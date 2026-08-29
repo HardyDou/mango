@@ -13,6 +13,7 @@ import io.mango.calendar.core.service.ICalendarAdminService;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.resource.support.ResourceHandler;
+import io.mango.resource.support.PortableResourceIds;
 import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.model.ResourceHandlerSpec;
 import io.mango.resource.support.model.ResourceSyncResult;
@@ -27,6 +28,9 @@ import java.util.List;
 public class CalendarYearResourceHandler implements ResourceHandler {
 
     private static final String TARGET_TABLE = "calendar_day";
+    private static final int MIN_YEAR = 1900;
+    private static final int MAX_YEAR = 2100;
+    private static final int MAX_DAYS_PER_YEAR = 366;
 
     private final CalendarMapper calendarMapper;
     private final CalendarDayMapper calendarDayMapper;
@@ -73,7 +77,9 @@ public class CalendarYearResourceHandler implements ResourceHandler {
                 init.setCalendarCode(payload.calendarCode());
                 init.setYear(payload.year());
                 init.setOverwrite(false);
-                calendarAdminService.initCalendarYear(init);
+                calendarAdminService.initResourceCalendarYear(init,
+                        date -> PortableResourceIds.stable(TARGET_TABLE,
+                                payload.tenantId(), payload.calendarCode(), date));
                 if (!payload.items().isEmpty()) {
                     ImportCalendarDaysCommand importCommand = new ImportCalendarDaysCommand();
                     importCommand.setCalendarCode(payload.calendarCode());
@@ -122,7 +128,7 @@ public class CalendarYearResourceHandler implements ResourceHandler {
 
         private static Payload from(ResourceDeclaration resource, ObjectMapper objectMapper) {
             int year = CalendarResourceFields.requiredInt(resource, "year");
-            if (year < 1900 || year > 2100) {
+            if (year < MIN_YEAR || year > MAX_YEAR) {
                 throw new IllegalArgumentException("Calendar resource year must be between 1900 and 2100");
             }
             Object rawItems = CalendarResourceFields.optionalValue(resource, "items");
@@ -132,7 +138,7 @@ public class CalendarYearResourceHandler implements ResourceHandler {
             JavaType itemType = objectMapper.getTypeFactory()
                     .constructCollectionType(List.class, ImportCalendarDayCommand.class);
             List<ImportCalendarDayCommand> items = objectMapper.convertValue(rawItems, itemType);
-            if (items.size() > 366) {
+            if (items.size() > MAX_DAYS_PER_YEAR) {
                 throw new IllegalArgumentException("Calendar resource items cannot exceed 366");
             }
             for (ImportCalendarDayCommand item : items) {

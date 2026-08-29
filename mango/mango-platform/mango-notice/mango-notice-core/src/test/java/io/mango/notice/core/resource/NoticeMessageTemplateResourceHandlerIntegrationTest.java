@@ -25,6 +25,7 @@ import org.springframework.test.context.TestPropertySource;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 
 import javax.sql.DataSource;
@@ -98,6 +99,39 @@ class NoticeMessageTemplateResourceHandlerIntegrationTest {
                                 "id = 2060000000000014003"))
                 .isEqualTo("任务失败：{{jobName}}");
         assertThat(count("notice_business_channel_template")).isOne();
+    }
+
+    @Test
+    void upsertUsesOnlyDeclaredPublishTime() throws Exception {
+        ResourceDeclaration declaration = messageTemplateDeclaration("定时任务执行失败：{{jobName}}", true);
+
+        handler.upsert(declaration);
+
+        assertThat(timestampValue(
+                        "notice_business_config_version",
+                        "publish_time",
+                        "id = 2060000000000014002"))
+                .isNull();
+        assertThat(timestampValue(
+                        "notice_business_channel_template",
+                        "publish_time",
+                        "id = 2060000000000014003"))
+                .isNull();
+
+        LocalDateTime publishTime = LocalDateTime.of(2026, 8, 30, 9, 15, 0);
+        field(declaration, "publishTime", ResourceFieldType.DATETIME, publishTime);
+        handler.upsert(declaration);
+
+        assertThat(timestampValue(
+                        "notice_business_config_version",
+                        "publish_time",
+                        "id = 2060000000000014002"))
+                .isEqualTo(publishTime);
+        assertThat(timestampValue(
+                        "notice_business_channel_template",
+                        "publish_time",
+                        "id = 2060000000000014003"))
+                .isEqualTo(publishTime);
     }
 
     @Test
@@ -392,6 +426,17 @@ class NoticeMessageTemplateResourceHandlerIntegrationTest {
                                         + whereClause)) {
             resultSet.next();
             return resultSet.getBoolean(1);
+        }
+    }
+
+    private LocalDateTime timestampValue(String tableName, String columnName, String whereClause)
+            throws Exception {
+        try (Connection connection = dataSource.getConnection();
+                Statement statement = connection.createStatement();
+                ResultSet resultSet = statement.executeQuery(
+                        "select " + columnName + " from " + tableName + " where " + whereClause)) {
+            resultSet.next();
+            return resultSet.getObject(1, LocalDateTime.class);
         }
     }
 

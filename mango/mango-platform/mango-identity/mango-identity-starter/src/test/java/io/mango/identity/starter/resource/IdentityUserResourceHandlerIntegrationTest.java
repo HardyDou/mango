@@ -31,6 +31,7 @@ import org.springframework.test.context.TestPropertySource;
 import java.util.LinkedHashMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest(classes = {
         DataSourceAutoConfiguration.class,
@@ -49,6 +50,9 @@ import static org.assertj.core.api.Assertions.assertThat;
         "mango.persistence.mybatis-plus.tenant.enabled=false"
 })
 class IdentityUserResourceHandlerIntegrationTest {
+
+    private static final String ENCODED_ADMIN_PASSWORD =
+            "$2a$10$xktxOwcAfFdqNAKKpWICDuV8MTEEshM9K1CtofRWA34v2OGoarvHa";
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -73,12 +77,13 @@ class IdentityUserResourceHandlerIntegrationTest {
     @Test
     void upsertEncodesInitialPasswordAndCreatesTenantMemberThroughRealMappers() {
         ResourceDeclaration resource = resource();
+        put(resource, "targetId", ResourceFieldType.LONG, 1L);
 
         ResourceSyncResult result = handler.upsert(resource);
 
         assertThat(handler.resourceType()).isEqualTo(ResourceTypes.IDENTITY_USER);
         assertThat(result.getTargetTable()).isEqualTo("identity_user");
-        assertThat(result.getTargetId()).isNotNull();
+        assertThat(result.getTargetId()).isEqualTo(1L);
 
         IdentityUserEntity user = userMapper.selectById(result.getTargetId());
         assertThat(user.getUsername()).isEqualTo("demo.admin");
@@ -123,6 +128,55 @@ class IdentityUserResourceHandlerIntegrationTest {
         assertThat(member.getRemark()).isEqualTo("updated by resource sync");
         assertThat(countUsers()).isEqualTo(1L);
         assertThat(countMembers()).isEqualTo(1L);
+    }
+
+    @Test
+    void upsertPreservesExistingBusinessKeyIdInsteadOfReplacingItWithDeclaredTargetId() {
+        ResourceSyncResult created = handler.upsert(resource());
+        ResourceDeclaration update = resource();
+        put(update, "targetId", ResourceFieldType.LONG, 1L);
+
+        ResourceSyncResult updated = handler.upsert(update);
+
+        assertThat(updated.getTargetId()).isEqualTo(created.getTargetId());
+        assertThat(updated.getTargetId()).isNotEqualTo(1L);
+        assertThat(countUsers()).isEqualTo(1L);
+        assertThat(memberMapper.selectList(null).get(0).getUserId()).isEqualTo(created.getTargetId());
+    }
+
+    @Test
+    void upsertPersistsEncodedPasswordDeterministicallyAcrossEmptyDatabases() {
+        ResourceDeclaration firstResource = resource();
+        firstResource.removeField("password");
+        put(firstResource, "targetId", ResourceFieldType.LONG, 1L);
+        put(firstResource, "encodedPassword", ResourceFieldType.STRING, ENCODED_ADMIN_PASSWORD);
+
+        ResourceSyncResult first = handler.upsert(firstResource);
+        String firstStoredPassword = userMapper.selectById(first.getTargetId()).getPassword();
+
+        resetSchema();
+        ResourceDeclaration secondResource = resource();
+        secondResource.removeField("password");
+        put(secondResource, "targetId", ResourceFieldType.LONG, 1L);
+        put(secondResource, "encodedPassword", ResourceFieldType.STRING, ENCODED_ADMIN_PASSWORD);
+        ResourceSyncResult second = handler.upsert(secondResource);
+        String secondStoredPassword = userMapper.selectById(second.getTargetId()).getPassword();
+
+        assertThat(firstStoredPassword).isEqualTo(ENCODED_ADMIN_PASSWORD);
+        assertThat(secondStoredPassword).isEqualTo(firstStoredPassword);
+        assertThat(passwordEncoder.matches("admin123", secondStoredPassword)).isTrue();
+    }
+
+    @Test
+    void upsertRejectsAmbiguousPlainAndEncodedPasswords() {
+        ResourceDeclaration resource = resource();
+        put(resource, "encodedPassword", ResourceFieldType.STRING, ENCODED_ADMIN_PASSWORD);
+
+        assertThatThrownBy(() -> handler.upsert(resource))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("password and encodedPassword cannot both be declared");
+        assertThat(countUsers()).isZero();
+        assertThat(countMembers()).isZero();
     }
 
     @Test

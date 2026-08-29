@@ -26,7 +26,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -104,6 +106,21 @@ class AppModuleServiceImplIntegrationTest {
         assertThat(menuPackageItemMenuIds()).containsExactlyElementsOf(menuIds());
         assertThat(roleMenuIds()).containsExactlyElementsOf(menuIds());
         assertThat(bindingHandler.calls()).containsExactlyInAnyOrder("1:1", "2:1");
+    }
+
+    @Test
+    @DisplayName("registerResourceManifest should produce stable ids across clean database replays")
+    void registerResourceManifestProducesStableIdsAcrossCleanDatabaseReplays() {
+        Map<String, List<Long>> firstReplay = replayManifestAndReadIds();
+
+        resetSchema();
+        Map<String, List<Long>> secondReplay = replayManifestAndReadIds();
+
+        assertThat(secondReplay).isEqualTo(firstReplay);
+        assertThat(firstReplay).allSatisfy((table, ids) -> assertThat(ids)
+                .as(table)
+                .isNotEmpty()
+                .doesNotContainNull());
     }
 
     @Test
@@ -338,6 +355,28 @@ class AppModuleServiceImplIntegrationTest {
                         values (?, 1, 'internal-admin', 'mango-system', 0, 1, ?, ?, 1, 1, 0)
                         """,
                 menuId, menuCode, menuCode);
+    }
+
+    private Map<String, List<Long>> replayManifestAndReadIds() {
+        seedPackage(1L, "internal-admin-default");
+        seedRole(10L, 1L, "ROLE_ADMIN");
+        AppModuleResourceManifestCommand manifest = createManifest();
+        manifest.setPackageCodes(List.of("internal-admin-default"));
+        manifest.setRoleCodes(List.of("ROLE_ADMIN"));
+
+        service.registerResourceManifest(manifest);
+
+        Map<String, List<Long>> ids = new LinkedHashMap<>();
+        ids.put("authorization_app_module", tableIds("authorization_app_module"));
+        ids.put("authorization_menu", tableIds("authorization_menu"));
+        ids.put("frontend_menu_runtime_config", tableIds("frontend_menu_runtime_config"));
+        ids.put("authorization_menu_package_item", tableIds("authorization_menu_package_item"));
+        ids.put("authorization_role_menu", tableIds("authorization_role_menu"));
+        return ids;
+    }
+
+    private List<Long> tableIds(String tableName) {
+        return jdbcTemplate.queryForList("select id from " + tableName + " order by id", Long.class);
     }
 
     private MenuEntity selectMenu(String menuCode) {

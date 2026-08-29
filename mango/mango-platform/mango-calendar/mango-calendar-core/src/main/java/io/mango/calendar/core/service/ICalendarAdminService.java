@@ -20,7 +20,9 @@ import io.mango.calendar.api.vo.CalendarVO;
 import io.mango.calendar.api.vo.CalendarYearSummaryVO;
 import io.mango.common.vo.PageResult;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.function.ToLongFunction;
 
 public interface ICalendarAdminService {
 
@@ -39,6 +41,16 @@ public interface ICalendarAdminService {
     PageResult<CalendarYearSummaryVO> pageCalendarYears(CalendarYearPageQuery query);
 
     boolean initCalendarYear(InitCalendarYearCommand command);
+
+    /**
+     * Initializes a Resource-owned calendar year with deterministic day identifiers.
+     *
+     * @param command calendar year initialization command
+     * @param targetIdProvider deterministic identifier provider keyed by calendar date
+     * @return whether initialization completed
+     */
+    boolean initResourceCalendarYear(InitCalendarYearCommand command,
+                                     ToLongFunction<LocalDate> targetIdProvider);
 
     boolean refreshCalendarYearLunar(RefreshCalendarYearLunarCommand command);
 

@@ -1,6 +1,7 @@
 package io.mango.authorization.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.authorization.core.entity.MenuEntity;
 import io.mango.authorization.core.entity.RoleEntity;
 import io.mango.authorization.core.entity.RoleMenuEntity;
@@ -8,6 +9,7 @@ import io.mango.authorization.core.mapper.MenuMapper;
 import io.mango.authorization.core.mapper.RoleMapper;
 import io.mango.authorization.core.mapper.RoleMenuMapper;
 import io.mango.authorization.core.service.IMenuPackageService;
+import io.mango.authorization.core.support.AuthorizationResourceIds;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.system.api.tenant.TenantPackageBindingHandler;
@@ -25,7 +27,9 @@ import java.util.stream.Collectors;
  * 机构绑定套餐后，同步默认管理员角色授权。
  */
 @Component
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Spring injects managed mapper and service collaborators; copying them is not valid"))
 public class TenantMenuPackageBindingHandler implements TenantPackageBindingHandler {
 
     private final RoleMapper roleMapper;
@@ -64,6 +68,8 @@ public class TenantMenuPackageBindingHandler implements TenantPackageBindingHand
                 .eq(RoleMenuEntity::getRoleId, role.getRoleId()));
         menuIds.forEach(menuId -> {
             RoleMenuEntity roleMenu = new RoleMenuEntity();
+            roleMenu.setId(AuthorizationResourceIds.stable(
+                    "authorization_role_menu", tenantId, role.getRoleId(), menuId));
             roleMenu.setTenantId(tenantId);
             roleMenu.setRoleId(role.getRoleId());
             roleMenu.setMenuId(menuId);

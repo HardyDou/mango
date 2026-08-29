@@ -83,6 +83,15 @@ class TenantMenuPackageBindingHandlerIntegrationTest {
         assertThat(roleMenus).extracting(RoleMenuEntity::getTenantId).containsOnly("2");
         assertThat(roleMenus).extracting(RoleMenuEntity::getRoleId).containsOnly(20L);
         assertThat(roleMenus).extracting(RoleMenuEntity::getMenuId).containsExactlyInAnyOrder(100L, 200L);
+
+        List<Long> firstIds = roleMenus.stream().map(RoleMenuEntity::getId).sorted().toList();
+        handler.bindPackage(2L, 10L);
+
+        assertThat(roleMenuMapper.selectList(null).stream()
+                .map(RoleMenuEntity::getId)
+                .sorted()
+                .toList())
+                .containsExactlyElementsOf(firstIds);
     }
 
     private void resetSchema() {

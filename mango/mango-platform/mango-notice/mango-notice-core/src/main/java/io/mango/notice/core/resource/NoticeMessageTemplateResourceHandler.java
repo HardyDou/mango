@@ -74,6 +74,7 @@ public class NoticeMessageTemplateResourceHandler implements ResourceHandler {
                 .fieldDescription("variableMapping", "变量映射 JSON。")
                 .fieldDescription("enabled", "是否启用，默认 true。")
                 .fieldDescription("channelConfigId", "绑定渠道配置 ID，空表示 AUTO。")
+                .fieldDescription("publishTime", "资源模板发布时间，可选；未声明时新记录保持为空，更新时保留原值。")
                 .build();
     }
 
@@ -211,7 +212,9 @@ public class NoticeMessageTemplateResourceHandler implements ResourceHandler {
         entity.setDefaultPriority(payload.defaultPriority());
         entity.setIdempotentStrategy(payload.idempotentStrategy());
         entity.setVersionStatus(payload.versionStatus());
-        entity.setPublishTime(now);
+        if (payload.publishTime() != null) {
+            entity.setPublishTime(payload.publishTime());
+        }
         entity.setPublishBy(payload.operatorId());
         if (entity.getCreatedAt() == null) {
             entity.setCreatedAt(now);
@@ -231,7 +234,9 @@ public class NoticeMessageTemplateResourceHandler implements ResourceHandler {
         entity.setVersionStatus(payload.versionStatus());
         entity.setEnabled(payload.enabled());
         entity.setChannelConfigId(payload.channelConfigId());
-        entity.setPublishTime(now);
+        if (payload.publishTime() != null) {
+            entity.setPublishTime(payload.publishTime());
+        }
         entity.setPublishBy(payload.operatorId());
         if (entity.getCreatedAt() == null) {
             entity.setCreatedAt(now);
@@ -297,7 +302,7 @@ public class NoticeMessageTemplateResourceHandler implements ResourceHandler {
                                    NoticeTemplateVersionStatus versionStatus, NoticeChannelType channelType,
                                    String templateName, String titleTemplate, String contentTemplate,
                                    String externalTemplateId, String variableMapping, Long channelConfigId,
-                                   Long operatorId) {
+                                   Long operatorId, LocalDateTime publishTime) {
 
         private static TemplatePayload from(ResourceDeclaration resource) {
             String id = resource.getId();
@@ -332,7 +337,8 @@ public class NoticeMessageTemplateResourceHandler implements ResourceHandler {
                     fieldText(resource, "externalTemplateId", false),
                     fieldText(resource, "variableMapping", false),
                     fieldLong(resource, "channelConfigId", false, null),
-                    fieldLong(resource, "operatorId", false, 1L)
+                    fieldLong(resource, "operatorId", false, 1L),
+                    fieldDateTime(resource, "publishTime")
             );
         }
     }
@@ -360,6 +366,17 @@ public class NoticeMessageTemplateResourceHandler implements ResourceHandler {
 
     static Boolean fieldBoolean(ResourceDeclaration resource, String name, boolean required, Boolean defaultValue) {
         return toBoolean(fieldValue(resource, name, required), required, defaultValue);
+    }
+
+    static LocalDateTime fieldDateTime(ResourceDeclaration resource, String name) {
+        Object value = fieldValue(resource, name, false);
+        if (value == null || !StringUtils.hasText(String.valueOf(value))) {
+            return null;
+        }
+        if (value instanceof LocalDateTime localDateTime) {
+            return localDateTime;
+        }
+        return LocalDateTime.parse(String.valueOf(value).trim().replace(' ', 'T'));
     }
 
     static String requiredText(Object value, String message) {

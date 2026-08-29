@@ -43,9 +43,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
+import java.time.Month;
+import java.time.Year;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.ToLongFunction;
 
 import static io.mango.calendar.api.enums.CalendarCode.CALENDAR_BUSINESS_ERROR;
 
@@ -157,6 +160,21 @@ public class CalendarAdminService implements ICalendarAdminService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean initCalendarYear(InitCalendarYearCommand command) {
+        Require.notNull(command, CALENDAR_BUSINESS_ERROR, "初始化日历年度命令不能为空");
+        return initCalendarYear(command, null);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean initResourceCalendarYear(InitCalendarYearCommand command,
+                                            ToLongFunction<LocalDate> targetIdProvider) {
+        Require.notNull(command, CALENDAR_BUSINESS_ERROR, "初始化日历年度命令不能为空");
+        Require.notNull(targetIdProvider, CALENDAR_BUSINESS_ERROR, "Resource 日历日期 ID 提供器不能为空");
+        return initCalendarYear(command, targetIdProvider);
+    }
+
+    private boolean initCalendarYear(InitCalendarYearCommand command,
+                                     ToLongFunction<LocalDate> targetIdProvider) {
         String tenantId = CalendarSupport.currentTenantId();
         CalendarEntity calendar = selectCalendarByCodeRequired(tenantId, command.getCalendarCode());
         long exists = dayMapper.countByYear(tenantId, calendar.getId(), command.getYear());
@@ -166,10 +184,14 @@ public class CalendarAdminService implements ICalendarAdminService {
             dayMapper.delete(yearDeleteWrapper(tenantId, calendar.getId(), command.getYear()));
         }
         Map<String, CalendarDayEntity> sourceByMonthDay = sourceDaysByMonthDay(tenantId, calendar, command.getSourceYear());
-        LocalDate date = LocalDate.of(command.getYear(), 1, 1);
-        LocalDate endDate = LocalDate.of(command.getYear(), 12, 31);
+        Year targetYear = Year.of(command.getYear());
+        LocalDate date = targetYear.atDay(1);
+        LocalDate endDate = targetYear.atMonth(Month.DECEMBER).atEndOfMonth();
         while (!date.isAfter(endDate)) {
             CalendarDayEntity entity = defaultDay(tenantId, calendar.getId(), date);
+            if (targetIdProvider != null) {
+                entity.setId(targetIdProvider.applyAsLong(date));
+            }
             CalendarDayEntity source = sourceByMonthDay.get(monthDayKey(date));
             if (source != null && !CalendarDayTypes.isDefaultType(CalendarDayTypes.normalize(source.getDayType()))) {
                 copySourceDay(source, entity);
@@ -417,8 +439,9 @@ public class CalendarAdminService implements ICalendarAdminService {
     private Map<Long, CalendarEntity> calendarsById(String tenantId) {
         LambdaQueryWrapper<CalendarEntity> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(CalendarEntity::getTenantId, tenantId);
-        Map<Long, CalendarEntity> result = new HashMap<>();
-        for (CalendarEntity calendar : calendarMapper.selectList(wrapper)) {
+        List<CalendarEntity> calendars = calendarMapper.selectList(wrapper);
+        Map<Long, CalendarEntity> result = new HashMap<>(calendars.size());
+        for (CalendarEntity calendar : calendars) {
             result.put(calendar.getId(), calendar);
         }
         return result;
@@ -430,7 +453,7 @@ public class CalendarAdminService implements ICalendarAdminService {
         }
         List<CalendarDayEntity> sourceDays = dayMapper.selectByYear(tenantId, calendar.getId(), sourceYear);
         Require.isTrue(!sourceDays.isEmpty(), CALENDAR_BUSINESS_ERROR, "复制来源年度未初始化");
-        Map<String, CalendarDayEntity> result = new HashMap<>();
+        Map<String, CalendarDayEntity> result = new HashMap<>(sourceDays.size());
         for (CalendarDayEntity day : sourceDays) {
             result.put(monthDayKey(day.getCalendarDate()), day);
         }

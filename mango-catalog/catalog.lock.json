@@ -4,7 +4,7 @@
     "schemaVersion": 1,
     "workspaceCount": 41
   },
-  "catalogDigest": "eb85d08d652adf77c2930f8c4feb31b8f09f76d0dfd46f01ed7db745221a3b84",
+  "catalogDigest": "ccec97244eded747b5f4803f63e0f759ab5ed0de75fd531041a3cf3afc8940e2",
   "maven": {
     "dependencyManagementSets": [
       {
@@ -5516,6 +5516,15 @@
         "artifactId": "mango-calendar-starter",
         "classifier": null,
         "dependencies": [
+          {
+            "artifactId": "mango-infra-persistence-starter",
+            "classifier": null,
+            "groupId": "io.mango.infra.persistence",
+            "optional": false,
+            "scope": "test",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
           {
             "artifactId": "mango-infra-web-starter",
             "classifier": null,

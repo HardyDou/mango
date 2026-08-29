@@ -90,8 +90,12 @@ public class AuthRoleDataScopeResourceHandler implements ResourceHandler {
                     "Auth role data scope preserved for INIT_ONLY: " + role.getRoleCode() + "/" + resourceCode);
         }
         LocalDateTime now = LocalDateTime.now();
-        if (entity == null) {
+        boolean creating = entity == null;
+        if (creating) {
             entity = new RoleDataScopeEntity();
+            entity.setId(fields.targetIdOrStable(resource, TARGET_TABLE,
+                    role.getTenantId(), role.getAppCode(),
+                    fields.requiredString(resource, "roleCode"), resourceCode));
             entity.setTenantId(role.getTenantId());
             entity.setAppCode(role.getAppCode());
             entity.setRoleId(role.getRoleId());
@@ -103,7 +107,7 @@ public class AuthRoleDataScopeResourceHandler implements ResourceHandler {
         entity.setIncludeChildren(fields.boolField(resource, "includeChildren", false));
         entity.setStatus(statusValue(resource));
         entity.setUpdateTime(now);
-        if (entity.getId() == null) {
+        if (creating) {
             roleDataScopeMapper.insert(entity);
         } else {
             roleDataScopeMapper.updateById(entity);

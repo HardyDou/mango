@@ -52,7 +52,8 @@ public class IdentityUserResourceHandler implements ResourceHandler {
                 .resourceType(resourceType())
                 .requiredField("tenantId")
                 .requiredField("username")
-                .fieldDescription("password", "明文初始密码，仅用于 demo/bootstrap；handler 会加密保存。")
+                .fieldDescription("password", "明文初始密码，仅用于 demo 或运行时初始化；handler 会加密保存。")
+                .fieldDescription("encodedPassword", "PasswordEncoder 已编码密码；正式可移植基线使用该字段保证构建结果确定。")
                 .fieldDescription("memberId", "固定租户成员 ID；用于被授权等资源稳定引用。")
                 .fieldDescription("memberNo", "租户成员编号；未配置时使用 USER-{userId}。")
                 .build();
@@ -61,16 +62,18 @@ public class IdentityUserResourceHandler implements ResourceHandler {
     @Override
     public ResourceSyncResult upsert(ResourceDeclaration resource) {
         IdentityUserEntity user = findUser(resource);
+        boolean newUser = user == null;
         LocalDateTime now = LocalDateTime.now();
-        if (user == null) {
+        if (newUser) {
             user = new IdentityUserEntity();
+            user.setUserId(fields.longField(resource, "targetId"));
             user.setUsername(fields.requiredString(resource, "username"));
             user.setRealm(fields.stringField(resource, "realm", DEFAULT_REALM));
             user.setActorType(fields.stringField(resource, "actorType", DEFAULT_ACTOR_TYPE));
             user.setCreateTime(now);
         }
         applyUserFields(resource, user, now);
-        if (user.getUserId() == null) {
+        if (newUser) {
             userMapper.insert(user);
         } else {
             userMapper.updateById(user);
@@ -100,7 +103,14 @@ public class IdentityUserResourceHandler implements ResourceHandler {
 
     private void applyUserFields(ResourceDeclaration resource, IdentityUserEntity user, LocalDateTime now) {
         String password = fields.stringField(resource, "password");
-        if (StringUtils.hasText(password)) {
+        String encodedPassword = fields.stringField(resource, "encodedPassword");
+        if (StringUtils.hasText(password) && StringUtils.hasText(encodedPassword)) {
+            throw new IllegalStateException(resourceType()
+                    + " password and encodedPassword cannot both be declared: " + resource.getId());
+        }
+        if (StringUtils.hasText(encodedPassword)) {
+            user.setPassword(encodedPassword.trim());
+        } else if (StringUtils.hasText(password)) {
             user.setPassword(passwordEncoder.encode(password.trim()));
         }
         user.setNickname(fields.stringField(resource, "nickname", user.getUsername()));

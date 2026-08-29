@@ -233,7 +233,9 @@ META-INF
 
 生成过程使用 replay/determinism/verify 三套 schema，三者都会显式使用 `mango.baseline.characterSet` 和 `mango.baseline.collation`，不继承构建机 MySQL 的 server 默认值。插件在创建临时 schema 前校验字符集与排序规则组合；未知组合或不安全的标识符会直接阻断构建。B SQL 和 manifest 分别固化实际表结构以及 `targetCharacterSet`、`targetCollation`，生成指纹也包含这两个目标值。业务项目如果覆盖默认值，目标空库必须使用相同字符集和排序规则，避免 B 之后新增的 V migration 重新继承另一套数据库语义。
 
-前两套 schema 独立回放 V 和便携 Resource 时，确定性比较忽略标准及历史运行审计时间列，例如 `created_at`、`updated_at`、`create_time`、`update_time` 和 `last_sync_time`；B SQL 仍保留 replay 中这些列的真实值，verify schema 连续执行 B 两次后仍按全部列比较结构和静态数据。其它业务列中的 `UUID()`、当前时间或环境值继续阻断构建。
+前两套 schema 独立回放 V 和便携 Resource 后，生成器会把标准及历史运行审计时间列规范化为固定值，例如 `created_at`、`updated_at`、`create_time`、`update_time` 和 `last_sync_time` 的非空值统一为 `2000-01-01` 或 `2000-01-01 00:00:00`，再生成 B SQL、manifest 和 generation fingerprint。`NULL` 保持为空，Resource Registry `last_sync_time` 与目标表 `updated_at` 使用同一规范值，因此恢复后仍保留运行期修改判断语义。双库确定性比较继续忽略这些受控审计列，verify schema 连续执行 B 两次后按全部列比较结构和静态数据。`publish_time` 等普通业务时间不属于审计列，不会被忽略或规范化；业务列中的 `UUID()`、当前时间或环境值继续阻断构建。
+
+便携 Resource 的业务主键必须由声明中的固定 ID 或稳定业务身份确定。生成器只规范化非语义审计时间，不会忽略普通业务列或主键差异；Authorization、Calendar、Identity、Notice 等正式 Handler 因此必须在两套独立空库中生成相同目标行。若某个 Handler 仍依赖雪花、自增、随机值、当前业务时间或调用顺序，replay/determinism 比较会直接失败并定位差异，而不是产出不可复现的 BSQL。
 
 Resource baseline 当前只支持一个 datasource group。`PORTABLE` Handler 的目标状态与 Registry hash 进入 BSQL；`ENVIRONMENT_REQUIRED` Handler 和没有本地 Handler 的远程目标在恢复后处理，构建期不会调用远程 Dispatcher。构建专用 Bootstrap 只选择 Mango Resource contributor，普通业务、租户和其它运行期 contributor 在目标环境 Bootstrap 执行。生成前清除环境 receipt、Resource 审计和 Bootstrap 运行记录，避免把构建过程当成部署成功回执。
 

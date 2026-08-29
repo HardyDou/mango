@@ -2,11 +2,13 @@ package io.mango.authorization.starter.resource;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.authorization.api.command.AppCommand;
 import io.mango.authorization.api.command.AppLoginContextCommand;
 import io.mango.authorization.api.vo.AppLoginContextVO;
 import io.mango.authorization.api.vo.AppVO;
 import io.mango.authorization.core.service.IAuthorizationAppService;
+import io.mango.authorization.core.support.AuthorizationResourceIds;
 import io.mango.resource.support.ResourceHandler;
 import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.api.enums.ResourceStatus;
@@ -22,7 +24,9 @@ import java.util.List;
  * Synchronizes required logical applications and login contexts without creating frontend runtime units.
  */
 @Component
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Spring injects managed service and ObjectMapper collaborators; copying them is not valid"))
 public class AuthAppResourceHandler implements ResourceHandler {
 
     private static final String TARGET_TABLE = "authorization_app";
@@ -69,7 +73,11 @@ public class AuthAppResourceHandler implements ResourceHandler {
 
     private AppCommand toCommand(ResourceDeclaration resource, AppVO existing) {
         AppCommand command = new AppCommand();
-        command.setAppId(existing == null ? null : existing.getAppId());
+        command.setAppId(existing == null
+                ? Long.valueOf(AuthorizationResourceIds.declaredOrStable(
+                        fields.longField(resource, "targetId"), TARGET_TABLE,
+                        fields.requiredString(resource, "appCode")))
+                : existing.getAppId());
         command.setAppCode(fields.requiredString(resource, "appCode"));
         command.setAppName(fields.stringField(resource, "appName", existing == null ? null : existing.getAppName()));
         if (command.getAppName() == null || command.getAppName().isBlank()) {
@@ -77,19 +85,21 @@ public class AuthAppResourceHandler implements ResourceHandler {
         }
         command.setIcon(fields.stringField(resource, "icon", existing == null ? null : existing.getIcon()));
         command.setSort(fields.intField(resource, "sort",
-                existing == null || existing.getSort() == null ? 0 : existing.getSort()));
+                existing == null || existing.getSort() == null ? Integer.valueOf(0) : existing.getSort()));
         command.setStatus(statusValue(resource, existing));
         command.setRemark(fields.stringField(resource, "remark", existing == null ? null : existing.getRemark()));
-        command.setLoginContexts(readLoginContexts(resource, existing));
+        command.setLoginContexts(readLoginContexts(resource, existing, command.getAppCode()));
         return command;
     }
 
-    private List<AppLoginContextCommand> readLoginContexts(ResourceDeclaration resource, AppVO existing) {
+    private List<AppLoginContextCommand> readLoginContexts(
+            ResourceDeclaration resource, AppVO existing, String appCode) {
         Object value = fields.fieldValue(resource, "loginContexts");
         if (value != null) {
             List<AppLoginContextCommand> contexts = objectMapper.convertValue(
                     value, new TypeReference<List<AppLoginContextCommand>>() { });
             if (!contexts.isEmpty()) {
+                contexts.forEach(context -> assignStableContextId(context, appCode));
                 return contexts;
             }
         }
@@ -97,6 +107,14 @@ public class AuthAppResourceHandler implements ResourceHandler {
             return existing.getLoginContexts().stream().map(this::toCommand).toList();
         }
         throw new IllegalStateException(ResourceTypes.AUTH_APP + " field is required: loginContexts");
+    }
+
+    private void assignStableContextId(AppLoginContextCommand context, String appCode) {
+        if (context.getContextId() == null) {
+            context.setContextId(AuthorizationResourceIds.stable(
+                    "authorization_app_login_context", appCode,
+                    context.getRealm(), context.getActorType()));
+        }
     }
 
     private AppLoginContextCommand toCommand(AppLoginContextVO source) {
@@ -118,6 +136,6 @@ public class AuthAppResourceHandler implements ResourceHandler {
         if (resource.getStatus() == ResourceStatus.DISABLED) {
             return 0;
         }
-        return existing == null || existing.getStatus() == null ? 1 : existing.getStatus();
+        return existing == null || existing.getStatus() == null ? Integer.valueOf(1) : existing.getStatus();
     }
 }

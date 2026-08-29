@@ -355,6 +355,8 @@ src/main/resources/META-INF/mango/resources/{module}-common-menu.yaml
 Flyway 只维护授权模块的表、列、索引等 DDL，不再承载任何初始化 DML。应用入口、登录上下文、套餐主档等必需资源放在本模块 `META-INF/mango/resources/`；演示角色和成员角色绑定放在 `META-INF/mango/demo/`，仅在显式开启 demo 时同步。
 业务模块不得直接写授权表或调用 `authorization-core` Service 来补菜单授权；角色、菜单和默认角色授权统一通过 Resource Registry 的 `AUTH_ROLE`、`AUTH_MENU` 声明同步。
 
+构建期 cold baseline 会在相互独立的空库中重复物化便携 Resource。授权模块对应用、登录上下文、菜单、套餐关系、角色关系、API Resource 和前端运行配置使用声明 `targetId`，或根据稳定业务身份生成确定性主键；相同声明在不同空库中必须得到相同主键。业务模块应继续使用稳定的 `appCode`、`moduleCode`、`menuCode`、`roleCode`、HTTP method/path 等身份，不得依赖数据库自增值或 Resource 扫描顺序。
+
 示例：
 
 ```json

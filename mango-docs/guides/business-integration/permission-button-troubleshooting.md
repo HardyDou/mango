@@ -308,3 +308,7 @@ pnpm -F @mango/admin-shell build
 ## 2026-08-25 Issue #851 Resource 模块增量影响
 
 - Issue #851 不改变按钮 `permissionCode`、角色授权、登录态权限集合、后端接口鉴权、租户隔离或 `v-auth` 展示语义；它只让未变化 Resource 模块在声明解析前按 receipt 跳过。若权限资源未形成，可先核对对应模块 receipt、generation 与 manifest fingerprint，再按本指南检查权限声明、角色授权和登录态刷新。
+
+## 2026-08-29 Issue #851 构建期确定性影响
+
+- Authorization Resource 的 API、菜单、角色及关联目标行现在使用声明 `targetId` 或稳定业务身份生成确定性主键，双空库构建会校验结果一致。该变化不修改按钮 `permissionCode`、登录态权限集合或接口鉴权语义；构建失败时应检查 Resource 的 module、method/path、menu/role code 等稳定身份，并保留权限校验、数据库初始化和扫描顺序的现行约束（详见 [PMO 持久化规则](../../../mango-pmo/rules/backend/07-persistence.md)）。

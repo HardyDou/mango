@@ -1,8 +1,10 @@
 package io.mango.authorization.starter.resource;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.authorization.api.command.FrontendModuleRuntimeStrategyCommand;
 import io.mango.authorization.api.query.FrontendModuleRuntimeStrategyQuery;
 import io.mango.authorization.core.service.IFrontendRuntimeStrategyService;
+import io.mango.authorization.core.support.AuthorizationResourceIds;
 import io.mango.resource.support.ResourceHandler;
 import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.support.model.ResourceDeclaration;
@@ -17,7 +19,9 @@ import org.springframework.util.StringUtils;
  * Resource Registry handler for authorization_frontend_module_runtime_strategy.
  */
 @Component
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Spring injects the managed runtime strategy service; copying it is not valid"))
 public class FrontendModuleRuntimeStrategyResourceHandler implements ResourceHandler {
 
     private static final String TARGET_TABLE = "authorization_frontend_module_runtime_strategy";
@@ -87,6 +91,9 @@ public class FrontendModuleRuntimeStrategyResourceHandler implements ResourceHan
         command.setAppCode(requiredString(resource, "appCode"));
         command.setModuleCode(defaultString(stringField(resource, "moduleCode"), resource.getModuleCode()));
         command.setDeployProfile(requiredString(resource, "deployProfile"));
+        command.setStrategyId(AuthorizationResourceIds.declaredOrStable(
+                longField(resource, "targetId"), TARGET_TABLE,
+                command.getAppCode(), command.getModuleCode(), command.getDeployProfile()));
         command.setPageType(requiredString(resource, "pageType"));
         command.setRuntimeCode(requiredString(resource, "runtimeCode"));
         command.setStatus(intField(resource, "status"));

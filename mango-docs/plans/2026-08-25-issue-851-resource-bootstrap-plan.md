@@ -147,7 +147,15 @@
 |---|---|---|---|
 | IMPL-011 | JAR 外 `FILE_ASSET` 仍能参与构建期 Resource baseline，且不重新打入应用 JAR | `resourceAdditionalClasspathElements`、可读性 fail-fast、业务接入说明 | DONE |
 | VERIFY-005 | 真实子进程读取外部资产，双库物化与恢复链通过，Boot JAR 保持外部资产 0 条目 | Maven Plugin 单元测试与 MySQL 8.4 Invoker | DONE |
+| IMPL-012 | 正式 `IDENTITY_USER` 初始密码可确定地进入 Resource baseline | `encodedPassword` 声明契约与内置管理员编码密码 | DONE |
+| VERIFY-006 | 两次空库生成相同用户密码数据且默认管理员密码仍可校验 | Identity 真实 Mapper 集成测试与 Baohan MySQL 8.4 双库 BSQL | DONE |
+| IMPL-013 | 相同输入的独立构建生成相同 BSQL、manifest 与 generation fingerprint | 审计时间规范化、Notice 显式业务发布时间 | DONE |
+| VERIFY-007 | 两次完整 Baohan 构建逐文件产物一致 | Maven Plugin MySQL 集成测试与 Baohan 33 模块 BSQL 跨构建比较 | DONE |
 
 - 发现事实：Baohan `bootstrap-assets` 按既有生产契约由镜像独立携带并通过 `loader.path` 加载；Spring Boot Maven Plugin 的 `additionalClasspathElements` 不属于 Maven 项目的 runtime classpath，1.0.43 `baseline-generate` 子进程因此无法读取声明引用的 DOCX。
 - 修复结果：插件显式合并业务配置的额外目录或 JAR；相对路径按最终应用模块目录解析，缺失或不可读以 `MANGO-BASELINE-053` 阻断构建，不把资产复制到 `target/classes`。
 - 验证结果：`BaselineGenerateMojoTest` 4/4；真实 MySQL 8.4 Maven Invoker 2/2，双库 Resource baseline、BSQL 重入和恢复应用均通过，第二次同 generation `executedSteps=0`，输出 `RESOURCE_DATABASE_BASELINE_VERIFIED`；夹具 Boot JAR 包含三模块 BSQL 与 manifest，外部资产条目为 0；所有一次性 schema 已清理。
+- 确定性返工：Identity 声明直接携带已编码密码；Calendar 与 Calendar Day 按稳定自然键生成主键；套餐绑定刷新生成的角色菜单关系按 `tenantId + roleId + menuId` 生成稳定主键，后台手工角色菜单分配路径保持不变。
+- 业务消费复验：Baohan 48 模块在本地 MySQL 8.4 完成两套空库 Resource baseline、数据库事实确定性对比、BSQL 重入和 Boot JAR 打包，构建成功，总耗时 2 分 43 秒；插件随机命名的一次性 schema 已清理。
+- 跨构建返工：生成器在写 BSQL 前把非空运行审计时间规范化为固定值，`publish_time` 保持普通业务字段；Notice 声明可显式提供 `publishTime`，未提供时新记录为空、已有记录保留原值。Maven Plugin MySQL 集成测试 11/11 通过，包含两次独立构建 SQL 与 manifest 全文一致断言。
+- 跨构建消费复验：Baohan 连续两轮 48 模块构建均成功，33 个 BSQL 逐文件无差异；manifest SHA-256 均为 `7828dc590751b9c3c7cab2449e09acf4c976f104c374a2042b4d65a85403341a`，SQL 内容集合 SHA-256 均为 `0f581a1781b0f27438f35d0eb65486d252a84c91e13986ad1d700578c7cdcf1c`，generation fingerprint 均为 `684bfb2cafe489314aab21347968921959b67620832243de3b92f643af55069f`；插件阶段分别约 103 秒和 102 秒，总构建分别约 2 分 23 秒和 2 分 20 秒，一次性 schema 已清理。

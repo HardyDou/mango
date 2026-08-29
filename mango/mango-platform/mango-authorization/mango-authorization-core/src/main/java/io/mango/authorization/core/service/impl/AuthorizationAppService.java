@@ -2,6 +2,7 @@ package io.mango.authorization.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.authorization.api.enums.AuthorizationCode;
 import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.api.command.AppCommand;
@@ -40,10 +41,13 @@ import java.util.stream.Collectors;
  * 授权应用基础信息仍写入 authorization_app；前端入口运行配置独立写入 authorization_frontend_app_registry。
  */
 @Service
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Spring injects managed mapper and service collaborators; copying them is not valid"))
 public class AuthorizationAppService implements IAuthorizationAppService {
 
     private static final String PLATFORM_TENANT_ID = "default";
+    private static final int MAX_APP_CODE_LENGTH = 64;
 
     private final AuthorizationAppMapper authorizationAppMapper;
     private final AuthorizationAppLoginContextMapper loginContextMapper;
@@ -182,8 +186,8 @@ public class AuthorizationAppService implements IAuthorizationAppService {
         app.setAppCode(command.getAppCode());
         app.setAppName(command.getAppName());
         app.setIcon(command.getIcon());
-        app.setSort(command.getSort() == null ? 0 : command.getSort());
-        app.setStatus(command.getStatus() == null ? 1 : command.getStatus());
+        app.setSort(command.getSort() == null ? Integer.valueOf(0) : command.getSort());
+        app.setStatus(command.getStatus() == null ? Integer.valueOf(1) : command.getStatus());
         app.setRemark(command.getRemark());
     }
 
@@ -212,9 +216,11 @@ public class AuthorizationAppService implements IAuthorizationAppService {
         FrontendAppRegistryEntity registry = frontendAppRegistryMapper.selectOne(new LambdaQueryWrapper<FrontendAppRegistryEntity>()
                 .eq(FrontendAppRegistryEntity::getAppCode, source.getAppCode())
                 .last("LIMIT 1"));
+        boolean creating = registry == null;
         LocalDateTime now = LocalDateTime.now();
-        if (registry == null) {
+        if (creating) {
             registry = new FrontendAppRegistryEntity();
+            registry.setRegistryId(source.getRegistryId());
             registry.setAppCode(source.getAppCode());
             registry.setTenantId(PLATFORM_TENANT_ID);
             registry.setCreateTime(now);
@@ -230,7 +236,7 @@ public class AuthorizationAppService implements IAuthorizationAppService {
         registry.setSandboxEnabled(Boolean.TRUE.equals(source.getSandboxEnabled()));
         registry.setStyleIsolation(defaultString(source.getStyleIsolation(), "NONE"));
         registry.setUpdateTime(now);
-        if (registry.getRegistryId() == null) {
+        if (creating) {
             frontendAppRegistryMapper.insert(registry);
         } else {
             frontendAppRegistryMapper.updateById(registry);
@@ -252,7 +258,7 @@ public class AuthorizationAppService implements IAuthorizationAppService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Boolean deleteFrontendAppRegistry(String appCode) {
-        Require.isTrue(appCode == null || appCode.length() <= 64,
+        Require.isTrue(appCode == null || appCode.length() <= MAX_APP_CODE_LENGTH,
                 AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR, "前端运行单元编码最多64个字符");
         if (!StringUtils.hasText(appCode)) {
             return false;
@@ -516,24 +522,49 @@ public class AuthorizationAppService implements IAuthorizationAppService {
         List<AppLoginContextCommand> normalized = normalizeLoginContexts(commands);
         Require.notEmpty(normalized, AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR,
                 "应用至少需要一个登录上下文");
-        loginContextMapper.delete(new LambdaQueryWrapper<AuthorizationAppLoginContextEntity>()
-                .eq(AuthorizationAppLoginContextEntity::getAppId, app.getAppId()));
+        Map<String, AuthorizationAppLoginContextEntity> existingContexts = loginContextMapper.selectList(
+                        new LambdaQueryWrapper<AuthorizationAppLoginContextEntity>()
+                                .eq(AuthorizationAppLoginContextEntity::getAppId, app.getAppId()))
+                .stream()
+                .collect(Collectors.toMap(
+                        context -> contextKey(context.getRealm(), context.getActorType()),
+                        context -> context,
+                        (left, right) -> left));
+        List<Long> retainedIds = new ArrayList<>();
         LocalDateTime now = LocalDateTime.now();
         for (int i = 0; i < normalized.size(); i++) {
             AppLoginContextCommand command = normalized.get(i);
-            AuthorizationAppLoginContextEntity context = new AuthorizationAppLoginContextEntity();
-            context.setTenantId(PLATFORM_TENANT_ID);
-            context.setAppId(app.getAppId());
-            context.setAppCode(app.getAppCode());
+            AuthorizationAppLoginContextEntity context = existingContexts.get(
+                    contextKey(command.getRealm(), command.getActorType()));
+            boolean creating = context == null;
+            if (creating) {
+                context = new AuthorizationAppLoginContextEntity();
+                context.setContextId(command.getContextId());
+                context.setTenantId(PLATFORM_TENANT_ID);
+                context.setAppId(app.getAppId());
+                context.setAppCode(app.getAppCode());
+                context.setCreateTime(now);
+            }
             context.setRealm(command.getRealm());
             context.setActorType(command.getActorType());
             context.setDefaultFlag(command.getDefaultFlag());
             context.setStatus(command.getStatus());
-            context.setSort(command.getSort() == null ? i : command.getSort());
-            context.setCreateTime(now);
+            context.setSort(command.getSort() == null ? Integer.valueOf(i) : command.getSort());
             context.setUpdateTime(now);
-            loginContextMapper.insert(context);
+            if (creating) {
+                loginContextMapper.insert(context);
+            } else {
+                loginContextMapper.updateById(context);
+            }
+            retainedIds.add(context.getContextId());
         }
+        loginContextMapper.delete(new LambdaQueryWrapper<AuthorizationAppLoginContextEntity>()
+                .eq(AuthorizationAppLoginContextEntity::getAppId, app.getAppId())
+                .notIn(AuthorizationAppLoginContextEntity::getId, retainedIds));
+    }
+
+    private String contextKey(String realm, String actorType) {
+        return normalizeCode(realm) + ":" + normalizeCode(actorType);
     }
 
     private List<AppLoginContextCommand> normalizeLoginContexts(List<AppLoginContextCommand> commands) {
@@ -557,9 +588,11 @@ public class AuthorizationAppService implements IAuthorizationAppService {
             AppLoginContextCommand item = normalized.get(i);
             item.setRealm(normalizeCode(item.getRealm()));
             item.setActorType(normalizeCode(item.getActorType()));
-            item.setStatus(item.getStatus() == null ? 1 : item.getStatus());
-            item.setSort(item.getSort() == null ? i : item.getSort());
-            item.setDefaultFlag(hasDefault ? (Integer.valueOf(1).equals(item.getDefaultFlag()) ? 1 : 0) : (i == 0 ? 1 : 0));
+            item.setStatus(item.getStatus() == null ? Integer.valueOf(1) : item.getStatus());
+            item.setSort(item.getSort() == null ? Integer.valueOf(i) : item.getSort());
+            item.setDefaultFlag(hasDefault
+                    ? (Integer.valueOf(1).equals(item.getDefaultFlag()) ? Integer.valueOf(1) : Integer.valueOf(0))
+                    : (i == 0 ? Integer.valueOf(1) : Integer.valueOf(0)));
             if (item.getDefaultFlag() == 1) {
                 hasDefault = true;
             }
