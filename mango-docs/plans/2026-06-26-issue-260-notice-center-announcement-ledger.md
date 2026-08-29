@@ -101,7 +101,7 @@
 
 | 台账 ID | 页面/接口 | 功能点 | 测试数据 | 关键断言 | UI/交互检查 | console/network 结果 | 截图/trace/日志 | 结论 |
 |---|---|---|---|---|---|---|---|---|
-| ANN-004 | 通知中心 / 公告管理 | 发布公告 | `系统升级通知`、`全员安全提醒` | 公告发布后生成用户级接收记录，重复用户只保留一条 | 表格、表单、发布确认、下线确认已验证 | E2E console error 与 notice API 4xx/5xx 为空 | `announcement-admin-mixed-targets.png` | PASS |
-| ANN-005 | 消息中心 / 公告 | 阅读确认 | `端午值班安排` | 用户只能操作自己的公告，确认后不再出现在未读/待确认筛选 | 列表、详情弹窗、确认按钮、筛选已验证 | E2E console error 与 notice API 4xx/5xx 为空 | `announcement-user-confirmed.png` | PASS |
-| ANN-006 | 消息中心 / 我的消息 | 公告提醒跳转 | `bizType=notice.announcement.published`、`bizId=ann-100` | 从消息进入公告详情，确认仍写公告对象 | 消息列表跳转、公告详情、已读状态已验证 | E2E console error 与 notice API 4xx/5xx 为空 | `site-message-announcement-jump.png` | PASS |
+| ANN-004 | 通知中心 / 公告管理 | 发布公告 | `系统升级通知`、`全员安全提醒` | 公告发布后生成用户级接收记录，重复用户只保留一条 | 表格、表单、发布确认、下线确认已验证 | E2E console error 与 notice API 4xx/5xx 为空 | `历史验收图片已清理（可从 Git 历史恢复）` | PASS |
+| ANN-005 | 消息中心 / 公告 | 阅读确认 | `端午值班安排` | 用户只能操作自己的公告，确认后不再出现在未读/待确认筛选 | 列表、详情弹窗、确认按钮、筛选已验证 | E2E console error 与 notice API 4xx/5xx 为空 | `历史验收图片已清理（可从 Git 历史恢复）` | PASS |
+| ANN-006 | 消息中心 / 我的消息 | 公告提醒跳转 | `bizType=notice.announcement.published`、`bizId=ann-100` | 从消息进入公告详情，确认仍写公告对象 | 消息列表跳转、公告详情、已读状态已验证 | E2E console error 与 notice API 4xx/5xx 为空 | `历史验收图片已清理（可从 Git 历史恢复）` | PASS |
 | ANN-007 | 菜单 | 管理端和用户侧菜单拆分 | 真实库 `mango_dev_d8db9e`，账号 `admin` | `通知中心` 只显示管理类菜单；`消息中心` 显示我的消息和公告；接收设置隐藏 | 真实 UI 登录后点击顶部菜单验证通过 | 后端健康检查 UP；真实菜单接口返回正确树 | `.runtime/issue-260-menu-check/notice-center-admin-menu.png`、`.runtime/issue-260-menu-check/message-center-user-menu.png` | PASS |

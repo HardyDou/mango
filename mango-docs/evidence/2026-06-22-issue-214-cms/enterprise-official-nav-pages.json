@@ -16,7 +16,7 @@
       "hasBadText": false,
       "hasNewsNav": true,
       "hasCompanyNewsNav": true,
-      "screenshot": "enterprise-home-nav.png"
+      "screenshot": "历史验收图片已清理（可从 Git 历史恢复）"
     },
     {
       "pathname": "/news",
@@ -34,7 +34,7 @@
       "hasBadText": false,
       "hasNewsNav": true,
       "hasCompanyNewsNav": true,
-      "screenshot": "enterprise-news.png"
+      "screenshot": "历史验收图片已清理（可从 Git 历史恢复）"
     },
     {
       "pathname": "/company-news",
@@ -52,7 +52,7 @@
       "hasBadText": false,
       "hasNewsNav": true,
       "hasCompanyNewsNav": true,
-      "screenshot": "enterprise-company-news.png"
+      "screenshot": "历史验收图片已清理（可从 Git 历史恢复）"
     }
   ],
   "consoleMessages": [],

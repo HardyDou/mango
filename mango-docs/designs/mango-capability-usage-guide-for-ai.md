@@ -201,11 +201,7 @@ npm run build
 npm run test:e2e
 ```
 
-Mango 仓内 Sprint 8 模式矩阵验收脚本：
-
-```bash
-node mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-8/verify-mode-matrix.mjs
-```
+历史 Sprint 8 模式矩阵验收脚本已随早期验收文件清理；需要追溯时从 Git 历史恢复。
 
 ## 9. AI 使用提示
 

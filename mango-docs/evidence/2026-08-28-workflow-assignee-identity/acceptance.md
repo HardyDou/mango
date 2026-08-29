@@ -20,13 +20,13 @@
 
 | 台账 ID | 用例 ID | 页面/接口 | 功能点 | 测试数据 | 关键断言 | UI/交互检查 | console/network 结果 | 截图/trace/日志 | 结论 |
 |---|---|---|---|---|---|---|---|---|---|
-| TASK-005 | TC-001 | 我的待办、任务详情、我的已办；`start-business`、`complete-result`、`progress/latest`、`tasks/todo`、`tasks/{taskId}` | 两节点真实审批从发起、首次推进、页面终审到已办闭环 | `ASSIGNEE-IDENTITY-E2E-*`；租户 `1`；办理人 `admin` | `assigneeName=admin`；`assigneeId=2093302750320009218` 且发起、动作结果、进度、待办和详情一致；`assigneeDisplayName=Administrator`；终审后业务进度为 `APPROVED` 且 `currentTasks=[]` | 待办列表显示 `Administrator`；详情页 `data-state=ready` 且摘要办理人显示 `Administrator`；浏览器点击“通过”完成终审；已办列表可查询结果 | 0 console error；0 page error；0 request failure；0 HTTP 5xx | `mango-docs/evidence/2026-08-28-workflow-assignee-identity/workflow-assignee-identity.png`；清理修正后串行重复 `5 passed (43.6s)` | PASS |
+| TASK-005 | TC-001 | 我的待办、任务详情、我的已办；`start-business`、`complete-result`、`progress/latest`、`tasks/todo`、`tasks/{taskId}` | 两节点真实审批从发起、首次推进、页面终审到已办闭环 | `ASSIGNEE-IDENTITY-E2E-*`；租户 `1`；办理人 `admin` | `assigneeName=admin`；`assigneeId=2093302750320009218` 且发起、动作结果、进度、待办和详情一致；`assigneeDisplayName=Administrator`；终审后业务进度为 `APPROVED` 且 `currentTasks=[]` | 待办列表显示 `Administrator`；详情页 `data-state=ready` 且摘要办理人显示 `Administrator`；浏览器点击“通过”完成终审；已办列表可查询结果 | 0 console error；0 page error；0 request failure；0 HTTP 5xx | `历史验收图片已清理（可从 Git 历史恢复）`；清理修正后串行重复 `5 passed (43.6s)` | PASS |
 
 ## 4. 回归抽查记录
 
 | 模块 | 页面 | 功能点 1 | 功能点 2 | UI 细节 | 截图/trace | 结论 |
 |---|---|---|---|---|---|---|
-| `@mango/workflow` | 我的待办、任务详情、我的已办 | 列表和详情显示租户成员昵称 | 审批后进度和已办状态一致 | 页面主内容非空，任务详情为 ready，办理人字段无溢出或遮挡 | `mango-docs/evidence/2026-08-28-workflow-assignee-identity/workflow-assignee-identity.png` | PASS |
+| `@mango/workflow` | 我的待办、任务详情、我的已办 | 列表和详情显示租户成员昵称 | 审批后进度和已办状态一致 | 页面主内容非空，任务详情为 ready，办理人字段无溢出或遮挡 | `历史验收图片已清理（可从 Git 历史恢复）` | PASS |
 
 ## 5. 未验证项和风险
 
