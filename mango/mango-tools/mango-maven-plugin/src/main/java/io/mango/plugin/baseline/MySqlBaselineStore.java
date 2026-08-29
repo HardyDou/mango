@@ -25,6 +25,7 @@ import java.util.regex.Pattern;
 final class MySqlBaselineStore {
 
     private static final String MYSQL_PRODUCT_NAME = "mysql";
+    private static final String RESOURCE_REGISTRY_TABLE = "resource_registry";
     private static final String SAFE_CHARACTER_SET_PATTERN = "[a-zA-Z0-9_]+";
     private static final String SAFE_DATABASE_NAME_PATTERN = "[a-z][a-z0-9_]{0,63}";
     private static final int SQL_BUFFER_CAPACITY = 64_000;
@@ -149,7 +150,7 @@ final class MySqlBaselineStore {
 
     private static void normalizeResourceRegistryIds(Connection connection, String database)
             throws SQLException {
-        if (!tableExists(connection, database, "resource_registry")) {
+        if (!tableExists(connection, database, RESOURCE_REGISTRY_TABLE)) {
             return;
         }
         List<Long> ids = new ArrayList<>();

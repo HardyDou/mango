@@ -40,6 +40,8 @@ public final class BaselineGenerateMojo extends AbstractMojo {
     private static final String SCHEMA_PREFIX_PATTERN = "[a-z][a-z0-9_]{0,31}";
     private static final String DATASOURCE_GROUP_PATTERN = "[a-z][a-z0-9-]{0,31}";
     private static final String MODULE_PATTERN = "[a-z0-9][a-z0-9-]*";
+    private static final String BASELINE_RESOURCE_ROOT = "db/baseline";
+    private static final String BASELINE_MANIFEST_PATH = "META-INF/mango/baseline-manifest.json";
 
     @Parameter(property = "mango.baseline.jdbcUrl", required = true)
     private String jdbcUrl;
@@ -153,6 +155,10 @@ public final class BaselineGenerateMojo extends AbstractMojo {
             throw new MojoExecutionException(
                     "MANGO-BASELINE-031 Maven project, searchDirectory, and outputDirectory are required");
         }
+        validateResourceBaselineConfiguration();
+    }
+
+    private void validateResourceBaselineConfiguration() throws MojoExecutionException {
         if (resourceApplicationClass != null && !resourceApplicationClass.isBlank()) {
             if (resourceTimeoutSeconds <= 0 || projectDirectory == null || classesDirectory == null) {
                 throw new MojoExecutionException(
@@ -189,9 +195,9 @@ public final class BaselineGenerateMojo extends AbstractMojo {
     static void copyGeneratedResourcesToClasses(Path generated, Path classes)
             throws MojoExecutionException {
         try {
-            deleteRecursively(classes.resolve("db/baseline"));
-            Files.deleteIfExists(classes.resolve("META-INF/mango/baseline-manifest.json"));
-            for (String relative : List.of("db/baseline", "META-INF/mango/baseline-manifest.json")) {
+            deleteRecursively(classes.resolve(BASELINE_RESOURCE_ROOT));
+            Files.deleteIfExists(classes.resolve(BASELINE_MANIFEST_PATH));
+            for (String relative : List.of(BASELINE_RESOURCE_ROOT, BASELINE_MANIFEST_PATH)) {
                 Path source = generated.resolve(relative);
                 if (!Files.exists(source)) {
                     continue;

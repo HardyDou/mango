@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 final class ResourceBaselineApplicationRunner {
 
     private static final String BASELINE_ENVIRONMENT = "mango-resource-baseline-build";
+    private static final long TERMINATION_TIMEOUT_SECONDS = 5L;
 
     private final ResourceBaselineExecutionSettings settings;
     private final BaselineGenerationSettings generationSettings;
@@ -90,9 +91,9 @@ final class ResourceBaselineApplicationRunner {
         }
         process.destroy();
         try {
-            if (!process.waitFor(5, TimeUnit.SECONDS)) {
+            if (!process.waitFor(TERMINATION_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
                 process.destroyForcibly();
-                process.waitFor(5, TimeUnit.SECONDS);
+                process.waitFor(TERMINATION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             }
         } catch (InterruptedException exception) {
             process.destroyForcibly();
