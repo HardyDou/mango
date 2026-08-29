@@ -464,7 +464,7 @@ authorization_api_resource         API_RESOURCE 访问模式正确
 | `ORG_UNIT` | `mango-org` | 按组织编码声明租户内组织基线。 |
 | `ORG_POST` | `mango-org` | 按岗位编码声明租户内岗位基线。 |
 | `ORG_MEMBER_BINDING` | `mango-identity` | 声明租户成员和组织、岗位的绑定关系。 |
-| `IDENTITY_USER` | `mango-identity` | 声明 demo/bootstrap 用户和租户成员；声明中的初始密码会由 handler 加密保存。 |
+| `IDENTITY_USER` | `mango-identity` | 声明 demo/bootstrap 用户和租户成员；正式可移植基线使用 `encodedPassword`，demo 或运行时初始化可使用由 handler 加密的 `password`，两者不能同时声明。 |
 | `MESSAGE_CHANNEL` | `mango-notice` | 见 `mango-notice` README。 |
 | `MESSAGE_TEMPLATE` | `mango-notice` | 见 `mango-notice` README。 |
 | `I18N_MESSAGE` | `mango-system` | 见 `mango-system` README。 |

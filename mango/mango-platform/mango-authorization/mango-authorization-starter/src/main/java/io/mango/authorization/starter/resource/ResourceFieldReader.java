@@ -1,5 +1,6 @@
 package io.mango.authorization.starter.resource;
 
+import io.mango.authorization.core.support.AuthorizationResourceIds;
 import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.model.ResourceField;
 import org.springframework.util.StringUtils;
@@ -51,6 +52,11 @@ final class ResourceFieldReader {
         }
         String text = String.valueOf(value);
         return StringUtils.hasText(text) ? Long.valueOf(text.trim()) : null;
+    }
+
+    long targetIdOrStable(ResourceDeclaration resource, String targetTable, Object... identityParts) {
+        return AuthorizationResourceIds.declaredOrStable(
+                longField(resource, "targetId"), targetTable, identityParts);
     }
 
     Integer intField(ResourceDeclaration resource, String fieldName, Integer defaultValue) {

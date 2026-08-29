@@ -300,6 +300,7 @@ public class ApiResourceService implements IApiResourceService {
 
     private ApiResourceEntity toEntity(ApiResourceRegisterCommand resource) {
         ApiResourceEntity entity = new ApiResourceEntity();
+        entity.setId(resource.getResourceId());
         entity.setTenantId("default");
         entity.setStatus(1);
         entity.setDeleted(0);

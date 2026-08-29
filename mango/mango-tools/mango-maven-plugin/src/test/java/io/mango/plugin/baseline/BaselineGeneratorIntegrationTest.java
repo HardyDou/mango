@@ -139,13 +139,14 @@ class BaselineGeneratorIntegrationTest {
                   record_code varchar(64) NOT NULL,
                   created_at datetime(6) NOT NULL,
                   updated_at datetime(6) NOT NULL,
-                  published_at datetime(6) NOT NULL
+                  published_at datetime(6) NOT NULL,
+                  publish_time datetime(6) NOT NULL
                 );
                 DO SLEEP(0.02);
                 INSERT INTO alpha_record (
-                  id, record_code, created_at, updated_at, published_at
+                  id, record_code, created_at, updated_at, published_at, publish_time
                 ) VALUES (
-                  1, 'ALPHA-1', CURRENT_TIMESTAMP(6), NOW(6), CURRENT_TIMESTAMP(6)
+                  1, 'ALPHA-1', CURRENT_TIMESTAMP(6), NOW(6), CURRENT_TIMESTAMP(6), NOW(6)
                 );
                 """);
         String prefix = uniquePrefix("it_audit_time");
@@ -154,7 +155,7 @@ class BaselineGeneratorIntegrationTest {
         generator(prefix, output, List.of("alpha"), Map.of()).generate();
 
         String baseline = Files.readString(output.resolve("db/baseline/alpha/B1__baseline.sql"));
-        assertTrue(baseline.contains("`created_at`, `updated_at`, `published_at`"));
+        assertTrue(baseline.contains("`created_at`, `updated_at`, `published_at`, `publish_time`"));
         assertTrue(Files.exists(output.resolve("META-INF/mango/baseline-manifest.json")));
         assertEquals(0, temporaryDatabaseCount(prefix));
     }

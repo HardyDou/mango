@@ -6,6 +6,7 @@ import io.mango.authorization.core.entity.RoleEntity;
 import io.mango.authorization.core.entity.SubjectRoleBindingEntity;
 import io.mango.authorization.core.mapper.RoleMapper;
 import io.mango.authorization.core.mapper.SubjectRoleBindingMapper;
+import io.mango.authorization.core.support.AuthorizationResourceIds;
 import io.mango.resource.support.ResourceHandler;
 import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.support.model.ResourceDeclaration;
@@ -77,7 +78,8 @@ public class AuthSubjectRoleResourceHandler implements ResourceHandler {
         Long firstBindingId = null;
         for (String roleCode : roleCodes) {
             RoleEntity role = requiredRole(resource, tenantId, roleCode);
-            SubjectRoleBindingEntity binding = ensureBinding(resource, tenantId, subjectId, subjectType, role.getRoleId());
+            SubjectRoleBindingEntity binding = ensureBinding(
+                    resource, tenantId, subjectId, subjectType, role.getRoleId(), roleCodes.size() == 1);
             if (firstBindingId == null) {
                 firstBindingId = binding.getId();
             }
@@ -126,13 +128,21 @@ public class AuthSubjectRoleResourceHandler implements ResourceHandler {
     }
 
     private SubjectRoleBindingEntity ensureBinding(ResourceDeclaration resource, Long tenantId, Long subjectId,
-                                             String subjectType, Long roleId) {
+                                             String subjectType, Long roleId, boolean useDeclaredTargetId) {
         SubjectRoleBindingEntity existing = bindingMapper.selectOne(
                 bindingWrapper(resource, tenantId, subjectId, subjectType, roleId).last("LIMIT 1"));
         if (existing != null) {
             return existing;
         }
         SubjectRoleBindingEntity binding = new SubjectRoleBindingEntity();
+        Long declaredTargetId = useDeclaredTargetId ? fields.longField(resource, "targetId") : null;
+        binding.setId(AuthorizationResourceIds.declaredOrStable(declaredTargetId, TARGET_TABLE,
+                tenantId, subjectId, subjectType,
+                fields.stringField(resource, "appCode", DEFAULT_APP_CODE),
+                fields.stringField(resource, "realm", DEFAULT_REALM),
+                fields.stringField(resource, "actorType", DEFAULT_ACTOR_TYPE),
+                fields.stringField(resource, "partyType"),
+                fields.longField(resource, "partyId"), roleId));
         binding.setTenantId(tenantId);
         binding.setSubjectId(subjectId);
         binding.setSubjectType(subjectType);

@@ -87,7 +87,7 @@ Resource Registry 基线注入可用于 demo、样例租户和初始化数据：
 
 | 资源类型 | 关键字段 |
 |----------|----------|
-| `IDENTITY_USER` | `tenantId`、`username`，可声明 `password`、`memberNo`、`displayName`、联系方式和状态；初始密码由 handler 使用现有 `PasswordEncoder` 加密保存。 |
+| `IDENTITY_USER` | `tenantId`、`username`，可声明 `encodedPassword`、`password`、`memberNo`、`displayName`、联系方式和状态。正式可移植基线使用已由 `PasswordEncoder` 编码的 `encodedPassword`，确保 BSQL 可重复生成；`password` 仅用于 demo 或运行时初始化并由 handler 编码。两个密码字段不能同时声明。 |
 | `ORG_MEMBER_BINDING` | `tenantId`、`orgCode`，并通过 `memberId`、`memberNo` 或 `username` 解析成员；可声明 `postCode`、`primaryOrg`、`leader`。 |
 
 首次登录改密、密码复杂度、登录失败锁定和锁定时长不在资源声明 handler 中处理，统一由独立身份安全策略能力承接。

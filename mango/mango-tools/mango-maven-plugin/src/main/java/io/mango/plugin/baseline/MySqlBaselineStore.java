@@ -36,7 +36,7 @@ final class MySqlBaselineStore {
     private static final Pattern DEFINER = Pattern.compile(
             "(?i)DEFINER\\s*=\\s*(?:`[^`]*`|[^@\\s]+)@(?:`[^`]*`|[^\\s]+)\\s*");
     private static final Set<String> RUNTIME_AUDIT_TIMESTAMP_COLUMNS = Set.of(
-            "created_at", "updated_at", "published_at", "last_sync_time",
+            "created_at", "updated_at", "published_at", "publish_time", "last_sync_time",
             "create_time", "update_time", "created_time", "updated_time");
     private static final int INSERT_BATCH_SIZE = 250;
 

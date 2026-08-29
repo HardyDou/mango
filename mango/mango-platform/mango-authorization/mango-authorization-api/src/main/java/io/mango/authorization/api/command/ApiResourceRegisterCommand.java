@@ -4,6 +4,7 @@ import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -13,6 +14,11 @@ import lombok.Data;
 @Data
 @Schema(description = "API 资源注册命令")
 public class ApiResourceRegisterCommand {
+
+    /** Optional stable target ID supplied by a portable Resource handler. */
+    @Schema(description = "稳定 API 资源 ID，普通运行时扫描可为空")
+    @Positive
+    private Long resourceId;
 
     /**
      * 稳定 Mango 模块名，不随部署服务变化。

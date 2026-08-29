@@ -6,6 +6,7 @@ import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.authorization.core.entity.ApiResourceEntity;
 import io.mango.authorization.core.mapper.ApiResourceMapper;
 import io.mango.authorization.core.service.IApiResourceService;
+import io.mango.authorization.core.support.AuthorizationResourceIds;
 import io.mango.resource.support.ResourceHandler;
 import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.api.enums.ResourceSyncMode;
@@ -145,6 +146,9 @@ public class ApiResourceHandler implements ResourceHandler {
         command.setModuleName(requiredString(resource, "moduleName"));
         command.setHttpMethod(requiredString(resource, "httpMethod"));
         command.setPathPattern(requiredString(resource, "pathPattern"));
+        command.setResourceId(AuthorizationResourceIds.declaredOrStable(
+                longField(resource, "targetId"), "authorization_api_resource",
+                command.getModuleName(), command.getHttpMethod(), command.getPathPattern()));
         command.setResourceCode(stringField(resource, "resourceCode"));
         command.setPermissionCode(stringField(resource, "permissionCode"));
         String accessMode = stringField(resource, "accessMode");

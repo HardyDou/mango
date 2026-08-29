@@ -147,7 +147,11 @@
 |---|---|---|---|
 | IMPL-011 | JAR 外 `FILE_ASSET` 仍能参与构建期 Resource baseline，且不重新打入应用 JAR | `resourceAdditionalClasspathElements`、可读性 fail-fast、业务接入说明 | DONE |
 | VERIFY-005 | 真实子进程读取外部资产，双库物化与恢复链通过，Boot JAR 保持外部资产 0 条目 | Maven Plugin 单元测试与 MySQL 8.4 Invoker | DONE |
+| IMPL-012 | 正式 `IDENTITY_USER` 初始密码可确定地进入 Resource baseline | `encodedPassword` 声明契约与内置管理员编码密码 | DONE |
+| VERIFY-006 | 两次空库生成相同用户密码数据且默认管理员密码仍可校验 | Identity 真实 Mapper 集成测试与 Baohan MySQL 8.4 双库 BSQL | DONE |
 
 - 发现事实：Baohan `bootstrap-assets` 按既有生产契约由镜像独立携带并通过 `loader.path` 加载；Spring Boot Maven Plugin 的 `additionalClasspathElements` 不属于 Maven 项目的 runtime classpath，1.0.43 `baseline-generate` 子进程因此无法读取声明引用的 DOCX。
 - 修复结果：插件显式合并业务配置的额外目录或 JAR；相对路径按最终应用模块目录解析，缺失或不可读以 `MANGO-BASELINE-053` 阻断构建，不把资产复制到 `target/classes`。
 - 验证结果：`BaselineGenerateMojoTest` 4/4；真实 MySQL 8.4 Maven Invoker 2/2，双库 Resource baseline、BSQL 重入和恢复应用均通过，第二次同 generation `executedSteps=0`，输出 `RESOURCE_DATABASE_BASELINE_VERIFIED`；夹具 Boot JAR 包含三模块 BSQL 与 manifest，外部资产条目为 0；所有一次性 schema 已清理。
+- 确定性返工：Identity 声明直接携带已编码密码；Calendar 与 Calendar Day 按稳定自然键生成主键；套餐绑定刷新生成的角色菜单关系按 `tenantId + roleId + menuId` 生成稳定主键，后台手工角色菜单分配路径保持不变。
+- 业务消费复验：Baohan 48 模块在本地 MySQL 8.4 完成两套空库 Resource baseline、数据库事实确定性对比、BSQL 重入和 Boot JAR 打包，构建成功，总耗时 2 分 43 秒；插件随机命名的一次性 schema 已清理。

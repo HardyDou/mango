@@ -87,7 +87,9 @@ public class AuthMenuPackageResourceHandler implements ResourceHandler {
     private MenuPackageCommand toCommand(ResourceDeclaration resource, MenuPackageVO existing) {
         MenuPackageCommand command = new MenuPackageCommand();
         command.setPackageId(existing == null
-                ? fields.longField(resource, "targetId")
+                ? fields.targetIdOrStable(resource, TARGET_TABLE,
+                        fields.requiredString(resource, "appCode"),
+                        fields.requiredString(resource, "packageCode"))
                 : existing.getPackageId());
         command.setAppCode(fields.requiredString(resource, "appCode"));
         command.setPackageCode(fields.requiredString(resource, "packageCode"));

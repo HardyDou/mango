@@ -21,6 +21,7 @@ import io.mango.authorization.core.mapper.MenuPackageMapper;
 import io.mango.authorization.core.mapper.RoleMapper;
 import io.mango.authorization.core.mapper.RoleMenuMapper;
 import io.mango.authorization.core.service.IAppModuleService;
+import io.mango.authorization.core.support.AuthorizationResourceIds;
 import io.mango.common.result.Require;
 import io.mango.system.api.tenant.TenantPackageBindingProvider;
 import lombok.RequiredArgsConstructor;
@@ -69,9 +70,11 @@ public class AppModuleService implements IAppModuleService {
     public Long save(AppModuleCommand command) {
         Require.notNull(command, AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR, "应用模块命令不能为空");
         AuthorizationAppModuleEntity binding = find(command.getAppCode(), command.getModuleCode());
+        boolean creating = binding == null;
         LocalDateTime now = LocalDateTime.now();
-        if (binding == null) {
+        if (creating) {
             binding = new AuthorizationAppModuleEntity();
+            binding.setBindingId(command.getBindingId());
             binding.setTenantId(PLATFORM_TENANT_ID);
             binding.setAppCode(command.getAppCode());
             binding.setModuleCode(command.getModuleCode());
@@ -81,7 +84,7 @@ public class AppModuleService implements IAppModuleService {
         binding.setStatus(command.getStatus() == null ? 1 : command.getStatus());
         binding.setSort(command.getSort() == null ? 0 : command.getSort());
         binding.setUpdateTime(now);
-        if (binding.getBindingId() == null) {
+        if (creating) {
             appModuleMapper.insert(binding);
         } else {
             appModuleMapper.updateById(binding);
@@ -214,6 +217,9 @@ public class AppModuleService implements IAppModuleService {
 
     private AppModuleCommand toModuleCommand(AppModuleResourceManifestCommand command) {
         AppModuleCommand moduleCommand = new AppModuleCommand();
+        moduleCommand.setBindingId(AuthorizationResourceIds.stable(
+                "authorization_app_module", PLATFORM_TENANT_ID,
+                command.getAppCode(), command.getModuleCode()));
         moduleCommand.setAppCode(command.getAppCode());
         moduleCommand.setModuleCode(command.getModuleCode());
         moduleCommand.setModuleName(command.getModuleName());
@@ -236,9 +242,13 @@ public class AppModuleService implements IAppModuleService {
         List<String> packageCodes = context.resolvePackageCodes(item.getPackageCodes(), inheritedPackageCodes);
         List<String> roleCodes = context.resolveRoleCodes(item.getRoleCodes(), inheritedRoleCodes);
         MenuEntity menu = findMenu(context.appCode(), context.moduleCode(), item.getMenuCode());
+        boolean creating = menu == null;
         LocalDateTime now = LocalDateTime.now();
-        if (menu == null) {
+        if (creating) {
             menu = new MenuEntity();
+            menu.setMenuId(AuthorizationResourceIds.stable(
+                    "authorization_menu", "1", context.appCode(),
+                    context.moduleCode(), item.getMenuCode()));
             menu.setTenantId(1L);
             menu.setAppCode(context.appCode());
             menu.setModuleCode(context.moduleCode());
@@ -247,7 +257,7 @@ public class AppModuleService implements IAppModuleService {
         }
         fillManifestMenu(menu, item, parentId, context);
         menu.setUpdateTime(now);
-        if (menu.getMenuId() == null) {
+        if (creating) {
             menuMapper.insert(menu);
         } else {
             menuMapper.updateById(menu);
@@ -390,6 +400,9 @@ public class AppModuleService implements IAppModuleService {
                 continue;
             }
             MenuPackageItemEntity item = new MenuPackageItemEntity();
+            item.setId(AuthorizationResourceIds.stable(
+                    "authorization_menu_package_item", String.valueOf(menuPackage.getTenantId()),
+                    String.valueOf(menuPackage.getPackageId()), String.valueOf(menu.getMenuId())));
             item.setTenantId(menuPackage.getTenantId());
             item.setPackageId(menuPackage.getPackageId());
             item.setMenuId(menu.getMenuId());
@@ -426,6 +439,9 @@ public class AppModuleService implements IAppModuleService {
                 continue;
             }
             RoleMenuEntity roleMenu = new RoleMenuEntity();
+            roleMenu.setId(AuthorizationResourceIds.stable(
+                    "authorization_role_menu", String.valueOf(role.getTenantId()),
+                    String.valueOf(role.getRoleId()), String.valueOf(menu.getMenuId())));
             roleMenu.setTenantId(role.getTenantId());
             roleMenu.setRoleId(role.getRoleId());
             roleMenu.setMenuId(menu.getMenuId());
@@ -458,9 +474,13 @@ public class AppModuleService implements IAppModuleService {
                 new LambdaQueryWrapper<FrontendMenuRuntimeConfigEntity>()
                         .eq(FrontendMenuRuntimeConfigEntity::getMenuId, menu.getMenuId())
                         .last("LIMIT 1"));
+        boolean creating = config == null;
         LocalDateTime now = LocalDateTime.now();
-        if (config == null) {
+        if (creating) {
             config = new FrontendMenuRuntimeConfigEntity();
+            config.setConfigId(AuthorizationResourceIds.stable(
+                    "frontend_menu_runtime_config", PLATFORM_TENANT_ID,
+                    String.valueOf(menu.getMenuId())));
             config.setTenantId(PLATFORM_TENANT_ID);
             config.setMenuId(menu.getMenuId());
             config.setCreateTime(now);
@@ -469,7 +489,7 @@ public class AppModuleService implements IAppModuleService {
         config.setPageType(StringUtils.hasText(pageType) ? pageType : defaultPageType(menu));
         config.setExternalUrl(externalUrl);
         config.setUpdateTime(now);
-        if (config.getConfigId() == null) {
+        if (creating) {
             menuRuntimeConfigMapper.insert(config);
         } else {
             menuRuntimeConfigMapper.updateById(config);

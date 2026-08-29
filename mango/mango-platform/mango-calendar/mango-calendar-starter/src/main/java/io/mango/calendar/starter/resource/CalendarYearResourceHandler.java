@@ -13,6 +13,7 @@ import io.mango.calendar.core.service.ICalendarAdminService;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.resource.support.ResourceHandler;
+import io.mango.resource.support.PortableResourceIds;
 import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.model.ResourceHandlerSpec;
 import io.mango.resource.support.model.ResourceSyncResult;
@@ -73,7 +74,9 @@ public class CalendarYearResourceHandler implements ResourceHandler {
                 init.setCalendarCode(payload.calendarCode());
                 init.setYear(payload.year());
                 init.setOverwrite(false);
-                calendarAdminService.initCalendarYear(init);
+                calendarAdminService.initResourceCalendarYear(init,
+                        date -> PortableResourceIds.stable(TARGET_TABLE,
+                                payload.tenantId(), payload.calendarCode(), date));
                 if (!payload.items().isEmpty()) {
                     ImportCalendarDaysCommand importCommand = new ImportCalendarDaysCommand();
                     importCommand.setCalendarCode(payload.calendarCode());

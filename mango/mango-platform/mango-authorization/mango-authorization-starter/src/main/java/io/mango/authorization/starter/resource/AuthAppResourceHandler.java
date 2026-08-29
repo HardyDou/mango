@@ -7,6 +7,7 @@ import io.mango.authorization.api.command.AppLoginContextCommand;
 import io.mango.authorization.api.vo.AppLoginContextVO;
 import io.mango.authorization.api.vo.AppVO;
 import io.mango.authorization.core.service.IAuthorizationAppService;
+import io.mango.authorization.core.support.AuthorizationResourceIds;
 import io.mango.resource.support.ResourceHandler;
 import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.api.enums.ResourceStatus;
@@ -69,7 +70,11 @@ public class AuthAppResourceHandler implements ResourceHandler {
 
     private AppCommand toCommand(ResourceDeclaration resource, AppVO existing) {
         AppCommand command = new AppCommand();
-        command.setAppId(existing == null ? null : existing.getAppId());
+        command.setAppId(existing == null
+                ? AuthorizationResourceIds.declaredOrStable(
+                        fields.longField(resource, "targetId"), TARGET_TABLE,
+                        fields.requiredString(resource, "appCode"))
+                : existing.getAppId());
         command.setAppCode(fields.requiredString(resource, "appCode"));
         command.setAppName(fields.stringField(resource, "appName", existing == null ? null : existing.getAppName()));
         if (command.getAppName() == null || command.getAppName().isBlank()) {
@@ -80,16 +85,18 @@ public class AuthAppResourceHandler implements ResourceHandler {
                 existing == null || existing.getSort() == null ? 0 : existing.getSort()));
         command.setStatus(statusValue(resource, existing));
         command.setRemark(fields.stringField(resource, "remark", existing == null ? null : existing.getRemark()));
-        command.setLoginContexts(readLoginContexts(resource, existing));
+        command.setLoginContexts(readLoginContexts(resource, existing, command.getAppCode()));
         return command;
     }
 
-    private List<AppLoginContextCommand> readLoginContexts(ResourceDeclaration resource, AppVO existing) {
+    private List<AppLoginContextCommand> readLoginContexts(
+            ResourceDeclaration resource, AppVO existing, String appCode) {
         Object value = fields.fieldValue(resource, "loginContexts");
         if (value != null) {
             List<AppLoginContextCommand> contexts = objectMapper.convertValue(
                     value, new TypeReference<List<AppLoginContextCommand>>() { });
             if (!contexts.isEmpty()) {
+                contexts.forEach(context -> assignStableContextId(context, appCode));
                 return contexts;
             }
         }
@@ -97,6 +104,14 @@ public class AuthAppResourceHandler implements ResourceHandler {
             return existing.getLoginContexts().stream().map(this::toCommand).toList();
         }
         throw new IllegalStateException(ResourceTypes.AUTH_APP + " field is required: loginContexts");
+    }
+
+    private void assignStableContextId(AppLoginContextCommand context, String appCode) {
+        if (context.getContextId() == null) {
+            context.setContextId(AuthorizationResourceIds.stable(
+                    "authorization_app_login_context", appCode,
+                    context.getRealm(), context.getActorType()));
+        }
     }
 
     private AppLoginContextCommand toCommand(AppLoginContextVO source) {

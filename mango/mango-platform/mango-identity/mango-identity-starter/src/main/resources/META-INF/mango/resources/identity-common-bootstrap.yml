@@ -16,7 +16,7 @@ mango:
             memberId: { type: LONG, value: 1001 }
             tenantId: { type: LONG, value: 1 }
             username: { type: STRING, value: admin }
-            password: { type: STRING, value: admin123 }
+            encodedPassword: { type: STRING, value: "$2a$10$xktxOwcAfFdqNAKKpWICDuV8MTEEshM9K1CtofRWA34v2OGoarvHa" }
             nickname: { type: STRING, value: Administrator }
             displayName: { type: STRING, value: 芒果集团管理员 }
             memberNo: { type: STRING, value: ADMIN-default }

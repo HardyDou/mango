@@ -26,7 +26,9 @@ class IdentityResourceDeclarationContractTest {
                 .contains("module-code: identity")
                 .contains("biz-key: identity.user.admin")
                 .contains("memberId: { type: LONG, value: 1001 }")
-                .contains("password: { type: STRING, value: admin123 }")
+                .contains("encodedPassword: { type: STRING, value: \"$2a$10$")
+                .doesNotContain("password: { type: STRING")
+                .doesNotContain("value: admin123")
                 .doesNotContain("ORG_MEMBER_BINDING");
         assertThat(demo)
                 .contains("biz-key: identity.member.tenant-2.admin")

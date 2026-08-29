@@ -3,6 +3,7 @@ package io.mango.authorization.starter.resource;
 import io.mango.authorization.api.command.FrontendModuleRuntimeStrategyCommand;
 import io.mango.authorization.api.query.FrontendModuleRuntimeStrategyQuery;
 import io.mango.authorization.core.service.IFrontendRuntimeStrategyService;
+import io.mango.authorization.core.support.AuthorizationResourceIds;
 import io.mango.resource.support.ResourceHandler;
 import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.support.model.ResourceDeclaration;
@@ -87,6 +88,9 @@ public class FrontendModuleRuntimeStrategyResourceHandler implements ResourceHan
         command.setAppCode(requiredString(resource, "appCode"));
         command.setModuleCode(defaultString(stringField(resource, "moduleCode"), resource.getModuleCode()));
         command.setDeployProfile(requiredString(resource, "deployProfile"));
+        command.setStrategyId(AuthorizationResourceIds.declaredOrStable(
+                longField(resource, "targetId"), TARGET_TABLE,
+                command.getAppCode(), command.getModuleCode(), command.getDeployProfile()));
         command.setPageType(requiredString(resource, "pageType"));
         command.setRuntimeCode(requiredString(resource, "runtimeCode"));
         command.setStatus(intField(resource, "status"));

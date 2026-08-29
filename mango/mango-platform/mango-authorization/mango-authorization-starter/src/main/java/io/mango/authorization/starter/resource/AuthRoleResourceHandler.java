@@ -71,9 +71,16 @@ public class AuthRoleResourceHandler implements ResourceHandler {
 
     private ResourceSyncResult upsertInTenant(ResourceDeclaration resource, Long tenantId) {
         RoleEntity role = findRole(resource);
+        boolean creating = role == null;
         LocalDateTime now = LocalDateTime.now();
-        if (role == null) {
+        if (creating) {
             role = new RoleEntity();
+            role.setRoleId(fields.targetIdOrStable(resource, TARGET_TABLE,
+                    tenantId,
+                    fields.stringField(resource, "appCode", DEFAULT_APP_CODE),
+                    fields.stringField(resource, "realm", DEFAULT_REALM),
+                    fields.stringField(resource, "actorType", DEFAULT_ACTOR_TYPE),
+                    fields.requiredString(resource, "roleCode")));
             role.setTenantId(tenantId);
             role.setAppCode(fields.stringField(resource, "appCode", DEFAULT_APP_CODE));
             role.setRealm(fields.stringField(resource, "realm", DEFAULT_REALM));
@@ -87,7 +94,7 @@ public class AuthRoleResourceHandler implements ResourceHandler {
         role.setSort(fields.intField(resource, "sort", 0));
         role.setRemark(fields.stringField(resource, "remark"));
         role.setUpdateTime(now);
-        if (role.getRoleId() == null) {
+        if (creating) {
             roleMapper.insert(role);
         } else {
             roleMapper.updateById(role);

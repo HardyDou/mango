@@ -212,9 +212,11 @@ public class AuthorizationAppService implements IAuthorizationAppService {
         FrontendAppRegistryEntity registry = frontendAppRegistryMapper.selectOne(new LambdaQueryWrapper<FrontendAppRegistryEntity>()
                 .eq(FrontendAppRegistryEntity::getAppCode, source.getAppCode())
                 .last("LIMIT 1"));
+        boolean creating = registry == null;
         LocalDateTime now = LocalDateTime.now();
-        if (registry == null) {
+        if (creating) {
             registry = new FrontendAppRegistryEntity();
+            registry.setRegistryId(source.getRegistryId());
             registry.setAppCode(source.getAppCode());
             registry.setTenantId(PLATFORM_TENANT_ID);
             registry.setCreateTime(now);
@@ -230,7 +232,7 @@ public class AuthorizationAppService implements IAuthorizationAppService {
         registry.setSandboxEnabled(Boolean.TRUE.equals(source.getSandboxEnabled()));
         registry.setStyleIsolation(defaultString(source.getStyleIsolation(), "NONE"));
         registry.setUpdateTime(now);
-        if (registry.getRegistryId() == null) {
+        if (creating) {
             frontendAppRegistryMapper.insert(registry);
         } else {
             frontendAppRegistryMapper.updateById(registry);
@@ -516,24 +518,49 @@ public class AuthorizationAppService implements IAuthorizationAppService {
         List<AppLoginContextCommand> normalized = normalizeLoginContexts(commands);
         Require.notEmpty(normalized, AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR,
                 "应用至少需要一个登录上下文");
-        loginContextMapper.delete(new LambdaQueryWrapper<AuthorizationAppLoginContextEntity>()
-                .eq(AuthorizationAppLoginContextEntity::getAppId, app.getAppId()));
+        Map<String, AuthorizationAppLoginContextEntity> existingContexts = loginContextMapper.selectList(
+                        new LambdaQueryWrapper<AuthorizationAppLoginContextEntity>()
+                                .eq(AuthorizationAppLoginContextEntity::getAppId, app.getAppId()))
+                .stream()
+                .collect(Collectors.toMap(
+                        context -> contextKey(context.getRealm(), context.getActorType()),
+                        context -> context,
+                        (left, right) -> left));
+        List<Long> retainedIds = new ArrayList<>();
         LocalDateTime now = LocalDateTime.now();
         for (int i = 0; i < normalized.size(); i++) {
             AppLoginContextCommand command = normalized.get(i);
-            AuthorizationAppLoginContextEntity context = new AuthorizationAppLoginContextEntity();
-            context.setTenantId(PLATFORM_TENANT_ID);
-            context.setAppId(app.getAppId());
-            context.setAppCode(app.getAppCode());
+            AuthorizationAppLoginContextEntity context = existingContexts.get(
+                    contextKey(command.getRealm(), command.getActorType()));
+            boolean creating = context == null;
+            if (creating) {
+                context = new AuthorizationAppLoginContextEntity();
+                context.setContextId(command.getContextId());
+                context.setTenantId(PLATFORM_TENANT_ID);
+                context.setAppId(app.getAppId());
+                context.setAppCode(app.getAppCode());
+                context.setCreateTime(now);
+            }
             context.setRealm(command.getRealm());
             context.setActorType(command.getActorType());
             context.setDefaultFlag(command.getDefaultFlag());
             context.setStatus(command.getStatus());
             context.setSort(command.getSort() == null ? i : command.getSort());
-            context.setCreateTime(now);
             context.setUpdateTime(now);
-            loginContextMapper.insert(context);
+            if (creating) {
+                loginContextMapper.insert(context);
+            } else {
+                loginContextMapper.updateById(context);
+            }
+            retainedIds.add(context.getContextId());
         }
+        loginContextMapper.delete(new LambdaQueryWrapper<AuthorizationAppLoginContextEntity>()
+                .eq(AuthorizationAppLoginContextEntity::getAppId, app.getAppId())
+                .notIn(AuthorizationAppLoginContextEntity::getId, retainedIds));
+    }
+
+    private String contextKey(String realm, String actorType) {
+        return normalizeCode(realm) + ":" + normalizeCode(actorType);
     }
 
     private List<AppLoginContextCommand> normalizeLoginContexts(List<AppLoginContextCommand> commands) {

@@ -57,9 +57,11 @@ public class FrontendRuntimeStrategyService implements IFrontendRuntimeStrategyS
                 command.getAppCode(),
                 command.getModuleCode(),
                 command.getDeployProfile());
+        boolean creating = strategy == null;
         LocalDateTime now = LocalDateTime.now();
-        if (strategy == null) {
+        if (creating) {
             strategy = new FrontendModuleRuntimeStrategyEntity();
+            strategy.setStrategyId(command.getStrategyId());
             strategy.setTenantId(PLATFORM_TENANT_ID);
             strategy.setAppCode(command.getAppCode());
             strategy.setModuleCode(command.getModuleCode());
@@ -71,7 +73,7 @@ public class FrontendRuntimeStrategyService implements IFrontendRuntimeStrategyS
         strategy.setStatus(command.getStatus() == null ? 1 : command.getStatus());
         strategy.setSort(command.getSort() == null ? 0 : command.getSort());
         strategy.setUpdateTime(now);
-        if (strategy.getStrategyId() == null) {
+        if (creating) {
             strategyMapper.insert(strategy);
         } else {
             strategyMapper.updateById(strategy);

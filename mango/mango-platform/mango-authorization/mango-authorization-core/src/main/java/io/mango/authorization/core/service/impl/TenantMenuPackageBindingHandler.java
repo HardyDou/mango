@@ -8,6 +8,7 @@ import io.mango.authorization.core.mapper.MenuMapper;
 import io.mango.authorization.core.mapper.RoleMapper;
 import io.mango.authorization.core.mapper.RoleMenuMapper;
 import io.mango.authorization.core.service.IMenuPackageService;
+import io.mango.authorization.core.support.AuthorizationResourceIds;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.system.api.tenant.TenantPackageBindingHandler;
@@ -64,6 +65,8 @@ public class TenantMenuPackageBindingHandler implements TenantPackageBindingHand
                 .eq(RoleMenuEntity::getRoleId, role.getRoleId()));
         menuIds.forEach(menuId -> {
             RoleMenuEntity roleMenu = new RoleMenuEntity();
+            roleMenu.setId(AuthorizationResourceIds.stable(
+                    "authorization_role_menu", tenantId, role.getRoleId(), menuId));
             roleMenu.setTenantId(tenantId);
             roleMenu.setRoleId(role.getRoleId());
             roleMenu.setMenuId(menuId);

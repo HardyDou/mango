@@ -1,6 +1,5 @@
 package io.mango.calendar.starter.resource;
 
-import io.mango.calendar.api.command.CreateCalendarCommand;
 import io.mango.calendar.api.command.UpdateCalendarCommand;
 import io.mango.calendar.api.command.UpdateCalendarStatusCommand;
 import io.mango.calendar.core.entity.CalendarEntity;
@@ -9,6 +8,7 @@ import io.mango.calendar.core.service.ICalendarAdminService;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.resource.support.ResourceHandler;
+import io.mango.resource.support.PortableResourceIds;
 import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.model.ResourceHandlerSpec;
 import io.mango.resource.support.model.ResourceSyncResult;
@@ -53,10 +53,19 @@ public class CalendarDefinitionResourceHandler implements ResourceHandler {
             CalendarEntity existing = calendarMapper.selectByCode(payload.tenantId(), payload.calendarCode());
             Long targetId;
             if (existing == null) {
-                CreateCalendarCommand command = new CreateCalendarCommand();
-                command.setCalendarCode(payload.calendarCode());
-                command.setCalendarName(payload.calendarName());
-                targetId = calendarAdminService.createCalendar(command);
+                targetId = PortableResourceIds.stable(TARGET_TABLE,
+                        payload.tenantId(), payload.calendarCode());
+                CalendarEntity conflicting = calendarMapper.selectById(targetId);
+                if (conflicting != null) {
+                    throw new IllegalStateException("Calendar portable targetId collision: targetId=" + targetId);
+                }
+                CalendarEntity calendar = new CalendarEntity();
+                calendar.setId(targetId);
+                calendar.setTenantId(payload.tenantId());
+                calendar.setCalendarCode(payload.calendarCode());
+                calendar.setCalendarName(payload.calendarName());
+                calendar.setStatus(payload.status());
+                calendarMapper.insert(calendar);
             } else {
                 UpdateCalendarCommand command = new UpdateCalendarCommand();
                 command.setId(existing.getId());
@@ -65,7 +74,9 @@ public class CalendarDefinitionResourceHandler implements ResourceHandler {
                 calendarAdminService.updateCalendar(command);
                 targetId = existing.getId();
             }
-            updateStatus(targetId, payload.status());
+            if (existing != null) {
+                updateStatus(targetId, payload.status());
+            }
             return ResourceSyncResult.of(targetId, TARGET_TABLE,
                     "Calendar definition synced: " + payload.calendarCode());
         });

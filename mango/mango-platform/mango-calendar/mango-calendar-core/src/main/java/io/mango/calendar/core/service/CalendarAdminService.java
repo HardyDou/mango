@@ -46,6 +46,7 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.ToLongFunction;
 
 import static io.mango.calendar.api.enums.CalendarCode.CALENDAR_BUSINESS_ERROR;
 
@@ -157,6 +158,19 @@ public class CalendarAdminService implements ICalendarAdminService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean initCalendarYear(InitCalendarYearCommand command) {
+        return initCalendarYear(command, null);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean initResourceCalendarYear(InitCalendarYearCommand command,
+                                            ToLongFunction<LocalDate> targetIdProvider) {
+        Require.notNull(targetIdProvider, CALENDAR_BUSINESS_ERROR, "Resource 日历日期 ID 提供器不能为空");
+        return initCalendarYear(command, targetIdProvider);
+    }
+
+    private boolean initCalendarYear(InitCalendarYearCommand command,
+                                     ToLongFunction<LocalDate> targetIdProvider) {
         String tenantId = CalendarSupport.currentTenantId();
         CalendarEntity calendar = selectCalendarByCodeRequired(tenantId, command.getCalendarCode());
         long exists = dayMapper.countByYear(tenantId, calendar.getId(), command.getYear());
@@ -170,6 +184,9 @@ public class CalendarAdminService implements ICalendarAdminService {
         LocalDate endDate = LocalDate.of(command.getYear(), 12, 31);
         while (!date.isAfter(endDate)) {
             CalendarDayEntity entity = defaultDay(tenantId, calendar.getId(), date);
+            if (targetIdProvider != null) {
+                entity.setId(targetIdProvider.applyAsLong(date));
+            }
             CalendarDayEntity source = sourceByMonthDay.get(monthDayKey(date));
             if (source != null && !CalendarDayTypes.isDefaultType(CalendarDayTypes.normalize(source.getDayType()))) {
                 copySourceDay(source, entity);
