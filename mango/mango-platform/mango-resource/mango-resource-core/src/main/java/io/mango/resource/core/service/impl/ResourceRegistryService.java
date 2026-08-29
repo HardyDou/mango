@@ -11,6 +11,7 @@ import io.mango.resource.api.command.ResourceModuleManifestCommand;
 import io.mango.resource.api.enums.ResourceApplyMode;
 import io.mango.resource.api.enums.ResourceCode;
 import io.mango.resource.support.ResourceHandler;
+import io.mango.resource.support.ResourceBaselinePolicy;
 import io.mango.resource.support.ResourceTargetDispatcher;
 import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.api.enums.ResourceStatus;
@@ -691,6 +692,15 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
         Map<String, List<ResourceDeclaration>> allDeclarationsByType = new LinkedHashMap<>();
         Map<String, List<ResourceDeclaration>> declarationsByType = new LinkedHashMap<>();
         for (ResourceDeclaration declaration : declarations) {
+            ResourceHandler handler = handlerMap.get(declaration.getResourceType());
+            if (properties.isBaselineBuildEnabled()
+                    && (handler == null
+                    || handler.baselinePolicy() == ResourceBaselinePolicy.ENVIRONMENT_REQUIRED)) {
+                log.info("Mango resource deferred until baseline restore: resourceId={}, resourceType={}, reason={}",
+                        declaration.getId(), declaration.getResourceType(),
+                        handler == null ? "non-local-target" : "environment-required");
+                continue;
+            }
             prepareActiveDeclaration(
                     declaration, force, registrySnapshot, allDeclarationsByType, declarationsByType);
         }

@@ -62,6 +62,7 @@ final class BaselineGenerator {
         long startedAt = System.nanoTime();
         List<String> moduleOrder = validateModuleOrder();
         Map<String, List<String>> groups = groupModules(moduleOrder);
+        validateResourceBaselineTopology(groups);
         Path staging = createStagingDirectory();
         Path migrationExtraction = createTemporaryDirectory("mango-baseline-migrations-");
         Map<String, TemporaryDatabases> databases = new LinkedHashMap<>();
@@ -70,6 +71,7 @@ final class BaselineGenerator {
                     store.databaseIdentity(ADMIN_DATABASE);
             store.validateSchemaDefaults(ADMIN_DATABASE, settings.schemaDefaults());
             prepareDatabases(groups, migrationExtraction, databases);
+            materializeResourceBaselines(groups, databases);
             List<ModuleManifest> modules = generateAndVerifyBaselines(groups, databases, staging);
             String generationFingerprint = generationFingerprint(databaseIdentity, modules);
             writeManifest(staging, databaseIdentity, generationFingerprint, modules, groups);
@@ -85,6 +87,28 @@ final class BaselineGenerator {
             deleteQuietly(staging);
             deleteQuietly(migrationExtraction);
             cleanupWorkspaceDatabases(databases);
+        }
+    }
+
+    private void materializeResourceBaselines(
+            Map<String, List<String>> groups,
+            Map<String, TemporaryDatabases> databases) throws MojoExecutionException {
+        if (!settings.resourceBaselineEnabled()) {
+            return;
+        }
+        TemporaryDatabases temporary = databases.values().iterator().next();
+        ResourceBaselineApplicationRunner runner = new ResourceBaselineApplicationRunner(
+                settings.resourceBaseline(), settings, store, log);
+        runner.materialize(temporary.replay());
+        runner.materialize(temporary.determinism());
+    }
+
+    private void validateResourceBaselineTopology(Map<String, List<String>> groups)
+            throws MojoExecutionException {
+        if (settings.resourceBaselineEnabled() && groups.size() != 1) {
+            throw new MojoExecutionException(
+                    "MANGO-BASELINE-048 Resource baseline generation currently requires one datasource group"
+                            + "; groups=" + groups.keySet());
         }
     }
 
@@ -158,9 +182,11 @@ final class BaselineGenerator {
         MySqlBaselineStore.SchemaSnapshot comparableReplay =
                 store.determinismSnapshot(temporary.replay(), groupModules, ownership);
         if (!comparableReplay.equals(deterministic)) {
+            String cause = settings.resourceBaselineEnabled()
+                    ? "migrations and portable Resource handlers are not deterministic"
+                    : "migrations are not deterministic across clean replays";
             throw new MojoExecutionException(
-                    "MANGO-BASELINE-040 V migrations are not deterministic across clean replays"
-                            + "; datasourceGroup=" + groupName + "; difference="
+                    "MANGO-BASELINE-040 " + cause + "; datasourceGroup=" + groupName + "; difference="
                             + snapshotDifference(comparableReplay, deterministic));
         }
     }

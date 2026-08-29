@@ -14,6 +14,7 @@ import io.mango.infra.kv.core.capability.KvStoreLeaseLocker;
 import io.mango.infra.kv.core.jdbc.JdbcKvStore;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
 import io.mango.resource.support.ResourceHandler;
+import io.mango.resource.support.ResourceBaselinePolicy;
 import io.mango.resource.support.ResourceProvider;
 import io.mango.resource.support.ResourceTargetDispatcher;
 import io.mango.resource.api.command.RegisterResourceDeclarationsCommand;
@@ -127,6 +128,9 @@ class ResourceRegistrySyncServiceIntegrationTest {
     @Autowired
     private ResourceContentHasher resourceContentHasher;
 
+    @Autowired
+    private ResourceRegistryProperties resourceRegistryProperties;
+
     @BeforeEach
     void setUp() {
         syncService.start();
@@ -135,9 +139,32 @@ class ResourceRegistrySyncServiceIntegrationTest {
         handler.resetBlocking();
         handler.resetUpsertCount();
         handler.resetPreservation();
+        handler.setEnvironmentRequired(false);
+        resourceRegistryProperties.setBaselineBuildEnabled(false);
         dispatcher.reset();
         syncOrderRecorder.clear();
         sqlStatementCounter.reset();
+    }
+
+    @Test
+    void portableBaselineOmitsEnvironmentRequiredHandlersWithoutCreatingRegistryState() {
+        resourceRegistryProperties.setBaselineBuildEnabled(true);
+        handler.setEnvironmentRequired(true);
+
+        syncService.sync();
+
+        assertThat(handler.upsertCount()).isZero();
+        assertThat(count("message_template")).isZero();
+        assertThat(count("resource_registry")).isZero();
+        assertThat(count("resource_sync_log")).isZero();
+        assertThat(count("resource_change_log")).isZero();
+
+        resourceRegistryProperties.setBaselineBuildEnabled(false);
+        syncService.sync();
+
+        assertThat(handler.upsertCount()).isEqualTo(1);
+        assertThat(count("message_template")).isEqualTo(1);
+        assertThat(count("resource_registry")).isEqualTo(1);
     }
 
     @Test
@@ -661,6 +688,19 @@ class ResourceRegistrySyncServiceIntegrationTest {
         assertThat(registry.getTargetId()).isEqualTo(92001L);
         assertThat(registry.getTargetTable()).isEqualTo("remote_notice_template");
         assertThat(dispatcher.upsertBatchCount()).isEqualTo(1);
+    }
+
+    @Test
+    void portableBaselineDefersRemoteTargetsWithoutCallingDispatcher() {
+        resourceRegistryProperties.setBaselineBuildEnabled(true);
+        provider.setDeclaration(remoteOnlyDeclaration());
+
+        syncService.sync();
+
+        assertThat(dispatcher.upsertBatchCount()).isZero();
+        assertThat(registryMapper.selectByResourceId("1900000000000000002")).isNull();
+        assertThat(count("resource_sync_log")).isZero();
+        assertThat(count("resource_change_log")).isZero();
     }
 
     @Test
@@ -1494,6 +1534,7 @@ class ResourceRegistrySyncServiceIntegrationTest {
         private final TestMessageTemplateMapper messageTemplateMapper;
         private final AtomicInteger upsertCount = new AtomicInteger();
         private final AtomicBoolean preserveNext = new AtomicBoolean();
+        private final AtomicBoolean environmentRequired = new AtomicBoolean();
         private final AtomicReference<CountDownLatch> enteredUpsert = new AtomicReference<>();
         private final AtomicReference<CountDownLatch> releaseUpsert = new AtomicReference<>();
 
@@ -1504,6 +1545,13 @@ class ResourceRegistrySyncServiceIntegrationTest {
         @Override
         public String resourceType() {
             return "MESSAGE_TEMPLATE";
+        }
+
+        @Override
+        public ResourceBaselinePolicy baselinePolicy() {
+            return environmentRequired.get()
+                    ? ResourceBaselinePolicy.ENVIRONMENT_REQUIRED
+                    : ResourceBaselinePolicy.PORTABLE;
         }
 
         @Override
@@ -1604,6 +1652,10 @@ class ResourceRegistrySyncServiceIntegrationTest {
 
         void resetPreservation() {
             preserveNext.set(false);
+        }
+
+        void setEnvironmentRequired(boolean value) {
+            environmentRequired.set(value);
         }
 
         private void awaitReleaseIfBlocked() {

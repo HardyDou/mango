@@ -15,6 +15,19 @@ import java.util.Map;
 public interface ResourceHandler {
 
     /**
+     * Declares whether this handler can be executed while generating a portable database baseline.
+     *
+     * <p>The default keeps ordinary database-backed handlers eligible. Handlers that read credentials,
+     * storage endpoints, host paths, external services, or other deployment-specific state must return
+     * {@link ResourceBaselinePolicy#ENVIRONMENT_REQUIRED}.</p>
+     *
+     * @return baseline materialization policy
+     */
+    default ResourceBaselinePolicy baselinePolicy() {
+        return ResourceBaselinePolicy.PORTABLE;
+    }
+
+    /**
      * 处理器支持的资源类型。
      *
      * @return 资源类型。

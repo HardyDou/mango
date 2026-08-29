@@ -25,6 +25,7 @@ public class BootstrapProperties {
     private String instanceId;
     private Duration runtimeLeaseTtl = DEFAULT_RUNTIME_LEASE_TTL;
     private Duration runtimeHeartbeatInterval = DEFAULT_RUNTIME_HEARTBEAT_INTERVAL;
+    private boolean resourceBaselineBuildEnabled;
 
     public BootstrapMode getMode() {
         return mode;
@@ -104,5 +105,13 @@ public class BootstrapProperties {
 
     public void setRuntimeHeartbeatInterval(Duration runtimeHeartbeatInterval) {
         this.runtimeHeartbeatInterval = runtimeHeartbeatInterval;
+    }
+
+    public boolean isResourceBaselineBuildEnabled() {
+        return resourceBaselineBuildEnabled;
+    }
+
+    public void setResourceBaselineBuildEnabled(boolean resourceBaselineBuildEnabled) {
+        this.resourceBaselineBuildEnabled = resourceBaselineBuildEnabled;
     }
 }

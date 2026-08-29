@@ -152,7 +152,7 @@
                             <postBuildHookScript>verify.groovy</postBuildHookScript>
                             <goals>
                                 <goal>clean</goal>
-                                <goal>package</goal>
+                                <goal>verify</goal>
                             </goals>
                             <properties>
                                 <mango.plugin.version>${project.version}</mango.plugin.version>

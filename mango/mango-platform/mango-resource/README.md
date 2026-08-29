@@ -364,6 +364,19 @@ Spring Boot 可执行 JAR 将上述 `META-INF` 条目保留在 JAR 根目录。B
 
 构建 POM、Boot JAR 检查以及与 cold baseline、sealed release manifest 的关系见[业务 API 构建期 cold baseline](../../../mango-docs/guides/business-integration/build-time-cold-baseline.md)。
 
+### 9.2 Resource 数据库 baseline
+
+最终业务应用可以在 `mango:baseline-generate` 中配置 `resourceApplicationClass`。生成器完成 Flyway 双回放后，在两套临时库分别执行正式 `bootstrap apply`，并把可移植目标状态和 `resource_registry.source_hash` 合入模块 BSQL。
+
+`ResourceHandler.baselinePolicy()` 决定 Handler 是否在构建期执行：
+
+| 策略 | 行为 |
+|---|---|
+| `PORTABLE` | 默认值；只写本地、可移植数据库状态，可进入 BSQL。 |
+| `ENVIRONMENT_REQUIRED` | 依赖凭据、对象存储、主机路径、外部服务或部署环境状态；构建期跳过，恢复后处理。 |
+
+没有本地 Handler 的远程目标同样延迟，构建期不调用 `ResourceTargetDispatcher`。构建专用 Bootstrap 只保留显式 opt-in 的 Resource contributor，普通业务、租户和其它运行期 contributor 默认排除，恢复后仍按正常 Bootstrap 执行。生成器会删除构建期模块 receipt、Resource 审计和 Bootstrap 运行记录，但保留目标数据与逐 Resource hash；因此空库恢复后仍建立本环境 receipt，便携 Handler 因 hash 相同不再执行。当前 Resource baseline 只支持单 datasource group。
+
 ## 10. 同步规则
 
 | 场景 | 行为 |
@@ -377,8 +390,8 @@ Spring Boot 可执行 JAR 将上述 `META-INF` 条目保留在 JAR 根目录。B
 | `AUTO` 声明在 FINALIZE 中缺失 | Registry 只用持久化的 `targetId/targetTable` 重建删除输入；目标 Handler 必须按该稳定目标身份停用或明确失败，不能要求已经从 classpath 消失的原声明字段。 |
 | 强制同步 | 后台 `/resource/sync/force` 触发，跳过 hash 未变化限制。 |
 
-同一批 active 声明如果包含跨类型依赖，Resource Registry 按目标 `ResourceHandler.dependsOnResourceTypes()`
-声明的依赖图排序后再调用各 handler。声明文件顺序、文件扫描顺序和 jar 加载顺序不作为同步顺序语义。
+同一批 active 声明如果包含跨类型依赖，Resource Registry 仍兼容按目标 `ResourceHandler.dependsOnResourceTypes()`
+声明的依赖图排序后再调用各 handler。该依赖能力只为存量兼容保留，不建议新 Resource 使用；新关系应通过固定 `resourceId`、`code`、`bizCode` 或 `resourceType + bizKey` 幂等解析。声明文件顺序、文件扫描顺序、jar 加载顺序和模块执行顺序不作为正确性语义。
 如果依赖图存在环，例如 `A -> B -> A`，同步会失败并提示 `Resource type dependency cycle detected`。
 
 ### 10.1 Resource 级增量与运行时修改退避

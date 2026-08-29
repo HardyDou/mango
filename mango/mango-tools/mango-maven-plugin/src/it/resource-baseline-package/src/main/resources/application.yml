@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: guarantee-resource-baseline-it
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+mango:
+  kv:
+    store:
+      type: memory
+    capability:
+      enabled: true
+  persistence:
+    mybatis-plus:
+      tenant:
+        enabled: false
+    flyway:
+      upgrade-locations-enabled: false
+      cold-baseline:
+        enabled: true
+      modules:
+        resource:
+          enabled: true
+        kv:
+          enabled: true
+        guarantee:
+          enabled: true
+  resource:
+    registry:
+      remote:
+        enabled: false

@@ -192,7 +192,7 @@ mvn mango:check \
 
 ### 7.1 构建期 cold baseline
 
-业务 API POM 将 goal 绑定到 `generate-resources`。生成器扫描当前工程和运行时依赖 JAR 中的 `db/migration/<module>/V*.sql`，在临时 MySQL 中按 `moduleOrder` 回放，并把结果写入：
+业务 API 只生成 Flyway baseline 时可以在 `generate-resources` 执行；同时物化 Resource 时必须绑定到 `prepare-package` 并配置最终业务应用主类。生成器扫描当前工程和运行时依赖 JAR 中的 `db/migration/<module>/V*.sql`，在临时 MySQL 中按 `moduleOrder` 回放；配置 Resource 后分别在 replay/determinism 库执行正式 `bootstrap apply`，再把结果写入：
 
 ```text
 target/generated-resources/db/baseline/<module>/B<version>__baseline.sql
@@ -225,12 +225,16 @@ META-INF
 | `mango.baseline.includedModules` | 全部发现模块 | 当前 API 制品需要打包的模块清单。 |
 | `mango.baseline.moduleOrder` | 模块名稳定顺序 | 显式配置时必须恰好包含所有发现模块一次。 |
 | `mango.baseline.moduleGroups` | 全部为 `default` | `module=group` 列表；同组模块使用同一对临时 schema，不同组隔离。 |
+| `mango.baseline.resourceApplicationClass` | 无 | 最终 Spring Boot 应用主类；配置后启用 `PORTABLE` Resource 数据库基线，并要求 goal 绑定 `prepare-package`。 |
+| `mango.baseline.resourceTimeoutSeconds` | `300` | 每次 Resource baseline 应用执行的超时秒数，必须大于 0。 |
 | `mango.baseline.outputDirectory` | `target/generated-resources` | 仅构建目录；不要指向 `src/main/resources`。 |
 | `mango.baseline.keepSchemas` | `false` | 诊断时保留临时 schema；正常 CI 保持关闭。 |
 
 生成过程使用 replay/determinism/verify 三套 schema，三者都会显式使用 `mango.baseline.characterSet` 和 `mango.baseline.collation`，不继承构建机 MySQL 的 server 默认值。插件在创建临时 schema 前校验字符集与排序规则组合；未知组合或不安全的标识符会直接阻断构建。B SQL 和 manifest 分别固化实际表结构以及 `targetCharacterSet`、`targetCollation`，生成指纹也包含这两个目标值。业务项目如果覆盖默认值，目标空库必须使用相同字符集和排序规则，避免 B 之后新增的 V migration 重新继承另一套数据库语义。
 
-前两套 schema 独立回放 V 时，确定性比较只忽略标准运行审计时间列 `created_at`、`updated_at`、`published_at`；B SQL 仍保留 replay 中这些列的真实值，verify schema 连续执行 B 两次后仍按全部列比较结构和 migration 静态行。其它列中的 `UUID()`、当前时间等非确定值继续阻断构建。
+前两套 schema 独立回放 V 和便携 Resource 时，确定性比较忽略标准及历史运行审计时间列，例如 `created_at`、`updated_at`、`create_time`、`update_time` 和 `last_sync_time`；B SQL 仍保留 replay 中这些列的真实值，verify schema 连续执行 B 两次后仍按全部列比较结构和静态数据。其它业务列中的 `UUID()`、当前时间或环境值继续阻断构建。
+
+Resource baseline 当前只支持一个 datasource group。`PORTABLE` Handler 的目标状态与 Registry hash 进入 BSQL；`ENVIRONMENT_REQUIRED` Handler 和没有本地 Handler 的远程目标在恢复后处理，构建期不会调用远程 Dispatcher。构建专用 Bootstrap 只选择 Mango Resource contributor，普通业务、租户和其它运行期 contributor 在目标环境 Bootstrap 执行。生成前清除环境 receipt、Resource 审计和 Bootstrap 运行记录，避免把构建过程当成部署成功回执。
 
 结构比较使用 MySQL 元数据的结构化语义快照，不按 `SHOW CREATE` 文本逐字比较。表、列、索引和约束的首个差异会定位到 `table:<name>`、`table:<name>.column:<name>`、`table:<name>.index:<name>` 或 `table:<name>.constraint:<name>`；隐式继承与显式声明只要落库后的 charset/collation 相同即视为等价。视图和触发器使用去除环境噪声后的 canonical DDL 比较。静态数据按列读取并用二进制十六进制值比较，因此字符集转换和不可见字节不会被字符串展示掩盖。存储过程、函数和事件当前 fail closed；重复版本、跨模块对象所有权、制品碰撞、缺失或被修改的 B、不可重入、结构或数据不等价都会使构建失败。安装新生成目录前保留上一次结果，安装异常时回滚。
 

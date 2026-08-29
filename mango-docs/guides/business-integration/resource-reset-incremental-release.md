@@ -78,7 +78,11 @@ mango:
 4. 显式开启 demo 时再加载 `META-INF/mango/demo/`，否则只加载正式资源。
 5. 回读业务表、Resource Registry、菜单权限、流程定义和文件对象，再启动 Runtime。
 
-当前版本的限制：Flyway cold baseline 已支持，但完整的非环境 Resource 数据库基线尚未落地。因此空库首次仍会执行 `RESOURCE_REQUIRED` 和对应 Handler；不能把当前重置发布宣称为“首次零 Handler”。
+构建阶段会在 Flyway 回放库上启动最终业务应用，把 `PORTABLE` Handler 的目标数据和 `resource_registry.source_hash` 合入 BSQL。恢复空库后，便携 Resource 因 hash 相同不再调用 Handler；`ENVIRONMENT_REQUIRED` Handler 和远程目标仍由首次 Bootstrap 处理。当前只支持单 datasource group。
+
+业务自定义 Handler 默认视为 `PORTABLE`。如果 Handler 读取凭据、对象存储、主机路径、外部服务或其它环境状态，需要覆盖 `baselinePolicy()` 返回 `ENVIRONMENT_REQUIRED`，避免制品构建触碰部署环境。
+
+业务自定义 `BootstrapStepContributor` 与 Resource Handler 是两条边界。普通业务 Bootstrap、租户对账和其它运行期步骤不会进入构建期 Resource baseline，目标环境首次 Bootstrap 仍会执行它们；业务模块不得为了加速构建而覆盖 `supportsResourceBaselineBuild()`。
 
 ### 5.2 增量发布
 
@@ -99,7 +103,8 @@ mango:
 
 | 用例 | 操作 | 关键断言 |
 |---|---|---|
-| 空库正式初始化 | 新建空库，关闭 demo，执行 Bootstrap | Flyway 表存在，正式菜单/配置/流程声明可见；当前版本允许首次 `RESOURCE_REQUIRED` |
+| 空库正式初始化 | 新建空库，关闭 demo，执行 Bootstrap | Flyway 表和便携 Resource 已由 B 恢复；便携 Handler 调用为 0，只有环境/远程 Resource 产生同步记录 |
+| 业务 Bootstrap 隔离 | 增加一个写业务表的普通 `BootstrapStepContributor` | 构建期 BSQL 无该业务行；目标空库首次 Bootstrap 正常写入，第二次同 generation 不重复执行 |
 | 空库演示初始化 | 新建隔离库，开启 demo | 演示租户和样例数据存在；关闭 demo 的库没有演示业务行 |
 | 无变化重启 | 相同 release/generation 重启 | 模块 receipt 命中，Handler、Registry、sync log 和业务表写入为 0 |
 | 单 Resource 变化 | 只修改保函有效期声明 | 只有对应 Resource 产生 `APPLIED`，同模块其它未变化资源不写 |
@@ -113,7 +118,7 @@ mango:
 
 ## 7. 当前未覆盖的业务开发边界
 
-- 完整 Resource cold baseline 和首次跳过 `RESOURCE_REQUIRED` 尚未实现。
+- Resource cold baseline 当前只支持单 datasource group；环境/远程 Resource 仍在恢复后首次 Bootstrap 处理。
 - 不是所有 Handler 都支持 `updated_at` 退避；当前只有 `SYSTEM_CONFIG` 已接入通用判断。
 - 旧 Handler 仍可能使用 `requiresCompleteBatch()` 兼容行为，业务模块升级前要确认其是否真正支持 changed-only 写入。
 - 本地 MinIO 只代表 S3-compatible 语义，不等于 OSS、COS、Kodo 的 IAM、TLS、区域和限流验收。

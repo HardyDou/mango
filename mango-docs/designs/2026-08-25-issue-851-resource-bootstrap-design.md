@@ -65,7 +65,8 @@
 - Handler 新批处理入口分离变化声明、同类型完整只读上下文和逐 Resource 同步上下文。`AUTH_MENU`、`API_RESOURCE` 使用完整上下文解析关系，但只写变化声明。
 - 需要保护后台修改的 Handler 显式比较目标行可靠的 `updated_at` 与 Registry `last_sync_time`。应用时目标与 Registry 写入同一秒级固定时间；发现不相等时返回 `PRESERVED`，不推进 `source_hash` 和 `last_sync_time`。
 - 当前只为一 Resource 对应一条 `sys_config` 行的 `SYSTEM_CONFIG` 启用退避。多表/多行目标不做通用时间猜测，由 Owner Handler 提供受管状态判断；本次不增加 `revision` 字段或通用状态表。
-- 现有 cold baseline 只重放 Flyway，不能证明 Handler 目标状态及 Registry 同步时间一致，因此重置发布的完整 Resource baseline 不在本批次完成范围。
+- `mango:baseline-generate` 在两套 Flyway 回放库上分别启动最终业务应用执行正式 `bootstrap apply`，但构建专用计划只保留显式声明支持 Resource baseline 的 contributor；普通业务、租户和其它运行期 Bootstrap contributor 默认排除。随后把 `PORTABLE` Handler 的目标表状态和 `resource_registry.source_hash` 一并写入模块 BSQL，并清除模块 receipt、Resource 审计与 Bootstrap 运行记录，避免把构建环境身份冒充部署回执。
+- `ENVIRONMENT_REQUIRED` Handler 和没有本地 Handler 的远程目标不在构建期执行，也不调用远程 Dispatcher；恢复后首次 Bootstrap 只协调这些延迟 Resource。当前 Resource baseline 只支持单 datasource group，多 group 在创建临时 schema 前失败闭合。
 
 ### 3.6 业务开发者消费契约
 
@@ -73,7 +74,7 @@
 - 单体业务 app 依赖业务 `<module>-starter`；微服务提供方拥有业务表和 Resource 声明，调用方只依赖 API 或 `<module>-starter-remote`，不读取提供方 `core` 或数据库。
 - 业务发布必须能区分 `reset` 与 `incremental`：reset 只允许真正空库或明确可重建环境；incremental 保留业务库，Flyway 按 history 执行，Resource 按模块 receipt/hash 协调。两种模式都要回读 Flyway history、Bootstrap receipt、Registry、目标业务表、权限和租户结果。
 - 新业务 Resource 的关系使用稳定 `resourceId`、`code`、`bizCode` 或 `resourceType + bizKey`。扫描顺序、JAR 顺序、模块启动顺序和自增主键不属于业务发布契约。
-- 业务验收至少覆盖正式空库、Demo 开关、无变化重启、单 Resource 变化、后台修改退避、删除隔离、中断恢复、租户/权限和微服务 remote 消费。当前空库首次仍会执行 `RESOURCE_REQUIRED`，因此不能宣称首次零 Handler。
+- 业务验收至少覆盖正式空库、Demo 开关、无变化重启、单 Resource 变化、后台修改退避、删除隔离、中断恢复、租户/权限和微服务 remote 消费。空库恢复后，便携 Resource 的 Handler 调用为零；环境和远程 Resource 仍在首次 Bootstrap 中执行。
 
 ## 4. 验收映射
 
@@ -92,6 +93,8 @@
 | AC-011 | `SYSTEM_CONFIG` 未经后台修改时以同一固定时间更新目标和 Registry | System core 集成测试 |
 | AC-012 | `SYSTEM_CONFIG.updated_at` 偏离上次同步时间时保留后台值 | System core 集成测试 |
 | AC-013 | `AUTH_MENU`、`API_RESOURCE` 使用完整上下文但只写变化声明 | Authorization starter 单元测试 |
+| AC-014 | BSQL 携带便携 Resource 目标状态与 source hash；恢复后只执行环境 Resource，第二次启动零步骤 | Maven Plugin 保函业务 MySQL 8.4 打包/恢复夹具 |
+| AC-015 | 构建期不执行环境 Handler、远程 Dispatcher 或普通业务 Bootstrap contributor；多 datasource group 在建库前失败 | Bootstrap、Resource core 与 Maven Plugin 集成测试 |
 
 ## 5. 真实场景矩阵
 
@@ -104,6 +107,7 @@
 | 并发与 fence | 同 generation 两线程 APPLY、旧 generation VERIFY、同 generation fingerprint 漂移 | 并发收敛为一个执行者和一个跳过者；generation/fingerprint 均 fail closed |
 | 文件后端 | 真实 Local、官方 MinIO S3-compatible；15 个对象逐一按大小和 SHA-256 回读；changed file 覆盖 | 两种后端完整生命周期均通过 |
 | 最终发布物 | `process-classes` 生成物进入最终 Spring Boot JAR，manifest 与对象字节一致 | Maven Invoker 1/1 通过 |
+| Resource 数据库基线 | 保函业务 `resource/kv/guarantee` 三模块生成 BSQL、构建期排除普通业务 Bootstrap、Boot JAR 恢复空库、首次执行环境 Resource 和正常业务 Bootstrap、第二次零步骤 | 本机 MySQL 8.4.8 完整夹具通过；临时 schema 已清理 |
 | 消费者回归 | Authorization 手工 Spring 测试配置、File Core 真实 MySQL 并发保存、fileproc 正常 reactor | 全部通过 |
 
 真实公有云 OSS/COS/Kodo 的 IAM、TLS、区域 endpoint、限流和网络故障行为不在本地可复现边界内；MinIO 只证明 S3-compatible 协议与对象语义，不等价于这些云厂商的生产验收。
@@ -116,4 +120,4 @@
 - M14：跨模块高影响设计的独立复核。
 - 不启用 M12/M13：本次没有新的 HTTP/API 消费入口或浏览器结果。
 
-本轮 AC-009 至 AC-013 已新增自动化测试资产并完成测试源码编译；受当前 Agent `simple` Skill 的测试执行限制，本轮不执行这些测试，运行结果保留为 PR CI 后续验证项。
+AC-009 至 AC-015 已沉淀为 Resource、System、Authorization、Maven Plugin 定向测试及保函业务 MySQL 打包/恢复夹具；最终结果以实施台账和 PR required checks 为准。
