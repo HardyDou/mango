@@ -809,26 +809,16 @@ export const workflowApi = {
   }).then(data => fromBackendPageResult(data, normalizeProcessInstance, params)),
   processDetail: (processInstanceId: string) => get<WorkflowProcessDetail>('/workflow/processes/detail', { params: { processInstanceId } })
     .then(normalizeProcessDetail),
-  users: (keyword = '') => get<any>('/identity/users/page', {
-    params: {
-      page: 1,
-      size: 100,
-      username: keyword || undefined,
-      nickname: keyword || undefined,
-    },
-  }).then(data => toPageList<any>(data)
-    .map(item => {
-      const id = item.userId ?? item.id ?? item.memberId;
-      const value = item.username ?? id;
-      const name = item.nickname || item.memberName || item.username || id;
-      const username = item.username && item.username !== name ? ` / ${item.username}` : '';
-      return id === undefined ? undefined : {
-        value: String(value),
-        label: `${name}${username}`,
-        username: item.username,
-      };
-    })
-    .filter(Boolean) as WorkflowUserOption[]),
+  // Workflow assignee candidates come from the platform Provider contract.
+  // Do not call the identity page endpoint here: it is intentionally scoped
+  // and may return 403 for workflow users without user-management permission.
+  users: (keyword = '') => get<WorkflowDesignerOptions>('/workflow/definitions/designer-options')
+    .then(data => normalizeDesignerOptions(data).users)
+    .then(users => {
+      const normalizedKeyword = keyword.trim().toLowerCase();
+      if (!normalizedKeyword) return users;
+      return users.filter(user => user.label.toLowerCase().includes(normalizedKeyword));
+    }),
   tenants: (keyword = '') => get<any>('/system/tenant/list', {
     params: { keyword: keyword || undefined, status: 1 },
   }).then(data => toPageList<any>(data)
