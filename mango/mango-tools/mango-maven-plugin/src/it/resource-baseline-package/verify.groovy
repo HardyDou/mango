@@ -3,6 +3,7 @@ assert jar.getEntry('BOOT-INF/classes/db/baseline/resource/B2__baseline.sql') !=
 assert jar.getEntry('BOOT-INF/classes/db/baseline/kv/B1__baseline.sql') != null
 assert jar.getEntry('BOOT-INF/classes/db/baseline/guarantee/B1__baseline.sql') != null
 assert jar.getEntry('META-INF/mango/baseline-manifest.json') != null
+assert jar.getEntry('BOOT-INF/classes/META-INF/mango/assets/guarantee-baseline/external-payload.txt') == null
 jar.close()
 
 def utf8Hex = { String value ->

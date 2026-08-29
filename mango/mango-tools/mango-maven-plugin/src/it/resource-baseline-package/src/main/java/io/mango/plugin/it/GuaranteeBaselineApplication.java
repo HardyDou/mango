@@ -15,15 +15,26 @@ import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.model.ResourceSyncResult;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
 @SpringBootApplication
 public class GuaranteeBaselineApplication {
 
+    private static final String EXTERNAL_ASSET =
+            "META-INF/mango/assets/guarantee-baseline/external-payload.txt";
+    private static final String RESOURCE_BASELINE_BUILD_ARGUMENT =
+            "--mango.bootstrap.resource-baseline-build-enabled=true";
+
     public static void main(String[] args) {
+        boolean resourceBaselineBuild = Arrays.asList(args).contains(RESOURCE_BASELINE_BUILD_ARGUMENT);
+        if (resourceBaselineBuild && !new ClassPathResource(EXTERNAL_ASSET).isReadable()) {
+            throw new IllegalStateException("External Resource baseline asset is not readable: " + EXTERNAL_ASSET);
+        }
         MangoApplication.run(GuaranteeBaselineApplication.class, args);
     }
 
