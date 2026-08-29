@@ -72,6 +72,7 @@ final class BaselineGenerator {
             store.validateSchemaDefaults(ADMIN_DATABASE, settings.schemaDefaults());
             prepareDatabases(groups, migrationExtraction, databases);
             materializeResourceBaselines(groups, databases);
+            canonicalizeRuntimeAuditTimestamps(databases);
             List<ModuleManifest> modules = generateAndVerifyBaselines(groups, databases, staging);
             String generationFingerprint = generationFingerprint(databaseIdentity, modules);
             writeManifest(staging, databaseIdentity, generationFingerprint, modules, groups);
@@ -109,6 +110,14 @@ final class BaselineGenerator {
             throw new MojoExecutionException(
                     "MANGO-BASELINE-048 Resource baseline generation currently requires one datasource group"
                             + "; groups=" + groups.keySet());
+        }
+    }
+
+    private void canonicalizeRuntimeAuditTimestamps(
+            Map<String, TemporaryDatabases> databases) throws MojoExecutionException {
+        for (TemporaryDatabases temporary : databases.values()) {
+            store.canonicalizeRuntimeAuditTimestamps(temporary.replay());
+            store.canonicalizeRuntimeAuditTimestamps(temporary.determinism());
         }
     }
 

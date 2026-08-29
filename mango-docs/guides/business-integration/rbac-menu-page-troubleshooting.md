@@ -314,3 +314,7 @@ pnpm -F @mango/admin-shell build
 ## 2026-08-25 Issue #851 Resource 模块增量影响
 
 - Issue #851 只把 Bootstrap Resource 协调收敛为构建期模块 manifest 与环境 receipt；菜单 `component` key、菜单树接口、页面注册、角色菜单授权、登录态权限聚合和租户应用绑定均不变。若升级后菜单资源未形成，可先核对对应 Resource 模块 receipt、generation 与 manifest fingerprint，再继续按本指南检查声明、授权和页面 key。
+
+## 2026-08-29 Issue #851 构建期确定性影响
+
+- 构建期 Resource baseline 现在根据稳定的应用、模块、菜单、套餐和角色身份生成授权目标行主键，相同 Resource 在不同空库中得到相同 ID。该变化不修改 `menuCode`、页面 key、套餐或角色授权语义；若构建因确定性比较失败，应修正声明中的稳定业务身份或 Handler，不能通过手工写授权表、固定数据库自增值或调整模块顺序绕过。

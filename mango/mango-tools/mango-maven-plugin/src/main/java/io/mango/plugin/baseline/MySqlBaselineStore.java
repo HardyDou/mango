@@ -36,8 +36,11 @@ final class MySqlBaselineStore {
     private static final Pattern DEFINER = Pattern.compile(
             "(?i)DEFINER\\s*=\\s*(?:`[^`]*`|[^@\\s]+)@(?:`[^`]*`|[^\\s]+)\\s*");
     private static final Set<String> RUNTIME_AUDIT_TIMESTAMP_COLUMNS = Set.of(
-            "created_at", "updated_at", "published_at", "publish_time", "last_sync_time",
+            "created_at", "updated_at", "published_at", "last_sync_time",
             "create_time", "update_time", "created_time", "updated_time");
+    private static final Set<String> AUDIT_TEMPORAL_TYPES = Set.of("date", "datetime", "timestamp");
+    private static final String CANONICAL_AUDIT_DATE = "2000-01-01";
+    private static final String CANONICAL_AUDIT_DATE_TIME = "2000-01-01 00:00:00";
     private static final int INSERT_BATCH_SIZE = 250;
 
     private final MySqlJdbcUrl jdbcUrl;
@@ -137,6 +140,60 @@ final class MySqlBaselineStore {
         } catch (SQLException exception) {
             throw databaseFailure("prepare portable Resource baseline " + database, exception);
         }
+    }
+
+    void canonicalizeRuntimeAuditTimestamps(String database) throws MojoExecutionException {
+        try (Connection connection = connect(database)) {
+            Map<String, List<AuditTemporalColumn>> columnsByTable = auditTemporalColumns(
+                    connection, database);
+            for (Map.Entry<String, List<AuditTemporalColumn>> entry : columnsByTable.entrySet()) {
+                List<AuditTemporalColumn> columns = entry.getValue();
+                String assignments = columns.stream()
+                        .map(column -> quote(column.name()) + " = CASE WHEN "
+                                + quote(column.name()) + " IS NULL THEN NULL ELSE ? END")
+                        .reduce((left, right) -> left + ", " + right)
+                        .orElseThrow();
+                try (PreparedStatement statement = connection.prepareStatement(
+                        "UPDATE " + quote(entry.getKey()) + " SET " + assignments)) {
+                    for (int index = 0; index < columns.size(); index++) {
+                        statement.setString(index + 1, canonicalAuditValue(columns.get(index).dataType()));
+                    }
+                    statement.executeUpdate();
+                }
+            }
+        } catch (SQLException exception) {
+            throw databaseFailure("canonicalize runtime audit timestamps in " + database, exception);
+        }
+    }
+
+    private static Map<String, List<AuditTemporalColumn>> auditTemporalColumns(
+            Connection connection,
+            String database) throws SQLException {
+        Map<String, List<AuditTemporalColumn>> columnsByTable = new LinkedHashMap<>();
+        try (PreparedStatement statement = connection.prepareStatement("""
+                SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE
+                FROM information_schema.COLUMNS
+                WHERE TABLE_SCHEMA = ?
+                ORDER BY TABLE_NAME, ORDINAL_POSITION
+                """)) {
+            statement.setString(1, database);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    String columnName = resultSet.getString(2);
+                    String dataType = resultSet.getString(3).toLowerCase(Locale.ROOT);
+                    if (RUNTIME_AUDIT_TIMESTAMP_COLUMNS.contains(columnName.toLowerCase(Locale.ROOT))
+                            && AUDIT_TEMPORAL_TYPES.contains(dataType)) {
+                        columnsByTable.computeIfAbsent(resultSet.getString(1), ignored -> new ArrayList<>())
+                                .add(new AuditTemporalColumn(columnName, dataType));
+                    }
+                }
+            }
+        }
+        return columnsByTable;
+    }
+
+    private static String canonicalAuditValue(String dataType) {
+        return "date".equals(dataType) ? CANONICAL_AUDIT_DATE : CANONICAL_AUDIT_DATE_TIME;
     }
 
     private static void deleteIfPresent(Connection connection, String database, String table)
@@ -1073,5 +1130,8 @@ final class MySqlBaselineStore {
     }
 
     private record ColumnSpec(String name, String literalCharacterSet) {
+    }
+
+    private record AuditTemporalColumn(String name, String dataType) {
     }
 }

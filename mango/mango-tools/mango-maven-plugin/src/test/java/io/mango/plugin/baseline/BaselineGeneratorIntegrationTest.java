@@ -9,6 +9,7 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
@@ -17,8 +18,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.time.Duration;
+import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -132,7 +135,7 @@ class BaselineGeneratorIntegrationTest {
     }
 
     @Test
-    void allowsRuntimeAuditTimestampsAcrossCleanReplays() throws Exception {
+    void canonicalizesRuntimeAuditTimestampsAcrossIndependentBuilds() throws Exception {
         migration("alpha", "V1__init.sql", """
                 CREATE TABLE alpha_record (
                   id bigint primary key,
@@ -146,17 +149,29 @@ class BaselineGeneratorIntegrationTest {
                 INSERT INTO alpha_record (
                   id, record_code, created_at, updated_at, published_at, publish_time
                 ) VALUES (
-                  1, 'ALPHA-1', CURRENT_TIMESTAMP(6), NOW(6), CURRENT_TIMESTAMP(6), NOW(6)
+                  1, 'ALPHA-1', CURRENT_TIMESTAMP(6), NOW(6), CURRENT_TIMESTAMP(6),
+                  '2026-08-30 09:15:00.123456'
                 );
                 """);
         String prefix = uniquePrefix("it_audit_time");
-        Path output = directory.resolve("target/generated-resources");
+        Path firstOutput = directory.resolve("target/first-generated-resources");
+        Path secondOutput = directory.resolve("target/second-generated-resources");
 
-        generator(prefix, output, List.of("alpha"), Map.of()).generate();
+        generator(prefix, firstOutput, List.of("alpha"), Map.of()).generate();
+        generator(prefix, secondOutput, List.of("alpha"), Map.of()).generate();
 
-        String baseline = Files.readString(output.resolve("db/baseline/alpha/B1__baseline.sql"));
-        assertTrue(baseline.contains("`created_at`, `updated_at`, `published_at`, `publish_time`"));
-        assertTrue(Files.exists(output.resolve("META-INF/mango/baseline-manifest.json")));
+        String firstBaseline = Files.readString(
+                firstOutput.resolve("db/baseline/alpha/B1__baseline.sql"));
+        String secondBaseline = Files.readString(
+                secondOutput.resolve("db/baseline/alpha/B1__baseline.sql"));
+        assertTrue(firstBaseline.contains("`created_at`, `updated_at`, `published_at`, `publish_time`"));
+        assertTrue(firstBaseline.contains(HexFormat.of()
+                .formatHex("2026-08-30".getBytes(StandardCharsets.US_ASCII))
+                .toUpperCase(Locale.ROOT)));
+        assertEquals(firstBaseline, secondBaseline);
+        assertEquals(
+                Files.readString(firstOutput.resolve("META-INF/mango/baseline-manifest.json")),
+                Files.readString(secondOutput.resolve("META-INF/mango/baseline-manifest.json")));
         assertEquals(0, temporaryDatabaseCount(prefix));
     }
 

@@ -676,6 +676,7 @@ mango-notice-starter/src/main/resources/META-INF/mango/resources/notice-common-d
 | `variableMapping` | `STRING` | 否 | 变量映射 JSON。 |
 | `enabled` | `BOOLEAN` | 否 | 是否启用，默认 `true`。 |
 | `channelConfigId` | `LONG` | 否 | 绑定渠道配置 ID，空表示自动选择。 |
+| `publishTime` | `DATETIME` | 否 | 固定的资源模板发布时间。未声明时新记录保持为空，更新已有记录时保留原发布时间；Resource 同步不会使用当前系统时间补值。 |
 
 已接入的默认模板 Provider：
 
