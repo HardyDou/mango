@@ -23,7 +23,7 @@
 |---|---|---|---|---|---|---|---|---|---|
 | TASK-001 | TC-001 | Crypto 单元测试 | SM2、SM3、SM4、HMAC-SM3 与公开兼容契约 | 官方/已知向量、非法密钥、CBC/ECB | 57 个测试全部通过；非法密钥完整异常链不泄露输入；公开构造器、接口签名与 `mango.crypto` 前缀不变 | 非 UI 用例；验证算法及公开契约 | 纯 JVM 单元测试，不产生浏览器 console/network；Surefire 无失败或错误 | Maven Surefire 摘要：57/57 PASS | PASS |
 | TASK-002 | TC-002 | Payment 真实消费者 | Payment 敏感值通过真实 `Sm4CryptoService` 加解密 | 随机测试明文 | `enc:` 密文不含明文、可回解、重复 encode 幂等；既有日志与签约服务合同不变 | 非 UI 用例；验证真实服务消费 | Spring/H2 接口服务测试，不产生浏览器 console/network；Surefire 无失败或错误 | Maven Surefire 摘要：10/10 PASS | PASS |
-| TASK-003 | TC-003 | `/api/payment/channel-contracts` 与签约通道页面 | 真实创建、数据库密文、详情脱敏、编辑保密、搜索回显、删除和审计 | 动态商户号、动态 AppId、动态 secret、真实上传证书文件 | 创建及编辑后数据库 `apiSecret` 均以 `enc:` 开头且不含原文；详情和编辑页只返回 `******`；编辑 AppId 后 secret 保持；删除后列表不可查且审计为 SUCCESS | 列表显示商户号和微信扫码/电脑网页能力；编辑弹窗回显脱敏值和费率；保存、关闭、删除提示均成功 | console error=0、pageerror=0、Payment requestfailed=0、HTTP 5xx=0 | [通过态截图](./payment-channel-contract-crypto.png)；Chromium 1 passed，测试体 4.9s | PASS |
+| TASK-003 | TC-003 | `/api/payment/channel-contracts` 与签约通道页面 | 真实创建、数据库密文、详情脱敏、编辑保密、搜索回显、删除和审计 | 动态商户号、动态 AppId、动态 secret、真实上传证书文件 | 创建及编辑后数据库 `apiSecret` 均以 `enc:` 开头且不含原文；详情和编辑页只返回 `******`；编辑 AppId 后 secret 保持；删除后列表不可查且审计为 SUCCESS | 列表显示商户号和微信扫码/电脑网页能力；编辑弹窗回显脱敏值和费率；保存、关闭、删除提示均成功 | console error=0、pageerror=0、Payment requestfailed=0、HTTP 5xx=0 | 通过态截图（历史验收图片已清理（可从 Git 历史恢复））；Chromium 1 passed，测试体 4.9s | PASS |
 | TASK-004 | TC-004 | 架构与静态门禁 | Crypto partial Reactor 全模式扫描 | `mango-infra-crypto` 及架构验证聚合器 | dependency=0、ArchUnit=0、PMD=0、blocking=0；Checkstyle/SpotBugs/PMD total/new/baseline/excluded/toolFailure 均为 0 | 非 UI 用例；检查源码、字节码、依赖和静态规则 | 非浏览器检查；Maven 工具失败数为 0 | 架构规则单测 124/124 PASS；scoped verify BUILD SUCCESS | PASS |
 
 ## 4. 回归抽查记录
@@ -31,7 +31,7 @@
 | 模块 | 页面 | 功能点 1 | 功能点 2 | UI 细节 | 截图/trace | 结论 |
 |---|---|---|---|---|---|---|
 | `mango-infra-crypto` | 不适用 | 算法已知向量和密文格式兼容 | 配置绑定失败和非法密钥异常链 | 不适用 | Surefire 57/57 | PASS |
-| `mango-payment` | 支付中心 / 签约通道 | 真实 Crypto 消费与数据库密文 | 脱敏编辑、页面回显、删除审计 | 标签、弹窗、输入值、成功提示均断言 | [payment-channel-contract-crypto.png](./payment-channel-contract-crypto.png) | PASS |
+| `mango-payment` | 支付中心 / 签约通道 | 真实 Crypto 消费与数据库密文 | 脱敏编辑、页面回显、删除审计 | 标签、弹窗、输入值、成功提示均断言 | 历史验收图片已清理（可从 Git 历史恢复） | PASS |
 | 架构规则 | 不适用 | `@LocalCapabilityContract` 仅放行 infra 本地能力 | 标记移出 infra 后仍 fail-closed | 不适用 | JUnit 124/124 | PASS |
 
 ## 5. 基线对比

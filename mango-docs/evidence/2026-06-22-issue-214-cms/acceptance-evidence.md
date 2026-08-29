@@ -39,8 +39,8 @@
 | CMS-017 | `@mango/cms` | CMS 管理页面包 | API 封装、页面、`admin-pages`、样式入口 | `@mango/cms` 构建通过，并被 `@mango/admin` 默认集成 | 页面包构建通过，后台 CMS E2E 已通过 | 构建命令未报告失败 | `pnpm -F @mango/cms build` | PASS |
 | CMS-018 | Admin 单体与 admin-shell | 灵活部署适配 | `@mango/admin`、`mango-admin-shell` | 单体聚合和样式依赖构建通过；admin-shell 通过 `cms-management.spec.ts` 完整浏览器 E2E 覆盖 CMS 管理资源 | Admin Shell 地址保留供人工验收；E2E 已验证页面打开、创建、发布、状态流转和站点配置 | `cms-management.spec.ts` 通过；`/admin build:style-deps` 通过；`mango-admin-cms-app build` 通过 | 后台 CMS E2E 命令；前端构建命令 | PASS |
 | CMS-019 | `@mango/site-shell` | 站点运行时薄壳 | 站点解析、API client、SEO、访问策略 | `site-shell` 构建通过，站点 App 通过它请求 `/cms-api`，默认按当前域名解析 | 两个站点 App 页面自含风格和页面，`site-shell` 不承载页面主题 | network 摘要确认请求带 `domain=127.0.0.1` 且未带默认 `siteCode` | `pnpm -F @mango/site-shell build`；`site-e2e-network-summary.json` | PASS |
-| CMS-020 | 企业官网 App | 官网首页展示 | 域名 `127.0.0.1`，导航、Banner、内容列表 | 首页能展示站点信息、导航、Banner 和内容列表；请求链路全部走 `/cms-api` | 截图显示企业官网首页布局和内容区域，未依赖管理端页面 | network 摘要记录 enterprise 站点 5 个公开接口请求，错误数组为空 | `enterprise-site-home.png`；`pnpm -F mango-site-enterprise-app test:e2e` | PASS |
-| CMS-021 | 帮助中心 App | 帮助中心首页和搜索 | 域名 `127.0.0.1`，关键词 `权限` | 首页、广告、栏目、内容列表和搜索请求走 `/cms-api`，搜索请求包含 keyword | 截图显示帮助中心首页和搜索结果状态 | network 摘要记录 help 站点 5 个公开接口请求，错误数组为空 | `help-site-home.png`，`help-site-search.png`；`pnpm -F mango-site-help-app test:e2e` | PASS |
+| CMS-020 | 企业官网 App | 官网首页展示 | 域名 `127.0.0.1`，导航、Banner、内容列表 | 首页能展示站点信息、导航、Banner 和内容列表；请求链路全部走 `/cms-api` | 截图显示企业官网首页布局和内容区域，未依赖管理端页面 | network 摘要记录 enterprise 站点 5 个公开接口请求，错误数组为空 | `历史验收图片已清理（可从 Git 历史恢复）`；`pnpm -F mango-site-enterprise-app test:e2e` | PASS |
+| CMS-021 | 帮助中心 App | 帮助中心首页和搜索 | 域名 `127.0.0.1`，关键词 `权限` | 首页、广告、栏目、内容列表和搜索请求走 `/cms-api`，搜索请求包含 keyword | 截图显示帮助中心首页和搜索结果状态 | network 摘要记录 help 站点 5 个公开接口请求，错误数组为空 | `历史验收图片已清理（可从 Git 历史恢复）`，`历史验收图片已清理（可从 Git 历史恢复）`；`pnpm -F mango-site-help-app test:e2e` | PASS |
 | CMS-022 | 浏览器 E2E | 仿真数据验收 | 后台真实后端时间戳数据；两个站点 App 仿真 `/cms-api` 数据 | 后台 CMS 管理端浏览器 E2E 已覆盖站点、栏目、内容、发布、导航、Banner、广告、站点配置和公开接口探测；两个站点 App E2E 已覆盖仿真 `/cms-api` 渲染 | 后台 E2E 无失败；站点页面完成首页、搜索和公开接口渲染断言 | 后台 `cms-management.spec.ts` 通过；两个站点 App E2E 通过；network 错误数组为空 | 后台 CMS E2E 命令；`site-e2e-network-summary.json`；三张站点截图 | PASS |
 | CMS-023 | 验收交付 | 地址、内容、方法 | Admin、后端、Enterprise、Help | 最终报告提供验收地址、验收内容、命令和证据 | 服务保留运行供用户人工验收 | 健康检查返回 `UP`，服务状态显示 backend/admin 运行中 | 本验收证据文件和最终说明 | PASS |
 
@@ -49,8 +49,8 @@
 | 模块 | 页面 | 功能点 1 | 功能点 2 | UI 细节 | 截图/trace | 结论 |
 |---|---|---|---|---|---|---|
 | 后端 CMS | `/cms-api/sites/resolve` | 匿名按 domain 解析站点 | 匿名默认不使用 siteCode | 接口类抽查，确认公开 VO 边界 | `site-e2e-network-summary.json` | PASS |
-| 企业官网 App | `http://127.0.0.1:5191` | 首页加载站点内容 | Banner 和内容列表展示 | 首页首屏有业务内容，布局可读 | `enterprise-site-home.png` | PASS |
-| 帮助中心 App | `http://127.0.0.1:5192` | 首页加载文档内容 | 关键词搜索刷新列表 | 首页和搜索结果有业务内容，布局可读 | `help-site-home.png`，`help-site-search.png` | PASS |
+| 企业官网 App | `http://127.0.0.1:5191` | 首页加载站点内容 | Banner 和内容列表展示 | 首页首屏有业务内容，布局可读 | `历史验收图片已清理（可从 Git 历史恢复）` | PASS |
+| 帮助中心 App | `http://127.0.0.1:5192` | 首页加载文档内容 | 关键词搜索刷新列表 | 首页和搜索结果有业务内容，布局可读 | `历史验收图片已清理（可从 Git 历史恢复）`，`历史验收图片已清理（可从 Git 历史恢复）` | PASS |
 | Admin Shell | `http://a.mango.io:5176` | CMS 包纳入 Admin Shell 聚合 | 样式聚合检查和后台 CMS E2E | 服务保留运行供人工验收 | `cms-management.spec.ts`；`pnpm -F @mango/admin build:style-deps` | PASS |
 
 ## 5. 后续增强项

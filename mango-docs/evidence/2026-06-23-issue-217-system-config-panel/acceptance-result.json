@@ -299,11 +299,11 @@
   ],
   "failedNetwork": [],
   "screenshots": [
-    "screenshots/01-login-page.png",
-    "screenshots/02-home-after-login.png",
-    "screenshots/03-system-config-page.png",
-    "screenshots/04-config-detail-drawer.png",
-    "screenshots/05-config-after-switch-update.png"
+    "历史验收图片已清理（可从 Git 历史恢复）",
+    "历史验收图片已清理（可从 Git 历史恢复）",
+    "历史验收图片已清理（可从 Git 历史恢复）",
+    "历史验收图片已清理（可从 Git 历史恢复）",
+    "历史验收图片已清理（可从 Git 历史恢复）"
   ],
   "notes": [
     "登录响应中的 accessToken、refreshToken 已脱敏。",

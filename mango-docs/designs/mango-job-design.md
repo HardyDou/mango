@@ -457,7 +457,7 @@ Worker 桥接负责：
 - 三个示例任务已同步到 PowerJob，包含手动任务、Cron 任务和每 1 分钟固定频率任务；每分钟任务使用 `FIXED_RATE` 和调度表达式 `60000`。
 - 手动示例任务触发后，Mango 实例 `engineInstanceId=943410988542066752`，状态为 `SUCCESS`；PowerJob `instance_info.status=5`，执行结果为 `Mango Job runtime probe executed`。
 - Mango UI 执行实例页面可看到同一次执行的任务、批次、实例和引擎实例信息，并从实例行内打开执行日志。
-- 验收截图保存在 `mango-docs/evidence/2026-06-05-mango-job-ui-e2e`。
+- 该批历史验收截图已清理，需要追溯时从 Git 历史恢复。
 
 ### 12.2 映射规则
 
