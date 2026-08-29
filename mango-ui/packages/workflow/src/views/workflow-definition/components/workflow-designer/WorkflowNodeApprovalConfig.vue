@@ -18,7 +18,7 @@
             :model-value="config.autoAssignmentStrategy || 'ROUND_ROBIN'"
             class="approval-radio-row assignment-strategy-row"
             data-field="workflow.assignment-strategy"
-            @change="value => $emit('update-config', { autoAssignmentStrategy: value })"
+            @change="(value: WorkflowAutoAssignmentStrategy) => $emit('update-config', { autoAssignmentStrategy: value })"
           >
             <el-radio label="ROUND_ROBIN">轮询</el-radio>
             <el-radio label="LEAST_TASKS">任务量最少</el-radio>
@@ -259,7 +259,11 @@
 </template>
 
 <script setup lang="ts">
-import type { WorkflowApprovalNodeConfig, WorkflowAssignmentMode } from '../../../../api/workflow';
+import type {
+  WorkflowApprovalNodeConfig,
+  WorkflowAssignmentMode,
+  WorkflowAutoAssignmentStrategy,
+} from '../../../../api/workflow';
 import type { ApprovalOrgTreeOption, ApprovalTargetOption, WorkflowVariableOption } from './types';
 
 defineProps<{
