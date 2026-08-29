@@ -162,19 +162,19 @@ Handler 按这些稳定身份幂等查询和写入，而不是把运行时生成
 [模块分层规范](../../../mango-pmo/rules/backend/05-module.md)。
 
 例如子菜单引用父菜单时保存稳定 `parentCode`，Handler 按 code 幂等解析目标；重复调用得到相同结果。稳定身份暂未
-解析到目标时返回可重试结果，由当前 Bootstrap 重试机制重入直至收敛；格式非法、类型不匹配等不可能满足的引用
-则作为永久失败处理。
+解析到目标时，Handler 不写入不稳定外键并保持同步可重入，使后续 Bootstrap、EVENTUAL reconciliation 或显式同步
+能够重试收敛；格式非法、类型不匹配等不可能满足的引用则明确失败。
 
 ### 6.2 兼容性排序提示（不建议使用）
 
-以下能力为存量声明保留，运行逻辑不删除，但不建议新 Resource 使用：
+以下能力继续兼容已有声明，但不得作为新 Resource 业务关系的正确性前提：
 
-- `ResourceHandler.dependsOnResourceTypes()`：同一批次内的资源类型拓扑排序和依赖类型变化重放。
-- `ResourceProvider.moduleDependencies()`：构建 manifest 的模块级拓扑排序。
+- `ResourceHandler.dependsOnResourceTypes()`：只对本次变化批次中确实需要写入的资源类型做拓扑排序，不会因前置类型变化而重放 hash 未变化的 Resource。
+- `ResourceProvider.moduleDependencies()`：构建 manifest 的模块级协调顺序，只用于少量稳定的平台初始化边界。
 - 声明文件 `moduleDependencies` / `module-dependencies`：模块固定前置关系。
 
-`dependsOnResourceTypes()` 仍会在同一同步批次内排序资源类型，并在依赖类型创建或更新后重放相关 AUTO 声明；
-依赖类型未进入当前批次时不强制失败，目标是否存在仍由 Handler 校验，依赖图成环时则在调用 Handler 前失败。
+`dependsOnResourceTypes()` 的依赖类型未进入变化批次时不强制失败，目标关系仍由 Handler 使用稳定身份解析和校验；
+依赖图成环时则在调用 Handler 前失败并输出循环路径。
 
 `moduleDependencies()` 仍用于构建 manifest 的模块拓扑排序，依赖缺失或成环时 fail closed。classpath 声明文件可在
 `mango.resource` envelope 中使用 `moduleDependencies`（YAML 也可写作 `module-dependencies`）；同一模块的多个声明
@@ -348,7 +348,7 @@ Flyway 路径：`mango-resource-core/src/main/resources/db/migration/resource`�
 
 | 表 | 作用 |
 |----|------|
-| `resource_registry` | 记录资源 ID、类型、bizKey、目标表、目标 ID、hash、同步模式和状态。 |
+| `resource_registry` | 记录资源 ID、类型、bizKey、目标表、目标 ID、`source_hash`、`last_sync_time`、同步模式和状态。 |
 | `resource_sync_log` | 记录每次同步、跳过、禁用、删除的结果。 |
 | `resource_change_log` | 记录注册资源内容变化。 |
 | `resource_module_receipt` | 记录 environment/app/service/module 最后成功安装的 hash、generation、manifest fingerprint 和 `EXPANDED`/`FINALIZED` 状态。 |
@@ -385,6 +385,19 @@ Spring Boot 可执行 JAR 将上述 `META-INF` 条目保留在 JAR 根目录。B
 
 构建 POM、Boot JAR 检查以及与 cold baseline、sealed release manifest 的关系见[业务 API 构建期 cold baseline](../../../mango-docs/guides/business-integration/build-time-cold-baseline.md)。
 
+### 9.2 Resource 数据库 baseline
+
+最终业务应用可以在 `mango:baseline-generate` 中配置 `resourceApplicationClass`。生成器完成 Flyway 双回放后，在两套临时库分别执行正式 `bootstrap apply`，并把可移植目标状态和 `resource_registry.source_hash` 合入模块 BSQL。
+
+`ResourceHandler.baselinePolicy()` 决定 Handler 是否在构建期执行：
+
+| 策略 | 行为 |
+|---|---|
+| `PORTABLE` | 默认值；只写本地、可移植数据库状态，可进入 BSQL。 |
+| `ENVIRONMENT_REQUIRED` | 依赖凭据、对象存储、主机路径、外部服务或部署环境状态；构建期跳过，恢复后处理。 |
+
+没有本地 Handler 的远程目标同样延迟，构建期不调用 `ResourceTargetDispatcher`。构建专用 Bootstrap 只保留显式 opt-in 的 Resource contributor，普通业务、租户和其它运行期 contributor 默认排除，恢复后仍按正常 Bootstrap 执行。生成器会删除构建期模块 receipt、Resource 审计和 Bootstrap 运行记录，但保留目标数据与逐 Resource hash；因此空库恢复后仍建立本环境 receipt，便携 Handler 因 hash 相同不再执行。当前 Resource baseline 只支持单 datasource group。
+
 ## 10. 同步规则
 
 | 场景 | 行为 |
@@ -398,9 +411,25 @@ Spring Boot 可执行 JAR 将上述 `META-INF` 条目保留在 JAR 根目录。B
 | `AUTO` 声明在 FINALIZE 中缺失 | Registry 只用持久化的 `targetId/targetTable` 重建删除输入；目标 Handler 必须按该稳定目标身份停用或明确失败，不能要求已经从 classpath 消失的原声明字段。 |
 | 强制同步 | 后台 `/resource/sync/force` 触发，跳过 hash 未变化限制。 |
 
-存量 active 声明如果仍包含跨类型依赖，Resource Registry 继续按 `ResourceHandler.dependsOnResourceTypes()` 的依赖图
-排序，并在依赖图成环时失败。该行为用于兼容；新增声明推荐使用稳定 `resourceId`、`code`、`bizCode` 或
-`resourceType + bizKey`，由 Handler 幂等解析关系。执行顺序的完整约束见[模块分层规范](../../../mango-pmo/rules/backend/05-module.md)。
+同一批 active 声明如果包含跨类型依赖，Resource Registry 仍兼容按目标 `ResourceHandler.dependsOnResourceTypes()`
+声明的依赖图排序后再调用各 handler。该依赖能力只为存量兼容保留，不建议新 Resource 使用；新关系应通过固定 `resourceId`、`code`、`bizCode` 或 `resourceType + bizKey` 幂等解析。声明文件顺序、文件扫描顺序、jar 加载顺序和模块执行顺序不作为正确性语义。
+如果依赖图存在环，例如 `A -> B -> A`，同步会失败并提示 `Resource type dependency cycle detected`。
+执行顺序的完整约束见[模块分层规范](../../../mango-pmo/rules/backend/05-module.md)。
+
+### 10.1 Resource 级增量与运行时修改退避
+
+模块 receipt 是第一层跳过：模块 hash 未变化时不解析模块内部声明。模块发生变化后，Registry 再按每个声明的 canonical hash 与 `resource_registry.source_hash` 比较；正常增量只把新增、内容变化、状态变化的 Resource 交给 Handler，hash 未变化的 Resource 不因依赖变化而重放。后台强制同步是显式例外。
+
+新批处理契约 `upsertBatchWithContext(changedDeclarations, completeBatch, syncContexts)` 将待写声明和完整上下文分开：Handler 的写入集合是 `changedDeclarations`，`completeBatch` 提供稳定关系的只读解析上下文。平台内需要完整上下文的 `AUTH_MENU`、`API_RESOURCE` 已按该契约改为 changed-only 写入。旧 Handler 的 `requiresCompleteBatch()` 默认行为为兼容保留；外部 Handler 迁移到新批处理契约后获得严格 changed-only 行为。
+
+Handler 可以按 Resource 显式启用运行时修改退避：
+
+1. Registry 传入上次 `last_sync_time` 和本次固定同步时间。
+2. Handler 锁定自己的目标行，并比较可靠的目标 `updated_at` 与上次 `last_sync_time`。
+3. 两者相等时，Handler 使用本次固定时间写目标 `updated_at` 并返回 `APPLIED`；Registry 用同一时间推进 `source_hash` 和 `last_sync_time`。
+4. 两者不相等时，Handler 不写目标并返回 `PRESERVED`；Registry 只记同步日志，不推进 `source_hash` 或 `last_sync_time`，后续模块变化仍会重新判断。
+
+该能力不是对所有表猜测更新时间。当前只有 `SYSTEM_CONFIG` 使用单行 `sys_config.updated_at` 启用退避；`AUTH_MENU`、`API_RESOURCE` 只保证未变化 Resource 不写，不声明通用的后台修改保护。一个 Resource 管理多表/多行，或目标表没有可靠 `updated_at` 时，由具体 Handler 提供自己的受管状态判断；未显式实现时沿用既有覆盖语义，不新增 `revision` 字段或通用状态表。
 
 多实例启动时通过 `ILeaseLocker` 抢占 `mango-resource-sync` lease。每次获取使用唯一 token，约在 TTL 三分之一周期续租；旧 session 不能续租或释放后来实例的 lease，失租后会在下一批次或持久化副作用前中止。停服先拒绝新同步并等待在途操作释放，再允许 Spring 销毁 DataSource。
 

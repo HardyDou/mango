@@ -1,5 +1,6 @@
 package io.mango.plugin.baseline;
 
+import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -10,8 +11,13 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -34,6 +40,8 @@ public final class BaselineGenerateMojo extends AbstractMojo {
     private static final String SCHEMA_PREFIX_PATTERN = "[a-z][a-z0-9_]{0,31}";
     private static final String DATASOURCE_GROUP_PATTERN = "[a-z][a-z0-9-]{0,31}";
     private static final String MODULE_PATTERN = "[a-z0-9][a-z0-9-]*";
+    private static final String BASELINE_RESOURCE_ROOT = "db/baseline";
+    private static final String BASELINE_MANIFEST_PATH = "META-INF/mango/baseline-manifest.json";
 
     @Parameter(property = "mango.baseline.jdbcUrl", required = true)
     private String jdbcUrl;
@@ -72,6 +80,21 @@ public final class BaselineGenerateMojo extends AbstractMojo {
     @Parameter(property = "mango.baseline.keepSchemas", defaultValue = "false")
     private boolean keepSchemas;
 
+    @Parameter(property = "mango.baseline.resourceApplicationClass")
+    private String resourceApplicationClass;
+
+    @Parameter(property = "mango.baseline.resourceTimeoutSeconds", defaultValue = "300")
+    private long resourceTimeoutSeconds;
+
+    @Parameter
+    private List<File> resourceAdditionalClasspathElements;
+
+    @Parameter(defaultValue = "${project.basedir}", readonly = true, required = true)
+    private File projectDirectory;
+
+    @Parameter(defaultValue = "${project.build.outputDirectory}", readonly = true, required = true)
+    private File classesDirectory;
+
     @Parameter(
             property = "mango.baseline.searchDirectory",
             defaultValue = "${session.executionRootDirectory}",
@@ -100,6 +123,7 @@ public final class BaselineGenerateMojo extends AbstractMojo {
         Path generatedResources = outputDirectory.toPath().toAbsolutePath().normalize();
         registerGeneratedResources(generatedResources);
 
+        ResourceBaselineExecutionSettings resourceBaseline = resourceBaselineSettings();
         BaselineGenerationSettings settings = new BaselineGenerationSettings(
                 jdbcUrl.trim(),
                 username.trim(),
@@ -109,8 +133,12 @@ public final class BaselineGenerateMojo extends AbstractMojo {
                 generatedResources,
                 order,
                 groups,
-                keepSchemas);
+                keepSchemas,
+                resourceBaseline);
         new BaselineGenerator(settings, catalog, getLog()).generate();
+        if (resourceBaseline != null) {
+            copyGeneratedResourcesToClasses(generatedResources, classesDirectory.toPath());
+        }
     }
 
     private void validateConfiguration() throws MojoExecutionException {
@@ -129,6 +157,119 @@ public final class BaselineGenerateMojo extends AbstractMojo {
         if (searchDirectory == null || outputDirectory == null || project == null) {
             throw new MojoExecutionException(
                     "MANGO-BASELINE-031 Maven project, searchDirectory, and outputDirectory are required");
+        }
+        validateResourceBaselineConfiguration();
+    }
+
+    private void validateResourceBaselineConfiguration() throws MojoExecutionException {
+        if (resourceApplicationClass != null && !resourceApplicationClass.isBlank()) {
+            if (resourceTimeoutSeconds <= 0 || projectDirectory == null || classesDirectory == null) {
+                throw new MojoExecutionException(
+                        "MANGO-BASELINE-049 Resource baseline application requires a positive timeout and build paths");
+            }
+            Path applicationClass = classesDirectory.toPath().resolve(
+                    resourceApplicationClass.trim().replace('.', File.separatorChar) + ".class");
+            if (!Files.isRegularFile(applicationClass)) {
+                throw new MojoExecutionException(
+                        "MANGO-BASELINE-050 Resource baseline application must be compiled before baseline-generate: "
+                                + resourceApplicationClass.trim()
+                                + "; bind this execution to prepare-package");
+            }
+        }
+    }
+
+    private ResourceBaselineExecutionSettings resourceBaselineSettings()
+            throws MojoExecutionException {
+        if (resourceApplicationClass == null || resourceApplicationClass.isBlank()) {
+            return null;
+        }
+        try {
+            return new ResourceBaselineExecutionSettings(
+                    resourceApplicationClass.trim(),
+                    resourceRuntimeClasspath(
+                            project.getRuntimeClasspathElements(),
+                            resourceAdditionalClasspathElements,
+                            projectDirectory.toPath()),
+                    projectDirectory.toPath().toAbsolutePath().normalize(),
+                    Duration.ofSeconds(resourceTimeoutSeconds));
+        } catch (DependencyResolutionRequiredException exception) {
+            throw new MojoExecutionException(
+                    "MANGO-BASELINE-051 Resource baseline runtime classpath is unavailable", exception);
+        }
+    }
+
+    static List<String> resourceRuntimeClasspath(
+            List<String> runtimeClasspath,
+            List<File> additionalElements,
+            Path projectDirectory) throws MojoExecutionException {
+        Set<String> resolved = new LinkedHashSet<>(runtimeClasspath);
+        if (additionalElements == null) {
+            return List.copyOf(resolved);
+        }
+        Path baseDirectory = projectDirectory.toAbsolutePath().normalize();
+        for (File element : additionalElements) {
+            Path path = element.toPath();
+            if (!path.isAbsolute()) {
+                path = baseDirectory.resolve(path);
+            }
+            path = path.toAbsolutePath().normalize();
+            if (!isReadableClasspathElement(path)) {
+                throw new MojoExecutionException(
+                        "MANGO-BASELINE-053 Resource baseline additional classpath element is not readable: "
+                                + path);
+            }
+            resolved.add(path.toString());
+        }
+        return List.copyOf(resolved);
+    }
+
+    private static boolean isReadableClasspathElement(Path path) {
+        if (!Files.isReadable(path)) {
+            return false;
+        }
+        return Files.isDirectory(path) || Files.isRegularFile(path);
+    }
+
+    static void copyGeneratedResourcesToClasses(Path generated, Path classes)
+            throws MojoExecutionException {
+        try {
+            deleteRecursively(classes.resolve(BASELINE_RESOURCE_ROOT));
+            Files.deleteIfExists(classes.resolve(BASELINE_MANIFEST_PATH));
+            for (String relative : List.of(BASELINE_RESOURCE_ROOT, BASELINE_MANIFEST_PATH)) {
+                Path source = generated.resolve(relative);
+                if (!Files.exists(source)) {
+                    continue;
+                }
+                if (Files.isDirectory(source)) {
+                    try (var paths = Files.walk(source)) {
+                        for (Path path : paths.toList()) {
+                            Path target = classes.resolve(relative).resolve(source.relativize(path));
+                            if (Files.isDirectory(path)) {
+                                Files.createDirectories(target);
+                            } else {
+                                Files.copy(path, target, StandardCopyOption.REPLACE_EXISTING);
+                            }
+                        }
+                    }
+                } else {
+                    Files.createDirectories(classes.resolve(relative).getParent());
+                    Files.copy(source, classes.resolve(relative), StandardCopyOption.REPLACE_EXISTING);
+                }
+            }
+        } catch (IOException exception) {
+            throw new MojoExecutionException(
+                    "MANGO-BASELINE-052 failed to copy generated baselines into application classes", exception);
+        }
+    }
+
+    private static void deleteRecursively(Path path) throws IOException {
+        if (!Files.exists(path)) {
+            return;
+        }
+        try (var paths = Files.walk(path)) {
+            for (Path entry : paths.sorted(Comparator.reverseOrder()).toList()) {
+                Files.deleteIfExists(entry);
+            }
         }
     }
 

@@ -1,5 +1,7 @@
 # 租户字典配置为空排障
 
+> 2026-08-28 Issue #851：Resource 增量同步不改变租户基础数据的公开 API、权限或隔离边界。当前 `SYSTEM_CONFIG` 会比较目标行 `updated_at` 与 Registry `last_sync_time`；两者不一致时视为后台已修改并保留目标值，不推进该 Resource 的 hash 或同步时间。其它 Resource 类型只有 Owner Handler 明确实现受管状态判断后才具备同类退避语义。
+
 > 日期范围查询兼容：系统登录日志和操作日志的日期-only 开始/结束值会分别按当天 `00:00:00` 和 `23:59:59` 查询；不改变租户、权限或数据初始化边界。
 
 > 2026-08-25 AI 管理能力影响：八类 AI 供应商、代表模型、Prompt、Skill 和服务使用 AI 自有 Resource Handler 写入租户隔离的 AI 配置表；供应商和模型首次创建时为空密钥、停用，既有租户配置按 `INIT_ONLY` 保留。该初始化不写入 System 字典、系统配置、组织、用户或租户主数据，也不改变这些数据的查询 API、权限、租户隔离和本指南排障链路。AI 配置为空应核对 `mango-ai-starter`、AI Resource 声明和 Handler 收据，不用字典/系统配置 SQL 补齐。
@@ -304,3 +306,7 @@ pnpm -F @mango/admin-shell build
 ## 2026-08-25 Issue #851 Resource 模块增量影响
 
 - Issue #851 新增环境级 Resource 模块 receipt，用于跳过 hash 未变化的声明并只协调变化模块；租户、字典、组织、用户和系统配置的数据模型、公开 API、权限及隔离语义不变。基础数据为空时可先核对目标模块 receipt、generation、manifest fingerprint 和协调状态，再继续按本指南检查租户上下文与声明内容，无需手工补写 seed。
+
+## 2026-08-28 Workflow 办理人身份契约影响
+
+- Workflow 现在在任务、进度、动作结果和事件中附带租户内 Identity 用户 ID 与显示名，并通过登录态批量查询接口解析；不新增租户、字典、组织或系统配置数据，不改变本指南的初始化顺序、权限模型或租户隔离。若审批页面办理人名称为空，应检查 Identity 批量接口的登录态、当前租户成员关系和用户启用状态，不要通过补字典或重建租户基础数据处理。

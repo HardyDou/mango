@@ -47,8 +47,8 @@
 
 | 要求 ID | 验证方式 | 命令或步骤 | 结果 | 证据 |
 |---|---|---|---|---|
-| SR-001 | M09 + M13 | 构建 `@mango/auth`、`@mango/system`；运行定向 Chromium 用例 | PASS | `notice-message-center-menu.spec.ts`、`notice-login-log.png` |
-| SR-002 | M13 | Chromium fixture 返回含时间、IP、地区和 UA 的当前账号记录 | PASS | `notice-login-log.png` |
+| SR-001 | M09 + M13 | 构建 `@mango/auth`、`@mango/system`；运行定向 Chromium 用例 | PASS | `notice-message-center-menu.spec.ts`、`历史验收图片已清理（可从 Git 历史恢复）` |
+| SR-002 | M13 | Chromium fixture 返回含时间、IP、地区和 UA 的当前账号记录 | PASS | `历史验收图片已清理（可从 Git 历史恢复）` |
 | SR-003 | M11 | system API/core/starter 定向 Maven 测试 | PASS | `SysLogServiceIntegrationTest`、`SystemApiContractTest`；72 tests passed |
 | SR-004 | M11 | 运行授权 core 与资源同步 starter 的 H2 集成测试 | PASS | `ApiResourceServiceImplIntegrationTest` 16 tests；`ApiAccessResourceProviderDatabaseComparisonTest` 3 tests |
 

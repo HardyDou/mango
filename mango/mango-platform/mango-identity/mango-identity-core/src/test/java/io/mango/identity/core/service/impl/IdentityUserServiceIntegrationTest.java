@@ -20,6 +20,8 @@ import io.mango.identity.api.command.UpdateCurrentUserProfileCommand;
 import io.mango.identity.api.enums.IdentityUserTargetType;
 import io.mango.identity.api.query.ExternalIdentityQuery;
 import io.mango.identity.api.query.IdentityUserTargetQuery;
+import io.mango.identity.api.request.IdentityUserBatchRequest;
+import io.mango.identity.api.vo.IdentityUserInfoVO;
 import io.mango.identity.core.entity.ExternalIdentityBindingEntity;
 import io.mango.identity.core.entity.IdentityUserEntity;
 import io.mango.identity.core.entity.TenantMemberEntity;
@@ -158,6 +160,59 @@ class IdentityUserServiceIntegrationTest {
     @DisplayName("账号不存在时返回空")
     void getUserInfoShouldReturnNullWhenNotFoundThroughRealMapper() {
         assertThat(service.getUserInfo("missing")).isNull();
+    }
+
+    @Test
+    @DisplayName("批量查询只返回当前租户成员并去重")
+    void listUserInfosShouldResolveMixedKeysWithinCurrentTenant() {
+        MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("1"));
+        seedUser(1001L, "admin", "管理员", "1", 1);
+        seedUser(1002L, "reviewer", "复核人", "1", 0);
+        seedUser(2001L, "other", "其它租户", "2", 1);
+        seedMember(11L, 1L, 1001L, 1, null);
+        seedMember(12L, 1L, 1002L, 0, null);
+        seedMember(21L, 2L, 2001L, 1, null);
+        IdentityUserBatchRequest query = new IdentityUserBatchRequest();
+        query.setUserIds(List.of(1001L, 1001L, 2001L, 9999L));
+        query.setUsernames(List.of("admin", "reviewer", "other", "missing", " admin "));
+
+        var users = service.listUserInfos(query);
+
+        assertThat(users).extracting(IdentityUserInfoVO::getUserId)
+                .containsExactlyInAnyOrder(1001L, 1002L);
+        assertThat(users).extracting(IdentityUserInfoVO::getUsername)
+                .containsExactlyInAnyOrder("admin", "reviewer");
+    }
+
+    @Test
+    @DisplayName("批量查询为空时返回空结果")
+    void listUserInfosShouldReturnEmptyForEmptyQuery() {
+        MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("1"));
+        IdentityUserBatchRequest query = new IdentityUserBatchRequest();
+
+        assertThat(service.listUserInfos(query)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("批量查询排除已退出当前租户的成员")
+    void listUserInfosShouldExcludeMembersWhoLeftCurrentTenant() {
+        MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("1"));
+        seedUser(1001L, "former", "已离开", "1", 1);
+        seedMember(11L, 1L, 1001L, 1, LocalDateTime.now());
+        IdentityUserBatchRequest query = new IdentityUserBatchRequest();
+        query.setUsernames(List.of("former"));
+
+        assertThat(service.listUserInfos(query)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("批量查询总标识数不能超过上限")
+    void listUserInfosShouldRejectMoreThanTwoHundredDistinctKeys() {
+        IdentityUserBatchRequest query = new IdentityUserBatchRequest();
+        query.setUserIds(java.util.stream.LongStream.rangeClosed(1, 201).boxed().toList());
+
+        assertThatThrownBy(() -> service.listUserInfos(query))
+                .isInstanceOf(io.mango.common.exception.BizException.class);
     }
 
     @Test

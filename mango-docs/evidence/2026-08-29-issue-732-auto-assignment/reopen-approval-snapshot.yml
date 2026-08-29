@@ -1,0 +1,257 @@
+- generic [ref=e1]:
+  - generic [ref=e60]:
+    - generic [ref=e62]:
+      - generic [ref=e63]:
+        - generic [ref=e65] [cursor=pointer]: Mango
+        - img [ref=e68] [cursor=pointer]
+      - generic [ref=e70]:
+        - button "首页" [ref=e71] [cursor=pointer]:
+          - img [ref=e73]
+          - generic [ref=e75]: 首页
+        - button "系统管理" [ref=e76] [cursor=pointer]:
+          - img [ref=e78]
+          - generic [ref=e80]: 系统管理
+        - button "平台能力" [ref=e81] [cursor=pointer]:
+          - img [ref=e83]
+          - generic [ref=e85]: 平台能力
+        - button "网址导航" [ref=e86] [cursor=pointer]:
+          - img [ref=e88]
+          - generic [ref=e90]: 网址导航
+        - button "开发中心" [ref=e91] [cursor=pointer]:
+          - img [ref=e93]
+          - generic [ref=e95]: 开发中心
+      - generic [ref=e96]:
+        - img [ref=e98]
+        - img [ref=e102] [cursor=pointer]
+        - generic [ref=e104]:
+          - button "消息提醒" [ref=e105] [cursor=pointer]:
+            - img [ref=e107]
+          - superscript [ref=e111]: "1"
+        - button "当前用户：Administrator" [ref=e113] [cursor=pointer]:
+          - img [ref=e116]
+          - generic [ref=e118]: Administrator
+          - img [ref=e120]
+    - generic [ref=e122]:
+      - complementary [ref=e124]:
+        - menubar [ref=e128]:
+          - menuitem "日历管理" [ref=e478] [cursor=pointer]:
+            - img [ref=e480]
+            - generic [ref=e482]: 日历管理
+          - menuitem "编号管理" [ref=e483] [cursor=pointer]:
+            - img [ref=e485]
+            - generic [ref=e487]: 编号管理
+          - menuitem "文件管理" [ref=e488]:
+            - generic [ref=e489] [cursor=pointer]:
+              - img [ref=e491]
+              - generic [ref=e493]: 文件管理
+              - img [ref=e495]
+          - menuitem "模板管理" [ref=e497]:
+            - generic [ref=e498] [cursor=pointer]:
+              - img [ref=e500]
+              - generic [ref=e502]: 模板管理
+              - img [ref=e504]
+          - menuitem "审批管理" [expanded] [ref=e506]:
+            - generic [ref=e507] [cursor=pointer]:
+              - img [ref=e509]
+              - generic [ref=e511]: 审批管理
+              - img [ref=e513]
+            - menu [ref=e756]:
+              - menuitem "流程办理" [ref=e757]:
+                - generic [ref=e758] [cursor=pointer]:
+                  - img [ref=e760]
+                  - generic [ref=e762]: 流程办理
+                  - img [ref=e764]
+              - menuitem "流程管理" [expanded] [ref=e766]:
+                - generic [ref=e767] [cursor=pointer]:
+                  - img [ref=e769]
+                  - generic [ref=e771]: 流程管理
+                  - img [ref=e773]
+                - menu [ref=e775]:
+                  - menuitem "流程模板" [ref=e776] [cursor=pointer]:
+                    - img [ref=e778]
+                    - generic [ref=e780]: 流程模板
+                  - menuitem "流程定义" [ref=e781] [cursor=pointer]:
+                    - img [ref=e783]
+                    - generic [ref=e785]: 流程定义
+              - menuitem "业务示例" [ref=e786] [cursor=pointer]:
+                - img [ref=e788]
+                - generic [ref=e790]: 业务示例
+          - menuitem "网址管理" [ref=e515]:
+            - generic [ref=e516] [cursor=pointer]:
+              - img [ref=e518]
+              - generic [ref=e521]: 网址管理
+              - img [ref=e523]
+          - menuitem "通知管理" [ref=e525]:
+            - generic [ref=e526] [cursor=pointer]:
+              - img [ref=e528]
+              - generic [ref=e532]: 通知管理
+              - img [ref=e534]
+          - menuitem "支付管理" [ref=e536]:
+            - generic [ref=e537] [cursor=pointer]:
+              - img [ref=e539]
+              - generic [ref=e542]: 支付管理
+              - img [ref=e544]
+          - menuitem "任务管理" [ref=e546]:
+            - generic [ref=e547] [cursor=pointer]:
+              - img [ref=e549]
+              - generic [ref=e553]: 任务管理
+              - img [ref=e555]
+          - menuitem "内容运营" [ref=e557]:
+            - generic [ref=e558] [cursor=pointer]:
+              - img [ref=e560]
+              - generic [ref=e564]: 内容运营
+              - img [ref=e566]
+          - menuitem "首页管理" [ref=e568]:
+            - generic [ref=e569] [cursor=pointer]:
+              - img [ref=e571]
+              - generic [ref=e573]: 首页管理
+              - img [ref=e575]
+          - menuitem "AI 管理" [ref=e577]:
+            - generic [ref=e578] [cursor=pointer]:
+              - img [ref=e580]
+              - generic [ref=e583]: AI 管理
+              - img [ref=e585]
+      - generic [ref=e134]:
+        - generic [ref=e140]:
+          - link "首页" [ref=e141] [cursor=pointer]:
+            - /url: "#/home"
+            - generic [ref=e142]: 首页
+          - link "流程定义" [ref=e587] [cursor=pointer]:
+            - /url: "#/workflow/manage/definition"
+            - generic [ref=e588]: 流程定义
+            - img [ref=e590]
+        - main [ref=e143]:
+          - generic [ref=e1973]:
+            - generic [ref=e1974]:
+              - button "返回列表" [ref=e1975] [cursor=pointer]:
+                - generic [ref=e1976]: 返回列表
+              - navigation "工作流设计步骤" [ref=e1977]:
+                - button "1 基础信息" [ref=e1978] [cursor=pointer]:
+                  - generic [ref=e1979]: "1"
+                  - strong [ref=e1981]: 基础信息
+                - button "2 表单信息" [ref=e1982] [cursor=pointer]:
+                  - generic [ref=e1983]: "2"
+                  - strong [ref=e1985]: 表单信息
+                - button "3 流程设计" [ref=e1986] [cursor=pointer]:
+                  - generic [ref=e1987]: "3"
+                  - strong [ref=e1989]: 流程设计
+              - generic [ref=e1990]:
+                - button "保存" [ref=e1991] [cursor=pointer]:
+                  - generic [ref=e1992]: 保存
+                - button "发布流程" [ref=e1993] [cursor=pointer]:
+                  - generic [ref=e1994]: 发布流程
+            - generic [ref=e1995]:
+              - text: "* * * * *                                                               *                   "
+              - generic [ref=e2100]:
+                - generic [ref=e2101]:
+                  - generic [ref=e2102]:
+                    - button "-" [ref=e2103] [cursor=pointer]:
+                      - generic [ref=e2104]: "-"
+                    - generic [ref=e2105]: 100%
+                    - button "+" [ref=e2106] [cursor=pointer]:
+                      - generic [ref=e2107]: +
+                    - button "重置" [ref=e2108] [cursor=pointer]:
+                      - img [ref=e2110]
+                  - generic [ref=e2113]:
+                    - generic [ref=e2114]:
+                      - generic [ref=e2115] [cursor=pointer]:
+                        - generic [ref=e2116]:
+                          - img [ref=e2118]
+                          - generic "发起人" [ref=e2120]
+                        - generic [ref=e2121]: 发起人发起流程
+                      - button "添加节点" [ref=e2123] [cursor=pointer]:
+                        - img [ref=e2125]
+                    - generic [ref=e2127]:
+                      - generic [ref=e2128] [cursor=pointer]:
+                        - generic [ref=e2129]:
+                          - img [ref=e2131]
+                          - generic "人工审批" [ref=e2133]
+                          - button "删除节点" [ref=e2134]:
+                            - img [ref=e2136]
+                        - generic [ref=e2138]: 人工处理节点
+                      - button "添加节点" [ref=e2140] [cursor=pointer]:
+                        - img [ref=e2142]
+                    - generic [ref=e2144]: 结束
+                - complementary "节点配置" [ref=e2147]:
+                  - generic [ref=e2148]:
+                    - generic [ref=e2149]:
+                      - img [ref=e2152]
+                      - generic [ref=e2154]:
+                        - strong [ref=e2155]: 节点配置
+                        - generic [ref=e2156]: 审批节点
+                    - button "关闭节点配置" [ref=e2157] [cursor=pointer]:
+                      - img [ref=e2159]
+                  - generic [ref=e2162]:
+                    - tablist [ref=e2166]:
+                      - tab "节点能力" [ref=e2168]
+                      - tab "审批设置" [active] [selected] [ref=e2169] [cursor=pointer]
+                      - tab "表单权限" [ref=e2170]
+                      - tab "基础" [ref=e2171]
+                      - tab "通知" [ref=e2172]
+                      - tab "高级" [ref=e2173]
+                      - tab "字段" [ref=e2174]
+                    - tabpanel "审批设置" [ref=e2278]:
+                      - generic [ref=e2280]:
+                        - generic [ref=e2281]:
+                          - generic [ref=e2282]: 审批人
+                          - generic [ref=e2283]:
+                            - generic [ref=e2284]: 办理方式
+                            - radiogroup "radio-group" [ref=e2285]:
+                              - generic [ref=e2286] [cursor=pointer]:
+                                - radio "待领取" [ref=e2288]
+                                - generic [ref=e2290]: 待领取
+                              - generic [ref=e2291] [cursor=pointer]:
+                                - radio "自动派单" [checked] [ref=e2293]
+                                - generic [ref=e2295]: 自动派单
+                            - radiogroup "radio-group" [ref=e2296]:
+                              - generic [ref=e2297] [cursor=pointer]:
+                                - radio "轮询" [ref=e2299]
+                                - generic [ref=e2301]: 轮询
+                              - generic [ref=e2302] [cursor=pointer]:
+                                - radio "任务量最少" [ref=e2304]
+                                - generic [ref=e2306]: 任务量最少
+                              - generic [ref=e2307] [cursor=pointer]:
+                                - radio "流程亲和" [checked] [ref=e2309]
+                                - generic [ref=e2311]: 流程亲和
+                          - radiogroup "radio-group" [ref=e2312]:
+                            - generic [ref=e2313] [cursor=pointer]:
+                              - radio "指定成员" [ref=e2315]
+                              - generic [ref=e2317]: 指定成员
+                            - generic [ref=e2318] [cursor=pointer]:
+                              - radio "部门主管" [ref=e2320]
+                              - generic [ref=e2322]: 部门主管
+                            - generic [ref=e2323] [cursor=pointer]:
+                              - radio "角色" [ref=e2325]
+                              - generic [ref=e2327]: 角色
+                            - generic [ref=e2328] [cursor=pointer]:
+                              - radio "指定岗位" [ref=e2330]
+                              - generic [ref=e2332]: 指定岗位
+                            - generic [ref=e2333] [cursor=pointer]:
+                              - radio "指定组织" [ref=e2335]
+                              - generic [ref=e2337]: 指定组织
+                            - generic [ref=e2338] [cursor=pointer]:
+                              - radio "发起人自选" [ref=e2340]
+                              - generic [ref=e2342]: 发起人自选
+                            - generic [ref=e2343] [cursor=pointer]:
+                              - radio "发起人自己" [checked] [ref=e2345]
+                              - generic [ref=e2347]: 发起人自己
+                            - generic [ref=e2348] [cursor=pointer]:
+                              - radio "表单人员" [ref=e2350]
+                              - generic [ref=e2352]: 表单人员
+                            - generic [ref=e2353] [cursor=pointer]:
+                              - radio "流程表达式" [ref=e2355]
+                              - generic [ref=e2357]: 流程表达式
+                        - generic [ref=e2358]:
+                          - button "审批人为空" [ref=e2360] [cursor=pointer]:
+                            - generic [ref=e2361]: 审批人为空
+                            - img [ref=e2363]
+                          - button "驳回策略" [ref=e2366] [cursor=pointer]:
+                            - generic [ref=e2367]: 驳回策略
+                            - img [ref=e2369]
+            - generic [ref=e2093]:
+              - button "上一步" [ref=e2094] [cursor=pointer]:
+                - generic [ref=e2095]: 上一步
+              - button "发布流程" [ref=e2145] [cursor=pointer]:
+                - generic [ref=e2146]: 发布流程
+          - generic [ref=e449]: © Mango
+  - generic:  

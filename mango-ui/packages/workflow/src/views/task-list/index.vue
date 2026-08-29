@@ -8,12 +8,7 @@
         </div>
       </template>
 
-      <el-tabs
-        v-if="taskMode === 'todo'"
-        v-model="todoTab"
-        class="todo-tabs"
-        @tab-change="handleTodoTabChange"
-      >
+      <el-tabs v-if="taskMode === 'todo'" v-model="todoTab" class="todo-tabs" @tab-change="handleTodoTabChange">
         <el-tab-pane label="待处理" name="assigned" />
         <el-tab-pane label="待领取" name="claimable" />
       </el-tabs>
@@ -34,7 +29,11 @@
         <el-table-column prop="processName" label="流程名称" min-width="180" show-overflow-tooltip />
         <el-table-column prop="processKey" label="流程编码" min-width="180" show-overflow-tooltip />
         <el-table-column prop="initiatorName" label="发起人" width="120" />
-        <el-table-column prop="assigneeName" label="办理人" width="120" />
+        <el-table-column label="办理人" width="120">
+          <template #default="{ row }">
+            <span data-field="workflow.assignee">{{ workflowAssigneeDisplay(row) }}</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
             <el-tag>{{ row.status }}</el-tag>
@@ -51,7 +50,13 @@
               </el-button>
               <el-button v-if="row.claimable" type="primary" link @click="claimTask(row)">领取</el-button>
             </template>
-            <el-button v-else-if="taskMode === 'copied' && row.status !== '已阅'" type="primary" link @click="readCopied(row)">已阅</el-button>
+            <el-button
+              v-else-if="taskMode === 'copied' && row.status !== '已阅'"
+              type="primary"
+              link
+              @click="readCopied(row)"
+              >已阅</el-button
+            >
             <el-button v-else type="primary" link @click="openTask(row)">查看</el-button>
           </template>
         </el-table-column>
@@ -76,6 +81,7 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import {
+  workflowAssigneeDisplay,
   workflowApi,
   type WorkflowApplyStatus,
   type WorkflowBusinessApply,
@@ -104,19 +110,25 @@ const taskMode = computed(() => {
   return 'todo';
 });
 
-const title = computed(() => ({
-  todo: '我的待办',
-  initiated: '我的申请',
-  done: '我的已办',
-  copied: '抄送给我',
-}[taskMode.value]));
+const title = computed(
+  () =>
+    ({
+      todo: '我的待办',
+      initiated: '我的申请',
+      done: '我的已办',
+      copied: '抄送给我',
+    })[taskMode.value],
+);
 
-const description = computed(() => ({
-  todo: todoTab.value === 'claimable' ? '候选待领取任务，认领后进入待处理' : '已经分配给当前用户的流程任务',
-  initiated: '当前用户发起的流程实例',
-  done: '当前用户已经处理完成的流程任务',
-  copied: '流程抄送通知与待阅事项',
-}[taskMode.value]));
+const description = computed(
+  () =>
+    ({
+      todo: todoTab.value === 'claimable' ? '候选待领取任务，认领后进入待处理' : '已经分配给当前用户的流程任务',
+      initiated: '当前用户发起的流程实例',
+      done: '当前用户已经处理完成的流程任务',
+      copied: '流程抄送通知与待阅事项',
+    })[taskMode.value],
+);
 
 const todoType = computed(() => (todoTab.value === 'claimable' ? 'CLAIMABLE' : 'ASSIGNED'));
 
@@ -194,14 +206,10 @@ function buildInitiatedQueryParams(): WorkflowBusinessApplyPageQuery {
 function resolveApplyStatuses(value: unknown): WorkflowApplyStatus[] | undefined {
   const values = Array.isArray(value) ? value : value ? [value] : [];
   const statuses = values
-    .map(item => String(item))
-    .filter((item): item is WorkflowApplyStatus => [
-      'SUBMITTED',
-      'IN_APPROVAL',
-      'APPROVED',
-      'REJECTED',
-      'WITHDRAWN',
-    ].includes(item));
+    .map((item) => String(item))
+    .filter((item): item is WorkflowApplyStatus =>
+      ['SUBMITTED', 'IN_APPROVAL', 'APPROVED', 'REJECTED', 'WITHDRAWN'].includes(item),
+    );
   return statuses.length ? statuses : undefined;
 }
 
@@ -217,13 +225,9 @@ async function loadInitiatedRows() {
   }
 
   const processResult = await workflowApi.initiatedProcesses(query.value);
-  const seenProcessIds = new Set(
-    businessRows
-      .map(item => item.processInstanceId)
-      .filter(Boolean),
-  );
+  const seenProcessIds = new Set(businessRows.map((item) => item.processInstanceId).filter(Boolean));
   const processRows = processResult.list
-    .filter(item => !seenProcessIds.has(item.processInstanceId))
+    .filter((item) => !seenProcessIds.has(item.processInstanceId))
     .map(mapProcessToTask);
   return {
     list: [...businessRows, ...processRows],
@@ -232,6 +236,7 @@ async function loadInitiatedRows() {
 }
 
 function mapBusinessApplyToTask(item: WorkflowBusinessApply): WorkflowTask {
+  const currentTask = item.currentTasks?.[0];
   return {
     id: item.id,
     taskName: item.applyTitle || '业务申请',
@@ -240,7 +245,10 @@ function mapBusinessApplyToTask(item: WorkflowBusinessApply): WorkflowTask {
     processKey: item.processDefinitionKey || item.businessType || '-',
     processInstanceId: item.processInstanceId || '',
     initiatorName: item.applicantName,
-    assigneeName: item.currentAssigneeNames,
+    assigneeName: currentTask?.assigneeName || item.currentAssigneeNames,
+    assigneeId: currentTask?.assigneeId,
+    assigneeDisplayName: currentTask?.assigneeDisplayName,
+    claimStatus: currentTask?.claimStatus,
     status: item.applyStatusName || item.applyStatus || '-',
     createTime: item.createdAt,
     startTime: item.createdAt,

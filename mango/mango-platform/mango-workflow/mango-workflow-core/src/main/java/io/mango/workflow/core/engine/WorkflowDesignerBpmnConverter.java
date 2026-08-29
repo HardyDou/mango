@@ -7,6 +7,8 @@ import io.mango.common.result.Require;
 import io.mango.workflow.api.enums.WorkflowCode;
 import io.mango.workflow.api.enums.WorkflowApprovalMode;
 import io.mango.workflow.api.enums.WorkflowAssigneeType;
+import io.mango.workflow.api.enums.WorkflowAssignmentMode;
+import io.mango.workflow.api.enums.WorkflowAutoAssignmentStrategy;
 import io.mango.workflow.api.enums.WorkflowEmptyAssigneeStrategy;
 import io.mango.workflow.api.enums.WorkflowFormPermission;
 import io.mango.workflow.api.enums.WorkflowRejectStrategy;
@@ -132,7 +134,10 @@ public class WorkflowDesignerBpmnConverter {
         WorkflowApprovalNodeConfig config = approvalConfig(node);
         Map<String, Object> properties = node.getProperties() == null ? Map.of() : node.getProperties();
         WorkflowAssigneeResolver.ResolvedAssignees resolved = designTimeAssignees(config, node);
-        if (isRuntimeResolved(config)) {
+        if (config != null && config.getAssignmentMode() == WorkflowAssignmentMode.AUTO) {
+            // Keep the Flowable task unassigned until the runtime service selects the tenant candidate atomically.
+            task.setAssignee(null);
+        } else if (isRuntimeResolved(config)) {
             applyRuntimeUserTaskProperties(task, config);
         } else if (resolved.empty()) {
             task.setAssignee("${mangoRuntimeAssignee_" + task.getId() + "}");
@@ -244,6 +249,22 @@ public class WorkflowDesignerBpmnConverter {
     }
 
     private void applyLegacyApprovalProperties(WorkflowApprovalNodeConfig config, Map<String, Object> properties) {
+        String assignmentMode = text(properties, "assignmentMode");
+        if (StringUtils.hasText(assignmentMode)) {
+            try {
+                config.setAssignmentMode(WorkflowAssignmentMode.valueOf(assignmentMode.trim().toUpperCase()));
+            } catch (IllegalArgumentException ignored) {
+                config.setAssignmentMode(WorkflowAssignmentMode.CLAIM);
+            }
+        }
+        String autoAssignmentStrategy = text(properties, "autoAssignmentStrategy");
+        if (StringUtils.hasText(autoAssignmentStrategy)) {
+            try {
+                config.setAutoAssignmentStrategy(WorkflowAutoAssignmentStrategy.valueOf(autoAssignmentStrategy.trim().toUpperCase()));
+            } catch (IllegalArgumentException ignored) {
+                // Invalid legacy values retain the compatible ROUND_ROBIN default.
+            }
+        }
         config.setAssigneeType(WorkflowAssigneeType.fromCode(text(properties, "assigneeType"), config.getAssigneeType()));
         config.setApprovalMode(WorkflowApprovalMode.fromCode(text(properties, "approvalMode"), config.getApprovalMode()));
         config.setEmptyAssigneeStrategy(WorkflowEmptyAssigneeStrategy.fromCode(text(properties, "emptyAssigneeStrategy"), config.getEmptyAssigneeStrategy()));

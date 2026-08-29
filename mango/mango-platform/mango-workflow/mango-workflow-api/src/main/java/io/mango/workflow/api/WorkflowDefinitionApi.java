@@ -1,15 +1,16 @@
 package io.mango.workflow.api;
 
 import io.mango.common.result.R;
-import io.mango.workflow.api.command.EnsureWorkflowDefinitionCommand;
-import io.mango.workflow.api.vo.WorkflowDeployVO;
 import io.mango.common.vo.PageResult;
+import io.mango.workflow.api.command.EnsureWorkflowDefinitionCommand;
 import io.mango.workflow.api.command.SaveWorkflowDefinitionCommand;
 import io.mango.workflow.api.command.UpdateWorkflowDefinitionStatusCommand;
 import io.mango.workflow.api.query.WorkflowDefinitionPageQuery;
 import io.mango.workflow.api.query.WorkflowDefinitionVersionQuery;
 import io.mango.workflow.api.vo.WorkflowDefinitionVO;
 import io.mango.workflow.api.vo.WorkflowDefinitionVersionVO;
+import io.mango.workflow.api.vo.WorkflowDeployVO;
+import io.mango.workflow.api.vo.WorkflowDesignerOptionsVO;
 import io.mango.workflow.api.vo.WorkflowNodeCatalogVO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -50,4 +51,6 @@ public interface WorkflowDefinitionApi {
     R<WorkflowDefinitionVersionVO> versionDetail(@NotNull Long id);
 
     R<List<WorkflowNodeCatalogVO>> nodeCatalog();
+
+    R<WorkflowDesignerOptionsVO> designerOptions();
 }

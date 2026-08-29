@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.mango.file.core.entity.FileStorageConfigEntity;
 import io.mango.file.core.mapper.FileStorageConfigMapper;
 import io.mango.resource.support.ResourceHandler;
+import io.mango.resource.support.ResourceBaselinePolicy;
 import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.model.ResourceField;
@@ -32,6 +33,11 @@ public class FileStorageConfigResourceHandler implements ResourceHandler {
     @Override
     public String resourceType() {
         return ResourceTypes.FILE_STORAGE_CONFIG;
+    }
+
+    @Override
+    public ResourceBaselinePolicy baselinePolicy() {
+        return ResourceBaselinePolicy.ENVIRONMENT_REQUIRED;
     }
 
     @Override

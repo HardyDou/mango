@@ -11,7 +11,7 @@
 - 前端支付中心 E2E：`mango-ui/apps/mango-admin/e2e/specs/payment-center.spec.ts`
 - 支付设计文档：`mango-docs/designs/统一支付系统设计说明书.md`
 - 支付交付台账：`mango-docs/plans/2026-05-25-payment-delivery-ledger.md`
-- 富友/收银台最终验收摘要：`mango-docs/evidence/2026-06-12-payment-fuiou-cashier-e2e.md`
+- 富友/收银台最终验收摘要：`历史验收文件已清理（可从 Git 历史恢复）`
 
 ## 3. 已合并的分散证据文件
 

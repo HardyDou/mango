@@ -25,6 +25,7 @@ import java.util.regex.Pattern;
 final class MySqlBaselineStore {
 
     private static final String MYSQL_PRODUCT_NAME = "mysql";
+    private static final String RESOURCE_REGISTRY_TABLE = "resource_registry";
     private static final String SAFE_CHARACTER_SET_PATTERN = "[a-zA-Z0-9_]+";
     private static final String SAFE_DATABASE_NAME_PATTERN = "[a-z][a-z0-9_]{0,63}";
     private static final int SQL_BUFFER_CAPACITY = 64_000;
@@ -35,7 +36,8 @@ final class MySqlBaselineStore {
     private static final Pattern DEFINER = Pattern.compile(
             "(?i)DEFINER\\s*=\\s*(?:`[^`]*`|[^@\\s]+)@(?:`[^`]*`|[^\\s]+)\\s*");
     private static final Set<String> RUNTIME_AUDIT_TIMESTAMP_COLUMNS = Set.of(
-            "created_at", "updated_at", "published_at");
+            "created_at", "updated_at", "published_at", "last_sync_time",
+            "create_time", "update_time", "created_time", "updated_time");
     private static final int INSERT_BATCH_SIZE = 250;
 
     private final MySqlJdbcUrl jdbcUrl;
@@ -114,6 +116,83 @@ final class MySqlBaselineStore {
 
     String databaseUrl(String database) {
         return jdbcUrl.database(database);
+    }
+
+    void preparePortableResourceBaseline(String database) throws MojoExecutionException {
+        try (Connection connection = connect(database);
+                Statement statement = connection.createStatement()) {
+            statement.execute("SET FOREIGN_KEY_CHECKS=0");
+            deleteIfPresent(connection, database, "resource_module_receipt");
+            deleteIfPresent(connection, database, "resource_sync_log");
+            deleteIfPresent(connection, database, "resource_change_log");
+            normalizeResourceRegistryIds(connection, database);
+            for (String table : List.of(
+                    "mango_runtime_instance",
+                    "mango_bootstrap_step_execution",
+                    "mango_bootstrap_execution",
+                    "mango_bootstrap_control")) {
+                statement.execute("DROP TABLE IF EXISTS " + quote(table));
+            }
+            statement.execute("SET FOREIGN_KEY_CHECKS=1");
+        } catch (SQLException exception) {
+            throw databaseFailure("prepare portable Resource baseline " + database, exception);
+        }
+    }
+
+    private static void deleteIfPresent(Connection connection, String database, String table)
+            throws SQLException {
+        if (tableExists(connection, database, table)) {
+            try (Statement statement = connection.createStatement()) {
+                statement.executeUpdate("DELETE FROM " + quote(table));
+            }
+        }
+    }
+
+    private static void normalizeResourceRegistryIds(Connection connection, String database)
+            throws SQLException {
+        if (!tableExists(connection, database, RESOURCE_REGISTRY_TABLE)) {
+            return;
+        }
+        List<Long> ids = new ArrayList<>();
+        try (Statement statement = connection.createStatement();
+                ResultSet rows = statement.executeQuery(
+                        "SELECT id FROM resource_registry ORDER BY resource_id")) {
+            while (rows.next()) {
+                ids.add(rows.getLong(1));
+            }
+        }
+        try (PreparedStatement negative = connection.prepareStatement(
+                    "UPDATE resource_registry SET id = ? WHERE id = ?");
+                PreparedStatement positive = connection.prepareStatement(
+                    "UPDATE resource_registry SET id = ? WHERE id = ?")) {
+            for (int index = 0; index < ids.size(); index++) {
+                negative.setLong(1, -(index + 1L));
+                negative.setLong(2, ids.get(index));
+                negative.addBatch();
+            }
+            negative.executeBatch();
+            for (int index = 0; index < ids.size(); index++) {
+                positive.setLong(1, index + 1L);
+                positive.setLong(2, -(index + 1L));
+                positive.addBatch();
+            }
+            positive.executeBatch();
+        }
+    }
+
+    private static boolean tableExists(Connection connection, String database, String table)
+            throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement("""
+                SELECT COUNT(*) FROM information_schema.TABLES
+                 WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?
+                """)) {
+            statement.setString(1, database);
+            statement.setString(2, table);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                resultSet.next();
+                return resultSet.getInt(1) == 1;
+            }
+        }
     }
 
     String dumpModule(

@@ -17,8 +17,21 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.mango.platform.identity</groupId>
+            <artifactId>mango-identity-api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.mango.platform.authorization</groupId>
             <artifactId>mango-authorization-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.platform.org</groupId>
+            <artifactId>mango-org-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.platform.system</groupId>
+            <artifactId>mango-system-api</artifactId>
         </dependency>
         <dependency>
             <groupId>io.mango.platform.resource</groupId>
@@ -81,6 +94,10 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.spotbugs</groupId>
+            <artifactId>spotbugs-annotations</artifactId>
         </dependency>
     </dependencies>
 </project>

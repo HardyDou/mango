@@ -1,16 +1,17 @@
 package io.mango.workflow.starter.remote;
 
 import io.mango.common.result.R;
+import io.mango.common.vo.PageResult;
 import io.mango.workflow.api.WorkflowDefinitionApi;
 import io.mango.workflow.api.command.EnsureWorkflowDefinitionCommand;
-import io.mango.workflow.api.vo.WorkflowDeployVO;
-import io.mango.common.vo.PageResult;
 import io.mango.workflow.api.command.SaveWorkflowDefinitionCommand;
 import io.mango.workflow.api.command.UpdateWorkflowDefinitionStatusCommand;
 import io.mango.workflow.api.query.WorkflowDefinitionPageQuery;
 import io.mango.workflow.api.query.WorkflowDefinitionVersionQuery;
 import io.mango.workflow.api.vo.WorkflowDefinitionVO;
 import io.mango.workflow.api.vo.WorkflowDefinitionVersionVO;
+import io.mango.workflow.api.vo.WorkflowDeployVO;
+import io.mango.workflow.api.vo.WorkflowDesignerOptionsVO;
 import io.mango.workflow.api.vo.WorkflowNodeCatalogVO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.cloud.openfeign.SpringQueryMap;
@@ -76,4 +77,8 @@ public interface WorkflowDefinitionFeignClient extends WorkflowDefinitionApi {
     @Override
     @GetMapping("/node-catalog")
     R<List<WorkflowNodeCatalogVO>> nodeCatalog();
+
+    @Override
+    @GetMapping("/designer-options")
+    R<WorkflowDesignerOptionsVO> designerOptions();
 }

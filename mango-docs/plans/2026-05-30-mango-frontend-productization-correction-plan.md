@@ -430,11 +430,7 @@ Exit criteria:
 
 ## 7. Required Evidence Structure
 
-Each Sprint must save evidence under:
-
-```text
-mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-<n>/
-```
+Each Sprint originally saved evidence in a dedicated historical directory. That early acceptance directory has been cleaned and remains recoverable from Git history.
 
 Required files:
 

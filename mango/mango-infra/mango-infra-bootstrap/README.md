@@ -48,6 +48,8 @@ MangoApplication.run(MyApplication.class, args);
 
 业务或基础能力模块需要贡献初始化步骤时，只依赖 `mango-infra-bootstrap-api` 并实现 `BootstrapStepContributor`；不要依赖 core 或 starter。
 
+`BootstrapStepContributor.supportsResourceBaselineBuild()` 默认返回 `false`。该方法只供 Mango Resource 构建链隔离正式 Resource 步骤；普通业务、租户和运行期 contributor 不得 opt-in，仍在目标环境 Bootstrap 中执行。
+
 ## 6. 配置说明
 
 | 配置 | 默认值 | 说明 |
@@ -69,7 +71,7 @@ MangoApplication.run(MyApplication.class, args);
 
 | 类型 | 用途 |
 |------|------|
-| `BootstrapStepContributor` | 向全局计划贡献步骤。 |
+| `BootstrapStepContributor` | 向全局计划贡献步骤；默认不进入构建期 Resource baseline。 |
 | `BootstrapStep` | 声明 code、phase、依赖、fingerprint material 和执行逻辑。 |
 | `BootstrapExecutionContext` | 向步骤传递 environment、generation、fingerprint 和 fencing token。 |
 | `BootstrapGenerationFence` | 目标服务校验写入是否来自权威 generation。 |

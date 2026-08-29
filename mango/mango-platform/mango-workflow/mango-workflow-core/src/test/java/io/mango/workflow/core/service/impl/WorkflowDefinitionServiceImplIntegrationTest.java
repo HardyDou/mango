@@ -3,6 +3,7 @@ package io.mango.workflow.core.service.impl;
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mango.common.exception.BizException;
 import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.domain.api.DomainApi;
@@ -17,6 +18,7 @@ import io.mango.infra.persistence.api.scope.DataScopeApplier;
 import io.mango.infra.persistence.api.scope.DataScopeMapping;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
 import io.mango.workflow.api.command.EnsureWorkflowDefinitionCommand;
+import io.mango.workflow.api.enums.WorkflowCode;
 import io.mango.workflow.api.enums.WorkflowDefinitionStatus;
 import io.mango.workflow.api.query.WorkflowDefinitionPageQuery;
 import io.mango.workflow.api.vo.WorkflowDefinitionVO;
@@ -142,6 +144,14 @@ class WorkflowDefinitionServiceImplIntegrationTest {
 
         assertThatThrownBy(() -> service.get(1101L))
                 .hasMessageContaining("流程定义不存在");
+    }
+
+    @Test
+    void designerOptionsFailsExplicitlyWhenProviderIsMissing() {
+        assertThatThrownBy(service::designerOptions)
+                .isInstanceOf(BizException.class)
+                .extracting("code")
+                .isEqualTo(WorkflowCode.DESIGNER_OPTION_PROVIDER_MISSING.getCode());
     }
 
     @Test

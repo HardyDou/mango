@@ -1,0 +1,6 @@
+### Result
+{"status":200,"total":"0","listSize":0}
+### Ran Playwright code
+```js
+await (async page => await page.evaluate(async () => { const r=await fetch('/api/workflow/definitions/page?page=1&size=100&keyword=issue732_browser_auto'); const b=await r.json(); return {status:r.status,total:b.data?.total,listSize:b.data?.list?.length}; }))(page);
+```

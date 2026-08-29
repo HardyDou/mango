@@ -4,6 +4,7 @@ import { writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { api as e2eApi } from '../support/api';
+import { collectBrowserDiagnostics } from '../support/browser-diagnostics';
 
 type LoginTenant = {
   tenantId: string;
@@ -13,6 +14,8 @@ type LoginTenant = {
 
 type WorkflowTodoTask = {
   assigneeId?: unknown;
+  assigneeName?: unknown;
+  assigneeDisplayName?: unknown;
   businessKey?: unknown;
   id?: number | string;
   taskName?: unknown;
@@ -43,6 +46,15 @@ function api(path: string) {
   return e2eApi(path);
 }
 
+function authHeaders(token: string) {
+  return {
+    Authorization: `Bearer ${token}`,
+    'TENANT-ID': platformTenant.tenantId,
+    'X-Mango-Tenant-Id': platformTenant.tenantId,
+    'X-Tenant-Id': platformTenant.tenantId,
+  };
+}
+
 function executeWorkspaceMysql(statements: string[]) {
   execFileSync(
     'mysql',
@@ -65,6 +77,128 @@ function executeWorkspaceMysql(statements: string[]) {
       },
     },
   );
+}
+
+function queryWorkspaceMysql(statement: string) {
+  return execFileSync(
+    'mysql',
+    [
+      '--protocol=TCP',
+      '--batch',
+      '--skip-column-names',
+      '-h',
+      process.env.MANGO_DB_HOST || '127.0.0.1',
+      '-P',
+      process.env.MANGO_DB_PORT || '3306',
+      '-u',
+      process.env.MANGO_DB_USERNAME || 'root',
+      process.env.MANGO_DB_NAME || 'mango',
+      '-e',
+      statement,
+    ],
+    {
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        MYSQL_PWD: process.env.MANGO_DB_PASSWORD || '',
+      },
+    },
+  ).trim();
+}
+
+function ensureAdminUserManagementMenuBinding() {
+  const bindingCountSql = `
+    SELECT COUNT(*)
+    FROM authorization_role_menu rm
+    JOIN authorization_role r ON r.id = rm.role_id
+    JOIN authorization_menu m ON m.id = rm.menu_id
+    WHERE r.tenant_id = 1
+      AND r.app_code = 'internal-admin'
+      AND r.role_code = 'ROLE_ADMIN'
+      AND m.tenant_id = 1
+      AND m.app_code = 'internal-admin'
+      AND m.menu_code = 'system:user'
+  `;
+  if (queryWorkspaceMysql(bindingCountSql) !== '0') {
+    return false;
+  }
+  executeWorkspaceMysql([
+    `INSERT INTO authorization_role_menu (id, tenant_id, role_id, menu_id)
+     SELECT UUID_SHORT(), 1, r.id, m.id
+     FROM authorization_role r
+     JOIN authorization_menu m
+       ON m.tenant_id = r.tenant_id
+      AND m.app_code = r.app_code
+     WHERE r.tenant_id = 1
+       AND r.app_code = 'internal-admin'
+       AND r.role_code = 'ROLE_ADMIN'
+       AND m.menu_code = 'system:user'
+       AND NOT EXISTS (
+         SELECT 1
+         FROM authorization_role_menu existing
+         WHERE existing.role_id = r.id
+           AND existing.menu_id = m.id
+       )`,
+  ]);
+  expect(queryWorkspaceMysql(bindingCountSql)).toBe('1');
+  return true;
+}
+
+function removeAdminUserManagementMenuBinding() {
+  executeWorkspaceMysql([
+    `DELETE rm
+     FROM authorization_role_menu rm
+     JOIN authorization_role r ON r.id = rm.role_id
+     JOIN authorization_menu m ON m.id = rm.menu_id
+     WHERE r.tenant_id = 1
+       AND r.app_code = 'internal-admin'
+       AND r.role_code = 'ROLE_ADMIN'
+       AND m.tenant_id = 1
+       AND m.app_code = 'internal-admin'
+       AND m.menu_code = 'system:user'`,
+  ]);
+}
+
+function ensureAdminParticipationDeclarePermission() {
+  const menuCode = 'workflow:business-form';
+  const permission = 'workflow:participation:declare';
+  const originalApiCodes = queryWorkspaceMysql(
+    `SELECT api_codes FROM authorization_menu WHERE tenant_id = 1 AND app_code = 'internal-admin' AND menu_code = ${sqlLiteral(menuCode)}`,
+  );
+  expect(originalApiCodes, `未找到测试授权菜单: ${menuCode}`).not.toBe('');
+  if (originalApiCodes.split(',').includes(permission)) {
+    return { changed: false, menuCode, originalApiCodes };
+  }
+  executeWorkspaceMysql([
+    `UPDATE authorization_menu
+     SET api_codes = CONCAT_WS(',', NULLIF(api_codes, ''), ${sqlLiteral(permission)})
+     WHERE tenant_id = 1
+       AND app_code = 'internal-admin'
+       AND menu_code = ${sqlLiteral(menuCode)}`,
+  ]);
+  expect(
+    queryWorkspaceMysql(
+      `SELECT COUNT(*) FROM authorization_menu WHERE tenant_id = 1 AND app_code = 'internal-admin' AND menu_code = ${sqlLiteral(menuCode)} AND FIND_IN_SET(${sqlLiteral(permission)}, api_codes) > 0`,
+    ),
+  ).toBe('1');
+  return { changed: true, menuCode, originalApiCodes };
+}
+
+function restoreAdminParticipationDeclarePermission(fixture: {
+  changed: boolean;
+  menuCode: string;
+  originalApiCodes: string;
+}) {
+  if (!fixture.changed) {
+    return;
+  }
+  executeWorkspaceMysql([
+    `UPDATE authorization_menu
+     SET api_codes = ${sqlLiteral(fixture.originalApiCodes)}
+     WHERE tenant_id = 1
+       AND app_code = 'internal-admin'
+       AND menu_code = ${sqlLiteral(fixture.menuCode)}`,
+  ]);
 }
 
 async function loginToken(request: APIRequestContext, tenant: LoginTenant) {
@@ -109,15 +243,15 @@ async function loginTokenAs(request: APIRequestContext, tenant: LoginTenant, use
 
 async function loginPage(page: Page, tenant: LoginTenant) {
   await page.goto('/#/login');
-  await page.fill('input[placeholder="用户名"]', 'admin');
-  await page.fill('input[placeholder="密码"]', 'admin123');
+  await page.getByPlaceholder(/用户名/).fill('admin');
+  await page.getByPlaceholder(/密码/).fill('admin123');
   const accountTenantsResponsePromise = page
     .waitForResponse(
       (response) => response.url().includes('/api/auth/login-institutions') && response.status() === 200,
       { timeout: 10000 },
     )
     .catch(() => null);
-  await page.locator('input[placeholder="密码"]').blur();
+  await page.getByPlaceholder(/密码/).blur();
   await page.locator('.tenant-select').click();
   await accountTenantsResponsePromise;
   await page.getByRole('option', { name: new RegExp(tenant.tenantName) }).click();
@@ -193,7 +327,7 @@ async function openCopiedTasks(page: Page) {
 }
 
 async function cleanupWorkflow(request: APIRequestContext, token: string, keyword: string) {
-  const headers = { Authorization: `Bearer ${token}` };
+  const headers = authHeaders(token);
   const definitionsResponse = await request.get(api(`/workflow/definitions/page?page=1&size=100&keyword=${keyword}`), {
     headers,
   });
@@ -380,6 +514,75 @@ function approvalDesignerJson(unique: number) {
   });
 }
 
+function assigneeIdentityDesignerJson(unique: number, assigneeUsername: string) {
+  return JSON.stringify({
+    id: 'startEvent',
+    nodeName: '发起人',
+    nodeType: 'ROOT',
+    childNode: {
+      id: `identity_admin_approve_${unique}`,
+      nodeName: '管理员初审',
+      nodeType: 'APPROVAL',
+      bpmnType: 'userTask',
+      executionType: 'USER_TASK',
+      childNode: {
+        id: `identity_member_approve_${unique}`,
+        nodeName: '租户成员复核',
+        nodeType: 'APPROVAL',
+        bpmnType: 'userTask',
+        executionType: 'USER_TASK',
+        childNode: null,
+        conditionNodes: [],
+        properties: {
+          approvalConfig: {
+            assigneeType: 'SPECIFIED_USER',
+            assigneeIds: [assigneeUsername],
+            roleIds: [],
+            postIds: [],
+            orgIds: [],
+            approvalMode: 'COUNTERSIGN',
+            emptyAssigneeStrategy: 'TO_ADMIN',
+            emptyAssigneeUserIds: [],
+            rejectStrategy: 'END_PROCESS',
+            formPermissions: {},
+            eventNotify: {
+              enabled: false,
+              type: 'HTTP',
+              method: 'POST',
+              timeoutMillis: 5000,
+            },
+            initiatorSelectMultiple: false,
+          },
+        },
+      },
+      conditionNodes: [],
+      properties: {
+        approvalConfig: {
+          assigneeType: 'SPECIFIED_USER',
+          assigneeIds: ['admin'],
+          roleIds: [],
+          postIds: [],
+          orgIds: [],
+          approvalMode: 'COUNTERSIGN',
+          emptyAssigneeStrategy: 'TO_ADMIN',
+          emptyAssigneeUserIds: [],
+          rejectStrategy: 'END_PROCESS',
+          formPermissions: {},
+          eventNotify: {
+            enabled: false,
+            type: 'HTTP',
+            method: 'POST',
+            timeoutMillis: 5000,
+          },
+          initiatorSelectMultiple: false,
+        },
+      },
+    },
+    conditionNodes: [],
+    properties: {},
+  });
+}
+
 function expenseApprovalDesignerJson(unique: number) {
   return JSON.stringify({
     id: 'startEvent',
@@ -523,6 +726,47 @@ function initiatorSelfDesignerJson(unique: number) {
         approvalConfig: {
           assigneeType: 'INITIATOR',
           assigneeIds: [],
+          roleIds: [],
+          postIds: [],
+          orgIds: [],
+          approvalMode: 'COUNTERSIGN',
+          emptyAssigneeStrategy: 'TO_ADMIN',
+          emptyAssigneeUserIds: [],
+          rejectStrategy: 'END_PROCESS',
+          formPermissions: {},
+          eventNotify: {
+            enabled: false,
+            type: 'HTTP',
+            method: 'POST',
+            timeoutMillis: 5000,
+          },
+          initiatorSelectMultiple: false,
+        },
+      },
+    },
+    conditionNodes: [],
+    properties: {},
+  });
+}
+
+function autoAssignmentDesignerJson(unique: number, assigneeIds: string[]) {
+  return JSON.stringify({
+    id: 'startEvent',
+    nodeName: '发起人',
+    nodeType: 'ROOT',
+    childNode: {
+      id: `auto_approve_${unique}`,
+      nodeName: '自动派单审批',
+      nodeType: 'APPROVAL',
+      bpmnType: 'userTask',
+      executionType: 'USER_TASK',
+      childNode: null,
+      conditionNodes: [],
+      properties: {
+        approvalConfig: {
+          assignmentMode: 'AUTO',
+          assigneeType: 'SPECIFIED_USER',
+          assigneeIds,
           roleIds: [],
           postIds: [],
           orgIds: [],
@@ -1049,7 +1293,7 @@ async function findTodoTask(request: APIRequestContext, token: string, businessK
 
 async function listTodoTasks(request: APIRequestContext, token: string, businessKey: string) {
   const response = await request.get(api(`/workflow/tasks/todo`), {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: authHeaders(token),
     params: { page: 1, size: 50, keyword: businessKey, todoType: 'ALL' },
   });
   expect(response.status()).toBe(200);
@@ -1119,7 +1363,7 @@ async function completeTask(
   variables: Record<string, any> = {},
 ) {
   const response = await request.post(api(`/workflow/tasks/complete`), {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: authHeaders(token),
     data: { taskId, comment, variables },
   });
   expect(response.status()).toBe(200);
@@ -1291,7 +1535,7 @@ async function prepareWorkflowNoticeRegression(
 }
 
 async function cleanupUser(request: APIRequestContext, token: string, username: string) {
-  const headers = { Authorization: `Bearer ${token}` };
+  const headers = authHeaders(token);
   const pageResponse = await request.get(api(`/identity/users/page`), {
     headers,
     params: { page: 1, size: 20, username },
@@ -1305,7 +1549,7 @@ async function cleanupUser(request: APIRequestContext, token: string, username: 
 }
 
 async function createTempUser(request: APIRequestContext, token: string, username: string) {
-  const headers = { Authorization: `Bearer ${token}` };
+  const headers = authHeaders(token);
   await cleanupUser(request, token, username);
   const response = await request.post(api(`/identity/users`), {
     headers,
@@ -1323,8 +1567,9 @@ async function createTempUser(request: APIRequestContext, token: string, usernam
       remark: 'E2E审批动作临时用户',
     },
   });
-  expect(response.status()).toBe(200);
-  const body = await response.json();
+  const responseText = await response.text();
+  expect(response.status(), responseText).toBe(200);
+  const body = JSON.parse(responseText);
   expectApiSuccess(body, `创建临时用户失败: ${username}`);
 
   const detailResponse = await request.get(api(`/identity/users/page`), {
@@ -1577,6 +1822,50 @@ function sqlLiteral(value: string) {
   return `'${value.replaceAll('\\', '\\\\').replaceAll("'", "''")}'`;
 }
 
+function cleanupAssigneeIdentityFlowableData(businessKey: string, definitionKey: string) {
+  const businessKeyLiteral = sqlLiteral(businessKey);
+  const definitionKeyLiteral = sqlLiteral(definitionKey);
+  executeWorkspaceMysql([
+    'CREATE TEMPORARY TABLE e2e_assignee_process_ids (id varchar(64) PRIMARY KEY)',
+    `INSERT IGNORE INTO e2e_assignee_process_ids SELECT PROC_INST_ID_ FROM ACT_HI_PROCINST WHERE BUSINESS_KEY_ = ${businessKeyLiteral}`,
+    `INSERT IGNORE INTO e2e_assignee_process_ids SELECT PROC_INST_ID_ FROM ACT_RU_EXECUTION WHERE BUSINESS_KEY_ = ${businessKeyLiteral}`,
+    'CREATE TEMPORARY TABLE e2e_assignee_deployment_ids (id varchar(64) PRIMARY KEY)',
+    `INSERT IGNORE INTO e2e_assignee_deployment_ids SELECT DEPLOYMENT_ID_ FROM ACT_RE_PROCDEF WHERE KEY_ = ${definitionKeyLiteral}`,
+    'CREATE TEMPORARY TABLE e2e_assignee_bytearray_ids (id varchar(64) PRIMARY KEY)',
+    'INSERT IGNORE INTO e2e_assignee_bytearray_ids SELECT BYTEARRAY_ID_ FROM ACT_RU_VARIABLE WHERE PROC_INST_ID_ IN (SELECT id FROM e2e_assignee_process_ids) AND BYTEARRAY_ID_ IS NOT NULL',
+    'INSERT IGNORE INTO e2e_assignee_bytearray_ids SELECT BYTEARRAY_ID_ FROM ACT_HI_DETAIL WHERE PROC_INST_ID_ IN (SELECT id FROM e2e_assignee_process_ids) AND BYTEARRAY_ID_ IS NOT NULL',
+    'INSERT IGNORE INTO e2e_assignee_bytearray_ids SELECT BYTEARRAY_ID_ FROM ACT_HI_VARINST WHERE PROC_INST_ID_ IN (SELECT id FROM e2e_assignee_process_ids) AND BYTEARRAY_ID_ IS NOT NULL',
+    'INSERT IGNORE INTO e2e_assignee_bytearray_ids SELECT CONTENT_ID_ FROM ACT_HI_ATTACHMENT WHERE PROC_INST_ID_ IN (SELECT id FROM e2e_assignee_process_ids) AND CONTENT_ID_ IS NOT NULL',
+    'DELETE FROM ACT_RU_IDENTITYLINK WHERE PROC_INST_ID_ IN (SELECT id FROM e2e_assignee_process_ids)',
+    'DELETE FROM ACT_RU_VARIABLE WHERE PROC_INST_ID_ IN (SELECT id FROM e2e_assignee_process_ids)',
+    'DELETE FROM ACT_RU_DEADLETTER_JOB WHERE PROCESS_INSTANCE_ID_ IN (SELECT id FROM e2e_assignee_process_ids)',
+    'DELETE FROM ACT_RU_EXTERNAL_JOB WHERE PROCESS_INSTANCE_ID_ IN (SELECT id FROM e2e_assignee_process_ids)',
+    'DELETE FROM ACT_RU_JOB WHERE PROCESS_INSTANCE_ID_ IN (SELECT id FROM e2e_assignee_process_ids)',
+    'DELETE FROM ACT_RU_SUSPENDED_JOB WHERE PROCESS_INSTANCE_ID_ IN (SELECT id FROM e2e_assignee_process_ids)',
+    'DELETE FROM ACT_RU_TIMER_JOB WHERE PROCESS_INSTANCE_ID_ IN (SELECT id FROM e2e_assignee_process_ids)',
+    'DELETE FROM ACT_RU_EVENT_SUBSCR WHERE PROC_INST_ID_ IN (SELECT id FROM e2e_assignee_process_ids)',
+    'DELETE FROM ACT_RU_TASK WHERE PROC_INST_ID_ IN (SELECT id FROM e2e_assignee_process_ids)',
+    'DELETE FROM ACT_RU_ACTINST WHERE PROC_INST_ID_ IN (SELECT id FROM e2e_assignee_process_ids)',
+    'DELETE FROM ACT_RU_EXECUTION WHERE PROC_INST_ID_ IN (SELECT id FROM e2e_assignee_process_ids)',
+    'DELETE FROM ACT_EVT_LOG WHERE PROC_INST_ID_ IN (SELECT id FROM e2e_assignee_process_ids)',
+    'DELETE FROM ACT_HI_ATTACHMENT WHERE PROC_INST_ID_ IN (SELECT id FROM e2e_assignee_process_ids)',
+    'DELETE FROM ACT_HI_COMMENT WHERE PROC_INST_ID_ IN (SELECT id FROM e2e_assignee_process_ids)',
+    'DELETE FROM ACT_HI_DETAIL WHERE PROC_INST_ID_ IN (SELECT id FROM e2e_assignee_process_ids)',
+    'DELETE FROM ACT_HI_IDENTITYLINK WHERE PROC_INST_ID_ IN (SELECT id FROM e2e_assignee_process_ids)',
+    'DELETE FROM ACT_HI_TASKINST WHERE PROC_INST_ID_ IN (SELECT id FROM e2e_assignee_process_ids)',
+    'DELETE FROM ACT_HI_TSK_LOG WHERE PROC_INST_ID_ IN (SELECT id FROM e2e_assignee_process_ids)',
+    'DELETE FROM ACT_HI_VARINST WHERE PROC_INST_ID_ IN (SELECT id FROM e2e_assignee_process_ids)',
+    'DELETE FROM ACT_HI_ACTINST WHERE PROC_INST_ID_ IN (SELECT id FROM e2e_assignee_process_ids)',
+    'DELETE FROM ACT_HI_PROCINST WHERE PROC_INST_ID_ IN (SELECT id FROM e2e_assignee_process_ids)',
+    'DELETE FROM ACT_PROCDEF_INFO WHERE PROC_DEF_ID_ IN (SELECT ID_ FROM ACT_RE_PROCDEF WHERE DEPLOYMENT_ID_ IN (SELECT id FROM e2e_assignee_deployment_ids))',
+    'DELETE FROM ACT_RU_IDENTITYLINK WHERE PROC_DEF_ID_ IN (SELECT ID_ FROM ACT_RE_PROCDEF WHERE DEPLOYMENT_ID_ IN (SELECT id FROM e2e_assignee_deployment_ids))',
+    'DELETE FROM ACT_RE_MODEL WHERE DEPLOYMENT_ID_ IN (SELECT id FROM e2e_assignee_deployment_ids)',
+    'DELETE FROM ACT_RE_PROCDEF WHERE DEPLOYMENT_ID_ IN (SELECT id FROM e2e_assignee_deployment_ids)',
+    'DELETE FROM ACT_GE_BYTEARRAY WHERE DEPLOYMENT_ID_ IN (SELECT id FROM e2e_assignee_deployment_ids) OR ID_ IN (SELECT id FROM e2e_assignee_bytearray_ids)',
+    'DELETE FROM ACT_RE_DEPLOYMENT WHERE ID_ IN (SELECT id FROM e2e_assignee_deployment_ids)',
+  ]);
+}
+
 function cleanupWorkflowNoticeData(businessKey: string) {
   const bizId = sqlLiteral(businessKey);
   executeWorkspaceMysql([
@@ -1637,6 +1926,55 @@ async function prepareLeaveWorkflow(request: APIRequestContext, token: string, u
     definitionName: `E2E审批请假流程${unique}`,
     definitionKey: `e2e_approval_leave_${unique}`,
   };
+}
+
+async function prepareAssigneeIdentityWorkflow(
+  request: APIRequestContext,
+  token: string,
+  unique: number,
+  keyword: string,
+  assigneeUsername: string,
+) {
+  const headers = { Authorization: `Bearer ${token}` };
+  const createCategoryResponse = await request.post(api(`/workflow/categories`), {
+    headers,
+    data: {
+      categoryName: `E2E办理人身份分类${unique}`,
+      categoryCode: keyword,
+      domainCode: defaultWorkflowDomainCode,
+      sort: 96,
+      status: 1,
+      remark: keyword,
+    },
+  });
+  expect(createCategoryResponse.status()).toBe(200);
+  const createCategoryBody = await createCategoryResponse.json();
+  expectApiSuccess(createCategoryBody, '创建办理人身份流程分类失败');
+
+  const createDefinitionResponse = await request.post(api(`/workflow/definitions`), {
+    headers,
+    data: {
+      categoryId: createCategoryBody.data,
+      domainCode: defaultWorkflowDomainCode,
+      definitionName: `E2E办理人身份流程${unique}`,
+      definitionKey: `e2e_assignee_identity_${unique}`,
+      designerJson: assigneeIdentityDesignerJson(unique, assigneeUsername),
+      formCode: `form_${keyword}`,
+      formJson: leaveFormJson(),
+      status: 'DRAFT',
+      remark: keyword,
+    },
+  });
+  expect(createDefinitionResponse.status()).toBe(200);
+  const createDefinitionBody = await createDefinitionResponse.json();
+  expectApiSuccess(createDefinitionBody, '创建办理人身份流程定义失败');
+
+  const deployResponse = await request.post(api(`/workflow/definitions/deploy?id=${createDefinitionBody.data}`), {
+    headers,
+  });
+  expect(deployResponse.status()).toBe(200);
+  expectApiSuccess(await deployResponse.json(), '部署办理人身份流程失败');
+  return String(createDefinitionBody.data);
 }
 
 async function prepareInitiatorSelectWorkflow(
@@ -1747,6 +2085,61 @@ async function prepareInitiatorSelfWorkflow(
   };
 }
 
+async function prepareAutoAssignmentWorkflow(
+  request: APIRequestContext,
+  token: string,
+  unique: number,
+  keyword: string,
+  assigneeIds: string[],
+) {
+  const headers = authHeaders(token);
+  const createCategoryResponse = await request.post(api('/workflow/categories'), {
+    headers,
+    data: {
+      categoryName: `E2E自动派单分类${unique}`,
+      categoryCode: `${keyword}_${unique}`,
+      domainCode: defaultWorkflowDomainCode,
+      sort: 87,
+      status: 1,
+      remark: keyword,
+    },
+  });
+  expect(createCategoryResponse.status()).toBe(200);
+  const createCategoryBody = await createCategoryResponse.json();
+  expectApiSuccess(createCategoryBody, '创建自动派单流程分类失败');
+
+  const definitionKey = `e2e_auto_assignment_${unique}`;
+  const createDefinitionResponse = await request.post(api('/workflow/definitions'), {
+    headers,
+    data: {
+      categoryId: createCategoryBody.data,
+      domainCode: defaultWorkflowDomainCode,
+      definitionName: `E2E自动派单流程${unique}`,
+      definitionKey,
+      designerJson: autoAssignmentDesignerJson(unique, assigneeIds),
+      formCode: `form_${keyword}_${unique}`,
+      formJson: leaveFormJson(),
+      status: 'DRAFT',
+      remark: keyword,
+    },
+  });
+  expect(createDefinitionResponse.status()).toBe(200);
+  const createDefinitionBody = await createDefinitionResponse.json();
+  expectApiSuccess(createDefinitionBody, '创建自动派单流程定义失败');
+
+  const deployResponse = await request.post(api(`/workflow/definitions/deploy?id=${createDefinitionBody.data}`), {
+    headers,
+  });
+  expect(deployResponse.status()).toBe(200);
+  expectApiSuccess(await deployResponse.json(), '部署自动派单流程失败');
+
+  return {
+    definitionId: String(createDefinitionBody.data),
+    definitionKey,
+    taskName: '自动派单审批',
+  };
+}
+
 async function startLeaveProcess(
   request: APIRequestContext,
   token: string,
@@ -1756,7 +2149,7 @@ async function startLeaveProcess(
   reason: string,
 ) {
   const response = await request.post(api(`/workflow/processes/start`), {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: authHeaders(token),
     data: {
       definitionId,
       businessKey,
@@ -1788,6 +2181,207 @@ function startProcessDialog(page: Page, name: string) {
 }
 
 test.describe('工作流配置真实接口闭环', () => {
+  test('@p0 @workflow 历史参与只读且自动派单按稳定用户ID轮询并在空候选时回滚', async ({ request }) => {
+    test.setTimeout(120_000);
+    const unique = Date.now();
+    const keyword = `E2E_732_${unique}`;
+    const usernames = [`e2e732a${unique}`, `e2e732b${unique}`, `e2e732none${unique}`];
+    const businessKeys = [`${keyword}_RR_1`, `${keyword}_RR_2`];
+    const failedBusinessKey = `${keyword}_NO_CANDIDATE`;
+    const userManagementBindingAdded = ensureAdminUserManagementMenuBinding();
+    const participationDeclarePermission = ensureAdminParticipationDeclarePermission();
+    const token = await loginToken(request, platformTenant);
+    let assignedUsers: Array<{ token: string; userId: string; username: string }> = [];
+
+    try {
+      const users = [];
+      for (const username of usernames) {
+        users.push(await createTempUser(request, token, username));
+      }
+      const adminRoleId = await findRoleId(request, token, 'ROLE_ADMIN');
+      for (const user of users) {
+        await assignSubjectRoles(request, token, user.memberId, [adminRoleId]);
+      }
+      assignedUsers = await Promise.all(
+        users.slice(0, 2).map(async (user) => ({
+          token: await loginTokenAs(request, platformTenant, String(user.username), 'E2E@123456'),
+          userId: String(user.userId),
+          username: String(user.username),
+        })),
+      );
+      assignedUsers.sort((left, right) => {
+        const leftId = BigInt(left.userId);
+        const rightId = BigInt(right.userId);
+        return leftId < rightId ? -1 : leftId > rightId ? 1 : 0;
+      });
+      const nonParticipantToken = await loginTokenAs(request, platformTenant, String(users[2].username), 'E2E@123456');
+
+      const workflow = await prepareAutoAssignmentWorkflow(
+        request,
+        token,
+        unique,
+        keyword,
+        assignedUsers.map((user) => user.userId).reverse(),
+      );
+
+      const firstProcessInstanceId = await startLeaveProcess(
+        request,
+        token,
+        workflow.definitionId,
+        businessKeys[0],
+        1,
+        'Issue 732 ROUND_ROBIN first assignment',
+      );
+      const firstTask = await waitForTodoTask(request, assignedUsers[0].token, businessKeys[0], workflow.taskName);
+      expect(String(firstTask.assigneeName)).toBe(assignedUsers[0].userId);
+
+      const declareResponse = await request.post(api('/workflow/participations/business'), {
+        headers: authHeaders(token),
+        data: {
+          processKey: workflow.definitionKey,
+          businessKey: businessKeys[0],
+          processInstanceId: firstProcessInstanceId,
+          participantUserIds: [assignedUsers[1].userId],
+        },
+      });
+      expect(declareResponse.status()).toBe(200);
+      expectApiSuccess(await declareResponse.json(), '声明业务参与人失败');
+
+      const participantAccessResponse = await request.get(api('/workflow/participations/access'), {
+        headers: authHeaders(assignedUsers[1].token),
+        params: { processKey: workflow.definitionKey, businessKey: businessKeys[0] },
+      });
+      expect(participantAccessResponse.status()).toBe(200);
+      const participantAccessBody = await participantAccessResponse.json();
+      expectApiSuccess(participantAccessBody, '业务参与人查询只读参与事实失败');
+      expect(participantAccessBody.data).toMatchObject({
+        readable: true,
+        latestProcessInstanceId: firstProcessInstanceId,
+      });
+      expect(participantAccessBody.data.participantTypes).toContain('BUSINESS_PARTICIPANT');
+
+      const unauthorizedCompleteResponse = await request.post(api('/workflow/tasks/complete'), {
+        headers: authHeaders(assignedUsers[1].token),
+        data: { taskId: String(firstTask.id), comment: '参与关系不得授予任务操作权', variables: {} },
+      });
+      expect(unauthorizedCompleteResponse.status()).toBe(200);
+      const unauthorizedCompleteBody = await unauthorizedCompleteResponse.json();
+      expect(unauthorizedCompleteBody.code).toBe(3651);
+      expect(unauthorizedCompleteBody.msg || unauthorizedCompleteBody.message).toContain('当前用户不能处理该任务');
+
+      const nonParticipantAccessResponse = await request.get(api('/workflow/participations/access'), {
+        headers: authHeaders(nonParticipantToken),
+        params: { processKey: workflow.definitionKey, businessKey: businessKeys[0] },
+      });
+      expect(nonParticipantAccessResponse.status()).toBe(200);
+      const nonParticipantAccessBody = await nonParticipantAccessResponse.json();
+      expectApiSuccess(nonParticipantAccessBody, '非参与人查询参与事实失败');
+      expect(nonParticipantAccessBody.data).toMatchObject({ readable: false, participantTypes: [] });
+
+      const myParticipationResponse = await request.get(api('/workflow/participations/my'), {
+        headers: authHeaders(assignedUsers[1].token),
+        params: { page: 1, size: 10, processKey: workflow.definitionKey },
+      });
+      expect(myParticipationResponse.status()).toBe(200);
+      const myParticipationBody = await myParticipationResponse.json();
+      expectApiSuccess(myParticipationBody, '分页查询我的参与业务失败');
+      const myParticipations = myParticipationBody.data?.list || myParticipationBody.data?.records || [];
+      expect(myParticipations).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            processKey: workflow.definitionKey,
+            businessKey: businessKeys[0],
+            processInstanceId: firstProcessInstanceId,
+            participantTypes: expect.arrayContaining(['BUSINESS_PARTICIPANT']),
+          }),
+        ]),
+      );
+
+      const wrongCoordinateResponse = await request.post(api('/workflow/participations/business'), {
+        headers: authHeaders(token),
+        data: {
+          processKey: workflow.definitionKey,
+          businessKey: `${businessKeys[0]}_WRONG`,
+          processInstanceId: firstProcessInstanceId,
+          participantUserIds: [assignedUsers[1].userId],
+        },
+      });
+      expect(wrongCoordinateResponse.status()).toBe(200);
+      const wrongCoordinateBody = await wrongCoordinateResponse.json();
+      expect(wrongCoordinateBody.code).toBe(3653);
+      expect(
+        queryWorkspaceMysql(
+          `SELECT COUNT(*) FROM workflow_process_participant WHERE business_key = ${sqlLiteral(`${businessKeys[0]}_WRONG`)}`,
+        ),
+      ).toBe('0');
+
+      await completeTask(request, assignedUsers[0].token, String(firstTask.id), '首位自动派单用户完成审批');
+      const completedAccessResponse = await request.get(api('/workflow/participations/access'), {
+        headers: authHeaders(assignedUsers[0].token),
+        params: { processKey: workflow.definitionKey, businessKey: businessKeys[0] },
+      });
+      expect(completedAccessResponse.status()).toBe(200);
+      const completedAccessBody = await completedAccessResponse.json();
+      expectApiSuccess(completedAccessBody, '已完成办理人查询历史参与事实失败');
+      expect(completedAccessBody.data.readable).toBe(true);
+      expect(completedAccessBody.data.participantTypes).toContain('COMPLETED_HANDLER');
+      expect(completedAccessBody.data.participantTypes).not.toContain('CURRENT_ASSIGNEE');
+
+      const secondProcessInstanceId = await startLeaveProcess(
+        request,
+        token,
+        workflow.definitionId,
+        businessKeys[1],
+        1,
+        'Issue 732 ROUND_ROBIN second assignment',
+      );
+      const secondTask = await waitForTodoTask(request, assignedUsers[1].token, businessKeys[1], workflow.taskName);
+      expect(String(secondTask.assigneeName)).toBe(assignedUsers[1].userId);
+      await completeTask(request, assignedUsers[1].token, String(secondTask.id), '次位自动派单用户完成审批');
+      expect(secondProcessInstanceId).not.toBe(firstProcessInstanceId);
+
+      const invalidWorkflow = await prepareAutoAssignmentWorkflow(request, token, unique + 1, keyword, [
+        '9223372036854770000',
+      ]);
+      const failedStartResponse = await request.post(api('/workflow/processes/start'), {
+        headers: authHeaders(token),
+        data: {
+          definitionId: invalidWorkflow.definitionId,
+          businessKey: failedBusinessKey,
+          variables: { days: 1, reason: 'Issue 732 empty candidate rollback' },
+        },
+      });
+      expect(failedStartResponse.status()).toBe(200);
+      const failedStartBody = await failedStartResponse.json();
+      expect(failedStartBody.code).toBe(3654);
+      expect(
+        queryWorkspaceMysql(
+          `SELECT (SELECT COUNT(*) FROM workflow_form_instance WHERE business_key = ${sqlLiteral(failedBusinessKey)})` +
+            ` + (SELECT COUNT(*) FROM workflow_process_participant WHERE business_key = ${sqlLiteral(failedBusinessKey)})` +
+            ` + (SELECT COUNT(*) FROM ACT_RU_EXECUTION WHERE BUSINESS_KEY_ = ${sqlLiteral(failedBusinessKey)})` +
+            ` + (SELECT COUNT(*) FROM ACT_HI_PROCINST WHERE BUSINESS_KEY_ = ${sqlLiteral(failedBusinessKey)})`,
+        ),
+      ).toBe('0');
+    } finally {
+      try {
+        executeWorkspaceMysql([
+          `DELETE FROM workflow_process_participant WHERE business_key LIKE ${sqlLiteral(`${keyword}%`)}`,
+          `DELETE FROM workflow_task_record WHERE process_instance_id IN (SELECT process_instance_id FROM workflow_form_instance WHERE business_key LIKE ${sqlLiteral(`${keyword}%`)})`,
+          `DELETE FROM workflow_form_instance WHERE business_key LIKE ${sqlLiteral(`${keyword}%`)}`,
+        ]);
+        await cleanupWorkflow(request, token, keyword);
+        for (const username of usernames) {
+          await cleanupUser(request, token, username);
+        }
+      } finally {
+        restoreAdminParticipationDeclarePermission(participationDeclarePermission);
+        if (userManagementBindingAdded) {
+          removeAdminUserManagementMenuBinding();
+        }
+      }
+    }
+  });
+
   test('流程定义同时支持业务域侧栏和流程分类筛选并在发起页按分类分组', async ({ page, request }) => {
     test.setTimeout(90_000);
     const unique = Date.now();
@@ -2105,6 +2699,11 @@ test.describe('工作流配置真实接口闭环', () => {
       await expect(nodePanel.getByText('流程表达式')).toBeVisible();
       await expect(nodePanel.getByText('指定岗位')).toBeVisible();
       await expect(nodePanel.getByText('指定组织')).toBeVisible();
+      const assignmentMode = nodePanel.locator('[data-field="workflow.assignment-mode"]');
+      await expect(assignmentMode.getByRole('radio', { name: '待领取' })).toBeChecked();
+      await assignmentMode.getByText('自动派单').click();
+      await expect(assignmentMode.getByRole('radio', { name: '自动派单' })).toBeChecked();
+      await expect(nodePanel.getByText('算法：ROUND_ROBIN')).toBeVisible();
       await expect(nodePanel.getByRole('button', { name: /审批人为空/ })).toBeVisible();
       await expect(nodePanel.getByRole('button', { name: /驳回策略/ })).toBeVisible();
       await nodePanel.getByRole('tab', { name: '表单权限' }).click();
@@ -2245,6 +2844,9 @@ test.describe('工作流配置真实接口闭环', () => {
       await page.getByRole('button', { name: '保存' }).click();
       const saveDraftResponse = await saveDraftResponsePromise;
       const saveDraftBody = await saveDraftResponse.json();
+      const saveDraftRequest = saveDraftResponse.request().postDataJSON() as { designerJson?: string };
+      const savedDesigner = JSON.parse(String(saveDraftRequest.designerJson || '{}'));
+      expect(savedDesigner.childNode?.properties?.approvalConfig?.assignmentMode).toBe('AUTO');
       expect(
         saveDraftResponse.status(),
         JSON.stringify(
@@ -3014,6 +3616,153 @@ test.describe('工作流配置真实接口闭环', () => {
       await expect(page.locator('.el-table__row', { hasText: businessKey })).toBeVisible({ timeout: 10000 });
       await expectNoAuthError(page);
     } finally {
+      await cleanupWorkflow(request, token, keyword).catch(() => undefined);
+    }
+  });
+
+  test('@p0 @workflow 办理人身份在真实审批流中保留原始 key 并显示租户成员昵称', async ({ page, request }, testInfo) => {
+    test.setTimeout(90_000);
+    const unique = Date.now();
+    const keyword = `e2e_assignee_identity_${unique}`;
+    const businessType = 'E2E_ASSIGNEE_IDENTITY';
+    const businessKey = `ASSIGNEE-IDENTITY-E2E-${unique}`;
+    const assigneeUsername = 'admin';
+    const assigneeNickname = 'Administrator';
+    const diagnostics = collectBrowserDiagnostics(page);
+    const token = await loginToken(request, platformTenant);
+
+    try {
+      cleanupWorkflowActionData(businessKey);
+      await cleanupWorkflow(request, token, keyword);
+      const definitionId = await prepareAssigneeIdentityWorkflow(request, token, unique, keyword, assigneeUsername);
+
+      const startResponse = await request.post(api(`/workflow/processes/start-business`), {
+        headers: { Authorization: `Bearer ${token}` },
+        data: {
+          definitionId,
+          businessType,
+          businessKey,
+          applyTitle: `E2E办理人身份申请${unique}`,
+          variables: {
+            days: 2,
+            reason: 'E2E办理人身份真实流程验证',
+            applicant: 'admin',
+          },
+        },
+      });
+      expect(startResponse.status()).toBe(200);
+      const startBody = await startResponse.json();
+      expectApiSuccess(startBody, '发起办理人身份流程失败');
+      expect(startBody.data.assigneeName).toBe('admin');
+      const assigneeId = String(startBody.data.assigneeId || '');
+      expect(assigneeId).not.toBe('');
+      expect(startBody.data.assigneeDisplayName).toBe(assigneeNickname);
+      expect(startBody.data.currentTasks).toHaveLength(1);
+      expect(startBody.data.currentTasks[0]).toMatchObject({
+        assigneeName: assigneeUsername,
+        assigneeDisplayName: assigneeNickname,
+      });
+
+      const adminTask = await findTodoTask(request, token, businessKey, '管理员初审');
+      const completeAdminResponse = await request.post(api(`/workflow/tasks/complete-result`), {
+        headers: { Authorization: `Bearer ${token}` },
+        data: {
+          taskId: adminTask.id,
+          comment: '管理员初审通过，流转租户成员复核',
+          variables: {},
+        },
+      });
+      expect(completeAdminResponse.status()).toBe(200);
+      const completeAdminBody = await completeAdminResponse.json();
+      expectApiSuccess(completeAdminBody, '管理员初审完成失败');
+      expect(completeAdminBody.data.ended).toBe(false);
+      expect(completeAdminBody.data.assigneeName).toBe(assigneeUsername);
+      expect(String(completeAdminBody.data.assigneeId)).toBe(assigneeId);
+      expect(completeAdminBody.data.assigneeDisplayName).toBe(assigneeNickname);
+      expect(completeAdminBody.data.currentTask).toMatchObject({
+        assigneeName: assigneeUsername,
+        assigneeDisplayName: assigneeNickname,
+      });
+      expect(completeAdminBody.data.currentTasks).toHaveLength(1);
+
+      const progressResponse = await request.get(api(`/workflow/business-applies/progress/latest`), {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { businessType, businessKey },
+      });
+      expect(progressResponse.status()).toBe(200);
+      const progressBody = await progressResponse.json();
+      expectApiSuccess(progressBody, '查询办理人身份流程进度失败');
+      expect(progressBody.data.assigneeName).toBe(assigneeUsername);
+      expect(String(progressBody.data.assigneeId)).toBe(assigneeId);
+      expect(progressBody.data.assigneeDisplayName).toBe(assigneeNickname);
+      expect(progressBody.data.currentTasks[0]).toMatchObject({
+        assigneeName: assigneeUsername,
+        assigneeDisplayName: assigneeNickname,
+      });
+
+      const assigneeTask = await findTodoTask(request, token, businessKey, '租户成员复核');
+      expect(assigneeTask.assigneeName).toBe(assigneeUsername);
+      expect(String(assigneeTask.assigneeId)).toBe(assigneeId);
+      expect(assigneeTask.assigneeDisplayName).toBe(assigneeNickname);
+
+      await loginPage(page, platformTenant);
+      const todoResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/workflow/tasks/todo') && response.status() === 200,
+      );
+      await openTodoTasks(page);
+      await todoResponsePromise;
+      const taskRow = page.locator('.el-table__row', { hasText: businessKey });
+      await expect(taskRow).toBeVisible({ timeout: 10_000 });
+      await expect(taskRow.locator('[data-field="workflow.assignee"]')).toHaveText(assigneeNickname);
+
+      const detailResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/workflow/tasks/detail') && response.status() === 200,
+      );
+      await taskRow.getByRole('button', { name: '处理' }).click();
+      await page.waitForURL('**/#/workflow/task/detail**', { timeout: 10_000 });
+      const detailBody = await (await detailResponsePromise).json();
+      expectApiSuccess(detailBody, '查询办理人身份任务详情失败');
+      expect(detailBody.data.task.assigneeName).toBe(assigneeUsername);
+      expect(String(detailBody.data.task.assigneeId)).toBe(assigneeId);
+      expect(detailBody.data.task.assigneeDisplayName).toBe(assigneeNickname);
+      await expect(page.locator('[data-page="workflow.task.detail"]')).toHaveAttribute('data-state', 'ready');
+      await expect(page.locator('[data-field="workflow.assignee"]')).toHaveText(assigneeNickname);
+
+      const screenshotPath = testInfo.outputPath('workflow-assignee-identity.png');
+      await page.screenshot({ path: screenshotPath, fullPage: true });
+      await testInfo.attach('workflow-assignee-identity', {
+        path: screenshotPath,
+        contentType: 'image/png',
+      });
+
+      await page.getByPlaceholder('请输入审批意见').fill('租户成员复核通过');
+      const completeResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/workflow/tasks/complete') && response.status() === 200,
+      );
+      await page.getByRole('button', { name: '通过' }).click();
+      await page
+        .getByRole('dialog', { name: '审批通过' })
+        .getByRole('button', { name: /^(OK|确定)$/ })
+        .click();
+      const completeBody = await (await completeResponsePromise).json();
+      expectApiSuccess(completeBody, '租户成员复核完成失败');
+      const completedProgressResponse = await request.get(api(`/workflow/business-applies/progress/latest`), {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { businessType, businessKey },
+      });
+      expect(completedProgressResponse.status()).toBe(200);
+      const completedProgressBody = await completedProgressResponse.json();
+      expectApiSuccess(completedProgressBody, '查询已完成办理人身份流程进度失败');
+      expect(completedProgressBody.data.applyStatus).toBe('APPROVED');
+      expect(completedProgressBody.data.currentTasks).toEqual([]);
+      await page.waitForURL('**/#/workflow/task/done', { timeout: 10_000 });
+      const doneRow = page.locator('.el-table__row', { hasText: businessKey }).filter({ hasText: '租户成员复核' });
+      await expect(doneRow).toBeVisible({ timeout: 10_000 });
+      await expect(doneRow.locator('[data-field="workflow.assignee"]')).toHaveText(assigneeNickname);
+      expect(diagnostics, `浏览器异常: ${diagnostics.join('\n')}`).toEqual([]);
+    } finally {
+      cleanupWorkflowActionData(businessKey);
+      cleanupAssigneeIdentityFlowableData(businessKey, keyword);
       await cleanupWorkflow(request, token, keyword).catch(() => undefined);
     }
   });

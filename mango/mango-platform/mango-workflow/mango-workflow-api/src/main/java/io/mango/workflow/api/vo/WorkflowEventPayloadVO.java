@@ -76,14 +76,17 @@ public class WorkflowEventPayloadVO {
     @Schema(description = "当前动作任务定义Key")
     private String taskDefinitionKey;
 
-    @Schema(description = "任务处理人")
+    @Schema(description = "兼容字段，保留 Flowable 原始办理人 key")
     private String assignee;
 
-    @Schema(description = "任务处理人ID")
+    @Schema(description = "当前租户解析得到的 Mango 用户 ID；无法解析时为空")
     private String assigneeId;
 
-    @Schema(description = "任务处理人名称")
+    @Schema(description = "Flowable 原始办理人 key")
     private String assigneeName;
+
+    @Schema(description = "任务处理人显示名")
+    private String assigneeDisplayName;
 
     @Schema(description = "完成任务ID")
     private String completedTaskId;

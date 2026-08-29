@@ -1,5 +1,7 @@
 package io.mango.infra.bootstrap.starter;
 
+import io.mango.infra.bootstrap.api.BootstrapAction;
+import io.mango.infra.bootstrap.api.BootstrapMode;
 import io.mango.infra.bootstrap.api.BootstrapStepContributor;
 import io.mango.infra.bootstrap.core.BootstrapDatabaseLock;
 import io.mango.infra.bootstrap.core.BootstrapManifestHasher;
@@ -18,11 +20,14 @@ import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
+import java.util.List;
 
 @AutoConfiguration
 @ConditionalOnBean(DataSource.class)
 @EnableConfigurationProperties({BootstrapProperties.class, MangoReleaseProperties.class})
 public class BootstrapAutoConfiguration {
+
+    private static final String RESOURCE_BASELINE_ENVIRONMENT = "mango-resource-baseline-build";
 
     @Bean
     @ConditionalOnMissingBean
@@ -62,9 +67,10 @@ public class BootstrapAutoConfiguration {
             BootstrapSchemaMigrator schemaMigrator,
             BootstrapDatabaseLock databaseLock,
             JdbcBootstrapRepository repository,
+            BootstrapProperties bootstrapProperties,
             ObjectProvider<BootstrapStepContributor> contributors) {
         return new BootstrapOrchestrator(planBuilder, hasher, schemaMigrator, databaseLock,
-                repository, contributors.orderedStream().toList());
+                repository, selectContributors(bootstrapProperties, contributors.orderedStream().toList()));
     }
 
     @Bean
@@ -91,6 +97,29 @@ public class BootstrapAutoConfiguration {
                                              JdbcBootstrapRepository repository,
                                              ApplicationEventPublisher eventPublisher) {
         return new RuntimeLeaseManager(bootstrapProperties, releaseProperties, planBuilder,
-                contributors.orderedStream().toList(), repository, eventPublisher);
+                selectContributors(bootstrapProperties, contributors.orderedStream().toList()),
+                repository, eventPublisher);
+    }
+
+    static List<BootstrapStepContributor> selectContributors(
+            BootstrapProperties properties,
+            List<BootstrapStepContributor> contributors) {
+        if (!properties.isResourceBaselineBuildEnabled()) {
+            return List.copyOf(contributors);
+        }
+        if (properties.getMode() != BootstrapMode.BOOTSTRAP
+                || properties.getAction() != BootstrapAction.APPLY
+                || !RESOURCE_BASELINE_ENVIRONMENT.equals(properties.getEnvironmentKey())) {
+            throw new IllegalStateException(
+                    "Resource baseline build mode requires bootstrap apply and the reserved environment key");
+        }
+        List<BootstrapStepContributor> selected = contributors.stream()
+                .filter(BootstrapStepContributor::supportsResourceBaselineBuild)
+                .toList();
+        if (selected.isEmpty()) {
+            throw new IllegalStateException(
+                    "Resource baseline build mode requires an eligible Resource Bootstrap contributor");
+        }
+        return selected;
     }
 }

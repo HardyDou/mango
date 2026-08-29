@@ -76,6 +76,11 @@ public final class ResourceBootstrapStepContributor implements BootstrapStepCont
                         ResourceApplyMode.FINALIZE, Set.of("RESOURCE_REQUIRED"), Set.of(), prepared));
     }
 
+    @Override
+    public boolean supportsResourceBaselineBuild() {
+        return true;
+    }
+
     private PreparedDeclarations prepare() {
         if (artifactLoader != null) {
             var packaged = artifactLoader.load();

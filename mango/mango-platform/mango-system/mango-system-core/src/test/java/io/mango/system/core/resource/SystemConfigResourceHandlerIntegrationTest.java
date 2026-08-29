@@ -2,10 +2,12 @@ package io.mango.system.core.resource;
 
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
+import io.mango.resource.api.enums.ResourceSyncDisposition;
 import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.model.ResourceField;
+import io.mango.resource.support.model.ResourceSyncContext;
 import io.mango.system.core.mapper.SysConfigMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,7 +24,11 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -79,6 +85,37 @@ class SystemConfigResourceHandlerIntegrationTest {
 
         assertThat(stringValue("sys_config", "config_value", "id = 1")).isEqualTo("skin-green");
         assertThat(intValue("sys_config", "sort", "id = 1")).isEqualTo(2);
+    }
+
+    @Test
+    void managedUpsertUsesExactTimestampAndPreservesAdminChanges() throws Exception {
+        ResourceDeclaration initial = configDeclaration("skin-blue", 1);
+        LocalDateTime firstSyncTime = LocalDateTime.of(2026, 8, 28, 10, 15, 30);
+        ResourceSyncContext firstContext = ResourceSyncContext.of(
+                initial.getId(), null, firstSyncTime, null, null);
+
+        var firstResult = handler.upsertBatchWithContext(
+                List.of(initial), List.of(initial), Map.of(initial.getId(), firstContext)).get(initial.getId());
+
+        assertThat(firstResult.getDisposition()).isEqualTo(ResourceSyncDisposition.APPLIED);
+        assertThat(firstResult.getSynchronizationTime()).isEqualTo(firstSyncTime);
+        assertThat(timestampValue("sys_config", "updated_at", "id = 1")).isEqualTo(firstSyncTime);
+
+        LocalDateTime adminChangeTime = firstSyncTime.plusMinutes(5);
+        execute("update sys_config set config_value = 'admin-value', updated_at = timestamp '"
+                + adminChangeTime + "' where id = 1");
+        ResourceDeclaration releaseUpdate = configDeclaration("skin-green", 2);
+        LocalDateTime secondSyncTime = firstSyncTime.plusHours(1);
+        ResourceSyncContext secondContext = ResourceSyncContext.of(
+                releaseUpdate.getId(), firstSyncTime, secondSyncTime, 1L, "sys_config");
+
+        var preserved = handler.upsertBatchWithContext(
+                List.of(releaseUpdate), List.of(releaseUpdate),
+                Map.of(releaseUpdate.getId(), secondContext)).get(releaseUpdate.getId());
+
+        assertThat(preserved.getDisposition()).isEqualTo(ResourceSyncDisposition.PRESERVED);
+        assertThat(stringValue("sys_config", "config_value", "id = 1")).isEqualTo("admin-value");
+        assertThat(timestampValue("sys_config", "updated_at", "id = 1")).isEqualTo(adminChangeTime);
     }
 
     @Test
@@ -206,6 +243,17 @@ class SystemConfigResourceHandlerIntegrationTest {
                      "select " + columnName + " from " + tableName + " where " + whereClause)) {
             resultSet.next();
             return resultSet.getInt(1);
+        }
+    }
+
+    private LocalDateTime timestampValue(String tableName, String columnName, String whereClause) throws Exception {
+        try (Connection connection = dataSource.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(
+                     "select " + columnName + " from " + tableName + " where " + whereClause)) {
+            resultSet.next();
+            Timestamp timestamp = resultSet.getTimestamp(1);
+            return timestamp.toLocalDateTime();
         }
     }
 

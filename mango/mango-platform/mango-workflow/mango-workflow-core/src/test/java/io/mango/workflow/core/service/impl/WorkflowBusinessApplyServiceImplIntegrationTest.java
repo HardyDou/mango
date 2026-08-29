@@ -5,8 +5,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
+import io.mango.workflow.core.identity.WorkflowAssigneeIdentityService;
 import io.mango.workflow.core.mapper.WorkflowBusinessApplyMapper;
 import org.flowable.engine.TaskService;
+import org.flowable.task.api.Task;
+import org.flowable.task.api.TaskQuery;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,9 +29,11 @@ import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest(classes = {
         DataSourceAutoConfiguration.class,
@@ -53,6 +58,9 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
 
     @Autowired
     private WorkflowBusinessApplyService service;
+
+    @Autowired
+    private TaskService taskService;
 
     @BeforeEach
     void setUp() {
@@ -110,6 +118,41 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
         var detail = service.detail(10L);
 
         assertThat(detail.getViewPath()).isEqualTo("/expense/apply/detail");
+    }
+
+    @Test
+    void refreshCurrentTasksPreservesRawFlowableAssigneeKey() {
+        MangoContextHolder.set(MangoContextSnapshot.empty()
+                .withSecurity(1001L, "1", "admin", "default", "USER", "USER", 1L, "internal-admin"));
+        insertApply(15L, 1001L, "IN_APPROVAL");
+        jdbcTemplate.update("""
+                update workflow_business_apply
+                set process_instance_id = 'PROC-15'
+                where id = 15
+                """);
+        Task task = mock(Task.class);
+        when(task.getId()).thenReturn("TASK-15");
+        when(task.getProcessInstanceId()).thenReturn("PROC-15");
+        when(task.getTaskDefinitionKey()).thenReturn("review");
+        when(task.getName()).thenReturn("复核");
+        when(task.getAssignee()).thenReturn(" reviewer ");
+        TaskQuery taskQuery = mock(TaskQuery.class);
+        when(taskService.createTaskQuery()).thenReturn(taskQuery);
+        when(taskQuery.processInstanceId("PROC-15")).thenReturn(taskQuery);
+        when(taskQuery.orderByTaskCreateTime()).thenReturn(taskQuery);
+        when(taskQuery.asc()).thenReturn(taskQuery);
+        when(taskQuery.list()).thenReturn(List.of(task));
+        when(taskService.getIdentityLinksForTask("TASK-15")).thenReturn(List.of());
+
+        var refreshed = service.refreshCurrentTasksAndReturn("PROC-15");
+
+        assertThat(refreshed.getCurrentTasks()).singleElement()
+                .satisfies(currentTask -> assertThat(currentTask.getAssigneeName()).isEqualTo(" reviewer "));
+        assertThat(jdbcTemplate.queryForObject("""
+                select assignee_name
+                from workflow_business_apply_current_task
+                where apply_id = 15
+                """, String.class)).isEqualTo(" reviewer ");
     }
 
     @Test
@@ -283,7 +326,7 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
     }
 
     @Configuration
-    @Import(WorkflowBusinessApplyService.class)
+    @Import({WorkflowBusinessApplyService.class, WorkflowAssigneeIdentityService.class})
     @MapperScan("io.mango.workflow.core.mapper")
     static class TestConfig {
 

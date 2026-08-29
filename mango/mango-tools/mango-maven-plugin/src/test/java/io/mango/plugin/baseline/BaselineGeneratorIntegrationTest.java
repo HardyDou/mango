@@ -15,6 +15,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Statement;
+import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -255,6 +257,104 @@ class BaselineGeneratorIntegrationTest {
         assertEquals(0, temporaryDatabaseCount(prefix));
     }
 
+    @Test
+    void rejectsResourceBaselineAcrossDatasourceGroupsBeforeCreatingSchemas() throws Exception {
+        migration("alpha", "V1__init.sql", "CREATE TABLE alpha_record (id bigint primary key);");
+        migration("archive", "V1__init.sql", "CREATE TABLE archive_record (id bigint primary key);");
+        String prefix = uniquePrefix("it_resource_groups");
+        Path output = directory.resolve("target/generated-resources");
+        ResourceBaselineExecutionSettings resourceBaseline = new ResourceBaselineExecutionSettings(
+                "example.ResourceApplication",
+                List.of(),
+                directory,
+                Duration.ofSeconds(1));
+
+        MojoExecutionException exception = assertThrows(
+                MojoExecutionException.class,
+                () -> generator(
+                        prefix,
+                        output,
+                        List.of("alpha", "archive"),
+                        Map.of("archive", "archive"),
+                        MySqlSchemaDefaults.cliStandard(),
+                        resourceBaseline).generate());
+
+        assertTrue(exception.getMessage().contains("MANGO-BASELINE-048"));
+        assertEquals(0, temporaryDatabaseCount(prefix));
+    }
+
+    @Test
+    void preparesPortableResourceStateWithoutRewritingAuditTimestamps() throws Exception {
+        String database = uniquePrefix("it_resource_cleanup");
+        MySqlBaselineStore store = baselineStore();
+        store.createDatabase("mysql", database, MySqlSchemaDefaults.cliStandard());
+        try {
+            try (Connection connection = connection(database);
+                    Statement statement = connection.createStatement()) {
+                statement.execute("""
+                        CREATE TABLE resource_registry (
+                          id bigint NOT NULL PRIMARY KEY,
+                          resource_id varchar(64) NOT NULL UNIQUE,
+                          created_at datetime NULL,
+                          updated_at datetime NULL,
+                          last_sync_time datetime NULL
+                        )
+                        """);
+                statement.execute("""
+                        INSERT INTO resource_registry
+                          (id, resource_id, created_at, updated_at, last_sync_time)
+                        VALUES
+                          (900, 'resource-b', '2026-08-29 08:01:02', '2026-08-29 08:03:04', '2026-08-29 08:05:06'),
+                          (100, 'resource-a', '2026-08-28 07:01:02', '2026-08-28 07:03:04', '2026-08-28 07:05:06')
+                        """);
+                for (String table : List.of(
+                        "resource_module_receipt", "resource_sync_log", "resource_change_log")) {
+                    statement.execute("CREATE TABLE " + table + " (id bigint NOT NULL PRIMARY KEY)");
+                    statement.execute("INSERT INTO " + table + " (id) VALUES (1)");
+                }
+                statement.execute("""
+                        CREATE TABLE alpha_record (
+                          id bigint NOT NULL PRIMARY KEY,
+                          updated_at datetime NOT NULL
+                        )
+                        """);
+                statement.execute("INSERT INTO alpha_record VALUES (1, '2024-02-03 04:05:06')");
+                for (String table : List.of(
+                        "mango_runtime_instance",
+                        "mango_bootstrap_step_execution",
+                        "mango_bootstrap_execution",
+                        "mango_bootstrap_control")) {
+                    statement.execute("CREATE TABLE " + table + " (id bigint NOT NULL PRIMARY KEY)");
+                }
+            }
+
+            store.preparePortableResourceBaseline(database);
+
+            assertEquals(1, queryLong(database,
+                    "SELECT id FROM resource_registry WHERE resource_id = 'resource-a'"));
+            assertEquals(2, queryLong(database,
+                    "SELECT id FROM resource_registry WHERE resource_id = 'resource-b'"));
+            assertEquals("2026-08-28 07:05:06", queryString(database,
+                    "SELECT DATE_FORMAT(last_sync_time, '%Y-%m-%d %H:%i:%s') "
+                            + "FROM resource_registry WHERE resource_id = 'resource-a'"));
+            assertEquals("2024-02-03 04:05:06", queryString(database,
+                    "SELECT DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s') FROM alpha_record WHERE id = 1"));
+            assertEquals(0, queryLong(database, "SELECT COUNT(*) FROM resource_module_receipt"));
+            assertEquals(0, queryLong(database, "SELECT COUNT(*) FROM resource_sync_log"));
+            assertEquals(0, queryLong(database, "SELECT COUNT(*) FROM resource_change_log"));
+            assertEquals(0, queryLong("mysql", """
+                    SELECT COUNT(*) FROM information_schema.TABLES
+                     WHERE TABLE_SCHEMA = '%s' AND TABLE_NAME LIKE 'mango_bootstrap%%'
+                    """.formatted(database)));
+            assertEquals(0, queryLong("mysql", """
+                    SELECT COUNT(*) FROM information_schema.TABLES
+                     WHERE TABLE_SCHEMA = '%s' AND TABLE_NAME = 'mango_runtime_instance'
+                    """.formatted(database)));
+        } finally {
+            store.dropDatabase("mysql", database);
+        }
+    }
+
     private BaselineGenerator generator(String prefix, Path output) throws Exception {
         return generator(
                 prefix,
@@ -282,6 +382,16 @@ class BaselineGeneratorIntegrationTest {
             List<String> moduleOrder,
             Map<String, String> groups,
             MySqlSchemaDefaults schemaDefaults) throws Exception {
+        return generator(prefix, output, moduleOrder, groups, schemaDefaults, null);
+    }
+
+    private BaselineGenerator generator(
+            String prefix,
+            Path output,
+            List<String> moduleOrder,
+            Map<String, String> groups,
+            MySqlSchemaDefaults schemaDefaults,
+            ResourceBaselineExecutionSettings resourceBaseline) throws Exception {
         BaselineMigrationCatalog catalog = BaselineMigrationCatalog.discover(
                 directory, new MavenProject(), Set.copyOf(moduleOrder));
         BaselineGenerationSettings settings = new BaselineGenerationSettings(
@@ -293,8 +403,42 @@ class BaselineGeneratorIntegrationTest {
                 output,
                 moduleOrder,
                 groups,
-                false);
+                false,
+                resourceBaseline);
         return new BaselineGenerator(settings, catalog, mock(Log.class));
+    }
+
+    private MySqlBaselineStore baselineStore() throws MojoExecutionException {
+        return new MySqlBaselineStore(
+                requiredEnvironment("MANGO_BASELINE_TEST_DB_URL"),
+                environment("MANGO_BASELINE_TEST_DB_USERNAME", "root"),
+                environment("MANGO_BASELINE_TEST_DB_PASSWORD", ""));
+    }
+
+    private Connection connection(String database) throws Exception {
+        MySqlJdbcUrl url = MySqlJdbcUrl.parse(requiredEnvironment("MANGO_BASELINE_TEST_DB_URL"));
+        return DriverManager.getConnection(
+                url.database(database),
+                environment("MANGO_BASELINE_TEST_DB_USERNAME", "root"),
+                environment("MANGO_BASELINE_TEST_DB_PASSWORD", ""));
+    }
+
+    private long queryLong(String database, String sql) throws Exception {
+        try (Connection connection = connection(database);
+                Statement statement = connection.createStatement();
+                ResultSet resultSet = statement.executeQuery(sql)) {
+            resultSet.next();
+            return resultSet.getLong(1);
+        }
+    }
+
+    private String queryString(String database, String sql) throws Exception {
+        try (Connection connection = connection(database);
+                Statement statement = connection.createStatement();
+                ResultSet resultSet = statement.executeQuery(sql)) {
+            resultSet.next();
+            return resultSet.getString(1);
+        }
     }
 
     private void createCompleteMigrationSet() throws Exception {

@@ -83,8 +83,14 @@ public class ResourceRegistryRepository {
     }
 
     public Long insert(ResourceDeclaration declaration, String hash, Long targetId, String targetTable) {
+        return insert(declaration, hash, targetId, targetTable, LocalDateTime.now());
+    }
+
+    public Long insert(ResourceDeclaration declaration, String hash, Long targetId, String targetTable,
+                       LocalDateTime synchronizationTime) {
         Long id = IdWorker.getId();
         LocalDateTime now = LocalDateTime.now();
+        LocalDateTime effectiveSyncTime = synchronizationTime == null ? now : synchronizationTime;
         ResourceRegistryEntity entity = new ResourceRegistryEntity();
         entity.setId(id);
         entity.setResourceId(declaration.getId());
@@ -101,7 +107,7 @@ public class ResourceRegistryRepository {
         entity.setSourceHash(hash);
         entity.setSyncMode(declaration.getSyncMode().name());
         entity.setStatus(declaration.getStatus().name());
-        entity.setLastSyncTime(now);
+        entity.setLastSyncTime(effectiveSyncTime);
         entity.setCreatedAt(now);
         entity.setUpdatedAt(now);
         registryMapper.insert(entity);
@@ -109,6 +115,13 @@ public class ResourceRegistryRepository {
     }
 
     public void update(ResourceRegistryRow row, ResourceDeclaration declaration, String hash, Long targetId, String targetTable) {
+        update(row, declaration, hash, targetId, targetTable, LocalDateTime.now());
+    }
+
+    public void update(ResourceRegistryRow row, ResourceDeclaration declaration, String hash, Long targetId,
+                       String targetTable, LocalDateTime synchronizationTime) {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime effectiveSyncTime = synchronizationTime == null ? now : synchronizationTime;
         ResourceRegistryEntity entity = new ResourceRegistryEntity();
         entity.setId(row.getId());
         entity.setResourceVersion(declaration.getVersion());
@@ -123,8 +136,8 @@ public class ResourceRegistryRepository {
         entity.setSourceHash(hash);
         entity.setSyncMode(declaration.getSyncMode().name());
         entity.setStatus(declaration.getStatus().name());
-        entity.setLastSyncTime(LocalDateTime.now());
-        entity.setUpdatedAt(LocalDateTime.now());
+        entity.setLastSyncTime(effectiveSyncTime);
+        entity.setUpdatedAt(now);
         registryMapper.updateById(entity);
     }
 
@@ -181,6 +194,7 @@ public class ResourceRegistryRepository {
         row.setSourceHash(entity.getSourceHash());
         row.setSyncMode(ResourceSyncMode.valueOf(entity.getSyncMode()));
         row.setStatus(entity.getStatus());
+        row.setLastSyncTime(entity.getLastSyncTime());
         return row;
     }
 

@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "id": "legacy-resource-workflow-2026-08-29",
+  "oneTime": true,
+  "from": {
+    "tag": "v2026.08.27-maven-1.0.42-date-resource-fixes",
+    "commit": "1e1fedec30bf11f0be078a4ce16e08a5b56fec58",
+    "tree": "4990fb8fd4a89c17c5eecf997116335113c36464"
+  },
+  "initialCandidate": {
+    "commit": "5aea9056374a8d6e6c9099881b6b43971d0b7266",
+    "tree": "ebe1dfd4efbca1cff308d0495a6130ef7256ac9e"
+  },
+  "finalReleasePlan": {
+    "file": ".changeset/release-plan.json",
+    "treeBinding": "The clean Git tree is recorded by mango release prepare after the Release PR source is committed."
+  },
+  "releases": [
+    {
+      "name": "@mango/workflow",
+      "type": "patch",
+      "fromVersion": "1.0.44",
+      "toVersion": "1.0.45",
+      "reason": "Issue #851 Resource baseline and incremental synchronization changes, together with Issues #732/#885/#886/#887 Workflow contracts already merged before the release projection"
+    },
+    {
+      "name": "@mango/admin-shell",
+      "type": "patch",
+      "fromVersion": "1.0.65",
+      "toVersion": "1.0.66",
+      "reason": "exact runtime dependency follows @mango/workflow"
+    },
+    {
+      "name": "@mango/workflow-business-example",
+      "type": "patch",
+      "fromVersion": "1.0.43",
+      "toVersion": "1.0.44",
+      "reason": "exact runtime dependency follows @mango/workflow"
+    },
+    {
+      "name": "@mango/admin",
+      "type": "patch",
+      "fromVersion": "1.1.1",
+      "toVersion": "1.1.2",
+      "reason": "exact runtime dependency follows @mango/admin-shell, @mango/workflow and @mango/workflow-business-example"
+    },
+    {
+      "name": "@mango/cli",
+      "type": "patch",
+      "fromVersion": "1.2.2",
+      "toVersion": "1.2.3",
+      "reason": "managed CLI compatibility tuple carries Mango Maven 1.0.43 and the generated npm closure"
+    }
+  ],
+  "restoredPublishedBaselines": [
+    { "name": "@mango/admin-extension", "version": "1.0.3", "gitCommit": "1e1fedec30bf11f0be078a4ce16e08a5b56fec58" },
+    { "name": "@mango/admin-pages", "version": "1.0.37", "gitCommit": "1e1fedec30bf11f0be078a4ce16e08a5b56fec58" },
+    { "name": "@mango/ai", "version": "1.1.1", "gitCommit": "1e1fedec30bf11f0be078a4ce16e08a5b56fec58" },
+    { "name": "@mango/auth", "version": "1.0.30", "gitCommit": "1e1fedec30bf11f0be078a4ce16e08a5b56fec58" },
+    { "name": "@mango/calendar", "version": "1.0.38", "gitCommit": "1e1fedec30bf11f0be078a4ce16e08a5b56fec58" },
+    { "name": "@mango/cms", "version": "1.0.27", "gitCommit": "1e1fedec30bf11f0be078a4ce16e08a5b56fec58" },
+    { "name": "@mango/common", "version": "2.0.1", "gitCommit": "1e1fedec30bf11f0be078a4ce16e08a5b56fec58" },
+    { "name": "@mango/file", "version": "1.0.37", "gitCommit": "1e1fedec30bf11f0be078a4ce16e08a5b56fec58" },
+    { "name": "@mango/grid-layout", "version": "1.0.20", "gitCommit": "1e1fedec30bf11f0be078a4ce16e08a5b56fec58" },
+    { "name": "@mango/grid-widgets", "version": "1.0.26", "gitCommit": "1e1fedec30bf11f0be078a4ce16e08a5b56fec58" },
+    { "name": "@mango/home", "version": "1.0.18", "gitCommit": "1e1fedec30bf11f0be078a4ce16e08a5b56fec58" },
+    { "name": "@mango/job", "version": "1.0.31", "gitCommit": "1e1fedec30bf11f0be078a4ce16e08a5b56fec58" },
+    { "name": "@mango/link", "version": "1.0.24", "gitCommit": "1e1fedec30bf11f0be078a4ce16e08a5b56fec58" },
+    { "name": "@mango/notice", "version": "1.0.43", "gitCommit": "1e1fedec30bf11f0be078a4ce16e08a5b56fec58" },
+    { "name": "@mango/numgen", "version": "1.0.39", "gitCommit": "1e1fedec30bf11f0be078a4ce16e08a5b56fec58" },
+    { "name": "@mango/payment", "version": "1.0.30", "gitCommit": "1e1fedec30bf11f0be078a4ce16e08a5b56fec58" },
+    { "name": "@mango/rbac", "version": "1.0.28", "gitCommit": "1e1fedec30bf11f0be078a4ce16e08a5b56fec58" },
+    { "name": "@mango/site-shell", "version": "1.0.16", "gitCommit": "1e1fedec30bf11f0be078a4ce16e08a5b56fec58" },
+    { "name": "@mango/system", "version": "1.0.36", "gitCommit": "1e1fedec30bf11f0be078a4ce16e08a5b56fec58" },
+    { "name": "@mango/template", "version": "1.0.39", "gitCommit": "1e1fedec30bf11f0be078a4ce16e08a5b56fec58" }
+  ],
+  "issues": [732, 851],
+  "exitCondition": "remove this record after Mango 1.0.43 is published and its successful source baseline is recorded"
+}

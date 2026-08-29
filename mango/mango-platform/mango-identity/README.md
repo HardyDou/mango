@@ -20,6 +20,7 @@
 | 当前用户授权管理 | 按当前租户、应用和用户查看绑定，并在密码校验后解绑 |
 | 租户初始化 | 新建租户时为创建者补建管理员成员，并尝试绑定 `ROLE_ADMIN` |
 | 用户管理接口 | 提供用户分页、详情、新增、编辑、状态、重置密码、批量移除等接口 |
+| Workflow 办理人身份批量查询 | `POST /identity/user/info/batch` 按当前租户和有效成员关系批量解析 `userIds`/`usernames`，最多 200 个去重标识；未命中不返回记录 |
 | 资源声明 | 通过 Resource Registry 的 `IDENTITY_USER` 和 `ORG_MEMBER_BINDING` 注入 demo/bootstrap 用户和组织成员绑定 |
 
 ## 3. 后端接入
@@ -151,6 +152,7 @@ HTTP 接口前缀是 `/identity`。
 | GET | `/identity/auth/id` | INTERNAL | 认证链路按用户 ID 查询认证事实 |
 | GET | `/identity/user/info/username` | 内部调用 | 按用户名查询身份资料 |
 | GET | `/identity/user/info/id` | 内部调用 | 按用户 ID 查询身份资料 |
+| POST | `/identity/user/info/batch` | 登录用户 | 按用户 ID 和用户名批量查询当前租户成员身份资料，标识总数最多 200 个 |
 | GET | `/identity/user/info/targets` | 内部调用 | 按 USER、ORG、POST、ROLE 解析接收人 |
 
 主要命令对象：

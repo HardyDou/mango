@@ -10,6 +10,8 @@ import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.event.api.IDomainEventPublisher;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
+import io.mango.identity.api.AuthUserProvider;
+import io.mango.identity.api.TenantMemberProvider;
 import io.mango.workflow.api.command.AddSignWorkflowTaskCommand;
 import io.mango.workflow.api.command.ClaimWorkflowTaskCommand;
 import io.mango.workflow.api.command.CompleteWorkflowTaskCommand;
@@ -43,11 +45,13 @@ import io.mango.workflow.core.entity.WorkflowDefinitionVersionEntity;
 import io.mango.workflow.core.entity.WorkflowFormInstanceEntity;
 import io.mango.workflow.core.entity.WorkflowTaskRecordEntity;
 import io.mango.workflow.core.event.WorkflowEventPublisher;
+import io.mango.workflow.core.identity.WorkflowAssigneeIdentityService;
 import io.mango.workflow.core.mapper.WorkflowDefinitionMapper;
 import io.mango.workflow.core.mapper.WorkflowDefinitionVersionMapper;
 import io.mango.workflow.core.mapper.WorkflowFormInstanceMapper;
 import io.mango.workflow.core.mapper.WorkflowTaskRecordMapper;
 import io.mango.workflow.core.service.IWorkflowBusinessApplyService;
+import io.mango.workflow.core.service.IWorkflowParticipationService;
 import io.mango.workflow.core.model.WorkflowProcessStartedContext;
 import io.mango.workflow.core.model.WorkflowTaskStatusContext;
 import io.mango.workflow.core.service.IWorkflowTaskRuntimeService;
@@ -148,6 +152,8 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
     @Autowired
     private WorkflowCandidateGroupProvider candidateGroupProvider;
     @Autowired
+    private IWorkflowParticipationService workflowParticipationService;
+    @Autowired
     private CapturingBusinessApplyService workflowBusinessApplyService;
     @Autowired
     private RecordingWorkflowEventPublisher workflowEventPublisher;
@@ -159,7 +165,8 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
         MangoContextHolder.clear();
         MangoContextHolder.set(MangoContextSnapshot.empty()
                 .withSecurity(1001L, "1", "anonymous", "default", "USER", "ORG", 100L, "anonymous"));
-        reset(taskService, runtimeService, historyService, repositoryService, candidateGroupProvider);
+        reset(taskService, runtimeService, historyService, repositoryService, candidateGroupProvider,
+                workflowParticipationService);
         workflowBusinessApplyService.clear();
         workflowEventPublisher.clear();
         operationLog.clear();
@@ -239,6 +246,52 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
         verify(taskService).setAssignee("task-1", "lisi");
         verify(taskService).claim("task-1", "anonymous");
         verify(taskService).unclaim("task-1");
+    }
+
+    @Test
+    void autoAssignmentQueriesUseTenantScopedRuntimeTasksAndRecentParticipants() {
+        jdbcTemplate.execute("""
+                create table ACT_RU_TASK (
+                    ID_ varchar(128) not null,
+                    ASSIGNEE_ varchar(128),
+                    PROC_INST_ID_ varchar(128),
+                    primary key (ID_)
+                )
+                """);
+        jdbcTemplate.execute("""
+                create table workflow_process_participant (
+                    id bigint not null,
+                    tenant_id varchar(64) not null,
+                    process_instance_id varchar(128) not null,
+                    user_id bigint not null,
+                    participant_type varchar(32) not null,
+                    active boolean not null,
+                    last_participated_at timestamp not null,
+                    primary key (id)
+                )
+                """);
+        insertFormInstance("proc-1", "{}", WorkflowInstanceStatus.RUNNING.name());
+        jdbcTemplate.update("insert into ACT_RU_TASK (ID_, ASSIGNEE_, PROC_INST_ID_) values (?, ?, ?)",
+                "active-10", "10", "proc-1");
+        jdbcTemplate.update("insert into ACT_RU_TASK (ID_, ASSIGNEE_, PROC_INST_ID_) values (?, ?, ?)",
+                "orphan-10", "10", "proc-without-form");
+        jdbcTemplate.update("""
+                insert into workflow_process_participant
+                    (id, tenant_id, process_instance_id, user_id, participant_type, active, last_participated_at)
+                values (?, ?, ?, ?, ?, ?, ?)
+                """, 1L, "1", "proc-1", 10L, "COMPLETED_HANDLER", true,
+                LocalDateTime.parse("2026-06-27T09:00:00"));
+        jdbcTemplate.update("""
+                insert into workflow_process_participant
+                    (id, tenant_id, process_instance_id, user_id, participant_type, active, last_participated_at)
+                values (?, ?, ?, ?, ?, ?, ?)
+                """, 2L, "1", "proc-1", 20L, "COMPLETED_HANDLER", true,
+                LocalDateTime.parse("2026-06-27T11:00:00"));
+
+        WorkflowAutoAssignmentSelector autoAssignmentSelector = new WorkflowAutoAssignmentSelector(jdbcTemplate);
+        assertThat(autoAssignmentSelector.activeTaskCount(10L)).isEqualTo(1L);
+        Task task = task("task-1", "manager_approve", "proc-1", "pd-1", null);
+        assertThat(autoAssignmentSelector.affinityCandidate(task, List.of(10L, 20L))).isEqualTo(20L);
     }
 
     @Test
@@ -323,6 +376,23 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
         assertThat(operationLog.entries()).containsSubsequence(
                 "refreshCurrentTasksAndReturn:proc-1",
                 "publishTaskAdvanced:proc-1");
+    }
+
+    @Test
+    void completeWithResultDeactivatesCurrentAssigneesWhenProcessEnds() {
+        stubAliveProcess("proc-1", true);
+        insertFormInstance("proc-1", "{}", WorkflowInstanceStatus.RUNNING.name());
+        Task task = task("task-1", "manager_approve", "proc-1", "pd-1", "anonymous");
+        TaskQuery query = taskQuery(task, 1L, List.of());
+        when(taskService.createTaskQuery()).thenReturn(query);
+        CompleteWorkflowTaskCommand command = new CompleteWorkflowTaskCommand();
+        command.setTaskId("task-1");
+        command.setComment("同意");
+
+        WorkflowTaskCompleteResultVO result = service.completeWithResult(command);
+
+        assertThat(result.getEnded()).isTrue();
+        verify(workflowParticipationService).deactivateCurrentAssignees("proc-1");
     }
 
     @Test
@@ -431,7 +501,7 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
         when(taskService.createTaskQuery())
                 .thenReturn(pendingQuery, processingQuery, overdueAssignedQuery, overdueClaimableQuery);
         when(historyService.createHistoricTaskInstanceQuery()).thenReturn(completedQuery);
-        when(completedQuery.taskAssignee("anonymous")).thenReturn(completedQuery);
+        when(completedQuery.taskAssigneeIds(List.of("anonymous", "1001"))).thenReturn(completedQuery);
         when(completedQuery.finished()).thenReturn(completedQuery);
         when(completedQuery.count()).thenReturn(7L);
 
@@ -442,6 +512,16 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
         assertThat(summary.getCompleted()).isEqualTo(7L);
         assertThat(summary.getOverdue()).isEqualTo(2L);
         assertThat(summary.getTotal()).isEqualTo(17L);
+    }
+
+    @Test
+    void roundRobinSelectsFirstCandidateGreaterThanRemovedPreviousCandidate() {
+        assertThat(WorkflowTaskRuntimeService.nextRoundRobinCandidate(List.of(100L, 300L, 500L), 200L))
+                .isEqualTo(300L);
+        assertThat(WorkflowTaskRuntimeService.nextRoundRobinCandidate(List.of(100L, 300L, 500L), 500L))
+                .isEqualTo(100L);
+        assertThat(WorkflowTaskRuntimeService.nextRoundRobinCandidate(List.of(100L, 300L, 500L), null))
+                .isEqualTo(100L);
     }
 
     private void rebuildTables() {
@@ -575,6 +655,7 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
                     business_key varchar(128),
                     apply_title varchar(255),
                     process_name varchar(128),
+                    process_definition_key varchar(128),
                     current_task_names varchar(255),
                     primary key (id)
                 )
@@ -753,7 +834,7 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
     }
 
     @Configuration
-    @Import(WorkflowTaskRuntimeService.class)
+    @Import({WorkflowTaskRuntimeService.class, WorkflowAssigneeIdentityService.class})
     @MapperScan("io.mango.workflow.core.mapper")
     static class TestConfig {
 
@@ -798,14 +879,30 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
         }
 
         @Bean
+        IWorkflowParticipationService workflowParticipationService() {
+            return mock(IWorkflowParticipationService.class);
+        }
+
+        @Bean
+        AuthUserProvider authUserProvider() {
+            return mock(AuthUserProvider.class);
+        }
+
+        @Bean
+        TenantMemberProvider tenantMemberProvider() {
+            return mock(TenantMemberProvider.class);
+        }
+
+        @Bean
         OperationLog operationLog() {
             return new OperationLog();
         }
 
         @Bean
         RecordingWorkflowEventPublisher workflowEventPublisher(ObjectProvider<IDomainEventPublisher> provider,
+                                                               WorkflowAssigneeIdentityService assigneeIdentityService,
                                                                OperationLog operationLog) {
-            return new RecordingWorkflowEventPublisher(provider, operationLog);
+            return new RecordingWorkflowEventPublisher(provider, assigneeIdentityService, operationLog);
         }
 
         @Bean
@@ -833,8 +930,10 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
     static class RecordingWorkflowEventPublisher extends WorkflowEventPublisher {
         private final OperationLog operationLog;
 
-        RecordingWorkflowEventPublisher(ObjectProvider<IDomainEventPublisher> provider, OperationLog operationLog) {
-            super(provider);
+        RecordingWorkflowEventPublisher(ObjectProvider<IDomainEventPublisher> provider,
+                                        WorkflowAssigneeIdentityService assigneeIdentityService,
+                                        OperationLog operationLog) {
+            super(provider, assigneeIdentityService);
             this.operationLog = operationLog;
         }
 

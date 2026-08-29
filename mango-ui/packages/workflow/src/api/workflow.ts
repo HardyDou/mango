@@ -8,6 +8,8 @@ import { toBackendDateRangeParams } from '@mango/common/utils/date-range';
 export type WorkflowStatus = 'DRAFT' | 'PUBLISHED' | 'DISABLED';
 export type WorkflowAssigneeType = 'SPECIFIED_USER' | 'SPECIFIED_ROLE' | 'SPECIFIED_POST' | 'SPECIFIED_ORG' | 'ORG_LEADER' | 'INITIATOR' | 'INITIATOR_SELECT' | 'FORM_USER' | 'EXPRESSION';
 export type WorkflowApprovalMode = 'COUNTERSIGN' | 'OR_SIGN' | 'SEQUENTIAL';
+export type WorkflowAssignmentMode = 'CLAIM' | 'AUTO';
+export type WorkflowAutoAssignmentStrategy = 'ROUND_ROBIN' | 'LEAST_TASKS' | 'AFFINITY';
 export type WorkflowEmptyAssigneeStrategy = 'AUTO_PASS' | 'AUTO_REJECT' | 'AUTO_END' | 'TO_ADMIN' | 'TO_USER';
 export type WorkflowRejectStrategy = 'END_PROCESS' | 'BACK_TO_START';
 export type WorkflowFormPermission = 'HIDDEN' | 'READONLY' | 'EDITABLE';
@@ -37,6 +39,8 @@ export interface WorkflowNodeActionConfig {
 }
 
 export interface WorkflowApprovalNodeConfig {
+  assignmentMode?: WorkflowAssignmentMode;
+  autoAssignmentStrategy?: WorkflowAutoAssignmentStrategy;
   assigneeType: WorkflowAssigneeType;
   assigneeIds?: string[];
   roleIds?: string[];
@@ -76,6 +80,20 @@ export interface WorkflowDomainOption {
   domainCode: string;
   domainName: string;
   children?: WorkflowDomainOption[];
+}
+
+export interface WorkflowDesignerOption {
+  value: string;
+  label: string;
+  children?: WorkflowDesignerOption[];
+}
+
+export interface WorkflowDesignerOptions {
+  users: WorkflowDesignerOption[];
+  roles: WorkflowDesignerOption[];
+  posts: WorkflowDesignerOption[];
+  organizations: WorkflowDesignerOption[];
+  dictTypes: WorkflowDesignerOption[];
 }
 
 export interface WorkflowDefinition {
@@ -283,6 +301,11 @@ export interface WorkflowTask {
   processDefinitionId?: string;
   initiatorName?: string;
   assigneeName?: string;
+  assigneeId?: WorkflowId;
+  assigneeDisplayName?: string;
+  claimStatus?: WorkflowTaskClaimStatus;
+  candidateUsers?: string[];
+  candidateGroups?: string[];
   claimable?: boolean;
   unclaimable?: boolean;
   status: string;
@@ -340,6 +363,7 @@ export interface StartWorkflowProcessCommand {
   snapshotRef?: string;
   variables?: Record<string, any>;
   selectedAssignees?: Record<string, string[]>;
+  participantUserIds?: WorkflowId[];
 }
 
 export interface StartBusinessWorkflowCommand {
@@ -362,6 +386,43 @@ export interface StartBusinessWorkflowCommand {
   variables?: Record<string, any>;
   extension?: Record<string, any>;
   selectedAssignees?: Record<string, string[]>;
+  participantUserIds?: WorkflowId[];
+}
+
+export type WorkflowParticipantType = 'INITIATOR' | 'CURRENT_ASSIGNEE' | 'COMPLETED_HANDLER' | 'BUSINESS_PARTICIPANT';
+
+export interface WorkflowParticipationAccess {
+  readable: boolean;
+  participantTypes: WorkflowParticipantType[];
+  latestProcessInstanceId?: string;
+}
+
+export interface WorkflowParticipationBusiness {
+  processKey: string;
+  businessKey: string;
+  processInstanceId: string;
+  participantTypes: WorkflowParticipantType[];
+  lastParticipatedAt?: string;
+}
+
+export interface WorkflowParticipationPageQuery extends WorkflowPageQuery {
+  processKey?: string;
+  startTime?: string;
+  endTime?: string;
+}
+
+export interface ReplaceWorkflowBusinessParticipantsCommand {
+  processKey: string;
+  businessKey: string;
+  processInstanceId: string;
+  participantUserIds: WorkflowId[];
+}
+
+export interface WorkflowBusinessParticipants {
+  processKey: string;
+  businessKey: string;
+  processInstanceId: string;
+  participantUserIds: WorkflowId[];
 }
 
 export type WorkflowApplyStatus = 'DRAFT' | 'SUBMITTED' | 'IN_APPROVAL' | 'APPROVED' | 'REJECTED' | 'WITHDRAWN' | 'CANCELED' | 'TERMINATED';
@@ -375,6 +436,7 @@ export interface WorkflowBusinessApplyCurrentTask {
   taskName?: string;
   assigneeId?: WorkflowId;
   assigneeName?: string;
+  assigneeDisplayName?: string;
   claimStatus?: WorkflowTaskClaimStatus;
   candidateUsers?: string[];
   candidateGroups?: string[];
@@ -429,6 +491,7 @@ export type WorkflowBusinessApplyProgress = Pick<WorkflowBusinessApply,
   taskDefinitionKey?: string;
   assigneeId?: WorkflowId;
   assigneeName?: string;
+  assigneeDisplayName?: string;
   claimStatus?: WorkflowTaskClaimStatus;
   candidateUsers?: string[];
   candidateGroups?: string[];
@@ -535,6 +598,7 @@ export interface WorkflowTaskCompleteResult {
   taskDefinitionKey?: string;
   assigneeId?: WorkflowId;
   assigneeName?: string;
+  assigneeDisplayName?: string;
   claimStatus?: WorkflowTaskClaimStatus;
   candidateUsers?: string[];
   candidateGroups?: string[];
@@ -560,6 +624,7 @@ export interface WorkflowTaskActionResult {
   taskDefinitionKey?: string;
   assigneeId?: WorkflowId;
   assigneeName?: string;
+  assigneeDisplayName?: string;
   claimStatus?: WorkflowTaskClaimStatus;
   candidateUsers?: string[];
   candidateGroups?: string[];
@@ -582,10 +647,23 @@ export interface WorkflowStartResult {
   taskDefinitionKey?: string;
   assigneeId?: WorkflowId;
   assigneeName?: string;
+  assigneeDisplayName?: string;
   claimStatus?: WorkflowTaskClaimStatus;
   candidateUsers?: string[];
   candidateGroups?: string[];
   currentTasks?: WorkflowBusinessApplyCurrentTask[];
+}
+
+export function workflowAssigneeDisplay(value?: {
+  assigneeDisplayName?: string;
+  assigneeName?: string;
+  claimStatus?: WorkflowTaskClaimStatus;
+} | null): string {
+  const displayName = value?.assigneeDisplayName?.trim();
+  if (displayName) return displayName;
+  const assigneeName = value?.assigneeName?.trim();
+  if (assigneeName) return assigneeName;
+  return value?.claimStatus === 'UNCLAIMED' ? '待领取' : '-';
 }
 
 export interface WorkflowTaskReturnCommand extends WorkflowTaskActionCommand {
@@ -634,6 +712,8 @@ export const workflowApi = {
   definitionVersionDetail: (id: WorkflowId) => get<WorkflowDefinitionVersion>('/workflow/definitions/version-detail', { params: { id } }).then(normalizeVersion),
   nodeCatalog: () => get<WorkflowNodeCatalog[]>('/workflow/definitions/node-catalog')
     .then(list => Array.isArray(list) ? list.map(normalizeNodeCatalog) : []),
+  designerOptions: () => get<WorkflowDesignerOptions>('/workflow/definitions/designer-options')
+    .then(normalizeDesignerOptions),
 
   templatesPage: (params?: WorkflowPageQuery & { templateCategoryId?: WorkflowId | '' }) => get<any>('/workflow/templates/page', { params: toBackendPageParams(params) })
     .then(data => fromBackendPageResult(data, normalizeTemplate, params)),
@@ -693,6 +773,13 @@ export const workflowApi = {
     .then(normalizeProcessInstance),
   startBusinessWorkflow: (data: StartBusinessWorkflowCommand) => post<WorkflowStartResult>('/workflow/processes/start-business', data)
     .then(normalizeWorkflowStartResult),
+  participationAccess: (processKey: string, businessKey: string) => get<WorkflowParticipationAccess>('/workflow/participations/access', {
+    params: { processKey, businessKey },
+  }),
+  participationMy: (params?: WorkflowParticipationPageQuery) => get<any>('/workflow/participations/my', {
+    params: toBackendPageParams(params),
+  }).then(data => fromBackendPageResult(data, item => item as WorkflowParticipationBusiness, params)),
+  replaceBusinessParticipants: (data: ReplaceWorkflowBusinessParticipantsCommand) => post<WorkflowBusinessParticipants>('/workflow/participations/business', data),
   businessAppliesPage: (params?: WorkflowBusinessApplyPageQuery) => post<any>('/workflow/business-applies/page', toBackendBusinessApplyPageParams(params))
     .then(data => fromBackendPageResult(data, normalizeBusinessApply, params)),
   businessApplyMySummary: () => get<WorkflowBusinessApplySummary>('/workflow/business-applies/my/summary', { silentError: true })
@@ -724,26 +811,16 @@ export const workflowApi = {
   }).then(data => fromBackendPageResult(data, normalizeProcessInstance, params)),
   processDetail: (processInstanceId: string) => get<WorkflowProcessDetail>('/workflow/processes/detail', { params: { processInstanceId } })
     .then(normalizeProcessDetail),
-  users: (keyword = '') => get<any>('/identity/users/page', {
-    params: {
-      page: 1,
-      size: 100,
-      username: keyword || undefined,
-      nickname: keyword || undefined,
-    },
-  }).then(data => toPageList<any>(data)
-    .map(item => {
-      const id = item.userId ?? item.id ?? item.memberId;
-      const value = item.username ?? id;
-      const name = item.nickname || item.memberName || item.username || id;
-      const username = item.username && item.username !== name ? ` / ${item.username}` : '';
-      return id === undefined ? undefined : {
-        value: String(value),
-        label: `${name}${username}`,
-        username: item.username,
-      };
-    })
-    .filter(Boolean) as WorkflowUserOption[]),
+  // Workflow assignee candidates come from the platform Provider contract.
+  // Do not call the identity page endpoint here: it is intentionally scoped
+  // and may return 403 for workflow users without user-management permission.
+  users: (keyword = '') => get<WorkflowDesignerOptions>('/workflow/definitions/designer-options')
+    .then(data => normalizeDesignerOptions(data).users)
+    .then(users => {
+      const normalizedKeyword = keyword.trim().toLowerCase();
+      if (!normalizedKeyword) return users;
+      return users.filter(user => user.label.toLowerCase().includes(normalizedKeyword));
+    }),
   tenants: (keyword = '') => get<any>('/system/tenant/list', {
     params: { keyword: keyword || undefined, status: 1 },
   }).then(data => toPageList<any>(data)
@@ -832,6 +909,8 @@ export function defaultDesignerJson(): string {
 
 export function defaultApprovalConfig(): WorkflowApprovalNodeConfig {
   return {
+    assignmentMode: 'CLAIM',
+    autoAssignmentStrategy: 'ROUND_ROBIN',
     assigneeType: 'INITIATOR',
     assigneeIds: [],
     roleIds: [],
@@ -972,6 +1051,25 @@ function normalizeDomainOption(item: any): WorkflowDomainOption {
   };
 }
 
+function normalizeDesignerOptions(data: Partial<WorkflowDesignerOptions> | undefined): WorkflowDesignerOptions {
+  return {
+    users: normalizeDesignerOptionList(data?.users),
+    roles: normalizeDesignerOptionList(data?.roles),
+    posts: normalizeDesignerOptionList(data?.posts),
+    organizations: normalizeDesignerOptionList(data?.organizations),
+    dictTypes: normalizeDesignerOptionList(data?.dictTypes),
+  };
+}
+
+function normalizeDesignerOptionList(items: WorkflowDesignerOption[] | undefined): WorkflowDesignerOption[] {
+  if (!Array.isArray(items)) return [];
+  return items.map(item => ({
+    value: String(item?.value ?? ''),
+    label: String(item?.label ?? item?.value ?? ''),
+    children: Array.isArray(item?.children) ? normalizeDesignerOptionList(item.children) : undefined,
+  })).filter(item => item.value && item.label);
+}
+
 function normalizeTemplate(item: any): WorkflowTemplate {
   return {
     ...item,
@@ -1102,6 +1200,11 @@ function normalizeTask(item: any): WorkflowTask {
     processDefinitionId: item?.processDefinitionId,
     initiatorName: item?.initiatorName,
     assigneeName: item?.assigneeName,
+    assigneeId: item?.assigneeId ? normalizeId(item.assigneeId) : undefined,
+    assigneeDisplayName: item?.assigneeDisplayName,
+    claimStatus: item?.claimStatus,
+    candidateUsers: Array.isArray(item?.candidateUsers) ? item.candidateUsers.map(String) : [],
+    candidateGroups: Array.isArray(item?.candidateGroups) ? item.candidateGroups.map(String) : [],
     claimable: Boolean(item?.claimable),
     unclaimable: Boolean(item?.unclaimable),
     status: item?.status || '-',
@@ -1162,6 +1265,7 @@ function normalizeBusinessApplyCurrentTask(item: any): WorkflowBusinessApplyCurr
     taskName: item?.taskName,
     assigneeId: item?.assigneeId ? normalizeId(item.assigneeId) : undefined,
     assigneeName: item?.assigneeName,
+    assigneeDisplayName: item?.assigneeDisplayName,
     claimStatus: item?.claimStatus,
     candidateUsers: Array.isArray(item?.candidateUsers) ? item.candidateUsers.map(String) : [],
     candidateGroups: Array.isArray(item?.candidateGroups) ? item.candidateGroups.map(String) : [],
@@ -1188,6 +1292,7 @@ function normalizeBusinessApplyProgress(item: any): WorkflowBusinessApplyProgres
     ...item,
     applyId: item?.applyId ? normalizeId(item.applyId) : undefined,
     assigneeId: item?.assigneeId ? normalizeId(item.assigneeId) : undefined,
+    assigneeDisplayName: item?.assigneeDisplayName,
     candidateUsers: Array.isArray(item?.candidateUsers) ? item.candidateUsers.map(String) : [],
     candidateGroups: Array.isArray(item?.candidateGroups) ? item.candidateGroups.map(String) : [],
     currentTasks: Array.isArray(item?.currentTasks) ? item.currentTasks.map(normalizeBusinessApplyCurrentTask) : [],
@@ -1203,6 +1308,7 @@ function normalizeTaskCompleteResult(item: any): WorkflowTaskCompleteResult {
     ...item,
     applyId: item?.applyId ? normalizeId(item.applyId) : undefined,
     assigneeId: item?.assigneeId ? normalizeId(item.assigneeId) : undefined,
+    assigneeDisplayName: item?.assigneeDisplayName,
     candidateUsers: Array.isArray(item?.candidateUsers) ? item.candidateUsers.map(String) : [],
     candidateGroups: Array.isArray(item?.candidateGroups) ? item.candidateGroups.map(String) : [],
     currentTask: item?.currentTask ? normalizeBusinessApplyCurrentTask(item.currentTask) : undefined,
@@ -1215,6 +1321,7 @@ function normalizeTaskActionResult(item: any): WorkflowTaskActionResult {
     ...item,
     applyId: item?.applyId ? normalizeId(item.applyId) : undefined,
     assigneeId: item?.assigneeId ? normalizeId(item.assigneeId) : undefined,
+    assigneeDisplayName: item?.assigneeDisplayName,
     candidateUsers: Array.isArray(item?.candidateUsers) ? item.candidateUsers.map(String) : [],
     candidateGroups: Array.isArray(item?.candidateGroups) ? item.candidateGroups.map(String) : [],
     currentTask: item?.currentTask ? normalizeBusinessApplyCurrentTask(item.currentTask) : undefined,
@@ -1227,6 +1334,7 @@ function normalizeWorkflowStartResult(item: any): WorkflowStartResult {
     ...item,
     applyId: item?.applyId ? normalizeId(item.applyId) : undefined,
     assigneeId: item?.assigneeId ? normalizeId(item.assigneeId) : undefined,
+    assigneeDisplayName: item?.assigneeDisplayName,
     candidateUsers: Array.isArray(item?.candidateUsers) ? item.candidateUsers.map(String) : [],
     candidateGroups: Array.isArray(item?.candidateGroups) ? item.candidateGroups.map(String) : [],
     currentTasks: Array.isArray(item?.currentTasks) ? item.currentTasks.map(normalizeBusinessApplyCurrentTask) : [],

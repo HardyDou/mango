@@ -8,6 +8,8 @@ import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.event.api.DomainEvent;
 import io.mango.infra.event.api.IDomainEventPublisher;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
+import io.mango.identity.api.AuthUserProvider;
+import io.mango.identity.api.TenantMemberProvider;
 import io.mango.workflow.api.WorkflowEventTypes;
 import io.mango.workflow.api.command.CompleteWorkflowTaskCommand;
 import io.mango.workflow.api.command.CreateWorkflowBusinessApplyCommand;
@@ -16,14 +18,17 @@ import io.mango.workflow.api.enums.WorkflowApplyStatus;
 import io.mango.workflow.core.engine.WorkflowAssigneeResolver;
 import io.mango.workflow.core.engine.WorkflowCandidateGroupProvider;
 import io.mango.workflow.core.event.WorkflowEventPublisher;
+import io.mango.workflow.core.identity.WorkflowAssigneeIdentityService;
 import io.mango.workflow.core.mapper.WorkflowBusinessApplyCurrentTaskMapper;
 import io.mango.workflow.core.mapper.WorkflowBusinessApplyMapper;
 import io.mango.workflow.core.mapper.WorkflowBusinessApplyStatusLogMapper;
+import io.mango.workflow.core.mapper.WorkflowAutoAssignmentStateMapper;
 import io.mango.workflow.core.mapper.WorkflowCopiedTaskMapper;
 import io.mango.workflow.core.mapper.WorkflowDefinitionMapper;
 import io.mango.workflow.core.mapper.WorkflowFormInstanceMapper;
 import io.mango.workflow.core.mapper.WorkflowTaskRecordMapper;
 import io.mango.workflow.core.service.IWorkflowBusinessApplyService;
+import io.mango.workflow.core.service.IWorkflowParticipationService;
 import io.mango.workflow.core.service.IWorkflowTaskRuntimeService;
 import org.flowable.engine.RepositoryService;
 import org.flowable.engine.RuntimeService;
@@ -52,6 +57,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 @SpringBootTest(
         classes = WorkflowTaskRuntimeServiceIntegrationTest.TestApplication.class,
@@ -462,6 +468,7 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
             PersistenceMybatisPlusAutoConfiguration.class,
             WorkflowAssigneeResolver.class,
             WorkflowCandidateGroupProvider.class,
+            WorkflowAssigneeIdentityService.class,
             WorkflowEventPublisher.class,
             WorkflowBusinessApplyService.class,
             WorkflowTaskRuntimeService.class
@@ -470,6 +477,7 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
             WorkflowBusinessApplyMapper.class,
             WorkflowBusinessApplyCurrentTaskMapper.class,
             WorkflowBusinessApplyStatusLogMapper.class,
+            WorkflowAutoAssignmentStateMapper.class,
             WorkflowCopiedTaskMapper.class,
             WorkflowDefinitionMapper.class,
             WorkflowFormInstanceMapper.class,
@@ -485,6 +493,21 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
         @Bean
         ObjectMapper objectMapper() {
             return new ObjectMapper();
+        }
+
+        @Bean
+        IWorkflowParticipationService workflowParticipationService() {
+            return mock(IWorkflowParticipationService.class);
+        }
+
+        @Bean
+        AuthUserProvider authUserProvider() {
+            return mock(AuthUserProvider.class);
+        }
+
+        @Bean
+        TenantMemberProvider tenantMemberProvider() {
+            return mock(TenantMemberProvider.class);
         }
     }
 

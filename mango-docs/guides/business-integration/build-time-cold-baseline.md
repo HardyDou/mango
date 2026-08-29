@@ -13,7 +13,9 @@ PR：校验 V，可升级；不生成 B
   -> 合并 main，人工冲突已解决
   -> API artifact build：临时 MySQL + mango:baseline-generate
   -> 临时 schema 显式使用业务目标 charset/collation，不继承构建机默认值
-  -> replay/determinism schema 各执行一次最终 V，先验证可复现（忽略标准审计时钟列）
+  -> replay/determinism schema 各执行一次最终 V
+  -> 两套 schema 分别启动最终业务应用，物化 PORTABLE Resource
+  -> 比较结构和受管数据，验证可复现（忽略运行时审计时钟列）
   -> 生成每模块一个 B
   -> verify schema 连续执行 B 两次并比较结构/静态数据
   -> package/repackage 把 B + manifest 打进 JAR
@@ -40,7 +42,7 @@ target/generated-resources/META-INF/mango/baseline-manifest.json
     <executions>
         <execution>
             <id>generate-cold-baselines</id>
-            <phase>generate-resources</phase>
+            <phase>prepare-package</phase>
             <goals>
                 <goal>baseline-generate</goal>
             </goals>
@@ -50,13 +52,26 @@ target/generated-resources/META-INF/mango/baseline-manifest.json
                 <moduleGroups>system=main,identity=main,authorization=main,workflow=main,file=main,guarantee=main</moduleGroups>
                 <characterSet>utf8mb4</characterSet>
                 <collation>utf8mb4_unicode_ci</collation>
+                <resourceApplicationClass>com.example.GuaranteeApplication</resourceApplicationClass>
+                <resourceTimeoutSeconds>300</resourceTimeoutSeconds>
+                <resourceAdditionalClasspathElements>
+                    <resourceAdditionalClasspathElement>
+                        ${project.basedir}/../bootstrap-assets
+                    </resourceAdditionalClasspathElement>
+                </resourceAdditionalClasspathElements>
             </configuration>
         </execution>
     </executions>
 </plugin>
 ```
 
-如果模块分属不同逻辑数据库，将相应模块映射到不同 group。一个 MySQL 实例可以承载多个随机 replay/determinism/verify schema，无需为每个 group 启动单独容器。
+只生成 Flyway baseline 时，可以把模块映射到不同 group。启用 `resourceApplicationClass` 后，当前版本要求所有模块位于同一个 datasource group；多 group 会在创建临时 schema 前失败，不能通过拆分执行绕过应用级 Resource 一致性。
+
+启用 `resourceApplicationClass` 的 Resource baseline 绑定到 `prepare-package`：此时最终业务主类和运行时 classpath 已编译完成，生成的 BSQL/manifest 仍会在 Boot repackage 前进入最终 JAR。未配置 `resourceApplicationClass` 的纯 Flyway baseline 可以继续使用较早阶段，但不能据此声明已物化 Resource。
+
+业务应用把大文件等资产保留在 JAR 外部时，使用 `resourceAdditionalClasspathElements` 把最终运行时会提供的只读目录或 JAR 加入构建期 Resource baseline 应用。相对路径按最终应用模块的 `${project.basedir}` 解析；路径不存在或不可读时构建直接失败。该参数只影响构建期 Java 子进程，不会把目录复制进应用 JAR；Docker 镜像或部署包仍需按业务运行时约定携带相同资产，并通过 `loader.path` 等正式入口加入运行时 classpath。
+
+生成器虽然启动最终业务应用，但构建专用 Bootstrap 只选择 Mango Resource contributor。业务自定义 `BootstrapStepContributor`、租户对账和其它运行期步骤不在构建期执行清单中；它们仍在目标环境的正常 Bootstrap 中执行。初始化数据的归属和构建期边界遵循 [数据库规范](../../../mango-pmo/rules/backend/04-db.md)，Resource 目标是否可进入 BSQL 由各 `ResourceHandler.baselinePolicy()` 决定。
 
 `characterSet` 和 `collation` 的默认值分别是 `utf8mb4`、`utf8mb4_unicode_ci`，与 Mango CLI 创建的标准业务数据库一致。通常无需在 POM 重复声明；示例显式写出是为了让业务制品的数据库语义可审计。正式目标空库的字符集组合及例外边界以 [数据库规范](../../../mango-pmo/rules/backend/04-db.md) 为准。
 
@@ -104,15 +119,17 @@ manifest 包含目标字符集、目标排序规则、模块、逻辑数据源 g
 | 已有模块 history | 忽略 B，继续增量 V。 |
 | 非空但没有一致的 history/回执 | fail closed；按环境恢复方案处理，不自动用 B 覆盖。 |
 
-Runtime 不生成 B、不执行 migration，也不访问构建数据库。
+Runtime 不生成 B，也不访问构建数据库。部署 Bootstrap 只消费制品中的 B 和 manifest；已有库继续执行未执行的 V。
 
 ## 7. Resource、Workflow 与文件
 
-cold baseline 只快照 V 最终产生的数据库结构和 migration 静态行。菜单、权限、流程发布、租户资源以及运行时可维护配置仍由 Resource Registry 的 Bootstrap 步骤处理。
+cold baseline 在 Flyway 最终状态上继续物化可移植的数据库 Resource。`ResourceHandler.baselinePolicy()` 默认为 `PORTABLE`；只写本地、可移植数据库状态的 Handler 可以进入 BSQL。读取凭据、对象存储、主机路径、外部服务或其它部署环境状态的 Handler 使用 `ENVIRONMENT_REQUIRED`，恢复后首次 Bootstrap 再处理；具体初始化边界遵循 [数据库规范](../../../mango-pmo/rules/backend/04-db.md)。
+
+构建期 BSQL 保留便携目标表数据及 `resource_registry.source_hash`，但清除模块 receipt、Resource 审计和 Bootstrap 运行记录。这样部署环境会重新建立自己的 receipt，同时按逐 Resource hash 跳过已物化 Handler。没有本地 Handler 的远程目标也会延迟处理；构建器不会调用远程 Dispatcher。
 
 预置文件使用 `FILE_ASSET` Resource：声明中保留稳定 file ID、目标配置、`classpath:` 或 `asset:` 内容位置和资源摘要。构建期 Resource 生成器把两类输入统一复制为内容寻址对象，并将 manifest 中的内容位置改写到 `classpath:META-INF/mango/files.bundle/objects/<sha256>`。Bootstrap File handler 再把该对象写入环境配置的存储层并写入/校验文件元数据。B 可以包含 V 历史形成的数据库元数据，但不包含文件二进制，也不替代对象存储上传。
 
-Workflow 定义同理：B 只负责相关表结构和 V 静态行，流程部署与版本回执由 `BOOTSTRAP_REQUIRED` Resource/Workflow handler 完成。
+Workflow 或其它 Handler 是否进入 BSQL，以其 `baselinePolicy()` 和目标状态是否可移植为准；环境依赖和版本回执始终在恢复环境建立。
 
 ### 7.1 Resource 构建物 POM
 
@@ -163,6 +180,7 @@ jar tf target/*.jar | grep -E '^META-INF/mango/(resource-bootstrap-manifest.json
 ### 7.2 发布物料关系
 
 - `mango:baseline-generate` 继续是数据库 cold baseline 的唯一生成入口；Resource 构建器不创建或连接数据库。
+- 配置 `resourceApplicationClass` 后，`mango:baseline-generate` 负责启动最终业务应用并把 `PORTABLE` Resource 合入同一组 BSQL；Resource manifest 构建器仍只负责声明和文件 bundle。
 - `files.bundle` 只携带逻辑 object key、SHA-256、大小、MIME 和内容对象，不携带 endpoint、bucket 或凭据；部署仍走现有 `FILE_ASSET` staged publish。
 - sealed Maven release manifest 已逐 JAR 记录 size/SHA-256，因此 JAR 内 Resource manifest 和 files bundle 自动受外层 JAR digest 保护，不再新增第二套 release manifest 或 digest 来源。
 - `statObject`/metadata 快速判断是后续可选优化；当前 Handler 仍读取对象并校验 SHA-256，正确性路径不依赖该优化。
@@ -175,6 +193,10 @@ jar tf target/*.jar | grep -E '^META-INF/mango/(resource-bootstrap-manifest.json
 - `cross-module ... ownership conflict`：两个模块声明了同一表或视图；归并到唯一 Owner。
 - `generated baseline is not equivalent`：B 在第二 schema 的结构或静态数据不同；构建已阻断，不要跳过验证。
 - `unsupported MySQL character set and collation`：目标组合不存在或不匹配；修正 `mango.baseline.characterSet` / `mango.baseline.collation`，不要退回构建机默认值。
-- `V migrations are not deterministic`：同一组 V 在两个空 schema 产生了不同结构或静态数据。生成器只在这一步忽略 `created_at`、`updated_at`、`published_at` 的运行时钟差异；B 仍保留真实值并接受全列等价验证。其它列中的 `UUID()`、当前时间等非确定初始化表达式会继续被阻断，应改用稳定业务值。
+- `migrations and portable Resource handlers are not deterministic`：两套空 schema 的 Flyway + 便携 Resource 最终状态不同。确定性比较忽略标准及历史审计时钟列，B 仍保留真实时间；其它业务列中的 UUID、当前时间或环境值继续阻断构建。
+- `Resource baseline application must be compiled before baseline-generate`：将 goal 绑定到 `prepare-package`，并确认 `resourceApplicationClass` 是最终 Spring Boot 应用主类。
+- `Resource baseline additional classpath element is not readable`：修正 `resourceAdditionalClasspathElements` 路径，并确认构建节点可读；不要把外部资产临时复制进 `target/classes` 规避检查。
+- `Resource baseline generation currently requires one datasource group`：当前应用级 Resource 物化不能跨多个逻辑 datasource group；收敛为一个 group，或暂不启用 Resource baseline。
+- `Resource baseline build mode requires ...`：不要在部署命令中手工打开构建专用开关；确认使用 `mango:baseline-generate` 启动最终应用，并且应用已装配 `mango-resource-sync-starter`。
 - `stored routines and events are not supported`：当前生成器不静默遗漏存储过程、函数或事件；将其迁移方案单独评审。
 - Jenkins 没有 MySQL：为该构建增加临时 MySQL 8.4 service/container，而不是改业务 datasource 或把生成推迟到部署服务器。

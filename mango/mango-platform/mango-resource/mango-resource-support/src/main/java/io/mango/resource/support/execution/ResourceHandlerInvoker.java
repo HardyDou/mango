@@ -7,6 +7,7 @@ import io.mango.resource.api.enums.ResourceCode;
 import io.mango.resource.support.ResourceHandler;
 import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.model.ResourceField;
+import io.mango.resource.support.model.ResourceSyncContext;
 import io.mango.resource.support.model.ResourceSyncResult;
 import org.springframework.util.StringUtils;
 
@@ -56,6 +57,58 @@ public class ResourceHandlerInvoker {
                     return null;
                 }));
         return results;
+    }
+
+    /**
+     * Upserts changed declarations while retaining the complete batch as read-only Handler context.
+     */
+    public Map<String, ResourceSyncResult> upsertBatchWithContext(
+            ResourceHandler handler,
+            List<ResourceDeclaration> declarations,
+            List<ResourceDeclaration> completeBatch,
+            Map<String, ResourceSyncContext> syncContexts) {
+        String tenantField = handler.executionTenantField();
+        if (!StringUtils.hasText(tenantField)) {
+            return handler.upsertBatchWithContext(declarations, completeBatch, syncContexts);
+        }
+        Map<String, List<ResourceDeclaration>> declarationsByTenant = groupByTenant(
+                declarations, tenantField);
+        Map<String, List<ResourceDeclaration>> completeBatchByTenant = groupByTenant(
+                completeBatch, tenantField);
+        Map<String, ResourceSyncResult> results = new LinkedHashMap<>();
+        declarationsByTenant.forEach((tenantId, tenantDeclarations) ->
+                withTenant(tenantId, () -> {
+                    Map<String, ResourceSyncContext> tenantContexts = new LinkedHashMap<>();
+                    tenantDeclarations.forEach(declaration -> {
+                        ResourceSyncContext context = syncContexts.get(declaration.getId());
+                        if (context != null) {
+                            tenantContexts.put(declaration.getId(), context);
+                        }
+                    });
+                    Map<String, ResourceSyncResult> tenantResults = handler.upsertBatchWithContext(
+                            tenantDeclarations,
+                            completeBatchByTenant.getOrDefault(tenantId, List.of()),
+                            tenantContexts);
+                    Require.notNull(tenantResults, ResourceCode.RESOURCE_SYNC_FAILED,
+                            "资源处理器未返回租户批量同步结果: " + handler.resourceType());
+                    tenantResults.forEach((resourceId, result) -> {
+                        ResourceSyncResult previous = results.put(resourceId, result);
+                        Require.isTrue(previous == null, ResourceCode.RESOURCE_CONFLICT,
+                                "资源处理器跨租户返回重复资源ID: " + resourceId);
+                    });
+                    return null;
+                }));
+        return results;
+    }
+
+    private Map<String, List<ResourceDeclaration>> groupByTenant(
+            List<ResourceDeclaration> declarations, String tenantField) {
+        Map<String, List<ResourceDeclaration>> declarationsByTenant = new LinkedHashMap<>();
+        for (ResourceDeclaration declaration : declarations) {
+            declarationsByTenant.computeIfAbsent(tenantId(declaration, tenantField), ignored -> new ArrayList<>())
+                    .add(declaration);
+        }
+        return declarationsByTenant;
     }
 
     /**
