@@ -92,3 +92,51 @@
 - `git diff --check`：PASS；新增差异未包含凭据值。`declaredSha256` 的 `null` 是未提供合法可选 checksum 的领域语义，不是空实现。
 - 两个专用数据库 `mango_issue_851_bootstrap_resource_perf`、`mango_issue_851_file_core_concurrency` 已删除并回读为空；MySQL 和 MinIO 已正常退出，端口 33385、19385、19386 均关闭。
 - `.runtime/issue-851-mysql` 与 `.runtime/issue-851-minio` 已移入系统废纸篓，可恢复；工作区 `.runtime` 不再包含本任务运行数据。
+
+## 5. 1.0.42 Resource 增量跟进
+
+### 5.1 基线与授权
+
+- 源码基线：`origin/main@557807086e1f9c2792a1ef7f36f37effd577cd69`。
+- 工作区：`M01=REUSE`，`/Users/hardy/Work/mango-issue-851-runtime`，分支 `feat/issue-851-resource-incremental-release`。
+- 授权：实现、文档、静态验证、Commit、当前任务分支 Push 和创建 PR；不含 Merge、发布或部署。
+
+### 5.2 交付项
+
+| ID | 要求 | 交付物 | 状态 |
+|---|---|---|---|
+| IMPL-007 | 变化模块内按 Resource hash 只调度变化声明 | Resource Registry changed-only 编排与依赖重放移除 | DONE |
+| IMPL-008 | 完整批次只作关系解析上下文 | `upsertBatchWithContext`、远程 Command/VO、`AUTH_MENU`/`API_RESOURCE` changed-only 实现 | DONE |
+| IMPL-009 | 后台修改后增量发布退避 | `SYSTEM_CONFIG.updated_at` 与 Registry `last_sync_time` 同步标记、`PRESERVED` 结果 | DONE |
+| VERIFY-003 | 覆盖未变依赖、Registry 不推进、配置退避和 Authorization changed-only | Core/System 集成测试与 Authorization 单元测试；Resource Registry 定向集成测试 43/43 通过 | DONE |
+| DOC-001 | 公开能力、System 用法、设计、台账和业务排障说明同步 | Resource/System README、能力地图、本设计、台账及菜单/按钮/租户配置业务指南 | DONE |
+
+### 5.3 当前边界
+
+- 模块 hash 与安装状态写入 `resource_module_receipt`；逐 Resource canonical hash 与上次成功同步时间写入 `resource_registry.source_hash`、`resource_registry.last_sync_time`。
+- `PRESERVED` 只写 `resource_sync_log`，不推进逐 Resource hash/同步时间；模块 receipt 可以完成当前发布，后续模块内容变化时该 Resource 会再次进入判断。
+- 当前只有 `SYSTEM_CONFIG` 启用通用单行 `updated_at` 退避。`AUTH_MENU`、`API_RESOURCE` 只保证未变化 Resource 不写；多表/多行资源由具体 Handler 决定受管状态。
+- Resource cold baseline 物化 `PORTABLE` Handler 状态和 Registry hash；`ENVIRONMENT_REQUIRED` 与远程目标延迟到恢复后首次 Bootstrap，不能把“便携 Handler 零调用”表述成“所有 Handler 零调用”。
+- 构建专用 Bootstrap 只执行显式 opt-in 的 Resource contributor；普通业务、租户和其它 contributor 默认排除，并在目标环境首次 Bootstrap 时正常执行。
+- Resource baseline 当前只支持单 datasource group；不是所有 Handler 都支持运行时 `updated_at` 退避。
+
+### 5.4 本地验证
+
+- Resource Registry 定向集成测试 43/43、Maven Plugin 基线集成测试 11/11、Mojo 配置与陈旧 BSQL 清理测试 2/2 通过。
+- 本机 MySQL 8.4.8 保函业务夹具生成 `resource/kv/guarantee` 三模块 BSQL 并打入 Boot JAR；构建期普通业务 Bootstrap 标记未进入 BSQL，空库恢复后该业务步骤正常执行，便携 Resource 不产生同步日志，环境 Resource 产生唯一同步日志，第二次启动 `executedSteps=0`，输出 `RESOURCE_DATABASE_BASELINE_VERIFIED`。
+- `audit-module-readmes.mjs`：PASS。
+- `audit-readme-source-facts.mjs`：PASS。
+- `check-capability-docs.mjs --base origin/main --head HEAD`：PASS，覆盖 Resource/System README、能力地图和三份业务集成指南。
+- `workspace-layout-check.mjs --root .`：PASS。
+- 既有 #851 `delivery-contract-check.mjs --mode verify`：8/8 DONE、0 EXCEPTION。
+- `git diff --check`：PASS。
+
+### 5.5 业务开发者消费契约
+
+| ID | 要求 | 交付物 | 状态 |
+|---|---|---|---|
+| DOC-002 | 业务开发者能区分 Flyway、正式 Resource、Demo、运行期数据和文件资产 | `mango-docs/guides/business-integration/resource-reset-incremental-release.md`、业务 Starter README 入口、模块模板 README 入口 | DONE |
+| VERIFY-004 | 保函类业务模块覆盖 reset/incremental、后台修改退避、权限租户和单体/微服务边界 | 临时 `guarantee` Consumer + MySQL 回读；业务验收矩阵和清理记录 | DONE（本地一次性消费验证） |
+| IMPL-010 | 构建期 Resource 数据库 baseline，reset 首次跳过已基线 Resource Handler | 最终业务应用双库物化、普通业务 Bootstrap 隔离、便携/环境策略、BSQL 恢复与确定性校验 | DONE |
+
+当前业务开发者消费边界：正式 Resource 的模块/Resource hash 跳过、便携 Resource cold baseline 和 `SYSTEM_CONFIG.updated_at` 退避已经可用；环境/远程 Resource 仍在恢复后处理，Resource baseline 只支持单 datasource group，所有 Handler 的通用运行期修改保护以及真实云对象存储验收不在本次完成范围。

@@ -6,11 +6,14 @@ import io.mango.common.result.R;
 import io.mango.common.result.Require;
 import io.mango.infra.feign.starter.ModuleTargetResolver;
 import io.mango.resource.api.command.ExecuteResourceTargetCommand;
+import io.mango.resource.api.command.ResourceSyncContextCommand;
 import io.mango.resource.api.enums.ResourceCode;
+import io.mango.resource.api.enums.ResourceSyncDisposition;
 import io.mango.resource.api.vo.ResourceBatchResultVO;
 import io.mango.resource.api.vo.ResourceSyncResultVO;
 import io.mango.resource.support.ResourceTargetDispatcher;
 import io.mango.resource.support.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceSyncContext;
 import io.mango.resource.support.model.ResourceSyncResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.util.StringUtils;
@@ -41,6 +44,14 @@ public class RemoteResourceTargetDispatcher implements ResourceTargetDispatcher 
     @Override
     public Map<String, ResourceSyncResult> upsertBatch(List<ResourceDeclaration> declarations,
                                                        List<ResourceDeclaration> completeBatch) {
+        return upsertBatchWithContext(declarations, completeBatch, Map.of());
+    }
+
+    @Override
+    public Map<String, ResourceSyncResult> upsertBatchWithContext(
+            List<ResourceDeclaration> declarations,
+            List<ResourceDeclaration> completeBatch,
+            Map<String, ResourceSyncContext> syncContexts) {
         Map<String, ResourceSyncResult> results = new HashMap<>();
         Map<String, List<ResourceDeclaration>> declarationsByTarget = declarations.stream()
                 .collect(Collectors.groupingBy(ResourceDeclaration::getTargetModule));
@@ -48,6 +59,7 @@ public class RemoteResourceTargetDispatcher implements ResourceTargetDispatcher 
             ExecuteResourceTargetCommand command = new ExecuteResourceTargetCommand();
             command.setDeclarations(toJson(entry.getValue()));
             command.setCompleteBatch(toJson(completeBatchForTarget(completeBatch, entry.getKey())));
+            command.setSyncContexts(syncContextCommands(entry.getValue(), syncContexts));
             ResourceBatchResultVO response = requireSuccess(
                     targetClient.upsertBatch(targetUri(entry.getKey()), command));
             response.getEntries().forEach(result ->
@@ -131,6 +143,29 @@ public class RemoteResourceTargetDispatcher implements ResourceTargetDispatcher 
 
     private ResourceSyncResult toResult(ResourceSyncResultVO result) {
         Require.notNull(result, ResourceCode.RESOURCE_SYNC_FAILED, "远程资源目标未返回同步结果");
-        return ResourceSyncResult.of(result.getTargetId(), result.getTargetTable(), result.getMessage());
+        ResourceSyncDisposition disposition = result.getDisposition() == null
+                ? ResourceSyncDisposition.APPLIED : result.getDisposition();
+        return new ResourceSyncResult(result.getTargetId(), result.getTargetTable(), result.getMessage(),
+                disposition, result.getSynchronizationTime());
+    }
+
+    private List<ResourceSyncContextCommand> syncContextCommands(
+            List<ResourceDeclaration> declarations,
+            Map<String, ResourceSyncContext> syncContexts) {
+        List<ResourceSyncContextCommand> commands = new ArrayList<>();
+        for (ResourceDeclaration declaration : declarations) {
+            ResourceSyncContext context = syncContexts.get(declaration.getId());
+            if (context == null) {
+                continue;
+            }
+            ResourceSyncContextCommand command = new ResourceSyncContextCommand();
+            command.setResourceId(context.getResourceId());
+            command.setPreviousSyncTime(context.getPreviousSyncTime());
+            command.setSynchronizationTime(context.getSynchronizationTime());
+            command.setTargetId(context.getTargetId());
+            command.setTargetTable(context.getTargetTable());
+            commands.add(command);
+        }
+        return commands;
     }
 }

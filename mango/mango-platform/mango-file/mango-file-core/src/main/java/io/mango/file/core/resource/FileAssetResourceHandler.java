@@ -15,6 +15,7 @@ import io.mango.file.core.storage.FileObject;
 import io.mango.file.core.storage.FileStorageRouter;
 import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.support.ResourceHandler;
+import io.mango.resource.support.ResourceBaselinePolicy;
 import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.support.declaration.FileAssetContentLocations;
 import io.mango.resource.support.model.ResourceDeclaration;
@@ -70,6 +71,11 @@ public class FileAssetResourceHandler implements ResourceHandler {
     @Override
     public String resourceType() {
         return ResourceTypes.FILE_ASSET;
+    }
+
+    @Override
+    public ResourceBaselinePolicy baselinePolicy() {
+        return ResourceBaselinePolicy.ENVIRONMENT_REQUIRED;
     }
 
     @Override

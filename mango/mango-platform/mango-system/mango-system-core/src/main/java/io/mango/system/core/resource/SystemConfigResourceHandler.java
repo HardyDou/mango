@@ -1,11 +1,13 @@
 package io.mango.system.core.resource;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import io.mango.resource.support.ResourceHandler;
 import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.model.ResourceField;
 import io.mango.resource.support.model.ResourceHandlerSpec;
+import io.mango.resource.support.model.ResourceSyncContext;
 import io.mango.resource.support.model.ResourceSyncResult;
 import io.mango.system.api.enums.ConfigOptionSourceEnum;
 import io.mango.system.api.enums.ConfigTypeEnum;
@@ -14,9 +16,13 @@ import io.mango.system.core.entity.SysConfigEntity;
 import io.mango.system.core.mapper.SysConfigMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 系统参数资源处理器。
@@ -84,6 +90,53 @@ public class SystemConfigResourceHandler implements ResourceHandler {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Map<String, ResourceSyncResult> upsertBatchWithContext(
+            List<ResourceDeclaration> declarations,
+            List<ResourceDeclaration> completeBatch,
+            Map<String, ResourceSyncContext> syncContexts) {
+        Map<String, ResourceSyncResult> results = new LinkedHashMap<>();
+        for (ResourceDeclaration declaration : declarations) {
+            ResourceSyncContext context = syncContexts.get(declaration.getId());
+            if (context == null) {
+                throw new IllegalStateException(
+                        "SYSTEM_CONFIG synchronization context is required: " + declaration.getId());
+            }
+            results.put(declaration.getId(), upsertManaged(declaration, context));
+        }
+        return results;
+    }
+
+    private ResourceSyncResult upsertManaged(ResourceDeclaration resource, ResourceSyncContext context) {
+        ConfigPayload payload = ConfigPayload.from(resource);
+        SysConfigEntity config = findByConfigKeyForUpdate(payload.configKey());
+        if (wasModifiedAfterResourceSync(config, context)) {
+            return ResourceSyncResult.preserved(
+                    config.getId(), TARGET_TABLE, "System config preserved: " + payload.configKey());
+        }
+        if (config == null) {
+            config = new SysConfigEntity();
+            config.setId(payload.configId());
+            config.setConfigKey(payload.configKey());
+            applyConfig(config, payload, context.getSynchronizationTime());
+            sysConfigMapper.insert(config);
+        } else {
+            applyConfig(config, payload, context.getSynchronizationTime());
+            sysConfigMapper.updateById(config);
+        }
+        setExactUpdatedAt(config.getId(), context.getSynchronizationTime());
+        return ResourceSyncResult.applied(
+                config.getId(), TARGET_TABLE, "System config synced: " + payload.configKey(),
+                context.getSynchronizationTime());
+    }
+
+    private boolean wasModifiedAfterResourceSync(SysConfigEntity config, ResourceSyncContext context) {
+        return config != null
+                && context.getPreviousSyncTime() != null
+                && !context.getPreviousSyncTime().equals(config.getUpdatedAt());
+    }
+
+    @Override
     public ResourceSyncResult disable(ResourceDeclaration resource) {
         SysConfigEntity config = resolveConfig(resource);
         if (config == null) {
@@ -106,7 +159,10 @@ public class SystemConfigResourceHandler implements ResourceHandler {
     }
 
     private void applyConfig(SysConfigEntity config, ConfigPayload payload) {
-        LocalDateTime now = LocalDateTime.now();
+        applyConfig(config, payload, LocalDateTime.now());
+    }
+
+    private void applyConfig(SysConfigEntity config, ConfigPayload payload, LocalDateTime synchronizationTime) {
         config.setConfigKey(payload.configKey());
         config.setConfigValue(payload.configValue());
         config.setConfigName(payload.configName());
@@ -128,9 +184,9 @@ public class SystemConfigResourceHandler implements ResourceHandler {
             config.setTenantId(DEFAULT_TENANT_ID);
         }
         if (config.getCreatedAt() == null) {
-            config.setCreatedAt(now);
+            config.setCreatedAt(synchronizationTime);
         }
-        config.setUpdatedAt(now);
+        config.setUpdatedAt(synchronizationTime);
     }
 
     private SysConfigEntity resolveConfig(ResourceDeclaration resource) {
@@ -156,6 +212,18 @@ public class SystemConfigResourceHandler implements ResourceHandler {
         return sysConfigMapper.selectOne(new LambdaQueryWrapper<SysConfigEntity>()
                 .eq(SysConfigEntity::getConfigKey, configKey)
                 .last("limit 1"));
+    }
+
+    private SysConfigEntity findByConfigKeyForUpdate(String configKey) {
+        return sysConfigMapper.selectOne(new LambdaQueryWrapper<SysConfigEntity>()
+                .eq(SysConfigEntity::getConfigKey, configKey)
+                .last("limit 1 for update"));
+    }
+
+    private void setExactUpdatedAt(Long configId, LocalDateTime synchronizationTime) {
+        sysConfigMapper.update(null, new LambdaUpdateWrapper<SysConfigEntity>()
+                .eq(SysConfigEntity::getId, configId)
+                .set(SysConfigEntity::getUpdatedAt, synchronizationTime));
     }
 
     private record ConfigPayload(Long configId, String configKey, String configValue, String configName,

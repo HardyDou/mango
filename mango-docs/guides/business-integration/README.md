@@ -27,6 +27,7 @@
 | [业务模块历史债务修复](./history-debt-remediation.md) | 在保持业务、接口、权限和租户语义不变的前提下治理存量代码 | PMO、Architecture、Persistence、Resource、API、UI/E2E |
 | [CI/CD 发布实践](./ci-cd-release-practices.md) | 业务项目规划镜像构建、测试晋级、生产发布、制品保留、回滚和 Jenkins 磁盘维护 | Git、Jenkins、Harbor、Docker BuildKit、Docker Compose |
 | [业务 API 构建期 cold baseline](./build-time-cold-baseline.md) | 空库首次初始化过慢，需要在制品构建中生成每模块 B 并打入 Boot JAR | Maven Plugin、Flyway、MySQL、Bootstrap、Jenkins |
+| [业务 Resource 重置与增量发布](./resource-reset-incremental-release.md) | 业务模块如何划分 DDL、正式 Resource、Demo 和运行期数据，并执行 reset/incremental 发布 | Resource Registry、Flyway、Bootstrap、业务 Starter、权限、租户 |
 
 ## 4. 新场景登记门禁
 

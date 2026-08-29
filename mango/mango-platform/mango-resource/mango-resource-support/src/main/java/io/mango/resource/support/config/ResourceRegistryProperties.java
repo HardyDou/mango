@@ -33,6 +33,8 @@ public class ResourceRegistryProperties {
             "classpath*:META-INF/mango/resources/*.yaml"
     ));
     private boolean demoEnabled = false;
+    /** Build-only mode used by mango:baseline-generate; never enable in a deployed process. */
+    private boolean baselineBuildEnabled = false;
     private List<String> demoLocations = new ArrayList<>(List.of(
             "classpath*:META-INF/mango/demo/*.json",
             "classpath*:META-INF/mango/demo/*.yml",

@@ -1,0 +1,35 @@
+{
+  "mango": {
+    "resource": {
+      "schema-version": 1,
+      "module-code": "guarantee",
+      "module-name": "Guarantee",
+      "declarations": {
+        "GUARANTEE_PRODUCT": [
+          {
+            "id": "851001",
+            "version": 1,
+            "biz-key": "guarantee.product.standard",
+            "name": "Standard guarantee product",
+            "target-module": "guarantee",
+            "fields": {
+              "value": { "type": "STRING", "value": "STANDARD" }
+            }
+          }
+        ],
+        "GUARANTEE_ENV_ENDPOINT": [
+          {
+            "id": "851002",
+            "version": 1,
+            "biz-key": "guarantee.endpoint.bank",
+            "name": "Bank endpoint",
+            "target-module": "guarantee",
+            "fields": {
+              "value": { "type": "STRING", "value": "environment://bank" }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

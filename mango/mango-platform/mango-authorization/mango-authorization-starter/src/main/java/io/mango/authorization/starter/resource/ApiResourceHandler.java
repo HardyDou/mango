@@ -11,6 +11,7 @@ import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.api.enums.ResourceSyncMode;
 import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.model.ResourceField;
+import io.mango.resource.support.model.ResourceSyncContext;
 import io.mango.resource.support.model.ResourceSyncResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -47,11 +48,28 @@ public class ApiResourceHandler implements ResourceHandler {
 
     @Override
     public Map<String, ResourceSyncResult> upsertBatch(List<ResourceDeclaration> resources) {
+        return synchronize(resources, false);
+    }
+
+    @Override
+    public Map<String, ResourceSyncResult> upsertBatchWithContext(
+            List<ResourceDeclaration> declarations,
+            List<ResourceDeclaration> completeBatch,
+            Map<String, ResourceSyncContext> syncContexts) {
+        return synchronize(declarations, true);
+    }
+
+    private Map<String, ResourceSyncResult> synchronize(
+            List<ResourceDeclaration> resources, boolean incremental) {
         List<ApiResourceRegisterCommand> commands = resources.stream()
                 .map(this::toCommand)
                 .toList();
         Map<String, ApiResourceEntity> protectedResources = protectedResources(resources, commands);
-        apiResourceService.registerApiResources(commands);
+        if (incremental) {
+            apiResourceService.upsertApiResources(commands);
+        } else {
+            apiResourceService.registerApiResources(commands);
+        }
         restoreProtectedResources(protectedResources);
         Map<ApiResourceKey, ApiResourceEntity> synchronizedResources = loadResourceIndex(commands);
         Map<String, ResourceSyncResult> results = new LinkedHashMap<>();

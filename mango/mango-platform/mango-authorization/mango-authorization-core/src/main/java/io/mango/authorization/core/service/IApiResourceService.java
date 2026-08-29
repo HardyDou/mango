@@ -22,6 +22,11 @@ public interface IApiResourceService {
     ApiResourceRegisterResultVO registerApiResources(List<ApiResourceRegisterCommand> resources);
 
     /**
+     * Creates or updates only the supplied API resources without treating omitted resources as stale.
+     */
+    ApiResourceRegisterResultVO upsertApiResources(List<ApiResourceRegisterCommand> resources);
+
+    /**
      * 根据请求方法和路径解析运行时访问决策。
      *
      * @param httpMethod HTTP 方法

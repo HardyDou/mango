@@ -2,6 +2,7 @@ package io.mango.resource.support;
 
 import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.model.ResourceHandlerSpec;
+import io.mango.resource.support.model.ResourceSyncContext;
 import io.mango.resource.support.model.ResourceSyncResult;
 
 import java.util.LinkedHashMap;
@@ -12,6 +13,19 @@ import java.util.Map;
  * 资源目标模块处理器。
  */
 public interface ResourceHandler {
+
+    /**
+     * Declares whether this handler can be executed while generating a portable database baseline.
+     *
+     * <p>The default keeps ordinary database-backed handlers eligible. Handlers that read credentials,
+     * storage endpoints, host paths, external services, or other deployment-specific state must return
+     * {@link ResourceBaselinePolicy#ENVIRONMENT_REQUIRED}.</p>
+     *
+     * @return baseline materialization policy
+     */
+    default ResourceBaselinePolicy baselinePolicy() {
+        return ResourceBaselinePolicy.PORTABLE;
+    }
 
     /**
      * 处理器支持的资源类型。
@@ -90,6 +104,26 @@ public interface ResourceHandler {
             results.put(resource.getId(), upsert(resource));
         }
         return results;
+    }
+
+    /**
+     * Synchronizes only declarations selected by the Registry while exposing the complete type batch
+     * for dependency resolution and one fixed timestamp per selected Resource.
+     *
+     * <p>Handlers that opt into runtime-change preservation must override this method, inspect their
+     * own target state, and return {@code PRESERVED} without writing when the target was modified after
+     * the previous synchronization. The legacy default keeps existing Handler behavior.</p>
+     *
+     * @param declarations declarations whose source hash changed
+     * @param completeBatch complete active declarations of this Resource type
+     * @param syncContexts synchronization context keyed by Resource ID
+     * @return results keyed by Resource ID
+     */
+    default Map<String, ResourceSyncResult> upsertBatchWithContext(
+            List<ResourceDeclaration> declarations,
+            List<ResourceDeclaration> completeBatch,
+            Map<String, ResourceSyncContext> syncContexts) {
+        return upsertBatch(requiresCompleteBatch() ? completeBatch : declarations);
     }
 
     /**

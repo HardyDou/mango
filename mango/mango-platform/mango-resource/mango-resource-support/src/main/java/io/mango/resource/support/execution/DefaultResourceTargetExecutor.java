@@ -5,12 +5,14 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.Require;
 import io.mango.resource.api.command.ExecuteResourceTargetCommand;
+import io.mango.resource.api.command.ResourceSyncContextCommand;
 import io.mango.resource.api.enums.ResourceCode;
 import io.mango.resource.api.vo.ResourceBatchEntryVO;
 import io.mango.resource.api.vo.ResourceBatchResultVO;
 import io.mango.resource.api.vo.ResourceSyncResultVO;
 import io.mango.resource.support.ResourceHandler;
 import io.mango.resource.support.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceSyncContext;
 import io.mango.resource.support.model.ResourceSyncResult;
 
 import java.util.ArrayList;
@@ -58,13 +60,16 @@ public class DefaultResourceTargetExecutor implements ResourceTargetExecutor {
         Require.notNull(command, ResourceCode.RESOURCE_INVALID, "资源目标端执行命令不能为空");
         List<ResourceDeclaration> declarations = parse(command.getDeclarations());
         List<ResourceDeclaration> completeBatch = parse(command.getCompleteBatch());
+        Map<String, ResourceSyncContext> syncContexts = syncContexts(command.getSyncContexts());
         Map<String, List<ResourceDeclaration>> declarationsByType = groupByResourceType(declarations);
         List<ResourceBatchEntryVO> entries = new ArrayList<>();
         declarationsByType.forEach((resourceType, typedDeclarations) -> {
             ResourceHandler handler = findHandler(resourceType);
-            List<ResourceDeclaration> handlerDeclarations = declarationsForHandler(
-                    handler, typedDeclarations, completeBatch, resourceType);
-            Map<String, ResourceSyncResult> handlerResults = handlerInvoker.upsertBatch(handler, handlerDeclarations);
+            List<ResourceDeclaration> typedCompleteBatch = completeBatch.stream()
+                    .filter(declaration -> resourceType.equals(declaration.getResourceType()))
+                    .toList();
+            Map<String, ResourceSyncResult> handlerResults = handlerInvoker.upsertBatchWithContext(
+                    handler, typedDeclarations, typedCompleteBatch, syncContexts);
             Require.notNull(handlerResults, ResourceCode.RESOURCE_SYNC_FAILED,
                     "资源处理器未返回批量同步结果: " + resourceType);
             handlerResults.forEach((resourceId, result) -> entries.add(toBatchEntry(resourceId, result)));
@@ -96,18 +101,6 @@ public class DefaultResourceTargetExecutor implements ResourceTargetExecutor {
                 .computeIfAbsent(declaration.getResourceType(), ignored -> new ArrayList<>())
                 .add(declaration));
         return grouped;
-    }
-
-    private List<ResourceDeclaration> declarationsForHandler(ResourceHandler handler,
-                                                              List<ResourceDeclaration> typedDeclarations,
-                                                              List<ResourceDeclaration> completeBatch,
-                                                              String resourceType) {
-        if (handler.requiresCompleteBatch()) {
-            return completeBatch.stream()
-                    .filter(declaration -> resourceType.equals(declaration.getResourceType()))
-                    .toList();
-        }
-        return typedDeclarations;
     }
 
     private ResourceHandler findHandler(String resourceType) {
@@ -169,6 +162,24 @@ public class DefaultResourceTargetExecutor implements ResourceTargetExecutor {
         vo.setTargetId(result.getTargetId());
         vo.setTargetTable(result.getTargetTable());
         vo.setMessage(result.getMessage());
+        vo.setDisposition(result.getDisposition());
+        vo.setSynchronizationTime(result.getSynchronizationTime());
         return vo;
+    }
+
+    private Map<String, ResourceSyncContext> syncContexts(List<ResourceSyncContextCommand> commands) {
+        Map<String, ResourceSyncContext> contexts = new LinkedHashMap<>();
+        for (ResourceSyncContextCommand command : commands) {
+            Require.notBlank(command.getResourceId(), ResourceCode.RESOURCE_INVALID,
+                    "资源同步上下文ID不能为空");
+            Require.notNull(command.getSynchronizationTime(), ResourceCode.RESOURCE_INVALID,
+                    "资源同步上下文时间不能为空: " + command.getResourceId());
+            ResourceSyncContext previous = contexts.put(command.getResourceId(), ResourceSyncContext.of(
+                    command.getResourceId(), command.getPreviousSyncTime(), command.getSynchronizationTime(),
+                    command.getTargetId(), command.getTargetTable()));
+            Require.isTrue(previous == null, ResourceCode.RESOURCE_CONFLICT,
+                    "资源同步上下文ID重复: " + command.getResourceId());
+        }
+        return contexts;
     }
 }

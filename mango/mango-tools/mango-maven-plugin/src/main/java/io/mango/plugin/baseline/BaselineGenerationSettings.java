@@ -15,6 +15,7 @@ final class BaselineGenerationSettings {
     private final List<String> moduleOrder;
     private final Map<String, String> moduleGroups;
     private final boolean keepSchemas;
+    private final ResourceBaselineExecutionSettings resourceBaseline;
 
     BaselineGenerationSettings(
             String jdbcUrl,
@@ -26,6 +27,21 @@ final class BaselineGenerationSettings {
             List<String> moduleOrder,
             Map<String, String> moduleGroups,
             boolean keepSchemas) {
+        this(jdbcUrl, username, password, schemaPrefix, schemaDefaults, outputDirectory,
+                moduleOrder, moduleGroups, keepSchemas, null);
+    }
+
+    BaselineGenerationSettings(
+            String jdbcUrl,
+            String username,
+            String password,
+            String schemaPrefix,
+            MySqlSchemaDefaults schemaDefaults,
+            Path outputDirectory,
+            List<String> moduleOrder,
+            Map<String, String> moduleGroups,
+            boolean keepSchemas,
+            ResourceBaselineExecutionSettings resourceBaseline) {
         this.jdbcUrl = jdbcUrl;
         this.username = username;
         this.password = password;
@@ -35,6 +51,7 @@ final class BaselineGenerationSettings {
         this.moduleOrder = List.copyOf(moduleOrder);
         this.moduleGroups = Map.copyOf(moduleGroups);
         this.keepSchemas = keepSchemas;
+        this.resourceBaseline = resourceBaseline;
     }
 
     String jdbcUrl() {
@@ -71,5 +88,13 @@ final class BaselineGenerationSettings {
 
     boolean keepSchemas() {
         return keepSchemas;
+    }
+
+    ResourceBaselineExecutionSettings resourceBaseline() {
+        return resourceBaseline;
+    }
+
+    boolean resourceBaselineEnabled() {
+        return resourceBaseline != null;
     }
 }

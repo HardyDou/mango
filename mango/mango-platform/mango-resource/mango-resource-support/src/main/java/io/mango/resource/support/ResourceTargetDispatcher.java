@@ -1,6 +1,7 @@
 package io.mango.resource.support;
 
 import io.mango.resource.support.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceSyncContext;
 import io.mango.resource.support.model.ResourceSyncResult;
 
 import java.util.List;
@@ -28,6 +29,16 @@ public interface ResourceTargetDispatcher {
      */
     Map<String, ResourceSyncResult> upsertBatch(List<ResourceDeclaration> declarations,
                                                 List<ResourceDeclaration> completeBatch);
+
+    /**
+     * Dispatches changed declarations with synchronization context.
+     */
+    default Map<String, ResourceSyncResult> upsertBatchWithContext(
+            List<ResourceDeclaration> declarations,
+            List<ResourceDeclaration> completeBatch,
+            Map<String, ResourceSyncContext> syncContexts) {
+        return upsertBatch(declarations, completeBatch);
+    }
 
     /**
      * 远程禁用资源。

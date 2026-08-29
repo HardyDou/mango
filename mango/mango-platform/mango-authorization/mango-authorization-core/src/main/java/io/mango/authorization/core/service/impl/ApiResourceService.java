@@ -53,6 +53,19 @@ public class ApiResourceService implements IApiResourceService {
     public ApiResourceRegisterResultVO registerApiResources(List<ApiResourceRegisterCommand> resources) {
         Require.isTrue(resources == null || resources.size() <= MAX_REGISTER_BATCH_SIZE,
                 AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR, "API 资源批量注册数量不能超过10000条");
+        return registerApiResources(resources, true);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public ApiResourceRegisterResultVO upsertApiResources(List<ApiResourceRegisterCommand> resources) {
+        Require.isTrue(resources == null || resources.size() <= MAX_REGISTER_BATCH_SIZE,
+                AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR, "API 资源批量注册数量不能超过10000条");
+        return registerApiResources(resources, false);
+    }
+
+    private ApiResourceRegisterResultVO registerApiResources(
+            List<ApiResourceRegisterCommand> resources, boolean disableStaleResources) {
         if (resources == null || resources.isEmpty()) {
             return ApiResourceRegisterResultVO.empty();
         }
@@ -95,7 +108,8 @@ public class ApiResourceService implements IApiResourceService {
                 updates.add(existing);
             }
         }
-        List<ApiResourceEntity> staleResources = loadStaleAutoScannedResources(validResources, currentResourceKeys);
+        List<ApiResourceEntity> staleResources = disableStaleResources
+                ? loadStaleAutoScannedResources(validResources, currentResourceKeys) : List.of();
         List<ApiResourceEntity> duplicateRouteResources = loadDuplicateRouteResources(validResources, currentResourceKeys, currentRouteKeys);
         staleResources.forEach(resource -> resource.setStatus(0));
         duplicateRouteResources.forEach(resource -> resource.setStatus(0));
