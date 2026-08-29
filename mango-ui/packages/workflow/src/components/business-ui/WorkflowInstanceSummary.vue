@@ -14,7 +14,7 @@
     </div>
     <div class="workflow-instance-summary__item">
       <span>办理人</span>
-      <strong>{{ summary.assigneeName || '-' }}</strong>
+      <strong data-field="workflow.assignee">{{ workflowAssigneeDisplay(summary) }}</strong>
     </div>
     <div class="workflow-instance-summary__item is-wide">
       <span>开始时间</span>
@@ -24,15 +24,19 @@
 </template>
 
 <script setup lang="ts">
+import { workflowAssigneeDisplay } from '../../api/workflow';
 import type { WorkflowInstanceSummaryData } from './types';
 
 defineOptions({ name: 'WorkflowInstanceSummary' });
 
-withDefaults(defineProps<{
-  summary?: WorkflowInstanceSummaryData;
-}>(), {
-  summary: () => ({}),
-});
+withDefaults(
+  defineProps<{
+    summary?: WorkflowInstanceSummaryData;
+  }>(),
+  {
+    summary: () => ({}),
+  },
+);
 </script>
 
 <style scoped>

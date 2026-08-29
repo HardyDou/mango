@@ -48,7 +48,7 @@ jobs:
       - name: Set up Node.js for common PMO gates
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: "22.23.1"
 
       - name: Install frontend dependencies for release projection classification
         run: pnpm install --frozen-lockfile --dir mango-ui --registry=https://registry.npmjs.org/
@@ -90,7 +90,7 @@ jobs:
       - name: Set up Node.js for release plan validation
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: "22.23.1"
 
       - name: Validate accumulated successful release baseline
         run: node mango-ui/scripts/release/check-release-plan.mjs
@@ -120,7 +120,7 @@ jobs:
       - name: Set up Node.js for PMO gates
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: "22.23.1"
 
       - name: Test document contracts, lifecycle routing, and Skills
         if: needs.preflight_scope.outputs.pmo == 'true'
@@ -176,7 +176,7 @@ jobs:
       - name: Set up Node.js for CLI gates
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: "22.23.1"
 
       - name: Build and verify the reproducible PMO package for CLI tests
         if: needs.preflight_scope.outputs.distribution == 'true' && needs.preflight_scope.outputs.m11 == 'true'
@@ -234,7 +234,7 @@ jobs:
       - name: Set up Node.js for generated backend gates
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: "22.23.1"
 
       - name: Set up Java for backend architecture gates
         uses: actions/setup-java@v4
@@ -401,7 +401,7 @@ jobs:
       - name: Set up Node.js for documentation gates
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: "22.23.1"
 
       - name: Check governance intent
         if: needs.preflight_scope.outputs.pmo == 'true' && needs.preflight_scope.outputs.m09 == 'true'

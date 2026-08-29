@@ -14,6 +14,7 @@ import io.mango.workflow.api.query.WorkflowDefinitionVersionQuery;
 import io.mango.workflow.api.vo.WorkflowDefinitionVO;
 import io.mango.workflow.api.vo.WorkflowDefinitionVersionVO;
 import io.mango.workflow.api.vo.WorkflowDeployVO;
+import io.mango.workflow.api.vo.WorkflowDesignerOptionsVO;
 import io.mango.workflow.api.vo.WorkflowNodeCatalogVO;
 import io.mango.workflow.core.service.IWorkflowDefinitionService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -160,5 +161,13 @@ public class WorkflowDefinitionController implements WorkflowDefinitionApi {
     @Override
     public R<List<WorkflowNodeCatalogVO>> nodeCatalog() {
         return R.ok(workflowDefinitionService.nodeCatalog());
+    }
+
+    @GetMapping("/designer-options")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:definition:query")
+    @Operation(summary = "查询流程设计器候选数据", description = "权限接口。通过 Workflow Provider 查询当前租户可用的用户、角色、岗位、组织和字典类型")
+    @Override
+    public R<WorkflowDesignerOptionsVO> designerOptions() {
+        return R.ok(workflowDefinitionService.designerOptions());
     }
 }

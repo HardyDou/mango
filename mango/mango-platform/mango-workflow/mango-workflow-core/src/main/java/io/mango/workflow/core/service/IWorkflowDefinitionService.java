@@ -10,6 +10,7 @@ import io.mango.workflow.api.query.WorkflowDefinitionVersionQuery;
 import io.mango.workflow.api.vo.WorkflowDefinitionVO;
 import io.mango.workflow.api.vo.WorkflowDefinitionVersionVO;
 import io.mango.workflow.api.vo.WorkflowDeployVO;
+import io.mango.workflow.api.vo.WorkflowDesignerOptionsVO;
 import io.mango.workflow.api.vo.WorkflowNodeCatalogVO;
 
 import java.util.List;
@@ -44,4 +45,6 @@ public interface IWorkflowDefinitionService {
     WorkflowDefinitionVersionVO versionDetail(Long id);
 
     List<WorkflowNodeCatalogVO> nodeCatalog();
+
+    WorkflowDesignerOptionsVO designerOptions();
 }

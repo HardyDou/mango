@@ -39,6 +39,7 @@ import io.mango.workflow.core.entity.WorkflowDefinitionEntity;
 import io.mango.workflow.core.entity.WorkflowFormInstanceEntity;
 import io.mango.workflow.core.entity.WorkflowTaskRecordEntity;
 import io.mango.workflow.core.event.WorkflowEventPublisher;
+import io.mango.workflow.core.identity.WorkflowAssigneeIdentityService;
 import io.mango.workflow.core.mapper.WorkflowDefinitionMapper;
 import io.mango.workflow.core.mapper.WorkflowFormInstanceMapper;
 import io.mango.workflow.core.mapper.WorkflowTaskRecordMapper;
@@ -321,7 +322,7 @@ class WorkflowProcessServiceImplIntegrationTest {
     }
 
     @Configuration
-    @Import(WorkflowProcessService.class)
+    @Import({WorkflowProcessService.class, WorkflowAssigneeIdentityService.class})
     @MapperScan("io.mango.workflow.core.mapper")
     static class TestConfig {
 
@@ -351,8 +352,10 @@ class WorkflowProcessServiceImplIntegrationTest {
         }
 
         @Bean
-        WorkflowEventPublisher workflowEventPublisher(ObjectProvider<io.mango.infra.event.api.IDomainEventPublisher> provider) {
-            return new WorkflowEventPublisher(provider);
+        WorkflowEventPublisher workflowEventPublisher(
+                ObjectProvider<io.mango.infra.event.api.IDomainEventPublisher> provider,
+                WorkflowAssigneeIdentityService assigneeIdentityService) {
+            return new WorkflowEventPublisher(provider, assigneeIdentityService);
         }
 
         @Bean

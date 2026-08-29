@@ -44,8 +44,11 @@ public class WorkflowStartResultVO {
     @Schema(description = "处理人ID")
     private Long assigneeId;
 
-    @Schema(description = "处理人名称")
+    @Schema(description = "Flowable 原始办理人 key")
     private String assigneeName;
+
+    @Schema(description = "处理人显示名；昵称优先、用户名兜底，无法解析时为空")
+    private String assigneeDisplayName;
 
     @Schema(description = "认领状态")
     private WorkflowTaskClaimStatus claimStatus;

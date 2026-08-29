@@ -31,12 +31,14 @@
 |------|----------|
 | 流程分类 | `/workflow/categories` 接口和流程管理页面。 |
 | 流程定义 | `/workflow/definitions` 接口和流程定义页面。 |
+| 设计器候选项 | `GET /workflow/definitions/designer-options`；通过 `WorkflowDesignerOptionProvider` 返回当前上下文中的用户、角色、岗位、组织和字典类型。 |
 | 流程发布 | `/workflow/definitions/deploy` 或 `WorkflowDefinitionApi.ensurePublished()`。 |
 | 流程模板 | `/workflow/templates` 接口和流程模板页面。 |
 | 业务申请 | `WorkflowBusinessApplyApi` 或 `/workflow/business-applies`。 |
 | 发起流程 | `WorkflowProcessApi.start()` 或 `/workflow/processes/start`。 |
 | 撤回流程 | `WorkflowProcessApi.withdraw()` 或 `/workflow/processes/withdraw`。 |
 | 待办和已办 | `/workflow/tasks/todo`、`/workflow/tasks/done`、任务列表页面。 |
+| 办理人身份增强 | 任务和业务进度返回原始 `assigneeName`，并按当前租户批量补充 `assigneeId`、`assigneeDisplayName`；候选组未认领时不虚构用户。 |
 | 审批处理 | `/workflow/tasks/complete`、`/workflow/tasks/complete-result`、`/workflow/tasks/reject`、`/workflow/tasks/return`、`/workflow/tasks/save`、`/workflow/tasks/transfer`、`/workflow/tasks/add-sign`。 |
 | 抄送 | `/workflow/tasks/copied`、`/workflow/tasks/copied/read`。 |
 | 业务进度查询 | `WorkflowBusinessProcessApi.latestByBusinessKeys()` 或 `/workflow/business-applies/progress/latest-batch`。 |
@@ -227,6 +229,14 @@ WorkflowProcessWithdrawResultVO result = workflowProcessApi.withdraw(withdraw).g
 业务启动命令可携带完整 `participantUserIds` 集合，也可调用 `POST /workflow/participations/business` 进行完整替换。Workflow 会先验证所有用户属于当前租户、账号和成员均启用且未离职，任何一个无效用户都会使整次声明零写入；不得用 username 代替授权身份。
 
 审批节点配置 `assignmentMode` 缺失时按 `CLAIM` 兼容。设置为 `AUTO` 后，运行时从指定用户、角色、岗位、组织或组织主管展开当前租户有效成员，按稳定 `userId` 排序并锁定 `workflow_auto_assignment_state` 游标，直接在节点事务内设置 assignee；当前策略固定为 `ROUND_ROBIN`。没有候选人时返回 `AUTO_ASSIGN_NO_CANDIDATE`，不转 admin、不退化为待领取，流程推进和游标更新一起回滚。
+
+### 3.3 设计器候选数据 Provider
+
+流程定义设计器通过 `GET /workflow/definitions/designer-options` 一次加载用户、角色、岗位、组织树和字典类型。接口只要求 `workflow:definition:query`，客户端不传 `tenantId`，也不需要给 Workflow 菜单追加 `system:*`、`authorization:*`、Identity 或 Org 权限。默认 `WorkflowPlatformApiDesignerOptionProvider` 使用当前可信上下文调用各平台模块的公共 Java API。
+
+承载 Workflow 的应用可以注册自己的 `WorkflowDesignerOptionProvider` Bean；自动配置使用 `@ConditionalOnMissingBean`，自定义 Bean 会替换默认实现。Provider 必须自行保证当前租户和数据范围，不得接受客户端租户标识。未配置 Provider 返回 `DESIGNER_OPTION_PROVIDER_MISSING`，任一上游加载失败返回 `DESIGNER_OPTION_LOAD_FAILED`；两种情况都不会伪装为空候选成功。
+
+该 Provider 的 VO 只用于设计器展示，不能作为运行时任务授权事实。AUTO 派单仍由运行时候选目录重新验证稳定 `userId`、租户成员状态和候选范围。
 
 业务页面处理“审批通过”时有两种模式：
 
@@ -665,7 +675,8 @@ Workflow 参数校验约束统一由 `mango-workflow-api` 的 `XxxApi` 契约声
 | `currentTaskDefinitionKeys` | 刷新后的当前节点定义 key，多个任务用逗号拼接。 |
 | `currentAssigneeNames` | 刷新后的当前处理人名称，多个任务用逗号拼接。 |
 | `currentTaskId` / `currentTaskName` / `taskDefinitionKey` | 第一个当前任务的 ID、名称和定义 key。 |
-| `assigneeId` / `assigneeName` | 第一个当前任务的处理人。 |
+| `assigneeName` | Flowable 原始办理人 key；兼容字段 `assignee` 同样保留该原始 key。 |
+| `assigneeId` / `assigneeDisplayName` | 当前租户身份解析得到的用户 ID（字符串语义）和显示名；解析失败时为空。 |
 | `claimStatus` | 当前任务认领状态：`NONE`、`UNCLAIMED`、`ASSIGNED`。 |
 | `candidateUsers` / `candidateGroups` | 当前任务候选用户和候选组。 |
 | `currentTasks` | 刷新后的当前任务快照，来源于 `workflow_business_apply_current_task`，包含认领状态和候选人。 |
@@ -715,12 +726,12 @@ Workflow 参数校验约束统一由 `mango-workflow-api` 的 `XxxApi` 契约声
 | `currentAssigneeNames` | 刷新后的当前处理人名称。 |
 | `currentTask` | 第一个当前任务快照。 |
 | `taskId` / `taskDefinitionKey` / `taskName` | 第一个当前任务的 ID、定义 key 和名称。 |
-| `assignee` | 第一个当前任务的处理人 ID。 |
-| `assigneeId` | 第一个当前任务的处理人 ID。 |
-| `assigneeName` | 第一个当前任务的处理人名称。 |
+| `assignee` | 兼容字段，保留第一个当前任务的 Flowable 原始办理人 key。 |
+| `assigneeId` / `assigneeDisplayName` | 第一个当前任务的租户用户 ID（字符串语义）和显示名；未认领或解析失败时为空。 |
+| `assigneeName` | 第一个当前任务的 Flowable 原始办理人 key。 |
 | `claimStatus` | 第一个当前任务认领状态：`NONE`、`UNCLAIMED`、`ASSIGNED`。 |
 | `candidateUsers` / `candidateGroups` | 第一个当前任务候选用户和候选组。 |
-| `currentTasks` | 刷新后的当前任务明细，包含 `taskId`、`taskDefinitionKey`、`taskName`、`assigneeId`、`assigneeName`、`claimStatus`、`candidateUsers`、`candidateGroups`、`arrivedAt`。 |
+| `currentTasks` | 刷新后的当前任务明细，包含原始 `assigneeName`、增强 `assigneeId`/`assigneeDisplayName`、`claimStatus`、`candidateUsers`、`candidateGroups` 和 `arrivedAt`。 |
 | `variables` | 流程变量快照。 |
 
 `workflow.task.assigned` 按运行时任务发送：任务已有 `assigneeId` 时，只通知该办理人；任务尚未到人时，将候选用户以及 `ROLE:<id>`、`POST:<id>`、`ORG:<id>` 转成同一个任务的 Notice 接收目标，目标中的全部有效成员收到指向同一 `taskId` 的通知。并行或多实例产生多个运行时任务时，每个任务分别发送并使用 `eventId + taskId` 幂等，不能把接收人聚合到第一条任务。流程已经结束或没有可解析接收人时跳过通知；`ORG_LEADER:<id>` 不会降级为全组织通知。
@@ -972,6 +983,8 @@ workflow:template:push
 确认管理后台已经注册 `@mango/workflow` 的 `admin-pages` 子入口，并且菜单里的组件路径能映射到 `workflow/template/index` 或 `workflow/definition/index` 页面 key。
 
 ## 14. 相关文档
+
+- [Workflow 办理人身份特性升级指南](../../../mango-docs/guides/business-integration/workflow-assignee-identity-upgrade.md)
 
 - [前端 workflow 包](../../../mango-ui/packages/workflow/README.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)

@@ -32,6 +32,8 @@ import io.mango.workflow.core.entity.WorkflowBusinessApplyStatusLogEntity;
 import io.mango.workflow.core.mapper.WorkflowBusinessApplyCurrentTaskMapper;
 import io.mango.workflow.core.mapper.WorkflowBusinessApplyMapper;
 import io.mango.workflow.core.mapper.WorkflowBusinessApplyStatusLogMapper;
+import io.mango.workflow.core.identity.WorkflowAssigneeIdentityService;
+import io.mango.workflow.core.identity.WorkflowAssigneeIdentity;
 import io.mango.workflow.core.model.WorkflowProcessStartedContext;
 import io.mango.workflow.core.model.WorkflowTaskStatusContext;
 import io.mango.workflow.core.service.IWorkflowBusinessApplyService;
@@ -46,6 +48,7 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -74,6 +77,7 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
     private final TaskService taskService;
     private final ObjectMapper objectMapper;
     private final ObjectProvider<WorkflowBusinessApplyAccessChecker> accessCheckerProvider;
+    private final WorkflowAssigneeIdentityService assigneeIdentityService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -124,7 +128,7 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
         applyMapper.insert(apply);
         enrichApplyId(command, apply);
         saveStatusLog(apply, null, WorkflowApplyStatus.DRAFT.name(), WorkflowApplyAction.CREATE, null, null, null);
-        return toVo(apply, List.of());
+        return enrich(toVo(apply, List.of()));
     }
 
     private void enrichApplyId(CreateWorkflowBusinessApplyCommand command, WorkflowBusinessApplyEntity apply) {
@@ -146,6 +150,7 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
         List<WorkflowBusinessApplyVO> records = withCurrentTasks(result.getRecords()).stream()
                 .map(entry -> toVo(entry.apply(), entry.tasks()))
                 .toList();
+        assigneeIdentityService.enrichBusinessApplies(records);
         return PageResult.of(records, result.getTotal(), resolved.getPage(), resolved.getSize());
     }
 
@@ -174,7 +179,7 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
         WorkflowBusinessApplyEntity apply = applyMapper.selectById(applyId);
         Require.notNull(apply, WorkflowCode.APPLY_NOT_FOUND);
         checkAccess(apply);
-        return toVo(apply, tasksByApplyId(apply.getId()));
+        return enrich(toVo(apply, tasksByApplyId(apply.getId())));
     }
 
     @Override
@@ -183,7 +188,7 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
         WorkflowBusinessApplyEntity entity = applyByProcessInstanceId(processInstanceId);
         Require.notNull(entity, WorkflowCode.APPLY_NOT_FOUND);
         checkAccess(entity);
-        return toVo(entity, tasksByApplyId(entity.getId()));
+        return enrich(toVo(entity, tasksByApplyId(entity.getId())));
     }
 
     @Override
@@ -195,7 +200,7 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
         if (apply == null) {
             return null;
         }
-        return toVo(apply, tasksByApplyId(apply.getId()));
+        return enrich(toVo(apply, tasksByApplyId(apply.getId())));
     }
 
     @Override
@@ -207,7 +212,7 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
             wrapper.eq(WorkflowBusinessApplyEntity::getProcessInstanceId, trim(processInstanceId));
         }
         WorkflowBusinessApplyEntity apply = applyMapper.selectOne(wrapper.last("limit 1 for update"));
-        return apply == null ? null : toVo(apply, tasksByApplyId(apply.getId()));
+        return apply == null ? null : enrich(toVo(apply, tasksByApplyId(apply.getId())));
     }
 
     @Override
@@ -225,6 +230,7 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
                 : withCurrentTasks(applies.subList((int) from, (int) to)).stream()
                 .map(entry -> toVo(entry.apply(), entry.tasks()))
                 .toList();
+        assigneeIdentityService.enrichBusinessApplies(records);
         return PageResult.of(records, applies.size(), resolved.getPage(), resolved.getSize());
     }
 
@@ -237,7 +243,9 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
             return null;
         }
         checkAccess(apply);
-        return toProgressVo(apply, tasksByApplyId(apply.getId()));
+        WorkflowBusinessApplyProgressVO progress = toProgressVo(apply, tasksByApplyId(apply.getId()));
+        assigneeIdentityService.enrichProgresses(List.of(progress));
+        return progress;
     }
 
     @Override
@@ -265,6 +273,7 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
             }
             result.putIfAbsent(apply.getBusinessKey(), toProgressVo(apply, taskMap.getOrDefault(apply.getId(), List.of())));
         }
+        assigneeIdentityService.enrichProgresses(result.values());
         return result;
     }
 
@@ -334,6 +343,10 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
                 .orderByTaskCreateTime()
                 .asc()
                 .list();
+        Map<String, WorkflowAssigneeIdentity> identities = assigneeIdentityService.resolve(tasks.stream()
+                .map(Task::getAssignee)
+                .toList());
+        List<WorkflowBusinessApplyCurrentTaskEntity> currentTasks = new ArrayList<>();
         LocalDateTime now = LocalDateTime.now();
         for (Task task : tasks) {
             WorkflowBusinessApplyCurrentTaskEntity currentTask = new WorkflowBusinessApplyCurrentTaskEntity();
@@ -345,8 +358,10 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
             currentTask.setTaskId(task.getId());
             currentTask.setTaskDefinitionKey(task.getTaskDefinitionKey());
             currentTask.setTaskName(task.getName());
-            currentTask.setAssigneeId(parseLong(task.getAssignee()));
-            currentTask.setAssigneeName(trim(task.getAssignee()));
+            String assigneeName = task.getAssignee();
+            WorkflowAssigneeIdentity identity = identities.get(trim(assigneeName));
+            currentTask.setAssigneeId(identity == null ? null : identity.userId());
+            currentTask.setAssigneeName(assigneeName);
             TaskCandidates candidates = candidates(task);
             WorkflowTaskClaimStatus claimStatus = currentClaimStatus(task, candidates);
             currentTask.setClaimStatus(claimStatus.name());
@@ -358,12 +373,19 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
             currentTask.setCreatedAt(now);
             currentTask.setUpdatedAt(now);
             currentTaskMapper.insert(currentTask);
+            currentTasks.add(currentTask);
         }
         updateCurrentTaskSummary(apply, tasks, now);
         if (!tasks.isEmpty() && WorkflowApplyStatus.SUBMITTED.name().equals(apply.getApplyStatus())) {
             updateStatus(apply, WorkflowApplyStatus.IN_APPROVAL, WorkflowApplyAction.TASK_CREATED, null, null, null);
         }
-        return findByProcessInstance(processInstanceId);
+        WorkflowBusinessApplyEntity refreshedApply = applyByProcessInstanceId(processInstanceId);
+        if (refreshedApply == null) {
+            return null;
+        }
+        WorkflowBusinessApplyVO result = toVo(refreshedApply, currentTasks);
+        assigneeIdentityService.enrichCurrentTasks(result.getCurrentTasks(), identities);
+        return result;
     }
 
     @Override
@@ -611,6 +633,11 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
         return vo;
     }
 
+    private WorkflowBusinessApplyVO enrich(WorkflowBusinessApplyVO apply) {
+        assigneeIdentityService.enrichBusinessApplies(List.of(apply));
+        return apply;
+    }
+
     private String customFormViewPath(String formJson) {
         Object customConfig = parseMap(formJson).get("customConfig");
         if (!(customConfig instanceof Map<?, ?> config)) {
@@ -695,6 +722,7 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
         vo.setTaskDefinitionKey(first.getTaskDefinitionKey());
         vo.setAssigneeId(first.getAssigneeId());
         vo.setAssigneeName(first.getAssigneeName());
+        vo.setAssigneeDisplayName(first.getAssigneeDisplayName());
         vo.setClaimStatus(first.getClaimStatus());
         vo.setCandidateUsers(first.getCandidateUsers());
         vo.setCandidateGroups(first.getCandidateGroups());
@@ -808,17 +836,6 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
             return List.of();
         }
         return cleanStrings(Arrays.asList(value.split(",")));
-    }
-
-    private Long parseLong(String value) {
-        if (!StringUtils.hasText(value)) {
-            return null;
-        }
-        try {
-            return Long.valueOf(value.trim());
-        } catch (NumberFormatException e) {
-            return null;
-        }
     }
 
     private Map<String, Object> parseMap(String value) {

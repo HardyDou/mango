@@ -6,6 +6,7 @@ import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.workflow.api.WorkflowBusinessApplyApi;
 import io.mango.workflow.api.WorkflowBusinessProcessApi;
+import io.mango.workflow.api.WorkflowDefinitionApi;
 import io.mango.workflow.api.WorkflowProcessApi;
 import io.mango.workflow.api.WorkflowTaskRuntimeApi;
 import io.mango.workflow.api.command.ClaimWorkflowTaskCommand;
@@ -21,11 +22,14 @@ import io.mango.workflow.api.vo.WorkflowTaskCompleteResultVO;
 import io.mango.workflow.api.vo.WorkflowTaskDetailVO;
 import io.mango.workflow.api.vo.WorkflowTaskSummaryVO;
 import io.mango.workflow.api.vo.WorkflowTaskVO;
+import io.mango.workflow.api.vo.WorkflowDesignerOptionsVO;
 import io.mango.workflow.core.service.IWorkflowBusinessApplyService;
+import io.mango.workflow.core.service.IWorkflowDefinitionService;
 import io.mango.workflow.core.service.IWorkflowProcessService;
 import io.mango.workflow.core.service.IWorkflowTaskRuntimeService;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -39,12 +43,15 @@ class WorkflowApiControllerContractTest {
     private final IWorkflowBusinessApplyService businessApplyService = mock(IWorkflowBusinessApplyService.class);
     private final IWorkflowProcessService processService = mock(IWorkflowProcessService.class);
     private final IWorkflowTaskRuntimeService runtimeService = mock(IWorkflowTaskRuntimeService.class);
+    private final IWorkflowDefinitionService definitionService = mock(IWorkflowDefinitionService.class);
     private final WorkflowBusinessApplyController businessApplyController =
             new WorkflowBusinessApplyController(businessApplyService);
     private final WorkflowProcessController processController = new WorkflowProcessController(processService);
     private final WorkflowBusinessProcessController businessProcessController =
             new WorkflowBusinessProcessController(processService);
     private final WorkflowTaskController taskController = new WorkflowTaskController(runtimeService);
+    private final WorkflowDefinitionController definitionController =
+            new WorkflowDefinitionController(definitionService);
 
     @Test
     void controllers_carryWorkflowApiContracts() {
@@ -52,6 +59,43 @@ class WorkflowApiControllerContractTest {
         assertThat(processController).isInstanceOf(WorkflowProcessApi.class);
         assertThat(businessProcessController).isInstanceOf(WorkflowBusinessProcessApi.class);
         assertThat(taskController).isInstanceOf(WorkflowTaskRuntimeApi.class);
+        assertThat(definitionController).isInstanceOf(WorkflowDefinitionApi.class);
+    }
+
+    @Test
+    void designerOptionsUsesWorkflowQueryPermissionAndDelegatesToDefinitionService()
+            throws NoSuchMethodException {
+        WorkflowDesignerOptionsVO options = new WorkflowDesignerOptionsVO();
+        when(definitionService.designerOptions()).thenReturn(options);
+
+        assertThat(definitionController.designerOptions().getData()).isSameAs(options);
+        verify(definitionService).designerOptions();
+
+        ApiAccess access = WorkflowDefinitionController.class
+                .getDeclaredMethod("designerOptions")
+                .getAnnotation(ApiAccess.class);
+        assertThat(access).isNotNull();
+        assertThat(access.mode()).isEqualTo(ApiResourceAccessMode.PERMISSION);
+        assertThat(access.permission()).isEqualTo("workflow:definition:query");
+    }
+
+    @Test
+    void taskCandidatesShouldBeDefensivelyCopied() {
+        List<String> candidateUsers = new ArrayList<>(List.of("admin"));
+        List<String> candidateGroups = new ArrayList<>(List.of("reviewers"));
+        WorkflowTaskVO task = new WorkflowTaskVO();
+
+        task.setCandidateUsers(candidateUsers);
+        task.setCandidateGroups(candidateGroups);
+        candidateUsers.add("operator");
+        candidateGroups.add("auditors");
+
+        assertThat(task.getCandidateUsers()).containsExactly("admin");
+        assertThat(task.getCandidateGroups()).containsExactly("reviewers");
+        task.getCandidateUsers().add("manager");
+        task.getCandidateGroups().add("managers");
+        assertThat(task.getCandidateUsers()).containsExactly("admin");
+        assertThat(task.getCandidateGroups()).containsExactly("reviewers");
     }
 
     @Test

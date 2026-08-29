@@ -80,6 +80,20 @@ export interface WorkflowDomainOption {
   children?: WorkflowDomainOption[];
 }
 
+export interface WorkflowDesignerOption {
+  value: string;
+  label: string;
+  children?: WorkflowDesignerOption[];
+}
+
+export interface WorkflowDesignerOptions {
+  users: WorkflowDesignerOption[];
+  roles: WorkflowDesignerOption[];
+  posts: WorkflowDesignerOption[];
+  organizations: WorkflowDesignerOption[];
+  dictTypes: WorkflowDesignerOption[];
+}
+
 export interface WorkflowDefinition {
   id?: WorkflowId;
   categoryId?: WorkflowId;
@@ -285,6 +299,11 @@ export interface WorkflowTask {
   processDefinitionId?: string;
   initiatorName?: string;
   assigneeName?: string;
+  assigneeId?: WorkflowId;
+  assigneeDisplayName?: string;
+  claimStatus?: WorkflowTaskClaimStatus;
+  candidateUsers?: string[];
+  candidateGroups?: string[];
   claimable?: boolean;
   unclaimable?: boolean;
   status: string;
@@ -415,6 +434,7 @@ export interface WorkflowBusinessApplyCurrentTask {
   taskName?: string;
   assigneeId?: WorkflowId;
   assigneeName?: string;
+  assigneeDisplayName?: string;
   claimStatus?: WorkflowTaskClaimStatus;
   candidateUsers?: string[];
   candidateGroups?: string[];
@@ -469,6 +489,7 @@ export type WorkflowBusinessApplyProgress = Pick<WorkflowBusinessApply,
   taskDefinitionKey?: string;
   assigneeId?: WorkflowId;
   assigneeName?: string;
+  assigneeDisplayName?: string;
   claimStatus?: WorkflowTaskClaimStatus;
   candidateUsers?: string[];
   candidateGroups?: string[];
@@ -575,6 +596,7 @@ export interface WorkflowTaskCompleteResult {
   taskDefinitionKey?: string;
   assigneeId?: WorkflowId;
   assigneeName?: string;
+  assigneeDisplayName?: string;
   claimStatus?: WorkflowTaskClaimStatus;
   candidateUsers?: string[];
   candidateGroups?: string[];
@@ -600,6 +622,7 @@ export interface WorkflowTaskActionResult {
   taskDefinitionKey?: string;
   assigneeId?: WorkflowId;
   assigneeName?: string;
+  assigneeDisplayName?: string;
   claimStatus?: WorkflowTaskClaimStatus;
   candidateUsers?: string[];
   candidateGroups?: string[];
@@ -622,10 +645,23 @@ export interface WorkflowStartResult {
   taskDefinitionKey?: string;
   assigneeId?: WorkflowId;
   assigneeName?: string;
+  assigneeDisplayName?: string;
   claimStatus?: WorkflowTaskClaimStatus;
   candidateUsers?: string[];
   candidateGroups?: string[];
   currentTasks?: WorkflowBusinessApplyCurrentTask[];
+}
+
+export function workflowAssigneeDisplay(value?: {
+  assigneeDisplayName?: string;
+  assigneeName?: string;
+  claimStatus?: WorkflowTaskClaimStatus;
+} | null): string {
+  const displayName = value?.assigneeDisplayName?.trim();
+  if (displayName) return displayName;
+  const assigneeName = value?.assigneeName?.trim();
+  if (assigneeName) return assigneeName;
+  return value?.claimStatus === 'UNCLAIMED' ? '待领取' : '-';
 }
 
 export interface WorkflowTaskReturnCommand extends WorkflowTaskActionCommand {
@@ -674,6 +710,8 @@ export const workflowApi = {
   definitionVersionDetail: (id: WorkflowId) => get<WorkflowDefinitionVersion>('/workflow/definitions/version-detail', { params: { id } }).then(normalizeVersion),
   nodeCatalog: () => get<WorkflowNodeCatalog[]>('/workflow/definitions/node-catalog')
     .then(list => Array.isArray(list) ? list.map(normalizeNodeCatalog) : []),
+  designerOptions: () => get<WorkflowDesignerOptions>('/workflow/definitions/designer-options')
+    .then(normalizeDesignerOptions),
 
   templatesPage: (params?: WorkflowPageQuery & { templateCategoryId?: WorkflowId | '' }) => get<any>('/workflow/templates/page', { params: toBackendPageParams(params) })
     .then(data => fromBackendPageResult(data, normalizeTemplate, params)),
@@ -1020,6 +1058,25 @@ function normalizeDomainOption(item: any): WorkflowDomainOption {
   };
 }
 
+function normalizeDesignerOptions(data: Partial<WorkflowDesignerOptions> | undefined): WorkflowDesignerOptions {
+  return {
+    users: normalizeDesignerOptionList(data?.users),
+    roles: normalizeDesignerOptionList(data?.roles),
+    posts: normalizeDesignerOptionList(data?.posts),
+    organizations: normalizeDesignerOptionList(data?.organizations),
+    dictTypes: normalizeDesignerOptionList(data?.dictTypes),
+  };
+}
+
+function normalizeDesignerOptionList(items: WorkflowDesignerOption[] | undefined): WorkflowDesignerOption[] {
+  if (!Array.isArray(items)) return [];
+  return items.map(item => ({
+    value: String(item?.value ?? ''),
+    label: String(item?.label ?? item?.value ?? ''),
+    children: Array.isArray(item?.children) ? normalizeDesignerOptionList(item.children) : undefined,
+  })).filter(item => item.value && item.label);
+}
+
 function normalizeTemplate(item: any): WorkflowTemplate {
   return {
     ...item,
@@ -1150,6 +1207,11 @@ function normalizeTask(item: any): WorkflowTask {
     processDefinitionId: item?.processDefinitionId,
     initiatorName: item?.initiatorName,
     assigneeName: item?.assigneeName,
+    assigneeId: item?.assigneeId ? normalizeId(item.assigneeId) : undefined,
+    assigneeDisplayName: item?.assigneeDisplayName,
+    claimStatus: item?.claimStatus,
+    candidateUsers: Array.isArray(item?.candidateUsers) ? item.candidateUsers.map(String) : [],
+    candidateGroups: Array.isArray(item?.candidateGroups) ? item.candidateGroups.map(String) : [],
     claimable: Boolean(item?.claimable),
     unclaimable: Boolean(item?.unclaimable),
     status: item?.status || '-',
@@ -1210,6 +1272,7 @@ function normalizeBusinessApplyCurrentTask(item: any): WorkflowBusinessApplyCurr
     taskName: item?.taskName,
     assigneeId: item?.assigneeId ? normalizeId(item.assigneeId) : undefined,
     assigneeName: item?.assigneeName,
+    assigneeDisplayName: item?.assigneeDisplayName,
     claimStatus: item?.claimStatus,
     candidateUsers: Array.isArray(item?.candidateUsers) ? item.candidateUsers.map(String) : [],
     candidateGroups: Array.isArray(item?.candidateGroups) ? item.candidateGroups.map(String) : [],
@@ -1236,6 +1299,7 @@ function normalizeBusinessApplyProgress(item: any): WorkflowBusinessApplyProgres
     ...item,
     applyId: item?.applyId ? normalizeId(item.applyId) : undefined,
     assigneeId: item?.assigneeId ? normalizeId(item.assigneeId) : undefined,
+    assigneeDisplayName: item?.assigneeDisplayName,
     candidateUsers: Array.isArray(item?.candidateUsers) ? item.candidateUsers.map(String) : [],
     candidateGroups: Array.isArray(item?.candidateGroups) ? item.candidateGroups.map(String) : [],
     currentTasks: Array.isArray(item?.currentTasks) ? item.currentTasks.map(normalizeBusinessApplyCurrentTask) : [],
@@ -1251,6 +1315,7 @@ function normalizeTaskCompleteResult(item: any): WorkflowTaskCompleteResult {
     ...item,
     applyId: item?.applyId ? normalizeId(item.applyId) : undefined,
     assigneeId: item?.assigneeId ? normalizeId(item.assigneeId) : undefined,
+    assigneeDisplayName: item?.assigneeDisplayName,
     candidateUsers: Array.isArray(item?.candidateUsers) ? item.candidateUsers.map(String) : [],
     candidateGroups: Array.isArray(item?.candidateGroups) ? item.candidateGroups.map(String) : [],
     currentTask: item?.currentTask ? normalizeBusinessApplyCurrentTask(item.currentTask) : undefined,
@@ -1263,6 +1328,7 @@ function normalizeTaskActionResult(item: any): WorkflowTaskActionResult {
     ...item,
     applyId: item?.applyId ? normalizeId(item.applyId) : undefined,
     assigneeId: item?.assigneeId ? normalizeId(item.assigneeId) : undefined,
+    assigneeDisplayName: item?.assigneeDisplayName,
     candidateUsers: Array.isArray(item?.candidateUsers) ? item.candidateUsers.map(String) : [],
     candidateGroups: Array.isArray(item?.candidateGroups) ? item.candidateGroups.map(String) : [],
     currentTask: item?.currentTask ? normalizeBusinessApplyCurrentTask(item.currentTask) : undefined,
@@ -1275,6 +1341,7 @@ function normalizeWorkflowStartResult(item: any): WorkflowStartResult {
     ...item,
     applyId: item?.applyId ? normalizeId(item.applyId) : undefined,
     assigneeId: item?.assigneeId ? normalizeId(item.assigneeId) : undefined,
+    assigneeDisplayName: item?.assigneeDisplayName,
     candidateUsers: Array.isArray(item?.candidateUsers) ? item.candidateUsers.map(String) : [],
     candidateGroups: Array.isArray(item?.candidateGroups) ? item.candidateGroups.map(String) : [],
     currentTasks: Array.isArray(item?.currentTasks) ? item.currentTasks.map(normalizeBusinessApplyCurrentTask) : [],

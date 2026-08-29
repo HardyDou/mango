@@ -4,7 +4,7 @@
     "schemaVersion": 1,
     "workspaceCount": 41
   },
-  "catalogDigest": "d92d9ba68b6e42de0c9ea01e9a4c13404c9a90ac1292822746af1962def1bf60",
+  "catalogDigest": "f4bfc4f93b4ed9cc5fd0f71adc426f08b830c5aedceb397766a2dac48844ad82",
   "maven": {
     "dependencyManagementSets": [
       {
@@ -9665,6 +9665,15 @@
             "version": "1.0.0-SNAPSHOT"
           },
           {
+            "artifactId": "mango-identity-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.identity",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
             "artifactId": "mango-notice-api",
             "classifier": null,
             "groupId": "io.mango.platform.notice",
@@ -9683,6 +9692,15 @@
             "version": "1.0.0-SNAPSHOT"
           },
           {
+            "artifactId": "mango-org-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.org",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
             "artifactId": "mango-resource-api",
             "classifier": null,
             "groupId": "io.mango.platform.resource",
@@ -9695,6 +9713,15 @@
             "artifactId": "mango-resource-support",
             "classifier": null,
             "groupId": "io.mango.platform.resource",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-system-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.system",
             "optional": false,
             "scope": "compile",
             "type": "jar",

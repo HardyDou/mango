@@ -1,4 +1,5 @@
 import { computed, createApp, h, inject, nextTick, provide, reactive } from 'vue';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import TaskList from '../index.vue';
 import { workflowApi } from '../../../api/workflow';
 
@@ -113,6 +114,23 @@ describe('workflow task list', () => {
     expect(workflowApi.todoTasks).toHaveBeenLastCalledWith(expect.objectContaining({
       todoType: 'CLAIMABLE',
     }));
+    unmount();
+  });
+
+  it('renders assignee display name, raw key and claim state in fallback order', async () => {
+    vi.mocked(workflowApi.todoTasks).mockResolvedValueOnce(pageResult([
+      { id: 'display', taskName: '显示名', assigneeName: 'admin', assigneeDisplayName: '管理员' },
+      { id: 'raw', taskName: '原始键', assigneeName: 'reviewer' },
+      { id: 'claimable', taskName: '候选任务', claimStatus: 'UNCLAIMED', candidateGroups: ['ROLE:1'] },
+      { id: 'empty', taskName: '空任务' },
+    ]));
+
+    const { el, unmount } = await mountTaskList();
+
+    expect(el.textContent).toContain('管理员');
+    expect(el.textContent).toContain('reviewer');
+    expect(el.textContent).toContain('待领取');
+    expect(el.textContent).toContain('-');
     unmount();
   });
 

@@ -18,6 +18,7 @@ import io.mango.workflow.api.enums.WorkflowApplyStatus;
 import io.mango.workflow.core.engine.WorkflowAssigneeResolver;
 import io.mango.workflow.core.engine.WorkflowCandidateGroupProvider;
 import io.mango.workflow.core.event.WorkflowEventPublisher;
+import io.mango.workflow.core.identity.WorkflowAssigneeIdentityService;
 import io.mango.workflow.core.mapper.WorkflowBusinessApplyCurrentTaskMapper;
 import io.mango.workflow.core.mapper.WorkflowBusinessApplyMapper;
 import io.mango.workflow.core.mapper.WorkflowBusinessApplyStatusLogMapper;
@@ -467,6 +468,7 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
             PersistenceMybatisPlusAutoConfiguration.class,
             WorkflowAssigneeResolver.class,
             WorkflowCandidateGroupProvider.class,
+            WorkflowAssigneeIdentityService.class,
             WorkflowEventPublisher.class,
             WorkflowBusinessApplyService.class,
             WorkflowTaskRuntimeService.class
