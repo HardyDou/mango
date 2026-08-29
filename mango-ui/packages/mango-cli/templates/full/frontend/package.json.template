@@ -31,7 +31,7 @@
   },
   "devDependencies": {
     "@eslint/js": "{{eslintJsVersion}}",
-    "@mango/cli": "1.2.3",
+    "@mango/cli": "1.2.2",
     "@playwright/test": "{{playwrightVersion}}",
     "@types/node": "{{nodeTypesVersion}}",
     "@vitejs/plugin-vue": "{{viteVueVersion}}",
