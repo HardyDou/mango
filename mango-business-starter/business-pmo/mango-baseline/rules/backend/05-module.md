@@ -46,6 +46,13 @@
   禁止库模块直接依赖 `mango-resource-core`、`mango-resource-starter`、`mango-resource-sync-starter`
   或 `mango-resource-starter-remote`。确需例外时，必须人工明确确认并通过 `mango:check` 参数
   `-Dmango.check.resourceStarterDependencyExceptions=<artifactId>=<reason>` 记录充分理由。
+- Resource 的跨模块正确性禁止依赖模块、声明文件、JAR 扫描或 Handler 的执行顺序。跨模块关系必须使用固定
+  `resourceId`、领域 `code` / `bizCode` 或 `resourceType + bizKey` 等稳定身份，并由目标 Handler 幂等解析、
+  写入和重试直至收敛；稳定身份暂未解析到目标时必须可重入，只有非法或不可能满足的引用才永久失败。禁止把
+  运行时生成的目标表主键或“先执行某模块”作为发布契约。
+- `ResourceProvider.moduleDependencies()`、声明文件 `moduleDependencies` / `module-dependencies` 和
+  `ResourceHandler.dependsOnResourceTypes()` 只保留存量兼容，不建议新增使用，也不得作为新 Resource 设计的
+  正确性前提。
 
 ## 5. 边界规则
 

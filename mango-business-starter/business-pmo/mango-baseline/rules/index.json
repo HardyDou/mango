@@ -113,7 +113,7 @@
     },
     "backend.module": {
       "path": "rules/backend/05-module.md",
-      "reason": "后端模块分层、模块身份首次纳管、Resource API 与纯 Java support SPI 依赖边界规范"
+      "reason": "后端模块分层、模块身份首次纳管、Resource API 与纯 Java support SPI 依赖边界、稳定身份引用与禁止执行顺序依赖规范"
     },
     "backend.security": {
       "path": "rules/backend/06-security.md",
