@@ -18,7 +18,7 @@
 | Sprint | Main Result | Evidence |
 | --- | --- | --- |
 | Sprint 5 | Published package consumption and feature selection verified | `sprint-5/delivery-ledger.md`, `sprint-5/nexus-consumer-report.json`, `sprint-5/nexus-runtime-e2e-report.json`, `sprint-5/feature-selection-report.json`, `sprint-5/screenshots/` |
-| Sprint 6 | `mango-cli` full preset and Nexus-generated project verified | `sprint-6/delivery-ledger.md`, `sprint-6/api-report.json`, `sprint-6/layout-report.json`, `sprint-6/screenshots/`, `sprint-6/generated-full-app/` |
+| Sprint 6 | `mango-cli` full preset and Nexus-generated project verified | `sprint-6/delivery-ledger.md`, `sprint-6/api-report.json`, `sprint-6/layout-report.json`, `sprint-6/screenshots/`；生成项目按 Issue #888 清理 |
 | Sprint 7 | Optional module selection and `mango add` verified | `sprint-7/delivery-ledger.md`, `sprint-7/summary.md` |
 | Sprint 8 | Monolith, hybrid micro-frontend, and mixed deployment matrix verified | `sprint-8/delivery-ledger.md`, `sprint-8/reports/mode-matrix-report.json`, `sprint-8/screenshots/` |
 | Sprint 9 | Release documentation and final evidence index | `sprint-9/final-evidence-index.md`, `sprint-9/release-readiness.md`, `sprint-9/delivery-ledger.md` |

@@ -43,3 +43,4 @@ Sprint 4 完成了 `@mango/admin` 管理端消费入口、聚合样式入口、�
 
 - 本 Sprint 不包含灰度、远程 registry、缓存治理、回滚平台、发布平台、监控告警或性能专项。
 - 本 Sprint 未改变后端菜单来源。full mode 仍以真实后端菜单接口为准。
+- `consumer-app` 和一次性 packed-consumer 脚本已按 Issue #888 清理；报告和截图保留，后续复现使用正式测试目录和 `.runtime/` 临时项目。

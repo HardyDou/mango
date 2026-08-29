@@ -40,11 +40,10 @@ Sprint 6 delivered the first usable `mango-cli` full preset and verified the pat
 - Frontend: `http://127.0.0.1:5186/`
 - Backend health: `http://127.0.0.1:5555/actuator/health`
 - Running frontend directory during final verification: `/tmp/mango-cli-nexus-verify-106/nexus-generated-full/frontend`
-- Evidence project directory: `mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-6/generated-full-app`
+- Evidence project directory: 已按 Issue #888 清理；后续使用 CLI 在 `.runtime/projects/` 生成临时项目。
 
 ## Evidence
 
-- `mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-6/generated-full-app`
 - `mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-6/screenshots/nexus-full-app-login-verified.png`
 - `mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-6/screenshots/nexus-full-app-home-verified.png`
 - `mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-6/layout-report.json`
