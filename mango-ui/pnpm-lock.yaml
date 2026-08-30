@@ -722,7 +722,7 @@ importers:
         specifier: workspace:1.0.37
         version: link:../admin-pages
       '@mango/admin-shell':
-        specifier: workspace:1.0.67
+        specifier: workspace:1.0.68
         version: link:../admin-shell
       '@mango/ai':
         specifier: workspace:1.1.1
@@ -776,10 +776,10 @@ importers:
         specifier: workspace:1.0.39
         version: link:../template
       '@mango/workflow':
-        specifier: workspace:1.0.46
+        specifier: workspace:1.0.47
         version: link:../workflow
       '@mango/workflow-business-example':
-        specifier: workspace:1.0.45
+        specifier: workspace:1.0.46
         version: link:../workflow-business-example
       element-plus:
         specifier: 2.14.1
@@ -884,7 +884,7 @@ importers:
         specifier: workspace:1.0.26
         version: link:../grid-widgets
       '@mango/home':
-        specifier: workspace:1.0.18
+        specifier: workspace:1.0.19
         version: link:../home
       '@mango/http-client':
         specifier: workspace:1.0.1
@@ -899,7 +899,7 @@ importers:
         specifier: workspace:1.0.28
         version: link:../rbac
       '@mango/workflow':
-        specifier: workspace:1.0.46
+        specifier: workspace:1.0.47
         version: link:../workflow
       element-plus:
         specifier: 2.14.1
@@ -1476,7 +1476,7 @@ importers:
   packages/mango-cli:
     dependencies:
       '@mango/pmo':
-        specifier: workspace:1.4.3
+        specifier: workspace:1.4.4
         version: link:../mango-pmo
       prettier:
         specifier: 3.9.5
@@ -1795,7 +1795,7 @@ importers:
         specifier: workspace:1.0.37
         version: link:../admin-pages
       '@mango/workflow':
-        specifier: workspace:1.0.46
+        specifier: workspace:1.0.47
         version: link:../workflow
       element-plus:
         specifier: '>=2.14.1 <3'

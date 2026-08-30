@@ -321,4 +321,4 @@ pnpm -F @mango/admin-shell build
 
 ## 2026-08-30 Issue #890 领域选项接口影响
 
-- Workflow 模板和 Home 管理页面改用各自领域的窄选项接口，不再要求 `system:tenant:list` 或 `system:user:list`。菜单 `component` key、菜单树、页面注册和角色菜单关系不变；页面仍出现 403 时，应核对 `workflow:template:push`、`home:list:view` 或 `home:user:view` 页面权限以及对应领域 Provider，不应给页面追加 System/Identity 管理权限。
+- Workflow 模板和 Home 管理页面改用各自领域的窄选项接口，不再要求 `system:tenant:list` 或 `system:user:list`。菜单 `component` key、菜单树、页面注册和角色菜单关系不变；页面仍出现 403 时，核对 `workflow:template:push`、`home:list:view` 或 `home:user:view` 页面权限以及对应领域 Provider。当前页面合同不包含 System/Identity 管理权限，出现这些管理 API 请求说明前端仍在使用旧调用路径。

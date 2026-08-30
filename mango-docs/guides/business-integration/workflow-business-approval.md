@@ -69,7 +69,7 @@ V3 升级只回填具有稳定 `operator_id` 或 `assignee_id` 的历史记录�
 | AUTO 节点返回 `AUTO_ASSIGN_NO_CANDIDATE` | 检查指定用户、角色、岗位、组织或组织主管是否能展开为当前租户启用且未离职的用户；该错误不会转 admin 或退化为待领取 |
 | 流程设计器候选项 403 | 确认角色有 `workflow:definition:query` 且前端只调用 `/workflow/definitions/designer-options`；不要追加 `system:*`、`authorization:*`、Identity 或 Org 权限 |
 | 流程设计器提示 Provider 缺失或加载失败 | 承载 Workflow 的应用应提供默认平台公共 API Bean，或注册自定义 `WorkflowDesignerOptionProvider`；Provider 的可信上下文与失败处理遵循 [安全规范](../../../mango-pmo/rules/backend/06-security.md) |
-| 流程模板页面打开即出现机构列表 403 | 前端不应在页面挂载时加载目标机构，也不应调用 `/system/tenant/list`；打开推送弹窗后调用 `/workflow/templates/tenant-options`，并确认拥有 `workflow:template:push` |
+| 流程模板页面打开即出现机构列表 403 | 当前前端只在打开推送弹窗后调用 `/workflow/templates/tenant-options`；页面挂载时加载机构或调用 `/system/tenant/list` 表示仍在使用旧调用路径，同时确认当前角色拥有 `workflow:template:push` |
 
 ## 6. 事件接入
 

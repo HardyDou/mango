@@ -1,5 +1,50 @@
 # Mango PMO Changelog
 
+## 1.4.4 - 2026-08-30
+
+### Pull Requests
+
+- [PR #899](https://github.com/HardyDou/mango/pull/899) Changed the `mango-workflow` Skill description to target Mango approval-domain guidance. Packages: `@mango/pmo@1.4.4` and exact dependent `@mango/cli@1.2.5`. Business Adaptation: upgrade PMO and CLI together so generic workflow, frontend, CI/CD and PMO tasks do not trigger approval-domain guidance.
+
+### Changed
+
+- Clarify that `mango-workflow` supplements Mango approval development and does not replace engineering or PMO process Skills.
+
+### Versions
+
+- `@mango/pmo`: `1.4.3` to `1.4.4`; exact dependent CLI: `1.2.4` to `1.2.5`.
+- Mango Maven advances from `1.0.44` to `1.0.45` in the same compatibility batch.
+
+### Published Packages
+
+- Publish `@mango/pmo@1.4.4` before its exact dependent `@mango/cli@1.2.5`.
+
+### Business Impact
+
+- PMO consumers get narrower automatic Skill routing without runtime API, database, tenant, permission or application behavior changes.
+
+### Upgrade Estimate
+
+- Audience: Mango-maintained business repositories and users of the published PMO Skill bundle.
+- Engineering Effort: 15 to 30 minutes.
+- Execution Window: 30 to 60 minutes including projection review and locked PMO checks.
+- Service Downtime: none.
+- Rollback Effort: 10 to 20 minutes to restore PMO `1.4.3` and CLI `1.2.4`.
+- Assumptions: Node `22.23.1`, clean locks and configured consume registry access.
+
+### Upgrade Notes
+
+1. Upgrade PMO and CLI together to `@mango/pmo@1.4.4` and `@mango/cli@1.2.5`.
+2. Review the managed `mango-workflow` Skill projection and run locked PMO checks.
+
+### Verification
+
+- Build/check PMO, verify Business Starter projection and Skill evals, then resolve sealed packages from the consume registry.
+
+### Rollback
+
+- Restore PMO `1.4.3` and CLI `1.2.4`; never overwrite immutable coordinates.
+
 ## 1.4.3 - 2026-08-30
 
 ### Pull Requests
