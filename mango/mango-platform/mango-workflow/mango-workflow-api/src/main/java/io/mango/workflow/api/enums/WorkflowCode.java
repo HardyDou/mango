@@ -78,6 +78,10 @@ public enum WorkflowCode implements BizCode {
 
     DESIGNER_OPTION_LOAD_FAILED(3656, "流程设计器候选数据加载失败"),
 
+    TEMPLATE_TENANT_OPTION_PROVIDER_MISSING(3657, "流程模板目标机构 Provider 未配置"),
+
+    TEMPLATE_TENANT_OPTION_LOAD_FAILED(3658, "流程模板目标机构加载失败"),
+
     /** 流程发布失败。 */
     DEPLOY_FAILED(3620, "流程发布失败");
 

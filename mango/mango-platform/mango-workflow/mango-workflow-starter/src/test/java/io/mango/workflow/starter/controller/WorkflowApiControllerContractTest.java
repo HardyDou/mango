@@ -15,6 +15,7 @@ import io.mango.workflow.api.command.ReadWorkflowCopiedTaskCommand;
 import io.mango.workflow.api.command.WithdrawWorkflowProcessCommand;
 import io.mango.workflow.api.query.WorkflowTaskPageQuery;
 import io.mango.workflow.api.query.WorkflowBusinessApplyPageQuery;
+import io.mango.workflow.api.vo.WorkflowBusinessApplyVO;
 import io.mango.workflow.api.vo.WorkflowMyTaskSummaryVO;
 import io.mango.workflow.api.vo.WorkflowProcessDetailVO;
 import io.mango.workflow.api.vo.WorkflowProcessWithdrawResultVO;
@@ -27,6 +28,7 @@ import io.mango.workflow.core.service.IWorkflowBusinessApplyService;
 import io.mango.workflow.core.service.IWorkflowDefinitionService;
 import io.mango.workflow.core.service.IWorkflowProcessService;
 import io.mango.workflow.core.service.IWorkflowTaskRuntimeService;
+import io.mango.workflow.core.service.IWorkflowTemplateService;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -44,6 +46,7 @@ class WorkflowApiControllerContractTest {
     private final IWorkflowProcessService processService = mock(IWorkflowProcessService.class);
     private final IWorkflowTaskRuntimeService runtimeService = mock(IWorkflowTaskRuntimeService.class);
     private final IWorkflowDefinitionService definitionService = mock(IWorkflowDefinitionService.class);
+    private final IWorkflowTemplateService templateService = mock(IWorkflowTemplateService.class);
     private final WorkflowBusinessApplyController businessApplyController =
             new WorkflowBusinessApplyController(businessApplyService);
     private final WorkflowProcessController processController = new WorkflowProcessController(processService);
@@ -52,6 +55,8 @@ class WorkflowApiControllerContractTest {
     private final WorkflowTaskController taskController = new WorkflowTaskController(runtimeService);
     private final WorkflowDefinitionController definitionController =
             new WorkflowDefinitionController(definitionService);
+    private final WorkflowTemplateController templateController =
+            new WorkflowTemplateController(templateService);
 
     @Test
     void controllers_carryWorkflowApiContracts() {
@@ -60,6 +65,7 @@ class WorkflowApiControllerContractTest {
         assertThat(businessProcessController).isInstanceOf(WorkflowBusinessProcessApi.class);
         assertThat(taskController).isInstanceOf(WorkflowTaskRuntimeApi.class);
         assertThat(definitionController).isInstanceOf(WorkflowDefinitionApi.class);
+        assertThat(templateController).isInstanceOf(io.mango.workflow.api.WorkflowTemplateApi.class);
     }
 
     @Test
@@ -77,6 +83,23 @@ class WorkflowApiControllerContractTest {
         assertThat(access).isNotNull();
         assertThat(access.mode()).isEqualTo(ApiResourceAccessMode.PERMISSION);
         assertThat(access.permission()).isEqualTo("workflow:definition:query");
+    }
+
+    @Test
+    void templateTenantOptionsUsePushPermissionAndDelegateToTemplateService()
+            throws NoSuchMethodException {
+        var options = List.<io.mango.workflow.api.vo.WorkflowTenantOptionVO>of();
+        when(templateService.tenantOptions("default")).thenReturn(options);
+
+        assertThat(templateController.tenantOptions("default").getData()).isSameAs(options);
+        verify(templateService).tenantOptions("default");
+
+        ApiAccess access = WorkflowTemplateController.class
+                .getDeclaredMethod("tenantOptions", String.class)
+                .getAnnotation(ApiAccess.class);
+        assertThat(access).isNotNull();
+        assertThat(access.mode()).isEqualTo(ApiResourceAccessMode.PERMISSION);
+        assertThat(access.permission()).isEqualTo("workflow:template:push");
     }
 
     @Test
@@ -106,6 +129,23 @@ class WorkflowApiControllerContractTest {
         assertLoginAccess(WorkflowBusinessApplyController.class, "detail", Long.class);
         assertLoginAccess(WorkflowBusinessApplyController.class, "history", WorkflowBusinessApplyPageQuery.class);
         assertLoginAccess(WorkflowBusinessApplyController.class, "latestProgress", String.class, String.class);
+        assertLoginAccess(WorkflowBusinessApplyController.class, "byProcessInstance", String.class);
+    }
+
+    @Test
+    void internalBusinessApplyReadBypassesUserDataPermissionWithoutWeakeningUserEndpoint()
+            throws NoSuchMethodException {
+        WorkflowBusinessApplyVO apply = new WorkflowBusinessApplyVO();
+        when(businessApplyService.findByProcessInstance("process-1")).thenReturn(apply);
+
+        assertThat(businessApplyController.findByProcessInstance("process-1").getData()).isSameAs(apply);
+        verify(businessApplyService).findByProcessInstance("process-1");
+
+        ApiAccess internalAccess = WorkflowBusinessApplyController.class
+                .getDeclaredMethod("findByProcessInstance", String.class)
+                .getAnnotation(ApiAccess.class);
+        assertThat(internalAccess).isNotNull();
+        assertThat(internalAccess.mode()).isEqualTo(ApiResourceAccessMode.INTERNAL);
         assertLoginAccess(WorkflowBusinessApplyController.class, "byProcessInstance", String.class);
     }
 

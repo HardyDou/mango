@@ -68,4 +68,9 @@ public interface WorkflowBusinessApplyFeignClient extends WorkflowBusinessApplyA
     @GetMapping("/progress/by-process-instance")
     R<WorkflowBusinessApplyVO> byProcessInstance(
             @RequestParam("processInstanceId") String processInstanceId);
+
+    @Override
+    @GetMapping("/internal/by-process-instance")
+    R<WorkflowBusinessApplyVO> findByProcessInstance(
+            @RequestParam("processInstanceId") String processInstanceId);
 }

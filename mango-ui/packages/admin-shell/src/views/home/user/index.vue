@@ -138,8 +138,7 @@ import { storeToRefs } from 'pinia';
 import { useRouter, type LocationQueryRaw } from 'vue-router';
 import { House, RefreshLeft, View } from '@element-plus/icons-vue';
 import type { FormInstance } from 'element-plus';
-import { get } from '@mango/common/utils/request';
-import { homeTemplateApi, type HomePageVO } from '@mango/home';
+import { homeOptionApi, homeTemplateApi, type HomePageVO, type HomeUserOptionVO } from '@mango/home';
 import { MangoGridLayout, parseGridLayoutValue, type GridLayoutItem } from '@mango/grid-layout';
 import { mergeGridWidgets, systemGridWidgets } from '@mango/grid-widgets';
 import type { MangoWidgetNavigateTarget, MangoWidgetRuntimeContext } from '@mango/grid-widgets';
@@ -153,20 +152,6 @@ interface UserOption {
   label: string;
   value: string;
   memberId?: string;
-}
-
-interface IdentityUserRecord {
-  userId?: string | number;
-  id?: string | number;
-  memberId?: string | number;
-  username?: string;
-  nickname?: string;
-  memberName?: string;
-}
-
-interface BackendPageResult<T> {
-  records?: T[];
-  list?: T[];
 }
 
 const PAGE_CODE = 'admin-home-workbench';
@@ -275,10 +260,11 @@ function resetQuery(): void {
 async function searchUsers(keyword: string): Promise<void> {
   userLoading.value = true;
   try {
-    const response = await get<BackendPageResult<IdentityUserRecord>>('/identity/users/page', {
-      params: { page: 1, size: 50, keyword: normalizeText(keyword) },
+    const response = await homeOptionApi.listVisibleUsers({
+      size: 50,
+      keyword: normalizeText(keyword),
     });
-    userOptions.value = (response.records || response.list || [])
+    userOptions.value = response
       .map(toUserOption)
       .filter((item): item is UserOption => Boolean(item));
   } catch (error) {
@@ -299,12 +285,12 @@ function handleUserSelect(value: string): void {
   }
 }
 
-function toUserOption(item: IdentityUserRecord): UserOption | undefined {
-  const id = item.userId ?? item.id;
+function toUserOption(item: HomeUserOptionVO): UserOption | undefined {
+  const id = item.userId;
   if (id === undefined || id === null) {
     return undefined;
   }
-  const name = item.nickname || item.memberName || item.username || id;
+  const name = item.displayName || item.username || id;
   const username = item.username && item.username !== name ? ` / ${item.username}` : '';
   return {
     value: String(id),

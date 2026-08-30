@@ -411,7 +411,7 @@ const pushRules: FormRules = {
 };
 
 onMounted(async () => {
-  await Promise.all([loadDomainOptions(), loadTemplateCategories(), loadTenants()]);
+  await Promise.all([loadDomainOptions(), loadTemplateCategories()]);
   await loadTemplates();
 });
 
@@ -595,7 +595,9 @@ function openPushDialog(row?: WorkflowTemplate) {
     domainCode: row?.categoryCode || query.domainCode || domainOptions.value[0]?.domainCode || 'WORKFLOW',
     templateIds: selected.map(item => item.id!).filter(Boolean),
   });
+  tenantOptions.value = [];
   pushDialogVisible.value = true;
+  void loadTenants();
 }
 
 async function submitPush() {

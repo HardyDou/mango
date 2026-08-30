@@ -10,8 +10,12 @@ import io.mango.workflow.api.command.SaveWorkflowTemplateCommand;
 import io.mango.workflow.api.query.WorkflowTemplatePageQuery;
 import io.mango.workflow.api.vo.WorkflowTemplateImportVO;
 import io.mango.workflow.api.vo.WorkflowTemplateVO;
+import io.mango.workflow.api.vo.WorkflowTenantOptionVO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
+import java.util.List;
 
 /** 流程模板 API。 */
 public interface WorkflowTemplateApi {
@@ -31,4 +35,7 @@ public interface WorkflowTemplateApi {
     R<WorkflowTemplateImportVO> importTemplates(@Valid ImportWorkflowTemplatesCommand command);
 
     R<WorkflowTemplateImportVO> pushTemplates(@Valid PushWorkflowTemplatesCommand command);
+
+    R<List<WorkflowTenantOptionVO>> tenantOptions(
+            @Size(max = 100, message = "机构关键字最多100个字符") String keyword);
 }

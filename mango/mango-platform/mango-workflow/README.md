@@ -90,6 +90,7 @@ module-path=/workflow
 | `WorkflowBusinessApplyApi.history()` | 按业务类型和业务主键查询历史申请。 |
 | `WorkflowBusinessApplyApi.latestProgress()` | 查询单个或批量业务单据的最新申请进度。 |
 | `WorkflowBusinessApplyApi.latestByBusinessKeys()` | 批量查询业务主键对应的最新申请。 |
+| `WorkflowBusinessApplyApi.findByProcessInstance()` | 仅供可信内部事件按流程实例读取关联申请和当前任务。 |
 | `WorkflowBusinessProcessApi.latestByBusinessKeys()` | 业务列表补充流程状态时使用的窄接口。 |
 | `WorkflowDefinitionApi.ensurePublished()` | 业务模块内置流程定义时，幂等确保流程已发布。 |
 | `WorkflowProcessApi.start()` | 发起流程实例。 |
@@ -118,7 +119,7 @@ public final class GuaranteeWorkflowDataPermissionProvider
 }
 ```
 
-Workflow 只根据 `workflow_business_apply` 的持久化事实构造 `WorkflowBusinessApplyAccessVO`，不会直接访问业务表，也不信任请求参数中的租户或 owner。匹配的 Provider 均拒绝或缺少安全的租户/申请人上下文时，接口返回 `WorkflowCode.APPLY_ACCESS_DENIED`（HTTP/Java/Feign 语义一致）；批量进度接口会过滤无权记录。内部事件链路使用 `findByProcessInstance`，不套用用户态校验。
+Workflow 只根据 `workflow_business_apply` 的持久化事实构造 `WorkflowBusinessApplyAccessVO`，不会直接访问业务表，也不信任请求参数中的租户或 owner。匹配的 Provider 均拒绝或缺少安全的租户/申请人上下文时，接口返回 `WorkflowCode.APPLY_ACCESS_DENIED`（HTTP/Java/Feign 语义一致）；批量进度接口会过滤无权记录。内部事件链路使用 `findByProcessInstance`，不套用用户态校验；其 HTTP 入口为 `INTERNAL`，不接受调用方提供的租户或 owner，外部用户仍只能调用受数据权限保护的 `byProcessInstance`。
 
 创建申请字段：
 
@@ -237,6 +238,12 @@ WorkflowProcessWithdrawResultVO result = workflowProcessApi.withdraw(withdraw).g
 承载 Workflow 的应用可以注册自己的 `WorkflowDesignerOptionProvider` Bean；自动配置使用 `@ConditionalOnMissingBean`，自定义 Bean 会替换默认实现。Provider 必须自行保证当前租户和数据范围，不得接受客户端租户标识。未配置 Provider 返回 `DESIGNER_OPTION_PROVIDER_MISSING`，任一上游加载失败返回 `DESIGNER_OPTION_LOAD_FAILED`；两种情况都不会伪装为空候选成功。
 
 该 Provider 的 VO 只用于设计器展示，不能作为运行时任务授权事实。AUTO 派单仍由运行时候选目录重新验证稳定 `userId`、租户成员状态和候选范围。
+
+### 3.4 模板推送目标机构 Provider
+
+流程模板页面只在打开“推送流程”弹窗后调用 `GET /workflow/templates/tenant-options`，接口使用 `workflow:template:push`，不在页面挂载时查询机构。默认 `WorkflowPlatformApiTemplateTenantOptionProvider` 通过 System 公共 Java API 读取启用机构，并只返回机构 ID、名称和编码；前端不调用 `/system/tenant/list`，也不需要 `system:tenant:list`。
+
+承载 Workflow 的应用可以注册自定义 `WorkflowTemplateTenantOptionProvider` Bean；自动配置使用 `@ConditionalOnMissingBean`。Provider 缺失返回 `TEMPLATE_TENANT_OPTION_PROVIDER_MISSING`，上游失败返回 `TEMPLATE_TENANT_OPTION_LOAD_FAILED`，两种情况均不会伪装为空候选成功。
 
 业务页面处理“审批通过”时有两种模式：
 

@@ -49,4 +49,28 @@ describe('workflow designer options', () => {
 
     expect(source).not.toMatch(/\/(identity\/users\/page|authorization\/roles|post\/page|org\/tree|system\/dict\/type\/list)/);
   });
+
+  it('loads template push tenants through the workflow-owned endpoint', async () => {
+    request.get.mockResolvedValue([{ id: 1, tenantName: '默认机构', tenantCode: 'default' }]);
+
+    const tenants = await workflowApi.tenants('默认');
+
+    expect(request.get).toHaveBeenCalledWith('/workflow/templates/tenant-options', {
+      params: { keyword: '默认' },
+    });
+    expect(tenants).toEqual([{
+      id: '1',
+      tenantName: '默认机构',
+      tenantCode: 'default',
+      status: undefined,
+    }]);
+  });
+
+  it('does not load tenant options while mounting the template page', () => {
+    const source = readFileSync(resolve(process.cwd(), 'src/views/workflow-template/index.vue'), 'utf8');
+
+    expect(source).not.toContain('/system/tenant/list');
+    expect(source).not.toMatch(/Promise\.all\(\[[^\]]*loadTenants/);
+    expect(source).toMatch(/openPushDialog[\s\S]*void loadTenants\(\)/);
+  });
 });

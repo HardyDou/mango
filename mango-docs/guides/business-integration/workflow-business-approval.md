@@ -34,6 +34,7 @@
 | 历史只读 | 业务详情需要历史参与可见性时，消费 `WorkflowParticipationApi.access()`；该事实只表示可读，不代表可办理当前任务 |
 | 自动派单 | 需要节点到达即明确办理人时显式配置 `assignmentMode=AUTO`；可选 `autoAssignmentStrategy=ROUND_ROBIN`、`LEAST_TASKS` 或 `AFFINITY`，缺失时兼容轮询，候选为空会使流程事务失败 |
 | 设计器候选项 | 流程定义页面只调用 Workflow 的 `designer-options` 接口；业务承载应用需要自定义目录时注册 `WorkflowDesignerOptionProvider`，不要给菜单追加跨域平台权限 |
+| 模板推送机构 | 流程模板页面只在打开推送弹窗后调用 Workflow 的 `tenant-options`；自定义机构目录注册 `WorkflowTemplateTenantOptionProvider`，不要追加 `system:tenant:list` |
 
 ## 4. 最小闭环
 
@@ -68,6 +69,7 @@ V3 升级只回填具有稳定 `operator_id` 或 `assignee_id` 的历史记录�
 | AUTO 节点返回 `AUTO_ASSIGN_NO_CANDIDATE` | 检查指定用户、角色、岗位、组织或组织主管是否能展开为当前租户启用且未离职的用户；该错误不会转 admin 或退化为待领取 |
 | 流程设计器候选项 403 | 确认角色有 `workflow:definition:query` 且前端只调用 `/workflow/definitions/designer-options`；不要追加 `system:*`、`authorization:*`、Identity 或 Org 权限 |
 | 流程设计器提示 Provider 缺失或加载失败 | 承载 Workflow 的应用应提供默认平台公共 API Bean，或注册自定义 `WorkflowDesignerOptionProvider`；Provider 的可信上下文与失败处理遵循 [安全规范](../../../mango-pmo/rules/backend/06-security.md) |
+| 流程模板页面打开即出现机构列表 403 | 前端不应在页面挂载时加载目标机构，也不应调用 `/system/tenant/list`；打开推送弹窗后调用 `/workflow/templates/tenant-options`，并确认拥有 `workflow:template:push` |
 
 ## 6. 事件接入
 
@@ -107,6 +109,7 @@ V3 升级只回填具有稳定 `operator_id` 或 `assignee_id` 的历史记录�
 - Issue #732 新增租户隔离的 Workflow 参与关系 API 和审批节点自动派单。业务可通过 `participantUserIds` 原子声明只读参与人，历史参与关系与任务操作权限保持分离；流程设计器中旧节点缺少 `assignmentMode` 时按 `CLAIM`，显式 `AUTO` 时可使用数据库游标保护的 `ROUND_ROBIN`、按活动任务数选择的 `LEAST_TASKS` 或流程实例最近处理人优先的 `AFFINITY`（未命中回退 `LEAST_TASKS`），空候选返回 `AUTO_ASSIGN_NO_CANDIDATE` 并回滚。设计器候选项改由 Workflow 自有接口和可替换 `WorkflowDesignerOptionProvider` 提供，只使用 Workflow 定义权限并从可信上下文派生租户。V3 仅回填可证明的稳定用户 ID，username-only 历史不授权。
 
 - Issue #870 为业务申请详情、历史、最新进度和流程详情增加 `WorkflowBusinessApplyDataPermissionProvider` 扩展点。业务模块在同一 Workflow 运行时中注册 Provider，并按 `businessType` 从自己的业务表校验 owner、组织和租户；普通业务员不再依赖全局 `workflow:business-apply:detail`。Workflow 使用持久化申请事实构造权限上下文，无权时返回 `APPLY_ACCESS_DENIED`，批量进度过滤无权记录。Provider 运行在实际承载 Workflow 服务的应用中，业务查询通过公开 Workflow API 完成；完整接入边界见 [Workflow README](../../../mango/mango-platform/mango-workflow/README.md#业务申请数据权限)，长期能力文档边界见 [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)。升级验证覆盖业务详情正反权限用例和业务代理兼容路径移除。
+- Issue #902 为业务事件回调增加 `WorkflowBusinessApplyApi.findByProcessInstance()` 内部读取契约。事件订阅方只传 `processInstanceId`，本地调用直接读取持久化关联，远程调用走受签名保护的 `INTERNAL` HTTP 入口；调用方不能覆盖租户或 owner。页面、用户请求和普通业务查询继续使用 `detail`、`history`、`latestProgress`、`byProcessInstance`，并继续执行 `WorkflowBusinessApplyDataPermissionProvider` 校验。
 
 - 2026-08-03 修复空库 Bootstrap 装配业务 starter 时公开 Workflow API 注入提前创建 Flowable 的问题。Bootstrap 只注入延迟解析的公开 API 代理，migration 后的 Resource step 仍按需发布定义，Runtime 仍使用原 Controller。业务继续依赖 `mango-workflow-api`，不需要改为 core service、恢复 `forceSync()`、手工建表或开启 Flowable 自动建表。
 

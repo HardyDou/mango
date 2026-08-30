@@ -10,6 +10,8 @@ import type {
   HomeTemplateIdCommand,
   HomeTemplateQuery,
   HomeTemplateVO,
+  HomeUserOptionQuery,
+  HomeUserOptionVO,
   RenameHomePageCommand,
   ResolveHomePageQuery,
   SaveHomePageLayoutCommand,
@@ -114,5 +116,14 @@ export const homeTemplateApi = {
   },
   resolveUserPages(query: UserHomeViewQuery) {
     return get<HomePageVO[]>('/home/templates/user-pages', { params: query });
+  },
+};
+
+export const homeOptionApi = {
+  listPageUsers(query: HomeUserOptionQuery = {}) {
+    return get<HomeUserOptionVO[]>('/home/options/page-users', { params: query });
+  },
+  listVisibleUsers(query: HomeUserOptionQuery = {}) {
+    return get<HomeUserOptionVO[]>('/home/options/visible-users', { params: query });
   },
 };
