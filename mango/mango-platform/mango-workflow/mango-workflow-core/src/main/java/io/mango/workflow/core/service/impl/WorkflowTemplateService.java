@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
 import io.mango.domain.api.DomainApi;
@@ -50,7 +51,8 @@ import java.util.Locale;
  * 流程模板服务实现。
  */
 @Service
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Spring-managed collaborators are injected"))
 public class WorkflowTemplateService implements IWorkflowTemplateService {
 
     private static final TypeReference<List<String>> STRING_LIST_TYPE = new TypeReference<>() {

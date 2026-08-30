@@ -13,6 +13,8 @@ import java.io.Serializable;
 @Schema(description = "首页管理用户候选项查询")
 public class HomeUserOptionQuery implements Serializable {
 
+    private static final long DEFAULT_SIZE = 50L;
+
     @Schema(description = "姓名或账号关键字")
     @Size(max = 100, message = "用户关键字最多100个字符")
     private String keyword;
@@ -20,5 +22,5 @@ public class HomeUserOptionQuery implements Serializable {
     @Schema(description = "返回数量，默认50，最多200")
     @Min(value = 1, message = "返回数量至少为1")
     @Max(value = 200, message = "返回数量不能超过200")
-    private Long size = 50L;
+    private Long size = DEFAULT_SIZE;
 }
