@@ -90,6 +90,7 @@ module-path=/workflow
 | `WorkflowBusinessApplyApi.history()` | 按业务类型和业务主键查询历史申请。 |
 | `WorkflowBusinessApplyApi.latestProgress()` | 查询单个或批量业务单据的最新申请进度。 |
 | `WorkflowBusinessApplyApi.latestByBusinessKeys()` | 批量查询业务主键对应的最新申请。 |
+| `WorkflowBusinessApplyApi.findByProcessInstance()` | 仅供可信内部事件按流程实例读取关联申请和当前任务。 |
 | `WorkflowBusinessProcessApi.latestByBusinessKeys()` | 业务列表补充流程状态时使用的窄接口。 |
 | `WorkflowDefinitionApi.ensurePublished()` | 业务模块内置流程定义时，幂等确保流程已发布。 |
 | `WorkflowProcessApi.start()` | 发起流程实例。 |
@@ -118,7 +119,7 @@ public final class GuaranteeWorkflowDataPermissionProvider
 }
 ```
 
-Workflow 只根据 `workflow_business_apply` 的持久化事实构造 `WorkflowBusinessApplyAccessVO`，不会直接访问业务表，也不信任请求参数中的租户或 owner。匹配的 Provider 均拒绝或缺少安全的租户/申请人上下文时，接口返回 `WorkflowCode.APPLY_ACCESS_DENIED`（HTTP/Java/Feign 语义一致）；批量进度接口会过滤无权记录。内部事件链路使用 `findByProcessInstance`，不套用用户态校验。
+Workflow 只根据 `workflow_business_apply` 的持久化事实构造 `WorkflowBusinessApplyAccessVO`，不会直接访问业务表，也不信任请求参数中的租户或 owner。匹配的 Provider 均拒绝或缺少安全的租户/申请人上下文时，接口返回 `WorkflowCode.APPLY_ACCESS_DENIED`（HTTP/Java/Feign 语义一致）；批量进度接口会过滤无权记录。内部事件链路使用 `findByProcessInstance`，不套用用户态校验；其 HTTP 入口为 `INTERNAL`，不接受调用方提供的租户或 owner，外部用户仍只能调用受数据权限保护的 `byProcessInstance`。
 
 创建申请字段：
 

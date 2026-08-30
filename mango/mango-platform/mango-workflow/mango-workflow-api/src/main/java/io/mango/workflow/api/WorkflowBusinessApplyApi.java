@@ -46,4 +46,15 @@ public interface WorkflowBusinessApplyApi {
 
     @WorkflowBusinessDataPermission(businessType = "*")
     R<WorkflowBusinessApplyVO> byProcessInstance(@NotBlank String processInstanceId);
+
+    /**
+     * Reads the application associated with a process instance for trusted internal event handling.
+     *
+     * <p>This contract does not accept caller-supplied tenant or owner coordinates. User-facing reads must keep using
+     * {@link #byProcessInstance(String)} so that business data permission checks remain in force.
+     *
+     * @param processInstanceId process instance identifier
+     * @return associated application, or {@code null} when no application is associated
+     */
+    R<WorkflowBusinessApplyVO> findByProcessInstance(@NotBlank String processInstanceId);
 }
