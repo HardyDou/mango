@@ -120,10 +120,10 @@ export const homeTemplateApi = {
 };
 
 export const homeOptionApi = {
-  listPageUsers(query: HomeUserOptionQuery = {}) {
+  listPageUsers(query: HomeUserOptionQuery = {}): Promise<HomeUserOptionVO[]> {
     return get<HomeUserOptionVO[]>('/home/options/page-users', { params: query });
   },
-  listVisibleUsers(query: HomeUserOptionQuery = {}) {
+  listVisibleUsers(query: HomeUserOptionQuery = {}): Promise<HomeUserOptionVO[]> {
     return get<HomeUserOptionVO[]>('/home/options/visible-users', { params: query });
   },
 };
