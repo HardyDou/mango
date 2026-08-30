@@ -1,5 +1,56 @@
 # @mango/cli Changelog
 
+## 1.2.5 - 2026-08-30
+
+### Pull Requests
+
+- [PR #899](https://github.com/HardyDou/mango/pull/899) Changed PMO approval-domain Skill routing. Packages: `@mango/pmo@1.4.4` and `@mango/cli@1.2.5`. Business Adaptation: generated repositories receive the narrowed Skill trigger through the exact PMO tuple.
+- [PR #903](https://github.com/HardyDou/mango/pull/903), [PR #904](https://github.com/HardyDou/mango/pull/904), [PR #905](https://github.com/HardyDou/mango/pull/905) and [PR #906](https://github.com/HardyDou/mango/pull/906) Fixed Workflow candidate tasks and callbacks, privileged Home/Workflow option calls and repeated Resource writes. Packages: Maven `1.0.45`, direct Home/Workflow/Admin Shell packages, generated npm closure and CLI `1.2.5`. Business Adaptation: generated consumers upgrade the complete tuple and verify callbacks, page permissions and unchanged Resource cycles.
+
+### Fixed
+
+- Carry the candidate-group null-assignee guard, trusted Workflow callback path and Resource eventual fingerprint skip into generated consumers.
+- Carry domain-owned Home and Workflow option endpoints so authorized pages avoid broad cross-module permissions.
+
+### Changed
+
+- Lock generated projects to Maven `1.0.45`, PMO `1.4.4` and the npm topology ending at CLI `1.2.5`.
+
+### Versions
+
+- CLI: `1.2.4` to `1.2.5`; Maven: `1.0.44` to `1.0.45`; PMO: `1.4.3` to `1.4.4`.
+- Frontend: Home `1.0.19`, Workflow `1.0.47`, Admin Shell `1.0.68`, Workflow Business Example `1.0.46`, Admin `1.1.4`.
+
+### Published Packages
+
+- Publish Maven/docs `1.0.45`, then `@mango/home@1.0.19` -> `@mango/pmo@1.4.4` -> `@mango/workflow@1.0.47` -> `@mango/admin-shell@1.0.68` -> `@mango/workflow-business-example@1.0.46` -> `@mango/admin@1.1.4` -> `@mango/cli@1.2.5`.
+
+### Business Impact
+
+- Generated consumers receive the Workflow, Home permission and Resource reconciliation fixes plus narrowed PMO Skill routing. No database schema migration is introduced.
+
+### Upgrade Estimate
+
+- Audience: generated Mango applications and direct Workflow, Home, Resource or PMO consumers.
+- Engineering Effort: 30 to 90 minutes for generated consumers; 1 to 3 hours for direct integrations.
+- Execution Window: 1 to 3 hours including dependency upgrade, clean build and focused regression.
+- Service Downtime: no framework-mandated downtime.
+- Rollback Effort: 15 to 45 minutes to restore CLI `1.2.4`, Maven `1.0.44`, PMO `1.4.3` and the prior npm tuple.
+- Assumptions: Node `22.23.1`, Java 21, clean locks and configured registries.
+
+### Upgrade Notes
+
+1. Upgrade CLI to `1.2.5` and apply its exact Maven `1.0.45`, PMO `1.4.4` and npm matrix.
+2. Verify signed Workflow callbacks, existing page permissions and Resource unchanged-cycle skips.
+
+### Verification
+
+- Verify the sealed Maven/npm batch from both registries and run a clean generated consumer.
+
+### Rollback
+
+- Restore CLI `1.2.4`, Maven `1.0.44`, PMO `1.4.3` and the prior exact npm tuple; never overwrite immutable coordinates.
+
 ## 1.2.4 - 2026-08-30
 
 ### Pull Requests

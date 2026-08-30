@@ -1,76 +1,78 @@
 ## Pull Requests
 
-- [PR #883](https://github.com/HardyDou/mango/pull/883) Changed Resource cross-module references to use stable identities instead of execution order. Packages: Mango Maven `1.0.44`, `io.mango:mango-docs-bundle:1.0.44`, `@mango/pmo@1.4.3` and `@mango/cli@1.2.4`. Business Adaptation: new Resource declarations should use stable `resourceId`, `code`, `bizCode` or `resourceType + bizKey` references.
-- [PR #894](https://github.com/HardyDou/mango/pull/894) Fixed external classpath loading for the generated Resource database baseline. Packages: Mango Maven `1.0.44`, `io.mango:mango-docs-bundle:1.0.44`, `@mango/cli@1.2.4` and its generated dependency closure. Business Adaptation: reset consumers can restore the sealed baseline without requiring source-tree Resource files.
-- [PR #895](https://github.com/HardyDou/mango/pull/895) Fixed Workflow assignee candidate loading through the tenant-safe Provider boundary. Packages: Mango Maven `1.0.44`, `io.mango:mango-docs-bundle:1.0.44`, `@mango/workflow@1.0.46` and its generated dependency closure. Business Adaptation: Workflow consumers use the Provider-backed designer options contract.
-- [PR #896](https://github.com/HardyDou/mango/pull/896) Added automatic Workflow assignment strategies with stable user identity handling. Packages: Mango Maven `1.0.44`, `io.mango:mango-docs-bundle:1.0.44`, `@mango/workflow@1.0.46` and its generated dependency closure. Business Adaptation: consumers configure assignment strategies with tenant-scoped stable user IDs.
-- [PR #897](https://github.com/HardyDou/mango/pull/897) Changed the Resource baseline and Workflow release projections to deterministic current-head artifacts. Packages: Mango Maven `1.0.44`, `io.mango:mango-docs-bundle:1.0.44`, `@mango/pmo@1.4.3`, `@mango/cli@1.2.4` and the complete generated closure. Business Adaptation: generated consumers receive one reproducible Maven/npm/PMO tuple.
+- [PR #899](https://github.com/HardyDou/mango/pull/899) Changed the `mango-workflow` Skill description to target Mango approval-domain guidance without intercepting generic workflow, PMO, frontend or delivery tasks. Packages: `@mango/pmo@1.4.4` and exact dependent `@mango/cli@1.2.5`. Business Adaptation: PMO consumers should upgrade the exact PMO/CLI tuple so approval-domain prompts route consistently.
+- [PR #903](https://github.com/HardyDou/mango/pull/903) Fixed candidate-group Workflow tasks whose Flowable assignee is null. Packages: Mango Maven `1.0.45`, `io.mango:mango-docs-bundle:1.0.45` and `@mango/cli@1.2.5`. Business Adaptation: no API change is required; candidate-group tasks remain unassigned and claimable until a user claims them.
+- [PR #904](https://github.com/HardyDou/mango/pull/904) Added a trusted internal process-instance lookup for Workflow event callbacks while preserving business data permission on user-facing reads. Packages: Mango Maven `1.0.45`, `io.mango:mango-docs-bundle:1.0.45` and `@mango/cli@1.2.5`. Business Adaptation: internal event consumers should call `WorkflowBusinessApplyApi.findByProcessInstance` through the signed internal client; ordinary users must continue to use the protected progress lookup.
+- [PR #905](https://github.com/HardyDou/mango/pull/905) Added narrow Workflow tenant and Home user option APIs so authorized pages no longer call privileged cross-module administration endpoints. Packages: Mango Maven `1.0.45`, `io.mango:mango-docs-bundle:1.0.45`, `@mango/home@1.0.19`, `@mango/workflow@1.0.47`, `@mango/admin-shell@1.0.68` and their generated dependency closure. Business Adaptation: direct frontend consumers must upgrade the exact topology and use `workflowApi.tenants` plus `homeOptionApi`; do not grant System or Identity list permissions to these pages.
+- [PR #906](https://github.com/HardyDou/mango/pull/906) Fixed the Resource eventual worker to skip unchanged declaration fingerprints after a successful submission. Packages: Mango Maven `1.0.45`, `io.mango:mango-docs-bundle:1.0.45` and `@mango/cli@1.2.5`. Business Adaptation: no configuration change is required; the first cycle after each application restart still submits, later unchanged cycles skip, and failed submissions remain retryable.
 
 ## Fixed
 
-- Keep external Resource baseline classpaths available during packaged cold restore and validate the sealed source tree.
-- Route Workflow assignee candidate loading through the tenant-safe Provider and stable identity contracts.
-- Make Resource baseline timestamps, IDs and generated projections deterministic across identical builds.
+- Preserve candidate-group Workflow tasks with `assignee=null` and skip identity enrichment until a user claims the task.
+- Let signed internal Workflow event callbacks resolve their business application without weakening user-facing business data authorization.
+- Remove the need for `system:tenant:list`, `system:user:list` or equivalent privileged cross-module list access from the affected Workflow and Home pages.
+- Stop the Resource eventual worker from resubmitting the same successful declaration set every 30 seconds while retaining retry after failure or authority/content changes.
 
 ## Added
 
-- Automatic Workflow assignment strategies with transactional empty-candidate handling.
+- Add `WorkflowBusinessApplyApi.findByProcessInstance` and `/workflow/business-applies/internal/by-process-instance` for trusted internal event handling.
+- Add Workflow-owned tenant options and Home-owned current-tenant user options with minimal response fields and page-specific permissions.
 
 ## Changed
 
-- Resource cross-module references now document stable identity as the correctness contract; module or JAR order remains compatibility-only.
-- PMO lifecycle contracts advance to `1.4.3`; the generated CLI compatibility tuple advances to Maven `1.0.44`, PMO `1.4.3` and CLI `1.2.4`.
+- Scope the published `mango-workflow` Skill to Mango approval-domain guidance and keep engineering, PMO and generic workflow routing separate.
+- Advance generated projects to the complete Maven/npm/PMO compatibility tuple ending at `@mango/cli@1.2.5`.
 
 ## Versions
 
-- Mango Maven non-application reactor and `io.mango:mango-docs-bundle`: `1.0.43` to `1.0.44` (192 coordinates).
-- `@mango/pmo`: `1.4.2` to `1.4.3`.
-- `@mango/workflow`: `1.0.45` to `1.0.46`.
-- Generated closure: `@mango/admin-shell` `1.0.66` to `1.0.67`; `@mango/workflow-business-example` `1.0.44` to `1.0.45`; `@mango/admin` `1.1.2` to `1.1.3`.
-- `@mango/cli`: `1.2.3` to `1.2.4`; its compatibility matrix advances to Maven `1.0.44` and PMO `1.4.3`.
+- Mango Maven non-application reactor and `io.mango:mango-docs-bundle`: `1.0.44` to `1.0.45` (192 coordinates).
+- Direct npm packages: `@mango/home` `1.0.18` to `1.0.19`; `@mango/pmo` `1.4.3` to `1.4.4`; `@mango/workflow` `1.0.46` to `1.0.47`; `@mango/admin-shell` `1.0.67` to `1.0.68`.
+- Generated dependency closure: `@mango/workflow-business-example` `1.0.45` to `1.0.46`; `@mango/admin` `1.1.3` to `1.1.4`.
+- `@mango/cli`: `1.2.4` to `1.2.5`; its compatibility matrix advances to Maven `1.0.45`, PMO `1.4.4` and the exact npm tuple.
 
 ## Published Packages
 
-1. Publish the 192-coordinate Mango Maven `--all-non-app` and docs bundle batch at `1.0.44`; application and capability-app fat JARs are excluded.
-2. Publish npm in topology order: `@mango/pmo@1.4.3` -> `@mango/workflow@1.0.46` -> `@mango/admin-shell@1.0.67` -> `@mango/workflow-business-example@1.0.45` -> `@mango/admin@1.1.3` -> `@mango/cli@1.2.4`.
-3. Create the tag and GitHub Release only after both registry roles and a clean pure consume-registry consumer verify the sealed candidate.
+1. Publish the 192-coordinate Mango Maven `--all-non-app` and docs bundle batch at `1.0.45`; application and capability-app fat JARs remain excluded.
+2. Publish npm in machine topology order: `@mango/home@1.0.19` -> `@mango/pmo@1.4.4` -> `@mango/workflow@1.0.47` -> `@mango/admin-shell@1.0.68` -> `@mango/workflow-business-example@1.0.46` -> `@mango/admin@1.1.4` -> `@mango/cli@1.2.5`.
+3. Create `v2026.08.30-maven-1.0.45-workflow-resource-fixes-release` and its GitHub Release only after both registry roles and a clean pure consume-registry consumer verify the sealed candidate.
 
 ## Business Impact
 
-- Reset consumers can restore the deterministic portable Resource database baseline and avoid repeating baseline Resource handlers after restore; existing databases continue normal Flyway and incremental Resource rules.
-- Workflow consumers get stable tenant-scoped assignment and Provider-backed candidate contracts.
-- PMO consumers receive the `1.4.3` document lifecycle contract and generated project projection. This is a component release only; it does not deploy an application or mutate test/production environments.
+- Mango `1.0.44` consumers affected by candidate-group task startup failures or blocked Workflow callbacks can upgrade without a database migration. The new internal callback path requires the existing signed internal-request configuration and never accepts caller-supplied tenant or owner coordinates.
+- Workflow template push, Home list and Home user pages use domain-owned option APIs under their existing page permissions. No additional broad System or Identity list permission should be granted.
+- Resource Registry stops repeated unchanged writes after the first successful cycle in one process. Application restart intentionally resets the in-memory fingerprint, and a failed submission does not advance it.
+- PMO consumers receive clarified Skill routing only. This component release does not deploy a business application, change traffic or mutate production data.
 
 ## Upgrade Estimate
 
-- Audience: Mango maintainers, generated applications, Resource Bootstrap consumers, Workflow API/UI consumers and PMO-managed business repositories.
-- Engineering Effort: 30 to 90 minutes for generated consumers; 1 to 3 hours for direct Workflow or custom Resource-handler consumers.
-- Execution Window: 1 to 3 hours including dependency upgrade, Flyway, clean reset/incremental verification and PMO locked checks.
-- Service Downtime: no framework-mandated downtime; consumers use their normal restart and migration window.
-- Rollback Effort: 15 to 45 minutes to restore Maven `1.0.43`, PMO `1.4.2`, CLI `1.2.3` and the prior exact npm tuple; database rollback follows the consumer's reviewed procedure.
-- Assumptions: Node `22.23.1`, Java 21, clean dependency locks, configured registries, one local MySQL datasource and tenant-scoped Workflow test data.
+- Audience: Mango platform maintainers, generated applications, Workflow event/API consumers, Home/Workflow frontend consumers, Resource Registry operators and PMO-managed repositories.
+- Engineering Effort: 30 to 90 minutes for generated consumers; 1 to 3 hours for direct Workflow event integrations or independently pinned frontend packages.
+- Execution Window: 1 to 3 hours including dependency upgrade, clean build, signed callback regression, page permission checks and Resource repeated-cycle verification.
+- Service Downtime: no framework-mandated downtime; consuming applications use their normal dependency upgrade and restart window.
+- Rollback Effort: 15 to 45 minutes to restore Maven `1.0.44`, PMO `1.4.3`, CLI `1.2.4` and the prior exact npm tuple; no database rollback is introduced by this batch.
+- Assumptions: Node `22.23.1`, Java 21, clean dependency locks, configured registries, existing Mango internal-request signing and representative tenant-scoped Workflow/Home data.
 
 ## Upgrade Notes
 
-1. Upgrade the Mango Maven BOM and non-application tuple to `1.0.44`; generated projects should use `@mango/cli@1.2.4`, which locks PMO `1.4.3` and the exact npm closure.
-2. For reset releases, restore the packaged BSQL into an empty database and verify portable Resource rows and Registry hashes before startup. For incremental releases, retain the existing database and verify unchanged module/resource hashes are skipped.
-3. Use stable Resource IDs/codes for cross-module references and tenant-scoped stable Workflow user IDs; do not make correctness depend on execution order.
-4. Run `mango pmo upgrade --project-dir . --to 1.4.3`, review the managed diff and run the locked PMO checks in each business repository.
+1. Upgrade aggregate consumers to Mango Maven `1.0.45` and `@mango/cli@1.2.5`; apply the CLI's exact PMO and npm compatibility matrix instead of upgrading one generated package in isolation.
+2. Internal Workflow event callbacks should use `WorkflowBusinessApplyApi.findByProcessInstance` or the corresponding Feign client. Keep browser and user-facing reads on the protected progress endpoint; do not expose the internal route directly.
+3. Direct frontend consumers should upgrade Home, Workflow, Admin Shell and generated dependants together. Verify template push calls `/workflow/templates/tenant-options` and Home user selectors call `/home/options/**` without broad System/Identity list permissions.
+4. Keep the Resource eventual interval configuration unchanged unless operations require a different cadence. Verify one successful submission followed by unchanged skips, then verify a declaration or authority change submits again.
+5. Upgrade PMO-managed repositories to `@mango/pmo@1.4.4`, review the managed Skill diff and run locked PMO checks.
 
 ## Verification
 
-- Run the release plan, exact release-notes checker, registry doctor, prepare and repository local release checks with Node `22.23.1`.
-- Verify all sealed Maven POMs/checksums and npm integrity from both publish and consume registries, then run one clean pure consume-registry consumer.
-- In the disposable local MySQL Resource fixture, verify deterministic reset BSQL, first restore, unchanged restart (`executedSteps=0`) and changed-only incremental behavior; verify Workflow Provider and stable identity tests.
-- No Baohan test or production environment is touched by this release preparation.
+- Run the Catalog compiler, Git impact checker, release plan, exact release-notes checker, required repository checks and `mango release registry doctor` under Node `22.23.1`.
+- Reuse the verified PR evidence: Workflow candidate-group integration regression; signed internal API/Feign/controller contracts; 148 Home/Workflow backend tests with four existing skips; 125 frontend tests and three package builds; Resource 31-test suite and four unchanged runtime cycles with stable registry log counts.
+- Prepare one sealed source archive, Maven/docs batch and npm topology, require protected checks on the exact prepared tree, then prove the merged `origin/main` tree equals the prepared tree before publication.
+- Verify Maven POM/checksum evidence and npm integrity in both registry roles, resolve the aggregate Maven consumer once, and run a clean pure consume-registry generated consumer.
 
 ## Rollback
 
-- Restore consumers to Maven `1.0.43`, PMO `1.4.2`, CLI `1.2.3` and the prior exact npm tuple using the consumer's normal dependency and restart procedure.
-- Never overwrite immutable `1.0.44`, `1.4.3`, `1.2.4` or other published coordinates. If publication is partial or ambiguous, retain this prepared candidate and use `mango release status` followed by authorized `mango release repair`.
-- Apply database recovery only through the consumer's reviewed Flyway/database procedure; do not delete Resource Registry or Workflow rows manually.
+- Restore consumers to Maven `1.0.44`, `@mango/pmo@1.4.3`, `@mango/cli@1.2.4` and the previous exact npm tuple using the consuming application's normal lockfile and restart procedure.
+- Never overwrite immutable `1.0.45`, `1.4.4`, `1.2.5` or other published coordinates. If publication is partial or ambiguous, retain this prepared candidate and use `mango release status` followed by authorized `mango release repair`.
+- No schema change is introduced by this batch. Do not delete Workflow or Resource Registry data as a rollback mechanism.
 
 ## Audit History
 
-- PRs #892 and #893 removed obsolete evidence artifacts and are not release-bearing changes.
-- The successful `1.0.43` batch is the release baseline; its source and registry evidence remain immutable.
+- The successful `1.0.44` batch, its Tag and its closeout remain the immutable publication baseline. Issue #851 remains open because warm Resource skip and the verified `1.0.44` consumer do not prove the remaining first-cold Resource baseline objective.
