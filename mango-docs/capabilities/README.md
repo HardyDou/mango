@@ -12,6 +12,8 @@
 
 2026-08-30 能力更新：Issue #890 将流程模板推送机构和 Home 管理用户候选项收敛到所属领域 API。Workflow 使用 `workflow:template:push` 按需加载启用机构；Home 使用 `home:list:view` / `home:user:view` 查询当前租户最小用户候选字段，不再要求 `system:tenant:list` 或 `system:user:list`。详见 Workflow、Home 与对应前端包 README。
 
+2026-08-30 能力更新：Issue #776 的 Resource runtime eventual worker 对当前 authority、来源、模块范围和 canonical 声明计算进程内成功 fingerprint；未变化轮次跳过远程全量注册，声明或 authority 变化重新提交，失败保留下一轮重试。详见 Resource README。
+
 ## 2. 使用方式
 
 1. 先按任务关键词找到涉及能力。

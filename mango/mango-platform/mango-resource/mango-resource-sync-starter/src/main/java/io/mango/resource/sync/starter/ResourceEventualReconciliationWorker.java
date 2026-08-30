@@ -8,6 +8,7 @@ import io.mango.resource.api.command.RegisterResourceDeclarationsCommand;
 import io.mango.resource.api.enums.ResourceApplyMode;
 import io.mango.resource.api.enums.ResourceExecutionPhase;
 import io.mango.resource.support.config.ResourceRegistryProperties;
+import io.mango.resource.support.declaration.ResourceDeclarationCanonicalizer;
 import io.mango.resource.support.declaration.ResourceDeclarationCollector;
 import io.mango.resource.support.model.ResourceDeclaration;
 import org.slf4j.Logger;
@@ -18,8 +19,12 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.core.Ordered;
 import org.springframework.util.StringUtils;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.util.Comparator;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -35,20 +40,24 @@ final class ResourceEventualReconciliationWorker implements ApplicationRunner, D
     private final ResourceDeclarationCollector collector;
     private final ResourceDeclarationApi declarationApi;
     private final ResourceManifestSerializer manifestSerializer;
+    private final ResourceDeclarationCanonicalizer canonicalizer;
     private final BootstrapRuntimeAuthorityProvider authorityProvider;
     private final String applicationName;
     private ScheduledExecutorService executor;
+    private volatile String lastSuccessfulFingerprint;
 
     ResourceEventualReconciliationWorker(ResourceRegistryProperties properties,
                                          ResourceDeclarationCollector collector,
                                          ResourceDeclarationApi declarationApi,
                                          ResourceManifestSerializer manifestSerializer,
+                                         ResourceDeclarationCanonicalizer canonicalizer,
                                          BootstrapRuntimeAuthorityProvider authorityProvider,
                                          String applicationName) {
         this.properties = properties;
         this.collector = collector;
         this.declarationApi = declarationApi;
         this.manifestSerializer = manifestSerializer;
+        this.canonicalizer = canonicalizer;
         this.authorityProvider = authorityProvider;
         this.applicationName = applicationName;
     }
@@ -92,12 +101,21 @@ final class ResourceEventualReconciliationWorker implements ApplicationRunner, D
             if (declarations.isEmpty()) {
                 return;
             }
-            RegisterResourceDeclarationsCommand command = command(authority, declarations);
+            List<String> moduleCodes = collector.managedModuleCodes(declarations).stream().sorted().toList();
+            String fingerprint = fingerprint(authority, moduleCodes, declarations);
+            if (fingerprint.equals(lastSuccessfulFingerprint)) {
+                LOG.debug("Mango eventual resources unchanged; remote registration skipped: "
+                                + "generation={}, count={}",
+                        authority.generation(), declarations.size());
+                return;
+            }
+            RegisterResourceDeclarationsCommand command = command(authority, moduleCodes, declarations);
             R<Boolean> response = declarationApi.registerDeclarations(command);
             if (response == null || !response.isSuccess() || !Boolean.TRUE.equals(response.getData())) {
                 throw new IllegalStateException("Resource eventual reconciliation was deferred: "
                         + (response == null ? "null response" : response.getMsg()));
             }
+            lastSuccessfulFingerprint = fingerprint;
             LOG.debug("Mango eventual resources reconciled: generation={}, count={}",
                     authority.generation(), declarations.size());
         } catch (RuntimeException exception) {
@@ -107,11 +125,12 @@ final class ResourceEventualReconciliationWorker implements ApplicationRunner, D
     }
 
     private RegisterResourceDeclarationsCommand command(BootstrapWriteAuthority authority,
+                                                         List<String> moduleCodes,
                                                          List<ResourceDeclaration> declarations) {
         RegisterResourceDeclarationsCommand command = new RegisterResourceDeclarationsCommand();
         command.setAppCode(resolveCode(properties.getRemote().getAppCode()));
         command.setServiceCode(resolveCode(properties.getRemote().getServiceCode()));
-        command.setModuleCodes(collector.managedModuleCodes(declarations).stream().sorted().toList());
+        command.setModuleCodes(moduleCodes);
         command.setDeclarations(manifestSerializer.serialize(declarations));
         command.setEnvironmentKey(authority.environmentKey());
         command.setGeneration(authority.generation());
@@ -119,6 +138,34 @@ final class ResourceEventualReconciliationWorker implements ApplicationRunner, D
         command.setFencingToken(authority.fencingToken());
         command.setApplyMode(ResourceApplyMode.EVENTUAL);
         return command;
+    }
+
+    private String fingerprint(BootstrapWriteAuthority authority,
+                               List<String> moduleCodes,
+                               List<ResourceDeclaration> declarations) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            update(digest, "resource-eventual-v1");
+            update(digest, resolveCode(properties.getRemote().getAppCode()));
+            update(digest, resolveCode(properties.getRemote().getServiceCode()));
+            update(digest, authority.environmentKey());
+            update(digest, Long.toString(authority.generation()));
+            update(digest, authority.manifestFingerprint());
+            update(digest, Long.toString(authority.fencingToken()));
+            moduleCodes.forEach(moduleCode -> update(digest, "module=" + moduleCode));
+            declarations.forEach(declaration -> {
+                digest.update(canonicalizer.canonicalBytes(declaration));
+                digest.update((byte) '\n');
+            });
+            return HexFormat.of().formatHex(digest.digest());
+        } catch (NoSuchAlgorithmException exception) {
+            throw new IllegalStateException("SHA-256 is unavailable", exception);
+        }
+    }
+
+    private static void update(MessageDigest digest, String value) {
+        digest.update(value.getBytes(StandardCharsets.UTF_8));
+        digest.update((byte) '\n');
     }
 
     private String resolveCode(String configured) {

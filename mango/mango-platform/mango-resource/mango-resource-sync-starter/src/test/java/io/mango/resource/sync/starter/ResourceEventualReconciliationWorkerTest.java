@@ -1,5 +1,6 @@
 package io.mango.resource.sync.starter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.R;
 import io.mango.infra.bootstrap.api.BootstrapRuntimeAuthorityProvider;
 import io.mango.infra.bootstrap.api.BootstrapWriteAuthority;
@@ -9,6 +10,7 @@ import io.mango.resource.api.enums.ResourceApplyMode;
 import io.mango.resource.api.enums.ResourceExecutionPhase;
 import io.mango.resource.support.ResourceProvider;
 import io.mango.resource.support.config.ResourceRegistryProperties;
+import io.mango.resource.support.declaration.ResourceDeclarationCanonicalizer;
 import io.mango.resource.support.declaration.ResourceDeclarationCollector;
 import io.mango.resource.support.model.ResourceDeclaration;
 import org.junit.jupiter.api.DisplayName;
@@ -83,14 +85,67 @@ class ResourceEventualReconciliationWorkerTest {
     }
 
     @Test
+    @DisplayName("unchanged declarations are not submitted again after success")
+    void unchangedDeclarationsSkipRemoteRegistration() {
+        AtomicInteger attempts = new AtomicInteger();
+        ResourceEventualReconciliationWorker worker = worker(
+                () -> Optional.of(AUTHORITY), command -> {
+                    attempts.incrementAndGet();
+                    return R.ok(Boolean.TRUE);
+                }, eventualDeclaration("2951300000000000004"));
+
+        worker.reconcileOnce();
+        worker.reconcileOnce();
+
+        assertThat(attempts).hasValue(1);
+    }
+
+    @Test
+    @DisplayName("a canonical declaration change is submitted after the previous success")
+    void changedDeclarationsAreSubmittedAgain() {
+        AtomicInteger attempts = new AtomicInteger();
+        ResourceDeclaration declaration = eventualDeclaration("2951300000000000005");
+        ResourceEventualReconciliationWorker worker = worker(
+                () -> Optional.of(AUTHORITY), command -> {
+                    attempts.incrementAndGet();
+                    return R.ok(Boolean.TRUE);
+                }, declaration);
+
+        worker.reconcileOnce();
+        declaration.setVersion(2);
+        worker.reconcileOnce();
+
+        assertThat(attempts).hasValue(2);
+    }
+
+    @Test
+    @DisplayName("a new bootstrap authority submits unchanged declarations again")
+    void changedAuthorityIsSubmittedAgain() {
+        AtomicInteger attempts = new AtomicInteger();
+        AtomicReference<BootstrapWriteAuthority> authority = new AtomicReference<>(AUTHORITY);
+        ResourceEventualReconciliationWorker worker = worker(
+                () -> Optional.of(authority.get()), command -> {
+                    attempts.incrementAndGet();
+                    return R.ok(Boolean.TRUE);
+                }, eventualDeclaration("2951300000000000006"));
+
+        worker.reconcileOnce();
+        authority.set(new BootstrapWriteAuthority("test", 8L, "b".repeat(64), 12L));
+        worker.reconcileOnce();
+
+        assertThat(attempts).hasValue(2);
+    }
+
+    @Test
     @DisplayName("remote failure is contained and the next reconciliation can converge")
     void failureDoesNotStopNextReconciliation() {
         AtomicInteger attempts = new AtomicInteger();
         ResourceEventualReconciliationWorker worker = worker(
                 () -> Optional.of(AUTHORITY), command -> attempts.incrementAndGet() == 1
                         ? R.fail("target dependency is not ready") : R.ok(Boolean.TRUE),
-                eventualDeclaration("2951300000000000004"));
+                eventualDeclaration("2951300000000000007"));
 
+        worker.reconcileOnce();
         worker.reconcileOnce();
         worker.reconcileOnce();
 
@@ -107,6 +162,7 @@ class ResourceEventualReconciliationWorkerTest {
                 new ListObjectProvider<>(List.of(provider)));
         return new ResourceEventualReconciliationWorker(
                 properties, collector, declarationApi, new ResourceManifestSerializer(),
+                new ResourceDeclarationCanonicalizer(new ObjectMapper()),
                 authorityProvider, "resource-service");
     }
 
