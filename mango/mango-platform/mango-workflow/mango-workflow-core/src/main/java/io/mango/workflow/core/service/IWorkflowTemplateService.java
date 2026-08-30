@@ -10,6 +10,9 @@ import io.mango.workflow.api.command.SaveWorkflowTemplateCommand;
 import io.mango.workflow.api.query.WorkflowTemplatePageQuery;
 import io.mango.workflow.api.vo.WorkflowTemplateImportVO;
 import io.mango.workflow.api.vo.WorkflowTemplateVO;
+import io.mango.workflow.api.vo.WorkflowTenantOptionVO;
+
+import java.util.List;
 
 /**
  * 流程模板服务。
@@ -31,4 +34,6 @@ public interface IWorkflowTemplateService {
     WorkflowTemplateImportVO importTemplates(ImportWorkflowTemplatesCommand command);
 
     WorkflowTemplateImportVO pushTemplates(PushWorkflowTemplatesCommand command);
+
+    List<WorkflowTenantOptionVO> tenantOptions(String keyword);
 }

@@ -318,3 +318,7 @@ pnpm -F @mango/admin-shell build
 ## 2026-08-29 Issue #851 构建期确定性影响
 
 - 构建期 Resource baseline 现在根据稳定的应用、模块、菜单、套餐和角色身份生成授权目标行主键，相同 Resource 在不同空库中得到相同 ID。该变化不修改 `menuCode`、页面 key、套餐或角色授权语义；若构建因确定性比较失败，应修正声明中的稳定业务身份或 Handler，不能通过手工写授权表、固定数据库自增值或调整模块顺序绕过。
+
+## 2026-08-30 Issue #890 领域选项接口影响
+
+- Workflow 模板和 Home 管理页面改用各自领域的窄选项接口，不再要求 `system:tenant:list` 或 `system:user:list`。菜单 `component` key、菜单树、页面注册和角色菜单关系不变；页面仍出现 403 时，应核对 `workflow:template:push`、`home:list:view` 或 `home:user:view` 页面权限以及对应领域 Provider，不应给页面追加 System/Identity 管理权限。

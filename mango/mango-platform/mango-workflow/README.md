@@ -239,6 +239,12 @@ WorkflowProcessWithdrawResultVO result = workflowProcessApi.withdraw(withdraw).g
 
 该 Provider 的 VO 只用于设计器展示，不能作为运行时任务授权事实。AUTO 派单仍由运行时候选目录重新验证稳定 `userId`、租户成员状态和候选范围。
 
+### 3.4 模板推送目标机构 Provider
+
+流程模板页面只在打开“推送流程”弹窗后调用 `GET /workflow/templates/tenant-options`，接口使用 `workflow:template:push`，不在页面挂载时查询机构。默认 `WorkflowPlatformApiTemplateTenantOptionProvider` 通过 System 公共 Java API 读取启用机构，并只返回机构 ID、名称和编码；前端不调用 `/system/tenant/list`，也不需要 `system:tenant:list`。
+
+承载 Workflow 的应用可以注册自定义 `WorkflowTemplateTenantOptionProvider` Bean；自动配置使用 `@ConditionalOnMissingBean`。Provider 缺失返回 `TEMPLATE_TENANT_OPTION_PROVIDER_MISSING`，上游失败返回 `TEMPLATE_TENANT_OPTION_LOAD_FAILED`，两种情况均不会伪装为空候选成功。
+
 业务页面处理“审批通过”时有两种模式：
 
 | 模式 | 入口 | 适合场景 |

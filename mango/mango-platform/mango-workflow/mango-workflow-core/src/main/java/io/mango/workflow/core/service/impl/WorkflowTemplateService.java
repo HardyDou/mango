@@ -6,11 +6,13 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
 import io.mango.domain.api.DomainApi;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.workflow.api.enums.WorkflowCode;
+import io.mango.workflow.api.WorkflowTemplateTenantOptionProvider;
 import io.mango.workflow.api.command.CreateWorkflowDefinitionFromTemplateCommand;
 import io.mango.workflow.api.command.CreateWorkflowTemplateFromDefinitionCommand;
 import io.mango.workflow.api.command.ImportWorkflowTemplatesCommand;
@@ -22,6 +24,7 @@ import io.mango.workflow.api.query.WorkflowTemplatePageQuery;
 import io.mango.workflow.api.vo.WorkflowTemplateImportErrorVO;
 import io.mango.workflow.api.vo.WorkflowTemplateImportVO;
 import io.mango.workflow.api.vo.WorkflowTemplateVO;
+import io.mango.workflow.api.vo.WorkflowTenantOptionVO;
 import io.mango.workflow.core.entity.WorkflowDefinitionEntity;
 import io.mango.workflow.core.entity.WorkflowTemplateEntity;
 import io.mango.workflow.core.entity.WorkflowTemplateCategoryEntity;
@@ -31,6 +34,7 @@ import io.mango.workflow.core.mapper.WorkflowTemplateMapper;
 import io.mango.workflow.core.service.IWorkflowTemplateService;
 import io.mango.workflow.core.support.WorkflowDomainSupport;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -47,7 +51,8 @@ import java.util.Locale;
  * 流程模板服务实现。
  */
 @Service
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Spring-managed collaborators are injected"))
 public class WorkflowTemplateService implements IWorkflowTemplateService {
 
     private static final TypeReference<List<String>> STRING_LIST_TYPE = new TypeReference<>() {
@@ -58,6 +63,7 @@ public class WorkflowTemplateService implements IWorkflowTemplateService {
     private final WorkflowTemplateCategoryMapper templateCategoryMapper;
     private final DomainApi domainApi;
     private final ObjectMapper objectMapper;
+    private final ObjectProvider<WorkflowTemplateTenantOptionProvider> tenantOptionProvider;
 
     @Override
     public PageResult<WorkflowTemplateVO> page(WorkflowTemplatePageQuery query) {
@@ -251,6 +257,14 @@ public class WorkflowTemplateService implements IWorkflowTemplateService {
             createDraftDefinitions(targetTenantId, 0L, command.getDomainCode(), command.getOrgId(), command.getAdminUsers(), templates, result, now);
         }
         return result;
+    }
+
+    @Override
+    public List<WorkflowTenantOptionVO> tenantOptions(String keyword) {
+        WorkflowTemplateTenantOptionProvider provider = Require.nonNull(
+                tenantOptionProvider.getIfAvailable(),
+                WorkflowCode.TEMPLATE_TENANT_OPTION_PROVIDER_MISSING);
+        return provider.options(StringUtils.hasText(keyword) ? keyword.trim() : null);
     }
 
     private void createDraftDefinitions(

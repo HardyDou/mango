@@ -208,7 +208,7 @@ bridge 等待 feature registrars 后，只 probe challenge 明确列出的 page 
 
 Shell 首页通过 `@mango/home` 接入用户多首页能力。默认首页路由会解析当前用户默认首页；带 `homeId` 参数的首页路由会打开当前用户拥有的指定首页或授权模板首页。用户可在首页宿主中创建、重命名、复制、排序、删除个人首页，设置默认首页，并把工作台布局 JSON 保存到后端 `mango-home`。授权模板首页只读，但可复制为个人首页副本。
 
-Shell 同时注册 `home/templates/index`、`home/list/index` 和 `home/user/index` 页面，供后端菜单资源 `平台能力 / 首页管理` 挂载。`首页模板` 使用页面式所见即所得编辑，已发布模板的修改先保存为草稿，再次发布后生效；`首页列表` 支持按用户选择、预览、编辑以及单条或批量删除用户自定义首页；`用户首页` 用于按用户渲染最终可见首页并切换不同首页。
+Shell 同时注册 `home/templates/index`、`home/list/index` 和 `home/user/index` 页面，供后端菜单资源 `平台能力 / 首页管理` 挂载。`首页模板` 使用页面式所见即所得编辑，已发布模板的修改先保存为草稿，再次发布后生效；`首页列表` 支持按用户选择、预览、编辑以及单条或批量删除用户自定义首页；`用户首页` 用于按用户渲染最终可见首页并切换不同首页。两个用户选择器分别调用 `homeOptionApi.listPageUsers()` 和 `homeOptionApi.listVisibleUsers()`，由 Home 后端使用页面自身权限返回当前租户最小候选字段，不依赖 Identity 成员管理权限。
 
 Shell 首页会为工作台小组件注入当前用户、租户、菜单树和 `navigate` 跳转函数。小组件可通过 `navigate({ path, raw: { query } })` 交给 Shell 跳转，Shell 只透传 `raw.query` 到 Vue Router，不会把业务小组件的路由细节写入布局组件或持久化布局 JSON。业务小组件通过模块注册函数返回或通过 `widgets` 选项传入，Shell 只做聚合和运行时注入，不承载业务组件实现。
 

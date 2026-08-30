@@ -25,13 +25,14 @@
 | 发布模板 | 发布草稿，授权用户生效 | `homeTemplateApi.publish` |
 | 模板授权 | 保存个人、部门、角色授权 | `homeTemplateApi.saveAuthorizations` |
 | 用户最终视图 | 查询指定用户可见首页集合 | `homeTemplateApi.resolveUserPages` |
+| Home 用户候选项 | 按首页列表或用户首页权限查询当前租户启用成员 | `homeOptionApi.listPageUsers` / `homeOptionApi.listVisibleUsers` |
 
 ## 3. 接入方式
 
 在前端包或应用中引入：
 
 ```ts
-import { homePageApi, homeTemplateApi } from '@mango/home';
+import { homeOptionApi, homePageApi, homeTemplateApi } from '@mango/home';
 ```
 
 `@mango/admin-shell` 已集成本包。业务应用只需要依赖 `@mango/admin-shell` 首页宿主时，无需直接操作 API；需要自定义首页入口时，可复用本包的类型和请求方法。
@@ -52,6 +53,7 @@ await homePageApi.resolve(undefined, { silentError: true });
 await homePageApi.create({ name: '项目工作台', layoutJson, setDefault: true });
 await homePageApi.saveLayout(homeId, { layoutJson });
 await homeTemplateApi.publish(templateId);
+await homeOptionApi.listVisibleUsers({ keyword: 'admin', size: 50 });
 ```
 
 `homePageApi.listMyPages()` 和 `homePageApi.resolve()` 支持第二个参数 `{ silentError: true }`。首页宿主把 `mango-home` 视为可选能力时，可用该选项自行处理 404 并回退到内置默认布局，避免触发全局错误提示。
@@ -70,6 +72,8 @@ await homeTemplateApi.publish(templateId);
 | `HomeTemplateVO` | 首页模板视图 |
 | `HomeTemplateAuthorizationVO` | 首页模板授权视图 |
 | `UserHomeViewQuery` | 后台用户最终首页查询入参 |
+| `HomeUserOptionQuery` | Home 用户候选关键字和有界返回数量 |
+| `HomeUserOptionVO` | 用户 ID、当前租户成员 ID、显示名和用户名 |
 
 ## 6. 数据与初始化
 
@@ -106,6 +110,7 @@ pnpm -F @mango/home build
 | 首页接口 404 | 确认后端是否启用 `mango-home-starter`；可选首页场景应使用 `silentError` 并回退到内置默认布局 |
 | 保存布局失败 | 确认后端是否引入 `mango-home-starter`，并检查 `layoutJson` 是否满足后端校验 |
 | 指定首页打不开 | 确认 `homeId` 属于当前登录用户且首页未被删除 |
+| 首页管理用户选择器 403 | 确认页面拥有 `home:list:view` 或 `home:user:view`，并调用 `homeOptionApi`；不要追加 `system:user:list` 或调用 Identity 成员管理分页接口 |
 
 ## 10. 相关文档
 

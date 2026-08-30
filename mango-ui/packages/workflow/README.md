@@ -248,7 +248,7 @@ import { WorkflowLayout, WorkflowSidebar } from '@mango/workflow';
 | 流程实例   | `startProcess()`、`startBusinessWorkflow()`、`initiatedProcesses()`、`processHistoryByBusinessKey()`、`processDetail()`                                                                                                                                                   |
 | 参与关系   | `participationAccess()`、`participationMy()`、`replaceBusinessParticipants()`                                                                                                                                        |
 | 业务申请   | `createBusinessApply()`、`businessAppliesPage()`、`businessApplyMySummary()`、`businessApplyDetail()`、`businessApplyHistory()`、`businessApplyLatestProgress()`、`businessApplyLatestProgressBatch()`、`businessApplyLatestByKeys()`、`businessApplyByProcessInstance()` |
-| 候选项     | `designerOptions()`（定义设计器的用户、角色、岗位、组织、字典）、`users()`（发起流程兼容入口）、`tenants()`、`enabledDomains()`                                                                                                                                             |
+| 候选项     | `designerOptions()`（定义设计器的用户、角色、岗位、组织、字典）、`users()`（发起流程兼容入口）、`tenants()`（模板推送目标机构）、`enabledDomains()`                                                                                                                        |
 
 `taskDetail()` 和 `processDetail()` 是业务详情渲染入口，对应后端接口只要求登录，不要求 `workflow:definition:*`、`workflow:task:detail` 或 `workflow:process:detail` 资源权限。响应中的可选 `designerJson` 来自流程实例实际运行的不可变发布版本，`WorkflowProgressTree`、`WorkflowSidebar` 和流程图弹窗可直接消费；字段缺失时继续降级展示审批记录，不应调用流程定义管理 API 补取最新定义。
 
@@ -339,6 +339,8 @@ import { WorkflowLayout, WorkflowSidebar } from '@mango/workflow';
 - 2026-08-28 办理人身份增强的业务升级适配见 [Workflow 办理人身份特性升级指南](../../../mango-docs/guides/business-integration/workflow-assignee-identity-upgrade.md)。展示优先使用 `assigneeDisplayName`，不应为已有显示名重复查询 Identity；业务权限和租户校验保持不变。
 
 - Issue #732 为流程设计器审批节点增加 `assignmentMode`：旧 `designerJson` 缺失字段按 `CLAIM`；选择 `AUTO` 时可配置 `ROUND_ROBIN`、`LEAST_TASKS` 或 `AFFINITY`，指定成员为空会阻止保存。设计器通过 `designerOptions()` 一次加载五类候选项，不再直连 Identity、Authorization、Org 和 System REST；接口仅使用 `workflow:definition:query`，租户由后端 Provider 从可信上下文取得。前端 API 同步暴露 `participantUserIds` 启动字段及参与关系查询、分页和原子替换方法；租户和任务操作权限仍由后端校验。
+
+- Issue #890 将 `tenants()` 收敛到 Workflow 自有 `/workflow/templates/tenant-options`，只在打开模板推送弹窗后按需加载，并使用 `workflow:template:push`。流程模板页不再调用 `/system/tenant/list`，业务角色不需要额外获得 `system:tenant:list`。
 
 - `@mango/workflow@1.0.37` 将精确依赖对齐到 `@mango/admin-pages@1.0.30`、`@mango/common@1.0.23`、`@mango/file@1.0.31`、`@mango/grid-widgets@1.0.20` 和 `@mango/system@1.0.29`。Workflow 查看类通知的 `viewPath` 和 fallback 目标由 Maven `1.0.29` 生成、由 `@mango/notice@1.0.35` 导航；本包页面 key、审批组件、权限和租户语义保持不变。
 

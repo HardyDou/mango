@@ -18,11 +18,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /** 首页 HTTP 参数校验合同测试。 */
-@WebMvcTest({HomePageController.class, HomeTemplateController.class})
+@WebMvcTest({HomePageController.class, HomeTemplateController.class, HomeOptionController.class})
 @ContextConfiguration(classes = {
         HomeControllerHttpValidationTest.TestApplication.class,
         HomePageController.class,
-        HomeTemplateController.class
+        HomeTemplateController.class,
+        HomeOptionController.class
 })
 class HomeControllerHttpValidationTest {
 
@@ -34,6 +35,9 @@ class HomeControllerHttpValidationTest {
 
     @MockitoBean
     private IHomeTemplateService homeTemplateService;
+
+    @MockitoBean
+    private io.mango.home.core.service.IHomeOptionService homeOptionService;
 
     @Test
     void createPageRejectsMissingNameThroughApiOwnedValidation() throws Exception {
@@ -54,6 +58,12 @@ class HomeControllerHttpValidationTest {
         mockMvc.perform(put("/home/templates/authorizations")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"templateId\":1,\"authorizations\":null}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void userOptionsRejectsOversizedResultRequest() throws Exception {
+        mockMvc.perform(get("/home/options/page-users").param("size", "201"))
                 .andExpect(status().isBadRequest());
     }
 

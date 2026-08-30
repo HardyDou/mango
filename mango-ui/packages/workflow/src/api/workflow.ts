@@ -821,9 +821,9 @@ export const workflowApi = {
       if (!normalizedKeyword) return users;
       return users.filter(user => user.label.toLowerCase().includes(normalizedKeyword));
     }),
-  tenants: (keyword = '') => get<any>('/system/tenant/list', {
-    params: { keyword: keyword || undefined, status: 1 },
-  }).then(data => toPageList<any>(data)
+  tenants: (keyword = '') => get<any[]>('/workflow/templates/tenant-options', {
+    params: { keyword: keyword || undefined },
+  }).then(data => (data || [])
     .map(item => {
       const id = item.id ?? item.tenantId;
       return id === undefined ? undefined : {

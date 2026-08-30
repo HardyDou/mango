@@ -312,3 +312,7 @@ pnpm -F @mango/admin-shell build
 ## 2026-08-29 Issue #851 构建期确定性影响
 
 - Authorization Resource 的 API、菜单、角色及关联目标行现在使用声明 `targetId` 或稳定业务身份生成确定性主键，双空库构建会校验结果一致。该变化不修改按钮 `permissionCode`、登录态权限集合或接口鉴权语义；构建失败时应检查 Resource 的 module、method/path、menu/role code 等稳定身份，并保留权限校验、数据库初始化和扫描顺序的现行约束（详见 [PMO 持久化规则](../../../mango-pmo/rules/backend/07-persistence.md)）。
+
+## 2026-08-30 Issue #890 领域选项权限影响
+
+- Workflow 推送机构选项固定校验 `workflow:template:push`，Home 用户选项分别校验 `home:list:view` 和 `home:user:view`；不新增可分配的按钮权限，也不改变登录态权限聚合。相关页面出现 403 时应检查页面自身权限与领域 Provider，不能通过补授 `system:tenant:list`、`system:user:list` 或关闭接口鉴权绕过。

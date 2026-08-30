@@ -23,6 +23,7 @@
 | 首页模板管理 | 管理平台级首页模板草稿、复制、发布、启停和删除 | `GET /home/templates` |
 | 模板授权 | 将已发布模板授权给个人、部门或角色 | `PUT /home/templates/authorizations` |
 | 用户最终视图 | 后台按用户、成员、部门查看最终可见首页集合 | `GET /home/templates/user-pages` |
+| 首页用户候选项 | 按 Home 页面自身权限查询当前租户启用成员的最小候选字段 | `GET /home/options/page-users`、`GET /home/options/visible-users` |
 
 ## 3. 接入方式
 
@@ -40,7 +41,7 @@
 前端管理端引入：
 
 ```ts
-import { homePageApi, homeTemplateApi } from '@mango/home';
+import { homeOptionApi, homePageApi, homeTemplateApi } from '@mango/home';
 ```
 
 `@mango/admin-shell` 的首页宿主已接入 `@mango/home`：
@@ -87,6 +88,8 @@ HTTP 接口：
 | `GET` | `/home/templates/authorizations?templateId=...` | 查询模板授权 |
 | `PUT` | `/home/templates/authorizations` | 保存模板授权 |
 | `GET` | `/home/templates/user-pages?userId=...` | 查询用户最终首页集合 |
+| `GET` | `/home/options/page-users` | 使用 `home:list:view` 查询首页列表用户候选项 |
+| `GET` | `/home/options/visible-users` | 使用 `home:user:view` 查询用户首页候选项 |
 
 Java API：
 
@@ -106,6 +109,7 @@ Java API：
 | `HomePageApi#adminDelete` | 后台删除租户内用户首页 |
 | `HomePageApi#adminBatchDelete` | 后台批量删除租户内用户首页 |
 | `HomeTemplateApi` | 模板草稿、复制、发布、启停、授权和用户首页视图管理 |
+| `HomeOptionApi` | 按 Home 页面权限查询当前租户用户 ID、成员 ID、显示名和用户名，不暴露成员管理详情 |
 
 布局 JSON 当前结构：
 
@@ -185,6 +189,8 @@ Java API：
 | `home:user:view` | 查看并渲染指定用户最终首页 |
 
 个人首页接口使用登录访问模式，后台模板和用户首页治理接口使用上表权限码。租户和当前用户来自 `MangoContextHolder`；后台查看指定用户时才通过契约传入目标用户 ID。指定 `homeId` 时，后端只允许访问当前用户拥有且启用的首页。
+
+`HomeOptionApi` 由 Home Starter 通过 Identity 公共 Java API 适配，只查询当前可信租户上下文中的启用成员。首页页面不调用 `/identity/users/page`，也不需要 `system:user:list`；上游缺失或失败时分别返回 `HOME_USER_OPTION_PROVIDER_MISSING`、`HOME_USER_OPTION_LOAD_FAILED`，不会伪装为空候选成功。
 
 ## 8. 快速开始
 
