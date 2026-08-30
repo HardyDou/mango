@@ -10,6 +10,8 @@
 
 2026-08-29 能力更新：Issue #851 的构建期 Resource baseline 对 Authorization、Calendar、Identity 等正式 Resource 使用固定 ID 或稳定业务身份生成确定性主键，并在写 BSQL 前把非空审计时间规范化为固定值；`publish_time` 等业务时间不被忽略或改写。相同输入会生成相同 BSQL、manifest 与 generation fingerprint，普通业务列、主键或资源事实差异仍会阻断构建。详见 Resource、Authorization、Calendar、Identity、Notice 与 Mango Tools README。
 
+2026-08-30 能力更新：Issue #776 的 Resource runtime eventual worker 对当前 authority、来源、模块范围和 canonical 声明计算进程内成功 fingerprint；未变化轮次跳过远程全量注册，声明或 authority 变化重新提交，失败保留下一轮重试。详见 Resource README。
+
 ## 2. 使用方式
 
 1. 先按任务关键词找到涉及能力。

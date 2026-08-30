@@ -110,10 +110,11 @@ public class ResourceSyncAutoConfiguration {
             ResourceDeclarationCollector collector,
             ResourceDeclarationApi resourceDeclarationApi,
             ResourceManifestSerializer manifestSerializer,
+            ResourceDeclarationCanonicalizer canonicalizer,
             BootstrapRuntimeAuthorityProvider authorityProvider,
             @Value("${spring.application.name:}") String applicationName) {
         return new ResourceEventualReconciliationWorker(properties, collector, resourceDeclarationApi,
-                manifestSerializer, authorityProvider, applicationName);
+                manifestSerializer, canonicalizer, authorityProvider, applicationName);
     }
 
     @Bean

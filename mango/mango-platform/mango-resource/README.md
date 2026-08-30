@@ -357,6 +357,8 @@ Flyway 路径：`mango-resource-core/src/main/resources/db/migration/resource`�
 
 Runtime 前由 `ResourceBootstrapStepContributor` 扫描并幂等同步 `BOOTSTRAP_REQUIRED` 声明；Runtime 中由 `ResourceEventualReconciliationWorker` 只对账 `RUNTIME_EVENTUAL` 声明。本地注册中心由 `ResourceRegistryService` 完成目标资源 upsert、disable 和 delete。
 
+Runtime eventual worker 每轮仍重新收集声明，并使用独立 canonical mapper 计算包含当前 Bootstrap authority、来源服务、受管模块和声明内容的 fingerprint。fingerprint 与本进程最近一次成功提交相同时跳过远程全量注册并只记录 DEBUG；声明或 authority 变化时重新提交，远程失败不会推进成功 fingerprint，下一轮继续重试。该状态不持久化，应用重启后的首次轮次会重新提交。
+
 声明 identity 与 Bootstrap 步骤 fingerprint 使用独立、确定性的 canonical JSON mapper，按稳定属性/Map key 顺序序列化，不继承宿主应用的 HTTP/Web Jackson module。相同 typed declaration 在非 Web Bootstrap 与 Web Runtime 中生成相同 hash，包括值类型为 `LONG` 且 Runtime 把 HTTP `Long` 输出为字符串的场景。DEBUG 诊断只记录模块、声明数量和逐步骤 hash，不打印完整声明内容。
 
 ### 9.1 构建 manifest 与模块 receipt

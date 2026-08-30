@@ -314,3 +314,7 @@ pnpm -F @mango/admin-shell build
 ## 2026-08-29 Issue #851 构建期确定性影响
 
 - 构建期 Resource baseline 为正式管理员、授权关系和 Calendar 初始数据使用固定 ID 或稳定业务身份，并对两套独立空库做确定性比较。该变化不修改租户字典、组织、用户或系统配置的公开 API、权限和运行期覆盖规则；基础数据为空仍按 receipt、租户上下文与声明内容排查，不能通过重建共享数据库或手工补 seed 代替失败的基线校验。
+
+## 2026-08-30 Issue #776 运行时对账影响
+
+- Resource eventual worker 仅在当前进程成功提交后跳过 fingerprint 未变化的后续运行时周期；失败会继续重试，声明、模块或 authority 变化会重新提交，应用重启也会先完整提交一次。该优化不改变 Bootstrap required、租户对账、基础数据初始化或租户隔离；基础数据为空仍按 receipt、Bootstrap 步骤和声明内容排查，不能把运行时 skip 日志当作初始化完成证明。
