@@ -2,7 +2,7 @@
 
 ## v2026.08.30-maven-1.0.45-workflow-resource-fixes-release - 2026-08-30
 
-Status: `PENDING`. Publication, dual-registry verification, clean consumer verification, Tag and GitHub Release creation remain governed by the sealed release manifest.
+Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `aa669c40e7c23807b7c3e37524e560bdbbc9f85c379097b80579d734d513e910` for plan `c23a79596e7d69098f16988e623e8fc564a961bbcf0a5c5dde58e25931b3b59f` and prepared candidate `a62e6723a1faee288a411b75ec5829fb69843bdd1f12d6db822327c116e4c84b` is `COMPLETED`: all 192 Maven/docs coordinates and all 7 npm packages ending at `@mango/cli@1.2.5` match the sealed candidate in both publish and consume registries, the pure consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`.
 
 ### Pull Requests
 
