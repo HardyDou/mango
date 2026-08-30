@@ -8,6 +8,7 @@ import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguratio
 import io.mango.workflow.core.identity.WorkflowAssigneeIdentityService;
 import io.mango.workflow.core.mapper.WorkflowBusinessApplyMapper;
 import org.flowable.engine.TaskService;
+import org.flowable.identitylink.api.IdentityLink;
 import org.flowable.task.api.Task;
 import org.flowable.task.api.TaskQuery;
 import org.junit.jupiter.api.AfterEach;
@@ -153,6 +154,50 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
                 from workflow_business_apply_current_task
                 where apply_id = 15
                 """, String.class)).isEqualTo(" reviewer ");
+    }
+
+    @Test
+    void refreshCurrentTasksPersistsUnclaimedCandidateTaskWhenAssigneeIsNull() {
+        MangoContextHolder.set(MangoContextSnapshot.empty()
+                .withSecurity(1001L, "1", "admin", "default", "USER", "USER", 1L, "internal-admin"));
+        insertApply(16L, 1001L, "IN_APPROVAL");
+        jdbcTemplate.update("""
+                update workflow_business_apply
+                set process_instance_id = 'PROC-16'
+                where id = 16
+                """);
+        Task task = mock(Task.class);
+        when(task.getId()).thenReturn("TASK-16");
+        when(task.getProcessInstanceId()).thenReturn("PROC-16");
+        when(task.getTaskDefinitionKey()).thenReturn("risk_review");
+        when(task.getName()).thenReturn("风控审核");
+        when(task.getAssignee()).thenReturn(null);
+        IdentityLink candidateGroup = mock(IdentityLink.class);
+        when(candidateGroup.getGroupId()).thenReturn("risk-reviewers");
+        TaskQuery taskQuery = mock(TaskQuery.class);
+        when(taskService.createTaskQuery()).thenReturn(taskQuery);
+        when(taskQuery.processInstanceId("PROC-16")).thenReturn(taskQuery);
+        when(taskQuery.orderByTaskCreateTime()).thenReturn(taskQuery);
+        when(taskQuery.asc()).thenReturn(taskQuery);
+        when(taskQuery.list()).thenReturn(List.of(task));
+        when(taskService.getIdentityLinksForTask("TASK-16")).thenReturn(List.of(candidateGroup));
+
+        var refreshed = service.refreshCurrentTasksAndReturn("PROC-16");
+
+        assertThat(refreshed.getCurrentTasks()).singleElement().satisfies(currentTask -> {
+            assertThat(currentTask.getAssigneeId()).isNull();
+            assertThat(currentTask.getAssigneeName()).isNull();
+            assertThat(currentTask.getClaimStatus().name()).isEqualTo("UNCLAIMED");
+            assertThat(currentTask.getCandidateGroups()).containsExactly("risk-reviewers");
+        });
+        assertThat(jdbcTemplate.queryForMap("""
+                select assignee_id, assignee_name, claim_status, candidate_groups
+                from workflow_business_apply_current_task
+                where apply_id = 16
+                """)).containsEntry("assignee_id", null)
+                .containsEntry("assignee_name", null)
+                .containsEntry("claim_status", "UNCLAIMED")
+                .containsEntry("candidate_groups", "risk-reviewers");
     }
 
     @Test
