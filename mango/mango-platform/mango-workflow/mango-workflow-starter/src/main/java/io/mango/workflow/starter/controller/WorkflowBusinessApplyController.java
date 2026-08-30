@@ -4,6 +4,7 @@ import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
+import io.mango.infra.web.api.Inner;
 import io.mango.workflow.api.WorkflowBusinessApplyApi;
 import io.mango.workflow.api.command.CreateWorkflowBusinessApplyCommand;
 import io.mango.workflow.api.query.WorkflowBusinessApplyPageQuery;
@@ -124,5 +125,16 @@ public class WorkflowBusinessApplyController implements WorkflowBusinessApplyApi
             @Parameter(description = "流程实例ID", required = true)
             @RequestParam("processInstanceId") String processInstanceId) {
         return R.ok(workflowBusinessApplyService.byProcessInstance(processInstanceId));
+    }
+
+    @GetMapping("/internal/by-process-instance")
+    @Inner
+    @ApiAccess(mode = ApiResourceAccessMode.INTERNAL, desc = "内部事件按流程实例读取业务申请")
+    @Operation(summary = "内部按流程实例查询业务申请", description = "内部事件回调读取关联申请和当前任务")
+    @Override
+    public R<WorkflowBusinessApplyVO> findByProcessInstance(
+            @Parameter(description = "流程实例ID", required = true)
+            @RequestParam("processInstanceId") String processInstanceId) {
+        return R.ok(workflowBusinessApplyService.findByProcessInstance(processInstanceId));
     }
 }

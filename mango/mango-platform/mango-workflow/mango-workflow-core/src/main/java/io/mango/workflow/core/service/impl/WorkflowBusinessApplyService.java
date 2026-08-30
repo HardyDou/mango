@@ -359,7 +359,9 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
             currentTask.setTaskDefinitionKey(task.getTaskDefinitionKey());
             currentTask.setTaskName(task.getName());
             String assigneeName = task.getAssignee();
-            WorkflowAssigneeIdentity identity = identities.get(trim(assigneeName));
+            WorkflowAssigneeIdentity identity = StringUtils.hasText(assigneeName)
+                    ? identities.get(assigneeName.trim())
+                    : null;
             currentTask.setAssigneeId(identity == null ? null : identity.userId());
             currentTask.setAssigneeName(assigneeName);
             TaskCandidates candidates = candidates(task);

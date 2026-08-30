@@ -15,6 +15,7 @@ import io.mango.workflow.api.command.ReadWorkflowCopiedTaskCommand;
 import io.mango.workflow.api.command.WithdrawWorkflowProcessCommand;
 import io.mango.workflow.api.query.WorkflowTaskPageQuery;
 import io.mango.workflow.api.query.WorkflowBusinessApplyPageQuery;
+import io.mango.workflow.api.vo.WorkflowBusinessApplyVO;
 import io.mango.workflow.api.vo.WorkflowMyTaskSummaryVO;
 import io.mango.workflow.api.vo.WorkflowProcessDetailVO;
 import io.mango.workflow.api.vo.WorkflowProcessWithdrawResultVO;
@@ -128,6 +129,23 @@ class WorkflowApiControllerContractTest {
         assertLoginAccess(WorkflowBusinessApplyController.class, "detail", Long.class);
         assertLoginAccess(WorkflowBusinessApplyController.class, "history", WorkflowBusinessApplyPageQuery.class);
         assertLoginAccess(WorkflowBusinessApplyController.class, "latestProgress", String.class, String.class);
+        assertLoginAccess(WorkflowBusinessApplyController.class, "byProcessInstance", String.class);
+    }
+
+    @Test
+    void internalBusinessApplyReadBypassesUserDataPermissionWithoutWeakeningUserEndpoint()
+            throws NoSuchMethodException {
+        WorkflowBusinessApplyVO apply = new WorkflowBusinessApplyVO();
+        when(businessApplyService.findByProcessInstance("process-1")).thenReturn(apply);
+
+        assertThat(businessApplyController.findByProcessInstance("process-1").getData()).isSameAs(apply);
+        verify(businessApplyService).findByProcessInstance("process-1");
+
+        ApiAccess internalAccess = WorkflowBusinessApplyController.class
+                .getDeclaredMethod("findByProcessInstance", String.class)
+                .getAnnotation(ApiAccess.class);
+        assertThat(internalAccess).isNotNull();
+        assertThat(internalAccess.mode()).isEqualTo(ApiResourceAccessMode.INTERNAL);
         assertLoginAccess(WorkflowBusinessApplyController.class, "byProcessInstance", String.class);
     }
 

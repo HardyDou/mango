@@ -2,12 +2,15 @@ package io.mango.workflow.core.service.impl;
 
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mango.common.exception.BizException;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
+import io.mango.workflow.api.enums.WorkflowCode;
 import io.mango.workflow.core.identity.WorkflowAssigneeIdentityService;
 import io.mango.workflow.core.mapper.WorkflowBusinessApplyMapper;
 import org.flowable.engine.TaskService;
+import org.flowable.identitylink.api.IdentityLink;
 import org.flowable.task.api.Task;
 import org.flowable.task.api.TaskQuery;
 import org.junit.jupiter.api.AfterEach;
@@ -32,6 +35,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -108,6 +112,8 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
 
     @Test
     void detailDerivesCustomViewPathFromFormSnapshot() {
+        MangoContextHolder.set(MangoContextSnapshot.empty()
+                .withSecurity(1001L, "1", "applicant", "default", "USER", "USER", 1L, "internal-admin"));
         insertApply(10L, 1001L, "APPROVED");
         jdbcTemplate.update("""
                 update workflow_business_apply
@@ -118,6 +124,26 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
         var detail = service.detail(10L);
 
         assertThat(detail.getViewPath()).isEqualTo("/expense/apply/detail");
+    }
+
+    @Test
+    void internalProcessLookupDoesNotApplyUserPermissionWhileUserLookupRemainsProtected() {
+        MangoContextHolder.set(MangoContextSnapshot.empty()
+                .withSecurity(1002L, "1", "operator", "default", "USER", "USER", 1L, "internal-admin"));
+        insertApply(11L, 1001L, "IN_APPROVAL");
+        jdbcTemplate.update("""
+                update workflow_business_apply
+                set process_instance_id = 'PROC-11'
+                where id = 11
+                """);
+
+        assertThatThrownBy(() -> service.byProcessInstance("PROC-11"))
+                .isInstanceOf(BizException.class)
+                .extracting("code").isEqualTo(WorkflowCode.APPLY_ACCESS_DENIED.getCode());
+
+        assertThat(service.findByProcessInstance("PROC-11"))
+                .extracting("id", "processInstanceId")
+                .containsExactly(11L, "PROC-11");
     }
 
     @Test
@@ -153,6 +179,50 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
                 from workflow_business_apply_current_task
                 where apply_id = 15
                 """, String.class)).isEqualTo(" reviewer ");
+    }
+
+    @Test
+    void refreshCurrentTasksPersistsUnclaimedCandidateTaskWhenAssigneeIsNull() {
+        MangoContextHolder.set(MangoContextSnapshot.empty()
+                .withSecurity(1001L, "1", "admin", "default", "USER", "USER", 1L, "internal-admin"));
+        insertApply(16L, 1001L, "IN_APPROVAL");
+        jdbcTemplate.update("""
+                update workflow_business_apply
+                set process_instance_id = 'PROC-16'
+                where id = 16
+                """);
+        Task task = mock(Task.class);
+        when(task.getId()).thenReturn("TASK-16");
+        when(task.getProcessInstanceId()).thenReturn("PROC-16");
+        when(task.getTaskDefinitionKey()).thenReturn("risk_review");
+        when(task.getName()).thenReturn("风控审核");
+        when(task.getAssignee()).thenReturn(null);
+        IdentityLink candidateGroup = mock(IdentityLink.class);
+        when(candidateGroup.getGroupId()).thenReturn("risk-reviewers");
+        TaskQuery taskQuery = mock(TaskQuery.class);
+        when(taskService.createTaskQuery()).thenReturn(taskQuery);
+        when(taskQuery.processInstanceId("PROC-16")).thenReturn(taskQuery);
+        when(taskQuery.orderByTaskCreateTime()).thenReturn(taskQuery);
+        when(taskQuery.asc()).thenReturn(taskQuery);
+        when(taskQuery.list()).thenReturn(List.of(task));
+        when(taskService.getIdentityLinksForTask("TASK-16")).thenReturn(List.of(candidateGroup));
+
+        var refreshed = service.refreshCurrentTasksAndReturn("PROC-16");
+
+        assertThat(refreshed.getCurrentTasks()).singleElement().satisfies(currentTask -> {
+            assertThat(currentTask.getAssigneeId()).isNull();
+            assertThat(currentTask.getAssigneeName()).isNull();
+            assertThat(currentTask.getClaimStatus().name()).isEqualTo("UNCLAIMED");
+            assertThat(currentTask.getCandidateGroups()).containsExactly("risk-reviewers");
+        });
+        assertThat(jdbcTemplate.queryForMap("""
+                select assignee_id, assignee_name, claim_status, candidate_groups
+                from workflow_business_apply_current_task
+                where apply_id = 16
+                """)).containsEntry("assignee_id", null)
+                .containsEntry("assignee_name", null)
+                .containsEntry("claim_status", "UNCLAIMED")
+                .containsEntry("candidate_groups", "risk-reviewers");
     }
 
     @Test
@@ -326,7 +396,8 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
     }
 
     @Configuration
-    @Import({WorkflowBusinessApplyService.class, WorkflowAssigneeIdentityService.class})
+    @Import({WorkflowBusinessApplyService.class, WorkflowBusinessApplyAccessChecker.class,
+            WorkflowAssigneeIdentityService.class})
     @MapperScan("io.mango.workflow.core.mapper")
     static class TestConfig {
 
