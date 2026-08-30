@@ -14,6 +14,8 @@
 
 2026-08-30 能力更新：Issue #776 的 Resource runtime eventual worker 对当前 authority、来源、模块范围和 canonical 声明计算进程内成功 fingerprint；未变化轮次跳过远程全量注册，声明或 authority 变化重新提交，失败保留下一轮重试。详见 Resource README。
 
+2026-08-30 发布批次：Mango Maven `1.0.45` 修复候选组首任务 `assignee=null`、受信内部 Workflow 事件回调读取和 Resource eventual 重复提交；前端同步发布 Home/Workflow 领域候选 API 及依赖闭包，PMO `1.4.4` 收窄 `mango-workflow` Skill 触发边界，CLI `1.2.5` 固化完整兼容矩阵。入口与升级边界见 Workflow、Home、Resource、PMO、CLI README 及根 `CHANGELOG.md`；Issue #851 的首次 cold Resource baseline 目标仍保持开放。
+
 ## 2. 使用方式
 
 1. 先按任务关键词找到涉及能力。
