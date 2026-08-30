@@ -117,6 +117,18 @@ export interface UserHomePageQuery {
   enabled?: boolean;
 }
 
+export interface HomeUserOptionQuery {
+  keyword?: string;
+  size?: number;
+}
+
+export interface HomeUserOptionVO {
+  userId: ApiId;
+  memberId?: ApiId;
+  displayName: string;
+  username?: string;
+}
+
 export interface CreateHomeTemplateCommand {
   name: string;
   layoutJson?: string;

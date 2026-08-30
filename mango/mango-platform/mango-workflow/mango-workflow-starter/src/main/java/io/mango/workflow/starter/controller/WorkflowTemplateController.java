@@ -13,6 +13,7 @@ import io.mango.workflow.api.command.SaveWorkflowTemplateCommand;
 import io.mango.workflow.api.query.WorkflowTemplatePageQuery;
 import io.mango.workflow.api.vo.WorkflowTemplateImportVO;
 import io.mango.workflow.api.vo.WorkflowTemplateVO;
+import io.mango.workflow.api.vo.WorkflowTenantOptionVO;
 import io.mango.workflow.core.service.IWorkflowTemplateService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -27,6 +28,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.validation.annotation.Validated;
+
+import java.util.List;
 
 /**
  * 工作流模板管理接口。
@@ -116,5 +119,15 @@ public class WorkflowTemplateController implements WorkflowTemplateApi {
             @Parameter(description = "推送流程模板命令", required = true)
             @RequestBody PushWorkflowTemplatesCommand command) {
         return R.ok(workflowTemplateService.pushTemplates(command));
+    }
+
+    @GetMapping("/tenant-options")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:template:push")
+    @Operation(summary = "查询流程模板推送目标机构", description = "权限接口。通过 Workflow Provider 查询可用于模板推送的启用机构")
+    @Override
+    public R<List<WorkflowTenantOptionVO>> tenantOptions(
+            @Parameter(description = "机构名称或编码关键字")
+            @RequestParam(value = "keyword", required = false) String keyword) {
+        return R.ok(workflowTemplateService.tenantOptions(keyword));
     }
 }

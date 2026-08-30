@@ -261,11 +261,16 @@ import { storeToRefs } from 'pinia';
 import { useRouter, type LocationQueryRaw } from 'vue-router';
 import { RefreshLeft, Search } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
-import { homePageApi, type HomePageVO, type UserHomePageResult } from '@mango/home';
+import {
+  homeOptionApi,
+  homePageApi,
+  type HomePageVO,
+  type HomeUserOptionVO,
+  type UserHomePageResult,
+} from '@mango/home';
 import { MangoGridDesigner, MangoGridLayout, parseGridLayoutValue, type GridLayoutItem } from '@mango/grid-layout';
 import { mergeGridWidgets, systemGridWidgets } from '@mango/grid-widgets';
 import type { MangoWidgetNavigateTarget, MangoWidgetRuntimeContext } from '@mango/grid-widgets';
-import { userApi, type IdentityUserVO } from '@mango/rbac';
 import { ensureFeatureRegistrars } from '../../../runtime/featureRegistrars';
 import { useMangoAdminHomeWidgets } from '../../../runtime/homeWidgets';
 import { useRoutesList } from '../../../stores/routesList';
@@ -290,7 +295,7 @@ const userLoading = ref(false);
 const errorMessage = ref('');
 const pages = ref<HomePageVO[]>([]);
 const selectedPageIds = ref<string[]>([]);
-const userOptions = ref<IdentityUserVO[]>([]);
+const userOptions = ref<HomeUserOptionVO[]>([]);
 const editorItems = ref<GridLayoutItem[]>([]);
 const query = reactive<{
   keyword: string;
@@ -413,8 +418,7 @@ async function loadPages(): Promise<void> {
 async function loadUserOptions(): Promise<void> {
   userLoading.value = true;
   try {
-    const result = await userApi.page({ pageNum: 1, pageSize: 200, status: 1 });
-    userOptions.value = result.list.filter(user => user.userId);
+    userOptions.value = await homeOptionApi.listPageUsers({ size: 200 });
   } catch (error) {
     userOptions.value = [];
   } finally {
@@ -612,11 +616,11 @@ function formatUserDisplay(userId?: string | number): string {
   return selected ? `${formatUserName(selected)}（${userId}）` : String(userId);
 }
 
-function formatUserName(user: IdentityUserVO): string {
-  return user.nickname || user.memberName || user.username || String(user.userId || '-');
+function formatUserName(user: HomeUserOptionVO): string {
+  return user.displayName || user.username || String(user.userId || '-');
 }
 
-function formatUserOption(user: IdentityUserVO): string {
+function formatUserOption(user: HomeUserOptionVO): string {
   const name = formatUserName(user);
   return user.username && user.username !== name ? `${name}（${user.username}）` : name;
 }

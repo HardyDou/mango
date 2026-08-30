@@ -5,11 +5,14 @@ import io.mango.identity.api.IdentityUserApi;
 import io.mango.org.api.PostApi;
 import io.mango.org.api.SysOrgApi;
 import io.mango.system.api.DictApi;
+import io.mango.system.api.SysTenantApi;
 import io.mango.workflow.api.WorkflowDesignerOptionProvider;
+import io.mango.workflow.api.WorkflowTemplateTenantOptionProvider;
 import io.mango.workflow.core.identity.IWorkflowAssigneeIdentityProvider;
 import io.mango.workflow.core.identity.WorkflowAssigneeIdentityService;
 import io.mango.workflow.core.mapper.WorkflowDefinitionMapper;
 import io.mango.workflow.starter.provider.WorkflowPlatformApiDesignerOptionProvider;
+import io.mango.workflow.starter.provider.WorkflowPlatformApiTemplateTenantOptionProvider;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -53,5 +56,12 @@ public class WorkflowAutoConfiguration {
                 postApiProvider,
                 sysOrgApiProvider,
                 dictApiProvider);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(WorkflowTemplateTenantOptionProvider.class)
+    public WorkflowTemplateTenantOptionProvider workflowTemplateTenantOptionProvider(
+            ObjectProvider<SysTenantApi> sysTenantApiProvider) {
+        return new WorkflowPlatformApiTemplateTenantOptionProvider(sysTenantApiProvider);
     }
 }

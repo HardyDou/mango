@@ -10,6 +10,8 @@
 
 2026-08-29 能力更新：Issue #851 的构建期 Resource baseline 对 Authorization、Calendar、Identity 等正式 Resource 使用固定 ID 或稳定业务身份生成确定性主键，并在写 BSQL 前把非空审计时间规范化为固定值；`publish_time` 等业务时间不被忽略或改写。相同输入会生成相同 BSQL、manifest 与 generation fingerprint，普通业务列、主键或资源事实差异仍会阻断构建。详见 Resource、Authorization、Calendar、Identity、Notice 与 Mango Tools README。
 
+2026-08-30 能力更新：Issue #890 将流程模板推送机构和 Home 管理用户候选项收敛到所属领域 API。Workflow 使用 `workflow:template:push` 按需加载启用机构；Home 使用 `home:list:view` / `home:user:view` 查询当前租户最小用户候选字段，不再要求 `system:tenant:list` 或 `system:user:list`。详见 Workflow、Home 与对应前端包 README。
+
 ## 2. 使用方式
 
 1. 先按任务关键词找到涉及能力。
