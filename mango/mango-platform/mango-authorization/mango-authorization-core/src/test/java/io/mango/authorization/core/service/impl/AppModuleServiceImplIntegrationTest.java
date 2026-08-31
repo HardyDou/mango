@@ -157,6 +157,51 @@ class AppModuleServiceImplIntegrationTest {
     }
 
     @Test
+    @DisplayName("registerResourceManifest should resolve a parent code declared in the same manifest")
+    void registerResourceManifestResolvesParentCodeDeclaredInSameManifest() {
+        AppModuleResourceManifestCommand manifest = createManifest();
+        manifest.getMenus().get(0).getChildren().get(0).setParentCode("contract");
+
+        int registered = service.registerResourceManifest(manifest);
+
+        assertThat(registered).isEqualTo(2);
+        MenuEntity directory = selectMenu("contract");
+        MenuEntity page = selectMenu("contract:archive:list");
+        assertThat(page.getParentId()).isEqualTo(directory.getMenuId());
+    }
+
+    @Test
+    @DisplayName("registerResourceManifest should fail and roll back when a parent menu is not ready")
+    void registerResourceManifestFailsAndRollsBackWhenParentMenuIsMissing() {
+        AppModuleResourceManifestCommand manifest = createManifest();
+        manifest.getMenus().get(0).setParentCode("system:permission");
+
+        assertThatThrownBy(() -> service.registerResourceManifest(manifest))
+                .isInstanceOf(DependencyNotReadyException.class)
+                .hasMessageContaining("internal-admin/system:permission");
+
+        assertThat(countRows("authorization_app_module")).isZero();
+        assertThat(countRows("authorization_menu")).isZero();
+        assertThat(countRows("frontend_menu_runtime_config")).isZero();
+    }
+
+    @Test
+    @DisplayName("registerResourceManifest should reject a parent menu that points to itself")
+    void registerResourceManifestRejectsSelfParentAsPermanentFailure() {
+        AppModuleResourceManifestCommand manifest = createManifest();
+        manifest.getMenus().get(0).setParentCode("contract");
+
+        assertThatThrownBy(() -> service.registerResourceManifest(manifest))
+                .isInstanceOf(BizException.class)
+                .isNotInstanceOf(DependencyNotReadyException.class)
+                .hasMessageContaining("资源清单父菜单不能指向自身：contract");
+
+        assertThat(countRows("authorization_app_module")).isZero();
+        assertThat(countRows("authorization_menu")).isZero();
+        assertThat(countRows("frontend_menu_runtime_config")).isZero();
+    }
+
+    @Test
     @DisplayName("registerResourceManifest should reject legacy permissions field")
     void registerResourceManifestRejectsLegacyPermissionsField() {
         AppModuleResourceManifestCommand manifest = createManifest();
