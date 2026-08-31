@@ -4,7 +4,6 @@ import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
 import io.mango.identity.api.TenantMemberApi;
-import io.mango.identity.api.TenantMemberProvider;
 import io.mango.identity.api.command.AddTenantMemberOrgCommand;
 import io.mango.identity.api.command.CreateTenantMemberInOrgCommand;
 import io.mango.identity.api.command.UpdateTenantMemberOrgCommand;
@@ -43,13 +42,12 @@ import java.util.List;
 public class TenantMemberController implements TenantMemberApi {
 
     private final ITenantMemberService tenantMemberService;
-    private final TenantMemberProvider tenantMemberProvider;
 
     @Override
     @PostMapping("/tenant-members/org-accounts")
     @Operation(summary = "在组织内创建成员账号", description = "内部接口。原子创建账号、租户成员和组织关系")
     public R<Long> createMemberInOrg(@RequestBody CreateTenantMemberInOrgCommand command) {
-        return R.ok(tenantMemberProvider.createMemberInOrg(command));
+        return R.ok(tenantMemberService.createMemberInOrg(command));
     }
 
     @Override

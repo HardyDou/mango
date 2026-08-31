@@ -70,4 +70,12 @@ public class IdentityUserPageQuery extends PageQuery {
     @Schema(description = "排除已加入该组织的成员")
     @Positive(message = "排除组织ID必须大于0")
     private Long excludeOrgId;
+
+    public List<Long> getOrgIds() {
+        return orgIds == null ? null : List.copyOf(orgIds);
+    }
+
+    public void setOrgIds(List<Long> orgIds) {
+        this.orgIds = orgIds == null ? null : List.copyOf(orgIds);
+    }
 }

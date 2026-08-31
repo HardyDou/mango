@@ -1,5 +1,6 @@
 package io.mango.authorization.starter.controller;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
@@ -26,7 +27,8 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/authorization/roles")
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Spring singleton service is intentionally injected and retained"))
 @Validated
 @Tag(name = "角色权限", description = "角色管理权限相关接口")
 public class RoleController implements RoleApi {

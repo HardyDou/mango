@@ -1,6 +1,7 @@
 package io.mango.authorization.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.authorization.api.enums.AuthorizationCode;
 import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.api.command.AssignSubjectRolesCommand;
@@ -47,8 +48,12 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Spring singleton collaborators are intentionally injected and retained"))
 public class RoleService implements IRoleService {
+
+    private static final int MAX_SUBJECT_ROLE_BATCH_SIZE = 200;
+    private static final int MAX_SUBJECT_ROLE_DELETE_SIZE = 10_000;
 
     private final RoleMapper roleMapper;
     private final SubjectRoleBindingMapper subjectRoleBindingMapper;
@@ -94,7 +99,7 @@ public class RoleService implements IRoleService {
 
     @Override
     public List<SubjectRoleSummaryVO> getSubjectRolesBatch(List<Long> subjectIds) {
-        Require.isTrue(subjectIds == null || subjectIds.size() <= 200,
+        Require.isTrue(subjectIds == null || subjectIds.size() <= MAX_SUBJECT_ROLE_BATCH_SIZE,
                 AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR, "成员ID不能超过200个");
         if (subjectIds == null || subjectIds.isEmpty()) {
             return List.of();
@@ -336,7 +341,8 @@ public class RoleService implements IRoleService {
     @Override
     @Transactional
     public Integer deleteSubjectRoleBindings(DeleteSubjectRoleBindingsCommand command) {
-        Require.isTrue(command == null || command.getSubjectIds() == null || command.getSubjectIds().size() <= 10000,
+        Require.isTrue(command == null || command.getSubjectIds() == null
+                        || command.getSubjectIds().size() <= MAX_SUBJECT_ROLE_DELETE_SIZE,
                 AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR, "一次删除的主体角色绑定不能超过10000条");
         if (command == null || !hasText(command.getSubjectType())
                 || command.getSubjectIds() == null || command.getSubjectIds().isEmpty()) {

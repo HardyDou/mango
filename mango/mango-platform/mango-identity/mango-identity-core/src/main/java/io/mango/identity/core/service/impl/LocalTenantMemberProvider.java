@@ -1,6 +1,7 @@
 package io.mango.identity.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.identity.api.TenantMemberProvider;
 import io.mango.identity.api.command.AddTenantMemberOrgCommand;
 import io.mango.identity.api.command.CreateIdentityUserCommand;
@@ -29,7 +30,8 @@ import java.util.List;
  * 基于本地租户成员表的成员事实 Provider。
  */
 @Component
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Spring singleton collaborators are intentionally injected and retained"))
 public class LocalTenantMemberProvider implements TenantMemberProvider {
 
     private static final int STATUS_ENABLED = 1;

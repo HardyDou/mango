@@ -1,6 +1,7 @@
 package io.mango.identity.core.service;
 
 import io.mango.identity.api.command.AddTenantMemberOrgCommand;
+import io.mango.identity.api.command.CreateTenantMemberInOrgCommand;
 import io.mango.identity.api.command.UpdateTenantMemberOrgCommand;
 import io.mango.identity.api.query.TenantMemberOrgExistsQuery;
 import io.mango.identity.api.query.TenantMemberOrgOtherCountQuery;
@@ -12,6 +13,7 @@ import java.util.List;
 
 public interface ITenantMemberService {
 
+    Long createMemberInOrg(CreateTenantMemberInOrgCommand command);
     TenantMemberVO getEnabledMember(Long userId, Long tenantId);
     List<TenantMemberVO> listEnabledMembers(Long userId);
     TenantMemberVO getMember(Long memberId);

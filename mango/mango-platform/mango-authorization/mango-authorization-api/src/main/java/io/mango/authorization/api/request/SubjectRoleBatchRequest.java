@@ -17,5 +17,14 @@ public class SubjectRoleBatchRequest {
 
     @NotEmpty(message = "成员ID不能为空")
     @Size(max = 200, message = "成员ID不能超过200个")
+    @Schema(description = "成员ID列表，最多200个")
     private List<@Positive(message = "成员ID必须大于0") Long> subjectIds;
+
+    public List<Long> getSubjectIds() {
+        return subjectIds == null ? null : List.copyOf(subjectIds);
+    }
+
+    public void setSubjectIds(List<Long> subjectIds) {
+        this.subjectIds = subjectIds == null ? null : List.copyOf(subjectIds);
+    }
 }
