@@ -1,9 +1,11 @@
 # RBAC Views
 
 ## 1. 概览
+
 本入口说明 `@mango/rbac` 的权限、菜单、角色、用户、组织、岗位、应用和菜单包页面。它们是 RBAC 管理页面入口，不是独立复用组件库。
 
 ## 2. 功能清单
+
 来自 `@mango/rbac`：
 
 - `MenuView`
@@ -26,18 +28,19 @@
 - 业务项目接入 Mango 后配置后台 RBAC 基础数据。
 
 ## 3. 页面入口
+
 常用页面 key 映射：
 
-| 页面 key | 组件 |
-|----------|------|
-| `system/menu/index` | `MenuView` |
+| 页面 key                    | 组件              |
+| --------------------------- | ----------------- |
+| `system/menu/index`         | `MenuView`        |
 | `system/menu-package/index` | `MenuPackageView` |
-| `system/role/index` | `RoleView` |
-| `system/user/index` | `UserView` |
-| `system/org/index` | `OrgView` |
-| `system/permission/index` | `PermissionView` |
-| `system/app/index` | `AppView` |
-| `system/post/index` | `PostView` |
+| `system/role/index`         | `RoleView`        |
+| `system/user/index`         | `UserView`        |
+| `system/org/index`          | `OrgView`         |
+| `system/permission/index`   | `PermissionView`  |
+| `system/app/index`          | `AppView`         |
+| `system/post/index`         | `PostView`        |
 
 接入示例：
 
@@ -57,16 +60,19 @@ import '@mango/rbac/style.css';
 - 用户、组织、岗位和角色影响授权结果。
 
 ## 4. 后端依赖
+
 - 后端模块：`mango-platform/mango-authorization`、`mango-platform/mango-identity`、`mango-platform/mango-org`、`mango-platform/mango-access`。
 - API 前缀覆盖 app、menu、menu-package、org、post、role、user 相关接口，具体路径以 `src/api/*.ts` 为准。
 - 登录菜单闭环还依赖 `@mango/auth` 和 admin-shell。
 
 ## 5. 管理入口
+
 - 页面中的菜单、角色、用户、组织和岗位数据由后端按租户、数据权限和接口权限校验。
 - 前端按钮权限来自菜单资源和用户权限集合。
 - 菜单 component key 需要能映射到真实页面组件，否则登录后会出现空页面或找不到组件。
 
 ## 6. 问题排查
+
 - 菜单能看到但页面打不开时，检查 component key 与前端注册映射。
 - 按钮不显示时，检查后端资源同步、角色授权和用户权限集合。
 - 用户或组织为空时，检查 identity/org 后端数据和租户上下文。
@@ -91,6 +97,7 @@ pnpm exec playwright test \
 6. 浏览器 console 和 network 没有未解释的模块加载、接口 401/403/404 错误。
 
 ## 7. 相关文档
+
 - [@mango/rbac README](../../README.md)
 - [Authorization 后端 README](../../../../../mango/mango-platform/mango-authorization/README.md)
 - [Identity 后端 README](../../../../../mango/mango-platform/mango-identity/README.md)

@@ -15,17 +15,17 @@
 
 ## 2. 功能清单
 
-| 能力                          | 使用入口                            | 后端依赖                                    |
-| ----------------------------- | ----------------------------------- | ------------------------------------------- |
-| 应用管理                      | `AppView`、`appApi`                 | `mango-authorization`                       |
-| 应用模块绑定和运行策略        | `appModuleApi`                      | `mango-authorization`、`@mango/app-runtime` |
-| 菜单和按钮资源                | `MenuView`、`menuApi`               | `mango-authorization`                       |
-| 菜单包                        | `MenuPackageView`、`menuPackageApi` | `mango-authorization`                       |
-| 角色、菜单/按钮授权和数据权限 | `RoleView`、`roleApi`               | `mango-authorization`                       |
+| 能力                          | 使用入口                            | 后端依赖                                             |
+| ----------------------------- | ----------------------------------- | ---------------------------------------------------- |
+| 应用管理                      | `AppView`、`appApi`                 | `mango-authorization`                                |
+| 应用模块绑定和运行策略        | `appModuleApi`                      | `mango-authorization`、`@mango/app-runtime`          |
+| 菜单和按钮资源                | `MenuView`、`menuApi`               | `mango-authorization`                                |
+| 菜单包                        | `MenuPackageView`、`menuPackageApi` | `mango-authorization`                                |
+| 角色、菜单/按钮授权和数据权限 | `RoleView`、`roleApi`               | `mango-authorization`                                |
 | 用户管理                      | `UserView`、`userApi`               | `mango-identity`、`mango-org`、`mango-authorization` |
-| 组织和成员                    | `OrgView`、`orgApi`                 | `mango-org`                                 |
-| 岗位管理                      | `PostView`、`postApi`               | `mango-org`                                 |
-| 权限资源查看                  | `PermissionView`                    | `mango-authorization`                       |
+| 组织和成员                    | `OrgView`、`orgApi`                 | `mango-org`                                          |
+| 岗位管理                      | `PostView`、`postApi`               | `mango-org`                                          |
+| 权限资源查看                  | `PermissionView`                    | `mango-authorization`                                |
 
 ## 3. 接入方式
 
@@ -72,54 +72,54 @@ const users = await userApi.page({ pageNum: 1, pageSize: 20 });
 
 `@mango/rbac` 没有独立运行时配置文件。主要行为由宿主请求配置、菜单 component key、API 参数和后端数据决定。
 
-| 配置位置           | 字段                                         | 含义                                                                           |
-| ------------------ | -------------------------------------------- | ------------------------------------------------------------------------------ |
-| 宿主应用           | API baseURL / 代理                           | 决定 `/authorization/**`、`/identity/**`、`/org/**`、`/post/**` 请求转发目标。 |
-| authorization 应用 | `appCode`                                    | 应用授权边界，管理端通常是 `internal-admin`。                                  |
-| 菜单数据           | `component`                                  | 必须匹配前端页面 key，Shell 才能打开页面。                                     |
-| 菜单数据           | `menuType`                                   | 区分目录、菜单、按钮。                                                         |
-| 角色数据           | `realm`、`actorType`                         | 角色作用域。                                                                   |
+| 配置位置           | 字段                                  | 含义                                                                           |
+| ------------------ | ------------------------------------- | ------------------------------------------------------------------------------ |
+| 宿主应用           | API baseURL / 代理                    | 决定 `/authorization/**`、`/identity/**`、`/org/**`、`/post/**` 请求转发目标。 |
+| authorization 应用 | `appCode`                             | 应用授权边界，管理端通常是 `internal-admin`。                                  |
+| 菜单数据           | `component`                           | 必须匹配前端页面 key，Shell 才能打开页面。                                     |
+| 菜单数据           | `menuType`                            | 区分目录、菜单、按钮。                                                         |
+| 角色数据           | `realm`、`actorType`                  | 角色作用域。                                                                   |
 | 用户查询           | `orgIds`、`excludeOrgId`、`keyword`   | 层级组织范围、目标组织已有成员排除，以及用户名/姓名/手机/邮箱 OR 搜索。        |
-| 组织查询           | `parentId`、`type`、`includeDisabled`        | 组织树过滤条件。                                                               |
+| 组织查询           | `parentId`、`type`、`includeDisabled` | 组织树过滤条件。                                                               |
 
 ## 5. API 与扩展
 
 页面导出：
 
-| 导出              | 默认页面 key                | 管理能力                                                                                                  |
-| ----------------- | --------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `AppView`         | `system/app/index`          | 应用管理。                                                                                                |
-| `MenuView`        | `system/menu/index`         | 菜单和按钮资源管理。                                                                                      |
-| `MenuPackageView` | `system/menu-package/index` | 菜单包管理。                                                                                              |
-| `RoleView`        | `system/role/index`         | 角色和菜单/按钮授权。                                                                                     |
+| 导出              | 默认页面 key                | 管理能力                                                                                                                     |
+| ----------------- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `AppView`         | `system/app/index`          | 应用管理。                                                                                                                   |
+| `MenuView`        | `system/menu/index`         | 菜单和按钮资源管理。                                                                                                         |
+| `MenuPackageView` | `system/menu-package/index` | 菜单包管理。                                                                                                                 |
+| `RoleView`        | `system/role/index`         | 角色和菜单/按钮授权。                                                                                                        |
 | `UserView`        | `system/user/index`         | 默认查看全部成员；按组织本级及下级筛选、清除组织选择、在目标组织新增或添加已有成员，并展示所属机构、完整部门路径和直接角色。 |
-| `OrgView`         | `system/org/index`          | 组织树和组织成员。                                                                                        |
-| `PostView`        | `system/post/index`         | 岗位管理。                                                                                                |
-| `PermissionView`  | `system/permission/index`   | 权限资源查看。                                                                                            |
+| `OrgView`         | `system/org/index`          | 组织树和组织成员。                                                                                                           |
+| `PostView`        | `system/post/index`         | 岗位管理。                                                                                                                   |
+| `PermissionView`  | `system/permission/index`   | 权限资源查看。                                                                                                               |
 
 主要 API：
 
-| API              | 主要接口                                             | 能力                                                                 |
-| ---------------- | ---------------------------------------------------- | -------------------------------------------------------------------- |
-| `appApi`         | `/authorization/apps`                                | 应用列表、详情、创建、更新、删除、运行时应用。                       |
-| `appModuleApi`   | `/authorization/app-modules`                         | 应用模块绑定、同步菜单、运行策略。                                   |
-| `menuApi`        | `/authorization/menus`                               | 用户菜单、菜单树、详情、创建、更新、删除。                           |
-| `menuPackageApi` | `/authorization/menu-packages`                       | 菜单包 CRUD。                                                        |
+| API              | 主要接口                                                 | 能力                                                                                |
+| ---------------- | -------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `appApi`         | `/authorization/apps`                                    | 应用列表、详情、创建、更新、删除、运行时应用。                                      |
+| `appModuleApi`   | `/authorization/app-modules`                             | 应用模块绑定、同步菜单、运行策略。                                                  |
+| `menuApi`        | `/authorization/menus`                                   | 用户菜单、菜单树、详情、创建、更新、删除。                                          |
+| `menuPackageApi` | `/authorization/menu-packages`                           | 菜单包 CRUD。                                                                       |
 | `roleApi`        | `/authorization/roles`、`/authorization/data-scopes`     | 角色 CRUD、角色菜单、可分配菜单、主体角色绑定、成员直接角色批量摘要和角色数据权限。 |
 | `userApi`        | `/identity/users/page`                                   | 用户分页、组织范围/候选搜索、详情、更新、删除、重置密码、企微同步和外部身份绑定。   |
 | `orgApi`         | `/org/tree`、`/org/member-scope`、`/org/member-accounts` | 组织树、成员层级范围、组织内原子开户、成员和负责人。                                |
-| `postApi`        | `/post/page`                                         | 岗位分页、详情、创建、更新、删除。                                   |
+| `postApi`        | `/post/page`                                             | 岗位分页、详情、创建、更新、删除。                                                  |
 
 常用返回字段：
 
-| 数据 | 字段                                                                     |
-| ---- | ------------------------------------------------------------------------ |
-| 应用 | `appCode`、`appName`、`appType`、`deployMode`、`entryUrl`                |
-| 菜单 | `id`、`parentId`、`menuType`、`path`、`component`、`perms`、`moduleCode` |
-| 角色 | `id`、`roleName`、`roleCode`、`appCode`、`realm`、`actorType`            |
+| 数据 | 字段                                                                               |
+| ---- | ---------------------------------------------------------------------------------- |
+| 应用 | `appCode`、`appName`、`appType`、`deployMode`、`entryUrl`                          |
+| 菜单 | `id`、`parentId`、`menuType`、`path`、`component`、`perms`、`moduleCode`           |
+| 角色 | `id`、`roleName`、`roleCode`、`appCode`、`realm`、`actorType`                      |
 | 用户 | `userId`、`memberId`、`username`、`nickname`、`status`、`tenantId`、`orgRelations` |
-| 组织 | `id`、`name`、`parentId`、`sort`、`children`                             |
-| 岗位 | `id`、`postCode`、`postName`、`sort`、`status`                           |
+| 组织 | `id`、`name`、`parentId`、`sort`、`children`                                       |
+| 岗位 | `id`、`postCode`、`postName`、`sort`、`status`                                     |
 
 角色数据权限页面行为：
 
