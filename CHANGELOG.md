@@ -2,7 +2,7 @@
 
 ## v2026.09.01-maven-1.0.46-resource-menu-package-release - 2026-09-01
 
-Status: `PENDING`. Publication, dual-registry verification, clean consumer verification, Tag and GitHub Release creation remain governed by the sealed release manifest.
+Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `440c4d76617fe9e5d25214af455a40579492f8921ce9e6bd178af792e1977d08` for plan `d500ebdd2f8877ab2a68a9a5b029057cf1334b9803ed99acfdbbd2e498bbd9aa` and prepared candidate `236414cd7ce579ab69ad543eee166f824836fdcedaa55f8805aab6ffe5523c6f` is `COMPLETED`: all 192 Maven/docs coordinates and `@mango/cli@1.2.6` match the sealed candidate in both publish and consume registries, the pure consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`.
 
 ### Pull Requests
 
