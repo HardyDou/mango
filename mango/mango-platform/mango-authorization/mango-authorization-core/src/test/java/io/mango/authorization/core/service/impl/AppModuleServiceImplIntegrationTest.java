@@ -8,6 +8,7 @@ import io.mango.authorization.core.entity.MenuEntity;
 import io.mango.authorization.core.mapper.AuthorizationAppModuleMapper;
 import io.mango.authorization.core.mapper.MenuMapper;
 import io.mango.common.exception.BizException;
+import io.mango.common.exception.DependencyNotReadyException;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
 import io.mango.system.api.tenant.TenantPackageBindingProvider;
 import org.junit.jupiter.api.BeforeEach;
@@ -106,6 +107,22 @@ class AppModuleServiceImplIntegrationTest {
         assertThat(menuPackageItemMenuIds()).containsExactlyElementsOf(menuIds());
         assertThat(roleMenuIds()).containsExactlyElementsOf(menuIds());
         assertThat(bindingHandler.calls()).containsExactlyInAnyOrder("1:1", "2:1");
+    }
+
+    @Test
+    @DisplayName("registerResourceManifest should fail and roll back when a menu package is not ready")
+    void registerResourceManifestFailsAndRollsBackWhenMenuPackageIsMissing() {
+        AppModuleResourceManifestCommand manifest = createManifest();
+        manifest.setPackageCodes(List.of("internal-admin-default"));
+
+        assertThatThrownBy(() -> service.registerResourceManifest(manifest))
+                .isInstanceOf(DependencyNotReadyException.class)
+                .hasMessageContaining("internal-admin-default");
+
+        assertThat(countRows("authorization_app_module")).isZero();
+        assertThat(countRows("authorization_menu")).isZero();
+        assertThat(countRows("frontend_menu_runtime_config")).isZero();
+        assertThat(countRows("authorization_menu_package_item")).isZero();
     }
 
     @Test

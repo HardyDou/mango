@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.exception.BizException;
+import io.mango.common.exception.DependencyNotReadyException;
 import io.mango.infra.kv.api.ILocker;
 import io.mango.infra.bootstrap.api.BootstrapGenerationFence;
 import io.mango.infra.kv.api.ILeaseLocker;
@@ -118,6 +119,9 @@ class ResourceRegistrySyncServiceIntegrationTest {
 
     @Autowired
     private ResourceSyncOrderRecorder syncOrderRecorder;
+
+    @Autowired
+    private DeferredResourceHandler deferredResourceHandler;
 
     @Autowired
     private SqlStatementCounter sqlStatementCounter;
@@ -380,6 +384,27 @@ class ResourceRegistrySyncServiceIntegrationTest {
                 .isInstanceOf(BizException.class)
                 .hasMessageContaining("Resource 模块依赖存在循环");
         assertThat(count("resource_module_receipt")).isZero();
+    }
+
+    @Test
+    void moduleManifestRetriesDependencyNotReadyAfterLaterModuleCreatesDependency() {
+        ResourceDeclaration dependent = genericDeclaration("1900000000000000103",
+                "TEST_DEFERRED", "deferred.resource", "deferred");
+        dependent.setModuleCode("a-dependent");
+        ResourceDeclaration dependency = genericDeclaration("1900000000000000104",
+                "TEST_PROVIDER", "provider.resource", "provider");
+        dependency.setModuleCode("z-provider");
+
+        RegisterResourceDeclarationsCommand command = moduleCommand(ResourceApplyMode.EXPAND,
+                moduleManifest("a-dependent", List.of(), List.of(dependent)),
+                moduleManifest("z-provider", List.of(), List.of(dependency)));
+
+        assertThat(syncService.registerDeclarations(command)).isTrue();
+        assertThat(deferredResourceHandler.upsertCalls()).isEqualTo(2);
+        assertThat(jdbcTemplate.queryForList(
+                "select module_code from resource_module_receipt order by module_code", String.class))
+                .containsExactly("a-dependent", "z-provider");
+        assertThat(count("resource_registry")).isEqualTo(2);
     }
 
     @Test
@@ -1430,6 +1455,16 @@ class ResourceRegistrySyncServiceIntegrationTest {
         OrderedTestResourceHandler cycleBResourceHandler(ResourceSyncOrderRecorder recorder) {
             return new OrderedTestResourceHandler("CYCLE_B", List.of("CYCLE_A"), recorder);
         }
+
+        @Bean
+        DeferredResourceHandler deferredResourceHandler() {
+            return new DeferredResourceHandler();
+        }
+
+        @Bean
+        ProviderResourceHandler providerResourceHandler() {
+            return new ProviderResourceHandler();
+        }
     }
 
     static class ResourceSyncOrderRecorder {
@@ -1446,6 +1481,51 @@ class ResourceRegistrySyncServiceIntegrationTest {
 
         void clear() {
             resourceTypes.clear();
+        }
+    }
+
+    static class DeferredResourceHandler implements ResourceHandler {
+
+        private final AtomicInteger upsertCalls = new AtomicInteger();
+
+        @Override
+        public String resourceType() {
+            return "TEST_DEFERRED";
+        }
+
+        @Override
+        public ResourceSyncResult upsert(ResourceDeclaration resource) {
+            if (upsertCalls.getAndIncrement() == 0) {
+                throw new DependencyNotReadyException("dependency is not ready");
+            }
+            return ResourceSyncResult.of(94001L, "test_deferred", "ok");
+        }
+
+        @Override
+        public ResourceSyncResult disable(ResourceDeclaration resource) {
+            return ResourceSyncResult.of(94001L, "test_deferred", "disabled");
+        }
+
+        int upsertCalls() {
+            return upsertCalls.get();
+        }
+    }
+
+    static class ProviderResourceHandler implements ResourceHandler {
+
+        @Override
+        public String resourceType() {
+            return "TEST_PROVIDER";
+        }
+
+        @Override
+        public ResourceSyncResult upsert(ResourceDeclaration resource) {
+            return ResourceSyncResult.of(94002L, "test_provider", "ok");
+        }
+
+        @Override
+        public ResourceSyncResult disable(ResourceDeclaration resource) {
+            return ResourceSyncResult.of(94002L, "test_provider", "disabled");
         }
     }
 

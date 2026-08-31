@@ -23,6 +23,7 @@ import io.mango.authorization.core.mapper.RoleMapper;
 import io.mango.authorization.core.mapper.RoleMenuMapper;
 import io.mango.authorization.core.service.IAppModuleService;
 import io.mango.authorization.core.support.AuthorizationResourceIds;
+import io.mango.common.exception.DependencyNotReadyException;
 import io.mango.common.result.Require;
 import io.mango.system.api.tenant.TenantPackageBindingProvider;
 import lombok.RequiredArgsConstructor;
@@ -183,12 +184,13 @@ public class AppModuleService implements IAppModuleService {
         Require.notBlank(command.getAppCode(), AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR, "应用编码不能为空");
         Require.notBlank(command.getModuleCode(), AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR, "模块编码不能为空");
         validateManifestMenus(command.getMenus());
+        ManifestContext context = new ManifestContext(command);
+        validateManifestPackages(context, command.getMenus());
         AppModuleCommand moduleCommand = toModuleCommand(command);
         save(moduleCommand);
         if (command.getMenus() == null || command.getMenus().isEmpty()) {
             return 0;
         }
-        ManifestContext context = new ManifestContext(command);
         for (AppModuleMenuRequest menu : command.getMenus()) {
             context.increment(upsertManifestMenu(
                     context,
@@ -216,6 +218,38 @@ public class AppModuleService implements IAppModuleService {
                     AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR,
                     "AUTH_MENU 不再支持 permissionItems，请把权限码声明到菜单 apiCodes");
             validateManifestMenus(menu.getChildren());
+        }
+    }
+
+    private void validateManifestPackages(ManifestContext context, List<AppModuleMenuRequest> menus) {
+        Set<String> packageCodes = new LinkedHashSet<>();
+        collectManifestPackageCodes(context, menus, null, packageCodes);
+        List<String> missingPackageCodes = packageCodes.stream()
+                .filter(packageCode -> findMenuPackage(context.appCode(), packageCode) == null)
+                .toList();
+        if (!missingPackageCodes.isEmpty()) {
+            Require.rethrow(new DependencyNotReadyException(
+                    "AUTH_MENU 依赖的菜单套餐尚未就绪："
+                            + context.appCode() + "/" + String.join(",", missingPackageCodes)));
+        }
+    }
+
+    private void collectManifestPackageCodes(
+            ManifestContext context,
+            List<AppModuleMenuRequest> menus,
+            List<String> inheritedPackageCodes,
+            Set<String> packageCodes) {
+        if (menus == null) {
+            return;
+        }
+        for (AppModuleMenuRequest menu : menus) {
+            if (menu == null) {
+                continue;
+            }
+            List<String> resolvedPackageCodes = context.resolvePackageCodes(
+                    menu.getPackageCodes(), inheritedPackageCodes);
+            packageCodes.addAll(resolvedPackageCodes);
+            collectManifestPackageCodes(context, menu.getChildren(), resolvedPackageCodes, packageCodes);
         }
     }
 
@@ -390,9 +424,11 @@ public class AppModuleService implements IAppModuleService {
     }
 
     private void assignMenuPackages(ManifestContext context, MenuEntity menu, List<String> packageCodes) {
+        List<String> missingPackageCodes = new ArrayList<>();
         for (String packageCode : packageCodes) {
             MenuPackageEntity menuPackage = findMenuPackage(context.appCode(), packageCode);
             if (menuPackage == null) {
+                missingPackageCodes.add(packageCode);
                 continue;
             }
             context.addChangedPackageId(menuPackage.getPackageId());
@@ -412,6 +448,11 @@ public class AppModuleService implements IAppModuleService {
             item.setMenuId(menu.getMenuId());
             item.setSort(menu.getSort());
             menuPackageItemMapper.insert(item);
+        }
+        if (!missingPackageCodes.isEmpty()) {
+            Require.rethrow(new DependencyNotReadyException(
+                    "AUTH_MENU 依赖的菜单套餐尚未就绪："
+                            + context.appCode() + "/" + String.join(",", missingPackageCodes)));
         }
     }
 
