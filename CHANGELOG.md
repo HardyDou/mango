@@ -1,5 +1,66 @@
 # Mango Changelog
 
+## v2026.09.01-maven-1.0.46-resource-menu-package-release - 2026-09-01
+
+Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `440c4d76617fe9e5d25214af455a40579492f8921ce9e6bd178af792e1977d08` for plan `d500ebdd2f8877ab2a68a9a5b029057cf1334b9803ed99acfdbbd2e498bbd9aa` and prepared candidate `236414cd7ce579ab69ad543eee166f824836fdcedaa55f8805aab6ffe5523c6f` is `COMPLETED`: all 192 Maven/docs coordinates and `@mango/cli@1.2.6` match the sealed candidate in both publish and consume registries, the pure consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`.
+
+### Pull Requests
+
+- [PR #911](https://github.com/HardyDou/mango/pull/911) Fixed Resource bootstrap when an `AUTH_MENU` declaration references a menu package that is not ready yet. Packages: Mango Maven `1.0.46`, `io.mango:mango-docs-bundle:1.0.46` and generated `@mango/cli@1.2.6`. Business Adaptation: no configuration or permission change is required; bootstrap now rolls back the incomplete module, continues independent modules and retries the deferred module after its package dependency is available.
+
+### Fixed
+
+- Reject incomplete `AUTH_MENU` registration before menu rows or a successful Resource receipt can be committed.
+- Defer dependency-not-ready Resource modules while continuing independent modules, then retry deferred declarations on a later synchronization cycle.
+
+### Changed
+
+- Lock generated consumers to Mango Maven `1.0.46` through `@mango/cli@1.2.6`; all existing frontend and PMO package versions remain unchanged.
+
+### Versions
+
+- Mango Maven non-application reactor and `io.mango:mango-docs-bundle`: `1.0.45` to `1.0.46` (192 coordinates).
+- `@mango/cli`: `1.2.5` to `1.2.6`; its compatibility matrix advances Mango Maven to `1.0.46` while retaining PMO `1.4.4` and the existing npm tuple.
+
+### Published Packages
+
+1. Publish the 192-coordinate Mango Maven `--all-non-app` and docs bundle batch at `1.0.46`; application and capability-app fat JARs remain excluded.
+2. Publish generated `@mango/cli@1.2.6` after Maven/docs `1.0.46` is visible from both registry roles.
+3. Create the Tag and GitHub Release only after dual-registry and clean pure-consumer verification.
+
+### Business Impact
+
+- Consumers whose Resource module scan sees `system` menu declarations before the `platform_admin` menu package no longer retain partial menus without package bindings or a false successful receipt.
+- Missing menu-package dependencies fail the current module transaction, remain retryable and do not block unrelated Resource modules in the same pass.
+- No database migration, API change, new permission, administrator fallback or module dependency cycle is introduced. This release does not deploy a business application or mutate production data.
+
+### Upgrade Estimate
+
+- Audience: Mango generated applications and direct Resource/Authorization bootstrap consumers.
+- Engineering Effort: 30 to 60 minutes for generated consumers; up to 2 hours for direct integrations with custom Resource declarations.
+- Execution Window: 1 to 2 hours including dependency upgrade, clean build and cold-start bootstrap verification.
+- Service Downtime: no framework-mandated downtime; consumers use their normal application restart window.
+- Rollback Effort: 15 to 30 minutes to restore Maven `1.0.45` and CLI `1.2.5`.
+- Assumptions: Java 21, Node `22.23.1`, configured registries and a representative database where `platform_admin` is created after dependent menu declarations are first encountered.
+
+### Upgrade Notes
+
+1. Upgrade aggregate consumers to Mango Maven `1.0.46` and `@mango/cli@1.2.6`; retain the CLI's exact existing PMO and frontend package matrix.
+2. Start a clean consumer and verify the authorization menu package is created before the deferred system menu module is retried.
+3. Confirm all declared menus are bound to `platform_admin`, independent modules complete, and no successful receipt exists for a rolled-back attempt.
+
+### Verification
+
+- Run the merged PR suites: `mango-common` 22 tests, `mango-authorization-core` 56 tests and `mango-resource-core` 73 tests, plus Java architecture, Checkstyle, PMD and SpotBugs gates.
+- Run Catalog, Git impact, release plan, exact release-notes checker, protected required checks and registry doctor under Node `22.23.1`.
+- Seal Maven/docs `1.0.46` and CLI `1.2.6` once, verify both registry roles and run one clean pure consume-registry generated consumer.
+
+### Rollback
+
+- Restore consumers to Mango Maven `1.0.45` and `@mango/cli@1.2.5` through the normal dependency lock and restart procedure.
+- Never overwrite immutable coordinates; retain the sealed candidate and use `status` then authorized `repair` for partial or ambiguous publication.
+- No schema change is introduced; do not delete Resource or Authorization data as rollback.
+
 ## v2026.08.30-maven-1.0.45-workflow-resource-fixes-release - 2026-08-30
 
 Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `aa669c40e7c23807b7c3e37524e560bdbbc9f85c379097b80579d734d513e910` for plan `c23a79596e7d69098f16988e623e8fc564a961bbcf0a5c5dde58e25931b3b59f` and prepared candidate `a62e6723a1faee288a411b75ec5829fb69843bdd1f12d6db822327c116e4c84b` is `COMPLETED`: all 192 Maven/docs coordinates and all 7 npm packages ending at `@mango/cli@1.2.5` match the sealed candidate in both publish and consume registries, the pure consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`.

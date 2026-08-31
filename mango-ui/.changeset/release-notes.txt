@@ -1,78 +1,56 @@
 ## Pull Requests
 
-- [PR #899](https://github.com/HardyDou/mango/pull/899) Changed the `mango-workflow` Skill description to target Mango approval-domain guidance without intercepting generic workflow, PMO, frontend or delivery tasks. Packages: `@mango/pmo@1.4.4` and exact dependent `@mango/cli@1.2.5`. Business Adaptation: PMO consumers should upgrade the exact PMO/CLI tuple so approval-domain prompts route consistently.
-- [PR #903](https://github.com/HardyDou/mango/pull/903) Fixed candidate-group Workflow tasks whose Flowable assignee is null. Packages: Mango Maven `1.0.45`, `io.mango:mango-docs-bundle:1.0.45` and `@mango/cli@1.2.5`. Business Adaptation: no API change is required; candidate-group tasks remain unassigned and claimable until a user claims them.
-- [PR #904](https://github.com/HardyDou/mango/pull/904) Added a trusted internal process-instance lookup for Workflow event callbacks while preserving business data permission on user-facing reads. Packages: Mango Maven `1.0.45`, `io.mango:mango-docs-bundle:1.0.45` and `@mango/cli@1.2.5`. Business Adaptation: internal event consumers should call `WorkflowBusinessApplyApi.findByProcessInstance` through the signed internal client; ordinary users must continue to use the protected progress lookup.
-- [PR #905](https://github.com/HardyDou/mango/pull/905) Added narrow Workflow tenant and Home user option APIs so authorized pages no longer call privileged cross-module administration endpoints. Packages: Mango Maven `1.0.45`, `io.mango:mango-docs-bundle:1.0.45`, `@mango/home@1.0.19`, `@mango/workflow@1.0.47`, `@mango/admin-shell@1.0.68` and their generated dependency closure. Business Adaptation: direct frontend consumers must upgrade the exact topology and use `workflowApi.tenants` plus `homeOptionApi`; do not grant System or Identity list permissions to these pages.
-- [PR #906](https://github.com/HardyDou/mango/pull/906) Fixed the Resource eventual worker to skip unchanged declaration fingerprints after a successful submission. Packages: Mango Maven `1.0.45`, `io.mango:mango-docs-bundle:1.0.45` and `@mango/cli@1.2.5`. Business Adaptation: no configuration change is required; the first cycle after each application restart still submits, later unchanged cycles skip, and failed submissions remain retryable.
+- [PR #911](https://github.com/HardyDou/mango/pull/911) Fixed Resource bootstrap when an `AUTH_MENU` declaration references a menu package that is not ready yet. Packages: Mango Maven `1.0.46`, `io.mango:mango-docs-bundle:1.0.46` and generated `@mango/cli@1.2.6`. Business Adaptation: no configuration or permission change is required; bootstrap rolls back the incomplete module, continues independent modules and retries the deferred module after its package dependency is available.
 
 ## Fixed
 
-- Preserve candidate-group Workflow tasks with `assignee=null` and skip identity enrichment until a user claims the task.
-- Let signed internal Workflow event callbacks resolve their business application without weakening user-facing business data authorization.
-- Remove the need for `system:tenant:list`, `system:user:list` or equivalent privileged cross-module list access from the affected Workflow and Home pages.
-- Stop the Resource eventual worker from resubmitting the same successful declaration set every 30 seconds while retaining retry after failure or authority/content changes.
-
-## Added
-
-- Add `WorkflowBusinessApplyApi.findByProcessInstance` and `/workflow/business-applies/internal/by-process-instance` for trusted internal event handling.
-- Add Workflow-owned tenant options and Home-owned current-tenant user options with minimal response fields and page-specific permissions.
+- Reject incomplete `AUTH_MENU` registration before menu rows or a successful Resource receipt can be committed.
+- Defer dependency-not-ready Resource modules while continuing independent modules, then retry deferred declarations on a later synchronization cycle.
 
 ## Changed
 
-- Scope the published `mango-workflow` Skill to Mango approval-domain guidance and keep engineering, PMO and generic workflow routing separate.
-- Advance generated projects to the complete Maven/npm/PMO compatibility tuple ending at `@mango/cli@1.2.5`.
+- Lock generated consumers to Mango Maven `1.0.46` through `@mango/cli@1.2.6`; existing frontend and PMO package versions remain unchanged.
 
 ## Versions
 
-- Mango Maven non-application reactor and `io.mango:mango-docs-bundle`: `1.0.44` to `1.0.45` (192 coordinates).
-- Direct npm packages: `@mango/home` `1.0.18` to `1.0.19`; `@mango/pmo` `1.4.3` to `1.4.4`; `@mango/workflow` `1.0.46` to `1.0.47`; `@mango/admin-shell` `1.0.67` to `1.0.68`.
-- Generated dependency closure: `@mango/workflow-business-example` `1.0.45` to `1.0.46`; `@mango/admin` `1.1.3` to `1.1.4`.
-- `@mango/cli`: `1.2.4` to `1.2.5`; its compatibility matrix advances to Maven `1.0.45`, PMO `1.4.4` and the exact npm tuple.
+- Mango Maven non-application reactor and `io.mango:mango-docs-bundle`: `1.0.45` to `1.0.46` (192 coordinates).
+- `@mango/cli`: `1.2.5` to `1.2.6`; PMO remains `1.4.4` and all other npm package versions remain unchanged.
 
 ## Published Packages
 
-1. Publish the 192-coordinate Mango Maven `--all-non-app` and docs bundle batch at `1.0.45`; application and capability-app fat JARs remain excluded.
-2. Publish npm in machine topology order: `@mango/home@1.0.19` -> `@mango/pmo@1.4.4` -> `@mango/workflow@1.0.47` -> `@mango/admin-shell@1.0.68` -> `@mango/workflow-business-example@1.0.46` -> `@mango/admin@1.1.4` -> `@mango/cli@1.2.5`.
-3. Create `v2026.08.30-maven-1.0.45-workflow-resource-fixes-release` and its GitHub Release only after both registry roles and a clean pure consume-registry consumer verify the sealed candidate.
+1. Publish the 192-coordinate Mango Maven `--all-non-app` and docs bundle batch at `1.0.46`; application and capability-app fat JARs remain excluded.
+2. Publish `@mango/cli@1.2.6` after Maven/docs `1.0.46` is visible from both registry roles.
+3. Create `v2026.09.01-maven-1.0.46-resource-menu-package-release` and its GitHub Release only after dual-registry and clean pure-consumer verification.
 
 ## Business Impact
 
-- Mango `1.0.44` consumers affected by candidate-group task startup failures or blocked Workflow callbacks can upgrade without a database migration. The new internal callback path requires the existing signed internal-request configuration and never accepts caller-supplied tenant or owner coordinates.
-- Workflow template push, Home list and Home user pages use domain-owned option APIs under their existing page permissions. No additional broad System or Identity list permission should be granted.
-- Resource Registry stops repeated unchanged writes after the first successful cycle in one process. Application restart intentionally resets the in-memory fingerprint, and a failed submission does not advance it.
-- PMO consumers receive clarified Skill routing only. This component release does not deploy a business application, change traffic or mutate production data.
+- Consumers whose Resource module scan sees `system` menu declarations before the `platform_admin` package no longer retain partial menus without package bindings or a false successful receipt.
+- Missing menu-package dependencies fail the current module transaction, remain retryable and do not block unrelated Resource modules in the same pass.
+- No database migration, API change, new permission, administrator fallback or module dependency cycle is introduced. This release does not deploy a business application or mutate production data.
 
 ## Upgrade Estimate
 
-- Audience: Mango platform maintainers, generated applications, Workflow event/API consumers, Home/Workflow frontend consumers, Resource Registry operators and PMO-managed repositories.
-- Engineering Effort: 30 to 90 minutes for generated consumers; 1 to 3 hours for direct Workflow event integrations or independently pinned frontend packages.
-- Execution Window: 1 to 3 hours including dependency upgrade, clean build, signed callback regression, page permission checks and Resource repeated-cycle verification.
-- Service Downtime: no framework-mandated downtime; consuming applications use their normal dependency upgrade and restart window.
-- Rollback Effort: 15 to 45 minutes to restore Maven `1.0.44`, PMO `1.4.3`, CLI `1.2.4` and the prior exact npm tuple; no database rollback is introduced by this batch.
-- Assumptions: Node `22.23.1`, Java 21, clean dependency locks, configured registries, existing Mango internal-request signing and representative tenant-scoped Workflow/Home data.
+- Audience: Mango generated applications and direct Resource/Authorization bootstrap consumers.
+- Engineering Effort: 30 to 60 minutes for generated consumers; up to 2 hours for direct integrations with custom Resource declarations.
+- Execution Window: 1 to 2 hours including dependency upgrade, clean build and cold-start bootstrap verification.
+- Service Downtime: no framework-mandated downtime; consumers use their normal application restart window.
+- Rollback Effort: 15 to 30 minutes to restore Maven `1.0.45` and CLI `1.2.5`.
+- Assumptions: Java 21, Node `22.23.1`, configured registries and a representative database where `platform_admin` is created after dependent menu declarations are first encountered.
 
 ## Upgrade Notes
 
-1. Upgrade aggregate consumers to Mango Maven `1.0.45` and `@mango/cli@1.2.5`; apply the CLI's exact PMO and npm compatibility matrix instead of upgrading one generated package in isolation.
-2. Internal Workflow event callbacks should use `WorkflowBusinessApplyApi.findByProcessInstance` or the corresponding Feign client. Keep browser and user-facing reads on the protected progress endpoint; do not expose the internal route directly.
-3. Direct frontend consumers should upgrade Home, Workflow, Admin Shell and generated dependants together. Verify template push calls `/workflow/templates/tenant-options` and Home user selectors call `/home/options/**` without broad System/Identity list permissions.
-4. Keep the Resource eventual interval configuration unchanged unless operations require a different cadence. Verify one successful submission followed by unchanged skips, then verify a declaration or authority change submits again.
-5. Upgrade PMO-managed repositories to `@mango/pmo@1.4.4`, review the managed Skill diff and run locked PMO checks.
+1. Upgrade aggregate consumers to Mango Maven `1.0.46` and `@mango/cli@1.2.6`; retain the CLI's exact existing PMO and frontend package matrix.
+2. Start a clean consumer and verify the authorization menu package is created before the deferred system menu module is retried.
+3. Confirm all declared menus are bound to `platform_admin`, independent modules complete, and no successful receipt exists for a rolled-back attempt.
 
 ## Verification
 
-- Run the Catalog compiler, Git impact checker, release plan, exact release-notes checker, required repository checks and `mango release registry doctor` under Node `22.23.1`.
-- Reuse the verified PR evidence: Workflow candidate-group integration regression; signed internal API/Feign/controller contracts; 148 Home/Workflow backend tests with four existing skips; 125 frontend tests and three package builds; Resource 31-test suite and four unchanged runtime cycles with stable registry log counts.
-- Prepare one sealed source archive, Maven/docs batch and npm topology, require protected checks on the exact prepared tree, then prove the merged `origin/main` tree equals the prepared tree before publication.
-- Verify Maven POM/checksum evidence and npm integrity in both registry roles, resolve the aggregate Maven consumer once, and run a clean pure consume-registry generated consumer.
+- Run the merged PR suites: `mango-common` 22 tests, `mango-authorization-core` 56 tests and `mango-resource-core` 73 tests, plus Java architecture, Checkstyle, PMD and SpotBugs gates.
+- Run Catalog, Git impact, release plan, exact release-notes checker, protected required checks and registry doctor under Node `22.23.1`.
+- Seal Maven/docs `1.0.46` and CLI `1.2.6` once, verify both registry roles and run one clean pure consume-registry generated consumer.
 
 ## Rollback
 
-- Restore consumers to Maven `1.0.44`, `@mango/pmo@1.4.3`, `@mango/cli@1.2.4` and the previous exact npm tuple using the consuming application's normal lockfile and restart procedure.
-- Never overwrite immutable `1.0.45`, `1.4.4`, `1.2.5` or other published coordinates. If publication is partial or ambiguous, retain this prepared candidate and use `mango release status` followed by authorized `mango release repair`.
-- No schema change is introduced by this batch. Do not delete Workflow or Resource Registry data as a rollback mechanism.
-
-## Audit History
-
-- The successful `1.0.44` batch, its Tag and its closeout remain the immutable publication baseline. Issue #851 remains open because warm Resource skip and the verified `1.0.44` consumer do not prove the remaining first-cold Resource baseline objective.
+- Restore consumers to Mango Maven `1.0.45` and `@mango/cli@1.2.5` through the normal dependency lock and restart procedure.
+- Never overwrite immutable coordinates; retain the sealed candidate and use `status` then authorized `repair` for partial or ambiguous publication.
+- No schema change is introduced; do not delete Resource or Authorization data as rollback.
