@@ -185,6 +185,7 @@ public class AppModuleService implements IAppModuleService {
         Require.notBlank(command.getModuleCode(), AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR, "模块编码不能为空");
         validateManifestMenus(command.getMenus());
         ManifestContext context = new ManifestContext(command);
+        validateManifestParents(context, command.getMenus());
         validateManifestPackages(context, command.getMenus());
         AppModuleCommand moduleCommand = toModuleCommand(command);
         save(moduleCommand);
@@ -231,6 +232,46 @@ public class AppModuleService implements IAppModuleService {
             Require.rethrow(new DependencyNotReadyException(
                     "AUTH_MENU 依赖的菜单套餐尚未就绪："
                             + context.appCode() + "/" + String.join(",", missingPackageCodes)));
+        }
+    }
+
+    private void validateManifestParents(ManifestContext context, List<AppModuleMenuRequest> menus) {
+        Set<String> declaredMenuCodes = new LinkedHashSet<>();
+        Set<String> parentCodes = new LinkedHashSet<>();
+        collectManifestMenuCodes(menus, declaredMenuCodes, parentCodes);
+        List<String> missingParentCodes = parentCodes.stream()
+                .filter(parentCode -> !declaredMenuCodes.contains(parentCode))
+                .filter(parentCode -> findManifestParentMenu(context.appCode(), parentCode) == null)
+                .toList();
+        if (!missingParentCodes.isEmpty()) {
+            Require.rethrow(new DependencyNotReadyException(
+                    "AUTH_MENU 依赖的父菜单尚未就绪："
+                            + context.appCode() + "/" + String.join(",", missingParentCodes)));
+        }
+    }
+
+    private void collectManifestMenuCodes(
+            List<AppModuleMenuRequest> menus,
+            Set<String> declaredMenuCodes,
+            Set<String> parentCodes) {
+        if (menus == null) {
+            return;
+        }
+        for (AppModuleMenuRequest menu : menus) {
+            if (menu == null) {
+                continue;
+            }
+            String menuCode = StringUtils.hasText(menu.getMenuCode()) ? menu.getMenuCode().trim() : null;
+            if (menuCode != null) {
+                declaredMenuCodes.add(menuCode);
+            }
+            if (StringUtils.hasText(menu.getParentCode())) {
+                String parentCode = menu.getParentCode().trim();
+                Require.isTrue(!parentCode.equals(menuCode), AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR,
+                        "资源清单父菜单不能指向自身：" + parentCode);
+                parentCodes.add(parentCode);
+            }
+            collectManifestMenuCodes(menu.getChildren(), declaredMenuCodes, parentCodes);
         }
     }
 
@@ -324,11 +365,13 @@ public class AppModuleService implements IAppModuleService {
             return defaultParentId == null ? Long.valueOf(0L) : defaultParentId;
         }
         String parentCode = item.getParentCode().trim();
-        MenuEntity parent = findManifestParentMenu(context.appCode(), parentCode);
-        Require.notNull(parent, AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR,
-                "资源清单父菜单不存在：" + parentCode);
         Require.isTrue(!parentCode.equals(item.getMenuCode()), AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR,
                 "资源清单父菜单不能指向自身：" + parentCode);
+        MenuEntity parent = findManifestParentMenu(context.appCode(), parentCode);
+        if (parent == null) {
+            return Require.rethrow(new DependencyNotReadyException(
+                    "AUTH_MENU 依赖的父菜单尚未就绪：" + context.appCode() + "/" + parentCode));
+        }
         return parent.getMenuId();
     }
 
