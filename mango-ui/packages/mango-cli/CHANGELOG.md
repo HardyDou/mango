@@ -1,5 +1,53 @@
 # @mango/cli Changelog
 
+## 1.2.6 - 2026-09-01
+
+### Pull Requests
+
+- [PR #911](https://github.com/HardyDou/mango/pull/911) Fixed Resource menu-package dependency retry during bootstrap. Packages: Mango Maven `1.0.46`, docs bundle `1.0.46` and `@mango/cli@1.2.6`. Business Adaptation: generated consumers upgrade the exact Maven/CLI tuple; no configuration or permission change is required.
+
+### Fixed
+
+- Carry transactional `AUTH_MENU` dependency validation and deferred Resource module retry into generated consumers.
+
+### Changed
+
+- Lock generated projects to Maven `1.0.46` while retaining PMO `1.4.4` and the existing frontend package tuple.
+
+### Versions
+
+- CLI: `1.2.5` to `1.2.6`; Maven: `1.0.45` to `1.0.46`; PMO remains `1.4.4`.
+
+### Published Packages
+
+- Publish Maven/docs `1.0.46`, then `@mango/cli@1.2.6` after dual-registry verification.
+
+### Business Impact
+
+- Generated applications no longer retain partial menu registration when a referenced menu package is not ready. Independent Resource modules continue and deferred modules retry later.
+
+### Upgrade Estimate
+
+- Audience: generated Mango applications and Resource/Authorization bootstrap consumers.
+- Engineering Effort: 30 to 60 minutes for generated consumers; up to 2 hours for custom Resource declarations.
+- Execution Window: 1 to 2 hours including clean build and cold-start verification.
+- Service Downtime: no framework-mandated downtime.
+- Rollback Effort: 15 to 30 minutes to restore CLI `1.2.5` and Maven `1.0.45`.
+- Assumptions: Java 21, Node `22.23.1`, configured registries and representative menu-package bootstrap data.
+
+### Upgrade Notes
+
+1. Upgrade CLI to `1.2.6` and Mango Maven to `1.0.46`; retain the existing PMO/frontend matrix.
+2. Verify deferred menu modules retry after `platform_admin` exists and all menus receive the expected package binding.
+
+### Verification
+
+- Verify the sealed Maven/docs and CLI batch from both registry roles and run a clean generated consumer.
+
+### Rollback
+
+- Restore CLI `1.2.5` and Maven `1.0.45`; never overwrite immutable coordinates.
+
 ## 1.2.5 - 2026-08-30
 
 ### Pull Requests
