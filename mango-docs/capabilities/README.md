@@ -16,6 +16,8 @@
 
 2026-08-30 发布批次：Mango Maven `1.0.45` 修复候选组首任务 `assignee=null`、受信内部 Workflow 事件回调读取和 Resource eventual 重复提交；前端同步发布 Home/Workflow 领域候选 API 及依赖闭包，PMO `1.4.4` 收窄 `mango-workflow` Skill 触发边界，CLI `1.2.5` 固化完整兼容矩阵。入口与升级边界见 Workflow、Home、Resource、PMO、CLI README 及根 `CHANGELOG.md`；Issue #851 的首次 cold Resource baseline 目标仍保持开放。
 
+2026-08-31 能力更新：Issue #909 按方案 A 优化用户管理。页面默认展示全部成员，组织节点按本级及全部启用下级过滤并可清除选择；在具体组织内新增账号会原子创建 Identity 账号、租户成员和组织关系，已有成员候选支持用户名、姓名、手机号、邮箱 OR 搜索并由后端排除目标组织现有成员；列表按页批量展示当前应用的启用直接角色，只展示所属机构、完整部门路径等业务字段。入口见 [Identity README](../../mango/mango-platform/mango-identity/README.md)、[Org README](../../mango/mango-platform/mango-org/README.md)、[Authorization README](../../mango/mango-platform/mango-authorization/README.md) 和 [RBAC README](../../mango-ui/packages/rbac/README.md)。
+
 ## 2. 使用方式
 
 1. 先按任务关键词找到涉及能力。
@@ -49,6 +51,8 @@
 | 应用初始化与滚动升级     | [Bootstrap](../../mango/mango-infra/mango-infra-bootstrap/README.md) -> [Persistence](../../mango/mango-infra/mango-infra-persistence/README.md) -> [Resource](../../mango/mango-platform/mango-resource/README.md) -> [File](../../mango/mango-platform/mango-file/README.md) -> [Workflow](../../mango/mango-platform/mango-workflow/README.md)                                                                          | 同一制品使用 `bootstrap plan`、`bootstrap apply`、`bootstrap finalize`、finalize 前 `bootstrap abort` 与 `runtime`；Runtime 不执行 Flyway 或阻断 Resource 初始化                                                                       |
 
 ## 3.1 近期能力变更
+
+- 2026-08-31，[Issue #909](https://github.com/HardyDou/mango/issues/909) 按方案 A 优化用户管理：默认“全部成员”，集团/公司/部门范围包含本级及全部启用下级，可清除组织选择；目标组织新增账号原子写入账号、租户成员和组织关系，候选成员按用户名、姓名、手机号或邮箱搜索并排除目标组织已有成员；列表每页一次批量查询当前应用的启用直接角色，表单隐藏登录域、操作者类型、主体类型和主体 ID。入口见 [Identity README](../../mango/mango-platform/mango-identity/README.md)、[Org README](../../mango/mango-platform/mango-org/README.md)、[Authorization README](../../mango/mango-platform/mango-authorization/README.md) 和 [RBAC README](../../mango-ui/packages/rbac/README.md)，交付记录见 [STANDARD 交付记录](../plans/2026-08-31-issue-909-user-management-delivery-record.md)。
 
 - 2026-08-29，[Issue #851](https://github.com/HardyDou/mango/issues/851) 在构建期模块 manifest、内容寻址 `files.bundle` 和环境级模块 receipt 基础上补齐 Resource 级增量与数据库基线：模块 hash 未变化时整模块跳过；变化模块内按 `resource_registry.source_hash` 只调度变化 Resource。`mango:baseline-generate` 可启动最终业务应用，把 `PORTABLE` Handler 状态和 Registry hash 合入 BSQL；应用使用 JAR 外资产时通过 `resourceAdditionalClasspathElements` 向构建子进程提供同一目录且不改变最终 JAR 内容。环境/远程 Resource 恢复后处理，当前只支持单 datasource group。Handler 可用 Registry 固定同步时间与目标 `updated_at` 显式实现后台修改退避，当前 `SYSTEM_CONFIG` 已落地，`AUTH_MENU`/`API_RESOURCE` 使用完整批次只读、变化声明写入。业务开发者的数据划分、reset/incremental 操作和保函类验收矩阵见[业务 Resource 重置与增量发布](../guides/business-integration/resource-reset-incremental-release.md)。入口见 [Mango Tools README](../../mango/mango-tools/README.md)、[Resource README](../../mango/mango-platform/mango-resource/README.md)、[构建期 cold baseline](../guides/business-integration/build-time-cold-baseline.md)、[设计](../designs/2026-08-25-issue-851-resource-bootstrap-design.md)和[验收台账](../plans/2026-08-25-issue-851-resource-bootstrap-plan.md)。
 

@@ -3,7 +3,10 @@ package io.mango.identity.core.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.mango.identity.api.TenantMemberProvider;
 import io.mango.identity.api.command.AddTenantMemberOrgCommand;
+import io.mango.identity.api.command.CreateIdentityUserCommand;
+import io.mango.identity.api.command.CreateTenantMemberInOrgCommand;
 import io.mango.identity.api.command.UpdateTenantMemberOrgCommand;
+import io.mango.identity.api.enums.IdentityCode;
 import io.mango.identity.api.vo.TenantMemberOrgRelationVO;
 import io.mango.identity.api.vo.TenantMemberVO;
 import io.mango.identity.core.entity.IdentityUserEntity;
@@ -12,6 +15,9 @@ import io.mango.identity.core.entity.TenantMemberOrgEntity;
 import io.mango.identity.core.mapper.IdentityUserMapper;
 import io.mango.identity.core.mapper.TenantMemberMapper;
 import io.mango.identity.core.mapper.TenantMemberOrgMapper;
+import io.mango.identity.core.service.IIdentityUserService;
+import io.mango.common.result.Require;
+import io.mango.infra.context.api.MangoContextHolder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +37,43 @@ public class LocalTenantMemberProvider implements TenantMemberProvider {
     private final TenantMemberMapper tenantMemberMapper;
     private final TenantMemberOrgMapper tenantMemberOrgMapper;
     private final IdentityUserMapper identityUserMapper;
+    private final IIdentityUserService identityUserService;
+
+    @Override
+    @Transactional
+    public Long createMemberInOrg(CreateTenantMemberInOrgCommand command) {
+        Require.notNull(command, IdentityCode.VALIDATION_ERROR, "组织成员账号创建命令不能为空");
+        Long currentTenantId = currentTenantId();
+        Require.isTrue(command.getTenantId().equals(currentTenantId), IdentityCode.VALIDATION_ERROR,
+                "只能在当前机构内创建成员账号");
+
+        CreateIdentityUserCommand userCommand = new CreateIdentityUserCommand();
+        userCommand.setUsername(command.getUsername());
+        userCommand.setPassword(command.getPassword());
+        userCommand.setNickname(command.getNickname());
+        userCommand.setEmail(command.getEmail());
+        userCommand.setPhone(command.getPhone());
+        userCommand.setStatus(command.getStatus());
+        userCommand.setRemark(command.getRemark());
+        Long userId = identityUserService.create(userCommand);
+
+        TenantMemberEntity member = tenantMemberMapper.selectOne(new LambdaQueryWrapper<TenantMemberEntity>()
+                .eq(TenantMemberEntity::getTenantId, currentTenantId)
+                .eq(TenantMemberEntity::getUserId, userId)
+                .last("LIMIT 1"));
+        Require.notNull(member, IdentityCode.CONFLICT, "租户成员创建失败");
+
+        AddTenantMemberOrgCommand relationCommand = new AddTenantMemberOrgCommand();
+        relationCommand.setTenantId(currentTenantId);
+        relationCommand.setMemberId(member.getMemberId());
+        relationCommand.setOrgId(command.getOrgId());
+        relationCommand.setPostId(command.getPostId());
+        relationCommand.setPrimaryFlag(command.getPrimaryFlag());
+        relationCommand.setLeaderFlag(command.getLeaderFlag());
+        relationCommand.setOperatorUserId(command.getOperatorUserId());
+        addOrgRelation(relationCommand);
+        return userId;
+    }
 
     @Override
     public TenantMemberVO getEnabledMember(Long userId, Long tenantId) {
@@ -223,6 +266,16 @@ public class LocalTenantMemberProvider implements TenantMemberProvider {
             return 1;
         }
         return 0;
+    }
+
+    private Long currentTenantId() {
+        String tenantId = MangoContextHolder.tenantId();
+        Require.notBlank(tenantId, IdentityCode.VALIDATION_ERROR, "当前机构上下文无效");
+        try {
+            return Long.valueOf(tenantId);
+        } catch (NumberFormatException exception) {
+            return Require.fail(IdentityCode.VALIDATION_ERROR, "当前机构上下文无效");
+        }
     }
 
     private TenantMemberVO toInfo(TenantMemberEntity member) {

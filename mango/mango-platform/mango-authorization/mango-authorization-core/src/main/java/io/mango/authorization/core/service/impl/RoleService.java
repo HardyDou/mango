@@ -11,6 +11,7 @@ import io.mango.authorization.api.query.RoleLookupQuery;
 import io.mango.authorization.api.query.SubjectRoleBindingQuery;
 import io.mango.authorization.api.vo.MenuVO;
 import io.mango.authorization.api.vo.RoleVO;
+import io.mango.authorization.api.vo.SubjectRoleSummaryVO;
 import io.mango.authorization.core.entity.MenuEntity;
 import io.mango.authorization.core.entity.RoleEntity;
 import io.mango.authorization.core.entity.RoleMenuEntity;
@@ -32,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -88,6 +90,63 @@ public class RoleService implements IRoleService {
         roleWrapper.in(RoleEntity::getId, roleIds);
         List<RoleEntity> roles = roleMapper.selectList(roleWrapper);
         return roles.stream().map(this::toVO).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<SubjectRoleSummaryVO> getSubjectRolesBatch(List<Long> subjectIds) {
+        Require.isTrue(subjectIds == null || subjectIds.size() <= 200,
+                AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR, "成员ID不能超过200个");
+        if (subjectIds == null || subjectIds.isEmpty()) {
+            return List.of();
+        }
+        List<Long> requestedIds = subjectIds.stream()
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .toList();
+        if (requestedIds.isEmpty()) {
+            return List.of();
+        }
+
+        Long tenantId = getTenantIdLong();
+        String appCode = MangoContextHolder.appCode();
+        LambdaQueryWrapper<SubjectRoleBindingEntity> bindingWrapper = new LambdaQueryWrapper<>();
+        bindingWrapper.eq(SubjectRoleBindingEntity::getSubjectType, AuthorizationQuery.SUBJECT_TYPE_TENANT_MEMBER)
+                .in(SubjectRoleBindingEntity::getSubjectId, requestedIds)
+                .eq(tenantId != null, SubjectRoleBindingEntity::getTenantId, tenantId)
+                .eq(hasText(appCode), SubjectRoleBindingEntity::getAppCode, appCode);
+        List<SubjectRoleBindingEntity> bindings = subjectRoleBindingMapper.selectList(bindingWrapper);
+
+        Map<Long, RoleVO> rolesById = new LinkedHashMap<>();
+        Set<Long> roleIds = bindings.stream()
+                .map(SubjectRoleBindingEntity::getRoleId)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        if (!roleIds.isEmpty()) {
+            LambdaQueryWrapper<RoleEntity> roleWrapper = new LambdaQueryWrapper<RoleEntity>()
+                    .in(RoleEntity::getId, roleIds)
+                    .eq(tenantId != null, RoleEntity::getTenantId, tenantId)
+                    .eq(hasText(appCode), RoleEntity::getAppCode, appCode)
+                    .eq(RoleEntity::getStatus, 1)
+                    .orderByAsc(RoleEntity::getSort)
+                    .orderByAsc(RoleEntity::getId);
+            roleMapper.selectList(roleWrapper).forEach(role -> rolesById.put(role.getRoleId(), toVO(role)));
+        }
+
+        Map<Long, Set<Long>> roleIdsBySubject = bindings.stream()
+                .collect(Collectors.groupingBy(
+                        SubjectRoleBindingEntity::getSubjectId,
+                        LinkedHashMap::new,
+                        Collectors.mapping(SubjectRoleBindingEntity::getRoleId,
+                                Collectors.toCollection(LinkedHashSet::new))));
+        return requestedIds.stream().map(subjectId -> {
+            SubjectRoleSummaryVO summary = new SubjectRoleSummaryVO();
+            summary.setSubjectId(subjectId);
+            Set<Long> assignedRoleIds = roleIdsBySubject.getOrDefault(subjectId, Set.of());
+            summary.setRoles(rolesById.entrySet().stream()
+                    .filter(entry -> assignedRoleIds.contains(entry.getKey()))
+                    .map(Map.Entry::getValue)
+                    .toList());
+            return summary;
+        }).toList();
     }
 
     @Override

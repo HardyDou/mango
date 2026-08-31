@@ -45,6 +45,11 @@ export interface SaveRoleDataScopeCommand {
   status?: number;
 }
 
+export interface SubjectRoleSummaryVO {
+  subjectId: ApiId;
+  roles: RoleVO[];
+}
+
 export const roleApi = {
   list: () => get<RoleVO[]>('/authorization/roles'),
   detail: (id: ApiId) => get<RoleVO>('/authorization/roles/detail', { params: { id } }),
@@ -52,9 +57,12 @@ export const roleApi = {
   update: (data: RoleVO) => put<boolean>('/authorization/roles', data),
   delete: (id: ApiId) => del<boolean>('/authorization/roles', { params: { id } }),
   getMenuIds: (roleId: ApiId) => get<ApiId[]>('/authorization/roles/menus', { params: { roleId } }),
-  getAssignableMenus: (appCode?: string) => get<SysMenuVO[]>('/authorization/roles/assignable-menus', { params: { appCode } }),
+  getAssignableMenus: (appCode?: string) =>
+    get<SysMenuVO[]>('/authorization/roles/assignable-menus', { params: { appCode } }),
   assignMenus: (roleId: ApiId, menuIds: ApiId[]) => post<boolean>('/authorization/roles/menus', { roleId, menuIds }),
   getSubjectRoles: (subjectId: ApiId) => get<RoleVO[]>('/authorization/roles/subjects', { params: { subjectId } }),
+  getSubjectRolesBatch: (subjectIds: ApiId[]) =>
+    post<SubjectRoleSummaryVO[]>('/authorization/roles/subjects/batch', { subjectIds }),
   assignSubjectRoles: (data: {
     subjectId: ApiId;
     appCode?: string;
@@ -66,7 +74,8 @@ export const roleApi = {
   }) => post<boolean>('/authorization/roles/subjects', data),
   getDataScopes: (roleId: ApiId) => get<RoleDataScopeVO[]>('/authorization/data-scopes/roles', { params: { roleId } }),
   saveDataScope: (data: SaveRoleDataScopeCommand) => post<boolean>('/authorization/data-scopes/roles', data),
-  deleteDataScope: (roleId: ApiId, resourceCode: string) => del<boolean>('/authorization/data-scopes/roles', {
-    params: { roleId, resourceCode },
-  }),
+  deleteDataScope: (roleId: ApiId, resourceCode: string) =>
+    del<boolean>('/authorization/data-scopes/roles', {
+      params: { roleId, resourceCode },
+    }),
 };

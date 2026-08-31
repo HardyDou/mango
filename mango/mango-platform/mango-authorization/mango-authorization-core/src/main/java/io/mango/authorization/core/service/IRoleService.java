@@ -8,6 +8,7 @@ import io.mango.authorization.api.query.RoleLookupQuery;
 import io.mango.authorization.api.query.SubjectRoleBindingQuery;
 import io.mango.authorization.api.vo.MenuVO;
 import io.mango.authorization.api.vo.RoleVO;
+import io.mango.authorization.api.vo.SubjectRoleSummaryVO;
 
 import java.util.List;
 
@@ -63,6 +64,9 @@ public interface IRoleService {
      * @return 主体角色列表
      */
     List<RoleVO> getSubjectRoles(Long subjectId);
+
+    /** 批量查询当前租户、当前应用下成员的直接角色。 */
+    List<SubjectRoleSummaryVO> getSubjectRolesBatch(List<Long> subjectIds);
 
     /**
      * 给主体分配角色。

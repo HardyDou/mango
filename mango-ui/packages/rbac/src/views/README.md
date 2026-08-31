@@ -20,6 +20,8 @@
 
 - 维护应用、菜单、页面 component key 和权限资源。
 - 维护角色授权、用户、组织和岗位。
+- 用户管理默认展示全部成员；选择组织后查询本级及全部启用下级成员，可清除选择回到全部成员。
+- 用户管理在目标组织内创建账号或添加已有成员，展示所属机构、完整部门路径和当前应用下的直接角色；不向管理员暴露登录域、操作者类型和主体 ID 等技术字段。
 - 排查登录后菜单、按钮权限和组织数据。
 - 业务项目接入 Mango 后配置后台 RBAC 基础数据。
 
@@ -68,6 +70,16 @@ import '@mango/rbac/style.css';
 - 菜单能看到但页面打不开时，检查 component key 与前端注册映射。
 - 按钮不显示时，检查后端资源同步、角色授权和用户权限集合。
 - 用户或组织为空时，检查 identity/org 后端数据和租户上下文。
+- 用户管理组织范围异常时，检查 `/org/member-scope`；候选搜索或排除异常时，检查 `/identity/users/page` 的 `keyword` 和 `excludeOrgId`；角色列异常时，检查 `/authorization/roles/subjects/batch`。
+
+用户管理永久 Chromium 回归入口：
+
+```bash
+pnpm exec playwright test \
+  --config apps/mango-admin/playwright.config.ts \
+  --project chromium \
+  --grep @user-management
+```
 
 菜单打不开排障顺序：
 

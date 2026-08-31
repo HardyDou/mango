@@ -9,6 +9,8 @@ import io.mango.authorization.api.command.AssignSubjectRolesCommand;
 import io.mango.authorization.api.command.RoleCommand;
 import io.mango.authorization.api.vo.MenuVO;
 import io.mango.authorization.api.vo.RoleVO;
+import io.mango.authorization.api.request.SubjectRoleBatchRequest;
+import io.mango.authorization.api.vo.SubjectRoleSummaryVO;
 import io.mango.authorization.core.service.IRoleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -78,6 +80,14 @@ public class RoleController implements RoleApi {
     public R<List<RoleVO>> getSubjectRoles(
             @Parameter(description = "机构成员ID") @RequestParam(name = "subjectId") Long subjectId) {
         return R.ok(roleService.getSubjectRoles(subjectId));
+    }
+
+    @Override
+    @PostMapping("/subjects/batch")
+    @Operation(summary = "批量获取成员角色", description = "权限接口。批量查询当前租户、当前应用下成员直接分配的有效角色")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:user:list")
+    public R<List<SubjectRoleSummaryVO>> getSubjectRolesBatch(@RequestBody SubjectRoleBatchRequest request) {
+        return R.ok(roleService.getSubjectRolesBatch(request.getSubjectIds()));
     }
 
     @Override

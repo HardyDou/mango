@@ -19,7 +19,8 @@
 | 联系方式安全变更 | 当前用户使用当前密码和新手机号/邮箱验证码修改联系方式 |
 | 当前用户授权管理 | 按当前租户、应用和用户查看绑定，并在密码校验后解绑 |
 | 租户初始化 | 新建租户时为创建者补建管理员成员，并尝试绑定 `ROLE_ADMIN` |
-| 用户管理接口 | 提供用户分页、详情、新增、编辑、状态、重置密码、批量移除等接口 |
+| 用户管理接口 | 提供用户分页、详情、新增、编辑、状态、重置密码、批量移除等接口；分页支持按多个组织范围查询、关键词 OR 搜索和排除目标组织已有成员 |
+| 组织内原子开户 | 受信 `TenantMemberProvider.createMemberInOrg` 在单事务内创建全局账号、租户成员和成员组织关系，任一步失败整体回滚 |
 | Workflow 办理人身份批量查询 | `POST /identity/user/info/batch` 按当前租户和有效成员关系批量解析 `userIds`/`usernames`，最多 200 个去重标识；未命中不返回记录 |
 | 资源声明 | 通过 Resource Registry 的 `IDENTITY_USER` 和 `ORG_MEMBER_BINDING` 注入 demo/bootstrap 用户和组织成员绑定 |
 
@@ -135,7 +136,7 @@ HTTP 接口前缀是 `/identity`。
 | PUT | `/identity/me/contact` | LOGIN | 使用当前密码和新值验证码修改联系方式 |
 | GET | `/identity/me/external-identities` | LOGIN | 查询当前用户在当前应用的第三方授权 |
 | DELETE | `/identity/me/external-identities` | LOGIN | 使用当前密码解绑本人授权 |
-| GET | `/identity/users/page` | `system:user:list` | 分页查询当前租户可管理成员 |
+| GET | `/identity/users/page` | `system:user:list` | 分页查询当前租户可管理成员；`orgIds` 匹配任一组织，`excludeOrgId` 排除目标组织已有成员，`keyword` 对用户名、昵称、手机号和邮箱执行 OR 搜索 |
 | GET | `/identity/users/detail` | `system:user:query` | 查询成员详情 |
 | POST | `/identity/users` | `system:user:add` | 新增当前租户成员账号 |
 | PUT | `/identity/users` | `system:user:edit` | 修改成员资料和成员状态 |
@@ -164,7 +165,8 @@ HTTP 接口前缀是 `/identity`。
 | `UpdateIdentityUserStatusCommand` | `userId`、`status` 必填；不能修改当前登录用户自己的成员状态 |
 | `ResetIdentityUserPasswordCommand` | `userId`、`password` 必填，密码长度 6 到 200 |
 | `BindExternalIdentityCommand` | `userId`、`provider`、`corpId`、`externalUserId` 必填 |
-| `IdentityUserPageQuery` | 支持 `username`、`keyword`、`nickname`、`phone`、`email`、`status`、`realm`、`actorType`、`partyType`、`partyId`、`orgId` |
+| `IdentityUserPageQuery` | 支持 `username`、`keyword`、`nickname`、`phone`、`email`、`status`、`realm`、`actorType`、`partyType`、`partyId`、`orgId`、最多 500 个 `orgIds` 和 `excludeOrgId` |
+| `CreateTenantMemberInOrgCommand` | 受信组织开户命令；`tenantId`、`orgId`、`username`、主组织/主管标识和操作用户必填，可传岗位、密码、姓名、联系方式、状态和备注 |
 
 Java API：
 
@@ -173,7 +175,7 @@ Java API：
 | `IdentityUserApi` | 用户管理、身份资料、接收人解析和外部身份绑定 |
 | `AuthIdentityApi` | 认证链路内部身份事实查询 |
 | `AuthUserProvider` | 给 `mango-auth` 使用的认证事实 Provider |
-| `TenantMemberProvider` | 按用户和租户查询启用成员事实 |
+| `TenantMemberProvider` | 按用户和租户查询启用成员事实，并为受信 Org 调用提供组织内原子开户 |
 
 ### 7.1 从 Maven 1.0.21 升级到 1.0.22
 

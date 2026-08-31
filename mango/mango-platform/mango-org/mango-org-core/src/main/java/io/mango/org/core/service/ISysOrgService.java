@@ -3,6 +3,7 @@ package io.mango.org.core.service;
 import io.mango.infra.persistence.api.crud.MangoTypedCrudService;
 import io.mango.org.api.command.AddOrgMemberCommand;
 import io.mango.org.api.command.CreateSysOrgCommand;
+import io.mango.org.api.command.CreateOrgMemberAccountCommand;
 import io.mango.org.api.command.UpdateSysOrgCommand;
 import io.mango.org.api.command.UpdateOrgMemberCommand;
 import io.mango.org.api.query.SysOrgTreeQuery;
@@ -23,6 +24,10 @@ public interface ISysOrgService extends MangoTypedCrudService<
     List<SysOrgVO> children(Long parentId);
 
     List<OrgMemberVO> members(Long orgId);
+
+    List<Long> memberScope(Long orgId);
+
+    Long createMemberAccount(CreateOrgMemberAccountCommand command);
 
     boolean addMember(AddOrgMemberCommand command);
 

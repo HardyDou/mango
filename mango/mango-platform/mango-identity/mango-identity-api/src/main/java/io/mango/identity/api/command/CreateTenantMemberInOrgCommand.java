@@ -1,0 +1,66 @@
+package io.mango.identity.api.command;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
+import lombok.Data;
+
+import java.io.Serializable;
+
+/**
+ * 在指定组织内创建租户成员账号的受信命令。
+ */
+@Data
+@Schema(description = "在指定组织内创建租户成员账号的受信命令")
+public class CreateTenantMemberInOrgCommand implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    @NotNull(message = "租户ID不能为空")
+    @Positive(message = "租户ID必须大于0")
+    private Long tenantId;
+
+    @NotNull(message = "组织ID不能为空")
+    @Positive(message = "组织ID必须大于0")
+    private Long orgId;
+
+    @Positive(message = "岗位ID必须大于0")
+    private Long postId;
+
+    @NotBlank(message = "用户名不能为空")
+    @Size(max = 100, message = "用户名最多100个字符")
+    private String username;
+
+    @Size(max = 200, message = "密码最多200个字符")
+    private String password;
+
+    @Size(max = 100, message = "姓名最多100个字符")
+    private String nickname;
+
+    @Size(max = 100, message = "邮箱最多100个字符")
+    private String email;
+
+    @Size(max = 32, message = "手机号最多32个字符")
+    private String phone;
+
+    @Min(value = 0, message = "成员状态只能为0或1")
+    @Max(value = 1, message = "成员状态只能为0或1")
+    private Integer status;
+
+    @Size(max = 500, message = "备注最多500个字符")
+    private String remark;
+
+    @NotNull(message = "主组织标识不能为空")
+    private Boolean primaryFlag;
+
+    @NotNull(message = "组织主管标识不能为空")
+    private Boolean leaderFlag;
+
+    @NotNull(message = "操作用户ID不能为空")
+    @Positive(message = "操作用户ID必须大于0")
+    private Long operatorUserId;
+}

@@ -3,6 +3,7 @@ package io.mango.org.api;
 import io.mango.common.result.R;
 import io.mango.org.api.command.AddOrgMemberCommand;
 import io.mango.org.api.command.CreateSysOrgCommand;
+import io.mango.org.api.command.CreateOrgMemberAccountCommand;
 import io.mango.org.api.command.UpdateSysOrgCommand;
 import io.mango.org.api.command.UpdateOrgMemberCommand;
 import io.mango.org.api.query.SysOrgTreeQuery;
@@ -41,6 +42,12 @@ public interface SysOrgApi {
     R<List<OrgMemberVO>> members(
             @NotNull(message = "组织ID不能为空")
             @Positive(message = "组织ID必须大于0") Long orgId);
+
+    R<List<Long>> memberScope(
+            @NotNull(message = "组织ID不能为空")
+            @Positive(message = "组织ID必须大于0") Long orgId);
+
+    R<Long> createMemberAccount(@Valid CreateOrgMemberAccountCommand command);
 
     R<Boolean> addMember(@Valid AddOrgMemberCommand command);
 

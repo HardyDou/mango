@@ -115,6 +115,7 @@ import io.mango.notice.support.channel.NoticeChannelMessage;
 import io.mango.notice.support.channel.NoticeChannelSender;
 import io.mango.org.api.SysOrgApi;
 import io.mango.org.api.command.AddOrgMemberCommand;
+import io.mango.org.api.command.CreateOrgMemberAccountCommand;
 import io.mango.org.api.command.CreateSysOrgCommand;
 import io.mango.org.api.command.UpdateOrgMemberCommand;
 import io.mango.org.api.command.UpdateSysOrgCommand;
@@ -1997,6 +1998,16 @@ class NoticeServiceIntegrationTest {
         @Override
         public R<List<OrgMemberVO>> members(Long orgId) {
             return R.ok(List.of());
+        }
+
+        @Override
+        public R<List<Long>> memberScope(Long orgId) {
+            return R.ok(List.of(orgId));
+        }
+
+        @Override
+        public R<Long> createMemberAccount(CreateOrgMemberAccountCommand command) {
+            return R.ok(1L);
         }
 
         @Override

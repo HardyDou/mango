@@ -22,7 +22,7 @@
 | 菜单和按钮资源                | `MenuView`、`menuApi`               | `mango-authorization`                       |
 | 菜单包                        | `MenuPackageView`、`menuPackageApi` | `mango-authorization`                       |
 | 角色、菜单/按钮授权和数据权限 | `RoleView`、`roleApi`               | `mango-authorization`                       |
-| 用户管理                      | `UserView`、`userApi`               | `mango-identity`                            |
+| 用户管理                      | `UserView`、`userApi`               | `mango-identity`、`mango-org`、`mango-authorization` |
 | 组织和成员                    | `OrgView`、`orgApi`                 | `mango-org`                                 |
 | 岗位管理                      | `PostView`、`postApi`               | `mango-org`                                 |
 | 权限资源查看                  | `PermissionView`                    | `mango-authorization`                       |
@@ -79,7 +79,7 @@ const users = await userApi.page({ pageNum: 1, pageSize: 20 });
 | 菜单数据           | `component`                                  | 必须匹配前端页面 key，Shell 才能打开页面。                                     |
 | 菜单数据           | `menuType`                                   | 区分目录、菜单、按钮。                                                         |
 | 角色数据           | `realm`、`actorType`                         | 角色作用域。                                                                   |
-| 用户数据           | `realm`、`actorType`、`partyType`、`partyId` | 登录身份上下文。                                                               |
+| 用户查询           | `orgIds`、`excludeOrgId`、`keyword`   | 层级组织范围、目标组织已有成员排除，以及用户名/姓名/手机/邮箱 OR 搜索。        |
 | 组织查询           | `parentId`、`type`、`includeDisabled`        | 组织树过滤条件。                                                               |
 
 ## 5. API 与扩展
@@ -92,7 +92,7 @@ const users = await userApi.page({ pageNum: 1, pageSize: 20 });
 | `MenuView`        | `system/menu/index`         | 菜单和按钮资源管理。                                                                                      |
 | `MenuPackageView` | `system/menu-package/index` | 菜单包管理。                                                                                              |
 | `RoleView`        | `system/role/index`         | 角色和菜单/按钮授权。                                                                                     |
-| `UserView`        | `system/user/index`         | 用户、企微同步、Identity 外部身份绑定；手工绑定要求企业微信完整昵称，企微同步不维护 Notice 独立接收账户。 |
+| `UserView`        | `system/user/index`         | 默认查看全部成员；按组织本级及下级筛选、清除组织选择、在目标组织新增或添加已有成员，并展示所属机构、完整部门路径和直接角色。 |
 | `OrgView`         | `system/org/index`          | 组织树和组织成员。                                                                                        |
 | `PostView`        | `system/post/index`         | 岗位管理。                                                                                                |
 | `PermissionView`  | `system/permission/index`   | 权限资源查看。                                                                                            |
@@ -105,9 +105,9 @@ const users = await userApi.page({ pageNum: 1, pageSize: 20 });
 | `appModuleApi`   | `/authorization/app-modules`                         | 应用模块绑定、同步菜单、运行策略。                                   |
 | `menuApi`        | `/authorization/menus`                               | 用户菜单、菜单树、详情、创建、更新、删除。                           |
 | `menuPackageApi` | `/authorization/menu-packages`                       | 菜单包 CRUD。                                                        |
-| `roleApi`        | `/authorization/roles`、`/authorization/data-scopes` | 角色 CRUD、角色菜单、可分配菜单、主体角色绑定、角色数据权限。        |
-| `userApi`        | `/identity/users/page`                               | 用户分页、详情、创建、更新、删除、重置密码、企微同步、外部身份绑定。 |
-| `orgApi`         | `/org/tree`                                          | 组织树、子节点、详情、成员、负责人。                                 |
+| `roleApi`        | `/authorization/roles`、`/authorization/data-scopes`     | 角色 CRUD、角色菜单、可分配菜单、主体角色绑定、成员直接角色批量摘要和角色数据权限。 |
+| `userApi`        | `/identity/users/page`                                   | 用户分页、组织范围/候选搜索、详情、更新、删除、重置密码、企微同步和外部身份绑定。   |
+| `orgApi`         | `/org/tree`、`/org/member-scope`、`/org/member-accounts` | 组织树、成员层级范围、组织内原子开户、成员和负责人。                                |
 | `postApi`        | `/post/page`                                         | 岗位分页、详情、创建、更新、删除。                                   |
 
 常用返回字段：
@@ -117,7 +117,7 @@ const users = await userApi.page({ pageNum: 1, pageSize: 20 });
 | 应用 | `appCode`、`appName`、`appType`、`deployMode`、`entryUrl`                |
 | 菜单 | `id`、`parentId`、`menuType`、`path`、`component`、`perms`、`moduleCode` |
 | 角色 | `id`、`roleName`、`roleCode`、`appCode`、`realm`、`actorType`            |
-| 用户 | `userId`、`username`、`nickname`、`status`、`tenantId`                   |
+| 用户 | `userId`、`memberId`、`username`、`nickname`、`status`、`tenantId`、`orgRelations` |
 | 组织 | `id`、`name`、`parentId`、`sort`、`children`                             |
 | 岗位 | `id`、`postCode`、`postName`、`sort`、`status`                           |
 
@@ -147,6 +147,8 @@ const users = await userApi.page({ pageNum: 1, pageSize: 20 });
 | 组织和岗位 | `mango-org`                                  | 组织管理、岗位管理、用户组织关系。           |
 
 业务模块菜单和权限应该由对应模块的 resource manifest 或后端初始化流程入库，不应该在前端手工补假数据。
+
+用户管理永久 E2E 位于 `apps/mango-admin/e2e/specs/user-management.spec.ts`，使用 `@user-management` 标签覆盖默认全部成员、层级组织筛选、组织内开户、已有成员邮箱搜索与排除、直接角色回显、清除组织选择，以及接口失败错误状态。
 
 ## 7. 管理入口
 

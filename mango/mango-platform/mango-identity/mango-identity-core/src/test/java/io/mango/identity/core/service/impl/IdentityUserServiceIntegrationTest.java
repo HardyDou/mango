@@ -13,12 +13,14 @@ import io.mango.captcha.api.dto.CaptchaSendRequest;
 import io.mango.captcha.api.dto.CaptchaVerifyRequest;
 import io.mango.identity.api.command.BindExternalIdentityCommand;
 import io.mango.identity.api.command.BatchDeleteIdentityUserCommand;
+import io.mango.identity.api.command.CreateTenantMemberInOrgCommand;
 import io.mango.identity.api.command.SendContactCaptchaCommand;
 import io.mango.identity.api.command.UnbindCurrentExternalIdentityCommand;
 import io.mango.identity.api.command.UpdateCurrentUserContactCommand;
 import io.mango.identity.api.command.UpdateCurrentUserProfileCommand;
 import io.mango.identity.api.enums.IdentityUserTargetType;
 import io.mango.identity.api.query.ExternalIdentityQuery;
+import io.mango.identity.api.query.IdentityUserPageQuery;
 import io.mango.identity.api.query.IdentityUserTargetQuery;
 import io.mango.identity.api.request.IdentityUserBatchRequest;
 import io.mango.identity.api.vo.IdentityUserInfoVO;
@@ -55,9 +57,14 @@ import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.event.ApplicationEvents;
 import org.springframework.test.context.event.RecordApplicationEvents;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+import org.springframework.transaction.PlatformTransactionManager;
+
+import javax.sql.DataSource;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -120,6 +127,9 @@ class IdentityUserServiceIntegrationTest {
 
     @Autowired
     private IdentityTenantProvisioner tenantProvisioner;
+
+    @Autowired
+    private LocalTenantMemberProvider tenantMemberProvider;
 
     @Autowired
     private ApplicationEvents applicationEvents;
@@ -510,6 +520,107 @@ class IdentityUserServiceIntegrationTest {
     }
 
     @Test
+    @DisplayName("分页查询支持多个组织范围并回显命中的组织关系")
+    void pageResultShouldFilterByAnyRequestedOrganization() {
+        MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("1"));
+        seedUser(1001L, "root-user", "集团成员", "1", 1);
+        seedUser(1002L, "child-user", "部门成员", "1", 1);
+        seedUser(1003L, "outside-user", "范围外成员", "1", 1);
+        seedMember(11L, 1L, 1001L, 1, null);
+        seedMember(12L, 1L, 1002L, 1, null);
+        seedMember(13L, 1L, 1003L, 1, null);
+        seedMemberOrg(101L, 1L, 11L, 200L, null);
+        seedMemberOrg(102L, 1L, 12L, 201L, null);
+        seedMemberOrg(103L, 1L, 13L, 300L, null);
+        IdentityUserPageQuery query = new IdentityUserPageQuery();
+        query.setPage(1L);
+        query.setSize(20L);
+        query.setOrgIds(List.of(200L, 201L));
+
+        var result = service.pageResult(query);
+
+        assertThat(result.getList()).extracting(item -> item.getUserId())
+                .containsExactlyInAnyOrder(1001L, 1002L);
+        assertThat(result.getList()).extracting(item -> item.getOrgId())
+                .containsExactlyInAnyOrder(200L, 201L);
+    }
+
+    @Test
+    @DisplayName("候选成员关键字按用户名姓名手机邮箱任一字段匹配")
+    void pageResultKeywordShouldMatchAnySupportedIdentityField() {
+        MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("1"));
+        seedUser(1001L, "keyword-login", "候选成员", "1", 1);
+        seedMember(11L, 1L, 1001L, 1, null);
+        jdbcTemplate.update("update identity_user set phone = '13912345678', email = 'candidate@example.com' where id = 1001");
+
+        for (String keyword : List.of("keyword-login", "候选成员", "1391234", "candidate@")) {
+            IdentityUserPageQuery query = new IdentityUserPageQuery();
+            query.setPage(1L);
+            query.setSize(20L);
+            query.setKeyword(keyword);
+
+            assertThat(service.pageResult(query).getList()).singleElement()
+                    .satisfies(item -> assertThat(item.getUserId()).isEqualTo(1001L));
+        }
+    }
+
+    @Test
+    @DisplayName("候选成员分页在数据库查询阶段排除目标组织已有成员")
+    void pageResultShouldExcludeMembersAlreadyInTargetOrganization() {
+        MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("1"));
+        seedUser(1001L, "already-added", "已有成员", "1", 1);
+        seedUser(1002L, "available", "可选成员", "1", 1);
+        seedMember(11L, 1L, 1001L, 1, null);
+        seedMember(12L, 1L, 1002L, 1, null);
+        seedMemberOrg(101L, 1L, 11L, 200L, null);
+        IdentityUserPageQuery query = new IdentityUserPageQuery();
+        query.setPage(1L);
+        query.setSize(20L);
+        query.setExcludeOrgId(200L);
+
+        var result = service.pageResult(query);
+
+        assertThat(result.getList()).singleElement()
+                .satisfies(item -> assertThat(item.getUserId()).isEqualTo(1002L));
+        assertThat(result.getTotal()).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("组织内开户在同一事务写入用户成员和组织关系")
+    void createMemberInOrgShouldPersistAllThreeIdentityFactsAtomically() {
+        setCurrentUser(9001L);
+        CreateTenantMemberInOrgCommand command = createMemberInOrgCommand("new-department-user", 200L);
+        command.setPostId(300L);
+        command.setLeaderFlag(true);
+
+        Long userId = tenantMemberProvider.createMemberInOrg(command);
+
+        assertThat(jdbcTemplate.queryForObject(
+                "select count(*) from identity_user where id = ? and tenant_id = '1'", Long.class, userId))
+                .isEqualTo(1L);
+        Long memberId = jdbcTemplate.queryForObject(
+                "select id from tenant_member where tenant_id = 1 and user_id = ?", Long.class, userId);
+        assertThat(jdbcTemplate.queryForObject("""
+                select count(*) from tenant_member_org
+                 where tenant_id = 1 and member_id = ? and org_id = 200 and post_id = 300
+                   and primary_flag = 1 and leader_flag = 1 and created_by = 9001
+                """, Long.class, memberId)).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("组织关系写入失败时回滚用户和成员")
+    void createMemberInOrgShouldRollbackUserAndMemberWhenRelationFails() {
+        setCurrentUser(9001L);
+        CreateTenantMemberInOrgCommand command = createMemberInOrgCommand("rollback-user", null);
+
+        assertThatThrownBy(() -> tenantMemberProvider.createMemberInOrg(command))
+                .isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
+        assertThat(jdbcTemplate.queryForObject("select count(*) from identity_user", Long.class)).isZero();
+        assertThat(countMembers()).isZero();
+        assertThat(countRelations()).isZero();
+    }
+
+    @Test
     @DisplayName("脱敏证件号留空更新时保留原号码")
     void updateCurrentProfileShouldPreserveExistingDocumentNumberWhenBlank() {
         setCurrentUser(1001L);
@@ -695,7 +806,7 @@ class IdentityUserServiceIntegrationTest {
                     id bigint primary key,
                     tenant_id bigint not null,
                     member_id bigint not null,
-                    org_id bigint,
+                    org_id bigint not null,
                     post_id bigint,
                     primary_flag tinyint,
                     leader_flag tinyint,
@@ -773,6 +884,22 @@ class IdentityUserServiceIntegrationTest {
         return command;
     }
 
+    private CreateTenantMemberInOrgCommand createMemberInOrgCommand(String username, Long orgId) {
+        CreateTenantMemberInOrgCommand command = new CreateTenantMemberInOrgCommand();
+        command.setTenantId(1L);
+        command.setOrgId(orgId);
+        command.setUsername(username);
+        command.setPassword("Mango@123456");
+        command.setNickname("新成员");
+        command.setEmail(username + "@example.com");
+        command.setPhone("13900000000");
+        command.setStatus(1);
+        command.setPrimaryFlag(true);
+        command.setLeaderFlag(false);
+        command.setOperatorUserId(9001L);
+        return command;
+    }
+
     private void setCurrentUser(Long userId) {
         MangoContextHolder.set(MangoContextSnapshot.empty()
                 .withSecurity(userId, "1", "current", "INTERNAL", "INTERNAL_USER", "INTERNAL_ORG", 1L,
@@ -802,6 +929,7 @@ class IdentityUserServiceIntegrationTest {
     }
 
     @Configuration
+    @EnableTransactionManagement(proxyTargetClass = true)
     @MapperScan(basePackageClasses = IdentityUserMapper.class)
     @Import({
             IdentityUserService.class,
@@ -809,6 +937,7 @@ class IdentityUserServiceIntegrationTest {
             IdentitySecurityPolicyService.class,
             IdentityPasswordPolicyService.class,
             IdentityTenantProvisioner.class,
+            LocalTenantMemberProvider.class,
             AuthorizationRoleBindingAdapter.class,
             SysConfigValueAdapter.class
     })
@@ -822,6 +951,11 @@ class IdentityUserServiceIntegrationTest {
         @Bean
         PasswordEncoder passwordEncoder() {
             return new BCryptPasswordEncoder();
+        }
+
+        @Bean
+        PlatformTransactionManager transactionManager(DataSource dataSource) {
+            return new DataSourceTransactionManager(dataSource);
         }
 
         @Bean

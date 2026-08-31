@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import io.mango.common.result.Require;
 import io.mango.identity.api.TenantMemberProvider;
 import io.mango.identity.api.command.AddTenantMemberOrgCommand;
+import io.mango.identity.api.command.CreateTenantMemberInOrgCommand;
 import io.mango.identity.api.command.UpdateTenantMemberOrgCommand;
 import io.mango.identity.api.vo.TenantMemberOrgRelationVO;
 import io.mango.identity.api.vo.TenantMemberVO;
@@ -14,6 +15,7 @@ import io.mango.infra.persistence.api.crud.MangoCrudServiceImpl;
 import io.mango.infra.persistence.api.query.PersistencePageResult;
 import io.mango.org.api.command.AddOrgMemberCommand;
 import io.mango.org.api.command.CreateSysOrgCommand;
+import io.mango.org.api.command.CreateOrgMemberAccountCommand;
 import io.mango.org.api.command.UpdateSysOrgCommand;
 import io.mango.org.api.command.UpdateOrgMemberCommand;
 import io.mango.org.api.enums.PostCode;
@@ -31,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -130,6 +133,53 @@ public class SysOrgService extends MangoCrudServiceImpl<SysOrgMapper, SysOrgEnti
             return List.of();
         }
         return relations.stream().map(this::toMemberVO).toList();
+    }
+
+    @Override
+    public List<Long> memberScope(Long orgId) {
+        SysOrgEntity root = requireEnabledOrg(orgId);
+        List<SysOrgEntity> orgs = list(new LambdaQueryWrapper<SysOrgEntity>()
+                .eq(SysOrgEntity::getOrgStatus, "1")
+                .orderByAsc(SysOrgEntity::getOrgSort)
+                .orderByAsc(SysOrgEntity::getId));
+        Map<Long, List<SysOrgEntity>> childrenByParentId = orgs.stream()
+                .collect(Collectors.groupingBy(org -> defaultParentId(org.getPid())));
+        List<Long> scope = new ArrayList<>();
+        ArrayDeque<Long> pending = new ArrayDeque<>();
+        pending.add(root.getId());
+        while (!pending.isEmpty()) {
+            Long currentId = pending.removeFirst();
+            scope.add(currentId);
+            childrenByParentId.getOrDefault(currentId, List.of()).stream()
+                    .map(SysOrgEntity::getId)
+                    .forEach(pending::addLast);
+        }
+        return scope;
+    }
+
+    @Override
+    public Long createMemberAccount(CreateOrgMemberAccountCommand command) {
+        Require.notNull(command, PostCode.VALIDATION_ERROR, "组织成员账号创建命令不能为空");
+        SysOrgEntity org = requireEnabledOrg(command.getOrgId());
+        Long tenantId = org.getTenantIdAsLong();
+        if (command.getPostId() != null) {
+            validatePost(tenantId, command.getPostId());
+        }
+        CreateTenantMemberInOrgCommand identityCommand = new CreateTenantMemberInOrgCommand();
+        identityCommand.setTenantId(tenantId);
+        identityCommand.setOrgId(org.getId());
+        identityCommand.setPostId(command.getPostId());
+        identityCommand.setUsername(command.getUsername());
+        identityCommand.setPassword(command.getPassword());
+        identityCommand.setNickname(command.getNickname());
+        identityCommand.setEmail(command.getEmail());
+        identityCommand.setPhone(command.getPhone());
+        identityCommand.setStatus(command.getStatus());
+        identityCommand.setRemark(command.getRemark());
+        identityCommand.setPrimaryFlag(command.getPrimaryFlag() == null || command.getPrimaryFlag());
+        identityCommand.setLeaderFlag(Boolean.TRUE.equals(command.getLeaderFlag()));
+        identityCommand.setOperatorUserId(MangoContextHolder.userId());
+        return tenantMemberProvider.createMemberInOrg(identityCommand);
     }
 
     @Override
@@ -315,6 +365,13 @@ public class SysOrgService extends MangoCrudServiceImpl<SysOrgMapper, SysOrgEnti
         Require.notNull(id, PostCode.VALIDATION_ERROR, "组织ID不能为空");
         SysOrgEntity org = getById(id);
         Require.notNull(org, PostCode.ORG_NOT_FOUND);
+        return org;
+    }
+
+    private SysOrgEntity requireEnabledOrg(Long id) {
+        SysOrgEntity org = requireOrg(id);
+        Require.isTrue(Objects.equals(org.getTenantId(), MangoContextHolder.tenantId()), PostCode.ORG_NOT_FOUND);
+        Require.isFalse("0".equals(org.getOrgStatus()), PostCode.ORG_NOT_FOUND);
         return org;
     }
 
