@@ -1,5 +1,7 @@
 # 菜单页面打不开排障
 
+> 2026-09-01 Issue #909：用户管理页改为默认显示全部成员，并支持按组织本级及下级筛选、清除组织选择、组织内新增或加入成员以及直接角色回显；不改变 `system/user/index` 页面 key、菜单树 API、菜单 Resource、角色菜单授权、租户应用绑定或页面注册协议。用户管理入口缺失或接口返回 403 时仍按本指南检查菜单 Resource 与角色授权；进入页面后的成员范围和角色列问题分别检查 `/org/member-scope`、`/identity/users/page` 和 `/authorization/roles/subjects/batch`。
+
 > 2026-08-28 Issue #851：`AUTH_MENU` 增量同步在变化模块中只写 canonical hash 发生变化的声明，依赖资源变化不再重放未变化菜单；同类型完整声明仅用于父子关系解析。菜单树 API、`component` key、页面注册、角色授权和本指南排障步骤不变。
 
 > 2026-08-25 AI 管理能力影响：新增的 `平台能力 → AI 管理` 菜单及模型、提示词、Skill 与工具、AI 服务子菜单由 `META-INF/mango/resources/ai-menu.json` 通过 Resource Registry 注册，页面 key 由 `@mango/ai/admin-pages` 提供。Realtime 短期票据只恢复 WebSocket/SSE 握手身份，不改变菜单树 API、`component` key 解析、角色菜单授权、租户应用绑定或既有菜单排障协议。AI 菜单缺失时应核对 `mango-ai-starter`、AI Resource 声明同步、角色授权和 `@mango/ai` registrar，不手工写授权表。
