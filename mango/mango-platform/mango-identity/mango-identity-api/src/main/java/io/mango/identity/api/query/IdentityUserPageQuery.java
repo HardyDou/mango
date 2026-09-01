@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Max;
+import java.util.List;
 
 /**
  * 机构成员分页查询条件。
@@ -61,4 +62,20 @@ public class IdentityUserPageQuery extends PageQuery {
     @Schema(description = "组织ID。传入后只查询该组织下的成员")
     @Positive(message = "组织ID必须大于0")
     private Long orgId;
+
+    @Schema(description = "组织ID集合。传入后查询任一组织下的成员，最多500个")
+    @Size(max = 500, message = "组织ID不能超过500个")
+    private List<@Positive(message = "组织ID必须大于0") Long> orgIds;
+
+    @Schema(description = "排除已加入该组织的成员")
+    @Positive(message = "排除组织ID必须大于0")
+    private Long excludeOrgId;
+
+    public List<Long> getOrgIds() {
+        return orgIds == null ? null : List.copyOf(orgIds);
+    }
+
+    public void setOrgIds(List<Long> orgIds) {
+        this.orgIds = orgIds == null ? null : List.copyOf(orgIds);
+    }
 }

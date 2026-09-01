@@ -1,6 +1,6 @@
 <!-- mango-page-baseline-exception all: 用户维护联合组织树筛选、角色分配、状态控制和凭据操作，不是单一标准列表与短表单弹框。 -->
 <template>
-  <div class="user-container">
+  <div class="user-container" data-page="user.management">
     <div class="user-page-layout">
       <aside class="org-filter-panel">
         <el-card class="layout-card">
@@ -9,21 +9,36 @@
             <el-button link type="primary" @click="loadOrgTree"> 刷新 </el-button>
           </div>
           <el-input v-model="orgKeyword" placeholder="请输入部门名称" clearable class="org-filter-search" />
+          <el-alert
+            v-if="orgLoadError"
+            title="部门组织加载失败"
+            type="error"
+            :closable="false"
+            show-icon
+            class="state-alert"
+          >
+            <el-button link type="primary" @click="loadOrgTree">重试</el-button>
+          </el-alert>
           <el-tree
             ref="orgTreeRef"
             v-loading="orgLoading"
             class="org-tree"
-            :data="orgTreeData"
+            :data="orgFilterTreeData"
             node-key="id"
             highlight-current
             default-expand-all
             :filter-node-method="filterOrgNode"
             :props="{ label: 'orgName', children: 'children' }"
             :expand-on-click-node="false"
+            :data-state="orgTreeState"
             @node-click="handleOrgClick"
           >
             <template #default="{ data }">
-              <span class="org-tree-node">
+              <span
+                class="org-tree-node"
+                :data-record-key="`org:${data.id}`"
+                :data-state="String(data.id) === String(selectedOrg?.id || ALL_MEMBERS_ID) ? 'selected' : 'idle'"
+              >
                 <span>{{ data.orgName }}</span>
                 <el-tag v-if="data.orgType" size="small" effect="plain">
                   {{ orgTypeLabel(data.orgType) }}
@@ -38,12 +53,16 @@
         <el-card class="layout-card">
           <div class="current-org-bar">
             <div>
-              <span class="current-org-title">{{ selectedOrg?.orgName || '全部成员' }}</span>
+              <span class="current-org-title" data-field="user.scope.name">
+                {{ selectedOrg?.orgName || '全部成员' }}
+              </span>
               <span class="current-org-subtitle">
-                {{ selectedOrg ? '当前仅显示该组织下成员，可在此设置部门主管' : '请选择左侧部门查看部门成员' }}
+                {{ selectedOrg ? '显示该组织本级及全部下级组织成员' : '显示当前机构全部成员' }}
               </span>
             </div>
-            <el-button v-if="selectedOrg" @click="clearOrgFilter"> 查看全部 </el-button>
+            <el-button v-if="selectedOrg" data-action="user.org.clear" @click="clearOrgFilter">
+              清除部门选择
+            </el-button>
           </div>
 
           <el-form :inline="true" class="search-form">
@@ -74,7 +93,7 @@
 
           <div class="action-toolbar">
             <div class="toolbar-left">
-              <el-button type="primary" @click="handleAdd"> 新增成员 </el-button>
+              <el-button type="primary" data-action="user.create" @click="handleAdd"> 新增成员 </el-button>
               <el-button type="danger" :disabled="selectedUsers.length === 0" @click="handleBatchDelete">
                 批量删除
               </el-button>
@@ -85,9 +104,22 @@
                   </el-button>
                 </span>
               </el-tooltip>
-              <el-button v-if="selectedOrg" @click="handleAddOrgMember"> 加入当前部门 </el-button>
+              <el-button v-if="selectedOrg" data-action="user.org.add-existing" @click="handleAddOrgMember">
+                添加已有成员
+              </el-button>
             </div>
           </div>
+
+          <el-alert
+            v-if="listLoadError"
+            title="成员列表加载失败"
+            type="error"
+            :closable="false"
+            show-icon
+            class="state-alert"
+          >
+            <el-button link type="primary" @click="loadData">重试</el-button>
+          </el-alert>
 
           <el-table
             v-loading="loading"
@@ -95,22 +127,37 @@
             row-key="userId"
             stripe
             class="user-table"
+            :data-state="listState"
             @selection-change="handleSelectionChange"
           >
+            <template #empty>
+              <el-empty :description="listLoadError ? '成员列表加载失败，请重试' : '暂无成员'" :image-size="72" />
+            </template>
             <el-table-column type="selection" width="54" :selectable="isRowSelectable" />
-            <el-table-column prop="username" label="用户名" min-width="140" />
+            <el-table-column prop="username" label="用户名" min-width="140">
+              <template #default="{ row }">
+                <span :data-record-key="`user:${row.username}`">{{ row.username }}</span>
+              </template>
+            </el-table-column>
             <el-table-column prop="nickname" label="姓名" min-width="140" />
-            <el-table-column prop="realm" label="登录域" width="120">
-              <template #default="{ row }">
-                <DictTag dict-code="auth_realm" :value="row.realm" size="small" />
-              </template>
-            </el-table-column>
-            <el-table-column prop="actorType" label="操作者类型" width="140">
-              <template #default="{ row }">
-                <DictTag dict-code="auth_actor_type" :value="row.actorType" size="small" />
-              </template>
-            </el-table-column>
             <el-table-column prop="phone" label="手机号" min-width="130" />
+            <el-table-column label="所属部门" min-width="190" show-overflow-tooltip>
+              <template #default="{ row }">
+                {{ orgPathLabel(row.orgId || row.primaryOrgId) || '-' }}
+              </template>
+            </el-table-column>
+            <el-table-column label="已分配角色" min-width="180">
+              <template #default="{ row }">
+                <div :data-record-key="`user-roles:${row.username}`">
+                  <div v-if="row.roleNames?.length" class="role-tags">
+                    <el-tag v-for="roleName in row.roleNames" :key="roleName" size="small" effect="plain">
+                      {{ roleName }}
+                    </el-tag>
+                  </div>
+                  <span v-else>-</span>
+                </div>
+              </template>
+            </el-table-column>
             <el-table-column v-if="selectedOrg" label="部门岗位" min-width="150">
               <template #default="{ row }">
                 <el-tag v-if="row.postName" effect="plain">
@@ -167,55 +214,59 @@
             </el-table-column>
             <el-table-column label="操作" :width="selectedOrg ? 700 : 570" fixed="right">
               <template #default="{ row }">
-                <el-button v-if="selectedOrg" link type="primary" size="small" @click="handleEditOrgPost(row)">
-                  岗位
-                </el-button>
-                <el-button
-                  v-if="selectedOrg && !row.orgLeaderFlag"
-                  link
-                  type="success"
-                  size="small"
-                  @click="handleSetLeader(row)"
-                >
-                  设为主管
-                </el-button>
-                <el-button
-                  v-if="selectedOrg && row.orgLeaderFlag"
-                  link
-                  type="warning"
-                  size="small"
-                  @click="handleUnsetLeader(row)"
-                >
-                  取消主管
-                </el-button>
-                <el-button
-                  v-if="selectedOrg && !row.primaryOrgFlag"
-                  link
-                  type="primary"
-                  size="small"
-                  @click="handleSetPrimaryOrg(row)"
-                >
-                  设主部门
-                </el-button>
-                <el-button link type="primary" size="small" @click="handleAssignRoles(row)"> 分配角色 </el-button>
-                <el-button link type="primary" size="small" @click="handleExternalIdentity(row)"> 企微身份 </el-button>
-                <el-button link type="primary" size="small" @click="handleEdit(row)"> 编辑 </el-button>
-                <el-button link type="warning" size="small" @click="handleResetPassword(row)"> 重置密码 </el-button>
-                <el-button link type="warning" size="small" @click="handleRequirePasswordReset(row)">
-                  要求改密
-                </el-button>
-                <el-button link type="success" size="small" :disabled="!isLocked(row)" @click="handleUnlock(row)">
-                  解锁
-                </el-button>
-                <el-button
-                  link
-                  :type="row.status === 1 ? 'warning' : 'success'"
-                  size="small"
-                  @click="handleStatus(row)"
-                >
-                  {{ row.status === 1 ? '禁用' : '启用' }}
-                </el-button>
-                <el-button link type="danger" size="small" @click="handleDelete(row)"> 删除 </el-button>
+                <div :data-record-key="`user-actions:${row.username}`">
+                  <el-button v-if="selectedOrg" link type="primary" size="small" @click="handleEditOrgPost(row)">
+                    岗位
+                  </el-button>
+                  <el-button
+                    v-if="selectedOrg && !row.orgLeaderFlag"
+                    link
+                    type="success"
+                    size="small"
+                    @click="handleSetLeader(row)"
+                  >
+                    设为主管
+                  </el-button>
+                  <el-button
+                    v-if="selectedOrg && row.orgLeaderFlag"
+                    link
+                    type="warning"
+                    size="small"
+                    @click="handleUnsetLeader(row)"
+                  >
+                    取消主管
+                  </el-button>
+                  <el-button
+                    v-if="selectedOrg && !row.primaryOrgFlag"
+                    link
+                    type="primary"
+                    size="small"
+                    @click="handleSetPrimaryOrg(row)"
+                  >
+                    设主部门
+                  </el-button>
+                  <el-button link type="primary" size="small" @click="handleAssignRoles(row)"> 分配角色 </el-button>
+                  <el-button link type="primary" size="small" @click="handleExternalIdentity(row)">
+                    企微身份
+                  </el-button>
+                  <el-button link type="primary" size="small" @click="handleEdit(row)"> 编辑 </el-button>
+                  <el-button link type="warning" size="small" @click="handleResetPassword(row)"> 重置密码 </el-button>
+                  <el-button link type="warning" size="small" @click="handleRequirePasswordReset(row)">
+                    要求改密
+                  </el-button>
+                  <el-button link type="success" size="small" :disabled="!isLocked(row)" @click="handleUnlock(row)">
+                    解锁
+                  </el-button>
+                  <el-button
+                    link
+                    :type="row.status === 1 ? 'warning' : 'success'"
+                    size="small"
+                    @click="handleStatus(row)"
+                  >
+                    {{ row.status === 1 ? '禁用' : '启用' }}
+                  </el-button>
+                  <el-button link type="danger" size="small" @click="handleDelete(row)"> 删除 </el-button>
+                </div>
               </template>
             </el-table-column>
           </el-table>
@@ -231,7 +282,7 @@
     </div>
 
     <el-dialog v-model="dialogVisible" :title="form.userId ? '编辑成员' : '新增成员'" width="620px">
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="110px">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="110px" data-surface="user.form">
         <el-form-item label="用户名" prop="username">
           <el-input v-model="form.username" :disabled="!!form.userId" placeholder="请输入用户名" />
         </el-form-item>
@@ -239,20 +290,24 @@
           <el-input v-model="form.password" type="password" show-password placeholder="不填默认 Mango@123456" />
           <PasswordPolicyHint v-if="form.password" :password="form.password" />
         </el-form-item>
-        <el-form-item label="登录域" prop="realm">
-          <el-select v-model="form.realm" :disabled="!!form.userId" class="form-select">
-            <el-option v-for="item in realmOptions" :key="item.value" :label="item.label" :value="String(item.value)" />
-          </el-select>
+        <el-form-item label="所属机构">
+          <el-input :model-value="institutionName" data-field="user.institution" disabled />
         </el-form-item>
-        <el-form-item label="操作者类型" prop="actorType">
-          <el-select v-model="form.actorType" :disabled="!!form.userId" class="form-select">
-            <el-option
-              v-for="item in actorTypeOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="String(item.value)"
-            />
-          </el-select>
+        <el-form-item label="所属部门" prop="orgId">
+          <el-tree-select
+            v-model="form.orgId"
+            :data="orgTreeData"
+            :props="{ value: 'id', label: 'orgName', children: 'children' }"
+            node-key="id"
+            check-strictly
+            default-expand-all
+            filterable
+            :disabled="!!form.userId"
+            placeholder="请选择所属部门"
+            class="form-select"
+            data-field="user.org"
+          />
+          <div class="org-path-hint" data-field="user.org.path">{{ formOrgPath || '请选择具体组织' }}</div>
         </el-form-item>
         <el-form-item label="姓名" prop="nickname">
           <el-input v-model="form.nickname" placeholder="请输入姓名" />
@@ -262,12 +317,6 @@
         </el-form-item>
         <el-form-item label="邮箱" prop="email">
           <el-input v-model="form.email" placeholder="请输入邮箱" />
-        </el-form-item>
-        <el-form-item label="归属主体类型" prop="partyType">
-          <el-input v-model="form.partyType" placeholder="例如 INTERNAL_ORG" />
-        </el-form-item>
-        <el-form-item label="归属主体ID" prop="partyId">
-          <el-input v-model="form.partyId" class="form-select" placeholder="请输入归属主体ID" />
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="form.status">
@@ -469,19 +518,27 @@
 
     <el-dialog
       v-model="orgMemberDialogVisible"
-      :title="orgMemberForm.relationId ? '调整部门岗位' : '加入当前部门'"
+      :title="orgMemberForm.relationId ? '调整部门岗位' : '添加已有成员'"
       width="520px"
     >
-      <el-form ref="orgMemberFormRef" :model="orgMemberForm" :rules="orgMemberRules" label-width="100px">
+      <el-form
+        ref="orgMemberFormRef"
+        :model="orgMemberForm"
+        :rules="orgMemberRules"
+        label-width="100px"
+        data-surface="user.org-member.form"
+      >
         <el-form-item v-if="!orgMemberForm.relationId" label="成员" prop="memberId">
           <el-select
             v-model="orgMemberForm.memberId"
             filterable
             remote
             reserve-keyword
-            placeholder="请输入用户名或姓名"
+            placeholder="请输入用户名、姓名、手机号或邮箱"
             :remote-method="searchCandidateUsers"
             :loading="candidateLoading"
+            :data-state="candidateState"
+            :no-data-text="candidateLoadError ? '候选成员加载失败，请重新输入关键字' : '暂无可添加成员'"
             class="form-select"
           >
             <el-option
@@ -518,7 +575,7 @@
 </template>
 
 <script setup lang="ts" name="SystemUser">
-import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules, type TreeInstance } from 'element-plus';
 import type { ApiId } from '@mango/api-schema';
 import { useDict } from '@mango/common/hooks/useDict';
@@ -532,14 +589,12 @@ import {
   isPasswordPolicyPassed,
 } from '@mango/common';
 import { Session } from '@mango/common/utils/storage';
-import { orgApi, type OrgMemberVO, type SysOrg } from '../../api/org';
+import { orgApi, type SysOrg } from '../../api/org';
 import { postApi, type PostVO } from '../../api/post';
 import { roleApi, type RoleVO } from '../../api/role';
 import { userApi, type ExternalIdentityBindingVO, type IdentityUserVO, type WecomUserSyncResult } from '../../api/user';
 
 const { options: statusOptions } = useDict('sys_normal_disable');
-const { options: realmOptions } = useDict('auth_realm');
-const { options: actorTypeOptions } = useDict('auth_actor_type');
 
 const loading = ref(false);
 const submitLoading = ref(false);
@@ -551,7 +606,10 @@ const wecomSyncDialogVisible = ref(false);
 const externalIdentityDialogVisible = ref(false);
 const resetPasswordDialogVisible = ref(false);
 const orgLoading = ref(false);
+const orgLoadError = ref(false);
 const candidateLoading = ref(false);
+const candidateLoadError = ref(false);
+const listLoadError = ref(false);
 const orgMemberSubmitLoading = ref(false);
 const wecomSyncLoading = ref(false);
 const externalIdentityLoading = ref(false);
@@ -575,6 +633,17 @@ const selectedOrg = ref<SysOrg>();
 const orgKeyword = ref('');
 const wecomSyncUseChannelConfig = ref(true);
 const wecomSyncResult = ref<WecomUserSyncResult>();
+const ALL_MEMBERS_ID = '__all_members__';
+const allMembersNode: SysOrg = {
+  id: ALL_MEMBERS_ID,
+  orgName: '全部成员',
+  pid: '0',
+};
+const orgFilterTreeData = computed(() => [allMembersNode, ...orgTreeData.value]);
+let loadSequence = 0;
+let orgTreeSequence = 0;
+let orgScopeSequence = 0;
+let candidateSequence = 0;
 
 const query = reactive({
   pageNum: 1,
@@ -583,18 +652,17 @@ const query = reactive({
   nickname: '',
   phone: '',
   status: undefined as number | undefined,
-  orgId: undefined as ApiId | undefined,
+  orgIds: undefined as ApiId[] | undefined,
 });
 
-const form = reactive<IdentityUserVO>({
+type UserForm = IdentityUserVO & { orgId?: ApiId };
+
+const form = reactive<UserForm>({
   userId: undefined,
   username: '',
   password: '',
   nickname: '',
-  realm: 'INTERNAL',
-  actorType: 'INTERNAL_USER',
-  partyType: 'INTERNAL_ORG',
-  partyId: undefined,
+  orgId: undefined,
   email: '',
   phone: '',
   status: 1,
@@ -638,6 +706,23 @@ const passwordPolicyMessage = getPasswordPolicyMessage(defaultPasswordPolicy);
 const canSubmitResetPassword = computed(() =>
   isPasswordPolicyPassed(resetPasswordForm.password, defaultPasswordPolicy),
 );
+const institutionName = computed(() => orgTreeData.value[0]?.orgName || '-');
+const formOrgPath = computed(() => orgPathLabel(form.orgId));
+const listState = computed(() => {
+  if (loading.value) return 'loading';
+  if (listLoadError.value) return 'error';
+  return tableData.value.length ? 'ready' : 'empty';
+});
+const orgTreeState = computed(() => {
+  if (orgLoading.value) return 'loading';
+  if (orgLoadError.value) return 'error';
+  return orgTreeData.value.length ? 'ready' : 'empty';
+});
+const candidateState = computed(() => {
+  if (candidateLoading.value) return 'loading';
+  if (candidateLoadError.value) return 'error';
+  return candidateUsers.value.length ? 'ready' : 'empty';
+});
 
 const rules: FormRules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
@@ -653,8 +738,18 @@ const rules: FormRules = {
       trigger: 'blur',
     },
   ],
-  realm: [{ required: true, message: '请选择登录域', trigger: 'change' }],
-  actorType: [{ required: true, message: '请选择操作者类型', trigger: 'change' }],
+  orgId: [
+    {
+      validator: (_rule, value, callback) => {
+        if (form.userId || value) {
+          callback();
+          return;
+        }
+        callback(new Error('请选择所属部门'));
+      },
+      trigger: 'change',
+    },
+  ],
   status: [{ required: true, message: '请选择状态', trigger: 'change' }],
 };
 
@@ -679,23 +774,52 @@ const resetPasswordRules: FormRules = {
 };
 
 async function loadData() {
+  const sequence = ++loadSequence;
   loading.value = true;
+  listLoadError.value = false;
   try {
     const data = await userApi.page(query);
-    tableData.value = data.list;
+    const memberIds = data.list.map((item) => item.memberId).filter(Boolean) as ApiId[];
+    const summaries = memberIds.length ? await roleApi.getSubjectRolesBatch(memberIds) : [];
+    if (sequence !== loadSequence) return;
+    const rolesByMemberId = new Map(summaries.map((item) => [String(item.subjectId), item.roles]));
+    tableData.value = data.list.map((item) => ({
+      ...item,
+      roleNames: item.memberId ? rolesByMemberId.get(String(item.memberId))?.map((role) => role.roleName) || [] : [],
+    }));
     total.value = data.total;
     selectedUsers.value = [];
+  } catch {
+    if (sequence === loadSequence) {
+      tableData.value = [];
+      total.value = 0;
+      selectedUsers.value = [];
+      listLoadError.value = true;
+      ElMessage.error('成员列表加载失败，请重试');
+    }
   } finally {
-    loading.value = false;
+    if (sequence === loadSequence) loading.value = false;
   }
 }
 
 async function loadOrgTree() {
+  const sequence = ++orgTreeSequence;
   orgLoading.value = true;
+  orgLoadError.value = false;
   try {
-    orgTreeData.value = await orgApi.tree({ parentId: '0', includeDisabled: true });
+    const data = await orgApi.tree({ parentId: '0' });
+    if (sequence !== orgTreeSequence) return;
+    orgTreeData.value = data;
+    await nextTick();
+    orgTreeRef.value?.setCurrentKey(selectedOrg.value?.id || ALL_MEMBERS_ID);
+  } catch {
+    if (sequence === orgTreeSequence) {
+      orgTreeData.value = [];
+      orgLoadError.value = true;
+      ElMessage.error('部门组织加载失败，请重试');
+    }
   } finally {
-    orgLoading.value = false;
+    if (sequence === orgTreeSequence) orgLoading.value = false;
   }
 }
 
@@ -709,32 +833,69 @@ function handleSearch() {
   loadData();
 }
 
-function handleReset() {
+async function handleReset() {
   query.pageNum = 1;
   query.username = '';
   query.nickname = '';
   query.phone = '';
   query.status = undefined;
-  query.orgId = selectedOrg.value?.id;
-  loadData();
-}
-
-async function handleOrgClick(row: SysOrg) {
-  selectedOrg.value = row;
-  query.orgId = row.id;
-  query.pageNum = 1;
   await loadData();
 }
 
+async function handleOrgClick(row: SysOrg) {
+  if (row.id === ALL_MEMBERS_ID) {
+    await clearOrgFilter();
+    return;
+  }
+  const sequence = ++orgScopeSequence;
+  selectedOrg.value = row;
+  loading.value = true;
+  listLoadError.value = false;
+  try {
+    const orgIds = await orgApi.memberScope(row.id);
+    if (sequence !== orgScopeSequence) return;
+    query.orgIds = orgIds;
+    query.pageNum = 1;
+    await loadData();
+  } catch {
+    if (sequence === orgScopeSequence) {
+      tableData.value = [];
+      total.value = 0;
+      listLoadError.value = true;
+      loading.value = false;
+      ElMessage.error('部门成员范围加载失败，请重试');
+    }
+  }
+}
+
 async function clearOrgFilter() {
+  orgScopeSequence += 1;
   selectedOrg.value = undefined;
-  query.orgId = undefined;
+  query.orgIds = undefined;
   query.pageNum = 1;
+  orgTreeRef.value?.setCurrentKey(ALL_MEMBERS_ID);
   await loadData();
 }
 
 function filterOrgNode(value: string, data: SysOrg) {
+  if (data.id === ALL_MEMBERS_ID) return true;
   return !value || data.orgName?.includes(value) || data.orgCode?.includes(value);
+}
+
+function orgPathLabel(orgId?: ApiId) {
+  if (!orgId) return '';
+  const path = findOrgPath(orgTreeData.value, orgId);
+  return path.map((org) => org.orgName).join(' / ');
+}
+
+function findOrgPath(nodes: SysOrg[], orgId: ApiId, ancestors: SysOrg[] = []): SysOrg[] {
+  for (const node of nodes) {
+    const path = [...ancestors, node];
+    if (String(node.id) === String(orgId)) return path;
+    const childPath = findOrgPath(node.children || [], orgId, path);
+    if (childPath.length) return childPath;
+  }
+  return [];
 }
 
 function orgTypeLabel(type?: number) {
@@ -758,16 +919,12 @@ function lockTip(row: IdentityUserVO) {
 }
 
 function resetForm() {
-  const userInfo = Session.get('userInfo') || {};
   Object.assign(form, {
     userId: undefined,
     username: '',
     password: '',
     nickname: '',
-    realm: userInfo.realm || 'INTERNAL',
-    actorType: userInfo.actorType || 'INTERNAL_USER',
-    partyType: userInfo.partyType || 'INTERNAL_ORG',
-    partyId: userInfo.partyId,
+    orgId: selectedOrg.value?.id,
     email: '',
     phone: '',
     avatar: '',
@@ -914,7 +1071,7 @@ function handleEdit(row: IdentityUserVO) {
     ...row,
     password: '',
     status: row.status ?? 1,
-    partyId: row.partyId,
+    orgId: row.orgId || row.primaryOrgId,
   });
   formRef.value?.clearValidate();
   dialogVisible.value = true;
@@ -929,7 +1086,18 @@ async function handleSubmit() {
       await userApi.update(form);
       ElMessage.success('修改成功');
     } else {
-      await userApi.create(form);
+      await orgApi.createMemberAccount({
+        orgId: form.orgId!,
+        username: form.username,
+        password: form.password,
+        nickname: form.nickname,
+        phone: form.phone,
+        email: form.email,
+        status: form.status,
+        remark: form.remark,
+        primaryFlag: true,
+        leaderFlag: false,
+      });
       ElMessage.success('新增成功');
     }
     dialogVisible.value = false;
@@ -1082,6 +1250,7 @@ async function handleAssignSubmit() {
     });
     ElMessage.success('分配成功');
     assignDialogVisible.value = false;
+    await loadData();
   } finally {
     assignSubmitLoading.value = false;
   }
@@ -1100,6 +1269,7 @@ async function handleAddOrgMember() {
   candidateUsers.value = [];
   orgMemberFormRef.value?.clearValidate();
   orgMemberDialogVisible.value = true;
+  await searchCandidateUsers('');
 }
 
 async function handleEditOrgPost(row: IdentityUserVO) {
@@ -1187,18 +1357,28 @@ async function handleOrgMemberSubmit() {
 }
 
 async function searchCandidateUsers(keyword: string) {
+  if (!selectedOrg.value) return;
+  const sequence = ++candidateSequence;
+  const targetOrgId = selectedOrg.value.id;
   candidateLoading.value = true;
+  candidateLoadError.value = false;
   try {
     const data = await userApi.page({
       pageNum: 1,
       pageSize: 50,
-      username: keyword,
-      nickname: keyword,
+      keyword: keyword.trim() || undefined,
+      excludeOrgId: targetOrgId,
     });
-    const existingMemberIds = new Set(tableData.value.map((item) => item.memberId).filter(Boolean));
-    candidateUsers.value = data.list.filter((item) => item.memberId && !existingMemberIds.has(item.memberId));
+    if (sequence !== candidateSequence || String(selectedOrg.value?.id) !== String(targetOrgId)) return;
+    candidateUsers.value = data.list.filter((item) => item.memberId);
+  } catch {
+    if (sequence === candidateSequence) {
+      candidateUsers.value = [];
+      candidateLoadError.value = true;
+      ElMessage.error('候选成员加载失败，请重试');
+    }
   } finally {
-    candidateLoading.value = false;
+    if (sequence === candidateSequence) candidateLoading.value = false;
   }
 }
 
@@ -1271,6 +1451,10 @@ onMounted(async () => {
 }
 
 .org-filter-search {
+  margin-bottom: 12px;
+}
+
+.state-alert {
   margin-bottom: 12px;
 }
 
@@ -1357,6 +1541,20 @@ onMounted(async () => {
 
 .form-select {
   width: 100%;
+}
+
+.org-path-hint {
+  width: 100%;
+  margin-top: 4px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.role-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 
 .wecom-sync-form {

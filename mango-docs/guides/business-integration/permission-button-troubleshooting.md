@@ -1,5 +1,7 @@
 # 按钮权限不显示排障
 
+> 2026-09-01 Issue #909：用户管理新增组织范围、组织内开户、已有成员搜索和直接角色批量回显，不新增或修改按钮 `permissionCode`、`v-auth`、登录态权限集合、角色菜单授权或接口鉴权规则。角色列展示的是当前租户和管理应用内对成员直接分配的有效角色，不等于按钮权限集合；按钮缺失或操作返回 403 时仍按本指南核对菜单授权、权限码和目标接口，角色列加载问题则检查 `/authorization/roles/subjects/batch`。
+
 > 2026-08-28 Issue #851：`API_RESOURCE` 增量同步在变化模块中只写 canonical hash 发生变化的声明，同类型完整声明只作关系解析上下文，不会由部分变化批次清理未变化资源。权限 API、`permissionCode`、角色授权、`v-auth`、接口鉴权和本指南排障步骤不变。
 
 > 2026-08-25 AI 管理能力影响：AI 管理页面与统一服务入口使用 `ai:provider:*`、`ai:model:*`、`ai:prompt:*`、`ai:skill:*`、`ai:tool:*`、`ai:service:*` 权限声明，仍由现有 Resource、角色授权、登录态权限集合和接口 `@ApiAccess` 链路判定。Realtime 短期票据只作用于可信登录态的 WebSocket/SSE 握手，不新增匿名权限或授权 fallback，也不改变 `permissionCode`、`v-auth` 和既有按钮排障协议。AI 操作不可见或返回 403 时应核对对应 AI 权限和角色授权，不放宽 Access/Authorization 校验。

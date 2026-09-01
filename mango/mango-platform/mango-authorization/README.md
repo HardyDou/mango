@@ -20,6 +20,7 @@
 | 菜单管理 | 保存目录、菜单、按钮权限、页面 key、路由、运行类型和可见状态 |
 | 菜单资源 | 消费 Resource Registry 的 `AUTH_MENU` 声明，批量注册模块菜单、按钮权限、页面 key、套餐绑定和默认角色授权 |
 | 角色授权 | 管理角色、成员角色绑定、角色菜单授权 |
+| 成员直接角色摘要 | 按当前租户、当前应用批量返回最多 200 个租户成员的启用直接角色，不计算继承角色 |
 | 内置默认角色 | 正式资源初始化 `ROLE_LOGIN`、`ROLE_ANONYMOUS`；机构初始化时自动创建并继承平台默认菜单授权 |
 | 数据权限 | 按角色配置资源级数据范围，解析当前成员生效范围 |
 | 用户菜单 | 按当前成员授权快照返回可见菜单树 |
@@ -272,6 +273,7 @@ Mango API 资源按访问模式分为三类：
 | POST/PUT/DELETE | `/authorization/menus` | 创建、更新、删除菜单 |
 | GET/POST/PUT/DELETE | `/authorization/roles` | 角色管理 |
 | POST | `/authorization/roles/subjects` | 给主体分配角色 |
+| POST | `/authorization/roles/subjects/batch` | 按当前租户和应用批量查询 `TENANT_MEMBER` 的启用直接角色摘要，需要 `system:user:list` |
 | POST | `/authorization/roles/menus` | 给角色分配菜单 |
 | GET/POST/DELETE | `/authorization/data-scopes/roles` | 查询、保存、删除角色数据权限 |
 | GET | `/authorization/data-scopes/effective` | 查询当前成员在资源上的生效数据权限 |

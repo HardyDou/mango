@@ -7,6 +7,7 @@ import io.mango.infra.persistence.api.crud.DeleteCommand;
 import io.mango.org.api.SysOrgApi;
 import io.mango.org.api.command.AddOrgMemberCommand;
 import io.mango.org.api.command.CreateSysOrgCommand;
+import io.mango.org.api.command.CreateOrgMemberAccountCommand;
 import io.mango.org.api.command.UpdateSysOrgCommand;
 import io.mango.org.api.command.UpdateOrgMemberCommand;
 import io.mango.org.api.query.SysOrgTreeQuery;
@@ -106,6 +107,24 @@ public class SysOrgController implements SysOrgApi {
             @Parameter(description = "组织ID", required = true)
             @RequestParam("orgId") Long orgId) {
         return R.ok(orgService.members(orgId));
+    }
+
+    @Override
+    @GetMapping("/member-scope")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:user:list")
+    @Operation(summary = "获取组织成员范围", description = "返回当前租户指定启用组织及全部启用下级组织ID")
+    public R<List<Long>> memberScope(
+            @Parameter(description = "组织ID", required = true)
+            @RequestParam("orgId") Long orgId) {
+        return R.ok(orgService.memberScope(orgId));
+    }
+
+    @Override
+    @PostMapping("/member-accounts")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:user:add")
+    @Operation(summary = "在组织内新增成员账号", description = "校验组织后原子创建账号、租户成员和组织关系")
+    public R<Long> createMemberAccount(@RequestBody CreateOrgMemberAccountCommand command) {
+        return R.ok(orgService.createMemberAccount(command));
     }
 
     @Override

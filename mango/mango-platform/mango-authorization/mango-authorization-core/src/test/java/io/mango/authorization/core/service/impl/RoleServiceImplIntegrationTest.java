@@ -167,6 +167,29 @@ class RoleServiceImplIntegrationTest {
         assertThat(roleMenuIds()).isEmpty();
     }
 
+    @Test
+    @DisplayName("批量角色摘要只返回当前租户当前应用的启用直接角色")
+    void getSubjectRolesBatchShouldIsolateTenantAppStatusAndSubjectType() {
+        seedRole(10L, 1L, "internal-admin", "ROLE_ALLOWED", 1);
+        seedRole(20L, 1L, "other-app", "ROLE_OTHER_APP", 1);
+        seedRole(30L, 2L, "internal-admin", "ROLE_OTHER_TENANT", 1);
+        seedRole(40L, 1L, "internal-admin", "ROLE_DISABLED", 0);
+        seedSubjectRole(1L, 1L, 1001L, "TENANT_MEMBER", "internal-admin", 10L);
+        seedSubjectRole(2L, 1L, 1001L, "TENANT_MEMBER", "other-app", 20L);
+        seedSubjectRole(3L, 2L, 1001L, "TENANT_MEMBER", "internal-admin", 30L);
+        seedSubjectRole(4L, 1L, 1001L, "TENANT_MEMBER", "internal-admin", 40L);
+        seedSubjectRole(5L, 1L, 1002L, "IDENTITY_USER", "internal-admin", 10L);
+
+        var summaries = service.getSubjectRolesBatch(List.of(1001L, 1002L));
+
+        assertThat(summaries).hasSize(2);
+        assertThat(summaries.get(0).getSubjectId()).isEqualTo(1001L);
+        assertThat(summaries.get(0).getRoles()).singleElement()
+                .satisfies(role -> assertThat(role.getRoleCode()).isEqualTo("ROLE_ALLOWED"));
+        assertThat(summaries.get(1).getSubjectId()).isEqualTo(1002L);
+        assertThat(summaries.get(1).getRoles()).isEmpty();
+    }
+
     private void resetSchema() {
         jdbcTemplate.execute("drop table if exists authorization_subject_role");
         jdbcTemplate.execute("drop table if exists authorization_role_menu");
@@ -272,21 +295,30 @@ class RoleServiceImplIntegrationTest {
     }
 
     private void seedRole(Long roleId, Long tenantId, String roleCode) {
+        seedRole(roleId, tenantId, "internal-admin", roleCode, 1);
+    }
+
+    private void seedRole(Long roleId, Long tenantId, String appCode, String roleCode, Integer status) {
         jdbcTemplate.update("""
                         insert into authorization_role
-                        (id, tenant_id, app_code, realm, actor_type, role_code, role_name)
-                        values (?, ?, 'internal-admin', 'INTERNAL', 'INTERNAL_USER', ?, ?)
+                        (id, tenant_id, app_code, realm, actor_type, role_code, role_name, status)
+                        values (?, ?, ?, 'INTERNAL', 'INTERNAL_USER', ?, ?, ?)
                         """,
-                roleId, tenantId, roleCode, roleCode);
+                roleId, tenantId, appCode, roleCode, roleCode, status);
     }
 
     private void seedSubjectRole(Long id, Long tenantId, Long subjectId, Long roleId) {
+        seedSubjectRole(id, tenantId, subjectId, "TENANT_MEMBER", "internal-admin", roleId);
+    }
+
+    private void seedSubjectRole(Long id, Long tenantId, Long subjectId, String subjectType,
+                                 String appCode, Long roleId) {
         jdbcTemplate.update("""
                         insert into authorization_subject_role
                         (id, tenant_id, subject_id, subject_type, app_code, realm, actor_type, party_type, party_id, role_id)
-                        values (?, ?, ?, 'TENANT_MEMBER', 'internal-admin', 'INTERNAL', 'INTERNAL_USER', 'INTERNAL_ORG', 1, ?)
+                        values (?, ?, ?, ?, ?, 'INTERNAL', 'INTERNAL_USER', 'INTERNAL_ORG', 1, ?)
                         """,
-                id, tenantId, subjectId, roleId);
+                id, tenantId, subjectId, subjectType, appCode, roleId);
     }
 
     private void seedRoleMenu(Long id, Long tenantId, Long roleId, Long menuId) {

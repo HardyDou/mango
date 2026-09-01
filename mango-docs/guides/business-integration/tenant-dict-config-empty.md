@@ -1,5 +1,7 @@
 # 租户字典配置为空排障
 
+> 2026-09-01 Issue #909：用户管理按当前租户查询全部成员或所选组织本级及下级成员，并在组织内新增账号或添加已有租户成员；不新增 migration，不修改租户、字典、系统配置或 Resource 初始化数据，也不改变这些数据的查询 API 和隔离边界。成员列表为空时先区分“全部成员”和组织筛选范围，并检查 `/org/member-scope`、`/identity/users/page` 的 `orgIds`/`excludeOrgId` 以及实际成员组织关系；底层租户基础数据为空仍按本指南检查 Bootstrap、Resource 和租户上下文。
+
 > 2026-08-28 Issue #851：Resource 增量同步不改变租户基础数据的公开 API、权限或隔离边界。当前 `SYSTEM_CONFIG` 会比较目标行 `updated_at` 与 Registry `last_sync_time`；两者不一致时视为后台已修改并保留目标值，不推进该 Resource 的 hash 或同步时间。其它 Resource 类型只有 Owner Handler 明确实现受管状态判断后才具备同类退避语义。
 
 > 日期范围查询兼容：系统登录日志和操作日志的日期-only 开始/结束值会分别按当天 `00:00:00` 和 `23:59:59` 查询；不改变租户、权限或数据初始化边界。

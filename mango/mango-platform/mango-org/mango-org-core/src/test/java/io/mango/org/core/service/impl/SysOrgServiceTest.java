@@ -3,6 +3,10 @@ package io.mango.org.core.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.mango.common.exception.BizException;
 import io.mango.identity.api.TenantMemberProvider;
+import io.mango.identity.api.command.CreateTenantMemberInOrgCommand;
+import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextSnapshot;
+import io.mango.org.api.command.CreateOrgMemberAccountCommand;
 import io.mango.org.api.query.SysOrgTreeQuery;
 import io.mango.org.api.vo.SysOrgVO;
 import io.mango.org.core.entity.SysOrgEntity;
@@ -10,6 +14,7 @@ import io.mango.org.core.mapper.PostMapper;
 import io.mango.org.core.mapper.SysOrgMapper;
 import io.mango.org.core.service.ISysOrgService;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -20,7 +25,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import org.mockito.ArgumentCaptor;
 
 /**
  * 组织业务服务单元测试。
@@ -43,6 +50,13 @@ class SysOrgServiceTest {
         tenantMemberProvider = mock(TenantMemberProvider.class);
         sysOrgService = new SysOrgService(postMapper, tenantMemberProvider);
         ReflectionTestUtils.setField(sysOrgService, "baseMapper", orgMapper);
+        MangoContextHolder.set(MangoContextSnapshot.empty().withSecurity(
+                9001L, "1", "admin", "INTERNAL", "INTERNAL_USER", "INTERNAL_ORG", 1L, "internal-admin"));
+    }
+
+    @AfterEach
+    void tearDown() {
+        MangoContextHolder.clear();
     }
 
     @Test
@@ -124,6 +138,59 @@ class SysOrgServiceTest {
     @Test
     void implementsTypedServiceContract() {
         assertThat(sysOrgService).isInstanceOf(ISysOrgService.class);
+    }
+
+    @Test
+    void memberScopeIncludesSelectedOrganizationAndEnabledDescendants() {
+        SysOrgEntity root = org(1L, "集团", 0L, 1);
+        SysOrgEntity company = org(2L, "公司", 1L, 2);
+        SysOrgEntity department = org(3L, "部门", 2L, 3);
+        when(orgMapper.selectById(1L)).thenReturn(root);
+        when(orgMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(List.of(root, company, department));
+
+        assertThat(sysOrgService.memberScope(1L)).containsExactly(1L, 2L, 3L);
+    }
+
+    @Test
+    void memberScopeRejectsMissingDisabledAndOtherTenantOrganizations() {
+        SysOrgEntity disabled = org(1L, "停用部门", 0L, 3);
+        disabled.setOrgStatus("0");
+        SysOrgEntity otherTenant = org(2L, "其它机构", 0L, 1);
+        otherTenant.setTenantId(2L);
+        when(orgMapper.selectById(1L)).thenReturn(disabled);
+        when(orgMapper.selectById(2L)).thenReturn(otherTenant);
+        when(orgMapper.selectById(999L)).thenReturn(null);
+
+        assertThatThrownBy(() -> sysOrgService.memberScope(1L)).isInstanceOf(BizException.class);
+        assertThatThrownBy(() -> sysOrgService.memberScope(2L)).isInstanceOf(BizException.class);
+        assertThatThrownBy(() -> sysOrgService.memberScope(999L)).isInstanceOf(BizException.class);
+    }
+
+    @Test
+    void createMemberAccountValidatesOrganizationAndMapsTrustedIdentityCommand() {
+        SysOrgEntity department = org(3L, "研发部", 2L, 3);
+        when(orgMapper.selectById(3L)).thenReturn(department);
+        when(tenantMemberProvider.createMemberInOrg(any(CreateTenantMemberInOrgCommand.class))).thenReturn(1001L);
+        CreateOrgMemberAccountCommand command = new CreateOrgMemberAccountCommand();
+        command.setOrgId(3L);
+        command.setUsername("new-user");
+        command.setPassword("Mango@123456");
+        command.setNickname("新用户");
+        command.setEmail("new-user@example.com");
+        command.setPhone("13900000000");
+        command.setStatus(1);
+
+        assertThat(sysOrgService.createMemberAccount(command)).isEqualTo(1001L);
+        ArgumentCaptor<CreateTenantMemberInOrgCommand> captor =
+                ArgumentCaptor.forClass(CreateTenantMemberInOrgCommand.class);
+        verify(tenantMemberProvider).createMemberInOrg(captor.capture());
+        CreateTenantMemberInOrgCommand mapped = captor.getValue();
+        assertThat(mapped.getTenantId()).isEqualTo(1L);
+        assertThat(mapped.getOrgId()).isEqualTo(3L);
+        assertThat(mapped.getOperatorUserId()).isEqualTo(9001L);
+        assertThat(mapped.getUsername()).isEqualTo("new-user");
+        assertThat(mapped.getPrimaryFlag()).isTrue();
+        assertThat(mapped.getLeaderFlag()).isFalse();
     }
 
     private SysOrgTreeQuery treeQuery(Long parentId) {

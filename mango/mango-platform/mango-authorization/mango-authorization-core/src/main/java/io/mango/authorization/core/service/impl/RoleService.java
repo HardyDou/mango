@@ -1,6 +1,7 @@
 package io.mango.authorization.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.authorization.api.enums.AuthorizationCode;
 import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.api.command.AssignSubjectRolesCommand;
@@ -11,6 +12,7 @@ import io.mango.authorization.api.query.RoleLookupQuery;
 import io.mango.authorization.api.query.SubjectRoleBindingQuery;
 import io.mango.authorization.api.vo.MenuVO;
 import io.mango.authorization.api.vo.RoleVO;
+import io.mango.authorization.api.vo.SubjectRoleSummaryVO;
 import io.mango.authorization.core.entity.MenuEntity;
 import io.mango.authorization.core.entity.RoleEntity;
 import io.mango.authorization.core.entity.RoleMenuEntity;
@@ -32,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -45,8 +48,12 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Spring singleton collaborators are intentionally injected and retained"))
 public class RoleService implements IRoleService {
+
+    private static final int MAX_SUBJECT_ROLE_BATCH_SIZE = 200;
+    private static final int MAX_SUBJECT_ROLE_DELETE_SIZE = 10_000;
 
     private final RoleMapper roleMapper;
     private final SubjectRoleBindingMapper subjectRoleBindingMapper;
@@ -88,6 +95,63 @@ public class RoleService implements IRoleService {
         roleWrapper.in(RoleEntity::getId, roleIds);
         List<RoleEntity> roles = roleMapper.selectList(roleWrapper);
         return roles.stream().map(this::toVO).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<SubjectRoleSummaryVO> getSubjectRolesBatch(List<Long> subjectIds) {
+        Require.isTrue(subjectIds == null || subjectIds.size() <= MAX_SUBJECT_ROLE_BATCH_SIZE,
+                AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR, "成员ID不能超过200个");
+        if (subjectIds == null || subjectIds.isEmpty()) {
+            return List.of();
+        }
+        List<Long> requestedIds = subjectIds.stream()
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .toList();
+        if (requestedIds.isEmpty()) {
+            return List.of();
+        }
+
+        Long tenantId = getTenantIdLong();
+        String appCode = MangoContextHolder.appCode();
+        LambdaQueryWrapper<SubjectRoleBindingEntity> bindingWrapper = new LambdaQueryWrapper<>();
+        bindingWrapper.eq(SubjectRoleBindingEntity::getSubjectType, AuthorizationQuery.SUBJECT_TYPE_TENANT_MEMBER)
+                .in(SubjectRoleBindingEntity::getSubjectId, requestedIds)
+                .eq(tenantId != null, SubjectRoleBindingEntity::getTenantId, tenantId)
+                .eq(hasText(appCode), SubjectRoleBindingEntity::getAppCode, appCode);
+        List<SubjectRoleBindingEntity> bindings = subjectRoleBindingMapper.selectList(bindingWrapper);
+
+        Map<Long, RoleVO> rolesById = new LinkedHashMap<>();
+        Set<Long> roleIds = bindings.stream()
+                .map(SubjectRoleBindingEntity::getRoleId)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        if (!roleIds.isEmpty()) {
+            LambdaQueryWrapper<RoleEntity> roleWrapper = new LambdaQueryWrapper<RoleEntity>()
+                    .in(RoleEntity::getId, roleIds)
+                    .eq(tenantId != null, RoleEntity::getTenantId, tenantId)
+                    .eq(hasText(appCode), RoleEntity::getAppCode, appCode)
+                    .eq(RoleEntity::getStatus, 1)
+                    .orderByAsc(RoleEntity::getSort)
+                    .orderByAsc(RoleEntity::getId);
+            roleMapper.selectList(roleWrapper).forEach(role -> rolesById.put(role.getRoleId(), toVO(role)));
+        }
+
+        Map<Long, Set<Long>> roleIdsBySubject = bindings.stream()
+                .collect(Collectors.groupingBy(
+                        SubjectRoleBindingEntity::getSubjectId,
+                        LinkedHashMap::new,
+                        Collectors.mapping(SubjectRoleBindingEntity::getRoleId,
+                                Collectors.toCollection(LinkedHashSet::new))));
+        return requestedIds.stream().map(subjectId -> {
+            SubjectRoleSummaryVO summary = new SubjectRoleSummaryVO();
+            summary.setSubjectId(subjectId);
+            Set<Long> assignedRoleIds = roleIdsBySubject.getOrDefault(subjectId, Set.of());
+            summary.setRoles(rolesById.entrySet().stream()
+                    .filter(entry -> assignedRoleIds.contains(entry.getKey()))
+                    .map(Map.Entry::getValue)
+                    .toList());
+            return summary;
+        }).toList();
     }
 
     @Override
@@ -277,7 +341,8 @@ public class RoleService implements IRoleService {
     @Override
     @Transactional
     public Integer deleteSubjectRoleBindings(DeleteSubjectRoleBindingsCommand command) {
-        Require.isTrue(command == null || command.getSubjectIds() == null || command.getSubjectIds().size() <= 10000,
+        Require.isTrue(command == null || command.getSubjectIds() == null
+                        || command.getSubjectIds().size() <= MAX_SUBJECT_ROLE_DELETE_SIZE,
                 AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR, "一次删除的主体角色绑定不能超过10000条");
         if (command == null || !hasText(command.getSubjectType())
                 || command.getSubjectIds() == null || command.getSubjectIds().isEmpty()) {
