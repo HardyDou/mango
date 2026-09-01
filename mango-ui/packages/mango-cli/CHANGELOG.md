@@ -1,58 +1,5 @@
 # @mango/cli Changelog
 
-## 1.2.7 - 2026-09-01
-
-### Pull Requests
-
-- [PR #915](https://github.com/HardyDou/mango/pull/915) Fixed first-start cross-module parent menu retry. Packages: Mango Maven/docs `1.0.47` and `@mango/cli@1.2.7`. Business Adaptation: generated consumers verify one empty-database startup without a second invocation.
-- [PR #916](https://github.com/HardyDou/mango/pull/916) Added organization-aware user management. Packages: `@mango/rbac@1.0.29`, its generated 16-package closure and `@mango/cli@1.2.7`. Business Adaptation: generated consumers apply the complete exact npm tuple and verify organization/member/role behavior.
-
-### Fixed
-
-- Carry the retryable external parent-menu Bootstrap behavior and retryable user-list error handling into generated consumers.
-
-### Added
-
-- Carry organization-scoped member queries, organization account creation and batch role summaries into the generated compatibility tuple.
-
-### Changed
-
-- Lock generated projects to Maven `1.0.47`, the 16-package npm closure ending at CLI `1.2.7`, and unchanged PMO `1.4.4`.
-
-### Versions
-
-- CLI: `1.2.6` to `1.2.7`; Maven: `1.0.46` to `1.0.47`; RBAC: `1.0.28` to `1.0.29`; PMO remains `1.4.4`.
-
-### Published Packages
-
-- Publish Maven/docs `1.0.47`, then the generated npm topology from `@mango/rbac@1.0.29` through `@mango/cli@1.2.7`.
-
-### Business Impact
-
-- Generated consumers receive first-start parent-menu convergence and organization-aware user management without a database migration or new permission.
-
-### Upgrade Estimate
-
-- Audience: generated Mango applications and direct Resource/RBAC consumers.
-- Engineering Effort: 45 to 90 minutes for generated consumers; 2 to 4 hours for customized direct integrations.
-- Execution Window: 1 to 3 hours including clean build and focused verification.
-- Service Downtime: no framework-mandated downtime.
-- Rollback Effort: 30 to 60 minutes to restore CLI `1.2.6`, Maven `1.0.46` and the prior npm tuple.
-- Assumptions: Java 21, Node `22.23.1`, configured registries and representative Bootstrap plus organization/member/role data.
-
-### Upgrade Notes
-
-1. Upgrade CLI to `1.2.7`, Maven to `1.0.47` and the complete exact npm matrix; retain PMO `1.4.4`.
-2. Verify one empty-database startup and organization-scoped/all-member user management with batch roles.
-
-### Verification
-
-- Verify the sealed Maven/docs and npm batch from both registry roles and run a clean generated consumer.
-
-### Rollback
-
-- Restore CLI `1.2.6`, Maven `1.0.46` and the previous exact npm tuple; never overwrite immutable coordinates.
-
 ## 1.2.6 - 2026-09-01
 
 ### Pull Requests

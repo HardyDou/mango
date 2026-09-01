@@ -1,6 +1,6 @@
 {
   "name": "@mango/system",
-  "version": "1.0.37",
+  "version": "1.0.36",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -51,7 +51,7 @@
     "@mango/api-schema": "workspace:1.0.3",
     "@mango/common": "workspace:2.0.1",
     "@mango/grid-widgets": "workspace:1.0.26",
-    "@mango/rbac": "workspace:1.0.29",
+    "@mango/rbac": "workspace:1.0.28",
     "form-create-designer": "3.2.11-oem"
   },
   "peerDependencies": {

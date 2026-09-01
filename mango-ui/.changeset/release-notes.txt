@@ -1,68 +1,56 @@
 ## Pull Requests
 
-- [PR #915](https://github.com/HardyDou/mango/pull/915) Fixed cold Bootstrap when an `AUTH_MENU` declaration references a stable parent menu that is not ready yet. Packages: Mango Maven `1.0.47`, `io.mango:mango-docs-bundle:1.0.47` and generated `@mango/cli@1.2.7`. Business Adaptation: no configuration, permission or database migration is required; the incomplete module rolls back, independent modules continue and the deferred parent reference retries in the same Bootstrap coordination.
-- [PR #916](https://github.com/HardyDou/mango/pull/916) Added organization-aware user management, organization-scoped account creation and batch role summaries. Packages: Mango Maven `1.0.47`, `@mango/rbac@1.0.29`, its generated 16-package npm closure ending at `@mango/cli@1.2.7`, and the docs bundle. Business Adaptation: direct RBAC consumers must upgrade the complete generated npm tuple and use the new organization and role batch contracts; existing permissions and database schema remain unchanged.
+- [PR #911](https://github.com/HardyDou/mango/pull/911) Fixed Resource bootstrap when an `AUTH_MENU` declaration references a menu package that is not ready yet. Packages: Mango Maven `1.0.46`, `io.mango:mango-docs-bundle:1.0.46` and generated `@mango/cli@1.2.6`. Business Adaptation: no configuration or permission change is required; bootstrap rolls back the incomplete module, continues independent modules and retries the deferred module after its package dependency is available.
 
 ## Fixed
 
-- Classify an unavailable external `AUTH_MENU.parentCode` as a retryable Resource dependency before manifest writes while preserving same-manifest parent resolution and permanent self-parent rejection.
-- Preserve the last successful user list on retryable request failures instead of replacing it with an ambiguous empty state.
-
-## Added
-
-- Add tenant-safe organization member scopes and organization-owned account creation across Org and Identity contracts.
-- Add batch subject-role summaries so the user page can load role assignments without per-user requests.
+- Reject incomplete `AUTH_MENU` registration before menu rows or a successful Resource receipt can be committed.
+- Defer dependency-not-ready Resource modules while continuing independent modules, then retry deferred declarations on a later synchronization cycle.
 
 ## Changed
 
-- Make the user management page organization-aware, including descendant organization filtering, all-member mode, organization account creation, batch role display and clearer loading/error states.
-- Advance the exact generated consumer tuple to Maven/docs `1.0.47`, the 16-package npm closure ending at `@mango/cli@1.2.7`, and unchanged `@mango/pmo@1.4.4`.
+- Lock generated consumers to Mango Maven `1.0.46` through `@mango/cli@1.2.6`; existing frontend and PMO package versions remain unchanged.
 
 ## Versions
 
-- Mango Maven non-application reactor and `io.mango:mango-docs-bundle`: `1.0.46` to `1.0.47` (192 coordinates).
-- Direct npm package: `@mango/rbac` `1.0.28` to `1.0.29`.
-- Generated npm closure: `@mango/system@1.0.37`, `@mango/admin-pages@1.0.38`, `@mango/calendar@1.0.39`, `@mango/cms@1.0.28`, `@mango/job@1.0.32`, `@mango/link@1.0.25`, `@mango/notice@1.0.44`, `@mango/numgen@1.0.40`, `@mango/payment@1.0.31`, `@mango/template@1.0.40`, `@mango/workflow@1.0.48`, `@mango/admin-shell@1.0.69`, `@mango/workflow-business-example@1.0.47`, `@mango/admin@1.1.5` and `@mango/cli@1.2.7`.
-- `@mango/pmo` remains `1.4.4`.
+- Mango Maven non-application reactor and `io.mango:mango-docs-bundle`: `1.0.45` to `1.0.46` (192 coordinates).
+- `@mango/cli`: `1.2.5` to `1.2.6`; PMO remains `1.4.4` and all other npm package versions remain unchanged.
 
 ## Published Packages
 
-1. Publish the 192-coordinate Mango Maven `--all-non-app` and docs bundle batch at `1.0.47`; application and capability-app fat JARs remain excluded.
-2. Publish npm in machine topology order: `@mango/rbac@1.0.29` -> `@mango/system@1.0.37` -> `@mango/admin-pages@1.0.38` -> `@mango/calendar@1.0.39` -> `@mango/cms@1.0.28` -> `@mango/job@1.0.32` -> `@mango/link@1.0.25` -> `@mango/notice@1.0.44` -> `@mango/numgen@1.0.40` -> `@mango/payment@1.0.31` -> `@mango/template@1.0.40` -> `@mango/workflow@1.0.48` -> `@mango/admin-shell@1.0.69` -> `@mango/workflow-business-example@1.0.47` -> `@mango/admin@1.1.5` -> `@mango/cli@1.2.7`.
-3. Create `v2026.09.01-maven-1.0.47-resource-user-management-release` and its GitHub Release only after dual-registry and clean pure-consumer verification.
+1. Publish the 192-coordinate Mango Maven `--all-non-app` and docs bundle batch at `1.0.46`; application and capability-app fat JARs remain excluded.
+2. Publish `@mango/cli@1.2.6` after Maven/docs `1.0.46` is visible from both registry roles.
+3. Create `v2026.09.01-maven-1.0.46-resource-menu-package-release` and its GitHub Release only after dual-registry and clean pure-consumer verification.
 
 ## Business Impact
 
-- Empty-database consumers whose Authorization manifest encounters a cross-module parent menu before its provider module can complete Bootstrap in the first formal startup without a second application start.
-- Administrators can filter members by an organization and enabled descendants, switch to all members, create an account directly in an organization, and inspect or assign roles using batch-loaded summaries.
-- New Org, Identity and Authorization Java/HTTP contracts are additive. Existing user, organization and role permissions remain authoritative; no administrator fallback, database migration or production data mutation is introduced.
-- Direct frontend consumers must upgrade the complete generated npm closure because exact runtime dependencies advance together. This release publishes platform artifacts only and does not deploy a business application.
+- Consumers whose Resource module scan sees `system` menu declarations before the `platform_admin` package no longer retain partial menus without package bindings or a false successful receipt.
+- Missing menu-package dependencies fail the current module transaction, remain retryable and do not block unrelated Resource modules in the same pass.
+- No database migration, API change, new permission, administrator fallback or module dependency cycle is introduced. This release does not deploy a business application or mutate production data.
 
 ## Upgrade Estimate
 
-- Audience: Mango generated applications, direct Resource/Authorization Bootstrap consumers and direct RBAC/Org/Identity/Authorization integrations.
-- Engineering Effort: 45 to 90 minutes for generated consumers; 2 to 4 hours for direct integrations that customize user management or call affected APIs.
-- Execution Window: 1 to 3 hours including dependency upgrade, clean build, empty-database first-start verification and user-management regression.
+- Audience: Mango generated applications and direct Resource/Authorization bootstrap consumers.
+- Engineering Effort: 30 to 60 minutes for generated consumers; up to 2 hours for direct integrations with custom Resource declarations.
+- Execution Window: 1 to 2 hours including dependency upgrade, clean build and cold-start bootstrap verification.
 - Service Downtime: no framework-mandated downtime; consumers use their normal application restart window.
-- Rollback Effort: 30 to 60 minutes to restore Maven `1.0.46`, CLI `1.2.6` and the prior exact npm tuple.
-- Assumptions: Java 21, Node `22.23.1`, configured registries, an isolated empty database for Bootstrap verification and representative organization/member/role data for user-management verification.
+- Rollback Effort: 15 to 30 minutes to restore Maven `1.0.45` and CLI `1.2.5`.
+- Assumptions: Java 21, Node `22.23.1`, configured registries and a representative database where `platform_admin` is created after dependent menu declarations are first encountered.
 
 ## Upgrade Notes
 
-1. Upgrade aggregate consumers to Mango Maven `1.0.47` and `@mango/cli@1.2.7`; apply the CLI's exact npm matrix and retain `@mango/pmo@1.4.4`.
-2. Direct RBAC consumers must upgrade all 16 planned npm packages together and rebuild from a clean lock/install state.
-3. Start the consumer once against a new empty database and confirm independent modules complete, the deferred menu module retries after its parent is available, the complete menu tree is present and readiness becomes `UP` in the same startup.
-4. Verify organization-scoped and all-member queries, organization account creation, batch role display/assignment and retryable list error recovery under existing permissions.
+1. Upgrade aggregate consumers to Mango Maven `1.0.46` and `@mango/cli@1.2.6`; retain the CLI's exact existing PMO and frontend package matrix.
+2. Start a clean consumer and verify the authorization menu package is created before the deferred system menu module is retried.
+3. Confirm all declared menus are bound to `platform_admin`, independent modules complete, and no successful receipt exists for a rolled-back attempt.
 
 ## Verification
 
-- Reuse the merged #914 Resource/Authorization rollback and same-batch retry tests plus the merged #909 Org, Identity, Authorization and RBAC unit/integration suites and recorded browser acceptance.
-- Run Catalog, Git impact, exact release plan/notes checks, full workspace build, protected required checks and registry doctor under Node `22.23.1`.
-- Seal Maven/docs `1.0.47` and all 16 npm packages once, verify publish and consume registries, and run one clean pure consume-registry generated consumer.
-- After publication, run the Baohan consumer against a fresh empty database and verify first-start Bootstrap plus a focused user-management consumption check.
+- Run the merged PR suites: `mango-common` 22 tests, `mango-authorization-core` 56 tests and `mango-resource-core` 73 tests, plus Java architecture, Checkstyle, PMD and SpotBugs gates.
+- Run Catalog, Git impact, release plan, exact release-notes checker, protected required checks and registry doctor under Node `22.23.1`.
+- Seal Maven/docs `1.0.46` and CLI `1.2.6` once, verify both registry roles and run one clean pure consume-registry generated consumer.
 
 ## Rollback
 
-- Restore consumers to Mango Maven `1.0.46`, `@mango/cli@1.2.6` and the previous exact npm tuple through the normal dependency lock and restart procedure.
+- Restore consumers to Mango Maven `1.0.45` and `@mango/cli@1.2.5` through the normal dependency lock and restart procedure.
 - Never overwrite immutable coordinates; retain the sealed candidate and use `status` then authorized `repair` for partial or ambiguous publication.
-- No schema change is introduced; do not delete Resource, Identity, Org or Authorization data as rollback.
+- No schema change is introduced; do not delete Resource or Authorization data as rollback.
