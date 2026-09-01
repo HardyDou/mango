@@ -1,5 +1,6 @@
 package io.mango.file.preview.starter;
 
+import cn.keking.ServerMain;
 import io.mango.authorization.api.ApiResourceApi;
 import io.mango.file.preview.core.config.FilePreviewProperties;
 import io.mango.file.preview.core.service.IFilePreviewService;
@@ -14,6 +15,7 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -32,18 +34,22 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @AutoConfiguration
 @AutoConfigureAfter(name = {
-        "io.mango.auth.starter.AuthAutoConfiguration",
-        "io.mango.infra.kv.starter.KvCapabilityAutoConfiguration"
+    "io.mango.auth.starter.AuthAutoConfiguration",
+    "io.mango.infra.kv.starter.KvCapabilityAutoConfiguration"
 })
 @ConditionalOnClass(IFilePreviewService.class)
 @ConditionalOnProperty(prefix = "mango.file-preview", name = "enabled", havingValue = "true", matchIfMissing = true)
 @EnableConfigurationProperties(FilePreviewProperties.class)
 @PropertySource(value = "classpath:/mango-file-preview-engine.properties", ignoreResourceNotFound = true)
-@ComponentScan({
-        "io.mango.file.preview.core",
-        "io.mango.file.preview.starter",
-        "cn.keking"
-    })
+@ComponentScan(
+        basePackages = {
+            "io.mango.file.preview.core",
+            "io.mango.file.preview.starter",
+            "cn.keking"
+        },
+        excludeFilters = @ComponentScan.Filter(
+                type = FilterType.ASSIGNABLE_TYPE,
+                classes = ServerMain.class))
 public class FilePreviewAutoConfiguration {
 
     @Bean

@@ -10,6 +10,7 @@ import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class FilePreviewMessageTests {
@@ -48,19 +49,17 @@ class FilePreviewMessageTests {
     }
 
     @Test
-    void supportResources_useMangoSupportMessage() throws IOException {
+    void supportResources_useMangoSupportMessageWithoutPublishingHostBanner() throws IOException {
         String contactPage = readResource("/web/main/contact.ftl");
-        String banner = readResource("/banner.txt");
         String startupShell = readSourceFile("src/main/bin/startup.sh");
         String startupBat = readSourceFile("src/main/bin/startup.bat");
 
         assertTrue(contactPage.contains("Mango 文件预览技术支持"));
-        assertTrue(banner.contains("Mango File Preview"));
+        assertNull(getClass().getResource("/banner.txt"));
         assertTrue(startupShell.contains("Mango project documentation"));
         assertTrue(startupBat.contains("Mango project documentation"));
 
         assertNoThirdPartySupportMessage(contactPage);
-        assertNoThirdPartySupportMessage(banner);
         assertNoThirdPartySupportMessage(startupShell);
         assertNoThirdPartySupportMessage(startupBat);
     }

@@ -61,6 +61,9 @@
 | `ApiResourceApi` | 启动时注册预览引擎公开资源 |
 | `mango-file-preview-engine` | 内置 kkFileView 预览引擎和静态资源 |
 
+单体应用通过 `mango-file-preview-starter` 把预览引擎组件装配到宿主 Spring 上下文，复用宿主端口，
+不会注册 kkFileView 的独立 `ServerMain`，也不会通过 engine JAR 覆盖宿主应用 Banner。
+
 ## 4. 前端接入
 
 业务页面通常不直接拼 kkFileView 地址，而是用文件前端能力里的预览组件。
