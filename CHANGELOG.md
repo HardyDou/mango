@@ -1,5 +1,70 @@
 # Mango Changelog
 
+## v2026.09.01-maven-1.0.47-resource-user-management-release - 2026-09-01
+
+Status: `PENDING`. The release plan, sealed candidate, registry verification, Tag and GitHub Release are not complete until the canonical publication manifest reaches `COMPLETED` and the closeout PR records the verified evidence.
+
+### Pull Requests
+
+- [PR #915](https://github.com/HardyDou/mango/pull/915) Fixed cold Bootstrap when an `AUTH_MENU` declaration references a stable parent menu that is not ready yet. Packages: Mango Maven `1.0.47`, `io.mango:mango-docs-bundle:1.0.47` and generated `@mango/cli@1.2.7`. Business Adaptation: no configuration, permission or database migration is required; the incomplete module rolls back, independent modules continue and the deferred parent reference retries in the same Bootstrap coordination.
+- [PR #916](https://github.com/HardyDou/mango/pull/916) Added organization-aware user management, organization-scoped account creation and batch role summaries. Packages: Mango Maven `1.0.47`, `@mango/rbac@1.0.29`, its generated 16-package npm closure ending at `@mango/cli@1.2.7`, and the docs bundle. Business Adaptation: direct RBAC consumers must upgrade the complete generated npm tuple and use the new organization and role batch contracts; existing permissions and database schema remain unchanged.
+
+### Fixed
+
+- Retry an unavailable external `AUTH_MENU.parentCode` before manifest writes while preserving same-manifest parent resolution and permanent self-parent rejection.
+- Preserve the last successful user list on retryable request failures instead of replacing it with an ambiguous empty state.
+
+### Added
+
+- Add tenant-safe organization member scopes, organization-owned account creation and batch subject-role summaries.
+
+### Changed
+
+- Make the user management page organization-aware and advance the exact generated Maven/npm consumer tuple without changing PMO `1.4.4`.
+
+### Versions
+
+- Mango Maven non-application reactor and `io.mango:mango-docs-bundle`: `1.0.46` to `1.0.47` (192 coordinates).
+- Direct npm package: `@mango/rbac` `1.0.28` to `1.0.29`.
+- Generated npm closure: `@mango/system@1.0.37`, `@mango/admin-pages@1.0.38`, `@mango/calendar@1.0.39`, `@mango/cms@1.0.28`, `@mango/job@1.0.32`, `@mango/link@1.0.25`, `@mango/notice@1.0.44`, `@mango/numgen@1.0.40`, `@mango/payment@1.0.31`, `@mango/template@1.0.40`, `@mango/workflow@1.0.48`, `@mango/admin-shell@1.0.69`, `@mango/workflow-business-example@1.0.47`, `@mango/admin@1.1.5` and `@mango/cli@1.2.7`; PMO remains `1.4.4`.
+
+### Published Packages
+
+1. Publish the 192-coordinate non-application Maven/docs batch at `1.0.47`.
+2. Publish the machine-generated 16-package npm topology from `@mango/rbac@1.0.29` through `@mango/cli@1.2.7`.
+3. Create the immutable Tag and GitHub Release only after dual-registry and pure consume verification.
+
+### Business Impact
+
+- Empty-database consumers can converge cross-module parent menus during the first formal startup without a second start.
+- Administrators gain organization-scoped member management, organization account creation and batch role loading under existing permissions.
+- New Org, Identity and Authorization contracts are additive; no database migration, administrator fallback, production deployment or data mutation is introduced.
+
+### Upgrade Estimate
+
+- Audience: generated applications and direct Resource, RBAC, Org, Identity or Authorization consumers.
+- Engineering Effort: 45 to 90 minutes for generated consumers; 2 to 4 hours for customized direct integrations.
+- Execution Window: 1 to 3 hours including clean build, first-start and user-management verification.
+- Service Downtime: no framework-mandated downtime; consumers use their normal restart window.
+- Rollback Effort: 30 to 60 minutes to restore Maven `1.0.46`, CLI `1.2.6` and the prior npm tuple.
+- Assumptions: Java 21, Node `22.23.1`, configured registries and representative empty-database plus organization/member/role fixtures.
+
+### Upgrade Notes
+
+1. Upgrade Maven to `1.0.47` and CLI to `1.2.7`; apply its exact npm matrix and retain PMO `1.4.4`.
+2. Direct RBAC consumers upgrade the complete 16-package npm closure together.
+3. Verify one empty-database startup converges deferred parent menus and verify organization-scoped/all-member user management plus batch roles.
+
+### Verification
+
+- Run the merged #914 and #909 suites, release plan/notes gates, full workspace build, protected required checks and registry doctor.
+- Seal once, verify both registry roles, run a clean pure consume-registry consumer and then run Baohan first-start verification.
+
+### Rollback
+
+- Restore Maven `1.0.46`, CLI `1.2.6` and the prior exact npm tuple; never overwrite immutable coordinates.
+- No schema change is introduced; do not delete Resource, Identity, Org or Authorization data as rollback.
+
 ## v2026.09.01-maven-1.0.46-resource-menu-package-release - 2026-09-01
 
 Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `440c4d76617fe9e5d25214af455a40579492f8921ce9e6bd178af792e1977d08` for plan `d500ebdd2f8877ab2a68a9a5b029057cf1334b9803ed99acfdbbd2e498bbd9aa` and prepared candidate `236414cd7ce579ab69ad543eee166f824836fdcedaa55f8805aab6ffe5523c6f` is `COMPLETED`: all 192 Maven/docs coordinates and `@mango/cli@1.2.6` match the sealed candidate in both publish and consume registries, the pure consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`.
