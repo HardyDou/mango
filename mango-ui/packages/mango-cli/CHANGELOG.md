@@ -1,5 +1,56 @@
 # @mango/cli Changelog
 
+## 1.2.7 - 2026-09-01
+
+### Pull Requests
+
+- [PR #915](https://github.com/HardyDou/mango/pull/915) Fixed retryable cross-module parent-menu resolution during cold Bootstrap. Packages: Mango Maven/docs `1.0.47` and `@mango/cli@1.2.7`. Business Adaptation: generated consumers upgrade the exact Maven/CLI tuple and verify one first start against an empty database; no configuration, permission or migration change is required.
+
+### Fixed
+
+- Carry pre-write `AUTH_MENU.parentCode` dependency validation, transactional rollback and deferred retry into generated consumers.
+- Preserve same-manifest menu parents and permanent self-parent rejection.
+
+### Changed
+
+- Lock generated projects to Maven `1.0.47` while retaining PMO `1.4.4` and the existing frontend package tuple.
+
+### Versions
+
+- CLI: `1.2.6` to `1.2.7`; Maven: `1.0.46` to `1.0.47`; PMO remains `1.4.4`.
+
+### Published Packages
+
+- Publish Maven/docs `1.0.47`, then `@mango/cli@1.2.7` after dual-registry verification.
+
+### Business Impact
+
+- Generated applications can complete first cold Bootstrap when a cross-module parent menu is registered later in the same coordination, without a manual second application start.
+- No database migration, public API, configuration or permission change is introduced.
+
+### Upgrade Estimate
+
+- Audience: generated Mango applications and Resource/Authorization Bootstrap consumers.
+- Engineering Effort: 30 to 60 minutes for generated consumers; up to 2 hours for custom cross-module menus.
+- Execution Window: 1 to 2 hours including a clean build and empty-database first-start verification.
+- Service Downtime: no framework-mandated downtime.
+- Rollback Effort: 15 to 30 minutes to restore CLI `1.2.6` and Maven `1.0.46`.
+- Assumptions: Java 21, Node `22.23.1`, configured registries and an isolated empty database.
+
+### Upgrade Notes
+
+1. Upgrade CLI to `1.2.7` and Mango Maven to `1.0.47`; retain the existing PMO/frontend matrix.
+2. Start once against an empty database and verify the deferred menu module retries after its parent becomes available during the same Bootstrap.
+
+### Verification
+
+- Verify the sealed Maven/docs and CLI batch from both registry roles and run a clean generated pure-registry consumer.
+- Verify the Baohan consumer completes its first formal empty-database startup without a second invocation.
+
+### Rollback
+
+- Restore CLI `1.2.6` and Maven `1.0.46`; never overwrite immutable coordinates.
+
 ## 1.2.6 - 2026-09-01
 
 ### Pull Requests
