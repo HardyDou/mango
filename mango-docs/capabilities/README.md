@@ -20,6 +20,8 @@
 
 2026-09-01 能力更新：Issue #919 区分“移出当前部门”和“移出租户成员”。租户移出保留原账号及 `userId/memberId`，撤销当前租户角色与全部部门关系；只有今天起由本特性记录为 `REMOVED` 的当前租户成员可通过脱敏候选恢复，恢复只建立本次选择的部门关系，不恢复旧授权。同名姓名可以创建不同登录账号，`realm + username` 仍唯一且旧账号不转让。入口见 [Identity README](../../mango/mango-platform/mango-identity/README.md)、[Org README](../../mango/mango-platform/mango-org/README.md) 和 [RBAC README](../../mango-ui/packages/rbac/README.md)。
 
+2026-09-01 能力更新：Issue #889 将 Mango 源码仓的 workspace/dev 命令固定到 `mango-ui` 的仓库内 CLI 源码入口，避免 `pnpm exec` 在缺少本地 bin 时静默命中过期全局 CLI；根开发 manifest 同时移除遗留 Maven `install`，Spring Boot 开发继续只从当前 Reactor 执行 `clean + compile + spring-boot:run`。源码仓入口见 [Mango UI README](../../mango-ui/README.md)，生成后的业务项目仍按 [CLI README](../../mango-ui/packages/mango-cli/README.md) 使用项目内锁定版本。
+
 ## 2. 使用方式
 
 1. 先按任务关键词找到涉及能力。

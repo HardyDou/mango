@@ -62,6 +62,16 @@ common -> api-schema
 pnpm -C mango-ui install
 ```
 
+Mango 源码仓的 workspace 和 dev 命令使用仓库内 CLI 源码入口：
+
+```bash
+pnpm -C mango-ui run mango workspace init
+pnpm -C mango-ui run mango dev doctor
+pnpm -C mango-ui run mango dev start backend
+```
+
+该脚本直接执行 `packages/mango-cli/src/index.mjs`。源码仓不要使用 `cd mango-ui && pnpm exec mango`；`mango-ui` 不是生成后的业务项目，缺少本地 bin 时 `pnpm exec` 会继续从系统 `PATH` 解析，可能误用旧的全局 CLI。生成后的业务项目仍应进入 `frontend`，安装依赖后使用项目内锁定的 `pnpm exec mango`。
+
 单体启动：
 
 ```bash
