@@ -9,7 +9,7 @@
 | 项目          | 值                                                                                                                                        |
 | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | NPM 包        | `@mango/cli`                                                                                                                              |
-| 当前发布版本  | `1.2.7`                                                                                                                                   |
+| 当前发布版本  | `1.2.6`                                                                                                                                   |
 | bin 命令      | `mango`、`mango-cli`                                                                                                                      |
 | 命令入口      | `src/index.mjs`                                                                                                                           |
 | 发布 registry | 由发布配置或 `MANGO_RELEASE_NPM_PUBLISH_REGISTRY` 注入                                                                                    |
@@ -71,8 +71,8 @@ CLI 不负责：
 
 ```bash
 npm view @mango/pmo@1.3.8 version --registry "$MANGO_NPM_REGISTRY"
-npm view @mango/cli@1.2.7 version --registry "$MANGO_NPM_REGISTRY"
-npm install -g @mango/cli@1.2.7 --registry "$MANGO_NPM_REGISTRY"
+npm view @mango/cli@1.2.6 version --registry "$MANGO_NPM_REGISTRY"
+npm install -g @mango/cli@1.2.6 --registry "$MANGO_NPM_REGISTRY"
 ```
 
 两个查询都返回精确版本后，该批次才可供业务项目安装。PMO 升级会整体同步 baseline、Agent 入口和 `.agents/skills`，不需要逐个安装 Skill。
