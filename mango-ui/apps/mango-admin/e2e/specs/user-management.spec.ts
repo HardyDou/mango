@@ -21,11 +21,15 @@ interface OrgNode {
 }
 
 interface UserRecord {
+  memberId?: string;
+  orgRelationId?: string;
+  primaryOrgFlag?: boolean;
   userId: string;
   username: string;
 }
 
 interface RoleRecord {
+  roleId?: string;
   roleCode: string;
   roleName: string;
   status: number;
@@ -46,7 +50,7 @@ async function responseData<T>(response: APIResponse): Promise<T> {
   return body.data;
 }
 
-async function adminLoginTenant(request: APIRequestContext) {
+async function adminLoginTenant(request: APIRequestContext, tenantCode = 'company_a') {
   const response = await request.post(e2eApi('/auth/login-institutions'), {
     data: {
       username: 'admin',
@@ -55,8 +59,8 @@ async function adminLoginTenant(request: APIRequestContext) {
     },
   });
   const tenants = await responseData<LoginTenant[]>(response);
-  const tenant = tenants.find((item) => item.tenantCode === 'company_a');
-  expect(tenant, 'demo 数据缺少 company_a').toBeDefined();
+  const tenant = tenants.find((item) => item.tenantCode === tenantCode);
+  expect(tenant, `demo 数据缺少 ${tenantCode}`).toBeDefined();
   return tenant!;
 }
 
@@ -84,6 +88,39 @@ async function loginToken(request: APIRequestContext, tenant: LoginTenant) {
     },
   });
   return (await responseData<{ accessToken: string }>(response)).accessToken;
+}
+
+async function createTenant(request: APIRequestContext, token: string, unique: number): Promise<LoginTenant> {
+  const tenantCode = `e2e_ml_${unique}`;
+  const tenantName = `E2E成员生命周期机构${unique}`;
+  const response = await request.post(e2eApi('/system/tenant'), {
+    headers: authHeaders(token),
+    data: {
+      tenantName,
+      tenantCode,
+      institutionType: 'ENTERPRISE',
+      packageId: 2,
+      status: 1,
+      contact: 'E2E成员生命周期管理员',
+      mobile: '13900000004',
+      email: `${tenantCode}@example.com`,
+    },
+  });
+  return {
+    tenantId: String(await responseData<string>(response)),
+    tenantCode,
+    tenantName,
+  };
+}
+
+async function archiveTenant(request: APIRequestContext, token: string, tenantId?: string) {
+  if (!tenantId) {
+    return;
+  }
+  const response = await request.put(e2eApi(`/system/tenant/status?id=${tenantId}&status=9`), {
+    headers: authHeaders(token),
+  });
+  expect(await responseData<boolean>(response)).toBe(true);
 }
 
 async function rootOrganization(request: APIRequestContext, token: string) {
@@ -138,7 +175,69 @@ async function createMemberAccount(
       leaderFlag: false,
     },
   });
-  await responseData<string>(response);
+  return responseData<string>(response);
+}
+
+async function findUser(request: APIRequestContext, token: string, username: string, orgId?: string) {
+  const params = new URLSearchParams({ page: '1', size: '20', username });
+  if (orgId) params.set('orgId', orgId);
+  const response = await request.get(e2eApi(`/identity/users/page?${params.toString()}`), {
+    headers: authHeaders(token),
+  });
+  const page = await responseData<{ records?: UserRecord[]; list?: UserRecord[] }>(response);
+  return (page.records || page.list || []).find((item) => item.username === username);
+}
+
+async function addMemberToOrganization(request: APIRequestContext, token: string, orgId: string, memberId: string) {
+  const response = await request.post(e2eApi('/org/members'), {
+    headers: authHeaders(token),
+    data: { orgId, memberId, primaryFlag: false, leaderFlag: false },
+  });
+  await responseData<boolean>(response);
+}
+
+async function assignMemberRole(
+  request: APIRequestContext,
+  token: string,
+  tenant: LoginTenant,
+  memberId: string,
+  roleId: string,
+) {
+  const response = await request.post(e2eApi('/authorization/roles/subjects'), {
+    headers: authHeaders(token),
+    data: {
+      subjectId: memberId,
+      appCode: 'internal-admin',
+      realm: 'INTERNAL',
+      actorType: 'INTERNAL_USER',
+      partyType: 'INTERNAL_ORG',
+      partyId: tenant.tenantId,
+      roleIds: [roleId],
+    },
+  });
+  await responseData<boolean>(response);
+}
+
+async function memberRoles(request: APIRequestContext, token: string, memberId: string) {
+  const response = await request.get(e2eApi(`/authorization/roles/subjects?subjectId=${memberId}`), {
+    headers: authHeaders(token),
+  });
+  return responseData<RoleRecord[]>(response);
+}
+
+async function accountAvailability(request: APIRequestContext, token: string, username: string) {
+  const response = await request.get(
+    e2eApi(`/identity/users/account-availability?username=${encodeURIComponent(username)}&realm=INTERNAL`),
+    { headers: authHeaders(token) },
+  );
+  return responseData<{
+    displayName?: string;
+    maskedEmail?: string;
+    maskedPhone?: string;
+    memberNo?: string;
+    removedAt?: string;
+    status: 'AVAILABLE' | 'RECOVERABLE' | 'UNAVAILABLE';
+  }>(response);
 }
 
 async function cleanupUser(request: APIRequestContext, token: string, username: string) {
@@ -378,6 +477,301 @@ test.describe('用户管理优化 @user-management', () => {
       await cleanupOrganization(request, token, targetOrgId);
       await cleanupOrganization(request, token, sourceOrgId);
     }
+  });
+
+  test('@p0 成员按部门和租户分层移出后复用原身份恢复', async ({ page, request }, testInfo) => {
+    test.setTimeout(90_000);
+    const unique = Date.now();
+    const sourceOrgName = `E2E生命周期来源${unique}`;
+    const targetOrgName = `E2E生命周期目标${unique}`;
+    const sourceOrgCode = `E2E_LIFECYCLE_SOURCE_${unique}`;
+    const targetOrgCode = `E2E_LIFECYCLE_TARGET_${unique}`;
+    const username = `E2E_LIFECYCLE_${unique}`;
+    const otherUsername = `E2E_LIFECYCLE_OTHER_${unique}`;
+    const displayName = `同名成员${unique}`;
+    const tenant = await adminLoginTenant(request, 'default');
+    const token = await loginToken(request, tenant);
+    let otherTenant: LoginTenant | undefined;
+    let sourceOrgId: string | undefined;
+    let targetOrgId: string | undefined;
+
+    try {
+      otherTenant = await createTenant(request, token, unique);
+      const otherTenantToken = await loginToken(request, otherTenant);
+      const root = await rootOrganization(request, token);
+      const role = await enabledRole(request, token);
+      expect(role.roleId).toBeDefined();
+      sourceOrgId = await createOrganization(request, token, root.id, sourceOrgName, sourceOrgCode);
+      targetOrgId = await createOrganization(request, token, root.id, targetOrgName, targetOrgCode);
+      const createdUserId = await createMemberAccount(
+        request,
+        token,
+        sourceOrgId,
+        username,
+        displayName,
+        `lifecycle-${unique}@example.com`,
+      );
+      const created = await findUser(request, token, username, sourceOrgId);
+      expect(created?.userId).toBe(createdUserId);
+      expect(created?.memberId).toBeDefined();
+      expect(created?.orgRelationId).toBeDefined();
+      await addMemberToOrganization(request, token, targetOrgId, created!.memberId!);
+      await assignMemberRole(request, token, tenant, created!.memberId!, role.roleId!);
+      expect(await memberRoles(request, token, created!.memberId!)).toHaveLength(1);
+
+      await loginAsTenant(page, tenant);
+      const diagnostics = collectBrowserDiagnostics(page);
+      const initialPageResponse = identityPageResponse(page);
+      await page.goto('/#/system/user');
+      await initialPageResponse;
+      const userPage = page.locator('[data-page="user.management"]');
+      const searchForm = userPage.locator('[data-surface="user.search"]');
+
+      const sourceScopeResponse = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/org/member-scope') &&
+          response.url().includes(`orgId=${encodeURIComponent(sourceOrgId!)}`) &&
+          response.status() === 200,
+      );
+      await userPage.locator(`[data-record-key="org:${sourceOrgId}"]`).click();
+      await sourceScopeResponse;
+      await searchForm.getByLabel('用户名', { exact: true }).fill(username);
+      const sourceSearchResponse = identityPageResponse(page, (url) => url.searchParams.get('username') === username);
+      await userPage.getByRole('button', { name: '查询', exact: true }).click();
+      await sourceSearchResponse;
+      const sourceActions = userPage.locator(`[data-record-key="user-actions:${username}"]`);
+      await expect(sourceActions.getByRole('button', { name: '移出当前部门', exact: true })).toBeVisible();
+
+      const removeOrgRequest = page.waitForRequest((requestEvent) => {
+        const url = new URL(requestEvent.url());
+        return (
+          url.pathname.endsWith('/api/org/members') &&
+          requestEvent.method() === 'DELETE' &&
+          url.searchParams.get('relationId') === created!.orgRelationId
+        );
+      });
+      await sourceActions.getByRole('button', { name: '移出当前部门', exact: true }).click();
+      await page.getByRole('dialog', { name: '移出当前部门' }).getByRole('button', { name: '移出部门' }).click();
+      await removeOrgRequest;
+      await expect(userPage.locator(`[data-record-key="user:${username}"]`)).toHaveCount(0);
+
+      const targetScopeResponse = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/org/member-scope') &&
+          response.url().includes(`orgId=${encodeURIComponent(targetOrgId!)}`) &&
+          response.status() === 200,
+      );
+      await userPage.locator(`[data-record-key="org:${targetOrgId}"]`).click();
+      await targetScopeResponse;
+      await searchForm.getByLabel('用户名', { exact: true }).fill(username);
+      const targetSearchResponse = identityPageResponse(page, (url) => url.searchParams.get('username') === username);
+      await userPage.getByRole('button', { name: '查询', exact: true }).click();
+      await targetSearchResponse;
+      await expect(userPage.locator(`[data-record-key="user:${username}"]`)).toBeVisible();
+      const promoted = await findUser(request, token, username, targetOrgId);
+      expect(promoted?.primaryOrgFlag).toBe(true);
+
+      const allMembersResponse = identityPageResponse(page, (url) => !url.searchParams.has('orgIds'));
+      await userPage.locator('[data-action="user.org.clear"]').click();
+      await allMembersResponse;
+      await searchForm.getByLabel('用户名', { exact: true }).fill(username);
+      const allMemberSearchResponse = identityPageResponse(
+        page,
+        (url) => url.searchParams.get('username') === username,
+      );
+      await userPage.getByRole('button', { name: '查询', exact: true }).click();
+      await allMemberSearchResponse;
+      const tenantActions = userPage.locator(`[data-record-key="user-actions:${username}"]`);
+
+      const removeTenantResponse = page.waitForResponse(
+        (response) =>
+          new URL(response.url()).pathname.endsWith('/api/identity/users') &&
+          response.request().method() === 'DELETE' &&
+          response.status() === 200,
+      );
+      await tenantActions.getByRole('button', { name: '移出租户成员', exact: true }).click();
+      await page.getByRole('dialog', { name: '移出租户成员' }).getByRole('button', { name: '移出租户' }).click();
+      await removeTenantResponse;
+      await expect(userPage.locator(`[data-record-key="user:${username}"]`)).toHaveCount(0);
+
+      const removedAvailability = await accountAvailability(request, token, username);
+      expect(removedAvailability.status).toBe('RECOVERABLE');
+      expect(removedAvailability.displayName).toBe(displayName);
+      expect(removedAvailability.maskedEmail).toBeTruthy();
+      expect(removedAvailability.maskedPhone).toBeTruthy();
+      expect(removedAvailability.memberNo).toBeTruthy();
+      expect(removedAvailability.removedAt).toBeTruthy();
+      const crossTenantAvailability = await accountAvailability(request, otherTenantToken, username);
+      expect(crossTenantAvailability.status).toBe('UNAVAILABLE');
+      expect(crossTenantAvailability.displayName).toBeFalsy();
+      expect(crossTenantAvailability.maskedEmail).toBeFalsy();
+      expect(crossTenantAvailability.maskedPhone).toBeFalsy();
+      expect(crossTenantAvailability.memberNo).toBeFalsy();
+      expect(crossTenantAvailability.removedAt).toBeFalsy();
+      expect(await memberRoles(request, token, created!.memberId!)).toEqual([]);
+
+      const loginAfterRemoval = await request.post(e2eApi('/auth/login'), {
+        data: {
+          username,
+          password: 'Mango@123456',
+          tenantId: tenant.tenantId,
+          tenantCode: tenant.tenantCode,
+          realm: 'INTERNAL',
+          actorType: 'INTERNAL_USER',
+          partyType: 'INTERNAL_ORG',
+          appCode: 'internal-admin',
+        },
+      });
+      const loginAfterRemovalBody = (await loginAfterRemoval.json()) as ApiEnvelope<unknown>;
+      expect(loginAfterRemovalBody.success === true || loginAfterRemovalBody.code === 200).toBeFalsy();
+
+      const restoreScopeResponse = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/org/member-scope') &&
+          response.url().includes(`orgId=${encodeURIComponent(targetOrgId!)}`) &&
+          response.status() === 200,
+      );
+      await userPage.locator(`[data-record-key="org:${targetOrgId}"]`).click();
+      await restoreScopeResponse;
+      await userPage.locator('[data-action="user.create"]').click();
+      const restoreDialog = page.getByRole('dialog', { name: '新增成员' });
+      const availabilityResponse = page.waitForResponse(
+        (response) =>
+          new URL(response.url()).pathname.endsWith('/api/identity/users/account-availability') &&
+          response.status() === 200,
+      );
+      await restoreDialog.getByLabel('用户名', { exact: true }).fill(username);
+      await restoreDialog.getByLabel('用户名', { exact: true }).blur();
+      await availabilityResponse;
+      await expect(restoreDialog.locator('[data-state="recoverable-account"]')).toContainText(displayName);
+      await expect(restoreDialog.locator('[data-state="recoverable-account"]')).toContainText('不会自动恢复');
+      await expect(restoreDialog.getByRole('button', { name: '修改登录账号', exact: true })).toBeVisible();
+
+      const restoreResponse = page.waitForResponse(
+        (response) =>
+          new URL(response.url()).pathname.endsWith('/api/org/member-accounts/restore') &&
+          response.request().method() === 'POST' &&
+          response.status() === 200,
+      );
+      await restoreDialog.getByRole('button', { name: '恢复原成员', exact: true }).click();
+      await restoreResponse;
+      await expect(page.getByText('已恢复原成员', { exact: true })).toBeVisible();
+
+      const restored = await findUser(request, token, username, targetOrgId);
+      expect(restored?.userId).toBe(created!.userId);
+      expect(restored?.memberId).toBe(created!.memberId);
+      expect(await memberRoles(request, token, created!.memberId!)).toEqual([]);
+
+      await userPage.locator('[data-action="user.create"]').click();
+      const otherPersonDialog = page.getByRole('dialog', { name: '新增成员' });
+      await otherPersonDialog.getByLabel('用户名', { exact: true }).fill(otherUsername);
+      await otherPersonDialog.getByLabel('姓名', { exact: true }).fill(displayName);
+      const createOtherResponse = page.waitForResponse(
+        (response) =>
+          new URL(response.url()).pathname.endsWith('/api/org/member-accounts') &&
+          response.request().method() === 'POST' &&
+          response.status() === 200,
+      );
+      await otherPersonDialog.getByRole('button', { name: '确定', exact: true }).click();
+      await createOtherResponse;
+      const otherPerson = await findUser(request, token, otherUsername, targetOrgId);
+      expect(otherPerson?.userId).not.toBe(created!.userId);
+      expect(otherPerson?.memberId).not.toBe(created!.memberId);
+
+      await testInfo.attach('member-lifecycle-restored', {
+        body: await page.screenshot({ fullPage: true }),
+        contentType: 'image/png',
+      });
+      expect(diagnostics, diagnostics.join('\n')).toEqual([]);
+    } finally {
+      await cleanupUser(request, token, username);
+      await cleanupUser(request, token, otherUsername);
+      await cleanupOrganization(request, token, sourceOrgId);
+      await cleanupOrganization(request, token, targetOrgId);
+      await archiveTenant(request, token, otherTenant?.tenantId);
+    }
+  });
+
+  test('@p1 登录账号校验失败时不提交新增成员', async ({ page, request }) => {
+    const tenant = await adminLoginTenant(request, 'default');
+    const token = await loginToken(request, tenant);
+    const root = await rootOrganization(request, token);
+    await loginAsTenant(page, tenant);
+    let createRequests = 0;
+    await page.route('**/api/identity/users/account-availability**', async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ code: 500, success: false, msg: 'E2E injected account check failure' }),
+      });
+    });
+    page.on('request', (requestEvent) => {
+      if (
+        new URL(requestEvent.url()).pathname.endsWith('/api/org/member-accounts') &&
+        requestEvent.method() === 'POST'
+      ) {
+        createRequests += 1;
+      }
+    });
+
+    const initialPageResponse = identityPageResponse(page);
+    await page.goto('/#/system/user');
+    await initialPageResponse;
+    const userPage = page.locator('[data-page="user.management"]');
+    const rootScopeResponse = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/org/member-scope') &&
+        response.url().includes(`orgId=${encodeURIComponent(root.id)}`) &&
+        response.status() === 200,
+    );
+    await userPage.locator(`[data-record-key="org:${root.id}"]`).click();
+    await rootScopeResponse;
+    await userPage.locator('[data-action="user.create"]').click();
+    const dialog = page.getByRole('dialog', { name: '新增成员' });
+    await dialog.getByLabel('用户名', { exact: true }).fill(`E2E_CHECK_FAIL_${Date.now()}`);
+    await dialog.getByRole('button', { name: '确定', exact: true }).click();
+
+    await expect(dialog.locator('[data-state="account-check-error"]')).toBeVisible();
+    await expect(dialog).toBeVisible();
+    expect(createRequests).toBe(0);
+  });
+
+  test('@p1 新增成员未选部门时仅显示表单校验且不提交', async ({ page, request }) => {
+    const tenant = await adminLoginTenant(request, 'default');
+    await loginAsTenant(page, tenant);
+    const diagnostics = collectBrowserDiagnostics(page);
+    let createRequests = 0;
+    page.on('request', (requestEvent) => {
+      if (
+        new URL(requestEvent.url()).pathname.endsWith('/api/org/member-accounts') &&
+        requestEvent.method() === 'POST'
+      ) {
+        createRequests += 1;
+      }
+    });
+
+    const initialPageResponse = identityPageResponse(page);
+    await page.goto('/#/system/user');
+    await initialPageResponse;
+    const userPage = page.locator('[data-page="user.management"]');
+    await expect(userPage.locator('[data-field="user.scope.name"]')).toHaveText('全部成员');
+    await userPage.locator('[data-action="user.create"]').click();
+    const dialog = page.getByRole('dialog', { name: '新增成员' });
+    const availabilityResponse = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname.endsWith('/api/identity/users/account-availability') &&
+        response.status() === 200,
+    );
+    await dialog.getByLabel('用户名', { exact: true }).fill(`E2E_NO_ORG_${Date.now()}`);
+    await dialog.getByLabel('用户名', { exact: true }).blur();
+    await availabilityResponse;
+    await dialog.getByRole('button', { name: '确定', exact: true }).click();
+
+    await expect(dialog.getByText('请选择所属部门', { exact: true })).toBeVisible();
+    await expect(dialog).toBeVisible();
+    await expect(page.getByText('系统错误，请刷新页面', { exact: true })).toHaveCount(0);
+    expect(createRequests).toBe(0);
+    expect(diagnostics, diagnostics.join('\n')).toEqual([]);
   });
 
   test('@p1 成员列表失败时显示可重试错误状态', async ({ page, request }, testInfo) => {

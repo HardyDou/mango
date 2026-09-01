@@ -137,6 +137,11 @@ public class IdentityRemoteAutoConfiguration {
         }
 
         @Override
+        public Long restoreMemberInOrg(io.mango.identity.api.command.RestoreTenantMemberInOrgCommand command) {
+            return requireData(tenantMemberFeignClient.getObject().restoreMemberInOrg(command));
+        }
+
+        @Override
         public TenantMemberVO getEnabledMember(Long userId, Long tenantId) {
             return unwrap(tenantMemberFeignClient.getObject().getEnabledMember(userId, tenantId));
         }

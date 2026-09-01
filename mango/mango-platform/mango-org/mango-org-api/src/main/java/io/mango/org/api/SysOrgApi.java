@@ -4,6 +4,7 @@ import io.mango.common.result.R;
 import io.mango.org.api.command.AddOrgMemberCommand;
 import io.mango.org.api.command.CreateSysOrgCommand;
 import io.mango.org.api.command.CreateOrgMemberAccountCommand;
+import io.mango.org.api.command.RestoreOrgMemberAccountCommand;
 import io.mango.org.api.command.UpdateSysOrgCommand;
 import io.mango.org.api.command.UpdateOrgMemberCommand;
 import io.mango.org.api.query.SysOrgTreeQuery;
@@ -48,6 +49,8 @@ public interface SysOrgApi {
             @Positive(message = "组织ID必须大于0") Long orgId);
 
     R<Long> createMemberAccount(@Valid CreateOrgMemberAccountCommand command);
+
+    R<Long> restoreMemberAccount(@Valid RestoreOrgMemberAccountCommand command);
 
     R<Boolean> addMember(@Valid AddOrgMemberCommand command);
 

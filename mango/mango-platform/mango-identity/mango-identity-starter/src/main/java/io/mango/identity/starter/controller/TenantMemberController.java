@@ -6,6 +6,7 @@ import io.mango.common.result.R;
 import io.mango.identity.api.TenantMemberApi;
 import io.mango.identity.api.command.AddTenantMemberOrgCommand;
 import io.mango.identity.api.command.CreateTenantMemberInOrgCommand;
+import io.mango.identity.api.command.RestoreTenantMemberInOrgCommand;
 import io.mango.identity.api.command.UpdateTenantMemberOrgCommand;
 import io.mango.identity.api.query.TenantMemberOrgExistsQuery;
 import io.mango.identity.api.query.TenantMemberOrgOtherCountQuery;
@@ -48,6 +49,13 @@ public class TenantMemberController implements TenantMemberApi {
     @Operation(summary = "在组织内创建成员账号", description = "内部接口。原子创建账号、租户成员和组织关系")
     public R<Long> createMemberInOrg(@RequestBody CreateTenantMemberInOrgCommand command) {
         return R.ok(tenantMemberService.createMemberInOrg(command));
+    }
+
+    @Override
+    @PostMapping("/tenant-members/restore-in-org")
+    @Operation(summary = "恢复原成员到组织", description = "内部接口。恢复保留的原成员并只建立指定组织关系")
+    public R<Long> restoreMemberInOrg(@RequestBody RestoreTenantMemberInOrgCommand command) {
+        return R.ok(tenantMemberService.restoreMemberInOrg(command));
     }
 
     @Override

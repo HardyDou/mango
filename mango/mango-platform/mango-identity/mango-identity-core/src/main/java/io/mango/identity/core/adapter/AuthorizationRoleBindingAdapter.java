@@ -19,7 +19,11 @@ public class AuthorizationRoleBindingAdapter {
     private final RoleBindingApi roleBindingApi;
 
     public void deleteSubjectRoleBindings(DeleteSubjectRoleBindingsCommand command) {
-        roleBindingApi.deleteSubjectRoleBindings(command);
+        R<Integer> result = roleBindingApi.deleteSubjectRoleBindings(command);
+        if (result == null || !result.isSuccess()) {
+            String message = result == null ? "Role binding deletion returned no response" : result.getMsg();
+            throw new IllegalStateException(message);
+        }
     }
 
     public Long findRoleId(RoleLookupQuery query) {

@@ -6,6 +6,7 @@ import io.mango.common.result.Require;
 import io.mango.identity.api.TenantMemberProvider;
 import io.mango.identity.api.command.AddTenantMemberOrgCommand;
 import io.mango.identity.api.command.CreateTenantMemberInOrgCommand;
+import io.mango.identity.api.command.RestoreTenantMemberInOrgCommand;
 import io.mango.identity.api.command.UpdateTenantMemberOrgCommand;
 import io.mango.identity.api.vo.TenantMemberOrgRelationVO;
 import io.mango.identity.api.vo.TenantMemberVO;
@@ -16,6 +17,7 @@ import io.mango.infra.persistence.api.query.PersistencePageResult;
 import io.mango.org.api.command.AddOrgMemberCommand;
 import io.mango.org.api.command.CreateSysOrgCommand;
 import io.mango.org.api.command.CreateOrgMemberAccountCommand;
+import io.mango.org.api.command.RestoreOrgMemberAccountCommand;
 import io.mango.org.api.command.UpdateSysOrgCommand;
 import io.mango.org.api.command.UpdateOrgMemberCommand;
 import io.mango.org.api.enums.PostCode;
@@ -183,6 +185,24 @@ public class SysOrgService extends MangoCrudServiceImpl<SysOrgMapper, SysOrgEnti
     }
 
     @Override
+    public Long restoreMemberAccount(RestoreOrgMemberAccountCommand command) {
+        Require.notNull(command, PostCode.VALIDATION_ERROR, "原成员恢复命令不能为空");
+        SysOrgEntity org = requireEnabledOrg(command.getOrgId());
+        Long tenantId = org.getTenantIdAsLong();
+        if (command.getPostId() != null) {
+            validatePost(tenantId, command.getPostId());
+        }
+        RestoreTenantMemberInOrgCommand identityCommand = new RestoreTenantMemberInOrgCommand();
+        identityCommand.setTenantId(tenantId);
+        identityCommand.setOrgId(org.getId());
+        identityCommand.setPostId(command.getPostId());
+        identityCommand.setUsername(command.getUsername());
+        identityCommand.setRealm(command.getRealm());
+        identityCommand.setOperatorUserId(MangoContextHolder.userId());
+        return tenantMemberProvider.restoreMemberInOrg(identityCommand);
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean addMember(AddOrgMemberCommand command) {
         Require.notNull(command, PostCode.VALIDATION_ERROR, "组织成员新增命令不能为空");
@@ -239,9 +259,6 @@ public class SysOrgService extends MangoCrudServiceImpl<SysOrgMapper, SysOrgEnti
     public boolean removeMember(Long relationId) {
         TenantMemberOrgRelationVO relation = tenantMemberProvider.getOrgRelation(relationId);
         Require.notNull(relation, PostCode.ORG_MEMBER_RELATION_NOT_FOUND);
-        if (isPrimaryRelation(relation)) {
-            Require.isTrue(hasOtherPrimaryCandidate(relation), PostCode.ORG_MEMBER_PRIMARY_REQUIRED);
-        }
         tenantMemberProvider.removeOrgRelation(relationId);
         return true;
     }

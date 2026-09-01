@@ -27,21 +27,25 @@ import io.mango.identity.api.command.UnbindCurrentExternalIdentityCommand;
 import io.mango.identity.api.enums.IdentityCode;
 import io.mango.identity.api.query.ExternalIdentityQuery;
 import io.mango.identity.api.query.IdentityUserPageQuery;
+import io.mango.identity.api.query.IdentityAccountAvailabilityQuery;
 import io.mango.identity.api.request.IdentityUserBatchRequest;
 import io.mango.identity.api.query.IdentityUserTargetQuery;
 import io.mango.identity.api.vo.ExternalIdentityBindingVO;
 import io.mango.identity.api.vo.IdentityUserInfoVO;
 import io.mango.identity.api.vo.IdentityUserVO;
+import io.mango.identity.api.vo.IdentityAccountAvailabilityVO;
 import io.mango.identity.api.vo.ContactCaptchaTicketVO;
 import io.mango.identity.api.vo.CurrentUserProfileVO;
 import io.mango.identity.core.entity.ExternalIdentityBindingEntity;
 import io.mango.identity.core.entity.IdentityUserEntity;
 import io.mango.identity.core.entity.TenantMemberEntity;
 import io.mango.identity.core.entity.TenantMemberOrgEntity;
+import io.mango.identity.core.entity.TenantMemberLifecycleLogEntity;
 import io.mango.identity.core.mapper.ExternalIdentityBindingMapper;
 import io.mango.identity.core.mapper.IdentityUserMapper;
 import io.mango.identity.core.mapper.TenantMemberMapper;
 import io.mango.identity.core.mapper.TenantMemberOrgMapper;
+import io.mango.identity.core.mapper.TenantMemberLifecycleLogMapper;
 import io.mango.identity.core.service.IIdentityUserService;
 import io.mango.identity.core.service.IIdentityPasswordPolicyService;
 import io.mango.identity.core.service.IIdentitySecurityPolicyService;
@@ -100,10 +104,13 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
     private static final long CONTACT_CAPTCHA_TTL_SECONDS = 300L;
     private static final int MASK_SUFFIX_LENGTH = 4;
     private static final int MASK_PHONE_PREFIX_LENGTH = 3;
+    private static final String MEMBER_EVENT_CREATED = "CREATED";
+    private static final String MEMBER_EVENT_REMOVED = "REMOVED";
 
     private final IdentityUserMapper identityUserMapper;
     private final TenantMemberMapper tenantMemberMapper;
     private final TenantMemberOrgMapper tenantMemberOrgMapper;
+    private final TenantMemberLifecycleLogMapper tenantMemberLifecycleLogMapper;
     private final AuthorizationRoleBindingAdapter roleBindingAdapter;
     private final ExternalIdentityBindingMapper externalIdentityBindingMapper;
     private final PasswordEncoder passwordEncoder;
@@ -232,12 +239,38 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
     }
 
     @Override
+    public IdentityAccountAvailabilityVO accountAvailability(IdentityAccountAvailabilityQuery query) {
+        Require.notNull(query, IdentityCode.VALIDATION_ERROR, "登录账号可用性查询不能为空");
+        String username = trimToNull(query.getUsername());
+        Require.notNull(username, IdentityCode.VALIDATION_ERROR, "用户名不能为空");
+        String realm = normalizeRealm(query.getRealm());
+        IdentityUserEntity user = getByUsername(username, realm);
+        if (user == null) {
+            return availability(IdentityAccountAvailabilityVO.AVAILABLE);
+        }
+        TenantMemberEntity member = retainedRecoverableMember(user);
+        if (member == null) {
+            return availability(IdentityAccountAvailabilityVO.UNAVAILABLE);
+        }
+        IdentityAccountAvailabilityVO result = availability(IdentityAccountAvailabilityVO.RECOVERABLE);
+        result.setDisplayName(firstText(member.getDisplayName(), firstText(user.getNickname(), user.getUsername())));
+        result.setMaskedPhone(maskPhone(user.getPhone()));
+        result.setMaskedEmail(maskEmail(user.getEmail()));
+        result.setMemberNo(member.getMemberNo());
+        result.setRemovedAt(member.getLeftAt());
+        return result;
+    }
+
+    @Override
     @Transactional
     public Long create(CreateIdentityUserCommand command) {
         Require.notNull(command, IdentityCode.VALIDATION_ERROR, "身份用户创建命令不能为空");
         String realm = firstText(command.getRealm(), DEFAULT_REALM);
         IdentityUserEntity existing = getByUsername(command.getUsername(), realm);
-        Require.isTrue(existing == null, IdentityCode.CONFLICT, "用户名已存在");
+        if (existing != null) {
+            Require.isTrue(retainedRecoverableMember(existing) == null, IdentityCode.RECOVERABLE_ACCOUNT);
+            return Require.fail(IdentityCode.ACCOUNT_UNAVAILABLE);
+        }
         IdentityUserEntity user = new IdentityUserEntity();
         String plainPassword = firstText(command.getPassword(), DEFAULT_INITIAL_PASSWORD);
         passwordPolicyService.validatePlainPassword(plainPassword);
@@ -345,9 +378,27 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
         tenantMemberOrgMapper.delete(new LambdaQueryWrapper<TenantMemberOrgEntity>()
                 .eq(TenantMemberOrgEntity::getTenantId, tenantId)
                 .in(TenantMemberOrgEntity::getMemberId, memberIds));
-        return tenantMemberMapper.delete(new LambdaQueryWrapper<TenantMemberEntity>()
-                .eq(TenantMemberEntity::getTenantId, tenantId)
-                .in(TenantMemberEntity::getId, memberIds));
+        LocalDateTime removedAt = LocalDateTime.now();
+        int removed = 0;
+        for (TenantMemberEntity member : members) {
+            int updated = tenantMemberMapper.update(null, new LambdaUpdateWrapper<TenantMemberEntity>()
+                    .eq(TenantMemberEntity::getTenantId, tenantId)
+                    .eq(TenantMemberEntity::getId, member.getMemberId())
+                    .isNull(TenantMemberEntity::getLeftAt)
+                    .set(TenantMemberEntity::getStatus, 0)
+                    .set(TenantMemberEntity::getLeftAt, removedAt)
+                    .set(TenantMemberEntity::getPrimaryOrgId, null)
+                    .set(TenantMemberEntity::getPrimaryPostId, null));
+            if (updated > 0) {
+                member.setStatus(0);
+                member.setLeftAt(removedAt);
+                member.setPrimaryOrgId(null);
+                member.setPrimaryPostId(null);
+                appendLifecycleEvent(member, MEMBER_EVENT_REMOVED, removedAt, currentUserId);
+                removed++;
+            }
+        }
+        return removed;
     }
 
     @Override
@@ -1103,7 +1154,7 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
         return List.of();
     }
 
-    private void createTenantMember(IdentityUserEntity user, String displayName) {
+    private TenantMemberEntity createTenantMember(IdentityUserEntity user, String displayName) {
         Long tenantId = currentTenantIdLong();
         Require.notNull(tenantId, IdentityCode.VALIDATION_ERROR, "当前机构上下文无效");
         TenantMemberEntity member = new TenantMemberEntity();
@@ -1116,6 +1167,48 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
         member.setJoinedAt(LocalDateTime.now());
         member.setRemark(user.getRemark());
         tenantMemberMapper.insert(member);
+        appendLifecycleEvent(member, MEMBER_EVENT_CREATED, member.getJoinedAt(), MangoContextHolder.userId());
+        return member;
+    }
+
+    private IdentityAccountAvailabilityVO availability(String status) {
+        IdentityAccountAvailabilityVO result = new IdentityAccountAvailabilityVO();
+        result.setStatus(status);
+        return result;
+    }
+
+    private TenantMemberEntity retainedRecoverableMember(IdentityUserEntity user) {
+        Long tenantId = currentTenantIdLong();
+        if (tenantId == null || user == null || !Integer.valueOf(1).equals(user.getStatus())) {
+            return null;
+        }
+        TenantMemberEntity member = tenantMemberMapper.selectOne(new LambdaQueryWrapper<TenantMemberEntity>()
+                .eq(TenantMemberEntity::getTenantId, tenantId)
+                .eq(TenantMemberEntity::getUserId, user.getUserId())
+                .eq(TenantMemberEntity::getStatus, 0)
+                .isNotNull(TenantMemberEntity::getLeftAt)
+                .last("LIMIT 1"));
+        if (member == null) {
+            return null;
+        }
+        Long removals = tenantMemberLifecycleLogMapper.selectCount(
+                new LambdaQueryWrapper<TenantMemberLifecycleLogEntity>()
+                        .eq(TenantMemberLifecycleLogEntity::getTenantId, tenantId)
+                        .eq(TenantMemberLifecycleLogEntity::getMemberId, member.getMemberId())
+                        .eq(TenantMemberLifecycleLogEntity::getEventType, MEMBER_EVENT_REMOVED));
+        return removals != null && removals > 0 ? member : null;
+    }
+
+    private void appendLifecycleEvent(TenantMemberEntity member, String eventType,
+                                      LocalDateTime occurredAt, Long operatorUserId) {
+        TenantMemberLifecycleLogEntity event = new TenantMemberLifecycleLogEntity();
+        event.setTenantId(member.getTenantId());
+        event.setUserId(member.getUserId());
+        event.setMemberId(member.getMemberId());
+        event.setEventType(eventType);
+        event.setOperatorUserId(operatorUserId);
+        event.setOccurredAt(occurredAt);
+        tenantMemberLifecycleLogMapper.insert(event);
     }
 
     private ExternalIdentityBindingEntity findExternalBinding(String appCode, String provider, String corpId,

@@ -65,7 +65,7 @@
             </el-button>
           </div>
 
-          <el-form :inline="true" class="search-form">
+          <el-form :inline="true" class="search-form" data-surface="user.search">
             <el-form-item label="用户名">
               <el-input v-model="query.username" placeholder="请输入用户名" clearable />
             </el-form-item>
@@ -95,7 +95,7 @@
             <div class="toolbar-left">
               <el-button type="primary" data-action="user.create" @click="handleAdd"> 新增成员 </el-button>
               <el-button type="danger" :disabled="selectedUsers.length === 0" @click="handleBatchDelete">
-                批量删除
+                批量移出租户成员
               </el-button>
               <el-tooltip :disabled="canSyncWecom" :content="wecomSyncDisabledTip" placement="top">
                 <span>
@@ -245,6 +245,16 @@
                   >
                     设主部门
                   </el-button>
+                  <el-button
+                    v-if="selectedOrg && row.orgRelationId"
+                    link
+                    type="danger"
+                    size="small"
+                    data-action="user.org.remove"
+                    @click="handleRemoveFromOrg(row)"
+                  >
+                    移出当前部门
+                  </el-button>
                   <el-button link type="primary" size="small" @click="handleAssignRoles(row)"> 分配角色 </el-button>
                   <el-button link type="primary" size="small" @click="handleExternalIdentity(row)">
                     企微身份
@@ -265,7 +275,16 @@
                   >
                     {{ row.status === 1 ? '禁用' : '启用' }}
                   </el-button>
-                  <el-button link type="danger" size="small" @click="handleDelete(row)"> 删除 </el-button>
+                  <el-button
+                    link
+                    type="danger"
+                    size="small"
+                    data-action="user.tenant.remove"
+                    :disabled="!isRowSelectable(row)"
+                    @click="handleDelete(row)"
+                  >
+                    移出租户成员
+                  </el-button>
                 </div>
               </template>
             </el-table-column>
@@ -284,8 +303,47 @@
     <el-dialog v-model="dialogVisible" :title="form.userId ? '编辑成员' : '新增成员'" width="620px">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="110px" data-surface="user.form">
         <el-form-item label="用户名" prop="username">
-          <el-input v-model="form.username" :disabled="!!form.userId" placeholder="请输入用户名" />
+          <el-input
+            v-model="form.username"
+            :disabled="!!form.userId"
+            placeholder="请输入用户名"
+            @blur="checkAccountAvailability"
+          />
         </el-form-item>
+        <el-alert
+          v-if="!form.userId && accountAvailability?.status === 'UNAVAILABLE'"
+          title="登录账号不可用，请修改登录账号"
+          type="error"
+          :closable="false"
+          show-icon
+          class="state-alert"
+        />
+        <el-alert
+          v-else-if="!form.userId && accountAvailabilityError"
+          title="登录账号校验失败，请重试"
+          type="error"
+          :closable="false"
+          show-icon
+          class="state-alert"
+          data-state="account-check-error"
+        />
+        <div
+          v-if="!form.userId && accountAvailability?.status === 'RECOVERABLE'"
+          class="recoverable-account"
+          data-state="recoverable-account"
+        >
+          <el-alert title="该账号对应已移出的原成员" type="warning" :closable="false" show-icon />
+          <el-descriptions :column="2" border size="small">
+            <el-descriptions-item label="姓名">{{ accountAvailability.displayName || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="成员编号">{{ accountAvailability.memberNo || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="手机号">{{ accountAvailability.maskedPhone || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="邮箱">{{ accountAvailability.maskedEmail || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="移出时间" :span="2">
+              {{ formatTime(accountAvailability.removedAt) || '-' }}
+            </el-descriptions-item>
+          </el-descriptions>
+          <div class="recoverable-account__notice">恢复后不会自动恢复原部门、岗位、角色或权限。</div>
+        </div>
         <el-form-item v-if="!form.userId" label="初始密码" prop="password">
           <el-input v-model="form.password" type="password" show-password placeholder="不填默认 Mango@123456" />
           <PasswordPolicyHint v-if="form.password" :password="form.password" />
@@ -331,7 +389,21 @@
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false"> 取消 </el-button>
-        <el-button type="primary" :loading="submitLoading" @click="handleSubmit"> 确定 </el-button>
+        <el-button
+          v-if="!form.userId && accountAvailability?.status === 'RECOVERABLE'"
+          @click="handleChangeLoginAccount"
+        >
+          修改登录账号
+        </el-button>
+        <el-button
+          type="primary"
+          data-action="user.restore"
+          :loading="submitLoading || accountAvailabilityLoading"
+          :disabled="!form.userId && accountAvailability?.status === 'UNAVAILABLE'"
+          @click="handleSubmit"
+        >
+          {{ !form.userId && accountAvailability?.status === 'RECOVERABLE' ? '恢复原成员' : '确定' }}
+        </el-button>
       </template>
     </el-dialog>
 
@@ -592,7 +664,13 @@ import { Session } from '@mango/common/utils/storage';
 import { orgApi, type SysOrg } from '../../api/org';
 import { postApi, type PostVO } from '../../api/post';
 import { roleApi, type RoleVO } from '../../api/role';
-import { userApi, type ExternalIdentityBindingVO, type IdentityUserVO, type WecomUserSyncResult } from '../../api/user';
+import {
+  userApi,
+  type ExternalIdentityBindingVO,
+  type IdentityAccountAvailabilityVO,
+  type IdentityUserVO,
+  type WecomUserSyncResult,
+} from '../../api/user';
 
 const { options: statusOptions } = useDict('sys_normal_disable');
 
@@ -614,6 +692,9 @@ const orgMemberSubmitLoading = ref(false);
 const wecomSyncLoading = ref(false);
 const externalIdentityLoading = ref(false);
 const resetPasswordLoading = ref(false);
+const accountAvailabilityLoading = ref(false);
+const accountAvailabilityError = ref(false);
+const accountAvailability = ref<IdentityAccountAvailabilityVO>();
 const tableData = ref<IdentityUserVO[]>([]);
 const selectedUsers = ref<IdentityUserVO[]>([]);
 const externalIdentities = ref<ExternalIdentityBindingVO[]>([]);
@@ -644,6 +725,7 @@ let loadSequence = 0;
 let orgTreeSequence = 0;
 let orgScopeSequence = 0;
 let candidateSequence = 0;
+let accountAvailabilitySequence = 0;
 
 const query = reactive({
   pageNum: 1,
@@ -919,6 +1001,7 @@ function lockTip(row: IdentityUserVO) {
 }
 
 function resetForm() {
+  clearAccountAvailability();
   Object.assign(form, {
     userId: undefined,
     username: '',
@@ -937,6 +1020,44 @@ function resetForm() {
 function handleAdd() {
   resetForm();
   dialogVisible.value = true;
+}
+
+async function checkAccountAvailability(): Promise<boolean> {
+  if (form.userId || !form.username.trim()) {
+    clearAccountAvailability();
+    return false;
+  }
+  const sequence = ++accountAvailabilitySequence;
+  const username = form.username.trim();
+  accountAvailabilityLoading.value = true;
+  accountAvailabilityError.value = false;
+  try {
+    const result = await userApi.accountAvailability(username, form.realm || 'INTERNAL');
+    if (sequence !== accountAvailabilitySequence || username !== form.username.trim()) return false;
+    accountAvailability.value = result;
+    return true;
+  } catch {
+    if (sequence === accountAvailabilitySequence) {
+      accountAvailability.value = undefined;
+      accountAvailabilityError.value = true;
+      ElMessage.error('登录账号校验失败，请重试');
+    }
+    return false;
+  } finally {
+    if (sequence === accountAvailabilitySequence) accountAvailabilityLoading.value = false;
+  }
+}
+
+function handleChangeLoginAccount() {
+  clearAccountAvailability();
+  form.username = '';
+}
+
+function clearAccountAvailability() {
+  accountAvailabilitySequence += 1;
+  accountAvailability.value = undefined;
+  accountAvailabilityError.value = false;
+  accountAvailabilityLoading.value = false;
 }
 
 function openWecomSyncDialog() {
@@ -1079,26 +1200,44 @@ function handleEdit(row: IdentityUserVO) {
 
 async function handleSubmit() {
   if (!formRef.value) return;
-  await formRef.value.validate();
+  const valid = await formRef.value.validate().catch(() => false);
+  if (!valid) return;
   submitLoading.value = true;
   try {
     if (form.userId) {
       await userApi.update(form);
       ElMessage.success('修改成功');
     } else {
-      await orgApi.createMemberAccount({
-        orgId: form.orgId!,
-        username: form.username,
-        password: form.password,
-        nickname: form.nickname,
-        phone: form.phone,
-        email: form.email,
-        status: form.status,
-        remark: form.remark,
-        primaryFlag: true,
-        leaderFlag: false,
-      });
-      ElMessage.success('新增成功');
+      const checked = await checkAccountAvailability();
+      if (!checked || !accountAvailability.value) {
+        return;
+      }
+      if (accountAvailability.value?.status === 'UNAVAILABLE') {
+        ElMessage.error('登录账号不可用，请修改登录账号');
+        return;
+      }
+      if (accountAvailability.value.status === 'RECOVERABLE') {
+        await orgApi.restoreMemberAccount({
+          orgId: form.orgId!,
+          username: form.username.trim(),
+          realm: form.realm || 'INTERNAL',
+        });
+        ElMessage.success('已恢复原成员');
+      } else {
+        await orgApi.createMemberAccount({
+          orgId: form.orgId!,
+          username: form.username,
+          password: form.password,
+          nickname: form.nickname,
+          phone: form.phone,
+          email: form.email,
+          status: form.status,
+          remark: form.remark,
+          primaryFlag: true,
+          leaderFlag: false,
+        });
+        ElMessage.success('新增成功');
+      }
     }
     dialogVisible.value = false;
     await loadData();
@@ -1109,14 +1248,18 @@ async function handleSubmit() {
 
 function handleDelete(row: IdentityUserVO) {
   if (!row.userId) return;
-  ElMessageBox.confirm(`确认移除成员「${row.username}」?`, '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning',
-  })
+  ElMessageBox.confirm(
+    `确认将成员「${row.username}」移出当前租户？其登录身份和历史将保留，当前角色与全部部门关系会被撤销，恢复时不会自动恢复权限。`,
+    '移出租户成员',
+    {
+      confirmButtonText: '移出租户',
+      cancelButtonText: '取消',
+      type: 'warning',
+    },
+  )
     .then(async () => {
       await userApi.delete(row.userId!);
-      ElMessage.success('移除成功');
+      ElMessage.success('已移出租户成员');
       await loadData();
     })
     .catch(() => {});
@@ -1134,20 +1277,40 @@ function isRowSelectable(row: IdentityUserVO) {
 function handleBatchDelete() {
   const userIds = selectedUsers.value.map((item) => item.userId).filter(Boolean) as ApiId[];
   if (!userIds.length) {
-    ElMessage.warning('请选择要删除的成员');
+    ElMessage.warning('请选择要移出租户的成员');
     return;
   }
-  ElMessageBox.confirm(`确认批量移除选中的 ${userIds.length} 个成员？`, '批量删除确认', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning',
-  })
+  ElMessageBox.confirm(
+    `确认将选中的 ${userIds.length} 个成员移出租户？角色和全部部门关系会被撤销。`,
+    '批量移出租户成员',
+    {
+      confirmButtonText: '移出租户',
+      cancelButtonText: '取消',
+      type: 'warning',
+    },
+  )
     .then(async () => {
       const count = await userApi.deleteBatch(userIds);
       ElMessage.success(`已移除 ${count} 个成员`);
       await loadData();
     })
     .catch(() => {});
+}
+
+async function handleRemoveFromOrg(row: IdentityUserVO) {
+  if (!row.orgRelationId) return;
+  await ElMessageBox.confirm(
+    `确认将成员「${row.username}」移出当前部门？成员仍保留在租户中，其角色和其它部门归属不受影响。`,
+    '移出当前部门',
+    {
+      confirmButtonText: '移出部门',
+      cancelButtonText: '取消',
+      type: 'warning',
+    },
+  );
+  await orgApi.removeMember(row.orgRelationId);
+  ElMessage.success('已移出当前部门');
+  await loadData();
 }
 
 function handleStatus(row: IdentityUserVO) {
@@ -1401,6 +1564,15 @@ watch(orgKeyword, (value) => {
   orgTreeRef.value?.filter(value);
 });
 
+watch(
+  () => form.username,
+  () => {
+    if (!form.userId) {
+      clearAccountAvailability();
+    }
+  },
+);
+
 onMounted(async () => {
   await Promise.all([loadOrgTree(), loadPostOptions()]);
   await loadData();
@@ -1456,6 +1628,18 @@ onMounted(async () => {
 
 .state-alert {
   margin-bottom: 12px;
+}
+
+.recoverable-account {
+  display: grid;
+  gap: 12px;
+  margin: 0 0 18px 110px;
+}
+
+.recoverable-account__notice {
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+  line-height: 1.6;
 }
 
 .org-tree {

@@ -21,6 +21,7 @@
 | 租户初始化 | 新建租户时为创建者补建管理员成员，并尝试绑定 `ROLE_ADMIN` |
 | 用户管理接口 | 提供用户分页、详情、新增、编辑、状态、重置密码、批量移除等接口；分页支持按多个组织范围查询、关键词 OR 搜索和排除目标组织已有成员 |
 | 组织内原子开户 | 受信 `TenantMemberProvider.createMemberInOrg` 在单事务内创建全局账号、租户成员和成员组织关系，任一步失败整体回滚 |
+| 成员生命周期 | 移出租户时保留 `identity_user`、`tenant_member` 和原标识，撤销当前租户角色及全部部门关系；账号可用性查询可识别本特性移出的原成员，并通过受信恢复入口只建立本次选择的部门关系 |
 | Workflow 办理人身份批量查询 | `POST /identity/user/info/batch` 按当前租户和有效成员关系批量解析 `userIds`/`usernames`，最多 200 个去重标识；未命中不返回记录 |
 | 资源声明 | 通过 Resource Registry 的 `IDENTITY_USER` 和 `ORG_MEMBER_BINDING` 注入 demo/bootstrap 用户和组织成员绑定 |
 
@@ -59,7 +60,7 @@
 |------|------|
 | `PasswordEncoder` | 创建用户、重置密码和登录校验使用同一密码编码器 |
 | `MangoContextHolder` | 管理接口按当前租户和当前用户上下文处理成员数据 |
-| `SubjectRoleBindingMapper` | 删除租户成员时清理当前租户下的成员角色绑定 |
+| `RoleBindingApi` | 移出租户成员前撤销当前租户下的成员角色绑定；业务失败时终止移出 |
 
 ## 4. 前端接入
 
@@ -118,7 +119,7 @@ Auth 的企业微信自助绑定会按需查询当前成员昵称头像，个人
 | 登录域 | `INTERNAL` | 创建用户未传 `realm` 时使用；认证按 `realm + username` 查用户 |
 | 操作者类型 | `INTERNAL_USER` | 创建用户未传 `actorType` 时使用 |
 | 归属主体类型 | `INTERNAL_ORG` | 创建用户未传 `partyType` 时使用 |
-| 初始密码 | `admin123` | 创建用户未传 `password` 时会被编码保存 |
+| 初始密码 | `Mango@123456` | 创建用户未传 `password` 时会被编码保存 |
 | 外部身份默认绑定来源 | `SYNC` | `BindExternalIdentityCommand.bindSource` 为空时使用 |
 | 外部身份绑定状态 | `BOUND` | 绑定成功后写入 `bind_status` |
 | 租户初始化角色 | `ROLE_ADMIN` | 新建租户时尝试给创建者成员绑定该角色 |
@@ -139,9 +140,10 @@ HTTP 接口前缀是 `/identity`。
 | GET | `/identity/users/page` | `system:user:list` | 分页查询当前租户可管理成员；`orgIds` 匹配任一组织，`excludeOrgId` 排除目标组织已有成员，`keyword` 对用户名、昵称、手机号和邮箱执行 OR 搜索 |
 | GET | `/identity/users/detail` | `system:user:query` | 查询成员详情 |
 | POST | `/identity/users` | `system:user:add` | 新增当前租户成员账号 |
+| GET | `/identity/users/account-availability` | `system:user:add` | 按 `realm + username` 返回 `AVAILABLE`、当前租户 `RECOVERABLE` 或通用 `UNAVAILABLE`；恢复候选资料仅返回脱敏联系方式 |
 | PUT | `/identity/users` | `system:user:edit` | 修改成员资料和成员状态 |
-| DELETE | `/identity/users` | `system:user:delete` | 移除当前租户成员身份 |
-| POST | `/identity/users/delete-batch` | `system:user:delete` | 批量移除当前租户成员身份 |
+| DELETE | `/identity/users` | `system:user:delete` | 软移出当前租户成员，保留账号和成员标识，撤销角色及全部部门关系 |
+| POST | `/identity/users/delete-batch` | `system:user:delete` | 按相同语义批量软移出当前租户成员；当前用户会被排除 |
 | PUT | `/identity/users/status` | `system:user:status` | 启用或禁用当前租户成员身份 |
 | PUT | `/identity/users/password/reset` | `system:user:reset-password` | 重置成员账号密码 |
 | PUT | `/identity/users/unlock` | `system:user:unlock` | 解锁被临时锁定的成员账号 |
@@ -167,6 +169,7 @@ HTTP 接口前缀是 `/identity`。
 | `BindExternalIdentityCommand` | `userId`、`provider`、`corpId`、`externalUserId` 必填 |
 | `IdentityUserPageQuery` | 支持 `username`、`keyword`、`nickname`、`phone`、`email`、`status`、`realm`、`actorType`、`partyType`、`partyId`、`orgId`、最多 500 个 `orgIds` 和 `excludeOrgId` |
 | `CreateTenantMemberInOrgCommand` | 受信组织开户命令；`tenantId`、`orgId`、`username`、主组织/主管标识和操作用户必填，可传岗位、密码、姓名、联系方式、状态和备注 |
+| `RestoreTenantMemberInOrgCommand` | 受信恢复命令；按当前租户、`realm + username` 恢复本特性移出的原成员，并只创建指定组织和岗位关系 |
 
 Java API：
 
@@ -175,7 +178,7 @@ Java API：
 | `IdentityUserApi` | 用户管理、身份资料、接收人解析和外部身份绑定 |
 | `AuthIdentityApi` | 认证链路内部身份事实查询 |
 | `AuthUserProvider` | 给 `mango-auth` 使用的认证事实 Provider |
-| `TenantMemberProvider` | 按用户和租户查询启用成员事实，并为受信 Org 调用提供组织内原子开户 |
+| `TenantMemberProvider` | 按用户和租户查询启用成员事实，并为受信 Org 调用提供组织内原子开户和原成员恢复 |
 
 ### 7.1 从 Maven 1.0.21 升级到 1.0.22
 
@@ -236,6 +239,7 @@ mango-identity-core/src/main/resources/db/migration/identity
 | `identity_user` | 全局账号和认证资料 | `uk_identity_user_realm_username(realm, username)` |
 | `tenant_member` | 账号在租户下的成员身份 | `uk_tenant_member_tenant_user(tenant_id, user_id)`、`uk_tenant_member_tenant_no(tenant_id, member_no)` |
 | `tenant_member_org` | 成员组织岗位关系 | `uk_tenant_member_org_member_org(tenant_id, member_id, org_id)` |
+| `tenant_member_lifecycle_log` | 今天起由本特性写入的成员创建、移出和恢复事件 | 按租户、成员和发生时间索引；恢复资格要求存在本特性 `REMOVED` 事件 |
 | `identity_external_binding` | 第三方登录身份绑定 | `uk_external_binding_external(tenant_id, app_code, provider, corp_id, external_user_id)` |
 
 初始化入口：
@@ -244,6 +248,7 @@ mango-identity-core/src/main/resources/db/migration/identity
 |------|------|
 | `V1__init_identity.sql` | 新环境一次性创建 identity 最终态表、索引和约束，只包含 DDL |
 | `V2__add_real_name_and_binding_app.sql` | 存量环境增加实名字段和绑定 `app_code`，存量绑定默认回填 `internal-admin` |
+| `V5__tenant_member_lifecycle.sql` | 创建成员生命周期事件表；不回填特性上线前已物理删除或已退出的历史成员 |
 | `META-INF/mango/resources/identity-common-domain.yml` | 注册 `IDENTITY`（身份管理）业务域 |
 | `META-INF/mango/resources/identity-common-bootstrap.yml` | 默认加载必需的 `admin` 全局账号和租户 1 成员 |
 | `META-INF/mango/demo/identity-demo-members.yml` | 开启 demo 资源后加载租户 2、3、4 的演示成员和组织关系 |

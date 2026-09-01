@@ -5,6 +5,7 @@ import io.mango.org.api.SysOrgApi;
 import io.mango.org.api.command.AddOrgMemberCommand;
 import io.mango.org.api.command.CreateSysOrgCommand;
 import io.mango.org.api.command.CreateOrgMemberAccountCommand;
+import io.mango.org.api.command.RestoreOrgMemberAccountCommand;
 import io.mango.org.api.command.UpdateSysOrgCommand;
 import io.mango.org.api.command.UpdateOrgMemberCommand;
 import io.mango.org.api.query.SysOrgTreeQuery;
@@ -62,6 +63,10 @@ public interface OrgFeignClient extends SysOrgApi {
     @Override
     @PostMapping("/member-accounts")
     R<Long> createMemberAccount(@RequestBody CreateOrgMemberAccountCommand command);
+
+    @Override
+    @PostMapping("/member-accounts/restore")
+    R<Long> restoreMemberAccount(@RequestBody RestoreOrgMemberAccountCommand command);
 
     @Override
     @PostMapping("/members")

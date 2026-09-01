@@ -2,6 +2,7 @@ package io.mango.identity.api;
 
 import io.mango.identity.api.command.AddTenantMemberOrgCommand;
 import io.mango.identity.api.command.CreateTenantMemberInOrgCommand;
+import io.mango.identity.api.command.RestoreTenantMemberInOrgCommand;
 import io.mango.identity.api.command.UpdateTenantMemberOrgCommand;
 import io.mango.identity.api.vo.TenantMemberOrgRelationVO;
 import io.mango.identity.api.vo.TenantMemberVO;
@@ -21,6 +22,9 @@ public interface TenantMemberProvider {
      * @return 新用户 ID
      */
     Long createMemberInOrg(CreateTenantMemberInOrgCommand command);
+
+    /** Restore a retained member and add only the selected organization relation. */
+    Long restoreMemberInOrg(RestoreTenantMemberInOrgCommand command);
 
     /**
      * 查询账号在指定机构下的启用成员身份。
