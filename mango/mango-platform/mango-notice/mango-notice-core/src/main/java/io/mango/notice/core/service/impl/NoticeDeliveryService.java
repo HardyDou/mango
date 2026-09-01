@@ -133,6 +133,7 @@ public class NoticeDeliveryService implements INoticeDeliveryService {
         validateMessageActions(command);
         NoticeTaskEntity task = createTask(command, templates, recipients);
         int totalCount = 0;
+        int sendableCount = 0;
         Set<NoticeChannelType> actualChannels = new LinkedHashSet<>();
         for (NoticeRecipientCommand recipientCommand : recipients) {
             NoticeRecipientEntity recipient = createRecipient(task.getId(), recipientCommand);
@@ -144,10 +145,18 @@ public class NoticeDeliveryService implements INoticeDeliveryService {
                 if (!decision.allowed()) {
                     continue;
                 }
+                sendableCount++;
             }
         }
         Require.isTrue(totalCount > 0, NoticeCode.NOTICE_BUSINESS_ERROR, "没有可发送的通知记录");
         updateTaskTotalCount(task, totalCount, actualChannels);
+        if (sendableCount == 0) {
+            task.setStatus(NoticeTaskStatus.CANCELED);
+            task.setSuccessCount(0);
+            task.setFailCount(0);
+            taskMapper.updateById(task);
+            return new NoticeSendResultVO(0, 0);
+        }
         outboxStore.enqueue(
                 NoticeOutboxMessageFactory.toOutboxMessage(task.getId(), nextAttemptAt(task)));
         return new NoticeSendResultVO(0, 0);
@@ -179,11 +188,7 @@ public class NoticeDeliveryService implements INoticeDeliveryService {
                                         List.of(
                                                 NoticeSendStatus.PENDING,
                                                 NoticeSendStatus.RETRY_WAITING)));
-        if (records.isEmpty() && hasOnlyCanceledRecords(taskId)) {
-            task.setStatus(NoticeTaskStatus.CANCELED);
-            task.setSuccessCount(0);
-            task.setFailCount(0);
-            taskMapper.updateById(task);
+        if (cancelTaskWhenOnlyCanceledRecords(taskId, task, records)) {
             return 0;
         }
         int successCount = 0;
@@ -219,9 +224,29 @@ public class NoticeDeliveryService implements INoticeDeliveryService {
         int totalFailCount = Math.max(0, previousFailCount - retryWaitingCount) + failCount;
         task.setSuccessCount(totalSuccessCount);
         task.setFailCount(totalFailCount);
-        task.setStatus(resolveTaskStatus(totalSuccessCount, totalFailCount));
+        task.setStatus(resolveCompletedTaskStatus(taskId, totalSuccessCount, totalFailCount));
         taskMapper.updateById(task);
         return successCount;
+    }
+
+    private boolean cancelTaskWhenOnlyCanceledRecords(
+            Long taskId, NoticeTaskEntity task, List<NoticeSendRecordEntity> records) {
+        if (!records.isEmpty() || !hasOnlyCanceledRecords(taskId)) {
+            return false;
+        }
+        task.setStatus(NoticeTaskStatus.CANCELED);
+        task.setSuccessCount(0);
+        task.setFailCount(0);
+        taskMapper.updateById(task);
+        return true;
+    }
+
+    private NoticeTaskStatus resolveCompletedTaskStatus(
+            Long taskId, int successCount, int failCount) {
+        if (successCount == 0 && failCount == 0 && hasOnlyCanceledRecords(taskId)) {
+            return NoticeTaskStatus.CANCELED;
+        }
+        return resolveTaskStatus(successCount, failCount);
     }
 
     private boolean hasOnlyCanceledRecords(Long taskId) {
@@ -339,7 +364,9 @@ public class NoticeDeliveryService implements INoticeDeliveryService {
                             .toList();
         }
         if (!templates.isEmpty() || businessType.getId() != null) {
-            return ensureSiteTemplate(command, businessType, templates);
+            return requested.isEmpty()
+                    ? ensureSiteTemplate(command, businessType, templates)
+                    : templates;
         }
         if (StringUtils.hasText(command.getTitle()) || StringUtils.hasText(command.getContent())) {
             return directTemplates(command, businessType, requested);
@@ -648,6 +675,11 @@ public class NoticeDeliveryService implements INoticeDeliveryService {
                 && !canSendToRecipient(template.getChannelType(), recipient)) {
             return missingRecipientAccountDecision(template.getChannelType());
         }
+        if (template.getChannelType() != NoticeChannelType.SITE
+                && (senderMap().get(template.getChannelType()) == null
+                || routeChannelConfigs(template, null).isEmpty())) {
+            return SendDecision.canceled(NoticeSendCancelCode.CHANNEL_UNAVAILABLE, "没有可用通知通道");
+        }
         PreferenceMatch preference =
                 effectivePreference(recipient.getUserId(), businessType, template.getChannelType());
         if (!preference.enabled()) {
@@ -658,7 +690,53 @@ public class NoticeDeliveryService implements INoticeDeliveryService {
         if (!account.allowed()) {
             return SendDecision.canceled(account.cancelCode(), account.cancelReason());
         }
-        return SendDecision.allowed(account.accountId());
+        if (template.getChannelType() == NoticeChannelType.WECOM
+                && recipient.getUserId() != null
+                && !StringUtils.hasText(recipient.getWecomUserId())) {
+            return evaluateWecomIdentity(template, recipient, account.accountId());
+        }
+        return SendDecision.allowed(account.accountId(), null);
+    }
+
+    private SendDecision evaluateWecomIdentity(
+            NoticeBusinessChannelTemplateEntity template,
+            NoticeRecipientEntity recipient,
+            Long accountId) {
+        for (NoticeChannelConfigEntity config : routeChannelConfigs(template, null)) {
+            String corpId;
+            try {
+                corpId = WecomChannelConfig.fromJson(config.getConfigJson()).corpId();
+            } catch (RuntimeException exception) {
+                return SendDecision.allowed(accountId, null);
+            }
+            if (!StringUtils.hasText(corpId)) {
+                return SendDecision.allowed(accountId, null);
+            }
+            ExternalIdentityQuery query = new ExternalIdentityQuery();
+            query.setUserId(recipient.getUserId());
+            query.setProvider("WECOM");
+            query.setCorpId(corpId.trim());
+            NoticeRemoteResult<ExternalIdentityBindingVO> response;
+            try {
+                response = identityGateway.findExternalIdentity(query);
+            } catch (RuntimeException exception) {
+                return SendDecision.allowed(accountId, null);
+            }
+            if (!response.isSuccess()) {
+                return SendDecision.allowed(accountId, null);
+            }
+            ExternalIdentityBindingVO binding = response.getData();
+            if (binding != null
+                    && "BOUND".equals(binding.getBindStatus())
+                    && StringUtils.hasText(binding.getExternalUserId())) {
+                recipient.setWecomUserId(binding.getExternalUserId().trim());
+                recipientMapper.updateById(recipient);
+                return SendDecision.allowed(accountId, config.getId());
+            }
+        }
+        return SendDecision.canceled(
+                NoticeSendCancelCode.RECIPIENT_ACCOUNT_MISSING,
+                "用户缺少与可用渠道匹配的企业微信绑定");
     }
 
     private SendDecision missingRecipientAccountDecision(NoticeChannelType channelType) {
@@ -868,6 +946,7 @@ public class NoticeDeliveryService implements INoticeDeliveryService {
         record.setBusinessChannelTemplateId(template.getId());
         record.setTemplateVersion(template.getVersion());
         record.setChannelType(template.getChannelType());
+        record.setChannelConfigId(decision.channelConfigId());
         record.setRequestId("NR" + UUID.randomUUID().toString().replace("-", ""));
         record.setStatus(decision.allowed() ? NoticeSendStatus.PENDING : NoticeSendStatus.CANCELED);
         record.setRenderedTitle(render(template.getTitleTemplate(), params));
@@ -897,6 +976,7 @@ public class NoticeDeliveryService implements INoticeDeliveryService {
         snapshot.put("businessChannelTemplateId", template.getId());
         snapshot.put("templateVersion", template.getVersion());
         snapshot.put("accountId", decision.accountId());
+        snapshot.put("channelConfigId", decision.channelConfigId());
         snapshot.put("cancelCode", decision.cancelCode());
         snapshot.put("params", params == null ? Collections.emptyMap() : params);
         return snapshot;
@@ -957,7 +1037,9 @@ public class NoticeDeliveryService implements INoticeDeliveryService {
             NoticeSendRecordEntity record,
             NoticeRecipientEntity recipient,
             NoticeBusinessChannelTemplateEntity template) {
-        List<NoticeChannelConfigEntity> configs = routeChannelConfigs(template, record.getId());
+        List<NoticeChannelConfigEntity> configs = record.getChannelConfigId() == null
+                ? routeChannelConfigs(template, record.getId())
+                : resolvedChannelConfig(template, record.getChannelConfigId());
         if (configs.isEmpty()) {
             if (routeMode(template) == NoticeChannelRouteMode.TAG) {
                 return ChannelSendResult.failed(
@@ -972,7 +1054,8 @@ public class NoticeDeliveryService implements INoticeDeliveryService {
         ChannelSendResult identityFailure = null;
         for (NoticeChannelConfigEntity config : configs) {
             if (template.getChannelType() == NoticeChannelType.WECOM
-                    && recipient.getUserId() != null) {
+                    && recipient.getUserId() != null
+                    && !StringUtils.hasText(recipient.getWecomUserId())) {
                 WecomIdentityResolution resolution = resolveWecomIdentity(recipient, config);
                 if (!resolution.resolved()) {
                     identityFailure = resolution.failure();
@@ -1177,6 +1260,19 @@ public class NoticeDeliveryService implements INoticeDeliveryService {
         return orderedRotation(configs, seed == null ? 0L : seed);
     }
 
+    private List<NoticeChannelConfigEntity> resolvedChannelConfig(
+            NoticeBusinessChannelTemplateEntity template, Long configId) {
+        NoticeChannelConfigEntity config = channelConfigMapper.selectById(configId);
+        if (config == null
+                || config.getChannelType() != template.getChannelType()
+                || !Boolean.TRUE.equals(config.getEnabled())
+                || config.getConfigStatus() != NoticeChannelConfigStatus.COMPLETE
+                || !NoticeChannelCapabilityPolicy.normalize(config.getCapabilityMode()).supportsSend()) {
+            return List.of();
+        }
+        return List.of(config);
+    }
+
     private NoticeChannelRouteMode routeMode(NoticeBusinessChannelTemplateEntity template) {
         if (template.getRouteMode() != null) {
             return template.getRouteMode();
@@ -1311,13 +1407,13 @@ public class NoticeDeliveryService implements INoticeDeliveryService {
     }
 
     private record SendDecision(
-            boolean allowed, Long accountId, String cancelCode, String cancelReason) {
-        static SendDecision allowed(Long accountId) {
-            return new SendDecision(true, accountId, null, null);
+            boolean allowed, Long accountId, Long channelConfigId, String cancelCode, String cancelReason) {
+        static SendDecision allowed(Long accountId, Long channelConfigId) {
+            return new SendDecision(true, accountId, channelConfigId, null, null);
         }
 
         static SendDecision canceled(NoticeSendCancelCode cancelCode, String cancelReason) {
-            return new SendDecision(false, null, cancelCode.name(), cancelReason);
+            return new SendDecision(false, null, null, cancelCode.name(), cancelReason);
         }
     }
 

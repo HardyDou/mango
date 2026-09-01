@@ -72,7 +72,8 @@ public class NoticeMessageTemplateResourceHandler implements ResourceHandler {
                 .fieldDescription("contentTemplate", "内容模板。")
                 .fieldDescription("externalTemplateId", "三方渠道模板 ID。")
                 .fieldDescription("variableMapping", "变量映射 JSON。")
-                .fieldDescription("enabled", "是否启用，默认 true。")
+                .fieldDescription("enabled", "业务消息类型是否启用，默认 true。")
+                .fieldDescription("channelEnabled", "渠道模板是否启用；未声明时兼容使用 enabled。")
                 .fieldDescription("channelConfigId", "绑定渠道配置 ID，空表示 AUTO。")
                 .fieldDescription("publishTime", "资源模板发布时间，可选；未声明时新记录保持为空，更新时保留原值。")
                 .build();
@@ -232,7 +233,7 @@ public class NoticeMessageTemplateResourceHandler implements ResourceHandler {
         entity.setChannelTemplateId(payload.externalTemplateId());
         entity.setVariableMapping(payload.variableMapping());
         entity.setVersionStatus(payload.versionStatus());
-        entity.setEnabled(payload.enabled());
+        entity.setEnabled(payload.channelEnabled());
         entity.setChannelConfigId(payload.channelConfigId());
         if (payload.publishTime() != null) {
             entity.setPublishTime(payload.publishTime());
@@ -297,7 +298,7 @@ public class NoticeMessageTemplateResourceHandler implements ResourceHandler {
 
     private record TemplatePayload(Long businessTypeId, Long configVersionId, Long channelTemplateResourceId,
                                    String tenantId, String bizType, String bizName, String bizGroup, String domainCode,
-                                   String description, String paramsSchema, Boolean enabled,
+                                   String description, String paramsSchema, Boolean enabled, Boolean channelEnabled,
                                    NoticePriority defaultPriority, String idempotentStrategy, Integer version,
                                    NoticeTemplateVersionStatus versionStatus, NoticeChannelType channelType,
                                    String templateName, String titleTemplate, String contentTemplate,
@@ -310,6 +311,7 @@ public class NoticeMessageTemplateResourceHandler implements ResourceHandler {
             if (version == null) {
                 version = 1;
             }
+            Boolean enabled = fieldBoolean(resource, "enabled", false, true);
             return new TemplatePayload(
                     fieldLong(resource, "businessTypeId", false, Long.valueOf(id)),
                     fieldLong(resource, "configVersionId", true, null),
@@ -321,7 +323,8 @@ public class NoticeMessageTemplateResourceHandler implements ResourceHandler {
                     fieldText(resource, "domainCode", false),
                     fieldText(resource, "description", false),
                     fieldText(resource, "paramsSchema", false),
-                    fieldBoolean(resource, "enabled", false, true),
+                    enabled,
+                    fieldBoolean(resource, "channelEnabled", false, enabled),
                     parseEnum(NoticePriority.class, fieldText(resource, "defaultPriority", false), NoticePriority.NORMAL),
                     fieldText(resource, "idempotentStrategy", false),
                     fieldInt(resource, "version", false, version),

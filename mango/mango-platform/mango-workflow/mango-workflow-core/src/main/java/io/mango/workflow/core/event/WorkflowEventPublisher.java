@@ -45,7 +45,8 @@ public class WorkflowEventPublisher {
     public void publishProcessStarted(
             WorkflowDefinitionEntity definition,
             ProcessInstance instance,
-            Map<String, Object> variables) {
+            Map<String, Object> variables,
+            WorkflowBusinessApplyVO businessApply) {
         Require.notNull(definition, "流程定义不能为空");
         Require.notNull(instance, "流程实例不能为空");
         WorkflowEventPayloadVO payload = basePayload(WorkflowDomainEvents.PROCESS_STARTED,
@@ -54,7 +55,20 @@ public class WorkflowEventPublisher {
         payload.setDefinitionId(definition.getId());
         payload.setDefinitionKey(definition.getDefinitionKey());
         payload.setDefinitionName(definition.getDefinitionName());
+        putBusinessApply(payload, businessApply);
         publish(WorkflowDomainEvents.PROCESS_STARTED, instance.getBusinessKey(), variables, payload);
+    }
+
+    public void publishTaskArrived(
+            String processInstanceId,
+            WorkflowFormInstanceEntity formInstance,
+            Map<String, Object> variables,
+            WorkflowBusinessApplyVO businessApply) {
+        WorkflowEventPayloadVO payload = basePayload(
+                WorkflowDomainEvents.TASK_ADVANCED, processInstanceId, variables);
+        payload.setEnded(Boolean.FALSE);
+        putBusinessApply(payload, businessApply);
+        publish(WorkflowDomainEvents.TASK_ADVANCED, businessKey(formInstance, variables), variables, payload);
     }
 
     public void publishTaskCompleted(
@@ -202,9 +216,15 @@ public class WorkflowEventPublisher {
         payload.setApplyId(businessApply.getId() == null ? null : String.valueOf(businessApply.getId()));
         payload.setApplicantId(businessApply.getApplicantId());
         payload.setApplicantName(businessApply.getApplicantName());
+        payload.setApplyTitle(businessApply.getApplyTitle());
+        payload.setApplySummary(businessApply.getApplySummary());
         payload.setViewPath(businessApply.getViewPath());
         payload.setBusinessType(businessApply.getBusinessType());
         payload.setBusinessKey(businessApply.getBusinessKey());
+        payload.setProcessDefinitionId(businessApply.getEngineProcessDefinitionId());
+        payload.setDefinitionId(businessApply.getProcessDefinitionId());
+        payload.setDefinitionKey(businessApply.getProcessDefinitionKey());
+        payload.setDefinitionName(businessApply.getProcessName());
         payload.setApplyStatus(businessApply.getApplyStatus() == null ? null : businessApply.getApplyStatus().name());
         payload.setApplyStatusName(businessApply.getApplyStatusName());
         payload.setCurrentTaskNames(businessApply.getCurrentTaskNames());
@@ -307,6 +327,8 @@ public class WorkflowEventPublisher {
         map.put("applyId", numericStringOrValue(payload.getApplyId()));
         map.put("applicantId", payload.getApplicantId());
         map.put("applicantName", payload.getApplicantName());
+        map.put("applyTitle", payload.getApplyTitle());
+        map.put("applySummary", payload.getApplySummary());
         map.put("viewPath", payload.getViewPath());
         map.put("variables", payload.getVariables() == null ? Map.of() : payload.getVariables().toMap());
         map.put("processDefinitionId", payload.getProcessDefinitionId());

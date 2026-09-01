@@ -38,10 +38,8 @@ public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscribe
     private static final int DELETE_CONTROL_CODE_POINT = 0x7f;
     private static final Set<String> SUPPORTED_EVENTS = Set.of(
             WorkflowEventTypes.TASK_ADVANCED,
-            WorkflowEventTypes.TASK_REJECTED,
             WorkflowEventTypes.PROCESS_COMPLETED,
-            WorkflowEventTypes.PROCESS_REJECTED,
-            WorkflowEventTypes.PROCESS_ENDED);
+            WorkflowEventTypes.PROCESS_REJECTED);
 
     private final ApplicationEventPublisher eventPublisher;
 
@@ -158,18 +156,15 @@ public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscribe
 
     private String toNoticeBizType(String eventType) {
         return switch (eventType) {
-            case WorkflowEventTypes.TASK_REJECTED -> "workflow.task.rejected";
             case WorkflowEventTypes.PROCESS_COMPLETED -> "workflow.process.completed";
             case WorkflowEventTypes.PROCESS_REJECTED -> "workflow.process.rejected";
-            case WorkflowEventTypes.PROCESS_ENDED -> "workflow.process.ended";
             case WorkflowEventTypes.TASK_ADVANCED -> "workflow.task.assigned";
             default -> null;
         };
     }
 
     private NoticePriority priority(String eventType) {
-        if (WorkflowEventTypes.TASK_REJECTED.equals(eventType)
-                || WorkflowEventTypes.PROCESS_REJECTED.equals(eventType)) {
+        if (WorkflowEventTypes.PROCESS_REJECTED.equals(eventType)) {
             return NoticePriority.HIGH;
         }
         return NoticePriority.NORMAL;
@@ -180,8 +175,11 @@ public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscribe
         params.put("eventType", event.getEventType());
         params.put("businessType", event.getBusinessType());
         params.put("businessKey", event.getBusinessKey());
-        params.putIfAbsent("processName", firstText(stringValue(params.get("definitionName")),
-                stringValue(params.get("businessType")), "流程"));
+        params.put("processName", firstText(stringValue(params.get("definitionName")), "流程"));
+        params.put("applyTitle", firstText(stringValue(params.get("applyTitle")), "业务申请"));
+        if (WorkflowEventTypes.PROCESS_REJECTED.equals(event.getEventType())) {
+            params.put("reason", firstText(stringValue(params.get("reason")), "未填写"));
+        }
         return params;
     }
 
@@ -189,7 +187,7 @@ public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscribe
         NoticeSiteMessageSubjectCommand subject = new NoticeSiteMessageSubjectCommand();
         subject.setSubjectType("WORKFLOW_PROCESS");
         subject.setSubjectId(firstText(stringValue(params.get("processInstanceId")), event.getAggregateId(), event.getBusinessKey()));
-        subject.setSubjectName(firstText(stringValue(params.get("processName")), event.getBusinessType(), "流程"));
+        subject.setSubjectName(firstText(stringValue(params.get("processName")), "流程"));
         return subject;
     }
 
@@ -218,12 +216,11 @@ public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscribe
     }
 
     private String defaultWorkflowTargetKey(String eventType, Map<String, Object> params) {
-        if ((WorkflowEventTypes.TASK_ADVANCED.equals(eventType) || WorkflowEventTypes.TASK_REJECTED.equals(eventType))
+        if (WorkflowEventTypes.TASK_ADVANCED.equals(eventType)
                 && StringUtils.hasText(stringValue(params.get("taskId")))) {
             return "workflow:task:detail";
         }
-        if (WorkflowEventTypes.PROCESS_COMPLETED.equals(eventType)
-                || WorkflowEventTypes.PROCESS_ENDED.equals(eventType)) {
+        if (WorkflowEventTypes.PROCESS_COMPLETED.equals(eventType)) {
             return "workflow:task:done";
         }
         if (WorkflowEventTypes.PROCESS_REJECTED.equals(eventType)) {
@@ -246,9 +243,6 @@ public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscribe
     }
 
     private String actionLabel(String eventType) {
-        if (WorkflowEventTypes.TASK_REJECTED.equals(eventType)) {
-            return "查看驳回详情";
-        }
         if (processTerminalEvent(eventType)) {
             return "查看申请";
         }
@@ -289,8 +283,7 @@ public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscribe
 
     private boolean processTerminalEvent(String eventType) {
         return WorkflowEventTypes.PROCESS_COMPLETED.equals(eventType)
-                || WorkflowEventTypes.PROCESS_REJECTED.equals(eventType)
-                || WorkflowEventTypes.PROCESS_ENDED.equals(eventType);
+                || WorkflowEventTypes.PROCESS_REJECTED.equals(eventType);
     }
 
     private void addCandidateUsers(Set<Long> userIds, Object value) {

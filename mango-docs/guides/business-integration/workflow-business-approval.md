@@ -94,6 +94,18 @@ V3 升级只回填具有稳定 `operator_id` 或 `assignee_id` 的历史记录�
 | `workflow.task.completed` | 否 | 记录当前任务完成动作。 |
 | `workflow.task.advanced` | 是 | 同步下一节点或退回目标节点、当前办理人和业务进度。 |
 
+### 6.1 默认审批通知
+
+Mango 的默认审批通知只消费 `workflow.task.advanced`、`workflow.process.completed` 和
+`workflow.process.rejected`：首次提交及后续节点到达时通知实际办理人，最终通过或驳回时只通知原申请人一次。
+默认文案使用 `processName` 和 `applyTitle` 展示流程名称与业务标题；`businessType`、`definitionKey`、
+`taskDefinitionKey`、`businessKey` 仍可用于内部关联和路由，但不会回退为默认用户文案。业务应用发起审批时应提供
+可读的申请标题，无需为每个业务类型复制默认模板或事件订阅器。
+
+默认模板启用系统消息和企业微信，关闭邮件和短信。没有可用外部通道或用户没有匹配当前企业微信 CorpID 的有效绑定时，
+对应发送记录收敛为取消且不重试；渠道配置解析失败、Identity 查询异常等真实运行故障仍按发送失败处理。业务状态回写仍按
+本节事件接入方式独立处理，默认通知不替代业务状态机，也不改变流程 API、权限或租户边界。
+
 `POST /workflow/tasks/return` 会把当前任务退回到最近一个已完成的不同用户任务节点，或退回到 `targetTaskDefinitionKey` 指定的历史节点。串行流程可以不传目标节点；并行、多实例、重复审批节点或业务语义固定的流程，应在流程节点动作配置或业务审批页中显式传入 `targetTaskDefinitionKey`。接口返回结构与 `complete-result` 一致，业务侧应使用返回的 `currentTasks` 或订阅 `workflow.task.advanced` 刷新业务单据当前节点和当前办理人；退回不会发布 `workflow.task.completed`，也不会把流程状态改为驳回。
 
 `POST /workflow/processes/withdraw` 与 `WorkflowProcessApi.withdraw()` 支持使用 `applyId` 或 `processInstanceId` 定位申请，`reason` 必填。后端同时校验 `workflow:process:withdraw` 权限、租户上下文和原申请人身份；仅运行中的 `IN_APPROVAL` 可首次撤回，已撤回请求按幂等成功返回，其它终态不会被改写。成功响应包含撤回前后状态、`withdrawn`、`idempotent`、`ended` 和原因，并发布 `workflow.process.withdrawn` 后再发布 `workflow.process.ended`。业务模块仍需先判断业务单据是否允许撤回，并用事件 ID 或业务主键幂等维护自身状态机、快照和通知；Workflow 不替代业务状态机。当前改动不提供新的前端撤回按钮，业务页面应按自身权限和状态决定是否展示操作入口。

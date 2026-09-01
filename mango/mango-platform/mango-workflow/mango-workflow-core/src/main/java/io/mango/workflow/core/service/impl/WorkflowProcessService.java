@@ -43,6 +43,7 @@ import io.mango.workflow.core.service.IWorkflowBusinessApplyService;
 import io.mango.workflow.core.service.IWorkflowProcessService;
 import io.mango.workflow.core.service.IWorkflowTaskRuntimeService;
 import io.mango.workflow.core.service.IWorkflowParticipationService;
+import io.mango.workflow.core.service.WorkflowTaskAdvanceResult;
 import lombok.RequiredArgsConstructor;
 import org.flowable.engine.HistoryService;
 import org.flowable.engine.RuntimeService;
@@ -153,20 +154,24 @@ public class WorkflowProcessService implements IWorkflowProcessService {
             participants.setParticipantUserIds(command.getParticipantUserIds());
             workflowParticipationService.replaceBusinessParticipants(participants);
         }
-        workflowEventPublisher.publishProcessStarted(definition, instance, variables);
         workflowBusinessApplyService.markProcessStarted(new WorkflowProcessStartedContext(
                 applyId, definition.getId(), definition.getDefinitionKey(),
                 definition.getProcessDefinitionId(), definition.getDefinitionName(), instance.getProcessInstanceId()));
-        workflowTaskRuntimeService.advanceRuntimeTasks(instance.getProcessInstanceId());
-        boolean ended = isProcessEnded(instance.getProcessInstanceId());
+        WorkflowBusinessApplyVO startedApply = workflowBusinessApplyService.findByProcessInstance(
+                instance.getProcessInstanceId());
+        workflowEventPublisher.publishProcessStarted(definition, instance, variables, startedApply);
+        WorkflowTaskAdvanceResult advanceResult = workflowTaskRuntimeService.advanceRuntimeTasks(
+                instance.getProcessInstanceId());
+        boolean ended = advanceResult.ended();
+        WorkflowFormInstanceEntity formInstance = findFormInstance(instance.getProcessInstanceId());
         if (ended) {
-            WorkflowFormInstanceEntity formInstance = formInstanceMapper.selectOne(new LambdaQueryWrapper<WorkflowFormInstanceEntity>()
-                    .eq(WorkflowFormInstanceEntity::getProcessInstanceId, instance.getProcessInstanceId())
-                    .last("limit 1"));
             updateCompletedFormInstance(formInstance);
             workflowBusinessApplyService.markApproved(instance.getProcessInstanceId());
             WorkflowBusinessApplyVO apply = workflowBusinessApplyService.findByProcessInstance(instance.getProcessInstanceId());
             workflowEventPublisher.publishProcessCompleted(instance.getProcessInstanceId(), formInstance, variables, apply);
+        } else {
+            workflowEventPublisher.publishTaskArrived(
+                    instance.getProcessInstanceId(), formInstance, variables, advanceResult.businessApply());
         }
 
         WorkflowProcessInstanceVO vo = new WorkflowProcessInstanceVO();
