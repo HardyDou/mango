@@ -67,7 +67,7 @@
 | `FileImportApi` / `FileApi` | 将企业微信头像导入 Mango 文件中心，快照更新失败时清理新文件，成功替换后清理旧文件 |
 | `ITokenProvider` | 生成、刷新、校验 token，读取 token claim |
 | `IAuthorizationProvider` | 加载角色编码和权限编码，写入 `LoginVO` |
-| `NoticeApi` | 可选，用于既有登录通知；不作为第三方登录配置来源 |
+| `NoticeApi` | 可选，用于账号登录锁定安全通知；不发送登录成功通知，也不作为第三方登录配置来源 |
 | `CaptchaApi` | 验证码发送和登录验证码校验 |
 | `SysLoginLogApi` | 可选，记录登录日志 |
 | `IpLocationResolver` | 可选，登录日志解析 IP 位置 |
@@ -311,9 +311,9 @@ token claim 会写入 `username`、`realm`、`actorType`、`partyType`、`partyI
 
 | 资源类型 | 目标模块 | 声明入口 | 内容 |
 |----------|----------|----------|------|
-| `MESSAGE_TEMPLATE` | `notice` | `AuthMessageTemplateResourceProvider` | `auth.login.locked`、`auth.login.success` |
+| `MESSAGE_TEMPLATE` | `notice` | `AuthMessageTemplateResourceProvider` | `auth.login.locked` |
 
-通知模板通过 Java `ResourceProvider` 声明，字段契约以 `mango-notice` 的 `MESSAGE_TEMPLATE` 说明为准。业务节点只发布 `NoticeSendEvent`，由 notice 本地或远程 starter 在事务提交后发送，通知失败只记录日志，不阻断登录主流程。
+通知模板通过 Java `ResourceProvider` 声明，字段契约以 `mango-notice` 的 `MESSAGE_TEMPLATE` 说明为准。密码登录成功不发布通知；失败次数达到限制时仍发布 `auth.login.locked` 安全通知。该事件由 notice 本地或远程 starter 在事务提交后发送，通知失败只记录日志，不阻断认证主流程。
 
 ## 12. 问题排查
 
@@ -343,5 +343,6 @@ token claim 会写入 `username`、`realm`、`actorType`、`partyType`、`partyI
 
 ## 14. 变更影响记录
 
+- 登录成功通知已移除，密码登录成功只保留登录日志和 token/session 行为；账号因连续失败被临时锁定时仍发送 `auth.login.locked` 安全通知。公开认证 API、返回字段、Cookie 和第三方登录配置不变。
 - Auth 历史债务治理将 `AuthApi`、Controller 和 Feign 收敛为同一 10 方法契约，Controller 只负责 HTTP 绑定和请求上下文补充，认证、审计、通知、验证码和企微逻辑归入 Auth Service；生产依赖不再隐式携带 Access Core 或 Authorization Starter。防重放从会破坏请求体的 Interceptor 改为可重复读取的 Filter，并补齐成功缓存、处理中冲突和失败可重试语义。HTTP 路径、合法请求返回结构、token claim、Cookie 名称和既有认证特性保持不变；已证明的签名 JSON 失败、页面假退出和审计成功文案漂移已修复。
 - 本次为登录链路新增首次改密票据、密码复杂度校验和失败次数锁定增强。`POST /auth/login` 现在可能返回 `passwordResetRequired=true`、`loginAction=CHANGE_PASSWORD` 和 `passwordResetTicket`，前端据此切换到强制改密弹窗；`POST /auth/password/change-required` 只有在密码校验成功后才会消费 ticket。该变更不改变登录、登出、刷新、企微登录和验证码接口路径。

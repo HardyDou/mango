@@ -102,6 +102,31 @@ class NoticeMessageTemplateResourceHandlerIntegrationTest {
     }
 
     @Test
+    void channelEnabledControlsTemplateWithoutDisablingBusinessType() throws Exception {
+        ResourceDeclaration declaration = messageTemplateDeclaration("定时任务执行失败：{{jobName}}", true);
+        field(declaration, "channelEnabled", ResourceFieldType.BOOLEAN, false);
+
+        handler.upsert(declaration);
+
+        assertThat(booleanValue("notice_business_type", "enabled", "id = 2060000000000014001"))
+                .isTrue();
+        assertThat(booleanValue(
+                "notice_business_channel_template", "enabled", "id = 2060000000000014003"))
+                .isFalse();
+    }
+
+    @Test
+    void legacyDeclarationUsesEnabledForBothBusinessTypeAndChannel() throws Exception {
+        handler.upsert(messageTemplateDeclaration("定时任务执行失败：{{jobName}}", false));
+
+        assertThat(booleanValue("notice_business_type", "enabled", "id = 2060000000000014001"))
+                .isFalse();
+        assertThat(booleanValue(
+                "notice_business_channel_template", "enabled", "id = 2060000000000014003"))
+                .isFalse();
+    }
+
+    @Test
     void upsertUsesOnlyDeclaredPublishTime() throws Exception {
         ResourceDeclaration declaration = messageTemplateDeclaration("定时任务执行失败：{{jobName}}", true);
 

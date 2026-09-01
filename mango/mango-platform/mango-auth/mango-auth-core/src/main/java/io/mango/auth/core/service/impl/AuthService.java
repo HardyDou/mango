@@ -117,9 +117,6 @@ public class AuthService implements IAuthService, ExternalAccountLoginService {
         Require.notNull(command, AuthCode.AUTH_REQUEST_INVALID);
         try {
             LoginVO response = doLogin(command);
-            if (!Boolean.TRUE.equals(response.getPasswordResetRequired())) {
-                publishLoginSuccessNotice(command, response);
-            }
             recordLoginLog(command, response, true, null);
             return response;
         } catch (io.mango.common.exception.BizException exception) {
@@ -512,29 +509,6 @@ public class AuthService implements IAuthService, ExternalAccountLoginService {
         target.setButtonType(source.getButtonType());
         target.setDisplayRule(source.getDisplayRule());
         return target;
-    }
-
-    private void publishLoginSuccessNotice(LoginCommand command, LoginVO response) {
-        Map<String, Object> params = new LinkedHashMap<>();
-        params.put("username", response.getUsername());
-        params.put("clientIp", command.getClientIp());
-        params.put("loginTime", LocalDateTime.now().toString());
-        params.put("appCode", firstText(response.getAppCode(), command.getAppCode()));
-        NoticeSiteMessageTargetCommand target = routeTarget("account:profile", params);
-        NoticeSendEventCommand event = new NoticeSendEventCommand();
-        event.setTenantId(response.getTenantId());
-        event.setBizType("auth.login.success");
-        event.setBizId(String.valueOf(response.getUserId()));
-        event.setUserId(response.getUserId());
-        event.setParams(NoticeJsonRequest.of(params));
-        event.setMessageScene("auth.login.success");
-        event.setMessageSubject(subject("AUTH_LOGIN", String.valueOf(response.getUserId()), response.getUsername()));
-        event.setMessageTarget(target);
-        event.setMessageData(NoticeJsonRequest.of(params));
-        event.setMessageActions(List.of(routeAction("VIEW_PROFILE", "查看资料", target)));
-        event.setPriority(NoticePriority.LOW);
-        event.setIdempotentKey("auth.login.success:" + response.getUserId() + ":" + System.currentTimeMillis());
-        eventPublisher.publishEvent(event);
     }
 
     private void publishLoginLockedNotice(LoginCommand command) {

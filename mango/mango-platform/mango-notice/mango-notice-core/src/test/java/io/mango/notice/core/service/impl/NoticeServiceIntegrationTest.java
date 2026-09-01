@@ -623,7 +623,7 @@ class NoticeServiceIntegrationTest {
     }
 
     @Test
-    void tagRouteWithoutCandidateFailsWithoutFallingBackToAuto() {
+    void tagRouteWithoutCandidateIsCanceledWithoutFallingBackToAuto() {
         seedBusinessType();
         seedSiteChannelConfig(20L);
         seedActiveEmailTemplate(40L, NoticeChannelRouteMode.TAG, null, "PRIMARY");
@@ -639,10 +639,30 @@ class NoticeServiceIntegrationTest {
         command.setChannelTypes(List.of(NoticeChannelType.EMAIL));
 
         noticeService.send(command);
+        assertThat(singleTask().getStatus()).isEqualTo(NoticeTaskStatus.CANCELED);
         noticeService.executeTask(singleTask().getId());
 
-        assertThat(emailRecord().getFailCode()).isEqualTo("CHANNEL_ROUTE_TAG_UNAVAILABLE");
+        assertThat(emailRecord().getStatus()).isEqualTo(NoticeSendStatus.CANCELED);
+        assertThat(emailRecord().getFailCode()).isEqualTo("CHANNEL_UNAVAILABLE");
         assertThat(emailRecord().getChannelConfigId()).isNull();
+        assertThat(emailChannelSender.configIds).isEmpty();
+    }
+
+    @Test
+    void externalTemplateWithoutChannelConfigIsCanceled() {
+        seedBusinessType();
+        seedActiveEmailTemplate(40L, NoticeChannelRouteMode.AUTO, null, null);
+        SendNoticeCommand command = sendCommand();
+        command.setUserIds(List.of(1L));
+        command.setChannelTypes(List.of(NoticeChannelType.EMAIL));
+
+        noticeService.send(command);
+        assertThat(singleTask().getStatus()).isEqualTo(NoticeTaskStatus.CANCELED);
+        noticeService.executeTask(singleTask().getId());
+
+        assertThat(emailRecord().getStatus()).isEqualTo(NoticeSendStatus.CANCELED);
+        assertThat(emailRecord().getFailCode()).isEqualTo("CHANNEL_UNAVAILABLE");
+        assertThat(singleTask().getStatus()).isEqualTo(NoticeTaskStatus.CANCELED);
         assertThat(emailChannelSender.configIds).isEmpty();
     }
 
@@ -775,7 +795,7 @@ class NoticeServiceIntegrationTest {
     }
 
     @Test
-    void wecomDeliveryRejectsInactiveIdentityBinding() {
+    void wecomDeliveryCancelsInactiveIdentityBinding() {
         seedBusinessType();
         seedActiveWecomTemplate(50L, NoticeChannelRouteMode.EXACT, 61L);
         insertWecomChannelConfig(61L, "corp-a", 0);
@@ -785,12 +805,32 @@ class NoticeServiceIntegrationTest {
         command.setChannelTypes(List.of(NoticeChannelType.WECOM));
 
         noticeService.send(command);
+        assertThat(singleTask().getStatus()).isEqualTo(NoticeTaskStatus.CANCELED);
         noticeService.executeTask(singleTask().getId());
 
         assertThat(wecomChannelSender.commands).isEmpty();
+        assertThat(wecomRecord().getStatus()).isEqualTo(NoticeSendStatus.CANCELED);
+        assertThat(wecomRecord().getFailCode()).isEqualTo("RECIPIENT_ACCOUNT_MISSING");
+        assertThat(wecomRecord().getFailReason()).contains("企业微信绑定");
+        assertThat(singleTask().getStatus()).isEqualTo(NoticeTaskStatus.CANCELED);
+    }
+
+    @Test
+    void wecomIdentityLookupFailureRemainsDeliveryFailure() {
+        seedBusinessType();
+        seedActiveWecomTemplate(50L, NoticeChannelRouteMode.EXACT, 61L);
+        insertWecomChannelConfig(61L, "corp-a", 0);
+        identityUserApi.externalIdentityLookupFailure = true;
+        SendNoticeCommand command = sendCommand();
+        command.setUserIds(List.of(1L));
+        command.setChannelTypes(List.of(NoticeChannelType.WECOM));
+
+        noticeService.send(command);
+        noticeService.executeTask(singleTask().getId());
+
         assertThat(wecomRecord().getStatus()).isEqualTo(NoticeSendStatus.FAILED);
         assertThat(wecomRecord().getFailCode()).isEqualTo("RECIPIENT_INVALID");
-        assertThat(wecomRecord().getFailReason()).contains("有效企业微信绑定");
+        assertThat(singleTask().getStatus()).isEqualTo(NoticeTaskStatus.FAILED);
     }
 
     @Test
@@ -1779,6 +1819,7 @@ class NoticeServiceIntegrationTest {
         private final Map<Long, IdentityUserInfoVO> users = new HashMap<>();
         private final List<ExternalIdentityBindingVO> externalIdentities = new ArrayList<>();
         private CreateIdentityUserCommand lastCreatedUser;
+        private boolean externalIdentityLookupFailure;
 
         @Override
         public R<CurrentUserProfileVO> currentProfile() {
@@ -1818,6 +1859,7 @@ class NoticeServiceIntegrationTest {
             users.clear();
             externalIdentities.clear();
             lastCreatedUser = null;
+            externalIdentityLookupFailure = false;
         }
 
         void addExternalIdentity(Long userId, String corpId, String externalUserId, String bindStatus) {
@@ -1945,6 +1987,9 @@ class NoticeServiceIntegrationTest {
 
         @Override
         public R<ExternalIdentityBindingVO> findExternalIdentity(ExternalIdentityQuery query) {
+            if (externalIdentityLookupFailure) {
+                return R.fail("身份服务暂时不可用");
+            }
             return R.ok(externalIdentities.stream()
                     .filter(binding -> query.getUserId() == null
                             || query.getUserId().equals(binding.getUserId()))
