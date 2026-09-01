@@ -104,6 +104,7 @@ class IdentityUserResourceHandlerIntegrationTest {
         assertThat(member.getStatus()).isEqualTo(1);
         assertThat(countUsers()).isEqualTo(1L);
         assertThat(countMembers()).isEqualTo(1L);
+        assertThat(countLifecycleEvents("CREATED")).isEqualTo(1L);
     }
 
     @Test
@@ -128,6 +129,7 @@ class IdentityUserResourceHandlerIntegrationTest {
         assertThat(member.getRemark()).isEqualTo("updated by resource sync");
         assertThat(countUsers()).isEqualTo(1L);
         assertThat(countMembers()).isEqualTo(1L);
+        assertThat(countLifecycleEvents("CREATED")).isEqualTo(1L);
     }
 
     @Test
@@ -220,6 +222,7 @@ class IdentityUserResourceHandlerIntegrationTest {
     }
 
     private void resetSchema() {
+        jdbcTemplate.execute("drop table if exists tenant_member_lifecycle_log");
         jdbcTemplate.execute("drop table if exists tenant_member");
         jdbcTemplate.execute("drop table if exists identity_user");
         jdbcTemplate.execute("""
@@ -280,6 +283,22 @@ class IdentityUserResourceHandlerIntegrationTest {
                     updated_at timestamp
                 )
                 """);
+        jdbcTemplate.execute("""
+                create table tenant_member_lifecycle_log (
+                    id bigint primary key,
+                    tenant_id bigint not null,
+                    org_id bigint,
+                    user_id bigint not null,
+                    member_id bigint not null,
+                    event_type varchar(16) not null,
+                    operator_user_id bigint,
+                    occurred_at timestamp not null,
+                    created_by bigint,
+                    created_at timestamp,
+                    updated_by bigint,
+                    updated_at timestamp
+                )
+                """);
     }
 
     private ResourceDeclaration resource() {
@@ -312,6 +331,11 @@ class IdentityUserResourceHandlerIntegrationTest {
 
     private Long countMembers() {
         return jdbcTemplate.queryForObject("select count(*) from tenant_member", Long.class);
+    }
+
+    private Long countLifecycleEvents(String eventType) {
+        return jdbcTemplate.queryForObject(
+                "select count(*) from tenant_member_lifecycle_log where event_type = ?", Long.class, eventType);
     }
 
     @Configuration

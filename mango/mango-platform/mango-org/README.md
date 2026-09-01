@@ -15,6 +15,7 @@
 | 组织成员 | 给租户成员绑定组织、岗位、主组织和组织负责人标记 |
 | 用户管理组织范围 | 校验当前租户启用组织，并返回包含当前节点及全部启用后代的成员查询范围 |
 | 组织内成员开户 | 校验目标组织后调用 Identity 受信契约，一次创建账号、租户成员和目标组织关系 |
+| 原成员恢复 | 校验目标组织和岗位后调用 Identity 受信契约，复用原 `userId/memberId`，只建立本次选择的组织关系 |
 | 负责人查询 | 按组织查询负责人 `memberId` |
 | 岗位维护 | 岗位分页、详情、新增、修改和删除 |
 | 租户初始化 | 新租户创建时初始化根组织和默认岗位 |
@@ -115,9 +116,10 @@ module-path=/org,/post
 | GET | `/org/members?orgId=...` | `system:org:list` | 查询组织成员 |
 | GET | `/org/member-scope?orgId=...` | `system:user:list` | 返回当前租户启用组织自身及全部启用后代 ID |
 | POST | `/org/member-accounts` | `system:user:add` | 在指定组织内原子创建账号、租户成员和组织关系 |
+| POST | `/org/member-accounts/restore` | `system:user:add` | 将当前租户内可恢复的原成员加入指定组织，不恢复旧角色、岗位或其它组织关系 |
 | POST | `/org/members` | `system:org:edit` | 增加组织成员 |
 | PUT | `/org/members` | `system:org:edit` | 修改组织成员关系 |
-| DELETE | `/org/members` | `system:org:edit` | 删除组织成员关系 |
+| DELETE | `/org/members` | `system:org:edit` | 只移出当前组织关系；删除主组织时确定性提升其它关系，没有其它关系时清空主组织和主岗位 |
 | GET | `/org/leader?orgId=...` | LOGIN | 查询组织负责人 |
 
 岗位接口前缀是 `/post`。
@@ -139,6 +141,7 @@ module-path=/org,/post
 | `SysOrgTreeQuery` | `parentId`、`type`、`includeDisabled` |
 | `AddOrgMemberCommand` | `orgId`、`memberId` 必填；可传 `postId`、`primaryFlag`、`leaderFlag` |
 | `CreateOrgMemberAccountCommand` | `orgId`、`username` 必填；可传岗位、密码、姓名、联系方式、状态、备注、主组织和主管标识 |
+| `RestoreOrgMemberAccountCommand` | `orgId`、`username` 必填；可传 `postId` 和 `realm`，恢复资格由 Identity 按当前租户校验 |
 | `UpdateOrgMemberCommand` | `relationId` 必填；可改岗位、主组织和负责人标记 |
 | `CreatePostCommand` | `postName`、`postCode` 必填；可传 `postSort`、`postStatus`、`remark` |
 | `UpdatePostCommand` | `id`、`postName`、`postCode` 必填 |

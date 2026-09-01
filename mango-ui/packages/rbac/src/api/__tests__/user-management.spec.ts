@@ -53,6 +53,20 @@ describe('user management API contracts', () => {
     expect(post).toHaveBeenCalledWith('/org/member-accounts', command);
   });
 
+  it('checks account availability and restores through explicit lifecycle endpoints', async () => {
+    vi.mocked(get).mockResolvedValue({ status: 'RECOVERABLE' });
+    vi.mocked(post).mockResolvedValue('1001');
+    const restoreCommand = { orgId: '101', username: 'former-user', realm: 'INTERNAL' };
+
+    await userApi.accountAvailability('former-user');
+    await orgApi.restoreMemberAccount(restoreCommand);
+
+    expect(get).toHaveBeenCalledWith('/identity/users/account-availability', {
+      params: { username: 'former-user', realm: 'INTERNAL' },
+    });
+    expect(post).toHaveBeenCalledWith('/org/member-accounts/restore', restoreCommand);
+  });
+
   it('loads organization scope and direct roles through bounded batch endpoints', async () => {
     vi.mocked(get).mockResolvedValue(['100', '101']);
     vi.mocked(post).mockResolvedValue([]);

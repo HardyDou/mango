@@ -18,6 +18,8 @@
 
 2026-08-31 能力更新：Issue #909 按方案 A 优化用户管理。页面默认展示全部成员，组织节点按本级及全部启用下级过滤并可清除选择；在具体组织内新增账号会原子创建 Identity 账号、租户成员和组织关系，已有成员候选支持用户名、姓名、手机号、邮箱 OR 搜索并由后端排除目标组织现有成员；列表按页批量展示当前应用的启用直接角色，只展示所属机构、完整部门路径等业务字段。入口见 [Identity README](../../mango/mango-platform/mango-identity/README.md)、[Org README](../../mango/mango-platform/mango-org/README.md)、[Authorization README](../../mango/mango-platform/mango-authorization/README.md) 和 [RBAC README](../../mango-ui/packages/rbac/README.md)。
 
+2026-09-01 能力更新：Issue #919 区分“移出当前部门”和“移出租户成员”。租户移出保留原账号及 `userId/memberId`，撤销当前租户角色与全部部门关系；只有今天起由本特性记录为 `REMOVED` 的当前租户成员可通过脱敏候选恢复，恢复只建立本次选择的部门关系，不恢复旧授权。同名姓名可以创建不同登录账号，`realm + username` 仍唯一且旧账号不转让。入口见 [Identity README](../../mango/mango-platform/mango-identity/README.md)、[Org README](../../mango/mango-platform/mango-org/README.md) 和 [RBAC README](../../mango-ui/packages/rbac/README.md)。
+
 ## 2. 使用方式
 
 1. 先按任务关键词找到涉及能力。
@@ -51,6 +53,8 @@
 | 应用初始化与滚动升级     | [Bootstrap](../../mango/mango-infra/mango-infra-bootstrap/README.md) -> [Persistence](../../mango/mango-infra/mango-infra-persistence/README.md) -> [Resource](../../mango/mango-platform/mango-resource/README.md) -> [File](../../mango/mango-platform/mango-file/README.md) -> [Workflow](../../mango/mango-platform/mango-workflow/README.md)                                                                          | 同一制品使用 `bootstrap plan`、`bootstrap apply`、`bootstrap finalize`、finalize 前 `bootstrap abort` 与 `runtime`；Runtime 不执行 Flyway 或阻断 Resource 初始化                                                                       |
 
 ## 3.1 近期能力变更
+
+- 2026-09-01，[Issue #919](https://github.com/HardyDou/mango/issues/919) 补齐成员生命周期：部门移出只解除准确的组织关系；租户移出保留原身份和成员标识并撤销当前租户访问；当前租户内由本特性移出的账号可查看脱敏候选并复用原标识恢复，旧角色、岗位和其它部门关系不自动恢复。特性上线前的历史删除不回填。入口见 [Identity README](../../mango/mango-platform/mango-identity/README.md)、[Org README](../../mango/mango-platform/mango-org/README.md) 和 [RBAC README](../../mango-ui/packages/rbac/README.md)，设计资产见 [Issue #919 设计目录](../designs/issue-919-member-lifecycle/)。
 
 - 2026-08-31，[Issue #909](https://github.com/HardyDou/mango/issues/909) 按方案 A 优化用户管理：默认“全部成员”，集团/公司/部门范围包含本级及全部启用下级，可清除组织选择；目标组织新增账号原子写入账号、租户成员和组织关系，候选成员按用户名、姓名、手机号或邮箱搜索并排除目标组织已有成员；列表每页一次批量查询当前应用的启用直接角色，表单隐藏登录域、操作者类型、主体类型和主体 ID。入口见 [Identity README](../../mango/mango-platform/mango-identity/README.md)、[Org README](../../mango/mango-platform/mango-org/README.md)、[Authorization README](../../mango/mango-platform/mango-authorization/README.md) 和 [RBAC README](../../mango-ui/packages/rbac/README.md)，交付记录见 [STANDARD 交付记录](../plans/2026-08-31-issue-909-user-management-delivery-record.md)。
 

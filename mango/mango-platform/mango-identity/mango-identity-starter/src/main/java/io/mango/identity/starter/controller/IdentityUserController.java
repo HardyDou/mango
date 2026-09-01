@@ -18,6 +18,7 @@ import io.mango.identity.api.command.UpdateCurrentUserProfileCommand;
 import io.mango.identity.api.command.UnbindCurrentExternalIdentityCommand;
 import io.mango.identity.api.query.ExternalIdentityQuery;
 import io.mango.identity.api.query.IdentityUserPageQuery;
+import io.mango.identity.api.query.IdentityAccountAvailabilityQuery;
 import io.mango.identity.api.query.IdentityUserTargetQuery;
 import io.mango.identity.api.request.IdentityUserBatchRequest;
 import io.mango.common.result.R;
@@ -25,6 +26,7 @@ import io.mango.identity.api.IdentityUserApi;
 import io.mango.identity.api.vo.ExternalIdentityBindingVO;
 import io.mango.identity.api.vo.IdentityUserInfoVO;
 import io.mango.identity.api.vo.IdentityUserVO;
+import io.mango.identity.api.vo.IdentityAccountAvailabilityVO;
 import io.mango.identity.api.vo.ContactCaptchaTicketVO;
 import io.mango.identity.api.vo.CurrentUserProfileVO;
 import io.mango.identity.core.service.IIdentityUserService;
@@ -113,6 +115,15 @@ public class IdentityUserController implements IdentityUserApi {
     @Override
     public R<Long> create(@RequestBody CreateIdentityUserCommand command) {
         return R.ok(identityUserService.create(command));
+    }
+
+    @Override
+    @GetMapping("/users/account-availability")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:user:add")
+    @Operation(summary = "查询登录账号可用性", description = "权限接口。仅对当前机构可恢复成员返回脱敏核对资料")
+    public R<IdentityAccountAvailabilityVO> accountAvailability(
+            @ParameterObject IdentityAccountAvailabilityQuery query) {
+        return R.ok(identityUserService.accountAvailability(query));
     }
 
     @PutMapping("/users")

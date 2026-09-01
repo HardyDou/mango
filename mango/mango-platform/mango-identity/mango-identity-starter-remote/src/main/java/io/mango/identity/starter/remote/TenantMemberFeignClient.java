@@ -4,6 +4,7 @@ import io.mango.common.result.R;
 import io.mango.identity.api.TenantMemberApi;
 import io.mango.identity.api.command.AddTenantMemberOrgCommand;
 import io.mango.identity.api.command.CreateTenantMemberInOrgCommand;
+import io.mango.identity.api.command.RestoreTenantMemberInOrgCommand;
 import io.mango.identity.api.command.UpdateTenantMemberOrgCommand;
 import io.mango.identity.api.query.TenantMemberOrgExistsQuery;
 import io.mango.identity.api.query.TenantMemberOrgOtherCountQuery;
@@ -30,6 +31,10 @@ public interface TenantMemberFeignClient extends TenantMemberApi {
     @Override
     @PostMapping("/tenant-members/org-accounts")
     R<Long> createMemberInOrg(@RequestBody CreateTenantMemberInOrgCommand command);
+
+    @Override
+    @PostMapping("/tenant-members/restore-in-org")
+    R<Long> restoreMemberInOrg(@RequestBody RestoreTenantMemberInOrgCommand command);
 
     @Override
     @GetMapping("/tenant-members/enabled")

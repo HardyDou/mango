@@ -18,11 +18,13 @@ import io.mango.identity.api.command.UpdateCurrentUserProfileCommand;
 import io.mango.identity.api.command.UnbindCurrentExternalIdentityCommand;
 import io.mango.identity.api.query.ExternalIdentityQuery;
 import io.mango.identity.api.query.IdentityUserPageQuery;
+import io.mango.identity.api.query.IdentityAccountAvailabilityQuery;
 import io.mango.identity.api.query.IdentityUserTargetQuery;
 import io.mango.identity.api.request.IdentityUserBatchRequest;
 import io.mango.identity.api.vo.ExternalIdentityBindingVO;
 import io.mango.identity.api.vo.IdentityUserInfoVO;
 import io.mango.identity.api.vo.IdentityUserVO;
+import io.mango.identity.api.vo.IdentityAccountAvailabilityVO;
 import io.mango.identity.api.vo.ContactCaptchaTicketVO;
 import io.mango.identity.api.vo.CurrentUserProfileVO;
 import org.springframework.cloud.openfeign.FeignClient;
@@ -69,6 +71,10 @@ public interface IdentityUserFeignClient extends IdentityUserApi {
     @Override
     @PostMapping("/users")
     R<Long> create(@RequestBody CreateIdentityUserCommand command);
+
+    @Override
+    @GetMapping("/users/account-availability")
+    R<IdentityAccountAvailabilityVO> accountAvailability(@SpringQueryMap IdentityAccountAvailabilityQuery query);
 
     @Override
     @PutMapping("/users")

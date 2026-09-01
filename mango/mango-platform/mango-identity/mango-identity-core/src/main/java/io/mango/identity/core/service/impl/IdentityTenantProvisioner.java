@@ -7,8 +7,10 @@ import io.mango.authorization.api.query.RoleLookupQuery;
 import io.mango.identity.core.adapter.AuthorizationRoleBindingAdapter;
 import io.mango.identity.core.entity.IdentityUserEntity;
 import io.mango.identity.core.entity.TenantMemberEntity;
+import io.mango.identity.core.entity.TenantMemberLifecycleLogEntity;
 import io.mango.identity.core.mapper.IdentityUserMapper;
 import io.mango.identity.core.mapper.TenantMemberMapper;
+import io.mango.identity.core.mapper.TenantMemberLifecycleLogMapper;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.system.api.tenant.TenantDependencyChecker;
 import io.mango.system.api.tenant.TenantProvisionCommand;
@@ -36,6 +38,7 @@ public class IdentityTenantProvisioner implements TenantProvisioner, TenantDepen
 
     private final IdentityUserMapper identityUserMapper;
     private final TenantMemberMapper tenantMemberMapper;
+    private final TenantMemberLifecycleLogMapper tenantMemberLifecycleLogMapper;
     private final AuthorizationRoleBindingAdapter roleBindingAdapter;
 
     @Override
@@ -87,6 +90,14 @@ public class IdentityTenantProvisioner implements TenantProvisioner, TenantDepen
         member.setJoinedAt(LocalDateTime.now());
         member.setRemark(context.getTenantName() + " 机构创建者");
         tenantMemberMapper.insert(member);
+        TenantMemberLifecycleLogEntity event = new TenantMemberLifecycleLogEntity();
+        event.setTenantId(member.getTenantId());
+        event.setUserId(member.getUserId());
+        event.setMemberId(member.getMemberId());
+        event.setEventType("CREATED");
+        event.setOperatorUserId(MangoContextHolder.userId());
+        event.setOccurredAt(member.getJoinedAt());
+        tenantMemberLifecycleLogMapper.insert(event);
         return member;
     }
 

@@ -4,9 +4,12 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.mango.common.exception.BizException;
 import io.mango.identity.api.TenantMemberProvider;
 import io.mango.identity.api.command.CreateTenantMemberInOrgCommand;
+import io.mango.identity.api.command.RestoreTenantMemberInOrgCommand;
+import io.mango.identity.api.vo.TenantMemberOrgRelationVO;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.org.api.command.CreateOrgMemberAccountCommand;
+import io.mango.org.api.command.RestoreOrgMemberAccountCommand;
 import io.mango.org.api.query.SysOrgTreeQuery;
 import io.mango.org.api.vo.SysOrgVO;
 import io.mango.org.core.entity.SysOrgEntity;
@@ -191,6 +194,43 @@ class SysOrgServiceTest {
         assertThat(mapped.getUsername()).isEqualTo("new-user");
         assertThat(mapped.getPrimaryFlag()).isTrue();
         assertThat(mapped.getLeaderFlag()).isFalse();
+    }
+
+    @Test
+    void restoreMemberAccountValidatesOrganizationAndMapsTrustedIdentityCommand() {
+        SysOrgEntity department = org(3L, "研发部", 2L, 3);
+        when(orgMapper.selectById(3L)).thenReturn(department);
+        when(tenantMemberProvider.restoreMemberInOrg(any(RestoreTenantMemberInOrgCommand.class)))
+                .thenReturn(1002L);
+        RestoreOrgMemberAccountCommand command = new RestoreOrgMemberAccountCommand();
+        command.setOrgId(3L);
+        command.setUsername("former-user");
+        command.setRealm("INTERNAL");
+
+        assertThat(sysOrgService.restoreMemberAccount(command)).isEqualTo(1002L);
+        ArgumentCaptor<RestoreTenantMemberInOrgCommand> captor =
+                ArgumentCaptor.forClass(RestoreTenantMemberInOrgCommand.class);
+        verify(tenantMemberProvider).restoreMemberInOrg(captor.capture());
+        RestoreTenantMemberInOrgCommand mapped = captor.getValue();
+        assertThat(mapped.getTenantId()).isEqualTo(1L);
+        assertThat(mapped.getOrgId()).isEqualTo(3L);
+        assertThat(mapped.getOperatorUserId()).isEqualTo(9001L);
+        assertThat(mapped.getUsername()).isEqualTo("former-user");
+    }
+
+    @Test
+    void removeMemberAllowsRemovingTheLastPrimaryDepartmentRelation() {
+        TenantMemberOrgRelationVO relation = new TenantMemberOrgRelationVO();
+        relation.setRelationId(101L);
+        relation.setTenantId(1L);
+        relation.setMemberId(11L);
+        relation.setOrgId(3L);
+        relation.setPrimaryFlag(true);
+        when(tenantMemberProvider.getOrgRelation(101L)).thenReturn(relation);
+
+        assertThat(sysOrgService.removeMember(101L)).isTrue();
+
+        verify(tenantMemberProvider).removeOrgRelation(101L);
     }
 
     private SysOrgTreeQuery treeQuery(Long parentId) {
