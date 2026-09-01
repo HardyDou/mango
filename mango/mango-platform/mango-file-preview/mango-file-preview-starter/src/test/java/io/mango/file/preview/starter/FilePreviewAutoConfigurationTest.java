@@ -1,6 +1,9 @@
 package io.mango.file.preview.starter;
 
+import cn.keking.ServerMain;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.PropertySource;
 
 import java.io.IOException;
@@ -27,5 +30,16 @@ class FilePreviewAutoConfigurationTest {
 
         assertThat(properties).contains("cache.type = ${KK_CACHE_TYPE:jdk}");
         assertThat(properties.lines()).noneMatch(line -> line.trim().startsWith("server.port"));
+    }
+
+    @Test
+    void embeddedStarter_excludesStandaloneServerMainFromHostComponentScan() {
+        ComponentScan componentScan = FilePreviewAutoConfiguration.class.getAnnotation(ComponentScan.class);
+
+        assertThat(componentScan).isNotNull();
+        assertThat(componentScan.excludeFilters()).singleElement().satisfies(filter -> {
+            assertThat(filter.type()).isEqualTo(FilterType.ASSIGNABLE_TYPE);
+            assertThat(filter.classes()).containsExactly(ServerMain.class);
+        });
     }
 }
