@@ -7,19 +7,7 @@ import { fileURLToPath } from 'node:url';
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.resolve(scriptDirectory, '../../..');
 const backendName = 'mango-backend';
-const backendModule = 'mango-app/monolith/mango-monolith-app';
-const requiredInstallSelectors = [':mango-bom', backendModule];
-
-function projectSelectors(args) {
-  const projectListIndex = args.indexOf('-pl');
-  if (projectListIndex < 0 || typeof args[projectListIndex + 1] !== 'string') {
-    return [];
-  }
-  return args[projectListIndex + 1]
-    .split(',')
-    .map((selector) => selector.trim())
-    .filter(Boolean);
-}
+const sourceCliScript = 'node ./packages/mango-cli/src/index.mjs';
 
 export function validateRepositoryDevManifest(manifest) {
   const failures = [];
@@ -34,29 +22,26 @@ export function validateRepositoryDevManifest(manifest) {
   if (positionalModes.length > 0) {
     failures.push(`${backendName} args must not declare a process mode: ${positionalModes.join(', ')}`);
   }
-  if (backend.install?.command !== 'mvn' || !Array.isArray(backend.install.args)) {
-    failures.push(`${backendName} must declare a Maven install command`);
-    return failures;
-  }
-  const selectors = projectSelectors(backend.install.args);
-  for (const selector of requiredInstallSelectors) {
-    if (!selectors.includes(selector)) {
-      failures.push(`${backendName} install -pl must include ${selector}`);
-    }
-  }
-  if (!backend.install.args.includes('-am')) {
-    failures.push(`${backendName} install must include -am`);
-  }
-  if (!backend.install.args.includes('install')) {
-    failures.push(`${backendName} install command must execute the Maven install phase`);
+  if (Object.prototype.hasOwnProperty.call(backend, 'install')) {
+    failures.push(`${backendName} must not declare a legacy install command`);
   }
   return failures;
+}
+
+export function validateRepositoryCliEntry(uiPackage) {
+  if (uiPackage?.scripts?.mango === sourceCliScript) {
+    return [];
+  }
+  return [
+    `mango-ui package script mango must execute ${sourceCliScript} so source development cannot fall back to PATH`,
+  ];
 }
 
 export function checkRepositoryDevManifest(root = repositoryRoot) {
   const manifestPath = path.join(root, 'mango.dev.json');
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-  const failures = validateRepositoryDevManifest(manifest);
+  const uiPackage = JSON.parse(fs.readFileSync(path.join(root, 'mango-ui/package.json'), 'utf8'));
+  const failures = [...validateRepositoryDevManifest(manifest), ...validateRepositoryCliEntry(uiPackage)];
   if (failures.length > 0) {
     throw new Error(`Repository development manifest check failed:\n- ${failures.join('\n- ')}`);
   }

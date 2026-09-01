@@ -15,6 +15,7 @@
     }
   },
   "scripts": {
+    "mango": "node ./packages/mango-cli/src/index.mjs",
     "dev": "pnpm admin:styles && pnpm -F mango-admin dev",
     "dev:micro": "pnpm admin:styles && node ./scripts/dev-micro.mjs",
     "preview:micro": "node ./scripts/preview-micro.mjs",
