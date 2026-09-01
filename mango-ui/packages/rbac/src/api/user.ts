@@ -5,6 +5,7 @@ export interface UserQuery {
   pageNum?: number;
   pageSize?: number;
   username?: string;
+  keyword?: string;
   nickname?: string;
   phone?: string;
   email?: string;
@@ -14,6 +15,8 @@ export interface UserQuery {
   partyType?: string;
   partyId?: ApiId;
   orgId?: ApiId;
+  orgIds?: ApiId[];
+  excludeOrgId?: ApiId;
 }
 
 export interface IdentityUserVO {
@@ -52,6 +55,7 @@ export interface IdentityUserVO {
   remark?: string;
   createTime?: string;
   updateTime?: string;
+  roleNames?: string[];
 }
 
 export interface PageResult<T> {
@@ -179,6 +183,7 @@ function toBackendQuery(params?: UserQuery) {
     page: params?.pageNum,
     size: params?.pageSize,
     username: params?.username,
+    keyword: params?.keyword,
     nickname: params?.nickname,
     phone: params?.phone,
     email: params?.email,
@@ -188,6 +193,8 @@ function toBackendQuery(params?: UserQuery) {
     partyType: params?.partyType,
     partyId: params?.partyId,
     orgId: params?.orgId,
+    orgIds: params?.orgIds?.join(','),
+    excludeOrgId: params?.excludeOrgId,
   };
 }
 

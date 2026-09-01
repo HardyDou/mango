@@ -211,7 +211,7 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
         IPage<IdentityUserEntity> page = identityUserMapper.selectPage(
                 new Page<>(query.getPage(), query.getSize()), wrapper);
         List<IdentityUserVO> list = page.getRecords().stream()
-                .map(user -> toVO(user, query.getOrgId()))
+                .map(user -> toVO(user, queryOrgIds(query)))
                 .collect(Collectors.toList());
         return PageResult.of(list, page.getTotal(), page.getCurrent(), page.getSize());
     }
@@ -828,10 +828,17 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
     private LambdaQueryWrapper<IdentityUserEntity> buildManageableUserWrapper(IdentityUserPageQuery query) {
         LambdaQueryWrapper<IdentityUserEntity> wrapper = new LambdaQueryWrapper<>();
         Set<Long> subjectIds = currentTenantSubjectIds(query.getStatus());
-        if (query.getOrgId() != null) {
-            Set<Long> orgUserIds = currentTenantOrgUserIds(query.getOrgId(), query.getStatus());
+        List<Long> orgIds = queryOrgIds(query);
+        if (!orgIds.isEmpty()) {
+            Set<Long> orgUserIds = currentTenantOrgUserIds(orgIds, query.getStatus());
             subjectIds = subjectIds.stream()
                     .filter(orgUserIds::contains)
+                    .collect(Collectors.toSet());
+        }
+        if (query.getExcludeOrgId() != null) {
+            Set<Long> excludedUserIds = currentTenantOrgUserIds(List.of(query.getExcludeOrgId()), query.getStatus());
+            subjectIds = subjectIds.stream()
+                    .filter(userId -> !excludedUserIds.contains(userId))
                     .collect(Collectors.toSet());
         }
         if (subjectIds.isEmpty()) {
@@ -908,14 +915,18 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
     }
 
     private Set<Long> currentTenantOrgUserIds(Long orgId, Integer memberStatus) {
+        return currentTenantOrgUserIds(List.of(orgId), memberStatus);
+    }
+
+    private Set<Long> currentTenantOrgUserIds(Collection<Long> orgIds, Integer memberStatus) {
         Long tenantId = currentTenantIdLong();
-        if (tenantId == null || orgId == null) {
+        if (tenantId == null || orgIds == null || orgIds.isEmpty()) {
             return Set.of();
         }
         List<TenantMemberOrgEntity> relations = tenantMemberOrgMapper.selectList(
                 new LambdaQueryWrapper<TenantMemberOrgEntity>()
                         .eq(TenantMemberOrgEntity::getTenantId, tenantId)
-                        .eq(TenantMemberOrgEntity::getOrgId, orgId));
+                        .in(TenantMemberOrgEntity::getOrgId, orgIds));
         if (relations == null || relations.isEmpty()) {
             return Set.of();
         }
@@ -1015,7 +1026,7 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
         return command;
     }
 
-    private IdentityUserVO toVO(IdentityUserEntity user, Long queryOrgId) {
+    private IdentityUserVO toVO(IdentityUserEntity user, Collection<Long> queryOrgIds) {
         IdentityUserVO vo = new IdentityUserVO();
         TenantMemberEntity member = currentTenantMember(user.getUserId());
         vo.setUserId(user.getUserId());
@@ -1025,7 +1036,7 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
             vo.setMemberType(member.getMemberType());
             vo.setMemberStatus(member.getStatus());
             vo.setPrimaryOrgId(member.getPrimaryOrgId());
-            fillOrgRelation(vo, member, queryOrgId);
+            fillOrgRelation(vo, member, queryOrgIds);
         }
         vo.setUsername(user.getUsername());
         vo.setNickname(user.getNickname());
@@ -1060,15 +1071,15 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
         return vo;
     }
 
-    private void fillOrgRelation(IdentityUserVO vo, TenantMemberEntity member, Long queryOrgId) {
-        if (queryOrgId == null) {
+    private void fillOrgRelation(IdentityUserVO vo, TenantMemberEntity member, Collection<Long> queryOrgIds) {
+        if (queryOrgIds == null || queryOrgIds.isEmpty()) {
             return;
         }
         TenantMemberOrgEntity relation = tenantMemberOrgMapper.selectOne(
                 new LambdaQueryWrapper<TenantMemberOrgEntity>()
                         .eq(TenantMemberOrgEntity::getTenantId, member.getTenantId())
                         .eq(TenantMemberOrgEntity::getMemberId, member.getMemberId())
-                        .eq(TenantMemberOrgEntity::getOrgId, queryOrgId)
+                        .in(TenantMemberOrgEntity::getOrgId, queryOrgIds)
                         .orderByDesc(TenantMemberOrgEntity::getPrimaryFlag)
                         .orderByAsc(TenantMemberOrgEntity::getId)
                         .last("LIMIT 1"));
@@ -1080,6 +1091,16 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
         vo.setPostId(relation.getPostId());
         vo.setPrimaryOrgFlag(Integer.valueOf(1).equals(relation.getPrimaryFlag()));
         vo.setOrgLeaderFlag(Integer.valueOf(1).equals(relation.getLeaderFlag()));
+    }
+
+    private List<Long> queryOrgIds(IdentityUserPageQuery query) {
+        if (query.getOrgIds() != null && !query.getOrgIds().isEmpty()) {
+            return query.getOrgIds().stream().filter(Objects::nonNull).distinct().toList();
+        }
+        if (query.getOrgId() != null) {
+            return List.of(query.getOrgId());
+        }
+        return List.of();
     }
 
     private void createTenantMember(IdentityUserEntity user, String displayName) {

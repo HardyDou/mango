@@ -54,6 +54,20 @@ export interface UpdateOrgMemberCommand {
   leaderFlag?: boolean;
 }
 
+export interface CreateOrgMemberAccountCommand {
+  orgId: ApiId;
+  postId?: ApiId;
+  username: string;
+  password?: string;
+  nickname?: string;
+  email?: string;
+  phone?: string;
+  status?: number;
+  remark?: string;
+  primaryFlag?: boolean;
+  leaderFlag?: boolean;
+}
+
 export interface OrgTreeParams {
   parentId?: ApiId;
   type?: number;
@@ -68,6 +82,8 @@ export const orgApi = {
   update: (data: Partial<SysOrg>) => put<boolean>('/org', toBackendOrg(data)),
   delete: (id: ApiId) => del<boolean>('/org', { params: { id } }),
   members: (orgId: ApiId) => get<OrgMemberVO[]>('/org/members', { params: { orgId } }),
+  memberScope: (orgId: ApiId) => get<ApiId[]>('/org/member-scope', { params: { orgId } }),
+  createMemberAccount: (data: CreateOrgMemberAccountCommand) => post<ApiId>('/org/member-accounts', data),
   addMember: (orgId: ApiId, data: Omit<AddOrgMemberCommand, 'orgId'>) =>
     post<boolean>('/org/members', { ...data, orgId }),
   updateMember: (data: UpdateOrgMemberCommand) => put<boolean>('/org/members', data),

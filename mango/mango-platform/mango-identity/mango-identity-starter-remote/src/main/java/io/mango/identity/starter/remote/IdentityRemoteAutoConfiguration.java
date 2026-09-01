@@ -6,6 +6,7 @@ import io.mango.identity.api.AuthUserProvider;
 import io.mango.identity.api.TenantMemberProvider;
 import io.mango.identity.api.command.AddTenantMemberOrgCommand;
 import io.mango.identity.api.command.ChangeRequiredPasswordCommand;
+import io.mango.identity.api.command.CreateTenantMemberInOrgCommand;
 import io.mango.identity.api.command.UpdateTenantMemberOrgCommand;
 import io.mango.identity.api.query.AuthUsernameQuery;
 import io.mango.identity.api.query.TenantMemberOrgExistsQuery;
@@ -131,6 +132,11 @@ public class IdentityRemoteAutoConfiguration {
         }
 
         @Override
+        public Long createMemberInOrg(CreateTenantMemberInOrgCommand command) {
+            return requireData(tenantMemberFeignClient.getObject().createMemberInOrg(command));
+        }
+
+        @Override
         public TenantMemberVO getEnabledMember(Long userId, Long tenantId) {
             return unwrap(tenantMemberFeignClient.getObject().getEnabledMember(userId, tenantId));
         }
@@ -200,6 +206,15 @@ public class IdentityRemoteAutoConfiguration {
 
         private <T> T unwrap(R<T> response) {
             return response != null && response.isSuccess() ? response.getData() : null;
+        }
+
+        private <T> T requireData(R<T> response) {
+            T data = unwrap(response);
+            if (data == null) {
+                String message = response == null ? "Remote tenant member operation failed" : response.getMsg();
+                throw new IllegalStateException(message);
+            }
+            return data;
         }
 
         private <T> List<T> unwrapList(R<List<T>> response) {

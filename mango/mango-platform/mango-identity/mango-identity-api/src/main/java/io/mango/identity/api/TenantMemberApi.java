@@ -2,6 +2,7 @@ package io.mango.identity.api;
 
 import io.mango.common.result.R;
 import io.mango.identity.api.command.AddTenantMemberOrgCommand;
+import io.mango.identity.api.command.CreateTenantMemberInOrgCommand;
 import io.mango.identity.api.command.UpdateTenantMemberOrgCommand;
 import io.mango.identity.api.query.TenantMemberOrgExistsQuery;
 import io.mango.identity.api.query.TenantMemberOrgOtherCountQuery;
@@ -17,6 +18,9 @@ import jakarta.validation.constraints.NotNull;
  * 机构成员事实 HTTP 契约。
  */
 public interface TenantMemberApi {
+
+    /** 在指定组织内原子创建账号、租户成员和组织关系。 */
+    R<Long> createMemberInOrg(@Valid CreateTenantMemberInOrgCommand command);
 
     /** 查询账号在指定机构下的启用成员身份。 */
     R<TenantMemberVO> getEnabledMember(@NotNull Long userId, @NotNull Long tenantId);

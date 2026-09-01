@@ -6,6 +6,8 @@ import io.mango.authorization.api.command.AssignSubjectRolesCommand;
 import io.mango.authorization.api.command.RoleCommand;
 import io.mango.authorization.api.vo.MenuVO;
 import io.mango.authorization.api.vo.RoleVO;
+import io.mango.authorization.api.request.SubjectRoleBatchRequest;
+import io.mango.authorization.api.vo.SubjectRoleSummaryVO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
@@ -63,6 +65,11 @@ public interface RoleApi {
      * @return 主体已绑定角色
      */
     R<List<RoleVO>> getSubjectRoles(@Positive Long subjectId);
+
+    /**
+     * 批量查询当前租户、当前应用下成员的直接角色。
+     */
+    R<List<SubjectRoleSummaryVO>> getSubjectRolesBatch(@Valid SubjectRoleBatchRequest request);
 
     /**
      * 给主体分配角色。

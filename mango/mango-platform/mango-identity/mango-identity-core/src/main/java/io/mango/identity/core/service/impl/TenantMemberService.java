@@ -3,6 +3,7 @@ package io.mango.identity.core.service.impl;
 import io.mango.common.result.Require;
 import io.mango.identity.api.TenantMemberProvider;
 import io.mango.identity.api.command.AddTenantMemberOrgCommand;
+import io.mango.identity.api.command.CreateTenantMemberInOrgCommand;
 import io.mango.identity.api.command.UpdateTenantMemberOrgCommand;
 import io.mango.identity.api.enums.IdentityCode;
 import io.mango.identity.api.query.TenantMemberOrgExistsQuery;
@@ -21,6 +22,12 @@ import java.util.List;
 public class TenantMemberService implements ITenantMemberService {
 
     private final TenantMemberProvider tenantMemberProvider;
+
+    @Override
+    public Long createMemberInOrg(CreateTenantMemberInOrgCommand command) {
+        Require.notNull(command, IdentityCode.VALIDATION_ERROR, "组织成员账号创建命令不能为空");
+        return tenantMemberProvider.createMemberInOrg(command);
+    }
 
     @Override
     public TenantMemberVO getEnabledMember(Long userId, Long tenantId) {
