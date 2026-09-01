@@ -667,6 +667,15 @@ class AuthSecurityFlowTest {
                 }
 
                 @Override
+                public R<io.mango.identity.api.vo.IdentityAccountAvailabilityVO> accountAvailability(
+                        io.mango.identity.api.query.IdentityAccountAvailabilityQuery query) {
+                    io.mango.identity.api.vo.IdentityAccountAvailabilityVO availability =
+                            new io.mango.identity.api.vo.IdentityAccountAvailabilityVO();
+                    availability.setStatus(io.mango.identity.api.vo.IdentityAccountAvailabilityVO.AVAILABLE);
+                    return R.ok(availability);
+                }
+
+                @Override
                 public R<Boolean> update(io.mango.identity.api.command.UpdateIdentityUserCommand command) {
                     return R.ok(true);
                 }

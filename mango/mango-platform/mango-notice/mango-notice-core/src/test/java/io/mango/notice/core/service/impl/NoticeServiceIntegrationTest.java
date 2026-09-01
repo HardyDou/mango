@@ -35,11 +35,13 @@ import io.mango.identity.api.command.UpdateCurrentUserProfileCommand;
 import io.mango.identity.api.command.UpdateIdentityUserCommand;
 import io.mango.identity.api.command.UpdateIdentityUserStatusCommand;
 import io.mango.identity.api.query.ExternalIdentityQuery;
+import io.mango.identity.api.query.IdentityAccountAvailabilityQuery;
 import io.mango.identity.api.query.IdentityUserPageQuery;
 import io.mango.identity.api.query.IdentityUserTargetQuery;
 import io.mango.identity.api.vo.ExternalIdentityBindingVO;
 import io.mango.identity.api.vo.ContactCaptchaTicketVO;
 import io.mango.identity.api.vo.CurrentUserProfileVO;
+import io.mango.identity.api.vo.IdentityAccountAvailabilityVO;
 import io.mango.identity.api.vo.IdentityUserInfoVO;
 import io.mango.identity.api.vo.IdentityUserVO;
 import io.mango.infra.context.api.MangoContextHolder;
@@ -117,6 +119,7 @@ import io.mango.org.api.SysOrgApi;
 import io.mango.org.api.command.AddOrgMemberCommand;
 import io.mango.org.api.command.CreateOrgMemberAccountCommand;
 import io.mango.org.api.command.CreateSysOrgCommand;
+import io.mango.org.api.command.RestoreOrgMemberAccountCommand;
 import io.mango.org.api.command.UpdateOrgMemberCommand;
 import io.mango.org.api.command.UpdateSysOrgCommand;
 import io.mango.org.api.query.SysOrgTreeQuery;
@@ -1844,6 +1847,14 @@ class NoticeServiceIntegrationTest {
         }
 
         @Override
+        public R<IdentityAccountAvailabilityVO> accountAvailability(
+                IdentityAccountAvailabilityQuery query) {
+            IdentityAccountAvailabilityVO availability = new IdentityAccountAvailabilityVO();
+            availability.setStatus(IdentityAccountAvailabilityVO.AVAILABLE);
+            return R.ok(availability);
+        }
+
+        @Override
         public R<Boolean> update(UpdateIdentityUserCommand command) {
             return R.ok(true);
         }
@@ -2007,6 +2018,11 @@ class NoticeServiceIntegrationTest {
 
         @Override
         public R<Long> createMemberAccount(CreateOrgMemberAccountCommand command) {
+            return R.ok(1L);
+        }
+
+        @Override
+        public R<Long> restoreMemberAccount(RestoreOrgMemberAccountCommand command) {
             return R.ok(1L);
         }
 
