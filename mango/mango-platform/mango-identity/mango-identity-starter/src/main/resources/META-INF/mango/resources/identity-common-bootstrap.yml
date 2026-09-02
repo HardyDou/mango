@@ -15,6 +15,7 @@ mango:
             targetId: { type: LONG, value: 1 }
             memberId: { type: LONG, value: 1001 }
             tenantId: { type: LONG, value: 1 }
+            initializedAt: { type: DATETIME, value: "2026-07-16T09:00:00" }
             username: { type: STRING, value: admin }
             encodedPassword: { type: STRING, value: "$2a$10$xktxOwcAfFdqNAKKpWICDuV8MTEEshM9K1CtofRWA34v2OGoarvHa" }
             nickname: { type: STRING, value: Administrator }

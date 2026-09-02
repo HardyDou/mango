@@ -6,6 +6,8 @@
 
 长期规则仍以 `mango-pmo` 为唯一来源；本文只做能力索引，不复制规范正文。
 
+2026-09-02 能力更新：Issue #938 为 `IDENTITY_USER` portable Resource 增加固定 `initializedAt` 初始化时间，并按 `tenantId + memberId + CREATED` 通过统一 portable ID 算法生成稳定成员创建事件主键；用户、成员和生命周期事件在两个独立空库产生一致数据，正常 API 创建、移出和恢复仍保留动态审计语义。详见 [Identity README](../../mango/mango-platform/mango-identity/README.md) 和 [STANDARD 交付记录](../plans/2026-09-02-issue-938-identity-resource-determinism-delivery-record.md)。
+
 2026-09-02 能力更新：Mango CLI 本地开发启动兼容旧 workspace 在同一额外参数字符串开头重复写入匹配的 `runtime`，同时将生命周期错误识别与 `mango dev logs` 改为最多读取日志末尾 1 MiB，避免多 GB 历史日志拖垮启动检查。独立或冲突的模式参数仍明确失败；完整边界见 [CLI README](../../mango-ui/packages/mango-cli/README.md)。
 
 2026-09-01 能力更新：Issue #923 规范化默认审批通知。首次与后续待办只通知实际办理人，最终通过或驳回只通知原申请人一次；用户文案统一展示可读流程名称、业务标题和审核状态/结果，不展示内部编码。默认消息模板启用系统消息与企业微信、关闭邮件与短信；无外部通道或无有效企微绑定收敛为取消且不重试，Identity 查询异常仍保留失败语义。Auth 同步移除登录成功通知并保留登录锁定安全提醒。详见 Workflow、Notice、Auth README 与 [STANDARD 交付记录](../plans/2026-09-01-issue-923-workflow-notice-standardization.md)。

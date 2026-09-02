@@ -7,6 +7,7 @@ import io.mango.identity.core.entity.TenantMemberLifecycleLogEntity;
 import io.mango.identity.core.mapper.IdentityUserMapper;
 import io.mango.identity.core.mapper.TenantMemberMapper;
 import io.mango.identity.core.mapper.TenantMemberLifecycleLogMapper;
+import io.mango.resource.support.PortableResourceIds;
 import io.mango.resource.support.ResourceHandler;
 import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.api.enums.ResourceStatus;
@@ -16,9 +17,11 @@ import io.mango.resource.support.model.ResourceSyncResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 /**
  * Resource handler for demo and bootstrap identity users.
@@ -32,6 +35,8 @@ public class IdentityUserResourceHandler implements ResourceHandler {
     private static final String DEFAULT_ACTOR_TYPE = "INTERNAL_USER";
     private static final String DEFAULT_PARTY_TYPE = "INTERNAL_ORG";
     private static final String DEFAULT_MEMBER_TYPE = "EMPLOYEE";
+    private static final String MEMBER_LIFECYCLE_TABLE = "tenant_member_lifecycle_log";
+    private static final String MEMBER_CREATED_EVENT = "CREATED";
 
     private final IdentityUserMapper userMapper;
     private final TenantMemberMapper memberMapper;
@@ -55,33 +60,42 @@ public class IdentityUserResourceHandler implements ResourceHandler {
                 .resourceType(resourceType())
                 .requiredField("tenantId")
                 .requiredField("username")
+                .requiredField("memberId")
+                .requiredField("initializedAt")
                 .fieldDescription("password", "明文初始密码，仅用于 demo 或运行时初始化；handler 会加密保存。")
                 .fieldDescription("encodedPassword", "PasswordEncoder 已编码密码；正式可移植基线使用该字段保证构建结果确定。")
                 .fieldDescription("memberId", "固定租户成员 ID；用于被授权等资源稳定引用。")
                 .fieldDescription("memberNo", "租户成员编号；未配置时使用 USER-{userId}。")
+                .fieldDescription("initializedAt", "固定初始化时间；用于可移植基线中的用户、成员和成员创建事件。")
                 .build();
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public ResourceSyncResult upsert(ResourceDeclaration resource) {
         IdentityUserEntity user = findUser(resource);
         boolean newUser = user == null;
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime initializationTime = fields.requiredDateTime(resource, "initializedAt");
+        Long tenantId = fields.requiredLong(resource, "tenantId");
+        Long memberId = fields.requiredLong(resource, "memberId");
+        Long expectedUserId = newUser ? fields.longField(resource, "targetId") : user.getUserId();
+        validateLifecycleEventIdentity(tenantId, memberId, expectedUserId);
         if (newUser) {
             user = new IdentityUserEntity();
             user.setUserId(fields.longField(resource, "targetId"));
             user.setUsername(fields.requiredString(resource, "username"));
             user.setRealm(fields.stringField(resource, "realm", DEFAULT_REALM));
             user.setActorType(fields.stringField(resource, "actorType", DEFAULT_ACTOR_TYPE));
-            user.setCreateTime(now);
+            user.setCreateTime(initializationTime);
+            user.setCreatedAt(initializationTime);
         }
-        applyUserFields(resource, user, now);
+        applyUserFields(resource, user, initializationTime);
         if (newUser) {
             userMapper.insert(user);
         } else {
             userMapper.updateById(user);
         }
-        TenantMemberEntity member = upsertMember(resource, user, now);
+        TenantMemberEntity member = upsertMember(resource, user, initializationTime);
         return ResourceSyncResult.of(user.getUserId(), TARGET_TABLE,
                 "Identity user synced: " + user.getUsername() + ", memberId=" + member.getMemberId());
     }
@@ -128,6 +142,7 @@ public class IdentityUserResourceHandler implements ResourceHandler {
         }
         user.setRemark(fields.stringField(resource, "remark"));
         user.setUpdateTime(now);
+        user.setUpdatedAt(now);
     }
 
     private TenantMemberEntity upsertMember(ResourceDeclaration resource, IdentityUserEntity user, LocalDateTime now) {
@@ -136,30 +151,73 @@ public class IdentityUserResourceHandler implements ResourceHandler {
         boolean newMember = member == null;
         if (newMember) {
             member = new TenantMemberEntity();
-            member.setMemberId(fields.longField(resource, "memberId"));
+            member.setMemberId(fields.requiredLong(resource, "memberId"));
             member.setTenantId(String.valueOf(tenantId));
             member.setUserId(user.getUserId());
             member.setMemberNo(fields.stringField(resource, "memberNo", "USER-" + user.getUserId()));
             member.setJoinedAt(now);
+            member.setCreatedAt(now);
         }
         member.setDisplayName(fields.stringField(resource, "displayName",
                 fields.stringField(resource, "nickname", user.getUsername())));
         member.setMemberType(fields.stringField(resource, "memberType", DEFAULT_MEMBER_TYPE));
         member.setStatus(statusValue(resource));
         member.setRemark(fields.stringField(resource, "remark"));
+        member.setUpdatedAt(now);
         if (newMember) {
+            TenantMemberLifecycleLogEntity event = lifecycleCreatedEvent(member, now);
+            TenantMemberLifecycleLogEntity existingEvent = lifecycleLogMapper.selectById(event.getId());
+            if (existingEvent != null && !sameLifecycleEvent(existingEvent, event)) {
+                throw new IllegalStateException("Identity portable lifecycle event ID collision: id=" + event.getId());
+            }
             memberMapper.insert(member);
-            TenantMemberLifecycleLogEntity event = new TenantMemberLifecycleLogEntity();
-            event.setTenantId(member.getTenantId());
-            event.setUserId(member.getUserId());
-            event.setMemberId(member.getMemberId());
-            event.setEventType("CREATED");
-            event.setOccurredAt(now);
-            lifecycleLogMapper.insert(event);
+            if (existingEvent == null) {
+                lifecycleLogMapper.insert(event);
+            }
         } else {
             memberMapper.updateById(member);
         }
         return member;
+    }
+
+    private TenantMemberLifecycleLogEntity lifecycleCreatedEvent(TenantMemberEntity member, LocalDateTime occurredAt) {
+        TenantMemberLifecycleLogEntity event = new TenantMemberLifecycleLogEntity();
+        event.setId(PortableResourceIds.stable(MEMBER_LIFECYCLE_TABLE,
+                member.getTenantId(), member.getMemberId(), MEMBER_CREATED_EVENT));
+        event.setTenantId(member.getTenantId());
+        event.setUserId(member.getUserId());
+        event.setMemberId(member.getMemberId());
+        event.setEventType(MEMBER_CREATED_EVENT);
+        event.setOccurredAt(occurredAt);
+        event.setCreatedAt(occurredAt);
+        event.setUpdatedAt(occurredAt);
+        return event;
+    }
+
+    private void validateLifecycleEventIdentity(Long tenantId, Long memberId, Long userId) {
+        long eventId = PortableResourceIds.stable(
+                MEMBER_LIFECYCLE_TABLE, tenantId, memberId, MEMBER_CREATED_EVENT);
+        TenantMemberLifecycleLogEntity existing = lifecycleLogMapper.selectById(eventId);
+        if (existing == null) {
+            return;
+        }
+        boolean sameIdentity = Objects.equals(existing.getTenantId(), String.valueOf(tenantId))
+                && Objects.equals(existing.getMemberId(), memberId)
+                && Objects.equals(existing.getEventType(), MEMBER_CREATED_EVENT)
+                && userId != null
+                && Objects.equals(existing.getUserId(), userId);
+        if (!sameIdentity) {
+            throw new IllegalStateException("Identity portable lifecycle event ID collision: id=" + eventId);
+        }
+    }
+
+    private boolean sameLifecycleEvent(
+            TenantMemberLifecycleLogEntity existing,
+            TenantMemberLifecycleLogEntity expected) {
+        return Objects.equals(existing.getTenantId(), expected.getTenantId())
+                && Objects.equals(existing.getUserId(), expected.getUserId())
+                && Objects.equals(existing.getMemberId(), expected.getMemberId())
+                && Objects.equals(existing.getEventType(), expected.getEventType());
     }
 
     private IdentityUserEntity findUser(ResourceDeclaration resource) {

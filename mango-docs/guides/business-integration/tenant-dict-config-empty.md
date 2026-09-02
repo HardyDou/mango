@@ -330,3 +330,6 @@ pnpm -F @mango/admin-shell build
 ## 2026-08-30 Issue #776 运行时对账影响
 
 - Resource eventual worker 仅在当前进程成功提交后跳过 fingerprint 未变化的后续运行时周期；失败会继续重试，声明、模块或 authority 变化会重新提交，应用重启也会先完整提交一次。该优化不改变 Bootstrap required、租户对账、基础数据初始化或租户隔离；基础数据为空仍按 receipt、Bootstrap 步骤和声明内容排查，不能把运行时 skip 日志当作初始化完成证明。
+# Issue #938 capability note
+
+`IDENTITY_USER` Resource 的 `initializedAt` 和稳定生命周期事件 ID 仅影响构建期 portable BSQL 的确定性；租户字典配置为空的排障路径、运行时配置和业务操作不变。
