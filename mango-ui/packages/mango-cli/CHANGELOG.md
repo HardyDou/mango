@@ -1,5 +1,63 @@
 # @mango/cli Changelog
 
+## 1.2.8 - 2026-09-02
+
+### Pull Requests
+
+- [PR #920](https://github.com/HardyDou/mango/pull/920) Added tenant-member removal and controlled restoration. Packages: Mango Maven `1.0.48`, `@mango/rbac@1.0.30`, the generated npm closure and `@mango/cli@1.2.8`. Business Adaptation: run normal Flyway startup and verify tenant-scoped removal and restore behavior.
+- [PR #921](https://github.com/HardyDou/mango/pull/921) Fixed source-repository dev startup to use the current CLI source and Reactor. Packages: repository development entry plus batch `@mango/cli@1.2.8`. Business Adaptation: none for generated consumers.
+- [PR #922](https://github.com/HardyDou/mango/pull/922) Fixed member-lifecycle source-backend regression coverage. Packages: Maven `1.0.48` verification sources and batch `@mango/cli@1.2.8`. Business Adaptation: none; runtime behavior is unchanged.
+- [PR #924](https://github.com/HardyDou/mango/pull/924) Fixed embedded file-preview startup isolation. Packages: Mango Maven/docs `1.0.48` and batch `@mango/cli@1.2.8`. Business Adaptation: reverify File Preview through the Mango starter.
+- [PR #925](https://github.com/HardyDou/mango/pull/925) Changed default Workflow approval notice targeting and content. Packages: Mango Maven/docs `1.0.48` and batch `@mango/cli@1.2.8`. Business Adaptation: synchronize templates and verify recipient bindings.
+- [PR #927](https://github.com/HardyDou/mango/pull/927) Fixed RBAC menu hydration and normalized tenant authorization identity. Packages: Maven `1.0.48`, the generated 17-package npm closure and `@mango/cli@1.2.8`. Business Adaptation: run normal Flyway startup and upgrade the complete npm tuple.
+- [PR #928](https://github.com/HardyDou/mango/pull/928) Changed file-preview tokens to Infra KV. Packages: Mango Maven/docs `1.0.48` and batch `@mango/cli@1.2.8`. Business Adaptation: provide KV and verify cross-instance preview access.
+
+### Fixed
+
+- Carry tenant-member lifecycle, role-menu hydration, source startup and file-preview isolation fixes into the generated compatibility matrix.
+
+### Added
+
+- Carry the auditable tenant-member restoration contract into generated consumers.
+
+### Changed
+
+- Lock generated projects to Maven `1.0.48`, the 17-package npm closure ending at CLI `1.2.8`, and unchanged PMO `1.4.4`.
+
+### Versions
+
+- CLI: `1.2.7` to `1.2.8`; Maven: `1.0.47` to `1.0.48`; direct frontend packages: `@mango/auth@1.0.31`, `@mango/rbac@1.0.30`, `@mango/system@1.0.38`, `@mango/admin-shell@1.0.70`; PMO remains `1.4.4`.
+
+### Published Packages
+
+- Publish Maven/docs `1.0.48`, then the machine-generated 17-package npm topology from `@mango/auth@1.0.31` through `@mango/cli@1.2.8`.
+
+### Business Impact
+
+- Generated consumers receive the member lifecycle, RBAC, Workflow notice and File Preview/KV corrections as one exact Maven/npm tuple without a Mango-managed business deployment.
+
+### Upgrade Estimate
+
+- Audience: generated Mango applications and direct affected-module consumers.
+- Engineering Effort: 60 to 120 minutes for generated consumers; 3 to 6 hours for customized integrations.
+- Execution Window: 2 to 4 hours including dependency upgrade, Flyway startup and focused regression.
+- Service Downtime: no framework-mandated downtime.
+- Rollback Effort: 30 to 90 minutes to restore CLI `1.2.7`, Maven `1.0.47` and the previous npm tuple.
+- Assumptions: Java 21, Node `22.23.1`, configured registries and representative tenant, notice and preview infrastructure.
+
+### Upgrade Notes
+
+1. Upgrade CLI to `1.2.8`, Maven to `1.0.48` and apply the complete exact npm matrix; retain PMO `1.4.4`.
+2. Run normal Flyway and Resource startup, then verify member lifecycle, role-menu saves, notice recipients and File Preview/KV behavior.
+
+### Verification
+
+- Verify the sealed Maven/docs and npm batch from both registry roles and run mixed plus clean generated consumers.
+
+### Rollback
+
+- Restore CLI `1.2.7`, Maven `1.0.47` and the previous exact npm tuple; never overwrite immutable coordinates.
+
 ## 1.2.7 - 2026-09-01
 
 ### Pull Requests

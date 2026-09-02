@@ -1,5 +1,75 @@
 # Mango Changelog
 
+## v2026.09.02-maven-1.0.48-identity-notice-file-preview-release - 2026-09-02
+
+Status: `PENDING`. The release plan, sealed candidate, registry verification, Tag and GitHub Release are not complete until the canonical publication manifest reaches `COMPLETED` and the closeout PR records the verified evidence.
+
+### Pull Requests
+
+- [PR #920](https://github.com/HardyDou/mango/pull/920) Added a tenant-member removal and controlled restoration lifecycle while preserving the original Identity account. Packages: Mango Maven `1.0.48`, `@mango/rbac@1.0.30`, the generated 17-package npm closure ending at `@mango/cli@1.2.8`, and `io.mango:mango-docs-bundle:1.0.48`. Business Adaptation: run the normal Flyway upgrade and allow restoration only for members recorded by the new lifecycle.
+- [PR #921](https://github.com/HardyDou/mango/pull/921) Fixed Mango source-repository dev startup so workspace commands invoke the repository CLI source and Maven Reactor directly. Packages: repository development manifest and documentation only; no standalone runtime coordinate is added, while the batch CLI remains `@mango/cli@1.2.8`. Business Adaptation: none for generated consumers; Mango source contributors use the governed root commands.
+- [PR #922](https://github.com/HardyDou/mango/pull/922) Fixed source-backend regression coverage after the member lifecycle change. Packages: Mango Maven `1.0.48` verification sources only; no additional public coordinate beyond the batch. Business Adaptation: none; runtime behavior is unchanged.
+- [PR #924](https://github.com/HardyDou/mango/pull/924) Fixed embedded kkFileView startup isolation inside the Mango file-preview boundary. Packages: Mango Maven `1.0.48` and `io.mango:mango-docs-bundle:1.0.48`. Business Adaptation: direct file-preview consumers reverify preview startup through the Mango starter.
+- [PR #925](https://github.com/HardyDou/mango/pull/925) Changed default Workflow approval notices to target the actual assignee and original applicant with normalized user-facing content. Packages: Mango Maven `1.0.48` and `io.mango:mango-docs-bundle:1.0.48`. Business Adaptation: synchronize updated templates and verify external recipient bindings.
+- [PR #927](https://github.com/HardyDou/mango/pull/927) Fixed RBAC role-menu hydration, normalized internal organization authorization subjects to tenant identity, and clarified tenant/configuration UI semantics. Packages: Mango Maven `1.0.48`, direct npm packages `@mango/auth@1.0.31`, `@mango/rbac@1.0.30`, `@mango/system@1.0.38`, `@mango/admin-shell@1.0.70`, their generated closure, and the docs bundle. Business Adaptation: run Identity V6 and Authorization V2 through normal Flyway startup and upgrade the complete npm tuple.
+- [PR #928](https://github.com/HardyDou/mango/pull/928) Changed file-preview token state to the shared Infra KV contract. Packages: Mango Maven `1.0.48` and `io.mango:mango-docs-bundle:1.0.48`. Business Adaptation: provide the normal Infra KV backing store and verify preview access across instances.
+
+### Fixed
+
+- Preserve accounts through tenant-member removal, prevent role-menu sibling over-selection, isolate embedded file-preview startup and keep source development on the current Reactor.
+
+### Added
+
+- Add auditable tenant-member lifecycle records and controlled restoration into a selected organization.
+
+### Changed
+
+- Standardize Workflow notice targeting, normalize internal authorization subjects to tenant identity and move preview-token state to Infra KV.
+
+### Versions
+
+- Mango Maven non-application reactor and `io.mango:mango-docs-bundle`: `1.0.47` to `1.0.48` (192 coordinates).
+- Direct npm packages: `@mango/auth@1.0.31`, `@mango/rbac@1.0.30`, `@mango/system@1.0.38` and `@mango/admin-shell@1.0.70`.
+- Generated npm closure: `@mango/admin-pages@1.0.39`, `@mango/calendar@1.0.40`, `@mango/cms@1.0.29`, `@mango/job@1.0.33`, `@mango/link@1.0.26`, `@mango/notice@1.0.45`, `@mango/numgen@1.0.41`, `@mango/payment@1.0.32`, `@mango/template@1.0.41`, `@mango/workflow@1.0.49`, `@mango/workflow-business-example@1.0.48`, `@mango/admin@1.1.6` and `@mango/cli@1.2.8`; `@mango/pmo` remains `1.4.4`.
+
+### Published Packages
+
+1. Publish the 192-coordinate non-application Maven/docs batch at `1.0.48`.
+2. Publish the machine-generated 17-package npm topology from `@mango/auth@1.0.31` through `@mango/cli@1.2.8`.
+3. Create the immutable Tag and GitHub Release only after dual-registry and pure-consumer verification.
+
+### Business Impact
+
+- Tenant member removal/restoration preserves the global account while tenant authorization stays revoked until deliberately reassigned.
+- Role editing no longer grants unchecked sibling menus, Workflow messages reach the intended recipients once, and File Preview supports shared token state.
+- The batch includes controlled Flyway migrations but does not upgrade, deploy or otherwise mutate a business application.
+
+### Upgrade Estimate
+
+- Audience: generated applications and direct Identity, Org, Authorization, RBAC, Workflow, Notice, File Preview or Infra KV consumers.
+- Engineering Effort: 60 to 120 minutes for generated consumers; 3 to 6 hours for customized direct integrations.
+- Execution Window: 2 to 4 hours including clean build, Flyway startup, Resource synchronization and focused regression.
+- Service Downtime: no framework-mandated downtime; consumers use their normal restart window.
+- Rollback Effort: 30 to 90 minutes to restore Maven `1.0.47`, CLI `1.2.7` and the previous npm tuple.
+- Assumptions: Java 21, Node `22.23.1`, configured registries and KV, representative tenant data and valid Notice bindings where external delivery is tested.
+
+### Upgrade Notes
+
+1. Upgrade Maven to `1.0.48` and CLI to `1.2.8`; apply its exact 17-package npm matrix and retain PMO `1.4.4`.
+2. Run normal Flyway startup and Resource synchronization; do not hand-edit lifecycle or authorization-subject rows.
+3. Verify member removal/restoration, role-menu saves, Workflow recipients and cross-instance file-preview token access.
+
+### Verification
+
+- Run the merged feature suites, Catalog and Git impact checks, exact plan/notes gates, capability audits, full Release PR checks and registry doctor under Node `22.23.1`.
+- Seal Maven/docs and npm once, verify both registry roles, run mixed and pure consumers, then verify Tag and GitHub Release.
+- No Baohan application upgrade or deployment is part of this release.
+
+### Rollback
+
+- Restore Maven `1.0.47`, CLI `1.2.7` and the previous exact npm tuple; never overwrite immutable coordinates.
+- Do not delete lifecycle, account, tenant, authorization or KV data as a framework rollback.
+
 ## v2026.09.01-maven-1.0.47-resource-user-management-release - 2026-09-01
 
 Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `c9482a03b27014cf769d6cba312c874a05420140a898b4daaaf5d3cc29f34a0c` for plan `e5a48afffa386829ef29503faab015bebc1ea0339deb91b7c4f37806261a14a9` and prepared candidate `751112774461f49c11e7f4f45a963515dae836b1a341f55dcbe77facb5328f5c` is `COMPLETED`: all 192 Maven/docs coordinates and all 16 npm packages ending at `@mango/cli@1.2.7` match the sealed candidate in both publish and consume registries, the pure consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`.
