@@ -4,6 +4,8 @@ import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.model.ResourceField;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDateTime;
+
 final class ResourceFieldReader {
 
     private final String resourceType;
@@ -60,6 +62,17 @@ final class ResourceFieldReader {
         }
         String text = String.valueOf(value);
         return StringUtils.hasText(text) ? Integer.valueOf(text.trim()) : defaultValue;
+    }
+
+    LocalDateTime requiredDateTime(ResourceDeclaration resource, String fieldName) {
+        Object value = fieldValue(resource, fieldName);
+        if (value == null || !StringUtils.hasText(String.valueOf(value))) {
+            throw new IllegalStateException(resourceType + " field is required: " + fieldName);
+        }
+        if (value instanceof LocalDateTime localDateTime) {
+            return localDateTime;
+        }
+        return LocalDateTime.parse(String.valueOf(value).trim().replace(' ', 'T'));
     }
 
     Boolean boolField(ResourceDeclaration resource, String fieldName, Boolean defaultValue) {

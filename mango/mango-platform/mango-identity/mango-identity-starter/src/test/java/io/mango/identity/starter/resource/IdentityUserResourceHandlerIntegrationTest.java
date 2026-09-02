@@ -3,9 +3,11 @@ package io.mango.identity.starter.resource;
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import io.mango.identity.core.entity.IdentityUserEntity;
 import io.mango.identity.core.entity.TenantMemberEntity;
+import io.mango.identity.core.mapper.TenantMemberLifecycleLogMapper;
 import io.mango.identity.core.mapper.IdentityUserMapper;
 import io.mango.identity.core.mapper.TenantMemberMapper;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
+import io.mango.resource.support.PortableResourceIds;
 import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.api.enums.ResourceStatus;
@@ -29,6 +31,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.TestPropertySource;
 
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -53,6 +57,7 @@ class IdentityUserResourceHandlerIntegrationTest {
 
     private static final String ENCODED_ADMIN_PASSWORD =
             "$2a$10$xktxOwcAfFdqNAKKpWICDuV8MTEEshM9K1CtofRWA34v2OGoarvHa";
+    private static final String INITIALIZED_AT = "2026-07-16T09:00:00";
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -62,6 +67,9 @@ class IdentityUserResourceHandlerIntegrationTest {
 
     @Autowired
     private TenantMemberMapper memberMapper;
+
+    @Autowired
+    private TenantMemberLifecycleLogMapper lifecycleLogMapper;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -167,6 +175,65 @@ class IdentityUserResourceHandlerIntegrationTest {
         assertThat(firstStoredPassword).isEqualTo(ENCODED_ADMIN_PASSWORD);
         assertThat(secondStoredPassword).isEqualTo(firstStoredPassword);
         assertThat(passwordEncoder.matches("admin123", secondStoredPassword)).isTrue();
+    }
+
+    @Test
+    void upsert_sameDeclarationAcrossEmptyDatabases_persistsIdenticalTableSnapshots() {
+        ResourceDeclaration declaration = resource();
+        declaration.removeField("password");
+        put(declaration, "targetId", ResourceFieldType.LONG, 1L);
+        put(declaration, "encodedPassword", ResourceFieldType.STRING, ENCODED_ADMIN_PASSWORD);
+
+        handler.upsert(declaration);
+        IdentityResourceSnapshot first = snapshot();
+
+        resetSchema();
+        handler.upsert(declaration.copy());
+        IdentityResourceSnapshot second = snapshot();
+
+        long expectedEventId = PortableResourceIds.stable(
+                "tenant_member_lifecycle_log", "1", 1001L, "CREATED");
+        assertThat(second).isEqualTo(first);
+        assertThat(second.lifecycleEvents()).singleElement().satisfies(row -> {
+            assertThat(row.get("id")).isEqualTo(expectedEventId);
+            assertThat(row.get("occurred_at").toString()).startsWith("2026-07-16 09:00");
+        });
+    }
+
+    @Test
+    void upsert_missingInitializationTime_rejectsWithoutWrites() {
+        ResourceDeclaration declaration = resource();
+        declaration.removeField("initializedAt");
+
+        assertThatThrownBy(() -> handler.upsert(declaration))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("field is required: initializedAt");
+        assertThat(countUsers()).isZero();
+        assertThat(countMembers()).isZero();
+        assertThat(countLifecycleEvents("CREATED")).isZero();
+    }
+
+    @Test
+    void upsert_stableLifecycleIdOccupiedByDifferentEvent_rejectsWithoutWrites() {
+        long eventId = PortableResourceIds.stable(
+                "tenant_member_lifecycle_log", "1", 1001L, "CREATED");
+        jdbcTemplate.update("""
+                        insert into tenant_member_lifecycle_log
+                            (id, tenant_id, user_id, member_id, event_type, occurred_at)
+                        values (?, ?, ?, ?, ?, ?)
+                        """,
+                eventId, 9L, 9L, 9L, "REMOVED", INITIALIZED_AT.replace('T', ' '));
+
+        ResourceDeclaration declaration = resource();
+        put(declaration, "targetId", ResourceFieldType.LONG, 1L);
+
+        assertThatThrownBy(() -> handler.upsert(declaration))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("portable lifecycle event ID collision");
+        assertThat(countUsers()).isZero();
+        assertThat(countMembers()).isZero();
+        assertThat(jdbcTemplate.queryForObject(
+                "select count(*) from tenant_member_lifecycle_log", Long.class)).isEqualTo(1L);
     }
 
     @Test
@@ -307,6 +374,7 @@ class IdentityUserResourceHandlerIntegrationTest {
         resource.setFields(new LinkedHashMap<>());
         put(resource, "tenantId", ResourceFieldType.LONG, 1L);
         put(resource, "memberId", ResourceFieldType.LONG, 1001L);
+        put(resource, "initializedAt", ResourceFieldType.DATETIME, INITIALIZED_AT);
         put(resource, "username", ResourceFieldType.STRING, "demo.admin");
         put(resource, "password", ResourceFieldType.STRING, "demo123");
         put(resource, "memberNo", ResourceFieldType.STRING, "DEMO-ADMIN");
@@ -336,6 +404,19 @@ class IdentityUserResourceHandlerIntegrationTest {
     private Long countLifecycleEvents(String eventType) {
         return jdbcTemplate.queryForObject(
                 "select count(*) from tenant_member_lifecycle_log where event_type = ?", Long.class, eventType);
+    }
+
+    private IdentityResourceSnapshot snapshot() {
+        return new IdentityResourceSnapshot(
+                jdbcTemplate.queryForList("select * from identity_user order by id"),
+                jdbcTemplate.queryForList("select * from tenant_member order by id"),
+                jdbcTemplate.queryForList("select * from tenant_member_lifecycle_log order by id"));
+    }
+
+    private record IdentityResourceSnapshot(
+            List<Map<String, Object>> users,
+            List<Map<String, Object>> members,
+            List<Map<String, Object>> lifecycleEvents) {
     }
 
     @Configuration
