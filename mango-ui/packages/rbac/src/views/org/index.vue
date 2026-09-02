@@ -42,7 +42,9 @@
             <template #default="{ data }">
               <span class="tree-node">
                 <span class="tree-name">{{ data.orgName }}</span>
-                <el-tag v-if="isRootOrg(data)" type="warning" size="small" effect="plain"> 租户根机构 </el-tag>
+                <el-tag v-if="isRootOrg(data)" type="warning" size="small" effect="plain">
+                  {{ rootOrgLabel(data) }}
+                </el-tag>
                 <el-tag v-else size="small" effect="plain">
                   {{ orgTypeLabel(data.orgType) }}
                 </el-tag>
@@ -232,6 +234,11 @@ const showTypeFilter = computed(() => {
 
 function orgTypeLabel(type?: number) {
   return orgTypeOptions.find((item) => item.value === Number(type))?.label || '-';
+}
+
+// Issue 938: 根组织同时展示组织类型和租户 ID，避免把同租户公司误解为独立租户。
+function rootOrgLabel(row: Partial<SysOrg>) {
+  return `${orgTypeLabel(row.orgType)} · 租户ID：${row.tenantId ?? '-'}`;
 }
 
 async function loadTree() {
