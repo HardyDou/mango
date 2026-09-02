@@ -620,7 +620,7 @@ mango-notice-starter/src/main/resources/META-INF/mango/resources/notice-common-m
 mango-notice-starter/src/main/resources/META-INF/mango/resources/notice-common-domain.yml
 ```
 
-业务模块声明通知模板时，推荐在业务模块自己的 starter 中实现 `ResourceProvider`，并通过 `NoticeMessageTemplateResourceDeclarations.fourChannels(...)` 生成站内信、邮件、企业微信、短信四类模板声明。业务代码只依赖 `mango-notice-api` 和 `mango-resource-api`，不依赖 `mango-resource` 的 core/starter。
+业务模块声明通知模板时，推荐在业务模块自己的 starter 中实现 `ResourceProvider`，并通过 `NoticeMessageTemplateResourceDeclarations.fourChannels(...)` 生成系统消息、邮件、企业微信、短信四类模板声明。该辅助方法默认启用系统消息和企业微信，默认关闭邮件和短信；业务代码只依赖 `mango-notice-api` 和 `mango-resource-api`，不依赖 `mango-resource` 的 core/starter。
 
 ### 8.1 MESSAGE_CHANNEL
 
@@ -642,7 +642,8 @@ mango-notice-starter/src/main/resources/META-INF/mango/resources/notice-common-d
 | `secretRefs` | `STRING` | 否 | Secret 键到 `env:` / `property:` 引用的 JSON 对象。 |
 | `routeTagCodes` | `STRING` | 否 | 账号绑定的稳定路由标签编码 JSON 数组；标签需已存在。 |
 | `rateLimitConfig` | `STRING` | 否 | 限流配置 JSON。 |
-| `enabled` | `BOOLEAN` | 否 | 是否启用，默认 `true`。 |
+| `enabled` | `BOOLEAN` | 否 | 业务消息类型是否启用，默认 `true`。 |
+| `channelEnabled` | `BOOLEAN` | 否 | 当前渠道模板是否启用；旧声明未提供时兼容使用 `enabled`。 |
 | `priority` | `INT` | 否 | 优先级，默认 `0`。 |
 | `weight` | `INT` | 否 | 权重，默认 `100`。 |
 | `lastSendStatus` | `STRING` | 否 | 最近发送状态，默认 `NONE`。 |
@@ -685,9 +686,9 @@ mango-notice-starter/src/main/resources/META-INF/mango/resources/notice-common-d
 
 | 模块 | Provider | 主要 `bizType` |
 |------|----------|----------------|
-| `mango-auth` | `AuthMessageTemplateResourceProvider` | `auth.login.locked`、`auth.login.success` |
+| `mango-auth` | `AuthMessageTemplateResourceProvider` | `auth.login.locked` |
 | `mango-identity` | `IdentityMessageTemplateResourceProvider` | `identity.user.created`、`identity.password.reset`、`auth.wecom.login.bound`、`auth.wecom.login.unbound` |
-| `mango-workflow` | `WorkflowMessageTemplateResourceProvider` | `workflow.task.assigned`、`workflow.task.claimable`、`workflow.task.cc`、`workflow.task.rejected`、`workflow.process.completed`、`workflow.process.rejected`、`workflow.process.ended`、`workflow.task.empty-assignee` |
+| `mango-workflow` | `WorkflowMessageTemplateResourceProvider` | `workflow.task.assigned`、`workflow.process.completed`、`workflow.process.rejected` |
 | `mango-payment` | `PaymentMessageTemplateResourceProvider` | `payment.order.success`、`payment.order.failed`、`payment.refund.success`、`payment.refund.failed`、`payment.refund.approval.created`、`payment.exception.order.created`、`payment.reconciliation.difference`、`payment.settlement.unresolved` |
 | `mango-job` | `JobMessageTemplateResourceProvider` | `job.instance.failed`、`job.worker.offline` |
 
@@ -704,7 +705,7 @@ mango-notice-starter/src/main/resources/META-INF/mango/resources/notice-common-d
 | `bizType` | 通知业务类型，必填。 |
 | `bizId` | 业务对象 ID，用于追踪和幂等。 |
 | `params` | 模板参数 Map。 |
-| `channelTypes` | 本次指定发送渠道；为空时按业务类型启用模板发送。 |
+| `channelTypes` | 本次明确指定的发送渠道；非空时严格使用指定集合，不隐式追加其它渠道；为空时按业务类型启用模板发送。 |
 | `recipients` | 明确接收人列表，可传用户 ID、手机号、邮箱、企微 ID、钉钉 ID 等。 |
 | `recipientTargets` | 接收目标，支持 `USER`、`ORG`、`POST`、`ROLE`。 |
 | `userId` / `userIds` | 单用户或批量用户快捷发送字段。 |
@@ -717,6 +718,8 @@ mango-notice-starter/src/main/resources/META-INF/mango/resources/notice-common-d
 | `idempotentKey` | 幂等键。 |
 
 业务模块不希望通知失败影响主流程时，可发布 `NoticeSendEvent`。事件命令使用 `tenantId`、`appCode`、`realm` 保存产生事件时的应用上下文；本地 `mango-notice-starter` 和微服务 `mango-notice-starter-remote` 在调用 `NoticeApi` 前恢复这些字段，并在调用完成后恢复原线程上下文。这样 `ROLE` 接收目标会在正确的租户、应用和登录域中解析；旧事件未携带 `appCode` 或 `realm` 时沿用消费线程已有值。事件监听器会记录发送失败日志，但不向上抛出异常阻断业务事务。
+
+外部渠道没有可用发送器或完整渠道配置时，对应发送记录标记为 `CANCELED`，取消码为 `CHANNEL_UNAVAILABLE`；企业微信用户没有与候选渠道 CorpID 匹配的有效 Identity 绑定时，记录标记为 `CANCELED`，取消码为 `RECIPIENT_ACCOUNT_MISSING`。任务内全部记录均取消时，任务也标记为 `CANCELED`，不写入发送 outbox、不失败重试。Identity 查询失败或抛出异常仍按真实投递失败处理，不会伪装成“未绑定”。
 
 ### 9.2 接收人字段
 
@@ -875,6 +878,7 @@ Notice 当前不提供演示数据。以后新增示例业务或示例账号时�
 | 问题 | 优先检查 |
 |------|----------|
 | 任务创建了但没有发送 | `mango.notice.outbox.enabled`、`dispatch-enabled`、outbox 存储、worker 日志。 |
+| 外部渠道记录显示已取消 | 检查 `CHANNEL_UNAVAILABLE` 对应的发送器与完整渠道配置，或 `RECIPIENT_ACCOUNT_MISSING` 对应的企业微信 CorpID 身份绑定；取消不会进入失败重试。 |
 | 通知 outbox 被 `domain-event-dispatcher` 锁定 | 是否已同步升级 topic 隔离版本并重启旧实例；自定义 worker 是否仍调用旧 claim API。 |
 | 站内信未出现 | 是否引入 `mango-notice-channel-site`，业务配置和站内信渠道模板是否已发布。 |
 | 第三方渠道失败 | `notice_send_record` 的失败码、失败原因、请求快照、响应快照和渠道配置 JSON。 |

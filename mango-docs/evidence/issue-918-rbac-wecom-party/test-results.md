@@ -21,7 +21,7 @@
 | VAL-001 | RBAC 包生产构建                  | `pnpm --dir mango-ui --filter @mango/rbac build`                                                                                                              | PASS，726 modules transformed                    | Vite 与类型生成退出码 0                                                                                            |
 | VAL-002 | Notice 企微同步集成              | `mvn -f mango/pom.xml -pl mango-platform/mango-notice/mango-notice-core -am -Dtest=NoticeServiceIntegrationTest -Dsurefire.failIfNoSpecifiedTests=false test` | PASS，22 tests，0 failures，0 errors             | Surefire 与 52 模块依赖 Reactor `BUILD SUCCESS`                                                                    |
 | VAL-002 | Notice 模块静态门禁              | `mvn -f mango/pom.xml -pl mango-platform/mango-notice/mango-notice-core -am -DskipTests verify`                                                               | PASS，52 模块依赖 Reactor `BUILD SUCCESS`        | compile、Checkstyle、PMD、SpotBugs 退出码 0                                                                        |
-| VAL-003 | Identity/Authorization migration | 任务库执行 Flyway V5/V2、错/正确/重复样本校验及幂等回查                                                                                                       | PASS，错误主体 0、重复组 0、重复执行前后计数一致 | `.runtime/issue-918/migration-verification.txt`                                                                    |
+| VAL-003 | Identity/Authorization migration | 任务库执行 Flyway V6/V2、错/正确/重复样本校验及幂等回查                                                                                                       | PASS，错误主体 0、重复组 0、重复执行前后计数一致 | `.runtime/issue-918/migration-verification.txt`                                                                    |
 | VAL-004 | E2E selector 规范                | `pnpm --dir mango-ui e2e-selectors:check`                                                                                                                     | PASS                                             | 业务 spec 无禁止的实现级 selector                                                                                  |
 | VAL-004 | 前端架构                         | `pnpm --dir mango-ui architecture:check`                                                                                                                      | PASS，errorCount=0                               | checker SHA-256 `78440c05c5b6b69e733f634b5ec988d114b0b394af2e5ee72d8fb97e5954bbe5`                                 |
 | VAL-004 | 前端边界                         | `pnpm --dir mango-ui frontend-boundaries:check`                                                                                                               | PASS，无本次新增违规                             | checker SHA-256 `ffef6fb34b6c798626ec086ff372bdc6ae03b30c292c32ad5e0cfecd507a30b5`                                 |
@@ -47,7 +47,7 @@
 - 角色菜单弹窗初始化只勾选已授权叶子，必要祖先呈半选，未授权兄弟不再被级联选中。
 - 保存提交 checked 与 half-checked 的去重集合，保留必要祖先且不扩大权限。
 - 企微用户同步把 `INTERNAL_ORG.partyId` 归一为当前租户 ID，部门 ID 仍只用于组织成员关系。
-- Identity V5 与 Authorization V2 修复历史错误主体；Authorization 在归一化前按完整唯一键保留最小 ID。
+- Identity V6 与 Authorization V2 修复历史错误主体；Authorization 在归一化前按完整唯一键保留最小 ID。
 - 默认 demo 只提供 1 个租户“芒果集团”，租户下保留 A/B 两个公司，每个公司 2 个部门；公司和部门不是独立租户。
 - 登录选项唯一时自动使用默认租户且不渲染选择器；`system:tenant` 菜单停用，不进入默认导航。
 - 内部 `tenant_id`、租户拦截器、租户 API 和存量兼容能力保持不变。

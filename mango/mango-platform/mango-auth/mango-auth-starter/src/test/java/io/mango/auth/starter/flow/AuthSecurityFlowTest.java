@@ -37,7 +37,6 @@ import io.mango.identity.api.IdentityUserApi;
 import io.mango.identity.api.vo.AuthUserVO;
 import io.mango.identity.api.vo.IdentityUserInfoVO;
 import io.mango.notice.api.NoticeApi;
-import io.mango.notice.api.enums.NoticeSiteMessageTargetType;
 import io.mango.notice.api.command.NoticeSendEventCommand;
 import io.mango.notice.api.vo.NoticeWecomLoginConfigVO;
 import jakarta.annotation.Resource;
@@ -153,16 +152,7 @@ class AuthSecurityFlowTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data").value("1:admin"));
 
-        assertThat(applicationEvents.stream(NoticeSendEventCommand.class).toList())
-                .singleElement()
-                .satisfies(event -> {
-                    assertThat(event.getTenantId()).isEqualTo("1");
-                    assertThat(event.getBizType()).isEqualTo("auth.login.success");
-                    assertThat(event.getMessageTarget().getTargetType()).isEqualTo(NoticeSiteMessageTargetType.ROUTE);
-                    assertThat(event.getMessageTarget().getTargetKey()).isEqualTo("account:profile");
-                    assertThat(event.getMessageActions()).singleElement()
-                            .satisfies(action -> assertThat(action.getActionCode()).isEqualTo("VIEW_PROFILE"));
-                });
+        assertThat(applicationEvents.stream(NoticeSendEventCommand.class).toList()).isEmpty();
     }
 
     @Test
@@ -664,6 +654,15 @@ class AuthSecurityFlowTest {
                 @Override
                 public R<Long> create(io.mango.identity.api.command.CreateIdentityUserCommand command) {
                     return R.ok(1L);
+                }
+
+                @Override
+                public R<io.mango.identity.api.vo.IdentityAccountAvailabilityVO> accountAvailability(
+                        io.mango.identity.api.query.IdentityAccountAvailabilityQuery query) {
+                    io.mango.identity.api.vo.IdentityAccountAvailabilityVO availability =
+                            new io.mango.identity.api.vo.IdentityAccountAvailabilityVO();
+                    availability.setStatus(io.mango.identity.api.vo.IdentityAccountAvailabilityVO.AVAILABLE);
+                    return R.ok(availability);
                 }
 
                 @Override

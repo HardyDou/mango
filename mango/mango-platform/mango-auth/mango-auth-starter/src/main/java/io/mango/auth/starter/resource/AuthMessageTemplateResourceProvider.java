@@ -38,20 +38,6 @@ public class AuthMessageTemplateResourceProvider implements ResourceProvider {
                 "账号 {{username}} 因连续登录失败已被临时锁定，客户端 IP：{{clientIp}}，剩余锁定时间：{{remainingMinutes}} 分钟。请确认是否本人操作。",
                 "账号登录已被临时锁定：{{username}}，IP：{{clientIp}}，剩余 {{remainingMinutes}} 分钟。",
                 "账号 {{username}} 登录已被临时锁定，剩余 {{remainingMinutes}} 分钟。")));
-        declarations.addAll(NoticeMessageTemplateResourceDeclarations.fourChannels(spec(
-                2026061900100010100L,
-                2060000000001010100L,
-                "auth.login.success",
-                "登录成功",
-                "用户成功登录后发送低优先级提醒。",
-                NoticePriority.LOW,
-                "{\"type\":\"object\",\"properties\":{\"username\":{\"type\":\"string\",\"title\":\"用户名\"},\"clientIp\":{\"type\":\"string\",\"title\":\"客户端IP\"},\"loginTime\":{\"type\":\"string\",\"title\":\"登录时间\"},\"appCode\":{\"type\":\"string\",\"title\":\"应用编码\"}},\"required\":[\"username\",\"loginTime\"]}",
-                "登录成功：{{username}}",
-                "账号 {{username}} 已成功登录 {{appCode}}，客户端 IP：{{clientIp}}，时间：{{loginTime}}。",
-                "【Mango】登录成功：{{username}}",
-                "账号 {{username}} 已成功登录 {{appCode}}，客户端 IP：{{clientIp}}，时间：{{loginTime}}。",
-                "登录成功：{{username}}，IP：{{clientIp}}。",
-                "账号 {{username}} 已成功登录。")));
         return declarations;
     }
 

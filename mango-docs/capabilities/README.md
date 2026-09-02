@@ -6,7 +6,9 @@
 
 长期规则仍以 `mango-pmo` 为唯一来源；本文只做能力索引，不复制规范正文。
 
-2026-09-01 能力更新：Issue #918 修复 RBAC 角色菜单树父目录回显导致兄弟节点被扩展勾选，并统一企微同步内部用户的授权主体为当前数值租户 ID。企微部门继续只维护成员组织关系；Notice 同步路径按需自愈错误主体，Identity V5 与 Authorization V2 归一化并去重历史数据。详见 [RBAC README](../../mango-ui/packages/rbac/README.md)、[Notice README](../../mango/mango-platform/mango-notice/README.md)、[Identity README](../../mango/mango-platform/mango-identity/README.md)、[Authorization README](../../mango/mango-platform/mango-authorization/README.md) 和 [Auth README](../../mango/mango-platform/mango-auth/README.md)。
+2026-09-01 能力更新：Issue #923 规范化默认审批通知。首次与后续待办只通知实际办理人，最终通过或驳回只通知原申请人一次；用户文案统一展示可读流程名称、业务标题和审核状态/结果，不展示内部编码。默认消息模板启用系统消息与企业微信、关闭邮件与短信；无外部通道或无有效企微绑定收敛为取消且不重试，Identity 查询异常仍保留失败语义。Auth 同步移除登录成功通知并保留登录锁定安全提醒。详见 Workflow、Notice、Auth README 与 [STANDARD 交付记录](../plans/2026-09-01-issue-923-workflow-notice-standardization.md)。
+
+2026-09-01 能力更新：Issue #918 修复 RBAC 角色菜单树父目录回显导致兄弟节点被扩展勾选，并统一企微同步内部用户的授权主体为当前数值租户 ID。企微部门继续只维护成员组织关系；Notice 同步路径按需自愈错误主体，Identity V6 与 Authorization V2 归一化并去重历史数据。详见 [RBAC README](../../mango-ui/packages/rbac/README.md)、[Notice README](../../mango/mango-platform/mango-notice/README.md)、[Identity README](../../mango/mango-platform/mango-identity/README.md)、[Authorization README](../../mango/mango-platform/mango-authorization/README.md) 和 [Auth README](../../mango/mango-platform/mango-auth/README.md)。
 
 2026-08-28 能力更新：Workflow 办理人身份字段统一为原始 Flowable `assigneeName` 加当前租户解析的 `assigneeId`、`assigneeDisplayName`；详见 Workflow、Identity README 与业务审批接入指南。
 
@@ -19,6 +21,10 @@
 2026-08-30 发布批次：Mango Maven `1.0.45` 修复候选组首任务 `assignee=null`、受信内部 Workflow 事件回调读取和 Resource eventual 重复提交；前端同步发布 Home/Workflow 领域候选 API 及依赖闭包，PMO `1.4.4` 收窄 `mango-workflow` Skill 触发边界，CLI `1.2.5` 固化完整兼容矩阵。入口与升级边界见 Workflow、Home、Resource、PMO、CLI README 及根 `CHANGELOG.md`；Issue #851 的首次 cold Resource baseline 目标仍保持开放。
 
 2026-08-31 能力更新：Issue #909 按方案 A 优化用户管理。页面默认展示全部成员，组织节点按本级及全部启用下级过滤并可清除选择；在具体组织内新增账号会原子创建 Identity 账号、租户成员和组织关系，已有成员候选支持用户名、姓名、手机号、邮箱 OR 搜索并由后端排除目标组织现有成员；列表按页批量展示当前应用的启用直接角色，只展示所属机构、完整部门路径等业务字段。入口见 [Identity README](../../mango/mango-platform/mango-identity/README.md)、[Org README](../../mango/mango-platform/mango-org/README.md)、[Authorization README](../../mango/mango-platform/mango-authorization/README.md) 和 [RBAC README](../../mango-ui/packages/rbac/README.md)。
+
+2026-09-01 能力更新：Issue #919 区分“移出当前部门”和“移出租户成员”。租户移出保留原账号及 `userId/memberId`，撤销当前租户角色与全部部门关系；只有今天起由本特性记录为 `REMOVED` 的当前租户成员可通过脱敏候选恢复，恢复只建立本次选择的部门关系，不恢复旧授权。同名姓名可以创建不同登录账号，`realm + username` 仍唯一且旧账号不转让。入口见 [Identity README](../../mango/mango-platform/mango-identity/README.md)、[Org README](../../mango/mango-platform/mango-org/README.md) 和 [RBAC README](../../mango-ui/packages/rbac/README.md)。
+
+2026-09-01 能力更新：Issue #889 将 Mango 源码仓的 workspace/dev 命令固定到 `mango-ui` 的仓库内 CLI 源码入口，避免 `pnpm exec` 在缺少本地 bin 时静默命中过期全局 CLI；根开发 manifest 同时移除遗留 Maven `install`，Spring Boot 开发继续只从当前 Reactor 执行 `clean + compile + spring-boot:run`。源码仓入口见 [Mango UI README](../../mango-ui/README.md)，生成后的业务项目仍按 [CLI README](../../mango-ui/packages/mango-cli/README.md) 使用项目内锁定版本。
 
 ## 2. 使用方式
 
@@ -53,6 +59,8 @@
 | 应用初始化与滚动升级     | [Bootstrap](../../mango/mango-infra/mango-infra-bootstrap/README.md) -> [Persistence](../../mango/mango-infra/mango-infra-persistence/README.md) -> [Resource](../../mango/mango-platform/mango-resource/README.md) -> [File](../../mango/mango-platform/mango-file/README.md) -> [Workflow](../../mango/mango-platform/mango-workflow/README.md)                                                                          | 同一制品使用 `bootstrap plan`、`bootstrap apply`、`bootstrap finalize`、finalize 前 `bootstrap abort` 与 `runtime`；Runtime 不执行 Flyway 或阻断 Resource 初始化                                                                       |
 
 ## 3.1 近期能力变更
+
+- 2026-09-01，[Issue #919](https://github.com/HardyDou/mango/issues/919) 补齐成员生命周期：部门移出只解除准确的组织关系；租户移出保留原身份和成员标识并撤销当前租户访问；当前租户内由本特性移出的账号可查看脱敏候选并复用原标识恢复，旧角色、岗位和其它部门关系不自动恢复。特性上线前的历史删除不回填。入口见 [Identity README](../../mango/mango-platform/mango-identity/README.md)、[Org README](../../mango/mango-platform/mango-org/README.md) 和 [RBAC README](../../mango-ui/packages/rbac/README.md)，设计资产见 [Issue #919 设计目录](../designs/issue-919-member-lifecycle/)。
 
 - 2026-08-31，[Issue #909](https://github.com/HardyDou/mango/issues/909) 按方案 A 优化用户管理：默认“全部成员”，集团/公司/部门范围包含本级及全部启用下级，可清除组织选择；目标组织新增账号原子写入账号、租户成员和组织关系，候选成员按用户名、姓名、手机号或邮箱搜索并排除目标组织已有成员；列表每页一次批量查询当前应用的启用直接角色，表单隐藏登录域、操作者类型、主体类型和主体 ID。入口见 [Identity README](../../mango/mango-platform/mango-identity/README.md)、[Org README](../../mango/mango-platform/mango-org/README.md)、[Authorization README](../../mango/mango-platform/mango-authorization/README.md) 和 [RBAC README](../../mango-ui/packages/rbac/README.md)，交付记录见 [STANDARD 交付记录](../plans/2026-08-31-issue-909-user-management-delivery-record.md)。
 

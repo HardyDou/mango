@@ -14,6 +14,7 @@ import io.mango.captcha.api.dto.CaptchaVerifyRequest;
 import io.mango.identity.api.command.BindExternalIdentityCommand;
 import io.mango.identity.api.command.BatchDeleteIdentityUserCommand;
 import io.mango.identity.api.command.CreateTenantMemberInOrgCommand;
+import io.mango.identity.api.command.RestoreTenantMemberInOrgCommand;
 import io.mango.identity.api.command.SendContactCaptchaCommand;
 import io.mango.identity.api.command.UnbindCurrentExternalIdentityCommand;
 import io.mango.identity.api.command.UpdateCurrentUserContactCommand;
@@ -21,6 +22,7 @@ import io.mango.identity.api.command.UpdateCurrentUserProfileCommand;
 import io.mango.identity.api.enums.IdentityUserTargetType;
 import io.mango.identity.api.query.ExternalIdentityQuery;
 import io.mango.identity.api.query.IdentityUserPageQuery;
+import io.mango.identity.api.query.IdentityAccountAvailabilityQuery;
 import io.mango.identity.api.query.IdentityUserTargetQuery;
 import io.mango.identity.api.request.IdentityUserBatchRequest;
 import io.mango.identity.api.vo.IdentityUserInfoVO;
@@ -245,6 +247,16 @@ class IdentityUserServiceIntegrationTest {
         assertThat(jdbcTemplate.queryForObject(
                 "select count(*) from tenant_member where tenant_id = 2 and user_id = 1",
                 Long.class)).isEqualTo(1L);
+        assertThat(jdbcTemplate.queryForObject(
+                "select count(*) from tenant_member_lifecycle_log where tenant_id = 2 and user_id = 1 "
+                        + "and event_type = 'CREATED'",
+                Long.class)).isEqualTo(1L);
+
+        tenantProvisioner.provision(new TenantProvisionCommand(2L, "company_a", "A公司"));
+        assertThat(jdbcTemplate.queryForObject(
+                "select count(*) from tenant_member_lifecycle_log where tenant_id = 2 and user_id = 1 "
+                        + "and event_type = 'CREATED'",
+                Long.class)).isEqualTo(1L);
     }
 
     @Test
@@ -320,8 +332,8 @@ class IdentityUserServiceIntegrationTest {
     }
 
     @Test
-    @DisplayName("批量删除成员时清理角色和部门关系")
-    void deleteBatchShouldRemoveRoleAndOrgRelationsThroughRealMappers() {
+    @DisplayName("批量移出成员时保留主体并清理角色和部门关系")
+    void deleteBatchShouldRetainMemberAndRemoveAccessThroughRealMappers() {
         MangoContextHolder.set(MangoContextSnapshot.empty()
                 .withSecurity(1001L, "1", "admin", "INTERNAL", "INTERNAL_USER", "INTERNAL_ORG", 1L,
                         "internal-admin"));
@@ -337,8 +349,14 @@ class IdentityUserServiceIntegrationTest {
         Integer count = service.deleteBatch(deleteCommand(1001L, 1002L, 1003L));
 
         assertThat(count).isEqualTo(2);
-        assertThat(countMembers()).isEqualTo(1L);
+        assertThat(countMembers()).isEqualTo(3L);
         assertThat(countRelations()).isZero();
+        assertThat(jdbcTemplate.queryForObject(
+                "select count(*) from tenant_member where status = 0 and left_at is not null", Long.class))
+                .isEqualTo(2L);
+        assertThat(jdbcTemplate.queryForObject(
+                "select count(*) from tenant_member_lifecycle_log where event_type = 'REMOVED'", Long.class))
+                .isEqualTo(2L);
         assertThat(roleBindingApi.deleteCommands).hasSize(1);
         DeleteSubjectRoleBindingsCommand command = roleBindingApi.deleteCommands.get(0);
         assertThat(command.getTenantId()).isEqualTo(1L);
@@ -359,6 +377,138 @@ class IdentityUserServiceIntegrationTest {
 
         assertThat(count).isZero();
         assertThat(countMembers()).isEqualTo(1L);
+        assertThat(roleBindingApi.deleteCommands).isEmpty();
+    }
+
+    @Test
+    @DisplayName("角色撤销失败时不得移出租户成员")
+    void deleteBatchShouldFailClosedWhenRoleRevocationFails() {
+        MangoContextHolder.set(MangoContextSnapshot.empty()
+                .withSecurity(1001L, "1", "admin", "INTERNAL", "INTERNAL_USER", "INTERNAL_ORG", 1L,
+                        "internal-admin"));
+        seedUser(1001L, "current", "当前用户", "1", 1);
+        seedUser(1002L, "target", "目标用户", "1", 1);
+        seedMember(10L, 1L, 1001L, 1, null);
+        seedMember(11L, 1L, 1002L, 1, null);
+        seedMemberOrg(101L, 1L, 11L, 200L, null);
+        roleBindingApi.deleteFailure = true;
+
+        assertThatThrownBy(() -> service.deleteBatch(deleteCommand(1002L)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("role revocation failed");
+
+        assertThat(memberMapper.selectById(11L).getLeftAt()).isNull();
+        assertThat(memberMapper.selectById(11L).getStatus()).isEqualTo(1);
+        assertThat(relationMapper.selectById(101L)).isNotNull();
+        assertThat(jdbcTemplate.queryForObject(
+                "select count(*) from tenant_member_lifecycle_log where event_type = 'REMOVED'", Long.class))
+                .isZero();
+    }
+
+    @Test
+    @DisplayName("账号可用性只为本特性移出的当前租户成员返回脱敏候选")
+    void accountAvailabilityShouldExposeOnlyCurrentTenantRecoverableMember() {
+        MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("1"));
+        seedUser(1002L, "former", "原成员", "1", 1);
+        seedMember(11L, 1L, 1002L, 0, LocalDateTime.now());
+        seedLifecycle(1L, 1002L, 11L, "REMOVED");
+        IdentityAccountAvailabilityQuery query = new IdentityAccountAvailabilityQuery();
+        query.setUsername("former");
+
+        var result = service.accountAvailability(query);
+
+        assertThat(result.getStatus()).isEqualTo("RECOVERABLE");
+        assertThat(result.getDisplayName()).isEqualTo("member-1002");
+        assertThat(result.getMaskedPhone()).isEqualTo("138****8000");
+        assertThat(result.getMaskedEmail()).isEqualTo("a***@example.com");
+        assertThat(result.getMemberNo()).isEqualTo("USER-1002");
+        assertThat(result.getRemovedAt()).isNotNull();
+
+        MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("2"));
+        var otherTenant = service.accountAvailability(query);
+        assertThat(otherTenant.getStatus()).isEqualTo("UNAVAILABLE");
+        assertThat(otherTenant.getDisplayName()).isNull();
+        assertThat(otherTenant.getMaskedPhone()).isNull();
+    }
+
+    @Test
+    @DisplayName("没有本特性移出事件的旧成员不可恢复")
+    void accountAvailabilityShouldNotRecoverHistoricalRows() {
+        MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("1"));
+        seedUser(1002L, "legacy", "旧成员", "1", 1);
+        seedMember(11L, 1L, 1002L, 0, LocalDateTime.now().minusDays(1));
+        IdentityAccountAvailabilityQuery query = new IdentityAccountAvailabilityQuery();
+        query.setUsername("legacy");
+
+        assertThat(service.accountAvailability(query).getStatus()).isEqualTo("UNAVAILABLE");
+    }
+
+    @Test
+    @DisplayName("成员状态与移出时间不一致时不可恢复")
+    void recoverMemberShouldRequireDisabledMemberStatus() {
+        MangoContextHolder.set(MangoContextSnapshot.empty().withSecurity(
+                1001L, "1", "admin", "INTERNAL", "INTERNAL_USER", "INTERNAL_ORG", 1L, "internal-admin"));
+        seedUser(1001L, "admin", "管理员", "1", 1);
+        seedUser(1002L, "inconsistent", "状态异常成员", "1", 1);
+        seedMember(10L, 1L, 1001L, 1, null);
+        seedMember(11L, 1L, 1002L, 1, LocalDateTime.now());
+        seedLifecycle(1L, 1002L, 11L, "REMOVED");
+        IdentityAccountAvailabilityQuery query = new IdentityAccountAvailabilityQuery();
+        query.setUsername("inconsistent");
+
+        assertThat(service.accountAvailability(query).getStatus()).isEqualTo("UNAVAILABLE");
+
+        RestoreTenantMemberInOrgCommand command = new RestoreTenantMemberInOrgCommand();
+        command.setTenantId(1L);
+        command.setOrgId(300L);
+        command.setUsername("inconsistent");
+        command.setOperatorUserId(1001L);
+
+        assertThatThrownBy(() -> tenantMemberProvider.restoreMemberInOrg(command))
+                .isInstanceOf(io.mango.common.exception.BizException.class)
+                .hasMessage("原成员当前不可恢复");
+        assertThat(relationMapper.selectList(null)).isEmpty();
+        assertThat(jdbcTemplate.queryForObject(
+                "select count(*) from tenant_member_lifecycle_log where event_type = 'RESTORED'", Long.class))
+                .isZero();
+    }
+
+    @Test
+    @DisplayName("恢复原成员复用身份标识且只建立本次部门关系")
+    void restoreMemberShouldReuseIdsAndCreateOnlySelectedOrgRelation() {
+        MangoContextHolder.set(MangoContextSnapshot.empty()
+                .withSecurity(1001L, "1", "admin", "INTERNAL", "INTERNAL_USER", "INTERNAL_ORG", 1L,
+                        "internal-admin"));
+        seedUser(1001L, "admin", "管理员", "1", 1);
+        seedUser(1002L, "former", "原成员", "1", 1);
+        seedMember(10L, 1L, 1001L, 1, null);
+        seedMember(11L, 1L, 1002L, 0, LocalDateTime.now());
+        seedLifecycle(1L, 1002L, 11L, "REMOVED");
+        RestoreTenantMemberInOrgCommand command = new RestoreTenantMemberInOrgCommand();
+        command.setTenantId(1L);
+        command.setOrgId(300L);
+        command.setPostId(400L);
+        command.setUsername("former");
+        command.setRealm("INTERNAL");
+        command.setOperatorUserId(1001L);
+
+        Long userId = tenantMemberProvider.restoreMemberInOrg(command);
+
+        assertThat(userId).isEqualTo(1002L);
+        TenantMemberEntity member = memberMapper.selectById(11L);
+        assertThat(member.getUserId()).isEqualTo(1002L);
+        assertThat(member.getStatus()).isEqualTo(1);
+        assertThat(member.getLeftAt()).isNull();
+        assertThat(member.getPrimaryOrgId()).isEqualTo(300L);
+        assertThat(relationMapper.selectList(null)).singleElement().satisfies(relation -> {
+            assertThat(relation.getMemberId()).isEqualTo(11L);
+            assertThat(relation.getOrgId()).isEqualTo(300L);
+            assertThat(relation.getPostId()).isEqualTo(400L);
+            assertThat(relation.getPrimaryFlag()).isEqualTo(1);
+        });
+        assertThat(jdbcTemplate.queryForObject(
+                "select count(*) from tenant_member_lifecycle_log where member_id = 11 and event_type = 'RESTORED'",
+                Long.class)).isEqualTo(1L);
         assertThat(roleBindingApi.deleteCommands).isEmpty();
     }
 
@@ -740,6 +890,7 @@ class IdentityUserServiceIntegrationTest {
 
     private void resetSchema() {
         jdbcTemplate.execute("drop table if exists identity_external_binding");
+        jdbcTemplate.execute("drop table if exists tenant_member_lifecycle_log");
         jdbcTemplate.execute("drop table if exists tenant_member_org");
         jdbcTemplate.execute("drop table if exists tenant_member");
         jdbcTemplate.execute("drop table if exists identity_user");
@@ -817,6 +968,22 @@ class IdentityUserServiceIntegrationTest {
                 )
                 """);
         jdbcTemplate.execute("""
+                create table tenant_member_lifecycle_log (
+                    id bigint primary key,
+                    tenant_id bigint not null,
+                    org_id bigint,
+                    user_id bigint not null,
+                    member_id bigint not null,
+                    event_type varchar(16) not null,
+                    operator_user_id bigint,
+                    occurred_at timestamp not null,
+                    created_by bigint,
+                    created_at timestamp,
+                    updated_by bigint,
+                    updated_at timestamp
+                )
+                """);
+        jdbcTemplate.execute("""
                 create table identity_external_binding (
                     id bigint primary key,
                     tenant_id bigint not null,
@@ -868,6 +1035,15 @@ class IdentityUserServiceIntegrationTest {
                         values (?, ?, ?, ?, ?, 0, 0)
                         """,
                 id, tenantId, memberId, orgId, postId);
+    }
+
+    private void seedLifecycle(Long tenantId, Long userId, Long memberId, String eventType) {
+        jdbcTemplate.update("""
+                        insert into tenant_member_lifecycle_log
+                        (id, tenant_id, user_id, member_id, event_type, operator_user_id, occurred_at)
+                        values (?, ?, ?, ?, ?, 1001, current_timestamp)
+                        """,
+                9000L + memberId, tenantId, userId, memberId, eventType);
     }
 
     private Long countMembers() {
@@ -982,6 +1158,8 @@ class IdentityUserServiceIntegrationTest {
 
         private SubjectRoleBindingCommand lastBindingCommand;
 
+        private boolean deleteFailure;
+
         @Override
         public R<Long> findRoleId(RoleLookupQuery query) {
             lastLookupQuery = query;
@@ -997,6 +1175,9 @@ class IdentityUserServiceIntegrationTest {
         @Override
         public R<Integer> deleteSubjectRoleBindings(DeleteSubjectRoleBindingsCommand command) {
             deleteCommands.add(command);
+            if (deleteFailure) {
+                return R.fail("role revocation failed");
+            }
             return R.ok(command.getSubjectIds() == null ? 0 : command.getSubjectIds().size());
         }
 
@@ -1012,6 +1193,7 @@ class IdentityUserServiceIntegrationTest {
             lastRoleQuery = null;
             lastLookupQuery = null;
             lastBindingCommand = null;
+            deleteFailure = false;
         }
     }
 }

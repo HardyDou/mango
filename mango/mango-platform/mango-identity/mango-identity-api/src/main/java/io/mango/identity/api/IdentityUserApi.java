@@ -17,11 +17,13 @@ import io.mango.identity.api.command.UpdateCurrentUserProfileCommand;
 import io.mango.identity.api.command.UnbindCurrentExternalIdentityCommand;
 import io.mango.identity.api.query.ExternalIdentityQuery;
 import io.mango.identity.api.query.IdentityUserPageQuery;
+import io.mango.identity.api.query.IdentityAccountAvailabilityQuery;
 import io.mango.identity.api.request.IdentityUserBatchRequest;
 import io.mango.identity.api.query.IdentityUserTargetQuery;
 import io.mango.identity.api.vo.ExternalIdentityBindingVO;
 import io.mango.identity.api.vo.IdentityUserInfoVO;
 import io.mango.identity.api.vo.IdentityUserVO;
+import io.mango.identity.api.vo.IdentityAccountAvailabilityVO;
 import io.mango.identity.api.vo.ContactCaptchaTicketVO;
 import io.mango.identity.api.vo.CurrentUserProfileVO;
 import jakarta.validation.Valid;
@@ -57,6 +59,9 @@ public interface IdentityUserApi {
      * 创建当前租户成员。
      */
     R<Long> create(@Valid CreateIdentityUserCommand command);
+
+    /** Check whether a login account can be created or restored in the current tenant. */
+    R<IdentityAccountAvailabilityVO> accountAvailability(@Valid IdentityAccountAvailabilityQuery query);
 
     /**
      * 更新当前租户成员。

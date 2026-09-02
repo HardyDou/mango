@@ -86,29 +86,29 @@ const users = await userApi.page({ pageNum: 1, pageSize: 20 });
 
 页面导出：
 
-| 导出              | 默认页面 key                | 管理能力                                                                                                                     |
-| ----------------- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `AppView`         | `system/app/index`          | 应用管理。                                                                                                                   |
-| `MenuView`        | `system/menu/index`         | 菜单和按钮资源管理。                                                                                                         |
-| `MenuPackageView` | `system/menu-package/index` | 菜单包管理。                                                                                                                 |
-| `RoleView`        | `system/role/index`         | 角色和菜单/按钮授权。                                                                                                        |
-| `UserView`        | `system/user/index`         | 默认查看全部成员；按组织本级及下级筛选、清除组织选择、在目标组织新增或添加已有成员，并展示所属机构、完整部门路径和直接角色。 |
-| `OrgView`         | `system/org/index`          | 组织树和组织成员。                                                                                                           |
-| `PostView`        | `system/post/index`         | 岗位管理。                                                                                                                   |
-| `PermissionView`  | `system/permission/index`   | 权限资源查看。                                                                                                               |
+| 导出              | 默认页面 key                | 管理能力                                                                                                                 |
+| ----------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `AppView`         | `system/app/index`          | 应用管理。                                                                                                               |
+| `MenuView`        | `system/menu/index`         | 菜单和按钮资源管理。                                                                                                     |
+| `MenuPackageView` | `system/menu-package/index` | 菜单包管理。                                                                                                             |
+| `RoleView`        | `system/role/index`         | 角色和菜单/按钮授权。                                                                                                    |
+| `UserView`        | `system/user/index`         | 默认查看全部成员；区分移出当前部门与移出租户成员；新增时识别可恢复原账号，展示脱敏候选并支持恢复原成员或改用新登录账号。 |
+| `OrgView`         | `system/org/index`          | 组织树和组织成员。                                                                                                       |
+| `PostView`        | `system/post/index`         | 岗位管理。                                                                                                               |
+| `PermissionView`  | `system/permission/index`   | 权限资源查看。                                                                                                           |
 
 主要 API：
 
-| API              | 主要接口                                                 | 能力                                                                                |
-| ---------------- | -------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `appApi`         | `/authorization/apps`                                    | 应用列表、详情、创建、更新、删除、运行时应用。                                      |
-| `appModuleApi`   | `/authorization/app-modules`                             | 应用模块绑定、同步菜单、运行策略。                                                  |
-| `menuApi`        | `/authorization/menus`                                   | 用户菜单、菜单树、详情、创建、更新、删除。                                          |
-| `menuPackageApi` | `/authorization/menu-packages`                           | 菜单包 CRUD。                                                                       |
-| `roleApi`        | `/authorization/roles`、`/authorization/data-scopes`     | 角色 CRUD、角色菜单、可分配菜单、主体角色绑定、成员直接角色批量摘要和角色数据权限。 |
-| `userApi`        | `/identity/users/page`                                   | 用户分页、组织范围/候选搜索、详情、更新、删除、重置密码、企微同步和外部身份绑定。   |
-| `orgApi`         | `/org/tree`、`/org/member-scope`、`/org/member-accounts` | 组织树、成员层级范围、组织内原子开户、成员和负责人。                                |
-| `postApi`        | `/post/page`                                             | 岗位分页、详情、创建、更新、删除。                                                  |
+| API              | 主要接口                                                       | 能力                                                                                |
+| ---------------- | -------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `appApi`         | `/authorization/apps`                                          | 应用列表、详情、创建、更新、删除、运行时应用。                                      |
+| `appModuleApi`   | `/authorization/app-modules`                                   | 应用模块绑定、同步菜单、运行策略。                                                  |
+| `menuApi`        | `/authorization/menus`                                         | 用户菜单、菜单树、详情、创建、更新、删除。                                          |
+| `menuPackageApi` | `/authorization/menu-packages`                                 | 菜单包 CRUD。                                                                       |
+| `roleApi`        | `/authorization/roles`、`/authorization/data-scopes`           | 角色 CRUD、角色菜单、可分配菜单、主体角色绑定、成员直接角色批量摘要和角色数据权限。 |
+| `userApi`        | `/identity/users/page`、`/identity/users/account-availability` | 用户分页、账号三态查询、租户成员软移出、重置密码、企微同步和外部身份绑定。          |
+| `orgApi`         | `/org/tree`、`/org/members`、`/org/member-accounts`            | 组织树、当前部门关系移除、组织内原子开户、原成员恢复和负责人查询。                  |
+| `postApi`        | `/post/page`                                                   | 岗位分页、详情、创建、更新、删除。                                                  |
 
 常用返回字段：
 
@@ -148,7 +148,7 @@ const users = await userApi.page({ pageNum: 1, pageSize: 20 });
 
 业务模块菜单和权限应该由对应模块的 resource manifest 或后端初始化流程入库，不应该在前端手工补假数据。
 
-用户管理永久 E2E 位于 `apps/mango-admin/e2e/specs/user-management.spec.ts`，使用 `@user-management` 标签覆盖默认全部成员、层级组织筛选、组织内开户、已有成员邮箱搜索与排除、直接角色回显、清除组织选择，以及接口失败错误状态。
+用户管理永久 E2E 位于 `apps/mango-admin/e2e/specs/user-management.spec.ts`，使用 `@user-management` 标签覆盖默认全部成员、层级组织筛选、组织内开户、已有成员搜索、直接角色回显、部门移出、租户移出、原标识恢复、同名不同账号创建，以及接口失败关闭。
 
 ## 7. 管理入口
 
@@ -174,16 +174,17 @@ const users = await userApi.page({ pageNum: 1, pageSize: 20 });
 
 ## 9. 问题排查
 
-| 问题                           | 常见原因                                                   | 处理方式                                                         |
-| ------------------------------ | ---------------------------------------------------------- | ---------------------------------------------------------------- |
-| 菜单为空                       | 应用、菜单、角色授权或用户角色缺失                         | 查 `/authorization/menus/user`。                                 |
-| 页面空白                       | 页面未注册或 component key 不一致                          | 对照默认页面 key 和注册入口。                                    |
-| 用户列表为空                   | identity 没有用户或当前账号无权限                          | 查 `/identity/users/page` 和接口权限。                           |
-| 组织树为空                     | org 数据未初始化或租户过滤无数据                           | 查 `/org/tree`。                                                 |
-| 授权后不生效                   | 用户仍使用旧 token 或旧菜单缓存                            | 重新登录并刷新菜单。                                             |
-| 角色授权弹框看不到按钮节点     | 后端可分配菜单树未返回按钮节点，或按钮资源未挂到对应菜单下 | 查 `roleApi.getAssignableMenus` 对应接口返回和按钮资源父子关系。 |
-| 角色授权弹框出现未授权兄弟节点 | 前端包仍使用旧版父目录直接回显逻辑                         | 升级 `@mango/rbac`，确认初始化只设置授权叶子并重新打开弹框。     |
-| 按钮隐藏但接口还能调           | 只做了前端隐藏，没有后端权限                               | 检查后端 authorization 资源和接口鉴权。                          |
+| 问题                           | 常见原因                                                    | 处理方式                                                                      |
+| ------------------------------ | ----------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| 菜单为空                       | 应用、菜单、角色授权或用户角色缺失                          | 查 `/authorization/menus/user`。                                              |
+| 页面空白                       | 页面未注册或 component key 不一致                           | 对照默认页面 key 和注册入口。                                                 |
+| 用户列表为空                   | identity 没有用户或当前账号无权限                           | 查 `/identity/users/page` 和接口权限。                                        |
+| 组织树为空                     | org 数据未初始化或租户过滤无数据                            | 查 `/org/tree`。                                                              |
+| 同名账号不能新增或恢复         | 账号已被其它主体占用，或原成员不属于当前租户/不是本特性移出 | 查 `/identity/users/account-availability`；`UNAVAILABLE` 不返回其它租户资料。 |
+| 授权后不生效                   | 用户仍使用旧 token 或旧菜单缓存                             | 重新登录并刷新菜单。                                                          |
+| 角色授权弹框看不到按钮节点     | 后端可分配菜单树未返回按钮节点，或按钮资源未挂到对应菜单下  | 查 `roleApi.getAssignableMenus` 对应接口返回和按钮资源父子关系。              |
+| 角色授权弹框出现未授权兄弟节点 | 前端包仍使用旧版父目录直接回显逻辑                          | 升级 `@mango/rbac`，确认初始化只设置授权叶子并重新打开弹框。                  |
+| 按钮隐藏但接口还能调           | 只做了前端隐藏，没有后端权限                                | 检查后端 authorization 资源和接口鉴权。                                       |
 
 ## 10. 相关文档
 

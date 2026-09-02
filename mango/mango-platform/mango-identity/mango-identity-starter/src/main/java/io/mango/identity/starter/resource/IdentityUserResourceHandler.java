@@ -3,8 +3,10 @@ package io.mango.identity.starter.resource;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.mango.identity.core.entity.IdentityUserEntity;
 import io.mango.identity.core.entity.TenantMemberEntity;
+import io.mango.identity.core.entity.TenantMemberLifecycleLogEntity;
 import io.mango.identity.core.mapper.IdentityUserMapper;
 import io.mango.identity.core.mapper.TenantMemberMapper;
+import io.mango.identity.core.mapper.TenantMemberLifecycleLogMapper;
 import io.mango.resource.support.ResourceHandler;
 import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.api.enums.ResourceStatus;
@@ -33,6 +35,7 @@ public class IdentityUserResourceHandler implements ResourceHandler {
 
     private final IdentityUserMapper userMapper;
     private final TenantMemberMapper memberMapper;
+    private final TenantMemberLifecycleLogMapper lifecycleLogMapper;
     private final PasswordEncoder passwordEncoder;
     private final ResourceFieldReader fields = new ResourceFieldReader(ResourceTypes.IDENTITY_USER);
 
@@ -146,6 +149,13 @@ public class IdentityUserResourceHandler implements ResourceHandler {
         member.setRemark(fields.stringField(resource, "remark"));
         if (newMember) {
             memberMapper.insert(member);
+            TenantMemberLifecycleLogEntity event = new TenantMemberLifecycleLogEntity();
+            event.setTenantId(member.getTenantId());
+            event.setUserId(member.getUserId());
+            event.setMemberId(member.getMemberId());
+            event.setEventType("CREATED");
+            event.setOccurredAt(now);
+            lifecycleLogMapper.insert(event);
         } else {
             memberMapper.updateById(member);
         }

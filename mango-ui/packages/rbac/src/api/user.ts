@@ -58,6 +58,15 @@ export interface IdentityUserVO {
   roleNames?: string[];
 }
 
+export interface IdentityAccountAvailabilityVO {
+  status: 'AVAILABLE' | 'RECOVERABLE' | 'UNAVAILABLE';
+  displayName?: string;
+  maskedPhone?: string;
+  maskedEmail?: string;
+  memberNo?: string;
+  removedAt?: string;
+}
+
 export interface PageResult<T> {
   list: T[];
   total: number;
@@ -161,6 +170,10 @@ export const userApi = {
   },
   detail: (userId: ApiId) => get<IdentityUserVO>('/identity/users/detail', { params: { userId } }),
   create: (data: IdentityUserVO) => post<ApiId>('/identity/users', toCreateCommand(data)),
+  accountAvailability: (username: string, realm = 'INTERNAL') =>
+    get<IdentityAccountAvailabilityVO>('/identity/users/account-availability', {
+      params: { username, realm },
+    }),
   update: (data: IdentityUserVO) => put<boolean>('/identity/users', toUpdateCommand(data)),
   delete: (userId: ApiId) => del<boolean>('/identity/users', { params: { userId } }),
   deleteBatch: (userIds: ApiId[]) => post<number>('/identity/users/delete-batch', { userIds }),

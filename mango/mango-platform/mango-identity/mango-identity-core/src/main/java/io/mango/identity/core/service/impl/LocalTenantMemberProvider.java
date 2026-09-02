@@ -1,11 +1,13 @@
 package io.mango.identity.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.identity.api.TenantMemberProvider;
 import io.mango.identity.api.command.AddTenantMemberOrgCommand;
 import io.mango.identity.api.command.CreateIdentityUserCommand;
 import io.mango.identity.api.command.CreateTenantMemberInOrgCommand;
+import io.mango.identity.api.command.RestoreTenantMemberInOrgCommand;
 import io.mango.identity.api.command.UpdateTenantMemberOrgCommand;
 import io.mango.identity.api.enums.IdentityCode;
 import io.mango.identity.api.vo.TenantMemberOrgRelationVO;
@@ -13,9 +15,11 @@ import io.mango.identity.api.vo.TenantMemberVO;
 import io.mango.identity.core.entity.IdentityUserEntity;
 import io.mango.identity.core.entity.TenantMemberEntity;
 import io.mango.identity.core.entity.TenantMemberOrgEntity;
+import io.mango.identity.core.entity.TenantMemberLifecycleLogEntity;
 import io.mango.identity.core.mapper.IdentityUserMapper;
 import io.mango.identity.core.mapper.TenantMemberMapper;
 import io.mango.identity.core.mapper.TenantMemberOrgMapper;
+import io.mango.identity.core.mapper.TenantMemberLifecycleLogMapper;
 import io.mango.identity.core.service.IIdentityUserService;
 import io.mango.common.result.Require;
 import io.mango.infra.context.api.MangoContextHolder;
@@ -25,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
 import java.util.List;
+import java.time.LocalDateTime;
 
 /**
  * 基于本地租户成员表的成员事实 Provider。
@@ -35,10 +40,14 @@ import java.util.List;
 public class LocalTenantMemberProvider implements TenantMemberProvider {
 
     private static final int STATUS_ENABLED = 1;
+    private static final String DEFAULT_REALM = "INTERNAL";
+    private static final String EVENT_REMOVED = "REMOVED";
+    private static final String EVENT_RESTORED = "RESTORED";
 
     private final TenantMemberMapper tenantMemberMapper;
     private final TenantMemberOrgMapper tenantMemberOrgMapper;
     private final IdentityUserMapper identityUserMapper;
+    private final TenantMemberLifecycleLogMapper tenantMemberLifecycleLogMapper;
     private final IIdentityUserService identityUserService;
 
     @Override
@@ -78,6 +87,64 @@ public class LocalTenantMemberProvider implements TenantMemberProvider {
     }
 
     @Override
+    @Transactional
+    public Long restoreMemberInOrg(RestoreTenantMemberInOrgCommand command) {
+        Require.notNull(command, IdentityCode.VALIDATION_ERROR, "原成员恢复命令不能为空");
+        Long tenantId = currentTenantId();
+        Require.isTrue(tenantId.equals(command.getTenantId()), IdentityCode.VALIDATION_ERROR,
+                "只能在当前机构内恢复成员");
+        Require.notBlank(command.getUsername(), IdentityCode.VALIDATION_ERROR, "用户名不能为空");
+        String realm = command.getRealm() == null || command.getRealm().isBlank()
+                ? DEFAULT_REALM : command.getRealm().trim();
+        IdentityUserEntity user = identityUserService.getByUsername(command.getUsername().trim(), realm);
+        Require.notNull(user, IdentityCode.ACCOUNT_UNAVAILABLE);
+        Require.isTrue(Integer.valueOf(STATUS_ENABLED).equals(user.getStatus()), IdentityCode.ACCOUNT_UNAVAILABLE);
+        TenantMemberEntity member = tenantMemberMapper.selectOne(new LambdaQueryWrapper<TenantMemberEntity>()
+                .eq(TenantMemberEntity::getTenantId, tenantId)
+                .eq(TenantMemberEntity::getUserId, user.getUserId())
+                .eq(TenantMemberEntity::getStatus, 0)
+                .isNotNull(TenantMemberEntity::getLeftAt)
+                .last("LIMIT 1"));
+        Require.notNull(member, IdentityCode.MEMBER_NOT_RECOVERABLE);
+        Long removalCount = tenantMemberLifecycleLogMapper.selectCount(
+                new LambdaQueryWrapper<TenantMemberLifecycleLogEntity>()
+                        .eq(TenantMemberLifecycleLogEntity::getTenantId, tenantId)
+                        .eq(TenantMemberLifecycleLogEntity::getMemberId, member.getMemberId())
+                        .eq(TenantMemberLifecycleLogEntity::getEventType, EVENT_REMOVED));
+        Require.isTrue(removalCount != null && removalCount > 0, IdentityCode.MEMBER_NOT_RECOVERABLE);
+        Require.isFalse(existsOrgRelation(tenantId, member.getMemberId(), command.getOrgId()),
+                IdentityCode.MEMBER_NOT_RECOVERABLE);
+
+        LocalDateTime restoredAt = LocalDateTime.now();
+        int restored = tenantMemberMapper.update(null, new LambdaUpdateWrapper<TenantMemberEntity>()
+                .eq(TenantMemberEntity::getTenantId, tenantId)
+                .eq(TenantMemberEntity::getId, member.getMemberId())
+                .eq(TenantMemberEntity::getStatus, 0)
+                .isNotNull(TenantMemberEntity::getLeftAt)
+                .set(TenantMemberEntity::getStatus, STATUS_ENABLED)
+                .set(TenantMemberEntity::getLeftAt, null)
+                .set(TenantMemberEntity::getPrimaryOrgId, command.getOrgId())
+                .set(TenantMemberEntity::getPrimaryPostId, command.getPostId()));
+        Require.isTrue(restored > 0, IdentityCode.MEMBER_NOT_RECOVERABLE);
+        member.setStatus(STATUS_ENABLED);
+        member.setLeftAt(null);
+        member.setPrimaryOrgId(command.getOrgId());
+        member.setPrimaryPostId(command.getPostId());
+
+        AddTenantMemberOrgCommand relation = new AddTenantMemberOrgCommand();
+        relation.setTenantId(tenantId);
+        relation.setMemberId(member.getMemberId());
+        relation.setOrgId(command.getOrgId());
+        relation.setPostId(command.getPostId());
+        relation.setPrimaryFlag(true);
+        relation.setLeaderFlag(false);
+        relation.setOperatorUserId(command.getOperatorUserId());
+        addOrgRelation(relation);
+        appendLifecycleEvent(member, EVENT_RESTORED, restoredAt, command.getOperatorUserId());
+        return user.getUserId();
+    }
+
+    @Override
     public TenantMemberVO getEnabledMember(Long userId, Long tenantId) {
         if (userId == null || tenantId == null) {
             return null;
@@ -86,6 +153,7 @@ public class LocalTenantMemberProvider implements TenantMemberProvider {
                 .eq(TenantMemberEntity::getUserId, userId)
                 .eq(TenantMemberEntity::getTenantId, tenantId)
                 .eq(TenantMemberEntity::getStatus, STATUS_ENABLED)
+                .isNull(TenantMemberEntity::getLeftAt)
                 .last("LIMIT 1"));
         return toInfo(member);
     }
@@ -98,6 +166,7 @@ public class LocalTenantMemberProvider implements TenantMemberProvider {
         return tenantMemberMapper.selectList(new LambdaQueryWrapper<TenantMemberEntity>()
                         .eq(TenantMemberEntity::getUserId, userId)
                         .eq(TenantMemberEntity::getStatus, STATUS_ENABLED)
+                        .isNull(TenantMemberEntity::getLeftAt)
                         .orderByAsc(TenantMemberEntity::getTenantId))
                 .stream()
                 .map(this::toInfo)
@@ -307,6 +376,18 @@ public class LocalTenantMemberProvider implements TenantMemberProvider {
             relation.setPrimaryFlag(0);
             tenantMemberOrgMapper.updateById(relation);
         });
+    }
+
+    private void appendLifecycleEvent(TenantMemberEntity member, String eventType,
+                                      LocalDateTime occurredAt, Long operatorUserId) {
+        TenantMemberLifecycleLogEntity event = new TenantMemberLifecycleLogEntity();
+        event.setTenantId(member.getTenantId());
+        event.setUserId(member.getUserId());
+        event.setMemberId(member.getMemberId());
+        event.setEventType(eventType);
+        event.setOperatorUserId(operatorUserId);
+        event.setOccurredAt(occurredAt);
+        tenantMemberLifecycleLogMapper.insert(event);
     }
 
     private TenantMemberOrgRelationVO toRelationInfo(TenantMemberOrgEntity relation) {

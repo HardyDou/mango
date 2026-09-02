@@ -68,6 +68,13 @@ export interface CreateOrgMemberAccountCommand {
   leaderFlag?: boolean;
 }
 
+export interface RestoreOrgMemberAccountCommand {
+  orgId: ApiId;
+  postId?: ApiId;
+  username: string;
+  realm?: string;
+}
+
 export interface OrgTreeParams {
   parentId?: ApiId;
   type?: number;
@@ -84,6 +91,7 @@ export const orgApi = {
   members: (orgId: ApiId) => get<OrgMemberVO[]>('/org/members', { params: { orgId } }),
   memberScope: (orgId: ApiId) => get<ApiId[]>('/org/member-scope', { params: { orgId } }),
   createMemberAccount: (data: CreateOrgMemberAccountCommand) => post<ApiId>('/org/member-accounts', data),
+  restoreMemberAccount: (data: RestoreOrgMemberAccountCommand) => post<ApiId>('/org/member-accounts/restore', data),
   addMember: (orgId: ApiId, data: Omit<AddOrgMemberCommand, 'orgId'>) =>
     post<boolean>('/org/members', { ...data, orgId }),
   updateMember: (data: UpdateOrgMemberCommand) => put<boolean>('/org/members', data),

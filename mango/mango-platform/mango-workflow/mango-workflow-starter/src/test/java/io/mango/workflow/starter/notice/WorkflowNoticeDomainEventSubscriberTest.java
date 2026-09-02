@@ -38,6 +38,7 @@ class WorkflowNoticeDomainEventSubscriberTest {
                 .payload("appCode", "internal-admin")
                 .payload("realm", "INTERNAL")
                 .payload("definitionName", "费用报销")
+                .payload("applyTitle", "5月费用报销")
                 .build();
 
         subscriber.onEvent(event);
@@ -55,7 +56,10 @@ class WorkflowNoticeDomainEventSubscriberTest {
             assertThat(notice.getMessageSubject().getSubjectId()).isEqualTo("PI-1001");
             assertThat(notice.getMessageTarget().getTargetType()).isEqualTo(NoticeSiteMessageTargetType.ROUTE);
             assertThat(notice.getMessageTarget().getTargetKey()).isEqualTo("workflow:task:detail");
-            assertThat(notice.getMessageData().toMap()).containsEntry("taskId", "TASK-1001");
+            assertThat(notice.getMessageData().toMap())
+                    .containsEntry("taskId", "TASK-1001")
+                    .containsEntry("processName", "费用报销")
+                    .containsEntry("applyTitle", "5月费用报销");
             assertThat(notice.getMessageActions()).singleElement().satisfies(action -> {
                 assertThat(action.getActionCode()).isEqualTo("OPEN_WORKFLOW");
                 assertThat(action.getActionLabel()).isEqualTo("去审批");
@@ -245,6 +249,49 @@ class WorkflowNoticeDomainEventSubscriberTest {
                 .build();
 
         subscriber.onEvent(event);
+
+        assertThat(events).isEmpty();
+    }
+
+    @Test
+    void internalCodesShouldNeverBecomeDefaultDisplayText() {
+        DomainEvent event = DomainEvent.builder()
+                .eventId("event-code-fallback")
+                .eventType(WorkflowEventTypes.PROCESS_COMPLETED)
+                .businessType("internal_business_code")
+                .businessKey("INTERNAL-1001")
+                .payload("processInstanceId", "PI-CODE-1")
+                .payload("applicantId", 8001L)
+                .build();
+
+        subscriber.onEvent(event);
+
+        assertThat(events).singleElement().satisfies(published -> {
+            NoticeSendEventCommand notice = (NoticeSendEventCommand) published;
+            assertThat(notice.getParams().toMap())
+                    .containsEntry("processName", "流程")
+                    .containsEntry("applyTitle", "业务申请");
+            assertThat(notice.getMessageSubject().getSubjectName()).isEqualTo("流程");
+        });
+    }
+
+    @Test
+    void nonDefaultWorkflowEventsShouldNotPublishNotices() {
+        for (String eventType : List.of(
+                WorkflowEventTypes.PROCESS_STARTED,
+                WorkflowEventTypes.TASK_REJECTED,
+                WorkflowEventTypes.TASK_SAVED,
+                WorkflowEventTypes.TASK_CLAIMED,
+                WorkflowEventTypes.TASK_UNCLAIMED,
+                WorkflowEventTypes.PROCESS_WITHDRAWN,
+                WorkflowEventTypes.PROCESS_ENDED)) {
+            subscriber.onEvent(DomainEvent.builder()
+                    .eventId("ignored-" + eventType)
+                    .eventType(eventType)
+                    .payload("applicantId", 8001L)
+                    .payload("assigneeId", 9001L)
+                    .build());
+        }
 
         assertThat(events).isEmpty();
     }

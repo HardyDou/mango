@@ -27,18 +27,6 @@
       "processMode": "runtime",
       "cwd": "mango",
       "pom": "mango-app/monolith/mango-monolith-app/pom.xml",
-      "install": {
-        "command": "mvn",
-        "args": [
-          "-f",
-          "pom.xml",
-          "-pl",
-          ":mango-bom,mango-app/monolith/mango-monolith-app",
-          "-am",
-          "-DskipTests",
-          "install"
-        ]
-      },
       "goal": "org.springframework.boot:spring-boot-maven-plugin:3.5.14:run",
       "portEnv": "MANGO_BACKEND_PORT",
       "port": 18080,

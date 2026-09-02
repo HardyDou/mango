@@ -315,7 +315,7 @@ public class ExpenseWorkflowEventSubscriber implements DomainEventSubscriber {
 
 | 业务目标 | 使用事件 | 说明 |
 |----------|----------|------|
-| 同步下一节点、当前办理人、待办摘要 | `workflow.task.advanced` | 该事件在 `workflow_business_apply_current_task` 刷新后发布。 |
+| 同步首次或下一节点、当前办理人、待办摘要 | `workflow.task.advanced` | 发起流程并刷新首个任务快照后发布一次，后续节点在 `workflow_business_apply_current_task` 刷新后发布。 |
 | 记录办理动作审计 | `workflow.task.completed` | 该事件只表示当前任务刚完成，不代表下一节点快照已刷新。 |
 | 回写业务通过状态 | `workflow.process.completed` | 流程正常结束后发布。 |
 | 回写业务驳回状态 | `workflow.process.rejected` | 流程被驳回后发布。 |
@@ -407,7 +407,7 @@ mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-comm
 | 资源类型 | 目标模块 | 声明入口 | 内容 |
 |----------|----------|----------|------|
 | `BUSINESS_DOMAIN` | `domain` | `workflow-common-domain.yml` | 工作流业务域 |
-| `MESSAGE_TEMPLATE` | `notice` | `WorkflowMessageTemplateResourceProvider` | `workflow.task.assigned`、`workflow.task.claimable`、`workflow.task.cc`、`workflow.task.rejected`、`workflow.process.completed`、`workflow.process.rejected`、`workflow.process.ended`、`workflow.task.empty-assignee` |
+| `MESSAGE_TEMPLATE` | `notice` | `WorkflowMessageTemplateResourceProvider` | `workflow.task.assigned`、`workflow.process.completed`、`workflow.process.rejected` |
 
 通知模板通过 Java `ResourceProvider` 声明，字段契约以 `mango-notice` 的 `MESSAGE_TEMPLATE` 说明为准。工作流节点只发布 `NoticeSendEvent`，由 notice 本地或远程 starter 在事务提交后发送，通知失败不阻断流程主链路。
 
@@ -695,8 +695,8 @@ Workflow 参数校验约束统一由 `mango-workflow-api` 的 `XxxApi` 契约声
 | 事件类型 | 发布时机 | 主要用途 |
 |----------|----------|----------|
 | `workflow.task.completed` | 当前任务完成记录写入后、流程推进快照刷新前 | 记录“哪个任务刚被完成”，不保证 `workflow_business_apply_current_task` 已是下一节点。 |
-| `workflow.task.advanced` | 完成或退回任务后，流程运行时任务和业务申请当前任务快照刷新完成后 | 同步下一节点待办、刷新业务侧当前任务、发送 `workflow.task.assigned` 通知。 |
-| `workflow.task.rejected` | 任务驳回并结束流程后 | 回写业务驳回状态和通知。 |
+| `workflow.task.advanced` | 发起流程或完成、退回任务后，流程运行时任务和业务申请当前任务快照刷新完成后 | 同步首次或下一节点待办、刷新业务侧当前任务、发送 `workflow.task.assigned` 通知。 |
+| `workflow.task.rejected` | 任务驳回并结束流程后 | 回写任务驳回事实；不产生默认通知。 |
 | `workflow.task.saved` | 任务暂存并刷新当前任务快照后 | 同步草稿或审批页状态。 |
 | `workflow.task.claimed` | 候选任务被认领并刷新当前任务快照后 | 同步当前处理人和认领状态。 |
 | `workflow.task.unclaimed` | 候选任务释放并刷新当前任务快照后 | 同步待领取状态和候选人。 |
@@ -719,8 +719,11 @@ Workflow 参数校验约束统一由 `mango-workflow-api` 的 `XxxApi` 契约声
 | `businessType` | 业务类型。 |
 | `businessKey` | 业务主键。 |
 | `applyId` | 业务申请 ID。 |
-| `applicantId` / `applicantName` | 原申请人；流程完成、驳回或结束通知使用 `applicantId` 作为接收人。 |
+| `applicantId` / `applicantName` | 原申请人；流程最终通过或驳回通知使用 `applicantId` 作为接收人。 |
+| `applyTitle` / `applySummary` | 业务申请的可读标题和摘要快照；默认通知使用 `applyTitle` 展示业务标题。 |
 | `viewPath` | 从业务申请 `formJsonSnapshot.customConfig.viewPath` 派生的只读站内路径；仅安全的应用内绝对路径用于通知目标。 |
+| `processDefinitionId` | Flowable 流程定义 ID。 |
+| `definitionId` / `definitionKey` / `definitionName` | Mango 流程定义 ID、编码和可读名称；默认通知只使用 `definitionName` 展示流程名称。 |
 | `completedTaskId` | 刚完成或发起退回的源任务 ID。 |
 | `completedTaskDefinitionKey` | 刚完成或发起退回的源任务定义 key。 |
 | `completedTaskName` | 刚完成或发起退回的源任务名称。 |
@@ -741,9 +744,11 @@ Workflow 参数校验约束统一由 `mango-workflow-api` 的 `XxxApi` 契约声
 | `currentTasks` | 刷新后的当前任务明细，包含原始 `assigneeName`、增强 `assigneeId`/`assigneeDisplayName`、`claimStatus`、`candidateUsers`、`candidateGroups` 和 `arrivedAt`。 |
 | `variables` | 流程变量快照。 |
 
-`workflow.task.assigned` 按运行时任务发送：任务已有 `assigneeId` 时，只通知该办理人；任务尚未到人时，将候选用户以及 `ROLE:<id>`、`POST:<id>`、`ORG:<id>` 转成同一个任务的 Notice 接收目标，目标中的全部有效成员收到指向同一 `taskId` 的通知。并行或多实例产生多个运行时任务时，每个任务分别发送并使用 `eventId + taskId` 幂等，不能把接收人聚合到第一条任务。流程已经结束或没有可解析接收人时跳过通知；`ORG_LEADER:<id>` 不会降级为全组织通知。
+默认工作流通知只包含三类：`workflow.task.assigned`、`workflow.process.completed`、`workflow.process.rejected`。标题和正文只展示可读流程名称、业务标题以及“待审核、审核通过、审核未通过”结果；不会把 `businessType`、`definitionKey`、`taskDefinitionKey` 或 `businessKey` 当作用户文案。流程名称或业务标题缺失时分别使用“流程”和“业务申请”，驳回原因缺失时使用“未填写”。
 
-`workflow.process.completed`、`workflow.process.rejected` 和 `workflow.process.ended` 使用业务申请中的 `applicantId` 通知原申请人。事件异步转为 Notice 时会连同 `tenantId`、`appCode`、`realm` 恢复应用上下文，确保角色候选目标按原应用和登录域解析。
+`workflow.task.assigned` 按运行时任务发送：首次提交和后续节点到达都会通知实际办理人。任务已有 `assigneeId` 时只通知该办理人；任务尚未到人时，将候选用户以及 `ROLE:<id>`、`POST:<id>`、`ORG:<id>` 转成同一个任务的 Notice 接收目标，目标中的全部有效成员收到指向同一 `taskId` 的通知。并行或多实例产生多个运行时任务时，每个任务分别发送并使用 `eventId + taskId` 幂等，不能把接收人聚合到第一条任务。流程已经结束或没有可解析接收人时跳过通知；`ORG_LEADER:<id>` 不会降级为全组织通知。
+
+`workflow.process.completed` 和 `workflow.process.rejected` 使用业务申请中的 `applicantId`，分别向原申请人发送一次最终结果通知。草稿、认领、取消认领、撤回、任务驳回和通用 `workflow.process.ended` 事件不产生默认通知。事件异步转为 Notice 时会连同 `tenantId`、`appCode`、`realm` 恢复应用上下文，确保角色候选目标按原应用和登录域解析。
 
 Maven `1.0.29` 会把业务申请快照中的 `customConfig.viewPath` 派生到 `WorkflowBusinessApplyVO` 和 `WorkflowEventPayloadVO`。完成、拒绝和结束类 Notice 优先使用安全的应用内 `viewPath` 作为查看目标，并在目标参数中携带对应的通用 Workflow `fallbackTargetKey`；没有配置、配置为外部地址或目标不可访问时，前端回退到已办、我发起等通用页面。该字段只读派生，不新增数据库列，不把任意外部 URL 交给 Shell 路由。
 

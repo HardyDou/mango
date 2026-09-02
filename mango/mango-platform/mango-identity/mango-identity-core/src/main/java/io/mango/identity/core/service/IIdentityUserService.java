@@ -16,12 +16,14 @@ import io.mango.identity.api.command.UpdateCurrentUserProfileCommand;
 import io.mango.identity.api.command.UnbindCurrentExternalIdentityCommand;
 import io.mango.identity.api.query.ExternalIdentityQuery;
 import io.mango.identity.api.query.IdentityUserPageQuery;
+import io.mango.identity.api.query.IdentityAccountAvailabilityQuery;
 import io.mango.identity.api.request.IdentityUserBatchRequest;
 import io.mango.identity.api.query.IdentityUserTargetQuery;
 import io.mango.identity.api.vo.ExternalIdentityBindingVO;
 import io.mango.identity.core.entity.IdentityUserEntity;
 import io.mango.identity.api.vo.IdentityUserInfoVO;
 import io.mango.identity.api.vo.IdentityUserVO;
+import io.mango.identity.api.vo.IdentityAccountAvailabilityVO;
 import io.mango.identity.api.vo.ContactCaptchaTicketVO;
 import io.mango.identity.api.vo.CurrentUserProfileVO;
 import io.mango.infra.persistence.api.crud.MangoTypedCrudService;
@@ -52,6 +54,8 @@ public interface IIdentityUserService extends MangoTypedCrudService<
      * 查询当前租户可管理的身份用户详情。
      */
     IdentityUserVO detail(Long userId);
+
+    IdentityAccountAvailabilityVO accountAvailability(IdentityAccountAvailabilityQuery query);
 
     /**
      * 创建当前租户下的身份用户。

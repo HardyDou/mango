@@ -16,7 +16,7 @@ class IdentityMigrationContractTest {
             Path.of("src/main/resources/db/migration/identity");
 
     @Test
-    void migrationsShouldContainFreshSchemaAndIssue643Upgrade() throws IOException {
+    void migrationsShouldContainFreshSchemaAndSupportedUpgrades() throws IOException {
         List<Path> migrations;
         try (var files = Files.list(MIGRATION_DIRECTORY)) {
             migrations = files.filter(path -> path.getFileName().toString().endsWith(".sql"))
@@ -29,7 +29,9 @@ class IdentityMigrationContractTest {
                         "V1__init_identity.sql",
                         "V2__add_real_name_and_binding_app.sql",
                         "V3__clear_legacy_wecom_display_name_fallback.sql",
-                        "V4__add_external_identity_avatar_file.sql");
+                        "V4__add_external_identity_avatar_file.sql",
+                        "V5__tenant_member_lifecycle.sql",
+                        "V6__normalize_internal_org_party_to_tenant.sql");
 
         String sql = Files.readString(migrations.getFirst()).toUpperCase(Locale.ROOT);
         assertThat(sql).contains("CREATE TABLE IF NOT EXISTS `IDENTITY_USER`")
@@ -45,6 +47,18 @@ class IdentityMigrationContractTest {
         assertThat(upgradeSql).contains("ADD COLUMN `REAL_NAME`")
                 .contains("ADD COLUMN `VERIFICATION_STATUS`")
                 .contains("ADD COLUMN `APP_CODE`")
+                .doesNotContain("INSERT INTO", "DELETE FROM", "LOCK TABLES");
+
+        String lifecycleSql = Files.readString(migrations.get(4)).toUpperCase(Locale.ROOT);
+        assertThat(lifecycleSql).contains("CREATE TABLE IF NOT EXISTS `TENANT_MEMBER_LIFECYCLE_LOG`")
+                .contains("`EVENT_TYPE` VARCHAR(16) NOT NULL")
+                .contains("`OPERATOR_USER_ID` BIGINT")
+                .doesNotContain("INSERT INTO", "UPDATE `", "DELETE FROM", "LOCK TABLES");
+
+        String normalizationSql = Files.readString(migrations.get(5)).toUpperCase(Locale.ROOT);
+        assertThat(normalizationSql).contains("UPDATE IDENTITY_USER")
+                .contains("PARTY_TYPE = 'INTERNAL_ORG'")
+                .contains("SET PARTY_ID = CAST(TENANT_ID AS UNSIGNED)")
                 .doesNotContain("INSERT INTO", "DELETE FROM", "LOCK TABLES");
     }
 }

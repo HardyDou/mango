@@ -4,17 +4,18 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-import { validateRepositoryDevManifest } from './check-repository-dev-manifest.mjs';
+import { validateRepositoryCliEntry, validateRepositoryDevManifest } from './check-repository-dev-manifest.mjs';
 
 const uiRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const repositoryRoot = path.resolve(uiRoot, '..');
 const manifest = JSON.parse(fs.readFileSync(path.join(repositoryRoot, 'mango.dev.json'), 'utf8'));
+const uiPackage = JSON.parse(fs.readFileSync(path.join(uiRoot, 'package.json'), 'utf8'));
 
 function candidate() {
   return structuredClone(manifest);
 }
 
-test('accepts the repository backend manifest with one process mode and a complete revision reactor', () => {
+test('accepts the repository backend manifest without a legacy install command', () => {
   assert.deepEqual(validateRepositoryDevManifest(candidate()), []);
 });
 
@@ -28,15 +29,19 @@ test('rejects implicit or duplicate repository backend process modes', () => {
   assert.match(validateRepositoryDevManifest(duplicate).join('\n'), /args must not declare a process mode/u);
 });
 
-test('rejects an install reactor that omits the local BOM or backend module', () => {
-  const withoutBom = candidate();
-  withoutBom.apps['mango-backend'].install.args[withoutBom.apps['mango-backend'].install.args.indexOf('-pl') + 1] =
-    'mango-app/monolith/mango-monolith-app';
-  assert.match(validateRepositoryDevManifest(withoutBom).join('\n'), /must include :mango-bom/u);
+test('rejects a repository backend legacy install command', () => {
+  const legacy = candidate();
+  legacy.apps['mango-backend'].install = {
+    command: 'mvn',
+    args: ['-DskipTests', 'install'],
+  };
+  assert.match(validateRepositoryDevManifest(legacy).join('\n'), /must not declare a legacy install command/u);
+});
 
-  const withoutBackend = candidate();
-  withoutBackend.apps['mango-backend'].install.args[
-    withoutBackend.apps['mango-backend'].install.args.indexOf('-pl') + 1
-  ] = ':mango-bom';
-  assert.match(validateRepositoryDevManifest(withoutBackend).join('\n'), /must include mango-app/u);
+test('requires the Mango source script to execute the repository CLI entry directly', () => {
+  assert.deepEqual(validateRepositoryCliEntry(uiPackage), []);
+
+  const pathFallback = structuredClone(uiPackage);
+  pathFallback.scripts.mango = 'mango';
+  assert.match(validateRepositoryCliEntry(pathFallback).join('\n'), /cannot fall back to PATH/u);
 });
