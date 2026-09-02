@@ -18,6 +18,9 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface PermissionAccess {
 
+    @AliasFor(annotation = ApiAccess.class, attribute = "version")
+    int version() default 1;
+
     /**
      * 权限码。
      */

@@ -60,6 +60,13 @@ public class ApiResourceRegisterCommand {
     private String permissionCode;
 
     /**
+     * API Resource 声明版本，未显式声明时为 1。
+     */
+    @Schema(description = "API Resource 声明版本，未显式声明时为 1")
+    @Positive
+    private Integer version = 1;
+
+    /**
      * 访问模式，由授权资源配置控制。
      */
     @Schema(description = "访问模式，由授权资源配置控制")

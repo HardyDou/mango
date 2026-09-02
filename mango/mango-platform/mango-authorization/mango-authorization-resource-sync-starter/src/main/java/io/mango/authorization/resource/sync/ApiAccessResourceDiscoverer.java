@@ -1,5 +1,6 @@
 package io.mango.authorization.resource.sync;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.command.ApiResourceRegisterCommand;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
@@ -12,6 +13,7 @@ import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.method.HandlerMethod;
+import org.springframework.web.servlet.mvc.condition.PathPatternsRequestCondition;
 import org.springframework.web.servlet.mvc.condition.PatternsRequestCondition;
 import org.springframework.web.servlet.mvc.condition.RequestMethodsRequestCondition;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
@@ -29,7 +31,9 @@ import java.util.Set;
 /**
  * 发现 Spring MVC API 资源声明。
  */
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Spring injects managed MVC and configuration collaborators; copying them is not valid"))
 public class ApiAccessResourceDiscoverer {
 
     private final RequestMappingHandlerMapping handlerMapping;
@@ -113,8 +117,9 @@ public class ApiAccessResourceDiscoverer {
 
     private Set<String> resolvePaths(RequestMappingInfo info) {
         Set<String> paths = new LinkedHashSet<>();
-        if (info.getPathPatternsCondition() != null) {
-            paths.addAll(info.getPathPatternsCondition().getPatternValues());
+        PathPatternsRequestCondition pathPatternsCondition = info.getPathPatternsCondition();
+        if (pathPatternsCondition != null) {
+            paths.addAll(pathPatternsCondition.getPatternValues());
         }
         PatternsRequestCondition patternsCondition = info.getPatternsCondition();
         if (patternsCondition != null) {
@@ -146,6 +151,7 @@ public class ApiAccessResourceDiscoverer {
         definition.setDescription(StringUtils.hasText(access.description())
                 ? access.description()
                 : handler.getBeanType().getSimpleName() + "#" + method.getName());
+        definition.setVersion(access.version());
         if (access.mode() == ApiResourceAccessMode.PERMISSION) {
             if (!StringUtils.hasText(access.permissionCode())) {
                 throw new IllegalStateException("@ApiAccess PERMISSION requires permission: "
@@ -178,9 +184,9 @@ public class ApiAccessResourceDiscoverer {
     private AccessDeclaration resolveAccess(Class<?> handlerType, Method handlerMethod) {
         ApiAccess apiAccess = findApiAccess(handlerType, handlerMethod);
         if (apiAccess != null) {
-            return new AccessDeclaration(apiAccess.mode(), apiAccess.permission(), apiAccess.desc());
+            return new AccessDeclaration(apiAccess.mode(), apiAccess.permission(), apiAccess.desc(), apiAccess.version());
         }
-        return new AccessDeclaration(properties.getDefaultAccessMode(), null, null);
+        return new AccessDeclaration(properties.getDefaultAccessMode(), null, null, 1);
     }
 
     private ApiAccess findApiAccess(Class<?> handlerType, Method handlerMethod) {
@@ -261,6 +267,7 @@ public class ApiAccessResourceDiscoverer {
     private record AccessDeclaration(
             ApiResourceAccessMode mode,
             String permissionCode,
-            String description) {
+            String description,
+            int version) {
     }
 }

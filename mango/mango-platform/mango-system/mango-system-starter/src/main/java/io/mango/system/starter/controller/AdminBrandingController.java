@@ -38,7 +38,7 @@ public class AdminBrandingController implements AdminBrandingApi {
 
     @Override
     @GetMapping("/public")
-    @PublicAccess(desc = "网站公共配置")
+    @PublicAccess(version = 2, desc = "网站公共配置")
     @Operation(summary = "获取网站公共配置", description = "无需登录，用于登录页和后台框架初始化网站展示信息")
     public R<AdminBrandingVO> publicConfig() {
         return R.ok(brandingService.get());
