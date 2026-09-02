@@ -5,11 +5,13 @@ export interface MenuTreeNode {
   children?: MenuTreeNode[];
 }
 
-function normalizeMenuIds(ids: ApiId[]): string[] {
+type MenuTreeKey = ApiId | number;
+
+function normalizeMenuIds(ids: MenuTreeKey[]): string[] {
   return Array.from(new Set(ids.map(String)));
 }
 
-export function authorizedLeafMenuIds(menus: MenuTreeNode[], authorizedMenuIds: ApiId[]): string[] {
+export function authorizedLeafMenuIds(menus: MenuTreeNode[], authorizedMenuIds: MenuTreeKey[]): string[] {
   const authorizedIds = new Set(normalizeMenuIds(authorizedMenuIds));
   const leafIds: string[] = [];
 
@@ -31,6 +33,6 @@ export function authorizedLeafMenuIds(menus: MenuTreeNode[], authorizedMenuIds: 
   return normalizeMenuIds(leafIds);
 }
 
-export function assignedMenuIds(checkedMenuIds: ApiId[], halfCheckedMenuIds: ApiId[]): string[] {
+export function assignedMenuIds(checkedMenuIds: MenuTreeKey[], halfCheckedMenuIds: MenuTreeKey[]): string[] {
   return normalizeMenuIds([...checkedMenuIds, ...halfCheckedMenuIds]);
 }
