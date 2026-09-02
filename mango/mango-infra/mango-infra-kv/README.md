@@ -27,6 +27,10 @@
 
 业务模块负责 key 语义、TTL、幂等窗口、并发冲突处理和降级策略。
 
+业务模块消费 `ICache`、`ILocker`、`ITokenStore` 等 capability 时，只依赖 API 契约并注入对应 Bean；
+具体实现由宿主应用引入 `mango-infra-kv-starter` 后统一装配。Memory、Redis、JDBC 的选择发生在
+`IKvStore` 层，上层 capability 会跟随所选 store，不需要业务模块再提供进程内 fallback。
+
 ## 5. 接入方式
 ```xml
 <dependency>
@@ -79,6 +83,9 @@ public void handleCallback(CallbackRequest request) {
 | `provider.jdbc.driver` | 回退到 `spring.datasource.driver-class-name` | JDBC 驱动。 |
 
 `store.type=auto` 时，存在 `RedissonClient` 则使用 Redis，否则使用 Memory。`store.type=jdbc` 需要 `JdbcTemplate`，且表结构必须存在。
+
+如果业务模块需要某项 capability，应同时开启 `capability.enabled` 和对应单项开关。缺少所需 Bean 时，
+消费模块的构造器注入会在启动期暴露配置错误；这与 `store.type=auto` 选择 Memory 的显式自动探测不同。
 
 ### Redis
 

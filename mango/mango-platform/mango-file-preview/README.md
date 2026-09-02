@@ -61,6 +61,11 @@
 | `ApiResourceApi` | 启动时注册预览引擎公开资源 |
 | `mango-file-preview-engine` | 内置 kkFileView 预览引擎和静态资源 |
 
+`ITokenStore` 由宿主应用的 `mango-infra-kv-starter` 装配。file preview 不提供进程内 token fallback；
+宿主需要启用 `mango.kv.capability.enabled=true` 和 `mango.kv.capability.token-store=true`，并通过
+`mango.kv.store.type` 选择 Memory、Redis、JDBC 或自动探测。缺少 `ITokenStore` 时应用会在启动期失败，
+避免多实例部署时把入口 token 或 source token 静默保存在单个 JVM 中。
+
 单体应用通过 `mango-file-preview-starter` 把预览引擎组件装配到宿主 Spring 上下文，复用宿主端口，
 不会注册 kkFileView 的独立 `ServerMain`，也不会通过 engine JAR 覆盖宿主应用 Banner。
 
@@ -98,6 +103,12 @@
 
 ```yaml
 mango:
+  kv:
+    store:
+      type: redis
+    capability:
+      enabled: true
+      token-store: true
   file-preview:
     enabled: true
     engine-path: /onlinePreview
@@ -117,6 +128,8 @@ mango:
 | `mango.file-preview.source-base-url` | 当前请求地址 | 预览引擎读取源文件时使用的内部服务地址；部署在网关后时建议配置为集群内部地址，避免流量经外部入口绕回 |
 | `mango.file-preview.source-token-expire-seconds` | `86400` | 入口 token 和源文件 token 有效期，单位秒 |
 | `mango.file-preview.standalone-ui-enabled` | `false` | 是否允许访问 kkFileView 独立首页和演示文件管理入口 |
+
+本地单实例开发可以使用 `mango.kv.store.type=memory`；多实例部署应选择 Redis 或 JDBC，确保任意实例都能读取已签发 token。
 
 Office 转换后的 PDF 由 PDF.js 通过同源 `/file-preview/generated?token=...&fileName=...` 读取，不再经 `/getCorsFile` 回源。该接口虽然属于 PUBLIC 路由，但必须携带有效 source token，并校验 token 对应的 `fileId` 与转换文件名；token 过期后不能继续读取转换结果。原始文件仍只由引擎使用同一 source token 从内部 `source-base-url` 下载。
 

@@ -4,6 +4,8 @@
 
 > 2026-08-29 Resource cold baseline 影响：运行期表单上传产生的文件记录、附件关系和文件内容不进入 BSQL 或 Resource baseline，也不会在重置或增量发布时被 Resource Handler 覆盖。只有随版本交付的固定文件才使用独立的 `FILE_ASSET` Resource 和受控文件 bundle；本指南的上传、回显、权限、租户及 `fileId`/`fileIds` 持久化方式不变。
 
+> 2026-09-02 Issue #926 File Preview token 存储修复：File Preview 改由宿主 `mango-infra-kv-starter` 装配 `ITokenStore`，Memory、Redis、JDBC 选择由 `mango.kv.*` 配置决定；文件上传、`fileId`/`fileIds` 持久化、预览/下载 API、权限、租户和本指南的业务接入方式不变。缺少 token-store capability 时应用启动会明确失败，不再静默使用单 JVM fallback。
+
 ## 1. 适用场景
 
 业务表单需要上传合同、图片、附件或导入文件，并在详情页回显、下载或预览。
