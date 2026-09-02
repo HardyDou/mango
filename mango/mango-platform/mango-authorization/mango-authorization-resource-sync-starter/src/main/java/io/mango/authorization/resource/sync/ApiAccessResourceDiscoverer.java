@@ -1,5 +1,6 @@
 package io.mango.authorization.resource.sync;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.command.ApiResourceRegisterCommand;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
@@ -12,6 +13,7 @@ import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.method.HandlerMethod;
+import org.springframework.web.servlet.mvc.condition.PathPatternsRequestCondition;
 import org.springframework.web.servlet.mvc.condition.PatternsRequestCondition;
 import org.springframework.web.servlet.mvc.condition.RequestMethodsRequestCondition;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
@@ -29,7 +31,9 @@ import java.util.Set;
 /**
  * 发现 Spring MVC API 资源声明。
  */
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Spring injects managed MVC and configuration collaborators; copying them is not valid"))
 public class ApiAccessResourceDiscoverer {
 
     private final RequestMappingHandlerMapping handlerMapping;
@@ -113,8 +117,9 @@ public class ApiAccessResourceDiscoverer {
 
     private Set<String> resolvePaths(RequestMappingInfo info) {
         Set<String> paths = new LinkedHashSet<>();
-        if (info.getPathPatternsCondition() != null) {
-            paths.addAll(info.getPathPatternsCondition().getPatternValues());
+        PathPatternsRequestCondition pathPatternsCondition = info.getPathPatternsCondition();
+        if (pathPatternsCondition != null) {
+            paths.addAll(pathPatternsCondition.getPatternValues());
         }
         PatternsRequestCondition patternsCondition = info.getPatternsCondition();
         if (patternsCondition != null) {
