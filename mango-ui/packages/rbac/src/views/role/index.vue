@@ -1,6 +1,6 @@
 <!-- mango-page-baseline-exception all: 角色工作台联合菜单授权、数据范围和成员关系配置，不是单一实体的标准列表与短表单弹框。 -->
 <template>
-  <div class="role-container">
+  <div class="role-container" data-page="role.management">
     <el-card>
       <div class="action-toolbar">
         <div class="toolbar-left">
@@ -126,6 +126,7 @@
       <el-tree
         ref="menuTreeRef"
         v-loading="assignLoading"
+        data-surface="role.menu-assignment"
         :data="assignableMenus"
         node-key="menuId"
         show-checkbox
@@ -143,7 +144,14 @@
       </el-tree>
       <template #footer>
         <el-button @click="assignDialogVisible = false"> 取消 </el-button>
-        <el-button type="primary" :loading="assignSubmitLoading" @click="handleAssignSubmit"> 确定 </el-button>
+        <el-button
+          type="primary"
+          data-action="role.menu.save"
+          :loading="assignSubmitLoading"
+          @click="handleAssignSubmit"
+        >
+          确定
+        </el-button>
       </template>
     </el-dialog>
 
@@ -297,6 +305,7 @@ import { appApi, type AppLoginContext, type AuthorizationApp } from '../../api/a
 import { roleApi, type DataScopeMode, type RoleDataScopeVO, type RoleVO } from '../../api/role';
 import type { SysMenuVO } from '../../api/menu';
 import { orgApi, type SysOrg } from '../../api/org';
+import { assignedMenuIds, authorizedLeafMenuIds } from './menu-tree-state';
 
 interface DataScopeResourceOption {
   code: string;
@@ -592,7 +601,7 @@ async function handleAssignMenus(row: RoleVO) {
     ]);
     assignableMenus.value = menus;
     await nextTick();
-    menuTreeRef.value?.setCheckedKeys(checkedMenuIds, false);
+    menuTreeRef.value?.setCheckedKeys(authorizedLeafMenuIds(menus, checkedMenuIds), false);
   } catch (error) {
     console.error('加载角色权限失败:', error);
   } finally {
@@ -605,7 +614,8 @@ async function handleAssignSubmit() {
   assignSubmitLoading.value = true;
   try {
     const checkedKeys = menuTreeRef.value.getCheckedKeys(false) as ApiId[];
-    const menuIds = Array.from(new Set(checkedKeys.map(String)));
+    const halfCheckedKeys = menuTreeRef.value.getHalfCheckedKeys() as ApiId[];
+    const menuIds = assignedMenuIds(checkedKeys, halfCheckedKeys);
     await roleApi.assignMenus(currentRole.value.roleId, menuIds);
     ElMessage.success('分配成功');
     assignDialogVisible.value = false;

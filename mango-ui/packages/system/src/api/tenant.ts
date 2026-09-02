@@ -1,6 +1,6 @@
 /**
- * Tenant API - 机构管理。
- * 后端路径和字段暂保留 tenant 命名，前端展示统一使用“机构”。
+ * Tenant API - 租户管理。
+ * 后端路径和字段使用 tenant 命名，前端展示保持相同业务术语。
  */
 
 import { del, get, post, put } from '@mango/common/utils/request';
@@ -55,8 +55,9 @@ export interface PageResult<T> {
 
 export const tenantApi = {
   list: (params?: TenantQuery) => {
-    return get<SysTenant[]>('/system/tenant/list', { params })
-      .then((list) => toPageResult(filterList(list.map(fromBackend), params), params));
+    return get<SysTenant[]>('/system/tenant/list', { params }).then((list) =>
+      toPageResult(filterList(list.map(fromBackend), params), params),
+    );
   },
   detail: (id: ApiId) => {
     return get<SysTenant>('/system/tenant/detail', { params: { id } }).then(fromBackend);
@@ -78,8 +79,8 @@ export const tenantApi = {
 function fromBackend(item: SysTenant): SysTenant {
   return {
     ...item,
-    capabilityCodeList: item.capabilityCodeList
-      ?? (item.capabilityCodes ? item.capabilityCodes.split(',').filter(Boolean) : []),
+    capabilityCodeList:
+      item.capabilityCodeList ?? (item.capabilityCodes ? item.capabilityCodes.split(',').filter(Boolean) : []),
     contactName: item.contactName ?? item.contact,
     contactPhone: item.contactPhone ?? item.mobile,
     contactEmail: item.contactEmail ?? item.email,
@@ -93,9 +94,7 @@ function toBackend(item: SysTenant): SysTenantPayload {
     tenantCode: item.tenantCode,
     institutionType: item.institutionType,
     packageId: item.packageId,
-    capabilityCodes: item.capabilityCodeList?.length
-      ? item.capabilityCodeList.join(',')
-      : item.capabilityCodes,
+    capabilityCodes: item.capabilityCodeList?.length ? item.capabilityCodeList.join(',') : item.capabilityCodes,
     status: item.status,
     contact: item.contactName ?? item.contact,
     mobile: item.contactPhone ?? item.mobile,
@@ -119,12 +118,13 @@ function toPageResult<T>(list: T[] = [], params?: TenantQuery): PageResult<T> {
 function filterList(list: SysTenant[], params?: TenantQuery) {
   const keyword = params?.keyword?.trim().toLowerCase();
   return list.filter((item) => {
-    const keywordMatched = !keyword
-      || item.tenantName?.toLowerCase().includes(keyword)
-      || item.tenantCode?.toLowerCase().includes(keyword)
-      || item.contactName?.toLowerCase().includes(keyword)
-      || item.contactPhone?.toLowerCase().includes(keyword)
-      || item.contactEmail?.toLowerCase().includes(keyword);
+    const keywordMatched =
+      !keyword ||
+      item.tenantName?.toLowerCase().includes(keyword) ||
+      item.tenantCode?.toLowerCase().includes(keyword) ||
+      item.contactName?.toLowerCase().includes(keyword) ||
+      item.contactPhone?.toLowerCase().includes(keyword) ||
+      item.contactEmail?.toLowerCase().includes(keyword);
     const statusMatched = params?.status === undefined || item.status === params.status;
     return keywordMatched && statusMatched;
   });

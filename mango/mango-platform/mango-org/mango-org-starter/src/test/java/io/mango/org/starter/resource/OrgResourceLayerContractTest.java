@@ -18,8 +18,16 @@ class OrgResourceLayerContractTest {
         String demo = resource("META-INF/mango/demo/org-demo-structure.yml");
 
         assertThat(required).contains("ORG_UNIT:", "ORG_POST:", "MANGO_GROUP", "DEPT_MANAGER");
-        assertThat(demo).contains("ORG_UNIT:", "ORG_POST:", "COMPANY_A_ROOT", "TECH_RD");
-        assertThat(required).doesNotContain("COMPANY_A_ROOT", "TECH_RD");
+        assertThat(demo)
+                .contains("ORG_UNIT:", "MANGO_COMPANY_A", "MANGO_COMPANY_B")
+                .doesNotContain("ORG_POST:", "GREEN_MANGO_ROOT", "GREEN_COMPANY_C", "GREEN_COMPANY_D")
+                .doesNotContain("tenantId: { type: LONG, value: 2 }")
+                .doesNotContain("orgType: { type: INT, value: 4 }");
+        assertThat(count(demo, "orgType: { type: INT, value: 1 }")).isZero();
+        assertThat(count(demo, "orgType: { type: INT, value: 2 }")).isEqualTo(2);
+        assertThat(count(demo, "orgType: { type: INT, value: 3 }")).isEqualTo(4);
+        assertThat(count(demo, "sync-mode: INIT_ONLY")).isEqualTo(6);
+        assertThat(required).doesNotContain("GREEN_MANGO_ROOT", "MANGO_COMPANY_A");
     }
 
     private String resource(String path) throws IOException {
@@ -27,5 +35,9 @@ class OrgResourceLayerContractTest {
             assertThat(input).as("classpath resource %s", path).isNotNull();
             return new String(input.readAllBytes(), StandardCharsets.UTF_8);
         }
+    }
+
+    private int count(String text, String token) {
+        return (text.length() - text.replace(token, "").length()) / token.length();
     }
 }

@@ -190,7 +190,10 @@ registerMangoNoticeAdminShell();
 只创建或更新 Identity WECOM 绑定。同步保存企业微信完整昵称；企业微信返回头像时，通过 FileImportApi
 导入 Mango 文件中心并只把 `avatarFileId` 写入 Identity，不持久化外部头像 URL。头像导入失败不阻断昵称
 同步；新头像绑定失败会清理新文件，替换或清空头像成功后尝试清理旧文件。手机号、邮箱等其它通知接收地址
-继续使用接收账户模型。
+继续使用接收账户模型。企微成员的 Identity 授权主体固定为 `partyType=INTERNAL_ORG`、
+`partyId=<当前正数值 tenantId>`；企微部门只写成员主组织和成员组织关系，不作为 `partyId`。创建、资料更新、
+禁用资料更新和 unchanged 快路径都会检查该不变量，已一致时不产生额外 Identity 更新；非正数值租户上下文
+会失败关闭，不写入错误主体。
 8. 在任务、发送记录、站内信列表里确认发送结果。
 
 ### 5.1 站内信动作协议

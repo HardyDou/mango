@@ -1,23 +1,25 @@
 import { expect, test, type Page, type APIRequestContext } from '@playwright/test';
 import { api as e2eApi } from '../support/api';
+import { collectBrowserDiagnostics } from '../support/browser-diagnostics';
+import { elementPlusTreeItemCheckbox } from '../support/element-plus';
 
-async function loginAsCompanyA(page: Page) {
+async function loginDefaultTenant(page: Page) {
   await page.goto('/#/login');
-  await page.locator('.tenant-select').click();
-  await page.getByRole('option', { name: /A公司/ }).click();
-  await page.fill('input[placeholder="用户名"]', 'admin');
-  await page.fill('input[placeholder="密码"]', 'admin123');
-  await page.click('button:has-text("登 录")');
+  await page.getByPlaceholder('请输入用户名').fill('admin');
+  await page.getByPlaceholder('请输入密码').fill('admin123');
+  await page.getByPlaceholder('请输入密码').blur();
+  await expect(page.locator('.tenant-select')).toHaveCount(0);
+  await page.getByRole('button', { name: '登录' }).click();
   await page.waitForURL('**/#/home', { timeout: 10000 });
 }
 
-async function loginTokenAsCompanyA(request: APIRequestContext) {
+async function loginTokenAsDefaultTenant(request: APIRequestContext) {
   const response = await request.post(e2eApi('/auth/login'), {
     data: {
       username: 'admin',
       password: 'admin123',
-      tenantId: '2',
-      tenantCode: 'company_a',
+      tenantId: '1',
+      tenantCode: 'default',
       realm: 'INTERNAL',
       actorType: 'INTERNAL_USER',
       partyType: 'INTERNAL_ORG',
@@ -75,21 +77,83 @@ async function expectNoAuthError(page: Page) {
 }
 
 test.describe('T2 角色授权闭环', () => {
-  test('A 公司可维护本租户角色，且不能授权平台级菜单能力', async ({ page, request }) => {
+  test('角色菜单回显只选授权叶子并保存必要祖先 @p0 @rbac', async ({ page }, testInfo) => {
+    const diagnostics = collectBrowserDiagnostics(page);
+    let assignRequestBody: { roleId: string; menuIds: string[] } | undefined;
+    const menuTree = [
+      {
+        menuId: '1',
+        parentId: '0',
+        menuType: 1,
+        menuName: '权限管理',
+        children: [
+          {
+            menuId: '10',
+            parentId: '1',
+            menuType: 2,
+            menuName: '角色管理',
+            children: [
+              { menuId: '100', parentId: '10', menuType: 3, menuName: '查询角色' },
+              { menuId: '101', parentId: '10', menuType: 3, menuName: '删除角色' },
+            ],
+          },
+        ],
+      },
+    ];
+
+    await page.route('**/api/authorization/roles/assignable-menus**', async (route) => {
+      await route.fulfill({ json: { code: 200, success: true, data: menuTree } });
+    });
+    await page.route('**/api/authorization/roles/menus**', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({ json: { code: 200, success: true, data: ['1', '10', '100'] } });
+        return;
+      }
+      assignRequestBody = route.request().postDataJSON();
+      await route.fulfill({ json: { code: 200, success: true, data: true } });
+    });
+
+    await loginDefaultTenant(page);
+    await page.goto('/#/system/role');
+    const rolePage = page.locator('[data-page="role.management"]');
+    await expect(rolePage).toBeVisible({ timeout: 10000 });
+    const adminRole = rolePage.getByRole('row').filter({ hasText: 'ROLE_ADMIN' });
+    await expect(adminRole).toHaveCount(1);
+    await adminRole.getByRole('button', { name: '分配权限' }).click();
+
+    const assignDialog = page.getByRole('dialog', { name: '分配角色权限' });
+    const tree = assignDialog.locator('[data-surface="role.menu-assignment"]');
+    await expect(tree).toBeVisible();
+
+    await expect(elementPlusTreeItemCheckbox(tree, '查询角色')).toBeChecked();
+    await expect(elementPlusTreeItemCheckbox(tree, '删除角色')).not.toBeChecked();
+    await expect(elementPlusTreeItemCheckbox(tree, '角色管理')).toBeChecked({ indeterminate: true });
+    await expect(elementPlusTreeItemCheckbox(tree, '权限管理')).toBeChecked({ indeterminate: true });
+    await testInfo.attach('issue-918-role-menu-hydration', {
+      body: await assignDialog.screenshot(),
+      contentType: 'image/png',
+    });
+
+    await assignDialog.locator('[data-action="role.menu.save"]').click();
+    await expect(page.getByText('分配成功')).toBeVisible({ timeout: 10000 });
+    const submittedMenuIds = assignRequestBody?.menuIds ?? [];
+    expect(submittedMenuIds).toHaveLength(3);
+    expect(submittedMenuIds).toEqual(expect.arrayContaining(['100', '10', '1']));
+    expect(diagnostics, diagnostics.join('\n')).toEqual([]);
+  });
+
+  test('默认租户可维护角色，且隐藏的租户管理不能被授权 @p0 @rbac', async ({ page, request }) => {
     const unique = Date.now();
     const roleCode = `E2E_ROLE_${unique}`;
     const roleName = `E2E角色${unique}`;
     const editedRoleName = `${roleName}-编辑`;
-    const token = await loginTokenAsCompanyA(request);
+    const token = await loginTokenAsDefaultTenant(request);
     const tenantManagementMenuId = await platformMenuId(request, 'system:tenant');
 
     await cleanupRole(request, token, roleCode);
 
-    await loginAsCompanyA(page);
-    await expect(page.getByText('审批管理')).toHaveCount(0);
-    await expect(page.getByText('机构管理')).toHaveCount(0);
-    await expect(page.getByText('应用管理')).toHaveCount(0);
-    await expect(page.getByText('菜单管理')).toHaveCount(0);
+    await loginDefaultTenant(page);
+    await expect(page.getByText('租户管理')).toHaveCount(0);
 
     const roleListResponsePromise = page.waitForResponse(
       (response) =>
@@ -148,9 +212,7 @@ test.describe('T2 角色授权闭环', () => {
     await expect(assignDialog.getByText('角色管理')).toBeVisible({ timeout: 10000 });
     await expect(assignDialog.getByText('组织架构')).toBeVisible();
     await expect(assignDialog.getByText('岗位管理')).toBeVisible();
-    await expect(assignDialog.getByText('机构管理')).toHaveCount(0);
-    await expect(assignDialog.getByText('应用管理')).toHaveCount(0);
-    await expect(assignDialog.getByText('套餐管理')).toHaveCount(0);
+    await expect(assignDialog.getByText('租户管理')).toHaveCount(0);
 
     const roleManageNode = assignDialog.locator('.el-tree-node', { hasText: '角色管理' }).first();
     await roleManageNode.locator('.el-checkbox').first().click();

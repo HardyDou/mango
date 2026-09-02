@@ -703,14 +703,16 @@ mango-authorization-core/src/main/resources/db/migration/authorization
 | `authorization_frontend_module_runtime_strategy` | 前端模块运行策略 |
 | `frontend_tenant_app_binding` | 租户应用绑定 |
 
-`V1__init_authorization.sql` 只初始化授权模块最终态表结构，不包含 `INSERT`、`UPDATE`、`DELETE` 等数据操作。
+`authorization_subject_role` 中，内部管理用户的 `party_type=INTERNAL_ORG` 时，`party_id` 使用数值 `tenant_id`；组织或部门关系不进入该主体角色唯一键。
+
+`V1__init_authorization.sql` 只初始化授权模块最终态表结构，不包含 `INSERT`、`UPDATE`、`DELETE` 等数据操作。`V2__normalize_internal_org_party_to_tenant.sql` 先按归一化后的主体角色唯一键保留最小 ID，再将存量 `INTERNAL_ORG.party_id` 修复为 `tenant_id`，避免多个历史部门主体收敛时触发唯一键冲突。
 
 初始化资源分层：
 
 | 目录 | 内容 | 加载条件 |
 |------|------|----------|
 | `META-INF/mango/resources/` | `internal-admin` 应用、登录上下文、菜单套餐主档、正式字典和菜单声明 | 默认加载 |
-| `META-INF/mango/demo/` | 演示租户的 `ROLE_ADMIN` 和 admin 成员角色绑定 | `mango.resource.registry.demo-enabled=true` |
+| `META-INF/mango/demo/` | 默认租户的 `ROLE_ADMIN` 和 admin 成员角色绑定 | `mango.resource.registry.demo-enabled=true` |
 
 功能模块菜单、按钮权限、菜单运行配置和套餐明细由各所属模块 starter 提供 `AUTH_MENU` 资源声明注入，授权模块的 Flyway 不跨模块写入这些数据。
 

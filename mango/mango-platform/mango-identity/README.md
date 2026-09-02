@@ -25,6 +25,8 @@
 | Workflow 办理人身份批量查询 | `POST /identity/user/info/batch` 按当前租户和有效成员关系批量解析 `userIds`/`usernames`，最多 200 个去重标识；未命中不返回记录 |
 | 资源声明 | 通过 Resource Registry 的 `IDENTITY_USER` 和 `ORG_MEMBER_BINDING` 注入 demo/bootstrap 用户和组织成员绑定 |
 
+内部管理用户使用 `realm=INTERNAL`、`actorType=INTERNAL_USER`、`partyType=INTERNAL_ORG` 时，`identity_user.party_id` 表示当前数值租户 ID。部门归属保存在 `tenant_member.primary_org_id` 和 `tenant_member_org`，不能用部门 ID 替代授权主体 ID。
+
 ## 3. 后端接入
 
 业务模块只使用身份契约时依赖 API 包：
@@ -248,10 +250,12 @@ mango-identity-core/src/main/resources/db/migration/identity
 |------|------|
 | `V1__init_identity.sql` | 新环境一次性创建 identity 最终态表、索引和约束，只包含 DDL |
 | `V2__add_real_name_and_binding_app.sql` | 存量环境增加实名字段和绑定 `app_code`，存量绑定默认回填 `internal-admin` |
+| `V3__clear_legacy_wecom_display_name_fallback.sql` | 清理历史自助企微绑定中等于账号昵称的显示名回退值 |
+| `V4__add_external_identity_avatar_file.sql` | 为第三方身份绑定增加 Mango 文件头像 ID |
 | `V5__tenant_member_lifecycle.sql` | 创建成员生命周期事件表；不回填特性上线前已物理删除或已退出的历史成员 |
+| `V6__normalize_internal_org_party_to_tenant.sql` | 将正数值租户下 `INTERNAL_ORG` 用户的错误 `party_id` 归一化为 `tenant_id`；非数值、溢出和其它主体不改动 |
 | `META-INF/mango/resources/identity-common-domain.yml` | 注册 `IDENTITY`（身份管理）业务域 |
 | `META-INF/mango/resources/identity-common-bootstrap.yml` | 默认加载必需的 `admin` 全局账号和租户 1 成员 |
-| `META-INF/mango/demo/identity-demo-members.yml` | 开启 demo 资源后加载租户 2、3、4 的演示成员和组织关系 |
 | `IdentityTenantProvisioner` | 新建租户时，如果当前上下文有创建者用户，则补建成员号 `ADMIN-<tenantId>-<userId>` 的机构管理员成员 |
 
 `IdentityTenantProvisioner` 还会查找当前租户 `internal-admin + ROLE_ADMIN` 角色。角色存在时，会把创建者成员绑定到该角色，授权上下文为 `INTERNAL / INTERNAL_USER / INTERNAL_ORG / partyId=tenantId`。
@@ -260,9 +264,8 @@ mango-identity-core/src/main/resources/db/migration/identity
 
 | 资源类型 | 目标模块 | 声明入口 | 内容 |
 |----------|----------|----------|------|
-| `IDENTITY_USER` | `identity` | `identity-common-bootstrap.yml`、`identity-demo-members.yml` | 必需管理员账号与演示租户成员 |
+| `IDENTITY_USER` | `identity` | `identity-common-bootstrap.yml` | 默认租户的必需管理员账号与成员 |
 | `BUSINESS_DOMAIN` | `domain` | `identity-common-domain.yml` | 身份管理业务域 |
-| `ORG_MEMBER_BINDING` | `identity` | `identity-demo-members.yml` | 演示成员与所属租户组织的绑定 |
 | `MESSAGE_TEMPLATE` | `notice` | `IdentityMessageTemplateResourceProvider` | `identity.user.created`、`identity.password.reset`、`auth.wecom.login.bound`、`auth.wecom.login.unbound` |
 
 `META-INF/mango/resources/` 默认加载必需资源，`META-INF/mango/demo/` 仅在 `mango.resource.registry.demo-enabled=true` 时加载演示资源。通知模板通过 Java `ResourceProvider` 声明，字段契约以 `mango-notice` 的 `MESSAGE_TEMPLATE` 说明为准。创建账号、重置密码和企业微信绑定变更只发布 `NoticeSendEvent`，由 notice 本地或远程 starter 在事务提交后发送，通知失败只记录日志，不阻断 identity 主流程。

@@ -11,7 +11,7 @@ public class SaveAdminBrandingCommand {
 
     @Schema(description = "是否启用")
     @Valid
-    @NotNull(message = "品牌配置启用状态不能为空")
+    @NotNull(message = "网站配置启用状态不能为空")
     private Boolean enabled;
 
     @Size(max = 100, message = "后台名称长度不能超过100")

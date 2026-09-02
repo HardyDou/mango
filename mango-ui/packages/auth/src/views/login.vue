@@ -23,7 +23,7 @@
           :tenant-options="tenantOptions"
         />
         <el-form ref="loginFormRef" :model="form" :rules="rules" @keyup.enter="handleLogin">
-          <el-form-item prop="tenantId">
+          <el-form-item v-if="tenantOptions.length > 1" prop="tenantId">
             <el-select
               v-model="form.tenantId"
               placeholder="请选择机构"

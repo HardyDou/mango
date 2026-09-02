@@ -42,7 +42,8 @@
             <template #default="{ data }">
               <span class="tree-node">
                 <span class="tree-name">{{ data.orgName }}</span>
-                <el-tag size="small" effect="plain">
+                <el-tag v-if="isRootOrg(data)" type="warning" size="small" effect="plain"> 租户根机构 </el-tag>
+                <el-tag v-else size="small" effect="plain">
                   {{ orgTypeLabel(data.orgType) }}
                 </el-tag>
               </span>
@@ -88,7 +89,7 @@
               <el-descriptions-item label="排序">
                 {{ currentOrg.orgSort ?? '-' }}
               </el-descriptions-item>
-              <el-descriptions-item label="机构ID">
+              <el-descriptions-item label="租户ID">
                 {{ currentOrg.tenantId ?? '-' }}
               </el-descriptions-item>
             </el-descriptions>

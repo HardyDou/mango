@@ -4,7 +4,7 @@
     <el-card>
       <el-form :inline="true" class="search-form">
         <el-form-item label="关键词">
-          <el-input v-model="query.keyword" placeholder="搜索机构名称/编码" clearable />
+          <el-input v-model="query.keyword" placeholder="搜索租户名称/编码" clearable />
         </el-form-item>
         <el-form-item label="状态">
           <DictSelect
@@ -24,14 +24,14 @@
 
       <div class="action-toolbar">
         <div class="toolbar-left">
-          <el-button type="primary" @click="handleAdd"> 新增机构 </el-button>
+          <el-button type="primary" @click="handleAdd"> 新增租户 </el-button>
         </div>
       </div>
 
       <el-table v-loading="loading" :data="tableData" stripe>
-        <el-table-column prop="tenantName" label="机构名称" />
-        <el-table-column prop="tenantCode" label="机构编码" />
-        <el-table-column prop="institutionType" label="机构类型" width="120">
+        <el-table-column prop="tenantName" label="租户名称" />
+        <el-table-column prop="tenantCode" label="租户编码" />
+        <el-table-column prop="institutionType" label="租户类型" width="120">
           <template #default="{ row }">
             <DictTag dict-code="institution_type" :value="row.institutionType" size="small" />
           </template>
@@ -79,19 +79,19 @@
       <Pagination v-model:page="query.pageNum" v-model:limit="query.pageSize" :total="total" @pagination="loadData" />
     </el-card>
 
-    <el-dialog v-model="dialogVisible" :title="form.id ? '编辑机构' : '新增机构'" width="600px">
+    <el-dialog v-model="dialogVisible" :title="form.id ? '编辑租户' : '新增租户'" width="600px">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
-        <el-form-item label="机构名称" prop="tenantName">
-          <el-input v-model="form.tenantName" placeholder="请输入机构名称" />
+        <el-form-item label="租户名称" prop="tenantName">
+          <el-input v-model="form.tenantName" placeholder="请输入租户名称" />
         </el-form-item>
-        <el-form-item label="机构编码" prop="tenantCode">
-          <el-input v-model="form.tenantCode" placeholder="请输入机构编码" :disabled="!!form.id" />
+        <el-form-item label="租户编码" prop="tenantCode">
+          <el-input v-model="form.tenantCode" placeholder="请输入租户编码" :disabled="!!form.id" />
         </el-form-item>
-        <el-form-item label="机构类型" prop="institutionType">
-          <DictSelect v-model="form.institutionType" dict-type="institution_type" placeholder="请选择机构类型" />
+        <el-form-item label="租户类型" prop="institutionType">
+          <DictSelect v-model="form.institutionType" dict-type="institution_type" placeholder="请选择租户类型" />
         </el-form-item>
-        <el-form-item label="机构套餐" prop="packageId">
-          <el-select v-model="form.packageId" placeholder="请选择机构套餐" filterable @change="handlePackageChange">
+        <el-form-item label="菜单套餐" prop="packageId">
+          <el-select v-model="form.packageId" placeholder="请选择菜单套餐" filterable @change="handlePackageChange">
             <el-option
               v-for="item in packageOptions"
               :key="item.packageId"
@@ -189,10 +189,10 @@ const form = reactive<SysTenant>({
 });
 
 const rules: FormRules = {
-  tenantName: [{ required: true, message: '请输入机构名称', trigger: 'blur' }],
-  tenantCode: [{ required: true, message: '请输入机构编码', trigger: 'blur' }],
-  institutionType: [{ required: true, message: '请选择机构类型', trigger: 'change' }],
-  packageId: [{ required: true, message: '请选择机构套餐', trigger: 'change' }],
+  tenantName: [{ required: true, message: '请输入租户名称', trigger: 'blur' }],
+  tenantCode: [{ required: true, message: '请输入租户编码', trigger: 'blur' }],
+  institutionType: [{ required: true, message: '请选择租户类型', trigger: 'change' }],
+  packageId: [{ required: true, message: '请选择菜单套餐', trigger: 'change' }],
 };
 
 async function loadPackageOptions() {
@@ -289,8 +289,8 @@ async function handleUpdateStatus(row: SysTenant, status: number) {
   const action = statusActions[status] || '修改状态';
   const confirmMessage =
     status === 1
-      ? `确认启用机构“${row.tenantName}”？`
-      : `确认将机构“${row.tenantName}”${action}？非启用状态下，该机构成员不能登录或继续访问系统。`;
+      ? `确认启用租户“${row.tenantName}”？`
+      : `确认将租户“${row.tenantName}”${action}？非启用状态下，该租户成员不能登录或继续访问系统。`;
   try {
     await ElMessageBox.confirm(confirmMessage, '提示', {
       confirmButtonText: '确定',
@@ -308,7 +308,7 @@ async function handleUpdateStatus(row: SysTenant, status: number) {
 }
 
 function handleDelete(row: SysTenant) {
-  ElMessageBox.confirm('仅允许删除未初始化、无关联数据的机构；已使用机构请归档。确认继续删除?', '提示', {
+  ElMessageBox.confirm('仅允许删除未初始化、无关联数据的租户；已使用租户请归档。确认继续删除?', '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning',

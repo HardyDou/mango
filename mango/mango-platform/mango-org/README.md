@@ -183,7 +183,7 @@ Flyway 只维护表、字段、索引和约束，不写业务数据。初始化�
 | 来源 | 内容 |
 |------|------|
 | `mango-org-starter/src/main/resources/META-INF/mango/resources/org-required-bootstrap.yml` | 系统运行必需的默认根组织和岗位，默认加载 |
-| `mango-org-starter/src/main/resources/META-INF/mango/demo/org-demo-structure.yml` | 演示组织树、演示租户根组织和演示岗位，仅启用 `mango.resource.registry.demo-enabled=true` 时加载 |
+| `mango-org-starter/src/main/resources/META-INF/mango/demo/org-demo-structure.yml` | 默认租户的精简组织树：两个公司、每个公司两个部门；仅启用 `mango.resource.registry.demo-enabled=true` 时加载 |
 | `OrgTenantProvisioner` | 新租户创建时生成根组织和默认岗位 |
 
 `OrgTenantProvisioner` 与 Resource Registry 共用上述稳定键。两者无论先后顺序或并发首次创建，都在唯一约束竞争后按同一租户和编码回读并收敛为一行；其它唯一键冲突不会被吞掉。
