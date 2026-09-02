@@ -1,5 +1,53 @@
 # @mango/cli Changelog
 
+## 1.2.10 - 2026-09-02
+
+### Pull Requests
+
+- [PR #939](https://github.com/HardyDou/mango/pull/939) Fixed deterministic Identity Resource initialization. Packages: Mango Maven/docs `1.0.50` and generated consumer lock `@mango/cli@1.2.10`. Business Adaptation: add fixed `initializedAt` to custom Identity declarations and verify repeated BSQL output against clean databases.
+
+### Fixed
+
+- Carry deterministic Identity lifecycle IDs and initialization timestamps into generated consumer Maven locks.
+
+### Changed
+
+- Lock generated projects to Mango Maven `1.0.50`; PMO `1.4.4` and all other npm package versions remain unchanged.
+
+### Versions
+
+- CLI: `1.2.9` to `1.2.10`; Maven: `1.0.49` to `1.0.50`; PMO remains `1.4.4`.
+
+### Published Packages
+
+- Publish Maven/docs `1.0.50`, then only `@mango/cli@1.2.10` from npm.
+
+### Business Impact
+
+- Generated consumers receive deterministic Identity Resource initialization and the exact Maven/docs tuple required to build stable BSQL artifacts.
+
+### Upgrade Estimate
+
+- Audience: generated applications and direct Identity Resource/BSQL consumers.
+- Engineering Effort: 30 to 60 minutes for generated consumers; 1 to 2 hours for customized declarations.
+- Execution Window: 45 to 120 minutes including clean build, repeated BSQL generation, snapshot comparison, and restart.
+- Service Downtime: no framework-mandated downtime.
+- Rollback Effort: 15 to 30 minutes to restore CLI `1.2.9` and Maven `1.0.49`.
+- Assumptions: Java 21, Node `22.23.1`, configured registries, stable IDs, and fixed `initializedAt` values.
+
+### Upgrade Notes
+
+1. Upgrade CLI to `1.2.10` and Maven to `1.0.50`; retain PMO `1.4.4` and the current frontend tuple.
+2. Add stable IDs and fixed `initializedAt` to custom `IDENTITY_USER` declarations, then compare two clean BSQL database snapshots.
+
+### Verification
+
+- Verify Issue #938 Identity tests, deterministic snapshots, release plan/notes, sealed artifacts in both registry roles, and a clean generated consumer.
+
+### Rollback
+
+- Restore CLI `1.2.9` and Maven `1.0.49`; never overwrite immutable coordinates or rewrite lifecycle audit rows.
+
 ## 1.2.9 - 2026-09-02
 
 ### Pull Requests
