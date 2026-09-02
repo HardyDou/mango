@@ -2,7 +2,7 @@
 
 > Issue #918 影响说明（2026-09-02）：默认 demo 精简为单一“芒果集团”租户及其组织树，但内部租户隔离、字典/配置 API、Resource 初始化边界和本指南排障路径保持不变。清库后仍应先核对 Resource 同步、当前 tenantId 和数据权限，不要通过关闭租户隔离补数据。
 
-> 2026-09-01 Issue #919：Identity V5 只新增 `tenant_member_lifecycle_log` 保存 2026-09-01 起的成员创建、移出和恢复事件，不回填历史物理删除数据；不修改租户、字典、系统配置或 Resource 初始化数据，也不改变这些基础数据的查询 API 和隔离边界。成员被移出后不应从数据库删除 `identity_user` 或 `tenant_member`，恢复入口只重用原身份并创建本次明确选择的部门关系；租户字典或配置为空仍按本指南检查 Bootstrap、Resource 和租户上下文。
+> 2026-09-01 Issue #919：Identity V5 只新增 `tenant_member_lifecycle_log` 保存 2026-09-01 起的成员创建、移出和恢复事件，不回填历史物理删除数据；不修改租户、字典、系统配置或 Resource 初始化数据，也不改变这些基础数据的查询 API 和隔离边界。成员被移出后，数据库仍保留 `identity_user` 和 `tenant_member`，恢复入口只重用原身份并创建本次明确选择的部门关系；租户字典或配置为空仍按本指南检查 Bootstrap、Resource 和租户上下文。
 
 > 2026-09-01 Issue #909：用户管理按当前租户查询全部成员或所选组织本级及下级成员，并在组织内新增账号或添加已有租户成员；不新增 migration，不修改租户、字典、系统配置或 Resource 初始化数据，也不改变这些数据的查询 API 和隔离边界。成员列表为空时先区分“全部成员”和组织筛选范围，并检查 `/org/member-scope`、`/identity/users/page` 的 `orgIds`/`excludeOrgId` 以及实际成员组织关系；底层租户基础数据为空仍按本指南检查 Bootstrap、Resource 和租户上下文。
 
