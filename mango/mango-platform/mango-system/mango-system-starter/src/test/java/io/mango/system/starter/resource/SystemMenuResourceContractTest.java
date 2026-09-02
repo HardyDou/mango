@@ -21,10 +21,24 @@ class SystemMenuResourceContractTest {
                     .path("mango").path("resource").path("declarations").path("AUTH_MENU");
 
             JsonNode memberMenu = findMenu(declarations, "system:user");
+            JsonNode brandingMenu = findMenu(declarations, "system:admin-branding");
+            JsonNode systemMenu = findDeclaration(declarations, "system.menu.internal-admin");
 
             assertThat(stringValues(memberMenu.path("apiCodes"))).contains("system:user:list");
+            assertThat(systemMenu.path("version").asInt()).isEqualTo(5);
+            assertThat(brandingMenu.path("menuName").asText()).isEqualTo("网站配置");
+            assertThat(declarations.toString()).doesNotContain("\"menuName\":\"后台品牌配置\"");
             assertThat(containsApiCode(declarations, "*:*")).isFalse();
         }
+    }
+
+    private JsonNode findDeclaration(JsonNode declarations, String bizKey) {
+        for (JsonNode declaration : declarations) {
+            if (bizKey.equals(declaration.path("bizKey").asText())) {
+                return declaration;
+            }
+        }
+        throw new AssertionError("Declaration not found: " + bizKey);
     }
 
     private boolean containsApiCode(JsonNode node, String apiCode) {

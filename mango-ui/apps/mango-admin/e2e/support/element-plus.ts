@@ -46,6 +46,17 @@ export async function setElementPlusSwitch(scope: Locator | Page, name: string, 
   await expect(switchInput).toHaveAttribute('aria-checked', String(checked));
 }
 
+/**
+ * Element Plus 的父 treeitem 包含所有后代节点，只按 role 定位会同时命中后代 checkbox。
+ * 限定到节点自身的 content 容器，避免业务用例依赖这段组件内部结构。
+ */
+export function elementPlusTreeItemCheckbox(tree: Locator, name: string): Locator {
+  return tree
+    .getByRole('treeitem', { name, exact: true })
+    .locator(':scope > .el-tree-node__content')
+    .getByRole('checkbox');
+}
+
 export async function chooseElementPlusOption(option: Locator): Promise<void> {
   await expect(option).toBeVisible();
   await option.click({ force: true });

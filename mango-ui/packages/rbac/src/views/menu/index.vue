@@ -19,7 +19,7 @@
           <el-input v-model="query.keyword" placeholder="搜索菜单名称/路径" clearable />
         </el-form-item>
         <el-form-item label="类型">
-          <el-select v-model="query.menuType" placeholder="请选择" clearable>
+          <el-select v-model="query.menuType" class="menu-type-filter" placeholder="请选择" clearable>
             <el-option
               v-for="item in menuTypeOptions"
               :key="item.value"
@@ -29,12 +29,12 @@
           </el-select>
         </el-form-item>
         <el-form-item label="模块">
-          <el-select v-model="query.moduleCode" placeholder="请选择" clearable>
+          <el-select v-model="query.moduleCode" class="menu-module-filter" placeholder="请选择" clearable>
             <el-option v-for="item in moduleOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
         <el-form-item label="状态">
-          <el-select v-model="query.status" placeholder="请选择" clearable>
+          <el-select v-model="query.status" class="menu-status-filter" placeholder="请选择" clearable>
             <el-option
               v-for="item in statusOptions"
               :key="item.value"
@@ -692,6 +692,13 @@ onMounted(() => {
   :deep(.el-form-item) {
     margin-bottom: 0;
   }
+}
+.menu-type-filter,
+.menu-status-filter {
+  width: 120px;
+}
+.menu-module-filter {
+  width: 160px;
 }
 .permissions-tags {
   display: flex;

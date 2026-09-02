@@ -31,7 +31,7 @@ public class AdminBrandingService implements IAdminBrandingService {
     private static final int ENABLED = 1;
     private static final String DOMAIN_CODE = "COMMON";
     private static final String GROUP_CODE = "admin-branding";
-    private static final String GROUP_NAME = "后台品牌配置";
+    private static final String GROUP_NAME = "网站配置";
     private static final String FILE_TOKEN_PREFIX = "mango-file:";
 
     private final SysConfigMapper sysConfigMapper;
@@ -46,7 +46,7 @@ public class AdminBrandingService implements IAdminBrandingService {
 
     @Override
     public Boolean save(SaveAdminBrandingCommand command) {
-        Require.notNull(command, SystemCode.SYSTEM_INVALID, "后台品牌配置不能为空");
+        Require.notNull(command, SystemCode.SYSTEM_INVALID, "网站配置不能为空");
         validateCommand(command);
         Map<String, SysConfigEntity> configMap = loadConfigMap();
         Arrays.stream(Field.values()).forEach(field -> saveField(field, field.readFrom(command), configMap.get(field.key)));

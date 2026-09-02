@@ -14,33 +14,21 @@ class IdentityResourceDeclarationContractTest {
             "src/main/resources/META-INF/mango/resources/identity-common-bootstrap.yml");
     private static final Path DOMAIN = Path.of(
             "src/main/resources/META-INF/mango/resources/identity-common-domain.yml");
-    private static final Path DEMO = Path.of(
-            "src/main/resources/META-INF/mango/demo/identity-demo-members.yml");
-
     @Test
-    void requiredLoginIdentityAndDemoMembersAreSeparated() throws IOException {
+    void requiredLoginIdentityProvidesTheSingleDefaultTenantMember() throws IOException {
         String formal = Files.readString(FORMAL);
-        String demo = Files.readString(DEMO);
 
         assertThat(formal)
                 .contains("module-code: identity")
                 .contains("biz-key: identity.user.admin")
                 .contains("memberId: { type: LONG, value: 1001 }")
+                .contains("tenantId: { type: LONG, value: 1 }")
+                .contains("partyId: { type: LONG, value: 1 }")
                 .contains("encodedPassword: { type: STRING, value: \"$2a$10$")
                 .doesNotContain("password: { type: STRING")
                 .doesNotContain("value: admin123")
                 .doesNotContain("ORG_MEMBER_BINDING");
-        assertThat(demo)
-                .contains("biz-key: identity.member.tenant-2.admin")
-                .contains("biz-key: identity.member.tenant-3.admin")
-                .contains("biz-key: identity.member.tenant-4.admin")
-                .contains("ORG_MEMBER_BINDING")
-                .contains("memberId: { type: LONG, value: 1002 }")
-                .contains("memberId: { type: LONG, value: 1003 }")
-                .contains("memberId: { type: LONG, value: 1004 }")
-                .doesNotContain("password:");
         assertThat(count(formal, "sync-mode: INIT_ONLY")).isEqualTo(1);
-        assertThat(count(demo, "sync-mode: INIT_ONLY")).isEqualTo(6);
     }
 
     @Test

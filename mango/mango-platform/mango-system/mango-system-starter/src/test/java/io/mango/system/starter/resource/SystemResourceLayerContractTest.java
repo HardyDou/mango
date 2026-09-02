@@ -18,26 +18,23 @@ class SystemResourceLayerContractTest {
     private static final Pattern ID = Pattern.compile("(?m)[\"']?id[\"']?\\s*:\\s*[\"']?([0-9]{19})");
 
     @Test
-    void requiredAndDemoResourcesRemainSeparatedAndComplete() throws IOException {
+    void requiredResourcesProvideTheSingleDefaultTenant() throws IOException {
         String tenant = resource("META-INF/mango/resources/system-common-tenant.yml");
         String area = resource("META-INF/mango/resources/system-common-area.yml");
         String i18n = resource("META-INF/mango/resources/system-common-i18n.yml");
-        String demo = resource("META-INF/mango/demo/system-demo-tenant.yml");
 
         assertThat(declarationCount(tenant)).isEqualTo(1);
         assertThat(declarationCount(area)).isEqualTo(524);
         assertThat(declarationCount(i18n)).isEqualTo(20);
-        assertThat(declarationCount(demo)).isEqualTo(3);
         assertThat(tenant).contains("SYSTEM_TENANT", "tenantCode: { type: STRING, value: default }")
-                .doesNotContain("company-a", "company-b", "company-c");
-        assertThat(demo).contains("SYSTEM_TENANT", "company-a", "company-b", "company-c");
+                .contains("tenantName: { type: STRING, value: 芒果集团 }");
     }
 
     @Test
     void systemResourceIdsAreStableAndGloballyUniqueWithinTheModule() throws IOException {
         Set<String> ids = systemResourceIds();
 
-        assertThat(ids).hasSize(548);
+        assertThat(ids).hasSize(545);
     }
 
     @Test
@@ -72,15 +69,14 @@ class SystemResourceLayerContractTest {
         for (String path : new String[]{
                 "META-INF/mango/resources/system-common-tenant.yml",
                 "META-INF/mango/resources/system-common-area.yml",
-                "META-INF/mango/resources/system-common-i18n.yml",
-                "META-INF/mango/demo/system-demo-tenant.yml"}) {
+                "META-INF/mango/resources/system-common-i18n.yml"}) {
             var matcher = ID.matcher(resource(path));
             while (matcher.find()) {
                 total++;
                 assertThat(ids.add(matcher.group(1))).as("duplicate system resource id %s", matcher.group(1)).isTrue();
             }
         }
-        assertThat(total).isEqualTo(548);
+        assertThat(total).isEqualTo(545);
         return ids;
     }
 

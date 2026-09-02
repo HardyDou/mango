@@ -1,12 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
 
-async function loginAsCompanyA(page: Page) {
+async function loginDefaultTenant(page: Page) {
   await page.goto('/#/login');
-  await page.locator('.tenant-select').click();
-  await page.getByRole('option', { name: /A公司/ }).click();
-  await page.fill('input[placeholder="用户名"]', 'admin');
-  await page.fill('input[placeholder="密码"]', 'admin123');
-  await page.click('button:has-text("登 录")');
+  await page.getByPlaceholder('请输入用户名').fill('admin');
+  await page.getByPlaceholder('请输入密码').fill('admin123');
+  await page.getByPlaceholder('请输入密码').blur();
+  await expect(page.locator('.tenant-select')).toHaveCount(0);
+  await page.getByRole('button', { name: '登录' }).click();
   await page.waitForURL('**/#/home', { timeout: 10000 });
 }
 
@@ -16,18 +16,15 @@ async function expectNoAuthError(page: Page) {
 }
 
 test.describe('T1 组织岗位权限闭环', () => {
-  test('A 公司可访问组织和岗位，岗位新增编辑删除可用，平台运营不可见', async ({ page }) => {
+  test('默认租户可访问两级组织和岗位，岗位新增编辑删除可用', async ({ page }) => {
     const unique = Date.now();
     const postName = `E2E岗位${unique}`;
     const editedPostName = `${postName}-编辑`;
     const postCode = `E2E_POST_${unique}`;
 
-    await loginAsCompanyA(page);
+    await loginDefaultTenant(page);
 
-    await expect(page.getByText('审批管理')).toHaveCount(0);
-    await expect(page.getByText('机构管理')).toHaveCount(0);
-    await expect(page.getByText('应用管理')).toHaveCount(0);
-    await expect(page.getByText('菜单管理')).toHaveCount(0);
+    await expect(page.getByText('租户管理')).toHaveCount(0);
 
     const orgResponsePromise = page.waitForResponse(
       (response) => response.url().includes('/api/org/tree') && response.status() === 200,
@@ -37,6 +34,8 @@ test.describe('T1 组织岗位权限闭环', () => {
     await expect(page.getByText('组织架构').first()).toBeVisible({ timeout: 10000 });
     await expect(page.getByText('组织详情').first()).toBeVisible();
     await expect(page.getByText('请选择左侧组织')).toBeVisible();
+    await expect(page.getByText('A公司').first()).toBeVisible();
+    await expect(page.getByText('B公司').first()).toBeVisible();
     await expectNoAuthError(page);
 
     const postPageResponsePromise = page.waitForResponse(

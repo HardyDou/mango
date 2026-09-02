@@ -6,9 +6,9 @@ mango:
     declarations:
       API_RESOURCE:
         - id: "880428706160694323"
-          version: 1
+          version: 2
           biz-key: api.mango-system.GET.system.admin-branding.public
-          name: 后台品牌公共配置
+          name: 网站公共配置
           target-module: authorization
           fields:
             moduleName: { type: STRING, value: mango-system }
@@ -18,7 +18,7 @@ mango:
             accessMode: { type: STRING, value: PUBLIC }
             handlerClass: { type: STRING, value: io.mango.system.starter.controller.AdminBrandingController }
             handlerMethod: { type: STRING, value: publicConfig }
-            description: { type: STRING, value: 后台品牌公共配置 }
+            description: { type: STRING, value: 网站公共配置 }
         - id: "882449018853866699"
           version: 1
           biz-key: api.mango-system.GET.system.tenant.login-options

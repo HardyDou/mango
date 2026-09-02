@@ -9,7 +9,7 @@
         "AUTH_MENU": [
           {
             "id": "2951300000000008001",
-            "version": 4,
+            "version": 5,
             "bizKey": "system.menu.internal-admin",
             "name": "系统基础菜单",
             "targetModule": "authorization",
@@ -146,13 +146,13 @@
                       },
                       {
                         "menuType": 2,
-                        "menuName": "后台品牌配置",
+                        "menuName": "网站配置",
                         "menuCode": "system:admin-branding",
                         "path": "/system/admin-branding",
                         "icon": "Monitor",
                         "component": "system/admin-branding/index",
                         "sort": 5,
-                        "remark": "Admin 登录页与后台框架品牌展示配置",
+                        "remark": "网站登录页与后台框架展示配置",
                         "packageCodes": [
                           "platform_admin"
                         ],
@@ -322,7 +322,7 @@
           },
           {
             "id": "2951300000000008002",
-            "version": 2,
+            "version": 3,
             "bizKey": "system.menu.account.internal-admin",
             "name": "系统账号组织菜单",
             "targetModule": "authorization",
@@ -356,17 +356,17 @@
                 "value": [
                   {
                     "menuType": 2,
-                    "menuName": "机构管理",
+                    "menuName": "租户管理",
                     "menuCode": "system:tenant",
                     "parentCode": "system:permission",
                     "path": "/system/tenant",
                     "icon": "OfficeBuilding",
                     "component": "system/tenant/index",
                     "sort": 2,
-                    "packageCodes": [
-                      "platform_admin"
-                    ],
-                    "remark": "机构管理",
+                    "status": 0,
+                    "visible": 0,
+                    "packageCodes": [],
+                    "remark": "单租户产品态不展示，保留多租户兼容入口",
                     "apiCodes": [
                       "system:tenant:list",
                       "system:tenant:query",

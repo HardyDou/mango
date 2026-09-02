@@ -1,6 +1,7 @@
 package io.mango.system.starter.controller;
 
 import io.mango.authorization.api.annotation.ApiAccess;
+import io.mango.authorization.api.annotation.PublicAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
 import io.mango.infra.log.annotation.Log;
@@ -22,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/system/admin-branding")
 @RequiredArgsConstructor
-@Tag(name = "后台品牌配置", description = "后台品牌配置管理接口")
+@Tag(name = "网站配置", description = "网站配置管理接口")
 public class AdminBrandingController implements AdminBrandingApi {
 
     private final IAdminBrandingService brandingService;
@@ -30,15 +31,15 @@ public class AdminBrandingController implements AdminBrandingApi {
     @Override
     @GetMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:admin-branding:query")
-    @Operation(summary = "获取后台品牌配置", description = "获取后台品牌配置并返回处理结果")
+    @Operation(summary = "获取网站配置", description = "获取网站配置并返回处理结果")
     public R<AdminBrandingVO> get() {
         return R.ok(brandingService.get());
     }
 
     @Override
     @GetMapping("/public")
-    @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "后台品牌公共配置")
-    @Operation(summary = "获取后台品牌公共配置", description = "获取后台品牌公共配置并返回处理结果")
+    @PublicAccess(desc = "网站公共配置")
+    @Operation(summary = "获取网站公共配置", description = "无需登录，用于登录页和后台框架初始化网站展示信息")
     public R<AdminBrandingVO> publicConfig() {
         return R.ok(brandingService.get());
     }
@@ -46,8 +47,8 @@ public class AdminBrandingController implements AdminBrandingApi {
     @Override
     @PutMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:admin-branding:edit")
-    @Operation(summary = "保存后台品牌配置", description = "保存后台品牌配置并返回处理结果")
-    @Log("保存后台品牌配置")
+    @Operation(summary = "保存网站配置", description = "保存网站配置并返回处理结果")
+    @Log("保存网站配置")
     public R<Boolean> save(@RequestBody SaveAdminBrandingCommand command) {
         return R.ok(brandingService.save(command));
     }

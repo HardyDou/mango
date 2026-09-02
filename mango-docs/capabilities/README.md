@@ -6,6 +6,8 @@
 
 长期规则仍以 `mango-pmo` 为唯一来源；本文只做能力索引，不复制规范正文。
 
+2026-09-01 能力更新：Issue #918 修复 RBAC 角色菜单树父目录回显导致兄弟节点被扩展勾选，并统一企微同步内部用户的授权主体为当前数值租户 ID。企微部门继续只维护成员组织关系；Notice 同步路径按需自愈错误主体，Identity V5 与 Authorization V2 归一化并去重历史数据。详见 [RBAC README](../../mango-ui/packages/rbac/README.md)、[Notice README](../../mango/mango-platform/mango-notice/README.md)、[Identity README](../../mango/mango-platform/mango-identity/README.md)、[Authorization README](../../mango/mango-platform/mango-authorization/README.md) 和 [Auth README](../../mango/mango-platform/mango-auth/README.md)。
+
 2026-08-28 能力更新：Workflow 办理人身份字段统一为原始 Flowable `assigneeName` 加当前租户解析的 `assigneeId`、`assigneeDisplayName`；详见 Workflow、Identity README 与业务审批接入指南。
 
 2026-08-29 能力更新：Issue #851 的构建期 Resource baseline 对 Authorization、Calendar、Identity 等正式 Resource 使用固定 ID 或稳定业务身份生成确定性主键，并在写 BSQL 前把非空审计时间规范化为固定值；`publish_time` 等业务时间不被忽略或改写。相同输入会生成相同 BSQL、manifest 与 generation fingerprint，普通业务列、主键或资源事实差异仍会阻断构建。详见 Resource、Authorization、Calendar、Identity、Notice 与 Mango Tools README。

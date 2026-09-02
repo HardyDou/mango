@@ -1,9 +1,13 @@
 <template>
-  <div class="admin-branding-page">
+  <div
+    class="admin-branding-page"
+    data-page="system.admin-branding"
+    :data-state="loading ? 'loading' : 'ready'"
+  >
     <el-card class="admin-branding-card" shadow="never">
       <template #header>
         <div class="admin-branding-header">
-          <div class="admin-branding-title">系统外观配置</div>
+          <div class="admin-branding-title">网站配置</div>
         </div>
       </template>
 
@@ -209,7 +213,7 @@ async function handleSave() {
   try {
     await adminBrandingApi.save({ ...form });
     window.dispatchEvent(new CustomEvent(ADMIN_BRANDING_UPDATED_EVENT));
-    ElMessage.success('后台品牌配置已保存');
+    ElMessage.success('网站配置已保存');
   } finally {
     saving.value = false;
   }

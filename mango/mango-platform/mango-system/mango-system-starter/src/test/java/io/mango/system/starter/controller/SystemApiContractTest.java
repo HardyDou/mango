@@ -2,8 +2,10 @@ package io.mango.system.starter.controller;
 
 import io.mango.area.api.SysAreaApi;
 import io.mango.authorization.api.annotation.ApiAccess;
+import io.mango.authorization.api.annotation.PublicAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.area.core.service.ISysAreaService;
+import io.mango.system.api.AdminBrandingApi;
 import io.mango.system.api.DictApi;
 import io.mango.system.api.SysConfigApi;
 import io.mango.system.api.SysLoginLogApi;
@@ -15,6 +17,7 @@ import io.mango.system.core.service.ISysConfigService;
 import io.mango.system.core.service.ISysLogService;
 import io.mango.system.core.service.ISysTenantService;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.annotation.AnnotatedElementUtils;
 
 import java.lang.reflect.Method;
 
@@ -30,6 +33,7 @@ class SystemApiContractTest {
         assertThat(SysLoginLogApi.class).isAssignableFrom(SysLoginLogController.class);
         assertThat(SysOperationLogApi.class).isAssignableFrom(SysOperationLogController.class);
         assertThat(SysAreaApi.class).isAssignableFrom(SysAreaController.class);
+        assertThat(AdminBrandingApi.class).isAssignableFrom(AdminBrandingController.class);
 
         assertThat(DictApi.class.isAssignableFrom(IDictService.class)).isFalse();
         assertThat(SysTenantApi.class.isAssignableFrom(ISysTenantService.class)).isFalse();
@@ -45,6 +49,20 @@ class SystemApiContractTest {
 
         ApiAccess access = method.getAnnotation(ApiAccess.class);
         assertThat(access.mode()).isEqualTo(ApiResourceAccessMode.LOGIN);
+        assertThat(access.permission()).isEmpty();
+    }
+
+    @Test
+    void websitePublicConfigUsesStandardPublicAccessContract() throws Exception {
+        Method method = AdminBrandingController.class.getMethod("publicConfig");
+
+        PublicAccess publicAccess = method.getAnnotation(PublicAccess.class);
+        ApiAccess access = AnnotatedElementUtils.findMergedAnnotation(method, ApiAccess.class);
+
+        assertThat(publicAccess).isNotNull();
+        assertThat(publicAccess.desc()).isEqualTo("网站公共配置");
+        assertThat(access).isNotNull();
+        assertThat(access.mode()).isEqualTo(ApiResourceAccessMode.PUBLIC);
         assertThat(access.permission()).isEmpty();
     }
 }
