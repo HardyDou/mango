@@ -202,6 +202,8 @@ class NoticeServiceIntegrationTest {
 
     @Autowired private TestIdentityUserApi identityUserApi;
 
+    @Autowired private NoopSysOrgApi sysOrgApi;
+
     @Autowired private TestEmailChannelSender emailChannelSender;
 
     @Autowired private TestWecomChannelSender wecomChannelSender;
@@ -221,6 +223,7 @@ class NoticeServiceIntegrationTest {
         realtimeApi.clear();
         domainEventPublisher.clear();
         identityUserApi.clear();
+        sysOrgApi.clear();
         emailChannelSender.clear();
         wecomChannelSender.clear();
         wecomDirectoryClient.clear();
@@ -835,6 +838,7 @@ class NoticeServiceIntegrationTest {
 
     @Test
     void wecomSyncOnlyWritesIdentityAndRepairsMissingBindingWhenUserIsUnchanged() {
+        setTenant("1");
         wecomDirectoryClient.users.add(new WecomDirectoryUser(
                 "wecom-user-1", "企业微信张三", List.of(), "工程师", null, null,
                 null, null, "https://work.weixin.qq.com/avatar/zhangsan.png", null, 1));
@@ -844,14 +848,34 @@ class NoticeServiceIntegrationTest {
         command.setSyncDepartments(false);
         command.setSyncUsers(true);
         command.setSkipUnchanged(true);
+        command.setDepartmentId(1L);
+        command.setTargetOrgId(10L);
 
         var first = noticeService.syncWecomUsers(command);
+        assertThat(identityUserApi.lastCreatedUser.getPartyType()).isEqualTo("INTERNAL_ORG");
+        assertThat(identityUserApi.lastCreatedUser.getPartyId()).isEqualTo(1L);
+        assertThat(sysOrgApi.addedMembers).singleElement().satisfies(member -> {
+            assertThat(member.getOrgId()).isEqualTo(10L);
+            assertThat(member.getMemberId()).isEqualTo(1001L);
+        });
+        identityUserApi.userDetails.get(1L).setPartyId(10L);
+        identityUserApi.updatedUsers.clear();
         identityUserApi.externalIdentities.clear();
         var second = noticeService.syncWecomUsers(command);
+
+        assertThat(second.getUpdatedCount()).isEqualTo(1);
+        assertThat(identityUserApi.updatedUsers).singleElement().satisfies(update -> {
+            assertThat(update.getPartyType()).isEqualTo("INTERNAL_ORG");
+            assertThat(update.getPartyId()).isEqualTo(1L);
+        });
+        identityUserApi.updatedUsers.clear();
+        var third = noticeService.syncWecomUsers(command);
 
         assertThat(first.getBoundIdentityCount()).isEqualTo(1);
         assertThat(second.getUnchangedCount()).isEqualTo(1);
         assertThat(second.getBoundIdentityCount()).isEqualTo(1);
+        assertThat(third.getUnchangedCount()).isEqualTo(1);
+        assertThat(identityUserApi.updatedUsers).isEmpty();
         assertThat(identityUserApi.externalIdentities).singleElement().satisfies(binding -> {
             assertThat(binding.getCorpId()).isEqualTo("corp-a");
             assertThat(binding.getExternalUserId()).isEqualTo("wecom-user-1");
@@ -867,6 +891,7 @@ class NoticeServiceIntegrationTest {
 
     @Test
     void wecomSyncClearsImportedAvatarWhenDirectoryProfileRemovesIt() {
+        setTenant("1");
         wecomDirectoryClient.users.add(new WecomDirectoryUser(
                 "wecom-user-1", "企业微信张三", List.of(), "工程师", null, null,
                 null, null, "https://work.weixin.qq.com/avatar/zhangsan.png", null, 1));
@@ -887,8 +912,66 @@ class NoticeServiceIntegrationTest {
         assertThat(identityUserApi.externalIdentities).singleElement()
                 .extracting(ExternalIdentityBindingVO::getAvatarFileId)
                 .isNull();
+        assertThat(identityUserApi.updatedUsers).singleElement().satisfies(update -> {
+            assertThat(update.getPartyType()).isEqualTo("INTERNAL_ORG");
+            assertThat(update.getPartyId()).isEqualTo(1L);
+        });
         assertThat(fileImportApi.sourceUrls).containsExactly(
                 "https://work.weixin.qq.com/avatar/zhangsan.png");
+    }
+
+    @Test
+    void wecomSyncRepairsTenantPartyWhenMatchedProfileUpdatesAreDisabled() {
+        setTenant("1");
+        wecomDirectoryClient.users.add(new WecomDirectoryUser(
+                "wecom-user-1", "企业微信张三", List.of(), "工程师", null, null,
+                null, null, null, null, 1));
+        SyncWecomUsersCommand command = new SyncWecomUsersCommand();
+        command.setCorpId("corp-a");
+        command.setSecret("directory-secret");
+        command.setSyncDepartments(false);
+        command.setSyncUsers(true);
+        command.setSkipUnchanged(false);
+
+        noticeService.syncWecomUsers(command);
+        identityUserApi.userDetails.get(1L).setPartyId(10L);
+        identityUserApi.updatedUsers.clear();
+        command.setUpdateMatchedUsers(false);
+
+        var result = noticeService.syncWecomUsers(command);
+
+        assertThat(result.getUpdatedCount()).isEqualTo(1);
+        assertThat(identityUserApi.updatedUsers).singleElement().satisfies(update -> {
+            assertThat(update.getNickname()).isEqualTo("企业微信张三");
+            assertThat(update.getPartyType()).isEqualTo("INTERNAL_ORG");
+            assertThat(update.getPartyId()).isEqualTo(1L);
+        });
+    }
+
+    @Test
+    void wecomSyncFailsClosedForNonNumericTenantParty() {
+        wecomDirectoryClient.users.add(new WecomDirectoryUser(
+                "wecom-user-1", "企业微信张三", List.of(), "工程师", null, null,
+                null, null, null, null, 1));
+        SyncWecomUsersCommand command = new SyncWecomUsersCommand();
+        command.setCorpId("corp-a");
+        command.setSecret("directory-secret");
+        command.setSyncDepartments(false);
+        command.setSyncUsers(true);
+
+        var result = noticeService.syncWecomUsers(command);
+
+        assertThat(result.getFailedCount()).isEqualTo(1);
+        assertThat(result.getMessages()).singleElement().asString().contains("当前租户 ID 必须为正数");
+        assertThat(identityUserApi.lastCreatedUser).isNull();
+        assertThat(identityUserApi.updatedUsers).isEmpty();
+    }
+
+    private void setTenant(String tenantId) {
+        MangoContextHolder.set(
+                MangoContextSnapshot.empty()
+                        .withSecurity(
+                                1L, tenantId, "notice-test", null, null, null, null, "test"));
     }
 
     private SendNoticeCommand sendCommand() {
@@ -1630,7 +1713,7 @@ class NoticeServiceIntegrationTest {
         }
 
         @Bean
-        SysOrgApi sysOrgApi() {
+        NoopSysOrgApi sysOrgApi() {
             return new NoopSysOrgApi();
         }
 
@@ -1818,6 +1901,8 @@ class NoticeServiceIntegrationTest {
     static class TestIdentityUserApi implements IdentityUserApi {
         private final Map<Long, IdentityUserInfoVO> users = new HashMap<>();
         private final List<ExternalIdentityBindingVO> externalIdentities = new ArrayList<>();
+        private final Map<Long, IdentityUserVO> userDetails = new HashMap<>();
+        private final List<UpdateIdentityUserCommand> updatedUsers = new ArrayList<>();
         private CreateIdentityUserCommand lastCreatedUser;
         private boolean externalIdentityLookupFailure;
 
@@ -1853,11 +1938,22 @@ class NoticeServiceIntegrationTest {
             info.setPhone(phone);
             info.setStatus(1);
             users.put(id, info);
+            IdentityUserVO detail = new IdentityUserVO();
+            detail.setUserId(id);
+            detail.setMemberId(1000L + id);
+            detail.setUsername(info.getUsername());
+            detail.setNickname(nickname);
+            detail.setEmail(email);
+            detail.setPhone(phone);
+            detail.setStatus(1);
+            userDetails.put(id, detail);
         }
 
         void clear() {
             users.clear();
             externalIdentities.clear();
+            userDetails.clear();
+            updatedUsers.clear();
             lastCreatedUser = null;
             externalIdentityLookupFailure = false;
         }
@@ -1879,12 +1975,25 @@ class NoticeServiceIntegrationTest {
 
         @Override
         public R<IdentityUserVO> detail(Long userId) {
-            return R.ok(null);
+            return R.ok(userDetails.get(userId));
         }
 
         @Override
         public R<Long> create(CreateIdentityUserCommand command) {
             lastCreatedUser = command;
+            IdentityUserVO detail = new IdentityUserVO();
+            detail.setUserId(1L);
+            detail.setMemberId(1001L);
+            detail.setUsername(command.getUsername());
+            detail.setNickname(command.getNickname());
+            detail.setPartyType(command.getPartyType());
+            detail.setPartyId(command.getPartyId());
+            detail.setEmail(command.getEmail());
+            detail.setPhone(command.getPhone());
+            detail.setAvatar(command.getAvatar());
+            detail.setStatus(command.getStatus());
+            detail.setRemark(command.getRemark());
+            userDetails.put(1L, detail);
             return R.ok(1L);
         }
 
@@ -1898,6 +2007,19 @@ class NoticeServiceIntegrationTest {
 
         @Override
         public R<Boolean> update(UpdateIdentityUserCommand command) {
+            updatedUsers.add(command);
+            IdentityUserVO detail = userDetails.get(command.getUserId());
+            if (detail == null) {
+                return R.ok(false);
+            }
+            detail.setNickname(command.getNickname());
+            detail.setPartyType(command.getPartyType());
+            detail.setPartyId(command.getPartyId());
+            detail.setEmail(command.getEmail());
+            detail.setPhone(command.getPhone());
+            detail.setAvatar(command.getAvatar());
+            detail.setStatus(command.getStatus());
+            detail.setRemark(command.getRemark());
             return R.ok(true);
         }
 
@@ -2021,6 +2143,8 @@ class NoticeServiceIntegrationTest {
     }
 
     static class NoopSysOrgApi implements SysOrgApi {
+        private final List<AddOrgMemberCommand> addedMembers = new ArrayList<>();
+
         @Override
         public R<List<SysOrgVO>> tree(SysOrgTreeQuery query) {
             return R.ok(List.of());
@@ -2073,6 +2197,7 @@ class NoticeServiceIntegrationTest {
 
         @Override
         public R<Boolean> addMember(AddOrgMemberCommand command) {
+            addedMembers.add(command);
             return R.ok(true);
         }
 
@@ -2089,6 +2214,10 @@ class NoticeServiceIntegrationTest {
         @Override
         public R<List<Long>> leaderUserIds(Long orgId) {
             return R.ok(List.of());
+        }
+
+        void clear() {
+            addedMembers.clear();
         }
     }
 

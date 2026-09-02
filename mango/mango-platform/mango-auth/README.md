@@ -201,6 +201,8 @@ HTTP 接口前缀是 `/auth`。
 | `captchaCode` | 否 | 验证码。当前登录验证码拦截器主要读取请求头 |
 | `captchaKey` | 否 | 验证码键。当前登录验证码拦截器主要读取请求头 |
 
+`realm=INTERNAL`、`actorType=INTERNAL_USER`、`partyType=INTERNAL_ORG` 的登录上下文以当前数值 `tenantId` 作为有效 `partyId`，并据此精确匹配主体角色。用户主部门属于 Identity/Org 成员关系，不作为 Auth 的主体 ID；历史账号缺少显式 `partyId` 时 Auth 仍按当前租户回退解析。
+
 需要验证码时，请求头使用：
 
 | 请求头 | 含义 |

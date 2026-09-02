@@ -8,6 +8,8 @@
 
 2026-09-01 能力更新：Issue #923 规范化默认审批通知。首次与后续待办只通知实际办理人，最终通过或驳回只通知原申请人一次；用户文案统一展示可读流程名称、业务标题和审核状态/结果，不展示内部编码。默认消息模板启用系统消息与企业微信、关闭邮件与短信；无外部通道或无有效企微绑定收敛为取消且不重试，Identity 查询异常仍保留失败语义。Auth 同步移除登录成功通知并保留登录锁定安全提醒。详见 Workflow、Notice、Auth README 与 [STANDARD 交付记录](../plans/2026-09-01-issue-923-workflow-notice-standardization.md)。
 
+2026-09-01 能力更新：Issue #918 修复 RBAC 角色菜单树父目录回显导致兄弟节点被扩展勾选，并统一企微同步内部用户的授权主体为当前数值租户 ID。企微部门继续只维护成员组织关系；Notice 同步路径按需自愈错误主体，Identity V6 与 Authorization V2 归一化并去重历史数据。详见 [RBAC README](../../mango-ui/packages/rbac/README.md)、[Notice README](../../mango/mango-platform/mango-notice/README.md)、[Identity README](../../mango/mango-platform/mango-identity/README.md)、[Authorization README](../../mango/mango-platform/mango-authorization/README.md) 和 [Auth README](../../mango/mango-platform/mango-auth/README.md)。
+
 2026-08-28 能力更新：Workflow 办理人身份字段统一为原始 Flowable `assigneeName` 加当前租户解析的 `assigneeId`、`assigneeDisplayName`；详见 Workflow、Identity README 与业务审批接入指南。
 
 2026-08-29 能力更新：Issue #851 的构建期 Resource baseline 对 Authorization、Calendar、Identity 等正式 Resource 使用固定 ID 或稳定业务身份生成确定性主键，并在写 BSQL 前把非空审计时间规范化为固定值；`publish_time` 等业务时间不被忽略或改写。相同输入会生成相同 BSQL、manifest 与 generation fingerprint，普通业务列、主键或资源事实差异仍会阻断构建。详见 Resource、Authorization、Calendar、Identity、Notice 与 Mango Tools README。

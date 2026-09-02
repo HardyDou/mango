@@ -106,6 +106,7 @@ public class NoticeWecomSyncService implements INoticeWecomSyncService {
                 }
             }
             if (Boolean.TRUE.equals(command.getSyncUsers())) {
+                Long tenantPartyId = tenantPartyId();
                 List<WecomDirectoryUser> users =
                         wecomDirectoryClient.listUsers(
                                 config.corpId(),
@@ -114,7 +115,7 @@ public class NoticeWecomSyncService implements INoticeWecomSyncService {
                                 !Boolean.FALSE.equals(command.getFetchChild()));
                 result.setTotalCount(users.size());
                 for (WecomDirectoryUser wecomUser : users) {
-                    syncOneWecomUser(command, result, wecomUser, config);
+                    syncOneWecomUser(command, result, wecomUser, config, tenantPartyId);
                 }
             }
         } catch (WecomApiException ex) {
@@ -510,14 +511,15 @@ public class NoticeWecomSyncService implements INoticeWecomSyncService {
             SyncWecomUsersCommand command,
             WecomUserSyncResultVO result,
             WecomDirectoryUser wecomUser,
-            WecomChannelConfig config) {
+            WecomChannelConfig config,
+            Long tenantPartyId) {
         if (!StringUtils.hasText(wecomUser.userId())) {
             result.setSkippedCount(result.getSkippedCount() + 1);
             result.addMessage("跳过缺少 userid 的企业微信成员");
             return;
         }
         try {
-            syncWecomUserData(command, result, wecomUser, config);
+            syncWecomUserData(command, result, wecomUser, config, tenantPartyId);
         } catch (RuntimeException ex) {
             result.setFailedCount(result.getFailedCount() + 1);
             result.addMessage("同步失败：" + wecomUser.userId() + "，" + ex.getMessage());
@@ -528,17 +530,20 @@ public class NoticeWecomSyncService implements INoticeWecomSyncService {
             SyncWecomUsersCommand command,
             WecomUserSyncResultVO result,
             WecomDirectoryUser wecomUser,
-            WecomChannelConfig config) {
+            WecomChannelConfig config,
+            Long tenantPartyId) {
         Long primaryOrgId = resolveUserPrimaryOrgId(command, wecomUser);
         String dataHash = hashWecomUser(wecomUser, primaryOrgId);
         NoticeWecomSyncMappingEntity mapping =
                 findWecomSyncMapping(WECOM_SYNC_TYPE_USER, wecomUser.userId());
         if (isUnchangedMapping(command, mapping, dataHash)) {
-            handleUnchangedUser(result, wecomUser, config, primaryOrgId, mapping);
+            handleUnchangedUser(
+                    result, wecomUser, config, primaryOrgId, tenantPartyId, mapping);
             return;
         }
         IdentityUserVO user = resolveIdentityUser(mapping, wecomUser, result);
-        user = createOrUpdateIdentityUser(command, result, wecomUser, primaryOrgId, user);
+        user = createOrUpdateIdentityUser(
+                command, result, wecomUser, tenantPartyId, user);
         if (user == null || user.getUserId() == null) {
             result.setSkippedCount(result.getSkippedCount() + 1);
             result.addMessage("未匹配成员：" + wecomUser.userId());
@@ -559,7 +564,13 @@ public class NoticeWecomSyncService implements INoticeWecomSyncService {
             WecomDirectoryUser wecomUser,
             WecomChannelConfig config,
             Long primaryOrgId,
+            Long tenantPartyId,
             NoticeWecomSyncMappingEntity mapping) {
+        IdentityUserVO user = findIdentityUserById(mapping.getLocalId());
+        Require.notNull(user, NoticeCode.NOTICE_BUSINESS_ERROR, "已同步企业微信成员不存在");
+        if (repairIdentityParty(user, tenantPartyId)) {
+            result.setUpdatedCount(result.getUpdatedCount() + 1);
+        }
         ensureWecomUserOrgRelation(mapping.getLocalId(), primaryOrgId);
         bindWecomLoginIdentity(mapping.getLocalId(), wecomUser, config, false);
         result.setBoundIdentityCount(result.getBoundIdentityCount() + 1);
@@ -588,17 +599,20 @@ public class NoticeWecomSyncService implements INoticeWecomSyncService {
             SyncWecomUsersCommand command,
             WecomUserSyncResultVO result,
             WecomDirectoryUser wecomUser,
-            Long primaryOrgId,
+            Long tenantPartyId,
             IdentityUserVO user) {
         if (user == null && Boolean.TRUE.equals(command.getCreateMissingUsers())) {
-            IdentityUserVO created = createWecomIdentityUser(wecomUser, primaryOrgId);
+            IdentityUserVO created = createWecomIdentityUser(wecomUser, tenantPartyId);
             result.setCreatedCount(result.getCreatedCount() + 1);
             return created;
         }
-        if (user != null
-                && Boolean.TRUE.equals(command.getUpdateMatchedUsers())
-                && updateWecomIdentityUser(user, wecomUser, primaryOrgId)) {
-            result.setUpdatedCount(result.getUpdatedCount() + 1);
+        if (user != null) {
+            boolean updated = Boolean.TRUE.equals(command.getUpdateMatchedUsers())
+                    ? updateWecomIdentityUser(user, wecomUser, tenantPartyId)
+                    : repairIdentityParty(user, tenantPartyId);
+            if (updated) {
+                result.setUpdatedCount(result.getUpdatedCount() + 1);
+            }
         }
         return user;
     }
@@ -830,16 +844,14 @@ public class NoticeWecomSyncService implements INoticeWecomSyncService {
     }
 
     private IdentityUserVO createWecomIdentityUser(
-            WecomDirectoryUser wecomUser, Long primaryOrgId) {
+            WecomDirectoryUser wecomUser, Long tenantPartyId) {
         CreateIdentityUserCommand create = new CreateIdentityUserCommand();
         create.setUsername(wecomUser.userId().trim());
         create.setNickname(firstText(wecomUser.name(), wecomUser.userId()));
         create.setRealm("INTERNAL");
         create.setActorType("INTERNAL_USER");
-        if (primaryOrgId != null) {
-            create.setPartyType(INTERNAL_ORG_PARTY_TYPE);
-            create.setPartyId(primaryOrgId);
-        }
+        create.setPartyType(INTERNAL_ORG_PARTY_TYPE);
+        create.setPartyId(tenantPartyId);
         create.setPhone(trimToNull(wecomUser.mobile()));
         create.setEmail(trimToNull(firstText(wecomUser.email(), wecomUser.bizMail())));
         create.setStatus(userStatus(wecomUser));
@@ -861,11 +873,11 @@ public class NoticeWecomSyncService implements INoticeWecomSyncService {
     }
 
     private boolean updateWecomIdentityUser(
-            IdentityUserVO user, WecomDirectoryUser wecomUser, Long primaryOrgId) {
+            IdentityUserVO user, WecomDirectoryUser wecomUser, Long tenantPartyId) {
         UpdateIdentityUserCommand update = new UpdateIdentityUserCommand();
         update.setUserId(user.getUserId());
         update.setNickname(firstText(wecomUser.name(), user.getNickname()));
-        updateIdentityParty(update, user, primaryOrgId);
+        updateIdentityParty(update, tenantPartyId);
         update.setPhone(firstText(wecomUser.mobile(), user.getPhone()));
         update.setEmail(
                 firstText(firstText(wecomUser.email(), wecomUser.bizMail()), user.getEmail()));
@@ -879,14 +891,34 @@ public class NoticeWecomSyncService implements INoticeWecomSyncService {
     }
 
     private void updateIdentityParty(
-            UpdateIdentityUserCommand update, IdentityUserVO user, Long primaryOrgId) {
-        if (primaryOrgId == null) {
-            update.setPartyType(user.getPartyType());
-            update.setPartyId(user.getPartyId());
-            return;
-        }
+            UpdateIdentityUserCommand update, Long tenantPartyId) {
         update.setPartyType(INTERNAL_ORG_PARTY_TYPE);
-        update.setPartyId(primaryOrgId);
+        update.setPartyId(tenantPartyId);
+    }
+
+    private boolean repairIdentityParty(IdentityUserVO user, Long tenantPartyId) {
+        if (INTERNAL_ORG_PARTY_TYPE.equals(user.getPartyType())
+                && Objects.equals(tenantPartyId, user.getPartyId())) {
+            return false;
+        }
+        UpdateIdentityUserCommand update = new UpdateIdentityUserCommand();
+        update.setUserId(user.getUserId());
+        update.setNickname(user.getNickname());
+        updateIdentityParty(update, tenantPartyId);
+        update.setPhone(user.getPhone());
+        update.setEmail(user.getEmail());
+        update.setAvatar(user.getAvatar());
+        update.setStatus(user.getStatus());
+        update.setRemark(user.getRemark());
+        NoticeRemoteResult<Boolean> response = identityGateway.update(update);
+        if (!response.isSuccess() || !Boolean.TRUE.equals(response.getData())) {
+            return Require.fail(
+                    NoticeCode.NOTICE_BUSINESS_ERROR,
+                    response.messageOr("修复成员授权主体失败"));
+        }
+        user.setPartyType(INTERNAL_ORG_PARTY_TYPE);
+        user.setPartyId(tenantPartyId);
+        return true;
     }
 
     private NoticeWecomSyncMappingEntity findWecomSyncMapping(String syncType, String externalId) {
@@ -967,6 +999,22 @@ public class NoticeWecomSyncService implements INoticeWecomSyncService {
 
     private String tenantId() {
         return firstText(MangoContextHolder.tenantId(), "default");
+    }
+
+    private Long tenantPartyId() {
+        String currentTenantId = trimToNull(MangoContextHolder.tenantId());
+        if (currentTenantId == null) {
+            return Require.fail(NoticeCode.NOTICE_BUSINESS_ERROR, "当前租户 ID 不能为空");
+        }
+        try {
+            Long partyId = Long.valueOf(currentTenantId);
+            if (partyId <= 0) {
+                return Require.fail(NoticeCode.NOTICE_BUSINESS_ERROR, "当前租户 ID 必须为正数");
+            }
+            return partyId;
+        } catch (NumberFormatException ex) {
+            return Require.fail(NoticeCode.NOTICE_BUSINESS_ERROR, "当前租户 ID 必须为正数", ex);
+        }
     }
 
     private boolean wecomActive(WecomDirectoryUser wecomUser) {

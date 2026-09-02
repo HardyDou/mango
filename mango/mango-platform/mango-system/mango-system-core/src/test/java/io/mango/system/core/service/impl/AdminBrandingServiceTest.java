@@ -88,7 +88,7 @@ class AdminBrandingServiceTest {
         SysConfigEntity firstInserted = captor.getAllValues().get(0);
         assertEquals("admin.branding.enabled", firstInserted.getConfigKey());
         assertEquals("true", firstInserted.getConfigValue());
-        assertEquals("后台品牌配置", firstInserted.getGroupName());
+        assertEquals("网站配置", firstInserted.getGroupName());
         assertTrue(firstInserted.getEditable());
         assertTrue(captor.getAllValues().stream()
                 .anyMatch(config -> "admin.branding.logoFile".equals(config.getConfigKey())

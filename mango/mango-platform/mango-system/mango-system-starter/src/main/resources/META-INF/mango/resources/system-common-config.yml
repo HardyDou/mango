@@ -1374,9 +1374,9 @@ mango:
               type: STRING
               value: 内容通过审核后默认同步发布的前台渠道
         - id: "2026062902590000000"
-          version: 1
+          version: 2
           biz-key: system.config.admin-branding-enabled
-          name: 后台品牌配置启用状态
+          name: 网站配置启用状态
           target-module: system
           fields:
             configId:
@@ -1390,7 +1390,7 @@ mango:
               value: "true"
             configName:
               type: STRING
-              value: 后台品牌配置启用状态
+              value: 网站配置启用状态
             type:
               type: STRING
               value: SYSTEM
@@ -1405,7 +1405,7 @@ mango:
               value: admin-branding
             groupName:
               type: STRING
-              value: 后台品牌配置
+              value: 网站配置
             defaultValue:
               type: STRING
               value: "true"
@@ -1423,9 +1423,9 @@ mango:
               value: 1
             remark:
               type: STRING
-              value: 启用后后台外观配置覆盖系统默认展示
+              value: 启用后网站配置覆盖系统默认展示
         - id: "2026062902590000001"
-          version: 1
+          version: 2
           biz-key: system.config.admin-branding-title
           name: 后台名称
           target-module: system
@@ -1456,7 +1456,7 @@ mango:
               value: admin-branding
             groupName:
               type: STRING
-              value: 后台品牌配置
+              value: 网站配置
             defaultValue:
               type: STRING
               value: Mango Admin
@@ -1476,7 +1476,7 @@ mango:
               type: STRING
               value: 后台浏览器标题和框架展示名称
         - id: "2026062902590000002"
-          version: 1
+          version: 2
           biz-key: system.config.admin-branding-short-title
           name: 后台简称
           target-module: system
@@ -1507,7 +1507,7 @@ mango:
               value: admin-branding
             groupName:
               type: STRING
-              value: 后台品牌配置
+              value: 网站配置
             defaultValue:
               type: STRING
               value: Mango
@@ -1527,7 +1527,7 @@ mango:
               type: STRING
               value: 后台折叠 Logo 和短文案展示
         - id: "2026062902590000003"
-          version: 1
+          version: 2
           biz-key: system.config.admin-branding-subtitle
           name: 后台副标题
           target-module: system
@@ -1558,7 +1558,7 @@ mango:
               value: admin-branding
             groupName:
               type: STRING
-              value: 后台品牌配置
+              value: 网站配置
             defaultValue:
               type: STRING
               value: 企业级管理平台
@@ -1576,9 +1576,9 @@ mango:
               value: 1
             remark:
               type: STRING
-              value: 后台品牌副标题
+              value: 网站副标题
         - id: "2026062902590000004"
-          version: 1
+          version: 2
           biz-key: system.config.admin-branding-login-title
           name: 登录页标题
           target-module: system
@@ -1609,7 +1609,7 @@ mango:
               value: admin-branding
             groupName:
               type: STRING
-              value: 后台品牌配置
+              value: 网站配置
             defaultValue:
               type: STRING
               value: Mango Admin
@@ -1629,7 +1629,7 @@ mango:
               type: STRING
               value: 登录页左侧主标题
         - id: "2026062902590000005"
-          version: 1
+          version: 2
           biz-key: system.config.admin-branding-login-subtitle
           name: 登录页副标题
           target-module: system
@@ -1660,7 +1660,7 @@ mango:
               value: admin-branding
             groupName:
               type: STRING
-              value: 后台品牌配置
+              value: 网站配置
             defaultValue:
               type: STRING
               value: 企业级管理平台
@@ -1680,7 +1680,7 @@ mango:
               type: STRING
               value: 登录页左侧副标题
         - id: "2026062902590000006"
-          version: 1
+          version: 2
           biz-key: system.config.admin-branding-logo-file
           name: 后台 Logo 文件
           target-module: system
@@ -1711,7 +1711,7 @@ mango:
               value: admin-branding
             groupName:
               type: STRING
-              value: 后台品牌配置
+              value: 网站配置
             defaultValue:
               type: STRING
               value: ""
@@ -1731,7 +1731,7 @@ mango:
               type: STRING
               value: 保存文件中心 token，不保存预览地址
         - id: "2026062902590000012"
-          version: 1
+          version: 2
           biz-key: system.config.admin-branding-logo-icon-file
           name: 折叠 Logo 文件
           target-module: system
@@ -1762,7 +1762,7 @@ mango:
               value: admin-branding
             groupName:
               type: STRING
-              value: 后台品牌配置
+              value: 网站配置
             defaultValue:
               type: STRING
               value: ""
@@ -1782,7 +1782,7 @@ mango:
               type: STRING
               value: 保存文件中心 ID，不保存预览地址
         - id: "2026062902590000007"
-          version: 1
+          version: 2
           biz-key: system.config.admin-branding-favicon-file
           name: 浏览器 favicon 文件
           target-module: system
@@ -1813,7 +1813,7 @@ mango:
               value: admin-branding
             groupName:
               type: STRING
-              value: 后台品牌配置
+              value: 网站配置
             defaultValue:
               type: STRING
               value: ""
@@ -1833,7 +1833,7 @@ mango:
               type: STRING
               value: 保存文件中心 token，不保存预览地址
         - id: "2026062902590000008"
-          version: 1
+          version: 2
           biz-key: system.config.admin-branding-login-image-file
           name: 登录页图片文件
           target-module: system
@@ -1864,7 +1864,7 @@ mango:
               value: admin-branding
             groupName:
               type: STRING
-              value: 后台品牌配置
+              value: 网站配置
             defaultValue:
               type: STRING
               value: ""
@@ -1884,7 +1884,7 @@ mango:
               type: STRING
               value: 保存文件中心 token，不保存预览地址
         - id: "2026062902590000009"
-          version: 1
+          version: 2
           biz-key: system.config.admin-branding-footer-copyright
           name: 页脚版权
           target-module: system
@@ -1915,7 +1915,7 @@ mango:
               value: admin-branding
             groupName:
               type: STRING
-              value: 后台品牌配置
+              value: 网站配置
             defaultValue:
               type: STRING
               value: © Mango
@@ -1935,7 +1935,7 @@ mango:
               type: STRING
               value: 后台框架页脚版权信息
         - id: "2026062902590000010"
-          version: 1
+          version: 2
           biz-key: system.config.admin-branding-icp
           name: 备案号
           target-module: system
@@ -1966,7 +1966,7 @@ mango:
               value: admin-branding
             groupName:
               type: STRING
-              value: 后台品牌配置
+              value: 网站配置
             defaultValue:
               type: STRING
               value: ""
@@ -1986,7 +1986,7 @@ mango:
               type: STRING
               value: 后台页脚备案号
         - id: "2026062902590000011"
-          version: 1
+          version: 2
           biz-key: system.config.admin-branding-contact
           name: 联系方式
           target-module: system
@@ -2017,7 +2017,7 @@ mango:
               value: admin-branding
             groupName:
               type: STRING
-              value: 后台品牌配置
+              value: 网站配置
             defaultValue:
               type: STRING
               value: ""

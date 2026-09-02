@@ -266,7 +266,7 @@ describe('admin-shell menu contract', () => {
         children: [
           {
             menuId: 'tenant',
-            menuName: '机构管理',
+            menuName: '租户管理',
             menuCode: 'tenant',
             parentId: 'system',
             menuType: MenuTypeEnum.MENU,
