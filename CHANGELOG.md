@@ -1,5 +1,63 @@
 # Mango Changelog
 
+## v2026.09.02-maven-1.0.49-api-resource-version-release - 2026-09-02
+
+Status: `PENDING`. This release candidate publishes the non-application Maven/docs batch at `1.0.49` and `@mango/cli@1.2.9`; immutable registry and consumer evidence will be recorded after publication.
+
+### Pull Requests
+
+- [PR #932](https://github.com/HardyDou/mango/pull/932) Fixed legacy runtime-prefix compatibility and bounded lifecycle/log reads. Packages: `@mango/cli@1.2.9`. Business Adaptation: existing local workspaces may retain one legacy leading `runtime` token; generated project contracts remain unchanged.
+- [PR #935](https://github.com/HardyDou/mango/pull/935) Fixed API Resource version propagation from annotations through runtime declarations. Packages: Mango Maven/docs `1.0.49` and `@mango/cli@1.2.9`. Business Adaptation: upgrade the exact Maven/CLI tuple and verify normal Resource reconciliation without hand-editing stored versions.
+
+### Fixed
+
+- Preserve explicit API Resource declaration versions so the version 2 public branding resource no longer triggers downgrade retries.
+- Bound CLI development log reads and accept the governed legacy runtime prefix.
+
+### Changed
+
+- Advance generated consumers to Maven `1.0.49` through CLI `1.2.9`; PMO and all other npm package versions remain unchanged.
+
+### Versions
+
+- Mango Maven non-application reactor and `io.mango:mango-docs-bundle`: `1.0.48` to `1.0.49` (machine-generated full coordinate closure).
+- `@mango/cli`: `1.2.8` to `1.2.9`; `@mango/pmo` remains `1.4.4`; all other npm packages remain unchanged.
+
+### Published Packages
+
+1. Publish the machine-generated non-application Maven/docs batch at `1.0.49`.
+2. Publish only `@mango/cli@1.2.9` from npm after Maven/docs verification.
+3. Create the immutable Tag and GitHub Release after dual-registry and pure-consumer verification.
+
+### Business Impact
+
+- Runtime API Resource reconciliation preserves version 2 for the public branding endpoint and converges without weakening downgrade protection.
+- Mango source development commands avoid whole-file reads of multi-gigabyte logs.
+- No migration, API path, access mode, permission, PMO change, business deployment, or production data mutation is included.
+
+### Upgrade Estimate
+
+- Audience: generated Mango applications, direct Authorization/System consumers, and Mango source contributors.
+- Engineering Effort: 15 to 30 minutes for generated consumers; up to 60 minutes for customized integrations.
+- Execution Window: 30 to 90 minutes including dependency upgrade, build, restart, and Resource verification.
+- Service Downtime: no framework-mandated downtime; use the consumer's normal restart window.
+- Rollback Effort: 15 to 30 minutes to restore Maven `1.0.48` and CLI `1.2.8`.
+- Assumptions: Java 21, Node `22.23.1`, configured registries, and normal Resource Registry access.
+
+### Upgrade Notes
+
+1. Upgrade Maven to `1.0.49` and CLI to `1.2.9`; retain PMO `1.4.4` and the existing frontend tuple.
+2. Build and restart, then verify `GET /system/admin-branding/public` remains Resource version 2 and eventual synchronization stabilizes.
+3. Do not overwrite `1.0.48`, lower stored resource versions, or bypass downgrade protection.
+
+### Verification
+
+- Run Issue #934 tests, changed-module Java quality gates, CLI regression tests, release plan/notes checks, registry doctor, sealed candidate consumers, and dual-registry back-checks.
+
+### Rollback
+
+- Restore Maven `1.0.48` and CLI `1.2.8`; never overwrite immutable coordinates and do not delete Resource Registry data.
+
 ## v2026.09.02-maven-1.0.48-identity-notice-file-preview-release - 2026-09-02
 
 Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `cd64e446dadc4d713c0b915c065393bf4acd135fa24323c0e568234ca52e8cd6` for plan `f225d819978529888e68d8b6901b83db50b000705cca6a77140c7d73c0d46b6e` and prepared candidate `6cceb721c724535cf1d99d9ddf6e1d13d93070f7739d67f717a9343d159804a2` is `COMPLETED`: all 192 Maven/docs coordinates and all 17 npm packages ending at `@mango/cli@1.2.8` match the sealed candidate in both publish and consume registries, the pure consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`.
