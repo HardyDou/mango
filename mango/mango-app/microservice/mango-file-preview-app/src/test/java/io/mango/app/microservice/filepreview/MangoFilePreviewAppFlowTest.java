@@ -14,14 +14,21 @@ import io.mango.file.api.query.FileRecordPageQuery;
 import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.file.api.vo.FilePreviewVO;
 import io.mango.file.api.vo.FileRecordVO;
+import io.mango.infra.kv.api.IKvStore;
+import io.mango.infra.kv.api.ITokenStore;
+import io.mango.infra.kv.core.memory.MemoryKvStore;
+import io.mango.infra.kv.core.support.PrefixedCapabilities;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpHeaders;
@@ -71,6 +78,9 @@ class MangoFilePreviewAppFlowTest {
     @LocalServerPort
     private int port;
 
+    @Autowired
+    private ApplicationContext applicationContext;
+
     private final TestRestTemplate restTemplate = new TestRestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -114,6 +124,49 @@ class MangoFilePreviewAppFlowTest {
 
         assertThat(entryResponse.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(sourceResponse.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    @DisplayName("file preview should use the infra-kv token store selected by the host application")
+    void filePreviewShouldUseInfraKvTokenStore() {
+        assertThat(applicationContext.getBean(IKvStore.class)).isInstanceOf(MemoryKvStore.class);
+        assertThat(applicationContext.getBean(ITokenStore.class)).isInstanceOf(PrefixedCapabilities.TokenStore.class);
+        assertThat(applicationContext.getBeanNamesForType(ITokenStore.class)).containsExactly("tokenStore");
+    }
+
+    @Test
+    @DisplayName("file preview should fail startup when the host does not provide ITokenStore")
+    void filePreviewShouldFailStartupWithoutInfraKvTokenStore() {
+        new WebApplicationContextRunner()
+                .withUserConfiguration(TestApp.class)
+                .withPropertyValues(
+                        "mango.file.enabled=false",
+                        "mango.file-preview.enabled=true",
+                        "mango.kv.store.type=memory",
+                        "mango.kv.capability.enabled=false",
+                        "mango.authorization.resource-access.enabled=false",
+                        "office.plugin.enabled=false",
+                        "trust.host=127.0.0.1,localhost",
+                        "spring.cloud.discovery.enabled=false",
+                        "spring.cloud.nacos.discovery.enabled=false",
+                        "spring.flyway.enabled=false",
+                        "spring.autoconfigure.exclude="
+                                + "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,"
+                                + "org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration,"
+                                + "org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration,"
+                                + "org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration,"
+                                + "org.mybatis.spring.boot.autoconfigure.MybatisAutoConfiguration,"
+                                + "io.mango.infra.persistence.starter.PersistenceFlywayAutoConfiguration,"
+                                + "io.mango.file.starter.remote.FileRemoteAutoConfiguration,"
+                                + "com.alibaba.druid.spring.boot3.autoconfigure.DruidDataSourceAutoConfigure,"
+                                + "org.redisson.spring.starter.RedissonAutoConfigurationV2")
+                .run(context -> {
+                    assertThat(context).hasFailed();
+                    assertThat(context.getStartupFailure())
+                            .hasRootCauseInstanceOf(org.springframework.beans.factory.NoSuchBeanDefinitionException.class)
+                            .rootCause()
+                            .hasMessageContaining(ITokenStore.class.getName());
+                });
     }
 
     private String baseUrl() {
