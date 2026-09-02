@@ -2,7 +2,7 @@
 
 ## v2026.09.02-maven-1.0.48-identity-notice-file-preview-release - 2026-09-02
 
-Status: `PENDING`. The release plan, sealed candidate, registry verification, Tag and GitHub Release are not complete until the canonical publication manifest reaches `COMPLETED` and the closeout PR records the verified evidence.
+Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `cd64e446dadc4d713c0b915c065393bf4acd135fa24323c0e568234ca52e8cd6` for plan `f225d819978529888e68d8b6901b83db50b000705cca6a77140c7d73c0d46b6e` and prepared candidate `6cceb721c724535cf1d99d9ddf6e1d13d93070f7739d67f717a9343d159804a2` is `COMPLETED`: all 192 Maven/docs coordinates and all 17 npm packages ending at `@mango/cli@1.2.8` match the sealed candidate in both publish and consume registries, the pure consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`.
 
 ### Pull Requests
 
