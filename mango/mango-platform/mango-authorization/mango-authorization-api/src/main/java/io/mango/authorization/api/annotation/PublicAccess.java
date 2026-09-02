@@ -16,6 +16,9 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface PublicAccess {
 
+    @AliasFor(annotation = ApiAccess.class, attribute = "version")
+    int version() default 1;
+
     @AliasFor(annotation = ApiAccess.class, attribute = "desc")
     String desc() default "";
 }

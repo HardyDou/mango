@@ -225,7 +225,9 @@ Controller 扫描、Gateway route 扫描和 `resources[]` 会被 Resource Provid
 | `@LoginApi` | LOGIN | 登录后访问，不要求权限码 |
 | `@PermissionAccess("code")` | PERMISSION | 登录后且具备指定权限码 |
 | `@InternalApi` | INTERNAL | 内部接口，外部 access 入口拒绝 |
-| `@ApiAccess` | 自定义 | 直接指定模式、权限码和描述 |
+| `@ApiAccess` | 自定义 | 直接指定模式、权限码、描述和 Resource 版本 |
+
+API Resource 版本默认是 `1`。当接口的资源内容或访问语义发生变更时，在 `@ApiAccess` 或组合注解上显式递增 `version`；运行时 MVC 扫描会将该版本透传到 Resource Registry。组合注解（如 `@PublicAccess(version = 2)`）与 `@ApiAccess(version = 2)` 语义一致。版本必须与同一资源的 `META-INF/mango/resources/*.yml` 静态声明保持一致，否则 Resource Registry 的版本保护会拒绝回退声明。
 
 ### 8.1 基础接口默认授权
 

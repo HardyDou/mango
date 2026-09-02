@@ -146,6 +146,7 @@ public class ApiAccessResourceDiscoverer {
         definition.setDescription(StringUtils.hasText(access.description())
                 ? access.description()
                 : handler.getBeanType().getSimpleName() + "#" + method.getName());
+        definition.setVersion(access.version());
         if (access.mode() == ApiResourceAccessMode.PERMISSION) {
             if (!StringUtils.hasText(access.permissionCode())) {
                 throw new IllegalStateException("@ApiAccess PERMISSION requires permission: "
@@ -178,9 +179,9 @@ public class ApiAccessResourceDiscoverer {
     private AccessDeclaration resolveAccess(Class<?> handlerType, Method handlerMethod) {
         ApiAccess apiAccess = findApiAccess(handlerType, handlerMethod);
         if (apiAccess != null) {
-            return new AccessDeclaration(apiAccess.mode(), apiAccess.permission(), apiAccess.desc());
+            return new AccessDeclaration(apiAccess.mode(), apiAccess.permission(), apiAccess.desc(), apiAccess.version());
         }
-        return new AccessDeclaration(properties.getDefaultAccessMode(), null, null);
+        return new AccessDeclaration(properties.getDefaultAccessMode(), null, null, 1);
     }
 
     private ApiAccess findApiAccess(Class<?> handlerType, Method handlerMethod) {
@@ -261,6 +262,7 @@ public class ApiAccessResourceDiscoverer {
     private record AccessDeclaration(
             ApiResourceAccessMode mode,
             String permissionCode,
-            String description) {
+            String description,
+            int version) {
     }
 }

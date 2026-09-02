@@ -20,7 +20,7 @@ public class ApiResourceDeclarationConverter {
     public ResourceDeclaration toDeclaration(ApiResourceRegisterCommand command, String sourceModuleCode) {
         ResourceDeclaration declaration = ResourceDeclarationBuilder.create(ResourceTypes.API_RESOURCE)
                 .id(stableResourceId(command))
-                .version(1)
+                .version(command.getVersion() == null ? 1 : command.getVersion())
                 .module(sourceModuleCode, command.getModuleName())
                 .bizKey(bizKey(command))
                 .name(command.getDescription())

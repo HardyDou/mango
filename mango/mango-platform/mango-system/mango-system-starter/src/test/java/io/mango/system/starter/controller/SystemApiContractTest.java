@@ -61,8 +61,10 @@ class SystemApiContractTest {
 
         assertThat(publicAccess).isNotNull();
         assertThat(publicAccess.desc()).isEqualTo("网站公共配置");
+        assertThat(publicAccess.version()).isEqualTo(2);
         assertThat(access).isNotNull();
         assertThat(access.mode()).isEqualTo(ApiResourceAccessMode.PUBLIC);
         assertThat(access.permission()).isEmpty();
+        assertThat(access.version()).isEqualTo(2);
     }
 }

@@ -27,6 +27,11 @@ public @interface ApiAccess {
     String permission() default "";
 
     /**
+     * API Resource 声明版本，内容或访问语义变化时递增。
+     */
+    int version() default 1;
+
+    /**
      * 资源描述。
      */
     String desc() default "";

@@ -13,6 +13,7 @@ import io.mango.authorization.api.query.ApiResourceAccessDecisionQuery;
 import io.mango.authorization.api.vo.ApiResourceAccessDecisionVO;
 import io.mango.authorization.api.vo.ApiResourceRegisterResultVO;
 import io.mango.common.result.R;
+import io.mango.resource.support.model.ResourceDeclaration;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.SpringBootConfiguration;
@@ -89,11 +90,18 @@ class ApiResourceSyncRunnerTest {
         assertEquals("GET:/resource-sync/public", publicResource.getResourceCode());
         assertEquals(ApiResourceAccessMode.PUBLIC, publicResource.getAccessMode());
         assertNull(publicResource.getPermissionCode());
+        assertEquals(1, publicResource.getVersion());
 
         ApiResourceRegisterCommand typeLevelPublicResource = find(resources, "GET", "/resource-sync/type-public");
         assertEquals("GET:/resource-sync/type-public", typeLevelPublicResource.getResourceCode());
         assertEquals(ApiResourceAccessMode.PUBLIC, typeLevelPublicResource.getAccessMode());
         assertNull(typeLevelPublicResource.getPermissionCode());
+
+        ApiResourceRegisterCommand versionedPublicResource = find(resources, "GET", "/resource-sync/versioned");
+        assertEquals(2, versionedPublicResource.getVersion());
+        ResourceDeclaration declaration = new ApiResourceDeclarationConverter()
+                .toDeclaration(versionedPublicResource, "authorization");
+        assertEquals(2, declaration.getVersion());
 
         ApiResourceRegisterCommand configuredPublicResource = find(resources, "GET", "/swagger-ui/**");
         assertEquals("mango-doc", configuredPublicResource.getModuleName());
@@ -196,6 +204,12 @@ class ApiResourceSyncRunnerTest {
         @PublicAccess
         @GetMapping("/resource-sync/public")
         String publicResource() {
+            return "ok";
+        }
+
+        @PublicAccess(version = 2)
+        @GetMapping("/resource-sync/versioned")
+        String versionedPublicResource() {
             return "ok";
         }
 
