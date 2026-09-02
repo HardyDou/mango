@@ -31,6 +31,7 @@ import { resolveHealthPollIntervalMs } from './dev-health-policy.mjs';
 import { shouldRunDevInstall } from './dev-install-policy.mjs';
 import { buildSpringBootReactorArgs, resolveSpringBootMavenReactor } from './dev-maven-reactor.mjs';
 import { injectStableBootstrapIdentity, readStableBootstrapReceipt } from './dev-bootstrap-receipt.mjs';
+import { getLogFileSize, readLogSuffixSince, tailLogFile } from './dev-log-reader.mjs';
 import {
   buildWorkspaceMavenRevisionQualifier,
   isMavenCommand,
@@ -2359,7 +2360,7 @@ function prepareManagedMangoLifecycle(context, appName, app, logPath) {
   const highestGeneration = Math.max(control.stableGeneration, control.candidateGeneration);
   let generation = control.stableGeneration;
   if (control.stableGeneration > 0) {
-    const verifyLogOffset = existsSync(logPath) ? readFileSync(logPath, 'utf8').length : 0;
+    const verifyLogOffset = getLogFileSize(logPath);
     const verifyResult = runManagedMangoLifecycleCommand(
       app,
       buildManagedLifecycleSpringArgs(app.springArgs, 'bootstrap', lifecycle, generation, 'verify'),
@@ -2367,7 +2368,7 @@ function prepareManagedMangoLifecycle(context, appName, app, logPath) {
       `${appName}: verifying bootstrap generation ${generation}`,
     );
     if (verifyResult.status !== 0) {
-      const failure = readFileSync(logPath, 'utf8').slice(verifyLogOffset);
+      const failure = readLogSuffixSince(logPath, verifyLogOffset);
       if (!failure.includes('BOOTSTRAP_FINGERPRINT_MISMATCH')) {
         fail(`${appName}: bootstrap verify failed, see ${relativeOrAbsolute(process.cwd(), logPath)}`);
       }
@@ -2404,7 +2405,7 @@ function assertManagedLifecycleWorkspaceDatabase(context, appName, app) {
 }
 
 function runColdBootstrap(appName, app, lifecycle, generation, logPath, allowFingerprintMismatch) {
-  const logOffset = existsSync(logPath) ? readFileSync(logPath, 'utf8').length : 0;
+  const logOffset = getLogFileSize(logPath);
   const result = runManagedMangoLifecycleCommand(
     app,
     buildManagedLifecycleSpringArgs(app.springArgs, 'bootstrap', lifecycle, generation, 'apply'),
@@ -2414,7 +2415,7 @@ function runColdBootstrap(appName, app, lifecycle, generation, logPath, allowFin
   if (result.status === 0) {
     return true;
   }
-  const failure = readFileSync(logPath, 'utf8').slice(logOffset);
+  const failure = readLogSuffixSince(logPath, logOffset);
   if (allowFingerprintMismatch && failure.includes('BOOTSTRAP_FINGERPRINT_MISMATCH')) {
     return false;
   }
@@ -2584,7 +2585,7 @@ async function waitForDevApp(context, name, app) {
 function failWithDevAppLog(context, name, message) {
   const pidInfo = readPidFile(context, name);
   if (pidInfo?.logPath) {
-    process.stderr.write(`${message}. Last log lines:\n${tailFile(pidInfo.logPath, 80)}\n`);
+    process.stderr.write(`${message}. Last log lines:\n${tailLogFile(pidInfo.logPath, 80)}\n`);
   }
   fail(message);
 }
@@ -2666,7 +2667,7 @@ function printDevWorkspaceLogs(context, argv) {
   if (!existsSync(logPath)) {
     fail(`log file not found: ${relativeOrAbsolute(process.cwd(), logPath)}`);
   }
-  process.stdout.write(tailFile(logPath, 200));
+  process.stdout.write(tailLogFile(logPath, 200));
 }
 
 function prepareFrontendWorkspace(context, { checkOnly }) {
@@ -2990,8 +2991,21 @@ function resolveDevCommand(context, app, vars) {
     const configuredSpringArgs = (app.args || []).map((arg) => interpolateValue(String(arg), vars)).filter(Boolean);
     const lifecycleManaged = app.mangoLifecycle === true || usesMangoApplication(app);
     const processMode = app.processMode || 'runtime';
-    const resolvedArgs = (app.args || []).map((arg) => interpolateValue(String(arg), vars)).filter(Boolean);
-    const modeArguments = configuredSpringArgs
+    let strippedLegacyModePrefix = false;
+    const normalizedSpringArgs = configuredSpringArgs.map((arg) => {
+      const tokens = arg.trim().split(/\s+/u);
+      if (
+        !strippedLegacyModePrefix &&
+        tokens.length > 1 &&
+        tokens[0] === processMode &&
+        isMangoLifecycleMode(tokens[0])
+      ) {
+        strippedLegacyModePrefix = true;
+        return tokens.slice(1).join(' ');
+      }
+      return arg;
+    });
+    const modeArguments = normalizedSpringArgs
       .flatMap((arg) => arg.trim().split(/\s+/u))
       .filter((arg) => arg === 'bootstrap' || arg === 'runtime');
     if (modeArguments.length > 0) {
@@ -3000,7 +3014,7 @@ function resolveDevCommand(context, app, vars) {
           `remove ${modeArguments.join(', ')} from app.args`,
       );
     }
-    const springArgs = [processMode, ...configuredSpringArgs];
+    const springArgs = [processMode, ...normalizedSpringArgs];
     return {
       command: 'mvn',
       args: ['-f', pom, `-Dspring-boot.run.arguments=${springArgs.join(' ')}`, goal],
@@ -3482,14 +3496,6 @@ function readMangoVersionFromPom(projectDir) {
     }
   }
   return '';
-}
-
-function tailFile(path, lineCount) {
-  if (!existsSync(path)) {
-    return '';
-  }
-  const lines = readFileSync(path, 'utf8').split(/\r?\n/);
-  return `${lines.slice(Math.max(0, lines.length - lineCount)).join('\n')}\n`;
 }
 
 const PMO_LOCK_RELATIVE_PATH = 'business-pmo/pmo-lock.json';
