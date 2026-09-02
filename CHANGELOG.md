@@ -2,7 +2,7 @@
 
 ## v2026.09.02-maven-1.0.50-identity-resource-determinism-release - 2026-09-02
 
-Status: `PENDING`. This release candidate publishes the 192-coordinate non-application Maven/docs batch at `1.0.50` and `@mango/cli@1.2.10`; immutable registry, consumer, Tag, and GitHub Release evidence will be recorded after publication.
+Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `6abfdf0e7ebf8e6058aceff5777688b0d99ee3de1415caca9678e9187912b03c` for plan `417bf4241f42a1ec5fab818de531e423d02d693e25615d649973d376fbe6c7ed` and prepared candidate `cf34a2d9c33c08a406240cc54f1fabc5839226f80fab9da0e2851ea4f474f502` is `COMPLETED`: all 192 Maven/docs coordinates at `1.0.50` and `@mango/cli@1.2.10` match the sealed candidate in both publish and consume registries, the pure consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`.
 
 ### Pull Requests
 
