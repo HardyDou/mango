@@ -113,7 +113,9 @@ test.describe('用户菜单导航 E2E', () => {
 
     const menuBody = await (await menuResponsePromise).json();
     const systemMenu = menuBody.data.find((item: { menuCode: string }) => item.menuCode === 'system');
-    expect(systemMenu.children.find((item: { menuCode: string }) => item.menuCode === 'system:admin-branding')).toMatchObject({
+    expect(
+      systemMenu.children.find((item: { menuCode: string }) => item.menuCode === 'system:admin-branding'),
+    ).toMatchObject({
       menuName: '网站配置',
       path: '/system/admin-branding',
     });

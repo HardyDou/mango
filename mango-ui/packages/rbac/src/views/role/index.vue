@@ -125,8 +125,8 @@
       </div>
       <el-tree
         ref="menuTreeRef"
-        data-surface="role.menu-assignment"
         v-loading="assignLoading"
+        data-surface="role.menu-assignment"
         :data="assignableMenus"
         node-key="menuId"
         show-checkbox

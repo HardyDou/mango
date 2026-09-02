@@ -16,18 +16,18 @@
 
 ## 2. 功能清单
 
-| 能力               | 使用入口                                                      | 后端依赖                              |
-| ------------------ | ------------------------------------------------------------- | ------------------------------------- |
-| 字典类型和字典数据 | `DictView`、`dictTypeApi`、`dictDataApi`                      | `mango-system`                        |
-| 系统配置           | `ConfigView`、`SystemConfigPanel`、`configApi`、`paramApi`    | `mango-system`                        |
-| 网站配置           | `AdminBrandingView`、`adminBrandingApi`                       | `mango-system`、`@mango/file`         |
-| 租户               | `TenantView`、`tenantApi`                                     | `mango-system`、`mango-authorization` |
-| 公共路径           | `PublicPathView`、public path API                             | BFF permission / authorization        |
-| 地区               | `AreaView`、`areaApi`                                         | `mango-system`                        |
-| 业务域             | `DomainView`、`domainApi`、`DomainSelector`、`DomainSideTree` | `mango-domain`                        |
+| 能力               | 使用入口                                                                  | 后端依赖                              |
+| ------------------ | ------------------------------------------------------------------------- | ------------------------------------- |
+| 字典类型和字典数据 | `DictView`、`dictTypeApi`、`dictDataApi`                                  | `mango-system`                        |
+| 系统配置           | `ConfigView`、`SystemConfigPanel`、`configApi`、`paramApi`                | `mango-system`                        |
+| 网站配置           | `AdminBrandingView`、`adminBrandingApi`                                   | `mango-system`、`@mango/file`         |
+| 租户               | `TenantView`、`tenantApi`                                                 | `mango-system`、`mango-authorization` |
+| 公共路径           | `PublicPathView`、public path API                                         | BFF permission / authorization        |
+| 地区               | `AreaView`、`areaApi`                                                     | `mango-system`                        |
+| 业务域             | `DomainView`、`domainApi`、`DomainSelector`、`DomainSideTree`             | `mango-domain`                        |
 | 登录日志和操作日志 | `LoginLogView`、个人中心“登录日志”、log API；日期-only 范围会补齐整日边界 | `mango-system`                        |
-| 系统事件 outbox    | `SystemEventView`、`systemEventApi`                           | `mango-infra-event`                   |
-| 参与人选择         | `ParticipantSelector`                                         | identity、org、authorization          |
+| 系统事件 outbox    | `SystemEventView`、`systemEventApi`                                       | `mango-infra-event`                   |
+| 参与人选择         | `ParticipantSelector`                                                     | identity、org、authorization          |
 
 ## 3. 接入方式
 
@@ -127,18 +127,18 @@ import '@mango/system/style.css';
 
 页面导出：
 
-| 导出                | 默认页面 key                  | 管理能力                                                              |
-| ------------------- | ----------------------------- | --------------------------------------------------------------------- |
-| `DictView`          | `system/dict/index`           | 字典类型和字典数据。                                                  |
-| `OperationLogView`  | `system/operation-log/index`  | 操作日志查询和清理。                                                  |
-| `LoginLogView`      | `system/login-log/index`      | 登录日志、统计和清理。                                                |
-| `TenantView`        | `system/tenant/index`         | 租户维护、状态切换、菜单包授权。                                      |
-| `ConfigView`        | `system/config/index`         | 系统配置管理和分组查询。                                              |
+| 导出                | 默认页面 key                  | 管理能力                                                            |
+| ------------------- | ----------------------------- | ------------------------------------------------------------------- |
+| `DictView`          | `system/dict/index`           | 字典类型和字典数据。                                                |
+| `OperationLogView`  | `system/operation-log/index`  | 操作日志查询和清理。                                                |
+| `LoginLogView`      | `system/login-log/index`      | 登录日志、统计和清理。                                              |
+| `TenantView`        | `system/tenant/index`         | 租户维护、状态切换、菜单包授权。                                    |
+| `ConfigView`        | `system/config/index`         | 系统配置管理和分组查询。                                            |
 | `AdminBrandingView` | `system/admin-branding/index` | 网站登录页、后台框架展开 Logo、折叠 Logo、favicon、页脚等网站配置。 |
-| `PublicPathView`    | `system/public-path/index`    | 公共路径维护。                                                        |
-| `AreaView`          | `system/area/index`           | 地区树管理。                                                          |
-| `DomainView`        | `system/domain/index`         | 业务域树管理。                                                        |
-| `SystemEventView`   | `system/event/index`          | 事件 outbox 查询、详情和重试。                                        |
+| `PublicPathView`    | `system/public-path/index`    | 公共路径维护。                                                      |
+| `AreaView`          | `system/area/index`           | 地区树管理。                                                        |
+| `DomainView`        | `system/domain/index`         | 业务域树管理。                                                      |
+| `SystemEventView`   | `system/event/index`          | 事件 outbox 查询、详情和重试。                                      |
 
 组件导出：
 
@@ -169,14 +169,14 @@ import '@mango/system/style.css';
 
 常用返回字段：
 
-| 数据         | 字段                                                                                                                                                               |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 字典选项     | `label`、`value`、`sort`、`status`                                                                                                                                 |
-| 系统配置     | `id`、`configKey`、`configValue`、`configName`、`domainCode`、`valueType`、`options`、`editable`、`status`                                                         |
+| 数据     | 字段                                                                                                                                                               |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 字典选项 | `label`、`value`、`sort`、`status`                                                                                                                                 |
+| 系统配置 | `id`、`configKey`、`configValue`、`configName`、`domainCode`、`valueType`、`options`、`editable`、`status`                                                         |
 | 网站配置 | `title`、`shortTitle`、`subtitle`、`loginTitle`、`loginSubtitle`、`logoFile`、`logoIconFile`、`faviconFile`、`loginImageFile`、`footerCopyright`、`icp`、`contact` |
-| 租户         | `id`、`tenantCode`、`tenantName`、`status`                                                                                                                         |
-| 业务域       | `id`、`domainCode`、`domainShortCode`、`domainName`、`children`                                                                                                    |
-| 系统事件     | `messageId`、`eventType`、`status`、`retryCount`、`createTime`                                                                                                     |
+| 租户     | `id`、`tenantCode`、`tenantName`、`status`                                                                                                                         |
+| 业务域   | `id`、`domainCode`、`domainShortCode`、`domainName`、`children`                                                                                                    |
+| 系统事件 | `messageId`、`eventType`、`status`、`retryCount`、`createTime`                                                                                                     |
 
 ## 6. 数据与初始化
 

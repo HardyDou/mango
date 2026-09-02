@@ -1,9 +1,5 @@
 <template>
-  <div
-    class="admin-branding-page"
-    data-page="system.admin-branding"
-    :data-state="loading ? 'loading' : 'ready'"
-  >
+  <div class="admin-branding-page" data-page="system.admin-branding" :data-state="loading ? 'loading' : 'ready'">
     <el-card class="admin-branding-card" shadow="never">
       <template #header>
         <div class="admin-branding-header">

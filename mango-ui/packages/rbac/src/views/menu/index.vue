@@ -666,11 +666,13 @@ onMounted(() => {
 .menu-container {
   padding: 0;
 }
+
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
+
 .group-tabs {
   display: flex;
   align-items: center;
