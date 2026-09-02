@@ -214,7 +214,9 @@ CLI 从当前目录向上查找 `mango.dev.json`。本地工作区分配事实�
 - 检测到多个后端或前端 app 时，`groups.backend`、`groups.frontend` 会包含全部 app，`groups.default` 只取第一个后端和第一个前端，并在计划中提示人工确认。
 - 已存在业务自有 `mango.dev.json` 时不会覆盖；需要本机临时改路径时使用 `.mango/dev-workspace.local.json`。
 
-新模板和自动生成的 Spring Boot 清单把 `runtime` 作为首个应用参数。`mango dev start` 发现后端源码使用 `MangoApplication.run`（或 app 显式配置 `mangoLifecycle: true`）时，会在 worktree 独立的 `mango_dev_*` 数据库上编排本地生命周期：空库先执行 generation 1 的 `bootstrap apply --mango.bootstrap.strategy=cold`；已有稳定 generation 先执行 `bootstrap verify`，fingerprint 未变化时直接复用，发生 `BOOTSTRAP_FINGERPRINT_MISMATCH` 时使用下一 generation 重新 cold apply；最后以相同 environment、release、revision 和 generation 启动 `runtime`。多后端项目按 `workspaceId + appName` 隔离 lifecycle key，避免共享数据库时串用回执。自动 bootstrap 前还会校验已解析的 MySQL datasource 必须明确指向当前 `mango_dev_*` 数据库，缺失或不一致时直接拒绝，避免误操作其它数据库。
+新模板和自动生成的 Spring Boot 清单通过 `processMode` 声明 `runtime`。`mango dev start` 发现后端源码使用 `MangoApplication.run`（或 app 显式配置 `mangoLifecycle: true`）时，会在 worktree 独立的 `mango_dev_*` 数据库上编排本地生命周期：空库先执行 generation 1 的 `bootstrap apply --mango.bootstrap.strategy=cold`；已有稳定 generation 先执行 `bootstrap verify`，fingerprint 未变化时直接复用，发生 `BOOTSTRAP_FINGERPRINT_MISMATCH` 时使用下一 generation 重新 cold apply；最后以相同 environment、release、revision 和 generation 启动 `runtime`。多后端项目按 `workspaceId + appName` 隔离 lifecycle key，避免共享数据库时串用回执。自动 bootstrap 前还会校验已解析的 MySQL datasource 必须明确指向当前 `mango_dev_*` 数据库，缺失或不一致时直接拒绝，避免误操作其它数据库。
+
+旧 workspace 可能在 `MANGO_BACKEND_ADDITIONAL_ARGS` 的同一参数字符串开头重复写入与 `processMode` 一致的 `runtime`。CLI 会兼容移除这一个旧前缀并保留后续实际参数；独立的 `runtime`、冲突的 `bootstrap`、参数中其它位置或多次出现的模式仍会失败。新配置只通过 `processMode` 声明模式，不应在 `app.args` 或额外参数中重复填写。
 
 存量业务自有 `mango.dev.json` 不需要被 CLI 覆盖，源码识别仍会生效。仍使用 `SpringApplication.run` 的兼容项目不会自动执行 bootstrap，只按原清单启动；迁移到正式生命周期时应先确保聚合 starter 包含 bootstrap starter，再把应用入口改为 `MangoApplication.run`。这套自动编排只属于本地 `mango dev`，生产部署仍必须显式执行发布批准的 bootstrap/runtime 流程。
 
@@ -267,7 +269,7 @@ CLI 从当前目录向上查找 `mango.dev.json`。本地工作区分配事实�
 | `.mango` 下的 `run`、`logs`、`<app>.log`  | 安装和启动输出                           | `mango dev start` | `mango dev logs <app>` 和失败诊断 |
 | `.mango/run/state.json`                   | 预留状态文件路径                         | context 初始化    | 后续状态扩展                      |
 
-`mango dev start` 执行前置安装命令时会把 stdout/stderr 直接追加到对应 app 日志，不在 CLI 进程内缓存完整输出。大型 Maven Reactor 即使产生超过 Node.js `spawnSync` 默认缓冲上限的日志，也不会因此被误判为安装失败；诊断仍统一使用 `mango dev logs <app>` 或对应 app 日志文件。
+`mango dev start` 执行前置安装命令时会把 stdout/stderr 直接追加到对应 app 日志，不在 CLI 进程内缓存完整输出。生命周期失败识别和 `mango dev logs <app>` 只读取日志末尾最多 1 MiB，不会把数 GB 历史日志整体载入内存；大型 Maven Reactor 日志不会因此拖垮启动检查。完整历史日志仍保留在对应 app 日志文件中。
 
 `mango dev status`、`mango dev stop` 和 `mango dev restart` 先通过内核 PID 探测判断进程是否存在，再把 `ps` 作为可选的僵尸进程补充检查。因此业务开发镜像或精简容器没有安装 `ps` 时，本地进程状态、停止和重启仍可使用；安装了 `ps` 的环境继续保留僵尸进程识别。
 

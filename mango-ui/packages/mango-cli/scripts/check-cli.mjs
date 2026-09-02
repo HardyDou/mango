@@ -2183,6 +2183,35 @@ function assertSpringBootProcessModeContract(projectRoot) {
       'conflicting bootstrap process argument',
       'process mode must be declared only through processMode',
     );
+
+    manifest.apps[backendName].args[0] = 'bootstrap --mango.resource.registry.demo-enabled=true';
+    writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+    assertCommandFails(
+      [cli, 'plan', backendName],
+      projectRoot,
+      'conflicting bootstrap process prefix',
+      'process mode must be declared only through processMode',
+    );
+
+    manifest.apps[backendName].args[0] = 'runtime --mango.resource.registry.demo-enabled=true';
+    writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+    const compatibleLegacyPlan = assertCommandOk(
+      [cli, 'plan', backendName],
+      projectRoot,
+      'matching legacy runtime prefix',
+    );
+    const springArgumentsLine = compatibleLegacyPlan.stdout
+      .split(/\r?\n/u)
+      .find((line) => line.includes('-Dspring-boot.run.arguments='));
+    if (!springArgumentsLine) {
+      throw new Error(`legacy runtime plan did not contain Spring Boot arguments:\n${compatibleLegacyPlan.stdout}`);
+    }
+    if (!springArgumentsLine.includes('=runtime --mango.resource.registry.demo-enabled=true')) {
+      throw new Error(`legacy runtime prefix or following flag was not normalized:\n${springArgumentsLine}`);
+    }
+    if ((springArgumentsLine.match(/\bruntime\b/gu) || []).length !== 1) {
+      throw new Error(`legacy runtime plan should contain exactly one runtime mode:\n${springArgumentsLine}`);
+    }
   } finally {
     writeFileSync(manifestPath, original);
   }
