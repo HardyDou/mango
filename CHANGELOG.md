@@ -2,7 +2,7 @@
 
 ## v2026.09.01-maven-1.0.47-resource-user-management-release - 2026-09-01
 
-Status: `PENDING`. The release plan, sealed candidate, registry verification, Tag and GitHub Release are not complete until the canonical publication manifest reaches `COMPLETED` and the closeout PR records the verified evidence.
+Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `c9482a03b27014cf769d6cba312c874a05420140a898b4daaaf5d3cc29f34a0c` for plan `e5a48afffa386829ef29503faab015bebc1ea0339deb91b7c4f37806261a14a9` and prepared candidate `751112774461f49c11e7f4f45a963515dae836b1a341f55dcbe77facb5328f5c` is `COMPLETED`: all 192 Maven/docs coordinates and all 16 npm packages ending at `@mango/cli@1.2.7` match the sealed candidate in both publish and consume registries, the pure consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`.
 
 ### Pull Requests
 
