@@ -2,7 +2,7 @@
 
 ## v2026.09.02-maven-1.0.49-api-resource-version-release - 2026-09-02
 
-Status: `PENDING`. This release candidate publishes the non-application Maven/docs batch at `1.0.49` and `@mango/cli@1.2.9`; immutable registry and consumer evidence will be recorded after publication.
+Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `4a432b876411ead5d36e6be9594ac198bee30b92fdfbb2489e0b8f2d11cfdcf9` for plan `d2d035ad0500b9ba67c54a69d5e466d585d33d2d0287101df0b27420705fb293` and prepared candidate `bf58cfdac67949323ce50eb61dde3c8b92df496e64a4331840a564ffbc51420d` is `COMPLETED`: all 192 Maven/docs coordinates at `1.0.49` and `@mango/cli@1.2.9` match the sealed candidate in both publish and consume registries, the pure consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`.
 
 ### Pull Requests
 
