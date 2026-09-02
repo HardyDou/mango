@@ -1,5 +1,64 @@
 # Mango Changelog
 
+## v2026.09.02-maven-1.0.50-identity-resource-determinism-release - 2026-09-02
+
+Status: `PENDING`. This release candidate publishes the 192-coordinate non-application Maven/docs batch at `1.0.50` and `@mango/cli@1.2.10`; immutable registry, consumer, Tag, and GitHub Release evidence will be recorded after publication.
+
+### Pull Requests
+
+- [PR #939](https://github.com/HardyDou/mango/pull/939) Fixed Identity Resource initialization so lifecycle IDs and timestamps remain deterministic across repeated BSQL builds and new production databases. Packages: Mango Maven/docs `1.0.50` and generated lock `@mango/cli@1.2.10`. Business Adaptation: declare stable user/member IDs plus fixed `initializedAt`, regenerate BSQL twice, and compare clean-database Identity snapshots.
+
+### Fixed
+
+- Derive the initial tenant-member lifecycle-log ID from stable tenant/member/event inputs rather than a runtime-generated ID.
+- Use fixed declaration time for initial user, membership, and lifecycle rows instead of the build clock.
+
+### Changed
+
+- Require valid `initializedAt` on `IDENTITY_USER` declarations and fail before writes when the deterministic input contract is incomplete.
+- Advance generated consumers to Maven `1.0.50` through CLI `1.2.10`; PMO `1.4.4` and all other npm packages remain unchanged.
+
+### Versions
+
+- Mango Maven non-application reactor and `io.mango:mango-docs-bundle`: `1.0.49` to `1.0.50` (192 machine-generated coordinates).
+- `@mango/cli`: `1.2.9` to `1.2.10`; `@mango/pmo` remains `1.4.4`; all other npm packages remain unchanged.
+
+### Published Packages
+
+1. Publish the 192-coordinate non-application Maven/docs batch at `1.0.50`.
+2. Publish only `@mango/cli@1.2.10` from npm after Maven/docs verification.
+3. Create the immutable Tag and GitHub Release after dual-registry and pure-consumer verification.
+
+### Business Impact
+
+- Identical Identity Resource declarations now produce identical BSQL user, tenant-member, and lifecycle rows across different build times and new databases.
+- Invalid deterministic inputs and stable-ID collisions fail before partial writes; normal API create/remove/restore paths retain runtime IDs and real event times.
+- No schema migration, API path, permission, tenant boundary, business deployment, or historical data rewrite is included.
+
+### Upgrade Estimate
+
+- Audience: generated applications and direct consumers that package `IDENTITY_USER` Resource declarations into BSQL.
+- Engineering Effort: 30 to 60 minutes for generated consumers; 1 to 2 hours for customized declarations or BSQL pipelines.
+- Execution Window: 45 to 120 minutes including upgrade, two BSQL generations, snapshot comparison, clean startup, and smoke verification.
+- Service Downtime: no framework-mandated downtime; use the consumer's normal deployment and restart window.
+- Rollback Effort: 15 to 30 minutes to restore Maven `1.0.49` and CLI `1.2.9` and regenerate the prior BSQL artifact.
+- Assumptions: Java 21, Node `22.23.1`, configured registries, stable declared IDs, and a fixed business-approved initialization timestamp.
+
+### Upgrade Notes
+
+1. Upgrade Maven to `1.0.50` and CLI to `1.2.10`; retain PMO `1.4.4` and the existing frontend tuple.
+2. Give every `IDENTITY_USER` declaration stable `id`, stable `memberId`, and fixed `initializedAt` in `DATETIME` format.
+3. Generate BSQL twice from the same source, load separate empty databases, and compare canonical Identity snapshots before production use.
+4. Do not rewrite historical lifecycle IDs/timestamps or change normal runtime lifecycle API behavior.
+
+### Verification
+
+- Run Issue #938 integration and module verify suites, changed-module quality and documentation gates, deterministic two-build database comparison, release plan/notes checks, registry doctor, sealed consumers, and dual-registry back-checks.
+
+### Rollback
+
+- Restore Maven `1.0.49` and CLI `1.2.9`, then regenerate the previous BSQL artifact; never overwrite immutable coordinates or rewrite lifecycle audit data.
+
 ## v2026.09.02-maven-1.0.49-api-resource-version-release - 2026-09-02
 
 Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `4a432b876411ead5d36e6be9594ac198bee30b92fdfbb2489e0b8f2d11cfdcf9` for plan `d2d035ad0500b9ba67c54a69d5e466d585d33d2d0287101df0b27420705fb293` and prepared candidate `bf58cfdac67949323ce50eb61dde3c8b92df496e64a4331840a564ffbc51420d` is `COMPLETED`: all 192 Maven/docs coordinates at `1.0.49` and `@mango/cli@1.2.9` match the sealed candidate in both publish and consume registries, the pure consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`.
