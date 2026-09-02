@@ -1,5 +1,55 @@
 # @mango/cli Changelog
 
+## 1.2.9 - 2026-09-02
+
+### Pull Requests
+
+- [PR #932](https://github.com/HardyDou/mango/pull/932) Fixed legacy runtime-prefix compatibility and bounded lifecycle/log reads. Packages: `@mango/cli@1.2.9`. Business Adaptation: existing local workspaces may retain one legacy leading `runtime` token and large historical logs no longer need cleanup before startup diagnosis.
+- [PR #935](https://github.com/HardyDou/mango/pull/935) Fixed API Resource version propagation. Packages: Mango Maven/docs `1.0.49` and generated lock `@mango/cli@1.2.9`. Business Adaptation: upgrade Maven and CLI together and verify Resource synchronization stabilizes.
+
+### Fixed
+
+- Accept the governed legacy runtime prefix and limit lifecycle/log reads to the final 1 MiB.
+- Carry the API Resource version propagation fix into generated consumer Maven locks.
+
+### Changed
+
+- Lock generated projects to Mango Maven `1.0.49`; PMO `1.4.4` and all other npm package versions remain unchanged.
+
+### Versions
+
+- CLI: `1.2.8` to `1.2.9`; Maven: `1.0.48` to `1.0.49`; PMO remains `1.4.4`.
+
+### Published Packages
+
+- Publish Maven/docs `1.0.49`, then only `@mango/cli@1.2.9` from npm.
+
+### Business Impact
+
+- Generated consumers receive the API Resource declaration-version fix, while source contributors get safer legacy startup and bounded log diagnostics.
+
+### Upgrade Estimate
+
+- Audience: generated applications, direct Authorization/System consumers, and Mango source contributors.
+- Engineering Effort: 15 to 30 minutes for generated consumers; up to 60 minutes for customized integrations.
+- Execution Window: 30 to 90 minutes including clean build, restart, and Resource verification.
+- Service Downtime: no framework-mandated downtime.
+- Rollback Effort: 15 to 30 minutes to restore CLI `1.2.8` and Maven `1.0.48`.
+- Assumptions: Java 21, Node `22.23.1`, configured registries, and normal Resource Registry access.
+
+### Upgrade Notes
+
+1. Upgrade CLI to `1.2.9` and Maven to `1.0.49`; retain PMO `1.4.4` and the current frontend tuple.
+2. Verify local startup/log commands and version 2 public branding Resource reconciliation.
+
+### Verification
+
+- Verify CLI tests, Maven Issue #934 tests, sealed artifacts in both registry roles, and a clean generated consumer.
+
+### Rollback
+
+- Restore CLI `1.2.8` and Maven `1.0.48`; never overwrite immutable coordinates.
+
 ## 1.2.8 - 2026-09-02
 
 ### Pull Requests
