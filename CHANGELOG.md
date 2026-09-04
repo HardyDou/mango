@@ -2,7 +2,7 @@
 
 ## v2026.09.04-maven-1.0.51-resource-finalize-runtime-mutations-release - 2026-09-04
 
-Status: `PENDING`. Release plan `114e3194ecc2c7a4c7836a507944c174414ddea94187e43612de91eb91d0fead` targets Mango Maven/docs `1.0.51` and the generated npm closure through `@mango/cli@1.2.11`.
+Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `ebbb1d84f8613cf85d70a5db824c0667b3668c1419968684d1d9d230cc22707a` for release plan `bb9e5a6ccc02f14e002f98ead6a7f7f6eee79a33141c629c453d1c4f75e6a8db` and prepared candidate `1e41f791986d6a5c56712a6d370a4d8f6ae9bde070e1680fd344854f881aca57` is `COMPLETED`: all 192 Maven/docs coordinates at `1.0.51` and 16 npm packages ending at `@mango/cli@1.2.11` match the sealed candidate in both publish and consume registries, the pure consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`.
 
 ### Pull Requests
 
