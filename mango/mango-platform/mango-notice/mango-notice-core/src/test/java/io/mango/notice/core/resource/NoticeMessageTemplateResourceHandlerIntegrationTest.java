@@ -1,6 +1,7 @@
 package io.mango.notice.core.resource;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 
@@ -177,6 +178,100 @@ class NoticeMessageTemplateResourceHandlerIntegrationTest {
     }
 
     @Test
+    void sparseDisableUsesRegistryTargetAndPreservesRuntimeChanges() throws Exception {
+        ResourceDeclaration declaration = messageTemplateDeclaration("声明标题", true);
+        handler.upsert(declaration);
+        execute("update notice_business_channel_template set template_name = '运行时名称', "
+                + "title_template = '运行时标题', content_template = '运行时内容' where id = 2060000000000014003");
+
+        handler.disable(sparseTarget(2060000000000014003L, "notice_business_channel_template", "1"));
+
+        assertThat(booleanValue("notice_business_channel_template", "enabled", "id = 2060000000000014003"))
+                .isFalse();
+        assertThat(stringValue("notice_business_channel_template", "template_name", "id = 2060000000000014003"))
+                .isEqualTo("运行时名称");
+        assertThat(stringValue("notice_business_channel_template", "title_template", "id = 2060000000000014003"))
+                .isEqualTo("运行时标题");
+        assertThat(stringValue("notice_business_channel_template", "content_template", "id = 2060000000000014003"))
+                .isEqualTo("运行时内容");
+    }
+
+    @Test
+    void sparseDeleteUsesRegistryTargetAndKeepsSharedRecords() throws Exception {
+        ResourceDeclaration site = messageTemplateDeclaration("系统标题", true);
+        ResourceDeclaration email = messageTemplateDeclaration("邮件标题", true);
+        email.setBizKey("job.message.job-instance-failed-email");
+        field(email, "channelTemplateId", ResourceFieldType.LONG, 2060000000000014004L);
+        field(email, "channelType", ResourceFieldType.STRING, "EMAIL");
+        field(email, "templateName", ResourceFieldType.STRING, "邮件模板");
+        handler.upsert(site);
+        handler.upsert(email);
+
+        handler.delete(sparseTarget(2060000000000014004L, "notice_business_channel_template", "1"));
+
+        assertThat(count("notice_business_channel_template")).isOne();
+        assertThat(count("notice_business_config_version")).isOne();
+        assertThat(count("notice_business_type")).isOne();
+        assertThat(stringValue("notice_business_channel_template", "channel_type",
+                "id = 2060000000000014003")).isEqualTo("SITE");
+    }
+
+    @Test
+    void sparseLifecycleIsIdempotentWhenTargetWasDeleted() throws Exception {
+        handler.upsert(messageTemplateDeclaration("系统标题", true));
+        execute("delete from notice_business_channel_template where id = 2060000000000014003");
+
+        handler.disable(sparseTarget(2060000000000014003L, "notice_business_channel_template", "1"));
+        handler.delete(sparseTarget(2060000000000014003L, "notice_business_channel_template", "1"));
+
+        assertThat(count("notice_business_channel_template")).isZero();
+        assertThat(count("notice_business_config_version")).isOne();
+        assertThat(count("notice_business_type")).isOne();
+    }
+
+    @Test
+    void sparseLifecycleRejectsUnexpectedTargetTable() throws Exception {
+        handler.upsert(messageTemplateDeclaration("系统标题", true));
+
+        assertThatThrownBy(() -> handler.disable(
+                sparseTarget(2060000000000014003L, "notice_business_type", "1")))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("targetTable must match notice_business_channel_template");
+    }
+
+    @Test
+    void sparseLifecycleRejectsTargetTenantMismatch() throws Exception {
+        handler.upsert(messageTemplateDeclaration("系统标题", true));
+
+        assertThatThrownBy(() -> handler.delete(
+                sparseTarget(2060000000000014003L, "notice_business_channel_template", "2")))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("tenantId does not match target");
+        assertThat(count("notice_business_channel_template")).isOne();
+    }
+
+    @Test
+    void upsertStillRequiresCompleteDeclarationFields() {
+        ResourceDeclaration missingConfigVersion = messageTemplateDeclaration("系统标题", true);
+        missingConfigVersion.getFields().get("configVersionId").setValue(null);
+        assertThatThrownBy(() -> handler.upsert(missingConfigVersion))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("configVersionId");
+
+        ResourceDeclaration missingChannelTemplateId = messageTemplateDeclaration("系统标题", true);
+        missingChannelTemplateId.getFields().get("channelTemplateId").setValue(null);
+        assertThatThrownBy(() -> handler.upsert(missingChannelTemplateId))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("channelTemplateId");
+
+        ResourceDeclaration missingContent = messageTemplateDeclaration("系统标题", true);
+        missingContent.getFields().get("contentTemplate").setValue(null);
+        assertThatThrownBy(() -> handler.upsert(missingContent))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("contentTemplate");
+    }
+
+    @Test
     void deletePhysicallyDeletesMessageTemplatePackage() throws Exception {
         ResourceDeclaration declaration = messageTemplateDeclaration("定时任务执行失败：{{jobName}}", true);
         handler.upsert(declaration);
@@ -298,6 +393,18 @@ class NoticeMessageTemplateResourceHandlerIntegrationTest {
                 ResourceFieldType.STRING,
                 "定时任务 {{jobName}}（{{jobCode}}）执行失败。实例：{{instanceId}}；处理器：{{handlerName}}；触发批次：{{triggerBatchNo}}；失败原因：{{errorSummary}}。请进入平台能力/任务管理/执行实例查看日志。");
         field(declaration, "operatorId", ResourceFieldType.LONG, 1L);
+        return declaration;
+    }
+
+    private ResourceDeclaration sparseTarget(Long targetId, String targetTable, String tenantId) {
+        ResourceDeclaration declaration = new ResourceDeclaration();
+        declaration.setId("2026061800700014999");
+        declaration.setVersion(1);
+        declaration.setResourceType(ResourceTypes.MESSAGE_TEMPLATE);
+        declaration.setFields(new LinkedHashMap<>());
+        field(declaration, "targetId", ResourceFieldType.LONG, targetId);
+        field(declaration, "targetTable", ResourceFieldType.STRING, targetTable);
+        field(declaration, "tenantId", ResourceFieldType.STRING, tenantId);
         return declaration;
     }
 
