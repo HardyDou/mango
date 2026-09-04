@@ -20,6 +20,7 @@ import io.mango.resource.support.model.ResourceHandlerSpec;
 import io.mango.resource.support.model.ResourceSyncResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
@@ -84,6 +85,7 @@ public class NoticeMessageTemplateResourceHandler implements ResourceHandler {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public ResourceSyncResult upsert(ResourceDeclaration resource) {
         TemplatePayload payload = TemplatePayload.from(resource);
         NoticeBusinessTypeEntity businessType = upsertBusinessType(payload);
@@ -96,6 +98,7 @@ public class NoticeMessageTemplateResourceHandler implements ResourceHandler {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public ResourceSyncResult disable(ResourceDeclaration resource) {
         Long registryTargetId = fieldLong(resource, "targetId", false, null);
         if (registryTargetId != null) {
@@ -123,6 +126,7 @@ public class NoticeMessageTemplateResourceHandler implements ResourceHandler {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public ResourceSyncResult delete(ResourceDeclaration resource) {
         Long registryTargetId = fieldLong(resource, "targetId", false, null);
         if (registryTargetId != null) {
