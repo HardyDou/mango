@@ -1,5 +1,63 @@
 # Mango Changelog
 
+## v2026.09.04-maven-1.0.51-resource-finalize-runtime-mutations-release - 2026-09-04
+
+Status: `PENDING`. Release plan `114e3194ecc2c7a4c7836a507944c174414ddea94187e43612de91eb91d0fead` targets Mango Maven/docs `1.0.51` and the generated npm closure through `@mango/cli@1.2.11`.
+
+### Pull Requests
+
+- [PR #942](https://github.com/HardyDou/mango/pull/942) Changed the RBAC tenant-root organization label to show organization type and tenant ID. Packages: `@mango/rbac@1.0.31` and the generated npm closure through `@mango/cli@1.2.11`. Business Adaptation: upgrade the generated frontend tuple and verify tenant-root labels.
+- [PR #945](https://github.com/HardyDou/mango/pull/945) Fixed sparse MESSAGE_TEMPLATE Resource Registry finalize with transactional cleanup and tenant-safe target resolution. Packages: Mango Maven/docs `1.0.51` and the generated npm closure through `@mango/cli@1.2.11`. Business Adaptation: verify runtime-modified and already-removed templates after upgrade.
+
+### Fixed
+
+- Resolve MESSAGE_TEMPLATE lifecycle operations by persisted target ID and real tenant, preserve runtime-owned fields, make missing targets idempotent, and roll back associated cleanup atomically.
+
+### Changed
+
+- Display the root organization type and tenant ID in the RBAC organization tree.
+- Advance Mango Maven/docs to `1.0.51` and the generated npm closure to the machine-plan versions; `@mango/pmo@1.4.4` remains unchanged.
+
+### Versions
+
+- Mango Maven non-application reactor and `io.mango:mango-docs-bundle`: `1.0.50` to `1.0.51` (192 machine-generated coordinates).
+- Generated npm closure: `@mango/rbac@1.0.31`, `@mango/system@1.0.39`, `@mango/admin-pages@1.0.40`, `@mango/calendar@1.0.41`, `@mango/cms@1.0.30`, `@mango/job@1.0.34`, `@mango/link@1.0.27`, `@mango/notice@1.0.46`, `@mango/numgen@1.0.42`, `@mango/payment@1.0.33`, `@mango/template@1.0.42`, `@mango/workflow@1.0.50`, `@mango/admin-shell@1.0.71`, `@mango/workflow-business-example@1.0.49`, `@mango/admin@1.1.7`, and `@mango/cli@1.2.11`.
+
+### Published Packages
+
+1. Publish the machine-generated 192-coordinate non-application Maven/docs batch at `1.0.51`.
+2. Publish the machine-generated 16-package npm topology ending at `@mango/cli@1.2.11` after Maven/docs verification.
+3. Create the immutable Tag and GitHub Release only after dual-registry and pure-consumer verification.
+
+### Business Impact
+
+- Resource Registry finalize no longer recreates or overwrites runtime-modified Notice templates when declarations are sparse or targets were removed.
+- RBAC organization users can distinguish tenant-root organizations without changing permissions or tenant isolation.
+- No production database, application deployment, schema migration, or historical Registry payload rewrite is included.
+
+### Upgrade Estimate
+
+- Audience: generated Mango applications and direct Resource Registry, Notice, RBAC, and organization consumers.
+- Engineering Effort: 45 to 90 minutes for generated consumers; 2 to 4 hours for customized integrations.
+- Execution Window: 60 to 150 minutes including dependency upgrade, clean build, Resource finalize verification, and UI smoke checks.
+- Service Downtime: no framework-mandated downtime; consumers use their normal deployment window.
+- Rollback Effort: 30 to 60 minutes to restore Maven `1.0.50`, CLI `1.2.10`, and the prior npm tuple.
+- Assumptions: Java 21, Node `22.23.1`, configured registries, representative tenant data, and existing Notice references.
+
+### Upgrade Notes
+
+1. Upgrade to Maven `1.0.51`, CLI `1.2.11`, and the generated npm versions above; retain PMO `1.4.4`.
+2. Verify Resource Registry plan/apply/verify/finalize preserves runtime modifications and skips already-removed targets.
+3. Verify tenant-root labels and tenant-scoped organization access after the frontend upgrade.
+
+### Verification
+
+- Run the 18-case H2/Spring/MyBatis integration suite, affected Maven verify/static checks, release plan/notes checks, registry doctor, sealed consumers, dual-registry back-checks, and a pure consume-registry consumer.
+
+### Rollback
+
+- Restore Maven `1.0.50`, CLI `1.2.10`, and the prior npm tuple through the normal immutable application release process; never overwrite `1.0.51` or recreate deleted templates.
+
 ## v2026.09.02-maven-1.0.50-identity-resource-determinism-release - 2026-09-02
 
 Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `6abfdf0e7ebf8e6058aceff5777688b0d99ee3de1415caca9678e9187912b03c` for plan `417bf4241f42a1ec5fab818de531e423d02d693e25615d649973d376fbe6c7ed` and prepared candidate `cf34a2d9c33c08a406240cc54f1fabc5839226f80fab9da0e2851ea4f474f502` is `COMPLETED`: all 192 Maven/docs coordinates at `1.0.50` and `@mango/cli@1.2.10` match the sealed candidate in both publish and consume registries, the pure consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`.
