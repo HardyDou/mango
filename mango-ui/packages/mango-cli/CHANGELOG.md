@@ -1,5 +1,54 @@
 # @mango/cli Changelog
 
+## 1.2.11 - 2026-09-04
+
+### Pull Requests
+
+- [PR #942](https://github.com/HardyDou/mango/pull/942) Changed the RBAC tenant-root organization label. Packages: `@mango/rbac@1.0.31`, generated npm dependents, and `@mango/cli@1.2.11`. Business Adaptation: upgrade the generated frontend tuple and verify tenant-root labels.
+- [PR #945](https://github.com/HardyDou/mango/pull/945) Fixed sparse MESSAGE_TEMPLATE Resource Registry finalize. Packages: Mango Maven/docs `1.0.51`, generated npm dependents, and `@mango/cli@1.2.11`. Business Adaptation: verify runtime-modified and already-removed templates after upgrade.
+
+### Fixed
+
+- Carry the Resource finalize runtime-mutation fix and tenant-safe deletion contract into generated consumer locks.
+
+### Changed
+
+- Lock generated projects to Mango Maven `1.0.51` and the machine-generated npm tuple; `@mango/pmo@1.4.4` remains unchanged.
+
+### Versions
+
+- CLI: `1.2.10` to `1.2.11`; Maven: `1.0.50` to `1.0.51`; RBAC: `1.0.30` to `1.0.31`; PMO remains `1.4.4`.
+
+### Published Packages
+
+- Publish the 192-coordinate Maven/docs `1.0.51` batch, then the generated npm topology ending at `@mango/cli@1.2.11`.
+
+### Business Impact
+
+- Generated consumers receive safe Resource Registry finalize behavior that preserves runtime changes and skips deleted targets, plus clearer tenant-root organization labels.
+
+### Upgrade Estimate
+
+- Audience: generated Mango applications and direct Resource Registry, Notice, RBAC, and organization consumers.
+- Engineering Effort: 45 to 90 minutes for generated consumers; 2 to 4 hours for customized integrations.
+- Execution Window: 60 to 150 minutes including clean build and runtime verification.
+- Service Downtime: no framework-mandated downtime.
+- Rollback Effort: 30 to 60 minutes to restore CLI `1.2.10` and Maven `1.0.50`.
+- Assumptions: Java 21, Node `22.23.1`, configured registries, and representative tenant data.
+
+### Upgrade Notes
+
+1. Upgrade CLI to `1.2.11` with Maven `1.0.51` and the generated npm tuple.
+2. Run Resource Registry finalize verification and organization tenant-root UI smoke checks.
+
+### Verification
+
+- Verify the sealed candidate, dual-registry back-checks, pure consume-registry consumer, Resource integration suite, and generated project compatibility.
+
+### Rollback
+
+- Restore CLI `1.2.10` and Maven `1.0.50`; never overwrite immutable coordinates.
+
 ## 1.2.10 - 2026-09-02
 
 ### Pull Requests
