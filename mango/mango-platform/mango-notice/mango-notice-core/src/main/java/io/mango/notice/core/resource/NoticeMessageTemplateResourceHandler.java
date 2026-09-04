@@ -10,6 +10,8 @@ import io.mango.notice.core.entity.NoticeBusinessTypeEntity;
 import io.mango.notice.core.mapper.NoticeBusinessChannelTemplateMapper;
 import io.mango.notice.core.mapper.NoticeBusinessConfigVersionMapper;
 import io.mango.notice.core.mapper.NoticeBusinessTypeMapper;
+import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.resource.support.ResourceHandler;
 import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.support.model.ResourceDeclaration;
@@ -18,6 +20,7 @@ import io.mango.resource.support.model.ResourceHandlerSpec;
 import io.mango.resource.support.model.ResourceSyncResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
@@ -76,10 +79,13 @@ public class NoticeMessageTemplateResourceHandler implements ResourceHandler {
                 .fieldDescription("channelEnabled", "渠道模板是否启用；未声明时兼容使用 enabled。")
                 .fieldDescription("channelConfigId", "绑定渠道配置 ID，空表示 AUTO。")
                 .fieldDescription("publishTime", "资源模板发布时间，可选；未声明时新记录保持为空，更新时保留原值。")
+                .fieldDescription("targetId", "Resource Registry 已创建的通知渠道模板目标 ID；仅用于 disable/delete 生命周期请求。")
+                .fieldDescription("targetTable", "Resource Registry 目标表，targetId 存在时必须为 notice_business_channel_template。")
                 .build();
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public ResourceSyncResult upsert(ResourceDeclaration resource) {
         TemplatePayload payload = TemplatePayload.from(resource);
         NoticeBusinessTypeEntity businessType = upsertBusinessType(payload);
@@ -92,7 +98,12 @@ public class NoticeMessageTemplateResourceHandler implements ResourceHandler {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public ResourceSyncResult disable(ResourceDeclaration resource) {
+        Long registryTargetId = fieldLong(resource, "targetId", false, null);
+        if (registryTargetId != null) {
+            return disableRegistryTarget(resource, registryTargetId);
+        }
         TemplatePayload payload = TemplatePayload.from(resource);
         NoticeBusinessTypeEntity businessType = findBusinessType(payload.tenantId(), payload.bizType());
         NoticeBusinessChannelTemplateEntity channelTemplate = findChannelTemplate(payload.tenantId(), payload.bizType(),
@@ -115,7 +126,12 @@ public class NoticeMessageTemplateResourceHandler implements ResourceHandler {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public ResourceSyncResult delete(ResourceDeclaration resource) {
+        Long registryTargetId = fieldLong(resource, "targetId", false, null);
+        if (registryTargetId != null) {
+            return deleteRegistryTarget(resource, registryTargetId);
+        }
         TemplatePayload payload = TemplatePayload.from(resource);
         NoticeBusinessChannelTemplateEntity channelTemplate = findChannelTemplate(payload.tenantId(), payload.bizType(),
                 payload.channelType(), payload.version());
@@ -136,6 +152,112 @@ public class NoticeMessageTemplateResourceHandler implements ResourceHandler {
         }
         return ResourceSyncResult.of(targetId, TARGET_TABLE,
                 "Notice message template deleted: " + payload.tenantId() + ":" + payload.bizType());
+    }
+
+    private ResourceSyncResult disableRegistryTarget(ResourceDeclaration resource, Long targetId) {
+        validateTargetTable(resource, targetId);
+        NoticeBusinessChannelTemplateEntity registryTarget = channelTemplateMapper.selectRegistryTargetById(targetId);
+        if (registryTarget == null) {
+            return notFound(targetId, "disabled");
+        }
+        String tenantId = requireTargetTenant(resource, registryTarget, targetId);
+        return withTenant(tenantId, () -> {
+            NoticeBusinessChannelTemplateEntity target = channelTemplateMapper.selectById(targetId);
+            if (target == null || !tenantId.equals(target.getTenantId())) {
+                return notFound(targetId, "disabled");
+            }
+            LocalDateTime now = LocalDateTime.now();
+            target.setEnabled(false);
+            target.setUpdatedAt(now);
+            channelTemplateMapper.updateById(target);
+            NoticeBusinessTypeEntity businessType = businessTypeMapper.selectById(target.getBusinessTypeId());
+            if (businessType != null && tenantId.equals(businessType.getTenantId())
+                    && countEnabledChannelTemplates(tenantId, target.getBusinessTypeId()) == 0) {
+                businessType.setEnabled(false);
+                businessType.setUpdatedAt(now);
+                businessTypeMapper.updateById(businessType);
+            }
+            return ResourceSyncResult.of(targetId, TARGET_TABLE,
+                    "Notice message template disabled by registry target: " + targetId);
+        });
+    }
+
+    private ResourceSyncResult deleteRegistryTarget(ResourceDeclaration resource, Long targetId) {
+        validateTargetTable(resource, targetId);
+        NoticeBusinessChannelTemplateEntity registryTarget = channelTemplateMapper.selectRegistryTargetById(targetId);
+        if (registryTarget == null) {
+            return notFound(targetId, "deleted");
+        }
+        String tenantId = requireTargetTenant(resource, registryTarget, targetId);
+        return withTenant(tenantId, () -> {
+            NoticeBusinessChannelTemplateEntity target = channelTemplateMapper.selectById(targetId);
+            if (target == null || !tenantId.equals(target.getTenantId())) {
+                return notFound(targetId, "deleted");
+            }
+            Long businessTypeId = target.getBusinessTypeId();
+            String bizType = target.getBizType();
+            Integer version = target.getVersion();
+            channelTemplateMapper.deleteById(targetId);
+            NoticeBusinessConfigVersionEntity configVersion = findConfigVersion(businessTypeId, tenantId, bizType, version);
+            if (configVersion != null
+                    && countChannelTemplates(tenantId, businessTypeId, version) == 0) {
+                configVersionMapper.deleteById(configVersion.getId());
+            }
+            NoticeBusinessTypeEntity businessType = businessTypeMapper.selectById(businessTypeId);
+            if (businessType != null && tenantId.equals(businessType.getTenantId())
+                    && countChannelTemplates(tenantId, businessTypeId) == 0
+                    && countConfigVersions(tenantId, businessTypeId) == 0) {
+                businessTypeMapper.deleteById(businessTypeId);
+            }
+            return ResourceSyncResult.of(targetId, TARGET_TABLE,
+                    "Notice message template deleted by registry target: " + targetId);
+        });
+    }
+
+    private String requireTargetTenant(ResourceDeclaration resource,
+                                       NoticeBusinessChannelTemplateEntity target,
+                                       Long targetId) {
+        String tenantId = target.getTenantId();
+        if (!StringUtils.hasText(tenantId)) {
+            throw invalidRegistryTarget(resource, targetId, "target tenantId is missing");
+        }
+        String declaredTenantId = fieldText(resource, "tenantId", false);
+        if (StringUtils.hasText(declaredTenantId) && !tenantId.equals(declaredTenantId.trim())) {
+            throw invalidRegistryTarget(resource, targetId, "tenantId does not match target");
+        }
+        return tenantId;
+    }
+
+    private void validateTargetTable(ResourceDeclaration resource, Long targetId) {
+        String targetTable = fieldText(resource, "targetTable", false);
+        if (!StringUtils.hasText(targetTable) || !TARGET_TABLE.equals(targetTable.trim())) {
+            throw invalidRegistryTarget(resource, targetId,
+                    "targetTable must match " + TARGET_TABLE);
+        }
+    }
+
+    private IllegalStateException invalidRegistryTarget(ResourceDeclaration resource, Long targetId, String reason) {
+        return new IllegalStateException("MESSAGE_TEMPLATE registry target is invalid: resourceId="
+                + resource.getId() + ", targetId=" + targetId + ", reason=" + reason);
+    }
+
+    private ResourceSyncResult notFound(Long targetId, String operation) {
+        return ResourceSyncResult.of(targetId, TARGET_TABLE,
+                "Notice message template already absent; " + operation + " is idempotent: " + targetId);
+    }
+
+    private <T> T withTenant(String tenantId, TenantOperation<T> operation) {
+        MangoContextSnapshot previous = MangoContextHolder.get();
+        MangoContextHolder.set(previous.withTenantId(tenantId));
+        try {
+            return operation.execute();
+        } finally {
+            MangoContextHolder.set(previous);
+        }
+    }
+
+    private interface TenantOperation<T> {
+        T execute();
     }
 
     private NoticeBusinessTypeEntity upsertBusinessType(TemplatePayload payload) {
@@ -277,6 +399,13 @@ public class NoticeMessageTemplateResourceHandler implements ResourceHandler {
                 .eq(NoticeBusinessChannelTemplateEntity::getEnabled, true));
     }
 
+    private Long countEnabledChannelTemplates(String tenantId, Long businessTypeId) {
+        return channelTemplateMapper.selectCount(new LambdaQueryWrapper<NoticeBusinessChannelTemplateEntity>()
+                .eq(NoticeBusinessChannelTemplateEntity::getTenantId, tenantId)
+                .eq(NoticeBusinessChannelTemplateEntity::getBusinessTypeId, businessTypeId)
+                .eq(NoticeBusinessChannelTemplateEntity::getEnabled, true));
+    }
+
     private Long countChannelTemplates(String tenantId, String bizType) {
         return channelTemplateMapper.selectCount(new LambdaQueryWrapper<NoticeBusinessChannelTemplateEntity>()
                 .eq(NoticeBusinessChannelTemplateEntity::getTenantId, tenantId)
@@ -290,10 +419,39 @@ public class NoticeMessageTemplateResourceHandler implements ResourceHandler {
                 .eq(NoticeBusinessChannelTemplateEntity::getVersion, version));
     }
 
+    private Long countChannelTemplates(String tenantId, Long businessTypeId) {
+        return channelTemplateMapper.selectCount(new LambdaQueryWrapper<NoticeBusinessChannelTemplateEntity>()
+                .eq(NoticeBusinessChannelTemplateEntity::getTenantId, tenantId)
+                .eq(NoticeBusinessChannelTemplateEntity::getBusinessTypeId, businessTypeId));
+    }
+
+    private Long countChannelTemplates(String tenantId, Long businessTypeId, Integer version) {
+        return channelTemplateMapper.selectCount(new LambdaQueryWrapper<NoticeBusinessChannelTemplateEntity>()
+                .eq(NoticeBusinessChannelTemplateEntity::getTenantId, tenantId)
+                .eq(NoticeBusinessChannelTemplateEntity::getBusinessTypeId, businessTypeId)
+                .eq(NoticeBusinessChannelTemplateEntity::getVersion, version));
+    }
+
     private Long countConfigVersions(String tenantId, String bizType) {
         return configVersionMapper.selectCount(new LambdaQueryWrapper<NoticeBusinessConfigVersionEntity>()
                 .eq(NoticeBusinessConfigVersionEntity::getTenantId, tenantId)
                 .eq(NoticeBusinessConfigVersionEntity::getBizType, bizType));
+    }
+
+    private Long countConfigVersions(String tenantId, Long businessTypeId) {
+        return configVersionMapper.selectCount(new LambdaQueryWrapper<NoticeBusinessConfigVersionEntity>()
+                .eq(NoticeBusinessConfigVersionEntity::getTenantId, tenantId)
+                .eq(NoticeBusinessConfigVersionEntity::getBusinessTypeId, businessTypeId));
+    }
+
+    private NoticeBusinessConfigVersionEntity findConfigVersion(Long businessTypeId, String tenantId,
+                                                                 String bizType, Integer version) {
+        return configVersionMapper.selectOne(new LambdaQueryWrapper<NoticeBusinessConfigVersionEntity>()
+                .eq(NoticeBusinessConfigVersionEntity::getTenantId, tenantId)
+                .eq(NoticeBusinessConfigVersionEntity::getBusinessTypeId, businessTypeId)
+                .eq(NoticeBusinessConfigVersionEntity::getBizType, bizType)
+                .eq(NoticeBusinessConfigVersionEntity::getVersion, version)
+                .last("limit 1"));
     }
 
     private record TemplatePayload(Long businessTypeId, Long configVersionId, Long channelTemplateResourceId,
