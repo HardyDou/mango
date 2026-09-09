@@ -21,7 +21,7 @@
 
 ### Published Packages
 
-- Pending sealed prepare and dual-registry publication.
+- Published and verified from the sealed candidate: Maven/docs `1.0.52` (192 coordinates) and the complete npm closure through `@mango/cli@1.2.12` match in both publish and consume registries; the pure consume-registry consumer passed.
 
 ### Business Impact
 
@@ -43,7 +43,7 @@
 
 ### Verification
 
-- Verify the sealed candidate, both registry roles, and a pure consume-registry consumer before publication.
+- Sealed candidate, both registry roles, pure consume-registry consumer, immutable Tag, and GitHub Release verified. Canonical manifest: `.runtime/mango-release/1f248bc498bd40d54ed4fdd7579dadf497844fbb4595faf6189539022360e71d/manifest.json`.
 
 ### Rollback
 

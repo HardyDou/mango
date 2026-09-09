@@ -2,7 +2,7 @@
 
 ## v2026.09.09-maven-1.0.52-profile-password-admin-shell-release - 2026-09-09
 
-Status: `PENDING`. Planned Maven/docs `1.0.52` (192 coordinates) and the 25-package npm closure ending at `@mango/cli@1.2.12`; plan digest `1f248bc498bd40d54ed4fdd7579dadf497844fbb4595faf6189539022360e71d`.
+Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `35ddc5885306dde8739efb38aca8a1bfd6a586d9d8dced7ef3b73b6ebba5e2fd` for release plan `1f248bc498bd40d54ed4fdd7579dadf497844fbb4595faf6189539022360e71d` and prepared candidate `18fb3cc604862eefbade4a692757a82cb57afef1e69caee975bc8993e498a505` is `COMPLETED`: all 192 Maven/docs coordinates at `1.0.52` and all 25 npm packages ending at `@mango/cli@1.2.12` match the sealed candidate in both publish and consume registries, the pure consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`.
 
 ### Pull Requests
 
@@ -24,7 +24,7 @@ Status: `PENDING`. Planned Maven/docs `1.0.52` (192 coordinates) and the 25-pack
 
 ### Published Packages
 
-- Pending sealed prepare and dual-registry publication; no registry write has occurred.
+- The sealed 192-coordinate Maven/docs batch at `1.0.52` and 25-package npm topology ending at `@mango/cli@1.2.12` are published and match in both publish and consume registries. The pure consume-registry consumer, immutable Tag, and GitHub Release were verified from the sealed candidate.
 
 ### Business Impact
 
@@ -46,7 +46,7 @@ Status: `PENDING`. Planned Maven/docs `1.0.52` (192 coordinates) and the 25-pack
 
 ### Verification
 
-- Plan, release-notes, catalog/style/workspace checks, affected frontend/Maven tests, prepare, registry back-checks, and pure consume-registry consumer are required before publication.
+- Plan, release-notes, catalog/style/workspace checks, affected frontend/Maven tests, sealed prepare, dual-registry publication and back-checks, pure consume-registry consumer, immutable Tag, and GitHub Release verification passed. Canonical manifest: `.runtime/mango-release/1f248bc498bd40d54ed4fdd7579dadf497844fbb4595faf6189539022360e71d/manifest.json`.
 
 ### Rollback
 
