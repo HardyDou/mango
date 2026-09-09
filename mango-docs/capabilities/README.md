@@ -4,6 +4,8 @@
 
 本文用于帮助 Mango 开发者、业务开发者和 AI Agent 快速定位 Mango 能力、模块 README、关联 PMO 规则和排障入口。
 
+2026-09-09 能力更新：个人中心修改密码统一调用 Identity 当前用户接口 `PUT /identity/me/password`，后端校验旧密码和密码策略；Auth、Notice 及租户字典配置初始化行为保持不变。详见 [Identity README](../../mango/mango-platform/mango-identity/README.md)、[@mango/auth README](../../mango-ui/packages/auth/README.md) 和 [交付记录](../evidence/profile-password-404/standard-delivery-record.md)。
+
 长期规则仍以 `mango-pmo` 为唯一来源；本文只做能力索引，不复制规范正文。
 
 2026-09-02 能力更新：Issue #938 为 `IDENTITY_USER` portable Resource 增加固定 `initializedAt` 初始化时间，并按 `tenantId + memberId + CREATED` 通过统一 portable ID 算法生成稳定成员创建事件主键；用户、成员和生命周期事件在两个独立空库产生一致数据，正常 API 创建、移出和恢复仍保留动态审计语义。详见 [Identity README](../../mango/mango-platform/mango-identity/README.md) 和 [STANDARD 交付记录](../plans/2026-09-02-issue-938-identity-resource-determinism-delivery-record.md)。

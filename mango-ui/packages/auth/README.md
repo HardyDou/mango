@@ -194,7 +194,7 @@ API 封装：
 | `getUserInfo()`                                             | `GET /auth/info`                             | 获取当前登录用户。                           |
 | `logout()`                                                  | `POST /auth/logout`                          | 退出登录。                                   |
 | `getCaptcha()`                                              | `GET /captcha/arithmetic`                    | 获取算术验证码。                             |
-| `updatePassword(data)`                                      | `POST /user/password`                        | 修改当前用户密码。                           |
+| `updatePassword(data)`                                      | `PUT /identity/me/password`                  | 校验旧密码后修改当前用户密码。               |
 | `getSystemConfig()`                                         | `GET /system/config/type`                    | 读取系统配置。                               |
 | `getCurrentUserProfile()`                                   | `GET /identity/me/profile`                   | 读取真实个人资料。                           |
 | `updateCurrentUserProfile(data)`                            | `PUT /identity/me/profile`                   | 保存基础和实名资料。                         |
@@ -262,7 +262,7 @@ API 封装：
 | 登录页租户为空         | `/system/tenant/login-options` 无数据或接口未放行 | 检查租户初始化和公共路径配置。                                         |
 | 登录成功但菜单为空     | 应用、角色、菜单或授权缺失                        | 检查 authorization 用户菜单接口。                                      |
 | 企业微信或钉钉登录失败 | Provider 配置不完整、未启用或 redirectUri 不匹配  | 检查 `GET /auth/providers` 可用状态及当前租户应用的 Provider 配置。    |
-| 修改密码失败           | 旧密码错误或后端密码策略不通过                    | 看 `POST /user/password` 返回信息。                                    |
+| 修改密码失败           | 旧密码错误或后端密码策略不通过                    | 看 `PUT /identity/me/password` 返回信息。                              |
 | 个人中心空白           | 路由未挂载或样式未引入                            | 检查 Shell 路由和 `@mango/auth/style.css`。                            |
 | 头像选择后未立即上传   | 头像上传与资料保存使用同一提交动作                | 点击“保存资料”；成功后资料字段应为 `mango-file:{id}`，而不是下载地址。 |
 

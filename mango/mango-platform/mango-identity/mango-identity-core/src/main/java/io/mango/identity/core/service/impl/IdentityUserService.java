@@ -14,6 +14,7 @@ import io.mango.common.result.Require;
 import io.mango.identity.api.command.BindExternalIdentityCommand;
 import io.mango.identity.api.command.BatchDeleteIdentityUserCommand;
 import io.mango.identity.api.command.CreateIdentityUserCommand;
+import io.mango.identity.api.command.ChangeCurrentUserPasswordCommand;
 import io.mango.identity.api.command.ResetIdentityUserPasswordCommand;
 import io.mango.identity.api.command.RequireIdentityUserPasswordResetCommand;
 import io.mango.identity.api.command.UnbindExternalIdentityCommand;
@@ -210,6 +211,27 @@ public class IdentityUserService extends MangoCrudServiceImpl<IdentityUserMapper
         user.setUpdateTime(LocalDateTime.now());
         Require.isTrue(identityUserMapper.updateById(user) > 0, IdentityCode.CONFLICT, "联系方式更新失败");
         return toCurrentProfile(user);
+    }
+
+    @Override
+    @Transactional
+    public Boolean changeCurrentPassword(ChangeCurrentUserPasswordCommand command) {
+        Require.notNull(command, IdentityCode.VALIDATION_ERROR, "修改密码命令不能为空");
+        IdentityUserEntity user = currentUser();
+        Require.isTrue(passwordEncoder.matches(command.getOldPassword(), user.getPassword()),
+                IdentityCode.CURRENT_PASSWORD_INVALID);
+        passwordPolicyService.validatePlainPassword(command.getNewPassword());
+        LocalDateTime now = LocalDateTime.now();
+        return identityUserMapper.update(null, new LambdaUpdateWrapper<IdentityUserEntity>()
+                .eq(IdentityUserEntity::getId, user.getId())
+                .set(IdentityUserEntity::getPassword, passwordEncoder.encode(command.getNewPassword()))
+                .set(IdentityUserEntity::getPasswordResetRequired, false)
+                .set(IdentityUserEntity::getPasswordUpdatedAt, now)
+                .set(IdentityUserEntity::getFailedLoginCount, 0)
+                .set(IdentityUserEntity::getLastFailedLoginAt, null)
+                .set(IdentityUserEntity::getLockedUntil, null)
+                .set(IdentityUserEntity::getLockedReason, null)
+                .set(IdentityUserEntity::getUpdateTime, now)) > 0;
     }
 
     @Override

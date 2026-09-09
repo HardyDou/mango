@@ -4,6 +4,7 @@ import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.identity.api.command.BatchDeleteIdentityUserCommand;
 import io.mango.identity.api.command.BindExternalIdentityCommand;
+import io.mango.identity.api.command.ChangeCurrentUserPasswordCommand;
 import io.mango.identity.api.command.CreateIdentityUserCommand;
 import io.mango.identity.api.command.RequireIdentityUserPasswordResetCommand;
 import io.mango.identity.api.command.ResetIdentityUserPasswordCommand;
@@ -44,6 +45,8 @@ public interface IdentityUserApi {
     R<ContactCaptchaTicketVO> sendCurrentContactCaptcha(@Valid SendContactCaptchaCommand command);
 
     R<CurrentUserProfileVO> updateCurrentContact(@Valid UpdateCurrentUserContactCommand command);
+
+    R<Boolean> changeCurrentPassword(@Valid ChangeCurrentUserPasswordCommand command);
 
     /**
      * 分页查询当前租户成员。

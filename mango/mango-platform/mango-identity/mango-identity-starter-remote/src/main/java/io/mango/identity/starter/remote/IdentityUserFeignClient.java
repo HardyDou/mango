@@ -5,6 +5,7 @@ import io.mango.common.vo.PageResult;
 import io.mango.identity.api.IdentityUserApi;
 import io.mango.identity.api.command.BatchDeleteIdentityUserCommand;
 import io.mango.identity.api.command.BindExternalIdentityCommand;
+import io.mango.identity.api.command.ChangeCurrentUserPasswordCommand;
 import io.mango.identity.api.command.CreateIdentityUserCommand;
 import io.mango.identity.api.command.RequireIdentityUserPasswordResetCommand;
 import io.mango.identity.api.command.ResetIdentityUserPasswordCommand;
@@ -59,6 +60,10 @@ public interface IdentityUserFeignClient extends IdentityUserApi {
     @Override
     @PutMapping("/me/contact")
     R<CurrentUserProfileVO> updateCurrentContact(@RequestBody UpdateCurrentUserContactCommand command);
+
+    @Override
+    @PutMapping("/me/password")
+    R<Boolean> changeCurrentPassword(@RequestBody ChangeCurrentUserPasswordCommand command);
 
     @Override
     @GetMapping("/users/page")
