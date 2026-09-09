@@ -1,4 +1,4 @@
-import { computed, createApp, h, nextTick, ref, type App as VueApp, type Ref } from 'vue';
+import { computed, nextTick, ref, type Ref } from 'vue';
 import type { Router } from 'vue-router';
 import { del, get, post, put } from '@mango/common/utils/request';
 import { Session } from '@mango/common/utils/storage';
@@ -15,18 +15,17 @@ import {
   type MangoRuntimeConfigDiagnostic,
   MangoRuntimeConfigError,
   type MangoRuntimeAppConfig,
-  MANGO_HTTP_CLIENT_KEY,
 } from '@mango/app-runtime';
 import { getPageLoader } from '@mango/admin-pages/core';
 import { useThemeStore } from '../stores/theme';
 import { useLayoutStore } from '../stores/layout';
 import { usePreferencesStore } from '../stores/preferences';
-import { installShellApp } from '../appBootstrap';
 import { getMangoAdminShellOptions } from '../config';
 import { ensureDevCenterPagesRegistered, MenuTypeEnum, type ShellMenu, type ShellRouteMenu } from './menuHost';
 import { ensureFeatureRegistrars } from './featureRegistrars';
 import { defaultRuntimeConfig, loadShellRuntimeConfig } from './runtimeConfig';
 import { resolveRuntimeAppConfig, toRuntimeApps } from './runtimeIdentity';
+import { createLocalPageCacheHost, type LocalPageEntry } from './localPageCache';
 
 export { resolveRuntimeAppConfig, toRuntimeApps } from './runtimeIdentity';
 
@@ -53,12 +52,53 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
   const activeRuntimeApp = ref<MangoRuntimeAppConfig>();
   const runtimeDecision = ref<RuntimeDecision>();
   const runtimeConfigAvailable = ref(true);
-  let mountedLocalPage: VueApp | undefined;
-  let mountedLocalRuntime: MangoAppRuntime | undefined;
-  let mountedMicroConfig: MangoRuntimeAppConfig | undefined;
+  let localHostRoot: HTMLElement | undefined;
+  let externalRoot: HTMLElement | undefined;
+  let localPageHost: ReturnType<typeof createLocalPageCacheHost> | undefined;
   let currentMenu: ShellMenu | undefined;
   let mountSeq = 0;
   let defaultPagesPromise: Promise<void> | undefined;
+  let activeTabKey = '';
+  const detachedTabNodes = new Map<string, Node[]>();
+  const disposedTabKeys = new Set<string>();
+  const mountedTabs = new Map<
+    string,
+    {
+      microConfig?: MangoRuntimeAppConfig;
+      runtime?: MangoAppRuntime;
+      externalNodes?: Node[];
+      keepAlive: boolean;
+    }
+  >();
+
+  function ensureRenderRoots(container: HTMLElement) {
+    if (!localHostRoot) {
+      localHostRoot = document.createElement('div');
+      localHostRoot.className = 'mango-runtime-local-root';
+    }
+    if (!externalRoot) {
+      externalRoot = document.createElement('div');
+      externalRoot.className = 'mango-runtime-external-root';
+    }
+    if (localHostRoot.parentNode !== container) {
+      container.appendChild(localHostRoot);
+    }
+    if (externalRoot.parentNode !== container) {
+      container.appendChild(externalRoot);
+    }
+  }
+
+  function ensureLocalPageHost() {
+    if (localPageHost || !localHostRoot) {
+      return;
+    }
+    localPageHost = createLocalPageCacheHost(localHostRoot, router);
+  }
+
+  function setLocalPage(entry: LocalPageEntry, keepAlive: boolean) {
+    ensureLocalPageHost();
+    localPageHost?.activate(entry, keepAlive);
+  }
 
   async function loadRuntimeApps() {
     loading.value = true;
@@ -83,11 +123,12 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
     }
   }
 
-  async function mountMenu(menu?: ShellMenu | ShellRouteMenu) {
+  async function mountMenu(menu?: ShellMenu | ShellRouteMenu, tabKey = 'default') {
     await nextTick();
     if (!menu) {
       return;
     }
+    disposedTabKeys.delete(tabKey);
     const seq = ++mountSeq;
     const sourceMenu = normalizeMenu(menu);
     currentMenu = sourceMenu;
@@ -97,25 +138,37 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
       return;
     }
 
-    await unmountCurrentPage();
-    if (!isLatestMount(seq)) {
-      return;
-    }
-    container.innerHTML = '';
+    ensureRenderRoots(container);
     const moduleConfig = resolveModuleConfig(sourceMenu);
     const pageType = resolvePageType(sourceMenu, moduleConfig);
+    const keepAlive = resolveMenuKeepAlive(sourceMenu);
+    if (activeTabKey && activeTabKey !== tabKey) {
+      await deactivateTab(activeTabKey);
+    }
+    activeTabKey = tabKey;
+    restoreExternalTab(tabKey);
+    if (pageType === 'LOCAL_ROUTE') {
+      externalRoot?.replaceChildren();
+    }
+    const existingExternal = mountedTabs.get(tabKey);
+    if (existingExternal?.keepAlive && existingExternal.externalNodes?.length && pageType !== 'LOCAL_ROUTE') {
+      return;
+    }
+    if (!isMountAllowed(seq, tabKey)) {
+      return;
+    }
     runtimeDecision.value = createRuntimeDecision(sourceMenu, moduleConfig, pageType);
     recordRuntimeDecision(runtimeDecision.value);
-    applyRuntimeMarker(container, runtimeDecision.value);
+    applyRuntimeMarker(externalRoot || container, runtimeDecision.value);
     if (!runtimeConfigAvailable.value && pageType === 'MICRO_ROUTE') {
       await mountFallback();
       return;
     }
     if (pageType === 'IFRAME') {
-      if (!isLatestMount(seq)) {
+      if (!isMountAllowed(seq, tabKey)) {
         return;
       }
-      mountIframe(sourceMenu);
+      mountIframe(sourceMenu, tabKey, keepAlive);
       return;
     }
     if (pageType === 'EXTERNAL_LINK') {
@@ -126,31 +179,36 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
     }
     if (pageType === 'MICRO_ROUTE') {
       try {
-        await mountMicroMenu(sourceMenu, moduleConfig, seq);
+        await mountMicroMenu(sourceMenu, moduleConfig, seq, tabKey, keepAlive);
       } catch (error) {
-        if (isLatestMount(seq)) {
+        if (isMountAllowed(seq, tabKey)) {
           mountRuntimeError(sourceMenu, error, moduleConfig);
         }
       }
       return;
     }
     try {
-      await mountLocalMenu(sourceMenu, seq);
+      await mountLocalMenu(sourceMenu, seq, tabKey, keepAlive);
     } catch (error) {
-      if (isLatestMount(seq)) {
+      if (isMountAllowed(seq, tabKey)) {
         mountRuntimeError(sourceMenu, error, moduleConfig);
       }
     }
   }
 
-  async function mountLocalMenu(menu: ShellMenu, seq: number) {
-    const container = containerRef.value;
-    if (!container) {
+  async function mountLocalMenu(menu: ShellMenu, seq: number, tabKey: string, keepAlive: boolean) {
+    if (!containerRef.value) {
+      return;
+    }
+
+    const cached = keepAlive ? localPageHost?.cachedPages.value.get(tabKey) : undefined;
+    if (cached) {
+      setLocalPage(cached, true);
       return;
     }
 
     await ensureDefaultPages();
-    if (!isLatestMount(seq)) {
+    if (!isMountAllowed(seq, tabKey)) {
       return;
     }
     const loader = getPageLoader(menu.moduleCode, menu.component) || getPageLoader(undefined, menu.component);
@@ -159,43 +217,56 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
         mountMenuContractError(menu);
         return;
       }
-      await mountNotFound(seq);
+      await mountNotFound(seq, tabKey, keepAlive);
       return;
     }
 
     const module = await loader();
-    if (!isLatestMount(seq)) {
+    if (!isMountAllowed(seq, tabKey)) {
       return;
     }
     const component = module.default || module;
-    mountedLocalPage = createApp({ render: () => h(component) });
-    installShellApp(mountedLocalPage);
-    mountedLocalPage.use(router);
-    mountedLocalRuntime = createLocalRuntime(menu);
-    mountedLocalPage.provide('mangoRuntime', mountedLocalRuntime);
-    mountedLocalPage.provide(MANGO_HTTP_CLIENT_KEY, mountedLocalRuntime.httpClient);
-    mountedLocalPage.mount(container);
+    const runtime = createLocalRuntime(menu, tabKey);
+    setLocalPage({ tabKey, component, runtime }, keepAlive);
   }
 
-  async function mountMicroMenu(menu: ShellMenu, moduleConfig: MangoModuleRuntimeConfig | undefined, seq: number) {
+  async function mountMicroMenu(
+    menu: ShellMenu,
+    moduleConfig: MangoModuleRuntimeConfig | undefined,
+    seq: number,
+    tabKey: string,
+    keepAlive: boolean,
+  ) {
     const config = resolveRuntimeConfig(menu, moduleConfig);
-    const container = containerRef.value;
+    const container = externalRoot;
     if (!config || !container) {
       mountRuntimeConfigError(menu, moduleConfig);
       return;
     }
-    activeRuntimeApp.value = config;
-    mountedMicroConfig = config;
-    const adapter = resolveAdapter(config.appType || 'MICRO_APP');
-    await adapter.mount(config, container, createRuntime(config, menu));
-    if (!isLatestMount(seq)) {
-      await adapter.unmount?.(config);
+    // Wujie identifies a mounted app by instanceId. Keep one instance per tab
+    // so opening the same micro route for another record cannot unmount the
+    // previously cached tab.
+    const tabConfig = createTabRuntimeConfig(config, tabKey);
+    activeRuntimeApp.value = tabConfig;
+    const adapter = resolveAdapter(tabConfig.appType || 'MICRO_APP');
+    const runtime = createRuntime(tabConfig, menu);
+    try {
+      await adapter.mount(tabConfig, container, runtime);
+    } catch (error) {
+      runtime.dispose?.();
+      throw error;
     }
+    if (!isMountAllowed(seq, tabKey)) {
+      await adapter.unmount?.(tabConfig);
+      runtime.dispose?.();
+      return;
+    }
+    mountedTabs.set(tabKey, { microConfig: tabConfig, runtime, keepAlive });
   }
 
-  async function mountNotFound(seq: number) {
+  async function mountNotFound(seq: number, tabKey: string, keepAlive: boolean) {
     await ensureDefaultPages();
-    if (!isLatestMount(seq)) {
+    if (!isMountAllowed(seq, tabKey)) {
       return;
     }
     const loader = getPageLoader('mango-shell', 'error/404') || getPageLoader(undefined, 'error/404');
@@ -204,25 +275,53 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
       return;
     }
     const module = await loader();
-    if (!isLatestMount(seq)) {
+    if (!isMountAllowed(seq, tabKey)) {
       return;
     }
     const component = (module as any).default || module;
-    mountedLocalPage = createApp({ render: () => h(component) });
-    installShellApp(mountedLocalPage);
-    mountedLocalPage.use(router);
-    mountedLocalPage.mount(containerRef.value!);
+    const runtime = createLocalRuntime(
+      {
+        appCode: 'internal-admin',
+        moduleCode: 'mango-shell',
+        menuId: 'shell-not-found',
+        menuName: '404',
+        menuCode: 'shell:not-found',
+        parentId: 0,
+        menuType: MenuTypeEnum.MENU,
+        path: '/404',
+        component: 'error/404',
+        sort: -999,
+        status: 1,
+        visible: 0,
+        keepAlive: keepAlive ? 1 : 0,
+      },
+      tabKey,
+    );
+    setLocalPage({ tabKey, component, runtime }, keepAlive);
   }
 
   async function retryCurrentMenu() {
     if (!currentMenu) {
       return;
     }
-    await mountMenu(currentMenu);
+    await mountMenu(currentMenu, activeTabKey);
   }
 
-  function mountIframe(menu: ShellMenu) {
-    const container = containerRef.value;
+  async function refreshTab(tabKey = activeTabKey) {
+    if (!currentMenu || tabKey !== activeTabKey) {
+      return;
+    }
+    disposedTabKeys.add(tabKey);
+    detachedTabNodes.delete(tabKey);
+    localPageHost?.deactivate(tabKey);
+    localPageHost?.remove(tabKey);
+    await unmountCurrentPage(tabKey);
+    disposedTabKeys.delete(tabKey);
+    await mountMenu(currentMenu, tabKey);
+  }
+
+  function mountIframe(menu: ShellMenu, tabKey: string, keepAlive: boolean) {
+    const container = externalRoot;
     const url = menu.externalUrl;
     if (!container || !url) {
       mountMessage('缺少 iframe 地址');
@@ -234,6 +333,7 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
     iframe.style.minHeight = 'calc(100vh - 160px)';
     iframe.style.border = '0';
     container.appendChild(iframe);
+    mountedTabs.set(tabKey, { externalNodes: [iframe], keepAlive });
   }
 
   function resolveRuntimeConfig(menu: ShellMenu, moduleConfig?: MangoModuleRuntimeConfig) {
@@ -283,19 +383,55 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
     return moduleConfig?.mode === 'micro' ? 'MICRO_ROUTE' : 'LOCAL_ROUTE';
   }
 
-  async function unmountCurrentPage() {
-    mountedLocalPage?.unmount();
-    mountedLocalPage = undefined;
-    mountedLocalRuntime?.dispose();
-    mountedLocalRuntime = undefined;
-    if (mountedMicroConfig) {
-      await resolveAdapter(mountedMicroConfig.appType || 'MICRO_APP').unmount?.(mountedMicroConfig);
-      mountedMicroConfig = undefined;
+  async function unmountCurrentPage(tabKey = activeTabKey) {
+    const mounted = mountedTabs.get(tabKey);
+    if (!mounted) {
+      return;
     }
+    if (mounted.microConfig) {
+      await resolveAdapter(mounted.microConfig.appType || 'MICRO_APP').unmount?.(mounted.microConfig);
+    }
+    mounted.runtime?.dispose?.();
+    mounted.externalNodes?.forEach((node) => node.parentNode?.removeChild(node));
+    mountedTabs.delete(tabKey);
+  }
+
+  async function deactivateTab(tabKey: string) {
+    localPageHost?.deactivate(tabKey);
+    const mounted = mountedTabs.get(tabKey);
+    if (!mounted) {
+      return;
+    }
+    if (mounted.keepAlive) {
+      detachExternalTab(tabKey);
+      return;
+    }
+    await unmountCurrentPage(tabKey);
+  }
+
+  function detachExternalTab(tabKey: string) {
+    const container = externalRoot;
+    const mounted = mountedTabs.get(tabKey);
+    if (!container || !mounted || detachedTabNodes.has(tabKey)) {
+      return;
+    }
+    const nodes = mounted.externalNodes || Array.from(container.childNodes);
+    mounted.externalNodes = nodes;
+    detachedTabNodes.set(tabKey, nodes);
+    container.replaceChildren();
+  }
+
+  function restoreExternalTab(tabKey: string) {
+    const nodes = detachedTabNodes.get(tabKey);
+    if (!nodes || !externalRoot) {
+      return;
+    }
+    externalRoot.replaceChildren(...nodes);
+    detachedTabNodes.delete(tabKey);
   }
 
   function mountMessage(message: string) {
-    const container = containerRef.value;
+    const container = externalRoot || containerRef.value;
     if (!container) {
       return;
     }
@@ -306,7 +442,7 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
   }
 
   function mountRuntimeError(menu: ShellMenu, error: unknown, moduleConfig?: MangoModuleRuntimeConfig) {
-    const container = containerRef.value;
+    const container = externalRoot || containerRef.value;
     if (!container) {
       return;
     }
@@ -322,7 +458,7 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
   }
 
   function mountRuntimeConfigError(menu: ShellMenu, moduleConfig?: MangoModuleRuntimeConfig) {
-    const container = containerRef.value;
+    const container = externalRoot || containerRef.value;
     if (!container) {
       return;
     }
@@ -338,7 +474,7 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
   }
 
   function mountMenuContractError(menu: ShellMenu) {
-    const container = containerRef.value;
+    const container = externalRoot || containerRef.value;
     if (!container) {
       return;
     }
@@ -365,7 +501,7 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
 
   async function mountFallback() {
     await nextTick();
-    const container = containerRef.value;
+    const container = externalRoot || containerRef.value;
     if (!container) {
       return;
     }
@@ -377,11 +513,27 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
 
   function dispose() {
     mountSeq += 1;
-    return unmountCurrentPage();
+    disposedTabKeys.clear();
+    detachedTabNodes.clear();
+    localPageHost?.dispose();
+    localPageHost = undefined;
+    return Promise.all(Array.from(mountedTabs.keys()).map((tabKey) => unmountCurrentPage(tabKey)));
+  }
+
+  async function disposeTab(tabKey: string) {
+    disposedTabKeys.add(tabKey);
+    detachedTabNodes.delete(tabKey);
+    localPageHost?.deactivate(tabKey);
+    localPageHost?.remove(tabKey);
+    await unmountCurrentPage(tabKey);
   }
 
   function isLatestMount(seq: number) {
     return seq === mountSeq;
+  }
+
+  function isMountAllowed(seq: number, tabKey: string) {
+    return isLatestMount(seq) && !disposedTabKeys.has(tabKey);
   }
 
   return {
@@ -393,6 +545,8 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
     runtimeDecision: computed(() => runtimeDecision.value),
     loadRuntimeApps,
     mountMenu,
+    refreshTab,
+    disposeTab,
     dispose,
   };
 }
@@ -421,6 +575,11 @@ function preloadRuntimeApps(apps: MangoRuntimeAppConfig[]) {
 
 function normalizeMenu(menu: ShellMenu | ShellRouteMenu): ShellMenu {
   return 'sourceMenu' in menu ? menu.sourceMenu : menu;
+}
+
+function resolveMenuKeepAlive(menu: ShellMenu | ShellRouteMenu): boolean {
+  const sourceMenu = normalizeMenu(menu);
+  return sourceMenu.keepAlive === 1 || (menu as ShellRouteMenu).meta?.keepAlive === true;
 }
 
 function renderRuntimeState(
@@ -475,12 +634,12 @@ function createRuntime(config: MangoRuntimeAppConfig, menu?: ShellMenu): MangoAp
   };
 }
 
-function createLocalRuntime(menu: ShellMenu) {
+function createLocalRuntime(menu: ShellMenu, tabKey: string) {
   const appCode = menu.moduleCode || 'mango-admin-local';
   return createRuntime(
     {
       appCode,
-      instanceId: `local:${appCode}`,
+      instanceId: `local:${appCode}::tab-${hashTabKey(tabKey)}`,
       appName: appCode,
       appType: 'LOCAL',
       deployMode: 'LOCAL',
@@ -527,6 +686,26 @@ function createBaseRuntime(config: MangoRuntimeAppConfig): MangoAppRuntime {
     eventBus: shellRuntimeEventBus,
     theme: createShellRuntimeTheme(),
   };
+}
+
+function createTabRuntimeConfig(config: MangoRuntimeAppConfig, tabKey: string): MangoRuntimeAppConfig {
+  const baseInstanceId = config.instanceId?.trim() || config.appCode;
+  if (!tabKey || tabKey === 'default') {
+    return { ...config, instanceId: baseInstanceId };
+  }
+  return {
+    ...config,
+    instanceId: `${baseInstanceId}::tab-${hashTabKey(tabKey)}`,
+  };
+}
+
+function hashTabKey(value: string): string {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(16).padStart(8, '0');
 }
 
 export function createShellRuntimeTheme(): MangoRuntimeTheme {

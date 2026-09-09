@@ -17,9 +17,17 @@ describe('@mango/admin-shell package boundary', () => {
   it('installs the shared error boundary for every Shell-created Vue app', () => {
     const bootstrapSource = readFile('src/appBootstrap.ts');
     const runtimeHostSource = readFile('src/runtime/runtimeHost.ts');
+    const localPageCacheSource = readFile('src/runtime/localPageCache.ts');
+    const parentViewSource = readFile('src/layout/routerView/parent.vue');
 
     expect(bootstrapSource).toContain('installShellErrorHandler(app)');
-    expect(runtimeHostSource.match(/installShellApp\(mountedLocalPage\)/gu)).toHaveLength(2);
+    expect(runtimeHostSource).toContain('createLocalPageCacheHost');
+    expect(localPageCacheSource).toContain('installShellApp');
+    expect(localPageCacheSource).toContain('KeepAlive');
+    expect(localPageCacheSource).toContain('routeLocationKey');
+    expect(localPageCacheSource).toContain('routerViewLocationKey');
+    expect(parentViewSource).toContain('route.meta.keepAlive');
+    expect(parentViewSource).not.toContain('keepAliveNames');
   });
 
   it('uses only exact workspace dependency pins in the development manifest', () => {

@@ -1,44 +1,24 @@
 <template>
-  <el-main
-    class="layout-main"
-    :class="{ 'layout-main--fixed-shell': enableFixedShell }"
-    :style="layoutMainStyle"
-  >
-    <template v-if="!enableFixedShell">
+  <el-main class="layout-main" :class="{ 'layout-main--fixed-shell': enableFixedShell }" :style="layoutMainStyle">
+    <div class="layout-main-frame" :class="{ 'layout-main-frame--fixed-shell': enableFixedShell }">
       <el-scrollbar
         ref="layoutMainScrollbarRef"
         class="layout-main-scroll layout-backtop-header-fixed"
+        :class="{ 'layout-main-scroll--content': enableFixedShell }"
         wrap-class="layout-main-scroll"
         view-class="layout-main-scroll"
       >
         <div class="layout-main-body">
-          <div class="layout-main-content">
-            <ShellRuntimeOutlet v-if="contentMode === 'runtime-outlet'" />
-            <LayoutParentView v-else />
+          <div class="layout-main-content-shell" :class="{ 'layout-main-content-shell--enabled': enableFixedShell }">
+            <div class="layout-main-content">
+              <ShellRuntimeOutlet v-if="contentMode === 'runtime-outlet'" />
+              <LayoutParentView v-else />
+            </div>
           </div>
           <LayoutFooter v-if="showFooter && !enableEdgeFooter" />
         </div>
       </el-scrollbar>
       <LayoutFooter v-if="showFooter && enableEdgeFooter" />
-    </template>
-    <div
-      v-else
-      class="layout-main-body layout-main-body--fixed-shell"
-    >
-      <el-scrollbar
-        ref="layoutMainScrollbarRef"
-        class="layout-main-scroll layout-main-scroll--content layout-backtop-header-fixed"
-        wrap-class="layout-main-scroll"
-        view-class="layout-main-scroll"
-      >
-        <div class="layout-main-content-shell">
-          <div class="layout-main-content">
-            <ShellRuntimeOutlet v-if="contentMode === 'runtime-outlet'" />
-            <LayoutParentView v-else />
-          </div>
-        </div>
-      </el-scrollbar>
-      <LayoutFooter v-if="showFooter" />
     </div>
     <el-backtop :target="setBacktopClass" />
   </el-main>
@@ -92,6 +72,13 @@ const setBacktopClass = computed(() => {
   flex-direction: column;
 }
 
+.layout-main-frame {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
+
 .layout-main-scroll {
   flex: 1;
   min-height: 0;
@@ -106,16 +93,13 @@ const setBacktopClass = computed(() => {
   flex-direction: column;
 }
 
-.layout-main-body--fixed-shell {
-  min-height: 0;
-  height: 100%;
-  overflow: hidden;
-  padding: 0;
-}
-
 .layout-main-content {
   flex: 1;
-  min-height: calc(100vh - var(--mango-header-height) - var(--mango-tags-view-height) - var(--mango-layout-footer-height) - var(--layout-content-space) - var(--layout-content-safe-bottom));
+  min-height: calc(
+    100vh - var(--mango-header-height) - var(--mango-tags-view-height) - var(--mango-layout-footer-height) - var(
+        --layout-content-space
+      ) - var(--layout-content-safe-bottom)
+  );
 }
 
 .layout-main-content-shell {
@@ -124,12 +108,24 @@ const setBacktopClass = computed(() => {
   box-sizing: border-box;
 }
 
+.layout-main-content-shell:not(.layout-main-content-shell--enabled) {
+  padding: 0;
+}
+
+.layout-main-frame--fixed-shell .layout-main-body {
+  padding: 0;
+}
+
 .layout-main-scroll--content {
   min-height: 0;
 }
 
 :deep(.router-view-parent.is-root) {
-  min-height: calc(100vh - var(--mango-header-height) - var(--mango-tags-view-height) - var(--mango-layout-footer-height) - var(--layout-content-space) - var(--layout-content-safe-bottom));
+  min-height: calc(
+    100vh - var(--mango-header-height) - var(--mango-tags-view-height) - var(--mango-layout-footer-height) - var(
+        --layout-content-space
+      ) - var(--layout-content-safe-bottom)
+  );
 }
 
 .layout-backtop-header-fixed {
