@@ -1,5 +1,57 @@
 # Mango Changelog
 
+## v2026.09.09-maven-1.0.52-profile-password-admin-shell-release - 2026-09-09
+
+Status: `PENDING`. Planned Maven/docs `1.0.52` (192 coordinates) and the 25-package npm closure ending at `@mango/cli@1.2.12`; plan digest `1f248bc498bd40d54ed4fdd7579dadf497844fbb4595faf6189539022360e71d`.
+
+### Pull Requests
+
+- [PR #948](https://github.com/HardyDou/mango/pull/948) Fixed Admin Shell tab-cache instance isolation and responsive route-state preservation. Packages: `@mango/common@2.0.2`, `@mango/admin-shell@1.0.72`, and generated npm dependents through `@mango/cli@1.2.12`. Business Adaptation: verify same-route tabs and responsive layout state.
+- [PR #949](https://github.com/HardyDou/mango/pull/949) Fixed the profile password-change endpoint and identity service contract. Packages: Maven/docs `1.0.52`, `@mango/auth@1.0.32`, and generated npm dependents through `@mango/cli@1.2.12`. Business Adaptation: verify the authenticated password-change flow and identity security checks.
+
+### Fixed
+
+- Isolate Admin Shell tab-cache instances by complete route identity and preserve state across responsive layout changes.
+- Restore the authenticated profile password-change endpoint and identity API contract.
+
+### Changed
+
+- Advance the machine-generated Maven/docs batch to `1.0.52` and the npm closure to the plan versions; `@mango/pmo@1.4.4` remains unchanged.
+
+### Versions
+
+- Maven/docs: `1.0.51` to `1.0.52` (192 coordinates). npm package versions: `@mango/common@2.0.2`, `@mango/admin-extension@1.0.4`, `@mango/ai@1.1.2`, `@mango/auth@1.0.32`, `@mango/file@1.0.38`, `@mango/grid-layout@1.0.21`, `@mango/grid-widgets@1.0.27`, `@mango/home@1.0.20`, `@mango/rbac@1.0.32`, `@mango/site-shell@1.0.17`, `@mango/system@1.0.40`, `@mango/admin-pages@1.0.41`, `@mango/calendar@1.0.42`, `@mango/cms@1.0.31`, `@mango/job@1.0.35`, `@mango/link@1.0.28`, `@mango/notice@1.0.47`, `@mango/numgen@1.0.43`, `@mango/payment@1.0.34`, `@mango/template@1.0.43`, `@mango/workflow@1.0.51`, `@mango/admin-shell@1.0.72`, `@mango/workflow-business-example@1.0.50`, `@mango/admin@1.1.8`, and `@mango/cli@1.2.12`; `@mango/pmo@1.4.4` remains unchanged.
+
+### Published Packages
+
+- Pending sealed prepare and dual-registry publication; no registry write has occurred.
+
+### Business Impact
+
+- Tab state remains isolated and password changes work through the restored identity endpoint; no production database or deployment change is included.
+
+### Upgrade Estimate
+
+- Audience: generated Mango applications and Admin Shell/Auth/Identity consumers.
+- Engineering Effort: 30 to 60 minutes for generated consumers; 1 to 3 hours for customized integrations.
+- Execution Window: 45 to 120 minutes including upgrade and smoke verification.
+- Service Downtime: no framework-mandated downtime.
+- Rollback Effort: 20 to 45 minutes to restore Maven `1.0.51`, CLI `1.2.11`, and the prior npm tuple.
+- Assumptions: Java 21, Node `22.23.1`, configured registries, authenticated tenant user, and representative multi-tab navigation.
+
+### Upgrade Notes
+
+1. Upgrade the complete tuple to Maven `1.0.52`, CLI `1.2.12`, and the planned npm versions; retain PMO `1.4.4`.
+2. Verify password change and same-route tab isolation after upgrade.
+
+### Verification
+
+- Plan, release-notes, catalog/style/workspace checks, affected frontend/Maven tests, prepare, registry back-checks, and pure consume-registry consumer are required before publication.
+
+### Rollback
+
+- Restore Maven `1.0.51`, CLI `1.2.11`, and the previous npm tuple through the normal immutable application release process.
+
 ## v2026.09.04-maven-1.0.51-resource-finalize-runtime-mutations-release - 2026-09-04
 
 Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `ebbb1d84f8613cf85d70a5db824c0667b3668c1419968684d1d9d230cc22707a` for release plan `bb9e5a6ccc02f14e002f98ead6a7f7f6eee79a33141c629c453d1c4f75e6a8db` and prepared candidate `1e41f791986d6a5c56712a6d370a4d8f6ae9bde070e1680fd344854f881aca57` is `COMPLETED`: all 192 Maven/docs coordinates at `1.0.51` and 16 npm packages ending at `@mango/cli@1.2.11` match the sealed candidate in both publish and consume registries, the pure consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`.

@@ -1,5 +1,54 @@
 # @mango/cli Changelog
 
+## 1.2.12 - 2026-09-09
+
+### Pull Requests
+
+- [PR #948](https://github.com/HardyDou/mango/pull/948) Fixed Admin Shell tab-cache isolation. Packages: the generated npm closure through `@mango/cli@1.2.12`. Business Adaptation: verify same-route tabs and responsive state.
+- [PR #949](https://github.com/HardyDou/mango/pull/949) Fixed the profile password-change endpoint. Packages: Maven/docs `1.0.52`, `@mango/auth@1.0.32`, and generated npm dependents through `@mango/cli@1.2.12`. Business Adaptation: verify authenticated password change and identity security checks.
+
+### Fixed
+
+- Carry the Admin Shell tab-cache and profile password-change fixes into generated consumer locks.
+
+### Changed
+
+- Advance generated consumers to Maven `1.0.52` and the machine-generated npm tuple; `@mango/pmo@1.4.4` remains unchanged.
+
+### Versions
+
+- CLI: `1.2.11` to `1.2.12`; Maven/docs: `1.0.51` to `1.0.52`.
+
+### Published Packages
+
+- Pending sealed prepare and dual-registry publication.
+
+### Business Impact
+
+- Generated consumers receive isolated tab-cache behavior and the restored profile password-change flow.
+
+### Upgrade Estimate
+
+- Audience: generated applications and direct CLI consumers.
+- Engineering Effort: 30 to 60 minutes.
+- Execution Window: 45 to 120 minutes.
+- Service Downtime: no framework-mandated downtime.
+- Rollback Effort: 20 to 45 minutes.
+- Assumptions: Node `22.23.1`, configured registries, and authenticated test user.
+
+### Upgrade Notes
+
+1. Upgrade CLI to `1.2.12` with Maven `1.0.52` and the generated npm tuple.
+2. Run password-change and tab-cache smoke checks.
+
+### Verification
+
+- Verify the sealed candidate, both registry roles, and a pure consume-registry consumer before publication.
+
+### Rollback
+
+- Restore CLI `1.2.11` and Maven `1.0.51`; never overwrite immutable coordinates.
+
 ## 1.2.11 - 2026-09-04
 
 ### Pull Requests
