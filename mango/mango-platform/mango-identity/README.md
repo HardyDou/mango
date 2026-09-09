@@ -16,6 +16,7 @@
 | 认证事实查询 | 为 `mango-auth` 提供 `AuthUserProvider`，以及按用户名和用户 ID 查询认证事实的内部接口 |
 | 第三方身份绑定 | 保存企业微信等外部身份和 Mango 用户的绑定关系 |
 | 当前用户资料 | 读取和维护昵称、头像、姓名、证件类型、证件号码、认证状态和来源；证件号码只脱敏返回 |
+| 当前用户修改密码 | 校验当前密码和统一密码策略后更新当前登录账号，并清理强制改密与临时锁定状态 |
 | 联系方式安全变更 | 当前用户使用当前密码和新手机号/邮箱验证码修改联系方式 |
 | 当前用户授权管理 | 按当前租户、应用和用户查看绑定，并在密码校验后解绑 |
 | 租户初始化 | 新建租户时为创建者补建管理员成员，并尝试绑定 `ROLE_ADMIN` |
@@ -135,6 +136,7 @@ HTTP 接口前缀是 `/identity`。
 |------|------|------|------|
 | GET | `/identity/me/profile` | LOGIN | 读取当前用户资料，联系方式和证件号码脱敏 |
 | PUT | `/identity/me/profile` | LOGIN | 更新当前用户基础资料和实名信息；认证状态、来源只读 |
+| PUT | `/identity/me/password` | LOGIN | 校验旧密码和新密码策略后修改当前登录用户密码 |
 | POST | `/identity/me/contact-captcha` | LOGIN | 向新手机号或邮箱发送验证码 |
 | PUT | `/identity/me/contact` | LOGIN | 使用当前密码和新值验证码修改联系方式 |
 | GET | `/identity/me/external-identities` | LOGIN | 查询当前用户在当前应用的第三方授权 |
@@ -168,6 +170,7 @@ HTTP 接口前缀是 `/identity`。
 | `UpdateIdentityUserCommand` | `userId` 必填；可改昵称、归属主体、邮箱、手机号、头像、状态和备注 |
 | `UpdateIdentityUserStatusCommand` | `userId`、`status` 必填；不能修改当前登录用户自己的成员状态 |
 | `ResetIdentityUserPasswordCommand` | `userId`、`password` 必填，密码长度 6 到 200 |
+| `ChangeCurrentUserPasswordCommand` | `oldPassword`、`newPassword` 必填；只作用于当前登录用户，新密码按统一密码策略校验 |
 | `BindExternalIdentityCommand` | `userId`、`provider`、`corpId`、`externalUserId` 必填 |
 | `IdentityUserPageQuery` | 支持 `username`、`keyword`、`nickname`、`phone`、`email`、`status`、`realm`、`actorType`、`partyType`、`partyId`、`orgId`、最多 500 个 `orgIds` 和 `excludeOrgId` |
 | `CreateTenantMemberInOrgCommand` | 受信组织开户命令；`tenantId`、`orgId`、`username`、主组织/主管标识和操作用户必填，可传岗位、密码、姓名、联系方式、状态和备注 |

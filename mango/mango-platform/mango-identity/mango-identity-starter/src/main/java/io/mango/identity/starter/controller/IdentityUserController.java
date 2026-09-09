@@ -5,6 +5,7 @@ import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.vo.PageResult;
 import io.mango.identity.api.command.BatchDeleteIdentityUserCommand;
 import io.mango.identity.api.command.BindExternalIdentityCommand;
+import io.mango.identity.api.command.ChangeCurrentUserPasswordCommand;
 import io.mango.identity.api.command.CreateIdentityUserCommand;
 import io.mango.identity.api.command.ResetIdentityUserPasswordCommand;
 import io.mango.identity.api.command.RequireIdentityUserPasswordResetCommand;
@@ -89,6 +90,14 @@ public class IdentityUserController implements IdentityUserApi {
     @Operation(summary = "更新当前用户联系方式", description = "校验当前密码和验证码后更新手机号或邮箱")
     public R<CurrentUserProfileVO> updateCurrentContact(@RequestBody UpdateCurrentUserContactCommand command) {
         return R.ok(identityUserService.updateCurrentContact(command));
+    }
+
+    @Override
+    @PutMapping("/me/password")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "修改当前用户密码")
+    @Operation(summary = "修改当前用户密码", description = "校验当前登录用户的旧密码和密码策略后更新密码")
+    public R<Boolean> changeCurrentPassword(@RequestBody ChangeCurrentUserPasswordCommand command) {
+        return R.ok(identityUserService.changeCurrentPassword(command));
     }
 
     @GetMapping("/users/page")

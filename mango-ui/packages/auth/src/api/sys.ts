@@ -1,4 +1,4 @@
-import { get, post } from '@mango/common/utils/request';
+import { get, post, put } from '@mango/common/utils/request';
 import { generateArithmetic } from '@mango/common/api/captcha';
 
 export interface LoginResult {
@@ -92,7 +92,7 @@ export function getCaptcha() {
  * 修改密码
  */
 export function updatePassword(data: { oldPassword: string; newPassword: string }) {
-  return post('/user/password', data);
+  return put('/identity/me/password', data);
 }
 
 /**

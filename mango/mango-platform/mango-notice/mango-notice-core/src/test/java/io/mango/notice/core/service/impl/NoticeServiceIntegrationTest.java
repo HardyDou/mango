@@ -23,6 +23,7 @@ import io.mango.file.api.vo.FileRecordVO;
 import io.mango.identity.api.IdentityUserApi;
 import io.mango.identity.api.command.BatchDeleteIdentityUserCommand;
 import io.mango.identity.api.command.BindExternalIdentityCommand;
+import io.mango.identity.api.command.ChangeCurrentUserPasswordCommand;
 import io.mango.identity.api.command.CreateIdentityUserCommand;
 import io.mango.identity.api.command.RequireIdentityUserPasswordResetCommand;
 import io.mango.identity.api.command.ResetIdentityUserPasswordCommand;
@@ -1927,6 +1928,11 @@ class NoticeServiceIntegrationTest {
         public R<CurrentUserProfileVO> updateCurrentContact(
                 UpdateCurrentUserContactCommand command) {
             return R.ok(null);
+        }
+
+        @Override
+        public R<Boolean> changeCurrentPassword(ChangeCurrentUserPasswordCommand command) {
+            return R.ok(Boolean.TRUE);
         }
 
         void addUser(Long id, String nickname, String email, String phone) {

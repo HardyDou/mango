@@ -13,6 +13,7 @@ import io.mango.captcha.api.dto.CaptchaSendRequest;
 import io.mango.captcha.api.dto.CaptchaVerifyRequest;
 import io.mango.identity.api.command.BindExternalIdentityCommand;
 import io.mango.identity.api.command.BatchDeleteIdentityUserCommand;
+import io.mango.identity.api.command.ChangeCurrentUserPasswordCommand;
 import io.mango.identity.api.command.CreateTenantMemberInOrgCommand;
 import io.mango.identity.api.command.RestoreTenantMemberInOrgCommand;
 import io.mango.identity.api.command.SendContactCaptchaCommand;
@@ -846,6 +847,41 @@ class IdentityUserServiceIntegrationTest {
         assertThat(jdbcTemplate.queryForObject("select email from identity_user where id = 1001", String.class))
                 .isEqualTo("new@example.com");
         verify(captchaApi).verify(any(CaptchaVerifyRequest.class));
+    }
+
+    @Test
+    @DisplayName("当前用户修改密码校验旧密码并清理安全状态")
+    void changeCurrentPasswordShouldVerifyOldPasswordAndClearSecurityState() {
+        setCurrentUser(1001L);
+        seedUser(1001L, "current", "当前用户", "1", 1);
+        seedMember(10L, 1L, 1001L, 1, null);
+        jdbcTemplate.update("""
+                update identity_user
+                   set password = ?, password_reset_required = true, failed_login_count = 3,
+                       locked_until = dateadd('MINUTE', 10, current_timestamp),
+                       locked_reason = 'TOO_MANY_FAILED_LOGIN_ATTEMPTS'
+                 where id = 1001
+                """, passwordEncoder.encode("current-password"));
+
+        ChangeCurrentUserPasswordCommand wrongPassword = new ChangeCurrentUserPasswordCommand();
+        wrongPassword.setOldPassword("wrong-password");
+        wrongPassword.setNewPassword("Changed@123456");
+        assertThatThrownBy(() -> service.changeCurrentPassword(wrongPassword))
+                .isInstanceOf(io.mango.common.exception.BizException.class);
+
+        ChangeCurrentUserPasswordCommand command = new ChangeCurrentUserPasswordCommand();
+        command.setOldPassword("current-password");
+        command.setNewPassword("Changed@123456");
+        assertThat(service.changeCurrentPassword(command)).isTrue();
+
+        IdentityUserEntity persisted = userMapper.selectById(1001L);
+        assertThat(passwordEncoder.matches("Changed@123456", persisted.getPassword())).isTrue();
+        assertThat(persisted.getPasswordResetRequired()).isFalse();
+        assertThat(persisted.getPasswordUpdatedAt()).isNotNull();
+        assertThat(persisted.getFailedLoginCount()).isZero();
+        assertThat(persisted.getLastFailedLoginAt()).isNull();
+        assertThat(persisted.getLockedUntil()).isNull();
+        assertThat(persisted.getLockedReason()).isNull();
     }
 
     @Test

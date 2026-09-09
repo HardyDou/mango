@@ -1,4 +1,4 @@
-import { get, post } from '@mango/common';
+import { get, post, put } from '@mango/common';
 import { generateArithmetic } from './captcha';
 
 /**
@@ -59,7 +59,7 @@ export function getCaptcha() {
  * 修改密码
  */
 export function updatePassword(data: { oldPassword: string; newPassword: string }) {
-  return post('/user/password', data);
+  return put('/identity/me/password', data);
 }
 
 /**

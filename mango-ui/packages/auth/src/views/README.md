@@ -56,7 +56,7 @@ import '@mango/auth/style.css';
 ## 4. 后端依赖
 
 - 后端模块：`mango-platform/mango-auth`、`mango-platform/mango-identity`、`mango-platform/mango-captcha`、`mango-platform/mango-system`。
-- API 前缀：`/auth/login`、`/auth/providers/**`、`/auth/provider-configs`、`/identity/me/**`、`/user/password`、`/system/tenant/login-options`。
+- API 前缀：`/auth/login`、`/auth/providers/**`、`/auth/provider-configs`、`/identity/me/**`、`/system/tenant/login-options`。
 - 验证码由 `@mango/common/api/captcha` 和后端 captcha/kv 能力提供。
 
 ## 5. 管理入口

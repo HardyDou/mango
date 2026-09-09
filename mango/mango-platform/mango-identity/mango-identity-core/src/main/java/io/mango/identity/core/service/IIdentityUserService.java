@@ -3,6 +3,7 @@ package io.mango.identity.core.service;
 import io.mango.common.vo.PageResult;
 import io.mango.identity.api.command.BindExternalIdentityCommand;
 import io.mango.identity.api.command.BatchDeleteIdentityUserCommand;
+import io.mango.identity.api.command.ChangeCurrentUserPasswordCommand;
 import io.mango.identity.api.command.CreateIdentityUserCommand;
 import io.mango.identity.api.command.ResetIdentityUserPasswordCommand;
 import io.mango.identity.api.command.RequireIdentityUserPasswordResetCommand;
@@ -44,6 +45,8 @@ public interface IIdentityUserService extends MangoTypedCrudService<
     ContactCaptchaTicketVO sendCurrentContactCaptcha(SendContactCaptchaCommand command);
 
     CurrentUserProfileVO updateCurrentContact(UpdateCurrentUserContactCommand command);
+
+    Boolean changeCurrentPassword(ChangeCurrentUserPasswordCommand command);
 
     /**
      * 分页查询当前租户可管理的身份用户。

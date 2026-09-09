@@ -1,5 +1,7 @@
 # Mango Auth
 
+本次个人中心修改密码 404 修复只新增并启用 Identity 的 `PUT /identity/me/password` 当前用户接口；认证登录、强制改密票据和其它 Auth API 行为不变。前端调用及接口验证记录见 [`@mango/auth` README](../../../mango-ui/packages/auth/README.md) 与 [交付记录](../../../mango-docs/evidence/profile-password-404/standard-delivery-record.md)。
+
 ## 1. 概览
 
 `mango-auth` 是 Mango 的认证模块，提供用户名密码登录、登录前机构选择、access token / refresh token 签发、刷新、注销、校验、当前登录用户信息、验证码发送，以及企业微信、钉钉第三方登录编排。

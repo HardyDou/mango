@@ -57,6 +57,17 @@ describe('current identity API', () => {
     );
   });
 
+  it('uses the current-user password endpoint for password changes', async () => {
+    const { updatePassword } = await import('../sys');
+
+    await updatePassword({ oldPassword: 'current-password', newPassword: 'Changed@123456' });
+
+    expect(request.put).toHaveBeenCalledWith('/identity/me/password', {
+      oldPassword: 'current-password',
+      newPassword: 'Changed@123456',
+    });
+  });
+
   it('places password-protected unbind data in the DELETE body', async () => {
     await unbindCurrentExternalIdentity({ bindingId: 9, currentPassword: 'password' });
 

@@ -641,6 +641,12 @@ class AuthSecurityFlowTest {
                 }
 
                 @Override
+                public R<Boolean> changeCurrentPassword(
+                        io.mango.identity.api.command.ChangeCurrentUserPasswordCommand command) {
+                    return R.ok(Boolean.TRUE);
+                }
+
+                @Override
                 public R<io.mango.common.vo.PageResult<io.mango.identity.api.vo.IdentityUserVO>> page(
                         io.mango.identity.api.query.IdentityUserPageQuery query) {
                     return R.ok(io.mango.common.vo.PageResult.of(List.of(), 0, 1, 10));
