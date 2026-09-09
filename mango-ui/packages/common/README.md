@@ -16,20 +16,20 @@
 
 ## 2. 功能清单
 
-| 能力        | 使用入口                                                                                                                                                                                   | 说明                                                        |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
-| HTTP client | `createMangoHttpClient`                                                                                                                                                                    | 新业务默认入口；host 注入、实例隔离、标准取消和规范化错误。 |
+| 能力        | 使用入口                                                                                                                                                                                   | 说明                                                                                |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| HTTP client | `createMangoHttpClient`                                                                                                                                                                    | 新业务默认入口；host 注入、实例隔离、标准取消和规范化错误。                         |
 | 日期范围    | `toBackendDateRangeParams`                                                                                                                                                                 | 将日期-only 的开始/结束边界分别补齐为 `00:00:00`/`23:59:59`，完整日期时间保持不变。 |
-| 旧请求入口  | `request`、`get`、`post`、`put`、`del`                                                                                                                                                     | 迁移期兼容；不得新增业务依赖。                              |
-| Session     | `Session`                                                                                                                                                                                  | 保存 token、refresh token、过期时间、用户信息和租户。       |
-| API 加密    | `wrapRequest`、`sm2Encrypt`、`sm2Decrypt`                                                                                                                                                  | 按环境变量启用 SM2 或 BFF 透传。                            |
-| 菜单和权限  | `buildMenuTree`、权限函数、TagsView 工具                                                                                                                                                   | 给管理后台菜单、按钮权限和标签页使用。                      |
-| Web Crypto  | `installWebCryptoRandomUUIDCompatibility`、`createWebCryptoRandomUUID`、`generateRfc4122UuidV4`                                                                                            | 为缺少原生 `randomUUID` 的运行环境提供安全 UUID 兼容。      |
-| 公共 API    | `uploadFile`、captcha、org、area、dict API                                                                                                                                                 | 连接 file、captcha、org、system 后端。                      |
-| 通用组件    | `MangoListPage`、`MangoSearchPanel`、`MangoListPanel`、`MangoDetailPage`、`MangoFormPage`、`MangoPageSection`、`MangoDialog`、`Pagination`、`DictSelect`、`OrgSelector`、`UserSelector` 等 | 后台页面骨架和复用组件。                                    |
-| hooks       | `useTitle`、`useDict`、`useECharts`、`useLocale`                                                                                                                                           | 页面标题、字典、图表和语言相关能力。                        |
-| 实时通信    | `useRealtime`、`SSE`、`Websocket`                                                                                                                                                          | SSE/WebSocket client 和组件。                               |
-| 主题和消息  | `mangoMessage`、theme 工具、主题 CSS                                                                                                                                                       | 管理端统一提示和主题样式。                                  |
+| 旧请求入口  | `request`、`get`、`post`、`put`、`del`                                                                                                                                                     | 迁移期兼容；不得新增业务依赖。                                                      |
+| Session     | `Session`                                                                                                                                                                                  | 保存 token、refresh token、过期时间、用户信息和租户。                               |
+| API 加密    | `wrapRequest`、`sm2Encrypt`、`sm2Decrypt`                                                                                                                                                  | 按环境变量启用 SM2 或 BFF 透传。                                                    |
+| 菜单和权限  | `buildMenuTree`、权限函数、TagsView 工具                                                                                                                                                   | 给管理后台菜单、按钮权限和标签页使用。                                              |
+| Web Crypto  | `installWebCryptoRandomUUIDCompatibility`、`createWebCryptoRandomUUID`、`generateRfc4122UuidV4`                                                                                            | 为缺少原生 `randomUUID` 的运行环境提供安全 UUID 兼容。                              |
+| 公共 API    | `uploadFile`、captcha、org、area、dict API                                                                                                                                                 | 连接 file、captcha、org、system 后端。                                              |
+| 通用组件    | `MangoListPage`、`MangoSearchPanel`、`MangoListPanel`、`MangoDetailPage`、`MangoFormPage`、`MangoPageSection`、`MangoDialog`、`Pagination`、`DictSelect`、`OrgSelector`、`UserSelector` 等 | 后台页面骨架和复用组件。                                                            |
+| hooks       | `useTitle`、`useDict`、`useECharts`、`useLocale`                                                                                                                                           | 页面标题、字典、图表和语言相关能力。                                                |
+| 实时通信    | `useRealtime`、`SSE`、`Websocket`                                                                                                                                                          | SSE/WebSocket client 和组件。                                                       |
+| 主题和消息  | `mangoMessage`、theme 工具、主题 CSS                                                                                                                                                       | 管理端统一提示和主题样式。                                                          |
 
 ## 3. 接入方式
 
@@ -263,6 +263,10 @@ function focusDialog() {
 部署时没有单独的 `@mango/common` 后端 starter。它调用的接口来自业务已经启用的后端模块，例如 file、captcha、org、system、auth。
 
 ## 4. 配置说明
+
+### Tags View Route Snapshot
+
+页签状态使用 `@mango/common/utils/tagsView` 的统一快照结构保存 `path`、`name`、`query`、`params`、`hash`、`meta` 和 `tabKey`。`createTabKey()` 按路径及 query/params/hash 的稳定序列化结果生成身份，因此同一路径的不同业务记录可以同时打开；页签持久化恢复应先经过 `normalizeTagsViewRoutes()`，不要只按 `path` 去重。
 
 请求配置：
 

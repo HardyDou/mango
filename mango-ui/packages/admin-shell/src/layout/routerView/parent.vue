@@ -1,26 +1,46 @@
 <template>
-  <div
-    class="router-view-parent"
-    :class="{ 'is-root': isRootParent }"
-  >
+  <div class="router-view-parent" :class="{ 'is-root': isRootParent }">
     <router-view v-slot="{ Component, route }">
-      <keep-alive :include="keepAliveNames">
+      <keep-alive v-if="route.meta.keepAlive">
         <component
           :is="Component"
-          :key="route.path"
+          :key="
+            getTagKey(
+              createTagSnapshot({
+                path: route.path,
+                name: route.name,
+                query: route.query,
+                params: route.params,
+                hash: route.hash,
+                meta: { ...route.meta },
+              }),
+            )
+          "
         />
       </keep-alive>
+      <component
+        v-else
+        :is="Component"
+        :key="
+          getTagKey(
+            createTagSnapshot({
+              path: route.path,
+              name: route.name,
+              query: route.query,
+              params: route.params,
+              hash: route.hash,
+              meta: { ...route.meta },
+            }),
+          )
+        "
+      />
     </router-view>
   </div>
 </template>
 
 <script setup lang="ts" name="RouterViewParent">
 import { computed, inject, provide } from 'vue';
-import { storeToRefs } from 'pinia';
-import { useKeepAliveNames } from '../../stores/keepAliveNames';
-
-const storesKeepAliveNames = useKeepAliveNames();
-const { keepAliveNames } = storeToRefs(storesKeepAliveNames);
+import { createTagSnapshot, getTagKey } from '@mango/common/utils/tagsView';
 
 const parentDepth = inject('routerViewParentDepth', 0);
 const isRootParent = computed(() => parentDepth === 0);

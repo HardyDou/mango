@@ -1,33 +1,9 @@
 <template>
-  <div
-    v-if="visible"
-    class="context-menu"
-  >
-    <div
-      class="context-menu-item"
-      @click="onRefresh"
-    >
-      刷新
-    </div>
-    <div
-      v-if="!isCurrentHomeTag"
-      class="context-menu-item"
-      @click="onClose"
-    >
-      关闭
-    </div>
-    <div
-      class="context-menu-item"
-      @click="onCloseOthers"
-    >
-      关闭其他
-    </div>
-    <div
-      class="context-menu-item"
-      @click="onCloseAll"
-    >
-      关闭全部
-    </div>
+  <div v-if="visible" class="context-menu">
+    <div class="context-menu-item" @click="onRefresh">刷新</div>
+    <div v-if="!isCurrentHomeTag" class="context-menu-item" @click="onClose">关闭</div>
+    <div class="context-menu-item" @click="onCloseOthers">关闭其他</div>
+    <div class="context-menu-item" @click="onCloseAll">关闭全部</div>
   </div>
 </template>
 
@@ -35,11 +11,11 @@
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useTagsViewRoutes } from '../../../stores/tagsViewRoutes';
-import { isHomeTag } from '@mango/common/utils/tagsView';
-import { resolveClosedTagFallback, resolveTagLocation } from '../../../runtime/tagNavigation';
+import { createTagSnapshot, getTagKey, isHomeTag, isSameTag, type MangoTagRoute } from '@mango/common/utils/tagsView';
+import { normalizeRouteLocation, resolveClosedTagFallback, resolveTagLocation } from '../../../runtime/tagNavigation';
 
 const props = defineProps<{
-  tag: any;
+  tag: MangoTagRoute | null;
 }>();
 
 const emit = defineEmits(['close']);
@@ -47,47 +23,73 @@ const route = useRoute();
 const router = useRouter();
 const storesTagsViewRoutes = useTagsViewRoutes();
 const visible = ref(true);
-const isCurrentHomeTag = computed(() => isHomeTag(props.tag));
+const isCurrentHomeTag = computed(() => isHomeTag(props.tag || undefined));
 
 watch(
   () => props.tag,
   () => {
     visible.value = true;
-  }
+  },
 );
 
 const onRefresh = () => {
-  router.replace(resolveTagLocation(props.tag, true));
+  if (!props.tag) {
+    return;
+  }
+  const currentTag = createTagSnapshot({
+    path: route.path,
+    name: route.name,
+    query: route.query,
+    params: route.params,
+    hash: route.hash,
+    meta: { ...route.meta },
+  });
+  if (isSameTag(props.tag, currentTag)) {
+    window.dispatchEvent(new CustomEvent('mango-tags-view-refresh', { detail: { tabKey: props.tag.tabKey } }));
+  } else {
+    void router.replace(normalizeRouteLocation(resolveTagLocation(props.tag, true)));
+  }
   emit('close');
 };
 
 const onClose = async () => {
-  if (isHomeTag(props.tag)) {
+  const tag = props.tag;
+  if (!tag || isHomeTag(tag)) {
     emit('close');
     return;
   }
-  const fallback = resolveClosedTagFallback(storesTagsViewRoutes.tagsViewRoutes, props.tag, route.path);
-  const tags = storesTagsViewRoutes.tagsViewRoutes.filter((t) => t.path !== props.tag.path);
+  const currentTag = createTagSnapshot({
+    path: route.path,
+    name: route.name,
+    query: route.query,
+    params: route.params,
+    hash: route.hash,
+    meta: { ...route.meta },
+  });
+  const fallback = resolveClosedTagFallback(storesTagsViewRoutes.tagsViewRoutes, tag, currentTag);
+  const tags = storesTagsViewRoutes.tagsViewRoutes.filter((t) => getTagKey(t) !== getTagKey(tag));
   if (fallback) {
-    await router.push(fallback);
+    await router.push(normalizeRouteLocation(fallback));
   }
   storesTagsViewRoutes.setTagsViewRoutes(tags);
   emit('close');
 };
 
 const onCloseOthers = () => {
-  const tags = storesTagsViewRoutes.tagsViewRoutes.filter(
-    (t) => t.path === props.tag.path || t.meta?.isAffix
-  );
+  const tag = props.tag;
+  if (!tag) {
+    return;
+  }
+  const tags = storesTagsViewRoutes.tagsViewRoutes.filter((t) => getTagKey(t) === getTagKey(tag) || t.meta?.isAffix);
   storesTagsViewRoutes.setTagsViewRoutes(tags);
-  router.push(resolveTagLocation(props.tag));
+  router.push(normalizeRouteLocation(resolveTagLocation(tag)));
   emit('close');
 };
 
 const onCloseAll = () => {
   const tags = storesTagsViewRoutes.tagsViewRoutes.filter((t) => t.meta?.isAffix);
   storesTagsViewRoutes.setTagsViewRoutes(tags);
-  router.push(tags[0] || '/home');
+  router.push(normalizeRouteLocation(tags[0] ? resolveTagLocation(tags[0]) : '/home'));
   emit('close');
 };
 </script>
