@@ -138,7 +138,7 @@ const admin = createMangoAdminApp({
 
 Shell 默认把 `MangoThemeSettings` 注入 `@mango/auth` 的个人中心“主题设置”子页。顶栏不再单独显示设置齿轮，用户可从头像下拉菜单进入 `/profile?tab=theme`；主题、布局和界面偏好仍实时应用并保存在当前浏览器。
 
-Shell 为主应用和 runtime outlet 的本地页面分别创建 Vue App，但每个 App 都通过 `installShellApp()` 使用同一错误边界。Element Plus MessageBox 的取消和关闭属于正常交互，不写错误日志、不显示“系统错误，请刷新页面”；其它异常继续进入原有全局兜底。自定义全局 Promise 拒绝处理器时，可复用 `isElementPlusMessageBoxCancellation(error)`，避免在业务入口维护第二份判断。
+Shell 主应用和 runtime outlet 统一通过 `installShellApp()` 安装同一错误边界；runtime outlet 的本地页面由单一 Vue 宿主和按 `tabKey` 管理的 `KeepAlive` 缓存承载。Element Plus MessageBox 的取消和关闭属于正常交互，不写错误日志、不显示“系统错误，请刷新页面”；其它异常继续进入原有全局兜底。自定义全局 Promise 拒绝处理器时，可复用 `isElementPlusMessageBoxCancellation(error)`，避免在业务入口维护第二份判断。
 
 子入口：
 
@@ -195,6 +195,8 @@ Shell 首页会自动把模块返回的 `widgets` 合并进组件库，个人中
 `modules` 用于声明运行时模块加载方式，结构来自 `@mango/app-runtime`。本地页面优先使用已注册的 page loader；微前端页面需要在运行时配置中声明 entry、activeRule 和隔离策略。
 
 同一微应用可由多个模块或路由槽位挂载。Shell 使用模块的 `instanceId` 精确选择 Wujie 实例；未显式配置且同一 `runtimeCode` 出现多次时，运行时按 `runtimeCode:moduleCode` 生成稳定标识。重复的显式 `instanceId` 会作为配置错误阻断，避免请求上下文和定向销毁串到相邻实例。
+
+运行时页签会在模块实例标识后追加当前页签 `tabKey` 的稳定后缀，因此同一路径打开不同业务数据时保持独立的微应用实例。明确配置 `keepAlive: 1` 的本地页面由统一 Vue `KeepAlive` 宿主管理，页签切换触发 `deactivated/activated`，关闭页签才移除对应缓存实例；未配置缓存的页面仍按普通路由重新挂载。右键“刷新”会显式销毁当前页签实例并重新进入页面，不依赖重复导航触发刷新。
 
 ### Module Runtime Diagnostics
 

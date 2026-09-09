@@ -1,28 +1,18 @@
 <template>
   <div :class="containerClasses">
-    <el-scrollbar
-      class="tags-view-scrollbar"
-      @scroll="onScroll"
-    >
+    <el-scrollbar class="tags-view-scrollbar" @scroll="onScroll">
       <router-link
         v-for="tag in visitedViews"
-        :key="tag.path"
-        :to="{ path: tag.path, query: tag.query }"
+        :key="tag.tabKey"
+        :to="resolveTagLocation(tag)"
         :class="getTagItemClasses(tag)"
         @contextmenu.prevent="openContextMenu($event, tag)"
       >
-        <el-icon
-          v-if="showTagIcon && resolveTagIcon(tag)"
-          class="tag-icon"
-        >
+        <el-icon v-if="showTagIcon && resolveTagIcon(tag)" class="tag-icon">
           <component :is="resolveTagIcon(tag)" />
         </el-icon>
         <span class="tag-title">{{ tag.meta?.title || tag.name }}</span>
-        <el-icon
-          v-if="!tag.meta?.isAffix"
-          class="close-icon"
-          @click.prevent.stop="closeSelectedTag(tag)"
-        >
+        <el-icon v-if="!tag.meta?.isAffix" class="close-icon" @click.prevent.stop="closeSelectedTag(tag)">
           <Close />
         </el-icon>
       </router-link>
@@ -39,15 +29,15 @@
 
 <script setup lang="ts" name="tagsView">
 import { computed, ref, watch } from 'vue';
-import { useRoute, useRouter, type RouteRecordRaw } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { Close } from '@element-plus/icons-vue';
 import { iconMap } from '@mango/common/utils/iconConfig';
 import { useTagsViewRoutes } from '../../../stores/tagsViewRoutes';
 import { useLayoutStore } from '../../../stores/layout';
 import { DEFAULT_TAGS_STYLE, normalizeTagsStyle, usePreferencesStore } from '../../../stores/preferences';
-import { isHomeTag } from '@mango/common/utils/tagsView';
-import { resolveClosedTagFallback } from '../../../runtime/tagNavigation';
+import { createTagSnapshot, getTagKey, isHomeTag, isSameTag, type MangoTagRoute } from '@mango/common/utils/tagsView';
+import { normalizeRouteLocation, resolveClosedTagFallback, resolveTagLocation } from '../../../runtime/tagNavigation';
 import ContextMenu from './contextmenu.vue';
 
 const route = useRoute();
@@ -62,7 +52,7 @@ const { tagsStyle } = storeToRefs(preferencesStore);
 const contextMenuVisible = ref(false);
 const contextMenuLeft = ref(0);
 const contextMenuTop = ref(0);
-const contextMenuTag = ref<any>(null);
+const contextMenuTag = ref<MangoTagRoute | null>(null);
 
 const visitedViews = computed(() => tagsViewRoutes.value);
 const showTagIcon = computed(() => isTagsviewIcon.value);
@@ -73,27 +63,34 @@ const addCurrentRoute = () => {
   if (!route.name || route.meta?.isHide) {
     return;
   }
-  const exists = tagsViewRoutes.value.some((tag) => tag.path === route.path);
-  if (exists) {
-    return;
-  }
-  storesTagsViewRoutes.setTagsViewRoutes([
-    ...tagsViewRoutes.value,
-    {
+  storesTagsViewRoutes.upsertTag(
+    createTagSnapshot({
       path: route.path,
       name: route.name,
       query: route.query,
       params: route.params,
+      hash: route.hash,
       meta: { ...route.meta },
-    } as any,
-  ]);
+    }),
+  );
 };
 
-const isActive = (tag: any) => {
-  return tag.path === route.path;
+const currentTag = computed(() =>
+  createTagSnapshot({
+    path: route.path,
+    name: route.name,
+    query: route.query,
+    params: route.params,
+    hash: route.hash,
+    meta: { ...route.meta },
+  }),
+);
+
+const isActive = (tag: MangoTagRoute) => {
+  return isSameTag(tag, currentTag.value);
 };
 
-const getTagItemClasses = (tag: RouteRecordRaw) => {
+const getTagItemClasses = (tag: MangoTagRoute) => {
   return [
     'tags-view-item',
     resolvedTagsStyle.value || DEFAULT_TAGS_STYLE,
@@ -104,26 +101,26 @@ const getTagItemClasses = (tag: RouteRecordRaw) => {
   ];
 };
 
-const resolveTagIcon = (tag: RouteRecordRaw) => {
+const resolveTagIcon = (tag: MangoTagRoute) => {
   const iconName = typeof tag.meta?.icon === 'string' ? tag.meta.icon : '';
   return iconName ? iconMap[iconName] : undefined;
 };
 
-const openContextMenu = (e: MouseEvent, tag: any) => {
+const openContextMenu = (e: MouseEvent, tag: MangoTagRoute) => {
   contextMenuLeft.value = e.clientX;
   contextMenuTop.value = e.clientY;
   contextMenuTag.value = tag;
   contextMenuVisible.value = true;
 };
 
-const closeSelectedTag = async (tag: any) => {
+const closeSelectedTag = async (tag: MangoTagRoute) => {
   if (isHomeTag(tag)) {
     return;
   }
-  const fallback = resolveClosedTagFallback(visitedViews.value, tag, route.path);
-  const newTags = visitedViews.value.filter((t) => t.path !== tag.path);
+  const fallback = resolveClosedTagFallback(visitedViews.value, tag, currentTag.value);
+  const newTags = visitedViews.value.filter((t) => getTagKey(t) !== getTagKey(tag));
   if (fallback) {
-    await router.push(fallback);
+    await router.push(normalizeRouteLocation(fallback));
   }
   storesTagsViewRoutes.setTagsViewRoutes(newTags);
 };
@@ -134,12 +131,12 @@ const onScroll = () => {
 
 // Close context menu on click outside
 watch(
-  () => route.path,
+  () => route.fullPath,
   () => {
     addCurrentRoute();
     contextMenuVisible.value = false;
   },
-  { immediate: true }
+  { immediate: true },
 );
 </script>
 

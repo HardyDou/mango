@@ -1,8 +1,5 @@
 <template>
-  <section
-    v-loading="pageLoading"
-    class="router-view-parent is-root shell-runtime-outlet"
-  >
+  <section v-loading="pageLoading" class="router-view-parent is-root shell-runtime-outlet">
     <div
       v-if="showRuntimeBadge && runtimeDecision"
       class="shell-runtime-badge"
@@ -11,14 +8,8 @@
       <span>{{ runtimeDecision.resolvedPageType === 'MICRO_ROUTE' ? 'MICRO' : 'LOCAL' }}</span>
       <strong>{{ runtimeDecision.runtimeCode || runtimeDecision.moduleCode || 'local' }}</strong>
     </div>
-    <el-empty
-      v-if="!activeMenu"
-      description="暂无可访问菜单"
-    />
-    <div
-      ref="containerRef"
-      class="shell-runtime-content"
-    />
+    <el-empty v-if="!activeMenu" description="暂无可访问菜单" />
+    <div ref="containerRef" class="shell-runtime-content" />
   </section>
 </template>
 
@@ -36,6 +27,7 @@ import {
 } from './menuHost';
 import { useRoutesList } from '../stores/routesList';
 import { useTagsViewRoutes } from '../stores/tagsViewRoutes';
+import { createTagSnapshot } from '@mango/common/utils/tagsView';
 
 const route = useRoute();
 const router = useRouter();
@@ -43,32 +35,21 @@ const containerRef = ref<HTMLElement>();
 const routesListStore = useRoutesList();
 const tagsViewStore = useTagsViewRoutes();
 const { activeTopRoutePath } = storeToRefs(routesListStore);
-const {
-  loading,
-  runtimeDecision,
-  loadRuntimeApps,
-  mountMenu,
-  dispose,
-} = useRuntimeHost(containerRef, router);
-const {
-  menuLoading,
-  menus,
-  activeMenu,
-  loadMenus,
-  selectMenu,
-} = useMenuHost();
+const { loading, runtimeDecision, loadRuntimeApps, mountMenu, refreshTab, disposeTab, dispose } = useRuntimeHost(
+  containerRef,
+  router,
+);
+const { menuLoading, menus, activeMenu, loadMenus, selectMenu } = useMenuHost();
 
 const pageLoading = computed(() => loading.value || menuLoading.value);
 const showRuntimeBadge = computed(() => import.meta.env.DEV && route.query.runtimeDebug === '1');
-let mountingPath = '';
+let mountingTabKey = '';
 let mountedFullPath = '';
+let knownTagKeys = new Set<string>();
 
 async function initShellRuntime() {
   try {
-    await Promise.all([
-      loadRuntimeApps(),
-      loadMenus(),
-    ]);
+    await Promise.all([loadRuntimeApps(), loadMenus()]);
     routesListStore.setRoutesList(menus.value);
 
     await renderCurrentRoute();
@@ -84,11 +65,11 @@ watch(
       return;
     }
     await renderCurrentRoute();
-  }
+  },
 );
 
 function findTopPath(path: string) {
-  return menus.value.find(menu => containsMenuPath(menu, path))?.path;
+  return menus.value.find((menu) => containsMenuPath(menu, path))?.path;
 }
 
 function resolveMenuPath(path: string): string {
@@ -99,23 +80,36 @@ function resolveMenuPath(path: string): string {
 }
 
 function ensureTag(menu: ShellRouteMenu) {
-  const exists = tagsViewStore.tagsViewRoutes.some(tag => tag.path === menu.path);
-  if (exists) {
-    return;
-  }
-  tagsViewStore.setTagsViewRoutes([
-    ...tagsViewStore.tagsViewRoutes,
-    {
-      path: menu.path,
-      name: menu.name || menu.sourceMenu?.menuCode || menu.sourceMenu?.menuName,
+  tagsViewStore.upsertTag(
+    createTagSnapshot({
+      path: route.path,
+      name: route.name || menu.sourceMenu?.menuCode || menu.sourceMenu?.menuName,
+      query: route.query,
+      params: route.params,
+      hash: route.hash,
       meta: {
-        title: menu.meta?.title || menu.sourceMenu?.menuName,
-        icon: menu.meta?.icon || menu.sourceMenu?.icon,
-        isAffix: menu.meta?.isAffix,
+        ...menu.sourceMenu?.meta,
+        title: menu.sourceMenu?.meta?.title || menu.sourceMenu?.menuName,
+        icon: menu.sourceMenu?.meta?.icon || menu.sourceMenu?.icon,
+        isAffix: menu.sourceMenu?.meta?.isAffix,
       },
-    },
-  ]);
+    }),
+  );
 }
+
+watch(
+  () => tagsViewStore.tagsViewRoutes.map((tag) => tag.tabKey),
+  (keys) => {
+    const currentKeys = new Set(keys);
+    knownTagKeys.forEach((key) => {
+      if (!currentKeys.has(key)) {
+        disposeTab(key);
+      }
+    });
+    knownTagKeys = currentKeys;
+  },
+  { immediate: true },
+);
 
 async function renderCurrentRoute() {
   const menuPath = resolveMenuPath(route.path);
@@ -135,28 +129,50 @@ async function renderCurrentRoute() {
 }
 
 async function mountShellMenu(menu: ShellRouteMenu) {
-  if (!menu?.path || mountedFullPath === route.fullPath || mountingPath === menu.path) {
+  const currentTag = createTagSnapshot({
+    path: route.path,
+    name: route.name,
+    query: route.query,
+    params: route.params,
+    hash: route.hash,
+    meta: { ...route.meta },
+  });
+  if (!menu?.path || mountedFullPath === route.fullPath || mountingTabKey === currentTag.tabKey) {
     return;
   }
-  mountingPath = menu.path;
+  mountingTabKey = currentTag.tabKey;
   try {
-    await mountMenu(menu);
+    const tag = tagsViewStore.tagsViewRoutes.find((item) => item.tabKey === currentTag.tabKey);
+    await mountMenu(menu, tag?.tabKey || currentTag.tabKey);
     mountedFullPath = route.fullPath;
   } finally {
-    mountingPath = '';
+    mountingTabKey = '';
   }
 }
 
 onMounted(initShellRuntime);
+onMounted(() => {
+  window.addEventListener('mango-tags-view-refresh', onRefreshRequest);
+});
 onBeforeUnmount(() => {
   void dispose();
+  window.removeEventListener('mango-tags-view-refresh', onRefreshRequest);
 });
+
+function onRefreshRequest(event: Event) {
+  const tabKey = (event as CustomEvent<{ tabKey?: string }>).detail?.tabKey;
+  if (tabKey) {
+    void refreshTab(tabKey);
+  }
+}
 </script>
 
 <style scoped>
 .shell-runtime-outlet {
   position: relative;
-  min-height: calc(100vh - var(--mango-header-height) - var(--mango-tags-view-height) - var(--mango-layout-footer-height) - 32px);
+  min-height: calc(
+    100vh - var(--mango-header-height) - var(--mango-tags-view-height) - var(--mango-layout-footer-height) - 32px
+  );
 }
 
 .shell-runtime-content {
