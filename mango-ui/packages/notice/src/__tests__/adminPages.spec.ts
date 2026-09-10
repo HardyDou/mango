@@ -85,4 +85,20 @@ describe('notice admin pages', () => {
     expect(source).toContain('v-model="channelConfig.inboundProtocol"');
     expect(source).toContain('v-model="channelConfig.inboundPassword"');
   });
+
+  it('消息业务配置列表使用后端分页契约并展示总数分页', () => {
+    const source = readFileSync(resolve(packageRoot, 'src/views/business-config/index.vue'), 'utf-8');
+
+    expect(source).toContain("import { Editor, Pagination } from '@mango/common';");
+    expect(source).toContain('pageNum: 1,');
+    expect(source).toContain('pageSize: 10,');
+    expect(source).toContain('pageNum: query.pageNum,');
+    expect(source).toContain('pageSize: query.pageSize,');
+    expect(source).toContain('total.value = Number(result.total || 0);');
+    expect(source).toMatch(
+      /<Pagination\s+v-model:page="query\.pageNum"\s+v-model:limit="query\.pageSize"\s+:total="total"\s+@pagination="loadBusinessTypes"\s+\/>/,
+    );
+    expect(source).toContain('function searchBusinessTypes()');
+    expect(source).toContain('query.pageNum = 1;');
+  });
 });
