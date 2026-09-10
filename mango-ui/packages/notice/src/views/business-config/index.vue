@@ -27,7 +27,7 @@
                 </el-select>
               </el-form-item>
               <el-form-item>
-                <el-button type="primary" @click="loadBusinessTypes">查询</el-button>
+                <el-button type="primary" @click="searchBusinessTypes">查询</el-button>
               </el-form-item>
             </el-form>
             <el-button type="primary" :icon="Plus" @click="openCreate">新增</el-button>
@@ -78,6 +78,14 @@
               </template>
             </el-table-column>
           </el-table>
+          <div class="business-pagination">
+            <Pagination
+              v-model:page="query.pageNum"
+              v-model:limit="query.pageSize"
+              :total="total"
+              @pagination="loadBusinessTypes"
+            />
+          </div>
         </main>
       </div>
     </el-card>
@@ -660,7 +668,7 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Delete, Plus } from '@element-plus/icons-vue';
-import { Editor } from '@mango/common';
+import { Editor, Pagination } from '@mango/common';
 import { DomainSideTree } from '@mango/system';
 import {
   activateBusinessConfigVersion,
@@ -759,6 +767,7 @@ const schemaTypeOptions: Array<{ label: string; value: SchemaFieldType }> = [
 const loading = ref(false);
 const pageMode = ref<PageMode>('LIST');
 const businessTypes = ref<NoticeBusinessType[]>([]);
+const total = ref(0);
 const domainOptions = ref<NoticeDomainOption[]>([]);
 const channelConfigs = ref<NoticeChannelConfig[]>([]);
 const routeTags = ref<NoticeRouteTag[]>([]);
@@ -780,7 +789,10 @@ const channelDrafts = reactive<Record<NoticeChannelType, Partial<NoticeChannelTe
 const channelMappingDrafts = reactive<Record<NoticeChannelType, TemplateMappingRow[]>>(
   {} as Record<NoticeChannelType, TemplateMappingRow[]>,
 );
-const query = reactive<{ bizType?: string; enabled?: boolean }>({});
+const query = reactive<{ pageNum: number; pageSize: number; bizType?: string; enabled?: boolean }>({
+  pageNum: 1,
+  pageSize: 10,
+});
 const activeDomain = ref('');
 const domainTreeProps = {
   label: 'domainName',
@@ -860,14 +872,22 @@ async function loadBusinessTypes() {
   loading.value = true;
   try {
     const result = await getBusinessTypes({
+      pageNum: query.pageNum,
+      pageSize: query.pageSize,
       bizType: query.bizType,
       enabled: query.enabled,
       domainCode: activeDomain.value || undefined,
     });
     businessTypes.value = result.list || [];
+    total.value = Number(result.total || 0);
   } finally {
     loading.value = false;
   }
+}
+
+function searchBusinessTypes() {
+  query.pageNum = 1;
+  void loadBusinessTypes();
 }
 
 async function loadChannelConfigs() {
@@ -1379,7 +1399,8 @@ async function copyVariable(name: string) {
 }
 
 function selectDomain() {
-  loadBusinessTypes();
+  query.pageNum = 1;
+  void loadBusinessTypes();
 }
 
 async function quickPublish(row: NoticeBusinessType) {
@@ -1862,6 +1883,12 @@ onMounted(() => {
   display: grid;
   grid-template-columns: 180px minmax(0, 1fr);
   gap: 12px;
+}
+
+.business-pagination {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 16px;
 }
 
 .domain-panel {
