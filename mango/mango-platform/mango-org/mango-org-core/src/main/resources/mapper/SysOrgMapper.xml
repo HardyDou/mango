@@ -18,6 +18,15 @@
         LIMIT 1
         FOR UPDATE
     </select>
+    <select id="selectRootIdByTenant" resultType="java.lang.Long">
+        SELECT id
+        FROM sys_org
+        WHERE tenant_id = #{tenantId}
+          AND pid = 0
+          AND org_status = '1'
+        ORDER BY id
+        LIMIT 1
+    </select>
     <select id="selectNameByTenantAndId" resultType="java.lang.String">
         SELECT org_name
         FROM sys_org

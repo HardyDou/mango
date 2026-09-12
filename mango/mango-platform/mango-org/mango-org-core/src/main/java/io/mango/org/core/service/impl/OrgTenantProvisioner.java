@@ -9,6 +9,8 @@ import io.mango.system.api.tenant.TenantDependencyChecker;
 import io.mango.system.api.tenant.TenantProvisionCommand;
 import io.mango.system.api.tenant.TenantProvisioner;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.Order;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Component;
@@ -20,13 +22,29 @@ import java.util.Optional;
  */
 @Component
 @Order(100)
-@RequiredArgsConstructor
 public class OrgTenantProvisioner implements TenantProvisioner, TenantDependencyChecker {
 
     private static final int EMPLOYEE_POST_SORT = 3;
 
     private final SysOrgMapper sysOrgMapper;
     private final PostMapper postMapper;
+    private final String rootOrgNameTemplate;
+    private final String rootOrgCodeTemplate;
+
+    public OrgTenantProvisioner(SysOrgMapper sysOrgMapper, PostMapper postMapper) {
+        this(sysOrgMapper, postMapper, "{tenantName}", "{tenantCode}_ROOT");
+    }
+
+    @Autowired
+    public OrgTenantProvisioner(SysOrgMapper sysOrgMapper,
+                                PostMapper postMapper,
+                                @Value("${mango.org.root-org.name-template:{tenantName}}") String rootOrgNameTemplate,
+                                @Value("${mango.org.root-org.code-template:{tenantCode}_ROOT}") String rootOrgCodeTemplate) {
+        this.sysOrgMapper = sysOrgMapper;
+        this.postMapper = postMapper;
+        this.rootOrgNameTemplate = rootOrgNameTemplate;
+        this.rootOrgCodeTemplate = rootOrgCodeTemplate;
+    }
 
     @Override
     public void provision(TenantProvisionCommand context) {
@@ -61,8 +79,8 @@ public class OrgTenantProvisioner implements TenantProvisioner, TenantDependency
         SysOrgEntity root = new SysOrgEntity();
         root.setTenantId(context.getTenantId());
         root.setPid(0L);
-        root.setOrgName(context.getTenantName());
-        root.setOrgCode(context.getTenantCode().toUpperCase() + "_ROOT");
+        root.setOrgName(render(rootOrgNameTemplate, "{tenantName}", context));
+        root.setOrgCode(render(rootOrgCodeTemplate, "{tenantCode}_ROOT", context).toUpperCase());
         root.setOrgType(2);
         root.setOrgSort(0);
         root.setOrgStatus("1");
@@ -75,6 +93,12 @@ public class OrgTenantProvisioner implements TenantProvisioner, TenantDependency
                 throw exception;
             }
         }
+    }
+
+    private String render(String template, String defaultTemplate, TenantProvisionCommand context) {
+        String value = template == null || template.isBlank() ? defaultTemplate : template.trim();
+        return value.replace("{tenantName}", context.getTenantName())
+                .replace("{tenantCode}", context.getTenantCode());
     }
 
     private void ensureDefaultPost(TenantProvisionCommand context,

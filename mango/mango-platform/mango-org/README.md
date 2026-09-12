@@ -92,7 +92,17 @@ Resource Handler 按声明中的 `tenantId` 建立执行上下文，不能使用
 
 ## 6. 配置说明
 
-`mango-org` 当前没有独立 `@ConfigurationProperties` 前缀。引入 starter 后会通过自动配置注册 mapper、service、组织 controller、岗位 controller、租户初始化扩展和租户删除依赖检查扩展。
+新租户根组织支持模板配置，默认值保持现有行为：
+
+```yaml
+mango:
+  org:
+    root-org:
+      name-template: "{tenantName}"
+      code-template: "{tenantCode}_ROOT"
+```
+
+模板支持 `{tenantName}` 和 `{tenantCode}`，根组织 code 最终会转为大写。配置只影响尚未创建根组织的新租户；已有根组织不会被启动对账自动改名或改编码。默认租户的固定根组织由 `org-required-bootstrap.yml` 声明；若调整默认根组织 code，需要同步调整 identity 模块的 `ORG_MEMBER_BINDING.orgCode`。
 
 模块声明：
 

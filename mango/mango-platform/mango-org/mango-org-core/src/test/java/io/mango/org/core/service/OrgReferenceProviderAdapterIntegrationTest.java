@@ -48,10 +48,12 @@ class OrgReferenceProviderAdapterIntegrationTest {
     void setUp() {
         jdbcTemplate.execute("drop table if exists org_post");
         jdbcTemplate.execute("drop table if exists sys_org");
-        jdbcTemplate.execute("create table sys_org (id bigint primary key, tenant_id bigint not null, org_code varchar(64), org_name varchar(100))");
+        jdbcTemplate.execute("create table sys_org (id bigint primary key, tenant_id bigint not null, pid bigint, "
+                + "org_code varchar(64), org_name varchar(100), org_status varchar(2))");
         jdbcTemplate.execute("create table org_post (id bigint primary key, tenant_id bigint not null, post_code varchar(64))");
         jdbcTemplate.update("insert into sys_org (id, tenant_id, org_code, org_name) values (?, ?, ?, ?)",
                 201L, 2L, "COMPANY_A_ROOT", "技术研发部");
+        jdbcTemplate.update("update sys_org set pid = 0, org_status = '1' where id = 201");
         jdbcTemplate.update("insert into org_post (id, tenant_id, post_code) values (?, ?, ?)", 301L, 2L, "COMPANY_A_ADMIN");
     }
 
@@ -62,6 +64,12 @@ class OrgReferenceProviderAdapterIntegrationTest {
         assertThat(provider.resolveOrgName(2L, 201L)).isEqualTo("技术研发部");
         assertThat(provider.resolveOrgId(1L, "COMPANY_A_ROOT")).isNull();
         assertThat(provider.resolveOrgName(1L, 201L)).isNull();
+    }
+
+    @Test
+    void resolvesEnabledRootOrganization() {
+        assertThat(provider.resolveRootOrgId(2L)).isEqualTo(201L);
+        assertThat(provider.resolveRootOrgId(1L)).isNull();
     }
 
     @Configuration

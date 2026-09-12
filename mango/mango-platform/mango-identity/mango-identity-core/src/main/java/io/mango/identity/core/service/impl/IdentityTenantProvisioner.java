@@ -11,15 +11,21 @@ import io.mango.identity.core.entity.TenantMemberLifecycleLogEntity;
 import io.mango.identity.core.mapper.IdentityUserMapper;
 import io.mango.identity.core.mapper.TenantMemberMapper;
 import io.mango.identity.core.mapper.TenantMemberLifecycleLogMapper;
+import io.mango.identity.api.TenantMemberProvider;
+import io.mango.identity.api.command.AddTenantMemberOrgCommand;
+import io.mango.identity.api.command.UpdateTenantMemberOrgCommand;
+import io.mango.identity.api.vo.TenantMemberOrgRelationVO;
 import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.org.api.OrgReferenceProvider;
 import io.mango.system.api.tenant.TenantDependencyChecker;
 import io.mango.system.api.tenant.TenantProvisionCommand;
 import io.mango.system.api.tenant.TenantProvisioner;
-import lombok.RequiredArgsConstructor;
 import org.springframework.core.annotation.Order;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -27,7 +33,6 @@ import java.util.Optional;
  */
 @Component
 @Order(300)
-@RequiredArgsConstructor
 public class IdentityTenantProvisioner implements TenantProvisioner, TenantDependencyChecker {
 
     private static final String DEFAULT_APP_CODE = "internal-admin";
@@ -40,6 +45,22 @@ public class IdentityTenantProvisioner implements TenantProvisioner, TenantDepen
     private final TenantMemberMapper tenantMemberMapper;
     private final TenantMemberLifecycleLogMapper tenantMemberLifecycleLogMapper;
     private final AuthorizationRoleBindingAdapter roleBindingAdapter;
+    private final ObjectProvider<TenantMemberProvider> tenantMemberProvider;
+    private final ObjectProvider<OrgReferenceProvider> orgReferenceProvider;
+
+    public IdentityTenantProvisioner(IdentityUserMapper identityUserMapper,
+                                     TenantMemberMapper tenantMemberMapper,
+                                     TenantMemberLifecycleLogMapper tenantMemberLifecycleLogMapper,
+                                     AuthorizationRoleBindingAdapter roleBindingAdapter,
+                                     ObjectProvider<TenantMemberProvider> tenantMemberProvider,
+                                     ObjectProvider<OrgReferenceProvider> orgReferenceProvider) {
+        this.identityUserMapper = identityUserMapper;
+        this.tenantMemberMapper = tenantMemberMapper;
+        this.tenantMemberLifecycleLogMapper = tenantMemberLifecycleLogMapper;
+        this.roleBindingAdapter = roleBindingAdapter;
+        this.tenantMemberProvider = tenantMemberProvider;
+        this.orgReferenceProvider = orgReferenceProvider;
+    }
 
     @Override
     public void provision(TenantProvisionCommand context) {
@@ -50,16 +71,59 @@ public class IdentityTenantProvisioner implements TenantProvisioner, TenantDepen
                 ensureTenantAdminMember(context, creator);
             }
         }
+        List<TenantMemberEntity> adminMembers = tenantMemberMapper.selectList(new LambdaQueryWrapper<TenantMemberEntity>()
+                .eq(TenantMemberEntity::getTenantId, context.getTenantId())
+                .eq(TenantMemberEntity::getMemberType, "INSTITUTION_ADMIN")
+                .eq(TenantMemberEntity::getStatus, 1)
+                .isNull(TenantMemberEntity::getLeftAt));
+        ensureTenantAdminPrimaryOrg(context, adminMembers);
         Long roleId = findAdminRoleId(context.getTenantId());
         if (roleId == null) {
             return;
         }
-        tenantMemberMapper.selectList(new LambdaQueryWrapper<TenantMemberEntity>()
-                        .eq(TenantMemberEntity::getTenantId, context.getTenantId())
-                        .eq(TenantMemberEntity::getMemberType, "INSTITUTION_ADMIN")
-                        .eq(TenantMemberEntity::getStatus, 1)
-                        .isNull(TenantMemberEntity::getLeftAt))
-                .forEach(member -> ensureRoleBinding(context, member.getMemberId(), roleId));
+        adminMembers.forEach(member -> ensureRoleBinding(context, member.getMemberId(), roleId));
+    }
+
+    private void ensureTenantAdminPrimaryOrg(TenantProvisionCommand context,
+                                             List<TenantMemberEntity> adminMembers) {
+        TenantMemberProvider memberProvider = tenantMemberProvider.getIfAvailable();
+        OrgReferenceProvider orgProvider = orgReferenceProvider.getIfAvailable();
+        if (memberProvider == null || orgProvider == null || adminMembers.isEmpty()) {
+            return;
+        }
+        Long rootOrgId = orgProvider.resolveRootOrgId(context.getTenantId());
+        if (rootOrgId == null) {
+            return;
+        }
+        List<TenantMemberOrgRelationVO> rootRelations = memberProvider.listOrgRelations(
+                context.getTenantId(), rootOrgId);
+        adminMembers.forEach(member -> {
+            if (member.getPrimaryOrgId() != null) {
+                return;
+            }
+            TenantMemberOrgRelationVO relation = rootRelations.stream()
+                    .filter(item -> member.getMemberId().equals(item.getMemberId()))
+                    .findFirst()
+                    .orElse(null);
+            if (relation == null) {
+                AddTenantMemberOrgCommand command = new AddTenantMemberOrgCommand();
+                command.setTenantId(context.getTenantId());
+                command.setMemberId(member.getMemberId());
+                command.setOrgId(rootOrgId);
+                command.setPrimaryFlag(true);
+                command.setLeaderFlag(false);
+                command.setOperatorUserId(MangoContextHolder.userId());
+                memberProvider.addOrgRelation(command);
+                return;
+            }
+            UpdateTenantMemberOrgCommand command = new UpdateTenantMemberOrgCommand();
+            command.setRelationId(relation.getRelationId());
+            command.setPostId(relation.getPostId());
+            command.setPrimaryFlag(true);
+            command.setLeaderFlag(Boolean.TRUE.equals(relation.getLeaderFlag()));
+            command.setOperatorUserId(MangoContextHolder.userId());
+            memberProvider.updateOrgRelation(command);
+        });
     }
 
     @Override

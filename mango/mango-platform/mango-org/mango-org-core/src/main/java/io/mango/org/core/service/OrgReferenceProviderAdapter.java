@@ -23,6 +23,14 @@ public class OrgReferenceProviderAdapter implements OrgReferenceProvider {
     }
 
     @Override
+    public Long resolveRootOrgId(Long tenantId) {
+        if (tenantId == null) {
+            return null;
+        }
+        return orgMapper.selectRootIdByTenant(tenantId);
+    }
+
+    @Override
     public Long resolvePostId(Long tenantId, String postCode) {
         if (tenantId == null || postCode == null || postCode.isBlank()) {
             return null;
