@@ -5,6 +5,16 @@ public interface OrgReferenceProvider {
 
     Long resolveOrgId(Long tenantId, String orgCode);
 
+    /**
+     * Resolve the enabled root organization for a tenant.
+     *
+     * @param tenantId tenant ID
+     * @return root organization ID, or {@code null} when it does not exist
+     */
+    default Long resolveRootOrgId(Long tenantId) {
+        return null;
+    }
+
     Long resolvePostId(Long tenantId, String postCode);
 
     /**

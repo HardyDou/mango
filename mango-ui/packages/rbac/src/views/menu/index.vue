@@ -60,7 +60,6 @@
         v-loading="loading"
         :data="menuTree"
         row-key="menuId"
-        default-expand-all
         stripe
         :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
       >

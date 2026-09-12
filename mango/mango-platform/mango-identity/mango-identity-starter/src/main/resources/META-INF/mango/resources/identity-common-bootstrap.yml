@@ -3,6 +3,8 @@ mango:
     schema-version: 1
     module-code: identity
     module-name: 身份
+    module-dependencies:
+      - org
     declarations:
       IDENTITY_USER:
         - id: "2026071609000000001"
@@ -30,3 +32,16 @@ mango:
             phone: { type: STRING, value: "18701445644" }
             status: { type: INT, value: 1 }
             remark: { type: STRING, value: 芒果集团初始化管理员成员 }
+      ORG_MEMBER_BINDING:
+        - id: "2026091209000000002"
+          version: 1
+          biz-key: identity.user.admin-root-org
+          name: 平台管理员根组织关系
+          target-module: identity
+          sync-mode: INIT_ONLY
+          fields:
+            tenantId: { type: LONG, value: 1 }
+            username: { type: STRING, value: admin }
+            orgCode: { type: STRING, value: MANGO_GROUP }
+            postCode: { type: STRING, value: GROUP_ADMIN }
+            primaryOrg: { type: BOOLEAN, value: true }

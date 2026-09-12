@@ -20,15 +20,17 @@ class IdentityResourceDeclarationContractTest {
 
         assertThat(formal)
                 .contains("module-code: identity")
+                .contains("module-dependencies:\n      - org")
                 .contains("biz-key: identity.user.admin")
                 .contains("memberId: { type: LONG, value: 1001 }")
                 .contains("tenantId: { type: LONG, value: 1 }")
                 .contains("partyId: { type: LONG, value: 1 }")
                 .contains("encodedPassword: { type: STRING, value: \"$2a$10$")
+                .contains("ORG_MEMBER_BINDING:")
+                .contains("biz-key: identity.user.admin-root-org")
                 .doesNotContain("password: { type: STRING")
-                .doesNotContain("value: admin123")
-                .doesNotContain("ORG_MEMBER_BINDING");
-        assertThat(count(formal, "sync-mode: INIT_ONLY")).isEqualTo(1);
+                .doesNotContain("value: admin123");
+        assertThat(count(formal, "sync-mode: INIT_ONLY")).isEqualTo(2);
     }
 
     @Test

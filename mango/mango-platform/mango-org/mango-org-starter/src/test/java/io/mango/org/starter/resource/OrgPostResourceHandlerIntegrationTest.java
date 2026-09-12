@@ -208,6 +208,24 @@ class OrgPostResourceHandlerIntegrationTest {
         assertThat(MangoContextHolder.tenantId()).isEqualTo("1");
     }
 
+    @Test
+    void provisionerUsesConfiguredRootOrgTemplates() {
+        MangoContextSnapshot previous = MangoContextHolder.get();
+        try {
+            MangoContextHolder.set(previous.withTenantId(String.valueOf(DECLARATION_TENANT_ID)));
+            new OrgTenantProvisioner(sysOrgMapper, postMapper,
+                    "集团-{tenantCode}", "ROOT-{tenantCode}").provision(tenantCommand());
+        } finally {
+            MangoContextHolder.set(previous);
+        }
+
+        var root = jdbcTemplate.queryForMap(
+                "select org_name, org_code from sys_org where tenant_id = ? and pid = 0",
+                DECLARATION_TENANT_ID);
+        assertThat(root.get("org_name")).isEqualTo("集团-it_621_company_a");
+        assertThat(root.get("org_code")).isEqualTo("ROOT-IT_621_COMPANY_A");
+    }
+
     private InvocationResult concurrentUpsert(ResourceDeclaration declaration,
                                               CountDownLatch ready,
                                               CountDownLatch start) throws InterruptedException {

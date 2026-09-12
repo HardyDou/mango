@@ -43,6 +43,7 @@ import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguratio
 import io.mango.notice.api.enums.NoticeSiteMessageActionInteractionType;
 import io.mango.notice.api.enums.NoticeSiteMessageTargetType;
 import io.mango.notice.api.command.NoticeSendEventCommand;
+import io.mango.org.api.OrgReferenceProvider;
 import io.mango.system.api.tenant.TenantProvisionCommand;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -127,6 +128,9 @@ class IdentityUserServiceIntegrationTest {
 
     @Autowired
     private CaptchaApi captchaApi;
+
+    @Autowired
+    private OrgReferenceProvider orgReferenceProvider;
 
     @Autowired
     private IdentityTenantProvisioner tenantProvisioner;
@@ -252,6 +256,11 @@ class IdentityUserServiceIntegrationTest {
                 "select count(*) from tenant_member_lifecycle_log where tenant_id = 2 and user_id = 1 "
                         + "and event_type = 'CREATED'",
                 Long.class)).isEqualTo(1L);
+        assertThat(jdbcTemplate.queryForObject(
+                "select count(*) from tenant_member_org where tenant_id = 2 and member_id = "
+                        + "(select id from tenant_member where tenant_id = 2 and user_id = 1) "
+                        + "and org_id = 200 and primary_flag = 1",
+                Long.class)).isEqualTo(1L);
 
         tenantProvisioner.provision(new TenantProvisionCommand(2L, "company_a", "A公司"));
         assertThat(jdbcTemplate.queryForObject(
@@ -278,6 +287,72 @@ class IdentityUserServiceIntegrationTest {
         assertThat(roleBindingApi.lastBindingCommand).isNotNull();
         assertThat(roleBindingApi.lastBindingCommand.getSubjectId()).isEqualTo(1001L);
         assertThat(roleBindingApi.lastBindingCommand.getRoleId()).isEqualTo(88L);
+    }
+
+    @Test
+    @DisplayName("无用户上下文时也能为历史机构管理员补根组织")
+    void tenantProvisionRepairsAdminPrimaryOrgWithoutUserContext() {
+        seedUser(1L, "admin", "Administrator", "1", 1);
+        jdbcTemplate.update("""
+                        insert into tenant_member
+                        (id, tenant_id, user_id, member_no, display_name, member_type, status, joined_at)
+                        values (1001, 1, 1, 'ADMIN-default', 'Administrator', 'INSTITUTION_ADMIN', 1, current_timestamp)
+                        """);
+        MangoContextHolder.clear();
+
+        tenantProvisioner.provision(new TenantProvisionCommand(1L, "default", "芒果集团"));
+
+        assertThat(jdbcTemplate.queryForObject(
+                "select primary_org_id from tenant_member where id = 1001", Long.class))
+                .isEqualTo(200L);
+        assertThat(jdbcTemplate.queryForObject(
+                "select count(*) from tenant_member_org where tenant_id = 1 and member_id = 1001 "
+                        + "and org_id = 200 and primary_flag = 1", Long.class)).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("已有主组织的机构管理员不会被改到根组织")
+    void tenantProvisionPreservesExistingAdminPrimaryOrg() {
+        seedUser(1L, "admin", "Administrator", "1", 1);
+        jdbcTemplate.update("""
+                        insert into tenant_member
+                        (id, tenant_id, user_id, member_no, display_name, member_type, status, joined_at, primary_org_id)
+                        values (1001, 1, 1, 'ADMIN-default', 'Administrator', 'INSTITUTION_ADMIN', 1,
+                                current_timestamp, 300)
+                        """);
+        seedMemberOrg(1001L, 1L, 1001L, 300L, null);
+        MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("1"));
+
+        tenantProvisioner.provision(new TenantProvisionCommand(1L, "default", "芒果集团"));
+
+        assertThat(jdbcTemplate.queryForObject(
+                "select primary_org_id from tenant_member where id = 1001", Long.class))
+                .isEqualTo(300L);
+        assertThat(jdbcTemplate.queryForObject(
+                "select count(*) from tenant_member_org where tenant_id = 1 and member_id = 1001 "
+                        + "and org_id = 200", Long.class)).isZero();
+    }
+
+    @Test
+    @DisplayName("已有根组织关系但未设主组织时会提升关系")
+    void tenantProvisionPromotesExistingRootRelation() {
+        seedUser(1L, "admin", "Administrator", "1", 1);
+        jdbcTemplate.update("""
+                        insert into tenant_member
+                        (id, tenant_id, user_id, member_no, display_name, member_type, status, joined_at)
+                        values (1001, 1, 1, 'ADMIN-default', 'Administrator', 'INSTITUTION_ADMIN', 1, current_timestamp)
+                        """);
+        seedMemberOrg(1001L, 1L, 1001L, 200L, null);
+        MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("1"));
+
+        tenantProvisioner.provision(new TenantProvisionCommand(1L, "default", "芒果集团"));
+
+        assertThat(jdbcTemplate.queryForObject(
+                "select primary_org_id from tenant_member where id = 1001", Long.class))
+                .isEqualTo(200L);
+        assertThat(jdbcTemplate.queryForObject(
+                "select count(*) from tenant_member_org where tenant_id = 1 and member_id = 1001 "
+                        + "and org_id = 200 and primary_flag = 1", Long.class)).isEqualTo(1L);
     }
 
     @Test
@@ -1173,6 +1248,13 @@ class IdentityUserServiceIntegrationTest {
         @Bean
         CaptchaApi captchaApi() {
             return mock(CaptchaApi.class);
+        }
+
+        @Bean
+        OrgReferenceProvider orgReferenceProvider() {
+            OrgReferenceProvider provider = mock(OrgReferenceProvider.class);
+            when(provider.resolveRootOrgId(any())).thenReturn(200L);
+            return provider;
         }
 
         @Bean
