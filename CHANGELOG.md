@@ -1,8 +1,60 @@
 # Mango Changelog
 
+## v2026.09.13-maven-1.0.53-issue-952-943-release - 2026-09-13
+
+Status: `PENDING`. Planned Maven/docs `1.0.53` (192 coordinates) and the 16-package npm closure ending at `@mango/cli@1.2.13`; plan digest `4565fef3babc0d022eb2cf034059d342bda1d1a0e227b684c40c64024900aa91`.
+
+### Pull Requests
+
+- [PR #952](https://github.com/HardyDou/mango/pull/952) Fixed notice business configuration pagination. Packages: `@mango/notice@1.0.48` and generated npm dependents through `@mango/cli@1.2.13`. Business Adaptation: verify paginated notice records.
+- [PR #954](https://github.com/HardyDou/mango/pull/954) Fixed administrator root-organization initialization and organization reference provisioning. Packages: Maven/docs `1.0.53`, `@mango/rbac@1.0.33`, and generated npm dependents through `@mango/cli@1.2.13`. Business Adaptation: verify tenant-scoped root organization access.
+
+### Fixed
+
+- Restore complete pagination controls and query parameters for notice business configuration records.
+- Initialize a usable administrator root organization for new tenants while preserving tenant isolation.
+
+### Changed
+
+- Advance the machine-generated Maven/docs batch to `1.0.53` and the npm closure to the plan versions; `@mango/pmo@1.4.4` remains unchanged.
+
+### Versions
+
+- Maven/docs: `1.0.52` to `1.0.53` (192 coordinates). npm package versions: `@mango/rbac@1.0.33`, `@mango/system@1.0.41`, `@mango/admin-pages@1.0.42`, `@mango/calendar@1.0.43`, `@mango/cms@1.0.32`, `@mango/job@1.0.36`, `@mango/link@1.0.29`, `@mango/notice@1.0.48`, `@mango/numgen@1.0.44`, `@mango/payment@1.0.35`, `@mango/template@1.0.44`, `@mango/workflow@1.0.52`, `@mango/admin-shell@1.0.73`, `@mango/workflow-business-example@1.0.51`, `@mango/admin@1.1.9`, and `@mango/cli@1.2.13`; `@mango/pmo@1.4.4` remains unchanged.
+
+### Published Packages
+
+- Publish the sealed 192-coordinate Maven/docs `1.0.53` batch and 16-package npm topology after dual-registry and pure-consumer verification.
+
+### Business Impact
+
+- Notice administrators can browse all business configuration records without truncation. New tenants receive a valid administrator root organization; existing tenant data is not rewritten.
+
+### Upgrade Estimate
+
+- Audience: generated Mango applications and direct Notice, RBAC, Identity, Organization, and CLI consumers.
+- Engineering Effort: 30 to 60 minutes for generated consumers; 1 to 3 hours for customized integrations.
+- Execution Window: 45 to 120 minutes including dependency upgrade and tenant/notice smoke verification.
+- Service Downtime: no framework-mandated downtime.
+- Rollback Effort: 20 to 45 minutes to restore Maven `1.0.52`, CLI `1.2.12`, and the previous npm tuple.
+- Assumptions: Java 21, Node `22.23.1`, configured registries, and representative tenant and notice data.
+
+### Upgrade Notes
+
+1. Upgrade the complete tuple to Maven `1.0.53`, CLI `1.2.13`, and the npm versions above; retain PMO `1.4.4`.
+2. Verify tenant administrator root organization creation and notice pagination.
+
+### Verification
+
+- Run release plan/notes, catalog, affected Notice/RBAC/Identity/Org tests, sealed prepare, dual-registry back-checks, and a pure consume-registry consumer. The canonical manifest will be recorded after publication.
+
+### Rollback
+
+- Restore Maven `1.0.52`, CLI `1.2.12`, and the previous npm tuple through the immutable application release process; never overwrite immutable coordinates.
+
 ## v2026.09.09-maven-1.0.52-profile-password-admin-shell-release - 2026-09-09
 
-Status: `PENDING`. Planned Maven/docs `1.0.52` (192 coordinates) and the 25-package npm closure ending at `@mango/cli@1.2.12`; plan digest `1f248bc498bd40d54ed4fdd7579dadf497844fbb4595faf6189539022360e71d`.
+Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `35ddc5885306dde8739efb38aca8a1bfd6a586d9d8dced7ef3b73b6ebba5e2fd` for release plan `1f248bc498bd40d54ed4fdd7579dadf497844fbb4595faf6189539022360e71d` and prepared candidate `18fb3cc604862eefbade4a692757a82cb57afef1e69caee975bc8993e498a505` is `COMPLETED`: all 192 Maven/docs coordinates at `1.0.52` and all 25 npm packages ending at `@mango/cli@1.2.12` match the sealed candidate in both publish and consume registries, the pure consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`.
 
 ### Pull Requests
 
@@ -24,7 +76,7 @@ Status: `PENDING`. Planned Maven/docs `1.0.52` (192 coordinates) and the 25-pack
 
 ### Published Packages
 
-- Pending sealed prepare and dual-registry publication; no registry write has occurred.
+- The sealed 192-coordinate Maven/docs batch at `1.0.52` and 25-package npm topology ending at `@mango/cli@1.2.12` are published and match in both publish and consume registries. The pure consume-registry consumer, immutable Tag, and GitHub Release were verified from the sealed candidate.
 
 ### Business Impact
 
@@ -46,7 +98,7 @@ Status: `PENDING`. Planned Maven/docs `1.0.52` (192 coordinates) and the 25-pack
 
 ### Verification
 
-- Plan, release-notes, catalog/style/workspace checks, affected frontend/Maven tests, prepare, registry back-checks, and pure consume-registry consumer are required before publication.
+- Plan, release-notes, catalog/style/workspace checks, affected frontend/Maven tests, sealed prepare, dual-registry publication and back-checks, pure consume-registry consumer, immutable Tag, and GitHub Release verification passed. Canonical manifest: `.runtime/mango-release/1f248bc498bd40d54ed4fdd7579dadf497844fbb4595faf6189539022360e71d/manifest.json`.
 
 ### Rollback
 
