@@ -1,5 +1,54 @@
 # @mango/cli Changelog
 
+## 1.2.13 - 2026-09-13
+
+### Pull Requests
+
+- [PR #952](https://github.com/HardyDou/mango/pull/952) Fixed notice business configuration pagination. Packages: `@mango/notice@1.0.48` and generated npm dependents through `@mango/cli@1.2.13`. Business Adaptation: verify paginated notice records.
+- [PR #954](https://github.com/HardyDou/mango/pull/954) Fixed administrator root-organization initialization. Packages: Maven/docs `1.0.53`, `@mango/rbac@1.0.33`, and generated npm dependents through `@mango/cli@1.2.13`. Business Adaptation: verify tenant-scoped root organization access.
+
+### Fixed
+
+- Carry notice pagination and administrator root-organization initialization into generated consumer locks.
+
+### Changed
+
+- Advance generated consumers to Maven `1.0.53` and the machine-generated npm tuple; `@mango/pmo@1.4.4` remains unchanged.
+
+### Versions
+
+- CLI: `1.2.12` to `1.2.13`; Maven/docs: `1.0.52` to `1.0.53`.
+
+### Published Packages
+
+- Publish and verify the sealed 192-coordinate Maven/docs `1.0.53` batch and generated npm closure through `@mango/cli@1.2.13` in both registries.
+
+### Business Impact
+
+- Generated consumers receive complete notice pagination and valid tenant administrator root organization provisioning.
+
+### Upgrade Estimate
+
+- Audience: generated applications and direct CLI consumers.
+- Engineering Effort: 30 to 60 minutes.
+- Execution Window: 45 to 120 minutes.
+- Service Downtime: no framework-mandated downtime.
+- Rollback Effort: 20 to 45 minutes.
+- Assumptions: Node `22.23.1`, configured registries, clean tenant bootstrap database, and representative notice records.
+
+### Upgrade Notes
+
+1. Upgrade CLI to `1.2.13` with Maven `1.0.53` and the generated npm tuple.
+2. Verify tenant administrator root organization creation and notice pagination.
+
+### Verification
+
+- Verify the sealed candidate, both registry roles, pure consume-registry consumer, and generated project compatibility for the exact tuple.
+
+### Rollback
+
+- Restore CLI `1.2.12` and Maven `1.0.52`; never overwrite immutable coordinates.
+
 ## 1.2.12 - 2026-09-09
 
 ### Pull Requests

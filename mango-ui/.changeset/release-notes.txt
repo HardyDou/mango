@@ -1,54 +1,54 @@
 ## Pull Requests
 
-- [PR #948](https://github.com/HardyDou/mango/pull/948) Fixed Admin Shell tab-cache instance isolation and responsive route-state preservation. Packages: `@mango/common@2.0.2`, `@mango/admin-shell@1.0.72`, and the generated npm closure through `@mango/cli@1.2.12`. Business Adaptation: upgrade the complete generated frontend tuple and verify multiple tabs with the same route and responsive layout changes.
-- [PR #949](https://github.com/HardyDou/mango/pull/949) Fixed the profile password-change endpoint and its identity service contract. Packages: Mango Maven/docs `1.0.52`, `@mango/auth@1.0.32`, and the generated npm closure through `@mango/cli@1.2.12`. Business Adaptation: upgrade Maven and CLI together, then verify password change from the authenticated profile flow and the existing identity security checks.
+- [PR #952](https://github.com/HardyDou/mango/pull/952) Fixed notice business configuration pagination. Packages: `@mango/notice@1.0.48` and generated npm dependents through `@mango/cli@1.2.13`. Business Adaptation: upgrade the complete tuple and verify paginated notice records.
+- [PR #954](https://github.com/HardyDou/mango/pull/954) Fixed administrator root-organization initialization and organization reference provisioning. Packages: Mango Maven/docs `1.0.53`, `@mango/rbac@1.0.33`, and generated npm dependents through `@mango/cli@1.2.13`. Business Adaptation: verify tenant-scoped root organization access after upgrade.
 
 ## Fixed
 
-- Isolate Admin Shell tab cache instances by complete route identity and preserve page state when responsive layout changes.
-- Restore the authenticated profile password-change endpoint, command contract, service implementation, Feign path, and integration coverage.
+- Restore complete pagination controls and query parameters for notice business configuration records.
+- Initialize and provision a usable administrator root organization for new tenants while preserving tenant isolation.
 
 ## Changed
 
-- Advance the machine-generated Maven/docs platform batch from `1.0.51` to `1.0.52`.
-- Advance the exact generated npm dependency closure from `@mango/common@2.0.1` through `@mango/cli@1.2.12`; `@mango/pmo@1.4.4` remains unchanged.
+- Advance the machine-generated Maven/docs platform batch from `1.0.52` to `1.0.53`.
+- Advance the generated npm closure from `@mango/rbac@1.0.32` through `@mango/cli@1.2.13`; `@mango/pmo@1.4.4` remains unchanged.
 
 ## Versions
 
-- Mango Maven non-application reactor and `io.mango:mango-docs-bundle`: `1.0.51` to `1.0.52` (192 machine-generated coordinates).
-- Generated npm closure: `@mango/common@2.0.2`, `@mango/admin-extension@1.0.4`, `@mango/ai@1.1.2`, `@mango/auth@1.0.32`, `@mango/file@1.0.38`, `@mango/grid-layout@1.0.21`, `@mango/grid-widgets@1.0.27`, `@mango/home@1.0.20`, `@mango/rbac@1.0.32`, `@mango/site-shell@1.0.17`, `@mango/system@1.0.40`, `@mango/admin-pages@1.0.41`, `@mango/calendar@1.0.42`, `@mango/cms@1.0.31`, `@mango/job@1.0.35`, `@mango/link@1.0.28`, `@mango/notice@1.0.47`, `@mango/numgen@1.0.43`, `@mango/payment@1.0.34`, `@mango/template@1.0.43`, `@mango/workflow@1.0.51`, `@mango/admin-shell@1.0.72`, `@mango/workflow-business-example@1.0.50`, `@mango/admin@1.1.8`, and `@mango/cli@1.2.12`.
+- Mango Maven non-application reactor and `io.mango:mango-docs-bundle`: `1.0.52` to `1.0.53` (192 machine-generated coordinates).
+- Generated npm closure: `@mango/rbac@1.0.33`, `@mango/system@1.0.41`, `@mango/admin-pages@1.0.42`, `@mango/calendar@1.0.43`, `@mango/cms@1.0.32`, `@mango/job@1.0.36`, `@mango/link@1.0.29`, `@mango/notice@1.0.48`, `@mango/numgen@1.0.44`, `@mango/payment@1.0.35`, `@mango/template@1.0.44`, `@mango/workflow@1.0.52`, `@mango/admin-shell@1.0.73`, `@mango/workflow-business-example@1.0.51`, `@mango/admin@1.1.9`, and `@mango/cli@1.2.13`; `@mango/pmo@1.4.4` remains unchanged.
 
 ## Published Packages
 
-1. Publish the machine-generated 192-coordinate non-application Maven/docs batch at `1.0.52`.
-2. Publish the machine-generated 25-package npm topology from `@mango/common@2.0.2` through `@mango/cli@1.2.12` after Maven/docs verification.
+1. Publish the machine-generated 192-coordinate non-application Maven/docs batch at `1.0.53`.
+2. Publish the machine-generated 16-package npm topology ending at `@mango/cli@1.2.13` after Maven/docs verification.
 3. Create the immutable tag and GitHub Release only after dual-registry and pure-consumer verification.
 
 ## Business Impact
 
-- Admin users no longer lose or cross-contaminate tab state when routes share a path or the shell changes responsive layout.
-- Generated consumers regain the profile password-change flow with the identity API contract restored; existing authorization and tenant boundaries remain unchanged.
-- No production database, business deployment, schema migration, or historical data rewrite is included.
+- Notice administrators can browse all business configuration records without truncation.
+- New tenants receive a valid administrator root organization and organization references remain tenant-scoped; existing tenant data is not rewritten.
+- No production database operation, application deployment, schema migration, or historical data rewrite is included.
 
 ## Upgrade Estimate
 
-- Audience: generated Mango applications and direct Admin Shell, Auth, Identity, and CLI consumers.
-- Engineering Effort: 30 to 60 minutes for generated consumers; 1 to 3 hours for customized profile flows or shell tab integrations.
-- Execution Window: 45 to 120 minutes including dependency upgrade, clean build, password-change smoke verification, and tab-cache checks.
+- Audience: generated Mango applications and direct Notice, RBAC, Identity, Organization, and CLI consumers.
+- Engineering Effort: 30 to 60 minutes for generated consumers; 1 to 3 hours for customized organization provisioning or notice pages.
+- Execution Window: 45 to 120 minutes including dependency upgrade, clean build, tenant bootstrap verification, and paginated notice checks.
 - Service Downtime: no framework-mandated downtime; consumers use their normal deployment and restart window.
-- Rollback Effort: 20 to 45 minutes to restore Maven `1.0.51`, CLI `1.2.11`, and the previous npm tuple.
-- Assumptions: Java 21, Node `22.23.1`, configured registries, an authenticated tenant user, and representative multi-tab navigation.
+- Rollback Effort: 20 to 45 minutes to restore Maven `1.0.52`, CLI `1.2.12`, and the previous npm tuple.
+- Assumptions: Java 21, Node `22.23.1`, configured registries, a clean tenant bootstrap database, and representative notice records.
 
 ## Upgrade Notes
 
-1. Upgrade the complete generated tuple to the versions above and use Mango Maven `1.0.52` with CLI `1.2.12`; retain PMO `1.4.4`.
-2. Run the authenticated profile password-change flow and verify the identity security integration tests.
-3. Open two tabs that share a route, switch responsive layout, and verify each tab keeps its own state.
+1. Upgrade the complete tuple to Maven `1.0.53`, CLI `1.2.13`, and the npm versions above; retain PMO `1.4.4`.
+2. For new tenants, verify administrator root organization creation and tenant-scoped organization reads.
+3. Open Notice business configuration and verify page navigation, total count, and records beyond the first page.
 
 ## Verification
 
-- Run catalog, style, workspace, release-plan, release-notes, affected frontend tests, affected Maven tests, module verification, registry doctor, sealed mixed consumers, dual-registry back-checks, and a pure consume-registry consumer for the exact tuple.
+- Run catalog/style/workspace checks, release-plan and release-notes checks, affected Notice/RBAC/Identity/Org tests, Maven verification, registry doctor, sealed mixed consumers, dual-registry back-checks, and a pure consume-registry consumer for the exact tuple.
 
 ## Rollback
 
-- Restore consumers to Maven `1.0.51`, CLI `1.2.11`, and the prior npm tuple through the normal immutable application release process; never overwrite immutable coordinates or disable the password endpoint as a rollback shortcut.
+- Restore consumers to Maven `1.0.52`, CLI `1.2.12`, and the previous npm tuple through the normal immutable application release process; never overwrite immutable coordinates or bypass tenant-root initialization checks.
