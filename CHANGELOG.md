@@ -17,6 +17,7 @@ Status: `PENDING`. Planned Maven/docs `1.0.53` (192 coordinates) and the 16-pack
 ### Changed
 
 - Advance the machine-generated Maven/docs batch to `1.0.53` and the npm closure to the plan versions; `@mango/pmo@1.4.4` remains unchanged.
+- Preserve the sealed release-plan source ancestry through the final merge commit; no package or runtime behavior changes are introduced by this handoff.
 
 ### Versions
 
