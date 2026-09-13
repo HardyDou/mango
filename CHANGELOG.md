@@ -2,12 +2,14 @@
 
 ## v2026.09.13-maven-1.0.53-issue-952-943-release - 2026-09-13
 
-Status: `PENDING`. Planned Maven/docs `1.0.53` (192 coordinates) and the 16-package npm closure ending at `@mango/cli@1.2.13`; plan digest `4565fef3babc0d022eb2cf034059d342bda1d1a0e227b684c40c64024900aa91`.
+Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `b7f04570d7cc526e8578eaff4b495c035918762f515dda78e951c866d1b19c6f` for release plan `4565fef3babc0d022eb2cf034059d342bda1d1a0e227b684c40c64024900aa91` and prepared candidate `9d6139f7b64ff8ddfd078942c4cadc96145b74b1f5fc9219a47c4ce9357e22b5` is `COMPLETED`: all 192 Maven/docs coordinates at `1.0.53` and all 16 npm packages ending at `@mango/cli@1.2.13` match the sealed candidate in both publish and consume registries, the pure consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`.
 
 ### Pull Requests
 
 - [PR #952](https://github.com/HardyDou/mango/pull/952) Fixed notice business configuration pagination. Packages: `@mango/notice@1.0.48` and generated npm dependents through `@mango/cli@1.2.13`. Business Adaptation: verify paginated notice records.
 - [PR #954](https://github.com/HardyDou/mango/pull/954) Fixed administrator root-organization initialization and organization reference provisioning. Packages: Maven/docs `1.0.53`, `@mango/rbac@1.0.33`, and generated npm dependents through `@mango/cli@1.2.13`. Business Adaptation: verify tenant-scoped root organization access.
+- [PR #955](https://github.com/HardyDou/mango/pull/955) Prepared the Mango 1.0.53 release projection.
+- [PR #956](https://github.com/HardyDou/mango/pull/956), [PR #957](https://github.com/HardyDou/mango/pull/957), and [PR #958](https://github.com/HardyDou/mango/pull/958) completed release ancestry and closeout bookkeeping without runtime behavior changes.
 
 ### Fixed
 
@@ -25,7 +27,7 @@ Status: `PENDING`. Planned Maven/docs `1.0.53` (192 coordinates) and the 16-pack
 
 ### Published Packages
 
-- Publish the sealed 192-coordinate Maven/docs `1.0.53` batch and 16-package npm topology after dual-registry and pure-consumer verification.
+- The sealed 192-coordinate Maven/docs `1.0.53` batch and 16-package npm topology were published and matched in both registries; the pure consume-registry consumer passed.
 
 ### Business Impact
 
@@ -47,7 +49,7 @@ Status: `PENDING`. Planned Maven/docs `1.0.53` (192 coordinates) and the 16-pack
 
 ### Verification
 
-- Run release plan/notes, catalog, affected Notice/RBAC/Identity/Org tests, sealed prepare, dual-registry back-checks, and a pure consume-registry consumer. The canonical manifest will be recorded after publication.
+- Release plan/notes, catalog/style/workspace checks, sealed prepare, dual-registry publication and back-checks, pure consume-registry consumer, immutable Tag, and GitHub Release verification all passed. Canonical manifest: `.runtime/mango-release/4565fef3babc0d022eb2cf034059d342bda1d1a0e227b684c40c64024900aa91/manifest.json`.
 
 ### Rollback
 
