@@ -66,7 +66,7 @@
       </template>
     </template>
 
-    <div class="mango-dialog__body" @pointerdown.capture="bringToFront">
+    <div class="mango-dialog__body" @pointerdown.capture="handleBodyPointerDown">
       <slot />
     </div>
 
@@ -136,6 +136,7 @@ const {
   dialogStyle,
   isInteracting,
   resetWindow,
+  startBodyPaddingDrag,
   startDrag,
   startResize,
   zIndex: dialogZIndex,
@@ -187,6 +188,10 @@ function handleClosed() {
 function bringToFront() {
   if (!props.modelValue || dialogUnavailable || dialogUnmounted) return;
   bringDialogToFront();
+}
+
+function handleBodyPointerDown(event: PointerEvent) {
+  if (!startBodyPaddingDrag(event)) bringToFront();
 }
 
 onBeforeUnmount(() => {
