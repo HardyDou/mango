@@ -138,6 +138,32 @@ function mockDialogRect(wrapper: ReturnType<typeof mountDialog>, rect: DOMRect) 
   vi.spyOn(wrapper.get('.el-dialog').element, 'getBoundingClientRect').mockReturnValue(rect);
 }
 
+function mockElementRect(element: HTMLElement, rect: DOMRect) {
+  vi.spyOn(element, 'getBoundingClientRect').mockReturnValue(rect);
+}
+
+function mockComputedPadding(element: Element) {
+  const originalGetComputedStyle = window.getComputedStyle.bind(window);
+  vi.spyOn(window, 'getComputedStyle').mockImplementation((target, pseudoElement) => {
+    const styles = originalGetComputedStyle(target, pseudoElement);
+    if (target !== element) return styles;
+
+    return new Proxy(styles, {
+      get(source, property, receiver) {
+        const padding: Partial<Record<PropertyKey, string>> = {
+          paddingBottom: '20px',
+          paddingLeft: '24px',
+          paddingRight: '24px',
+          paddingTop: '20px',
+        };
+        if (property in padding) return padding[property];
+        const value = Reflect.get(source, property, receiver);
+        return typeof value === 'function' ? value.bind(source) : value;
+      },
+    });
+  });
+}
+
 function dispatchPointer(type: 'pointermove' | 'pointerup', init: PointerEventInit) {
   document.dispatchEvent(
     new PointerEvent(type, {
@@ -304,6 +330,113 @@ describe('MangoDialog', () => {
     expect(style).toContain('top: -220px');
 
     dispatchPointer('pointerup', { clientX: -140, clientY: -190 });
+  });
+
+  it.each([
+    { edge: 'top', clientX: 200, clientY: 146 },
+    { edge: 'right', clientX: 688, clientY: 200 },
+    { edge: 'bottom', clientX: 200, clientY: 414 },
+    { edge: 'left', clientX: 112, clientY: 200 },
+  ])('moves a draggable dialog from the $edge body padding', async ({ clientX, clientY }) => {
+    const wrapper = mountDialog({ draggable: true });
+    mockDialogRect(wrapper, createRect(100, 80, 600, 400));
+    const body = wrapper.get('.mango-dialog__body');
+    body.element.setAttribute('style', 'padding: 20px 24px !important');
+    mockElementRect(body.element as HTMLElement, createRect(100, 136, 600, 288));
+    mockComputedPadding(body.element);
+
+    await body.trigger('pointerdown', {
+      button: 0,
+      clientX,
+      clientY,
+      isPrimary: true,
+      pointerId: 1,
+    });
+    dispatchPointer('pointermove', { clientX: clientX + 40, clientY: clientY + 30 });
+    await nextTick();
+
+    const style = wrapper.get('.el-dialog').attributes('style');
+    expect(style).toContain('left: 140px');
+    expect(style).toContain('top: 110px');
+
+    dispatchPointer('pointerup', { clientX: clientX + 40, clientY: clientY + 30 });
+  });
+
+  it('does not drag from the body content box or slotted content', async () => {
+    const wrapper = mountDialog({ draggable: true });
+    mockDialogRect(wrapper, createRect(100, 80, 600, 400));
+    const body = wrapper.get('.mango-dialog__body');
+    body.element.setAttribute('style', 'padding: 20px 24px !important');
+    mockElementRect(body.element as HTMLElement, createRect(100, 136, 600, 288));
+    mockComputedPadding(body.element);
+
+    await body.trigger('pointerdown', {
+      button: 0,
+      clientX: 200,
+      clientY: 200,
+      isPrimary: true,
+      pointerId: 1,
+    });
+    dispatchPointer('pointermove', { clientX: 240, clientY: 230 });
+    await nextTick();
+    expect(wrapper.get('.el-dialog').attributes('style') ?? '').not.toContain('position: fixed');
+
+    await wrapper.get('.content').trigger('pointerdown', {
+      button: 0,
+      clientX: 112,
+      clientY: 200,
+      isPrimary: true,
+      pointerId: 1,
+    });
+    dispatchPointer('pointermove', { clientX: 152, clientY: 230 });
+    await nextTick();
+    expect(wrapper.get('.el-dialog').attributes('style') ?? '').not.toContain('position: fixed');
+  });
+
+  it('keeps the body padding inert when draggable is disabled', async () => {
+    const wrapper = mountDialog();
+    mockDialogRect(wrapper, createRect(100, 80, 600, 400));
+    const body = wrapper.get('.mango-dialog__body');
+    body.element.setAttribute('style', 'padding: 20px 24px !important');
+    mockElementRect(body.element as HTMLElement, createRect(100, 136, 600, 288));
+    mockComputedPadding(body.element);
+
+    await body.trigger('pointerdown', {
+      button: 0,
+      clientX: 112,
+      clientY: 200,
+      isPrimary: true,
+      pointerId: 1,
+    });
+    dispatchPointer('pointermove', { clientX: 152, clientY: 230 });
+    await nextTick();
+
+    expect(wrapper.get('.el-dialog').attributes('style') ?? '').not.toContain('position: fixed');
+  });
+
+  it('does not treat a scrollbar as draggable body padding', async () => {
+    const wrapper = mountDialog({ draggable: true });
+    mockDialogRect(wrapper, createRect(100, 80, 600, 400));
+    const body = wrapper.get('.mango-dialog__body');
+    body.element.setAttribute('style', 'padding: 20px 24px !important');
+    mockElementRect(body.element as HTMLElement, createRect(100, 136, 600, 288));
+    mockComputedPadding(body.element);
+    Object.defineProperty(body.element, 'clientWidth', {
+      configurable: true,
+      value: 580,
+    });
+
+    await body.trigger('pointerdown', {
+      button: 0,
+      clientX: 690,
+      clientY: 200,
+      isPrimary: true,
+      pointerId: 1,
+    });
+    dispatchPointer('pointermove', { clientX: 730, clientY: 230 });
+    await nextTick();
+
+    expect(wrapper.get('.el-dialog').attributes('style') ?? '').not.toContain('position: fixed');
   });
 
   it('renders only four corner handles and resizes from the south-east corner', async () => {

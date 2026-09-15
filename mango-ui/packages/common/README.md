@@ -434,7 +434,7 @@ const stream: ChatStreamProvider = async (command, onEvent, signal) => {
 | props  | `closeOnClickModal`                                      | 点击遮罩是否关闭，默认 `false`。                                                        |
 | props  | `lockScroll`                                             | 是否锁定页面滚动；未指定时跟随 `modal`。                                                |
 | props  | `zIndex`                                                 | 弹框动态置顶使用的最低层级；未指定时跟随 Element Plus。                                 |
-| props  | `draggable`                                              | 是否允许通过标题区拖动整个弹框，默认 `false`。                                          |
+| props  | `draggable`                                              | 是否允许通过标题区或内容区空白内边距拖动整个弹框，默认 `false`。                        |
 | props  | `resizable`                                              | 是否允许通过四个角自由调整宽高，默认 `false`。                                          |
 | props  | `minWidth` / `minHeight`                                 | 交互调整时的最小宽高，默认 `320` / `240` 像素。                                         |
 | emits  | `update:modelValue`、`open`、`opened`、`close`、`closed` | 透出弹框显示状态和 Element Plus Dialog 生命周期事件。                                   |
@@ -444,7 +444,7 @@ const stream: ChatStreamProvider = async (command, onEvent, signal) => {
 | slots  | `headerExtra`                                            | 标题右侧扩展区域。                                                                      |
 | slots  | `footer`                                                 | 底部按钮区域。未传入时不渲染底部。                                                      |
 
-`draggable` 和 `resizable` 相互独立，内容仍由 slots 提供。拖拽默认关闭遮罩，并允许弹框移出浏览器可视区域；需要拖拽且保留遮罩时显式传入 `:modal="true"`。多个无模态弹框同时存在时，用户按下弹框的标题、内容或 footer 任意区域都会将该实例提升到最高层级；置顶监听不阻止内部按钮、输入框和其它控件的原有事件。显式传入的 `zIndex` 会作为动态层级的最低基线。四角调整以每次按下时读取的真实宽高为起点，浏览器视口缩小时只收缩弹框宽高，不强制修改已经拖动的位置；弹框关闭后重新按 `width` 和当前视口恢复自适应布局。
+`draggable` 和 `resizable` 相互独立，内容仍由 slots 提供。开启拖拽后，标题区和内容区四周实际生效的空白 padding 都可以启动拖拽；内容盒、slot 子元素和滚动条不属于拖拽热区，点击、输入、文本选择、预览和滚动行为保持不变。拖拽默认关闭遮罩，并允许弹框移出浏览器可视区域；需要拖拽且保留遮罩时显式传入 `:modal="true"`。多个无模态弹框同时存在时，用户按下弹框的标题、内容或 footer 任意区域都会将该实例提升到最高层级；置顶监听不阻止内部按钮、输入框和其它控件的原有事件。显式传入的 `zIndex` 会作为动态层级的最低基线。四角调整以每次按下时读取的真实宽高为起点，浏览器视口缩小时只收缩弹框宽高，不强制修改已经拖动的位置；弹框关闭后重新按 `width` 和当前视口恢复自适应布局。
 
 `Editor` 富文本组件：
 

@@ -62,6 +62,53 @@ function isPrimaryPointer(event: PointerEvent) {
   return event.isPrimary && event.button === 0;
 }
 
+function readPixelValue(value: string) {
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+}
+
+function isPointerInsideElementPadding(event: PointerEvent, element: HTMLElement) {
+  if (event.target !== element) return false;
+
+  const rect = element.getBoundingClientRect();
+  if (rect.width <= 0 || rect.height <= 0) return false;
+
+  const styles = window.getComputedStyle(element);
+  const scaleX = element.offsetWidth > 0 ? rect.width / element.offsetWidth : 1;
+  const scaleY = element.offsetHeight > 0 ? rect.height / element.offsetHeight : 1;
+  const borderLeft = readPixelValue(styles.borderLeftWidth) * scaleX;
+  const borderRight = readPixelValue(styles.borderRightWidth) * scaleX;
+  const borderTop = readPixelValue(styles.borderTopWidth) * scaleY;
+  const borderBottom = readPixelValue(styles.borderBottomWidth) * scaleY;
+  const paddingLeft = readPixelValue(styles.paddingLeft) * scaleX;
+  const paddingRight = readPixelValue(styles.paddingRight) * scaleX;
+  const paddingTop = readPixelValue(styles.paddingTop) * scaleY;
+  const paddingBottom = readPixelValue(styles.paddingBottom) * scaleY;
+
+  // clientWidth/clientHeight exclude scrollbars. Fall back to the computed border
+  // box in non-layout test environments where client metrics are unavailable.
+  const paddingBoxLeft = rect.left + (element.clientWidth > 0 ? element.clientLeft * scaleX : borderLeft);
+  const paddingBoxTop = rect.top + (element.clientHeight > 0 ? element.clientTop * scaleY : borderTop);
+  const paddingBoxRight =
+    element.clientWidth > 0 ? paddingBoxLeft + element.clientWidth * scaleX : rect.right - borderRight;
+  const paddingBoxBottom =
+    element.clientHeight > 0 ? paddingBoxTop + element.clientHeight * scaleY : rect.bottom - borderBottom;
+  const insidePaddingBox =
+    event.clientX >= paddingBoxLeft &&
+    event.clientX <= paddingBoxRight &&
+    event.clientY >= paddingBoxTop &&
+    event.clientY <= paddingBoxBottom;
+  if (!insidePaddingBox) return false;
+
+  const insideContentBox =
+    event.clientX >= paddingBoxLeft + paddingLeft &&
+    event.clientX <= paddingBoxRight - paddingRight &&
+    event.clientY >= paddingBoxTop + paddingTop &&
+    event.clientY <= paddingBoxBottom - paddingBottom;
+
+  return !insideContentBox;
+}
+
 export function useDialogWindow(options: UseDialogWindowOptions) {
   const { nextZIndex } = useZIndex();
   const rect = ref<DialogRect | null>(null);
@@ -209,6 +256,15 @@ export function useDialogWindow(options: UseDialogWindowOptions) {
     startInteraction(event, 'drag');
   }
 
+  function startBodyPaddingDrag(event: PointerEvent) {
+    if (!options.draggable.value || !isPrimaryPointer(event)) return false;
+    const element = event.currentTarget;
+    if (!(element instanceof HTMLElement) || !isPointerInsideElementPadding(event, element)) return false;
+
+    startInteraction(event, 'drag');
+    return true;
+  }
+
   function startResize(event: PointerEvent, corner: DialogResizeCorner) {
     if (!options.resizable.value) return;
     startInteraction(event, corner);
@@ -243,6 +299,7 @@ export function useDialogWindow(options: UseDialogWindowOptions) {
     dialogStyle,
     isInteracting,
     resetWindow,
+    startBodyPaddingDrag,
     startDrag,
     startResize,
     zIndex,
