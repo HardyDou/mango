@@ -9,7 +9,7 @@
 - 需求影响：L2 - 新增稳定公共组件 API、主题变量和包导出，供 Mango 业务项目统一消费。
 - 方案风险：L2 - 涉及 Element Plus 表格交互、分页请求去重、主题覆盖、类型产物和跨项目消费契约。
 - 最终风险：L2
-- 工作区决策：CREATE - `D:\Project\mango-data-table`，分支 `codex/mango-data-table`，已同步至 `origin/main@5c1f94d22`
+- 工作区决策：CREATE - `D:\Project\mango-data-table`，分支 `codex/mango-data-table`，开发基线为 `origin/main@5c1f94d22`，提交前已合入 `origin/main@e277d0623`
 - 启用能力：M01、M08、M09、M10、M11、M13
 
 ## 2. 目标与范围
@@ -54,7 +54,7 @@
 
 | 要求 ID                           | 验证方式                   | 命令或步骤                                                                                                                                                                                  | 结果    | 证据                                                                                                                                                                                       |
 | --------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| SR-01、SR-02、SR-03、SR-04、SR-05 | M10 组件单元测试           | `pnpm --filter @mango/common test`                                                                                                                                                          | PASS    | 32 test files、348 tests passed                                                                                                                                                            |
+| SR-01、SR-02、SR-03、SR-04、SR-05 | M10 组件单元测试           | `pnpm --filter @mango/common test`                                                                                                                                                          | PASS    | 32 test files、354 tests passed                                                                                                                                                            |
 | SR-06                             | M09 类型、构建与发布面检查 | `pnpm --filter @mango/common build`、`pnpm component-contracts:check`、`pnpm package-exports:check`、`pnpm package-consumer:typecheck -- --reuse-build`                                     | PASS    | 构建、契约、exports 通过；候选 tarball 在全新消费者中安装后，`vue-tsc` 与生产构建通过                                                                                                      |
 | SR-01 至 SR-06                    | M09 受影响范围和样式治理   | `pnpm admin:styles:check`、`pnpm admin:module-styles:check`、`pnpm stylelint`、定向 ESLint/Prettier、`test-quality-check.mjs --base origin/main`、`pnpm check:affected`、`git diff --check` | PARTIAL | admin styles、module styles、Stylelint、定向 ESLint/Prettier、4 个测试文件质量检查、diff check 通过；`check:affected` 被仓库 Windows 工具链门禁阻断                                        |
 | SR-06                             | M11 Changeset 闭包检查     | `pnpm release:change-check -- --include-working-tree`                                                                                                                                       | PASS    | 正确识别 `@mango/common` 直接影响及其完整发布闭包                                                                                                                                          |
