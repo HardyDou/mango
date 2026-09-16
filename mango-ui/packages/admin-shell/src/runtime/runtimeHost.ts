@@ -579,7 +579,8 @@ function normalizeMenu(menu: ShellMenu | ShellRouteMenu): ShellMenu {
 
 function resolveMenuKeepAlive(menu: ShellMenu | ShellRouteMenu): boolean {
   const sourceMenu = normalizeMenu(menu);
-  return sourceMenu.keepAlive === 1 || (menu as ShellRouteMenu).meta?.keepAlive === true;
+  const routeMeta = (menu as unknown as { meta?: { keepAlive?: boolean } }).meta;
+  return sourceMenu.keepAlive === 1 || routeMeta?.keepAlive === true;
 }
 
 function renderRuntimeState(
@@ -642,7 +643,7 @@ function createLocalRuntime(menu: ShellMenu, tabKey: string) {
       instanceId: `local:${appCode}::tab-${hashTabKey(tabKey)}`,
       appName: appCode,
       appType: 'LOCAL',
-      deployMode: 'LOCAL',
+      deployMode: 'LOCAL' as MangoRuntimeAppConfig['deployMode'],
       status: 1,
     },
     menu,
@@ -672,10 +673,10 @@ function createBaseRuntime(config: MangoRuntimeAppConfig): MangoAppRuntime {
     userInfo,
     permissions: userInfo.permissions || [],
     request: {
-      get,
-      post,
-      put,
-      delete: del,
+      get: (url, config) => get(url, config as never),
+      post: (url, data, config) => post(url, data, config as never),
+      put: (url, data, config) => put(url, data, config as never),
+      delete: (url, config) => del(url, config as never),
     },
     httpClient,
     dispose: () => {

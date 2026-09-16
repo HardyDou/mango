@@ -8,7 +8,7 @@ export function normalizeRouteLocation(location: RouteLocationRaw): RouteLocatio
   }
   return {
     ...location,
-    params: location.params || {},
+    params: (location as RouteLocationRaw & { params?: Record<string, unknown> }).params || {},
     query: location.query || {},
   } as RouteLocationRaw;
 }
@@ -16,9 +16,21 @@ export function normalizeRouteLocation(location: RouteLocationRaw): RouteLocatio
 export function resolveTagLocation(tag: MangoTagRouteInput, replace = false): RouteLocationRaw {
   const hasParams = Boolean(tag.params && Object.keys(tag.params).length > 0);
   if (tag.name && hasParams) {
-    return normalizeRouteLocation({ name: tag.name, params: tag.params, query: tag.query, hash: tag.hash, replace });
+    return normalizeRouteLocation({
+      name: tag.name,
+      params: tag.params,
+      query: tag.query,
+      hash: tag.hash,
+      replace,
+    } as unknown as RouteLocationRaw);
   }
-  return normalizeRouteLocation({ path: tag.path, params: tag.params, query: tag.query, hash: tag.hash, replace });
+  return normalizeRouteLocation({
+    path: tag.path,
+    params: tag.params,
+    query: tag.query,
+    hash: tag.hash,
+    replace,
+  } as unknown as RouteLocationRaw);
 }
 
 export function resolveFallbackLocation(routes: RouteRecordRaw[], excludePath?: string): string {
@@ -31,7 +43,7 @@ export function resolveFirstVisibleRoute(routes: RouteRecordRaw[], excludePath?:
     if (item.meta?.isHide || item.path === excludePath) {
       continue;
     }
-    if (isRunnableMenu(item as ShellRouteMenu)) {
+    if (isRunnableMenu(item as unknown as ShellRouteMenu)) {
       return item;
     }
     const child = resolveFirstVisibleRoute((item.children || []) as RouteRecordRaw[], excludePath);
