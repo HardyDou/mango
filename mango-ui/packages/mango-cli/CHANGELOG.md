@@ -1,5 +1,54 @@
 # @mango/cli Changelog
 
+## 1.2.14 - 2026-09-16
+
+### Pull Requests
+
+- [PR #961](https://github.com/HardyDou/mango/pull/961) Fixed `MangoDialog` dragging from content padding while preserving child and scroll interactions. Packages: `@mango/common@2.0.3` and generated npm dependents through `@mango/cli@1.2.14`. Business Adaptation: upgrade the complete tuple and verify dialog drag behavior.
+- [PR #962](https://github.com/HardyDou/mango/pull/962) Fixed Admin Shell runtime and route type contracts that blocked the governed typecheck. Packages: `@mango/admin-shell@1.0.74` and generated npm dependents through `@mango/cli@1.2.14`. Business Adaptation: upgrade the complete tuple and verify a clean published-package consumer build.
+
+### Fixed
+
+- Carry the `MangoDialog` padding drag behavior and corrected Admin Shell type contracts into generated consumer locks.
+
+### Changed
+
+- Advance generated consumers to the machine-generated 25-package npm tuple; Maven/docs remain at `1.0.53` and `@mango/pmo@1.4.4` remains unchanged.
+
+### Versions
+
+- CLI: `1.2.13` to `1.2.14`; Admin Shell: `1.0.73` to `1.0.74`; Common: `2.0.2` to `2.0.3`; Maven/docs remain `1.0.53`.
+
+### Published Packages
+
+- Publish and verify the sealed 25-package npm closure through `@mango/cli@1.2.14` in npm hosted and npm group; do not republish Maven/docs `1.0.53`.
+
+### Business Impact
+
+- Generated Admin consumers receive the dialog drag behavior and corrected Admin Shell type contracts without Baohan source changes.
+
+### Upgrade Estimate
+
+- Audience: generated Mango Admin applications and direct Mango frontend package consumers.
+- Engineering Effort: 15 to 30 minutes.
+- Execution Window: 30 to 60 minutes.
+- Service Downtime: no framework-mandated downtime.
+- Rollback Effort: 15 to 30 minutes.
+- Assumptions: Node `22.23.1`, configured npm hosted/group registries, and a clean consumer install with Vite/browser caches cleared.
+
+### Upgrade Notes
+
+1. Upgrade CLI to `1.2.14` with the complete generated npm tuple; retain Maven/docs `1.0.53`.
+2. Clear Vite and browser caches, then verify `MangoDialog` padding drag and a clean Admin consumer build.
+
+### Verification
+
+- Verify the sealed candidate, both npm registry roles, a pure consume-registry consumer, matching Admin Shell JS/CSS versions, and a non-zero Admin main container.
+
+### Rollback
+
+- Restore CLI `1.2.13` and the previous immutable npm tuple; never overwrite published coordinates.
+
 ## 1.2.13 - 2026-09-13
 
 ### Pull Requests
