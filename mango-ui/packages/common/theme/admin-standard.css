@@ -13,6 +13,15 @@
   --mango-color-primary-light: #5b8af6;
   --mango-color-primary-lighter: #eef4ff;
   --mango-color-primary-dark: #1e3cc4;
+  --mango-color-status-primary: var(--mango-color-primary);
+  --mango-color-status-success: var(--el-color-success);
+  --mango-color-status-warning: var(--el-color-warning);
+  --mango-color-status-danger: var(--el-color-danger);
+  --mango-color-status-info: var(--el-color-info);
+  --mango-color-status-neutral: var(--mango-text-color-regular);
+  --mango-table-header-bg: #eef1f5;
+  --mango-table-header-text: #000;
+  --mango-table-expand-bg: var(--el-fill-color-light);
   --mango-shadow-light: 0 6px 18px rgba(30, 62, 120, 0.08);
   --el-color-primary: #2e5cf6;
   --el-color-primary-dark-2: #2644d4;

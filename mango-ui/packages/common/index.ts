@@ -37,6 +37,41 @@ export * from './api/dict';
 export * from './hooks/useDict';
 
 export { default as Pagination } from './components/Pagination/index.vue';
+export type {
+  PaginationAlign,
+  PaginationChange,
+  PaginationEmits,
+  PaginationProps,
+} from './components/Pagination/types';
+export { default as MangoDataTable } from './components/MangoDataTable/index.vue';
+export { default as MangoTableCell } from './components/MangoDataTable/MangoTableCell.vue';
+export type {
+  MangoDataTableEmits,
+  MangoDataTableExpose,
+  MangoDataTableProps,
+  MangoTableAction,
+  MangoTableActionContext,
+  MangoTableActionTone,
+  MangoTableCellChangeContext,
+  MangoTableCellCondition,
+  MangoTableCellContext,
+  MangoTableColumn,
+  MangoTableColumnType,
+  MangoTableCondition,
+  MangoTableExpand,
+  MangoTableExpandType,
+  MangoTableHeaderCellStyle,
+  MangoTableMode,
+  MangoTableOperation,
+  MangoTableOption,
+  MangoTableOptionValue,
+  MangoTablePageChangeContext,
+  MangoTablePagination,
+  MangoTableProps,
+  MangoTableRowContext,
+} from './components/MangoDataTable/types';
+export { default as MangoStatusText } from './components/MangoStatusText/index.vue';
+export type { MangoStatusTextProps, MangoStatusTone } from './components/MangoStatusText/types';
 export { default as MangoListPage } from './components/MangoListPage/index.vue';
 export { default as MangoSearchPanel } from './components/MangoSearchPanel/index.vue';
 export { default as MangoListPanel } from './components/MangoListPanel/index.vue';

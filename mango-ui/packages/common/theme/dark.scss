@@ -21,6 +21,15 @@
   --mango-color-primary-light: #5b8af6;
   --mango-color-primary-lighter: #1e2732;
   --mango-color-primary-dark: #2a50d4;
+  --mango-color-status-primary: var(--mango-color-primary);
+  --mango-color-status-success: var(--el-color-success);
+  --mango-color-status-warning: var(--el-color-warning);
+  --mango-color-status-danger: var(--el-color-danger);
+  --mango-color-status-info: var(--el-color-info);
+  --mango-color-status-neutral: var(--mango-text-color-regular);
+  --mango-table-header-bg: var(--mango-bg-overlay);
+  --mango-table-header-text: var(--mango-text-color);
+  --mango-table-expand-bg: var(--mango-bg-overlay);
 
   /* Menu / Sidebar */
   --mango-bg-menu-bar: #1e2732;
