@@ -60,7 +60,7 @@ watch(
   () => {
     const activeTop = activeTopRoutePath.value
       ? routesList.value.find((item) => item.path === activeTopRoutePath.value)
-      : routesList.value.find((item) => containsMenuPath(item, route.path));
+      : routesList.value.find((item) => containsMenuPath(item as never, route.path));
     menuList.value = activeTop?.children?.length ? activeTop.children : [];
   },
   { immediate: true },

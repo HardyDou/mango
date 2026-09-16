@@ -57,10 +57,10 @@ export function createLocalPageCacheHost(
   const activeTabKey = ref('');
   const transientPage = shallowRef<LocalPageEntry>();
   let cacheNameSequence = 0;
-  const cachedComponentNames = computed(() =>
+  const cachedComponentNames = computed<string[]>(() =>
     Array.from(cachedPages.value.values())
       .map((entry) => entry.cacheName)
-      .filter(Boolean),
+      .filter((name): name is string => Boolean(name)),
   );
 
   function createCachedEntry(entry: LocalPageEntry): LocalPageEntry {

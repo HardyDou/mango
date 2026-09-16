@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+import type { PiniaPluginContext } from 'pinia';
 import type { RouteRecordRaw } from 'vue-router';
 import { Session } from '@mango/common/utils/storage';
 import {
@@ -72,7 +73,7 @@ export const useTagsViewRoutes = defineStore('tagsViewRoutes', {
   },
   persist: {
     enabled: true,
-    afterRestore: ({ store }) => {
+    afterRestore: ({ store }: PiniaPluginContext) => {
       store.tagsViewRoutes = normalizeTagsViewRoutes(store.tagsViewRoutes as RouteRecordRaw[]);
     },
     strategies: [
