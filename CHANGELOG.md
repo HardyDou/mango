@@ -1,5 +1,67 @@
 # Mango Changelog
 
+## v2026.09.16-npm-admin-shell-typecheck-release - 2026-09-16
+
+Status: `PENDING`. This npm-only release will publish the sealed 25-package closure from `@mango/common@2.0.3` through `@mango/cli@1.2.14`; Maven/docs remain at the successful `1.0.53` baseline.
+
+### Pull Requests
+
+- [PR #961](https://github.com/HardyDou/mango/pull/961) Fixed `MangoDialog` dragging from content padding while preserving child and scroll interactions. Packages: `@mango/common@2.0.3` and generated npm dependents through `@mango/cli@1.2.14`. Business Adaptation: upgrade the complete tuple and verify dialog drag behavior.
+- [PR #962](https://github.com/HardyDou/mango/pull/962) Fixed Admin Shell runtime and route type contracts that blocked the governed typecheck. Packages: `@mango/admin-shell@1.0.74` and generated npm dependents through `@mango/cli@1.2.14`. Business Adaptation: upgrade the complete tuple and verify a clean published-package consumer build.
+
+### Fixed
+
+- Allow `MangoDialog` with `draggable` enabled to start dragging from blank content padding without changing nested controls or scroll behavior.
+- Align Admin Shell route, runtime request, KeepAlive, persisted-store, and local runtime typings with the current package contracts.
+
+### Changed
+
+- Publish the machine-generated 25-package npm closure from `@mango/common@2.0.3` through `@mango/cli@1.2.14`.
+- Keep Mango Maven/docs at `1.0.53`; this is an npm-only release.
+
+### Versions
+
+- Maven/docs: unchanged at `1.0.53`.
+- npm closure: `@mango/common@2.0.3`, `@mango/admin-extension@1.0.5`, `@mango/ai@1.1.3`, `@mango/auth@1.0.33`, `@mango/file@1.0.39`, `@mango/grid-layout@1.0.22`, `@mango/grid-widgets@1.0.28`, `@mango/home@1.0.21`, `@mango/rbac@1.0.34`, `@mango/site-shell@1.0.18`, `@mango/system@1.0.42`, `@mango/admin-pages@1.0.43`, `@mango/calendar@1.0.44`, `@mango/cms@1.0.33`, `@mango/job@1.0.37`, `@mango/link@1.0.30`, `@mango/notice@1.0.49`, `@mango/numgen@1.0.45`, `@mango/payment@1.0.36`, `@mango/template@1.0.45`, `@mango/workflow@1.0.53`, `@mango/admin-shell@1.0.74`, `@mango/workflow-business-example@1.0.52`, `@mango/admin@1.1.10`, and `@mango/cli@1.2.14`.
+
+### Published Packages
+
+1. Publish the machine-generated 25-package npm topology in order to npm hosted, then verify every package from npm group.
+2. Maven/docs remain deliberately unpublished because `1.0.53` is already the successful baseline.
+3. Create the immutable tag and GitHub Release only after sealed-candidate and pure-consumer verification.
+
+### Business Impact
+
+- Generated Mango Admin consumers receive the dialog drag behavior and corrected Admin Shell type contracts.
+- No Maven coordinate, database migration, production data rewrite, or Baohan source change is included.
+- Consumers must install the complete published npm tuple; workspace links and mixed cached package versions are unsupported.
+
+### Upgrade Estimate
+
+- Audience: generated Mango Admin applications and direct Mango frontend package consumers.
+- Engineering Effort: 15 to 30 minutes for dependency update and clean frontend build.
+- Execution Window: 30 to 60 minutes including registry propagation and pure-consumer verification.
+- Service Downtime: no framework-mandated downtime; consumers use their normal deployment window.
+- Rollback Effort: 15 to 30 minutes to restore the previous immutable npm tuple.
+- Assumptions: Node `22.23.1`, configured npm hosted/group registries, and a clean consumer install with Vite/browser caches cleared.
+
+### Upgrade Notes
+
+1. Upgrade the complete npm tuple to the versions above, ending at `@mango/cli@1.2.14`; retain Maven/docs `1.0.53`.
+2. Do not mix workspace dependencies with published packages. Clear consumer Vite and browser caches before validating the new tuple.
+3. Verify `MangoDialog` padding drag, nested controls, and scrolling, then run a clean generated Admin consumer build.
+
+### Verification
+
+- Run catalog, package export, style, typecheck, release-plan, release-notes, and local release checks with Node `22.23.1`.
+- Seal one candidate, verify npm hosted and group metadata/tarballs against recorded hashes, and run a pure consume-registry consumer using the exact 25-package tuple.
+- Confirm the published Admin Shell JS and CSS are from `@mango/admin-shell@1.0.74` and the consumer main container has non-zero dimensions.
+
+### Rollback
+
+- Restore consumers to the previous immutable npm tuple through the normal application release process; do not overwrite published coordinates.
+- Maven/docs remain at `1.0.53`; no Maven rollback is required for this npm-only batch.
+
 ## v2026.09.13-maven-1.0.53-issue-952-943-release - 2026-09-13
 
 Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `b7f04570d7cc526e8578eaff4b495c035918762f515dda78e951c866d1b19c6f` for release plan `4565fef3babc0d022eb2cf034059d342bda1d1a0e227b684c40c64024900aa91` and prepared candidate `9d6139f7b64ff8ddfd078942c4cadc96145b74b1f5fc9219a47c4ce9357e22b5` is `COMPLETED`: all 192 Maven/docs coordinates at `1.0.53` and all 16 npm packages ending at `@mango/cli@1.2.13` match the sealed candidate in both publish and consume registries, the pure consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`.
