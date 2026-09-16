@@ -2,12 +2,13 @@
 
 ## v2026.09.16-npm-admin-shell-typecheck-release - 2026-09-16
 
-Status: `PENDING`. This npm-only release will publish the sealed 25-package closure from `@mango/common@2.0.3` through `@mango/cli@1.2.14`; Maven/docs remain at the successful `1.0.53` baseline.
+Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `96d04bf40e91123d042fa6175f46e0245d90d763116ada8d99d8e6871c95832c` for release plan `cae12c2da56bfea25d1967f9272c5e9d2a47f4f61452afd397ba57141a3f8cae` and prepared candidate `354c469783df795f1a9331d54cd49cecefee3233b014ba35beff8e3033952dee` is `COMPLETED`: all 25 npm packages from `@mango/common@2.0.3` through `@mango/cli@1.2.14` match the sealed candidate in both publish and consume registries, the pure consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`. Maven/docs remain at the successful `1.0.53` baseline.
 
 ### Pull Requests
 
 - [PR #961](https://github.com/HardyDou/mango/pull/961) Fixed `MangoDialog` dragging from content padding while preserving child and scroll interactions. Packages: `@mango/common@2.0.3` and generated npm dependents through `@mango/cli@1.2.14`. Business Adaptation: upgrade the complete tuple and verify dialog drag behavior.
 - [PR #962](https://github.com/HardyDou/mango/pull/962) Fixed Admin Shell runtime and route type contracts that blocked the governed typecheck. Packages: `@mango/admin-shell@1.0.74` and generated npm dependents through `@mango/cli@1.2.14`. Business Adaptation: upgrade the complete tuple and verify a clean published-package consumer build.
+- [PR #963](https://github.com/HardyDou/mango/pull/963) Prepared and authorized the sealed npm-only release candidate without changing runtime behavior.
 
 ### Fixed
 
