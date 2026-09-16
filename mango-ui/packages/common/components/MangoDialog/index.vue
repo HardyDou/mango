@@ -66,7 +66,13 @@
       </template>
     </template>
 
-    <div class="mango-dialog__body" @pointerdown.capture="handleBodyPointerDown">
+    <div
+      class="mango-dialog__body"
+      :class="{ 'mango-dialog__body--padding-drag-ready': draggable && isBodyPaddingHovered }"
+      @pointerdown.capture="handleBodyPointerDown"
+      @pointermove.capture="updateBodyPaddingHover"
+      @pointerleave="clearBodyPaddingHover"
+    >
       <slot />
     </div>
 
@@ -133,12 +139,15 @@ const resolvedCloseOnClickModal = computed(() => (resolvedModal.value ? props.cl
 const resolvedLockScroll = computed(() => props.lockScroll ?? resolvedModal.value);
 const {
   bringToFront: bringDialogToFront,
+  clearBodyPaddingHover,
   dialogStyle,
+  isBodyPaddingHovered,
   isInteracting,
   resetWindow,
   startBodyPaddingDrag,
   startDrag,
   startResize,
+  updateBodyPaddingHover,
   zIndex: dialogZIndex,
 } = useDialogWindow({
   draggable: computed(() => props.draggable),
@@ -325,6 +334,10 @@ defineExpose<MangoDialogExpose>({
   padding: var(--mango-dialog-body-padding);
   overflow: hidden auto;
   background: var(--el-bg-color);
+}
+
+.mango-dialog__body--padding-drag-ready {
+  cursor: move;
 }
 
 :global(.mango-dialog--free-layout .mango-dialog__body) {

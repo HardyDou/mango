@@ -352,6 +352,7 @@ describe('MangoDialog', () => {
       isPrimary: true,
       pointerId: 1,
     });
+    expect(document.documentElement.style.cursor).toBe('move');
     dispatchPointer('pointermove', { clientX: clientX + 40, clientY: clientY + 30 });
     await nextTick();
 
@@ -360,6 +361,66 @@ describe('MangoDialog', () => {
     expect(style).toContain('top: 110px');
 
     dispatchPointer('pointerup', { clientX: clientX + 40, clientY: clientY + 30 });
+    expect(document.documentElement.style.cursor).toBe('');
+  });
+
+  it.each([
+    { edge: 'top', clientX: 200, clientY: 146 },
+    { edge: 'right', clientX: 688, clientY: 200 },
+    { edge: 'bottom', clientX: 200, clientY: 414 },
+    { edge: 'left', clientX: 112, clientY: 200 },
+  ])('shows the move cursor over the $edge body padding', async ({ clientX, clientY }) => {
+    const wrapper = mountDialog({ draggable: true });
+    const body = wrapper.get('.mango-dialog__body');
+    body.element.setAttribute('style', 'padding: 20px 24px !important');
+    mockElementRect(body.element as HTMLElement, createRect(100, 136, 600, 288));
+    mockComputedPadding(body.element);
+
+    await body.trigger('pointermove', { clientX, clientY });
+
+    expect(body.classes()).toContain('mango-dialog__body--padding-drag-ready');
+
+    await body.trigger('pointerleave');
+    expect(body.classes()).not.toContain('mango-dialog__body--padding-drag-ready');
+  });
+
+  it('keeps the default cursor over body content, slotted content, and the scrollbar', async () => {
+    const wrapper = mountDialog({ draggable: true });
+    const body = wrapper.get('.mango-dialog__body');
+    body.element.setAttribute('style', 'padding: 20px 24px !important');
+    mockElementRect(body.element as HTMLElement, createRect(100, 136, 600, 288));
+    mockComputedPadding(body.element);
+    Object.defineProperty(body.element, 'clientWidth', {
+      configurable: true,
+      value: 580,
+    });
+
+    await body.trigger('pointermove', { clientX: 112, clientY: 200 });
+    expect(body.classes()).toContain('mango-dialog__body--padding-drag-ready');
+
+    await body.trigger('pointermove', { clientX: 200, clientY: 200 });
+    expect(body.classes()).not.toContain('mango-dialog__body--padding-drag-ready');
+
+    await wrapper.get('.content').trigger('pointermove', { clientX: 200, clientY: 200 });
+    expect(body.classes()).not.toContain('mango-dialog__body--padding-drag-ready');
+
+    await body.trigger('pointermove', { clientX: 690, clientY: 200 });
+    expect(body.classes()).not.toContain('mango-dialog__body--padding-drag-ready');
+  });
+
+  it('does not show the move cursor over body padding when draggable is disabled', async () => {
+    const wrapper = mountDialog({ draggable: true });
+    const body = wrapper.get('.mango-dialog__body');
+    body.element.setAttribute('style', 'padding: 20px 24px !important');
+    mockElementRect(body.element as HTMLElement, createRect(100, 136, 600, 288));
+    mockComputedPadding(body.element);
+
+    await body.trigger('pointermove', { clientX: 112, clientY: 200 });
+    expect(body.classes()).toContain('mango-dialog__body--padding-drag-ready');
+
+    await wrapper.setProps({ draggable: false });
+
+    expect(body.classes()).not.toContain('mango-dialog__body--padding-drag-ready');
   });
 
   it('does not drag from the body content box or slotted content', async () => {

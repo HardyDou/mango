@@ -4,7 +4,7 @@
 
 本文用于帮助 Mango 开发者、业务开发者和 AI Agent 快速定位 Mango 能力、模块 README、关联 PMO 规则和排障入口。
 
-2026-09-15 能力更新：`@mango/common` 的 `MangoDialog` 在开启 `draggable` 后，除标题区外还可从内容区四周实际生效的空白 padding 启动拖拽；内容盒、slot 子元素和滚动条继续只执行原有交互，不会触发拖拽。详见 [Common README](../../mango-ui/packages/common/README.md) 和 [STANDARD 交付记录](../evidence/mango-dialog-padding-drag/standard-delivery-record.md)。
+2026-09-16 能力更新：`@mango/common` 的 `MangoDialog` 在开启 `draggable` 后，除标题区外还可从内容区四周实际生效的空白 padding 启动拖拽，并在这些区域显示四向移动光标；内容盒、slot 子元素和滚动条继续只执行原有交互，不会触发拖拽或显示拖拽反馈。详见 [Common README](../../mango-ui/packages/common/README.md) 和 [STANDARD 交付记录](../evidence/mango-dialog-padding-drag/standard-delivery-record.md)。
 
 2026-09-09 能力更新：个人中心修改密码统一调用 Identity 当前用户接口 `PUT /identity/me/password`，后端校验旧密码和密码策略；Auth、Notice 及租户字典配置初始化行为保持不变。详见 [Identity README](../../mango/mango-platform/mango-identity/README.md)、[@mango/auth README](../../mango-ui/packages/auth/README.md) 和 [交付记录](../evidence/profile-password-404/standard-delivery-record.md)。
 

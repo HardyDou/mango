@@ -114,6 +114,7 @@ export function useDialogWindow(options: UseDialogWindowOptions) {
   const rect = ref<DialogRect | null>(null);
   const zIndex = ref<number>();
   const isInteracting = ref(false);
+  const isBodyPaddingHovered = ref(false);
   let interaction: DialogInteraction | null = null;
   let previousCursor = '';
   let previousUserSelect = '';
@@ -238,7 +239,7 @@ export function useDialogWindow(options: UseDialogWindowOptions) {
     isInteracting.value = true;
     previousCursor = document.documentElement.style.cursor;
     previousUserSelect = document.documentElement.style.userSelect;
-    document.documentElement.style.cursor = window.getComputedStyle(pointerTarget).cursor;
+    document.documentElement.style.cursor = kind === 'drag' ? 'move' : window.getComputedStyle(pointerTarget).cursor;
     document.documentElement.style.userSelect = 'none';
     pointerTarget.setPointerCapture?.(event.pointerId);
     document.addEventListener('pointermove', handlePointerMove, { passive: false });
@@ -265,6 +266,16 @@ export function useDialogWindow(options: UseDialogWindowOptions) {
     return true;
   }
 
+  function updateBodyPaddingHover(event: PointerEvent) {
+    const element = event.currentTarget;
+    isBodyPaddingHovered.value =
+      options.draggable.value && element instanceof HTMLElement && isPointerInsideElementPadding(event, element);
+  }
+
+  function clearBodyPaddingHover() {
+    isBodyPaddingHovered.value = false;
+  }
+
   function startResize(event: PointerEvent, corner: DialogResizeCorner) {
     if (!options.resizable.value) return;
     startInteraction(event, corner);
@@ -282,6 +293,7 @@ export function useDialogWindow(options: UseDialogWindowOptions) {
 
   function resetWindow() {
     finishInteraction();
+    clearBodyPaddingHover();
     rect.value = null;
   }
 
@@ -296,12 +308,15 @@ export function useDialogWindow(options: UseDialogWindowOptions) {
 
   return {
     bringToFront,
+    clearBodyPaddingHover,
     dialogStyle,
+    isBodyPaddingHovered,
     isInteracting,
     resetWindow,
     startBodyPaddingDrag,
     startDrag,
     startResize,
+    updateBodyPaddingHover,
     zIndex,
   };
 }
