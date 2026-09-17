@@ -1,6 +1,6 @@
 {
   "name": "@mango/site-shell",
-  "version": "1.0.18",
+  "version": "1.0.19",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -20,7 +20,7 @@
     "package.json"
   ],
   "dependencies": {
-    "@mango/common": "workspace:2.0.3"
+    "@mango/common": "workspace:2.0.4"
   },
   "peerDependencies": {
     "vue": ">=3.5.13 <4"
