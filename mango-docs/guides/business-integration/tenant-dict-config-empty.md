@@ -1,5 +1,7 @@
 # 租户字典配置为空排障
 
+> Issue #943 确定性修复只调整 `ORG_MEMBER_BINDING` 新建关系的主键来源，并为内置 admin 根组织关系声明固定 `targetId`；不修改租户、字典或系统配置数据及其查询 API、权限和隔离边界。本指南的空数据排障步骤保持不变；管理员组织归属异常时仍应核对该 Resource 声明、Handler 同步结果和 `tenant_member_org` 关系。
+
 > 个人中心修改密码 404 修复不改变租户、字典或系统配置的初始化、权限和 API 合同；本场景排障步骤不受影响。具体改密接口和真实 HTTP 验证记录见 [个人中心修改密码交付记录](../../evidence/profile-password-404/standard-delivery-record.md)。
 
 > Issue #934：仅修复系统公共 API Resource 的运行时声明版本，不新增或修改租户、字典、系统配置数据，也不改变本指南排障步骤。
