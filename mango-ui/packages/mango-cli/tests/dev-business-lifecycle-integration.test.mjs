@@ -32,8 +32,11 @@ test(
 
     try {
       const initialized = runCli(['workspace', 'init']);
-      assert.match(initialized.stdout, /Workspace slot 1:/u);
       const workspace = JSON.parse(readFileSync(join(root, '.mango/workspace.json'), 'utf8'));
+      assert.match(initialized.stdout, new RegExp(`Workspace slot ${workspace.slot}:`, 'u'));
+      const registryEntries = readRegistryEntries();
+      assert.equal(registryEntries.length, 1);
+      assert.equal(registryEntries[0].slot, workspace.slot);
       const appUrl = `http://127.0.0.1:${workspace.backendPort}`;
       disableDatabaseAutoCreate();
 
