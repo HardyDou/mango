@@ -1,6 +1,6 @@
 {
   "name": "@mango/payment",
-  "version": "1.0.36",
+  "version": "1.0.37",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -26,10 +26,10 @@
   ],
   "dependencies": {
     "@element-plus/icons-vue": "2.3.2",
-    "@mango/admin-pages": "workspace:1.0.43",
+    "@mango/admin-pages": "workspace:1.0.44",
     "@mango/api-schema": "workspace:1.0.3",
-    "@mango/common": "workspace:2.0.3",
-    "@mango/file": "workspace:1.0.39",
+    "@mango/common": "workspace:2.0.4",
+    "@mango/file": "workspace:1.0.40",
     "qrcode": "1.5.4"
   },
   "peerDependencies": {
