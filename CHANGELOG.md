@@ -1,5 +1,70 @@
 # Mango Changelog
 
+## v2026.09.17-maven-1.0.54-common-identity-release - 2026-09-17
+
+Status: `PENDING`. This mixed release will publish the sealed non-application Maven/docs batch at `1.0.54` and the generated npm closure from `@mango/common@2.0.4` through `@mango/cli@1.2.15`.
+
+### Pull Requests
+
+- [PR #965](https://github.com/HardyDou/mango/pull/965) Fixed `MangoDialog` content-padding drag feedback so only actual drag hot zones show the move cursor. Packages: `@mango/common@2.0.4` and generated npm dependents through `@mango/cli@1.2.15`. Business Adaptation: upgrade the complete npm tuple and verify dialog padding, child controls, and scroll behavior.
+- [PR #967](https://github.com/HardyDou/mango/pull/967) Fixed `ORG_MEMBER_BINDING` portable Resource IDs so clean databases receive deterministic relationship IDs while existing relationships retain their runtime IDs. Packages: Mango Maven/docs `1.0.54` and generated lock `@mango/cli@1.2.15`. Business Adaptation: upgrade Maven and CLI together, then verify clean-database Resource generation and existing relationship preservation.
+- [PR #968](https://github.com/HardyDou/mango/pull/968) Changed the CLI workspace lifecycle integration test to remain isolated from pre-existing local workspace slots. Packages: no additional runtime package; `@mango/cli@1.2.15` already belongs to the generated release closure. Business Adaptation: none; runtime workspace allocation behavior is unchanged.
+
+### Fixed
+
+- Show the move cursor only on effective `MangoDialog` padding drag zones; nested content, slot controls, and scrollbars keep their original cursor and interaction behavior.
+- Use an explicit positive `targetId`, or a stable tenant/member/organization-derived ID, when creating an `ORG_MEMBER_BINDING`; preserve the database ID of an already existing relationship and fail closed on ID collisions.
+
+### Changed
+
+- Advance the complete non-application Maven/docs batch from `1.0.53` to `1.0.54` for the Identity Resource runtime correction.
+- Publish the machine-generated npm dependency closure from `@mango/common@2.0.4` through `@mango/cli@1.2.15`.
+- Validate CLI workspace lifecycle behavior against the slot actually allocated by an isolated registry instead of assuming slot 1 is free.
+
+### Versions
+
+- Mango Maven non-application reactor and `io.mango:mango-docs-bundle`: `1.0.53` to `1.0.54`.
+- npm closure: `@mango/common@2.0.4`, `@mango/admin-extension@1.0.6`, `@mango/ai@1.1.4`, `@mango/auth@1.0.34`, `@mango/file@1.0.40`, `@mango/grid-layout@1.0.23`, `@mango/grid-widgets@1.0.29`, `@mango/home@1.0.22`, `@mango/rbac@1.0.35`, `@mango/site-shell@1.0.19`, `@mango/system@1.0.43`, `@mango/admin-pages@1.0.44`, `@mango/calendar@1.0.45`, `@mango/cms@1.0.34`, `@mango/job@1.0.38`, `@mango/link@1.0.31`, `@mango/notice@1.0.50`, `@mango/numgen@1.0.46`, `@mango/payment@1.0.37`, `@mango/template@1.0.46`, `@mango/workflow@1.0.54`, `@mango/admin-shell@1.0.75`, `@mango/workflow-business-example@1.0.53`, `@mango/admin@1.1.11`, and `@mango/cli@1.2.15`; `@mango/pmo@1.4.4` remains unchanged.
+
+### Published Packages
+
+1. Publish the sealed non-application Maven reactor plus `io.mango:mango-docs-bundle:1.0.54`, then verify both Maven registry roles.
+2. Publish the generated npm topology in dependency order, ending at `@mango/cli@1.2.15`, then verify every package from npm group.
+3. Create the immutable Tag and GitHub Release only after sealed-candidate and pure consume-registry verification.
+
+### Business Impact
+
+- New clean-database `ORG_MEMBER_BINDING` Resource initialization is deterministic across builds; existing runtime organization-member relationship IDs are not rewritten.
+- Generated Mango Admin consumers receive accurate `MangoDialog` drag cursor feedback without changing child-control or scrolling semantics.
+- No schema migration, historical data rewrite, production operation, Baohan source change, or business application deployment is included.
+
+### Upgrade Estimate
+
+- Audience: generated Mango applications, direct Identity Resource consumers, and direct Mango frontend package consumers.
+- Engineering Effort: 30 to 60 minutes for standard generated consumers; 1 to 2 hours for customized Resource declarations or frontend integrations.
+- Execution Window: 45 to 120 minutes including dependency update, clean build, Resource verification, and registry propagation.
+- Service Downtime: no framework-mandated downtime; consumers use their normal deployment and restart window.
+- Rollback Effort: 20 to 45 minutes to restore Maven `1.0.53`, CLI `1.2.14`, and the previous immutable npm tuple.
+- Assumptions: Java 21, Node `22.23.1`, configured Maven/npm registries, stable tenant/member/organization declarations, and a clean consumer install.
+
+### Upgrade Notes
+
+1. Upgrade the complete tuple to Maven/docs `1.0.54`, the npm versions above, and `@mango/cli@1.2.15`; retain `@mango/pmo@1.4.4`.
+2. For portable `ORG_MEMBER_BINDING` declarations, provide a stable positive `targetId` when an externally assigned relationship ID is required; otherwise Mango derives one from tenant, member, and organization identity.
+3. Existing organization-member relationships retain their current database IDs. Do not rewrite historical IDs or restore initialization data over runtime changes.
+4. Install frontend packages from the consume registry without workspace links, clear Vite/browser caches, and verify dialog padding cursor, child controls, and scrolling.
+
+### Verification
+
+- Run the Identity starter integration/contract tests, module verify, Common component tests, isolated CLI workspace lifecycle test, workspace typecheck/build, catalog/impact/style/export checks, release-plan/notes checks, and repository local release checks.
+- Seal one mixed candidate, verify all Maven/docs and npm coordinates against both registry roles, and run a pure consume-registry consumer with the exact released tuple.
+- Verify two clean Identity databases produce the same `ORG_MEMBER_BINDING` target ID, existing relationships retain their database ID, and dialog cursor feedback is limited to effective drag padding.
+
+### Rollback
+
+- Restore consumers to Maven `1.0.53`, CLI `1.2.14`, and the previous immutable npm tuple through their normal application release process; do not overwrite any published coordinate.
+- No database rollback is required because this batch adds no schema migration and does not rewrite existing relationship IDs.
+
 ## v2026.09.16-npm-admin-shell-typecheck-release - 2026-09-16
 
 Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `96d04bf40e91123d042fa6175f46e0245d90d763116ada8d99d8e6871c95832c` for release plan `cae12c2da56bfea25d1967f9272c5e9d2a47f4f61452afd397ba57141a3f8cae` and prepared candidate `354c469783df795f1a9331d54cd49cecefee3233b014ba35beff8e3033952dee` is `COMPLETED`: all 25 npm packages from `@mango/common@2.0.3` through `@mango/cli@1.2.14` match the sealed candidate in both publish and consume registries, the pure consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`. Maven/docs remain at the successful `1.0.53` baseline.
