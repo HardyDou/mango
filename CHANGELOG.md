@@ -2,7 +2,7 @@
 
 ## v2026.09.17-maven-1.0.54-common-identity-release - 2026-09-17
 
-Status: `PENDING`. This mixed release will publish the sealed non-application Maven/docs batch at `1.0.54` and the generated npm closure from `@mango/common@2.0.4` through `@mango/cli@1.2.15`.
+Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `346868b6db938d1ccd42e58debef4dee9dc6dbf502cb299e78c014983f9e4f08` for release plan `e3bd62fb8b47c0be39656c232412d0b1f112d3c3067ae7c2509e63b2dd34e473` and prepared candidate `b4a55a66264cf4cc20006565c4da373e212a218db001dcf466d29744125c0dc7` is `COMPLETED`: all 192 Maven/docs coordinates at `1.0.54` and all 25 npm packages from `@mango/common@2.0.4` through `@mango/cli@1.2.15` match the sealed candidate in both publish and consume registries, the pure consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`.
 
 ### Pull Requests
 
