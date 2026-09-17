@@ -93,7 +93,7 @@ Resource Registry 基线注入可用于 demo、样例租户和初始化数据：
 | 资源类型 | 关键字段 |
 |----------|----------|
 | `IDENTITY_USER` | `tenantId`、`username`、`memberId`、`initializedAt`，可声明 `encodedPassword`、`password`、`memberNo`、`displayName`、联系方式和状态。`memberId` 是稳定成员身份；`initializedAt` 是固定初始化时间，同时用于用户、成员加入和 `CREATED` 生命周期事件；该事件 ID 由租户、成员和事件类型稳定派生。正式可移植基线使用已由 `PasswordEncoder` 编码的 `encodedPassword`，确保 BSQL 可重复生成；`password` 仅用于 demo 或运行时初始化并由 handler 编码。两个密码字段不能同时声明。 |
-| `ORG_MEMBER_BINDING` | `tenantId`、`orgCode`，并通过 `memberId`、`memberNo` 或 `username` 解析成员；可声明 `postCode`、`primaryOrg`、`leader`。 |
+| `ORG_MEMBER_BINDING` | `tenantId`、`orgCode`，并通过 `memberId`、`memberNo` 或 `username` 解析成员；可声明 `targetId`、`postCode`、`primaryOrg`、`leader`。新建关系优先使用正数 `targetId`，未声明时按租户、成员和组织编码稳定派生；已存在的同业务键关系保留数据库中的真实 ID。 |
 
 首次登录改密、密码复杂度、登录失败锁定和锁定时长不在资源声明 handler 中处理，统一由独立身份安全策略能力承接。
 
@@ -258,7 +258,7 @@ mango-identity-core/src/main/resources/db/migration/identity
 | `V5__tenant_member_lifecycle.sql` | 创建成员生命周期事件表；不回填特性上线前已物理删除或已退出的历史成员 |
 | `V6__normalize_internal_org_party_to_tenant.sql` | 将正数值租户下 `INTERNAL_ORG` 用户的错误 `party_id` 归一化为 `tenant_id`；非数值、溢出和其它主体不改动 |
 | `META-INF/mango/resources/identity-common-domain.yml` | 注册 `IDENTITY`（身份管理）业务域 |
-| `META-INF/mango/resources/identity-common-bootstrap.yml` | 默认加载必需的 `admin` 全局账号和租户 1 成员 |
+| `META-INF/mango/resources/identity-common-bootstrap.yml` | 默认加载必需的 `admin` 全局账号、租户 1 成员及使用固定关系 ID 的根组织绑定 |
 | `IdentityTenantProvisioner` | 新建租户时，如果当前上下文有创建者用户，则补建成员号 `ADMIN-<tenantId>-<userId>` 的机构管理员成员 |
 
 `IdentityTenantProvisioner` 还会查找当前租户 `internal-admin + ROLE_ADMIN` 角色。角色存在时，会把创建者成员绑定到该角色，授权上下文为 `INTERNAL / INTERNAL_USER / INTERNAL_ORG / partyId=tenantId`。

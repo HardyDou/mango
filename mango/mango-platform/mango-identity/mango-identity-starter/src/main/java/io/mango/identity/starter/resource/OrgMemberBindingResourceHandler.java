@@ -8,6 +8,7 @@ import io.mango.identity.core.mapper.IdentityUserMapper;
 import io.mango.identity.core.mapper.TenantMemberMapper;
 import io.mango.identity.core.mapper.TenantMemberOrgMapper;
 import io.mango.org.api.OrgReferenceProvider;
+import io.mango.resource.support.PortableResourceIds;
 import io.mango.resource.support.ResourceHandler;
 import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.support.model.ResourceDeclaration;
@@ -56,6 +57,7 @@ public class OrgMemberBindingResourceHandler implements ResourceHandler {
                 .resourceType(resourceType())
                 .requiredField("tenantId")
                 .requiredField("orgCode")
+                .fieldDescription("targetId", "可选稳定关系 ID；未填写时按租户、成员和组织编码稳定派生。")
                 .fieldDescription("memberId", "成员 ID。memberId、memberNo、username 三选一。")
                 .fieldDescription("memberNo", "成员编号。")
                 .fieldDescription("username", "用户名，用于解析租户成员。")
@@ -67,22 +69,20 @@ public class OrgMemberBindingResourceHandler implements ResourceHandler {
     public ResourceSyncResult upsert(ResourceDeclaration resource) {
         Long tenantId = fields.requiredLong(resource, "tenantId");
         TenantMemberEntity member = requiredMember(resource, tenantId);
-        Long orgId = requiredOrgId(resource, tenantId);
+        String orgCode = fields.requiredString(resource, "orgCode");
+        Long orgId = requiredOrgId(tenantId, orgCode);
         Long postId = optionalPostId(resource, tenantId);
         TenantMemberOrgEntity relation = findRelation(tenantId, member.getMemberId(), orgId);
+        boolean newRelation = relation == null;
         LocalDateTime now = LocalDateTime.now();
-        if (relation == null) {
-            relation = new TenantMemberOrgEntity();
-            relation.setTenantId(String.valueOf(tenantId));
-            relation.setMemberId(member.getMemberId());
-            relation.setOrgId(orgId);
-            relation.setCreatedAt(now);
+        if (newRelation) {
+            relation = newRelation(resource, tenantId, member.getMemberId(), orgId, orgCode, now);
         }
         relation.setPostId(postId);
         relation.setPrimaryFlag(Boolean.TRUE.equals(fields.boolField(resource, "primaryOrg", false)) ? 1 : 0);
         relation.setLeaderFlag(Boolean.TRUE.equals(fields.boolField(resource, "leader", false)) ? 1 : 0);
         relation.setUpdatedAt(now);
-        if (relation.getId() == null) {
+        if (newRelation) {
             memberOrgMapper.insert(relation);
         } else {
             memberOrgMapper.updateById(relation);
@@ -90,14 +90,14 @@ public class OrgMemberBindingResourceHandler implements ResourceHandler {
         updateMemberPrimary(member, relation);
         return ResourceSyncResult.of(relation.getId(), TARGET_TABLE,
                 "Org member binding synced: memberId=" + member.getMemberId() + ", orgCode="
-                        + fields.requiredString(resource, "orgCode"));
+                        + orgCode);
     }
 
     @Override
     public ResourceSyncResult disable(ResourceDeclaration resource) {
         Long tenantId = fields.requiredLong(resource, "tenantId");
         TenantMemberEntity member = requiredMember(resource, tenantId);
-        Long orgId = requiredOrgId(resource, tenantId);
+        Long orgId = requiredOrgId(tenantId, fields.requiredString(resource, "orgCode"));
         TenantMemberOrgEntity relation = findRelation(tenantId, member.getMemberId(), orgId);
         boolean changed = relation != null && memberOrgMapper.deleteById(relation.getId()) > 0;
         return ResourceSyncResult.of(relation == null ? null : relation.getId(), TARGET_TABLE,
@@ -142,14 +142,30 @@ public class OrgMemberBindingResourceHandler implements ResourceHandler {
         throw new IllegalStateException("ORG_MEMBER_BINDING referenced member does not exist");
     }
 
-    private Long requiredOrgId(ResourceDeclaration resource, Long tenantId) {
-        String orgCode = fields.requiredString(resource, "orgCode");
+    private Long requiredOrgId(Long tenantId, String orgCode) {
         Long orgId = orgReferenceProvider.resolveOrgId(tenantId, orgCode);
         if (orgId == null) {
             throw new IllegalStateException("ORG_MEMBER_BINDING referenced org does not exist: "
                     + orgCode);
         }
         return orgId;
+    }
+
+    private TenantMemberOrgEntity newRelation(ResourceDeclaration resource, Long tenantId, Long memberId,
+                                               Long orgId, String orgCode, LocalDateTime createdAt) {
+        long relationId = PortableResourceIds.declaredOrStable(
+                fields.longField(resource, "targetId"), TARGET_TABLE, tenantId, memberId, orgCode);
+        TenantMemberOrgEntity occupied = memberOrgMapper.selectById(relationId);
+        if (occupied != null) {
+            throw new IllegalStateException("ORG_MEMBER_BINDING portable relation ID collision: id=" + relationId);
+        }
+        TenantMemberOrgEntity relation = new TenantMemberOrgEntity();
+        relation.setId(relationId);
+        relation.setTenantId(String.valueOf(tenantId));
+        relation.setMemberId(memberId);
+        relation.setOrgId(orgId);
+        relation.setCreatedAt(createdAt);
+        return relation;
     }
 
     private Long optionalPostId(ResourceDeclaration resource, Long tenantId) {
