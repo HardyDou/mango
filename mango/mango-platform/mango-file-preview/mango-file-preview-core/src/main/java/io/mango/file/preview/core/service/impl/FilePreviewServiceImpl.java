@@ -39,6 +39,9 @@ import java.util.UUID;
 @RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
         justification = "Spring collaborators are intentionally retained for the service lifetime"))
 public class FilePreviewServiceImpl implements IFilePreviewService {
+    private static final int SOURCE_VERSION_HEX_LENGTH = 16;
+    private static final int SOURCE_VERSION_DIGEST_BYTES = 8;
+    private static final long HASH_FALLBACK_MASK = 0xffffffffL;
 
     private static final String FULL_FILENAME_PARAM = "fullfilename";
     private static final String ENTRY_TOKEN_PREFIX = "file-preview:entry:";
@@ -181,13 +184,13 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
                 String.valueOf(fileRecord.getUpdatedTime()));
         try {
             byte[] digest = MessageDigest.getInstance("SHA-256").digest(source.getBytes(StandardCharsets.UTF_8));
-            StringBuilder value = new StringBuilder(16);
-            for (int index = 0; index < 8; index++) {
+            StringBuilder value = new StringBuilder(SOURCE_VERSION_HEX_LENGTH);
+            for (int index = 0; index < SOURCE_VERSION_DIGEST_BYTES; index++) {
                 value.append(String.format(Locale.ROOT, "%02x", digest[index]));
             }
             return value.toString();
         } catch (NoSuchAlgorithmException impossible) {
-            return String.format(Locale.ROOT, "%016x", source.hashCode() & 0xffffffffL);
+            return String.format(Locale.ROOT, "%016x", source.hashCode() & HASH_FALLBACK_MASK);
         }
     }
 

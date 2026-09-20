@@ -44,9 +44,14 @@ import java.time.Duration;
 @Service
 public class OfficeFilePreviewImpl implements FilePreview {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(OfficeFilePreviewImpl.class);
     public static final String OFFICE_PREVIEW_TYPE_IMAGE = "image";
     public static final String OFFICE_PREVIEW_TYPE_ALL_IMAGES = "allImages";
+    private static final Logger LOGGER = LoggerFactory.getLogger(OfficeFilePreviewImpl.class);
+    private static final int PROGRESS_START = 20;
+    private static final int PROGRESS_CONVERTING = 60;
+    private static final int PROGRESS_HTML = 95;
+    private static final int PROGRESS_IMAGES = 90;
+    private static final int PROGRESS_COMPLETE = 100;
 
     // 用于处理回调的线程池
     private static final ExecutorService CALLBACK_EXECUTOR = Executors.newFixedThreadPool(3);
@@ -62,6 +67,7 @@ public class OfficeFilePreviewImpl implements FilePreview {
     @Value("${office.plugin.task.timeout:5m}")
     private Duration conversionTimeout = Duration.ofMinutes(DEFAULT_CONVERSION_TIMEOUT_MINUTES);
 
+    @SuppressWarnings("EI_EXPOSE_REP2")
     public OfficeFilePreviewImpl(FileHandlerService fileHandlerService, OfficeToPdfService officeToPdfService, OtherFilePreviewImpl otherFilePreview, PdfToJpgService pdftojpgservice, ConversionCoordinator conversionCoordinator) {
         this.fileHandlerService = fileHandlerService;
         this.officeToPdfService = officeToPdfService;
@@ -220,13 +226,13 @@ public class OfficeFilePreviewImpl implements FilePreview {
                 return List.of();
             }
             FileConvertStatusManager.startConvert(cacheName);
-            FileConvertStatusManager.updateProgress(cacheName, "正在启动Office转换", 20);
-            FileConvertStatusManager.updateProgress(cacheName, "正在转换Office到jpg", 60);
+            FileConvertStatusManager.updateProgress(cacheName, "正在启动Office转换", PROGRESS_START);
+            FileConvertStatusManager.updateProgress(cacheName, "正在转换Office到jpg", PROGRESS_CONVERTING);
             convertToPdfAtomically(filePath, outFilePath, fileAttribute);
             processHtmlOutput(outFilePath, cacheName, fileAttribute);
             List<String> imageUrls = convertPdfToImages(outFilePath, cacheName, fileAttribute, officePreviewType);
             cacheConversion(filePath, outFilePath, cacheName, fileAttribute);
-            FileConvertStatusManager.updateProgress(cacheName, "转换完成", 100);
+            FileConvertStatusManager.updateProgress(cacheName, "转换完成", PROGRESS_COMPLETE);
             FileConvertStatusManager.convertSuccess(cacheName);
             return imageUrls;
         } catch (OfficeException exception) {
@@ -255,7 +261,7 @@ public class OfficeFilePreviewImpl implements FilePreview {
 
     private void processHtmlOutput(String outFilePath, String cacheName, FileAttribute fileAttribute) {
         if (fileAttribute.isHtmlView()) {
-            FileConvertStatusManager.updateProgress(cacheName, "处理HTML编码", 95);
+            FileConvertStatusManager.updateProgress(cacheName, "处理HTML编码", PROGRESS_HTML);
             fileHandlerService.doActionConvertedFile(outFilePath);
         }
     }
@@ -266,7 +272,7 @@ public class OfficeFilePreviewImpl implements FilePreview {
                 && !OFFICE_PREVIEW_TYPE_ALL_IMAGES.equals(officePreviewType)) {
             return null;
         }
-        FileConvertStatusManager.updateProgress(cacheName, "正在转换PDF为图片", 90);
+        FileConvertStatusManager.updateProgress(cacheName, "正在转换PDF为图片", PROGRESS_IMAGES);
         return pdftojpgservice.pdf2jpg(outFilePath, outFilePath, fileAttribute);
     }
 
@@ -321,8 +327,8 @@ public class OfficeFilePreviewImpl implements FilePreview {
     /**
      * 获取预览类型（图片预览）
      */
-     String getPreviewType(Model model, FileAttribute fileAttribute, String officePreviewType,
-                                  String cacheName, String outFilePath) {
+    String getPreviewType(Model model, FileAttribute fileAttribute, String officePreviewType,
+                          String cacheName, String outFilePath) {
         String suffix = fileAttribute.getSuffix();
         boolean isPPT = suffix.equalsIgnoreCase("ppt") || suffix.equalsIgnoreCase("pptx");
         List<String> imageUrls;

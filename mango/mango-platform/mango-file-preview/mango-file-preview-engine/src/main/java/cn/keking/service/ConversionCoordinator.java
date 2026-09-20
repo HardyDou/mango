@@ -26,7 +26,9 @@ public final class ConversionCoordinator {
     }
 
     @Autowired
-    public ConversionCoordinator(ConversionTaskLease lease) { this(ForkJoinPool.commonPool(), lease); }
+    public ConversionCoordinator(ConversionTaskLease lease) {
+        this(ForkJoinPool.commonPool(), lease);
+    }
 
     ConversionCoordinator(Executor executor) {
         this(executor, new LocalConversionTaskLease());
