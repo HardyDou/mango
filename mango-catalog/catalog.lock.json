@@ -1,10 +1,10 @@
 {
   "architectureGraph": {
-    "reportSha256": "78440c05c5b6b69e733f634b5ec988d114b0b394af2e5ee72d8fb97e5954bbe5",
+    "reportSha256": "b4ca515bd33a875721b42914d99adaddd901d0085f550f412908b9759b3fcbe9",
     "schemaVersion": 1,
     "workspaceCount": 41
   },
-  "catalogDigest": "eefac1a50f7e10a9fce5d33351bfb5ed0cd6316bc19747d14304834f19a43ba9",
+  "catalogDigest": "eeca215703417d44e0b673ceaa896a8a3fa0b65e23c67b669520b3779b250dee",
   "maven": {
     "dependencyManagementSets": [
       {
@@ -11424,6 +11424,14 @@
             "import": "./dist/components/IconSelector/index.js",
             "types": "./dist/components/IconSelector/index.d.ts"
           },
+          "./components/MangoDataTable/MangoTableCell.vue": {
+            "import": "./dist/components/MangoDataTable/MangoTableCell.js",
+            "types": "./dist/components/MangoDataTable/MangoTableCell.d.ts"
+          },
+          "./components/MangoDataTable/index.vue": {
+            "import": "./dist/components/MangoDataTable/index.js",
+            "types": "./dist/components/MangoDataTable/index.d.ts"
+          },
           "./components/MangoDetailPage/index.vue": {
             "import": "./dist/components/MangoDetailPage/index.js",
             "types": "./dist/components/MangoDetailPage/index.d.ts"
@@ -11451,6 +11459,10 @@
           "./components/MangoSearchPanel/index.vue": {
             "import": "./dist/components/MangoSearchPanel/index.js",
             "types": "./dist/components/MangoSearchPanel/index.d.ts"
+          },
+          "./components/MangoStatusText/index.vue": {
+            "import": "./dist/components/MangoStatusText/index.js",
+            "types": "./dist/components/MangoStatusText/index.d.ts"
           },
           "./components/Pagination/index.vue": {
             "import": "./dist/components/Pagination/index.js",
@@ -11520,6 +11532,16 @@
         },
         {
           "kind": "code",
+          "source": "./components/MangoDataTable/MangoTableCell.vue",
+          "subpath": "./components/MangoDataTable/MangoTableCell.vue"
+        },
+        {
+          "kind": "code",
+          "source": "./components/MangoDataTable/index.vue",
+          "subpath": "./components/MangoDataTable/index.vue"
+        },
+        {
+          "kind": "code",
           "source": "./components/MangoDetailPage/index.vue",
           "subpath": "./components/MangoDetailPage/index.vue"
         },
@@ -11552,6 +11574,11 @@
           "kind": "code",
           "source": "./components/MangoSearchPanel/index.vue",
           "subpath": "./components/MangoSearchPanel/index.vue"
+        },
+        {
+          "kind": "code",
+          "source": "./components/MangoStatusText/index.vue",
+          "subpath": "./components/MangoStatusText/index.vue"
         },
         {
           "kind": "code",
