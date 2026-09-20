@@ -34,12 +34,13 @@ mango:
             remark: { type: STRING, value: 芒果集团初始化管理员成员 }
       ORG_MEMBER_BINDING:
         - id: "2026091209000000002"
-          version: 1
+          version: 2
           biz-key: identity.user.admin-root-org
           name: 平台管理员根组织关系
           target-module: identity
           sync-mode: INIT_ONLY
           fields:
+            targetId: { type: LONG, value: 7421519422447286235 }
             tenantId: { type: LONG, value: 1 }
             username: { type: STRING, value: admin }
             orgCode: { type: STRING, value: MANGO_GROUP }

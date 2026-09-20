@@ -28,6 +28,7 @@ class IdentityResourceDeclarationContractTest {
                 .contains("encodedPassword: { type: STRING, value: \"$2a$10$")
                 .contains("ORG_MEMBER_BINDING:")
                 .contains("biz-key: identity.user.admin-root-org")
+                .contains("targetId: { type: LONG, value: 7421519422447286235 }")
                 .doesNotContain("password: { type: STRING")
                 .doesNotContain("value: admin123");
         assertThat(count(formal, "sync-mode: INIT_ONLY")).isEqualTo(2);
