@@ -16,6 +16,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -55,7 +57,18 @@ class FilePreviewServiceImplTest {
         String sourceUrl = sourceUrl(service.createEnginePreview(100L).getPreviewUrl());
 
         assertThat(sourceUrl).doesNotContain("中文");
-        assertThat(queryParameter(sourceUrl, "fullfilename")).isEqualTo("file-100.docx");
+        assertThat(queryParameter(sourceUrl, "fullfilename")).matches("file-100-[0-9a-f]{16}\\.docx");
+    }
+
+    @Test
+    void createEnginePreview_文件版本变化生成不同源文件名() {
+        StubFileApi firstApi = new StubFileApi("demo.pptx", "hash-a");
+        StubFileApi secondApi = new StubFileApi("demo.pptx", "hash-b");
+
+        String first = queryParameter(sourceUrl(service(new FilePreviewProperties(), firstApi).createEnginePreview(100L).getPreviewUrl()), "fullfilename");
+        String second = queryParameter(sourceUrl(service(new FilePreviewProperties(), secondApi).createEnginePreview(100L).getPreviewUrl()), "fullfilename");
+
+        assertThat(first).isNotEqualTo(second);
     }
 
     @Test
@@ -94,6 +107,24 @@ class FilePreviewServiceImplTest {
     }
 
     @Test
+    void openSource_二百兆文件保持流式返回() {
+        StubFileContentProvider contentProvider = new LargeFileContentProvider();
+        FilePreviewServiceImpl service = service(new StubTokenStore(), Clock.systemUTC(), contentProvider);
+        var preview = service.createPreview(100L);
+        var enginePreview = service.createEnginePreviewByToken(preview.getPreviewToken());
+        String sourceToken = queryParameter(sourceUrl(enginePreview.getPreviewUrl()), "token");
+
+        var source = service.openSource(sourceToken);
+
+        assertThat(source.contentLength()).isEqualTo(200L * 1024 * 1024);
+        try {
+            assertThat(source.inputStream().read()).isEqualTo(1);
+        } catch (IOException exception) {
+            throw new AssertionError(exception);
+        }
+    }
+
+    @Test
     void openSource_无效令牌失败且不改变调用方上下文() {
         FilePreviewServiceImpl service = service();
         MangoContextSnapshot caller = MangoContextSnapshot.empty().withTenantId("caller");
@@ -128,7 +159,8 @@ class FilePreviewServiceImplTest {
         var enginePreview = service.createEnginePreview(100L);
         String sourceToken = queryParameter(sourceUrl(enginePreview.getPreviewUrl()), "token");
 
-        service.validateGeneratedAccess(sourceToken, "file-100pptx.pdf");
+        String generatedName = queryParameter(sourceUrl(enginePreview.getPreviewUrl()), "fullfilename").replace(".pptx", "pptx.pdf");
+        service.validateGeneratedAccess(sourceToken, generatedName);
 
         assertThatThrownBy(() -> service.validateGeneratedAccess(sourceToken, "file-101pptx.pdf"))
                 .hasMessageContaining("预览令牌无效或已过期");
@@ -250,13 +282,19 @@ class FilePreviewServiceImplTest {
     private static class StubFileApi implements FileApi {
 
         private final String fileName;
+        private final String fileHash;
 
         private StubFileApi() {
-            this("demo.pptx");
+            this("demo.pptx", null);
         }
 
         private StubFileApi(String fileName) {
+            this(fileName, null);
+        }
+
+        private StubFileApi(String fileName, String fileHash) {
             this.fileName = fileName;
+            this.fileHash = fileHash;
         }
 
         @Override
@@ -269,6 +307,7 @@ class FilePreviewServiceImplTest {
             FileRecordVO vo = new FileRecordVO();
             vo.setId(id);
             vo.setFileName(fileName);
+            vo.setFileHash(fileHash);
             return R.ok(vo);
         }
 
@@ -301,6 +340,19 @@ class FilePreviewServiceImplTest {
         @Override
         public R<Boolean> delete(io.mango.file.api.command.FileDeleteCommand command) {
             throw new UnsupportedOperationException();
+        }
+    }
+
+    private static final class LargeFileContentProvider extends StubFileContentProvider {
+        @Override
+        public FileDownloadVO downloadForService(Long id) {
+            return new FileDownloadVO(new InputStream() {
+                private long remaining = 200L * 1024 * 1024;
+                @Override public int read() throws IOException {
+                    if (remaining-- <= 0) return -1;
+                    return 1;
+                }
+            }, "large.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", 200L * 1024 * 1024);
         }
     }
 

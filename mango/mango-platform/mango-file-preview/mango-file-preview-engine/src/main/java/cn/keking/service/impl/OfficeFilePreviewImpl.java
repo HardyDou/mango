@@ -7,6 +7,7 @@ import cn.keking.service.FileHandlerService;
 import cn.keking.service.FilePreview;
 import cn.keking.service.OfficeToPdfService;
 import cn.keking.service.PdfToJpgService;
+import cn.keking.service.ConversionCoordinator;
 import cn.keking.utils.DownloadUtils;
 import cn.keking.utils.FileConvertStatusManager;
 import cn.keking.utils.KkFileUtils;
@@ -19,14 +20,21 @@ import org.jodconverter.core.office.OfficeManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.ui.Model;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.UUID;
+import java.time.Duration;
 
 /**
  * Created by kl on 2018/1/17.
@@ -46,12 +54,17 @@ public class OfficeFilePreviewImpl implements FilePreview {
     private final OfficeToPdfService officeToPdfService;
     private final OtherFilePreviewImpl otherFilePreview;
     private final PdfToJpgService pdftojpgservice;
+    private final ConversionCoordinator conversionCoordinator;
 
-    public OfficeFilePreviewImpl(FileHandlerService fileHandlerService, OfficeToPdfService officeToPdfService, OtherFilePreviewImpl otherFilePreview, PdfToJpgService pdftojpgservice) {
+    @Value("${office.plugin.task.timeout:5m}")
+    private Duration conversionTimeout = Duration.ofMinutes(5);
+
+    public OfficeFilePreviewImpl(FileHandlerService fileHandlerService, OfficeToPdfService officeToPdfService, OtherFilePreviewImpl otherFilePreview, PdfToJpgService pdftojpgservice, ConversionCoordinator conversionCoordinator) {
         this.fileHandlerService = fileHandlerService;
         this.officeToPdfService = officeToPdfService;
         this.otherFilePreview = otherFilePreview;
         this.pdftojpgservice = pdftojpgservice;
+        this.conversionCoordinator = conversionCoordinator;
     }
 
     @Override
@@ -154,15 +167,28 @@ public class OfficeFilePreviewImpl implements FilePreview {
                                             FileAttribute fileAttribute,
                                             String officePreviewType) {
         // 启动异步转换
-        CompletableFuture<List<String>> conversionFuture = CompletableFuture.supplyAsync(() -> {
+        CompletableFuture<List<String>> conversionFuture = conversionCoordinator.submit(cacheName + "|" + officePreviewType,
+                conversionTimeout, () -> {
             try {
+                if (ConfigConstants.isCacheEnabled()
+                        && fileHandlerService.listConvertedFiles().containsKey(cacheName)) {
+                    FileConvertStatusManager.convertSuccess(cacheName);
+                    logger.info("复用已完成的Office转换结果: {}", cacheName);
+                    return List.of();
+                }
                 // 更新状态
                 FileConvertStatusManager.startConvert(cacheName);
                 FileConvertStatusManager.updateProgress(cacheName, "正在启动Office转换", 20);
 
                 // 转换Office到PDF
                 FileConvertStatusManager.updateProgress(cacheName, "正在转换Office到jpg", 60);
-                officeToPdfService.openOfficeToPDF(filePath, outFilePath, fileAttribute);
+                String temporaryOutputPath = temporaryOutputPath(outFilePath);
+                try {
+                    officeToPdfService.openOfficeToPDF(filePath, temporaryOutputPath, fileAttribute);
+                    moveOutputAtomically(temporaryOutputPath, outFilePath);
+                } finally {
+                    KkFileUtils.deleteFileByPath(temporaryOutputPath);
+                }
 
 
                 if (fileAttribute.isHtmlView()) {
@@ -213,6 +239,16 @@ public class OfficeFilePreviewImpl implements FilePreview {
                 return null;
             }
         });
+        conversionFuture.whenComplete((imageUrls, error) -> {
+            if (error != null) {
+                FileConvertStatusManager.ConvertStatus status = FileConvertStatusManager.getConvertStatus(cacheName);
+                if (status == null || status.getStatus() == FileConvertStatusManager.Status.CONVERTING) {
+                    logger.error("Office转换任务失联或超时: {}", cacheName, error);
+                    FileConvertStatusManager.markTimeout(cacheName);
+                }
+                KkFileUtils.deleteFileByPath(outFilePath);
+            }
+        });
         // 添加转换完成后的回调
         conversionFuture.thenAcceptAsync(imageUrls -> {
             try {
@@ -227,6 +263,25 @@ public class OfficeFilePreviewImpl implements FilePreview {
                 logger.error("Office转换后续处理失败: {}", filePath, e);
             }
         }, callbackExecutor);
+    }
+
+    private static String temporaryOutputPath(String outputPath) {
+        int extensionIndex = outputPath.lastIndexOf('.');
+        if (extensionIndex < 0) {
+            return outputPath + ".part-" + UUID.randomUUID();
+        }
+        return outputPath.substring(0, extensionIndex) + ".part-" + UUID.randomUUID()
+                + outputPath.substring(extensionIndex);
+    }
+
+    private static void moveOutputAtomically(String temporaryOutputPath, String outputPath) throws Exception {
+        Path source = Path.of(temporaryOutputPath);
+        Path target = Path.of(outputPath);
+        try {
+            Files.move(source, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        } catch (AtomicMoveNotSupportedException e) {
+            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
+        }
     }
 
     /**
