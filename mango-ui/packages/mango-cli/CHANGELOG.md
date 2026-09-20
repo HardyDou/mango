@@ -1,5 +1,56 @@
 # @mango/cli Changelog
 
+## 1.2.15 - 2026-09-17
+
+### Pull Requests
+
+- [PR #965](https://github.com/HardyDou/mango/pull/965) Fixed `MangoDialog` content-padding drag feedback. Packages: `@mango/common@2.0.4` and generated npm dependents through `@mango/cli@1.2.15`. Business Adaptation: upgrade the complete tuple and verify dialog padding, child controls, and scrolling.
+- [PR #967](https://github.com/HardyDou/mango/pull/967) Fixed deterministic `ORG_MEMBER_BINDING` Resource IDs. Packages: Mango Maven/docs `1.0.54` and generated lock `@mango/cli@1.2.15`. Business Adaptation: upgrade Maven and CLI together and verify clean-database generation plus existing relationship preservation.
+- [PR #968](https://github.com/HardyDou/mango/pull/968) Changed the CLI workspace lifecycle integration test to use the allocated isolated slot. Packages: `@mango/cli@1.2.15`. Business Adaptation: none; runtime workspace allocation behavior is unchanged.
+
+### Fixed
+
+- Carry the `MangoDialog` cursor correction and deterministic `ORG_MEMBER_BINDING` Resource initialization into generated consumer locks.
+
+### Changed
+
+- Advance generated consumers to Maven/docs `1.0.54` and the machine-generated 25-package npm tuple while retaining `@mango/pmo@1.4.4`.
+- Verify CLI workspace lifecycle behavior without assuming slot 1 is free.
+
+### Versions
+
+- CLI: `1.2.14` to `1.2.15`; Maven/docs: `1.0.53` to `1.0.54`; Common: `2.0.3` to `2.0.4`; Admin Shell: `1.0.74` to `1.0.75`.
+
+### Published Packages
+
+- Publish and verify the sealed 191-coordinate Maven reactor, docs bundle, and 25-package npm closure through `@mango/cli@1.2.15` in both registry roles.
+
+### Business Impact
+
+- Generated consumers receive the dialog cursor correction and deterministic Identity Resource IDs without rewriting existing runtime relationship IDs or requiring Baohan source changes.
+
+### Upgrade Estimate
+
+- Audience: generated Mango applications, Identity Resource consumers, and direct frontend package consumers.
+- Engineering Effort: 30 to 60 minutes for standard consumers; 1 to 2 hours for customized integrations.
+- Execution Window: 45 to 120 minutes including dependency update and verification.
+- Service Downtime: no framework-mandated downtime.
+- Rollback Effort: 20 to 45 minutes.
+- Assumptions: Java 21, Node `22.23.1`, configured registries, and a clean consumer install.
+
+### Upgrade Notes
+
+1. Upgrade CLI to `1.2.15` with Maven/docs `1.0.54` and the complete generated npm tuple; retain `@mango/pmo@1.4.4`.
+2. Verify clean-database and existing `ORG_MEMBER_BINDING` behavior plus `MangoDialog` padding cursor interactions.
+
+### Verification
+
+- Verify the sealed candidate, both Maven/npm registry roles, a pure consume-registry consumer, Identity Spring + H2 tests, Common component tests, and CLI lifecycle allocation with pre-existing occupied slots.
+
+### Rollback
+
+- Restore CLI `1.2.14`, Maven `1.0.53`, and the previous immutable npm tuple; never overwrite published coordinates.
+
 ## 1.2.14 - 2026-09-16
 
 ### Pull Requests
