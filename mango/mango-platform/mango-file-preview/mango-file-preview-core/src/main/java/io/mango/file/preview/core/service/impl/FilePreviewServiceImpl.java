@@ -26,6 +26,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.Locale;
 import java.util.UUID;
@@ -37,6 +39,9 @@ import java.util.UUID;
 @RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
         justification = "Spring collaborators are intentionally retained for the service lifetime"))
 public class FilePreviewServiceImpl implements IFilePreviewService {
+    private static final int SOURCE_VERSION_HEX_LENGTH = 16;
+    private static final int SOURCE_VERSION_DIGEST_BYTES = 8;
+    private static final long HASH_FALLBACK_MASK = 0xffffffffL;
 
     private static final String FULL_FILENAME_PARAM = "fullfilename";
     private static final String ENTRY_TOKEN_PREFIX = "file-preview:entry:";
@@ -73,7 +78,7 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
         FileRecordVO fileRecord = fileRecord(fileId);
         String token = token();
         storeToken(SOURCE_TOKEN_PREFIX + token, new PreviewToken(fileId, MangoContextHolder.get(), expiresAt()));
-        String sourceUrl = sourceUrl(token, engineFileName(fileId, fileRecord.getFileName()));
+        String sourceUrl = sourceUrl(token, engineFileName(fileId, fileRecord));
         String encodedSourceUrl = Base64.getEncoder().encodeToString(sourceUrl.getBytes(StandardCharsets.UTF_8));
         FilePreviewLinkVO vo = new FilePreviewLinkVO();
         vo.setFileId(fileId);
@@ -105,7 +110,7 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
         try {
             MangoContextHolder.set(sourceToken.context());
             FileRecordVO fileRecord = fileRecord(sourceToken.fileId());
-            Require.isTrue(fileName.equals(generatedPdfFileName(sourceToken.fileId(), fileRecord.getFileName())),
+            Require.isTrue(fileName.equals(generatedPdfFileName(sourceToken.fileId(), fileRecord)),
                     FilePreviewCode.PREVIEW_TOKEN_INVALID);
         } finally {
             MangoContextHolder.set(previous);
@@ -151,8 +156,10 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
         return currentBaseUrl();
     }
 
-    private String engineFileName(Long fileId, String originalFileName) {
+    private String engineFileName(Long fileId, FileRecordVO fileRecord) {
+        String originalFileName = fileRecord.getFileName();
         String baseName = ENGINE_FILE_PREFIX + fileId;
+        baseName += "-" + sourceVersionKey(fileRecord);
         String extension = StringUtils.getFilenameExtension(originalFileName);
         if (!isSafeExtension(extension)) {
             return baseName;
@@ -160,13 +167,31 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
         return baseName + "." + extension.toLowerCase(Locale.ROOT);
     }
 
-    private String generatedPdfFileName(Long fileId, String originalFileName) {
-        String engineFileName = engineFileName(fileId, originalFileName);
+    private String generatedPdfFileName(Long fileId, FileRecordVO fileRecord) {
+        String engineFileName = engineFileName(fileId, fileRecord);
         int extensionSeparator = engineFileName.lastIndexOf('.');
         Require.isTrue(extensionSeparator > 0, FilePreviewCode.PREVIEW_TOKEN_INVALID);
         String baseName = engineFileName.substring(0, extensionSeparator);
         String extension = engineFileName.substring(extensionSeparator + 1);
         return baseName + extension + ".pdf";
+    }
+
+    private String sourceVersionKey(FileRecordVO fileRecord) {
+        String source = String.join("|",
+                String.valueOf(fileRecord.getId()),
+                String.valueOf(fileRecord.getFileHash()),
+                String.valueOf(fileRecord.getFileSize()),
+                String.valueOf(fileRecord.getUpdatedTime()));
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(source.getBytes(StandardCharsets.UTF_8));
+            StringBuilder value = new StringBuilder(SOURCE_VERSION_HEX_LENGTH);
+            for (int index = 0; index < SOURCE_VERSION_DIGEST_BYTES; index++) {
+                value.append(String.format(Locale.ROOT, "%02x", digest[index]));
+            }
+            return value.toString();
+        } catch (NoSuchAlgorithmException impossible) {
+            return String.format(Locale.ROOT, "%016x", source.hashCode() & HASH_FALLBACK_MASK);
+        }
     }
 
     private boolean isSafeExtension(String extension) {

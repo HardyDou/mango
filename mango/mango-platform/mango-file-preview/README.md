@@ -116,6 +116,14 @@ mango:
     source-base-url: http://mango-app:8080
     source-token-expire-seconds: 86400
     standalone-ui-enabled: false
+
+office:
+  plugin:
+    task:
+      timeout: 5m
+
+cache:
+  type: redis # 多实例独立引擎使用 redis；单体可使用 jdk/default
 ```
 
 ## 7. YAML 配置字段
@@ -130,6 +138,8 @@ mango:
 | `mango.file-preview.standalone-ui-enabled` | `false` | 是否允许访问 kkFileView 独立首页和演示文件管理入口 |
 
 本地单实例开发可以使用 `mango.kv.store.type=memory`；多实例部署应选择 Redis 或 JDBC，确保任意实例都能读取已签发 token。
+
+Office 转换任务按文件内容版本生成稳定缓存名，并在进程内合并并发请求。单体或单实例使用本地租约；独立引擎配置 `cache.type=redis` 后使用 Redisson 租约跨实例合并任务。Office UNO 断连、进程退出或超过 `office.plugin.task.timeout` 时，任务进入失败/超时终态并释放租约，后续请求可以重新提交。转换结果先写入临时文件，校验成功后才进入缓存；源文件通过 `fileId` 对应的 `IFileContentProvider.downloadForService` 流读取，不会为大文件构造整文件字节数组。
 
 Office 转换后的 PDF 由 PDF.js 通过同源 `/file-preview/generated?token=...&fileName=...` 读取，不再经 `/getCorsFile` 回源。该接口虽然属于 PUBLIC 路由，但必须携带有效 source token，并校验 token 对应的 `fileId` 与转换文件名；token 过期后不能继续读取转换结果。原始文件仍只由引擎使用同一 source token 从内部 `source-base-url` 下载。
 

@@ -148,6 +148,8 @@ FileRecordVO zipFile = fileApi.packageFiles(command).getData();
 
 ## 8. 变更影响记录
 
+- 2026-09-20 Issue #972：File Preview Office 转换任务增加同版本请求合并、超时恢复、结果缓存隔离和大文件流式读取；业务表单仍只保存 `fileId`/`fileIds`，上传、回显、预览、下载公开 API、权限、租户及本场景接入步骤不变。独立预览引擎如启用多实例需按 File Preview README 配置 Redis 租约。
+
 - 2026-09-01：File Preview 单体嵌入边界调整仅移除 engine JAR 根 `banner.txt`，并由 starter 在宿主组件扫描中排除独立启动入口 `cn.keking.ServerMain`；`ServerMain` 仍保留在 engine JAR 供独立启动使用。单体应用继续复用宿主 Spring 上下文、端口和 Banner，文件上传、回显、预览、下载的公开 API、配置、路由、权限、租户及本场景验收步骤不变。
 
 - 2026-08-20：Fileproc 新增 PDF/DOCX 到 OFD 的转换 provider，并新增独立 Docsign 模块提供 PDF/OFD 签名、验签和可见签章。文件上传、回显、预览、下载、`fileId`/`fileIds` 持久化、权限、租户和本场景验收步骤不变；File/File Preview 不会自动把上传文件转换为 OFD 或自动签章。业务需要这些能力时，应在后端显式引入对应 Fileproc/Docsign starter、传入调用方管理的证书与签章参数，并把生成结果按现有 File API 另行保存为文件记录。
