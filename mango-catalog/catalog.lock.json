@@ -1,10 +1,10 @@
 {
   "architectureGraph": {
-    "reportSha256": "b4ca515bd33a875721b42914d99adaddd901d0085f550f412908b9759b3fcbe9",
+    "reportSha256": "5cc7af0127e230a60489aadf02be4dcc13ec3fad2845f5a8c3cd0b843cc75400",
     "schemaVersion": 1,
-    "workspaceCount": 41
+    "workspaceCount": 42
   },
-  "catalogDigest": "eeca215703417d44e0b673ceaa896a8a3fa0b65e23c67b669520b3779b250dee",
+  "catalogDigest": "681c8607be9d537e2ae1c0f3c54bec617b89661cf164f5915f05ae7ddaa71ed1",
   "maven": {
     "dependencyManagementSets": [
       {
@@ -11432,9 +11432,17 @@
             "import": "./dist/components/MangoDataTable/index.js",
             "types": "./dist/components/MangoDataTable/index.d.ts"
           },
+          "./components/MangoDescriptionList/index.vue": {
+            "import": "./dist/components/MangoDescriptionList/index.js",
+            "types": "./dist/components/MangoDescriptionList/index.d.ts"
+          },
           "./components/MangoDetailPage/index.vue": {
             "import": "./dist/components/MangoDetailPage/index.js",
             "types": "./dist/components/MangoDetailPage/index.d.ts"
+          },
+          "./components/MangoDetailSummary/index.vue": {
+            "import": "./dist/components/MangoDetailSummary/index.js",
+            "types": "./dist/components/MangoDetailSummary/index.d.ts"
           },
           "./components/MangoDialog/index.vue": {
             "import": "./dist/components/MangoDialog/index.js",
@@ -11452,6 +11460,10 @@
             "import": "./dist/components/MangoListPanel/index.js",
             "types": "./dist/components/MangoListPanel/index.d.ts"
           },
+          "./components/MangoPageBackBar/index.vue": {
+            "import": "./dist/components/MangoPageBackBar/index.js",
+            "types": "./dist/components/MangoPageBackBar/index.d.ts"
+          },
           "./components/MangoPageSection/index.vue": {
             "import": "./dist/components/MangoPageSection/index.js",
             "types": "./dist/components/MangoPageSection/index.d.ts"
@@ -11459,6 +11471,10 @@
           "./components/MangoSearchPanel/index.vue": {
             "import": "./dist/components/MangoSearchPanel/index.js",
             "types": "./dist/components/MangoSearchPanel/index.d.ts"
+          },
+          "./components/MangoSideDrawerShell/index.vue": {
+            "import": "./dist/components/MangoSideDrawerShell/index.js",
+            "types": "./dist/components/MangoSideDrawerShell/index.d.ts"
           },
           "./components/MangoStatusText/index.vue": {
             "import": "./dist/components/MangoStatusText/index.js",
@@ -11542,8 +11558,18 @@
         },
         {
           "kind": "code",
+          "source": "./components/MangoDescriptionList/index.vue",
+          "subpath": "./components/MangoDescriptionList/index.vue"
+        },
+        {
+          "kind": "code",
           "source": "./components/MangoDetailPage/index.vue",
           "subpath": "./components/MangoDetailPage/index.vue"
+        },
+        {
+          "kind": "code",
+          "source": "./components/MangoDetailSummary/index.vue",
+          "subpath": "./components/MangoDetailSummary/index.vue"
         },
         {
           "kind": "code",
@@ -11567,6 +11593,11 @@
         },
         {
           "kind": "code",
+          "source": "./components/MangoPageBackBar/index.vue",
+          "subpath": "./components/MangoPageBackBar/index.vue"
+        },
+        {
+          "kind": "code",
           "source": "./components/MangoPageSection/index.vue",
           "subpath": "./components/MangoPageSection/index.vue"
         },
@@ -11574,6 +11605,11 @@
           "kind": "code",
           "source": "./components/MangoSearchPanel/index.vue",
           "subpath": "./components/MangoSearchPanel/index.vue"
+        },
+        {
+          "kind": "code",
+          "source": "./components/MangoSideDrawerShell/index.vue",
+          "subpath": "./components/MangoSideDrawerShell/index.vue"
         },
         {
           "kind": "code",
@@ -11642,6 +11678,42 @@
         }
       ],
       "version": "2.0.4"
+    },
+    {
+      "name": "@mango/detail",
+      "npmProjection": {
+        "exports": {
+          ".": {
+            "import": "./dist/index.js",
+            "types": "./dist/index.d.ts"
+          },
+          "./style.css": "./dist/style.css"
+        },
+        "files": [
+          "README.md",
+          "dist",
+          "package.json"
+        ],
+        "types": "./dist/index.d.ts"
+      },
+      "owner": "package:@mango/detail",
+      "path": "mango-ui/packages/detail",
+      "publicEntries": [
+        {
+          "kind": "code",
+          "source": "./src/index.ts",
+          "subpath": "."
+        }
+      ],
+      "publicResources": [
+        {
+          "dist": "./dist/style.css",
+          "generation": "build",
+          "source": "./src/index.ts",
+          "subpath": "./style.css"
+        }
+      ],
+      "version": "1.0.0"
     },
     {
       "name": "@mango/file",

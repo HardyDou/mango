@@ -1,7 +1,44 @@
 {
   "schemaVersion": 1,
   "packageName": "@mango/file",
-  "components": [],
+  "components": [
+    {
+      "name": "MangoFileList",
+      "exportKey": ".",
+      "exportName": "MangoFileList",
+      "level": "C4",
+      "hostProfile": "host-agnostic",
+      "environmentProfile": "browser-only",
+      "distribution": ["npm"],
+      "deploymentModes": ["monolith", "microfrontend"],
+      "stability": "stable",
+      "ownerRole": "Frontend Standards Owner",
+      "styleExportKeys": ["./style.css"],
+      "docs": {
+        "path": "README.md",
+        "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
+      },
+      "testEvidence": ["src/components/__tests__/MangoFileList.spec.ts"]
+    },
+    {
+      "name": "MangoFilePreviewDialog",
+      "exportKey": ".",
+      "exportName": "MangoFilePreviewDialog",
+      "level": "C4",
+      "hostProfile": "host-agnostic",
+      "environmentProfile": "browser-only",
+      "distribution": ["npm"],
+      "deploymentModes": ["monolith", "microfrontend"],
+      "stability": "stable",
+      "ownerRole": "Frontend Standards Owner",
+      "styleExportKeys": ["./style.css"],
+      "docs": {
+        "path": "README.md",
+        "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
+      },
+      "testEvidence": ["src/components/__tests__/MangoFilePreviewDialog.spec.ts"]
+    }
+  ],
   "legacyComponentExports": [
     {
       "exportKey": ".",

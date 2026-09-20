@@ -323,6 +323,55 @@ function focusDialog() {
 
 部署时没有单独的 `@mango/common` 后端 starter。它调用的接口来自业务已经启用的后端模块，例如 file、captcha、org、system、auth。
 
+### 详情页基础组件
+
+详情骨架拆成四个可以独立使用的基础组件；从根入口导入时不需要逐个安装：
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue';
+import {
+  MangoDescriptionList,
+  MangoDetailSummary,
+  MangoPageBackBar,
+  MangoSideDrawerShell,
+  RichTextViewer,
+  type MangoSideDrawerShellExpose,
+} from '@mango/common';
+
+const drawer = ref<MangoSideDrawerShellExpose>();
+const fields = [
+  { key: 'orderNo', label: '订单编号', value: 'BH20260920001' },
+  { key: 'remark', label: '说明', value: '<p>保函说明</p>', componentType: 'rich-text-preview' as const },
+];
+</script>
+
+<template>
+  <MangoSideDrawerShell ref="drawer" title="节点过程" :show-trigger="false">
+    <template #main>
+      <MangoPageBackBar title="保函详情" @back="$router.back()" @refresh="loadDetail" />
+      <MangoDetailSummary title="履约保函" :fields="[{ key: 'amount', label: '金额', value: '100,000.00' }]" />
+      <MangoDescriptionList :items="fields" />
+    </template>
+    <WorkflowTimeline />
+  </MangoSideDrawerShell>
+
+  <el-button @click="drawer?.open()">查看节点过程</el-button>
+</template>
+```
+
+- `MangoPageBackBar` 默认展示刷新按钮；返回和刷新只发出事件。只有设置 `navigateOnBack` 时才会调用宿主 Vue Router，此时必须同时提供 `backTo`。
+- `MangoSideDrawerShell` 默认提供右下角按钮和右侧抽屉，支持 `v-model`、`showTrigger`，并暴露 `open()`、`close()`、`toggle()`。
+- `MangoDetailSummary` 展示标题、标签和右侧摘要字段，数据和状态语义均由消费方传入。
+- `MangoDescriptionList` 支持 `items` 或 `groups` 两种互斥数据形式、`key-value/table` 两种展示形式、字段 Slot、分组头扩展 Slot 和内置富文本项。
+- `RichTextViewer` 会过滤不安全 HTML，解析 `mango-file:<id>` 资源；受保护图片通过鉴权请求生成临时 Blob URL。点击托管资源会发出 `preview-request`，由组合层决定使用哪个预览弹框。
+
+基础组件也可以使用包内公开子路径按需导入，例如：
+
+```ts
+import MangoDescriptionList from '@mango/common/components/MangoDescriptionList/index.vue';
+```
+
 ## 4. 配置说明
 
 ### Tags View Route Snapshot

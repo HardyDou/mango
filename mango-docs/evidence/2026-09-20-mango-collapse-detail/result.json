@@ -1,0 +1,208 @@
+{
+  "result": "PASS",
+  "uiBaseUrl": "http://127.0.0.1:30139",
+  "route": "/guarantee/dev/collapse-detail-preview",
+  "account": "sales-demo-01",
+  "startedAt": "2026-09-20T09:04:00.816Z",
+  "assertions": [
+    {
+      "name": "通过页面登录隔离环境",
+      "status": "PASS",
+      "at": "2026-09-20T09:04:01.995Z"
+    },
+    {
+      "name": "Mango 骨架与摘要区域完成渲染",
+      "status": "PASS",
+      "at": "2026-09-20T09:04:02.205Z"
+    },
+    {
+      "name": "八个面板默认全部展开",
+      "status": "PASS",
+      "at": "2026-09-20T09:04:02.222Z",
+      "panelTitles": [
+        "基本信息",
+        "表格式描述",
+        "富文本预览",
+        "普通列表",
+        "文件列表",
+        "保函方案",
+        "资料附件",
+        "处理记录"
+      ]
+    },
+    {
+      "name": "内置文件列表和主题表头完成渲染",
+      "status": "PASS",
+      "at": "2026-09-20T09:04:02.248Z",
+      "backgroundColor": "rgb(238, 241, 245)",
+      "color": "rgb(0, 0, 0)"
+    },
+    {
+      "name": "富文本预览和内置列表完成渲染",
+      "status": "PASS",
+      "at": "2026-09-20T09:04:02.264Z"
+    },
+    {
+      "name": "底部操作区完成渲染",
+      "status": "PASS",
+      "at": "2026-09-20T09:04:02.275Z"
+    },
+    {
+      "name": "公开触发按钮打开右侧工作流抽屉",
+      "status": "PASS",
+      "at": "2026-09-20T09:04:02.352Z"
+    },
+    {
+      "name": "回到顶部按钮可见并可点击",
+      "status": "PASS",
+      "at": "2026-09-20T09:04:02.514Z",
+      "target": "element",
+      "scrollTop": 900,
+      "candidates": [
+        {
+          "className": "mango-collapse-detail-page is-with-actions",
+          "clientHeight": 1904,
+          "scrollHeight": 1904,
+          "overflowY": "visible"
+        },
+        {
+          "className": "mango-side-drawer-shell",
+          "clientHeight": 1904,
+          "scrollHeight": 1904,
+          "overflowY": "visible"
+        },
+        {
+          "className": "collapse-detail-preview__viewport",
+          "clientHeight": 740,
+          "scrollHeight": 1904,
+          "overflowY": "auto"
+        }
+      ]
+    },
+    {
+      "name": "唯一刷新按钮保持当前路由并完成整页刷新",
+      "status": "PASS",
+      "at": "2026-09-20T09:04:03.240Z",
+      "url": "http://127.0.0.1:30139/#/guarantee/dev/collapse-detail-preview"
+    },
+    {
+      "name": "1440px 桌面端 宿主布局与菜单收放保持稳定",
+      "status": "PASS",
+      "at": "2026-09-20T09:04:03.354Z",
+      "before": {
+        "display": "flex",
+        "flexDirection": "row",
+        "asideTop": 56,
+        "asideWidth": 220,
+        "contentTop": 56,
+        "workspaceNavTop": 56,
+        "detailTop": 191
+      },
+      "after": {
+        "display": "flex",
+        "flexDirection": "row",
+        "asideTop": 56,
+        "asideWidth": 64,
+        "contentTop": 56,
+        "workspaceNavTop": 56,
+        "detailTop": 191
+      }
+    },
+    {
+      "name": "桌面端 页面无横向溢出",
+      "status": "PASS",
+      "at": "2026-09-20T09:04:03.365Z",
+      "clientWidth": 1440,
+      "scrollWidth": 1440
+    },
+    {
+      "name": "2560px 宽屏端 宿主布局与菜单收放保持稳定",
+      "status": "PASS",
+      "at": "2026-09-20T09:04:03.553Z",
+      "before": {
+        "display": "flex",
+        "flexDirection": "row",
+        "asideTop": 56,
+        "asideWidth": 220,
+        "contentTop": 56,
+        "workspaceNavTop": 56,
+        "detailTop": 191
+      },
+      "after": {
+        "display": "flex",
+        "flexDirection": "row",
+        "asideTop": 56,
+        "asideWidth": 64,
+        "contentTop": 56,
+        "workspaceNavTop": 56,
+        "detailTop": 191
+      }
+    },
+    {
+      "name": "宽屏端 页面无横向溢出",
+      "status": "PASS",
+      "at": "2026-09-20T09:04:03.556Z",
+      "clientWidth": 2560,
+      "scrollWidth": 2560
+    },
+    {
+      "name": "移动端 页面无横向溢出",
+      "status": "PASS",
+      "at": "2026-09-20T09:04:03.663Z",
+      "clientWidth": 390,
+      "scrollWidth": 390
+    },
+    {
+      "name": "移动端描述列表保持可读单列布局",
+      "status": "PASS",
+      "at": "2026-09-20T09:04:03.685Z",
+      "keyValueLayout": {
+        "innerWidth": 390,
+        "display": "grid",
+        "cellWidth": 298,
+        "labelWidth": 115.15625,
+        "contentWidth": 172.84375,
+        "labelRight": 161.15625,
+        "contentLeft": 171.15625
+      },
+      "tableLayout": {
+        "display": "grid",
+        "columns": "125.156px 172.844px",
+        "childCount": 4
+      }
+    }
+  ],
+  "consoleErrors": [],
+  "pageErrors": [],
+  "failedRequests": [],
+  "screenshots": [
+    "D:\\Project\\baohan-mango-collapse-detail\\baohan-ui\\.runtime\\evidence\\mango-collapse-detail-candidate\\desktop.png",
+    "D:\\Project\\baohan-mango-collapse-detail\\baohan-ui\\.runtime\\evidence\\mango-collapse-detail-candidate\\wide-desktop.png",
+    "D:\\Project\\baohan-mango-collapse-detail\\baohan-ui\\.runtime\\evidence\\mango-collapse-detail-candidate\\mobile.png"
+  ],
+  "scrollDiagnostics": {
+    "target": "element",
+    "scrollTop": 900,
+    "candidates": [
+      {
+        "className": "mango-collapse-detail-page is-with-actions",
+        "clientHeight": 1904,
+        "scrollHeight": 1904,
+        "overflowY": "visible"
+      },
+      {
+        "className": "mango-side-drawer-shell",
+        "clientHeight": 1904,
+        "scrollHeight": 1904,
+        "overflowY": "visible"
+      },
+      {
+        "className": "collapse-detail-preview__viewport",
+        "clientHeight": 740,
+        "scrollHeight": 1904,
+        "overflowY": "auto"
+      }
+    ]
+  },
+  "finishedAt": "2026-09-20T09:04:03.717Z"
+}

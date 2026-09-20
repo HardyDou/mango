@@ -122,6 +122,38 @@ import { FilePreviewPanel } from '@mango/file';
 图片预览不需要额外 prop：`FilePreviewPanel` 默认直接展示 Element Plus Image Viewer 的缩放、旋转、适应窗口、原始尺寸和
 拖拽能力。Viewer 被限制在预览区域内，不 Teleport 到 `body`，不显示遮罩和关闭按钮，也不会在业务弹框上再次打开一层图片弹窗。
 
+### 详情文件列表与预览弹框
+
+`MangoFileList` 用于详情页的资料清单。它支持文本列、文件列、自定义列、多文件、选择、预览、下载和相邻资料分组合并：
+
+```vue
+<script setup lang="ts">
+import { MangoFileList, type MangoFileListColumn } from '@mango/file';
+import '@mango/file/style.css';
+
+const columns: MangoFileListColumn[] = [
+  { key: 'group', label: '资料分组', prop: 'group', mergeAdjacent: true, mergeBy: ['group'] },
+  { key: 'name', label: '资料名称', prop: 'name' },
+  { key: 'files', label: '文件', prop: 'files', type: 'files', fileMeta: ['version', 'uploadedAt'] },
+];
+const rows = [
+  { key: '1', group: '申请资料', name: '营业执照', files: [{ fileId: '101', fileName: '营业执照.pdf' }] },
+  { key: '2', group: '申请资料', name: '法人证件', files: [] },
+];
+</script>
+
+<template>
+  <MangoFileList :rows="rows" :columns="columns" selectable @selection-change="handleSelection" />
+</template>
+```
+
+`mergeAdjacent` 只合并相邻行。默认按当前列 `prop` 比较；需要组合判断时配置 `mergeBy`。设置
+`mergeAdjacentRows="false"` 会关闭整张表的合并。表头颜色使用 `--mango-table-header-bg` 和
+`--mango-table-header-text`，会跟随消费系统的 Mango 主题。
+
+`MangoFilePreviewDialog` 是可独立使用的文件预览弹框，接受 `fileId`、`file` 或 `preview`；文本文件也可以通过
+`textContent` 直接展示。`MangoFileList` 已内置该弹框，普通列表消费方无需重复引入。
+
 ## 5. 快速开始
 
 1. 后端应用启用 `mango-file`，需要文档预览时同时启用 `mango-file-preview`。
@@ -176,10 +208,12 @@ import { FilePreviewPanel } from '@mango/file';
 
 组件导出：
 
-| 导出               | 标识                 | 用途                              |
-| ------------------ | -------------------- | --------------------------------- |
-| `MUpload`          | `business-component` | 上传文件并回写 ID、token 或记录。 |
-| `FilePreviewPanel` | `business-component` | 预览、下载和打开文件。            |
+| 导出                     | 标识                 | 用途                                           |
+| ------------------------ | -------------------- | ---------------------------------------------- |
+| `MangoFileList`          | `business-component` | 配置化详情文件列表、相邻分组合并、预览和下载。 |
+| `MangoFilePreviewDialog` | `business-component` | 文件或文本内容预览弹框。                       |
+| `MUpload`                | `business-component` | 上传文件并回写 ID、token 或记录。              |
+| `FilePreviewPanel`       | `business-component` | 预览、下载和打开文件。                         |
 
 `fileApi`：
 
