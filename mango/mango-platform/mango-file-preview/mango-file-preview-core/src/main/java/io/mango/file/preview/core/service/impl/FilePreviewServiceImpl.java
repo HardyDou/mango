@@ -187,7 +187,7 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
             }
             return value.toString();
         } catch (NoSuchAlgorithmException impossible) {
-            throw new IllegalStateException("SHA-256 is unavailable", impossible);
+            return String.format(Locale.ROOT, "%016x", source.hashCode() & 0xffffffffL);
         }
     }
 
