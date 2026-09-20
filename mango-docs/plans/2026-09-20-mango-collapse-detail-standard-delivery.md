@@ -14,7 +14,7 @@
 - 目标：将保函系统已经验证的折叠详情展示能力收敛为 Mango 公共组件，并保持包边界清晰、独立消费可用和现有 `MangoDetailPage` 行为不变。
 - 成功条件：公开组件、类型、样式和子路径可构建、可类型检查、可由独立消费者引用；组件测试覆盖正常、空、错误、交互和组合场景；保函临时消费者可完成真实页面验证。
 - 处理范围：`MangoPageBackBar`、`MangoSideDrawerShell`、`MangoDetailSummary`、`MangoDescriptionList`、`MangoFileList`、`MangoFilePreviewDialog`、`MangoCollapseDetailPage`；增强现有 `RichTextViewer`；复用 `MangoDataTable`；同步 README、公开导出、组件契约、Changeset 和验证记录。
-- 不处理范围：不迁移保函工作流业务面板、项目资料业务组件、方案表格、旧 `GuaranteeCompactPageShell`/`GuaranteeDetailPageShell`；不修改或删除现有 `MangoDetailPage`；不提交保函临时验证代码；不发布 npm 包、不合并 PR、不部署。
+- 不处理范围：不迁移保函工作流业务面板、项目资料业务组件、方案表格、旧 `GuaranteeCompactPageShell`/`GuaranteeDetailPageShell`；不修改或删除现有 `MangoDetailPage`；不提交保函临时验证代码；不发布 npm 包、不部署。
 
 ## 3. 可观察系统要求
 
@@ -65,12 +65,12 @@
 
 ## 7. 例外与剩余风险
 
-- 当前从尚未合并的 `codex/mango-data-table` 分支堆叠开发；表格 PR 合并后需要将本分支同步到最新 `main` 并重新执行全部门禁。
+- 统一表格 PR #966 已合并为 `main@25d91ee61b8063b96b66b81a12408edf666bc261`；本分支已合入该基线并将 `@mango/detail` 的 peer dependency 同步为 `@mango/common@2.0.4` 与 `@mango/file@1.0.40`，不再依赖 stacked base。
 - 保函系统本次仅作为临时消费者验证，不形成其正式消费关系；临时 worktree 和代码在验收结束后清理。
 - `@mango/file` 源码 typecheck 的既有失败为测试未引入 Vitest globals、`MUpload.vue` 的 `Error`/`UploadAjaxError` 不匹配和根入口 `PageResult` 重复导出；本次新增代码必须单独证明无新增类型诊断。
 - 全仓 ESLint/Prettier ratchet 仍被任务范围外的 `admin-shell`、`workflow` 等既有诊断阻断；本次新增/修改组件路径的 ESLint、Stylelint、Prettier 定向检查均通过，全仓 Stylelint 通过。
 - `catalog:check` 和 `check:affected` 的默认入口在 Windows 分别受 `spawnSync('mvn')`、`spawnSync('corepack')` 无法启动 `.cmd` 影响；catalog 已通过脚本支持的 `--effective-pom` 参数完成等价验证，`check:affected` 的 `quality:versions` 工具链异常保留为未通过项。
-- 用户已授权提交本次任务 PR；未授权 PR 合并、npm 发布或部署。
+- 用户已授权更新本次任务 PR 并在 required checks 通过后自动合并；未授权 npm 发布或部署。
 
 ## 8. M13 候选预览页验收证据
 

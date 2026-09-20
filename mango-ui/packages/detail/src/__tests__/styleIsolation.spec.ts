@@ -21,8 +21,8 @@ describe('@mango/detail 样式与依赖隔离', () => {
     expect(combinedSource).not.toMatch(/:global\(\.el-/);
     expect(packageJson.dependencies).toBeUndefined();
     expect(packageJson.peerDependencies).toMatchObject({
-      '@mango/common': 'workspace:2.0.3',
-      '@mango/file': 'workspace:1.0.39',
+      '@mango/common': 'workspace:2.0.4',
+      '@mango/file': 'workspace:1.0.40',
     });
   });
 });

@@ -1249,10 +1249,10 @@ importers:
   packages/detail:
     dependencies:
       '@mango/common':
-        specifier: workspace:2.0.3
+        specifier: workspace:2.0.4
         version: link:../common
       '@mango/file':
-        specifier: workspace:1.0.39
+        specifier: workspace:1.0.40
         version: link:../file
       element-plus:
         specifier: '>=2.14.1 <3'
