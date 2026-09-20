@@ -22,6 +22,18 @@
       "types": "./dist/components/Pagination/index.d.ts",
       "import": "./dist/components/Pagination/index.js"
     },
+    "./components/MangoDataTable/index.vue": {
+      "types": "./dist/components/MangoDataTable/index.d.ts",
+      "import": "./dist/components/MangoDataTable/index.js"
+    },
+    "./components/MangoDataTable/MangoTableCell.vue": {
+      "types": "./dist/components/MangoDataTable/MangoTableCell.d.ts",
+      "import": "./dist/components/MangoDataTable/MangoTableCell.js"
+    },
+    "./components/MangoStatusText/index.vue": {
+      "types": "./dist/components/MangoStatusText/index.d.ts",
+      "import": "./dist/components/MangoStatusText/index.js"
+    },
     "./components/MangoListPage/index.vue": {
       "types": "./dist/components/MangoListPage/index.d.ts",
       "import": "./dist/components/MangoListPage/index.js"
@@ -145,6 +157,18 @@
       },
       "./components/Pagination/index.vue": {
         "source": "./components/Pagination/index.vue",
+        "kind": "code"
+      },
+      "./components/MangoDataTable/index.vue": {
+        "source": "./components/MangoDataTable/index.vue",
+        "kind": "code"
+      },
+      "./components/MangoDataTable/MangoTableCell.vue": {
+        "source": "./components/MangoDataTable/MangoTableCell.vue",
+        "kind": "code"
+      },
+      "./components/MangoStatusText/index.vue": {
+        "source": "./components/MangoStatusText/index.vue",
         "kind": "code"
       },
       "./components/MangoListPage/index.vue": {
