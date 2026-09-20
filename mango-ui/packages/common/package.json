@@ -58,6 +58,22 @@
       "types": "./dist/components/MangoPageSection/index.d.ts",
       "import": "./dist/components/MangoPageSection/index.js"
     },
+    "./components/MangoPageBackBar/index.vue": {
+      "types": "./dist/components/MangoPageBackBar/index.d.ts",
+      "import": "./dist/components/MangoPageBackBar/index.js"
+    },
+    "./components/MangoSideDrawerShell/index.vue": {
+      "types": "./dist/components/MangoSideDrawerShell/index.d.ts",
+      "import": "./dist/components/MangoSideDrawerShell/index.js"
+    },
+    "./components/MangoDetailSummary/index.vue": {
+      "types": "./dist/components/MangoDetailSummary/index.d.ts",
+      "import": "./dist/components/MangoDetailSummary/index.js"
+    },
+    "./components/MangoDescriptionList/index.vue": {
+      "types": "./dist/components/MangoDescriptionList/index.d.ts",
+      "import": "./dist/components/MangoDescriptionList/index.js"
+    },
     "./components/IconSelector/index.vue": {
       "types": "./dist/components/IconSelector/index.d.ts",
       "import": "./dist/components/IconSelector/index.js"
@@ -193,6 +209,22 @@
       },
       "./components/MangoPageSection/index.vue": {
         "source": "./components/MangoPageSection/index.vue",
+        "kind": "code"
+      },
+      "./components/MangoPageBackBar/index.vue": {
+        "source": "./components/MangoPageBackBar/index.vue",
+        "kind": "code"
+      },
+      "./components/MangoSideDrawerShell/index.vue": {
+        "source": "./components/MangoSideDrawerShell/index.vue",
+        "kind": "code"
+      },
+      "./components/MangoDetailSummary/index.vue": {
+        "source": "./components/MangoDetailSummary/index.vue",
+        "kind": "code"
+      },
+      "./components/MangoDescriptionList/index.vue": {
+        "source": "./components/MangoDescriptionList/index.vue",
         "kind": "code"
       },
       "./components/IconSelector/index.vue": {

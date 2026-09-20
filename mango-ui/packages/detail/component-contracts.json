@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "packageName": "@mango/detail",
+  "components": [
+    {
+      "name": "MangoCollapseDetailPage",
+      "exportKey": ".",
+      "exportName": "MangoCollapseDetailPage",
+      "level": "C4",
+      "hostProfile": "host-agnostic",
+      "environmentProfile": "browser-only",
+      "distribution": ["npm"],
+      "deploymentModes": ["monolith", "microfrontend"],
+      "stability": "stable",
+      "ownerRole": "Frontend Standards Owner",
+      "styleExportKeys": ["./style.css"],
+      "docs": {
+        "path": "README.md",
+        "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
+      },
+      "testEvidence": ["src/__tests__/MangoCollapseDetailPage.spec.ts"]
+    },
+    {
+      "name": "MangoRichTextPreview",
+      "exportKey": ".",
+      "exportName": "MangoRichTextPreview",
+      "level": "C4",
+      "hostProfile": "host-agnostic",
+      "environmentProfile": "browser-only",
+      "distribution": ["npm"],
+      "deploymentModes": ["monolith", "microfrontend"],
+      "stability": "stable",
+      "ownerRole": "Frontend Standards Owner",
+      "styleExportKeys": ["./style.css"],
+      "docs": {
+        "path": "README.md",
+        "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
+      },
+      "testEvidence": ["src/__tests__/MangoRichTextPreview.spec.ts"]
+    }
+  ],
+  "legacyComponentExports": []
+}

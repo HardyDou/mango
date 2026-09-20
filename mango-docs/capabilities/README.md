@@ -4,6 +4,8 @@
 
 本文用于帮助 Mango 开发者、业务开发者和 AI Agent 快速定位 Mango 能力、模块 README、关联 PMO 规则和排障入口。
 
+2026-09-20 能力更新：新增独立 `@mango/detail` 包，提供 `MangoCollapseDetailPage` 折叠详情骨架和 `MangoRichTextPreview` 富文本文件预览组合能力；`@mango/common` 同步增加返回栏、摘要、描述列表和右侧抽屉壳子，`@mango/file` 增加支持资料分组合并的文件列表与统一文件预览弹框。该能力只依赖公开 props、events、slots 和 package 样式入口，不依赖 Admin Shell、宿主路由或全局布局样式。详见 [Detail README](../../mango-ui/packages/detail/README.md)、[Common README](../../mango-ui/packages/common/README.md)、[File README](../../mango-ui/packages/file/README.md) 和 [STANDARD 交付记录](../plans/2026-09-20-mango-collapse-detail-standard-delivery.md)。
+
 2026-09-16 能力更新：`@mango/common` 新增 `MangoDataTable`、`MangoTableCell` 和 `MangoStatusText`，统一提供可切换卡片表面、列配置、单元格编辑、状态文本与分页事件；状态文案和 tone 仍由业务决定，颜色读取可覆盖的 Mango 主题变量。现有 `Pagination` 增加对齐能力，并将同一轮页码和页大小联动合并为一次业务分页事件。详见 [Common README](../../mango-ui/packages/common/README.md) 和 [STANDARD 交付记录](../plans/2026-09-16-mango-data-table-standard-delivery.md)。
 
 2026-09-16 能力更新：`@mango/common` 的 `MangoDialog` 在开启 `draggable` 后，除标题区外还可从内容区四周实际生效的空白 padding 启动拖拽，并在这些区域显示四向移动光标；内容盒、slot 子元素和滚动条继续只执行原有交互，不会触发拖拽或显示拖拽反馈。详见 [Common README](../../mango-ui/packages/common/README.md) 和 [STANDARD 交付记录](../evidence/mango-dialog-padding-drag/standard-delivery-record.md)。
