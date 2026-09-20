@@ -15,16 +15,22 @@ import org.springframework.beans.factory.annotation.Autowired;
 /** 合并同一转换键的并发请求，并保证超时后可以重新提交。 */
 @Component
 public final class ConversionCoordinator {
+    private static final long LEASE_POLL_MILLIS = 50L;
+    private static final long MIN_SLEEP_MILLIS = 1L;
     private final ConcurrentMap<String, CompletableFuture<?>> tasks = new ConcurrentHashMap<>();
     private final Executor executor;
     private final ConversionTaskLease lease;
 
-    public ConversionCoordinator() { this(ForkJoinPool.commonPool(), new LocalConversionTaskLease()); }
+    public ConversionCoordinator() {
+        this(ForkJoinPool.commonPool(), new LocalConversionTaskLease());
+    }
 
     @Autowired
     public ConversionCoordinator(ConversionTaskLease lease) { this(ForkJoinPool.commonPool(), lease); }
 
-    ConversionCoordinator(Executor executor) { this(executor, new LocalConversionTaskLease()); }
+    ConversionCoordinator(Executor executor) {
+        this(executor, new LocalConversionTaskLease());
+    }
 
     ConversionCoordinator(Executor executor, ConversionTaskLease lease) {
         this.executor = Objects.requireNonNull(executor, "executor");
@@ -35,7 +41,9 @@ public final class ConversionCoordinator {
         Objects.requireNonNull(key, "key");
         Objects.requireNonNull(timeout, "timeout");
         Objects.requireNonNull(task, "task");
-        if (timeout.isZero() || timeout.isNegative()) throw new IllegalArgumentException("timeout must be positive");
+        if (timeout.isZero() || timeout.isNegative()) {
+            throw new IllegalArgumentException("timeout must be positive");
+        }
         @SuppressWarnings("unchecked")
         CompletableFuture<T> result = (CompletableFuture<T>) tasks.computeIfAbsent(key, ignored -> {
             CompletableFuture<T> future = CompletableFuture.supplyAsync(() -> runWithLease(key, timeout, task), executor)
@@ -46,14 +54,19 @@ public final class ConversionCoordinator {
         return result;
     }
 
-    public int inFlight() { return tasks.size(); }
+    public int inFlight() {
+        return tasks.size();
+    }
 
     private <T> T runWithLease(String key, Duration timeout, Supplier<T> task) {
         long deadline = System.nanoTime() + timeout.toNanos();
         try {
             while (!lease.tryAcquire(key, timeout)) {
-                if (System.nanoTime() >= deadline) throw new java.util.concurrent.TimeoutException("conversion lease timeout");
-                Thread.sleep(Math.min(50L, Math.max(1L, Duration.ofNanos(deadline - System.nanoTime()).toMillis())));
+                if (System.nanoTime() >= deadline) {
+                    throw new java.util.concurrent.TimeoutException("conversion lease timeout");
+                }
+                Thread.sleep(Math.min(LEASE_POLL_MILLIS,
+                        Math.max(MIN_SLEEP_MILLIS, Duration.ofNanos(deadline - System.nanoTime()).toMillis())));
             }
             try {
                 return task.get();
@@ -67,4 +80,5 @@ public final class ConversionCoordinator {
             throw new CompletionException(timeoutException);
         }
     }
+
 }

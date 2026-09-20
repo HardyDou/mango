@@ -30,6 +30,7 @@ import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -43,12 +44,14 @@ import java.time.Duration;
 @Service
 public class OfficeFilePreviewImpl implements FilePreview {
 
-    private static final Logger logger = LoggerFactory.getLogger(OfficeFilePreviewImpl.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(OfficeFilePreviewImpl.class);
     public static final String OFFICE_PREVIEW_TYPE_IMAGE = "image";
     public static final String OFFICE_PREVIEW_TYPE_ALL_IMAGES = "allImages";
 
     // 用于处理回调的线程池
-    private static final ExecutorService callbackExecutor = Executors.newFixedThreadPool(3);
+    private static final ExecutorService CALLBACK_EXECUTOR = Executors.newFixedThreadPool(3);
+
+    private static final int DEFAULT_CONVERSION_TIMEOUT_MINUTES = 5;
 
     private final FileHandlerService fileHandlerService;
     private final OfficeToPdfService officeToPdfService;
@@ -57,7 +60,7 @@ public class OfficeFilePreviewImpl implements FilePreview {
     private final ConversionCoordinator conversionCoordinator;
 
     @Value("${office.plugin.task.timeout:5m}")
-    private Duration conversionTimeout = Duration.ofMinutes(5);
+    private Duration conversionTimeout = Duration.ofMinutes(DEFAULT_CONVERSION_TIMEOUT_MINUTES);
 
     public OfficeFilePreviewImpl(FileHandlerService fileHandlerService, OfficeToPdfService officeToPdfService, OtherFilePreviewImpl otherFilePreview, PdfToJpgService pdftojpgservice, ConversionCoordinator conversionCoordinator) {
         this.fileHandlerService = fileHandlerService;
@@ -72,87 +75,102 @@ public class OfficeFilePreviewImpl implements FilePreview {
         if (!isOfficeManagerAvailable()) {
             return otherFilePreview.notSupportedFile(model, fileAttribute, "Mango 文件预览暂未启用 Office 转换能力，请下载文件查看，或联系管理员启用文档转换服务");
         }
-
-        // 预览Type，参数传了就取参数的，没传取系统默认
         String officePreviewType = fileAttribute.getOfficePreviewType();
-        boolean userToken = fileAttribute.getUsePasswordCache();
-        String baseUrl = BaseUrlFilter.getBaseUrl();
-        String suffix = fileAttribute.getSuffix();  //获取文件后缀
-        String fileName = fileAttribute.getName(); //获取文件原始名称
-        String filePassword = fileAttribute.getFilePassword(); //获取密码
-        boolean forceUpdatedCache = fileAttribute.forceUpdatedCache();  //是否启用强制更新命令
-        boolean isHtmlView = fileAttribute.isHtmlView();  //xlsx  转换成html
         String cacheName = fileAttribute.getCacheName();  //转换后的文件名
-        String outFilePath = fileAttribute.getOutFilePath();  //转换后生成文件的路径
-
-        // 查询转换状态
-        String convertStatusResult = checkAndHandleConvertStatus(model, fileName, cacheName, fileAttribute);
+        String convertStatusResult = checkAndHandleConvertStatus(model, fileAttribute.getName(), cacheName, fileAttribute);
         if (convertStatusResult != null) {
             return convertStatusResult;
         }
-
-        if (!officePreviewType.equalsIgnoreCase("html")) {
-            if (ConfigConstants.getOfficeTypeWeb().equalsIgnoreCase("web")) {
-                if (suffix.equalsIgnoreCase("xlsx")) {
-                    model.addAttribute("pdfUrl", KkFileUtils.htmlEscape(url)); //特殊符号处理
-                    return XLSX_FILE_PREVIEW_PAGE;
-                }
-                if (suffix.equalsIgnoreCase("csv")) {
-                    model.addAttribute("csvUrl", KkFileUtils.htmlEscape(url));
-                    return CSV_FILE_PREVIEW_PAGE;
-                }
-            }
+        String webPreview = handleWebPreview(url, model, fileAttribute);
+        if (webPreview != null) {
+            return webPreview;
         }
-
-        // 图片预览模式（异步转换）
-        if (!isHtmlView && baseUrl != null && (OFFICE_PREVIEW_TYPE_IMAGE.equals(officePreviewType) || OFFICE_PREVIEW_TYPE_ALL_IMAGES.equals(officePreviewType))) {
-            boolean jiami = false;
-            if (!ObjectUtils.isEmpty(filePassword)) {
-                jiami = pdftojpgservice.hasEncryptedPdfCacheSimple(outFilePath);
-            }
-            if (forceUpdatedCache || !fileHandlerService.listConvertedFiles().containsKey(cacheName) || !ConfigConstants.isCacheEnabled()) {
-                if (jiami) {
-                    return getPreviewType(model, fileAttribute, officePreviewType, cacheName, outFilePath);
-                }
-                // 下载文件
-                ReturnResponse<String> response = DownloadUtils.downLoad(fileAttribute, fileName);
-                if (response.isFailure()) {
-                    return otherFilePreview.notSupportedFile(model, fileAttribute, response.getMsg());
-                }
-                String filePath = response.getContent();
-
-                // 检查是否加密文件
-                boolean isPwdProtectedOffice = OfficeUtils.isPwdProtected(filePath);
-                if (isPwdProtectedOffice && !StringUtils.hasLength(filePassword)) {
-                    // 加密文件需要密码
-                    model.addAttribute("needFilePassword", true);
-                    model.addAttribute("fileName", fileName);
-                    model.addAttribute("cacheName", cacheName);
-                    return EXEL_FILE_PREVIEW_PAGE;
-                }
-
-                try {
-                    // 启动异步转换
-                    startAsyncOfficeConversion(filePath, outFilePath, cacheName, fileAttribute, officePreviewType);
-                    int refreshSchedule = ConfigConstants.getTime();
-                    // 返回等待页面
-                    model.addAttribute("fileName", fileName);
-                    model.addAttribute("time", refreshSchedule);
-                    model.addAttribute("message", "文件正在转换中，请稍候...");
-                    return WAITING_FILE_PREVIEW_PAGE;
-                } catch (Exception e) {
-                    logger.error("Failed to start Office conversion: {}", filePath, e);
-                    return otherFilePreview.notSupportedFile(model, fileAttribute, "文件转换异常，请联系管理员");
-                }
-            } else {
-                // 如果已有缓存，直接渲染预览
-                return getPreviewType(model, fileAttribute, officePreviewType, cacheName, outFilePath);
-            }
+        String imagePreview = handleImagePreview(model, fileAttribute, officePreviewType);
+        if (imagePreview != null) {
+            return imagePreview;
         }
+        return handleRegularOfficePreview(model, fileAttribute, fileAttribute.getName(),
+                fileAttribute.forceUpdatedCache(), cacheName, fileAttribute.getOutFilePath(),
+                fileAttribute.isHtmlView(), fileAttribute.getUsePasswordCache(), fileAttribute.getFilePassword());
+    }
 
-        // 处理普通Office转PDF预览
-        return handleRegularOfficePreview(model, fileAttribute, fileName, forceUpdatedCache, cacheName, outFilePath,
-                isHtmlView, userToken, filePassword);
+    private String handleWebPreview(String url, Model model, FileAttribute fileAttribute) {
+        if (fileAttribute.getOfficePreviewType().equalsIgnoreCase("html")
+                || !ConfigConstants.getOfficeTypeWeb().equalsIgnoreCase("web")) {
+            return null;
+        }
+        String suffix = fileAttribute.getSuffix();
+        if (suffix.equalsIgnoreCase("xlsx")) {
+            model.addAttribute("pdfUrl", KkFileUtils.htmlEscape(url));
+            return XLSX_FILE_PREVIEW_PAGE;
+        }
+        if (suffix.equalsIgnoreCase("csv")) {
+            model.addAttribute("csvUrl", KkFileUtils.htmlEscape(url));
+            return CSV_FILE_PREVIEW_PAGE;
+        }
+        return null;
+    }
+
+    private String handleImagePreview(Model model, FileAttribute fileAttribute, String officePreviewType) {
+        if (fileAttribute.isHtmlView() || BaseUrlFilter.getBaseUrl() == null
+                || !isImagePreviewType(officePreviewType)) {
+            return null;
+        }
+        String cacheName = fileAttribute.getCacheName();
+        String outFilePath = fileAttribute.getOutFilePath();
+        if (hasEncryptedPreview(fileAttribute, outFilePath)) {
+            return getPreviewType(model, fileAttribute, officePreviewType, cacheName, outFilePath);
+        }
+        if (!shouldStartImageConversion(fileAttribute, cacheName)) {
+            return getPreviewType(model, fileAttribute, officePreviewType, cacheName, outFilePath);
+        }
+        return startImageConversion(model, fileAttribute, officePreviewType);
+    }
+
+    private boolean isImagePreviewType(String officePreviewType) {
+        return OFFICE_PREVIEW_TYPE_IMAGE.equals(officePreviewType)
+                || OFFICE_PREVIEW_TYPE_ALL_IMAGES.equals(officePreviewType);
+    }
+
+    private boolean hasEncryptedPreview(FileAttribute fileAttribute, String outFilePath) {
+        return StringUtils.hasLength(fileAttribute.getFilePassword())
+                && pdftojpgservice.hasEncryptedPdfCacheSimple(outFilePath);
+    }
+
+    private boolean shouldStartImageConversion(FileAttribute fileAttribute, String cacheName) {
+        return fileAttribute.forceUpdatedCache()
+                || !fileHandlerService.listConvertedFiles().containsKey(cacheName)
+                || !ConfigConstants.isCacheEnabled();
+    }
+
+    private String startImageConversion(Model model, FileAttribute fileAttribute, String officePreviewType) {
+        String fileName = fileAttribute.getName();
+        ReturnResponse<String> response = DownloadUtils.downLoad(fileAttribute, fileName);
+        if (response.isFailure()) {
+            return otherFilePreview.notSupportedFile(model, fileAttribute, response.getMsg());
+        }
+        String filePath = response.getContent();
+        if (requiresPassword(filePath, fileAttribute)) {
+            model.addAttribute("needFilePassword", true);
+            model.addAttribute("fileName", fileName);
+            model.addAttribute("cacheName", fileAttribute.getCacheName());
+            return EXEL_FILE_PREVIEW_PAGE;
+        }
+        try {
+            startAsyncOfficeConversion(filePath, fileAttribute.getOutFilePath(), fileAttribute.getCacheName(),
+                    fileAttribute, officePreviewType);
+            model.addAttribute("fileName", fileName);
+            model.addAttribute("time", ConfigConstants.getTime());
+            model.addAttribute("message", "文件正在转换中，请稍候...");
+            return WAITING_FILE_PREVIEW_PAGE;
+        } catch (Exception exception) {
+            LOGGER.error("Failed to start Office conversion: {}", filePath, exception);
+            return otherFilePreview.notSupportedFile(model, fileAttribute, "文件转换异常，请联系管理员");
+        }
+    }
+
+    private boolean requiresPassword(String filePath, FileAttribute fileAttribute) {
+        return OfficeUtils.isPwdProtected(filePath) && !StringUtils.hasLength(fileAttribute.getFilePassword());
     }
 
     private boolean isOfficeManagerAvailable() {
@@ -166,103 +184,119 @@ public class OfficeFilePreviewImpl implements FilePreview {
     private void startAsyncOfficeConversion(String filePath, String outFilePath, String cacheName,
                                             FileAttribute fileAttribute,
                                             String officePreviewType) {
-        // 启动异步转换
-        CompletableFuture<List<String>> conversionFuture = conversionCoordinator.submit(cacheName + "|" + officePreviewType,
-                conversionTimeout, () -> {
-            try {
-                if (ConfigConstants.isCacheEnabled()
-                        && fileHandlerService.listConvertedFiles().containsKey(cacheName)) {
-                    FileConvertStatusManager.convertSuccess(cacheName);
-                    logger.info("复用已完成的Office转换结果: {}", cacheName);
-                    return List.of();
-                }
-                // 更新状态
-                FileConvertStatusManager.startConvert(cacheName);
-                FileConvertStatusManager.updateProgress(cacheName, "正在启动Office转换", 20);
-
-                // 转换Office到PDF
-                FileConvertStatusManager.updateProgress(cacheName, "正在转换Office到jpg", 60);
-                String temporaryOutputPath = temporaryOutputPath(outFilePath);
-                try {
-                    officeToPdfService.openOfficeToPDF(filePath, temporaryOutputPath, fileAttribute);
-                    moveOutputAtomically(temporaryOutputPath, outFilePath);
-                } finally {
-                    KkFileUtils.deleteFileByPath(temporaryOutputPath);
-                }
-
-
-                if (fileAttribute.isHtmlView()) {
-                    // 对转换后的文件进行操作(改变编码方式)
-                    FileConvertStatusManager.updateProgress(cacheName, "处理HTML编码", 95);
-                    fileHandlerService.doActionConvertedFile(outFilePath);
-                }
-
-                // 是否需要转换为图片
-                List<String> imageUrls = null;
-                if (OFFICE_PREVIEW_TYPE_IMAGE.equals(officePreviewType) ||
-                        OFFICE_PREVIEW_TYPE_ALL_IMAGES.equals(officePreviewType)) {
-                    FileConvertStatusManager.updateProgress(cacheName, "正在转换PDF为图片", 90);
-                    imageUrls = pdftojpgservice.pdf2jpg(outFilePath, outFilePath, fileAttribute);
-                }
-
-                // 缓存处理
-                boolean isPwdProtectedOffice = OfficeUtils.isPwdProtected(filePath);
-                boolean userToken = fileAttribute.getUsePasswordCache();
-                String filePassword = fileAttribute.getFilePassword();
-
-                if (ConfigConstants.isCacheEnabled() && (ObjectUtils.isEmpty(filePassword) || userToken || !isPwdProtectedOffice)) {
-                    fileHandlerService.addConvertedFile(cacheName, fileHandlerService.getRelativePath(outFilePath));
-                }
-
-                FileConvertStatusManager.updateProgress(cacheName, "转换完成", 100);
-                FileConvertStatusManager.convertSuccess(cacheName);
-
-                return imageUrls;
-            } catch (OfficeException e) {
-                boolean isPwdProtectedOffice = OfficeUtils.isPwdProtected(filePath);
-                String filePassword = fileAttribute.getFilePassword();
-                if (isPwdProtectedOffice && !OfficeUtils.isCompatible(filePath, filePassword)) {
-                    FileConvertStatusManager.markError(cacheName, "文件密码错误，请重新输入");
-                } else {
-                    logger.error("Office转换执行失败: {}", cacheName, e);
-                    FileConvertStatusManager.markError(cacheName, "Office转换失败: " + e.getMessage());
-                }
-                return null;
-            } catch (Exception e) {
-                logger.error("Office转换执行失败: {}", cacheName, e);
-
-                // 检查是否已经标记为超时
-                FileConvertStatusManager.ConvertStatus status = FileConvertStatusManager.getConvertStatus(cacheName);
-                if (status == null || status.getStatus() != FileConvertStatusManager.Status.TIMEOUT) {
-                    FileConvertStatusManager.markError(cacheName, "转换失败: " + e.getMessage());
-                }
-                return null;
-            }
-        });
+        CompletableFuture<List<String>> conversionFuture = conversionCoordinator.submit(
+                cacheName + "|" + officePreviewType,
+                conversionTimeout,
+                () -> executeOfficeConversion(filePath, outFilePath, cacheName, fileAttribute, officePreviewType));
         conversionFuture.whenComplete((imageUrls, error) -> {
             if (error != null) {
                 FileConvertStatusManager.ConvertStatus status = FileConvertStatusManager.getConvertStatus(cacheName);
                 if (status == null || status.getStatus() == FileConvertStatusManager.Status.CONVERTING) {
-                    logger.error("Office转换任务失联或超时: {}", cacheName, error);
+                    LOGGER.error("Office转换任务失联或超时: {}", cacheName, error);
                     FileConvertStatusManager.markTimeout(cacheName);
                 }
                 KkFileUtils.deleteFileByPath(outFilePath);
             }
         });
-        // 添加转换完成后的回调
         conversionFuture.thenAcceptAsync(imageUrls -> {
             try {
-                // 这里假设imageUrls不为null且不为空表示转换成功
                 if (imageUrls != null && !imageUrls.isEmpty()) {
-                    // 是否保留源文件（只在转换成功后才删除）
                     if (!fileAttribute.isCompressFile() && ConfigConstants.getDeleteSourceFile()) {
                         KkFileUtils.deleteFileByPath(filePath);
                     }
                 }
             } catch (Exception e) {
-                logger.error("Office转换后续处理失败: {}", filePath, e);
+                LOGGER.error("Office转换后续处理失败: {}", filePath, e);
             }
-        }, callbackExecutor);
+        }, CALLBACK_EXECUTOR);
+    }
+
+    private List<String> executeOfficeConversion(String filePath, String outFilePath, String cacheName,
+                                                 FileAttribute fileAttribute, String officePreviewType) {
+        try {
+            if (hasCachedConversion(cacheName)) {
+                FileConvertStatusManager.convertSuccess(cacheName);
+                LOGGER.info("复用已完成的Office转换结果: {}", cacheName);
+                return List.of();
+            }
+            FileConvertStatusManager.startConvert(cacheName);
+            FileConvertStatusManager.updateProgress(cacheName, "正在启动Office转换", 20);
+            FileConvertStatusManager.updateProgress(cacheName, "正在转换Office到jpg", 60);
+            convertToPdfAtomically(filePath, outFilePath, fileAttribute);
+            processHtmlOutput(outFilePath, cacheName, fileAttribute);
+            List<String> imageUrls = convertPdfToImages(outFilePath, cacheName, fileAttribute, officePreviewType);
+            cacheConversion(filePath, outFilePath, cacheName, fileAttribute);
+            FileConvertStatusManager.updateProgress(cacheName, "转换完成", 100);
+            FileConvertStatusManager.convertSuccess(cacheName);
+            return imageUrls;
+        } catch (OfficeException exception) {
+            handleOfficeException(filePath, cacheName, fileAttribute, exception);
+            return null;
+        } catch (Exception exception) {
+            handleConversionException(cacheName, exception);
+            return null;
+        }
+    }
+
+    private boolean hasCachedConversion(String cacheName) {
+        return ConfigConstants.isCacheEnabled() && fileHandlerService.listConvertedFiles().containsKey(cacheName);
+    }
+
+    private void convertToPdfAtomically(String filePath, String outFilePath, FileAttribute fileAttribute)
+            throws OfficeException, IOException {
+        String temporaryOutputPath = temporaryOutputPath(outFilePath);
+        try {
+            officeToPdfService.openOfficeToPDF(filePath, temporaryOutputPath, fileAttribute);
+            moveOutputAtomically(temporaryOutputPath, outFilePath);
+        } finally {
+            KkFileUtils.deleteFileByPath(temporaryOutputPath);
+        }
+    }
+
+    private void processHtmlOutput(String outFilePath, String cacheName, FileAttribute fileAttribute) {
+        if (fileAttribute.isHtmlView()) {
+            FileConvertStatusManager.updateProgress(cacheName, "处理HTML编码", 95);
+            fileHandlerService.doActionConvertedFile(outFilePath);
+        }
+    }
+
+    private List<String> convertPdfToImages(String outFilePath, String cacheName, FileAttribute fileAttribute,
+                                            String officePreviewType) throws Exception {
+        if (!OFFICE_PREVIEW_TYPE_IMAGE.equals(officePreviewType)
+                && !OFFICE_PREVIEW_TYPE_ALL_IMAGES.equals(officePreviewType)) {
+            return null;
+        }
+        FileConvertStatusManager.updateProgress(cacheName, "正在转换PDF为图片", 90);
+        return pdftojpgservice.pdf2jpg(outFilePath, outFilePath, fileAttribute);
+    }
+
+    private void cacheConversion(String filePath, String outFilePath, String cacheName, FileAttribute fileAttribute) {
+        boolean isPwdProtectedOffice = OfficeUtils.isPwdProtected(filePath);
+        String filePassword = fileAttribute.getFilePassword();
+        if (ConfigConstants.isCacheEnabled()
+                && (ObjectUtils.isEmpty(filePassword) || fileAttribute.getUsePasswordCache() || !isPwdProtectedOffice)) {
+            fileHandlerService.addConvertedFile(cacheName, fileHandlerService.getRelativePath(outFilePath));
+        }
+    }
+
+    private void handleOfficeException(String filePath, String cacheName, FileAttribute fileAttribute,
+                                       OfficeException exception) {
+        boolean isPwdProtectedOffice = OfficeUtils.isPwdProtected(filePath);
+        String filePassword = fileAttribute.getFilePassword();
+        if (isPwdProtectedOffice && !OfficeUtils.isCompatible(filePath, filePassword)) {
+            FileConvertStatusManager.markError(cacheName, "文件密码错误，请重新输入");
+        } else {
+            LOGGER.error("Office转换执行失败: {}", cacheName, exception);
+            FileConvertStatusManager.markError(cacheName, "Office转换失败: " + exception.getMessage());
+        }
+    }
+
+    private void handleConversionException(String cacheName, Exception exception) {
+        LOGGER.error("Office转换执行失败: {}", cacheName, exception);
+        FileConvertStatusManager.ConvertStatus status = FileConvertStatusManager.getConvertStatus(cacheName);
+        if (status == null || status.getStatus() != FileConvertStatusManager.Status.TIMEOUT) {
+            FileConvertStatusManager.markError(cacheName, "转换失败: " + exception.getMessage());
+        }
     }
 
     private static String temporaryOutputPath(String outputPath) {
@@ -274,7 +308,7 @@ public class OfficeFilePreviewImpl implements FilePreview {
                 + outputPath.substring(extensionIndex);
     }
 
-    private static void moveOutputAtomically(String temporaryOutputPath, String outputPath) throws Exception {
+    private static void moveOutputAtomically(String temporaryOutputPath, String outputPath) throws IOException {
         Path source = Path.of(temporaryOutputPath);
         Path target = Path.of(outputPath);
         try {
@@ -314,7 +348,7 @@ public class OfficeFilePreviewImpl implements FilePreview {
                 return PICTURE_FILE_PREVIEW_PAGE;
             }
         } catch (Exception e) {
-            logger.error("渲染Office预览页面失败: {}", cacheName, e);
+            LOGGER.error("渲染Office预览页面失败: {}", cacheName, e);
             return otherFilePreview.notSupportedFile(model, fileAttribute, "渲染预览页面异常，请联系管理员");
         }
     }
@@ -326,50 +360,60 @@ public class OfficeFilePreviewImpl implements FilePreview {
                                               String fileName, boolean forceUpdatedCache, String cacheName,
                                               String outFilePath, boolean isHtmlView, boolean userToken,
                                               String filePassword) {
-
-        if (forceUpdatedCache || !fileHandlerService.listConvertedFiles().containsKey(cacheName) || !ConfigConstants.isCacheEnabled()) {
-            // 下载远程文件到本地，如果文件在本地已存在不会重复下载
-            ReturnResponse<String> response = DownloadUtils.downLoad(fileAttribute, fileName);
-            if (response.isFailure()) {
-                return otherFilePreview.notSupportedFile(model, fileAttribute, response.getMsg());
-            }
-            String filePath = response.getContent();
-
-            boolean isPwdProtectedOffice = OfficeUtils.isPwdProtected(filePath);    // 判断是否加密文件
-            if (isPwdProtectedOffice && !StringUtils.hasLength(filePassword)) {
-                // 加密文件需要密码
-                model.addAttribute("needFilePassword", true);
-                return EXEL_FILE_PREVIEW_PAGE;
-            } else {
-                if (StringUtils.hasText(outFilePath)) {
-                    try {
-                        officeToPdfService.openOfficeToPDF(filePath, outFilePath, fileAttribute);
-                    } catch (OfficeException e) {
-                        if (isPwdProtectedOffice && !OfficeUtils.isCompatible(filePath, filePassword)) {
-                            // 加密文件密码错误，提示重新输入
-                            model.addAttribute("needFilePassword", true);
-                            model.addAttribute("filePasswordError", true);
-                            return EXEL_FILE_PREVIEW_PAGE;
-                        }
-                        return otherFilePreview.notSupportedFile(model, fileAttribute, "抱歉，该文件版本不兼容，文件版本错误。");
-                    }
-                    if (isHtmlView) {
-                        // 对转换后的文件进行操作(改变编码方式)
-                        fileHandlerService.doActionConvertedFile(outFilePath);
-                    }
-                    //是否保留OFFICE源文件
-                    if (!fileAttribute.isCompressFile() && ConfigConstants.getDeleteSourceFile()) {
-                        KkFileUtils.deleteFileByPath(filePath);
-                    }
-                    if (userToken || !isPwdProtectedOffice) {
-                        // 加入缓存
-                        fileHandlerService.addConvertedFile(cacheName, fileHandlerService.getRelativePath(outFilePath));
-                    }
-                }
+        if (!forceUpdatedCache && fileHandlerService.listConvertedFiles().containsKey(cacheName)
+                && ConfigConstants.isCacheEnabled()) {
+            return renderRegularPreview(model, cacheName, isHtmlView);
+        }
+        ReturnResponse<String> response = DownloadUtils.downLoad(fileAttribute, fileName);
+        if (response.isFailure()) {
+            return otherFilePreview.notSupportedFile(model, fileAttribute, response.getMsg());
+        }
+        String filePath = response.getContent();
+        boolean isPwdProtectedOffice = OfficeUtils.isPwdProtected(filePath);
+        if (isPwdProtectedOffice && !StringUtils.hasLength(filePassword)) {
+            model.addAttribute("needFilePassword", true);
+            return EXEL_FILE_PREVIEW_PAGE;
+        }
+        if (StringUtils.hasText(outFilePath)) {
+            String errorPage = convertRegularOfficeFile(model, fileAttribute, filePath, outFilePath, cacheName,
+                    isHtmlView, userToken, filePassword, isPwdProtectedOffice);
+            if (errorPage != null) {
+                return errorPage;
             }
         }
+        return renderRegularPreview(model, cacheName, isHtmlView);
+    }
 
-        model.addAttribute("pdfUrl", WebUtils.encodeFileName(cacheName));  //输出转义文件名 方便url识别
+    private String convertRegularOfficeFile(Model model, FileAttribute fileAttribute, String filePath,
+                                            String outFilePath, String cacheName, boolean isHtmlView,
+                                            boolean userToken, String filePassword, boolean isPwdProtectedOffice) {
+        try {
+            convertToPdfAtomically(filePath, outFilePath, fileAttribute);
+        } catch (OfficeException exception) {
+            if (isPwdProtectedOffice && !OfficeUtils.isCompatible(filePath, filePassword)) {
+                model.addAttribute("needFilePassword", true);
+                model.addAttribute("filePasswordError", true);
+                return EXEL_FILE_PREVIEW_PAGE;
+            }
+            return otherFilePreview.notSupportedFile(model, fileAttribute, "抱歉，该文件版本不兼容，文件版本错误。");
+        } catch (IOException exception) {
+            LOGGER.error("Office转换结果写入失败: {}", cacheName, exception);
+            return otherFilePreview.notSupportedFile(model, fileAttribute, "文件转换结果写入异常，请联系管理员");
+        }
+        if (isHtmlView) {
+            fileHandlerService.doActionConvertedFile(outFilePath);
+        }
+        if (!fileAttribute.isCompressFile() && ConfigConstants.getDeleteSourceFile()) {
+            KkFileUtils.deleteFileByPath(filePath);
+        }
+        if (userToken || !isPwdProtectedOffice) {
+            fileHandlerService.addConvertedFile(cacheName, fileHandlerService.getRelativePath(outFilePath));
+        }
+        return null;
+    }
+
+    private String renderRegularPreview(Model model, String cacheName, boolean isHtmlView) {
+        model.addAttribute("pdfUrl", WebUtils.encodeFileName(cacheName));
         return isHtmlView ? EXEL_FILE_PREVIEW_PAGE : PDF_FILE_PREVIEW_PAGE;
     }
 
@@ -393,7 +437,7 @@ public class OfficeFilePreviewImpl implements FilePreview {
                 if (forceUpdatedCache) {
                     // 强制更新命令，清除状态，允许重新转换
                     FileConvertStatusManager.convertSuccess(cacheName);
-                    logger.info("强制更新命令跳过超时状态，允许重新转换: {}", cacheName);
+                    LOGGER.info("强制更新命令跳过超时状态，允许重新转换: {}", cacheName);
                     return null; // 返回null表示继续执行
                 } else {
                     // 没有强制更新，不允许重新转换
@@ -404,7 +448,7 @@ public class OfficeFilePreviewImpl implements FilePreview {
                 if (forceUpdatedCache) {
                     // 强制更新命令，清除状态，允许重新转换
                     FileConvertStatusManager.convertSuccess(cacheName);
-                    logger.info("强制更新命令跳过失败状态，允许重新转换: {}", cacheName);
+                    LOGGER.info("强制更新命令跳过失败状态，允许重新转换: {}", cacheName);
                     return null; // 返回null表示继续执行
                 } else {
                     // 没有强制更新，不允许重新转换

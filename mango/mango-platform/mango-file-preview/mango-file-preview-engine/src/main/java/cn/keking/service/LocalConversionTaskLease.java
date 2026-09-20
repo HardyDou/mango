@@ -14,8 +14,9 @@ public final class LocalConversionTaskLease implements ConversionTaskLease {
     @Override
     public boolean tryAcquire(String key, Duration leaseDuration) {
         long expiresAt = System.nanoTime() + leaseDuration.toNanos();
-        return leases.compute(key, (ignored, currentExpiry) ->
-                currentExpiry == null || currentExpiry <= System.nanoTime() ? expiresAt : currentExpiry) == expiresAt;
+        Long result = leases.compute(key, (ignored, currentExpiry) ->
+                currentExpiry == null || currentExpiry <= System.nanoTime() ? expiresAt : currentExpiry);
+        return result != null && result.longValue() == expiresAt;
     }
     @Override
     public void release(String key) { leases.remove(key); }

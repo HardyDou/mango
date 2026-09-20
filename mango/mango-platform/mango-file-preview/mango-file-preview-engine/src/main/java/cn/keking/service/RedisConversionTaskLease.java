@@ -28,6 +28,8 @@ public class RedisConversionTaskLease implements ConversionTaskLease {
     @Override
     public void release(String key) {
         RLock lock = redissonClient.getLock(PREFIX + key);
-        if (lock.isHeldByCurrentThread()) lock.unlock();
+        if (lock.isHeldByCurrentThread()) {
+            lock.unlock();
+        }
     }
 }
