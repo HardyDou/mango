@@ -21,6 +21,42 @@
       "testEvidence": ["components/MangoAvatar/__tests__/MangoAvatar.spec.ts"]
     },
     {
+      "name": "MangoDataTable",
+      "exportKey": ".",
+      "exportName": "MangoDataTable",
+      "level": "C4",
+      "hostProfile": "host-agnostic",
+      "environmentProfile": "browser-only",
+      "distribution": ["npm"],
+      "deploymentModes": ["monolith", "microfrontend"],
+      "stability": "stable",
+      "ownerRole": "Frontend Standards Owner",
+      "styleExportKeys": ["./style.css", "./theme/index.css"],
+      "docs": {
+        "path": "README.md",
+        "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
+      },
+      "testEvidence": ["components/MangoDataTable/__tests__/MangoDataTable.spec.ts"]
+    },
+    {
+      "name": "MangoDataTable",
+      "exportKey": "./components/MangoDataTable/index.vue",
+      "exportName": "default",
+      "level": "C4",
+      "hostProfile": "host-agnostic",
+      "environmentProfile": "browser-only",
+      "distribution": ["npm"],
+      "deploymentModes": ["monolith", "microfrontend"],
+      "stability": "stable",
+      "ownerRole": "Frontend Standards Owner",
+      "styleExportKeys": ["./style.css", "./theme/index.css"],
+      "docs": {
+        "path": "README.md",
+        "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
+      },
+      "testEvidence": ["components/MangoDataTable/__tests__/MangoDataTable.spec.ts"]
+    },
+    {
       "name": "MangoDetailPage",
       "exportKey": ".",
       "exportName": "MangoDetailPage",
@@ -273,6 +309,78 @@
       "testEvidence": ["components/MangoListPage/__tests__/MangoPageLayout.spec.ts"]
     },
     {
+      "name": "MangoStatusText",
+      "exportKey": ".",
+      "exportName": "MangoStatusText",
+      "level": "C4",
+      "hostProfile": "host-agnostic",
+      "environmentProfile": "browser-only",
+      "distribution": ["npm"],
+      "deploymentModes": ["monolith", "microfrontend"],
+      "stability": "stable",
+      "ownerRole": "Frontend Standards Owner",
+      "styleExportKeys": ["./style.css", "./theme/index.css"],
+      "docs": {
+        "path": "README.md",
+        "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
+      },
+      "testEvidence": ["components/MangoStatusText/__tests__/MangoStatusText.spec.ts"]
+    },
+    {
+      "name": "MangoStatusText",
+      "exportKey": "./components/MangoStatusText/index.vue",
+      "exportName": "default",
+      "level": "C4",
+      "hostProfile": "host-agnostic",
+      "environmentProfile": "browser-only",
+      "distribution": ["npm"],
+      "deploymentModes": ["monolith", "microfrontend"],
+      "stability": "stable",
+      "ownerRole": "Frontend Standards Owner",
+      "styleExportKeys": ["./style.css", "./theme/index.css"],
+      "docs": {
+        "path": "README.md",
+        "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
+      },
+      "testEvidence": ["components/MangoStatusText/__tests__/MangoStatusText.spec.ts"]
+    },
+    {
+      "name": "MangoTableCell",
+      "exportKey": ".",
+      "exportName": "MangoTableCell",
+      "level": "C4",
+      "hostProfile": "host-agnostic",
+      "environmentProfile": "browser-only",
+      "distribution": ["npm"],
+      "deploymentModes": ["monolith", "microfrontend"],
+      "stability": "stable",
+      "ownerRole": "Frontend Standards Owner",
+      "styleExportKeys": ["./style.css", "./theme/index.css"],
+      "docs": {
+        "path": "README.md",
+        "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
+      },
+      "testEvidence": ["components/MangoDataTable/__tests__/MangoTableCell.spec.ts"]
+    },
+    {
+      "name": "MangoTableCell",
+      "exportKey": "./components/MangoDataTable/MangoTableCell.vue",
+      "exportName": "default",
+      "level": "C4",
+      "hostProfile": "host-agnostic",
+      "environmentProfile": "browser-only",
+      "distribution": ["npm"],
+      "deploymentModes": ["monolith", "microfrontend"],
+      "stability": "stable",
+      "ownerRole": "Frontend Standards Owner",
+      "styleExportKeys": ["./style.css", "./theme/index.css"],
+      "docs": {
+        "path": "README.md",
+        "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
+      },
+      "testEvidence": ["components/MangoDataTable/__tests__/MangoTableCell.spec.ts"]
+    },
+    {
       "name": "Pagination",
       "exportKey": ".",
       "exportName": "Pagination",
@@ -288,7 +396,7 @@
         "path": "README.md",
         "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
       },
-      "testEvidence": ["components/MangoListPage/__tests__/MangoPageLayout.spec.ts"]
+      "testEvidence": ["components/Pagination/__tests__/Pagination.spec.ts"]
     },
     {
       "name": "Pagination",
@@ -306,7 +414,7 @@
         "path": "README.md",
         "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
       },
-      "testEvidence": ["components/MangoListPage/__tests__/MangoPageLayout.spec.ts"]
+      "testEvidence": ["components/Pagination/__tests__/Pagination.spec.ts"]
     },
     {
       "name": "RichTextViewer",
@@ -325,6 +433,150 @@
         "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
       },
       "testEvidence": ["components/RichTextViewer/__tests__/RichTextViewer.spec.ts"]
+    },
+    {
+      "name": "MangoPageBackBar",
+      "exportKey": ".",
+      "exportName": "MangoPageBackBar",
+      "level": "C4",
+      "hostProfile": "host-agnostic",
+      "environmentProfile": "browser-only",
+      "distribution": ["npm"],
+      "deploymentModes": ["monolith", "microfrontend"],
+      "stability": "stable",
+      "ownerRole": "Frontend Standards Owner",
+      "styleExportKeys": ["./style.css", "./theme/index.css"],
+      "docs": {
+        "path": "README.md",
+        "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
+      },
+      "testEvidence": ["components/MangoPageBackBar/__tests__/MangoPageBackBar.spec.ts"]
+    },
+    {
+      "name": "MangoPageBackBar",
+      "exportKey": "./components/MangoPageBackBar/index.vue",
+      "exportName": "default",
+      "level": "C4",
+      "hostProfile": "host-agnostic",
+      "environmentProfile": "browser-only",
+      "distribution": ["npm"],
+      "deploymentModes": ["monolith", "microfrontend"],
+      "stability": "stable",
+      "ownerRole": "Frontend Standards Owner",
+      "styleExportKeys": ["./style.css", "./theme/index.css"],
+      "docs": {
+        "path": "README.md",
+        "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
+      },
+      "testEvidence": ["components/MangoPageBackBar/__tests__/MangoPageBackBar.spec.ts"]
+    },
+    {
+      "name": "MangoSideDrawerShell",
+      "exportKey": ".",
+      "exportName": "MangoSideDrawerShell",
+      "level": "C4",
+      "hostProfile": "host-agnostic",
+      "environmentProfile": "browser-only",
+      "distribution": ["npm"],
+      "deploymentModes": ["monolith", "microfrontend"],
+      "stability": "stable",
+      "ownerRole": "Frontend Standards Owner",
+      "styleExportKeys": ["./style.css", "./theme/index.css"],
+      "docs": {
+        "path": "README.md",
+        "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
+      },
+      "testEvidence": ["components/MangoSideDrawerShell/__tests__/MangoSideDrawerShell.spec.ts"]
+    },
+    {
+      "name": "MangoSideDrawerShell",
+      "exportKey": "./components/MangoSideDrawerShell/index.vue",
+      "exportName": "default",
+      "level": "C4",
+      "hostProfile": "host-agnostic",
+      "environmentProfile": "browser-only",
+      "distribution": ["npm"],
+      "deploymentModes": ["monolith", "microfrontend"],
+      "stability": "stable",
+      "ownerRole": "Frontend Standards Owner",
+      "styleExportKeys": ["./style.css", "./theme/index.css"],
+      "docs": {
+        "path": "README.md",
+        "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
+      },
+      "testEvidence": ["components/MangoSideDrawerShell/__tests__/MangoSideDrawerShell.spec.ts"]
+    },
+    {
+      "name": "MangoDetailSummary",
+      "exportKey": ".",
+      "exportName": "MangoDetailSummary",
+      "level": "C4",
+      "hostProfile": "host-agnostic",
+      "environmentProfile": "browser-only",
+      "distribution": ["npm"],
+      "deploymentModes": ["monolith", "microfrontend"],
+      "stability": "stable",
+      "ownerRole": "Frontend Standards Owner",
+      "styleExportKeys": ["./style.css", "./theme/index.css"],
+      "docs": {
+        "path": "README.md",
+        "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
+      },
+      "testEvidence": ["components/MangoDetailSummary/__tests__/MangoDetailSummary.spec.ts"]
+    },
+    {
+      "name": "MangoDetailSummary",
+      "exportKey": "./components/MangoDetailSummary/index.vue",
+      "exportName": "default",
+      "level": "C4",
+      "hostProfile": "host-agnostic",
+      "environmentProfile": "browser-only",
+      "distribution": ["npm"],
+      "deploymentModes": ["monolith", "microfrontend"],
+      "stability": "stable",
+      "ownerRole": "Frontend Standards Owner",
+      "styleExportKeys": ["./style.css", "./theme/index.css"],
+      "docs": {
+        "path": "README.md",
+        "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
+      },
+      "testEvidence": ["components/MangoDetailSummary/__tests__/MangoDetailSummary.spec.ts"]
+    },
+    {
+      "name": "MangoDescriptionList",
+      "exportKey": ".",
+      "exportName": "MangoDescriptionList",
+      "level": "C4",
+      "hostProfile": "host-agnostic",
+      "environmentProfile": "browser-only",
+      "distribution": ["npm"],
+      "deploymentModes": ["monolith", "microfrontend"],
+      "stability": "stable",
+      "ownerRole": "Frontend Standards Owner",
+      "styleExportKeys": ["./style.css", "./theme/index.css"],
+      "docs": {
+        "path": "README.md",
+        "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
+      },
+      "testEvidence": ["components/MangoDescriptionList/__tests__/MangoDescriptionList.spec.ts"]
+    },
+    {
+      "name": "MangoDescriptionList",
+      "exportKey": "./components/MangoDescriptionList/index.vue",
+      "exportName": "default",
+      "level": "C4",
+      "hostProfile": "host-agnostic",
+      "environmentProfile": "browser-only",
+      "distribution": ["npm"],
+      "deploymentModes": ["monolith", "microfrontend"],
+      "stability": "stable",
+      "ownerRole": "Frontend Standards Owner",
+      "styleExportKeys": ["./style.css", "./theme/index.css"],
+      "docs": {
+        "path": "README.md",
+        "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
+      },
+      "testEvidence": ["components/MangoDescriptionList/__tests__/MangoDescriptionList.spec.ts"]
     }
   ],
   "legacyComponentExports": [

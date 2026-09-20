@@ -6,6 +6,8 @@
 
 > 2026-09-02 Issue #926 File Preview token 存储修复：File Preview 改由宿主 `mango-infra-kv-starter` 装配 `ITokenStore`，Memory、Redis、JDBC 选择由 `mango.kv.*` 配置决定；文件上传、`fileId`/`fileIds` 持久化、预览/下载 API、权限、租户和本指南的业务接入方式不变。缺少 token-store capability 时应用启动会明确失败，不再静默使用单 JVM fallback。
 
+> 2026-09-20 折叠详情组件迁移影响：`@mango/file` 新增可选的 `MangoFileList` 和 `MangoFilePreviewDialog`，供详情页按文件记录展示列表或在弹框中复用 `FilePreviewPanel`；`@mango/detail` 可组合这些公开组件。本次不改变 `MUpload`、`FilePreviewPanel`、上传/预览/下载 API、`fileId`/`fileIds` 持久化、权限、租户或本指南的表单接入方式。现有业务无需迁移；新详情页按对应 package README 引入组件与 `style.css`。
+
 ## 1. 适用场景
 
 业务表单需要上传合同、图片、附件或导入文件，并在详情页回显、下载或预览。

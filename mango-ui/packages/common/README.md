@@ -16,20 +16,20 @@
 
 ## 2. 功能清单
 
-| 能力        | 使用入口                                                                                                                                                                                   | 说明                                                                                |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
-| HTTP client | `createMangoHttpClient`                                                                                                                                                                    | 新业务默认入口；host 注入、实例隔离、标准取消和规范化错误。                         |
-| 日期范围    | `toBackendDateRangeParams`                                                                                                                                                                 | 将日期-only 的开始/结束边界分别补齐为 `00:00:00`/`23:59:59`，完整日期时间保持不变。 |
-| 旧请求入口  | `request`、`get`、`post`、`put`、`del`                                                                                                                                                     | 迁移期兼容；不得新增业务依赖。                                                      |
-| Session     | `Session`                                                                                                                                                                                  | 保存 token、refresh token、过期时间、用户信息和租户。                               |
-| API 加密    | `wrapRequest`、`sm2Encrypt`、`sm2Decrypt`                                                                                                                                                  | 按环境变量启用 SM2 或 BFF 透传。                                                    |
-| 菜单和权限  | `buildMenuTree`、权限函数、TagsView 工具                                                                                                                                                   | 给管理后台菜单、按钮权限和标签页使用。                                              |
-| Web Crypto  | `installWebCryptoRandomUUIDCompatibility`、`createWebCryptoRandomUUID`、`generateRfc4122UuidV4`                                                                                            | 为缺少原生 `randomUUID` 的运行环境提供安全 UUID 兼容。                              |
-| 公共 API    | `uploadFile`、captcha、org、area、dict API                                                                                                                                                 | 连接 file、captcha、org、system 后端。                                              |
-| 通用组件    | `MangoListPage`、`MangoSearchPanel`、`MangoListPanel`、`MangoDetailPage`、`MangoFormPage`、`MangoPageSection`、`MangoDialog`、`Pagination`、`DictSelect`、`OrgSelector`、`UserSelector` 等 | 后台页面骨架和复用组件。                                                            |
-| hooks       | `useTitle`、`useDict`、`useECharts`、`useLocale`                                                                                                                                           | 页面标题、字典、图表和语言相关能力。                                                |
-| 实时通信    | `useRealtime`、`SSE`、`Websocket`                                                                                                                                                          | SSE/WebSocket client 和组件。                                                       |
-| 主题和消息  | `mangoMessage`、theme 工具、主题 CSS                                                                                                                                                       | 管理端统一提示和主题样式。                                                          |
+| 能力        | 使用入口                                                                                                                   | 说明                                                                                |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| HTTP client | `createMangoHttpClient`                                                                                                    | 新业务默认入口；host 注入、实例隔离、标准取消和规范化错误。                         |
+| 日期范围    | `toBackendDateRangeParams`                                                                                                 | 将日期-only 的开始/结束边界分别补齐为 `00:00:00`/`23:59:59`，完整日期时间保持不变。 |
+| 旧请求入口  | `request`、`get`、`post`、`put`、`del`                                                                                     | 迁移期兼容；不得新增业务依赖。                                                      |
+| Session     | `Session`                                                                                                                  | 保存 token、refresh token、过期时间、用户信息和租户。                               |
+| API 加密    | `wrapRequest`、`sm2Encrypt`、`sm2Decrypt`                                                                                  | 按环境变量启用 SM2 或 BFF 透传。                                                    |
+| 菜单和权限  | `buildMenuTree`、权限函数、TagsView 工具                                                                                   | 给管理后台菜单、按钮权限和标签页使用。                                              |
+| Web Crypto  | `installWebCryptoRandomUUIDCompatibility`、`createWebCryptoRandomUUID`、`generateRfc4122UuidV4`                            | 为缺少原生 `randomUUID` 的运行环境提供安全 UUID 兼容。                              |
+| 公共 API    | `uploadFile`、captcha、org、area、dict API                                                                                 | 连接 file、captcha、org、system 后端。                                              |
+| 通用组件    | `MangoListPage`、`MangoSearchPanel`、`MangoDataTable`、`MangoTableCell`、`MangoStatusText`、`MangoDialog`、`Pagination` 等 | 后台页面骨架、统一表格和复用组件。                                                  |
+| hooks       | `useTitle`、`useDict`、`useECharts`、`useLocale`                                                                           | 页面标题、字典、图表和语言相关能力。                                                |
+| 实时通信    | `useRealtime`、`SSE`、`Websocket`                                                                                          | SSE/WebSocket client 和组件。                                                       |
+| 主题和消息  | `mangoMessage`、theme 工具、主题 CSS                                                                                       | 管理端统一提示和主题样式。                                                          |
 
 ## 3. 接入方式
 
@@ -106,12 +106,14 @@ const rows = await get('/system/dict/data/options', {
 import {
   DictSelect,
   MangoDetailPage,
+  MangoDataTable,
   MangoDialog,
   MangoFormPage,
   MangoListPage,
   MangoListPanel,
   MangoPageSection,
   MangoSearchPanel,
+  MangoStatusText,
   OrgSelector,
   Pagination,
 } from '@mango/common';
@@ -161,6 +163,65 @@ import '@mango/common/style.css';
     </MangoListPanel>
   </MangoListPage>
 </template>
+```
+
+统一列表使用 `MangoDataTable`。业务字段、状态文案和 tone 判断由消费方提供，组件只负责表格结构、单元格交互和展示。`card` 控制同一组件是否使用卡片表面，不需要维护两套表格：
+
+```vue
+<script setup lang="ts">
+import { reactive, ref } from 'vue';
+import { MangoDataTable, type MangoTableColumn, type MangoTablePageChangeContext } from '@mango/common';
+
+interface OrderRow {
+  id: string;
+  orderNo: string;
+  status: 'PENDING' | 'DONE';
+}
+
+const rows = ref<OrderRow[]>([]);
+const columns: MangoTableColumn<OrderRow>[] = [
+  { field: 'orderNo', label: '订单号', minWidth: 180 },
+  {
+    field: 'status',
+    label: '状态',
+    type: 'status',
+    options: [
+      { label: '处理中', value: 'PENDING', tone: 'warning' },
+      { label: '已完成', value: 'DONE', tone: 'success' },
+    ],
+  },
+];
+const paging = reactive({ page: 1, limit: 20, total: 0 });
+
+function loadPage(next: MangoTablePageChangeContext) {
+  paging.page = next.page;
+  paging.limit = next.limit;
+  // 调用业务 API，并更新 rows 与 paging.total。
+}
+</script>
+
+<template>
+  <MangoDataTable
+    :rows="rows"
+    :columns="columns"
+    row-key="id"
+    :pagination="paging"
+    :card="true"
+    @page-change="loadPage"
+  />
+</template>
+```
+
+`MangoStatusText` 也可独立使用。`tone` 支持 `primary`、`success`、`warning`、`danger`、`info`、`neutral`；未传时为 `neutral`。消费系统可在任意主题容器覆盖对应 CSS 变量，不需要修改组件：
+
+```vue
+<MangoStatusText tone="danger">审核拒绝</MangoStatusText>
+```
+
+```css
+.my-business-theme {
+  --mango-color-status-danger: var(--my-business-danger-color);
+}
 ```
 
 独立详情页和表单页使用对应页面外壳，并通过 `MangoPageSection` 按业务语义分组：
@@ -262,6 +323,55 @@ function focusDialog() {
 
 部署时没有单独的 `@mango/common` 后端 starter。它调用的接口来自业务已经启用的后端模块，例如 file、captcha、org、system、auth。
 
+### 详情页基础组件
+
+详情骨架拆成四个可以独立使用的基础组件；从根入口导入时不需要逐个安装：
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue';
+import {
+  MangoDescriptionList,
+  MangoDetailSummary,
+  MangoPageBackBar,
+  MangoSideDrawerShell,
+  RichTextViewer,
+  type MangoSideDrawerShellExpose,
+} from '@mango/common';
+
+const drawer = ref<MangoSideDrawerShellExpose>();
+const fields = [
+  { key: 'orderNo', label: '订单编号', value: 'BH20260920001' },
+  { key: 'remark', label: '说明', value: '<p>保函说明</p>', componentType: 'rich-text-preview' as const },
+];
+</script>
+
+<template>
+  <MangoSideDrawerShell ref="drawer" title="节点过程" :show-trigger="false">
+    <template #main>
+      <MangoPageBackBar title="保函详情" @back="$router.back()" @refresh="loadDetail" />
+      <MangoDetailSummary title="履约保函" :fields="[{ key: 'amount', label: '金额', value: '100,000.00' }]" />
+      <MangoDescriptionList :items="fields" />
+    </template>
+    <WorkflowTimeline />
+  </MangoSideDrawerShell>
+
+  <el-button @click="drawer?.open()">查看节点过程</el-button>
+</template>
+```
+
+- `MangoPageBackBar` 默认展示刷新按钮；返回和刷新只发出事件。只有设置 `navigateOnBack` 时才会调用宿主 Vue Router，此时必须同时提供 `backTo`。
+- `MangoSideDrawerShell` 默认提供右下角按钮和右侧抽屉，支持 `v-model`、`showTrigger`，并暴露 `open()`、`close()`、`toggle()`。
+- `MangoDetailSummary` 展示标题、标签和右侧摘要字段，数据和状态语义均由消费方传入。
+- `MangoDescriptionList` 支持 `items` 或 `groups` 两种互斥数据形式、`key-value/table` 两种展示形式、字段 Slot、分组头扩展 Slot 和内置富文本项。
+- `RichTextViewer` 会过滤不安全 HTML，解析 `mango-file:<id>` 资源；受保护图片通过鉴权请求生成临时 Blob URL。点击托管资源会发出 `preview-request`，由组合层决定使用哪个预览弹框。
+
+基础组件也可以使用包内公开子路径按需导入，例如：
+
+```ts
+import MangoDescriptionList from '@mango/common/components/MangoDescriptionList/index.vue';
+```
+
 ## 4. 配置说明
 
 ### Tags View Route Snapshot
@@ -352,10 +462,13 @@ API 加密环境变量：
 | `MangoListPage`                                                           | 管理后台列表页外壳，按搜索区和列表区组织页面，不渲染额外页面标题。                             |
 | `MangoSearchPanel`                                                        | 列表页搜索面板，统一字段栅格、按钮位置、展开收起和查询/重置事件。                              |
 | `MangoListPanel`                                                          | 列表卡片，统一功能区、表格区和分页区位置。                                                     |
+| `MangoDataTable`                                                          | 统一数据表格，提供卡片切换、列配置、展开、选择、序号、操作、状态和分页事件。                   |
+| `MangoTableCell`                                                          | 通用单元格，提供 text/status/tag/button/input/select/radio/custom 类型。                       |
+| `MangoStatusText`                                                         | 主题化状态文本；文案和 tone 由消费方传入，不内置业务状态映射。                                 |
 | `MangoDetailPage`                                                         | 详情页外壳，提供返回栏、内容区和底部操作栏。                                                   |
 | `MangoFormPage`                                                           | 表单页外壳，提供返回栏、内容区和底部操作栏。                                                   |
 | `MangoPageSection`                                                        | 详情页和表单页的业务分组容器。                                                                 |
-| `Pagination`                                                              | 分页器。                                                                                       |
+| `Pagination`                                                              | 分页器，支持对齐、`page/limit` 双向绑定和同轮变更事件合并。                                    |
 | `MangoDialog`                                                             | 管理端通用弹框外壳，统一标题区、关闭按钮、内容滚动区和底部按钮区。                             |
 | `MangoAvatar`                                                             | 统一显示普通图片地址或 `mango-file:{id}` 文件标识，并负责受保护头像的下载回显和对象 URL 回收。 |
 | `DictSelect`、`DictTag`                                                   | 字典选择和展示。                                                                               |
@@ -365,6 +478,25 @@ API 加密环境变量：
 | `IconSelector`、`TreeSelect`、`RightToolbar`                              | 管理端通用选择和工具栏。                                                                       |
 | `FormCreate`、`Sign`、`CodeEditor`、`Editor`、`RichTextViewer`、`ECharts` | 表单、签名、代码、富文本编辑/预览和图表。                                                      |
 | `SSE`、`Websocket`、`Chat`                                                | 实时通信和聊天 UI。                                                                            |
+
+`MangoDataTable` 核心契约：
+
+| 类型   | 名称                                                               | 说明                                                                    |
+| ------ | ------------------------------------------------------------------ | ----------------------------------------------------------------------- |
+| props  | `rows`、`columns`、`rowKey`                                        | 必填的行数据、列定义和稳定行标识。后端 ID 应按字符串传递。              |
+| props  | `card`                                                             | 是否使用列表卡片表面，默认 `true`；`false` 仅移除表面样式，不切换实现。 |
+| props  | `loading`、`error`、`retryable`、`emptyText`                       | 由消费方控制加载、失败、重试入口和空态。                                |
+| props  | `mode`、`showModeSwitch`、`expand`                                 | 平铺/展开模式及列表展开列配置，支持 `v-model:mode`。                    |
+| props  | `showIndex`、`showSelection`、`selectable`                         | 序号列、选择列及行是否可选判断；选择列不依赖必须传入判断函数。          |
+| props  | `operation`、`pagination`                                          | 操作列和分页配置；操作只返回 key 与行上下文，不执行业务动作。           |
+| emits  | `cell-change`、`action`、`page-change`、`selection-change`         | 单元格、操作、分页和选择变化事件。                                      |
+| emits  | `update:mode`、`mode-change`、`retry`                              | 展示模式和重试意图事件。                                                |
+| slots  | `actions`、`view-actions`、列 `slot` 或 `field` 名                 | 顶部操作区、视图操作区和业务自定义单元格。                              |
+| expose | `clearSelection()`、`toggleRowSelection()`、`toggleRowExpansion()` | 类型安全访问底层 Element Plus Table 的常用选择和展开动作。              |
+
+`MangoTableCell` 会直接修改传入行的可编辑字段，并在提交后通过 `change` 提供 `previousValue` 和新值；只读业务可仅使用 text/status/tag/custom。`MangoDataTable` 不请求接口、不读取路由或 store，也不根据业务状态推断文案、tone 或权限。
+
+表头背景和文字颜色分别由 `--mango-table-header-bg`、`--mango-table-header-text` 提供。默认主题和 `admin-standard` 使用 `#eef1f5` / `#000000`，dark 与 compact 主题使用各自语义色；消费系统可在主题容器覆盖这两个变量。组件保留同值 fallback，确保宿主仍加载旧版主题包时不会退回 Element Plus 的透明表头。
 
 `Chat` 只负责聊天 UI，不再内置具体传输。升级本批次时，所有调用方必须显式传入 `stream` provider；provider 负责鉴权、租户、服务选择、取消和把真实 AI 事件回调给组件：
 

@@ -3,6 +3,24 @@ export { default as FileStorageView } from './views/storage-configs/index.vue';
 export { default as FileSettingsView } from './views/settings/index.vue';
 export { default as FilePreviewPanel } from './components/FilePreviewPanel.vue';
 export type { FilePreviewPanelProps } from './components/FilePreviewPanel.types';
+export { default as MangoFilePreviewDialog } from './components/MangoFilePreviewDialog.vue';
+export type {
+  MangoFilePreviewDialogEmits,
+  MangoFilePreviewDialogProps,
+} from './components/MangoFilePreviewDialog.types';
+export { default as MangoFileList } from './components/MangoFileList.vue';
+export type {
+  MangoFileListCellSlotProps,
+  MangoFileListCellStyle,
+  MangoFileListColumn,
+  MangoFileListColumnType,
+  MangoFileListFile,
+  MangoFileListFileActionsSlotProps,
+  MangoFileListFileMeta,
+  MangoFileListProps,
+  MangoFileListRow,
+  MangoFileListTableStyle,
+} from './components/MangoFileList.types';
 export { default as MUpload } from './components/MUpload.vue';
 export type {
   UploadColumn,

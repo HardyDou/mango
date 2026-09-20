@@ -22,6 +22,18 @@
       "types": "./dist/components/Pagination/index.d.ts",
       "import": "./dist/components/Pagination/index.js"
     },
+    "./components/MangoDataTable/index.vue": {
+      "types": "./dist/components/MangoDataTable/index.d.ts",
+      "import": "./dist/components/MangoDataTable/index.js"
+    },
+    "./components/MangoDataTable/MangoTableCell.vue": {
+      "types": "./dist/components/MangoDataTable/MangoTableCell.d.ts",
+      "import": "./dist/components/MangoDataTable/MangoTableCell.js"
+    },
+    "./components/MangoStatusText/index.vue": {
+      "types": "./dist/components/MangoStatusText/index.d.ts",
+      "import": "./dist/components/MangoStatusText/index.js"
+    },
     "./components/MangoListPage/index.vue": {
       "types": "./dist/components/MangoListPage/index.d.ts",
       "import": "./dist/components/MangoListPage/index.js"
@@ -45,6 +57,22 @@
     "./components/MangoPageSection/index.vue": {
       "types": "./dist/components/MangoPageSection/index.d.ts",
       "import": "./dist/components/MangoPageSection/index.js"
+    },
+    "./components/MangoPageBackBar/index.vue": {
+      "types": "./dist/components/MangoPageBackBar/index.d.ts",
+      "import": "./dist/components/MangoPageBackBar/index.js"
+    },
+    "./components/MangoSideDrawerShell/index.vue": {
+      "types": "./dist/components/MangoSideDrawerShell/index.d.ts",
+      "import": "./dist/components/MangoSideDrawerShell/index.js"
+    },
+    "./components/MangoDetailSummary/index.vue": {
+      "types": "./dist/components/MangoDetailSummary/index.d.ts",
+      "import": "./dist/components/MangoDetailSummary/index.js"
+    },
+    "./components/MangoDescriptionList/index.vue": {
+      "types": "./dist/components/MangoDescriptionList/index.d.ts",
+      "import": "./dist/components/MangoDescriptionList/index.js"
     },
     "./components/IconSelector/index.vue": {
       "types": "./dist/components/IconSelector/index.d.ts",
@@ -147,6 +175,18 @@
         "source": "./components/Pagination/index.vue",
         "kind": "code"
       },
+      "./components/MangoDataTable/index.vue": {
+        "source": "./components/MangoDataTable/index.vue",
+        "kind": "code"
+      },
+      "./components/MangoDataTable/MangoTableCell.vue": {
+        "source": "./components/MangoDataTable/MangoTableCell.vue",
+        "kind": "code"
+      },
+      "./components/MangoStatusText/index.vue": {
+        "source": "./components/MangoStatusText/index.vue",
+        "kind": "code"
+      },
       "./components/MangoListPage/index.vue": {
         "source": "./components/MangoListPage/index.vue",
         "kind": "code"
@@ -169,6 +209,22 @@
       },
       "./components/MangoPageSection/index.vue": {
         "source": "./components/MangoPageSection/index.vue",
+        "kind": "code"
+      },
+      "./components/MangoPageBackBar/index.vue": {
+        "source": "./components/MangoPageBackBar/index.vue",
+        "kind": "code"
+      },
+      "./components/MangoSideDrawerShell/index.vue": {
+        "source": "./components/MangoSideDrawerShell/index.vue",
+        "kind": "code"
+      },
+      "./components/MangoDetailSummary/index.vue": {
+        "source": "./components/MangoDetailSummary/index.vue",
+        "kind": "code"
+      },
+      "./components/MangoDescriptionList/index.vue": {
+        "source": "./components/MangoDescriptionList/index.vue",
         "kind": "code"
       },
       "./components/IconSelector/index.vue": {

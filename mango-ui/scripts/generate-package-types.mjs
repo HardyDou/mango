@@ -198,12 +198,18 @@ function generateCommonSubpathTypes(root) {
 
   const componentNames = [
     'Pagination',
+    'MangoDataTable',
+    'MangoStatusText',
     'MangoListPage',
     'MangoSearchPanel',
     'MangoListPanel',
     'MangoDetailPage',
     'MangoFormPage',
     'MangoPageSection',
+    'MangoPageBackBar',
+    'MangoSideDrawerShell',
+    'MangoDetailSummary',
+    'MangoDescriptionList',
     'IconSelector',
     'DictTag',
     'DictSelect',
@@ -221,6 +227,19 @@ function generateCommonSubpathTypes(root) {
     );
     writeFile(join(distDir, 'components', name, 'index.js'), `export { ${name} as default } from '../../index.js';`);
   }
+
+  writeFile(
+    join(distDir, 'components/MangoDataTable/MangoTableCell.d.ts'),
+    [
+      "import type { DefineComponent } from 'vue';",
+      'declare const component: DefineComponent<Record<string, unknown>, Record<string, unknown>, unknown>;',
+      'export default component;',
+    ].join('\n'),
+  );
+  writeFile(
+    join(distDir, 'components/MangoDataTable/MangoTableCell.js'),
+    "export { MangoTableCell as default } from '../../index.js';",
+  );
 }
 
 function removeDeclarations(dir) {
