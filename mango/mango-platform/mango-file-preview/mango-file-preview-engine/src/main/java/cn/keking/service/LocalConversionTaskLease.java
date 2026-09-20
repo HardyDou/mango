@@ -20,5 +20,7 @@ public final class LocalConversionTaskLease implements ConversionTaskLease {
         return proposedExpiry.equals(result);
     }
     @Override
-    public void release(String key) { leases.remove(key); }
+    public void release(String key) {
+        leases.remove(key);
+    }
 }

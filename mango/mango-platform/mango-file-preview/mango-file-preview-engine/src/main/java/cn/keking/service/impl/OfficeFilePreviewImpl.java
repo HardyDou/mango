@@ -14,6 +14,7 @@ import cn.keking.utils.KkFileUtils;
 import cn.keking.utils.OfficeUtils;
 import cn.keking.utils.WebUtils;
 import cn.keking.web.filter.BaseUrlFilter;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.jodconverter.core.office.InstalledOfficeManagerHolder;
 import org.jodconverter.core.office.OfficeException;
 import org.jodconverter.core.office.OfficeManager;
@@ -67,7 +68,7 @@ public class OfficeFilePreviewImpl implements FilePreview {
     @Value("${office.plugin.task.timeout:5m}")
     private Duration conversionTimeout = Duration.ofMinutes(DEFAULT_CONVERSION_TIMEOUT_MINUTES);
 
-    @SuppressWarnings("EI_EXPOSE_REP2")
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public OfficeFilePreviewImpl(FileHandlerService fileHandlerService, OfficeToPdfService officeToPdfService, OtherFilePreviewImpl otherFilePreview, PdfToJpgService pdftojpgservice, ConversionCoordinator conversionCoordinator) {
         this.fileHandlerService = fileHandlerService;
         this.officeToPdfService = officeToPdfService;
