@@ -22,7 +22,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.stream.IntStream;
 
 /**
  * 创建文件转换器
@@ -35,12 +37,22 @@ import java.util.Arrays;
 @ConditionalOnProperty(name = "office.plugin.enabled", havingValue = "true", matchIfMissing = true)
 public class OfficePluginManager {
 
+    private static final int MAX_PORT = 65_535;
+    private static final int PROCESS_BUFFER_SIZE = 256;
+    private static final int MAC_OFFICE_PROCESS_MATCH_INDEX = 3;
+
     private final Logger logger = LoggerFactory.getLogger(OfficePluginManager.class);
 
     private LocalOfficeManager officeManager;
 
-    @Value("${office.plugin.server.ports:2001,2002}")
+    @Value("${office.plugin.server.ports:}")
     private String serverPorts;
+
+    @Value("${mango.file-preview.conversion.worker-count:2}")
+    private int conversionWorkerCount;
+
+    @Value("${mango.file-preview.conversion.office-base-port:2001}")
+    private int officeBasePort;
 
     @Value("${office.plugin.task.timeout:5m}")
     private String timeOut;
@@ -65,8 +77,7 @@ public class OfficePluginManager {
             logger.warn("检测到有正在运行的office进程，已自动结束该进程");
         }
         try {
-            String[] portsString = serverPorts.split(",");
-            int[] ports = Arrays.stream(portsString).mapToInt(Integer::parseInt).toArray();
+            int[] ports = resolvePorts();
             long timeout = DurationStyle.detectAndParse(timeOut).toMillis();
             long taskexecutiontimeout = DurationStyle.detectAndParse(taskExecutionTimeout).toMillis();
             officeManager = LocalOfficeManager.builder()
@@ -84,6 +95,30 @@ public class OfficePluginManager {
         }
     }
 
+    private int[] resolvePorts() {
+        if (conversionWorkerCount <= 0) {
+            throw new IllegalStateException("mango.file-preview.conversion.worker-count must be positive");
+        }
+        if (StringUtils.isNotBlank(serverPorts)) {
+            int[] configuredPorts = Arrays.stream(serverPorts.split(","))
+                    .map(String::trim)
+                    .filter(StringUtils::isNotBlank)
+                    .mapToInt(Integer::parseInt)
+                    .toArray();
+            if (configuredPorts.length != conversionWorkerCount) {
+                throw new IllegalStateException("office.plugin.server.ports 数量必须与转换 worker 数量一致: workers="
+                        + conversionWorkerCount + ", ports=" + configuredPorts.length);
+            }
+            return configuredPorts;
+        }
+        if (officeBasePort <= 0 || officeBasePort + conversionWorkerCount - 1 > MAX_PORT) {
+            throw new IllegalStateException("mango.file-preview.conversion.office-base-port 配置无效");
+        }
+        return IntStream.range(0, conversionWorkerCount)
+                .map(offset -> officeBasePort + offset)
+                .toArray();
+    }
+
     private boolean killProcess() {
         boolean flag = false;
         try {
@@ -91,11 +126,11 @@ public class OfficePluginManager {
                 Process p = Runtime.getRuntime().exec("cmd /c tasklist ");
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 InputStream os = p.getInputStream();
-                byte[] b = new byte[256];
+                byte[] b = new byte[PROCESS_BUFFER_SIZE];
                 while (os.read(b) > 0) {
                     baos.write(b);
                 }
-                String s = baos.toString();
+                String s = baos.toString(StandardCharsets.UTF_8);
                 if (s.contains("soffice.bin")) {
                     Runtime.getRuntime().exec("taskkill /im " + "soffice.bin" + " /f");
                     flag = true;
@@ -104,12 +139,12 @@ public class OfficePluginManager {
                 Process p = Runtime.getRuntime().exec(new String[]{"sh", "-c", "ps -ef | grep " + "soffice.bin"});
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 InputStream os = p.getInputStream();
-                byte[] b = new byte[256];
+                byte[] b = new byte[PROCESS_BUFFER_SIZE];
                 while (os.read(b) > 0) {
                     baos.write(b);
                 }
-                String s = baos.toString();
-                if (StringUtils.ordinalIndexOf(s, "soffice.bin", 3) > 0) {
+                String s = baos.toString(StandardCharsets.UTF_8);
+                if (StringUtils.ordinalIndexOf(s, "soffice.bin", MAC_OFFICE_PROCESS_MATCH_INDEX) > 0) {
                     String[] cmd = {"sh", "-c", "kill -15 `ps -ef|grep " + "soffice.bin" + "|awk 'NR==1{print $2}'`"};
                     Runtime.getRuntime().exec(cmd);
                     flag = true;
@@ -118,11 +153,11 @@ public class OfficePluginManager {
                 Process p = Runtime.getRuntime().exec(new String[]{"sh", "-c", "ps -ef | grep " + "soffice.bin" + " |grep -v grep | wc -l"});
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 InputStream os = p.getInputStream();
-                byte[] b = new byte[256];
+                byte[] b = new byte[PROCESS_BUFFER_SIZE];
                 while (os.read(b) > 0) {
                     baos.write(b);
                 }
-                String s = baos.toString();
+                String s = baos.toString(StandardCharsets.UTF_8);
                 if (!s.startsWith("0")) {
                     String[] cmd = {"sh", "-c", "ps -ef | grep soffice.bin | grep -v grep | awk '{print \"kill -9 \"$2}' | sh"};
                     Runtime.getRuntime().exec(cmd);

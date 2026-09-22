@@ -11,7 +11,7 @@ class FilePreviewApiTest {
 
     @Test
     void preview_文件Id约束由Api契约统一声明() throws NoSuchMethodException {
-        Method preview = FilePreviewApi.class.getMethod("preview", Long.class);
+        Method preview = FilePreviewApi.class.getMethod("preview", Long.class, Boolean.class);
 
         NotNull notNull = preview.getParameters()[0].getAnnotation(NotNull.class);
 

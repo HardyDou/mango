@@ -84,7 +84,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -112,7 +111,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
-
 /**
  * 文件服务实现。
  */
@@ -122,7 +120,6 @@ import java.util.zip.ZipOutputStream;
 @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
         justification = "Spring collaborators are container-managed shared services; defensive copies are not applicable.")
 public class FileService implements IFileService, IFileContentProvider {
-
     private static final DateTimeFormatter DATE_PATH = DateTimeFormatter.ofPattern("yyyy/MM/dd");
     private static final int BIZ_META_MAX_LENGTH = 4000;
     private static final long DEFAULT_CHUNK_SIZE = 10L * 1024 * 1024;
@@ -143,7 +140,6 @@ public class FileService implements IFileService, IFileContentProvider {
             ConvertFormat.TIFF,
             ConvertFormat.DOC,
             ConvertFormat.DOCX);
-
     private final FileStorageRouter fileStorageRouter;
     private final IFileStorageConfigService storageConfigService;
     private final IFileSettingsService settingsService;
@@ -160,7 +156,6 @@ public class FileService implements IFileService, IFileContentProvider {
     private final List<ConvertApi> convertApis;
     private final List<RenderApi> renderApis;
     private final FilePackageSizeControlProcessor filePackageSizeControlProcessor;
-
     @Override
     @Transactional(rollbackFor = Exception.class)
     public FileRecordVO upload(MultipartFile file, SaveFileCommand command) {
@@ -169,7 +164,6 @@ public class FileService implements IFileService, IFileContentProvider {
         FileInput input = FileInput.fromMultipart(file);
         return save(input, command);
     }
-
     @Override
     @Transactional(rollbackFor = Exception.class)
     public FileRecordVO save(SaveFileCommand command) {
@@ -180,8 +174,23 @@ public class FileService implements IFileService, IFileContentProvider {
             return Require.fail(FileCode.FILE_READ_FAILED);
         }
     }
-
-
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public FileRecordVO savePreviewArtifact(SaveFileCommand command) {
+        Require.notNull(command, FileCode.FILE_EMPTY);
+        try (FileInput input = FileInput.fromCommand(command)) {
+            return save(input, command, true);
+        } catch (IOException e) {
+            return Require.fail(FileCode.FILE_READ_FAILED);
+        }
+    }
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public FileRecordVO savePreviewArtifact(MultipartFile file, SaveFileCommand command) {
+        Require.notNull(file, FileCode.FILE_EMPTY);
+        Require.notNull(command, FileCode.FILE_EMPTY);
+        return save(FileInput.fromMultipart(file), command, true);
+    }
     @Override
     @Transactional(rollbackFor = Exception.class)
     public FileRecordVO packageFiles(FilePackageCommand command) {
@@ -202,7 +211,6 @@ public class FileService implements IFileService, IFileContentProvider {
         saveCommand.setDirectoryId(command.getDirectoryId());
         return save(saveCommand);
     }
-
     @Override
     @Transactional(rollbackFor = Exception.class)
     public FilePackageResultVO packageFilesWithSizeControl(FilePackageSizeControlCommand command) {
@@ -221,7 +229,6 @@ public class FileService implements IFileService, IFileContentProvider {
             return Require.fail(FileCode.FILE_STORE_FAILED);
         }
     }
-
     private SaveFileCommand packageSaveCommand(FilePackageCommand command, String fileName, long fileSize) {
         SaveFileCommand saveCommand = new SaveFileCommand();
         saveCommand.setFileName(fileName);
@@ -235,7 +242,6 @@ public class FileService implements IFileService, IFileContentProvider {
         saveCommand.setDirectoryId(command.getDirectoryId());
         return saveCommand;
     }
-
     @Override
     @Transactional(rollbackFor = Exception.class)
     public FileRecordVO mergeToPdf(FileMergePdfCommand command) {
@@ -257,7 +263,6 @@ public class FileService implements IFileService, IFileContentProvider {
         saveCommand.setDirectoryId(command.getDirectoryId());
         return save(saveCommand);
     }
-
     private byte[] buildZipPackage(FilePackageCommand command) {
         Set<String> paths = new HashSet<>();
         try (java.io.ByteArrayOutputStream output = new java.io.ByteArrayOutputStream();
@@ -282,7 +287,6 @@ public class FileService implements IFileService, IFileContentProvider {
             return Require.fail(FileCode.FILE_STORE_FAILED);
         }
     }
-
     private byte[] buildMergedPdf(FileMergePdfCommand command, String pdfFileName) {
         List<PdfSourceVO> sources = new ArrayList<>();
         for (FileMergePdfEntryCommand entry : command.getEntries()) {
@@ -306,7 +310,6 @@ public class FileService implements IFileService, IFileContentProvider {
             return Require.fail(FileCode.FILE_READ_FAILED);
         }
     }
-
     private byte[] convertToPdf(FileDownloadVO download) {
         Require.notNull(download, FileCode.FILE_NOT_FOUND);
         ConvertFormat sourceFormat = resolveSourceFormat(download);
@@ -331,7 +334,6 @@ public class FileService implements IFileService, IFileContentProvider {
             return Require.fail(FileCode.FILE_READ_FAILED);
         }
     }
-
     private ConvertFormat resolveSourceFormat(FileDownloadVO download) {
         String extension = fileExt(normalizeFileName(download.fileName()));
         ConvertFormat format = ConvertFormat.parse(extension)
@@ -340,7 +342,6 @@ public class FileService implements IFileService, IFileContentProvider {
         Require.isTrue(MERGE_PDF_SOURCE_FORMATS.contains(format), FileCode.FILE_EXTENSION_NOT_ALLOWED);
         return format;
     }
-
     private ConvertFormat parseContentType(String contentType) {
         if (!StringUtils.hasText(contentType)) {
             return null;
@@ -356,14 +357,12 @@ public class FileService implements IFileService, IFileContentProvider {
             default -> null;
         };
     }
-
     private String resolvePdfSourceName(FileMergePdfEntryCommand entry, FileDownloadVO download) {
         if (StringUtils.hasText(entry.getTitle())) {
             return normalizeFileName(entry.getTitle());
         }
         return normalizeFileName(download.fileName());
     }
-
     private FileMergeTargetFormat resolveMergeTargetFormat(String targetFormat) {
         try {
             return FileMergeTargetFormat.of(targetFormat);
@@ -371,9 +370,11 @@ public class FileService implements IFileService, IFileContentProvider {
             return Require.fail(FileCode.FILE_EXTENSION_NOT_ALLOWED);
         }
     }
-
     private FileRecordVO save(FileInput input, SaveFileCommand command) {
-        validateUpload(input);
+        return save(input, command, false);
+    }
+    private FileRecordVO save(FileInput input, SaveFileCommand command, boolean previewArtifact) {
+        validateUpload(input, previewArtifact);
         Long tenantId = requireTenantId();
         Long userId = MangoContextHolder.userId();
         Long resolvedDirectoryId = normalizeDirectoryId(command.getDirectoryId());
@@ -398,7 +399,6 @@ public class FileService implements IFileService, IFileContentProvider {
                     input.fileSize, input.contentType, 0L);
             createHashMapping(tenantId, storageConfig, hash, input.fileSize, fileObject, settings);
         }
-
         FileRecordEntity entity = createFileRecord(tenantId,
                 userId,
                 fileObject,
@@ -418,7 +418,6 @@ public class FileService implements IFileService, IFileContentProvider {
         incrementObjectRefCount(fileObject.getId());
         return toVO(entity);
     }
-
     @Override
     @Transactional(rollbackFor = Exception.class)
     public List<FileRecordVO> uploadBatch(MultipartFile[] files, SaveFileCommand command) {
@@ -430,7 +429,6 @@ public class FileService implements IFileService, IFileContentProvider {
                 .collect(Collectors.toList());
         return result;
     }
-
     @Override
     @Transactional(rollbackFor = Exception.class)
     public FileRecordVO saveGenerated(byte[] content, SaveFileCommand command) {
@@ -481,7 +479,6 @@ public class FileService implements IFileService, IFileContentProvider {
             return Require.fail(FileCode.FILE_STORE_FAILED);
         }
     }
-
     @Override
     public PageResult<FileRecordVO> page(FileRecordPageQuery query) {
         FileRecordPageQuery resolved = query == null ? new FileRecordPageQuery() : query;
@@ -493,12 +490,10 @@ public class FileService implements IFileService, IFileContentProvider {
                 .collect(Collectors.toList());
         return PageResult.of(records, page.getTotal(), page.getCurrent(), page.getSize());
     }
-
     @Override
     public FileRecordVO get(Long id) {
         return toVO(selectVisible(id));
     }
-
     @Override
     public FilePreviewVO preview(Long id) {
         FileRecordEntity record = selectVisible(id);
@@ -513,12 +508,10 @@ public class FileService implements IFileService, IFileContentProvider {
         fillDirectAccess(vo, record, settings);
         return vo;
     }
-
     @Override
     public FileDownloadVO download(Long id) {
         return downloadForService(id);
     }
-
     @Override
     public FileDownloadVO download(FileDownloadOptions options) {
         Require.notNull(options, FileCode.FILE_NOT_FOUND);
@@ -907,13 +900,15 @@ public class FileService implements IFileService, IFileContentProvider {
         return records;
     }
 
-    private void validateUpload(FileInput input) {
+    private void validateUpload(FileInput input, boolean previewArtifact) {
         Require.notNull(input, FileCode.FILE_EMPTY);
         FileInput requiredInput = Objects.requireNonNull(input);
         Require.notNull(requiredInput.streamSupplier, FileCode.FILE_EMPTY);
         Require.isFalse(requiredInput.empty, FileCode.FILE_EMPTY);
         long maxSize = settingsService.current().getMaxSize();
-        Require.isTrue(requiredInput.fileSize <= maxSize, FileCode.FILE_SIZE_EXCEEDED);
+        if (!previewArtifact) {
+            Require.isTrue(requiredInput.fileSize <= maxSize, FileCode.FILE_SIZE_EXCEEDED);
+        }
     }
 
     private void validateExtension(String fileExt, FileSettingsVO settings) {

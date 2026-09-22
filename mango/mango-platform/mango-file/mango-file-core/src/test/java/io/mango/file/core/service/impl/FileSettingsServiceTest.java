@@ -50,6 +50,7 @@ class FileSettingsServiceTest {
         assertThat(existing.getAccessTokenExpireSeconds()).isEqualTo(86400L);
         assertThat(existing.getPreviewProviderUrl()).isEqualTo("/file-preview/files/preview");
         assertThat(existing.getPreviewExpireSeconds()).isEqualTo(86400L);
+        assertThat(existing.getPreviewMaxSize()).isEqualTo(200L * 1024 * 1024);
         assertThat(existing.getArchiveRetainEnabled()).isOne();
         assertThat(existing.getArchiveRetainDays()).isEqualTo(180);
         assertThat(existing.getArchiveRestoreEnabled()).isZero();
@@ -99,6 +100,7 @@ class FileSettingsServiceTest {
         command.setAccessTokenExpireSeconds(86400L);
         command.setPreviewProviderUrl("/file-preview/files/preview");
         command.setPreviewExpireSeconds(86400L);
+        command.setPreviewMaxSize(200L * 1024 * 1024);
         command.setPreviewExternalExtensions(List.of());
         command.setArchiveRetainEnabled(true);
         command.setArchiveRetainDays(180);

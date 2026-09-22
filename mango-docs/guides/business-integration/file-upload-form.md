@@ -10,6 +10,8 @@
 
 > 2026-09-21 分类卡片上传组件影响：`@mango/file` 新增 `MangoAttachmentUploadGrid`，用于按资料分类配置必填、数量、格式和大小规则，并提供点击/拖拽上传、替换、预览、删除、插槽和 `validate()`。组件继续调用同一 `fileApi.upload()`，不改变上传 API、文件 ID 持久化、权限或租户边界；不需要分类卡片交互的现有表单继续使用 `MUpload`。
 
+> 2026-09-23 Issue #972 预览任务优化影响：Office 文档预览改为按文件版本异步排队并复用已生成的 PDF，PDF 和转换产物统一通过 `file-preview` 的 `preview-entry`/PDF.js 页面展示；图片、音视频、文本、HTML、表格和 CAD/STL 等直接支持格式不进入 Office 转换队列。文件配置页新增 `previewMaxSize`（默认 200 MiB），超过限制时用户可以下载查看或明确继续等待转换。业务表单仍只保存 `fileId`/`fileIds`，上传、权限、租户和附件关联接入方式不变；需要在线转换时确认 `mango-file-preview` 与 `mango-infra-fileproc` 已启用。
+
 ## 1. 适用场景
 
 业务表单需要上传合同、图片、附件或导入文件，并在详情页回显、下载或预览。

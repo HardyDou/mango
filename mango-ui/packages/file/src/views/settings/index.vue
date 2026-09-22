@@ -241,6 +241,20 @@
                 <span class="unit-text">秒</span>
               </el-form-item>
             </el-col>
+            <el-col :xs="24" :md="12">
+              <el-form-item label="Office 预览上限" prop="previewMaxSize">
+                <el-input-number
+                  v-model="previewMaxSizeMb"
+                  :min="1"
+                  :max="serverUploadLimit.maxFileSizeMb"
+                  :precision="0"
+                  controls-position="right"
+                  class="number-input"
+                />
+                <span class="unit-text">MB</span>
+              </el-form-item>
+              <div class="form-tip">超过此大小的 DOC、DOCX、PPT、PPTX 不进入转换队列，提示下载查看。</div>
+            </el-col>
           </el-row>
           <el-form-item label="外部预览类型">
             <el-input
@@ -334,12 +348,20 @@ const multipartThresholdMb = computed({
   },
 });
 
+const previewMaxSizeMb = computed({
+  get: () => Math.max(1, Math.round(Number(form.previewMaxSize || 0) / 1024 / 1024)),
+  set: (value: number) => {
+    form.previewMaxSize = Number(value || 1) * 1024 * 1024;
+  },
+});
+
 const rules: FormRules = {
   maxSize: [{ required: true, message: '请输入单文件大小限制', trigger: 'blur' }],
   multipartThreshold: [{ required: true, message: '请输入分片临界值', trigger: 'blur' }],
   directUploadExpireSeconds: [{ required: true, message: '请输入直传有效期', trigger: 'blur' }],
   accessTokenExpireSeconds: [{ required: true, message: '请输入访问有效期', trigger: 'blur' }],
   previewExpireSeconds: [{ required: true, message: '请输入预览有效期', trigger: 'blur' }],
+  previewMaxSize: [{ required: true, message: '请输入 Office 预览大小', trigger: 'blur' }],
   archiveRetainDays: [{ required: true, message: '请输入归档保留天数', trigger: 'blur' }],
 };
 

@@ -126,6 +126,10 @@ public class SaveFileSettingsCommand implements Serializable {
     @Schema(description = "文档预览访问有效期，单位秒")
     private Long previewExpireSeconds;
 
+    @Min(value = 1, message = "Office 文档预览大小必须大于0")
+    @Schema(description = "Office 文档在线预览最大大小，单位字节；未传时使用默认值 200 MiB")
+    private Long previewMaxSize;
+
     @Schema(description = "可交由文档预览服务处理的扩展名")
     @NotNull(message = "文档预览扩展名不能为空")
     @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",

@@ -5,6 +5,7 @@ import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.enums.FileCode;
 import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.file.api.vo.FileRecordVO;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,6 +19,10 @@ import java.util.Map;
 public interface IFileContentProvider {
 
     FileRecordVO save(SaveFileCommand command);
+
+    default FileRecordVO savePreviewArtifact(SaveFileCommand command) {
+        return save(command);
+    }
 
     FileDownloadVO download(Long id);
 
@@ -71,8 +76,13 @@ public interface IFileContentProvider {
         return name.isEmpty() ? "download" : name;
     }
 
+    @SuppressFBWarnings(value = "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE",
+            justification = "The parent is validated before resolving unique targets")
     private Path uniqueTarget(Path target) throws IOException {
         Path directory = target.getParent();
+        if (directory == null) {
+            throw new BizException(FileCode.STORAGE_PATH_INVALID.getCode(), FileCode.STORAGE_PATH_INVALID.getMessage());
+        }
         String fileName = target.getFileName().toString();
         String baseName = fileName;
         String extension = "";

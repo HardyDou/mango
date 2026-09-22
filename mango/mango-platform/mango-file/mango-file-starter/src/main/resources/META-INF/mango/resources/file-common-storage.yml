@@ -46,7 +46,7 @@ mango:
               value: 系统默认本地文件存储
       FILE_SETTINGS:
         - id: "2026061801000000101"
-          version: 5
+          version: 6
           biz-key: file.settings.default
           name: 文件中心默认配置
           target-module: file
@@ -115,6 +115,9 @@ mango:
             previewExpireSeconds:
               type: LONG
               value: 86400
+            previewMaxSize:
+              type: LONG
+              value: 209715200
             previewExternalExtensions:
               type: STRING
               value: doc,docx,xls,xlsx,xlsm,ppt,pptx,odt,ods,odp,ofd,wps,et,dps,csv,txt,zip,rar,7z,eml,msg

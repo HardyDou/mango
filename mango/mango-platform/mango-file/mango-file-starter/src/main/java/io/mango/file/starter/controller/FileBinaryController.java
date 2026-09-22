@@ -15,6 +15,7 @@ import io.mango.file.core.service.IFileService;
 import io.mango.file.core.service.model.FileDownloadOptions;
 import io.mango.file.core.service.model.ServerFilePart;
 import io.mango.common.contract.BinaryHttpAdapter;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -47,6 +48,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @Validated
 @Tag(name = "文件传输", description = "文件上传、下载、内容预览与分片上传接口")
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Spring-managed service is injected once")
 public class FileBinaryController {
 
     private final IFileService fileService;
@@ -63,6 +65,21 @@ public class FileBinaryController {
             @Parameter(description = "业务自定义参数") @RequestParam(value = "bizMeta", required = false) String bizMeta,
             @Parameter(description = "逻辑目录ID") @RequestParam(value = "directoryId", required = false) Long directoryId) {
         return R.ok(fileService.upload(file, uploadCommand(purpose, accessLevel, bizType, bizId, bizMeta, directoryId)));
+    }
+
+    @PostMapping("/preview-artifacts")
+    @ApiAccess(mode = ApiResourceAccessMode.INTERNAL)
+    @Operation(summary = "保存预览产物", description = "内部文件预览服务保存已生成的预览文件")
+    public R<FileRecordVO> uploadPreviewArtifact(
+            @RequestPart("file") MultipartFile file,
+            @RequestParam(value = "purpose", required = false) String purpose,
+            @RequestParam(value = "accessLevel", required = false) String accessLevel,
+            @RequestParam(value = "bizType", required = false) String bizType,
+            @RequestParam(value = "bizId", required = false) String bizId,
+            @RequestParam(value = "bizMeta", required = false) String bizMeta,
+            @RequestParam(value = "directoryId", required = false) Long directoryId) {
+        return R.ok(fileService.savePreviewArtifact(
+                file, uploadCommand(purpose, accessLevel, bizType, bizId, bizMeta, directoryId)));
     }
 
     @PostMapping("/batch")

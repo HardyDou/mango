@@ -116,6 +116,9 @@ mango:
     source-base-url: http://mango-app:8080
     source-token-expire-seconds: 86400
     standalone-ui-enabled: false
+    conversion:
+      worker-count: 2
+      office-base-port: 2001
 
 office:
   plugin:
@@ -136,10 +139,12 @@ cache:
 | `mango.file-preview.source-base-url` | 当前请求地址 | 预览引擎读取源文件时使用的内部服务地址；部署在网关后时建议配置为集群内部地址，避免流量经外部入口绕回 |
 | `mango.file-preview.source-token-expire-seconds` | `86400` | 入口 token 和源文件 token 有效期，单位秒 |
 | `mango.file-preview.standalone-ui-enabled` | `false` | 是否允许访问 kkFileView 独立首页和演示文件管理入口 |
+| `mango.file-preview.conversion.worker-count` | `2` | 每个预览实例的转换 Worker 数量，同时决定默认 LibreOffice 进程数量 |
+| `mango.file-preview.conversion.office-base-port` | `2001` | 未显式配置端口列表时生成 LibreOffice 端口的起始端口 |
 
 本地单实例开发可以使用 `mango.kv.store.type=memory`；多实例部署应选择 Redis 或 JDBC，确保任意实例都能读取已签发 token。
 
-Office 转换任务按文件内容版本生成稳定缓存名，并在进程内合并并发请求。单体或单实例使用本地租约；独立引擎配置 `cache.type=redis` 后使用 Redisson 租约跨实例合并任务。Office UNO 断连、进程退出或超过 `office.plugin.task.timeout` 时，任务进入失败/超时终态并释放租约，后续请求可以重新提交。转换结果先写入临时文件，校验成功后才进入缓存；源文件通过 `fileId` 对应的 `IFileContentProvider.downloadForService` 流读取，不会为大文件构造整文件字节数组。
+Office 转换任务按文件内容版本生成稳定转换键；同一文件同一版本不区分 PDF/图片模式只允许一个底层转换，不同文件由固定大小的转换 Worker 池并行处理。`mango.file-preview.conversion.worker-count` 是唯一并发配置，默认 2；页面展示、任务消费能力和默认 LibreOffice 进程数量保持一致。未显式配置 `office.plugin.server.ports` 时，端口从 `office-base-port` 开始按 Worker 数量连续生成；显式配置端口列表时，数量不一致会在启动阶段失败。普通 PDF 预览和图片预览共用同一协调器；任务 Worker 使用 infra-kv 分布式槽位和文件版本租约，多个实例共同遵守同一并发上限。请求超时只结束当前请求视图，在途 LibreOffice 任务完成前不会启动同键的第二个转换，避免 `forceUpdatedCache` 形成输出竞争和 Office 断连。转换结果先写入唯一临时文件，校验成功后再原子替换缓存；源文件通过 `fileId` 对应的 `IFileContentProvider.downloadForService` 流读取，不会为大文件构造整文件字节数组。
 
 Office 转换后的 PDF 由 PDF.js 通过同源 `/file-preview/generated?token=...&fileName=...` 读取，不再经 `/getCorsFile` 回源。该接口虽然属于 PUBLIC 路由，但必须携带有效 source token，并校验 token 对应的 `fileId` 与转换文件名；token 过期后不能继续读取转换结果。原始文件仍只由引擎使用同一 source token 从内部 `source-base-url` 下载。
 
@@ -150,6 +155,9 @@ Office 转换后的 PDF 由 PDF.js 通过同源 `/file-preview/generated?token=.
 | `mango.file-preview.engine.port` | `8012` | 预览引擎端口 |
 | `MANGO_FILE_PREVIEW_ENGINE_PORT` | 无 | 环境变量形式的引擎端口 |
 | `KK_SERVER_PORT` | 无 | kkFileView 兼容环境变量 |
+| `mango.file-preview.conversion.worker-count` | `2` | 每个预览实例的转换 Worker 数量；也可使用环境变量 `MANGO_FILE_PREVIEW_WORKER_COUNT` |
+| `mango.file-preview.conversion.office-base-port` | `2001` | 自动生成 LibreOffice 端口的起始端口；也可使用环境变量 `MANGO_FILE_PREVIEW_OFFICE_BASE_PORT` |
+| `KK_OFFICE_PLUGIN_PORTS` | 无 | 显式指定 LibreOffice 端口列表，数量必须与 Worker 数量一致 |
 | `office.xlsx.web.buttons.enabled` | `true` | 是否在 XLS/XLSX Web 预览页显示“跳转 HTML 预览”和“打印”按钮；关闭时 Luckysheet 从页面顶部铺满 |
 | `KK_OFFICE_XLSX_WEB_BUTTONS_ENABLED` | 无 | `office.xlsx.web.buttons.enabled` 的环境变量形式 |
 

@@ -28,6 +28,7 @@ public class FileSettingsResourceHandler implements ResourceHandler {
     private static final long DEFAULT_MULTIPART_THRESHOLD = 20971520L;
     private static final long DEFAULT_DIRECT_UPLOAD_EXPIRE_SECONDS = 900L;
     private static final long DEFAULT_ACCESS_EXPIRE_SECONDS = 86400L;
+    private static final long DEFAULT_PREVIEW_MAX_SIZE = 200L * 1024L * 1024L;
     private static final int ENABLED = 1;
     private static final int DISABLED = 0;
 
@@ -66,6 +67,7 @@ public class FileSettingsResourceHandler implements ResourceHandler {
                 .fieldDescription("accessTokenExpireSeconds", "访问令牌有效期，默认 86400（24 小时）。")
                 .fieldDescription("previewProviderUrl", "外部预览服务地址。")
                 .fieldDescription("previewExpireSeconds", "预览访问有效期，默认 86400（24 小时）。")
+                .fieldDescription("previewMaxSize", "Office 文档在线预览最大大小，单位字节，默认 209715200。")
                 .fieldDescription("previewExternalExtensions", "外部预览扩展名，逗号分隔。")
                 .fieldDescription("archiveRetainEnabled", "是否保留归档记录，默认 1。")
                 .fieldDescription("archiveRetainDays", "归档记录保留天数，默认 180。")
@@ -147,6 +149,7 @@ public class FileSettingsResourceHandler implements ResourceHandler {
         entity.setAccessTokenExpireSeconds(payload.accessTokenExpireSeconds());
         entity.setPreviewProviderUrl(payload.previewProviderUrl());
         entity.setPreviewExpireSeconds(payload.previewExpireSeconds());
+        entity.setPreviewMaxSize(payload.previewMaxSize());
         entity.setPreviewExternalExtensions(payload.previewExternalExtensions());
         entity.setArchiveRetainEnabled(payload.archiveRetainEnabled());
         entity.setArchiveRetainDays(payload.archiveRetainDays());
@@ -192,7 +195,7 @@ public class FileSettingsResourceHandler implements ResourceHandler {
                                    Integer directUploadEnabled, Long directUploadExpireSeconds,
                                    Integer accessTokenEnabled, Integer publicReadRequiresToken,
                                    String accessMode, Long accessTokenExpireSeconds,
-                                   String previewProviderUrl, Long previewExpireSeconds,
+                                   String previewProviderUrl, Long previewExpireSeconds, Long previewMaxSize,
                                    String previewExternalExtensions, Integer archiveRetainEnabled,
                                    Integer archiveRetainDays, Integer archiveRestoreEnabled,
                                    Integer physicalDeleteEnabled) {
@@ -224,6 +227,7 @@ public class FileSettingsResourceHandler implements ResourceHandler {
                     fieldLong(resource, "accessTokenExpireSeconds", false, DEFAULT_ACCESS_EXPIRE_SECONDS),
                     fieldText(resource, "previewProviderUrl", false),
                     fieldLong(resource, "previewExpireSeconds", false, DEFAULT_ACCESS_EXPIRE_SECONDS),
+                    fieldLong(resource, "previewMaxSize", false, DEFAULT_PREVIEW_MAX_SIZE),
                     defaultText(fieldText(resource, "previewExternalExtensions", false),
                             "doc,docx,xls,xlsx,xlsm,ppt,pptx,odt,ods,odp,ofd,wps,et,dps,csv,txt,zip,rar,7z,eml,msg"),
                     fieldInt(resource, "archiveRetainEnabled", false, ENABLED),

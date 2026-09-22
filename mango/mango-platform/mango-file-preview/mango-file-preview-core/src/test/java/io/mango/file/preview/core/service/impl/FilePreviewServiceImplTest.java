@@ -9,6 +9,7 @@ import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.file.api.vo.FileRecordVO;
 import io.mango.file.preview.core.config.FilePreviewProperties;
 import io.mango.file.preview.core.gateway.FilePreviewFileGateway;
+import io.mango.file.preview.core.task.IFilePreviewTaskService;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.kv.api.ITokenStore;
@@ -27,6 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
 
 class FilePreviewServiceImplTest {
 
@@ -44,9 +46,9 @@ class FilePreviewServiceImplTest {
         var enginePreview = service.createEnginePreviewByToken(preview.getPreviewToken());
         var refreshedEnginePreview = service.createEnginePreviewByToken(preview.getPreviewToken());
 
-        assertThat(preview.getPreviewUrl()).startsWith("/file-preview/files/preview-entry?token=");
-        assertThat(enginePreview.getPreviewUrl()).startsWith("/onlinePreview?url=");
-        assertThat(refreshedEnginePreview.getPreviewUrl()).startsWith("/onlinePreview?url=");
+        assertThat(preview.getPreviewUrl()).startsWith("/api/file-preview/files/preview-entry?token=");
+        assertThat(enginePreview.getPreviewUrl()).startsWith("/api/onlinePreview?url=");
+        assertThat(refreshedEnginePreview.getPreviewUrl()).startsWith("/api/onlinePreview?url=");
     }
 
     @Test
@@ -215,7 +217,8 @@ class FilePreviewServiceImplTest {
                                            Clock clock,
                                            StubFileContentProvider contentProvider) {
         FilePreviewFileGateway gateway = new FilePreviewFileGateway(fileApi, contentProvider);
-        return new FilePreviewServiceImpl(gateway, properties, tokenStore, new ObjectMapper(), clock);
+        return new FilePreviewServiceImpl(gateway, properties, tokenStore, new ObjectMapper(), clock,
+                mock(IFilePreviewTaskService.class));
     }
 
     private String sourceUrl(String enginePreviewUrl) {

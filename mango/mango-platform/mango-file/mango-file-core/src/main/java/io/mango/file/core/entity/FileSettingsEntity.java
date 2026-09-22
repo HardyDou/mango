@@ -34,6 +34,7 @@ public class FileSettingsEntity extends FileTenantEntity {
     private Long accessTokenExpireSeconds;
     private String previewProviderUrl;
     private Long previewExpireSeconds;
+    private Long previewMaxSize;
     private String previewExternalExtensions;
     private Integer archiveRetainEnabled;
     private Integer archiveRetainDays;
