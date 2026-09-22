@@ -6,11 +6,11 @@
 
 这个包有三种集成形态：
 
-| 标识                 | 内容                               |
-| -------------------- | ---------------------------------- |
-| `admin-pages`        | 文件管理、存储配置、文件设置页面。 |
-| `business-component` | `MUpload`、`FilePreviewPanel`。    |
-| `api-client`         | 文件、存储配置、文件设置接口封装。 |
+| 标识                 | 内容                                                                                                    |
+| -------------------- | ------------------------------------------------------------------------------------------------------- |
+| `admin-pages`        | 文件管理、存储配置、文件设置页面。                                                                      |
+| `business-component` | `MUpload`、`MangoAttachmentUploadGrid`、`MangoFileList`、`MangoFilePreviewDialog`、`FilePreviewPanel`。 |
+| `api-client`         | 文件、存储配置、文件设置接口封装。                                                                      |
 
 `admin-pages` 面向 Mango 管理后台；官网、营销站或独立前台项目通常不应直接复用这些管理页面。业务页面需要上传或预览文件时，优先使用 `MUpload` 和 `FilePreviewPanel`。
 
@@ -24,6 +24,7 @@
 | 业务表单上传附件或图片                               | `MUpload`。                             |
 | 详情页预览图片、PDF、音视频或文档                    | `FilePreviewPanel`。                    |
 | 工作流运行时表单上传字段                             | `MUpload`。                             |
+| 按资料分类进行卡片式上传                             | `MangoAttachmentUploadGrid`。           |
 
 ## 3. 集成形态
 
@@ -96,6 +97,36 @@ const attachmentIds = ref<string[]>([]);
   />
 </template>
 ```
+
+按资料分类使用卡片上传组件：
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue';
+import {
+  MangoAttachmentUploadGrid,
+  type MangoAttachmentUploadCategory,
+  type MangoAttachmentUploadFile,
+} from '@mango/file';
+import '@mango/file/style.css';
+
+const files = ref<MangoAttachmentUploadFile[]>([]);
+const categories: MangoAttachmentUploadCategory[] = [
+  { key: 'license', name: '营业执照', required: true, minFileCount: 1, maxFileCount: 1, formats: ['pdf'] },
+];
+</script>
+
+<template>
+  <MangoAttachmentUploadGrid
+    v-model="files"
+    :categories="categories"
+    purpose="contract-material"
+    access-level="PRIVATE"
+  />
+</template>
+```
+
+组件支持 `grid` 和 `stacked` 两种布局，保留 `file-status`、`file-note` 插槽，以及 `validate()` 实例方法。它只回写附件关系，不会因为点击删除而删除文件中心中的物理文件。
 
 详情页使用预览组件：
 
@@ -208,12 +239,13 @@ const rows = [
 
 组件导出：
 
-| 导出                     | 标识                 | 用途                                           |
-| ------------------------ | -------------------- | ---------------------------------------------- |
-| `MangoFileList`          | `business-component` | 配置化详情文件列表、相邻分组合并、预览和下载。 |
-| `MangoFilePreviewDialog` | `business-component` | 文件或文本内容预览弹框。                       |
-| `MUpload`                | `business-component` | 上传文件并回写 ID、token 或记录。              |
-| `FilePreviewPanel`       | `business-component` | 预览、下载和打开文件。                         |
+| 导出                        | 标识                 | 用途                                           |
+| --------------------------- | -------------------- | ---------------------------------------------- |
+| `MangoFileList`             | `business-component` | 配置化详情文件列表、相邻分组合并、预览和下载。 |
+| `MangoFilePreviewDialog`    | `business-component` | 文件或文本内容预览弹框。                       |
+| `MangoAttachmentUploadGrid` | `business-component` | 按资料分类的卡片式点击/拖拽上传。              |
+| `MUpload`                   | `business-component` | 上传文件并回写 ID、token 或记录。              |
+| `FilePreviewPanel`          | `business-component` | 预览、下载和打开文件。                         |
 
 `fileApi`：
 

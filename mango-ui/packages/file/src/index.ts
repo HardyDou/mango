@@ -8,6 +8,13 @@ export type {
   MangoFilePreviewDialogEmits,
   MangoFilePreviewDialogProps,
 } from './components/MangoFilePreviewDialog.types';
+export { default as MangoAttachmentUploadGrid } from './components/MangoAttachmentUploadGrid.vue';
+export type {
+  MangoAttachmentUploadCategory,
+  MangoAttachmentUploadFile,
+  MangoAttachmentUploadFileSlotProps,
+  MangoAttachmentUploadGridExpose,
+} from './components/MangoAttachmentUploadGrid.types';
 export { default as MangoFileList } from './components/MangoFileList.vue';
 export type {
   MangoFileListCellSlotProps,
