@@ -62,6 +62,7 @@ public class OfficeFilePreviewImpl implements FilePreview {
     private static final ExecutorService CALLBACK_EXECUTOR = Executors.newFixedThreadPool(3);
 
     private static final int DEFAULT_CONVERSION_TIMEOUT_MINUTES = 5;
+    private static final long CONVERSION_WAIT_BUFFER_MILLIS = 1_000L;
 
     private final FileHandlerService fileHandlerService;
     private final OfficeToPdfService officeToPdfService;
@@ -422,7 +423,7 @@ public class OfficeFilePreviewImpl implements FilePreview {
                 } catch (Exception exception) {
                     throw new CompletionException(exception);
                 }
-            }).get(conversionTimeout.toMillis() + 1_000L, TimeUnit.MILLISECONDS);
+            }).get(conversionTimeout.toMillis() + CONVERSION_WAIT_BUFFER_MILLIS, TimeUnit.MILLISECONDS);
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
             return otherFilePreview.notSupportedFile(model, fileAttribute, "文件转换已中断，请稍后重试");
@@ -437,7 +438,7 @@ public class OfficeFilePreviewImpl implements FilePreview {
                 LOGGER.warn("Office转换等待超时，保留在途任务: {}", cacheName);
                 return otherFilePreview.notSupportedFile(model, fileAttribute, "文件转换较慢，请稍后刷新或下载文件查看");
             }
-            if (cause instanceof OfficeException officeException) {
+            if (cause instanceof OfficeException) {
                 return handleOfficeConversionException(model, fileAttribute, filePath, filePassword,
                         isPwdProtectedOffice);
             }
@@ -457,12 +458,12 @@ public class OfficeFilePreviewImpl implements FilePreview {
 
     private String handleOfficeConversionException(Model model, FileAttribute fileAttribute, String filePath,
                                                    String filePassword, boolean isPwdProtectedOffice) {
-            if (isPwdProtectedOffice && !OfficeUtils.isCompatible(filePath, filePassword)) {
-                model.addAttribute("needFilePassword", true);
-                model.addAttribute("filePasswordError", true);
-                return EXEL_FILE_PREVIEW_PAGE;
-            }
-            return otherFilePreview.notSupportedFile(model, fileAttribute, "抱歉，该文件版本不兼容，文件版本错误。");
+        if (isPwdProtectedOffice && !OfficeUtils.isCompatible(filePath, filePassword)) {
+            model.addAttribute("needFilePassword", true);
+            model.addAttribute("filePasswordError", true);
+            return EXEL_FILE_PREVIEW_PAGE;
+        }
+        return otherFilePreview.notSupportedFile(model, fileAttribute, "抱歉，该文件版本不兼容，文件版本错误。");
     }
 
     private Throwable unwrap(Throwable throwable) {

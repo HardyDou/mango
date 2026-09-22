@@ -1,6 +1,9 @@
 package io.mango.file.preview.core.config;
 
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
@@ -31,19 +34,26 @@ public class FilePreviewProperties {
     private boolean standaloneUiEnabled = false;
 
     /** 转换调度配置。 */
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Spring configuration object is managed by the container"))
+    @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Spring configuration object is managed by the container"))
     private Conversion conversion = new Conversion();
 
     @Data
     public static class Conversion {
 
+        private static final int DEFAULT_WORKER_COUNT = 2;
+        private static final int DEFAULT_OFFICE_BASE_PORT = 2001;
+
         /** 每个预览实例的转换 Worker 数量。 */
         private int workerCount = 2;
 
         /** 未显式配置端口列表时生成 LibreOffice 端口的起始端口。 */
-        private int officeBasePort = 2001;
+        private int officeBasePort = DEFAULT_OFFICE_BASE_PORT;
 
         public int effectiveWorkerCount() {
-            return workerCount > 0 ? workerCount : 2;
+            return workerCount > 0 ? workerCount : DEFAULT_WORKER_COUNT;
         }
     }
 }

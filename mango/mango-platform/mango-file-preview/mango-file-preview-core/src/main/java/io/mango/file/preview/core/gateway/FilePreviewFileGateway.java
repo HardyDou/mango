@@ -7,6 +7,7 @@ import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.file.api.vo.FileRecordVO;
 import io.mango.file.api.vo.FileSettingsVO;
 import io.mango.common.result.R;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,9 +17,11 @@ import org.springframework.stereotype.Component;
  * 文件预览对文件中心传输契约的适配器。
  */
 @Component
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Spring-managed collaborators are injected once")
 public class FilePreviewFileGateway {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FilePreviewFileGateway.class);
+    private static final long DEFAULT_PREVIEW_MAX_SIZE_BYTES = 200L * 1024L * 1024L;
 
     private final FileApi fileApi;
     private final IFileContentProvider fileContentProvider;
@@ -68,16 +71,16 @@ public class FilePreviewFileGateway {
      */
     public long previewMaxSize() {
         if (fileSettingsApi == null) {
-            return 200L * 1024L * 1024L;
+            return DEFAULT_PREVIEW_MAX_SIZE_BYTES;
         }
         try {
             R<FileSettingsVO> result = fileSettingsApi.get();
             Long value = result == null || !result.isSuccess() || result.getData() == null
                     ? null : result.getData().getPreviewMaxSize();
-            return value == null || value <= 0 ? 200L * 1024L * 1024L : value;
+            return value == null || value <= 0 ? DEFAULT_PREVIEW_MAX_SIZE_BYTES : value;
         } catch (RuntimeException exception) {
             LOGGER.warn("Unable to read file preview size settings; using the safe default", exception);
-            return 200L * 1024L * 1024L;
+            return DEFAULT_PREVIEW_MAX_SIZE_BYTES;
         }
     }
 }

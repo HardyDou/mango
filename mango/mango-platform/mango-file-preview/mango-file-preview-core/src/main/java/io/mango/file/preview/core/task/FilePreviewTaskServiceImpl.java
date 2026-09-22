@@ -19,6 +19,7 @@ import io.mango.infra.kv.api.ILeaseLocker;
 import io.mango.infra.kv.api.LockLease;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,6 +42,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * <p>任务状态写入共享 TokenStore，转换执行通过共享 lease 协调，因此多个实例可以共同消费同一任务。</p>
  */
 @Service
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Spring-managed collaborators are injected once")
 public class FilePreviewTaskServiceImpl implements IFilePreviewTaskService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FilePreviewTaskServiceImpl.class);
@@ -48,6 +50,14 @@ public class FilePreviewTaskServiceImpl implements IFilePreviewTaskService {
     private static final String LEASE_PREFIX = "file-preview:convert:";
     private static final String WORKER_SLOT_PREFIX = "file-preview:worker-slot:";
     private static final String OWNER = java.util.UUID.randomUUID().toString();
+    private static final long TASK_RETENTION_SECONDS = 30L * 24 * 60 * 60;
+    private static final String OFFICE_PREVIEW_CONFIRM_MESSAGE = "文件太大，预览需要较长时间，建议下载查看";
+    private static final String TASK_PREFIX = "file-preview:task:";
+    private static final int PROGRESS_PENDING = 5;
+    private static final int PROGRESS_CONVERTING = 15;
+    private static final int PROGRESS_SAVING = 85;
+    private static final int PROGRESS_COMPLETE = 100;
+    private static final long WORKER_POLL_INTERVAL_MILLIS = 100L;
     private static final Set<String> OFFICE_EXTENSIONS = Set.of("doc", "docx", "ppt", "pptx");
     private static final Set<String> DIRECT_PREVIEW_EXTENSIONS = Set.of(
             "pdf", "ofd", "png", "jpg", "jpeg", "tif", "tiff", "txt", "html", "htm",
@@ -62,9 +72,6 @@ public class FilePreviewTaskServiceImpl implements IFilePreviewTaskService {
     private final ObjectMapper objectMapper;
     private final FilePreviewProperties properties;
     private final ExecutorService conversionExecutor;
-    private static final long TASK_RETENTION_SECONDS = 30L * 24 * 60 * 60;
-    private static final String OFFICE_PREVIEW_CONFIRM_MESSAGE = "文件太大，预览需要较长时间，建议下载查看";
-    private static final String TASK_PREFIX = "file-preview:task:";
     private final Map<String, FilePreviewTaskVO> tasks = new ConcurrentHashMap<>();
     private final Map<Long, String> latestKeys = new ConcurrentHashMap<>();
     private final java.util.Set<String> activeKeys = ConcurrentHashMap.newKeySet();
@@ -169,7 +176,7 @@ public class FilePreviewTaskServiceImpl implements IFilePreviewTaskService {
             activeKeys.remove(key);
             FilePreviewTaskVO task = tasks.get(key);
             if (task != null) {
-                update(task, FilePreviewTaskStatus.FAILED, 100, "预览任务提交失败，请稍后重试");
+                update(task, FilePreviewTaskStatus.FAILED, PROGRESS_COMPLETE, "预览任务提交失败，请稍后重试");
             }
         }
     }
@@ -189,25 +196,25 @@ public class FilePreviewTaskServiceImpl implements IFilePreviewTaskService {
             return;
         }
         try {
-            update(task, FilePreviewTaskStatus.PROCESSING, 5, "正在读取原文件");
+            update(task, FilePreviewTaskStatus.PROCESSING, PROGRESS_PENDING, "正在读取原文件");
             String extension = extension(record);
             if (DIRECT_PREVIEW_EXTENSIONS.contains(extension) && !OFFICE_EXTENSIONS.contains(extension)) {
-                update(task, FilePreviewTaskStatus.SUCCEEDED, 100, "预览已就绪");
+                update(task, FilePreviewTaskStatus.SUCCEEDED, PROGRESS_COMPLETE, "预览已就绪");
                 touch(task);
                 return;
             }
             var parsedFormat = ConvertFormat.parse(extension);
             if (parsedFormat.isEmpty()) {
-                update(task, FilePreviewTaskStatus.FAILED, 100, "暂不支持该文件格式的预览");
+                update(task, FilePreviewTaskStatus.FAILED, PROGRESS_COMPLETE, "暂不支持该文件格式的预览");
                 return;
             }
             ConvertFormat source = parsedFormat.get();
             if (!convertApi.canConvert(source, ConvertFormat.PDF)) {
-                update(task, FilePreviewTaskStatus.FAILED, 100, "暂不支持该文件格式转换为 PDF");
+                update(task, FilePreviewTaskStatus.FAILED, PROGRESS_COMPLETE, "暂不支持该文件格式转换为 PDF");
                 return;
             }
             FileDownloadVO sourceFile = fileGateway.download(record.getId());
-            update(task, FilePreviewTaskStatus.PROCESSING, 15, "正在转换为 PDF");
+            update(task, FilePreviewTaskStatus.PROCESSING, PROGRESS_CONVERTING, "正在转换为 PDF");
             ConvertResultVO result;
             try (InputStream input = sourceFile.inputStream()) {
                 result = convertApi.convert(ConvertCommand.builder()
@@ -217,7 +224,7 @@ public class FilePreviewTaskServiceImpl implements IFilePreviewTaskService {
                         .fileName(sourceFile.fileName())
                         .build());
             }
-            update(task, FilePreviewTaskStatus.PROCESSING, 85, "正在保存预览产物");
+            update(task, FilePreviewTaskStatus.PROCESSING, PROGRESS_SAVING, "正在保存预览产物");
             SaveFileCommand save = new SaveFileCommand();
             save.setInputStream(resultInput(result));
             save.setFileName(previewName(record));
@@ -231,11 +238,11 @@ public class FilePreviewTaskServiceImpl implements IFilePreviewTaskService {
                     + versionKey(record) + "\"}");
             FileRecordVO artifact = contentProvider.savePreviewArtifact(save);
             task.setPreviewFileId(artifact.getId());
-            update(task, FilePreviewTaskStatus.SUCCEEDED, 100, "预览已就绪");
+            update(task, FilePreviewTaskStatus.SUCCEEDED, PROGRESS_COMPLETE, "预览已就绪");
         } catch (Exception ex) {
             LOGGER.warn("文件预览转换失败，fileId={}, fileSize={}, message={}",
                     record.getId(), record.getFileSize(), ex.getMessage(), ex);
-            update(task, FilePreviewTaskStatus.FAILED, 100,
+            update(task, FilePreviewTaskStatus.FAILED, PROGRESS_COMPLETE,
                     ex.getMessage() == null ? "预览生成失败，请下载原文件查看" : ex.getMessage());
         } finally {
             leaseLocker.release(workerSlot);
@@ -254,7 +261,7 @@ public class FilePreviewTaskServiceImpl implements IFilePreviewTaskService {
                 }
             }
             try {
-                Thread.sleep(100L);
+                Thread.sleep(WORKER_POLL_INTERVAL_MILLIS);
             } catch (InterruptedException ex) {
                 Thread.currentThread().interrupt();
                 return null;

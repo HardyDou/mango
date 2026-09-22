@@ -15,6 +15,7 @@ import io.mango.file.core.service.IFileService;
 import io.mango.file.core.service.model.FileDownloadOptions;
 import io.mango.file.core.service.model.ServerFilePart;
 import io.mango.common.contract.BinaryHttpAdapter;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -47,6 +48,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @Validated
 @Tag(name = "文件传输", description = "文件上传、下载、内容预览与分片上传接口")
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Spring-managed service is injected once")
 public class FileBinaryController {
 
     private final IFileService fileService;

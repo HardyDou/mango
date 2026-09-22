@@ -40,6 +40,8 @@ import java.nio.charset.StandardCharsets;
 @Tag(name = "文件预览页面", description = "文件预览页面跳转接口")
 public class FilePreviewPageController {
 
+    private static final int HTTP_FOUND = 302;
+
     private final IFilePreviewService filePreviewService;
     private final IFilePreviewTaskService previewTaskService;
 
@@ -160,7 +162,7 @@ public class FilePreviewPageController {
                 + (artifact ? "preview-artifact" : "preview-content")
                 + "?token=" + urlEncode(token);
         String safeArtifactPath = artifactPath.replace("\\", "\\\\").replace("'", "\\'");
-        String html = """
+        String htmlTemplate = """
                 <!doctype html><html lang='zh-CN'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
                 <title>文件预览</title><style>html,body{width:100%%;height:100%%;margin:0;overflow:hidden;background:#2b2b2b}iframe{width:100%%;height:100%%;border:0}</style>
                 </head><body><iframe id='pdf-viewer' title='文件预览'></iframe><script>
@@ -176,7 +178,8 @@ public class FilePreviewPageController {
                 }
                 viewer.addEventListener('load',()=>{applyDefaultView();setTimeout(applyDefaultView,500);});
                 </script></body></html>
-                """.formatted(safeArtifactPath);
+                """;
+        String html = htmlTemplate.replace("\n", "%n").formatted(safeArtifactPath);
         View view = (model, request, response) -> {
             response.setContentType(MediaType.TEXT_HTML_VALUE + ";charset=UTF-8");
             response.getWriter().write(html);
@@ -206,7 +209,7 @@ public class FilePreviewPageController {
             case SUCCEEDED -> "已完成";
             case FAILED -> "转换失败";
         };
-        String html = """
+        String htmlTemplate = """
                 <!doctype html><html lang='zh-CN'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
                 <title>文件预览准备中</title><style>
                 *{box-sizing:border-box}body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f5f7fb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Microsoft YaHei',sans-serif;color:#1f2937}
@@ -214,7 +217,8 @@ public class FilePreviewPageController {
                 h1{font-size:24px;margin:0 0 12px}.message{color:#6b7280;margin:0 0 12px}.status{color:#2563eb;font-weight:600}.button{margin-top:24px;padding:10px 24px;border:0;border-radius:8px;background:#2563eb;color:white;cursor:pointer;font-size:15px}.secondary{background:#e5e7eb;color:#1f2937;text-decoration:none;margin-right:8px}.tip{margin-top:24px;padding:12px;border-radius:10px;background:#eff6ff;color:#1d4ed8;font-size:14px}
                 </style></head><body><main class='card'><div class='spinner' id='spinner'></div><h1 id='title'>文件正在转换</h1><p class='message' id='message'>%s</p><div class='status' id='status'>%s</div><div id='actions'><button class='button' onclick='location.reload()'>立即刷新</button></div><div class='tip' id='tip'>大文件转换需要一些时间，请不要关闭此页面。</div></main>
                 <script>const token='%s';let allowLargeFile=false;const labels={CONFIRM_REQUIRED:'等待确认',QUEUED:'排队中',PROCESSING:'转换中',SUCCEEDED:'已完成',FAILED:'转换失败'};async function poll(){try{const r=await fetch('/api/file-preview/files/preview-progress?token='+encodeURIComponent(token)+'&allowLargeFile='+allowLargeFile);const j=await r.json();const t=j.data||{};document.getElementById('message').textContent=t.message||'文件正在转换，请稍候';document.getElementById('status').textContent=labels[t.status]||'处理中';if(t.status==='QUEUED'&&t.queueAhead!==undefined){document.getElementById('tip').textContent='前面还有 '+t.queueAhead+' 个任务'+(t.workerCount?'，使用 '+t.workerCount+' 个转换进程':'');}if(t.status==='CONFIRM_REQUIRED'){document.getElementById('spinner').style.display='none';document.getElementById('title').textContent='文件较大';document.getElementById('tip').textContent='建议下载查看，也可以继续等待在线转换';document.getElementById('actions').innerHTML='<a class="button secondary" href="/api/file/files/download?id='+encodeURIComponent(t.fileId)+'" target="_blank">下载查看</a><button class="button" onclick="continuePreview()">继续等待预览</button>';return}if(t.status==='SUCCEEDED'){location.href='/api/file-preview/files/preview-entry?token='+encodeURIComponent(token)+'&ready=true';return}if(t.status==='FAILED'){document.getElementById('spinner').style.display='none';document.getElementById('tip').textContent=t.message||'预览生成失败，请下载原文件查看';return}}catch(e){document.getElementById('tip').textContent='正在检查转换状态，请稍候...'}setTimeout(poll,2000)}async function continuePreview(){allowLargeFile=true;document.getElementById('actions').innerHTML='<button class="button" onclick="location.reload()">立即刷新</button>';document.getElementById('spinner').style.display='block';document.getElementById('title').textContent='文件正在转换';await poll()}poll();</script></body></html>
-                """.formatted(safeMessage, status, safeToken);
+                """;
+        String html = htmlTemplate.replace("\n", "%n").formatted(safeMessage, status, safeToken);
         View view = (model, request, response) -> {
             response.setContentType(MediaType.TEXT_HTML_VALUE + ";charset=UTF-8");
             response.getWriter().write(html);
@@ -224,7 +228,7 @@ public class FilePreviewPageController {
 
     private ModelAndView redirectView(String location) {
         View view = (model, request, response) -> {
-            response.setStatus(302);
+            response.setStatus(HTTP_FOUND);
             response.setHeader("Location", location);
         };
         return new ModelAndView(view);
