@@ -8,20 +8,22 @@
 
 > 2026-09-20 折叠详情组件迁移影响：`@mango/file` 新增可选的 `MangoFileList` 和 `MangoFilePreviewDialog`，供详情页按文件记录展示列表或在弹框中复用 `FilePreviewPanel`；`@mango/detail` 可组合这些公开组件。本次不改变 `MUpload`、`FilePreviewPanel`、上传/预览/下载 API、`fileId`/`fileIds` 持久化、权限、租户或本指南的表单接入方式。现有业务无需迁移；新详情页按对应 package README 引入组件与 `style.css`。
 
+> 2026-09-21 分类卡片上传组件影响：`@mango/file` 新增 `MangoAttachmentUploadGrid`，用于按资料分类配置必填、数量、格式和大小规则，并提供点击/拖拽上传、替换、预览、删除、插槽和 `validate()`。组件继续调用同一 `fileApi.upload()`，不改变上传 API、文件 ID 持久化、权限或租户边界；不需要分类卡片交互的现有表单继续使用 `MUpload`。
+
 ## 1. 适用场景
 
 业务表单需要上传合同、图片、附件或导入文件，并在详情页回显、下载或预览。
 
 ## 2. 阅读顺序
 
-| 顺序 | 文档                                                                               | 关注点                                     |
-| ---- | ---------------------------------------------------------------------------------- | ------------------------------------------ |
-| 1    | [File 后端 README](../../../mango/mango-platform/mango-file/README.md)             | 存储配置、文件记录、下载接口、数据库资源   |
-| 2    | [Fileproc README](../../../mango/mango-infra/mango-infra-fileproc/README.md)       | 文件渲染、转换、Aspose 配置                |
-| 3    | [File Preview README](../../../mango/mango-platform/mango-file-preview/README.md)  | 预览 token、预览页面、下载边界             |
-| 4    | [@mango/file README](../../../mango-ui/packages/file/README.md)                    | 前端组件、API 封装、页面 key               |
-| 5    | [File Components README](../../../mango-ui/packages/file/src/components/README.md) | `MUpload`、`FilePreviewPanel` 用法和 props |
-| 6    | [能力地图：文件上传到预览闭环](../../capabilities/README.md#3-组合接入入口)        | 组合验证入口                               |
+| 顺序 | 文档                                                                               | 关注点                                   |
+| ---- | ---------------------------------------------------------------------------------- | ---------------------------------------- |
+| 1    | [File 后端 README](../../../mango/mango-platform/mango-file/README.md)             | 存储配置、文件记录、下载接口、数据库资源 |
+| 2    | [Fileproc README](../../../mango/mango-infra/mango-infra-fileproc/README.md)       | 文件渲染、转换、Aspose 配置              |
+| 3    | [File Preview README](../../../mango/mango-platform/mango-file-preview/README.md)  | 预览 token、预览页面、下载边界           |
+| 4    | [@mango/file README](../../../mango-ui/packages/file/README.md)                    | 前端组件、API 封装、页面 key             |
+| 5    | [File Components README](../../../mango-ui/packages/file/src/components/README.md) | 上传、分类卡片、文件列表与预览组件用法   |
+| 6    | [能力地图：文件上传到预览闭环](../../capabilities/README.md#3-组合接入入口)        | 组合验证入口                             |
 
 ## 3. 接入检查点
 
@@ -81,6 +83,45 @@ create table biz_contract_attachment (
   sort_no int
 );
 ```
+
+### 4.1 按资料分类上传
+
+业务表单需要按资料类型分别展示卡片，并为每类资料配置必填、数量、格式或大小规则时，使用 `MangoAttachmentUploadGrid`。组件的 `v-model` 回写附件记录及 `categoryKey`，业务提交时仍按自身 Command 转换并保存文件 ID 或附件关联，不保存预览和下载地址。
+
+```vue
+<script setup lang="ts">
+import { ref } from "vue";
+import {
+  MangoAttachmentUploadGrid,
+  type MangoAttachmentUploadCategory,
+  type MangoAttachmentUploadFile,
+} from "@mango/file";
+import "@mango/file/style.css";
+
+const files = ref<MangoAttachmentUploadFile[]>([]);
+const categories: MangoAttachmentUploadCategory[] = [
+  {
+    key: "license",
+    name: "营业执照",
+    required: true,
+    minFileCount: 1,
+    maxFileCount: 1,
+    formats: ["pdf"],
+  },
+];
+</script>
+
+<template>
+  <MangoAttachmentUploadGrid
+    v-model="files"
+    :categories="categories"
+    purpose="contract-material"
+    access-level="PRIVATE"
+  />
+</template>
+```
+
+删除卡片中的文件只会解除当前 `v-model` 关系，不会删除文件中心中的物理文件。业务保存、解绑和物理清理由消费系统按自身生命周期处理。
 
 ## 5. 业务场景验收点
 

@@ -10,9 +10,46 @@
 
 | 能力         | 导出                                                                                     |
 | ------------ | ---------------------------------------------------------------------------------------- |
-| 上传文件     | `MUpload`                                                                                |
+| 普通文件上传 | `MUpload`                                                                                |
+| 分类卡片上传 | `MangoAttachmentUploadGrid`                                                              |
 | 预览文件     | `FilePreviewPanel`                                                                       |
 | 上传组件类型 | `UploadColumn`、`UploadColumnKey`、`UploadDisplay`、`UploadSizeRules`、`UploadValueType` |
+
+### 分类卡片上传
+
+`MangoAttachmentUploadGrid` 用于“按资料分类上传文件”的卡片场景。它保持每个分类独立的文件规则，支持点击或拖拽上传、单文件替换、多文件限制、格式/大小校验、预览、删除和必填校验。上传底层复用 `fileApi.upload()`，因此沿用 Mango 文件 API 的普通上传、分片上传和秒传策略。
+
+组件只负责分类卡片交互和附件值回写，不负责保存业务表单，也不删除文件中心中的物理文件。业务方通过 `purpose`、`access-level`、`biz-type`、`biz-id`、`biz-meta` 和 `directory-id` 传递文件归属信息。
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue';
+import {
+  MangoAttachmentUploadGrid,
+  type MangoAttachmentUploadCategory,
+  type MangoAttachmentUploadFile,
+  type MangoAttachmentUploadGridExpose,
+} from '@mango/file';
+
+const files = ref<MangoAttachmentUploadFile[]>([]);
+const gridRef = ref<MangoAttachmentUploadGridExpose>();
+const categories: MangoAttachmentUploadCategory[] = [
+  { key: 'license', name: '营业执照', required: true, minFileCount: 1, maxFileCount: 1, formats: ['pdf'] },
+];
+</script>
+
+<template>
+  <MangoAttachmentUploadGrid
+    ref="gridRef"
+    v-model="files"
+    :categories="categories"
+    purpose="contract-material"
+    access-level="PRIVATE"
+  />
+</template>
+```
+
+公开 API 与原分类卡片上传能力保持一致：`v-model` 使用 `MangoAttachmentUploadFile[]`，事件包括 `change`、`uploading-change`、`success`、`error` 和 `remove`，插槽包括 `file-status` 与 `file-note`，实例方法为 `validate()`。布局通过 `layout="grid" | "stacked"` 控制，默认使用 `grid`。
 
 组件选型边界：
 
