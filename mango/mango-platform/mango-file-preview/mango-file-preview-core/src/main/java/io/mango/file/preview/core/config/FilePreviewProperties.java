@@ -29,4 +29,21 @@ public class FilePreviewProperties {
 
     /** 是否允许访问 kkFileView 独立首页与演示文件管理入口。 */
     private boolean standaloneUiEnabled = false;
+
+    /** 转换调度配置。 */
+    private Conversion conversion = new Conversion();
+
+    @Data
+    public static class Conversion {
+
+        /** 每个预览实例的转换 Worker 数量。 */
+        private int workerCount = 2;
+
+        /** 未显式配置端口列表时生成 LibreOffice 端口的起始端口。 */
+        private int officeBasePort = 2001;
+
+        public int effectiveWorkerCount() {
+            return workerCount > 0 ? workerCount : 2;
+        }
+    }
 }

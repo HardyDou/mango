@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.stream.IntStream;
 
 /**
  * 创建文件转换器
@@ -39,8 +40,14 @@ public class OfficePluginManager {
 
     private LocalOfficeManager officeManager;
 
-    @Value("${office.plugin.server.ports:2001,2002}")
+    @Value("${office.plugin.server.ports:}")
     private String serverPorts;
+
+    @Value("${mango.file-preview.conversion.worker-count:2}")
+    private int conversionWorkerCount;
+
+    @Value("${mango.file-preview.conversion.office-base-port:2001}")
+    private int officeBasePort;
 
     @Value("${office.plugin.task.timeout:5m}")
     private String timeOut;
@@ -65,8 +72,7 @@ public class OfficePluginManager {
             logger.warn("检测到有正在运行的office进程，已自动结束该进程");
         }
         try {
-            String[] portsString = serverPorts.split(",");
-            int[] ports = Arrays.stream(portsString).mapToInt(Integer::parseInt).toArray();
+            int[] ports = resolvePorts();
             long timeout = DurationStyle.detectAndParse(timeOut).toMillis();
             long taskexecutiontimeout = DurationStyle.detectAndParse(taskExecutionTimeout).toMillis();
             officeManager = LocalOfficeManager.builder()
@@ -82,6 +88,30 @@ public class OfficePluginManager {
             logger.error("启动office组件失败，请检查office组件是否可用");
             throw e;
         }
+    }
+
+    private int[] resolvePorts() {
+        if (conversionWorkerCount <= 0) {
+            throw new IllegalStateException("mango.file-preview.conversion.worker-count must be positive");
+        }
+        if (StringUtils.isNotBlank(serverPorts)) {
+            int[] configuredPorts = Arrays.stream(serverPorts.split(","))
+                    .map(String::trim)
+                    .filter(StringUtils::isNotBlank)
+                    .mapToInt(Integer::parseInt)
+                    .toArray();
+            if (configuredPorts.length != conversionWorkerCount) {
+                throw new IllegalStateException("office.plugin.server.ports 数量必须与转换 worker 数量一致: workers="
+                        + conversionWorkerCount + ", ports=" + configuredPorts.length);
+            }
+            return configuredPorts;
+        }
+        if (officeBasePort <= 0 || officeBasePort + conversionWorkerCount - 1 > 65535) {
+            throw new IllegalStateException("mango.file-preview.conversion.office-base-port 配置无效");
+        }
+        return IntStream.range(0, conversionWorkerCount)
+                .map(offset -> officeBasePort + offset)
+                .toArray();
     }
 
     private boolean killProcess() {

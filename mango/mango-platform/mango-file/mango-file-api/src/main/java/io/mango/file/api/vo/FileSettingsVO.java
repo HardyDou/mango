@@ -107,6 +107,9 @@ public class FileSettingsVO implements Serializable {
     @Schema(description = "文档预览访问有效期，单位秒")
     private Long previewExpireSeconds;
 
+    @Schema(description = "Office 文档在线预览最大大小，单位字节")
+    private Long previewMaxSize;
+
     @Schema(description = "可交由文档预览服务处理的扩展名")
     @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
             justification = "Jackson and Feign require this mutable collection getter"))

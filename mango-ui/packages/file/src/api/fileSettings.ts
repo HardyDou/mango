@@ -30,6 +30,7 @@ export interface FileSettings {
   accessTokenExpireSeconds: number;
   previewProviderUrl?: string;
   previewExpireSeconds: number;
+  previewMaxSize: number;
   previewExternalExtensions: string[];
   archiveRetainEnabled: boolean;
   archiveRetainDays: number;
@@ -77,6 +78,7 @@ export const defaultFileSettings: FileSettings = {
   accessTokenExpireSeconds: 600,
   previewProviderUrl: '/file-preview/files/preview',
   previewExpireSeconds: 600,
+  previewMaxSize: 200 * 1024 * 1024,
   previewExternalExtensions: [
     'doc',
     'docx',
@@ -166,6 +168,7 @@ function fromBackendSettings(item: any): FileSettings {
     accessTokenExpireSeconds: Number(item?.accessTokenExpireSeconds ?? defaultFileSettings.accessTokenExpireSeconds),
     previewProviderUrl: item?.previewProviderUrl || defaultFileSettings.previewProviderUrl,
     previewExpireSeconds: Number(item?.previewExpireSeconds ?? defaultFileSettings.previewExpireSeconds),
+    previewMaxSize: positiveOrDefault(item?.previewMaxSize, defaultFileSettings.previewMaxSize),
     previewExternalExtensions: normalizeArray(item?.previewExternalExtensions),
     archiveRetainEnabled: item?.archiveRetainEnabled !== false,
     archiveRetainDays: Number(item?.archiveRetainDays ?? defaultFileSettings.archiveRetainDays),
@@ -200,6 +203,7 @@ function toBackendSettings(data: FileSettings) {
     accessTokenExpireSeconds: Number(data.accessTokenExpireSeconds),
     previewProviderUrl: data.previewProviderUrl || undefined,
     previewExpireSeconds: Number(data.previewExpireSeconds),
+    previewMaxSize: Number(data.previewMaxSize),
     previewExternalExtensions: data.previewExternalExtensions || [],
     archiveRetainEnabled: Boolean(data.archiveRetainEnabled),
     archiveRetainDays: Number(data.archiveRetainDays),

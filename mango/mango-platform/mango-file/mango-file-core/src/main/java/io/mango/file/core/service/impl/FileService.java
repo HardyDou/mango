@@ -181,6 +181,25 @@ public class FileService implements IFileService, IFileContentProvider {
         }
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public FileRecordVO savePreviewArtifact(SaveFileCommand command) {
+        Require.notNull(command, FileCode.FILE_EMPTY);
+        try (FileInput input = FileInput.fromCommand(command)) {
+            return save(input, command, true);
+        } catch (IOException e) {
+            return Require.fail(FileCode.FILE_READ_FAILED);
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public FileRecordVO savePreviewArtifact(MultipartFile file, SaveFileCommand command) {
+        Require.notNull(file, FileCode.FILE_EMPTY);
+        Require.notNull(command, FileCode.FILE_EMPTY);
+        return save(FileInput.fromMultipart(file), command, true);
+    }
+
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -373,7 +392,11 @@ public class FileService implements IFileService, IFileContentProvider {
     }
 
     private FileRecordVO save(FileInput input, SaveFileCommand command) {
-        validateUpload(input);
+        return save(input, command, false);
+    }
+
+    private FileRecordVO save(FileInput input, SaveFileCommand command, boolean previewArtifact) {
+        validateUpload(input, previewArtifact);
         Long tenantId = requireTenantId();
         Long userId = MangoContextHolder.userId();
         Long resolvedDirectoryId = normalizeDirectoryId(command.getDirectoryId());
@@ -907,13 +930,15 @@ public class FileService implements IFileService, IFileContentProvider {
         return records;
     }
 
-    private void validateUpload(FileInput input) {
+    private void validateUpload(FileInput input, boolean previewArtifact) {
         Require.notNull(input, FileCode.FILE_EMPTY);
         FileInput requiredInput = Objects.requireNonNull(input);
         Require.notNull(requiredInput.streamSupplier, FileCode.FILE_EMPTY);
         Require.isFalse(requiredInput.empty, FileCode.FILE_EMPTY);
         long maxSize = settingsService.current().getMaxSize();
-        Require.isTrue(requiredInput.fileSize <= maxSize, FileCode.FILE_SIZE_EXCEEDED);
+        if (!previewArtifact) {
+            Require.isTrue(requiredInput.fileSize <= maxSize, FileCode.FILE_SIZE_EXCEEDED);
+        }
     }
 
     private void validateExtension(String fileExt, FileSettingsVO settings) {

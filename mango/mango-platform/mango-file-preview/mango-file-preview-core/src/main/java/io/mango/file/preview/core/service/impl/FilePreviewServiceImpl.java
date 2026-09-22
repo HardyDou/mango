@@ -11,6 +11,8 @@ import io.mango.file.preview.api.vo.FilePreviewLinkVO;
 import io.mango.file.preview.core.config.FilePreviewProperties;
 import io.mango.file.preview.core.gateway.FilePreviewFileGateway;
 import io.mango.file.preview.core.service.IFilePreviewService;
+import io.mango.file.preview.core.task.IFilePreviewTaskService;
+import io.mango.file.preview.api.vo.FilePreviewTaskVO;
 import io.mango.file.preview.core.service.model.FilePreviewSource;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
@@ -56,6 +58,7 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
     private final ITokenStore tokenStore;
     private final ObjectMapper objectMapper;
     private final Clock clock;
+    private final IFilePreviewTaskService previewTaskService;
 
     @Override
     public FilePreviewLinkVO createPreview(Long fileId) {
@@ -124,6 +127,68 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
         try {
             MangoContextHolder.set(previewToken.context());
             return createEnginePreview(previewToken.fileId());
+        } finally {
+            MangoContextHolder.set(previous);
+        }
+    }
+
+    @Override
+    public Long resolvePreviewFileId(String token) {
+        return readPreviewToken(token).fileId();
+    }
+
+    @Override
+    public FilePreviewTaskVO previewTaskByToken(String token, boolean allowLargeFile) {
+        PreviewToken previewToken = readPreviewToken(token);
+        MangoContextSnapshot previous = MangoContextHolder.get();
+        try {
+            MangoContextHolder.set(previewToken.context());
+            return previewTaskService.status(previewToken.fileId(), allowLargeFile);
+        } finally {
+            MangoContextHolder.set(previous);
+        }
+    }
+
+    @Override
+    public FileDownloadVO downloadPreviewArtifact(String token) {
+        PreviewToken previewToken = readPreviewToken(token);
+        MangoContextSnapshot previous = MangoContextHolder.get();
+        try {
+            MangoContextHolder.set(previewToken.context());
+            FilePreviewTaskVO task = previewTaskService.status(previewToken.fileId(), false);
+            Require.isTrue(task.getStatus() == io.mango.file.preview.api.enums.FilePreviewTaskStatus.SUCCEEDED
+                    && task.getPreviewFileId() != null, FilePreviewCode.PREVIEW_TOKEN_INVALID);
+            FileDownloadVO download = fileGateway.download(task.getPreviewFileId());
+            Require.notNull(download, FilePreviewCode.FILE_NOT_FOUND);
+            return download;
+        } finally {
+            MangoContextHolder.set(previous);
+        }
+    }
+
+    @Override
+    public FileDownloadVO downloadPreviewSource(String token) {
+        PreviewToken previewToken = readPreviewToken(token);
+        MangoContextSnapshot previous = MangoContextHolder.get();
+        try {
+            MangoContextHolder.set(previewToken.context());
+            FileDownloadVO download = fileGateway.download(previewToken.fileId());
+            Require.notNull(download, FilePreviewCode.FILE_NOT_FOUND);
+            return download;
+        } finally {
+            MangoContextHolder.set(previous);
+        }
+    }
+
+    @Override
+    public boolean isPdfPreview(String token) {
+        PreviewToken previewToken = readPreviewToken(token);
+        MangoContextSnapshot previous = MangoContextHolder.get();
+        try {
+            MangoContextHolder.set(previewToken.context());
+            FileRecordVO record = fileRecord(previewToken.fileId());
+            String extension = StringUtils.getFilenameExtension(record.getFileName());
+            return "pdf".equalsIgnoreCase(extension) || "application/pdf".equalsIgnoreCase(record.getContentType());
         } finally {
             MangoContextHolder.set(previous);
         }
@@ -216,7 +281,7 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
     }
 
     private String engineUrl(String encodedSourceUrl) {
-        return UriComponentsBuilder.fromPath(normalize(properties.getEnginePath()))
+        return UriComponentsBuilder.fromPath("/api" + normalize(properties.getEnginePath()))
                 .queryParam("url", encodedSourceUrl)
                 .build()
                 .encode(StandardCharsets.UTF_8)
@@ -224,7 +289,7 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
     }
 
     private String previewEntryUrl(String token) {
-        return UriComponentsBuilder.fromPath("/file-preview/files/preview-entry")
+        return UriComponentsBuilder.fromPath("/api/file-preview/files/preview-entry")
                 .queryParam("token", token)
                 .build()
                 .encode(StandardCharsets.UTF_8)

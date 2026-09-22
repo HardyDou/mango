@@ -34,6 +34,10 @@ public interface IFileService {
 
     FileRecordVO save(SaveFileCommand command);
 
+    FileRecordVO savePreviewArtifact(SaveFileCommand command);
+
+    FileRecordVO savePreviewArtifact(MultipartFile file, SaveFileCommand command);
+
     FileRecordVO packageFiles(FilePackageCommand command);
 
     FilePackageResultVO packageFilesWithSizeControl(FilePackageSizeControlCommand command);

@@ -33,8 +33,12 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.UUID;
 import java.time.Duration;
 
@@ -192,7 +196,7 @@ public class OfficeFilePreviewImpl implements FilePreview {
                                             FileAttribute fileAttribute,
                                             String officePreviewType) {
         CompletableFuture<List<String>> conversionFuture = conversionCoordinator.submit(
-                cacheName + "|" + officePreviewType,
+                officeConversionKey(cacheName),
                 conversionTimeout,
                 () -> executeOfficeConversion(filePath, outFilePath, cacheName, fileAttribute, officePreviewType));
         conversionFuture.whenComplete((imageUrls, error) -> {
@@ -202,7 +206,11 @@ public class OfficeFilePreviewImpl implements FilePreview {
                     LOGGER.error("Office转换任务失联或超时: {}", cacheName, error);
                     FileConvertStatusManager.markTimeout(cacheName);
                 }
-                KkFileUtils.deleteFileByPath(outFilePath);
+                // 请求视图超时不代表底层转换已停止。底层任务可能仍会原子写入该输出，
+                // 此时删除输出会把成功转换的结果清掉，下一次请求又会重复启动转换。
+                if (!(unwrap(error) instanceof TimeoutException)) {
+                    KkFileUtils.deleteFileByPath(outFilePath);
+                }
             }
         });
         conversionFuture.thenAcceptAsync(imageUrls -> {
@@ -395,28 +403,77 @@ public class OfficeFilePreviewImpl implements FilePreview {
                                             String outFilePath, String cacheName, boolean isHtmlView,
                                             boolean userToken, String filePassword, boolean isPwdProtectedOffice) {
         try {
-            convertToPdfAtomically(filePath, outFilePath, fileAttribute);
-        } catch (OfficeException exception) {
+            conversionCoordinator.submit(officeConversionKey(cacheName), conversionTimeout, () -> {
+                try {
+                    FileConvertStatusManager.startConvert(cacheName);
+                    FileConvertStatusManager.updateProgress(cacheName, "正在转换Office到PDF", PROGRESS_CONVERTING);
+                    convertToPdfAtomically(filePath, outFilePath, fileAttribute);
+                    if (isHtmlView) {
+                        fileHandlerService.doActionConvertedFile(outFilePath);
+                    }
+                    if (!fileAttribute.isCompressFile() && ConfigConstants.getDeleteSourceFile()) {
+                        KkFileUtils.deleteFileByPath(filePath);
+                    }
+                    if (userToken || !isPwdProtectedOffice) {
+                        fileHandlerService.addConvertedFile(cacheName, fileHandlerService.getRelativePath(outFilePath));
+                    }
+                    FileConvertStatusManager.convertSuccess(cacheName);
+                    return null;
+                } catch (Exception exception) {
+                    throw new CompletionException(exception);
+                }
+            }).get(conversionTimeout.toMillis() + 1_000L, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            return otherFilePreview.notSupportedFile(model, fileAttribute, "文件转换已中断，请稍后重试");
+        } catch (TimeoutException exception) {
+            FileConvertStatusManager.markTimeout(cacheName);
+            LOGGER.warn("Office转换等待超时，保留在途任务: {}", cacheName);
+            return otherFilePreview.notSupportedFile(model, fileAttribute, "文件转换较慢，请稍后刷新或下载文件查看");
+        } catch (ExecutionException exception) {
+            Throwable cause = unwrap(exception.getCause());
+            if (cause instanceof TimeoutException) {
+                FileConvertStatusManager.markTimeout(cacheName);
+                LOGGER.warn("Office转换等待超时，保留在途任务: {}", cacheName);
+                return otherFilePreview.notSupportedFile(model, fileAttribute, "文件转换较慢，请稍后刷新或下载文件查看");
+            }
+            if (cause instanceof OfficeException officeException) {
+                return handleOfficeConversionException(model, fileAttribute, filePath, filePassword,
+                        isPwdProtectedOffice);
+            }
+            if (cause instanceof IOException ioException) {
+                LOGGER.error("Office转换结果写入失败: {}", cacheName, ioException);
+                return otherFilePreview.notSupportedFile(model, fileAttribute, "文件转换结果写入异常，请联系管理员");
+            }
+            LOGGER.error("Office转换执行失败: {}", cacheName, cause);
+            return otherFilePreview.notSupportedFile(model, fileAttribute, "文件转换失败，请稍后重试或下载文件查看");
+        }
+        return null;
+    }
+
+    private String officeConversionKey(String cacheName) {
+        return cacheName + "|office";
+    }
+
+    private String handleOfficeConversionException(Model model, FileAttribute fileAttribute, String filePath,
+                                                   String filePassword, boolean isPwdProtectedOffice) {
             if (isPwdProtectedOffice && !OfficeUtils.isCompatible(filePath, filePassword)) {
                 model.addAttribute("needFilePassword", true);
                 model.addAttribute("filePasswordError", true);
                 return EXEL_FILE_PREVIEW_PAGE;
             }
             return otherFilePreview.notSupportedFile(model, fileAttribute, "抱歉，该文件版本不兼容，文件版本错误。");
-        } catch (IOException exception) {
-            LOGGER.error("Office转换结果写入失败: {}", cacheName, exception);
-            return otherFilePreview.notSupportedFile(model, fileAttribute, "文件转换结果写入异常，请联系管理员");
+    }
+
+    private Throwable unwrap(Throwable throwable) {
+        Throwable cause = throwable;
+        while (cause instanceof CompletionException || cause instanceof ExecutionException) {
+            if (cause.getCause() == null) {
+                break;
+            }
+            cause = cause.getCause();
         }
-        if (isHtmlView) {
-            fileHandlerService.doActionConvertedFile(outFilePath);
-        }
-        if (!fileAttribute.isCompressFile() && ConfigConstants.getDeleteSourceFile()) {
-            KkFileUtils.deleteFileByPath(filePath);
-        }
-        if (userToken || !isPwdProtectedOffice) {
-            fileHandlerService.addConvertedFile(cacheName, fileHandlerService.getRelativePath(outFilePath));
-        }
-        return null;
+        return cause;
     }
 
     private String renderRegularPreview(Model model, String cacheName, boolean isHtmlView) {

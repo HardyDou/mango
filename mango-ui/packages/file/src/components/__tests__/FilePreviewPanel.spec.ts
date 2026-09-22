@@ -156,13 +156,7 @@ describe('FilePreviewPanel', () => {
     });
   });
 
-  it('keeps the default loading state while authenticated preview content is loading', async () => {
-    let resolveContent!: (value: { data: Blob; headers: { 'content-type': string } }) => void;
-    vi.spyOn(fileApi, 'previewContent').mockReturnValue(
-      new Promise((resolve) => {
-        resolveContent = resolve;
-      }),
-    );
+  it('passes the authenticated preview endpoint directly to the image viewer', async () => {
     const host = await mountPanel(
       createPreview({
         fileName: 'diagram.png',
@@ -170,23 +164,15 @@ describe('FilePreviewPanel', () => {
         contentType: 'image/png',
       }),
     );
-    const panel = host.querySelector('.file-preview-panel');
-
-    expect(panel?.getAttribute('data-loading')).toBe('true');
-
-    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:preview-image');
-    resolveContent({
-      data: new Blob(['preview-content'], { type: 'image/png' }),
-      headers: { 'content-type': 'image/png' },
-    });
     await vi.waitFor(() => {
-      expect(panel?.getAttribute('data-loading')).toBe('false');
-      expect(host.querySelector('.preview-image-viewer')).not.toBeNull();
+      expect(host.querySelector('.preview-image-viewer [data-image-viewer] .el-image-viewer__img')?.getAttribute('src')).toBe(
+        'http://localhost:3000/api/file/files/preview-content?id=file-1',
+      );
     });
+    expect(vi.spyOn(fileApi, 'previewContent')).not.toHaveBeenCalled();
   });
 
-  it('stops loading and shows the failure state when preview content loading fails', async () => {
-    vi.spyOn(fileApi, 'previewContent').mockRejectedValue(new Error('preview failed'));
+  it('keeps a direct authenticated preview URL when content is protected', async () => {
     const host = await mountPanel(
       createPreview({
         fileName: 'diagram.png',
@@ -194,12 +180,10 @@ describe('FilePreviewPanel', () => {
         contentType: 'image/png',
       }),
     );
-    const panel = host.querySelector('.file-preview-panel');
-
     await vi.waitFor(() => {
-      expect(panel?.getAttribute('data-loading')).toBe('false');
-      expect(host.querySelector('.preview-error-state')?.textContent).toContain('文件预览加载失败');
+      expect(host.querySelector('.preview-image-viewer')).not.toBeNull();
     });
+    expect(host.querySelector('.preview-error-state')).toBeNull();
   });
 
   it('keeps the natural-height mode by default', async () => {
@@ -228,7 +212,6 @@ describe('FilePreviewPanel', () => {
   });
 
   it.each([
-    ['PDF', createPreview({ directPreviewUrl: '/preview/report.pdf' }), 'iframe.preview-frame'],
     [
       'image',
       createPreview({
@@ -286,7 +269,7 @@ describe('FilePreviewPanel', () => {
     );
 
     const viewerImage = host.querySelector('.preview-image-viewer [data-image-viewer] .el-image-viewer__img');
-    expect(viewerImage?.getAttribute('src')).toBe('/preview/diagram.png');
+    expect(viewerImage?.getAttribute('src')).toBe('http://localhost:3000/preview/diagram.png');
     expect(viewerImage?.getAttribute('data-infinite')).toBe('false');
     expect(viewerImage?.getAttribute('data-teleported')).toBe('false');
     expect(viewerImage?.getAttribute('data-close-on-press-escape')).toBe('false');
@@ -342,16 +325,12 @@ describe('FilePreviewPanel', () => {
   });
 
   it.each([
-    ['PDF', 'report.pdf', 'pdf', 'application/pdf', 'iframe'],
     ['image', 'diagram.png', 'png', 'image/png', '.el-image-viewer__img'],
     ['video', 'demo.mp4', 'mp4', 'video/mp4', 'video'],
     ['audio', 'recording.mp3', 'mp3', 'audio/mpeg', 'audio'],
   ])(
-    'loads %s without a direct URL as an authenticated blob',
+    'loads %s directly from the authenticated preview URL',
     async (_label, fileName, fileExt, contentType, selector) => {
-      const objectUrl = `blob:preview-${fileExt}`;
-      const createObjectUrl = vi.spyOn(URL, 'createObjectURL').mockReturnValue(objectUrl);
-      const revokeObjectUrl = vi.spyOn(URL, 'revokeObjectURL');
       const previewContent = vi.spyOn(fileApi, 'previewContent').mockResolvedValue({
         data: new Blob(['preview-content'], { type: contentType }),
         headers: { 'content-type': contentType },
@@ -369,35 +348,63 @@ describe('FilePreviewPanel', () => {
       );
 
       await vi.waitFor(() => {
-        expect(previewContent).toHaveBeenCalledWith('file-1');
-        expect(host.querySelector(selector)?.getAttribute('src')).toBe(objectUrl);
+        expect(host.querySelector(selector)?.getAttribute('src')).toBe(
+          'http://127.0.0.1:18045/file/files/preview-content?id=file-1',
+        );
       });
-      expect(createObjectUrl).toHaveBeenCalledOnce();
+      expect(previewContent).not.toHaveBeenCalled();
       expect(previewLink).not.toHaveBeenCalled();
-
-      mountedApps.pop()?.unmount();
-      expect(revokeObjectUrl).toHaveBeenCalledWith(objectUrl);
     },
   );
 
-  it('loads a local backend direct URL as an authenticated blob', async () => {
-    const objectUrl = 'blob:local-pdf';
-    vi.spyOn(URL, 'createObjectURL').mockReturnValue(objectUrl);
+  it('loads a local image backend direct URL without creating a blob', async () => {
     const previewContent = vi.spyOn(fileApi, 'previewContent').mockResolvedValue({
-      data: new Blob(['preview-content'], { type: 'application/pdf' }),
-      headers: { 'content-type': 'application/pdf' },
+      data: new Blob(['preview-content'], { type: 'image/png' }),
+      headers: { 'content-type': 'image/png' },
     });
 
     const host = await mountPanel(
       createPreview({
-        directPreviewUrl: 'http://127.0.0.1:18002/file/local-objects/local/report.pdf',
+        fileName: 'report.png',
+        fileExt: 'png',
+        contentType: 'image/png',
+        directPreviewUrl: 'http://127.0.0.1:18002/file/local-objects/local/report.png',
       }),
     );
 
     await vi.waitFor(() => {
-      expect(previewContent).toHaveBeenCalledWith('file-1');
-      expect(host.querySelector('iframe')?.getAttribute('src')).toBe(objectUrl);
+      expect(host.querySelector('.preview-image-viewer [data-image-viewer] .el-image-viewer__img')?.getAttribute('src')).toBe(
+        'http://127.0.0.1:18002/file/local-objects/local/report.png',
+      );
     });
+    expect(previewContent).not.toHaveBeenCalled();
+  });
+
+  it('loads PDF through the tokenized preview-entry instead of preview-content', async () => {
+    const previewLink = vi.spyOn(fileApi, 'previewLink').mockResolvedValue({
+      fileId: 'file-1',
+      fileName: 'report.pdf',
+      previewUrl: '/api/file-preview/files/preview-entry?token=preview-token',
+    });
+    const previewContent = vi.spyOn(fileApi, 'previewContent');
+
+    const host = await mountPanel(
+      createPreview({
+        fileName: 'report.pdf',
+        fileExt: 'pdf',
+        contentType: 'application/pdf',
+        previewUrl: 'http://127.0.0.1:18045/file/files/preview-content?id=file-1',
+        documentPreviewUrl: 'http://127.0.0.1:18045/file-preview/files/preview?fileId=file-1',
+      }),
+    );
+
+    await vi.waitFor(() => {
+      expect(previewLink).toHaveBeenCalledWith('file-1');
+      expect(host.querySelector('iframe')?.getAttribute('src')).toBe(
+        '/api/file-preview/files/preview-entry?token=preview-token',
+      );
+    });
+    expect(previewContent).not.toHaveBeenCalled();
   });
 
   it('loads a complex document through the tokenized preview service link', async () => {

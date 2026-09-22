@@ -41,6 +41,21 @@ public class FileRemoteContentProvider implements IFileContentProvider {
     }
 
     @Override
+    public FileRecordVO savePreviewArtifact(SaveFileCommand command) {
+        if (command == null) {
+            throw new BizException(FileCode.FILE_EMPTY.getCode(), FileCode.FILE_EMPTY.getMessage());
+        }
+        R<FileRecordVO> response = fileBinaryFeignClient.uploadPreviewArtifact(
+                new CommandMultipartFile(command), command.getPurpose(), command.getAccessLevel(),
+                command.getBizType(), command.getBizId(), command.getBizMeta(), command.getDirectoryId());
+        if (response == null || !response.isSuccess() || response.getData() == null) {
+            String message = response == null ? FileCode.FILE_STORE_FAILED.getMessage() : response.getMsg();
+            throw new BizException(FileCode.FILE_STORE_FAILED.getCode(), message);
+        }
+        return response.getData();
+    }
+
+    @Override
     public FileDownloadVO download(Long id) {
         return FileRemoteDownloadConverter.toFileDownload(fileBinaryFeignClient.download(id));
     }

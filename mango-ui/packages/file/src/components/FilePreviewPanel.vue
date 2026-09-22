@@ -27,9 +27,9 @@
             :close-on-press-escape="false"
           />
         </div>
-        <iframe v-else-if="isPdf && inlinePreviewUrl" class="preview-frame" :src="inlinePreviewUrl" title="文件预览" />
         <video v-else-if="isVideo && inlinePreviewUrl" class="preview-media" :src="inlinePreviewUrl" controls />
         <audio v-else-if="isAudio && inlinePreviewUrl" class="preview-audio" :src="inlinePreviewUrl" controls />
+        <iframe v-else-if="isPdf && documentPreviewUrl" class="preview-frame" :src="documentPreviewUrl" title="文件预览" />
         <iframe v-else-if="documentPreviewUrl" class="preview-frame" :src="documentPreviewUrl" title="文件预览" />
         <div v-else class="preview-placeholder">
           <el-icon><Document /></el-icon>
@@ -45,7 +45,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Document } from '@element-plus/icons-vue';
 import { downloadFileRecord, fileApi, normalizeFileId, type FilePreview } from '../api/file';
-import { isBackendFileContentUrl, isPreviewDisplayUrl } from '../utils/previewUrl';
+import { isPreviewDisplayUrl } from '../utils/previewUrl';
 import type { FilePreviewPanelProps } from './FilePreviewPanel.types';
 
 type PreviewActionsState = {
@@ -68,7 +68,6 @@ const previewError = ref('');
 const loadedPreview = ref<FilePreview | null>(null);
 const inlinePreviewUrl = ref('');
 const externalPreviewUrl = ref('');
-const inlinePreviewObjectUrl = ref('');
 let previewLoadSequence = 0;
 let metadataLoadSequence = 0;
 
@@ -110,7 +109,7 @@ const documentPreviewUrl = computed(() => {
   const item = preview.value;
   if (!item) return '';
   if (externalPreviewUrl.value) return externalPreviewUrl.value;
-  if (isImage.value || isPdf.value || isVideo.value || isAudio.value) return '';
+  if (isImage.value || isVideo.value || isAudio.value) return '';
   if (isDefaultPreviewProviderUrl(item.documentPreviewUrl)) return '';
   if (isPreviewDisplayUrl(item.documentPreviewUrl)) return item.documentPreviewUrl;
   const providerUrl = props.previewProviderUrl || import.meta.env.VITE_FILE_PREVIEW_PROVIDER_URL;
@@ -165,7 +164,6 @@ async function loadInlinePreview() {
   const loadSequence = ++previewLoadSequence;
   contentLoading.value = true;
   previewError.value = '';
-  revokeInlinePreviewObjectUrl();
   inlinePreviewUrl.value = '';
   externalPreviewUrl.value = '';
   const item = preview.value;
@@ -174,7 +172,7 @@ async function loadInlinePreview() {
     return;
   }
   try {
-    if (isImage.value || isPdf.value || isVideo.value || isAudio.value) {
+    if (isImage.value || isVideo.value || isAudio.value) {
       const directUrl = resolveInlinePreviewUrl(item);
       if (directUrl) {
         if (loadSequence === previewLoadSequence) {
@@ -182,13 +180,6 @@ async function loadInlinePreview() {
         }
         return;
       }
-      const objectUrl = await resolveInlinePreviewObjectUrl(item);
-      if (loadSequence !== previewLoadSequence) {
-        URL.revokeObjectURL(objectUrl);
-        return;
-      }
-      inlinePreviewObjectUrl.value = objectUrl;
-      inlinePreviewUrl.value = objectUrl;
       return;
     }
     const previewUrl = await resolveExternalPreviewUrl(item);
@@ -233,7 +224,7 @@ async function openPreviewInNewWindow() {
 }
 
 async function resolveExternalPreviewUrl(item: FilePreview) {
-  if (isDefaultPreviewProviderUrl(item.documentPreviewUrl)) {
+  if (isPdf.value || isDefaultPreviewProviderUrl(item.documentPreviewUrl)) {
     const link = await fileApi.previewLink(item.id);
     return isPreviewDisplayUrl(link.previewUrl) ? link.previewUrl : '';
   }
@@ -241,23 +232,18 @@ async function resolveExternalPreviewUrl(item: FilePreview) {
 }
 
 function resolveInlinePreviewUrl(item: FilePreview) {
-  if (isPreviewDisplayUrl(item.directPreviewUrl) && !isBackendFileContentUrl(item.directPreviewUrl)) {
-    return item.directPreviewUrl;
+  if (isPreviewDisplayUrl(item.directPreviewUrl)) return absolutePreviewUrl(item.directPreviewUrl);
+  if (isPreviewDisplayUrl(item.previewUrl)) return absolutePreviewUrl(item.previewUrl);
+  return item.id ? absolutePreviewUrl(`/api/file/files/preview-content?id=${encodeURIComponent(String(item.id))}`) : '';
+}
+
+function absolutePreviewUrl(value?: string) {
+  if (!value) return '';
+  try {
+    return new URL(value, window.location.origin).toString();
+  } catch {
+    return value;
   }
-  return '';
-}
-
-async function resolveInlinePreviewObjectUrl(item: FilePreview) {
-  const response = await fileApi.previewContent(item.id);
-  const contentType = item.contentType || response.headers?.['content-type'] || 'application/octet-stream';
-  const blob = response.data instanceof Blob ? response.data : new Blob([response.data], { type: contentType });
-  return URL.createObjectURL(blob);
-}
-
-function revokeInlinePreviewObjectUrl() {
-  if (!inlinePreviewObjectUrl.value) return;
-  URL.revokeObjectURL(inlinePreviewObjectUrl.value);
-  inlinePreviewObjectUrl.value = '';
 }
 
 function isDefaultPreviewProviderUrl(value?: string) {
@@ -268,10 +254,17 @@ function isDefaultPreviewProviderUrl(value?: string) {
       url.pathname === '/api/file-preview/files/preview' ||
       url.pathname === '/file-preview/files/preview' ||
       url.pathname === '/api/file-preview/files/preview-entry' ||
-      url.pathname === '/file-preview/files/preview-entry'
+      url.pathname === '/file-preview/files/preview-entry' ||
+      url.pathname === '/api/onlinePreview' ||
+      url.pathname === '/onlinePreview'
     );
   } catch {
-    return value.startsWith('/api/file-preview/files/preview') || value.startsWith('/file-preview/files/preview');
+    return (
+      value.startsWith('/api/file-preview/files/preview') ||
+      value.startsWith('/file-preview/files/preview') ||
+      value.startsWith('/api/onlinePreview') ||
+      value.startsWith('/onlinePreview')
+    );
   }
 }
 
@@ -298,7 +291,6 @@ onBeforeUnmount(() => {
   metadataLoadSequence += 1;
   metadataLoading.value = false;
   contentLoading.value = false;
-  revokeInlinePreviewObjectUrl();
   inlinePreviewUrl.value = '';
 });
 

@@ -41,6 +41,7 @@ public class FileSettingsService implements IFileSettingsService {
 
     private static final int DEFAULT_ARCHIVE_RETAIN_DAYS = 180;
     private static final long DEFAULT_MULTIPART_THRESHOLD = 20L * 1024L * 1024L;
+    private static final long DEFAULT_PREVIEW_MAX_SIZE = 200L * 1024L * 1024L;
 
     private final FileSettingsMapper mapper;
     private final FileProperties properties;
@@ -60,6 +61,9 @@ public class FileSettingsService implements IFileSettingsService {
         validateExpire(command.getDirectUploadExpireSeconds(), "直传有效期必须大于0");
         validateExpire(command.getAccessTokenExpireSeconds(), "访问有效期必须大于0");
         validateExpire(command.getPreviewExpireSeconds(), "预览有效期必须大于0");
+        if (command.getPreviewMaxSize() != null) {
+            Require.isTrue(command.getPreviewMaxSize() > 0, FileCode.STORAGE_SETTINGS_INVALID);
+        }
         if (command.getMultipartThreshold() != null) {
             Require.isTrue(command.getMultipartThreshold() > 0, FileCode.STORAGE_SETTINGS_INVALID);
         }
@@ -154,6 +158,7 @@ public class FileSettingsService implements IFileSettingsService {
                 defaults.getPreviewProviderUrl()));
         entity.setPreviewExpireSeconds(resolveDefault(command.getPreviewExpireSeconds(),
                 defaults.getPreviewExpireSeconds()));
+        entity.setPreviewMaxSize(resolveDefault(command.getPreviewMaxSize(), defaults.getPreviewMaxSize()));
         entity.setPreviewExternalExtensions(joinExtensions(command.getPreviewExternalExtensions()));
         entity.setArchiveRetainEnabled(enabledByDefault(command.getArchiveRetainEnabled()));
         entity.setArchiveRetainDays(resolveDefault(command.getArchiveRetainDays(), defaults.getArchiveRetainDays()));
@@ -188,6 +193,7 @@ public class FileSettingsService implements IFileSettingsService {
         vo.setPreviewProviderUrl(resolveText(entity.getPreviewProviderUrl(),
                 defaultVO(entity.getTenantIdAsLong()).getPreviewProviderUrl()));
         vo.setPreviewExpireSeconds(entity.getPreviewExpireSeconds());
+        vo.setPreviewMaxSize(positiveOrDefault(entity.getPreviewMaxSize(), DEFAULT_PREVIEW_MAX_SIZE));
         vo.setPreviewExternalExtensions(splitExtensions(entity.getPreviewExternalExtensions()));
         vo.setArchiveRetainEnabled(!Integer.valueOf(0).equals(entity.getArchiveRetainEnabled()));
         vo.setArchiveRetainDays(entity.getArchiveRetainDays());
@@ -226,6 +232,7 @@ public class FileSettingsService implements IFileSettingsService {
         vo.setAccessTokenExpireSeconds(properties.getAccess().getTokenExpireSeconds());
         vo.setPreviewProviderUrl(trimToNull(properties.getPreview().getProviderUrl()));
         vo.setPreviewExpireSeconds(properties.getPreview().getExpireSeconds());
+        vo.setPreviewMaxSize(DEFAULT_PREVIEW_MAX_SIZE);
         vo.setPreviewExternalExtensions(normalizeExtensions(properties.getPreview().getExternalExtensions()));
         vo.setArchiveRetainEnabled(true);
         vo.setArchiveRetainDays(DEFAULT_ARCHIVE_RETAIN_DAYS);

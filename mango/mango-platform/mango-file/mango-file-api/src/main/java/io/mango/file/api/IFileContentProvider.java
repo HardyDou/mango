@@ -19,6 +19,10 @@ public interface IFileContentProvider {
 
     FileRecordVO save(SaveFileCommand command);
 
+    default FileRecordVO savePreviewArtifact(SaveFileCommand command) {
+        return save(command);
+    }
+
     FileDownloadVO download(Long id);
 
     FileDownloadVO downloadForService(Long id);

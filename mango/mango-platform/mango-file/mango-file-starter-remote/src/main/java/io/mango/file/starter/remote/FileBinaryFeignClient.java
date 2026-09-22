@@ -26,6 +26,16 @@ public interface FileBinaryFeignClient {
             @RequestParam(value = "bizMeta", required = false) String bizMeta,
             @RequestParam(value = "directoryId", required = false) Long directoryId);
 
+    @PostMapping("/preview-artifacts")
+    R<FileRecordVO> uploadPreviewArtifact(
+            @RequestPart("file") MultipartFile file,
+            @RequestParam(value = "purpose", required = false) String purpose,
+            @RequestParam(value = "accessLevel", required = false) String accessLevel,
+            @RequestParam(value = "bizType", required = false) String bizType,
+            @RequestParam(value = "bizId", required = false) String bizId,
+            @RequestParam(value = "bizMeta", required = false) String bizMeta,
+            @RequestParam(value = "directoryId", required = false) Long directoryId);
+
     @GetMapping("/download")
     ResponseEntity<byte[]> download(@RequestParam("id") Long id);
 }

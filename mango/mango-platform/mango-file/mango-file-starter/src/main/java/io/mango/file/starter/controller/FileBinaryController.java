@@ -65,6 +65,21 @@ public class FileBinaryController {
         return R.ok(fileService.upload(file, uploadCommand(purpose, accessLevel, bizType, bizId, bizMeta, directoryId)));
     }
 
+    @PostMapping("/preview-artifacts")
+    @ApiAccess(mode = ApiResourceAccessMode.INTERNAL)
+    @Operation(summary = "保存预览产物", description = "内部文件预览服务保存已生成的预览文件")
+    public R<FileRecordVO> uploadPreviewArtifact(
+            @RequestPart("file") MultipartFile file,
+            @RequestParam(value = "purpose", required = false) String purpose,
+            @RequestParam(value = "accessLevel", required = false) String accessLevel,
+            @RequestParam(value = "bizType", required = false) String bizType,
+            @RequestParam(value = "bizId", required = false) String bizId,
+            @RequestParam(value = "bizMeta", required = false) String bizMeta,
+            @RequestParam(value = "directoryId", required = false) Long directoryId) {
+        return R.ok(fileService.savePreviewArtifact(
+                file, uploadCommand(purpose, accessLevel, bizType, bizId, bizMeta, directoryId)));
+    }
+
     @PostMapping("/batch")
     @ApiAccess(mode = ApiResourceAccessMode.LOGIN)
     @Operation(summary = "多文件上传", description = "批量上传文件并创建当前机构下的文件记录")

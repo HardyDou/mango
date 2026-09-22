@@ -138,6 +138,12 @@ const viteConfig = defineConfig((mode: ConfigEnv) => {
         ...(env.VITE_USE_MOCK !== 'true'
           ? {
               '/api': createMangoApiProxy(proxyTarget),
+              // PDF.js is loaded by the preview-entry redirect. Keep its static assets on the same
+              // backend origin during local development so the embedded viewer is not served by Vite.
+              '/pdfjs': {
+                target: proxyTarget,
+                changeOrigin: true,
+              },
               '/mango-message': {
                 target: proxyTarget,
                 ws: true,
