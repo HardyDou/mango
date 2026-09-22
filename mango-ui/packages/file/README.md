@@ -55,6 +55,12 @@ URL 字段职责：
 - `FilePreviewPanel` 需要 Office 转换或文档预览服务时，会按文件 ID 获取预览元数据，并使用 `documentPreviewUrl`；这条链路不要求业务保存或理解存储公开访问字段。
 - `fileSettingsApi` 封装文件中心运行时配置。
 
+文档预览约定：`FilePreviewPanel` 对 PDF、Office 和其它文档统一使用
+`/api/file-preview/files/preview-entry?token=...` 入口；入口内部负责 PDF.js 展示、异步转换状态和已生成产物复用。
+图片、音视频、文本、HTML、表格及 CAD/STL 等直接支持的格式不经过 Office PDF 转换。文件配置页的
+`previewMaxSize`（默认 200 MiB）只限制 DOC/DOCX/PPT/PPTX 的自动转换；超过限制时先提示下载或继续等待预览。
+业务表单和业务表仍只保存 `fileId`，不保存预览 URL。
+
 ## 4. 接入方式
 
 安装依赖：

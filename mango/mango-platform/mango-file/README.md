@@ -16,6 +16,10 @@
 
 不属于 `mango-file` 的能力：Office/PDF 转换、OCR、在线编辑、模板渲染。文档预览和文件加工分别看 `mango-file-preview`、`mango-infra-fileproc`。
 
+文件服务为文档预览提供底层文件能力：文件设置中的 `previewMaxSize`（默认 200 MiB）由管理后台维护并供
+`mango-file-preview` 查询，预览产物使用新的文件记录保存，源文件记录保持不可变。业务代码仍通过 `fileId`
+读取源文件，不直接下载或持久化 URL；预览入口、任务状态和 PDF.js 页面由 `mango-file-preview` 负责。
+
 ## 2. 功能清单
 
 | 能力 | 用途 | 常用入口 |
