@@ -6,6 +6,7 @@ import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.file.api.vo.FileRecordVO;
 import io.mango.file.preview.api.enums.FilePreviewTaskStatus;
+import io.mango.file.preview.api.enums.FilePreviewCode;
 import io.mango.file.preview.api.vo.FilePreviewTaskVO;
 import io.mango.file.preview.core.config.FilePreviewProperties;
 import io.mango.file.preview.core.gateway.FilePreviewFileGateway;
@@ -89,9 +90,9 @@ public class FilePreviewTaskServiceImpl implements IFilePreviewTaskService {
 
     @Override
     public FilePreviewTaskVO submit(Long fileId, boolean allowLargeFile) {
-        Require.notNull(fileId, "文件ID不能为空");
+        Require.notNull(fileId, FilePreviewCode.FILE_ID_EMPTY);
         FileRecordVO record = fileGateway.find(fileId);
-        Require.notNull(record, "文件不存在");
+        Require.notNull(record, FilePreviewCode.FILE_NOT_FOUND);
         String key = versionKey(record);
         latestKeys.put(fileId, key);
         FilePreviewTaskVO persisted = readPersisted(key);
@@ -130,9 +131,9 @@ public class FilePreviewTaskServiceImpl implements IFilePreviewTaskService {
 
     @Override
     public FilePreviewTaskVO status(Long fileId, boolean allowLargeFile) {
-        Require.notNull(fileId, "文件ID不能为空");
+        Require.notNull(fileId, FilePreviewCode.FILE_ID_EMPTY);
         FileRecordVO record = fileGateway.find(fileId);
-        Require.notNull(record, "文件不存在");
+        Require.notNull(record, FilePreviewCode.FILE_NOT_FOUND);
         String key = versionKey(record);
         latestKeys.put(fileId, key);
         FilePreviewTaskVO persisted = readPersisted(key);
@@ -166,7 +167,10 @@ public class FilePreviewTaskServiceImpl implements IFilePreviewTaskService {
             });
         } catch (RuntimeException ex) {
             activeKeys.remove(key);
-            throw ex;
+            FilePreviewTaskVO task = tasks.get(key);
+            if (task != null) {
+                update(task, FilePreviewTaskStatus.FAILED, 100, "预览任务提交失败，请稍后重试");
+            }
         }
     }
 
@@ -192,10 +196,15 @@ public class FilePreviewTaskServiceImpl implements IFilePreviewTaskService {
                 touch(task);
                 return;
             }
-            ConvertFormat source = ConvertFormat.parse(extension).orElseThrow(
-                    () -> new IllegalArgumentException("暂不支持该文件格式的预览"));
+            var parsedFormat = ConvertFormat.parse(extension);
+            if (parsedFormat.isEmpty()) {
+                update(task, FilePreviewTaskStatus.FAILED, 100, "暂不支持该文件格式的预览");
+                return;
+            }
+            ConvertFormat source = parsedFormat.get();
             if (!convertApi.canConvert(source, ConvertFormat.PDF)) {
-                throw new IllegalArgumentException("暂不支持该文件格式转换为 PDF");
+                update(task, FilePreviewTaskStatus.FAILED, 100, "暂不支持该文件格式转换为 PDF");
+                return;
             }
             FileDownloadVO sourceFile = fileGateway.download(record.getId());
             update(task, FilePreviewTaskStatus.PROCESSING, 15, "正在转换为 PDF");

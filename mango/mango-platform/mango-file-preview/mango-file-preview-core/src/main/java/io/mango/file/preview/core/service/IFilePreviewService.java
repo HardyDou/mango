@@ -39,13 +39,6 @@ public interface IFilePreviewService {
      */
     Long resolvePreviewFileId(String token);
 
-    /**
-     * Reads task state with the tenant context carried by the public preview token.
-     */
-    default FilePreviewTaskVO previewTaskByToken(String token) {
-        return previewTaskByToken(token, false);
-    }
-
     FilePreviewTaskVO previewTaskByToken(String token, boolean allowLargeFile);
 
     /** 在预览令牌携带的租户上下文中读取已生成的预览产物。 */

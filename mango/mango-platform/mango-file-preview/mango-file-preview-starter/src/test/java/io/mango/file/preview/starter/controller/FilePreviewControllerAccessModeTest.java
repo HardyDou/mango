@@ -18,7 +18,7 @@ class FilePreviewControllerAccessModeTest {
 
     @Test
     void fileIdPreviewEndpointsAllowEveryLoggedInUser() throws NoSuchMethodException {
-        assertAccessMode("preview", ApiResourceAccessMode.LOGIN, "", Long.class, boolean.class);
+        assertAccessMode("preview", ApiResourceAccessMode.LOGIN, "", Long.class, Boolean.class);
         assertAccessMode(FilePreviewPageController.class, "redirectPreview",
                 ApiResourceAccessMode.LOGIN, "", Long.class, boolean.class);
     }

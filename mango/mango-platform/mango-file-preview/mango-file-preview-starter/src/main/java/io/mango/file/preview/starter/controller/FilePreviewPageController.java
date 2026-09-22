@@ -1,6 +1,7 @@
 package io.mango.file.preview.starter.controller;
 
 import io.mango.file.api.vo.FileDownloadVO;
+import io.mango.common.contract.NativeHttpAdapter;
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.file.preview.api.vo.FilePreviewLinkVO;
@@ -33,6 +34,7 @@ import java.nio.charset.StandardCharsets;
  */
 @Validated
 @RestController
+@NativeHttpAdapter
 @RequestMapping("/file-preview")
 @RequiredArgsConstructor
 @Tag(name = "文件预览页面", description = "文件预览页面跳转接口")
@@ -47,6 +49,7 @@ public class FilePreviewPageController {
     public ModelAndView redirectPreview(
             @Parameter(description = "文件ID", required = true)
             @RequestParam("fileId") @NotNull(message = "文件ID不能为空") Long fileId,
+            @Parameter(description = "是否确认继续转换大文件")
             @RequestParam(value = "allowLargeFile", defaultValue = "false") boolean allowLargeFile) {
         previewTaskService.submit(fileId, allowLargeFile);
         FilePreviewLinkVO link = filePreviewService.createPreview(fileId);
@@ -57,6 +60,7 @@ public class FilePreviewPageController {
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "文件预览临时入口")
     @Operation(summary = "跳转临时文件预览页", description = "公开接口。使用已鉴权接口签发的短期令牌跳转到在线预览页面")
     public ModelAndView redirectPreviewEntry(
+            @Parameter(description = "预览入口临时令牌", required = true)
             @RequestParam("token") @NotBlank(message = "预览入口临时令牌不能为空") String token) {
         return redirectPreviewEntry(token, false, false);
     }
@@ -64,7 +68,9 @@ public class FilePreviewPageController {
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "文件预览临时入口")
     public ModelAndView redirectPreviewEntry(
             String token,
+            @Parameter(description = "是否直接打开已生成产物")
             @RequestParam(value = "ready", defaultValue = "false") boolean ready,
+            @Parameter(description = "是否确认继续转换大文件")
             @RequestParam(value = "allowLargeFile", defaultValue = "false") boolean allowLargeFile) {
         FilePreviewTaskVO task = filePreviewService.previewTaskByToken(token, allowLargeFile);
         if (!ready) {
@@ -89,7 +95,9 @@ public class FilePreviewPageController {
 
     @GetMapping(value = "/files/preview-artifact")
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "文件预览已生成产物")
+    @Operation(summary = "读取预览产物", description = "公开接口。按预览入口令牌读取已经生成的 PDF 产物")
     public void previewArtifact(
+            @Parameter(description = "预览入口临时令牌", required = true)
             @RequestParam("token") @NotBlank(message = "预览入口临时令牌不能为空") String token,
             HttpServletResponse response) throws IOException {
         FileDownloadVO download;
@@ -116,7 +124,9 @@ public class FilePreviewPageController {
 
     @GetMapping(value = "/files/preview-content")
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "文件预览原始内容")
+    @Operation(summary = "读取原始预览内容", description = "公开接口。按预览入口令牌读取无需转换的原始 PDF 内容")
     public void previewContent(
+            @Parameter(description = "预览入口临时令牌", required = true)
             @RequestParam("token") @NotBlank(message = "预览入口临时令牌不能为空") String token,
             HttpServletResponse response) throws IOException {
         FileDownloadVO download;
@@ -176,8 +186,11 @@ public class FilePreviewPageController {
 
     @GetMapping(value = "/files/preview-progress", produces = MediaType.APPLICATION_JSON_VALUE)
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "文件预览转换状态")
+    @Operation(summary = "查询预览转换状态", description = "公开接口。按预览入口令牌查询排队、转换或完成状态")
     public R<FilePreviewTaskVO> previewProgress(
+            @Parameter(description = "预览入口临时令牌", required = true)
             @RequestParam("token") @NotBlank(message = "预览入口临时令牌不能为空") String token,
+            @Parameter(description = "是否确认继续转换大文件")
             @RequestParam(value = "allowLargeFile", defaultValue = "false") boolean allowLargeFile) {
         return R.ok(filePreviewService.previewTaskByToken(token, allowLargeFile));
     }

@@ -49,12 +49,12 @@ class FilePreviewTaskServiceImplTest {
                 taskStore, leaseLocker, new ObjectMapper().registerModule(new JavaTimeModule()),
                 new FilePreviewProperties(), testExecutor());
 
-        FilePreviewTaskVO first = service.submit(42L);
-        FilePreviewTaskVO second = service.submit(42L);
+        FilePreviewTaskVO first = service.submit(42L, false);
+        FilePreviewTaskVO second = service.submit(42L, false);
 
         assertThat(second.getFileId()).isEqualTo(first.getFileId());
         assertThat(second.getCreatedAt()).isEqualTo(first.getCreatedAt());
-        await(() -> service.status(42L).getStatus() == FilePreviewTaskStatus.FAILED);
+        await(() -> service.status(42L, false).getStatus() == FilePreviewTaskStatus.FAILED);
         verify(leaseLocker, atLeastOnce()).tryAcquire(any(), any(), anyLong());
         verify(taskStore, atLeastOnce()).store(any(), contains("FAILED"), eq(30L * 24 * 60 * 60));
         verify(convertApi, never()).convert(any());
@@ -83,10 +83,10 @@ class FilePreviewTaskServiceImplTest {
                 taskStore, leaseLocker, new ObjectMapper().registerModule(new JavaTimeModule()),
                 new FilePreviewProperties(), testExecutor());
 
-        service.submit(43L);
-        await(() -> service.status(43L).getStatus() == FilePreviewTaskStatus.SUCCEEDED);
+        service.submit(43L, false);
+        await(() -> service.status(43L, false).getStatus() == FilePreviewTaskStatus.SUCCEEDED);
 
-        FilePreviewTaskVO result = service.status(43L);
+        FilePreviewTaskVO result = service.status(43L, false);
         assertThat(result.getPreviewFileId()).isEqualTo(99L);
         assertThat(result.getProgress()).isEqualTo(100);
         verify(contentProvider, times(1)).savePreviewArtifact(any());
@@ -105,10 +105,10 @@ class FilePreviewTaskServiceImplTest {
                 taskStore, availableLeaseLocker(), new ObjectMapper().registerModule(new JavaTimeModule()),
                 new FilePreviewProperties(), testExecutor());
 
-        service.submit(44L);
-        await(() -> service.status(44L).getStatus() == FilePreviewTaskStatus.SUCCEEDED);
+        service.submit(44L, false);
+        await(() -> service.status(44L, false).getStatus() == FilePreviewTaskStatus.SUCCEEDED);
 
-        FilePreviewTaskVO result = service.status(44L);
+        FilePreviewTaskVO result = service.status(44L, false);
         assertThat(result.getPreviewFileId()).isNull();
         verify(convertApi, never()).convert(any());
         verify(contentProvider, never()).save(any());
@@ -132,7 +132,7 @@ class FilePreviewTaskServiceImplTest {
                 taskStore, availableLeaseLocker(), new ObjectMapper().registerModule(new JavaTimeModule()),
                 new FilePreviewProperties(), testExecutor());
 
-        FilePreviewTaskVO result = service.submit(45L);
+        FilePreviewTaskVO result = service.submit(45L, false);
 
         assertThat(result.getStatus()).isEqualTo(FilePreviewTaskStatus.CONFIRM_REQUIRED);
         assertThat(result.getMessage()).isEqualTo("文件太大，预览需要较长时间，建议下载查看");
@@ -184,7 +184,7 @@ class FilePreviewTaskServiceImplTest {
                 taskStore, availableLeaseLocker(), new ObjectMapper().registerModule(new JavaTimeModule()),
                 properties, testExecutor(2));
 
-        records.keySet().forEach(service::submit);
+        records.keySet().forEach(fileId -> service.submit(fileId, false));
 
         assertThat(started.await(3, TimeUnit.SECONDS)).isTrue();
         assertThat(maximum.get()).isEqualTo(2);
@@ -192,7 +192,7 @@ class FilePreviewTaskServiceImplTest {
         assertThat(maximum.get()).isEqualTo(2);
         release.countDown();
         for (Long fileId : records.keySet()) {
-            await(() -> service.status(fileId).getStatus() == FilePreviewTaskStatus.SUCCEEDED);
+            await(() -> service.status(fileId, false).getStatus() == FilePreviewTaskStatus.SUCCEEDED);
         }
     }
 

@@ -2,6 +2,7 @@ package io.mango.file.preview.starter.controller;
 
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
+import jakarta.validation.constraints.NotNull;
 import io.mango.common.result.R;
 import io.mango.file.preview.api.FilePreviewApi;
 import io.mango.file.preview.api.vo.FilePreviewLinkVO;
@@ -37,9 +38,10 @@ public class FilePreviewController implements FilePreviewApi {
     @Operation(summary = "创建文件预览链接", description = "登录接口。按文件ID创建当前租户可见文件的在线预览页面地址")
     public R<FilePreviewLinkVO> preview(
             @Parameter(description = "文件ID", required = true)
-            @RequestParam("fileId") Long fileId,
-            @RequestParam(value = "allowLargeFile", defaultValue = "false") boolean allowLargeFile) {
-        previewTaskService.submit(fileId, allowLargeFile);
+            @RequestParam("fileId") @NotNull(message = "文件ID不能为空") Long fileId,
+            @Parameter(description = "是否确认继续转换大文件")
+            @RequestParam(value = "allowLargeFile", defaultValue = "false") @NotNull Boolean allowLargeFile) {
+        previewTaskService.submit(fileId, Boolean.TRUE.equals(allowLargeFile));
         return R.ok(filePreviewService.createPreview(fileId));
     }
 
@@ -49,9 +51,10 @@ public class FilePreviewController implements FilePreviewApi {
     @Operation(summary = "查询文件预览生成状态", description = "登录接口。首次查询会创建异步预览任务，重复请求复用同一文件版本任务")
     public R<FilePreviewTaskVO> status(
             @Parameter(description = "文件ID", required = true)
-            @RequestParam("fileId") Long fileId,
-            @RequestParam(value = "allowLargeFile", defaultValue = "false") boolean allowLargeFile) {
-        return R.ok(previewTaskService.status(fileId, allowLargeFile));
+            @RequestParam("fileId") @NotNull(message = "文件ID不能为空") Long fileId,
+            @Parameter(description = "是否确认继续转换大文件")
+            @RequestParam(value = "allowLargeFile", defaultValue = "false") @NotNull Boolean allowLargeFile) {
+        return R.ok(previewTaskService.status(fileId, Boolean.TRUE.equals(allowLargeFile)));
     }
 
 }
