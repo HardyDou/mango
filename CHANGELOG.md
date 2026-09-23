@@ -2,7 +2,7 @@
 
 ## v2026.09.23-common-detail-file-release - 2026-09-23
 
-Status: `PENDING`. Release plan `937d808f20ad1d805a65612e23b63daebcffd111beaf95268fe3f221bf82ce1a` targets Mango Maven/docs `1.0.55` and the 26-package npm closure through `@mango/cli@1.2.16`; publication and verification are pending.
+Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `d29b1399226e3e798d937b867f459b44f78a6fe0f7a514967ba3e92e7bf366d8` for release plan `937d808f20ad1d805a65612e23b63daebcffd111beaf95268fe3f221bf82ce1a` and prepared candidate `d005f2cefc5494c83802e3e4f33c4778020840eed1101eb1ef86dd2e821c9d67` is `COMPLETED`: all 192 Maven/docs coordinates at `1.0.55` and all 26 npm packages through `@mango/cli@1.2.16` match the sealed candidate in both publish and consume registries, the pure consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`.
 
 ### Pull Requests
 
