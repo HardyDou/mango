@@ -12,6 +12,12 @@ describe('@mango/detail 样式与依赖隔离', () => {
       dependencies?: Record<string, string>;
       peerDependencies?: Record<string, string>;
     };
+    const commonPackage = JSON.parse(readFileSync(resolve(packageRoot, '../common/package.json'), 'utf8')) as {
+      version: string;
+    };
+    const filePackage = JSON.parse(readFileSync(resolve(packageRoot, '../file/package.json'), 'utf8')) as {
+      version: string;
+    };
     const combinedSource = `${pageSource}\n${richTextSource}`;
 
     expect(pageSource).toContain('<style scoped>');
@@ -21,8 +27,8 @@ describe('@mango/detail 样式与依赖隔离', () => {
     expect(combinedSource).not.toMatch(/:global\(\.el-/);
     expect(packageJson.dependencies).toBeUndefined();
     expect(packageJson.peerDependencies).toMatchObject({
-      '@mango/common': 'workspace:2.0.4',
-      '@mango/file': 'workspace:1.0.40',
+      '@mango/common': `workspace:${commonPackage.version}`,
+      '@mango/file': `workspace:${filePackage.version}`,
     });
   });
 });
