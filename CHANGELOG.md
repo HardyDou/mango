@@ -1,5 +1,84 @@
 # Mango Changelog
 
+## v2026.09.23-common-detail-file-release - 2026-09-23
+
+Status: `PENDING`. Release plan `937d808f20ad1d805a65612e23b63daebcffd111beaf95268fe3f221bf82ce1a` targets Mango Maven/docs `1.0.55` and the 26-package npm closure through `@mango/cli@1.2.16`; publication and verification are pending.
+
+### Pull Requests
+
+- [PR #966](https://github.com/HardyDou/mango/pull/966) Added MangoDataTable, MangoTableCell, MangoStatusText and the updated Pagination contract. Packages: @mango/common@2.1.0, @mango/admin@1.1.12 and generated npm dependents through @mango/cli@1.2.16. Business Adaptation: upgrade the complete npm tuple and verify table, cell, status and pagination interactions.
+- [PR #973](https://github.com/HardyDou/mango/pull/973) Added the collapsible detail component suite and related common/file public components. Packages: @mango/detail@1.1.0, @mango/common@2.1.0, @mango/file@1.1.0 and generated npm dependents through @mango/cli@1.2.16. Business Adaptation: install the detail package with its documented style entry and verify detail, rich-text, drawer and file-preview states.
+- [PR #974](https://github.com/HardyDou/mango/pull/974) Fixed Issue #972 office preview conversion coordination, task leasing and protected preview access. Packages: Mango Maven/docs 1.0.55, @mango/file@1.1.0 and generated npm dependents through @mango/cli@1.2.16. Business Adaptation: run the file preview migration, verify async task polling and retry behavior, and keep preview access behind the documented permission path.
+- [PR #975](https://github.com/HardyDou/mango/pull/975) Added MangoAttachmentUploadGrid for categorized click/drag uploads, validation, preview, replace and deletion. Packages: @mango/file@1.1.0 and generated npm dependents through @mango/cli@1.2.16. Business Adaptation: use the public component API and validate file rules, progress, preview and required-state behavior.
+- [PR #978](https://github.com/HardyDou/mango/pull/978) Fixed asynchronous file-preview task coordination and completion handling. Packages: Mango Maven/docs 1.0.55, @mango/file@1.1.0 and generated npm dependents through @mango/cli@1.2.16. Business Adaptation: verify concurrent preview requests, lease ownership, failure reporting and final download URLs from a clean consumer.
+
+### Fixed
+
+- Coordinate office preview conversion through durable task records and bounded local or Redis leases, with explicit failure and retry states.
+- Preserve protected file-preview access and correct preview task completion while preventing direct-service fallback paths.
+- Add the file settings preview size migration with a default 200 MiB limit and expose the value through the real settings API.
+
+### Added
+
+- Add @mango/detail with MangoCollapseDetailPage and MangoRichTextPreview.
+- Add common detail building blocks: MangoDataTable, MangoTableCell, MangoStatusText, MangoDescriptionList, MangoDetailSummary, MangoPageBackBar and MangoSideDrawerShell.
+- Add MangoFileList, MangoFilePreviewDialog and MangoAttachmentUploadGrid with documented props, events, slots and validation behavior.
+
+### Changed
+
+- Advance the non-application Maven reactor and io.mango:mango-docs-bundle from 1.0.54 to 1.0.55.
+- Publish the machine-generated npm dependency closure from @mango/common@2.1.0 through @mango/cli@1.2.16 in topology order.
+- Keep @mango/pmo@1.4.4 unchanged while the CLI locks the complete frontend tuple and Mango Maven 1.0.55.
+
+### Versions
+
+- Mango Maven non-application reactor and io.mango:mango-docs-bundle: 1.0.54 to 1.0.55 across 192 coordinates.
+- npm closure: @mango/common@2.1.0, @mango/admin-extension@1.0.7, @mango/ai@1.1.5, @mango/auth@1.0.35, @mango/file@1.1.0, @mango/detail@1.1.0, @mango/grid-layout@1.0.24, @mango/grid-widgets@1.0.30, @mango/home@1.0.23, @mango/rbac@1.0.36, @mango/site-shell@1.0.20, @mango/system@1.0.44, @mango/admin-pages@1.0.45, @mango/calendar@1.0.46, @mango/cms@1.0.35, @mango/job@1.0.39, @mango/link@1.0.32, @mango/notice@1.0.51, @mango/numgen@1.0.47, @mango/payment@1.0.38, @mango/template@1.0.47, @mango/workflow@1.0.55, @mango/admin-shell@1.0.76, @mango/workflow-business-example@1.0.54, @mango/admin@1.1.12 and @mango/cli@1.2.16. @mango/pmo@1.4.4 remains unchanged.
+
+### Published Packages
+
+1. Publish the sealed 192-coordinate non-application Maven reactor plus io.mango:mango-docs-bundle:1.0.55, then verify both Maven registry roles.
+2. Publish the 26-package npm topology in dependency order, ending at @mango/cli@1.2.16, then verify every package from the npm consume registry.
+3. Create the immutable tag v2026.09.23-common-detail-file-release and GitHub Release only after sealed-candidate and pure consume-registry verification.
+
+### Business Impact
+
+- Generated Mango consumers receive the new detail, data-table and categorized file-upload capabilities through the complete published npm tuple.
+- File consumers must run the file module migration, which adds file_settings.preview_max_size with a 200 MiB default; existing files and runtime IDs are preserved.
+- Office preview requests become asynchronous and lease-coordinated across instances; callers must use the documented task status and preview endpoints and handle explicit failure states.
+- No production traffic rollout, application deployment, historical file rewrite or Baohan source change is included.
+
+### Upgrade Estimate
+
+- Audience: generated Mango applications, direct frontend component consumers, and services using File Preview or File settings.
+- Engineering Effort: 45 to 90 minutes for standard generated consumers; 2 to 4 hours for customized file-preview integrations or multi-instance deployments.
+- Execution Window: 60 to 150 minutes including dependency update, migration, clean build, preview verification and registry propagation.
+- Service Downtime: no framework-mandated downtime; apply the migration in the consumer's normal deployment window.
+- Rollback Effort: 30 to 60 minutes to restore Maven 1.0.54, CLI 1.2.15 and the previous immutable npm tuple; retain the additive preview_max_size column unless a separately reviewed database rollback is required.
+- Assumptions: Java 21, Node 22.23.1, configured Maven/npm registries, Redis when using distributed leases, and representative office files.
+
+### Upgrade Notes
+
+1. Upgrade the complete tuple to Maven/docs 1.0.55, @mango/cli@1.2.16 and every npm coordinate listed above; retain @mango/pmo@1.4.4.
+2. Run the file module migration and confirm file_settings.preview_max_size is 209715200 unless an explicit operational value is configured.
+3. Update file-preview consumers to submit or poll the asynchronous task contract, handle failed and expired tasks, and preserve permission checks on preview and download endpoints.
+4. Install @mango/detail, @mango/common and @mango/file from the consume registry without workspace links; clear Vite/browser caches and verify detail, table, upload and preview states.
+
+### Verification
+
+- Run catalog, release-impact, package export, admin-style, module-style, frontend unit/typecheck/build, backend module tests and the generated backend gate with Node 22.23.1.
+- Run release-plan, release-notes, PMO baseline, CLI release-version and local release checks; seal one mixed candidate from the exact source tree.
+- Verify all 192 Maven coordinates and 26 npm packages by checksum in publish and consume registries, then run one pure consume-registry consumer covering detail components, upload validation, async preview polling and the migration-applied file settings API.
+
+### Rollback
+
+- Restore consumers to Maven/docs 1.0.54, @mango/cli@1.2.15 and the previous immutable npm tuple through their normal application release process; never overwrite published coordinates.
+- Keep the additive preview_max_size migration in place unless a separately approved database rollback is prepared; existing file metadata and runtime IDs require no rewrite.
+
+### Audit History
+
+- PRs #969 and #970 are prior 1.0.54 release and closeout history and are not release-bearing changes in this batch.
+
 ## v2026.09.17-maven-1.0.54-common-identity-release - 2026-09-17
 
 Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `346868b6db938d1ccd42e58debef4dee9dc6dbf502cb299e78c014983f9e4f08` for release plan `e3bd62fb8b47c0be39656c232412d0b1f112d3c3067ae7c2509e63b2dd34e473` and prepared candidate `b4a55a66264cf4cc20006565c4da373e212a218db001dcf466d29744125c0dc7` is `COMPLETED`: all 192 Maven/docs coordinates at `1.0.54` and all 25 npm packages from `@mango/common@2.0.4` through `@mango/cli@1.2.15` match the sealed candidate in both publish and consume registries, the pure consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`.
