@@ -496,6 +496,23 @@ API 加密环境变量：
 
 `MangoTableCell` 会直接修改传入行的可编辑字段，并在提交后通过 `change` 提供 `previousValue` 和新值；只读业务可仅使用 text/status/tag/custom。`MangoDataTable` 不请求接口、不读取路由或 store，也不根据业务状态推断文案、tone 或权限。
 
+`MangoDataTable` 的列和扩展类型：
+
+| 类型 | 字段 / 默认语义 |
+| --- | --- |
+| `MangoTableColumn` | `field`、`label` 必填；`type` 为 `text | status | tag | button | input | select | radio | custom`（默认 `text`）；支持 `width`、`minWidth`、`fixed`、`align`、`sortable`、`resizable`、`expandable`、`hidden`、`showOverflowTooltip`、`emptyText`、`options`、`loading`、`slot`、`props`、`formatter`、`disabled`。 |
+| `MangoTableOption` | `label`、`value` 必填；`disabled?`、`tone?` 用于选择项状态。 |
+| `MangoTableAction` | `key`、`text` 必填；`tone`、`visible`、`disabled`、`loading` 可为静态值或按行上下文计算，`props` 透传按钮属性。 |
+| `MangoTableOperation` | 操作列配置：`visible`、`label`、`width`、`minWidth`、`fixed`、`align`、`resizable`、`moreCount`、`actions`。`actions` 必填；事件只返回意图，不自动调用接口。 |
+| `MangoTablePagination` | `page`、`limit`、`total` 必填；`visible`、`pageSizes`、`align`、`layout`、`props` 可选。 |
+| `MangoTableExpand` | `type`（当前为 `list`）、`labelWidth`、`emptyText`。 |
+
+单元格上下文包含 `{ row, rowIndex, column, field, value }`；编辑事件额外包含 `previousValue`。`MangoTableCell` 的 `input/select/radio` 会改写行字段并触发 `cell-change`，`formatter` 只改变展示值。`MangoDataTable` 的分页、选择、操作和重试均由宿主监听后请求数据。
+
+`MangoStatusText`：`tone` 默认 `neutral`，可选 `primary | success | warning | danger | info | neutral`；默认插槽为状态文案。组件只映射主题 CSS 变量，不内置业务状态到 tone 的转换，也不提供事件或接口。
+
+`Pagination` Props 默认值为：`total=0`、`page=1`、`limit=20`、`pageSizes=[10,20,30,50]`、`layout='total, sizes, prev, pager, next, jumper'`、`background=true`、`pagerCount=5`、`small=false`、`disabled=false`、`align='right'`。支持 `v-model:page`、`v-model:limit`；事件 `update:page(number)`、`update:limit(number)` 和合并同一轮变更的 `pagination({ page, limit })`。`small` 仅控制 Element Plus 尺寸，不会改变分页数据结构。
+
 表头背景和文字颜色分别由 `--mango-table-header-bg`、`--mango-table-header-text` 提供。默认主题和 `admin-standard` 使用 `#eef1f5` / `#000000`，dark 与 compact 主题使用各自语义色；消费系统可在主题容器覆盖这两个变量。组件保留同值 fallback，确保宿主仍加载旧版主题包时不会退回 Element Plus 的透明表头。
 
 `Chat` 只负责聊天 UI，不再内置具体传输。升级本批次时，所有调用方必须显式传入 `stream` provider；provider 负责鉴权、租户、服务选择、取消和把真实 AI 事件回调给组件：

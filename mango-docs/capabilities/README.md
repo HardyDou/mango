@@ -1,5 +1,7 @@
 # Mango 能力地图
 
+2026-09-23 文档补全：保函业务迁移到 Mango 的详情、文件和公共表格组件已补齐正式 API 契约。`@mango/detail`、`@mango/file`、`@mango/common` README 现在覆盖 Props/defaults、事件 payload、slots、类型字段、后端依赖、权限/租户边界和排障入口；分类上传的完整契约集中在 [File Components README](../../mango-ui/packages/file/src/components/README.md)。
+
 ## 1. 定位
 
 本文用于帮助 Mango 开发者、业务开发者和 AI Agent 快速定位 Mango 能力、模块 README、关联 PMO 规则和排障入口。
