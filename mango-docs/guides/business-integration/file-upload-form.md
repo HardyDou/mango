@@ -90,6 +90,8 @@ create table biz_contract_attachment (
 
 业务表单需要按资料类型分别展示卡片，并为每类资料配置必填、数量、格式或大小规则时，使用 `MangoAttachmentUploadGrid`。组件的 `v-model` 回写附件记录及 `categoryKey`，业务提交时仍按自身 Command 转换并保存文件 ID 或附件关联，不保存预览和下载地址。
 
+组件的完整 Props、默认值、事件、插槽和 `validate()` 约定见 [`@mango/file` 组件 API](../../../mango-ui/packages/file/src/components/README.md)；详情页文件列表/预览弹框见 [`@mango/file` README](../../../mango-ui/packages/file/README.md)。本文只保留业务接入和验收口径，避免复制公共 API 表。
+
 ```vue
 <script setup lang="ts">
 import { ref } from "vue";

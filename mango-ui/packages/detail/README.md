@@ -81,22 +81,47 @@ const panels: MangoCollapsePanel[] = [
 | `rich-text-preview` | 安全富文本和托管文件预览         | `MangoRichTextPreview`        |
 | `custom`            | 业务自定义内容                   | `panel-*` 或 `panel` slot     |
 
-主要状态 props：
+完整 Props：
 
-| 属性                      | 默认值         | 说明                             |
-| ------------------------- | -------------- | -------------------------------- |
-| `loading`                 | `false`        | 展示加载状态，优先于错误态       |
-| `errorText`               | 空             | 展示错误结果并提供重试按钮       |
-| `emptyDescription`        | `暂无详情信息` | 无面板时的空状态文案             |
-| `autoExpandPanels`        | `true`         | 自动展开全部面板，并跟随新增面板 |
-| `defaultActivePanelNames` | `[]`           | 关闭自动展开后指定初始展开 Key   |
-| `showRefresh`             | `true`         | 展示返回栏刷新按钮               |
-| `showContentShadow`       | `true`         | 控制内容区域默认阴影             |
-| `showWorkflowTrigger`     | `true`         | 展示右下角工作流抽屉按钮         |
+| 属性 | 默认值 | 说明 |
+| --- | --- | --- |
+| `title` | 必填 | 页面标题。 |
+| `panels` / `tabs` | `undefined` | 二选一；直接面板或 Tab 下的面板配置。两者同时传入会报错。 |
+| `responsive` | `undefined` | 描述列表栅格响应式配置：`gutter`、`span`、`xs`、`sm`、`md`、`lg`、`xl`。 |
+| `activeTab` / `defaultActiveTab` | `undefined` | 受控/初始 Tab 名称。 |
+| `autoExpandPanels` | `true` | 自动展开全部面板，并跟随新增面板。 |
+| `defaultActivePanelNames` | `undefined` | `autoExpandPanels=false` 时指定初始展开 Key。 |
+| `backLabel` | `返回` | 返回按钮文案。 |
+| `backTo` | `undefined` | 传给 `MangoPageBackBar` 的目标路由。 |
+| `navigateOnBack` | `false` | 返回时是否由组件执行路由跳转；关闭时只触发 `back`。 |
+| `showBackBar` | `true` | 是否显示返回栏。 |
+| `showRefresh` / `refreshLoading` | `true` / `false` | 刷新按钮及其 loading。 |
+| `showContentShadow` | `true` | 内容区默认阴影。 |
+| `summary` | `undefined` | `MangoDetailSummary` 配置。 |
+| `showBackTop` / `backTopThreshold` | `true` / `300` | 是否显示回到顶部按钮及触发滚动距离（px）。 |
+| `showActions` / `actionsAlign` | `true` / `right` | 底部操作区及对齐方式 `left | center | right`。 |
+| `showWorkflow` / `showWorkflowTrigger` | `false` / `true` | 工作流抽屉及右下角触发按钮。 |
+| `workflowTitle` / `workflowDrawerSize` | `节点过程` / `min(420px, 100vw)` | 抽屉标题和尺寸。 |
+| `dataPage` | `undefined` | 写入稳定数据标识 `data-page`，用于埋点和验收。 |
+| `loading` | `false` | 加载态，优先于错误态。 |
+| `errorText` | `''` | 错误文案；非空时显示重试入口。 |
+| `emptyDescription` | `暂无详情信息` | 无面板或空内容文案。 |
 
 `defaultActivePanelNames` 只能在 `autoExpandPanels=false` 时使用。空、重复或不存在的 Key，以及同时传入 `panels` 和 `tabs`，都会抛出明确配置错误。
 
-公开事件包括 `back`、`refresh`、`retry`、`change`、`tab-change`、`panel-action`、`file-list-selection-change` 和 `update:activeTab`。
+面板与内容类型：`description-list.data` 是 `MangoDescriptionListProps`，`file-list.data` 是 `MangoFileListProps`，`list-table.data` 是去掉卡片/模式切换字段的 `MangoDataTableProps<Record<string, unknown>>`，`rich-text-preview.data` 为 `{ content?: string }`，`custom` 不需要 `data` 并通过 slot 渲染。面板字段为 `name`、`title`、`disabled`、`emptyDescription`、`dataSurface`、`headerActions` 和 `content`；Tab 字段为 `name`、`label`、`disabled`、`lazy`、`panels`、`emptyDescription`；面板操作字段为 `name`、`label`、`icon`、`disabled`、`loading`、`dataAction`、`dataStage`。
+
+公开事件及 payload：
+
+| 事件 | payload |
+| --- | --- |
+| `back`、`refresh`、`retry` | 无参数。 |
+| `update:activeTab`、`tab-change` | Tab `name: string`。前者用于 `v-model:active-tab`。 |
+| `change` | 当前展开面板名 `string[]`。 |
+| `panel-action` | `{ action, panel, panelIndex, tab?, tabIndex? }`。 |
+| `file-list-selection-change` | `{ panel, panelIndex, rows, tab?, tabIndex? }`，`rows` 为 `MangoFileListRow[]`。 |
+
+Slots：`toolbar`（返回栏工具区）、`summary`（摘要）、`actions`（底部操作）、`workflow`（工作流抽屉）、`panel` / `panel-{name}`（自定义面板，参数含 `panel/index/expanded/tab/tabIndex`）、`tab-{name}`（参数含 `tab/index/active`）。描述列表使用 `description-item-{panelName}__{slot}`、`description-group-extra-{panelName}__{slot}`；文件列表使用 `file-list-cell-{panelName}__{slot}`、`file-list-file-actions-{panelName}__{slot}`；内嵌表格使用 `list-table-cell-{panelName}__{slot}`。这些细粒度 slot 会额外收到对应的 `panel`、索引、Tab 上下文。
 
 公开方法包括：
 
@@ -109,7 +134,7 @@ const panels: MangoCollapsePanel[] = [
 
 ### MangoRichTextPreview
 
-`MangoRichTextPreview` 接收 `content`，复用 `RichTextViewer` 过滤 HTML、解析 Mango 文件 token，并在点击受保护文件时使用 `MangoFilePreviewDialog` 展示文件或文本内容。
+`MangoRichTextPreview` 只有一个可选 prop：`content?: string`（默认空字符串）。它复用 `RichTextViewer` 过滤 HTML、解析 `mango-file:{id}` token，并在点击受保护文件时使用 `MangoFilePreviewDialog` 展示文件或文本内容；组件本身没有 emits 或 expose。文件详情解析依赖 `@mango/file` 的请求实例和后端文件预览接口，业务只应持久化文件 ID，不要把临时 URL 写入业务数据。
 
 ## 6. 数据与初始化
 

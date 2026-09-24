@@ -191,6 +191,44 @@ const rows = [
 `MangoFilePreviewDialog` 是可独立使用的文件预览弹框，接受 `fileId`、`file` 或 `preview`；文本文件也可以通过
 `textContent` 直接展示。`MangoFileList` 已内置该弹框，普通列表消费方无需重复引入。
 
+### 4.1 详情文件组件 API
+
+`MangoAttachmentUploadGrid` 的完整字段、事件、插槽和 `validate()` 契约见[组件 API 文档](./src/components/README.md)。该组件只回写 `MangoAttachmentUploadFile[]` 附件关系；删除操作不会删除文件中心物理文件，`previewUrl`/`downloadUrl` 仅为运行时地址，不应持久化。
+
+`MangoFileList` Props：
+
+| 属性 | 默认值 | 说明 |
+| --- | --- | --- |
+| `rows` / `columns` | 必填 | 行数据和列配置。每行必须有唯一 `key`。 |
+| `emptyText` | `暂无文件` | 空列表文案。 |
+| `selectable` | `false` | 是否显示选择框。 |
+| `selectableWithoutFile` | `false` | 无文件行是否也允许选择。 |
+| `mergeAdjacentRows` | `true` | 是否启用相邻行合并。 |
+| `tableStyle` | `undefined` | `headerCellStyle`、`bodyCellStyle`、`borderRadius`、`contentMinHeight`、`contentPadding`、`contentLineHeight`。 |
+
+列 `MangoFileListColumn` 字段：`key`、`label`、`prop`、`type`（`text | files | custom`）、`width`、`minWidth`、`align`、`fixed`、`showOverflowTooltip`、`emptyText`、`mergeAdjacent`、`mergeBy`、`slot`、`fileActionsSlot`、`fileMeta`（`fileSize | version | uploadedAt`）、`showPreview`、`showDownload`。文件对象字段为 `key?`、`fileId?`、`fileName?`、`fileUrl?`、`fileSize?`、`version?`、`uploadedAt?`；文件列应至少提供 `fileId` 或可解析的文件记录。
+
+`mergeAdjacent` 只比较相邻行；未配置 `mergeBy` 时按当前列 `prop` 比较，配置后按指定字段组合比较。`mergeAdjacentRows=false` 会关闭整表合并，不改变原始 `rows`。
+
+事件只有 `selection-change(rows: MangoFileListRow[])`。插槽 `cell-${column.slot}` 收到 `{ row, rowIndex, column, value, displayValue }`；`file-actions-${column.fileActionsSlot}` 收到 `{ row, rowIndex, column, file, fileIndex, hasFile }`。插槽只负责展示或操作扩展，预览/下载仍受列上的 `showPreview`、`showDownload` 和文件权限控制。
+
+`MangoFilePreviewDialog` Props：
+
+| 属性 | 默认值 | 说明 |
+| --- | --- | --- |
+| `modelValue` | 必填 | 弹框显示状态，使用 `v-model`。 |
+| `title` | `文件预览` | 标题。 |
+| `fileId` | `''` | 文件 ID；组件据此加载预览。 |
+| `file` / `preview` | `null` | 已加载的 `FileRecord` 或 `FilePreview`，可避免重复请求。 |
+| `textContent` | `''` | 直接展示的文本内容。 |
+| `showActions` | `true` | 是否显示下载等操作。 |
+| `loading` | `false` | 外部加载态。 |
+| `emptyText` | `暂无可预览内容` | 无有效输入时的空状态。 |
+
+输入优先级为 `fileId` / `file` / `preview`（任一有效文件输入）> `textContent`（仅在没有文件输入时展示）> `emptyText` 空状态；组件不会把临时预览地址写回业务对象。事件为 `update:modelValue(boolean)` 和弹框关闭后的 `closed`（无参数）。
+
+适用边界：详情资料清单使用 `MangoFileList`，独立弹框使用 `MangoFilePreviewDialog`，分类资料表单使用 `MangoAttachmentUploadGrid`；通用表单上传仍使用 `MUpload`，固定区域的预览仍使用 `FilePreviewPanel`。这些组件都依赖文件中心后端的鉴权、租户隔离和预览接口，前端只负责展示与触发请求，不能绕过服务端权限。
+
 ## 5. 快速开始
 
 1. 后端应用启用 `mango-file`，需要文档预览时同时启用 `mango-file-preview`。
