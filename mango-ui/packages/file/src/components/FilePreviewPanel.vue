@@ -45,7 +45,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Document } from '@element-plus/icons-vue';
 import { downloadFileRecord, fileApi, normalizeFileId, type FilePreview } from '../api/file';
-import { isPreviewDisplayUrl } from '../utils/previewUrl';
+import { isBackendFileContentUrl, isPreviewDisplayUrl } from '../utils/previewUrl';
 import type { FilePreviewPanelProps } from './FilePreviewPanel.types';
 
 type PreviewActionsState = {
@@ -68,6 +68,7 @@ const previewError = ref('');
 const loadedPreview = ref<FilePreview | null>(null);
 const inlinePreviewUrl = ref('');
 const externalPreviewUrl = ref('');
+const inlinePreviewObjectUrl = ref('');
 let previewLoadSequence = 0;
 let metadataLoadSequence = 0;
 
@@ -111,7 +112,7 @@ const documentPreviewUrl = computed(() => {
   if (externalPreviewUrl.value) return externalPreviewUrl.value;
   if (isImage.value || isVideo.value || isAudio.value) return '';
   if (isDefaultPreviewProviderUrl(item.documentPreviewUrl)) return '';
-  if (isPreviewDisplayUrl(item.documentPreviewUrl)) return item.documentPreviewUrl;
+  if (isSafeInlineUrl(item.documentPreviewUrl)) return item.documentPreviewUrl;
   const providerUrl = props.previewProviderUrl || import.meta.env.VITE_FILE_PREVIEW_PROVIDER_URL;
   if (!providerUrl) return '';
   const url = new URL(providerUrl, window.location.origin);
@@ -164,6 +165,7 @@ async function loadInlinePreview() {
   const loadSequence = ++previewLoadSequence;
   contentLoading.value = true;
   previewError.value = '';
+  revokeInlinePreviewObjectUrl();
   inlinePreviewUrl.value = '';
   externalPreviewUrl.value = '';
   const item = preview.value;
@@ -180,6 +182,13 @@ async function loadInlinePreview() {
         }
         return;
       }
+      const objectUrl = await resolveInlinePreviewObjectUrl(item);
+      if (loadSequence !== previewLoadSequence) {
+        URL.revokeObjectURL(objectUrl);
+        return;
+      }
+      inlinePreviewObjectUrl.value = objectUrl;
+      inlinePreviewUrl.value = objectUrl;
       return;
     }
     const previewUrl = await resolveExternalPreviewUrl(item);
@@ -226,15 +235,32 @@ async function openPreviewInNewWindow() {
 async function resolveExternalPreviewUrl(item: FilePreview) {
   if (isPdf.value || isDefaultPreviewProviderUrl(item.documentPreviewUrl)) {
     const link = await fileApi.previewLink(item.id);
-    return isPreviewDisplayUrl(link.previewUrl) ? link.previewUrl : '';
+    return isSafeInlineUrl(link.previewUrl) ? link.previewUrl : '';
   }
-  return isPreviewDisplayUrl(item.documentPreviewUrl) ? item.documentPreviewUrl || '' : '';
+  return isSafeInlineUrl(item.documentPreviewUrl) ? item.documentPreviewUrl || '' : '';
 }
 
 function resolveInlinePreviewUrl(item: FilePreview) {
-  if (isPreviewDisplayUrl(item.directPreviewUrl)) return absolutePreviewUrl(item.directPreviewUrl);
-  if (isPreviewDisplayUrl(item.previewUrl)) return absolutePreviewUrl(item.previewUrl);
-  return item.id ? absolutePreviewUrl(`/api/file/files/preview-content?id=${encodeURIComponent(String(item.id))}`) : '';
+  if (isSafeInlineUrl(item.directPreviewUrl)) return absolutePreviewUrl(item.directPreviewUrl);
+  if (isSafeInlineUrl(item.previewUrl)) return absolutePreviewUrl(item.previewUrl);
+  return '';
+}
+
+function isSafeInlineUrl(value?: string) {
+  return isPreviewDisplayUrl(value) && !isBackendFileContentUrl(value);
+}
+
+async function resolveInlinePreviewObjectUrl(item: FilePreview) {
+  const response = await fileApi.previewContent(item.id);
+  const contentType = item.contentType || response.headers?.['content-type'] || 'application/octet-stream';
+  const blob = response.data instanceof Blob ? response.data : new Blob([response.data], { type: contentType });
+  return URL.createObjectURL(blob);
+}
+
+function revokeInlinePreviewObjectUrl() {
+  if (!inlinePreviewObjectUrl.value) return;
+  URL.revokeObjectURL(inlinePreviewObjectUrl.value);
+  inlinePreviewObjectUrl.value = '';
 }
 
 function absolutePreviewUrl(value?: string) {
@@ -291,6 +317,7 @@ onBeforeUnmount(() => {
   metadataLoadSequence += 1;
   metadataLoading.value = false;
   contentLoading.value = false;
+  revokeInlinePreviewObjectUrl();
   inlinePreviewUrl.value = '';
 });
 

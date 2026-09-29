@@ -115,6 +115,28 @@ class FilePreviewTaskServiceImplTest {
     }
 
     @Test
+    void markdownUsesDirectPreviewWithoutPdfConversion() throws Exception {
+        FileApi fileApi = mock(FileApi.class);
+        IFileContentProvider contentProvider = mock(IFileContentProvider.class);
+        ConvertApi convertApi = mock(ConvertApi.class);
+        ITokenStore taskStore = mock(ITokenStore.class);
+        FileRecordVO record = record(46L, "readme.md");
+        when(fileApi.get(46L)).thenReturn(io.mango.common.result.R.ok(record));
+        FilePreviewTaskServiceImpl service = new FilePreviewTaskServiceImpl(
+                new FilePreviewFileGateway(fileApi, contentProvider), contentProvider, convertApi,
+                taskStore, availableLeaseLocker(), new ObjectMapper().registerModule(new JavaTimeModule()),
+                new FilePreviewProperties(), testExecutor());
+
+        service.submit(46L, false);
+        await(() -> service.status(46L, false).getStatus() == FilePreviewTaskStatus.SUCCEEDED);
+
+        FilePreviewTaskVO result = service.status(46L, false);
+        assertThat(result.getPreviewFileId()).isNull();
+        verify(convertApi, never()).convert(any());
+        verify(contentProvider, never()).save(any());
+    }
+
+    @Test
     void configuredOfficeLimitRequiresExplicitConfirmationBeforeSchedulingConversion() {
         FileApi fileApi = mock(FileApi.class);
         FileSettingsApi settingsApi = mock(FileSettingsApi.class);

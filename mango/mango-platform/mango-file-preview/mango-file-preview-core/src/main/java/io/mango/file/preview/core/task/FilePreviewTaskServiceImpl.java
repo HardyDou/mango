@@ -60,7 +60,7 @@ public class FilePreviewTaskServiceImpl implements IFilePreviewTaskService {
     private static final long WORKER_POLL_INTERVAL_MILLIS = 100L;
     private static final Set<String> OFFICE_EXTENSIONS = Set.of("doc", "docx", "ppt", "pptx");
     private static final Set<String> DIRECT_PREVIEW_EXTENSIONS = Set.of(
-            "pdf", "ofd", "png", "jpg", "jpeg", "tif", "tiff", "txt", "html", "htm",
+            "pdf", "ofd", "png", "jpg", "jpeg", "tif", "tiff", "txt", "md", "html", "htm",
             "xls", "xlsx",
             "dwg", "dxf", "dwf", "dwt", "stl", "step", "stp", "iges", "igs");
 
