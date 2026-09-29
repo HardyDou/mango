@@ -2,7 +2,7 @@
 
 2026-09-23 文档补全：保函业务迁移到 Mango 的详情、文件和公共表格组件已补齐正式 API 契约。`@mango/detail`、`@mango/file`、`@mango/common` README 现在覆盖 Props/defaults、事件 payload、slots、类型字段、后端依赖、权限/租户边界和排障入口；分类上传的完整契约集中在 [File Components README](../../mango-ui/packages/file/src/components/README.md)。
 
-2026-09-29 能力更新：`mango-common` 的 `R<T>` 增加 `unwrap(BizCode, fallbackMessage)`，Service 调用其它模块 `XxxApi` 时可以统一解包必须有数据的成功响应；失败响应优先保留上游消息，空数据使用调用方兜底消息并转换为 `BizException`。详见 [Mango Common README](../../mango/mango-common/README.md)。
+2026-09-29 能力更新：`mango-common` 的 `R<T>` 增加 `unwrap(BizCode, fallbackMessage)`，用于统一读取其它模块 `XxxApi` 的返回数据并映射失败结果。详见 [Mango Common README](../../mango/mango-common/README.md) 和 [后端 API 规则](../../mango-pmo/rules/backend/03-api.md)。
 
 ## 1. 定位
 
