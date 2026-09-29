@@ -546,15 +546,6 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
         for (ASTMethodCall call : type.descendants(ASTMethodCall.class)) {
             inspectServiceCall(call, context);
         }
-        type.descendants(ASTConstructorCall.class)
-                .filter(call -> isType(call.getTypeMirror(), RESULT_R))
-                .forEach(
-                        call ->
-                                violation(
-                                        context,
-                                        call,
-                                        "MANGO-ARCH-SVC-002 Service must not construct R"
-                                                + " instances"));
         type.descendants(ASTThrowStatement.class)
                 .forEach(
                         statement ->
@@ -586,9 +577,6 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
     }
 
     private void inspectServiceCall(ASTMethodCall call, RuleContext context) {
-        if (isCallOn(call, RESULT_R)) {
-            violation(context, call, "MANGO-ARCH-SVC-002 Service must not call R methods");
-        }
         if (!isCallOn(call, REQUIRE)) {
             return;
         }
@@ -647,14 +635,6 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
                                             annotation,
                                             "MANGO-ARCH-SVC-013 service interfaces must be"
                                                     + " transport-neutral"));
-            method.descendants(ASTMethodCall.class)
-                    .filter(call -> isCallOn(call, RESULT_R))
-                    .forEach(
-                            call ->
-                                    violation(
-                                            context,
-                                            call,
-                                            "MANGO-ARCH-SVC-002 Service must not call R methods"));
         }
     }
 

@@ -526,18 +526,23 @@ class MangoJavaArchitectureRuleTest {
     }
 
     @Test
-    void serviceCallingRMethodsIsRejected() {
+    void serviceCanCallApiAndReadRResults() {
         Report report = analyze("example/OrderService.java", """
                 package example;
                 import io.mango.common.result.R;
+                interface OrderApi { R<String> get(); }
                 final class OrderService {
-                    void create() { R.ok("ok"); R.fail("bad"); }
+                    private OrderApi orderApi;
+                    Object create() {
+                        R<String> response = orderApi.get();
+                        response.isSuccess();
+                        response.getData();
+                        return R.ok("ok");
+                    }
                 }
                 """);
 
-        assertThat(messages(report)).containsExactly(
-                "MANGO-ARCH-SVC-002 Service must not call R methods",
-                "MANGO-ARCH-SVC-002 Service must not call R methods");
+        assertThat(messages(report)).isEmpty();
     }
 
     @Test
@@ -864,8 +869,7 @@ class MangoJavaArchitectureRuleTest {
         assertThat(messages(report)).containsExactlyInAnyOrder(
                 "MANGO-ARCH-CTRL-004 Controller may only construct success results with R.ok",
                 "MANGO-ARCH-CTRL-004 HTTP Controller must directly return canonical R.ok(...)",
-                "MANGO-ARCH-CTRL-010 Controller must delegate business failures to Service Require",
-                "MANGO-ARCH-SVC-002 Service must not construct R instances");
+                "MANGO-ARCH-CTRL-010 Controller must delegate business failures to Service Require");
     }
 
     @Test
@@ -2076,7 +2080,6 @@ class MangoJavaArchitectureRuleTest {
 
         assertThat(messages(report)).containsExactlyInAnyOrder(
                 "MANGO-ARCH-SVC-001 Service must not return R<T>",
-                "MANGO-ARCH-SVC-002 Service must not call R methods",
                 "MANGO-ARCH-SVC-010 Service method must consolidate more than two business parameters",
                 "MANGO-ARCH-SVC-012 service interfaces must declare abstract contracts only");
     }
