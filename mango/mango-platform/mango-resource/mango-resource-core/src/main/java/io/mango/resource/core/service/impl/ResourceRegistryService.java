@@ -447,7 +447,7 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
 
     private void doSync(boolean force) {
         Map<String, ResourceHandler> handlerMap = loadHandlers();
-        List<ResourceDeclaration> declarations = collector.collect();
+        List<ResourceDeclaration> declarations = dedupeLocalDeclarations(collector.collect());
         doSync(LOCAL_APP_CODE, LOCAL_SERVICE_CODE, declarations, handlerMap,
                 collector.managedModuleCodes(declarations), force);
     }
@@ -605,6 +605,66 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
                     "资源处理器重复: " + handler.resourceType());
         }
         return handlerMap;
+    }
+
+    private List<ResourceDeclaration> dedupeLocalDeclarations(List<ResourceDeclaration> declarations) {
+        if (declarations == null || declarations.size() < 2) {
+            return declarations;
+        }
+        Map<String, List<ResourceDeclaration>> byId = new LinkedHashMap<>();
+        for (ResourceDeclaration declaration : declarations) {
+            byId.computeIfAbsent(declaration.getId(), key -> new ArrayList<>()).add(declaration);
+        }
+        List<ResourceDeclaration> deduped = new ArrayList<>();
+        for (List<ResourceDeclaration> group : byId.values()) {
+            deduped.addAll(resolvePhaseDuplicates(group));
+        }
+        return deduped;
+    }
+
+    private List<ResourceDeclaration> resolvePhaseDuplicates(List<ResourceDeclaration> group) {
+        if (group.size() == 1) {
+            return group;
+        }
+        Set<ResourceExecutionPhase> phases = new HashSet<>();
+        for (ResourceDeclaration declaration : group) {
+            phases.add(executionPhase(declaration));
+        }
+        if (phases.size() == 1) {
+            return group;
+        }
+        ResourceExecutionPhase winner = highestPriorityPhase(phases);
+        List<ResourceDeclaration> winners = new ArrayList<>();
+        for (ResourceDeclaration declaration : group) {
+            if (executionPhase(declaration) == winner) {
+                winners.add(declaration);
+            }
+        }
+        return winners;
+    }
+
+    private ResourceExecutionPhase highestPriorityPhase(Set<ResourceExecutionPhase> phases) {
+        ResourceExecutionPhase highest = ResourceExecutionPhase.MANUAL;
+        for (ResourceExecutionPhase phase : phases) {
+            if (phasePriority(phase) < phasePriority(highest)) {
+                highest = phase;
+            }
+        }
+        return highest;
+    }
+
+    private ResourceExecutionPhase executionPhase(ResourceDeclaration declaration) {
+        return declaration.getExecutionPhase() == null
+                ? ResourceExecutionPhase.BOOTSTRAP_REQUIRED
+                : declaration.getExecutionPhase();
+    }
+
+    private int phasePriority(ResourceExecutionPhase phase) {
+        return switch (phase) {
+            case BOOTSTRAP_REQUIRED -> 0;
+            case RUNTIME_EVENTUAL -> 1;
+            case MANUAL -> 2;
+        };
     }
 
     private void validateDeclarations(List<ResourceDeclaration> declarations) {

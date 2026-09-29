@@ -21,6 +21,7 @@ import io.mango.resource.support.ResourceTargetDispatcher;
 import io.mango.resource.api.command.RegisterResourceDeclarationsCommand;
 import io.mango.resource.api.command.ResourceModuleManifestCommand;
 import io.mango.resource.api.enums.ResourceApplyMode;
+import io.mango.resource.api.enums.ResourceExecutionPhase;
 import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.api.enums.ResourceStatus;
 import io.mango.resource.api.enums.ResourceSyncMode;
@@ -264,6 +265,31 @@ class ResourceRegistrySyncServiceIntegrationTest {
         assertThat(moduleSyncStatusRegistry.resolve("guarantee")).get()
                 .extracting(status -> status.state())
                 .isEqualTo(ResourceModuleSyncState.FAILED);
+    }
+
+    @Test
+    void bootstrapDeclarationWinsWhenRuntimeEventualSharesSameResourceId() {
+        ResourceDeclaration runtime = activeDeclaration(1, "运行时重复声明");
+        runtime.setExecutionPhase(ResourceExecutionPhase.RUNTIME_EVENTUAL);
+        ResourceDeclaration bootstrap = activeDeclaration(1, "启动声明");
+        provider.setDeclarations(List.of(runtime, bootstrap));
+
+        syncService.sync();
+
+        assertThat(messageTemplateRows()).hasSize(1);
+        assertThat(messageTemplateRows().get(0).title()).isEqualTo("启动声明");
+        assertThat(registryRows()).hasSize(1);
+    }
+
+    @Test
+    void twoBootstrapDeclarationsWithSameResourceIdStillConflict() {
+        ResourceDeclaration first = activeDeclaration(1, "启动声明A");
+        ResourceDeclaration second = activeDeclaration(1, "启动声明B");
+        provider.setDeclarations(List.of(first, second));
+
+        assertThatThrownBy(syncService::sync)
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("Duplicate resource id");
     }
 
     @Test
