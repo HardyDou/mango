@@ -1107,6 +1107,43 @@ class ResourceRegistrySyncServiceIntegrationTest {
                 .isEqualTo("DELETE");
     }
 
+    @Test
+    void managedRecordShadowsSystemDeclarationWithSameBizKey() {
+        ResourceDeclaration managed = activeDeclaration(
+                "1900000000000000099", 1, "guarantee.apply.submit", "后台托管");
+        managed.setSyncMode(ResourceSyncMode.MANUAL);
+        assertThat(syncService.syncRemote(
+                "platform-admin", "service-managed", List.of(managed))).isTrue();
+
+        provider.setDeclaration(activeDeclaration(
+                "1900000000000000001", 1, "guarantee.apply.submit", "系统声明"));
+        syncService.sync();
+
+        assertThat(registryRows()).hasSize(1);
+        assertThat(registryRows().get(0).resourceId()).isEqualTo("1900000000000000099");
+        assertThat(registryRows().get(0).syncMode()).isEqualTo("MANUAL");
+        assertThat(messageTemplateRows()).hasSize(1);
+        assertThat(messageTemplateRows().get(0).title()).isEqualTo("后台托管");
+    }
+
+    @Test
+    void deletedResourceIsNotRecreatedBySystemSync() {
+        provider.setDeclaration(activeDeclaration(1, "提交申请"));
+        syncService.sync();
+        assertThat(count("resource_registry")).isEqualTo(1);
+        assertThat(registryStatus("1900000000000000001")).isEqualTo("ACTIVE");
+
+        syncService.deleteResource("1900000000000000001", false);
+
+        assertThat(registryStatus("1900000000000000001")).isEqualTo("REMOVED");
+
+        provider.setDeclaration(activeDeclaration(1, "提交申请"));
+        syncService.sync();
+
+        assertThat(registryStatus("1900000000000000001")).isEqualTo("REMOVED");
+        assertThat(count("resource_registry")).isEqualTo(1);
+    }
+
     private ResourceDeclaration activeDeclaration(int version, String titleValue) {
         return activeDeclaration("1900000000000000001", version, "guarantee.apply.submit", titleValue);
     }
