@@ -1,0 +1,1354 @@
+{
+    ".github":  {
+                    "description":  "GitHub配置",
+                    "tooltip":  "GitHub 仓库配置：自动化构建、Issue 模板等"
+                },
+    ".github/workflows":  {
+                              "description":  "自动构建任务",
+                              "tooltip":  "GitHub Actions 自动化构建任务定义"
+                          },
+    ".mango":  {
+                   "description":  "本地运行数据",
+                   "tooltip":  "Mango 本地运行数据：设计稿、Java 依赖、数据库、运行时"
+               },
+    ".mango/design":  {
+                          "description":  "设计稿素材",
+                          "tooltip":  "本地设计稿素材"
+                      },
+    ".mango/m2":  {
+                      "description":  "Java依赖仓库",
+                      "tooltip":  "本地 Maven 依赖仓库"
+                  },
+    ".mango/m2/repository":  {
+                                 "description":  "依赖包缓存",
+                                 "tooltip":  "Java 依赖包本地缓存"
+                             },
+    ".mango/mysql":  {
+                         "description":  "本地数据库",
+                         "tooltip":  "本地 MySQL 数据库目录"
+                     },
+    ".mango/mysql/data":  {
+                              "description":  "数据库文件",
+                              "tooltip":  "MySQL 数据文件"
+                          },
+    ".mango/run":  {
+                       "description":  "运行临时文件",
+                       "tooltip":  "运行时临时文件：进程 ID、手动脚本"
+                   },
+    ".mango/run/manual":  {
+                              "description":  "手动脚本",
+                              "tooltip":  "手动运行的脚本"
+                          },
+    ".mango/run/pids":  {
+                            "description":  "进程ID记录",
+                            "tooltip":  "进程 PID 记录文件"
+                        },
+    ".vscode":  {
+                    "description":  "编辑器配置",
+                    "tooltip":  "VS Code 工作区配置"
+                },
+    "deploy":  {
+                   "description":  "部署脚本",
+                   "tooltip":  "部署相关配置与脚本"
+               },
+    "deploy/job":  {
+                       "description":  "部署任务",
+                       "tooltip":  "部署任务脚本"
+                   },
+    "docs":  {
+                 "description":  "项目文档",
+                 "tooltip":  "项目级文档"
+             },
+    "docs/superpowers":  {
+                             "description":  "AI助手文档",
+                             "tooltip":  "AI 助手能力文档"
+                         },
+    "docs/superpowers/plans":  {
+                                   "description":  "开发计划",
+                                   "tooltip":  "AI 助手开发计划文档"
+                               },
+    "docs/superpowers/specs":  {
+                                   "description":  "需求规格",
+                                   "tooltip":  "AI 助手需求规格文档"
+                               },
+    "jenkins":  {
+                    "description":  "自动化构建",
+                    "tooltip":  "Jenkins 自动化构建配置"
+                },
+    "mango":  {
+                  "description":  "Java后端代码",
+                  "tooltip":  "Mango 后端主仓：Java/Spring Boot 微服务"
+              },
+    "mango/config":  {
+                         "description":  "后端配置",
+                         "tooltip":  "后端配置文件"
+                     },
+    "mango/config/ip-location":  {
+                                     "description":  "IP地址库",
+                                     "tooltip":  "IP 归属地数据"
+                                 },
+    "mango/mango-admin-starter":  {
+                                      "description":  "后台启动入口",
+                                      "tooltip":  "管理后台启动入口模块"
+                                  },
+    "mango/mango-admin-starter/src":  {
+                                          "description":  "启动入口源码",
+                                          "tooltip":  "管理后台启动入口源码"
+                                      },
+    "mango/mango-app":  {
+                            "description":  "部署方式组装",
+                            "tooltip":  "应用部署组装：微服务/单体/平台能力"
+                        },
+    "mango/mango-app/microservice":  {
+                                         "description":  "微服务部署",
+                                         "tooltip":  "微服务部署组装"
+                                     },
+    "mango/mango-app/monolith":  {
+                                     "description":  "单体部署",
+                                     "tooltip":  "单体部署组装"
+                                 },
+    "mango/mango-app/platform-capability":  {
+                                                "description":  "平台能力部署",
+                                                "tooltip":  "平台能力部署组装"
+                                            },
+    "mango/mango-bom":  {
+                            "description":  "版本统一管理",
+                            "tooltip":  "Java 依赖版本统一管理清单"
+                        },
+    "mango/mango-common":  {
+                               "description":  "后端公共代码",
+                               "tooltip":  "后端公共代码模块"
+                           },
+    "mango/mango-common/src":  {
+                                   "description":  "公共代码源码",
+                                   "tooltip":  "后端公共代码源码"
+                               },
+    "mango/mango-extension":  {
+                                  "description":  "后端扩展功能",
+                                  "tooltip":  "后端扩展功能模块"
+                              },
+    "mango/mango-extension/mango-ai":  {
+                                           "description":  "AI功能扩展",
+                                           "tooltip":  "AI 功能扩展模块"
+                                       },
+    "mango/mango-infra":  {
+                              "description":  "后端基础工具",
+                              "tooltip":  "后端基础设施工具集"
+                          },
+    "mango/mango-infra/mango-infra-bootstrap":  {
+                                                    "description":  "启动器",
+                                                    "tooltip":  "基础设施启动器"
+                                                },
+    "mango/mango-infra/mango-infra-context":  {
+                                                  "description":  "上下文管理",
+                                                  "tooltip":  "上下文管理基础设施"
+                                              },
+    "mango/mango-infra/mango-infra-crypto":  {
+                                                 "description":  "加解密工具",
+                                                 "tooltip":  "加解密工具基础设施"
+                                             },
+    "mango/mango-infra/mango-infra-doc":  {
+                                              "description":  "文档工具",
+                                              "tooltip":  "文档处理基础设施"
+                                          },
+    "mango/mango-infra/mango-infra-docsign":  {
+                                                  "description":  "文档签署",
+                                                  "tooltip":  "文档签署基础设施"
+                                              },
+    "mango/mango-infra/mango-infra-event":  {
+                                                "description":  "事件机制",
+                                                "tooltip":  "事件机制基础设施"
+                                            },
+    "mango/mango-infra/mango-infra-excel-starter":  {
+                                                        "description":  "Excel处理",
+                                                        "tooltip":  "Excel 处理启动器"
+                                                    },
+    "mango/mango-infra/mango-infra-feign":  {
+                                                "description":  "服务间调用",
+                                                "tooltip":  "Feign 远程服务调用"
+                                            },
+    "mango/mango-infra/mango-infra-fileproc":  {
+                                                   "description":  "文件处理",
+                                                   "tooltip":  "文件处理基础设施"
+                                               },
+    "mango/mango-infra/mango-infra-ip-location":  {
+                                                      "description":  "IP归属地",
+                                                      "tooltip":  "IP 归属地基础设施"
+                                                  },
+    "mango/mango-infra/mango-infra-kv":  {
+                                             "description":  "键值存储",
+                                             "tooltip":  "键值存储基础设施"
+                                         },
+    "mango/mango-infra/mango-infra-log":  {
+                                              "description":  "日志记录",
+                                              "tooltip":  "日志记录基础设施"
+                                          },
+    "mango/mango-infra/mango-infra-log-api":  {
+                                                  "description":  "日志接口",
+                                                  "tooltip":  "日志 API 基础设施"
+                                              },
+    "mango/mango-infra/mango-infra-module":  {
+                                                 "description":  "模块定义",
+                                                 "tooltip":  "基础设施模块定义"
+                                             },
+    "mango/mango-infra/mango-infra-persistence":  {
+                                                      "description":  "数据持久层",
+                                                      "tooltip":  "数据持久层基础设施"
+                                                  },
+    "mango/mango-infra/mango-infra-realtime":  {
+                                                   "description":  "实时通信",
+                                                   "tooltip":  "实时通信基础设施（WebSocket）"
+                                               },
+    "mango/mango-infra/mango-infra-sensitive":  {
+                                                    "description":  "敏感数据脱敏",
+                                                    "tooltip":  "敏感数据脱敏处理"
+                                                },
+    "mango/mango-infra/mango-infra-test":  {
+                                               "description":  "测试工具",
+                                               "tooltip":  "基础设施测试工具"
+                                           },
+    "mango/mango-infra/mango-infra-web":  {
+                                              "description":  "Web层支持",
+                                              "tooltip":  "Web 层基础设施"
+                                          },
+    "mango/mango-parent":  {
+                               "description":  "父级版本管理",
+                               "tooltip":  "Maven 父级版本管理"
+                           },
+    "mango/mango-platform":  {
+                                 "description":  "后端业务能力",
+                                 "tooltip":  "后端业务能力模块集合"
+                             },
+    "mango/mango-platform/mango-access":  {
+                                              "description":  "访问入口",
+                                              "tooltip":  "访问入口控制平台"
+                                          },
+    "mango/mango-platform/mango-auth":  {
+                                            "description":  "登录认证",
+                                            "tooltip":  "登录认证平台"
+                                        },
+    "mango/mango-platform/mango-authorization":  {
+                                                     "description":  "权限授权",
+                                                     "tooltip":  "权限授权平台"
+                                                 },
+    "mango/mango-platform/mango-calendar":  {
+                                                "description":  "日历功能",
+                                                "tooltip":  "日历功能平台"
+                                            },
+    "mango/mango-platform/mango-captcha":  {
+                                               "description":  "图形验证码",
+                                               "tooltip":  "图形验证码平台"
+                                           },
+    "mango/mango-platform/mango-cms":  {
+                                           "description":  "内容管理",
+                                           "tooltip":  "内容管理平台(CMS)"
+                                       },
+    "mango/mango-platform/mango-domain":  {
+                                              "description":  "领域模型",
+                                              "tooltip":  "领域模型定义"
+                                          },
+    "mango/mango-platform/mango-file":  {
+                                            "description":  "文件管理",
+                                            "tooltip":  "文件管理平台"
+                                        },
+    "mango/mango-platform/mango-file-preview":  {
+                                                    "description":  "文件预览",
+                                                    "tooltip":  "文件预览平台"
+                                                },
+    "mango/mango-platform/mango-grid-layout":  {
+                                                   "description":  "网格布局",
+                                                   "tooltip":  "网格布局平台"
+                                               },
+    "mango/mango-platform/mango-home":  {
+                                            "description":  "首页功能",
+                                            "tooltip":  "首页功能平台"
+                                        },
+    "mango/mango-platform/mango-identity":  {
+                                                "description":  "用户身份",
+                                                "tooltip":  "用户身份平台"
+                                            },
+    "mango/mango-platform/mango-job":  {
+                                           "description":  "定时任务",
+                                           "tooltip":  "定时任务平台"
+                                       },
+    "mango/mango-platform/mango-link":  {
+                                            "description":  "友情链接",
+                                            "tooltip":  "友情链接平台"
+                                        },
+    "mango/mango-platform/mango-notice":  {
+                                              "description":  "通知公告",
+                                              "tooltip":  "通知公告平台"
+                                          },
+    "mango/mango-platform/mango-numgen":  {
+                                              "description":  "编号生成",
+                                              "tooltip":  "编号生成器平台"
+                                          },
+    "mango/mango-platform/mango-org":  {
+                                           "description":  "组织架构",
+                                           "tooltip":  "组织架构平台"
+                                       },
+    "mango/mango-platform/mango-payment":  {
+                                               "description":  "支付功能",
+                                               "tooltip":  "支付功能平台"
+                                           },
+    "mango/mango-platform/mango-resource":  {
+                                                "description":  "资源管理",
+                                                "tooltip":  "资源管理平台"
+                                            },
+    "mango/mango-platform/mango-system":  {
+                                              "description":  "系统管理",
+                                              "tooltip":  "系统管理平台"
+                                          },
+    "mango/mango-platform/mango-template":  {
+                                                "description":  "模板管理",
+                                                "tooltip":  "模板管理平台"
+                                            },
+    "mango/mango-platform/mango-workflow":  {
+                                                "description":  "工作流引擎",
+                                                "tooltip":  "工作流引擎平台"
+                                            },
+    "mango/mango-tools":  {
+                              "description":  "构建校验工具",
+                              "tooltip":  "架构规则与构建插件工具"
+                          },
+    "mango/mango-tools/mango-architecture-rules":  {
+                                                       "description":  "架构规则",
+                                                       "tooltip":  "架构规则定义"
+                                                   },
+    "mango/mango-tools/mango-architecture-verification":  {
+                                                              "description":  "架构校验",
+                                                              "tooltip":  "架构校验工具"
+                                                          },
+    "mango/mango-tools/mango-maven-plugin":  {
+                                                 "description":  "Java构建插件",
+                                                 "tooltip":  "Mango Maven 构建插件"
+                                             },
+    "mango-business-starter":  {
+                                   "description":  "业务接入示例",
+                                   "tooltip":  "业务接入样例仓库"
+                               },
+    "mango-business-starter/.github":  {
+                                           "description":  "示例仓GH配置",
+                                           "tooltip":  "业务示例仓 GitHub 配置"
+                                       },
+    "mango-business-starter/backend":  {
+                                           "description":  "业务后端示例",
+                                           "tooltip":  "业务后端示例代码"
+                                       },
+    "mango-business-starter/backend/modules":  {
+                                                   "description":  "业务后端模块",
+                                                   "tooltip":  "业务后端模块"
+                                               },
+    "mango-business-starter/business-docs":  {
+                                                 "description":  "业务文档",
+                                                 "tooltip":  "业务文档集"
+                                             },
+    "mango-business-starter/business-docs/plans":  {
+                                                       "description":  "业务计划",
+                                                       "tooltip":  "业务计划文档"
+                                                   },
+    "mango-business-starter/business-pmo":  {
+                                                "description":  "业务项目管理",
+                                                "tooltip":  "业务项目管理流程"
+                                            },
+    "mango-business-starter/business-pmo/mango-baseline":  {
+                                                               "description":  "业务基线",
+                                                               "tooltip":  "业务基线配置"
+                                                           },
+    "mango-business-starter/frontend":  {
+                                            "description":  "业务前端示例",
+                                            "tooltip":  "业务前端示例代码"
+                                        },
+    "mango-business-starter/frontend/apps":  {
+                                                 "description":  "业务前端应用",
+                                                 "tooltip":  "业务前端应用"
+                                             },
+    "mango-business-starter/frontend/packages":  {
+                                                     "description":  "业务前端包",
+                                                     "tooltip":  "业务前端包"
+                                                 },
+    "mango-business-starter/scripts":  {
+                                           "description":  "业务脚本",
+                                           "tooltip":  "业务仓脚本"
+                                       },
+    "mango-business-starter/topologies":  {
+                                              "description":  "部署拓扑",
+                                              "tooltip":  "业务部署拓扑图"
+                                          },
+    "mango-business-starter/topologies/microservice":  {
+                                                           "description":  "微服务拓扑",
+                                                           "tooltip":  "微服务部署拓扑"
+                                                       },
+    "mango-business-starter/topologies/monolith":  {
+                                                       "description":  "单体拓扑",
+                                                       "tooltip":  "单体部署拓扑"
+                                                   },
+    "mango-catalog":  {
+                          "description":  "组件目录清单",
+                          "tooltip":  "制品目录与配置片段"
+                      },
+    "mango-catalog/config-fragments":  {
+                                           "description":  "配置片段",
+                                           "tooltip":  "配置片段集合"
+                                       },
+    "mango-catalog/modules":  {
+                                  "description":  "模块清单",
+                                  "tooltip":  "模块清单"
+                              },
+    "mango-catalog/release-artifacts":  {
+                                            "description":  "发布产物",
+                                            "tooltip":  "发布产物"
+                                        },
+    "mango-catalog/schema":  {
+                                 "description":  "数据结构定义",
+                                 "tooltip":  "Schema 数据结构定义"
+                             },
+    "mango-docs":  {
+                       "description":  "文档站源码",
+                       "tooltip":  "文档站点源码（VitePress）"
+                   },
+    "mango-docs/.vitepress":  {
+                                  "description":  "VitePress配置",
+                                  "tooltip":  "VitePress 配置"
+                              },
+    "mango-docs/capabilities":  {
+                                    "description":  "功能说明文档",
+                                    "tooltip":  "功能说明文档"
+                                },
+    "mango-docs/designs":  {
+                               "description":  "设计文档集",
+                               "tooltip":  "设计文档集合"
+                           },
+    "mango-docs/designs/authorization-architecture-debt":  {
+                                                               "description":  "授权架构债务",
+                                                               "tooltip":  "设计 - 授权架构债务"
+                                                           },
+    "mango-docs/designs/cms-architecture-debt":  {
+                                                     "description":  "CMS架构债务",
+                                                     "tooltip":  "设计 - CMS 架构债务"
+                                                 },
+    "mango-docs/designs/github-jenkins-release-bridge":  {
+                                                             "description":  "发布桥接",
+                                                             "tooltip":  "设计 - GitHub/Jenkins 发布桥接"
+                                                         },
+    "mango-docs/designs/issue-387-notice-actions":  {
+                                                        "description":  "通知操作",
+                                                        "tooltip":  "设计 - Issue 387 通知操作"
+                                                    },
+    "mango-docs/designs/issue-453-file-dedup-concurrency":  {
+                                                                "description":  "文件去重并发",
+                                                                "tooltip":  "设计 - Issue 453 文件去重并发"
+                                                            },
+    "mango-docs/designs/issue-643-identity-providers":  {
+                                                            "description":  "第三方登录",
+                                                            "tooltip":  "设计 - Issue 643 第三方身份提供者"
+                                                        },
+    "mango-docs/designs/issue-690-weekly-regression":  {
+                                                           "description":  "周回归测试",
+                                                           "tooltip":  "设计 - Issue 690 周回归测试"
+                                                       },
+    "mango-docs/designs/issue-732-workflow-participation-auto-assignment":  {
+                                                                                "description":  "工作流自动分派",
+                                                                                "tooltip":  "设计 - Issue 732 工作流自动分派"
+                                                                            },
+    "mango-docs/designs/issue-765-notice-inbound":  {
+                                                        "description":  "通知入站",
+                                                        "tooltip":  "设计 - Issue 765 通知入站"
+                                                    },
+    "mango-docs/designs/issue-805-release-consumer":  {
+                                                          "description":  "发布消费",
+                                                          "tooltip":  "设计 - Issue 805 发布消费"
+                                                      },
+    "mango-docs/designs/issue-918-rbac-wecom-party":  {
+                                                          "description":  "企微组织权限",
+                                                          "tooltip":  "设计 - Issue 918 RBAC 企微组织"
+                                                      },
+    "mango-docs/designs/issue-919-member-lifecycle":  {
+                                                          "description":  "成员生命周期",
+                                                          "tooltip":  "设计 - Issue 919 成员生命周期"
+                                                      },
+    "mango-docs/designs/issues-641-642-notice-delivery":  {
+                                                              "description":  "通知投递",
+                                                              "tooltip":  "设计 - Issues 641/642 通知投递"
+                                                          },
+    "mango-docs/designs/issues-824-826":  {
+                                              "description":  "Issues824/826",
+                                              "tooltip":  "设计 - Issues 824/826"
+                                          },
+    "mango-docs/designs/notice-architecture-debt":  {
+                                                        "description":  "通知架构债务",
+                                                        "tooltip":  "设计 - 通知架构债务"
+                                                    },
+    "mango-docs/designs/payment-architecture-debt":  {
+                                                         "description":  "支付架构债务",
+                                                         "tooltip":  "设计 - 支付架构债务"
+                                                     },
+    "mango-docs/designs/review":  {
+                                      "description":  "设计评审",
+                                      "tooltip":  "设计 - 评审"
+                                  },
+    "mango-docs/designs/system-config-control-panel":  {
+                                                           "description":  "系统配置面板",
+                                                           "tooltip":  "设计 - 系统配置控制面板"
+                                                       },
+    "mango-docs/designs/workflow-architecture-debt":  {
+                                                          "description":  "工作流架构债务",
+                                                          "tooltip":  "设计 - 工作流架构债务"
+                                                      },
+    "mango-docs/evidence":  {
+                                "description":  "验收证据",
+                                "tooltip":  "验收证据集合"
+                            },
+    "mango-docs/evidence/baselines":  {
+                                          "description":  "基线证据",
+                                          "tooltip":  "证据 - 基线"
+                                      },
+    "mango-docs/evidence/governance":  {
+                                           "description":  "治理证据",
+                                           "tooltip":  "证据 - 治理"
+                                       },
+    "mango-docs/evidence/test-baseline":  {
+                                              "description":  "测试基线证据",
+                                              "tooltip":  "证据 - 测试基线"
+                                          },
+    "mango-docs/guides":  {
+                              "description":  "使用指南",
+                              "tooltip":  "使用指南文档"
+                          },
+    "mango-docs/guides/business-integration":  {
+                                                   "description":  "业务接入指南",
+                                                   "tooltip":  "业务接入指南"
+                                               },
+    "mango-docs/plans":  {
+                             "description":  "开发计划",
+                             "tooltip":  "开发计划文档"
+                         },
+    "mango-docs/plans/evidence":  {
+                                      "description":  "计划证据",
+                                      "tooltip":  "计划证据"
+                                  },
+    "mango-docs/plans/readme-usage-normalize":  {
+                                                    "description":  "README规范",
+                                                    "tooltip":  "计划 - README 用法规范"
+                                                },
+    "mango-docs/plans/review":  {
+                                    "description":  "计划评审",
+                                    "tooltip":  "计划 - 评审"
+                                },
+    "mango-docs/plans/sprint-14":  {
+                                       "description":  "Sprint14计划",
+                                       "tooltip":  "计划 - Sprint 14"
+                                   },
+    "mango-docs/versions":  {
+                                "description":  "版本发布归档",
+                                "tooltip":  "版本发布归档"
+                            },
+    "mango-pmo":  {
+                      "description":  "项目流程规范",
+                      "tooltip":  "项目流程、规则、技能、工具"
+                  },
+    "mango-pmo/agents":  {
+                             "description":  "AI助手配置",
+                             "tooltip":  "AI 助手入口与路由配置"
+                         },
+    "mango-pmo/baselines":  {
+                                "description":  "基线规范集",
+                                "tooltip":  "基线集合"
+                            },
+    "mango-pmo/baselines/architecture":  {
+                                             "description":  "架构基线",
+                                             "tooltip":  "架构基线"
+                                         },
+    "mango-pmo/baselines/backend-test":  {
+                                             "description":  "后端测试基线",
+                                             "tooltip":  "后端测试基线"
+                                         },
+    "mango-pmo/baselines/mango-check":  {
+                                            "description":  "代码检查基线",
+                                            "tooltip":  "mango-check 代码检查基线"
+                                        },
+    "mango-pmo/contracts":  {
+                                "description":  "接口契约",
+                                "tooltip":  "接口契约定义"
+                            },
+    "mango-pmo/plugin-src":  {
+                                 "description":  "插件源码",
+                                 "tooltip":  "插件源码"
+                             },
+    "mango-pmo/plugin-src/.codex-plugin":  {
+                                               "description":  "Codex插件",
+                                               "tooltip":  "Codex 插件源码"
+                                           },
+    "mango-pmo/rules":  {
+                            "description":  "开发规则集",
+                            "tooltip":  "开发规则集合"
+                        },
+    "mango-pmo/rules/backend":  {
+                                    "description":  "后端规则",
+                                    "tooltip":  "后端开发规则"
+                                },
+    "mango-pmo/rules/frontend":  {
+                                     "description":  "前端规则",
+                                     "tooltip":  "前端开发规则"
+                                 },
+    "mango-pmo/rules/product":  {
+                                    "description":  "产品规则",
+                                    "tooltip":  "产品规则"
+                                },
+    "mango-pmo/skills":  {
+                             "description":  "技能集",
+                             "tooltip":  "技能集合"
+                         },
+    "mango-pmo/skills/mango-defect-fix":  {
+                                              "description":  "缺陷修复",
+                                              "tooltip":  "技能 - 缺陷修复"
+                                          },
+    "mango-pmo/skills/mango-design-delivery-assurance":  {
+                                                             "description":  "设计交付保障",
+                                                             "tooltip":  "技能 - 设计交付保障"
+                                                         },
+    "mango-pmo/skills/mango-design-technical":  {
+                                                    "description":  "技术设计",
+                                                    "tooltip":  "技能 - 技术设计"
+                                                },
+    "mango-pmo/skills/mango-engineering":  {
+                                               "description":  "工程实践",
+                                               "tooltip":  "技能 - 工程实践"
+                                           },
+    "mango-pmo/skills/mango-issue-handle":  {
+                                                "description":  "Issue处理",
+                                                "tooltip":  "技能 - Issue 处理"
+                                            },
+    "mango-pmo/skills/mango-issue-register":  {
+                                                  "description":  "Issue登记",
+                                                  "tooltip":  "技能 - Issue 登记"
+                                              },
+    "mango-pmo/skills/mango-module-development":  {
+                                                      "description":  "模块开发",
+                                                      "tooltip":  "技能 - 模块开发"
+                                                  },
+    "mango-pmo/skills/mango-plan-implementation":  {
+                                                       "description":  "实施计划",
+                                                       "tooltip":  "技能 - 实施计划"
+                                                   },
+    "mango-pmo/skills/mango-pmo-lifecycle":  {
+                                                 "description":  "项目生命周期",
+                                                 "tooltip":  "技能 - 项目生命周期"
+                                             },
+    "mango-pmo/skills/mango-project-bootstrap":  {
+                                                     "description":  "项目启动",
+                                                     "tooltip":  "技能 - 项目启动"
+                                                 },
+    "mango-pmo/skills/mango-qa-verification":  {
+                                                   "description":  "QA验证",
+                                                   "tooltip":  "技能 - QA 验证"
+                                               },
+    "mango-pmo/skills/mango-release":  {
+                                           "description":  "发布流程",
+                                           "tooltip":  "技能 - 发布流程"
+                                       },
+    "mango-pmo/skills/mango-requirements-business":  {
+                                                         "description":  "业务需求",
+                                                         "tooltip":  "技能 - 业务需求"
+                                                     },
+    "mango-pmo/skills/mango-requirements-system":  {
+                                                       "description":  "系统需求",
+                                                       "tooltip":  "技能 - 系统需求"
+                                                   },
+    "mango-pmo/skills/mango-review-pr":  {
+                                             "description":  "PR代码审查",
+                                             "tooltip":  "技能 - PR 代码审查"
+                                         },
+    "mango-pmo/skills/mango-submit-pr":  {
+                                             "description":  "提交PR",
+                                             "tooltip":  "技能 - 提交 PR"
+                                         },
+    "mango-pmo/skills/mango-workflow":  {
+                                            "description":  "工作流",
+                                            "tooltip":  "技能 - 工作流"
+                                        },
+    "mango-pmo/templates":  {
+                                "description":  "模板集",
+                                "tooltip":  "模板集合"
+                            },
+    "mango-pmo/tests":  {
+                            "description":  "测试集",
+                            "tooltip":  "PMO 测试"
+                        },
+    "mango-pmo/tests/document-contract":  {
+                                              "description":  "文档契约测试",
+                                              "tooltip":  "文档契约测试"
+                                          },
+    "mango-pmo/tests/skills":  {
+                                   "description":  "技能测试",
+                                   "tooltip":  "技能测试"
+                               },
+    "mango-pmo/tools":  {
+                            "description":  "工具集",
+                            "tooltip":  "PMO 工具"
+                        },
+    "mango-pmo/tools/document-contract":  {
+                                              "description":  "文档契约工具",
+                                              "tooltip":  "文档契约工具"
+                                          },
+    "mango-pmo/tools/lib":  {
+                                "description":  "工具库",
+                                "tooltip":  "工具库"
+                            },
+    "mango-ui":  {
+                     "description":  "前端工程",
+                     "tooltip":  "前端工程（pnpm monorepo）"
+                 },
+    "mango-ui/.changeset":  {
+                                "description":  "版本变更记录",
+                                "tooltip":  "Changeset 版本变更记录配置"
+                            },
+    "mango-ui/.mango":  {
+                            "description":  "前端Mango配置",
+                            "tooltip":  "前端 Mango 配置"
+                        },
+    "mango-ui/.mango/releases":  {
+                                     "description":  "前端发布记录",
+                                     "tooltip":  "前端发布记录"
+                                 },
+    "mango-ui/apps":  {
+                          "description":  "前端应用集",
+                          "tooltip":  "前端应用集合"
+                      },
+    "mango-ui/apps/mango-admin":  {
+                                      "description":  "管理后台应用",
+                                      "tooltip":  "管理后台应用"
+                                  },
+    "mango-ui/apps/mango-admin-cms-app":  {
+                                              "description":  "CMS管理应用",
+                                              "tooltip":  "CMS 内容管理应用"
+                                          },
+    "mango-ui/apps/mango-admin-rbac-app":  {
+                                               "description":  "权限管理应用",
+                                               "tooltip":  "RBAC 权限管理应用"
+                                           },
+    "mango-ui/apps/mango-admin-shell":  {
+                                            "description":  "后台外壳应用",
+                                            "tooltip":  "管理后台外壳应用"
+                                        },
+    "mango-ui/apps/mango-admin-template-app":  {
+                                                   "description":  "后台模板应用",
+                                                   "tooltip":  "管理后台模板应用"
+                                               },
+    "mango-ui/apps/mango-admin-workflow-app":  {
+                                                   "description":  "工作流管理应用",
+                                                   "tooltip":  "管理工作流应用"
+                                               },
+    "mango-ui/apps/mango-site-demo-app":  {
+                                              "description":  "演示站点应用",
+                                              "tooltip":  "站点演示应用"
+                                          },
+    "mango-ui/apps/mango-site-enterprise-app":  {
+                                                    "description":  "企业站点应用",
+                                                    "tooltip":  "企业站点应用"
+                                                },
+    "mango-ui/apps/mango-site-help-app":  {
+                                              "description":  "帮助站点应用",
+                                              "tooltip":  "帮助站点应用"
+                                          },
+    "mango-ui/build-config":  {
+                                  "description":  "构建配置",
+                                  "tooltip":  "构建配置"
+                              },
+    "mango-ui/deploy":  {
+                            "description":  "前端部署",
+                            "tooltip":  "前端部署配置"
+                        },
+    "mango-ui/deploy/nginx":  {
+                                  "description":  "Nginx配置",
+                                  "tooltip":  "Nginx 配置"
+                              },
+    "mango-ui/docs":  {
+                          "description":  "前端文档",
+                          "tooltip":  "前端文档"
+                      },
+    "mango-ui/packages":  {
+                              "description":  "前端包集合",
+                              "tooltip":  "前端包集合"
+                          },
+    "mango-ui/packages/admin":  {
+                                    "description":  "管理后台包",
+                                    "tooltip":  "管理后台包"
+                                },
+    "mango-ui/packages/admin-extension":  {
+                                              "description":  "管理后台扩展",
+                                              "tooltip":  "管理后台扩展"
+                                          },
+    "mango-ui/packages/admin-pages":  {
+                                          "description":  "管理页面包",
+                                          "tooltip":  "管理后台页面包"
+                                      },
+    "mango-ui/packages/admin-shell":  {
+                                          "description":  "后台外壳包",
+                                          "tooltip":  "管理后台外壳包"
+                                      },
+    "mango-ui/packages/ai":  {
+                                 "description":  "AI功能包",
+                                 "tooltip":  "AI 功能包"
+                             },
+    "mango-ui/packages/ai-api":  {
+                                     "description":  "AI接口包",
+                                     "tooltip":  "AI API 接口包"
+                                 },
+    "mango-ui/packages/api-schema":  {
+                                         "description":  "接口Schema包",
+                                         "tooltip":  "API Schema 接口结构定义包"
+                                     },
+    "mango-ui/packages/app-runtime":  {
+                                          "description":  "应用运行时包",
+                                          "tooltip":  "应用运行时包"
+                                      },
+    "mango-ui/packages/auth":  {
+                                   "description":  "登录认证包",
+                                   "tooltip":  "登录认证包"
+                               },
+    "mango-ui/packages/calendar":  {
+                                       "description":  "日历包",
+                                       "tooltip":  "日历功能包"
+                                   },
+    "mango-ui/packages/cms":  {
+                                  "description":  "内容管理包",
+                                  "tooltip":  "CMS 内容管理包"
+                              },
+    "mango-ui/packages/common":  {
+                                     "description":  "公共组件库",
+                                     "tooltip":  "公共组件与工具包"
+                                 },
+    "mango-ui/packages/detail":  {
+                                     "description":  "详情页包",
+                                     "tooltip":  "详情页包"
+                                 },
+    "mango-ui/packages/file":  {
+                                   "description":  "文件管理包",
+                                   "tooltip":  "文件管理包"
+                               },
+    "mango-ui/packages/grid-layout":  {
+                                          "description":  "网格布局包",
+                                          "tooltip":  "网格布局包"
+                                      },
+    "mango-ui/packages/grid-widgets":  {
+                                           "description":  "网格组件包",
+                                           "tooltip":  "网格组件包"
+                                       },
+    "mango-ui/packages/home":  {
+                                   "description":  "首页包",
+                                   "tooltip":  "首页包"
+                               },
+    "mango-ui/packages/http-client":  {
+                                          "description":  "请求封装包",
+                                          "tooltip":  "HTTP 请求客户端封装包"
+                                      },
+    "mango-ui/packages/job":  {
+                                  "description":  "定时任务包",
+                                  "tooltip":  "定时任务包"
+                              },
+    "mango-ui/packages/link":  {
+                                   "description":  "友情链接包",
+                                   "tooltip":  "友情链接包"
+                               },
+    "mango-ui/packages/link-openapi":  {
+                                           "description":  "链接OpenAPI包",
+                                           "tooltip":  "OpenAPI 链接包"
+                                       },
+    "mango-ui/packages/link-page":  {
+                                        "description":  "页面链接包",
+                                        "tooltip":  "页面链接包"
+                                    },
+    "mango-ui/packages/mango-cli":  {
+                                        "description":  "前端CLI工具",
+                                        "tooltip":  "前端 mango CLI 命令行工具包"
+                                    },
+    "mango-ui/packages/mango-pmo":  {
+                                        "description":  "前端PMO包",
+                                        "tooltip":  "前端 PMO 包"
+                                    },
+    "mango-ui/packages/notice":  {
+                                     "description":  "通知公告包",
+                                     "tooltip":  "通知公告包"
+                                 },
+    "mango-ui/packages/numgen":  {
+                                     "description":  "编号生成包",
+                                     "tooltip":  "编号生成包"
+                                 },
+    "mango-ui/packages/payment":  {
+                                      "description":  "支付包",
+                                      "tooltip":  "支付功能包"
+                                  },
+    "mango-ui/packages/rbac":  {
+                                   "description":  "权限控制包",
+                                   "tooltip":  "RBAC 权限控制包"
+                               },
+    "mango-ui/packages/site-shell":  {
+                                         "description":  "站点外壳包",
+                                         "tooltip":  "站点外壳包"
+                                     },
+    "mango-ui/packages/system":  {
+                                     "description":  "系统管理包",
+                                     "tooltip":  "系统管理包"
+                                 },
+    "mango-ui/packages/template":  {
+                                       "description":  "模板包",
+                                       "tooltip":  "模板包"
+                                   },
+    "mango-ui/packages/workflow":  {
+                                       "description":  "工作流包",
+                                       "tooltip":  "工作流包"
+                                   },
+    "mango-ui/packages/workflow-business-example":  {
+                                                        "description":  "工作流示例包",
+                                                        "tooltip":  "工作流业务示例包"
+                                                    },
+    "mango-ui/scripts":  {
+                             "description":  "前端脚本集",
+                             "tooltip":  "前端脚本集合"
+                         },
+    "mango-ui/scripts/catalog":  {
+                                     "description":  "目录脚本",
+                                     "tooltip":  "目录脚本"
+                                 },
+    "mango-ui/scripts/quality":  {
+                                     "description":  "质量脚本",
+                                     "tooltip":  "代码质量脚本"
+                                 },
+    "mango-ui/scripts/release":  {
+                                     "description":  "发布脚本",
+                                     "tooltip":  "发布脚本"
+                                 },
+    "scripts":  {
+                    "description":  "通用脚本集",
+                    "tooltip":  "通用脚本集合（CI、Docker、测试）"
+                },
+    "scripts/ci":  {
+                       "description":  "CI脚本",
+                       "tooltip":  "CI 脚本"
+                   },
+    "scripts/docker":  {
+                           "description":  "Docker脚本",
+                           "tooltip":  "Docker 脚本"
+                       },
+    "scripts/tests":  {
+                          "description":  "测试脚本",
+                          "tooltip":  "测试脚本"
+                      },
+    "mango-docs/evidence/2026-06-17-role-data-scope":  {
+                                                           "description":  "角色数据范围",
+                                                           "tooltip":  "证据 - 角色数据范围"
+                                                       },
+    "mango-docs/evidence/issue-732-workflow-participation-auto-assignment":  {
+                                                                                 "description":  "工作流自动分派",
+                                                                                 "tooltip":  "证据 - Issue 732 工作流自动分派"
+                                                                             },
+    "mango-docs/evidence/2026-08-01-issue-643":  {
+                                                     "description":  "第三方登录",
+                                                     "tooltip":  "证据 - Issue 643 第三方身份提供者"
+                                                 },
+    "mango-docs/evidence/2026-08-11-file-preview-loading":  {
+                                                                "description":  "文件预览加载",
+                                                                "tooltip":  "证据 - 文件预览加载"
+                                                            },
+    "mango-docs/evidence/2026-09-01-issue-909-user-management":  {
+                                                                     "description":  "用户管理",
+                                                                     "tooltip":  "证据 - Issue 909 用户管理"
+                                                                 },
+    "mango-docs/evidence/issue-186":  {
+                                          "description":  "Issue186",
+                                          "tooltip":  "证据 - Issue 186"
+                                      },
+    "mango-docs/evidence/2026-06-23-issue-217-system-config-panel":  {
+                                                                         "description":  "系统配置面板",
+                                                                         "tooltip":  "证据 - Issue 217 系统配置面板"
+                                                                     },
+    "mango-docs/evidence/2026-06-22-issue-214-cms":  {
+                                                         "description":  "CMS功能",
+                                                         "tooltip":  "证据 - Issue 214 CMS"
+                                                     },
+    "mango-docs/evidence/2026-07-11-java-spring-architecture-gates":  {
+                                                                          "description":  "架构门禁",
+                                                                          "tooltip":  "证据 - Java/Spring 架构门禁"
+                                                                      },
+    "mango-docs/evidence/2026-07-02-issue-368-user-home-pages":  {
+                                                                     "description":  "用户首页",
+                                                                     "tooltip":  "证据 - Issue 368 用户首页"
+                                                                 },
+    "mango-docs/evidence/2026-08-28-workflow-assignee-identity":  {
+                                                                      "description":  "分派人身份",
+                                                                      "tooltip":  "证据 - 工作流分派人身份"
+                                                                  },
+    "mango-docs/evidence/mango-dialog-padding-drag":  {
+                                                          "description":  "弹窗内边距拖拽",
+                                                          "tooltip":  "证据 - 弹窗内边距拖拽"
+                                                      },
+    "mango-docs/evidence/2026-07-15-infra-crypto-debt":  {
+                                                             "description":  "加解密债务",
+                                                             "tooltip":  "证据 - 加解密基础设施债"
+                                                         },
+    "mango-docs/evidence/2026-09-01-issue-919-member-lifecycle":  {
+                                                                      "description":  "成员生命周期",
+                                                                      "tooltip":  "证据 - Issue 919 成员生命周期"
+                                                                  },
+    "mango-docs/evidence/2026-08-29-issue-732-auto-assignment":  {
+                                                                     "description":  "工作流自动分派",
+                                                                     "tooltip":  "证据 - Issue 732 自动分派"
+                                                                 },
+    "mango-docs/evidence/issue-918-rbac-wecom-party":  {
+                                                           "description":  "企微组织权限",
+                                                           "tooltip":  "证据 - Issue 918 RBAC 企微组织"
+                                                       },
+    "mango-docs/evidence/2026-06-26-issue-260-notice-announcement":  {
+                                                                         "description":  "通知公告",
+                                                                         "tooltip":  "证据 - Issue 260 通知公告"
+                                                                     },
+    "mango-docs/evidence/issue-952":  {
+                                          "description":  "Issue952",
+                                          "tooltip":  "证据 - Issue 952"
+                                      },
+    "mango-docs/evidence/2026-09-20-mango-collapse-detail":  {
+                                                                 "description":  "折叠详情组件",
+                                                                 "tooltip":  "证据 - 折叠详情组件"
+                                                             },
+    "mango-docs/evidence/2026-07-22-rich-text-managed-assets":  {
+                                                                    "description":  "富文本资源",
+                                                                    "tooltip":  "证据 - 富文本托管资源"
+                                                                },
+    "mango-docs/evidence/issue-453-file-dedup-concurrency":  {
+                                                                 "description":  "文件去重并发",
+                                                                 "tooltip":  "证据 - Issue 453 文件去重并发"
+                                                             },
+    "mango-docs/evidence/issue-765-notice-inbound":  {
+                                                         "description":  "通知入站",
+                                                         "tooltip":  "证据 - Issue 765 通知入站"
+                                                     },
+    "mango-docs/evidence/profile-password-404":  {
+                                                     "description":  "密码404问题",
+                                                     "tooltip":  "证据 - 个人资料密码 404"
+                                                 },
+    "mango-docs/evidence/2026-07-16-issue-553-notice-navigation":  {
+                                                                       "description":  "通知导航",
+                                                                       "tooltip":  "证据 - Issue 553 通知导航"
+                                                                   },
+    "mango-docs/evidence/2026-08-02-issue-692-notification-center":  {
+                                                                         "description":  "通知中心",
+                                                                         "tooltip":  "证据 - Issue 692 通知中心"
+                                                                     },
+    "mango-docs/evidence/2026-06-30-file-preview-download-split-e2e":  {
+                                                                           "description":  "文件预览拆分",
+                                                                           "tooltip":  "证据 - 文件预览/下载拆分 E2E"
+                                                                       },
+    "mango-docs/evidence/2026-07-24-issues-641-642":  {
+                                                          "description":  "通知投递",
+                                                          "tooltip":  "证据 - Issues 641/642"
+                                                      },
+    "mango-docs/evidence/2026-06-19-issue-187-maven-plugin-scope":  {
+                                                                        "description":  "Maven插件范围",
+                                                                        "tooltip":  "证据 - Issue 187 Maven 插件 scope"
+                                                                    },
+    "mango-docs/evidence/2026-07-23-issue-348-module-runtime-doctor":  {
+                                                                           "description":  "运行时诊断",
+                                                                           "tooltip":  "证据 - Issue 348 模块运行时诊断"
+                                                                       },
+    "mango-docs/evidence/2026-06-26-issue-252-auth-business-domain":  {
+                                                                          "description":  "认证业务域",
+                                                                          "tooltip":  "证据 - Issue 252 认证业务域"
+                                                                      },
+    "mango-docs/evidence/2026-06-23-grid-widgets-quick-entry-verify":  {
+                                                                           "description":  "网格组件验证",
+                                                                           "tooltip":  "证据 - 网格组件快捷入口验证"
+                                                                       },
+    "mango-docs/evidence/issue-943-resource-determinism":  {
+                                                               "description":  "资源确定性",
+                                                               "tooltip":  "证据 - Issue 943 资源确定性"
+                                                           },
+    "mango-docs/versions/v2026.08.05-maven-1.0.34-workflow-withdraw-release":  {
+                                                                                   "description":  "工作流撤回发布",
+                                                                                   "tooltip":  "v2026.08.05 - 工作流撤回 1.0.34"
+                                                                               },
+    "mango-docs/versions/v2026.07.23-maven-1.0.26-pmo-1.3.5-cli-1.0.90-platform-runtime-release":  {
+                                                                                                       "description":  "平台运行时发布",
+                                                                                                       "tooltip":  "v2026.07.23 - 平台运行时 PMO 1.3.5"
+                                                                                                   },
+    "mango-docs/versions/v2026.07.20-maven-1.0.23-cli-1.0.85-platform-fixes-release":  {
+                                                                                           "description":  "平台修复发布",
+                                                                                           "tooltip":  "v2026.07.20 - 平台修复 CLI 1.0.85"
+                                                                                       },
+    "mango-docs/versions/v2026.07.13-maven-1.0.17-pmo-1.2.0-cli-1.0.70-release":  {
+                                                                                      "description":  "PMO1.2.0发布",
+                                                                                      "tooltip":  "v2026.07.13 - PMO 1.2.0 CLI 1.0.70"
+                                                                                  },
+    "mango-docs/versions/v2026.07.01-maven-1.0.4-link-cli-docs-release":  {
+                                                                              "description":  "链接CLI发布",
+                                                                              "tooltip":  "v2026.07.01 - 链接 CLI 文档 1.0.4"
+                                                                          },
+    "mango-docs/versions/v2026.07.04-maven-1.0.8-platform-release":  {
+                                                                         "description":  "平台1.0.8发布",
+                                                                         "tooltip":  "v2026.07.04 - 平台 1.0.8"
+                                                                     },
+    "mango-docs/versions/v2026.06.30-maven-1.0.1-admin-branding-cli-release":  {
+                                                                                   "description":  "品牌CLI发布",
+                                                                                   "tooltip":  "v2026.06.30 - 管理品牌 CLI 1.0.1"
+                                                                               },
+    "mango-docs/versions/v2026.08.01-maven-1.0.29-pmo-1.3.7-cli-1.0.93-platform-bootstrap-file-release":  {
+                                                                                                              "description":  "启动器文件发布",
+                                                                                                              "tooltip":  "v2026.08.01 - 平台启动器文件 PMO 1.3.7"
+                                                                                                          },
+    "mango-docs/versions/v2026.07.13-maven-1.0.16-pmo-cli-release":  {
+                                                                         "description":  "PMO CLI发布",
+                                                                         "tooltip":  "v2026.07.13 - PMO CLI 1.0.16"
+                                                                     },
+    "mango-docs/versions/v2026.07.26-maven-1.0.27-pmo-1.3.6-cli-1.0.91-file-notice-release":  {
+                                                                                                  "description":  "文件通知发布",
+                                                                                                  "tooltip":  "v2026.07.26 - 文件通知 PMO 1.3.6"
+                                                                                              },
+    "mango-docs/versions/v2026.07.29-maven-1.0.28-cli-1.0.92-dialog-workflow-job-release":  {
+                                                                                                "description":  "弹窗工作流发布",
+                                                                                                "tooltip":  "v2026.07.29 - 弹窗工作流任务 1.0.28"
+                                                                                            },
+    "mango-docs/versions/v2026.07.02-maven-1.0.6-home-widgets-cli-release":  {
+                                                                                 "description":  "首页组件发布",
+                                                                                 "tooltip":  "v2026.07.02 - 首页组件 CLI 1.0.6"
+                                                                             },
+    "mango-docs/versions/v2026.07.03-maven-1.0.7-platform-release":  {
+                                                                         "description":  "平台1.0.7发布",
+                                                                         "tooltip":  "v2026.07.03 - 平台 1.0.7"
+                                                                     },
+    "mango-docs/versions/v2026.07.18-maven-1.0.22-pmo-1.3.0-cli-1.0.80-regression-release":  {
+                                                                                                 "description":  "PMO1.3.0回归",
+                                                                                                 "tooltip":  "v2026.07.18 - PMO 1.3.0 CLI 1.0.80 回归"
+                                                                                             },
+    "mango-docs/versions/v2026.08.02-maven-1.0.31-pmo-1.3.9-cli-1.0.96-platform-identity-bootstrap-release":  {
+                                                                                                                  "description":  "身份启动器发布",
+                                                                                                                  "tooltip":  "v2026.08.02 - 平台身份启动器 PMO 1.3.9"
+                                                                                                              },
+    "mango-docs/versions/v2026.08.01-maven-1.0.30-cli-1.0.95-flyway-startup-order-release":  {
+                                                                                                 "description":  "数据库启动顺序",
+                                                                                                 "tooltip":  "v2026.08.01 - Flyway 数据库启动顺序 1.0.30"
+                                                                                             },
+    "mango-docs/versions/v2026.08.03-maven-1.0.32-bootstrap-resource-fixes-release":  {
+                                                                                          "description":  "启动器修复发布",
+                                                                                          "tooltip":  "v2026.08.03 - 启动器资源修复 1.0.32"
+                                                                                      },
+    "mango-docs/versions/v2026.08.03-maven-1.0.33-baseline-web-errors-release":  {
+                                                                                     "description":  "Web错误基线",
+                                                                                     "tooltip":  "v2026.08.03 - Web 错误基线 1.0.33"
+                                                                                 },
+    "mango-docs/versions/v2026.07.21-maven-1.0.24-pmo-1.3.4-cli-1.0.88-platform-notice-fixes-release":  {
+                                                                                                            "description":  "通知修复发布",
+                                                                                                            "tooltip":  "v2026.07.21 - 平台通知修复 PMO 1.3.4"
+                                                                                                        },
+    "mango-docs/versions/v2026.08.14-maven-1.0.36-notice-1.0.39-admin-1.0.65-cli-1.0.104-inbound-release":  {
+                                                                                                                "description":  "通知入站发布",
+                                                                                                                "tooltip":  "v2026.08.14 - 通知入站多包发布"
+                                                                                                            },
+    "mango-docs/versions/v2026.08.05-maven-1.0.35-numgen-1.0.34-admin-1.0.63-cli-1.0.98-release":  {
+                                                                                                       "description":  "编号生成发布",
+                                                                                                       "tooltip":  "v2026.08.05 - 编号生成/管理/CLI 多包发布"
+                                                                                                   },
+    "mango-docs/versions/v2026.07.11-maven-1.0.14-cli-release":  {
+                                                                     "description":  "CLI1.0.14发布",
+                                                                     "tooltip":  "v2026.07.11 - CLI 1.0.14"
+                                                                 },
+    "mango-docs/versions/v2026.07.07-maven-1.0.10-resource-sync-release":  {
+                                                                               "description":  "资源同步发布",
+                                                                               "tooltip":  "v2026.07.07 - 资源同步 1.0.10"
+                                                                           },
+    "mango-docs/versions/v2026.07.01-maven-1.0.5-data-governance-release":  {
+                                                                                "description":  "数据治理发布",
+                                                                                "tooltip":  "v2026.07.01 - 数据治理 1.0.5"
+                                                                            },
+    "mango-docs/versions/v2026.07.07-maven-1.0.9-api-contract-release":  {
+                                                                             "description":  "API契约发布",
+                                                                             "tooltip":  "v2026.07.07 - API 契约 1.0.9"
+                                                                         },
+    "mango-docs/versions/v2026.07.21-maven-1.0.25-cli-1.0.89-branding-workflow-bom-release":  {
+                                                                                                  "description":  "品牌工作流发布",
+                                                                                                  "tooltip":  "v2026.07.21 - 品牌工作流 BOM 1.0.25"
+                                                                                              },
+    "mango-ui/packages/common/components/MangoPageSection":  {
+                                                                 "description":  "页面分区组件",
+                                                                 "tooltip":  "页面区块组件"
+                                                             },
+    "mango-ui/packages/common/components/DictSelect":  {
+                                                           "description":  "字典下拉选择",
+                                                           "tooltip":  "数据字典下拉选择组件"
+                                                       },
+    "mango-ui/packages/common/components/OrgSelector":  {
+                                                            "description":  "组织选择器",
+                                                            "tooltip":  "组织架构选择组件"
+                                                        },
+    "mango-ui/packages/workflow/src/components/trace":  {
+                                                            "description":  "流程追踪组件",
+                                                            "tooltip":  "工作流流程追踪组件"
+                                                        },
+    "mango-ui/packages/common/components/MangoDetailPage":  {
+                                                                "description":  "详情页布局",
+                                                                "tooltip":  "详情页布局组件"
+                                                            },
+    "mango-ui/packages/common/components/Websocket":  {
+                                                          "description":  "WebSocket组件",
+                                                          "tooltip":  "WebSocket 实时通信组件"
+                                                      },
+    "mango-ui/packages/common/components/MangoPageBackBar":  {
+                                                                 "description":  "返回栏组件",
+                                                                 "tooltip":  "页面顶部返回栏组件"
+                                                             },
+    "mango-ui/packages/file/src/components/__tests__":  {
+                                                            "description":  "文件组件测试",
+                                                            "tooltip":  "文件包组件单元测试"
+                                                        },
+    "mango-ui/packages/common/components/Captcha":  {
+                                                        "description":  "验证码组件",
+                                                        "tooltip":  "图形验证码组件"
+                                                    },
+    "mango-ui/packages/common/components/PasswordPolicyHint":  {
+                                                                   "description":  "密码策略提示",
+                                                                   "tooltip":  "密码策略提示组件"
+                                                               },
+    "mango-ui/packages/common/components/TreeSelect":  {
+                                                           "description":  "树形选择器",
+                                                           "tooltip":  "树形数据选择组件"
+                                                       },
+    "mango-ui/packages/common/components/MangoDetailSummary":  {
+                                                                   "description":  "详情摘要组件",
+                                                                   "tooltip":  "详情摘要头部组件"
+                                                               },
+    "mango-ui/packages/system/src/components/ParticipantSelector":  {
+                                                                        "description":  "参与者选择器",
+                                                                        "tooltip":  "工作流参与者选择组件"
+                                                                    },
+    "mango-ui/packages/common/components/UserSelector":  {
+                                                             "description":  "用户选择器",
+                                                             "tooltip":  "用户选择组件"
+                                                         },
+    "mango-ui/apps/mango-admin/src/views/components/table":  {
+                                                                 "description":  "表格组件",
+                                                                 "tooltip":  "管理后台 - 表格组件"
+                                                             },
+    "mango-ui/packages/common/components/Sign":  {
+                                                     "description":  "手写签名组件",
+                                                     "tooltip":  "手写签名组件"
+                                                 },
+    "mango-ui/packages/common/components/MangoAvatar":  {
+                                                            "description":  "头像组件",
+                                                            "tooltip":  "用户头像展示组件"
+                                                        },
+    "mango-ui/packages/common/components/MangoSearchPanel":  {
+                                                                 "description":  "搜索面板组件",
+                                                                 "tooltip":  "搜索条件面板组件"
+                                                             },
+    "mango-ui/packages/common/components/Pagination":  {
+                                                           "description":  "分页组件",
+                                                           "tooltip":  "分页器组件"
+                                                       },
+    "mango-ui/packages/common/components/ChinaArea":  {
+                                                          "description":  "省市区选择",
+                                                          "tooltip":  "中国省市区级联选择组件"
+                                                      },
+    "mango-ui/packages/common/components/MangoDialog":  {
+                                                            "description":  "弹窗组件",
+                                                            "tooltip":  "业务弹窗组件"
+                                                        },
+    "mango-ui/packages/common/components/MangoListPanel":  {
+                                                               "description":  "列表面板组件",
+                                                               "tooltip":  "列表内容面板组件"
+                                                           },
+    "mango-ui/packages/system/src/components/DomainSideTree":  {
+                                                                   "description":  "域侧边树",
+                                                                   "tooltip":  "业务域侧边树组件"
+                                                               },
+    "mango-ui/packages/common/components/CodeEditor":  {
+                                                           "description":  "代码编辑器",
+                                                           "tooltip":  "代码编辑器组件"
+                                                       },
+    "mango-ui/packages/common/components/IconSelector":  {
+                                                             "description":  "图标选择器",
+                                                             "tooltip":  "图标选择组件"
+                                                         },
+    "mango-ui/packages/system/src/components/DomainSelector":  {
+                                                                   "description":  "业务域选择器",
+                                                                   "tooltip":  "业务域选择组件"
+                                                               },
+    "mango-ui/packages/notice/src/components/__tests__":  {
+                                                              "description":  "通知组件测试",
+                                                              "tooltip":  "通知包组件单元测试"
+                                                          },
+    "mango-ui/packages/common/components/Editor":  {
+                                                       "description":  "富文本编辑器",
+                                                       "tooltip":  "富文本编辑器组件"
+                                                   },
+    "mango-ui/packages/common/components/DictTag":  {
+                                                        "description":  "字典标签组件",
+                                                        "tooltip":  "数据字典标签展示组件"
+                                                    },
+    "mango-ui/packages/common/components/MangoFormPage":  {
+                                                              "description":  "表单页布局",
+                                                              "tooltip":  "表单页布局组件"
+                                                          },
+    "mango-ui/packages/common/components/FormCreate":  {
+                                                           "description":  "动态表单设计",
+                                                           "tooltip":  "动态表单创建组件"
+                                                       },
+    "mango-ui/packages/workflow/src/views/workflow-definition/components/workflow-designer":  {
+                                                                                                  "description":  "工作流设计器",
+                                                                                                  "tooltip":  "工作流可视化设计器"
+                                                                                              },
+    "mango-ui/packages/common/components/ECharts":  {
+                                                        "description":  "ECharts图表",
+                                                        "tooltip":  "ECharts 图表组件"
+                                                    },
+    "mango-ui/packages/common/components/MangoDescriptionList":  {
+                                                                     "description":  "描述列表组件",
+                                                                     "tooltip":  "详情描述列表组件"
+                                                                 },
+    "mango-ui/packages/workflow/src/components/business-ui":  {
+                                                                  "description":  "工作流业务UI",
+                                                                  "tooltip":  "工作流业务界面组件"
+                                                              },
+    "mango-ui/packages/common/components/MangoDataTable":  {
+                                                               "description":  "数据表格组件",
+                                                               "tooltip":  "业务数据表格组件"
+                                                           },
+    "mango-ui/packages/common/components/SSE":  {
+                                                    "description":  "SSE推送组件",
+                                                    "tooltip":  "Server-Sent Events 实时推送组件"
+                                                },
+    "mango-ui/packages/workflow/src/components/__tests__":  {
+                                                                "description":  "工作流组件测试",
+                                                                "tooltip":  "工作流包组件单元测试"
+                                                            },
+    "mango-ui/packages/common/components/MangoSideDrawerShell":  {
+                                                                     "description":  "侧边抽屉外壳",
+                                                                     "tooltip":  "侧边抽屉外壳组件"
+                                                                 },
+    "mango-ui/packages/common/components/Chat":  {
+                                                     "description":  "聊天组件",
+                                                     "tooltip":  "即时聊天组件"
+                                                 },
+    "mango-ui/packages/common/components/MangoListPage":  {
+                                                              "description":  "列表页布局",
+                                                              "tooltip":  "列表页布局组件"
+                                                          },
+    "mango-ui/packages/common/components/MangoStatusText":  {
+                                                                "description":  "状态文本组件",
+                                                                "tooltip":  "状态文本展示组件"
+                                                            },
+    "mango-ui/packages/system/src/components/SystemConfigPanel":  {
+                                                                      "description":  "系统配置面板",
+                                                                      "tooltip":  "系统配置面板组件"
+                                                                  },
+    "mango-ui/packages/common/components/RightToolbar":  {
+                                                             "description":  "右侧工具栏",
+                                                             "tooltip":  "表格右侧操作工具栏组件"
+                                                         },
+    "mango-ui/apps/mango-admin/src/views/components/icon":  {
+                                                                "description":  "图标组件",
+                                                                "tooltip":  "管理后台 - 图标组件"
+                                                            },
+    "mango-ui/packages/common/components/RichTextViewer":  {
+                                                               "description":  "富文本查看器",
+                                                               "tooltip":  "富文本内容查看组件"
+                                                           }
+}

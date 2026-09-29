@@ -40,7 +40,8 @@ mvnw.cmd
 *.iml
 *.ipr
 *.iws
-.vscode/
+.vscode/*
+!.vscode/public-folder-alias.json
 *.swp
 *.swo
 *~
