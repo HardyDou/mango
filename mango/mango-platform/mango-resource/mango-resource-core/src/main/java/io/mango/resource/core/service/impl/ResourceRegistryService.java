@@ -485,10 +485,12 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
         try {
             validateDeclarations(declarations);
             ResourceRegistrySnapshot registrySnapshot = repository.loadSnapshot(declarations);
-            validateRegistryConflicts(declarations, registrySnapshot);
+            List<ResourceDeclaration> effectiveDeclarations =
+                    excludeManagedShadowedDeclarations(declarations, registrySnapshot);
+            validateRegistryConflicts(effectiveDeclarations, registrySnapshot);
             Set<String> seenResourceIds = new HashSet<>();
             List<ResourceDeclaration> activeDeclarations = new ArrayList<>();
-            for (ResourceDeclaration declaration : declarations) {
+            for (ResourceDeclaration declaration : effectiveDeclarations) {
                 assertOperationCanContinue();
                 seenResourceIds.add(declaration.getId());
                 if (isDeprecated(declaration)) {
@@ -504,7 +506,8 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
                 disableMissing(appCode, serviceCode, managedModuleCodes, seenResourceIds, handlerMap);
             }
             observeDiagnosticCompletion(observations, declarations, handlerMap);
-            log.info("Mango resource registry sync complete: declarations={}", declarations.size());
+            log.info("Mango resource registry sync complete: declarations={}, effective={}",
+                    declarations.size(), effectiveDeclarations.size());
         } catch (RuntimeException exception) {
             recordDiagnosticFailure(observations, "RESOURCE_SYNC_FAILED");
             Require.rethrow(exception);
@@ -680,6 +683,30 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
                 conflict("Duplicate resource type and bizKey: " + bizKey);
             }
         }
+    }
+
+    private List<ResourceDeclaration> excludeManagedShadowedDeclarations(
+            List<ResourceDeclaration> declarations, ResourceRegistrySnapshot registrySnapshot) {
+        List<ResourceDeclaration> effective = new ArrayList<>();
+        for (ResourceDeclaration declaration : declarations) {
+            ResourceRegistryRow rowByBizKey = registrySnapshot.findByTypeAndBizKey(
+                    declaration.getResourceType(), declaration.getBizKey());
+            if (rowByBizKey != null && !declaration.getId().equals(rowByBizKey.getResourceId())
+                    && isManagedSyncMode(rowByBizKey.getSyncMode())) {
+                log.info("Mango resource system declaration skipped by managed record: resourceType={}, bizKey={}, managedId={}, declarationId={}",
+                        declaration.getResourceType(), declaration.getBizKey(),
+                        rowByBizKey.getResourceId(), declaration.getId());
+                continue;
+            }
+            effective.add(declaration);
+        }
+        return effective;
+    }
+
+    private boolean isManagedSyncMode(ResourceSyncMode syncMode) {
+        return syncMode == ResourceSyncMode.MANUAL
+                || syncMode == ResourceSyncMode.INIT_ONLY
+                || syncMode == ResourceSyncMode.LOCKED;
     }
 
     private void validateRegistryConflicts(List<ResourceDeclaration> declarations,
@@ -914,7 +941,8 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
             result = disableTarget(declaration, handlerMap);
         }
         assertOperationCanContinue();
-        repository.updateStatus(row, ResourceStatus.REMOVED.name(), row.getSourceHash());
+        repository.updateStatusAndSyncMode(row, ResourceStatus.REMOVED.name(),
+                ResourceSyncMode.MANUAL.name(), row.getSourceHash());
         String changeType = "DISABLE";
         if (physical) {
             changeType = "DELETE";
