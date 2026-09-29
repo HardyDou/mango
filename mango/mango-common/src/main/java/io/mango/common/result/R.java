@@ -71,6 +71,22 @@ public final class R<T> implements Serializable {
     }
 
     /**
+     * 解包成功响应中的数据，失败响应统一转换为业务异常。
+     *
+     * @param bizCode 调用方业务错误码。
+     * @param fallbackMessage 消息为空或数据为空时使用的兜底消息。
+     * @return 非空响应数据。
+     */
+    public T unwrap(BizCode bizCode, String fallbackMessage) {
+        String message = getMsg();
+        if (message == null || message.isBlank()) {
+            message = fallbackMessage;
+        }
+        Require.isTrue(isSuccess(), bizCode, message);
+        return Require.nonNull(getData(), bizCode, fallbackMessage);
+    }
+
+    /**
      * 返回请求是否成功。
      *
      * @return 请求是否成功。

@@ -167,7 +167,7 @@ const fileIds = ref<string[]>([]);
 | `bizMeta` | `Record<string, unknown> \| string` | 未设置 | 文件归属扩展元数据。 |
 | `directoryId` | `string \| number` | 未设置 | 文件中心逻辑目录 ID。 |
 | `showPreviewActions` | `boolean` | `true` | 是否显示预览弹框的下载/新窗口操作。 |
-| `disabled` | `boolean` | `false` | 禁止上传、替换和删除，但仍展示已有文件。 |
+| `disabled` | `boolean` | `false` | 不执行上传、替换和删除操作，但仍展示已有文件。 |
 | `layout` | `'grid' \| 'stacked'` | `'grid'` | 卡片排列方式。 |
 
 #### `MangoAttachmentUploadCategory`
@@ -196,8 +196,8 @@ const fileIds = ref<string[]>([]);
 | `fileName` | `string` | 原始文件名。 |
 | `fileExt` | `string` | 文件扩展名，可选。 |
 | `fileSize` | `number` | 文件大小，单位字节，可选。 |
-| `previewUrl` | `string` | 当前页面临时预览地址，可选，不应持久化到业务表。 |
-| `downloadUrl` | `string` | 当前页面临时下载地址，可选，不应持久化到业务表。 |
+| `previewUrl` | `string` | 当前页面临时预览地址，可选；业务持久化使用文件字段或附件关系。 |
+| `downloadUrl` | `string` | 当前页面临时下载地址，可选；业务持久化使用文件字段或附件关系。 |
 
 #### Events、slots 和 expose
 

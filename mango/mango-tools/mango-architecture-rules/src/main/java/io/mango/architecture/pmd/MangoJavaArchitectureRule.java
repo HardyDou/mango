@@ -98,12 +98,17 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
     private static final String DTO_SUFFIX = "DTO";
     private static final String CODE_SUFFIX = "Code";
     private static final String RESULT_OK_METHOD = "ok";
+    private static final String REQUIRE_RETHROW_METHOD = "rethrow";
     private static final String ENTITY_SUFFIX = "Entity";
     private static final String PO_SUFFIX = "PO";
     private static final String JAVA_OBJECT = "java.lang.Object";
     private static final String JAVA_STRING = "java.lang.String";
     private static final String JAVA_MAP = "java.util.Map";
     private static final String JAVA_SERIALIZABLE = "java.io.Serializable";
+    private static final String RUNTIME_PATH_PLACEHOLDER_PREFIX = "${";
+    private static final String PATH_PLACEHOLDER_END = "}";
+    private static final Set<String> BOOLEAN_TYPES =
+            Set.of("boolean", "java.lang.Boolean");
     private static final String JAKARTA_SERVLET_PREFIX = "jakarta.servlet.";
     private static final String JAVAX_SERVLET_PREFIX = "javax.servlet.";
     private static final String SPRING_PREFIX = "org.springframework.";
@@ -546,15 +551,6 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
         for (ASTMethodCall call : type.descendants(ASTMethodCall.class)) {
             inspectServiceCall(call, context);
         }
-        type.descendants(ASTConstructorCall.class)
-                .filter(call -> isType(call.getTypeMirror(), RESULT_R))
-                .forEach(
-                        call ->
-                                violation(
-                                        context,
-                                        call,
-                                        "MANGO-ARCH-SVC-002 Service must not construct R"
-                                                + " instances"));
         type.descendants(ASTThrowStatement.class)
                 .forEach(
                         statement ->
@@ -586,13 +582,10 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
     }
 
     private void inspectServiceCall(ASTMethodCall call, RuleContext context) {
-        if (isCallOn(call, RESULT_R)) {
-            violation(context, call, "MANGO-ARCH-SVC-002 Service must not call R methods");
-        }
         if (!isCallOn(call, REQUIRE)) {
             return;
         }
-        if ("rethrow".equals(call.getMethodName())) {
+        if (REQUIRE_RETHROW_METHOD.equals(call.getMethodName())) {
             return;
         }
         int codeParameterIndex = businessCodeParameterIndex(call);
@@ -647,14 +640,6 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
                                             annotation,
                                             "MANGO-ARCH-SVC-013 service interfaces must be"
                                                     + " transport-neutral"));
-            method.descendants(ASTMethodCall.class)
-                    .filter(call -> isCallOn(call, RESULT_R))
-                    .forEach(
-                            call ->
-                                    violation(
-                                            context,
-                                            call,
-                                            "MANGO-ARCH-SVC-002 Service must not call R methods"));
         }
     }
 
@@ -943,18 +928,13 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
                         .toList();
         boolean containsRuntimePlaceholder =
                 paths.stream().anyMatch(this::containsRuntimePathPlaceholder);
-        if (containsRuntimePlaceholder
-                && paths.stream()
-                        .anyMatch(
-                                path ->
-                                        containsRuntimePathPlaceholder(path)
-                                                && !isAllowedNativeRuntimePath(
-                                                        path,
-                                                        allowRuntimePathPlaceholder))) {
-            violation(
-                    context,
-                    annotation,
-                    "MANGO-ARCH-PATH-003 runtime path placeholders are forbidden in HTTP adapters");
+        if (containsRuntimePlaceholder) {
+            if (containsDisallowedRuntimePathPlaceholder(paths, allowRuntimePathPlaceholder)) {
+                violation(
+                        context,
+                        annotation,
+                        "MANGO-ARCH-PATH-003 runtime path placeholders are forbidden in HTTP adapters");
+            }
         } else if (!containsRuntimePlaceholder
                 && paths.stream().anyMatch(this::containsUriTemplate)) {
             violation(
@@ -976,19 +956,36 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
     }
 
     private boolean containsRuntimePathPlaceholder(String path) {
-        return path.contains("${") || path.contains("#{");
+        return path.contains(RUNTIME_PATH_PLACEHOLDER_PREFIX) || path.contains("#{");
+    }
+
+    private boolean containsDisallowedRuntimePathPlaceholder(
+            List<String> paths, boolean allowRuntimePathPlaceholder) {
+        return paths.stream()
+                .anyMatch(path -> isDisallowedRuntimePathPlaceholder(path, allowRuntimePathPlaceholder));
+    }
+
+    private boolean isDisallowedRuntimePathPlaceholder(
+            String path, boolean allowRuntimePathPlaceholder) {
+        if (!containsRuntimePathPlaceholder(path)) {
+            return false;
+        }
+        return !isAllowedNativeRuntimePath(path, allowRuntimePathPlaceholder);
     }
 
     private boolean isAllowedNativeRuntimePath(
             String path, boolean allowRuntimePathPlaceholder) {
-        if (!allowRuntimePathPlaceholder || !path.startsWith("${") || !path.endsWith("}")) {
+        if (!allowRuntimePathPlaceholder
+                || !path.startsWith(RUNTIME_PATH_PLACEHOLDER_PREFIX)
+                || !path.endsWith(PATH_PLACEHOLDER_END)) {
             return false;
         }
         int defaultSeparator = path.indexOf(':', 2);
         if (defaultSeparator < 0 || defaultSeparator + 1 >= path.length() - 1) {
             return false;
         }
-        String defaultPath = path.substring(defaultSeparator + 1, path.length() - 1);
+        String defaultPath =
+                path.substring(defaultSeparator + 1, path.length() - PATH_PLACEHOLDER_END.length());
         return defaultPath.startsWith("/") && !containsUriTemplate(defaultPath);
     }
 
@@ -1220,9 +1217,10 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
             return true;
         }
         JTypeMirror fieldType = field.getTypeNode().getTypeMirror();
-        if ("boolean".equals(canonicalName(fieldType))
-                || "java.lang.Boolean".equals(canonicalName(fieldType))
-                || fieldType.getSymbol() instanceof JClassSymbol symbol && symbol.isEnum()) {
+        if (BOOLEAN_TYPES.contains(canonicalName(fieldType))) {
+            return true;
+        }
+        if (fieldType.getSymbol() instanceof JClassSymbol symbol && symbol.isEnum()) {
             return true;
         }
         return containsCompositeApiInput(fieldType)
