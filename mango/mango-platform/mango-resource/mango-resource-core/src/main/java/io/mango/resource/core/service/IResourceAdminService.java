@@ -1,6 +1,8 @@
 package io.mango.resource.core.service;
 
 import io.mango.common.vo.PageResult;
+import io.mango.resource.api.command.CreateResourceRegistryCommand;
+import io.mango.resource.api.command.UpdateResourceSyncModeCommand;
 import io.mango.resource.api.query.ResourceLogPageQuery;
 import io.mango.resource.api.query.ResourceRegistryPageQuery;
 import io.mango.resource.api.vo.ResourceChangeLogVO;
@@ -20,6 +22,10 @@ public interface IResourceAdminService {
     Boolean forceSync();
 
     Boolean deleteResource(String resourceId, Boolean physical);
+
+    String createResource(CreateResourceRegistryCommand command);
+
+    Boolean updateResourceSyncMode(UpdateResourceSyncModeCommand command);
 
     PageResult<ResourceSyncLogVO> pageSyncLogs(ResourceLogPageQuery query);
 

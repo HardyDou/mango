@@ -483,12 +483,16 @@ Handler 可以按 Resource 显式启用运行时修改退避：
 | `POST /resource/declarations/register` | 远程服务上报资源声明。 |
 | `GET /resource/registries/page` | 查询注册资源。 |
 | `POST /resource/sync/force` | 强制重新同步。 |
+| `POST /resource/registries` | 新增托管资源；默认 `syncMode=MANUAL`，`fields` 使用与声明一致的 JSON 对象。 |
+| `PUT /resource/registries/sync-mode` | 显式切换资源 `syncMode`，用于接管或交还系统同步。 |
 | `DELETE /resource/registries` | 删除注册资源，支持逻辑删除和物理删除。 |
 | `GET /resource/sync-logs/page` | 查询同步日志。 |
 | `GET /resource/change-logs/page` | 查询变更日志。 |
 | `GET /resource/handler-specs` | 查询当前应用已装配的资源处理器字段契约。 |
 
-管理接口通过 `@ApiAccess` 声明权限码，权限包括 `system:resource:registry:list`、`system:resource:sync:force`、`system:resource:registry:delete`、`system:resource:sync-log:list`、`system:resource:change-log:list` 和 `system:resource:handler:list`。对应菜单、租户授权和页面 component key 由授权资源注册链路消费。
+管理接口通过 `@ApiAccess` 声明权限码，权限包括 `system:resource:registry:list`、`system:resource:registry:add`、`system:resource:registry:edit`、`system:resource:sync:force`、`system:resource:registry:delete`、`system:resource:sync-log:list`、`system:resource:change-log:list` 和 `system:resource:handler:list`。对应菜单、租户授权和页面 component key 由授权资源注册链路消费。
+
+`POST /resource/registries` 的 `fields` 是声明格式的 JSON 字符串，例如：`{"configKey":{"type":"STRING","value":"demo.key"},"configValue":{"type":"STRING","value":"demo"},"configName":{"type":"STRING","value":"Demo"}}`。后台新增后建议保持 `MANUAL` 或 `INIT_ONLY`；删除后 registry 保留 `REMOVED/MANUAL` tombstone。
 
 ## 12. 快速开始
 

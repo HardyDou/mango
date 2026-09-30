@@ -162,6 +162,14 @@ public class ResourceRegistryRepository {
         registryMapper.updateById(entity);
     }
 
+    public void updateSyncMode(ResourceRegistryRow row, String syncMode) {
+        ResourceRegistryEntity entity = new ResourceRegistryEntity();
+        entity.setId(row.getId());
+        entity.setSyncMode(syncMode);
+        entity.setUpdatedAt(LocalDateTime.now());
+        registryMapper.updateById(entity);
+    }
+
     public void insertSyncLog(Long resourceRowId, String syncType, String result, String message) {
         ResourceSyncLogEntity entity = new ResourceSyncLogEntity();
         entity.setId(IdWorker.getId());

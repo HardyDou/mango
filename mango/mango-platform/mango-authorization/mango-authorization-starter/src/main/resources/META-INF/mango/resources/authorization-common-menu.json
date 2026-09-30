@@ -106,6 +106,8 @@
                       "system:menu:edit",
                       "system:menu:delete",
                       "system:resource:registry:list",
+                      "system:resource:registry:add",
+                      "system:resource:registry:edit",
                       "system:resource:sync:force",
                       "system:resource:registry:delete",
                       "system:resource:sync-log:list",

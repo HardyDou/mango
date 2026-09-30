@@ -18,6 +18,7 @@ import io.mango.resource.support.ResourceHandler;
 import io.mango.resource.support.ResourceBaselinePolicy;
 import io.mango.resource.support.ResourceProvider;
 import io.mango.resource.support.ResourceTargetDispatcher;
+import io.mango.resource.api.command.CreateResourceRegistryCommand;
 import io.mango.resource.api.command.RegisterResourceDeclarationsCommand;
 import io.mango.resource.api.command.ResourceModuleManifestCommand;
 import io.mango.resource.api.enums.ResourceApplyMode;
@@ -35,7 +36,9 @@ import io.mango.resource.support.declaration.ResourceDeclarationLoader;
 import io.mango.resource.core.entity.ResourceRegistryEntity;
 import io.mango.resource.core.diagnostic.ResourceModuleSyncState;
 import io.mango.resource.core.diagnostic.ResourceModuleSyncStatusRegistry;
+import io.mango.resource.core.mapper.ResourceChangeLogMapper;
 import io.mango.resource.core.mapper.ResourceRegistryMapper;
+import io.mango.resource.core.mapper.ResourceSyncLogMapper;
 import io.mango.resource.core.sync.ResourceContentHasher;
 import io.mango.resource.core.sync.ResourceRegistryLock;
 import io.mango.resource.core.sync.ResourceRegistryRepository;
@@ -102,6 +105,9 @@ class ResourceRegistrySyncServiceIntegrationTest {
 
     @Autowired
     private ResourceRegistryService syncService;
+
+    @Autowired
+    private ResourceAdminService adminService;
 
     @Autowired
     private ResourceRegistryMapper registryMapper;
@@ -1144,6 +1150,67 @@ class ResourceRegistrySyncServiceIntegrationTest {
         assertThat(count("resource_registry")).isEqualTo(1);
     }
 
+    @Test
+    void createManagedResourceCreatesManualRegistryRecord() {
+        ResourceDeclaration managed = activeDeclaration(
+                "1900000000000000099", 1, "guarantee.managed", "后台新增");
+        managed.setSyncMode(ResourceSyncMode.MANUAL);
+        managed.setExecutionPhase(ResourceExecutionPhase.MANUAL);
+
+        String resourceId = syncService.createManagedResource(managed);
+
+        assertThat(resourceId).isEqualTo("1900000000000000099");
+        assertThat(registryRows()).hasSize(1);
+        assertThat(registryRows().get(0).syncMode()).isEqualTo("MANUAL");
+        assertThat(messageTemplateRows()).hasSize(1);
+        assertThat(messageTemplateRows().get(0).title()).isEqualTo("后台新增");
+    }
+
+    @Test
+    void updateResourceSyncModeChangesOwnership() {
+        provider.setDeclaration(activeDeclaration(1, "提交申请"));
+        syncService.sync();
+        assertThat(registryRows().get(0).syncMode()).isEqualTo("AUTO");
+        String sourceHash = jdbcTemplate.queryForObject(
+                "select source_hash from resource_registry limit 1", String.class);
+        long changeLogCount = count("resource_change_log");
+
+        syncService.updateResourceSyncMode("1900000000000000001", ResourceSyncMode.MANUAL);
+
+        assertThat(registryRows().get(0).syncMode()).isEqualTo("MANUAL");
+        assertThat(jdbcTemplate.queryForObject(
+                "select source_hash from resource_registry limit 1", String.class))
+                .isEqualTo(sourceHash);
+        assertThat(count("resource_change_log")).isEqualTo(changeLogCount + 1);
+    }
+
+    @Test
+    void adminCreateResourceParsesFieldJsonAndCreatesManagedRecord() {
+        CreateResourceRegistryCommand command = new CreateResourceRegistryCommand();
+        command.setResourceType("MESSAGE_TEMPLATE");
+        command.setModuleCode("resource-admin-test");
+        command.setBizKey("guarantee.apply.submit");
+        command.setName("后台 API 新增");
+        command.setTargetModule("notice");
+        command.setFields("{\"title\":{\"type\":\"STRING\",\"value\":\"后台 API 新增\"}}");
+
+        String resourceId = adminService.createResource(command);
+        provider.setDeclaration(activeDeclaration(1, "系统声明不应覆盖"));
+        syncService.sync();
+
+        assertThat(resourceId).isNotBlank();
+        assertThat(registryRows()).singleElement()
+                .satisfies(row -> {
+                    assertThat(row.resourceId()).isEqualTo(resourceId);
+                    assertThat(row.syncMode()).isEqualTo("MANUAL");
+                    assertThat(row.status()).isEqualTo("ACTIVE");
+                    assertThat(row.bizKey()).isEqualTo("guarantee.apply.submit");
+                });
+        assertThat(messageTemplateRows()).singleElement()
+                .extracting(MessageTemplateRow::title)
+                .isEqualTo("后台 API 新增");
+    }
+
     private ResourceDeclaration activeDeclaration(int version, String titleValue) {
         return activeDeclaration("1900000000000000001", version, "guarantee.apply.submit", titleValue);
     }
@@ -1412,11 +1479,13 @@ class ResourceRegistrySyncServiceIntegrationTest {
 
     @Configuration
     @MapperScan(basePackageClasses = {
+            ResourceChangeLogMapper.class,
             ResourceRegistryMapper.class,
+            ResourceSyncLogMapper.class,
             TestMessageTemplateMapper.class
     })
     @Import({ResourceRegistryRepository.class, ResourceModuleReceiptRepository.class,
-            ResourceRegistryLock.class, ResourceRegistryService.class})
+            ResourceRegistryLock.class, ResourceRegistryService.class, ResourceAdminService.class})
     static class TestConfig {
 
         @Bean

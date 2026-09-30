@@ -426,6 +426,108 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
         }
     }
 
+    @Override
+    public String createManagedResource(ResourceDeclaration declaration) {
+        ResourceDeclaration validated = Require.nonNull(
+                declaration, ResourceCode.RESOURCE_INVALID, "资源声明不能为空");
+        if (!beginOperation()) {
+            log.info("Mango resource managed create deferred: application is shutting down");
+            return null;
+        }
+        try {
+            return createManagedResourceWhileRunning(validated);
+        } finally {
+            endOperation();
+        }
+    }
+
+    private String createManagedResourceWhileRunning(ResourceDeclaration declaration) {
+        invalidateDiagnosticStatus("RESOURCE_SYNC_ATTEMPT_STARTED");
+        if (!properties.isEnabled()) {
+            invalidateDiagnosticStatus("RESOURCE_SYNC_DISABLED");
+            log.info("Mango resource managed create disabled");
+            return null;
+        }
+        String owner = resolveOwner();
+        ResourceRegistryLock.LeaseSession lease = lock.tryLock(
+                owner, properties.getLockTtlSeconds()).orElse(null);
+        if (lease == null) {
+            invalidateDiagnosticStatus("RESOURCE_SYNC_LOCK_NOT_ACQUIRED");
+            log.info("Mango resource managed create skipped: lock is held by another instance");
+            return null;
+        }
+        try {
+            applySource(declaration, LOCAL_APP_CODE, LOCAL_SERVICE_CODE);
+            validateRequired(declaration);
+            Require.notNull(declaration.getSyncMode(), ResourceCode.RESOURCE_INVALID,
+                    "资源同步模式不能为空: " + declaration.getId());
+            Require.notNull(declaration.getStatus(), ResourceCode.RESOURCE_INVALID,
+                    "资源状态不能为空: " + declaration.getId());
+            Map<String, ResourceHandler> handlerMap = loadHandlers();
+            ResourceRegistryRow existing = repository.findByTypeAndBizKey(
+                    declaration.getResourceType(), declaration.getBizKey());
+            Require.isNull(existing, ResourceCode.RESOURCE_CONFLICT.getCode(),
+                    "资源已存在: " + declaration.getResourceType() + ":" + declaration.getBizKey());
+            ResourceSyncResult result = upsertSingleTarget(declaration, handlerMap);
+            Require.notNull(result, ResourceCode.RESOURCE_SYNC_FAILED,
+                    "资源处理器未返回同步结果: " + declaration.getId());
+            assertOperationCanContinue();
+            String hash = hasher.hash(declaration);
+            Long rowId = repository.insert(declaration, hash, result.getTargetId(), result.getTargetTable());
+            repository.insertSyncLog(rowId, "CREATE", "SUCCESS", result.getMessage());
+            repository.insertChangeLog(rowId, "CREATE", null, toJson(declaration));
+            log.info("Mango resource managed record created: resourceId={}, type={}, bizKey={}",
+                    declaration.getId(), declaration.getResourceType(), declaration.getBizKey());
+            return declaration.getId();
+        } catch (RuntimeException exception) {
+            failObservedDiagnosticStatus("RESOURCE_SYNC_FAILED");
+            return Require.rethrow(exception);
+        } finally {
+            lease.close();
+        }
+    }
+
+    @Override
+    public void updateResourceSyncMode(String resourceId, ResourceSyncMode syncMode) {
+        Require.notBlank(resourceId, ResourceCode.RESOURCE_INVALID, "Resource id is required");
+        Require.notNull(syncMode, ResourceCode.RESOURCE_INVALID, "Resource sync mode is required");
+        if (!beginOperation()) {
+            log.info("Mango resource sync mode update deferred: application is shutting down");
+            return;
+        }
+        try {
+            updateResourceSyncModeWhileRunning(resourceId, syncMode);
+        } finally {
+            endOperation();
+        }
+    }
+
+    private void updateResourceSyncModeWhileRunning(String resourceId, ResourceSyncMode syncMode) {
+        if (!properties.isEnabled()) {
+            log.info("Mango resource sync mode update skipped: registry disabled, resourceId={}", resourceId);
+            return;
+        }
+        String owner = resolveOwner();
+        ResourceRegistryLock.LeaseSession lease = lock.tryLock(
+                owner, properties.getLockTtlSeconds()).orElse(null);
+        if (lease == null) {
+            log.info("Mango resource sync mode update skipped: lock is held by another instance");
+            return;
+        }
+        try {
+            ResourceRegistryRow row = repository.findByResourceId(resourceId);
+            Require.notNull(row, ResourceCode.RESOURCE_NOT_FOUND, "资源注册记录不存在: " + resourceId);
+            String before = toJson(row);
+            repository.updateSyncMode(row, syncMode.name());
+            ResourceRegistryRow updated = repository.findByResourceId(resourceId);
+            repository.insertSyncLog(row.getId(), "SYNC_MODE", "SUCCESS",
+                    "Resource sync mode is " + syncMode.name());
+            repository.insertChangeLog(row.getId(), "SYNC_MODE", before, toJson(updated));
+        } finally {
+            lease.close();
+        }
+    }
+
     private void deleteResourceWhileRunning(String resourceId, boolean physical) {
         Require.notBlank(resourceId, ResourceCode.RESOURCE_INVALID, "Resource id is required");
         if (!properties.isEnabled()) {

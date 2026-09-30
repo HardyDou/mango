@@ -1,12 +1,22 @@
 package io.mango.resource.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.IdWorker;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
+import io.mango.resource.api.command.CreateResourceRegistryCommand;
+import io.mango.resource.api.command.UpdateResourceSyncModeCommand;
 import io.mango.resource.api.query.ResourceLogPageQuery;
 import io.mango.resource.api.enums.ResourceCode;
+import io.mango.resource.api.enums.ResourceExecutionPhase;
+import io.mango.resource.api.enums.ResourceStatus;
 import io.mango.resource.api.query.ResourceRegistryPageQuery;
+import io.mango.resource.support.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceField;
 import io.mango.resource.api.vo.ResourceChangeLogVO;
 import io.mango.resource.api.vo.ResourceHandlerFieldVO;
 import io.mango.resource.api.vo.ResourceHandlerSpecVO;
@@ -27,7 +37,9 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +48,7 @@ public class ResourceAdminService implements IResourceAdminService {
     private final ResourceRegistryMapper registryMapper;
     private final ResourceSyncLogMapper syncLogMapper;
     private final ResourceChangeLogMapper changeLogMapper;
+    private final ObjectMapper objectMapper;
     private final ObjectProvider<ResourceHandler> handlers;
     private final IResourceRegistryService registryService;
 
@@ -50,6 +63,50 @@ public class ResourceAdminService implements IResourceAdminService {
         Require.notBlank(resourceId, ResourceCode.RESOURCE_INVALID, "资源ID不能为空");
         registryService.deleteResource(resourceId, Boolean.TRUE.equals(physical));
         return Boolean.TRUE;
+    }
+
+    @Override
+    public String createResource(CreateResourceRegistryCommand command) {
+        CreateResourceRegistryCommand validated = Require.nonNull(
+                command, ResourceCode.RESOURCE_INVALID, "新增资源命令不能为空");
+        return registryService.createManagedResource(toDeclaration(validated));
+    }
+
+    @Override
+    public Boolean updateResourceSyncMode(UpdateResourceSyncModeCommand command) {
+        UpdateResourceSyncModeCommand validated = Require.nonNull(
+                command, ResourceCode.RESOURCE_INVALID, "同步模式更新命令不能为空");
+        registryService.updateResourceSyncMode(validated.getResourceId(), validated.getSyncMode());
+        return Boolean.TRUE;
+    }
+
+    private ResourceDeclaration toDeclaration(CreateResourceRegistryCommand command) {
+        ResourceDeclaration declaration = new ResourceDeclaration();
+        declaration.setId(String.valueOf(IdWorker.getId()));
+        declaration.setVersion(1);
+        declaration.setResourceType(command.getResourceType());
+        declaration.setModuleCode(command.getModuleCode());
+        declaration.setBizKey(command.getBizKey());
+        declaration.setName(command.getName());
+        declaration.setTargetModule(command.getTargetModule());
+        declaration.setSyncMode(command.getSyncMode());
+        declaration.setExecutionPhase(ResourceExecutionPhase.MANUAL);
+        declaration.setStatus(ResourceStatus.ACTIVE);
+        declaration.setFields(parseFields(command.getFields()));
+        return declaration;
+    }
+
+    private Map<String, ResourceField> parseFields(String fields) {
+        Require.notBlank(fields, ResourceCode.RESOURCE_INVALID, "资源字段JSON不能为空");
+        try {
+            Map<String, ResourceField> parsed = objectMapper.readValue(
+                    fields, new TypeReference<>() { });
+            return new LinkedHashMap<>(Require.nonNull(parsed, ResourceCode.RESOURCE_INVALID,
+                    "资源字段JSON必须是对象"));
+        } catch (JsonProcessingException exception) {
+            Require.isTrue(false, ResourceCode.RESOURCE_INVALID, "资源字段JSON格式不正确");
+            return new LinkedHashMap<>();
+        }
     }
 
     @Override
