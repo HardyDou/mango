@@ -98,17 +98,12 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
     private static final String DTO_SUFFIX = "DTO";
     private static final String CODE_SUFFIX = "Code";
     private static final String RESULT_OK_METHOD = "ok";
-    private static final String REQUIRE_RETHROW_METHOD = "rethrow";
     private static final String ENTITY_SUFFIX = "Entity";
     private static final String PO_SUFFIX = "PO";
     private static final String JAVA_OBJECT = "java.lang.Object";
     private static final String JAVA_STRING = "java.lang.String";
     private static final String JAVA_MAP = "java.util.Map";
     private static final String JAVA_SERIALIZABLE = "java.io.Serializable";
-    private static final String RUNTIME_PATH_PLACEHOLDER_PREFIX = "${";
-    private static final String PATH_PLACEHOLDER_END = "}";
-    private static final Set<String> BOOLEAN_TYPES =
-            Set.of("boolean", "java.lang.Boolean");
     private static final String JAKARTA_SERVLET_PREFIX = "jakarta.servlet.";
     private static final String JAVAX_SERVLET_PREFIX = "javax.servlet.";
     private static final String SPRING_PREFIX = "org.springframework.";
@@ -585,7 +580,7 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
         if (!isCallOn(call, REQUIRE)) {
             return;
         }
-        if (REQUIRE_RETHROW_METHOD.equals(call.getMethodName())) {
+        if ("rethrow".equals(call.getMethodName())) {
             return;
         }
         int codeParameterIndex = businessCodeParameterIndex(call);
@@ -928,13 +923,18 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
                         .toList();
         boolean containsRuntimePlaceholder =
                 paths.stream().anyMatch(this::containsRuntimePathPlaceholder);
-        if (containsRuntimePlaceholder) {
-            if (containsDisallowedRuntimePathPlaceholder(paths, allowRuntimePathPlaceholder)) {
-                violation(
-                        context,
-                        annotation,
-                        "MANGO-ARCH-PATH-003 runtime path placeholders are forbidden in HTTP adapters");
-            }
+        if (containsRuntimePlaceholder
+                && paths.stream()
+                        .anyMatch(
+                                path ->
+                                        containsRuntimePathPlaceholder(path)
+                                                && !isAllowedNativeRuntimePath(
+                                                        path,
+                                                        allowRuntimePathPlaceholder))) {
+            violation(
+                    context,
+                    annotation,
+                    "MANGO-ARCH-PATH-003 runtime path placeholders are forbidden in HTTP adapters");
         } else if (!containsRuntimePlaceholder
                 && paths.stream().anyMatch(this::containsUriTemplate)) {
             violation(
@@ -956,36 +956,19 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
     }
 
     private boolean containsRuntimePathPlaceholder(String path) {
-        return path.contains(RUNTIME_PATH_PLACEHOLDER_PREFIX) || path.contains("#{");
-    }
-
-    private boolean containsDisallowedRuntimePathPlaceholder(
-            List<String> paths, boolean allowRuntimePathPlaceholder) {
-        return paths.stream()
-                .anyMatch(path -> isDisallowedRuntimePathPlaceholder(path, allowRuntimePathPlaceholder));
-    }
-
-    private boolean isDisallowedRuntimePathPlaceholder(
-            String path, boolean allowRuntimePathPlaceholder) {
-        if (!containsRuntimePathPlaceholder(path)) {
-            return false;
-        }
-        return !isAllowedNativeRuntimePath(path, allowRuntimePathPlaceholder);
+        return path.contains("${") || path.contains("#{");
     }
 
     private boolean isAllowedNativeRuntimePath(
             String path, boolean allowRuntimePathPlaceholder) {
-        if (!allowRuntimePathPlaceholder
-                || !path.startsWith(RUNTIME_PATH_PLACEHOLDER_PREFIX)
-                || !path.endsWith(PATH_PLACEHOLDER_END)) {
+        if (!allowRuntimePathPlaceholder || !path.startsWith("${") || !path.endsWith("}")) {
             return false;
         }
         int defaultSeparator = path.indexOf(':', 2);
         if (defaultSeparator < 0 || defaultSeparator + 1 >= path.length() - 1) {
             return false;
         }
-        String defaultPath =
-                path.substring(defaultSeparator + 1, path.length() - PATH_PLACEHOLDER_END.length());
+        String defaultPath = path.substring(defaultSeparator + 1, path.length() - 1);
         return defaultPath.startsWith("/") && !containsUriTemplate(defaultPath);
     }
 
@@ -1217,10 +1200,9 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
             return true;
         }
         JTypeMirror fieldType = field.getTypeNode().getTypeMirror();
-        if (BOOLEAN_TYPES.contains(canonicalName(fieldType))) {
-            return true;
-        }
-        if (fieldType.getSymbol() instanceof JClassSymbol symbol && symbol.isEnum()) {
+        if ("boolean".equals(canonicalName(fieldType))
+                || "java.lang.Boolean".equals(canonicalName(fieldType))
+                || fieldType.getSymbol() instanceof JClassSymbol symbol && symbol.isEnum()) {
             return true;
         }
         return containsCompositeApiInput(fieldType)
