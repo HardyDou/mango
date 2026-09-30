@@ -1,5 +1,94 @@
 # Mango PMO Changelog
 
+## 1.4.5 - 2026-09-30
+
+## Pull Requests
+
+- [PR #982](https://github.com/HardyDou/mango/pull/982) Added the completed capability documentation contract and public component guidance. Packages: @mango/common@2.1.1, @mango/detail@1.1.1, @mango/file@1.1.1 and generated npm dependents through @mango/cli@1.2.17. Business Adaptation: upgrade the complete npm tuple and use the published capability and component contracts.
+- [PR #987](https://github.com/HardyDou/mango/pull/987) Changed the VS Code public-folder alias inventory. Packages: none; repository editor configuration only. Business Adaptation: none; no generated application or runtime asset behavior changes.
+- [PR #988](https://github.com/HardyDou/mango/pull/988) Added Java R.unwrap and retired the SVC-002 architecture rule while retaining SVC-001. Packages: Mango Maven/docs 1.0.56 and @mango/pmo@1.4.5. Business Adaptation: use R.unwrap for Java API response unwrapping and consume the updated backend rules.
+- [PR #990](https://github.com/HardyDou/mango/pull/990) Fixed authenticated blob preview and the protected preview-link contract. Packages: Mango Maven/docs 1.0.56, @mango/file@1.1.1 and generated npm dependents through @mango/cli@1.2.17. Business Adaptation: verify private preview and download flows through the permission-aware file API.
+- [PR #991](https://github.com/HardyDou/mango/pull/991) Fixed bootstrap and runtime declaration deduplication by execution phase. Packages: Mango Maven/docs 1.0.56 and generated npm dependents through @mango/cli@1.2.17. Business Adaptation: upgrade the platform tuple and verify clean bootstrap plus idempotent declaration reconciliation.
+- [PR #992](https://github.com/HardyDou/mango/pull/992) Fixed reconciliation of system declarations with managed resources. Packages: Mango Maven/docs 1.0.56 and generated npm dependents through @mango/cli@1.2.17. Business Adaptation: verify managed-resource precedence, sync mode ownership and stable identifiers on a clean database.
+- [PR #993](https://github.com/HardyDou/mango/pull/993) Changed and documented idempotent migration, fingerprint and administrative Resource Registry rules. Packages: Mango Maven/docs 1.0.56 and @mango/pmo@1.4.5 with generated npm dependents through @mango/cli@1.2.17. Business Adaptation: apply the documented resource ownership, tombstone and fingerprint guidance.
+- [PR #994](https://github.com/HardyDou/mango/pull/994) Added standalone public API documentation for table and layout components. Packages: @mango/common@2.1.1, @mango/detail@1.1.1, @mango/file@1.1.1 and generated npm dependents through @mango/cli@1.2.17. Business Adaptation: install the published packages and validate documented exports and styles.
+- [PR #996](https://github.com/HardyDou/mango/pull/996) Added privileged Resource Registry create and syncMode management APIs plus authorization declarations. Packages: Mango Maven/docs 1.0.56, @mango/pmo@1.4.5 and generated npm dependents through @mango/cli@1.2.17. Business Adaptation: grant the new permissions deliberately, then verify create, query, syncMode transition, tombstone deletion and no system-declaration overwrite.
+- [PR #995](https://github.com/HardyDou/mango/pull/995) Fixed notification detail title/type rendering. Packages: @mango/notice@1.0.52 and generated npm dependents through @mango/cli@1.2.17. Business Adaptation: upgrade the complete tuple and verify notification detail titles and types independently.
+- [PR #998](https://github.com/HardyDou/mango/pull/998) Changed the public `R.unwrap` capability documentation for upstream failure messages and empty-data fallback behavior. Packages: Mango Maven/docs 1.0.56. Business Adaptation: review the published API-unwrapping contract and adopt the documented failure and empty-data semantics.
+
+## Fixed
+
+- Preserve authenticated file preview access and correct preview-link assembly for private resources.
+- Keep Resource Registry synchronization idempotent across execution phases and managed/system ownership boundaries.
+- Add Resource Registry administrative create and syncMode transitions without damaging manifest fingerprint, moduleHash, sourceHash, generation or fencingToken invariants.
+- Correct notification detail title and type rendering.
+- Clarify `R.unwrap` failure-message precedence and empty-data fallback semantics in the published capability documentation.
+
+## Added
+
+- Add the Resource Registry `POST /resource/registries` and `PUT /resource/registries/sync-mode` management contracts with `system:resource:registry:add` and `system:resource:registry:edit` authorization.
+- Add the standalone component and capability documentation updates required by the current public npm tuple.
+
+## Changed
+
+- Advance the non-application Mango Maven reactor and `io.mango:mango-docs-bundle` from 1.0.55 to 1.0.56 across 192 coordinates.
+- Publish the machine-generated npm dependency closure in topology order from @mango/common@2.1.1 through @mango/cli@1.2.17, including @mango/pmo@1.4.5 and @mango/notice@1.0.52.
+- Keep Maven, npm, CLI, PMO, template and generated Business Starter projections on one release plan and immutable source tree.
+
+## Versions
+
+- Mango Maven non-application reactor and `io.mango:mango-docs-bundle`: 1.0.55 -> 1.0.56 across 192 coordinates.
+- npm closure: @mango/common@2.1.1, @mango/admin-extension@1.0.8, @mango/ai@1.1.6, @mango/auth@1.0.36, @mango/file@1.1.1, @mango/detail@1.1.1, @mango/grid-layout@1.0.25, @mango/grid-widgets@1.0.31, @mango/home@1.0.24, @mango/pmo@1.4.5, @mango/rbac@1.0.37, @mango/site-shell@1.0.21, @mango/system@1.0.45, @mango/admin-pages@1.0.46, @mango/calendar@1.0.47, @mango/cms@1.0.36, @mango/job@1.0.40, @mango/link@1.0.33, @mango/notice@1.0.52, @mango/numgen@1.0.48, @mango/payment@1.0.39, @mango/template@1.0.48, @mango/workflow@1.0.56, @mango/admin-shell@1.0.77, @mango/workflow-business-example@1.0.55, @mango/admin@1.1.13 and @mango/cli@1.2.17.
+
+## Published Packages
+
+1. Publish the sealed 192-coordinate non-application Maven reactor and `io.mango:mango-docs-bundle:1.0.56` to Maven publish, then verify Maven publish and consume registries.
+2. Publish the 27-package npm topology in machine-generated dependency order, ending at `@mango/cli@1.2.17`, then verify every package from the npm consume registry.
+3. Verify a clean mixed consumer, create the immutable tag `v2026.09.30-maven-1.0.56-resource-admin-release`, and create the GitHub Release only after registry and consumer verification.
+
+## Business Impact
+
+- Backend consumers receive Resource Registry administrative create and syncMode ownership controls, with new permission declarations and tombstone semantics.
+- Resource declarations remain safe for existing installations: managed `MANUAL`, `INIT_ONLY` and `LOCKED` records take precedence, and stable synchronization fingerprints and fencing values remain intact.
+- File consumers receive the authenticated private preview fix; notification consumers receive independent title/type rendering.
+- Generated frontend consumers receive the complete npm dependency closure, public component documentation, current PMO 1.4.5 projection and CLI 1.2.17.
+- No application deployment, production traffic change, business-source modification or destructive database migration is included.
+
+## Upgrade Estimate
+
+- Audience: Mango backend/resource consumers, generated frontend applications, file-preview consumers, notification consumers and PMO-managed business repositories.
+- Engineering Effort: 45 to 90 minutes for standard generated consumers; 2 to 4 hours for custom Resource Registry or private file-preview integrations.
+- Execution Window: 60 to 150 minutes including dependency upgrade, clean Maven/npm resolution, permission review, database smoke verification and registry propagation.
+- Service Downtime: no framework-mandated downtime; use the consumer's normal deployment window for dependency and permission rollout.
+- Rollback Effort: 30 to 60 minutes to restore Maven/docs 1.0.55, CLI 1.2.16 and the previous immutable npm tuple; do not overwrite published coordinates.
+- Assumptions: Java 21, Node 22.23.1, configured Nexus Maven/npm roles, administrator permission fixtures, MySQL for live validation and representative private files for preview consumers.
+
+## Upgrade Notes
+
+1. Upgrade Maven/docs to 1.0.56 and the complete npm tuple through @mango/cli@1.2.17; keep all generated dependencies on the plan versions listed above.
+2. Review and grant `system:resource:registry:add` and `system:resource:registry:edit` only to intended administrators.
+3. Verify Resource Registry create, query, syncMode transition, tombstone deletion, system-declaration precedence and stable fingerprint/generation/fencing behavior on a clean or upgraded database.
+4. Verify private file preview through the authenticated preview contract and verify notification detail title/type rendering.
+5. For PMO-managed repositories, upgrade @mango/pmo@1.4.5 and @mango/cli@1.2.17 together; run generated-project and PMO contract checks from the consume registry.
+
+## Verification
+
+- `mango release registry doctor` passed for npm publish/consume and Maven publish/consume roles.
+- Maven Resource module verify passed with 81 tests, including 52 Resource Registry integration tests; the real Spring Boot/MySQL/administrator permission-chain evidence is recorded in `.runtime/resource-admin-live/report.txt`.
+- Run catalog, release impact, package exports, PMO projection, CLI version, generated backend, release-plan, release-notes and local release checks before prepare.
+- Prepare one sealed mixed candidate from source commit `6e6f06b11` and verify it with the configured npm consume registry plus the aggregate Maven consumer.
+- After publication, re-resolve all 192 Maven coordinates and 27 npm packages from publish and consume registries by the sealed checksums, then run one clean consume-registry consumer.
+
+## Rollback
+
+- Restore consumers to Maven/docs 1.0.55, @mango/cli@1.2.16 and the previous immutable npm tuple through their normal application release process; never republish or overwrite immutable coordinates.
+- Resource Registry records and tombstones are not rewritten by this release; any consumer database rollback must use the reviewed database procedure and preserve existing resource IDs and audit history.
+- Keep additive file-preview and existing Resource Registry data intact unless a separately approved migration rollback is prepared.
+
+## Audit History
+
+- PRs #980 and #981 are prior 1.0.55 release preparation and closeout records and are excluded from the release-bearing PR list.
+
 ## 1.4.4 - 2026-08-30
 
 ### Pull Requests
