@@ -2,7 +2,7 @@
 
 ## v2026.09.30-maven-1.0.56-resource-admin-release - Maven 1.0.56 - npm @mango/common@2.1.1 @mango/admin-extension@1.0.8 @mango/ai@1.1.6 @mango/auth@1.0.36 @mango/file@1.1.1 @mango/detail@1.1.1 @mango/grid-layout@1.0.25 @mango/grid-widgets@1.0.31 @mango/home@1.0.24 @mango/pmo@1.4.5 @mango/rbac@1.0.37 @mango/site-shell@1.0.21 @mango/system@1.0.45 @mango/admin-pages@1.0.46 @mango/calendar@1.0.47 @mango/cms@1.0.36 @mango/job@1.0.40 @mango/link@1.0.33 @mango/notice@1.0.52 @mango/numgen@1.0.48 @mango/payment@1.0.39 @mango/template@1.0.48 @mango/workflow@1.0.56 @mango/admin-shell@1.0.77 @mango/workflow-business-example@1.0.55 @mango/admin@1.1.13 @mango/cli@1.2.17 - 2026-09-30
 
-Status: `PENDING`. Release plan `25500a7e5a58408cb0d282d04a03554abf0933baf7a444dfeaf1dfa90853b6e8` targets Maven/docs `1.0.56` and the generated npm closure through `@mango/cli@1.2.17` from the regenerated release source. No immutable registry write has occurred.
+Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `0cb3cb4c2e7d3b63dfd9586e30741ff4094d1e9b5a1ec06d11673c8c27396bc6` for release plan `25500a7e5a58408cb0d282d04a03554abf0933baf7a444dfeaf1dfa90853b6e8` and prepared candidate `31acca76cf17560b2883b56e983cd1fe0e0de95b5f11207c3664c19eb0247e5c` is `COMPLETED`: all 192 Maven/docs coordinates at `1.0.56` and all 27 npm packages through `@mango/cli@1.2.17` match the sealed candidate in both publish and consume registries, the pure consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`.
 
 ### Pull Requests
 
@@ -78,7 +78,7 @@ Status: `PENDING`. Release plan `25500a7e5a58408cb0d282d04a03554abf0933baf7a444d
 - `mango release registry doctor` passed for npm publish/consume and Maven publish/consume roles.
 - Maven Resource module verify passed with 80 tests, including 51 Resource Registry integration tests; the real Spring Boot/MySQL/administrator permission-chain evidence is recorded in `.runtime/resource-admin-live/report.txt`.
 - Run catalog, release impact, package exports, PMO projection, CLI version, generated backend, release-plan, release-notes and local release checks before prepare.
-- Prepare one sealed mixed candidate from the final clean release-projection commit and verify it with the configured npm consume registry plus the aggregate Maven consumer.
+- Prepare one sealed mixed candidate from source commit `41b811b9553c105f74df2e87ef413e4fa13d6253` and verify it with the configured npm consume registry plus the aggregate Maven consumer.
 - After publication, re-resolve all 192 Maven coordinates and 27 npm packages from publish and consume registries by the sealed checksums, then run one clean consume-registry consumer.
 
 ### Rollback
