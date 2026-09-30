@@ -167,7 +167,7 @@ const fileIds = ref<string[]>([]);
 | `bizMeta` | `Record<string, unknown> \| string` | 未设置 | 文件归属扩展元数据。 |
 | `directoryId` | `string \| number` | 未设置 | 文件中心逻辑目录 ID。 |
 | `showPreviewActions` | `boolean` | `true` | 是否显示预览弹框的下载/新窗口操作。 |
-| `disabled` | `boolean` | `false` | 禁止上传、替换和删除，但仍展示已有文件。 |
+| `disabled` | `boolean` | `false` | 不执行上传、替换和删除操作，但仍展示已有文件。 |
 | `layout` | `'grid' \| 'stacked'` | `'grid'` | 卡片排列方式。 |
 
 #### `MangoAttachmentUploadCategory`
@@ -196,8 +196,8 @@ const fileIds = ref<string[]>([]);
 | `fileName` | `string` | 原始文件名。 |
 | `fileExt` | `string` | 文件扩展名，可选。 |
 | `fileSize` | `number` | 文件大小，单位字节，可选。 |
-| `previewUrl` | `string` | 当前页面临时预览地址，可选，不应持久化到业务表。 |
-| `downloadUrl` | `string` | 当前页面临时下载地址，可选，不应持久化到业务表。 |
+| `previewUrl` | `string` | 当前页面临时预览地址，可选；业务持久化使用文件字段或附件关系。 |
+| `downloadUrl` | `string` | 当前页面临时下载地址，可选；业务持久化使用文件字段或附件关系。 |
 
 #### Events、slots 和 expose
 
@@ -299,9 +299,10 @@ const fileIds = ref<string[]>([]);
 - PDF：`application/pdf` 或 `pdf`。
 - 视频：`video/*` 或 `mp4`、`webm`、`ogg`、`mov`、`m4v`。
 - 音频：`audio/*` 或 `mp3`、`wav`、`ogg`、`m4a`、`aac`、`flac`。
-- 图片、PDF、音视频的内联预览只使用有效 `previewUrl` 或预览元数据中的存储公开预览地址；不会使用 `downloadUrl` 或 `fileApi.downloadUrl(id)` 兜底。
+- 图片、视频、音频优先使用有效的 `directPreviewUrl` 或 `previewUrl`（需为非下载接口，且非 `preview-content`、`local-objects` 等需鉴权内容地址）作为原生 `src`；没有可用直连地址时，组件通过 `fileApi.previewContent(id)`（携带 `Authorization` 头）获取内容并渲染为 Blob 对象地址，不依赖 `MANGO_TOKEN` cookie。
+- PDF 与文档优先使用 `documentPreviewUrl` 或 `/file-preview/files/preview-link` 返回的令牌化预览地址。
 - 其他文件优先使用有效 `previewUrl`；默认预览入口会请求 `/file-preview/files/preview-link`。
-- `/api/file/files/download` 和 `/file/files/download` 这类下载接口不会进入预览区域。
+- `/api/file/files/download` 和 `/file/files/download` 这类下载接口不会进入预览区域；`preview-content`、`local-objects` 这类需鉴权地址不会被当作原生 `src` 使用。
 - 没有可用预览地址时，展示下载查看提示，不会自动触发下载。
 - 文件记录里的 `previewUrl` 表示原始内容预览地址，不等同于 Office 转换或文档预览服务地址；组件需要文档预览服务时会按文件 ID 获取预览元数据并读取 `documentPreviewUrl`。
 

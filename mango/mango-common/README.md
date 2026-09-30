@@ -10,6 +10,7 @@
 | 能力 | 常用入口 |
 |------|----------|
 | Controller 返回统一 R&lt;T&gt; | Maven 依赖 / HTTP API / Java API |
+| Service 解包 XxxApi 返回的 R&lt;T&gt; | `R.unwrap(BizCode, fallbackMessage)` |
 | Service 或校验逻辑抛出 BizException | Maven 依赖 / HTTP API / Java API |
 | 模块自定义错误码实现 BizCode | Maven 依赖 / HTTP API / Java API |
 | 列表接口使用 PageQuery 和 PageResult&lt;T&gt; | Maven 依赖 / HTTP API / Java API |
@@ -68,6 +69,19 @@ throw new BizException(400, "订单状态不允许操作");
 
 `Require` 支持 `BizCode`、自定义细化消息和原始异常链。需要在完成补偿后保持原运行时异常类型时，使用 `Require.rethrow(exception)`；不要把未知异常改写成不相关的业务错误码。
 
+Service 调用其它模块的 `XxxApi` 时，可以直接在返回的 `R<T>` 上解包：
+
+```java
+import io.mango.common.result.R;
+
+R<FileRecordVO> response = fileApi.get(fileId);
+FileRecordVO file = response.unwrap(
+        OrderCode.ORDER_NOT_FOUND,
+        "文件不存在或不可见");
+```
+
+`unwrap` 在响应失败时抛出带调用方 `BizCode` 的 `BizException`，优先使用响应自身的错误消息；成功响应没有数据时使用兜底消息抛出异常。它适用于成功结果必须有数据的接口；成功时允许 `data` 为空的接口应直接使用响应对象的状态和数据字段。该实例方法要求 API 已返回非空 `R`。
+
 分页返回：
 
 ```java
@@ -91,7 +105,7 @@ PageResult<OrderVO> result = PageResult.of(rows, total, query.getPage(), query.g
 ## 7. API 与扩展
 | 类型 | 能力 |
 |------|------|
-| `R<T>` | 统一返回体，字段为 `code`、`success`、`msg`、`data`。 |
+| `R<T>` | 统一返回体，字段为 `code`、`success`、`msg`、`data`；`unwrap(BizCode, fallbackMessage)` 用于将必须有数据的成功响应解包为 `T`。 |
 | `BizCode` | 业务错误码接口，模块可自定义枚举实现。 |
 | `CommonCode` | 通用错误码：成功、参数错误、未登录、权限不足、资源不存在、系统繁忙。 |
 | `BizException` | 业务异常，携带 `code` 和异常消息。 |
@@ -122,7 +136,7 @@ public enum OrderCode implements BizCode {
 2. Controller 返回 `R<T>` 或由统一 Web 层包装。
 3. 查询对象继承或组合 `PageQuery`。
 4. 列表接口返回 `PageResult<T>`。
-5. 业务异常使用 `BizException` 或 `Require`。
+5. 业务异常使用 `BizException` 或 `Require`；跨模块 API 返回结果需要数据时使用 `R.unwrap(...)`。
 6. 模块级错误码实现 `BizCode`，不要复用 HTTP 状态码表达业务细分错误。
 
 ## 11. 问题排查

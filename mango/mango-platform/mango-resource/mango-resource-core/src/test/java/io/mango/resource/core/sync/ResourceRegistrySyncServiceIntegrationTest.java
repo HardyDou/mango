@@ -21,6 +21,7 @@ import io.mango.resource.support.ResourceTargetDispatcher;
 import io.mango.resource.api.command.RegisterResourceDeclarationsCommand;
 import io.mango.resource.api.command.ResourceModuleManifestCommand;
 import io.mango.resource.api.enums.ResourceApplyMode;
+import io.mango.resource.api.enums.ResourceExecutionPhase;
 import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.api.enums.ResourceStatus;
 import io.mango.resource.api.enums.ResourceSyncMode;
@@ -264,6 +265,31 @@ class ResourceRegistrySyncServiceIntegrationTest {
         assertThat(moduleSyncStatusRegistry.resolve("guarantee")).get()
                 .extracting(status -> status.state())
                 .isEqualTo(ResourceModuleSyncState.FAILED);
+    }
+
+    @Test
+    void bootstrapDeclarationWinsWhenRuntimeEventualSharesSameResourceId() {
+        ResourceDeclaration runtime = activeDeclaration(1, "运行时重复声明");
+        runtime.setExecutionPhase(ResourceExecutionPhase.RUNTIME_EVENTUAL);
+        ResourceDeclaration bootstrap = activeDeclaration(1, "启动声明");
+        provider.setDeclarations(List.of(runtime, bootstrap));
+
+        syncService.sync();
+
+        assertThat(messageTemplateRows()).hasSize(1);
+        assertThat(messageTemplateRows().get(0).title()).isEqualTo("启动声明");
+        assertThat(registryRows()).hasSize(1);
+    }
+
+    @Test
+    void twoBootstrapDeclarationsWithSameResourceIdStillConflict() {
+        ResourceDeclaration first = activeDeclaration(1, "启动声明A");
+        ResourceDeclaration second = activeDeclaration(1, "启动声明B");
+        provider.setDeclarations(List.of(first, second));
+
+        assertThatThrownBy(syncService::sync)
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("Duplicate resource id");
     }
 
     @Test
@@ -1079,6 +1105,43 @@ class ResourceRegistrySyncServiceIntegrationTest {
         assertThat(jdbcTemplate.queryForObject(
                 "select change_type from resource_change_log order by created_at desc limit 1", String.class))
                 .isEqualTo("DELETE");
+    }
+
+    @Test
+    void managedRecordShadowsSystemDeclarationWithSameBizKey() {
+        ResourceDeclaration managed = activeDeclaration(
+                "1900000000000000099", 1, "guarantee.apply.submit", "后台托管");
+        managed.setSyncMode(ResourceSyncMode.MANUAL);
+        assertThat(syncService.syncRemote(
+                "platform-admin", "service-managed", List.of(managed))).isTrue();
+
+        provider.setDeclaration(activeDeclaration(
+                "1900000000000000001", 1, "guarantee.apply.submit", "系统声明"));
+        syncService.sync();
+
+        assertThat(registryRows()).hasSize(1);
+        assertThat(registryRows().get(0).resourceId()).isEqualTo("1900000000000000099");
+        assertThat(registryRows().get(0).syncMode()).isEqualTo("MANUAL");
+        assertThat(messageTemplateRows()).hasSize(1);
+        assertThat(messageTemplateRows().get(0).title()).isEqualTo("后台托管");
+    }
+
+    @Test
+    void deletedResourceIsNotRecreatedBySystemSync() {
+        provider.setDeclaration(activeDeclaration(1, "提交申请"));
+        syncService.sync();
+        assertThat(count("resource_registry")).isEqualTo(1);
+        assertThat(registryStatus("1900000000000000001")).isEqualTo("ACTIVE");
+
+        syncService.deleteResource("1900000000000000001", false);
+
+        assertThat(registryStatus("1900000000000000001")).isEqualTo("REMOVED");
+
+        provider.setDeclaration(activeDeclaration(1, "提交申请"));
+        syncService.sync();
+
+        assertThat(registryStatus("1900000000000000001")).isEqualTo("REMOVED");
+        assertThat(count("resource_registry")).isEqualTo(1);
     }
 
     private ResourceDeclaration activeDeclaration(int version, String titleValue) {

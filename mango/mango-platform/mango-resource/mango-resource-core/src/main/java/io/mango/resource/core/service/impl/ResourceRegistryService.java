@@ -447,7 +447,7 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
 
     private void doSync(boolean force) {
         Map<String, ResourceHandler> handlerMap = loadHandlers();
-        List<ResourceDeclaration> declarations = collector.collect();
+        List<ResourceDeclaration> declarations = dedupeLocalDeclarations(collector.collect());
         doSync(LOCAL_APP_CODE, LOCAL_SERVICE_CODE, declarations, handlerMap,
                 collector.managedModuleCodes(declarations), force);
     }
@@ -485,10 +485,12 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
         try {
             validateDeclarations(declarations);
             ResourceRegistrySnapshot registrySnapshot = repository.loadSnapshot(declarations);
-            validateRegistryConflicts(declarations, registrySnapshot);
+            List<ResourceDeclaration> effectiveDeclarations =
+                    excludeManagedShadowedDeclarations(declarations, registrySnapshot);
+            validateRegistryConflicts(effectiveDeclarations, registrySnapshot);
             Set<String> seenResourceIds = new HashSet<>();
             List<ResourceDeclaration> activeDeclarations = new ArrayList<>();
-            for (ResourceDeclaration declaration : declarations) {
+            for (ResourceDeclaration declaration : effectiveDeclarations) {
                 assertOperationCanContinue();
                 seenResourceIds.add(declaration.getId());
                 if (isDeprecated(declaration)) {
@@ -504,7 +506,8 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
                 disableMissing(appCode, serviceCode, managedModuleCodes, seenResourceIds, handlerMap);
             }
             observeDiagnosticCompletion(observations, declarations, handlerMap);
-            log.info("Mango resource registry sync complete: declarations={}", declarations.size());
+            log.info("Mango resource registry sync complete: declarations={}, effective={}",
+                    declarations.size(), effectiveDeclarations.size());
         } catch (RuntimeException exception) {
             recordDiagnosticFailure(observations, "RESOURCE_SYNC_FAILED");
             Require.rethrow(exception);
@@ -607,6 +610,66 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
         return handlerMap;
     }
 
+    private List<ResourceDeclaration> dedupeLocalDeclarations(List<ResourceDeclaration> declarations) {
+        if (declarations == null || declarations.size() < 2) {
+            return declarations;
+        }
+        Map<String, List<ResourceDeclaration>> byId = new LinkedHashMap<>();
+        for (ResourceDeclaration declaration : declarations) {
+            byId.computeIfAbsent(declaration.getId(), key -> new ArrayList<>()).add(declaration);
+        }
+        List<ResourceDeclaration> deduped = new ArrayList<>();
+        for (List<ResourceDeclaration> group : byId.values()) {
+            deduped.addAll(resolvePhaseDuplicates(group));
+        }
+        return deduped;
+    }
+
+    private List<ResourceDeclaration> resolvePhaseDuplicates(List<ResourceDeclaration> group) {
+        if (group.size() == 1) {
+            return group;
+        }
+        Set<ResourceExecutionPhase> phases = new HashSet<>();
+        for (ResourceDeclaration declaration : group) {
+            phases.add(executionPhase(declaration));
+        }
+        if (phases.size() == 1) {
+            return group;
+        }
+        ResourceExecutionPhase winner = highestPriorityPhase(phases);
+        List<ResourceDeclaration> winners = new ArrayList<>();
+        for (ResourceDeclaration declaration : group) {
+            if (executionPhase(declaration) == winner) {
+                winners.add(declaration);
+            }
+        }
+        return winners;
+    }
+
+    private ResourceExecutionPhase highestPriorityPhase(Set<ResourceExecutionPhase> phases) {
+        ResourceExecutionPhase highest = ResourceExecutionPhase.MANUAL;
+        for (ResourceExecutionPhase phase : phases) {
+            if (phasePriority(phase) < phasePriority(highest)) {
+                highest = phase;
+            }
+        }
+        return highest;
+    }
+
+    private ResourceExecutionPhase executionPhase(ResourceDeclaration declaration) {
+        return declaration.getExecutionPhase() == null
+                ? ResourceExecutionPhase.BOOTSTRAP_REQUIRED
+                : declaration.getExecutionPhase();
+    }
+
+    private int phasePriority(ResourceExecutionPhase phase) {
+        return switch (phase) {
+            case BOOTSTRAP_REQUIRED -> 0;
+            case RUNTIME_EVENTUAL -> 1;
+            case MANUAL -> 2;
+        };
+    }
+
     private void validateDeclarations(List<ResourceDeclaration> declarations) {
         Set<String> ids = new HashSet<>();
         Set<String> bizKeys = new HashSet<>();
@@ -620,6 +683,30 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
                 conflict("Duplicate resource type and bizKey: " + bizKey);
             }
         }
+    }
+
+    private List<ResourceDeclaration> excludeManagedShadowedDeclarations(
+            List<ResourceDeclaration> declarations, ResourceRegistrySnapshot registrySnapshot) {
+        List<ResourceDeclaration> effective = new ArrayList<>();
+        for (ResourceDeclaration declaration : declarations) {
+            ResourceRegistryRow rowByBizKey = registrySnapshot.findByTypeAndBizKey(
+                    declaration.getResourceType(), declaration.getBizKey());
+            if (rowByBizKey != null && !declaration.getId().equals(rowByBizKey.getResourceId())
+                    && isManagedSyncMode(rowByBizKey.getSyncMode())) {
+                log.info("Mango resource system declaration skipped by managed record: resourceType={}, bizKey={}, managedId={}, declarationId={}",
+                        declaration.getResourceType(), declaration.getBizKey(),
+                        rowByBizKey.getResourceId(), declaration.getId());
+                continue;
+            }
+            effective.add(declaration);
+        }
+        return effective;
+    }
+
+    private boolean isManagedSyncMode(ResourceSyncMode syncMode) {
+        return syncMode == ResourceSyncMode.MANUAL
+                || syncMode == ResourceSyncMode.INIT_ONLY
+                || syncMode == ResourceSyncMode.LOCKED;
     }
 
     private void validateRegistryConflicts(List<ResourceDeclaration> declarations,
@@ -854,7 +941,8 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
             result = disableTarget(declaration, handlerMap);
         }
         assertOperationCanContinue();
-        repository.updateStatus(row, ResourceStatus.REMOVED.name(), row.getSourceHash());
+        repository.updateStatusAndSyncMode(row, ResourceStatus.REMOVED.name(),
+                ResourceSyncMode.MANUAL.name(), row.getSourceHash());
         String changeType = "DISABLE";
         if (physical) {
             changeType = "DELETE";

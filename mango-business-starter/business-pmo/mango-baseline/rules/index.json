@@ -105,7 +105,7 @@
     },
     "backend.api": {
       "path": "rules/backend/03-api.md",
-      "reason": "后端 API、Controller、Service、Mapper、Entity、Feign、参数校验继承、纯 support Executor 服务端口、LocalCapabilityContract 本地 JVM 能力边界与 Java 架构机器门禁规范"
+      "reason": "后端 API、Controller、Service、Mapper、Entity、Feign、参数校验继承、R 解包、纯 support Executor 服务端口、LocalCapabilityContract 本地 JVM 能力边界与 Java 架构机器门禁规范"
     },
     "backend.db": {
       "path": "rules/backend/04-db.md",
