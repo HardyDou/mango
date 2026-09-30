@@ -275,7 +275,7 @@ describe('NoticeBell', () => {
     expect(apiMock.getMyUnreadCount).toHaveBeenCalledTimes(1);
     expect(realtimeMock.speakNoticeText).toHaveBeenCalledWith('新的系统消息');
     expect(realtimeMock.showDesktopNotice).not.toHaveBeenCalled();
-    expect(notificationOptions.title).toBe('SYSTEM_NOTICE');
+    expect(notificationOptions.title).toBe('测试系统消息');
     expect(notificationOptions.position).toBe('bottom-right');
     expect(notificationOptions.message.children[0].children[0].children[0].children).toBe('消息类型：');
     expect(notificationOptions.message.children[0].children[0].children[1].props.innerHTML).toBe('SYSTEM_NOTICE');
