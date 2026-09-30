@@ -6,7 +6,7 @@
     "tag": "v2026.09.30-maven-1.0.56-resource-admin-release",
     "title": "Mango release v2026.09.30-maven-1.0.56-resource-admin-release",
     "notesFile": ".changeset/release-notes.txt",
-    "notesSha256": "985e664a0e8f6cd57ee82472acb539f16cc893f1892319e809c9eec77d345f4e"
+    "notesSha256": "3a1fd073bb871806f7fee32aaa3f766e1a6b0acdfd0469684e1c483ece7bf63b"
   },
   "baseline": {
     "kind": "successful-release",
@@ -7056,7 +7056,7 @@
     "catalogDigest": "fd9f5e47c9cdc3b4a2a086c9f004eb87494a676e311d888d0d1973f836843abc",
     "previousBaselineDigest": "cfe732777019323fbcb588f403ea149c414028d1419c0511e73e3264158dae64",
     "changesetsDigest": "b37afda28074126e113cf7bb1ab201be5a0291015ea42d3270d74b4e8201f65d",
-    "releaseNotesDigest": "985e664a0e8f6cd57ee82472acb539f16cc893f1892319e809c9eec77d345f4e",
+    "releaseNotesDigest": "3a1fd073bb871806f7fee32aaa3f766e1a6b0acdfd0469684e1c483ece7bf63b",
     "versionPolicyDigest": "c4c4c80d533dde047a59627c915cf87e3570606c2d329023ce6896544c50ee12",
     "resolvedTuple": [
       {
@@ -8598,5 +8598,5 @@
       "@mango/cli"
     ]
   },
-  "planDigest": "97d494f20d082e05c73a116f9e711e80d7ba06caa2f9132a0db3f442dc16e4d9"
+  "planDigest": "25500a7e5a58408cb0d282d04a03554abf0933baf7a444dfeaf1dfa90853b6e8"
 }
