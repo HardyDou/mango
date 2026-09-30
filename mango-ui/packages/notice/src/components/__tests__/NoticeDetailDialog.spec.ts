@@ -31,9 +31,10 @@ function mountDialog(actions = message.actions) {
     global: {
       stubs: {
         ElDialog: {
-          props: ['modelValue', 'title'],
+          props: ['modelValue', 'title', 'width'],
           emits: ['update:modelValue'],
-          template: '<section><h2>{{ title }}</h2><slot /><footer><slot name="footer" /></footer></section>',
+          template:
+            '<section :data-width="width"><h2>{{ title }}</h2><slot /><footer><slot name="footer" /></footer></section>',
         },
         ElTag: { template: '<span class="tag"><slot /></span>' },
         ElDescriptions: { template: '<dl><slot /></dl>' },
@@ -48,7 +49,8 @@ describe('NoticeDetailDialog', () => {
   it('按 label:value 展示消息并固定输出关闭和一个主操作', async () => {
     const wrapper = mountDialog();
 
-    expect(wrapper.get('h2').text()).toBe('流程完成');
+    expect(wrapper.get('h2').text()).toBe('流程已完成：费用报销');
+    expect(wrapper.attributes('data-width')).toBe('760px');
     expect(wrapper.text()).toContain('消息类型：流程完成');
     expect(wrapper.text()).toContain('消息内容：流程费用报销已完成。');
     expect(wrapper.text()).toContain('消息时间：2026-07-30 10:00:00');
@@ -72,6 +74,7 @@ describe('NoticeDetailDialog', () => {
         modelValue: true,
         message: {
           ...message,
+          title: '<strong>审批标题</strong><script>alert(0)</script>',
           bizName: '<strong>审批通知</strong>',
           content: '<p onclick="alert(1)">请<em>及时处理</em><script>alert(2)</script></p>',
         },
@@ -87,7 +90,7 @@ describe('NoticeDetailDialog', () => {
       },
     });
 
-    expect(wrapper.get('h2').text()).toBe('审批通知');
+    expect(wrapper.get('h2').text()).toBe('审批标题');
     expect(wrapper.find('.notice-detail__value strong').text()).toBe('审批通知');
     expect(wrapper.find('.notice-detail__value em').text()).toBe('及时处理');
     expect(wrapper.html()).not.toContain('onclick');

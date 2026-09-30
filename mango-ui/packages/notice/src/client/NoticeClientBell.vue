@@ -295,7 +295,7 @@ async function notifyNewMessage(message: NoticeSiteMessage) {
   }
   if (config.popupEnabled !== false) {
     ElNotification({
-      title: noticePlainText(presentNoticeMessage(message).typeLabel),
+      title: noticePlainText(message.title || presentNoticeMessage(message).typeLabel),
       message: notificationMessage(message),
       type: 'info',
       position: config.popupPlacement || 'top-right',
