@@ -3,7 +3,6 @@ package io.mango.resource.core.service.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.mango.common.exception.BizException;
 import io.mango.common.exception.DependencyNotReadyException;
 import io.mango.common.result.Require;
 import io.mango.infra.bootstrap.api.BootstrapGenerationFence;
@@ -22,6 +21,7 @@ import io.mango.resource.api.enums.ResourceSyncDisposition;
 import io.mango.resource.api.enums.ResourceExecutionPhase;
 import io.mango.resource.core.service.IResourceRegistryService;
 import io.mango.resource.core.sync.ResourceContentHasher;
+import io.mango.resource.core.validation.ResourceRegistryAssertions;
 import io.mango.resource.core.sync.ResourceRegistryLock;
 import io.mango.resource.core.sync.ResourceRegistryRepository;
 import io.mango.resource.core.sync.ResourceRegistryRepository.ResourceRegistrySnapshot;
@@ -467,10 +467,8 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
             Map<String, ResourceHandler> handlerMap = loadHandlers();
             ResourceRegistryRow existing = repository.findByTypeAndBizKey(
                     declaration.getResourceType(), declaration.getBizKey());
-            if (existing != null) {
-                throw new BizException(ResourceCode.RESOURCE_CONFLICT.getCode(),
-                        "资源已存在: " + declaration.getResourceType() + ":" + declaration.getBizKey());
-            }
+            ResourceRegistryAssertions.requireNull(existing, ResourceCode.RESOURCE_CONFLICT,
+                    "资源已存在: " + declaration.getResourceType() + ":" + declaration.getBizKey());
             ResourceSyncResult result = upsertSingleTarget(declaration, handlerMap);
             Require.notNull(result, ResourceCode.RESOURCE_SYNC_FAILED,
                     "资源处理器未返回同步结果: " + declaration.getId());
