@@ -1,5 +1,5 @@
 <template>
-  <el-dialog v-model="visible" :title="dialogTitle" width="640px" class="notice-detail-dialog" destroy-on-close>
+  <el-dialog v-model="visible" :title="dialogTitle" width="760px" class="notice-detail-dialog" destroy-on-close>
     <div v-if="message" class="notice-detail">
       <div v-for="row in detailRows" :key="row.key" class="notice-detail__row">
         <span class="notice-detail__label">{{ row.label }}：</span>
@@ -47,7 +47,10 @@ const visible = computed({
 });
 
 const presentation = computed(() => presentNoticeMessage(props.message || emptyMessage));
-const dialogTitle = computed(() => noticePlainText(presentation.value.typeLabel));
+const dialogTitle = computed(() => {
+  const title = noticePlainText(props.message?.title);
+  return title === '-' ? noticePlainText(presentation.value.typeLabel) : title;
+});
 const detailRows = computed(() => {
   const current = presentation.value;
   return [
