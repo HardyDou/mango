@@ -6,7 +6,7 @@
     "tag": "v2026.09.30-maven-1.0.56-resource-admin-release",
     "title": "Mango release v2026.09.30-maven-1.0.56-resource-admin-release",
     "notesFile": ".changeset/release-notes.txt",
-    "notesSha256": "546425a497e2a660f922e8dc6246cf311812419d1220a60291370d9ffc0f144e"
+    "notesSha256": "985e664a0e8f6cd57ee82472acb539f16cc893f1892319e809c9eec77d345f4e"
   },
   "baseline": {
     "kind": "successful-release",
@@ -3514,7 +3514,13 @@
   ],
   "legacyReconciliation": null,
   "restoredPublishedBaselines": [],
-  "directPackages": ["@mango/common", "@mango/detail", "@mango/file", "@mango/notice", "@mango/pmo"],
+  "directPackages": [
+    "@mango/common",
+    "@mango/detail",
+    "@mango/file",
+    "@mango/notice",
+    "@mango/pmo"
+  ],
   "classifiedFiles": [
     {
       "file": "mango-pmo/rules/backend/03-api.md",
@@ -3648,7 +3654,9 @@
           "summary": "exact runtime dependency follows @mango/common"
         }
       ],
-      "releaseDependencies": ["@mango/common"]
+      "releaseDependencies": [
+        "@mango/common"
+      ]
     },
     {
       "name": "@mango/ai",
@@ -3664,7 +3672,10 @@
           "summary": "exact runtime dependency follows @mango/admin-extension, @mango/common"
         }
       ],
-      "releaseDependencies": ["@mango/admin-extension", "@mango/common"]
+      "releaseDependencies": [
+        "@mango/admin-extension",
+        "@mango/common"
+      ]
     },
     {
       "name": "@mango/auth",
@@ -3680,7 +3691,9 @@
           "summary": "exact runtime dependency follows @mango/common"
         }
       ],
-      "releaseDependencies": ["@mango/common"]
+      "releaseDependencies": [
+        "@mango/common"
+      ]
     },
     {
       "name": "@mango/file",
@@ -3696,7 +3709,10 @@
           "summary": "- 修复文件预览的鉴权访问与私有资源预览链路。\n- 补充资源注册中心后台托管资源新增、查询、syncMode 切换和 tombstone 使用说明。\n- 更新资源同步幂等与后台管理能力文档。"
         }
       ],
-      "releaseDependencies": ["@mango/admin-extension", "@mango/common"]
+      "releaseDependencies": [
+        "@mango/admin-extension",
+        "@mango/common"
+      ]
     },
     {
       "name": "@mango/detail",
@@ -3712,7 +3728,10 @@
           "summary": "- 修复文件预览的鉴权访问与私有资源预览链路。\n- 补充资源注册中心后台托管资源新增、查询、syncMode 切换和 tombstone 使用说明。\n- 更新资源同步幂等与后台管理能力文档。"
         }
       ],
-      "releaseDependencies": ["@mango/common", "@mango/file"]
+      "releaseDependencies": [
+        "@mango/common",
+        "@mango/file"
+      ]
     },
     {
       "name": "@mango/grid-layout",
@@ -3728,7 +3747,9 @@
           "summary": "exact runtime dependency follows @mango/common"
         }
       ],
-      "releaseDependencies": ["@mango/common"]
+      "releaseDependencies": [
+        "@mango/common"
+      ]
     },
     {
       "name": "@mango/grid-widgets",
@@ -3744,7 +3765,9 @@
           "summary": "exact runtime dependency follows @mango/grid-layout"
         }
       ],
-      "releaseDependencies": ["@mango/grid-layout"]
+      "releaseDependencies": [
+        "@mango/grid-layout"
+      ]
     },
     {
       "name": "@mango/home",
@@ -3760,7 +3783,9 @@
           "summary": "exact runtime dependency follows @mango/common"
         }
       ],
-      "releaseDependencies": ["@mango/common"]
+      "releaseDependencies": [
+        "@mango/common"
+      ]
     },
     {
       "name": "@mango/pmo",
@@ -3792,7 +3817,9 @@
           "summary": "exact runtime dependency follows @mango/common"
         }
       ],
-      "releaseDependencies": ["@mango/common"]
+      "releaseDependencies": [
+        "@mango/common"
+      ]
     },
     {
       "name": "@mango/site-shell",
@@ -3808,7 +3835,9 @@
           "summary": "exact runtime dependency follows @mango/common"
         }
       ],
-      "releaseDependencies": ["@mango/common"]
+      "releaseDependencies": [
+        "@mango/common"
+      ]
     },
     {
       "name": "@mango/system",
@@ -3824,7 +3853,12 @@
           "summary": "exact runtime dependency follows @mango/common, @mango/file, @mango/grid-widgets, @mango/rbac"
         }
       ],
-      "releaseDependencies": ["@mango/common", "@mango/file", "@mango/grid-widgets", "@mango/rbac"]
+      "releaseDependencies": [
+        "@mango/common",
+        "@mango/file",
+        "@mango/grid-widgets",
+        "@mango/rbac"
+      ]
     },
     {
       "name": "@mango/admin-pages",
@@ -3840,7 +3874,13 @@
           "summary": "exact runtime dependency follows @mango/admin-extension, @mango/auth, @mango/common, @mango/rbac, @mango/system"
         }
       ],
-      "releaseDependencies": ["@mango/admin-extension", "@mango/auth", "@mango/common", "@mango/rbac", "@mango/system"]
+      "releaseDependencies": [
+        "@mango/admin-extension",
+        "@mango/auth",
+        "@mango/common",
+        "@mango/rbac",
+        "@mango/system"
+      ]
     },
     {
       "name": "@mango/calendar",
@@ -3856,7 +3896,11 @@
           "summary": "exact runtime dependency follows @mango/admin-pages, @mango/common, @mango/grid-widgets"
         }
       ],
-      "releaseDependencies": ["@mango/admin-pages", "@mango/common", "@mango/grid-widgets"]
+      "releaseDependencies": [
+        "@mango/admin-pages",
+        "@mango/common",
+        "@mango/grid-widgets"
+      ]
     },
     {
       "name": "@mango/cms",
@@ -3872,7 +3916,11 @@
           "summary": "exact runtime dependency follows @mango/admin-pages, @mango/common, @mango/file"
         }
       ],
-      "releaseDependencies": ["@mango/admin-pages", "@mango/common", "@mango/file"]
+      "releaseDependencies": [
+        "@mango/admin-pages",
+        "@mango/common",
+        "@mango/file"
+      ]
     },
     {
       "name": "@mango/job",
@@ -3888,7 +3936,10 @@
           "summary": "exact runtime dependency follows @mango/admin-pages, @mango/common"
         }
       ],
-      "releaseDependencies": ["@mango/admin-pages", "@mango/common"]
+      "releaseDependencies": [
+        "@mango/admin-pages",
+        "@mango/common"
+      ]
     },
     {
       "name": "@mango/link",
@@ -3904,7 +3955,11 @@
           "summary": "exact runtime dependency follows @mango/admin-pages, @mango/common, @mango/grid-widgets"
         }
       ],
-      "releaseDependencies": ["@mango/admin-pages", "@mango/common", "@mango/grid-widgets"]
+      "releaseDependencies": [
+        "@mango/admin-pages",
+        "@mango/common",
+        "@mango/grid-widgets"
+      ]
     },
     {
       "name": "@mango/notice",
@@ -3920,7 +3975,12 @@
           "summary": "- 修复通知详情弹窗标题与通知类型混用的问题。"
         }
       ],
-      "releaseDependencies": ["@mango/admin-pages", "@mango/common", "@mango/grid-widgets", "@mango/system"]
+      "releaseDependencies": [
+        "@mango/admin-pages",
+        "@mango/common",
+        "@mango/grid-widgets",
+        "@mango/system"
+      ]
     },
     {
       "name": "@mango/numgen",
@@ -3936,7 +3996,11 @@
           "summary": "exact runtime dependency follows @mango/admin-pages, @mango/common, @mango/system"
         }
       ],
-      "releaseDependencies": ["@mango/admin-pages", "@mango/common", "@mango/system"]
+      "releaseDependencies": [
+        "@mango/admin-pages",
+        "@mango/common",
+        "@mango/system"
+      ]
     },
     {
       "name": "@mango/payment",
@@ -3952,7 +4016,11 @@
           "summary": "exact runtime dependency follows @mango/admin-pages, @mango/common, @mango/file"
         }
       ],
-      "releaseDependencies": ["@mango/admin-pages", "@mango/common", "@mango/file"]
+      "releaseDependencies": [
+        "@mango/admin-pages",
+        "@mango/common",
+        "@mango/file"
+      ]
     },
     {
       "name": "@mango/template",
@@ -3968,7 +4036,12 @@
           "summary": "exact runtime dependency follows @mango/admin-pages, @mango/common, @mango/file, @mango/system"
         }
       ],
-      "releaseDependencies": ["@mango/admin-pages", "@mango/common", "@mango/file", "@mango/system"]
+      "releaseDependencies": [
+        "@mango/admin-pages",
+        "@mango/common",
+        "@mango/file",
+        "@mango/system"
+      ]
     },
     {
       "name": "@mango/workflow",
@@ -4034,7 +4107,10 @@
           "summary": "exact runtime dependency follows @mango/admin-pages, @mango/workflow"
         }
       ],
-      "releaseDependencies": ["@mango/admin-pages", "@mango/workflow"]
+      "releaseDependencies": [
+        "@mango/admin-pages",
+        "@mango/workflow"
+      ]
     },
     {
       "name": "@mango/admin",
@@ -4389,7 +4465,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.common:mango-common"]
+        "dependencies": [
+          "io.mango.common:mango-common"
+        ]
       },
       {
         "coordinate": "io.mango.infra.context:mango-infra-context-api:1.0.56",
@@ -4398,7 +4476,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.common:mango-common"]
+        "dependencies": [
+          "io.mango.common:mango-common"
+        ]
       },
       {
         "coordinate": "io.mango.infra.crypto:mango-infra-crypto:1.0.56",
@@ -4407,7 +4487,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.common:mango-common"]
+        "dependencies": [
+          "io.mango.common:mango-common"
+        ]
       },
       {
         "coordinate": "io.mango.infra.kv:mango-infra-kv-api:1.0.56",
@@ -4416,7 +4498,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.common:mango-common"]
+        "dependencies": [
+          "io.mango.common:mango-common"
+        ]
       },
       {
         "coordinate": "io.mango.infra.log:mango-infra-log-api:1.0.56",
@@ -4425,7 +4509,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.common:mango-common"]
+        "dependencies": [
+          "io.mango.common:mango-common"
+        ]
       },
       {
         "coordinate": "io.mango.infra.persistence:mango-infra-persistence-api:1.0.56",
@@ -4434,7 +4520,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.common:mango-common"]
+        "dependencies": [
+          "io.mango.common:mango-common"
+        ]
       },
       {
         "coordinate": "io.mango.infra.realtime:mango-infra-realtime-api:1.0.56",
@@ -4443,7 +4531,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.common:mango-common"]
+        "dependencies": [
+          "io.mango.common:mango-common"
+        ]
       },
       {
         "coordinate": "io.mango.platform.file:mango-file-api:1.0.56",
@@ -4452,7 +4542,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.common:mango-common"]
+        "dependencies": [
+          "io.mango.common:mango-common"
+        ]
       },
       {
         "coordinate": "io.mango.infra.web:mango-infra-web-api:1.0.56",
@@ -4461,7 +4553,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.common:mango-common"]
+        "dependencies": [
+          "io.mango.common:mango-common"
+        ]
       },
       {
         "coordinate": "io.mango.platform.resource:mango-resource-api:1.0.56",
@@ -4470,7 +4564,10 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.common:mango-common", "io.mango.infra.web:mango-infra-web-api"]
+        "dependencies": [
+          "io.mango.common:mango-common",
+          "io.mango.infra.web:mango-infra-web-api"
+        ]
       },
       {
         "coordinate": "io.mango.platform.resource:mango-resource-support:1.0.56",
@@ -4511,7 +4608,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.infra.context:mango-infra-context-api"]
+        "dependencies": [
+          "io.mango.infra.context:mango-infra-context-api"
+        ]
       },
       {
         "coordinate": "io.mango.infra.context:mango-infra-context-starter:1.0.56",
@@ -4545,7 +4644,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.common:mango-common"]
+        "dependencies": [
+          "io.mango.common:mango-common"
+        ]
       },
       {
         "coordinate": "io.mango.infra.module:mango-infra-module-api:1.0.56",
@@ -4554,7 +4655,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.common:mango-common"]
+        "dependencies": [
+          "io.mango.common:mango-common"
+        ]
       },
       {
         "coordinate": "io.mango.infra.persistence:mango-infra-persistence-starter:1.0.56",
@@ -4615,7 +4718,10 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.common:mango-common", "io.mango.platform.resource:mango-resource-api"]
+        "dependencies": [
+          "io.mango.common:mango-common",
+          "io.mango.platform.resource:mango-resource-api"
+        ]
       },
       {
         "coordinate": "io.mango.extension.ai:mango-ai-starter:1.0.56",
@@ -4659,7 +4765,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.infra.bootstrap:mango-infra-bootstrap-api"]
+        "dependencies": [
+          "io.mango.infra.bootstrap:mango-infra-bootstrap-api"
+        ]
       },
       {
         "coordinate": "io.mango.infra.bootstrap:mango-infra-bootstrap-starter:1.0.56",
@@ -4698,7 +4806,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.infra.module:mango-infra-module-api"]
+        "dependencies": [
+          "io.mango.infra.module:mango-infra-module-api"
+        ]
       },
       {
         "coordinate": "io.mango.infra.module:mango-infra-module-starter:1.0.56",
@@ -4707,7 +4817,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.infra.module:mango-infra-module-core"]
+        "dependencies": [
+          "io.mango.infra.module:mango-infra-module-core"
+        ]
       },
       {
         "coordinate": "io.mango.infra.doc:mango-infra-doc-starter:1.0.56",
@@ -4729,7 +4841,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.common:mango-common"]
+        "dependencies": [
+          "io.mango.common:mango-common"
+        ]
       },
       {
         "coordinate": "io.mango.infra.docsign:mango-infra-docsign-core:1.0.56",
@@ -4738,7 +4852,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.infra.docsign:mango-infra-docsign-api"]
+        "dependencies": [
+          "io.mango.infra.docsign:mango-infra-docsign-api"
+        ]
       },
       {
         "coordinate": "io.mango.infra.docsign:mango-infra-docsign-starter:1.0.56",
@@ -4747,7 +4863,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.infra.docsign:mango-infra-docsign-core"]
+        "dependencies": [
+          "io.mango.infra.docsign:mango-infra-docsign-core"
+        ]
       },
       {
         "coordinate": "io.mango.infra.docsign:mango-infra-docsign:1.0.56",
@@ -4765,7 +4883,10 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.common:mango-common", "io.mango.infra.kv:mango-infra-kv-api"]
+        "dependencies": [
+          "io.mango.common:mango-common",
+          "io.mango.infra.kv:mango-infra-kv-api"
+        ]
       },
       {
         "coordinate": "io.mango.infra.event:mango-infra-event-core:1.0.56",
@@ -4824,7 +4945,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.infra.persistence:mango-infra-persistence-web-starter"]
+        "dependencies": [
+          "io.mango.infra.persistence:mango-infra-persistence-web-starter"
+        ]
       },
       {
         "coordinate": "io.mango.infra.feign:mango-infra-feign-starter:1.0.56",
@@ -4848,7 +4971,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.common:mango-common"]
+        "dependencies": [
+          "io.mango.common:mango-common"
+        ]
       },
       {
         "coordinate": "io.mango.infra.fileproc:mango-infra-fileproc-core:1.0.56",
@@ -4857,7 +4982,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.infra.fileproc:mango-infra-fileproc-api"]
+        "dependencies": [
+          "io.mango.infra.fileproc:mango-infra-fileproc-api"
+        ]
       },
       {
         "coordinate": "io.mango.infra.fileproc:mango-infra-fileproc-starter:1.0.56",
@@ -4866,7 +4993,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.infra.fileproc:mango-infra-fileproc-core"]
+        "dependencies": [
+          "io.mango.infra.fileproc:mango-infra-fileproc-core"
+        ]
       },
       {
         "coordinate": "io.mango.infra.fileproc:mango-infra-fileproc:1.0.56",
@@ -4884,7 +5013,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.common:mango-common"]
+        "dependencies": [
+          "io.mango.common:mango-common"
+        ]
       },
       {
         "coordinate": "io.mango.infra.ip.location:mango-infra-ip-location-core:1.0.56",
@@ -4893,7 +5024,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.infra.ip.location:mango-infra-ip-location-api"]
+        "dependencies": [
+          "io.mango.infra.ip.location:mango-infra-ip-location-api"
+        ]
       },
       {
         "coordinate": "io.mango.infra.ip.location:mango-infra-ip-location-starter:1.0.56",
@@ -4932,7 +5065,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.infra.log:mango-infra-log-api"]
+        "dependencies": [
+          "io.mango.infra.log:mango-infra-log-api"
+        ]
       },
       {
         "coordinate": "io.mango.infra.module:mango-infra-module:1.0.56",
@@ -4959,7 +5094,10 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.common:mango-common", "io.mango.infra.realtime:mango-infra-realtime-api"]
+        "dependencies": [
+          "io.mango.common:mango-common",
+          "io.mango.infra.realtime:mango-infra-realtime-api"
+        ]
       },
       {
         "coordinate": "io.mango.infra.realtime:mango-infra-realtime-core:1.0.56",
@@ -5015,7 +5153,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.common:mango-common"]
+        "dependencies": [
+          "io.mango.common:mango-common"
+        ]
       },
       {
         "coordinate": "io.mango.infra.sensitive:mango-infra-sensitive-core:1.0.56",
@@ -5024,7 +5164,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.infra.sensitive:mango-infra-sensitive-api"]
+        "dependencies": [
+          "io.mango.infra.sensitive:mango-infra-sensitive-api"
+        ]
       },
       {
         "coordinate": "io.mango.infra.sensitive:mango-infra-sensitive-starter:1.0.56",
@@ -5033,7 +5175,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.infra.sensitive:mango-infra-sensitive-core"]
+        "dependencies": [
+          "io.mango.infra.sensitive:mango-infra-sensitive-core"
+        ]
       },
       {
         "coordinate": "io.mango.infra.sensitive:mango-infra-sensitive:1.0.56",
@@ -5127,7 +5271,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.common:mango-common"]
+        "dependencies": [
+          "io.mango.common:mango-common"
+        ]
       },
       {
         "coordinate": "io.mango.platform.captcha:mango-captcha-api:1.0.56",
@@ -5136,7 +5282,10 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.common:mango-common", "io.mango.infra.web:mango-infra-web-api"]
+        "dependencies": [
+          "io.mango.common:mango-common",
+          "io.mango.infra.web:mango-infra-web-api"
+        ]
       },
       {
         "coordinate": "io.mango.platform.identity:mango-identity-api:1.0.56",
@@ -5145,7 +5294,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.common:mango-common"]
+        "dependencies": [
+          "io.mango.common:mango-common"
+        ]
       },
       {
         "coordinate": "io.mango.platform.notice:mango-notice-api:1.0.56",
@@ -5154,7 +5305,10 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.common:mango-common", "io.mango.platform.resource:mango-resource-api"]
+        "dependencies": [
+          "io.mango.common:mango-common",
+          "io.mango.platform.resource:mango-resource-api"
+        ]
       },
       {
         "coordinate": "io.mango.platform.org:mango-org-api:1.0.56",
@@ -5163,7 +5317,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.common:mango-common"]
+        "dependencies": [
+          "io.mango.common:mango-common"
+        ]
       },
       {
         "coordinate": "io.mango.platform.system:mango-system-api:1.0.56",
@@ -5172,7 +5328,10 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.common:mango-common", "io.mango.platform.resource:mango-resource-api"]
+        "dependencies": [
+          "io.mango.common:mango-common",
+          "io.mango.platform.resource:mango-resource-api"
+        ]
       },
       {
         "coordinate": "io.mango.platform.auth:mango-auth-core:1.0.56",
@@ -5205,7 +5364,10 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.infra.feign:mango-infra-feign-starter", "io.mango.platform.auth:mango-auth-api"]
+        "dependencies": [
+          "io.mango.infra.feign:mango-infra-feign-starter",
+          "io.mango.platform.auth:mango-auth-api"
+        ]
       },
       {
         "coordinate": "io.mango.platform.notice:mango-notice-support:1.0.56",
@@ -5277,7 +5439,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.platform.authorization:mango-authorization-api"]
+        "dependencies": [
+          "io.mango.platform.authorization:mango-authorization-api"
+        ]
       },
       {
         "coordinate": "io.mango.platform.authorization:mango-authorization-resource-sync-starter:1.0.56",
@@ -5357,7 +5521,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.common:mango-common"]
+        "dependencies": [
+          "io.mango.common:mango-common"
+        ]
       },
       {
         "coordinate": "io.mango.platform.calendar:mango-calendar-core:1.0.56",
@@ -5416,7 +5582,10 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.infra.kv:mango-infra-kv-api", "io.mango.platform.captcha:mango-captcha-api"]
+        "dependencies": [
+          "io.mango.infra.kv:mango-infra-kv-api",
+          "io.mango.platform.captcha:mango-captcha-api"
+        ]
       },
       {
         "coordinate": "io.mango.platform.captcha:mango-captcha-starter-remote:1.0.56",
@@ -5459,7 +5628,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.common:mango-common"]
+        "dependencies": [
+          "io.mango.common:mango-common"
+        ]
       },
       {
         "coordinate": "io.mango.platform.cms:mango-cms-core:1.0.56",
@@ -5483,7 +5654,10 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.infra.feign:mango-infra-feign-starter", "io.mango.platform.cms:mango-cms-api"]
+        "dependencies": [
+          "io.mango.infra.feign:mango-infra-feign-starter",
+          "io.mango.platform.cms:mango-cms-api"
+        ]
       },
       {
         "coordinate": "io.mango.platform.cms:mango-cms-starter:1.0.56",
@@ -5517,7 +5691,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.common:mango-common"]
+        "dependencies": [
+          "io.mango.common:mango-common"
+        ]
       },
       {
         "coordinate": "io.mango.platform.domain:mango-domain-core:1.0.56",
@@ -5540,7 +5716,10 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.infra.feign:mango-infra-feign-starter", "io.mango.platform.domain:mango-domain-api"]
+        "dependencies": [
+          "io.mango.infra.feign:mango-infra-feign-starter",
+          "io.mango.platform.domain:mango-domain-api"
+        ]
       },
       {
         "coordinate": "io.mango.platform.domain:mango-domain-starter:1.0.56",
@@ -5571,7 +5750,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.common:mango-common"]
+        "dependencies": [
+          "io.mango.common:mango-common"
+        ]
       },
       {
         "coordinate": "io.mango.platform.file.preview:mango-file-preview-core:1.0.56",
@@ -5644,7 +5825,10 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.infra.feign:mango-infra-feign-starter", "io.mango.platform.file:mango-file-api"]
+        "dependencies": [
+          "io.mango.infra.feign:mango-infra-feign-starter",
+          "io.mango.platform.file:mango-file-api"
+        ]
       },
       {
         "coordinate": "io.mango.platform.file:mango-file-starter:1.0.56",
@@ -5676,7 +5860,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.common:mango-common"]
+        "dependencies": [
+          "io.mango.common:mango-common"
+        ]
       },
       {
         "coordinate": "io.mango.platform.gridlayout:mango-grid-layout-core:1.0.56",
@@ -5722,7 +5908,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.common:mango-common"]
+        "dependencies": [
+          "io.mango.common:mango-common"
+        ]
       },
       {
         "coordinate": "io.mango.platform.home:mango-home-core:1.0.56",
@@ -5828,7 +6016,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.common:mango-common"]
+        "dependencies": [
+          "io.mango.common:mango-common"
+        ]
       },
       {
         "coordinate": "io.mango.platform.job:mango-job-support:1.0.56",
@@ -5910,7 +6100,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.common:mango-common"]
+        "dependencies": [
+          "io.mango.common:mango-common"
+        ]
       },
       {
         "coordinate": "io.mango.platform.link:mango-link-core:1.0.56",
@@ -5958,7 +6150,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.platform.notice:mango-notice-support"]
+        "dependencies": [
+          "io.mango.platform.notice:mango-notice-support"
+        ]
       },
       {
         "coordinate": "io.mango.platform.notice:mango-notice-channel-email:1.0.56",
@@ -5967,7 +6161,10 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.platform.file:mango-file-api", "io.mango.platform.notice:mango-notice-support"]
+        "dependencies": [
+          "io.mango.platform.file:mango-file-api",
+          "io.mango.platform.notice:mango-notice-support"
+        ]
       },
       {
         "coordinate": "io.mango.platform.notice:mango-notice-channel-site:1.0.56",
@@ -5988,7 +6185,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.platform.notice:mango-notice-support"]
+        "dependencies": [
+          "io.mango.platform.notice:mango-notice-support"
+        ]
       },
       {
         "coordinate": "io.mango.platform.notice:mango-notice-channel-wechat-official:1.0.56",
@@ -5997,7 +6196,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.platform.notice:mango-notice-support"]
+        "dependencies": [
+          "io.mango.platform.notice:mango-notice-support"
+        ]
       },
       {
         "coordinate": "io.mango.platform.notice:mango-notice-channel-wecom:1.0.56",
@@ -6006,7 +6207,10 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.platform.notice:mango-notice-api", "io.mango.platform.notice:mango-notice-support"]
+        "dependencies": [
+          "io.mango.platform.notice:mango-notice-api",
+          "io.mango.platform.notice:mango-notice-support"
+        ]
       },
       {
         "coordinate": "io.mango.platform.notice:mango-notice-core:1.0.56",
@@ -6092,7 +6296,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.common:mango-common"]
+        "dependencies": [
+          "io.mango.common:mango-common"
+        ]
       },
       {
         "coordinate": "io.mango.platform.numgen:mango-numgen-core:1.0.56",
@@ -6119,7 +6325,10 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.infra.feign:mango-infra-feign-starter", "io.mango.platform.numgen:mango-numgen-api"]
+        "dependencies": [
+          "io.mango.infra.feign:mango-infra-feign-starter",
+          "io.mango.platform.numgen:mango-numgen-api"
+        ]
       },
       {
         "coordinate": "io.mango.platform.numgen:mango-numgen-starter:1.0.56",
@@ -6128,7 +6337,10 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.infra.web:mango-infra-web-starter", "io.mango.platform.numgen:mango-numgen-core"]
+        "dependencies": [
+          "io.mango.infra.web:mango-infra-web-starter",
+          "io.mango.platform.numgen:mango-numgen-core"
+        ]
       },
       {
         "coordinate": "io.mango.platform.numgen:mango-numgen:1.0.56",
@@ -6161,7 +6373,10 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.infra.feign:mango-infra-feign-starter", "io.mango.platform.org:mango-org-api"]
+        "dependencies": [
+          "io.mango.infra.feign:mango-infra-feign-starter",
+          "io.mango.platform.org:mango-org-api"
+        ]
       },
       {
         "coordinate": "io.mango.platform.org:mango-org-starter:1.0.56",
@@ -6192,7 +6407,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.common:mango-common"]
+        "dependencies": [
+          "io.mango.common:mango-common"
+        ]
       },
       {
         "coordinate": "io.mango.platform.workflow:mango-workflow-api:1.0.56",
@@ -6201,7 +6418,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.common:mango-common"]
+        "dependencies": [
+          "io.mango.common:mango-common"
+        ]
       },
       {
         "coordinate": "io.mango.platform.payment:mango-payment-core:1.0.56",
@@ -6385,7 +6604,9 @@
         "packaging": "jar",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.common:mango-common"]
+        "dependencies": [
+          "io.mango.common:mango-common"
+        ]
       },
       {
         "coordinate": "io.mango.platform.template:mango-template-core:1.0.56",
@@ -6525,7 +6746,9 @@
         "packaging": "maven-plugin",
         "extension": "jar",
         "classifier": null,
-        "dependencies": ["io.mango.tools:mango-architecture-rules"]
+        "dependencies": [
+          "io.mango.tools:mango-architecture-rules"
+        ]
       },
       {
         "coordinate": "io.mango.tools:mango-architecture-verification:1.0.56",
@@ -6833,7 +7056,7 @@
     "catalogDigest": "fd9f5e47c9cdc3b4a2a086c9f004eb87494a676e311d888d0d1973f836843abc",
     "previousBaselineDigest": "cfe732777019323fbcb588f403ea149c414028d1419c0511e73e3264158dae64",
     "changesetsDigest": "b37afda28074126e113cf7bb1ab201be5a0291015ea42d3270d74b4e8201f65d",
-    "releaseNotesDigest": "546425a497e2a660f922e8dc6246cf311812419d1220a60291370d9ffc0f144e",
+    "releaseNotesDigest": "985e664a0e8f6cd57ee82472acb539f16cc893f1892319e809c9eec77d345f4e",
     "versionPolicyDigest": "c4c4c80d533dde047a59627c915cf87e3570606c2d329023ce6896544c50ee12",
     "resolvedTuple": [
       {
@@ -8375,5 +8598,5 @@
       "@mango/cli"
     ]
   },
-  "planDigest": "8f5844667ce3bf94dc97591815575d1fc45c071a37b5c5dfb44395b5bcd9a8ac"
+  "planDigest": "97d494f20d082e05c73a116f9e711e80d7ba06caa2f9132a0db3f442dc16e4d9"
 }
