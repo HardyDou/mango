@@ -34,6 +34,43 @@ Resource 声明的 `execution-phase` 与 `sync-mode` 正交：
 
 历史 Flyway 中如果保留旧字典、旧菜单或旧 demo seed，只能作为历史库兼容证据，不能作为新增资源声明模板。新增或调整字典、菜单、角色、工作流等小资源时，先看当前 handler 是否开放，再按本 README 的 Resource 声明和 `sync-mode` 处理。
 
+### 1.3 业务 Flyway 资源迁移幂等说明（通用解决方案）
+
+业务仓用 Flyway 复制/迁移资源类数据时，必须按以下规则编写幂等迁移；这是「系统初始化数据」与「运行期/客户数据」共存的统一解法，适用于历史版本、当前版本和运行期数据同时存在的情况。
+
+1. **锁定激活源版本**：源查询必须约束到「当前激活、非删除」的规则/版本，禁止只按业务键全量 join；历史版本与当前版本共存时不得重复插入。
+2. **按稳定业务身份去重**：先确定业务身份（如 `checklist_key + material_definition_id`），源行按该身份去重后再插入，避免同一物料被复制多份。
+3. **明确 `variant_key` 归属**：若 `variant_key` 是生成实现细节（如 `DEFAULT_<后缀>`），不得用它判断「是否已存在」，应忽略后缀比较业务身份；若它有业务含义，则必须纳入唯一键与 `NOT EXISTS` 条件。
+4. **保留运行期/客户数据**：目标已存在同业务身份的运行期数据时，用业务键 `NOT EXISTS` 跳过，不得覆盖或删除。
+5. **幂等**：重复执行必须 no-op，用「业务键 `NOT EXISTS`」或「`ON DUPLICATE KEY UPDATE` 明确策略」；禁止 `INSERT IGNORE` 隐藏冲突。
+6. **必须补集成测试**：至少覆盖「仅当前源版本 / 历史+当前版本共存 / 目标已存在运行期项 / 部分失败重试 / 重复执行」五种库状态。
+
+框架侧已统一：后台托管记录（`MANUAL`/`INIT_ONLY`/`LOCKED`）优先于系统声明，同 `bizKey` 不冲突；后台删除写入 tombstone，系统同步不重建。
+
+### 1.4 后台增删改查与指纹/栅栏（如何规避问题）
+
+**指纹与栅栏的作用**：每次发布会构建 resource 清单（manifest），并计算 `manifestFingerprint`、`generation` 和 `fencingToken`；运行期注册命令携带这些值，`BootstrapGenerationFence` 校验 authority，保证旧代实例无法覆盖新代资源。每条声明还有 `sourceHash`，每个模块有 `moduleHash`——这些指纹全部来自**声明内容本身**。
+
+**关键结论**：后台增删改查只改变 `resource_registry` 行和目标表数据，不改变声明内容，因此**不会改变 `manifestFingerprint`/`moduleHash`/`sourceHash`**，不会导致发布或 bootstrap 栅栏失败。
+
+但后台增删改查必须遵守 `sync-mode` 归属约定，否则会造成同步冲突或后台数据被覆盖：
+
+| 操作 | 正确做法 | 会出问题的做法 |
+| --- | --- | --- |
+| 增（后台新增数据） | 归属 `MANUAL` 或 `INIT_ONLY` | 用 `AUTO`，后续系统声明同 `bizKey` 会冲突/覆盖 |
+| 改（后台修改目标数据） | 资源用 `INIT_ONLY`，Handler 返回 PRESERVED | 用 `AUTO`，系统同步会覆盖后台修改 |
+| 删（后台删除） | 走 `DELETE /resource/registries`，写 MANUAL tombstone | 直接删 registry 行/目标表，下次同步重建或主键冲突 |
+| 查 | 走分页/日志查询接口 | 无风险 |
+
+**规避清单**：
+
+1. 后台新增的资源必须归属 MANAGED（`MANUAL`/`INIT_ONLY`），不要用 `AUTO`。
+2. 需要后台可改的系统资源，声明 `sync-mode: INIT_ONLY`。
+3. 删除必须走后台删除接口（tombstone），禁止直删 registry 行或目标表。
+4. 业务 Flyway 迁移资源类数据按 1.3 幂等规则执行。
+5. 不要修改历史已发布的声明文件/清单；确需变更按正规升级流程递增 `version` 与 generation。
+6. 同 `bizKey` 的系统声明与托管记录冲突时，框架已统一：托管记录优先，系统声明跳过并记诊断日志。
+
 ## 2. 模块结构
 
 | 模块 | 职责 |
