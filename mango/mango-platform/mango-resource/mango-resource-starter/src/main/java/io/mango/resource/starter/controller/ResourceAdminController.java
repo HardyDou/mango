@@ -5,6 +5,8 @@ import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.resource.api.ResourceAdminApi;
+import io.mango.resource.api.command.CreateResourceRegistryCommand;
+import io.mango.resource.api.command.UpdateResourceSyncModeCommand;
 import io.mango.resource.api.query.ResourceLogPageQuery;
 import io.mango.resource.api.query.ResourceRegistryPageQuery;
 import io.mango.resource.api.vo.ResourceChangeLogVO;
@@ -21,6 +23,8 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -58,6 +62,20 @@ public class ResourceAdminController implements ResourceAdminApi {
             @Parameter(description = "是否物理删除") @RequestParam(value = "physical", defaultValue = "false")
             Boolean physical) {
         return R.ok(resourceAdminService.deleteResource(resourceId, physical));
+    }
+
+    @PostMapping("/registries")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:resource:registry:add")
+    @Operation(summary = "新增托管资源", description = "后台动态新增托管资源，默认 syncMode=MANUAL，不会被系统声明覆盖")
+    public R<String> createResource(@RequestBody CreateResourceRegistryCommand command) {
+        return R.ok(resourceAdminService.createResource(command));
+    }
+
+    @PutMapping("/registries/sync-mode")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:resource:registry:edit")
+    @Operation(summary = "更新资源同步模式", description = "后台显式接管或交还资源所有权，切换 AUTO/INIT_ONLY/MANUAL/LOCKED")
+    public R<Boolean> updateResourceSyncMode(@RequestBody UpdateResourceSyncModeCommand command) {
+        return R.ok(resourceAdminService.updateResourceSyncMode(command));
     }
 
     @GetMapping("/sync-logs/page")

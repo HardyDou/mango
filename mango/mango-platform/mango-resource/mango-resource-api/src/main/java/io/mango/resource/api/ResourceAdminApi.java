@@ -2,6 +2,8 @@ package io.mango.resource.api;
 
 import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
+import io.mango.resource.api.command.CreateResourceRegistryCommand;
+import io.mango.resource.api.command.UpdateResourceSyncModeCommand;
 import io.mango.resource.api.query.ResourceLogPageQuery;
 import io.mango.resource.api.query.ResourceRegistryPageQuery;
 import io.mango.resource.api.vo.ResourceChangeLogVO;
@@ -43,6 +45,22 @@ public interface ResourceAdminApi {
      */
     R<Boolean> deleteResource(@NotBlank(message = "资源ID不能为空") String resourceId,
                               @NotNull(message = "删除方式不能为空") Boolean physical);
+
+    /**
+     * 后台新增托管资源。
+     *
+     * @param command 新增资源命令。
+     * @return 新资源稳定ID。
+     */
+    R<String> createResource(@Valid CreateResourceRegistryCommand command);
+
+    /**
+     * 后台更新资源同步模式。
+     *
+     * @param command 同步模式更新命令。
+     * @return 是否处理成功。
+     */
+    R<Boolean> updateResourceSyncMode(@Valid UpdateResourceSyncModeCommand command);
 
     /**
      * 分页查询资源同步记录。
