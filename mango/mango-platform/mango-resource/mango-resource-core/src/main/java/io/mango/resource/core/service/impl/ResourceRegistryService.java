@@ -466,7 +466,7 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
             Map<String, ResourceHandler> handlerMap = loadHandlers();
             ResourceRegistryRow existing = repository.findByTypeAndBizKey(
                     declaration.getResourceType(), declaration.getBizKey());
-            Require.isNull(existing, ResourceCode.RESOURCE_CONFLICT.getCode(),
+            Require.isNull(existing, ResourceCode.RESOURCE_CONFLICT,
                     "资源已存在: " + declaration.getResourceType() + ":" + declaration.getBizKey());
             ResourceSyncResult result = upsertSingleTarget(declaration, handlerMap);
             Require.notNull(result, ResourceCode.RESOURCE_SYNC_FAILED,
