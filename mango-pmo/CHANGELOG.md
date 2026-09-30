@@ -76,7 +76,7 @@
 - `mango release registry doctor` passed for npm publish/consume and Maven publish/consume roles.
 - Maven Resource module verify passed with 81 tests, including 52 Resource Registry integration tests; the real Spring Boot/MySQL/administrator permission-chain evidence is recorded in `.runtime/resource-admin-live/report.txt`.
 - Run catalog, release impact, package exports, PMO projection, CLI version, generated backend, release-plan, release-notes and local release checks before prepare.
-- Prepare one sealed mixed candidate from source commit `78c327bdf` and verify it with the configured npm consume registry plus the aggregate Maven consumer.
+- Prepare one sealed mixed candidate from source commit `6e6f06b11` and verify it with the configured npm consume registry plus the aggregate Maven consumer.
 - After publication, re-resolve all 192 Maven coordinates and 27 npm packages from publish and consume registries by the sealed checksums, then run one clean consume-registry consumer.
 
 ## Rollback

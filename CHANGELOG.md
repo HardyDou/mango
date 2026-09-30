@@ -2,7 +2,7 @@
 
 ## v2026.09.30-maven-1.0.56-resource-admin-release - Maven 1.0.56 - npm @mango/common@2.1.1 @mango/admin-extension@1.0.8 @mango/ai@1.1.6 @mango/auth@1.0.36 @mango/file@1.1.1 @mango/detail@1.1.1 @mango/grid-layout@1.0.25 @mango/grid-widgets@1.0.31 @mango/home@1.0.24 @mango/pmo@1.4.5 @mango/rbac@1.0.37 @mango/site-shell@1.0.21 @mango/system@1.0.45 @mango/admin-pages@1.0.46 @mango/calendar@1.0.47 @mango/cms@1.0.36 @mango/job@1.0.40 @mango/link@1.0.33 @mango/notice@1.0.52 @mango/numgen@1.0.48 @mango/payment@1.0.39 @mango/template@1.0.48 @mango/workflow@1.0.56 @mango/admin-shell@1.0.77 @mango/workflow-business-example@1.0.55 @mango/admin@1.1.13 @mango/cli@1.2.17 - 2026-09-30
 
-Status: `PENDING`. Release plan `8f5844667ce3bf94dc97591815575d1fc45c071a37b5c5dfb44395b5bcd9a8ac` targets Maven/docs `1.0.56` and the generated npm closure through `@mango/cli@1.2.17` from the regenerated release source. No immutable registry write has occurred.
+Status: `PENDING`. Release plan `25500a7e5a58408cb0d282d04a03554abf0933baf7a444dfeaf1dfa90853b6e8` targets Maven/docs `1.0.56` and the generated npm closure through `@mango/cli@1.2.17` from the regenerated release source. No immutable registry write has occurred.
 
 ### Pull Requests
 
