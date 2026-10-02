@@ -76,6 +76,10 @@ public class LoginVO {
     private String companyName;
 
     @Schema(description = "当前用户所属部门名称列表")
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+        justification = "Feign and Jackson require this mutable collection getter"))
+    @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Feign and Jackson require this mutable collection setter"))
     private List<String> departmentNames;
 
     @Schema(description = "应用编码")
