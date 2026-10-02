@@ -1,8 +1,11 @@
-# 旧 PRD 模板已停止使用
+# 旧 PRD 模板迁移入口
 
-新文档必须选择明确阶段模板：
+旧 PRD 已停止作为新文档模板。它把业务需求、系统行为和验收内容混在一个文件中，不能用于新任务。
 
-- 业务需求：`business-requirements.md`
-- 系统需求：`system-requirements.md`
+请选择明确阶段模板：
 
-禁止继续生成混合 PRD。
+- [业务需求说明书（BRD）](./business-requirements.md)：业务问题、场景、规则、范围和业务验收。
+- [系统需求规格说明书（SRS）](./system-requirements.md)：系统行为、页面、字段、动作、失败边界和系统验收。
+- [模板选择说明](./README.md)：判断从哪个阶段开始，以及 BRD、SRS、TDD、Plan 的顺序。
+
+新任务不生成混合 PRD。历史 PRD 只用于迁移和追溯。

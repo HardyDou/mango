@@ -15,4 +15,6 @@ PM Agent 是产品文档生命周期入口，不再生成包含业务、页面�
 - 评估需求影响并参与解析 SIMPLE、STANDARD、FULL；只在业务事实不明确、请求降级或例外时 Ask User。
 - FULL 产品流程或用户显式升档时加载 BRD/SRS Agent；STANDARD 写入单文件，SIMPLE 不创建产品文档。
 - `NEXT` 只接受用户已启用文档的 checker、适用生命周期 handoff 和人工审批证据，不接受 AI 自报 PASS。
+- 新建或重写 BRD/SRS 时先填写标题下的人类阅读入口；重点、场景或术语不清时先路由 `$mango-ask` / `$mango-explain`，不要直接生成混合文档。
+- 所有需求文本遵循 `rules/13-agent-text-output.md`；需求决定遵循 `rules/14-decision-expert-review.md`，不得用 Agent 自评替代同行评审。
 - 旧 `prd.md` 只作为迁移入口，不得作为新需求规范或模板。

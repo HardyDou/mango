@@ -47,12 +47,12 @@ target/generated-resources/META-INF/mango/baseline-manifest.json
                 <goal>baseline-generate</goal>
             </goals>
             <configuration>
-                <includedModules>system,identity,authorization,workflow,file,guarantee</includedModules>
-                <moduleOrder>system,identity,authorization,workflow,file,guarantee</moduleOrder>
-                <moduleGroups>system=main,identity=main,authorization=main,workflow=main,file=main,guarantee=main</moduleGroups>
+                <includedModules>system,identity,authorization,workflow,file,business</includedModules>
+                <moduleOrder>system,identity,authorization,workflow,file,business</moduleOrder>
+                <moduleGroups>system=main,identity=main,authorization=main,workflow=main,file=main,business=main</moduleGroups>
                 <characterSet>utf8mb4</characterSet>
                 <collation>utf8mb4_unicode_ci</collation>
-                <resourceApplicationClass>com.example.GuaranteeApplication</resourceApplicationClass>
+                <resourceApplicationClass>com.example.BusinessApplication</resourceApplicationClass>
                 <resourceTimeoutSeconds>300</resourceTimeoutSeconds>
                 <resourceAdditionalClasspathElements>
                     <resourceAdditionalClasspathElement>
@@ -82,7 +82,7 @@ Jenkins 节点本身不需要预装 MySQL。流水线为 API 构建启动一个�
 ```bash
 export MANGO_BASELINE_DB_PASSWORD="$CI_BASELINE_DB_PASSWORD"
 
-mvn -pl baohan-api -am package \
+mvn -pl business-api -am package \
   -Dmango.baseline.jdbcUrl='jdbc:mysql://127.0.0.1:33060/mysql?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai' \
   -Dmango.baseline.username=root \
   -Dmango.baseline.passwordEnv=MANGO_BASELINE_DB_PASSWORD \

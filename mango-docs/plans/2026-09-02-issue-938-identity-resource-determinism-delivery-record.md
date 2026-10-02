@@ -53,4 +53,4 @@
 
 ## 7. 例外与剩余风险
 
-- Maven `1.0.50` 不可变版本发布已由用户授权，按独立 `mango-release` 流程执行；Baohan 真实 MySQL BSQL/Jenkins 回归仍属于业务消费验收边界。
+- Maven `1.0.50` 不可变版本发布已由用户授权，按独立 `mango-release` 流程执行；Business 真实 MySQL BSQL/Jenkins 回归仍属于业务消费验收边界。

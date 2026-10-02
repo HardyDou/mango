@@ -6,6 +6,7 @@
 - **规范源**：`mango-pmo/rules/product/02-system-requirements.md`。
 - **模板**：`mango-pmo/templates/system-requirements.md`。
 - **检查器**：`node mango-pmo/tools/check-system-requirements.mjs --document <path>`。
+- **人类阅读入口检查**：`node mango-pmo/tools/check-document-reading-entry.mjs --document <path>`。
 - **人工责任人**：系统分析或产品负责人批准系统行为和验收；存在已启用 BRD 时由业务负责人确认没有改变 BRD，否则确认没有改变用户已确认的业务目标与边界。
 
 ## 动作门禁
@@ -23,3 +24,8 @@
 - 不发明 BRD 中不存在的业务规则。
 - 不复制规范正文到文档。
 - 不把系统影响降到 BRD 以下，不因页面或 API 等关键词机械升级。
+
+## 文本与决定门禁
+
+- 系统需求遵循 `rules/13-agent-text-output.md`，先写用户可观察行为、输入、输出和失败边界。
+- 系统决定遵循 `rules/14-decision-expert-review.md`，完成三轮独立视角和同行评审后再进入 `NEXT`。

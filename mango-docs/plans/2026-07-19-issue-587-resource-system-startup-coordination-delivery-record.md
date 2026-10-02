@@ -65,7 +65,7 @@
 | SR-001 至 SR-005 | 三模块同 Reactor 测试与生命周期验证 | `mvn -f mango/pom.xml -pl mango-platform/mango-resource/mango-resource-support,mango-platform/mango-resource/mango-resource-sync-starter,mango-platform/mango-system/mango-system-core -DskipITs verify` | PASS：support 8、sync starter 4、system core 60，共 72；失败 0、错误 0、跳过 0 |
 | SR-002/SR-003/SR-006 | `ResourceSyncRunnerTest` | 首次调用失败，前置就绪事件立即重试，后续重试成功，再重复调度 | PASS：失败后状态为未完成，成功后状态为完成，只发布一个完成事件 |
 | SR-002/SR-004/SR-005/SR-006 | `TenantProvisioningReconciliationRunnerTest` | 完成状态、前置基线、延后事件、瞬时失败重试和无状态兼容 | PASS：未完成时前置调用 1 次且不标记最终完成；资源完成后最终调用 1 次；瞬时失败后重试收敛 |
-| SR-001 至 SR-006 | Baohan 1.0.22 真实消费项目空库 | 从业务 `main` 合并提交 `d2b4c5319` 建立隔离 worktree，关闭业务补偿 Runner，使用隔离 Maven 仓库加载本修复，CLI slot 9 删除并重建数据库后执行 `mango dev start backend` | PASS：健康持续 `UP`；日志严格出现一次“资源因 `ROLE_ADMIN` 延后 -> 前置基线完成 -> 1964 条资源同步完成 -> 最终对账完成”；246 表、1964 资源、981 API 资源、15 角色、56 角色数据范围、12 业务域、5 工作流定义 |
+| SR-001 至 SR-006 | Business 1.0.22 真实消费项目空库 | 从业务 `main` 合并提交 `d2b4c5319` 建立隔离 worktree，关闭业务补偿 Runner，使用隔离 Maven 仓库加载本修复，CLI slot 9 删除并重建数据库后执行 `mango dev start backend` | PASS：健康持续 `UP`；日志严格出现一次“资源因 `ROLE_ADMIN` 延后 -> 前置基线完成 -> 1964 条资源同步完成 -> 最终对账完成”；246 表、1964 资源、981 API 资源、15 角色、56 角色数据范围、12 业务域、5 工作流定义 |
 | 全部 | Mango 架构与 Java 静态质量门禁 | 受影响三个模块与 `mango-architecture-verification` 执行 changed 模式 `verify`，静态 gate 为 `no-new-violations` | PASS：dependency 0、PMD 0、blocking 0；静态问题 0、新增问题 0、工具失败 0；存在 1 个与本次无关的既有非阻断 Controller 根路径 ArchUnit 记录 |
 | 全部 | 测试资产和 Mock 门禁 | `test-quality-check.mjs --base origin/main`；`audit-backend-test-mocks.mjs --report-only --changed-only --base origin/main` | PASS：2 个变更测试文件；Mock block=0、warn=0 |
 | 全部 | README、源码事实、业务指南、能力说明和补丁检查 | `audit-module-readmes.mjs`；`audit-readme-source-facts.mjs`；`check-business-guides.mjs`；`check-capability-docs.mjs`；`git diff --check` | PASS |
@@ -75,7 +75,7 @@
 - 本任务不在当前工作区执行版本发布；合并后进入下一次 Maven 版本发布。
 - 业务项目升级到包含本修复的版本后，可删除等待资源可见并手工二次执行机构对账的临时补偿。
 - 回滚可整体回退状态、事件和 System 协调逻辑；没有数据库或数据回滚步骤。
-- 真实空库的资源数、角色数和权限绑定数取决于业务声明；本次已在 Baohan 最新合并态关闭消费方补偿后验证既有数量基线。其它业务项目升级时仍应回读自己的声明基线。
+- 真实空库的资源数、角色数和权限绑定数取决于业务声明；本次已在 Business 最新合并态关闭消费方补偿后验证既有数量基线。其它业务项目升级时仍应回读自己的声明基线。
 
 ## 9. 剩余风险
 

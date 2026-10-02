@@ -56,7 +56,7 @@ const panels: MangoCollapsePanel[] = [
 </script>
 
 <template>
-  <MangoCollapseDetailPage ref="detailRef" title="保函详情" :panels="panels" show-workflow>
+  <MangoCollapseDetailPage ref="detailRef" title="业务详情" :panels="panels" show-workflow>
     <template #workflow><WorkflowTimeline /></template>
     <template #actions><el-button type="primary">提交</el-button></template>
   </MangoCollapseDetailPage>

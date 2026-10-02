@@ -18,8 +18,8 @@
 └─────────────────────────────────────────────────────────────┘
                               ↓ 复用
 ┌─────────────────────────────────────────────────────────────┐
-│                    电子保函层 GUARANTEE                      │
-│  mango-guarantee | mango-project | mango-institution        │
+│                    电子业务层 BUSINESS                      │
+│  mango-business | mango-project | mango-institution        │
 │  mango-payment | mango-document                            │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -33,7 +33,7 @@
 | `mango-tools` | Maven Plugin | CLI（gen-module / gen-crud / gen-permission / check） | 100% | ❌ 缺失 |
 | `mango-generator` | JAR | Velocity 模板（被 tools 调用） | 100% | ✅ 已有 |
 
-### 1.3 通用业务层（电子保函系统可直接复用）
+### 1.3 通用业务层（电子业务系统可直接复用）
 
 | 模块 | 类型 | 职责 | 成熟度 | README 状态 |
 |------|------|------|--------|----------|
@@ -61,7 +61,7 @@
 | 模块 | 类型 | 职责 | 成熟度 | README 状态 |
 |------|------|------|--------|----------|
 | `mango-admin-app` | 部署分组 | 打包 auth/permission/user 等通用业务模块到一个进程 | 100% | ✅ 已有 |
-| `guarantee-app` | 部署分组 | **电子保函业务部署分组**（打包 guarantee + 通用业务 starter） | 0% | ❌ 缺失 |
+| `business-app` | 部署分组 | **电子业务部署分组**（打包 business + 通用业务 starter） | 0% | ❌ 缺失 |
 
 **部署分组命名规范**：
 - `*-app` = 部署分组，把多个 `*-starter` 打包成一个 Spring Boot 应用
@@ -147,12 +147,12 @@ IUseCase 体系     → 管"缓存、锁、计数、防重、ID 生成"
 | 把加密实现留 `common` | 实现带 `@Component` | 业务系统 Bean 命名冲突 |
 | 把 AOP 切面放 `common` | 依赖 Spring AOP | common 丧失跨项目复用能力 |
 
-### 1.7 电子保函业务层（待建）
+### 1.7 电子业务层（待建）
 
 | 模块 | 职责 | 优先级 |
 |------|------|--------|
 | `mango-project` | 上游招标平台项目同步 | P0 |
-| `mango-guarantee` | 保函申请/审批/出函/签章/验真/注销/索赔 | P0 |
+| `mango-business` | 业务申请/审批/业务处理/签章/验真/注销/争议处理 | P0 |
 | `mango-institution` | 下游金融机构对接 | P1 |
 | `mango-payment` | 支付流程 | P1 |
 | `mango-document` | 文档处理：Office 转 PDF、PDF 工具、OCR、缩略图、在线 Office provider 适配 | P2 |
@@ -623,14 +623,14 @@ mango-infra-context/
 ```
 单体部署（一个进程包含所有模块）
 ┌─────────────────────────────────────────────────────────────┐
-│                    guarantee-app (单进程)                     │
+│                    business-app (单进程)                     │
 │  ┌───────────────────────────────────────────────────────┐ │
 │  │ Controller Layer（直接调用各 *-starter）               │ │
 │  │  - /portal/*, /admin/*, /open/*                      │ │
 │  └───────────────────────────────────────────────────────┘ │
 │  ┌───────────────────────────────────────────────────────┐ │
 │  │ Service Layer（*-starter，本地调用）                   │ │
-│  │  - guarantee-starter                                  │ │
+│  │  - business-starter                                  │ │
 │  │  - auth-starter ←────────┐                          │ │
 │  │  - permission-starter    │                           │ │
 │  │  - user-starter         ─┼── 通用业务模块复用        │ │
@@ -641,8 +641,8 @@ mango-infra-context/
 
 微服务部署（每个 *-app 是独立进程）
 ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
-│  guarantee-app   │  │   auth-app      │  │  permission-app │
-│  (保函业务)      │  │  (认证服务)      │  │  (权限服务)    │
+│  business-app   │  │   auth-app      │  │  permission-app │
+│  (业务)      │  │  (认证服务)      │  │  (权限服务)    │
 │  4个模块打包     │  │  独立扩缩容     │  │  独立扩缩容    │
 └────────┬─────────┘  └────────┬─────────┘  └────────┬─────────┘
          │                     │                      │
@@ -654,11 +654,11 @@ mango-infra-context/
                     └──────────────────┘
 ```
 
-### 4.2 电子保函业务部署分组
+### 4.2 电子业务部署分组
 
 ```
-guarantee-app（电子保函业务部署分组）
-├── guarantee-starter     → 保函核心业务（项目/保函/机构/支付/文档）
+business-app（电子业务部署分组）
+├── business-starter     → 业务核心业务（项目/业务/机构/支付/文档）
 ├── auth-starter         → 认证服务
 ├── permission-starter   → 权限服务
 ├── user-starter         → 用户档案
@@ -667,7 +667,7 @@ guarantee-app（电子保函业务部署分组）
 └── ...
 
 微服务部署时：
-guarantee-app（独立进程）←──Feign──→ auth-app（独立进程）
+business-app（独立进程）←──Feign──→ auth-app（独立进程）
                                     permission-app
                                     user-app
                                     ...
@@ -685,13 +685,13 @@ guarantee-app（独立进程）←──Feign──→ auth-app（独立进程�
 
 ---
 
-## 五、电子保函业务模块（待建）
+## 五、电子业务模块（待建）
 
-### 5.1 电子保函部署分组
+### 5.1 电子业务部署分组
 
 ```
-guarantee-app（电子保函业务部署分组，打包多个 starter 到一个进程）
-├── guarantee-starter     → 保函核心业务（项目/保函/机构/支付/文档）
+business-app（电子业务部署分组，打包多个 starter 到一个进程）
+├── business-starter     → 业务核心业务（项目/业务/机构/支付/文档）
 ├── auth-starter         → 认证服务
 ├── permission-starter   → 权限服务
 ├── user-starter         → 用户档案
@@ -700,24 +700,24 @@ guarantee-app（电子保函业务部署分组，打包多个 starter 到一个�
 └── ...
 ```
 
-### 5.2 电子保函业务服务（*-core）
+### 5.2 电子业务服务（*-core）
 
 ```
-电子保函业务层（每个 *-core 是独立可复用的业务模块）
+电子业务层（每个 *-core 是独立可复用的业务模块）
 ├── mango-project    → 上游招标平台项目同步（业主发布项目 → 平台）
-├── mango-guarantee  → 保函全生命周期（申请 → 支付 → 出函 → 签章 → 验真 → 注销/索赔）
-├── mango-institution→ 下游金融机构对接（银行/保险/担保公司出函）
+├── mango-business  → 业务全生命周期（申请 → 支付 → 业务处理 → 签章 → 验真 → 注销/争议处理）
+├── mango-institution→ 下游金融机构对接（银行/保险/合作机构业务处理）
 ├── mango-payment    → 支付流程（保证金支付）
-└── mango-document   → 电子保函文档（模板/签章/验真）
+└── mango-document   → 电子业务文档（模板/签章/验真）
 ```
 
 ### 5.3 复用关系
 
-这些电子保函模块依赖 mango 脚手架的通用业务层：
+这些电子业务模块依赖 mango 脚手架的通用业务层：
 
 ```
-guarantee-app
-    ├── guarantee-core      → 保函核心业务
+business-app
+    ├── business-core      → 业务核心业务
     ├── auth-starter        → 复用 mango-auth
     ├── permission-starter  → 复用 mango-permission
     ├── user-starter        → 复用 mango-user
@@ -754,7 +754,7 @@ guarantee-app
 | `mango-captcha` | 更新 | 存储 SPI |
 | `mango-gateway` | 更新 | WebFlux+Servlet 双协议 |
 | `mango-generator` | 更新 | 模板变量说明 |
-| `guarantee-app` | 新建 | 电子保函业务部署分组 |
+| `business-app` | 新建 | 电子业务部署分组 |
 
 ---
 

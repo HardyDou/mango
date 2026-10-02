@@ -11,7 +11,7 @@
 | 业务项目 starter 资产 | `mango-business-starter` | 仓内生产起点，不是 demo |
 | 官方脚手架 CLI | `@mango/cli` | 通过已发布 Maven / npm 包生成业务工程；安装后命令为 `mango` / `mango-cli` |
 | Web 生成服务 | Mango Initializr | 对齐 Spring Initializr |
-| 生成后的业务项目 | `<business>-platform` | 例如 `guarantee-platform`、`baohan-platform` |
+| 生成后的业务项目 | `<business>-platform` | 例如 `business-platform`、`business-platform` |
 | 后端框架依赖 | `mango-admin-starter` | Maven starter 依赖 |
 | 前端管理后台壳 | `@mango/admin-shell` | npm shell 依赖 |
 
@@ -35,10 +35,10 @@ registry=${MANGO_NPM_REGISTRY}
 ```bash
 npm install -g @mango/cli@1.0.55
 
-mango init guarantee-platform \
+mango init business-platform \
   --preset custom \
   --modules workflow,template,file \
-  --package com.example.guarantee \
+  --package com.example.business \
   --group-id com.example \
   --topology monolith
 ```
@@ -47,10 +47,10 @@ mango init guarantee-platform \
 
 ```bash
 npm exec --package @mango/cli@1.0.55 -- \
-  mango init guarantee-platform \
+  mango init business-platform \
   --preset custom \
   --modules workflow,template,file \
-  --package com.example.guarantee \
+  --package com.example.business \
   --group-id com.example \
   --topology monolith
 ```
@@ -64,9 +64,9 @@ CLI 内置 `release-versions.json` 负责锁定业务项目默认消费的 Mango
 需要全量 Mango 管理端能力时使用 full preset：
 
 ```bash
-mango init guarantee-platform \
+mango init business-platform \
   --preset full \
-  --package com.example.guarantee \
+  --package com.example.business \
   --group-id com.example \
   --topology monolith
 ```
@@ -84,10 +84,10 @@ full preset 后端依赖 `mango-admin-starter`，不再内置独立的运行时�
 只需要必选系统能力时使用 custom preset 且不选择可选模块：
 
 ```bash
-mango init guarantee-platform \
+mango init business-platform \
   --preset custom \
   --modules none \
-  --package com.example.guarantee \
+  --package com.example.business \
   --group-id com.example \
   --topology monolith
 ```
@@ -95,17 +95,17 @@ mango init guarantee-platform \
 ## 4. 生成项目结构
 
 ```text
-guarantee-platform/
+business-platform/
   AGENTS.md
   README.md
   mango.config.json
   backend/
     modules/
-      guarantee/
-        guarantee-api/
-        guarantee-core/
-        guarantee-starter/
-        guarantee-starter-remote/
+      business/
+        business-api/
+        business-core/
+        business-starter/
+        business-starter-remote/
   frontend/
     src/
     public/runtime-config.json

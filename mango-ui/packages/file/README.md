@@ -1,5 +1,9 @@
 # @mango/file
 
+> **场景 / 路径：** `MUpload -> fileId -> 业务表单 -> FilePreviewPanel`。
+>
+> **边界 / 源码：** 组件只处理文件交互；租户、权限、归属和地址安全由后端负责。入口为 [`MUpload.vue`](./src/components/MUpload.vue)。先看“3. 集成形态”和“4. 接入方式”。
+
 `@mango/file` 是 Mango 文件能力的前端接入包，提供文件管理页面、存储配置页面、文件设置页面、上传组件、预览组件和 API 封装。
 
 ## 1. 概览
@@ -402,25 +406,9 @@ const rows = [
 
 ## 12. 变更影响记录
 
-- Issue #805 将文件管理页 registrar 的内部依赖从 FE3 `@mango/admin-pages/core` 迁移到 FE1
-  `@mango/admin-extension/core`，解除发布闭包循环。`registerMangoFileAdminPages()`、页面 key、文件 API、权限和组件用法不变。
-- `@mango/file@1.0.31` 发布 `FilePreviewPanel.fitContainer` 容器填充模式，并把图片预览由点击 `ElImage` 再打开覆盖层，调整为默认直接展示无蒙层的内嵌
-  Element Plus Image Viewer。缩放、旋转、适应模式、原始尺寸和拖拽能力保持使用 Element Plus 原生实现，Viewer 只占用
-  `preview-stage`，并随 `fit-container` 和外层弹框尺寸变化。该 prop 默认关闭；普通流式页面和现有 CSS 变量入口保持兼容，
-  文件 API、文件 ID、权限、下载和文档转换接口不变。
-
-- `@mango/file@1.0.26` publishes the file preview dialog fix: PDF preview fills the dialog content height and owns its own scrolling; the open-in-new-window action always renders and is disabled only when no usable preview URL exists. File ID persistence, upload, download, preview APIs, page keys, permissions and backend startup stay compatible.
-
-- `@mango/file@1.0.22` 发布文件预览弹框体验修复：文件管理页预览弹框中的 `FilePreviewPanel`
-  会按弹框内容区高度铺满，PDF 由自身滚动承载内容；新窗口预览按钮始终渲染，缺少可用预览地址时仅禁用。
-  文件 ID 持久化、上传、下载、预览 API、页面 key、权限和后端启动方式不变。
-- `@mango/file@1.0.21` 向前发布当前文件访问实现和完整 README，不恢复已移除的
-  `FilePreviewPanel.downloadPermission`，也不回退登录级上传、预览和下载访问基线；运行时行为与 `1.0.20`
-  一致，并将 `@mango/admin-pages` 精确依赖对齐到本发布批次。
-- v2026.07.11-npm-lock-sync-release 将文件管理页的上传、预览和下载操作对齐到登录级文件访问基线，不再用
-  `file:files:upload`、`file:files:query` 或 `file:files:download` 控制前端按钮显隐；最终访问仍由后端依据登录态、
-  文件状态、访问级别、租户和业务归属校验。列表、归档、删除、目录、存储配置和文件设置继续使用既有细粒度权限。
-- `FilePreviewPanel` 移除了 `downloadPermission` prop，详情预览组件不再接受自定义下载按钮权限码。业务页面应删除
-  该 prop，并继续通过文件服务返回的下载地址或组件 `openDownload()` 执行下载。
-- 文件管理预览弹框调整为响应式宽高，`FilePreviewPanel` 支持通过 CSS 变量适配弹框内容高度；文件 ID 持久化、上传、
-  下载、预览 API、页面 key 和后端启动方式不变。
+| 版本 / 事项 | 保持不变或新增 |
+|---|---|
+| Issue #805 | registrar 改用 FE1 `@mango/admin-extension/core`；页面 key、API、权限和组件用法不变。 |
+| `@mango/file@1.0.31` | 新增 `FilePreviewPanel.fitContainer`；图片预览改为内嵌 Viewer；文件 ID、权限、下载和转换 API 不变。 |
+| `@mango/file@1.0.21` / `1.0.26` | 预览弹框支持自有滚动和新窗口预览；移除 `downloadPermission`，访问仍由后端校验。 |
+| npm lock-sync release | 上传、预览、下载采用登录级访问基线；管理、归档、删除、目录和配置继续使用细粒度权限。 |

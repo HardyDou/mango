@@ -1,0 +1,6 @@
+interface:
+  display_name: "Mango Retro"
+  short_description: "Capture evidence-based delivery learning and owned follow-up actions"
+  default_prompt: "Use $mango-retro to review this completed delivery and record only evidence-backed improvements."
+policy:
+  allow_implicit_invocation: true

@@ -1,5 +1,9 @@
 # MangoDataTable
 
+> **场景 / 路径：** `业务 API -> rows/columns -> MangoDataTable -> 事件 -> 业务 API`。
+>
+> **边界 / 源码：** 组件不调用接口、不决定业务状态、不处理权限和租户；入口为 [`index.vue`](./index.vue)。先看“核心契约”和“使用示例”。
+
 统一数据表格组件。提供卡片切换、列配置、展开、选择、序号、操作、状态和分页事件。
 
 业务字段、状态文案和 tone 判断由消费方提供，组件只负责表格结构、单元格交互和展示。
@@ -90,12 +94,7 @@ function loadPage(next: MangoTablePageChangeContext) {
 
 ### MangoTableProps
 
-```ts
-interface MangoTableProps {
-  headerCellStyle?: never;
-  'header-cell-style'?: never;
-}
-```
+不支持 `headerCellStyle` 和 `header-cell-style`；表格主题使用 CSS 变量。
 
 ### MangoTableOption
 

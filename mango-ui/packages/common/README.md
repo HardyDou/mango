@@ -342,15 +342,15 @@ import {
 const drawer = ref<MangoSideDrawerShellExpose>();
 const fields = [
   { key: 'orderNo', label: '订单编号', value: 'BH20260920001' },
-  { key: 'remark', label: '说明', value: '<p>保函说明</p>', componentType: 'rich-text-preview' as const },
+  { key: 'remark', label: '说明', value: '<p>业务说明</p>', componentType: 'rich-text-preview' as const },
 ];
 </script>
 
 <template>
   <MangoSideDrawerShell ref="drawer" title="节点过程" :show-trigger="false">
     <template #main>
-      <MangoPageBackBar title="保函详情" @back="$router.back()" @refresh="loadDetail" />
-      <MangoDetailSummary title="履约保函" :fields="[{ key: 'amount', label: '金额', value: '100,000.00' }]" />
+      <MangoPageBackBar title="业务详情" @back="$router.back()" @refresh="loadDetail" />
+      <MangoDetailSummary title="履约业务" :fields="[{ key: 'amount', label: '金额', value: '100,000.00' }]" />
       <MangoDescriptionList :items="fields" />
     </template>
     <WorkflowTimeline />

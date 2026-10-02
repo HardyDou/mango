@@ -463,7 +463,7 @@
 ### Verification
 
 - `node --test mango-pmo/tests/document-contract/document-contract.test.mjs`
-- `node mango-pmo/tools/check-document-set.mjs --root /Users/hardy/Work/Yunxin/baohan-system-upgrade-notice/docs`
+- `node mango-pmo/tools/check-document-set.mjs --root /Users/hardy/Work/Yunxin/business-system-upgrade-notice/docs`
 - `pnpm -F @mango/pmo check`, `pnpm -F @mango/cli test`, Business Starter projection and full repository release gates.
 
 ## 1.3.13 - 2026-08-09
@@ -547,7 +547,7 @@
 - `node --test mango-pmo/tests/document-contract/document-contract.test.mjs`
 - `node mango-ui/packages/mango-pmo/scripts/build-package.mjs && node mango-ui/packages/mango-pmo/scripts/check-package.mjs`
 - `node mango-business-starter/scripts/sync-pmo-baseline.mjs --check`
-- Business document-set regression against the 58-document guarantee project, including seven path/SHA/version-pinned historical documents.
+- Business document-set regression against the 58-document business project, including seven path/SHA/version-pinned historical documents.
 
 ## 1.3.10 - 2026-08-06
 

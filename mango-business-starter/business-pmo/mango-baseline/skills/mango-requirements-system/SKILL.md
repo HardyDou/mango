@@ -31,9 +31,10 @@ Run PMO preflight with role `pm` and phase `requirement`, then read every `Must 
    - `STOP`: the upstream document is absent, unapproved, invalid, or the request asks for implementation design.
    - `ASK`: a required externally observable system fact cannot be traced to approved business input or verified repository facts.
    - `WRITE`: inputs satisfy the rule; fill the official template and preserve upstream trace links without inventing business scope.
-3. Set `pmoVersion` to the contract's exact `metadata.fixed.pmoVersion`, then run `node "$PMO_ROOT/tools/check-system-requirements.mjs" --document <document-path>`.
-4. Fix failures without weakening the checker or adding technical implementation content.
-5. Run the lifecycle checker for the user-enabled SRS and applicable upstream; require the valid hash and trace coverage that apply, `APPROVED/NEXT`, a human approver, approval evidence and no open blocker.
-6. Return `NEXT: $mango-pmo-lifecycle` only when the dedicated checker, applicable lifecycle handoff, gate table and human approval all pass. Let the coordinator choose the next enabled measure; do not assume TDD follows.
+3. Fill the human reading entry immediately below the title: one-sentence goal, one real system scenario, key input/output, success/failure boundary, and explicit out-of-scope. Do not leave template placeholders.
+4. Set `pmoVersion` to the contract's exact `metadata.fixed.pmoVersion`, then run `node "$PMO_ROOT/tools/check-system-requirements.mjs" --document <document-path>` and `node "$PMO_ROOT/tools/check-document-reading-entry.mjs" --document <document-path>`.
+5. Fix failures without weakening the checker or adding technical implementation content.
+6. Run the lifecycle checker for the user-enabled SRS and applicable upstream; require the valid hash and trace coverage that apply, `APPROVED/NEXT`, a human approver, approval evidence and no open blocker.
+7. Return `NEXT: $mango-pmo-lifecycle` only when the dedicated checker, human reading entry check, applicable lifecycle handoff, gate table and human approval all pass. Let the coordinator choose the next enabled measure; do not assume TDD follows.
 
 With an empty context, return `ASK` for M04 confirmation and the observable system source. When a confirmed SRS lacks an applicable approved source, return `STOP` and identify it. Do not infer documents from L2/L3.

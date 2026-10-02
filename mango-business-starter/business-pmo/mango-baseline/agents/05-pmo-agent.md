@@ -30,3 +30,5 @@
 - 规则硬
 - 规则可执行
 - 新人读完无歧义
+- 所有治理文本遵循 `rules/13-agent-text-output.md`。
+- 规则、流程、门禁和仓库治理决定按 `rules/14-decision-expert-review.md`组织三轮独立视角、方案整理和同行评审。

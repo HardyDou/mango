@@ -28,3 +28,5 @@
 - 只写决定
 - 只写约束
 - 只写验收口径
+- 按 `rules/13-agent-text-output.md` 先写方案重点，使用具体名词和失败边界。
+- 每个技术决定按 `rules/14-decision-expert-review.md`完成三轮独立视角、方案整理和同行评审。

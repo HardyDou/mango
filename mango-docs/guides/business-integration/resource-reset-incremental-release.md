@@ -2,7 +2,7 @@
 
 ## 1. 适用场景
 
-本文面向基于 Mango 开发业务模块的团队，说明业务代码、初始化数据和发布物料如何配合 Resource Registry。示例以“保函申请、保函类型和后台配置”这类业务为背景，但不绑定具体业务表。
+本文面向基于 Mango 开发业务模块的团队，说明业务代码、初始化数据和发布物料如何配合 Resource Registry。示例以“业务申请、业务类型和后台配置”这类业务为背景，但不绑定具体业务表。
 
 本文是接入说明，不替代 PMO 规则。初始化数据的长期边界以 [数据库规范](../../../mango-pmo/rules/backend/04-db.md) 和 [Issue #184 数据治理设计](../../designs/2026-07-01-issue-184-data-governance-design.md) 为准。
 
@@ -15,12 +15,12 @@
 | 表、列、索引、约束 | Flyway | `<module>-core/src/main/resources/db/migration/<module>/V*.sql` | 已有库按 history 增量执行；空库可消费构建物 B baseline |
 | 菜单、按钮权限、接口访问模式 | Resource Registry | `META-INF/mango/resources/<module>-common-menu.json` 或 typed declaration | 按模块 hash 和 Resource hash 增量协调 |
 | 随应用提供的字典、系统配置、编号规则、流程定义 | Resource Registry | `META-INF/mango/resources/` | 根据 `sync-mode` 处理；可运营数据优先 `INIT_ONLY` |
-| 演示租户、演示保函、测试账号、样例流程 | Demo Resource / 测试 fixture | `META-INF/mango/demo/` 或测试目录 | 默认不加载，显式开启 demo 后才初始化 |
-| 用户运行期创建的保函、审批实例、附件关系 | 业务 API / 管理后台 | Service、Controller、后台页面 | 不进入发布包，不由 Resource 覆盖 |
+| 演示租户、演示业务、测试账号、样例流程 | Demo Resource / 测试 fixture | `META-INF/mango/demo/` 或测试目录 | 默认不加载，显式开启 demo 后才初始化 |
+| 用户运行期创建的业务、审批实例、附件关系 | 业务 API / 管理后台 | Service、Controller、后台页面 | 不进入发布包，不由 Resource 覆盖 |
 | 随版本发布的固定模板或文件 | `FILE_ASSET` Resource | `META-INF/mango/assets/` 或受控 `asset:` 根目录 | 按 SHA-256 物化到配置的文件存储 |
 | 大字典、外部修复 SQL、停机数据修复 | 外部 Flyway upgrade | `${MANGO_HOME:-/opt/mango}/upgrade/<module>` | 按独立升级窗口和脚本发布 |
 
-典型保函模块的“保函申请记录”和“审批实例”属于运行期业务数据；“保函类型字典”“默认编号规则”“后台菜单”才可能是正式 Resource。不要把业务 CRUD demo 行写进默认 Flyway，也不要把生产客户数据打进 Resource manifest。
+典型业务模块的“业务申请记录”和“审批实例”属于运行期业务数据；“业务类型字典”“默认编号规则”“后台菜单”才可能是正式 Resource。不要把业务 CRUD demo 行写进默认 Flyway，也不要把生产客户数据打进 Resource manifest。
 
 ## 3. 业务模块接入
 
@@ -48,19 +48,19 @@
 mango:
   resource:
     schema-version: 1
-    module-code: guarantee
-    module-name: 保函
+    module-code: business
+    module-name: 业务
     declarations:
       SYSTEM_CONFIG:
         - id: "6100000000000000001"
           version: 2
-          biz-key: guarantee.application.expire-days
-          name: 保函申请有效期
+          biz-key: business.application.expire-days
+          name: 业务申请有效期
           target-module: system
           sync-mode: INIT_ONLY
           status: ACTIVE
           fields:
-            configKey: { type: STRING, value: guarantee.application.expire-days }
+            configKey: { type: STRING, value: business.application.expire-days }
             configValue: { type: STRING, value: "365" }
 ```
 
@@ -99,7 +99,7 @@ mango:
 
 这不是所有业务表的通用猜测机制。没有可靠 `updated_at`，或一个 Resource 管理多表/多行时，业务 Handler 需要自己提供受管状态判断；在此之前使用 `INIT_ONLY`、`MANUAL` 或 `LOCKED`，不要假装具备后台修改保护。
 
-## 6. 保函类模块最小验收矩阵
+## 6. 业务类模块最小验收矩阵
 
 | 用例 | 操作 | 关键断言 |
 |---|---|---|
@@ -107,11 +107,11 @@ mango:
 | 业务 Bootstrap 隔离 | 增加一个写业务表的普通 `BootstrapStepContributor` | 构建期 BSQL 无该业务行；目标空库首次 Bootstrap 正常写入，第二次同 generation 不重复执行 |
 | 空库演示初始化 | 新建隔离库，开启 demo | 演示租户和样例数据存在；关闭 demo 的库没有演示业务行 |
 | 无变化重启 | 相同 release/generation 重启 | 模块 receipt 命中，Handler、Registry、sync log 和业务表写入为 0 |
-| 单 Resource 变化 | 只修改保函有效期声明 | 只有对应 Resource 产生 `APPLIED`，同模块其它未变化资源不写 |
+| 单 Resource 变化 | 只修改业务有效期声明 | 只有对应 Resource 产生 `APPLIED`，同模块其它未变化资源不写 |
 | 后台修改退避 | 管理后台把有效期改为 `730`，再发布声明 `367` | 数据库仍为 `730`，同步日志为 `PRESERVED`，hash/time 不推进 |
-| 删除隔离 | 删除一个模块声明并 finalize | 只处理该变化模块的 Registry-owned `AUTO` 资源，不删除运行期保函或 `INIT_ONLY` 数据 |
+| 删除隔离 | 删除一个模块声明并 finalize | 只处理该变化模块的 Registry-owned `AUTO` 资源，不删除运行期业务或 `INIT_ONLY` 数据 |
 | 中断恢复 | Handler 中途失败后重试 | 已成功模块 receipt 保留，失败模块可重试，不重复创建业务键 |
-| 租户与权限 | 用两个租户和不同角色回读菜单、接口和保函数据 | 菜单、接口权限和业务数据均按租户/角色隔离，不能只凭前端隐藏断言 |
+| 租户与权限 | 用两个租户和不同角色回读菜单、接口和业务数据 | 菜单、接口权限和业务数据均按租户/角色隔离，不能只凭前端隐藏断言 |
 | 微服务消费 | 提供方和调用方分开启动 | 调用方通过 API/remote starter 工作，不访问提供方 core 或数据库 |
 
 每个用例使用独立数据库或唯一测试前缀，并在结束后清理本用例创建的数据。证据至少包含 Bootstrap receipt、`resource_registry`、`resource_sync_log`、Flyway history、目标业务表和权限/租户回读。

@@ -1,81 +1,13 @@
-# Mango 文档索引
+# Mango 文档资产索引
 
-这里只放设计和计划文档。
+这里是 Mango 文档资产的分类索引，不是业务开发的首个入口。业务开发请先看 [Mango 文档首页](./README.md) 或 [能力地图](./capabilities/README.md)。
 
-规范入口在：
+| 文档资产 | 职责 | 入口 |
+|---|---|---|
+| 能力地图 | 介绍 Mango 的功能模块和模块责任 | [能力地图](./capabilities/README.md) |
+| 业务接入场景 | 说明具体业务接入、排障和验证步骤 | [场景手册](./guides/business-integration/README.md) |
+| 架构设计 | 记录分层、边界、取舍和迁移设计 | [架构设计](./mango-architecture-design.md) |
+| 计划与证据 | 记录实施计划、交付结果和人工证据 | `plans/**`、`evidence/**` |
+| PMO 规范与模板 | 记录研发流程和阶段文档入口 | [PMO](../mango-pmo/README.md) |
 
-- [mango-pmo](../mango-pmo/)
-
-文档资产归档边界：
-
-- [mango-pmo/rules/06-document-assets.md](../mango-pmo/rules/06-document-assets.md)
-
-## 能力地图
-
-能力地图用于快速定位 Mango 模块能力、README、验证入口和相关 PMO 规则链接；长期规范仍以 `mango-pmo` 为准。
-
-- [Mango 能力地图](./capabilities/README.md)
-
-## 业务接入场景
-
-面向业务开发者的接入和排障手册：
-
-- [业务接入场景手册](./guides/business-integration/README.md)
-
-## 顶层设计
-
-| 文档 | 说明 |
-|------|------|
-| [mango-architecture-design.md](./mango-architecture-design.md) | 顶层设计 |
-| [mango-backend-architecture-boundary-refactor-master-plan.md](./mango-backend-architecture-boundary-refactor-master-plan.md) | 后端边界收敛总计划 |
-| [tenant-model-research-guarantee-business.md](./tenant-model-research-guarantee-business.md) | 保函业务系统租户模型调研与 Mango 差距分析 |
-| [business-project-development-guide.md](./designs/business-project-development-guide.md) | 基于 Mango 开启业务项目的 starter、CLI、PMO baseline 和协作说明 |
-
-## 近期交付设计
-
-| 文档 | 状态 | 说明 |
-|------|------|------|
-| [Issue #184 数据初始化与停机升级治理](./designs/2026-07-01-issue-184-data-governance-design.md) | 已实施第一版 | Resource 负责正式/demo/`INIT_ONLY` 资源；Persistence 负责 DDL、外部 SQL 和 schema baseline pack。 |
-| [Issue #316 文件服务 ZIP 打包实施计划](./plans/2026-06-29-issue-316-file-package-plan.md) | 已实施 | File 服务按目录结构清单生成 ZIP 并写回存储层。 |
-| [Issue #316 文件服务 ZIP 打包详细设计](./designs/2026-06-29-issue-316-file-package-design.md) | 已实施 | API、服务流程、路径安全和异步扩展设计。 |
-| [Issue #316 文件服务 ZIP 打包交付台账](./plans/2026-06-29-issue-316-file-package-ledger.md) | 已完成 | 需求、API、实现、文档和测试交付登记。 |
-| [Issue #382 文件服务合并生成 PDF 实施计划](./plans/2026-07-03-issue-382-file-merge-pdf-plan.md) | 实施中 | File 服务按多个 fileId 生成单个 PDF 并写回存储层。 |
-| [Issue #382 文件服务合并生成 PDF 详细设计](./designs/2026-07-03-issue-382-file-merge-pdf-design.md) | 实施中 | API、服务流程、格式边界、异常和测试映射设计。 |
-| [Issue #382 文件服务合并生成 PDF 交付台账](./plans/2026-07-03-issue-382-file-merge-pdf-ledger.md) | 实施中 | 需求、API、实现、文档和测试交付登记。 |
-
-## Sprint 计划
-
-| 计划 | 状态 | 说明 |
-|------|------|------|
-| [sprint-00](./plans/2026-04-07-sprint-00-mango-module-architecture-plan.md) | 已完成 | 模块架构总纲 |
-| [sprint-03](./plans/2026-04-08-sprint-03-mango-infra-dal-iucase-refactor.md) | 已完成 | mango-infra-kv IUCASE 重构 |
-| [sprint-04](./plans/2026-04-08-sprint-04-mango-infra-dal-memoryxistore-fix.md) | 已完成 | kv MemoryXistore 修复 |
-| [sprint-04b](./plans/2026-04-08-sprint-04b-dal-naming-fix.md) | 已完成 | kv 命名修复 |
-| [sprint-05](./plans/2026-04-08-sprint-05-mango-infra-crypto.md) | 已完成 | 国密算法实现 |
-| [sprint-06](./plans/2026-04-08-sprint-06-mango-infra-security.md) | 已完成 | 权限注解、AOP 切面 |
-| [sprint-07](./plans/2026-04-08-sprint-07-mango-rbac-refactor.md) | 已完成 | auth × rbac 重构 |
-| [sprint-09](./plans/2026-04-14-sprint-09-mango-common-kernel-contract-refactor.md) | 已完成 | mango-common 收敛 |
-| [sprint-09-delivery](./plans/2026-04-15-sprint-09-delivery-record.md) | 已完成 | Sprint 09 交付记录 |
-| [sprint-10](./plans/2026-04-14-sprint-10-infra-web-security-boundary-decoupling.md) | 已完成 | infra-web / infra-security 去业务依赖 |
-| [sprint-11](./plans/2026-04-14-sprint-11-platform-rbac-system-boundary-phase1.md) | 进行中 | rbac / system 第一阶段边界收敛 |
-| [sprint-12](./plans/2026-04-14-sprint-12-auth-admin-app-boundary-assembly-cleanup.md) | 待执行 | auth / admin-app 边界收口 |
-| [sprint-13](./plans/2026-04-14-sprint-13-frontend-monorepo-migration.md) | 已完成 | 前端 Monorepo 迁移 |
-| [sprint-14](./plans/2026-04-17-sprint-14-pmo-backend-rules-engineering.md) | 已完成 | PMO 后端规则工程化 |
-| [sprint-15](./plans/2026-04-17-sprint-15-capability-registry-remote-adapter.md) | 进行中 | 能力自动注册与 Remote Adapter 重构 |
-| [backend-refactor-2026-04-17](./plans/2026-04-17-backend-module-by-module-refactor-plan.md) | 建议执行 | 当前代码基线的后端模块级重构顺序与执行模板 |
-| [backend-refactor-phase-0-delivery](./plans/2026-04-17-phase-0-fact-source-delivery-record.md) | 已完成 | Phase 0 事实源校准交付记录 |
-| [backend-refactor-phase-1-common-ownership](./plans/2026-04-17-phase-1-common-class-ownership.md) | 已完成 | Phase 1 `mango-common` 类归属表 |
-| [backend-refactor-phase-1-delivery](./plans/2026-04-17-phase-1-common-delivery-record.md) | 已完成 | Phase 1 `mango-common` 收敛交付记录 |
-| [backend-refactor-phase-2-kv-rules](./plans/2026-04-17-phase-2-kv-configuration-rules.md) | 已完成 | Phase 2 `mango-infra-kv` 配置与装配规则 |
-| [backend-refactor-phase-2-delivery](./plans/2026-04-17-phase-2-kv-delivery-record.md) | 已完成 | Phase 2 `mango-infra-kv` 收敛交付记录 |
-| [backend-refactor-phase-3-realtime-design](./plans/2026-04-18-infra-realtime-design.md) | 已完成 | Phase 3 `mango-infra-realtime` 当前设计说明 |
-| [backend-refactor-phase-3-delivery](./plans/2026-04-18-phase-3-messaging-delivery-record.md) | 已完成 | Phase 3 `mango-infra-realtime` 收敛交付记录 |
-| [backend-refactor-phase-4-delivery](./plans/2026-04-24-phase-4-web-security-context-delivery-record.md) | 已完成，待人工验收 | Phase 4 `mango-infra-web` / `mango-infra-security` 上下文契约收敛交付记录 |
-
-## 后端待执行顺序
-
-| 顺序 | Sprint | 原因 |
-|------|--------|------|
-| 1 | [backend-refactor-2026-04-17](./plans/2026-04-17-backend-module-by-module-refactor-plan.md) | 当前代码基线以后端模块级 Phase 顺序执行，先完成 Phase -1 / Phase 0，再进入 `mango-common` |
-| 2 | [sprint-15](./plans/2026-04-17-sprint-15-capability-registry-remote-adapter.md) | 作为后续相关 Phase 的参考输入，不再越过当前模块级计划单独前置 |
-| 3 | [sprint-12](./plans/2026-04-14-sprint-12-auth-admin-app-boundary-assembly-cleanup.md) | 作为 auth / admin-app 后续 Phase 的历史计划输入 |
+当前能力事实以模块 README 为准；历史设计、计划和证据不替代当前使用说明。

@@ -1,183 +1,71 @@
 # Mango 文档
 
-这里是面向业务开发者的 Mango 文档入口。Mango 是业务系统研发底座，提供后端平台能力、前端管理端能力、业务项目脚手架、PMO 规则和部署接入说明。
+这是 Mango 面向业务开发者、架构师和交付人员的使用入口。这里也提供 [Mango 能力地图](./capabilities/README.md) 和 [业务接入场景手册](./guides/business-integration/README.md)。
 
-如果你要接入一个能力，优先看对应模块 README：模块定位、功能清单、接入方式、前端用法、配置说明和字段含义。
+先按“我要完成什么”选择章节；模块 README 负责能力事实，场景指南负责接入步骤，PMO 规则负责流程约束，设计与计划文档负责决策记录。
 
-## 1. 开始
+## 先选任务
 
-- [Mango 能力地图](./capabilities/README.md)：按模块查 README、接入入口和组合使用顺序。
-- [业务接入场景手册](./guides/business-integration/README.md)：按业务问题查接入路径和排障入口。
-- [数据初始化与停机升级治理](./designs/2026-07-01-issue-184-data-governance-design.md)：说明 Flyway、Resource、demo、`INIT_ONLY`、外部 SQL 和 baseline pack 的边界。
-- [PRD 模板](../mango-pmo/templates/prd.md)：输出业务开发可读、AI 可继续设计的需求文档。
-- [详细设计模板](../mango-pmo/templates/detailed-design.md)：把 PRD 转成可开发、可验证、可交付的设计文档。
-- [交付契约模板](../mango-pmo/templates/delivery-contract.md)：把 PRD、设计、开发和验收项拆成逐项可核验台账。
-- [PRD 模板规范](../mango-pmo/rules/product/01-prd-template.md)：约束 PRD 的业务边界、编号和验收闭环。
-- [详细设计模板规范](../mango-pmo/rules/product/03-detailed-design-template.md)：约束设计文档的 PRD 追踪、接口、数据、权限、状态和验收映射。
-- [文档资产归档边界](../mango-pmo/rules/06-document-assets.md)：说明哪些文档放 PMO、哪些放模块 README、哪些放 evidence。
-- [能力说明维护规范](../mango-pmo/rules/08-capability-docs.md)：模块 README 的验收门禁。
+| 我要做什么 | 先看哪里 | 你会得到什么 |
+|---|---|---|
+| 接入一个业务能力 | [能力地图](./capabilities/README.md) | 能力定位、责任模块、最小路径和源码入口 |
+| 按场景接入或排障 | [业务接入场景](./guides/business-integration/README.md) | 前置条件、操作步骤、失败分支和验证入口 |
+| 写产品需求 | [产品文档模板选择](../mango-pmo/templates/README.md) | BRD/SRS/TDD/Plan 的选择和顺序 |
+| 创建业务项目 | [Business Starter](../mango-business-starter/README.md) | 项目初始化、拓扑、开发和交付入口 |
+| 理解架构边界 | [架构设计](./mango-architecture-design.md) | 分层、依赖边界和关键设计决策 |
+| 执行研发流程 | [PMO 总流程](../mango-pmo/rules/00-dev-flow.md) | 风险、阶段、审批和验证要求 |
 
-## 1.1 模块使用文档交付
+## 章节职责
 
-业务开发时看不到模块使用文档，按下面方式解决：
+| 章节 | 只负责什么 | 不负责什么 |
+|---|---|---|
+| 开始 | 说明 Mango 定位、阅读顺序、版本和入口选择 | 不展开模块 API，不堆历史变更 |
+| 示例场景 | 用真实任务说明接入、排障、输入、输出和失败边界 | 不复制长期规范，不替代模块 README |
+| 产品文档输出 | 选择 BRD、SRS、TDD、Plan 和交付记录 | 不描述平台能力，不生成混合 PRD |
+| 基础能力 | 说明基础设施和公共装配的能力边界 | 不承担业务模块接入说明 |
+| 平台能力 | 按业务能力索引后端模块、前端包、责任边界和入口 | 不承载 Issue 日志和交付台账 |
+| 架构设计 | 记录稳定架构、边界、取舍和迁移设计 | 不替代使用手册和操作排障 |
+| PMO 规范与模板 | 提供流程规则、角色、模板和检查工具 | 不重复能力 README 和业务场景 |
 
-1. 在线阅读统一走 Mango 文档站，入口是 [Mango 能力地图](./capabilities/README.md)。
-2. 离线或本地开发时，拉取与依赖版本匹配的 Mango 源码或文档快照，直接阅读模块 README。
-3. 本地预览文档站：
+## 产品文档怎么选
+
+```text
+业务问题与规则 -> BRD -> SRS -> TDD -> Implementation Plan
+```
+
+- 业务问题、范围、流程、规则和业务验收：使用 [BRD](../mango-pmo/templates/business-requirements.md)。
+- 用户可观察的系统行为、页面、字段、动作、失败边界和系统验收：使用 [SRS](../mango-pmo/templates/system-requirements.md)。
+- 同一任务同时涉及业务和系统：分别填写 BRD、SRS，不生成混合 PRD。
+- 完整选择说明见[产品文档模板选择](../mango-pmo/templates/README.md)。
+
+## 阅读顺序
+
+1. 先看能力地图或场景指南，确认责任模块和使用边界。
+2. 再读对应后端模块 README 和前端包 README。
+3. 需要设计、开发或验收时，再进入架构文档和 PMO 规则。
+4. 历史 Issue、交付记录和变更日志只用于追溯，不作为当前能力入口。
+
+## 文档版本
+
+GitHub Pages 根路径发布当前 `main` 的 Latest 文档。历史静态快照已移除，版本内容通过 Git tag 追溯，避免旧业务文档继续进入文档站和仓库。需要锁定版本时，请检出对应 Git tag 构建文档。
+
+## 本地预览
 
 ```bash
 npm --prefix mango-docs install
 npm --prefix mango-docs run docs:dev
-```
-
-4. 静态构建文档站：
-
-```bash
 npm --prefix mango-docs run docs:build
 ```
 
-后端 Maven 运行时 jar 不承载 README；jar 只包含运行所需类和资源。前端 npm 包继续保留包根 `README.md`，这是 npm 生态的标准文档入口。
+## 文档资产归档边界
 
-## 1.2 文档版本选择
+当前使用说明、模块能力和场景指南面向使用者；Issue、计划、交付记录和验收证据只承担历史追溯，不替代当前入口。长期规则统一维护在 `mango-pmo`，不在本章复制规则正文。
 
-GitHub Pages 根路径 `/mango/` 永远发布当前 `main` 的最新文档，导航栏中的 `Latest` 表示最新文档。
+## 文档事实来源
 
-业务开发需要锁定文档版本时，选择与后端 Maven、前端 npm 发布版本一致的 release tag。版本快照路径固定为 `/mango/versions/<release-tag>/`，例如：
-
-```text
-/mango/versions/v2026.06.30-maven-1.0.1-admin-branding-cli-release/
-```
-
-新增发布版本时，在 `mango-docs` 下生成版本快照：
-
-```bash
-npm --prefix mango-docs run docs:snapshot -- v2026.06.30-maven-1.0.1-admin-branding-cli-release
-```
-
-生成后再执行常规构建：
-
-```bash
-npm --prefix mango-docs run docs:build
-```
-
-`docs:build` 会构建 Latest，并把 `mango-docs/versions` 下的历史快照一起复制到 GitHub Pages artifact。业务开发按 release tag 选择文档版本；没有锁定版本时使用 Latest。
-
-## 2. 示例场景
-
-- [文件上传表单接入](./guides/business-integration/file-upload-form.md)
-- [业务审批接入](./guides/business-integration/workflow-business-approval.md)
-- [菜单页面打不开排障](./guides/business-integration/rbac-menu-page-troubleshooting.md)
-- [按钮权限不显示排障](./guides/business-integration/permission-button-troubleshooting.md)
-- [租户字典配置为空排障](./guides/business-integration/tenant-dict-config-empty.md)
-- [数据初始化与停机升级治理](./designs/2026-07-01-issue-184-data-governance-design.md)
-- [Workflow 业务示例前端包](../mango-ui/packages/workflow-business-example/README.md)
-- [Job 部署与生产参数](../deploy/job/README.md)
-
-## 3. 基础能力
-
-后端基础设施：
-
-- [Context 上下文](../mango/mango-infra/mango-infra-context/README.md)
-- [Crypto 加密](../mango/mango-infra/mango-infra-crypto/README.md)
-- [Doc 文档](../mango/mango-infra/mango-infra-doc/README.md)
-- [Event 事件](../mango/mango-infra/mango-infra-event/README.md)
-- [Feign](../mango/mango-infra/mango-infra-feign/README.md)
-- [Fileproc 文件处理](../mango/mango-infra/mango-infra-fileproc/README.md)
-- [Aspose License](../mango/mango-infra/mango-infra-fileproc/mango-infra-fileproc-core/src/main/resources/aspose/README.md)
-- [IP Location](../mango/mango-infra/mango-infra-ip-location/README.md)
-- [KV](../mango/mango-infra/mango-infra-kv/README.md)
-- [Log 日志](../mango/mango-infra/mango-infra-log/README.md)
-- [Module 模块服务](../mango/mango-infra/mango-infra-module/README.md)
-- [Persistence 持久化](../mango/mango-infra/mango-infra-persistence/README.md)
-- [Realtime 实时](../mango/mango-infra/mango-infra-realtime/README.md)
-- [Sensitive 敏感数据](../mango/mango-infra/mango-infra-sensitive/README.md)
-- [Infra Test](../mango/mango-infra/mango-infra-test/README.md)
-- [Web](../mango/mango-infra/mango-infra-web/README.md)
-
-公共装配和工具：
-
-- [Admin Starter](../mango/mango-admin-starter/README.md)
-- [Common](../mango/mango-common/README.md)
-- [Extension](../mango/mango-extension/README.md)
-- [Maven Parent](../mango/mango-parent/README.md)
-- [Mango Tools](../mango/mango-tools/README.md)
-- [Mango CLI](../mango-ui/packages/mango-cli/README.md)
-- [API Schema](../mango-ui/packages/api-schema/README.md)
-- [Common 前端公共组件](../mango-ui/packages/common/README.md)
-
-## 4. 平台能力
-
-后端平台能力：
-
-- [Access 访问控制](../mango/mango-platform/mango-access/README.md)
-- [Auth 认证](../mango/mango-platform/mango-auth/README.md)
-- [Authorization 授权](../mango/mango-platform/mango-authorization/README.md)
-- [Calendar 日历](../mango/mango-platform/mango-calendar/README.md)
-- [Captcha 验证码](../mango/mango-platform/mango-captcha/README.md)
-- [CMS 内容管理](../mango/mango-platform/mango-cms/README.md)
-- [Domain 业务域](../mango/mango-platform/mango-domain/README.md)
-- [File 文件](../mango/mango-platform/mango-file/README.md)
-- [File Preview 文件预览](../mango/mango-platform/mango-file-preview/README.md)
-- [Grid Layout 自定义栅格布局](../mango/mango-platform/mango-grid-layout/README.md)
-- [Home 用户首页工作台](../mango/mango-platform/mango-home/README.md)
-- [Identity 身份](../mango/mango-platform/mango-identity/README.md)
-- [Job 任务调度](../mango/mango-platform/mango-job/README.md)
-- [Link 网址导航](../mango/mango-platform/mango-link/README.md)
-- [Notice 通知](../mango/mango-platform/mango-notice/README.md)
-- [Numgen 编号生成](../mango/mango-platform/mango-numgen/README.md)
-- [Org 组织](../mango/mango-platform/mango-org/README.md)
-- [Payment 支付](../mango/mango-platform/mango-payment/README.md)
-- [Resource Registry 资源注册中心](../mango/mango-platform/mango-resource/README.md)
-- [System 系统](../mango/mango-platform/mango-system/README.md)
-- [Template 模板](../mango/mango-platform/mango-template/README.md)
-- [Workflow 工作流](../mango/mango-platform/mango-workflow/README.md)
-
-前端平台能力主要服务管理后台，详见：
-
-- [前端能力索引](./capabilities/README.md#6-前端与-cli-能力)
-- [Admin Pages](../mango-ui/packages/admin-pages/README.md)
-- [RBAC 前端](../mango-ui/packages/rbac/README.md)
-- [Payment 前端](../mango-ui/packages/payment/README.md)
-- [Workflow 前端](../mango-ui/packages/workflow/README.md)
-
-## 5. 代码规范
-
-- [PMO 总流程](../mango-pmo/rules/00-dev-flow.md)
-- [AI 编码红线](../mango-pmo/rules/03-ai-coding-redlines.md)
-- [AI 交付质量门禁](../mango-pmo/rules/05-ai-delivery-quality.md)
-- [后端模块规范](../mango-pmo/rules/backend/05-module.md)
-- [后端安全规范](../mango-pmo/rules/backend/06-security.md)
-- [模块菜单规范](../mango-pmo/rules/backend/11-module-menu.md)
-- [前端 Vue 代码规范](../mango-pmo/rules/frontend/01-vue-code.md)
-- [前端 Monorepo 架构规范](../mango-pmo/rules/frontend/06-monorepo-architecture.md)
-- [能力说明维护规范](../mango-pmo/rules/08-capability-docs.md)
-- [模块 README 模板](../mango-pmo/templates/module-readme.md)
-
-## 6. 架构设计
-
-- [Mango 后端聚合](../mango/README.md)
-- [应用拓扑](../mango/mango-app/README.md)
-- [单体应用](../mango/mango-app/monolith/mango-monolith-app/README.md)
-- [微服务拓扑](../mango/mango-app/microservice/README.md)
-- [前端 workspace](../mango-ui/README.md)
-- [Admin Shell](../mango-ui/packages/admin-shell/README.md)
-- [App Runtime](../mango-ui/packages/app-runtime/README.md)
-- [业务项目模板](../mango-business-starter/README.md)
-- [单体业务拓扑模板](../mango-business-starter/topologies/monolith/README.md)
-- [微服务业务拓扑模板](../mango-business-starter/topologies/microservice/README.md)
-
-## 7. PMO
-
-PMO 内容统一维护在 `mango-pmo`，这里登记入口：
-
-- [PMO 总流程](../mango-pmo/rules/00-dev-flow.md)
-- [PRD 模板规范](../mango-pmo/rules/product/01-prd-template.md)
-- [PRD 模板](../mango-pmo/templates/prd.md)
-- [详细设计模板规范](../mango-pmo/rules/product/03-detailed-design-template.md)
-- [详细设计模板](../mango-pmo/templates/detailed-design.md)
-- [交付契约模板](../mango-pmo/templates/delivery-contract.md)
-- [文档资产归档边界](../mango-pmo/rules/06-document-assets.md)
-- [能力说明维护规范](../mango-pmo/rules/08-capability-docs.md)
-- [规则索引](../mango-pmo/rules/index.json)
-- [Business PMO 模板](../mango-business-starter/business-pmo/README.md)
-- [Business PMO Baseline](../mango-business-starter/business-pmo/mango-baseline/README.md)
+- 当前能力事实：模块或 package README。
+- 业务接入步骤：`mango-docs/guides/business-integration/**`。
+- 长期规则：`mango-pmo/rules/**`。
+- 模板：`mango-pmo/templates/**`。
+- 架构和决策：`mango-docs/designs/**`。
+- 交付证据：`mango-docs/plans/**`、`mango-docs/evidence/**`。

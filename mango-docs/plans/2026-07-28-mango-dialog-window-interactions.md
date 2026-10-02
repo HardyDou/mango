@@ -14,7 +14,7 @@
 - 目标：让通用 `MangoDialog` 在不绑定任何业务内容的前提下，可选支持浏览器内拖拽、四角调整宽高和当前点击实例置顶。
 - 成功条件：普通弹框默认保留遮罩且点击遮罩不关闭；拖拽默认无遮罩并可移出视口；显式配置可让拖拽与遮罩共存；尺寸调整响应视口变化；现有 slots 和关闭流程保持兼容。
 - 处理范围：`@mango/common` 的 `MangoDialog` 实现、公开类型、组件测试和使用说明。
-- 不处理范围：不修改 `baohan-system`、`GuaranteeFilePreviewDialog`、`GuaranteeFilePreviewPanel` 或 `FilePreviewPanel`；不发布 npm 包；不增加最大化、最小化、边缘缩放或内容缩放。
+- 不处理范围：不修改 `business-system`、`BusinessFilePreviewDialog`、`BusinessFilePreviewPanel` 或 `FilePreviewPanel`；不发布 npm 包；不增加最大化、最小化、边缘缩放或内容缩放。
 
 ## 3. 可观察系统要求
 
@@ -56,7 +56,7 @@
 
 ## 7. 例外与剩余风险
 
-- `baohan-system` 消费适配不在本次 Mango 改动范围；Mango 交付后提供独立修改提示词。
+- `business-system` 消费适配不在本次 Mango 改动范围；Mango 交付后提供独立修改提示词。
 - npm 发布需要用户独立授权，本任务不执行发布。
 - `pnpm check:affected` 在当前 Windows 环境中无法由 Node 子进程解析 `pnpm`；等价的 `pnpm check:full` 已完成全部 workspace 构建，但随后同样停在 `check-toolchain-versions.mjs` 的 `spawnSync('pnpm')` 兼容问题。相关构建、包导出、消费端类型检查、组件契约及本次改动的定向静态检查均已独立通过。
 - `typecheck:raw` 受同一 Windows 子进程问题影响，将 34 个目标记为 `FAIL (0 diagnostics)` 且错误返回退出码 0；本次公开类型已由 common 构建产物生成和真实 tarball 消费端 `vue-tsc` 验证覆盖。
