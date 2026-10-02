@@ -1,57 +1,53 @@
-<!-- mango-page-baseline-exception list: Worker 节点是运行时运维页，同页承载节点排空、下线、禁用和处理器联合登记 -->
+<!-- eslint-disable vue/multi-word-component-names -->
 <!-- mango-page-baseline-exception dialog: Worker 登记同时编辑节点身份、通信信息与处理器参数 Schema，属于运维联合登记表单 -->
 <template>
-  <div class="job-page">
-    <section class="job-toolbar">
-      <div class="job-toolbar-head">
-        <div>
-          <h2>Worker 节点</h2>
-          <p>查看任务执行节点地址、所属应用、通信方式和在线状态。</p>
-        </div>
-        <div class="job-toolbar-actions">
-          <el-button v-auth="'job:worker:add'" type="primary" :icon="Plus" @click="openCreateDialog"
-            >登记 Worker</el-button
-          >
-          <el-button v-auth="'job:worker:list'" :icon="Refresh" @click="loadRows">刷新</el-button>
-        </div>
-      </div>
-
-      <el-form :model="query" class="job-search" inline @submit.prevent>
-        <el-form-item label="关键字" class="job-search-item job-search-item-wide">
+  <MangoListPage class="job-page" data-page="job.worker">
+    <template #search>
+      <MangoSearchPanel
+        :model="query"
+        :columns="4"
+        collapsible
+        :collapsed-count="4"
+        @search="loadRows"
+        @reset="resetQuery"
+      >
+        <el-form-item label="关键字">
           <el-input v-model="query.keyword" clearable placeholder="Worker 地址/实例标识" @keyup.enter="loadRows" />
         </el-form-item>
-        <el-form-item label="应用" class="job-search-item">
+        <el-form-item label="应用">
           <el-input v-model="query.appCode" clearable placeholder="appCode" @keyup.enter="loadRows" />
         </el-form-item>
-        <el-form-item label="服务" class="job-search-item">
+        <el-form-item label="服务">
           <el-input v-model="query.serviceCode" clearable placeholder="serviceCode" @keyup.enter="loadRows" />
         </el-form-item>
-        <el-form-item label="Worker组" class="job-search-item">
+        <el-form-item label="Worker组">
           <el-input v-model="query.workerGroup" clearable placeholder="workerGroup" @keyup.enter="loadRows" />
         </el-form-item>
-        <el-form-item label="状态" class="job-search-item job-search-item-small">
+        <el-form-item label="状态">
           <el-select v-model="query.status" clearable placeholder="全部">
             <el-option v-for="item in workerStatusOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
-        <el-form-item label="运行时" class="job-search-item job-search-item-small">
+        <el-form-item label="运行时">
           <el-select v-model="query.engineType" clearable placeholder="全部">
             <el-option v-for="item in engineTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
-        <el-form-item label="通信" class="job-search-item job-search-item-small">
+        <el-form-item label="通信">
           <el-select v-model="query.transportType" clearable placeholder="全部">
             <el-option v-for="item in transportTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
-        <el-form-item class="job-search-actions">
-          <el-button v-auth="'job:worker:list'" type="primary" :icon="Search" @click="loadRows">查询</el-button>
-          <el-button :icon="Refresh" @click="resetQuery">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </section>
+      </MangoSearchPanel>
+    </template>
 
-    <section class="job-panel">
+    <MangoListPanel>
+      <template #actions>
+        <el-button v-auth="'job:worker:add'" type="primary" plain :icon="Plus" @click="openCreateDialog">
+          登记 Worker
+        </el-button>
+        <el-button v-auth="'job:worker:list'" plain :icon="Refresh" @click="loadRows">刷新</el-button>
+      </template>
       <el-alert v-if="errorMessage" class="job-error" type="error" :closable="false" show-icon>
         <template #title>
           {{ errorMessage }}
@@ -126,10 +122,10 @@
         </el-table-column>
       </el-table>
 
-      <div class="job-pagination">
+      <template #pagination>
         <Pagination v-model:page="query.pageNum" v-model:limit="query.pageSize" :total="total" @pagination="loadRows" />
-      </div>
-    </section>
+      </template>
+    </MangoListPanel>
 
     <el-dialog v-model="createDialogVisible" title="登记 Worker" width="640px" destroy-on-close>
       <el-form ref="createFormRef" :model="createForm" :rules="createRules" label-width="110px">
@@ -160,12 +156,12 @@
         <el-button type="primary" :loading="saving" @click="submitCreate">保存</el-button>
       </template>
     </el-dialog>
-  </div>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts">
-import { Plus, Refresh, Search } from '@element-plus/icons-vue';
-import { Pagination } from '@mango/common';
+import { Plus, Refresh } from '@element-plus/icons-vue';
+import { MangoListPage, MangoListPanel, MangoSearchPanel, Pagination } from '@mango/common';
 import type { FormInstance, FormRules } from 'element-plus';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { onMounted, reactive, ref } from 'vue';

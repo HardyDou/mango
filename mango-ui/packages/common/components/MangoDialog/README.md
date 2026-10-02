@@ -139,3 +139,44 @@ function focusDialog() {
 - 短表单和标准弹框使用 `MangoDialog`；独立详情页和表单页使用 `MangoDetailPage` / `MangoFormPage`
 - 不要把 `MangoDetailPage` 或 `MangoFormPage` 塞进弹框、抽屉
 - 内容区独立滚动，弹框最大高度为视口高度的 90%
+
+## 概览
+
+统一管理端弹窗外壳，封装标题、内容、关闭和底部操作区域。
+
+## 功能清单
+
+支持 v-model、拖拽、缩放、遮罩、动态层级、销毁内容和自定义标题/底部 slot。
+
+## 接入方式
+
+从 `@mango/common` 导入，在短表单、确认操作和局部编辑场景中使用。
+
+## 配置说明
+
+按上方 Props 表配置尺寸、模态、关闭行为和交互能力；业务状态由宿主管理。
+
+## API 与扩展
+
+支持 `update:modelValue`、生命周期事件、`bringToFront()` 以及 `default`、`title`、`headerExtra`、`footer` slot。
+
+## 数据与初始化
+
+无数据库或默认数据初始化要求。
+
+## 管理入口
+
+无独立管理入口，由业务页面或公共页面组件接入。
+
+## 快速开始
+
+参见基础用法示例。
+
+## 问题排查
+
+确认使用 `v-model` 控制显示状态，关闭后的数据清理按 `destroyOnClose` 预期配置，并避免在弹框内嵌套详情页外壳。
+
+## 相关文档
+
+- [Common 包说明](../../README.md)
+- [能力说明规范](../../../../../mango-pmo/rules/08-capability-docs.md)

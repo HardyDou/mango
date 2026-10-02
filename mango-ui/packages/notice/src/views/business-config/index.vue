@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
   <div class="notice-business-config-page">
     <el-card v-if="pageMode === 'LIST'" shadow="never" class="business-main page-card">
@@ -15,77 +16,82 @@
           @loaded="handleDomainsLoaded"
         />
         <main class="definition-main">
-          <div class="list-toolbar">
-            <el-form :inline="true" :model="query" class="notice-filter">
-              <el-form-item label="消息编码">
-                <el-input v-model="query.bizType" clearable class="filter-control" />
-              </el-form-item>
-              <el-form-item label="启用状态">
-                <el-select v-model="query.enabled" clearable placeholder="全部" class="filter-control">
-                  <el-option label="启用" :value="true" />
-                  <el-option label="停用" :value="false" />
-                </el-select>
-              </el-form-item>
-              <el-form-item>
-                <el-button type="primary" @click="searchBusinessTypes">查询</el-button>
-              </el-form-item>
-            </el-form>
-            <el-button type="primary" :icon="Plus" @click="openCreate">新增</el-button>
-          </div>
-          <el-table v-loading="loading" :data="businessTypes" border stripe>
-            <el-table-column prop="bizName" label="消息名称" min-width="150" />
-            <el-table-column prop="bizType" label="消息编码" min-width="180" />
-            <el-table-column prop="domainCode" label="业务域" width="110" />
-            <el-table-column label="生命周期" width="100">
-              <template #default="{ row }">
-                <el-tag :type="row.enabled ? 'success' : 'info'">{{ row.enabled ? '启用' : '停用' }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="同步状态" width="120">
-              <template #default="{ row }">
-                <el-tooltip :content="row.syncReason || '-'" placement="top">
-                  <el-tag :type="row.syncStatus === 'PENDING_PUBLISH' ? 'warning' : 'success'">
-                    {{ row.syncStatus === 'PENDING_PUBLISH' ? '待发布' : '已同步' }}
+          <MangoSearchPanel :model="query" :columns="3" @search="searchBusinessTypes" @reset="resetBusinessSearch">
+            <el-form-item label="消息编码">
+              <el-input v-model="query.bizType" clearable class="filter-control" />
+            </el-form-item>
+            <el-form-item label="启用状态">
+              <el-select v-model="query.enabled" clearable placeholder="全部" class="filter-control">
+                <el-option label="启用" :value="true" />
+                <el-option label="停用" :value="false" />
+              </el-select>
+            </el-form-item>
+            <template #actions>
+              <el-button type="primary" @click="searchBusinessTypes">查询</el-button>
+              <el-button @click="resetBusinessSearch">重置</el-button>
+            </template>
+          </MangoSearchPanel>
+
+          <MangoListPanel>
+            <template #actions>
+              <el-button type="primary" plain :icon="Plus" @click="openCreate">新增</el-button>
+            </template>
+
+            <el-table v-loading="loading" :data="businessTypes" border stripe>
+              <el-table-column prop="bizName" label="消息名称" min-width="150" />
+              <el-table-column prop="bizType" label="消息编码" min-width="180" />
+              <el-table-column prop="domainCode" label="业务域" width="110" />
+              <el-table-column label="生命周期" width="100">
+                <template #default="{ row }">
+                  <el-tag :type="row.enabled ? 'success' : 'info'">{{ row.enabled ? '启用' : '停用' }}</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="同步状态" width="120">
+                <template #default="{ row }">
+                  <el-tooltip :content="row.syncReason || '-'" placement="top">
+                    <el-tag :type="row.syncStatus === 'PENDING_PUBLISH' ? 'warning' : 'success'">
+                      {{ row.syncStatus === 'PENDING_PUBLISH' ? '待发布' : '已同步' }}
+                    </el-tag>
+                  </el-tooltip>
+                </template>
+              </el-table-column>
+              <el-table-column label="开启渠道" min-width="150">
+                <template #default="{ row }">
+                  <el-tag
+                    v-for="item in enabledChannelLabels(row.enabledChannels)"
+                    :key="item"
+                    class="notice-tag"
+                    effect="plain"
+                  >
+                    {{ item }}
                   </el-tag>
-                </el-tooltip>
-              </template>
-            </el-table-column>
-            <el-table-column label="开启渠道" min-width="150">
-              <template #default="{ row }">
-                <el-tag
-                  v-for="item in enabledChannelLabels(row.enabledChannels)"
-                  :key="item"
-                  class="notice-tag"
-                  effect="plain"
-                >
-                  {{ item }}
-                </el-tag>
-                <span v-if="enabledChannelLabels(row.enabledChannels).length === 0" class="notice-muted">未发布</span>
-              </template>
-            </el-table-column>
-            <el-table-column label="生效版本" width="100">
-              <template #default="{ row }">{{ row.activeVersion ? `V${row.activeVersion}` : '未发布' }}</template>
-            </el-table-column>
-            <el-table-column prop="lastPublishTime" label="最后发布" width="170" />
-            <el-table-column prop="updatedAt" label="更新时间" width="170" />
-            <el-table-column label="操作" width="280" fixed="right">
-              <template #default="{ row }">
-                <el-button link type="primary" @click="openDetail(row)">详情</el-button>
-                <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
-                <el-button link type="primary" @click="openHistory(row)">历史版本</el-button>
-                <el-button link type="success" @click="quickPublish(row)">发布</el-button>
-                <el-button link type="danger" @click="removeBusinessType(row)">删除</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-          <div class="business-pagination">
-            <Pagination
-              v-model:page="query.pageNum"
-              v-model:limit="query.pageSize"
-              :total="total"
-              @pagination="loadBusinessTypes"
-            />
-          </div>
+                  <span v-if="enabledChannelLabels(row.enabledChannels).length === 0" class="notice-muted">未发布</span>
+                </template>
+              </el-table-column>
+              <el-table-column label="生效版本" width="100">
+                <template #default="{ row }">{{ row.activeVersion ? `V${row.activeVersion}` : '未发布' }}</template>
+              </el-table-column>
+              <el-table-column prop="lastPublishTime" label="最后发布" width="170" />
+              <el-table-column prop="updatedAt" label="更新时间" width="170" />
+              <el-table-column label="操作" width="280" fixed="right">
+                <template #default="{ row }">
+                  <el-button link type="primary" @click="openDetail(row)">详情</el-button>
+                  <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
+                  <el-button link type="primary" @click="openHistory(row)">历史版本</el-button>
+                  <el-button link type="success" @click="quickPublish(row)">发布</el-button>
+                  <el-button link type="danger" @click="removeBusinessType(row)">删除</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+            <template #pagination>
+              <Pagination
+                v-model:page="query.pageNum"
+                v-model:limit="query.pageSize"
+                :total="total"
+                @pagination="loadBusinessTypes"
+              />
+            </template>
+          </MangoListPanel>
         </main>
       </div>
     </el-card>
@@ -668,7 +674,7 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Delete, Plus } from '@element-plus/icons-vue';
-import { Editor, Pagination } from '@mango/common';
+import { Editor, MangoListPanel, MangoSearchPanel, Pagination } from '@mango/common';
 import { DomainSideTree } from '@mango/system';
 import {
   activateBusinessConfigVersion,
@@ -887,6 +893,13 @@ async function loadBusinessTypes() {
 
 function searchBusinessTypes() {
   query.pageNum = 1;
+  void loadBusinessTypes();
+}
+
+function resetBusinessSearch() {
+  query.pageNum = 1;
+  query.bizType = '';
+  query.enabled = undefined;
   void loadBusinessTypes();
 }
 

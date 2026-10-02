@@ -1,6 +1,6 @@
 <template>
   <div class="workflow-business-layout">
-    <header class="workflow-business-layout__header">
+    <header v-if="showHeader" class="workflow-business-layout__header">
       <div class="workflow-business-layout__title">
         <slot name="title">
           <span>{{ title || '流程详情' }}</span>
@@ -28,11 +28,16 @@ import { ArrowLeft } from '@element-plus/icons-vue';
 
 defineOptions({ name: 'WorkflowLayout' });
 
-withDefaults(defineProps<{
-  title?: string;
-}>(), {
-  title: '流程详情',
-});
+withDefaults(
+  defineProps<{
+    title?: string;
+    showHeader?: boolean;
+  }>(),
+  {
+    title: '流程详情',
+    showHeader: true,
+  },
+);
 
 const emit = defineEmits<{
   back: [];

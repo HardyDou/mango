@@ -1,150 +1,74 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
-  <div class="file-storage-container">
-    <el-card>
-      <el-form :inline="true" class="search-form">
+  <MangoListPage class="file-storage-container" data-page="file.storage-configs">
+    <template #search>
+      <MangoSearchPanel :model="query" :columns="4" @search="handleSearch" @reset="handleReset">
         <el-form-item label="关键词">
-          <el-input
-            v-model="query.keyword"
-            placeholder="搜索名称/桶/地址"
-            clearable
-          />
+          <el-input v-model="query.keyword" placeholder="搜索名称/桶/地址" clearable />
         </el-form-item>
         <el-form-item label="存储类型">
-          <el-select
-            v-model="query.storageType"
-            placeholder="请选择"
-            clearable
-            style="width: 150px"
-          >
-            <el-option
-              v-for="item in storageTypeOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
+          <el-select v-model="query.storageType" placeholder="请选择" clearable style="width: 150px">
+            <el-option v-for="item in storageTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
         <el-form-item label="默认启用">
-          <el-select
-            v-model="query.active"
-            placeholder="请选择"
-            clearable
-            style="width: 120px"
-          >
+          <el-select v-model="query.active" placeholder="请选择" clearable style="width: 120px">
             <el-option label="是" :value="true" />
             <el-option label="否" :value="false" />
           </el-select>
         </el-form-item>
         <el-form-item label="状态">
-          <el-select
-            v-model="query.status"
-            placeholder="请选择"
-            clearable
-            style="width: 120px"
-          >
+          <el-select v-model="query.status" placeholder="请选择" clearable style="width: 120px">
             <el-option label="启用" :value="1" />
             <el-option label="停用" :value="0" />
           </el-select>
         </el-form-item>
-        <el-form-item>
-          <el-button v-auth="'file:storage-configs:list'" type="primary" @click="handleSearch">
-            查询
-          </el-button>
-          <el-button v-auth="'file:storage-configs:list'" @click="handleReset">
-            重置
-          </el-button>
-        </el-form-item>
-      </el-form>
+      </MangoSearchPanel>
+    </template>
 
-      <div class="action-toolbar">
-        <div class="toolbar-left">
-          <el-button v-auth="'file:storage-configs:add'" type="primary" @click="handleAdd">
-            新增配置
-          </el-button>
-        </div>
-      </div>
+    <MangoListPanel>
+      <template #actions>
+        <el-button v-auth="'file:storage-configs:add'" type="primary" plain @click="handleAdd"> 新增配置 </el-button>
+      </template>
 
-      <el-table
-        v-loading="loading"
-        :data="tableData"
-        stripe
-      >
-        <el-table-column
-          prop="configName"
-          label="配置名称"
-          min-width="160"
-          show-overflow-tooltip
-        />
-        <el-table-column
-          prop="storageType"
-          label="存储类型"
-          width="130"
-        >
+      <el-table v-loading="loading" :data="tableData" stripe>
+        <el-table-column prop="configName" label="配置名称" min-width="160" show-overflow-tooltip />
+        <el-table-column prop="storageType" label="存储类型" width="130">
           <template #default="{ row }">
             {{ storageTypeLabel(row.storageType) }}
           </template>
         </el-table-column>
-        <el-table-column
-          prop="bucketName"
-          label="存储桶"
-          min-width="150"
-          show-overflow-tooltip
-        />
-        <el-table-column
-          prop="storagePath"
-          label="存储路径"
-          min-width="160"
-          show-overflow-tooltip
-        >
+        <el-table-column prop="bucketName" label="存储桶" min-width="150" show-overflow-tooltip />
+        <el-table-column prop="storagePath" label="存储路径" min-width="160" show-overflow-tooltip>
           <template #default="{ row }">
             {{ row.storagePath || '/' }}
           </template>
         </el-table-column>
-        <el-table-column
-          prop="endpoint"
-          label="接入地址"
-          min-width="220"
-          show-overflow-tooltip
-        />
-        <el-table-column
-          prop="region"
-          label="区域"
-          width="120"
-          show-overflow-tooltip
-        />
-        <el-table-column
-          label="默认"
-          width="90"
-        >
+        <el-table-column prop="endpoint" label="接入地址" min-width="220" show-overflow-tooltip />
+        <el-table-column prop="region" label="区域" width="120" show-overflow-tooltip />
+        <el-table-column label="默认" width="90">
           <template #default="{ row }">
-            <el-tag v-if="row.active" type="success" size="small">
-              默认
-            </el-tag>
+            <el-tag v-if="row.active" type="success" size="small"> 默认 </el-tag>
             <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column
-          label="状态"
-          width="90"
-        >
+        <el-table-column label="状态" width="90">
           <template #default="{ row }">
             <el-tag :type="row.status === 1 ? 'success' : 'info'" size="small">
               {{ row.status === 1 ? '启用' : '停用' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column
-          prop="updatedTime"
-          label="更新时间"
-          width="180"
-        />
-        <el-table-column
-          label="操作"
-          width="260"
-          fixed="right"
-        >
+        <el-table-column prop="updatedTime" label="更新时间" width="180" />
+        <el-table-column label="操作" width="260" fixed="right">
           <template #default="{ row }">
-            <el-button v-auth="'file:storage-configs:test'" link type="primary" size="small" @click="handleTestSaved(row)">
+            <el-button
+              v-auth="'file:storage-configs:test'"
+              link
+              type="primary"
+              size="small"
+              @click="handleTestSaved(row)"
+            >
               测试
             </el-button>
             <el-button
@@ -174,26 +98,13 @@
         </el-table-column>
       </el-table>
 
-      <Pagination
-        v-model:current-page="query.pageNum"
-        v-model:page-size="query.pageSize"
-        :total="total"
-        @change="loadData"
-      />
-    </el-card>
+      <template #pagination>
+        <Pagination v-model:page="query.pageNum" v-model:limit="query.pageSize" :total="total" @pagination="loadData" />
+      </template>
+    </MangoListPanel>
 
-    <el-dialog
-      v-model="dialogVisible"
-      :title="dialogTitle"
-      width="720px"
-      destroy-on-close
-    >
-      <el-form
-        ref="formRef"
-        :model="form"
-        :rules="rules"
-        label-width="120px"
-      >
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="720px" destroy-on-close>
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="120px">
         <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item label="配置名称" prop="configName">
@@ -202,7 +113,12 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="存储类型" prop="storageType">
-              <el-select v-model="form.storageType" placeholder="请选择" style="width: 100%" @change="handleStorageTypeChange">
+              <el-select
+                v-model="form.storageType"
+                placeholder="请选择"
+                style="width: 100%"
+                @change="handleStorageTypeChange"
+              >
                 <el-option
                   v-for="item in storageTypeOptions"
                   :key="item.value"
@@ -277,32 +193,19 @@
 
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="form.status">
-            <el-radio :value="1">
-              启用
-            </el-radio>
-            <el-radio :value="0">
-              停用
-            </el-radio>
+            <el-radio :value="1"> 启用 </el-radio>
+            <el-radio :value="0"> 停用 </el-radio>
           </el-radio-group>
         </el-form-item>
 
         <el-form-item label="备注">
-          <el-input
-            v-model="form.remark"
-            type="textarea"
-            :rows="3"
-            placeholder="配置用途或注意事项"
-          />
+          <el-input v-model="form.remark" type="textarea" :rows="3" placeholder="配置用途或注意事项" />
         </el-form-item>
       </el-form>
 
       <template #footer>
-        <el-button @click="dialogVisible = false">
-          取消
-        </el-button>
-        <el-button v-auth="'file:storage-configs:test'" @click="handleTestEditing">
-          测试连接
-        </el-button>
+        <el-button @click="dialogVisible = false"> 取消 </el-button>
+        <el-button v-auth="'file:storage-configs:test'" @click="handleTestEditing"> 测试连接 </el-button>
         <el-button
           v-auth="form.id ? 'file:storage-configs:edit' : 'file:storage-configs:add'"
           type="primary"
@@ -313,13 +216,13 @@
         </el-button>
       </template>
     </el-dialog>
-  </div>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
-import { Pagination } from '@mango/common';
+import { MangoListPage, MangoListPanel, MangoSearchPanel, Pagination } from '@mango/common';
 import {
   fileStorageApi,
   storageTypeLabel,
@@ -368,20 +271,24 @@ const rules: FormRules = {
   configName: [{ required: true, message: '请输入配置名称', trigger: 'blur' }],
   storageType: [{ required: true, message: '请选择存储类型', trigger: 'change' }],
   bucketName: [{ required: true, message: '请输入存储桶', trigger: 'blur' }],
-  accessKey: [{
-    validator: (_rule, value, callback) => {
-      if (form.storageType !== 'LOCAL' && !value) callback(new Error('请输入 AccessKey'));
-      else callback();
+  accessKey: [
+    {
+      validator: (_rule, value, callback) => {
+        if (form.storageType !== 'LOCAL' && !value) callback(new Error('请输入 AccessKey'));
+        else callback();
+      },
+      trigger: 'blur',
     },
-    trigger: 'blur',
-  }],
-  secretKey: [{
-    validator: (_rule, value, callback) => {
-      if (form.storageType !== 'LOCAL' && !form.id && !value) callback(new Error('请输入 SecretKey'));
-      else callback();
+  ],
+  secretKey: [
+    {
+      validator: (_rule, value, callback) => {
+        if (form.storageType !== 'LOCAL' && !form.id && !value) callback(new Error('请输入 SecretKey'));
+        else callback();
+      },
+      trigger: 'blur',
     },
-    trigger: 'blur',
-  }],
+  ],
   status: [{ required: true, message: '请选择状态', trigger: 'change' }],
 };
 

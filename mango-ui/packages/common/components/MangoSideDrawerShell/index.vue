@@ -17,6 +17,7 @@
       :title="title"
       direction="rtl"
       :size="drawerSize"
+      :destroy-on-close="destroyOnClose"
       append-to-body
       :data-surface="dataSurface"
       @open="emit('open')"
@@ -41,6 +42,7 @@ const props = withDefaults(defineProps<MangoSideDrawerShellProps>(), {
   title: '节点过程',
   showTrigger: true,
   drawerSize: 'min(420px, 100vw)',
+  destroyOnClose: false,
   dataSurface: 'detail.side-drawer',
   dataAction: 'detail.side-drawer.open',
 });

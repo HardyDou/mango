@@ -1,190 +1,190 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
-  <section class="home-admin-page" data-page="home.template" :data-state="pageState">
-    <section v-if="!editor.visible" class="job-toolbar" data-surface="home.template.search">
-      <div class="job-toolbar-head">
-        <div>
-          <h2>首页模板</h2>
-          <p>维护首页模板、发布版本和授权范围。</p>
-        </div>
-        <el-button
-          v-auth="'home:templates:add'"
-          type="primary"
-          :icon="Plus"
-          data-action="home.template.create"
-          @click="openTemplateEditor()"
+  <section data-page="home.template" :data-state="pageState">
+    <MangoListPage v-if="!editor.visible" class="home-admin-page">
+      <template #search>
+        <MangoSearchPanel
+          :model="query"
+          data-surface="home.template.search"
+          @search="handleSearch"
+          @reset="handleReset"
         >
-          新建模板
-        </el-button>
-      </div>
+          <el-form-item label="模板名称">
+            <el-input
+              v-model="query.keyword"
+              clearable
+              placeholder="请输入模板名称"
+              data-field="home.template.keyword"
+              @keyup.enter="handleSearch"
+            />
+          </el-form-item>
+          <el-form-item label="状态">
+            <el-select v-model="query.enabled" clearable placeholder="全部" data-field="home.template.enabled">
+              <el-option label="启用" :value="true" />
+              <el-option label="停用" :value="false" />
+            </el-select>
+          </el-form-item>
+          <template #actions>
+            <el-button
+              v-auth="'home:templates:list'"
+              type="primary"
+              :icon="Search"
+              :loading="loading"
+              data-action="home.template.search"
+              @click="handleSearch"
+            >
+              查询
+            </el-button>
+            <el-button :icon="RefreshLeft" data-action="home.template.reset" @click="handleReset">重置</el-button>
+          </template>
+        </MangoSearchPanel>
+      </template>
 
-      <el-form ref="queryFormRef" :model="query" class="job-search" inline @submit.prevent>
-        <el-form-item label="模板名称" prop="keyword" class="job-search-item job-search-item-wide">
-          <el-input
-            v-model="query.keyword"
-            clearable
-            placeholder="请输入模板名称"
-            data-field="home.template.keyword"
-            @keyup.enter="handleSearch"
-          />
-        </el-form-item>
-        <el-form-item label="状态" prop="enabled" class="job-search-item job-search-item-small">
-          <el-select v-model="query.enabled" clearable placeholder="全部" data-field="home.template.enabled">
-            <el-option label="启用" :value="true" />
-            <el-option label="停用" :value="false" />
-          </el-select>
-        </el-form-item>
-        <el-form-item class="job-search-actions home-job-search-actions">
+      <MangoListPanel data-surface="home.template.list">
+        <template #actions>
           <el-button
-            v-auth="'home:templates:list'"
+            v-auth="'home:templates:add'"
             type="primary"
-            :icon="Search"
-            :loading="loading"
-            data-action="home.template.search"
-            @click="handleSearch"
+            :icon="Plus"
+            data-action="home.template.create"
+            @click="openTemplateEditor()"
           >
-            查询
+            新建模板
           </el-button>
-          <el-button :icon="RefreshLeft" data-action="home.template.reset" @click="handleReset">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </section>
-
-    <section v-if="!editor.visible" class="job-panel" data-surface="home.template.list">
-      <el-alert v-if="errorMessage" class="home-admin-error" type="error" :closable="false" show-icon>
-        <template #title>
-          {{ errorMessage }}
-          <el-button link type="primary" data-action="home.template.retry" @click="loadTemplates">重试</el-button>
         </template>
-      </el-alert>
+        <el-alert v-if="errorMessage" class="home-admin-error" type="error" :closable="false" show-icon>
+          <template #title>
+            {{ errorMessage }}
+            <el-button link type="primary" data-action="home.template.retry" @click="loadTemplates">重试</el-button>
+          </template>
+        </el-alert>
 
-      <el-table
-        v-loading="loading"
-        :data="pagedTemplates"
-        row-key="id"
-        stripe
-        data-surface="home.template.table"
-      >
-        <template #empty>
-          <el-empty :description="emptyDescription" />
-        </template>
-        <el-table-column label="模板名称" min-width="240" fixed="left" show-overflow-tooltip>
-          <template #default="{ row }">
-            <div class="home-template-name" :data-record-key="`home-template:${row.id}`">
-              <strong>{{ row.name }}</strong>
-              <span>{{ row.id || '-' }}</span>
-            </div>
+        <el-table v-loading="loading" :data="pagedTemplates" row-key="id" stripe data-surface="home.template.table">
+          <template #empty>
+            <el-empty :description="emptyDescription" />
           </template>
-        </el-table-column>
-        <el-table-column label="发布变更" width="120">
-          <template #default="{ row }">
-            <el-tag :type="publishChangeTagType(row)" effect="light">{{ formatPublishChange(row) }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="生效版本" width="110">
-          <template #default="{ row }">{{ formatActiveVersion(row) }}</template>
-        </el-table-column>
-        <el-table-column label="草稿状态" width="110">
-          <template #default="{ row }">
-            <el-tag :type="row.draftVersionId ? 'warning' : 'info'" effect="light">
-              {{ row.draftVersionId ? '有草稿' : '已同步' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="授权数" width="96">
-          <template #default="{ row }">{{ row.authorizationCount ?? 0 }}</template>
-        </el-table-column>
-        <el-table-column label="状态" width="96">
-          <template #default="{ row }">
-            <el-tag :type="row.enabled ? 'success' : 'info'" effect="light">
-              {{ row.enabled ? '启用' : '停用' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="更新时间" min-width="170" show-overflow-tooltip>
-          <template #default="{ row }">{{ formatDateTime(row.updatedAt) }}</template>
-        </el-table-column>
-        <el-table-column label="操作" width="260" fixed="right">
-          <template #default="{ row }">
-            <div class="home-admin-actions">
-              <el-button
-                v-auth="'home:templates:edit'"
-                link
-                type="primary"
-                :disabled="!canEditTemplate(row)"
-                data-action="home.template.edit"
-                :data-record-key="`home-template:${row.id}`"
-                @click="openTemplateEditor(row)"
-              >
-                编辑
-              </el-button>
-              <el-button
-                v-auth="'home:templates:add'"
-                link
-                type="primary"
-                data-action="home.template.copy"
-                :data-record-key="`home-template:${row.id}`"
-                @click="copyTemplate(row)"
-              >
-                复制
-              </el-button>
-              <el-dropdown trigger="click" @command="handleRowCommand(row, $event)">
-                <el-button link type="primary" data-action="home.template.more" :data-record-key="`home-template:${row.id}`">
-                  更多<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+          <el-table-column label="模板名称" min-width="240" fixed="left" show-overflow-tooltip>
+            <template #default="{ row }">
+              <div class="home-template-name" :data-record-key="`home-template:${row.id}`">
+                <strong>{{ row.name }}</strong>
+                <span>{{ row.id || '-' }}</span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column label="发布变更" width="120">
+            <template #default="{ row }">
+              <el-tag :type="publishChangeTagType(row)" effect="light">{{ formatPublishChange(row) }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="生效版本" width="110">
+            <template #default="{ row }">{{ formatActiveVersion(row) }}</template>
+          </el-table-column>
+          <el-table-column label="草稿状态" width="110">
+            <template #default="{ row }">
+              <el-tag :type="row.draftVersionId ? 'warning' : 'info'" effect="light">
+                {{ row.draftVersionId ? '有草稿' : '已同步' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="授权数" width="96">
+            <template #default="{ row }">{{ row.authorizationCount ?? 0 }}</template>
+          </el-table-column>
+          <el-table-column label="状态" width="96">
+            <template #default="{ row }">
+              <el-tag :type="row.enabled ? 'success' : 'info'" effect="light">
+                {{ row.enabled ? '启用' : '停用' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="更新时间" min-width="170" show-overflow-tooltip>
+            <template #default="{ row }">{{ formatDateTime(row.updatedAt) }}</template>
+          </el-table-column>
+          <el-table-column label="操作" width="260" fixed="right">
+            <template #default="{ row }">
+              <div class="home-admin-actions">
+                <el-button
+                  v-auth="'home:templates:edit'"
+                  link
+                  type="primary"
+                  :disabled="!canEditTemplate(row)"
+                  data-action="home.template.edit"
+                  :data-record-key="`home-template:${row.id}`"
+                  @click="openTemplateEditor(row)"
+                >
+                  编辑
                 </el-button>
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item
-                      v-auth="'home:templates:publish'"
-                      command="publish"
-                      :disabled="!canPublish(row)"
-                      data-action="home.template.publish"
-                    >
-                      发布
-                    </el-dropdown-item>
-                    <el-dropdown-item
-                      v-auth="'home:templates:auth'"
-                      command="auth"
-                      :disabled="!row.activeVersionId"
-                      data-action="home.template.auth"
-                    >
-                      授权
-                    </el-dropdown-item>
-                    <el-dropdown-item
-                      v-auth="'home:templates:status'"
-                      command="status"
-                      data-action="home.template.status"
-                    >
-                      {{ row.enabled ? '停用' : '启用' }}
-                    </el-dropdown-item>
-                    <el-dropdown-item
-                      v-auth="'home:templates:delete'"
-                      divided
-                      command="delete"
-                      data-action="home.template.delete"
-                    >
-                      <span class="home-admin-danger">删除</span>
-                    </el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
-              </el-dropdown>
-            </div>
-          </template>
-        </el-table-column>
-      </el-table>
+                <el-button
+                  v-auth="'home:templates:add'"
+                  link
+                  type="primary"
+                  data-action="home.template.copy"
+                  :data-record-key="`home-template:${row.id}`"
+                  @click="copyTemplate(row)"
+                >
+                  复制
+                </el-button>
+                <el-dropdown trigger="click" @command="handleRowCommand(row, $event)">
+                  <el-button
+                    link
+                    type="primary"
+                    data-action="home.template.more"
+                    :data-record-key="`home-template:${row.id}`"
+                  >
+                    更多<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                  </el-button>
+                  <template #dropdown>
+                    <el-dropdown-menu>
+                      <el-dropdown-item
+                        v-auth="'home:templates:publish'"
+                        command="publish"
+                        :disabled="!canPublish(row)"
+                        data-action="home.template.publish"
+                      >
+                        发布
+                      </el-dropdown-item>
+                      <el-dropdown-item
+                        v-auth="'home:templates:auth'"
+                        command="auth"
+                        :disabled="!row.activeVersionId"
+                        data-action="home.template.auth"
+                      >
+                        授权
+                      </el-dropdown-item>
+                      <el-dropdown-item
+                        v-auth="'home:templates:status'"
+                        command="status"
+                        data-action="home.template.status"
+                      >
+                        {{ row.enabled ? '停用' : '启用' }}
+                      </el-dropdown-item>
+                      <el-dropdown-item
+                        v-auth="'home:templates:delete'"
+                        divided
+                        command="delete"
+                        data-action="home.template.delete"
+                      >
+                        <span class="home-admin-danger">删除</span>
+                      </el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
+              </div>
+            </template>
+          </el-table-column>
+        </el-table>
 
-      <div class="job-pagination">
-        <el-pagination
-          v-model:current-page="pager.page"
-          v-model:page-size="pager.size"
-          :total="filteredTemplates.length"
-          :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next, jumper"
-          data-surface="home.template.pagination"
-          @current-change="handlePageChange"
-          @size-change="handlePageSizeChange"
-        />
-      </div>
-    </section>
+        <template #pagination>
+          <Pagination
+            v-model:page="pager.page"
+            v-model:limit="pager.size"
+            :total="filteredTemplates.length"
+            :page-sizes="[10, 20, 50, 100]"
+            data-surface="home.template.pagination"
+            @pagination="normalizeCurrentPage"
+          />
+        </template>
+      </MangoListPanel>
+    </MangoListPage>
 
     <section v-else class="job-panel home-template-edit-page" data-surface="home.template.form-page">
       <div class="home-template-edit-page__head">
@@ -227,7 +227,9 @@
       </el-form>
       <div class="home-template-edit-page__footer">
         <el-button :disabled="saving" @click="closeEditor">取消</el-button>
-        <el-button type="primary" :loading="saving" data-action="home.template.save" @click="saveTemplateDraft">保存草稿</el-button>
+        <el-button type="primary" :loading="saving" data-action="home.template.save" @click="saveTemplateDraft"
+          >保存草稿</el-button
+        >
       </div>
     </section>
 
@@ -241,9 +243,15 @@
     >
       <div class="home-admin-toolbar home-admin-toolbar--dialog" data-surface="home.template.auth-toolbar">
         <div class="home-admin-toolbar__left">
-          <el-button plain data-action="home.template.auth.add-user" @click="addAuthorization('USER')">添加个人</el-button>
-          <el-button plain data-action="home.template.auth.add-org" @click="addAuthorization('ORG')">添加部门</el-button>
-          <el-button plain data-action="home.template.auth.add-role" @click="addAuthorization('ROLE')">添加角色</el-button>
+          <el-button plain data-action="home.template.auth.add-user" @click="addAuthorization('USER')"
+            >添加个人</el-button
+          >
+          <el-button plain data-action="home.template.auth.add-org" @click="addAuthorization('ORG')"
+            >添加部门</el-button
+          >
+          <el-button plain data-action="home.template.auth.add-role" @click="addAuthorization('ROLE')"
+            >添加角色</el-button
+          >
         </div>
       </div>
       <el-table
@@ -329,12 +337,23 @@
         </el-table-column>
         <el-table-column label="排序" width="130">
           <template #default="{ row }">
-            <el-input-number v-model="row.sort" :min="0" :step="10" controls-position="right" data-field="home.template.auth.sort" />
+            <el-input-number
+              v-model="row.sort"
+              :min="0"
+              :step="10"
+              controls-position="right"
+              data-field="home.template.auth.sort"
+            />
           </template>
         </el-table-column>
         <el-table-column label="操作" width="88" fixed="right">
           <template #default="{ $index }">
-            <el-button link type="danger" data-action="home.template.auth.remove" @click="authorization.rows.splice($index, 1)">
+            <el-button
+              link
+              type="danger"
+              data-action="home.template.auth.remove"
+              @click="authorization.rows.splice($index, 1)"
+            >
               移除
             </el-button>
           </template>
@@ -342,7 +361,9 @@
       </el-table>
       <template #footer>
         <el-button :disabled="saving" @click="authorization.visible = false">取消</el-button>
-        <el-button type="primary" :loading="saving" data-action="home.template.auth.save" @click="saveAuthorizations">保存授权</el-button>
+        <el-button type="primary" :loading="saving" data-action="home.template.auth.save" @click="saveAuthorizations"
+          >保存授权</el-button
+        >
       </template>
     </el-dialog>
   </section>
@@ -354,6 +375,7 @@ import { storeToRefs } from 'pinia';
 import { useRouter, type LocationQueryRaw } from 'vue-router';
 import { ArrowDown, ArrowLeft, Plus, RefreshLeft, Search } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
+import { MangoListPage, MangoListPanel, MangoSearchPanel, Pagination } from '@mango/common';
 import {
   homeTemplateApi,
   type HomeTemplateAuthorizationItem,
@@ -385,7 +407,6 @@ const userInfo = useUserInfo();
 const routesListStore = useRoutesList();
 const { routesList } = storeToRefs(routesListStore);
 const businessHomeWidgets = useMangoAdminHomeWidgets();
-const queryFormRef = ref<FormInstance>();
 const templateFormRef = ref<FormInstance>();
 const loading = ref(false);
 const saving = ref(false);
@@ -431,11 +452,12 @@ const pageState = computed(() => {
   return filteredTemplates.value.length > 0 ? 'ready' : 'empty';
 });
 const hasQuery = computed(() => Boolean(query.keyword.trim() || query.enabled !== undefined));
-const emptyDescription = computed(() => hasQuery.value ? '暂无符合条件的首页模板' : '暂无首页模板');
+const emptyDescription = computed(() => (hasQuery.value ? '暂无符合条件的首页模板' : '暂无首页模板'));
 const filteredTemplates = computed(() => {
   const keyword = query.keyword.trim().toLowerCase();
-  return templates.value.filter(item => {
-    const matchedKeyword = !keyword || item.name.toLowerCase().includes(keyword) || String(item.id || '').includes(keyword);
+  return templates.value.filter((item) => {
+    const matchedKeyword =
+      !keyword || item.name.toLowerCase().includes(keyword) || String(item.id || '').includes(keyword);
     const matchedStatus = query.enabled === undefined || item.enabled === query.enabled;
     return matchedKeyword && matchedStatus;
   });
@@ -453,10 +475,9 @@ const widgetRuntime = computed<MangoWidgetRuntimeContext>(() => ({
     nickname: userInfo.userInfos.nickname,
     avatar: userInfo.userInfos.photo,
     roles: userInfo.userInfos.roles,
-    permissions: Array.from(new Set([
-      ...(userInfo.userInfos.permissions || []),
-      ...(userInfo.userInfos.authBtnList || []),
-    ])),
+    permissions: Array.from(
+      new Set([...(userInfo.userInfos.permissions || []), ...(userInfo.userInfos.authBtnList || [])]),
+    ),
     appCode: userInfo.userInfos.appCode,
   },
   tenant: {
@@ -467,11 +488,13 @@ const widgetRuntime = computed<MangoWidgetRuntimeContext>(() => ({
   menus: routesList.value,
   navigate: navigateWidget,
 }));
-const templateWidgets = computed(() => mergeGridWidgets({
-  runtime: widgetRuntime.value,
-  systemWidgets: systemGridWidgets,
-  businessWidgets: businessHomeWidgets.value,
-}));
+const templateWidgets = computed(() =>
+  mergeGridWidgets({
+    runtime: widgetRuntime.value,
+    systemWidgets: systemGridWidgets,
+    businessWidgets: businessHomeWidgets.value,
+  }),
+);
 
 onMounted(initializePage);
 
@@ -491,7 +514,7 @@ async function loadTemplates(): Promise<void> {
     templates.value = await homeTemplateApi.list();
     loaded.value = true;
     normalizeCurrentPage();
-  } catch (error) {
+  } catch {
     errorMessage.value = '首页模板加载失败，请稍后重试。';
   } finally {
     loading.value = false;
@@ -505,15 +528,6 @@ function handleSearch(): void {
 function handleReset(): void {
   query.keyword = '';
   query.enabled = undefined;
-  pager.page = 1;
-  queryFormRef.value?.clearValidate();
-}
-
-function handlePageChange(): void {
-  normalizeCurrentPage();
-}
-
-function handlePageSizeChange(): void {
   pager.page = 1;
 }
 
@@ -530,7 +544,7 @@ async function openTemplateEditor(row?: HomeTemplateVO): Promise<void> {
       const detail = await homeTemplateApi.detail(String(row.id));
       editor.form.name = detail.name;
       draftItems.value = resolveLayoutItems(detail.draftLayoutJson || detail.activeLayoutJson);
-    } catch (error) {
+    } catch {
       ElMessage.error('模板详情加载失败');
       return;
     }
@@ -656,7 +670,7 @@ async function openAuthorizationDialog(row: HomeTemplateVO): Promise<void> {
       sort: item.sort ?? (index + 1) * 10,
     }));
     authorization.visible = true;
-  } catch (error) {
+  } catch {
     ElMessage.error('模板授权加载失败');
   }
 }
@@ -671,7 +685,7 @@ function addAuthorization(subjectType: HomeTemplateAuthorizationSubjectType): vo
 }
 
 async function saveAuthorizations(): Promise<void> {
-  const authorizations = authorization.rows.map(row => {
+  const authorizations = authorization.rows.map((row) => {
     const subjectName = formatAuthorizationSubjectName(row);
     if (row.subjectType === 'ROLE') {
       return {
@@ -690,7 +704,7 @@ async function saveAuthorizations(): Promise<void> {
       sort: row.sort,
     };
   });
-  if (authorizations.some(row => row.subjectType === 'ROLE' ? !row.subjectCode : !row.subjectId)) {
+  if (authorizations.some((row) => (row.subjectType === 'ROLE' ? !row.subjectCode : !row.subjectId))) {
     ElMessage.warning('请选择完整的授权对象');
     return;
   }
@@ -719,9 +733,9 @@ async function loadAuthorizationOptions(): Promise<void> {
       orgApi.tree({ parentId: '0', includeDisabled: false }),
       roleApi.list(),
     ]);
-    authorization.userOptions = users.list.filter(item => item.userId);
+    authorization.userOptions = users.list.filter((item) => item.userId);
     authorization.orgOptions = orgs;
-    authorization.roleOptions = roles.filter(item => item.roleCode && item.status !== 0);
+    authorization.roleOptions = roles.filter((item) => item.roleCode && item.status !== 0);
   } finally {
     authorization.optionsLoading = false;
   }
@@ -734,7 +748,7 @@ function handleAuthorizationSubjectTypeChange(row: AuthorizationRow): void {
 }
 
 function handleAuthorizationUserChange(row: AuthorizationRow): void {
-  const selected = authorization.userOptions.find(item => String(item.userId) === String(row.subjectId));
+  const selected = authorization.userOptions.find((item) => String(item.userId) === String(row.subjectId));
   row.subjectName = selected ? formatUserName(selected) : undefined;
   row.subjectCode = undefined;
 }
@@ -746,7 +760,7 @@ function handleAuthorizationOrgChange(row: AuthorizationRow): void {
 }
 
 function handleAuthorizationRoleChange(row: AuthorizationRow): void {
-  const selected = authorization.roleOptions.find(item => item.roleCode === row.subjectCode);
+  const selected = authorization.roleOptions.find((item) => item.roleCode === row.subjectCode);
   row.subjectName = selected?.roleName;
   row.subjectId = undefined;
 }
@@ -796,9 +810,10 @@ function normalizeId(value: unknown): string | undefined {
 }
 
 function formatAuthorizationSubjectName(row: HomeTemplateAuthorizationItem): string {
-  const selectedUser = row.subjectType === 'USER'
-    ? authorization.userOptions.find(item => String(item.userId) === String(row.subjectId))
-    : undefined;
+  const selectedUser =
+    row.subjectType === 'USER'
+      ? authorization.userOptions.find((item) => String(item.userId) === String(row.subjectId))
+      : undefined;
   if (selectedUser) {
     return formatUserName(selectedUser);
   }
@@ -806,9 +821,10 @@ function formatAuthorizationSubjectName(row: HomeTemplateAuthorizationItem): str
   if (selectedOrg) {
     return selectedOrg.orgName;
   }
-  const selectedRole = row.subjectType === 'ROLE'
-    ? authorization.roleOptions.find(item => item.roleCode === row.subjectCode)
-    : undefined;
+  const selectedRole =
+    row.subjectType === 'ROLE'
+      ? authorization.roleOptions.find((item) => item.roleCode === row.subjectCode)
+      : undefined;
   return selectedRole?.roleName || row.subjectName?.trim() || '-';
 }
 
@@ -900,22 +916,13 @@ function gridItem(
     padding?: boolean;
   } = {},
 ): GridLayoutItem {
-  const {
-    minW = 3,
-    minH = 10,
-    maxW = 12,
-    maxH = 1000,
-    showTitle,
-    padding,
-  } = options;
+  const { minW = 3, minH = 10, maxW = 12, maxH = 1000, showTitle, padding } = options;
   return {
     id,
     widgetType,
     title,
     layout: { x, y, w, h, minW, minH, maxW, maxH },
-    props: widgetType === 'link.link-navigation'
-      ? { maxGroups: 24, maxItemsPerGroup: 200 }
-      : undefined,
+    props: widgetType === 'link.link-navigation' ? { maxGroups: 24, maxItemsPerGroup: 200 } : undefined,
     showTitle,
     padding,
   };
@@ -946,19 +953,8 @@ function resolveWidgetQuery(raw: unknown): LocationQueryRaw | undefined {
 </script>
 
 <style scoped>
-.home-admin-page {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  min-height: 100%;
-}
-
 .home-admin-error {
   margin-bottom: 12px;
-}
-
-.home-job-search-actions {
-  margin-left: auto;
 }
 
 .home-admin-toolbar {

@@ -1,5 +1,7 @@
 # Mango Auth
 
+2026-10-02 能力更新：`/auth/info`、登录和刷新结果中的 `LoginVO` 增加 `departmentNames`，由 Identity 真实组织关系解析当前用户在当前租户所属的全部部门，供管理端部门独立下拉展示。
+
 本次个人中心修改密码 404 修复只新增并启用 Identity 的 `PUT /identity/me/password` 当前用户接口；认证登录、强制改密票据和其它 Auth API 行为不变。前端调用及接口验证记录见 [`@mango/auth` README](../../../mango-ui/packages/auth/README.md) 与 [交付记录](../../../mango-docs/evidence/profile-password-404/standard-delivery-record.md)。
 
 ## 1. 概览

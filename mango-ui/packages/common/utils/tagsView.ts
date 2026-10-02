@@ -41,7 +41,8 @@ export function isHomeTag(tag: { path?: string } | undefined): boolean {
 export function createTabKey(route: Pick<MangoTagRouteInput, 'path' | 'name' | 'query' | 'params' | 'hash'>): string {
   const routeIdentity = {
     path: route.path || '',
-    query: route.query || {},
+    // Personal-center subpages are switched by query without opening duplicate tabs.
+    query: route.path === '/profile' ? {} : route.query || {},
     params: route.params || {},
     hash: route.hash || '',
   };

@@ -49,6 +49,7 @@ import io.mango.captcha.api.constant.CaptchaType;
 import io.mango.captcha.api.dto.CaptchaSendRequest;
 import io.mango.identity.api.vo.IdentityUserInfoVO;
 import io.mango.identity.api.vo.TenantMemberVO;
+import io.mango.identity.api.vo.TenantMemberOrgRelationVO;
 import io.mango.infra.iplocation.api.IpLocation;
 import io.mango.infra.iplocation.api.IpLocationResolver;
 import io.mango.system.api.command.RecordLoginLogCommand;
@@ -689,6 +690,13 @@ public class AuthService implements IAuthService, ExternalAccountLoginService {
         }
         Long tenantId = resolveLong(response.getTenantId(), member.getTenantId());
         response.setDepartmentName(organizationProvider.resolveOrgName(tenantId, member.getPrimaryOrgId()));
+        List<String> departmentNames = memberProvider.listUserOrgRelations(tenantId, response.getUserId()).stream()
+                .map(TenantMemberOrgRelationVO::getOrgId)
+                .map(orgId -> organizationProvider.resolveOrgName(tenantId, orgId))
+                .filter(name -> name != null && !name.isBlank())
+                .distinct()
+                .toList();
+        response.setDepartmentNames(departmentNames);
     }
 
     private IdentityContext resolveIdentityContext(AuthUserVO user, LoginCommand command) {

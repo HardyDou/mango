@@ -38,6 +38,9 @@ public interface TenantMemberApi {
     /** 查询组织成员关系。 */
     R<List<TenantMemberOrgRelationVO>> listOrgRelations(@NotNull Long tenantId, @NotNull Long orgId);
 
+    /** 查询指定用户在指定机构下的全部组织关系。 */
+    R<List<TenantMemberOrgRelationVO>> listUserOrgRelations(@NotNull Long tenantId, @NotNull Long userId);
+
     /** 查询成员组织关系。 */
     R<TenantMemberOrgRelationVO> getOrgRelation(@NotNull Long relationId);
 

@@ -1,27 +1,19 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
-  <div class="workflow-task-page">
-    <el-card>
-      <template #header>
-        <div class="card-header">
-          <span>{{ title }}</span>
-          <el-tag type="info">{{ description }}</el-tag>
-        </div>
-      </template>
+  <MangoListPage class="workflow-task-page">
+    <template #search>
+      <MangoSearchPanel :model="query" @search="loadData" @reset="resetQuery">
+        <el-form-item label="关键词">
+          <el-input v-model="query.keyword" placeholder="搜索流程/任务名称" clearable @keyup.enter="loadData" />
+        </el-form-item>
+      </MangoSearchPanel>
+    </template>
 
+    <MangoListPanel>
       <el-tabs v-if="taskMode === 'todo'" v-model="todoTab" class="todo-tabs" @tab-change="handleTodoTabChange">
         <el-tab-pane label="待处理" name="assigned" />
         <el-tab-pane label="待领取" name="claimable" />
       </el-tabs>
-
-      <el-form :inline="true" class="search-form">
-        <el-form-item label="关键词">
-          <el-input v-model="query.keyword" placeholder="搜索流程/任务名称" clearable @keyup.enter="loadData" />
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="loadData">查询</el-button>
-          <el-button @click="resetQuery">重置</el-button>
-        </el-form-item>
-      </el-form>
 
       <el-table v-loading="loading" :data="tableData" stripe>
         <el-table-column prop="taskName" label="任务名称" min-width="160" />
@@ -62,24 +54,24 @@
         </el-table-column>
       </el-table>
 
-      <el-pagination
-        v-model:current-page="query.pageNum"
-        v-model:page-size="query.pageSize"
-        class="pagination"
-        :total="total"
-        :page-sizes="[10, 20, 50, 100]"
-        layout="total, sizes, prev, pager, next, jumper"
-        @size-change="loadData"
-        @current-change="loadData"
-      />
-    </el-card>
-  </div>
+      <template #pagination>
+        <Pagination
+          v-model:page="query.pageNum"
+          v-model:limit="query.pageSize"
+          :total="total"
+          :page-sizes="[10, 20, 50, 100]"
+          @pagination="loadData"
+        />
+      </template>
+    </MangoListPanel>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
+import { MangoListPage, MangoListPanel, MangoSearchPanel, Pagination } from '@mango/common';
 import {
   workflowAssigneeDisplay,
   workflowApi,
@@ -109,26 +101,6 @@ const taskMode = computed(() => {
   if (route.path.includes('/copied')) return 'copied';
   return 'todo';
 });
-
-const title = computed(
-  () =>
-    ({
-      todo: '我的待办',
-      initiated: '我的申请',
-      done: '我的已办',
-      copied: '抄送给我',
-    })[taskMode.value],
-);
-
-const description = computed(
-  () =>
-    ({
-      todo: todoTab.value === 'claimable' ? '候选待领取任务，认领后进入待处理' : '已经分配给当前用户的流程任务',
-      initiated: '当前用户发起的流程实例',
-      done: '当前用户已经处理完成的流程任务',
-      copied: '流程抄送通知与待阅事项',
-    })[taskMode.value],
-);
 
 const todoType = computed(() => (todoTab.value === 'claimable' ? 'CLAIMABLE' : 'ASSIGNED'));
 

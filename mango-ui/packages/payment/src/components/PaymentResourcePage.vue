@@ -1,18 +1,7 @@
 <template>
-  <div class="payment-page">
-    <section class="payment-page__header">
-      <div>
-        <h3>{{ title }}</h3>
-        <p>{{ description }}</p>
-      </div>
-      <div class="payment-page__actions">
-        <slot name="extra-actions" />
-        <el-button v-if="editable" type="primary" :icon="Plus" @click="openEditor()">新增</el-button>
-      </div>
-    </section>
-
-    <section class="payment-page__toolbar">
-      <el-form :inline="true" :model="query">
+  <MangoListPage class="payment-page">
+    <template #search>
+      <MangoSearchPanel :model="query" :columns="3" @search="loadRows" @reset="resetQuery">
         <el-form-item label="关键字">
           <el-input
             v-model="query.keyword"
@@ -28,63 +17,56 @@
             <el-option label="停用" :value="0" />
           </el-select>
         </el-form-item>
-        <el-form-item>
-          <el-button type="primary" :icon="Search" @click="loadRows">查询</el-button>
-          <el-button :icon="Refresh" @click="resetQuery">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </section>
+      </MangoSearchPanel>
+    </template>
 
-    <el-table :data="rows" v-loading="loading" row-key="id" stripe highlight-current-row class="payment-table">
-      <el-table-column
-        v-for="column in columns"
-        :key="column.prop"
-        :prop="column.prop"
-        :label="column.label"
-        :width="column.width"
-        :min-width="column.minWidth"
-        show-overflow-tooltip
-      >
-        <template #default="{ row }">
-          <el-tag v-if="column.variant === 'tag'" effect="light" round>{{ formatCell(row, column) }}</el-tag>
-          <div v-else-if="column.variant === 'tags'" class="payment-table__tags">
-            <el-tag
-              v-for="item in formatTags(formatCell(row, column))"
-              :key="item"
-              effect="light"
-              round
-            >
-              {{ item }}
+    <MangoListPanel>
+      <template #actions>
+        <slot name="extra-actions" />
+        <el-button v-if="editable" type="primary" plain :icon="Plus" @click="openEditor()">新增</el-button>
+      </template>
+
+      <el-table :data="rows" v-loading="loading" row-key="id" stripe highlight-current-row class="payment-table">
+        <el-table-column
+          v-for="column in columns"
+          :key="column.prop"
+          :prop="column.prop"
+          :label="column.label"
+          :width="column.width"
+          :min-width="column.minWidth"
+          show-overflow-tooltip
+        >
+          <template #default="{ row }">
+            <el-tag v-if="column.variant === 'tag'" effect="light" round>{{ formatCell(row, column) }}</el-tag>
+            <div v-else-if="column.variant === 'tags'" class="payment-table__tags">
+              <el-tag v-for="item in formatTags(formatCell(row, column))" :key="item" effect="light" round>
+                {{ item }}
+              </el-tag>
+              <span v-if="!formatTags(formatCell(row, column)).length">-</span>
+            </div>
+            <span v-else-if="column.money">{{ formatMoney(row[column.prop]) }}</span>
+            <span v-else>{{ formatCell(row, column) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column v-if="withStatus" label="状态" width="90">
+          <template #default="{ row }">
+            <el-tag :type="row.status === 1 ? 'success' : 'info'">
+              {{ row.status === 1 ? '启用' : '停用' }}
             </el-tag>
-            <span v-if="!formatTags(formatCell(row, column)).length">-</span>
-          </div>
-          <span v-else-if="column.money">{{ formatMoney(row[column.prop]) }}</span>
-          <span v-else>{{ formatCell(row, column) }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column v-if="withStatus" label="状态" width="90">
-        <template #default="{ row }">
-          <el-tag :type="row.status === 1 ? 'success' : 'info'">
-            {{ row.status === 1 ? '启用' : '停用' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="updateTime" label="更新时间" width="170" />
-      <el-table-column label="操作" :width="operationWidth" fixed="right" class-name="payment-table__operation-cell">
-        <template #default="{ row }">
-          <PaymentRowActions :actions="rowActions(row)" />
-        </template>
-      </el-table-column>
-    </el-table>
+          </template>
+        </el-table-column>
+        <el-table-column prop="updateTime" label="更新时间" width="170" />
+        <el-table-column label="操作" :width="operationWidth" fixed="right" class-name="payment-table__operation-cell">
+          <template #default="{ row }">
+            <PaymentRowActions :actions="resolveRowActions(row)" />
+          </template>
+        </el-table-column>
+      </el-table>
 
-    <div class="payment-page__pagination">
-      <Pagination
-        v-model:current-page="query.pageNum"
-        v-model:page-size="query.pageSize"
-        :total="total"
-        @change="loadRows"
-      />
-    </div>
+      <template #pagination>
+        <Pagination v-model:page="query.pageNum" v-model:limit="query.pageSize" :total="total" @pagination="loadRows" />
+      </template>
+    </MangoListPanel>
 
     <el-dialog
       v-if="editable"
@@ -94,7 +76,13 @@
       destroy-on-close
       append-to-body
     >
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="126px" class="payment-editor payment-dialog-form">
+      <el-form
+        ref="formRef"
+        :model="form"
+        :rules="rules"
+        label-width="126px"
+        class="payment-editor payment-dialog-form"
+      >
         <slot name="form" :form="form" />
       </el-form>
       <template #footer>
@@ -102,13 +90,13 @@
         <el-button type="primary" :loading="saving" @click="saveRow">保存</el-button>
       </template>
     </el-dialog>
-  </div>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts">
-import { Pagination } from '@mango/common';
+import { MangoListPage, MangoListPanel, MangoSearchPanel, Pagination } from '@mango/common';
 import { computed, onMounted, reactive, ref } from 'vue';
-import { Delete, Edit, Plus, Refresh, Search } from '@element-plus/icons-vue';
+import { Delete, Edit, Plus } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import type { ApiId } from '@mango/api-schema';
 import type { PageResult, PaymentPageQuery, PaymentResourceApi, PaymentTableColumn } from '../api/payment';
@@ -117,32 +105,35 @@ import type { PaymentRowAction } from './PaymentRowActions';
 
 type PaymentRecord = Record<string, unknown>;
 
-const props = withDefaults(defineProps<{
-  title: string;
-  description: string;
-  keywordPlaceholder?: string;
-  columns: PaymentTableColumn[];
-  api: PaymentResourceApi<PaymentRecord>;
-  defaults?: PaymentRecord;
-  rules?: FormRules;
-  editable?: boolean;
-  withStatus?: boolean;
-  deleteConfirmMessage?: (row: PaymentRecord) => string;
-  editorWidth?: string;
-  operationWidth?: number;
-  rowActions?: (row: PaymentRecord) => PaymentRowAction[];
-  toSavePayload?: (form: PaymentRecord, editing: boolean) => PaymentRecord;
-  onSaved?: (result: unknown, form: PaymentRecord, editing: boolean) => void | Promise<void>;
-  onEditorOpened?: (form: PaymentRecord, row?: PaymentRecord) => void | Promise<void>;
-}>(), {
-  keywordPlaceholder: '名称 / 编码',
-  defaults: () => ({}),
-  rules: () => ({}),
-  editable: true,
-  withStatus: true,
-  editorWidth: '760px',
-  operationWidth: 220,
-});
+const props = withDefaults(
+  defineProps<{
+    title: string;
+    description: string;
+    keywordPlaceholder?: string;
+    columns: PaymentTableColumn[];
+    api: PaymentResourceApi<PaymentRecord>;
+    defaults?: PaymentRecord;
+    rules?: FormRules;
+    editable?: boolean;
+    withStatus?: boolean;
+    deleteConfirmMessage?: (row: PaymentRecord) => string;
+    editorWidth?: string;
+    operationWidth?: number;
+    rowActions?: (row: PaymentRecord) => PaymentRowAction[];
+    toSavePayload?: (form: PaymentRecord, editing: boolean) => PaymentRecord;
+    onSaved?: (result: unknown, form: PaymentRecord, editing: boolean) => void | Promise<void>;
+    onEditorOpened?: (form: PaymentRecord, row?: PaymentRecord) => void | Promise<void>;
+  }>(),
+  {
+    keywordPlaceholder: '名称 / 编码',
+    defaults: () => ({}),
+    rules: () => ({}),
+    editable: true,
+    withStatus: true,
+    editorWidth: '760px',
+    operationWidth: 220,
+  },
+);
 
 const query = reactive<PaymentPageQuery>({
   pageNum: 1,
@@ -183,7 +174,7 @@ function resetQuery() {
 
 async function openEditor(row?: PaymentRecord) {
   editingId.value = row?.id as ApiId | undefined;
-  Object.keys(form).forEach(key => delete form[key]);
+  Object.keys(form).forEach((key) => delete form[key]);
   Object.assign(form, props.defaults, row || {});
   editorVisible.value = true;
   await props.onEditorOpened?.(form, row);
@@ -211,7 +202,9 @@ async function saveRow() {
 }
 
 async function removeRow(row: PaymentRecord) {
-  const message = props.deleteConfirmMessage?.(row) || `确认删除 ${row.name || row.appName || row.channelName || row.methodName || row.cashierName || row.id}？`;
+  const message =
+    props.deleteConfirmMessage?.(row) ||
+    `确认删除 ${row.name || row.appName || row.channelName || row.methodName || row.cashierName || row.id}？`;
   await ElMessageBox.confirm(message, '删除确认', {
     type: 'warning',
     confirmButtonText: '删除',
@@ -222,7 +215,7 @@ async function removeRow(row: PaymentRecord) {
   await loadRows();
 }
 
-function rowActions(row: PaymentRecord): PaymentRowAction[] {
+function resolveRowActions(row: PaymentRecord): PaymentRowAction[] {
   const actions: PaymentRowAction[] = [...(props.rowActions?.(row) || [])];
   if (props.editable) {
     actions.push({
@@ -257,7 +250,7 @@ function formatTags(value: unknown) {
   }
   return String(value)
     .split(',')
-    .map(item => item.trim())
+    .map((item) => item.trim())
     .filter(Boolean);
 }
 

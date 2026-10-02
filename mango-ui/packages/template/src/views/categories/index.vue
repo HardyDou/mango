@@ -1,26 +1,18 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
-  <div class="template-container">
-    <el-card class="template-main">
-      <el-form :inline="true" class="search-form">
+  <MangoListPage class="template-container" data-page="template.categories">
+    <template #search>
+      <MangoSearchPanel :model="query" :columns="3" @search="handleSearch" @reset="handleReset">
         <el-form-item label="关键词">
-          <el-input
-            v-model="query.keyword"
-            placeholder="搜索分类名称或编码"
-            clearable
-            @keyup.enter="handleSearch"
-          />
+          <el-input v-model="query.keyword" placeholder="搜索分类名称或编码" clearable @keyup.enter="handleSearch" />
         </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="handleSearch">查询</el-button>
-          <el-button @click="handleReset">重置</el-button>
-        </el-form-item>
-      </el-form>
+      </MangoSearchPanel>
+    </template>
 
-      <div class="action-toolbar">
-        <div class="toolbar-left">
-          <el-button type="primary" @click="handleCreate">新增分类</el-button>
-        </div>
-      </div>
+    <MangoListPanel>
+      <template #actions>
+        <el-button type="primary" plain @click="handleCreate">新增分类</el-button>
+      </template>
 
       <el-table v-loading="loading" :data="tableData" class="data-table" stripe>
         <template #empty>
@@ -41,13 +33,10 @@
         </el-table-column>
       </el-table>
 
-      <Pagination
-        v-model:current-page="query.pageNum"
-        v-model:page-size="query.pageSize"
-        :total="total"
-        @change="loadData"
-      />
-    </el-card>
+      <template #pagination>
+        <Pagination v-model:page="query.pageNum" v-model:limit="query.pageSize" :total="total" @pagination="loadData" />
+      </template>
+    </MangoListPanel>
 
     <el-dialog v-model="editVisible" :title="categoryForm.id ? '编辑分类' : '新增分类'" width="560px">
       <el-form ref="categoryFormRef" :model="categoryForm" :rules="categoryRules" label-width="96px">
@@ -69,13 +58,13 @@
         <el-button type="primary" @click="submitCategory">保存</el-button>
       </template>
     </el-dialog>
-  </div>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
-import { Pagination } from '@mango/common';
+import { MangoListPage, MangoListPanel, MangoSearchPanel, Pagination } from '@mango/common';
 import {
   templateCategoryApi,
   type SaveTemplateCategoryPayload,
@@ -162,7 +151,9 @@ async function submitCategory() {
 }
 
 async function handleDelete(row: TemplateCategory) {
-  await ElMessageBox.confirm(`确认删除分类“${row.categoryName}”？已关联模板不会自动迁移。`, '删除分类', { type: 'warning' });
+  await ElMessageBox.confirm(`确认删除分类“${row.categoryName}”？已关联模板不会自动迁移。`, '删除分类', {
+    type: 'warning',
+  });
   await templateCategoryApi.delete(row.id);
   ElMessage.success('分类已删除');
   loadData();

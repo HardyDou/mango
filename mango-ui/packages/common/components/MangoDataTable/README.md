@@ -43,6 +43,47 @@ import type { MangoTableColumn, MangoTablePageChangeContext } from '@mango/commo
 
 单元格上下文包含 `{ row, rowIndex, column, field, value }`；编辑事件额外包含 `previousValue`。`MangoTableCell` 的 `input/select/radio` 会改写行字段并触发 `cell-change`，`formatter` 只改变展示值。`MangoDataTable` 的分页、选择、操作和重试均由宿主监听后请求数据。
 
+## 概览
+
+公共管理端数据表格组件，负责表格结构与展示交互，不承载业务请求。
+
+## 功能清单
+
+支持列配置、状态/标签/操作单元格、选择、展开、分页、加载、空态、错误重试和自定义 slot。
+
+## 接入方式
+
+从 `@mango/common` 导入，在 `MangoListPanel` 或页面列表区中使用。
+
+## 配置说明
+
+通过 `rows`、`columns`、`rowKey`、`pagination` 等 props 配置；业务状态映射和接口参数由宿主维护。
+
+## API 与扩展
+
+事件、slot、expose 和类型定义以本 README 的核心契约为准。
+
+## 数据与初始化
+
+无数据库、字典或默认数据初始化要求；组件只接收宿主传入的数据。
+
+## 管理入口
+
+无独立管理入口，由各业务模块列表页面接入。
+
+## 快速开始
+
+参见上方使用示例。
+
+## 问题排查
+
+先确认 `rowKey` 稳定、列 `field` 与数据字段一致，并检查宿主是否处理分页和重试事件。
+
+## 相关文档
+
+- [Common 包说明](../../README.md)
+- [能力说明规范](../../../../../mango-pmo/rules/08-capability-docs.md)
+
 ## 使用示例
 
 ```vue

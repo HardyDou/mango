@@ -1,15 +1,9 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
-  <section class="home-list-page" data-page="home.list" :data-state="pageState">
-    <section class="job-toolbar" data-surface="home.list.search">
-      <div class="job-toolbar-head">
-        <div>
-          <h2>首页列表</h2>
-          <p>查看所有用户自定义首页，默认展示全部用户数据。</p>
-        </div>
-      </div>
-
-      <el-form ref="queryFormRef" :model="query" class="job-search" inline @submit.prevent>
-        <el-form-item label="关键词" prop="keyword" class="job-search-item job-search-item-wide">
+  <MangoListPage class="home-list-page" data-page="home.list" :data-state="pageState">
+    <template #search>
+      <MangoSearchPanel :model="query" :columns="4" @search="handleSearch" @reset="handleReset">
+        <el-form-item label="关键词" prop="keyword">
           <el-input
             v-model="query.keyword"
             clearable
@@ -18,7 +12,7 @@
             @keyup.enter="handleSearch"
           />
         </el-form-item>
-        <el-form-item label="用户" prop="userId" class="job-search-item home-list-user-filter">
+        <el-form-item label="用户" prop="userId" class="home-list-user-filter">
           <el-select
             v-model="query.userId"
             clearable
@@ -37,29 +31,44 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="状态" prop="enabled" class="job-search-item job-search-item-small">
+        <el-form-item label="状态" prop="enabled">
           <el-select v-model="query.enabled" clearable placeholder="全部" data-field="home.list.enabled">
             <el-option label="启用" :value="true" />
             <el-option label="停用" :value="false" />
           </el-select>
         </el-form-item>
-        <el-form-item class="job-search-actions home-job-search-actions">
+        <template #actions>
           <el-button
             v-auth="'home:list:view'"
             type="primary"
-            :icon="Search"
             :loading="loading"
             data-action="home.list.search"
             @click="handleSearch"
           >
             查询
           </el-button>
-          <el-button :icon="RefreshLeft" data-action="home.list.reset" @click="handleReset">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </section>
+          <el-button data-action="home.list.reset" @click="handleReset">重置</el-button>
+        </template>
+      </MangoSearchPanel>
+    </template>
 
-    <section class="job-panel" data-surface="home.list.table-panel">
+    <MangoListPanel>
+      <template #actions>
+        <div class="home-list-selection" data-surface="home.list.batch-toolbar">
+          <el-button
+            v-auth="'home:list:delete'"
+            type="danger"
+            plain
+            :disabled="selectedPages.length === 0"
+            data-action="home.list.batch-delete"
+            @click="deleteSelectedPages"
+          >
+            批量删除
+          </el-button>
+          <span>已选 {{ selectedPages.length }} 项</span>
+        </div>
+      </template>
+
       <el-alert v-if="errorMessage" class="home-list-error" type="error" :closable="false" show-icon>
         <template #title>
           {{ errorMessage }}
@@ -67,27 +76,7 @@
         </template>
       </el-alert>
 
-      <div class="home-list-toolbar" data-surface="home.list.batch-toolbar">
-        <el-button
-          v-auth="'home:list:delete'"
-          type="danger"
-          plain
-          :disabled="selectedPages.length === 0"
-          data-action="home.list.batch-delete"
-          @click="deleteSelectedPages"
-        >
-          批量删除
-        </el-button>
-        <span>已选 {{ selectedPages.length }} 项</span>
-      </div>
-
-      <el-table
-        v-loading="loading"
-        :data="pages"
-        row-key="id"
-        stripe
-        data-surface="home.list.table"
-      >
+      <el-table v-loading="loading" :data="pages" row-key="id" stripe data-surface="home.list.table">
         <template #empty>
           <el-empty :description="emptyDescription" />
         </template>
@@ -185,19 +174,17 @@
         </el-table-column>
       </el-table>
 
-      <div class="job-pagination">
-        <el-pagination
-          v-model:current-page="pager.page"
-          v-model:page-size="pager.size"
+      <template #pagination>
+        <Pagination
+          v-model:page="pager.page"
+          v-model:limit="pager.size"
           :total="pager.total"
           :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next, jumper"
           data-surface="home.list.pagination"
-          @current-change="loadPages"
-          @size-change="handlePageSizeChange"
+          @pagination="loadPages"
         />
-      </div>
-    </section>
+      </template>
+    </MangoListPanel>
 
     <el-dialog v-model="preview.visible" title="预览首页" width="1180px" destroy-on-close append-to-body>
       <div class="home-list-preview" data-surface="home.list.preview">
@@ -219,7 +206,13 @@
       append-to-body
       :close-on-click-modal="false"
     >
-      <el-form ref="editorFormRef" :model="editor.form" :rules="editorRules" label-width="86px" data-surface="home.list.editor">
+      <el-form
+        ref="editorFormRef"
+        :model="editor.form"
+        :rules="editorRules"
+        label-width="86px"
+        data-surface="home.list.editor"
+      >
         <div class="home-admin-form-section">基本信息</div>
         <el-row :gutter="14">
           <el-col :xs="24" :md="12">
@@ -252,15 +245,15 @@
         <el-button type="primary" :loading="saving" data-action="home.list.save" @click="savePage">保存</el-button>
       </template>
     </el-dialog>
-  </section>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts" name="HomeListPage">
 import { computed, onMounted, reactive, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRouter, type LocationQueryRaw } from 'vue-router';
-import { RefreshLeft, Search } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
+import { MangoListPage, MangoListPanel, MangoSearchPanel, Pagination } from '@mango/common';
 import {
   homeOptionApi,
   homePageApi,
@@ -286,7 +279,6 @@ const userInfo = useUserInfo();
 const routesListStore = useRoutesList();
 const { routesList } = storeToRefs(routesListStore);
 const businessHomeWidgets = useMangoAdminHomeWidgets();
-const queryFormRef = ref<FormInstance>();
 const editorFormRef = ref<FormInstance>();
 const loading = ref(false);
 const saving = ref(false);
@@ -338,16 +330,20 @@ const pageState = computed(() => {
   return pages.value.length > 0 ? 'ready' : 'empty';
 });
 const hasQuery = computed(() => Boolean(query.keyword.trim() || query.userId.trim() || query.enabled !== undefined));
-const emptyDescription = computed(() => hasQuery.value ? '暂无符合条件的用户定义首页' : '暂无用户定义首页');
-const filteredUserOptions = computed(() => userOptions.value.filter(user => user.userId));
+const emptyDescription = computed(() => (hasQuery.value ? '暂无符合条件的用户定义首页' : '暂无用户定义首页'));
+const filteredUserOptions = computed(() => userOptions.value.filter((user) => user.userId));
 const selectablePages = computed(() => pages.value.filter(canDeletePage));
 const selectedPages = computed(() => {
   const selected = new Set(selectedPageIds.value);
-  return selectablePages.value.filter(row => row.id !== undefined && selected.has(String(row.id)));
+  return selectablePages.value.filter((row) => row.id !== undefined && selected.has(String(row.id)));
 });
-const allSelectableSelected = computed(() => selectablePages.value.length > 0 && selectedPages.value.length === selectablePages.value.length);
+const allSelectableSelected = computed(
+  () => selectablePages.value.length > 0 && selectedPages.value.length === selectablePages.value.length,
+);
 const someSelectableSelected = computed(() => selectedPages.value.length > 0 && !allSelectableSelected.value);
-const activeRuntimeUserId = computed(() => editor.form.userId || preview.userId || query.userId || userInfo.userInfos.userId);
+const activeRuntimeUserId = computed(
+  () => editor.form.userId || preview.userId || query.userId || userInfo.userInfos.userId,
+);
 const widgetRuntime = computed<MangoWidgetRuntimeContext>(() => ({
   pageCode: PAGE_CODE,
   mode: 'host',
@@ -357,10 +353,9 @@ const widgetRuntime = computed<MangoWidgetRuntimeContext>(() => ({
     nickname: userInfo.userInfos.nickname,
     avatar: userInfo.userInfos.photo,
     roles: userInfo.userInfos.roles,
-    permissions: Array.from(new Set([
-      ...(userInfo.userInfos.permissions || []),
-      ...(userInfo.userInfos.authBtnList || []),
-    ])),
+    permissions: Array.from(
+      new Set([...(userInfo.userInfos.permissions || []), ...(userInfo.userInfos.authBtnList || [])]),
+    ),
     appCode: userInfo.userInfos.appCode,
   },
   tenant: {
@@ -371,11 +366,13 @@ const widgetRuntime = computed<MangoWidgetRuntimeContext>(() => ({
   menus: routesList.value,
   navigate: navigateWidget,
 }));
-const templateWidgets = computed(() => mergeGridWidgets({
-  runtime: widgetRuntime.value,
-  systemWidgets: systemGridWidgets,
-  businessWidgets: businessHomeWidgets.value,
-}));
+const templateWidgets = computed(() =>
+  mergeGridWidgets({
+    runtime: widgetRuntime.value,
+    systemWidgets: systemGridWidgets,
+    businessWidgets: businessHomeWidgets.value,
+  }),
+);
 const previewItems = computed(() => resolveLayoutItems(preview.layoutJson));
 
 onMounted(initializePage);
@@ -393,19 +390,19 @@ async function loadPages(): Promise<void> {
   loading.value = true;
   errorMessage.value = '';
   try {
-    const response = await homePageApi.pageUserPages({
+    const response = (await homePageApi.pageUserPages({
       page: pager.page,
       size: pager.size,
       keyword: normalizeText(query.keyword),
       userId: normalizeText(query.userId),
       enabled: query.enabled,
-    }) as unknown as UserHomePageResponse;
+    })) as unknown as UserHomePageResponse;
     const result = normalizePageResult(response);
-    pages.value = (result.list || []).filter(page => !page.builtIn && !page.readOnly && !page.templateId);
+    pages.value = (result.list || []).filter((page) => !page.builtIn && !page.readOnly && !page.templateId);
     pager.total = Number(result.total || pages.value.length || 0);
     selectedPageIds.value = [];
     loaded.value = true;
-  } catch (error) {
+  } catch {
     pages.value = [];
     pager.total = 0;
     selectedPageIds.value = [];
@@ -419,7 +416,7 @@ async function loadUserOptions(): Promise<void> {
   userLoading.value = true;
   try {
     userOptions.value = await homeOptionApi.listPageUsers({ size: 200 });
-  } catch (error) {
+  } catch {
     userOptions.value = [];
   } finally {
     userLoading.value = false;
@@ -441,12 +438,6 @@ function handleReset(): void {
   query.keyword = '';
   query.userId = '';
   query.enabled = undefined;
-  pager.page = 1;
-  queryFormRef.value?.clearValidate();
-  void loadPages();
-}
-
-function handlePageSizeChange(): void {
   pager.page = 1;
   void loadPages();
 }
@@ -473,14 +464,12 @@ function togglePage(row: HomePageVO, checked: boolean): void {
     return;
   }
   if (!checked) {
-    selectedPageIds.value = selectedPageIds.value.filter(item => item !== id);
+    selectedPageIds.value = selectedPageIds.value.filter((item) => item !== id);
   }
 }
 
 function toggleAllPages(checked: boolean): void {
-  selectedPageIds.value = checked
-    ? selectablePages.value.map(row => String(row.id)).filter(Boolean)
-    : [];
+  selectedPageIds.value = checked ? selectablePages.value.map((row) => String(row.id)).filter(Boolean) : [];
 }
 
 function openPreview(row: HomePageVO): void {
@@ -551,7 +540,9 @@ async function deletePage(row: HomePageVO): Promise<void> {
 }
 
 async function deleteSelectedPages(): Promise<void> {
-  const ids = selectedPages.value.map(row => row.id).filter((id): id is string | number => id !== undefined && id !== null);
+  const ids = selectedPages.value
+    .map((row) => row.id)
+    .filter((id): id is string | number => id !== undefined && id !== null);
   if (ids.length === 0) {
     return;
   }
@@ -612,7 +603,7 @@ function formatUserDisplay(userId?: string | number): string {
   if (userId === undefined || userId === null) {
     return '-';
   }
-  const selected = userOptions.value.find(user => String(user.userId) === String(userId));
+  const selected = userOptions.value.find((user) => String(user.userId) === String(userId));
   return selected ? `${formatUserName(selected)}（${userId}）` : String(userId);
 }
 
@@ -661,10 +652,6 @@ function resolveWidgetQuery(raw: unknown): LocationQueryRaw | undefined {
   margin-bottom: 12px;
 }
 
-.home-job-search-actions {
-  margin-left: auto;
-}
-
 .home-list-user-filter {
   min-width: 360px;
 }
@@ -673,12 +660,10 @@ function resolveWidgetQuery(raw: unknown): LocationQueryRaw | undefined {
   width: 360px;
 }
 
-.home-list-toolbar {
+.home-list-selection {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
-  margin-bottom: 12px;
   color: var(--el-text-color-secondary);
   font-size: 13px;
 }
@@ -723,7 +708,7 @@ function resolveWidgetQuery(raw: unknown): LocationQueryRaw | undefined {
     min-width: 0;
   }
 
-  .home-list-toolbar {
+  .home-list-selection {
     align-items: stretch;
     flex-direction: column;
   }

@@ -1,18 +1,11 @@
 <template>
-  <div class="cms-page">
-    <section class="cms-toolbar">
-      <div class="cms-toolbar-head">
-        <div>
-          <h2>{{ config.title }}</h2>
-        </div>
-        <el-button v-if="config.editor" type="primary" :icon="Plus" @click="openEditor()">新增</el-button>
-      </div>
-
-      <el-form :model="query" class="cms-search" inline @submit.prevent>
-        <el-form-item label="关键字" class="cms-search-item">
+  <MangoListPage class="cms-page">
+    <template #search>
+      <MangoSearchPanel :model="query" :columns="4" @search="loadRows" @reset="resetQuery">
+        <el-form-item label="关键字">
           <el-input v-model="query.keyword" clearable placeholder="名称/编码" @keyup.enter="loadRows" />
         </el-form-item>
-        <el-form-item v-if="config.filterSite" label="站点" class="cms-search-item">
+        <el-form-item v-if="config.filterSite" label="站点">
           <el-select v-model="query.siteId" clearable filterable placeholder="全部站点">
             <el-option
               v-for="site in siteOptions"
@@ -22,19 +15,19 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item v-if="config.statusField" label="状态" class="cms-search-item">
+        <el-form-item v-if="config.statusField" label="状态">
           <el-select v-model="query.status" clearable placeholder="全部">
             <el-option v-for="item in statusOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
-        <el-form-item class="cms-search-actions">
-          <el-button type="primary" :icon="Search" @click="loadRows">查询</el-button>
-          <el-button :icon="Refresh" @click="resetQuery">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </section>
+      </MangoSearchPanel>
+    </template>
 
-    <section class="cms-panel">
+    <MangoListPanel>
+      <template #actions>
+        <el-button v-if="config.editor" type="primary" plain @click="openEditor()">新增</el-button>
+      </template>
+
       <el-alert v-if="errorMessage" class="cms-error" type="error" :closable="false" show-icon>
         <template #title>
           {{ errorMessage }}
@@ -115,8 +108,8 @@
         <el-table-column label="操作" width="300" fixed="right">
           <template #default="{ row }">
             <div class="cms-actions">
-              <el-button v-if="config.detail" link type="primary" :icon="View" @click="openDetail(row)">详情</el-button>
-              <el-button v-if="config.editor" link type="primary" :icon="Edit" @click="openEditor(row)">编辑</el-button>
+              <el-button v-if="config.detail" link type="primary" @click="openDetail(row)">详情</el-button>
+              <el-button v-if="config.editor" link type="primary" @click="openEditor(row)">编辑</el-button>
               <el-button
                 v-if="config.canToggleStatus && rowStatus(row) === 'ENABLED'"
                 link
@@ -166,25 +159,22 @@
                 @click="offlinePublish(row)"
                 >下线</el-button
               >
-              <el-button v-if="config.remove" link type="danger" :icon="Delete" @click="deleteRow(row)">删除</el-button>
+              <el-button v-if="config.remove" link type="danger" @click="deleteRow(row)">删除</el-button>
             </div>
           </template>
         </el-table-column>
       </el-table>
 
-      <div v-if="!config.hidePagination" class="cms-pagination">
-        <el-pagination
-          v-model:current-page="query.pageNum"
-          v-model:page-size="query.pageSize"
-          background
-          layout="total, sizes, prev, pager, next, jumper"
-          :page-sizes="[10, 20, 50, 100]"
+      <template v-if="!config.hidePagination" #pagination>
+        <Pagination
+          v-model:page="query.pageNum"
+          v-model:limit="query.pageSize"
           :total="total"
-          @size-change="loadRows"
-          @current-change="loadRows"
+          :page-sizes="[10, 20, 50, 100]"
+          @pagination="loadRows"
         />
-      </div>
-    </section>
+      </template>
+    </MangoListPanel>
 
     <el-dialog
       v-model="editorVisible"
@@ -315,7 +305,7 @@
       </template>
     </el-dialog>
 
-    <el-dialog
+    <MangoDialog
       v-model="detailVisible"
       :title="config.key === 'contents' ? '文章详情' : `${config.title}详情`"
       :width="config.key === 'contents' ? '920px' : '860px'"
@@ -388,16 +378,15 @@
       <template #footer>
         <el-button type="primary" @click="detailVisible = false">关闭</el-button>
       </template>
-    </el-dialog>
-  </div>
+    </MangoDialog>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import type { FormInstance, FormRules } from 'element-plus';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { Delete, Edit, Plus, Refresh, Search, View } from '@element-plus/icons-vue';
-import { Editor } from '@mango/common';
+import { Editor, MangoDialog, MangoListPage, MangoListPanel, MangoSearchPanel, Pagination } from '@mango/common';
 import { MUpload, fileApi } from '@mango/file';
 import { requestErrorMessage, type ApiId, type CmsPageQuery, type CmsRequestOptions, type CmsSite } from '../api/cms';
 import { useCmsApi } from '../composables/useCmsApi';

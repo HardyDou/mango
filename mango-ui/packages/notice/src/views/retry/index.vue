@@ -1,24 +1,40 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
-  <div class="notice-retry-page">
-    <el-card shadow="never">
-      <template #header>
-        <div class="notice-retry-page__header">
-          <span>失败重试</span>
-          <el-space>
-            <el-button :disabled="selectedRecords.length === 0" :loading="actionLoading" @click="openBatchHandle('manualSuccess')">
-              批量成功
-            </el-button>
-            <el-button :disabled="selectedRecords.length === 0" :loading="actionLoading" @click="openBatchHandle('ignore')">
-              批量忽略
-            </el-button>
-            <el-button :disabled="selectedRecords.length === 0" :loading="actionLoading" @click="handleBatchRetry">
-              批量重试
-            </el-button>
-          </el-space>
-        </div>
+  <MangoListPage class="notice-retry-page" data-page="notice.retry">
+    <template #search>
+      <MangoSearchPanel :model="searchQuery" :columns="3" @search="load" @reset="resetSearch">
+        <el-form-item label="业务类型">
+          <el-input v-model="searchQuery.bizType" clearable placeholder="请输入业务类型" @keyup.enter="load" />
+        </el-form-item>
+        <el-form-item label="业务对象">
+          <el-input v-model="searchQuery.bizId" clearable placeholder="请输入业务对象 ID" @keyup.enter="load" />
+        </el-form-item>
+        <el-form-item label="渠道">
+          <el-select v-model="searchQuery.channelType" clearable placeholder="全部">
+            <el-option v-for="item in channelOptions" :key="item" :label="channelLabel(item)" :value="item" />
+          </el-select>
+        </el-form-item>
+      </MangoSearchPanel>
+    </template>
+
+    <MangoListPanel>
+      <template #actions>
+        <el-button
+          :disabled="selectedRecords.length === 0"
+          :loading="actionLoading"
+          @click="openBatchHandle('manualSuccess')"
+        >
+          批量成功
+        </el-button>
+        <el-button :disabled="selectedRecords.length === 0" :loading="actionLoading" @click="openBatchHandle('ignore')">
+          批量忽略
+        </el-button>
+        <el-button :disabled="selectedRecords.length === 0" :loading="actionLoading" @click="handleBatchRetry">
+          批量重试
+        </el-button>
       </template>
 
-      <el-table :data="records" border stripe v-loading="loading" @selection-change="handleSelectionChange">
+      <el-table v-loading="loading" :data="records" border stripe @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="48" />
         <el-table-column label="业务域" min-width="120" show-overflow-tooltip>
           <template #default="{ row }">{{ domainText(row.bizGroup) }}</template>
@@ -51,7 +67,7 @@
             <el-space>
               <el-button link type="primary" @click="openDetail(row)">详情</el-button>
               <el-button link type="primary" :loading="actionLoading" @click="handleRetry(row)">重试</el-button>
-              <el-dropdown @command="command => handleMoreCommand(command, row)">
+              <el-dropdown @command="(command) => handleMoreCommand(command, row)">
                 <el-button link type="primary">更多</el-button>
                 <template #dropdown>
                   <el-dropdown-menu>
@@ -64,9 +80,9 @@
           </template>
         </el-table-column>
       </el-table>
-    </el-card>
+    </MangoListPanel>
 
-    <el-dialog v-model="detailVisible" title="失败记录详情" width="860px">
+    <MangoDialog v-model="detailVisible" title="失败记录详情" width="860px">
       <div v-if="currentRecord" class="notice-retry-page__detail">
         <section>
           <h3>基础信息</h3>
@@ -107,7 +123,7 @@
       <template #footer>
         <el-button type="primary" @click="detailVisible = false">关闭</el-button>
       </template>
-    </el-dialog>
+    </MangoDialog>
 
     <el-dialog v-model="handleVisible" :title="handleTitle" width="520px">
       <el-form label-width="84px">
@@ -127,12 +143,13 @@
         <el-button type="primary" :loading="actionLoading" @click="submitHandle">确认</el-button>
       </template>
     </el-dialog>
-  </div>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
+import { MangoDialog, MangoListPage, MangoListPanel, MangoSearchPanel } from '@mango/common';
 import {
   getSendRecords,
   ignoreSendRecord,
@@ -146,6 +163,11 @@ import type { NoticeChannelType, NoticeSendRecord, NoticeSendStatus } from '../.
 import { useNoticeDomains } from '../../components/useNoticeDomains';
 
 const failedStatuses: NoticeSendStatus[] = ['FAILED', 'RETRY_WAITING', 'FINAL_FAILED'];
+const channelOptions: NoticeChannelType[] = ['SITE', 'SMS', 'EMAIL', 'WECHAT_OFFICIAL', 'WECOM', 'DINGTALK'];
+const searchQuery = reactive<{ bizType: string; bizId: string; channelType?: NoticeChannelType }>({
+  bizType: '',
+  bizId: '',
+});
 const loading = ref(false);
 const actionLoading = ref(false);
 const rawRecords = ref<NoticeSendRecord[]>([]);
@@ -159,15 +181,34 @@ const handleMode = ref<'single' | 'batch'>('single');
 const handleRecord = ref<NoticeSendRecord>();
 const { domainText, loadDomains } = useNoticeDomains();
 
-const records = computed(() => rawRecords.value
-  .filter(item => failedStatuses.includes(item.status))
-  .sort((left, right) => stringValue(right.sentAt).localeCompare(stringValue(left.sentAt))));
+const records = computed(() =>
+  rawRecords.value
+    .filter((item) => failedStatuses.includes(item.status))
+    .sort((left, right) => stringValue(right.sentAt).localeCompare(stringValue(left.sentAt))),
+);
+
+function resetSearch() {
+  searchQuery.bizType = '';
+  searchQuery.bizId = '';
+  searchQuery.channelType = undefined;
+  void load();
+}
 
 async function load() {
   loading.value = true;
   try {
-    const pages = await Promise.all(failedStatuses.map(status => getSendRecords({ status, pageSize: 50 })));
-    rawRecords.value = pages.flatMap(page => page.list || []);
+    const pages = await Promise.all(
+      failedStatuses.map((status) =>
+        getSendRecords({
+          status,
+          pageSize: 50,
+          bizType: searchQuery.bizType || undefined,
+          bizId: searchQuery.bizId || undefined,
+          channelType: searchQuery.channelType,
+        }),
+      ),
+    );
+    rawRecords.value = pages.flatMap((page) => page.list || []);
   } finally {
     loading.value = false;
   }
@@ -211,7 +252,7 @@ async function handleBatchRetry() {
   });
   actionLoading.value = true;
   try {
-    await retrySendRecords(selectedRecords.value.map(item => item.id));
+    await retrySendRecords(selectedRecords.value.map((item) => item.id));
     ElMessage.success('已提交批量重试');
     await load();
   } finally {
@@ -260,13 +301,19 @@ async function submitHandle() {
   try {
     if (handleAction.value === 'manualSuccess') {
       if (handleMode.value === 'batch') {
-        await markSendRecordsManualSuccess(selectedRecords.value.map(item => item.id), reason);
+        await markSendRecordsManualSuccess(
+          selectedRecords.value.map((item) => item.id),
+          reason,
+        );
       } else if (handleRecord.value) {
         await markSendRecordManualSuccess(handleRecord.value.id, reason);
       }
     } else {
       if (handleMode.value === 'batch') {
-        await ignoreSendRecords(selectedRecords.value.map(item => item.id), reason);
+        await ignoreSendRecords(
+          selectedRecords.value.map((item) => item.id),
+          reason,
+        );
       } else if (handleRecord.value) {
         await ignoreSendRecord(handleRecord.value.id, reason);
       }
@@ -308,11 +355,9 @@ function recipientText(row: NoticeSendRecord) {
     return recipientAccount;
   }
   const request = parseSnapshot(row.requestSnapshot);
-  const values = [
-    stringValue(request.recipientName),
-    stringValue(request.mobile),
-    stringValue(request.email),
-  ].filter(Boolean);
+  const values = [stringValue(request.recipientName), stringValue(request.mobile), stringValue(request.email)].filter(
+    Boolean,
+  );
   return values[0] || '-';
 }
 
@@ -359,7 +404,7 @@ function parseSnapshot(snapshot?: string) {
   if (!snapshot) return {};
   try {
     const parsed = JSON.parse(snapshot);
-    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {};
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : {};
   } catch {
     return {};
   }

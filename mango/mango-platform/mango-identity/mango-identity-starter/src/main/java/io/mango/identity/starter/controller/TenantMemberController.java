@@ -93,6 +93,15 @@ public class TenantMemberController implements TenantMemberApi {
     }
 
     @Override
+    @GetMapping("/tenant-members/user-org-relations")
+    @Operation(summary = "查询用户全部组织关系", description = "按用户和机构查询用户所属的全部组织")
+    public R<List<TenantMemberOrgRelationVO>> listUserOrgRelations(
+            @Parameter(description = "租户ID") @RequestParam("tenantId") Long tenantId,
+            @Parameter(description = "用户ID") @RequestParam("userId") Long userId) {
+        return R.ok(tenantMemberService.listUserOrgRelations(tenantId, userId));
+    }
+
+    @Override
     @GetMapping("/tenant-members/org-relations/detail")
     @Operation(summary = "查询成员组织关系", description = "内部接口。按关系ID查询成员组织关系")
     public R<TenantMemberOrgRelationVO> getOrgRelation(

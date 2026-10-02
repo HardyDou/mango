@@ -1,7 +1,11 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
   <section class="mango-page-section">
-    <header v-if="title || $slots.extra" class="mango-page-section__header">
-      <h3 v-if="title" class="mango-page-section__title">{{ title }}</h3>
+    <header v-if="title || subtitle || $slots.extra" class="mango-page-section__header">
+      <div class="mango-page-section__heading">
+        <h3 v-if="title" class="mango-page-section__title">{{ title }}</h3>
+        <p v-if="subtitle" class="mango-page-section__subtitle">{{ subtitle }}</p>
+      </div>
       <div v-if="$slots.extra" class="mango-page-section__extra">
         <slot name="extra" />
       </div>
@@ -15,6 +19,7 @@
 <script setup lang="ts" name="MangoPageSection">
 defineProps<{
   title?: string;
+  subtitle?: string;
 }>();
 </script>
 
@@ -37,12 +42,23 @@ defineProps<{
   margin-bottom: 14px;
 }
 
+.mango-page-section__heading {
+  min-width: 0;
+}
+
 .mango-page-section__title {
   margin: 0;
   color: var(--mango-text-color);
   font-size: 16px;
   font-weight: 600;
   line-height: 24px;
+}
+
+.mango-page-section__subtitle {
+  margin: 4px 0 0;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .mango-page-section__extra {

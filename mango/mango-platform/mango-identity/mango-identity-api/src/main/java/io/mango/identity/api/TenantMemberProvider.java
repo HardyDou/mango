@@ -61,6 +61,15 @@ public interface TenantMemberProvider {
     List<TenantMemberOrgRelationVO> listOrgRelations(Long tenantId, Long orgId);
 
     /**
+     * 查询指定用户在指定机构下的全部组织关系。
+     *
+     * @param tenantId 机构 ID
+     * @param userId 全局账号 ID
+     * @return 成员组织关系列表
+     */
+    List<TenantMemberOrgRelationVO> listUserOrgRelations(Long tenantId, Long userId);
+
+    /**
      * 查询成员组织关系。
      *
      * @param relationId 关系 ID

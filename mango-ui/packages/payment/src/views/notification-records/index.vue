@@ -1,14 +1,8 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
-  <div class="payment-notification-records">
-    <section class="payment-notification-records__header">
-      <div>
-        <h3>通知记录</h3>
-        <p>查看业务回调通知结果、失败重试和人工补偿推送记录。</p>
-      </div>
-    </section>
-
-    <section class="payment-notification-records__toolbar">
-      <el-form :inline="true" :model="query">
+  <MangoListPage class="payment-notification-records" data-page="payment.notification-records">
+    <template #search>
+      <MangoSearchPanel :model="query" :columns="3" @search="loadRows" @reset="resetQuery">
         <el-form-item label="关键字">
           <el-input
             v-model="query.keyword"
@@ -19,13 +13,7 @@
           />
         </el-form-item>
         <el-form-item label="状态">
-          <el-select
-            v-model="query.statusCode"
-            placeholder="全部状态"
-            clearable
-            @change="loadRows"
-            @clear="loadRows"
-          >
+          <el-select v-model="query.statusCode" placeholder="全部状态" clearable @change="loadRows" @clear="loadRows">
             <el-option
               v-for="status in notifyStatuses"
               :key="status.statusCode"
@@ -34,96 +22,82 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item>
-          <el-button type="primary" :icon="Search" @click="loadRows">查询</el-button>
-          <el-button :icon="Refresh" @click="resetQuery">重置</el-button>
-          <el-button
-            type="primary"
-            plain
-            :icon="RefreshRight"
-            :loading="deliverDueSubmitting"
-            @click="deliverDueNotifications"
-          >
-            投递到期通知
-          </el-button>
-        </el-form-item>
-      </el-form>
-    </section>
+      </MangoSearchPanel>
+    </template>
 
-    <el-alert
-      v-if="errorMessage"
-      :title="errorMessage"
-      type="error"
-      show-icon
-      :closable="false"
-    >
-      <template #default>
-        <el-button link type="primary" :icon="Refresh" @click="loadRows">重新加载</el-button>
+    <MangoListPanel>
+      <template #actions>
+        <el-button
+          type="primary"
+          plain
+          :icon="RefreshRight"
+          :loading="deliverDueSubmitting"
+          @click="deliverDueNotifications"
+        >
+          投递到期通知
+        </el-button>
       </template>
-    </el-alert>
 
-    <el-table
-      :data="rows"
-      v-loading="loading"
-      row-key="id"
-      stripe
-      highlight-current-row
-      class="payment-notification-records__table"
-    >
-      <template #empty>
-        <el-empty :description="emptyDescription" />
+      <el-alert v-if="errorMessage" :title="errorMessage" type="error" show-icon :closable="false">
+        <template #default>
+          <el-button link type="primary" :icon="Refresh" @click="loadRows">重新加载</el-button>
+        </template>
+      </el-alert>
+
+      <el-table
+        :data="rows"
+        v-loading="loading"
+        row-key="id"
+        stripe
+        highlight-current-row
+        class="payment-notification-records__table"
+      >
+        <template #empty>
+          <el-empty :description="emptyDescription" />
+        </template>
+        <el-table-column prop="notificationNo" label="通知单号" min-width="190" show-overflow-tooltip />
+        <el-table-column prop="relatedOrderNo" label="关联订单号" min-width="190" show-overflow-tooltip />
+        <el-table-column label="通知类型" width="150">
+          <template #default="{ row }">
+            <span>{{ row.notificationTypeName || row.notificationType || '-' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="通知状态" width="120">
+          <template #default="{ row }">
+            <el-tag :type="statusTagType(row.notifyStatus)" effect="light">{{
+              row.notifyStatusName || row.notifyStatus || '-'
+            }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="targetUrl" label="目标地址" min-width="280" show-overflow-tooltip />
+        <el-table-column prop="retryTimes" label="重试次数" width="100" />
+        <el-table-column prop="nextRetryTime" label="下次重试时间" width="170" show-overflow-tooltip />
+        <el-table-column prop="responseCode" label="响应码" width="120" show-overflow-tooltip />
+        <el-table-column prop="responseMessage" label="响应信息" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="createTime" label="创建时间" width="170" show-overflow-tooltip />
+        <el-table-column label="操作" width="156" fixed="right" align="left" class-name="payment-table__operation-cell">
+          <template #default="{ row }">
+            <div class="payment-table__actions">
+              <el-button link type="primary" :icon="Tickets" @click="openDetail(row)">详情</el-button>
+              <el-button v-if="canRetry(row)" link type="primary" :icon="RefreshRight" @click="openRetry(row)">
+                重推
+              </el-button>
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <template #pagination>
+        <Pagination v-model:page="query.pageNum" v-model:limit="query.pageSize" :total="total" @pagination="loadRows" />
       </template>
-      <el-table-column prop="notificationNo" label="通知单号" min-width="190" show-overflow-tooltip />
-      <el-table-column prop="relatedOrderNo" label="关联订单号" min-width="190" show-overflow-tooltip />
-      <el-table-column label="通知类型" width="150">
-        <template #default="{ row }">
-          <span>{{ row.notificationTypeName || row.notificationType || '-' }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="通知状态" width="120">
-        <template #default="{ row }">
-          <el-tag :type="statusTagType(row.notifyStatus)" effect="light">{{ row.notifyStatusName || row.notifyStatus || '-' }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="targetUrl" label="目标地址" min-width="280" show-overflow-tooltip />
-      <el-table-column prop="retryTimes" label="重试次数" width="100" />
-      <el-table-column prop="nextRetryTime" label="下次重试时间" width="170" show-overflow-tooltip />
-      <el-table-column prop="responseCode" label="响应码" width="120" show-overflow-tooltip />
-      <el-table-column prop="responseMessage" label="响应信息" min-width="180" show-overflow-tooltip />
-      <el-table-column prop="createTime" label="创建时间" width="170" show-overflow-tooltip />
-      <el-table-column label="操作" width="156" fixed="right" align="left" class-name="payment-table__operation-cell">
-        <template #default="{ row }">
-          <div class="payment-table__actions">
-            <el-button link type="primary" :icon="Tickets" @click="openDetail(row)">详情</el-button>
-            <el-button
-              v-if="canRetry(row)"
-              link
-              type="primary"
-              :icon="RefreshRight"
-              @click="openRetry(row)"
-            >
-              重推
-            </el-button>
-          </div>
-        </template>
-      </el-table-column>
-    </el-table>
+    </MangoListPanel>
 
-    <div class="payment-notification-records__pagination">
-      <Pagination
-        v-model:current-page="query.pageNum"
-        v-model:page-size="query.pageSize"
-        :total="total"
-        @change="loadRows"
-      />
-    </div>
-
-    <el-drawer
+    <MangoSideDrawerShell
       v-model="detailVisible"
       title="通知记录详情"
-      size="760px"
-      destroy-on-close
-      append-to-body
+      drawer-size="760px"
+      :destroy-on-close="true"
+      data-surface="payment.notification-record.detail"
       class="payment-notification-records__drawer"
     >
       <el-skeleton v-if="detailLoading" :rows="10" animated />
@@ -135,7 +109,9 @@
             {{ detail.notificationTypeName || detail.notificationType || '-' }}
           </el-descriptions-item>
           <el-descriptions-item label="通知状态">
-            <el-tag :type="statusTagType(detail.notifyStatus)" effect="light">{{ detail.notifyStatusName || detail.notifyStatus || '-' }}</el-tag>
+            <el-tag :type="statusTagType(detail.notifyStatus)" effect="light">{{
+              detail.notifyStatusName || detail.notifyStatus || '-'
+            }}</el-tag>
           </el-descriptions-item>
           <el-descriptions-item label="目标地址" :span="2">{{ valueText(detail.targetUrl) }}</el-descriptions-item>
         </el-descriptions>
@@ -148,10 +124,16 @@
         </el-descriptions>
 
         <el-descriptions title="人工补偿" :column="2" border class="payment-notification-records__detail-block">
-          <el-descriptions-item label="重推人">{{ valueText(detail.lastManualRetryOperatorName) }}</el-descriptions-item>
+          <el-descriptions-item label="重推人">{{
+            valueText(detail.lastManualRetryOperatorName)
+          }}</el-descriptions-item>
           <el-descriptions-item label="重推时间">{{ valueText(detail.lastManualRetryTime) }}</el-descriptions-item>
-          <el-descriptions-item label="重推原因" :span="2">{{ valueText(detail.lastManualRetryReason) }}</el-descriptions-item>
-          <el-descriptions-item label="重推结果" :span="2">{{ valueText(detail.lastManualRetryResult) }}</el-descriptions-item>
+          <el-descriptions-item label="重推原因" :span="2">{{
+            valueText(detail.lastManualRetryReason)
+          }}</el-descriptions-item>
+          <el-descriptions-item label="重推结果" :span="2">{{
+            valueText(detail.lastManualRetryResult)
+          }}</el-descriptions-item>
         </el-descriptions>
 
         <el-descriptions title="时间信息" :column="2" border class="payment-notification-records__detail-block">
@@ -160,15 +142,9 @@
         </el-descriptions>
       </template>
       <el-empty v-else description="未查询到通知记录详情" />
-    </el-drawer>
+    </MangoSideDrawerShell>
 
-    <el-dialog
-      v-model="retryVisible"
-      title="人工重推通知"
-      width="600px"
-      destroy-on-close
-      append-to-body
-    >
+    <el-dialog v-model="retryVisible" title="人工重推通知" width="600px" destroy-on-close append-to-body>
       <el-form ref="retryFormRef" :model="retryForm" :rules="retryRules" label-width="96px" class="payment-dialog-form">
         <el-form-item label="通知单号">
           <el-input :model-value="currentRow?.notificationNo || '-'" disabled />
@@ -177,13 +153,7 @@
           <el-input :model-value="currentRow?.relatedOrderNo || '-'" disabled />
         </el-form-item>
         <el-form-item label="重推原因" prop="retryReason">
-          <el-input
-            v-model="retryForm.retryReason"
-            type="textarea"
-            :rows="4"
-            maxlength="512"
-            show-word-limit
-          />
+          <el-input v-model="retryForm.retryReason" type="textarea" :rows="4" maxlength="512" show-word-limit />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -191,13 +161,13 @@
         <el-button type="primary" :loading="retrySubmitting" @click="submitRetry">确认重推</el-button>
       </template>
     </el-dialog>
-  </div>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts">
-import { Pagination } from '@mango/common';
+import { MangoListPage, MangoListPanel, MangoSearchPanel, MangoSideDrawerShell, Pagination } from '@mango/common';
 import { computed, onMounted, reactive, ref } from 'vue';
-import { Refresh, RefreshRight, Search, Tickets } from '@element-plus/icons-vue';
+import { Refresh, RefreshRight, Tickets } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import {
   paymentNotificationRecordApi,
@@ -324,7 +294,7 @@ async function deliverDueNotifications() {
         confirmButtonText: '确认投递',
         cancelButtonText: '取消',
         type: 'warning',
-      }
+      },
     );
   } catch {
     return;
@@ -361,5 +331,4 @@ function valueText(value: unknown) {
 .payment-notification-records__detail-block {
   margin-top: 18px;
 }
-
 </style>

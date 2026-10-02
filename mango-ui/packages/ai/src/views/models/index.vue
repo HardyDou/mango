@@ -1,20 +1,29 @@
 <template>
   <MangoListPage class="mango-ai-model-management" data-page="ai.models">
     <template #search>
-      <MangoSearchPanel v-if="activeTab === 'models'" :model="query" @search="handleSearch" @reset="handleReset">
-        <el-form-item label="关键词">
-          <el-input
-            v-model="query.keyword"
-            clearable
-            placeholder="模型名称、标识或平台别名"
-            @keyup.enter="handleSearch"
-          />
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="query.enabled" clearable placeholder="全部状态">
-            <el-option label="启用" :value="true" />
-            <el-option label="停用" :value="false" />
-          </el-select>
+      <MangoSearchPanel
+        :model="activeTab === 'models' ? query : routeQuery"
+        @search="handleSearch"
+        @reset="handleReset"
+      >
+        <template v-if="activeTab === 'models'">
+          <el-form-item label="关键词">
+            <el-input
+              v-model="query.keyword"
+              clearable
+              placeholder="模型名称、标识或平台别名"
+              @keyup.enter="handleSearch"
+            />
+          </el-form-item>
+          <el-form-item label="状态">
+            <el-select v-model="query.enabled" clearable placeholder="全部状态">
+              <el-option label="启用" :value="true" />
+              <el-option label="停用" :value="false" />
+            </el-select>
+          </el-form-item>
+        </template>
+        <el-form-item v-else label="能力">
+          <el-input v-model="routeQuery.keyword" clearable placeholder="搜索能力名称" @keyup.enter="handleSearch" />
         </el-form-item>
       </MangoSearchPanel>
     </template>
@@ -161,7 +170,7 @@
                 :closable="false"
                 show-icon
               />
-              <el-table :data="routeRows" class="mango-ai-model-management__routes"
+              <el-table :data="filteredRouteRows" class="mango-ai-model-management__routes"
                 ><el-table-column prop="capability" label="能力" width="180"
                   ><template #default="{ row }">{{ capabilityName(row.capability) }}</template></el-table-column
                 ><el-table-column prop="modelDisplayName" label="当前模型" min-width="180"
@@ -381,6 +390,12 @@ const routeRows = computed(() =>
     (capability) => routes.value.find((item) => item.capability === capability) ?? { capability, modelId: '' },
   ),
 );
+const routeQuery = reactive({ keyword: '' });
+const routeCriteria = reactive({ keyword: '' });
+const filteredRouteRows = computed(() => {
+  if (!routeCriteria.keyword) return routeRows.value;
+  return routeRows.value.filter((row) => capabilityName(row.capability).toLowerCase().includes(routeCriteria.keyword));
+});
 const filteredModels = computed(() =>
   models.value.filter((item) => {
     const keyword = criteria.keyword;
@@ -401,11 +416,20 @@ function normalizePage() {
   query.page = Math.min(query.page, Math.max(1, Math.ceil(filteredModels.value.length / query.size)));
 }
 function handleSearch() {
+  if (activeTab.value === 'routes') {
+    routeCriteria.keyword = routeQuery.keyword.trim().toLowerCase();
+    return;
+  }
   criteria.keyword = query.keyword.trim().toLowerCase();
   criteria.enabled = query.enabled;
   query.page = 1;
 }
 function handleReset() {
+  if (activeTab.value === 'routes') {
+    routeQuery.keyword = '';
+    routeCriteria.keyword = '';
+    return;
+  }
   query.keyword = '';
   query.enabled = undefined;
   criteria.keyword = '';

@@ -57,6 +57,11 @@ public class TenantMemberService implements ITenantMemberService {
     }
 
     @Override
+    public List<TenantMemberOrgRelationVO> listUserOrgRelations(Long tenantId, Long userId) {
+        return tenantMemberProvider.listUserOrgRelations(tenantId, userId);
+    }
+
+    @Override
     public TenantMemberOrgRelationVO getOrgRelation(Long relationId) {
         return tenantMemberProvider.getOrgRelation(relationId);
     }

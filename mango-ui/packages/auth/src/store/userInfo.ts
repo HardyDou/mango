@@ -79,6 +79,7 @@ export interface UserInfosState {
     tenantCode: string;
     tenantName: string;
     departmentName?: string;
+    departmentNames?: string[];
     deptName?: string;
     orgName?: string;
     companyName?: string;

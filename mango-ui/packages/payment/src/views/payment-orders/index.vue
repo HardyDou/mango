@@ -1,14 +1,8 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
-  <div class="payment-orders">
-    <section class="payment-orders__header">
-      <div>
-        <h3>支付订单</h3>
-        <p>查询每次支付尝试、实际通道请求、通道交易号和支付状态流转。</p>
-      </div>
-    </section>
-
-    <section class="payment-orders__toolbar">
-      <el-form :inline="true" :model="query">
+  <MangoListPage class="payment-orders" data-page="payment.payment-orders">
+    <template #search>
+      <MangoSearchPanel :model="query" :columns="3" @search="loadRows" @reset="resetQuery">
         <el-form-item label="关键字">
           <el-input
             v-model="query.keyword"
@@ -28,174 +22,174 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item class="payment-orders__filter-actions">
-          <el-button type="primary" :icon="Search" @click="loadRows">查询</el-button>
-          <el-button :icon="Refresh" @click="resetQuery">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </section>
+      </MangoSearchPanel>
+    </template>
 
-    <el-alert
-      v-if="errorMessage"
-      :title="errorMessage"
-      type="error"
-      show-icon
-      :closable="false"
-    >
-      <template #default>
-        <el-button link type="primary" :icon="Refresh" @click="loadRows">重新加载</el-button>
+    <MangoListPanel>
+      <el-alert v-if="errorMessage" :title="errorMessage" type="error" show-icon :closable="false">
+        <template #default>
+          <el-button link type="primary" :icon="Refresh" @click="loadRows">重新加载</el-button>
+        </template>
+      </el-alert>
+
+      <el-table
+        :data="rows"
+        v-loading="loading"
+        row-key="id"
+        stripe
+        highlight-current-row
+        class="payment-orders__table"
+      >
+        <template #empty>
+          <el-empty :description="emptyDescription" />
+        </template>
+        <el-table-column label="订单信息" min-width="280">
+          <template #default="{ row }">
+            <div class="payment-table-stack">
+              <div class="payment-table-stack__primary">{{ valueText(row.payOrderNo) }}</div>
+              <div class="payment-table-stack__line">
+                <span>业务订单</span>
+                <strong>{{ valueText(row.bizOrderNo) }}</strong>
+              </div>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column label="支付通道" min-width="280">
+          <template #default="{ row }">
+            <div class="payment-table-stack">
+              <div class="payment-table-stack__primary">{{ methodText(row) }}</div>
+              <div class="payment-table-stack__line">
+                <span>实际通道</span>
+                <strong>{{ channelText(row) }}</strong>
+              </div>
+              <div class="payment-table-stack__line">
+                <span>商户号</span>
+                <strong>{{ valueText(row.channelMerchantNo) }}</strong>
+              </div>
+              <div class="payment-table-stack__line">
+                <span>通道单号</span>
+                <strong>{{ valueText(row.channelTradeNo) }}</strong>
+              </div>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column label="金额/状态" width="160">
+          <template #default="{ row }">
+            <div class="payment-money-status">
+              <strong>{{ formatMoney(row.amount) }}</strong>
+              <span>元</span>
+              <el-tag :type="statusTagType(row.status)" effect="light">{{
+                row.statusName || row.status || '-'
+              }}</el-tag>
+              <el-tag v-if="showBusinessEntryResult(row)" :type="businessEntryTagType(row)" effect="plain">
+                业务入账：{{ businessEntryText(row) }}
+              </el-tag>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column label="时间信息" min-width="220">
+          <template #default="{ row }">
+            <div class="payment-table-stack payment-table-stack--compact">
+              <div class="payment-table-stack__line">
+                <span>支付成功</span>
+                <strong>{{ valueText(row.payTime) }}</strong>
+              </div>
+              <div class="payment-table-stack__line">
+                <span>过期</span>
+                <strong>{{ valueText(row.expireTime) }}</strong>
+              </div>
+              <div class="payment-table-stack__line">
+                <span>更新</span>
+                <strong>{{ valueText(row.updateTime) }}</strong>
+              </div>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="230" fixed="right" align="left" class-name="payment-table__operation-cell">
+          <template #default="{ row }">
+            <div class="payment-table__actions">
+              <el-button
+                link
+                type="primary"
+                :icon="Refresh"
+                :loading="syncingPayOrderNo === row.payOrderNo"
+                :disabled="!canSyncStatus(row)"
+                @click="syncStatus(row)"
+              >
+                同步状态
+              </el-button>
+              <el-button link type="primary" :icon="RefreshLeft" :disabled="!canRefund(row)" @click="openRefund(row)"
+                >退款</el-button
+              >
+              <el-button link type="primary" :icon="Tickets" @click="openDetail(row)">详情</el-button>
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <template #pagination>
+        <Pagination v-model:page="query.pageNum" v-model:limit="query.pageSize" :total="total" @pagination="loadRows" />
       </template>
-    </el-alert>
+    </MangoListPanel>
 
-    <el-table
-      :data="rows"
-      v-loading="loading"
-      row-key="id"
-      stripe
-      highlight-current-row
-      class="payment-orders__table"
-    >
-      <template #empty>
-        <el-empty :description="emptyDescription" />
-      </template>
-      <el-table-column label="订单信息" min-width="280">
-        <template #default="{ row }">
-          <div class="payment-table-stack">
-            <div class="payment-table-stack__primary">{{ valueText(row.payOrderNo) }}</div>
-            <div class="payment-table-stack__line">
-              <span>业务订单</span>
-              <strong>{{ valueText(row.bizOrderNo) }}</strong>
-            </div>
-          </div>
-        </template>
-      </el-table-column>
-      <el-table-column label="支付通道" min-width="280">
-        <template #default="{ row }">
-          <div class="payment-table-stack">
-            <div class="payment-table-stack__primary">{{ methodText(row) }}</div>
-            <div class="payment-table-stack__line">
-              <span>实际通道</span>
-              <strong>{{ channelText(row) }}</strong>
-            </div>
-            <div class="payment-table-stack__line">
-              <span>商户号</span>
-              <strong>{{ valueText(row.channelMerchantNo) }}</strong>
-            </div>
-            <div class="payment-table-stack__line">
-              <span>通道单号</span>
-              <strong>{{ valueText(row.channelTradeNo) }}</strong>
-            </div>
-          </div>
-        </template>
-      </el-table-column>
-      <el-table-column label="金额/状态" width="160">
-        <template #default="{ row }">
-          <div class="payment-money-status">
-            <strong>{{ formatMoney(row.amount) }}</strong>
-            <span>元</span>
-            <el-tag :type="statusTagType(row.status)" effect="light">{{ row.statusName || row.status || '-' }}</el-tag>
-            <el-tag v-if="showBusinessEntryResult(row)" :type="businessEntryTagType(row)" effect="plain">
-              业务入账：{{ businessEntryText(row) }}
-            </el-tag>
-          </div>
-        </template>
-      </el-table-column>
-      <el-table-column label="时间信息" min-width="220">
-        <template #default="{ row }">
-          <div class="payment-table-stack payment-table-stack--compact">
-            <div class="payment-table-stack__line">
-              <span>支付成功</span>
-              <strong>{{ valueText(row.payTime) }}</strong>
-            </div>
-            <div class="payment-table-stack__line">
-              <span>过期</span>
-              <strong>{{ valueText(row.expireTime) }}</strong>
-            </div>
-            <div class="payment-table-stack__line">
-              <span>更新</span>
-              <strong>{{ valueText(row.updateTime) }}</strong>
-            </div>
-          </div>
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" width="230" fixed="right" align="left" class-name="payment-table__operation-cell">
-        <template #default="{ row }">
-          <div class="payment-table__actions">
-            <el-button
-              link
-              type="primary"
-              :icon="Refresh"
-              :loading="syncingPayOrderNo === row.payOrderNo"
-              :disabled="!canSyncStatus(row)"
-              @click="syncStatus(row)"
-            >
-              同步状态
-            </el-button>
-            <el-button link type="primary" :icon="RefreshLeft" :disabled="!canRefund(row)" @click="openRefund(row)">退款</el-button>
-            <el-button link type="primary" :icon="Tickets" @click="openDetail(row)">详情</el-button>
-          </div>
-        </template>
-      </el-table-column>
-    </el-table>
-
-    <div class="payment-orders__pagination">
-      <Pagination
-        v-model:current-page="query.pageNum"
-        v-model:page-size="query.pageSize"
-        :total="total"
-        @change="loadRows"
-      />
-    </div>
-
-    <el-drawer
+    <MangoSideDrawerShell
       v-model="detailVisible"
       title="支付订单详情"
-      size="780px"
-      destroy-on-close
-      append-to-body
+      drawer-size="780px"
+      :show-trigger="false"
+      data-surface="payment.payment-order.detail"
       class="payment-orders__drawer"
     >
       <el-skeleton v-if="detailLoading" :rows="10" animated />
       <template v-else-if="detail">
-        <el-descriptions title="订单信息" :column="2" border>
-          <el-descriptions-item label="支付订单号">{{ valueText(detail.payOrderNo) }}</el-descriptions-item>
-          <el-descriptions-item label="支付状态">
-            <el-tag :type="statusTagType(detail.status)" effect="light">{{ detail.statusName || detail.status || '-' }}</el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item label="业务订单号">{{ valueText(detail.bizOrderNo) }}</el-descriptions-item>
-          <el-descriptions-item label="支付标题">{{ valueText(detail.title) }}</el-descriptions-item>
-          <el-descriptions-item label="AppId">{{ valueText(detail.appId) }}</el-descriptions-item>
-          <el-descriptions-item label="企业主体">{{ valueText(detail.subjectName) }}</el-descriptions-item>
-          <el-descriptions-item label="收银台">{{ valueText(detail.cashierName) }}</el-descriptions-item>
-          <el-descriptions-item label="币种">{{ valueText(detail.currency) }}</el-descriptions-item>
-          <el-descriptions-item label="支付金额（元）">{{ formatMoney(detail.amount) }}</el-descriptions-item>
-          <el-descriptions-item label="业务入账结果">
-            <el-tag :type="businessEntryTagType(detail)" effect="light">
-              {{ businessEntryText(detail) }}
-            </el-tag>
-          </el-descriptions-item>
-        </el-descriptions>
+        <MangoPageSection title="订单信息">
+          <el-descriptions :column="2" border>
+            <el-descriptions-item label="支付订单号">{{ valueText(detail.payOrderNo) }}</el-descriptions-item>
+            <el-descriptions-item label="支付状态">
+              <el-tag :type="statusTagType(detail.status)" effect="light">{{
+                detail.statusName || detail.status || '-'
+              }}</el-tag>
+            </el-descriptions-item>
+            <el-descriptions-item label="业务订单号">{{ valueText(detail.bizOrderNo) }}</el-descriptions-item>
+            <el-descriptions-item label="支付标题">{{ valueText(detail.title) }}</el-descriptions-item>
+            <el-descriptions-item label="AppId">{{ valueText(detail.appId) }}</el-descriptions-item>
+            <el-descriptions-item label="企业主体">{{ valueText(detail.subjectName) }}</el-descriptions-item>
+            <el-descriptions-item label="收银台">{{ valueText(detail.cashierName) }}</el-descriptions-item>
+            <el-descriptions-item label="币种">{{ valueText(detail.currency) }}</el-descriptions-item>
+            <el-descriptions-item label="支付金额（元）">{{ formatMoney(detail.amount) }}</el-descriptions-item>
+            <el-descriptions-item label="业务入账结果">
+              <el-tag :type="businessEntryTagType(detail)" effect="light">
+                {{ businessEntryText(detail) }}
+              </el-tag>
+            </el-descriptions-item>
+          </el-descriptions>
+        </MangoPageSection>
 
-        <el-descriptions title="支付方式与通道请求" :column="2" border class="payment-orders__detail-block">
-          <el-descriptions-item label="支付方式">{{ methodText(detail) }}</el-descriptions-item>
-          <el-descriptions-item label="实际通道">{{ channelText(detail) }}</el-descriptions-item>
-          <el-descriptions-item label="通道商户号">{{ valueText(detail.channelMerchantNo) }}</el-descriptions-item>
-          <el-descriptions-item label="通道交易号">{{ valueText(detail.channelTradeNo) }}</el-descriptions-item>
-          <el-descriptions-item label="签约配置">{{ valueText(detail.contractName) }}</el-descriptions-item>
-          <el-descriptions-item label="签约能力 ID">{{ valueText(detail.contractCapabilityId) }}</el-descriptions-item>
-          <el-descriptions-item label="路由规则 ID">{{ valueText(detail.routeRuleId) }}</el-descriptions-item>
-          <el-descriptions-item label="交易流水号">{{ valueText(detail.flowNo) }}</el-descriptions-item>
-        </el-descriptions>
+        <MangoPageSection title="支付方式与通道请求">
+          <el-descriptions :column="2" border>
+            <el-descriptions-item label="支付方式">{{ methodText(detail) }}</el-descriptions-item>
+            <el-descriptions-item label="实际通道">{{ channelText(detail) }}</el-descriptions-item>
+            <el-descriptions-item label="通道商户号">{{ valueText(detail.channelMerchantNo) }}</el-descriptions-item>
+            <el-descriptions-item label="通道交易号">{{ valueText(detail.channelTradeNo) }}</el-descriptions-item>
+            <el-descriptions-item label="签约配置">{{ valueText(detail.contractName) }}</el-descriptions-item>
+            <el-descriptions-item label="签约能力 ID">{{
+              valueText(detail.contractCapabilityId)
+            }}</el-descriptions-item>
+            <el-descriptions-item label="路由规则 ID">{{ valueText(detail.routeRuleId) }}</el-descriptions-item>
+            <el-descriptions-item label="交易流水号">{{ valueText(detail.flowNo) }}</el-descriptions-item>
+          </el-descriptions>
+        </MangoPageSection>
 
-        <el-descriptions title="时间信息" :column="2" border class="payment-orders__detail-block">
-          <el-descriptions-item label="创建时间">{{ valueText(detail.createTime) }}</el-descriptions-item>
-          <el-descriptions-item label="更新时间">{{ valueText(detail.updateTime) }}</el-descriptions-item>
-          <el-descriptions-item label="支付成功时间">{{ valueText(detail.payTime) }}</el-descriptions-item>
-          <el-descriptions-item label="过期时间">{{ valueText(detail.expireTime) }}</el-descriptions-item>
-        </el-descriptions>
+        <MangoPageSection title="时间信息">
+          <el-descriptions :column="2" border>
+            <el-descriptions-item label="创建时间">{{ valueText(detail.createTime) }}</el-descriptions-item>
+            <el-descriptions-item label="更新时间">{{ valueText(detail.updateTime) }}</el-descriptions-item>
+            <el-descriptions-item label="支付成功时间">{{ valueText(detail.payTime) }}</el-descriptions-item>
+            <el-descriptions-item label="过期时间">{{ valueText(detail.expireTime) }}</el-descriptions-item>
+          </el-descriptions>
+        </MangoPageSection>
 
-        <section class="payment-orders__flow payment-orders__detail-block">
-          <h4>状态流转</h4>
+        <MangoPageSection title="状态流转" class="payment-orders__flow">
           <el-timeline v-if="detail.statusFlows?.length">
             <el-timeline-item
               v-for="flow in detail.statusFlows"
@@ -209,10 +203,10 @@
             </el-timeline-item>
           </el-timeline>
           <el-empty v-else description="暂无状态流转记录" />
-        </section>
+        </MangoPageSection>
       </template>
       <el-empty v-else description="未查询到支付订单详情" />
-    </el-drawer>
+    </MangoSideDrawerShell>
 
     <el-dialog
       v-model="refundVisible"
@@ -222,7 +216,13 @@
       destroy-on-close
       @closed="resetRefundForm"
     >
-      <el-form ref="refundFormRef" :model="refundForm" :rules="refundRules" label-width="108px" class="payment-dialog-form">
+      <el-form
+        ref="refundFormRef"
+        :model="refundForm"
+        :rules="refundRules"
+        label-width="108px"
+        class="payment-dialog-form"
+      >
         <section class="payment-form-section">
           <h4 class="payment-form-section__title">原支付信息</h4>
           <div class="payment-form-grid">
@@ -230,7 +230,9 @@
               <span class="payment-form-readonly">{{ refundOrder?.payOrderNo || '-' }}</span>
             </el-form-item>
             <el-form-item label="可退金额（元）">
-              <span class="payment-form-readonly payment-form-readonly--strong">{{ formatMoney(refundAvailableAmount) }}</span>
+              <span class="payment-form-readonly payment-form-readonly--strong">{{
+                formatMoney(refundAvailableAmount)
+              }}</span>
             </el-form-item>
           </div>
         </section>
@@ -271,13 +273,20 @@
         <el-button type="primary" :loading="refundSubmitting" @click="submitRefund">提交审批</el-button>
       </template>
     </el-dialog>
-  </div>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts">
-import { Pagination } from '@mango/common';
+import {
+  MangoListPage,
+  MangoListPanel,
+  MangoPageSection,
+  MangoSearchPanel,
+  MangoSideDrawerShell,
+  Pagination,
+} from '@mango/common';
 import { computed, onMounted, reactive, ref } from 'vue';
-import { Refresh, RefreshLeft, Search, Tickets } from '@element-plus/icons-vue';
+import { Refresh, RefreshLeft, Tickets } from '@element-plus/icons-vue';
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
 import {
   paymentOrderApi,
@@ -379,9 +388,10 @@ async function openDetail(row: PaymentOrder) {
 }
 
 function canRefund(row: PaymentOrder) {
-  const refundableAmount = row.refundableAmount === undefined || row.refundableAmount === null
-    ? Number(row.amount || 0) - Number(row.occupyingRefundAmount ?? row.refundedAmount ?? 0)
-    : Number(row.refundableAmount || 0);
+  const refundableAmount =
+    row.refundableAmount === undefined || row.refundableAmount === null
+      ? Number(row.amount || 0) - Number(row.occupyingRefundAmount ?? row.refundedAmount ?? 0)
+      : Number(row.refundableAmount || 0);
   return row.status === 'SUCCESS' && row.successFlag === 1 && refundableAmount > 0;
 }
 
@@ -596,5 +606,4 @@ function valueText(value?: string | number) {
   color: var(--el-text-color-secondary);
   font-size: 12px;
 }
-
 </style>
