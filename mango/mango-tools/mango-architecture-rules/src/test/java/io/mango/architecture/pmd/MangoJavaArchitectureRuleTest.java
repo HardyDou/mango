@@ -1680,6 +1680,29 @@ class MangoJavaArchitectureRuleTest {
     }
 
     @Test
+    void temporalQueryFieldsMayOmitValidationWhenUsedAsFilters() {
+        Report report = analyze(
+                "example/LogQuery.java", """
+                package example;
+                import io.swagger.v3.oas.annotations.media.Schema;
+                import java.time.LocalDateTime;
+                class LogQuery {
+                    @Schema(description = "开始时间")
+                    private LocalDateTime startTime;
+                    @Schema(description = "结束时间")
+                    private LocalDateTime endTime;
+                }
+                """,
+                "io/swagger/v3/oas/annotations/media/Schema.java", """
+                package io.swagger.v3.oas.annotations.media;
+                public @interface Schema { String description(); }
+                """);
+
+        assertThat(messages(report)).doesNotContain(
+                "MANGO-ARCH-MODEL-002 Command/Query/Request field requires a jakarta.validation constraint");
+    }
+
+    @Test
     void apiContractTransportAnnotationsAreRejected() {
         Report report = analyze(
                 "example/OrderApi.java", """
