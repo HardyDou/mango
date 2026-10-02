@@ -87,3 +87,44 @@ function loadData() {
 - 组件使用 `<main>` 语义标签，每个页面应只有一个 `MangoListPage` 实例
 - `dataPage` 用于前端埋点和页面定位，建议按 `模块.功能` 格式命名（如 `file.files`、`demo.orders`）
 - 组件不渲染额外页面标题，标题由路由或宿主应用处理
+
+## 概览
+
+统一管理端标准列表页外壳，分离搜索区与列表区。
+
+## 功能清单
+
+支持搜索 slot、列表内容 slot、紧凑间距和页面标识。
+
+## 接入方式
+
+从 `@mango/common` 导入，组合 `MangoSearchPanel`、`MangoListPanel` 和 `Pagination` 使用。
+
+## 配置说明
+
+通过 `dataPage` 和 `dense` 配置页面标识与间距；查询、列表和分页状态由宿主管理。
+
+## API 与扩展
+
+支持 `search` 与 `default` slot，列表交互由子组件和宿主事件扩展。
+
+## 数据与初始化
+
+无数据库、字典或默认数据初始化要求。
+
+## 管理入口
+
+无独立管理入口，由各管理模块列表页面接入。
+
+## 快速开始
+
+参见上方标准列表示例。
+
+## 问题排查
+
+确认搜索区使用 `MangoSearchPanel`、列表区使用 `MangoListPanel`，并避免在列表面板内部重复嵌套搜索面板。
+
+## 相关文档
+
+- [Common 包说明](../../README.md)
+- [能力说明规范](../../../../../mango-pmo/rules/08-capability-docs.md)

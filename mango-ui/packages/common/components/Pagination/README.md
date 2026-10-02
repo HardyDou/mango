@@ -79,3 +79,44 @@ function handlePagination(change: PaginationChange) {
 
 - 组件不请求接口，分页变化由宿主监听后请求数据
 - `pagination` 事件通过 `queueMicrotask` 合并同轮变更，确保只触发一次
+
+## 概览
+
+统一管理端分页器，封装页码、每页数量、对齐和同轮变更合并。
+
+## 功能清单
+
+支持页码/条数双向绑定、页大小选项、布局、禁用、小尺寸、响应式和分页事件。
+
+## 接入方式
+
+从 `@mango/common` 导入，放在 `MangoListPanel` 的 `pagination` slot 中使用。
+
+## 配置说明
+
+通过 `total`、`page`、`limit`、`pageSizes`、`layout` 和 `align` 配置。
+
+## API 与扩展
+
+支持 `update:page`、`update:limit` 和合并后的 `pagination` 事件。
+
+## 数据与初始化
+
+无数据库、字典或默认数据初始化要求；数据请求由宿主处理。
+
+## 管理入口
+
+无独立管理入口，由业务列表页面接入。
+
+## 快速开始
+
+参见上方使用示例。
+
+## 问题排查
+
+确认宿主监听 `pagination` 事件并同步页码、条数与总数，避免重复请求。
+
+## 相关文档
+
+- [Common 包说明](../../README.md)
+- [能力说明规范](../../../../../mango-pmo/rules/08-capability-docs.md)

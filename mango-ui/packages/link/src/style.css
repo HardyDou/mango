@@ -1,5 +1,5 @@
 .link-page {
-  padding: 16px;
+  padding: 0;
 }
 
 .link-toolbar,
@@ -181,10 +181,6 @@
 }
 
 @media (max-width: 720px) {
-  .link-page {
-    padding: 10px;
-  }
-
   .link-toolbar-head {
     align-items: stretch;
     flex-direction: column;
@@ -218,7 +214,8 @@
   gap: clamp(8px, calc(6px + 0.8cqw), 12px);
   height: 100%;
   min-height: 0;
-  padding: clamp(12px, calc(8px + 1.1cqw), 18px) clamp(14px, calc(10px + 1.2cqw), 22px) clamp(12px, calc(8px + 0.9cqw), 16px);
+  padding: clamp(12px, calc(8px + 1.1cqw), 18px) clamp(14px, calc(10px + 1.2cqw), 22px)
+    clamp(12px, calc(8px + 0.9cqw), 16px);
   overflow: hidden;
   color: var(--mango-text-color-primary, #1f2937);
   background: var(--mango-bg-color, #fff);
@@ -334,7 +331,12 @@
   border-radius: 6px;
   opacity: 0;
   transform: translateY(-2px);
-  transition: color 0.16s ease, opacity 0.16s ease, transform 0.16s ease, background-color 0.16s ease, border-color 0.16s ease;
+  transition:
+    color 0.16s ease,
+    opacity 0.16s ease,
+    transform 0.16s ease,
+    background-color 0.16s ease,
+    border-color 0.16s ease;
 }
 
 .mango-grid-widget-link-navigation__heading:hover .mango-grid-widget-link-navigation__brand-edit,
@@ -444,7 +446,11 @@
   background: transparent;
   border: 0;
   border-radius: 0;
-  transition: color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .mango-grid-widget-link-navigation__engines button + button {
@@ -515,11 +521,11 @@
   border: 0;
 }
 
-.mango-grid-widget-link-navigation__tabs-scroll button[draggable="true"] {
+.mango-grid-widget-link-navigation__tabs-scroll button[draggable='true'] {
   cursor: grab;
 }
 
-.mango-grid-widget-link-navigation__tabs-scroll button[draggable="true"]:active {
+.mango-grid-widget-link-navigation__tabs-scroll button[draggable='true']:active {
   cursor: grabbing;
 }
 
@@ -534,7 +540,7 @@
   bottom: 0;
   left: 0;
   height: 2px;
-  content: "";
+  content: '';
   background: transparent;
   border-radius: 3px 3px 0 0;
 }
@@ -718,7 +724,12 @@
   box-shadow: 0 1px 4px rgb(16 24 40 / 18%);
   opacity: 0;
   transform: scale(0.92);
-  transition: color 0.16s ease, opacity 0.16s ease, transform 0.16s ease, background-color 0.16s ease, box-shadow 0.16s ease;
+  transition:
+    color 0.16s ease,
+    opacity 0.16s ease,
+    transform 0.16s ease,
+    background-color 0.16s ease,
+    box-shadow 0.16s ease;
 }
 
 .mango-grid-widget-link-navigation__item:hover .mango-grid-widget-link-navigation__favorite,

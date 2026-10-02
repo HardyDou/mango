@@ -1,14 +1,10 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
-  <div class="template-container">
-    <el-card class="template-main">
-      <el-form :inline="true" class="search-form">
+  <MangoListPage class="template-container" data-page="template.render-records">
+    <template #search>
+      <MangoSearchPanel :model="query" :columns="3" @search="handleSearch" @reset="handleReset">
         <el-form-item label="模板编码">
-          <el-input
-            v-model="query.templateCode"
-            placeholder="输入模板编码"
-            clearable
-            @keyup.enter="handleSearch"
-          />
+          <el-input v-model="query.templateCode" placeholder="输入模板编码" clearable @keyup.enter="handleSearch" />
         </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="query.status" placeholder="全部状态" clearable style="width: 120px">
@@ -18,17 +14,13 @@
             <el-option label="失败" value="FAILED" />
           </el-select>
         </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="handleSearch">查询</el-button>
-          <el-button @click="handleReset">重置</el-button>
-        </el-form-item>
-      </el-form>
+      </MangoSearchPanel>
+    </template>
 
-      <div class="action-toolbar">
-        <div class="toolbar-left">
-          <el-button @click="loadData">刷新</el-button>
-        </div>
-      </div>
+    <MangoListPanel>
+      <template #actions>
+        <el-button plain @click="loadData">刷新</el-button>
+      </template>
 
       <el-table v-loading="loading" :data="tableData" class="data-table" stripe>
         <template #empty>
@@ -58,13 +50,10 @@
         </el-table-column>
       </el-table>
 
-      <Pagination
-        v-model:current-page="query.pageNum"
-        v-model:page-size="query.pageSize"
-        :total="total"
-        @change="loadData"
-      />
-    </el-card>
+      <template #pagination>
+        <Pagination v-model:page="query.pageNum" v-model:limit="query.pageSize" :total="total" @pagination="loadData" />
+      </template>
+    </MangoListPanel>
 
     <el-drawer v-model="detailVisible" title="渲染详情" size="680px">
       <el-descriptions v-if="currentRecord" :column="2" border>
@@ -86,12 +75,12 @@
         <pre class="error-text">{{ currentRecord.errorMessage }}</pre>
       </section>
     </el-drawer>
-  </div>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue';
-import { Pagination } from '@mango/common';
+import { MangoListPage, MangoListPanel, MangoSearchPanel, Pagination } from '@mango/common';
 import {
   templateApi,
   type TemplateRenderRecord,

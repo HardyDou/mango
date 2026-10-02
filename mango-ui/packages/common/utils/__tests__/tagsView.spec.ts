@@ -43,6 +43,12 @@ describe('tagsView', () => {
     ]);
   });
 
+  it('uses one tab for personal-center query subpages', () => {
+    expect(createTabKey({ path: '/profile', query: { tab: 'profile' } })).toBe(
+      createTabKey({ path: '/profile', query: { tab: 'theme' } }),
+    );
+  });
+
   it('creates deterministic keys for reordered query and params objects', () => {
     expect(createTabKey({ path: '/orders/detail', query: { id: '1', mode: 'edit' }, params: { tenant: 't1' } })).toBe(
       createTabKey({ path: '/orders/detail', query: { mode: 'edit', id: '1' }, params: { tenant: 't1' } }),

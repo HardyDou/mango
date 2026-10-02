@@ -1,23 +1,26 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
-  <div class="notice-announcement-page">
-    <div class="page-header">
-      <h1>公告管理</h1>
-      <div class="page-actions">
-        <el-button :loading="loading" @click="loadData">刷新</el-button>
-        <el-button type="primary" @click="openCreate">新增公告</el-button>
-      </div>
-    </div>
+  <MangoListPage class="notice-announcement-page" data-page="notice.announcement">
+    <template #search>
+      <MangoSearchPanel :model="query" :columns="3" @search="loadData" @reset="resetQuery">
+        <el-form-item label="关键词">
+          <el-input v-model="query.keyword" clearable placeholder="搜索标题或内容" @keyup.enter="loadData" />
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-select v-model="query.status" clearable placeholder="状态">
+            <el-option label="草稿" value="DRAFT" />
+            <el-option label="已发布" value="PUBLISHED" />
+            <el-option label="已下线" value="OFFLINE" />
+          </el-select>
+        </el-form-item>
+      </MangoSearchPanel>
+    </template>
 
-    <el-card shadow="never">
-      <div class="filter-bar">
-        <el-input v-model="query.keyword" clearable placeholder="搜索标题或内容" class="filter-control" @keyup.enter="loadData" />
-        <el-select v-model="query.status" clearable placeholder="状态" class="filter-control">
-          <el-option label="草稿" value="DRAFT" />
-          <el-option label="已发布" value="PUBLISHED" />
-          <el-option label="已下线" value="OFFLINE" />
-        </el-select>
-        <el-button @click="loadData">查询</el-button>
-      </div>
+    <MangoListPanel>
+      <template #actions>
+        <el-button :loading="loading" plain @click="loadData">刷新</el-button>
+        <el-button type="primary" plain @click="openCreate">新增公告</el-button>
+      </template>
 
       <el-table :data="rows" border stripe v-loading="loading">
         <el-table-column prop="title" label="公告标题" min-width="220" show-overflow-tooltip />
@@ -48,7 +51,7 @@
           </template>
         </el-table-column>
       </el-table>
-    </el-card>
+    </MangoListPanel>
 
     <el-dialog v-model="formVisible" :title="editingId ? '编辑公告' : '新增公告'" width="820px" destroy-on-close>
       <el-form ref="formRef" :model="form" :rules="rules" label-width="104px">
@@ -97,7 +100,7 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="detailVisible" title="公告详情" width="760px" destroy-on-close>
+    <MangoDialog v-model="detailVisible" title="公告详情" width="760px" destroy-on-close>
       <el-descriptions v-if="current" :column="2" border>
         <el-descriptions-item label="标题">{{ current.title }}</el-descriptions-item>
         <el-descriptions-item label="状态">{{ statusLabel(current.status) }}</el-descriptions-item>
@@ -109,13 +112,14 @@
         <el-descriptions-item label="已确认">{{ current.stats?.confirmedCount || 0 }}</el-descriptions-item>
       </el-descriptions>
       <div v-if="current" class="content-box">{{ current.content }}</div>
-    </el-dialog>
-  </div>
+    </MangoDialog>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
 import type { FormInstance, FormRules } from 'element-plus';
+import { MangoDialog, MangoListPage, MangoListPanel, MangoSearchPanel } from '@mango/common';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { ParticipantSelector } from '@mango/system';
 import type { ParticipantOrgTreeOption, ParticipantSelectorValue, ParticipantTargetOption } from '@mango/system';
@@ -169,16 +173,18 @@ const form = reactive<SaveNoticeAnnouncementCommand>({
 const rules: FormRules = {
   title: [{ required: true, message: '请输入公告标题', trigger: 'blur' }],
   content: [{ required: true, message: '请输入公告内容', trigger: 'blur' }],
-  targets: [{
-    validator: (_rule, _value, callback) => {
-      if (allUsers.value || (form.targets && form.targets.length > 0)) {
-        callback();
-      } else {
-        callback(new Error('请选择发布对象'));
-      }
+  targets: [
+    {
+      validator: (_rule, _value, callback) => {
+        if (allUsers.value || (form.targets && form.targets.length > 0)) {
+          callback();
+        } else {
+          callback(new Error('请选择发布对象'));
+        }
+      },
+      trigger: 'change',
     },
-    trigger: 'change',
-  }],
+  ],
 };
 
 const participantValue = computed<ParticipantSelectorValue>({
@@ -187,7 +193,7 @@ const participantValue = computed<ParticipantSelectorValue>({
     orgIds: targetIds('ORG'),
     roleIds: targetIds('ROLE'),
   }),
-  set: value => {
+  set: (value) => {
     form.targets = [
       ...targetsOf('USER', value.userIds || [], participantUserOptions.value),
       ...targetsOf('ORG', value.orgIds || [], flattenOrgOptions(orgTreeOptions.value)),
@@ -203,13 +209,17 @@ const participantLoading = computed(() => ({
   roles: roleLoading.value,
 }));
 
-const participantUserOptions = computed<ParticipantTargetOption[]>(() => userOptions.value
-  .filter(item => item.userId !== undefined)
-  .map(item => ({ value: String(item.userId), label: item.nickname || item.username || String(item.userId) })));
+const participantUserOptions = computed<ParticipantTargetOption[]>(() =>
+  userOptions.value
+    .filter((item) => item.userId !== undefined)
+    .map((item) => ({ value: String(item.userId), label: item.nickname || item.username || String(item.userId) })),
+);
 
-const participantRoleOptions = computed<ParticipantTargetOption[]>(() => roleOptions.value
-  .filter(item => item.roleId !== undefined)
-  .map(item => ({ value: String(item.roleId), label: item.roleName || String(item.roleId) })));
+const participantRoleOptions = computed<ParticipantTargetOption[]>(() =>
+  roleOptions.value
+    .filter((item) => item.roleId !== undefined)
+    .map((item) => ({ value: String(item.roleId), label: item.roleName || String(item.roleId) })),
+);
 
 async function loadData() {
   loading.value = true;
@@ -236,13 +246,14 @@ function openEdit(row: NoticeAnnouncement) {
   form.confirmRequired = Boolean(row.confirmRequired);
   form.syncMessageEnabled = row.syncMessageEnabled !== false;
   validRange.value = row.validStartTime && row.validEndTime ? [row.validStartTime, row.validEndTime] : [];
-  allUsers.value = row.targets?.some(target => target.targetType === 'ALL') || false;
-  form.targets = row.targets?.map(target => ({
-    targetType: target.targetType,
-    targetId: target.targetId,
-    targetName: target.targetName,
-    includeChildren: target.includeChildren,
-  })) || [];
+  allUsers.value = row.targets?.some((target) => target.targetType === 'ALL') || false;
+  form.targets =
+    row.targets?.map((target) => ({
+      targetType: target.targetType,
+      targetId: target.targetId,
+      targetName: target.targetName,
+      includeChildren: target.includeChildren,
+    })) || [];
   formVisible.value = true;
   ensureUsersLoaded();
   loadOrgTree();
@@ -293,6 +304,12 @@ async function offline(row: NoticeAnnouncement) {
   loadData();
 }
 
+function resetQuery() {
+  query.keyword = '';
+  query.status = undefined;
+  void loadData();
+}
+
 function resetForm() {
   editingId.value = '';
   allUsers.value = false;
@@ -321,7 +338,7 @@ function applyValidRange() {
 }
 
 function handleAllUsersChange(value: string | number | boolean) {
-  if (Boolean(value)) {
+  if (value) {
     form.targets = [{ targetType: 'ALL', targetName: '全员' }];
   } else {
     form.targets = [];
@@ -362,7 +379,7 @@ async function loadRoles() {
   roleLoading.value = true;
   try {
     const result = await getNoticeRoles();
-    roleOptions.value = (result || []).filter(item => item.roleId !== undefined && item.status !== 0);
+    roleOptions.value = (result || []).filter((item) => item.roleId !== undefined && item.status !== 0);
   } finally {
     roleLoading.value = false;
   }
@@ -370,21 +387,25 @@ async function loadRoles() {
 
 function targetIds(type: NoticeAnnouncementTargetCommand['targetType']) {
   return (form.targets || [])
-    .filter(target => target.targetType === type && target.targetId)
-    .map(target => String(target.targetId));
+    .filter((target) => target.targetType === type && target.targetId)
+    .map((target) => String(target.targetId));
 }
 
-function targetsOf(type: NoticeAnnouncementTargetCommand['targetType'], ids: string[], options: ParticipantTargetOption[]) {
-  return ids.map(id => ({
+function targetsOf(
+  type: NoticeAnnouncementTargetCommand['targetType'],
+  ids: string[],
+  options: ParticipantTargetOption[],
+) {
+  return ids.map((id) => ({
     targetType: type,
     targetId: id,
-    targetName: options.find(option => option.value === id)?.label,
+    targetName: options.find((option) => option.value === id)?.label,
     includeChildren: false,
   }));
 }
 
 function toOrgTreeOptions(nodes: NoticeOrgNode[]): ParticipantOrgTreeOption[] {
-  return nodes.map(node => ({
+  return nodes.map((node) => ({
     value: String(node.id),
     label: node.orgName || String(node.id),
     children: node.children?.length ? toOrgTreeOptions(node.children) : undefined,
@@ -392,11 +413,14 @@ function toOrgTreeOptions(nodes: NoticeOrgNode[]): ParticipantOrgTreeOption[] {
 }
 
 function flattenOrgOptions(nodes: ParticipantOrgTreeOption[]): ParticipantTargetOption[] {
-  return nodes.flatMap(node => [{ value: node.value, label: node.label }, ...flattenOrgOptions(node.children || [])]);
+  return nodes.flatMap((node) => [{ value: node.value, label: node.label }, ...flattenOrgOptions(node.children || [])]);
 }
 
 function statusLabel(status: NoticeAnnouncementStatus) {
-  return ({ DRAFT: '草稿', PUBLISHED: '已发布', OFFLINE: '已下线' } as Record<NoticeAnnouncementStatus, string>)[status] || status;
+  return (
+    ({ DRAFT: '草稿', PUBLISHED: '已发布', OFFLINE: '已下线' } as Record<NoticeAnnouncementStatus, string>)[status] ||
+    status
+  );
 }
 
 function statusTag(status: NoticeAnnouncementStatus) {

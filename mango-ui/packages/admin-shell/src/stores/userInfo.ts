@@ -22,6 +22,7 @@ export const useUserInfo = defineStore('userInfo', {
       partyType: '',
       partyId: '',
       appCode: '',
+      departmentNames: [],
     },
   }),
   actions: {
@@ -58,6 +59,7 @@ export const useUserInfo = defineStore('userInfo', {
         partyType: '',
         partyId: '',
         appCode: '',
+        departmentNames: [],
       };
       Session.clearSession();
     },
@@ -82,6 +84,7 @@ export interface UserInfosState {
     deptName?: string;
     orgName?: string;
     companyName?: string;
+    departmentNames?: string[];
     realm: string;
     actorType: string;
     partyType: string;

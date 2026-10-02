@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
   <MangoListPage class="file-page" data-page="file.files">
     <template #search>
@@ -11,8 +12,8 @@
         <el-form-item label="访问级别">
           <DictSelect v-model="query.accessLevel" dict-type="file_access_level" placeholder="全部级别" clearable />
         </el-form-item>
-        <el-form-item>
-          <el-checkbox v-model="query.includeArchived"> 包含归档 </el-checkbox>
+        <el-form-item label="归档文件">
+          <el-switch v-model="query.includeArchived" inline-prompt active-text="含归档" inactive-text="不含" />
         </el-form-item>
         <template #actions>
           <el-button v-auth="'file:files:list'" type="primary" :icon="Search" @click="handleSearch"> 查询 </el-button>
@@ -115,8 +116,8 @@
               <el-button link type="primary" size="small" @click="handlePreview(row)"> 预览 </el-button>
               <el-button link type="primary" size="small" @click="handleDownload(row)"> 下载 </el-button>
               <el-button
-                v-auth="'file:files:archive'"
                 v-if="row.archived !== 1"
+                v-auth="'file:files:archive'"
                 link
                 type="danger"
                 size="small"
@@ -125,8 +126,8 @@
                 归档
               </el-button>
               <el-button
-                v-auth="'file:files:delete'"
                 v-if="row.archived !== 1"
+                v-auth="'file:files:delete'"
                 link
                 type="danger"
                 size="small"
@@ -227,7 +228,7 @@ import {
 } from '@mango/common';
 import { downloadFileRecord, fileApi, type FilePreview, type FileQuery, type FileRecord } from '../../api/file';
 import { fileDirectoryApi, rootDirectory, type FileDirectory } from '../../api/fileDirectory';
-import { defaultFileSettings, fileSettingsApi, formatBytes, type FileSettings } from '../../api/fileSettings';
+import { defaultFileSettings, fileSettingsApi, type FileSettings } from '../../api/fileSettings';
 import FilePreviewPanel from '../../components/FilePreviewPanel.vue';
 import MUpload from '../../components/MUpload.vue';
 

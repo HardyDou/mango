@@ -3,6 +3,7 @@ export interface MangoSideDrawerShellProps {
   title?: string;
   showTrigger?: boolean;
   drawerSize?: string | number;
+  destroyOnClose?: boolean;
   dataSurface?: string;
   dataAction?: string;
 }

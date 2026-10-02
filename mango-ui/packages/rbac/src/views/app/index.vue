@@ -1,12 +1,10 @@
-<!-- mango-page-baseline-exception all: 应用登记、模块绑定、密钥管理和运行策略在同一工作台联动，页面不是单一列表与短表单弹框。 -->
+<!-- mango-page-baseline-exception list: 应用列表接口返回当前平台应用集合，不支持分页列表语义；模块运行策略仍在列表上下文抽屉中维护。 -->
 <template>
-  <div class="app-container">
-    <el-card>
-      <div class="action-toolbar">
-        <div class="toolbar-left">
-          <el-button type="primary" @click="handleAdd"> 新增应用 </el-button>
-        </div>
-      </div>
+  <MangoListPage class="app-page" data-page="system.app">
+    <MangoListPanel>
+      <template #actions>
+        <el-button type="primary" plain @click="handleAdd">新增应用</el-button>
+      </template>
 
       <el-table v-loading="loading" :data="tableData" stripe>
         <el-table-column prop="appName" label="应用名称" min-width="160" />
@@ -75,7 +73,7 @@
           </template>
         </el-table-column>
       </el-table>
-    </el-card>
+    </MangoListPanel>
 
     <MangoDialog
       v-model="dialogVisible"
@@ -275,11 +273,11 @@
         </el-table-column>
       </el-table>
     </el-drawer>
-  </div>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts" name="SystemApp">
-import { DictSelect, DictTag, IconSelector, MangoDialog } from '@mango/common';
+import { DictSelect, DictTag, IconSelector, MangoDialog, MangoListPage, MangoListPanel } from '@mango/common';
 import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import { useDict } from '@mango/common/hooks/useDict';
@@ -768,7 +766,7 @@ onMounted(() => {
     align-self: flex-start;
   }
 
-  @media (max-width: 640px) {
+  @media (width <= 640px) {
     .context-fields {
       grid-template-columns: minmax(0, 1fr);
     }

@@ -1,5 +1,9 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
   <section class="mango-list-panel" data-surface="list">
+    <div v-if="hasHeader" class="mango-list-panel__header">
+      <slot name="header" />
+    </div>
     <div v-if="hasToolbar" class="mango-list-panel__toolbar">
       <div class="mango-list-panel__actions">
         <slot name="actions" />
@@ -21,6 +25,7 @@
 import { computed, useSlots } from 'vue';
 
 const slots = useSlots();
+const hasHeader = computed(() => Boolean(slots.header));
 const hasToolbar = computed(() => Boolean(slots.actions || slots['view-actions']));
 const hasPagination = computed(() => Boolean(slots.pagination));
 </script>
@@ -34,6 +39,11 @@ const hasPagination = computed(() => Boolean(slots.pagination));
   border: 1px solid var(--mango-border-light);
   border-radius: 6px;
   box-shadow: var(--mango-shadow-light);
+}
+
+.mango-list-panel__header {
+  min-width: 0;
+  margin-bottom: 12px;
 }
 
 .mango-list-panel__toolbar {

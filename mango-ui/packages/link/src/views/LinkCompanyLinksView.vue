@@ -1,22 +1,15 @@
 <!-- mango-page-baseline-exception list: 本页合并展示企业与个人链接分类投影，编辑入口分散在独立路由，不是单一领域对象的标准 CRUD 列表。 -->
 <template>
-  <div class="link-page" data-page="link-company">
-    <section class="link-toolbar">
-      <div class="link-toolbar-head">
-        <h2>我的分类</h2>
-      </div>
-      <el-form :model="query" class="link-search" inline @submit.prevent>
-        <el-form-item label="关键字" class="link-search-item">
+  <MangoListPage class="link-page" data-page="link-company">
+    <template #search>
+      <MangoSearchPanel :model="query" :columns="3" @search="loadRows" @reset="resetQuery">
+        <el-form-item label="关键字">
           <el-input v-model="query.keyword" clearable placeholder="分类名称/说明" @keyup.enter="loadRows" />
         </el-form-item>
-        <el-form-item class="link-search-actions">
-          <el-button type="primary" :icon="Search" @click="loadRows">查询</el-button>
-          <el-button :icon="Refresh" @click="resetQuery">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </section>
+      </MangoSearchPanel>
+    </template>
 
-    <section class="link-panel">
+    <MangoListPanel>
       <el-alert v-if="errorMessage" class="link-error" type="error" :closable="false" show-icon>
         <template #title>{{ errorMessage }}</template>
       </el-alert>
@@ -30,12 +23,12 @@
         <el-table-column prop="remark" label="说明" min-width="220" show-overflow-tooltip />
         <el-table-column label="网址数量" width="100" prop="linkCount" />
       </el-table>
-    </section>
-  </div>
+    </MangoListPanel>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts">
-import { Refresh, Search } from '@element-plus/icons-vue';
+import { MangoListPage, MangoListPanel, MangoSearchPanel } from '@mango/common';
 import { onMounted, reactive, ref } from 'vue';
 import { linkApi, requestErrorMessage, type LinkCategory, type LinkItem } from '../api/link';
 

@@ -1,15 +1,8 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
-  <section class="payment-settlement-summaries">
-    <div class="payment-settlement-summaries__header">
-      <div>
-        <h3>结算汇总</h3>
-        <p>按日、应用、企业主体和通道汇总支付、退款、手续费和净收款，用于财务核对。</p>
-      </div>
-      <el-button type="primary" :icon="Plus" @click="openGenerate(false)">生成汇总</el-button>
-    </div>
-
-    <div class="payment-settlement-summaries__toolbar">
-      <el-form :inline="true" :model="query">
+  <MangoListPage class="payment-settlement-summaries" data-page="payment.settlement-summaries">
+    <template #search>
+      <MangoSearchPanel :model="query" :columns="3" @search="loadRows" @reset="resetQuery">
         <el-form-item label="关键词">
           <el-input
             v-model="query.keyword"
@@ -20,13 +13,7 @@
           />
         </el-form-item>
         <el-form-item label="状态">
-          <el-select
-            v-model="query.statusCode"
-            placeholder="全部状态"
-            clearable
-            @change="loadRows"
-            @clear="loadRows"
-          >
+          <el-select v-model="query.statusCode" placeholder="全部状态" clearable @change="loadRows" @clear="loadRows">
             <el-option
               v-for="status in statuses"
               :key="status.statusCode"
@@ -41,83 +28,93 @@
             <el-button :icon="Refresh" @click="resetQuery">重置</el-button>
           </div>
         </el-form-item>
-      </el-form>
-    </div>
+      </MangoSearchPanel>
+    </template>
 
-    <el-alert
-      v-if="errorMessage"
-      :title="errorMessage"
-      type="error"
-      show-icon
-      :closable="false"
-    >
-      <template #default>
-        <el-button link type="primary" :icon="Refresh" @click="loadRows">重新加载</el-button>
+    <MangoListPanel>
+      <template #actions>
+        <el-button type="primary" plain :icon="Plus" @click="openGenerate(false)">生成汇总</el-button>
       </template>
-    </el-alert>
 
-    <el-table
-      v-loading="loading"
-      class="payment-settlement-summaries__table"
-      :data="rows"
-      row-key="id"
-      stripe
-      highlight-current-row
-    >
-      <template #empty>
-        <el-empty :description="emptyDescription" />
+      <el-alert v-if="errorMessage" :title="errorMessage" type="error" show-icon :closable="false">
+        <template #default>
+          <el-button link type="primary" :icon="Refresh" @click="loadRows">重新加载</el-button>
+        </template>
+      </el-alert>
+
+      <el-table
+        v-loading="loading"
+        class="payment-settlement-summaries__table"
+        :data="rows"
+        row-key="id"
+        stripe
+        highlight-current-row
+      >
+        <template #empty>
+          <el-empty :description="emptyDescription" />
+        </template>
+        <el-table-column prop="settlementDate" label="结算日期" width="120" />
+        <el-table-column prop="appCode" label="应用" min-width="170" show-overflow-tooltip>
+          <template #default="{ row }">{{
+            row.appName ? `${row.appName} / ${row.appCode}` : valueText(row.appCode)
+          }}</template>
+        </el-table-column>
+        <el-table-column prop="subjectName" label="企业主体" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="channelCode" label="通道" min-width="140" show-overflow-tooltip>
+          <template #default="{ row }">{{
+            row.channelName ? `${row.channelName} / ${row.channelCode}` : valueText(row.channelCode)
+          }}</template>
+        </el-table-column>
+        <el-table-column label="支付金额（元）" width="120" align="right">
+          <template #default="{ row }">{{ formatMoney(row.tradeAmount) }}</template>
+        </el-table-column>
+        <el-table-column label="退款金额（元）" width="120" align="right">
+          <template #default="{ row }">{{ formatMoney(row.refundAmount) }}</template>
+        </el-table-column>
+        <el-table-column label="手续费（元）" width="110" align="right">
+          <template #default="{ row }">{{ formatMoney(row.feeAmount) }}</template>
+        </el-table-column>
+        <el-table-column label="净收款（元）" width="120" align="right">
+          <template #default="{ row }">{{ formatMoney(row.netAmount) }}</template>
+        </el-table-column>
+        <el-table-column label="未处理差异（笔/元）" width="140" align="right">
+          <template #default="{ row }">
+            {{ row.unresolvedDifferenceCount || 0 }} / {{ formatMoney(row.unresolvedDifferenceAmount) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="状态" width="110">
+          <template #default="{ row }">
+            <el-tag :type="statusTagType(row.status)" effect="light">{{ row.statusName || row.status || '-' }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="generatedAt" label="生成时间" width="170" show-overflow-tooltip />
+        <el-table-column label="操作" width="292" fixed="right" align="left" class-name="payment-table__operation-cell">
+          <template #default="{ row }">
+            <div class="payment-table__actions">
+              <el-button link type="primary" :icon="Tickets" @click="openDetail(row)">详情</el-button>
+              <el-button v-if="row.status === 'GENERATED'" link type="primary" :icon="Check" @click="confirmRow(row)"
+                >确认</el-button
+              >
+              <el-button v-if="row.status === 'CONFIRMED'" link type="danger" :icon="Close" @click="openVoid(row)"
+                >作废</el-button
+              >
+              <el-button
+                v-if="row.status === 'VOIDED'"
+                link
+                type="primary"
+                :icon="Refresh"
+                @click="openGenerate(true, row)"
+                >重新生成</el-button
+              >
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <template #pagination>
+        <Pagination v-model:page="query.pageNum" v-model:limit="query.pageSize" :total="total" @pagination="loadRows" />
       </template>
-      <el-table-column prop="settlementDate" label="结算日期" width="120" />
-      <el-table-column prop="appCode" label="应用" min-width="170" show-overflow-tooltip>
-        <template #default="{ row }">{{ row.appName ? `${row.appName} / ${row.appCode}` : valueText(row.appCode) }}</template>
-      </el-table-column>
-      <el-table-column prop="subjectName" label="企业主体" min-width="180" show-overflow-tooltip />
-      <el-table-column prop="channelCode" label="通道" min-width="140" show-overflow-tooltip>
-        <template #default="{ row }">{{ row.channelName ? `${row.channelName} / ${row.channelCode}` : valueText(row.channelCode) }}</template>
-      </el-table-column>
-      <el-table-column label="支付金额（元）" width="120" align="right">
-        <template #default="{ row }">{{ formatMoney(row.tradeAmount) }}</template>
-      </el-table-column>
-      <el-table-column label="退款金额（元）" width="120" align="right">
-        <template #default="{ row }">{{ formatMoney(row.refundAmount) }}</template>
-      </el-table-column>
-      <el-table-column label="手续费（元）" width="110" align="right">
-        <template #default="{ row }">{{ formatMoney(row.feeAmount) }}</template>
-      </el-table-column>
-      <el-table-column label="净收款（元）" width="120" align="right">
-        <template #default="{ row }">{{ formatMoney(row.netAmount) }}</template>
-      </el-table-column>
-      <el-table-column label="未处理差异（笔/元）" width="140" align="right">
-        <template #default="{ row }">
-          {{ row.unresolvedDifferenceCount || 0 }} / {{ formatMoney(row.unresolvedDifferenceAmount) }}
-        </template>
-      </el-table-column>
-      <el-table-column label="状态" width="110">
-        <template #default="{ row }">
-          <el-tag :type="statusTagType(row.status)" effect="light">{{ row.statusName || row.status || '-' }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="generatedAt" label="生成时间" width="170" show-overflow-tooltip />
-      <el-table-column label="操作" width="292" fixed="right" align="left" class-name="payment-table__operation-cell">
-        <template #default="{ row }">
-          <div class="payment-table__actions">
-            <el-button link type="primary" :icon="Tickets" @click="openDetail(row)">详情</el-button>
-            <el-button v-if="row.status === 'GENERATED'" link type="primary" :icon="Check" @click="confirmRow(row)">确认</el-button>
-            <el-button v-if="row.status === 'CONFIRMED'" link type="danger" :icon="Close" @click="openVoid(row)">作废</el-button>
-            <el-button v-if="row.status === 'VOIDED'" link type="primary" :icon="Refresh" @click="openGenerate(true, row)">重新生成</el-button>
-          </div>
-        </template>
-      </el-table-column>
-    </el-table>
-
-    <div class="payment-settlement-summaries__pagination">
-      <Pagination
-        v-model:current-page="query.pageNum"
-        v-model:page-size="query.pageSize"
-        :total="total"
-        @change="loadRows"
-      />
-    </div>
+    </MangoListPanel>
 
     <el-dialog
       v-model="generateVisible"
@@ -126,7 +123,13 @@
       destroy-on-close
       append-to-body
     >
-      <el-form ref="generateFormRef" :model="generateForm" :rules="generateRules" label-width="112px" class="payment-dialog-form">
+      <el-form
+        ref="generateFormRef"
+        :model="generateForm"
+        :rules="generateRules"
+        label-width="112px"
+        class="payment-dialog-form"
+      >
         <el-row :gutter="16">
           <el-col :xs="24" :sm="12">
             <el-form-item label="结算日期" prop="settlementDate">
@@ -163,25 +166,18 @@
       </template>
     </el-dialog>
 
-    <el-dialog
-      v-model="voidVisible"
-      title="作废结算汇总"
-      width="560px"
-      destroy-on-close
-      append-to-body
-    >
+    <el-dialog v-model="voidVisible" title="作废结算汇总" width="560px" destroy-on-close append-to-body>
       <el-form ref="voidFormRef" :model="voidForm" :rules="voidRules" label-width="96px" class="payment-dialog-form">
         <el-form-item label="汇总范围">
-          <el-input :model-value="currentRow ? `${currentRow.settlementDate} / ${currentRow.appCode} / ${currentRow.channelCode}` : '-'" disabled />
+          <el-input
+            :model-value="
+              currentRow ? `${currentRow.settlementDate} / ${currentRow.appCode} / ${currentRow.channelCode}` : '-'
+            "
+            disabled
+          />
         </el-form-item>
         <el-form-item label="作废原因" prop="voidReason">
-          <el-input
-            v-model="voidForm.voidReason"
-            type="textarea"
-            :rows="4"
-            maxlength="512"
-            show-word-limit
-          />
+          <el-input v-model="voidForm.voidReason" type="textarea" :rows="4" maxlength="512" show-word-limit />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -190,23 +186,30 @@
       </template>
     </el-dialog>
 
-    <el-drawer
+    <MangoSideDrawerShell
       v-model="detailVisible"
       title="结算汇总详情"
-      size="760px"
-      destroy-on-close
-      append-to-body
+      drawer-size="760px"
+      :destroy-on-close="true"
+      :show-trigger="false"
+      data-surface="payment.settlement-summary.detail"
     >
       <el-skeleton v-if="detailLoading" :rows="10" animated />
       <template v-else-if="detail">
         <el-descriptions title="汇总范围" :column="2" border>
           <el-descriptions-item label="结算日期">{{ valueText(detail.settlementDate) }}</el-descriptions-item>
           <el-descriptions-item label="状态">
-            <el-tag :type="statusTagType(detail.status)" effect="light">{{ detail.statusName || detail.status || '-' }}</el-tag>
+            <el-tag :type="statusTagType(detail.status)" effect="light">{{
+              detail.statusName || detail.status || '-'
+            }}</el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="应用">{{ detail.appName ? `${detail.appName} / ${detail.appCode}` : valueText(detail.appCode) }}</el-descriptions-item>
+          <el-descriptions-item label="应用">{{
+            detail.appName ? `${detail.appName} / ${detail.appCode}` : valueText(detail.appCode)
+          }}</el-descriptions-item>
           <el-descriptions-item label="企业主体">{{ valueText(detail.subjectName) }}</el-descriptions-item>
-          <el-descriptions-item label="通道">{{ detail.channelName ? `${detail.channelName} / ${detail.channelCode}` : valueText(detail.channelCode) }}</el-descriptions-item>
+          <el-descriptions-item label="通道">{{
+            detail.channelName ? `${detail.channelName} / ${detail.channelCode}` : valueText(detail.channelCode)
+          }}</el-descriptions-item>
           <el-descriptions-item label="主体 ID">{{ valueText(detail.enterpriseSubjectId) }}</el-descriptions-item>
         </el-descriptions>
 
@@ -217,8 +220,12 @@
           <el-descriptions-item label="退款成功笔数">{{ detail.refundCount || 0 }}</el-descriptions-item>
           <el-descriptions-item label="通道手续费（元）">{{ formatMoney(detail.feeAmount) }}</el-descriptions-item>
           <el-descriptions-item label="净收款（元）">{{ formatMoney(detail.netAmount) }}</el-descriptions-item>
-          <el-descriptions-item label="未处理差异笔数">{{ detail.unresolvedDifferenceCount || 0 }}</el-descriptions-item>
-          <el-descriptions-item label="未处理差异金额（元）">{{ formatMoney(detail.unresolvedDifferenceAmount) }}</el-descriptions-item>
+          <el-descriptions-item label="未处理差异笔数">{{
+            detail.unresolvedDifferenceCount || 0
+          }}</el-descriptions-item>
+          <el-descriptions-item label="未处理差异金额（元）">{{
+            formatMoney(detail.unresolvedDifferenceAmount)
+          }}</el-descriptions-item>
         </el-descriptions>
 
         <el-descriptions title="操作信息" :column="2" border class="payment-settlement-summaries__detail-block">
@@ -232,12 +239,12 @@
         </el-descriptions>
       </template>
       <el-empty v-else description="未查询到结算汇总详情" />
-    </el-drawer>
-  </section>
+    </MangoSideDrawerShell>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts">
-import { Pagination } from '@mango/common';
+import { MangoListPage, MangoListPanel, MangoSearchPanel, MangoSideDrawerShell, Pagination } from '@mango/common';
 import { computed, onMounted, reactive, ref } from 'vue';
 import { Check, Close, Plus, Refresh, Search, Tickets } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
@@ -467,5 +474,4 @@ function valueText(value: unknown) {
 .payment-settlement-summaries__detail-block {
   margin-top: 18px;
 }
-
 </style>

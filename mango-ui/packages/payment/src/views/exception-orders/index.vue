@@ -1,15 +1,8 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
-  <div class="payment-exception-orders">
-    <section class="payment-exception-orders__header">
-      <div>
-        <h3>异常订单</h3>
-        <p>处理重复支付、超时未回调、金额不一致、状态不一致等支付异常。</p>
-      </div>
-      <el-button link type="primary" :icon="QuestionFilled" @click="helpVisible = true">帮助</el-button>
-    </section>
-
-    <section class="payment-exception-orders__toolbar">
-      <el-form :inline="true" :model="query">
+  <MangoListPage class="payment-exception-orders" data-page="payment.exception-orders">
+    <template #search>
+      <MangoSearchPanel :model="query" :columns="3" @search="loadRows" @reset="resetQuery">
         <el-form-item label="关键字">
           <el-input
             v-model="query.keyword"
@@ -20,13 +13,7 @@
           />
         </el-form-item>
         <el-form-item label="状态">
-          <el-select
-            v-model="query.statusCode"
-            placeholder="全部状态"
-            clearable
-            @change="loadRows"
-            @clear="loadRows"
-          >
+          <el-select v-model="query.statusCode" placeholder="全部状态" clearable @change="loadRows" @clear="loadRows">
             <el-option
               v-for="status in handleStatuses"
               :key="status.statusCode"
@@ -35,89 +22,79 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item>
-          <el-button type="primary" :icon="Search" @click="loadRows">查询</el-button>
-          <el-button :icon="Refresh" @click="resetQuery">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </section>
+      </MangoSearchPanel>
+    </template>
 
-    <el-alert
-      v-if="errorMessage"
-      :title="errorMessage"
-      type="error"
-      show-icon
-      :closable="false"
-    >
-      <template #default>
-        <el-button link type="primary" :icon="Refresh" @click="loadRows">重新加载</el-button>
+    <MangoListPanel>
+      <template #view-actions>
+        <el-button link type="primary" :icon="QuestionFilled" @click="helpVisible = true">帮助</el-button>
       </template>
-    </el-alert>
 
-    <el-table
-      :data="rows"
-      v-loading="loading"
-      row-key="id"
-      stripe
-      highlight-current-row
-      class="payment-exception-orders__table"
-    >
-      <template #empty>
-        <el-empty :description="emptyDescription" />
+      <el-alert v-if="errorMessage" :title="errorMessage" type="error" show-icon :closable="false">
+        <template #default>
+          <el-button link type="primary" :icon="Refresh" @click="loadRows">重新加载</el-button>
+        </template>
+      </el-alert>
+
+      <el-table
+        :data="rows"
+        v-loading="loading"
+        row-key="id"
+        stripe
+        highlight-current-row
+        class="payment-exception-orders__table"
+      >
+        <template #empty>
+          <el-empty :description="emptyDescription" />
+        </template>
+        <el-table-column prop="exceptionNo" label="异常单号" min-width="190" show-overflow-tooltip />
+        <el-table-column prop="relatedOrderNo" label="关联订单号" min-width="190" show-overflow-tooltip />
+        <el-table-column label="异常类型" width="150">
+          <template #default="{ row }">
+            <span>{{ row.exceptionTypeName || row.exceptionType || '-' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="级别" width="100">
+          <template #default="{ row }">
+            <el-tag :type="severityTagType(row.severity)" effect="light">{{
+              row.severityName || row.severity || '-'
+            }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="处理状态" width="120">
+          <template #default="{ row }">
+            <el-tag :type="statusTagType(row.handleStatus)" effect="light">{{
+              row.handleStatusName || row.handleStatus || '-'
+            }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="reason" label="异常原因" min-width="220" show-overflow-tooltip />
+        <el-table-column prop="handleResult" label="处理结果" min-width="220" show-overflow-tooltip />
+        <el-table-column prop="createTime" label="创建时间" width="170" show-overflow-tooltip />
+        <el-table-column label="操作" width="156" fixed="right" align="left" class-name="payment-table__operation-cell">
+          <template #default="{ row }">
+            <div class="payment-table__actions">
+              <el-button link type="primary" :icon="Tickets" @click="openDetail(row)">详情</el-button>
+              <el-button v-if="canHandle(row)" link type="primary" :icon="Operation" @click="openHandle(row)">
+                处理
+              </el-button>
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <template #pagination>
+        <Pagination v-model:page="query.pageNum" v-model:limit="query.pageSize" :total="total" @pagination="loadRows" />
       </template>
-      <el-table-column prop="exceptionNo" label="异常单号" min-width="190" show-overflow-tooltip />
-      <el-table-column prop="relatedOrderNo" label="关联订单号" min-width="190" show-overflow-tooltip />
-      <el-table-column label="异常类型" width="150">
-        <template #default="{ row }">
-          <span>{{ row.exceptionTypeName || row.exceptionType || '-' }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="级别" width="100">
-        <template #default="{ row }">
-          <el-tag :type="severityTagType(row.severity)" effect="light">{{ row.severityName || row.severity || '-' }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="处理状态" width="120">
-        <template #default="{ row }">
-          <el-tag :type="statusTagType(row.handleStatus)" effect="light">{{ row.handleStatusName || row.handleStatus || '-' }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="reason" label="异常原因" min-width="220" show-overflow-tooltip />
-      <el-table-column prop="handleResult" label="处理结果" min-width="220" show-overflow-tooltip />
-      <el-table-column prop="createTime" label="创建时间" width="170" show-overflow-tooltip />
-      <el-table-column label="操作" width="156" fixed="right" align="left" class-name="payment-table__operation-cell">
-        <template #default="{ row }">
-          <div class="payment-table__actions">
-            <el-button link type="primary" :icon="Tickets" @click="openDetail(row)">详情</el-button>
-            <el-button
-              v-if="canHandle(row)"
-              link
-              type="primary"
-              :icon="Operation"
-              @click="openHandle(row)"
-            >
-              处理
-            </el-button>
-          </div>
-        </template>
-      </el-table-column>
-    </el-table>
+    </MangoListPanel>
 
-    <div class="payment-exception-orders__pagination">
-      <Pagination
-        v-model:current-page="query.pageNum"
-        v-model:page-size="query.pageSize"
-        :total="total"
-        @change="loadRows"
-      />
-    </div>
-
-    <el-drawer
+    <MangoSideDrawerShell
       v-model="detailVisible"
       title="异常订单详情"
-      size="720px"
-      destroy-on-close
-      append-to-body
+      drawer-size="720px"
+      :destroy-on-close="true"
+      :show-trigger="false"
+      data-surface="payment.exception-order.detail"
       class="payment-exception-orders__drawer"
     >
       <el-skeleton v-if="detailLoading" :rows="10" animated />
@@ -129,14 +106,18 @@
             {{ detail.exceptionTypeName || detail.exceptionType || '-' }}
           </el-descriptions-item>
           <el-descriptions-item label="级别">
-            <el-tag :type="severityTagType(detail.severity)" effect="light">{{ detail.severityName || detail.severity || '-' }}</el-tag>
+            <el-tag :type="severityTagType(detail.severity)" effect="light">{{
+              detail.severityName || detail.severity || '-'
+            }}</el-tag>
           </el-descriptions-item>
           <el-descriptions-item label="异常原因" :span="2">{{ valueText(detail.reason) }}</el-descriptions-item>
         </el-descriptions>
 
         <el-descriptions title="处理信息" :column="2" border class="payment-exception-orders__detail-block">
           <el-descriptions-item label="处理状态">
-            <el-tag :type="statusTagType(detail.handleStatus)" effect="light">{{ detail.handleStatusName || detail.handleStatus || '-' }}</el-tag>
+            <el-tag :type="statusTagType(detail.handleStatus)" effect="light">{{
+              detail.handleStatusName || detail.handleStatus || '-'
+            }}</el-tag>
           </el-descriptions-item>
           <el-descriptions-item label="处理动作">{{ valueText(detail.handleAction) }}</el-descriptions-item>
           <el-descriptions-item label="处理原因" :span="2">{{ valueText(detail.handleReason) }}</el-descriptions-item>
@@ -152,13 +133,14 @@
         </el-descriptions>
       </template>
       <el-empty v-else description="未查询到异常订单详情" />
-    </el-drawer>
+    </MangoSideDrawerShell>
 
-    <el-drawer
+    <MangoSideDrawerShell
       v-model="helpVisible"
       title="异常订单使用说明"
-      size="520px"
-      append-to-body
+      drawer-size="520px"
+      :show-trigger="false"
+      data-surface="payment.exception-order.help"
       class="payment-exception-orders__help-drawer"
     >
       <el-descriptions title="页面用途" :column="1" border>
@@ -186,15 +168,9 @@
           支付类和退款类异常均可用。人工确认无需系统动作后关闭异常单，不直接修改支付或退款状态。
         </el-descriptions-item>
       </el-descriptions>
-    </el-drawer>
+    </MangoSideDrawerShell>
 
-    <el-dialog
-      v-model="handleVisible"
-      title="处理异常订单"
-      width="640px"
-      destroy-on-close
-      append-to-body
-    >
+    <el-dialog v-model="handleVisible" title="处理异常订单" width="640px" destroy-on-close append-to-body>
       <el-form
         ref="handleFormRef"
         :model="handleForm"
@@ -227,31 +203,13 @@
           :closable="false"
         />
         <el-form-item label="处理原因" prop="handleReason">
-          <el-input
-            v-model="handleForm.handleReason"
-            type="textarea"
-            :rows="3"
-            maxlength="512"
-            show-word-limit
-          />
+          <el-input v-model="handleForm.handleReason" type="textarea" :rows="3" maxlength="512" show-word-limit />
         </el-form-item>
         <el-form-item label="处理结果" prop="handleResult">
-          <el-input
-            v-model="handleForm.handleResult"
-            type="textarea"
-            :rows="3"
-            maxlength="512"
-            show-word-limit
-          />
+          <el-input v-model="handleForm.handleResult" type="textarea" :rows="3" maxlength="512" show-word-limit />
         </el-form-item>
         <el-form-item label="处理凭据">
-          <el-input
-            v-model="handleForm.handleEvidence"
-            type="textarea"
-            :rows="2"
-            maxlength="512"
-            show-word-limit
-          />
+          <el-input v-model="handleForm.handleEvidence" type="textarea" :rows="2" maxlength="512" show-word-limit />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -259,13 +217,13 @@
         <el-button type="primary" :loading="handleSubmitting" @click="submitHandle">保存处理</el-button>
       </template>
     </el-dialog>
-  </div>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts">
-import { Pagination } from '@mango/common';
+import { MangoListPage, MangoListPanel, MangoSearchPanel, MangoSideDrawerShell, Pagination } from '@mango/common';
 import { computed, onMounted, reactive, ref } from 'vue';
-import { Operation, QuestionFilled, Refresh, Search, Tickets } from '@element-plus/icons-vue';
+import { Operation, QuestionFilled, Refresh, Tickets } from '@element-plus/icons-vue';
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
 import {
   paymentExceptionOrderApi,
@@ -326,7 +284,7 @@ const allowedHandleActions = computed(() => {
   });
 });
 const selectedHandleActionDescription = computed(() => {
-  const action = allowedHandleActions.value.find(item => item.actionCode === handleForm.handleAction);
+  const action = allowedHandleActions.value.find((item) => item.actionCode === handleForm.handleAction);
   return action?.description || '';
 });
 
@@ -444,5 +402,4 @@ function valueText(value: unknown) {
 .payment-exception-orders__detail-block {
   margin-top: 18px;
 }
-
 </style>

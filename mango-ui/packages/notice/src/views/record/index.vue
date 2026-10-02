@@ -1,90 +1,72 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
-  <div class="notice-record-page">
-    <el-card shadow="never" class="notice-record-page__search">
-      <el-form :model="searchForm" label-width="96px">
-        <el-row :gutter="16">
-          <el-col :xs="24" :sm="12" :md="8" :lg="6">
-            <el-form-item label="业务域">
-              <el-select v-model="searchForm.bizGroup" clearable filterable placeholder="请选择业务域" :loading="domainLoading">
-                <el-option v-for="item in domainOptions" :key="item.value" :label="item.label" :value="item.value" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :xs="24" :sm="12" :md="8" :lg="6">
-            <el-form-item label="消息名称">
-              <el-input v-model="searchForm.messageName" clearable placeholder="请输入消息名称" @keyup.enter="handleSearch" />
-            </el-form-item>
-          </el-col>
-          <el-col :xs="24" :sm="12" :md="8" :lg="6">
-            <el-form-item label="渠道">
-              <el-select v-model="searchForm.channelType" clearable placeholder="请选择渠道">
-                <el-option v-for="item in channelOptions" :key="item.value" :label="item.label" :value="item.value" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :xs="24" :sm="12" :md="8" :lg="6">
-            <el-form-item label="接收人">
-              <el-select
-                v-model="searchForm.recipientKeyword"
-                :loading="recipientLoading"
-                clearable
-                filterable
-                remote
-                :remote-method="searchRecipients"
-                placeholder="请选择接收人"
-                @visible-change="handleRecipientVisible"
-              >
-                <el-option
-                  v-for="item in recipientOptions"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.keyword"
-                />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :xs="24" :sm="12" :md="8" :lg="6">
-            <el-form-item label="状态">
-              <el-select v-model="searchForm.status" clearable placeholder="请选择状态">
-                <el-option v-for="item in statusOptions" :key="item.value" :label="item.label" :value="item.value" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :xs="24" :sm="12" :md="10" :lg="8">
-            <el-form-item label="发送时间">
-              <el-config-provider :locale="zhCn">
-                <el-date-picker
-                  v-model="searchForm.sentTimeRange"
-                  type="datetimerange"
-                  range-separator="至"
-                  start-placeholder="开始时间"
-                  end-placeholder="结束时间"
-                  value-format="YYYY-MM-DD HH:mm:ss"
-                />
-              </el-config-provider>
-            </el-form-item>
-          </el-col>
-          <el-col :xs="24" :sm="12" :md="6" :lg="4">
-            <el-form-item label-width="0">
-              <el-space>
-                <el-button type="primary" :loading="loading" @click="handleSearch">查询</el-button>
-                <el-button @click="resetSearch">重置</el-button>
-              </el-space>
-            </el-form-item>
-          </el-col>
-        </el-row>
-      </el-form>
-    </el-card>
+  <MangoListPage class="notice-record-page" data-page="notice.record">
+    <template #search>
+      <MangoSearchPanel :model="searchForm" :columns="4" @search="handleSearch" @reset="resetSearch">
+        <el-form-item label="业务域">
+          <el-select
+            v-model="searchForm.bizGroup"
+            clearable
+            filterable
+            placeholder="请选择业务域"
+            :loading="domainLoading"
+          >
+            <el-option v-for="item in domainOptions" :key="item.value" :label="item.label" :value="item.value" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="消息名称">
+          <el-input
+            v-model="searchForm.messageName"
+            clearable
+            placeholder="请输入消息名称"
+            @keyup.enter="handleSearch"
+          />
+        </el-form-item>
+        <el-form-item label="渠道">
+          <el-select v-model="searchForm.channelType" clearable placeholder="请选择渠道">
+            <el-option v-for="item in channelOptions" :key="item.value" :label="item.label" :value="item.value" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="接收人">
+          <el-select
+            v-model="searchForm.recipientKeyword"
+            :loading="recipientLoading"
+            clearable
+            filterable
+            remote
+            :remote-method="searchRecipients"
+            placeholder="请选择接收人"
+            @visible-change="handleRecipientVisible"
+          >
+            <el-option v-for="item in recipientOptions" :key="item.value" :label="item.label" :value="item.keyword" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-select v-model="searchForm.status" clearable placeholder="请选择状态">
+            <el-option v-for="item in statusOptions" :key="item.value" :label="item.label" :value="item.value" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="发送时间">
+          <el-config-provider :locale="zhCn">
+            <el-date-picker
+              v-model="searchForm.sentTimeRange"
+              type="datetimerange"
+              range-separator="至"
+              start-placeholder="开始时间"
+              end-placeholder="结束时间"
+              value-format="YYYY-MM-DD HH:mm:ss"
+            />
+          </el-config-provider>
+        </el-form-item>
+      </MangoSearchPanel>
+    </template>
 
-    <el-card shadow="never">
-      <template #header>
-        <div class="notice-record-page__header">
-          <span>发送记录</span>
-          <el-button type="primary" plain :loading="loading" @click="loadRecords">刷新</el-button>
-        </div>
+    <MangoListPanel>
+      <template #actions>
+        <el-button type="primary" plain :loading="loading" @click="loadRecords">刷新</el-button>
       </template>
 
-      <el-table :data="records" border stripe v-loading="loading">
+      <el-table v-loading="loading" :data="records" border stripe>
         <el-table-column label="业务域" min-width="120" show-overflow-tooltip>
           <template #default="{ row }">{{ domainText(row.bizGroup) }}</template>
         </el-table-column>
@@ -117,9 +99,9 @@
           </template>
         </el-table-column>
       </el-table>
-    </el-card>
+    </MangoListPanel>
 
-    <el-dialog v-model="detailVisible" title="发送记录详情" width="860px">
+    <MangoDialog v-model="detailVisible" title="发送记录详情" width="860px">
       <div v-if="currentRecord" class="notice-record-page__detail">
         <section>
           <h3>基础信息</h3>
@@ -152,8 +134,12 @@
           <el-descriptions :column="2" border>
             <el-descriptions-item label="通道名称">{{ currentRecord.channelConfigName || '-' }}</el-descriptions-item>
             <el-descriptions-item label="通道配置ID">{{ currentRecord.channelConfigId || '-' }}</el-descriptions-item>
-            <el-descriptions-item label="模板名称">{{ currentRecord.businessChannelTemplateName || '-' }}</el-descriptions-item>
-            <el-descriptions-item label="模板ID">{{ currentRecord.businessChannelTemplateId || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="模板名称">{{
+              currentRecord.businessChannelTemplateName || '-'
+            }}</el-descriptions-item>
+            <el-descriptions-item label="模板ID">{{
+              currentRecord.businessChannelTemplateId || '-'
+            }}</el-descriptions-item>
             <el-descriptions-item label="模板版本">{{ currentRecord.templateVersion ?? '-' }}</el-descriptions-item>
             <el-descriptions-item label="请求流水号">{{ currentRecord.requestId || '-' }}</el-descriptions-item>
             <el-descriptions-item label="三方消息ID">{{ currentRecord.providerMessageId || '-' }}</el-descriptions-item>
@@ -176,12 +162,13 @@
       <template #footer>
         <el-button type="primary" @click="detailVisible = false">关闭</el-button>
       </template>
-    </el-dialog>
-  </div>
+    </MangoDialog>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue';
+import { MangoDialog, MangoListPage, MangoListPanel, MangoSearchPanel } from '@mango/common';
 import zhCn from 'element-plus/es/locale/lang/zh-cn';
 import { getIdentityUsers, getSendRecords, type NoticeIdentityUser } from '../../api/notice';
 import type { NoticeChannelType, NoticeSendRecord, NoticeSendStatus } from '../../types/notice';
@@ -248,11 +235,15 @@ async function searchRecipients(keyword: string) {
   recipientLoading.value = true;
   try {
     const result = await getIdentityUsers(keyword.trim(), { pageNum: 1, pageSize: 20, status: 1 });
-    recipientOptions.value = (result.list || []).map(toRecipientOption).filter((item): item is {
-      value: string;
-      label: string;
-      keyword: string;
-    } => Boolean(item));
+    recipientOptions.value = (result.list || []).map(toRecipientOption).filter(
+      (
+        item,
+      ): item is {
+        value: string;
+        label: string;
+        keyword: string;
+      } => Boolean(item),
+    );
   } finally {
     recipientLoading.value = false;
   }
@@ -300,11 +291,9 @@ function recipientText(row: NoticeSendRecord) {
     return recipientAccount;
   }
   const request = parseSnapshot(row.requestSnapshot);
-  const values = [
-    stringValue(request.recipientName),
-    stringValue(request.mobile),
-    stringValue(request.email),
-  ].filter(Boolean);
+  const values = [stringValue(request.recipientName), stringValue(request.mobile), stringValue(request.email)].filter(
+    Boolean,
+  );
   return values[0] || '-';
 }
 
@@ -329,49 +318,61 @@ function searchParams() {
 }
 
 function channelTypeText(type: NoticeChannelType) {
-  return ({
-    SITE: '系统消息',
-    SMS: '短信',
-    EMAIL: '邮件',
-    WECHAT_OFFICIAL: '公众号',
-    WECOM: '企业微信',
-    DINGTALK: '钉钉',
-  } as Record<NoticeChannelType, string>)[type] || type;
+  return (
+    (
+      {
+        SITE: '系统消息',
+        SMS: '短信',
+        EMAIL: '邮件',
+        WECHAT_OFFICIAL: '公众号',
+        WECOM: '企业微信',
+        DINGTALK: '钉钉',
+      } as Record<NoticeChannelType, string>
+    )[type] || type
+  );
 }
 
 function sendStatusText(status: NoticeSendStatus) {
-  return ({
-    PENDING: '待发送',
-    SENDING: '发送中',
-    SUCCESS: '成功',
-    FAILED: '失败',
-    RETRY_WAITING: '等待重试',
-    FINAL_FAILED: '最终失败',
-    MANUAL_SUCCESS: '人工成功',
-    IGNORED: '已忽略',
-    CANCELED: '已取消',
-  } as Record<NoticeSendStatus, string>)[status] || status;
+  return (
+    (
+      {
+        PENDING: '待发送',
+        SENDING: '发送中',
+        SUCCESS: '成功',
+        FAILED: '失败',
+        RETRY_WAITING: '等待重试',
+        FINAL_FAILED: '最终失败',
+        MANUAL_SUCCESS: '人工成功',
+        IGNORED: '已忽略',
+        CANCELED: '已取消',
+      } as Record<NoticeSendStatus, string>
+    )[status] || status
+  );
 }
 
 function sendStatusTag(status: NoticeSendStatus) {
-  return ({
-    PENDING: 'info',
-    SENDING: 'warning',
-    SUCCESS: 'success',
-    FAILED: 'danger',
-    RETRY_WAITING: 'warning',
-    FINAL_FAILED: 'danger',
-    MANUAL_SUCCESS: 'success',
-    IGNORED: 'info',
-    CANCELED: 'info',
-  } as Record<NoticeSendStatus, 'success' | 'warning' | 'danger' | 'info'>)[status] || 'info';
+  return (
+    (
+      {
+        PENDING: 'info',
+        SENDING: 'warning',
+        SUCCESS: 'success',
+        FAILED: 'danger',
+        RETRY_WAITING: 'warning',
+        FINAL_FAILED: 'danger',
+        MANUAL_SUCCESS: 'success',
+        IGNORED: 'info',
+        CANCELED: 'info',
+      } as Record<NoticeSendStatus, 'success' | 'warning' | 'danger' | 'info'>
+    )[status] || 'info'
+  );
 }
 
 function parseSnapshot(snapshot?: string) {
   if (!snapshot) return {};
   try {
     const parsed = JSON.parse(snapshot);
-    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {};
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : {};
   } catch {
     return {};
   }
@@ -463,7 +464,7 @@ onMounted(() => {
   overflow: auto;
   white-space: pre;
   word-break: normal;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
   font-size: 12px;
   line-height: 1.6;
   color: var(--el-text-color-primary);

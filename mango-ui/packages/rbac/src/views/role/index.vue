@@ -1,13 +1,30 @@
-<!-- mango-page-baseline-exception all: 角色工作台联合菜单授权、数据范围和成员关系配置，不是单一实体的标准列表与短表单弹框。 -->
+<!-- mango-page-baseline-exception list: 角色接口返回当前上下文角色集合，不支持分页列表语义。 -->
+<!-- mango-page-baseline-exception dialog: 角色编辑联合菜单授权和数据范围配置，弹框需要保留复杂业务上下文。 -->
 <template>
-  <div class="role-container" data-page="role.management">
-    <el-card>
-      <div class="action-toolbar">
-        <div class="toolbar-left">
-          <el-button type="primary" @click="handleAdd"> 新增角色 </el-button>
-        </div>
-      </div>
-      <el-table v-loading="loading" :data="tableData" stripe>
+  <MangoListPage class="role-page" data-page="system.role">
+    <template #search>
+      <MangoSearchPanel :model="roleQuery" :columns="2" @search="handleRoleSearch" @reset="handleRoleReset">
+        <el-form-item label="关键词">
+          <el-input v-model="roleQuery.keyword" placeholder="角色名称/编码" clearable @keyup.enter="handleRoleSearch" />
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-select v-model="roleQuery.status" placeholder="全部状态" clearable>
+            <el-option
+              v-for="item in statusOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="Number(item.value)"
+            />
+          </el-select>
+        </el-form-item>
+      </MangoSearchPanel>
+    </template>
+
+    <MangoListPanel>
+      <template #actions>
+        <el-button type="primary" plain @click="handleAdd">新增角色</el-button>
+      </template>
+      <el-table v-loading="loading" :data="filteredTableData" stripe data-surface="system.role.table">
         <el-table-column prop="roleName" label="角色名称" />
         <el-table-column prop="roleCode" label="角色编码" />
         <el-table-column prop="realm" label="登录域" width="120">
@@ -47,9 +64,9 @@
           </template>
         </el-table-column>
       </el-table>
-    </el-card>
+    </MangoListPanel>
 
-    <el-dialog v-model="dialogVisible" :title="form.roleId ? '编辑角色' : '新增角色'" width="560px">
+    <MangoDialog v-model="dialogVisible" :title="form.roleId ? '编辑角色' : '新增角色'" width="560px">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="应用编码" prop="appCode">
           <el-select
@@ -114,9 +131,9 @@
         <el-button @click="dialogVisible = false"> 取消 </el-button>
         <el-button type="primary" :loading="submitLoading" @click="handleSubmit"> 确定 </el-button>
       </template>
-    </el-dialog>
+    </MangoDialog>
 
-    <el-dialog v-model="assignDialogVisible" title="分配角色权限" width="640px">
+    <MangoDialog v-model="assignDialogVisible" title="分配角色权限" width="640px">
       <div class="assign-header">
         <span>{{ currentRole?.roleName }}</span>
         <el-tag v-if="currentRole?.roleCode" effect="plain">
@@ -153,9 +170,9 @@
           确定
         </el-button>
       </template>
-    </el-dialog>
+    </MangoDialog>
 
-    <el-dialog v-model="dataScopeDialogVisible" title="角色数据权限" width="920px">
+    <MangoDialog v-model="dataScopeDialogVisible" title="角色数据权限" width="920px">
       <div class="assign-header">
         <span>{{ currentRole?.roleName }}</span>
         <el-tag v-if="currentRole?.roleCode" effect="plain">
@@ -289,12 +306,12 @@
       <template #footer>
         <el-button @click="dataScopeDialogVisible = false"> 关闭 </el-button>
       </template>
-    </el-dialog>
-  </div>
+    </MangoDialog>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts" name="SystemRole">
-import { DictTag } from '@mango/common';
+import { DictTag, MangoDialog, MangoListPage, MangoListPanel, MangoSearchPanel } from '@mango/common';
 import { computed, nextTick, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules, type TreeInstance } from 'element-plus';
 import type { ApiId } from '@mango/api-schema';
@@ -347,6 +364,7 @@ const loading = ref(false);
 const submitLoading = ref(false);
 const dialogVisible = ref(false);
 const tableData = ref<RoleVO[]>([]);
+const roleQuery = reactive({ keyword: '', status: undefined as number | undefined });
 const appOptions = ref<AuthorizationApp[]>([]);
 const selectedContextKey = ref('');
 const formRef = ref<FormInstance>();
@@ -423,6 +441,16 @@ const currentAppContexts = computed(() => {
   return app?.loginContexts?.filter((item) => item.status === 1) || [];
 });
 
+const filteredTableData = computed(() => {
+  const keyword = roleQuery.keyword.trim().toLowerCase();
+  return tableData.value.filter((item) => {
+    const matchesKeyword =
+      !keyword || item.roleName.toLowerCase().includes(keyword) || item.roleCode.toLowerCase().includes(keyword);
+    const matchesStatus = roleQuery.status === undefined || item.status === roleQuery.status;
+    return matchesKeyword && matchesStatus;
+  });
+});
+
 const dataScopeTableRows = computed<DataScopeTableRow[]>(() => {
   if (dataScopeEditRow.isNew) {
     return [dataScopeEditRow, ...dataScopes.value];
@@ -441,6 +469,15 @@ async function loadData() {
   } finally {
     loading.value = false;
   }
+}
+
+function handleRoleSearch() {
+  // 角色列表由接口一次返回，搜索在当前租户角色集合上本地过滤。
+}
+
+function handleRoleReset() {
+  roleQuery.keyword = '';
+  roleQuery.status = undefined;
 }
 
 function resetForm() {

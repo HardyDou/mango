@@ -86,7 +86,7 @@
                         "path": "/link/my-links",
                         "icon": "Collection",
                         "component": "link/my-links/index",
-                        "sort": 3,
+                        "sort": 2,
                         "remark": "用户侧个人网址入口",
                         "apiCodes": [
                           "link:personal:view"

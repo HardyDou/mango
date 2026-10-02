@@ -1,9 +1,7 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
   <main class="mango-detail-page" :data-page="dataPage || undefined">
-    <header class="mango-detail-page__backbar">
-      <el-button link :icon="Back" @click="emit('back')">{{ backText }}</el-button>
-      <span class="mango-detail-page__title">{{ title }}</span>
-    </header>
+    <MangoPageBackBar :title="title" :back-label="backText" :show-refresh="false" @back="emit('back')" />
     <div class="mango-detail-page__content">
       <slot />
     </div>
@@ -14,16 +12,19 @@
 </template>
 
 <script setup lang="ts" name="MangoDetailPage">
-import { Back } from '@element-plus/icons-vue';
+import MangoPageBackBar from '../MangoPageBackBar/index.vue';
 
-withDefaults(defineProps<{
-  title: string;
-  backText?: string;
-  dataPage?: string;
-}>(), {
-  backText: '返回',
-  dataPage: undefined,
-});
+withDefaults(
+  defineProps<{
+    title: string;
+    backText?: string;
+    dataPage?: string;
+  }>(),
+  {
+    backText: '返回',
+    dataPage: undefined,
+  },
+);
 
 const emit = defineEmits<{
   back: [];
@@ -38,20 +39,6 @@ const emit = defineEmits<{
   width: 100%;
   min-width: 0;
   padding-bottom: 64px;
-}
-
-.mango-detail-page__backbar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 40px;
-}
-
-.mango-detail-page__title {
-  color: var(--mango-text-color);
-  font-size: 18px;
-  font-weight: 600;
-  line-height: 26px;
 }
 
 .mango-detail-page__content {

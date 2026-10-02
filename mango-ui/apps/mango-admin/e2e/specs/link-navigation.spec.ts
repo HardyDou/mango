@@ -145,48 +145,56 @@ function mysqlScalar(sql: string) {
 }
 
 function collectMenuNames(menus: MenuNode[]): string[] {
-  return menus.flatMap((menu) => [
-    menu.menuName,
-    ...collectMenuNames(menu.children || []),
-  ]).filter(Boolean) as string[];
+  return menus.flatMap((menu) => [menu.menuName, ...collectMenuNames(menu.children || [])]).filter(Boolean) as string[];
 }
 
 async function waitForLinkAuthorizationReady(request: APIRequestContext, authHeaders: Record<string, string>) {
-  await expect.poll(async () => {
-    const response = await request.get('/api/authorization/menus/user?fmt=tree', { headers: authHeaders });
-    if (response.status() !== 200) {
-      return false;
-    }
-    const body = await response.json();
-    return collectMenuNames(body.data || []).includes('网址导航');
-  }, {
-    timeout: 20000,
-    intervals: [500, 1000, 2000],
-  }).toBe(true);
+  await expect
+    .poll(
+      async () => {
+        const response = await request.get('/api/authorization/menus/user?fmt=tree', { headers: authHeaders });
+        if (response.status() !== 200) {
+          return false;
+        }
+        const body = await response.json();
+        return collectMenuNames(body.data || []).includes('网址导航');
+      },
+      {
+        timeout: 20000,
+        intervals: [500, 1000, 2000],
+      },
+    )
+    .toBe(true);
 }
 
 async function waitForLinkMenuReady(page: Page) {
-  await expect.poll(async () => page.evaluate(async () => {
-    const response = await fetch('/api/authorization/menus/user?fmt=tree');
-    if (!response.ok) {
-      return false;
-    }
-    const body = await response.json();
-    const names: string[] = [];
-    const walk = (menus: MenuNode[]) => {
-      for (const menu of menus || []) {
-        if (menu.menuName) {
-          names.push(menu.menuName);
-        }
-        walk(menu.children || []);
-      }
-    };
-    walk(body.data || []);
-    return names.includes('网址导航');
-  }), {
-    timeout: 20000,
-    intervals: [500, 1000, 2000],
-  }).toBe(true);
+  await expect
+    .poll(
+      async () =>
+        page.evaluate(async () => {
+          const response = await fetch('/api/authorization/menus/user?fmt=tree');
+          if (!response.ok) {
+            return false;
+          }
+          const body = await response.json();
+          const names: string[] = [];
+          const walk = (menus: MenuNode[]) => {
+            for (const menu of menus || []) {
+              if (menu.menuName) {
+                names.push(menu.menuName);
+              }
+              walk(menu.children || []);
+            }
+          };
+          walk(body.data || []);
+          return names.includes('网址导航');
+        }),
+      {
+        timeout: 20000,
+        intervals: [500, 1000, 2000],
+      },
+    )
+    .toBe(true);
 }
 
 test.describe('网址导航菜单 E2E', () => {
@@ -221,95 +229,114 @@ test.describe('网址导航菜单 E2E', () => {
     let personalLinkId: string | undefined;
 
     try {
-      categoryId = await expectApiData<string>(await request.post('/api/link/categories/create', {
-        headers: authHeaders,
-        data: {
-          name: unique,
-          sortNo: 0,
-          remark: unique,
-        },
-      }));
+      categoryId = await expectApiData<string>(
+        await request.post('/api/link/categories/create', {
+          headers: authHeaders,
+          data: {
+            name: unique,
+            sortNo: 0,
+            remark: unique,
+          },
+        }),
+      );
 
-      companyLinkId = await expectApiData<string>(await request.post('/api/link/items/create', {
-        headers: authHeaders,
-        data: {
-          name: `${unique}_COMPANY`,
-          url: `https://example.com/${unique.toLowerCase()}/company`,
-          categoryId,
-          summary: unique,
-          tags: [tag],
-          visibilityScope: 'COMPANY',
-          recommended: true,
-          sortNo: 0,
-        },
-      }));
+      companyLinkId = await expectApiData<string>(
+        await request.post('/api/link/items/create', {
+          headers: authHeaders,
+          data: {
+            name: `${unique}_COMPANY`,
+            url: `https://example.com/${unique.toLowerCase()}/company`,
+            categoryId,
+            summary: unique,
+            tags: [tag],
+            visibilityScope: 'COMPANY',
+            recommended: true,
+            sortNo: 0,
+          },
+        }),
+      );
 
-      personalCategoryId = await expectApiData<string>(await request.post('/api/link/personal-categories/create', {
-        headers: authHeaders,
-        data: {
-          name: `${unique}_PERSONAL_CATEGORY`,
-          sortNo: 0,
-        },
-      }));
+      personalCategoryId = await expectApiData<string>(
+        await request.post('/api/link/personal-categories/create', {
+          headers: authHeaders,
+          data: {
+            name: `${unique}_PERSONAL_CATEGORY`,
+            sortNo: 0,
+          },
+        }),
+      );
 
-      personalLinkId = await expectApiData<string>(await request.post('/api/link/personal-links/create', {
-        headers: authHeaders,
-        data: {
-          name: `${unique}_PERSONAL`,
-          url: `https://example.com/${unique.toLowerCase()}/personal`,
-          categoryId: personalCategoryId,
-          summary: unique,
-          tags: [tag],
-        },
-      }));
+      personalLinkId = await expectApiData<string>(
+        await request.post('/api/link/personal-links/create', {
+          headers: authHeaders,
+          data: {
+            name: `${unique}_PERSONAL`,
+            url: `https://example.com/${unique.toLowerCase()}/personal`,
+            categoryId: personalCategoryId,
+            summary: unique,
+            tags: [tag],
+          },
+        }),
+      );
 
-      await expectApiData<boolean>(await request.post('/api/link/favorites/create', {
-        headers: authHeaders,
-        data: { linkId: companyLinkId },
-      }));
+      await expectApiData<boolean>(
+        await request.post('/api/link/favorites/create', {
+          headers: authHeaders,
+          data: { linkId: companyLinkId },
+        }),
+      );
 
       const anonymousContext = await playwrightRequest.newContext({ baseURL });
       try {
         const anonymousLinks = await expectApiData<Array<{ name?: string }>>(
-          await anonymousContext.get(`/api/link/open/public-links/list?tenantId=1&keyword=${encodeURIComponent(unique)}`),
+          await anonymousContext.get(
+            `/api/link/open/public-links/list?tenantId=1&keyword=${encodeURIComponent(unique)}`,
+          ),
         );
         expect(anonymousLinks).toHaveLength(0);
       } finally {
         await anonymousContext.dispose();
       }
 
-      const visibleLinks = await expectApiData<Array<{
-        id?: string;
-        name?: string;
-        source?: string;
-        favorited?: boolean;
-        redirectUrl?: string;
-        url?: string;
-      }>>(
+      const visibleLinks = await expectApiData<
+        Array<{
+          id?: string;
+          name?: string;
+          source?: string;
+          favorited?: boolean;
+          redirectUrl?: string;
+          url?: string;
+        }>
+      >(
         await request.get(`/api/link/visible-links/list?keyword=${encodeURIComponent(unique)}`, {
           headers: authHeaders,
         }),
       );
-      expect(visibleLinks).toEqual(expect.arrayContaining([
-        expect.objectContaining({ id: String(companyLinkId), source: 'COMPANY', favorited: true }),
-        expect.objectContaining({ id: String(companyLinkId), source: 'FAVORITE', favorited: true }),
-        expect.objectContaining({ id: String(personalLinkId), source: 'PERSONAL' }),
-      ]));
+      expect(visibleLinks).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ id: String(companyLinkId), source: 'COMPANY', favorited: true }),
+          expect.objectContaining({ id: String(companyLinkId), source: 'FAVORITE', favorited: true }),
+          expect.objectContaining({ id: String(personalLinkId), source: 'PERSONAL' }),
+        ]),
+      );
 
       const companyEntry = visibleLinks.find((item) => item.id === String(companyLinkId) && item.source === 'COMPANY');
       expect(companyEntry?.url).toBe(`https://example.com/${unique.toLowerCase()}/company`);
-      const beforeAccessCount = Number(mysqlScalar(
-        `SELECT COUNT(*) FROM link_access_record WHERE link_id = ${companyLinkId} AND source = 'COMPANY'`,
-      ));
-      const redirectResponse = await request.get(`/api/link/visible-links/redirect?id=${companyLinkId}&source=COMPANY`, {
-        headers: authHeaders,
-        maxRedirects: 0,
-      });
+      const beforeAccessCount = Number(
+        mysqlScalar(`SELECT COUNT(*) FROM link_access_record WHERE link_id = ${companyLinkId} AND source = 'COMPANY'`),
+      );
+      const redirectResponse = await request.get(
+        `/api/link/visible-links/redirect?id=${companyLinkId}&source=COMPANY`,
+        {
+          headers: authHeaders,
+          maxRedirects: 0,
+        },
+      );
       expect(redirectResponse.status()).toBe(302);
       expect(redirectResponse.headers().location).toBe(companyEntry?.url);
-      const afterAccessCount = Number(mysqlScalar(
-        `SELECT COUNT(*) FROM link_access_record WHERE link_id = ${companyLinkId} AND source = 'COMPANY'`,
-      ));
+      const afterAccessCount = Number(
+        mysqlScalar(`SELECT COUNT(*) FROM link_access_record WHERE link_id = ${companyLinkId} AND source = 'COMPANY'`),
+      );
       expect(afterAccessCount).toBe(beforeAccessCount + 1);
     } finally {
       if (companyLinkId) {
@@ -334,9 +361,7 @@ test.describe('网址导航菜单 E2E', () => {
   test('@p0 @mango-link 管理员可看到网址导航菜单并打开网址列表页面', async ({ page }) => {
     const menuResponsePromise = page.waitForResponse((response) => {
       const url = response.url();
-      return response.status() === 200
-        && url.includes('/api/authorization/menus/user')
-        && url.includes('fmt=tree');
+      return response.status() === 200 && url.includes('/api/authorization/menus/user') && url.includes('fmt=tree');
     });
 
     await login(page);
@@ -361,45 +386,29 @@ test.describe('网址导航菜单 E2E', () => {
 
     await page.goto('/#/link/company');
     await expect(page.locator('[data-page="link-company"]')).toBeVisible({ timeout: 10000 });
-    await expect(page.getByRole('heading', { name: '我的分类' })).toBeVisible();
   });
 
-  test('@p0 @mango-link 我的分类和我的网址页面回显真实数据', async ({ page, request }, testInfo) => {
+  test('@p0 @mango-link 我的网址页面回显真实数据', async ({ page, request }, testInfo) => {
     const token = await loginByApi(request);
     const authHeaders = { Authorization: `Bearer ${token}` };
     const unique = `E2E_LINK_PAGE_${testInfo.project.name}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    let personalCategoryId: string | undefined;
     let personalLinkId: string | undefined;
 
     try {
-      personalCategoryId = await expectApiData<string>(await request.post('/api/link/personal-categories/create', {
-        headers: authHeaders,
-        data: {
-          name: `${unique}_分类`,
-          sortNo: 10,
-        },
-      }));
-
-      personalLinkId = await expectApiData<string>(await request.post('/api/link/personal-links/create', {
-        headers: authHeaders,
-        data: {
-          name: `${unique}_网址`,
-          url: `https://example.com/${unique.toLowerCase()}`,
-          categoryId: personalCategoryId,
-          summary: `${unique}_说明`,
-          tags: ['e2e', 'link'],
-        },
-      }));
+      personalLinkId = await expectApiData<string>(
+        await request.post('/api/link/personal-links/create', {
+          headers: authHeaders,
+          data: {
+            name: `${unique}_网址`,
+            url: `https://example.com/${unique.toLowerCase()}`,
+            summary: `${unique}_说明`,
+            tags: ['e2e', 'link'],
+          },
+        }),
+      );
 
       await login(page);
       await waitForLinkMenuReady(page);
-
-      await page.goto('/#/link/company');
-      await expect(page.locator('[data-page="link-company"]')).toBeVisible({ timeout: 10000 });
-      await expect(page.getByRole('heading', { name: '我的分类' })).toBeVisible();
-      await expect(page.getByText('企业导航')).toBeVisible({ timeout: 10000 });
-      await expect(page.getByText(`${unique}_分类`)).toBeVisible({ timeout: 10000 });
-      await expect(page.locator('[data-page="link-company"] .el-tag', { hasText: /^个人$/ }).first()).toBeVisible();
 
       await page.goto('/#/link/my-links');
       await expect(page.locator('[data-page="link-my-links"]')).toBeVisible({ timeout: 10000 });
@@ -409,9 +418,6 @@ test.describe('网址导航菜单 E2E', () => {
     } finally {
       if (personalLinkId) {
         await request.delete(`/api/link/personal-links/delete?id=${personalLinkId}`, { headers: authHeaders });
-      }
-      if (personalCategoryId) {
-        await request.delete(`/api/link/personal-categories/delete?id=${personalCategoryId}`, { headers: authHeaders });
       }
     }
   });

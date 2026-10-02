@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <!-- mango-page-baseline-exception all: 组织维护是树形主从工作台，左侧组织树、右侧详情和直属下级表格共同构成一个联动页面。 -->
 <template>
   <div class="org-container">
@@ -96,37 +97,38 @@
               </el-descriptions-item>
             </el-descriptions>
 
-            <div class="section-header">
-              <span>直属下级</span>
-              <el-button link type="primary" @click="loadChildren(currentOrg.id)"> 刷新下级 </el-button>
-            </div>
+            <MangoListPanel>
+              <template #actions>
+                <el-button plain @click="loadChildren(currentOrg.id)">刷新下级</el-button>
+              </template>
 
-            <el-table v-loading="childrenLoading" :data="childrenData" stripe row-key="id">
-              <el-table-column prop="orgName" label="组织名称" min-width="160" />
-              <el-table-column prop="orgCode" label="组织编码" min-width="140" />
-              <el-table-column prop="orgType" label="类型" width="100">
-                <template #default="{ row }">
-                  {{ orgTypeLabel(row.orgType) }}
-                </template>
-              </el-table-column>
-              <el-table-column prop="orgStatus" label="状态" width="100">
-                <template #default="{ row }">
-                  <el-tag :type="row.orgStatus === '1' ? 'success' : 'danger'" size="small">
-                    {{ row.orgStatus === '1' ? '启用' : '禁用' }}
-                  </el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column prop="orgSort" label="排序" width="90" />
-              <el-table-column label="操作" width="180" fixed="right">
-                <template #default="{ row }">
-                  <el-button link type="primary" size="small" @click="handleAddChild(row)"> 新增下级 </el-button>
-                  <el-button link type="primary" size="small" @click="handleEdit(row)"> 编辑 </el-button>
-                  <el-button link type="danger" size="small" :disabled="isRootOrg(row)" @click="handleDelete(row)">
-                    删除
-                  </el-button>
-                </template>
-              </el-table-column>
-            </el-table>
+              <el-table v-loading="childrenLoading" :data="childrenData" stripe row-key="id">
+                <el-table-column prop="orgName" label="组织名称" min-width="160" />
+                <el-table-column prop="orgCode" label="组织编码" min-width="140" />
+                <el-table-column prop="orgType" label="类型" width="100">
+                  <template #default="{ row }">
+                    {{ orgTypeLabel(row.orgType) }}
+                  </template>
+                </el-table-column>
+                <el-table-column prop="orgStatus" label="状态" width="100">
+                  <template #default="{ row }">
+                    <el-tag :type="row.orgStatus === '1' ? 'success' : 'danger'" size="small">
+                      {{ row.orgStatus === '1' ? '启用' : '禁用' }}
+                    </el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="orgSort" label="排序" width="90" />
+                <el-table-column label="操作" width="180" fixed="right">
+                  <template #default="{ row }">
+                    <el-button link type="primary" size="small" @click="handleAddChild(row)"> 新增下级 </el-button>
+                    <el-button link type="primary" size="small" @click="handleEdit(row)"> 编辑 </el-button>
+                    <el-button link type="danger" size="small" :disabled="isRootOrg(row)" @click="handleDelete(row)">
+                      删除
+                    </el-button>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </MangoListPanel>
           </template>
         </el-card>
       </el-col>
@@ -181,6 +183,7 @@
 </template>
 
 <script setup lang="ts" name="SystemOrg">
+import { MangoListPanel } from '@mango/common';
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import type { ApiId } from '@mango/api-schema';

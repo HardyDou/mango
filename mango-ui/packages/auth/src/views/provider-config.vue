@@ -1,29 +1,36 @@
-<!-- mango-page-baseline-exception list: 本页固定展示企业微信和钉钉两行配置矩阵，不存在分页领域数据。 -->
+<!-- mango-page-baseline-exception list: 配置接口按应用返回固定的企业微信和钉钉两行矩阵，不存在分页领域数据。 -->
 <template>
-  <div class="provider-config-page" data-surface="provider-config">
-    <el-card shadow="never">
-      <div class="page-header">
-        <div>
-          <h2>第三方登录配置</h2>
-          <p>配置当前租户、指定应用可使用的企业微信和钉钉登录。</p>
-        </div>
-        <div class="app-filter">
-          <el-input v-model="appCode" placeholder="应用编码，如 internal-admin" clearable @keyup.enter="loadConfigs" />
-          <el-button v-auth="'auth:provider-config:view'" type="primary" :loading="loading" @click="loadConfigs">
-            查询
-          </el-button>
-        </div>
-      </div>
+  <MangoListPage class="provider-config-page" data-page="auth.provider-config">
+    <template #search>
+      <MangoSearchPanel :model="query" :columns="1" @search="loadConfigs" @reset="resetSearch">
+        <el-form-item label="应用编码">
+          <el-input
+            v-model="query.appCode"
+            class="provider-config-page__app-code"
+            clearable
+            placeholder="如 internal-admin"
+            @keyup.enter="loadConfigs"
+          />
+        </el-form-item>
+      </MangoSearchPanel>
+    </template>
 
-      <el-alert
-        v-if="loadFailed"
-        type="error"
-        title="配置加载失败，请检查权限或稍后重试。"
-        :closable="false"
-        show-icon
-      />
+    <MangoListPanel>
+      <template #view-actions>
+        <el-button type="primary" plain :loading="loading" @click="loadConfigs">刷新</el-button>
+      </template>
 
-      <el-table v-loading="loading" :data="providerRows" empty-text="暂无配置">
+      <el-alert v-if="loadFailed" type="error" title="配置加载失败，请检查权限或稍后重试。" :closable="false" show-icon>
+        <el-button link type="danger" @click="loadConfigs">重试</el-button>
+      </el-alert>
+
+      <el-table
+        v-loading="loading"
+        :data="providerRows"
+        row-key="provider"
+        empty-text="暂无第三方登录配置"
+        data-surface="auth.provider-config.table"
+      >
         <el-table-column label="登录方式" min-width="140">
           <template #default="{ row }">
             <span :data-provider="row.provider">{{ providerName(row.provider) }}</span>
@@ -62,7 +69,7 @@
           </template>
         </el-table-column>
       </el-table>
-    </el-card>
+    </MangoListPanel>
 
     <MangoDialog v-model="dialogVisible" :title="`${providerName(form.provider)}配置`" width="620px">
       <el-form ref="formRef" :model="form" label-width="116px">
@@ -110,13 +117,13 @@
         <el-button type="primary" :loading="saving" @click="saveConfig">保存</el-button>
       </template>
     </MangoDialog>
-  </div>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts" name="MangoProviderConfig">
 import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage } from 'element-plus';
-import { MangoDialog } from '@mango/common';
+import { MangoDialog, MangoListPage, MangoListPanel, MangoSearchPanel } from '@mango/common';
 import { Session } from '@mango/common/utils/storage';
 import { listProviderConfigs, saveProviderConfig, type ProviderConfig } from '../api/provider';
 import type { ExternalAuthProvider } from '../api/identity';
@@ -135,7 +142,8 @@ interface ProviderConfigForm {
 }
 
 const sessionUser = Session.get('userInfo') || {};
-const appCode = ref(String(sessionUser.appCode || 'internal-admin'));
+const defaultAppCode = String(sessionUser.appCode || 'internal-admin');
+const query = reactive({ appCode: defaultAppCode });
 const loading = ref(false);
 const saving = ref(false);
 const loadFailed = ref(false);
@@ -147,7 +155,7 @@ const providerRows = computed(() =>
     const saved = configs.value.find((item) => item.provider === provider);
     return (
       saved || {
-        appCode: appCode.value.trim(),
+        appCode: query.appCode.trim(),
         provider,
         redirectUris: [],
         enabled: false,
@@ -163,7 +171,7 @@ onMounted(() => {
 });
 
 async function loadConfigs() {
-  const normalizedAppCode = appCode.value.trim();
+  const normalizedAppCode = query.appCode.trim();
   if (!normalizedAppCode) {
     ElMessage.warning('请输入应用编码');
     return;
@@ -181,9 +189,14 @@ async function loadConfigs() {
   }
 }
 
+function resetSearch() {
+  query.appCode = defaultAppCode;
+  void loadConfigs();
+}
+
 function openEditor(provider: ExternalAuthProvider, config?: ProviderConfig) {
   Object.assign(form, emptyForm(provider), config || {}, {
-    appCode: appCode.value.trim(),
+    appCode: query.appCode.trim(),
     secret: '',
     secretConfigured: Boolean(config?.secretConfigured),
     redirectUrisText: (config?.redirectUris || []).join('\n'),
@@ -232,7 +245,7 @@ async function saveConfig() {
 
 function emptyForm(provider: ExternalAuthProvider): ProviderConfigForm {
   return {
-    appCode: appCode?.value?.trim?.() || 'internal-admin',
+    appCode: defaultAppCode,
     provider,
     clientId: '',
     providerTenantId: '',
@@ -251,46 +264,16 @@ function providerName(provider: ExternalAuthProvider) {
 
 <style scoped lang="scss">
 .provider-config-page {
-  padding: 20px;
+  min-width: 0;
 }
 
-.page-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 24px;
-  margin-bottom: 20px;
-
-  h2 {
-    margin: 0 0 6px;
-    font-size: 20px;
-  }
-
-  p {
-    margin: 0;
-    color: var(--el-text-color-secondary);
-  }
-}
-
-.app-filter {
-  display: flex;
-  gap: 8px;
-  width: min(440px, 100%);
+.provider-config-page__app-code {
+  width: min(320px, 100%);
 }
 
 .field-hint {
   color: var(--el-text-color-secondary);
   font-size: 12px;
   line-height: 1.5;
-}
-
-@media (width <= 768px) {
-  .page-header {
-    flex-direction: column;
-  }
-
-  .app-filter {
-    width: 100%;
-  }
 }
 </style>

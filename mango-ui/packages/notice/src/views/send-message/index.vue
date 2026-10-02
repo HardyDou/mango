@@ -1,15 +1,29 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
-  <div class="notice-send-message-page">
-    <div class="page-header">
-      <h1>发送任务</h1>
-      <div class="page-actions">
-        <el-button :loading="recordLoading" @click="loadRecords">刷新</el-button>
-        <el-button type="primary" @click="openSendDialog">新增任务</el-button>
-      </div>
-    </div>
+  <MangoListPage class="notice-send-message-page" data-page="notice.send-message">
+    <template #search>
+      <MangoSearchPanel :model="taskQuery" :columns="3" @search="loadRecords" @reset="resetTaskQuery">
+        <el-form-item label="业务类型">
+          <el-input v-model="taskQuery.bizType" clearable placeholder="请输入业务类型" @keyup.enter="loadRecords" />
+        </el-form-item>
+        <el-form-item label="业务对象">
+          <el-input v-model="taskQuery.bizId" clearable placeholder="请输入业务对象 ID" @keyup.enter="loadRecords" />
+        </el-form-item>
+        <el-form-item label="任务状态">
+          <el-select v-model="taskQuery.status" clearable placeholder="全部">
+            <el-option v-for="item in taskStatusOptions" :key="item.value" :label="item.label" :value="item.value" />
+          </el-select>
+        </el-form-item>
+      </MangoSearchPanel>
+    </template>
 
-    <el-card shadow="never">
-      <el-table :data="tasks" border stripe v-loading="recordLoading">
+    <MangoListPanel>
+      <template #actions>
+        <el-button :loading="recordLoading" plain @click="loadRecords">刷新</el-button>
+        <el-button type="primary" plain @click="openSendDialog">新增任务</el-button>
+      </template>
+
+      <el-table v-loading="recordLoading" :data="tasks" border stripe>
         <el-table-column prop="taskCode" label="登记编号" width="190" show-overflow-tooltip />
         <el-table-column label="业务域" width="130" show-overflow-tooltip>
           <template #default="{ row }">{{ domainText(row.bizGroup) }}</template>
@@ -35,7 +49,7 @@
           </template>
         </el-table-column>
       </el-table>
-    </el-card>
+    </MangoListPanel>
 
     <el-dialog
       v-model="sendDialogVisible"
@@ -164,16 +178,20 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="taskDetailVisible" title="发送详情" width="760px" destroy-on-close>
+    <MangoDialog v-model="taskDetailVisible" title="发送详情" width="760px" destroy-on-close>
       <el-descriptions v-if="selectedTask" :column="2" border>
         <el-descriptions-item label="登记编号">{{ selectedTask.taskCode }}</el-descriptions-item>
         <el-descriptions-item label="状态">
           <el-tag :type="taskStatusTag(selectedTask.status)">{{ taskStatusLabel(selectedTask.status) }}</el-tag>
         </el-descriptions-item>
         <el-descriptions-item label="业务域">{{ domainText(selectedTask.bizGroup) }}</el-descriptions-item>
-        <el-descriptions-item label="消息模板名称">{{ selectedTask.bizName || selectedTask.bizType }}</el-descriptions-item>
+        <el-descriptions-item label="消息模板名称">{{
+          selectedTask.bizName || selectedTask.bizType
+        }}</el-descriptions-item>
         <el-descriptions-item label="模板 Key">{{ selectedTask.bizType }}</el-descriptions-item>
-        <el-descriptions-item label="计划渠道">{{ enabledChannelText(selectedTask.channelTypes) }}</el-descriptions-item>
+        <el-descriptions-item label="计划渠道">{{
+          enabledChannelText(selectedTask.channelTypes)
+        }}</el-descriptions-item>
         <el-descriptions-item label="明细数">{{ selectedTask.totalCount }}</el-descriptions-item>
         <el-descriptions-item label="提交时间">{{ selectedTask.createdAt || '-' }}</el-descriptions-item>
         <el-descriptions-item label="成功">{{ selectedTask.successCount }}</el-descriptions-item>
@@ -187,20 +205,17 @@
           <pre class="json-viewer">{{ snapshotJson(selectedTask.paramsSnapshot, '{}') }}</pre>
         </el-tab-pane>
       </el-tabs>
-    </el-dialog>
-  </div>
+    </MangoDialog>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
 import type { FormInstance, FormRules } from 'element-plus';
+import { MangoDialog, MangoListPage, MangoListPanel, MangoSearchPanel } from '@mango/common';
 import { ElMessage } from 'element-plus';
 import { ParticipantSelector } from '@mango/system';
-import type {
-  ParticipantOrgTreeOption,
-  ParticipantSelectorValue,
-  ParticipantTargetOption,
-} from '@mango/system';
+import type { ParticipantOrgTreeOption, ParticipantSelectorValue, ParticipantTargetOption } from '@mango/system';
 import {
   getBusinessTypes,
   getIdentityUsers,
@@ -224,7 +239,8 @@ import type {
 } from '../../types/notice';
 import { useNoticeDomains } from '../../components/useNoticeDomains';
 
-type ParamFieldType = 'string' | 'textarea' | 'number' | 'integer' | 'boolean' | 'date' | 'time' | 'datetime' | 'select' | 'json';
+type ParamFieldType =
+  'string' | 'textarea' | 'number' | 'integer' | 'boolean' | 'date' | 'time' | 'datetime' | 'select' | 'json';
 type ParamValue = string | number | boolean | undefined;
 
 interface ParamOption {
@@ -284,6 +300,18 @@ const roleLoading = ref(false);
 const sendDialogVisible = ref(false);
 const taskDetailVisible = ref(false);
 const tasks = ref<NoticeTask[]>([]);
+const taskQuery = reactive<{ bizType: string; bizId: string; status?: NoticeTaskStatus }>({
+  bizType: '',
+  bizId: '',
+});
+const taskStatusOptions: Array<{ label: string; value: NoticeTaskStatus }> = [
+  { label: '等待中', value: 'WAITING' },
+  { label: '发送中', value: 'SENDING' },
+  { label: '部分成功', value: 'PARTIAL_SUCCESS' },
+  { label: '成功', value: 'SUCCESS' },
+  { label: '失败', value: 'FAILED' },
+  { label: '已取消', value: 'CANCELED' },
+];
 const selectedTask = ref<NoticeTask>();
 const businessTypes = ref<NoticeBusinessType[]>([]);
 const userOptions = ref<NoticeIdentityUser[]>([]);
@@ -319,7 +347,7 @@ const recipientValue = computed<ParticipantSelectorValue>({
     roleIds: targetIds('ROLE'),
     postIds: targetIds('POST'),
   }),
-  set: value => {
+  set: (value) => {
     form.recipientTargets = [
       ...recipientTargetsOf('USER', value.userIds || [], participantUserOptions.value),
       ...recipientTargetsOf('ORG', value.orgIds || [], flattenOrgOptions(orgTreeOptions.value)),
@@ -337,26 +365,32 @@ const participantLoading = computed(() => ({
   roles: roleLoading.value,
 }));
 
-const participantUserOptions = computed<ParticipantTargetOption[]>(() => userOptions.value
-  .filter(item => item.userId !== undefined)
-  .map(item => ({
-    value: String(item.userId),
-    label: item.nickname || item.username || String(item.userId),
-  })));
+const participantUserOptions = computed<ParticipantTargetOption[]>(() =>
+  userOptions.value
+    .filter((item) => item.userId !== undefined)
+    .map((item) => ({
+      value: String(item.userId),
+      label: item.nickname || item.username || String(item.userId),
+    })),
+);
 
-const participantPostOptions = computed<ParticipantTargetOption[]>(() => postOptions.value
-  .filter(item => item.id !== undefined)
-  .map(item => ({
-    value: String(item.id),
-    label: postLabel(item),
-  })));
+const participantPostOptions = computed<ParticipantTargetOption[]>(() =>
+  postOptions.value
+    .filter((item) => item.id !== undefined)
+    .map((item) => ({
+      value: String(item.id),
+      label: postLabel(item),
+    })),
+);
 
-const participantRoleOptions = computed<ParticipantTargetOption[]>(() => roleOptions.value
-  .filter(item => item.roleId !== undefined)
-  .map(item => ({
-    value: String(item.roleId),
-    label: roleLabel(item),
-  })));
+const participantRoleOptions = computed<ParticipantTargetOption[]>(() =>
+  roleOptions.value
+    .filter((item) => item.roleId !== undefined)
+    .map((item) => ({
+      value: String(item.roleId),
+      label: roleLabel(item),
+    })),
+);
 
 const channelOptions: Array<{ label: string; value: NoticeChannelType }> = [
   { label: '系统消息', value: 'SITE' },
@@ -367,14 +401,27 @@ const channelOptions: Array<{ label: string; value: NoticeChannelType }> = [
   { label: '钉钉', value: 'DINGTALK' },
 ];
 
-const businessOptions = computed(() => businessTypes.value.filter(item => item.enabled));
-const selectedBusiness = computed(() => businessOptions.value.find(item => item.id === form.businessTypeId));
+const businessOptions = computed(() => businessTypes.value.filter((item) => item.enabled));
+const selectedBusiness = computed(() => businessOptions.value.find((item) => item.id === form.businessTypeId));
 const paramFields = computed(() => parseParamFields(selectedBusiness.value?.paramsSchema));
+
+function resetTaskQuery() {
+  taskQuery.bizType = '';
+  taskQuery.bizId = '';
+  taskQuery.status = undefined;
+  void loadRecords();
+}
 
 async function loadRecords() {
   recordLoading.value = true;
   try {
-    const result = await getNoticeTasks({ pageNum: 1, pageSize: 50 });
+    const result = await getNoticeTasks({
+      pageNum: 1,
+      pageSize: 50,
+      bizType: taskQuery.bizType || undefined,
+      bizId: taskQuery.bizId || undefined,
+      status: taskQuery.status,
+    });
     tasks.value = result.list || [];
   } finally {
     recordLoading.value = false;
@@ -406,7 +453,7 @@ function openTaskDetail(task: NoticeTask) {
 }
 
 function handleBusinessChange() {
-  Object.keys(form.params).forEach(key => delete form.params[key]);
+  Object.keys(form.params).forEach((key) => delete form.params[key]);
   paramFields.value.forEach((field) => {
     form.params[field.name] = defaultParamValue(field);
   });
@@ -451,7 +498,7 @@ async function loadPosts() {
   postLoading.value = true;
   try {
     const result = await getNoticePosts({ pageNum: 1, pageSize: 200, postStatus: '1' });
-    postOptions.value = (result.list || []).filter(item => item.id !== undefined);
+    postOptions.value = (result.list || []).filter((item) => item.id !== undefined);
   } finally {
     postLoading.value = false;
   }
@@ -464,18 +511,21 @@ async function loadRoles() {
   roleLoading.value = true;
   try {
     const result = await getNoticeRoles();
-    roleOptions.value = (result || []).filter(item => item.roleId !== undefined && item.status !== 0);
+    roleOptions.value = (result || []).filter((item) => item.roleId !== undefined && item.status !== 0);
   } finally {
     roleLoading.value = false;
   }
 }
 
 function saveDraft() {
-  localStorage.setItem(DRAFT_KEY, JSON.stringify({
-    businessTypeId: form.businessTypeId,
-    params: form.params,
-    recipientTargets: form.recipientTargets,
-  }));
+  localStorage.setItem(
+    DRAFT_KEY,
+    JSON.stringify({
+      businessTypeId: form.businessTypeId,
+      params: form.params,
+      recipientTargets: form.recipientTargets,
+    }),
+  );
   ElMessage.success('已暂存');
 }
 
@@ -493,9 +543,11 @@ function restoreDraft() {
     };
     form.businessTypeId = draft.businessTypeId || '';
     form.recipientTargets = Array.isArray(draft.recipientTargets)
-      ? draft.recipientTargets.filter(isRecipientTarget).map(target => ({ ...target, targetId: String(target.targetId) }))
+      ? draft.recipientTargets
+          .filter(isRecipientTarget)
+          .map((target) => ({ ...target, targetId: String(target.targetId) }))
       : legacyUserTargets(draft.userIds);
-    Object.keys(form.params).forEach(key => delete form.params[key]);
+    Object.keys(form.params).forEach((key) => delete form.params[key]);
     Object.assign(form.params, isRecord(draft.params) ? draft.params : {});
   } catch {
     localStorage.removeItem(DRAFT_KEY);
@@ -531,31 +583,37 @@ function parseJsonSchema(schemaText?: string): JsonSchema | undefined {
     if (legacySchema) {
       return legacySchema;
     }
-    const properties = isRecord(parsed.properties) ? Object.entries(parsed.properties).reduce<Record<string, JsonSchemaProperty>>((result, [key, value]) => {
-      if (isRecord(value)) {
-        result[key] = {
-          type: typeof value.type === 'string' ? value.type : undefined,
-          title: typeof value.title === 'string' ? value.title : undefined,
-          description: typeof value.description === 'string' ? value.description : undefined,
-          format: typeof value.format === 'string' ? value.format : undefined,
-          default: value.default,
-          example: value.example,
-          enum: Array.isArray(value.enum) ? value.enum.filter(isOptionValue) : undefined,
-          enumNames: Array.isArray(value.enumNames) ? value.enumNames.filter(item => typeof item === 'string') : undefined,
-          options: Array.isArray(value.options) ? value.options.filter(isParamOption) : undefined,
-          oneOf: Array.isArray(value.oneOf) ? value.oneOf.filter(isRecord).map(item => ({
-            title: typeof item.title === 'string' ? item.title : undefined,
-            const: item.const,
-            value: item.value,
-          })) : undefined,
-        };
-      }
-      return result;
-    }, {}) : {};
+    const properties = isRecord(parsed.properties)
+      ? Object.entries(parsed.properties).reduce<Record<string, JsonSchemaProperty>>((result, [key, value]) => {
+          if (isRecord(value)) {
+            result[key] = {
+              type: typeof value.type === 'string' ? value.type : undefined,
+              title: typeof value.title === 'string' ? value.title : undefined,
+              description: typeof value.description === 'string' ? value.description : undefined,
+              format: typeof value.format === 'string' ? value.format : undefined,
+              default: value.default,
+              example: value.example,
+              enum: Array.isArray(value.enum) ? value.enum.filter(isOptionValue) : undefined,
+              enumNames: Array.isArray(value.enumNames)
+                ? value.enumNames.filter((item) => typeof item === 'string')
+                : undefined,
+              options: Array.isArray(value.options) ? value.options.filter(isParamOption) : undefined,
+              oneOf: Array.isArray(value.oneOf)
+                ? value.oneOf.filter(isRecord).map((item) => ({
+                    title: typeof item.title === 'string' ? item.title : undefined,
+                    const: item.const,
+                    value: item.value,
+                  }))
+                : undefined,
+            };
+          }
+          return result;
+        }, {})
+      : {};
     return {
       type: typeof parsed.type === 'string' ? parsed.type : undefined,
       properties,
-      required: Array.isArray(parsed.required) ? parsed.required.filter(item => typeof item === 'string') : [],
+      required: Array.isArray(parsed.required) ? parsed.required.filter((item) => typeof item === 'string') : [],
     };
   } catch {
     return undefined;
@@ -702,7 +760,11 @@ async function submit() {
       recipientTargets: form.recipientTargets,
     });
     const hasImmediateResult = result.successCount > 0 || result.failCount > 0;
-    ElMessage.success(hasImmediateResult ? `发送已提交，成功 ${result.successCount} 条，失败 ${result.failCount} 条` : '发送任务已提交，可在发送列表查看结果');
+    ElMessage.success(
+      hasImmediateResult
+        ? `发送已提交，成功 ${result.successCount} 条，失败 ${result.failCount} 条`
+        : '发送任务已提交，可在发送列表查看结果',
+    );
     localStorage.removeItem(DRAFT_KEY);
     sendDialogVisible.value = false;
     await loadRecords();
@@ -714,21 +776,23 @@ async function submit() {
 function resetForm() {
   form.businessTypeId = '';
   form.recipientTargets = [];
-  Object.keys(form.params).forEach(key => delete form.params[key]);
+  Object.keys(form.params).forEach((key) => delete form.params[key]);
   formRef.value?.clearValidate();
 }
 
 function targetIds(type: NoticeRecipientTargetType) {
-  return form.recipientTargets
-    .filter(item => item.targetType === type)
-    .map(item => String(item.targetId));
+  return form.recipientTargets.filter((item) => item.targetType === type).map((item) => String(item.targetId));
 }
 
-function recipientTargetsOf(type: NoticeRecipientTargetType, ids: string[], options: ParticipantTargetOption[]): NoticeRecipientTargetCommand[] {
-  return ids.map(id => ({
+function recipientTargetsOf(
+  type: NoticeRecipientTargetType,
+  ids: string[],
+  options: ParticipantTargetOption[],
+): NoticeRecipientTargetCommand[] {
+  return ids.map((id) => ({
     targetType: type,
     targetId: id,
-    targetName: options.find(item => item.value === id)?.label || id,
+    targetName: options.find((item) => item.value === id)?.label || id,
   }));
 }
 
@@ -736,13 +800,15 @@ function isRecipientTarget(value: unknown): value is NoticeRecipientTargetComman
   if (!isRecord(value)) {
     return false;
   }
-  return ['USER', 'ORG', 'POST', 'ROLE'].includes(String(value.targetType))
-    && (typeof value.targetId === 'string' || typeof value.targetId === 'number');
+  return (
+    ['USER', 'ORG', 'POST', 'ROLE'].includes(String(value.targetType)) &&
+    (typeof value.targetId === 'string' || typeof value.targetId === 'number')
+  );
 }
 
 function legacyUserTargets(userIds?: string[]) {
   return Array.isArray(userIds)
-    ? userIds.map(id => ({ targetType: 'USER' as const, targetId: id, targetName: id }))
+    ? userIds.map((id) => ({ targetType: 'USER' as const, targetId: id, targetName: id }))
     : [];
 }
 
@@ -755,7 +821,7 @@ function roleLabel(role: NoticeRole) {
 }
 
 function toOrgTreeOptions(nodes: NoticeOrgNode[]): ParticipantOrgTreeOption[] {
-  return nodes.map(node => ({
+  return nodes.map((node) => ({
     value: String(node.id),
     label: node.orgName,
     children: node.children?.length ? toOrgTreeOptions(node.children) : undefined,
@@ -780,11 +846,14 @@ function enabledChannelText(value?: string) {
   if (!value?.trim()) {
     return '-';
   }
-  return value.split(',').map(item => channelLabel(item.trim())).join(' / ');
+  return value
+    .split(',')
+    .map((item) => channelLabel(item.trim()))
+    .join(' / ');
 }
 
 function channelLabel(value: string) {
-  return channelOptions.find(item => item.value === value)?.label || value;
+  return channelOptions.find((item) => item.value === value)?.label || value;
 }
 
 function taskStatusLabel(status: NoticeTaskStatus) {

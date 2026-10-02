@@ -2,54 +2,25 @@
 <!-- mango-page-baseline-exception list: 个人中心授权区仅展示固定登录提供方状态，不是独立分页业务列表。 -->
 <template>
   <div class="profile-container" data-page="account.profile">
-    <el-card class="profile-shell" shadow="never">
-      <div class="settings-layout">
-        <aside class="settings-sidebar" data-surface="profile.navigation">
-          <component :is="profileSlots.sidebarTop" v-if="profileSlots.sidebarTop" :user="profile" />
+    <div class="settings-layout">
+      <aside class="settings-sidebar" data-surface="profile.navigation">
+        <component :is="profileSlots.sidebarTop" v-if="profileSlots.sidebarTop" :user="profile" />
 
-          <div class="sidebar-user">
-            <el-avatar :size="48" :src="profileAvatar">
-              <el-icon><User /></el-icon>
-            </el-avatar>
-            <div>
-              <strong>{{ displayName }}</strong>
-              <span>{{ profile?.username || roleLabel }}</span>
-            </div>
+        <div class="sidebar-user">
+          <el-avatar :size="48" :src="profileAvatar">
+            <el-icon><User /></el-icon>
+          </el-avatar>
+          <div>
+            <strong>{{ displayName }}</strong>
+            <span>{{ profile?.username || roleLabel }}</span>
           </div>
+        </div>
 
-          <el-menu :default-active="activeSection" class="settings-menu" @select="handleSectionSelect">
-            <template v-for="group in messageCenterGroups" :key="group.label">
-              <div class="profile-menu-group__label">{{ group.label }}</div>
-              <el-menu-item
-                v-for="section in group.sections"
-                :key="section.key"
-                :index="section.key"
-                :data-action="`switch-${section.key}`"
-              >
-                <el-icon v-if="section.icon"><component :is="section.icon" /></el-icon>
-                <span>{{ section.label }}</span>
-              </el-menu-item>
-            </template>
-            <div class="profile-menu-group__label">基础设置</div>
-            <el-menu-item index="profile" data-action="switch-profile">
-              <el-icon><User /></el-icon>
-              <span>个人资料</span>
-            </el-menu-item>
-            <el-menu-item v-if="profileSlots.theme" index="theme" data-action="switch-theme">
-              <el-icon><Brush /></el-icon>
-              <span>主题设置</span>
-            </el-menu-item>
-            <div class="profile-menu-group__label">安全设置</div>
-            <el-menu-item index="security" data-action="switch-security">
-              <el-icon><Lock /></el-icon>
-              <span>账号安全</span>
-            </el-menu-item>
-            <el-menu-item index="password" data-action="switch-password">
-              <el-icon><Key /></el-icon>
-              <span>修改密码</span>
-            </el-menu-item>
+        <el-menu :default-active="activeSection" class="settings-menu" @select="handleSectionSelect">
+          <template v-for="group in messageCenterGroups" :key="group.label">
+            <div class="profile-menu-group__label">{{ group.label }}</div>
             <el-menu-item
-              v-for="section in securityProfileSections"
+              v-for="section in group.sections"
               :key="section.key"
               :index="section.key"
               :data-action="`switch-${section.key}`"
@@ -57,180 +28,186 @@
               <el-icon v-if="section.icon"><component :is="section.icon" /></el-icon>
               <span>{{ section.label }}</span>
             </el-menu-item>
-            <div class="profile-menu-group__label">账号关联</div>
-            <el-menu-item index="authorization" data-action="switch-authorization">
-              <el-icon><Connection /></el-icon>
-              <span>第三方授权</span>
-            </el-menu-item>
-            <template v-for="group in remainingExtensionGroups" :key="group.label">
-              <div class="profile-menu-group__label">{{ group.label }}</div>
-              <el-menu-item
-                v-for="section in group.sections"
-                :key="section.key"
-                :index="section.key"
-                :data-action="`switch-${section.key}`"
-              >
-                <el-icon v-if="section.icon"><component :is="section.icon" /></el-icon>
-                <span>{{ section.label }}</span>
-              </el-menu-item>
-            </template>
-          </el-menu>
-
-          <component :is="profileSlots.sidebarBottom" v-if="profileSlots.sidebarBottom" :user="profile" />
-        </aside>
-
-        <main ref="settingsContentRef" v-loading="loading" class="settings-content" :data-state="activeSection">
-          <Transition name="content-fade" mode="out-in">
-            <div v-if="activeSection === 'profile'" key="profile" data-surface="profile.details">
-              <component :is="profileSlots.infoBefore" v-if="profileSlots.infoBefore" :form="form" :user="profile" />
-
-              <el-form label-position="top" class="profile-form">
-                <section class="content-section" aria-labelledby="basic-profile-title">
-                  <div class="section-heading">
-                    <div>
-                      <h2 id="basic-profile-title">基础信息</h2>
-                      <p>头像和昵称会用于个人中心及账户标识。</p>
-                    </div>
-                  </div>
-
-                  <el-form-item label="头像" data-field="avatar">
-                    <div class="avatar-editor">
-                      <div class="avatar-preview">
-                        <el-avatar :size="88" :src="profileAvatar">
-                          <el-icon><User /></el-icon>
-                        </el-avatar>
-                      </div>
-                      <div class="avatar-actions">
-                        <div class="avatar-action-row">
-                          <el-upload
-                            v-model:file-list="avatarFileList"
-                            accept=".jpg,.jpeg,.png,.webp"
-                            :auto-upload="false"
-                            :show-file-list="false"
-                            :disabled="saving"
-                            :on-change="handleAvatarChange"
-                          >
-                            <el-button :disabled="saving">
-                              <el-icon class="el-icon--left"><UploadIcon /></el-icon>
-                              {{ hasAvatar ? '更换头像' : '选择图片' }}
-                            </el-button>
-                          </el-upload>
-                          <el-button v-if="hasAvatar" link type="danger" :disabled="saving" @click="removeAvatar">
-                            移除
-                          </el-button>
-                        </div>
-                        <p>支持 JPG、PNG、WebP，图片不超过 5 MB；点击保存后生效。</p>
-                      </div>
-                    </div>
-                  </el-form-item>
-
-                  <el-row :gutter="20">
-                    <el-col :xs="24" :md="12">
-                      <el-form-item label="用户名">
-                        <el-input :model-value="profile?.username || ''" disabled />
-                      </el-form-item>
-                    </el-col>
-                    <el-col :xs="24" :md="12">
-                      <el-form-item label="昵称">
-                        <el-input v-model="form.nickname" maxlength="100" show-word-limit />
-                      </el-form-item>
-                    </el-col>
-                  </el-row>
-                </section>
-
-                <section class="content-section" aria-labelledby="identity-profile-title">
-                  <div class="section-heading">
-                    <div>
-                      <h2 id="identity-profile-title">实名信息</h2>
-                      <p>用于账户身份记录；录入后默认保持未认证，认证来源为空。</p>
-                    </div>
-                    <div class="verification-summary">
-                      <el-tag :type="verificationTagType">{{ verificationStatusLabel }}</el-tag>
-                      <span>来源：{{ profile?.verificationSource || '无' }}</span>
-                    </div>
-                  </div>
-
-                  <el-row :gutter="20">
-                    <el-col :xs="24" :md="12">
-                      <el-form-item label="姓名" data-field="real-name">
-                        <el-input v-model="form.realName" maxlength="100" />
-                      </el-form-item>
-                    </el-col>
-                    <el-col :xs="24" :md="12">
-                      <el-form-item label="证件类型">
-                        <el-select v-model="form.documentType" clearable placeholder="请选择" style="width: 100%">
-                          <el-option label="居民身份证" value="ID_CARD" />
-                          <el-option label="护照" value="PASSPORT" />
-                          <el-option label="其他证件" value="OTHER" />
-                        </el-select>
-                      </el-form-item>
-                    </el-col>
-                  </el-row>
-                  <el-form-item label="证件号码" data-field="document-number">
-                    <el-input v-model="form.documentNumber" maxlength="128" :placeholder="documentNumberPlaceholder" />
-                    <div class="field-hint">留空表示不修改；证件类型和号码都清空表示删除。</div>
-                  </el-form-item>
-                </section>
-
-                <div class="form-actions">
-                  <el-button type="primary" :loading="saving" data-action="save-profile" @click="saveProfile">
-                    保存资料
-                  </el-button>
-                </div>
-              </el-form>
-
-              <component :is="profileSlots.infoAfter" v-if="profileSlots.infoAfter" :form="form" :user="profile" />
-            </div>
-
-            <div v-else-if="activeSection === 'security'" key="security" data-surface="profile.security">
-              <section class="content-section content-section--first" aria-labelledby="account-security-title">
-                <div class="section-heading">
-                  <div>
-                    <h2 id="account-security-title">联系方式</h2>
-                    <p>修改手机号或邮箱时，需要验证当前密码和新联系方式验证码。</p>
-                  </div>
-                </div>
-
-                <div class="security-list">
-                  <div class="security-item" data-field="contact-phone">
-                    <div class="security-icon">
-                      <el-icon><Iphone /></el-icon>
-                    </div>
-                    <div class="security-copy">
-                      <strong>手机号</strong>
-                      <span>{{ profile?.phone || '未设置' }}</span>
-                    </div>
-                    <el-button type="primary" link @click="openContactDialog('PHONE')">修改手机号</el-button>
-                  </div>
-
-                  <div class="security-item" data-field="contact-email">
-                    <div class="security-icon">
-                      <el-icon><Message /></el-icon>
-                    </div>
-                    <div class="security-copy">
-                      <strong>邮箱</strong>
-                      <span>{{ profile?.email || '未设置' }}</span>
-                    </div>
-                    <el-button type="primary" link @click="openContactDialog('EMAIL')">修改邮箱</el-button>
-                  </div>
-                </div>
-              </section>
-            </div>
-
-            <div
-              v-else-if="activeSection === 'authorization'"
-              key="authorization"
-              data-surface="profile.authorizations"
+          </template>
+          <div class="profile-menu-group__label">基础设置</div>
+          <el-menu-item index="profile" data-action="switch-profile">
+            <el-icon><User /></el-icon>
+            <span>个人资料</span>
+          </el-menu-item>
+          <el-menu-item v-if="profileSlots.theme" index="theme" data-action="switch-theme">
+            <el-icon><Brush /></el-icon>
+            <span>主题设置</span>
+          </el-menu-item>
+          <div class="profile-menu-group__label">安全设置</div>
+          <el-menu-item index="security" data-action="switch-security">
+            <el-icon><Lock /></el-icon>
+            <span>账号安全</span>
+          </el-menu-item>
+          <el-menu-item index="password" data-action="switch-password">
+            <el-icon><Key /></el-icon>
+            <span>修改密码</span>
+          </el-menu-item>
+          <el-menu-item
+            v-for="section in securityProfileSections"
+            :key="section.key"
+            :index="section.key"
+            :data-action="`switch-${section.key}`"
+          >
+            <el-icon v-if="section.icon"><component :is="section.icon" /></el-icon>
+            <span>{{ section.label }}</span>
+          </el-menu-item>
+          <div class="profile-menu-group__label">账号关联</div>
+          <el-menu-item index="authorization" data-action="switch-authorization">
+            <el-icon><Connection /></el-icon>
+            <span>第三方授权</span>
+          </el-menu-item>
+          <template v-for="group in remainingExtensionGroups" :key="group.label">
+            <div class="profile-menu-group__label">{{ group.label }}</div>
+            <el-menu-item
+              v-for="section in group.sections"
+              :key="section.key"
+              :index="section.key"
+              :data-action="`switch-${section.key}`"
             >
-              <section class="content-section content-section--first" aria-labelledby="authorization-title">
-                <div class="authorization-header">
-                  <div>
-                    <h2 id="authorization-title">第三方账号</h2>
-                    <p>绑定后可使用对应账号登录当前应用；解绑时需要验证当前密码。</p>
+              <el-icon v-if="section.icon"><component :is="section.icon" /></el-icon>
+              <span>{{ section.label }}</span>
+            </el-menu-item>
+          </template>
+        </el-menu>
+
+        <component :is="profileSlots.sidebarBottom" v-if="profileSlots.sidebarBottom" :user="profile" />
+      </aside>
+
+      <main
+        ref="settingsContentRef"
+        v-loading="loading && !profile"
+        class="settings-content"
+        :data-state="activeSection"
+      >
+        <Transition name="content-fade" mode="out-in">
+          <div v-if="activeSection === 'profile'" key="profile" data-surface="profile.details">
+            <component :is="profileSlots.infoBefore" v-if="profileSlots.infoBefore" :form="form" :user="profile" />
+
+            <el-form label-position="top" class="profile-form">
+              <MangoPageSection title="基础信息" subtitle="头像和昵称会用于个人中心及账户标识。">
+                <el-form-item label="头像" data-field="avatar">
+                  <div class="avatar-editor">
+                    <div class="avatar-preview">
+                      <el-avatar :size="88" :src="profileAvatar">
+                        <el-icon><User /></el-icon>
+                      </el-avatar>
+                    </div>
+                    <div class="avatar-actions">
+                      <div class="avatar-action-row">
+                        <el-upload
+                          v-model:file-list="avatarFileList"
+                          accept=".jpg,.jpeg,.png,.webp"
+                          :auto-upload="false"
+                          :show-file-list="false"
+                          :disabled="saving"
+                          :on-change="handleAvatarChange"
+                        >
+                          <el-button :disabled="saving">
+                            <el-icon class="el-icon--left"><UploadIcon /></el-icon>
+                            {{ hasAvatar ? '更换头像' : '选择图片' }}
+                          </el-button>
+                        </el-upload>
+                        <el-button v-if="hasAvatar" link type="danger" :disabled="saving" @click="removeAvatar">
+                          移除
+                        </el-button>
+                      </div>
+                      <p>支持 JPG、PNG、WebP，图片不超过 5 MB；点击保存后生效。</p>
+                    </div>
                   </div>
-                  <el-button :loading="authorizationLoading" @click="loadAuthorizations">刷新</el-button>
+                </el-form-item>
+
+                <el-row :gutter="20">
+                  <el-col :xs="24" :md="12">
+                    <el-form-item label="用户名">
+                      <el-input :model-value="profile?.username || ''" disabled />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="24" :md="12">
+                    <el-form-item label="昵称">
+                      <el-input v-model="form.nickname" maxlength="100" show-word-limit />
+                    </el-form-item>
+                  </el-col>
+                </el-row>
+              </MangoPageSection>
+
+              <MangoPageSection title="实名信息" subtitle="用于账户身份记录；录入后默认保持未认证，认证来源为空。">
+                <template #extra>
+                  <div class="verification-summary">
+                    <el-tag :type="verificationTagType">{{ verificationStatusLabel }}</el-tag>
+                    <span>来源：{{ profile?.verificationSource || '无' }}</span>
+                  </div>
+                </template>
+                <el-row :gutter="20">
+                  <el-col :xs="24" :md="12">
+                    <el-form-item label="姓名" data-field="real-name">
+                      <el-input v-model="form.realName" maxlength="100" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="24" :md="12">
+                    <el-form-item label="证件类型">
+                      <el-select v-model="form.documentType" clearable placeholder="请选择" style="width: 100%">
+                        <el-option label="居民身份证" value="ID_CARD" />
+                        <el-option label="护照" value="PASSPORT" />
+                        <el-option label="其他证件" value="OTHER" />
+                      </el-select>
+                    </el-form-item>
+                  </el-col>
+                </el-row>
+                <el-form-item label="证件号码" data-field="document-number">
+                  <el-input v-model="form.documentNumber" maxlength="128" :placeholder="documentNumberPlaceholder" />
+                  <div class="field-hint">留空表示不修改；证件类型和号码都清空表示删除。</div>
+                </el-form-item>
+              </MangoPageSection>
+
+              <div class="form-actions">
+                <el-button type="primary" :loading="saving" data-action="save-profile" @click="saveProfile">
+                  保存资料
+                </el-button>
+              </div>
+            </el-form>
+
+            <component :is="profileSlots.infoAfter" v-if="profileSlots.infoAfter" :form="form" :user="profile" />
+          </div>
+
+          <div v-else-if="activeSection === 'security'" key="security" data-surface="profile.security">
+            <MangoPageSection title="联系方式" subtitle="修改手机号或邮箱时，需要验证当前密码和新联系方式验证码。">
+              <div class="security-list">
+                <div class="security-item" data-field="contact-phone">
+                  <div class="security-icon">
+                    <el-icon><Iphone /></el-icon>
+                  </div>
+                  <div class="security-copy">
+                    <strong>手机号</strong>
+                    <span>{{ profile?.phone || '未设置' }}</span>
+                  </div>
+                  <el-button type="primary" link @click="openContactDialog('PHONE')">修改手机号</el-button>
                 </div>
 
+                <div class="security-item" data-field="contact-email">
+                  <div class="security-icon">
+                    <el-icon><Message /></el-icon>
+                  </div>
+                  <div class="security-copy">
+                    <strong>邮箱</strong>
+                    <span>{{ profile?.email || '未设置' }}</span>
+                  </div>
+                  <el-button type="primary" link @click="openContactDialog('EMAIL')">修改邮箱</el-button>
+                </div>
+              </div>
+            </MangoPageSection>
+          </div>
+
+          <div v-else-if="activeSection === 'authorization'" key="authorization" data-surface="profile.authorizations">
+            <MangoPageSection title="第三方账号" subtitle="绑定后可使用对应账号登录当前应用；解绑时需要验证当前密码。">
+              <template #extra>
+                <el-button :loading="authorizationLoading" @click="loadAuthorizations">刷新</el-button>
+              </template>
+              <MangoListPanel class="authorization-list-panel">
                 <el-table v-loading="authorizationLoading" :data="providerRows" empty-text="暂无可用登录方式">
                   <el-table-column label="登录方式" min-width="140">
                     <template #default="{ row }">
@@ -307,28 +284,34 @@
                     </template>
                   </el-table-column>
                 </el-table>
-              </section>
-            </div>
-
-            <div v-else-if="activeSection === 'password'" key="password" data-surface="profile.password">
-              <PasswordView display-mode="embedded" />
-            </div>
-
-            <div v-else-if="currentExtension" :key="currentExtension.key" data-surface="profile.extension">
-              <component :is="currentExtension.component" :form="form" :user="profile" embedded />
-            </div>
-
-            <div v-else key="theme" data-surface="profile.theme">
-              <component :is="profileSlots.theme" embedded />
-            </div>
-          </Transition>
-
-          <div v-if="profileSlots.extraTabs" class="profile-extension">
-            <component :is="profileSlots.extraTabs" :form="form" :user="profile" />
+              </MangoListPanel>
+            </MangoPageSection>
           </div>
-        </main>
-      </div>
-    </el-card>
+
+          <div v-else-if="activeSection === 'password'" key="password" data-surface="profile.password">
+            <MangoPageSection title="修改密码" subtitle="定期修改密码可以提升账号安全性。">
+              <PasswordView display-mode="embedded" />
+            </MangoPageSection>
+          </div>
+
+          <div v-else-if="currentExtension" :key="currentExtension.key" data-surface="profile.extension">
+            <MangoPageSection :title="currentExtension.label" :subtitle="currentExtensionSubtitle">
+              <component :is="currentExtension.component" :form="form" :user="profile" embedded />
+            </MangoPageSection>
+          </div>
+
+          <div v-else key="theme" data-surface="profile.theme">
+            <MangoPageSection title="主题设置" subtitle="调整后台界面布局与视觉偏好。">
+              <component :is="profileSlots.theme" embedded />
+            </MangoPageSection>
+          </div>
+        </Transition>
+
+        <div v-if="profileSlots.extraTabs" class="profile-extension">
+          <component :is="profileSlots.extraTabs" :form="form" :user="profile" />
+        </div>
+      </main>
+    </div>
 
     <MangoDialog v-model="contactDialogVisible" :title="contactDialogTitle" width="500px">
       <el-form label-width="104px">
@@ -405,7 +388,7 @@ import {
   User,
 } from '@element-plus/icons-vue';
 import { downloadUploadedFile, fileToken, uploadImage } from '@mango/common/api/upload';
-import { MangoDialog } from '@mango/common';
+import { MangoDialog, MangoListPanel, MangoPageSection } from '@mango/common';
 import { Session } from '@mango/common/utils/storage';
 import { useAuthConfig } from '../composables/useAuthConfig';
 import { getMangoAuthProfileSections, type MangoAuthProfileSection } from '../config';
@@ -507,6 +490,13 @@ const remainingExtensionGroups = computed(() =>
   extensionGroups.value.filter((group) => group.label !== '消息中心' && group.label !== '安全设置'),
 );
 const currentExtension = computed(() => profileSections.value.find((section) => section.key === activeSection.value));
+const extensionSubtitles: Record<string, string> = {
+  'notice-site-message': '查看和处理站内消息。',
+  'notice-announcement-user': '查看和确认系统公告。',
+  'notice-receive-setting': '配置通知接收方式和提醒规则。',
+  'login-log': '查看当前账号的登录记录。',
+};
+const currentExtensionSubtitle = computed(() => extensionSubtitles[activeSection.value] || '管理个人中心扩展功能。');
 const displayName = computed(() => profile.value?.nickname || profile.value?.username || '用户');
 const roleLabel = computed(() => authConfig.value.profile?.roleLabel || sessionUser.roleName || '当前用户');
 const profileAvatar = computed(() => {
@@ -925,18 +915,15 @@ async function confirmUnbind() {
 <style scoped lang="scss">
 .profile-container {
   width: 100%;
-  max-width: 1240px;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: 16px;
+  padding: 0;
   box-sizing: border-box;
-}
-
-.profile-shell {
   overflow: hidden;
-
-  :deep(.el-card__body) {
-    padding: 0;
-  }
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+  background: var(--el-bg-color);
+  box-shadow: var(--el-box-shadow-light);
 }
 
 .settings-layout {
@@ -1020,39 +1007,15 @@ async function confirmUnbind() {
 }
 
 .profile-form {
-  max-width: 820px;
+  display: grid;
+  width: 100%;
+  gap: 12px;
 }
 
-.content-section {
-  padding: 32px 0;
-  border-bottom: 1px solid var(--el-border-color-lighter);
-}
-
-.content-section--first {
-  padding-top: 32px;
-}
-
-.section-heading,
-.authorization-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 24px;
-  margin-bottom: 24px;
-
-  h2 {
-    margin: 0 0 6px;
-    color: var(--el-text-color-primary);
-    font-size: 17px;
-    line-height: 1.4;
-  }
-
-  p {
-    margin: 0;
-    color: var(--el-text-color-secondary);
-    font-size: 13px;
-    line-height: 1.65;
-  }
+.authorization-list-panel {
+  padding: 0;
+  border: 0;
+  box-shadow: none;
 }
 
 .verification-summary {
@@ -1318,16 +1281,6 @@ async function confirmUnbind() {
 
   .settings-content {
     padding: 22px 16px 28px;
-  }
-
-  .content-section {
-    padding: 26px 0;
-  }
-
-  .section-heading,
-  .authorization-header {
-    display: grid;
-    gap: 14px;
   }
 
   .verification-summary {

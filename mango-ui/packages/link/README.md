@@ -86,7 +86,7 @@ registerMangoLinkAdminPages();
 | 数据       | 来源                               | 说明                                                                                     |
 | ---------- | ---------------------------------- | ---------------------------------------------------------------------------------------- |
 | 菜单和权限 | `mango-link-starter` resource 声明 | 注入 `网址导航` 和 `网址管理` 菜单。                                                     |
-| 页面 key   | `@mango/link/admin-pages`          | 注册 `link/company/index`、`link/items/index` 等 Vue 页面。                              |
+| 页面 key   | `@mango/link/admin-pages`          | 注册 `link/company/index`、`link/favorites/index`、`link/items/index` 等 Vue 页面。      |
 | 首页小组件 | `./widgets/link-navigation`        | 通过 `registerMangoLinkAdminPages()` 返回给 admin-shell，按 `LINK / 导航域` 业务域展示。 |
 | 网址数据   | `mango-link` 后端                  | 页面不持久化业务数据，所有列表、收藏和个人网址操作来自后端接口。                         |
 

@@ -1,14 +1,8 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
-  <div class="payment-refund-orders">
-    <section class="payment-refund-orders__header">
-      <div>
-        <h3>退款订单</h3>
-        <p>查询退款申请、原支付订单、退款状态和通道退款结果。</p>
-      </div>
-    </section>
-
-    <section class="payment-refund-orders__toolbar">
-      <el-form :inline="true" :model="query">
+  <MangoListPage class="payment-refund-orders" data-page="payment.refund-orders">
+    <template #search>
+      <MangoSearchPanel :model="query" :columns="3" @search="loadRows" @reset="resetQuery">
         <el-form-item label="关键字">
           <el-input
             v-model="query.keyword"
@@ -28,130 +22,120 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item>
-          <el-button type="primary" :icon="Search" @click="loadRows">查询</el-button>
-          <el-button :icon="Refresh" @click="resetQuery">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </section>
+      </MangoSearchPanel>
+    </template>
 
-    <el-alert
-      v-if="errorMessage"
-      :title="errorMessage"
-      type="error"
-      show-icon
-      :closable="false"
-    >
-      <template #default>
-        <el-button link type="primary" :icon="Refresh" @click="loadRows">重新加载</el-button>
+    <MangoListPanel>
+      <el-alert v-if="errorMessage" :title="errorMessage" type="error" show-icon :closable="false">
+        <template #default>
+          <el-button link type="primary" :icon="Refresh" @click="loadRows">重新加载</el-button>
+        </template>
+      </el-alert>
+
+      <el-table
+        :data="rows"
+        v-loading="loading"
+        row-key="id"
+        stripe
+        highlight-current-row
+        class="payment-refund-orders__table"
+      >
+        <template #empty>
+          <el-empty :description="emptyDescription" />
+        </template>
+        <el-table-column label="退款信息" min-width="280">
+          <template #default="{ row }">
+            <div class="payment-table-stack">
+              <div class="payment-table-stack__primary">{{ valueText(row.refundOrderNo) }}</div>
+              <div class="payment-table-stack__line">
+                <span>业务退款</span>
+                <strong>{{ valueText(row.bizRefundNo) }}</strong>
+              </div>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column label="原支付订单" min-width="280">
+          <template #default="{ row }">
+            <div class="payment-table-stack">
+              <div class="payment-table-stack__primary">{{ valueText(row.payOrderNo) }}</div>
+              <div class="payment-table-stack__line">
+                <span>业务订单</span>
+                <strong>{{ valueText(row.bizOrderNo) }}</strong>
+              </div>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column label="支付通道" min-width="260">
+          <template #default="{ row }">
+            <div class="payment-table-stack">
+              <div class="payment-table-stack__primary">{{ methodText(row) }}</div>
+              <div class="payment-table-stack__line">
+                <span>实际通道</span>
+                <strong>{{ channelText(row) }}</strong>
+              </div>
+              <div class="payment-table-stack__line">
+                <span>退款单号</span>
+                <strong>{{ valueText(row.channelRefundNo) }}</strong>
+              </div>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column label="金额/状态" width="150">
+          <template #default="{ row }">
+            <div class="payment-money-status">
+              <strong>{{ formatMoney(row.refundAmount) }}</strong>
+              <span>元</span>
+              <el-tag :type="statusTagType(row.status)" effect="light">{{
+                row.statusName || normalizedStatus(row.status) || '-'
+              }}</el-tag>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column label="时间信息" min-width="190">
+          <template #default="{ row }">
+            <div class="payment-table-stack payment-table-stack--compact">
+              <div class="payment-table-stack__line">
+                <span>退款成功</span>
+                <strong>{{ valueText(row.refundTime) }}</strong>
+              </div>
+              <div class="payment-table-stack__line">
+                <span>更新</span>
+                <strong>{{ valueText(row.updateTime) }}</strong>
+              </div>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="192" fixed="right" align="left" class-name="payment-table__operation-cell">
+          <template #default="{ row }">
+            <div class="payment-table__actions">
+              <el-button
+                v-if="canQueryRefund(row)"
+                link
+                type="primary"
+                :icon="Refresh"
+                :loading="queryingId === row.id"
+                @click="queryRefund(row)"
+              >
+                主动查退款
+              </el-button>
+              <el-button link type="primary" :icon="Tickets" @click="openDetail(row)">详情</el-button>
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <template #pagination>
+        <Pagination v-model:page="query.pageNum" v-model:limit="query.pageSize" :total="total" @pagination="loadRows" />
       </template>
-    </el-alert>
+    </MangoListPanel>
 
-    <el-table
-      :data="rows"
-      v-loading="loading"
-      row-key="id"
-      stripe
-      highlight-current-row
-      class="payment-refund-orders__table"
-    >
-      <template #empty>
-        <el-empty :description="emptyDescription" />
-      </template>
-      <el-table-column label="退款信息" min-width="280">
-        <template #default="{ row }">
-          <div class="payment-table-stack">
-            <div class="payment-table-stack__primary">{{ valueText(row.refundOrderNo) }}</div>
-            <div class="payment-table-stack__line">
-              <span>业务退款</span>
-              <strong>{{ valueText(row.bizRefundNo) }}</strong>
-            </div>
-          </div>
-        </template>
-      </el-table-column>
-      <el-table-column label="原支付订单" min-width="280">
-        <template #default="{ row }">
-          <div class="payment-table-stack">
-            <div class="payment-table-stack__primary">{{ valueText(row.payOrderNo) }}</div>
-            <div class="payment-table-stack__line">
-              <span>业务订单</span>
-              <strong>{{ valueText(row.bizOrderNo) }}</strong>
-            </div>
-          </div>
-        </template>
-      </el-table-column>
-      <el-table-column label="支付通道" min-width="260">
-        <template #default="{ row }">
-          <div class="payment-table-stack">
-            <div class="payment-table-stack__primary">{{ methodText(row) }}</div>
-            <div class="payment-table-stack__line">
-              <span>实际通道</span>
-              <strong>{{ channelText(row) }}</strong>
-            </div>
-            <div class="payment-table-stack__line">
-              <span>退款单号</span>
-              <strong>{{ valueText(row.channelRefundNo) }}</strong>
-            </div>
-          </div>
-        </template>
-      </el-table-column>
-      <el-table-column label="金额/状态" width="150">
-        <template #default="{ row }">
-          <div class="payment-money-status">
-            <strong>{{ formatMoney(row.refundAmount) }}</strong>
-            <span>元</span>
-            <el-tag :type="statusTagType(row.status)" effect="light">{{ row.statusName || normalizedStatus(row.status) || '-' }}</el-tag>
-          </div>
-        </template>
-      </el-table-column>
-      <el-table-column label="时间信息" min-width="190">
-        <template #default="{ row }">
-          <div class="payment-table-stack payment-table-stack--compact">
-            <div class="payment-table-stack__line">
-              <span>退款成功</span>
-              <strong>{{ valueText(row.refundTime) }}</strong>
-            </div>
-            <div class="payment-table-stack__line">
-              <span>更新</span>
-              <strong>{{ valueText(row.updateTime) }}</strong>
-            </div>
-          </div>
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" width="192" fixed="right" align="left" class-name="payment-table__operation-cell">
-        <template #default="{ row }">
-          <div class="payment-table__actions">
-            <el-button
-              v-if="canQueryRefund(row)"
-              link
-              type="primary"
-              :icon="Refresh"
-              :loading="queryingId === row.id"
-              @click="queryRefund(row)"
-            >
-              主动查退款
-            </el-button>
-            <el-button link type="primary" :icon="Tickets" @click="openDetail(row)">详情</el-button>
-          </div>
-        </template>
-      </el-table-column>
-    </el-table>
-
-    <div class="payment-refund-orders__pagination">
-      <Pagination
-        v-model:current-page="query.pageNum"
-        v-model:page-size="query.pageSize"
-        :total="total"
-        @change="loadRows"
-      />
-    </div>
-
-    <el-drawer
+    <MangoSideDrawerShell
       v-model="detailVisible"
       title="退款订单详情"
-      size="780px"
-      destroy-on-close
-      append-to-body
+      drawer-size="780px"
+      :destroy-on-close="true"
+      :show-trigger="false"
+      data-surface="payment.refund-order.detail"
       class="payment-refund-orders__drawer"
     >
       <el-skeleton v-if="detailLoading" :rows="10" animated />
@@ -159,7 +143,9 @@
         <el-descriptions title="退款申请" :column="2" border>
           <el-descriptions-item label="退款订单号">{{ valueText(detail.refundOrderNo) }}</el-descriptions-item>
           <el-descriptions-item label="退款状态">
-            <el-tag :type="statusTagType(detail.status)" effect="light">{{ detail.statusName || normalizedStatus(detail.status) || '-' }}</el-tag>
+            <el-tag :type="statusTagType(detail.status)" effect="light">{{
+              detail.statusName || normalizedStatus(detail.status) || '-'
+            }}</el-tag>
           </el-descriptions-item>
           <el-descriptions-item label="业务退款号">{{ valueText(detail.bizRefundNo) }}</el-descriptions-item>
           <el-descriptions-item label="退款金额（元）">{{ formatMoney(detail.refundAmount) }}</el-descriptions-item>
@@ -207,14 +193,14 @@
         </section>
       </template>
       <el-empty v-else description="未查询到退款订单详情" />
-    </el-drawer>
-  </div>
+    </MangoSideDrawerShell>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts">
-import { Pagination } from '@mango/common';
+import { MangoListPage, MangoListPanel, MangoSearchPanel, MangoSideDrawerShell, Pagination } from '@mango/common';
 import { computed, onMounted, reactive, ref } from 'vue';
-import { Refresh, Search, Tickets } from '@element-plus/icons-vue';
+import { Refresh, Tickets } from '@element-plus/icons-vue';
 import {
   paymentRefundOrderApi,
   type PaymentPageQuery,
@@ -300,7 +286,7 @@ async function queryRefund(row: PaymentRefundOrder) {
   queryingId.value = String(row.id);
   try {
     const result = await paymentRefundOrderApi.queryChannel({ id: row.id });
-    const index = rows.value.findIndex(item => item.id === row.id);
+    const index = rows.value.findIndex((item) => item.id === row.id);
     if (index >= 0) {
       rows.value[index] = result;
     }

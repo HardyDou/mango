@@ -10,7 +10,6 @@ import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 import jakarta.validation.constraints.PastOrPresent;
-
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Schema(description = "登录日志分页查询条件")

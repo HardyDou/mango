@@ -1,5 +1,7 @@
 # @mango/auth
 
+当前用户信息会保留认证接口返回的 `departmentNames`，供 Admin Shell 将部门选择区与头像/昵称个人菜单分离展示；部门列表来源于真实 Identity 组织关系，不在前端伪造。
+
 ## 1. 概览
 
 `@mango/auth` 是 Mango 管理端认证前端包，提供登录页、登录逻辑 hook、个人中心、修改密码页、用户信息 store、认证 API 封装和登录页运行配置。

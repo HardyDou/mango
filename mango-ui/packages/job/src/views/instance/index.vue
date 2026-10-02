@@ -1,22 +1,9 @@
-<!-- mango-page-baseline-exception list: 执行实例是运行诊断页，同页承载远程任务检索、实例同步、原生日志轮询和日志抽屉 -->
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
-  <div class="job-page">
-    <section class="job-toolbar">
-      <div class="job-toolbar-head">
-        <div>
-          <h2>执行实例</h2>
-          <p>按任务查看每次触发后的运行状态、批次号、耗时和日志。</p>
-        </div>
-        <div class="job-toolbar-actions">
-          <el-button v-auth="'job:instance:sync'" :icon="Refresh" :loading="syncing" @click="syncRows"
-            >同步实例</el-button
-          >
-          <el-button v-auth="'job:instance:list'" :icon="Refresh" @click="loadRows">刷新</el-button>
-        </div>
-      </div>
-
-      <el-form :model="query" class="job-search" inline @submit.prevent>
-        <el-form-item label="任务" class="job-search-item job-search-item-wide">
+  <MangoListPage class="job-page" data-page="job.instance">
+    <template #search>
+      <MangoSearchPanel :model="query" :columns="4" @search="loadRows" @reset="resetQuery">
+        <el-form-item label="任务">
           <el-select
             v-model="query.jobId"
             clearable
@@ -39,7 +26,7 @@
             </el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="状态" class="job-search-item job-search-item-small">
+        <el-form-item label="状态">
           <el-select v-model="query.status" clearable placeholder="全部">
             <el-option
               v-for="item in instanceStatusOptions"
@@ -49,22 +36,22 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="触发类型" class="job-search-item">
+        <el-form-item label="触发类型">
           <el-select v-model="query.triggerType" clearable placeholder="全部">
             <el-option v-for="item in triggerTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
-        <el-form-item label="批次号" class="job-search-item job-search-item-wide">
+        <el-form-item label="批次号">
           <el-input v-model="query.triggerBatchNo" clearable placeholder="triggerBatchNo" @keyup.enter="loadRows" />
         </el-form-item>
-        <el-form-item class="job-search-actions">
-          <el-button v-auth="'job:instance:list'" type="primary" :icon="Search" @click="loadRows">查询</el-button>
-          <el-button :icon="Refresh" @click="resetQuery">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </section>
+      </MangoSearchPanel>
+    </template>
 
-    <section class="job-panel">
+    <MangoListPanel>
+      <template #actions>
+        <el-button v-auth="'job:instance:sync'" plain :loading="syncing" @click="syncRows">同步实例</el-button>
+        <el-button v-auth="'job:instance:list'" plain :icon="Refresh" @click="loadRows">刷新</el-button>
+      </template>
       <el-alert v-if="errorMessage" class="job-error" type="error" :closable="false" show-icon>
         <template #title>
           {{ errorMessage }}
@@ -115,10 +102,10 @@
         </el-table-column>
       </el-table>
 
-      <div class="job-pagination">
+      <template #pagination>
         <Pagination v-model:page="query.pageNum" v-model:limit="query.pageSize" :total="total" @pagination="loadRows" />
-      </div>
-    </section>
+      </template>
+    </MangoListPanel>
 
     <el-drawer v-model="logVisible" title="执行日志详情" size="760px" destroy-on-close>
       <el-alert v-if="logError" class="job-error" type="error" :closable="false" show-icon>
@@ -185,12 +172,12 @@
         </section>
       </div>
     </el-drawer>
-  </div>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts">
-import { Document, Refresh, Search } from '@element-plus/icons-vue';
-import { Pagination } from '@mango/common';
+import { Document, Refresh } from '@element-plus/icons-vue';
+import { MangoListPage, MangoListPanel, MangoSearchPanel, Pagination } from '@mango/common';
 import { onMounted, reactive, ref } from 'vue';
 import {
   instanceStatusOptions,
