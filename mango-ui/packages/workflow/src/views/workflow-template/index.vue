@@ -1,12 +1,6 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
   <div class="workflow-template-page">
-    <section class="page-head">
-      <div>
-        <h2>流程模板</h2>
-        <p>模板是不可直接运行的流程资产，推送到机构后生成该机构自己的流程定义草稿。</p>
-      </div>
-    </section>
-
     <div class="template-layout">
       <DomainSideTree
         v-model="query.domainCode"
@@ -19,106 +13,112 @@
         @loaded="handleDomainsLoaded"
       />
 
-      <section class="template-panel">
-        <div class="table-head">
-          <div>
-            <h3>{{ currentTemplateDomainName }}</h3>
-            <p>模板只能推送或导入为流程草稿后使用，模板本身不参与运行。</p>
-          </div>
-          <div class="table-actions">
+      <MangoListPage class="template-content">
+        <template #search>
+          <MangoSearchPanel :model="query" :columns="4" @search="loadTemplates" @reset="resetQuery">
+            <el-form-item label="关键词">
+              <el-input
+                v-model="query.keyword"
+                clearable
+                placeholder="模板名称/编码/场景"
+                @keyup.enter="loadTemplates"
+              />
+            </el-form-item>
+            <el-form-item label="状态">
+              <el-select v-model="query.status" clearable placeholder="全部状态" style="width: 140px">
+                <el-option label="启用" value="ENABLED" />
+                <el-option label="停用" value="DISABLED" />
+                <el-option label="归档" value="ARCHIVED" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="模板分类">
+              <el-select
+                v-model="query.templateCategoryId"
+                clearable
+                filterable
+                placeholder="全部分类"
+                style="width: 180px"
+              >
+                <el-option
+                  v-for="item in templateCategoryOptions"
+                  :key="item.id"
+                  :label="item.categoryName"
+                  :value="item.id"
+                />
+              </el-select>
+            </el-form-item>
+            <template #actions>
+              <el-button type="primary" @click="loadTemplates">查询</el-button>
+              <el-button @click="resetQuery">重置</el-button>
+            </template>
+          </MangoSearchPanel>
+        </template>
+
+        <MangoListPanel>
+          <template #header>
+            <div class="table-head">
+              <div>
+                <h3>{{ currentTemplateDomainName }}</h3>
+                <p>模板只能推送或导入为流程草稿后使用，模板本身不参与运行。</p>
+              </div>
+            </div>
+          </template>
+
+          <template #actions>
             <el-button :icon="Upload" type="primary" @click="openPushDialog()">推送流程</el-button>
             <el-button :icon="FolderAdd" @click="openCategoryManage">管理分类</el-button>
-          </div>
-        </div>
-
-        <el-form :inline="true" :model="query" class="filter-form">
-          <el-form-item label="关键词">
-            <el-input v-model="query.keyword" clearable placeholder="模板名称/编码/场景" @keyup.enter="loadTemplates" />
-          </el-form-item>
-          <el-form-item label="状态">
-            <el-select v-model="query.status" clearable placeholder="全部状态" style="width: 140px">
-              <el-option label="启用" value="ENABLED" />
-              <el-option label="停用" value="DISABLED" />
-              <el-option label="归档" value="ARCHIVED" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="模板分类">
-            <el-select
-              v-model="query.templateCategoryId"
-              clearable
-              filterable
-              placeholder="全部分类"
-              style="width: 180px"
-            >
-              <el-option
-                v-for="item in templateCategoryOptions"
-                :key="item.id"
-                :label="item.categoryName"
-                :value="item.id"
-              />
-            </el-select>
-          </el-form-item>
-          <el-form-item>
-            <el-button :icon="Search" type="primary" @click="loadTemplates">查询</el-button>
-            <el-button :icon="Refresh" @click="resetQuery">重置</el-button>
-          </el-form-item>
-        </el-form>
-
-        <el-table
-          v-loading="loading"
-          :data="templates"
-          stripe
-          @selection-change="handleTemplateSelectionChange"
-        >
-          <el-table-column type="selection" width="48" />
-          <el-table-column prop="templateName" label="模板名称" min-width="180" show-overflow-tooltip />
-          <el-table-column prop="templateCode" label="模板编码" min-width="170" show-overflow-tooltip />
-          <el-table-column label="业务域" min-width="140">
-            <template #default="{ row }">
-              <span>{{ domainName(row.categoryCode) }}</span>
-              <span class="domain-code-cell">{{ row.categoryCode || '-' }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="模板分类" min-width="140" show-overflow-tooltip>
-            <template #default="{ row }">
-              {{ row.templateCategoryName || '未分类' }}
-            </template>
-          </el-table-column>
-          <el-table-column label="版本" width="90">
-            <template #default="{ row }">v{{ row.versionNo || 1 }}</template>
-          </el-table-column>
-          <el-table-column label="状态" width="100">
-            <template #default="{ row }">
-              <el-tag :type="row.status === 'ENABLED' ? 'success' : row.status === 'ARCHIVED' ? 'warning' : 'info'">
-                {{ row.statusName || row.status }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="sourceDefinitionName" label="来源流程" min-width="150" show-overflow-tooltip />
-          <el-table-column prop="updatedTime" label="更新时间" width="170" />
-          <el-table-column label="操作" width="180" fixed="right">
-            <template #default="{ row }">
-              <el-button link type="primary" @click="openPushDialog(row)">推送流程</el-button>
-              <el-button link type="primary" @click="openPreview(row)">预览</el-button>
-              <el-button link type="danger" @click="deleteTemplate(row)">删除</el-button>
-            </template>
-          </el-table-column>
-          <template #empty>
-            <el-empty description="暂无流程模板" />
           </template>
-        </el-table>
 
-        <el-pagination
-          v-model:current-page="query.pageNum"
-          v-model:page-size="query.pageSize"
-          class="pagination"
-          :total="total"
-          :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="loadTemplates"
-          @current-change="loadTemplates"
-        />
-      </section>
+          <el-table v-loading="loading" :data="templates" stripe @selection-change="handleTemplateSelectionChange">
+            <el-table-column type="selection" width="48" />
+            <el-table-column prop="templateName" label="模板名称" min-width="180" show-overflow-tooltip />
+            <el-table-column prop="templateCode" label="模板编码" min-width="170" show-overflow-tooltip />
+            <el-table-column label="业务域" min-width="140">
+              <template #default="{ row }">
+                <span>{{ domainName(row.categoryCode) }}</span>
+                <span class="domain-code-cell">{{ row.categoryCode || '-' }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="模板分类" min-width="140" show-overflow-tooltip>
+              <template #default="{ row }">
+                {{ row.templateCategoryName || '未分类' }}
+              </template>
+            </el-table-column>
+            <el-table-column label="版本" width="90">
+              <template #default="{ row }">v{{ row.versionNo || 1 }}</template>
+            </el-table-column>
+            <el-table-column label="状态" width="100">
+              <template #default="{ row }">
+                <el-tag :type="row.status === 'ENABLED' ? 'success' : row.status === 'ARCHIVED' ? 'warning' : 'info'">
+                  {{ row.statusName || row.status }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="sourceDefinitionName" label="来源流程" min-width="150" show-overflow-tooltip />
+            <el-table-column prop="updatedTime" label="更新时间" width="170" />
+            <el-table-column label="操作" width="180" fixed="right">
+              <template #default="{ row }">
+                <el-button link type="primary" @click="openPushDialog(row)">推送流程</el-button>
+                <el-button link type="primary" @click="openPreview(row)">预览</el-button>
+                <el-button link type="danger" @click="deleteTemplate(row)">删除</el-button>
+              </template>
+            </el-table-column>
+            <template #empty>
+              <el-empty description="暂无流程模板" />
+            </template>
+          </el-table>
+
+          <template #pagination>
+            <Pagination
+              v-model:page="query.pageNum"
+              v-model:limit="query.pageSize"
+              :total="total"
+              :page-sizes="[10, 20, 50, 100]"
+              @pagination="loadTemplates"
+            />
+          </template>
+        </MangoListPanel>
+      </MangoListPage>
     </div>
 
     <el-dialog v-model="templateDialogVisible" :title="templateForm.id ? '查看模板' : '新增模板'" width="720px">
@@ -142,12 +142,7 @@
           />
         </el-form-item>
         <el-form-item label="模板分类" prop="templateCategoryId">
-          <el-select
-            v-model="templateForm.templateCategoryId"
-            clearable
-            filterable
-            placeholder="请选择模板分类"
-          >
+          <el-select v-model="templateForm.templateCategoryId" clearable filterable placeholder="请选择模板分类">
             <el-option
               v-for="item in templateCategoryOptions"
               :key="item.id"
@@ -299,9 +294,10 @@
 </template>
 
 <script setup lang="ts">
+import { MangoListPage, MangoListPanel, MangoSearchPanel, Pagination } from '@mango/common';
 import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
-import { FolderAdd, Refresh, Search, Upload } from '@element-plus/icons-vue';
+import { FolderAdd, Refresh, Upload } from '@element-plus/icons-vue';
 import { DomainSideTree } from '@mango/system';
 import {
   defaultDesignerJson,
@@ -369,7 +365,9 @@ const pushForm = reactive({
 
 const categoryEnabled = computed({
   get: () => categoryForm.status === 1,
-  set: value => { categoryForm.status = value ? 1 : 0; },
+  set: (value) => {
+    categoryForm.status = value ? 1 : 0;
+  },
 });
 
 const domainTreeProps = {
@@ -387,7 +385,9 @@ const currentTemplateDomainName = computed(() => {
 
 const pushRangeTip = computed(() => {
   if (query.templateCategoryId) {
-    const categoryName = templateCategoryOptions.value.find(item => item.id === query.templateCategoryId)?.categoryName || '当前模板分类';
+    const categoryName =
+      templateCategoryOptions.value.find((item) => item.id === query.templateCategoryId)?.categoryName ||
+      '当前模板分类';
     return `将推送「${categoryName}」下全部启用模板。`;
   }
   return `将推送「${query.domainCode ? domainName(query.domainCode) : '全部业务域'}」下全部启用模板。`;
@@ -437,14 +437,16 @@ function handleDomainsLoaded(domains: WorkflowDomainOption[]) {
 }
 
 function flattenDomainOptions(options: WorkflowDomainOption[]): WorkflowDomainOption[] {
-  return options.flatMap(item => [item, ...flattenDomainOptions(item.children || [])]);
+  return options.flatMap((item) => [item, ...flattenDomainOptions(item.children || [])]);
 }
 
 function domainName(domainCode?: string) {
   if (!domainCode) {
     return '未设置业务域';
   }
-  return flattenDomainOptions(domainOptions.value).find(item => item.domainCode === domainCode)?.domainName || domainCode;
+  return (
+    flattenDomainOptions(domainOptions.value).find((item) => item.domainCode === domainCode)?.domainName || domainCode
+  );
 }
 
 function syncTemplateDomainName() {
@@ -484,18 +486,21 @@ function selectTemplateDomain() {
 }
 
 function openTemplateForm(row?: WorkflowTemplate) {
-  Object.assign(templateForm, row || {
-    id: undefined,
-    templateName: '',
-    templateCode: '',
-    templateCategoryId: query.templateCategoryId || undefined,
-    categoryCode: query.domainCode || domainOptions.value[0]?.domainCode || 'WORKFLOW',
-    categoryName: domainName(query.domainCode || domainOptions.value[0]?.domainCode || 'WORKFLOW'),
-    designerJson: defaultDesignerJson(),
-    formJson: '',
-    status: 'ENABLED',
-    remark: '',
-  });
+  Object.assign(
+    templateForm,
+    row || {
+      id: undefined,
+      templateName: '',
+      templateCode: '',
+      templateCategoryId: query.templateCategoryId || undefined,
+      categoryCode: query.domainCode || domainOptions.value[0]?.domainCode || 'WORKFLOW',
+      categoryName: domainName(query.domainCode || domainOptions.value[0]?.domainCode || 'WORKFLOW'),
+      designerJson: defaultDesignerJson(),
+      formJson: '',
+      status: 'ENABLED',
+      remark: '',
+    },
+  );
   syncTemplateDomainName();
   templateDialogVisible.value = true;
 }
@@ -519,15 +524,18 @@ async function openCategoryManage() {
 }
 
 function openCategoryForm(row?: WorkflowTemplateCategory) {
-  Object.assign(categoryForm, row || {
-    id: undefined,
-    categoryName: '',
-    categoryCode: '',
-    icon: '',
-    sort: 0,
-    status: 1,
-    remark: '',
-  });
+  Object.assign(
+    categoryForm,
+    row || {
+      id: undefined,
+      categoryName: '',
+      categoryCode: '',
+      icon: '',
+      sort: 0,
+      status: 1,
+      remark: '',
+    },
+  );
   categoryDialogVisible.value = true;
 }
 
@@ -593,7 +601,7 @@ function openPushDialog(row?: WorkflowTemplate) {
   Object.assign(pushForm, {
     targetTenantIds: [],
     domainCode: row?.categoryCode || query.domainCode || domainOptions.value[0]?.domainCode || 'WORKFLOW',
-    templateIds: selected.map(item => item.id!).filter(Boolean),
+    templateIds: selected.map((item) => item.id!).filter(Boolean),
   });
   tenantOptions.value = [];
   pushDialogVisible.value = true;
@@ -633,38 +641,6 @@ async function submitPush() {
   gap: 16px;
 }
 
-.page-head,
-.card-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.page-head {
-  padding: 18px 20px;
-  background: var(--el-bg-color);
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 8px;
-}
-
-.page-head h2 {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 650;
-}
-
-.page-head p {
-  margin: 8px 0 0;
-  color: var(--el-text-color-regular);
-}
-
-.page-actions {
-  display: flex;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
 .template-layout {
   display: grid;
   grid-template-columns: 300px minmax(0, 1fr);
@@ -672,15 +648,8 @@ async function submitPush() {
   align-items: start;
 }
 
-.template-panel {
-  background: var(--el-bg-color);
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 8px;
-}
-
-.template-panel {
+.template-content {
   min-width: 0;
-  padding: 16px;
 }
 
 .table-head {
@@ -707,16 +676,6 @@ async function submitPush() {
   color: var(--el-text-color-secondary);
 }
 
-.table-actions {
-  display: flex;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.filter-form {
-  margin-bottom: 16px;
-}
-
 .pagination {
   margin-top: 16px;
   justify-content: flex-end;
@@ -727,15 +686,6 @@ async function submitPush() {
 }
 
 @media (max-width: 768px) {
-  .page-head,
-  .card-header {
-    flex-direction: column;
-  }
-
-  .page-actions {
-    flex-wrap: wrap;
-  }
-
   .template-layout {
     grid-template-columns: 1fr;
   }

@@ -1,28 +1,27 @@
-<!-- mango-page-baseline-exception all: 行政区域维护以层级树和父子区域联动为核心，不是平铺领域列表或标准短表单弹框。 -->
+<!-- eslint-disable vue/multi-word-component-names -->
+<!-- mango-page-baseline-exception list: 行政区域维护以层级树和父子区域联动为核心，不支持分页列表语义。 -->
 <template>
-  <div class="area-container">
-    <el-card>
+  <MangoListPage class="area-page" data-page="system.area">
+    <div class="area-page__breadcrumb">
       <el-breadcrumb class="area-breadcrumb" separator="/">
         <el-breadcrumb-item>
-          <el-button link type="primary" @click="loadRoot"> 全国 </el-button>
+          <el-button link type="primary" @click="loadRoot">全国</el-button>
         </el-breadcrumb-item>
         <el-breadcrumb-item v-for="item in pathStack" :key="item.id">
-          <el-button link type="primary" @click="loadChildren(item, true)">
-            {{ item.name }}
-          </el-button>
+          <el-button link type="primary" @click="loadChildren(item, true)">{{ item.name }}</el-button>
         </el-breadcrumb-item>
       </el-breadcrumb>
+    </div>
 
-      <div class="action-toolbar">
-        <div class="toolbar-left">
-          <span class="current-level">当前层级：{{ currentLevelLabel }}</span>
-        </div>
-        <div class="toolbar-right">
-          <el-button @click="loadRoot"> 返回省级 </el-button>
-          <el-button type="primary" @click="handleAdd"> 新增区划 </el-button>
-        </div>
-      </div>
-
+    <MangoListPanel>
+      <template #actions>
+        <span class="current-level">当前层级：{{ currentLevelLabel }}</span>
+        <el-button type="primary" plain @click="handleAdd">新增区划</el-button>
+      </template>
+      <template #view-actions>
+        <el-button plain @click="loadRoot">返回省级</el-button>
+        <el-button type="primary" plain :loading="loading" @click="reloadCurrentLevel">刷新</el-button>
+      </template>
       <el-table v-loading="loading" :data="tableData" stripe row-key="id">
         <el-table-column prop="name" label="区划名称" min-width="160" />
         <el-table-column prop="adcode" label="区划编码" width="130" />
@@ -60,9 +59,9 @@
           </template>
         </el-table-column>
       </el-table>
-    </el-card>
+    </MangoListPanel>
 
-    <el-dialog v-model="dialogVisible" :title="form.id ? '编辑区划' : '新增区划'" width="620px">
+    <MangoDialog v-model="dialogVisible" :title="form.id ? '编辑区划' : '新增区划'" width="620px">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="110px">
         <el-form-item label="上级区划">
           <el-input :model-value="parentLabel" disabled />
@@ -108,14 +107,14 @@
         <el-button @click="dialogVisible = false"> 取消 </el-button>
         <el-button type="primary" :loading="submitLoading" @click="handleSubmit"> 确定 </el-button>
       </template>
-    </el-dialog>
-  </div>
+    </MangoDialog>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts" name="SystemArea">
 import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
-import { DictTag, useDict } from '@mango/common';
+import { DictTag, MangoDialog, MangoListPage, MangoListPanel, useDict } from '@mango/common';
 import { areaApi, type SysArea } from '../../api/area';
 
 const { options: statusOptions } = useDict('sys_normal_disable');
@@ -275,8 +274,8 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
-.area-container {
-  padding: 0;
+.area-page__breadcrumb {
+  margin: 0;
 }
 
 .card-header {
@@ -298,7 +297,7 @@ onMounted(() => {
 }
 
 .area-breadcrumb {
-  margin-bottom: 16px;
+  margin: 0;
 }
 
 .full-input {

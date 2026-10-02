@@ -10,11 +10,16 @@ describe('toBackendDateRangeParams', () => {
   });
 
   it('supports custom bound names without changing complete date-time values', () => {
-    expect(toBackendDateRangeParams({
-      triggerTimeStart: '2026-08-27',
-      triggerTimeEnd: '2026-08-27 18:00:00',
-      page: 1,
-    }, { startKey: 'triggerTimeStart', endKey: 'triggerTimeEnd' })).toEqual({
+    expect(
+      toBackendDateRangeParams(
+        {
+          triggerTimeStart: '2026-08-27',
+          triggerTimeEnd: '2026-08-27 18:00:00',
+          page: 1,
+        },
+        { startKey: 'triggerTimeStart', endKey: 'triggerTimeEnd' },
+      ),
+    ).toEqual({
       triggerTimeStart: '2026-08-27 00:00:00',
       triggerTimeEnd: '2026-08-27 18:00:00',
       page: 1,

@@ -20,6 +20,7 @@ public interface ITenantMemberService {
     List<TenantMemberVO> listEnabledMembers(Long userId);
     TenantMemberVO getMember(Long memberId);
     List<TenantMemberOrgRelationVO> listOrgRelations(Long tenantId, Long orgId);
+    List<TenantMemberOrgRelationVO> listUserOrgRelations(Long tenantId, Long userId);
     TenantMemberOrgRelationVO getOrgRelation(Long relationId);
     boolean existsOrgRelation(TenantMemberOrgExistsQuery query);
     boolean addOrgRelation(AddTenantMemberOrgCommand command);

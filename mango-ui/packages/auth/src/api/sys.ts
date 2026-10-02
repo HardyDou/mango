@@ -10,6 +10,7 @@ export interface LoginResult {
   tenantCode?: string;
   tenantName?: string;
   departmentName?: string;
+  departmentNames?: string[];
   companyName?: string;
   realm?: string;
   actorType?: string;

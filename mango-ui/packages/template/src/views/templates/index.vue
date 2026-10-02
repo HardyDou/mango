@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
   <div class="template-container">
     <div v-if="pageMode === 'list'" class="template-list-layout">
@@ -11,108 +12,131 @@
         @change="handleDomainChange"
       />
 
-      <el-card class="template-main">
-        <el-form :inline="true" class="search-form">
-          <el-form-item label="关键词">
-            <el-input
-              v-model="query.keyword"
-              placeholder="搜索模板编码或名称"
-              clearable
-              @keyup.enter="handleSearch"
-            />
-          </el-form-item>
-          <el-form-item label="格式">
-            <DictSelect
-              v-model="query.sourceFormat"
-              dict-type="template_source_format"
-              placeholder="全部格式"
-              clearable
-              style="width: 130px"
-            />
-          </el-form-item>
-          <el-form-item>
-            <el-button type="primary" @click="handleSearch">查询</el-button>
-            <el-button @click="handleReset">重置</el-button>
-          </el-form-item>
-        </el-form>
-
-        <div class="action-toolbar">
-          <div class="toolbar-left">
-            <el-button type="primary" @click="handleCreate">新增模板</el-button>
-            <el-button type="danger" :disabled="selectedRows.length === 0" @click="handleBatchDelete">批量删除</el-button>
-            <el-button @click="loadData">刷新</el-button>
-          </div>
-        </div>
-
-        <el-table
-          v-loading="loading"
-          :data="tableData"
-          class="data-table"
-          stripe
-          @selection-change="handleSelectionChange"
-        >
-        <template #empty>
-          <el-empty description="暂无模板">
-            <el-button type="primary" @click="handleCreate">新增模板</el-button>
-          </el-empty>
+      <MangoListPage class="template-list-content">
+        <template #search>
+          <MangoSearchPanel :model="query" :columns="3" @search="handleSearch" @reset="handleReset">
+            <el-form-item label="关键词">
+              <el-input
+                v-model="query.keyword"
+                placeholder="搜索模板编码或名称"
+                clearable
+                @keyup.enter="handleSearch"
+              />
+            </el-form-item>
+            <el-form-item label="格式">
+              <DictSelect
+                v-model="query.sourceFormat"
+                dict-type="template_source_format"
+                placeholder="全部格式"
+                clearable
+                style="width: 130px"
+              />
+            </el-form-item>
+          </MangoSearchPanel>
         </template>
-        <el-table-column type="selection" width="48" />
-        <el-table-column label="模板" min-width="260" fixed="left">
-          <template #default="{ row }">
-            <div class="template-cell">
-              <strong>{{ row.templateCode }}</strong>
-              <span>{{ row.templateName }}</span>
-            </div>
-          </template>
-        </el-table-column>
-        <el-table-column prop="domainCode" label="业务域" min-width="130" show-overflow-tooltip>
-          <template #default="{ row }">{{ row.categoryName || row.domainCode || row.categoryCode || '-' }}</template>
-        </el-table-column>
-        <el-table-column prop="sourceFormat" label="模板格式" width="120">
-          <template #default="{ row }">
-            <DictTag v-if="row.sourceFormat" dict-code="template_source_format" :value="row.sourceFormat" size="small" />
-            <el-tag v-else size="small" type="info">未发布</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="发布变更" width="110">
-          <template #default="{ row }">
-            <el-tooltip
-              v-if="row.hasUnpublishedChanges"
-              :content="`已保存但未发布：${(row.unpublishedChangeReasons || []).join('、') || '模板内容'}`"
-              placement="top"
-            >
-              <el-tag type="warning">未同步</el-tag>
-            </el-tooltip>
-            <el-tag v-else effect="plain" type="success">已同步</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="publishedVersionNo" label="生效版本" width="110">
-          <template #default="{ row }">
-            <el-button v-if="row.publishedVersionNo" link type="primary" @click="handleVersions(row)">
-              V{{ row.publishedVersionNo }}
-            </el-button>
-            <span v-else>-</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="remark" label="备注" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="updatedTime" label="更新时间" width="180" />
-        <el-table-column label="操作" width="270" fixed="right">
-          <template #default="{ row }">
-            <el-button link type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
-            <el-button link type="primary" size="small" :disabled="!row.publishedVersionNo" @click="handleVersions(row)">历史版本</el-button>
-            <el-button link type="success" size="small" :disabled="!row.publishedVersionNo" @click="handlePreview(row)">预览</el-button>
-            <el-button link type="danger" size="small" @click="handleDelete(row)">删除</el-button>
-          </template>
-        </el-table-column>
-        </el-table>
 
-        <Pagination
-          v-model:current-page="query.pageNum"
-          v-model:page-size="query.pageSize"
-          :total="total"
-          @change="loadData"
-        />
-      </el-card>
+        <MangoListPanel>
+          <template #actions>
+            <el-button type="primary" plain @click="handleCreate">新增模板</el-button>
+            <el-button type="danger" plain :disabled="selectedRows.length === 0" @click="handleBatchDelete"
+              >批量删除</el-button
+            >
+            <el-button plain @click="loadData">刷新</el-button>
+          </template>
+
+          <el-table
+            v-loading="loading"
+            :data="tableData"
+            class="data-table"
+            stripe
+            @selection-change="handleSelectionChange"
+          >
+            <template #empty>
+              <el-empty description="暂无模板">
+                <el-button type="primary" @click="handleCreate">新增模板</el-button>
+              </el-empty>
+            </template>
+            <el-table-column type="selection" width="48" />
+            <el-table-column label="模板" min-width="260" fixed="left">
+              <template #default="{ row }">
+                <div class="template-cell">
+                  <strong>{{ row.templateCode }}</strong>
+                  <span>{{ row.templateName }}</span>
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column prop="domainCode" label="业务域" min-width="130" show-overflow-tooltip>
+              <template #default="{ row }">{{
+                row.categoryName || row.domainCode || row.categoryCode || '-'
+              }}</template>
+            </el-table-column>
+            <el-table-column prop="sourceFormat" label="模板格式" width="120">
+              <template #default="{ row }">
+                <DictTag
+                  v-if="row.sourceFormat"
+                  dict-code="template_source_format"
+                  :value="row.sourceFormat"
+                  size="small"
+                />
+                <el-tag v-else size="small" type="info">未发布</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="发布变更" width="110">
+              <template #default="{ row }">
+                <el-tooltip
+                  v-if="row.hasUnpublishedChanges"
+                  :content="`已保存但未发布：${(row.unpublishedChangeReasons || []).join('、') || '模板内容'}`"
+                  placement="top"
+                >
+                  <el-tag type="warning">未同步</el-tag>
+                </el-tooltip>
+                <el-tag v-else effect="plain" type="success">已同步</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="publishedVersionNo" label="生效版本" width="110">
+              <template #default="{ row }">
+                <el-button v-if="row.publishedVersionNo" link type="primary" @click="handleVersions(row)">
+                  V{{ row.publishedVersionNo }}
+                </el-button>
+                <span v-else>-</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="remark" label="备注" min-width="180" show-overflow-tooltip />
+            <el-table-column prop="updatedTime" label="更新时间" width="180" />
+            <el-table-column label="操作" width="270" fixed="right">
+              <template #default="{ row }">
+                <el-button link type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
+                <el-button
+                  link
+                  type="primary"
+                  size="small"
+                  :disabled="!row.publishedVersionNo"
+                  @click="handleVersions(row)"
+                  >历史版本</el-button
+                >
+                <el-button
+                  link
+                  type="success"
+                  size="small"
+                  :disabled="!row.publishedVersionNo"
+                  @click="handlePreview(row)"
+                  >预览</el-button
+                >
+                <el-button link type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+
+          <template #pagination>
+            <Pagination
+              v-model:page="query.pageNum"
+              v-model:limit="query.pageSize"
+              :total="total"
+              @pagination="loadData"
+            />
+          </template>
+        </MangoListPanel>
+      </MangoListPage>
     </div>
 
     <el-card v-else-if="pageMode === 'preview'" class="template-main page-card preview-page">
@@ -156,8 +180,12 @@
             <el-descriptions v-if="detail" :column="1" border>
               <el-descriptions-item label="模板编码">{{ detail.templateCode }}</el-descriptions-item>
               <el-descriptions-item label="模板名称">{{ detail.templateName }}</el-descriptions-item>
-              <el-descriptions-item label="业务域">{{ detail.categoryName || detail.domainCode || detail.categoryCode || '-' }}</el-descriptions-item>
-              <el-descriptions-item label="预览版本">{{ previewingTemplateVersion ? `V${previewingTemplateVersion.versionNo}` : '-' }}</el-descriptions-item>
+              <el-descriptions-item label="业务域">{{
+                detail.categoryName || detail.domainCode || detail.categoryCode || '-'
+              }}</el-descriptions-item>
+              <el-descriptions-item label="预览版本">{{
+                previewingTemplateVersion ? `V${previewingTemplateVersion.versionNo}` : '-'
+              }}</el-descriptions-item>
               <el-descriptions-item label="模板格式">
                 <DictTag
                   v-if="previewingTemplateVersion?.sourceFormat || detail.sourceFormat"
@@ -172,12 +200,12 @@
           </section>
 
           <section class="form-section">
-          <div class="section-title">参数输入</div>
-          <el-form label-width="88px">
-            <el-form-item label="输出格式">
-              <DictSelect v-model="renderForm.outputFormat" class="form-select" dict-type="template_output_format" />
-            </el-form-item>
-            <el-form-item label="变量参数">
+            <div class="section-title">参数输入</div>
+            <el-form label-width="88px">
+              <el-form-item label="输出格式">
+                <DictSelect v-model="renderForm.outputFormat" class="form-select" dict-type="template_output_format" />
+              </el-form-item>
+              <el-form-item label="变量参数">
                 <el-tabs v-model="renderVariableMode" class="stable-tabs render-tabs">
                   <el-tab-pane label="表单填写" name="FORM">
                     <el-empty v-if="renderVariableRows.length === 0" description="生效版本未定义变量" />
@@ -259,7 +287,9 @@
                 <el-button @click="openRenderRecord">查看渲染记录</el-button>
               </div>
             </div>
-            <pre v-else>{{ renderResult.content || (renderResult.fileId ? `文件ID：${renderResult.fileId}` : '') }}</pre>
+            <pre v-else>{{
+              renderResult.content || (renderResult.fileId ? `文件ID：${renderResult.fileId}` : '')
+            }}</pre>
           </div>
         </section>
       </div>
@@ -283,7 +313,12 @@
         </el-table-column>
         <el-table-column prop="sourceFormat" label="模板格式" width="120">
           <template #default="{ row }">
-            <DictTag v-if="row.sourceFormat" dict-code="template_source_format" :value="row.sourceFormat" size="small" />
+            <DictTag
+              v-if="row.sourceFormat"
+              dict-code="template_source_format"
+              :value="row.sourceFormat"
+              size="small"
+            />
             <span v-else>-</span>
           </template>
         </el-table-column>
@@ -327,162 +362,168 @@
         </div>
       </div>
 
-      <el-form ref="templateFormRef" class="maintain-form" :model="templateForm" :rules="templateRules" label-width="96px">
-          <section class="form-section">
-            <div class="section-title">基础信息</div>
-            <div class="form-grid">
-              <el-form-item label="模板编码" prop="templateCode">
-                <el-input v-model="templateForm.templateCode" :disabled="!!templateForm.id" placeholder="如 CONTRACT_NOTICE" />
-              </el-form-item>
-              <el-form-item label="模板名称" prop="templateName">
-                <el-input v-model="templateForm.templateName" placeholder="如 合同到期提醒" />
-              </el-form-item>
-              <el-form-item label="业务域" prop="domainCode">
-                <el-input v-model="templateForm.domainCode" class="form-select" placeholder="如 TEMPLATE" />
-              </el-form-item>
-            </div>
-            <el-form-item label="备注">
-              <el-input v-model="templateForm.remark" type="textarea" :rows="3" placeholder="记录适用场景、调用方或维护说明" />
+      <el-form
+        ref="templateFormRef"
+        class="maintain-form"
+        :model="templateForm"
+        :rules="templateRules"
+        label-width="96px"
+      >
+        <section class="form-section">
+          <div class="section-title">基础信息</div>
+          <div class="form-grid">
+            <el-form-item label="模板编码" prop="templateCode">
+              <el-input
+                v-model="templateForm.templateCode"
+                :disabled="!!templateForm.id"
+                placeholder="如 CONTRACT_NOTICE"
+              />
             </el-form-item>
-          </section>
+            <el-form-item label="模板名称" prop="templateName">
+              <el-input v-model="templateForm.templateName" placeholder="如 合同到期提醒" />
+            </el-form-item>
+            <el-form-item label="业务域" prop="domainCode">
+              <el-input v-model="templateForm.domainCode" class="form-select" placeholder="如 TEMPLATE" />
+            </el-form-item>
+          </div>
+          <el-form-item label="备注">
+            <el-input
+              v-model="templateForm.remark"
+              type="textarea"
+              :rows="3"
+              placeholder="记录适用场景、调用方或维护说明"
+            />
+          </el-form-item>
+        </section>
 
-          <section class="form-section">
-            <div class="section-title">
-              <span>模板内容</span>
-              <div class="section-actions">
-                <el-button size="small" @click="resetVersionDraft">清空内容</el-button>
+        <section class="form-section">
+          <div class="section-title">
+            <span>模板内容</span>
+            <div class="section-actions">
+              <el-button size="small" @click="resetVersionDraft">清空内容</el-button>
+            </div>
+          </div>
+          <div class="maintain-editor-layout">
+            <aside class="variable-pane">
+              <div class="variable-toolbar">
+                <div class="variable-toolbar-meta">
+                  <span>变量定义</span>
+                  <el-tag size="small" effect="plain">{{ versionForm.variables.length }} 个</el-tag>
+                </div>
+                <div class="variable-toolbar-actions">
+                  <el-button :icon="MagicStick" @click="extractVariables">提取变量</el-button>
+                  <el-button type="primary" :icon="Plus" @click="addVariable()">新增变量</el-button>
+                </div>
               </div>
-            </div>
-            <div class="maintain-editor-layout">
-              <aside class="variable-pane">
-                <div class="variable-toolbar">
-                  <div class="variable-toolbar-meta">
-                    <span>变量定义</span>
-                    <el-tag size="small" effect="plain">{{ versionForm.variables.length }} 个</el-tag>
-                  </div>
-                  <div class="variable-toolbar-actions">
-                    <el-button :icon="MagicStick" @click="extractVariables">提取变量</el-button>
-                    <el-button type="primary" :icon="Plus" @click="addVariable()">新增变量</el-button>
-                  </div>
-                </div>
-                <el-table
-                  class="variable-tree-table"
-                  :data="versionForm.variables"
-                  row-key="id"
-                  size="small"
-                  height="420"
-                  default-expand-all
-                  :indent="16"
-                  :tree-props="{ children: 'children' }"
-                >
-                  <el-table-column prop="name" label="字段" min-width="220">
-                    <template #default="{ row, $index }">
-                      <div class="field-name-cell">
-                        <div class="field-inline-actions">
-                          <el-tooltip v-if="isContainerVariable(row)" content="添加子字段" placement="top">
-                            <el-button
-                              link
-                              type="primary"
-                              :icon="Plus"
-                              aria-label="添加子字段"
-                              @click="addChildVariable(row)"
-                            />
-                          </el-tooltip>
-                          <el-tooltip content="删除" placement="top">
-                            <el-button
-                              link
-                              type="danger"
-                              :icon="Delete"
-                              aria-label="删除"
-                              @click="removeVariable(row, $index)"
-                            />
-                          </el-tooltip>
-                        </div>
-                        <el-input v-model="row.name" placeholder="字段名" />
-                        <el-popover placement="right" trigger="click" width="220">
-                          <template #reference>
-                            <el-button
-                              class="field-label-button"
-                              link
-                              type="primary"
-                              :icon="EditPen"
-                              aria-label="编辑标签"
-                            />
-                          </template>
-                          <div class="field-label-popover">
-                            <span>字段标签</span>
-                            <el-input v-model="row.label" placeholder="如 客户名称" clearable />
-                          </div>
-                        </el-popover>
+              <el-table
+                class="variable-tree-table"
+                :data="versionForm.variables"
+                row-key="id"
+                size="small"
+                height="420"
+                default-expand-all
+                :indent="16"
+                :tree-props="{ children: 'children' }"
+              >
+                <el-table-column prop="name" label="字段" min-width="220">
+                  <template #default="{ row, $index }">
+                    <div class="field-name-cell">
+                      <div class="field-inline-actions">
+                        <el-tooltip v-if="isContainerVariable(row)" content="添加子字段" placement="top">
+                          <el-button
+                            link
+                            type="primary"
+                            :icon="Plus"
+                            aria-label="添加子字段"
+                            @click="addChildVariable(row)"
+                          />
+                        </el-tooltip>
+                        <el-tooltip content="删除" placement="top">
+                          <el-button
+                            link
+                            type="danger"
+                            :icon="Delete"
+                            aria-label="删除"
+                            @click="removeVariable(row, $index)"
+                          />
+                        </el-tooltip>
                       </div>
-                    </template>
-                  </el-table-column>
-                  <el-table-column prop="type" label="类型" width="100">
-                    <template #default="{ row }">
-                      <el-select v-model="row.type" @change="handleVariableTypeChange(row)">
-                        <el-option
-                          v-for="item in variableTypeOptions"
-                          :key="item.value"
-                          :label="item.label"
-                          :value="item.value"
-                        />
-                      </el-select>
-                    </template>
-                  </el-table-column>
-                  <el-table-column prop="required" label="必填" width="70">
-                    <template #default="{ row }"><el-switch v-model="row.required" /></template>
-                  </el-table-column>
-                </el-table>
-              </aside>
+                      <el-input v-model="row.name" placeholder="字段名" />
+                      <el-popover placement="right" trigger="click" width="220">
+                        <template #reference>
+                          <el-button
+                            class="field-label-button"
+                            link
+                            type="primary"
+                            :icon="EditPen"
+                            aria-label="编辑标签"
+                          />
+                        </template>
+                        <div class="field-label-popover">
+                          <span>字段标签</span>
+                          <el-input v-model="row.label" placeholder="如 客户名称" clearable />
+                        </div>
+                      </el-popover>
+                    </div>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="type" label="类型" width="100">
+                  <template #default="{ row }">
+                    <el-select v-model="row.type" @change="handleVariableTypeChange(row)">
+                      <el-option
+                        v-for="item in variableTypeOptions"
+                        :key="item.value"
+                        :label="item.label"
+                        :value="item.value"
+                      />
+                    </el-select>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="required" label="必填" width="70">
+                  <template #default="{ row }"><el-switch v-model="row.required" /></template>
+                </el-table-column>
+              </el-table>
+            </aside>
 
-              <section class="content-pane">
-                <div class="content-format-bar">
-                  <span>模板类型</span>
-                  <el-radio-group v-model="versionForm.sourceFormat">
-                    <el-radio-button
-                      v-for="item in sourceFormatOptions"
-                      :key="item.value"
-                      :label="item.value"
-                    >
-                      {{ item.label }}
-                    </el-radio-button>
-                  </el-radio-group>
-                </div>
-                <div v-if="isTextTemplate" class="content-editor">
-                  <CodeEditor
-                    v-if="versionForm.sourceFormat === 'TEXT'"
-                    v-model="versionForm.content"
-                    language="markdown"
-                    height="420px"
+            <section class="content-pane">
+              <div class="content-format-bar">
+                <span>模板类型</span>
+                <el-radio-group v-model="versionForm.sourceFormat">
+                  <el-radio-button v-for="item in sourceFormatOptions" :key="item.value" :label="item.value">
+                    {{ item.label }}
+                  </el-radio-button>
+                </el-radio-group>
+              </div>
+              <div v-if="isTextTemplate" class="content-editor">
+                <CodeEditor
+                  v-if="versionForm.sourceFormat === 'TEXT'"
+                  v-model="versionForm.content"
+                  language="markdown"
+                  height="420px"
+                />
+                <Editor v-else v-model="versionForm.content" height="420px" mode="default" />
+              </div>
+              <div v-else class="document-template-panel">
+                <div class="document-upload-area">
+                  <MUpload
+                    v-model="versionFileValue"
+                    value-type="record"
+                    :fmt="documentFormat"
+                    button-text="上传模板文件"
+                    biz-type="template-source"
+                    display="drag"
+                    @success="handleTemplateFileSuccess"
+                    @change="handleTemplateFileChange"
                   />
-                  <Editor
-                    v-else
-                    v-model="versionForm.content"
-                    height="420px"
-                    mode="default"
-                  />
                 </div>
-                <div v-else class="document-template-panel">
-                  <div class="document-upload-area">
-                    <MUpload
-                      v-model="versionFileValue"
-                      value-type="record"
-                      :fmt="documentFormat"
-                      button-text="上传模板文件"
-                      biz-type="template-source"
-                      display="drag"
-                      @success="handleTemplateFileSuccess"
-                      @change="handleTemplateFileChange"
-                    />
-                  </div>
-                  <div v-if="versionForm.sourceFileId" class="document-preview-card">
-                    <FilePreviewPanel :file-id="versionForm.sourceFileId" />
-                  </div>
-                  <el-empty v-else class="document-empty" description="上传 Word 或 Excel 模板文件后显示预览" />
+                <div v-if="versionForm.sourceFileId" class="document-preview-card">
+                  <FilePreviewPanel :file-id="versionForm.sourceFileId" />
                 </div>
-              </section>
-            </div>
-          </section>
+                <el-empty v-else class="document-empty" description="上传 Word 或 Excel 模板文件后显示预览" />
+              </div>
+            </section>
+          </div>
+        </section>
       </el-form>
     </el-card>
   </div>
@@ -492,7 +533,17 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import { Delete, EditPen, MagicStick, Plus } from '@element-plus/icons-vue';
-import { CodeEditor, DictSelect, DictTag, Editor, Pagination, useDict } from '@mango/common';
+import {
+  CodeEditor,
+  DictSelect,
+  DictTag,
+  Editor,
+  MangoListPage,
+  MangoListPanel,
+  MangoSearchPanel,
+  Pagination,
+  useDict,
+} from '@mango/common';
 import { fileApi, FilePreviewPanel, MUpload, type FileRecord } from '@mango/file';
 import { DomainSideTree } from '@mango/system';
 import {
@@ -594,9 +645,11 @@ const templateRules: FormRules = {
 };
 
 const { options: sourceDictOptions } = useDict('template_source_format');
-const sourceFormatOptions = computed(() => sourceDictOptions.value
-  .filter((item) => ['TEXT', 'HTML', 'DOCX', 'XLSX'].includes(String(item.value)))
-  .map((item) => ({ label: item.label, value: item.value as TemplateSourceFormat })));
+const sourceFormatOptions = computed(() =>
+  sourceDictOptions.value
+    .filter((item) => ['TEXT', 'HTML', 'DOCX', 'XLSX'].includes(String(item.value)))
+    .map((item) => ({ label: item.label, value: item.value as TemplateSourceFormat })),
+);
 const isTextTemplate = computed(() => versionForm.sourceFormat === 'TEXT' || versionForm.sourceFormat === 'HTML');
 const documentFormat = computed(() => versionForm.sourceFormat.toLowerCase());
 const isFileRenderResult = computed(() => Boolean(renderResult.value?.fileId) && !renderResult.value?.content);
@@ -605,7 +658,9 @@ const renderFileExt = computed(() => {
   const ext = source.includes('.') ? source.split('.').pop() : source;
   return (ext || 'FILE').toUpperCase();
 });
-const renderDefaultFileName = computed(() => `${currentTemplate.value?.templateCode || 'template-render'}.${renderFileExt.value.toLowerCase()}`);
+const renderDefaultFileName = computed(
+  () => `${currentTemplate.value?.templateCode || 'template-render'}.${renderFileExt.value.toLowerCase()}`,
+);
 const renderResultTitle = computed(() => (isFileRenderResult.value ? '生成文件结果' : '预览内容'));
 const renderFileDescription = computed(() => `${renderForm.outputFormat} 文件已生成，可下载后查看完整内容。`);
 onMounted(() => {
@@ -618,15 +673,18 @@ watch(renderVariableMode, (mode) => {
   }
 });
 
-watch(() => versionForm.sourceFormat, (format, previous) => {
-  if (!previous || format === previous) return;
-  if (format === 'TEXT' || format === 'HTML') {
-    versionForm.sourceFileId = undefined;
-    versionFileValue.value = null;
-    return;
-  }
-  versionForm.content = '';
-});
+watch(
+  () => versionForm.sourceFormat,
+  (format, previous) => {
+    if (!previous || format === previous) return;
+    if (format === 'TEXT' || format === 'HTML') {
+      versionForm.sourceFileId = undefined;
+      versionFileValue.value = null;
+      return;
+    }
+    versionForm.content = '';
+  },
+);
 
 async function loadData() {
   loading.value = true;
@@ -677,9 +735,13 @@ async function handleDelete(row: TemplateItem) {
 
 async function handleBatchDelete() {
   if (selectedRows.value.length === 0) return;
-  await ElMessageBox.confirm(`确认删除选中的 ${selectedRows.value.length} 个模板？删除后会同步清理版本和渲染记录。`, '批量删除模板', {
-    type: 'warning',
-  });
+  await ElMessageBox.confirm(
+    `确认删除选中的 ${selectedRows.value.length} 个模板？删除后会同步清理版本和渲染记录。`,
+    '批量删除模板',
+    {
+      type: 'warning',
+    },
+  );
   await Promise.all(selectedRows.value.map((item) => templateApi.delete(item.id)));
   ElMessage.success('模板已批量删除');
   loadData();
@@ -790,7 +852,12 @@ function currentVersion(value: TemplateDetail | null): TemplateVersion | undefin
 }
 
 function loadDraftOrVersionToForm(value: TemplateDetail | null) {
-  if (value?.hasUnpublishedChanges || value?.draftContent || value?.draftSourceFileId || value?.draftVariables?.length) {
+  if (
+    value?.hasUnpublishedChanges ||
+    value?.draftContent ||
+    value?.draftSourceFileId ||
+    value?.draftVariables?.length
+  ) {
     Object.assign(versionForm, {
       sourceFormat: value.draftSourceFormat || value.sourceFormat || 'TEXT',
       content: value.draftContent || '',
@@ -798,13 +865,15 @@ function loadDraftOrVersionToForm(value: TemplateDetail | null) {
       versionRemark: '',
       variables: normalizeVariables(value.draftVariables || []),
     });
-    versionFileValue.value = value.draftSourceFileId ? {
-      id: value.draftSourceFileId,
-      name: `file-${value.draftSourceFileId}`,
-      url: `mango-file:${value.draftSourceFileId}`,
-      fileName: `file-${value.draftSourceFileId}`,
-      fileSize: 0,
-    } : null;
+    versionFileValue.value = value.draftSourceFileId
+      ? {
+          id: value.draftSourceFileId,
+          name: `file-${value.draftSourceFileId}`,
+          url: `mango-file:${value.draftSourceFileId}`,
+          fileName: `file-${value.draftSourceFileId}`,
+          fileSize: 0,
+        }
+      : null;
     return;
   }
   loadVersionToDraft(currentVersion(value), false);
@@ -828,10 +897,10 @@ function templateSavePayload(): SaveTemplatePayload {
 
 function hasUnpublishedDraft() {
   return Boolean(
-    versionForm.sourceFormat
-      || versionForm.content?.trim()
-      || versionForm.sourceFileId
-      || cleanVariables(versionForm.variables).length,
+    versionForm.sourceFormat ||
+    versionForm.content?.trim() ||
+    versionForm.sourceFileId ||
+    cleanVariables(versionForm.variables).length,
   );
 }
 
@@ -855,13 +924,15 @@ function loadVersionToDraft(row?: TemplateVersion, notify = true) {
     versionRemark: row ? `基于 V${row.versionNo} 调整` : '',
     variables: normalizeVariables(row?.variables || []),
   });
-  versionFileValue.value = row?.sourceFileId ? {
-    id: row.sourceFileId,
-    name: `file-${row.sourceFileId}`,
-    url: `mango-file:${row.sourceFileId}`,
-    fileName: `file-${row.sourceFileId}`,
-    fileSize: 0,
-  } : null;
+  versionFileValue.value = row?.sourceFileId
+    ? {
+        id: row.sourceFileId,
+        name: `file-${row.sourceFileId}`,
+        url: `mango-file:${row.sourceFileId}`,
+        fileName: `file-${row.sourceFileId}`,
+        fileSize: 0,
+      }
+    : null;
   syncVariableJsonFromStruct();
   if (notify && row) {
     ElMessage.success(`已载入 V${row.versionNo} 副本`);
@@ -900,7 +971,10 @@ async function publishVersion() {
 
 async function activateVersion(row: TemplateVersion) {
   if (!currentTemplate.value) return;
-  await ElMessageBox.confirm(`确认将 V${row.versionNo} 设为生效版本？后续不指定版本的渲染都会使用该版本。`, '设置生效版本');
+  await ElMessageBox.confirm(
+    `确认将 V${row.versionNo} 设为生效版本？后续不指定版本的渲染都会使用该版本。`,
+    '设置生效版本',
+  );
   await templateApi.activateVersion({ templateId: currentTemplate.value.id, versionNo: row.versionNo });
   ElMessage.success(`V${row.versionNo} 已设为生效版本`);
   await refreshVersionDetail();
@@ -976,7 +1050,12 @@ function switchPreviewVersion(row: TemplateVersion) {
 function applyPreviewVersion(target?: TemplateVersion) {
   previewingTemplateVersion.value = target;
   renderResult.value = null;
-  renderForm.outputFormat = target?.sourceFormat === 'HTML' ? 'HTML' : target?.sourceFormat === 'TEXT' ? 'TEXT' : (target?.sourceFormat || 'TEXT');
+  renderForm.outputFormat =
+    target?.sourceFormat === 'HTML'
+      ? 'HTML'
+      : target?.sourceFormat === 'TEXT'
+        ? 'TEXT'
+        : target?.sourceFormat || 'TEXT';
   renderForm.versionNo = target?.versionNo;
   renderForm.async = false;
   renderVariableMode.value = 'FORM';
@@ -1030,7 +1109,8 @@ async function submitRender() {
 
 function renderErrorMessage(error: unknown) {
   if (error && typeof error === 'object') {
-    const responseData = (error as { response?: { data?: { msg?: unknown; message?: unknown; error?: unknown } } }).response?.data;
+    const responseData = (error as { response?: { data?: { msg?: unknown; message?: unknown; error?: unknown } } })
+      .response?.data;
     const responseMessage = responseData?.msg || responseData?.message || responseData?.error;
     if (responseMessage) return String(responseMessage);
   }
@@ -1133,12 +1213,14 @@ function createVariable(partial: Partial<TemplateVariableDefinition> = {}): Vari
 }
 
 function normalizeVariables(items: TemplateVariableDefinition[]): VariableRow[] {
-  return items.map((item) => createVariable({
-    ...item,
-    type: item.type || 'STRING',
-    required: item.required !== false,
-    children: normalizeVariables(item.children || []),
-  }));
+  return items.map((item) =>
+    createVariable({
+      ...item,
+      type: item.type || 'STRING',
+      required: item.required !== false,
+      children: normalizeVariables(item.children || []),
+    }),
+  );
 }
 
 function cleanVariables(items: TemplateVariableDefinition[]): TemplateVariableDefinition[] {
@@ -1167,9 +1249,8 @@ function buildRenderVariableRows(items: TemplateVariableDefinition[]): RenderVar
   return cleanVariables(items).map((item) => ({
     ...item,
     id: `render-${item.name}`,
-    value: item.type === 'OBJECT' || item.type === 'ARRAY'
-      ? JSON.stringify(sampleValue(item), null, 2)
-      : sampleValue(item),
+    value:
+      item.type === 'OBJECT' || item.type === 'ARRAY' ? JSON.stringify(sampleValue(item), null, 2) : sampleValue(item),
   }));
 }
 
@@ -1187,7 +1268,10 @@ function buildVariablesFromRenderForm(): JsonObject {
 }
 
 function setJsonPathValue(target: JsonObject, path: string, value: JsonValue) {
-  const parts = path.split('.').map((part) => part.trim()).filter(Boolean);
+  const parts = path
+    .split('.')
+    .map((part) => part.trim())
+    .filter(Boolean);
   if (parts.length === 0) return;
   let current: { [key: string]: JsonValue } = target;
   parts.forEach((part, index) => {
@@ -1355,7 +1439,9 @@ function isJsonObject(value: unknown): value is JsonObject {
   gap: 7px;
   padding: 9px 10px;
   text-align: left;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
 }
 
 .preview-version-item:hover,

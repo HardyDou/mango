@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
   <div class="layout-navbars-container">
     <div class="layout-navbars-container-left">
@@ -51,14 +52,27 @@
       </el-icon>
       <CloseFull />
       <component
-        v-if="noticeClientEnabled"
         :is="noticeBellComponent"
+        v-if="noticeClientEnabled"
         :load-runtime-config="loadNoticeRuntimeConfig"
         :realtime-options="noticeRealtimeOptions"
         @view-all="goNoticeMessages"
         @settings="goNoticeReceiveSetting"
         @interaction="handleNoticeInteraction"
       />
+      <el-dropdown v-if="departmentOptions.length" trigger="click" popper-class="layout-department-popper">
+        <span class="layout-department-trigger" :title="currentDepartmentName">
+          <span class="layout-department-name">{{ currentDepartmentName }}</span>
+          <el-icon><ArrowDown /></el-icon>
+        </span>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item v-for="department in departmentOptions" :key="department">
+              {{ department }}
+            </el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
       <User />
     </div>
   </div>
@@ -70,9 +84,10 @@ import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useLayoutStore } from '../../stores/layout';
 import { useRoutesList } from '../../stores/routesList';
+import { useUserInfo } from '../../stores/userInfo';
 import { iconMap } from '@mango/common/utils/iconConfig';
 import { containsMenuPath } from '@mango/common/utils/menuTree';
-import { Fold, Expand, Search, Close } from '@element-plus/icons-vue';
+import { ArrowDown, Fold, Expand, Search, Close } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import { Session } from '@mango/common/utils/storage';
 import { hasPermission } from '@mango/common/utils/authFunction';
@@ -98,7 +113,17 @@ const route = useRoute();
 const router = useRouter();
 const layoutStore = useLayoutStore();
 const storesRoutesList = useRoutesList();
+const storesUserInfo = useUserInfo();
 const { routesList, activeTopRoutePath } = storeToRefs(storesRoutesList);
+const { userInfos } = storeToRefs(storesUserInfo);
+
+const currentDepartmentName = computed(
+  () => userInfos.value.departmentName || userInfos.value.deptName || userInfos.value.orgName || '',
+);
+const departmentOptions = computed(() => {
+  const values = [currentDepartmentName.value, ...(userInfos.value.departmentNames || [])];
+  return [...new Set(values.filter(Boolean))];
+});
 
 const topMenus = computed(() => routesList.value.filter((item) => !item.meta?.isHide));
 const showTopSystems = computed(() => layoutStore.layout === 'classic' || layoutStore.layout === 'transverse');
@@ -349,6 +374,28 @@ watch(
     padding-right: 8px;
     margin-left: auto;
     flex-shrink: 0;
+  }
+
+  .layout-department-trigger {
+    display: inline-flex;
+    align-items: center;
+    max-width: 112px;
+    gap: 3px;
+    padding: 0 4px;
+    color: var(--mango-color-top-bar);
+    font-size: 13px;
+    line-height: 32px;
+    cursor: pointer;
+  }
+
+  .layout-department-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  :global(.layout-department-popper .el-dropdown-menu) {
+    min-width: 160px;
   }
 
   .hamburger {

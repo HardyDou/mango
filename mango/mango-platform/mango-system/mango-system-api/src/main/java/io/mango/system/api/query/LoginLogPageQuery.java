@@ -9,8 +9,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
-import jakarta.validation.constraints.PastOrPresent;
-
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Schema(description = "登录日志分页查询条件")
@@ -25,10 +23,8 @@ public class LoginLogPageQuery extends PageQuery {
     private Integer status;
 
     @Schema(description = "开始时间")
-    @PastOrPresent(message = "开始时间不能晚于当前时间")
     private LocalDateTime startTime;
 
     @Schema(description = "结束时间")
-    @PastOrPresent(message = "结束时间不能晚于当前时间")
     private LocalDateTime endTime;
 }

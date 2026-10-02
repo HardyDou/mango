@@ -1,11 +1,7 @@
 <template>
-  <div class="link-page" data-page="link-categories">
-    <section class="link-toolbar">
-      <div class="link-toolbar-head">
-        <h2>网址分类</h2>
-        <el-button type="primary" :icon="Plus" data-action="create-category" @click="openEditor()">新增</el-button>
-      </div>
-      <el-form :model="query" class="link-search" inline @submit.prevent>
+  <MangoListPage class="link-page" data-page="link-categories">
+    <template #search>
+      <MangoSearchPanel :model="query" :columns="3" @search="loadRows" @reset="resetQuery">
         <el-form-item label="关键字" class="link-search-item">
           <el-input v-model="query.keyword" clearable placeholder="分类名称" @keyup.enter="loadRows" />
         </el-form-item>
@@ -15,14 +11,16 @@
             <el-option label="停用" value="DISABLED" />
           </el-select>
         </el-form-item>
-        <el-form-item class="link-search-actions">
-          <el-button type="primary" :icon="Search" @click="loadRows">查询</el-button>
-          <el-button :icon="Refresh" @click="resetQuery">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </section>
+      </MangoSearchPanel>
+    </template>
 
-    <section class="link-panel">
+    <MangoListPanel>
+      <template #actions>
+        <el-button type="primary" plain :icon="Plus" data-action="create-category" @click="openEditor()"
+          >新增</el-button
+        >
+      </template>
+
       <el-alert v-if="errorMessage" class="link-error" type="error" :closable="false" show-icon>
         <template #title>{{ errorMessage }}</template>
       </el-alert>
@@ -48,7 +46,9 @@
         <el-table-column prop="sortNo" label="排序" width="90" />
         <el-table-column label="状态" width="100">
           <template #default="{ row }">
-            <el-tag :type="row.status === 'ENABLED' ? 'success' : 'info'" size="small">{{ statusText(row.status) }}</el-tag>
+            <el-tag :type="row.status === 'ENABLED' ? 'success' : 'info'" size="small">{{
+              statusText(row.status)
+            }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="更新时间" width="170">
@@ -58,28 +58,33 @@
           <template #default="{ row }">
             <div class="link-actions">
               <el-button link type="primary" :icon="Edit" @click="openEditor(row)">编辑</el-button>
-              <el-button v-if="row.status === 'ENABLED'" link type="warning" @click="changeStatus(row, 'DISABLED')">停用</el-button>
+              <el-button v-if="row.status === 'ENABLED'" link type="warning" @click="changeStatus(row, 'DISABLED')"
+                >停用</el-button
+              >
               <el-button v-else link type="success" @click="changeStatus(row, 'ENABLED')">启用</el-button>
               <el-button link type="danger" :icon="Delete" @click="deleteRow(row)">删除</el-button>
             </div>
           </template>
         </el-table-column>
       </el-table>
-      <div class="link-pagination">
-        <el-pagination
-          v-model:current-page="query.pageNum"
-          v-model:page-size="query.pageSize"
-          background
-          layout="total, sizes, prev, pager, next, jumper"
-          :page-sizes="[10, 20, 50, 100]"
+      <template #pagination>
+        <Pagination
+          v-model:page="query.pageNum"
+          v-model:limit="query.pageSize"
           :total="total"
-          @size-change="loadRows"
-          @current-change="loadRows"
+          :page-sizes="[10, 20, 50, 100]"
+          @pagination="loadRows"
         />
-      </div>
-    </section>
+      </template>
+    </MangoListPanel>
 
-    <el-dialog v-model="editorVisible" :title="form.id ? '编辑网址分类' : '新增网址分类'" width="620px" destroy-on-close append-to-body>
+    <el-dialog
+      v-model="editorVisible"
+      :title="form.id ? '编辑网址分类' : '新增网址分类'"
+      width="620px"
+      destroy-on-close
+      append-to-body
+    >
       <el-form ref="formRef" :model="form" :rules="rules" label-width="96px">
         <el-form-item label="分类名称" prop="name">
           <el-input v-model="form.name" maxlength="64" show-word-limit placeholder="例如：办公系统" />
@@ -96,11 +101,12 @@
         <el-button type="primary" :loading="saving" @click="saveRow">保存</el-button>
       </template>
     </el-dialog>
-  </div>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts">
-import { Delete, Edit, Plus, Refresh, Search } from '@element-plus/icons-vue';
+import { Delete, Edit, Plus } from '@element-plus/icons-vue';
+import { MangoListPage, MangoListPanel, MangoSearchPanel, Pagination } from '@mango/common';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import { onMounted, reactive, ref } from 'vue';
 import { linkApi, requestErrorMessage, type LinkCategory, type LinkPageQuery, type LinkStatus } from '../api/link';

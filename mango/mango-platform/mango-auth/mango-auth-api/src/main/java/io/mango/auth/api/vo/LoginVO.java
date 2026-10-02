@@ -75,6 +75,9 @@ public class LoginVO {
     @Schema(description = "当前公司名称")
     private String companyName;
 
+    @Schema(description = "当前用户所属部门名称列表")
+    private List<String> departmentNames;
+
     @Schema(description = "应用编码")
     private String appCode;
 

@@ -1,30 +1,15 @@
 <template>
-  <div class="operation-log-container">
-    <el-card>
-      <el-form
-        :inline="true"
-        class="search-form"
-      >
+  <MangoListPage class="operation-log-page" data-page="system.operation-log">
+    <template #search>
+      <MangoSearchPanel :model="query" :columns="3" @search="handleSearch" @reset="handleReset">
         <el-form-item label="关键词">
-          <el-input
-            v-model="query.keyword"
-            placeholder="搜索操作人/操作描述"
-            clearable
-          />
+          <el-input v-model="query.keyword" placeholder="搜索操作人/操作描述" clearable @keyup.enter="handleSearch" />
         </el-form-item>
         <el-form-item label="操作人">
-          <el-input
-            v-model="query.username"
-            placeholder="请输入"
-            clearable
-          />
+          <el-input v-model="query.username" placeholder="请输入" clearable @keyup.enter="handleSearch" />
         </el-form-item>
         <el-form-item label="状态">
-          <el-select
-            v-model="query.status"
-            placeholder="请选择"
-            clearable
-          >
+          <el-select v-model="query.status" placeholder="请选择" clearable>
             <el-option
               v-for="item in operationStatusOptions"
               :key="item.value"
@@ -41,133 +26,52 @@
             start-placeholder="开始日期"
             end-placeholder="结束日期"
             value-format="YYYY-MM-DD"
+            class="operation-log-page__date-range"
           />
         </el-form-item>
-        <el-form-item>
-          <el-button
-            type="primary"
-            @click="handleSearch"
-          >
-            查询
-          </el-button>
-          <el-button @click="handleReset">
-            重置
-          </el-button>
-        </el-form-item>
-      </el-form>
+      </MangoSearchPanel>
+    </template>
 
-      <div class="action-toolbar">
-        <div class="toolbar-left">
-          <el-button
-            type="primary"
-            @click="handleExport"
-            disabled
-          >
-            导出
-          </el-button>
-          <el-button
-            type="danger"
-            @click="handleClean"
-          >
-            清理
-          </el-button>
-        </div>
-      </div>
+    <MangoListPanel>
+      <template #actions>
+        <el-button type="primary" plain disabled @click="handleExport">导出</el-button>
+        <el-button type="danger" plain @click="handleClean">清理</el-button>
+      </template>
 
-      <el-table
-        v-loading="loading"
-        :data="tableData"
-        stripe
-      >
-        <el-table-column
-          prop="username"
-          label="操作人"
-          width="120"
-        />
-        <el-table-column
-          prop="operation"
-          label="操作描述"
-        />
-        <el-table-column
-          prop="requestMethod"
-          label="请求方法"
-          width="100"
-        >
+      <el-table v-loading="loading" :data="tableData" stripe>
+        <el-table-column prop="username" label="操作人" width="120" />
+        <el-table-column prop="operation" label="操作描述" />
+        <el-table-column prop="requestMethod" label="请求方法" width="100">
           <template #default="{ row }">
             <el-tag size="small">
               {{ row.requestMethod }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column
-          prop="requestUrl"
-          label="请求URL"
-          show-overflow-tooltip
-        />
-        <el-table-column
-          prop="costTime"
-          label="耗时(ms)"
-          width="100"
-        />
-        <el-table-column
-          prop="ip"
-          label="IP地址"
-          width="140"
-        />
-        <el-table-column
-          prop="status"
-          label="状态"
-          width="80"
-        >
+        <el-table-column prop="requestUrl" label="请求URL" show-overflow-tooltip />
+        <el-table-column prop="costTime" label="耗时(ms)" width="100" />
+        <el-table-column prop="ip" label="IP地址" width="140" />
+        <el-table-column prop="status" label="状态" width="80">
           <template #default="{ row }">
-            <DictTag
-              dict-code="sys_operation_status"
-              :value="row.status"
-              size="small"
-            />
+            <DictTag dict-code="sys_operation_status" :value="row.status" size="small" />
           </template>
         </el-table-column>
-        <el-table-column
-          prop="operateTime"
-          label="操作时间"
-          width="180"
-        />
-        <el-table-column
-          label="操作"
-          width="100"
-          fixed="right"
-        >
+        <el-table-column prop="operateTime" label="操作时间" width="180" />
+        <el-table-column label="操作" width="100" fixed="right">
           <template #default="{ row }">
-            <el-button
-              link
-              type="primary"
-              size="small"
-              @click="handleDetail(row)"
-            >
-              详情
-            </el-button>
+            <el-button link type="primary" size="small" @click="handleDetail(row)"> 详情 </el-button>
           </template>
         </el-table-column>
       </el-table>
 
-      <Pagination
-        v-model:page="query.pageNum"
-        v-model:limit="query.pageSize"
-        :total="total"
-        @pagination="loadData"
-      />
-    </el-card>
+      <template #pagination>
+        <Pagination v-model:page="query.pageNum" v-model:limit="query.pageSize" :total="total" @pagination="loadData" />
+      </template>
+    </MangoListPanel>
 
     <!-- 详情弹窗 -->
-    <el-dialog
-      v-model="detailVisible"
-      title="操作详情"
-      width="700px"
-    >
-      <el-descriptions
-        :column="2"
-        border
-      >
+    <MangoDialog v-model="detailVisible" title="操作详情" width="min(700px, calc(100vw - 24px))">
+      <el-descriptions :column="2" border>
         <el-descriptions-item label="操作人">
           {{ currentRow?.username }}
         </el-descriptions-item>
@@ -180,10 +84,7 @@
         <el-descriptions-item label="处理器方法">
           {{ currentRow?.handlerMethod || '-' }}
         </el-descriptions-item>
-        <el-descriptions-item
-          label="请求URL"
-          :span="2"
-        >
+        <el-descriptions-item label="请求URL" :span="2">
           {{ currentRow?.requestUrl }}
         </el-descriptions-item>
         <el-descriptions-item label="IP地址">
@@ -192,56 +93,42 @@
         <el-descriptions-item label="地理位置">
           {{ currentRow?.location }}
         </el-descriptions-item>
-        <el-descriptions-item label="耗时">
-          {{ currentRow?.costTime }}ms
-        </el-descriptions-item>
+        <el-descriptions-item label="耗时"> {{ currentRow?.costTime }}ms </el-descriptions-item>
         <el-descriptions-item label="状态">
-          <DictTag
-            dict-code="sys_operation_status"
-            :value="currentRow?.status"
-            size="small"
-          />
+          <DictTag dict-code="sys_operation_status" :value="currentRow?.status" size="small" />
         </el-descriptions-item>
-        <el-descriptions-item
-          label="操作时间"
-          :span="2"
-        >
+        <el-descriptions-item label="操作时间" :span="2">
           {{ currentRow?.operateTime }}
         </el-descriptions-item>
-        <el-descriptions-item
-          label="请求参数"
-          :span="2"
-        >
+        <el-descriptions-item label="请求参数" :span="2">
           <pre style="max-height: 200px; overflow: auto">{{ formatJson(currentRow?.requestParams) }}</pre>
         </el-descriptions-item>
-        <el-descriptions-item
-          label="请求体"
-          :span="2"
-        >
+        <el-descriptions-item label="请求体" :span="2">
           <pre style="max-height: 200px; overflow: auto">{{ formatJson(currentRow?.requestBody) }}</pre>
         </el-descriptions-item>
-        <el-descriptions-item
-          label="响应结果"
-          :span="2"
-        >
+        <el-descriptions-item label="响应结果" :span="2">
           <pre style="max-height: 200px; overflow: auto">{{ formatJson(currentRow?.responseResult) }}</pre>
         </el-descriptions-item>
-        <el-descriptions-item
-          v-if="currentRow?.errorMsg"
-          label="错误信息"
-          :span="2"
-        >
+        <el-descriptions-item v-if="currentRow?.errorMsg" label="错误信息" :span="2">
           <span style="color: #f56c6c">{{ currentRow?.errorMsg }}</span>
         </el-descriptions-item>
       </el-descriptions>
-    </el-dialog>
-  </div>
+    </MangoDialog>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts" name="SystemOperationLog">
 import { ref, reactive, onMounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { DictTag, Pagination, useDict } from '@mango/common';
+import {
+  DictTag,
+  MangoDialog,
+  MangoListPage,
+  MangoListPanel,
+  MangoSearchPanel,
+  Pagination,
+  useDict,
+} from '@mango/common';
 import { operationLogApi, type SysOperationLog } from '../../api/log';
 
 const { options: operationStatusOptions } = useDict('sys_operation_status');
@@ -249,7 +136,7 @@ const { options: operationStatusOptions } = useDict('sys_operation_status');
 const loading = ref(false);
 const tableData = ref<SysOperationLog[]>([]);
 const total = ref(0);
-const dateRange = ref<string[]>([]);
+const dateRange = ref<string[]>(defaultDateRange());
 const detailVisible = ref(false);
 const currentRow = ref<SysOperationLog | null>(null);
 
@@ -262,6 +149,18 @@ const query = reactive({
   startTime: '',
   endTime: '',
 });
+
+function defaultDateRange(): [string, string] {
+  const end = new Date();
+  const start = new Date(end);
+  start.setDate(start.getDate() - 1);
+  return [formatDateInput(start), formatDateInput(end)];
+}
+
+function formatDateInput(value: Date): string {
+  const pad = (part: number) => String(part).padStart(2, '0');
+  return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}`;
+}
 
 async function loadData() {
   loading.value = true;
@@ -289,7 +188,7 @@ function handleReset() {
   query.keyword = '';
   query.username = '';
   query.status = undefined;
-  dateRange.value = [];
+  dateRange.value = defaultDateRange();
   query.startTime = '';
   query.endTime = '';
   query.pageNum = 1;
@@ -311,15 +210,17 @@ function handleClean() {
     cancelButtonText: '取消',
     inputPattern: /^\d+$/,
     inputErrorMessage: '请输入数字',
-  }).then(async ({ value }) => {
-    try {
-      await operationLogApi.clean(parseInt(value));
-      ElMessage.success('清理成功');
-      loadData();
-    } catch (error) {
-      console.error('清理失败:', error);
-    }
-  }).catch(() => {});
+  })
+    .then(async ({ value }) => {
+      try {
+        await operationLogApi.clean(parseInt(value));
+        ElMessage.success('清理成功');
+        loadData();
+      } catch (error) {
+        console.error('清理失败:', error);
+      }
+    })
+    .catch(() => {});
 }
 
 function formatJson(str: string | undefined): string {
@@ -337,25 +238,20 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
-.operation-log-container {
-  padding: 0;
+.operation-log-page {
+  min-width: 0;
 }
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.search-form {
-  margin-bottom: 16px;
-  :deep(.el-form-item) {
-    margin-bottom: 0;
-  }
-}
+
 pre {
+  max-width: 100%;
+  max-height: 200px;
   margin: 0;
-  font-size: 12px;
-  background: var(--el-fill-color-light);
   padding: 8px;
+  overflow: auto;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  background: var(--el-fill-color-light);
   border-radius: 4px;
+  font-size: 12px;
 }
 </style>

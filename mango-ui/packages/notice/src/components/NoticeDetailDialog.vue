@@ -1,5 +1,5 @@
 <template>
-  <el-dialog v-model="visible" :title="dialogTitle" width="760px" class="notice-detail-dialog" destroy-on-close>
+  <MangoDialog v-model="visible" :title="dialogTitle" width="760px" class="notice-detail-dialog" destroy-on-close>
     <div v-if="message" class="notice-detail">
       <div v-for="row in detailRows" :key="row.key" class="notice-detail__row">
         <span class="notice-detail__label">{{ row.label }}：</span>
@@ -22,10 +22,11 @@
         </el-button>
       </div>
     </template>
-  </el-dialog>
+  </MangoDialog>
 </template>
 
 <script setup lang="ts">
+import { MangoDialog } from '@mango/common';
 import { computed } from 'vue';
 import { presentNoticeMessage } from '../client/messagePresentation';
 import { noticePlainText, sanitizeNoticeHtml } from '../client/html';

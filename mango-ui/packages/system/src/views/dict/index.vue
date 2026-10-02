@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <!-- mango-page-baseline-exception all: 字典页由类型列表与数据列表组成同步主从工作台，两个编辑弹框依赖当前类型上下文。 -->
 <template>
   <div class="dict-container">
@@ -58,23 +59,22 @@
 
       <!-- 右侧：字典数据列表 -->
       <section class="dict-data-panel">
-        <el-card class="data-card">
-          <el-form :inline="true" class="search-form">
+        <MangoListPanel>
+          <MangoSearchPanel
+            :model="{ keyword: dataKeyword }"
+            :columns="2"
+            @search="handleDataSearch"
+            @reset="handleDataReset"
+          >
             <el-form-item label="关键词">
               <el-input v-model="dataKeyword" placeholder="搜索标签/值" clearable @keyup.enter="handleDataSearch" />
             </el-form-item>
-            <el-form-item>
-              <el-button type="primary" @click="handleDataSearch"> 查询 </el-button>
-              <el-button @click="handleDataReset"> 重置 </el-button>
-            </el-form-item>
-          </el-form>
+          </MangoSearchPanel>
 
-          <div class="action-toolbar">
-            <div class="toolbar-left">
-              <span class="current-type">{{ currentType ? `当前字典：${currentType.name}` : '请选择字典类型' }}</span>
-            </div>
-            <el-button type="primary" :disabled="!currentType" @click="handleAddData"> 新增数据 </el-button>
-          </div>
+          <template #actions>
+            <span class="current-type">{{ currentType ? `当前字典：${currentType.name}` : '请选择字典类型' }}</span>
+            <el-button type="primary" plain :disabled="!currentType" @click="handleAddData">新增数据</el-button>
+          </template>
 
           <!-- 数据表格 -->
           <el-table v-loading="dataLoading" :data="dataList" stripe>
@@ -100,13 +100,15 @@
           </el-table>
 
           <!-- 分页 -->
-          <Pagination
-            v-model:page="dataQuery.pageNum"
-            v-model:limit="dataQuery.pageSize"
-            :total="dataTotal"
-            @pagination="loadDataList"
-          />
-        </el-card>
+          <template #pagination>
+            <Pagination
+              v-model:page="dataQuery.pageNum"
+              v-model:limit="dataQuery.pageSize"
+              :total="dataTotal"
+              @pagination="loadDataList"
+            />
+          </template>
+        </MangoListPanel>
       </section>
     </div>
 
@@ -180,7 +182,7 @@
 import { ref, reactive, onMounted } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import { Search } from '@element-plus/icons-vue';
-import { DictTag, Pagination, formatDate, useDict } from '@mango/common';
+import { DictTag, MangoListPanel, MangoSearchPanel, Pagination, formatDate, useDict } from '@mango/common';
 import { dictTypeApi, dictDataApi, type DictType, type DictData } from '../../api/dict';
 import DomainSelector from '../../components/DomainSelector/index.vue';
 import DomainSideTree from '../../components/DomainSideTree/index.vue';

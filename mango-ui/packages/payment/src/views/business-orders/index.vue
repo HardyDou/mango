@@ -1,15 +1,8 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
-  <div class="payment-business-orders">
-    <section class="payment-business-orders__header">
-      <div>
-        <h3>业务订单</h3>
-        <p>查询业务系统提交到支付平台的支付意图、金额、通知地址和支付状态。</p>
-      </div>
-      <el-button type="primary" plain :icon="Plus" @click="openCreateDialog">新增</el-button>
-    </section>
-
-    <section class="payment-business-orders__toolbar">
-      <el-form :inline="true" :model="query">
+  <MangoListPage class="payment-business-orders" data-page="payment.business-orders">
+    <template #search>
+      <MangoSearchPanel :model="query" :columns="4" @search="loadRows" @reset="resetQuery">
         <el-form-item label="关键字">
           <el-input
             v-model="query.keyword"
@@ -60,86 +53,77 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item class="payment-business-orders__filter-actions">
-          <el-button type="primary" :icon="Search" @click="loadRows">查询</el-button>
-          <el-button :icon="Refresh" @click="resetQuery">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </section>
+      </MangoSearchPanel>
+    </template>
 
-    <el-alert
-      v-if="errorMessage"
-      :title="errorMessage"
-      type="error"
-      show-icon
-      :closable="false"
-    >
-      <template #default>
-        <el-button link type="primary" :icon="Refresh" @click="loadRows">重新加载</el-button>
+    <MangoListPanel>
+      <template #actions>
+        <el-button type="primary" plain :icon="Plus" @click="openCreateDialog">新增</el-button>
       </template>
-    </el-alert>
 
-    <el-table
-      :data="rows"
-      v-loading="loading"
-      row-key="id"
-      stripe
-      highlight-current-row
-      class="payment-business-orders__table"
-    >
-      <template #empty>
-        <el-empty :description="emptyDescription" />
+      <el-alert v-if="errorMessage" :title="errorMessage" type="error" show-icon :closable="false">
+        <template #default>
+          <el-button link type="primary" :icon="Refresh" @click="loadRows">重新加载</el-button>
+        </template>
+      </el-alert>
+
+      <el-table
+        :data="rows"
+        v-loading="loading"
+        row-key="id"
+        stripe
+        highlight-current-row
+        class="payment-business-orders__table"
+      >
+        <template #empty>
+          <el-empty :description="emptyDescription" />
+        </template>
+        <el-table-column prop="bizOrderNo" label="业务订单号" min-width="190" show-overflow-tooltip />
+        <el-table-column prop="appName" label="接入应用" min-width="160" show-overflow-tooltip>
+          <template #default="{ row }">{{ valueText(row.appName) }}</template>
+        </el-table-column>
+        <el-table-column prop="title" label="支付标题" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="subjectName" label="企业主体" min-width="190" show-overflow-tooltip />
+        <el-table-column label="应付金额（元）" width="120" align="right">
+          <template #default="{ row }">
+            <span>{{ formatMoney(row.amount) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="已支付（元）" width="120" align="right">
+          <template #default="{ row }">
+            <span>{{ formatMoney(row.paidAmount) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="已退款（元）" width="120" align="right">
+          <template #default="{ row }">
+            <span>{{ formatMoney(row.refundedAmount) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="订单状态" width="120">
+          <template #default="{ row }">
+            <el-tag :type="statusTagType(row.status)" effect="light">{{ row.statusName || row.status || '-' }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="expireTime" label="过期时间" width="170" show-overflow-tooltip />
+        <el-table-column prop="updateTime" label="更新时间" width="170" show-overflow-tooltip />
+        <el-table-column label="操作" width="156" fixed="right" align="left" class-name="payment-table__operation-cell">
+          <template #default="{ row }">
+            <PaymentRowActions :actions="businessOrderRowActions(row)" />
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <template #pagination>
+        <Pagination v-model:page="query.pageNum" v-model:limit="query.pageSize" :total="total" @pagination="loadRows" />
       </template>
-      <el-table-column prop="bizOrderNo" label="业务订单号" min-width="190" show-overflow-tooltip />
-      <el-table-column prop="appName" label="接入应用" min-width="160" show-overflow-tooltip>
-        <template #default="{ row }">{{ valueText(row.appName) }}</template>
-      </el-table-column>
-      <el-table-column prop="title" label="支付标题" min-width="180" show-overflow-tooltip />
-      <el-table-column prop="subjectName" label="企业主体" min-width="190" show-overflow-tooltip />
-      <el-table-column label="应付金额（元）" width="120" align="right">
-        <template #default="{ row }">
-          <span>{{ formatMoney(row.amount) }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="已支付（元）" width="120" align="right">
-        <template #default="{ row }">
-          <span>{{ formatMoney(row.paidAmount) }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="已退款（元）" width="120" align="right">
-        <template #default="{ row }">
-          <span>{{ formatMoney(row.refundedAmount) }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="订单状态" width="120">
-        <template #default="{ row }">
-          <el-tag :type="statusTagType(row.status)" effect="light">{{ row.statusName || row.status || '-' }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="expireTime" label="过期时间" width="170" show-overflow-tooltip />
-      <el-table-column prop="updateTime" label="更新时间" width="170" show-overflow-tooltip />
-      <el-table-column label="操作" width="156" fixed="right" align="left" class-name="payment-table__operation-cell">
-        <template #default="{ row }">
-          <PaymentRowActions :actions="businessOrderRowActions(row)" />
-        </template>
-      </el-table-column>
-    </el-table>
+    </MangoListPanel>
 
-    <div class="payment-business-orders__pagination">
-      <Pagination
-        v-model:current-page="query.pageNum"
-        v-model:page-size="query.pageSize"
-        :total="total"
-        @change="loadRows"
-      />
-    </div>
-
-    <el-drawer
+    <MangoSideDrawerShell
       v-model="detailVisible"
       title="业务订单详情"
-      size="720px"
-      destroy-on-close
-      append-to-body
+      drawer-size="720px"
+      :destroy-on-close="true"
+      data-surface="payment.business-order.detail"
       class="payment-business-orders__drawer"
     >
       <el-skeleton v-if="detailLoading" :rows="8" animated />
@@ -147,7 +131,9 @@
         <el-descriptions title="订单信息" :column="2" border>
           <el-descriptions-item label="业务订单号">{{ valueText(detail.bizOrderNo) }}</el-descriptions-item>
           <el-descriptions-item label="订单状态">
-            <el-tag :type="statusTagType(detail.status)" effect="light">{{ detail.statusName || detail.status || '-' }}</el-tag>
+            <el-tag :type="statusTagType(detail.status)" effect="light">{{
+              detail.statusName || detail.status || '-'
+            }}</el-tag>
           </el-descriptions-item>
           <el-descriptions-item label="接入应用">{{ valueText(detail.appName) }}</el-descriptions-item>
           <el-descriptions-item label="支付标题">{{ valueText(detail.title) }}</el-descriptions-item>
@@ -195,7 +181,7 @@
         </section>
       </template>
       <el-empty v-else description="未查询到业务订单详情" />
-    </el-drawer>
+    </MangoSideDrawerShell>
 
     <el-dialog
       v-model="cashierVisible"
@@ -271,14 +257,13 @@
         <el-button type="primary" :loading="creating" @click="submitCreateOrder">保存</el-button>
       </template>
     </el-dialog>
-
-  </div>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts">
-import { Pagination } from '@mango/common';
+import { MangoListPage, MangoListPanel, MangoSearchPanel, MangoSideDrawerShell, Pagination } from '@mango/common';
 import { computed, onMounted, reactive, ref } from 'vue';
-import { CreditCard, Plus, Refresh, Search, Tickets } from '@element-plus/icons-vue';
+import { CreditCard, Plus, Refresh, Tickets } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import PaymentCashier from '../../components/PaymentCashier.vue';
 import PaymentEntitySelect from '../../components/PaymentEntitySelect.vue';
@@ -334,9 +319,13 @@ const createForm = reactive<CreateBusinessOrderForm>(defaultCreateForm());
 
 const emptyDescription = computed(() => {
   if (errorMessage.value) return '业务订单加载失败';
-  return query.keyword || query.statusCode || query.applicationId || query.enterpriseSubjectId ? '未查询到匹配的业务订单' : '暂无业务订单';
+  return query.keyword || query.statusCode || query.applicationId || query.enterpriseSubjectId
+    ? '未查询到匹配的业务订单'
+    : '暂无业务订单';
 });
-const cashierDialogTitle = computed(() => cashierOrder.value?.bizOrderNo ? `收银台 - ${cashierOrder.value.bizOrderNo}` : '收银台');
+const cashierDialogTitle = computed(() =>
+  cashierOrder.value?.bizOrderNo ? `收银台 - ${cashierOrder.value.bizOrderNo}` : '收银台',
+);
 const createDirty = computed(() => JSON.stringify(createForm) !== JSON.stringify(defaultCreateForm()));
 
 const createRules: FormRules<CreateBusinessOrderForm> = {
@@ -344,12 +333,8 @@ const createRules: FormRules<CreateBusinessOrderForm> = {
     { required: true, message: '请输入商品名称', trigger: 'blur' },
     { max: 128, message: '商品名称长度不能超过 128 个字符', trigger: 'blur' },
   ],
-  cashierConfigId: [
-    { required: true, message: '请选择收银台', trigger: 'change' },
-  ],
-  amountYuan: [
-    { required: true, type: 'number', min: 0.01, message: '请输入大于 0 的应付金额', trigger: 'blur' },
-  ],
+  cashierConfigId: [{ required: true, message: '请选择收银台', trigger: 'change' }],
+  amountYuan: [{ required: true, type: 'number', min: 0.01, message: '请输入大于 0 的应付金额', trigger: 'blur' }],
 };
 
 onMounted(async () => {
@@ -570,7 +555,7 @@ async function resolveCreateDefaults(): Promise<ResolvedCreateDefaults> {
   }
   const subjectId = String(cashier.enterpriseSubjectIds || '')
     .split(',')
-    .map(item => item.trim())
+    .map((item) => item.trim())
     .find(Boolean);
   if (!subjectId) {
     throw new Error('默认收银台未配置签约主体');
@@ -660,5 +645,4 @@ async function resolveCreateDefaults(): Promise<ResolvedCreateDefaults> {
 .payment-business-orders__create-select {
   width: 100%;
 }
-
 </style>

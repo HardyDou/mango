@@ -327,6 +327,7 @@ defineExpose<MangoDialogExpose>({
 
 .mango-dialog__body {
   flex: 1 1 auto;
+  min-width: 0;
   min-height: 0;
   max-height: calc(
     var(--mango-dialog-max-height) - var(--mango-dialog-header-height) - var(--mango-dialog-footer-min-height)

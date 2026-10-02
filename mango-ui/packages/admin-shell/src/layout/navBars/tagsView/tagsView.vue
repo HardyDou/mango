@@ -11,7 +11,14 @@
         <el-icon v-if="showTagIcon && resolveTagIcon(tag)" class="tag-icon">
           <component :is="resolveTagIcon(tag)" />
         </el-icon>
-        <span class="tag-title">{{ tag.meta?.title || tag.name }}</span>
+        <span
+          :ref="(element) => setTagTitleRef(tag.tabKey, element)"
+          class="tag-title"
+          :class="{ 'is-overflowing': overflowingTagKeys.has(tag.tabKey) }"
+          :style="getTagTitleStyle(tag.tabKey)"
+        >
+          {{ tag.meta?.title || tag.name }}
+        </span>
         <el-icon v-if="!tag.meta?.isAffix" class="close-icon" @click.prevent.stop="closeSelectedTag(tag)">
           <Close />
         </el-icon>
@@ -28,7 +35,7 @@
 </template>
 
 <script setup lang="ts" name="tagsView">
-import { computed, ref, watch } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { Close } from '@element-plus/icons-vue';
@@ -53,6 +60,9 @@ const contextMenuVisible = ref(false);
 const contextMenuLeft = ref(0);
 const contextMenuTop = ref(0);
 const contextMenuTag = ref<MangoTagRoute | null>(null);
+const overflowingTagKeys = ref(new Set<string>());
+const tagTitleElements = new Map<string, HTMLElement>();
+const tagTitleShifts = ref(new Map<string, string>());
 
 const visitedViews = computed(() => tagsViewRoutes.value);
 const showTagIcon = computed(() => isTagsviewIcon.value);
@@ -125,9 +135,38 @@ const closeSelectedTag = async (tag: MangoTagRoute) => {
   storesTagsViewRoutes.setTagsViewRoutes(newTags);
 };
 
+const setTagTitleRef = (key: string, element: unknown) => {
+  if (element instanceof HTMLElement) {
+    tagTitleElements.set(key, element);
+  } else {
+    tagTitleElements.delete(key);
+  }
+};
+
+const getTagTitleStyle = (key: string) => {
+  const shift = tagTitleShifts.value.get(key);
+  return shift ? { '--tag-title-shift': shift } : undefined;
+};
+
+const refreshTagTitleOverflow = async () => {
+  await nextTick();
+  const overflowing = new Set<string>();
+  const shifts = new Map<string, string>();
+  for (const [key, element] of tagTitleElements) {
+    if (element.scrollWidth > element.clientWidth + 1) {
+      overflowing.add(key);
+      shifts.set(key, `${element.clientWidth - element.scrollWidth}px`);
+    }
+  }
+  overflowingTagKeys.value = overflowing;
+  tagTitleShifts.value = shifts;
+};
+
 const onScroll = () => {
   contextMenuVisible.value = false;
 };
+
+watch([visitedViews, resolvedTagsStyle], refreshTagTitleOverflow, { deep: true, flush: 'post', immediate: true });
 
 // Close context menu on click outside
 watch(
@@ -209,9 +248,17 @@ watch(
     }
 
     .tag-title {
+      display: block;
+      min-width: 0;
+      max-width: 10em;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+
+      &.is-overflowing:hover {
+        text-overflow: clip;
+        animation: tags-view-title-marquee 4s ease-in-out infinite alternate;
+      }
     }
 
     .close-icon {
@@ -283,6 +330,15 @@ watch(
 
   .tags-view-item.tags-style-classic {
     border-radius: 6px 6px 0 0;
+  }
+}
+
+@keyframes tags-view-title-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(var(--tag-title-shift));
   }
 }
 </style>

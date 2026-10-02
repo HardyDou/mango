@@ -1,14 +1,8 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
-  <div class="payment-transaction-flows">
-    <section class="payment-transaction-flows__header">
-      <div>
-        <h3>交易流水</h3>
-        <p>查询支付成功、退款成功、手续费等支付域资金事件，支撑财务追踪和对账。</p>
-      </div>
-    </section>
-
-    <section class="payment-transaction-flows__toolbar">
-      <el-form :inline="true" :model="query">
+  <MangoListPage class="payment-transaction-flows" data-page="payment.transaction-flows">
+    <template #search>
+      <MangoSearchPanel :model="query" :columns="3" @search="loadRows" @reset="resetQuery">
         <el-form-item label="关键字">
           <el-input
             v-model="query.keyword"
@@ -18,76 +12,64 @@
             @clear="loadRows"
           />
         </el-form-item>
-        <el-form-item>
-          <el-button type="primary" :icon="Search" @click="loadRows">查询</el-button>
-          <el-button :icon="Refresh" @click="resetQuery">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </section>
+      </MangoSearchPanel>
+    </template>
 
-    <el-alert
-      v-if="errorMessage"
-      :title="errorMessage"
-      type="error"
-      show-icon
-      :closable="false"
-    >
-      <template #default>
-        <el-button link type="primary" :icon="Refresh" @click="loadRows">重新加载</el-button>
+    <MangoListPanel>
+      <el-alert v-if="errorMessage" :title="errorMessage" type="error" show-icon :closable="false">
+        <template #default>
+          <el-button link type="primary" :icon="Refresh" @click="loadRows">重新加载</el-button>
+        </template>
+      </el-alert>
+
+      <el-table
+        :data="rows"
+        v-loading="loading"
+        row-key="id"
+        stripe
+        highlight-current-row
+        class="payment-transaction-flows__table"
+      >
+        <template #empty>
+          <el-empty :description="emptyDescription" />
+        </template>
+        <el-table-column prop="flowNo" label="流水号" min-width="190" show-overflow-tooltip />
+        <el-table-column prop="bizOrderNo" label="业务订单号" min-width="190" show-overflow-tooltip />
+        <el-table-column prop="payOrderNo" label="支付订单号" min-width="190" show-overflow-tooltip />
+        <el-table-column prop="refundOrderNo" label="退款订单号" min-width="190" show-overflow-tooltip />
+        <el-table-column label="流水类型" width="150">
+          <template #default="{ row }">
+            <span>{{ row.flowTypeName || row.flowType || '-' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="金额（元）" width="130" align="right">
+          <template #default="{ row }">
+            <span>{{ formatMoney(row.amount) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="createTime" label="创建时间" width="170" show-overflow-tooltip />
+        <el-table-column prop="updateTime" label="更新时间" width="170" show-overflow-tooltip />
+        <el-table-column label="操作" width="104" fixed="right" align="left" class-name="payment-table__operation-cell">
+          <template #default="{ row }">
+            <div class="payment-table__actions">
+              <el-button link type="primary" :icon="Tickets" @click="openDetail(row)">详情</el-button>
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <template #pagination>
+        <Pagination v-model:page="query.pageNum" v-model:limit="query.pageSize" :total="total" @pagination="loadRows" />
       </template>
-    </el-alert>
+    </MangoListPanel>
 
-    <el-table
-      :data="rows"
-      v-loading="loading"
-      row-key="id"
-      stripe
-      highlight-current-row
-      class="payment-transaction-flows__table"
-    >
-      <template #empty>
-        <el-empty :description="emptyDescription" />
-      </template>
-      <el-table-column prop="flowNo" label="流水号" min-width="190" show-overflow-tooltip />
-      <el-table-column prop="bizOrderNo" label="业务订单号" min-width="190" show-overflow-tooltip />
-      <el-table-column prop="payOrderNo" label="支付订单号" min-width="190" show-overflow-tooltip />
-      <el-table-column prop="refundOrderNo" label="退款订单号" min-width="190" show-overflow-tooltip />
-      <el-table-column label="流水类型" width="150">
-        <template #default="{ row }">
-          <span>{{ row.flowTypeName || row.flowType || '-' }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="金额（元）" width="130" align="right">
-        <template #default="{ row }">
-          <span>{{ formatMoney(row.amount) }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column prop="createTime" label="创建时间" width="170" show-overflow-tooltip />
-      <el-table-column prop="updateTime" label="更新时间" width="170" show-overflow-tooltip />
-      <el-table-column label="操作" width="104" fixed="right" align="left" class-name="payment-table__operation-cell">
-        <template #default="{ row }">
-          <div class="payment-table__actions">
-            <el-button link type="primary" :icon="Tickets" @click="openDetail(row)">详情</el-button>
-          </div>
-        </template>
-      </el-table-column>
-    </el-table>
-
-    <div class="payment-transaction-flows__pagination">
-      <Pagination
-        v-model:current-page="query.pageNum"
-        v-model:page-size="query.pageSize"
-        :total="total"
-        @change="loadRows"
-      />
-    </div>
-
-    <el-drawer
+    <MangoSideDrawerShell
       v-model="detailVisible"
       title="交易流水详情"
-      size="680px"
-      destroy-on-close
-      append-to-body
+      drawer-size="680px"
+      :destroy-on-close="true"
+      :show-trigger="false"
+      data-surface="payment.transaction-flow.detail"
       class="payment-transaction-flows__drawer"
     >
       <el-skeleton v-if="detailLoading" :rows="8" animated />
@@ -113,14 +95,14 @@
         </el-descriptions>
       </template>
       <el-empty v-else description="未查询到交易流水详情" />
-    </el-drawer>
-  </div>
+    </MangoSideDrawerShell>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts">
-import { Pagination } from '@mango/common';
+import { MangoListPage, MangoListPanel, MangoSearchPanel, MangoSideDrawerShell, Pagination } from '@mango/common';
 import { computed, onMounted, reactive, ref } from 'vue';
-import { Refresh, Search, Tickets } from '@element-plus/icons-vue';
+import { Refresh, Tickets } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import { paymentTransactionFlowApi, type PaymentPageQuery, type PaymentTransactionFlow } from '../../api/payment';
 
@@ -192,5 +174,4 @@ function valueText(value: unknown) {
 .payment-transaction-flows__detail-block {
   margin-top: 18px;
 }
-
 </style>

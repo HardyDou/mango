@@ -7,10 +7,16 @@
           <el-input v-model="query.keyword" clearable placeholder="搜索公告" @keyup.enter="search" />
         </el-form-item>
         <el-form-item label="阅读状态">
-          <el-checkbox v-model="query.unreadOnly">仅未读</el-checkbox>
+          <el-select v-model="query.unreadOnly" clearable placeholder="全部" style="width: 140px">
+            <el-option label="全部" :value="undefined" />
+            <el-option label="仅未读" :value="true" />
+          </el-select>
         </el-form-item>
         <el-form-item label="确认状态">
-          <el-checkbox v-model="query.pendingConfirmOnly">仅待确认</el-checkbox>
+          <el-select v-model="query.pendingConfirmOnly" clearable placeholder="全部" style="width: 140px">
+            <el-option label="全部" :value="undefined" />
+            <el-option label="仅待确认" :value="true" />
+          </el-select>
         </el-form-item>
       </MangoSearchPanel>
     </template>

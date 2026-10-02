@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
   <div class="calendar-admin">
     <el-card class="calendar-shell" shadow="never">
@@ -101,11 +102,21 @@
           <div class="toolbar">
             <div>
               <h2>日历管理</h2>
-              <p>{{ selectedCalendar ? `${selectedCalendar.calendarName} / ${selectedCalendar.calendarCode}` : '选择日历后维护年度' }}</p>
+              <p>
+                {{
+                  selectedCalendar
+                    ? `${selectedCalendar.calendarName} / ${selectedCalendar.calendarCode}`
+                    : '选择日历后维护年度'
+                }}
+              </p>
             </div>
             <div class="toolbar-actions">
-              <el-button v-auth="'calendar:year:init'" :disabled="!selectedCalendar" @click="openYearDialog">初始化年度</el-button>
-              <el-button v-auth="'calendar:day:batch'" :disabled="!selectedRows.length" @click="openBatchDialog">批量设置</el-button>
+              <el-button v-auth="'calendar:year:init'" :disabled="!selectedCalendar" @click="openYearDialog"
+                >初始化年度</el-button
+              >
+              <el-button v-auth="'calendar:day:batch'" :disabled="!selectedRows.length" @click="openBatchDialog"
+                >批量设置</el-button
+              >
               <el-button
                 v-auth="'calendar:calculate:query'"
                 :icon="Tools"
@@ -119,7 +130,7 @@
 
           <el-tabs v-model="activeTab" @tab-change="handleTabChange">
             <el-tab-pane label="年度" name="years">
-              <el-form :inline="true" :model="yearQuery" class="search-form">
+              <MangoSearchPanel :model="yearQuery" @search="searchYears" @reset="resetYears">
                 <el-form-item label="年度">
                   <el-date-picker
                     v-model="yearPickerValue"
@@ -135,50 +146,81 @@
                     <el-option label="停用" :value="0" />
                   </el-select>
                 </el-form-item>
-                <el-form-item>
-                  <el-button v-auth="'calendar:year:list'" type="primary" :disabled="!selectedCalendar" @click="searchYears">查询</el-button>
-                  <el-button @click="resetYears">重置</el-button>
-                </el-form-item>
-              </el-form>
+                <template #actions>
+                  <el-button
+                    v-auth="'calendar:year:list'"
+                    type="primary"
+                    :icon="Search"
+                    :disabled="!selectedCalendar"
+                    @click="searchYears"
+                  >
+                    查询
+                  </el-button>
+                  <el-button :icon="Refresh" @click="resetYears">重置</el-button>
+                </template>
+              </MangoSearchPanel>
 
-              <el-table v-loading="yearLoading" :data="yearRows" stripe @row-click="selectYear">
-                <el-table-column prop="year" label="年度" width="110" />
-                <el-table-column prop="calendarName" label="日历名称" min-width="160" show-overflow-tooltip />
-                <el-table-column prop="totalDays" label="总天数" width="90" />
-                <el-table-column prop="workdays" label="工作日" width="90" />
-                <el-table-column prop="restdays" label="休息日" width="90" />
-                <el-table-column prop="legalHolidays" label="法定节假日" width="110" />
-                <el-table-column prop="adjustedWorkdays" label="调休补班" width="100" />
-                <el-table-column label="状态" width="90">
-                  <template #default="{ row }">
-                    <el-tag :type="row.enabled === 1 ? 'success' : 'info'" size="small">
-                      {{ row.enabled === 1 ? '启用' : '停用' }}
-                    </el-tag>
-                  </template>
-                </el-table-column>
-                <el-table-column label="操作" width="190" fixed="right">
-                  <template #default="{ row }">
-                    <el-button v-auth="'calendar:day:list'" link type="primary" size="small" @click.stop="selectYear(row)">查看日期</el-button>
-                    <el-button v-auth="'calendar:year:enabled'" link type="primary" size="small" @click.stop="toggleYear(row)">
-                      {{ row.enabled === 1 ? '停用' : '启用' }}
-                    </el-button>
-                    <el-button v-auth="'calendar:year:delete'" link type="danger" size="small" @click.stop="deleteYear(row)">
-                      删除
-                    </el-button>
-                  </template>
-                </el-table-column>
-              </el-table>
+              <MangoListPanel>
+                <el-table v-loading="yearLoading" :data="yearRows" stripe @row-click="selectYear">
+                  <el-table-column prop="year" label="年度" width="110" />
+                  <el-table-column prop="calendarName" label="日历名称" min-width="160" show-overflow-tooltip />
+                  <el-table-column prop="totalDays" label="总天数" width="90" />
+                  <el-table-column prop="workdays" label="工作日" width="90" />
+                  <el-table-column prop="restdays" label="休息日" width="90" />
+                  <el-table-column prop="legalHolidays" label="法定节假日" width="110" />
+                  <el-table-column prop="adjustedWorkdays" label="调休补班" width="100" />
+                  <el-table-column label="状态" width="90">
+                    <template #default="{ row }">
+                      <el-tag :type="row.enabled === 1 ? 'success' : 'info'" size="small">
+                        {{ row.enabled === 1 ? '启用' : '停用' }}
+                      </el-tag>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="操作" width="190" fixed="right">
+                    <template #default="{ row }">
+                      <el-button
+                        v-auth="'calendar:day:list'"
+                        link
+                        type="primary"
+                        size="small"
+                        @click.stop="selectYear(row)"
+                        >查看日期</el-button
+                      >
+                      <el-button
+                        v-auth="'calendar:year:enabled'"
+                        link
+                        type="primary"
+                        size="small"
+                        @click.stop="toggleYear(row)"
+                      >
+                        {{ row.enabled === 1 ? '停用' : '启用' }}
+                      </el-button>
+                      <el-button
+                        v-auth="'calendar:year:delete'"
+                        link
+                        type="danger"
+                        size="small"
+                        @click.stop="deleteYear(row)"
+                      >
+                        删除
+                      </el-button>
+                    </template>
+                  </el-table-column>
+                </el-table>
 
-              <Pagination
-                v-model:current-page="yearQuery.pageNum"
-                v-model:page-size="yearQuery.pageSize"
-                :total="yearTotal"
-                @change="loadYears"
-              />
+                <template #pagination>
+                  <Pagination
+                    v-model:page="yearQuery.pageNum"
+                    v-model:limit="yearQuery.pageSize"
+                    :total="yearTotal"
+                    @pagination="loadYears"
+                  />
+                </template>
+              </MangoListPanel>
             </el-tab-pane>
 
             <el-tab-pane label="日期明细" name="days">
-              <el-form :inline="true" :model="dayQuery" class="search-form">
+              <MangoSearchPanel :model="dayQuery" @search="searchDays" @reset="resetDays">
                 <el-form-item label="年度">
                   <el-date-picker
                     v-model="dayYearPickerValue"
@@ -200,7 +242,12 @@
                 </el-form-item>
                 <el-form-item label="类型">
                   <el-select v-model="dayQuery.dayType" clearable placeholder="全部" style="width: 150px">
-                    <el-option v-for="item in dayTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
+                    <el-option
+                      v-for="item in dayTypeOptions"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value"
+                    />
                   </el-select>
                 </el-form-item>
                 <el-form-item label="工作日">
@@ -212,64 +259,87 @@
                 <el-form-item label="关键词">
                   <el-input v-model="dayQuery.keyword" clearable placeholder="名称/来源/备注" />
                 </el-form-item>
-                <el-form-item>
-                  <el-button v-auth="'calendar:day:list'" type="primary" :disabled="!selectedCalendar" @click="searchDays">查询</el-button>
-                  <el-button @click="resetDays">重置</el-button>
-                </el-form-item>
-              </el-form>
+                <template #actions>
+                  <el-button
+                    v-auth="'calendar:day:list'"
+                    type="primary"
+                    :icon="Search"
+                    :disabled="!selectedCalendar"
+                    @click="searchDays"
+                  >
+                    查询
+                  </el-button>
+                  <el-button :icon="Refresh" @click="resetDays">重置</el-button>
+                </template>
+              </MangoSearchPanel>
 
-              <el-table
-                v-loading="dayLoading"
-                :data="dayRows"
-                stripe
-                @selection-change="selectedRows = $event"
-              >
-                <el-table-column type="selection" width="48" />
-                <el-table-column prop="date" label="日期" width="120" />
-                <el-table-column label="星期" width="80">
-                  <template #default="{ row }">{{ weekDayLabel(row.dayOfWeek) }}</template>
-                </el-table-column>
-                <el-table-column label="农历/节气" min-width="170" show-overflow-tooltip>
-                  <template #default="{ row }">
-                    <div class="lunar-cell">
-                      <span>{{ lunarLabel(row) }}</span>
-                      <el-tag v-if="row.solarTerm" type="warning" size="small">{{ row.solarTerm }}</el-tag>
-                    </div>
-                  </template>
-                </el-table-column>
-                <el-table-column label="类型" width="120">
-                  <template #default="{ row }">
-                    <el-tag :type="row.workday ? 'success' : 'info'" size="small">{{ dayTypeLabel(row.dayType) }}</el-tag>
-                  </template>
-                </el-table-column>
-                <el-table-column label="工作日" width="90">
-                  <template #default="{ row }">{{ row.workday ? '是' : '否' }}</template>
-                </el-table-column>
-                <el-table-column prop="dayName" label="名称" min-width="140" show-overflow-tooltip />
-                <el-table-column prop="source" label="来源" width="120" show-overflow-tooltip />
-                <el-table-column prop="remark" label="备注" min-width="160" show-overflow-tooltip />
-                <el-table-column prop="updateTime" label="更新时间" width="180" />
-                <el-table-column label="操作" width="120" fixed="right">
-                  <template #default="{ row }">
-                    <el-button v-auth="'calendar:day:edit'" link type="primary" size="small" @click="openDayDialog(row)">编辑</el-button>
-                    <el-button v-auth="'calendar:day:delete'" link type="danger" size="small" @click="deleteDay(row)">删除</el-button>
-                  </template>
-                </el-table-column>
-              </el-table>
+              <MangoListPanel>
+                <el-table v-loading="dayLoading" :data="dayRows" stripe @selection-change="selectedRows = $event">
+                  <el-table-column type="selection" width="48" />
+                  <el-table-column prop="date" label="日期" width="120" />
+                  <el-table-column label="星期" width="80">
+                    <template #default="{ row }">{{ weekDayLabel(row.dayOfWeek) }}</template>
+                  </el-table-column>
+                  <el-table-column label="农历/节气" min-width="170" show-overflow-tooltip>
+                    <template #default="{ row }">
+                      <div class="lunar-cell">
+                        <span>{{ lunarLabel(row) }}</span>
+                        <el-tag v-if="row.solarTerm" type="warning" size="small">{{ row.solarTerm }}</el-tag>
+                      </div>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="类型" width="120">
+                    <template #default="{ row }">
+                      <el-tag :type="row.workday ? 'success' : 'info'" size="small">{{
+                        dayTypeLabel(row.dayType)
+                      }}</el-tag>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="工作日" width="90">
+                    <template #default="{ row }">{{ row.workday ? '是' : '否' }}</template>
+                  </el-table-column>
+                  <el-table-column prop="dayName" label="名称" min-width="140" show-overflow-tooltip />
+                  <el-table-column prop="source" label="来源" width="120" show-overflow-tooltip />
+                  <el-table-column prop="remark" label="备注" min-width="160" show-overflow-tooltip />
+                  <el-table-column prop="updateTime" label="更新时间" width="180" />
+                  <el-table-column label="操作" width="120" fixed="right">
+                    <template #default="{ row }">
+                      <el-button
+                        v-auth="'calendar:day:edit'"
+                        link
+                        type="primary"
+                        size="small"
+                        @click="openDayDialog(row)"
+                        >编辑</el-button
+                      >
+                      <el-button v-auth="'calendar:day:delete'" link type="danger" size="small" @click="deleteDay(row)"
+                        >删除</el-button
+                      >
+                    </template>
+                  </el-table-column>
+                </el-table>
 
-              <Pagination
-                v-model:current-page="dayQuery.pageNum"
-                v-model:page-size="dayQuery.pageSize"
-                :total="dayTotal"
-                @change="loadDays"
-              />
+                <template #pagination>
+                  <Pagination
+                    v-model:page="dayQuery.pageNum"
+                    v-model:limit="dayQuery.pageSize"
+                    :total="dayTotal"
+                    @pagination="loadDays"
+                  />
+                </template>
+              </MangoListPanel>
             </el-tab-pane>
           </el-tabs>
         </main>
       </div>
     </el-card>
 
-    <el-dialog v-model="calendarDialogVisible" :title="calendarForm.id ? '编辑日历' : '新增日历'" width="520px" destroy-on-close>
+    <el-dialog
+      v-model="calendarDialogVisible"
+      :title="calendarForm.id ? '编辑日历' : '新增日历'"
+      width="520px"
+      destroy-on-close
+    >
       <el-form ref="calendarFormRef" :model="calendarForm" :rules="calendarRules" label-width="92px">
         <el-form-item label="日历编码" prop="calendarCode">
           <el-input v-model="calendarForm.calendarCode" placeholder="如 CN_STANDARD" />
@@ -457,7 +527,7 @@
 </template>
 
 <script setup lang="ts">
-import { Pagination } from '@mango/common';
+import { MangoListPanel, MangoSearchPanel, Pagination } from '@mango/common';
 import { computed, markRaw, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import {
@@ -469,6 +539,7 @@ import {
   Edit,
   Operation,
   Position,
+  Refresh,
   Right,
   Search,
   Sunny,
@@ -486,9 +557,32 @@ import {
   type SolarTermVO,
 } from '../../api/calendar';
 
-type ToolKey = 'day' | 'check' | 'next' | 'previous' | 'add' | 'count' | 'month' | 'nth' | 'lunarDay' | 'lunarToSolar' | 'solarTerms';
-type ToolField = 'date' | 'sourceDate' | 'amount' | 'includeSource' | 'range' | 'includeBoundary' | 'month' | 'nth'
-  | 'termYear' | 'lunarYear' | 'lunarMonth' | 'lunarDay' | 'leapMonth';
+type ToolKey =
+  | 'day'
+  | 'check'
+  | 'next'
+  | 'previous'
+  | 'add'
+  | 'count'
+  | 'month'
+  | 'nth'
+  | 'lunarDay'
+  | 'lunarToSolar'
+  | 'solarTerms';
+type ToolField =
+  | 'date'
+  | 'sourceDate'
+  | 'amount'
+  | 'includeSource'
+  | 'range'
+  | 'includeBoundary'
+  | 'month'
+  | 'nth'
+  | 'termYear'
+  | 'lunarYear'
+  | 'lunarMonth'
+  | 'lunarDay'
+  | 'leapMonth';
 
 const activeTab = ref<'years' | 'days'>('years');
 const calendarLoading = ref(false);
@@ -505,7 +599,13 @@ const yearTotal = ref(0);
 const dayTotal = ref(0);
 
 const calendarQuery = reactive({ pageNum: 1, pageSize: 10, keyword: '', status: '' as number | '' });
-const yearQuery = reactive({ pageNum: 1, pageSize: 10, calendarCode: '', year: '' as number | '', enabled: '' as number | '' });
+const yearQuery = reactive({
+  pageNum: 1,
+  pageSize: 10,
+  calendarCode: '',
+  year: '' as number | '',
+  enabled: '' as number | '',
+});
 const dayQuery = reactive({
   pageNum: 1,
   pageSize: 20,
@@ -521,19 +621,27 @@ const dayQuery = reactive({
 const dayRange = ref<[string, string] | null>(null);
 const yearPickerValue = computed({
   get: () => (yearQuery.year === '' ? '' : String(yearQuery.year)),
-  set: value => { yearQuery.year = parseYearPickerValue(value); },
+  set: (value) => {
+    yearQuery.year = parseYearPickerValue(value);
+  },
 });
 const dayYearPickerValue = computed({
   get: () => (dayQuery.year === '' ? '' : String(dayQuery.year)),
-  set: value => { dayQuery.year = parseYearPickerValue(value); },
+  set: (value) => {
+    dayQuery.year = parseYearPickerValue(value);
+  },
 });
 const yearFormYearPicker = computed({
   get: () => String(yearForm.year || ''),
-  set: value => { yearForm.year = parseYearPickerValue(value) || new Date().getFullYear(); },
+  set: (value) => {
+    yearForm.year = parseYearPickerValue(value) || new Date().getFullYear();
+  },
 });
 const yearFormSourceYearPicker = computed({
   get: () => (yearForm.sourceYear ? String(yearForm.sourceYear) : ''),
-  set: value => { yearForm.sourceYear = parseYearPickerValue(value) || undefined; },
+  set: (value) => {
+    yearForm.sourceYear = parseYearPickerValue(value) || undefined;
+  },
 });
 const selectedCalendarLabel = computed(() =>
   selectedCalendar.value ? `${selectedCalendar.value.calendarName}（${selectedCalendar.value.calendarCode}）` : '',
@@ -555,7 +663,11 @@ const dayFormRef = ref<FormInstance>();
 const batchFormRef = ref<FormInstance>();
 
 const calendarForm = reactive<CalendarVO>({ calendarCode: '', calendarName: '', status: 1 });
-const yearForm = reactive({ year: new Date().getFullYear(), sourceYear: undefined as number | undefined, overwrite: false });
+const yearForm = reactive({
+  year: new Date().getFullYear(),
+  sourceYear: undefined as number | undefined,
+  overwrite: false,
+});
 const dayForm = reactive<Partial<CalendarDayVO>>({ dayType: 'WORKDAY' });
 const batchForm = reactive({ dayType: 'WORKDAY' as CalendarDayType, dayName: '', source: '手工维护', remark: '' });
 const activeToolKey = ref<ToolKey>('check');
@@ -582,16 +694,31 @@ const calendarTools = [
   { key: 'check' as const, title: '是否工作日', fields: ['date'] as ToolField[], icon: markRaw(CircleCheck) },
   { key: 'next' as const, title: '下一个工作日', fields: ['date'] as ToolField[], icon: markRaw(Right) },
   { key: 'previous' as const, title: '上一个工作日', fields: ['date'] as ToolField[], icon: markRaw(Position) },
-  { key: 'add' as const, title: '偏移工作日', fields: ['sourceDate', 'amount', 'includeSource'] as ToolField[], icon: markRaw(Operation) },
-  { key: 'count' as const, title: '区间工作日数', fields: ['range', 'includeBoundary'] as ToolField[], icon: markRaw(DataAnalysis) },
+  {
+    key: 'add' as const,
+    title: '偏移工作日',
+    fields: ['sourceDate', 'amount', 'includeSource'] as ToolField[],
+    icon: markRaw(Operation),
+  },
+  {
+    key: 'count' as const,
+    title: '区间工作日数',
+    fields: ['range', 'includeBoundary'] as ToolField[],
+    icon: markRaw(DataAnalysis),
+  },
   { key: 'month' as const, title: '月份汇总', fields: ['month'] as ToolField[], icon: markRaw(Calendar) },
   { key: 'nth' as const, title: '第 N 个工作日', fields: ['month', 'nth'] as ToolField[], icon: markRaw(Calendar) },
   { key: 'lunarDay' as const, title: '农历查询', fields: ['date'] as ToolField[], icon: markRaw(Sunny) },
-  { key: 'lunarToSolar' as const, title: '农历转公历', fields: ['lunarYear', 'lunarMonth', 'lunarDay', 'leapMonth'] as ToolField[], icon: markRaw(Sunny) },
+  {
+    key: 'lunarToSolar' as const,
+    title: '农历转公历',
+    fields: ['lunarYear', 'lunarMonth', 'lunarDay', 'leapMonth'] as ToolField[],
+    icon: markRaw(Sunny),
+  },
   { key: 'solarTerms' as const, title: '节气查询', fields: ['termYear'] as ToolField[], icon: markRaw(Sunny) },
 ];
 
-const activeTool = computed(() => calendarTools.find(tool => tool.key === activeToolKey.value));
+const activeTool = computed(() => calendarTools.find((tool) => tool.key === activeToolKey.value));
 const toolResultItems = computed(() => formatToolResult(activeToolKey.value, toolResult.value));
 
 const calendarRules: FormRules = {
@@ -789,11 +916,11 @@ async function toggleYear(row: CalendarYearSummaryVO) {
 }
 
 async function deleteYear(row: CalendarYearSummaryVO) {
-  await ElMessageBox.confirm(
-    `删除 ${row.year} 年度会删除该年度全部日期明细，是否继续？`,
-    '删除年度',
-    { type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消' },
-  );
+  await ElMessageBox.confirm(`删除 ${row.year} 年度会删除该年度全部日期明细，是否继续？`, '删除年度', {
+    type: 'warning',
+    confirmButtonText: '删除',
+    cancelButtonText: '取消',
+  });
   await calendarApi.deleteCalendarYear(row.calendarCode, row.year);
   ElMessage.success('删除成功');
   if (selectedYear.value === row.year) {
@@ -832,11 +959,11 @@ async function saveDay() {
 }
 
 async function deleteDay(row: CalendarDayVO) {
-  await ElMessageBox.confirm(
-    `删除日期 ${row.date} 后，该日期不会再参与工作日计算，是否继续？`,
-    '删除日期',
-    { type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消' },
-  );
+  await ElMessageBox.confirm(`删除日期 ${row.date} 后，该日期不会再参与工作日计算，是否继续？`, '删除日期', {
+    type: 'warning',
+    confirmButtonText: '删除',
+    cancelButtonText: '取消',
+  });
   await calendarApi.deleteCalendarDay(row.id!);
   ElMessage.success('删除成功');
   await loadDays();
@@ -853,7 +980,7 @@ async function saveBatch() {
   batchSaving.value = true;
   try {
     await calendarApi.batchUpdateCalendarDays({
-      ids: selectedRows.value.map(row => row.id!),
+      ids: selectedRows.value.map((row) => row.id!),
       ...batchForm,
     });
     ElMessage.success('批量设置成功');
@@ -883,11 +1010,14 @@ async function runTool() {
   try {
     const calendarCode = selectedCalendar.value.calendarCode;
     if (activeToolKey.value === 'day') {
-      toolResult.value = await calendarApi.getDay({ calendarCode, date: toolForm.date }) as unknown as Record<string, unknown>;
+      toolResult.value = (await calendarApi.getDay({ calendarCode, date: toolForm.date })) as unknown as Record<
+        string,
+        unknown
+      >;
       return;
     }
     if (activeToolKey.value === 'lunarDay') {
-      toolResult.value = await calendarApi.lunarDay({ date: toolForm.date }) as unknown as Record<string, unknown>;
+      toolResult.value = (await calendarApi.lunarDay({ date: toolForm.date })) as unknown as Record<string, unknown>;
       return;
     }
     if (activeToolKey.value === 'lunarToSolar') {
@@ -902,7 +1032,10 @@ async function runTool() {
       return;
     }
     if (activeToolKey.value === 'solarTerms') {
-      toolResult.value = await calendarApi.solarTerms({ year: Number(toolForm.termYear) }) as unknown as Record<string, unknown>;
+      toolResult.value = (await calendarApi.solarTerms({ year: Number(toolForm.termYear) })) as unknown as Record<
+        string,
+        unknown
+      >;
       return;
     }
     if (activeToolKey.value === 'check') {
@@ -943,7 +1076,10 @@ async function runTool() {
     }
     const [year, month] = toolForm.month.split('-').map(Number);
     if (activeToolKey.value === 'month') {
-      toolResult.value = await calendarApi.monthSummary({ calendarCode, year, month }) as unknown as Record<string, unknown>;
+      toolResult.value = (await calendarApi.monthSummary({ calendarCode, year, month })) as unknown as Record<
+        string,
+        unknown
+      >;
       return;
     }
     toolResult.value = {
@@ -984,7 +1120,7 @@ function formatToolResult(key: ToolKey, result?: Record<string, unknown> | Calen
   }
   if (key === 'solarTerms') {
     const terms = result as SolarTermVO[];
-    return terms.map(term => ({ label: term.name, value: term.date }));
+    return terms.map((term) => ({ label: term.name, value: term.date }));
   }
   if (key === 'check') {
     return [{ label: '是否工作日', value: result.workday ? '是' : '否' }];
@@ -1026,7 +1162,8 @@ function parseYearPickerValue(value?: string | number) {
 
 <style scoped>
 .calendar-admin {
-  padding: 16px;
+  width: 100%;
+  min-width: 0;
 }
 
 .calendar-shell {
@@ -1034,7 +1171,7 @@ function parseYearPickerValue(value?: string | number) {
 }
 
 .calendar-shell :deep(.el-card__body) {
-  height: calc(100vh - 128px);
+  height: calc(100vh - var(--mango-header-height) - var(--mango-tags-view-height) - 32px);
   min-height: 560px;
 }
 
@@ -1163,10 +1300,6 @@ function parseYearPickerValue(value?: string | number) {
   gap: 8px;
 }
 
-.search-form {
-  margin-bottom: 12px;
-}
-
 .tool-calendar {
   display: grid;
   gap: 6px;
@@ -1209,7 +1342,10 @@ function parseYearPickerValue(value?: string | number) {
   cursor: pointer;
   font: inherit;
   text-align: left;
-  transition: border-color 0.16s ease, background-color 0.16s ease, color 0.16s ease;
+  transition:
+    border-color 0.16s ease,
+    background-color 0.16s ease,
+    color 0.16s ease;
 }
 
 .tool-card:hover {
@@ -1243,10 +1379,6 @@ function parseYearPickerValue(value?: string | number) {
 }
 
 @media (max-width: 760px) {
-  .calendar-admin {
-    padding: 10px;
-  }
-
   .side-filter {
     grid-template-columns: 1fr;
   }

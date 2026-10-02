@@ -1,53 +1,40 @@
+<!-- mango-page-baseline-exception list: 业务域接口返回组织树，必须保持层级展开，不支持分页列表语义。 -->
 <template>
-  <div class="domain-page">
-    <el-card>
-      <el-form
-        :model="query"
-        class="domain-search"
-        label-width="72px"
+  <MangoListPage class="domain-page" data-page="system.domain">
+    <template #search>
+      <MangoSearchPanel :model="query" :columns="3" @search="loadDomains" @reset="resetQuery">
+        <el-form-item label="编码">
+          <el-input v-model="query.domainCode" clearable placeholder="业务域编码" @keyup.enter="loadDomains" />
+        </el-form-item>
+        <el-form-item label="名称">
+          <el-input v-model="query.domainName" clearable placeholder="业务域名称" @keyup.enter="loadDomains" />
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-select v-model="query.status" clearable placeholder="全部状态">
+            <el-option label="启用" :value="1" />
+            <el-option label="停用" :value="0" />
+          </el-select>
+        </el-form-item>
+      </MangoSearchPanel>
+    </template>
+
+    <MangoListPanel>
+      <template #actions>
+        <el-button type="primary" plain @click="openCreate">新增业务域</el-button>
+      </template>
+      <template #view-actions>
+        <el-button type="primary" plain :loading="loading" @click="loadDomains">刷新</el-button>
+      </template>
+
+      <el-alert
+        v-if="loadFailed"
+        type="error"
+        title="业务域加载失败，请检查权限或稍后重试。"
+        :closable="false"
+        show-icon
       >
-        <el-row :gutter="16">
-          <el-col :xs="24" :sm="12" :md="7" :lg="6">
-            <el-form-item label="编码">
-              <el-input
-                v-model="query.domainCode"
-                clearable
-                placeholder="业务域编码"
-                @keyup.enter="loadDomains"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :xs="24" :sm="12" :md="7" :lg="6">
-            <el-form-item label="名称">
-              <el-input
-                v-model="query.domainName"
-                clearable
-                placeholder="业务域名称"
-                @keyup.enter="loadDomains"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :xs="24" :sm="12" :md="6" :lg="5">
-            <el-form-item label="状态">
-              <el-select
-                v-model="query.status"
-                clearable
-                placeholder="全部状态"
-              >
-                <el-option label="启用" :value="1" />
-                <el-option label="停用" :value="0" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :xs="24" :sm="12" :md="6" :lg="7">
-            <div class="domain-actions">
-              <el-button @click="resetQuery">重置</el-button>
-              <el-button type="primary" @click="loadDomains">查询</el-button>
-              <el-button type="primary" @click="openCreate">新增业务域</el-button>
-            </div>
-          </el-col>
-        </el-row>
-      </el-form>
+        <el-button link type="danger" @click="loadDomains">重试</el-button>
+      </el-alert>
 
       <el-table
         v-loading="loading"
@@ -56,6 +43,8 @@
         :tree-props="{ children: 'children' }"
         default-expand-all
         stripe
+        empty-text="暂无业务域"
+        data-surface="system.domain.table"
       >
         <el-table-column prop="domainName" label="业务域" min-width="180" />
         <el-table-column prop="domainCode" label="编码" min-width="180" show-overflow-tooltip />
@@ -78,32 +67,17 @@
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="openCreate(row)">新增下级</el-button>
             <el-button link type="primary" size="small" @click="openEdit(row)">编辑</el-button>
-            <el-button
-              link
-              :type="row.status === 1 ? 'warning' : 'success'"
-              size="small"
-              @click="toggleStatus(row)"
-            >
+            <el-button link :type="row.status === 1 ? 'warning' : 'success'" size="small" @click="toggleStatus(row)">
               {{ row.status === 1 ? '停用' : '启用' }}
             </el-button>
             <el-button link type="danger" size="small" @click="deleteDomain(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
-    </el-card>
+    </MangoListPanel>
 
-    <el-dialog
-      v-model="dialogVisible"
-      :title="form.id ? '编辑业务域' : '新增业务域'"
-      width="720px"
-      destroy-on-close
-    >
-      <el-form
-        ref="formRef"
-        :model="form"
-        :rules="rules"
-        label-width="120px"
-      >
+    <MangoDialog v-model="dialogVisible" :title="form.id ? '编辑业务域' : '新增业务域'" width="720px" destroy-on-close>
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="120px">
         <el-row :gutter="16">
           <el-col :xs="24" :sm="12">
             <el-form-item label="上级业务域">
@@ -130,11 +104,7 @@
           </el-col>
           <el-col :xs="24" :sm="12">
             <el-form-item label="本层编码" prop="domainCode">
-              <el-input
-                v-model="form.domainCode"
-                :disabled="Boolean(form.id)"
-                placeholder="如 ORDER 或 PAY"
-              />
+              <el-input v-model="form.domainCode" :disabled="Boolean(form.id)" placeholder="如 ORDER 或 PAY" />
             </el-form-item>
           </el-col>
           <el-col :xs="24" :sm="12">
@@ -159,13 +129,7 @@
           </el-col>
           <el-col :xs="24">
             <el-form-item label="备注">
-              <el-input
-                v-model="form.remark"
-                type="textarea"
-                :rows="3"
-                maxlength="512"
-                show-word-limit
-              />
+              <el-input v-model="form.remark" type="textarea" :rows="3" maxlength="512" show-word-limit />
             </el-form-item>
           </el-col>
         </el-row>
@@ -174,8 +138,8 @@
         <el-button @click="dialogVisible = false">取消</el-button>
         <el-button type="primary" :loading="saving" @click="submitForm">保存</el-button>
       </template>
-    </el-dialog>
-  </div>
+    </MangoDialog>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts">
@@ -183,6 +147,7 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import type { FormInstance, FormRules } from 'element-plus';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import type { ApiId } from '@mango/api-schema';
+import { MangoListPage, MangoListPanel, MangoSearchPanel, MangoDialog } from '@mango/common';
 import { domainApi, normalizeCode, type DomainItem } from '../../api/domain';
 
 type DomainForm = {
@@ -198,6 +163,7 @@ type DomainForm = {
 
 const loading = ref(false);
 const saving = ref(false);
+const loadFailed = ref(false);
 const dialogVisible = ref(false);
 const domains = ref<DomainItem[]>([]);
 const parentOptions = ref<DomainItem[]>([]);
@@ -245,17 +211,27 @@ const previewCode = computed(() => {
   return current.startsWith(prefix) ? current : `${prefix}${current}`;
 });
 
-onMounted(loadDomains);
+onMounted(() => {
+  void loadDomains();
+});
 
 async function loadDomains() {
   loading.value = true;
+  loadFailed.value = false;
   try {
-    domains.value = await domainApi.tree({
-      domainCode: query.domainCode || undefined,
-      domainName: query.domainName || undefined,
-      status: query.status,
-    });
-    parentOptions.value = await domainApi.tree();
+    [domains.value, parentOptions.value] = await Promise.all([
+      domainApi.tree({
+        domainCode: query.domainCode || undefined,
+        domainName: query.domainName || undefined,
+        status: query.status,
+      }),
+      domainApi.tree(),
+    ]);
+  } catch (error) {
+    console.error('加载业务域失败:', error);
+    domains.value = [];
+    parentOptions.value = [];
+    loadFailed.value = true;
   } finally {
     loading.value = false;
   }
@@ -265,7 +241,7 @@ function resetQuery() {
   query.domainCode = '';
   query.domainName = '';
   query.status = undefined;
-  loadDomains();
+  void loadDomains();
 }
 
 function openCreate(parent?: DomainItem) {
@@ -289,7 +265,10 @@ async function openEdit(row: DomainItem) {
 }
 
 async function submitForm() {
-  await formRef.value?.validate();
+  const valid = await formRef.value?.validate().catch(() => false);
+  if (!valid) {
+    return;
+  }
   saving.value = true;
   try {
     if (form.id) {
@@ -328,7 +307,10 @@ async function toggleStatus(row: DomainItem) {
 }
 
 async function deleteDomain(row: DomainItem) {
-  await ElMessageBox.confirm(`确认删除业务域“${row.domainName}”？`, '删除确认', {
+  await ElMessageBox.confirm(`确认删除业务域“${row.domainName}”？删除后该业务域及其层级关系将被移除。`, '删除确认', {
+    confirmButtonText: '确认删除',
+    cancelButtonText: '取消',
+    confirmButtonClass: 'el-button--danger',
     type: 'warning',
   });
   await domainApi.delete(row.id!);
@@ -367,28 +349,10 @@ function findDomainById(items: DomainItem[], id?: ApiId | 0): DomainItem | undef
 
 <style scoped>
 .domain-page {
-  padding: 16px;
-}
-
-.domain-search {
-  margin-bottom: 8px;
-}
-
-.domain-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  width: 100%;
+  min-width: 0;
 }
 
 .full-input {
   width: 100%;
-}
-
-@media (max-width: 768px) {
-  .domain-actions {
-    justify-content: flex-start;
-    flex-wrap: wrap;
-  }
 }
 </style>

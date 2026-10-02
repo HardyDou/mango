@@ -1,14 +1,8 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
-  <div class="payment-refund-approvals">
-    <section class="payment-refund-approvals__header">
-      <div>
-        <h3>退款审批</h3>
-        <p>审核后台发起的退款申请，审批通过后进入统一退款流程。</p>
-      </div>
-    </section>
-
-    <section class="payment-refund-approvals__toolbar">
-      <el-form :inline="true" :model="query">
+  <MangoListPage class="payment-refund-approvals" data-page="payment.refund-approvals">
+    <template #search>
+      <MangoSearchPanel :model="query" :columns="3" @search="loadRows" @reset="resetQuery">
         <el-form-item label="关键字">
           <el-input
             v-model="query.keyword"
@@ -28,126 +22,136 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item>
-          <el-button type="primary" :icon="Search" @click="loadRows">查询</el-button>
-          <el-button :icon="Refresh" @click="resetQuery">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </section>
+      </MangoSearchPanel>
+    </template>
 
-    <el-alert v-if="errorMessage" :title="errorMessage" type="error" show-icon :closable="false">
-      <template #default>
-        <el-button link type="primary" :icon="Refresh" @click="loadRows">重新加载</el-button>
+    <MangoListPanel>
+      <el-alert v-if="errorMessage" :title="errorMessage" type="error" show-icon :closable="false">
+        <template #default>
+          <el-button link type="primary" :icon="Refresh" @click="loadRows">重新加载</el-button>
+        </template>
+      </el-alert>
+
+      <el-table
+        :data="rows"
+        v-loading="loading"
+        row-key="id"
+        stripe
+        highlight-current-row
+        class="payment-refund-approvals__table"
+      >
+        <template #empty>
+          <el-empty :description="emptyDescription" />
+        </template>
+        <el-table-column label="审批信息" min-width="280">
+          <template #default="{ row }">
+            <div class="payment-table-stack">
+              <div class="payment-table-stack__primary">{{ valueText(row.approvalNo) }}</div>
+              <div class="payment-table-stack__line">
+                <span>业务退款</span>
+                <strong>{{ valueText(row.bizRefundNo) }}</strong>
+              </div>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column label="关联订单" min-width="300">
+          <template #default="{ row }">
+            <div class="payment-table-stack">
+              <div class="payment-table-stack__primary">{{ valueText(row.payOrderNo) }}</div>
+              <div class="payment-table-stack__line">
+                <span>业务订单</span>
+                <strong>{{ valueText(row.bizOrderNo) }}</strong>
+              </div>
+              <div class="payment-table-stack__line">
+                <span>退款订单</span>
+                <strong>{{ valueText(row.refundOrderNo) }}</strong>
+              </div>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column label="金额/状态" width="150">
+          <template #default="{ row }">
+            <div class="payment-money-status">
+              <strong>{{ formatMoney(row.refundAmount) }}</strong>
+              <span>元</span>
+              <el-tag :type="statusTagType(row.status)" effect="light">{{
+                row.statusName || row.status || '-'
+              }}</el-tag>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column label="申请/审核" min-width="260">
+          <template #default="{ row }">
+            <div class="payment-table-stack">
+              <div class="payment-table-stack__line">
+                <span>申请人</span>
+                <strong>{{ valueText(row.applicantName) }}</strong>
+              </div>
+              <div class="payment-table-stack__line">
+                <span>申请时间</span>
+                <strong>{{ valueText(row.applyTime) }}</strong>
+              </div>
+              <div class="payment-table-stack__line">
+                <span>审核人</span>
+                <strong>{{ valueText(row.reviewerName) }}</strong>
+              </div>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column label="审批进度" min-width="240">
+          <template #default="{ row }">
+            <div class="payment-table-stack">
+              <div class="payment-table-stack__line">
+                <span>工作流</span>
+                <strong>{{ valueText(row.workflowApplyStatusName || row.workflowApplyStatus) }}</strong>
+              </div>
+              <div class="payment-table-stack__line">
+                <span>当前节点</span>
+                <strong>{{ valueText(row.workflowCurrentTaskNames) }}</strong>
+              </div>
+              <div class="payment-table-stack__line">
+                <span>处理人</span>
+                <strong>{{ valueText(row.workflowCurrentAssigneeNames) }}</strong>
+              </div>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="操作"
+          width="120"
+          fixed="right"
+          align="right"
+          class-name="payment-table__operation-cell"
+        >
+          <template #default="{ row }">
+            <div class="payment-table__actions payment-table__actions--right">
+              <el-button link type="primary" :icon="Tickets" @click="openDetail(row)">详情</el-button>
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <template #pagination>
+        <Pagination v-model:page="query.pageNum" v-model:limit="query.pageSize" :total="total" @pagination="loadRows" />
       </template>
-    </el-alert>
+    </MangoListPanel>
 
-    <el-table
-      :data="rows"
-      v-loading="loading"
-      row-key="id"
-      stripe
-      highlight-current-row
-      class="payment-refund-approvals__table"
+    <MangoSideDrawerShell
+      v-model="detailVisible"
+      title="退款审批详情"
+      drawer-size="760px"
+      :destroy-on-close="true"
+      :show-trigger="false"
+      data-surface="payment.refund-approval.detail"
     >
-      <template #empty>
-        <el-empty :description="emptyDescription" />
-      </template>
-      <el-table-column label="审批信息" min-width="280">
-        <template #default="{ row }">
-          <div class="payment-table-stack">
-            <div class="payment-table-stack__primary">{{ valueText(row.approvalNo) }}</div>
-            <div class="payment-table-stack__line">
-              <span>业务退款</span>
-              <strong>{{ valueText(row.bizRefundNo) }}</strong>
-            </div>
-          </div>
-        </template>
-      </el-table-column>
-      <el-table-column label="关联订单" min-width="300">
-        <template #default="{ row }">
-          <div class="payment-table-stack">
-            <div class="payment-table-stack__primary">{{ valueText(row.payOrderNo) }}</div>
-            <div class="payment-table-stack__line">
-              <span>业务订单</span>
-              <strong>{{ valueText(row.bizOrderNo) }}</strong>
-            </div>
-            <div class="payment-table-stack__line">
-              <span>退款订单</span>
-              <strong>{{ valueText(row.refundOrderNo) }}</strong>
-            </div>
-          </div>
-        </template>
-      </el-table-column>
-      <el-table-column label="金额/状态" width="150">
-        <template #default="{ row }">
-          <div class="payment-money-status">
-            <strong>{{ formatMoney(row.refundAmount) }}</strong>
-            <span>元</span>
-            <el-tag :type="statusTagType(row.status)" effect="light">{{ row.statusName || row.status || '-' }}</el-tag>
-          </div>
-        </template>
-      </el-table-column>
-      <el-table-column label="申请/审核" min-width="260">
-        <template #default="{ row }">
-          <div class="payment-table-stack">
-            <div class="payment-table-stack__line">
-              <span>申请人</span>
-              <strong>{{ valueText(row.applicantName) }}</strong>
-            </div>
-            <div class="payment-table-stack__line">
-              <span>申请时间</span>
-              <strong>{{ valueText(row.applyTime) }}</strong>
-            </div>
-            <div class="payment-table-stack__line">
-              <span>审核人</span>
-              <strong>{{ valueText(row.reviewerName) }}</strong>
-            </div>
-          </div>
-        </template>
-      </el-table-column>
-      <el-table-column label="审批进度" min-width="240">
-        <template #default="{ row }">
-          <div class="payment-table-stack">
-            <div class="payment-table-stack__line">
-              <span>工作流</span>
-              <strong>{{ valueText(row.workflowApplyStatusName || row.workflowApplyStatus) }}</strong>
-            </div>
-            <div class="payment-table-stack__line">
-              <span>当前节点</span>
-              <strong>{{ valueText(row.workflowCurrentTaskNames) }}</strong>
-            </div>
-            <div class="payment-table-stack__line">
-              <span>处理人</span>
-              <strong>{{ valueText(row.workflowCurrentAssigneeNames) }}</strong>
-            </div>
-          </div>
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" width="120" fixed="right" align="right" class-name="payment-table__operation-cell">
-        <template #default="{ row }">
-          <div class="payment-table__actions payment-table__actions--right">
-            <el-button link type="primary" :icon="Tickets" @click="openDetail(row)">详情</el-button>
-          </div>
-        </template>
-      </el-table-column>
-    </el-table>
-
-    <div class="payment-refund-approvals__pagination">
-      <Pagination
-        v-model:current-page="query.pageNum"
-        v-model:page-size="query.pageSize"
-        :total="total"
-        @change="loadRows"
-      />
-    </div>
-
-    <el-drawer v-model="detailVisible" title="退款审批详情" size="760px" destroy-on-close append-to-body>
       <el-skeleton v-if="detailLoading" :rows="8" animated />
       <template v-else-if="detail">
         <el-descriptions title="审批申请" :column="2" border>
           <el-descriptions-item label="审批单号">{{ valueText(detail.approvalNo) }}</el-descriptions-item>
           <el-descriptions-item label="审批状态">
-            <el-tag :type="statusTagType(detail.status)" effect="light">{{ detail.statusName || detail.status || '-' }}</el-tag>
+            <el-tag :type="statusTagType(detail.status)" effect="light">{{
+              detail.statusName || detail.status || '-'
+            }}</el-tag>
           </el-descriptions-item>
           <el-descriptions-item label="业务退款号">{{ valueText(detail.bizRefundNo) }}</el-descriptions-item>
           <el-descriptions-item label="退款金额（元）">{{ formatMoney(detail.refundAmount) }}</el-descriptions-item>
@@ -155,11 +159,19 @@
           <el-descriptions-item label="备注">{{ valueText(detail.remark) }}</el-descriptions-item>
         </el-descriptions>
         <el-descriptions title="工作流进度" :column="2" border class="payment-refund-approvals__detail-block">
-          <el-descriptions-item label="流程实例">{{ valueText(detail.workflowProcessInstanceId) }}</el-descriptions-item>
-          <el-descriptions-item label="流程定义">{{ valueText(detail.workflowProcessDefinitionKey) }}</el-descriptions-item>
-          <el-descriptions-item label="工作流状态">{{ valueText(detail.workflowApplyStatusName || detail.workflowApplyStatus) }}</el-descriptions-item>
+          <el-descriptions-item label="流程实例">{{
+            valueText(detail.workflowProcessInstanceId)
+          }}</el-descriptions-item>
+          <el-descriptions-item label="流程定义">{{
+            valueText(detail.workflowProcessDefinitionKey)
+          }}</el-descriptions-item>
+          <el-descriptions-item label="工作流状态">{{
+            valueText(detail.workflowApplyStatusName || detail.workflowApplyStatus)
+          }}</el-descriptions-item>
           <el-descriptions-item label="当前节点">{{ valueText(detail.workflowCurrentTaskNames) }}</el-descriptions-item>
-          <el-descriptions-item label="当前处理人">{{ valueText(detail.workflowCurrentAssigneeNames) }}</el-descriptions-item>
+          <el-descriptions-item label="当前处理人">{{
+            valueText(detail.workflowCurrentAssigneeNames)
+          }}</el-descriptions-item>
           <el-descriptions-item label="同步时间">{{ valueText(detail.workflowSyncedAt) }}</el-descriptions-item>
         </el-descriptions>
         <el-descriptions title="关联订单" :column="2" border class="payment-refund-approvals__detail-block">
@@ -177,14 +189,14 @@
         </el-descriptions>
       </template>
       <el-empty v-else description="未查询到退款审批详情" />
-    </el-drawer>
-  </div>
+    </MangoSideDrawerShell>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts">
-import { Pagination } from '@mango/common';
+import { MangoListPage, MangoListPanel, MangoSearchPanel, MangoSideDrawerShell, Pagination } from '@mango/common';
 import { computed, onMounted, reactive, ref } from 'vue';
-import { Refresh, Search, Tickets } from '@element-plus/icons-vue';
+import { Refresh, Tickets } from '@element-plus/icons-vue';
 import {
   paymentRefundApprovalApi,
   type PaymentPageQuery,

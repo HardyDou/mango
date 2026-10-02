@@ -1,20 +1,9 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
-  <div class="payment-offline-collections">
-    <section class="payment-offline-collections__header">
-      <div>
-        <h3>线下收款</h3>
-        <p>查询线下转账收款单、批量导入银行流水、确认匹配到账和处理线下退款。</p>
-      </div>
-    </section>
-
-    <el-tabs v-model="activeTab" class="payment-offline-collections__tabs">
-      <el-tab-pane label="收款订单" name="collections" />
-      <el-tab-pane label="银行流水" name="bankStatements" />
-    </el-tabs>
-
-    <section class="payment-offline-collections__toolbar">
-      <el-form v-if="activeTab === 'collections'" :inline="true" :model="query">
-        <el-form-item label="关键字">
+  <MangoListPage class="payment-offline-collections" data-page="payment.offline-collections">
+    <template #search>
+      <MangoSearchPanel :model="activeTab === 'collections' ? query : bankStatementQuery" :columns="3">
+        <el-form-item v-if="activeTab === 'collections'" label="关键字">
           <el-input
             v-model="query.keyword"
             placeholder="收款单号 / 支付单号 / 业务单号 / 对账码 / 备注"
@@ -23,7 +12,7 @@
             @clear="loadRows"
           />
         </el-form-item>
-        <el-form-item label="收款状态">
+        <el-form-item v-if="activeTab === 'collections'" label="收款状态">
           <el-select v-model="query.statusCode" clearable placeholder="全部状态" @change="applyFilters">
             <el-option
               v-for="status in statusOptions"
@@ -33,13 +22,7 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item class="payment-offline-collections__filter-actions">
-          <el-button type="primary" :icon="Search" @click="loadRows">查询</el-button>
-          <el-button :icon="Refresh" @click="resetQuery">重置</el-button>
-        </el-form-item>
-      </el-form>
-      <el-form v-else :inline="true" :model="bankStatementQuery">
-        <el-form-item label="关键字">
+        <el-form-item v-if="activeTab !== 'collections'" label="关键字">
           <el-input
             v-model="bankStatementQuery.keyword"
             placeholder="批次号 / 文件名 / 摘要 / 导入人 / 账号"
@@ -48,8 +31,13 @@
             @clear="loadBankStatements"
           />
         </el-form-item>
-        <el-form-item label="批次状态">
-          <el-select v-model="bankStatementQuery.statusCode" clearable placeholder="全部状态" @change="applyBankStatementFilters">
+        <el-form-item v-if="activeTab !== 'collections'" label="批次状态">
+          <el-select
+            v-model="bankStatementQuery.statusCode"
+            clearable
+            placeholder="全部状态"
+            @change="applyBankStatementFilters"
+          >
             <el-option
               v-for="status in bankStatementStatusOptions"
               :key="status.code || status.statusCode"
@@ -58,194 +46,208 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item class="payment-offline-collections__filter-actions">
-          <el-button type="primary" :icon="Search" @click="loadBankStatements">查询</el-button>
-          <el-button :icon="Refresh" @click="resetBankStatementQuery">重置</el-button>
-          <el-upload
-            class="payment-offline-collections__upload"
-            :auto-upload="false"
-            :show-file-list="false"
-            accept=".xls,.xlsx"
-            :disabled="importingBankStatement"
-            :on-change="handleBankStatementFile"
+        <template #actions>
+          <el-button
+            type="primary"
+            :icon="Search"
+            @click="activeTab === 'collections' ? loadRows() : loadBankStatements()"
           >
-            <el-button type="success" :loading="importingBankStatement">导入银行流水</el-button>
-          </el-upload>
-        </el-form-item>
-      </el-form>
-    </section>
+            查询
+          </el-button>
+          <el-button :icon="Refresh" @click="activeTab === 'collections' ? resetQuery() : resetBankStatementQuery()">
+            重置
+          </el-button>
+        </template>
+      </MangoSearchPanel>
+    </template>
 
-    <el-alert
-      v-if="activeTab === 'collections' && errorMessage"
-      :title="errorMessage"
-      type="error"
-      show-icon
-      :closable="false"
-    >
-      <template #default>
-        <el-button link type="primary" :icon="Refresh" @click="loadRows">重新加载</el-button>
+    <MangoListPanel>
+      <template #header>
+        <el-tabs v-model="activeTab" class="payment-offline-collections__tabs">
+          <el-tab-pane label="收款订单" name="collections" />
+          <el-tab-pane label="银行流水" name="bankStatements" />
+        </el-tabs>
       </template>
-    </el-alert>
-    <el-alert
-      v-if="activeTab === 'bankStatements' && bankStatementErrorMessage"
-      :title="bankStatementErrorMessage"
-      type="error"
-      show-icon
-      :closable="false"
-    >
-      <template #default>
-        <el-button link type="primary" :icon="Refresh" @click="loadBankStatements">重新加载</el-button>
+
+      <template #actions>
+        <el-upload
+          v-if="activeTab === 'bankStatements'"
+          class="payment-offline-collections__upload"
+          :auto-upload="false"
+          :show-file-list="false"
+          accept=".xls,.xlsx"
+          :disabled="importingBankStatement"
+          :on-change="handleBankStatementFile"
+        >
+          <el-button type="success" :loading="importingBankStatement">导入银行流水</el-button>
+        </el-upload>
       </template>
-    </el-alert>
 
-    <el-table
-      v-if="activeTab === 'collections'"
-      :data="rows"
-      v-loading="loading"
-      row-key="id"
-      stripe
-      highlight-current-row
-      class="payment-offline-collections__table"
-    >
-      <template #empty>
-        <el-empty :description="emptyDescription" />
+      <el-alert
+        v-if="activeTab === 'collections' && errorMessage"
+        :title="errorMessage"
+        type="error"
+        show-icon
+        :closable="false"
+      >
+        <template #default>
+          <el-button link type="primary" :icon="Refresh" @click="loadRows">重新加载</el-button>
+        </template>
+      </el-alert>
+      <el-alert
+        v-if="activeTab === 'bankStatements' && bankStatementErrorMessage"
+        :title="bankStatementErrorMessage"
+        type="error"
+        show-icon
+        :closable="false"
+      >
+        <template #default>
+          <el-button link type="primary" :icon="Refresh" @click="loadBankStatements">重新加载</el-button>
+        </template>
+      </el-alert>
+
+      <el-table
+        v-if="activeTab === 'collections'"
+        v-loading="loading"
+        :data="rows"
+        row-key="id"
+        stripe
+        highlight-current-row
+        class="payment-offline-collections__table"
+      >
+        <template #empty>
+          <el-empty :description="emptyDescription" />
+        </template>
+        <el-table-column prop="offlineCollectionNo" label="线下收款单号" min-width="190" show-overflow-tooltip />
+        <el-table-column prop="payOrderNo" label="支付订单号" min-width="190" show-overflow-tooltip />
+        <el-table-column prop="bizOrderNo" label="业务订单号" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="subjectName" label="收款主体" min-width="160" show-overflow-tooltip />
+        <el-table-column label="收款金额（元）" width="120" align="right">
+          <template #default="{ row }">
+            <span>{{ formatMoney(row.amount) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="reconciliationCode" label="对账码" min-width="130" show-overflow-tooltip />
+        <el-table-column prop="transferRemark" label="转账备注" min-width="180" show-overflow-tooltip />
+        <el-table-column label="收款状态" width="140">
+          <template #default="{ row }">
+            <el-tag :type="statusTagType(row.collectionStatus)" effect="light">
+              {{ row.collectionStatusName || row.collectionStatus || '-' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="凭证" width="88" align="right">
+          <template #default="{ row }">
+            <span>{{ row.voucherCount ?? 0 }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="expireTime" label="过期时间" width="170" show-overflow-tooltip />
+        <el-table-column prop="updateTime" label="更新时间" width="170" show-overflow-tooltip />
+        <el-table-column label="操作" width="236" fixed="right" align="left" class-name="payment-table__operation-cell">
+          <template #default="{ row }">
+            <div class="payment-table__actions payment-offline-collections__row-actions">
+              <el-tooltip :disabled="canConfirmCollection(row)" :content="confirmDisabledReason(row)" placement="top">
+                <span class="payment-offline-collections__action">
+                  <el-button
+                    link
+                    type="success"
+                    :icon="Check"
+                    :disabled="!canConfirmCollection(row)"
+                    @click="openConfirm(row)"
+                  >
+                    确认到账
+                  </el-button>
+                </span>
+              </el-tooltip>
+              <el-tooltip :disabled="canRefundCollection(row)" :content="refundDisabledReason(row)" placement="top">
+                <span class="payment-offline-collections__action">
+                  <el-button
+                    link
+                    type="warning"
+                    :icon="RefreshLeft"
+                    :disabled="!canRefundCollection(row)"
+                    @click="openRefund(row)"
+                  >
+                    退款
+                  </el-button>
+                </span>
+              </el-tooltip>
+              <el-button link type="primary" :icon="Tickets" @click="openDetail(row)">详情</el-button>
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <el-table
+        v-else
+        v-loading="bankStatementLoading"
+        :data="bankStatementRows"
+        row-key="id"
+        stripe
+        highlight-current-row
+        class="payment-offline-collections__table"
+      >
+        <template #empty>
+          <el-empty :description="bankStatementEmptyDescription" />
+        </template>
+        <el-table-column prop="batchNo" label="导入批次号" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="statementFileName" label="文件名" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="bankAccountNoMask" label="收款账号" min-width="150" show-overflow-tooltip />
+        <el-table-column label="总笔数" width="90" align="right">
+          <template #default="{ row }">{{ row.totalCount ?? 0 }}</template>
+        </el-table-column>
+        <el-table-column label="匹配" width="90" align="right">
+          <template #default="{ row }">{{ row.matchedCount ?? 0 }}</template>
+        </el-table-column>
+        <el-table-column label="已确认" width="90" align="right">
+          <template #default="{ row }">{{ row.confirmedCount ?? 0 }}</template>
+        </el-table-column>
+        <el-table-column label="差异" width="90" align="right">
+          <template #default="{ row }">{{ row.differenceCount ?? 0 }}</template>
+        </el-table-column>
+        <el-table-column label="批次状态" width="120">
+          <template #default="{ row }">
+            <el-tag :type="bankStatementStatusTagType(row.batchStatus)" effect="light">
+              {{ row.batchStatusName || row.batchStatus || '-' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="importerName" label="导入人" width="120" show-overflow-tooltip />
+        <el-table-column prop="importTime" label="导入时间" width="170" show-overflow-tooltip />
+        <el-table-column label="操作" width="104" fixed="right" align="left" class-name="payment-table__operation-cell">
+          <template #default="{ row }">
+            <div class="payment-table__actions">
+              <el-button link type="primary" :icon="Tickets" @click="openBankStatementDetail(row)">详情</el-button>
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <template #pagination>
+        <Pagination
+          v-if="activeTab === 'collections'"
+          v-model:page="query.pageNum"
+          v-model:limit="query.pageSize"
+          :total="total"
+          @pagination="loadRows"
+        />
+        <Pagination
+          v-else
+          v-model:page="bankStatementQuery.pageNum"
+          v-model:limit="bankStatementQuery.pageSize"
+          :total="bankStatementTotal"
+          @pagination="loadBankStatements"
+        />
       </template>
-      <el-table-column prop="offlineCollectionNo" label="线下收款单号" min-width="190" show-overflow-tooltip />
-      <el-table-column prop="payOrderNo" label="支付订单号" min-width="190" show-overflow-tooltip />
-      <el-table-column prop="bizOrderNo" label="业务订单号" min-width="180" show-overflow-tooltip />
-      <el-table-column prop="subjectName" label="收款主体" min-width="160" show-overflow-tooltip />
-      <el-table-column label="收款金额（元）" width="120" align="right">
-        <template #default="{ row }">
-          <span>{{ formatMoney(row.amount) }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column prop="reconciliationCode" label="对账码" min-width="130" show-overflow-tooltip />
-      <el-table-column prop="transferRemark" label="转账备注" min-width="180" show-overflow-tooltip />
-      <el-table-column label="收款状态" width="140">
-        <template #default="{ row }">
-          <el-tag :type="statusTagType(row.collectionStatus)" effect="light">
-            {{ row.collectionStatusName || row.collectionStatus || '-' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="凭证" width="88" align="right">
-        <template #default="{ row }">
-          <span>{{ row.voucherCount ?? 0 }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column prop="expireTime" label="过期时间" width="170" show-overflow-tooltip />
-      <el-table-column prop="updateTime" label="更新时间" width="170" show-overflow-tooltip />
-      <el-table-column label="操作" width="236" fixed="right" align="left" class-name="payment-table__operation-cell">
-        <template #default="{ row }">
-          <div class="payment-table__actions payment-offline-collections__row-actions">
-            <el-tooltip
-              :disabled="canConfirmCollection(row)"
-              :content="confirmDisabledReason(row)"
-              placement="top"
-            >
-              <span class="payment-offline-collections__action">
-                <el-button
-                  link
-                  type="success"
-                  :icon="Check"
-                  :disabled="!canConfirmCollection(row)"
-                  @click="openConfirm(row)"
-                >
-                  确认到账
-                </el-button>
-              </span>
-            </el-tooltip>
-            <el-tooltip
-              :disabled="canRefundCollection(row)"
-              :content="refundDisabledReason(row)"
-              placement="top"
-            >
-              <span class="payment-offline-collections__action">
-                <el-button
-                  link
-                  type="warning"
-                  :icon="RefreshLeft"
-                  :disabled="!canRefundCollection(row)"
-                  @click="openRefund(row)"
-                >
-                  退款
-                </el-button>
-              </span>
-            </el-tooltip>
-            <el-button link type="primary" :icon="Tickets" @click="openDetail(row)">详情</el-button>
-          </div>
-        </template>
-      </el-table-column>
-    </el-table>
+    </MangoListPanel>
 
-    <el-table
-      v-else
-      :data="bankStatementRows"
-      v-loading="bankStatementLoading"
-      row-key="id"
-      stripe
-      highlight-current-row
-      class="payment-offline-collections__table"
-    >
-      <template #empty>
-        <el-empty :description="bankStatementEmptyDescription" />
-      </template>
-      <el-table-column prop="batchNo" label="导入批次号" min-width="180" show-overflow-tooltip />
-      <el-table-column prop="statementFileName" label="文件名" min-width="180" show-overflow-tooltip />
-      <el-table-column prop="bankAccountNoMask" label="收款账号" min-width="150" show-overflow-tooltip />
-      <el-table-column label="总笔数" width="90" align="right">
-        <template #default="{ row }">{{ row.totalCount ?? 0 }}</template>
-      </el-table-column>
-      <el-table-column label="匹配" width="90" align="right">
-        <template #default="{ row }">{{ row.matchedCount ?? 0 }}</template>
-      </el-table-column>
-      <el-table-column label="已确认" width="90" align="right">
-        <template #default="{ row }">{{ row.confirmedCount ?? 0 }}</template>
-      </el-table-column>
-      <el-table-column label="差异" width="90" align="right">
-        <template #default="{ row }">{{ row.differenceCount ?? 0 }}</template>
-      </el-table-column>
-      <el-table-column label="批次状态" width="120">
-        <template #default="{ row }">
-          <el-tag :type="bankStatementStatusTagType(row.batchStatus)" effect="light">
-            {{ row.batchStatusName || row.batchStatus || '-' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="importerName" label="导入人" width="120" show-overflow-tooltip />
-      <el-table-column prop="importTime" label="导入时间" width="170" show-overflow-tooltip />
-      <el-table-column label="操作" width="104" fixed="right" align="left" class-name="payment-table__operation-cell">
-        <template #default="{ row }">
-          <div class="payment-table__actions">
-            <el-button link type="primary" :icon="Tickets" @click="openBankStatementDetail(row)">详情</el-button>
-          </div>
-        </template>
-      </el-table-column>
-    </el-table>
-
-    <div v-if="activeTab === 'collections'" class="payment-offline-collections__pagination">
-      <Pagination
-        v-model:current-page="query.pageNum"
-        v-model:page-size="query.pageSize"
-        :total="total"
-        @change="loadRows"
-      />
-    </div>
-    <div v-else class="payment-offline-collections__pagination">
-      <Pagination
-        v-model:current-page="bankStatementQuery.pageNum"
-        v-model:page-size="bankStatementQuery.pageSize"
-        :total="bankStatementTotal"
-        @change="loadBankStatements"
-      />
-    </div>
-
-    <el-drawer
+    <MangoSideDrawerShell
       v-model="detailVisible"
       title="线下收款详情"
-      size="780px"
-      destroy-on-close
-      append-to-body
+      drawer-size="780px"
+      :destroy-on-close="true"
+      :show-trigger="false"
+      data-surface="payment.offline-collection.detail"
       class="payment-offline-collections__drawer"
     >
       <el-skeleton v-if="detailLoading" :rows="10" animated />
@@ -265,8 +267,12 @@
           <el-descriptions-item label="币种">{{ valueText(detail.currency) }}</el-descriptions-item>
           <el-descriptions-item label="对账码">{{ valueText(detail.reconciliationCode) }}</el-descriptions-item>
           <el-descriptions-item label="转账备注">{{ valueText(detail.transferRemark) }}</el-descriptions-item>
-          <el-descriptions-item label="提交转账金额（元）">{{ formatMoney(detail.transferAmount) }}</el-descriptions-item>
-          <el-descriptions-item label="确认到账金额（元）">{{ formatMoney(detail.confirmedAmount) }}</el-descriptions-item>
+          <el-descriptions-item label="提交转账金额（元）">{{
+            formatMoney(detail.transferAmount)
+          }}</el-descriptions-item>
+          <el-descriptions-item label="确认到账金额（元）">{{
+            formatMoney(detail.confirmedAmount)
+          }}</el-descriptions-item>
           <el-descriptions-item label="转账凭证">{{ valueText(detail.voucherFileIds) }}</el-descriptions-item>
           <el-descriptions-item label="提交说明">{{ valueText(detail.submitRemark) }}</el-descriptions-item>
         </el-descriptions>
@@ -288,15 +294,23 @@
           <el-descriptions-item label="过期时间">{{ valueText(detail.expireTime) }}</el-descriptions-item>
           <el-descriptions-item label="提交凭证时间">{{ valueText(detail.submittedTime) }}</el-descriptions-item>
           <el-descriptions-item label="确认到账时间">{{ valueText(detail.confirmedTime) }}</el-descriptions-item>
-          <el-descriptions-item label="确认人">{{ valueText(detail.confirmedByName || detail.confirmedBy) }}</el-descriptions-item>
+          <el-descriptions-item label="确认人">{{
+            valueText(detail.confirmedByName || detail.confirmedBy)
+          }}</el-descriptions-item>
           <el-descriptions-item label="确认说明">{{ valueText(detail.confirmRemark) }}</el-descriptions-item>
         </el-descriptions>
       </template>
       <el-empty v-else description="未查询到线下收款详情" />
-    </el-drawer>
+    </MangoSideDrawerShell>
 
     <el-dialog v-model="confirmVisible" title="确认线下收款到账" width="520px" destroy-on-close append-to-body>
-      <el-form ref="confirmFormRef" :model="confirmForm" :rules="confirmRules" label-width="112px" class="payment-dialog-form">
+      <el-form
+        ref="confirmFormRef"
+        :model="confirmForm"
+        :rules="confirmRules"
+        label-width="112px"
+        class="payment-dialog-form"
+      >
         <section class="payment-form-section">
           <h4 class="payment-form-section__title">收款摘要</h4>
           <div class="payment-form-grid">
@@ -304,7 +318,9 @@
               <span class="payment-form-readonly">{{ currentRow?.offlineCollectionNo || '-' }}</span>
             </el-form-item>
             <el-form-item label="应收金额（元）">
-              <span class="payment-form-readonly payment-form-readonly--strong">{{ formatMoney(currentRow?.amount) }}</span>
+              <span class="payment-form-readonly payment-form-readonly--strong">{{
+                formatMoney(currentRow?.amount)
+              }}</span>
             </el-form-item>
             <el-form-item label="提交金额（元）">
               <span class="payment-form-readonly">{{ formatMoney(currentRow?.transferAmount) }}</span>
@@ -333,7 +349,13 @@
     </el-dialog>
 
     <el-dialog v-model="refundVisible" title="创建线下退款" width="640px" destroy-on-close append-to-body>
-      <el-form ref="refundFormRef" :model="refundForm" :rules="refundRules" label-width="112px" class="payment-dialog-form">
+      <el-form
+        ref="refundFormRef"
+        :model="refundForm"
+        :rules="refundRules"
+        label-width="112px"
+        class="payment-dialog-form"
+      >
         <section class="payment-form-section">
           <h4 class="payment-form-section__title">原收款信息</h4>
           <div class="payment-form-grid">
@@ -341,7 +363,9 @@
               <span class="payment-form-readonly">{{ currentRow?.offlineCollectionNo || '-' }}</span>
             </el-form-item>
             <el-form-item label="已收金额（元）">
-              <span class="payment-form-readonly payment-form-readonly--strong">{{ formatMoney(currentRow?.confirmedAmount || currentRow?.amount) }}</span>
+              <span class="payment-form-readonly payment-form-readonly--strong">{{
+                formatMoney(currentRow?.confirmedAmount || currentRow?.amount)
+              }}</span>
             </el-form-item>
           </div>
         </section>
@@ -391,12 +415,13 @@
       </template>
     </el-dialog>
 
-    <el-drawer
+    <MangoSideDrawerShell
       v-model="bankStatementDetailVisible"
       title="银行流水导入详情"
-      size="980px"
-      destroy-on-close
-      append-to-body
+      drawer-size="980px"
+      :destroy-on-close="true"
+      :show-trigger="false"
+      data-surface="payment.bank-statement.detail"
       class="payment-offline-collections__drawer"
     >
       <el-skeleton v-if="bankStatementDetailLoading" :rows="10" animated />
@@ -408,11 +433,14 @@
               {{ bankStatementDetail.batchStatusName || bankStatementDetail.batchStatus || '-' }}
             </el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="文件名">{{ valueText(bankStatementDetail.statementFileName) }}</el-descriptions-item>
+          <el-descriptions-item label="文件名">{{
+            valueText(bankStatementDetail.statementFileName)
+          }}</el-descriptions-item>
           <el-descriptions-item label="文件摘要">{{ valueText(bankStatementDetail.fileDigest) }}</el-descriptions-item>
           <el-descriptions-item label="总笔数">{{ bankStatementDetail.totalCount ?? 0 }}</el-descriptions-item>
           <el-descriptions-item label="匹配/确认/差异">
-            {{ bankStatementDetail.matchedCount ?? 0 }} / {{ bankStatementDetail.confirmedCount ?? 0 }} / {{ bankStatementDetail.differenceCount ?? 0 }}
+            {{ bankStatementDetail.matchedCount ?? 0 }} / {{ bankStatementDetail.confirmedCount ?? 0 }} /
+            {{ bankStatementDetail.differenceCount ?? 0 }}
           </el-descriptions-item>
           <el-descriptions-item label="导入人">{{ valueText(bankStatementDetail.importerName) }}</el-descriptions-item>
           <el-descriptions-item label="导入时间">{{ valueText(bankStatementDetail.importTime) }}</el-descriptions-item>
@@ -456,9 +484,15 @@
         </el-table>
       </template>
       <el-empty v-else description="未查询到银行流水批次详情" />
-    </el-drawer>
+    </MangoSideDrawerShell>
 
-    <el-dialog v-model="bankStatementConfirmVisible" title="确认银行流水匹配到账" width="520px" destroy-on-close append-to-body>
+    <el-dialog
+      v-model="bankStatementConfirmVisible"
+      title="确认银行流水匹配到账"
+      width="520px"
+      destroy-on-close
+      append-to-body
+    >
       <el-form label-width="112px" class="payment-dialog-form">
         <el-form-item label="确认笔数">
           <span>{{ selectedBankStatementItemIds.length }}</span>
@@ -469,14 +503,16 @@
       </el-form>
       <template #footer>
         <el-button @click="bankStatementConfirmVisible = false">取消</el-button>
-        <el-button type="primary" :loading="confirmingBankStatements" @click="submitBankStatementConfirm">确认到账</el-button>
+        <el-button type="primary" :loading="confirmingBankStatements" @click="submitBankStatementConfirm"
+          >确认到账</el-button
+        >
       </template>
     </el-dialog>
-  </div>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts">
-import { Pagination } from '@mango/common';
+import { MangoListPage, MangoListPanel, MangoSearchPanel, MangoSideDrawerShell, Pagination } from '@mango/common';
 import { computed, onMounted, reactive, ref } from 'vue';
 import { Check, Refresh, RefreshLeft, Search, Tickets } from '@element-plus/icons-vue';
 import type { FormInstance, FormRules, UploadFile } from 'element-plus';
@@ -564,7 +600,9 @@ const emptyDescription = computed(() => {
 });
 const bankStatementEmptyDescription = computed(() => {
   if (bankStatementErrorMessage.value) return '银行流水加载失败';
-  return bankStatementQuery.keyword || bankStatementQuery.statusCode ? '未查询到匹配的银行流水批次' : '暂未导入银行流水';
+  return bankStatementQuery.keyword || bankStatementQuery.statusCode
+    ? '未查询到匹配的银行流水批次'
+    : '暂未导入银行流水';
 });
 
 onMounted(async () => {
@@ -767,8 +805,8 @@ async function handleBankStatementFile(uploadFile: UploadFile) {
 
 function handleBankStatementSelection(items: PaymentOfflineBankStatementItem[]) {
   selectedBankStatementItemIds.value = items
-    .filter(item => item.id && item.matchStatus === 'MATCHED_PENDING_CONFIRM')
-    .map(item => String(item.id));
+    .filter((item) => item.id && item.matchStatus === 'MATCHED_PENDING_CONFIRM')
+    .map((item) => String(item.id));
 }
 
 function isBankStatementSelectable(row: PaymentOfflineBankStatementItem) {
@@ -867,5 +905,4 @@ function yuanToCents(value: number) {
   align-items: center;
   line-height: 1;
 }
-
 </style>

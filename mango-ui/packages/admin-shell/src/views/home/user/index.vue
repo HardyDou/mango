@@ -1,15 +1,9 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
-  <section class="home-user-page" data-page="home.user" :data-state="pageState">
-    <section class="job-toolbar" data-surface="home.user.search">
-      <div class="job-toolbar-head">
-        <div>
-          <h2>用户首页</h2>
-          <p>选择用户后查看该用户真实可见首页。</p>
-        </div>
-      </div>
-
-      <el-form ref="queryFormRef" :model="query" class="job-search" inline @submit.prevent>
-        <el-form-item label="用户 ID" prop="userId" class="job-search-item">
+  <MangoListPage class="home-user-page" data-page="home.user" :data-state="pageState">
+    <template #search>
+      <MangoSearchPanel :model="query" data-surface="home.user.search" @search="loadUserHomePages" @reset="resetQuery">
+        <el-form-item label="用户 ID">
           <el-input
             v-model="query.userId"
             clearable
@@ -18,7 +12,7 @@
             @keyup.enter="loadUserHomePages"
           />
         </el-form-item>
-        <el-form-item label="选择用户" class="job-search-item job-search-item-wide">
+        <el-form-item label="选择用户">
           <el-select
             v-model="selectedUserId"
             filterable
@@ -33,15 +27,10 @@
             data-field="home.user.selector"
             @change="handleUserSelect"
           >
-            <el-option
-              v-for="item in userOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
+            <el-option v-for="item in userOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
-        <el-form-item label="成员 ID" prop="memberId" class="job-search-item">
+        <el-form-item label="成员 ID">
           <el-input
             v-model="query.memberId"
             clearable
@@ -50,7 +39,7 @@
             @keyup.enter="loadUserHomePages"
           />
         </el-form-item>
-        <el-form-item label="部门 ID" prop="orgId" class="job-search-item">
+        <el-form-item label="部门 ID">
           <el-input
             v-model="query.orgId"
             clearable
@@ -59,7 +48,7 @@
             @keyup.enter="loadUserHomePages"
           />
         </el-form-item>
-        <el-form-item class="job-search-actions home-job-search-actions">
+        <template #actions>
           <el-button
             v-auth="'home:user:view'"
             type="primary"
@@ -71,11 +60,11 @@
             查看
           </el-button>
           <el-button :icon="RefreshLeft" data-action="home.user.reset" @click="resetQuery">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </section>
+        </template>
+      </MangoSearchPanel>
+    </template>
 
-    <section v-loading="loading" class="home-user-panel" data-surface="home.user.preview">
+    <MangoListPanel v-loading="loading" data-surface="home.user.preview">
       <el-alert v-if="errorMessage" class="home-user-error" type="error" :closable="false" show-icon>
         <template #title>
           {{ errorMessage }}
@@ -89,12 +78,7 @@
       <div v-else class="home-container home-user-workbench">
         <section class="home-page-bar" data-surface="home.user.page-switcher">
           <div class="home-page-bar__main">
-            <div
-              class="home-page-tabs"
-              data-surface="home.user.tabs"
-              role="tablist"
-              aria-label="用户首页切换"
-            >
+            <div class="home-page-tabs" data-surface="home.user.tabs" role="tablist" aria-label="用户首页切换">
               <button
                 v-for="item in pages"
                 :key="pageRouteKey(item)"
@@ -107,15 +91,21 @@
                 @click="selectedRouteKey = pageRouteKey(item)"
               >
                 <el-tooltip v-if="item.defaultPage" content="默认首页" placement="bottom">
-                  <el-icon class="home-page-tabs__home-icon" data-field="home.user.default-indicator"><House /></el-icon>
+                  <el-icon class="home-page-tabs__home-icon" data-field="home.user.default-indicator"
+                    ><House
+                  /></el-icon>
                 </el-tooltip>
                 <span class="home-page-tabs__name">{{ item.name }}</span>
                 <el-tag v-if="item.builtIn" class="home-page-tabs__tag" type="info" effect="light" round>内置</el-tag>
-                <el-tag v-else-if="item.readOnly" class="home-page-tabs__tag" type="success" effect="light" round>授权</el-tag>
+                <el-tag v-else-if="item.readOnly" class="home-page-tabs__tag" type="success" effect="light" round
+                  >授权</el-tag
+                >
               </button>
             </div>
             <el-tag v-if="currentPage?.builtIn" type="info" effect="light">内置</el-tag>
-            <el-tag v-else-if="currentPage?.readOnly" type="success" effect="light">{{ currentPage.sourceLabel || '授权首页' }}</el-tag>
+            <el-tag v-else-if="currentPage?.readOnly" type="success" effect="light">{{
+              currentPage.sourceLabel || '授权首页'
+            }}</el-tag>
           </div>
         </section>
 
@@ -128,8 +118,8 @@
           data-surface="home.user.layout"
         />
       </div>
-    </section>
-  </section>
+    </MangoListPanel>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts" name="HomeUserPage">
@@ -137,7 +127,7 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRouter, type LocationQueryRaw } from 'vue-router';
 import { House, RefreshLeft, View } from '@element-plus/icons-vue';
-import type { FormInstance } from 'element-plus';
+import { MangoListPage, MangoListPanel, MangoSearchPanel } from '@mango/common';
 import { homeOptionApi, homeTemplateApi, type HomePageVO, type HomeUserOptionVO } from '@mango/home';
 import { MangoGridLayout, parseGridLayoutValue, type GridLayoutItem } from '@mango/grid-layout';
 import { mergeGridWidgets, systemGridWidgets } from '@mango/grid-widgets';
@@ -161,7 +151,6 @@ const userInfo = useUserInfo();
 const routesListStore = useRoutesList();
 const { routesList } = storeToRefs(routesListStore);
 const businessHomeWidgets = useMangoAdminHomeWidgets();
-const queryFormRef = ref<FormInstance>();
 const loading = ref(false);
 const loaded = ref(false);
 const userLoading = ref(false);
@@ -182,7 +171,9 @@ const pageState = computed(() => {
   if (!loaded.value) return 'idle';
   return pages.value.length ? 'ready' : 'empty';
 });
-const currentPage = computed(() => pages.value.find(item => pageRouteKey(item) === selectedRouteKey.value) || pages.value[0]);
+const currentPage = computed(
+  () => pages.value.find((item) => pageRouteKey(item) === selectedRouteKey.value) || pages.value[0],
+);
 const currentLayoutItems = computed(() => resolveLayoutItems(currentPage.value?.layoutJson));
 const widgetRuntime = computed<MangoWidgetRuntimeContext>(() => ({
   pageCode: PAGE_CODE,
@@ -193,10 +184,9 @@ const widgetRuntime = computed<MangoWidgetRuntimeContext>(() => ({
     nickname: userInfo.userInfos.nickname,
     avatar: userInfo.userInfos.photo,
     roles: userInfo.userInfos.roles,
-    permissions: Array.from(new Set([
-      ...(userInfo.userInfos.permissions || []),
-      ...(userInfo.userInfos.authBtnList || []),
-    ])),
+    permissions: Array.from(
+      new Set([...(userInfo.userInfos.permissions || []), ...(userInfo.userInfos.authBtnList || [])]),
+    ),
     appCode: userInfo.userInfos.appCode,
   },
   tenant: {
@@ -207,14 +197,16 @@ const widgetRuntime = computed<MangoWidgetRuntimeContext>(() => ({
   menus: routesList.value,
   navigate: navigateWidget,
 }));
-const workbenchWidgets = computed(() => mergeGridWidgets({
-  runtime: widgetRuntime.value,
-  systemWidgets: systemGridWidgets,
-  businessWidgets: businessHomeWidgets.value,
-}));
+const workbenchWidgets = computed(() =>
+  mergeGridWidgets({
+    runtime: widgetRuntime.value,
+    systemWidgets: systemGridWidgets,
+    businessWidgets: businessHomeWidgets.value,
+  }),
+);
 
 onMounted(async () => {
-  await ensureFeatureRegistrars().catch(error => {
+  await ensureFeatureRegistrars().catch((error) => {
     console.error('[mango-shell] failed to register shell features', error);
   });
   await searchUsers('');
@@ -234,9 +226,9 @@ async function loadUserHomePages(): Promise<void> {
       memberId: normalizeText(query.memberId),
       orgId: normalizeText(query.orgId),
     });
-    selectedRouteKey.value = pageRouteKey(pages.value.find(item => item.defaultPage) || pages.value[0]);
+    selectedRouteKey.value = pageRouteKey(pages.value.find((item) => item.defaultPage) || pages.value[0]);
     loaded.value = true;
-  } catch (error) {
+  } catch {
     pages.value = [];
     selectedRouteKey.value = '';
     errorMessage.value = '用户首页加载失败，请稍后重试。';
@@ -254,7 +246,6 @@ function resetQuery(): void {
   selectedRouteKey.value = '';
   loaded.value = false;
   errorMessage.value = '';
-  queryFormRef.value?.clearValidate();
 }
 
 async function searchUsers(keyword: string): Promise<void> {
@@ -264,10 +255,8 @@ async function searchUsers(keyword: string): Promise<void> {
       size: 50,
       keyword: normalizeText(keyword),
     });
-    userOptions.value = response
-      .map(toUserOption)
-      .filter((item): item is UserOption => Boolean(item));
-  } catch (error) {
+    userOptions.value = response.map(toUserOption).filter((item): item is UserOption => Boolean(item));
+  } catch {
     userOptions.value = [];
   } finally {
     userLoading.value = false;
@@ -279,7 +268,7 @@ function handleUserSelect(value: string): void {
     return;
   }
   query.userId = value;
-  const selected = userOptions.value.find(item => item.value === value);
+  const selected = userOptions.value.find((item) => item.value === value);
   if (selected?.memberId && !query.memberId) {
     query.memberId = selected.memberId;
   }
@@ -338,29 +327,6 @@ function resolveWidgetQuery(raw: unknown): LocationQueryRaw | undefined {
 </script>
 
 <style scoped>
-.home-user-page {
-  display: flex;
-  min-height: 100%;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.home-user-panel {
-  border: 1px solid var(--el-border-color-light);
-  border-radius: 8px;
-  background: var(--el-bg-color);
-  box-shadow: var(--el-box-shadow-light);
-}
-
-.home-job-search-actions {
-  margin-left: auto;
-}
-
-.home-user-panel {
-  padding: 16px 18px 14px;
-  overflow: hidden;
-}
-
 .home-user-error {
   margin-bottom: 12px;
 }
@@ -421,7 +387,10 @@ function resolveWidgetQuery(raw: unknown): LocationQueryRaw | undefined {
   background: transparent;
   border: 0;
   border-radius: 6px;
-  transition: color 0.16s ease, background-color 0.16s ease, box-shadow 0.16s ease;
+  transition:
+    color 0.16s ease,
+    background-color 0.16s ease,
+    box-shadow 0.16s ease;
 }
 
 .home-page-tabs__item:hover {
@@ -468,10 +437,6 @@ function resolveWidgetQuery(raw: unknown): LocationQueryRaw | undefined {
   .home-page-tabs {
     width: 100%;
     max-width: 100%;
-  }
-
-  .home-user-panel {
-    padding: 12px;
   }
 }
 </style>

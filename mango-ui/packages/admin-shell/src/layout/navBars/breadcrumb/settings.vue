@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
   <div v-if="embedded" class="layout-theme-page">
     <el-scrollbar class="layout-breadcrumb-settings-bar">
@@ -585,7 +586,9 @@ const handleMobileResize = (res: { isMobile: boolean; windowWidth: number; layou
 }
 
 .layout-theme-page {
-  width: min(100%, 760px);
+  width: 100%;
+  max-width: 820px;
+  margin: 0 auto;
 
   :deep(.el-scrollbar__wrap) {
     overflow: visible;
@@ -604,6 +607,8 @@ const handleMobileResize = (res: { isMobile: boolean; windowWidth: number; layou
   display: flex;
   align-items: center;
   justify-content: space-between;
+  width: 100%;
+  max-width: 680px;
   margin-bottom: 5px;
 
   .layout-settings-label {
@@ -622,19 +627,21 @@ const handleMobileResize = (res: { isMobile: boolean; windowWidth: number; layou
 }
 
 .layout-drawer-content-flex {
-  overflow: hidden;
-  display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
-  margin: 0 -5px;
+  display: grid;
+  grid-template-columns: repeat(4, 171px);
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
 
   .layout-drawer-content-item {
-    width: 50%;
-    height: 70px;
+    position: relative;
+    width: 171px;
+    height: 96px;
+    padding: 5px;
     cursor: pointer;
     border: 1px solid transparent;
-    position: relative;
-    padding: 5px;
+    border-radius: 4px;
+    background-color: var(--el-fill-color-light);
 
     .el-container {
       height: 100%;
@@ -730,5 +737,25 @@ const handleMobileResize = (res: { isMobile: boolean; windowWidth: number; layou
 
 :deep(.el-divider--horizontal) {
   margin: 16px 0;
+}
+
+@media (max-width: 520px) {
+  .layout-theme-page {
+    max-width: 100%;
+  }
+
+  .layout-drawer-content-flex {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    .layout-drawer-content-item {
+      width: auto;
+      height: auto;
+      aspect-ratio: 16 / 9;
+    }
+  }
+
+  .layout-settings-item {
+    max-width: 100%;
+  }
 }
 </style>
