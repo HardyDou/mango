@@ -82,7 +82,8 @@ function read(relativePath) {
 function gitOutput(args) {
   return execFileSync('git', args, {
     cwd: root,
-    encoding: 'utf8'
+    encoding: 'utf8',
+    maxBuffer: 64 * 1024 * 1024
   });
 }
 
