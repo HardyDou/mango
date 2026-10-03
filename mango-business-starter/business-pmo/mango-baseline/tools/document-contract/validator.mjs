@@ -21,6 +21,7 @@ const UPSTREAM_DOCUMENT_PREFIX = {
   'system-requirements': 'SRS',
   'technical-design': 'TDD'
 };
+const TEMPLATE_GUIDANCE_SECTION_TITLES = new Set(['使用合同与最小填写方式']);
 
 function addFinding(findings, ruleId, message, line = null) {
   findings.push({ severity: 'FAIL', ruleId, message, ...(line ? { line } : {}) });
@@ -195,13 +196,27 @@ function validateStructure(ast, contract, findings) {
 
   const actualTitles = ast.sections.map((section) => section.logicalTitle);
   const expectedTitles = contract.sections.map((section) => section.title);
+  const guidanceSections = ast.sections.filter((section) =>
+    TEMPLATE_GUIDANCE_SECTION_TITLES.has(section.logicalTitle));
+  if (guidanceSections.length > 1) {
+    addFinding(findings, contract.metadata.ruleId, '模板说明章节只能出现一次');
+  }
+  const firstContractSectionLine = ast.sections
+    .filter((section) => expectedTitles.includes(section.logicalTitle))
+    .map((section) => section.line)[0];
+  for (const section of guidanceSections) {
+    if (firstContractSectionLine !== undefined && section.line > firstContractSectionLine) {
+      addFinding(findings, contract.metadata.ruleId, '模板说明章节必须位于合同章节之前', section.line);
+    }
+  }
   for (const sectionSpec of contract.sections) {
     const matches = ast.sections.filter((section) => section.logicalTitle === sectionSpec.title);
     if (matches.length === 0) addFinding(findings, sectionSpec.ruleId, `缺少章节：${sectionSpec.title}`);
     if (matches.length > 1) addFinding(findings, sectionSpec.ruleId, `章节重复：${sectionSpec.title}`);
   }
   for (const section of ast.sections) {
-    if (!expectedTitles.includes(section.logicalTitle)) {
+    if (!expectedTitles.includes(section.logicalTitle)
+        && !TEMPLATE_GUIDANCE_SECTION_TITLES.has(section.logicalTitle)) {
       addFinding(findings, contract.metadata.ruleId, `出现合同未定义的 H2 章节：${section.logicalTitle}`, section.line);
     }
   }
