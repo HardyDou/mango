@@ -1,36 +1,6 @@
-# 租户字典配置为空排障
+# 租户字典配置为空排障：历史变更索引
 
-> 本次仅补充真实用户组织关系展示，不改变租户、字典、系统配置数据及其查询 API、权限和隔离边界；本指南空数据排障步骤无需调整。
-
-> Issue #943 确定性修复只调整 `ORG_MEMBER_BINDING` 新建关系的主键来源，并为内置 admin 根组织关系声明固定 `targetId`；不修改租户、字典或系统配置数据及其查询 API、权限和隔离边界。本指南的空数据排障步骤保持不变；管理员组织归属异常时仍应核对该 Resource 声明、Handler 同步结果和 `tenant_member_org` 关系。
-
-> 个人中心修改密码 404 修复不改变租户、字典或系统配置的初始化、权限和 API 合同；本场景排障步骤不受影响。具体改密接口和真实 HTTP 验证记录见 [个人中心修改密码交付记录](../../evidence/profile-password-404/standard-delivery-record.md)。
-
-> Issue #934：仅修复系统公共 API Resource 的运行时声明版本，不新增或修改租户、字典、系统配置数据，也不改变本指南排障步骤。
-
-> Issue #918 影响说明（2026-09-02）：默认 demo 精简为单一“芒果集团”租户及其组织树，但内部租户隔离、字典/配置 API、Resource 初始化边界和本指南排障路径保持不变。清库后仍应先核对 Resource 同步、当前 tenantId 和数据权限，不要通过关闭租户隔离补数据。
-
-> 2026-09-01 Issue #919：Identity V5 只新增 `tenant_member_lifecycle_log` 保存 2026-09-01 起的成员创建、移出和恢复事件，不回填历史物理删除数据；不修改租户、字典、系统配置或 Resource 初始化数据，也不改变这些基础数据的查询 API 和隔离边界。成员被移出后，数据库仍保留 `identity_user` 和 `tenant_member`，恢复入口只重用原身份并创建本次明确选择的部门关系；租户字典或配置为空仍按本指南检查 Bootstrap、Resource 和租户上下文。
-
-> 2026-09-01 Issue #909：用户管理按当前租户查询全部成员或所选组织本级及下级成员，并在组织内新增账号或添加已有租户成员；不新增 migration，不修改租户、字典、系统配置或 Resource 初始化数据，也不改变这些数据的查询 API 和隔离边界。成员列表为空时先区分“全部成员”和组织筛选范围，并检查 `/org/member-scope`、`/identity/users/page` 的 `orgIds`/`excludeOrgId` 以及实际成员组织关系；底层租户基础数据为空仍按本指南检查 Bootstrap、Resource 和租户上下文。
-
-> 2026-08-28 Issue #851：Resource 增量同步不改变租户基础数据的公开 API、权限或隔离边界。当前 `SYSTEM_CONFIG` 会比较目标行 `updated_at` 与 Registry `last_sync_time`；两者不一致时视为后台已修改并保留目标值，不推进该 Resource 的 hash 或同步时间。其它 Resource 类型只有 Owner Handler 明确实现受管状态判断后才具备同类退避语义。
-
-> 日期范围查询兼容：系统登录日志和操作日志的日期-only 开始/结束值会分别按当天 `00:00:00` 和 `23:59:59` 查询；不改变租户、权限或数据初始化边界。
-
-> 2026-08-25 AI 管理能力影响：八类 AI 供应商、代表模型、Prompt、Skill 和服务使用 AI 自有 Resource Handler 写入租户隔离的 AI 配置表；供应商和模型首次创建时为空密钥、停用，既有租户配置按 `INIT_ONLY` 保留。该初始化不写入 System 字典、系统配置、组织、用户或租户主数据，也不改变这些数据的查询 API、权限、租户隔离和本指南排障链路。AI 配置为空应核对 `mango-ai-starter`、AI Resource 声明和 Handler 收据，不用字典/系统配置 SQL 补齐。
-
-> 2026-07-22 菜单显示文案调整说明：通知中心、审批中心和编号规则分别更名为通知管理、审批管理和编号管理；租户数据、资源同步顺序、菜单权限和本指南排障步骤均不受影响，历史记录保留原名称。
-
-> 2026-08-02 Issue #690 影响说明：租户字典和系统配置查询 API、权限、租户隔离及已有数据不变；初始化入口统一为 `META-INF/mango/resources/` typed declarations。Maven `1.0.31` 的声明 identity 使用独立 canonical mapper，非 Web Bootstrap 与 Web Runtime 的 `Long`/Java Time Jackson 配置不会改变同一 Resource fingerprint。使用 Maven `1.0.30`/`1.0.3x` 的业务仓升级后，排障时同时核对完整 release tuple、Bootstrap stable receipt 的 environment/generation/fingerprint、Resource 同步日志和目标 handler 结果；旧 fingerprint 不一致应升级完整 tuple 后使用新 generation 重新 plan/apply/verify，不重建已有业务库、手工修改 Bootstrap 审计表或用手工 SQL 绕过声明同步。
-
-> 2026-08-06 富文本托管资源影响：本次只扩展 `@mango/common` Editor、只读预览组件及 Admin Shell 开发中心示例，不新增或修改租户、字典、组织、用户、系统配置及 Resource 声明数据，也不改变查询 API、权限、租户隔离或本指南排障步骤。
-
-> 2026-08-14 Issue #791：Admin Shell 菜单路径解析改为包内实现并修复受管前端发布矩阵；不新增或修改租户、字典、组织、用户、系统配置及 Resource 声明数据，也不改变查询 API、权限、租户隔离或本指南排障步骤。基础数据为空仍按 Resource 同步、租户上下文和角色绑定链路排查。
-
-## 1. 适用场景
-
-业务页面中的字典、下拉、组织、用户、岗位、系统配置或初始化数据为空，且问题只在部分租户或部分账号出现。
+> 本页只用于追溯历史影响，不是当前接入入口。当前步骤请回到[租户字典配置为空排障](../../guides/faq/tenant-dict-config-empty.md)。
 
 ### 2026-07-16 组织初始化边界
 
@@ -43,71 +13,6 @@ System 新库只执行纯 DDL `V1__init_system.sql`。平台默认租户、524 �
 ### Issue #348 模块运行态诊断影响
 
 新增的 `mango module doctor mango-link` 是默认关闭、只读的本机诊断入口，不创建或修复租户、字典、组织、用户和系统配置数据，查询范围仅限声明的权威租户域。首版 Authorization 诊断分别读取平台菜单权威域 `tenant_id=1` 和全局 API 资源权威域 `tenant_id=default`；它不改变业务租户数据隔离或本指南的空数据排障步骤。
-
-## 2. 阅读顺序
-
-| 顺序 | 文档                                                                                     | 关注点                                              |
-| ---- | ---------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| 1    | [Identity 后端 README](../../../mango/mango-platform/mango-identity/README.md)           | 用户、账号、租户身份                                |
-| 2    | [Org 后端 README](../../../mango/mango-platform/mango-org/README.md)                     | 组织、岗位、组织树                                  |
-| 3    | [System 后端 README](../../../mango/mango-platform/mango-system/README.md)               | 系统配置、字典、参数                                |
-| 4    | [Issue #184 数据治理设计](../../designs/2026-07-01-issue-184-data-governance-design.md)  | Flyway、Resource、demo、`INIT_ONLY` 和外部 SQL 边界 |
-| 5    | [Resource 后端 README](../../../mango/mango-platform/mango-resource/README.md)           | 资源声明同步、demo 隔离和运行时保留策略             |
-| 6    | [Access 后端 README](../../../mango/mango-platform/mango-access/README.md)               | 接口访问和数据权限上下文                            |
-| 7    | [Authorization 后端 README](../../../mango/mango-platform/mango-authorization/README.md) | 菜单、角色和权限资源                                |
-| 8    | [@mango/admin-shell README](../../../mango-ui/packages/admin-shell/README.md)            | 登录态、租户切换、上下文透传                        |
-
-## 3. 接入检查点
-
-| 环节       | 检查点                                                                                                                                                                                                 |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 租户上下文 | 当前登录用户的 tenantId 与业务数据 tenantId 一致                                                                                                                                                       |
-| 请求透传   | 请求头或上下文中租户信息已透传到后端                                                                                                                                                                   |
-| 基础数据   | 目标租户已初始化所需字典、配置、组织或岗位数据                                                                                                                                                         |
-| 数据过滤   | 查询接口没有被数据权限、组织范围或状态字段过滤掉                                                                                                                                                       |
-| 前端参数   | 前端查询参数没有带错 appCode、dictCode、domainCode 或 status                                                                                                                                           |
-| 初始化边界 | DDL 和大 SQL 由 Flyway 处理；正式小资源由 Resource `META-INF/mango/resources/` 处理；demo 资源由 `META-INF/mango/demo/` 且默认禁用；运行时可修改但升级要保留的数据使用 `INIT_ONLY` 或业务开通/导入流程 |
-
-## 4. 最小闭环
-
-1. 用目标租户账号登录。
-2. 打开同一页面并记录请求中的 tenantId 或租户上下文。
-3. 直接调用对应后端查询接口，确认返回数据和页面一致。
-4. 补齐租户基础数据后重新登录验证。
-5. 用另一个租户账号复测，确认数据隔离符合预期。
-
-## 5. 常见失败
-
-| 现象                         | 优先检查                                 |
-| ---------------------------- | ---------------------------------------- |
-| 平台租户有数据，业务租户为空 | 租户开通流程、业务导入任务、租户应用绑定 |
-| 用户下拉为空                 | identity 用户状态、组织关系、租户上下文  |
-| 组织树为空                   | org 初始化数据、组织状态、父子关系       |
-| 字典项为空                   | system 字典编码、状态、租户维度          |
-| 切换租户后仍显示旧数据       | 前端缓存、登录态刷新、请求头租户 ID      |
-
-## 6. 验证命令
-
-```bash
-mvn -f mango/pom.xml -pl mango-platform/mango-identity,mango-platform/mango-org,mango-platform/mango-system,mango-platform/mango-resource -am test
-pnpm -F @mango/system build
-pnpm -F @mango/admin-shell build
-```
-
-模块验证入口：
-
-- [Identity 验证方式](../../../mango/mango-platform/mango-identity/README.md#10-验证方式)
-- [Org 验证方式](../../../mango/mango-platform/mango-org/README.md#10-验证方式)
-- [System 验证方式](../../../mango/mango-platform/mango-system/README.md#10-验证方式)
-- [Resource 同步规则](../../../mango/mango-platform/mango-resource/README.md#10-同步规则)
-- [Access 验证方式](../../../mango/mango-platform/mango-access/README.md#10-验证方式)
-- [Authorization 验证方式](../../../mango/mango-platform/mango-authorization/README.md#10-验证方式)
-- [数据初始化与停机升级治理](../../designs/2026-07-01-issue-184-data-governance-design.md)
-
-## 7. 关联规则
-
-- [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
-- [AI 交付质量规则](../../../mango-pmo/rules/05-ai-delivery-quality.md)
 
 ## 8. 变更影响记录
 

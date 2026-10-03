@@ -1,55 +1,55 @@
 # Mango 文档
 
-这是 Mango 面向业务开发者、架构师和交付人员的使用入口。这里也提供 [Mango 能力地图](./capabilities/README.md) 和 [业务接入场景手册](./guides/business-integration/README.md)。
-
-先按“我要完成什么”选择章节；模块 README 负责能力事实，场景指南负责接入步骤，PMO 规则负责流程约束，设计与计划文档负责决策记录。
+Mango 是面向业务开发者、架构师和交付人员的业务系统研发底座。本页同时作为 Mango 能力地图、业务接入场景手册与文档资产归档边界的总入口。文档按读者任务组织：先找到目标，再进入能力、场景或规则，不按仓库源码目录堆叠内容。
 
 ## 先选任务
 
-| 我要做什么 | 先看哪里 | 你会得到什么 |
+| 我要做什么 | 入口 | 适合谁 |
 |---|---|---|
-| 接入一个业务能力 | [能力地图](./capabilities/README.md) | 能力定位、责任模块、最小路径和源码入口 |
-| 按场景接入或排障 | [业务接入场景](./guides/business-integration/README.md) | 前置条件、操作步骤、失败分支和验证入口 |
-| 写产品需求 | [产品文档模板选择](../mango-pmo/templates/README.md) | BRD/SRS/TDD/Plan 的选择和顺序 |
-| 创建业务项目 | [Business Starter](../mango-business-starter/README.md) | 项目初始化、拓扑、开发和交付入口 |
-| 理解架构边界 | [架构设计](./mango-architecture-design.md) | 分层、依赖边界和关键设计决策 |
-| 执行研发流程 | [PMO 总流程](../mango-pmo/rules/00-dev-flow.md) | 风险、阶段、审批和验证要求 |
+| 了解 Mango 有哪些模块 | [能力地图](./capabilities/README.md) | 业务开发者、架构师 |
+| 接入文件、审批或按钮能力 | [业务接入场景](./guides/business-integration/README.md) | 业务开发者 |
+| 菜单、权限或租户数据异常 | [常见问题与排障](./guides/faq/README.md) | 开发、测试、运维 |
+| 构建、升级、发布或治理项目 | [运维、升级与交付](./guides/operations/README.md) | 交付、运维、技术负责人 |
+| 理解系统边界和设计取舍 | [架构设计](./mango-architecture-design.md) | 架构师、技术负责人 |
+| 编写 BRD、SRS、TDD 或计划 | [PMO 模板选择](../mango-pmo/templates/README.md) | PM、技术负责人、开发 |
+| 执行研发流程和质量门禁 | [PMO 总流程](../mango-pmo/rules/00-dev-flow.md) | 所有交付角色 |
 
-## 章节职责
+## 文档层次
 
-| 章节 | 只负责什么 | 不负责什么 |
+| 层次 | 负责回答 | 主要资产 |
 |---|---|---|
-| 开始 | 说明 Mango 定位、阅读顺序、版本和入口选择 | 不展开模块 API，不堆历史变更 |
-| 示例场景 | 用真实任务说明接入、排障、输入、输出和失败边界 | 不复制长期规范，不替代模块 README |
-| 产品文档输出 | 选择 BRD、SRS、TDD、Plan 和交付记录 | 不描述平台能力，不生成混合 PRD |
-| 基础能力 | 说明基础设施和公共装配的能力边界 | 不承担业务模块接入说明 |
-| 平台能力 | 按业务能力索引后端模块、前端包、责任边界和入口 | 不承载 Issue 日志和交付台账 |
-| 架构设计 | 记录稳定架构、边界、取舍和迁移设计 | 不替代使用手册和操作排障 |
-| PMO 规范与模板 | 提供流程规则、角色、模板和检查工具 | 不重复能力 README 和业务场景 |
+| 入口 | 从哪里开始、下一步看什么 | 本页、[文档资产索引](./index.md) |
+| 能力 | Mango 提供什么、谁负责、边界是什么 | 能力地图、模块/package README |
+| 场景 | 怎样接入一个真实业务目标 | `guides/business-integration/**` |
+| FAQ | 已接入后如何定位异常 | `guides/faq/**` |
+| 运维 | 怎样构建、升级、发布和恢复 | `guides/operations/**` |
+| 决策 | 为什么采用当前架构和迁移方案 | `designs/**` |
+| 规则 | 研发阶段、质量和提交要求是什么 | `mango-pmo/rules/**` |
+| 追溯 | 某次变更的计划、证据和历史上下文 | `plans/**`、`evidence/**`、`CHANGELOG.md` |
+
+## 推荐阅读顺序
+
+1. 从[能力地图](./capabilities/README.md)或任务入口确认目标模块。
+2. 进入对应场景或 FAQ，了解前置条件、步骤和验证闭环。
+3. 回到模块 README，查完整配置、API、边界和模块级验证。
+4. 需要设计、开发或交付时，再阅读架构文档和 PMO 规则。
+5. 只在需要追溯时查看设计、计划、证据和变更日志。
 
 ## 产品文档怎么选
 
 ```text
-业务问题与规则 -> BRD -> SRS -> TDD -> Implementation Plan
+业务问题与规则 -> BRD -> SRS -> TDD -> Implementation Plan -> 验收证据
 ```
 
-- 业务问题、范围、流程、规则和业务验收：使用 [BRD](../mango-pmo/templates/business-requirements.md)。
+- 业务目标、范围、流程、规则和业务验收：使用 [BRD](../mango-pmo/templates/business-requirements.md)。
 - 用户可观察的系统行为、页面、字段、动作、失败边界和系统验收：使用 [SRS](../mango-pmo/templates/system-requirements.md)。
-- 同一任务同时涉及业务和系统：分别填写 BRD、SRS，不生成混合 PRD。
+- 技术边界、接口、数据、风险和验证：使用 [TDD](../mango-pmo/templates/technical-design.md)。
+- 可执行任务、依赖和证据：使用 [Implementation Plan](../mango-pmo/templates/implementation-plan.md)。
 - 完整选择说明见[产品文档模板选择](../mango-pmo/templates/README.md)。
 
-## 阅读顺序
+## 文档版本与本地预览
 
-1. 先看能力地图或场景指南，确认责任模块和使用边界。
-2. 再读对应后端模块 README 和前端包 README。
-3. 需要设计、开发或验收时，再进入架构文档和 PMO 规则。
-4. 历史 Issue、交付记录和变更日志只用于追溯，不作为当前能力入口。
-
-## 文档版本
-
-GitHub Pages 根路径发布当前 `main` 的 Latest 文档。历史静态快照已移除，版本内容通过 Git tag 追溯，避免旧业务文档继续进入文档站和仓库。需要锁定版本时，请检出对应 Git tag 构建文档。
-
-## 本地预览
+GitHub Pages 根路径发布当前 `main` 的 Latest 文档。历史版本通过 Git tag 追溯，不把旧快照混入当前入口。
 
 ```bash
 npm --prefix mango-docs install
@@ -57,15 +57,14 @@ npm --prefix mango-docs run docs:dev
 npm --prefix mango-docs run docs:build
 ```
 
-## 文档资产归档边界
+## 事实来源
 
-当前使用说明、模块能力和场景指南面向使用者；Issue、计划、交付记录和验收证据只承担历史追溯，不替代当前入口。长期规则统一维护在 `mango-pmo`，不在本章复制规则正文。
-
-## 文档事实来源
-
-- 当前能力事实：模块或 package README。
-- 业务接入步骤：`mango-docs/guides/business-integration/**`。
-- 长期规则：`mango-pmo/rules/**`。
-- 模板：`mango-pmo/templates/**`。
+- 当前能力事实：对应后端模块或前端 package README。
+- 当前业务步骤：[业务接入场景](./guides/business-integration/README.md)。
+- 当前排障路径：[常见问题与排障](./guides/faq/README.md)。
+- 当前交付路径：[运维、升级与交付](./guides/operations/README.md)。
+- 长期规则和模板：`mango-pmo/rules/**`、`mango-pmo/templates/**`。
 - 架构和决策：`mango-docs/designs/**`。
-- 交付证据：`mango-docs/plans/**`、`mango-docs/evidence/**`。
+- 交付计划和证据：`mango-docs/plans/**`、`mango-docs/evidence/**`。
+
+当前使用说明不复制长期规则；历史变更应进入模块 README、根 CHANGELOG、Release、设计文档或交付证据，而不是继续堆在场景入口。

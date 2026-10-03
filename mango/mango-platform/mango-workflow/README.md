@@ -988,7 +988,7 @@ workflow:template:push
 
 ## 14. 相关文档
 
-- [Workflow 办理人身份特性升级指南](../../../mango-docs/guides/business-integration/workflow-assignee-identity-upgrade.md)
+- [Workflow 办理人身份特性升级指南](../../../mango-docs/guides/operations/workflow-assignee-identity-upgrade.md)
 
 - [前端 workflow 包](../../../mango-ui/packages/workflow/README.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
