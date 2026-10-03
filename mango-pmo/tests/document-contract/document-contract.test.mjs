@@ -25,6 +25,8 @@ import { validateDocument } from "../../tools/document-contract/validator.mjs";
 const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES = path.join(TEST_DIR, "fixtures");
 
+const TEMPLATE_GUIDANCE_SECTION_TITLE = "使用合同与最小填写方式";
+
 const STAGES = [
   {
     name: "business-requirements",
@@ -159,8 +161,19 @@ for (const stage of STAGES) {
     const ast = parseMarkdown(
       fs.readFileSync(repositoryPath(contract.template), "utf8"),
     );
+    const guidanceSections = ast.sections.filter(
+      (section) => section.logicalTitle === TEMPLATE_GUIDANCE_SECTION_TITLE,
+    );
+    assert.equal(guidanceSections.length, 1);
+    assert.ok(
+      guidanceSections[0].line < ast.sections.find(
+        (section) => section.logicalTitle === contract.sections[0].title,
+      ).line,
+    );
     assert.deepEqual(
-      ast.sections.map((section) => section.logicalTitle),
+      ast.sections
+        .filter((section) => section.logicalTitle !== TEMPLATE_GUIDANCE_SECTION_TITLE)
+        .map((section) => section.logicalTitle),
       contract.sections.map((section) => section.title),
     );
     for (const sectionSpec of contract.sections) {
@@ -179,6 +192,20 @@ for (const stage of STAGES) {
     }
   });
 }
+
+test("文档合同允许模板使用说明章节", () => {
+  for (const stage of STAGES) {
+    const contract = loadContract(stage.contract);
+    const source = readFixture(`valid/${stage.valid}`).replace(
+      "\n## 1. ",
+      `\n## 0. ${TEMPLATE_GUIDANCE_SECTION_TITLE}\n\n模板填写说明。\n\n## 1. `,
+    );
+    const result = validateDocument(source, contract, {
+      documentPath: path.join(FIXTURES, "valid", stage.valid),
+    });
+    assert.deepEqual(result.findings, [], stage.name);
+  }
+});
 
 test("文档 pmoVersion 必须与版本化合同一致", () => {
   const contract = loadContract(
