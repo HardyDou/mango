@@ -213,7 +213,7 @@ META-INF
 
 源码目录不会生成 B；Docker 镜像只复制已经完成校验的最终 JAR。
 
-最小 POM 配置和 Jenkins 使用方式见[业务 API 构建期 cold baseline](../../mango-docs/guides/business-integration/build-time-cold-baseline.md)。常用参数：
+最小 POM 配置和 Jenkins 使用方式见[业务 API 构建期 cold baseline](../../mango-docs/guides/operations/build-time-cold-baseline.md)。常用参数：
 
 | 参数 | 默认值 | 说明 |
 |------|--------|------|

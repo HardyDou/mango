@@ -416,7 +416,7 @@ Spring Boot 可执行 JAR 将上述 `META-INF` 条目保留在 JAR 根目录。B
 | FINALIZE 成功 | receipt 进入 `FINALIZED`；只禁用该变化模块内缺失的 Registry-owned `AUTO`。 |
 | 协调失败或 generation fence 失效 | 不推进 receipt，下次用旧成功状态重试。 |
 
-构建 POM、Boot JAR 检查以及与 cold baseline、sealed release manifest 的关系见[业务 API 构建期 cold baseline](../../../mango-docs/guides/business-integration/build-time-cold-baseline.md)。
+构建 POM、Boot JAR 检查以及与 cold baseline、sealed release manifest 的关系见[业务 API 构建期 cold baseline](../../../mango-docs/guides/operations/build-time-cold-baseline.md)。
 
 ### 9.2 Resource 数据库 baseline
 

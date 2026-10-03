@@ -1,30 +1,6 @@
-# 按钮权限不显示排障
+# 按钮权限不显示排障：历史变更索引
 
-> 本次统一后台页面结构和顶部交互不改变按钮 permissionCode、`v-auth`、登录态权限集合或接口鉴权；本指南内容无需调整。
-
-> Issue #934：仅修复 API Resource 声明版本透传，不改变按钮权限码、接口鉴权、角色授权或本指南排障步骤。
-
-> Issue #918 影响说明（2026-09-02）：本次仅修复角色菜单树回显误扩大授权的问题，并统一企微同步主体；按钮权限码、后端鉴权入口和本指南验证步骤不变。仍需以服务端授权结果为准，不以页面显示替代接口校验。
-
-> 2026-09-01 Issue #919：成员管理新增部门移出、租户移出和恢复入口，不新增或修改按钮 `permissionCode`、`v-auth`、登录态权限集合或角色菜单授权；恢复服务仍按当前租户、realm、成员状态和现有管理接口权限校验，不能跨租户搜索或接管身份。动作不可见时先确认页面组织上下文和行关系数据，操作返回 403 时继续按本指南核对当前角色与目标 Org/Identity 接口授权，不要放宽权限或手工恢复历史角色。
-
-> 2026-09-01 Issue #909：用户管理新增组织范围、组织内开户、已有成员搜索和直接角色批量回显，不新增或修改按钮 `permissionCode`、`v-auth`、登录态权限集合、角色菜单授权或接口鉴权规则。角色列展示的是当前租户和管理应用内对成员直接分配的有效角色，不等于按钮权限集合；按钮缺失或操作返回 403 时仍按本指南核对菜单授权、权限码和目标接口，角色列加载问题则检查 `/authorization/roles/subjects/batch`。
-
-> 2026-08-28 Issue #851：`API_RESOURCE` 增量同步在变化模块中只写 canonical hash 发生变化的声明，同类型完整声明只作关系解析上下文，不会由部分变化批次清理未变化资源。权限 API、`permissionCode`、角色授权、`v-auth`、接口鉴权和本指南排障步骤不变。
-
-> 2026-08-25 AI 管理能力影响：AI 管理页面与统一服务入口使用 `ai:provider:*`、`ai:model:*`、`ai:prompt:*`、`ai:skill:*`、`ai:tool:*`、`ai:service:*` 权限声明，仍由现有 Resource、角色授权、登录态权限集合和接口 `@ApiAccess` 链路判定。Realtime 短期票据只作用于可信登录态的 WebSocket/SSE 握手，不新增匿名权限或授权 fallback，也不改变 `permissionCode`、`v-auth` 和既有按钮排障协议。AI 操作不可见或返回 403 时应核对对应 AI 权限和角色授权，不放宽 Access/Authorization 校验。
-
-> 2026-08-25 Issue #835：只修复已有数据库升级时 Resource Registry 按持久化 `targetId` 停用已缺失角色数据权限声明的链路；不改变按钮 `permissionCode`、登录态权限集合、角色授权、`v-auth`、接口鉴权、租户边界或本指南排障步骤。该修复不会新增或移除当前声明中的按钮权限。
-
-> 2026-07-22 菜单显示文案调整说明：通知中心、审批中心和编号规则分别更名为通知管理、审批管理和编号管理；按钮 permissionCode、登录态权限集合、接口鉴权和本指南排障步骤均不受影响，历史记录保留原名称。
-
-> 2026-08-06 富文本托管资源影响：本次只扩展 `@mango/common` Editor、只读预览组件及 Admin Shell 开发中心示例，不改变按钮 `permissionCode`、登录态权限集合、`v-auth` 判断、接口鉴权或本指南排障步骤。
-
-> 2026-08-14 Issue #791：Admin Shell 菜单路径解析改为包内实现并修复受管前端发布矩阵；不改变按钮 `permissionCode`、登录态权限集合、`v-auth` 判断、接口鉴权或本指南排障步骤。按钮仍缺失时继续核对角色菜单授权、页面权限集合和目标接口权限，不以降级前端包绕过。
-
-## 1. 适用场景
-
-用户能打开页面，但新增、编辑、删除、导出、审批等按钮不显示或点击后返回无权限。
+> 本页只用于追溯历史影响，不是当前接入入口。当前步骤请回到[按钮权限不显示排障](../../guides/faq/permission-button-troubleshooting.md)。
 
 ### 2026-07-16 租户权限上下文修复
 
@@ -41,68 +17,6 @@ System 租户初始化不改变任何按钮 `permissionCode`、登录态权限�
 ### Issue #348 模块运行态诊断影响
 
 `mango module doctor mango-link` 的 `authorization.menuApi` 只交叉检查当前 Resource 声明要求的菜单和 API 资源是否物化，不修改授权数据，也不判断某个用户的按钮展示规则、数据权限或当前登录态权限缓存。诊断 PASS 不能替代本指南的按钮级闭环；按钮缺失或点击 403 仍需核对 `permissionCode`、角色授权、登录态权限和接口鉴权。
-
-## 2. 阅读顺序
-
-| 顺序 | 文档                                                                                     | 关注点                       |
-| ---- | ---------------------------------------------------------------------------------------- | ---------------------------- |
-| 1    | [Access 后端 README](../../../mango/mango-platform/mango-access/README.md)               | 接口权限、上下文、拦截边界   |
-| 2    | [Authorization 后端 README](../../../mango/mango-platform/mango-authorization/README.md) | 权限资源、角色授权、菜单关系 |
-| 3    | [@mango/rbac README](../../../mango-ui/packages/rbac/README.md)                          | 前端授权数据和管理页面       |
-| 4    | [@mango/admin-shell README](../../../mango-ui/packages/admin-shell/README.md)            | 登录后权限集合和按钮指令     |
-
-## 3. 接入检查点
-
-| 环节         | 检查点                                                           |
-| ------------ | ---------------------------------------------------------------- |
-| 按钮资源     | 后端资源中存在按钮 permissionCode                                |
-| 菜单关系     | 菜单资源与按钮权限存在父子关系                                   |
-| 角色授权     | 角色管理「分配权限」弹框能看到按钮节点，且角色已绑定对应按钮权限 |
-| 用户上下文   | 当前用户拥有该角色，且角色在当前租户和组织上下文内生效           |
-| 登录态权限   | 登录后权限集合包含目标 permissionCode                            |
-| 按钮展示规则 | 登录后 `buttonRules` 中目标按钮的 `displayRule` 执行结果为显示   |
-| 前端判断     | 前端按钮使用的权限码与后端资源一致                               |
-| 接口校验     | 接口层权限校验与前端按钮权限码一致或有清晰映射                   |
-
-## 4. 最小闭环
-
-1. 给测试角色授权目标菜单和按钮。
-2. 用测试用户重新登录。
-3. 打开页面确认按钮出现。
-4. 点击按钮并确认接口返回业务成功或明确的业务校验错误。
-5. 取消按钮授权后重新登录，按钮不可见或接口返回无权限。
-
-## 5. 常见失败
-
-| 现象                     | 优先检查                                                                                   |
-| ------------------------ | ------------------------------------------------------------------------------------------ |
-| 按钮完全不显示           | 前端 `v-auth` 或权限判断使用的 permissionCode                                              |
-| 按钮显示但接口 403       | 接口权限注解、Access 上下文、后端授权集合                                                  |
-| 管理员可见普通用户不可见 | 角色授权、用户角色绑定、组织/岗位限制                                                      |
-| 菜单可见按钮不可见       | 菜单授权和按钮授权是否分开配置                                                             |
-| 有按钮权限但按钮仍隐藏   | 按钮展示规则、`v-auth` 对象写法和页面传入的 `row` / `pageState` / `query` / `selectedRows` |
-| 角色授权弹框看不到按钮   | 后端可分配菜单树是否返回按钮节点、按钮资源是否挂在页面菜单下                               |
-| 重新授权后仍不生效       | 登录态权限缓存、前端刷新、token 重新获取                                                   |
-
-## 6. 验证命令
-
-```bash
-mvn -f mango/pom.xml -pl mango-platform/mango-access,mango-platform/mango-authorization -am test
-pnpm -F @mango/rbac build
-pnpm -F @mango/admin-shell build
-```
-
-模块验证入口：
-
-- [Access 验证方式](../../../mango/mango-platform/mango-access/README.md#10-验证方式)
-- [Authorization 验证方式](../../../mango/mango-platform/mango-authorization/README.md#10-验证方式)
-- [RBAC Frontend 验证方式](../../../mango-ui/packages/rbac/README.md#10-验证方式)
-- [Admin Shell 验证方式](../../../mango-ui/packages/admin-shell/README.md#10-验证方式)
-
-## 7. 关联规则
-
-- [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
-- [AI 编码红线](../../../mango-pmo/rules/03-ai-coding-redlines.md)
 
 ## 8. 变更影响记录
 

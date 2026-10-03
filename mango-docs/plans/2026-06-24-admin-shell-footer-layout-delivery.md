@@ -30,9 +30,9 @@
 
 - `mango-ui/packages/admin-shell/src/layout/component/main.vue`
 - `mango-ui/packages/admin-shell/README.md`
-- `mango-docs/guides/business-integration/rbac-menu-page-troubleshooting.md`
-- `mango-docs/guides/business-integration/permission-button-troubleshooting.md`
-- `mango-docs/guides/business-integration/tenant-dict-config-empty.md`
+- `mango-docs/guides/faq/rbac-menu-page-troubleshooting.md`
+- `mango-docs/guides/faq/permission-button-troubleshooting.md`
+- `mango-docs/guides/faq/tenant-dict-config-empty.md`
 - `mango-docs/plans/2026-06-24-admin-shell-footer-layout-delivery.md`
 
 ### 5.2 接口变化

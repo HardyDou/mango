@@ -1,49 +1,52 @@
-# 业务接入场景手册
+# 业务接入场景
 
-## 1. 定位
+本章按“我要把什么业务能力接入系统”组织内容。每篇指南只保留当前接入事实、前置条件、步骤、验证和失败边界；平台能力的完整 API、配置和实现边界以对应模块 README 为准。
 
-本文面向基于 Mango 开发业务系统的开发者，用场景方式串起模块 README、能力地图和常见排障入口。
+## 使用方式
 
-这里记录接入路径和检查点，不承载长期规范；正式交付规则以 PMO preflight 输出和 `mango-pmo/rules/**` 为准。
+1. 先从[能力地图](../../capabilities/README.md)确认责任模块和最小能力组合。
+2. 选择一个业务场景，按“阅读顺序”依次查看模块 README。
+3. 准备前置条件，完成接入检查点和最小闭环。
+4. 使用模块验证命令、场景验收点和真实环境证据完成验收。
+5. 遇到“已接入但行为异常”，转到[常见问题与排障](../faq/README.md)，不要把排障记录混入场景步骤。
 
-## 2. 使用方式
+## 场景索引
 
-1. 先按业务目标选择场景。
-2. 按阅读顺序打开模块 README，确认后端 starter、前端包、配置、菜单和验证入口。
-3. 按场景检查点完成业务代码接入。
-4. 用模块 README 的验证命令和场景验收点一起验证。
+### 业务能力接入
 
-## 3. 场景索引
+| 场景 | 适合任务 | 主要能力 |
+|---|---|---|
+| [文件上传表单](./file-upload-form.md) | 表单上传附件、回显、预览、下载、打包或 PDF 归档 | File、Fileproc、File Preview、Frontend File |
+| [业务审批接入](./workflow-business-approval.md) | 发起审批、处理任务、回写业务状态和查看流程记录 | Workflow、Workflow Frontend、Workflow Example |
+| [按钮展示规则](./permission-button-display-rule.md) | 根据业务状态、行数据或页面上下文控制按钮显示 | Access、Authorization、Admin Shell |
 
-| 场景 | 适合问题 | 主要能力 |
-|------|----------|----------|
-| [Mango 1.0.30 / 1.0.3x 到 1.0.31 升级](./mango-1.0.30-to-1.0.31-upgrade.md) | 已使用受影响旧 tuple，需要成组升级 Maven、npm、CLI、PMO、Resource 与 Bootstrap 生命周期 | Release、CLI、PMO、Bootstrap、Resource、Identity、Notice、File |
-| [Maven 1.0.21 到 1.0.22 Java API 升级](./maven-1.0.21-to-1.0.22-java-api-upgrade.md) | 升级后出现 `IdentityUserInfo`、`CmsAdminApi`、Resource/Job 等旧 Java 类型无法编译 | Identity、Access、Authorization、CMS、Job、Resource、Org、System |
-| [文件上传表单](./file-upload-form.md) | 业务表单上传附件、回显、预览、删除失败 | File、Fileproc、File Preview、Frontend File |
-| [业务审批接入](./workflow-business-approval.md) | 业务单据发起审批、处理审批结果、查看流程记录 | Workflow、Workflow Frontend、Workflow Example |
-| [菜单页面打不开排障](./rbac-menu-page-troubleshooting.md) | 登录后菜单空白、404、页面组件找不到 | Authorization、RBAC、Admin Shell |
-| [按钮权限不显示排障](./permission-button-troubleshooting.md) | 菜单可见但新增、编辑、删除按钮不显示 | Authorization、Access、RBAC Frontend |
-| [租户字典配置为空排障](./tenant-dict-config-empty.md) | 业务下拉、字典、配置或基础数据为空 | Identity、Org、System、Resource、Persistence |
-| [业务模块历史债务修复](./history-debt-remediation.md) | 在保持业务、接口、权限和租户语义不变的前提下治理存量代码 | PMO、Architecture、Persistence、Resource、API、UI/E2E |
-| [CI/CD 发布实践](./ci-cd-release-practices.md) | 业务项目规划镜像构建、测试晋级、生产发布、制品保留、回滚和 Jenkins 磁盘维护 | Git、Jenkins、Harbor、Docker BuildKit、Docker Compose |
-| [业务 API 构建期 cold baseline](./build-time-cold-baseline.md) | 空库首次初始化过慢，需要在制品构建中生成每模块 B 并打入 Boot JAR | Maven Plugin、Flyway、MySQL、Bootstrap、Jenkins |
-| [业务 Resource 重置与增量发布](./resource-reset-incremental-release.md) | 业务模块如何划分 DDL、正式 Resource、Demo 和运行期数据，并执行 reset/incremental 发布 | Resource Registry、Flyway、Bootstrap、业务 Starter、权限、租户 |
+## 场景与排障的边界
 
-## 4. 新场景登记门禁
+| 读者问题 | 进入 |
+|---|---|
+| 我还没有接入能力，不知道依赖什么 | 本章场景指南和[能力地图](../../capabilities/README.md) |
+| 能力已接入，但菜单、按钮或数据异常 | [常见问题与排障](../faq/README.md) |
+| 我要构建、升级、发布或治理业务项目 | [运维、升级与交付](../operations/README.md) |
+| 我要了解模块 API、配置、边界和验证 | 对应后端或前端模块 README |
+| 我要查某次发布为什么这样改 | [CHANGELOG](../../../CHANGELOG.md)、设计文档、计划和验收证据 |
 
-新增业务接入场景时，README 需要说清楚：
+## 新场景最小结构
 
-- 业务目标是什么，哪些模块参与。
-- 后端需要引入哪些 starter 或 remote starter。
-- 前端需要引入哪些包，是否只适用于管理后台。
-- 配置项在哪里配置，默认值是什么。
-- 菜单、权限、租户、初始化数据由谁负责。
-- 涉及初始化数据、字典、菜单、角色、demo、Flyway 或升级数据时，链接 [Issue #184 数据治理设计](../../designs/2026-07-01-issue-184-data-governance-design.md)，说明它属于 Resource、Persistence、demo、`INIT_ONLY` 还是业务运行时数据。
-- 最小验收闭环是什么，失败时先查哪张表或哪个接口。
+新增场景时，至少说明：
 
-## 5. 关联入口
+- 目标用户、适用条件和不适用边界；
+- 后端 starter/remote starter、前端包和配置前置条件；
+- 菜单、权限、租户和初始化数据的责任归属；
+- 按顺序可执行的接入步骤；
+- 正向、反向和跨租户最小验收闭环；
+- 常见失败、事实来源和模块验证入口。
+
+场景指南不复制长期规则，不把 Issue 时间线当作章节正文。长期研发规则以 [PMO 规则](../../../mango-pmo/rules/00-dev-flow.md) 为准。
+
+## 关联入口
 
 - [Mango 能力地图](../../capabilities/README.md)
+- [常见问题与排障](../faq/README.md)
+- [运维、升级与交付](../operations/README.md)
 - [业务项目开发指南](../../designs/business-project-development-guide.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
-- [文档资产归档边界](../../../mango-pmo/rules/06-document-assets.md)

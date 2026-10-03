@@ -1,19 +1,5 @@
 # 文件上传表单接入
 
-> 本次页面骨架统一和文件归档筛选控件调整不改变 `MUpload`、文件 ID 持久化、预览/下载 API、权限或租户边界；本指南上传接入步骤无需调整。
-
-> 2026-08-26 AI 统一会话工作台影响：`@mango/ai` 复用文件中心上传能力，将 `fileId` 作为消息内容块提交，并由后端在当前租户和登录上下文中通过文件能力重新授权读取；会话只持久化文件 ID，不保存预览、下载或 `blob:` 地址。File Preview 本次仅修复启动时合并许可路径对不可变配置快照的兼容问题，不改变文件上传、预览、下载的公开 API、权限或业务表单接入方式。普通业务表单仍按本指南使用 `MUpload`，只保存 `fileId`/`fileIds`。
-
-> 2026-08-29 Resource cold baseline 影响：运行期表单上传产生的文件记录、附件关系和文件内容不进入 BSQL 或 Resource baseline，也不会在重置或增量发布时被 Resource Handler 覆盖。只有随版本交付的固定文件才使用独立的 `FILE_ASSET` Resource 和受控文件 bundle；本指南的上传、回显、权限、租户及 `fileId`/`fileIds` 持久化方式不变。
-
-> 2026-09-02 Issue #926 File Preview token 存储修复：File Preview 改由宿主 `mango-infra-kv-starter` 装配 `ITokenStore`，Memory、Redis、JDBC 选择由 `mango.kv.*` 配置决定；文件上传、`fileId`/`fileIds` 持久化、预览/下载 API、权限、租户和本指南的业务接入方式不变。缺少 token-store capability 时应用启动会明确失败，不再静默使用单 JVM fallback。
-
-> 2026-09-20 折叠详情组件迁移影响：`@mango/file` 新增可选的 `MangoFileList` 和 `MangoFilePreviewDialog`，供详情页按文件记录展示列表或在弹框中复用 `FilePreviewPanel`；`@mango/detail` 可组合这些公开组件。本次不改变 `MUpload`、`FilePreviewPanel`、上传/预览/下载 API、`fileId`/`fileIds` 持久化、权限、租户或本指南的表单接入方式。现有业务无需迁移；新详情页按对应 package README 引入组件与 `style.css`。
-
-> 2026-09-21 分类卡片上传组件影响：`@mango/file` 新增 `MangoAttachmentUploadGrid`，用于按资料分类配置必填、数量、格式和大小规则，并提供点击/拖拽上传、替换、预览、删除、插槽和 `validate()`。组件继续调用同一 `fileApi.upload()`，不改变上传 API、文件 ID 持久化、权限或租户边界；不需要分类卡片交互的现有表单继续使用 `MUpload`。
-
-> 2026-09-23 Issue #972 预览任务优化影响：Office 文档预览改为按文件版本异步排队并复用已生成的 PDF，PDF 和转换产物统一通过 `file-preview` 的 `preview-entry`/PDF.js 页面展示；图片、音视频、文本、HTML、表格和 CAD/STL 等直接支持格式不进入 Office 转换队列。文件配置页新增 `previewMaxSize`（默认 200 MiB），超过限制时用户可以下载查看或明确继续等待转换。业务表单仍只保存 `fileId`/`fileIds`，上传、权限、租户和附件关联接入方式不变；需要在线转换时确认 `mango-file-preview` 与 `mango-infra-fileproc` 已启用。
-
 ## 1. 适用场景
 
 业务表单需要上传合同、图片、附件或导入文件，并在详情页回显、下载或预览。
@@ -193,27 +179,6 @@ FileRecordVO zipFile = fileApi.packageFiles(command).getData();
 
 验收时除上传、回显、下载闭环外，还应确认 ZIP 中的目录结构、文件名、租户可见性和下载权限符合业务预期。
 
-## 8. 变更影响记录
-
-- 2026-09-20 Issue #972：File Preview Office 转换任务增加同版本请求合并、超时恢复、结果缓存隔离和大文件流式读取；业务表单仍只保存 `fileId`/`fileIds`，上传、回显、预览、下载公开 API、权限、租户及本场景接入步骤不变。独立预览引擎如启用多实例需按 File Preview README 配置 Redis 租约。
-
-- 2026-09-01：File Preview 单体嵌入边界调整仅移除 engine JAR 根 `banner.txt`，并由 starter 在宿主组件扫描中排除独立启动入口 `cn.keking.ServerMain`；`ServerMain` 仍保留在 engine JAR 供独立启动使用。单体应用继续复用宿主 Spring 上下文、端口和 Banner，文件上传、回显、预览、下载的公开 API、配置、路由、权限、租户及本场景验收步骤不变。
-
-- 2026-08-20：Fileproc 新增 PDF/DOCX 到 OFD 的转换 provider，并新增独立 Docsign 模块提供 PDF/OFD 签名、验签和可见签章。文件上传、回显、预览、下载、`fileId`/`fileIds` 持久化、权限、租户和本场景验收步骤不变；File/File Preview 不会自动把上传文件转换为 OFD 或自动签章。业务需要这些能力时，应在后端显式引入对应 Fileproc/Docsign starter、传入调用方管理的证书与签章参数，并把生成结果按现有 File API 另行保存为文件记录。
-
-- 2026-08-02 Issue #690：文件上传、回显、预览、下载、ZIP/PDF 接口、fileId 持久化和租户权限合同不变。本次影响是应用初始化与制品消费边界：使用 Maven `1.0.30`/`1.0.3x` 的业务仓升级时按新 release tuple 成组更新，并验证 Boot JAR、Bootstrap receipt、File 资源声明和预览引擎注册结果；已有文件记录、业务附件关系和文件内容不重建。
-
-- 2026-07-30：`FilePreviewPanel` 新增默认关闭的 `fit-container` 容器填充模式。固定高度容器、`ElDialog` 或
-  `MangoDialog` 正文可以直接传入该 prop，使 PDF、Office、图片和音视频随容器缩放，无需业务页面监听 resize
-  或组合预览高度变量。未传入时继续使用自然高度；文件 ID 持久化、上传/预览/下载 API、权限、租户、文档转换
-  接口和本场景验收步骤不变。
-
-- 2026-07-30：`FilePreviewPanel` 的图片预览默认直接展示无蒙层的内嵌 Element Plus Image Viewer，缩放、旋转、
-  适应模式、原始尺寸和拖拽工具栏进入预览区后即可使用，不再点击图片打开第二层覆盖层。业务接入不需要增加 prop；
-  文件 ID 持久化、上传/预览/下载 API、权限、租户和文档转换接口不变。
-
-- v2026.07.08-admin-page-layout-release 只发布后台统一页面骨架组件、运营列表页 CLI/starter 模板和前端 npm 版本锁；不改变文件上传、回显、下载、预览、文件权限、租户隔离、业务表保存 fileId/fileIds 的接入方式和本场景验收步骤。业务项目升级时按发布说明成组升级前端 `@mango/*` 包和 `@mango/cli`。
-
 ## 8. 后端合并 PDF 归档
 
 业务需要把手机拍照上传的多张图片，或图片、PDF、Word 材料按顺序归档为一个 PDF 时，业务后端依赖 `mango-file-api`，调用 `FileApi.mergeToPdf(FileMergePdfCommand)`，或通过文件服务 HTTP 入口 `POST /file/files/merge-pdf` 发起合并。合并完成后文件中心会生成新的 PDF 文件记录，业务表只保存返回的 PDF `fileId` 或自己的归档记录。
@@ -268,10 +233,10 @@ pnpm -F @mango/file test
 
 模块验证入口：
 
-- [File 验证方式](../../../mango/mango-platform/mango-file/README.md#10-验证方式)
-- [File Preview 验证方式](../../../mango/mango-platform/mango-file-preview/README.md#10-验证方式)
-- [Frontend File 验证方式](../../../mango-ui/packages/file/README.md#10-验证方式)
-- [File Components 验证方式](../../../mango-ui/packages/file/src/components/README.md#8-验证方式)
+- [File 验证方式](../../../mango/mango-platform/mango-file/README.md)
+- [File Preview 验证方式](../../../mango/mango-platform/mango-file-preview/README.md)
+- [Frontend File 验证方式](../../../mango-ui/packages/file/README.md)
+- [File Components 验证方式](../../../mango-ui/packages/file/src/components/README.md)
 
 ## 11. 关联规则
 
@@ -281,123 +246,6 @@ pnpm -F @mango/file test
 - [后端 API 文件字段规则](../../../mango-pmo/rules/backend/03-api.md#22-文件字段规则)
 - [前端文件上传与回显规则](../../../mango-pmo/rules/frontend/01-vue-code.md#41-文件上传与回显规则)
 
-## 12. 变更影响记录
+## 12. 历史变更
 
-- Issue #639 修复 HTTP IP、非安全上下文中大文件上传因 Web Crypto 不可用而中断的问题。文件管理员可配置 `multipartEnabled` 和 `multipartThreshold`；`MUpload` 自动读取当前租户策略和 `maxSize`。无客户端哈希时固定走 `SERVER_CHUNK`，服务端完成后补算 SHA-256；业务表单仍只保存 `fileId`/`fileIds`，无需增加组件属性。业务项目需在后续发布批次整体升级 `@mango/file`、固定版本前端消费者和对应后端 Maven 物料，并执行本节 HTTP IP 验收步骤。
-
-- v2026.07.21-maven-1.0.25-cli-1.0.89-branding-workflow-bom-release 将 `mango-file-preview-engine` 的既有依赖版本交由同版本 `mango-bom` 统一管理，不改变文件上传、回显、预览、下载的公开 API、配置、权限、租户、页面入口、启动方式或本场景验收步骤。继承 `mango-parent` 的业务项目只需整体升级 Mango 版本；使用自有 parent 的项目导入 `io.mango:mango-bom:1.0.25`。
-
-- Issue #553 将 `/file-preview/files/preview-link` 和 `/file-preview/files/preview` 与现有文件上传、详情、预览内容和下载基线对齐为登录可用，业务表单无需再为统一预览链接配置 `file:files:download` 角色权限。链接生成仍先按当前租户查找文件，匿名请求不能生成预览 token；文件列表、归档、删除、目录和管理配置权限不变。前端 `/api` 仍只是代理路径标识，后端实际路径不带 `/api`。
-
-- Issue #563 修复 Office 文件名同时包含 URL 编码字节和括号等原始字符时的 PDF 预览失败。File Preview 内部改用基于 `fileId` 的 ASCII 转换名，并通过与源文件 token 绑定的同源接口读取转换 PDF。业务表单仍只保存 `fileId`/`fileIds`，上传、回显、预览入口、下载、权限、租户和本指南的验收步骤不变；涉及中文、空格或括号的 Word 附件时，确认 PDF.js 能渲染实际页面且网络请求不出现 `%25` 二次编码。
-
-- PR #565 补充多个独立前端共用同一后端时的文件访问约定：推荐将运行时文件访问模式设为 `PROXY`，各前端只消费当前 Origin 下带 `/api` 的 `previewUrl`、`downloadUrl`，由各自 Nginx 去掉 `/api` 后转发到后端，避免 8081、8082、8083 之间跨域访问。确需 `DIRECT` 时，MinIO 配置稳定的 `publicEndpoint`，签名地址中的 host、port、path 和 query 保持原样，并为实际前端 Origin 配置 bucket CORS。业务表仍只保存 fileId/fileIds；已有租户配置不会被默认资源覆盖。
-
-- PR #454 将后端错误码类型的 Java 导入路径从 `io.mango.file.api.FileCode` 调整为
-  `io.mango.file.api.enums.FileCode`；业务后端如直接引用错误码需更新 import。错误码数值和消息、文件上传与去重
-  行为、HTTP/API 契约、fileId/fileIds 持久化、权限、租户、页面入口、启动方式及本场景验收步骤不变，不提供旧包
-  兼容类型。
-
-- PR #451 清理 file-preview engine 未被源码使用且目标仓库不可解析的旧 `javax.media:jai_core`、`javax.media:jai_codec` 构建依赖；现有源码编译和模块测试继续通过。该内部依赖清理不改变文件上传、回显、预览、下载的公开 API 与配置，不改变菜单、权限、租户、页面入口、启动方式、运行时行为或本场景验收步骤。
-
-- v2026.07.11-maven-1.0.14-cli-release 仅将当前后端实现向前发布为 Maven `1.0.14` 并更新 CLI 后端版本锁；不改变文件上传、回显、预览、下载 API、fileId/fileIds 持久化、权限、租户或本场景验收步骤。
-
-- v2026.07.11-npm-readme-forward-release 以 `@mango/file@1.0.21` 向前发布已更正的 README 和精确依赖，不回退 `1.0.20` 的运行时变更。`FilePreviewPanel` 不再接受 `downloadPermission` prop，业务页面升级时需要删除该 prop；上传、预览和下载入口由登录态与后端文件访问校验决定，不再使用 `file:files:upload/query/download` 前端按钮权限隐藏。列表、归档、删除、目录和管理配置的细粒度权限不变。
-
-- PR #433 统一文件访问基线：详情、上传、批量、秒传、分片、预览、下载、打包、合并和运行时设置读取改为登录即可，不再依赖默认角色注入或 `file:files:query/upload/download` 权限码。文件分页、详情、上传结果和预览查询继续直接返回可使用的 `previewUrl`、`downloadUrl`；DIRECT 模式沿用存储适配器的跨域安全签名策略，有效期统一为 24 小时。文件列表、归档、删除、目录和管理配置继续使用细粒度权限，业务表单仍只保存 fileId/fileIds。
-
-- PR #439 优化 `FilePreviewPanel` 弹性高度和文件管理页预览弹框布局，并补充组件入口 README 中 `MUpload` 与 `FilePreviewPanel` 的选型边界；文件上传表单的 fileId/fileIds 保存方式、上传/下载/预览 API、权限、租户、页面入口、启动方式和本场景验收步骤不变。业务页面已使用 `FilePreviewPanel` 时可沿用文件 ID 接入方式；需要弹框承载时，由外层弹框负责标题和尺寸，预览内容继续交给 `FilePreviewPanel`。
-
-- Issue #431 新增 Excel 导入失败工作簿保存桥接。`BaseCrudController` 存在行级导入错误且装配 `mango-file-starter` 时，会以 `PRIVATE`、`EXCEL_IMPORT` 用途保存失败 `.xlsx`，并在 `ImportResult.failureFileId` 返回文件 ID；下载继续经过既有文件权限和租户隔离。普通文件上传表单的 fileId/fileIds 持久化、回显、预览和下载接口不变。
-
-- PR #386 简化 `@mango/file` 前端 `FileRecord` 公共类型，只保留业务可见字段并移除存储层和直连访问字段；文件上传表单仍按 `fileId`、`fileIds` 或文件 token 保存业务值，上传、回显、预览、下载 API、权限、租户、页面入口、启动方式和本场景验收步骤不变。业务前端如曾读取 `storageType`、`bucketName`、`objectName`、`url`、`directPreviewUrl` 或 `directDownloadUrl`，升级后应改为使用 `previewUrl`、`downloadUrl` 或按文件 ID 调用预览/下载能力。
-
-- Issue #382 新增 `FileApi.mergeToPdf` 和 `POST /file/files/merge-pdf`，业务后端可以把多个已存在图片、PDF、Word 文件按顺序生成 PDF 并保存为新的文件记录；输出目标格式首期仅支持 `PDF`。文件上传、预览、下载、前端组件、菜单、权限和租户基础规则不变。业务验收需要额外确认 PDF 页面顺序、源文件状态隔离、生成 PDF 的预览/下载权限，以及不支持格式失败时不会生成半成品。
-
-- v2026.07.02-maven-1.0.6-home-widgets-cli-release 仅发布首页小组件归属拆分、CLI 版本锁和 generated backend baseline 修复；`@mango/file@1.0.15` 只是随批次对齐依赖版本，不改变文件上传、下载、预览 API、组件用法、业务表保存方式、权限、租户、页面入口、启动方式和本场景验收步骤。业务项目升级时按发布说明成组升级后端 `<mango.version>`、前端 `@mango/*` 包和 `@mango/cli`。
-
-- v2026.06.30-maven-1.0.1-admin-branding-cli-release 发布固定后端 Maven `1.0.1` 和 `@mango/file@1.0.14` 前端批次，仅对齐文件组件回显修复、npm 物料和 CLI/starter 版本锁；不改变文件上传、下载、预览 API、业务表保存方式、权限、租户、页面入口、启动方式和表单验收步骤。业务项目应成组升级本发布批次的后端 `<mango.version>` 和前端 `@mango/*` 包。
-
-- Issue #337 修复 `FilePreviewPanel` 预览地址与下载地址混用问题：详情预览区域只使用有效 `previewUrl`、预览元数据中的存储公开预览地址或文档预览服务链接，不再使用 `downloadUrl` 或 `/api/file/files/download` 作为内联预览兜底；下载入口和上传回显策略不变。业务验收需要额外确认图片/PDF/音视频可正常预览，只有下载地址时页面展示下载查看提示，点击预览不再触发浏览器自动下载。
-
-- Issue #332 修复文件下载响应头文件名二次编码问题，中文、`+` 等字符在浏览器下载保存时应显示为原始文件名；不改变上传、fileId 持久化、详情回显、预览/下载 API、权限、租户、页面入口、启动方式和表单验收步骤。业务验收仍按本指南最小闭环执行，涉及中文附件名或 ZIP 文件名时确认下载后的本地文件名可读。
-
-- PR 本次后台品牌配置修复同步调整 `MUpload` 图片缩略图回显策略：业务值仍只保存文件 ID、文件 token 或文件记录；组件优先使用文件记录的 `previewUrl`，必要时按文件 ID 获取预览元数据，没有可直接展示地址时通过鉴权下载生成临时 `blob:` 地址显示缩略图。文件上传、下载、在线预览 API、业务表保存方式、权限资源、租户隔离和接入代码不变。业务验收需要额外确认上传后立即回显、刷新后按文件 ID 回显、无存储公开访问地址时图片缩略图不裂图。
-
-- PR #329 新增文件下载压缩参数，业务调用文件服务下载或 ZIP 打包时可以为图片和 PDF 设置压缩档位，并可用 `perFileTargetSizeBytes` 或 entry 级 `targetSizeBytes` 指定单文件目标大小；该目标不表示 ZIP 总大小。文件上传、fileId 持久化、详情回显、预览入口、权限资源、租户隔离和前端 `MUpload` 接入方式不变。业务验收需要额外确认压缩后的图片/PDF 可打开、未支持格式在 ZIP 中保持原内容、每个 entry 的压缩参数只影响对应源文件。
-
-- PR #319 新增 `FileApi.packageFiles` 和 `POST /file/files/package`，业务后端可以把多个已存在文件按 `entries.path` 生成 ZIP 并保存为新的文件记录；文件上传、预览、下载、前端组件、菜单、权限和租户基础规则不变。业务验收需要额外确认 ZIP 内部目录结构、`${fileName}` 替换结果、路径安全校验和生成 ZIP 的下载权限。
-
-- PR #280 将文件详情、下载、预览和设置读取等已登录用户可用接口标记为 `LOGIN` 资源，业务表单不需要再为这些通用文件读取接口配置角色或用户授权；业务页面入口、业务数据可见性、上传、归档、删除和设置保存仍按原有业务权限、租户与数据权限控制。文件上传表单的 fileId 持久化、详情回显、预览和下载验收步骤不变。
-
-- v2026.06.27-system-component-release 同步发布 `@mango/file@1.0.13` 及其前端依赖批次，仅对齐 npm 物料和 CLI/starter 版本锁；不改变文件上传组件用法、上传/下载/预览 API、存储配置、业务表保存方式、权限边界、页面入口和本场景验收步骤。业务项目排查上传表单异常时，仍先确认前端包批次一致、后端 file starter 已引入、存储配置可用。
-
-- Issue #264 发布 `@mango/file@1.0.12` 并随前端发布批次对齐 `@mango/admin-pages@1.0.11`；不改变文件上传、下载、预览的公开 API、前端组件、配置、权限、租户、页面、启动方式和表单验收步骤。本次仅同步发布锁和 package 边界，业务项目继续通过 `@mango/file` 公开入口和 `@mango/file/style.css` 接入。
-- PR #216 加固前端 `@mango/*` npm 包发布边界，非 CLI 包不再发布 `src` 等源码目录，并补充发布包 tarball 和业务消费 typecheck 基线；不改变文件上传、下载、预览的公开 API、前端组件、配置、权限、租户、页面、启动方式和表单验收步骤。业务项目应继续使用公开 package 入口和样式入口，升级到后续发布的新包版本后重新运行前端 typecheck。
-
-- PR #199 加固 Resource Registry runtime、远程上报和能力 app 注入链路，并保持 file/file-preview 能力通过声明方式初始化菜单、权限和默认资源；不改变文件上传、下载、预览的公开 API、前端组件、存储配置、租户隔离和表单验收步骤。清库重建或 1.0 rebase 升级后，排查文件中心菜单、下载/预览权限或默认文件配置缺失时，需要同时确认 `AUTH_MENU`、`API_RESOURCE`、`FILE_STORAGE_CONFIG` 和 `FILE_SETTINGS` 声明同步成功。
-- PR #195 加固前端 `@mango/*` 包的 `exports`、`types` 和生成声明文件，使业务项目通过发布后的 `dist` 产物独立消费；不改变文件上传、下载、预览的公开 API、前端组件、配置、权限、租户、页面、启动方式和表单验收步骤。业务项目应继续使用公开 package 入口和 `./style.css`，不要依赖包内 `src` 路径。
-- PR #194 发布资源注册中心版本并升级 `@mango/file@1.0.11`、`@mango/admin@1.0.23`、`@mango/common@1.0.10`、`@mango/cli@1.0.34` 等前端包；不改变文件上传、下载、预览的公开 API、前端组件、权限、租户、页面、启动方式和表单验收步骤。业务升级时应成组升级前端 `@mango/*` 包并刷新后端 Mango `1.0.0-SNAPSHOT` 依赖。
-- PR #193 新增 `mango-resource` 注册中心并将文件存储配置、文件设置默认数据迁移为资源声明同步；不改变文件上传、下载、预览的公开 API、前端组件、权限、租户、页面和表单验收步骤。排查默认存储配置缺失时，需要同时确认 `FILE_STORAGE_CONFIG` 和 `FILE_SETTINGS` 声明是否已同步。
-- PR #153 Maven revision 支持只调整构建和发布版本解析，不改变文件上传、下载、预览的公开 API、配置、权限、租户、页面和运行时行为。
-- PR 本次持久化基线与 README 发布物料治理只补充业务开发查看 Mango 能力文档的入口，并让 npm 包携带 package README；不改变文件上传、下载、预览的公开 API、配置、权限、租户、页面、启动和运行时行为。
-
-- Issue #322 仅放宽 Mango 前端包在当前已认证主版本内的 `peerDependencies` 范围，并明确 `pinia@3`、`vue-i18n@10+`、`vue-router@5` 暂未纳入当前认证范围；不改变文件上传、下载、预览的公开 API、前端组件、fileId 持久化、权限、租户、页面、启动方式和表单验收步骤。业务项目安装依赖时如出现 peer warning，应先按 `mango-ui/README.md` 的认证范围对齐前端包批次，文件上传表单异常仍按文件服务、组件接入和业务字段持久化链路排查。
-
-- v2026.07.04-maven-1.0.8-platform-release 精简文件记录返回字段，业务表单仍只保存文件 ID、文件 token 或文件记录；详情回显、预览和下载应读取文件服务返回的 `previewUrl` 与 `downloadUrl`，不要依赖 `url`、`directPreviewUrl`、`directDownloadUrl`、bucket 或 objectName 等存储层字段。文件上传组件接入方式、权限资源、租户隔离、页面入口和本场景验收步骤不变；文档预览类页面继续按文件 ID 获取预览元数据，`FileRecordVO.previewUrl` 仅表示文件服务预览地址。
-
-- v2026.07.07-maven-1.0.13-menu-api-codes-release 仅发布 menuCode/apiCodes 权限模型的 Maven、npm 和 CLI 版本批次；不改变文件上传、下载、预览的公开 API、前端组件、fileId 持久化、权限、租户、页面入口、启动方式和表单验收步骤。文件基础接口仍由默认角色权限承载，业务单据的查看、编辑、归档和删除仍由业务菜单权限、数据权限和租户隔离控制。
-
-- v2026.07.11-npm-lock-sync-release 发布 `@mango/file@1.0.20`：文件管理页上传、预览和下载操作不再依赖
-  `file:files:upload`、`file:files:query` 或 `file:files:download` 前端角色权限码，改为由登录态和后端文件访问
-  校验决定；列表、归档、删除、目录、存储配置和文件设置仍使用既有细粒度权限。`FilePreviewPanel` 不再支持
-  `downloadPermission` prop，业务页面应移除该 prop。文件 ID 持久化、上传/下载/预览 API、租户边界、页面入口和
-  启动方式不变。
-
-- Resource 历史债务治理仅迁移 File 资源 Handler 的本地 SPI 依赖，不改变上传、下载、预览 API、文件 ID 持久化、访问权限、租户边界、页面入口、启动方式和本场景验收步骤。
-
-- File Preview 历史债务治理将预览页读取源文件的内部地址调整为 `/file-preview/sources?token=...`，并分离页面与二进制流适配器；业务表单仍只保存文件 ID，上传、详情回显、预览入口、下载、租户边界和本场景验收步骤不变。
-
-## 2026-07-19 前端规范候选影响
-
-- 本次前端规范候选统一公开包合同、显式 `style.css` 入口和 Host 请求客户端注入；不改变文件上传、下载、预览 API、文件 ID 持久化、权限、租户或业务表单验收步骤。业务项目主动升级完整前端包矩阵后，需要确认 Host 已注入请求客户端并显式引入文件组件样式，再执行本指南的上传、回显、预览和下载闭环。
-
-## 2026-07-22 富文本托管资源影响
-
-- `MangoEditor` 显式启用 `imageValueType="token"` 与 `pasteImageMode="upload"` 后，工具栏图片、剪贴板 File/Data URI 和远程 HTML 图片统一进入文件服务；对外 HTML 只保留 `mango-file:<id>` 与 `data-file-id`。远程图片通过登录态 `POST /file/files/import-image` 受控导入并固定为 `PRIVATE` 图片文件，普通附件继续复用 `MUpload`，业务表单仍只保存文件 ID、文件 ID 列表或文件 token。未启用新属性的 Editor 以及现有上传、回显、预览、下载接口保持兼容。
-
-## 2026-07-27 Bootstrap 生命周期影响
-
-- 普通业务表单上传、回显、预览和下载 API、文件 ID 持久化、权限及租户边界保持不变。需要随业务版本预置的固定文件改用 `FILE_ASSET` Resource：小型资产可使用 `classpath:META-INF/mango/assets/`，不适合打入 Jar 的大型二进制使用 `asset:<relative-path>`，并通过 `mango.file.asset-root` 或 `MANGO_FILE_ASSET_ROOT` 映射开发、Docker 等环境的外部根目录。Bootstrap 把内容发布到配置的 LOCAL/S3/OSS/COS/Qiniu 存储并写入稳定的 `file_record`、`file_object`；重入时按对象长度和 SHA-256 校验，内容漂移会重新发布。`asset:` 拒绝绝对路径、`..`、反斜杠和越过根目录的符号链接；根目录或文件不可读时 Bootstrap 明确失败。业务升级顺序调整为先完成 `bootstrap apply` 与 `bootstrap verify`，不再在 Runtime 启动代码中上传预置文件。
-
-## 2026-07-31 文件预览容器适配影响
-
-- `v2026.07.31-maven-1.0.29-pmo-1.3.7-cli-1.0.93-notice-file-dialog-release` 为 `FilePreviewPanel` 增加可选的 `fitContainer`，用于让预览面板填满宿主容器；图片预览默认在预览舞台内使用嵌入式 Element Plus Viewer，不再依赖全屏遮罩交互。上传、文件 ID 持久化、回显、预览元数据、下载 API、权限和租户边界均不变。业务页面升级后应同时验证普通尺寸与 `fitContainer` 布局、图片缩放/切换/关闭，以及自定义 Viewer CSS 是否仍适配。
-
-## Issue #661 单 ZIP 大小控制影响
-
-- 文件模块新增可选的 `FileApi.packageFilesWithSizeControl` 和 `POST /file/files/package-size-control`，供业务后端以 AUTO 总目标或 MANUAL 逐文件目标生成单个 ZIP。普通上传表单的 fileId/fileIds 持久化、上传、回显、预览、下载、权限、租户和前端组件接入均不变。业务使用新入口时应验收 PDF/图片压缩、`compression=NONE`、Office 原样保留，以及目标不可达时仍返回实际 ZIP 和结构化未达标结果。
-
-## 2026-08-03 Mango 1.0.31 发布影响
-
-- Mango `1.0.31` 不改变文件上传、回显、预览、下载、ZIP/PDF API、fileId 持久化、权限或租户边界。使用 `1.0.30` 或其它 `1.0.3x` 版本的业务项目应成组升级 Maven、`@mango/file` 及其固定依赖、CLI 和 PMO，并在独立 Bootstrap 成功后复验上传到下载的完整闭环；已有文件记录、对象内容和业务附件关系无需重建，也不迁移为 URL 字段。
-
-## 2026-08-06 前端依赖批次发布影响
-
-- 本发布候选将 `@mango/file@1.0.34` 作为前端精确版本循环 cohort 的一员发布，用于保持 `admin-pages -> system -> file -> admin-pages` 的依赖一致性；不改变上传、回显、预览、下载、ZIP/PDF API、fileId 持久化、权限或租户边界。业务项目成组升级该批次后，文件场景仍按本指南原闭环验收。
-
-## 2026-08-11 文件预览加载态影响
-
-- `FilePreviewPanel` 在加载预览元数据、受保护文件内容或文档预览地址期间显示 Element Plus 默认 loading，加载失败时在预览区域显示失败态；文件 ID 持久化、上传/预览/下载 API、权限、租户、菜单页面入口和业务表字段不变。业务项目升级后应确认图片预览的 loading、完成态和失败态不会遮挡文件名、操作区或预览内容。
-
-## 2026-08-12 XLS/XLSX Web 预览按钮配置
-
-- `mango-file-preview-engine` 新增 `office.xlsx.web.buttons.enabled`，环境变量为 `KK_OFFICE_XLSX_WEB_BUTTONS_ENABLED`，默认 `true`。业务部署设置为 `false` 后，XLS/XLSX Web 预览页不再渲染“跳转 HTML 预览”和“打印”，Luckysheet 同步铺满顶部；上传、下载、文件权限、租户、`@mango/file` 组件和其它文件类型预览均不变。该开关是业务项目控制按钮展示的接入入口，无需增加 CSS、iframe DOM 注入或遮挡逻辑；长期实现边界见[前端开发流程](../../../mango-pmo/rules/frontend/05-dev-flow.md)。
-
-## 2026-08-16 Issue #805 full-consumer 兼容性说明
-
-- Issue #805 仅调整前端包之间的注册契约，并将 File 页面迁移到 Element Plus 当前 `value` API；不改变文件上传、回显、预览、下载、ZIP/PDF API、fileId 持久化、权限或租户边界。业务项目按发布闭包成组升级后继续执行本指南的文件 ID、上传、预览和下载闭环，无需修改业务表字段或保存 URL。
-
-## 2026-08-25 Issue #851 FILE_ASSET 增量影响
-
-- Issue #851 只改变构建期固定 `FILE_ASSET` 的内容寻址打包、模块 receipt 跳过与 staged publish 失败清理；普通业务上传、fileId/fileIds 持久化、回显、预览、下载 API、权限和租户边界均不变。预置文件异常时可核对文件模块 receipt、对象 SHA-256 与 staging 清理结果；普通业务表单仍按本指南执行上传到下载闭环。
+详细版本影响见[文件上传表单历史变更索引](../../changelog/business-integration/file-upload-form.md)。

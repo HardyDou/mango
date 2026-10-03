@@ -38,7 +38,7 @@ const guideChecks = [
     ]
   },
   {
-    file: 'mango-docs/guides/business-integration/rbac-menu-page-troubleshooting.md',
+    file: 'mango-docs/guides/faq/rbac-menu-page-troubleshooting.md',
     sections: ['阅读顺序', '接入检查点', '最小闭环', '常见失败', '验证命令', '关联规则'],
     text: [
       'Authorization 后端 README',
@@ -50,7 +50,7 @@ const guideChecks = [
     ]
   },
   {
-    file: 'mango-docs/guides/business-integration/permission-button-troubleshooting.md',
+    file: 'mango-docs/guides/faq/permission-button-troubleshooting.md',
     sections: ['阅读顺序', '接入检查点', '最小闭环', '常见失败', '验证命令', '关联规则'],
     text: [
       'Access 后端 README',
@@ -63,7 +63,7 @@ const guideChecks = [
     ]
   },
   {
-    file: 'mango-docs/guides/business-integration/tenant-dict-config-empty.md',
+    file: 'mango-docs/guides/faq/tenant-dict-config-empty.md',
     sections: ['阅读顺序', '接入检查点', '最小闭环', '常见失败', '验证命令', '关联规则'],
     text: [
       'Identity 后端 README',
