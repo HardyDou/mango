@@ -1,0 +1,6 @@
+interface:
+  display_name: "Mango Explain"
+  short_description: "Explain Mango behavior in user language before design or implementation"
+  default_prompt: "Use $mango-explain to explain the current Mango capability, terms, evidence, and next file before changing anything."
+policy:
+  allow_implicit_invocation: true

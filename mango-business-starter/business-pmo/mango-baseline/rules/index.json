@@ -1,5 +1,5 @@
 {
-  "version": 16,
+  "version": 19,
   "always": [
     {
       "path": "rules/00-dev-flow.md",
@@ -8,6 +8,14 @@
     {
       "path": "rules/03-ai-coding-redlines.md",
       "reason": "AI 编码红线、重写唯一执行路径与兼容迁移边界"
+    },
+    {
+      "path": "rules/13-agent-text-output.md",
+      "reason": "所有 Agent 文本输出的受控语言、重点顺序、证据和失败边界"
+    },
+    {
+      "path": "rules/14-decision-expert-review.md",
+      "reason": "决定的三轮独立专家视角、方案整理、同行评审和人工审批边界"
     }
   ],
   "rules": {
@@ -58,6 +66,14 @@
     "process.aiCodingRedlines": {
       "path": "rules/03-ai-coding-redlines.md",
       "reason": "AI 编码红线、重写唯一执行路径、兼容迁移、最终交付真实实现与测试替身边界"
+    },
+    "process.agentTextOutput": {
+      "path": "rules/13-agent-text-output.md",
+      "reason": "所有 Agent 文本输出的受控语言、重点顺序、证据和失败边界"
+    },
+    "process.decisionExpertReview": {
+      "path": "rules/14-decision-expert-review.md",
+      "reason": "决定的三轮独立专家视角、方案整理、同行评审和人工审批边界"
     },
     "process.testAssets": {
       "path": "rules/04-test-assets.md",
@@ -185,7 +201,7 @@
     },
     "product.documentLifecycle": {
       "path": "rules/product/05-document-lifecycle.md",
-      "reason": "BRD、SRS、TDD、实施计划顺序、摘要、追踪、PMO 1.4.5 当前合同与受控历史版本及精确章节变体门禁"
+      "reason": "BRD、SRS、TDD、实施计划顺序、人类阅读摘要、追踪、PMO 1.4.5 当前合同与受控历史版本及精确章节变体门禁"
     },
     "frontend.adminUiCommon": {
       "path": "rules/frontend/07-admin-ui-common.md",
@@ -336,6 +352,25 @@
       "paths": ["mango-pmo/**", "rules/**", "agents/**"],
       "keywords": ["PMO", "规范治理", "规则治理", "Agent 入口", "Agent入口", "流程规范", "规范源", "文档归档", "归档边界"],
       "include": ["agent.pmo", "process.aiDeliveryQuality", "process.documentAssets"]
+    },
+    "ruleActionCards": {
+      "roles": ["pm", "tech-lead", "dev", "qa", "pmo"],
+      "paths": ["mango-pmo/tools/render-rule-action-card.mjs", "mango-pmo/rules/**"],
+      "keywords": ["规范执行卡片", "规则怎么执行", "rule action card", "point-of-use rule"],
+      "include": ["process.deliveryAssurance", "process.documentAssets"]
+    },
+    "askAndUnderstanding": {
+      "roles": ["pm", "tech-lead", "dev", "qa", "pmo"],
+      "paths": ["mango-pmo/skills/mango-ask/**", "mango-pmo/skills/mango-explain/**", "mango-docs/guides/understanding-first/**"],
+      "keywords": ["我看不懂", "解释一下", "先理解", "基本用法", "不确定要做什么", "路由到哪个 Skill", "ambiguous term", "mango-ask", "mango-explain"],
+      "include": ["process.deliveryAssurance", "process.documentAssets", "process.capabilityDocs"]
+    },
+    "deliveryRetro": {
+      "roles": ["dev", "qa", "pmo"],
+      "phases": ["verify", "release", "governance"],
+      "paths": ["mango-pmo/skills/mango-retro/**", "mango-pmo/templates/retrospective.md", "mango-docs/evidence/retrospectives/**"],
+      "keywords": ["复盘", "retro", "retrospective", "交付复盘", "理解复盘", "后续动作"],
+      "include": ["process.documentAssets", "process.aiDeliveryQuality", "process.deliveryAssurance"]
     },
     "documentAssets": {
       "paths": ["mango-docs/**", "mango-pmo/rules/**", "README.md", "**/README.md"],

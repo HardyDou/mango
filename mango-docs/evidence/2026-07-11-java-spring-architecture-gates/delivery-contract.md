@@ -20,7 +20,7 @@
 6. Service 错误使用 `R<T>`、`BizCode/ErrorCode`、`Require`。
 7. 规范存在但编码、构建阶段不能阻断违规。
 
-不处理 Mango 存量业务代码，不修改 `baohan-system`，不证明具体业务规则本身正确，不引入服务端质量平台。
+不处理 Mango 存量业务代码，不修改 `business-system`，不证明具体业务规则本身正确，不引入服务端质量平台。
 
 设计输入：
 
@@ -78,12 +78,12 @@ Mango 全量候选分布：依赖 3、ArchUnit 38、PMD 2,336。主要规则数�
 
 这里的 full 失败不是门禁实现失败，而是存量代码确有候选问题；因此推广策略必须是“新增/修改绝对阻断，存量专项治理”，不能把 2,377 项直接冻结成合法基线。
 
-### 5.2 `baohan-system` 只读消费实验
+### 5.2 `business-system` 只读消费实验
 
-- 正式源仓：`/Users/hardy/work/Yunxin/baohan-system`
+- 正式源仓：`/Users/hardy/work/Yunxin/business-system`
 - 扫描前后 HEAD：`098e133b2a027f05d62766451d60828916fb652e`
 - 扫描前后正式源仓状态：clean，未修改任何文件。
-- 在 `.runtime/pmo/baohan-system-architecture` 的本地实验副本编译 42 个 Maven 模块并执行门禁。
+- 在 `.runtime/pmo/business-system-architecture` 的本地实验副本编译 42 个 Maven 模块并执行门禁。
 - 检出 232 项候选：依赖 11、ArchUnit 15、PMD 206；changed-only 阻断为 0，架构扫描耗时 2,284 ms。
 - 实际识别到 core 依赖 runtime starter、Feign 多 API、API 层 Entity、Controller 未实现 API、Service 返回 R 等问题，证明规则能消费非 `io.mango` 业务 groupId，而不是只对 Mango 自测有效。
 
@@ -124,7 +124,7 @@ Mango 全量候选分布：依赖 3、ArchUnit 38、PMD 2,336。主要规则数�
 
 | 基线 ID | 覆盖台账 ID | E2E 脚本 | 测试命令 | 环境/版本 | 数据库或数据集 | 账号/租户标识 | 结果摘要 | 失败/阻塞/例外 | 报告/截图/日志路径 | 行为变化 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| BASELINE-ARCH-20260711 | TASK-001 至 TASK-005 | EXCEPTION: 本任务只修改后端构建期规则，不存在可操作页面，用户已定义 E2E 为 UI 测试 | 规则测试、changed/full verify、只读消费实验 | macOS，本地 JDK/Maven，固定工具版本 | Mango Reactor、baohan 只读副本、正反 fixture | 不适用 | 197/197 测试通过；changed PASS；full 检出 2,377 | full 的存量失败符合预期 | `mango-docs/evidence/2026-07-11-java-spring-architecture-gates/delivery-contract.md` | 从源码正则硬门禁切换为 Maven/字节码/AST 单一权威 |
+| BASELINE-ARCH-20260711 | TASK-001 至 TASK-005 | EXCEPTION: 本任务只修改后端构建期规则，不存在可操作页面，用户已定义 E2E 为 UI 测试 | 规则测试、changed/full verify、只读消费实验 | macOS，本地 JDK/Maven，固定工具版本 | Mango Reactor、business 只读副本、正反 fixture | 不适用 | 197/197 测试通过；changed PASS；full 检出 2,377 | full 的存量失败符合预期 | `mango-docs/evidence/2026-07-11-java-spring-architecture-gates/delivery-contract.md` | 从源码正则硬门禁切换为 Maven/字节码/AST 单一权威 |
 
 本文件是当前最新基线；运行过程日志和临时项目只在 `.runtime/pmo`，不提交过程数据。
 

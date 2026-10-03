@@ -6,6 +6,7 @@
 - **规范源**：`mango-pmo/rules/product/01-business-requirements.md`。
 - **模板**：`mango-pmo/templates/business-requirements.md`。
 - **检查器**：`node mango-pmo/tools/check-business-requirements.mjs --document <path>`。
+- **人类阅读入口检查**：`node mango-pmo/tools/check-document-reading-entry.mjs --document <path>`。
 - **人工责任人**：业务负责人批准业务事实、范围、规则和业务验收；Agent 不代替批准。
 
 ## 动作门禁
@@ -21,3 +22,8 @@
 - 不复制规范正文到文档。
 - 不用 AI 自检结果代替检查器和人工审批。
 - 不按技术关键词、文件数量或代码行数定级，也不替 Tech Lead 决定方案风险。
+
+## 文本与决定门禁
+
+- 需求文本遵循 `rules/13-agent-text-output.md`，先写业务目标、场景和验收重点。
+- 业务决定遵循 `rules/14-decision-expert-review.md`，完成三轮独立视角和同行评审后再进入 `NEXT`。

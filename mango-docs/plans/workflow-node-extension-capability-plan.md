@@ -10,7 +10,7 @@
 - 画布视觉还不够接近 Pigx 的流程编排体验：节点颜色、连线、分支结构、缩放、步骤检查都需要加强。
 - 当前发布只把节点类型简单映射为 `userTask/serviceTask/gateway`，缺少统一执行器和节点能力治理。
 
-本计划继续吸收 Pigx UI 和 beer-brace-flowable 的优质思路，但不直接复制代码。
+本计划吸收既有流程编排实现的优质思路，但不直接复制代码。
 
 ## 参考项目取舍
 
@@ -30,7 +30,7 @@
 - 不沿用数字型节点类型。Mango 需要更清晰、可扩展的字符串编码。
 - 不把业务节点继续写死为前端常量。
 
-### beer-brace-flowable 吸收点
+### 既有流程编排实现的吸收点
 
 - HTTP 服务任务执行前可构造流程上下文，执行后记录调用日志。
 - 远程服务任务可以把 `DelegateExecution` 封装成安全 DTO 后发给业务服务。
@@ -38,7 +38,7 @@
 - Provider local/remote 分层思想值得保留：单体直接调用，微服务通过远程客户端调用。
 - 表单定义、部署快照、流程实例和任务操作 API 分层值得参考。
 
-### beer-brace-flowable 不直接吸收
+### 既有流程编排实现的不直接吸收项
 
 - 不使用反射读取 Flowable 内部 `CompleteTaskCmd` 私有字段。该方式依赖 Flowable 内部实现，版本升级风险高。
 - 不直接继承/替换 Flowable HTTP Client 作为主扩展点。Mango 优先用自己的服务任务执行器封装 HTTP 调用，更容易审计和治理。
@@ -76,9 +76,9 @@
 
 | 字段 | 说明 |
 |---|---|
-| `node_code` | 节点编码，全局唯一，如 `APPROVAL`、`SERVICE_HTTP`、`GUARANTEE_BANK_SUBMIT` |
+| `node_code` | 节点编码，全局唯一，如 `APPROVAL`、`SERVICE_HTTP`、`BUSINESS_BANK_SUBMIT` |
 | `node_name` | 节点名称 |
-| `category_code` | 分类，如 `COMMON`、`INTEGRATION`、`GUARANTEE` |
+| `category_code` | 分类，如 `COMMON`、`INTEGRATION`、`BUSINESS` |
 | `category_name` | 分类名称 |
 | `bpmn_type` | 发布时映射类型：`userTask`、`serviceTask`、`exclusiveGateway`、`parallelGateway`、`none` |
 | `execution_type` | 执行类型：`NONE`、`USER_TASK`、`SPRING_BEAN`、`HTTP_URL`、`REMOTE_SERVICE`、`EVENT_PUBLISH` |
@@ -97,9 +97,9 @@
 ```json
 {
   "id": "risk_review_001",
-  "nodeName": "元丰行风控初审",
+  "nodeName": "业务方风控初审",
   "nodeType": "APPROVAL",
-  "nodeDefinitionCode": "GUARANTEE_RISK_REVIEW",
+  "nodeDefinitionCode": "BUSINESS_RISK_REVIEW",
   "bpmnType": "userTask",
   "executionType": "USER_TASK",
   "properties": {
@@ -112,7 +112,7 @@
 }
 ```
 
-`nodeType` 表示运行语义，`nodeDefinitionCode` 表示选择的节点模板。保函节点不应该成为独立不可控的 BPMN 类型，而是模板化配置。
+`nodeType` 表示运行语义，`nodeDefinitionCode` 表示选择的节点模板。业务节点不应该成为独立不可控的 BPMN 类型，而是模板化配置。
 
 ### 执行类型
 
@@ -282,7 +282,7 @@ P1 再考虑动态表单：
 - HTTP/远程调用节点：青色或琥珀色
 - 事件节点：靛蓝色
 - 条件/并行网关：灰黑结构色
-- 保函模板节点：在通用颜色基础上加业务角标，不另起不可控颜色体系
+- 业务模板节点：在通用颜色基础上加业务角标，不另起不可控颜色体系
 
 节点之间必须有连线：
 
@@ -299,7 +299,7 @@ P1 再考虑动态表单：
 - Bean 节点显示 Bean、方法、参数映射、返回变量。
 - HTTP 节点显示 Method、URL、Header、Body、超时、成功码。
 - 事件节点显示事件类型、主题、载荷模板。
-- 保函模板节点显示业务预设字段，但本质还是通用节点属性。
+- 业务模板节点显示业务预设字段，但本质还是通用节点属性。
 
 ## 后端 API 规划
 
@@ -403,7 +403,7 @@ P2 新增：
 - 支持 `SPRING_BEAN`、`HTTP_URL`、`EVENT_PUBLISH` 三类执行能力的模型和校验。
 - 前端新增三步骤设计页。
 - 画布增加颜色、连线、分支视觉和缩放。
-- 当前保函节点改为节点模板，不再由后端代码硬编码返回。
+- 当前业务节点改为节点模板，不再由后端代码硬编码返回。
 - E2E 覆盖新增流程三步骤、保存草稿、发布、版本记录。
 
 ### P1：任务/表单/审批能力完善
@@ -419,13 +419,13 @@ P2 新增：
 
 - 远程服务调用接入服务发现或网关。
 - 事件 outbox，支持 MQ。
-- 跨机构节点：提交下游担保机构、提交银行、银行反馈。
+- 跨机构节点：提交下游合作机构、提交银行、银行反馈。
 - 平台流程模板按机构类型初始化。
 - 流程版本回滚、复制版本为草稿。
 
 ## 本轮优先级
 
-本轮先做 P0，不碰保函业务模块实现：
+本轮先做 P0，不碰业务模块实现：
 
 1. 先落节点定义数据模型和接口。
 2. 再改 `node-catalog` 为数据驱动。

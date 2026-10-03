@@ -16,7 +16,7 @@
 - 目标：为运行中的业务审批提供公开、幂等、可审计的撤回能力，避免撤回后遗留的旧流程任务继续出现在待领取或待办结果中。
 - 成功条件：业务可按申请 ID 或流程实例 ID 撤回；当前租户和申请人校验生效；Flowable 运行实例与当前任务终止；业务申请进入 `WITHDRAWN`；操作人、原因和动作可追溯；发布 `workflow.process.withdrawn` 与 `workflow.process.ended`；重复撤回幂等成功；其它终态返回明确失败；本地与远程契约一致。
 - 处理范围：`mango-workflow-api` 公开命令、结果、状态和事件契约；`mango-workflow-core` 撤回编排、并发幂等、状态流水与事件；starter Controller、权限资源、starter-remote Feign；充分单元测试、定向集成/API 契约测试；Workflow README、业务接入指南和能力地图。
-- 不处理范围：业务项目自身订单/审核轮次状态机、历史脏数据清理、前端撤回按钮、Baohan 业务代码升级、Maven 发布。
+- 不处理范围：业务项目自身订单/审核轮次状态机、历史脏数据清理、前端撤回按钮、Business 业务代码升级、Maven 发布。
 
 ## 3. 可观察系统要求
 
@@ -65,6 +65,6 @@
 ## 7. 例外与剩余风险
 
 - 本任务不处理 Issue 中已经产生的历史旧流程和旧任务；只保证能力发布后新发生的撤回走完整公共链路。
-- 本任务不发布 Maven 版本，也不修改 Baohan 业务仓；业务回归仍依赖后续独立发布与消费项目升级。
+- 本任务不发布 Maven 版本，也不修改 Business 业务仓；业务回归仍依赖后续独立发布与消费项目升级。
 - 业务单据能否撤回、撤回后回到何种业务状态，仍由业务模块在调用前和订阅事件时按自身状态机判断；Workflow 只负责其申请和运行实例终态。
 - core 全量 `verify` 中 4 条既有 `WorkflowMigrationUpgradeIntegrationTest` 由 `MANGO_DB_NAME=mango_dev_*` 环境条件控制，本次未连接专用 MySQL，因此按设计跳过；本改动不包含 migration，撤回持久化链路已由隔离 H2 + 真实 Mapper 覆盖。

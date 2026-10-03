@@ -137,7 +137,7 @@ Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `d29b1399226e3e798d
 - Generated Mango consumers receive the new detail, data-table and categorized file-upload capabilities through the complete published npm tuple.
 - File consumers must run the file module migration, which adds file_settings.preview_max_size with a 200 MiB default; existing files and runtime IDs are preserved.
 - Office preview requests become asynchronous and lease-coordinated across instances; callers must use the documented task status and preview endpoints and handle explicit failure states.
-- No production traffic rollout, application deployment, historical file rewrite or Baohan source change is included.
+- No production traffic rollout, application deployment, historical file rewrite or Business source change is included.
 
 ### Upgrade Estimate
 
@@ -206,7 +206,7 @@ Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `346868b6db938d1ccd
 
 - New clean-database `ORG_MEMBER_BINDING` Resource initialization is deterministic across builds; existing runtime organization-member relationship IDs are not rewritten.
 - Generated Mango Admin consumers receive accurate `MangoDialog` drag cursor feedback without changing child-control or scrolling semantics.
-- No schema migration, historical data rewrite, production operation, Baohan source change, or business application deployment is included.
+- No schema migration, historical data rewrite, production operation, Business source change, or business application deployment is included.
 
 ### Upgrade Estimate
 
@@ -269,7 +269,7 @@ Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `96d04bf40e91123d04
 ### Business Impact
 
 - Generated Mango Admin consumers receive the dialog drag behavior and corrected Admin Shell type contracts.
-- No Maven coordinate, database migration, production data rewrite, or Baohan source change is included.
+- No Maven coordinate, database migration, production data rewrite, or Business source change is included.
 - Consumers must install the complete published npm tuple; workspace links and mixed cached package versions are unsupported.
 
 ### Upgrade Estimate
@@ -643,7 +643,7 @@ Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `cd64e446dadc4d713c
 
 - Run the merged feature suites, Catalog and Git impact checks, exact plan/notes gates, capability audits, full Release PR checks and registry doctor under Node `22.23.1`.
 - Seal Maven/docs and npm once, verify both registry roles, run mixed and pure consumers, then verify Tag and GitHub Release.
-- No Baohan application upgrade or deployment is part of this release.
+- No Business application upgrade or deployment is part of this release.
 
 ### Rollback
 
@@ -708,7 +708,7 @@ Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `c9482a03b27014cf76
 ### Verification
 
 - Run the merged #914 and #909 suites, release plan/notes gates, full workspace build, protected required checks and registry doctor.
-- Seal once, verify both registry roles, run a clean pure consume-registry consumer and then run Baohan first-start verification.
+- Seal once, verify both registry roles, run a clean pure consume-registry consumer and then run Business first-start verification.
 
 ### Rollback
 
@@ -917,7 +917,7 @@ Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `290e7acc4b2ecc0a76
 ### Verification
 
 - Run plan, notes, registry doctor, prepare and local release checks; verify sealed Maven/npm artifacts from both registry roles and one clean pure consumer.
-- Verify deterministic local Resource reset/incremental and Workflow Provider fixtures. No Baohan test or production environment is touched.
+- Verify deterministic local Resource reset/incremental and Workflow Provider fixtures. No Business test or production environment is touched.
 
 ### Rollback
 
@@ -989,7 +989,7 @@ Status: `PENDING`. Publication, dual-registry verification, clean consumer verif
 
 - Run `mango release plan`, `mango release prepare` and the exact release-notes checker with Node `22.23.1`; preserve the generated plan digest and sealed candidate hashes.
 - Verify the sealed Maven batch with one aggregate clean consumer and verify npm packages from the consume registry, not a workspace link or local cache.
-- In the local guarantee-style fixture, assert reset BSQL contains portable Resource rows and Registry hashes, first restore reports the expected applied steps, the second unchanged startup reports `executedSteps=0`, and an incremental update dispatches only changed Resources while preserving modified `SYSTEM_CONFIG`.
+- In the local business-style fixture, assert reset BSQL contains portable Resource rows and Registry hashes, first restore reports the expected applied steps, the second unchanged startup reports `executedSteps=0`, and an incremental update dispatches only changed Resources while preserving modified `SYSTEM_CONFIG`.
 - Verify Registry rows, receipt/disposition records, target tables and Flyway history in the disposable local MySQL database. No test or production environment is modified.
 
 ### Rollback
@@ -1824,8 +1824,8 @@ Status: `PENDING`. This npm-only governance patch publishes `@mango/pmo@1.3.14` 
 ### Verification
 
 - The document-contract suite must cover pinned 1.3.10/1.3.11/1.3.12 positive cases, a pinned 1.3.13 no-variant case, and current-version, unpinned, unknown-section and malformed-table negative cases.
-- The real Baohan set of 82 lifecycle documents must pass without modifying its seven path/SHA/version-pinned historical documents.
-- PMO and CLI package checks, Business Starter projection, release impact, README/capability audits, workspace layout, branch protection, required checks, hosted/group back-checks and a clean published Baohan consumer upgrade must pass before completion.
+- The real Business set of 82 lifecycle documents must pass without modifying its seven path/SHA/version-pinned historical documents.
+- PMO and CLI package checks, Business Starter projection, release impact, README/capability audits, workspace layout, branch protection, required checks, hosted/group back-checks and a clean published Business consumer upgrade must pass before completion.
 
 ## v2026.08.14-cli-1.0.105-pmo-manifest-compat-release - 2026-08-14
 
@@ -1864,7 +1864,7 @@ Status: `PUBLISHED_AND_VERIFIED`. This npm-only patch published `@mango/cli@1.0.
 ### Verification
 
 - Regression test reproduces the exact `invalid @mango/pmo manifest file descriptor: code-templates/README.md` failure against a valid historical schema v2 descriptor, then proves the fixed transaction removes the obsolete file.
-- Required CLI tests, packed and clean registry consumer verification, release lock, PMO/Business Starter projection, workspace layout, README/capability audits, admin style gates, branch protection read-back, required checks and the real Baohan PMO upgrade all passed.
+- Required CLI tests, packed and clean registry consumer verification, release lock, PMO/Business Starter projection, workspace layout, README/capability audits, admin style gates, branch protection read-back, required checks and the real Business PMO upgrade all passed.
 
 ## v2026.08.14-maven-1.0.36-notice-1.0.39-admin-1.0.65-cli-1.0.104-inbound-release - 2026-08-14
 
@@ -2073,8 +2073,8 @@ The canonical publication manifest SHA-256 is `37de973286f36a3199425346e97a67eb5
 - PR #745 passed `pr-contract-check`, `pmo-doc-check`, `frontend-pr-quality` and the underlying PMO, CLI, package, documentation and frontend gates. Live branch protection matched `.github/branch-protection-policy.json` before publication.
 - All 24 coordinates resolve from npm-hosted and npm-group with identical versions, integrity, shasum and publication timestamps. Every tarball contract passed and each immutable coordinate was published exactly once. CLI release lock matches all 29 local package versions and keeps Maven `1.0.35`.
 - Git tag and GitHub Release point to source commit `4592e70a...`; Pages run `31083471251` published and verified Latest documentation from the same source.
-- A clean npm-group consumer installed CLI `1.0.101` and PMO `1.3.11`, passed locked PMO validation, generated a module from the published code baseline, passed `vue-tsc` and produced a production build. The real guarantee project also resolved Admin `1.0.64`, Admin Shell `1.0.58`, Notice `1.0.38` and System `1.0.32`, passed its 11/11 upgrade contract, PMO document-set regression, typecheck, production build and runtime health check against database `mango_dev_baohan_system_upgrade_latest_mango_006`.
-- The guarantee application's authenticated `/profile` click-through screenshot and console/network capture remain a business UI acceptance follow-up because the verification session had no controllable browser instance. This does not weaken the completed immutable publication, dual-registry verification, package contracts or clean-consumer build evidence.
+- A clean npm-group consumer installed CLI `1.0.101` and PMO `1.3.11`, passed locked PMO validation, generated a module from the published code baseline, passed `vue-tsc` and produced a production build. The real business project also resolved Admin `1.0.64`, Admin Shell `1.0.58`, Notice `1.0.38` and System `1.0.32`, passed its 11/11 upgrade contract, PMO document-set regression, typecheck, production build and runtime health check against database `mango_dev_business_system_upgrade_latest_mango_006`.
+- The business application's authenticated `/profile` click-through screenshot and console/network capture remain a business UI acceptance follow-up because the verification session had no controllable browser instance. This does not weaken the completed immutable publication, dual-registry verification, package contracts or clean-consumer build evidence.
 
 ## v2026.08.06-cli-1.0.100-code-baseline-consumer-fix - 2026-08-06
 
@@ -2177,7 +2177,7 @@ The completed read-only verification manifest SHA-256 is `d1021af285b1ed607db2ba
 ### Fixed
 
 - Allow numgen DATE segments to use `MMdd` and arbitrary `DateTimeFormatter` patterns from the management page, with live preview and explicit validation errors.
-- Support daily and yearly sequence grouping needed by the business guarantee-number formats `YYYY年分离式字第XXMMDDNNNN号` and `AAA（YYYY）年第XXNNNN号`.
+- Support daily and yearly sequence grouping needed by the business business-number formats `YYYY年分离式字第XXMMDDNNNN号` and `AAA（YYYY）年第XXNNNN号`.
 - Keep the persisted frontend configuration, backend date validation and injected-clock tests aligned.
 
 ### Versions
@@ -3606,7 +3606,7 @@ Status: `PUBLISHED_AND_VERIFIED`. The complete frontend standards npm matrix was
 ### Upgrade Notes
 
 1. Install `@mango/cli@1.0.72` after both it and `@mango/pmo@1.2.2` resolve from `npm-group`; Mango Maven remains `1.0.17`.
-2. In a historical business repository, set the real roots once, for example `"paths": { "backend": "baohan-backend", "frontend": "frontend", "businessDocs": "business-docs" }`.
+2. In a historical business repository, set the real roots once, for example `"paths": { "backend": "business-backend", "frontend": "frontend", "businessDocs": "business-docs" }`.
 3. Run `mango pmo upgrade --project-dir . --to 1.2.2`, then synchronize the standard `.gitea/workflows/pmo-doc-check.yml` or `.github/workflows/pmo-doc-check.yml` for the hosting platform.
 4. Configure `PMO Documentation Checks / pmo-doc-check` as a required check in the business repository. This is repository-host configuration, not part of the Mango package release.
 
@@ -3660,7 +3660,7 @@ Status: `PUBLISHED_AND_VERIFIED`. The complete frontend standards npm matrix was
 - `pnpm -C mango-ui --filter @mango/pmo check`
 - `node --test mango-ui/packages/mango-cli/tests/pmo-bundle.test.mjs`
 - `node mango-ui/scripts/publish-package.mjs --verify-pmo-package-root=<extracted-package-root>` rejects the historical `@mango/pmo@1.2.0` tarball because its executable mode differs from the manifest.
-- Business consumer dry-run against `/Users/hardy/Work/Yunxin/baohan-system-mango-pmo-1.2.0`: local `@mango/cli@1.0.71` / `@mango/pmo@1.2.1` tarballs produced `add: 99, update: 36, delete: 0, skip: 30, warn: 0`; the business worktree remained unchanged.
+- Business consumer dry-run against `/Users/hardy/Work/Yunxin/business-system-mango-pmo-1.2.0`: local `@mango/cli@1.0.71` / `@mango/pmo@1.2.1` tarballs produced `add: 99, update: 36, delete: 0, skip: 30, warn: 0`; the business worktree remained unchanged.
 - Required PR check `pmo-doc-check` passed in 7m08s; the release state manifest completed all 17 fixed states at `2026-07-14T00:47:54.581Z`.
 - A fresh `npm-group` download preserved `0755` for all three governed tools and passed package-root verification; a clean registry install repeated the business dry-run with `warn: 0` and no worktree changes.
 - Immutable coordinates, checksums, recovery facts, and consumer evidence are recorded in `mango-docs/evidence/governance/release-v2026.07.14-pmo-1.2.1-cli-1.0.71-release.json`.
@@ -5776,7 +5776,7 @@ The completed release manifest records all 17 states as `passed`, including the 
 
 ### Fixed
 
-- Added safe business return-path support to the Workflow standard task detail page. Business modules can pass `returnPath=/guarantee/risk/reviews` and optional `returnQuery=scope%3DTODO` so the top-level return button goes back to the originating business workspace.
+- Added safe business return-path support to the Workflow standard task detail page. Business modules can pass `returnPath=/business/risk/reviews` and optional `returnQuery=scope%3DTODO` so the top-level return button goes back to the originating business workspace.
 - Reused the same safe business return target after task actions complete, so approve/reject/claim/unclaim no longer force business users into Workflow todo/done lists when a valid `returnPath` is present.
 - Hardened `returnPath` validation to allow only same-site absolute paths and reject external URLs, protocol-relative URLs, empty values, query/hash-in-path values, backslashes, and control characters.
 - Updated task-detail unit coverage for business return paths, unsafe URL fallback, legacy `from=initiated/done/todo` fallback, and post-action navigation.
@@ -5794,7 +5794,7 @@ The completed release manifest records all 17 states as `passed`, including the 
 
 ### Upgrade Notes
 
-- Business frontends that enter Workflow task detail from a business workspace should pass a same-site `returnPath`, for example `/guarantee/risk/reviews`, and optional `returnQuery` for business tab state.
+- Business frontends that enter Workflow task detail from a business workspace should pass a same-site `returnPath`, for example `/business/risk/reviews`, and optional `returnQuery` for business tab state.
 - Business frontends that consume Workflow directly should upgrade to `@mango/workflow@1.0.12`.
 - Business frontends that consume the Workflow business example package should upgrade to `@mango/workflow-business-example@1.0.12`.
 - Business frontends that consume grid widgets should upgrade to `@mango/grid-widgets@1.0.1` so widget dependencies resolve the updated Workflow package.

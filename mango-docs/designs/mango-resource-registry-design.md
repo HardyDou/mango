@@ -142,27 +142,27 @@ YAML 示例：
 mango:
   resource:
     schemaVersion: 1
-    moduleCode: guarantee
-    moduleName: 担保业务
+    moduleCode: business
+    moduleName: 合作业务
     declarations:
       MESSAGE_TEMPLATE:
         - id: "739201839201839104"
           version: 1
-          bizKey: guarantee.apply.submit
-          name: 担保申请提交消息
+          bizKey: business.apply.submit
+          name: 合作申请提交消息
           targetModule: mango-notice
           syncMode: AUTO
           status: ACTIVE
           fields:
             templateCode:
               type: string
-              value: guarantee_apply_submit
+              value: business_apply_submit
             title:
               type: string
-              value: 担保申请已提交
+              value: 合作申请已提交
             content:
               type: file
-              location: classpath:/mango/resources/guarantee/message/apply-submit.html
+              location: classpath:/mango/resources/business/message/apply-submit.html
               encoding: UTF-8
               mediaType: text/html
             sort:
@@ -171,18 +171,18 @@ mango:
       WORKFLOW_DEFINITION:
         - id: "739201839201839105"
           version: 3
-          bizKey: guarantee.apply.approve
-          name: 担保申请审批流
+          bizKey: business.apply.approve
+          name: 合作申请审批流
           targetModule: mango-workflow
           syncMode: AUTO
           status: ACTIVE
           fields:
             definitionCode:
               type: string
-              value: guarantee_apply_approve
+              value: business_apply_approve
             definition:
               type: file
-              location: classpath:/mango/resources/guarantee/workflow/apply-approve.json
+              location: classpath:/mango/resources/business/workflow/apply-approve.json
               encoding: UTF-8
               mediaType: application/json
 ```
@@ -194,22 +194,22 @@ JSON 使用同一结构：
   "mango": {
     "resource": {
       "schemaVersion": 1,
-      "moduleCode": "guarantee",
-      "moduleName": "担保业务",
+      "moduleCode": "business",
+      "moduleName": "合作业务",
       "declarations": {
         "MESSAGE_TEMPLATE": [
           {
             "id": "739201839201839104",
             "version": 1,
-            "bizKey": "guarantee.apply.submit",
-            "name": "担保申请提交消息",
+            "bizKey": "business.apply.submit",
+            "name": "合作申请提交消息",
             "targetModule": "mango-notice",
             "syncMode": "AUTO",
             "status": "ACTIVE",
             "fields": {
               "templateCode": {
                 "type": "string",
-                "value": "guarantee_apply_submit"
+                "value": "business_apply_submit"
               }
             }
           }
@@ -320,10 +320,10 @@ mvn mango:resource-validate
 示例：
 
 ```text
-guarantee.apply.submit
-guarantee.apply.approve
-guarantee.issue.success
-guarantee.apply.no
+business.apply.submit
+business.apply.approve
+business.issue.success
+business.apply.no
 ```
 
 唯一约束：

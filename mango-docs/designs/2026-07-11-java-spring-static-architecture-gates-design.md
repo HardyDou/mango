@@ -145,7 +145,7 @@ mvn verify
 ### 6.2 真实仓验证
 
 - Mango：全部 210 个 Maven POM 和实际 Reactor 模块。
-- `baohan-system`：保持只读，扫描前后 Git HEAD、tracked/untracked 快照一致。
+- `business-system`：保持只读，扫描前后 Git HEAD、tracked/untracked 快照一致。
 - 对两个仓库分别执行普通路径与包含 `.mango/worktrees` 的路径一致性验证。
 - 对临时普通 clone 注入六类违规，六类必须全部失败；源仓不得修改。
 

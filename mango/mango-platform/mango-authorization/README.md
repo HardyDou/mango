@@ -475,16 +475,16 @@ Flyway 只维护授权模块的表、列、索引等 DDL，不再承载任何初
 {
   "id": "2900000000000000101",
   "version": 1,
-  "bizKey": "guarantee.frontend.app.guarantee-local",
-  "name": "保函前端本地运行单元",
+  "bizKey": "business.frontend.app.business-local",
+  "name": "业务前端本地运行单元",
   "targetModule": "authorization",
   "fields": {
-    "appCode": { "type": "STRING", "value": "guarantee-local" },
+    "appCode": { "type": "STRING", "value": "business-local" },
     "appType": { "type": "STRING", "value": "MICRO_APP" },
     "deployMode": { "type": "STRING", "value": "REMOTE" },
     "entryUrl": { "type": "STRING", "value": "http://127.0.0.1:5188/src/micro.ts" },
-    "mountPath": { "type": "STRING", "value": "/micro/guarantee" },
-    "activeRule": { "type": "STRING", "value": "/guarantee/**" },
+    "mountPath": { "type": "STRING", "value": "/micro/business" },
+    "activeRule": { "type": "STRING", "value": "/business/**" },
     "framework": { "type": "STRING", "value": "vue3" },
     "version": { "type": "STRING", "value": "dev" },
     "sandboxEnabled": { "type": "BOOLEAN", "value": false },
@@ -499,15 +499,15 @@ Flyway 只维护授权模块的表、列、索引等 DDL，不再承载任何初
 {
   "id": "2900000000000000102",
   "version": 1,
-  "bizKey": "guarantee.frontend.strategy.internal-admin.hybrid",
-  "name": "保函模块前端运行策略",
+  "bizKey": "business.frontend.strategy.internal-admin.hybrid",
+  "name": "业务模块前端运行策略",
   "targetModule": "authorization",
   "fields": {
     "appCode": { "type": "STRING", "value": "internal-admin" },
-    "moduleCode": { "type": "STRING", "value": "guarantee" },
+    "moduleCode": { "type": "STRING", "value": "business" },
     "deployProfile": { "type": "STRING", "value": "hybrid" },
     "pageType": { "type": "STRING", "value": "MICRO_ROUTE" },
-    "runtimeCode": { "type": "STRING", "value": "guarantee-local" },
+    "runtimeCode": { "type": "STRING", "value": "business-local" },
     "status": { "type": "INT", "value": 1 },
     "sort": { "type": "INT", "value": 30 }
   }

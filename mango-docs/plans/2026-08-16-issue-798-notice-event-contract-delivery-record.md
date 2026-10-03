@@ -59,4 +59,4 @@
 - 删除的是既有公开事件字段；当前仓库内未提供消费者兼容层。发布说明必须明确业务消费者需要改为用 `messageId` 查询详情。
 - 完整 `mango-notice-core` 验证仍被 `NoticeChannelResourceHandlerIntegrationTest` 的既有 H2 schema 漂移阻断；该错误已在干净 `main` 复现，不属于 #798 改动。本任务未扩大范围修复该基线问题。
 - 首次在线 Maven 验证访问私有 Nexus SNAPSHOT metadata 时收到 HTTP 504；使用本地已解析依赖执行离线验证后，受影响测试与模块生命周期均通过。
-- 本任务不执行 Maven 发布，也不修改保函业务仓；业务环境只有在包含本修复的新 Mango 正式制品发布并升级后生效。
+- 本任务不执行 Maven 发布，也不修改业务仓；业务环境只有在包含本修复的新 Mango 正式制品发布并升级后生效。

@@ -42,7 +42,7 @@
 - Generated Mango consumers receive the new detail, data-table and categorized file-upload capabilities through the complete published npm tuple.
 - File consumers must run the file module migration, which adds file_settings.preview_max_size with a 200 MiB default; existing files and runtime IDs are preserved.
 - Office preview requests become asynchronous and lease-coordinated across instances; callers must use the documented task status and preview endpoints and handle explicit failure states.
-- No production traffic rollout, application deployment, historical file rewrite or Baohan source change is included.
+- No production traffic rollout, application deployment, historical file rewrite or Business source change is included.
 
 ### Upgrade Estimate
 
@@ -193,7 +193,7 @@
 
 ### Business Impact
 
-- Generated consumers receive the dialog cursor correction and deterministic Identity Resource IDs without rewriting existing runtime relationship IDs or requiring Baohan source changes.
+- Generated consumers receive the dialog cursor correction and deterministic Identity Resource IDs without rewriting existing runtime relationship IDs or requiring Business source changes.
 
 ### Upgrade Estimate
 
@@ -242,7 +242,7 @@
 
 ### Business Impact
 
-- Generated Admin consumers receive the dialog drag behavior and corrected Admin Shell type contracts without Baohan source changes.
+- Generated Admin consumers receive the dialog drag behavior and corrected Admin Shell type contracts without Business source changes.
 
 ### Upgrade Estimate
 
@@ -823,7 +823,7 @@
 
 ### Verification
 
-- Verify the sealed Maven/npm batch from both registry roles and run the guarantee-style reset/incremental fixture plus a clean consume-registry generated consumer.
+- Verify the sealed Maven/npm batch from both registry roles and run the business-style reset/incremental fixture plus a clean consume-registry generated consumer.
 
 ### Rollback
 
@@ -1384,7 +1384,7 @@
 ### Verification
 
 - PMO document-contract tests cover the exact 1.3.10/1.3.11/1.3.12 historical section matrix, a 1.3.13 no-variant case, and current, unpinned, unknown-section and malformed-table negative cases.
-- The real Baohan set of 82 lifecycle documents passes with seven hash-pinned historical documents and without modifying approved content.
+- The real Business set of 82 lifecycle documents passes with seven hash-pinned historical documents and without modifying approved content.
 - PMO/CLI package checks, Business Starter projection, release lock, repository gates and clean published consumer upgrade.
 
 ## 1.0.105 - 2026-08-14
@@ -1403,7 +1403,7 @@
 ### Verification
 
 - PMO bundle regression covers an installed schema v2 manifest with `kind: code-template`, validates the atomic upgrade, and proves the obsolete file is deleted.
-- CLI package tests, packed consumer checks, release-version lock, Business Starter projection, workspace layout, admin style gates, and a real Baohan `1.3.11 -> 1.3.13` consumer transaction.
+- CLI package tests, packed consumer checks, release-version lock, Business Starter projection, workspace layout, admin style gates, and a real Business `1.3.11 -> 1.3.13` consumer transaction.
 
 ## 1.0.104 - 2026-08-14
 
@@ -2062,7 +2062,7 @@
 
 ### Fixed
 
-- Read backend, frontend, and business-document roots from `mango.config.json.paths`; a repository using `baohan-backend/` is no longer silently classified as having no backend changes.
+- Read backend, frontend, and business-document roots from `mango.config.json.paths`; a repository using `business-backend/` is no longer silently classified as having no backend changes.
 - Fail closed when the configured backend POM is missing, and feed the resolved backend POM and business-document root to the standard workflow.
 - Ship equivalent GitHub and Gitea `pmo-doc-check` templates. Direct-module checks continue without `-am` or `-amd` and compare no-new violations against the PR base.
 - Include `io.mango:mango-docs-bundle:<version>` in the existing `publish-maven-batch.sh --all-non-app` release step so a Maven release cannot omit its version-matched CLI documentation source.

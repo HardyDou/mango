@@ -119,11 +119,11 @@ mango:
 
 ### 任务来源
 
-参考 `/Users/hardy/Work/baohan/baohan/mango-api/mango-file`，为 mango 增加文件能力。
+参考 `/Users/hardy/Work/business/business/mango-api/mango-file`，为 mango 增加文件能力。
 
 ### 处理原则
 
-- 作为基础设施/系统能力独立规划，不混入机构模型或保函业务。
+- 作为基础设施/系统能力独立规划，不混入机构模型或业务。
 - 后续业务模块只引用文件能力接口，不直接关心本地磁盘、对象存储等具体实现。
 - 存储适配、文件记录、访问权限、预览元数据、Swagger 文档一次性规划清楚。
 

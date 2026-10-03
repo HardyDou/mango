@@ -50,7 +50,7 @@
 | 要求 ID | 验证方式 | 命令或步骤 | 结果 | 证据 |
 |---|---|---|---|---|
 | SR-674-01, SR-674-02, SR-674-03 | M11 H2 模块集成测试 | `mvn -q -f mango/mango-infra/mango-infra-persistence/mango-infra-persistence-starter/pom.xml -Dtest=PersistenceFlywayAutoConfigurationTest test` | PASS：26 tests，0 failures，0 errors | `target/surefire-reports/TEST-io.mango.infra.persistence.starter.PersistenceFlywayAutoConfigurationTest.xml` |
-| SR-674-01, SR-674-04 | M11 MySQL 空库 Workflow 装配 | 将补丁 starter 以 `1.0.29` 安装到隔离 Maven 仓库，启动宝涵后端连接 0 表 MySQL 库 | PASS（Issue 范围）：生成 289 张表；`flyway_schema_history_workflow` 有 3 条成功记录；`ACT_GE_PROPERTY` 有 13 条 Flowable 7.0 元数据；日志依次出现 Workflow history 创建、ProcessEngine 创建和应用启动，且无 `ACT_GE_PROPERTY` 缺表错误 | 数据库查询与 `.mango/run/logs/baohan-system-service.log`；验证后已执行 `mango dev stop` |
+| SR-674-01, SR-674-04 | M11 MySQL 空库 Workflow 装配 | 将补丁 starter 以 `1.0.29` 安装到隔离 Maven 仓库，启动宝涵后端连接 0 表 MySQL 库 | PASS（Issue 范围）：生成 289 张表；`flyway_schema_history_workflow` 有 3 条成功记录；`ACT_GE_PROPERTY` 有 13 条 Flowable 7.0 元数据；日志依次出现 Workflow history 创建、ProcessEngine 创建和应用启动，且无 `ACT_GE_PROPERTY` 缺表错误 | 数据库查询与 `.mango/run/logs/business-system-service.log`；验证后已执行 `mango dev stop` |
 | SR-674-01, SR-674-02, SR-674-03, SR-674-04 | M09 直接修改模块 verify | `mvn -q -f mango/mango-infra/mango-infra-persistence/mango-infra-persistence-starter/pom.xml verify` | PASS：98 tests，0 failures，0 errors，1 skipped | `target/surefire-reports/TEST-*.xml` |
 | SR-674-01, SR-674-02, SR-674-03, SR-674-04 | 代码与文档门禁 | `git diff --check`、测试质量、mock audit、模块 README audit、README source facts audit | PASS | 各命令退出码均为 0；mock audit block=0、warn=0 |
 

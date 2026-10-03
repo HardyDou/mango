@@ -1,5 +1,9 @@
 # Mango File 使用说明
 
+> **场景 / 路径：** `上传 -> fileId -> 业务表保存 -> File API/Preview 按 fileId 读取`。
+>
+> **边界 / 源码：** 业务表不保存 `previewUrl`、`downloadUrl` 或对象存储地址；权限、租户和转换失败先查文件状态。入口为 [`FileRecordEntity.java`](mango-file-core/src/main/java/io/mango/file/core/entity/FileRecordEntity.java)。先看“3.0”，再看“4. 前端接入”和“13. 问题排查”。
+
 `mango-file` 是 Mango 的文件中心。业务系统用它统一处理上传、文件记录、下载、预览、逻辑目录、存储配置、上传策略、秒传和分片上传。
 
 业务模块只保存 `fileId` 或自己的附件关联关系，不保存 bucket、objectName、对象存储地址、预签名 URL、下载 URL 或预览 URL。访问地址由文件中心按当前配置实时生成。
@@ -239,16 +243,16 @@ AUTO 模式要求 `maxPackageSizeBytes`；AUTO 中 entry 的 `targetSizeBytes` �
 `entries.path` 支持多级嵌套目录，不需要单独传目录项；ZIP 会按路径自动形成目录结构。例如：
 
 ```text
-项目名称+被保人名称+保函金额.zip
+项目名称+被保人名称+业务金额.zip
 ├── 01_签约资料
-│   ├── 保函申请书.pdf
+│   ├── 业务申请书.pdf
 │   └── 企业资料
 │       └── 营业执照.pdf
 ├── 02_资料清单
 │   └── 配置的资料清单.xlsx
-└── 04_反担保资料
+└── 04_反合作资料
     └── 合同
-        └── 反担保合同.pdf
+        └── 反合作合同.pdf
 ```
 
 下载文件到工作目录：
@@ -584,44 +588,18 @@ mango:
 
 ### 7.1 多前端文件访问
 
-本节说明以下部署方案中的文件访问问题和解决办法，不作为其它网络拓扑的部署要求：8081、8082、8083 是三个独立访问的前端应用，共用一个后端；每个前端通过自身同源的 `/api/` 反向代理访问后端，Nginx 转发时去掉 `/api`。
+本节只适用于 8081、8082、8083 三个前端共用后端、各自通过同源 `/api/` 代理的部署。前端原样使用接口返回的 `previewUrl` 和 `downloadUrl`，不拼接或删除 `/api`。
 
-在这套方案下，前端直接使用文件接口返回的 `previewUrl` 和 `downloadUrl`，不自行拼接或删除 `/api`。
+`PROXY` 模式下：
 
-#### 问题一：返回地址缺少 `/api`
+- `mango.file.public-base-url` 留空，租户配置使用 `accessMode=PROXY`。
+- Nginx 转发 `Host`、`X-Forwarded-Host`、`X-Forwarded-Port`、`X-Forwarded-Proto`，并设置 `X-Forwarded-Prefix: /api`。
+- `/api/` 的 `proxy_pass` 保留末尾 `/`，后端据此返回当前端口的同源地址，例如 `http://host:8082/api/file/files/preview-content?id=...`。
+- 完整配置见 `mango-ui/deploy/nginx/mango-independent-apps.conf`。固定 `public-base-url` 或丢失转发头会导致地址缺少 `/api` 或指向其它端口。
 
-如果后端返回如下地址，浏览器会把请求发送到前端静态服务，无法经过 `/api` 代理访问文件接口：
+`DIRECT` 模式下，签名 URL 的 host、port、path 和 query 不可改写；配置浏览器可达的 `publicEndpoint`，并为 8081、8082、8083 配置 MinIO CORS。预览/下载允许 `GET`、`HEAD`，直传另加 `PUT`。
 
-```text
-http://192.168.5.114/file/files/preview-content?id=2078005986303193089
-```
 
-这通常是因为后端没有收到浏览器实际访问的 Host、Port 和代理前缀。该部署方案的处理方式是：
-
-- `mango.file.public-base-url` 保持为空，避免把文件地址固定到某一个前端。
-- 租户运行时文件配置使用 `accessMode=PROXY`。
-- Nginx 转发当前请求的 `Host`、`X-Forwarded-Host`、`X-Forwarded-Port`、`X-Forwarded-Proto`，并设置 `X-Forwarded-Prefix: /api`。
-- `/api/` 对应的 `proxy_pass` 末尾保留 `/`，使 Nginx 去掉 `/api/` 后再转发后端。
-
-后端据此返回当前应用同源且包含 `/api` 的地址，例如从 8082 访问时返回：
-
-```text
-http://192.168.5.114:8082/api/file/files/preview-content?id=2078005986303193089
-```
-
-完整 Nginx 配置可参考：
-
-```text
-mango-ui/deploy/nginx/mango-independent-apps.conf
-```
-
-#### 问题二：文件地址指向另一个前端端口
-
-如果把 `mango.file.public-base-url` 固定为某个前端地址，或者 Nginx 没有转发当前 Host 和 Port，8081 应用可能拿到 8082 的文件地址，从而触发浏览器跨域。
-
-解决办法与问题一相同：保持 `public-base-url` 为空并转发当前请求信息，让后端根据每次请求动态生成同源地址。8081、8082、8083 分别使用自身端口下的 `/api/file/**`，不需要在三个前端之间互相访问。
-
-#### MinIO DIRECT 地址和跨域
 
 如果该部署使用 `DIRECT` 模式，后端返回的是 MinIO/S3 预签名 URL。URL 的 host、port、path 和 query 参与签名，添加 `/api` 或改写成某个前端端口会导致签名失效。
 
@@ -728,13 +706,13 @@ mango-file-starter/src/main/resources/META-INF/mango/resources/file-common-stora
 mango:
   resource:
     schema-version: 1
-    module-code: guarantee
-    module-name: 保函
+    module-code: business
+    module-name: 业务
     declarations:
       FILE_ASSET:
         - id: "840000000000000001"
           version: 1
-          biz-key: guarantee.workflow.payment-voucher
+          biz-key: business.workflow.payment-voucher
           name: 付款凭证示例
           target-module: file
           sync-mode: INIT_ONLY
@@ -742,16 +720,16 @@ mango:
             tenantId: { type: LONG, value: 1 }
             fileId: { type: LONG, value: 840000000000000101 }
             storageConfigId: { type: LONG, value: 1 }
-            objectName: { type: STRING, value: mango-assets/guarantee/payment-voucher.pdf }
+            objectName: { type: STRING, value: mango-assets/business/payment-voucher.pdf }
             fileName: { type: STRING, value: payment-voucher.pdf }
             sha256: { type: STRING, value: "<64 位小写 SHA-256>" }
             content:
               type: FILE
-              location: classpath:META-INF/mango/assets/guarantee/payment-voucher.pdf
+              location: classpath:META-INF/mango/assets/business/payment-voucher.pdf
               mediaType: application/pdf
             purpose: { type: STRING, value: workflow-attachment-template }
             bizType: { type: STRING, value: WORKFLOW_DEFINITION }
-            bizId: { type: STRING, value: GUARANTEE_PAYMENT }
+            bizId: { type: STRING, value: BUSINESS_PAYMENT }
 ```
 
 | 字段 | 必填 | 约束 |
@@ -776,24 +754,24 @@ mango:
       FILE_ASSET:
         - id: "840000000000000002"
           version: 1
-          biz-key: guarantee.document.application
-          name: 保函申请书模板
+          biz-key: business.document.application
+          name: 业务申请书模板
           target-module: file
           sync-mode: INIT_ONLY
           fields:
             tenantId: { type: LONG, value: 1 }
             fileId: { type: LONG, value: 840000000000000102 }
             storageConfigId: { type: LONG, value: 1 }
-            objectName: { type: STRING, value: mango-assets/guarantee/application.docx }
+            objectName: { type: STRING, value: mango-assets/business/application.docx }
             fileName: { type: STRING, value: application.docx }
             sha256: { type: STRING, value: "<64 位小写 SHA-256>" }
             content:
               type: FILE
-              location: asset:guarantee/application.docx
+              location: asset:business/application.docx
               mediaType: application/vnd.openxmlformats-officedocument.wordprocessingml.document
 ```
 
-开发环境可以把 `MANGO_FILE_ASSET_ROOT` 指向项目外或模块内未打包的资产目录；声明中的 `asset:guarantee/application.docx` 不随环境变化。Docker 镜像可以把同一目录复制到镜像内固定目录，并把该目录注入 `MANGO_FILE_ASSET_ROOT`：
+开发环境可以把 `MANGO_FILE_ASSET_ROOT` 指向项目外或模块内未打包的资产目录；声明中的 `asset:business/application.docx` 不随环境变化。Docker 镜像可以把同一目录复制到镜像内固定目录，并把该目录注入 `MANGO_FILE_ASSET_ROOT`：
 
 ```dockerfile
 ARG FILE_ASSET_ROOT

@@ -11,10 +11,10 @@
 
 ## 2. 目标与范围
 
-- 目标：将保函系统已经验证的折叠详情展示能力收敛为 Mango 公共组件，并保持包边界清晰、独立消费可用和现有 `MangoDetailPage` 行为不变。
-- 成功条件：公开组件、类型、样式和子路径可构建、可类型检查、可由独立消费者引用；组件测试覆盖正常、空、错误、交互和组合场景；保函临时消费者可完成真实页面验证。
+- 目标：将业务系统已经验证的折叠详情展示能力收敛为 Mango 公共组件，并保持包边界清晰、独立消费可用和现有 `MangoDetailPage` 行为不变。
+- 成功条件：公开组件、类型、样式和子路径可构建、可类型检查、可由独立消费者引用；组件测试覆盖正常、空、错误、交互和组合场景；业务临时消费者可完成真实页面验证。
 - 处理范围：`MangoPageBackBar`、`MangoSideDrawerShell`、`MangoDetailSummary`、`MangoDescriptionList`、`MangoFileList`、`MangoFilePreviewDialog`、`MangoCollapseDetailPage`；增强现有 `RichTextViewer`；复用 `MangoDataTable`；同步 README、公开导出、组件契约、Changeset 和验证记录。
-- 不处理范围：不迁移保函工作流业务面板、项目资料业务组件、方案表格、旧 `GuaranteeCompactPageShell`/`GuaranteeDetailPageShell`；不修改或删除现有 `MangoDetailPage`；不提交保函临时验证代码；不发布 npm 包、不部署。
+- 不处理范围：不迁移业务工作流业务面板、项目资料业务组件、方案表格、旧 `BusinessCompactPageShell`/`BusinessDetailPageShell`；不修改或删除现有 `MangoDetailPage`；不提交业务临时验证代码；不发布 npm 包、不部署。
 
 ## 3. 可观察系统要求
 
@@ -49,7 +49,7 @@
 | IMPL-003 | TD-004         | 3    | `RichTextViewer` 与 detail 组合层          | 富文本增强且无循环依赖，文件/文本预览链路有测试                   |
 | IMPL-004 | TD-001, TD-005 | 4    | `mango-ui/packages/detail/**`              | 独立包、完整骨架、面板渲染、状态、插槽、expose 和样式隔离测试完成 |
 | IMPL-005 | TD-006         | 5    | package 配置、README、组件契约、Changeset  | 公开说明与实现一致，导出检查通过                                  |
-| IMPL-006 | 全部           | 6    | Mango 定向/全局门禁与保函临时消费者        | 自动化验证通过，人工验收入口可用且保函正式仓无提交                |
+| IMPL-006 | 全部           | 6    | Mango 定向/全局门禁与业务临时消费者        | 自动化验证通过，人工验收入口可用且业务正式仓无提交                |
 
 ## 6. 验收映射与结果
 
@@ -60,13 +60,13 @@
 | SR-006                                         | M10 组件测试         | `pnpm --filter @mango/common test`                                                                                                                 | PASS | 36 个测试文件、364 项测试通过，包含 RichTextViewer 新增场景                                  |
 | SR-008                                         | M09 静态验证         | `common/file/detail` 三个包 build、detail typecheck、`package-exports:check`、`component-contracts:check`、consumer typecheck                      | PASS | 三包构建、detail typecheck、公开导出、组件合同及 tarball 独立消费者 `vue-tsc` 和生产构建通过 |
 | SR-001 至 SR-008                               | M09 样式治理         | `pnpm admin:styles:check`、`pnpm admin:module-styles:check`                                                                                        | PASS | 19 个 package style export 与 13 个 official module 检查通过                                 |
-| SR-001, SR-003, SR-004, SR-005, SR-006, SR-007 | M13 UI 验证          | 在保函任务专用临时 worktree 中执行候选预览页 Playwright：`pnpm -C baohan-ui exec node e2e/scripts/mango-collapse-detail-candidate-browser-e2e.mjs` | PASS | 1440/2560/390 三档通过；宿主布局、菜单收放、骨架组合交互及 console/network 见验收证据目录    |
-| SR-001 至 SR-008                               | M16 人工验收         | 用户在保函隔离环境的候选预览页完成人工走查                                                                                                         | PASS | 用户于 2026-09-20 反馈页面未发现问题                                                         |
+| SR-001, SR-003, SR-004, SR-005, SR-006, SR-007 | M13 UI 验证          | 在业务任务专用临时 worktree 中执行候选预览页 Playwright：`pnpm -C business-ui exec node e2e/scripts/mango-collapse-detail-candidate-browser-e2e.mjs` | PASS | 1440/2560/390 三档通过；宿主布局、菜单收放、骨架组合交互及 console/network 见验收证据目录    |
+| SR-001 至 SR-008                               | M16 人工验收         | 用户在业务隔离环境的候选预览页完成人工走查                                                                                                         | PASS | 用户于 2026-09-20 反馈页面未发现问题                                                         |
 
 ## 7. 例外与剩余风险
 
 - 统一表格 PR #966 已合并为 `main@25d91ee61b8063b96b66b81a12408edf666bc261`；本分支已合入该基线并将 `@mango/detail` 的 peer dependency 同步为 `@mango/common@2.0.4` 与 `@mango/file@1.0.40`，不再依赖 stacked base。
-- 保函系统本次仅作为临时消费者验证，不形成其正式消费关系；临时 worktree 和代码在验收结束后清理。
+- 业务系统本次仅作为临时消费者验证，不形成其正式消费关系；临时 worktree 和代码在验收结束后清理。
 - `@mango/file` 源码 typecheck 的既有失败为测试未引入 Vitest globals、`MUpload.vue` 的 `Error`/`UploadAjaxError` 不匹配和根入口 `PageResult` 重复导出；本次新增代码必须单独证明无新增类型诊断。
 - 全仓 ESLint/Prettier ratchet 仍被任务范围外的 `admin-shell`、`workflow` 等既有诊断阻断；本次新增/修改组件路径的 ESLint、Stylelint、Prettier 定向检查均通过，全仓 Stylelint 通过。
 - `catalog:check` 和 `check:affected` 的默认入口在 Windows 分别受 `spawnSync('mvn')`、`spawnSync('corepack')` 无法启动 `.cmd` 影响；catalog 已通过脚本支持的 `--effective-pom` 参数完成等价验证，`check:affected` 的 `quality:versions` 工具链异常保留为未通过项。
@@ -76,19 +76,19 @@
 
 旧证据判定为无效：旧脚本只验证了骨架内部内容和交互，没有断言 `.mango-layout-body` 的布局方向、侧栏与内容顶部位置，以及菜单展开前后内容纵坐标稳定性。临时消费者替换整个 `@mango/admin@1.1.10` 后，与仍在运行的 `@mango/admin-shell@1.0.72` 形成双版本样式/运行时代码错配，实际页面已出现侧栏把内容向下推的回归。
 
-拆分为 `@mango/detail` 后，保函临时消费者只替换 `@mango/common`、`@mango/file` 与 `@mango/detail`，保持其既有 `@mango/admin@1.1.8` 和 `@mango/admin-shell@1.0.72` 不变。M13 已在 1440x1000、2560x1440、390x844 三档视口重新执行：桌面端 `.mango-layout-body` 均为横向 flex，侧栏与内容顶部对齐；菜单宽度在 220px 与 64px 之间切换时页签和详情内容纵坐标不变；移动端无横向溢出；console error、page error 和失败请求均为 0。证据位于 `mango-docs/evidence/2026-09-20-mango-collapse-detail/`。
+拆分为 `@mango/detail` 后，业务临时消费者只替换 `@mango/common`、`@mango/file` 与 `@mango/detail`，保持其既有 `@mango/admin@1.1.8` 和 `@mango/admin-shell@1.0.72` 不变。M13 已在 1440x1000、2560x1440、390x844 三档视口重新执行：桌面端 `.mango-layout-body` 均为横向 flex，侧栏与内容顶部对齐；菜单宽度在 220px 与 64px 之间切换时页签和详情内容纵坐标不变；移动端无横向溢出；console error、page error 和失败请求均为 0。证据位于 `mango-docs/evidence/2026-09-20-mango-collapse-detail/`。
 
 ### 8.5 未验证项和风险
 
 | 项目               | 原因                                                           | 影响                                              | 后续处理                                                         | 用户确认                 |
 | ------------------ | -------------------------------------------------------------- | ------------------------------------------------- | ---------------------------------------------------------------- | ------------------------ |
-| 保函真实业务入口   | 保函本次只作为临时候选包消费者，按已确认范围不形成正式消费关系 | 不证明现有保函业务页已经切换到 Mango 组件         | 保函临时代码在验收结束后清理；后续消费项目按自身入口验收         | 已确认不纳入本次正式交付 |
+| 业务真实业务入口   | 业务本次只作为临时候选包消费者，按已确认范围不形成正式消费关系 | 不证明现有业务页已经切换到 Mango 组件         | 业务临时代码在验收结束后清理；后续消费项目按自身入口验收         | 已确认不纳入本次正式交付 |
 | npm 发布物         | 本次未获授权发布                                               | 外部消费者暂时无法从 registry 获取这些版本        | 完成 PR、合并和独立发布流程后再回查制品                          | 未授权发布               |
-| 保函全量 typecheck | 仓库既有页面存在与本次适配器无关的类型诊断                     | 不能用全量 typecheck 作为保函临时消费者的全绿结论 | 保留既有错误清单；本次适配器无新增诊断，生产构建和边界检查已通过 | 待原业务任务处理         |
+| 业务全量 typecheck | 仓库既有页面存在与本次适配器无关的类型诊断                     | 不能用全量 typecheck 作为业务临时消费者的全绿结论 | 保留既有错误清单；本次适配器无新增诊断，生产构建和边界检查已通过 | 待原业务任务处理         |
 
 ### 8.6 业务开发交接输出
 
 | 输出对象         | 交接内容                                          | 材料路径                                                                                                        | 执行入口                                                                                  | 数据/账号边界                                            | 失败/例外处理                                                          | 状态 |
 | ---------------- | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------- | ---- |
 | Mango 组件消费者 | 公共组件、类型、slots、events、样式入口和组合示例 | `mango-ui/packages/common/README.md`、`mango-ui/packages/file/README.md`、`mango-ui/packages/detail/README.md`  | 从公开 package 入口导入并引入对应 `style.css`                                             | 消费方提供业务数据、权限和远程能力；组件不保存宿主 token | 缺少输入或非法配置时按公开契约展示空/错误态或明确抛错                  | DONE |
-| 保函临时验收     | 候选包适配器、DEV 预览页和可重复 Playwright 脚本  | `D:/Project/baohan-mango-collapse-detail/baohan-ui/e2e/scripts/mango-collapse-detail-candidate-browser-e2e.mjs` | `pnpm -C baohan-ui exec node e2e/scripts/mango-collapse-detail-candidate-browser-e2e.mjs` | 仅使用隔离数据库和测试账号；不连接共享业务库             | 脚本失败时读取 `result.json`、截图和 `trace.zip`，不得提交临时保函代码 | DONE |
+| 业务临时验收     | 候选包适配器、DEV 预览页和可重复 Playwright 脚本  | `D:/Project/business-mango-collapse-detail/business-ui/e2e/scripts/mango-collapse-detail-candidate-browser-e2e.mjs` | `pnpm -C business-ui exec node e2e/scripts/mango-collapse-detail-candidate-browser-e2e.mjs` | 仅使用隔离数据库和测试账号；不连接共享业务库             | 脚本失败时读取 `result.json`、截图和 `trace.zip`，不得提交临时业务代码 | DONE |

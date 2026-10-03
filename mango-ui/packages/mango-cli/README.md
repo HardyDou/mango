@@ -170,7 +170,7 @@ mango docs pull --project-dir demo-custom --version 1.0.1 --maven-repository "$M
 | `groupId`                        | `com.example.mango`                             | Maven groupId                                    | `writeMangoConfig`                     |
 | `projectVersion`                 | `1.0.0-SNAPSHOT`                                | 业务项目版本                                     | `writeMangoConfig`                     |
 | `mangoBackendVersion`            | `release-versions.json` 的 `maven.mangoBackend` | Mango 后端固定 Maven 版本                        | `writeMangoConfig`                     |
-| `paths.backend`                  | `backend`                                       | 后端 Maven 根目录；历史仓可设为 `baohan-backend` | `writeMangoConfig`，历史仓人工配置一次 |
+| `paths.backend`                  | `backend`                                       | 后端 Maven 根目录；历史仓可设为 `business-backend` | `writeMangoConfig`，历史仓人工配置一次 |
 | `paths.frontend`                 | `frontend`                                      | 前端根目录                                       | `writeMangoConfig`，历史仓人工配置一次 |
 | `paths.businessDocs`             | `business-docs`                                 | PMO 生命周期文档根目录                           | `writeMangoConfig`，历史仓人工配置一次 |
 | `pmoChecks.frontendPageBaseline` | `true`                                          | 是否执行前端页面骨架基线；仅布尔 `false` 关闭    | `writeMangoConfig`、`pmo sync/upgrade` |
@@ -259,7 +259,7 @@ CLI 从当前目录向上查找 `mango.dev.json`。本地工作区分配事实�
 | `.mango/dev-workspace.env`        | `MANGO_BACKEND_ADDITIONAL_ARGS`  | 空字符串                                      | 后端额外启动参数            | 追加到 Spring Boot args                                                                   | `defaultDevWorkspaceEnv`                               |
 | `.mango/dev-workspace.local.json` | `groups`、`apps`                 | 空                                            | 本机覆盖 manifest           | 与 `mango.dev.json` 深合并                                                                | `mergeDevWorkspaceManifest`                            |
 
-示例：项目目录名为 `baohan-system` 且分配到 `slot=7` 时，后端端口为 `18007`，前端主端口为 `30007`，子前端按 `31007`、`32007`、`33007` 递增，数据库名为 `mango_dev_baohan_system_007`。
+示例：项目目录名为 `business-system` 且分配到 `slot=7` 时，后端端口为 `18007`，前端主端口为 `30007`，子前端按 `31007`、`32007`、`33007` 递增，数据库名为 `mango_dev_business_system_007`。
 
 本地运行文件：
 
@@ -731,7 +731,7 @@ full preset 会在生成的 `application.yml` 中显式启用 `mango.event.outbo
 
 ### 1.0.72 发布影响
 
-`@mango/cli@1.0.72` 精确依赖 `@mango/pmo@1.2.2`。标准 scope classifier 从 `mango.config.json` 的 `paths` 对象读取业务仓目录；例如设置 `"backend": "baohan-backend"` 后，后端改动会进入直接模块 Maven 门禁，不会因目录名不是 `backend/` 而被误判为无后端改动。full template 同时提供 GitHub 和 Gitea 的 `pmo-doc-check`，两者使用同一 classifier 输出和稳定 check 名称。
+`@mango/cli@1.0.72` 精确依赖 `@mango/pmo@1.2.2`。标准 scope classifier 从 `mango.config.json` 的 `paths` 对象读取业务仓目录；例如设置 `"backend": "business-backend"` 后，后端改动会进入直接模块 Maven 门禁，不会因目录名不是 `backend/` 而被误判为无后端改动。full template 同时提供 GitHub 和 Gitea 的 `pmo-doc-check`，两者使用同一 classifier 输出和稳定 check 名称。
 
 该补丁不改变 Mango Java 运行时，业务后端继续使用 Mango Maven `1.0.17`。Mango 的正式 Maven `--all-non-app` 发布步骤已明确包含同版本 `io.mango:mango-docs-bundle`，不再依赖批次外人工补发。业务仓安装 `@mango/cli@1.0.72` 后，执行 `mango pmo upgrade --project-dir . --to 1.2.2`，再同步适用平台的标准 workflow。
 

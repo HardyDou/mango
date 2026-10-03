@@ -1,10 +1,10 @@
 # 标准交付记录
 
-任务：保函系统 Issue #905 触发的 Mango XLS/XLSX Web 预览按钮能力优化。
+任务：业务系统 Issue #905 触发的 Mango XLS/XLSX Web 预览按钮能力优化。
 
 ## 1. 元数据
 
-- 任务 ID：保函系统 Issue #905 / Mango 文件预览能力优化
+- 任务 ID：业务系统 Issue #905 / Mango 文件预览能力优化
 - 交付模式：STANDARD
 - 需求影响：L2 - 新增公开配置并改变 XLS/XLSX Web 预览页的可观察入口与布局
 - 方案风险：L2 - 配置需要经过动态刷新、请求属性和 FreeMarker 模板协作，且必须保持其它预览类型不变

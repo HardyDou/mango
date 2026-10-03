@@ -38,10 +38,10 @@
 
 - 已完成任务：业务示例列表显示当前审批节点。
 - 已完成验证：
-  - `mvn -pl :mango-guarantee-core -am -Dtest=GuaranteeCaseServiceImplTest -Dsurefire.failIfNoSpecifiedTests=false test`
-  - `mvn -pl :mango-guarantee-api,:mango-guarantee-core,:mango-workflow-api,:mango-workflow-core -am -DskipITs -DskipTests compile`
+  - `mvn -pl :mango-business-core -am -Dtest=BusinessCaseServiceImplTest -Dsurefire.failIfNoSpecifiedTests=false test`
+  - `mvn -pl :mango-business-api,:mango-business-core,:mango-workflow-api,:mango-workflow-core -am -DskipITs -DskipTests compile`
   - `git diff --check`
-  - `rg "throw new IllegalArgumentException|Objects\\.requireNonNull|new IllegalStateException|requireText\\(" mango/mango-platform/mango-guarantee mango/mango-platform/mango-workflow -n`
+  - `rg "throw new IllegalArgumentException|Objects\\.requireNonNull|new IllegalStateException|requireText\\(" mango/mango-platform/mango-business mango/mango-platform/mango-workflow -n`
 - 已完成任务：P0 Apply Center 后端基础模型与接口。
 - 已完成验证：
   - `mvn -pl :mango-workflow-api,:mango-workflow-core,:mango-workflow-starter -am -DskipITs -DskipTests compile`

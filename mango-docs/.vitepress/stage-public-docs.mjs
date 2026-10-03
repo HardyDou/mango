@@ -18,13 +18,16 @@ const publicDocs = [
   'mango-docs/capabilities/README.md',
   'mango-docs/mango-architecture-design.md',
   'mango-docs/mango-backend-architecture-boundary-refactor-master-plan.md',
-  'mango-docs/tenant-model-research-guarantee-business.md',
   'mango-docs/guides/business-integration/README.md',
   'mango-docs/guides/business-integration/file-upload-form.md',
   'mango-docs/guides/business-integration/permission-button-troubleshooting.md',
   'mango-docs/guides/business-integration/rbac-menu-page-troubleshooting.md',
   'mango-docs/guides/business-integration/tenant-dict-config-empty.md',
   'mango-docs/guides/business-integration/workflow-business-approval.md',
+  'mango-docs/guides/understanding-first/README.md',
+  'mango-docs/guides/understanding-first/resource-registry-quickstart.md',
+  'mango-docs/guides/understanding-first/file-upload-preview-quickstart.md',
+  'mango-docs/guides/understanding-first/workflow-approval-quickstart.md',
   'mango-docs/designs/business-project-development-guide.md',
   'mango-docs/designs/mango-capability-usage-guide-for-ai.md',
   'mango-docs/designs/2026-07-13-module-architecture-debt-governance-design.md',
@@ -50,6 +53,8 @@ const publicDocs = [
   'mango-pmo/rules/06-document-assets.md',
   'mango-pmo/rules/07-mango-issue-runbook.md',
   'mango-pmo/rules/08-capability-docs.md',
+  'mango-pmo/rules/13-agent-text-output.md',
+  'mango-pmo/rules/14-decision-expert-review.md',
   'mango-pmo/baselines/architecture/README.md',
   'mango-pmo/rules/backend/01-code.md',
   'mango-pmo/rules/backend/02-naming.md',
@@ -74,15 +79,29 @@ const publicDocs = [
   'mango-pmo/rules/frontend/10-form-page.md',
   'mango-pmo/rules/frontend/11-dialog-drawer.md',
   'mango-pmo/rules/index.json',
-  'mango-pmo/rules/product/01-prd-template.md',
   'mango-pmo/rules/product/02-sprint.md',
   'mango-pmo/rules/product/03-detailed-design-template.md',
+  'mango-pmo/rules/product/05-document-lifecycle.md',
   'mango-pmo/templates/acceptance-evidence.md',
+  'mango-pmo/templates/README.md',
+  'mango-pmo/templates/business-requirements.md',
   'mango-pmo/templates/delivery-contract.md',
+  'mango-pmo/templates/decision-review.md',
+  'mango-pmo/templates/implementation-plan.md',
+  'mango-pmo/templates/retrospective.md',
+  'mango-pmo/templates/system-requirements.md',
+  'mango-pmo/templates/technical-design.md',
   'mango-pmo/templates/detailed-design.md',
   'mango-pmo/templates/frontend-entry-readme.md',
   'mango-pmo/templates/module-readme.md',
-  'mango-pmo/templates/prd.md',
+  'mango-pmo/tools/check-comprehension-evaluation.mjs',
+  'mango-pmo/tools/check-decision-review.mjs',
+  'mango-pmo/tools/check-document-reading-entry.mjs',
+  'mango-pmo/tools/check-readable-module-readmes.mjs',
+  'mango-pmo/tools/check-retrospective.mjs',
+  'mango-pmo/tools/create-comprehension-evaluation-packet.mjs',
+  'mango-pmo/tools/render-implementation-plan-graph.mjs',
+  'mango-pmo/tools/render-rule-action-card.mjs',
   'mango-business-starter/README.md',
   'mango-business-starter/business-pmo/README.md',
   'mango-business-starter/business-pmo/mango-baseline/README.md',
@@ -188,13 +207,15 @@ const sidebar = [
     text: '产品文档输出',
     collapsed: false,
     items: [
-      { text: 'PRD 模板', link: '/mango-pmo/templates/prd' },
-      { text: 'PRD 模板规范', link: '/mango-pmo/rules/product/01-prd-template' },
-      { text: '详细设计模板', link: '/mango-pmo/templates/detailed-design' },
-      { text: '详细设计模板规范', link: '/mango-pmo/rules/product/03-detailed-design-template' },
+      { text: 'Understanding-first 能力入口', link: '/mango-docs/guides/understanding-first/README' },
+      { text: '模板选择页', link: '/mango-pmo/templates/README' },
+      { text: 'BRD 业务需求模板', link: '/mango-pmo/templates/business-requirements' },
+      { text: 'SRS 系统需求模板', link: '/mango-pmo/templates/system-requirements' },
+      { text: 'TDD 技术设计模板', link: '/mango-pmo/templates/technical-design' },
+      { text: 'Implementation Plan 实施计划', link: '/mango-pmo/templates/implementation-plan' },
+      { text: '文档生命周期规则', link: '/mango-pmo/rules/product/05-document-lifecycle' },
       { text: '交付契约模板', link: '/mango-pmo/templates/delivery-contract' },
-      { text: '交付契约规则', link: '/mango-pmo/rules/01-delivery-contract' },
-      { text: 'Sprint 规范', link: '/mango-pmo/rules/product/02-sprint' }
+      { text: '交付复盘模板', link: '/mango-pmo/templates/retrospective' }
     ]
   },
   {
@@ -338,7 +359,6 @@ const sidebar = [
     items: [
       { text: 'Mango 整体架构', link: '/mango-docs/mango-architecture-design' },
       { text: '后端架构边界总计划', link: '/mango-docs/mango-backend-architecture-boundary-refactor-master-plan' },
-      { text: '租户模型调研', link: '/mango-docs/tenant-model-research-guarantee-business' },
       { text: '业务项目开发说明', link: '/mango-docs/designs/business-project-development-guide' },
       { text: 'Mango 能力使用指南', link: '/mango-docs/designs/mango-capability-usage-guide-for-ai' },
       { text: '模块架构债务治理', link: '/mango-docs/designs/2026-07-13-module-architecture-debt-governance-design' },
@@ -422,7 +442,7 @@ const sidebar = [
         text: '产品规范',
         collapsed: true,
         items: [
-          { text: 'PRD 模板规范', link: '/mango-pmo/rules/product/01-prd-template' },
+          { text: '需求文档生命周期', link: '/mango-pmo/rules/product/05-document-lifecycle' },
           { text: 'Sprint 规范', link: '/mango-pmo/rules/product/02-sprint' },
           { text: '详细设计模板规范', link: '/mango-pmo/rules/product/03-detailed-design-template' }
         ]
@@ -431,9 +451,13 @@ const sidebar = [
         text: '模板',
         collapsed: true,
         items: [
+          { text: '模板选择页', link: '/mango-pmo/templates/README' },
+          { text: 'BRD 业务需求模板', link: '/mango-pmo/templates/business-requirements' },
+          { text: 'SRS 系统需求模板', link: '/mango-pmo/templates/system-requirements' },
+          { text: 'TDD 技术设计模板', link: '/mango-pmo/templates/technical-design' },
+          { text: '实施计划模板', link: '/mango-pmo/templates/implementation-plan' },
           { text: '验收证据模板', link: '/mango-pmo/templates/acceptance-evidence' },
           { text: '交付契约模板', link: '/mango-pmo/templates/delivery-contract' },
-          { text: 'PRD 模板', link: '/mango-pmo/templates/prd' },
           { text: '详细设计模板', link: '/mango-pmo/templates/detailed-design' },
           { text: '前端入口 README 模板', link: '/mango-pmo/templates/frontend-entry-readme' },
           { text: '模块 README 模板', link: '/mango-pmo/templates/module-readme' }
@@ -485,7 +509,7 @@ const versionNavItems = await loadVersionNavItems();
 const nav = [
   { text: '开始', link: '/' },
   { text: '示例场景', link: '/mango-docs/guides/business-integration/README' },
-  { text: '产品文档输出', link: '/mango-pmo/templates/prd' },
+  { text: '产品文档输出', link: '/mango-docs/guides/understanding-first/README' },
   { text: '基础能力', link: '/mango/mango-infra/mango-infra-context/README' },
   { text: '平台能力', link: '/mango-docs/capabilities/README' },
   { text: '架构设计', link: '/mango-docs/mango-architecture-design' },
@@ -519,64 +543,48 @@ export default defineConfig({
 
 const index = `# Mango Docs
 
-Mango 是面向 AI Agent 和业务开发者的 Java Spring Boot 业务开发底座，目标是把后端模块、前端后台、权限菜单、初始化数据、PMO 流程和验证规则沉淀成可复用能力，让业务需求可以按统一边界快速落地。
+Mango 是面向业务开发者和 AI Agent 的业务系统研发底座。
 
-这份公开文档用于说明 Mango 的能力边界、接入方式、基础能力和架构设计。左侧菜单按阅读习惯组织为开始、示例场景、基础能力、平台能力、架构设计和 PMO 规范。
+先按目标进入文档：
 
-## 推荐入口
+| 目标 | 入口 |
+|---|---|
+| 了解 Mango 有哪些能力模块 | [能力地图](./mango-docs/capabilities/README.md) |
+| 接入或排查一个真实业务场景 | [业务接入场景](./mango-docs/guides/business-integration/README.md) |
+| 选择 BRD、SRS、TDD 或 Plan | [产品文档模板选择](./mango-pmo/templates/README.md) |
+| 创建业务项目 | [Business Starter](./mango-business-starter/README.md) |
+| 了解架构边界 | [Mango 架构设计](./mango-docs/mango-architecture-design.md) |
+| 执行研发流程和门禁 | [PMO 总流程](./mango-pmo/rules/00-dev-flow.md) |
 
-| 分类 | 适合场景 | 入口 |
-|------|----------|------|
-| 示例场景 | 按业务场景接入或排障 | [业务接入场景手册](./mango-docs/guides/business-integration/README.md) |
-| 产品文档输出 | 给业务开发输出 PRD、详细设计、交付契约和规范依据 | [PRD 模板](./mango-pmo/templates/prd.md) |
-| 基础能力 | 查持久化、事件、KV、Web、装配和业务基线 | [Context 上下文](./mango/mango-infra/mango-infra-context/README.md) |
-| 平台能力 | 定位认证、授权、文件、支付、工作流等能力 README | [Mango 能力地图](./mango-docs/capabilities/README.md) |
-| 架构设计 | 了解 Mango 定位、架构边界、模块设计和关键取舍 | [Mango 整体架构](./mango-docs/mango-architecture-design.md) |
-| PMO 规范 | 查后端、前端、API、UI、交付和文档规范 | [Mango PMO 总流程](./mango-pmo/rules/00-dev-flow.md) |
+章节职责：开始负责入口，示例场景负责步骤，基础能力和平台能力负责能力说明，架构设计负责稳定决策，PMO 负责规则和模板。
 
-## 发布边界
-
-GitHub Pages 只发布业务开发需要的公开白名单文档。历史计划、交付证据、内部配置说明和内部过程材料不作为站内文档发布。
+GitHub Pages 发布当前 Latest 文档，并保留最近五个发布版本快照。历史交付记录不作为当前能力入口。
 `;
 
-const docsIndex = `# Mango 业务开发文档
+const docsIndex = `# Mango 文档目录
 
-Mango 是面向 AI Agent 和业务开发者的 Java Spring Boot 业务开发底座，提供后端平台模块、前端后台能力、业务项目基线和 PMO 交付规范。
+这里按文档职责组织入口，不按源码目录堆叠内容。
 
-这里是 Mango 面向业务开发者的公开文档入口，用于快速定位使用说明、业务接入场景、基础能力、平台能力和架构设计。
+| 章节 | 内容 |
+|---|---|
+| 开始 | Mango 定位、版本和阅读路线 |
+| 示例场景 | 业务接入、排障和验证步骤 |
+| 产品文档输出 | BRD、SRS、TDD、Plan 和交付记录选择 |
+| 基础能力 | 基础设施和公共装配能力 |
+| 平台能力 | 后端模块和前端能力模块 |
+| 架构设计 | 分层、边界和设计决策 |
+| PMO 规范与模板 | 研发规则、角色、模板和检查工具 |
 
-## 推荐阅读
+常用入口：
 
-- [业务接入场景手册](./guides/business-integration/README.md)
-- [Mango 能力地图](./capabilities/README.md)
-- [PRD 模板](../mango-pmo/templates/prd.md)
-- [详细设计模板](../mango-pmo/templates/detailed-design.md)
-- [交付契约模板](../mango-pmo/templates/delivery-contract.md)
+- [能力地图](./capabilities/README.md)
+- [业务接入场景](./guides/business-integration/README.md)
+- [产品文档模板选择](../mango-pmo/templates/README.md)
+- [Understanding-first 能力入口](./guides/understanding-first/README.md)
+- [Mango 架构设计](./mango-architecture-design.md)
+- [PMO 总流程](../mango-pmo/rules/00-dev-flow.md)
 
-## 模块使用文档交付
-
-业务开发时看不到模块使用文档，按下面方式解决：
-
-1. 在线阅读统一走 Mango 文档站，入口是 [Mango 能力地图](./capabilities/README.md)。
-2. 离线或本地开发时，拉取与依赖版本匹配的 Mango 源码或文档快照，直接阅读模块 README。
-3. 本地预览文档站：
-
-\`\`\`bash
-npm --prefix mango-docs install
-npm --prefix mango-docs run docs:dev
-\`\`\`
-
-4. 静态构建文档站：
-
-\`\`\`bash
-npm --prefix mango-docs run docs:build
-\`\`\`
-
-后端 Maven 运行时 jar 不承载 README；jar 只包含运行所需类和资源。前端 npm 包继续保留包根 \`README.md\`，这是 npm 生态的标准文档入口。
-
-## 发布边界
-
-GitHub Pages 只发布业务开发需要的公开白名单文档。历史计划、交付证据、内部配置说明和内部过程材料不作为站内文档发布。
+模块的详细能力、配置、API 和失败边界以对应 README 为准；历史计划和交付记录只用于追溯。
 `;
 
 await rm(stageRoot, { recursive: true, force: true });

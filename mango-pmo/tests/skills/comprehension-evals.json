@@ -1,0 +1,176 @@
+{
+  "schemaVersion": 1,
+  "suiteId": "mango-understanding-first-pilot",
+  "purpose": "Measure whether a user can understand Mango behavior and find the next source entry without relying on a second AI explanation.",
+  "trustedFixturePolicy": "evaluator-injected-current-repository-facts",
+  "scoring": {
+    "questions": [
+      "What problem does this solve?",
+      "What triggers it?",
+      "What is the input?",
+      "Which module owns the behavior?",
+      "What state or data changes?",
+      "What happens when it fails, and where is the next source file?"
+    ],
+    "targetScore": 5,
+    "relativeClarificationReduction": 0.3,
+    "firstCorrectSourceRate": 0.8,
+    "unexplainedTermLimit": 3
+  },
+  "cases": [
+    {
+      "id": "COG-001",
+      "audience": "Mango developer",
+      "recommendedFormat": "受控文字；先讲运行场景，再给最小流程",
+      "prompt": "用一个具体场景解释 Resource runtime eventual worker：什么时候触发、为什么可以跳过、失败后会怎样。不要先给完整架构图。",
+      "expectedFacts": [
+        "RUNTIME_EVENTUAL runs in a runtime background worker and does not block traffic.",
+        "A successful fingerprint includes current authority, source, module scope, and canonical declarations.",
+        "An unchanged successful fingerprint skips remote full registration.",
+        "A changed declaration or authority is submitted again; failure does not advance the successful fingerprint and is retried later."
+      ],
+      "canonicalTerms": ["RUNTIME_EVENTUAL", "fingerprint", "authority", "声明"],
+      "sourceRefs": [
+        "mango/mango-platform/mango-resource/README.md#1.2 Bootstrap 与 Runtime",
+        "mango/mango-platform/mango-resource/README.md#10.1 Resource 级增量与运行时修改退避"
+      ],
+      "forbiddenAssumptions": ["RUNTIME_EVENTUAL means bootstrap must finish before traffic", "Resource stores target business data"],
+      "nextSource": "mango/mango-platform/mango-resource/README.md"
+    },
+    {
+      "id": "COG-002",
+      "audience": "Mango backend developer",
+      "recommendedFormat": "受控文字；用文件不存在场景解释错误边界",
+      "prompt": "我看不懂 R.unwrap。请用“Service 调用文件 API 后文件不存在”的场景解释它解决什么问题、什么时候不应该用。",
+      "expectedFacts": [
+        "R<T> is the common response envelope with code, success, msg, and data.",
+        "unwrap turns a data-required successful response into T.",
+        "Failure uses the response message first and the caller fallback message when successful data is absent.",
+        "An API that legitimately succeeds with empty data should keep the response instead of using unwrap."
+      ],
+      "canonicalTerms": ["R<T>", "unwrap", "BizException", "fallback message"],
+      "sourceRefs": [
+        "mango/mango-common/README.md#业务异常和断言",
+        "mango/mango-common/src/main/java/io/mango/common/result/R.java#unwrap"
+      ],
+      "forbiddenAssumptions": ["unwrap is a network retry", "unwrap changes the HTTP response contract"],
+      "caseQuestions": [
+        "在示例代码中，谁提供 OrderCode.ORDER_NOT_FOUND？",
+        "上游 msg 和 fallbackMessage 都存在时，先使用哪一个？",
+        "什么类型的接口成功但 data 为空时不适合 unwrap？"
+      ],
+      "nextSource": "mango/mango-common/README.md"
+    },
+    {
+      "id": "COG-003",
+      "audience": "Mango product or frontend developer",
+      "recommendedFormat": "受控文字 + 关系图；保留租户上下文",
+      "prompt": "请用一个员工离开部门但仍属于租户、以及彻底移出租户的场景，解释两种操作分别改变什么，哪些身份和权限会保留。",
+      "expectedFacts": [
+        "Removing a current department relationship changes the organization relationship only.",
+        "Removing a tenant member keeps the global account and member identifiers but revokes current-tenant roles and department relationships.",
+        "Recovery only applies to members removed by the current feature and creates the selected organization relationship; old roles, posts, and other departments are not automatically restored.",
+        "Identity owns account and tenant-member facts; Org owns organization relationships; Authorization owns roles and permissions.",
+        "The operation is evaluated in the current tenant context and requires the member/org identifiers to belong to that context; permission and relationship checks are part of the real entry path."
+      ],
+      "canonicalTerms": ["部门关系", "租户成员", "memberId", "恢复"],
+      "sourceRefs": [
+        "mango/mango-platform/mango-identity/README.md#1.概览",
+        "mango/mango-platform/mango-identity/README.md#11.租户边界",
+        "mango/mango-platform/mango-org/README.md#功能清单"
+      ],
+      "forbiddenAssumptions": ["tenant removal deletes the global account", "recovery restores all previous authorization", "department removal automatically revokes every tenant role"],
+      "caseQuestions": [
+        "只移出研发部时，账号、租户成员和角色分别发生什么？",
+        "移出租户 A 后，全局账号还在不在？",
+        "恢复时具体只重新建立哪一条关系？",
+        "请求中的 memberId、orgId 应该属于哪个租户上下文？",
+        "如果权限或关系校验失败，能否把操作当作成功？"
+      ],
+      "nextSource": "mango/mango-platform/mango-identity/README.md"
+    },
+    {
+      "id": "COG-004",
+      "audience": "Agent router evaluator",
+      "recommendedFormat": "受控文字；只问一个分类问题",
+      "prompt": "我说‘workflow 失败了’，但没有说明是审批、CI/CD 还是普通业务状态机。先解释你缺少什么分类事实，不要直接调用 Mango 审批能力。",
+      "expectedFacts": [
+        "The bare word workflow is ambiguous.",
+        "Mango approval guidance requires explicit signals such as @mango/workflow, mango-workflow-api, /workflow/ APIs, process definitions, or approve/reject/task actions.",
+        "CI/CD, PMO flow, generic state machines, and agent workflows are outside the Mango approval Skill.",
+        "Ask one short classification question only if the next action depends on it."
+      ],
+      "canonicalTerms": ["workflow", "Mango approval workflow", "CI/CD workflow"],
+      "sourceRefs": ["mango-pmo/rules/08-capability-docs.md#2.1.1 Workflow 多义术语路由", "mango-pmo/skills/mango-workflow/SKILL.md#Classify Before Loading"],
+      "forbiddenAssumptions": ["bare workflow means Mango approval", "load all workflow documentation before classification"],
+      "nextSource": "mango-pmo/rules/08-capability-docs.md"
+    },
+    {
+      "id": "COG-005",
+      "audience": "Release operator",
+      "recommendedFormat": "文字 + 状态流图；标出不可逆边界",
+      "prompt": "请用一个发布批次说明 plan、prepare、publish、status、repair 各自解决什么问题，以及为什么不能把它们当成一个‘发布命令’。",
+      "expectedFacts": [
+        "The Mango release flow binds a plan to a source snapshot and release facts before preparing a candidate.",
+        "Prepare seals a candidate and its evidence; publish uses the sealed candidate rather than rebuilding a different artifact.",
+        "Status reads the publication state and repair handles an explicitly recoverable release state.",
+        "Release authorization and consumer verification are separate from ordinary Mango PR implementation."
+      ],
+      "canonicalTerms": ["plan", "prepare", "sealed candidate", "publish", "repair"],
+      "sourceRefs": ["mango-pmo/skills/mango-release/SKILL.md", "mango-ui/packages/mango-cli/README.md"],
+      "forbiddenAssumptions": ["prepare and publish can silently rebuild different artifacts", "ordinary business PR should use mango-release"],
+      "nextSource": "mango-pmo/skills/mango-release/SKILL.md"
+    },
+    {
+      "id": "COG-006",
+      "audience": "New Mango contributor",
+      "recommendedFormat": "角色关系图 + 文字版回退",
+      "prompt": "请用登录后看到菜单这一条具体链路，解释 Identity、Auth、Authorization、Access、Admin Shell 各自负责什么，先不要介绍其它平台模块。",
+      "expectedFacts": [
+        "Identity answers who the account and tenant member are.",
+        "Auth handles authentication and login context.",
+        "Authorization owns menus, buttons, API resources, roles, and permission facts.",
+        "Access and Admin Shell assemble the usable application entry and page surface.",
+        "The capability map provides the current reading order and troubleshooting entry."
+      ],
+      "canonicalTerms": ["账号", "租户成员", "认证", "授权", "页面入口"],
+      "sourceRefs": ["mango-docs/capabilities/README.md#模块协作关系", "mango/mango-platform/mango-identity/README.md", "mango/mango-platform/mango-auth/README.md", "mango/mango-platform/mango-authorization/README.md"],
+      "forbiddenAssumptions": ["frontend menu visibility is the final authorization decision", "Admin Shell owns business permission data"],
+      "nextSource": "mango-docs/capabilities/README.md#登录到菜单闭环"
+    },
+    {
+      "id": "COG-007",
+      "audience": "Business frontend developer",
+      "recommendedFormat": "最小代码示例 + 上传到预览流程图",
+      "prompt": "我要在合同表单上传附件，并在详情页预览。请说明组件、业务字段、后端权限/租户校验之间的关系，并给出最小用法。",
+      "expectedFacts": [
+        "MUpload uploads and writes a file ID or attachment relationship.",
+        "The business form persists fileId or an attachment relation, not preview or download URLs.",
+        "FilePreviewPanel reads by file ID and displays preview/download actions.",
+        "The backend owns file status, access level, tenant, business ownership, and authorization checks.",
+        "Document preview may require mango-file-preview."
+      ],
+      "canonicalTerms": ["fileId", "previewUrl", "downloadUrl", "FilePreviewPanel", "租户边界"],
+      "sourceRefs": ["mango-docs/guides/understanding-first/file-upload-preview-quickstart.md", "mango-ui/packages/file/README.md#4.集成形态", "mango-pmo/rules/frontend/01-vue-code.md#4.1 文件上传与回显规则"],
+      "forbiddenAssumptions": ["persist a signed storage URL", "frontend component replaces backend authorization"],
+      "nextSource": "mango-docs/guides/understanding-first/file-upload-preview-quickstart.md"
+    },
+    {
+      "id": "COG-008",
+      "audience": "Mango project participant",
+      "recommendedFormat": "对比表；先给风险和模式结论",
+      "prompt": "请解释 SIMPLE、STANDARD、FULL 和 M01-M16 的关系，用一个‘修改 PMO Skill’和一个‘简单 README 拼写修正’对比说明。",
+      "expectedFacts": [
+        "Delivery mode controls process and document cost; M01-M16 are execution capabilities selected by observable facts.",
+        "L0/L1 normally maps to SIMPLE, L2 to STANDARD, and L3 to FULL.",
+        "Changing the PMO Skill or governance semantics is a governance-system change and should not be treated as a simple text edit.",
+        "A simple spelling-only README correction may use the lowest sufficient verification when it has no behavior or contract impact.",
+        "The final risk is max(requirement impact, solution risk)."
+      ],
+      "canonicalTerms": ["delivery mode", "requirement impact", "solution risk", "final risk", "M01-M16"],
+      "sourceRefs": ["mango-pmo/rules/11-delivery-assurance.md#3.三档交付模式", "mango-pmo/rules/11-delivery-assurance.md#5.M01-M16 执行能力", "mango-pmo/skills/mango-design-delivery-assurance/SKILL.md#Select The Delivery Mode"],
+      "forbiddenAssumptions": ["FULL always means all tests", "a small diff automatically means SIMPLE", "M01-M16 is a fixed questionnaire"],
+      "nextSource": "mango-pmo/rules/11-delivery-assurance.md"
+    }
+  ]
+}

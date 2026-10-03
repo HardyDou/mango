@@ -16,7 +16,7 @@
 
 本次复用现有 `mango:baseline-generate` 数据库 cold baseline、Bootstrap generation fence、`FILE_ASSET` staged publish 和 sealed release manifest，不建立第二套发布事实源。
 
-不处理版本对版本差量包、通用资源 DAG、生产数据库覆盖、生产环境操作、Baohan 环境操作、Mango 发布和 PR。
+不处理版本对版本差量包、通用资源 DAG、生产数据库覆盖、生产环境操作、Business 环境操作、Mango 发布和 PR。
 
 ## 3. 架构决定
 
@@ -93,7 +93,7 @@
 | AC-011 | `SYSTEM_CONFIG` 未经后台修改时以同一固定时间更新目标和 Registry | System core 集成测试 |
 | AC-012 | `SYSTEM_CONFIG.updated_at` 偏离上次同步时间时保留后台值 | System core 集成测试 |
 | AC-013 | `AUTH_MENU`、`API_RESOURCE` 使用完整上下文但只写变化声明 | Authorization starter 单元测试 |
-| AC-014 | BSQL 携带便携 Resource 目标状态与 source hash；恢复后只执行环境 Resource，第二次启动零步骤 | Maven Plugin 保函业务 MySQL 8.4 打包/恢复夹具 |
+| AC-014 | BSQL 携带便携 Resource 目标状态与 source hash；恢复后只执行环境 Resource，第二次启动零步骤 | Maven Plugin 业务 MySQL 8.4 打包/恢复夹具 |
 | AC-015 | 构建期不执行环境 Handler、远程 Dispatcher 或普通业务 Bootstrap contributor；多 datasource group 在建库前失败 | Bootstrap、Resource core 与 Maven Plugin 集成测试 |
 
 ## 5. 真实场景矩阵
@@ -107,7 +107,7 @@
 | 并发与 fence | 同 generation 两线程 APPLY、旧 generation VERIFY、同 generation fingerprint 漂移 | 并发收敛为一个执行者和一个跳过者；generation/fingerprint 均 fail closed |
 | 文件后端 | 真实 Local、官方 MinIO S3-compatible；15 个对象逐一按大小和 SHA-256 回读；changed file 覆盖 | 两种后端完整生命周期均通过 |
 | 最终发布物 | `process-classes` 生成物进入最终 Spring Boot JAR，manifest 与对象字节一致 | Maven Invoker 1/1 通过 |
-| Resource 数据库基线 | 保函业务 `resource/kv/guarantee` 三模块生成 BSQL、构建期排除普通业务 Bootstrap、Boot JAR 恢复空库、首次执行环境 Resource 和正常业务 Bootstrap、第二次零步骤 | 本机 MySQL 8.4.8 完整夹具通过；临时 schema 已清理 |
+| Resource 数据库基线 | 业务 `resource/kv/business` 三模块生成 BSQL、构建期排除普通业务 Bootstrap、Boot JAR 恢复空库、首次执行环境 Resource 和正常业务 Bootstrap、第二次零步骤 | 本机 MySQL 8.4.8 完整夹具通过；临时 schema 已清理 |
 | 消费者回归 | Authorization 手工 Spring 测试配置、File Core 真实 MySQL 并发保存、fileproc 正常 reactor | 全部通过 |
 
 真实公有云 OSS/COS/Kodo 的 IAM、TLS、区域 endpoint、限流和网络故障行为不在本地可复现边界内；MinIO 只证明 S3-compatible 协议与对象语义，不等价于这些云厂商的生产验收。
@@ -120,4 +120,4 @@
 - M14：跨模块高影响设计的独立复核。
 - 不启用 M12/M13：本次没有新的 HTTP/API 消费入口或浏览器结果。
 
-AC-009 至 AC-015 已沉淀为 Resource、System、Authorization、Maven Plugin 定向测试及保函业务 MySQL 打包/恢复夹具；最终结果以实施台账和 PR required checks 为准。
+AC-009 至 AC-015 已沉淀为 Resource、System、Authorization、Maven Plugin 定向测试及业务 MySQL 打包/恢复夹具；最终结果以实施台账和 PR required checks 为准。

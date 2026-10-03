@@ -1,7 +1,7 @@
 {
   "result": "PASS",
   "uiBaseUrl": "http://127.0.0.1:30139",
-  "route": "/guarantee/dev/collapse-detail-preview",
+  "route": "/business/dev/collapse-detail-preview",
   "account": "sales-demo-01",
   "startedAt": "2026-09-20T09:04:00.816Z",
   "assertions": [
@@ -25,7 +25,7 @@
         "富文本预览",
         "普通列表",
         "文件列表",
-        "保函方案",
+        "业务方案",
         "资料附件",
         "处理记录"
       ]
@@ -83,7 +83,7 @@
       "name": "唯一刷新按钮保持当前路由并完成整页刷新",
       "status": "PASS",
       "at": "2026-09-20T09:04:03.240Z",
-      "url": "http://127.0.0.1:30139/#/guarantee/dev/collapse-detail-preview"
+      "url": "http://127.0.0.1:30139/#/business/dev/collapse-detail-preview"
     },
     {
       "name": "1440px 桌面端 宿主布局与菜单收放保持稳定",
@@ -176,9 +176,9 @@
   "pageErrors": [],
   "failedRequests": [],
   "screenshots": [
-    "D:\\Project\\baohan-mango-collapse-detail\\baohan-ui\\.runtime\\evidence\\mango-collapse-detail-candidate\\desktop.png",
-    "D:\\Project\\baohan-mango-collapse-detail\\baohan-ui\\.runtime\\evidence\\mango-collapse-detail-candidate\\wide-desktop.png",
-    "D:\\Project\\baohan-mango-collapse-detail\\baohan-ui\\.runtime\\evidence\\mango-collapse-detail-candidate\\mobile.png"
+    "D:\\Project\\business-mango-collapse-detail\\business-ui\\.runtime\\evidence\\mango-collapse-detail-candidate\\desktop.png",
+    "D:\\Project\\business-mango-collapse-detail\\business-ui\\.runtime\\evidence\\mango-collapse-detail-candidate\\wide-desktop.png",
+    "D:\\Project\\business-mango-collapse-detail\\business-ui\\.runtime\\evidence\\mango-collapse-detail-candidate\\mobile.png"
   ],
   "scrollDiagnostics": {
     "target": "element",

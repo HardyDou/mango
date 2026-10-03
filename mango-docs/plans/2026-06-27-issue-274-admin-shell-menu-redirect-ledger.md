@@ -71,7 +71,7 @@
 
 | 台账 ID | 页面/接口 | 功能点 | 测试数据 | 关键断言 | UI/交互检查 | console/network 结果 | 截图/trace/日志 | 结论 |
 |---|---|---|---|---|---|---|---|---|
-| TASK-001 | Admin Shell 菜单解析 | 目录 redirect 不在当前可见菜单树时 fallback | `/guarantee` redirect `/guarantee/overview`，当前树只有 `/guarantee/risk-review` | `resolveAccessibleMenuPath` 和 `resolveDirectoryRouteRedirect` 返回 `/guarantee/risk-review` | 未启动浏览器，顶部点击入口调用同一解析函数 | 不适用，纯单测 | `pnpm --filter @mango/admin-shell test` 通过 | DONE |
-| TASK-002 | Admin Shell 菜单解析 | 目录 redirect 目标不可运行时 fallback | `/guarantee/overview` 缺少 component，`/guarantee/risk-review` 可运行 | 返回 `/guarantee/risk-review` | 未启动浏览器，逻辑单测覆盖 | 不适用，纯单测 | `pnpm --filter @mango/admin-shell test` 通过 | DONE |
+| TASK-001 | Admin Shell 菜单解析 | 目录 redirect 不在当前可见菜单树时 fallback | `/business` redirect `/business/overview`，当前树只有 `/business/risk-review` | `resolveAccessibleMenuPath` 和 `resolveDirectoryRouteRedirect` 返回 `/business/risk-review` | 未启动浏览器，顶部点击入口调用同一解析函数 | 不适用，纯单测 | `pnpm --filter @mango/admin-shell test` 通过 | DONE |
+| TASK-002 | Admin Shell 菜单解析 | 目录 redirect 目标不可运行时 fallback | `/business/overview` 缺少 component，`/business/risk-review` 可运行 | 返回 `/business/risk-review` | 未启动浏览器，逻辑单测覆盖 | 不适用，纯单测 | `pnpm --filter @mango/admin-shell test` 通过 | DONE |
 | TASK-003 | Admin Shell 顶部菜单/目录 route | 顶部菜单和目录 route 复用统一解析 | `navBars/index.vue` 使用 `resolveAccessibleMenuPath`，`resolveDirectoryRouteRedirect` 同源 | 包构建通过，类型有效 | 未启动浏览器 | 不适用，未运行 E2E | `pnpm --filter @mango/admin-shell build` 通过 | DONE |
 | TASK-004 | 业务菜单配置 | 不要求业务按角色维护不同 redirect | 无业务配置改动 | diff 仅涉及 admin-shell 代码、测试和本台账 | 不适用 | 不适用 | `git diff --check` 通过 | DONE |

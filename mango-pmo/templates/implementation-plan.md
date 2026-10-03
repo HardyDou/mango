@@ -16,6 +16,36 @@ upstreamDocumentHash: {{TDD_SHA256_OR_NONE}}
 
 # {{REQUIREMENT_NAME}} 实施计划
 
+> **写作与决定门禁：** 遵循 [`Agent 文本输出规范`](../rules/13-agent-text-output.md)。先写顺序、责任和下一步，使用具体交付物和完成标准。实施决定另按 [`决策专家评审规范`](../rules/14-decision-expert-review.md)记录三轮意见、方案整理和同行评审。
+
+> **先读：这份文档要回答什么**
+> - **一句话目标：** {{ONE_SENTENCE_GOAL}}
+> - **真实场景：** {{CONCRETE_IMPLEMENTATION_SCENARIO}}
+> - **关键输入 / 输出：** {{IMPLEMENTATION_INPUT_AND_DELIVERABLES}}
+> - **成功与失败：** {{IMPLEMENTATION_SUCCESS_AND_FAILURE_BOUNDARY}}
+> - **明确不做：** {{IMPLEMENTATION_OUT_OF_SCOPE}}
+> - **阅读顺序：** 先看本段，再看交付物与任务依赖，最后看验证、风险和追踪矩阵。
+> - **任务图入口：** `node mango-pmo/tools/render-implementation-plan-graph.mjs --document <path>`
+
+## 0. 使用合同与最小填写方式
+
+填写人是实施负责人或 Dev Lead；输入必须来自已批准的 TDD、系统验收标准和仓库现状。Plan 的下游使用方是开发、QA、Reviewer、发布负责人和交付记录维护人。
+
+| 区域 | 只填写什么 | 来源与填写人 | 下游用途 | 校验方式 |
+|---|---|---|---|---|
+| Front Matter | 文档身份、最终风险、Owner、上游 TDD ID/hash | PMO 元数据；Plan Owner 填写 | 生命周期 handoff 和审批 | 文档契约 + TDD hash 检查 |
+| 先读摘要 | 实施目标、交付物、成功/失败和不做范围 | Plan Owner 从第 1～3 节归纳 | 开发者快速理解本次交付 | 人工复述、范围核对 |
+| 第 1～3 节 | 交付物、任务、依赖、顺序和里程碑 | TDD、仓库事实、Owner 估算 | 直接执行开发和并行安排 | 任务图检查；无前置环或孤立任务 |
+| 第 4～6 节 | 命令、环境、数据、数据库步骤和文档同步 | QA、DB Owner、文档 Owner | 可重复验证、迁移和收尾 | 命令可执行；证据路径可写入 |
+| 第 7～9 节 | 风险、追踪、checker、依赖图和审批 | Plan Owner、Approver | 阻断升级、完成判定和审计 | blocker/exception/覆盖检查 |
+
+**最小合格示例（复制后替换，不要保留示例）：**
+
+- `DEL-001`：完成订单 API 和 migration；完成条件是构建通过、契约测试通过、回滚脚本已演练。
+- `TASK-001`：先执行 `TASK-000` 的 migration，再实现 Service；验证入口为 `npm test` 或明确 Maven 命令。
+- `VAL-001`：在空库和已有数据两种环境执行；预期无数据丢失，失败时停止发布并保留日志。
+- `MS-001`：只有 `VAL-001` 通过后才进入灰度；阻塞超过截止时间升级给 Owner。
+
 ## 1. 实施目标、范围与交付物
 
 | 交付物ID | 技术设计ID | 交付物 | 路径或模块 | 完成状态定义 | 验收来源 | 不处理边界 |

@@ -50,7 +50,7 @@ branch: fix/issues-641-642-notice-delivery
 ### 2.2 不处理范围
 
 - 不建设跨 Mango 全平台的通用 Secret 管理中心。
-- 不修改业务项目的保函要素或业务侧发件账号字段。
+- 不修改业务项目的业务要素或业务侧发件账号字段。
 - 不改变 Notice 的任务调度、重试次数和站内信等其它渠道协议。
 - 不在本任务执行 Maven/npm 发布；发布必须走独立 `mango-release` 流程并取得用户授权。
 - 不保存附件内容、临时下载地址、预签名 URL 或解析后的 Secret 到发送记录、日志或 API 返回。
@@ -155,8 +155,8 @@ Content-Transfer-Encoding: base64
 
 PGh0bWw+Li4u
 --boundary
-Content-Type: application/pdf; name*=UTF-8''guarantee.pdf
-Content-Disposition: attachment; filename*=UTF-8''guarantee.pdf
+Content-Type: application/pdf; name*=UTF-8''business.pdf
+Content-Disposition: attachment; filename*=UTF-8''business.pdf
 Content-Transfer-Encoding: base64
 
 JVBERi0xLjcuLi4=
@@ -186,7 +186,7 @@ JVBERi0xLjcuLi4=
   "status": "SENT",
   "provider": "SMTP",
   "attachments": [
-    {"fileId": "1001", "fileName": "guarantee.pdf", "contentType": "application/pdf", "size": 12345, "status": "ATTACHED"}
+    {"fileId": "1001", "fileName": "business.pdf", "contentType": "application/pdf", "size": 12345, "status": "ATTACHED"}
   ]
 }
 ```
@@ -301,32 +301,32 @@ resources:
   MESSAGE_CHANNEL:
     - id: "2000000000000000642"
       version: 1
-      biz-key: guarantee.notice.email.primary
+      biz-key: business.notice.email.primary
       target-module: notice
       fields:
-        configCode: { type: STRING, value: GUARANTEE_EMAIL_PRIMARY }
+        configCode: { type: STRING, value: BUSINESS_EMAIL_PRIMARY }
         channelType: { type: STRING, value: EMAIL }
         providerCode: { type: STRING, value: SMTP }
-        configName: { type: STRING, value: 保函电子件主账号 }
+        configName: { type: STRING, value: 业务电子件主账号 }
         enabled: { type: BOOLEAN, value: true }
         priority: { type: INT, value: 10 }
         weight: { type: INT, value: 100 }
         routeTags:
           type: LIST
           value:
-            - { code: GUARANTEE_ELECTRONIC_DELIVERY, name: 保函电子件 }
+            - { code: BUSINESS_ELECTRONIC_DELIVERY, name: 业务电子件 }
         configJson:
           type: JSON
           value:
             host: smtp.example.com
             port: 465
-            username: guarantee@example.com
-            from: guarantee@example.com
+            username: business@example.com
+            from: business@example.com
             ssl: true
         secretRefs:
           type: JSON
           value:
-            password: env:GUARANTEE_SMTP_PASSWORD
+            password: env:BUSINESS_SMTP_PASSWORD
 ```
 
 Resource registry 继续承担声明版本、来源文件、变更日志和同步日志；Notice 保存发送时需要的来源快照和受控字段，不复制 Resource registry 的完整审计模型。
@@ -452,7 +452,7 @@ Notice API 增加标签分页/列表、保存展示名、删除、账号关联�
 
 ### 12.6 M16 现场验收边界
 
-自动化 SMTP 可以证明 MIME 和路由行为，但不能证明业务生产邮箱的反垃圾、网关和最终收件箱行为。发布后业务项目仍需使用真实 SMTP 和真实收件箱完成一次附件投递验收；未完成前不得把 Baohan #329 的外部送达判定为完成。
+自动化 SMTP 可以证明 MIME 和路由行为，但不能证明业务生产邮箱的反垃圾、网关和最终收件箱行为。发布后业务项目仍需使用真实 SMTP 和真实收件箱完成一次附件投递验收；未完成前不得把 Business #329 的外部送达判定为完成。
 
 ## 13. 兼容、发布与恢复
 

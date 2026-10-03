@@ -64,7 +64,7 @@
 
 ## 8. 2026-08-03 真实业务回归重开与补充修复
 
-- 回归事实：保函业务升级到 Maven `1.0.31` 后，空库 `bootstrap apply` 仍由普通业务定时 Bean 的依赖图触发 `WorkflowTaskRuntimeApi -> WorkflowTaskController -> WorkflowTaskRuntimeService -> Flowable`，在 migration 前查询不存在的 `ACT_GE_PROPERTY`。这证明原修复只覆盖 ResourceHandler、Runner、scheduler processor 和非 Web MVC，未覆盖公开 Workflow API 的依赖解析。
+- 回归事实：业务升级到 Maven `1.0.31` 后，空库 `bootstrap apply` 仍由普通业务定时 Bean 的依赖图触发 `WorkflowTaskRuntimeApi -> WorkflowTaskController -> WorkflowTaskRuntimeService -> Flowable`，在 migration 前查询不存在的 `ACT_GE_PROPERTY`。这证明原修复只覆盖 ResourceHandler、Runner、scheduler processor 和非 Web MVC，未覆盖公开 Workflow API 的依赖解析。
 - 补充决定 `TD-004`：Bootstrap 为 Workflow Controller 承载的全部公开 Java API 注册主候选延迟代理；依赖注入不解析 Controller，首次 API 调用才解析原 Controller。Runtime 不注册代理，`mango.workflow.enabled=false` 语义不变，migration 后的 ResourceHandler 与流程定义发布路径不变。
 - 补充实现：新增 `WorkflowBootstrapApiIsolationAutoConfiguration`、自动配置注册和 starter 单元测试；同步 Workflow README、业务审批指南、能力地图及 Maven `1.0.32` 发布说明。
 - 验证：`mvn -f mango/pom.xml -pl mango-platform/mango-workflow/mango-workflow-starter test` 完成 22 项 L1 单元测试，0 失败；测试质量、测试替身、模块 README 与 source-fact 检查通过；本地 `1.0.32-local-SNAPSHOT` 非 app Reactor 186/186 模块安装成功并回查 starter JAR 包含修复类。

@@ -259,6 +259,6 @@ await jobApi.createAlarmRule({
 
 ## 12. 变更影响记录
 
-- baohan-open Issue #43 修复任务管理页面分页组件解析和 `page/size` 请求契约；源码修复尚未发布，业务项目需要等待新版本发布后再升级依赖。
+- business-open Issue #43 修复任务管理页面分页组件解析和 `page/size` 请求契约；源码修复尚未发布，业务项目需要等待新版本发布后再升级依赖。
 - `@mango/job@1.0.13` 将 `@mango/admin-pages` 精确依赖升级到 `1.0.20`；任务 API、页面 key、权限、租户和
   运行时行为相对 `1.0.12` 不变。
