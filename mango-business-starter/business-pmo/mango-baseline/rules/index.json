@@ -1,5 +1,5 @@
 {
-  "version": 19,
+  "version": 20,
   "always": [
     {
       "path": "rules/00-dev-flow.md",
@@ -15,7 +15,7 @@
     },
     {
       "path": "rules/14-decision-expert-review.md",
-      "reason": "决定的三轮独立专家视角、方案整理、同行评审和人工审批边界"
+      "reason": "决定的三视角复核、外部评审选择、方案整理和人工审批边界"
     }
   ],
   "rules": {
@@ -73,7 +73,7 @@
     },
     "process.decisionExpertReview": {
       "path": "rules/14-decision-expert-review.md",
-      "reason": "决定的三轮独立专家视角、方案整理、同行评审和人工审批边界"
+      "reason": "决定的三视角复核、外部评审选择、方案整理和人工审批边界"
     },
     "process.testAssets": {
       "path": "rules/04-test-assets.md",

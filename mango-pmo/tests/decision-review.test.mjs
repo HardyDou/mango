@@ -36,10 +36,13 @@ status: REVIEWED
 ## 5. 方案整理
 采用方案：按当前范围实现。
 
-## 6. 同行评审
-| 评审人 | 阻断问题 | 建议 | 结论 |
-|---|---|---|---|
-| Peer reviewer | None | Keep source evidence. | PASS |
+## 6. 评审选择与记录
+- **评审选择：** EXTERNAL_PEER_REVIEW
+- **询问记录：** 用户确认需要外部同行评审。
+- **用户决定人：** Owner
+| 评审方式 | 评审人/Agent 角色 | 阻断问题 | 建议 | 结论 |
+|---|---|---|---|---|
+| EXTERNAL_PEER_REVIEW | Peer reviewer | None | Keep source evidence. | PASS |
 
 ## 7. 审批与后续动作
 - **审批人：** Pending owner
@@ -53,13 +56,23 @@ function run(content) {
   return spawnSync(process.execPath, [checker, '--document', file], { encoding: 'utf8' });
 }
 
-test('decision review requires three rounds and peer review', () => {
+test('decision review requires three perspectives and a recorded review choice', () => {
   const result = run(validReview);
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /three independent rounds/);
+  assert.match(result.stdout, /three perspectives/);
 });
 
-test('decision review rejects placeholders and simulated reviewers', () => {
+test('decision review accepts Agent-only analysis after user choice is recorded', () => {
+  const result = run(validReview
+    .replace('EXTERNAL_PEER_REVIEW', 'AGENT_ONLY')
+    .replace('Peer reviewer', 'Agent role analysis')
+    .replace('PASS |', 'RECORDED |')
+    .replace('用户确认需要外部同行评审。', '用户确认只保留 Agent 角色视角分析。'));
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /AGENT_ONLY/);
+});
+
+test('decision review rejects placeholders and simulated external reviewers', () => {
   const result = run(validReview.replace('Peer reviewer', 'Agent dry run').replace('review record', '{{APPROVAL_EVIDENCE}}'));
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /占位符|真实同行/);

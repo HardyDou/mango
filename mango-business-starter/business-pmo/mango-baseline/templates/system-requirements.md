@@ -16,7 +16,7 @@ upstreamDocumentHash: {{BRD_SHA256_OR_NONE}}
 
 # {{REQUIREMENT_NAME}} 系统需求规格说明书
 
-> **写作与决定门禁：** 遵循 [`Agent 文本输出规范`](../rules/13-agent-text-output.md)。先写重点，使用具体主语和稳定术语，保留成功/失败边界。需求决定另按 [`决策专家评审规范`](../rules/14-decision-expert-review.md)记录三轮意见、方案整理和同行评审。
+> **写作与决定门禁：** 遵循 [`Agent 文本输出规范`](../rules/13-agent-text-output.md)。先写重点，使用具体主语和稳定术语，保留成功/失败边界。需求决定另按 [`决策复核规范`](../rules/14-decision-expert-review.md)记录三视角分析，并询问、记录是否需要外部同行评审。
 
 > **先读：这份文档要回答什么**
 > - **一句话目标：** {{ONE_SENTENCE_GOAL}}

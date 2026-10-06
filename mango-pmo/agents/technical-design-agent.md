@@ -29,4 +29,4 @@
 ## 文本与决定门禁
 
 - 技术设计遵循 `rules/13-agent-text-output.md`，先写方案结论、约束、风险和验证口径。
-- 技术决定遵循 `rules/14-decision-expert-review.md`，完成三轮独立视角和同行评审后再进入 `NEXT`。
+- 技术决定遵循 `rules/14-decision-expert-review.md`，完成三视角分析并记录评审选择后再进入 `NEXT`；需要正式技术审批时仍按生命周期合同执行。
