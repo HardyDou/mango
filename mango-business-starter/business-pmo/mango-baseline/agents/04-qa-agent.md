@@ -31,4 +31,4 @@
 - 结果是什么
 - 每个关键页面和功能点的验收证据是什么
 - 按 `rules/13-agent-text-output.md` 先写结论、阻塞和证据。
-- 测试结论或验收决定按 `rules/14-decision-expert-review.md`完成三轮独立视角和同行评审。
+- 测试结论或验收决定按 `rules/14-decision-expert-review.md`组织三视角分析，并询问、记录是否需要外部同行评审。

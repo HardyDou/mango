@@ -200,7 +200,7 @@ Java API：
 
 `IdentityUserApi.getUserInfo`、`getUserInfoById` 和 `listUserInfosByTarget` 的方法名与业务语义不变，返回泛型改为 `IdentityUserInfoVO`。实现 API、Feign 适配器或测试桩的业务代码需要同步覆盖方法签名。1.0.22 的参数校验约束由 API 接口声明，实现类不要重复或改变约束配置。
 
-完整的依赖、其它模块 API、数据库、验证和部署步骤见 [Mango Maven 1.0.21 到 1.0.22 Java API 升级](../../../mango-docs/guides/business-integration/maven-1.0.21-to-1.0.22-java-api-upgrade.md)。
+完整的依赖、其它模块 API、数据库、验证和部署步骤见 [Mango Maven 1.0.21 到 1.0.22 Java API 升级](../../../mango-docs/guides/operations/maven-1.0.21-to-1.0.22-java-api-upgrade.md)。
 
 ## 8. 返回字段
 

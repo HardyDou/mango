@@ -337,7 +337,7 @@ import { WorkflowLayout, WorkflowSidebar } from '@mango/workflow';
 
 | 版本 / 事项 | 影响 |
 |---|---|
-| 2026-08-28 | 办理人展示优先 `assigneeDisplayName`；见[升级指南](../../../mango-docs/guides/business-integration/workflow-assignee-identity-upgrade.md)。 |
+| 2026-08-28 | 办理人展示优先 `assigneeDisplayName`；见[升级指南](../../../mango-docs/guides/operations/workflow-assignee-identity-upgrade.md)。 |
 | Issue #732 | 新增 `assignmentMode` 和三种自动派单策略；候选项改为单次 Provider 查询，权限由后端校验。 |
 | Issue #890 | `tenants()` 改用 `/workflow/templates/tenant-options`，仅打开推送弹窗时请求。 |
 | `@mango/workflow@1.0.27` / `1.0.37` | 对齐依赖版本；页面 key、API、组件、权限和租户语义保持不变。 |

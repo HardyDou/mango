@@ -28,4 +28,4 @@
 ## 文本与决定门禁
 
 - 系统需求遵循 `rules/13-agent-text-output.md`，先写用户可观察行为、输入、输出和失败边界。
-- 系统决定遵循 `rules/14-decision-expert-review.md`，完成三轮独立视角和同行评审后再进入 `NEXT`。
+- 系统决定遵循 `rules/14-decision-expert-review.md`，完成三视角分析并记录评审选择后再进入 `NEXT`；需要正式系统审批时仍按生命周期合同执行。

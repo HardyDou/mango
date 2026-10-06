@@ -35,4 +35,4 @@
 - 风险清楚
 - 验证结果清楚
 - 按 `rules/13-agent-text-output.md` 先写结果和下一步，不用“已完成”替代证据。
-- 实现、兼容、回退或验证决定按 `rules/14-decision-expert-review.md`完成三轮独立视角和同行评审。
+- 实现、兼容、回退或验证决定按 `rules/14-decision-expert-review.md`组织三视角分析，并询问、记录是否需要外部同行评审。
