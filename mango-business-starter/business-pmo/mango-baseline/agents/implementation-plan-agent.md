@@ -29,4 +29,4 @@
 ## 文本与决定门禁
 
 - 实施计划遵循 `rules/13-agent-text-output.md`，先写顺序、责任、交付物和完成标准。
-- 计划决定遵循 `rules/14-decision-expert-review.md`，完成三轮独立视角和同行评审后再进入 `NEXT`。
+- 计划决定遵循 `rules/14-decision-expert-review.md`，完成三视角分析并记录评审选择后再进入 `NEXT`；需要正式实施审批时仍按生命周期合同执行。

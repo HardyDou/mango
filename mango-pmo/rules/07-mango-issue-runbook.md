@@ -2,7 +2,7 @@
 
 ## 1. 触发条件
 
-Issue 标题和正文遵循 [Agent 文本输出规范](./13-agent-text-output.md)：先写影响和结论，使用具体版本、步骤、实际/期望结果和证据。优先级、归因、处理方案和关闭结论属于决定，遵循 [决策专家评审规范](./14-decision-expert-review.md)。
+Issue 标题和正文遵循 [Agent 文本输出规范](./13-agent-text-output.md)：先写影响和结论，使用具体版本、步骤、实际/期望结果和证据。优先级、归因、处理方案和关闭结论属于决定，遵循 [决策复核规范](./14-decision-expert-review.md)。
 
 业务开发使用 Mango 时，确认问题由 Mango 框架、starter、CLI、模板、前端包或发布物料引起，必须登记 Mango Issue。
 

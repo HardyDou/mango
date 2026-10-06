@@ -26,4 +26,4 @@
 ## 文本与决定门禁
 
 - 需求文本遵循 `rules/13-agent-text-output.md`，先写业务目标、场景和验收重点。
-- 业务决定遵循 `rules/14-decision-expert-review.md`，完成三轮独立视角和同行评审后再进入 `NEXT`。
+- 业务决定遵循 `rules/14-decision-expert-review.md`，完成三视角分析并记录评审选择后再进入 `NEXT`；需要正式业务审批时仍按生命周期合同执行。

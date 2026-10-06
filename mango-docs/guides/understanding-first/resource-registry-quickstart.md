@@ -104,5 +104,5 @@ mango:
 ## 权威来源
 
 - [Resource README](../../../mango/mango-platform/mango-resource/README.md)
-- [业务 Resource 重置与增量发布](../business-integration/resource-reset-incremental-release.md)
+- [业务 Resource 重置与增量发布](../operations/resource-reset-incremental-release.md)
 - [Mango 能力地图](../../capabilities/README.md)

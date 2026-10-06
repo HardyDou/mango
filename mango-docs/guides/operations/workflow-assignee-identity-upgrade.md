@@ -137,4 +137,4 @@ const displayName = task.assigneeDisplayName || task.assigneeName || '-';
 
 回滚只需按发布批次回退 Maven/npm 依赖和业务适配代码。无需回滚数据库或修改历史 Flowable 任务。回退后旧客户端继续读取 `assigneeName`；如果业务已依赖 `assigneeDisplayName`，应保留前端的原始 key 回退逻辑，直到所有运行实例完成版本切换。
 
-关联文档：[业务审批接入](./workflow-business-approval.md)、[Workflow 后端 README](../../../mango/mango-platform/mango-workflow/README.md)、[@mango/workflow README](../../../mango-ui/packages/workflow/README.md)。
+关联文档：[业务审批接入](../business-integration/workflow-business-approval.md)、[Workflow 后端 README](../../../mango/mango-platform/mango-workflow/README.md)、[@mango/workflow README](../../../mango-ui/packages/workflow/README.md)。

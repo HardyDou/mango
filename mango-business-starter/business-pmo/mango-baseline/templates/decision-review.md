@@ -7,9 +7,9 @@ decisionOwner: {{DECISION_OWNER}}
 reviewDate: {{REVIEW_DATE}}
 ---
 
-# {{DECISION_SUBJECT}} 决策评审
+# {{DECISION_SUBJECT}} 决策复核
 
-> **先读：** 先看“决定”和“影响”，再看三轮意见、替代方案、验证和同行评审。只记录当前事实；角色模拟不能代替真实专家或人工审批。
+> **先读：** 先看“决定”和“影响”，再看三视角分析、替代方案、验证和评审选择。先询问并记录是否需要外部同行评审；`AGENT_ONLY` 不称为人工评审或人工审批。
 
 ## 1. 决定摘要
 
@@ -47,13 +47,18 @@ reviewDate: {{REVIEW_DATE}}
 | 未解决冲突 | {{OPEN_CONFLICTS}} |
 | 影响范围 | {{IMPACT}} |
 | 剩余风险 | {{RESIDUAL_RISK}} |
+| 评审选择 | AGENT_ONLY / EXTERNAL_PEER_REVIEW |
 | 人工确认 | {{HUMAN_CONFIRMATION_OWNER_AND_DEADLINE}} |
 
-## 6. 同行评审
+## 6. 评审选择与记录
 
-| 评审人 | 检查范围 | 阻断问题 | 非阻断建议 | 结论 |
-|---|---|---|---|---|
-| {{PEER_REVIEWER}} | 事实 / 范围 / 风险 / 验证 / 文本 | {{BLOCKERS_OR_NONE}} | {{NON_BLOCKING_SUGGESTIONS}} | PASS / BLOCKED |
+- **评审选择：** AGENT_ONLY / EXTERNAL_PEER_REVIEW
+- **询问记录：** {{REVIEW_CHOICE_QUESTION_AND_ANSWER}}
+- **用户决定人：** {{REVIEW_CHOICE_OWNER}}
+
+| 评审方式 | 评审人/Agent 角色 | 检查范围 | 阻断问题 | 非阻断建议 | 结论 |
+|---|---|---|---|---|---|
+| {{REVIEW_MODE}} | {{PEER_OR_AGENT_REVIEWER}} | 事实 / 范围 / 风险 / 验证 / 文本 | {{BLOCKERS_OR_NONE}} | {{NON_BLOCKING_SUGGESTIONS}} | PASS / RECORDED / BLOCKED |
 
 ## 7. 审批与后续动作
 

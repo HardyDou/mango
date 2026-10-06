@@ -135,7 +135,7 @@
 
 | ID | 要求 | 交付物 | 状态 |
 |---|---|---|---|
-| DOC-002 | 业务开发者能区分 Flyway、正式 Resource、Demo、运行期数据和文件资产 | `mango-docs/guides/business-integration/resource-reset-incremental-release.md`、业务 Starter README 入口、模块模板 README 入口 | DONE |
+| DOC-002 | 业务开发者能区分 Flyway、正式 Resource、Demo、运行期数据和文件资产 | `mango-docs/guides/operations/resource-reset-incremental-release.md`、业务 Starter README 入口、模块模板 README 入口 | DONE |
 | VERIFY-004 | 业务类业务模块覆盖 reset/incremental、后台修改退避、权限租户和单体/微服务边界 | 临时 `business` Consumer + MySQL 回读；业务验收矩阵和清理记录 | DONE（本地一次性消费验证） |
 | IMPL-010 | 构建期 Resource 数据库 baseline，reset 首次跳过已基线 Resource Handler | 最终业务应用双库物化、普通业务 Bootstrap 隔离、便携/环境策略、BSQL 恢复与确定性校验 | DONE |
 

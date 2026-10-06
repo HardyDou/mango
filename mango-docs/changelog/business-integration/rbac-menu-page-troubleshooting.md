@@ -1,34 +1,6 @@
-# 菜单页面打不开排障
+# 菜单页面打不开排障：历史变更索引
 
-> 本次统一后台页面结构和顶部交互不改变菜单 API、页面 key、权限码、租户绑定或菜单排障链路；本指南内容无需调整。
-
-> Issue #934：仅修复 API Resource 声明版本在静态清单与运行时扫描之间的不一致，不改变菜单、页面 key、权限或本指南排障步骤。
-
-> Issue #918 影响说明（2026-09-02）：本次修复角色菜单授权树的精确回显与保存集合；菜单 API、页面 key、Resource、角色授权和本指南排障入口保持不变。升级后若出现页面空白、菜单缺失或接口 403，仍按下方菜单资源、页面注册和角色授权链路排查。
-
-> 2026-09-01 Issue #919：用户管理页新增“移出当前部门”“移出租户成员”和原身份恢复交互，但不改变 `system/user/index` 页面 key、菜单树 API、菜单 Resource、角色菜单授权、租户应用绑定或页面注册协议。页面入口缺失或接口返回 403 时仍按本指南排查；页面可打开但动作不符合预期时，应确认当前是否选择具体部门、成员行是否返回准确 `orgRelationId`，以及账号 availability 是否为当前租户可恢复状态。
-
-> 2026-09-01 Issue #909：用户管理页改为默认显示全部成员，并支持按组织本级及下级筛选、清除组织选择、组织内新增或加入成员以及直接角色回显；不改变 `system/user/index` 页面 key、菜单树 API、菜单 Resource、角色菜单授权、租户应用绑定或页面注册协议。用户管理入口缺失或接口返回 403 时仍按本指南检查菜单 Resource 与角色授权；进入页面后的成员范围和角色列问题分别检查 `/org/member-scope`、`/identity/users/page` 和 `/authorization/roles/subjects/batch`。
-
-> 2026-08-28 Issue #851：`AUTH_MENU` 增量同步在变化模块中只写 canonical hash 发生变化的声明，依赖资源变化不再重放未变化菜单；同类型完整声明仅用于父子关系解析。菜单树 API、`component` key、页面注册、角色授权和本指南排障步骤不变。
-
-> 2026-08-25 AI 管理能力影响：新增的 `平台能力 → AI 管理` 菜单及模型、提示词、Skill 与工具、AI 服务子菜单由 `META-INF/mango/resources/ai-menu.json` 通过 Resource Registry 注册，页面 key 由 `@mango/ai/admin-pages` 提供。Realtime 短期票据只恢复 WebSocket/SSE 握手身份，不改变菜单树 API、`component` key 解析、角色菜单授权、租户应用绑定或既有菜单排障协议。AI 菜单缺失时应核对 `mango-ai-starter`、AI Resource 声明同步、角色授权和 `@mango/ai` registrar，不手工写授权表。
-
-> 2026-08-25 Issue #835：只修复已有数据库升级时 Resource Registry 无法按持久化 `targetId` 停用已缺失 `AUTH_ROLE_DATA_SCOPE` 的问题；不改变菜单树 API、`component` key、页面注册、角色菜单授权、权限码、租户绑定或本指南排障步骤。升级启动仍在 FINALIZE 报 `field is required: tenantId` 时，应升级到包含该修复的 Mango Maven 版本后重试，不要保留废弃声明或手工修改授权表。
-
-> 2026-07-22 菜单显示文案调整说明：通知中心、审批中心和编号规则分别更名为通知管理、审批管理和编号管理；路由、菜单编码、权限码、页面 key、资源同步和本指南排障步骤均不受影响，历史记录保留原名称。
-
-> 2026-08-05 Issue #721：个人中心扩展入口由已集成能力包的 feature registrar 自动装配。Notice 提供“我的消息、系统公告、通知设置”，System 提供“登录日志”；这些仍是 `/profile` 页内导航，不进入框架菜单树。业务入口缺项时先检查对应 registrar 是否进入 `featureRegistrars`，无需在业务 `main.ts` 重复配置 `profile.sections`。
-
-> 2026-08-05 Issue #722：Admin Shell 统一补齐缺少的安全 Web Crypto `randomUUID`，只改变旧浏览器/WebView 的前端启动兼容性；不改变菜单树 API、`component` key、页面注册、角色授权、按钮权限或租户绑定。升级后仍出现 `randomUUID is not a function` 时应先核对完整前端包矩阵和安全上下文，菜单或页面异常继续按本指南原链路排查。
-
-> 2026-08-06 富文本托管资源影响：本次只扩展 `@mango/common` Editor、只读预览组件及 Admin Shell 开发中心示例，不改变菜单树 API、`component` key、页面注册、角色授权、菜单权限、租户绑定或本指南排障步骤。
-
-> 2026-08-14 Issue #791：Admin Shell 将当前菜单路径解析收回包内，并以 `@mango/admin-shell@1.0.60`、`@mango/admin@1.0.66`、`@mango/cli@1.0.107` 修复已发布包矩阵不兼容；不改变菜单树 API、父菜单高亮规则、`component` key、页面注册、角色授权、租户绑定或本指南排障步骤。业务项目应按完整受管版本矩阵升级，不修改 `node_modules` 或单独替换 Common。
-
-## 1. 适用场景
-
-用户登录后能看到菜单，但点击菜单出现空白页、404、组件加载失败或接口无权限。
+> 本页只用于追溯历史影响，不是当前接入入口。当前步骤请回到[菜单页面打不开排障](../../guides/faq/rbac-menu-page-troubleshooting.md)。
 
 ### 2026-07-16 组织模块修复影响
 
@@ -45,74 +17,6 @@
 ### Issue #348 模块运行态诊断入口
 
 `mango module doctor mango-link` 可在显式启用诊断端点和 Admin Shell bridge 后，一次交叉检查 starter 安装、Flyway、当前 Resource 声明、Authorization 菜单/API 物化及五个 `mango-link` 页面 loader/chunk。它只支持本机 loopback、单实例、默认同端口 Actuator 和 `mango-link`，不改变菜单树 API、`component` key、角色授权或本指南的逐项排障链路；其它模块或任一证据不可观察时会保守返回 UNKNOWN，而不是替代人工排查得出 READY。
-
-## 2. 阅读顺序
-
-| 顺序 | 文档                                                                                     | 关注点                         |
-| ---- | ---------------------------------------------------------------------------------------- | ------------------------------ |
-| 1    | [Authorization 后端 README](../../../mango/mango-platform/mango-authorization/README.md) | 菜单、权限、资源同步、授权关系 |
-| 2    | [@mango/rbac README](../../../mango-ui/packages/rbac/README.md)                          | RBAC 前端包和 API              |
-| 3    | [RBAC Views README](../../../mango-ui/packages/rbac/src/views/README.md)                 | 页面 key 和组件映射            |
-| 4    | [@mango/admin-shell README](../../../mango-ui/packages/admin-shell/README.md)            | 页面注册、菜单渲染、登录后装配 |
-
-## 3. 接入检查点
-
-| 环节       | 检查点                                                                   |
-| ---------- | ------------------------------------------------------------------------ |
-| 菜单数据   | `/authorization/menus/user?fmt=tree&appCode=internal-admin` 返回目标菜单 |
-| 页面 key   | 菜单 `component` 字段能匹配前端页面 key                                  |
-| 前端注册   | 前端包已引入并完成页面注册或路由映射                                     |
-| 角色授权   | 当前用户角色已绑定目标菜单                                               |
-| 租户绑定   | 当前租户已绑定目标应用和菜单包                                           |
-| 运行态请求 | 浏览器 network 中页面依赖和业务接口没有未解释的 401/403/404              |
-
-## 4. 最小闭环
-
-1. 用目标用户登录。
-2. 打开菜单接口，确认返回目标菜单和 component key。
-3. 在前端页面 key 文档中确认 component key 存在。
-4. 点击菜单，页面组件正常加载。
-5. 浏览器 network 中页面资源、菜单接口和业务接口没有未解释的 401/403/404。
-
-## 5. 页面 key 对照
-
-| 能力     | 常见页面 key 文档                                                                          |
-| -------- | ------------------------------------------------------------------------------------------ |
-| Auth     | [Auth Views README](../../../mango-ui/packages/auth/src/views/README.md)                   |
-| File     | [File Components README](../../../mango-ui/packages/file/src/components/README.md)         |
-| Job      | [Job Views README](../../../mango-ui/packages/job/src/views/README.md)                     |
-| RBAC     | [RBAC Views README](../../../mango-ui/packages/rbac/src/views/README.md)                   |
-| System   | [System Components README](../../../mango-ui/packages/system/src/components/README.md)     |
-| Workflow | [Workflow Components README](../../../mango-ui/packages/workflow/src/components/README.md) |
-
-## 6. 常见失败
-
-| 现象               | 优先检查                                            |
-| ------------------ | --------------------------------------------------- |
-| 菜单存在但点击空白 | component key 与前端注册表不一致                    |
-| 菜单不存在         | resource manifest、迁移 SQL、角色授权和租户应用绑定 |
-| 页面加载但接口 403 | Access、Authorization 和当前用户权限集合            |
-| 刷新后页面丢失     | 前端路由 fallback、admin-shell 注册时机             |
-| 只有某租户异常     | 租户应用绑定、菜单包绑定、租户初始化数据            |
-
-## 7. 验证命令
-
-```bash
-mvn -f mango/pom.xml -pl mango-platform/mango-authorization -am test
-pnpm -F @mango/rbac build
-pnpm -F @mango/admin-shell build
-```
-
-模块验证入口：
-
-- [Authorization 验证方式](../../../mango/mango-platform/mango-authorization/README.md#10-验证方式)
-- [RBAC Frontend 验证方式](../../../mango-ui/packages/rbac/README.md#10-验证方式)
-- [Admin Shell 验证方式](../../../mango-ui/packages/admin-shell/README.md#10-验证方式)
-
-## 8. 关联规则
-
-- [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
-- [AI 交付质量规则](../../../mango-pmo/rules/05-ai-delivery-quality.md)
 
 ## 9. 变更影响记录
 
