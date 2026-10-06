@@ -65,3 +65,7 @@
 | 输出对象 | 交接内容 | 材料路径 | 执行入口 | 数据/账号边界 | 失败/例外处理 | 状态 |
 |---|---|---|---|---|---|---|
 | Mango KV 维护者 | Memory/Redis/JDBC 固定窗口契约、所有者安全删除、Outbox 并发领取、真实 Redis/MySQL 套件和 Resource Registry 浏览器回归 | `mango/mango-infra/mango-infra-kv`；`mango/mango-infra/mango-infra-test/src/test/java/io/mango/infra/kv`；`mango-ui/apps/mango-admin/e2e/specs/infra-kv-resource-registry.spec.ts` | 定向 Maven 测试；外部服务启动后执行 Playwright Chromium 单 worker 用例 | 每次使用独立新库；demo 资源须显式开启；测试 Redis/MySQL 连接由既有测试环境提供 | 任一契约、并发、真实组件、Flyway、资源同步或浏览器业务断言失败均阻断；不得用 mock 替代真实 Redis/MySQL/E2E | DONE |
+
+## 9. 2026-10-05 模块重构复核补充
+
+本分支补充确认 Redis 开关语义：当 `mango.redis.enabled=false` 且 `mango.kv.store.type=auto` 时，不创建 `RedissonClient`，KV 自动探测回退到 `MemoryKvStore`；显式 `type=redis` 也不会绕过该开关。证据为 `KvRedisAutoConfigurationTest.disabledRedis_doesNotCreateRedissonClient` 和 `KvStoreAutoConfigurationTest.typeAuto_redisDisabled_fallsBackToMemoryKvStore`，均包含在最终 Reactor 验证中。

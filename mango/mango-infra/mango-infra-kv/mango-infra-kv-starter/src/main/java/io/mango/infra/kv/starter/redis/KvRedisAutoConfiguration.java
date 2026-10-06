@@ -5,6 +5,7 @@ import org.redisson.api.RedissonClient;
 import org.redisson.config.Config;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
@@ -26,6 +27,7 @@ import org.springframework.util.StringUtils;
 @AutoConfiguration
 @EnableConfigurationProperties(KvRedisProperties.class)
 @ConditionalOnExpression("'${mango.kv.store.type:auto}' == 'auto' || '${mango.kv.store.type:auto}' == 'redis'")
+@ConditionalOnProperty(prefix = "mango.redis", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class KvRedisAutoConfiguration {
 
     @Bean

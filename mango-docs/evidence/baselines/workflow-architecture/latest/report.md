@@ -61,3 +61,9 @@ mvn -f mango/pom.xml \
 ```
 
 新库启动使用 `mango-monolith-app`、独立 MySQL 数据库、关闭本机未安装的文件预览组件并提供测试 SM4 密钥。健康检查为 HTTP 200/UP；上述环境参数只用于本地验收，未写入仓库。
+
+## 6. 2026-10-05 当前分支兼容回归补充
+
+- `WorkflowMigrationUpgradeIntegrationTest` 的 legacy fixture 补齐后续参与关系 migration 所需的源列，并将断言改为真实的 V1+V2、V1+V2+V3 执行数量；生产 `workflow-1.0.20`、`workflow-1.0.21`、`workflow-1.0.22` 的历史 migration 未修改。
+- `WorkflowApiSurfaceContractTest` fingerprint 更新仅反映当前既有 `ApiAccess.version()` 声明值，未改变 Controller 的 HTTP path、verb、binding、权限或响应包装。
+- 本次补充仅用于当前分支的 Java 21/全量 Reactor 复核，不重写历史 Workflow 架构债务基线。

@@ -20,6 +20,8 @@ import io.mango.infra.kv.api.LockLease;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -88,6 +90,29 @@ public class FilePreviewTaskServiceImpl implements IFilePreviewTaskService {
         this.fileGateway = fileGateway;
         this.contentProvider = contentProvider;
         this.convertApi = convertApi;
+        this.taskStore = taskStore;
+        this.leaseLocker = leaseLocker;
+        this.objectMapper = objectMapper;
+        this.properties = properties;
+        this.conversionExecutor = conversionExecutor;
+    }
+
+    /**
+     * Direct previews remain available when the optional file-processing starter is absent.
+     */
+    @Autowired
+    public FilePreviewTaskServiceImpl(
+            FilePreviewFileGateway fileGateway,
+            IFileContentProvider contentProvider,
+            ObjectProvider<ConvertApi> convertApiProvider,
+            ITokenStore taskStore,
+            ILeaseLocker leaseLocker,
+            ObjectMapper objectMapper,
+            FilePreviewProperties properties,
+            @Qualifier("filePreviewConversionExecutor") ExecutorService conversionExecutor) {
+        this.fileGateway = fileGateway;
+        this.contentProvider = contentProvider;
+        this.convertApi = convertApiProvider.getIfAvailable();
         this.taskStore = taskStore;
         this.leaseLocker = leaseLocker;
         this.objectMapper = objectMapper;
@@ -206,6 +231,11 @@ public class FilePreviewTaskServiceImpl implements IFilePreviewTaskService {
             var parsedFormat = ConvertFormat.parse(extension);
             if (parsedFormat.isEmpty()) {
                 update(task, FilePreviewTaskStatus.FAILED, PROGRESS_COMPLETE, "暂不支持该文件格式的预览");
+                return;
+            }
+            if (convertApi == null) {
+                update(task, FilePreviewTaskStatus.FAILED, PROGRESS_COMPLETE,
+                        "当前未启用文件格式转换能力，请下载原文件查看");
                 return;
             }
             ConvertFormat source = parsedFormat.get();

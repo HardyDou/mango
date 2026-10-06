@@ -58,13 +58,14 @@
 | `FileApi` | 查询文件元数据 |
 | `IFileContentProvider` | 以文件中心服务契约读取源文件流 |
 | `ITokenStore` | 保存 `file-preview:entry:*` 和 `file-preview:source:*` 短期 token |
+| `ILeaseLocker` | 协调多实例转换任务和 Worker 槽位 |
 | `ApiResourceApi` | 启动时注册预览引擎公开资源 |
 | `mango-file-preview-engine` | 内置 kkFileView 预览引擎和静态资源 |
 
-`ITokenStore` 由宿主应用的 `mango-infra-kv-starter` 装配。file preview 不提供进程内 token fallback；
-宿主需要启用 `mango.kv.capability.enabled=true` 和 `mango.kv.capability.token-store=true`，并通过
-`mango.kv.store.type` 选择 Memory、Redis、JDBC 或自动探测。缺少 `ITokenStore` 时应用会在启动期失败，
-避免多实例部署时把入口 token 或 source token 静默保存在单个 JVM 中。
+`ITokenStore` 和 `ILeaseLocker` 由宿主应用的 `mango-infra-kv-starter` 装配。file preview 不提供进程内 token fallback；
+宿主需要启用 `mango.kv.capability.enabled=true`、`mango.kv.capability.locker=true` 和
+`mango.kv.capability.token-store=true`，并通过 `mango.kv.store.type` 选择 Memory、Redis、JDBC 或自动探测。
+缺少 `ITokenStore` 或 `ILeaseLocker` 时应用会在启动期失败，避免多实例部署时把入口 token 或转换协调状态静默保存在单个 JVM 中。
 
 单体应用通过 `mango-file-preview-starter` 把预览引擎组件装配到宿主 Spring 上下文，复用宿主端口，
 不会注册 kkFileView 的独立 `ServerMain`，也不会通过 engine JAR 覆盖宿主应用 Banner。
@@ -108,6 +109,7 @@ mango:
       type: redis
     capability:
       enabled: true
+      locker: true
       token-store: true
   file-preview:
     enabled: true
