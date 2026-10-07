@@ -9,6 +9,7 @@ import io.mango.file.api.vo.FileSettingsVO;
 import io.mango.common.result.R;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -33,7 +34,7 @@ public class FilePreviewFileGateway {
 
     @Autowired
     public FilePreviewFileGateway(FileApi fileApi, IFileContentProvider fileContentProvider,
-                                  FileSettingsApi fileSettingsApi) {
+                                  @Nullable FileSettingsApi fileSettingsApi) {
         this.fileApi = fileApi;
         this.fileContentProvider = fileContentProvider;
         this.fileSettingsApi = fileSettingsApi;

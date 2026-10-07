@@ -95,13 +95,14 @@ class BootstrapPublicApiDeclarationContractTest {
                 moduleName,
                 controller.getName(),
                 method.getName(),
+                access.version(),
                 access.desc());
     }
 
     private void assertExactDeclaration(PublicEndpoint endpoint, ResourceDeclaration declaration) {
         assertThat(declaration).as(endpoint.key().toString()).isNotNull();
         assertThat(declaration.getId()).isEqualTo(stableResourceId(endpoint));
-        assertThat(declaration.getVersion()).isEqualTo(1);
+        assertThat(declaration.getVersion()).isEqualTo(endpoint.version());
         assertThat(declaration.getResourceType()).isEqualTo("API_RESOURCE");
         assertThat(declaration.getModuleCode()).isEqualTo("authorization");
         assertThat(declaration.getModuleName()).isEqualTo(endpoint.moduleName());
@@ -199,6 +200,7 @@ class BootstrapPublicApiDeclarationContractTest {
             String moduleName,
             String handlerClass,
             String handlerMethod,
+            int version,
             String description) {
     }
 }

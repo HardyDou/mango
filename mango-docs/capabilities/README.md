@@ -16,6 +16,10 @@
 
 ## 2. 基础设施能力
 
+后端编译与运行基线为 Java 21，Maven 使用 `--release 21`；Context、Crypto、Org、System 和应用宿主统一继承该基线。入口见 [Parent README](../../mango/mango-parent/README.md)、[App README](../../mango/mango-app/README.md) 和 [Infra Test README](../../mango/mango-infra/mango-infra-test/README.md)。
+
+[Common README](../../mango/mango-common/README.md) 提供公共模型入口；`PageResult.of` 对 `size <= 0` 返回 `pages=0`，保留原始 page、size、total 值。Resource 和 Workflow 的初始化与契约说明仍以各自 README 为准，测试路径或历史升级 fixture 不作为生产初始化入口。
+
 | 模块 | 能做什么 | 不负责什么 | 说明入口 |
 |---|---|---|---|
 | Context | 保存当前请求、用户、租户、应用和登录域上下文。 | 不负责登录、授权或业务数据。 | [Context README](../../mango/mango-infra/mango-infra-context/README.md) |

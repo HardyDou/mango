@@ -48,6 +48,8 @@
 
 ## 6. 验证命令
 
+后端验证使用 Java 21。Org/System 的编译基线统一和 Resource 测试目录校准不改变公开 API、配置、菜单、权限、租户过滤、页面、启动或基础数据运行时语义；本场景仍按上文检查租户上下文及正式资源初始化，不通过测试 fixture 补生产数据。
+
 ```bash
 mvn -f mango/pom.xml -pl mango-platform/mango-identity,mango-platform/mango-org,mango-platform/mango-system,mango-platform/mango-resource -am test
 pnpm -F @mango/system build

@@ -36,6 +36,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.io.ByteArrayInputStream;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
@@ -72,7 +76,7 @@ class MangoFilePreviewAppFlowTest {
 
     private static final Long FILE_ID = 10001L;
     private static final String FILE_NAME = "readme.txt";
-    private static final String ENGINE_FILE_NAME = "file-10001.txt";
+    private static final String ENGINE_FILE_NAME_PREFIX = "file-10001-";
     private static final String FILE_CONTENT = "Mango file preview E2E";
 
     @LocalServerPort
@@ -95,11 +99,24 @@ class MangoFilePreviewAppFlowTest {
         assertThat(body.at("/data/fileId").asText()).isEqualTo(FILE_ID.toString());
         assertThat(body.at("/data/fileName").asText()).isEqualTo(FILE_NAME);
         String previewUrl = body.at("/data/previewUrl").asText();
-        assertThat(previewUrl).startsWith("/file-preview/files/preview-entry?token=");
+        assertThat(previewUrl).startsWith("/api/file-preview/files/preview-entry?token=");
 
-        ResponseEntity<String> previewResponse = restTemplate.getForEntity(baseUrl() + previewUrl, String.class);
+        // The generated link contains the external gateway prefix; this test talks to
+        // the backend directly, so strip that prefix before issuing the request.
+        HttpClient httpClient = HttpClient.newBuilder()
+                .followRedirects(HttpClient.Redirect.NEVER)
+                .build();
+        HttpResponse<String> entryResponse = httpClient.send(
+                HttpRequest.newBuilder(URI.create(baseUrl() + previewUrl.replaceFirst("^/api", "")))
+                        .GET().build(), HttpResponse.BodyHandlers.ofString());
+        assertThat(entryResponse.statusCode()).isEqualTo(HttpStatus.FOUND.value());
+        String engineLocation = entryResponse.headers().firstValue("Location").orElseThrow();
+        assertThat(engineLocation).startsWith("/api/onlinePreview?url=");
+
+        ResponseEntity<String> previewResponse = restTemplate.getForEntity(
+                URI.create(baseUrl() + engineLocation.replaceFirst("^/api", "")), String.class);
         assertThat(previewResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(previewResponse.getBody()).contains(ENGINE_FILE_NAME);
+        assertThat(previewResponse.getBody()).contains(ENGINE_FILE_NAME_PREFIX).contains(".txt");
         assertThat(previewResponse.getBody()).contains(Base64.getEncoder()
                 .encodeToString((FILE_CONTENT + "\r\n").getBytes(StandardCharsets.UTF_8)));
     }

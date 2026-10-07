@@ -1,13 +1,26 @@
 package io.mango.infra.kv.starter.redis;
 
 import org.junit.jupiter.api.Test;
+import org.redisson.api.RedissonClient;
 import org.redisson.config.Config;
 import org.redisson.config.SingleServerConfig;
+import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.mock.env.MockEnvironment;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class KvRedisAutoConfigurationTest {
+
+    @Test
+    void disabledRedis_doesNotCreateRedissonClient() {
+        new ApplicationContextRunner()
+                .withConfiguration(AutoConfigurations.of(KvRedisAutoConfiguration.class))
+                .withPropertyValues(
+                        "mango.kv.store.type=redis",
+                        "mango.redis.enabled=false")
+                .run(context -> assertThat(context).doesNotHaveBean(RedissonClient.class));
+    }
 
     @Test
     void dalPropertiesOverrideMangoAndSpringProperties() {

@@ -127,6 +127,8 @@ mango:
 
 ## 8. 验证命令
 
+后端验证使用 Java 21。legacy migration fixture 和 API surface fingerprint 是测试资产；本次校准仅跟随既有 V1/V2/V3 迁移与 API 声明版本，未修改生产历史 SQL、公开 API、配置、菜单、权限、租户、页面、启动或审批运行时行为。业务审批接入步骤保持不变。
+
 ```bash
 mvn -f mango/pom.xml -pl mango-platform/mango-workflow -am test
 pnpm -F @mango/workflow build
