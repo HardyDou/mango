@@ -20,9 +20,8 @@ import io.mango.infra.kv.api.LockLease;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.lang.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -81,7 +80,7 @@ public class FilePreviewTaskServiceImpl implements IFilePreviewTaskService {
     public FilePreviewTaskServiceImpl(
             FilePreviewFileGateway fileGateway,
             IFileContentProvider contentProvider,
-            ConvertApi convertApi,
+            @Nullable ConvertApi convertApi,
             ITokenStore taskStore,
             ILeaseLocker leaseLocker,
             ObjectMapper objectMapper,
@@ -90,29 +89,6 @@ public class FilePreviewTaskServiceImpl implements IFilePreviewTaskService {
         this.fileGateway = fileGateway;
         this.contentProvider = contentProvider;
         this.convertApi = convertApi;
-        this.taskStore = taskStore;
-        this.leaseLocker = leaseLocker;
-        this.objectMapper = objectMapper;
-        this.properties = properties;
-        this.conversionExecutor = conversionExecutor;
-    }
-
-    /**
-     * Direct previews remain available when the optional file-processing starter is absent.
-     */
-    @Autowired
-    public FilePreviewTaskServiceImpl(
-            FilePreviewFileGateway fileGateway,
-            IFileContentProvider contentProvider,
-            ObjectProvider<ConvertApi> convertApiProvider,
-            ITokenStore taskStore,
-            ILeaseLocker leaseLocker,
-            ObjectMapper objectMapper,
-            FilePreviewProperties properties,
-            @Qualifier("filePreviewConversionExecutor") ExecutorService conversionExecutor) {
-        this.fileGateway = fileGateway;
-        this.contentProvider = contentProvider;
-        this.convertApi = convertApiProvider.getIfAvailable();
         this.taskStore = taskStore;
         this.leaseLocker = leaseLocker;
         this.objectMapper = objectMapper;

@@ -1,12 +1,12 @@
-# 模块重构分析分支最终验收记录
+# 模块重构分析验收与提交前复核记录
 
-## 1. 结论
+## 1. 2026-10-05 实施验收结论
 
 - 分支：`chore/module-refactor-analysis`
 - 基线：`8a8e80fd9`
 - 工作区：复用既有非 `main` worktree `/Users/hardy/Work/mango-module-refactor-analysis`
 - 自动化结论：Java 21、Redis、分页、Flyway/MySQL、API、Bootstrap、文件预览和全 Reactor 验证均完成；最终 `mvn clean verify` 为 `BUILD SUCCESS`。
-- 验收状态：自动化验证完成。本次未执行提交、发布或人工审批动作。
+- 当日验收状态：自动化验证完成，当日未执行提交、发布或人工审批动作。下文第 2–11 节保留该阶段证据；提交前新增事实与修正见第 12 节，最终 head 的检查结果以 PR 回读记录为准。
 
 本记录只保存结果摘要和可追溯入口，不保存运行日志、数据库密码、令牌、SM4 密钥或其它凭据。原始 Maven 日志位于本机 `/tmp`，不作为仓库资产提交。
 
@@ -52,7 +52,7 @@
 | DEC-001 | parent compiler 保留 source/target 21，并增加 `release=21` | 全仓编译与发布字节码统一到 Java 21；因此必须做完整 Reactor 验证 | 回退 parent/POM 改动并恢复原 override；不得只回退单个模块 |
 | DEC-002 | Redis auto-configuration 增加 `mango.redis.enabled` 条件 | 显式关闭 Redis 时 Redisson 不装配，KV auto 使用 Memory | 回退条件和新增测试；不改变 `IKvStore` API |
 | DEC-003 | PageResult 零 size 返回 0 pages | 防止除零，保留 page/size/total 的原值语义 | 回退实现并保留新增测试作为缺陷证据 |
-| DEC-004 | 可选协作能力使用 `ObjectProvider` | FileSettings/Convert starter 缺失时直接预览不被阻断；转换不可用时任务明确 `FAILED` | 回退到强依赖会恢复独立预览启动阻断，不作为本次推荐方案 |
+| DEC-004 | 可选协作能力使用 Spring `@Nullable` 构造器参数（提交前修正，见第 12 节） | FileSettings/Convert starter 缺失时直接预览不被阻断；转换不可用时任务明确 `FAILED` | 回退到强依赖会恢复独立预览启动阻断，不作为本次推荐方案 |
 | DEC-005 | File Preview 宿主显式启用 `mango.kv.capability.locker=true` | 异步预览任务具备跨实例 lease/worker slot 协调能力 | 回退配置会使应用缺少 `ILeaseLocker`，启动应失败而不是静默降级 |
 | DEC-006 | Workflow 只修测试 fixture/断言和 fingerprint | 不改变生产 migration、HTTP path/verb/binding/permission/response | 反向移动测试或恢复断言；不新增 fallback migration |
 | DEC-007 | API declaration version 跟随注解 | 保留既有 Branding API version 2，不把产品 API 强行改成 version 1 | 只回退测试断言会重新制造错误契约，不推荐 |
@@ -60,7 +60,7 @@
 
 ## 5. 实施路径
 
-- `mango/mango-parent/pom.xml`、`mango/pom.xml` 及受影响聚合 POM：Java 21/release 清理。
+- `mango/mango-parent/pom.xml` 及受影响 infra/context/crypto/org/system POM：Java 21/release 清理；根 `mango/pom.xml` 未修改。
 - `mango/mango-infra/mango-infra-kv/**`：Redis 条件、测试和 README。
 - `mango/mango-common/**`：分页实现与单测。
 - `mango/mango-platform/mango-workflow/**`：legacy test fixture、迁移断言和 API surface test。
@@ -133,7 +133,7 @@ mvn clean verify
 
 ## 8. 文档与能力说明
 
-- 能力地图已有 File Preview 入口，无需新增能力分类。
+- 能力地图已有 File Preview 入口，不新增能力分类；提交前补充 Java 21 和 Common 分页边界，三个业务指南同步使用或无运行时影响说明。
 - `mango/mango-platform/mango-file-preview/README.md` 已补充 `ILeaseLocker`、`mango.kv.capability.locker=true` 和可选转换能力的当前运行边界。
 - `mango-docs/evidence/baselines/infra-kv/latest/acceptance.md` 已补充 Redis disabled/Memory fallback 证据。
 - `mango-docs/evidence/baselines/file-preview/latest/README.md` 已补充可选依赖、locker 和独立 app Flow 证据。
@@ -163,7 +163,7 @@ mvn clean verify
 
 - 参与视角：Tech Lead/安全与数据边界的 Agent 角色视角。
 - 来源：parent/root POM、Workflow migration 目录、File Preview gateway/task、KV auto-configuration、API fingerprint、真实 MySQL/Flyway 结果。
-- 结论：parent 变化已触发完整 Reactor；可选能力用 `ObjectProvider`，核心 locker/token 能力仍显式要求；Workflow 只改测试 fixture/断言；权限、租户、Flyway 和历史 migration 未被绕过。
+- 结论：parent 变化已触发完整 Reactor；可选能力在当日使用 `ObjectProvider`（提交前改为 `@Nullable`，见第 12 节），核心 locker/token 能力仍显式要求；Workflow 只改测试 fixture/断言；权限、租户、Flyway 和历史 migration 未被绕过。
 - 反对意见/冲突：把 V2/V3 缺失列直接补进生产历史 SQL，或为独立预览恢复进程内 fallback，会掩盖真实升级/多实例风险；均拒绝。
 - 输入下一轮：确认每项风险有可观察验证、skipped 未被误报、文档和回滚路径可追溯。
 
@@ -198,4 +198,25 @@ mvn clean verify
 - 文本清晰性：通过；模块 README、能力地图入口和最终验收记录可相互追溯。
 - 阻断问题：无自动化阻断问题。
 - 非阻断建议：合并前由真实 Dev/QA/Tech Lead 完成 PR Review；若门禁禁止 skipped，补齐六组专用环境后重跑。
-- 评审结论：自动化验证完成；不代签人工批准或发布。
+- 当日检查结论：自动化验证完成；不代签人工批准或发布。
+
+## 12. 提交前复核与修正
+
+- 用户授权：提交 PR；只包含本地 commit、任务分支 push、PR 创建和回读，不包含合并、审批、发布或部署。
+- 已形成任务提交 `8d004bb5a`，并以非破坏性 merge 合入 `origin/main` 的 `06aa9c1ee`，产生 `e581240de`；主 worktree 未修改。
+- 首次提交前 `clean verify` 在 KV 测试阶段被 2,400 秒超时中断，不能计为通过。重新核验 Locker/Counter 为 21/21，后续完整执行采用 `caffeinate` 避免休眠干扰。
+- 2026-10-07 完整复验的用例无失败/错误，但静态门禁发现两个新增 `CT_CONSTRUCTOR_THROW`：`FilePreviewFileGateway` 和 `FilePreviewTaskServiceImpl` 在构造器中解析 `ObjectProvider`。该次结果是 `BUILD FAILURE`，不以 10 月 5 日结果替代。
+- 修正为 Spring `@Nullable` 参数注入，移除本次新增的 provider 重载，保留原有构造器签名、可选能力语义和强制 locker/token 依赖。未增加 SpotBugs 抑制或修改债务基线。定向 core/Flow 复验 24/24，含新增 Office 缺少转换能力时的明确失败回归。
+- 带真实 PR body 的能力文档检查发现缺失覆盖，已补充能力地图及文件上传、业务审批、租户基础数据三个指南；未带 PR body 的检查结果不能替代此门禁。
+- 额外 `pnpm check:affected` 的改动文件检查通过，共享 `check:static` 因 23 条存量 ESLint diagnostic identity 失败。相关 9 个文件及 lockfile、checker/config 与 base 逐字节相同，独立登记 [Issue #1010](https://github.com/HardyDou/mango/issues/1010)，不混入本次修复。required `frontend-pr-quality` 的 PR job 已由主分支暂停为 notice，本任务没有修改或停用该检查，也不把 notice 算作前端全局质量通过。
+- 最终提交验证使用工作区 `.runtime/maven-repository` 隔离本项目可变制品。第三方缓存复制时排除 `io/mango`，当前源码重新安装 gate 与生成项目验收前置制品；不复用共享仓库的 Mango SNAPSHOT 作为提交证据。
+
+### 三视角与方案决定
+
+| 视角/参与者 | 来源、结论与不确定项 | 反对意见与下一步 |
+|---|---|---|
+| 事实与用户 / Agent | 用户要求提交既有任务；diff 和本地 gate 明确定位到新增可选依赖构造器及缺失能力说明。旧绿灯不能覆盖新失败。 | 不扩大至无关前端诊断；记录 Issue 后回到提交目标。 |
+| 技术与风险 / Agent | Spring 可空参数注入保持启动时依赖解析和原签名，不在对象构造内执行 provider 查找。无新迁移或 HTTP/权限/租户变化。 | 拒绝全局抑制、放松检查和更新债务预算；以应用 Flow 与静态检查确认。 |
+| 验证与交付 / Agent | 使用当前源码与隔离制品仓执行 required workflow 同源入口，最终命令、环境、SHA 和结果记录到 PR。 | 任一适用 required 本地门禁失败都停止 push；23 环境 skipped 继续单列，外部 CI 待回读。 |
+
+评审选择：已在会话询问是否需要外部同行评审；未指定，按 `AGENT_ONLY` 继续。上述分析不称为独立专家或人工审批。回退为反向撤销任务提交；本任务不执行数据回滚、发布或合并。最终 head 尚需通过同源全量门禁后才可提交 PR。

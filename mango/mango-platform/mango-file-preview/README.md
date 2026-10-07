@@ -67,6 +67,8 @@
 `mango.kv.capability.token-store=true`，并通过 `mango.kv.store.type` 选择 Memory、Redis、JDBC 或自动探测。
 缺少 `ITokenStore` 或 `ILeaseLocker` 时应用会在启动期失败，避免多实例部署时把入口 token 或转换协调状态静默保存在单个 JVM 中。
 
+`FileSettingsApi` 和 `ConvertApi` 是可选协作能力。缺少文件设置服务时，Office 预览大小限制使用 200 MiB 默认值；缺少格式转换服务时，直接预览仍可用，Office 转换任务返回 `FAILED`，提示“当前未启用文件格式转换能力，请下载原文件查看”。
+
 单体应用通过 `mango-file-preview-starter` 把预览引擎组件装配到宿主 Spring 上下文，复用宿主端口，
 不会注册 kkFileView 的独立 `ServerMain`，也不会通过 engine JAR 覆盖宿主应用 Banner。
 
