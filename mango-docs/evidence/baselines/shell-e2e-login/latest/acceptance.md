@@ -4,13 +4,13 @@
 
 结论：原先卡在 `.tenant-select` 的两项超时已在隔离库复现。测试按现行单机构自动选择、多机构显式选择规则修正后，最终定向浏览器测试 11/11 通过，类型检查及 22 项单元合同测试通过。此前完整 P0 关闭重试连续执行三轮，12/12 通过。
 
-- 源码基线：`7769add9f36e9d4d4d593a7e5b0af56652774b4b`；结果来自未提交工作区。`results.json` 记录最终测试文件 SHA-256，不把基线 SHA 冒充新改动提交。
+- 测试 head：`ecd3e8ad1b760729f4a4a29c1c9bb19247747b14`，任务 commit `4e51f6c75` 已合入最新 `origin/main`；`results.json` 记录最终测试文件 SHA-256。
 - 工作区：`/Users/hardy/Work/mango-shell-e2e-login`，分支 `fix/shell-e2e-login`。
 - 产品事实源：`mango-ui/packages/auth/src/views/login.vue`、`useMangoLoginFlow.ts`、CMS `CmsResourceView.vue`、Shell `runtimeHost.ts`、Workflow 的当前列表页面。
 - 修改对象：Shell 的三个业务测试共用登录前置；新增机构发现与登录结果合同回归；更新 CMS 列表、运行标记和业务表头定位；配置可变微应用地址及 CI 能上传的截图路径。
 - 不修改产品登录、授权、机构、菜单、数据库或运行时实现；不删除 P0 用例，不增加超时，不用重试替代成功。
 - 需求影响 L1、方案风险 L1、最终 L1 / SIMPLE：仅测试与验证说明，错误恢复是回退这些文件，不涉及产品契约或数据迁移。
-- M01=CREATE；M02 不重建已有库，仅由 CLI 创建本任务的新库。M08、M09、M10、M13 启用；无产品四阶段文档、无发布动作。
+- M01=REUSE；M02=REBUILD 仅用于 CLI 创建本任务的新隔离库，不重建已有库。M08、M09、M10、M11、M12、M13、M14 启用；无产品四阶段文档、无发布动作。
 
 ## 2. 执行环境
 
@@ -88,5 +88,5 @@ pnpm -C mango-ui test:micro --grep '@p0|@auth-contract' --retries=0 --trace reta
 
 | 输出对象 | 交接内容 | 材料路径 | 执行入口 | 数据/账号边界 | 失败/例外处理 | 状态 |
 |---|---|---|---|---|---|---|
-| 测试维护者 | 共用登录前置、当前页面定位、单位及浏览器合同、P0 结果 | Shell `e2e/`、`tests/` 与本目录 | 上述 test 与 test:micro 命令 | 仅本任务隔离库；不记录密码和 token | 保留真实业务断言；未知错误直接失败 | 已验证，尚未提交 |
+| 测试维护者 | 共用登录前置、当前页面定位、单元及浏览器合同、P0 结果 | Shell `e2e/`、`tests/` 与本目录 | 上述 test 与 test:micro 命令 | 仅本任务隔离库；不记录密码和 token | 保留真实业务断言；未知错误直接失败 | 已验证；commit `4e51f6c75`，测试 merge head `ecd3e8ad1` |
 | 发布维护者 | 此结果只证明测试修正，不是制品发布完成 | 本目录与 Issue #1014 | 独立 Mango 发布流程 | 不升版、不发制品、不创建 Tag | 发布版本、Changeset 和其它发布门禁另行完成 | 尚未发布 |
