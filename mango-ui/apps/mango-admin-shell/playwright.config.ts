@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
-import { copyFileSync, mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { resolveE2EApiBaseURL } from '../../playwright.workspace';
 
@@ -25,11 +25,21 @@ const gitTree = execFileSync('git', ['rev-parse', 'HEAD^{tree}'], {
 }).trim();
 mkdirSync(dirname(runtimeConfigPath), { recursive: true });
 mkdirSync(dirname(reportPath), { recursive: true });
-copyFileSync(resolve(__dirname, './runtime-config.dev.json'), runtimeConfigPath);
+const runtimeConfig = JSON.parse(readFileSync(resolve(__dirname, './runtime-config.dev.json'), 'utf8'));
+for (const [moduleCode, entry] of Object.entries({
+  'mango-authorization': process.env.PLAYWRIGHT_RBAC_ENTRY,
+  'mango-workflow': process.env.PLAYWRIGHT_WORKFLOW_ENTRY,
+  'mango-template': process.env.PLAYWRIGHT_TEMPLATE_ENTRY,
+  'mango-cms': process.env.PLAYWRIGHT_CMS_ENTRY,
+})) {
+  if (entry) runtimeConfig.modules[moduleCode].entry = entry;
+}
+writeFileSync(runtimeConfigPath, `${JSON.stringify(runtimeConfig, null, 2)}\n`);
 process.env.PLAYWRIGHT_RUNTIME_CONFIG_PATH = runtimeConfigPath;
 
 export default defineConfig({
   testDir: './e2e',
+  outputDir: resolve(uiRoot, '../.runtime/playwright/mango-admin-shell/test-results'),
   timeout: 120 * 1000,
   expect: {
     timeout: 8000,
