@@ -151,6 +151,7 @@ node business-pmo/mango-baseline/tools/audit-readme-source-facts.mjs
 | 升级历史业务 baseline | `mango pmo upgrade --project-dir .`                                                        |
 | 输出任务规则          | `node business-pmo/mango-baseline/tools/pmo-preflight.mjs ...`                             |
 | 检查交付台账          | `node business-pmo/mango-baseline/tools/delivery-contract-check.mjs ...`                   |
+| 检查决策复核记录      | `node business-pmo/mango-baseline/tools/check-decision-review.mjs --document <path>`       |
 | 检查全部业务文档      | `node business-pmo/mango-baseline/tools/check-document-set.mjs --root business-docs`       |
 | 检查业务能力 README   | `node business-pmo/mango-baseline/tools/audit-module-readmes.mjs`                          |
 | 核对业务 README 事实  | `node business-pmo/mango-baseline/tools/audit-readme-source-facts.mjs`                     |
@@ -158,6 +159,8 @@ node business-pmo/mango-baseline/tools/audit-readme-source-facts.mjs
 | 检查单个模块债务      | `node mango-pmo/tools/check-architecture-debt-budget.mjs --module <moduleKey\|artifactId>` |
 | 首次纳管存量模块      | 先用完整 Reactor 和 `-Dmango.architecture.inventoryOnly=true` 生成报告，再执行 `node mango-pmo/tools/check-architecture-debt-budget.mjs --onboard-module <moduleKey-prefix> --module-properties <path> --base-ref <base-sha> --reason "<reason>" --write` |
 | 业务项目首次纳管      | 使用项目自有 `business-pmo/architecture-debt-budget.json`；完整命令和 GitHub/Gitea required check 入口见生成项目 `business-pmo/README.md` |
+
+`check-decision-review.mjs` 从“评审选择与记录”章节读取唯一的评审选择和非空询问记录，按表头校验每一行，而非在整行匹配关键词。记录中的方式与所选方式一致；无开放阻断时在“阻断问题”列填写 `None` 或 `无`。`AGENT_ONLY` 的结论支持 `PASS`、`RECORDED`，外部评审结论支持 `PASS`；空结论、`BLOCKED` 和未解决阻断均会失败。明确记录“未指定，按 AGENT_ONLY 继续”仍可通过，不要求即时人工答复。规范与权限边界见[决策复核规范](./rules/14-decision-expert-review.md)。
 
 ## 8. 存量业务项目升级与模块纳管
 
