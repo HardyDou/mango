@@ -1,6 +1,6 @@
 # MangoTableCell
 
-通用单元格组件。提供 `text` / `status` / `tag` / `button` / `input` / `select` / `radio` / `custom` 类型。
+通用单元格组件。提供 `text` / `status` / `tag` / `button` / `input` / `select` / `radio` / `switch` / `custom` 类型。
 
 作为 `MangoDataTable` 的内部子组件，通常不单独使用。
 
@@ -18,6 +18,7 @@ const columns: MangoTableColumn<OrderRow>[] = [
   { field: 'remark', label: '备注', type: 'input' },     // 可编辑输入
   { field: 'level', label: '等级', type: 'select', options: [...] },   // 下拉选择
   { field: 'enabled', label: '启用', type: 'radio', options: [...] },  // 单选
+  { field: 'active', label: '激活', type: 'switch' },   // 开关
   { field: 'custom', label: '自定义', type: 'custom' },  // 自定义插槽
 ];
 ```
@@ -33,11 +34,12 @@ const columns: MangoTableColumn<OrderRow>[] = [
 | `input` | 输入框，直接修改行字段 | 是 |
 | `select` | 下拉选择，直接修改行字段 | 是 |
 | `radio` | 单选，直接修改行字段 | 是 |
+| `switch` | 开关，直接修改行字段，支持 boolean 或 0/1 | 是 |
 | `custom` | 完全自定义，通过 `slot` 或 `formatter` | 否 |
 
 ## 编辑行为
 
-`input` / `select` / `radio` 类型会直接修改传入行的可编辑字段，并在提交后通过 `cell-change` 事件提供 `previousValue` 和新值。只读业务可仅使用 `text` / `status` / `tag` / `custom`。
+`input` / `select` / `radio` / `switch` 类型会直接修改传入行的可编辑字段，并在提交后通过 `cell-change` 事件提供 `previousValue` 和新值。只读业务可仅使用 `text` / `status` / `tag` / `custom`。
 
 ## 单元格上下文
 

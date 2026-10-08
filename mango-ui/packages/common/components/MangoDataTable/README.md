@@ -34,7 +34,7 @@ import type { MangoTableColumn, MangoTablePageChangeContext } from '@mango/commo
 
 | 类型 | 字段 / 默认语义 |
 | --- | --- |
-| `MangoTableColumn` | `field`、`label` 必填；`type` 为 `text | status | tag | button | input | select | radio | custom`（默认 `text`）；支持 `width`、`minWidth`、`fixed`、`align`、`sortable`、`resizable`、`expandable`、`hidden`、`showOverflowTooltip`、`emptyText`、`options`、`loading`、`slot`、`props`、`formatter`、`disabled`。 |
+| `MangoTableColumn` | `field`、`label` 必填；`type` 为 `text | status | tag | button | input | select | radio | switch | custom`（默认 `text`）；支持 `width`、`minWidth`、`fixed`、`align`、`sortable`、`resizable`、`expandable`、`hidden`、`showOverflowTooltip`、`emptyText`、`options`、`loading`、`slot`、`props`、`formatter`、`disabled`。 |
 | `MangoTableOption` | `label`、`value` 必填；`disabled?`、`tone?` 用于选择项状态。 |
 | `MangoTableAction` | `key`、`text` 必填；`tone`、`visible`、`disabled`、`loading` 可为静态值或按行上下文计算，`props` 透传按钮属性。 |
 | `MangoTableOperation` | 操作列配置：`visible`、`label`、`width`、`minWidth`、`fixed`、`align`、`resizable`、`moreCount`、`actions`。`actions` 必填；事件只返回意图，不自动调用接口。 |
@@ -197,7 +197,7 @@ type MangoTableCellCondition<Row extends object> = boolean | ((context: MangoTab
 interface MangoTableColumn<Row extends object> {
   field: string;
   label: string;
-  type?: MangoTableColumnType; // text | status | tag | button | input | select | radio | custom
+  type?: MangoTableColumnType; // text | status | tag | button | input | select | radio | switch | custom
   width?: number | string;
   minWidth?: number | string;
   fixed?: boolean | 'left' | 'right';

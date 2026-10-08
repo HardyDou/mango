@@ -4,7 +4,16 @@ import type { MangoStatusTone } from '../MangoStatusText/types';
 
 export type MangoTableMode = 'flat' | 'expand';
 export type MangoTableExpandType = 'list';
-export type MangoTableColumnType = 'text' | 'status' | 'tag' | 'button' | 'input' | 'select' | 'radio' | 'custom';
+export type MangoTableColumnType =
+  | 'text'
+  | 'status'
+  | 'tag'
+  | 'button'
+  | 'input'
+  | 'select'
+  | 'radio'
+  | 'switch'
+  | 'custom';
 export type MangoTableOptionValue = string | number | boolean;
 export type MangoTableActionTone = Exclude<MangoStatusTone, 'neutral'>;
 
