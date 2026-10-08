@@ -425,7 +425,7 @@
     },
     "workspaceLint": {
       "command": "pnpm -C mango-ui lint",
-      "status": "EXCEPTION",
+      "status": "FAIL",
       "evidence": ".runtime/shell-e2e-login/mango-ui-lint.log",
       "reason": "ratchet reported new diagnostics in unchanged existing files outside the task paths; no task file appeared in the reported identities"
     },

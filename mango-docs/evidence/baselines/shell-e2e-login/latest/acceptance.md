@@ -36,7 +36,7 @@ PLAYWRIGHT_CMS_ENTRY=http://e.mango.io:35001/ \
 pnpm -C mango-ui test:micro --grep '@p0|@auth-contract' --retries=0 --trace retain-on-failure
 ```
 
-三轮稳定性抽查使用同组地址，参数改为 `--grep @p0 --retries=0 --repeat-each=3 --trace retain-on-failure`。该抽查发生在最终类型收紧与格式整理前；整理后的完整 11 项再次通过。
+三轮稳定性抽查使用同组地址，参数改为 `--grep @p0 --retries=0 --repeat-each=3 --trace retain-on-failure`。合入 `origin/main` 后，测试 head `ecd3e8ad1` 的三轮抽查 12/12 和完整 11 项均再次通过；证据提交 `d884dc387` 的完整 11 项复跑也通过。
 
 ## 3. 功能验收记录
 
@@ -61,6 +61,7 @@ pnpm -C mango-ui test:micro --grep '@p0|@auth-contract' --retries=0 --trace reta
 | P0 三轮无重试抽查 | 12/12，0 skipped | `.runtime/shell-e2e-login/p0-repeat.log`；`results.json` p0Repeat |
 | 最终 P0 + 登录浏览器合同 | 11/11，0 skipped，0 retry | `.runtime/shell-e2e-login/browser-final.log`；`results.json` final |
 | TypeScript | PASS，已接入应用 test 脚本 | `tsconfig.e2e.json`；unit-final.log |
+| Shell 生产构建与公共包单测 | PASS；不代表生产构建态浏览器验收 | `pnpm -C mango-ui --filter mango-admin-shell build`；`pnpm -C mango-ui --filter @mango/admin-shell test` |
 | 当前任务范围 ESLint、Prettier、test-quality、workspace-layout、Catalog、diff | PASS；目标 ESLint 使用 `apps/mango-admin-shell/e2e`、`tests` 和 Playwright 配置范围 | `.runtime/shell-e2e-login/lint-targeted-gate.log` 及当前任务 runtime 检查日志 |
 
 ### 复核选择
@@ -79,7 +80,7 @@ pnpm -C mango-ui test:micro --grep '@p0|@auth-contract' --retries=0 --trace reta
 |---|---|---|---|---|
 | 微应用回切时一次空白 | 定向调试中曾失败，之后同产品源码多轮通过；根因尚未定位 | 不能把测试适配当作运行时缺陷修复 | 已登记 [Issue #1014](https://github.com/HardyDou/mango/issues/1014)，保留回切断言与失败日志；后续复现需保存 trace | 未申请忽略失败或发布豁免 |
 | 真实多机构授权闭环 | 多机构新增用例控制的是机构发现响应 | 只能证明前置脚本和选择器分支，不证明后台授权 | 产品授权任务使用真实机构/成员 fixture 单独验证 | 不声称本次已覆盖 |
-| 全量 CMS 按钮、其它 P1/P2、生产构建、多浏览器 | 本任务范围是登录前置与已失败 P0；第三处登录调用已替换并通过类型检查 | 不等于所有长期浏览器套件通过 | 后续按相应任务运行完整套件 | 无自动豁免 |
+| 全量 CMS 按钮、其它 P1/P2、生产构建态浏览器、多浏览器 | 本任务范围是登录前置与已失败 P0；第三处登录调用已替换并通过类型检查 | 不等于所有长期浏览器套件通过 | 后续按相应任务运行完整套件 | 无自动豁免 |
 | console/network 全局审计 | 本轮保留原业务请求断言与截图，未新增全局错误收集器 | 不宣称所有浏览器 console 或网络请求均无错误 | 完整 UI 或发布验收补独立事件清单 | 不扩大此次验收结论 |
 | 初次本机微应用 CORS | 工作区端口与默认允许 origin 不同，已通过已有环境变量配置正确 origin | 属于本机验证环境准备，不改产品 CORS 策略 | README 写明配置；最终回归使用同一 origin | 非产品变更 |
 | 全仓 `mango-ui lint` | ratchet 报告未修改存量文件的新诊断，涉及 `apps/mango-admin/e2e/specs/workflow-management.spec.ts`、`packages/admin-shell/src/**`、`packages/common/**`、`packages/file/**`、`packages/workflow/**`；当前任务文件的定向 ESLint 已通过 | 全仓门禁当前阻断，不能归因于本任务；不扩大范围修复存量基线 | 已保存 `.runtime/shell-e2e-login/mango-ui-lint.log`，后续单独维护静态质量基线并重跑全仓门禁 | 本任务不申请将该全仓结果视为通过，也不据此宣称发布可用 |
