@@ -15,11 +15,6 @@
     <name>Mango Crypto</name>
     <description>Mango 基础密码能力集合，提供有限的 SM2/SM3/SM4、AES、RSA、HMAC 实现</description>
 
-    <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>io.mango.common</groupId>

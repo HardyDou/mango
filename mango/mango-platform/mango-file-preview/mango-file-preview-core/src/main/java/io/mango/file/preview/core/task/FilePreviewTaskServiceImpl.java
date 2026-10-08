@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.lang.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -79,7 +80,7 @@ public class FilePreviewTaskServiceImpl implements IFilePreviewTaskService {
     public FilePreviewTaskServiceImpl(
             FilePreviewFileGateway fileGateway,
             IFileContentProvider contentProvider,
-            ConvertApi convertApi,
+            @Nullable ConvertApi convertApi,
             ITokenStore taskStore,
             ILeaseLocker leaseLocker,
             ObjectMapper objectMapper,
@@ -206,6 +207,11 @@ public class FilePreviewTaskServiceImpl implements IFilePreviewTaskService {
             var parsedFormat = ConvertFormat.parse(extension);
             if (parsedFormat.isEmpty()) {
                 update(task, FilePreviewTaskStatus.FAILED, PROGRESS_COMPLETE, "暂不支持该文件格式的预览");
+                return;
+            }
+            if (convertApi == null) {
+                update(task, FilePreviewTaskStatus.FAILED, PROGRESS_COMPLETE,
+                        "当前未启用文件格式转换能力，请下载原文件查看");
                 return;
             }
             ConvertFormat source = parsedFormat.get();

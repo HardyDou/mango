@@ -124,8 +124,10 @@ const categories: MangoAttachmentUploadCategory[] = [
 | 租户数据 | 文件记录、业务单据和当前登录用户处于同一租户上下文                                                                                                                                     |
 | 前端组件 | `MUpload` 返回 `fileId`、`fileIds` 或 token，详情页按文件 ID 回显；不要把 `previewUrl`、`downloadUrl` 或临时 `blob:` 地址提交给业务接口；`FilePreviewPanel` 不会把下载地址当作预览地址 |
 | 菜单页面 | 使用文件中心管理页时，页面 key 和菜单 component 对齐                                                                                                                                   |
-| 预览链路 | 启用预览时，file-preview 和 fileproc 依赖可用                                                                                                                                          |
+| 预览链路 | 直接预览只需 file-preview 与文件读取能力；Office 转换另需 fileproc 转换能力                                                                                                                                          |
 | 业务语义 | 编辑、删除业务单据时，附件解绑或物理清理策略清晰                                                                                                                                       |
+
+预览宿主同时启用 KV `token-store` 和 `locker` 能力。缺少 `FileSettingsApi` 时，Office 大小限制使用 200 MiB 默认值；缺少 `ConvertApi` 时，直接预览仍可用，Office 转换任务返回 `FAILED` 和下载原文件提示。这不改变上传、下载 API、菜单、权限或租户边界，配置入口见 [File Preview README](../../../mango/mango-platform/mango-file-preview/README.md)。
 
 ### 5.1 大文件和 HTTP IP 环境
 

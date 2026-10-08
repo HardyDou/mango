@@ -38,4 +38,12 @@ class PageResultTest {
         assertThat(result.getPage()).isEqualTo(2);
         assertThat(result.getSize()).isEqualTo(10);
     }
+
+    @Test
+    void of_zeroSize_returnsZeroPages() {
+        PageResult<String> result = PageResult.of(List.of(), 21, 1, 0);
+
+        assertThat(result.getPages()).isZero();
+        assertThat(result.getSize()).isZero();
+    }
 }

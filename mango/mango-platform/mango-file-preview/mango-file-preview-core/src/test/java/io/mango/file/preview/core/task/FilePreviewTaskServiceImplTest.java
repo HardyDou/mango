@@ -137,6 +137,30 @@ class FilePreviewTaskServiceImplTest {
     }
 
     @Test
+    void submit_withoutConversionCapability_reportsExplicitFailure() throws Exception {
+        FileApi fileApi = mock(FileApi.class);
+        IFileContentProvider contentProvider = mock(IFileContentProvider.class);
+        ITokenStore taskStore = mock(ITokenStore.class);
+        FileRecordVO record = record(47L, "optional-conversion.docx");
+        when(fileApi.get(47L)).thenReturn(io.mango.common.result.R.ok(record));
+        try (ExecutorService executor = testExecutor()) {
+            FilePreviewTaskServiceImpl service = new FilePreviewTaskServiceImpl(
+                    new FilePreviewFileGateway(fileApi, contentProvider), contentProvider, null,
+                    taskStore, availableLeaseLocker(), new ObjectMapper().registerModule(new JavaTimeModule()),
+                    new FilePreviewProperties(), executor);
+
+            service.submit(47L, false);
+            await(() -> service.status(47L, false).getStatus() == FilePreviewTaskStatus.FAILED);
+
+            FilePreviewTaskVO result = service.status(47L, false);
+            assertThat(result.getProgress()).isEqualTo(100);
+            assertThat(result.getMessage()).isEqualTo("当前未启用文件格式转换能力，请下载原文件查看");
+            assertThat(result.getPreviewFileId()).isNull();
+            verifyNoInteractions(contentProvider);
+        }
+    }
+
+    @Test
     void configuredOfficeLimitRequiresExplicitConfirmationBeforeSchedulingConversion() {
         FileApi fileApi = mock(FileApi.class);
         FileSettingsApi settingsApi = mock(FileSettingsApi.class);

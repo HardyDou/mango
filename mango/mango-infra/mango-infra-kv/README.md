@@ -82,7 +82,7 @@ public void handleCallback(CallbackRequest request) {
 | `provider.jdbc.password` | 回退到 `spring.datasource.password` | JDBC 密码。 |
 | `provider.jdbc.driver` | 回退到 `spring.datasource.driver-class-name` | JDBC 驱动。 |
 
-`store.type=auto` 时，存在 `RedissonClient` 则使用 Redis，否则使用 Memory。`store.type=jdbc` 需要 `JdbcTemplate`，且表结构必须存在。
+`store.type=auto` 时，存在 `RedissonClient` 则使用 Redis，否则使用 Memory；因此 `mango.redis.enabled=false` 会让自动模式回退到 Memory。`store.type=jdbc` 需要 `JdbcTemplate`，且表结构必须存在。
 
 如果业务模块需要某项 capability，应同时开启 `capability.enabled` 和对应单项开关。缺少所需 Bean 时，
 消费模块的构造器注入会在启动期暴露配置错误；这与 `store.type=auto` 选择 Memory 的显式自动探测不同。
@@ -93,7 +93,7 @@ Redis 配置优先级在代码中按 `mango.dal.provider.redis.*`、`mango.redis
 
 | 配置 | 默认值 | 含义 |
 |------|--------|------|
-| `mango.redis.enabled` | `true` | 是否启用 Mango Redis 配置。 |
+| `mango.redis.enabled` | `true` | 是否启用 Mango Redis 自动配置；显式设为 `false` 时不创建 `RedissonClient`。 |
 | `mango.redis.host` | `localhost` | Redis host。 |
 | `mango.redis.port` | `6379` | Redis port。 |
 | `mango.redis.password` | 无 | Redis 密码。 |

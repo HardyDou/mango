@@ -7,6 +7,7 @@ import io.mango.infra.kv.core.aspect.KvCapabilityAspect;
 import io.mango.infra.kv.core.jdbc.JdbcKvStore;
 import io.mango.infra.kv.core.memory.MemoryKvStore;
 import io.mango.infra.kv.core.redis.RedisKvStore;
+import io.mango.infra.kv.starter.redis.KvRedisAutoConfiguration;
 import org.junit.jupiter.api.Test;
 import org.redisson.api.RedissonClient;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -150,6 +151,20 @@ class KvStoreAutoConfigurationTest {
                 .withPropertyValues("mango.kv.store.type=auto")
                 .run(context -> {
                     assertThat(context).hasBean("autoMemoryKvStore");
+                    assertThat(context.getBean(IKvStore.class)).isInstanceOf(MemoryKvStore.class);
+                });
+    }
+
+    @Test
+    void typeAuto_redisDisabled_fallsBackToMemoryKvStore() {
+        new ApplicationContextRunner()
+                .withConfiguration(AutoConfigurations.of(
+                        KvRedisAutoConfiguration.class, KvStoreAutoConfiguration.class))
+                .withPropertyValues(
+                        "mango.kv.store.type=auto",
+                        "mango.redis.enabled=false")
+                .run(context -> {
+                    assertThat(context).doesNotHaveBean(RedissonClient.class);
                     assertThat(context.getBean(IKvStore.class)).isInstanceOf(MemoryKvStore.class);
                 });
     }
