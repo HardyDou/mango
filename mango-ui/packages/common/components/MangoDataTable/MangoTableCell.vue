@@ -76,6 +76,16 @@
     </el-radio>
   </el-radio-group>
 
+  <el-switch
+    v-else-if="column.type === 'switch'"
+    v-bind="column.props"
+    :disabled="isDisabled"
+    :loading="column.loading"
+    :model-value="switchValue"
+    @update:model-value="handleSwitchUpdate"
+    @change="commitChange"
+  />
+
   <template v-else>{{ displayText }}</template>
 </template>
 
@@ -128,6 +138,7 @@ const inputValue = computed(() => {
   const value = rawValue.value;
   return typeof value === 'string' || typeof value === 'number' ? value : '';
 });
+const switchValue = computed(() => rawValue.value === true || rawValue.value === 1);
 const isDisabled = computed(() => resolveCellCondition(props.column.disabled, cellContext.value));
 
 function getByPath(target: object, path: string): unknown {
@@ -172,6 +183,14 @@ function handleValueUpdate(value: unknown) {
   beginEditing();
   dirty.value = true;
   setByPath(props.row, props.column.field, value);
+}
+
+function handleSwitchUpdate(value: boolean) {
+  beginEditing();
+  dirty.value = true;
+  // 如果原始值是数字（0/1），保持数字类型写入；否则写入 boolean
+  const numeric = typeof rawValue.value === 'number';
+  setByPath(props.row, props.column.field, numeric ? (value ? 1 : 0) : value);
 }
 
 function commitChange() {
