@@ -57,6 +57,8 @@ npm --prefix mango-docs run docs:dev
 npm --prefix mango-docs run docs:build
 ```
 
+构建会为原 `guides/business-integration/` 下的 `permission-button-troubleshooting`、`rbac-menu-page-troubleshooting`、`tenant-dict-config-empty` 三个公开地址生成 FAQ 跳转入口。脚本跳转保留查询参数和锚点，无 JavaScript 时仍提供刷新和手动链接；导航和正文只维护新 FAQ。`docs:build` 自动执行旧地址产物回归检查，也可在构建后单独运行 `npm --prefix mango-docs run docs:check-redirects`。本地构建成功不表示 Pages 已部署。
+
 ## 事实来源
 
 - 当前能力事实：对应后端模块或前端 package README。

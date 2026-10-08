@@ -663,11 +663,44 @@ for (const doc of publicDocs) {
   }
 }
 
+// Preserve these published URLs without duplicating FAQ content or adding old pages to navigation.
+// Relative targets keep both project Pages bases and version snapshot bases intact.
+const legacyFaqSlugs = [
+  'permission-button-troubleshooting',
+  'rbac-menu-page-troubleshooting',
+  'tenant-dict-config-empty'
+];
+for (const slug of legacyFaqSlugs) {
+  const currentDoc = `mango-docs/guides/faq/${slug}.md`;
+  if (!publicDocSet.has(currentDoc)) throw new Error(`FAQ redirect target is not public: ${currentDoc}`);
+  const targetHref = `../faq/${slug}.html`;
+  const redirectFile = resolve(stageRoot, 'public/mango-docs/guides/business-integration', `${slug}.html`);
+  await mkdir(dirname(redirectFile), { recursive: true });
+  await writeFile(redirectFile, `<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>排障文档已迁移</title>
+<meta name="robots" content="noindex">
+<link rel="canonical" href="${targetHref}">
+<meta http-equiv="refresh" content="0;url=${targetHref}">
+<script>
+const target = new URL(${JSON.stringify(targetHref)}, window.location.href);
+target.search = window.location.search;
+target.hash = window.location.hash;
+window.location.replace(target.href);
+</script>
+</head>
+<body><p>本页已迁移至 FAQ。<a href="${targetHref}">打开当前排障文档</a></p></body>
+</html>
+`);
+}
+
 await writeFile(resolve(stageRoot, 'index.md'), index);
 await writeFile(resolve(stageRoot, 'mango-docs/index.md'), docsIndex);
 await writeFile(resolve(stageRoot, '.vitepress/config.mts'), config);
 
-console.log(`Staged ${publicDocs.length} public docs in ${relative(repoRoot, stageRoot)}`);
+console.log(`Staged ${publicDocs.length} public docs and ${legacyFaqSlugs.length} FAQ redirects in ${relative(repoRoot, stageRoot)}`);
 
 function rewriteMarkdownLinks(markdown, sourceDoc) {
   return markdown.replace(/(!?)\[([^\]]+)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g, (match, marker, text, rawHref) => {
