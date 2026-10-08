@@ -1,6 +1,15 @@
 import { expect, test, type APIRequestContext, type Locator, type Page } from '@playwright/test';
 import { api as e2eApi } from '../support/api';
-import { checkButton, firstDialog, formItem, selectValue, selectValues } from '../support/element-plus';
+import { login } from '../support/login';
+import {
+  checkButton,
+  cmsPage,
+  firstDialog,
+  formItem,
+  selectValue,
+  selectValues,
+  waitCmsReady,
+} from '../support/element-plus';
 
 type ApiBody<T> = {
   code?: number;
@@ -53,7 +62,7 @@ async function apiGet<T>(
   request: APIRequestContext,
   token: string,
   path: string,
-  params?: Record<string, string | number | boolean | undefined>,
+  params?: Record<string, string | number | boolean>,
 ) {
   const response = await request.get(api(path), { headers: authHeaders(token), params });
   expect(response.status(), `${path} HTTP 状态错误`).toBe(200);
@@ -74,27 +83,11 @@ async function apiDelete(request: APIRequestContext, token: string, path: string
   }
 }
 
-async function login(page: Page) {
-  await page.goto('/#/login');
-  await page.getByPlaceholder('用户名').fill('admin');
-  await page.getByPlaceholder('密码').fill('admin123');
-  const accountTenantsResponsePromise = page.waitForResponse(
-    (response) => response.url().includes('/api/auth/login-institutions') && response.status() === 200,
-  );
-  await page.getByPlaceholder('密码').blur();
-  await accountTenantsResponsePromise;
-  await page.locator('.tenant-select').click();
-  await page.getByRole('option', { name: /芒果集团/ }).click();
-  await page.getByRole('button', { name: /^登\s*录$/ }).click();
-  await page.waitForURL('**/#/home', { timeout: 10000 });
-  await expect(page.locator('.shell-runtime-content')).toBeVisible();
-}
-
 async function openCmsPage(page: Page, path: string, title: string) {
   await page.goto(`/#${path}`);
   await page.waitForURL(`**/#${path}`, { timeout: 10000 });
-  await expect(page.locator('main')).toContainText(title);
-  await expect(page.locator('.cms-panel')).toBeVisible({ timeout: 10000 });
+  await waitCmsReady(page);
+  await expect(cmsPage(page).getByRole('button', { name: '新增', exact: true }), `${title}应可新增资源`).toBeVisible();
 }
 
 async function searchKeyword(page: Page, keyword: string) {
@@ -103,8 +96,7 @@ async function searchKeyword(page: Page, keyword: string) {
 }
 
 async function selectSearchSite(page: Page, siteName: string) {
-  const toolbar = page.locator('.cms-toolbar');
-  await selectValue(toolbar, '站点', siteName);
+  await selectValue(cmsPage(page), '站点', siteName);
 }
 
 function rowByText(page: Page, text: string | RegExp) {

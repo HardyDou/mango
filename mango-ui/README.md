@@ -229,6 +229,7 @@ Shell 构建和测试：
 
 ```bash
 pnpm -C mango-ui --filter @mango/admin-shell test
+pnpm -C mango-ui --filter mango-admin-shell test
 pnpm -C mango-ui --filter mango-admin-shell build
 ```
 
@@ -241,9 +242,15 @@ pnpm -C mango-ui build:micro
 微前端 E2E：
 
 ```bash
-pnpm -C mango-ui dev:micro
+node mango-ui/packages/mango-cli/src/index.mjs dev start mango-admin-shell mango-admin-rbac-app mango-admin-workflow-app mango-admin-template-app mango-admin-cms-app
 PLAYWRIGHT_USE_EXTERNAL_WEBSERVER=true pnpm -C mango-ui test:micro --project=chromium
 ```
+
+工作区端口以 `mango workspace status` 为准。使用非默认端口时，测试进程设置 `PLAYWRIGHT_BASE_URL`、`PLAYWRIGHT_RBAC_ENTRY`、`PLAYWRIGHT_WORKFLOW_ENTRY`、`PLAYWRIGHT_TEMPLATE_ENTRY` 和 `PLAYWRIGHT_CMS_ENTRY`；启动微应用时设置 `VITE_MANGO_ALLOWED_ORIGINS` 为 Shell origin。启动 Shell 时设置 `VITE_MANGO_RUNTIME_CONFIG_FILE` 为当前工作区绝对路径 `.runtime/playwright/mango-admin-shell/runtime-config.json`，让测试切换的运行配置与服务读取位置一致。测试会生成该文件，不改应用的受控默认配置。
+
+Shell 的三个业务测试共用 `apps/mango-admin-shell/e2e/support/login.ts`：单机构自动选择，多机构按机构编码选择；机构查询错误、目标机构缺失或登录机构不一致会明确失败，不靠隐藏下拉框就放行。单元合同测试由 `--filter mango-admin-shell test` 执行；`test:micro login-contract.spec.ts` 验证真实单机构登录及明确标注的受控响应场景，后者不代表真实多机构授权验收。`test:e2e:p0` 继续执行 CMS 业务闭环、混合/单体装配和未授权事件验证，不跳过业务断言。
+
+浏览器截图、trace 和错误上下文输出到 `.runtime/playwright/mango-admin-shell/test-results/`，与 CI 上传的 `.runtime/playwright` 证据目录一致。此测试调整不改变公开 API、产品登录规则、菜单、权限或租户行为。
 
 README 门禁：
 

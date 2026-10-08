@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { login } from '../support/login';
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -6,6 +7,7 @@ import { join } from 'node:path';
 import { deflateSync } from 'node:zlib';
 import {
   checkButton,
+  cmsPage,
   confirmDelete,
   expectToast,
   expectUploadSuccess,
@@ -203,24 +205,8 @@ async function uploadFile(scope: Locator, label: string, file: UploadAsset) {
 async function openCmsPage(page: Page, path: string, title: string) {
   await page.goto(`/#${path}`);
   await page.waitForURL(`**/#${path}`, { timeout: 15000 });
-  await expect(page.locator('main')).toContainText(title, { timeout: 15000 });
   await waitCmsReady(page);
-}
-
-async function login(page: Page) {
-  await page.goto('/#/login');
-  await page.getByPlaceholder('用户名').fill('admin');
-  await page.getByPlaceholder('密码').fill('admin123');
-  const tenants = page.waitForResponse(
-    (response) => response.url().includes('/api/auth/login-institutions') && response.status() === 200,
-  );
-  await page.getByPlaceholder('密码').blur();
-  await tenants;
-  await page.locator('.tenant-select').click();
-  await page.getByRole('option', { name: /芒果集团/ }).click();
-  await page.getByRole('button', { name: /^登\s*录$/ }).click();
-  await page.waitForURL('**/#/home', { timeout: 15000 });
-  await expect(page.locator('main')).toContainText(/工作台|欢迎|首页/, { timeout: 15000 });
+  await expect(cmsPage(page).getByRole('button', { name: '新增', exact: true }), `${title}应可新增资源`).toBeVisible();
 }
 
 async function queryAndReset(page: Page, pageName: string, keywordValue: string) {

@@ -1,4 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
+import { login } from '../support/login';
+import { cmsPage, waitCmsReady } from '../support/element-plus';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -15,7 +17,7 @@ let originalRuntimeConfig = '';
 let originalDistRuntimeConfig = '';
 
 type MangoRuntimeWindow = Window & {
-  __MANGO_RUNTIME_EVENT_BUS__: { emit(event: string): void };
+  __MANGO_RUNTIME_EVENT_BUS__?: { emit(event: string): void };
   __MANGO_ACTIVE_MICRO_APP__?: { entryUrl?: string };
   __MANGO_MICRO_APP_EVENTS__?: Array<{ entryUrl?: string }>;
   __MANGO_RUNTIME_CONFIG_DIAGNOSTICS__?: Array<{
@@ -161,7 +163,7 @@ test.describe.serial('Shell runtime composition', () => {
     });
     await expect(page.getByText('新增套餐')).toBeVisible();
     await expectRemoteResource(page, new URL(rbacEntry).host);
-    await expectBusinessSmoke(page, 'rbac');
+    await expectBusinessSmoke(page, 'rbac', 'micro');
 
     await page.goto('/#/workflow/start-process');
     await page.waitForURL('**/#/workflow/start-process', { timeout: 10000 });
@@ -171,9 +173,9 @@ test.describe.serial('Shell runtime composition', () => {
       pageType: 'MICRO_ROUTE',
       entryIncludes: new URL(workflowEntry).host,
     });
-    await expect(page.locator('main')).toContainText('发起流程');
+    await expect(page.locator('[data-page="workflow.start-process"]')).toContainText('已发布流程');
     await expectRemoteResource(page, new URL(workflowEntry).host);
-    await expectBusinessSmoke(page, 'workflow');
+    await expectBusinessSmoke(page, 'workflow', 'micro');
 
     await page.goto('/#/system/menu-package');
     await page.waitForURL('**/#/system/menu-package**', { timeout: 10000 });
@@ -184,7 +186,7 @@ test.describe.serial('Shell runtime composition', () => {
       entryIncludes: new URL(rbacEntry).host,
     });
     await expect(page.getByText('新增套餐')).toBeVisible();
-    await expectBusinessSmoke(page, 'rbac');
+    await expectBusinessSmoke(page, 'rbac', 'micro');
 
     await page.goto('/#/cms/sites');
     await page.waitForURL('**/#/cms/sites**', { timeout: 10000 });
@@ -194,9 +196,10 @@ test.describe.serial('Shell runtime composition', () => {
       pageType: 'MICRO_ROUTE',
       entryIncludes: new URL(cmsEntry).host,
     });
-    await expect(page.locator('main')).toContainText('站点管理');
+    await waitCmsReady(page);
+    await expect(cmsPage(page).getByRole('columnheader', { name: '站点', exact: true })).toBeVisible();
     await expectRemoteResource(page, new URL(cmsEntry).host);
-    await expectBusinessSmoke(page, 'cms');
+    await expectBusinessSmoke(page, 'cms', 'micro');
   });
 
   test('@p0 @runtime monolith profile renders modules locally without loading remote apps', async ({ page }) => {
@@ -211,7 +214,7 @@ test.describe.serial('Shell runtime composition', () => {
       pageType: 'LOCAL_ROUTE',
     });
     await expect(page.getByText('新增套餐')).toBeVisible();
-    await expectBusinessSmoke(page, 'rbac');
+    await expectBusinessSmoke(page, 'rbac', 'local');
 
     await page.goto('/#/workflow/start-process');
     await page.waitForURL('**/#/workflow/start-process', { timeout: 10000 });
@@ -220,8 +223,8 @@ test.describe.serial('Shell runtime composition', () => {
       runtimeCode: 'mango-admin-workflow-local',
       pageType: 'LOCAL_ROUTE',
     });
-    await expect(page.locator('main')).toContainText('发起流程');
-    await expectBusinessSmoke(page, 'workflow');
+    await expect(page.locator('[data-page="workflow.start-process"]')).toContainText('已发布流程');
+    await expectBusinessSmoke(page, 'workflow', 'local');
 
     await page.goto('/#/cms/sites');
     await page.waitForURL('**/#/cms/sites**', { timeout: 10000 });
@@ -230,8 +233,9 @@ test.describe.serial('Shell runtime composition', () => {
       runtimeCode: 'mango-admin-cms-local',
       pageType: 'LOCAL_ROUTE',
     });
-    await expect(page.locator('main')).toContainText('站点管理');
-    await expectBusinessSmoke(page, 'cms');
+    await waitCmsReady(page);
+    await expect(cmsPage(page).getByRole('columnheader', { name: '站点', exact: true })).toBeVisible();
+    await expectBusinessSmoke(page, 'cms', 'local');
 
     const remoteResources = await remoteRuntimeResources(page);
     expect(remoteResources).toEqual([]);
@@ -324,7 +328,9 @@ test.describe.serial('Shell runtime composition', () => {
     await login(page);
 
     await page.evaluate(() => {
-      (window as MangoRuntimeWindow).__MANGO_RUNTIME_EVENT_BUS__.emit('unauthorized');
+      const eventBus = (window as MangoRuntimeWindow).__MANGO_RUNTIME_EVENT_BUS__;
+      if (!eventBus) throw new Error('Shell runtime event bus is not registered');
+      eventBus.emit('unauthorized');
     });
 
     await page.waitForURL('**/#/login**', { timeout: 10000 });
@@ -342,22 +348,6 @@ function writeRuntimeConfig(config: unknown) {
   }
 }
 
-async function login(page: Page) {
-  await page.goto('/#/login');
-  await page.getByPlaceholder('用户名').fill('admin');
-  await page.getByPlaceholder('密码').fill('admin123');
-  const accountTenantsResponsePromise = page.waitForResponse(
-    (response) => response.url().includes('/api/auth/login-institutions') && response.status() === 200,
-  );
-  await page.getByPlaceholder('密码').blur();
-  await accountTenantsResponsePromise;
-  await page.locator('.tenant-select').click();
-  await page.getByRole('option', { name: /芒果集团/ }).click();
-  await page.getByRole('button', { name: /^登\s*录$/ }).click();
-  await page.waitForURL('**/#/home', { timeout: 10000 });
-  await expect(page.locator('.shell-runtime-content')).toBeVisible();
-}
-
 async function expectRuntime(
   page: Page,
   expected: {
@@ -369,7 +359,7 @@ async function expectRuntime(
 ) {
   await expect
     .poll(async () => {
-      return page.locator('.shell-runtime-content').evaluate((el) => ({
+      return page.locator('[data-mango-runtime-module]').evaluate((el) => ({
         moduleCode: (el as HTMLElement).dataset.mangoRuntimeModule,
         runtimeCode: (el as HTMLElement).dataset.mangoRuntimeCode,
         pageType: (el as HTMLElement).dataset.mangoRuntimePageType,
@@ -384,7 +374,7 @@ async function expectRuntime(
 
   if (expected.entryIncludes) {
     const entry = await page
-      .locator('.shell-runtime-content')
+      .locator('[data-mango-runtime-module]')
       .evaluate((el) => (el as HTMLElement).dataset.mangoRuntimeEntry || '');
     expect(entry).toContain(expected.entryIncludes);
   }
@@ -408,61 +398,47 @@ async function expectRemoteResource(page: Page, urlPart: string) {
     .toBeTruthy();
 }
 
-async function expectBusinessSmoke(page: Page, module: 'rbac' | 'workflow' | 'cms') {
+async function expectBusinessSmoke(page: Page, module: 'rbac' | 'workflow' | 'cms', mode: 'micro' | 'local') {
+  const runtime = {
+    moduleCode: module === 'rbac' ? 'mango-authorization' : `mango-${module}`,
+    runtimeCode: `mango-admin-${module}-${mode === 'micro' ? 'app' : 'local'}`,
+    pageType: mode === 'micro' ? 'MICRO_ROUTE' : 'LOCAL_ROUTE',
+  };
   if (module === 'rbac') {
     await page.goto('/#/system/role');
-    await expectRuntime(page, {
-      moduleCode: 'mango-authorization',
-      runtimeCode: await currentRuntimeCode(page),
-      pageType: await currentPageType(page),
-    });
-    await expect(page.getByText('新增角色')).toBeVisible();
-    await expect(page.getByText('角色名称')).toBeVisible();
+    await expectRuntime(page, runtime);
+    await expect(page.getByRole('button', { name: '新增角色', exact: true })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: '角色名称', exact: true })).toBeVisible();
 
     await page.goto('/#/system/menu');
-    await expect(page.getByRole('button', { name: '新增菜单' })).toBeVisible();
-    await expect(page.getByText('菜单名称')).toBeVisible();
+    await expectRuntime(page, runtime);
+    await expect(page.getByRole('button', { name: '新增菜单', exact: true })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: '菜单名称', exact: true })).toBeVisible();
     return;
   }
 
   if (module === 'cms') {
-    await page.goto('/#/cms/content-categories');
-    await expectRuntime(page, {
-      moduleCode: 'mango-cms',
-      runtimeCode: await currentRuntimeCode(page),
-      pageType: await currentPageType(page),
-    });
-    await expect(page.locator('main')).toContainText('内容分类');
-    await expect(page.getByRole('button', { name: '新增' })).toBeVisible();
-
-    await page.goto('/#/cms/ad-deliveries');
-    await expect(page.locator('main')).toContainText('广告投放管理');
-    await expect(page.getByRole('button', { name: '新增' })).toBeVisible();
+    for (const [path, column] of [
+      ['content-categories', '分类名称'],
+      ['ad-deliveries', '投放'],
+    ]) {
+      await page.goto(`/#/cms/${path}`);
+      await expectRuntime(page, runtime);
+      await waitCmsReady(page);
+      await expect(cmsPage(page).getByRole('columnheader', { name: column, exact: true })).toBeVisible();
+      await expect(cmsPage(page).getByRole('button', { name: '新增', exact: true })).toBeVisible();
+    }
     return;
   }
 
-  await page.goto('/#/workflow/task/initiated');
-  await expectRuntime(page, {
-    moduleCode: 'mango-workflow',
-    runtimeCode: await currentRuntimeCode(page),
-    pageType: await currentPageType(page),
-  });
-  await expect(page.locator('main')).toContainText('我的申请');
-  await expect(page.locator('main')).toContainText('当前用户发起的流程实例');
-
-  await page.goto('/#/workflow/task/done');
-  await expect(page.locator('main')).toContainText('我的已办');
-  await expect(page.locator('main')).toContainText('当前用户已经处理完成的流程任务');
-}
-
-async function currentRuntimeCode(page: Page) {
-  return page.locator('.shell-runtime-content').evaluate((el) => (el as HTMLElement).dataset.mangoRuntimeCode || '');
-}
-
-async function currentPageType(page: Page) {
-  return page
-    .locator('.shell-runtime-content')
-    .evaluate((el) => (el as HTMLElement).dataset.mangoRuntimePageType || '');
+  for (const taskMode of ['initiated', 'done']) {
+    await page.goto(`/#/workflow/task/${taskMode}`);
+    await expectRuntime(page, runtime);
+    await expect(page.getByPlaceholder('搜索流程/任务名称', { exact: true })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: '任务名称', exact: true })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: '业务单号', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: '查询', exact: true })).toBeVisible();
+  }
 }
 
 async function expectRuntimeDiagnostic(
@@ -489,19 +465,13 @@ async function expectRuntimeDiagnostic(
 }
 
 async function remoteRuntimeResources(page: Page) {
-  return page.evaluate(() =>
-    performance
-      .getEntriesByType('resource')
-      .map((entry) => entry.name)
-      .filter(
-        (url) =>
-          url.includes('b.mango.io:5181') ||
-          url.includes('c.mango.io:5182') ||
-          url.includes('e.mango.io:5184') ||
-          url.includes('b.mango.io:4181') ||
-          url.includes('c.mango.io:4182') ||
-          url.includes('e.mango.io:4184'),
-      ),
+  return page.evaluate(
+    (origins) =>
+      performance
+        .getEntriesByType('resource')
+        .map((entry) => entry.name)
+        .filter((url) => origins.includes(new URL(url).origin)),
+    [rbacEntry, workflowEntry, cmsEntry].map((entry) => new URL(entry).origin),
   );
 }
 
