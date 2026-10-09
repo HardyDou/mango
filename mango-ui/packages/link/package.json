@@ -1,6 +1,6 @@
 {
   "name": "@mango/link",
-  "version": "1.0.33",
+  "version": "1.0.34",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -42,9 +42,9 @@
   ],
   "dependencies": {
     "@element-plus/icons-vue": "2.3.2",
-    "@mango/admin-pages": "workspace:1.0.46",
-    "@mango/common": "workspace:2.1.1",
-    "@mango/grid-widgets": "workspace:1.0.31",
+    "@mango/admin-pages": "workspace:1.0.47",
+    "@mango/common": "workspace:2.1.2",
+    "@mango/grid-widgets": "workspace:1.0.32",
     "@mango/link-openapi": "workspace:1.0.4"
   },
   "peerDependencies": {
