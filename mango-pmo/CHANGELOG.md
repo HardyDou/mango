@@ -1,18 +1,5 @@
 # Mango PMO Changelog
 
-## 1.4.6 - 2026-10-08
-
-### Changed
-
-- Synchronize the understanding-first governance and Business Starter PMO baseline.
-- Make capability-document, PMO scope and release scope checks resilient to large diffs without changing ownership boundaries.
-- Publish the PMO contracts, rules and document-contract fixtures at version 1.4.6.
-
-### Upgrade Notes
-
-- Synchronize @mango/pmo@1.4.6 with @mango/cli@1.2.18 in PMO-managed repositories.
-- Re-run the current reading-entry, decision-review, capability-document and large-diff checks after upgrade.
-
 ## 1.4.5 - 2026-09-30
 
 ## Pull Requests
