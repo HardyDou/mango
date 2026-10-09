@@ -1,0 +1,448 @@
+{
+  "baseCommit": "ecd3e8ad1b760729f4a4a29c1c9bb19247747b14",
+  "sourceState": "committed task changes merged with origin/main; baseCommit is the tested merge head",
+  "workingFilesSha256": {
+    "mango-ui/README.md": "c37d879395567c159140481f302dfab44f5b4a64f1d1be92c6c91fba14274c38",
+    "mango-ui/apps/mango-admin-shell/e2e/specs/cms-management.spec.ts": "f0bc81c1d1fa7f0b87ee1a5b4cb05d399967e05b6c0b0d173ffe526ecc15595e",
+    "mango-ui/apps/mango-admin-shell/e2e/specs/cms-operations-buttons.spec.ts": "d51a3d488bb621b5194bb14e63d00cee4c494b5889fbedfd84ae1676c308a35e",
+    "mango-ui/apps/mango-admin-shell/e2e/specs/login-contract.spec.ts": "05ce0b20ecf71f3e3524ee5c2b3fa20f213ec7e8bd9e164cf269ac5151b2607e",
+    "mango-ui/apps/mango-admin-shell/e2e/specs/runtime-composition.spec.ts": "5b1217917338d9fd6b7c4184afe5c3d67a56e9e8fde365ad3698e24d32f22af3",
+    "mango-ui/apps/mango-admin-shell/e2e/support/element-plus.ts": "e51856501fa0acde0e87fa4f1d2ad7b628a9cdf1b54bee1c01a36172ccc6a9c3",
+    "mango-ui/apps/mango-admin-shell/e2e/support/login.ts": "06ffa68b7a0ff8e664deb3df3765ef5d2973feee0da3cb6b9966458ffa5a16cf",
+    "mango-ui/apps/mango-admin-shell/package.json": "e61bd9b36c4806e41dd691021295bca916a9f0a0838cf6b9f8ee17b677dcd450",
+    "mango-ui/apps/mango-admin-shell/playwright.config.ts": "1cdb5b81e82c7f0566714f2ebc65f4549119356d370102e58681b3b742a66221",
+    "mango-ui/apps/mango-admin-shell/tests/login.test.ts": "47e78a2fa18358c54269a2067242e478353b3bb5b7de60bf30f67ea1f7bdfbba",
+    "mango-ui/apps/mango-admin-shell/tsconfig.e2e.json": "026919fbde2ee041dc2f60eb922e7d2f1130987d75bc0457e290bfa0cc44c680"
+  },
+  "environment": {
+    "node": "v22.23.1",
+    "pnpm": "11.14.0",
+    "playwright": "1.61.1",
+    "browser": "Chrome / Chromium",
+    "database": "mango_dev_mango_shell_e2e_login_001",
+    "account": "admin",
+    "tenantId": "1",
+    "tenantCode": "default"
+  },
+  "unit": {
+    "command": "pnpm -C mango-ui --filter mango-admin-shell test",
+    "typecheck": "PASS",
+    "passed": 22,
+    "failed": 0
+  },
+  "before": {
+    "stats": {
+      "startTime": "2026-10-08T04:03:39.467Z",
+      "duration": 243077.458,
+      "expected": 0,
+      "skipped": 2,
+      "unexpected": 2,
+      "flaky": 0
+    },
+    "tests": [
+      {
+        "title": "@p0 @cms CMS 资源管理、状态流转、发布关系和站点详情可用",
+        "file": "specs/cms-management.spec.ts",
+        "project": "chromium",
+        "status": "unexpected",
+        "attempts": [
+          {
+            "status": "timedOut",
+            "retry": 0,
+            "durationMs": 120138
+          }
+        ]
+      },
+      {
+        "title": "@p0 @runtime hybrid profile loads RBAC and Workflow from remote micro apps",
+        "file": "specs/runtime-composition.spec.ts",
+        "project": "chromium",
+        "status": "unexpected",
+        "attempts": [
+          {
+            "status": "timedOut",
+            "retry": 0,
+            "durationMs": 120143
+          }
+        ]
+      },
+      {
+        "title": "@p0 @runtime monolith profile renders modules locally without loading remote apps",
+        "file": "specs/runtime-composition.spec.ts",
+        "project": "chromium",
+        "status": "skipped",
+        "attempts": [
+          {
+            "status": "skipped",
+            "retry": 0,
+            "durationMs": 0
+          }
+        ]
+      },
+      {
+        "title": "@p0 @runtime micro app unauthorized event is handled by the shell",
+        "file": "specs/runtime-composition.spec.ts",
+        "project": "chromium",
+        "status": "skipped",
+        "attempts": [
+          {
+            "status": "skipped",
+            "retry": 0,
+            "durationMs": 0
+          }
+        ]
+      }
+    ]
+  },
+  "p0Repeat": {
+    "stats": {
+      "startTime": "2026-10-08T07:36:59.781Z",
+      "duration": 176277.715,
+      "expected": 12,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "tests": [
+      {
+        "title": "@p0 @cms CMS 资源管理、状态流转、发布关系和站点详情可用",
+        "file": "specs/cms-management.spec.ts",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "retry": 0,
+            "durationMs": 46031
+          }
+        ]
+      },
+      {
+        "title": "@p0 @cms CMS 资源管理、状态流转、发布关系和站点详情可用",
+        "file": "specs/cms-management.spec.ts",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "retry": 0,
+            "durationMs": 45759
+          }
+        ]
+      },
+      {
+        "title": "@p0 @cms CMS 资源管理、状态流转、发布关系和站点详情可用",
+        "file": "specs/cms-management.spec.ts",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "retry": 0,
+            "durationMs": 44906
+          }
+        ]
+      },
+      {
+        "title": "@p0 @runtime hybrid profile loads RBAC and Workflow from remote micro apps",
+        "file": "specs/runtime-composition.spec.ts",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "retry": 0,
+            "durationMs": 8061
+          }
+        ]
+      },
+      {
+        "title": "@p0 @runtime monolith profile renders modules locally without loading remote apps",
+        "file": "specs/runtime-composition.spec.ts",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "retry": 0,
+            "durationMs": 2358
+          }
+        ]
+      },
+      {
+        "title": "@p0 @runtime micro app unauthorized event is handled by the shell",
+        "file": "specs/runtime-composition.spec.ts",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "retry": 0,
+            "durationMs": 1388
+          }
+        ]
+      },
+      {
+        "title": "@p0 @runtime hybrid profile loads RBAC and Workflow from remote micro apps",
+        "file": "specs/runtime-composition.spec.ts",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "retry": 0,
+            "durationMs": 7761
+          }
+        ]
+      },
+      {
+        "title": "@p0 @runtime monolith profile renders modules locally without loading remote apps",
+        "file": "specs/runtime-composition.spec.ts",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "retry": 0,
+            "durationMs": 2310
+          }
+        ]
+      },
+      {
+        "title": "@p0 @runtime micro app unauthorized event is handled by the shell",
+        "file": "specs/runtime-composition.spec.ts",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "retry": 0,
+            "durationMs": 1366
+          }
+        ]
+      },
+      {
+        "title": "@p0 @runtime hybrid profile loads RBAC and Workflow from remote micro apps",
+        "file": "specs/runtime-composition.spec.ts",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "retry": 0,
+            "durationMs": 8533
+          }
+        ]
+      },
+      {
+        "title": "@p0 @runtime monolith profile renders modules locally without loading remote apps",
+        "file": "specs/runtime-composition.spec.ts",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "retry": 0,
+            "durationMs": 2412
+          }
+        ]
+      },
+      {
+        "title": "@p0 @runtime micro app unauthorized event is handled by the shell",
+        "file": "specs/runtime-composition.spec.ts",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "retry": 0,
+            "durationMs": 1385
+          }
+        ]
+      }
+    ]
+  },
+  "final": {
+    "stats": {
+      "startTime": "2026-10-08T07:41:26.470Z",
+      "duration": 68446.838,
+      "expected": 11,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "tests": [
+      {
+        "title": "@p0 @cms CMS 资源管理、状态流转、发布关系和站点详情可用",
+        "file": "specs/cms-management.spec.ts",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "retry": 0,
+            "durationMs": 45597
+          }
+        ]
+      },
+      {
+        "title": "@p1 @auth-contract 单机构真实登录自动选中并建立目标机构会话",
+        "file": "specs/login-contract.spec.ts",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "retry": 0,
+            "durationMs": 1397
+          }
+        ]
+      },
+      {
+        "title": "@p1 @auth-contract 多机构受控选项按机构编码选择，不依赖列表顺序",
+        "file": "specs/login-contract.spec.ts",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "retry": 0,
+            "durationMs": 1929
+          }
+        ]
+      },
+      {
+        "title": "@p1 @auth-contract 空机构列表受控响应应明确失败且不提交登录",
+        "file": "specs/login-contract.spec.ts",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "retry": 0,
+            "durationMs": 1136
+          }
+        ]
+      },
+      {
+        "title": "@p1 @auth-contract HTTP 200 业务失败受控响应应明确失败且不提交登录",
+        "file": "specs/login-contract.spec.ts",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "retry": 0,
+            "durationMs": 1121
+          }
+        ]
+      },
+      {
+        "title": "@p1 @auth-contract HTTP 错误受控响应应明确失败且不提交登录",
+        "file": "specs/login-contract.spec.ts",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "retry": 0,
+            "durationMs": 1130
+          }
+        ]
+      },
+      {
+        "title": "@p1 @auth-contract 登录 HTTP 错误受控响应不能冒充登录成功",
+        "file": "specs/login-contract.spec.ts",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "retry": 0,
+            "durationMs": 1158
+          }
+        ]
+      },
+      {
+        "title": "@p1 @auth-contract 登录业务失败受控响应不能冒充登录成功",
+        "file": "specs/login-contract.spec.ts",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "retry": 0,
+            "durationMs": 1167
+          }
+        ]
+      },
+      {
+        "title": "@p0 @runtime hybrid profile loads RBAC and Workflow from remote micro apps",
+        "file": "specs/runtime-composition.spec.ts",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "retry": 0,
+            "durationMs": 8081
+          }
+        ]
+      },
+      {
+        "title": "@p0 @runtime monolith profile renders modules locally without loading remote apps",
+        "file": "specs/runtime-composition.spec.ts",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "retry": 0,
+            "durationMs": 2903
+          }
+        ]
+      },
+      {
+        "title": "@p0 @runtime micro app unauthorized event is handled by the shell",
+        "file": "specs/runtime-composition.spec.ts",
+        "project": "chromium",
+        "status": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "retry": 0,
+            "durationMs": 1415
+          }
+        ]
+      }
+    ]
+  },
+  "staticChecks": {
+    "targetedEslint": {
+      "command": "node mango-ui/scripts/quality/run-static-gate.mjs eslint apps/mango-admin-shell/e2e apps/mango-admin-shell/tests apps/mango-admin-shell/playwright.config.ts",
+      "status": "PASS",
+      "evidence": ".runtime/shell-e2e-login/lint-targeted-gate.log"
+    },
+    "workspaceLint": {
+      "command": "pnpm -C mango-ui lint",
+      "status": "FAIL",
+      "evidence": ".runtime/shell-e2e-login/mango-ui-lint.log",
+      "reason": "ratchet reported new diagnostics in unchanged existing files outside the task paths; no task file appeared in the reported identities"
+    },
+    "shellBuild": {
+      "command": "pnpm -C mango-ui --filter mango-admin-shell build",
+      "status": "PASS"
+    },
+    "adminShellPackageTest": {
+      "command": "pnpm -C mango-ui --filter @mango/admin-shell test",
+      "status": "PASS"
+    }
+  },
+  "boundaries": [
+    "Final browser run comprises 4 real P0 cases, 1 real single-institution login and 6 explicitly controlled-response login helper contract cases.",
+    "Controlled institution options do not verify backend multi-institution authorization.",
+    "CMS operations-buttons and runtime P1 negative scenarios were not executed in full.",
+    "No aggregate console/network-error audit was performed; request assertions and screenshots cover the stated checks only.",
+    "An earlier isolated runtime return-to-role blank screen is tracked in issue #1014; later passes do not claim its cause was fixed."
+  ]
+}

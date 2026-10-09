@@ -7,7 +7,7 @@ export function formItem(scope: Locator, label: string) {
     has: scope
       .page()
       .locator('.el-form-item__label')
-      .filter({ hasText: new RegExp(`^\\*?\\s*${escapeRegExp(label)}$`) }),
+      .filter({ hasText: new RegExp(`^\\*?\\s*${escapeRegExp(label)}\\s*[:：]?\\s*$`) }),
   });
 }
 
@@ -15,11 +15,15 @@ export function firstDialog(page: Page) {
   return page.locator('.el-dialog:visible').last();
 }
 
+// CmsResourceView uses MangoListPage; its inner <main> is distinct from the Shell's <main>.
+export function cmsPage(page: Page) {
+  return page.locator('.cms-page');
+}
+
 export async function waitCmsReady(page: Page) {
-  await expect(page.locator('.cms-panel')).toBeVisible({ timeout: 15000 });
-  await expect
-    .poll(async () => page.locator('.cms-panel .el-loading-mask:visible').count(), { timeout: 15000 })
-    .toBe(0);
+  await expect(cmsPage(page)).toBeVisible({ timeout: 15000 });
+  await expect.poll(() => cmsPage(page).locator('.el-loading-mask:visible').count(), { timeout: 15000 }).toBe(0);
+  await expect(cmsPage(page).getByRole('alert')).toHaveCount(0);
 }
 
 async function closeDropdowns(page: Page) {
@@ -29,7 +33,7 @@ async function closeDropdowns(page: Page) {
   if (await dialogHeader.count()) {
     await clickThroughTransientOverlay(dialogHeader, { position: { x: 12, y: 12 } });
   } else {
-    await clickThroughTransientOverlay(page.locator('main h2').first());
+    await page.keyboard.press('Escape');
   }
   await expect.poll(async () => dropdowns.count(), { timeout: 5000 }).toBe(0);
 }
