@@ -27,7 +27,7 @@
     ],
     "fixed": {
       "documentType": "implementation-plan",
-      "pmoVersion": "1.4.6",
+      "pmoVersion": "1.4.5",
       "schemaRevision": "1"
     },
     "historicalPmoVersions": [
@@ -46,8 +46,7 @@
       "1.4.1",
       "1.4.2",
       "1.4.3",
-      "1.4.4",
-      "1.4.5"
+      "1.4.4"
     ]
   },
   "localPrefixes": [
