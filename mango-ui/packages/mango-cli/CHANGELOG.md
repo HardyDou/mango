@@ -1,3 +1,16 @@
+## 1.2.18 - 2026-10-08
+
+### Changed
+
+- Lock the Mango Maven 1.0.57 and @mango/pmo@1.4.6 platform tuple.
+- Publish the complete 28-package npm dependency closure through @mango/cli@1.2.18.
+- Synchronize the generated Business Starter and PMO projections, including large-diff governance checks.
+
+### Upgrade Notes
+
+- Upgrade @mango/cli and @mango/pmo together, then verify generated project PMO checks and clean published-package consumption.
+- Use the Maven 1.0.57 platform coordinates and do not publish application fat JARs.
+
 ## 1.2.16 - 2026-09-23
 
 ### Pull Requests
