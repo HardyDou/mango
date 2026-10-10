@@ -3,7 +3,11 @@ import { existsSync, readFileSync } from 'node:fs';
 import { isAbsolute, join, resolve } from 'node:path';
 
 export function runGit(repoRoot, args, { allowFailure = false } = {}) {
-  const result = spawnSync('git', args, { cwd: repoRoot, encoding: 'utf8' });
+  const result = spawnSync('git', args, {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    maxBuffer: 64 * 1024 * 1024,
+  });
   if (!allowFailure && result.status !== 0) {
     throw new Error(`git ${args.join(' ')} failed: ${(result.stderr || result.stdout).trim()}`);
   }
