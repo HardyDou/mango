@@ -47,6 +47,33 @@ describe('micro app instance isolation', () => {
     expect(second.dispose).toHaveBeenCalledTimes(1);
   });
 
+  it('waits for Wujie to finish destroying a micro app before unmount resolves', async () => {
+    let release!: () => void;
+    const destroy = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          release = resolve;
+        }),
+    );
+    wujie.startApp.mockResolvedValueOnce(destroy);
+    const runtimeValue = runtime('orders-async');
+    const container = { innerHTML: '' } as HTMLElement;
+
+    await microAppAdapter.mount(config('orders-async'), container, runtimeValue.value);
+    const unmountPromise = microAppAdapter.unmount?.(config('orders-async'));
+    await vi.waitFor(() => expect(destroy).toHaveBeenCalledTimes(1));
+    let unmountResolved = false;
+    void unmountPromise?.then(() => {
+      unmountResolved = true;
+    });
+    await Promise.resolve();
+    expect(unmountResolved).toBe(false);
+
+    release();
+    await unmountPromise;
+    expect(unmountResolved).toBe(true);
+  });
+
   it('falls back to appCode when an instance id is absent or blank', () => {
     expect(resolveRuntimeInstanceId({ appCode: 'orders' })).toBe('orders');
     expect(resolveRuntimeInstanceId({ appCode: 'orders', instanceId: '  ' })).toBe('orders');

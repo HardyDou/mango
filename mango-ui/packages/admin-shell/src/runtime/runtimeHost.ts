@@ -26,6 +26,7 @@ import { ensureFeatureRegistrars } from './featureRegistrars';
 import { defaultRuntimeConfig, loadShellRuntimeConfig } from './runtimeConfig';
 import { resolveRuntimeAppConfig, toRuntimeApps } from './runtimeIdentity';
 import { createLocalPageCacheHost, type LocalPageEntry } from './localPageCache';
+import { createTabRuntimeConfig, hashTabKey } from './runtimeTabConfig';
 
 export { resolveRuntimeAppConfig, toRuntimeApps } from './runtimeIdentity';
 
@@ -150,16 +151,16 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
     if (pageType === 'LOCAL_ROUTE') {
       externalRoot?.replaceChildren();
     }
-    const existingExternal = mountedTabs.get(tabKey);
-    if (existingExternal?.keepAlive && existingExternal.externalNodes?.length && pageType !== 'LOCAL_ROUTE') {
-      return;
-    }
     if (!isMountAllowed(seq, tabKey)) {
       return;
     }
     runtimeDecision.value = createRuntimeDecision(sourceMenu, moduleConfig, pageType);
     recordRuntimeDecision(runtimeDecision.value);
     applyRuntimeMarker(externalRoot || container, runtimeDecision.value);
+    const existingExternal = mountedTabs.get(tabKey);
+    if (existingExternal?.keepAlive && existingExternal.externalNodes?.length && pageType !== 'LOCAL_ROUTE') {
+      return;
+    }
     if (!runtimeConfigAvailable.value && pageType === 'MICRO_ROUTE') {
       await mountFallback();
       return;
@@ -246,7 +247,10 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
     // Wujie identifies a mounted app by instanceId. Keep one instance per tab
     // so opening the same micro route for another record cannot unmount the
     // previously cached tab.
-    const tabConfig = createTabRuntimeConfig(config, tabKey);
+    // Wujie calls unmount when its host element is detached. Keep the child
+    // application alive while the shell keeps the tab cached, otherwise
+    // restoring the cached DOM restores an already-empty application.
+    const tabConfig = createTabRuntimeConfig(config, tabKey, keepAlive);
     activeRuntimeApp.value = tabConfig;
     const adapter = resolveAdapter(tabConfig.appType || 'MICRO_APP');
     const runtime = createRuntime(tabConfig, menu);
@@ -261,7 +265,12 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
       runtime.dispose?.();
       return;
     }
-    mountedTabs.set(tabKey, { microConfig: tabConfig, runtime, keepAlive });
+    mountedTabs.set(tabKey, {
+      microConfig: tabConfig,
+      runtime,
+      externalNodes: Array.from(container.childNodes),
+      keepAlive,
+    });
   }
 
   async function mountNotFound(seq: number, tabKey: string, keepAlive: boolean) {
@@ -687,26 +696,6 @@ function createBaseRuntime(config: MangoRuntimeAppConfig): MangoAppRuntime {
     eventBus: shellRuntimeEventBus,
     theme: createShellRuntimeTheme(),
   };
-}
-
-function createTabRuntimeConfig(config: MangoRuntimeAppConfig, tabKey: string): MangoRuntimeAppConfig {
-  const baseInstanceId = config.instanceId?.trim() || config.appCode;
-  if (!tabKey || tabKey === 'default') {
-    return { ...config, instanceId: baseInstanceId };
-  }
-  return {
-    ...config,
-    instanceId: `${baseInstanceId}::tab-${hashTabKey(tabKey)}`,
-  };
-}
-
-function hashTabKey(value: string): string {
-  let hash = 2166136261;
-  for (let index = 0; index < value.length; index += 1) {
-    hash ^= value.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-  return (hash >>> 0).toString(16).padStart(8, '0');
 }
 
 export function createShellRuntimeTheme(): MangoRuntimeTheme {
