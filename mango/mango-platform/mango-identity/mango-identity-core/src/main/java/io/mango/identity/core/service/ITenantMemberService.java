@@ -18,6 +18,8 @@ public interface ITenantMemberService {
     Long restoreMemberInOrg(RestoreTenantMemberInOrgCommand command);
     TenantMemberVO getEnabledMember(Long userId, Long tenantId);
     List<TenantMemberVO> listEnabledMembers(Long userId);
+    List<TenantMemberVO> listEnabledMembersByTenant(Long tenantId);
+    List<TenantMemberVO> listEnabledMembersByOrg(Long tenantId, Long orgId, boolean includeDescendants);
     TenantMemberVO getMember(Long memberId);
     List<TenantMemberOrgRelationVO> listOrgRelations(Long tenantId, Long orgId);
     TenantMemberOrgRelationVO getOrgRelation(Long relationId);

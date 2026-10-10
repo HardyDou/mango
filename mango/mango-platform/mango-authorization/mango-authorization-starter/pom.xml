@@ -29,6 +29,11 @@
             <groupId>io.mango.common</groupId>
             <artifactId>mango-common</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.mango.infra.log</groupId>
+            <artifactId>mango-infra-log-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- Mango 授权与安全 API -->
         <dependency>

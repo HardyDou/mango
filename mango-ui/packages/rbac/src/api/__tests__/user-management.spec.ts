@@ -79,4 +79,28 @@ describe('user management API contracts', () => {
       subjectIds: ['2001', '2002'],
     });
   });
+
+  it('previews and executes a selected-member batch role assignment', async () => {
+    vi.mocked(post).mockResolvedValue({
+      roleId: '3001',
+      roleCode: 'ROLE_REVIEWER',
+      roleName: '审核员',
+      targetScope: 'SUBJECT_IDS',
+      targetCount: 2,
+      members: [],
+    });
+
+    const command = {
+      roleCode: 'ROLE_REVIEWER',
+      targetScope: 'SUBJECT_IDS' as const,
+      subjectIds: ['2001', '2002'],
+    };
+    await roleApi.previewBatchRoleAssignment(command);
+    await roleApi.assignBatchRole(command);
+    await roleApi.unassignBatchRole(command);
+
+    expect(post).toHaveBeenNthCalledWith(1, '/authorization/roles/batch/preview', command);
+    expect(post).toHaveBeenNthCalledWith(2, '/authorization/roles/batch/assign', command);
+    expect(post).toHaveBeenNthCalledWith(3, '/authorization/roles/batch/unassign', command);
+  });
 });

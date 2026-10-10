@@ -44,6 +44,13 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- 租户成员事实能力，仅通过 Provider 跨模块访问 -->
+        <dependency>
+            <groupId>io.mango.platform.identity</groupId>
+            <artifactId>mango-identity-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>io.mango.platform.system</groupId>
             <artifactId>mango-system-api</artifactId>

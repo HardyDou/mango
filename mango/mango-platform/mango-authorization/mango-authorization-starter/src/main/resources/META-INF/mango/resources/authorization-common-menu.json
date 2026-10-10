@@ -83,7 +83,8 @@
                       "authorization:role:add",
                       "authorization:role:edit",
                       "authorization:role:delete",
-                      "authorization:role:assign"
+                      "authorization:role:assign",
+                      "authorization:role:batch-assign"
                     ]
                   },
                   {
@@ -197,7 +198,8 @@
                     "roleCodes": [],
                     "remark": "机构成员角色分配权限",
                     "apiCodes": [
-                      "authorization:role:assign"
+                      "authorization:role:assign",
+                      "authorization:role:batch-assign"
                     ]
                   }
                 ]

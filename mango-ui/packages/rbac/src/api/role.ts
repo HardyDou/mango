@@ -50,6 +50,41 @@ export interface SubjectRoleSummaryVO {
   roles: RoleVO[];
 }
 
+export type BatchRoleTargetScope =
+  'ALL_ENABLED_MEMBERS' | 'SUBJECT_IDS' | 'ORGANIZATION' | 'ORGANIZATION_AND_DESCENDANTS';
+
+export interface BatchRoleAssignmentCommand {
+  roleCode: string;
+  targetScope: BatchRoleTargetScope;
+  subjectIds?: ApiId[];
+  orgId?: ApiId;
+}
+
+export interface BatchRoleAssignmentPreviewVO {
+  roleId: ApiId;
+  roleCode: string;
+  roleName: string;
+  targetScope: BatchRoleTargetScope;
+  targetCount: number;
+  members: Array<{
+    subjectId: ApiId;
+    memberNo?: string;
+    displayName?: string;
+    primaryOrgId?: ApiId;
+  }>;
+}
+
+export interface BatchRoleAssignmentResultVO {
+  roleId: ApiId;
+  roleCode: string;
+  targetCount: number;
+  createdCount: number;
+  existingCount: number;
+  removedCount: number;
+  skippedCount: number;
+  skippedSubjectIds?: ApiId[];
+}
+
 export const roleApi = {
   list: () => get<RoleVO[]>('/authorization/roles'),
   detail: (id: ApiId) => get<RoleVO>('/authorization/roles/detail', { params: { id } }),
@@ -72,6 +107,12 @@ export const roleApi = {
     partyId?: ApiId;
     roleIds: ApiId[];
   }) => post<boolean>('/authorization/roles/subjects', data),
+  previewBatchRoleAssignment: (data: BatchRoleAssignmentCommand) =>
+    post<BatchRoleAssignmentPreviewVO>('/authorization/roles/batch/preview', data),
+  assignBatchRole: (data: BatchRoleAssignmentCommand) =>
+    post<BatchRoleAssignmentResultVO>('/authorization/roles/batch/assign', data),
+  unassignBatchRole: (data: BatchRoleAssignmentCommand) =>
+    post<BatchRoleAssignmentResultVO>('/authorization/roles/batch/unassign', data),
   getDataScopes: (roleId: ApiId) => get<RoleDataScopeVO[]>('/authorization/data-scopes/roles', { params: { roleId } }),
   saveDataScope: (data: SaveRoleDataScopeCommand) => post<boolean>('/authorization/data-scopes/roles', data),
   deleteDataScope: (roleId: ApiId, resourceCode: string) =>

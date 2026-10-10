@@ -47,6 +47,16 @@ public class TenantMemberService implements ITenantMemberService {
     }
 
     @Override
+    public List<TenantMemberVO> listEnabledMembersByTenant(Long tenantId) {
+        return tenantMemberProvider.listEnabledMembersByTenant(tenantId);
+    }
+
+    @Override
+    public List<TenantMemberVO> listEnabledMembersByOrg(Long tenantId, Long orgId, boolean includeDescendants) {
+        return tenantMemberProvider.listEnabledMembersByOrg(tenantId, orgId, includeDescendants);
+    }
+
+    @Override
     public TenantMemberVO getMember(Long memberId) {
         return tenantMemberProvider.getMember(memberId);
     }

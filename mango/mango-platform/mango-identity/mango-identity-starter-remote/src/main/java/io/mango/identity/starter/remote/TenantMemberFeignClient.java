@@ -8,6 +8,7 @@ import io.mango.identity.api.command.RestoreTenantMemberInOrgCommand;
 import io.mango.identity.api.command.UpdateTenantMemberOrgCommand;
 import io.mango.identity.api.query.TenantMemberOrgExistsQuery;
 import io.mango.identity.api.query.TenantMemberOrgOtherCountQuery;
+import io.mango.identity.api.request.ListTenantMembersByOrgRequest;
 import io.mango.identity.api.request.ListTenantMembersRequest;
 import io.mango.identity.api.vo.TenantMemberVO;
 import io.mango.identity.api.vo.TenantMemberOrgRelationVO;
@@ -44,6 +45,14 @@ public interface TenantMemberFeignClient extends TenantMemberApi {
     @Override
     @GetMapping("/tenant-members/enabled-list")
     R<List<TenantMemberVO>> listEnabledMembers(@RequestParam("userId") Long userId);
+
+    @Override
+    @GetMapping("/tenant-members/enabled-by-tenant")
+    R<List<TenantMemberVO>> listEnabledMembersByTenant(@RequestParam("tenantId") Long tenantId);
+
+    @Override
+    @PostMapping("/tenant-members/enabled-by-org")
+    R<List<TenantMemberVO>> listEnabledMembersByOrg(@RequestBody ListTenantMembersByOrgRequest request);
 
     @Override
     @GetMapping("/tenant-members/detail")

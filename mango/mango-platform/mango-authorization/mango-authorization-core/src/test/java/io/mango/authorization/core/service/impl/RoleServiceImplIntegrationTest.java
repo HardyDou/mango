@@ -3,6 +3,9 @@ package io.mango.authorization.core.service.impl;
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.api.command.AssignSubjectRolesCommand;
+import io.mango.authorization.api.command.BatchRoleAssignmentCommand;
+import io.mango.authorization.api.enums.BatchRoleTargetScope;
+import io.mango.authorization.api.vo.BatchRoleAssignmentResultVO;
 import io.mango.authorization.api.command.RoleCommand;
 import io.mango.authorization.api.vo.ButtonDisplayRuleVO;
 import io.mango.authorization.api.vo.MenuVO;
@@ -13,6 +16,8 @@ import io.mango.authorization.core.service.IMenuService;
 import io.mango.authorization.core.service.ISubjectAuthorityService;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
+import io.mango.identity.api.TenantMemberProvider;
+import io.mango.identity.api.vo.TenantMemberVO;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,6 +39,9 @@ import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest(classes = {
         DataSourceAutoConfiguration.class,
@@ -63,9 +71,13 @@ class RoleServiceImplIntegrationTest {
     @Autowired
     private RoleService service;
 
+    @Autowired
+    private TenantMemberProvider tenantMemberProvider;
+
     @BeforeEach
     void setUp() {
         resetSchema();
+        reset(tenantMemberProvider);
         MangoContextHolder.set(MangoContextSnapshot.empty().withSecurity(
                 1L,
                 1001L,
@@ -136,6 +148,33 @@ class RoleServiceImplIntegrationTest {
 
         assertThat(assigned).isTrue();
         assertThat(subjectRoleIds()).containsExactlyInAnyOrder(20L, 30L);
+    }
+
+    @Test
+    @DisplayName("批量角色绑定应按租户和成员状态幂等执行并支持解除")
+    void batchRoleAssignmentIsTenantScopedIdempotentAndReversible() {
+        seedRole(50L, 1L, "internal-admin", "ROLE_BATCH", 1);
+        TenantMemberVO enabled = member(1001L, 1L, 1);
+        TenantMemberVO disabled = member(1002L, 1L, 0);
+        TenantMemberVO otherTenant = member(1003L, 2L, 1);
+        when(tenantMemberProvider.listEnabledMembersByTenant(1L))
+                .thenReturn(List.of(enabled, disabled, otherTenant));
+
+        BatchRoleAssignmentCommand command = new BatchRoleAssignmentCommand();
+        command.setRoleCode("ROLE_BATCH");
+        command.setTargetScope(BatchRoleTargetScope.ALL_ENABLED_MEMBERS);
+
+        assertThat(service.previewBatchRoleAssignment(command).getTargetCount()).isEqualTo(1);
+        BatchRoleAssignmentResultVO first = service.assignBatchRole(command);
+        BatchRoleAssignmentResultVO second = service.assignBatchRole(command);
+        BatchRoleAssignmentResultVO rollback = service.unassignBatchRole(command);
+
+        assertThat(first.getCreatedCount()).isEqualTo(1);
+        assertThat(first.getExistingCount()).isZero();
+        assertThat(second.getCreatedCount()).isZero();
+        assertThat(second.getExistingCount()).isEqualTo(1);
+        assertThat(rollback.getRemovedCount()).isEqualTo(1);
+        assertThat(subjectRoleIds()).isEmpty();
     }
 
     @Test
@@ -369,9 +408,24 @@ class RoleServiceImplIntegrationTest {
         }
 
         @Bean
+        TenantMemberProvider tenantMemberProvider() {
+            return mock(TenantMemberProvider.class);
+        }
+
+        @Bean
         ISubjectAuthorityService subjectAuthorityService() {
             return new AllPermissionSubjectAuthorityService();
         }
+    }
+
+    private TenantMemberVO member(Long memberId, Long tenantId, Integer status) {
+        TenantMemberVO member = new TenantMemberVO();
+        member.setMemberId(memberId);
+        member.setTenantId(tenantId);
+        member.setStatus(status);
+        member.setMemberNo("IT-1001-" + memberId);
+        member.setDisplayName("Issue 1001 member " + memberId);
+        return member;
     }
 
     static class TreeOnlyMenuService implements IMenuService {

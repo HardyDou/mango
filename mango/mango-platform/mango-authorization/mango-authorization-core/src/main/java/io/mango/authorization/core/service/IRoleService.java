@@ -1,6 +1,7 @@
 package io.mango.authorization.core.service;
 
 import io.mango.authorization.api.command.AssignSubjectRolesCommand;
+import io.mango.authorization.api.command.BatchRoleAssignmentCommand;
 import io.mango.authorization.api.command.DeleteSubjectRoleBindingsCommand;
 import io.mango.authorization.api.command.RoleCommand;
 import io.mango.authorization.api.command.SubjectRoleBindingCommand;
@@ -9,6 +10,8 @@ import io.mango.authorization.api.query.SubjectRoleBindingQuery;
 import io.mango.authorization.api.vo.MenuVO;
 import io.mango.authorization.api.vo.RoleVO;
 import io.mango.authorization.api.vo.SubjectRoleSummaryVO;
+import io.mango.authorization.api.vo.BatchRoleAssignmentPreviewVO;
+import io.mango.authorization.api.vo.BatchRoleAssignmentResultVO;
 
 import java.util.List;
 
@@ -75,6 +78,15 @@ public interface IRoleService {
 
     /** 执行成员角色分配，并将拒绝结果转换为 HTTP 业务异常。 */
     Boolean assignRolesRequired(AssignSubjectRolesCommand command);
+
+    /** 预览当前租户内批量角色绑定的目标成员。 */
+    BatchRoleAssignmentPreviewVO previewBatchRoleAssignment(BatchRoleAssignmentCommand command);
+
+    /** 幂等批量绑定角色。 */
+    BatchRoleAssignmentResultVO assignBatchRole(BatchRoleAssignmentCommand command);
+
+    /** 批量解除角色绑定。 */
+    BatchRoleAssignmentResultVO unassignBatchRole(BatchRoleAssignmentCommand command);
 
     /**
      * 按业务条件查询角色 ID。

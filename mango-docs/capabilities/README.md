@@ -20,6 +20,8 @@
 
 2026-09-09 能力更新：个人中心修改密码统一调用 Identity 当前用户接口 `PUT /identity/me/password`，后端校验旧密码和密码策略；Auth、Notice 及租户字典配置初始化行为保持不变。详见 [Identity README](../../mango/mango-platform/mango-identity/README.md)、[@mango/auth README](../../mango-ui/packages/auth/README.md) 和 [交付记录](../evidence/profile-password-404/standard-delivery-record.md)。
 
+2026-10-01 能力更新：Issue #1001 为 Authorization 增加租户范围批量角色绑定。支持按全部启用成员、指定成员、组织及下级组织预览目标成员，按 `tenantId + appCode + realm + actorType + roleCode` 幂等绑定或解除角色；成员范围由 Identity 真实成员目录解析，接口要求 `authorization:role:batch-assign`，并通过操作日志记录执行入口。RBAC 成员管理页面支持选择多个成员批量添加或删除一个角色。详见 [Authorization README](../../mango/mango-platform/mango-authorization/README.md) 和 [RBAC README](../../mango-ui/packages/rbac/README.md)。
+
 长期规则仍以 `mango-pmo` 为唯一来源；本文只做能力索引，不复制规范正文。
 
 2026-09-02 能力更新：Issue #938 为 `IDENTITY_USER` portable Resource 增加固定 `initializedAt` 初始化时间，并按 `tenantId + memberId + CREATED` 通过统一 portable ID 算法生成稳定成员创建事件主键；用户、成员和生命周期事件在两个独立空库产生一致数据，正常 API 创建、移出和恢复仍保留动态审计语义。详见 [Identity README](../../mango/mango-platform/mango-identity/README.md) 和 [STANDARD 交付记录](../plans/2026-09-02-issue-938-identity-resource-determinism-delivery-record.md)。

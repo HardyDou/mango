@@ -22,7 +22,12 @@ async function login(page: import('@playwright/test').Page) {
 }
 
 const pages = [
-  { path: '/system/user', title: '成员管理', api: '/api/identity/users/page', labels: ['新增成员', '用户名'] },
+  {
+    path: '/system/user',
+    title: '成员管理',
+    api: '/api/identity/users/page',
+    labels: ['新增成员', '用户名', '批量添加角色', '批量删除角色'],
+  },
   { path: '/system/role', title: '角色管理', api: '/api/authorization/roles', labels: ['系统角色', '启用'] },
   { path: '/system/org', title: '组织架构', api: '/api/org/tree', labels: ['组织详情', '芒果集团'] },
   { path: '/system/post', title: '岗位管理', api: '/api/post/page', labels: ['新增岗位', '岗位名称'] },

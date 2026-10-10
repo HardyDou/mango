@@ -7,6 +7,7 @@ import io.mango.identity.api.command.RestoreTenantMemberInOrgCommand;
 import io.mango.identity.api.command.UpdateTenantMemberOrgCommand;
 import io.mango.identity.api.query.TenantMemberOrgExistsQuery;
 import io.mango.identity.api.query.TenantMemberOrgOtherCountQuery;
+import io.mango.identity.api.request.ListTenantMembersByOrgRequest;
 import io.mango.identity.api.request.ListTenantMembersRequest;
 import io.mango.identity.api.vo.TenantMemberVO;
 import io.mango.identity.api.vo.TenantMemberOrgRelationVO;
@@ -31,6 +32,12 @@ public interface TenantMemberApi {
 
     /** 查询账号已加入且启用的机构成员身份。 */
     R<List<TenantMemberVO>> listEnabledMembers(@NotNull Long userId);
+
+    /** 查询租户内全部启用成员。 */
+    R<List<TenantMemberVO>> listEnabledMembersByTenant(@NotNull Long tenantId);
+
+    /** 查询组织范围内全部启用成员。 */
+    R<List<TenantMemberVO>> listEnabledMembersByOrg(@Valid ListTenantMembersByOrgRequest request);
 
     /** 按成员 ID 查询成员身份。 */
     R<TenantMemberVO> getMember(@NotNull Long memberId);
