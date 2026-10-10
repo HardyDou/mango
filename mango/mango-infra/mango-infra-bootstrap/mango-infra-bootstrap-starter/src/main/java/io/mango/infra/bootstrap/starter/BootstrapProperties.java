@@ -26,6 +26,7 @@ public class BootstrapProperties {
     private Duration runtimeLeaseTtl = DEFAULT_RUNTIME_LEASE_TTL;
     private Duration runtimeHeartbeatInterval = DEFAULT_RUNTIME_HEARTBEAT_INTERVAL;
     private boolean resourceBaselineBuildEnabled;
+    private boolean localStartup;
 
     public BootstrapMode getMode() {
         return mode;
@@ -113,5 +114,13 @@ public class BootstrapProperties {
 
     public void setResourceBaselineBuildEnabled(boolean resourceBaselineBuildEnabled) {
         this.resourceBaselineBuildEnabled = resourceBaselineBuildEnabled;
+    }
+
+    public boolean isLocalStartup() {
+        return localStartup;
+    }
+
+    public void setLocalStartup(boolean localStartup) {
+        this.localStartup = localStartup;
     }
 }

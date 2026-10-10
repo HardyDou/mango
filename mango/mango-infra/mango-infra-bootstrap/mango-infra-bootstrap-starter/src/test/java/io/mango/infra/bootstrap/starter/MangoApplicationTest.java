@@ -53,10 +53,7 @@ class MangoApplicationTest {
     }
 
     @Test
-    void rejectsMissingOrUnsupportedLifecycleCommandsBeforeStartingSpring() {
-        assertThatThrownBy(() -> MangoApplication.run(TestApplication.class))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("process mode is required");
+    void rejectsUnsupportedLifecycleCommandsBeforeStartingSpring() {
         assertThatThrownBy(() -> MangoApplication.run(TestApplication.class, "serve"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Unsupported Mango process mode");
