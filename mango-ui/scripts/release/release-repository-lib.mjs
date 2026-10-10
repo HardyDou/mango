@@ -24,7 +24,7 @@ export function gitChangedFiles(repoRoot, baseRef, headRef = 'HEAD', includeWork
     runGit(repoRoot, [...args, '-z'])
       .stdout.split('\0')
       .filter(Boolean);
-  const files = new Set(readNullDelimited(['diff', '--name-only', `${mergeBase}..${headRef}`]));
+  const files = new Set(readNullDelimited(['diff', '--name-only', '--no-renames', `${mergeBase}..${headRef}`]));
   if (includeWorkingTree) {
     for (const args of [
       ['diff', '--name-only'],
