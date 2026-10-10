@@ -165,6 +165,17 @@ test.describe.serial('Shell runtime composition', () => {
     await expectRemoteResource(page, new URL(rbacEntry).host);
     await expectBusinessSmoke(page, 'rbac', 'micro');
 
+    // Keep the RBAC role tab open while switching to another micro app. Returning
+    // to it must restore rendered content instead of an empty cached host.
+    await page.goto('/#/system/role');
+    await expectRuntime(page, {
+      moduleCode: 'mango-authorization',
+      runtimeCode: 'mango-admin-rbac-app',
+      pageType: 'MICRO_ROUTE',
+      entryIncludes: new URL(rbacEntry).host,
+    });
+    await expect(page.getByRole('button', { name: '新增角色', exact: true })).toBeVisible();
+
     await page.goto('/#/workflow/start-process');
     await page.waitForURL('**/#/workflow/start-process', { timeout: 10000 });
     await expectRuntime(page, {
@@ -176,6 +187,16 @@ test.describe.serial('Shell runtime composition', () => {
     await expect(page.locator('[data-page="workflow.start-process"]')).toContainText('已发布流程');
     await expectRemoteResource(page, new URL(workflowEntry).host);
     await expectBusinessSmoke(page, 'workflow', 'micro');
+
+    await page.goto('/#/system/role');
+    await expectRuntime(page, {
+      moduleCode: 'mango-authorization',
+      runtimeCode: 'mango-admin-rbac-app',
+      pageType: 'MICRO_ROUTE',
+      entryIncludes: new URL(rbacEntry).host,
+    });
+    await expect(page.getByRole('button', { name: '新增角色', exact: true })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: '角色名称', exact: true })).toBeVisible();
 
     await page.goto('/#/system/menu-package');
     await page.waitForURL('**/#/system/menu-package**', { timeout: 10000 });
