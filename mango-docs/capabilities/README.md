@@ -42,7 +42,7 @@
 | Auth | 提供登录、认证 Provider、登录回调和登录态接入。 | [Auth README](../../mango/mango-platform/mango-auth/README.md) |
 | Identity | 管理用户、租户成员、身份标识和成员生命周期。 | [Identity README](../../mango/mango-platform/mango-identity/README.md) |
 | Org | 管理组织、部门、岗位、组织树和成员组织关系。 | [Org README](../../mango/mango-platform/mango-org/README.md) |
-| Authorization | 管理菜单、API 资源、角色、角色数据范围和授权关系。 | [Authorization README](../../mango/mango-platform/mango-authorization/README.md) |
+| Authorization | 管理菜单、API 资源、角色、角色数据范围、成员角色批量绑定和授权关系。 | [Authorization README](../../mango/mango-platform/mango-authorization/README.md) |
 | Access | 提供权限检查、访问拦截和统一访问控制基础。 | [Access README](../../mango/mango-platform/mango-access/README.md) |
 | Captcha | 提供验证码生成、校验和认证流程配套能力。 | [Captcha README](../../mango/mango-platform/mango-captcha/README.md) |
 
@@ -84,7 +84,7 @@
 | Admin Shell | 提供管理端运行壳、菜单装配、登录后初始化和页面承载。 | [Admin Shell README](../../mango-ui/packages/admin-shell/README.md) |
 | Admin Pages | 提供管理页面注册表和页面插件接入。 | [Admin Pages README](../../mango-ui/packages/admin-pages/README.md) |
 | Common | 提供公共组件、主题变量、API 契约和前端工具。 | [Common README](../../mango-ui/packages/common/README.md) |
-| RBAC | 提供菜单、角色、权限和数据范围管理页面。 | [RBAC README](../../mango-ui/packages/rbac/README.md) |
+| RBAC | 提供菜单、角色、权限、数据范围和成员批量角色管理页面。 | [RBAC README](../../mango-ui/packages/rbac/README.md) |
 | `@mango/file` | 提供上传、附件列表、文件预览和文件管理页面。 | [File Frontend README](../../mango-ui/packages/file/README.md) |
 | `@mango/workflow` | 提供流程管理页面、审批组件和 Workflow API。 | [Workflow Frontend README](../../mango-ui/packages/workflow/README.md) |
 | `@mango/job` | 提供任务管理和调度页面。 | [Job Frontend README](../../mango-ui/packages/job/README.md) |

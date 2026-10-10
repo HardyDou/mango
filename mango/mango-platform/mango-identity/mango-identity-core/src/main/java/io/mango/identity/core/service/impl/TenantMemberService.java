@@ -9,6 +9,7 @@ import io.mango.identity.api.command.UpdateTenantMemberOrgCommand;
 import io.mango.identity.api.enums.IdentityCode;
 import io.mango.identity.api.query.TenantMemberOrgExistsQuery;
 import io.mango.identity.api.query.TenantMemberOrgOtherCountQuery;
+import io.mango.identity.api.request.ListTenantMembersByOrgRequest;
 import io.mango.identity.api.request.ListTenantMembersRequest;
 import io.mango.identity.api.vo.TenantMemberOrgRelationVO;
 import io.mango.identity.api.vo.TenantMemberVO;
@@ -44,6 +45,18 @@ public class TenantMemberService implements ITenantMemberService {
     @Override
     public List<TenantMemberVO> listEnabledMembers(Long userId) {
         return tenantMemberProvider.listEnabledMembers(userId);
+    }
+
+    @Override
+    public List<TenantMemberVO> listEnabledMembersByTenant(Long tenantId) {
+        return tenantMemberProvider.listEnabledMembersByTenant(tenantId);
+    }
+
+    @Override
+    public List<TenantMemberVO> listEnabledMembersByOrg(ListTenantMembersByOrgRequest request) {
+        Require.notNull(request, IdentityCode.VALIDATION_ERROR, "组织成员查询请求不能为空");
+        return tenantMemberProvider.listEnabledMembersByOrg(
+                request.getTenantId(), request.getOrgId(), Boolean.TRUE.equals(request.getIncludeDescendants()));
     }
 
     @Override

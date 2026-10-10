@@ -21,9 +21,11 @@ import io.mango.identity.core.mapper.TenantMemberMapper;
 import io.mango.identity.core.mapper.TenantMemberOrgMapper;
 import io.mango.identity.core.mapper.TenantMemberLifecycleLogMapper;
 import io.mango.identity.core.service.IIdentityUserService;
+import io.mango.org.api.OrgReferenceProvider;
 import io.mango.common.result.Require;
 import io.mango.infra.context.api.MangoContextHolder;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,6 +51,7 @@ public class LocalTenantMemberProvider implements TenantMemberProvider {
     private final IdentityUserMapper identityUserMapper;
     private final TenantMemberLifecycleLogMapper tenantMemberLifecycleLogMapper;
     private final IIdentityUserService identityUserService;
+    private final ObjectProvider<OrgReferenceProvider> orgReferenceProvider;
 
     @Override
     @Transactional
@@ -168,6 +171,48 @@ public class LocalTenantMemberProvider implements TenantMemberProvider {
                         .eq(TenantMemberEntity::getStatus, STATUS_ENABLED)
                         .isNull(TenantMemberEntity::getLeftAt)
                         .orderByAsc(TenantMemberEntity::getTenantId))
+                .stream()
+                .map(this::toInfo)
+                .toList();
+    }
+
+    @Override
+    public List<TenantMemberVO> listEnabledMembersByTenant(Long tenantId) {
+        if (tenantId == null) {
+            return List.of();
+        }
+        return tenantMemberMapper.selectList(enabledMemberWrapper(tenantId))
+                .stream()
+                .map(this::toInfo)
+                .toList();
+    }
+
+    @Override
+    public List<TenantMemberVO> listEnabledMembersByOrg(Long tenantId, Long orgId,
+                                                          boolean includeDescendants) {
+        if (tenantId == null || orgId == null) {
+            return List.of();
+        }
+        OrgReferenceProvider provider = orgReferenceProvider.getIfAvailable();
+        if (provider == null) {
+            return List.of();
+        }
+        List<Long> orgIds = provider.resolveOrgScope(tenantId, orgId, includeDescendants);
+        if (orgIds == null || orgIds.isEmpty()) {
+            return List.of();
+        }
+        List<Long> memberIds = tenantMemberOrgMapper.selectList(new LambdaQueryWrapper<TenantMemberOrgEntity>()
+                        .eq(TenantMemberOrgEntity::getTenantId, String.valueOf(tenantId))
+                        .in(TenantMemberOrgEntity::getOrgId, orgIds))
+                .stream()
+                .map(TenantMemberOrgEntity::getMemberId)
+                .distinct()
+                .toList();
+        if (memberIds.isEmpty()) {
+            return List.of();
+        }
+        return tenantMemberMapper.selectList(enabledMemberWrapper(tenantId)
+                        .in(TenantMemberEntity::getId, memberIds))
                 .stream()
                 .map(this::toInfo)
                 .toList();
@@ -357,6 +402,14 @@ public class LocalTenantMemberProvider implements TenantMemberProvider {
                 .stream()
                 .map(this::toInfo)
                 .toList();
+    }
+
+    private LambdaQueryWrapper<TenantMemberEntity> enabledMemberWrapper(Long tenantId) {
+        return new LambdaQueryWrapper<TenantMemberEntity>()
+                .eq(TenantMemberEntity::getTenantId, tenantId)
+                .eq(TenantMemberEntity::getStatus, STATUS_ENABLED)
+                .isNull(TenantMemberEntity::getLeftAt)
+                .orderByAsc(TenantMemberEntity::getId);
     }
 
     private int booleanFlag(boolean value) {

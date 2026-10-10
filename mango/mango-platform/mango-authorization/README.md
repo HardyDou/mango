@@ -21,6 +21,7 @@
 | 菜单资源 | 消费 Resource Registry 的 `AUTH_MENU` 声明，批量注册模块菜单、按钮权限、页面 key、套餐绑定和默认角色授权 |
 | 角色授权 | 管理角色、成员角色绑定、角色菜单授权 |
 | 成员直接角色摘要 | 按当前租户、当前应用批量返回最多 200 个租户成员的启用直接角色，不计算继承角色 |
+| 租户范围批量角色绑定 | 按全部启用成员、指定成员、组织或组织及下级组织预览、幂等绑定和解除角色 |
 | 内置默认角色 | 正式资源初始化 `ROLE_LOGIN`、`ROLE_ANONYMOUS`；机构初始化时自动创建并继承平台默认菜单授权 |
 | 数据权限 | 按角色配置资源级数据范围，解析当前成员生效范围 |
 | 用户菜单 | 按当前成员授权快照返回可见菜单树 |
@@ -113,9 +114,10 @@
 4. 在模块资源目录放 `META-INF/mango/resources/{module}-common-menu.{json,yml,yaml}`，用 `AUTH_MENU` 登记模块、菜单、页面 key 和 `apiCodes`。菜单量大时优先使用 JSON。
 5. 启动服务后确认 `authorization_api_resource` 有接口资源，`authorization_menu` 有菜单和 `api_codes`。
 6. 给租户绑定菜单套餐，由租户套餐同步管理员角色菜单；`roleCodes` 用于 `ROLE_LOGIN`、`ROLE_ANONYMOUS` 等已明确确认的默认角色场景。
-7. 给成员绑定角色。
-8. 登录后检查 `/auth/info` 的 `permissions` 和 `/authorization/menus/user?fmt=tree&appCode=internal-admin` 的菜单树。
-9. 访问受保护接口，确认无权限返回 403、授权后通过。
+7. 给成员绑定角色；需要批量操作时调用 `/authorization/roles/batch/preview`，确认成员清单后调用 `/authorization/roles/batch/assign`。
+8. 批量命令只使用当前租户上下文定位角色，角色通过 `roleCode + appCode + realm + actorType` 解析；成员目录只返回当前租户启用成员，停用成员、其它租户成员和服务主体会被排除。重复执行绑定保持幂等，`unassign` 可用于批量撤销或回滚。
+9. 登录后检查 `/auth/info` 的 `permissions` 和 `/authorization/menus/user?fmt=tree&appCode=internal-admin` 的菜单树。
+10. 访问受保护接口，确认无权限返回 403、授权后通过。
 
 基础接口不用给每个角色或用户单独配置权限。所有登录用户都应具备的 `PERMISSION` 接口，挂到隐藏菜单并授权给 `ROLE_LOGIN`；匿名可用接口挂到隐藏菜单并授权给 `ROLE_ANONYMOUS`。管理员只需要分配业务菜单，系统会自动授予该菜单的 `apiCodes`。
 
@@ -276,6 +278,9 @@ Mango API 资源按访问模式分为三类：
 | GET/POST/PUT/DELETE | `/authorization/roles` | 角色管理 |
 | POST | `/authorization/roles/subjects` | 给主体分配角色 |
 | POST | `/authorization/roles/subjects/batch` | 按当前租户和应用批量查询 `TENANT_MEMBER` 的启用直接角色摘要，需要 `system:user:list` |
+| POST | `/authorization/roles/batch/preview` | 预览租户范围内启用成员，需要 `authorization:role:batch-assign` |
+| POST | `/authorization/roles/batch/assign` | 幂等批量绑定租户成员角色，需要 `authorization:role:batch-assign` |
+| POST | `/authorization/roles/batch/unassign` | 批量解除租户成员角色，需要 `authorization:role:batch-assign` |
 | POST | `/authorization/roles/menus` | 给角色分配菜单 |
 | GET/POST/DELETE | `/authorization/data-scopes/roles` | 查询、保存、删除角色数据权限 |
 | GET | `/authorization/data-scopes/effective` | 查询当前成员在资源上的生效数据权限 |
@@ -749,6 +754,7 @@ Resource Registry 还支持授权基线声明：
 | 前端页面打不开 | 查菜单 `component` 是否等于前端包注册的页面 key，`pageType` 和 `externalUrl` 是否匹配 |
 | 登录后 `/auth/info` 权限为空 | 查成员角色绑定的 `subjectId` 是否等于登录 `memberId`，`appCode`、`realm`、`actorType` 是否一致 |
 | 模块诊断的 Authorization 条件失败 | Resource 当前声明已 APPLIED，但菜单或 API 物化行有缺失；响应只给 expected/missing 计数和 page key，不暴露 API path、handler、用户、角色或租户。 |
+| 批量角色预览为空 | 检查当前租户上下文、角色是否启用、身份成员目录是否装配，以及组织范围是否属于当前租户；不要直接写 `authorization_subject_role` |
 | FINALIZE 报 `AUTH_ROLE_DATA_SCOPE field is required: tenantId` | 这是旧 Handler 无法消费 Registry `targetId` 的升级缺陷；升级到包含 Issue #835 修复的 Maven 版本后重试原 generation，不要保留废弃声明、手工改授权表或重建已有数据库。 |
 
 ## 15. 相关文档

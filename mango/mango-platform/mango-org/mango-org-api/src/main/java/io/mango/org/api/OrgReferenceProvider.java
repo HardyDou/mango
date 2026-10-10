@@ -1,5 +1,7 @@
 package io.mango.org.api;
 
+import java.util.List;
+
 /** 为跨模块资源装配提供稳定的组织与岗位引用解析边界。 */
 public interface OrgReferenceProvider {
 
@@ -13,6 +15,18 @@ public interface OrgReferenceProvider {
      */
     default Long resolveRootOrgId(Long tenantId) {
         return null;
+    }
+
+    /**
+     * Resolve an enabled organization and, when requested, its enabled descendants.
+     *
+     * @param tenantId tenant ID
+     * @param orgId selected organization ID
+     * @param includeDescendants whether descendants are included
+     * @return organization IDs in the requested scope
+     */
+    default List<Long> resolveOrgScope(Long tenantId, Long orgId, boolean includeDescendants) {
+        return orgId == null ? List.of() : List.of(orgId);
     }
 
     Long resolvePostId(Long tenantId, String postCode);

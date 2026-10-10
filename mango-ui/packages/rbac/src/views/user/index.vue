@@ -92,6 +92,20 @@
                 <el-button type="danger" :disabled="selectedUsers.length === 0" @click="handleBatchDelete">
                   批量移出租户成员
                 </el-button>
+                <el-button
+                  data-action="user.batch-role.assign"
+                  :disabled="selectedRoleMembers.length === 0"
+                  @click="openBatchRoleDialog('assign')"
+                >
+                  批量添加角色
+                </el-button>
+                <el-button
+                  data-action="user.batch-role.unassign"
+                  :disabled="selectedRoleMembers.length === 0"
+                  @click="openBatchRoleDialog('unassign')"
+                >
+                  批量删除角色
+                </el-button>
                 <el-tooltip :disabled="canSyncWecom" :content="wecomSyncDisabledTip" placement="top">
                   <span>
                     <el-button :disabled="!canSyncWecom" :loading="wecomSyncLoading" @click="openWecomSyncDialog">
@@ -587,6 +601,61 @@
     </el-dialog>
 
     <el-dialog
+      v-model="batchRoleDialogVisible"
+      :title="batchRoleAction === 'assign' ? '批量添加角色' : '批量删除角色'"
+      width="560px"
+      :close-on-click-modal="false"
+    >
+      <el-form label-width="110px" data-surface="user.batch-role.form">
+        <el-form-item label="目标成员">
+          <div class="batch-role-target">
+            <el-tag type="info">已选 {{ selectedRoleMembers.length }} 人</el-tag>
+            <span class="batch-role-target__hint">无成员身份或已停用成员将由后端跳过</span>
+          </div>
+        </el-form-item>
+        <el-form-item label="角色" required>
+          <el-select
+            v-model="batchRoleCode"
+            filterable
+            placeholder="请选择一个角色"
+            class="form-select"
+            data-field="user.batch-role.role"
+            :loading="batchRoleLoading"
+          >
+            <el-option
+              v-for="role in activeRoleOptions"
+              :key="role.roleId"
+              :label="`${role.roleName}（${role.roleCode}）`"
+              :value="role.roleCode"
+            />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <el-alert
+        type="info"
+        show-icon
+        :closable="false"
+        :title="
+          batchRoleAction === 'assign'
+            ? '确认后将为所选成员绑定该角色，重复绑定会自动跳过。'
+            : '确认后将解除所选成员的该角色绑定。'
+        "
+      />
+      <template #footer>
+        <el-button @click="batchRoleDialogVisible = false">取消</el-button>
+        <el-button
+          type="primary"
+          data-action="user.batch-role.submit"
+          :loading="batchRoleSubmitLoading"
+          :disabled="!batchRoleCode || selectedRoleMembers.length === 0"
+          @click="submitBatchRole"
+        >
+          {{ batchRoleAction === 'assign' ? '确认添加' : '确认删除' }}
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog
       v-model="orgMemberDialogVisible"
       :title="orgMemberForm.relationId ? '调整部门岗位' : '添加已有成员'"
       width="520px"
@@ -678,8 +747,11 @@ const { options: statusOptions } = useDict('sys_normal_disable');
 const loading = ref(false);
 const submitLoading = ref(false);
 const assignSubmitLoading = ref(false);
+const batchRoleLoading = ref(false);
+const batchRoleSubmitLoading = ref(false);
 const dialogVisible = ref(false);
 const assignDialogVisible = ref(false);
+const batchRoleDialogVisible = ref(false);
 const orgMemberDialogVisible = ref(false);
 const wecomSyncDialogVisible = ref(false);
 const externalIdentityDialogVisible = ref(false);
@@ -704,6 +776,8 @@ const postOptions = ref<PostVO[]>([]);
 const candidateUsers = ref<IdentityUserVO[]>([]);
 const orgTreeData = ref<SysOrg[]>([]);
 const selectedRoleIds = ref<ApiId[]>([]);
+const batchRoleCode = ref('');
+const batchRoleAction = ref<'assign' | 'unassign'>('assign');
 const total = ref(0);
 const formRef = ref<FormInstance>();
 const orgTreeRef = ref<TreeInstance>();
@@ -806,6 +880,8 @@ const candidateState = computed(() => {
   if (candidateLoadError.value) return 'error';
   return candidateUsers.value.length ? 'ready' : 'empty';
 });
+const activeRoleOptions = computed(() => roleOptions.value.filter((role) => role.status === 1));
+const selectedRoleMembers = computed(() => selectedUsers.value.filter((item) => Boolean(item.memberId)));
 
 const rules: FormRules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
@@ -1298,6 +1374,72 @@ function handleBatchDelete() {
     .catch(() => {});
 }
 
+async function openBatchRoleDialog(action: 'assign' | 'unassign') {
+  if (!selectedRoleMembers.value.length) {
+    ElMessage.warning('请选择有成员身份的用户');
+    return;
+  }
+  batchRoleAction.value = action;
+  batchRoleCode.value = '';
+  batchRoleDialogVisible.value = true;
+  batchRoleLoading.value = true;
+  try {
+    roleOptions.value = await roleApi.list();
+    if (!activeRoleOptions.value.length) {
+      ElMessage.warning('当前没有可用角色');
+    }
+  } catch {
+    batchRoleDialogVisible.value = false;
+    ElMessage.error('角色列表加载失败，请重试');
+  } finally {
+    batchRoleLoading.value = false;
+  }
+}
+
+async function submitBatchRole() {
+  if (!batchRoleCode.value || !selectedRoleMembers.value.length || batchRoleSubmitLoading.value) return;
+  const command = {
+    roleCode: batchRoleCode.value,
+    targetScope: 'SUBJECT_IDS' as const,
+    subjectIds: selectedRoleMembers.value.map((item) => item.memberId!) as ApiId[],
+  };
+  batchRoleSubmitLoading.value = true;
+  try {
+    const preview = await roleApi.previewBatchRoleAssignment(command);
+    if (!preview.targetCount) {
+      ElMessage.warning('所选成员中没有可处理的启用成员');
+      return;
+    }
+    const roleLabel = `${preview.roleName}（${preview.roleCode}）`;
+    const actionLabel = batchRoleAction.value === 'assign' ? '添加' : '删除';
+    try {
+      await ElMessageBox.confirm(
+        `将为 ${preview.targetCount} 个有效成员${actionLabel}角色“${roleLabel}”，是否继续？`,
+        '批量角色操作确认',
+        { confirmButtonText: '继续', cancelButtonText: '取消', type: 'warning' },
+      );
+    } catch {
+      return;
+    }
+    const result =
+      batchRoleAction.value === 'assign'
+        ? await roleApi.assignBatchRole(command)
+        : await roleApi.unassignBatchRole(command);
+    if (batchRoleAction.value === 'assign') {
+      ElMessage.success(`批量添加完成：新增 ${result.createdCount} 个，已存在 ${result.existingCount} 个`);
+    } else {
+      ElMessage.success(`批量删除完成：已解除 ${result.removedCount} 个角色绑定`);
+    }
+    if (result.skippedCount > 0) {
+      ElMessage.warning(`有 ${result.skippedCount} 个成员被跳过`);
+    }
+    batchRoleDialogVisible.value = false;
+    await loadData();
+  } finally {
+    batchRoleSubmitLoading.value = false;
+  }
+}
+
 async function handleRemoveFromOrg(row: IdentityUserVO) {
   if (!row.orgRelationId) return;
   await ElMessageBox.confirm(
@@ -1735,6 +1877,18 @@ onMounted(async () => {
 
 .role-option {
   padding: 6px 0;
+}
+
+.batch-role-target {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 32px;
+}
+
+.batch-role-target__hint {
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
 }
 
 @media (max-width: 1200px) {

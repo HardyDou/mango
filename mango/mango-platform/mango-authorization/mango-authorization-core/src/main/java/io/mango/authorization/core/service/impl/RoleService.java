@@ -5,6 +5,8 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.authorization.api.enums.AuthorizationCode;
 import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.api.command.AssignSubjectRolesCommand;
+import io.mango.authorization.api.command.BatchRoleAssignmentCommand;
+import io.mango.authorization.api.enums.BatchRoleTargetScope;
 import io.mango.authorization.api.command.DeleteSubjectRoleBindingsCommand;
 import io.mango.authorization.api.command.RoleCommand;
 import io.mango.authorization.api.command.SubjectRoleBindingCommand;
@@ -13,6 +15,11 @@ import io.mango.authorization.api.query.SubjectRoleBindingQuery;
 import io.mango.authorization.api.vo.MenuVO;
 import io.mango.authorization.api.vo.RoleVO;
 import io.mango.authorization.api.vo.SubjectRoleSummaryVO;
+import io.mango.authorization.api.vo.BatchRoleAssignmentPreviewVO;
+import io.mango.authorization.api.vo.BatchRoleAssignmentResultVO;
+import io.mango.authorization.api.vo.BatchRoleMemberVO;
+import io.mango.identity.api.TenantMemberProvider;
+import io.mango.identity.api.vo.TenantMemberVO;
 import io.mango.authorization.core.entity.MenuEntity;
 import io.mango.authorization.core.entity.RoleEntity;
 import io.mango.authorization.core.entity.RoleMenuEntity;
@@ -28,6 +35,7 @@ import io.mango.common.result.Require;
 import io.mango.infra.context.api.MangoContextHolder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.util.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -61,6 +69,7 @@ public class RoleService implements IRoleService {
     private final MenuMapper menuMapper;
     private final IMenuService menuService;
     private final ISubjectAuthorityService subjectAuthorityService;
+    private final ObjectProvider<TenantMemberProvider> tenantMemberProvider;
 
     @Override
     public List<RoleVO> list() {
@@ -284,6 +293,187 @@ public class RoleService implements IRoleService {
         boolean assigned = Boolean.TRUE.equals(assignRoles(command));
         Require.isTrue(assigned, AuthorizationCode.AUTHORIZATION_FORBIDDEN, "无权分配该角色");
         return true;
+    }
+
+    @Override
+    public BatchRoleAssignmentPreviewVO previewBatchRoleAssignment(BatchRoleAssignmentCommand command) {
+        Require.notNull(command, AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR, "批量角色绑定命令不能为空");
+        BatchRoleContext context = resolveBatchRoleContext(command);
+        List<TenantMemberVO> members = resolveBatchMembers(command);
+        BatchRoleAssignmentPreviewVO preview = new BatchRoleAssignmentPreviewVO();
+        preview.setTenantId(context.tenantId());
+        preview.setRoleId(context.role().getRoleId());
+        preview.setRoleCode(context.role().getRoleCode());
+        preview.setRoleName(context.role().getRoleName());
+        preview.setTargetScope(command.getTargetScope());
+        preview.setTargetCount(members.size());
+        preview.setMembers(members.stream().map(this::toBatchMember).toList());
+        return preview;
+    }
+
+    @Override
+    @Transactional
+    public BatchRoleAssignmentResultVO assignBatchRole(BatchRoleAssignmentCommand command) {
+        Require.notNull(command, AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR, "批量角色绑定命令不能为空");
+        return changeBatchRole(command, true);
+    }
+
+    @Override
+    @Transactional
+    public BatchRoleAssignmentResultVO unassignBatchRole(BatchRoleAssignmentCommand command) {
+        Require.notNull(command, AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR, "批量角色绑定命令不能为空");
+        return changeBatchRole(command, false);
+    }
+
+    private BatchRoleAssignmentResultVO changeBatchRole(BatchRoleAssignmentCommand command, boolean assign) {
+        BatchRoleContext context = resolveBatchRoleContext(command);
+        ResolvedMembers resolved = resolveBatchMembersWithSkipped(command);
+        int created = 0;
+        int existing = 0;
+        int removed = 0;
+        for (TenantMemberVO member : resolved.members()) {
+            LambdaQueryWrapper<SubjectRoleBindingEntity> wrapper = batchBindingWrapper(context, member.getMemberId());
+            SubjectRoleBindingEntity binding = subjectRoleBindingMapper.selectOne(wrapper);
+            if (assign) {
+                if (binding != null) {
+                    existing++;
+                    continue;
+                }
+                SubjectRoleBindingEntity createdBinding = new SubjectRoleBindingEntity();
+                createdBinding.setTenantId(context.tenantId());
+                createdBinding.setSubjectId(member.getMemberId());
+                createdBinding.setSubjectType(AuthorizationQuery.SUBJECT_TYPE_TENANT_MEMBER);
+                createdBinding.setAppCode(context.appCode());
+                createdBinding.setRealm(context.realm());
+                createdBinding.setActorType(context.actorType());
+                createdBinding.setPartyType(context.partyType());
+                createdBinding.setPartyId(context.partyId());
+                createdBinding.setRoleId(context.role().getRoleId());
+                Require.isTrue(subjectRoleBindingMapper.insert(createdBinding) > 0,
+                        AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR, "批量角色绑定写入失败");
+                created++;
+            } else if (binding != null) {
+                removed += subjectRoleBindingMapper.deleteById(binding.getId());
+            }
+        }
+        BatchRoleAssignmentResultVO result = new BatchRoleAssignmentResultVO();
+        result.setRoleId(context.role().getRoleId());
+        result.setRoleCode(context.role().getRoleCode());
+        result.setTargetCount(resolved.members().size());
+        result.setCreatedCount(created);
+        result.setExistingCount(existing);
+        result.setRemovedCount(removed);
+        result.setSkippedCount(resolved.skippedSubjectIds().size());
+        result.setSkippedSubjectIds(resolved.skippedSubjectIds());
+        return result;
+    }
+
+    private BatchRoleContext resolveBatchRoleContext(BatchRoleAssignmentCommand command) {
+        Require.notNull(command, AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR, "批量角色绑定命令不能为空");
+        Long tenantId = getTenantIdLong();
+        Require.notNull(tenantId, AuthorizationCode.AUTHORIZATION_UNAUTHORIZED, "当前租户上下文无效");
+        Require.notBlank(command.getRoleCode(), AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR, "角色编码不能为空");
+        String appCode = textOr(command.getAppCode(), MangoContextHolder.appCode());
+        String currentApp = MangoContextHolder.appCode();
+        Require.isTrue(!hasText(currentApp) || !hasText(command.getAppCode()) || currentApp.equals(command.getAppCode().trim()),
+                AuthorizationCode.AUTHORIZATION_FORBIDDEN, "不能跨应用执行批量角色绑定");
+        Require.isTrue(!hasText(command.getRealm()) || command.getRealm().trim().equals(MangoContextHolder.get().realm()),
+                AuthorizationCode.AUTHORIZATION_FORBIDDEN, "不能跨登录域执行批量角色绑定");
+        Require.isTrue(!hasText(command.getActorType()) || command.getActorType().trim().equals(MangoContextHolder.get().actorType()),
+                AuthorizationCode.AUTHORIZATION_FORBIDDEN, "不能跨操作者类型执行批量角色绑定");
+        Require.isTrue(!hasText(command.getPartyType()) || command.getPartyType().trim().equals(MangoContextHolder.get().partyType()),
+                AuthorizationCode.AUTHORIZATION_FORBIDDEN, "不能跨归属主体类型执行批量角色绑定");
+        Require.isTrue(command.getPartyId() == null
+                        || java.util.Objects.equals(command.getPartyId(), MangoContextHolder.get().partyId()),
+                AuthorizationCode.AUTHORIZATION_FORBIDDEN, "不能跨归属主体执行批量角色绑定");
+        String realm = textOr(command.getRealm(), MangoContextHolder.get().realm());
+        String actorType = textOr(command.getActorType(), MangoContextHolder.get().actorType());
+        String partyType = textOr(command.getPartyType(), MangoContextHolder.get().partyType());
+        Long partyId = command.getPartyId() != null ? command.getPartyId() : MangoContextHolder.get().partyId();
+        LambdaQueryWrapper<RoleEntity> roleWrapper = new LambdaQueryWrapper<RoleEntity>()
+                .eq(RoleEntity::getTenantId, tenantId)
+                .eq(RoleEntity::getRoleCode, command.getRoleCode().trim())
+                .eq(hasText(appCode), RoleEntity::getAppCode, appCode)
+                .eq(hasText(realm), RoleEntity::getRealm, realm)
+                .eq(hasText(actorType), RoleEntity::getActorType, actorType)
+                .eq(RoleEntity::getStatus, 1)
+                .last("LIMIT 1");
+        RoleEntity role = roleMapper.selectOne(roleWrapper);
+        Require.notNull(role, AuthorizationCode.AUTHORIZATION_NOT_FOUND, "目标角色不存在或已停用");
+        return new BatchRoleContext(tenantId, appCode, realm, actorType, partyType, partyId, role);
+    }
+
+    private List<TenantMemberVO> resolveBatchMembers(BatchRoleAssignmentCommand command) {
+        return resolveBatchMembersWithSkipped(command).members();
+    }
+
+    private ResolvedMembers resolveBatchMembersWithSkipped(BatchRoleAssignmentCommand command) {
+        Require.notNull(command.getTargetScope(), AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR, "目标范围不能为空");
+        Long tenantId = getTenantIdLong();
+        List<Long> requestedIds = command.getSubjectIds() == null ? List.of()
+                : command.getSubjectIds().stream().filter(java.util.Objects::nonNull).distinct().toList();
+        Require.isTrue(command.getTargetScope() != BatchRoleTargetScope.SUBJECT_IDS || requestedIds.size() <= MAX_SUBJECT_ROLE_DELETE_SIZE,
+                AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR, "成员ID不能超过10000个");
+        if (command.getTargetScope() == BatchRoleTargetScope.ORGANIZATION
+                || command.getTargetScope() == BatchRoleTargetScope.ORGANIZATION_AND_DESCENDANTS) {
+            Require.notNull(command.getOrgId(), AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR, "组织ID不能为空");
+        }
+        TenantMemberProvider provider = tenantMemberProvider.getIfAvailable();
+        Require.notNull(provider, AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR, "身份成员目录不可用");
+        List<TenantMemberVO> members;
+        switch (command.getTargetScope()) {
+            case ALL_ENABLED_MEMBERS -> members = provider.listEnabledMembersByTenant(tenantId);
+            case ORGANIZATION -> members = provider.listEnabledMembersByOrg(tenantId, command.getOrgId(), false);
+            case ORGANIZATION_AND_DESCENDANTS -> members = provider.listEnabledMembersByOrg(tenantId, command.getOrgId(), true);
+            case SUBJECT_IDS -> members = provider.listMembers(requestedIds);
+            default -> members = List.of();
+        }
+        if (members == null) {
+            members = List.of();
+        }
+        Map<Long, TenantMemberVO> validById = members.stream()
+                .filter(member -> member != null && member.getMemberId() != null
+                        && tenantId.equals(member.getTenantId())
+                        && Integer.valueOf(1).equals(member.getStatus()))
+                .collect(Collectors.toMap(TenantMemberVO::getMemberId, member -> member,
+                        (first, ignored) -> first, LinkedHashMap::new));
+        List<Long> skipped = requestedIds.stream().filter(id -> !validById.containsKey(id)).toList();
+        return new ResolvedMembers(List.copyOf(validById.values()), skipped);
+    }
+
+    private LambdaQueryWrapper<SubjectRoleBindingEntity> batchBindingWrapper(BatchRoleContext context,
+                                                                               Long subjectId) {
+        return new LambdaQueryWrapper<SubjectRoleBindingEntity>()
+                .eq(SubjectRoleBindingEntity::getTenantId, context.tenantId())
+                .eq(SubjectRoleBindingEntity::getSubjectId, subjectId)
+                .eq(SubjectRoleBindingEntity::getSubjectType, AuthorizationQuery.SUBJECT_TYPE_TENANT_MEMBER)
+                .eq(hasText(context.appCode()), SubjectRoleBindingEntity::getAppCode, context.appCode())
+                .eq(hasText(context.realm()), SubjectRoleBindingEntity::getRealm, context.realm())
+                .eq(hasText(context.actorType()), SubjectRoleBindingEntity::getActorType, context.actorType())
+                .eq(hasText(context.partyType()), SubjectRoleBindingEntity::getPartyType, context.partyType())
+                .eq(context.partyId() != null, SubjectRoleBindingEntity::getPartyId, context.partyId())
+                .eq(SubjectRoleBindingEntity::getRoleId, context.role().getRoleId())
+                .last("LIMIT 1");
+    }
+
+    private BatchRoleMemberVO toBatchMember(TenantMemberVO member) {
+        BatchRoleMemberVO vo = new BatchRoleMemberVO();
+        vo.setSubjectId(member.getMemberId());
+        vo.setMemberNo(member.getMemberNo());
+        vo.setDisplayName(member.getDisplayName());
+        vo.setPrimaryOrgId(member.getPrimaryOrgId());
+        return vo;
+    }
+
+    private String textOr(String value, String fallback) {
+        return hasText(value) ? value.trim() : fallback;
+    }
+
+    private record BatchRoleContext(Long tenantId, String appCode, String realm, String actorType,
+                                    String partyType, Long partyId, RoleEntity role) {
+    }
+
+    private record ResolvedMembers(List<TenantMemberVO> members, List<Long> skippedSubjectIds) {
     }
 
     @Override

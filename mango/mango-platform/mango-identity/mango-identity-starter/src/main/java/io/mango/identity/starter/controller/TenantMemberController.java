@@ -16,6 +16,7 @@ import io.mango.identity.api.vo.TenantMemberOrgRelationVO;
 import io.mango.identity.core.service.ITenantMemberService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -73,6 +74,22 @@ public class TenantMemberController implements TenantMemberApi {
     public R<List<TenantMemberVO>> listEnabledMembers(
             @Parameter(description = "用户ID") @RequestParam("userId") Long userId) {
         return R.ok(tenantMemberService.listEnabledMembers(userId));
+    }
+
+    @Override
+    @GetMapping("/tenant-members/enabled-by-tenant")
+    @Operation(summary = "查询租户启用成员", description = "内部接口。按租户查询全部启用成员")
+    public R<List<TenantMemberVO>> listEnabledMembersByTenant(
+            @Parameter(description = "租户ID") @RequestParam("tenantId") Long tenantId) {
+        return R.ok(tenantMemberService.listEnabledMembersByTenant(tenantId));
+    }
+
+    @Override
+    @PostMapping("/tenant-members/enabled-by-org")
+    @Operation(summary = "查询组织范围启用成员", description = "内部接口。按组织查询自身或包含下级组织的启用成员")
+    public R<List<TenantMemberVO>> listEnabledMembersByOrg(
+            @RequestBody io.mango.identity.api.request.ListTenantMembersByOrgRequest request) {
+        return R.ok(tenantMemberService.listEnabledMembersByOrg(request));
     }
 
     @Override

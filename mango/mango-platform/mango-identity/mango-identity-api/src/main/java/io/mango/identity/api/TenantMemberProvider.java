@@ -44,6 +44,29 @@ public interface TenantMemberProvider {
     List<TenantMemberVO> listEnabledMembers(Long userId);
 
     /**
+     * 查询租户内全部启用成员。
+     *
+     * @param tenantId 租户 ID
+     * @return 启用成员身份
+     */
+    default List<TenantMemberVO> listEnabledMembersByTenant(Long tenantId) {
+        return List.of();
+    }
+
+    /**
+     * 查询组织范围内全部启用成员。
+     *
+     * @param tenantId 租户 ID
+     * @param orgId 组织 ID
+     * @param includeDescendants 是否包含下级组织
+     * @return 启用成员身份
+     */
+    default List<TenantMemberVO> listEnabledMembersByOrg(Long tenantId, Long orgId,
+                                                           boolean includeDescendants) {
+        return List.of();
+    }
+
+    /**
      * 按成员 ID 查询成员身份。
      *
      * @param memberId 成员 ID

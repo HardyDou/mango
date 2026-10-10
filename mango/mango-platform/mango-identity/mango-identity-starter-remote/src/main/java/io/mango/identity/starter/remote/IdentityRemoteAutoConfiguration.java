@@ -11,6 +11,7 @@ import io.mango.identity.api.command.UpdateTenantMemberOrgCommand;
 import io.mango.identity.api.query.AuthUsernameQuery;
 import io.mango.identity.api.query.TenantMemberOrgExistsQuery;
 import io.mango.identity.api.query.TenantMemberOrgOtherCountQuery;
+import io.mango.identity.api.request.ListTenantMembersByOrgRequest;
 import io.mango.identity.api.request.ListTenantMembersRequest;
 import io.mango.identity.api.vo.AuthUserVO;
 import io.mango.identity.api.vo.TenantMemberVO;
@@ -149,6 +150,21 @@ public class IdentityRemoteAutoConfiguration {
         @Override
         public List<TenantMemberVO> listEnabledMembers(Long userId) {
             return unwrapList(tenantMemberFeignClient.getObject().listEnabledMembers(userId));
+        }
+
+        @Override
+        public List<TenantMemberVO> listEnabledMembersByTenant(Long tenantId) {
+            return unwrapList(tenantMemberFeignClient.getObject().listEnabledMembersByTenant(tenantId));
+        }
+
+        @Override
+        public List<TenantMemberVO> listEnabledMembersByOrg(Long tenantId, Long orgId,
+                                                              boolean includeDescendants) {
+            ListTenantMembersByOrgRequest request = new ListTenantMembersByOrgRequest();
+            request.setTenantId(tenantId);
+            request.setOrgId(orgId);
+            request.setIncludeDescendants(includeDescendants);
+            return unwrapList(tenantMemberFeignClient.getObject().listEnabledMembersByOrg(request));
         }
 
         @Override
