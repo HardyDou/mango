@@ -2,7 +2,7 @@
 
 ## v2026.10.08-maven-1.0.57-admin-layout-data-table-release - Maven 1.0.57 - npm 28 packages including @mango/common@2.1.2 @mango/pmo@1.4.6 @mango/cli@1.2.18 - 2026-10-08
 
-Status: `PENDING`. Release plan digest `872365e2b620b2bbeb3a37d57ba0a27a94755176c8104aaf77155b0f326b21db`; publication, registry verification, immutable Tag and GitHub Release are pending.
+Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `042b54e4fca0ed1ef396bcbf580f1d6e55609e3f0abf5e6467d91f5bc2e64188`; prepared candidate `2e4babde6ff247bd4e562df7f9478929276b5f2ec54142730843640ea1adc3e2` is published and verified from both registry roles with a pure consume-registry consumer. Tag and GitHub Release are `CREATED_AND_VERIFIED`.
 
 ### Pull Requests
 
