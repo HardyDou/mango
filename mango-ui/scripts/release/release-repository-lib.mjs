@@ -20,7 +20,10 @@ export function gitValue(repoRoot, args) {
 
 export function gitChangedFiles(repoRoot, baseRef, headRef = 'HEAD', includeWorkingTree = false) {
   const mergeBase = gitValue(repoRoot, ['merge-base', baseRef, headRef]);
-  const readNullDelimited = (args) => runGit(repoRoot, [...args, '-z']).stdout.split('\0').filter(Boolean);
+  const readNullDelimited = (args) =>
+    runGit(repoRoot, [...args, '-z'])
+      .stdout.split('\0')
+      .filter(Boolean);
   const files = new Set(readNullDelimited(['diff', '--name-only', `${mergeBase}..${headRef}`]));
   if (includeWorkingTree) {
     for (const args of [
