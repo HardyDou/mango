@@ -440,11 +440,11 @@ function assertExecutableBootArtifact() {
     timeout: 20_000,
   });
   if (launched.status === 0 || launched.error?.code === 'ETIMEDOUT') {
-    throw new Error('generated Boot JAR must reach MangoApplication and reject a missing process mode');
+    throw new Error('generated Boot JAR must reach MangoApplication and reject missing local workspace configuration');
   }
   assertIncludes(
     combinedOutput(launched),
-    'Mango process mode is required: bootstrap or runtime',
+    'MANGO_LOCAL_DATABASE_REJECTED',
     'generated Boot JAR Start-Class',
   );
 }
