@@ -35,6 +35,10 @@ public final class BootstrapOrchestrator {
         this.contributors = List.copyOf(contributors);
     }
 
+    public String manifestFingerprint(String releaseId, String buildRevision) {
+        return planBuilder.build(releaseId, buildRevision, contributors).manifestFingerprint();
+    }
+
     public BootstrapOutcome execute(BootstrapInvocation request) {
         validate(request);
         BootstrapPlan plan = planBuilder.build(request.releaseId(), request.buildRevision(), contributors);

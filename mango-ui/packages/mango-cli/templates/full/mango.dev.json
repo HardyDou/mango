@@ -16,6 +16,7 @@
     "{{projectKebab}}-service": {
       "type": "spring-boot-maven",
       "processMode": "runtime",
+      "lifecycleKey": "{{projectKebab}}-backend",
       "cwd": "backend",
       "pom": "app/pom.xml",
       "bootstrapReceiptDirectory": "../.mango/bootstrap",

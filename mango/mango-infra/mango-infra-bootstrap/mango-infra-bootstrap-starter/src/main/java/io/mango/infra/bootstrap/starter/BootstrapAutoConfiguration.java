@@ -83,10 +83,14 @@ public class BootstrapAutoConfiguration {
     BootstrapCommandRunner bootstrapCommandRunner(BootstrapProperties bootstrapProperties,
                                                    MangoReleaseProperties releaseProperties,
                                                    BootstrapOrchestrator orchestrator,
+                                                   BootstrapSchemaMigrator schemaMigrator,
                                                    JdbcBootstrapRepository repository,
-                                                   BootstrapReceiptWriter receiptWriter) {
+                                                   BootstrapReceiptWriter receiptWriter,
+                                                   Environment environment,
+                                                   ObjectProvider<MangoLocalStartupState> localStartupState) {
         return new BootstrapCommandRunner(
-                bootstrapProperties, releaseProperties, orchestrator, repository, receiptWriter);
+                bootstrapProperties, releaseProperties, orchestrator, schemaMigrator, repository, receiptWriter,
+                environment, localStartupState.getIfAvailable());
     }
 
     @Bean
