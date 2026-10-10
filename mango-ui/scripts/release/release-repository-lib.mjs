@@ -3,7 +3,11 @@ import { existsSync, readFileSync } from 'node:fs';
 import { isAbsolute, join, resolve } from 'node:path';
 
 export function runGit(repoRoot, args, { allowFailure = false } = {}) {
-  const result = spawnSync('git', args, { cwd: repoRoot, encoding: 'utf8' });
+  const result = spawnSync('git', args, {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    maxBuffer: 64 * 1024 * 1024,
+  });
   if (!allowFailure && result.status !== 0) {
     throw new Error(`git ${args.join(' ')} failed: ${(result.stderr || result.stdout).trim()}`);
   }
@@ -16,18 +20,18 @@ export function gitValue(repoRoot, args) {
 
 export function gitChangedFiles(repoRoot, baseRef, headRef = 'HEAD', includeWorkingTree = false) {
   const mergeBase = gitValue(repoRoot, ['merge-base', baseRef, headRef]);
-  const files = new Set(
-    runGit(repoRoot, ['diff', '--name-only', `${mergeBase}..${headRef}`])
-      .stdout.split(/\r?\n/u)
-      .filter(Boolean),
-  );
+  const readNullDelimited = (args) =>
+    runGit(repoRoot, [...args, '-z'])
+      .stdout.split('\0')
+      .filter(Boolean);
+  const files = new Set(readNullDelimited(['diff', '--name-only', '--no-renames', `${mergeBase}..${headRef}`]));
   if (includeWorkingTree) {
     for (const args of [
       ['diff', '--name-only'],
       ['diff', '--cached', '--name-only'],
       ['ls-files', '--others', '--exclude-standard'],
     ]) {
-      for (const file of runGit(repoRoot, args).stdout.split(/\r?\n/u).filter(Boolean)) files.add(file);
+      for (const file of readNullDelimited(args)) files.add(file);
     }
   }
   return [...files].sort();
