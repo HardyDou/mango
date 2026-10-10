@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { homedir } from 'node:os';
+import { homedir, tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { assertPnpmLockfileFixtureInvocations, createPnpmLockfileFixture } from './support/pnpm-lockfile-fixture.mjs';
@@ -14,6 +14,7 @@ const mangoPluginVersion = process.env.MANGO_BACKEND_GATE_PLUGIN_VERSION || mang
 const runtimeProjectsRoot = resolve(packageRoot, '../../../.runtime/projects');
 mkdirSync(runtimeProjectsRoot, { recursive: true });
 const tempRoot = mkdtempSync(join(runtimeProjectsRoot, 'mango-generated-backend-gate-'));
+const isolatedLaunchRoot = mkdtempSync(join(tmpdir(), 'mango-generated-boot-launch-'));
 const localMangoRepository = join(tempRoot, 'mango-repository');
 mkdirSync(localMangoRepository, { recursive: true });
 const mavenRepository = process.env.MANGO_BACKEND_GATE_REPOSITORY || `${pathToFileURL(localMangoRepository).href}/`;
@@ -353,6 +354,7 @@ public final class StaticViolation {
     process.stdout.write(`Generated backend gate diagnostics retained at ${tempRoot}\n`);
   } else {
     rmSync(tempRoot, { recursive: true, force: true });
+    rmSync(isolatedLaunchRoot, { recursive: true, force: true });
   }
 }
 
@@ -434,7 +436,7 @@ function assertExecutableBootArtifact() {
     assertIncludes(listed.stdout, entry, 'generated executable Boot JAR');
   }
   const launched = spawnSync('java', ['-jar', jarPath], {
-    cwd: projectRoot,
+    cwd: isolatedLaunchRoot,
     encoding: 'utf8',
     maxBuffer: 20 * 1024 * 1024,
     timeout: 20_000,
