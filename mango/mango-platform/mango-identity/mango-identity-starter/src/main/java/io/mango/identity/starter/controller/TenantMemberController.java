@@ -88,9 +88,8 @@ public class TenantMemberController implements TenantMemberApi {
     @PostMapping("/tenant-members/enabled-by-org")
     @Operation(summary = "查询组织范围启用成员", description = "内部接口。按组织查询自身或包含下级组织的启用成员")
     public R<List<TenantMemberVO>> listEnabledMembersByOrg(
-            @RequestBody @Valid io.mango.identity.api.request.ListTenantMembersByOrgRequest request) {
-        return R.ok(tenantMemberService.listEnabledMembersByOrg(
-                request.getTenantId(), request.getOrgId(), Boolean.TRUE.equals(request.getIncludeDescendants())));
+            @RequestBody io.mango.identity.api.request.ListTenantMembersByOrgRequest request) {
+        return R.ok(tenantMemberService.listEnabledMembersByOrg(request));
     }
 
     @Override

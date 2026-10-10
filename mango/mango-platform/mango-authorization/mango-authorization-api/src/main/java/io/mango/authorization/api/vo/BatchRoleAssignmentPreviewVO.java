@@ -1,8 +1,11 @@
 package io.mango.authorization.api.vo;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.authorization.api.enums.BatchRoleTargetScope;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Serializable;
 import java.util.List;
@@ -33,5 +36,9 @@ public class BatchRoleAssignmentPreviewVO implements Serializable {
     private Integer targetCount;
 
     @Schema(description = "目标成员清单")
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Response binding requires a mutable collection getter"))
+    @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Response binding requires a mutable collection setter"))
     private List<BatchRoleMemberVO> members;
 }

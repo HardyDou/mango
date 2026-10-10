@@ -297,6 +297,7 @@ public class RoleService implements IRoleService {
 
     @Override
     public BatchRoleAssignmentPreviewVO previewBatchRoleAssignment(BatchRoleAssignmentCommand command) {
+        Require.notNull(command, AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR, "批量角色绑定命令不能为空");
         BatchRoleContext context = resolveBatchRoleContext(command);
         List<TenantMemberVO> members = resolveBatchMembers(command);
         BatchRoleAssignmentPreviewVO preview = new BatchRoleAssignmentPreviewVO();
@@ -313,12 +314,14 @@ public class RoleService implements IRoleService {
     @Override
     @Transactional
     public BatchRoleAssignmentResultVO assignBatchRole(BatchRoleAssignmentCommand command) {
+        Require.notNull(command, AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR, "批量角色绑定命令不能为空");
         return changeBatchRole(command, true);
     }
 
     @Override
     @Transactional
     public BatchRoleAssignmentResultVO unassignBatchRole(BatchRoleAssignmentCommand command) {
+        Require.notNull(command, AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR, "批量角色绑定命令不能为空");
         return changeBatchRole(command, false);
     }
 
@@ -409,7 +412,7 @@ public class RoleService implements IRoleService {
         Long tenantId = getTenantIdLong();
         List<Long> requestedIds = command.getSubjectIds() == null ? List.of()
                 : command.getSubjectIds().stream().filter(java.util.Objects::nonNull).distinct().toList();
-        Require.isTrue(command.getTargetScope() != BatchRoleTargetScope.SUBJECT_IDS || requestedIds.size() <= 10_000,
+        Require.isTrue(command.getTargetScope() != BatchRoleTargetScope.SUBJECT_IDS || requestedIds.size() <= MAX_SUBJECT_ROLE_DELETE_SIZE,
                 AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR, "成员ID不能超过10000个");
         if (command.getTargetScope() == BatchRoleTargetScope.ORGANIZATION
                 || command.getTargetScope() == BatchRoleTargetScope.ORGANIZATION_AND_DESCENDANTS) {

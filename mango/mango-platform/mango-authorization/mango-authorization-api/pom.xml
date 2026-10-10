@@ -41,6 +41,11 @@
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>com.github.spotbugs</groupId>
+            <artifactId>spotbugs-annotations</artifactId>
+            <scope>provided</scope>
+        </dependency>
 
         <!-- 参数校验注解 -->
         <dependency>

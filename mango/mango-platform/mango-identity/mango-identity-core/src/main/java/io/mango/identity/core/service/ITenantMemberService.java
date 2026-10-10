@@ -6,6 +6,7 @@ import io.mango.identity.api.command.RestoreTenantMemberInOrgCommand;
 import io.mango.identity.api.command.UpdateTenantMemberOrgCommand;
 import io.mango.identity.api.query.TenantMemberOrgExistsQuery;
 import io.mango.identity.api.query.TenantMemberOrgOtherCountQuery;
+import io.mango.identity.api.request.ListTenantMembersByOrgRequest;
 import io.mango.identity.api.request.ListTenantMembersRequest;
 import io.mango.identity.api.vo.TenantMemberOrgRelationVO;
 import io.mango.identity.api.vo.TenantMemberVO;
@@ -19,7 +20,7 @@ public interface ITenantMemberService {
     TenantMemberVO getEnabledMember(Long userId, Long tenantId);
     List<TenantMemberVO> listEnabledMembers(Long userId);
     List<TenantMemberVO> listEnabledMembersByTenant(Long tenantId);
-    List<TenantMemberVO> listEnabledMembersByOrg(Long tenantId, Long orgId, boolean includeDescendants);
+    List<TenantMemberVO> listEnabledMembersByOrg(ListTenantMembersByOrgRequest request);
     TenantMemberVO getMember(Long memberId);
     List<TenantMemberOrgRelationVO> listOrgRelations(Long tenantId, Long orgId);
     List<TenantMemberOrgRelationVO> listUserOrgRelations(Long tenantId, Long userId);

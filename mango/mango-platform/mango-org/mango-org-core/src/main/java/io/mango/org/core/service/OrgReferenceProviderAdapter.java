@@ -46,7 +46,7 @@ public class OrgReferenceProviderAdapter implements OrgReferenceProvider {
                 .eq(SysOrgEntity::getTenantId, tenantId)
                 .eq(SysOrgEntity::getOrgStatus, "1"));
         Map<Long, List<SysOrgEntity>> children = orgs.stream()
-                .collect(Collectors.groupingBy(org -> org.getPid() == null ? 0L : org.getPid()));
+                .collect(Collectors.groupingBy(org -> org.getPid() == null ? Long.valueOf(0L) : org.getPid()));
         if (!orgs.stream().anyMatch(org -> org.getId().equals(orgId))) {
             return List.of();
         }

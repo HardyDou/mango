@@ -1,12 +1,15 @@
 package io.mango.authorization.api.command;
 
 import io.mango.authorization.api.enums.BatchRoleTargetScope;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Serializable;
 import java.util.List;
@@ -51,6 +54,10 @@ public class BatchRoleAssignmentCommand implements Serializable {
 
     @Size(max = 10000)
     @Schema(description = "目标成员ID列表，仅 SUBJECT_IDS 生效，最多10000个")
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Request binding requires a mutable collection getter"))
+    @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Request binding requires a mutable collection setter"))
     private List<@Positive Long> subjectIds;
 
     @Positive
