@@ -25,6 +25,7 @@
       "type": "spring-boot-maven",
       "mangoLifecycle": true,
       "processMode": "runtime",
+      "lifecycleKey": "mango-monolith-app",
       "cwd": "mango",
       "pom": "mango-app/monolith/mango-monolith-app/pom.xml",
       "goal": "org.springframework.boot:spring-boot-maven-plugin:3.5.14:run",

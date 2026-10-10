@@ -54,7 +54,7 @@ MangoApplication.run(MyApplication.class, args);
 
 | 配置 | 默认值 | 说明 |
 |------|--------|------|
-| `mango.bootstrap.mode` | 由第一个命令参数设置 | `bootstrap` 或 `runtime`。 |
+| `mango.bootstrap.mode` | 由第一个命令参数或本地托管入口设置 | `bootstrap` 或 `runtime`。无参数 `MangoApplication.run(App.class)` 仅用于本地开发，会自动完成 bootstrap 后再启动 runtime。 |
 | `mango.bootstrap.action` | `APPLY` | `PLAN`、`APPLY`、`VERIFY`、`FINALIZE`、`ABORT`。 |
 | `mango.bootstrap.strategy` | `ROLLING` | 首次空库使用 `COLD`；后续升级使用 `ROLLING`。 |
 | `mango.bootstrap.environment-key` | `default` | 同一环境的锁、回执和 Runtime lease 作用域。 |
@@ -102,7 +102,9 @@ MangoApplication.run(MyApplication.class, args);
 
 ## 10. 快速开始
 
-本地 Mango 主仓、CLI 新生成项目以及已迁移到 `MangoApplication.run` 的业务项目，使用 `mango dev start backend` 时由 `@mango/cli` 在当前 worktree 的 `mango_dev_*` 独立数据库中自动准备 bootstrap 回执并启动 runtime。存量 `SpringApplication.run` 项目继续走兼容直启，不会被 CLI 自动切换生命周期。CLI 的本地编排不替代测试、预发或生产发布流程；这些环境仍按下列命令显式管理 generation、策略和切流。
+本地 Mango 主仓、CLI 新生成项目以及已迁移到 `MangoApplication.run` 的业务项目，使用 `mango dev start backend` 或直接在 IDEA 运行无参数 `main()` 时，都会在当前 worktree 的 `mango_dev_*` 独立数据库中自动准备 bootstrap 回执、执行必要 Flyway 增量迁移并启动 runtime。两种入口复用同一 Bootstrap/Runtime 校验；CLI 会向进程传递 `MANGO_LOCAL_LIFECYCLE_KEY`，保证 lifecycle identity 一致。存量 `SpringApplication.run` 项目继续走兼容直启，不会被 CLI 自动切换生命周期。CLI 与 IDEA 的本地编排不替代测试、预发或生产发布流程；这些环境仍按下列命令显式管理 generation、策略和切流。
+
+本地托管入口从当前目录向上查找 `.mango/dev-workspace.env`，读取 workspace、数据库和端口配置；当 `MANGO_DB_AUTO_CREATE=true` 时，仅允许自动创建 `mango_dev_*` 数据库。应用仍必须通过 `MangoApplication.run(App.class, args)` 接入，不能用 `SpringApplication.run` 绕过 Mango 门禁。显式传入 `bootstrap` 或 `runtime` 时保持生产生命周期语义，不启用本地托管。
 
 Mango 源码仓或派生 CI 的选定模块安装使用 `-pl :mango-bom,<backend-module> -am`。Maven `-am` 不会仅因为后端 POM 导入 BOM 就自动把本地 `mango-bom` 放进 Reactor；缺少该 selector 时，CI-friendly revision 可能从远端解析到错误坐标。普通业务仓继续从发布仓库消费 BOM，不需要加入 Mango 源码模块。
 
