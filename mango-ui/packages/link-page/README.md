@@ -2,7 +2,7 @@
 
 ## 1. 概览
 
-`@mango/link-page` 是面向保函业务人员的快捷导航首页。页面从 `mango-link` 读取内置导航数据，按“业务相关、工具相关、其他”三组展示卡片，并提供关键词搜索和整卡点击打开能力。
+`@mango/link-page` 是面向业务人员的快捷导航首页。页面从 `mango-link` 读取内置导航数据，按“业务相关、工具相关、其他”三组展示卡片，并提供关键词搜索和整卡点击打开能力。
 
 当前版本只做公共链接导航，不包含登录、收藏、个人网址、前台新增、前台编辑、重复提示和卡片级权限控制。
 
@@ -43,8 +43,8 @@ import '@mango/link-page/style.css';
 <template>
   <MangoLinkPage
     base-url="/api"
-    headline="保函业务快捷入口"
-    subtitle="集中访问保函查询、风险核验和常用辅助工具"
+    headline="业务快捷入口"
+    subtitle="集中访问业务查询、风险检查和常用辅助工具"
     search-placeholder="搜索网站、工具或关键词"
   />
 </template>
@@ -58,8 +58,8 @@ import '@mango/link-page/style.css';
 | `tenantId`          | `string \| number`                                         | -                        | 匿名公开导航查询使用的租户 ID；登录查询仍以认证上下文为准。                                                         |
 | `headers`           | `HeadersInit \| () => HeadersInit \| Promise<HeadersInit>` | -                        | 请求头，宿主可传租户、认证等上下文。                                                                                |
 | `credentials`       | `RequestCredentials`                                       | `same-origin`            | fetch credentials。                                                                                                 |
-| `title`             | `string`                                                   | `保函业务导航`           | 页面标题兜底值。                                                                                                    |
-| `headline`          | `string`                                                   | `保函业务快捷入口`       | 搜索框上方主文案，可由宿主配置。                                                                                    |
+| `title`             | `string`                                                   | `业务导航`           | 页面标题兜底值。                                                                                                    |
+| `headline`          | `string`                                                   | `业务快捷入口`       | 搜索框上方主文案，可由宿主配置。                                                                                    |
 | `subtitle`          | `string`                                                   | -                        | 主文案下方辅助说明。                                                                                                |
 | `searchPlaceholder` | `string`                                                   | `搜索网站、工具或关键词` | 搜索框占位文案。                                                                                                    |
 | `jumpEnabled`       | `boolean`                                                  | -                        | 组件侧跳转开关。未传时尊重后端 `redirectUrl`；`false` 强制直连原始 `url`；`true` 按 `source` 补公开或登录跳转地址。 |
@@ -85,8 +85,8 @@ import '@mango/link-page/style.css';
 
 | 分组       | 用途                                                   |
 | ---------- | ------------------------------------------------------ |
-| `业务相关` | 保函查询、风险核验、公共资源和采购信息等业务入口。     |
-| `工具相关` | 保费测算、快递 H5、电子签署、AI 辅助和搜索工具等入口。 |
+| `业务相关` | 业务查询、风险检查、公共资源和采购信息等业务入口。     |
+| `工具相关` | 费用测算、快递 H5、电子签署、AI 辅助和搜索工具等入口。 |
 | `其他`     | 法律服务、知识问答等辅助入口。                         |
 
 卡片字段口径：

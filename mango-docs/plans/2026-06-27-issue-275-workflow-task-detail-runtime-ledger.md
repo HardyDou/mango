@@ -73,7 +73,7 @@
 
 | 台账 ID | 页面/接口 | 功能点 | 测试数据 | 关键断言 | UI/交互检查 | console/network 结果 | 截图/trace/日志 | 结论 |
 |---|---|---|---|---|---|---|---|---|
-| TASK-001 | `/workflow/task/detail` | 不调用定义管理接口 | taskId `task-risk-1`，processKey `WF_GUARANTEE_RISK_REVIEW` | `definitionVersions`、`definitionDetail`、`definitionsPage` 调用次数为 0 | 未启动浏览器，组件测试覆盖 | 测试中定义管理 API mock 为 rejected，页面仍渲染 | 任务详情 Vitest 通过 | DONE |
-| TASK-002 | 标准任务详情 | 运行时表单渲染 | `formJson` 包含 `riskTitle` 字段，变量包含业务类型和标题 | 页面渲染 `保函风控审批` 和 `风控标题` | 组件测试覆盖表单渲染 | 不依赖定义管理接口 | 任务详情 Vitest 通过 | DONE |
+| TASK-001 | `/workflow/task/detail` | 不调用定义管理接口 | taskId `task-risk-1`，processKey `WF_BUSINESS_RISK_REVIEW` | `definitionVersions`、`definitionDetail`、`definitionsPage` 调用次数为 0 | 未启动浏览器，组件测试覆盖 | 测试中定义管理 API mock 为 rejected，页面仍渲染 | 任务详情 Vitest 通过 | DONE |
+| TASK-002 | 标准任务详情 | 运行时表单渲染 | `formJson` 包含 `riskTitle` 字段，变量包含业务类型和标题 | 页面渲染 `业务风控审批` 和 `风控标题` | 组件测试覆盖表单渲染 | 不依赖定义管理接口 | 任务详情 Vitest 通过 | DONE |
 | TASK-003 | `@mango/workflow` 包 | 生产构建 | 当前 workflow 包源码 | Vite 构建和类型生成成功 | 不适用 | 不适用 | `pnpm --filter @mango/workflow build` 通过 | DONE |
 | TASK-004 | 业务接入文档 | 影响说明 | Issue #275 | 文档说明办理人无需定义管理接口权限 | 不适用 | 不适用 | `node mango-pmo/tools/check-business-guides.mjs`、`git diff --check` 通过 | DONE |

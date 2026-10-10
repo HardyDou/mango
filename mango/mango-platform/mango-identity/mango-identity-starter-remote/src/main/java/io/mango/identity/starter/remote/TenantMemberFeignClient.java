@@ -64,6 +64,11 @@ public interface TenantMemberFeignClient extends TenantMemberApi {
             @RequestParam("orgId") Long orgId);
 
     @Override
+    @GetMapping("/tenant-members/user-org-relations")
+    R<List<TenantMemberOrgRelationVO>> listUserOrgRelations(@RequestParam("tenantId") Long tenantId,
+            @RequestParam("userId") Long userId);
+
+    @Override
     @GetMapping("/tenant-members/org-relations/detail")
     R<TenantMemberOrgRelationVO> getOrgRelation(@RequestParam("relationId") Long relationId);
 

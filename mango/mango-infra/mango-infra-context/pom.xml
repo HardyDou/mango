@@ -15,11 +15,6 @@
     <name>Mango Infra Context</name>
     <description>Mango 运行时上下文与上下文传播基础设施</description>
 
-    <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
-    </properties>
-
     <modules>
         <module>mango-infra-context-api</module>
         <module>mango-infra-context-support</module>

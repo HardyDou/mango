@@ -15,11 +15,6 @@
     <artifactId>mango-infra</artifactId>
     <packaging>pom</packaging>
 
-    <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
-    </properties>
-
     <name>Mango Infra</name>
     <description>Mango Infrastructure Module - Third-party middleware integration</description>
 

@@ -6,6 +6,7 @@
     "dev": "vite --strictPort",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0 --port 4176",
+    "test": "tsc --project tsconfig.e2e.json && vitest run tests",
     "test:e2e": "../../node_modules/.pnpm/node_modules/.bin/playwright test"
   },
   "dependencies": {

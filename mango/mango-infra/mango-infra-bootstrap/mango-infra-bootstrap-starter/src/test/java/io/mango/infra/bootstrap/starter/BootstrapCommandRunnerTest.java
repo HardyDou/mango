@@ -4,6 +4,7 @@ import io.mango.infra.bootstrap.api.BootstrapAction;
 import io.mango.infra.bootstrap.api.BootstrapMode;
 import io.mango.infra.bootstrap.core.BootstrapOrchestrator;
 import io.mango.infra.bootstrap.core.BootstrapOutcome;
+import io.mango.infra.bootstrap.core.BootstrapSchemaMigrator;
 import io.mango.infra.bootstrap.core.JdbcBootstrapRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -37,12 +38,41 @@ class BootstrapCommandRunnerTest {
                 new BootstrapOutcome("execution-1", FINGERPRINT, "FINALIZED", 3, 0));
         BootstrapReceiptWriter writer = writer(bootstrap);
 
-        new BootstrapCommandRunner(bootstrap, release, orchestrator, repository, writer)
+        runner(bootstrap, release, orchestrator, repository, writer)
                 .run(mock(ApplicationArguments.class));
 
         verify(repository).assertStableReleaseIdentity(
                 "mango_023", "release-1", "revision-1", 1, FINGERPRINT);
         assertThat(temporaryDirectory.resolve("mango_023.json")).exists();
+    }
+
+    @Test
+    void localStartupUsesLifecycleKeyAndPublishesRuntimeIdentity() {
+        BootstrapProperties bootstrap = bootstrapProperties(BootstrapAction.APPLY);
+        bootstrap.setLocalStartup(true);
+        MangoReleaseProperties release = releaseProperties();
+        BootstrapOrchestrator orchestrator = mock(BootstrapOrchestrator.class);
+        BootstrapSchemaMigrator schemaMigrator = mock(BootstrapSchemaMigrator.class);
+        JdbcBootstrapRepository repository = mock(JdbcBootstrapRepository.class);
+        MangoLocalStartupState startupState = new MangoLocalStartupState();
+        when(orchestrator.manifestFingerprint("local-mango_023-mango-backend", "revision-1"))
+                .thenReturn(FINGERPRINT);
+        when(orchestrator.execute(any())).thenReturn(
+                new BootstrapOutcome("execution-1", FINGERPRINT, "FINALIZED", 3, 0));
+        BootstrapReceiptWriter writer = writer(bootstrap);
+        MockEnvironment environment = new MockEnvironment()
+                .withProperty("spring.application.name", "ignored-app")
+                .withProperty("MANGO_WORKSPACE_ID", "mango_023")
+                .withProperty("MANGO_LOCAL_LIFECYCLE_KEY", "mango-backend")
+                .withProperty("MANGO_MAVEN_REVISION_QUALIFIER", "revision-1");
+
+        new BootstrapCommandRunner(bootstrap, release, orchestrator, schemaMigrator, repository, writer,
+                environment, startupState).run(mock(ApplicationArguments.class));
+
+        verify(schemaMigrator).migrate();
+        assertThat(startupState.requireIdentity()).isEqualTo(new MangoLocalRuntimeIdentity(
+                "local-mango_023-mango-backend", "local-mango_023-mango-backend", "revision-1", 1,
+                FINGERPRINT));
     }
 
     @Test
@@ -54,7 +84,7 @@ class BootstrapCommandRunnerTest {
         when(orchestrator.execute(any())).thenReturn(
                 new BootstrapOutcome(null, FINGERPRINT, "PLANNED", 0, 0));
 
-        new BootstrapCommandRunner(bootstrap, release, orchestrator, repository, writer(bootstrap))
+        runner(bootstrap, release, orchestrator, repository, writer(bootstrap))
                 .run(mock(ApplicationArguments.class));
 
         verifyNoInteractions(repository);
@@ -76,6 +106,15 @@ class BootstrapCommandRunnerTest {
         properties.setRevision("revision-1");
         properties.setGeneration(1);
         return properties;
+    }
+
+    private BootstrapCommandRunner runner(BootstrapProperties bootstrap,
+                                          MangoReleaseProperties release,
+                                          BootstrapOrchestrator orchestrator,
+                                          JdbcBootstrapRepository repository,
+                                          BootstrapReceiptWriter writer) {
+        return new BootstrapCommandRunner(bootstrap, release, orchestrator, mock(BootstrapSchemaMigrator.class),
+                repository, writer, new MockEnvironment(), null);
     }
 
     private BootstrapReceiptWriter writer(BootstrapProperties properties) {

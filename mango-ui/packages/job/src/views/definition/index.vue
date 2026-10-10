@@ -1,27 +1,26 @@
-<!-- mango-page-baseline-exception list: 任务定义是调度编排操作台，同页承载高级筛选、状态机动作、手动触发和结构化参数编辑 -->
+<!-- eslint-disable vue/multi-word-component-names -->
 <!-- mango-page-baseline-exception dialog: 任务编辑与手动触发包含调度联动和递归结构化参数编辑器，超出标准短表单弹框合同 -->
 <template>
-  <div class="job-page">
-    <section class="job-toolbar">
-      <div class="job-toolbar-head">
-        <div>
-          <h2>任务定义</h2>
-          <p>维护任务定义、调度频率、处理器和结构化参数。</p>
-        </div>
-        <el-button v-auth="'job:definition:add'" type="primary" :icon="Plus" @click="openEditor()">新增任务</el-button>
-      </div>
-
-      <el-form :model="query" class="job-search" inline @submit.prevent>
-        <el-form-item label="关键字" class="job-search-item job-search-item-wide">
+  <MangoListPage class="job-page" data-page="job.definition">
+    <template #search>
+      <MangoSearchPanel
+        :model="query"
+        :columns="4"
+        collapsible
+        :collapsed-count="4"
+        @search="loadRows"
+        @reset="resetQuery"
+      >
+        <el-form-item label="关键字">
           <el-input v-model="query.keyword" clearable placeholder="编码/名称/处理器" @keyup.enter="loadRows" />
         </el-form-item>
-        <el-form-item label="应用" class="job-search-item">
+        <el-form-item label="应用">
           <el-input v-model="query.appCode" clearable placeholder="appCode" @keyup.enter="loadRows" />
         </el-form-item>
-        <el-form-item label="服务" class="job-search-item">
+        <el-form-item label="服务">
           <el-input v-model="query.ownerService" clearable placeholder="ownerService" @keyup.enter="loadRows" />
         </el-form-item>
-        <el-form-item label="状态" class="job-search-item job-search-item-small">
+        <el-form-item label="状态">
           <el-select v-model="query.status" clearable placeholder="全部">
             <el-option
               v-for="item in jobDefinitionStatusOptions"
@@ -31,43 +30,33 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item class="job-search-actions">
-          <el-button v-auth="'job:definition:list'" type="primary" :icon="Search" @click="loadRows">查询</el-button>
-          <el-button :icon="Refresh" @click="resetQuery">重置</el-button>
-          <el-button text type="primary" @click="advancedVisible = !advancedVisible">
-            {{ advancedVisible ? '收起' : '更多筛选' }}
-            <el-icon class="job-more-icon" :class="{ 'is-open': advancedVisible }"><ArrowDown /></el-icon>
-          </el-button>
+        <el-form-item label="任务类型">
+          <el-select v-model="query.jobType" clearable placeholder="全部">
+            <el-option v-for="item in jobTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
+          </el-select>
         </el-form-item>
-        <div v-show="advancedVisible" class="job-search-more">
-          <el-form-item label="任务类型" class="job-search-item">
-            <el-select v-model="query.jobType" clearable placeholder="全部">
-              <el-option v-for="item in jobTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="Worker组" class="job-search-item">
-            <el-input v-model="query.workerGroup" clearable placeholder="workerGroup" @keyup.enter="loadRows" />
-          </el-form-item>
-          <el-form-item label="调度类型" class="job-search-item">
-            <el-select v-model="query.scheduleType" clearable placeholder="全部">
-              <el-option
-                v-for="item in scheduleTypeOptions"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value"
-              />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="引擎" class="job-search-item job-search-item-small">
-            <el-select v-model="query.engineType" clearable placeholder="全部">
-              <el-option v-for="item in engineTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
-            </el-select>
-          </el-form-item>
-        </div>
-      </el-form>
-    </section>
+        <el-form-item label="Worker组">
+          <el-input v-model="query.workerGroup" clearable placeholder="workerGroup" @keyup.enter="loadRows" />
+        </el-form-item>
+        <el-form-item label="调度类型">
+          <el-select v-model="query.scheduleType" clearable placeholder="全部">
+            <el-option v-for="item in scheduleTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="引擎">
+          <el-select v-model="query.engineType" clearable placeholder="全部">
+            <el-option v-for="item in engineTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
+          </el-select>
+        </el-form-item>
+      </MangoSearchPanel>
+    </template>
 
-    <section class="job-panel">
+    <MangoListPanel>
+      <template #actions>
+        <el-button v-auth="'job:definition:add'" type="primary" plain :icon="Plus" @click="openEditor()">
+          新增任务
+        </el-button>
+      </template>
       <el-alert v-if="errorMessage" class="job-error" type="error" :closable="false" show-icon>
         <template #title>
           {{ errorMessage }}
@@ -158,10 +147,10 @@
         </el-table-column>
       </el-table>
 
-      <div class="job-pagination">
+      <template #pagination>
         <Pagination v-model:page="query.pageNum" v-model:limit="query.pageSize" :total="total" @pagination="loadRows" />
-      </div>
-    </section>
+      </template>
+    </MangoListPanel>
 
     <el-dialog
       v-model="editorVisible"
@@ -306,12 +295,12 @@
         <el-button type="primary" :loading="triggering" @click="triggerRow">触发</el-button>
       </template>
     </el-dialog>
-  </div>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts">
-import { ArrowDown, Delete, Edit, Plus, Refresh, Search, VideoPlay } from '@element-plus/icons-vue';
-import { Pagination } from '@mango/common';
+import { Delete, Edit, Plus, VideoPlay } from '@element-plus/icons-vue';
+import { MangoListPage, MangoListPanel, MangoSearchPanel, Pagination } from '@mango/common';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import { onMounted, reactive, ref } from 'vue';
 import {
@@ -336,7 +325,6 @@ const loading = ref(false);
 const saving = ref(false);
 const triggering = ref(false);
 const errorMessage = ref('');
-const advancedVisible = ref(false);
 const rows = ref<JobDefinition[]>([]);
 const total = ref(0);
 const editorVisible = ref(false);

@@ -18,7 +18,7 @@
 - #620 直接故障：资源同步仍在 main/ApplicationRunner 执行时 Spring shutdown 已关闭 Druid，JDBC KV finally 无法可靠释放。CLI 的 2 秒 grace 是放大器，不是唯一根因。
 - #620 结构缺口：`ResourceRegistryLock` 丢弃 owner；`KvStoreLocker` 使用固定值和无条件删除；无续租、失租检查和关闭屏障。
 - #621 直接故障：Handler 显式 `tenant_id=2`，TenantLine 又追加 ambient tenant 1，查询为空后 INSERT tenant 2 撞唯一键。
-- 性能事实：1964 条声明的稳定失败轮次最低执行 1964 次 bizKey SELECT、1964 次 resourceId SELECT 和 1963 次 SKIP INSERT，共 5891 条 SQL；111 轮最低约 65 万条。Baohan 空库进一步定位出 API_RESOURCE 约 980 次逐条回读、SYSTEM_AREA 约 524 次逐条回读。
+- 性能事实：1964 条声明的稳定失败轮次最低执行 1964 次 bizKey SELECT、1964 次 resourceId SELECT 和 1963 次 SKIP INSERT，共 5891 条 SQL；111 轮最低约 65 万条。Business 空库进一步定位出 API_RESOURCE 约 980 次逐条回读、SYSTEM_AREA 约 524 次逐条回读。
 - 目标：owner-safe lease、DataSource 销毁前的关闭屏障、声明 tenant 执行作用域、业务键并发收敛、失败分类、批量快照与准确 readiness。
 - 范围：`mango-infra-kv`、`mango-resource`、`mango-org`、必要的 `mango-system`、Mango CLI、能力说明与真实业务回归。
 - 不处理：生产发布、数据库表结构变更、业务 UI、没有下游实际校验的完整 fencing 声明。
@@ -36,7 +36,7 @@
 | SR-007 | 瞬态数据库/锁故障 | 声明合法 | 轻量抢锁、指数退避+jitter、恢复后 delta 继续 | readiness 保持非 UP并暴露 next retry |
 | SR-008 | 同一声明快照永久错误 | 校验、版本、依赖、租户或业务键错误 | 完整同步最多执行一次，修改声明或人工触发后再试 | PERMANENT_FAILED，可审计但不刷屏 |
 | SR-009 | 未启用远程 Resource 的部署 | 无同步状态 Bean | 保持既有启动与 readiness 行为 | 不因可选能力缺失阻断 |
-| SR-010 | Baohan 升级 | 新 Mango 修复已通过框架验证 | 先升级并对照验证，再删除旧 240 次补偿器，完成空库/温库/停启 | 任一真实链路失败则恢复补偿与旧版本 |
+| SR-010 | Business 升级 | 新 Mango 修复已通过框架验证 | 先升级并对照验证，再删除旧 240 次补偿器，完成空库/温库/停启 | 任一真实链路失败则恢复补偿与旧版本 |
 
 ## 4. 架构与技术决定
 
@@ -73,9 +73,9 @@
 | IMPL-004 | TD-005/TD-006 | Resource support/core、Org starter/core | ambient 1/tenant 2、target mismatch、双线程、两种先后顺序通过 | DONE；MySQL RR 竞争恢复使用 `FOR UPDATE` 当前读 |
 | IMPL-005 | TD-007 | Resource core/sync starter | warm SQL 目标、SKIP=0、永久 snapshot 不重放 | DONE |
 | IMPL-006 | TD-008 | Resource/System/Actuator | 完成前 readiness 非 UP，成功后 2 秒内 UP，无 Resource 兼容 | DONE；修复 Boot 在 `ApplicationReadyEvent` 后覆盖 readiness 的事件时序 |
-| IMPL-007 | 全部 | README、能力地图、evidence、Baohan | 文档门禁、模块门禁与真实消费验收全部 PASS | DONE（显式 `MANGO_BACKEND_AUTO_INSTALL=false` 的源快照验收）；Baohan cold p95=54.11 秒、warm p95=20.50 秒 |
+| IMPL-007 | 全部 | README、能力地图、evidence、Business | 文档门禁、模块门禁与真实消费验收全部 PASS | DONE（显式 `MANGO_BACKEND_AUTO_INSTALL=false` 的源快照验收）；Business cold p95=54.11 秒、warm p95=20.50 秒 |
 | IMPL-008 | TD-004/TD-007 | Mango CLI | 后端重复停启可显式跳过未变化依赖 install；默认行为保持兼容，健康轮询可配置 | DONE；`MANGO_BACKEND_AUTO_INSTALL` 默认 `true`，`waitPollIntervalMs` 默认 500ms |
-| IMPL-009 | TD-007 | Authorization/System handlers | API_RESOURCE、SYSTEM_AREA cold 目标回读批量化，不改变租户、保护模式和重复 targetId 语义 | DONE；新增定向测试，Baohan 真实 cold 资源同步降至约 27～30 秒 |
+| IMPL-009 | TD-007 | Authorization/System handlers | API_RESOURCE、SYSTEM_AREA cold 目标回读批量化，不改变租户、保护模式和重复 targetId 语义 | DONE；新增定向测试，Business 真实 cold 资源同步降至约 27～30 秒 |
 
 顺序：IMPL-001 与 IMPL-004 先建立正确性；IMPL-002/003 完成停服；随后 IMPL-005/006 完成性能和状态；最后 IMPL-007～009 完成 CLI 与高频 Handler 收口。性能优化不得改变租户、业务键或完成语义。
 
@@ -89,7 +89,7 @@
 | TC-004 | SR-005/SR-006 | 专属 MySQL 8.4 + 真实 MyBatis TenantLine | 一行、双方同 ID、错误 target 不变、上下文成功/异常后恢复；禁止 Mockito/H2-only 替代 |
 | TC-005 | SR-001/SR-002/SR-008 | 1964 等价声明，fresh 5 次、warm 10 次 | warm Registry 核心 SQL <=20，新增逐资源 SKIP=0，永久 snapshot 五分钟内不重放 |
 | TC-006 | SR-001/SR-007~009 | Spring/Actuator | 同步/对账完成前 100% 非 UP，完成后 2 秒内 UP；未启用 Resource 兼容 |
-| TC-007 | SR-010 | Baohan 隔离 worktree/数据库 | 无旧补偿器时空库命令到 READY p95<=60s、温库<=30s、快速停启不等旧 TTL，资源/角色/权限/业务域/工作流基线收敛 |
+| TC-007 | SR-010 | Business 隔离 worktree/数据库 | 无旧补偿器时空库命令到 READY p95<=60s、温库<=30s、快速停启不等旧 TTL，资源/角色/权限/业务域/工作流基线收敛 |
 | TC-008 | 全部 | 直接修改模块 verify、CLI tests、能力文档检查、diff check | 无新增架构、质量、测试资产和文档问题 |
 
 ## 8. 能力说明、升级与回滚
@@ -99,7 +99,7 @@
 - Org README 说明声明 tenant scope、稳定业务键、targetId 与并发语义。
 - System/CLI README 说明组合 readiness、停服 grace、PGID 和错误反馈。
 - 能力地图登记 #620/#621、业务升级顺序与验收入口。
-- Baohan 必须先升级并对照验证 Mango 修复，再删除 `MangoStartupReconciliationInitializer`。失败时恢复旧版本和补偿器；无数据库回填。
+- Business 必须先升级并对照验证 Mango 修复，再删除 `MangoStartupReconciliationInitializer`。失败时恢复旧版本和补偿器；无数据库回填。
 
 ## 9. 验证结果
 
@@ -108,19 +108,19 @@
 | 用例 | 结果 | 环境与真实证据 |
 |---|---|---|
 | TC-001 | PASS | Memory/JDBC/Redis lease contract 12/12；`ResourceRegistryLockTest` 4/4，覆盖续租失效、旧 handle 释放、新 owner 接管与 close 后拒绝获取。 |
-| TC-002 | PASS（有剩余边界） | `ResourceRegistrySyncServiceIntegrationTest` 25/25；Handler 被阻塞后 stop 拒绝新任务，Handler 返回后因 shutdown fail-closed，不再写 registry/log，lease 释放。Mango/Baohan 真实快速停启均由 CLI 同秒结束 PGID。尚未构造真实 ApplicationContext 中单个 Handler 超过 25 秒的现场。 |
+| TC-002 | PASS（有剩余边界） | `ResourceRegistrySyncServiceIntegrationTest` 25/25；Handler 被阻塞后 stop 拒绝新任务，Handler 返回后因 shutdown fail-closed，不再写 registry/log，lease 释放。Mango/Business 真实快速停启均由 CLI 同秒结束 PGID。尚未构造真实 ApplicationContext 中单个 Handler 超过 25 秒的现场。 |
 | TC-003 | PASS | `node --test mango-ui/packages/mango-cli/tests/process-control.test.mjs` 3/3；Maven leader/子进程组、SIGKILL 后复查、非法 PID 零信号调用均覆盖。 |
 | TC-004 | PASS | MySQL 8.4.8 数据库 `mango_dev_mango_issues_620_621_022`；`OrgPostResourceHandlerMySqlIntegrationTest` 5/5，包含 RR 旧快照后 1062 + locking read、Resource 双线程、Provision 双线程、targetId 错指和上下文恢复；H2 + 真实 TenantLine 补充 6/6。 |
-| TC-005 | PASS（源快照 + 显式启动策略） | H2 1964 warm iteration 固定 3 次 Registry Mapper 查询、Handler=0、sync/change log 零增长；Baohan 专属 MySQL 空库 fresh×5 为 54.11/51.99/51.42/49.41/49.41 秒，p95=54.11 秒；最终 warm×10 为 17.45～20.50 秒，p95=20.50 秒；永久业务键冲突保持 `PERMANENT_FAILED` 约 5 分 38 秒，永久错误日志=1，sync/change log 仍 2136/2136。 |
-| TC-006 | PASS | Baohan `18021` 高频回读依次观察 `OUT_OF_SERVICE/BOOTSTRAPPING`、`OUT_OF_SERVICE/SYNCING`、`OUT_OF_SERVICE/READY+RECONCILING_TENANTS`、`UP/READY+READY`；Boot ACCEPTING 覆盖回归测试通过。Health 暴露状态、失败计数、尝试/失败/下次重试时间和脱敏错误类型。 |
-| TC-007 | PASS（显式启动策略；默认锁定 CLI 仍需升级） | Baohan 隔离 worktree `/Users/hardy/Work/Yunxin/baohan-system-mango-620-621-acceptance`，端口 18021。删除 240 次补偿器并消费本地 `1.0.0-SNAPSHOT`；使用 Mango CLI 源码快照、`MANGO_BACKEND_AUTO_INSTALL=false` 和批量 Handler 后，专属库 fresh×5 p95=54.11 秒（2136 资源），warm×10 p95=20.50 秒；资源/角色/权限/业务域/工作流基线收敛，快速停启不等旧 TTL。原 Baohan 锁定 `@mango/cli` 1.0.89 且默认 install 的 cold p95=70.69 秒，需随 CLI 版本升级后才能获得该优化；不能把未发布源快照当成已发布消费结果。 |
-| TC-008 | PASS | 直接修改 11 个 Maven 模块 verify 已通过；新增阻断修复后定向 Resource/Org/System 测试通过，Baohan app verify 11 项（4 skipped、0 failure/error），CLI、README、source facts、style 与 diff 门禁通过。 |
+| TC-005 | PASS（源快照 + 显式启动策略） | H2 1964 warm iteration 固定 3 次 Registry Mapper 查询、Handler=0、sync/change log 零增长；Business 专属 MySQL 空库 fresh×5 为 54.11/51.99/51.42/49.41/49.41 秒，p95=54.11 秒；最终 warm×10 为 17.45～20.50 秒，p95=20.50 秒；永久业务键冲突保持 `PERMANENT_FAILED` 约 5 分 38 秒，永久错误日志=1，sync/change log 仍 2136/2136。 |
+| TC-006 | PASS | Business `18021` 高频回读依次观察 `OUT_OF_SERVICE/BOOTSTRAPPING`、`OUT_OF_SERVICE/SYNCING`、`OUT_OF_SERVICE/READY+RECONCILING_TENANTS`、`UP/READY+READY`；Boot ACCEPTING 覆盖回归测试通过。Health 暴露状态、失败计数、尝试/失败/下次重试时间和脱敏错误类型。 |
+| TC-007 | PASS（显式启动策略；默认锁定 CLI 仍需升级） | Business 隔离 worktree `/Users/hardy/Work/Yunxin/business-system-mango-620-621-acceptance`，端口 18021。删除 240 次补偿器并消费本地 `1.0.0-SNAPSHOT`；使用 Mango CLI 源码快照、`MANGO_BACKEND_AUTO_INSTALL=false` 和批量 Handler 后，专属库 fresh×5 p95=54.11 秒（2136 资源），warm×10 p95=20.50 秒；资源/角色/权限/业务域/工作流基线收敛，快速停启不等旧 TTL。原 Business 锁定 `@mango/cli` 1.0.89 且默认 install 的 cold p95=70.69 秒，需随 CLI 版本升级后才能获得该优化；不能把未发布源快照当成已发布消费结果。 |
+| TC-008 | PASS | 直接修改 11 个 Maven 模块 verify 已通过；新增阻断修复后定向 Resource/Org/System 测试通过，Business app verify 11 项（4 skipped、0 failure/error），CLI、README、source facts、style 与 diff 门禁通过。 |
 
-真实停启命令使用 Mango CLI：Mango `node mango-ui/packages/mango-cli/src/index.mjs dev start|stop backend`；Baohan 最终优化验收使用当前 Mango CLI 源快照 `node /Users/hardy/Work/mango-issues-620-621/mango-ui/packages/mango-cli/src/index.mjs dev start|stop backend`，并记录显式 `MANGO_BACKEND_AUTO_INSTALL=false`。Baohan 验收 worktree 保持未提交，主工作区和既有治理 worktree 未修改。
+真实停启命令使用 Mango CLI：Mango `node mango-ui/packages/mango-cli/src/index.mjs dev start|stop backend`；Business 最终优化验收使用当前 Mango CLI 源快照 `node /Users/hardy/Work/mango-issues-620-621/mango-ui/packages/mango-cli/src/index.mjs dev start|stop backend`，并记录显式 `MANGO_BACKEND_AUTO_INSTALL=false`。Business 验收 worktree 保持未提交，主工作区和既有治理 worktree 未修改。
 
 ## 10. 剩余风险
 
 - 本任务不宣称完整 fencing；长暂停后的严格陈旧写拒绝仍需所有 target Handler 消费单调 fence。
 - 自定义 KV 若不提供原子 lease 能力，Resource Registry 将 fail-fast，需要消费者升级实现。
-- Baohan 业务项目当前锁定的 `@mango/cli` 1.0.89 尚未包含后端自动 install 开关与 500ms 健康轮询；发布/升级 Mango CLI 后，业务项目需在依赖未变化的重复停启场景显式设置 `MANGO_BACKEND_AUTO_INSTALL=false`，依赖变化时恢复 `true` 或手工 install。
+- Business 业务项目当前锁定的 `@mango/cli` 1.0.89 尚未包含后端自动 install 开关与 500ms 健康轮询；发布/升级 Mango CLI 后，业务项目需在依赖未变化的重复停启场景显式设置 `MANGO_BACKEND_AUTO_INSTALL=false`，依赖变化时恢复 `true` 或手工 install。
 - 本任务不执行 commit、push、PR 或发布；实现与验证完成后停在当前 worktree 交付状态。

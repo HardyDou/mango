@@ -2,17 +2,17 @@
 
 ## 1. 验收范围
 
-- 页面：保函隔离环境 `/guarantee/dev/collapse-detail-preview`。
+- 页面：业务隔离环境 `/business/dev/collapse-detail-preview`。
 - 接口：登录及页面运行时真实接口；本次不改变后端 API。
 - 权限：`sales-demo-01` 通过页面登录进入 DEV 预览路由。
-- 数据：仅使用隔离数据库 `mango_dev_baohan_mango_collapse_detail_139` 和预览页静态展示数据。
-- 部署形态：保函 Admin Shell 单体入口，保持 `@mango/admin@1.1.8` 与 `@mango/admin-shell@1.0.72`，只替换 `@mango/common@2.0.3`、`@mango/file@1.0.39` 和 `@mango/detail@1.0.0` 本地候选包。
+- 数据：仅使用隔离数据库 `mango_dev_business_mango_collapse_detail_139` 和预览页静态展示数据。
+- 部署形态：业务 Admin Shell 单体入口，保持 `@mango/admin@1.1.8` 与 `@mango/admin-shell@1.0.72`，只替换 `@mango/common@2.0.3`、`@mango/file@1.0.39` 和 `@mango/detail@1.0.0` 本地候选包。
 
 ## 2. 执行环境
 
 - 前端地址：`http://127.0.0.1:30139`
 - 后端地址：`http://127.0.0.1:18139`
-- 数据库或租户：`mango_dev_baohan_mango_collapse_detail_139`
+- 数据库或租户：`mango_dev_business_mango_collapse_detail_139`
 - 测试账号：`sales-demo-01`
 - 浏览器：项目 `@playwright/test` Chromium，1440x1000、2560x1440、390x844。
 
@@ -20,10 +20,10 @@
 
 | 台账 ID                        | 用例 ID | 页面/接口                                | 功能点       | 测试数据                                   | 关键断言                                                                                                        | UI/交互检查                                             | console/network 结果                      | 截图/trace/日志                   | 结论 |
 | ------------------------------ | ------- | ---------------------------------------- | ------------ | ------------------------------------------ | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ----------------------------------------- | --------------------------------- | ---- |
-| MANGO-COLLAPSE-DETAIL-20260920 | TC-001  | `/guarantee/dev/collapse-detail-preview` | 宿主布局隔离 | 1440x1000                                  | `.mango-layout-body` 为横向 flex；侧栏和内容 top 均为 56；菜单宽度 220 -> 64 时页签 top=56、详情 top=191 均不变 | 展开与收起左侧菜单，页面无横向溢出                      | console error=0；page error=0；失败请求=0 | `desktop.png`、`result.json`      | PASS |
-| MANGO-COLLAPSE-DETAIL-20260920 | TC-002  | `/guarantee/dev/collapse-detail-preview` | 宽屏布局隔离 | 2560x1440                                  | `.mango-layout-body` 为横向 flex；侧栏和内容 top 均为 56；菜单宽度 220 -> 64 时页签和详情纵坐标不变             | 展开与收起左侧菜单，页面无横向溢出                      | console error=0；page error=0；失败请求=0 | `wide-desktop.png`、`result.json` | PASS |
-| MANGO-COLLAPSE-DETAIL-20260920 | TC-003  | `/guarantee/dev/collapse-detail-preview` | 移动端响应式 | 390x844                                    | 页面 scrollWidth=clientWidth=390；描述项为可读单列网格，标签与内容不叠压                                        | 检查摘要、面板和固定操作区                              | console error=0；page error=0；失败请求=0 | `mobile.png`、`result.json`       | PASS |
-| MANGO-COLLAPSE-DETAIL-20260920 | TC-004  | `/guarantee/dev/collapse-detail-preview` | 骨架组合能力 | 八个面板、两条文件、富文本、列表、流程摘要 | 八个面板默认展开；文件表头主题生效；富文本和表格内容可见                                                        | 打开/关闭工作流抽屉，点击回到顶部，刷新后路由和页面恢复 | console error=0；page error=0；失败请求=0 | `desktop.png`、`result.json`      | PASS |
+| MANGO-COLLAPSE-DETAIL-20260920 | TC-001  | `/business/dev/collapse-detail-preview` | 宿主布局隔离 | 1440x1000                                  | `.mango-layout-body` 为横向 flex；侧栏和内容 top 均为 56；菜单宽度 220 -> 64 时页签 top=56、详情 top=191 均不变 | 展开与收起左侧菜单，页面无横向溢出                      | console error=0；page error=0；失败请求=0 | `desktop.png`、`result.json`      | PASS |
+| MANGO-COLLAPSE-DETAIL-20260920 | TC-002  | `/business/dev/collapse-detail-preview` | 宽屏布局隔离 | 2560x1440                                  | `.mango-layout-body` 为横向 flex；侧栏和内容 top 均为 56；菜单宽度 220 -> 64 时页签和详情纵坐标不变             | 展开与收起左侧菜单，页面无横向溢出                      | console error=0；page error=0；失败请求=0 | `wide-desktop.png`、`result.json` | PASS |
+| MANGO-COLLAPSE-DETAIL-20260920 | TC-003  | `/business/dev/collapse-detail-preview` | 移动端响应式 | 390x844                                    | 页面 scrollWidth=clientWidth=390；描述项为可读单列网格，标签与内容不叠压                                        | 检查摘要、面板和固定操作区                              | console error=0；page error=0；失败请求=0 | `mobile.png`、`result.json`       | PASS |
+| MANGO-COLLAPSE-DETAIL-20260920 | TC-004  | `/business/dev/collapse-detail-preview` | 骨架组合能力 | 八个面板、两条文件、富文本、列表、流程摘要 | 八个面板默认展开；文件表头主题生效；富文本和表格内容可见                                                        | 打开/关闭工作流抽屉，点击回到顶部，刷新后路由和页面恢复 | console error=0；page error=0；失败请求=0 | `desktop.png`、`result.json`      | PASS |
 
 ## 4. 回归抽查记录
 
@@ -36,19 +36,19 @@
 
 - M16 人工验收：PASS。
 - 验收时间：2026-09-20。
-- 验收入口：`http://127.0.0.1:30139/#/guarantee/dev/collapse-detail-preview`。
+- 验收入口：`http://127.0.0.1:30139/#/business/dev/collapse-detail-preview`。
 - 验收结论：用户在隔离环境完成页面人工走查，反馈未发现问题。
 
 ## 6. 未验证项和风险
 
 | 项目               | 原因                                                   | 影响                                      | 后续处理                                                 | 用户确认                 |
 | ------------------ | ------------------------------------------------------ | ----------------------------------------- | -------------------------------------------------------- | ------------------------ |
-| 保函正式消费       | 本次保函代码仅作为候选包验证适配，不形成正式依赖关系   | 不代表现有保函业务页面已切换到 Mango 组件 | 验收结束后清理保函临时分支                               | 已确认不纳入本次正式交付 |
-| 保函全量 typecheck | 临时分支存在 22 条与本次候选适配无关的既有业务类型诊断 | 不能声明保函全量类型检查通过              | 以生产构建、候选包类型检查及独立消费者类型检查为本次证据 | 待原业务任务处理         |
+| 业务正式消费       | 本次业务代码仅作为候选包验证适配，不形成正式依赖关系   | 不代表现有业务页面已切换到 Mango 组件 | 验收结束后清理业务临时分支                               | 已确认不纳入本次正式交付 |
+| 业务全量 typecheck | 临时分支存在 22 条与本次候选适配无关的既有业务类型诊断 | 不能声明业务全量类型检查通过              | 以生产构建、候选包类型检查及独立消费者类型检查为本次证据 | 待原业务任务处理         |
 
 ## 7. 业务开发交接输出
 
 | 输出对象         | 交接内容                                      | 材料路径                                                                                                        | 执行入口                                                                                  | 数据/账号边界                           | 失败/例外处理                                                            | 状态 |
 | ---------------- | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------ | ---- |
 | Mango 组件消费者 | `@mango/detail` 独立包及 common/file 组合能力 | `mango-ui/packages/detail/README.md`、本目录截图与 `result.json`                                                | `pnpm package-consumer:typecheck -- --reuse-build`                                        | 消费方提供业务数据、权限和远程能力      | 缺少输入时显示公开空/错状态，不回退 Admin 私有路径                       | PASS |
-| 保函临时验收     | 可重复 Playwright 验证适配器、功能和宿主布局  | `D:/Project/baohan-mango-collapse-detail/baohan-ui/e2e/scripts/mango-collapse-detail-candidate-browser-e2e.mjs` | `pnpm -C baohan-ui exec node e2e/scripts/mango-collapse-detail-candidate-browser-e2e.mjs` | 隔离数据库、测试账号和 18139/30139 端口 | 失败时读取 `result.json`、截图与运行时 `trace.zip`，不得提交临时保函代码 | PASS |
+| 业务临时验收     | 可重复 Playwright 验证适配器、功能和宿主布局  | `D:/Project/business-mango-collapse-detail/business-ui/e2e/scripts/mango-collapse-detail-candidate-browser-e2e.mjs` | `pnpm -C business-ui exec node e2e/scripts/mango-collapse-detail-candidate-browser-e2e.mjs` | 隔离数据库、测试账号和 18139/30139 端口 | 失败时读取 `result.json`、截图与运行时 `trace.zip`，不得提交临时业务代码 | PASS |

@@ -1,10 +1,10 @@
 # 标准交付记录
 
-> 任务：Job 管理分页链路修复（baohan-open Issue #43）
+> 任务：Job 管理分页链路修复（business-open Issue #43）
 
 ## 1. 元数据
 
-- 任务 ID：baohan-open Issue #43
+- 任务 ID：business-open Issue #43
 - 交付模式：STANDARD
 - 需求影响：L2 - `@mango/job` 的四个列表页无法渲染分页器，数据超过一页后用户无法访问后续记录
 - 方案风险：L2 - 修复公共 npm 包内组件契约和前后端分页参数适配，并修复 Windows 质量检查与 CLI 后台进程链路；影响五个分页查询入口和本地质量/启动命令，但不改变后端接口
@@ -88,7 +88,7 @@
 - `@mango/cli` README 已同步 Windows `.cmd` 后台 runner、日志继承、参数传递、进程树停止语义和排障入口；没有新增命令、参数或配置。
 - 能力地图不更新：本次恢复既有 Job 分页与 CLI 开发编排能力，没有新增能力入口或组合阅读顺序。业务集成指南不更新：依赖、注册、菜单、权限、租户和启动步骤均未变化。
 - PMO 规则及 `mango-pmo/rules/index.json` 不更新：本次没有新增或修改长期规则。
-- 本次没有新增 endpoint、类型或配置；属于既有分页能力修复。仍需发布新的 npm 版本并由 `baohan-open` 升级后，业务环境才能获得修复。
+- 本次没有新增 endpoint、类型或配置；属于既有分页能力修复。仍需发布新的 npm 版本并由 `business-open` 升级后，业务环境才能获得修复。
 
 ## 7. 例外与剩余风险
 
@@ -97,4 +97,4 @@
 - Windows 下首次 Mango CLI 冷启动需要执行完整 Maven Reactor bootstrap/verify，耗时约 4 分钟；已验证前后端最终健康，但仍属于本地启动成本。
 - 四个 Job 页面保留现有领域操作台布局，没有在本 PR 迁移 `MangoListPage`/`MangoSearchPanel`/`MangoListPanel`；任务定义、Worker 和告警编辑弹框也保留领域联合表单。源码已按具体页面语义登记 `mango-page-baseline-exception`，后续若统一页面骨架需重新执行完整 UI 验收。
 - `npm ci` 报告 VitePress 依赖树存在 2 个 moderate、3 个 high 漏洞；属于当前文档站依赖基线，本任务未升级依赖，文档构建仍通过。
-- npm 发布和 `baohan-open` 依赖升级不在本次代码修复授权范围内，源码修复完成后仍需独立发布流程才能进入业务环境。
+- npm 发布和 `business-open` 依赖升级不在本次代码修复授权范围内，源码修复完成后仍需独立发布流程才能进入业务环境。

@@ -1,5 +1,7 @@
 # Mango Identity
 
+2026-10-02 能力更新：成员组织关系新增按用户和租户查询全部组织关系的接口 `/identity/tenant-members/user-org-relations`，认证信息会返回 `departmentNames`，供管理端独立展示当前用户所属部门列表；查询继续执行启用成员、租户和组织关系边界。
+
 ## 1. 概览
 
 `mango-identity` 是 Mango 的身份事实模块，负责全局账号、租户成员、成员组织关系、认证用户事实和第三方登录身份绑定。它回答“这个账号是谁、在哪个机构下是什么成员、账号状态如何”，不负责 token，也不负责菜单权限。
@@ -12,7 +14,7 @@
 |------|------|
 | 全局账号 | 保存 username、password hash、昵称、手机号、邮箱、头像、状态、登录域和主体信息 |
 | 租户成员 | 保存账号在某个租户下的 `memberId`，登录和授权都依赖这个成员身份 |
-| 成员组织关系 | 维护成员和组织、岗位关系，支持按 USER、ORG、POST、ROLE 解析接收人 |
+| 成员组织关系 | 维护成员和组织、岗位关系，支持按 USER、ORG、POST、ROLE 解析接收人，并可按用户和租户读取全部所属组织 |
 | 认证事实查询 | 为 `mango-auth` 提供 `AuthUserProvider`，以及按用户名和用户 ID 查询认证事实的内部接口 |
 | 第三方身份绑定 | 保存企业微信等外部身份和 Mango 用户的绑定关系 |
 | 当前用户资料 | 读取和维护昵称、头像、姓名、证件类型、证件号码、认证状态和来源；证件号码只脱敏返回 |
@@ -198,7 +200,7 @@ Java API：
 
 `IdentityUserApi.getUserInfo`、`getUserInfoById` 和 `listUserInfosByTarget` 的方法名与业务语义不变，返回泛型改为 `IdentityUserInfoVO`。实现 API、Feign 适配器或测试桩的业务代码需要同步覆盖方法签名。1.0.22 的参数校验约束由 API 接口声明，实现类不要重复或改变约束配置。
 
-完整的依赖、其它模块 API、数据库、验证和部署步骤见 [Mango Maven 1.0.21 到 1.0.22 Java API 升级](../../../mango-docs/guides/business-integration/maven-1.0.21-to-1.0.22-java-api-upgrade.md)。
+完整的依赖、其它模块 API、数据库、验证和部署步骤见 [Mango Maven 1.0.21 到 1.0.22 Java API 升级](../../../mango-docs/guides/operations/maven-1.0.21-to-1.0.22-java-api-upgrade.md)。
 
 ## 8. 返回字段
 

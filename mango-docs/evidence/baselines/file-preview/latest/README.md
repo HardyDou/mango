@@ -75,3 +75,10 @@
 | 输出对象 | 交接内容 | 材料路径 | 执行入口 | 数据/账号边界 | 失败/例外处理 | 状态 |
 |---|---|---|---|---|---|---|
 | Mango 业务开发者 | 按文件 ID 获取预览链接；预览要求文件下载权限；源文件 token 使用 query 参数 | `mango/mango-platform/mango-file-preview/README.md` | 第 3 节四组定向命令及正式 Playwright 用例 | 使用隔离数据库、tenant `1`；测试文件由用例清理 | Office 转换不可用时检查 LibreOffice/插件配置；远程 404 时先核对 clean 后 JAR 与服务路由 | DONE |
+
+## 10. 2026-10-05 宿主兼容性复核补充
+
+- `FileSettingsApi` 与 `ConvertApi` 作为可选协作能力接入：缺少文件设置服务时直接文件预览仍可用；缺少格式转换 starter 时，Office 转换任务进入 `FAILED` 并返回“当前未启用文件格式转换能力，请下载原文件查看”，不在启动阶段误报缺 Bean。
+- 异步预览任务继续要求 KV 的 `ITokenStore` 和 `ILeaseLocker`；独立 `mango-file-preview-app` 已显式设置 `mango.kv.capability.locker=true`。模块 README 已同步依赖和配置。
+- `MangoFilePreviewAppFlowTest` 最终 5/5 通过；测试剥离外部网关 `/api` 前缀后直连后端，并显式校验预览入口 HTTP 302 和随机引擎文件名，不改变外部 HTTP 契约。
+- 全量 Java 21 Reactor 验证通过；该补充不修改生产历史 migration。

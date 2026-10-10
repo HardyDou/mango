@@ -6,6 +6,7 @@
 - **规范源**：`mango-pmo/rules/product/03-technical-design.md`。
 - **模板**：`mango-pmo/templates/technical-design.md`。
 - **检查器**：`node mango-pmo/tools/check-technical-design.mjs --document <path>`。
+- **人类阅读入口检查**：`node mango-pmo/tools/check-document-reading-entry.mjs --document <path>`。
 - **人工责任人**：Tech Lead 对技术决策、规范适用和可实施性负责；存在已启用 SRS 时由系统分析负责人确认没有新增需求，否则确认没有改变用户已确认的目标与边界。
 
 ## 动作门禁
@@ -24,3 +25,8 @@
 - 不在本角色文件复制 Java、API、数据库、前端或测试规则。
 - 不把计划中的任务状态或测试结果伪装为已完成事实。
 - 不按代码量或关键词降级，不机械全选 M09-M16，不为后端任务伪造 M13。
+
+## 文本与决定门禁
+
+- 技术设计遵循 `rules/13-agent-text-output.md`，先写方案结论、约束、风险和验证口径。
+- 技术决定遵循 `rules/14-decision-expert-review.md`，完成三视角分析并记录评审选择后再进入 `NEXT`；需要正式技术审批时仍按生命周期合同执行。

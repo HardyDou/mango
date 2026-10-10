@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <!-- mango-page-baseline-exception all: 用户维护联合组织树筛选、角色分配、状态控制和凭据操作，不是单一标准列表与短表单弹框。 -->
 <template>
   <div class="user-container" data-page="user.management">
@@ -50,267 +51,264 @@
       </aside>
 
       <section class="user-list-panel">
-        <el-card class="layout-card">
-          <div class="current-org-bar">
-            <div>
-              <span class="current-org-title" data-field="user.scope.name">
-                {{ selectedOrg?.orgName || '全部成员' }}
-              </span>
-              <span class="current-org-subtitle">
-                {{ selectedOrg ? '显示该组织本级及全部下级组织成员' : '显示当前机构全部成员' }}
-              </span>
-            </div>
-            <el-button v-if="selectedOrg" data-action="user.org.clear" @click="clearOrgFilter">
-              清除部门选择
-            </el-button>
-          </div>
+        <MangoListPage class="user-list-page">
+          <template #search>
+            <MangoSearchPanel
+              :model="query"
+              :columns="4"
+              data-surface="user.management.search"
+              @search="handleSearch"
+              @reset="handleReset"
+            >
+              <el-form-item label="用户名">
+                <el-input v-model="query.username" placeholder="请输入用户名" clearable />
+              </el-form-item>
+              <el-form-item label="姓名">
+                <el-input v-model="query.nickname" placeholder="请输入姓名" clearable />
+              </el-form-item>
+              <el-form-item label="手机号">
+                <el-input v-model="query.phone" placeholder="请输入手机号" clearable />
+              </el-form-item>
+              <el-form-item label="状态">
+                <DictSelect
+                  v-model="query.status"
+                  dict-type="sys_normal_disable"
+                  placeholder="状态"
+                  show-any-option
+                  any-option-label="不限"
+                  number-value
+                />
+              </el-form-item>
+            </MangoSearchPanel>
+          </template>
 
-          <el-form :inline="true" class="search-form" data-surface="user.search">
-            <el-form-item label="用户名">
-              <el-input v-model="query.username" placeholder="请输入用户名" clearable />
-            </el-form-item>
-            <el-form-item label="姓名">
-              <el-input v-model="query.nickname" placeholder="请输入姓名" clearable />
-            </el-form-item>
-            <el-form-item label="手机号">
-              <el-input v-model="query.phone" placeholder="请输入手机号" clearable />
-            </el-form-item>
-            <el-form-item label="状态">
-              <DictSelect
-                v-model="query.status"
-                dict-type="sys_normal_disable"
-                placeholder="状态"
-                show-any-option
-                any-option-label="不限"
-                number-value
-              />
-            </el-form-item>
-            <el-form-item>
-              <el-button type="primary" @click="handleSearch"> 查询 </el-button>
-              <el-button @click="handleReset"> 重置 </el-button>
-            </el-form-item>
-          </el-form>
-
-          <div class="action-toolbar">
-            <div class="toolbar-left">
-              <el-button type="primary" data-action="user.create" @click="handleAdd"> 新增成员 </el-button>
-              <el-button type="danger" :disabled="selectedUsers.length === 0" @click="handleBatchDelete">
-                批量移出租户成员
-              </el-button>
-              <el-button
-                data-action="user.batch-role.assign"
-                :disabled="selectedRoleMembers.length === 0"
-                @click="openBatchRoleDialog('assign')"
-              >
-                批量添加角色
-              </el-button>
-              <el-button
-                data-action="user.batch-role.unassign"
-                :disabled="selectedRoleMembers.length === 0"
-                @click="openBatchRoleDialog('unassign')"
-              >
-                批量删除角色
-              </el-button>
-              <el-tooltip :disabled="canSyncWecom" :content="wecomSyncDisabledTip" placement="top">
-                <span>
-                  <el-button :disabled="!canSyncWecom" :loading="wecomSyncLoading" @click="openWecomSyncDialog">
-                    同步企微用户
-                  </el-button>
-                </span>
-              </el-tooltip>
-              <el-button v-if="selectedOrg" data-action="user.org.add-existing" @click="handleAddOrgMember">
-                添加已有成员
-              </el-button>
-            </div>
-          </div>
-
-          <el-alert
-            v-if="listLoadError"
-            title="成员列表加载失败"
-            type="error"
-            :closable="false"
-            show-icon
-            class="state-alert"
-          >
-            <el-button link type="primary" @click="loadData">重试</el-button>
-          </el-alert>
-
-          <el-table
-            v-loading="loading"
-            :data="tableData"
-            row-key="userId"
-            stripe
-            class="user-table"
-            :data-state="listState"
-            @selection-change="handleSelectionChange"
-          >
-            <template #empty>
-              <el-empty :description="listLoadError ? '成员列表加载失败，请重试' : '暂无成员'" :image-size="72" />
-            </template>
-            <el-table-column type="selection" width="54" :selectable="isRowSelectable" />
-            <el-table-column prop="username" label="用户名" min-width="140">
-              <template #default="{ row }">
-                <span :data-record-key="`user:${row.username}`">{{ row.username }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column prop="nickname" label="姓名" min-width="140" />
-            <el-table-column prop="phone" label="手机号" min-width="130" />
-            <el-table-column label="所属部门" min-width="190" show-overflow-tooltip>
-              <template #default="{ row }">
-                {{ orgPathLabel(row.orgId || row.primaryOrgId) || '-' }}
-              </template>
-            </el-table-column>
-            <el-table-column label="已分配角色" min-width="180">
-              <template #default="{ row }">
-                <div :data-record-key="`user-roles:${row.username}`">
-                  <div v-if="row.roleNames?.length" class="role-tags">
-                    <el-tag v-for="roleName in row.roleNames" :key="roleName" size="small" effect="plain">
-                      {{ roleName }}
-                    </el-tag>
-                  </div>
-                  <span v-else>-</span>
-                </div>
-              </template>
-            </el-table-column>
-            <el-table-column v-if="selectedOrg" label="部门岗位" min-width="150">
-              <template #default="{ row }">
-                <el-tag v-if="row.postName" effect="plain">
-                  {{ row.postName }}
-                </el-tag>
-                <span v-else>-</span>
-              </template>
-            </el-table-column>
-            <el-table-column v-if="selectedOrg" label="部门主管" width="110">
-              <template #default="{ row }">
-                <el-tag :type="row.orgLeaderFlag ? 'success' : 'info'" effect="light">
-                  {{ row.orgLeaderFlag ? '是' : '否' }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column v-if="selectedOrg" label="主部门" width="100">
-              <template #default="{ row }">
-                <el-tag :type="row.primaryOrgFlag ? 'primary' : 'info'" effect="plain">
-                  {{ row.primaryOrgFlag ? '是' : '否' }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="email" label="邮箱" min-width="180" show-overflow-tooltip />
-            <el-table-column prop="status" label="状态" width="90">
-              <template #default="{ row }">
-                <DictTag dict-code="sys_normal_disable" :value="row.status" size="small" />
-              </template>
-            </el-table-column>
-            <el-table-column label="密码状态" width="110">
-              <template #default="{ row }">
-                <el-tag :type="row.passwordResetRequired ? 'warning' : 'success'" effect="light">
-                  {{ row.passwordResetRequired ? '需改密' : '正常' }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="锁定状态" width="130">
-              <template #default="{ row }">
-                <el-tooltip :disabled="!isLocked(row)" :content="lockTip(row)" placement="top">
-                  <el-tag :type="isLocked(row) ? 'danger' : 'success'" effect="light">
-                    {{ isLocked(row) ? '已锁定' : '未锁定' }}
-                  </el-tag>
+          <MangoListPanel>
+            <template #actions>
+              <div class="toolbar-left">
+                <el-button v-if="selectedOrg" data-action="user.org.clear" @click="clearOrgFilter">
+                  清除部门选择
+                </el-button>
+                <el-button type="primary" data-action="user.create" @click="handleAdd"> 新增成员 </el-button>
+                <el-button type="danger" :disabled="selectedUsers.length === 0" @click="handleBatchDelete">
+                  批量移出租户成员
+                </el-button>
+                <el-button
+                  data-action="user.batch-role.assign"
+                  :disabled="selectedRoleMembers.length === 0"
+                  @click="openBatchRoleDialog('assign')"
+                >
+                  批量添加角色
+                </el-button>
+                <el-button
+                  data-action="user.batch-role.unassign"
+                  :disabled="selectedRoleMembers.length === 0"
+                  @click="openBatchRoleDialog('unassign')"
+                >
+                  批量删除角色
+                </el-button>
+                <el-tooltip :disabled="canSyncWecom" :content="wecomSyncDisabledTip" placement="top">
+                  <span>
+                    <el-button :disabled="!canSyncWecom" :loading="wecomSyncLoading" @click="openWecomSyncDialog">
+                      同步企微用户
+                    </el-button>
+                  </span>
                 </el-tooltip>
-              </template>
-            </el-table-column>
-            <el-table-column prop="lastLoginTime" label="最近登录" width="180">
-              <template #default="{ row }">
-                {{ formatTime(row.lastLoginTime) }}
-              </template>
-            </el-table-column>
-            <el-table-column prop="createTime" label="创建时间" width="180">
-              <template #default="{ row }">
-                {{ formatTime(row.createTime) }}
-              </template>
-            </el-table-column>
-            <el-table-column label="操作" :width="selectedOrg ? 700 : 570" fixed="right">
-              <template #default="{ row }">
-                <div :data-record-key="`user-actions:${row.username}`">
-                  <el-button v-if="selectedOrg" link type="primary" size="small" @click="handleEditOrgPost(row)">
-                    岗位
-                  </el-button>
-                  <el-button
-                    v-if="selectedOrg && !row.orgLeaderFlag"
-                    link
-                    type="success"
-                    size="small"
-                    @click="handleSetLeader(row)"
-                  >
-                    设为主管
-                  </el-button>
-                  <el-button
-                    v-if="selectedOrg && row.orgLeaderFlag"
-                    link
-                    type="warning"
-                    size="small"
-                    @click="handleUnsetLeader(row)"
-                  >
-                    取消主管
-                  </el-button>
-                  <el-button
-                    v-if="selectedOrg && !row.primaryOrgFlag"
-                    link
-                    type="primary"
-                    size="small"
-                    @click="handleSetPrimaryOrg(row)"
-                  >
-                    设主部门
-                  </el-button>
-                  <el-button
-                    v-if="selectedOrg && row.orgRelationId"
-                    link
-                    type="danger"
-                    size="small"
-                    data-action="user.org.remove"
-                    @click="handleRemoveFromOrg(row)"
-                  >
-                    移出当前部门
-                  </el-button>
-                  <el-button link type="primary" size="small" @click="handleAssignRoles(row)"> 分配角色 </el-button>
-                  <el-button link type="primary" size="small" @click="handleExternalIdentity(row)">
-                    企微身份
-                  </el-button>
-                  <el-button link type="primary" size="small" @click="handleEdit(row)"> 编辑 </el-button>
-                  <el-button link type="warning" size="small" @click="handleResetPassword(row)"> 重置密码 </el-button>
-                  <el-button link type="warning" size="small" @click="handleRequirePasswordReset(row)">
-                    要求改密
-                  </el-button>
-                  <el-button link type="success" size="small" :disabled="!isLocked(row)" @click="handleUnlock(row)">
-                    解锁
-                  </el-button>
-                  <el-button
-                    link
-                    :type="row.status === 1 ? 'warning' : 'success'"
-                    size="small"
-                    @click="handleStatus(row)"
-                  >
-                    {{ row.status === 1 ? '禁用' : '启用' }}
-                  </el-button>
-                  <el-button
-                    link
-                    type="danger"
-                    size="small"
-                    data-action="user.tenant.remove"
-                    :disabled="!isRowSelectable(row)"
-                    @click="handleDelete(row)"
-                  >
-                    移出租户成员
-                  </el-button>
-                </div>
-              </template>
-            </el-table-column>
-          </el-table>
+                <el-button v-if="selectedOrg" data-action="user.org.add-existing" @click="handleAddOrgMember">
+                  添加已有成员
+                </el-button>
+              </div>
+            </template>
 
-          <Pagination
-            v-model:page="query.pageNum"
-            v-model:limit="query.pageSize"
-            :total="total"
-            @pagination="loadData"
-          />
-        </el-card>
+            <el-alert
+              v-if="listLoadError"
+              title="成员列表加载失败"
+              type="error"
+              :closable="false"
+              show-icon
+              class="state-alert"
+            >
+              <el-button link type="primary" @click="loadData">重试</el-button>
+            </el-alert>
+
+            <el-table
+              v-loading="loading"
+              :data="tableData"
+              row-key="userId"
+              stripe
+              class="user-table"
+              :data-state="listState"
+              @selection-change="handleSelectionChange"
+            >
+              <template #empty>
+                <el-empty :description="listLoadError ? '成员列表加载失败，请重试' : '暂无成员'" :image-size="72" />
+              </template>
+              <el-table-column type="selection" width="54" :selectable="isRowSelectable" />
+              <el-table-column prop="username" label="用户名" min-width="140">
+                <template #default="{ row }">
+                  <span :data-record-key="`user:${row.username}`">{{ row.username }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column prop="nickname" label="姓名" min-width="140" />
+              <el-table-column prop="phone" label="手机号" min-width="130" />
+              <el-table-column label="所属部门" min-width="190" show-overflow-tooltip>
+                <template #default="{ row }">
+                  {{ orgPathLabel(row.orgId || row.primaryOrgId) || '-' }}
+                </template>
+              </el-table-column>
+              <el-table-column label="已分配角色" min-width="180">
+                <template #default="{ row }">
+                  <div :data-record-key="`user-roles:${row.username}`">
+                    <div v-if="row.roleNames?.length" class="role-tags">
+                      <el-tag v-for="roleName in row.roleNames" :key="roleName" size="small" effect="plain">
+                        {{ roleName }}
+                      </el-tag>
+                    </div>
+                    <span v-else>-</span>
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column v-if="selectedOrg" label="部门岗位" min-width="150">
+                <template #default="{ row }">
+                  <el-tag v-if="row.postName" effect="plain">
+                    {{ row.postName }}
+                  </el-tag>
+                  <span v-else>-</span>
+                </template>
+              </el-table-column>
+              <el-table-column v-if="selectedOrg" label="部门主管" width="110">
+                <template #default="{ row }">
+                  <el-tag :type="row.orgLeaderFlag ? 'success' : 'info'" effect="light">
+                    {{ row.orgLeaderFlag ? '是' : '否' }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column v-if="selectedOrg" label="主部门" width="100">
+                <template #default="{ row }">
+                  <el-tag :type="row.primaryOrgFlag ? 'primary' : 'info'" effect="plain">
+                    {{ row.primaryOrgFlag ? '是' : '否' }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="email" label="邮箱" min-width="180" show-overflow-tooltip />
+              <el-table-column prop="status" label="状态" width="90">
+                <template #default="{ row }">
+                  <DictTag dict-code="sys_normal_disable" :value="row.status" size="small" />
+                </template>
+              </el-table-column>
+              <el-table-column label="密码状态" width="110">
+                <template #default="{ row }">
+                  <el-tag :type="row.passwordResetRequired ? 'warning' : 'success'" effect="light">
+                    {{ row.passwordResetRequired ? '需改密' : '正常' }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="锁定状态" width="130">
+                <template #default="{ row }">
+                  <el-tooltip :disabled="!isLocked(row)" :content="lockTip(row)" placement="top">
+                    <el-tag :type="isLocked(row) ? 'danger' : 'success'" effect="light">
+                      {{ isLocked(row) ? '已锁定' : '未锁定' }}
+                    </el-tag>
+                  </el-tooltip>
+                </template>
+              </el-table-column>
+              <el-table-column prop="lastLoginTime" label="最近登录" width="180">
+                <template #default="{ row }">
+                  {{ formatTime(row.lastLoginTime) }}
+                </template>
+              </el-table-column>
+              <el-table-column prop="createTime" label="创建时间" width="180">
+                <template #default="{ row }">
+                  {{ formatTime(row.createTime) }}
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" :width="selectedOrg ? 700 : 570" fixed="right">
+                <template #default="{ row }">
+                  <div :data-record-key="`user-actions:${row.username}`">
+                    <el-button v-if="selectedOrg" link type="primary" size="small" @click="handleEditOrgPost(row)">
+                      岗位
+                    </el-button>
+                    <el-button
+                      v-if="selectedOrg && !row.orgLeaderFlag"
+                      link
+                      type="success"
+                      size="small"
+                      @click="handleSetLeader(row)"
+                    >
+                      设为主管
+                    </el-button>
+                    <el-button
+                      v-if="selectedOrg && row.orgLeaderFlag"
+                      link
+                      type="warning"
+                      size="small"
+                      @click="handleUnsetLeader(row)"
+                    >
+                      取消主管
+                    </el-button>
+                    <el-button
+                      v-if="selectedOrg && !row.primaryOrgFlag"
+                      link
+                      type="primary"
+                      size="small"
+                      @click="handleSetPrimaryOrg(row)"
+                    >
+                      设主部门
+                    </el-button>
+                    <el-button
+                      v-if="selectedOrg && row.orgRelationId"
+                      link
+                      type="danger"
+                      size="small"
+                      data-action="user.org.remove"
+                      @click="handleRemoveFromOrg(row)"
+                    >
+                      移出当前部门
+                    </el-button>
+                    <el-button link type="primary" size="small" @click="handleAssignRoles(row)"> 分配角色 </el-button>
+                    <el-button link type="primary" size="small" @click="handleExternalIdentity(row)">
+                      企微身份
+                    </el-button>
+                    <el-button link type="primary" size="small" @click="handleEdit(row)"> 编辑 </el-button>
+                    <el-button link type="warning" size="small" @click="handleResetPassword(row)"> 重置密码 </el-button>
+                    <el-button link type="warning" size="small" @click="handleRequirePasswordReset(row)">
+                      要求改密
+                    </el-button>
+                    <el-button link type="success" size="small" :disabled="!isLocked(row)" @click="handleUnlock(row)">
+                      解锁
+                    </el-button>
+                    <el-button
+                      link
+                      :type="row.status === 1 ? 'warning' : 'success'"
+                      size="small"
+                      @click="handleStatus(row)"
+                    >
+                      {{ row.status === 1 ? '禁用' : '启用' }}
+                    </el-button>
+                    <el-button
+                      link
+                      type="danger"
+                      size="small"
+                      data-action="user.tenant.remove"
+                      :disabled="!isRowSelectable(row)"
+                      @click="handleDelete(row)"
+                    >
+                      移出租户成员
+                    </el-button>
+                  </div>
+                </template>
+              </el-table-column>
+            </el-table>
+
+            <template #pagination>
+              <Pagination
+                v-model:page="query.pageNum"
+                v-model:limit="query.pageSize"
+                :total="total"
+                @pagination="loadData"
+              />
+            </template>
+          </MangoListPanel>
+        </MangoListPage>
       </section>
     </div>
 
@@ -723,6 +721,9 @@ import { useDict } from '@mango/common/hooks/useDict';
 import {
   DictSelect,
   DictTag,
+  MangoListPage,
+  MangoListPanel,
+  MangoSearchPanel,
   Pagination,
   PasswordPolicyHint,
   defaultPasswordPolicy,
@@ -1804,47 +1805,6 @@ onMounted(async () => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.current-org-bar {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 16px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--el-border-color-lighter);
-}
-
-.current-org-title {
-  display: block;
-  color: var(--el-text-color-primary);
-  font-size: 18px;
-  font-weight: 700;
-  line-height: 1.4;
-}
-
-.current-org-subtitle {
-  display: block;
-  margin-top: 4px;
-  color: var(--el-text-color-secondary);
-  font-size: 13px;
-}
-
-.search-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px 18px;
-  margin-bottom: 14px;
-
-  :deep(.el-form-item) {
-    margin-bottom: 0;
-  }
-
-  :deep(.el-input),
-  :deep(.el-select) {
-    width: 190px;
-  }
 }
 
 .action-toolbar {

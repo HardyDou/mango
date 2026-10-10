@@ -26,7 +26,7 @@
 
 非目标：
 
-- 不修改保函项目 82 份生命周期文档或其审批证据。
+- 不修改业务项目 82 份生命周期文档或其审批证据。
 - 不让任意历史版本跳过当前合同，也不按标题猜测历史合同。
 - 不改变文档生命周期 schema revision、CLI 命令语法、Mango Maven 或运行时前后端能力。
 - 不重新发布或移动 `@mango/cli@1.0.105`、既有 Tag 和 GitHub Release。
@@ -43,7 +43,7 @@
 | 类型 | 路径或模板ID | 版本或提交 | 用途 | 实际采用范围 |
 ```
 
-在保函升级 worktree 执行当前 1.3.13 checker 时，82 份生命周期文档中 12 份 1.3.11 TDD/Plan 因 `TDD-META-001`、`PLAN-META-001` 和合同外 H2 失败。
+在业务升级 worktree 执行当前 1.3.13 checker 时，82 份生命周期文档中 12 份 1.3.11 TDD/Plan 因 `TDD-META-001`、`PLAN-META-001` 和合同外 H2 失败。
 
 ## 4. 方案决定
 
@@ -82,10 +82,10 @@ TDD/Plan 合同通过 `historicalSectionVariants` 声明：
 | HIST-003 | 相同历史内容未登记 hash 基线 | 不启用历史结构 | 未锁定反例 | PASS |
 | HIST-004 | 当前版本文档使用历史章节 | 当前合同拒绝 | 当前版本反例 | PASS |
 | HIST-005 | 历史表头变化 | 缺少预期表格且出现合同外表格 | 错误表头反例 | PASS |
-| HIST-006 | 保函真实 82 份文档集合 | 不修改业务文档并全部通过 | `check-document-set.mjs --root .../docs` | PASS，82/82 |
+| HIST-006 | 业务真实 82 份文档集合 | 不修改业务文档并全部通过 | `check-document-set.mjs --root .../docs` | PASS，82/82 |
 | HIST-006A | 三重锁定的 1.3.13 文档不含历史章节 | 作为历史版本通过但不附加章节变体 | 1.3.13 no-variant 回归 | PASS |
 | HIST-007 | PMO/CLI/Starter 投影 | 包、manifest、CLI lock 与 starter 无漂移 | package/CLI/sync gates | PENDING |
-| HIST-008 | 私仓发布与干净消费 | hosted/group 均解析精确制品，真实保函升级通过 | Mango release manifest 与业务消费记录 | PENDING |
+| HIST-008 | 私仓发布与干净消费 | hosted/group 均解析精确制品，真实业务升级通过 | Mango release manifest 与业务消费记录 | PENDING |
 
 ## 6. 发布矩阵
 
@@ -120,5 +120,5 @@ TDD/Plan 合同通过 `historicalSectionVariants` 声明：
 - [ ] 合并最新 `main` 后重跑受影响验证。
 - [ ] PR required checks 通过并合并。
 - [ ] release preflight、branch protection、registry doctor 和版本不存在检查通过。
-- [ ] Mango release 状态机发布、hosted/group 回查、干净消费和保函真实升级通过。
+- [ ] Mango release 状态机发布、hosted/group 回查、干净消费和业务真实升级通过。
 - [ ] 发布后 closeout PR 将新发布段从 `PENDING` 回填为真实状态。

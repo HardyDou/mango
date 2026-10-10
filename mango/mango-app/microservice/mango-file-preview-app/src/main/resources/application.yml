@@ -11,6 +11,7 @@ mango:
       type: jdbc
     capability:
       enabled: true
+      locker: true
       token-store: true
   file:
     enabled: true

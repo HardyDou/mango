@@ -25,6 +25,8 @@ import { validateDocument } from "../../tools/document-contract/validator.mjs";
 const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES = path.join(TEST_DIR, "fixtures");
 
+const TEMPLATE_GUIDANCE_SECTION_TITLE = "使用合同与最小填写方式";
+
 const STAGES = [
   {
     name: "business-requirements",
@@ -52,21 +54,21 @@ function readFixture(relativePath) {
   return fs.readFileSync(path.join(FIXTURES, relativePath), "utf8");
 }
 
-function hydrateLifecycle(levels = {}, pmoVersion = "1.4.5") {
+function hydrateLifecycle(levels = {}, pmoVersion = "1.4.6") {
   const brd = readFixture("valid/business-requirements.md")
     .replace("riskLevel: L2", `riskLevel: ${levels.brd ?? "L2"}`)
-    .replace("pmoVersion: 1.4.5", `pmoVersion: ${pmoVersion}`);
+    .replace("pmoVersion: 1.4.6", `pmoVersion: ${pmoVersion}`);
   const srs = readFixture("valid/system-requirements.md")
     .replace("riskLevel: L2", `riskLevel: ${levels.srs ?? "L2"}`)
-    .replace("pmoVersion: 1.4.5", `pmoVersion: ${pmoVersion}`)
+    .replace("pmoVersion: 1.4.6", `pmoVersion: ${pmoVersion}`)
     .replace("0".repeat(64), sha256(brd));
   const tdd = readFixture("valid/technical-design.md")
     .replace("riskLevel: L2", `riskLevel: ${levels.tdd ?? "L2"}`)
-    .replace("pmoVersion: 1.4.5", `pmoVersion: ${pmoVersion}`)
+    .replace("pmoVersion: 1.4.6", `pmoVersion: ${pmoVersion}`)
     .replace("0".repeat(64), sha256(srs));
   const plan = readFixture("valid/implementation-plan.md")
     .replace("riskLevel: L2", `riskLevel: ${levels.plan ?? "L2"}`)
-    .replace("pmoVersion: 1.4.5", `pmoVersion: ${pmoVersion}`)
+    .replace("pmoVersion: 1.4.6", `pmoVersion: ${pmoVersion}`)
     .replace("0".repeat(64), sha256(tdd));
   return {
     brd: {
@@ -159,8 +161,19 @@ for (const stage of STAGES) {
     const ast = parseMarkdown(
       fs.readFileSync(repositoryPath(contract.template), "utf8"),
     );
+    const guidanceSections = ast.sections.filter(
+      (section) => section.logicalTitle === TEMPLATE_GUIDANCE_SECTION_TITLE,
+    );
+    assert.equal(guidanceSections.length, 1);
+    assert.ok(
+      guidanceSections[0].line < ast.sections.find(
+        (section) => section.logicalTitle === contract.sections[0].title,
+      ).line,
+    );
     assert.deepEqual(
-      ast.sections.map((section) => section.logicalTitle),
+      ast.sections
+        .filter((section) => section.logicalTitle !== TEMPLATE_GUIDANCE_SECTION_TITLE)
+        .map((section) => section.logicalTitle),
       contract.sections.map((section) => section.title),
     );
     for (const sectionSpec of contract.sections) {
@@ -180,12 +193,26 @@ for (const stage of STAGES) {
   });
 }
 
+test("文档合同允许模板使用说明章节", () => {
+  for (const stage of STAGES) {
+    const contract = loadContract(stage.contract);
+    const source = readFixture(`valid/${stage.valid}`).replace(
+      "\n## 1. ",
+      `\n## 0. ${TEMPLATE_GUIDANCE_SECTION_TITLE}\n\n模板填写说明。\n\n## 1. `,
+    );
+    const result = validateDocument(source, contract, {
+      documentPath: path.join(FIXTURES, "valid", stage.valid),
+    });
+    assert.deepEqual(result.findings, [], stage.name);
+  }
+});
+
 test("文档 pmoVersion 必须与版本化合同一致", () => {
   const contract = loadContract(
     "mango-pmo/contracts/business-requirements.json",
   );
   const source = readFixture("valid/business-requirements.md").replace(
-    "pmoVersion: 1.4.5",
+    "pmoVersion: 1.4.6",
     "pmoVersion: 9.9.9",
   );
   const result = validateDocument(source, contract);
@@ -193,12 +220,12 @@ test("文档 pmoVersion 必须与版本化合同一致", () => {
     result.findings.some(
       (finding) =>
         finding.ruleId === "BRD-META-001" &&
-        finding.message.includes("pmoVersion 必须为 1.4.5"),
+        finding.message.includes("pmoVersion 必须为 1.4.6"),
     ),
   );
   const historical = validateDocument(
     readFixture("valid/business-requirements.md").replace(
-      "pmoVersion: 1.4.5",
+      "pmoVersion: 1.4.6",
       "pmoVersion: 1.3.6",
     ),
     contract,
@@ -207,7 +234,7 @@ test("文档 pmoVersion 必须与版本化合同一致", () => {
     historical.findings.some(
       (finding) =>
         finding.ruleId === "BRD-META-001" &&
-        finding.message.includes("pmoVersion 必须为 1.4.5"),
+        finding.message.includes("pmoVersion 必须为 1.4.6"),
     ),
   );
 });
@@ -506,7 +533,7 @@ test("业务文档集合拒绝未锁定历史文档使用历史章节变体", (t
 });
 
 test("业务文档集合拒绝当前版本文档使用历史章节变体", (t) => {
-  const root = writeHistoricalSectionDocumentSet(t, { pmoVersion: "1.4.5" });
+  const root = writeHistoricalSectionDocumentSet(t, { pmoVersion: "1.4.6" });
   const pinned = pinHistoricalPmoVersionDocuments(root);
   assert.equal(pinned.added.length, 0);
 
@@ -535,7 +562,7 @@ test("业务文档集合拒绝合同未声明的历史 PMO 版本", (t) => {
     result.findings.some(
       (finding) =>
         finding.ruleId === "BRD-META-001" &&
-        finding.message.includes("pmoVersion 必须为 1.4.5"),
+        finding.message.includes("pmoVersion 必须为 1.4.6"),
     ),
   );
 });

@@ -190,6 +190,20 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
                     "close",
                     "archive",
                     "refund");
+    private static final Set<String> UNCONSTRAINED_QUERY_TYPES =
+            Set.of(
+                    "java.time.LocalDate",
+                    "java.time.LocalDateTime",
+                    "java.time.LocalTime",
+                    "java.time.OffsetDateTime",
+                    "java.time.OffsetTime",
+                    "java.time.ZonedDateTime",
+                    "java.time.Year",
+                    "java.time.YearMonth",
+                    "java.time.MonthDay",
+                    "java.time.Instant",
+                    "java.time.Duration",
+                    "java.time.Period");
     private static final Set<String> API_SCALAR_TYPES =
             Set.of(
                     "java.lang.Boolean",
@@ -1069,7 +1083,10 @@ public final class MangoJavaArchitectureRule extends AbstractJavaRule {
                     field,
                     "MANGO-ARCH-MODEL-001 API model field requires @Schema(description)");
         }
-        if (input && !hasProtocolFieldConstraint(field)) {
+        if (input
+                && !hasProtocolFieldConstraint(field)
+                && !UNCONSTRAINED_QUERY_TYPES.contains(
+                        canonicalName(field.getTypeNode().getTypeMirror()))) {
             violation(
                     context,
                     field,

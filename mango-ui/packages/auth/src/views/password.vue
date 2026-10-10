@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
   <div class="password-container" :class="{ 'password-container--embedded': displayMode === 'embedded' }">
     <el-row justify="center">
@@ -135,7 +136,7 @@ const handleReset = () => {
   padding: 0;
 
   :deep(.el-row) {
-    justify-content: flex-start;
+    justify-content: center;
   }
 
   :deep(.el-col) {

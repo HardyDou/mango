@@ -1,7 +1,7 @@
 ---
 documentId: PLAN-ANN-001
 documentType: implementation-plan
-pmoVersion: 1.4.5
+pmoVersion: 1.4.6
 schemaRevision: 1
 riskLevel: L2
 riskAssessmentEvidence: TDD-ANN-001 risk assessment
@@ -15,6 +15,17 @@ upstreamDocumentHash: 0000000000000000000000000000000000000000000000000000000000
 ---
 
 # 公告审核实施计划
+
+> **写作与决定门禁：** 遵循 [`Agent 文本输出规范`](../../../../rules/13-agent-text-output.md)。先写顺序、责任和下一步，使用具体交付物和完成标准。实施决定另按 [`决策复核规范`](../../../../rules/14-decision-expert-review.md)记录三视角分析、方案整理，并询问、记录是否需要外部同行评审。
+
+> **先读：这份文档要回答什么**
+> - **一句话目标：** 按已批准设计交付公告审核代码、测试和证据。
+> - **真实场景：** 开发与测试负责人按任务依赖实现公告工作区，并用 VAL-001 验证结果。
+> - **关键输入 / 输出：** TDD、交付物和任务依赖 / 代码产物、验证结果和交付证据。
+> - **成功与失败：** 每项任务满足完成标准并通过验证；设计缺口、阻断或验证失败立即停止升级。
+> - **明确不做：** 不改变跨企业共享能力，不在计划中重新设计 API 或数据模型。
+> - **阅读顺序：** 先看本段，再看交付物与任务依赖，最后看验证、风险和追踪矩阵。
+> - **任务图入口：** `node mango-pmo/tools/render-implementation-plan-graph.mjs --document <path>`
 
 ## 1. 实施目标、范围与交付物
 

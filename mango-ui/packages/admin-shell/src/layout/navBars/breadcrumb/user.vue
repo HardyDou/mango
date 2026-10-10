@@ -16,9 +16,6 @@
       <el-dropdown-menu>
         <el-dropdown-item disabled class="account-summary-dropdown-item">
           <div class="account-summary" data-surface="current-user.summary">
-            <MangoAvatar :size="44" :source="currentUser.photo">
-              <el-icon><User /></el-icon>
-            </MangoAvatar>
             <div class="account-summary__copy">
               <strong>{{ currentDisplayName }}</strong>
               <span :title="organizationLabel">{{ organizationLabel }}</span>
@@ -66,10 +63,7 @@ const currentDisplayName = computed(() => currentUser.value.nickname || currentU
 
 const organizationLabel = computed(() => {
   const info = currentUser.value;
-  const departmentName = info.departmentName || info.deptName || info.orgName || '';
-  const companyName = info.companyName || info.tenantName || info.tenantCode || '';
-  const labels = [departmentName || '部门未设置', companyName || '公司未设置'];
-  return labels.join('｜');
+  return info.companyName || info.tenantName || info.tenantCode || '公司未设置';
 });
 
 async function confirmLogout() {
@@ -161,7 +155,8 @@ const handleCommand = (command: string) => {
 }
 
 :global(.layout-breadcrumb-user-popper .el-dropdown-menu) {
-  min-width: 244px;
+  width: 160px;
+  min-width: 160px;
   padding: 7px 0;
   background: transparent;
   border: 0;
@@ -170,14 +165,14 @@ const handleCommand = (command: string) => {
 
 :global(.layout-breadcrumb-user-popper .el-dropdown-menu__item) {
   height: 40px;
-  padding: 0 18px;
+  padding: 0 14px;
   color: var(--mango-text-color);
   font-size: 14px;
   line-height: 40px;
 }
 
 :global(.layout-breadcrumb-user-popper .el-dropdown-menu__item .el-icon) {
-  margin-right: 12px;
+  margin-right: 8px;
   color: inherit;
   font-size: 18px;
 }
@@ -196,7 +191,7 @@ const handleCommand = (command: string) => {
 :global(.layout-breadcrumb-user-popper .account-summary-dropdown-item) {
   height: auto;
   min-height: 68px;
-  padding: 11px 16px 12px;
+  padding: 11px 12px 12px;
   opacity: 1;
   cursor: default;
   color: var(--mango-text-color);
@@ -209,10 +204,6 @@ const handleCommand = (command: string) => {
 }
 
 .account-summary {
-  display: grid;
-  grid-template-columns: 44px minmax(0, 1fr);
-  align-items: center;
-  gap: 12px;
   width: 100%;
 }
 

@@ -1,133 +1,37 @@
 <template>
-  <div class="system-event-page" data-page="system.event">
-    <el-card class="system-event-search">
-      <el-form
-        :model="query"
-        :inline="true"
-        class="system-event-search__form"
-        @submit.prevent
-      >
-        <el-row :gutter="16">
-          <el-col
-            :xs="24"
-            :sm="12"
-            :lg="6"
-          >
-            <el-form-item label="关键词">
-              <el-input
-                v-model="query.keyword"
-                placeholder="消息ID/类型/业务键"
-                clearable
-                @keyup.enter="handleSearch"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col
-            :xs="24"
-            :sm="12"
-            :lg="6"
-          >
-            <el-form-item label="状态">
-              <el-select
-                v-model="query.status"
-                placeholder="全部状态"
-                clearable
-              >
-                <el-option
-                  v-for="item in systemEventStatusOptions"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value"
-                />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col
-            :xs="24"
-            :sm="12"
-            :lg="6"
-          >
-            <el-form-item label="事件类型">
-              <el-input
-                v-model="query.eventType"
-                placeholder="eventType"
-                clearable
-              />
-            </el-form-item>
-          </el-col>
-          <el-col
-            :xs="24"
-            :sm="12"
-            :lg="6"
-          >
-            <el-form-item label="业务类型">
-              <el-input
-                v-model="query.businessType"
-                placeholder="businessType"
-                clearable
-              />
-            </el-form-item>
-          </el-col>
-          <el-col
-            :xs="24"
-            :sm="12"
-            :lg="6"
-          >
-            <el-form-item label="业务键">
-              <el-input
-                v-model="query.businessKey"
-                placeholder="businessKey"
-                clearable
-              />
-            </el-form-item>
-          </el-col>
-          <el-col
-            :xs="24"
-            :sm="12"
-            :lg="6"
-          >
-            <el-form-item label="异常范围">
-              <el-switch
-                v-model="query.abnormalOnly"
-                active-text="仅异常"
-                inactive-text="全部"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col
-            :xs="24"
-            :sm="12"
-            :lg="6"
-          >
-            <el-form-item>
-              <el-button
-                type="primary"
-                data-action="system.event.search"
-                @click="handleSearch"
-              >
-                查询
-              </el-button>
-              <el-button data-action="system.event.reset" @click="handleReset">
-                重置
-              </el-button>
-            </el-form-item>
-          </el-col>
-        </el-row>
-      </el-form>
-    </el-card>
+  <MangoListPage class="system-event-page" data-page="system.event">
+    <template #search>
+      <MangoSearchPanel :model="query" :columns="2" @search="handleSearch" @reset="handleReset">
+        <el-form-item label="关键词" class="system-event-page__keyword-field">
+          <el-input
+            v-model="query.keyword"
+            placeholder="消息ID/类型/业务键"
+            clearable
+            data-action="system.event.search-input"
+            @keyup.enter="handleSearch"
+          />
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-select v-model="query.status" placeholder="全部状态" clearable>
+            <el-option
+              v-for="item in systemEventStatusOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="业务类型">
+          <el-input v-model="query.businessType" placeholder="businessType" clearable />
+        </el-form-item>
+      </MangoSearchPanel>
+    </template>
 
-    <div class="system-event-toolbar">
-      <el-button
-        plain
-        data-action="system.event.refresh"
-        :loading="loading"
-        @click="loadData"
-      >
-        刷新
-      </el-button>
-    </div>
+    <MangoListPanel>
+      <template #view-actions>
+        <el-button plain data-action="system.event.refresh" :loading="loading" @click="loadData"> 刷新 </el-button>
+      </template>
 
-    <el-card class="system-event-table">
       <el-alert
         v-if="errorMessage"
         data-surface="system.event.error"
@@ -137,13 +41,7 @@
         :closable="false"
       >
         <template #default>
-          <el-button
-            link
-            type="primary"
-            @click="loadData"
-          >
-            重试
-          </el-button>
+          <el-button link type="primary" @click="loadData"> 重试 </el-button>
         </template>
       </el-alert>
       <el-table
@@ -153,88 +51,45 @@
         stripe
         empty-text="暂无系统事件"
       >
-        <el-table-column
-          prop="status"
-          label="状态"
-          width="100"
-        >
+        <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
-            <el-tag
-              :type="systemEventStatusTagType(row.status)"
-              size="small"
-            >
+            <el-tag :type="systemEventStatusTagType(row.status)" size="small">
               {{ systemEventStatusLabel(row.status) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column
-          prop="eventType"
-          label="事件类型"
-          min-width="220"
-          show-overflow-tooltip
-        >
+        <el-table-column prop="eventType" label="事件类型" min-width="220" show-overflow-tooltip>
           <template #default="{ row }">
             {{ row.eventType || '-' }}
           </template>
         </el-table-column>
-        <el-table-column
-          prop="businessType"
-          label="业务类型"
-          min-width="160"
-          show-overflow-tooltip
-        >
+        <el-table-column prop="businessType" label="业务类型" min-width="160" show-overflow-tooltip>
           <template #default="{ row }">
             {{ row.businessType || '-' }}
           </template>
         </el-table-column>
-        <el-table-column
-          prop="businessKey"
-          label="业务键"
-          min-width="180"
-          show-overflow-tooltip
-        >
+        <el-table-column prop="businessKey" label="业务键" min-width="180" show-overflow-tooltip>
           <template #default="{ row }">
             {{ row.businessKey || '-' }}
           </template>
         </el-table-column>
-        <el-table-column
-          prop="attemptCount"
-          label="次数"
-          width="80"
-        />
-        <el-table-column
-          prop="occurredAt"
-          label="发生时间"
-          width="180"
-        >
+        <el-table-column prop="attemptCount" label="次数" width="80" />
+        <el-table-column prop="occurredAt" label="发生时间" width="180">
           <template #default="{ row }">
             {{ row.occurredAt || '-' }}
           </template>
         </el-table-column>
-        <el-table-column
-          prop="nextAttemptAt"
-          label="下次投递"
-          width="180"
-        >
+        <el-table-column prop="nextAttemptAt" label="下次投递" width="180">
           <template #default="{ row }">
             {{ row.nextAttemptAt || '-' }}
           </template>
         </el-table-column>
-        <el-table-column
-          prop="errorMessage"
-          label="错误"
-          min-width="220"
-          show-overflow-tooltip
-        >
+        <el-table-column prop="errorMessage" label="错误" min-width="220" show-overflow-tooltip>
           <template #default="{ row }">
             {{ row.errorMessage || '-' }}
           </template>
         </el-table-column>
-        <el-table-column
-          label="操作"
-          width="150"
-          fixed="right"
-        >
+        <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
             <el-button
               link
@@ -258,36 +113,23 @@
           </template>
         </el-table-column>
       </el-table>
-      <Pagination
-        v-model:page="query.pageNum"
-        v-model:limit="query.pageSize"
-        :total="total"
-        @pagination="loadData"
-      />
-    </el-card>
+      <template #pagination>
+        <Pagination v-model:page="query.pageNum" v-model:limit="query.pageSize" :total="total" @pagination="loadData" />
+      </template>
+    </MangoListPanel>
 
-    <el-dialog
+    <MangoDialog
       v-model="detailVisible"
       data-surface="system.event.detail"
       title="系统事件详情"
       width="820px"
       destroy-on-close
     >
-      <el-skeleton
-        v-if="detailLoading"
-        :rows="8"
-        animated
-      />
+      <el-skeleton v-if="detailLoading" :rows="8" animated />
       <template v-else>
-        <el-descriptions
-          :column="2"
-          border
-        >
+        <el-descriptions :column="2" border>
           <el-descriptions-item label="状态">
-            <el-tag
-              :type="systemEventStatusTagType(currentEvent?.status)"
-              size="small"
-            >
+            <el-tag :type="systemEventStatusTagType(currentEvent?.status)" size="small">
               {{ systemEventStatusLabel(currentEvent?.status) }}
             </el-tag>
           </el-descriptions-item>
@@ -318,17 +160,10 @@
           <el-descriptions-item label="锁定时间">
             {{ currentEvent?.lockedAt || '-' }}
           </el-descriptions-item>
-          <el-descriptions-item
-            label="消息ID"
-            :span="2"
-          >
+          <el-descriptions-item label="消息ID" :span="2">
             {{ currentEvent?.messageId || '-' }}
           </el-descriptions-item>
-          <el-descriptions-item
-            v-if="currentEvent?.errorMessage"
-            label="错误信息"
-            :span="2"
-          >
+          <el-descriptions-item v-if="currentEvent?.errorMessage" label="错误信息" :span="2">
             <el-text type="danger">
               {{ currentEvent.errorMessage }}
             </el-text>
@@ -344,9 +179,7 @@
         </div>
       </template>
       <template #footer>
-        <el-button @click="detailVisible = false">
-          关闭
-        </el-button>
+        <el-button @click="detailVisible = false"> 关闭 </el-button>
         <el-button
           type="primary"
           data-action="system.event.detail.reconsume"
@@ -357,14 +190,14 @@
           重新投递
         </el-button>
       </template>
-    </el-dialog>
-  </div>
+    </MangoDialog>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts" name="SystemEvent">
 import { onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { Pagination } from '@mango/common';
+import { MangoDialog, MangoListPage, MangoListPanel, MangoSearchPanel, Pagination } from '@mango/common';
 import {
   requestErrorMessage,
   systemEventApi,
@@ -440,15 +273,11 @@ async function handleDetail(row: SystemEvent) {
 }
 
 async function handleReconsume(row: SystemEvent) {
-  await ElMessageBox.confirm(
-    `确认将事件 ${row.businessKey || row.messageId} 放回待投递队列？`,
-    '重新投递系统事件',
-    {
-      confirmButtonText: '确认重投',
-      cancelButtonText: '取消',
-      type: 'warning',
-    },
-  );
+  await ElMessageBox.confirm(`确认将事件 ${row.businessKey || row.messageId} 放回待投递队列？`, '重新投递系统事件', {
+    confirmButtonText: '确认重投',
+    cancelButtonText: '取消',
+    type: 'warning',
+  });
   reconsumeLoading.value = true;
   try {
     await systemEventApi.reconsume(row.messageId);
@@ -485,28 +314,8 @@ onMounted(loadData);
   gap: 16px;
 }
 
-.system-event-search__form {
-  :deep(.el-form-item) {
-    width: 100%;
-    margin-right: 0;
-    margin-bottom: 12px;
-  }
-
-  :deep(.el-select),
-  :deep(.el-input) {
-    width: 100%;
-  }
-}
-
-.system-event-toolbar {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.system-event-table {
-  :deep(.el-alert) {
-    margin-bottom: 12px;
-  }
+.system-event-page__keyword-field {
+  grid-column: 1 / -1;
 }
 
 .system-event-detail__block {
@@ -530,7 +339,6 @@ pre {
   font-size: 12px;
   line-height: 1.6;
   white-space: pre-wrap;
-  word-break: break-word;
+  overflow-wrap: anywhere;
 }
-
 </style>

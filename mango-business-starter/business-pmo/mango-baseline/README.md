@@ -16,8 +16,10 @@
 | README 作用域审计      | `tools/audit-module-readmes.mjs`、`tools/audit-readme-source-facts.mjs`                                         | 源仓审计固定 Mango 资产；业务 baseline 按 `mango.config.json.paths` 和业务能力地图审计仓库自有 README 与源码事实                                      |
 | 规则路由               | rules index JSON                                                                                                | 维护规则、角色、阶段和 bundle 映射                                                                                                                  |
 | 角色定义               | `agents/**`                                                                                                     | PM、Tech Lead、Dev、QA、PMO 的职责说明                                                                                                              |
-| 模板资产               | `templates/**`                                                                                                  | PRD、详细设计、交付契约、验收证据模板                                                                                                               |
+| 模板资产               | `templates/README.md`、`templates/**`                                                                           | BRD、SRS、TDD、实施计划、交付契约和验收证据模板；旧 PRD 仅保留迁移入口                                                                                 |
 | 交付模式               | `rules/11-delivery-assurance.md`、`contracts/delivery-assurance.json`、`skills/mango-design-delivery-assurance` | 自动隔离工作区，按 L0-L3 路由 SIMPLE、STANDARD、FULL；Mango 平台组件发布独立                                                                        |
+| Agent 文本输出         | `rules/13-agent-text-output.md`                                                                           | 所有文本先给重点，使用受控语言，保留证据、失败边界和必要信息                                                                                         |
+| 决策复核与评审选择     | `rules/14-decision-expert-review.md`                                                                      | 需要决定时组织三视角分析，询问并记录是否需要外部同行评审；不把 Agent 分析当成真实审批                         |
 | PR 提交                | `rules/12-pr-submission.md`、`skills/mango-submit-pr`                                                          | Mango 主仓与业务仓共用；Runner 同源本地检查和最终 head 全绿后才精确暂存、Commit、Push、创建或更新 PR 并远端回读，不负责 Review、合并、发布或部署      |
 | 文档生命周期           | `contracts/*.json`、`tools/check-*-requirements.mjs`                                                            | STANDARD 检查单文件，FULL 对适用 BRD、SRS、TDD、实施计划执行结构、追踪和审批门禁                                                                    |
 | 文档集合门禁           | `tools/check-document-set.mjs`                                                                                  | 扫描业务文档目录，阻断漏类型、未知类型、重复 ID、断链和失效摘要；合同声明的同 schema 历史 `pmoVersion` 必须由升级生成的路径、SHA-256 和版本基线锁定，并只应用该版本声明的精确历史章节变体 |
@@ -29,18 +31,18 @@
 | 业务 PR 风险合同       | `contracts/delivery-assurance.json`、`templates/business-pull-request-template.md`、`tools/risk-verification.mjs` | 同一 schema 定义字段、canonical 模板、PR 正文校验和模板结构校验                                                                                    |
 | 模块架构债务预算       | `tools/check-architecture-debt-budget.mjs`                                                                      | 比较完整 Reactor 报告与 Git 基准，阻断新增、替换、跨模块迁移和预算回升，并支持按模块查询、递减及存量模块两 PR 受控首次纳管                           |
 | 专项 Agent             | `agents/*-requirements-agent.md`、`agents/technical-design-agent.md`、`agents/implementation-plan-agent.md`     | 一个生命周期模板对应一个撰写 Agent                                                                                                                  |
-| 可安装 Skills          | `skills/**`                                                                                                     | 保障方案确认、生命周期协调、按需文档、工程、QA、Issue、模块、PR 提交和 PR review；仓库专用 `mango-release` 不进入业务分发                            |
+| 可安装 Skills          | `skills/**`                                                                                                     | 保障方案确认、生命周期协调、按需理解解释、按需文档、工程、QA、Issue、模块、PR 提交和 PR review；仓库专用 `mango-release` 不进入业务分发                            |
 | 全局实体例外           | `contracts/global-entity-exceptions.json`                                                                       | 按 Entity/table/owner/审批/到期日管理精确例外                                                                                                       |
 | Mango 主仓分支保护策略 | `.github/branch-protection-policy.json`、`tools/branch-protection-policy.mjs`                                   | 声明并校验单 Owner 或多人维护模式，同时固定 Required Check 和历史保护项                                                                             |
 
-Skill 按实际能力命名，而不是按发布包命名：只有治理编排使用 `mango-pmo-lifecycle`；需求、设计、工程、QA、Issue、模块、PR 提交与评审分别使用各自领域名称。`mango-release` 仅存在于 Mango 主仓，不属于业务项目可安装 Skill。
+Skill 按实际能力命名，而不是按发布包命名：只有治理编排使用 `mango-pmo-lifecycle`；不确定要解释、设计还是开发时先用 `$mango-ask`，理解“这是什么、谁负责、下一步看哪里”时使用 `$mango-explain`；询问规范如何执行时可生成规范执行卡片，它们只读、按需调用，确认后才路由到设计或开发。所有 Agent 文本输出遵循 `rules/13-agent-text-output.md`；需要作出范围、方案、验证、Issue、PR、发布或治理决定时遵循 `rules/14-decision-expert-review.md`。交付完成后用 `$mango-retro` 记录有证据的保留项、改变项和后续动作；它不替代 QA、Review 或审批。`mango-release` 仅存在于 Mango 主仓，不属于业务项目可安装 Skill。
 
 ## 3. 接入方式
 
 业务项目通过 `@mango/cli` 提供的 `mango pmo ...` 命令管理 baseline。全局 CLI 只用于创建项目、历史项目升级和临时诊断：
 
 ```bash
-npm view @mango/pmo@1.4.5 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+npm view @mango/pmo@1.4.6 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
 npm view @mango/cli@1.0.109 version --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
 npm install -g @mango/cli@1.0.109 --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
 ```
@@ -56,8 +58,8 @@ npm install -g @mango/cli@1.0.109 --registry http://nexus.inner.yunxinbaokeji.co
 ```bash
 mango pmo status --project-dir .
 mango pmo check --project-dir .
-mango pmo upgrade --project-dir . --to 1.4.5 --dry-run
-mango pmo upgrade --project-dir . --to 1.4.5 --sync-shell
+mango pmo upgrade --project-dir . --to 1.4.6 --dry-run
+mango pmo upgrade --project-dir . --to 1.4.6 --sync-shell
 mango pmo check --project-dir . --locked
 ```
 
@@ -149,6 +151,7 @@ node business-pmo/mango-baseline/tools/audit-readme-source-facts.mjs
 | 升级历史业务 baseline | `mango pmo upgrade --project-dir .`                                                        |
 | 输出任务规则          | `node business-pmo/mango-baseline/tools/pmo-preflight.mjs ...`                             |
 | 检查交付台账          | `node business-pmo/mango-baseline/tools/delivery-contract-check.mjs ...`                   |
+| 检查决策复核记录      | `node business-pmo/mango-baseline/tools/check-decision-review.mjs --document <path>`       |
 | 检查全部业务文档      | `node business-pmo/mango-baseline/tools/check-document-set.mjs --root business-docs`       |
 | 检查业务能力 README   | `node business-pmo/mango-baseline/tools/audit-module-readmes.mjs`                          |
 | 核对业务 README 事实  | `node business-pmo/mango-baseline/tools/audit-readme-source-facts.mjs`                     |
@@ -156,6 +159,8 @@ node business-pmo/mango-baseline/tools/audit-readme-source-facts.mjs
 | 检查单个模块债务      | `node mango-pmo/tools/check-architecture-debt-budget.mjs --module <moduleKey\|artifactId>` |
 | 首次纳管存量模块      | 先用完整 Reactor 和 `-Dmango.architecture.inventoryOnly=true` 生成报告，再执行 `node mango-pmo/tools/check-architecture-debt-budget.mjs --onboard-module <moduleKey-prefix> --module-properties <path> --base-ref <base-sha> --reason "<reason>" --write` |
 | 业务项目首次纳管      | 使用项目自有 `business-pmo/architecture-debt-budget.json`；完整命令和 GitHub/Gitea required check 入口见生成项目 `business-pmo/README.md` |
+
+`check-decision-review.mjs` 从“评审选择与记录”章节读取唯一的评审选择和非空询问记录，按表头校验每一行，而非在整行匹配关键词。记录中的方式与所选方式一致；无开放阻断时在“阻断问题”列填写 `None` 或 `无`。`AGENT_ONLY` 的结论支持 `PASS`、`RECORDED`，外部评审结论支持 `PASS`；空结论、`BLOCKED` 和未解决阻断均会失败。明确记录“未指定，按 AGENT_ONLY 继续”仍可通过，不要求即时人工答复。规范与权限边界见[决策复核规范](./rules/14-decision-expert-review.md)。
 
 ## 8. 存量业务项目升级与模块纳管
 

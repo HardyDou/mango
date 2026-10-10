@@ -16,6 +16,36 @@ upstreamDocumentHash: {{SRS_SHA256_OR_NONE}}
 
 # {{REQUIREMENT_NAME}} 技术设计文档
 
+> **写作与决定门禁：** 遵循 [`Agent 文本输出规范`](../rules/13-agent-text-output.md)。先写方案重点，区分事实、推断和决定，保留权限、租户、数据与失败边界。每个技术决定另按 [`决策复核规范`](../rules/14-decision-expert-review.md)记录三视角分析、方案整理，并询问、记录是否需要外部同行评审。
+
+> **先读：这份文档要回答什么**
+> - **一句话目标：** {{ONE_SENTENCE_GOAL}}
+> - **真实场景：** {{CONCRETE_TECHNICAL_SCENARIO}}
+> - **关键输入 / 输出：** {{TECHNICAL_INPUT_AND_OBSERVABLE_OUTPUT}}
+> - **成功与失败：** {{TECHNICAL_SUCCESS_AND_FAILURE_BOUNDARY}}
+> - **明确不做：** {{TECHNICAL_OUT_OF_SCOPE}}
+> - **阅读顺序：** 先看本段，再看模块、流程和关键契约，最后看数据、安全、测试和追踪矩阵。
+
+## 0. 使用合同与最小填写方式
+
+填写人是 Tech Lead 或模块设计人；输入必须来自已批准的 SRS、源码事实、平台规则和专项调研。TDD 的下游使用方是开发、QA、Review 人员和实施计划编写人。
+
+| 区域 | 只填写什么 | 来源与填写人 | 下游用途 | 校验方式 |
+|---|---|---|---|---|
+| Front Matter | 文档身份、最终风险、Owner、上游 SRS ID/hash | PMO 元数据；Tech Lead 填写 | 生命周期 handoff 和审批 | 文档契约 + SRS hash 检查 |
+| 先读摘要 | 技术目标、场景、输入输出、成功/失败和不做范围 | Tech Lead 从设计结论归纳 | 开发者先了解影响和边界 | 人工复述、Review 检查 |
+| 第 1～4 节 | 决策、模块、模型、状态、流程、一致性和补偿 | SRS、源码、架构规则；Tech Lead 填写 | 形成可实施的结构和时序 | 决策必须有来源、理由和回退条件 |
+| 第 5～9 节 | API、数据、安全、错误、前端映射 | 模块事实、规则和验收要求 | 开发任务、接口契约、测试用例 | API/DB/权限/失败边界逐项检查 |
+| 第 10～13 节 | 测试、兼容、追踪、checker 和审批 | QA、模块 Owner、Approver | Plan、实现和发布门禁 | TC 与 SAC 映射；无孤立设计项 |
+
+**最小合格示例（复制后替换，不要保留示例）：**
+
+- `DEC-001`：选择幂等键 `tenantId + businessNo`；来源 `SRS-FR-003`；回退条件为唯一索引无法上线。
+- `MOD-001`：API 只依赖领域接口，Controller 不直接访问 Mapper；验证方式为 ArchUnit/模块测试。
+- `API-001`：`POST /orders`；鉴权为租户 + 资源权限；重复请求返回原订单；错误码 `ORDER_DUPLICATE`。
+- `DB-001`：新增唯一索引和可回滚 migration；失败时停止发布，不执行后续数据回填。
+- `TC-001`：覆盖成功、重复请求、越权和下游超时，证据保存到交付记录。
+
 ## 1. 设计输入、约束与决策
 
 | 决策ID | 问题 | 候选方案 | 选择 | 理由 | 来源ID或路径 | 是否推断 | 影响 | 风险 | 回退条件 |

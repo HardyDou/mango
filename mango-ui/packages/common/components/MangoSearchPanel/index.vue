@@ -1,5 +1,10 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
-  <section class="mango-search-panel" :class="{ 'mango-search-panel--more-bottom': morePlacement === 'bottom' }" data-surface="search">
+  <section
+    class="mango-search-panel"
+    :class="{ 'mango-search-panel--more-bottom': morePlacement === 'bottom' }"
+    data-surface="search"
+  >
     <el-form
       class="mango-search-panel__form"
       :model="model"
@@ -9,12 +14,7 @@
       :size="size"
       @submit.prevent
     >
-      <div
-        ref="fieldsRef"
-        class="mango-search-panel__fields"
-        :class="fieldsClasses"
-        :style="fieldsStyle"
-      >
+      <div ref="fieldsRef" class="mango-search-panel__fields" :class="fieldsClasses" :style="fieldsStyle">
         <slot />
       </div>
       <div class="mango-search-panel__actions">
@@ -66,45 +66,48 @@ type SearchPanelMorePlacement = 'actions' | 'bottom';
 type SearchPanelLabelPosition = 'left' | 'right' | 'top';
 type SearchPanelSize = 'large' | 'default' | 'small';
 
-const props = withDefaults(defineProps<{
-  model?: Record<string, unknown>;
-  labelWidth?: string | number;
-  labelSuffix?: string;
-  labelPosition?: SearchPanelLabelPosition;
-  size?: SearchPanelSize;
-  searchText?: string;
-  resetText?: string;
-  showReset?: boolean;
-  collapsible?: boolean;
-  defaultExpanded?: boolean;
-  collapsedRows?: number;
-  collapsedCount?: number;
-  expandText?: string;
-  collapseText?: string;
-  columns?: SearchPanelColumns;
-  morePlacement?: SearchPanelMorePlacement;
-  fieldMinWidth?: string;
-  fieldMaxWidth?: string;
-}>(), {
-  model: undefined,
-  labelWidth: '96px',
-  labelSuffix: '：',
-  labelPosition: 'right',
-  size: 'default',
-  searchText: '查询',
-  resetText: '重置',
-  showReset: true,
-  collapsible: false,
-  defaultExpanded: false,
-  collapsedRows: 2,
-  collapsedCount: undefined,
-  columns: 4,
-  morePlacement: 'bottom',
-  fieldMinWidth: '280px',
-  fieldMaxWidth: '320px',
-  expandText: '展开',
-  collapseText: '收起',
-});
+const props = withDefaults(
+  defineProps<{
+    model?: Record<string, unknown>;
+    labelWidth?: string | number;
+    labelSuffix?: string;
+    labelPosition?: SearchPanelLabelPosition;
+    size?: SearchPanelSize;
+    searchText?: string;
+    resetText?: string;
+    showReset?: boolean;
+    collapsible?: boolean;
+    defaultExpanded?: boolean;
+    collapsedRows?: number;
+    collapsedCount?: number;
+    expandText?: string;
+    collapseText?: string;
+    columns?: SearchPanelColumns;
+    morePlacement?: SearchPanelMorePlacement;
+    fieldMinWidth?: string;
+    fieldMaxWidth?: string;
+  }>(),
+  {
+    model: undefined,
+    labelWidth: '96px',
+    labelSuffix: '：',
+    labelPosition: 'right',
+    size: 'default',
+    searchText: '查询',
+    resetText: '重置',
+    showReset: true,
+    collapsible: false,
+    defaultExpanded: false,
+    collapsedRows: 2,
+    collapsedCount: undefined,
+    columns: 4,
+    morePlacement: 'bottom',
+    fieldMinWidth: '280px',
+    fieldMaxWidth: '320px',
+    expandText: '展开',
+    collapseText: '收起',
+  },
+);
 
 const emit = defineEmits<{
   search: [];
@@ -118,7 +121,9 @@ const hasOverflow = ref(false);
 const fieldsWidth = ref(0);
 let resizeObserver: ResizeObserver | undefined;
 
-const configuredColumns = computed(() => (typeof props.columns === 'number' && props.columns > 0 ? Math.floor(props.columns) : undefined));
+const configuredColumns = computed(() =>
+  typeof props.columns === 'number' && props.columns > 0 ? Math.floor(props.columns) : undefined,
+);
 const fixedColumns = computed(() => configuredColumns.value !== undefined);
 
 // 固定列模式会跟随容器宽度降列，保证 collapsedRows 对应真实可见行数。
@@ -147,7 +152,9 @@ const fieldsStyle = computed(() => ({
   '--mango-search-field-max-width': props.fieldMaxWidth,
 }));
 
-const showActionMoreButton = computed(() => props.collapsible && hasOverflow.value && props.morePlacement === 'actions');
+const showActionMoreButton = computed(
+  () => props.collapsible && hasOverflow.value && props.morePlacement === 'actions',
+);
 const showBottomMoreRow = computed(() => props.collapsible && props.morePlacement === 'bottom');
 const showBottomMoreButton = computed(() => props.collapsible && hasOverflow.value && props.morePlacement === 'bottom');
 
@@ -181,9 +188,8 @@ const resolveCollapsedCount = () => {
   }
 
   const templateColumns = window.getComputedStyle(fields).gridTemplateColumns;
-  const columnCount = templateColumns && templateColumns !== 'none'
-    ? templateColumns.split(' ').filter(Boolean).length
-    : 1;
+  const columnCount =
+    templateColumns && templateColumns !== 'none' ? templateColumns.split(' ').filter(Boolean).length : 1;
 
   return Math.max(1, columnCount * props.collapsedRows);
 };
@@ -262,6 +268,12 @@ onBeforeUnmount(() => {
 <style scoped>
 .mango-search-panel {
   width: 100%;
+  min-width: 0;
+  padding: 16px;
+  background: var(--mango-bg-color);
+  border: 1px solid var(--mango-border-light);
+  border-radius: 6px;
+  box-shadow: var(--mango-shadow-light);
 }
 
 .mango-search-panel__form {
@@ -278,7 +290,10 @@ onBeforeUnmount(() => {
 }
 
 .mango-search-panel__fields--auto {
-  grid-template-columns: repeat(auto-fill, minmax(var(--mango-search-field-min-width), var(--mango-search-field-max-width)));
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(var(--mango-search-field-min-width), var(--mango-search-field-max-width))
+  );
   justify-content: start;
 }
 
@@ -345,7 +360,9 @@ onBeforeUnmount(() => {
   border: 0;
   border-radius: 50%;
   outline: none;
-  transition: color 0.2s ease, background-color 0.2s ease;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease;
 }
 
 .mango-search-panel__more-button:hover,
@@ -370,6 +387,12 @@ onBeforeUnmount(() => {
 
   .mango-search-panel__actions :deep(.el-form-item__content) {
     justify-content: flex-end;
+  }
+}
+
+@media (max-width: 720px) {
+  .mango-search-panel {
+    padding: 12px;
   }
 }
 

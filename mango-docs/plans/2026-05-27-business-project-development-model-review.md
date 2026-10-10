@@ -18,7 +18,7 @@
 
 - 不在本方案中实现模板仓库、CLI、Maven BOM 或 npm 发布。
 - 不在本方案中新增或修改 Mango PMO 长期规范。
-- 不在本方案中新增保函业务代码。
+- 不在本方案中新增业务代码。
 - 不替代后续正式 Sprint 计划和交付台账。
 
 ## 4. 设计输入
@@ -85,7 +85,7 @@ io.mango.platform.*:mango-platform-*-starter-remote
 
 ### 6.2 业务项目职责
 
-业务项目只维护当前业务域能力，例如保函、合同、授信、支付业务扩展等。
+业务项目只维护当前业务域能力，例如业务、合同、授信、支付业务扩展等。
 
 业务项目不得复制 Mango 源码。业务项目通过 Maven BOM、starter jar、npm 包和 PMO baseline 使用 Mango 能力。
 
@@ -94,7 +94,7 @@ io.mango.platform.*:mango-platform-*-starter-remote
 业务项目默认采用 product monorepo。
 
 ```text
-guarantee-platform/
+business-platform/
 ├── AGENTS.md
 ├── mango.config.json
 ├── business-pmo/
@@ -148,12 +148,12 @@ guarantee-platform/
 业务后端按 Mango 模块分层组织：
 
 ```text
-backend/guarantee-domain/
-├── guarantee-api
-├── guarantee-support
-├── guarantee-core
-├── guarantee-starter
-└── guarantee-starter-remote
+backend/business-domain/
+├── business-api
+├── business-support
+├── business-core
+├── business-starter
+└── business-starter-remote
 ```
 
 约束：
@@ -172,17 +172,17 @@ backend/guarantee-domain/
 ```text
 frontend/
 ├── apps/
-│   └── guarantee-admin
+│   └── business-admin
 └── packages/
-    ├── guarantee
-    └── guarantee-api
+    ├── business
+    └── business-api
 ```
 
 约束：
 
 - `apps` 只负责布局、路由聚合、权限拦截和全局初始化。
-- `packages/guarantee` 放保函页面、组件、路由声明和模块注册。
-- `packages/guarantee-api` 放保函 API client 和类型。
+- `packages/business` 放业务页面、组件、路由声明和模块注册。
+- `packages/business-api` 放业务 API client 和类型。
 - 业务包可以依赖 `@mango/common`、`@mango/api-schema` 和相关 Mango 能力包。
 - 公共包不得反向依赖 `apps`。
 
@@ -212,7 +212,7 @@ Mango ecosystem baseline + 当前业务领域规则
 ```text
 business-pmo/rules/
 ├── 00-project-flow.md
-└── guarantee/
+└── business/
     ├── 01-domain.md
     ├── 02-status-machine.md
     ├── 03-approval.md
@@ -231,13 +231,13 @@ business-pmo/rules/
 Mango 提供业务模板仓库和初始化器。
 
 ```bash
-npm create mango-app@latest guarantee-platform
+npm create mango-app@latest business-platform
 ```
 
 或：
 
 ```bash
-mango init guarantee-platform
+mango init business-platform
 ```
 
 初始化选项：
@@ -295,7 +295,7 @@ FE 提出接口需求
 契约文件：
 
 ```text
-business-docs/contracts/guarantee-api.md
+business-docs/contracts/business-api.md
 ```
 
 契约变更记录必须包含：

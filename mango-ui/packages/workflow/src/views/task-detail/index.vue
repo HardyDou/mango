@@ -1,135 +1,142 @@
+<!-- eslint-disable vue/multi-word-component-names, no-control-regex -->
 <template>
-  <div class="workflow-task-detail-page" data-page="workflow.task.detail" :data-state="loading ? 'loading' : 'ready'">
-    <el-card v-loading="loading" class="task-detail-shell">
-      <el-empty v-if="!detail" description="暂无流程详情" />
+  <MangoDetailPage
+    v-loading="loading"
+    class="workflow-task-detail-page"
+    :title="detail?.process.processName || '流程详情'"
+    data-page="workflow.task.detail"
+    :data-state="loading ? 'loading' : 'ready'"
+    @back="backToList"
+  >
+    <el-empty v-if="!detail" description="暂无流程详情" />
 
-      <WorkflowLayout v-else :title="detail.process.processName || '流程详情'" @back="backToList">
-        <section class="task-section">
-          <div class="section-header compact">
-            <h3>{{ businessComponent ? '业务审批信息' : '业务表单信息' }}</h3>
-          </div>
-          <component :is="businessComponent" v-if="businessComponent && businessContext" :context="businessContext" />
-          <RuntimeFormRenderer
-            v-else-if="shouldRenderDynamicForm && runtimeFields.length"
-            :fields="runtimeFields"
-            :model="detail.variables"
-            :readonly="readonlyMode"
-            :permissions="effectiveFormPermissions"
-          />
-          <el-alert
-            v-else-if="isCustomRenderMode"
-            title="当前流程配置为自定义业务表单，但未找到匹配的审批组件。"
-            type="warning"
-            :closable="false"
-            show-icon
-          />
-          <el-descriptions v-else :column="1" border>
-            <el-descriptions-item label="流程变量">
-              <pre class="json-preview">{{ formatJson(detail.variables) }}</pre>
-            </el-descriptions-item>
-          </el-descriptions>
-          <el-alert
-            v-if="unsupportedFields.length"
-            class="detail-alert"
-            :title="`有 ${unsupportedFields.length} 个复杂表单组件暂以变量 JSON 展示。`"
-            type="warning"
-            :closable="false"
-            show-icon
-          />
-        </section>
-
-        <section v-if="!readonlyMode && showActionCommentInput" class="task-section approval-section">
-          <div class="section-header compact">
-            <h3>审批动作</h3>
-          </div>
-          <el-form label-width="84px">
-            <el-form-item label="审批意见">
-              <el-input v-model="actionForm.comment" type="textarea" :rows="4" placeholder="请输入审批意见" />
-            </el-form-item>
-          </el-form>
-        </section>
-
-        <div v-if="!readonlyMode && detail" class="approval-action-bar">
-          <el-tooltip
-            v-for="action in visibleNodeActions"
-            :key="action.key"
-            :content="action.tooltip || ''"
-            :disabled="!action.tooltip"
-          >
-            <el-button
-              :type="action.buttonType"
-              :plain="action.key !== 'complete'"
-              :disabled="action.disabled"
-              :loading="submittingAction === action.key"
-              @click="submitAction(action.key)"
-            >
-              {{ action.label }}
-            </el-button>
-          </el-tooltip>
+    <WorkflowLayout v-else :title="detail.process.processName || '流程详情'" :show-header="false">
+      <section class="task-section">
+        <div class="section-header compact">
+          <h3>{{ businessComponent ? '业务审批信息' : '业务表单信息' }}</h3>
         </div>
+        <component :is="businessComponent" v-if="businessComponent && businessContext" :context="businessContext" />
+        <RuntimeFormRenderer
+          v-else-if="shouldRenderDynamicForm && runtimeFields.length"
+          :fields="runtimeFields"
+          :model="detail.variables"
+          :readonly="readonlyMode"
+          :permissions="effectiveFormPermissions"
+        />
+        <el-alert
+          v-else-if="isCustomRenderMode"
+          title="当前流程配置为自定义业务表单，但未找到匹配的审批组件。"
+          type="warning"
+          :closable="false"
+          show-icon
+        />
+        <el-descriptions v-else :column="1" border>
+          <el-descriptions-item label="流程变量">
+            <pre class="json-preview">{{ formatJson(detail.variables) }}</pre>
+          </el-descriptions-item>
+        </el-descriptions>
+        <el-alert
+          v-if="unsupportedFields.length"
+          class="detail-alert"
+          :title="`有 ${unsupportedFields.length} 个复杂表单组件暂以变量 JSON 展示。`"
+          type="warning"
+          :closable="false"
+          show-icon
+        />
+      </section>
 
-        <template #sidebar>
-          <WorkflowSidebar
-            :summary="workflowSummary"
-            :node="workflowDefinitionNode"
-            :current-node-key="workflowCurrentNodeKey"
-            :visited-node-keys="workflowVisitedNodeKeys"
-            :status="workflowStatus"
-            :records="detail.records"
-            :business-type="businessType"
-            :business-key="workflowBusinessKey"
-            :mode="sidebarMode"
+      <section v-if="!readonlyMode && showActionCommentInput" class="task-section approval-section">
+        <div class="section-header compact">
+          <h3>审批动作</h3>
+        </div>
+        <el-form label-width="84px">
+          <el-form-item label="审批意见">
+            <el-input v-model="actionForm.comment" type="textarea" :rows="4" placeholder="请输入审批意见" />
+          </el-form-item>
+        </el-form>
+      </section>
+
+      <div v-if="!readonlyMode && detail" class="approval-action-bar">
+        <el-tooltip
+          v-for="action in visibleNodeActions"
+          :key="action.key"
+          :content="action.tooltip || ''"
+          :disabled="!action.tooltip"
+        >
+          <el-button
+            :type="action.buttonType"
+            :plain="action.key !== 'complete'"
+            :disabled="action.disabled"
+            :loading="submittingAction === action.key"
+            @click="submitAction(action.key)"
           >
-            <template #default>
-              <div v-if="customRecordPanelComponent && showRecordPanel" class="aside-records">
-                <div class="record-header">
-                  <h3>审批信息</h3>
-                  <span>{{ detail.records.length }} 条</span>
-                </div>
-                <component :is="customRecordPanelComponent" v-if="businessContext" :context="businessContext" />
-              </div>
-            </template>
-          </WorkflowSidebar>
-        </template>
-      </WorkflowLayout>
-    </el-card>
+            {{ action.label }}
+          </el-button>
+        </el-tooltip>
+      </div>
 
-    <MangoDialog
-      v-model="selectorDialog.visible"
-      :title="selectorDialog.action === 'transfer' ? '选择转办人员' : '选择加签人员'"
-      width="520px"
-      append-to-body
-      destroy-on-close
-      @closed="cancelUserSelection"
-    >
-      <UserSelector
-        v-if="selectorDialog.action === 'transfer'"
-        v-model="selectorDialog.targetUserId"
-        mode="dialog"
-        placeholder="请选择目标办理人"
-        title="选择转办人员"
-      />
-      <UserSelector
-        v-else
-        v-model="selectorDialog.targetUserIds"
-        mode="dialog"
-        multiple
-        placeholder="请选择加签人"
-        title="选择加签人员"
-      />
-      <template #footer>
-        <el-button @click="cancelUserSelection">取消</el-button>
-        <el-button type="primary" @click="confirmUserSelection">确认</el-button>
+      <template #sidebar>
+        <WorkflowSidebar
+          :summary="workflowSummary"
+          :node="workflowDefinitionNode"
+          :current-node-key="workflowCurrentNodeKey"
+          :visited-node-keys="workflowVisitedNodeKeys"
+          :status="workflowStatus"
+          :records="detail.records"
+          :business-type="businessType"
+          :business-key="workflowBusinessKey"
+          :mode="sidebarMode"
+        >
+          <template #default>
+            <div v-if="customRecordPanelComponent && showRecordPanel" class="aside-records">
+              <div class="record-header">
+                <h3>审批信息</h3>
+                <span>{{ detail.records.length }} 条</span>
+              </div>
+              <component :is="customRecordPanelComponent" v-if="businessContext" :context="businessContext" />
+            </div>
+          </template>
+        </WorkflowSidebar>
       </template>
-    </MangoDialog>
-  </div>
+    </WorkflowLayout>
+  </MangoDetailPage>
+
+  <MangoDialog
+    v-model="selectorDialog.visible"
+    :title="selectorDialog.action === 'transfer' ? '选择转办人员' : '选择加签人员'"
+    width="520px"
+    append-to-body
+    destroy-on-close
+    @closed="cancelUserSelection"
+  >
+    <UserSelector
+      v-if="selectorDialog.action === 'transfer'"
+      v-model="selectorDialog.targetUserId"
+      mode="dialog"
+      placeholder="请选择目标办理人"
+      title="选择转办人员"
+    />
+    <UserSelector
+      v-else
+      v-model="selectorDialog.targetUserIds"
+      mode="dialog"
+      multiple
+      placeholder="请选择加签人"
+      title="选择加签人员"
+    />
+    <template #footer>
+      <el-button @click="cancelUserSelection">取消</el-button>
+      <el-button type="primary" @click="confirmUserSelection">确认</el-button>
+    </template>
+  </MangoDialog>
 </template>
 
 <script setup lang="ts">
+/* eslint-disable no-control-regex */
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { MangoDialog, UserSelector } from '@mango/common';
+import { MangoDetailPage, MangoDialog, UserSelector } from '@mango/common';
 import {
   parseDesignerJson,
   workflowApi,

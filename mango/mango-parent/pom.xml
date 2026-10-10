@@ -27,9 +27,10 @@
     <properties>
         <revision>1.0.0-SNAPSHOT</revision>
         <!-- Java -->
-        <java.version>17</java.version>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
+        <java.version>21</java.version>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
@@ -69,6 +70,7 @@
                     <configuration>
                         <source>${maven.compiler.source}</source>
                         <target>${maven.compiler.target}</target>
+                        <release>${maven.compiler.release}</release>
                         <encoding>${project.build.sourceEncoding}</encoding>
                         <parameters>true</parameters>
                     </configuration>

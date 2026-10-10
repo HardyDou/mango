@@ -1,22 +1,18 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
-  <div class="workflow-start-page">
-    <el-card>
-      <template #header>
-        <div class="card-header">
-          <span>发起流程</span>
-          <el-tag type="success">已发布流程</el-tag>
-        </div>
-      </template>
-
-      <el-form :inline="true" class="search-form">
+  <MangoListPage class="workflow-start-page" data-page="workflow.start-process">
+    <template #search>
+      <MangoSearchPanel :model="query" :columns="3" @search="loadData" @reset="resetQuery">
         <el-form-item label="关键词">
           <el-input v-model="query.keyword" placeholder="搜索流程名称/编码" clearable @keyup.enter="loadData" />
         </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="loadData">查询</el-button>
-          <el-button @click="resetQuery">重置</el-button>
-        </el-form-item>
-      </el-form>
+      </MangoSearchPanel>
+    </template>
+
+    <MangoListPanel>
+      <template #view-actions>
+        <el-tag type="success">已发布流程</el-tag>
+      </template>
 
       <div v-loading="loading" class="workflow-launch-board">
         <el-empty v-if="!groupedDefinitions.length" description="暂无可发起流程" />
@@ -44,13 +40,20 @@
           </div>
         </section>
       </div>
-    </el-card>
+    </MangoListPanel>
 
-    <el-dialog v-model="dialogVisible" :title="selectedDefinition?.definitionName || '发起流程'" width="680px" destroy-on-close>
+    <el-dialog
+      v-model="dialogVisible"
+      :title="selectedDefinition?.definitionName || '发起流程'"
+      width="680px"
+      destroy-on-close
+    >
       <div v-if="selectedDefinition" class="definition-summary">
         <span class="definition-name">{{ selectedDefinition.definitionName }}</span>
         <span class="definition-meta">{{ selectedDefinition.definitionKey }}</span>
-        <span v-if="selectedDefinition.categoryName" class="definition-meta">{{ selectedDefinition.categoryName }}</span>
+        <span v-if="selectedDefinition.categoryName" class="definition-meta">{{
+          selectedDefinition.categoryName
+        }}</span>
         <span v-if="selectedDefinition.processDefinitionVersion" class="definition-meta">
           v{{ selectedDefinition.processDefinitionVersion }}
         </span>
@@ -93,7 +96,7 @@
               :loading="userLoading"
               :placeholder="node.multiple ? '请选择一个或多个审批人' : '请选择审批人'"
               @focus="ensureUsersLoaded"
-              @visible-change="visible => visible && ensureUsersLoaded()"
+              @visible-change="(visible) => visible && ensureUsersLoaded()"
             >
               <el-option v-for="user in userOptions" :key="user.value" :label="user.label" :value="user.value" />
             </el-select>
@@ -118,15 +121,22 @@
         <el-button type="primary" :loading="submitting" @click="submitStart">确认发起</el-button>
       </template>
     </el-dialog>
-  </div>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage, type FormInstance } from 'element-plus';
+import { MangoListPage, MangoListPanel, MangoSearchPanel } from '@mango/common';
 import { Bell, Box, Cloudy, Connection, DocumentChecked, ForkSpoon, Share, User } from '@element-plus/icons-vue';
-import { parseDesignerJson, workflowApi, type WorkflowDefinition, type WorkflowDesignerNode, type WorkflowUserOption } from '../../api/workflow';
+import {
+  parseDesignerJson,
+  workflowApi,
+  type WorkflowDefinition,
+  type WorkflowDesignerNode,
+  type WorkflowUserOption,
+} from '../../api/workflow';
 import { fileApi, fileRuntimeUrl, normalizeFileId } from '@mango/file';
 import { customApplyRouteOf, parseWorkflowFormConfig } from '../../workflowFormConfig';
 import RuntimeFormRenderer from '../../components/RuntimeFormRenderer.vue';
@@ -140,7 +150,14 @@ const tableData = ref<WorkflowDefinition[]>([]);
 const workflowIconUrlMap = ref<Record<string, string>>({});
 const selectedDefinition = ref<WorkflowDefinition | null>(null);
 const startFormRef = ref<FormInstance>();
-const query = ref({ pageNum: 1, pageSize: 50, keyword: '', status: 'PUBLISHED', publishedOnly: true, startEntryVisible: true });
+const query = ref({
+  pageNum: 1,
+  pageSize: 50,
+  keyword: '',
+  status: 'PUBLISHED',
+  publishedOnly: true,
+  startEntryVisible: true,
+});
 const startForm = ref({
   variablesJson: '{}',
 });
@@ -157,7 +174,7 @@ const debugPanels = ref<string[]>([]);
 
 const groupedDefinitions = computed(() => {
   const categoryMap = new Map<string, WorkflowDefinition[]>();
-  tableData.value.forEach(item => {
+  tableData.value.forEach((item) => {
     const categoryName = item.categoryName || '未分类';
     if (!categoryMap.has(categoryName)) {
       categoryMap.set(categoryName, []);
@@ -208,11 +225,11 @@ function isProtectedFileUrl(value: string) {
 
 async function hydrateWorkflowIconUrls() {
   const ids = tableData.value
-    .map(item => normalizeFileId(item.icon))
+    .map((item) => normalizeFileId(item.icon))
     .filter((id): id is string => Boolean(id && !workflowIconUrlMap.value[String(id)]));
   const uniqueIds = Array.from(new Set(ids));
   if (!uniqueIds.length) return;
-  const previews = await Promise.all(uniqueIds.map(id => fileApi.preview(id).catch(() => null)));
+  const previews = await Promise.all(uniqueIds.map((id) => fileApi.preview(id).catch(() => null)));
   const next = { ...workflowIconUrlMap.value };
   previews.forEach((preview) => {
     if (!preview?.id) return;
@@ -250,7 +267,7 @@ function openStartDialog(row: WorkflowDefinition) {
   };
   initiatorSelectNodes.value = collectInitiatorSelectNodes(row.designerJson);
   selectedAssignees.value = Object.fromEntries(
-    initiatorSelectNodes.value.map(node => [node.id, node.multiple ? [] : '']),
+    initiatorSelectNodes.value.map((node) => [node.id, node.multiple ? [] : '']),
   );
   if (initiatorSelectNodes.value.length) {
     void ensureUsersLoaded();
@@ -267,9 +284,7 @@ async function submitStart() {
   let advancedVariables: Record<string, any> = {};
   if (showDebugFormTools) {
     try {
-      advancedVariables = startForm.value.variablesJson.trim()
-        ? JSON.parse(startForm.value.variablesJson)
-        : {};
+      advancedVariables = startForm.value.variablesJson.trim() ? JSON.parse(startForm.value.variablesJson) : {};
     } catch {
       ElMessage.error('表单变量必须是合法 JSON');
       return;
@@ -288,13 +303,16 @@ async function submitStart() {
     const instance = await workflowApi.startProcess({
       definitionId: selectedDefinition.value.id,
       businessType: String(formVariables.value.businessType || selectedDefinition.value.definitionKey || ''),
-      businessKey: String(formVariables.value.businessKey || formVariables.value.code || formVariables.value.applyCode || ''),
+      businessKey: String(
+        formVariables.value.businessKey || formVariables.value.code || formVariables.value.applyCode || '',
+      ),
       renderMode: formConfig.mode,
       applyPageKey: formConfig.customConfig.applyPageKey,
       approvePageKey: formConfig.customConfig.approvePageKey,
       variables: {
         title: formVariables.value.title || selectedDefinition.value.definitionName,
-        summary: formVariables.value.summary || selectedDefinition.value.remark || selectedDefinition.value.definitionKey,
+        summary:
+          formVariables.value.summary || selectedDefinition.value.remark || selectedDefinition.value.definitionKey,
         businessType: formVariables.value.businessType || selectedDefinition.value.definitionKey,
         businessKey: formVariables.value.businessKey || formVariables.value.code || formVariables.value.applyCode,
         ...formVariables.value,
@@ -334,8 +352,11 @@ function normalizeSelectedAssignees() {
   for (const node of initiatorSelectNodes.value) {
     const rawValue = selectedAssignees.value[node.id];
     const values = Array.isArray(rawValue)
-      ? rawValue.map(item => String(item).trim()).filter(Boolean)
-      : String(rawValue || '').split(',').map(item => item.trim()).filter(Boolean);
+      ? rawValue.map((item) => String(item).trim()).filter(Boolean)
+      : String(rawValue || '')
+          .split(',')
+          .map((item) => item.trim())
+          .filter(Boolean);
     if (values.length) {
       result[node.id] = node.multiple ? values : values.slice(0, 1);
     }
@@ -346,9 +367,7 @@ function normalizeSelectedAssignees() {
 function validateSelectedAssignees() {
   for (const node of initiatorSelectNodes.value) {
     const rawValue = selectedAssignees.value[node.id];
-    const selected = Array.isArray(rawValue)
-      ? rawValue.filter(Boolean)
-      : (rawValue ? [rawValue] : []);
+    const selected = Array.isArray(rawValue) ? rawValue.filter(Boolean) : rawValue ? [rawValue] : [];
     if (selected.length === 0) {
       ElMessage.error(`请选择「${node.nodeName}」审批人`);
       return false;
@@ -433,7 +452,10 @@ onMounted(loadData);
   background: var(--el-bg-color);
   color: var(--el-text-color-primary);
   cursor: pointer;
-  transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.16s ease;
 }
 
 .workflow-launch-card:hover {

@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <!-- mango-page-baseline-exception all: 系统配置页联合分组筛选、配置项维护和运行时值管理，不是单一领域对象的标准列表与短表单。 -->
 <template>
   <div class="config-container">
@@ -16,64 +17,49 @@
         />
 
         <section class="config-main">
-          <el-card class="config-search" shadow="never">
-            <el-form :inline="true" :model="query" class="config-search__form">
-              <el-form-item label="关键词">
-                <el-input
-                  v-model="query.keyword"
-                  placeholder="搜索参数名称/参数键/介绍"
-                  clearable
-                  @keyup.enter="handleSearch"
-                  @clear="handleSearch"
+          <MangoSearchPanel :model="query" :columns="4" @search="handleSearch" @reset="handleReset">
+            <el-form-item label="关键词">
+              <el-input
+                v-model="query.keyword"
+                placeholder="搜索参数名称/参数键/介绍"
+                clearable
+                @keyup.enter="handleSearch"
+                @clear="handleSearch"
+              />
+            </el-form-item>
+            <el-form-item label="参数分类">
+              <el-select v-model="query.configGroup" placeholder="不限" clearable @change="handleSearch">
+                <el-option
+                  v-for="item in configTypeOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="String(item.value)"
                 />
-              </el-form-item>
-              <el-form-item label="参数分类">
-                <el-select v-model="query.configGroup" placeholder="不限" clearable @change="handleSearch">
-                  <el-option
-                    v-for="item in configTypeOptions"
-                    :key="item.value"
-                    :label="item.label"
-                    :value="String(item.value)"
-                  />
-                </el-select>
-              </el-form-item>
-              <el-form-item label="展示类型">
-                <el-select v-model="query.valueType" placeholder="不限" clearable @change="handleSearch">
-                  <el-option
-                    v-for="item in valueTypeOptions"
-                    :key="item.value"
-                    :label="item.label"
-                    :value="item.value"
-                  />
-                </el-select>
-              </el-form-item>
-              <el-form-item label="状态">
-                <el-select v-model="query.status" placeholder="不限" clearable @change="handleSearch">
-                  <el-option
-                    v-for="item in statusOptions"
-                    :key="item.value"
-                    :label="item.label"
-                    :value="Number(item.value)"
-                  />
-                </el-select>
-              </el-form-item>
-              <el-form-item>
-                <el-button type="primary" @click="handleSearch"> 查询 </el-button>
-                <el-button @click="handleReset"> 重置 </el-button>
-              </el-form-item>
-            </el-form>
-          </el-card>
+              </el-select>
+            </el-form-item>
+            <el-form-item label="展示类型">
+              <el-select v-model="query.valueType" placeholder="不限" clearable @change="handleSearch">
+                <el-option v-for="item in valueTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="状态">
+              <el-select v-model="query.status" placeholder="不限" clearable @change="handleSearch">
+                <el-option
+                  v-for="item in statusOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="Number(item.value)"
+                />
+              </el-select>
+            </el-form-item>
+          </MangoSearchPanel>
 
-          <el-card class="config-table-card" shadow="never">
-            <div class="config-toolbar">
-              <div class="config-toolbar__left">
-                <el-button type="primary" plain @click="handleAdd"> 新增参数 </el-button>
-                <el-button plain @click="openOperationPanel"> 操作面板 </el-button>
-              </div>
-              <div class="config-toolbar__right">
-                <el-button plain :loading="listLoading" @click="loadConfigList"> 刷新 </el-button>
-              </div>
-            </div>
+          <MangoListPanel>
+            <template #actions>
+              <el-button type="primary" plain @click="handleAdd">新增参数</el-button>
+              <el-button plain @click="openOperationPanel">操作面板</el-button>
+              <el-button plain :loading="listLoading" @click="loadConfigList">刷新</el-button>
+            </template>
 
             <el-table v-loading="listLoading" :data="pagedConfigs" stripe row-key="id">
               <el-table-column prop="configName" label="参数定义" min-width="190" show-overflow-tooltip>
@@ -142,8 +128,10 @@
               </el-table-column>
             </el-table>
 
-            <Pagination v-model:page="query.pageNum" v-model:limit="query.pageSize" :total="filteredConfigs.length" />
-          </el-card>
+            <template #pagination>
+              <Pagination v-model:page="query.pageNum" v-model:limit="query.pageSize" :total="filteredConfigs.length" />
+            </template>
+          </MangoListPanel>
         </section>
       </div>
     </template>
@@ -169,7 +157,7 @@
       </el-card>
     </template>
 
-    <el-dialog v-model="detailVisible" title="参数详情" width="720px">
+    <MangoDialog v-model="detailVisible" title="参数详情" width="720px">
       <el-descriptions v-if="detailConfig" :column="2" border>
         <el-descriptions-item label="参数定义">
           {{ detailConfig.configName || detailConfig.configKey }}
@@ -211,7 +199,7 @@
       <template #footer>
         <el-button @click="detailVisible = false"> 关闭 </el-button>
       </template>
-    </el-dialog>
+    </MangoDialog>
 
     <el-dialog
       v-model="dialogVisible"
@@ -364,7 +352,7 @@
 <script setup lang="ts" name="SystemConfig">
 import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
-import { Pagination, useDict } from '@mango/common';
+import { MangoDialog, MangoListPanel, MangoSearchPanel, Pagination, useDict } from '@mango/common';
 import { configApi, type ConfigOptionSource, type ConfigValueType, type SysConfig } from '../../api/config';
 import { dictTypeApi, type DictType } from '../../api/dict';
 import { domainApi, type DomainItem } from '../../api/domain';

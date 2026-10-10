@@ -23,7 +23,7 @@
 ## 4. 模块入口
 `mango-parent/pom.xml` 管理：
 
-- Java 17 编译基线。
+- Java 21 编译基线，使用 `--release 21` 生成与运行时一致的字节码。
 - Maven 坐标版本变量 `revision`，默认 `1.0.0-SNAPSHOT`。
 - 导入同版本 `io.mango:mango-bom`，依赖版本清单不在 parent 内重复维护。
 - Maven compiler、surefire、checkstyle、spotbugs、pmd 等插件版本。
@@ -48,7 +48,7 @@
 | 属性 | 默认值 | 含义 |
 |------|--------|------|
 | `revision` | `1.0.0-SNAPSHOT` | 当前构建版本。 |
-| `java.version` | `17` | Java 基线。 |
+| `java.version` | `21` | Java 基线。 |
 | `spring-boot.version` | `3.5.14` | Spring Boot Maven 插件版本，需与 BOM 基线保持一致。 |
 
 修改这些属性属于全仓影响，必须扩大验证范围。

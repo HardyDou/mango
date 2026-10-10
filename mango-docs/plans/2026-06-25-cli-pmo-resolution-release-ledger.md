@@ -73,7 +73,7 @@
 
 | 台账 ID | 页面/接口 | 功能点 | 测试数据 | 关键断言 | UI/交互检查 | console/network 结果 | 截图/trace/日志 | 结论 |
 |---|---|---|---|---|---|---|---|---|
-| TASK-001 | CLI | PMO baseline 解析 | baohan-system-upgrade-mango-latest-20260625 | 修复后的 CLI 输出 `Baseline: @mango/pmo@1.0.0`，不再输出 `@mango/cli-template@1.0.35` | 不涉及 UI | 不涉及 network | 终端输出 | DONE |
+| TASK-001 | CLI | PMO baseline 解析 | business-system-upgrade-mango-latest-20260625 | 修复后的 CLI 输出 `Baseline: @mango/pmo@1.0.0`，不再输出 `@mango/cli-template@1.0.35` | 不涉及 UI | 不涉及 network | 终端输出 | DONE |
 | TASK-002 | CLI test | pnpm 发布布局回归 | fake `.pnpm/@mango+cli@1.0.36/node_modules/@mango/{cli,pmo}` | `pnpm --filter @mango/cli test` 通过 | 不涉及 UI | 不涉及 network | 终端输出 | DONE |
 | TASK-003 | Release notes | 发布说明 | `@mango/cli@1.0.36` | 根 `CHANGELOG.md` 最新段包含 Published Packages、Upgrade Notes、Verification | 不涉及 UI | 不涉及 network | 终端输出 | DONE |
 | TASK-004 | Release validation | 发布前验证 | 当前任务 worktree | CLI、PMO、admin 样式治理检查通过 | 不涉及 UI | 不涉及 network | 终端输出 | DONE |

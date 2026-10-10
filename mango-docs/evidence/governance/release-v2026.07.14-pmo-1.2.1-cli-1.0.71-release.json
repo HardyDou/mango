@@ -111,7 +111,7 @@
     "githubReleaseNotes": "PASS",
     "docsLatest": "PASS",
     "businessConsumer": {
-      "worktree": "/Users/hardy/Work/Yunxin/baohan-system-mango-pmo-1.2.0",
+      "worktree": "/Users/hardy/Work/Yunxin/business-system-mango-pmo-1.2.0",
       "installedCli": "@mango/cli@1.0.71",
       "installedPmo": "@mango/pmo@1.2.1",
       "command": "mango pmo upgrade --project-dir . --to 1.2.1 --dry-run",

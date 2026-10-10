@@ -56,7 +56,7 @@ class WorkflowMigrationUpgradeIntegrationTest {
 
         var migrationResult = currentFlyway().migrate();
 
-        assertThat(migrationResult.migrationsExecuted).isOne();
+        assertThat(migrationResult.migrationsExecuted).isEqualTo(2);
         assertThat(historyChecksum("1")).isEqualTo(CURRENT_V1_CHECKSUM);
         assertThat(historyChecksum("2")).isNotNull();
         assertCanonicalAuditColumns();
@@ -70,7 +70,7 @@ class WorkflowMigrationUpgradeIntegrationTest {
 
         var migrationResult = currentFlyway().migrate();
 
-        assertThat(migrationResult.migrationsExecuted).isOne();
+        assertThat(migrationResult.migrationsExecuted).isEqualTo(2);
         assertThat(historyChecksum("1")).isEqualTo(CURRENT_V1_CHECKSUM);
         assertThat(historyChecksum("2")).isNotNull();
         assertCanonicalAuditColumns();
@@ -81,7 +81,7 @@ class WorkflowMigrationUpgradeIntegrationTest {
         var firstMigration = currentFlyway().migrate();
         var secondMigration = currentFlyway().migrate();
 
-        assertThat(firstMigration.migrationsExecuted).isEqualTo(2);
+        assertThat(firstMigration.migrationsExecuted).isEqualTo(3);
         assertThat(secondMigration.migrationsExecuted).isZero();
         assertThat(historyChecksum("1")).isEqualTo(CURRENT_V1_CHECKSUM);
         assertThat(historyChecksum("2")).isNotNull();

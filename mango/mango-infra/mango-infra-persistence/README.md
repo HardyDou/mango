@@ -432,7 +432,7 @@ target/generated-resources/db/baseline/<module>/B<version>__baseline.sql
 target/generated-resources/META-INF/mango/baseline-manifest.json
 ```
 
-生成目录中每个模块恰好只有一个 `B*__baseline.sql`。`B<version>` 表示 SQL 已覆盖的最高模块 migration 版本；历史 `db/migration/<module>/V*.sql` 继续保留，供审计、既有库升级和基线后的增量 migration 使用。B 不进入 Git，不在 PR 或部署现场生成，也不把所有模块合成一个大 SQL。具体 POM/Jenkins 配置见[业务 API 构建期 cold baseline](../../../mango-docs/guides/business-integration/build-time-cold-baseline.md)，长期约束见[数据库规范](../../../mango-pmo/rules/backend/04-db.md)。
+生成目录中每个模块恰好只有一个 `B*__baseline.sql`。`B<version>` 表示 SQL 已覆盖的最高模块 migration 版本；历史 `db/migration/<module>/V*.sql` 继续保留，供审计、既有库升级和基线后的增量 migration 使用。B 不进入 Git，不在 PR 或部署现场生成，也不把所有模块合成一个大 SQL。具体 POM/Jenkins 配置见[业务 API 构建期 cold baseline](../../../mango-docs/guides/operations/build-time-cold-baseline.md)，长期约束见[数据库规范](../../../mango-pmo/rules/backend/04-db.md)。
 
 生成基线首行包含可重入标记：
 

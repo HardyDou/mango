@@ -2356,6 +2356,7 @@ function runMysqlStatement(dbEnv = {}, statement, options = {}) {
 function prepareManagedMangoLifecycle(context, appName, app, logPath) {
   assertManagedLifecycleWorkspaceDatabase(context, appName, app);
   const lifecycle = buildLocalLifecycleIdentity(context, appName, app);
+  app.env = { ...app.env, MANGO_LOCAL_LIFECYCLE_KEY: app.lifecycleKey || appName };
   const control = readBootstrapGenerationState(context.env, lifecycle.environmentKey);
   const highestGeneration = Math.max(control.stableGeneration, control.candidateGeneration);
   let generation = control.stableGeneration;
@@ -2438,14 +2439,15 @@ function runManagedMangoLifecycleCommand(app, springArgs, logPath, message) {
 
 function buildLocalLifecycleIdentity(context, appName, app) {
   const workspaceId = context.env.MANGO_WORKSPACE_ID || ensureWorkspaceConfig(context.root).workspaceId;
-  const suffix = `${workspaceId}-${appName}`
+  const lifecycleKey = app.lifecycleKey || appName;
+  const suffix = `${workspaceId}-${lifecycleKey}`
     .toLowerCase()
     .replace(/[^a-z0-9_.-]+/gu, '-')
     .replace(/^-+|-+$/gu, '');
   return {
     environmentKey: `local-${suffix}`,
     releaseId: `local-${suffix}`,
-    revision: app.mavenRevision || context.env.MANGO_MAVEN_REVISION_QUALIFIER || workspaceId,
+    revision: context.env.MANGO_MAVEN_REVISION_QUALIFIER || workspaceId,
   };
 }
 

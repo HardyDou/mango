@@ -496,7 +496,7 @@ export const microAppAdapter: MangoAppAdapter = {
     const destroy = wujieDestroyers.get(instanceId);
     if (destroy) {
       wujieDestroyers.delete(instanceId);
-      destroy();
+      await destroy();
     } else {
       destroyApp(instanceId);
     }

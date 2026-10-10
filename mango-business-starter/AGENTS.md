@@ -20,7 +20,8 @@
 4. 执行 Mango baseline preflight。
 5. 按任务类型读取 preflight 输出中的所有 `Must read` 文件原文。
 6. 读取本业务 `business-pmo/README.md`、相关领域规则和本次任务对应的 `business-docs/**` 文件。
-7. 执行 `git worktree list`，同一任务返工必须复用已有任务 worktree。
+7. 文档、Issue、沟通、注释和交付文本遵循 baseline 的 `rules/13-agent-text-output.md`；需要作出决定时遵循 `rules/14-decision-expert-review.md`。
+8. 执行 `git worktree list`，同一任务返工必须复用已有任务 worktree。
 8. 在任务 worktree 或任务分支内开发。
 9. 执行后端、前端和台账验证。
 
@@ -70,6 +71,8 @@ business-pmo/mango-baseline/baseline.json
 ## 5. AI 协作
 
 AI 可以参与实现，但 owner 和验收责任不转移。前端使用 AI 修改后端代码时，必须由后端 owner review。
+
+AI 输出文本必须先写重点、事实、失败边界和下一步；三轮意见和同行评审未完成时，不得把方案写成最终批准。
 
 本地启动只使用 Mango CLI：
 

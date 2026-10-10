@@ -13,7 +13,7 @@
 5. 增加聚合 Maven goal，并绑定验证生命周期；普通路径和 `.mango/worktrees` 使用相同相对输入。
 6. 冻结 TC-ARCH-001 至 TC-ARCH-014，断言真实规则编号和构建退出码。
 7. 新旧引擎只在迁移测试中对照；新引擎达标后从 CI、`mango:check all` 和不可豁免规则中删除七类旧正则硬判断。历史显式命令仅保留兼容诊断，并明确输出非权威警告。
-8. 对 Mango 全 Reactor 和只读 `baohan-system` 验证，执行至少五轮性能基准。
+8. 对 Mango 全 Reactor 和只读 `business-system` 验证，执行至少五轮性能基准。
 
 ## 3. 兼容与迁移边界
 
@@ -29,7 +29,7 @@
 - 规则模块单元测试和真实 Maven fixture 集成测试报告。
 - `mvn verify` 在普通路径及包含 `.mango/worktrees` 路径下的退出码、规则编号和差异结果。
 - Mango 全量报告、抽样复核表和工具失败统计。
-- `baohan-system` 扫描前后 HEAD、tracked/untracked 快照一致性证明。
+- `business-system` 扫描前后 HEAD、tracked/untracked 快照一致性证明。
 - 同一 JDK、同一机器、预热后连续五轮的 changed-only 与全量耗时，报告中位数和最大值。
 
 ## 5. 切换条件

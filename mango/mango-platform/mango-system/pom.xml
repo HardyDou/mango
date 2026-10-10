@@ -15,10 +15,6 @@
     <packaging>pom</packaging>
     <name>Mango System</name>
 
-    <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
-    </properties>
     <description>Mango System Module - dict/config/log/tenant/route management</description>
     <modules>
         <module>mango-system-api</module>

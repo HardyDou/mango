@@ -47,10 +47,10 @@
 | 要求 ID | 验证方式 | 命令或步骤 | 结果 | 证据 |
 |---|---|---|---|---|
 | R-01 至 R-03 | M10/M11 定向测试 | `mvn -B -ntp -f mango/pom.xml -pl :mango-identity-starter -am -Dtest=OrgMemberBindingResourceHandlerIntegrationTest,IdentityResourceDeclarationContractTest -Dsurefire.failIfNoSpecifiedTests=false test` | PASS | 6 tests，0 failures，0 errors；覆盖两次空库重建、声明 ID、已有关系 ID 和碰撞失败 |
-| R-01 至 R-03 | M11 真实 MySQL cold baseline | baohan-system 使用发布版 `mango-maven-plugin:1.0.53`、修复后的 `mango-identity-starter:1.0.53` 和 `-Pbsql` 执行 `package` | PASS | MySQL 8.4.8 上 replay、determinism 和 verify 三库验证通过；生成并打包 34 份 BSQL；fingerprint=`32a101ad79e4fc172bb137643425c3bbace480ada9a30e51349bfe66faed67ed` |
+| R-01 至 R-03 | M11 真实 MySQL cold baseline | business-system 使用发布版 `mango-maven-plugin:1.0.53`、修复后的 `mango-identity-starter:1.0.53` 和 `-Pbsql` 执行 `package` | PASS | MySQL 8.4.8 上 replay、determinism 和 verify 三库验证通过；生成并打包 34 份 BSQL；fingerprint=`32a101ad79e4fc172bb137643425c3bbace480ada9a30e51349bfe66faed67ed` |
 | R-01 至 R-03 | M09 模块质量检查 | `mvn -B -ntp -f mango/pom.xml -pl :mango-identity-starter verify` | PASS | 23 tests，0 failures，0 errors；模块 `BUILD SUCCESS` |
 | R-01 至 R-03 | M08 文档与测试质量检查 | 运行 STANDARD 记录、模块 README、README 源事实、测试质量和后端 mock 审计 | PASS | STANDARD/README/测试质量检查通过；mock 审计 `block=0, warn=0` |
 
 ## 7. 例外与剩余风险
 
-- 本地已用真实 MySQL 和 baohan-system 完成 cold baseline 生成验证；仍需独立发布新的 Mango Maven 版本，并由 baohan-system 升级后在正式 CI 构建中复核。发布和业务仓升级不在本次编码范围内。
+- 本地已用真实 MySQL 和 business-system 完成 cold baseline 生成验证；仍需独立发布新的 Mango Maven 版本，并由 business-system 升级后在正式 CI 构建中复核。发布和业务仓升级不在本次编码范围内。

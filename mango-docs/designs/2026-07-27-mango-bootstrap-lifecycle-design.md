@@ -16,7 +16,7 @@
 3. `TenantProvisioningReconciliationRunner` 依赖 Resource 状态完成机构基线和租户对账。
 4. 上述动作完成前 readiness 为 `REFUSING_TRAFFIC`，但容器健康检查通常只看到应用长时间 unhealthy。
 
-Baohan 空库发布已经证明该模型存在结构性问题：MySQL 就绪约 81 秒，模块 Flyway 和工作流初始化耗时接近 5 分钟，Spring 打印 `Started` 后仍进入 Resource/租户对账；Docker 在 API 尚未完成初始化时判定 unhealthy 并触发回滚。回滚镜像因为数据库已经被新版本初始化而很快健康，说明失败点不是应用无法运行，而是“初始化任务”和“运行态健康检查”被错误绑定。
+Business 空库发布已经证明该模型存在结构性问题：MySQL 就绪约 81 秒，模块 Flyway 和工作流初始化耗时接近 5 分钟，Spring 打印 `Started` 后仍进入 Resource/租户对账；Docker 在 API 尚未完成初始化时判定 unhealthy 并触发回滚。回滚镜像因为数据库已经被新版本初始化而很快健康，说明失败点不是应用无法运行，而是“初始化任务”和“运行态健康检查”被错误绑定。
 
 同日将健康窗口放宽后的业务复测能够成功，但 API readiness 为 649 秒、发布阶段为 732 秒；API ready 后 Site、Admin、H5 才启动且均返回 HTTP 200，未触发回滚。这证明业务初始化本身可完成，也证明延长 Runtime healthcheck 只能作为临时措施。正式治理以“Bootstrap 允许 20～30 分钟独立执行，Bootstrap 成功后的 Runtime readiness 为秒级”为验收方向。
 
@@ -111,7 +111,7 @@ Bootstrap core 不依赖具体平台模块。步骤通过 `BootstrapStepContribu
 
 ```java
 public static void main(String[] args) {
-    MangoApplication.run(BaohanSystemApplication.class, args);
+    MangoApplication.run(BusinessSystemApplication.class, args);
 }
 ```
 
@@ -430,9 +430,9 @@ Bootstrap 根据 `PersistenceModuleDataSourceResolver` 或模块显式 datasourc
 
 制品构建使用 migration 重放库和 baseline 验证库证明两条空库路径最终等价；需要验证已有库升级时再增加从上一正式
 制品升级到候选 migrations 的独立数据库场景。性能门禁不是只计算 SQL 文本或 Resource 元数据。仓库基准必须真实执行 MySQL DDL/DML、`WORKFLOW_DEFINITION`
-到 Flowable 的 BPMN 发布，以及 `FILE_ASSET` 到文件存储层的二进制写入和 SHA-256 回读。当前 5 倍保函参考负载为
+到 Flowable 的 BPMN 发布，以及 `FILE_ASSET` 到文件存储层的二进制写入和 SHA-256 回读。当前 5 倍业务参考负载为
 5 模块、375 表、37,500 行、16,372,270 SQL 字节，以及 1,255 条 Resource、75 MiB 文件和 20 个八级审批流程。
-Resource 规模以保函只读统计的 232 个声明、4 个启动发布 Workflow、15 个启动物化文件为基准，三个维度分别达到 5 倍，不能用普通声明填充量替代 Workflow/File 覆盖。MySQL 8.4 实测 SQL 2.267 秒、完整 Bootstrap Resource 冷注入 13.049 秒、同代热重入 53 毫秒，均低于一分钟目标。
+Resource 规模以业务只读统计的 232 个声明、4 个启动发布 Workflow、15 个启动物化文件为基准，三个维度分别达到 5 倍，不能用普通声明填充量替代 Workflow/File 覆盖。MySQL 8.4 实测 SQL 2.267 秒、完整 Bootstrap Resource 冷注入 13.049 秒、同代热重入 53 毫秒，均低于一分钟目标。
 
 ## 13. 安全、租户与多数据源
 
@@ -490,7 +490,7 @@ Jenkins 发布顺序改为：
 | AC-012 | Bootstrap 中途失锁/进程被杀 | 旧 fencing token 无法提交；同 fingerprint 新进程可安全续跑。 |
 | AC-013 | 多数据源部分成功 | 全局 receipt 不成功；重入只补未完成步骤。 |
 | AC-014 | finalize 前回滚 N+1 | N 可恢复流量，新结构/资源保留且兼容；不执行 down migration。 |
-| AC-015 | 真实 Baohan 空库基线 | 初始化由独立 Bootstrap Job 完成；Runtime 在预期短窗口内 ready；Jenkins 不再因 7 分钟初始化把 API 判 unhealthy。 |
+| AC-015 | 真实 Business 空库基线 | 初始化由独立 Bootstrap Job 完成；Runtime 在预期短窗口内 ready；Jenkins 不再因 7 分钟初始化把 API 判 unhealthy。 |
 
 ## 17. 实施范围与一次性交付顺序
 
@@ -502,7 +502,7 @@ Jenkins 发布顺序改为：
 4. 将 System 租户前置/最终对账迁入 Bootstrap contributor，移除 Runtime 启动编排。
 5. 增加 runtime lease、rolling finalize 门禁、Actuator 和诊断。
 6. 更新 BOM、最终应用模板、模块 README、能力地图、业务接入指南和 Jenkins 示例。
-7. 完成单元、MySQL 8.4 集成、空库、已有库升级、并发 Bootstrap、滚动 N/N+1、回滚和 Baohan 消费验证。
+7. 完成单元、MySQL 8.4 集成、空库、已有库升级、并发 Bootstrap、滚动 N/N+1、回滚和 Business 消费验证。
 
 本交付不以“阶段 1 可用”作为完成；只有 AC-001 至 AC-015 和仓库质量门禁全部通过，才算三项治理能力完成。
 

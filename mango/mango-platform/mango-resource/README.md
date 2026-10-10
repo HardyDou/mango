@@ -1,5 +1,9 @@
 # Mango Resource
 
+> **场景 / 路径：** `声明文件 -> Registry -> ResourceHandler -> 目标表`；适用于菜单、字典和流程定义等系统资源。
+>
+> **边界 / 源码：** Resource 不保存业务运行数据、不替代 Owner Service、不执行 Flyway SQL；入口为 [`ResourceRegistryCoreConfiguration.java`](mango-resource-core/src/main/java/io/mango/resource/core/config/ResourceRegistryCoreConfiguration.java)。先看“1.1”，再看“4. 接入方式”和“14. 问题排查”。
+
 ## 1. 概览
 
 `mango-resource` 是 Mango 的资源注册中心，只负责资源声明采集、注册、同步、覆盖控制、审计和变更追踪。
@@ -34,42 +38,32 @@ Resource 声明的 `execution-phase` 与 `sync-mode` 正交：
 
 历史 Flyway 中如果保留旧字典、旧菜单或旧 demo seed，只能作为历史库兼容证据，不能作为新增资源声明模板。新增或调整字典、菜单、角色、工作流等小资源时，先看当前 handler 是否开放，再按本 README 的 Resource 声明和 `sync-mode` 处理。
 
-### 1.3 业务 Flyway 资源迁移幂等说明（通用解决方案）
+### 1.3 业务 Flyway 资源迁移
 
-业务仓用 Flyway 复制/迁移资源类数据时，必须按以下规则编写幂等迁移；这是「系统初始化数据」与「运行期/客户数据」共存的统一解法，适用于历史版本、当前版本和运行期数据同时存在的情况。
+资源数据迁移同时面对历史版本、当前版本和运行期数据时，按业务身份幂等处理：
 
-1. **锁定激活源版本**：源查询必须约束到「当前激活、非删除」的规则/版本，禁止只按业务键全量 join；历史版本与当前版本共存时不得重复插入。
-2. **按稳定业务身份去重**：先确定业务身份（如 `checklist_key + material_definition_id`），源行按该身份去重后再插入，避免同一物料被复制多份。
-3. **明确 `variant_key` 归属**：若 `variant_key` 是生成实现细节（如 `DEFAULT_<后缀>`），不得用它判断「是否已存在」，应忽略后缀比较业务身份；若它有业务含义，则必须纳入唯一键与 `NOT EXISTS` 条件。
-4. **保留运行期/客户数据**：目标已存在同业务身份的运行期数据时，用业务键 `NOT EXISTS` 跳过，不得覆盖或删除。
-5. **幂等**：重复执行必须 no-op，用「业务键 `NOT EXISTS`」或「`ON DUPLICATE KEY UPDATE` 明确策略」；禁止 `INSERT IGNORE` 隐藏冲突。
-6. **必须补集成测试**：至少覆盖「仅当前源版本 / 历史+当前版本共存 / 目标已存在运行期项 / 部分失败重试 / 重复执行」五种库状态。
+| 规则 | 要求 |
+|---|---|
+| 源数据 | 只取当前激活、未删除版本，并按稳定业务身份去重。 |
+| `variant_key` | 仅为生成细节时不参与存在判断；有业务含义时纳入唯一条件。 |
+| 运行期数据 | 目标已存在时跳过，不覆盖或删除。 |
+| 重试 | 使用 `NOT EXISTS` 或明确的 `ON DUPLICATE KEY UPDATE`；禁止 `INSERT IGNORE`。 |
+| 测试 | 覆盖当前源、历史与当前共存、运行期数据、部分失败重试、重复执行。 |
 
-框架侧已统一：后台托管记录（`MANUAL`/`INIT_ONLY`/`LOCKED`）优先于系统声明，同 `bizKey` 不冲突；后台删除写入 tombstone，系统同步不重建。
+后台 `MANUAL`/`INIT_ONLY`/`LOCKED` 记录优先于系统声明；删除写 tombstone，系统同步不重建。
 
-### 1.4 后台增删改查与指纹/栅栏（如何规避问题）
+### 1.4 后台数据与指纹
 
-**指纹与栅栏的作用**：每次发布会构建 resource 清单（manifest），并计算 `manifestFingerprint`、`generation` 和 `fencingToken`；运行期注册命令携带这些值，`BootstrapGenerationFence` 校验 authority，保证旧代实例无法覆盖新代资源。每条声明还有 `sourceHash`，每个模块有 `moduleHash`——这些指纹全部来自**声明内容本身**。
+`manifestFingerprint`、`moduleHash`、`sourceHash`、`generation` 和 `fencingToken` 均来自声明内容或发布代次。后台 CRUD 只改 registry 和目标表，不改变这些值，也不会单独触发栅栏失败。
 
-**关键结论**：后台增删改查只改变 `resource_registry` 行和目标表数据，不改变声明内容，因此**不会改变 `manifestFingerprint`/`moduleHash`/`sourceHash`**，不会导致发布或 bootstrap 栅栏失败。
+| 操作 | 做法 |
+|---|---|
+| 增 | 使用 `MANUAL` 或 `INIT_ONLY`，不要使用 `AUTO`。 |
+| 改 | 可被后台修改的声明使用 `INIT_ONLY`，Handler 返回 `PRESERVED`。 |
+| 删 | 调用 `DELETE /resource/registries` 写 tombstone；不要直删表。 |
+| 变更声明 | 按升级流程递增 `version` 和 generation，不改历史清单。 |
 
-但后台增删改查必须遵守 `sync-mode` 归属约定，否则会造成同步冲突或后台数据被覆盖：
-
-| 操作 | 正确做法 | 会出问题的做法 |
-| --- | --- | --- |
-| 增（后台新增数据） | 归属 `MANUAL` 或 `INIT_ONLY` | 用 `AUTO`，后续系统声明同 `bizKey` 会冲突/覆盖 |
-| 改（后台修改目标数据） | 资源用 `INIT_ONLY`，Handler 返回 PRESERVED | 用 `AUTO`，系统同步会覆盖后台修改 |
-| 删（后台删除） | 走 `DELETE /resource/registries`，写 MANUAL tombstone | 直接删 registry 行/目标表，下次同步重建或主键冲突 |
-| 查 | 走分页/日志查询接口 | 无风险 |
-
-**规避清单**：
-
-1. 后台新增的资源必须归属 MANAGED（`MANUAL`/`INIT_ONLY`），不要用 `AUTO`。
-2. 需要后台可改的系统资源，声明 `sync-mode: INIT_ONLY`。
-3. 删除必须走后台删除接口（tombstone），禁止直删 registry 行或目标表。
-4. 业务 Flyway 迁移资源类数据按 1.3 幂等规则执行。
-5. 不要修改历史已发布的声明文件/清单；确需变更按正规升级流程递增 `version` 与 generation。
-6. 同 `bizKey` 的系统声明与托管记录冲突时，框架已统一：托管记录优先，系统声明跳过并记诊断日志。
+资源迁移遵循 1.3；同 `bizKey` 冲突时托管记录优先，系统声明跳过并记录诊断。
 
 ## 2. 模块结构
 
@@ -422,7 +416,7 @@ Spring Boot 可执行 JAR 将上述 `META-INF` 条目保留在 JAR 根目录。B
 | FINALIZE 成功 | receipt 进入 `FINALIZED`；只禁用该变化模块内缺失的 Registry-owned `AUTO`。 |
 | 协调失败或 generation fence 失效 | 不推进 receipt，下次用旧成功状态重试。 |
 
-构建 POM、Boot JAR 检查以及与 cold baseline、sealed release manifest 的关系见[业务 API 构建期 cold baseline](../../../mango-docs/guides/business-integration/build-time-cold-baseline.md)。
+构建 POM、Boot JAR 检查以及与 cold baseline、sealed release manifest 的关系见[业务 API 构建期 cold baseline](../../../mango-docs/guides/operations/build-time-cold-baseline.md)。
 
 ### 9.2 Resource 数据库 baseline
 

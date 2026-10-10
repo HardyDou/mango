@@ -187,6 +187,13 @@ assert(
 
 const ruleIndex = JSON.parse(readFileSync(join(pmoRoot, 'rules/index.json'), 'utf8'));
 const capabilityDocsBundle = ruleIndex.bundles?.capabilityDocs;
+const actionCardBundle = ruleIndex.bundles?.ruleActionCards;
+assert(actionCardBundle?.paths?.includes('mango-pmo/tools/render-rule-action-card.mjs'), 'rule action-card routing bundle is missing');
+assert(actionCardBundle?.keywords?.includes('规范执行卡片'), 'rule action-card routing is missing its explicit keyword');
+assert(
+  cases.some(item => item.id === 'ask-rule-action-card' && item.expect.skill === 'mango-ask' && item.expect.action === 'NEXT'),
+  'missing rule action-card route eval',
+);
 for (const keyword of ['@mango/workflow', 'mango-workflow-api', 'mango-workflow-starter', 'designerJson', 'formJson', '/workflow/']) {
   assert(
     capabilityDocsBundle?.keywords?.includes(keyword),

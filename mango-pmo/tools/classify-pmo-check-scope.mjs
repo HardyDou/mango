@@ -312,6 +312,7 @@ function changedFiles(base, head) {
   return execFileSync('git', ['diff', '--name-only', `${base}...${head}`], {
     cwd: root,
     encoding: 'utf8',
+    maxBuffer: 64 * 1024 * 1024,
   }).split(/\r?\n/u).map(file => file.trim()).filter(Boolean);
 }
 

@@ -17,7 +17,7 @@
 - 目标：为 Workflow 业务申请单项及批量读取提供统一的业务数据权限扩展点，消除对全局 `workflow:business-apply:detail` 的强依赖。
 - 成功条件：业务 Provider 可按业务类型校验 owner、组织和租户；无权读取稳定返回 `APPLY_ACCESS_DENIED`；HTTP、Java API 和 Feign 使用同一服务层语义；内部流程链路不被用户态校验阻断。
 - 处理范围：Workflow API 契约、业务申请服务、流程详情读取、批量最新进度过滤、模块 README 和定向测试。
-- 不处理范围：业务模块具体 Provider 实现、Baohan 依赖升级和代理删除、Maven 制品发布及生产部署。
+- 不处理范围：业务模块具体 Provider 实现、Business 依赖升级和代理删除、Maven 制品发布及生产部署。
 
 ## 3. 可观察系统要求
 
@@ -58,5 +58,5 @@
 
 ## 7. 例外与剩余风险
 
-- 本次未实现 Baohan 业务 Provider；业务仓库需要在升级 Workflow 依赖后接入 Provider 并删除临时代理路径。
+- 本次未实现 Business 业务 Provider；业务仓库需要在升级 Workflow 依赖后接入 Provider 并删除临时代理路径。
 - 尚未创建 PR、合并、发布或部署；生产权限数据和真实浏览器链路不在本次本地验证范围。

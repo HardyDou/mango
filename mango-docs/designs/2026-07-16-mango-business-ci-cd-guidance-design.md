@@ -39,7 +39,7 @@ Mango 已提供业务项目脚手架、PMO 基线、Maven/npm 发布物料和多
 指南归档到：
 
 ```text
-mango-docs/guides/business-integration/ci-cd-release-practices.md
+mango-docs/guides/operations/ci-cd-release-practices.md
 ```
 
 入口同步到：

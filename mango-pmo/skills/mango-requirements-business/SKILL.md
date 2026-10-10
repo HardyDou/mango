@@ -31,9 +31,10 @@ Run PMO preflight with role `pm` and phase `requirement`, then read every `Must 
    - `STOP`: requested content crosses the stage boundary, authoritative assets disagree, or a required source is unavailable.
    - `ASK`: a required business fact cannot be established. Ask one focused question and do not insert placeholders or invented facts.
    - `WRITE`: inputs satisfy the rule; fill the official template with business content only and preserve required trace identifiers.
-3. Set `pmoVersion` to the contract's exact `metadata.fixed.pmoVersion`, then run `node "$PMO_ROOT/tools/check-business-requirements.mjs" --document <document-path>`.
-4. Fix failures without weakening the checker or moving forbidden downstream content into the document.
-5. Run the lifecycle checker for the user-enabled BRD; disabled future documents are not required. The BRD must be `APPROVED/NEXT`, name a human approver, contain verifiable approval evidence, and have no open blocker.
-6. Return `NEXT: $mango-pmo-lifecycle` only when the dedicated checker, applicable lifecycle handoff, gate table and human approval all pass. Let the coordinator choose the next enabled measure; do not assume SRS follows.
+3. Fill the human reading entry immediately below the title: one-sentence goal, one real business scenario, key input/output, success/failure boundary, and explicit out-of-scope. Do not leave template placeholders.
+4. Set `pmoVersion` to the contract's exact `metadata.fixed.pmoVersion`, then run `node "$PMO_ROOT/tools/check-business-requirements.mjs" --document <document-path>` and `node "$PMO_ROOT/tools/check-document-reading-entry.mjs" --document <document-path>`.
+5. Fix failures without weakening the checker or moving forbidden downstream content into the document.
+6. Run the lifecycle checker for the user-enabled BRD; disabled future documents are not required. The BRD must be `APPROVED/NEXT`, name a human approver, contain verifiable approval evidence, and have no open blocker.
+7. Return `NEXT: $mango-pmo-lifecycle` only when the dedicated checker, human reading entry check, applicable lifecycle handoff, gate table and human approval all pass. Let the coordinator choose the next enabled measure; do not assume SRS follows.
 
 With an empty context, return `ASK` for the business problem, affected actors, expected outcome and M03 confirmation. Do not generate a generic document or infer BRD from L2/L3.

@@ -79,8 +79,8 @@
 | RAS-005 | Mango 源仓固定 README 被删除 | module audit 仍失败 | missing source README 反例 | PASS |
 | RAS-006 | `mango.config.json.paths` 越界 | 解析阶段失败 | path traversal 反例 | PASS |
 | RAS-007 | 当前 Mango 源仓两条审计 | 全量平台 README 与源码事实通过 | 源码命令 | PASS |
-| RAS-008 | 真实保函升级 worktree source-facts | 审计集合非空、无源仓目录误报 | 3 个业务资产实际回读 | PASS |
-| RAS-009 | 真实保函升级 worktree module audit | 不再出现 11 个源仓 README | 当前仅发现 1 个业务 README 真实断链 | PASS（#806 误报消失） |
+| RAS-008 | 真实业务升级 worktree source-facts | 审计集合非空、无源仓目录误报 | 3 个业务资产实际回读 | PASS |
+| RAS-009 | 真实业务升级 worktree module audit | 不再出现 11 个源仓 README | 当前仅发现 1 个业务 README 真实断链 | PASS（#806 误报消失） |
 | RAS-010 | PMO package 与 Business Starter 投影 | 唯一源构建、manifest 和投影无漂移 | Node 22 `@mango/pmo` build/check、sync `--write`、sync `--check`；144 managed files | PASS |
 | RAS-011 | 发布 PMO/CLI 与干净消费 | hosted/group 哈希一致，业务升级后正式命令可执行 | release manifest 与业务升级记录 | PENDING |
 
@@ -104,7 +104,7 @@
 
 - 发布前回滚：整体撤回共享解析器、两条脚本、规则、文档、测试、Changeset 和机械投影。
 - 发布后不覆盖已发布坐标；发现缺陷时发布新的 PMO/CLI patch。
-- 真实保函仓仍有一个能力地图已引用 README 的断链，属于业务文档真实问题，不是 #806 的源仓误报；待业务仓升级新 tuple 后在原业务任务 worktree 修复并重跑 Gate。
+- 真实业务仓仍有一个能力地图已引用 README 的断链，属于业务文档真实问题，不是 #806 的源仓误报；待业务仓升级新 tuple 后在原业务任务 worktree 修复并重跑 Gate。
 - Nexus 已发布坐标不可变性由 #807 统一治理；本 Issue 发布前仍必须执行版本不存在与双仓完整性检查。
 
 ## 9. 收尾清单

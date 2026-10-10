@@ -1,24 +1,16 @@
-<!-- mango-page-baseline-exception list: 告警规则页同时呈现应用级与任务级匹配优先级、远程任务选择和通知目标规则 -->
+<!-- eslint-disable vue/multi-word-component-names -->
 <!-- mango-page-baseline-exception dialog: 告警编辑同时配置匹配优先级、通知模板和动态收件人规则数组，超出标准短表单弹框合同 -->
 <template>
-  <div class="job-page">
-    <section class="job-toolbar">
-      <div class="job-toolbar-head">
-        <div>
-          <h2>告警规则</h2>
-          <p>维护失败实例告警规则，触发后提交到 mango-notice 的消息模板和收件人规则。</p>
-        </div>
-        <el-button v-auth="'job:alarm:add'" type="primary" :icon="Plus" @click="openEditor()">新增规则</el-button>
-      </div>
-
-      <el-form :model="query" class="job-search" inline @submit.prevent>
-        <el-form-item label="关键字" class="job-search-item job-search-item-wide">
+  <MangoListPage class="job-page" data-page="job.alarm">
+    <template #search>
+      <MangoSearchPanel :model="query" :columns="4" @search="loadRows" @reset="resetQuery">
+        <el-form-item label="关键字">
           <el-input v-model="query.keyword" clearable placeholder="规则/场景/模板" @keyup.enter="loadRows" />
         </el-form-item>
-        <el-form-item label="应用" class="job-search-item">
+        <el-form-item label="应用">
           <el-input v-model="query.appCode" clearable placeholder="appCode" @keyup.enter="loadRows" />
         </el-form-item>
-        <el-form-item label="任务" class="job-search-item job-search-item-wide">
+        <el-form-item label="任务">
           <el-select
             v-model="query.jobId"
             clearable
@@ -32,7 +24,7 @@
             <el-option v-for="item in jobOptions" :key="item.id" :label="jobOptionLabel(item)" :value="item.id" />
           </el-select>
         </el-form-item>
-        <el-form-item label="状态" class="job-search-item job-search-item-small">
+        <el-form-item label="状态">
           <el-select v-model="query.enabled" clearable placeholder="全部">
             <el-option
               v-for="item in enabledOptions"
@@ -42,21 +34,14 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item class="job-search-actions">
-          <el-button v-auth="'job:alarm:list'" type="primary" :icon="Search" @click="loadRows">查询</el-button>
-          <el-button :icon="Refresh" @click="resetQuery">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </section>
+      </MangoSearchPanel>
+    </template>
 
-    <section class="job-panel">
-      <div class="job-panel-head">
-        <div>
-          <h3>规则列表</h3>
-          <p>任务级规则优先匹配指定任务；应用级默认规则在同应用失败实例上生效。</p>
-        </div>
-        <el-button v-auth="'job:alarm:list'" :icon="Refresh" @click="loadRows">刷新</el-button>
-      </div>
+    <MangoListPanel>
+      <template #actions>
+        <el-button v-auth="'job:alarm:add'" type="primary" plain :icon="Plus" @click="openEditor()">新增规则</el-button>
+        <el-button v-auth="'job:alarm:list'" plain :icon="Refresh" @click="loadRows">刷新</el-button>
+      </template>
 
       <el-alert v-if="errorMessage" class="job-error" type="error" :closable="false" show-icon>
         <template #title>
@@ -110,10 +95,10 @@
         </el-table-column>
       </el-table>
 
-      <div class="job-pagination">
+      <template #pagination>
         <Pagination v-model:page="query.pageNum" v-model:limit="query.pageSize" :total="total" @pagination="loadRows" />
-      </div>
-    </section>
+      </template>
+    </MangoListPanel>
 
     <el-dialog
       v-model="editorVisible"
@@ -205,12 +190,12 @@
         <el-button type="primary" :loading="saving" @click="saveRow">保存</el-button>
       </template>
     </el-dialog>
-  </div>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts">
-import { Delete, Edit, Plus, Refresh, Search } from '@element-plus/icons-vue';
-import { Pagination } from '@mango/common';
+import { Delete, Edit, Plus, Refresh } from '@element-plus/icons-vue';
+import { MangoListPage, MangoListPanel, MangoSearchPanel, Pagination } from '@mango/common';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import { onMounted, reactive, ref } from 'vue';
 import {

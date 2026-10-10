@@ -1,34 +1,29 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
   <!-- mango-page-baseline-exception list: Existing outbound routing table layout is retained because this task only adds explicit receive capability fields and must preserve established send management behavior. -->
   <!-- mango-page-baseline-exception dialog: Existing outbound channel editor is retained because replacing its dialog in this task would expand scope and risk the established email, SMS, site, and WeCom send flows. -->
-  <div class="notice-channel-page" data-surface="notice.channel.routing">
-    <el-card shadow="never" class="channel-main page-card">
-      <div class="list-page-header">
-        <h1>渠道配置</h1>
-      </div>
+  <MangoListPage class="notice-channel-page" data-page="notice.channel">
+    <template #search>
+      <MangoSearchPanel :model="query" :columns="2" @search="load" @reset="resetQuery">
+        <el-form-item label="渠道类型">
+          <el-select v-model="query.channelType" clearable placeholder="全部">
+            <el-option v-for="item in channels" :key="item" :label="channelLabel(item)" :value="item" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="启用状态">
+          <el-select v-model="query.enabled" clearable placeholder="全部">
+            <el-option label="启用" :value="true" />
+            <el-option label="停用" :value="false" />
+          </el-select>
+        </el-form-item>
+      </MangoSearchPanel>
+    </template>
 
-      <div class="list-toolbar">
-        <el-form :inline="true" :model="query" class="notice-filter">
-          <el-form-item label="渠道类型">
-            <el-select v-model="query.channelType" clearable placeholder="全部" class="filter-control">
-              <el-option v-for="item in channels" :key="item" :label="channelLabel(item)" :value="item" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="启用状态">
-            <el-select v-model="query.enabled" clearable placeholder="全部" class="filter-control">
-              <el-option label="启用" :value="true" />
-              <el-option label="停用" :value="false" />
-            </el-select>
-          </el-form-item>
-          <el-form-item>
-            <el-button type="primary" @click="load">查询</el-button>
-          </el-form-item>
-        </el-form>
-        <div class="toolbar-actions">
-          <el-button @click="openRouteTagManager">路由标签</el-button>
-          <el-button type="primary" :icon="Plus" @click="openCreate">新增</el-button>
-        </div>
-      </div>
+    <MangoListPanel>
+      <template #actions>
+        <el-button @click="openRouteTagManager">路由标签</el-button>
+        <el-button type="primary" :icon="Plus" @click="openCreate">新增</el-button>
+      </template>
 
       <el-table v-loading="loading" :data="configs" border stripe>
         <el-table-column prop="configCode" label="配置编码" min-width="170" show-overflow-tooltip />
@@ -113,7 +108,7 @@
           </template>
         </el-table-column>
       </el-table>
-    </el-card>
+    </MangoListPanel>
 
     <el-dialog v-model="visible" :title="dialogTitle" width="760px" class="channel-dialog" destroy-on-close>
       <el-form :model="form" label-width="92px" class="channel-form">
@@ -852,7 +847,7 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="detailVisible" title="渠道详情" width="760px" class="channel-dialog" destroy-on-close>
+    <MangoDialog v-model="detailVisible" title="渠道详情" width="760px" destroy-on-close>
       <template v-if="current">
         <el-form label-width="92px" class="channel-form channel-detail-form">
           <section class="form-section">
@@ -960,14 +955,15 @@
       <template #footer>
         <el-button type="primary" @click="detailVisible = false">关闭</el-button>
       </template>
-    </el-dialog>
-  </div>
+    </MangoDialog>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Plus } from '@element-plus/icons-vue';
+import { MangoDialog, MangoListPage, MangoListPanel, MangoSearchPanel } from '@mango/common';
 import NoticeSecretInput from './components/NoticeSecretInput.vue';
 import {
   deleteChannelConfig,
@@ -1060,6 +1056,12 @@ const capabilityModeOptions = computed(() =>
     ? capabilityModes
     : capabilityModes.filter((item) => item.value === 'SEND'),
 );
+
+function resetQuery() {
+  query.channelType = undefined;
+  query.enabled = undefined;
+  void load();
+}
 
 async function load() {
   loading.value = true;
@@ -1719,12 +1721,6 @@ onMounted(load);
 </script>
 
 <style scoped>
-.notice-channel-page {
-  display: flex;
-  min-height: calc(100vh - var(--mango-header-height) - var(--mango-tags-view-height) - 32px);
-  padding: 0;
-}
-
 .config-group-title {
   margin: 8px 0 14px;
   padding: 8px 12px;
@@ -1735,73 +1731,12 @@ onMounted(load);
   border-radius: 4px;
 }
 
-.channel-main {
-  display: flex;
-  flex: 1;
-  min-width: 0;
-}
-
-.channel-main :deep(.el-card__body) {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  min-width: 0;
-  min-height: 0;
-  padding: 16px;
-}
-
-.page-card {
-  min-height: calc(100vh - 136px);
-}
-
-.list-page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.list-page-header h1 {
-  margin: 0;
-  color: var(--el-text-color-primary);
-  font-size: 18px;
-  font-weight: 650;
-  line-height: 32px;
-}
-
-.list-toolbar {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.toolbar-actions,
 .route-tag-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-}
-
-.route-tag-toolbar {
   margin-bottom: 12px;
-}
-
-.notice-filter {
-  flex: 1;
-  min-width: 0;
-  margin-bottom: 0;
-}
-
-.notice-filter :deep(.el-form-item) {
-  margin-bottom: 0;
-}
-
-.filter-control {
-  width: 160px;
 }
 
 .channel-form {
@@ -1857,15 +1792,5 @@ onMounted(load);
 .channel-detail-form :deep(.el-input__wrapper),
 .channel-detail-form :deep(.el-textarea__inner) {
   background-color: var(--el-fill-color-lighter);
-}
-
-@media (width <= 768px) {
-  .list-toolbar {
-    display: block;
-  }
-
-  .toolbar-actions {
-    margin-top: 12px;
-  }
 }
 </style>

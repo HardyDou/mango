@@ -89,7 +89,10 @@ describe('notice admin pages', () => {
   it('消息业务配置列表使用后端分页契约并展示总数分页', () => {
     const source = readFileSync(resolve(packageRoot, 'src/views/business-config/index.vue'), 'utf-8');
 
-    expect(source).toContain("import { Editor, Pagination } from '@mango/common';");
+    expect(source).toContain('Editor');
+    expect(source).toContain('Pagination');
+    expect(source).toContain('MangoSearchPanel');
+    expect(source).toContain('MangoListPanel');
     expect(source).toContain('pageNum: 1,');
     expect(source).toContain('pageSize: 10,');
     expect(source).toContain('pageNum: query.pageNum,');

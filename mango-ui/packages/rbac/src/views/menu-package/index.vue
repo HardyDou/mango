@@ -1,10 +1,10 @@
-<!-- mango-page-baseline-exception all: 菜单套餐维护联合套餐列表、层级菜单树和权限范围配置，不能映射为独立的标准列表与短表单弹框。 -->
+<!-- mango-page-baseline-exception dialog: 套餐编辑联合层级菜单树和权限范围配置，编辑弹框需要保留复杂上下文。 -->
 <template>
-  <div class="menu-package-container">
-    <el-card>
-      <el-form :inline="true" class="search-form">
+  <MangoListPage class="menu-package-page" data-page="system.menu-package">
+    <template #search>
+      <MangoSearchPanel :model="query" @search="loadData" @reset="handleReset">
         <el-form-item label="关键词">
-          <el-input v-model="query.keyword" placeholder="搜索套餐名称/编码" clearable />
+          <el-input v-model="query.keyword" placeholder="搜索套餐名称/编码" clearable @keyup.enter="loadData" />
         </el-form-item>
         <el-form-item label="状态">
           <DictSelect
@@ -16,19 +16,15 @@
             number-value
           />
         </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="loadData">查询</el-button>
-          <el-button @click="handleReset">重置</el-button>
-        </el-form-item>
-      </el-form>
+      </MangoSearchPanel>
+    </template>
 
-      <div class="action-toolbar">
-        <div class="toolbar-left">
-          <el-button type="primary" @click="handleAdd">新增套餐</el-button>
-        </div>
-      </div>
+    <MangoListPanel>
+      <template #actions>
+        <el-button type="primary" plain @click="handleAdd">新增套餐</el-button>
+      </template>
 
-      <el-table v-loading="loading" :data="tableData" stripe>
+      <el-table v-loading="loading" :data="tableData" stripe data-surface="system.menu-package.table">
         <el-table-column prop="packageName" label="套餐名称" min-width="180" />
         <el-table-column prop="packageCode" label="套餐编码" min-width="160" />
         <el-table-column prop="appCode" label="应用" width="140" />
@@ -49,9 +45,9 @@
           </template>
         </el-table-column>
       </el-table>
-    </el-card>
+    </MangoListPanel>
 
-    <el-dialog v-model="dialogVisible" :title="form.packageId ? '编辑套餐' : '新增套餐'" width="860px">
+    <MangoDialog v-model="dialogVisible" :title="form.packageId ? '编辑套餐' : '新增套餐'" width="860px">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-row :gutter="16">
           <el-col :span="12">
@@ -100,7 +96,7 @@
         <el-button @click="dialogVisible = false">取消</el-button>
         <el-button type="primary" @click="handleSubmit">确定</el-button>
       </template>
-    </el-dialog>
+    </MangoDialog>
 
     <el-drawer v-model="previewVisible" title="套餐菜单预览" size="420px">
       <el-tree
@@ -112,11 +108,11 @@
         :props="treeProps"
       />
     </el-drawer>
-  </div>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts" name="RbacMenuPackage">
-import { DictSelect, DictTag } from '@mango/common';
+import { DictSelect, DictTag, MangoDialog, MangoListPage, MangoListPanel, MangoSearchPanel } from '@mango/common';
 import { nextTick, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import type { ApiId } from '@mango/api-schema';
@@ -263,18 +259,8 @@ onMounted(async () => {
 </script>
 
 <style scoped lang="scss">
-.menu-package-container {
-  padding: 0;
-}
-
-.card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.search-form {
-  margin-bottom: 16px;
+.menu-package-page {
+  min-width: 0;
 }
 
 .package-tree {

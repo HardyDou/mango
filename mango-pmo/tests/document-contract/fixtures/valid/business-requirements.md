@@ -1,7 +1,7 @@
 ---
 documentId: BRD-ANN-001
 documentType: business-requirements
-pmoVersion: 1.4.5
+pmoVersion: 1.4.6
 schemaRevision: 1
 riskLevel: L2
 riskAssessmentEvidence: rules/09-test-case-automation-flow.md and feature impact review
@@ -15,6 +15,16 @@ upstreamDocumentHash: NONE
 ---
 
 # 公告审核业务需求说明书
+
+> **写作与决定门禁：** 遵循 [`Agent 文本输出规范`](../../../../rules/13-agent-text-output.md)。先写重点，使用具体主语和稳定术语，保留成功/失败边界。需求决定另按 [`决策复核规范`](../../../../rules/14-decision-expert-review.md)记录三视角分析，并询问、记录是否需要外部同行评审。
+
+> **先读：这份文档要回答什么**
+> - **一句话目标：** 让公告提交人及时获得审核决定。
+> - **真实场景：** 运营人员提交公告后，审核员在企业内处理并反馈结果。
+> - **关键输入 / 输出：** 公告内容和审核动作 / 当前业务决定与通知结果。
+> - **成功与失败：** 成功在约定时间内形成决定；失败时保留可追踪的拒绝或撤回原因。
+> - **明确不做：** 不处理跨企业共享和法务定稿。
+> - **阅读顺序：** 先看本段，再看业务对象与流程，最后看规则、验收和追踪矩阵。
 
 ## 1. 业务背景与问题
 

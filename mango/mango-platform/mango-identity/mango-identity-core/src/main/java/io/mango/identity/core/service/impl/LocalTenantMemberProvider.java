@@ -243,6 +243,33 @@ public class LocalTenantMemberProvider implements TenantMemberProvider {
     }
 
     @Override
+    public List<TenantMemberOrgRelationVO> listUserOrgRelations(Long tenantId, Long userId) {
+        if (tenantId == null || userId == null) {
+            return List.of();
+        }
+        List<Long> memberIds = tenantMemberMapper.selectList(new LambdaQueryWrapper<TenantMemberEntity>()
+                        .eq(TenantMemberEntity::getTenantId, String.valueOf(tenantId))
+                        .eq(TenantMemberEntity::getUserId, userId)
+                        .eq(TenantMemberEntity::getStatus, STATUS_ENABLED)
+                        .isNull(TenantMemberEntity::getLeftAt))
+                .stream()
+                .map(TenantMemberEntity::getMemberId)
+                .toList();
+        if (memberIds.isEmpty()) {
+            return List.of();
+        }
+        return tenantMemberOrgMapper.selectList(new LambdaQueryWrapper<TenantMemberOrgEntity>()
+                        .eq(TenantMemberOrgEntity::getTenantId, tenantId)
+                        .in(TenantMemberOrgEntity::getMemberId, memberIds)
+                        .orderByDesc(TenantMemberOrgEntity::getPrimaryFlag)
+                        .orderByAsc(TenantMemberOrgEntity::getCreatedAt)
+                        .orderByAsc(TenantMemberOrgEntity::getId))
+                .stream()
+                .map(this::toRelationInfo)
+                .toList();
+    }
+
+    @Override
     public TenantMemberOrgRelationVO getOrgRelation(Long relationId) {
         if (relationId == null) {
             return null;

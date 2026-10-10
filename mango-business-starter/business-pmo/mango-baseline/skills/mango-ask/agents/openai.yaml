@@ -1,0 +1,6 @@
+interface:
+  display_name: "Mango Ask"
+  short_description: "Classify an unclear request and route it to the smallest next Skill"
+  default_prompt: "Use $mango-ask to classify what I need before loading a large workflow or changing anything."
+policy:
+  allow_implicit_invocation: true

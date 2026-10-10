@@ -1,13 +1,13 @@
-<!-- mango-page-baseline-exception all: 岗位维护联合组织上下文、岗位成员关系和状态操作，弹框承担关联配置而非标准短表单。 -->
+<!-- mango-page-baseline-exception dialog: 岗位编辑联合组织上下文和成员关系配置，编辑弹框需要保留业务上下文。 -->
 <template>
-  <div class="post-container">
-    <el-card>
-      <el-form :inline="true" class="search-form">
+  <MangoListPage class="post-page" data-page="system.post">
+    <template #search>
+      <MangoSearchPanel :model="query" :columns="3" @search="handleSearch" @reset="handleReset">
         <el-form-item label="岗位名称">
-          <el-input v-model="query.postName" placeholder="请输入岗位名称" clearable />
+          <el-input v-model="query.postName" placeholder="请输入岗位名称" clearable @keyup.enter="handleSearch" />
         </el-form-item>
         <el-form-item label="岗位编码">
-          <el-input v-model="query.postCode" placeholder="请输入岗位编码" clearable />
+          <el-input v-model="query.postCode" placeholder="请输入岗位编码" clearable @keyup.enter="handleSearch" />
         </el-form-item>
         <el-form-item label="状态">
           <DictSelect
@@ -18,19 +18,15 @@
             any-option-label="不限"
           />
         </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="handleSearch"> 查询 </el-button>
-          <el-button @click="handleReset"> 重置 </el-button>
-        </el-form-item>
-      </el-form>
+      </MangoSearchPanel>
+    </template>
 
-      <div class="action-toolbar">
-        <div class="toolbar-left">
-          <el-button type="primary" @click="handleAdd"> 新增岗位 </el-button>
-        </div>
-      </div>
+    <MangoListPanel>
+      <template #actions>
+        <el-button type="primary" plain @click="handleAdd">新增岗位</el-button>
+      </template>
 
-      <el-table v-loading="loading" :data="tableData" stripe>
+      <el-table v-loading="loading" :data="tableData" stripe data-surface="system.post.table">
         <el-table-column prop="postName" label="岗位名称" min-width="160" />
         <el-table-column prop="postCode" label="岗位编码" min-width="160" />
         <el-table-column prop="postSort" label="排序" width="90" />
@@ -53,10 +49,12 @@
         </el-table-column>
       </el-table>
 
-      <Pagination v-model:page="query.pageNum" v-model:limit="query.pageSize" :total="total" @pagination="loadData" />
-    </el-card>
+      <template #pagination>
+        <Pagination v-model:page="query.pageNum" v-model:limit="query.pageSize" :total="total" @pagination="loadData" />
+      </template>
+    </MangoListPanel>
 
-    <el-dialog v-model="dialogVisible" :title="form.id ? '编辑岗位' : '新增岗位'" width="560px">
+    <MangoDialog v-model="dialogVisible" :title="form.id ? '编辑岗位' : '新增岗位'" width="560px">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="岗位名称" prop="postName">
           <el-input v-model="form.postName" placeholder="请输入岗位名称" />
@@ -82,12 +80,20 @@
         <el-button @click="dialogVisible = false"> 取消 </el-button>
         <el-button type="primary" :loading="submitLoading" @click="handleSubmit"> 确定 </el-button>
       </template>
-    </el-dialog>
-  </div>
+    </MangoDialog>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts" name="SystemPost">
-import { DictSelect, DictTag, Pagination } from '@mango/common';
+import {
+  DictSelect,
+  DictTag,
+  MangoDialog,
+  MangoListPage,
+  MangoListPanel,
+  MangoSearchPanel,
+  Pagination,
+} from '@mango/common';
 import { onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import { useDict } from '@mango/common/hooks/useDict';
@@ -217,21 +223,7 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
-.post-container {
-  padding: 0;
-}
-
-.card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.search-form {
-  margin-bottom: 16px;
-
-  :deep(.el-form-item) {
-    margin-bottom: 0;
-  }
+.post-page {
+  min-width: 0;
 }
 </style>

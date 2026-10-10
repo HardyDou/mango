@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <!-- mango-page-baseline-exception all: Existing numgen management page predates Mango standard page containers; Issue #730 only changes DATE segment editing and preview, so migrating the page shell is out of scope. -->
 <template>
   <div class="numgen-page">
@@ -63,100 +64,94 @@
         @change="handleDomainChange"
       />
 
-      <section class="numgen-rule-panel">
-        <div class="numgen-table-head">
-          <div>
-            <h3>编号管理</h3>
-            <p>维护业务Key、当前生效版本和待发布规则，编辑后发布才会影响业务生成。</p>
-          </div>
-          <div class="numgen-head-actions">
-            <el-button type="primary" :icon="Plus" @click="openGeneratorDrawer()">新增规则</el-button>
-          </div>
-        </div>
+      <MangoListPage class="numgen-rule-page">
+        <template #search>
+          <MangoSearchPanel :model="generatorQuery" @search="loadGenerators" @reset="resetGeneratorQuery">
+            <el-form-item label="关键字">
+              <el-input
+                v-model="generatorQuery.keyword"
+                placeholder="业务Key / 名称"
+                clearable
+                @keyup.enter="loadGenerators"
+                @clear="loadGenerators"
+              />
+            </el-form-item>
+            <el-form-item label="状态">
+              <el-select v-model="generatorQuery.status" clearable placeholder="全部状态">
+                <el-option label="启用" :value="1" />
+                <el-option label="停用" :value="0" />
+              </el-select>
+            </el-form-item>
+          </MangoSearchPanel>
+        </template>
 
-        <el-form :inline="true" :model="generatorQuery" class="search-form">
-          <el-form-item label="关键字">
-            <el-input
-              v-model="generatorQuery.keyword"
-              placeholder="业务Key / 名称"
-              clearable
-              @keyup.enter="loadGenerators"
-              @clear="loadGenerators"
-            />
-          </el-form-item>
-          <el-form-item label="状态">
-            <el-select v-model="generatorQuery.status" clearable placeholder="全部状态">
-              <el-option label="启用" :value="1" />
-              <el-option label="停用" :value="0" />
-            </el-select>
-          </el-form-item>
-          <el-form-item>
-            <el-button type="primary" :icon="Search" @click="loadGenerators">查询</el-button>
-            <el-button :icon="Refresh" @click="resetGeneratorQuery">重置</el-button>
-          </el-form-item>
-        </el-form>
+        <MangoListPanel>
+          <template #actions>
+            <el-button type="primary" @click="openGeneratorDrawer()">新增规则</el-button>
+          </template>
 
-        <el-table
-          class="generator-table"
-          :data="generatorRows"
-          v-loading="generatorLoading"
-          row-key="id"
-          stripe
-          highlight-current-row
-          @row-click="selectGenerator"
-        >
-          <el-table-column prop="genName" label="规则名称" min-width="180" show-overflow-tooltip />
-          <el-table-column prop="genKey" label="业务Key" min-width="180" show-overflow-tooltip />
-          <el-table-column prop="domainCode" label="业务域" width="120" show-overflow-tooltip />
-          <el-table-column label="生效版本" width="118">
-            <template #default="{ row }">
-              <span v-if="row.currentRuleVersion">V{{ row.currentRuleVersion }}</span>
-              <span v-else class="muted-text">未发布</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="发布变更" width="100">
-            <template #default="{ row }">
-              <el-tooltip
-                v-if="row.hasUnpublishedChanges"
-                content="已保存但未发布，发布后才会成为业务生成使用的规则"
-                placement="top"
-              >
-                <el-tag type="warning">未同步</el-tag>
-              </el-tooltip>
-              <el-tag v-else effect="plain" type="success">已同步</el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column label="状态" width="90">
-            <template #default="{ row }">
-              <el-tag :type="row.status === 1 ? 'success' : 'info'">
-                {{ row.status === 1 ? '启用' : '停用' }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="updateTime" label="更新时间" width="170" />
-          <el-table-column label="操作" width="250" fixed="right">
-            <template #default="{ row }">
-              <div class="table-actions">
-                <el-button link type="primary" :icon="Edit" @click.stop="openGeneratorDrawer(row)">编辑</el-button>
-                <el-button link type="success" :icon="Finished" @click.stop="publishCurrentVersion(row)"
-                  >发布</el-button
+          <el-table
+            class="generator-table"
+            :data="generatorRows"
+            v-loading="generatorLoading"
+            row-key="id"
+            stripe
+            highlight-current-row
+            @row-click="selectGenerator"
+          >
+            <el-table-column prop="genName" label="规则名称" min-width="180" show-overflow-tooltip />
+            <el-table-column prop="genKey" label="业务Key" min-width="180" show-overflow-tooltip />
+            <el-table-column prop="domainCode" label="业务域" width="120" show-overflow-tooltip />
+            <el-table-column label="生效版本" width="118">
+              <template #default="{ row }">
+                <span v-if="row.currentRuleVersion">V{{ row.currentRuleVersion }}</span>
+                <span v-else class="muted-text">未发布</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="发布变更" width="100">
+              <template #default="{ row }">
+                <el-tooltip
+                  v-if="row.hasUnpublishedChanges"
+                  content="已保存但未发布，发布后才会成为业务生成使用的规则"
+                  placement="top"
                 >
-                <el-button link type="primary" :icon="Clock" @click.stop="openHistoryPage(row)">历史版本</el-button>
-                <el-button link type="danger" :icon="Delete" @click.stop="deleteGenerator(row)">删除</el-button>
-              </div>
-            </template>
-          </el-table-column>
-        </el-table>
+                  <el-tag type="warning">未同步</el-tag>
+                </el-tooltip>
+                <el-tag v-else effect="plain" type="success">已同步</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="状态" width="90">
+              <template #default="{ row }">
+                <el-tag :type="row.status === 1 ? 'success' : 'info'">
+                  {{ row.status === 1 ? '启用' : '停用' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="updateTime" label="更新时间" width="170" />
+            <el-table-column label="操作" width="250" fixed="right">
+              <template #default="{ row }">
+                <div class="table-actions">
+                  <el-button link type="primary" :icon="Edit" @click.stop="openGeneratorDrawer(row)">编辑</el-button>
+                  <el-button link type="success" :icon="Finished" @click.stop="publishCurrentVersion(row)"
+                    >发布</el-button
+                  >
+                  <el-button link type="primary" :icon="Clock" @click.stop="openHistoryPage(row)">历史版本</el-button>
+                  <el-button link type="danger" :icon="Delete" @click.stop="deleteGenerator(row)">删除</el-button>
+                </div>
+              </template>
+            </el-table-column>
+          </el-table>
 
-        <div class="pagination-row">
-          <Pagination
-            v-model:current-page="generatorQuery.pageNum"
-            v-model:page-size="generatorQuery.pageSize"
-            :total="generatorTotal"
-            @change="loadGenerators"
-          />
-        </div>
-      </section>
+          <template #pagination>
+            <Pagination
+              v-model:page="generatorQuery.pageNum"
+              v-model:limit="generatorQuery.pageSize"
+              :total="generatorTotal"
+              @pagination="loadGenerators"
+            />
+          </template>
+        </MangoListPanel>
+      </MangoListPage>
     </div>
 
     <el-dialog
@@ -437,11 +432,11 @@
 </template>
 
 <script setup lang="ts">
-import { Pagination } from '@mango/common';
+import { MangoListPage, MangoListPanel, MangoSearchPanel, Pagination } from '@mango/common';
 import { computed, onMounted, reactive, ref, shallowRef, watch } from 'vue';
 import type { FormInstance, FormRules } from 'element-plus';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { Clock, Delete, Edit, Finished, Plus, Refresh, Search } from '@element-plus/icons-vue';
+import { Clock, Delete, Edit, Finished, Plus } from '@element-plus/icons-vue';
 import { DomainSideTree } from '@mango/system';
 import {
   numgenApi,
@@ -645,18 +640,15 @@ async function selectGenerator(row: NumgenGenerator) {
 
 async function loadVersions() {
   if (!selectedGenerator.value) return;
-  try {
-    const data = await numgenApi.pageVersions({ pageNum: 1, pageSize: 20, genKey: selectedGenerator.value.genKey });
-    versionRows.value = data.list;
-    const next = selectedVersion.value
-      ? versionRows.value.find((item) => String(item.id) === String(selectedVersion.value?.id))
-      : preferredEditableVersion();
-    if (next) {
-      await selectVersion(next);
-    } else {
-      selectedVersion.value = undefined;
-    }
-  } finally {
+  const data = await numgenApi.pageVersions({ pageNum: 1, pageSize: 20, genKey: selectedGenerator.value.genKey });
+  versionRows.value = data.list;
+  const next = selectedVersion.value
+    ? versionRows.value.find((item) => String(item.id) === String(selectedVersion.value?.id))
+    : preferredEditableVersion();
+  if (next) {
+    await selectVersion(next);
+  } else {
+    selectedVersion.value = undefined;
   }
 }
 
@@ -1338,15 +1330,6 @@ function segmentTypeLabel(type: SegmentEditorType) {
   margin-left: 0;
 }
 
-.search-form {
-  margin-bottom: 2px;
-}
-
-.search-form :deep(.el-input),
-.search-form :deep(.el-select) {
-  width: 220px;
-}
-
 .numgen-rule-panel :deep(.el-table) {
   width: 100%;
 }
@@ -1358,12 +1341,6 @@ function segmentTypeLabel(type: SegmentEditorType) {
 
 .muted-text {
   color: var(--el-text-color-secondary);
-}
-
-.pagination-row {
-  display: flex;
-  justify-content: flex-end;
-  padding-top: 14px;
 }
 
 .segment-strip {

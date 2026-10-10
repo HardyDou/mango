@@ -1,10 +1,10 @@
-<!-- mango-page-baseline-exception all: 机构维护联合套餐绑定、菜单树授权和生命周期状态操作，弹框不是标准短表单。 -->
+<!-- mango-page-baseline-exception dialog: 企业维护包含套餐绑定和菜单树授权，编辑弹框需要保留复杂上下文。 -->
 <template>
-  <div class="tenant-container">
-    <el-card>
-      <el-form :inline="true" class="search-form">
+  <MangoListPage class="tenant-page" data-page="system.tenant">
+    <template #search>
+      <MangoSearchPanel :model="query" @search="handleSearch" @reset="handleReset">
         <el-form-item label="关键词">
-          <el-input v-model="query.keyword" placeholder="搜索租户名称/编码" clearable />
+          <el-input v-model="query.keyword" placeholder="搜索租户名称/编码" clearable @keyup.enter="handleSearch" />
         </el-form-item>
         <el-form-item label="状态">
           <DictSelect
@@ -16,19 +16,15 @@
             number-value
           />
         </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="handleSearch"> 查询 </el-button>
-          <el-button @click="handleReset"> 重置 </el-button>
-        </el-form-item>
-      </el-form>
+      </MangoSearchPanel>
+    </template>
 
-      <div class="action-toolbar">
-        <div class="toolbar-left">
-          <el-button type="primary" @click="handleAdd"> 新增租户 </el-button>
-        </div>
-      </div>
+    <MangoListPanel>
+      <template #actions>
+        <el-button type="primary" plain @click="handleAdd">新增租户</el-button>
+      </template>
 
-      <el-table v-loading="loading" :data="tableData" stripe>
+      <el-table v-loading="loading" :data="tableData" stripe data-surface="system.tenant.table">
         <el-table-column prop="tenantName" label="租户名称" />
         <el-table-column prop="tenantCode" label="租户编码" />
         <el-table-column prop="institutionType" label="租户类型" width="120">
@@ -76,10 +72,12 @@
         </el-table-column>
       </el-table>
 
-      <Pagination v-model:page="query.pageNum" v-model:limit="query.pageSize" :total="total" @pagination="loadData" />
-    </el-card>
+      <template #pagination>
+        <Pagination v-model:page="query.pageNum" v-model:limit="query.pageSize" :total="total" @pagination="loadData" />
+      </template>
+    </MangoListPanel>
 
-    <el-dialog v-model="dialogVisible" :title="form.id ? '编辑租户' : '新增租户'" width="600px">
+    <MangoDialog v-model="dialogVisible" :title="form.id ? '编辑租户' : '新增租户'" width="600px">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="租户名称" prop="tenantName">
           <el-input v-model="form.tenantName" placeholder="请输入租户名称" />
@@ -132,14 +130,24 @@
         <el-button @click="dialogVisible = false"> 取消 </el-button>
         <el-button type="primary" @click="handleSubmit"> 确定 </el-button>
       </template>
-    </el-dialog>
-  </div>
+    </MangoDialog>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts" name="SystemTenant">
 import { ref, reactive, onMounted, computed, nextTick } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
-import { DictSelect, DictTag, Pagination, formatDate, useDict } from '@mango/common';
+import {
+  DictSelect,
+  DictTag,
+  MangoDialog,
+  MangoListPage,
+  MangoListPanel,
+  MangoSearchPanel,
+  Pagination,
+  formatDate,
+  useDict,
+} from '@mango/common';
 import { tenantApi, type SysTenant } from '../../api/tenant';
 import { menuApi, type SysMenuVO } from '@mango/rbac';
 import { menuPackageApi, type MenuPackageVO } from '@mango/rbac';
@@ -340,20 +348,10 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
-.tenant-container {
-  padding: 0;
+.tenant-page {
+  min-width: 0;
 }
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.search-form {
-  margin-bottom: 16px;
-  :deep(.el-form-item) {
-    margin-bottom: 0;
-  }
-}
+
 .empty-text {
   color: var(--el-text-color-placeholder);
 }

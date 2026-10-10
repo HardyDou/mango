@@ -9,7 +9,7 @@
 | 项目          | 值                                                                                                                                        |
 | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | NPM 包        | `@mango/cli`                                                                                                                              |
-| 当前发布版本  | `1.2.17`                                                                                                                                  |
+| 当前发布版本  | `1.2.18`                                                                                                                                  |
 | bin 命令      | `mango`、`mango-cli`                                                                                                                      |
 | 命令入口      | `src/index.mjs`                                                                                                                           |
 | 发布 registry | 由发布配置或 `MANGO_RELEASE_NPM_PUBLISH_REGISTRY` 注入                                                                                    |
@@ -71,8 +71,8 @@ CLI 不负责：
 
 ```bash
 npm view @mango/pmo@1.3.8 version --registry "$MANGO_NPM_REGISTRY"
-npm view @mango/cli@1.2.17 version --registry "$MANGO_NPM_REGISTRY"
-npm install -g @mango/cli@1.2.17 --registry "$MANGO_NPM_REGISTRY"
+npm view @mango/cli@1.2.18 version --registry "$MANGO_NPM_REGISTRY"
+npm install -g @mango/cli@1.2.18 --registry "$MANGO_NPM_REGISTRY"
 ```
 
 两个查询都返回精确版本后，该批次才可供业务项目安装。PMO 升级会整体同步 baseline、Agent 入口和 `.agents/skills`，不需要逐个安装 Skill。
@@ -161,25 +161,25 @@ mango docs pull --project-dir demo-custom --version 1.0.1 --maven-repository "$M
 
 `mango init` 会在项目根目录生成 `mango.config.json`，`mango add` 和 `mango module add` 都依赖它判断项目状态。
 
-| 字段                             | 示例                                            | 含义                                             | 写入 / 更新入口                        |
-| -------------------------------- | ----------------------------------------------- | ------------------------------------------------ | -------------------------------------- |
-| `project`                        | `demo-admin`                                    | 项目 code                                        | `writeMangoConfig`                     |
-| `preset`                         | `custom`                                        | 当前项目预设                                     | `writeMangoConfig`                     |
-| `topology`                       | `monolith`                                      | 当前拓扑                                         | `writeMangoConfig`                     |
-| `basePackage`                    | `com.example.mango`                             | Java 根包名                                      | `writeMangoConfig`                     |
-| `groupId`                        | `com.example.mango`                             | Maven groupId                                    | `writeMangoConfig`                     |
-| `projectVersion`                 | `1.0.0-SNAPSHOT`                                | 业务项目版本                                     | `writeMangoConfig`                     |
-| `mangoBackendVersion`            | `release-versions.json` 的 `maven.mangoBackend` | Mango 后端固定 Maven 版本                        | `writeMangoConfig`                     |
-| `paths.backend`                  | `backend`                                       | 后端 Maven 根目录；历史仓可设为 `baohan-backend` | `writeMangoConfig`，历史仓人工配置一次 |
-| `paths.frontend`                 | `frontend`                                      | 前端根目录                                       | `writeMangoConfig`，历史仓人工配置一次 |
-| `paths.businessDocs`             | `business-docs`                                 | PMO 生命周期文档根目录                           | `writeMangoConfig`，历史仓人工配置一次 |
-| `pmoChecks.frontendPageBaseline` | `true`                                          | 是否执行前端页面骨架基线；仅布尔 `false` 关闭    | `writeMangoConfig`、`pmo sync/upgrade` |
-| `modules.required`               | `authorization`、`system`                       | 必选 Mango 平台能力                              | `writeMangoConfig`                     |
-| `modules.optional`               | `workflow`、`template`                          | 已启用的 Mango 可选能力                          | `writeMangoConfig`、`addModules`       |
-| `mangoFrontendVersions`          | `@mango/admin` 等                               | 前端 Mango 包版本锁                              | `writeMangoConfig`                     |
-| `npmRegistry`                    | NPM group URL                                   | 项目 NPM registry                                | `writeMangoConfig`                     |
-| `mavenRepository`                | Maven public URL                                | 项目 Maven 仓库                                  | `writeMangoConfig`                     |
-| `businessModules`                | 业务模块列表                                    | `mango module add` 追加的业务模块登记            | `updateBusinessConfig`                 |
+| 字段                             | 示例                                            | 含义                                               | 写入 / 更新入口                        |
+| -------------------------------- | ----------------------------------------------- | -------------------------------------------------- | -------------------------------------- |
+| `project`                        | `demo-admin`                                    | 项目 code                                          | `writeMangoConfig`                     |
+| `preset`                         | `custom`                                        | 当前项目预设                                       | `writeMangoConfig`                     |
+| `topology`                       | `monolith`                                      | 当前拓扑                                           | `writeMangoConfig`                     |
+| `basePackage`                    | `com.example.mango`                             | Java 根包名                                        | `writeMangoConfig`                     |
+| `groupId`                        | `com.example.mango`                             | Maven groupId                                      | `writeMangoConfig`                     |
+| `projectVersion`                 | `1.0.0-SNAPSHOT`                                | 业务项目版本                                       | `writeMangoConfig`                     |
+| `mangoBackendVersion`            | `release-versions.json` 的 `maven.mangoBackend` | Mango 后端固定 Maven 版本                          | `writeMangoConfig`                     |
+| `paths.backend`                  | `backend`                                       | 后端 Maven 根目录；历史仓可设为 `business-backend` | `writeMangoConfig`，历史仓人工配置一次 |
+| `paths.frontend`                 | `frontend`                                      | 前端根目录                                         | `writeMangoConfig`，历史仓人工配置一次 |
+| `paths.businessDocs`             | `business-docs`                                 | PMO 生命周期文档根目录                             | `writeMangoConfig`，历史仓人工配置一次 |
+| `pmoChecks.frontendPageBaseline` | `true`                                          | 是否执行前端页面骨架基线；仅布尔 `false` 关闭      | `writeMangoConfig`、`pmo sync/upgrade` |
+| `modules.required`               | `authorization`、`system`                       | 必选 Mango 平台能力                                | `writeMangoConfig`                     |
+| `modules.optional`               | `workflow`、`template`                          | 已启用的 Mango 可选能力                            | `writeMangoConfig`、`addModules`       |
+| `mangoFrontendVersions`          | `@mango/admin` 等                               | 前端 Mango 包版本锁                                | `writeMangoConfig`                     |
+| `npmRegistry`                    | NPM group URL                                   | 项目 NPM registry                                  | `writeMangoConfig`                     |
+| `mavenRepository`                | Maven public URL                                | 项目 Maven 仓库                                    | `writeMangoConfig`                     |
+| `businessModules`                | 业务模块列表                                    | `mango module add` 追加的业务模块登记              | `updateBusinessConfig`                 |
 
 `pmoChecks.frontendPageBaseline` 缺失时按 `true` 处理，保证旧项目行为不变。`mango pmo sync/upgrade` 会为已有 `mango.config.json` 补齐默认值并保留显式 `false`，`mango pmo check --locked` 会拒绝字符串、数字、数组、空值和错误 JSON。关闭时 GitHub/Gitea 只跳过页面基线，稳定 `pmo-doc-check` 及其它 PMO 门禁继续执行。
 
@@ -214,7 +214,7 @@ CLI 从当前目录向上查找 `mango.dev.json`。本地工作区分配事实�
 - 检测到多个后端或前端 app 时，`groups.backend`、`groups.frontend` 会包含全部 app，`groups.default` 只取第一个后端和第一个前端，并在计划中提示人工确认。
 - 已存在业务自有 `mango.dev.json` 时不会覆盖；需要本机临时改路径时使用 `.mango/dev-workspace.local.json`。
 
-新模板和自动生成的 Spring Boot 清单通过 `processMode` 声明 `runtime`。`mango dev start` 发现后端源码使用 `MangoApplication.run`（或 app 显式配置 `mangoLifecycle: true`）时，会在 worktree 独立的 `mango_dev_*` 数据库上编排本地生命周期：空库先执行 generation 1 的 `bootstrap apply --mango.bootstrap.strategy=cold`；已有稳定 generation 先执行 `bootstrap verify`，fingerprint 未变化时直接复用，发生 `BOOTSTRAP_FINGERPRINT_MISMATCH` 时使用下一 generation 重新 cold apply；最后以相同 environment、release、revision 和 generation 启动 `runtime`。多后端项目按 `workspaceId + appName` 隔离 lifecycle key，避免共享数据库时串用回执。自动 bootstrap 前还会校验已解析的 MySQL datasource 必须明确指向当前 `mango_dev_*` 数据库，缺失或不一致时直接拒绝，避免误操作其它数据库。
+新模板和自动生成的 Spring Boot 清单通过 `processMode` 声明 `runtime`。`mango dev start` 发现后端源码使用 `MangoApplication.run`（或 app 显式配置 `mangoLifecycle: true`）时，会在 worktree 独立的 `mango_dev_*` 数据库上编排本地生命周期：空库先执行 generation 1 的 `bootstrap apply --mango.bootstrap.strategy=cold`；已有稳定 generation 先执行 `bootstrap verify`，fingerprint 未变化时直接复用，发生 `BOOTSTRAP_FINGERPRINT_MISMATCH` 时使用下一 generation 重新 cold apply；最后以相同 environment、release、revision 和 generation 启动 `runtime`。直接在 IDEA 运行 `MangoApplication.run(App.class)` 的无参数 `main()` 复用同一托管生命周期、数据库边界和 identity 合同，不需要手工填写 lifecycle、release、generation 或 fingerprint 参数。多后端项目按 `workspaceId + appName` 隔离 lifecycle key，避免共享数据库时串用回执。自动 bootstrap 前还会校验已解析的 MySQL datasource 必须明确指向当前 `mango_dev_*` 数据库，缺失或不一致时直接拒绝，避免误操作其它数据库。
 
 旧 workspace 可能在 `MANGO_BACKEND_ADDITIONAL_ARGS` 的同一参数字符串开头重复写入与 `processMode` 一致的 `runtime`。CLI 会兼容移除这一个旧前缀并保留后续实际参数；独立的 `runtime`、冲突的 `bootstrap`、参数中其它位置或多次出现的模式仍会失败。新配置只通过 `processMode` 声明模式，不应在 `app.args` 或额外参数中重复填写。
 
@@ -259,7 +259,7 @@ CLI 从当前目录向上查找 `mango.dev.json`。本地工作区分配事实�
 | `.mango/dev-workspace.env`        | `MANGO_BACKEND_ADDITIONAL_ARGS`  | 空字符串                                      | 后端额外启动参数            | 追加到 Spring Boot args                                                                   | `defaultDevWorkspaceEnv`                               |
 | `.mango/dev-workspace.local.json` | `groups`、`apps`                 | 空                                            | 本机覆盖 manifest           | 与 `mango.dev.json` 深合并                                                                | `mergeDevWorkspaceManifest`                            |
 
-示例：项目目录名为 `baohan-system` 且分配到 `slot=7` 时，后端端口为 `18007`，前端主端口为 `30007`，子前端按 `31007`、`32007`、`33007` 递增，数据库名为 `mango_dev_baohan_system_007`。
+示例：项目目录名为 `business-system` 且分配到 `slot=7` 时，后端端口为 `18007`，前端主端口为 `30007`，子前端按 `31007`、`32007`、`33007` 递增，数据库名为 `mango_dev_business_system_007`。
 
 本地运行文件：
 
@@ -731,7 +731,7 @@ full preset 会在生成的 `application.yml` 中显式启用 `mango.event.outbo
 
 ### 1.0.72 发布影响
 
-`@mango/cli@1.0.72` 精确依赖 `@mango/pmo@1.2.2`。标准 scope classifier 从 `mango.config.json` 的 `paths` 对象读取业务仓目录；例如设置 `"backend": "baohan-backend"` 后，后端改动会进入直接模块 Maven 门禁，不会因目录名不是 `backend/` 而被误判为无后端改动。full template 同时提供 GitHub 和 Gitea 的 `pmo-doc-check`，两者使用同一 classifier 输出和稳定 check 名称。
+`@mango/cli@1.0.72` 精确依赖 `@mango/pmo@1.2.2`。标准 scope classifier 从 `mango.config.json` 的 `paths` 对象读取业务仓目录；例如设置 `"backend": "business-backend"` 后，后端改动会进入直接模块 Maven 门禁，不会因目录名不是 `backend/` 而被误判为无后端改动。full template 同时提供 GitHub 和 Gitea 的 `pmo-doc-check`，两者使用同一 classifier 输出和稳定 check 名称。
 
 该补丁不改变 Mango Java 运行时，业务后端继续使用 Mango Maven `1.0.17`。Mango 的正式 Maven `--all-non-app` 发布步骤已明确包含同版本 `io.mango:mango-docs-bundle`，不再依赖批次外人工补发。业务仓安装 `@mango/cli@1.0.72` 后，执行 `mango pmo upgrade --project-dir . --to 1.2.2`，再同步适用平台的标准 workflow。
 

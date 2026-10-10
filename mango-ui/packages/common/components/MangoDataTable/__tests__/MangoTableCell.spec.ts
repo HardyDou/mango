@@ -9,6 +9,7 @@ interface TestRow {
   profile: { name: string };
   status: string;
   empty?: string;
+  active?: boolean;
 }
 
 const ElInputStub = defineComponent({
@@ -23,12 +24,32 @@ const ElInputStub = defineComponent({
   },
 });
 
+const ElSwitchStub = defineComponent({
+  name: 'ElSwitch',
+  props: {
+    modelValue: { type: Boolean, default: false },
+    disabled: Boolean,
+    loading: Boolean,
+  },
+  emits: ['update:modelValue', 'change'],
+  setup(props) {
+    return () =>
+      h('button', {
+        type: 'button',
+        role: 'switch',
+        'aria-checked': props.modelValue,
+        disabled: props.disabled,
+      });
+  },
+});
+
 function mountCell(row: TestRow, column: MangoTableColumn<TestRow>) {
   return mount(MangoTableCell<TestRow>, {
     props: { row, rowIndex: 2, column },
     global: {
       stubs: {
         ElInput: ElInputStub,
+        ElSwitch: ElSwitchStub,
       },
     },
   });
@@ -110,5 +131,61 @@ describe('MangoTableCell', () => {
     });
 
     expect(wrapper.text()).toBe('无数据');
+  });
+
+  it('emits a change with the previous boolean value after a switch is toggled', async () => {
+    const row: TestRow = {
+      id: '1',
+      profile: { name: 'Mango' },
+      status: 'ENABLED',
+      active: false,
+    };
+    const wrapper = mountCell(row, {
+      field: 'active',
+      label: '激活',
+      type: 'switch',
+    });
+    const switchComponent = wrapper.getComponent(ElSwitchStub);
+
+    switchComponent.vm.$emit('update:modelValue', true);
+    await nextTick();
+    switchComponent.vm.$emit('change', true);
+
+    expect(row.active).toBe(true);
+    expect(wrapper.emitted('change')).toHaveLength(1);
+    expect(wrapper.emitted('change')?.[0]?.[0]).toMatchObject({
+      field: 'active',
+      value: true,
+      previousValue: false,
+      rowIndex: 2,
+    });
+  });
+
+  it('supports 1 and 0 as truthy switch values', async () => {
+    const row: TestRow = {
+      id: '1',
+      profile: { name: 'Mango' },
+      status: 'ENABLED',
+      active: 1,
+    };
+    const wrapper = mountCell(row, {
+      field: 'active',
+      label: '激活',
+      type: 'switch',
+    });
+    const switchComponent = wrapper.getComponent(ElSwitchStub);
+
+    switchComponent.vm.$emit('update:modelValue', false);
+    await nextTick();
+    switchComponent.vm.$emit('change', false);
+
+    expect(row.active).toBe(0);
+    expect(wrapper.emitted('change')).toHaveLength(1);
+    expect(wrapper.emitted('change')?.[0]?.[0]).toMatchObject({
+      field: 'active',
+      value: 0,
+      previousValue: 1,
+      rowIndex: 2,
+    });
   });
 });

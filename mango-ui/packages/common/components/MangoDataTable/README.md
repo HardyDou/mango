@@ -1,5 +1,9 @@
 # MangoDataTable
 
+> **场景 / 路径：** `业务 API -> rows/columns -> MangoDataTable -> 事件 -> 业务 API`。
+>
+> **边界 / 源码：** 组件不调用接口、不决定业务状态、不处理权限和租户；入口为 [`index.vue`](./index.vue)。先看“核心契约”和“使用示例”。
+
 统一数据表格组件。提供卡片切换、列配置、展开、选择、序号、操作、状态和分页事件。
 
 业务字段、状态文案和 tone 判断由消费方提供，组件只负责表格结构、单元格交互和展示。
@@ -30,7 +34,7 @@ import type { MangoTableColumn, MangoTablePageChangeContext } from '@mango/commo
 
 | 类型 | 字段 / 默认语义 |
 | --- | --- |
-| `MangoTableColumn` | `field`、`label` 必填；`type` 为 `text | status | tag | button | input | select | radio | custom`（默认 `text`）；支持 `width`、`minWidth`、`fixed`、`align`、`sortable`、`resizable`、`expandable`、`hidden`、`showOverflowTooltip`、`emptyText`、`options`、`loading`、`slot`、`props`、`formatter`、`disabled`。 |
+| `MangoTableColumn` | `field`、`label` 必填；`type` 为 `text | status | tag | button | input | select | radio | switch | custom`（默认 `text`）；支持 `width`、`minWidth`、`fixed`、`align`、`sortable`、`resizable`、`expandable`、`hidden`、`showOverflowTooltip`、`emptyText`、`options`、`loading`、`slot`、`props`、`formatter`、`disabled`。 |
 | `MangoTableOption` | `label`、`value` 必填；`disabled?`、`tone?` 用于选择项状态。 |
 | `MangoTableAction` | `key`、`text` 必填；`tone`、`visible`、`disabled`、`loading` 可为静态值或按行上下文计算，`props` 透传按钮属性。 |
 | `MangoTableOperation` | 操作列配置：`visible`、`label`、`width`、`minWidth`、`fixed`、`align`、`resizable`、`moreCount`、`actions`。`actions` 必填；事件只返回意图，不自动调用接口。 |
@@ -38,6 +42,47 @@ import type { MangoTableColumn, MangoTablePageChangeContext } from '@mango/commo
 | `MangoTableExpand` | `type`（当前为 `list`）、`labelWidth`、`emptyText`。 |
 
 单元格上下文包含 `{ row, rowIndex, column, field, value }`；编辑事件额外包含 `previousValue`。`MangoTableCell` 的 `input/select/radio` 会改写行字段并触发 `cell-change`，`formatter` 只改变展示值。`MangoDataTable` 的分页、选择、操作和重试均由宿主监听后请求数据。
+
+## 概览
+
+公共管理端数据表格组件，负责表格结构与展示交互，不承载业务请求。
+
+## 功能清单
+
+支持列配置、状态/标签/操作单元格、选择、展开、分页、加载、空态、错误重试和自定义 slot。
+
+## 接入方式
+
+从 `@mango/common` 导入，在 `MangoListPanel` 或页面列表区中使用。
+
+## 配置说明
+
+通过 `rows`、`columns`、`rowKey`、`pagination` 等 props 配置；业务状态映射和接口参数由宿主维护。
+
+## API 与扩展
+
+事件、slot、expose 和类型定义以本 README 的核心契约为准。
+
+## 数据与初始化
+
+无数据库、字典或默认数据初始化要求；组件只接收宿主传入的数据。
+
+## 管理入口
+
+无独立管理入口，由各业务模块列表页面接入。
+
+## 快速开始
+
+参见上方使用示例。
+
+## 问题排查
+
+先确认 `rowKey` 稳定、列 `field` 与数据字段一致，并检查宿主是否处理分页和重试事件。
+
+## 相关文档
+
+- [Common 包说明](../../README.md)
+- [能力说明规范](../../../../../mango-pmo/rules/08-capability-docs.md)
 
 ## 使用示例
 
@@ -90,12 +135,7 @@ function loadPage(next: MangoTablePageChangeContext) {
 
 ### MangoTableProps
 
-```ts
-interface MangoTableProps {
-  headerCellStyle?: never;
-  'header-cell-style'?: never;
-}
-```
+不支持 `headerCellStyle` 和 `header-cell-style`；表格主题使用 CSS 变量。
 
 ### MangoTableOption
 
@@ -157,7 +197,7 @@ type MangoTableCellCondition<Row extends object> = boolean | ((context: MangoTab
 interface MangoTableColumn<Row extends object> {
   field: string;
   label: string;
-  type?: MangoTableColumnType; // text | status | tag | button | input | select | radio | custom
+  type?: MangoTableColumnType; // text | status | tag | button | input | select | radio | switch | custom
   width?: number | string;
   minWidth?: number | string;
   fixed?: boolean | 'left' | 'right';

@@ -1,19 +1,14 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
-  <div class="public-path-container">
-    <!-- Search Bar -->
-    <el-card class="search-card">
-      <el-form inline>
+  <MangoListPage class="public-path-container" data-page="system.public-path">
+    <template #search>
+      <MangoSearchPanel :model="searchForm" :columns="3" @search="handleSearch" @reset="handleReset">
         <el-form-item label="路径">
           <el-input v-model="searchForm.path" placeholder="请输入路径" clearable style="width: 200px" />
         </el-form-item>
         <el-form-item label="类型">
           <el-select v-model="searchForm.pathType" placeholder="请选择类型" clearable style="width: 150px">
-            <el-option
-              v-for="item in PATH_TYPE_OPTIONS"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
+            <el-option v-for="item in PATH_TYPE_OPTIONS" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
         <el-form-item label="状态">
@@ -22,18 +17,13 @@
             <el-option label="禁用" :value="0" />
           </el-select>
         </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="handleSearch">查询</el-button>
-          <el-button @click="handleReset">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
+      </MangoSearchPanel>
+    </template>
 
-    <!-- Table -->
-    <el-card class="table-card">
-      <div class="table-toolbar">
-        <el-button type="primary" @click="handleAdd">新增</el-button>
-      </div>
+    <MangoListPanel>
+      <template #actions>
+        <el-button type="primary" plain @click="handleAdd">新增</el-button>
+      </template>
 
       <el-table :data="tableData" border stripe>
         <el-table-column prop="id" label="ID" width="80" />
@@ -53,12 +43,7 @@
         <el-table-column prop="priority" label="优先级" width="80" />
         <el-table-column prop="status" label="状态" width="80">
           <template #default="{ row }">
-            <el-switch
-              v-model="row.status"
-              :active-value="1"
-              :inactive-value="0"
-              @change="handleStatusChange(row)"
-            />
+            <el-switch v-model="row.status" :active-value="1" :inactive-value="0" @change="handleStatusChange(row)" />
           </template>
         </el-table-column>
         <el-table-column prop="updateTime" label="更新时间" width="180" />
@@ -69,7 +54,7 @@
           </template>
         </el-table-column>
       </el-table>
-    </el-card>
+    </MangoListPanel>
 
     <!-- Add/Edit Dialog -->
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="500px" @close="handleDialogClose">
@@ -80,12 +65,7 @@
         </el-form-item>
         <el-form-item label="类型" prop="pathType">
           <el-select v-model="formData.pathType" placeholder="请选择类型" style="width: 100%">
-            <el-option
-              v-for="item in PATH_TYPE_OPTIONS"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            >
+            <el-option v-for="item in PATH_TYPE_OPTIONS" :key="item.value" :label="item.label" :value="item.value">
               <span>{{ item.label }}</span>
               <span class="option-desc">{{ item.description }}</span>
             </el-option>
@@ -113,12 +93,13 @@
         <el-button type="primary" @click="handleSubmit">确定</el-button>
       </template>
     </el-dialog>
-  </div>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
+import { MangoListPage, MangoListPanel, MangoSearchPanel } from '@mango/common';
 import type { FormInstance, FormRules } from 'element-plus';
 import {
   getPublicPathList,
@@ -273,18 +254,6 @@ fetchData();
 </script>
 
 <style scoped lang="scss">
-.public-path-container {
-  padding: 16px;
-}
-
-.search-card {
-  margin-bottom: 16px;
-}
-
-.table-toolbar {
-  margin-bottom: 16px;
-}
-
 .form-tip {
   font-size: 12px;
   color: #999;

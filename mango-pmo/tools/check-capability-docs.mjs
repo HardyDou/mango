@@ -40,7 +40,7 @@ const businessGuideMappings = [
     ]
   },
   {
-    guide: 'mango-docs/guides/business-integration/rbac-menu-page-troubleshooting.md',
+    guide: 'mango-docs/guides/faq/rbac-menu-page-troubleshooting.md',
     matches: [
       /^mango\/mango-platform\/mango-authorization(\/|$)/,
       /^mango-ui\/packages\/rbac(\/|$)/,
@@ -50,7 +50,7 @@ const businessGuideMappings = [
     ]
   },
   {
-    guide: 'mango-docs/guides/business-integration/permission-button-troubleshooting.md',
+    guide: 'mango-docs/guides/faq/permission-button-troubleshooting.md',
     matches: [
       /^mango\/mango-platform\/mango-access(\/|$)/,
       /^mango\/mango-platform\/mango-authorization(\/|$)/,
@@ -59,7 +59,7 @@ const businessGuideMappings = [
     ]
   },
   {
-    guide: 'mango-docs/guides/business-integration/tenant-dict-config-empty.md',
+    guide: 'mango-docs/guides/faq/tenant-dict-config-empty.md',
     matches: [
       /^mango\/mango-platform\/mango-identity(\/|$)/,
       /^mango\/mango-platform\/mango-org(\/|$)/,
@@ -82,7 +82,8 @@ function read(relativePath) {
 function gitOutput(args) {
   return execFileSync('git', args, {
     cwd: root,
-    encoding: 'utf8'
+    encoding: 'utf8',
+    maxBuffer: 64 * 1024 * 1024
   });
 }
 

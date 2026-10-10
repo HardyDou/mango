@@ -6,6 +6,8 @@
 - **规范源**：`mango-pmo/rules/product/04-implementation-plan.md`。
 - **模板**：`mango-pmo/templates/implementation-plan.md`。
 - **检查器**：`node mango-pmo/tools/check-implementation-plan.mjs --document <path>`。
+- **人类阅读入口检查**：`node mango-pmo/tools/check-document-reading-entry.mjs --document <path>`。
+- **任务图检查**：`node mango-pmo/tools/render-implementation-plan-graph.mjs --document <path>`。
 - **人工责任人**：实施负责人批准任务、依赖、批次和验证可执行性；存在已启用 TDD 时由 Tech Lead 确认计划没有改变设计，否则确认没有改变用户已确认的实施边界。
 
 ## 动作门禁
@@ -23,3 +25,8 @@
 - 不把验证计划写成验证结果。
 - 不复制规范正文到计划或角色文件。
 - 不重新评估或降低最终风险，不为每个任务机械安排全部测试类型。
+
+## 文本与决定门禁
+
+- 实施计划遵循 `rules/13-agent-text-output.md`，先写顺序、责任、交付物和完成标准。
+- 计划决定遵循 `rules/14-decision-expert-review.md`，完成三视角分析并记录评审选择后再进入 `NEXT`；需要正式实施审批时仍按生命周期合同执行。

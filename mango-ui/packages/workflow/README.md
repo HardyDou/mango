@@ -1,10 +1,12 @@
 # @mango/workflow
 
-`@mango/workflow` 是 Mango 审批流前端包。它提供管理后台页面、业务可复用组件和 workflow HTTP API 封装，用于接入后端 `mango-workflow`。
+> **场景 / 路径：** `注册页面或组件 -> 发起/查询 Workflow API -> 展示进度 -> 刷新业务状态`。
+>
+> **边界 / 源码：** 注册表不是权限控制；前端不访问 Workflow 内部服务或数据库。入口为 [`WorkflowLayout.vue`](./src/components/business-ui/WorkflowLayout.vue)。先看“3. 集成形态”和“4. 接入方式”。
 
 ## 1. 概览
 
-这个包包含三类集成形态：
+`@mango/workflow` 提供管理页面、业务组件和 Workflow API，接入后端 `mango-workflow`。
 
 | 标识                 | 内容                                                                   | 适合谁使用                               |
 | -------------------- | ---------------------------------------------------------------------- | ---------------------------------------- |
@@ -136,13 +138,10 @@ import { WorkflowLayout, WorkflowSidebar } from '@mango/workflow';
 
 ## 5. 快速开始
 
-1. 后端应用启用 `mango-workflow-starter`，并完成 workflow 菜单和权限初始化。
-2. 前端应用安装 `@mango/workflow`，在管理后台启动阶段调用 `registerMangoWorkflowAdminPages()`。
-3. 在流程定义页面维护流程定义，表单使用动态表单或自定义页面。
-4. 动态表单流程直接由 `RuntimeFormRenderer` 渲染。
-5. 自定义申请流程在业务包启动阶段调用 `registerBusinessApplyComponent(applyPageKey, registration)`。
-6. 自定义审批流程调用 `registerBusinessApprovalComponent(approvePageKey, registration)`。
-7. 业务列表需要审批状态时，调用 `workflowApi.businessApplyLatestProgressBatch()` 或后端业务接口聚合结果。
+1. 后端启用 `mango-workflow-starter` 并完成菜单、权限初始化。
+2. 前端安装 `@mango/workflow`，注册管理页面和自定义申请/审批组件。
+3. 流程定义选择动态表单或自定义页面；对应组件使用 `RuntimeFormRenderer` 或注册表。
+4. 业务列表用 `workflowApi.businessApplyLatestProgressBatch()` 获取审批状态。
 
 ## 6. 配置说明
 
@@ -336,13 +335,9 @@ import { WorkflowLayout, WorkflowSidebar } from '@mango/workflow';
 
 ## 12. 变更影响记录
 
-- 2026-08-28 办理人身份增强的业务升级适配见 [Workflow 办理人身份特性升级指南](../../../mango-docs/guides/business-integration/workflow-assignee-identity-upgrade.md)。展示优先使用 `assigneeDisplayName`，不应为已有显示名重复查询 Identity；业务权限和租户校验保持不变。
-
-- Issue #732 为流程设计器审批节点增加 `assignmentMode`：旧 `designerJson` 缺失字段按 `CLAIM`；选择 `AUTO` 时可配置 `ROUND_ROBIN`、`LEAST_TASKS` 或 `AFFINITY`，指定成员为空会阻止保存。设计器通过 `designerOptions()` 一次加载五类候选项，不再直连 Identity、Authorization、Org 和 System REST；接口仅使用 `workflow:definition:query`，租户由后端 Provider 从可信上下文取得。前端 API 同步暴露 `participantUserIds` 启动字段及参与关系查询、分页和原子替换方法；租户和任务操作权限仍由后端校验。
-
-- Issue #890 将 `tenants()` 收敛到 Workflow 自有 `/workflow/templates/tenant-options`，只在打开模板推送弹窗后按需加载，并使用 `workflow:template:push`。流程模板页不再调用 `/system/tenant/list`，业务角色不需要额外获得 `system:tenant:list`。
-
-- `@mango/workflow@1.0.37` 将精确依赖对齐到 `@mango/admin-pages@1.0.30`、`@mango/common@1.0.23`、`@mango/file@1.0.31`、`@mango/grid-widgets@1.0.20` 和 `@mango/system@1.0.29`。Workflow 查看类通知的 `viewPath` 和 fallback 目标由 Maven `1.0.29` 生成、由 `@mango/notice@1.0.35` 导航；本包页面 key、审批组件、权限和租户语义保持不变。
-
-- `@mango/workflow@1.0.27` 将精确依赖升级到 `@mango/admin-pages@1.0.20`、`@mango/file@1.0.21` 和
-  `@mango/system@1.0.19`；流程 API、页面 key、审批组件、权限、租户和运行时行为相对 `1.0.26` 不变。
+| 版本 / 事项 | 影响 |
+|---|---|
+| 2026-08-28 | 办理人展示优先 `assigneeDisplayName`；见[升级指南](../../../mango-docs/guides/operations/workflow-assignee-identity-upgrade.md)。 |
+| Issue #732 | 新增 `assignmentMode` 和三种自动派单策略；候选项改为单次 Provider 查询，权限由后端校验。 |
+| Issue #890 | `tenants()` 改用 `/workflow/templates/tenant-options`，仅打开推送弹窗时请求。 |
+| `@mango/workflow@1.0.27` / `1.0.37` | 对齐依赖版本；页面 key、API、组件、权限和租户语义保持不变。 |

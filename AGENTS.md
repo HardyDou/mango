@@ -7,6 +7,8 @@
 - PMO 总流程：[mango-pmo/rules/00-dev-flow.md](./mango-pmo/rules/00-dev-flow.md)
 - 文档资产边界：[mango-pmo/rules/06-document-assets.md](./mango-pmo/rules/06-document-assets.md)
 - 能力说明维护：[mango-pmo/rules/08-capability-docs.md](./mango-pmo/rules/08-capability-docs.md)
+- Agent 文本输出：[mango-pmo/rules/13-agent-text-output.md](./mango-pmo/rules/13-agent-text-output.md)
+- 决策与同行评审：[mango-pmo/rules/14-decision-expert-review.md](./mango-pmo/rules/14-decision-expert-review.md)
 - 规则索引：[mango-pmo/rules/index.json](./mango-pmo/rules/index.json)
 
 ## 2. Preflight

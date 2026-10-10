@@ -178,6 +178,11 @@ public class IdentityRemoteAutoConfiguration {
         }
 
         @Override
+        public List<TenantMemberOrgRelationVO> listUserOrgRelations(Long tenantId, Long userId) {
+            return unwrapList(tenantMemberFeignClient.getObject().listUserOrgRelations(tenantId, userId));
+        }
+
+        @Override
         public TenantMemberOrgRelationVO getOrgRelation(Long relationId) {
             return unwrap(tenantMemberFeignClient.getObject().getOrgRelation(relationId));
         }

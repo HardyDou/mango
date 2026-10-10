@@ -1,15 +1,12 @@
 # Mango Workflow
 
-`mango-workflow` 提供审批流平台能力。业务模块可以用它管理流程定义、发布流程、创建业务申请、发起审批、处理待办、查询审批进度和维护流程模板。
+> **场景 / 路径：** `业务单据 -> 业务申请 -> 已发布流程 -> 审批任务 -> 业务状态回写`。
+>
+> **边界 / 源码：** Workflow 保存审批事实，不保存业务单据，也不决定业务最终状态；入口为 [`WorkflowBaseEntity.java`](mango-workflow-core/src/main/java/io/mango/workflow/core/entity/WorkflowBaseEntity.java)。先看“3. 后端接入”和“3.1”，再看“13. 问题排查”。
 
 ## 1. 概览
 
-这个模块面向两类使用者：
-
-- 后端业务模块：引入 API 契约，创建申请、发起流程、查询业务单据最新审批状态。
-- 管理后台：注册流程定义、流程模板、任务列表、任务详情和自定义申请页面。
-
-后端包分为三层：
+`mango-workflow` 提供流程定义、业务申请、审批任务、进度查询和模板能力。业务模块依赖 API 契约；Workflow 服务和管理后台依赖 starter。后端包分为三层：
 
 | 包 | Maven 坐标 | 什么时候用 |
 |----|------------|------------|
@@ -104,16 +101,16 @@ module-path=/workflow
 
 ```java
 @Component
-@WorkflowBusinessDataPermission(businessType = "GUARANTEE")
-public final class GuaranteeWorkflowDataPermissionProvider
+@WorkflowBusinessDataPermission(businessType = "BUSINESS")
+public final class BusinessWorkflowDataPermissionProvider
         implements WorkflowBusinessApplyDataPermissionProvider {
     public boolean supports(String businessType) {
-        return "GUARANTEE".equals(businessType);
+        return "BUSINESS".equals(businessType);
     }
 
     public boolean canRead(WorkflowBusinessApplyAccessVO context) {
-        // 在保函业务表校验当前用户的 owner、组织和租户范围。
-        return guaranteeQuery.canRead(context.getBusinessKey(), context.getTenantId(),
+        // 在业务表校验当前用户的 owner、组织和租户范围。
+        return businessQuery.canRead(context.getBusinessKey(), context.getTenantId(),
                 context.getOrgId(), MangoContextHolder.userId());
     }
 }
@@ -523,16 +520,11 @@ mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-comm
 
 ## 7. 快速开始
 
-1. 业务后端引入 `mango-workflow-api`；部署 workflow 能力的应用引入 `mango-workflow-starter`。
-2. 管理后台安装 `@mango/workflow`，注册 workflow 页面。
-3. 启动后确认 workflow starter 的 `AUTH_MENU` 资源已同步，流程菜单和权限已经进入 `authorization_menu`。
-4. 在流程定义页面维护流程分类、流程定义、表单和节点配置。
-5. 管理员维护的流程调用 `/workflow/definitions/deploy` 发布；业务内置流程使用 `WORKFLOW_DEFINITION` 声明，不在 Runtime 初始化代码中调用 `ensurePublished()`。
-6. 业务单据提交审批前，先保存业务主表、业务明细、附件关系和业务快照引用。
-7. 调用 `WorkflowBusinessApplyApi.create()` 创建业务申请。
-8. 调用 `WorkflowProcessApi.start()` 发起流程。
-9. 业务列表用 `WorkflowBusinessProcessApi.latestByBusinessKeys(businessType, keys)` 批量补充审批状态。
-10. 审批页面用任务详情接口拿表单、变量、字段权限和当前节点配置，再调用任务处理接口。
+1. 后端引入 `mango-workflow-api`；Workflow 服务再引入 `mango-workflow-starter`。
+2. 前端安装 `@mango/workflow` 并注册管理页面；确认 `AUTH_MENU` 已同步。
+3. 创建并发布流程；内置流程使用 `WORKFLOW_DEFINITION`，不要在 Runtime 初始化代码中调用 `ensurePublished()`。
+4. 业务先保存单据、附件和快照，再调用 `WorkflowBusinessApplyApi.create()` 与 `WorkflowProcessApi.start()`。
+5. 列表用 `latestByBusinessKeys()` 批量补充状态；审批页用任务详情和 `*-result` 接口刷新状态。
 
 ### 启动入口可见性
 
@@ -996,7 +988,7 @@ workflow:template:push
 
 ## 14. 相关文档
 
-- [Workflow 办理人身份特性升级指南](../../../mango-docs/guides/business-integration/workflow-assignee-identity-upgrade.md)
+- [Workflow 办理人身份特性升级指南](../../../mango-docs/guides/operations/workflow-assignee-identity-upgrade.md)
 
 - [前端 workflow 包](../../../mango-ui/packages/workflow/README.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)

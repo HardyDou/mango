@@ -33,6 +33,13 @@ vi.mock('element-plus', async () => {
 });
 
 vi.mock('@mango/common', () => ({
+  MangoDetailPage: {
+    name: 'MangoDetailPage',
+    props: { title: String },
+    emits: ['back'],
+    template:
+      '<div class="mock-detail-page"><h1>{{ title }}</h1><button type="button" @click="$emit(\'back\')">返回</button><slot /><aside class="mock-detail-sidebar"><slot name="sidebar" /></aside></div>',
+  },
   MangoDialog: {
     name: 'MangoDialog',
     template: '<div><slot /><slot name="footer" /></div>',
