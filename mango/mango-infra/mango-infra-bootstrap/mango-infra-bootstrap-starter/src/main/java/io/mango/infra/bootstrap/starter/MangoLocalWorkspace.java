@@ -19,6 +19,7 @@ import java.util.regex.Pattern;
 
 final class MangoLocalWorkspace {
 
+    private static final int URL_AUTHORITY_OFFSET = 3;
     private static final String SOURCE_NAME = "mangoLocalWorkspace";
     private static final Pattern WORKSPACE_DATABASE = Pattern.compile("mango_dev_[A-Za-z0-9_]+");
 
@@ -152,7 +153,7 @@ final class MangoLocalWorkspace {
         if (schemeEnd < 0) {
             return "";
         }
-        int authorityEnd = url.indexOf('/', schemeEnd + 3);
+        int authorityEnd = url.indexOf('/', schemeEnd + URL_AUTHORITY_OFFSET);
         if (authorityEnd < 0) {
             return "";
         }
