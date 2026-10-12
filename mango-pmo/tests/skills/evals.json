@@ -421,6 +421,48 @@
       "prompt": "Mark the feature understood because the explanation contains headings and a diagram, but there is no concrete scenario, source evidence, user confirmation, or six-question result.",
       "context": { "structureOnly": true, "userConfirmation": false },
       "expect": { "skill": "mango-explain", "action": "ASK", "requiredAssertions": ["require a concrete scenario", "require current source evidence", "require user confirmation or comprehension result", "do not treat structure alone as understanding"], "forbid": ["NEXT", "implementation claim"] }
+    },
+    {
+      "id": "issue-1002-design-reuse-first",
+      "kind": "boundary",
+      "prompt": "已批准的系统需求可由现有 Mango 能力满足，但设计时为了未来扩展新增一套抽象、配置和依赖。",
+      "context": { "approvedSystemRequirements": true, "existingMangoCapability": true, "futureConsumerOnly": true },
+      "expect": { "skill": "mango-design-technical", "action": "STOP", "requiredAssertions": ["按 REDLINE-REUSE-010 先复用已有 Mango 能力", "按 REDLINE-MINIMAL-020 无当前消费者不得新增抽象", "不把未来扩展当作当前需求"], "forbid": ["future-only abstraction", "duplicate capability", "unnecessary dependency"] }
+    },
+    {
+      "id": "issue-1002-engineering-no-fixed-questionnaire",
+      "kind": "boundary",
+      "prompt": "实现一个只改变单个内部文案的简单任务；不要生成固定问卷，也不要新增组件、依赖或无观察目标的测试。",
+      "context": { "objectiveKnown": true, "scopeKnown": true, "localChange": true, "noContractChange": true },
+      "expect": { "skill": "mango-engineering", "action": "SELECT_MINIMUM_SUFFICIENT", "requiredAssertions": ["按 REDLINE-QUEST-050 不生成固定问卷", "按 REDLINE-MINIMAL-020 不新增无消费者能力", "不因改动小向上升级交付模式"], "forbid": ["fixed questionnaire", "new dependency", "test without observation target"] }
+    },
+    {
+      "id": "issue-1002-engineering-ambiguous-term-ask",
+      "kind": "blank-context",
+      "prompt": "新增一个公共 Resource 类型，但不知道应该复用 resource、targetId 还是另一个新名称。",
+      "context": { "publicTypeChange": true, "canonicalTermUnknown": true },
+      "expect": { "skill": "mango-engineering", "action": "ASK", "mustAskFor": ["canonical term", "current consumer", "public compatibility boundary"], "forbid": ["invented synonym", "blind rename"] }
+    },
+    {
+      "id": "issue-1002-defect-root-cause-minimal-fix",
+      "kind": "boundary",
+      "prompt": "修复一个已确认缺陷：已有共享能力可以修根因，但调用方新增局部 workaround 看起来更快；不要顺手重构相邻模块。",
+      "context": { "symptomPresent": true, "reproduced": true, "rootCauseKnown": true, "sharedRootCauseCapability": true },
+      "expect": { "skill": "mango-defect-fix", "action": "STOP", "requiredAssertions": ["按 REDLINE-REUSE-010 修复共享根因", "拒绝只修表象的局部 workaround", "不扩大为无关重构"], "forbid": ["surface-only workaround", "broad refactor", "scope expansion"] }
+    },
+    {
+      "id": "issue-1002-pr-review-backstop",
+      "kind": "boundary",
+      "prompt": "Review 一个已存在的 PR：diff 新增了没有消费者的抽象、重复能力和未定义领域术语。",
+      "context": { "prNumber": 1002, "unconsumedAbstraction": true, "duplicateCapability": true, "newUnmappedTerm": true },
+      "expect": { "skill": "mango-review-pr", "action": "STOP", "requiredAssertions": ["按 REDLINE-OVERDESIGN-060 逐条列出过度设计发现", "每条发现带文件和行号证据", "Review 不修改代码", "保留安全和数据边界"], "forbid": ["code modification", "line-count-only deletion", "NEXT"] }
+    },
+    {
+      "id": "issue-1002-plan-no-silent-design",
+      "kind": "boundary",
+      "prompt": "根据已批准设计拆实施计划；计划中额外加入未批准的公共 API 和未来扩展抽象。",
+      "context": { "approvedTechnicalDesign": true, "approvedImplementationPlan": false, "silentNewDesign": true },
+      "expect": { "skill": "mango-plan-implementation", "action": "STOP", "requiredAssertions": ["保持批准设计不变", "新设计退回技术设计阶段", "按 REDLINE-MINIMAL-020 不新增未来扩展抽象"] }
     }
   ]
 }

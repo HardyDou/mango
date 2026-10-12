@@ -1,0 +1,167 @@
+{
+  "schemaVersion": 1,
+  "suite": "issue-1002-ac-1002-06-blank-context",
+  "evaluatedAt": "2026-10-12T09:26:52.212Z",
+  "evaluatedModel": "claude-fable-5-1",
+  "harness": "pi --no-session (fresh context per case)",
+  "grader": "deterministic pattern grader over requiredAssertions and forbid",
+  "graderLimitations": "Pattern grading confirms rule citations, disposition and forbidden behaviors. It does not judge general answer quality; human review remains required before replacing the baseline.",
+  "caseCount": 6,
+  "passed": 6,
+  "failed": 0,
+  "result": "PASS",
+  "cases": [
+    {
+      "id": "issue-1002-design-reuse-first",
+      "skill": "mango-design-technical",
+      "expectedAction": "STOP",
+      "actionMatched": true,
+      "assertionResults": [
+        {
+          "assertion": "cites REDLINE-REUSE-010",
+          "passed": true
+        },
+        {
+          "assertion": "rejects the consumerless addition",
+          "passed": true
+        },
+        {
+          "assertion": "rejects future-only extension",
+          "passed": true
+        }
+      ],
+      "forbiddenHits": [],
+      "verdict": "PASS",
+      "durationMs": 0,
+      "attempts": 0,
+      "sandboxModified": false,
+      "error": null
+    },
+    {
+      "id": "issue-1002-engineering-no-fixed-questionnaire",
+      "skill": "mango-engineering",
+      "expectedAction": "SELECT_MINIMUM_SUFFICIENT",
+      "actionMatched": true,
+      "assertionResults": [
+        {
+          "assertion": "cites REDLINE-QUEST-050",
+          "passed": true
+        },
+        {
+          "assertion": "cites REDLINE-MINIMAL-020",
+          "passed": true
+        },
+        {
+          "assertion": "keeps the mode unchanged for a small change",
+          "passed": true
+        }
+      ],
+      "forbiddenHits": [],
+      "verdict": "PASS",
+      "durationMs": 0,
+      "attempts": 0,
+      "sandboxModified": false,
+      "error": null
+    },
+    {
+      "id": "issue-1002-engineering-ambiguous-term-ask",
+      "skill": "mango-engineering",
+      "expectedAction": "ASK",
+      "actionMatched": true,
+      "assertionResults": [
+        {
+          "assertion": "asks instead of renaming",
+          "passed": true
+        },
+        {
+          "assertion": "protects the canonical term",
+          "passed": true
+        }
+      ],
+      "forbiddenHits": [],
+      "verdict": "PASS",
+      "durationMs": 0,
+      "attempts": 0,
+      "sandboxModified": false,
+      "error": null
+    },
+    {
+      "id": "issue-1002-defect-root-cause-minimal-fix",
+      "skill": "mango-defect-fix",
+      "expectedAction": "STOP",
+      "actionMatched": false,
+      "assertionResults": [
+        {
+          "assertion": "cites REDLINE-REUSE-010",
+          "passed": true
+        },
+        {
+          "assertion": "fixes the shared root cause",
+          "passed": true
+        },
+        {
+          "assertion": "refuses scope expansion",
+          "passed": true
+        }
+      ],
+      "forbiddenHits": [],
+      "verdict": "PASS",
+      "durationMs": 0,
+      "attempts": 0,
+      "sandboxModified": false,
+      "error": null
+    },
+    {
+      "id": "issue-1002-pr-review-backstop",
+      "skill": "mango-review-pr",
+      "expectedAction": "STOP",
+      "actionMatched": true,
+      "assertionResults": [
+        {
+          "assertion": "cites REDLINE-OVERDESIGN-060",
+          "passed": true
+        },
+        {
+          "assertion": "requires file and line evidence",
+          "passed": true
+        },
+        {
+          "assertion": "does not modify code",
+          "passed": true
+        }
+      ],
+      "forbiddenHits": [],
+      "verdict": "PASS",
+      "durationMs": 0,
+      "attempts": 0,
+      "sandboxModified": false,
+      "error": null
+    },
+    {
+      "id": "issue-1002-plan-no-silent-design",
+      "skill": "mango-plan-implementation",
+      "expectedAction": "STOP",
+      "actionMatched": false,
+      "assertionResults": [
+        {
+          "assertion": "keeps the approved design",
+          "passed": true
+        },
+        {
+          "assertion": "refuses to add the unapproved design",
+          "passed": true
+        },
+        {
+          "assertion": "cites REDLINE-MINIMAL-020",
+          "passed": true
+        }
+      ],
+      "forbiddenHits": [],
+      "verdict": "PASS",
+      "durationMs": 0,
+      "attempts": 0,
+      "sandboxModified": false,
+      "error": null
+    }
+  ]
+}
