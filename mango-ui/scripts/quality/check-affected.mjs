@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { resolveCommandForPlatform } from '../platform-command.mjs';
 import { readAffectedWorkspaces, selectAffectedWorkspaces } from './affected-selector-lib.mjs';
 import { createQualityCommandPlan } from './quality-command-plan-lib.mjs';
+import { advisoryRecord, isBlockingPrCommand } from './pr-quality-policy.mjs';
 
 const uiRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const repositoryRoot = path.resolve(uiRoot, '..');
@@ -73,10 +74,21 @@ try {
   };
   fs.mkdirSync(path.dirname(reportFile), { recursive: true });
   const persist = () => fs.writeFileSync(reportFile, `${JSON.stringify(report, null, 2)}\n`);
+  const advisories = [];
+  report.advisories = advisories;
   const execute = (command, arguments_) => {
     report.executedCommands.push([command, ...arguments_].join(' '));
     persist();
-    run(command, arguments_);
+    try {
+      run(command, arguments_);
+    } catch (error) {
+      if (profile !== 'pr' || isBlockingPrCommand(command, arguments_)) throw error;
+      const result = advisoryRecord(command, arguments_, error instanceof Error ? error.message : String(error));
+      advisories.push(result);
+      report.advisories = advisories;
+      persist();
+      console.error(`frontend quality advisory: ${result.command} (${result.status})`);
+    }
   };
   persist();
 
@@ -93,8 +105,11 @@ try {
   }
   report.completedAt = new Date().toISOString();
   report.status = 'passed';
+  report.advisoryCount = advisories.length;
   persist();
-  console.log(`affected frontend check PASS profile=${profile} ${JSON.stringify(selection)}`);
+  console.log(
+    `affected frontend check PASS profile=${profile} advisories=${advisories.length} ${JSON.stringify(selection)}`,
+  );
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error);
   if (report) {
