@@ -3,8 +3,8 @@
   "packageVersion": "1.4.6",
   "schemaVersion": 2,
   "source": "mango-pmo",
-  "sourceCommit": "13094accd71b9b579be67a0a953d3346dd2f8781",
-  "bundleSha256": "c8eeb659717f7a5af54891c8b1f0f5484c496f4f5d6be9dcc1bc10303810b16c",
+  "sourceCommit": "95f80bed860d15dd3538a1f6bc731694c8ab1a25",
+  "bundleSha256": "453ea90641da1685373a9cc4707abf847782d884748fc56548c682e55a8a3c09",
   "contracts": [
     {
       "contractId": "business-requirements",
@@ -49,7 +49,7 @@
   ],
   "plugin": {
     "path": "package-root",
-    "sha256": "2d6acb75148b96d740e2c7f04b9b040f877aa624d44dd22215e32b4dec4380d8",
+    "sha256": "7c241608486a27af740cb62d8e9249897386d6502bd3ff81b827bb0987a864b2",
     "files": [
       {
         "path": ".codex-plugin/plugin.json",
@@ -116,8 +116,8 @@
       },
       {
         "path": "skills/mango-engineering/SKILL.md",
-        "sha256": "4fa82e2f38511bc0bf444854ff3144ed2c3bbfb8237cb76d0e8fb32106779424",
-        "size": 6997,
+        "sha256": "878a02a941ec621a12d25b3caae5f73a0e8712e477b7cd28e52f3f71b60552df",
+        "size": 7129,
         "kind": "plugin",
         "mode": "0644"
       },
@@ -172,8 +172,8 @@
       },
       {
         "path": "skills/mango-module-development/SKILL.md",
-        "sha256": "2b33cbdda3daccc427dac1504004663967ac158f9e0c9720fa92c306daa7b37c",
-        "size": 3573,
+        "sha256": "25a363f7c5d56007dec91164851780ec59ab8aea146706b6ace56aa436178cbe",
+        "size": 3563,
         "kind": "plugin",
         "mode": "0644"
       },
@@ -357,8 +357,8 @@
     },
     {
       "path": "agents/03-dev-agent.md",
-      "sha256": "de4511105b246831ff2b978ca281b8715214b30a81bc7c782959eebf035b480f",
-      "size": 2151,
+      "sha256": "84369f5d3b4d53bd22f7e4e8f9d34a9d73f2482b9a0c564aa83d76ce7f833754",
+      "size": 2329,
       "kind": "agent",
       "mode": "0644"
     },
@@ -483,8 +483,8 @@
     },
     {
       "path": "rules/03-ai-coding-redlines.md",
-      "sha256": "169ac5f5d89b7f983e0b42617b3f6cd0b4f1035bc6f183d405fa29052dec64d0",
-      "size": 6166,
+      "sha256": "803d03e8ac56124c68a66c8daacaa6d58287c006722182aebced1caedaac99ab",
+      "size": 6158,
       "kind": "rule",
       "mode": "0644"
     },
@@ -847,8 +847,8 @@
     },
     {
       "path": "skills/mango-engineering/SKILL.md",
-      "sha256": "4fa82e2f38511bc0bf444854ff3144ed2c3bbfb8237cb76d0e8fb32106779424",
-      "size": 6997,
+      "sha256": "878a02a941ec621a12d25b3caae5f73a0e8712e477b7cd28e52f3f71b60552df",
+      "size": 7129,
       "kind": "skill",
       "mode": "0644"
     },
@@ -903,8 +903,8 @@
     },
     {
       "path": "skills/mango-module-development/SKILL.md",
-      "sha256": "2b33cbdda3daccc427dac1504004663967ac158f9e0c9720fa92c306daa7b37c",
-      "size": 3573,
+      "sha256": "25a363f7c5d56007dec91164851780ec59ab8aea146706b6ace56aa436178cbe",
+      "size": 3563,
       "kind": "skill",
       "mode": "0644"
     },

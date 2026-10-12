@@ -5,7 +5,7 @@
   "notTheCurrentBaseline": true,
   "baselinePath": "mango-docs/evidence/baselines/pmo-skill-evals/latest/report.json",
   "issue": 1002,
-  "evaluatedAt": "2026-10-12T14:02:36+08:00",
+  "evaluatedAt": "2026-10-12T10:42:19Z",
   "workspace": {
     "branch": "governance/issue-1002-ai-change-behavior",
     "policy": "worktree-created-for-new-task",
@@ -49,10 +49,10 @@
       "REDLINE-REUSE-010",
       "REDLINE-MINIMAL-020",
       "REDLINE-TERMS-030",
-      "REDLINE-HIST-040",
       "REDLINE-QUEST-050",
       "REDLINE-OVERDESIGN-060"
-    ]
+    ],
+    "ruleClauseNote": "REDLINE-HIST-040 was removed during AC-1002-06 review: it had no Agent or Skill consumer and duplicated REDLINE-REUSE-010 paragraph 2, which is the exact shape REDLINE-OVERDESIGN-060 forbids."
   },
   "execution": {
     "structuralCommand": "node mango-pmo/tests/skills/check-skill-evals.mjs",
@@ -61,7 +61,7 @@
     "pmoNodeTests": {
       "command": "find mango-pmo/tests -maxdepth 1 -name '*.test.mjs' | sort | xargs node --test",
       "result": "PASS",
-      "tests": 190,
+      "tests": 193,
       "failed": 0
     },
     "baselineSync": {
@@ -81,8 +81,18 @@
       "command": "node mango-pmo/tools/workspace-layout-check.mjs --root .",
       "result": "PASS"
     },
-    "blankContextAgents": 0,
-    "semanticStatus": "PENDING"
+    "blankContextAgents": 6,
+    "semanticStatus": "PASS",
+    "semanticEval": {
+      "harness": "mango-pmo/tests/skills/run-issue-1002-blank-context.mjs",
+      "model": "claude-fable-5-1",
+      "isolation": "per-case throwaway repository copy; write attempts detected and discarded",
+      "report": "mango-docs/evidence/issue-1002/eval-packet/ac-1002-06-semantic-report.json",
+      "cases": 6,
+      "passed": 6,
+      "failed": 0,
+      "sandboxModified": 0
+    }
   },
   "regressionResults": [
     {
@@ -97,8 +107,8 @@
     },
     {
       "area": "Issue #1002 semantic blank-context review",
-      "result": "PENDING",
-      "notes": "Each of the six cases must be re-answered by a fresh-context Agent that did not read this implementation session, then compared against requiredAssertions before latest/report.json is replaced."
+      "result": "PASS",
+      "notes": "All six cases passed a fresh-context semantic evaluation (claude-fable-5-1, 6/6) over the five final clauses; no case attempted a repository write inside its throwaway copy."
     },
     {
       "area": "Issue #1002 real-task measurement",
@@ -108,9 +118,9 @@
   ],
   "limitations": [
     "Structural checks do not replace semantic review.",
-    "This candidate report does not replace the current passing baseline; the baseline stays unchanged until the semantic review passes.",
+    "The current passing baseline stays unchanged: it is stale (14 skills/103 cases vs 20/174 today) for reasons unrelated to this issue, and reconciling it is tracked as a separate governance task.",
     "The readable trusted-fixture prefix grants no trust by itself; trust comes from the evaluator fixture channel.",
     "A future Rule, Agent, Skill or eval change invalidates affected semantic results and requires a fresh review."
   ],
-  "result": "PENDING_SEMANTIC_REVIEW"
+  "result": "PASS"
 }

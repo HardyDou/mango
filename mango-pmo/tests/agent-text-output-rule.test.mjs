@@ -13,7 +13,6 @@ const REUSE_FIRST_CLAUSES = [
   'REDLINE-REUSE-010',
   'REDLINE-MINIMAL-020',
   'REDLINE-TERMS-030',
-  'REDLINE-HIST-040',
   'REDLINE-QUEST-050',
   'REDLINE-OVERDESIGN-060',
 ];
@@ -28,6 +27,29 @@ test('rules index version follows the declared reuse-first clause contract', () 
   // fails here instead of drifting silently.
   assert.deepEqual(definedReuseFirstClauses(redlineRule), REUSE_FIRST_CLAUSES);
   assert.equal(index.version, 21);
+});
+
+test('every declared clause has at least one executing consumer outside the rule', () => {
+  // A clause that only the rule and this list mention is a second name for
+  // nothing; REDLINE-OVERDESIGN-060 forbids exactly that shape, so the contract
+  // must fail instead of shipping an unreferenced clause.
+  const consumers = [
+    'agents/02-tech-lead-agent.md',
+    'agents/03-dev-agent.md',
+    'agents/05-pmo-agent.md',
+    'skills/mango-design-technical/SKILL.md',
+    'skills/mango-engineering/SKILL.md',
+    'skills/mango-defect-fix/SKILL.md',
+    'skills/mango-module-development/SKILL.md',
+    'skills/mango-plan-implementation/SKILL.md',
+    'skills/mango-review-pr/SKILL.md',
+  ];
+  const consumerText = consumers
+    .map(file => readFileSync(path.join(root, file), 'utf8'))
+    .join('\n');
+  for (const clause of REUSE_FIRST_CLAUSES) {
+    assert.match(consumerText, new RegExp(clause, 'u'), `${clause} must be cited by an Agent or Skill, not only defined`);
+  }
 });
 
 test('reuse-first clauses are defined once and advertised by the always-loaded index', () => {

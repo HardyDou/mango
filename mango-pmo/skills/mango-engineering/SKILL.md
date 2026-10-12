@@ -19,9 +19,9 @@ Set `PMO_ROOT` to the first available source: `<repo>/business-pmo/mango-baselin
 6. For frontend work, also read `$PMO_ROOT/rules/frontend/04-test.md` and the loaded frontend code, architecture, UI, and development-flow rules before touching code.
 7. Execute M09-M16 capabilities that can observe the acceptance outcomes. Preserve explicit exceptions and never add a test type without a real observation target.
 
-Before editing, apply `REDLINE-REUSE-010` to `REDLINE-OVERDESIGN-060` from `$PMO_ROOT/rules/03-ai-coding-redlines.md`; do not restate them here. Return `ASK` when the current consumer or the canonical term cannot be established instead of picking one silently.
+Before editing, apply `REDLINE-REUSE-010` to `REDLINE-OVERDESIGN-060` from `$PMO_ROOT/rules/03-ai-coding-redlines.md`; do not restate them here. Under `REDLINE-REUSE-010`, treat historical examples, generated code, old tests and nearby implementations as evidence only, and reject any pattern that conflicts with the currently loaded rules. Under `REDLINE-QUEST-050`, do not turn this behavior into a fixed questionnaire, a consumerless document or a test without an observation target. Return `ASK` when the current consumer or the canonical term cannot be established instead of picking one silently.
 
-Compare any historical example, generated code, old test or nearby implementation used as a reference with the currently loaded rules. Treat conflicts as historical debt, not as permission to copy the pattern. Confirm that selected build and test commands keep project-generated mutable artifacts inside the current worktree; only proven immutable external dependency caches may be shared.
+Confirm that selected build and test commands keep project-generated mutable artifacts inside the current worktree; only proven immutable external dependency caches may be shared.
 
 If the current workspace is already on a non-`main` task branch/worktree and the user asks to solve the task, reuse it. Do not create another worktree or replace implementation with Issue registration; only register an Issue when the user explicitly chooses registration or attribution proves the problem is outside the current task. If scope is genuinely unclear, return `ASK` before changing workspace state.
 

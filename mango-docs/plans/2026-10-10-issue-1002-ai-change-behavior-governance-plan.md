@@ -26,14 +26,13 @@
 
 ### 2.1 规则源
 
-在始终加载的 `mango-pmo/rules/03-ai-coding-redlines.md` 第 2.1 节新增带条款 ID 的默认变更行为，使 Agent、Skill 和评测可以稳定引用同一份定义，不在入口文件复制正文：
+扩展始终加载的 `mango-pmo/rules/03-ai-coding-redlines.md` 第 2.1 节，新增**五个带条款 ID** 的默认变更行为，使 Agent、Skill 和评测可以稳定引用同一份定义，不在入口文件复制正文：
 
 | 条款 ID | 约束 |
 |---|---|
-| `REDLINE-REUSE-010` | 按 Mango 能力、当前模块实现、标准库、已安装依赖、新增结构的顺序取舍 |
+| `REDLINE-REUSE-010` | 按 Mango 能力、当前模块实现、标准库、已安装依赖、新增结构的顺序取舍；历史代码仅作为事实证据 |
 | `REDLINE-MINIMAL-020` | 新增抽象、配置、接口、模块或依赖必须具备当前消费者、责任边界和验证入口 |
 | `REDLINE-TERMS-030` | 先复用主术语；术语冲突时 `ASK`，禁止造同义词或直接重命名公共标识 |
-| `REDLINE-HIST-040` | 历史代码、旧设计和旧测试只作为事实证据 |
 | `REDLINE-QUEST-050` | 简单任务不生成固定问卷、无消费者文档或无观察目标的测试 |
 | `REDLINE-OVERDESIGN-060` | 过度设计判定清单，供设计和 PR Review 逐条检查 |
 
@@ -108,7 +107,7 @@
 
 ## 6.1 单独跟踪的未完成项
 
-- 6 个新增用例的独立空白上下文语义评测；候选结果在 `mango-docs/evidence/issue-1002/candidate-skill-evals.json`，未通过前不替换 `latest/report.json`。
+- ~~6 个新增用例的独立空白上下文语义评测~~ 已完成：`mango-pmo/tests/skills/run-issue-1002-blank-context.mjs` 逐例在一次性仓库副本中执行，6/6 通过，证据在 `mango-docs/evidence/issue-1002/eval-packet/ac-1002-06-semantic-report.json`。`latest/report.json` 仍保持原基线不变（该基线已滞后于当前 20 skills/174 cases，reconcile 属独立治理任务）。
 - 真实 Mango 任务度量：代码量、Review 轮次、澄清次数、返工率和新增术语数，作为独立后续任务跟踪，本任务不伪造结果。
 
 ## 7. 决策复核
