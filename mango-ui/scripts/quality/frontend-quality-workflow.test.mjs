@@ -14,14 +14,15 @@ function job(id) {
   return match[0];
 }
 
-test('pull requests keep the required frontend quality context paused without checkout', () => {
+test('pull requests run the phase-one advisory quality gate with a stable required context', () => {
   const pullRequestJob = job('frontend-pr-quality');
   assert.match(pullRequestJob, /name: frontend-pr-quality/u);
   assert.match(pullRequestJob, /if: github\.event_name == 'pull_request'/u);
-  assert.match(pullRequestJob, /Report temporary pause/u);
-  assert.match(pullRequestJob, /frontend-pr-quality remains successful/u);
-  assert.doesNotMatch(pullRequestJob, /actions\/checkout@v4/u);
-  assert.doesNotMatch(pullRequestJob, /pnpm install|pnpm check:pr|playwright|Start real Mango backend/u);
+  assert.match(pullRequestJob, /actions\/checkout@v4/u);
+  assert.match(pullRequestJob, /pnpm install --frozen-lockfile/u);
+  assert.match(pullRequestJob, /pnpm check:pr -- --base=/u);
+  assert.match(pullRequestJob, /Upload frontend quality evidence/u);
+  assert.doesNotMatch(pullRequestJob, /playwright|Start real Mango backend/u);
 });
 
 test('deep frontend quality and P0 browser acceptance do not run for pull requests', () => {
