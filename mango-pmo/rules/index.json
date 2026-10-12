@@ -1,5 +1,5 @@
 {
-  "version": 20,
+  "version": 21,
   "always": [
     {
       "path": "rules/00-dev-flow.md",
@@ -7,7 +7,7 @@
     },
     {
       "path": "rules/03-ai-coding-redlines.md",
-      "reason": "AI 编码红线、重写唯一执行路径与兼容迁移边界"
+      "reason": "AI 编码红线、复用优先、最小充分实现、稳定术语、重写唯一执行路径与兼容迁移边界"
     },
     {
       "path": "rules/13-agent-text-output.md",

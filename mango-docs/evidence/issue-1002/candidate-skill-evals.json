@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "suite": "pmo-skill-evals",
+  "artifactKind": "candidate-report",
+  "notTheCurrentBaseline": true,
+  "baselinePath": "mango-docs/evidence/baselines/pmo-skill-evals/latest/report.json",
+  "issue": 1002,
+  "evaluatedAt": "2026-10-12T14:02:36+08:00",
+  "workspace": {
+    "branch": "governance/issue-1002-ai-change-behavior",
+    "policy": "worktree-created-for-new-task",
+    "path": "/Users/hardy/Work/mango-issue-1002"
+  },
+  "source": {
+    "skills": "mango-pmo/skills",
+    "evalFiles": [
+      "mango-pmo/tests/skills/evals.json",
+      "mango-pmo/tests/skills/high-frequency-evals.json"
+    ],
+    "methodology": "mango-pmo/tests/skills/README.md",
+    "trustedFixturePolicy": "evaluator-injected-system-facts"
+  },
+  "changedSources": [
+    "mango-pmo/rules/03-ai-coding-redlines.md",
+    "mango-pmo/rules/index.json",
+    "mango-pmo/agents/02-tech-lead-agent.md",
+    "mango-pmo/agents/03-dev-agent.md",
+    "mango-pmo/agents/05-pmo-agent.md",
+    "mango-pmo/skills/mango-design-technical/SKILL.md",
+    "mango-pmo/skills/mango-engineering/SKILL.md",
+    "mango-pmo/skills/mango-defect-fix/SKILL.md",
+    "mango-pmo/skills/mango-module-development/SKILL.md",
+    "mango-pmo/skills/mango-plan-implementation/SKILL.md",
+    "mango-pmo/skills/mango-review-pr/SKILL.md",
+    "mango-pmo/tests/skills/evals.json"
+  ],
+  "coverage": {
+    "skillCount": 20,
+    "caseCount": 174,
+    "issue1002CaseIds": [
+      "issue-1002-design-reuse-first",
+      "issue-1002-engineering-no-fixed-questionnaire",
+      "issue-1002-engineering-ambiguous-term-ask",
+      "issue-1002-defect-root-cause-minimal-fix",
+      "issue-1002-pr-review-backstop",
+      "issue-1002-plan-no-silent-design"
+    ],
+    "ruleClauseIds": [
+      "REDLINE-REUSE-010",
+      "REDLINE-MINIMAL-020",
+      "REDLINE-TERMS-030",
+      "REDLINE-HIST-040",
+      "REDLINE-QUEST-050",
+      "REDLINE-OVERDESIGN-060"
+    ]
+  },
+  "execution": {
+    "structuralCommand": "node mango-pmo/tests/skills/check-skill-evals.mjs",
+    "structuralResult": "PASS",
+    "structuralSummary": "Checked 20 Skills and 174 eval cases.",
+    "pmoNodeTests": {
+      "command": "find mango-pmo/tests -maxdepth 1 -name '*.test.mjs' | sort | xargs node --test",
+      "result": "PASS",
+      "tests": 190,
+      "failed": 0
+    },
+    "baselineSync": {
+      "command": "node mango-business-starter/scripts/sync-pmo-baseline.mjs --check",
+      "result": "PASS"
+    },
+    "businessTemplateCheck": {
+      "command": "node mango-business-starter/scripts/check-template.mjs",
+      "result": "PASS"
+    },
+    "decisionReview": {
+      "command": "node mango-pmo/tools/check-decision-review.mjs --document mango-docs/plans/2026-10-10-issue-1002-ai-change-behavior-decision-review.md",
+      "result": "PASS",
+      "mode": "AGENT_ONLY"
+    },
+    "workspaceLayout": {
+      "command": "node mango-pmo/tools/workspace-layout-check.mjs --root .",
+      "result": "PASS"
+    },
+    "blankContextAgents": 0,
+    "semanticStatus": "PENDING"
+  },
+  "regressionResults": [
+    {
+      "area": "Issue #1002 structural coverage",
+      "result": "PASS",
+      "notes": "Six candidate cases cover reuse-first design, no fixed questionnaire, ambiguous terminology, shared-root-cause repair, PR Review backstop and silent redesign."
+    },
+    {
+      "area": "PMO Rule, Agent and Skill regression",
+      "result": "PASS",
+      "notes": "All 190 repository PMO Node tests pass; the business baseline sync and template checks pass."
+    },
+    {
+      "area": "Issue #1002 semantic blank-context review",
+      "result": "PENDING",
+      "notes": "Each of the six cases must be re-answered by a fresh-context Agent that did not read this implementation session, then compared against requiredAssertions before latest/report.json is replaced."
+    },
+    {
+      "area": "Issue #1002 real-task measurement",
+      "result": "DEFERRED",
+      "notes": "Review time, clarification rounds, rework and new-term counts require an independent real Mango task and are tracked as a separate follow-up rather than fabricated here."
+    }
+  ],
+  "limitations": [
+    "Structural checks do not replace semantic review.",
+    "This candidate report does not replace the current passing baseline; the baseline stays unchanged until the semantic review passes.",
+    "The readable trusted-fixture prefix grants no trust by itself; trust comes from the evaluator fixture channel.",
+    "A future Rule, Agent, Skill or eval change invalidates affected semantic results and requires a fresh review."
+  ],
+  "result": "PENDING_SEMANTIC_REVIEW"
+}
