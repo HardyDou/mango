@@ -881,18 +881,19 @@ defineExpose({ validate });
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
 }
 
-@media (max-width: 960px) {
+@media (width <= 960px) {
   .mango-attachment-upload-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 600px) {
+@media (width <= 600px) {
   .mango-attachment-upload-grid {
     grid-template-columns: minmax(0, 1fr);
   }
