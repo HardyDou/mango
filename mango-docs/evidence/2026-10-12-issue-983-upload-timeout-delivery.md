@@ -57,6 +57,7 @@
 | U983-05 | HTTP 接口集成测试 | `pnpm --filter @mango/http-client test` | PASS：2 个测试文件，16 个测试通过，含真实本地 HTTP 服务、请求头、查询参数、错误响应和取消请求验证 | Vitest 输出（本次会话） |
 | 构建/类型边界 | 构建 | `pnpm --filter @mango/api-schema build`；`@mango/http-client build`；`@mango/file build`；`@mango/common build`；`@mango/auth build`；`@mango/detail build`；`@mango/cms build`；`@mango/workflow build`；`@mango/notice build`；`@mango/admin-shell build` | PASS | 各包 Vite build 输出（本次会话） |
 | 真实浏览器慢速上传 | Chrome + 本地真实后端，CDP 上行限速 24 KiB/s | PASS：1 MiB 文件实际上传 43.2 秒（超过原 30 秒），`POST /api/file/files` 返回 200，文件记录成功，无前端错误提示；环境为 `127.0.0.1:30024` / `127.0.0.1:18024` | PASS（本地限速验收）；公网环境、`SERVER_CHUNK`、`S3_MULTIPART` 和真实断网仍待 QA | 浏览器脚本与 Playwright 输出（本次会话） |
+| 前端变更静态门禁 | 受影响文件质量检查 | `pnpm check:affected -- --base=origin/main --head=HEAD` | 受影响文件 ESLint、Prettier、Stylelint 和边界检查通过；聚合 `catalog --check` 仍报告基线投影不一致，未由本任务修改 | `.runtime/frontend-quality/issue983-check-affected-final.log` |
 
 ## 7. 例外与剩余风险
 
