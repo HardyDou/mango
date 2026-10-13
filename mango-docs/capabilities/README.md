@@ -85,7 +85,7 @@
 | Admin Pages | 提供管理页面注册表和页面插件接入。 | [Admin Pages README](../../mango-ui/packages/admin-pages/README.md) |
 | Common | 提供公共组件、主题变量、API 契约和前端工具。 | [Common README](../../mango-ui/packages/common/README.md) |
 | RBAC | 提供菜单、角色、权限、数据范围和成员批量角色管理页面。 | [RBAC README](../../mango-ui/packages/rbac/README.md) |
-| `@mango/file` | 提供上传、附件列表、文件预览和文件管理页面。 | [File Frontend README](../../mango-ui/packages/file/README.md) |
+| `@mango/file` | 提供上传、附件列表、文件预览和文件管理页面。上传 API 支持可选实例级 `HttpClient`；未传入时保留原有默认请求路径，上传总超时和无进度超时独立配置。 | [File Frontend README](../../mango-ui/packages/file/README.md) |
 | `@mango/workflow` | 提供流程管理页面、审批组件和 Workflow API。 | [Workflow Frontend README](../../mango-ui/packages/workflow/README.md) |
 | `@mango/job` | 提供任务管理和调度页面。 | [Job Frontend README](../../mango-ui/packages/job/README.md) |
 | `@mango/notice` | 提供消息中心、通知管理和通知展示组件。 | [Notice Frontend README](../../mango-ui/packages/notice/README.md) |
