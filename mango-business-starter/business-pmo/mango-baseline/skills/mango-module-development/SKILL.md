@@ -15,7 +15,7 @@ Run PMO preflight with role `dev`, phase `develop`, and all affected module path
 
 1. Return `STOP` when the module boundary, ownership, public contract, dependency direction, or a user-enabled approved design is absent or inconsistent.
 2. Return `ASK` for one unresolved module identity, aggregate, dependency, persistence, menu, permission, initialization, or consumer fact.
-3. Use the canonical Mango module-generation entry when one exists; do not create a parallel structure by hand. Audit generated and neighboring historical code against the currently loaded rules before reusing it; current rules override generator or repository precedent.
+3. Use the canonical Mango module-generation entry when one exists; do not create a parallel structure by hand. Apply `REDLINE-REUSE-010` before adding a new abstraction, and treat generated and neighboring historical code as evidence only under `REDLINE-REUSE-010`; current rules override generator or repository precedent.
 4. Before implementation, map production and test responsibilities across `api`, `core`, `starter` and `starter-remote`. Keep protocols and mechanical contracts in `api`, business behavior and its tests in `core`, remote-boundary verification outside `starter-remote` unit tests, and only observable Spring/runtime integration tests in `starter`.
 5. For Java types, use the rule-selected Lombok annotations for mechanical getters, setters and constructors. Require a named semantic reason for every handwritten accessor or constructor, and do not default to `@Data`.
 6. If the module replaces an existing implementation, include removal of its old implementation, calls, configuration and fallback; compatibility requires an independently approved migration boundary and exit condition.

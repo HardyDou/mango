@@ -35,6 +35,9 @@ Run PMO preflight with role `tech-lead` and phase `design`, then read every `Mus
    - `WRITE`: inputs satisfy the rule; fill the official template and trace every design decision to upstream requirements.
 3. Fill the human reading entry immediately below the title: one-sentence goal, one real technical scenario, key input/output, success/failure boundary, and explicit out-of-scope. Do not leave template placeholders.
 4. Set `pmoVersion` to the contract's exact `metadata.fixed.pmoVersion`, then run `node "$PMO_ROOT/tools/check-technical-design.mjs" --document <document-path>` and `node "$PMO_ROOT/tools/check-document-reading-entry.mjs" --document <document-path>`.
+
+When choosing a design, apply `REDLINE-REUSE-010`, `REDLINE-MINIMAL-020` and `REDLINE-TERMS-030` from `$PMO_ROOT/rules/03-ai-coding-redlines.md`; do not restate them here. Return `ASK` when the canonical term or the current consumer cannot be established.
+
 5. Validate every API design against the loaded backend API/module rules, including the path-variable ban, protocol-model boundary and api/core/starter/starter-remote ownership.
 6. Map acceptance outcomes only to user-enabled verification measures, record why each selected type proves the result and preserve the residual risk of disabled triggered measures. Run the lifecycle checker for the enabled TDD and applicable upstream; require valid hashes, applicable risk relations, trace coverage, `APPROVED/NEXT`, a human approver, approval evidence and no open blocker.
 7. Return `NEXT: $mango-pmo-lifecycle` only when the dedicated checker, human reading entry check, applicable lifecycle handoff, specialized design checks, gate table and human approval all pass. Let the coordinator choose the next enabled measure; do not assume Plan follows.

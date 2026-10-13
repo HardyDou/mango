@@ -16,11 +16,13 @@
 5. 保证风险门禁验证需求影响、方案风险及二者最大值，并按改动范围选择 CI 套件
 6. 保留稳定 required check 身份，把全量历史盘点与普通 PR 的受影响模块门禁分离
 7. 保证 L0/L1、L2、L3 分别路由到 SIMPLE、STANDARD、FULL，M01 自动隔离，验证能力只由真实观察面触发
+8. 治理 Rule、Agent 和 Skill 时，保证 `rules/03-ai-coding-redlines.md` 的 `REDLINE-REUSE-010` 至 `REDLINE-OVERDESIGN-060` 只在 `mango-pmo` 维护，入口文本只引用条款 ID、不复制正文
 
 ## 3. 禁止事项
 
 - 允许同一规则多处维护
 - 允许过时规则继续误导执行
+- 把复用优先变成每个任务都要填写的固定问卷，或把代码行数作为唯一判定依据
 - 用设计文档代替规范文件
 - SIMPLE 生成文档、STANDARD 拆成四文档、FULL 伪造无关产品文档，或按等级机械执行所有测试类型
 
