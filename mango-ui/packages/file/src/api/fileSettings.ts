@@ -2,8 +2,8 @@
  * File Settings API - 文件中心运行时配置。
  */
 
-import { get, put } from '@mango/common';
-import type { ApiId } from '@mango/api-schema';
+import type { ApiId, HttpClient } from '@mango/api-schema';
+import { getLegacyHttpClient } from './legacyHttpClient';
 
 export interface FileSettings {
   id?: ApiId;
@@ -40,20 +40,47 @@ export interface FileSettings {
   updatedTime?: string;
 }
 
-let pendingSettings: Promise<FileSettings> | undefined;
+export interface FileSettingsRequestOptions {
+  timeoutMs?: number;
+  inactivityTimeoutMs?: number;
+}
 
-export const fileSettingsApi = {
-  get: () => {
-    if (pendingSettings) return pendingSettings;
-    pendingSettings = get<FileSettings>('/file/settings')
-      .then(fromBackendSettings)
-      .finally(() => {
-        pendingSettings = undefined;
-      });
-    return pendingSettings;
-  },
-  save: (data: FileSettings) => put<boolean>('/file/settings', toBackendSettings(data)),
-};
+export interface FileSettingsApi {
+  get(options?: FileSettingsRequestOptions): Promise<FileSettings>;
+  save(data: FileSettings, options?: FileSettingsRequestOptions): Promise<boolean>;
+}
+
+export function createFileSettingsApi(httpClient?: HttpClient): FileSettingsApi {
+  const transport = httpClient || getLegacyHttpClient();
+  let pendingSettings: Promise<FileSettings> | undefined;
+  return {
+    get: (options): Promise<FileSettings> => {
+      if (pendingSettings) return pendingSettings;
+      const request = transport
+        .request<FileSettings>({ method: 'GET', url: '/file/settings', ...options })
+        .then(fromBackendSettings)
+        .finally(() => {
+          pendingSettings = undefined;
+        });
+      pendingSettings = request;
+      return request;
+    },
+    save: (data: FileSettings, options) =>
+      transport.request<boolean, ReturnType<typeof toBackendSettings>>({
+        method: 'PUT',
+        url: '/file/settings',
+        body: toBackendSettings(data),
+        ...options,
+      }),
+  };
+}
+
+export function configureFileSettingsApi(httpClient: HttpClient): FileSettingsApi {
+  return createFileSettingsApi(httpClient);
+}
+
+/** Legacy entry point: no HttpClient is required and the original request path is retained. */
+export const fileSettingsApi = createFileSettingsApi();
 
 export const defaultFileSettings: FileSettings = {
   maxSize: 100 * 1024 * 1024,

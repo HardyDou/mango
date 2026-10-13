@@ -38,5 +38,7 @@ export type {
 } from './components/MUpload.vue';
 
 export * from './api/file';
+export { useFileApi, useFileDirectoryApi, useFileSettingsApi, useFileStorageApi } from './composables/useFileApi';
+export * from './api/fileDirectory';
 export * from './api/fileStorage';
 export * from './api/fileSettings';

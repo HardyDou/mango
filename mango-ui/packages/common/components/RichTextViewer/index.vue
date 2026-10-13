@@ -21,7 +21,8 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
-import { downloadUploadedFile, getUploadedFileDetail, type FileId, type UploadResult } from '../../api/upload';
+import { useUploadApi } from '../../composables/useUploadApi';
+import type { FileId, UploadResult } from '../../api/upload';
 import { collectManagedFileIds, renderManagedHtml } from '../Editor/managedImages';
 import { sanitizeRichTextHtml } from './sanitize';
 import type {
@@ -32,6 +33,8 @@ import type {
 } from './types';
 
 defineOptions({ name: 'MangoRichTextViewer' });
+
+const uploadApi = useUploadApi();
 
 const props = withDefaults(
   defineProps<{
@@ -83,7 +86,7 @@ async function renderContent() {
 
   loading.value = true;
   renderedHtml.value = sanitized;
-  const resolver = props.resolveFile || getUploadedFileDetail;
+  const resolver = props.resolveFile || uploadApi.getUploadedFileDetail;
   const assets = new Map<FileId, UploadResult | undefined>();
   await Promise.all(
     ids.map(async (id) => {
@@ -123,7 +126,7 @@ async function resolveRenderableAsset(id: FileId, asset: UploadResult, version: 
 }
 
 async function defaultContentResolver(id: FileId) {
-  const response = await downloadUploadedFile(id);
+  const response = await uploadApi.downloadUploadedFile(id);
   return response.data;
 }
 

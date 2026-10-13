@@ -387,7 +387,7 @@ import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Editor, MangoDialog, MangoListPage, MangoListPanel, MangoSearchPanel, Pagination } from '@mango/common';
-import { MUpload, fileApi } from '@mango/file';
+import { MUpload, downloadUrl } from '@mango/file';
 import { requestErrorMessage, type ApiId, type CmsPageQuery, type CmsRequestOptions, type CmsSite } from '../api/cms';
 import { useCmsApi } from '../composables/useCmsApi';
 
@@ -1169,7 +1169,7 @@ function siteName(value: unknown) {
 
 function fileImageUrl(value: unknown) {
   const id = String(value || '').trim();
-  return id ? fileApi.downloadUrl(id) : '';
+  return id ? downloadUrl(id) : '';
 }
 
 function formatValue(row: CmsRow, prop?: string) {

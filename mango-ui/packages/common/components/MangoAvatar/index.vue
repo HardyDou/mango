@@ -6,12 +6,14 @@
 
 <script setup lang="ts">
 import { onBeforeUnmount, ref, watch } from 'vue';
-import { downloadUploadedFile } from '../../api/upload';
+import { useUploadApi } from '../../composables/useUploadApi';
 
 defineOptions({
   name: 'MangoAvatar',
   inheritAttrs: false,
 });
+
+const uploadApi = useUploadApi();
 
 const props = withDefaults(
   defineProps<{
@@ -61,7 +63,7 @@ async function resolveSource(source?: string) {
   const fileId = fileTokenId(normalized);
   if (!fileId) return;
   try {
-    const response = await downloadUploadedFile(fileId);
+    const response = await uploadApi.downloadUploadedFile(fileId);
     const blob =
       response.data instanceof Blob
         ? response.data

@@ -28,7 +28,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
-import { fileApi, fileRuntimeUrl } from '@mango/file';
+import { fileRuntimeUrl, useFileApi } from '@mango/file';
 
 export type MAdItem = {
   id?: string | number;
@@ -56,6 +56,8 @@ export type MAdItem = {
   openTarget?: string;
   sort?: number;
 };
+
+const fileApi = useFileApi();
 
 const props = withDefaults(defineProps<{
   items?: MAdItem[];

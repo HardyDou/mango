@@ -2,8 +2,8 @@
  * File Directory API - 文件逻辑目录。
  */
 
-import { del, get, post, put } from '@mango/common';
-import type { ApiId } from '@mango/api-schema';
+import type { ApiId, HttpClient } from '@mango/api-schema';
+import { getLegacyHttpClient } from './legacyHttpClient';
 
 export type DirectoryId = ApiId;
 
@@ -28,6 +28,13 @@ export interface SaveFileDirectoryCommand {
   status?: number;
 }
 
+export interface FileDirectoryApi {
+  tree(): Promise<FileDirectory[]>;
+  create(data: SaveFileDirectoryCommand): Promise<DirectoryId>;
+  update(data: SaveFileDirectoryCommand): Promise<boolean>;
+  delete(id: DirectoryId): Promise<boolean>;
+}
+
 export const rootDirectory: FileDirectory = {
   id: '0',
   parentId: '0',
@@ -38,12 +45,25 @@ export const rootDirectory: FileDirectory = {
   children: [],
 };
 
-export const fileDirectoryApi = {
-  tree: () => get<FileDirectory[]>('/file/directories/tree').then((items: any) => normalizeTree(items)),
-  create: (data: SaveFileDirectoryCommand) => post<DirectoryId>('/file/directories', toBackendDirectory(data)),
-  update: (data: SaveFileDirectoryCommand) => put<boolean>('/file/directories', toBackendDirectory(data)),
-  delete: (id: DirectoryId) => del<boolean>('/file/directories', { params: { id } }),
-};
+export function createFileDirectoryApi(httpClient?: HttpClient): FileDirectoryApi {
+  const transport = httpClient || getLegacyHttpClient();
+  return {
+    tree: () => transport.request<unknown>({ method: 'GET', url: '/file/directories/tree' }).then(normalizeTree),
+    create: (data) =>
+      transport.request<DirectoryId, ReturnType<typeof toBackendDirectory>>({
+        method: 'POST',
+        url: '/file/directories',
+        body: toBackendDirectory(data),
+      }),
+    update: (data) =>
+      transport.request<boolean, ReturnType<typeof toBackendDirectory>>({
+        method: 'PUT',
+        url: '/file/directories',
+        body: toBackendDirectory(data),
+      }),
+    delete: (id) => transport.request<boolean>({ method: 'DELETE', url: '/file/directories', query: { id } }),
+  };
+}
 
 function toBackendDirectory(data: SaveFileDirectoryCommand) {
   return {
@@ -55,20 +75,21 @@ function toBackendDirectory(data: SaveFileDirectoryCommand) {
   };
 }
 
-function normalizeTree(items: any[]): FileDirectory[] {
+function normalizeTree(items: unknown): FileDirectory[] {
   return (Array.isArray(items) ? items : []).map(normalizeDirectory);
 }
 
-function normalizeDirectory(item: any): FileDirectory {
+function normalizeDirectory(item: unknown): FileDirectory {
+  const record = item && typeof item === 'object' ? (item as Record<string, unknown>) : {};
   return {
-    ...item,
-    id: normalizeId(item.id),
-    parentId: normalizeId(item.parentId ?? 0),
-    directoryName: item.directoryName || '',
-    children: normalizeTree(item.children),
-  };
+    ...record,
+    id: normalizeId(record.id),
+    parentId: normalizeId(record.parentId ?? 0),
+    directoryName: String(record.directoryName || ''),
+    children: normalizeTree(record.children),
+  } as FileDirectory;
 }
 
-function normalizeId(value: any): string {
+function normalizeId(value: unknown): string {
   return value === undefined || value === null ? '' : String(value);
 }

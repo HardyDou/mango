@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { installMangoAuth } from '@mango/auth';
 import { get } from '@mango/common/utils/request';
-import { fileApi, fileRuntimeUrl, normalizeFileId, type FilePreview } from '@mango/file';
+import { fileRuntimeUrl, normalizeFileId, type FileApi, type FilePreview } from '@mango/file';
 import { usePreferencesStore } from './preferences';
 
 export interface AdminBrandingConfig {
@@ -56,15 +56,15 @@ export const useAdminBrandingStore = defineStore('adminBranding', {
     loaded: false,
   }),
   actions: {
-    async loadPublicConfig() {
+    async loadPublicConfig(fileApi?: FileApi) {
       const loadSeq = ++adminBrandingLoadSeq;
       const config = await fetchAdminBrandingPublic().catch(() => DEFAULT_ADMIN_BRANDING);
       const normalized = normalizeBrandingConfig(config);
       const [logoUrl, logoIconUrl, faviconUrl, loginImageUrl] = await Promise.all([
-        resolveFilePreviewUrl(normalized.logoFile),
-        resolveFilePreviewUrl(normalized.logoIconFile),
-        resolveFilePreviewUrl(normalized.faviconFile),
-        resolveFilePreviewUrl(normalized.loginImageFile),
+        resolveFilePreviewUrl(normalized.logoFile, fileApi),
+        resolveFilePreviewUrl(normalized.logoIconFile, fileApi),
+        resolveFilePreviewUrl(normalized.faviconFile, fileApi),
+        resolveFilePreviewUrl(normalized.loginImageFile, fileApi),
       ]);
 
       if (loadSeq !== adminBrandingLoadSeq) {
@@ -117,8 +117,9 @@ function normalizeText(value: unknown, fallback: string): string {
   return value.trim();
 }
 
-async function resolveFilePreviewUrl(value?: string): Promise<string> {
+async function resolveFilePreviewUrl(value: string | undefined, fileApi?: FileApi): Promise<string> {
   const fileId = normalizeFileId(value);
+  if (!fileApi) return '';
   if (!fileId) {
     return '';
   }
@@ -128,17 +129,17 @@ async function resolveFilePreviewUrl(value?: string): Promise<string> {
     if (runtimeUrl) {
       return runtimeUrl;
     }
-    return await resolveProtectedImageObjectUrl(preview);
+    return await resolveProtectedImageObjectUrl(preview, fileApi);
   } catch {
     return '';
   }
 }
 
-async function resolveProtectedImageObjectUrl(preview: FilePreview): Promise<string> {
+async function resolveProtectedImageObjectUrl(preview: FilePreview, fileApi: FileApi): Promise<string> {
   if (!isImagePreview(preview) || typeof URL === 'undefined') {
     return '';
   }
-  const response = (await fileApi.previewContent(preview.id)) as { data?: unknown };
+  const response = await fileApi.previewContent(preview.id);
   const blob = response.data;
   if (!(blob instanceof Blob)) {
     return '';

@@ -15,12 +15,13 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { RichTextViewer, type RichTextViewerPreviewRequest } from '@mango/common';
-import { fileApi, MangoFilePreviewDialog, type FilePreview } from '@mango/file';
+import { MangoFilePreviewDialog, type FilePreview, useFileApi } from '@mango/file';
 import type { MangoRichTextPreviewProps } from './MangoRichTextPreview.types';
 
 defineOptions({ name: 'MangoRichTextPreview' });
 withDefaults(defineProps<MangoRichTextPreviewProps>(), { content: '' });
 
+const fileApi = useFileApi();
 const visible = ref(false);
 const loading = ref(false);
 const title = ref('文件预览');

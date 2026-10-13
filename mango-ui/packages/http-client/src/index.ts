@@ -57,6 +57,7 @@ interface DispatchContext {
   controller: AbortController;
   request: HttpRequest<unknown>;
   refreshedToken?: string;
+  timedOut?: boolean;
 }
 
 const DEFAULT_TIMEOUT_MS = 30_000;
@@ -199,10 +200,16 @@ class AxiosMangoHttpClient implements MangoHttpClient {
     while (true) {
       this.#throwIfAborted(context.controller.signal);
       try {
+        context.timedOut = false;
         const response = await this.#dispatch(context);
         return this.#decode<TResponse>(response);
       } catch (failure) {
-        const error = normalizeFailure(failure, context.controller.signal, this.#options.authExpiredCodes);
+        const error = normalizeFailure(
+          failure,
+          context.controller.signal,
+          this.#options.authExpiredCodes,
+          context.timedOut === true,
+        );
 
         if (
           error.kind === 'unauthorized' &&
@@ -240,6 +247,31 @@ class AxiosMangoHttpClient implements MangoHttpClient {
   async #dispatch(context: DispatchContext): Promise<AxiosResponse<unknown>> {
     const request = context.request;
     const headers = await this.#createHeaders(request, context.refreshedToken);
+    const inactivityTimeoutMs = positiveTimeout(request.inactivityTimeoutMs);
+    let inactivityTimer: ReturnType<typeof setTimeout> | undefined;
+    const resetInactivityTimer = () => {
+      if (!inactivityTimeoutMs) return;
+      if (inactivityTimer) clearTimeout(inactivityTimer);
+      inactivityTimer = setTimeout(() => {
+        context.timedOut = true;
+        context.controller.abort('HTTP request inactivity timeout');
+      }, inactivityTimeoutMs);
+    };
+    resetInactivityTimer();
+    const onUploadProgress =
+      request.onUploadProgress || inactivityTimeoutMs
+        ? (event: AxiosProgressEvent) => {
+            resetInactivityTimer();
+            request.onUploadProgress?.(toHttpProgress(event));
+          }
+        : undefined;
+    const onDownloadProgress =
+      request.onDownloadProgress || inactivityTimeoutMs
+        ? (event: AxiosProgressEvent) => {
+            resetInactivityTimer();
+            request.onDownloadProgress?.(toHttpProgress(event));
+          }
+        : undefined;
     const config: AxiosRequestConfig = {
       method: request.method,
       url: request.url,
@@ -247,17 +279,17 @@ class AxiosMangoHttpClient implements MangoHttpClient {
       params: request.query,
       headers,
       signal: context.controller.signal,
-      timeout: request.timeoutMs ?? this.#options.timeoutMs,
+      timeout: request.timeoutMs ?? (inactivityTimeoutMs ? 0 : this.#options.timeoutMs),
       responseType: toAxiosResponseType(request.responseType),
       adapter: request.responseType === 'stream' ? 'fetch' : undefined,
-      onUploadProgress: request.onUploadProgress
-        ? (event) => request.onUploadProgress?.(toHttpProgress(event))
-        : undefined,
-      onDownloadProgress: request.onDownloadProgress
-        ? (event) => request.onDownloadProgress?.(toHttpProgress(event))
-        : undefined,
+      onUploadProgress,
+      onDownloadProgress,
     };
-    return this.#transport.request(config);
+    try {
+      return await this.#transport.request(config);
+    } finally {
+      if (inactivityTimer) clearTimeout(inactivityTimer);
+    }
   }
 
   async #createHeaders(
@@ -419,6 +451,8 @@ function toHttpProgress(event: AxiosProgressEvent): HttpProgress {
     total: event.total,
     progress: event.progress,
     bytesPerSecond: event.rate,
+    bytes: event.bytes,
+    lengthComputable: event.lengthComputable,
   };
 }
 
@@ -441,8 +475,15 @@ function normalizeFailure(
   failure: unknown,
   signal: AbortSignal,
   authExpiredCodes: readonly (number | string)[] = DEFAULT_AUTH_EXPIRED_CODES,
+  timedOut = false,
 ): MangoHttpError {
   if (failure instanceof MangoHttpError) return failure;
+  if (timedOut) {
+    return new MangoHttpError('Request timed out because the connection made no progress', {
+      kind: 'timeout',
+      retryable: true,
+    });
+  }
   if (signal.aborted) {
     return new MangoHttpError('Request aborted', { kind: 'aborted', retryable: false });
   }
@@ -497,6 +538,10 @@ function responseHeader(response: AxiosResponse<unknown>, name: string): string 
 
 function messageOf(value: unknown, fallback: string): string {
   return value instanceof Error && value.message ? value.message : fallback;
+}
+
+function positiveTimeout(value?: number): number | undefined {
+  return value !== undefined && Number.isFinite(value) && value > 0 ? value : undefined;
 }
 
 function linkAbortSignal(source: AbortSignal | undefined, target: AbortController): () => void {

@@ -22,9 +22,9 @@
 
 | 能力                                                 | 使用入口                                |
 | ---------------------------------------------------- | --------------------------------------- |
-| 文件记录分页、详情、上传、下载、归档、删除           | `FileView`、`fileApi`。                 |
-| 存储配置分页、详情、新增、编辑、删除、测试、设为默认 | `FileStorageView`、`fileStorageApi`。   |
-| 上传限制、秒传、直传、访问、预览、归档策略           | `FileSettingsView`、`fileSettingsApi`。 |
+| 文件记录分页、详情、上传、下载、归档、删除           | `FileView`、`useFileApi` / `createFileApi`。                 |
+| 存储配置分页、详情、新增、编辑、删除、测试、设为默认 | `FileStorageView`、`useFileStorageApi` / `createFileStorageApi`。   |
+| 上传限制、秒传、直传、访问、预览、归档策略           | `FileSettingsView`、`useFileSettingsApi` / `createFileSettingsApi`。 |
 | 业务表单上传附件或图片                               | `MUpload`。                             |
 | 详情页预览图片、PDF、音视频或文档                    | `FilePreviewPanel`。                    |
 | 工作流运行时表单上传字段                             | `MUpload`。                             |
@@ -47,8 +47,11 @@
 
 `api-client`：
 
-- `fileApi` 封装文件记录、上传、分片、预览和下载。
-- `fileStorageApi` 封装存储配置。
+- API 均通过注入的 `HttpClient` 创建，不再依赖全局 Axios 请求实例。
+- Vue 组件使用 `useFileApi`、`useFileStorageApi` 和 `useFileSettingsApi`；非 Vue 代码使用对应的 `create*Api(httpClient)` 工厂。
+- 宿主应用需要用 `MANGO_HTTP_CLIENT_KEY` 提供实例；上传请求默认使用 10 分钟总超时和 60 秒无进度超时，普通请求仍保持 HTTP 客户端的 30 秒默认值。
+- `FileHttpError` / `MangoHttpError` 提供 `kind: 'timeout' | 'network' | 'protocol' | ...`，调用方可据此区分超时和业务失败。
+- `fileApi`、`fileSettingsApi`、`fileStorageApi` 旧入口继续保留；存量业务未传入 `HttpClient` 时继续使用原有默认请求逻辑，无需修改代码。新代码可传入注入式 `HttpClient`。
 
 URL 字段职责：
 
@@ -104,6 +107,8 @@ const attachmentIds = ref<string[]>([]);
     access-level="PRIVATE"
     biz-type="contract"
     :biz-id="contractId"
+    :timeout-ms="10 * 60 * 1000"
+    :inactivity-timeout-ms="60 * 1000"
   />
 </template>
 ```

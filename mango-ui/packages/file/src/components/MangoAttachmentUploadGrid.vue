@@ -143,7 +143,8 @@
 import { computed, ref, useAttrs } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Loading, Upload, UploadFilled } from '@element-plus/icons-vue';
-import { fileApi, type FileRecord, type FileUploadParams } from '../api/file';
+import { type FileRecord, type FileUploadParams } from '../api/file';
+import { useFileApi } from '../composables/useFileApi';
 import MangoFilePreviewDialog from './MangoFilePreviewDialog.vue';
 import type {
   MangoAttachmentUploadCategory,
@@ -164,6 +165,8 @@ defineSlots<{
   'file-status'?: (props: MangoAttachmentUploadFileSlotProps) => unknown;
   'file-note'?: (props: MangoAttachmentUploadFileSlotProps) => unknown;
 }>();
+
+const fileApi = useFileApi();
 
 const props = withDefaults(
   defineProps<{

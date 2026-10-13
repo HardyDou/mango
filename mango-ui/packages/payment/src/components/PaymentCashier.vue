@@ -505,7 +505,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { fileApi, MUpload } from '@mango/file';
+import { downloadUrl, MUpload } from '@mango/file';
 import type { ApiId } from '@mango/api-schema';
 import type { FormInstance, FormRules } from 'element-plus';
 import { ElMessage } from 'element-plus';
@@ -587,7 +587,7 @@ let expireTimer: number | undefined;
 
 const resolvedCashierConfigId = computed(() => String(props.cashierConfigId || ''));
 const resolvedBusinessOrderId = computed(() => String(props.businessOrderId || ''));
-const logoUrl = computed(() => session.value?.display?.logoFileId ? fileApi.downloadUrl(session.value.display.logoFileId) : '');
+const logoUrl = computed(() => session.value?.display?.logoFileId ? downloadUrl(session.value.display.logoFileId) : '');
 const brandInitial = computed(() => (session.value?.display?.title || session.value?.cashierName || '收').slice(0, 1));
 const amountText = computed(() => formatMoney(displayOrder.value.amount));
 const resultAmountText = computed(() => previewMode.value
@@ -1292,7 +1292,7 @@ function methodIcon(method: PaymentCashierMethod | undefined) {
 
 function methodLogoUrl(method: PaymentCashierMethod | undefined) {
   if (!method) return '';
-  return method.iconFileId ? fileApi.downloadUrl(method.iconFileId) : '';
+  return method.iconFileId ? downloadUrl(method.iconFileId) : '';
 }
 
 function primaryMethod(group: MethodGroup) {

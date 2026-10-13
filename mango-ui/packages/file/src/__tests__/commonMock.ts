@@ -23,6 +23,7 @@ export const put = noopRequest;
 export const del = noopRequest;
 
 export const request = {
+  request: noopRequest,
   get: noopRequest,
   post: noopRequest,
   put: noopRequest,

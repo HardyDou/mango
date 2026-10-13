@@ -154,7 +154,6 @@
 import { onMounted, reactive, ref } from 'vue';
 import { Download, View } from '@element-plus/icons-vue';
 import {
-  downloadUploadedFile,
   MangoDialog,
   MangoListPage,
   MangoListPanel,
@@ -162,6 +161,7 @@ import {
   MangoSearchPanel,
   Pagination,
   RichTextViewer,
+  useUploadApi,
 } from '@mango/common';
 import { getInboundMessage, getInboundMessages } from '../../api/notice';
 import type {
@@ -181,6 +181,7 @@ interface InboundQuery {
   receivedTimeRange?: string[];
 }
 
+const uploadApi = useUploadApi();
 const loading = ref(false);
 const detailLoading = ref(false);
 const detailVisible = ref(false);
@@ -251,7 +252,7 @@ async function openDetail(row: NoticeInboundMessage) {
 
 async function downloadAttachment(attachment: NoticeInboundAttachment) {
   if (!attachment.fileId) return;
-  const response = await downloadUploadedFile(attachment.fileId);
+  const response = await uploadApi.downloadUploadedFile(attachment.fileId);
   const blob = response.data instanceof Blob ? response.data : new Blob([response.data]);
   const objectUrl = URL.createObjectURL(blob);
   const link = document.createElement('a');

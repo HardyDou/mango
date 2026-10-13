@@ -20,6 +20,7 @@ import ElementPlus from 'element-plus';
 import zhCn from 'element-plus/es/locale/lang/zh-cn';
 import * as ElementPlusIconsVue from '@element-plus/icons-vue';
 import '@mango/admin/style-full.css';
+import { configureFileApi } from '@mango/file';
 import { initThemeBeforeRender } from '@/utils/themeInit';
 import { registerAuthDirectives } from './directive/authDirective';
 
@@ -55,6 +56,7 @@ const adminHttpClient = createMangoHttpClient({
   onUnauthorized: () => redirectToLogin(),
 });
 app.provide(MANGO_HTTP_CLIENT_KEY, adminHttpClient);
+const adminFileApi = configureFileApi(adminHttpClient);
 app.onUnmount(() => adminHttpClient.destroy());
 
 // 全局注册 Element Plus 图标
@@ -103,7 +105,7 @@ installMangoAuth(app, {
     minLength: 6,
   },
 });
-installAdminBrandingRuntime();
+installAdminBrandingRuntime(adminFileApi);
 
 // 在 Vue 首帧渲染前同步恢复 store 状态（布局/深色模式等），避免闪屏
 initThemeBeforeRender();

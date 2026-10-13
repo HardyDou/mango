@@ -30,6 +30,7 @@ export * from './utils/realtime';
 
 export * from './hooks/useTitle';
 export * from './api/upload';
+export { useUploadApi } from './composables/useUploadApi';
 export * from './api/captcha';
 export * from './api/org';
 export * from './api/area';

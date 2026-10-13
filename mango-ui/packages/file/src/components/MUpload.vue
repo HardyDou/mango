@@ -100,10 +100,10 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { ElMessage, type UploadProps, type UploadRequestOptions, type UploadUserFile } from 'element-plus';
-import type { AxiosProgressEvent } from 'axios';
+import type { UploadAjaxError } from 'element-plus/es/components/upload/src/ajax';
+import type { HttpProgress } from '@mango/api-schema';
 import { Plus, Upload as UploadIcon, UploadFilled } from '@element-plus/icons-vue';
 import {
-  fileApi,
   fileToken,
   isFileAccessUrl,
   isFileDisplayUrl,
@@ -113,7 +113,8 @@ import {
   type FileBizMeta,
   type FileId,
 } from '../api/file';
-import { fileSettingsApi, formatBytes } from '../api/fileSettings';
+import { useFileApi, useFileSettingsApi } from '../composables/useFileApi';
+import { formatBytes } from '../api/fileSettings';
 
 defineOptions({
   name: 'MUpload',
@@ -171,6 +172,8 @@ const props = withDefaults(
     bizMeta?: FileBizMeta;
     directoryId?: FileId;
     buttonText?: string;
+    timeoutMs?: number;
+    inactivityTimeoutMs?: number;
   }>(),
   {
     count: 1,
@@ -181,6 +184,8 @@ const props = withDefaults(
     purpose: 'attachment',
     accessLevel: 'PRIVATE',
     buttonText: '上传文件',
+    timeoutMs: undefined,
+    inactivityTimeoutMs: undefined,
   },
 );
 
@@ -191,6 +196,8 @@ const emit = defineEmits<{
   (event: 'error', error: unknown): void;
 }>();
 
+const fileApi = useFileApi();
+const fileSettingsApi = useFileSettingsApi();
 const internalFiles = ref<InternalUploadFile[]>([]);
 const syncing = ref(false);
 const uploadRef = ref();
@@ -245,8 +252,10 @@ async function handleUpload(options: UploadRequestOptions) {
         directoryId: props.directoryId,
       },
       {
+        timeoutMs: props.timeoutMs,
+        inactivityTimeoutMs: props.inactivityTimeoutMs,
         onUploadProgress: options.onProgress
-          ? (event) =>
+          ? (event: HttpProgress) =>
               options.onProgress?.({
                 ...event,
                 percent: progressPercent(event.loaded, event.total || (options.file as File).size || 0),
@@ -257,7 +266,7 @@ async function handleUpload(options: UploadRequestOptions) {
     options.onSuccess?.(record);
     emit('success', record);
   } catch (error) {
-    options.onError?.(error as Error);
+    options.onError?.(error as UploadAjaxError);
     emit('error', error);
   }
 }
@@ -338,12 +347,16 @@ async function submitUpload() {
         ? [
             await fileApi.upload(files[0], uploadParams(), {
               ...policy,
-              onUploadProgress: (event) => updateSingleProgress(pending[0], event),
+              timeoutMs: props.timeoutMs,
+              inactivityTimeoutMs: props.inactivityTimeoutMs,
+              onUploadProgress: (event: HttpProgress) => updateSingleProgress(pending[0], event),
             }),
             ...(await uploadRemainingFiles(files.slice(1), pending.slice(1), policy)),
           ]
         : await fileApi.uploadBatch(files, uploadParams(), {
-            onUploadProgress: (event) => updateBatchProgress(pending, event),
+            timeoutMs: props.timeoutMs,
+            inactivityTimeoutMs: props.inactivityTimeoutMs,
+            onUploadProgress: (event: HttpProgress) => updateBatchProgress(pending, event),
           });
     pending.forEach((file) => {
       file.percentage = 100;
@@ -361,12 +374,12 @@ async function submitUpload() {
   }
 }
 
-function updateSingleProgress(file: InternalUploadFile | undefined, event: AxiosProgressEvent) {
+function updateSingleProgress(file: InternalUploadFile | undefined, event: HttpProgress) {
   if (!file) return;
   file.percentage = progressPercent(event.loaded, event.total || file.raw?.size || file.size || 0);
 }
 
-function updateBatchProgress(files: InternalUploadFile[], event: AxiosProgressEvent) {
+function updateBatchProgress(files: InternalUploadFile[], event: HttpProgress) {
   const total = event.total || files.reduce((sum, file) => sum + Number(file.raw?.size || file.size || 0), 0);
   const loaded = Math.min(event.loaded || 0, total || 0);
   let offset = 0;
@@ -393,7 +406,9 @@ async function uploadRemainingFiles(
     records.push(
       await fileApi.upload(files[index], uploadParams(), {
         ...policy,
-        onUploadProgress: (event) => updateSingleProgress(pending[index], event),
+        timeoutMs: props.timeoutMs,
+        inactivityTimeoutMs: props.inactivityTimeoutMs,
+        onUploadProgress: (event: HttpProgress) => updateSingleProgress(pending[index], event),
       }),
     );
   }

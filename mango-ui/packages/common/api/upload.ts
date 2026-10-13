@@ -1,5 +1,5 @@
 import request, { get, post } from '../utils/request';
-import type { ApiId } from '@mango/api-schema';
+import type { ApiId, HttpClient, HttpProgress } from '@mango/api-schema';
 
 export type FileId = ApiId;
 
@@ -48,6 +48,23 @@ export interface ExcelUploadResult {
   data: Record<string, unknown>[];
 }
 
+export interface UploadRequestOptions {
+  timeoutMs?: number;
+  inactivityTimeoutMs?: number;
+  onUploadProgress?: (progress: HttpProgress) => void;
+}
+
+export interface UploadApi {
+  uploadFile(file: File, options?: UploadRequestOptions): Promise<UploadResult>;
+  uploadImage(file: File, options?: UploadRequestOptions): Promise<UploadResult>;
+  uploadExcel(file: File, options?: UploadRequestOptions): Promise<ExcelUploadResult>;
+  uploadMultiple(files: File[], options?: UploadRequestOptions): Promise<UploadResult[]>;
+  getUploadedFileDetail(id: FileId, options?: UploadRequestOptions): Promise<UploadResult>;
+  importRemoteImage(input: ImportRemoteImageInput, options?: UploadRequestOptions): Promise<UploadResult>;
+  downloadUploadedFile(id: FileId, options?: UploadRequestOptions): Promise<BinaryDownloadResponse>;
+  createUploadedFileObjectUrl(id: FileId): Promise<string>;
+}
+
 export interface ImportRemoteImageInput {
   sourceUrl: string;
   bizType?: string;
@@ -65,6 +82,7 @@ export function uploadFile(file: File): Promise<UploadResult> {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
+    timeout: DEFAULT_UPLOAD_TIMEOUT_MS,
   }).then(toUploadResult);
 }
 
@@ -77,6 +95,7 @@ export function uploadImage(file: File): Promise<UploadResult> {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
+    timeout: DEFAULT_UPLOAD_TIMEOUT_MS,
   }).then(toUploadResult);
 }
 
@@ -89,6 +108,7 @@ export function uploadExcel(file: File): Promise<ExcelUploadResult> {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
+    timeout: DEFAULT_UPLOAD_TIMEOUT_MS,
   }).then((record) => ({ ...toUploadResult(record), data: [] }));
 }
 
@@ -103,6 +123,7 @@ export function uploadMultiple(files: File[]): Promise<UploadResult[]> {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
+    timeout: DEFAULT_UPLOAD_TIMEOUT_MS,
   }).then((records) => records.map(toUploadResult));
 }
 
@@ -111,7 +132,9 @@ export function getUploadedFileDetail(id: FileId): Promise<UploadResult> {
 }
 
 export function importRemoteImage(input: ImportRemoteImageInput): Promise<UploadResult> {
-  return post<UploadApiRecord>('/file/files/import-image', input).then(toUploadResult);
+  return post<UploadApiRecord>('/file/files/import-image', input, { timeout: DEFAULT_UPLOAD_TIMEOUT_MS }).then(
+    toUploadResult,
+  );
 }
 
 export async function downloadUploadedFile(id: FileId): Promise<BinaryDownloadResponse> {
@@ -119,6 +142,7 @@ export async function downloadUploadedFile(id: FileId): Promise<BinaryDownloadRe
     params: { id },
     responseType: 'blob',
     rawResponse: true,
+    timeout: DEFAULT_UPLOAD_TIMEOUT_MS,
   } as any);
   await assertBinaryDownloadResponse(response as any);
   return response as BinaryDownloadResponse;
@@ -148,6 +172,100 @@ function toUploadResult(record: UploadApiRecord): UploadResult {
 
 function toUploadedFileDetail(record: UploadApiRecord): UploadResult {
   return toUploadResult(record);
+}
+
+const legacyUploadApi: UploadApi = {
+  uploadFile,
+  uploadImage,
+  uploadExcel,
+  uploadMultiple,
+  getUploadedFileDetail,
+  importRemoteImage,
+  downloadUploadedFile,
+  createUploadedFileObjectUrl,
+};
+
+export function createUploadApi(httpClient?: HttpClient): UploadApi {
+  if (!httpClient) return legacyUploadApi;
+  const upload = (file: File, purpose: string, options?: UploadRequestOptions) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('purpose', purpose);
+    formData.append('accessLevel', 'PRIVATE');
+    return httpClient
+      .request<UploadApiRecord>({
+        method: 'POST',
+        url: '/file/files',
+        body: formData,
+        ...uploadRequestOptions(options),
+      })
+      .then(toUploadResult);
+  };
+  return {
+    uploadFile: (file, options) => upload(file, 'attachment', options),
+    uploadImage: (file, options) => upload(file, 'image', options),
+    uploadExcel: (file, options) => upload(file, 'excel', options).then((record) => ({ ...record, data: [] })),
+    uploadMultiple: (files, options) => {
+      const formData = new FormData();
+      files.forEach((file) => formData.append('files', file));
+      formData.append('purpose', 'attachment');
+      formData.append('accessLevel', 'PRIVATE');
+      return httpClient
+        .request<UploadApiRecord[]>({
+          method: 'POST',
+          url: '/file/files/batch',
+          body: formData,
+          ...uploadRequestOptions(options),
+        })
+        .then((records) => records.map(toUploadResult));
+    },
+    getUploadedFileDetail: (id) =>
+      httpClient
+        .request<UploadApiRecord>({ method: 'GET', url: '/file/files/detail', query: { id } })
+        .then(toUploadedFileDetail),
+    importRemoteImage: (input) =>
+      httpClient
+        .request<UploadApiRecord, ImportRemoteImageInput>({
+          method: 'POST',
+          url: '/file/files/import-image',
+          body: input,
+        })
+        .then(toUploadResult),
+    downloadUploadedFile: async (id, options) => {
+      const data = await httpClient.request<Blob>({
+        method: 'GET',
+        url: '/file/files/download',
+        query: { id },
+        responseType: 'blob',
+        ...uploadRequestOptions(options),
+      });
+      await assertBinaryBlob(data);
+      return { data };
+    },
+    createUploadedFileObjectUrl: async (id) => `/api/file/files/download?id=${encodeURIComponent(String(id))}`,
+  };
+}
+
+const DEFAULT_UPLOAD_TIMEOUT_MS = 10 * 60 * 1000;
+const DEFAULT_UPLOAD_INACTIVITY_TIMEOUT_MS = 60 * 1000;
+
+function uploadRequestOptions(options?: UploadRequestOptions) {
+  return {
+    timeoutMs: options?.timeoutMs ?? DEFAULT_UPLOAD_TIMEOUT_MS,
+    inactivityTimeoutMs: options?.inactivityTimeoutMs ?? DEFAULT_UPLOAD_INACTIVITY_TIMEOUT_MS,
+    onUploadProgress: options?.onUploadProgress,
+  };
+}
+
+async function assertBinaryBlob(blob: Blob) {
+  if (!blob.type.toLowerCase().includes('application/json')) return;
+  try {
+    const body = JSON.parse(await blob.text()) as { msg?: string; message?: string };
+    throw new Error(body.msg || body.message || '文件下载失败');
+  } catch (error) {
+    if (error instanceof SyntaxError) throw new Error('文件下载失败', { cause: error });
+    throw error;
+  }
 }
 
 export function fileToken(id?: FileId): string {
