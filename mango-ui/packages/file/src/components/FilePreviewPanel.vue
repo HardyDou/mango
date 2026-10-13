@@ -29,7 +29,12 @@
         </div>
         <video v-else-if="isVideo && inlinePreviewUrl" class="preview-media" :src="inlinePreviewUrl" controls />
         <audio v-else-if="isAudio && inlinePreviewUrl" class="preview-audio" :src="inlinePreviewUrl" controls />
-        <iframe v-else-if="isPdf && documentPreviewUrl" class="preview-frame" :src="documentPreviewUrl" title="文件预览" />
+        <iframe
+          v-else-if="isPdf && documentPreviewUrl"
+          class="preview-frame"
+          :src="documentPreviewUrl"
+          title="文件预览"
+        />
         <iframe v-else-if="documentPreviewUrl" class="preview-frame" :src="documentPreviewUrl" title="文件预览" />
         <div v-else class="preview-placeholder">
           <el-icon><Document /></el-icon>
@@ -44,7 +49,8 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Document } from '@element-plus/icons-vue';
-import { downloadFileRecord, fileApi, normalizeFileId, type FilePreview } from '../api/file';
+import { downloadFileRecord, normalizeFileId, type FilePreview } from '../api/file';
+import { useFileApi } from '../composables/useFileApi';
 import { isBackendFileContentUrl, isPreviewDisplayUrl } from '../utils/previewUrl';
 import type { FilePreviewPanelProps } from './FilePreviewPanel.types';
 
@@ -52,6 +58,8 @@ type PreviewActionsState = {
   canDownload: boolean;
   canOpenInNewWindow: boolean;
 };
+
+const fileApi = useFileApi();
 
 const props = withDefaults(defineProps<FilePreviewPanelProps>(), {
   showActions: true,
@@ -208,7 +216,7 @@ async function loadInlinePreview() {
 
 async function openDownload() {
   const item = preview.value;
-  if (item) await downloadFileRecord(item);
+  if (item) await downloadFileRecord(fileApi, item);
 }
 
 async function openPreviewInNewWindow() {

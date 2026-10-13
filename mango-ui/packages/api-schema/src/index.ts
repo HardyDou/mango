@@ -23,6 +23,9 @@ export interface HttpProgress {
   total?: number;
   progress?: number;
   bytesPerSecond?: number;
+  /** Compatibility fields retained for legacy upload progress consumers. */
+  bytes?: number;
+  lengthComputable?: boolean;
 }
 
 export interface HttpRequest<TBody = unknown> {
@@ -33,7 +36,10 @@ export interface HttpRequest<TBody = unknown> {
   query?: HttpQuery;
   headers?: HttpHeaders;
   signal?: AbortSignal;
+  /** Maximum total request duration. */
   timeoutMs?: number;
+  /** Maximum duration without upload or download progress. */
+  inactivityTimeoutMs?: number;
   responseType?: HttpResponseType;
   idempotencyKey?: string;
   onUploadProgress?: (progress: HttpProgress) => void;

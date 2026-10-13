@@ -2,8 +2,8 @@
  * File Storage API - 文件存储配置。
  */
 
-import { del, get, post, put } from '@mango/common';
-import type { ApiId } from '@mango/api-schema';
+import type { ApiId, HttpClient } from '@mango/api-schema';
+import { getLegacyHttpClient } from './legacyHttpClient';
 
 export type FileStorageType = 'LOCAL' | 'S3' | 'MINIO' | 'AWS_S3' | 'ALIYUN_OSS' | 'TENCENT_COS' | 'QINIU_KODO';
 
@@ -44,6 +44,8 @@ export interface PageResult<T> {
   pageSize: number;
 }
 
+export type FileStoragePageResult = PageResult<FileStorageConfig>;
+
 export interface TestStorageConfigCommand {
   id?: ApiId;
   config?: FileStorageConfig;
@@ -54,16 +56,56 @@ export interface TestStorageConfigResult {
   message: string;
 }
 
-export const fileStorageApi = {
-  page: (params?: FileStorageConfigQuery) => get<any>('/file/storage-configs/page', { params: toBackendPageParams(params) })
-    .then((data) => fromBackendPageResult(data, fromBackendStorageConfig, params)),
-  detail: (id: ApiId) => get<FileStorageConfig>('/file/storage-configs/detail', { params: { id } }).then(fromBackendStorageConfig),
-  create: (data: FileStorageConfig) => post<ApiId>('/file/storage-configs', toBackendStorageConfig(data)),
-  update: (data: FileStorageConfig) => put<boolean>('/file/storage-configs', toBackendStorageConfig(data)),
-  delete: (id: ApiId) => del<boolean>('/file/storage-configs', { params: { id } }),
-  activate: (id: ApiId) => put<boolean>('/file/storage-configs/active', undefined, { params: { id } }),
-  test: (command: TestStorageConfigCommand) => post<TestStorageConfigResult>('/file/storage-configs/test', command),
-};
+export interface FileStorageApi {
+  page(params?: FileStorageConfigQuery): Promise<FileStoragePageResult>;
+  detail(id: ApiId): Promise<FileStorageConfig>;
+  create(data: FileStorageConfig): Promise<ApiId>;
+  update(data: FileStorageConfig): Promise<boolean>;
+  delete(id: ApiId): Promise<boolean>;
+  activate(id: ApiId): Promise<boolean>;
+  test(command: TestStorageConfigCommand): Promise<TestStorageConfigResult>;
+}
+
+export function createFileStorageApi(httpClient?: HttpClient): FileStorageApi {
+  const transport = httpClient || getLegacyHttpClient();
+  return {
+    page: (params) =>
+      transport
+        .request<unknown>({ method: 'GET', url: '/file/storage-configs/page', query: toBackendPageParams(params) })
+        .then((data) => fromBackendPageResult(data, params)),
+    detail: (id) =>
+      transport
+        .request<unknown>({ method: 'GET', url: '/file/storage-configs/detail', query: { id } })
+        .then(fromBackendStorageConfig),
+    create: (data) =>
+      transport.request<ApiId, ReturnType<typeof toBackendStorageConfig>>({
+        method: 'POST',
+        url: '/file/storage-configs',
+        body: toBackendStorageConfig(data),
+      }),
+    update: (data) =>
+      transport.request<boolean, ReturnType<typeof toBackendStorageConfig>>({
+        method: 'PUT',
+        url: '/file/storage-configs',
+        body: toBackendStorageConfig(data),
+      }),
+    delete: (id) => transport.request<boolean>({ method: 'DELETE', url: '/file/storage-configs', query: { id } }),
+    activate: (id) => transport.request<boolean>({ method: 'PUT', url: '/file/storage-configs/active', query: { id } }),
+    test: (command) =>
+      transport.request<TestStorageConfigResult, TestStorageConfigCommand>({
+        method: 'POST',
+        url: '/file/storage-configs/test',
+        body: command,
+      }),
+  };
+}
+
+export function configureFileStorageApi(httpClient: HttpClient): FileStorageApi {
+  return createFileStorageApi(httpClient);
+}
+
+/** Legacy entry point: no HttpClient is required and the original request path is retained. */
+export const fileStorageApi = createFileStorageApi();
 
 export const storageTypeOptions: Array<{ label: string; value: FileStorageType }> = [
   { label: '本地存储', value: 'LOCAL' },
@@ -76,7 +118,7 @@ export const storageTypeOptions: Array<{ label: string; value: FileStorageType }
 ];
 
 export function storageTypeLabel(value?: string) {
-  return storageTypeOptions.find(item => item.value === value)?.label || value || '-';
+  return storageTypeOptions.find((item) => item.value === value)?.label || value || '-';
 }
 
 function toBackendStorageConfig(data: FileStorageConfig) {
@@ -90,53 +132,49 @@ function toBackendStorageConfig(data: FileStorageConfig) {
   };
 }
 
-function fromBackendStorageConfig(item: any): FileStorageConfig {
+function fromBackendStorageConfig(item: unknown): FileStorageConfig {
+  const record = item && typeof item === 'object' ? (item as Record<string, unknown>) : {};
   return {
-    ...item,
-    id: normalizeId(item.id),
-    pathStyleAccess: Boolean(item.pathStyleAccess),
-    sslEnabled: Boolean(item.sslEnabled),
-    active: Boolean(item.active),
-    secretConfigured: Boolean(item.secretConfigured),
-    createdTime: normalizeDateTime(item.createdTime),
-    updatedTime: normalizeDateTime(item.updatedTime),
-  };
+    ...record,
+    id: normalizeId(record.id),
+    configName: String(record.configName || ''),
+    storageType: (record.storageType || 'LOCAL') as FileStorageType,
+    bucketName: String(record.bucketName || ''),
+    pathStyleAccess: Boolean(record.pathStyleAccess),
+    sslEnabled: Boolean(record.sslEnabled),
+    active: Boolean(record.active),
+    secretConfigured: Boolean(record.secretConfigured),
+    createdTime: normalizeDateTime(record.createdTime),
+    updatedTime: normalizeDateTime(record.updatedTime),
+  } as FileStorageConfig;
 }
 
-function normalizeId(value: any): ApiId | undefined {
+function normalizeId(value: unknown): ApiId | undefined {
   return value === undefined || value === null ? undefined : String(value);
 }
 
 function toBackendPageParams(params?: FileStorageConfigQuery) {
-  if (!params) return params;
+  if (!params) return undefined;
   const { pageNum, pageSize, active, ...rest } = params;
-  return {
-    ...rest,
-    active: active === '' ? undefined : active,
-    page: pageNum,
-    size: pageSize,
-  };
+  return { ...rest, active: active === '' ? undefined : active, page: pageNum, size: pageSize };
 }
 
-function fromBackendPageResult<T>(
-  data: any,
-  mapper: (item: any) => T,
-  params?: { pageNum?: number; pageSize?: number },
-): PageResult<T> {
-  const list = Array.isArray(data?.list) ? data.list.map(mapper) : [];
+function fromBackendPageResult(data: unknown, params?: { pageNum?: number; pageSize?: number }): FileStoragePageResult {
+  const record = data && typeof data === 'object' ? (data as Record<string, unknown>) : {};
+  const list = Array.isArray(record.list) ? record.list.map(fromBackendStorageConfig) : [];
   return {
     list,
-    total: Number(data?.total ?? list.length),
-    pageNum: Number(data?.page ?? params?.pageNum ?? 1),
-    pageSize: Number(data?.size ?? params?.pageSize ?? list.length ?? 10),
+    total: Number(record.total ?? list.length),
+    pageNum: Number(record.page ?? params?.pageNum ?? 1),
+    pageSize: Number(record.size ?? params?.pageSize ?? (list.length || 10)),
   };
 }
 
-function normalizeDateTime(value: any): string {
+function normalizeDateTime(value: unknown): string {
   if (!value) return '';
   if (Array.isArray(value)) {
     const [year, month, day, hour = 0, minute = 0, second = 0] = value;
-    return `${year}-${pad(month)}-${pad(day)} ${pad(hour)}:${pad(minute)}:${pad(second)}`;
+    return `${year}-${pad(Number(month))}-${pad(Number(day))} ${pad(Number(hour))}:${pad(Number(minute))}:${pad(Number(second))}`;
   }
   return String(value).replace('T', ' ');
 }

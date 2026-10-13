@@ -6,6 +6,7 @@ import * as ElementPlusIconsVue from '@element-plus/icons-vue';
 import { createMangoHttpClient, registerUnauthorizedHandler, Session } from '@mango/common';
 import { MANGO_HTTP_CLIENT_KEY, type MangoAppRuntime } from '@mango/app-runtime';
 import { registerDefaultAdminPages } from '@mango/admin-pages';
+import { configureFileApi } from '@mango/file';
 import { registerMangoFileAdminPages } from '@mango/file/admin-pages';
 import { registerMangoCmsAdminPages } from '@mango/cms/admin-pages';
 import { bindMangoRuntimeTheme, createMangoWujieVueApp } from '@mango/app-runtime/vue-micro';
@@ -47,7 +48,9 @@ function installCommon(appInstance: VueApp, runtime?: MangoAppRuntime) {
       messages: { 'zh-cn': {} },
     }),
   );
-  appInstance.provide(MANGO_HTTP_CLIENT_KEY, runtime?.httpClient || getStandaloneHttpClient());
+  const httpClient = runtime?.httpClient || getStandaloneHttpClient();
+  appInstance.provide(MANGO_HTTP_CLIENT_KEY, httpClient);
+  configureFileApi(httpClient);
 }
 
 createMangoWujieVueApp({

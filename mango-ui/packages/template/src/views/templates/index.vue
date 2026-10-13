@@ -544,7 +544,7 @@ import {
   Pagination,
   useDict,
 } from '@mango/common';
-import { fileApi, FilePreviewPanel, MUpload, type FileRecord } from '@mango/file';
+import { downloadUrl, FilePreviewPanel, MUpload, type FileRecord } from '@mango/file';
 import { DomainSideTree } from '@mango/system';
 import {
   templateApi,
@@ -1119,7 +1119,7 @@ function renderErrorMessage(error: unknown) {
 
 function downloadRenderFile() {
   if (!renderResult.value?.fileId) return;
-  window.open(fileApi.downloadUrl(renderResult.value.fileId), '_blank', 'noopener');
+  window.open(downloadUrl(renderResult.value.fileId), '_blank', 'noopener');
 }
 
 function openRenderRecord() {

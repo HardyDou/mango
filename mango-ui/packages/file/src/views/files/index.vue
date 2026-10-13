@@ -226,11 +226,16 @@ import {
   MangoSearchPanel,
   Pagination,
 } from '@mango/common';
-import { downloadFileRecord, fileApi, type FilePreview, type FileQuery, type FileRecord } from '../../api/file';
-import { fileDirectoryApi, rootDirectory, type FileDirectory } from '../../api/fileDirectory';
-import { defaultFileSettings, fileSettingsApi, type FileSettings } from '../../api/fileSettings';
+import { downloadFileRecord, type FilePreview, type FileQuery, type FileRecord } from '../../api/file';
+import { rootDirectory, type FileDirectory } from '../../api/fileDirectory';
+import { defaultFileSettings, type FileSettings } from '../../api/fileSettings';
+import { useFileApi, useFileDirectoryApi, useFileSettingsApi } from '../../composables/useFileApi';
 import FilePreviewPanel from '../../components/FilePreviewPanel.vue';
 import MUpload from '../../components/MUpload.vue';
+
+const fileApi = useFileApi();
+const fileDirectoryApi = useFileDirectoryApi();
+const fileSettingsApi = useFileSettingsApi();
 
 const loading = ref(false);
 const directoryLoading = ref(false);
@@ -425,7 +430,7 @@ function handlePreview(row: FileRecord) {
 }
 
 async function handleDownload(row: FileRecord) {
-  await downloadFileRecord(row);
+  await downloadFileRecord(fileApi, row);
 }
 
 function handlePreviewActionsChange(value: { canDownload: boolean; canOpenInNewWindow: boolean }) {

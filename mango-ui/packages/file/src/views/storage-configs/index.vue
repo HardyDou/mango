@@ -224,14 +224,15 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import { MangoListPage, MangoListPanel, MangoSearchPanel, Pagination } from '@mango/common';
 import {
-  fileStorageApi,
   storageTypeLabel,
   storageTypeOptions,
   type FileStorageConfig,
   type FileStorageConfigQuery,
   type FileStorageType,
 } from '../../api/fileStorage';
+import { useFileStorageApi } from '../../composables/useFileApi';
 
+const fileStorageApi = useFileStorageApi();
 const loading = ref(false);
 const saving = ref(false);
 const dialogVisible = ref(false);

@@ -1,10 +1,13 @@
 /**
  * File API - 文件管理。
+ *
+ * The API is transport agnostic. Hosts create an instance-scoped HttpClient and
+ * provide it through @mango/app-runtime; callers use createFileApi or useFileApi.
  */
 
-import { del, get, post, put, request, type RequestConfig } from '@mango/common';
-import type { ApiId } from '@mango/api-schema';
-import { defaultFileSettings, fileSettingsApi } from './fileSettings';
+import type { ApiId, HttpClient, HttpError, HttpFailureKind, HttpProgress } from '@mango/api-schema';
+import { createFileSettingsApi, defaultFileSettings, type FileSettingsApi } from './fileSettings';
+import { getLegacyHttpClient } from './legacyHttpClient';
 import { sha256IfSupported, shouldUseMultipart } from './uploadSupport';
 
 export type FileId = ApiId;
@@ -89,7 +92,21 @@ export interface FileQuery {
 export type FileUploadParams = Partial<
   Pick<FileRecord, 'purpose' | 'accessLevel' | 'bizType' | 'bizId' | 'bizMeta' | 'directoryId'>
 >;
-export interface FileUploadOptions extends Pick<RequestConfig, 'onUploadProgress'> {
+
+export interface LegacyUploadProgress extends HttpProgress {
+  bytes: number;
+  lengthComputable: boolean;
+}
+
+export type FileUploadProgressHandler = ((progress: HttpProgress) => void) | ((progress: LegacyUploadProgress) => void);
+
+export interface FileUploadOptions {
+  /** Accepts both the new vendor-neutral progress shape and the legacy Axios-compatible shape. */
+  onUploadProgress?: FileUploadProgressHandler;
+  /** Maximum total duration for each upload request. */
+  timeoutMs?: number;
+  /** Maximum duration without transport progress for each upload request. */
+  inactivityTimeoutMs?: number;
   multipartEnabled?: boolean;
   multipartThreshold?: number;
   chunkSize?: number;
@@ -134,107 +151,230 @@ export interface CompleteFileUploadPartCommand {
   partHash?: string;
 }
 
-export interface PageResult<T> {
+interface PageResult<T> {
   list: T[];
   total: number;
   pageNum: number;
   pageSize: number;
 }
 
-export const fileApi = {
-  page: (params?: FileQuery) =>
-    get<any>('/file/files/page', { params: toBackendPageParams(params) }).then((data) =>
-      fromBackendPageResult(data, fromBackendFileRecord, params),
-    ),
-  detail: (id: FileId) => get<FileRecord>('/file/files/detail', { params: { id } }).then(fromBackendFileRecord),
-  preview: (id: FileId) =>
-    get<FilePreview>('/file/files/preview', { params: { id } }).then((item: any) => ({
-      ...item,
-      id: normalizeId(item.id),
-      previewable: Boolean(item.previewable),
-      previewUrl: normalizeApiUrl(item.previewUrl),
-      downloadUrl: normalizeApiUrl(item.downloadUrl),
-      documentPreviewUrl: normalizeApiUrl(item.documentPreviewUrl),
-      directAccess: Boolean(item.directAccess),
-      directPreviewUrl: normalizeApiUrl(item.directPreviewUrl),
-      directDownloadUrl: normalizeApiUrl(item.directDownloadUrl),
-      directPreviewExpireSeconds: Number(item.directPreviewExpireSeconds ?? 0),
-      directDownloadExpireSeconds: Number(item.directDownloadExpireSeconds ?? 0),
-    })),
-  previewLink: (fileId: FileId) =>
-    get<FilePreviewLink>('/file-preview/files/preview-link', { params: { fileId } }).then((item: any) => ({
-      ...item,
-      fileId: normalizeId(item.fileId),
-      previewUrl: normalizeApiUrl(item.previewUrl),
-      expireSeconds: Number(item.expireSeconds ?? 0),
-    })),
-  previewContent: async (id: FileId) => {
-    const response = await request.get('/file/files/preview-content', {
-      params: { id },
-      responseType: 'blob',
-      rawResponse: true,
-    } as any);
-    await assertBinaryResponse(response as any, '文件预览失败');
-    return response as any;
-  },
-  upload: (file: File, params?: FileUploadParams, options?: FileUploadOptions) => uploadSmart(file, params, options),
-  uploadPolicy: () => resolveUploadPolicy(),
-  uploadBatch: (files: File[], params?: FileUploadParams, options?: FileUploadOptions) => {
-    const formData = new FormData();
-    files.forEach((file) => formData.append('files', file));
-    appendOptional(formData, params);
-    return post<FileRecord[]>('/file/files/batch', formData as any, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-      onUploadProgress: options?.onUploadProgress,
-    }).then((items) => (items || []).map(fromBackendFileRecord));
-  },
-  archive: (id: FileId, reason?: string) => del<boolean>('/file/files', { params: { id, reason } }),
-  delete: (ids: FileId[]) => post<boolean>('/file/files/delete', { ids }),
-  createUploadSession: (command: CreateFileUploadSessionCommand) =>
-    post<FileUploadInit>('/file/files/uploads', normalizeUploadSessionCommand(command) as any).then(
-      fromBackendUploadInit,
-    ),
-  createUploadPartSign: (sessionId: FileId, partNumber: number, partSize?: number) =>
-    post<FileUploadPartSign>(`/file/files/uploads/${encodeURIComponent(String(sessionId))}/parts/sign`, {
-      partNumber,
-      partSize,
-    }),
-  uploadServerPart: (sessionId: FileId, partNumber: number, chunk: Blob, fileName: string) => {
-    const formData = new FormData();
-    formData.append('partNumber', String(partNumber));
-    formData.append('file', chunk, fileName);
-    return post<boolean>(`/file/files/uploads/${encodeURIComponent(String(sessionId))}/parts`, formData as any, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-  },
-  completeUploadPart: (sessionId: FileId, command: CompleteFileUploadPartCommand) =>
-    put<boolean>(`/file/files/uploads/${encodeURIComponent(String(sessionId))}/parts`, command),
-  completeUploadSession: (sessionId: FileId) =>
-    post<FileRecord>(`/file/files/uploads/${encodeURIComponent(String(sessionId))}/complete`).then(
-      fromBackendFileRecord,
-    ),
-  abortUploadSession: (sessionId: FileId) =>
-    del<boolean>(`/file/files/uploads/${encodeURIComponent(String(sessionId))}`),
-  downloadUrl: (id: FileId) => `/api/file/files/download?id=${encodeURIComponent(String(id))}`,
-  download: async (id: FileId) => {
-    const response = await request.get('/file/files/download', {
-      params: { id },
-      responseType: 'blob',
-      rawResponse: true,
-    } as any);
-    await assertBinaryResponse(response as any, '文件下载失败');
-    return response as any;
-  },
-};
+export interface BinaryDownloadResponse {
+  data: Blob;
+  headers?: Record<string, string | undefined>;
+}
 
-export function normalizeFileId(value?: FileReference): FileId {
+export interface FileApi {
+  page(params?: FileQuery): Promise<PageResult<FileRecord>>;
+  detail(id: FileId): Promise<FileRecord>;
+  preview(id: FileId): Promise<FilePreview>;
+  previewLink(fileId: FileId): Promise<FilePreviewLink>;
+  previewContent(id: FileId): Promise<BinaryDownloadResponse>;
+  upload(file: File, params?: FileUploadParams, options?: FileUploadOptions): Promise<FileRecord>;
+  uploadPolicy(options?: FileUploadOptions): Promise<FileUploadPolicy>;
+  uploadBatch(files: File[], params?: FileUploadParams, options?: FileUploadOptions): Promise<FileRecord[]>;
+  archive(id: FileId, reason?: string): Promise<boolean>;
+  delete(ids: FileId[]): Promise<boolean>;
+  createUploadSession(command: CreateFileUploadSessionCommand, options?: FileUploadOptions): Promise<FileUploadInit>;
+  createUploadPartSign(
+    sessionId: FileId,
+    partNumber: number,
+    partSize?: number,
+    options?: FileUploadOptions,
+  ): Promise<FileUploadPartSign>;
+  uploadServerPart(
+    sessionId: FileId,
+    partNumber: number,
+    chunk: Blob,
+    fileName: string,
+    options?: FileUploadOptions,
+  ): Promise<boolean>;
+  completeUploadPart(
+    sessionId: FileId,
+    command: CompleteFileUploadPartCommand,
+    options?: FileUploadOptions,
+  ): Promise<boolean>;
+  completeUploadSession(sessionId: FileId, options?: FileUploadOptions): Promise<FileRecord>;
+  abortUploadSession(sessionId: FileId, options?: FileUploadOptions): Promise<boolean>;
+  downloadUrl(id: FileId): string;
+  download(id: FileId): Promise<BinaryDownloadResponse>;
+}
+
+export class FileHttpError extends Error implements HttpError {
+  readonly name = 'HttpError' as const;
+  readonly kind: HttpFailureKind;
+  readonly status?: number;
+  readonly code?: string;
+  readonly retryable: boolean;
+  readonly requestId?: string;
+  readonly details?: unknown;
+
+  constructor(message: string, options: { kind: HttpFailureKind; status?: number; code?: string; details?: unknown }) {
+    super(message);
+    this.kind = options.kind;
+    this.status = options.status;
+    this.code = options.code;
+    this.retryable = false;
+    this.details = options.details;
+  }
+}
+
+export const DEFAULT_MULTIPART_THRESHOLD = 20 * 1024 * 1024;
+export const DEFAULT_CHUNK_SIZE = 10 * 1024 * 1024;
+export const DEFAULT_UPLOAD_TIMEOUT_MS = 10 * 60 * 1000;
+export const DEFAULT_UPLOAD_INACTIVITY_TIMEOUT_MS = 60 * 1000;
+
+export function createFileApi(httpClient?: HttpClient): FileApi {
+  const transport = httpClient || getLegacyHttpClient();
+  const settingsApi = createFileSettingsApi(transport);
+  const api: FileApi = {
+    page: (params) =>
+      transport
+        .request<unknown>({ method: 'GET', url: '/file/files/page', query: toBackendPageParams(params) })
+        .then((data) => fromBackendPageResult(data, fromBackendFileRecord, params)),
+    detail: (id) =>
+      transport
+        .request<unknown>({ method: 'GET', url: '/file/files/detail', query: { id } })
+        .then(fromBackendFileRecord),
+    preview: (id) =>
+      transport.request<unknown>({ method: 'GET', url: '/file/files/preview', query: { id } }).then((item) => {
+        const record = asRecord(item);
+        return {
+          id: normalizeId(record.id),
+          fileName: stringValue(record.fileName) || '',
+          fileExt: stringValue(record.fileExt),
+          fileSize: Number(record.fileSize ?? 0),
+          contentType: stringValue(record.contentType),
+          previewable: Boolean(record.previewable),
+          previewUrl: normalizeApiUrl(stringValue(record.previewUrl)),
+          downloadUrl: normalizeApiUrl(stringValue(record.downloadUrl)),
+          documentPreviewUrl: normalizeApiUrl(stringValue(record.documentPreviewUrl)),
+          directAccess: Boolean(record.directAccess),
+          directPreviewUrl: normalizeApiUrl(stringValue(record.directPreviewUrl)),
+          directDownloadUrl: normalizeApiUrl(stringValue(record.directDownloadUrl)),
+          directPreviewExpireSeconds: Number(record.directPreviewExpireSeconds ?? 0),
+          directDownloadExpireSeconds: Number(record.directDownloadExpireSeconds ?? 0),
+        } satisfies FilePreview;
+      }),
+    previewLink: (fileId) =>
+      transport
+        .request<unknown>({ method: 'GET', url: '/file-preview/files/preview-link', query: { fileId } })
+        .then((item) => {
+          const record = asRecord(item);
+          return {
+            ...record,
+            fileId: normalizeId(record.fileId),
+            previewUrl: normalizeApiUrl(stringValue(record.previewUrl)),
+            expireSeconds: Number(record.expireSeconds ?? 0),
+          } as FilePreviewLink;
+        }),
+    previewContent: async (id) => {
+      const response = await transport.request<Blob | BinaryDownloadResponse>({
+        method: 'GET',
+        url: '/file/files/preview-content',
+        query: { id },
+        responseType: 'blob',
+      });
+      const result = toBinaryDownloadResponse(response);
+      await assertBinaryBlob(result.data, '文件预览失败');
+      return result;
+    },
+    upload: (file, params, options) => uploadSmart(api, settingsApi, transport, file, params, options),
+    uploadPolicy: (options) => resolveUploadPolicy(settingsApi, options),
+    uploadBatch: async (files, params, options) => {
+      const formData = new FormData();
+      files.forEach((file) => formData.append('files', file));
+      appendOptional(formData, params);
+      const items = await transport.request<unknown>({
+        method: 'POST',
+        url: '/file/files/batch',
+        body: formData,
+        ...uploadRequestOptions(options),
+      });
+      return Array.isArray(items) ? items.map(fromBackendFileRecord) : [];
+    },
+    archive: (id, reason) =>
+      transport.request<boolean>({ method: 'DELETE', url: '/file/files', query: { id, reason } }),
+    delete: (ids) =>
+      transport.request<boolean, { ids: FileId[] }>({ method: 'POST', url: '/file/files/delete', body: { ids } }),
+    createUploadSession: (command, options) =>
+      transport
+        .request<unknown, ReturnType<typeof normalizeUploadSessionCommand>>({
+          method: 'POST',
+          url: '/file/files/uploads',
+          body: normalizeUploadSessionCommand(command),
+          ...uploadRequestOptions(options),
+        })
+        .then(fromBackendUploadInit),
+    createUploadPartSign: (sessionId, partNumber, partSize, options) =>
+      transport.request<FileUploadPartSign, { partNumber: number; partSize?: number }>({
+        method: 'POST',
+        url: `/file/files/uploads/${encodeURIComponent(String(sessionId))}/parts/sign`,
+        body: { partNumber, partSize },
+        ...uploadRequestOptions(options),
+      }),
+    uploadServerPart: async (sessionId, partNumber, chunk, fileName, options) => {
+      const formData = new FormData();
+      formData.append('partNumber', String(partNumber));
+      formData.append('file', chunk, fileName);
+      return transport.request<boolean>({
+        method: 'POST',
+        url: `/file/files/uploads/${encodeURIComponent(String(sessionId))}/parts`,
+        body: formData,
+        ...uploadRequestOptions(options),
+      });
+    },
+    completeUploadPart: (sessionId, command, options) =>
+      transport.request<boolean, CompleteFileUploadPartCommand>({
+        method: 'PUT',
+        url: `/file/files/uploads/${encodeURIComponent(String(sessionId))}/parts`,
+        body: command,
+        ...uploadRequestOptions(options),
+      }),
+    completeUploadSession: (sessionId, options) =>
+      transport
+        .request<unknown>({
+          method: 'POST',
+          url: `/file/files/uploads/${encodeURIComponent(String(sessionId))}/complete`,
+          ...uploadRequestOptions(options),
+        })
+        .then(fromBackendFileRecord),
+    abortUploadSession: (sessionId, options) =>
+      transport.request<boolean>({
+        method: 'DELETE',
+        url: `/file/files/uploads/${encodeURIComponent(String(sessionId))}`,
+        ...uploadRequestOptions(options),
+      }),
+    downloadUrl,
+    download: async (id) => {
+      const response = await transport.request<Blob | BinaryDownloadResponse>({
+        method: 'GET',
+        url: '/file/files/download',
+        query: { id },
+        responseType: 'blob',
+      });
+      const result = toBinaryDownloadResponse(response);
+      await assertBinaryBlob(result.data, '文件下载失败');
+      return result;
+    },
+  };
+  return api;
+}
+
+/**
+ * Optional host configuration for new consumers. It returns an instance and
+ * does not mutate the legacy `fileApi` singleton, avoiding cross-app leakage.
+ */
+export function configureFileApi(httpClient: HttpClient): FileApi {
+  return createFileApi(httpClient);
+}
+
+/** Legacy entry point: no HttpClient is required and the original request path is retained. */
+export const fileApi = createFileApi();
+
+export function normalizeFileId(value?: FileReference) {
   if (!value) return '';
-  if (typeof value === 'number') {
-    return isValidFileId(value) ? String(value) : '';
-  }
-  if (typeof value !== 'string') {
-    return normalizeFileId(value.id);
-  }
+  if (typeof value === 'number') return isValidFileId(value) ? String(value) : '';
+  if (typeof value !== 'string') return normalizeFileId(value.id);
   const text = value.trim();
   if (!text || isFileAccessUrl(text)) return '';
   const rawId = text.startsWith('mango-file:') ? text.slice('mango-file:'.length).trim() : text;
@@ -274,47 +414,56 @@ export function isFileAccessUrl(value?: string): boolean {
   return /^(https?:|data:|blob:)/i.test(value) || value.startsWith('/') || isProtectedApiUrl(value);
 }
 
+export function downloadUrl(id: FileId): string {
+  return `/api/file/files/download?id=${encodeURIComponent(String(id))}`;
+}
+
 export async function downloadFileRecord(
-  row: Pick<FileRecord, 'id' | 'fileName'> & Partial<Pick<FilePreview, 'directDownloadUrl'>>,
+  apiOrRow: FileApi | (Pick<FileRecord, 'id' | 'fileName'> & Partial<Pick<FilePreview, 'directDownloadUrl'>>),
+  maybeRow?: Pick<FileRecord, 'id' | 'fileName'> & Partial<Pick<FilePreview, 'directDownloadUrl'>>,
 ) {
+  const api = maybeRow ? (apiOrRow as FileApi) : fileApi;
+  const row =
+    maybeRow || (apiOrRow as Pick<FileRecord, 'id' | 'fileName'> & Partial<Pick<FilePreview, 'directDownloadUrl'>>);
   if (row.directDownloadUrl && !isProtectedApiUrl(row.directDownloadUrl)) {
     openDirectDownload(row.directDownloadUrl, row.fileName || `file-${row.id}`);
     return;
   }
-  const preview = row.directDownloadUrl ? undefined : await fileApi.preview(row.id);
+  const preview = row.directDownloadUrl ? undefined : await api.preview(row.id);
   if (preview?.directDownloadUrl && !isProtectedApiUrl(preview.directDownloadUrl)) {
     openDirectDownload(preview.directDownloadUrl, preview.fileName || row.fileName || `file-${row.id}`);
     return;
   }
-  const response = await fileApi.download(row.id);
-  const blob =
-    response.data instanceof Blob
-      ? response.data
-      : new Blob([response.data], { type: response.headers?.['content-type'] || 'application/octet-stream' });
-  const objectUrl = URL.createObjectURL(blob);
+  const response = await api.download(row.id);
+  const objectUrl = URL.createObjectURL(response.data);
   openDirectDownload(objectUrl, preview?.fileName || row.fileName || `file-${row.id}`);
   setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
 }
 
-export const DEFAULT_MULTIPART_THRESHOLD = 20 * 1024 * 1024;
-export const DEFAULT_CHUNK_SIZE = 10 * 1024 * 1024;
-
-async function uploadSmart(file: File, params?: FileUploadParams, options?: FileUploadOptions): Promise<FileRecord> {
-  const policy = await resolveUploadPolicy(options);
-  if (!shouldUseMultipart(file.size, policy)) {
-    return uploadSimple(file, params, options);
-  }
-  return uploadMultipart(file, params, options);
+async function uploadSmart(
+  api: FileApi,
+  settingsApi: FileSettingsApi,
+  httpClient: HttpClient,
+  file: File,
+  params?: FileUploadParams,
+  options?: FileUploadOptions,
+): Promise<FileRecord> {
+  const policy = await resolveUploadPolicy(settingsApi, options);
+  if (!shouldUseMultipart(file.size, policy)) return uploadSimple(httpClient, file, params, options);
+  return uploadMultipart(api, file, params, options);
 }
 
-async function resolveUploadPolicy(options?: FileUploadOptions): Promise<FileUploadPolicy> {
+async function resolveUploadPolicy(
+  settingsApi: FileSettingsApi,
+  options?: FileUploadOptions,
+): Promise<FileUploadPolicy> {
   if (options?.multipartEnabled !== undefined && options.multipartThreshold !== undefined) {
     return {
       multipartEnabled: options.multipartEnabled,
       multipartThreshold: positiveNumber(options.multipartThreshold, DEFAULT_MULTIPART_THRESHOLD),
     };
   }
-  const settings = await fileSettingsApi.get().catch(() => defaultFileSettings);
+  const settings = await settingsApi.get(uploadRequestOptions(options)).catch(() => defaultFileSettings);
   return {
     multipartEnabled: options?.multipartEnabled ?? settings.multipartEnabled,
     multipartThreshold: positiveNumber(
@@ -324,17 +473,36 @@ async function resolveUploadPolicy(options?: FileUploadOptions): Promise<FileUpl
   };
 }
 
-function uploadSimple(file: File, params?: FileUploadParams, options?: FileUploadOptions) {
+function uploadRequestOptions(options?: FileUploadOptions) {
+  return {
+    timeoutMs: options?.timeoutMs ?? DEFAULT_UPLOAD_TIMEOUT_MS,
+    inactivityTimeoutMs: options?.inactivityTimeoutMs ?? DEFAULT_UPLOAD_INACTIVITY_TIMEOUT_MS,
+    onUploadProgress: options?.onUploadProgress
+      ? (progress: HttpProgress) => (options.onUploadProgress as (value: HttpProgress) => void)(progress)
+      : undefined,
+  };
+}
+
+async function uploadSimple(
+  httpClient: HttpClient,
+  file: File,
+  params?: FileUploadParams,
+  options?: FileUploadOptions,
+): Promise<FileRecord> {
   const formData = new FormData();
   formData.append('file', file);
   appendOptional(formData, params);
-  return post<FileRecord>('/file/files', formData as any, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-    onUploadProgress: options?.onUploadProgress,
-  }).then(fromBackendFileRecord);
+  const item = await httpClient.request<unknown>({
+    method: 'POST',
+    url: '/file/files',
+    body: formData,
+    ...uploadRequestOptions(options),
+  });
+  return fromBackendFileRecord(item);
 }
 
 async function uploadMultipart(
+  api: FileApi,
   file: File,
   params?: FileUploadParams,
   options?: FileUploadOptions,
@@ -342,22 +510,24 @@ async function uploadMultipart(
   const chunkSize = options?.chunkSize ?? DEFAULT_CHUNK_SIZE;
   const totalParts = Math.ceil(file.size / chunkSize);
   const fileHash = await sha256IfSupported(file);
-  const init = await fileApi.createUploadSession({
-    ...params,
-    fileName: file.name,
-    fileSize: file.size,
-    fileHash,
-    contentType: file.type || undefined,
-    chunkSize,
-    totalParts,
-  });
+  const controlOptions = withoutProgress(options);
+  const init = await api.createUploadSession(
+    {
+      ...params,
+      fileName: file.name,
+      fileSize: file.size,
+      fileHash,
+      contentType: file.type || undefined,
+      chunkSize,
+      totalParts,
+    },
+    controlOptions,
+  );
   if (init.instant && init.fileRecord) {
-    options?.onUploadProgress?.({ loaded: file.size, total: file.size, progress: 1 } as any);
+    emitUploadProgress(options, { loaded: file.size, total: file.size, progress: 1 });
     return init.fileRecord;
   }
-  if (!init.sessionId || !init.uploadMode) {
-    throw new Error('文件上传会话创建失败');
-  }
+  if (!init.sessionId || !init.uploadMode) throw new Error('文件上传会话创建失败');
   const resolvedChunkSize = Number(init.chunkSize || chunkSize);
   const resolvedTotalParts = Number(init.totalParts || totalParts);
   try {
@@ -365,46 +535,149 @@ async function uploadMultipart(
       const start = (partNumber - 1) * resolvedChunkSize;
       const end = Math.min(start + resolvedChunkSize, file.size);
       const chunk = file.slice(start, end);
+      const partOptions = withPartProgress(options, start, file.size);
       if (init.uploadMode === 'S3_MULTIPART') {
-        await uploadS3MultipartPart(init.sessionId, partNumber, chunk);
+        await uploadS3MultipartPart(api, init.sessionId, partNumber, chunk, partOptions);
       } else {
-        await fileApi.uploadServerPart(init.sessionId, partNumber, chunk, file.name);
+        await api.uploadServerPart(init.sessionId, partNumber, chunk, file.name, partOptions);
       }
       reportMultipartProgress(options, end, file.size);
     }
-    return await fileApi.completeUploadSession(init.sessionId);
+    return await api.completeUploadSession(init.sessionId, controlOptions);
   } catch (error) {
-    await fileApi.abortUploadSession(init.sessionId).catch(() => undefined);
+    await api.abortUploadSession(init.sessionId, withoutProgress(options)).catch(() => undefined);
     throw error;
   }
 }
 
-async function uploadS3MultipartPart(sessionId: FileId, partNumber: number, chunk: Blob) {
-  const sign = await fileApi.createUploadPartSign(sessionId, partNumber, chunk.size);
-  const response = await fetch(sign.uploadUrl, {
-    method: sign.method || 'PUT',
-    body: chunk,
-  });
-  if (!response.ok) {
-    throw new Error(`分片上传失败：${response.status}`);
+async function uploadS3MultipartPart(
+  api: FileApi,
+  sessionId: FileId,
+  partNumber: number,
+  chunk: Blob,
+  options?: FileUploadOptions,
+) {
+  const requestOptions = withoutProgress(options);
+  const sign = await api.createUploadPartSign(sessionId, partNumber, chunk.size, requestOptions);
+  const etag = await uploadSignedPart(sign, chunk, options);
+  await api.completeUploadPart(sessionId, { partNumber, etag, partSize: chunk.size }, requestOptions);
+}
+
+async function uploadSignedPart(sign: FileUploadPartSign, chunk: Blob, options?: FileUploadOptions): Promise<string> {
+  if (typeof XMLHttpRequest !== 'undefined') {
+    return uploadSignedPartWithXhr(sign, chunk, options);
   }
-  const etag = response.headers.get('ETag')?.replace(/^"|"$/g, '') || '';
-  if (!etag) {
-    throw new Error('对象存储未返回分片 ETag');
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), options?.timeoutMs ?? DEFAULT_UPLOAD_TIMEOUT_MS);
+  try {
+    const response = await fetch(sign.uploadUrl, {
+      method: sign.method || 'PUT',
+      body: chunk,
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      throw new FileHttpError(`分片上传失败：${response.status}`, { kind: 'protocol', status: response.status });
+    }
+    const etag = response.headers.get('ETag')?.replace(/^"|"$/g, '') || '';
+    if (!etag) throw new FileHttpError('对象存储未返回分片 ETag', { kind: 'protocol' });
+    return etag;
+  } catch (error) {
+    if (controller.signal.aborted) throw new FileHttpError('分片上传超时', { kind: 'timeout' });
+    throw error;
+  } finally {
+    clearTimeout(timer);
   }
-  await fileApi.completeUploadPart(sessionId, {
-    partNumber,
-    etag,
-    partSize: chunk.size,
+}
+
+function uploadSignedPartWithXhr(sign: FileUploadPartSign, chunk: Blob, options?: FileUploadOptions): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    const inactivityTimeoutMs = options?.inactivityTimeoutMs ?? DEFAULT_UPLOAD_INACTIVITY_TIMEOUT_MS;
+    let inactivityTimer: ReturnType<typeof setTimeout> | undefined;
+    let settled = false;
+    const cleanup = () => {
+      if (inactivityTimer) clearTimeout(inactivityTimer);
+    };
+    const fail = (error: Error) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      xhr.abort();
+      reject(error);
+    };
+    const resetInactivityTimer = () => {
+      cleanup();
+      inactivityTimer = setTimeout(
+        () => fail(new FileHttpError('分片上传无进度超时', { kind: 'timeout' })),
+        inactivityTimeoutMs,
+      );
+    };
+    xhr.open(sign.method || 'PUT', sign.uploadUrl, true);
+    xhr.timeout = options?.timeoutMs ?? DEFAULT_UPLOAD_TIMEOUT_MS;
+    xhr.upload.onprogress = (event) => {
+      resetInactivityTimer();
+      emitUploadProgress(options, {
+        loaded: event.loaded,
+        total: event.total || chunk.size,
+        progress: event.total ? event.loaded / event.total : undefined,
+      });
+    };
+    xhr.onload = () => {
+      if (settled) return;
+      if (xhr.status < 200 || xhr.status >= 300) {
+        fail(new FileHttpError(`分片上传失败：${xhr.status}`, { kind: 'protocol', status: xhr.status }));
+        return;
+      }
+      const etag = xhr.getResponseHeader('ETag')?.replace(/^"|"$/g, '') || '';
+      if (!etag) {
+        fail(new FileHttpError('对象存储未返回分片 ETag', { kind: 'protocol' }));
+        return;
+      }
+      settled = true;
+      cleanup();
+      resolve(etag);
+    };
+    xhr.onerror = () => fail(new FileHttpError('分片上传网络失败', { kind: 'network' }));
+    xhr.ontimeout = () => fail(new FileHttpError('分片上传超时', { kind: 'timeout' }));
+    xhr.onabort = () => {
+      if (!settled) fail(new FileHttpError('分片上传已取消', { kind: 'aborted' }));
+    };
+    resetInactivityTimer();
+    xhr.send(chunk);
   });
 }
 
+function withoutProgress(options?: FileUploadOptions): FileUploadOptions | undefined {
+  return options ? { ...options, onUploadProgress: undefined } : undefined;
+}
+
+function withPartProgress(options: FileUploadOptions | undefined, offset: number, total: number) {
+  if (!options?.onUploadProgress) return options;
+  return {
+    ...options,
+    onUploadProgress: (progress: HttpProgress) => {
+      const loaded = Math.min(offset + progress.loaded, total);
+      emitUploadProgress(options, {
+        loaded,
+        total,
+        progress: total ? loaded / total : 0,
+        bytesPerSecond: progress.bytesPerSecond,
+      });
+    },
+  };
+}
+
 function reportMultipartProgress(options: FileUploadOptions | undefined, loaded: number, total: number) {
-  options?.onUploadProgress?.({
-    loaded,
-    total,
-    progress: total ? loaded / total : 0,
-  } as any);
+  emitUploadProgress(options, { loaded, total, progress: total ? loaded / total : 0 });
+}
+
+function emitUploadProgress(options: FileUploadOptions | undefined, progress: HttpProgress) {
+  const callback = options?.onUploadProgress as ((value: HttpProgress) => void) | undefined;
+  callback?.({
+    ...progress,
+    bytes: progress.bytes ?? progress.loaded,
+    lengthComputable: progress.lengthComputable ?? progress.total !== undefined,
+  });
 }
 
 function positiveNumber(value: unknown, fallback: number): number {
@@ -422,11 +695,9 @@ function openDirectDownload(url: string, fileName: string) {
   document.body.removeChild(link);
 }
 
-function appendOptional(formData: FormData, params?: Record<string, any>) {
+function appendOptional(formData: FormData, params?: Record<string, unknown>) {
   Object.entries(params || {}).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== '') {
-      formData.append(key, String(value));
-    }
+    if (value !== undefined && value !== null && value !== '') formData.append(key, String(value));
   });
 }
 
@@ -444,45 +715,49 @@ function normalizeBizMetaForRequest(value?: FileBizMeta) {
   return typeof value === 'string' ? value : JSON.stringify(value);
 }
 
-function fromBackendUploadInit(item: any): FileUploadInit {
+function fromBackendUploadInit(item: unknown): FileUploadInit {
+  const record = asRecord(item);
   return {
-    ...item,
-    instant: Boolean(item?.instant),
-    fileRecord: item?.fileRecord ? fromBackendFileRecord(item.fileRecord) : undefined,
-    sessionId: normalizeId(item?.sessionId),
-    chunkSize: Number(item?.chunkSize ?? 0),
-    totalParts: Number(item?.totalParts ?? 0),
-    expiresAt: normalizeDateTime(item?.expiresAt),
+    instant: Boolean(record.instant),
+    fileRecord: record.fileRecord ? fromBackendFileRecord(record.fileRecord) : undefined,
+    sessionId: normalizeId(record.sessionId),
+    uploadMode:
+      record.uploadMode === 'S3_MULTIPART' || record.uploadMode === 'SERVER_CHUNK' ? record.uploadMode : undefined,
+    storageUploadId: typeof record.storageUploadId === 'string' ? record.storageUploadId : undefined,
+    chunkSize: Number(record.chunkSize ?? 0),
+    totalParts: Number(record.totalParts ?? 0),
+    expiresAt: normalizeDateTime(record.expiresAt),
   };
 }
 
-function fromBackendFileRecord(item: any): FileRecord {
+function fromBackendFileRecord(item: unknown): FileRecord {
+  const record = asRecord(item);
   return {
-    id: normalizeId(item.id),
-    tenantId: normalizeId(item.tenantId),
-    bizType: item.bizType,
-    bizId: item.bizId,
-    purpose: item.purpose,
-    bizMeta: parseBizMeta(item.bizMeta),
-    directoryId: normalizeId(item.directoryId ?? 0),
-    directoryName: item.directoryName,
-    accessLevel: item.accessLevel,
-    fileName: item.fileName,
-    fileExt: item.fileExt,
-    fileSize: Number(item.fileSize ?? 0),
-    contentType: item.contentType,
-    fileHash: item.fileHash,
-    status: item.status === undefined || item.status === null ? undefined : Number(item.status),
-    archived: item.archived === undefined || item.archived === null ? undefined : Number(item.archived),
-    createdBy: normalizeId(item.createdBy),
-    createdTime: normalizeDateTime(item.createdTime),
-    updatedTime: normalizeDateTime(item.updatedTime),
-    previewUrl: normalizeApiUrl(item.previewUrl),
-    downloadUrl: normalizeApiUrl(item.downloadUrl),
+    id: normalizeId(record.id),
+    tenantId: normalizeId(record.tenantId),
+    bizType: stringValue(record.bizType),
+    bizId: stringValue(record.bizId),
+    purpose: stringValue(record.purpose),
+    bizMeta: parseBizMeta(record.bizMeta),
+    directoryId: normalizeId(record.directoryId ?? 0),
+    directoryName: stringValue(record.directoryName),
+    accessLevel: stringValue(record.accessLevel),
+    fileName: stringValue(record.fileName) || '',
+    fileExt: stringValue(record.fileExt),
+    fileSize: Number(record.fileSize ?? 0),
+    contentType: stringValue(record.contentType),
+    fileHash: stringValue(record.fileHash),
+    status: numberValue(record.status),
+    archived: numberValue(record.archived),
+    createdBy: normalizeId(record.createdBy),
+    createdTime: normalizeDateTime(record.createdTime),
+    updatedTime: normalizeDateTime(record.updatedTime),
+    previewUrl: normalizeApiUrl(stringValue(record.previewUrl)),
+    downloadUrl: normalizeApiUrl(stringValue(record.downloadUrl)),
   };
 }
 
-function normalizeId(value: any): FileId {
+function normalizeId(value: unknown): FileId {
   return value === undefined || value === null ? '' : String(value);
 }
 
@@ -498,37 +773,39 @@ function isProtectedApiUrl(value?: string) {
   }
 }
 
-function parseBizMeta(value: any): FileBizMeta | undefined {
+function parseBizMeta(value: unknown): FileBizMeta | undefined {
   if (!value) return undefined;
-  if (typeof value !== 'string') return value;
+  if (typeof value !== 'string') return value as Record<string, unknown>;
   try {
-    return JSON.parse(value);
+    return JSON.parse(value) as FileBizMeta;
   } catch {
     return value;
   }
 }
 
-async function assertBinaryResponse(response: any, fallbackMessage: string) {
-  const contentType = String(response.headers?.['content-type'] || '').toLowerCase();
-  if (!contentType.includes('application/json')) return;
-  const data = response.data;
-  const text = data instanceof Blob ? await data.text() : String(data || '');
+function toBinaryDownloadResponse(response: Blob | BinaryDownloadResponse): BinaryDownloadResponse {
+  if (response instanceof Blob) return { data: response };
+  return response;
+}
+
+async function assertBinaryBlob(blob: Blob, fallbackMessage: string) {
+  if (!blob.type.toLowerCase().includes('application/json')) return;
   try {
-    const body = JSON.parse(text);
-    throw new Error(body?.msg || body?.message || fallbackMessage);
+    const body = JSON.parse(await blob.text()) as { msg?: string; message?: string };
+    throw new FileHttpError(body.msg || body.message || fallbackMessage, { kind: 'protocol', details: body });
   } catch (error) {
     if (error instanceof SyntaxError) {
-      throw new Error(fallbackMessage);
+      throw new FileHttpError(fallbackMessage, { kind: 'protocol', details: error });
     }
     throw error;
   }
 }
 
-function normalizeDateTime(value: any): string {
+function normalizeDateTime(value: unknown): string {
   if (!value) return '';
   if (Array.isArray(value)) {
     const [year, month, day, hour = 0, minute = 0, second = 0] = value;
-    return `${year}-${pad(month)}-${pad(day)} ${pad(hour)}:${pad(minute)}:${pad(second)}`;
+    return `${year}-${pad(Number(month))}-${pad(Number(day))} ${pad(Number(hour))}:${pad(Number(minute))}:${pad(Number(second))}`;
   }
   return String(value).replace('T', ' ');
 }
@@ -538,26 +815,23 @@ function pad(value: number): string {
 }
 
 function toBackendPageParams(params?: FileQuery) {
-  if (!params) return params;
+  if (!params) return undefined;
   const { pageNum, pageSize, ...rest } = params;
-  return {
-    ...rest,
-    page: pageNum,
-    size: pageSize,
-  };
+  return { ...rest, page: pageNum, size: pageSize };
 }
 
-function fromBackendPageResult<T>(
-  data: any,
-  mapper: (item: any) => T,
+function fromBackendPageResult(
+  data: unknown,
+  mapper: (item: unknown) => FileRecord,
   params?: { pageNum?: number; pageSize?: number },
-): PageResult<T> {
-  const list = Array.isArray(data?.list) ? data.list.map(mapper) : [];
+): PageResult<FileRecord> {
+  const record = asRecord(data);
+  const list = Array.isArray(record.list) ? record.list.map(mapper) : [];
   return {
     list,
-    total: Number(data?.total ?? list.length),
-    pageNum: Number(data?.page ?? params?.pageNum ?? 1),
-    pageSize: Number(data?.size ?? params?.pageSize ?? list.length ?? 10),
+    total: Number(record.total ?? list.length),
+    pageNum: Number(record.page ?? params?.pageNum ?? 1),
+    pageSize: Number(record.size ?? params?.pageSize ?? (list.length || 10)),
   };
 }
 
@@ -565,4 +839,16 @@ function normalizeApiUrl(value?: string): string {
   if (!value) return '';
   if (/^https?:\/\//i.test(value) || value.startsWith('/api/')) return value;
   return value.startsWith('/') ? `/api${value}` : value;
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
+}
+
+function stringValue(value: unknown): string | undefined {
+  return value === undefined || value === null ? undefined : String(value);
+}
+
+function numberValue(value: unknown): number | undefined {
+  return value === undefined || value === null ? undefined : Number(value);
 }

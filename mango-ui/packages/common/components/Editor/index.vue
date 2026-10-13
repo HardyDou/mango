@@ -51,14 +51,8 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch 
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue';
 import { Boot, type IButtonMenu, type IDomEditor } from '@wangeditor/editor';
 import '@wangeditor/editor/dist/css/style.css';
-import {
-  getUploadedFileDetail,
-  importRemoteImage,
-  uploadFile,
-  uploadImage,
-  type FileId,
-  type UploadResult,
-} from '../../api/upload';
+import { useUploadApi } from '../../composables/useUploadApi';
+import type { FileId, UploadResult } from '../../api/upload';
 import {
   collectManagedFileIds,
   managedAttachmentHtml,
@@ -72,6 +66,8 @@ import {
 import type { EditorAssetError, EditorAssetErrorSource, EditorImageError } from './types';
 
 defineOptions({ name: 'MangoEditor' });
+
+const uploadApi = useUploadApi();
 
 type ManagedDropHandler = (files: File[]) => boolean;
 const uploadAttachmentMenuKey = 'uploadAttachment';
@@ -349,7 +345,7 @@ function finishUpload() {
 async function uploadManagedFile(file: File) {
   beginUpload();
   try {
-    return await (isImageFile(file) ? uploadImage(file) : uploadFile(file));
+    return await (isImageFile(file) ? uploadApi.uploadImage(file) : uploadApi.uploadFile(file));
   } finally {
     finishUpload();
   }
@@ -358,7 +354,7 @@ async function uploadManagedFile(file: File) {
 async function uploadManagedImage(file: File) {
   beginUpload();
   try {
-    return await uploadImage(file);
+    return await uploadApi.uploadImage(file);
   } finally {
     finishUpload();
   }
@@ -367,7 +363,7 @@ async function uploadManagedImage(file: File) {
 async function importManagedRemote(sourceUrl: string) {
   beginUpload();
   try {
-    return await importRemoteImage({ sourceUrl });
+    return await uploadApi.importRemoteImage({ sourceUrl });
   } finally {
     finishUpload();
   }
@@ -443,7 +439,7 @@ async function syncExternalValue(content: string) {
   await Promise.all(
     ids.map(async (id) => {
       try {
-        const detail = await getUploadedFileDetail(id);
+        const detail = await uploadApi.getUploadedFileDetail(id);
         previews.set(id, detail);
       } catch {
         previews.set(id, undefined);
@@ -564,7 +560,7 @@ async function preparePastedHtml(html: string, clipboardFiles: File[]) {
 
 async function renderExistingToken(image: HTMLImageElement, id: FileId) {
   try {
-    const detail = await getUploadedFileDetail(id);
+    const detail = await uploadApi.getUploadedFileDetail(id);
     const previewUrl = managedPreviewUrl(detail);
     if (previewUrl) previewIds.set(previewUrl, id);
     image.outerHTML = managedImageHtml(id, previewUrl, image.getAttribute('alt') || '');

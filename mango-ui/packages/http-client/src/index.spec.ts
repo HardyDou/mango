@@ -275,10 +275,47 @@ describe('createMangoHttpClient', () => {
       onDownloadProgress: downloadProgress,
     });
 
-    expect(uploadProgress).toHaveBeenCalledWith({ loaded: 4, total: 10, progress: 0.4, bytesPerSecond: 20 });
-    expect(downloadProgress).toHaveBeenCalledWith({ loaded: 10, total: 10, progress: 1, bytesPerSecond: 30 });
+    expect(uploadProgress).toHaveBeenCalledWith({
+      loaded: 4,
+      total: 10,
+      progress: 0.4,
+      bytesPerSecond: 20,
+      bytes: 4,
+      lengthComputable: undefined,
+    });
+    expect(downloadProgress).toHaveBeenCalledWith({
+      loaded: 10,
+      total: 10,
+      progress: 1,
+      bytesPerSecond: 30,
+      bytes: 6,
+      lengthComputable: undefined,
+    });
     expect(uploadProgress.mock.calls[0]?.[0]).not.toHaveProperty('rate');
-    expect(uploadProgress.mock.calls[0]?.[0]).not.toHaveProperty('bytes');
+    expect(uploadProgress.mock.calls[0]?.[0]).toMatchObject({ bytes: 4 });
+  });
+
+  it('allows upload requests to override total and inactivity timeout semantics', async () => {
+    const client = createMangoHttpClient({ baseUrl: '/api' });
+    mocks.instances[0].request.mockResolvedValue(successResponse({ uploaded: true }));
+
+    await expect(
+      client.request({
+        method: 'POST',
+        url: '/file/files',
+        body: new FormData(),
+        timeoutMs: 10 * 60 * 1000,
+        inactivityTimeoutMs: 60 * 1000,
+      }),
+    ).resolves.toEqual({ uploaded: true });
+
+    expect(mocks.instances[0].request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        timeout: 10 * 60 * 1000,
+        onUploadProgress: expect.any(Function),
+        onDownloadProgress: expect.any(Function),
+      }),
+    );
   });
 
   it('normalizes protocol failures without retaining Axios request, config or response objects', async () => {
