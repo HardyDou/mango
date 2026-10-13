@@ -58,6 +58,9 @@
 | 构建/类型边界 | 构建 | `pnpm --filter @mango/api-schema build`；`@mango/http-client build`；`@mango/file build`；`@mango/common build`；`@mango/auth build`；`@mango/detail build`；`@mango/cms build`；`@mango/workflow build`；`@mango/notice build`；`@mango/admin-shell build` | PASS | 各包 Vite build 输出（本次会话） |
 | 真实浏览器慢速上传 | Chrome + 本地真实后端，CDP 上行限速 24 KiB/s | PASS：1 MiB 文件实际上传 43.2 秒（超过原 30 秒），`POST /api/file/files` 返回 200，文件记录成功，无前端错误提示；环境为 `127.0.0.1:30024` / `127.0.0.1:18024` | PASS（本地限速验收）；公网环境、`SERVER_CHUNK`、`S3_MULTIPART` 和真实断网仍待 QA | 浏览器脚本与 Playwright 输出（本次会话） |
 | 前端变更静态门禁 | 受影响文件质量检查 | `pnpm check:affected -- --base=origin/main --head=HEAD` | 受影响文件 ESLint、Prettier、Stylelint 和边界检查通过；聚合 `catalog --check` 仍报告基线投影不一致，未由本任务修改 | `.runtime/frontend-quality/issue983-check-affected-final.log` |
+| U983-04 | detail 组件测试（PR #1026 验收返工） | `pnpm --filter @mango/detail test` | PASS：3 个测试文件，8 个测试通过。返工前 2 个 `MangoRichTextPreview` 用例失败，原因为 `@mango/detail` 的 `@mango/file` mock 未导出组件新使用的 `useFileApi`；已将 mock 改为 `useFileApi: () => ({ preview, previewContent })` | Vitest 输出（本次会话） |
+| 前端 PR 门禁 | CI 同源本地入口 | `pnpm check:pr -- --base=9c45049f36198858b01fe3bf17125236a3c5c702 --head=bdd6d01610cc9f0efa50c343dee1bf214c5a2a21` | PASS：14 个直接变更 workspace 加传递消费者检查通过，advisories=3 | 命令输出（本次会话） |
+| 测试质量门禁 | 测试改动检查 | `node mango-pmo/tools/test-quality-check.mjs --base origin/main` | PASS：4 个文件 | 命令输出（本次会话） |
 
 ## 7. 例外与剩余风险
 
