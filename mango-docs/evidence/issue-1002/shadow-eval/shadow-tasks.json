@@ -1,0 +1,92 @@
+[
+  {
+    "id": "1001-batch-role",
+    "pr": 1022,
+    "type": "backend-feature",
+    "baseline": "e4e260b6fbea99a4e16e6d72a21d10dde0c20cf5",
+    "actualAdditions": 1065,
+    "actualDeletions": 28,
+    "actualFiles": 34,
+    "requirement": "Mango authorization 提供租户内批量角色绑定能力：按 tenantId+appCode+realm+actorType+roleCode 定位目标角色；目标范围支持当前租户全部启用成员、指定用户 ID、指定组织、组织及下级；预览成员数量与清单；幂等创建不产生重复关系；校验角色与成员属于当前租户，排除其他租户、停用成员、服务账号；仅租户管理员或授权管理员可执行；提供审计、结果统计、失败明细与可逆解绑/回滚；绑定后刷新授权缓存；提供 API/CLI/管理端入口并补测试。"
+  },
+  {
+    "id": "1014-shell-tabs",
+    "pr": 1021,
+    "type": "frontend-bugfix",
+    "baseline": "2a47bc4e1e048e5a696292bc6080d78d0c56bd16",
+    "actualAdditions": 121,
+    "actualDeletions": 27,
+    "actualFiles": 7,
+    "requirement": "Shell 混合模式从 Workflow 切回 RBAC 已打开页签时，内容区偶发空白（路由、菜单、页签已切换，但目标按钮 8 秒内未出现）。修复微应用页签恢复，根因与稳定复现条件需确定。"
+  },
+  {
+    "id": "1017-local-startup",
+    "pr": 1019,
+    "type": "backend-feature",
+    "baseline": "7be8bd1e6f0555a76721ad122dbfeb32b1fb0912",
+    "actualAdditions": 651,
+    "actualDeletions": 28,
+    "actualFiles": 19,
+    "requirement": "Mango 后端 App 的 main 方法无法像 Spring Boot 一样在 IDEA 直接 Run/Debug；现有命令 mango dev start backend 能完成工作区配置、Bootstrap/Flyway 增量、Runtime 回执与服务启动。期望提供统一的本地启动入口，等价于 mango dev start。"
+  },
+  {
+    "id": "1008-release-buffer",
+    "pr": 1008,
+    "type": "tool-bugfix",
+    "baseline": "3da2628f94e7a6e1e7b53e006467f61414460e16",
+    "actualAdditions": 4,
+    "actualDeletions": 1,
+    "actualFiles": 1,
+    "requirement": "增大受信任的 release-scope 分类器输出缓冲区，使大型文档清理 PR 能在 PMO 门禁运行前完成分类，而不是在 Git 文件列表收集阶段失败。"
+  },
+  {
+    "id": "1007-pmo-buffer",
+    "pr": 1007,
+    "type": "tool-bugfix",
+    "baseline": "f30b14844baf9e5f3fac55b88dee9c80e3f1e201",
+    "actualAdditions": 6,
+    "actualDeletions": 4,
+    "actualFiles": 3,
+    "requirement": "增大受信任的 PMO scope 分类器输出缓冲区，使大型文档清理 PR 能到达 scope 分类而不是在 Git 文件列表收集阶段失败；同步 canonical 分类器。"
+  },
+  {
+    "id": "1012-decision-review",
+    "pr": 1012,
+    "type": "tool-fix",
+    "baseline": "5d5254423c8781e0996b2ab4336a9add54550fc0",
+    "actualAdditions": 436,
+    "actualDeletions": 57,
+    "actualFiles": 12,
+    "requirement": "修复 check-decision-review.mjs：按章节字段和表头逐行读取，拒绝空询问记录、模式不一致、开放阻断、BLOCKED 和空结论，避免方式列/建议列关键词掩盖失败；保留 AGENT_ONLY 与“未指定按 AGENT_ONLY 继续”的记录；为三个历史 FAQ 保留旧 URL。"
+  },
+  {
+    "id": "1011-java21-refactor",
+    "pr": 1011,
+    "type": "backend-refactor",
+    "baseline": "06aa9c1ee928dbd726f2a7761c50e030da7d726a",
+    "actualAdditions": 421,
+    "actualDeletions": 62,
+    "actualFiles": 38,
+    "requirement": "完成 Java 21 模块重构验收修复：统一 Java 21 / --release 21，修复 Redis 禁用与 KV 回退、分页大小边界、文件预览可选依赖及 locker 配置，校准 Workflow/Bootstrap 测试契约和 Chromium 登录选择器。不修改生产历史 migration、HTTP path/verb/binding、JSON 包装、权限或租户语义。"
+  },
+  {
+    "id": "1015-e2e-login",
+    "pr": 1015,
+    "type": "frontend-test",
+    "baseline": "387aaecf27a040ee9df124ccc83022aa4a16b2f8",
+    "actualAdditions": 916,
+    "actualDeletions": 136,
+    "actualFiles": 17,
+    "requirement": "对齐 Admin Shell E2E 登录设置与当前规则：单个可访问机构自动选中，多个机构需按机构码显式选择；校验机构选择行为。"
+  },
+  {
+    "id": "1016-component-docs",
+    "pr": 1016,
+    "type": "docs",
+    "baseline": "b4e203d39e7fda3af5cb61f310097f61be463130",
+    "actualAdditions": 4664,
+    "actualDeletions": 0,
+    "actualFiles": 24,
+    "requirement": "为 @mango/common 中可独立引用但缺少独立 README.md 的 24 个组件补全组件级 API 文档，格式对齐已有 MangoDialog/MangoListPage 标杆。"
+  }
+]
