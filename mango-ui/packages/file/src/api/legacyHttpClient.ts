@@ -41,7 +41,7 @@ export function getLegacyHttpClient(): HttpClient {
         return response as TResponse;
       } catch (error) {
         if (controller.signal.aborted) {
-          throw new Error('Request aborted or timed out');
+          throw new Error('Request aborted or timed out', { cause: error });
         }
         throw error;
       } finally {

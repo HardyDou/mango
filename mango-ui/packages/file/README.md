@@ -20,15 +20,15 @@
 
 ## 2. 功能清单
 
-| 能力                                                 | 使用入口                                |
-| ---------------------------------------------------- | --------------------------------------- |
-| 文件记录分页、详情、上传、下载、归档、删除           | `FileView`、`useFileApi` / `createFileApi`。                 |
-| 存储配置分页、详情、新增、编辑、删除、测试、设为默认 | `FileStorageView`、`useFileStorageApi` / `createFileStorageApi`。   |
+| 能力                                                 | 使用入口                                                             |
+| ---------------------------------------------------- | -------------------------------------------------------------------- |
+| 文件记录分页、详情、上传、下载、归档、删除           | `FileView`、`useFileApi` / `createFileApi`。                         |
+| 存储配置分页、详情、新增、编辑、删除、测试、设为默认 | `FileStorageView`、`useFileStorageApi` / `createFileStorageApi`。    |
 | 上传限制、秒传、直传、访问、预览、归档策略           | `FileSettingsView`、`useFileSettingsApi` / `createFileSettingsApi`。 |
-| 业务表单上传附件或图片                               | `MUpload`。                             |
-| 详情页预览图片、PDF、音视频或文档                    | `FilePreviewPanel`。                    |
-| 工作流运行时表单上传字段                             | `MUpload`。                             |
-| 按资料分类进行卡片式上传                             | `MangoAttachmentUploadGrid`。           |
+| 业务表单上传附件或图片                               | `MUpload`。                                                          |
+| 详情页预览图片、PDF、音视频或文档                    | `FilePreviewPanel`。                                                 |
+| 工作流运行时表单上传字段                             | `MUpload`。                                                          |
+| 按资料分类进行卡片式上传                             | `MangoAttachmentUploadGrid`。                                        |
 
 ## 3. 集成形态
 
@@ -206,14 +206,14 @@ const rows = [
 
 `MangoFileList` Props：
 
-| 属性 | 默认值 | 说明 |
-| --- | --- | --- |
-| `rows` / `columns` | 必填 | 行数据和列配置。每行必须有唯一 `key`。 |
-| `emptyText` | `暂无文件` | 空列表文案。 |
-| `selectable` | `false` | 是否显示选择框。 |
-| `selectableWithoutFile` | `false` | 无文件行是否也允许选择。 |
-| `mergeAdjacentRows` | `true` | 是否启用相邻行合并。 |
-| `tableStyle` | `undefined` | `headerCellStyle`、`bodyCellStyle`、`borderRadius`、`contentMinHeight`、`contentPadding`、`contentLineHeight`。 |
+| 属性                    | 默认值      | 说明                                                                                                            |
+| ----------------------- | ----------- | --------------------------------------------------------------------------------------------------------------- |
+| `rows` / `columns`      | 必填        | 行数据和列配置。每行必须有唯一 `key`。                                                                          |
+| `emptyText`             | `暂无文件`  | 空列表文案。                                                                                                    |
+| `selectable`            | `false`     | 是否显示选择框。                                                                                                |
+| `selectableWithoutFile` | `false`     | 无文件行是否也允许选择。                                                                                        |
+| `mergeAdjacentRows`     | `true`      | 是否启用相邻行合并。                                                                                            |
+| `tableStyle`            | `undefined` | `headerCellStyle`、`bodyCellStyle`、`borderRadius`、`contentMinHeight`、`contentPadding`、`contentLineHeight`。 |
 
 列 `MangoFileListColumn` 字段：`key`、`label`、`prop`、`type`（`text | files | custom`）、`width`、`minWidth`、`align`、`fixed`、`showOverflowTooltip`、`emptyText`、`mergeAdjacent`、`mergeBy`、`slot`、`fileActionsSlot`、`fileMeta`（`fileSize | version | uploadedAt`）、`showPreview`、`showDownload`。文件对象字段为 `key?`、`fileId?`、`fileName?`、`fileUrl?`、`fileSize?`、`version?`、`uploadedAt?`；文件列应至少提供 `fileId` 或可解析的文件记录。
 
@@ -223,16 +223,16 @@ const rows = [
 
 `MangoFilePreviewDialog` Props：
 
-| 属性 | 默认值 | 说明 |
-| --- | --- | --- |
-| `modelValue` | 必填 | 弹框显示状态，使用 `v-model`。 |
-| `title` | `文件预览` | 标题。 |
-| `fileId` | `''` | 文件 ID；组件据此加载预览。 |
-| `file` / `preview` | `null` | 已加载的 `FileRecord` 或 `FilePreview`，可避免重复请求。 |
-| `textContent` | `''` | 直接展示的文本内容。 |
-| `showActions` | `true` | 是否显示下载等操作。 |
-| `loading` | `false` | 外部加载态。 |
-| `emptyText` | `暂无可预览内容` | 无有效输入时的空状态。 |
+| 属性               | 默认值           | 说明                                                     |
+| ------------------ | ---------------- | -------------------------------------------------------- |
+| `modelValue`       | 必填             | 弹框显示状态，使用 `v-model`。                           |
+| `title`            | `文件预览`       | 标题。                                                   |
+| `fileId`           | `''`             | 文件 ID；组件据此加载预览。                              |
+| `file` / `preview` | `null`           | 已加载的 `FileRecord` 或 `FilePreview`，可避免重复请求。 |
+| `textContent`      | `''`             | 直接展示的文本内容。                                     |
+| `showActions`      | `true`           | 是否显示下载等操作。                                     |
+| `loading`          | `false`          | 外部加载态。                                             |
+| `emptyText`        | `暂无可预览内容` | 无有效输入时的空状态。                                   |
 
 输入优先级为 `fileId` / `file` / `preview`（任一有效文件输入）> `textContent`（仅在没有文件输入时展示）> `emptyText` 空状态；组件不会把临时预览地址写回业务对象。事件为 `update:modelValue(boolean)` 和弹框关闭后的 `closed`（无参数）。
 
@@ -411,9 +411,9 @@ const rows = [
 
 ## 12. 变更影响记录
 
-| 版本 / 事项 | 保持不变或新增 |
-|---|---|
-| Issue #805 | registrar 改用 FE1 `@mango/admin-extension/core`；页面 key、API、权限和组件用法不变。 |
-| `@mango/file@1.0.31` | 新增 `FilePreviewPanel.fitContainer`；图片预览改为内嵌 Viewer；文件 ID、权限、下载和转换 API 不变。 |
-| `@mango/file@1.0.21` / `1.0.26` | 预览弹框支持自有滚动和新窗口预览；移除 `downloadPermission`，访问仍由后端校验。 |
-| npm lock-sync release | 上传、预览、下载采用登录级访问基线；管理、归档、删除、目录和配置继续使用细粒度权限。 |
+| 版本 / 事项                     | 保持不变或新增                                                                                      |
+| ------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Issue #805                      | registrar 改用 FE1 `@mango/admin-extension/core`；页面 key、API、权限和组件用法不变。               |
+| `@mango/file@1.0.31`            | 新增 `FilePreviewPanel.fitContainer`；图片预览改为内嵌 Viewer；文件 ID、权限、下载和转换 API 不变。 |
+| `@mango/file@1.0.21` / `1.0.26` | 预览弹框支持自有滚动和新窗口预览；移除 `downloadPermission`，访问仍由后端校验。                     |
+| npm lock-sync release           | 上传、预览、下载采用登录级访问基线；管理、归档、删除、目录和配置继续使用细粒度权限。                |
