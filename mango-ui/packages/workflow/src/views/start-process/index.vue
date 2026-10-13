@@ -137,12 +137,13 @@ import {
   type WorkflowDesignerNode,
   type WorkflowUserOption,
 } from '../../api/workflow';
-import { fileApi, fileRuntimeUrl, normalizeFileId } from '@mango/file';
+import { fileRuntimeUrl, normalizeFileId, useFileApi } from '@mango/file';
 import { customApplyRouteOf, parseWorkflowFormConfig } from '../../workflowFormConfig';
 import RuntimeFormRenderer from '../../components/RuntimeFormRenderer.vue';
 import { createDefaultVariables, parseRuntimeForm, type RuntimeFormField } from '../../components/runtimeForm';
 
 const router = useRouter();
+const fileApi = useFileApi();
 const loading = ref(false);
 const submitting = ref(false);
 const dialogVisible = ref(false);

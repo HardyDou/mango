@@ -387,8 +387,8 @@ import {
   Upload as UploadIcon,
   User,
 } from '@element-plus/icons-vue';
-import { downloadUploadedFile, fileToken, uploadImage } from '@mango/common/api/upload';
-import { MangoDialog, MangoListPanel, MangoPageSection } from '@mango/common';
+import { fileToken } from '@mango/common/api/upload';
+import { MangoDialog, MangoListPanel, MangoPageSection, useUploadApi } from '@mango/common';
 import { Session } from '@mango/common/utils/storage';
 import { useAuthConfig } from '../composables/useAuthConfig';
 import { getMangoAuthProfileSections, type MangoAuthProfileSection } from '../config';
@@ -425,6 +425,7 @@ const PROVIDER_RETURN_KEY = 'mango-auth:provider-return';
 const AVATAR_MAX_SIZE = 5 * 1024 * 1024;
 const AVATAR_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const authConfig = useAuthConfig();
+const uploadApi = useUploadApi();
 const registeredProfileSections = getMangoAuthProfileSections();
 const route = useRoute();
 const router = useRouter();
@@ -629,7 +630,7 @@ async function saveProfile() {
     let avatar = form.avatar.trim();
     if (pendingAvatarFile.value) {
       avatarUploading.value = true;
-      const uploaded = await uploadImage(pendingAvatarFile.value);
+      const uploaded = await uploadApi.uploadImage(pendingAvatarFile.value);
       avatar = fileToken(uploaded.id);
       if (!avatar) {
         throw new Error('头像上传成功但未返回文件标识');
@@ -674,7 +675,7 @@ async function resolveSavedAvatar(value?: string) {
   const fileId = avatarFileId(value);
   if (!fileId) return;
   try {
-    const response = await downloadUploadedFile(fileId);
+    const response = await uploadApi.downloadUploadedFile(fileId);
     const blob =
       response.data instanceof Blob
         ? response.data
@@ -820,7 +821,7 @@ async function resolveBindingAvatars(currentBindings: ExternalIdentityBinding[])
       const fileId = String(binding.avatarFileId || '').trim();
       if (!/^[1-9]\d*$/u.test(fileId)) return;
       try {
-        const response = await downloadUploadedFile(fileId);
+        const response = await uploadApi.downloadUploadedFile(fileId);
         const blob =
           response.data instanceof Blob
             ? response.data

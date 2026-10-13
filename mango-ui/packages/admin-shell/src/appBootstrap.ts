@@ -1,4 +1,5 @@
 import type { App as VueApp } from 'vue';
+import { useFileApi, type FileApi } from '@mango/file';
 import { createPinia, type Pinia } from 'pinia';
 import ElementPlus from 'element-plus';
 import zhCn from 'element-plus/es/locale/lang/zh-cn';
@@ -122,26 +123,37 @@ export function installShellApp(app: VueApp, options: MangoAdminShellOptions = g
       minLength: 6,
     },
   });
-  installAdminBrandingRuntime();
+  installAdminBrandingRuntime(resolveInjectedFileApi(app));
   installShellErrorHandler(app);
 }
 
-export function installAdminBrandingRuntime() {
+export function installAdminBrandingRuntime(fileApi?: FileApi) {
   const adminBrandingStore = useAdminBrandingStore();
-  void adminBrandingStore.loadPublicConfig();
-  installAdminBrandingRefreshListener(adminBrandingStore);
+  void adminBrandingStore.loadPublicConfig(fileApi);
+  installAdminBrandingRefreshListener(adminBrandingStore, fileApi);
 }
 
-function installAdminBrandingRefreshListener(adminBrandingStore: ReturnType<typeof useAdminBrandingStore>) {
+function installAdminBrandingRefreshListener(
+  adminBrandingStore: ReturnType<typeof useAdminBrandingStore>,
+  fileApi?: FileApi,
+) {
   if (adminBrandingRefreshListenerInstalled || typeof window === 'undefined') {
     return;
   }
   const refreshAdminBranding = () => {
-    void adminBrandingStore.loadPublicConfig();
+    void adminBrandingStore.loadPublicConfig(fileApi);
   };
   window.addEventListener(ADMIN_BRANDING_UPDATED_EVENT, refreshAdminBranding);
   window.addEventListener(MANGO_AUTH_LOGIN_SUCCESS_EVENT, refreshAdminBranding);
   adminBrandingRefreshListenerInstalled = true;
+}
+
+function resolveInjectedFileApi(app: VueApp): FileApi | undefined {
+  try {
+    return app.runWithContext(() => useFileApi());
+  } catch {
+    return undefined;
+  }
 }
 
 function toMangoAuthLoginOptions(login: MangoAdminShellOptions['login']) {

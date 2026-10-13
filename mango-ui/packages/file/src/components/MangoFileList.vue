@@ -100,6 +100,7 @@
 import { computed, ref } from 'vue';
 import { ElMessage, type TableColumnCtx } from 'element-plus';
 import { downloadFileRecord, type FilePreview, type FileRecord } from '../api/file';
+import { useFileApi } from '../composables/useFileApi';
 import MangoFilePreviewDialog from './MangoFilePreviewDialog.vue';
 import type {
   MangoFileListCellSlotProps,
@@ -140,6 +141,8 @@ defineSlots<{
   [name: `cell-${string}`]: (props: MangoFileListCellSlotProps) => unknown;
   [name: `file-actions-${string}`]: (props: MangoFileListFileActionsSlotProps) => unknown;
 }>();
+
+const fileApi = useFileApi();
 
 const props = withDefaults(defineProps<MangoFileListProps>(), {
   emptyText: '暂无文件',
@@ -359,7 +362,7 @@ async function downloadFile(file: MangoFileListFile) {
   const fileId = String(file.fileId || '').trim();
   if (fileId) {
     try {
-      await downloadFileRecord({ id: fileId, fileName: fileNameText(file) || `file-${fileId}` });
+      await downloadFileRecord(fileApi, { id: fileId, fileName: fileNameText(file) || `file-${fileId}` });
     } catch (error) {
       ElMessage.error(error instanceof Error ? error.message : '文件下载失败');
     }

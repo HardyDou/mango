@@ -44,12 +44,7 @@
             class="payment-method-tabs"
             @update:model-value="selectMethodGroupByCode"
           >
-            <el-tab-pane
-              v-for="group in methodGroups"
-              :key="group.code"
-              :disabled="paying"
-              :name="group.code"
-            >
+            <el-tab-pane v-for="group in methodGroups" :key="group.code" :disabled="paying" :name="group.code">
               <template #label>
                 <span class="method-tab-label">
                   <span class="method-tab-label__icon">
@@ -190,9 +185,7 @@
                       <strong>{{ previewTransferMaterial.transferRemark }}</strong>
                     </div>
 
-                    <div class="transfer-check__footer">
-                      请完成转账后回传转账凭证。
-                    </div>
+                    <div class="transfer-check__footer">请完成转账后回传转账凭证。</div>
                   </div>
                 </div>
               </template>
@@ -268,31 +261,55 @@
                       <div class="transfer-check__payee">
                         <span>目标户主</span>
                         <strong>{{ payMaterial.accountName || '-' }}</strong>
-                        <el-button link type="primary" :disabled="!payMaterial.accountName" @click="copyText(payMaterial.accountName, '目标户主')">复制</el-button>
+                        <el-button
+                          link
+                          type="primary"
+                          :disabled="!payMaterial.accountName"
+                          @click="copyText(payMaterial.accountName, '目标户主')"
+                          >复制</el-button
+                        >
                       </div>
                       <div class="transfer-check__payee">
                         <span>目标账号</span>
                         <strong>{{ payMaterial.accountNo || payMaterial.accountNoMask || '-' }}</strong>
-                        <el-button link type="primary" :disabled="!payMaterial.accountNo" @click="copyText(payMaterial.accountNo, '目标账号')">复制</el-button>
+                        <el-button
+                          link
+                          type="primary"
+                          :disabled="!payMaterial.accountNo"
+                          @click="copyText(payMaterial.accountNo, '目标账号')"
+                          >复制</el-button
+                        >
                       </div>
                       <div class="transfer-check__payee">
                         <span>目标开户行</span>
                         <strong>{{ payMaterial.bankName || '-' }}</strong>
-                        <el-button link type="primary" :disabled="!payMaterial.bankName" @click="copyText(payMaterial.bankName, '目标开户行')">复制</el-button>
+                        <el-button
+                          link
+                          type="primary"
+                          :disabled="!payMaterial.bankName"
+                          @click="copyText(payMaterial.bankName, '目标开户行')"
+                          >复制</el-button
+                        >
                       </div>
                     </div>
 
                     <div class="transfer-check__remark">
                       <span>转账备注</span>
                       <strong>{{ payMaterial.transferRemark || '-' }}</strong>
-                      <el-button link type="primary" :disabled="!payMaterial.transferRemark" @click="copyText(payMaterial.transferRemark, '转账备注')">复制</el-button>
+                      <el-button
+                        link
+                        type="primary"
+                        :disabled="!payMaterial.transferRemark"
+                        @click="copyText(payMaterial.transferRemark, '转账备注')"
+                        >复制</el-button
+                      >
                     </div>
 
-                    <div class="transfer-check__footer">
-                      请完成转账后回传转账凭证。
-                    </div>
+                    <div class="transfer-check__footer">请完成转账后回传转账凭证。</div>
                   </div>
-                  <p v-if="payMaterial.transferInstruction" class="material-note">{{ payMaterial.transferInstruction }}</p>
+                  <p v-if="payMaterial.transferInstruction" class="material-note">
+                    {{ payMaterial.transferInstruction }}
+                  </p>
 
                   <div v-if="offlineVoucherVisible && !offlineVoucherFormVisible" class="offline-action">
                     <el-button type="primary" size="large" @click="showOfflineVoucherForm">
@@ -350,9 +367,7 @@
                     </el-button>
                   </div>
 
-                  <div class="qr-receipt__order">
-                    订单号：{{ payResult.payOrderNo }}
-                  </div>
+                  <div class="qr-receipt__order">订单号：{{ payResult.payOrderNo }}</div>
                 </div>
               </template>
 
@@ -364,7 +379,9 @@
                     <el-button type="primary" size="large" :disabled="!payMaterial.htmlForm" @click="submitHtmlForm">
                       打开网银支付
                     </el-button>
-                    <el-button link type="primary" :loading="gatewaySyncing" @click="syncCurrentPayResult">同步支付状态</el-button>
+                    <el-button link type="primary" :loading="gatewaySyncing" @click="syncCurrentPayResult"
+                      >同步支付状态</el-button
+                    >
                   </div>
                   <el-button
                     v-if="mangoPayActionVisible"
@@ -383,7 +400,12 @@
                   <strong>账户支付请求已生成</strong>
                   <span>请跳转到支付页面完成付款，完成后回到本页等待结果确认。</span>
                   <div class="redirect-material__actions">
-                    <el-button type="primary" size="large" :disabled="!payMaterial.redirectUrl" @click="openRedirectUrl">
+                    <el-button
+                      type="primary"
+                      size="large"
+                      :disabled="!payMaterial.redirectUrl"
+                      @click="openRedirectUrl"
+                    >
                       打开支付页面
                     </el-button>
                     <el-button link type="primary" @click="refreshCurrentPayResult">查询支付结果</el-button>
@@ -473,13 +495,7 @@
       </el-form>
       <template #footer>
         <el-button @click="offlineVoucherFormVisible = false">取消</el-button>
-        <el-button
-          type="primary"
-          :loading="submittingOfflineVoucher"
-          @click="submitOfflineVoucher"
-        >
-          提交
-        </el-button>
+        <el-button type="primary" :loading="submittingOfflineVoucher" @click="submitOfflineVoucher"> 提交 </el-button>
       </template>
     </el-dialog>
 
@@ -505,7 +521,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { fileApi, MUpload } from '@mango/file';
+import { downloadUrl, MUpload } from '@mango/file';
 import type { ApiId } from '@mango/api-schema';
 import type { FormInstance, FormRules } from 'element-plus';
 import { ElMessage } from 'element-plus';
@@ -530,15 +546,18 @@ interface BankPaymentForm {
   bankName: string;
 }
 
-const props = withDefaults(defineProps<{
-  cashierConfigId?: ApiId | string;
-  businessOrderId?: ApiId | string;
-  embedded?: boolean;
-}>(), {
-  cashierConfigId: '',
-  businessOrderId: '',
-  embedded: false,
-});
+const props = withDefaults(
+  defineProps<{
+    cashierConfigId?: ApiId | string;
+    businessOrderId?: ApiId | string;
+    embedded?: boolean;
+  }>(),
+  {
+    cashierConfigId: '',
+    businessOrderId: '',
+    embedded: false,
+  },
+);
 
 const emit = defineEmits<{
   success: [result: PaymentCashierPayResult];
@@ -587,13 +606,19 @@ let expireTimer: number | undefined;
 
 const resolvedCashierConfigId = computed(() => String(props.cashierConfigId || ''));
 const resolvedBusinessOrderId = computed(() => String(props.businessOrderId || ''));
-const logoUrl = computed(() => session.value?.display?.logoFileId ? fileApi.downloadUrl(session.value.display.logoFileId) : '');
+const logoUrl = computed(() =>
+  session.value?.display?.logoFileId ? downloadUrl(session.value.display.logoFileId) : '',
+);
 const brandInitial = computed(() => (session.value?.display?.title || session.value?.cashierName || '收').slice(0, 1));
 const amountText = computed(() => formatMoney(displayOrder.value.amount));
-const resultAmountText = computed(() => previewMode.value
-  ? formatMoney(displayOrder.value.amount)
-  : formatMoney(payResult.value?.amount ?? session.value?.order?.amount ?? displayOrder.value.amount));
-const mangoPayOrderTitle = computed(() => session.value?.order?.orderTitle || session.value?.order?.bizOrderNo || '订单支付');
+const resultAmountText = computed(() =>
+  previewMode.value
+    ? formatMoney(displayOrder.value.amount)
+    : formatMoney(payResult.value?.amount ?? session.value?.order?.amount ?? displayOrder.value.amount),
+);
+const mangoPayOrderTitle = computed(
+  () => session.value?.order?.orderTitle || session.value?.order?.bizOrderNo || '订单支付',
+);
 const serverNow = computed(() => expireNow.value + serverTimeDelta.value);
 const orderExpired = computed(() => {
   const expireTime = session.value?.order?.expireTime;
@@ -626,20 +651,36 @@ const methodGroups = computed<MethodGroup[]>(() => {
   }
   return groups.sort((current, next) => current.sort - next.sort);
 });
-const selectedMethod = computed(() => (session.value?.methods || []).find(method => method.methodCode === selectedMethodCode.value));
-const selectedMethodGroup = computed(() => methodGroups.value.find(group => group.code === selectedGroupCode.value)
-  || methodGroups.value.find(group => group.methods.some(method => method.methodCode === selectedMethodCode.value)));
-const bankGroup = computed(() => methodGroups.value.find(group => group.code === 'EBANK'));
+const selectedMethod = computed(() =>
+  (session.value?.methods || []).find((method) => method.methodCode === selectedMethodCode.value),
+);
+const selectedMethodGroup = computed(
+  () =>
+    methodGroups.value.find((group) => group.code === selectedGroupCode.value) ||
+    methodGroups.value.find((group) => group.methods.some((method) => method.methodCode === selectedMethodCode.value)),
+);
+const bankGroup = computed(() => methodGroups.value.find((group) => group.code === 'EBANK'));
 const bankMethods = computed(() => bankGroup.value?.methods || []);
 const showMethodGroupTabs = computed(() => methodGroups.value.length > 1);
 const showBankMethodTabs = computed(() => bankMethods.value.length > 1);
 const payMaterial = computed(() => payResult.value?.material);
-const payableOrder = computed(() => (session.value?.order?.status === 'TO_PAY' || session.value?.order?.status === 'PAYING') && !orderExpired.value);
-const terminalPayResult = computed(() => payResult.value?.status === 'SUCCESS' || payResult.value?.status === 'FAILED' || payResult.value?.status === 'CLOSED');
+const payableOrder = computed(
+  () => (session.value?.order?.status === 'TO_PAY' || session.value?.order?.status === 'PAYING') && !orderExpired.value,
+);
+const terminalPayResult = computed(
+  () =>
+    payResult.value?.status === 'SUCCESS' ||
+    payResult.value?.status === 'FAILED' ||
+    payResult.value?.status === 'CLOSED',
+);
 const terminalResultVisible = computed(() => Boolean(payResult.value && terminalPayResult.value));
 const previewMode = computed(() => Boolean(session.value && !resolvedBusinessOrderId.value));
-const mangoPayActionVisible = computed(() => payResult.value?.status === 'PAYING' && payResult.value.channelCode === 'MANGO_PAY');
-const offlineVoucherVisible = computed(() => payResult.value?.status === 'PAYING' && payResult.value.channelCode === 'OFFLINE_COLLECTION');
+const mangoPayActionVisible = computed(
+  () => payResult.value?.status === 'PAYING' && payResult.value.channelCode === 'MANGO_PAY',
+);
+const offlineVoucherVisible = computed(
+  () => payResult.value?.status === 'PAYING' && payResult.value.channelCode === 'OFFLINE_COLLECTION',
+);
 const qrReceiptProvider = computed(() => {
   if (selectedMethod.value?.instrumentType === 'WECHAT') return 'wechat';
   if (selectedMethod.value?.instrumentType === 'ALIPAY') return 'alipay';
@@ -674,13 +715,28 @@ const qrManualResultDescription = computed(() => {
   return '暂未查询到成功结果，请确认付款完成后稍后再试。';
 });
 const qrManualLocked = computed(() => qrManualChecking.value || qrManualLockSeconds.value > 0);
-const qrManualButtonText = computed(() => qrManualLockSeconds.value > 0 ? `请稍候 ${qrManualLockSeconds.value}s` : '我已完成支付');
+const qrManualButtonText = computed(() =>
+  qrManualLockSeconds.value > 0 ? `请稍候 ${qrManualLockSeconds.value}s` : '我已完成支付',
+);
 const selectedMethodIsBank = computed(() => isBankMethod(selectedMethod.value));
 const selectedMethodIsOffline = computed(() => isOfflineMethod(selectedMethod.value));
 const selectedMethodIsQr = computed(() => isQrMethod(selectedMethod.value));
-const bankMethodAwaitingInput = computed(() => selectedMethodIsBank.value && !payResult.value && Boolean(session.value?.order?.businessOrderId) && payableOrder.value);
-const bankWorkspaceVisible = computed(() => selectedGroupCode.value === 'EBANK' && !payResult.value && (previewMode.value || (Boolean(session.value?.order?.businessOrderId) && payableOrder.value)));
-const previewMaterialVisible = computed(() => previewMode.value && Boolean(selectedMethod.value) && !payResult.value && !bankWorkspaceVisible.value);
+const bankMethodAwaitingInput = computed(
+  () =>
+    selectedMethodIsBank.value &&
+    !payResult.value &&
+    Boolean(session.value?.order?.businessOrderId) &&
+    payableOrder.value,
+);
+const bankWorkspaceVisible = computed(
+  () =>
+    selectedGroupCode.value === 'EBANK' &&
+    !payResult.value &&
+    (previewMode.value || (Boolean(session.value?.order?.businessOrderId) && payableOrder.value)),
+);
+const previewMaterialVisible = computed(
+  () => previewMode.value && Boolean(selectedMethod.value) && !payResult.value && !bankWorkspaceVisible.value,
+);
 const previewMaterialType = computed(() => {
   if (selectedMethodIsOffline.value) return 'TRANSFER_ACCOUNT';
   if (selectedMethodIsQr.value) return 'QR';
@@ -697,8 +753,12 @@ const previewQrContent = computed(() => {
   ].join(':');
 });
 const activeQrContent = computed(() => payMaterial.value?.qrContent || previewQrContent.value);
-const orderNotPayableTitle = computed(() => orderExpired.value ? '当前订单已超时，不允许发起支付。' : '当前订单状态不可发起支付，可查看订单和支付方式信息。');
-const selectedBankOption = computed(() => paymentBankOptions.find(bank => bank.code === bankPaymentForm.value.bankCode));
+const orderNotPayableTitle = computed(() =>
+  orderExpired.value ? '当前订单已超时，不允许发起支付。' : '当前订单状态不可发起支付，可查看订单和支付方式信息。',
+);
+const selectedBankOption = computed(() =>
+  paymentBankOptions.find((bank) => bank.code === bankPaymentForm.value.bankCode),
+);
 const transferDeadlineText = computed(() => {
   if (previewMode.value) {
     return `请你于 ${formatChineseDateTime(previewTransferDeadline.value)} 之前完成转账`;
@@ -732,7 +792,9 @@ const displayOrder = computed(() => {
     amount: order.amount,
   };
 });
-const displaySubjectName = computed(() => previewMode.value ? '演示收款方' : (session.value?.subject?.subjectName || '签约主体'));
+const displaySubjectName = computed(() =>
+  previewMode.value ? '演示收款方' : session.value?.subject?.subjectName || '签约主体',
+);
 const previewTransferMaterial = computed(() => ({
   accountName: '演示收款方',
   accountNo: '6222 0000 0000 0000',
@@ -785,7 +847,7 @@ watch([resolvedCashierConfigId, resolvedBusinessOrderId], () => {
   void loadSession();
 });
 
-watch(activeQrContent, value => {
+watch(activeQrContent, (value) => {
   void renderQrImage(value || '');
 });
 
@@ -814,7 +876,8 @@ async function activateInitialPaymentMethod() {
     return;
   }
   selectedMethodCode.value = method.methodCode;
-  selectedGroupCode.value = methodGroups.value.find(group => group.methods.some(item => item.methodCode === method.methodCode))?.code || '';
+  selectedGroupCode.value =
+    methodGroups.value.find((group) => group.methods.some((item) => item.methodCode === method.methodCode))?.code || '';
   if (isBankMethod(method)) {
     resetBankPaymentFormWithDefaultBank();
     return;
@@ -858,7 +921,7 @@ function selectMethodGroup(group: MethodGroup) {
 }
 
 function selectMethodGroupByCode(value: string | number) {
-  const group = methodGroups.value.find(item => item.code === String(value));
+  const group = methodGroups.value.find((item) => item.code === String(value));
   if (group) {
     selectMethodGroup(group);
   }
@@ -1228,7 +1291,7 @@ async function copyText(value: string | undefined, label: string) {
 }
 
 function delay(ms: number) {
-  return new Promise(resolve => window.setTimeout(resolve, ms));
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
 function centsToYuan(value: number | string) {
@@ -1292,7 +1355,7 @@ function methodIcon(method: PaymentCashierMethod | undefined) {
 
 function methodLogoUrl(method: PaymentCashierMethod | undefined) {
   if (!method) return '';
-  return method.iconFileId ? fileApi.downloadUrl(method.iconFileId) : '';
+  return method.iconFileId ? downloadUrl(method.iconFileId) : '';
 }
 
 function primaryMethod(group: MethodGroup) {
@@ -1301,13 +1364,13 @@ function primaryMethod(group: MethodGroup) {
 
 function preferredGroupMethod(group: MethodGroup) {
   if (group.code === 'WECHAT_PAY') {
-    return group.methods.find(method => method.paymentMaterialType === 'QR') || primaryMethod(group);
+    return group.methods.find((method) => method.paymentMaterialType === 'QR') || primaryMethod(group);
   }
   if (group.code === 'ALIPAY') {
-    return group.methods.find(method => method.paymentMaterialType === 'QR') || primaryMethod(group);
+    return group.methods.find((method) => method.paymentMaterialType === 'QR') || primaryMethod(group);
   }
   if (group.code === 'OFFLINE_TRANSFER') {
-    return group.methods.find(method => method.paymentMaterialType === 'TRANSFER_ACCOUNT') || primaryMethod(group);
+    return group.methods.find((method) => method.paymentMaterialType === 'TRANSFER_ACCOUNT') || primaryMethod(group);
   }
   return primaryMethod(group);
 }
@@ -1315,7 +1378,7 @@ function preferredGroupMethod(group: MethodGroup) {
 function initialPaymentMethod() {
   const methods = session.value?.methods || [];
   if (!methods.length) return undefined;
-  const defaultMethod = methods.find(method => method.methodCode === session.value?.defaultMethodCode);
+  const defaultMethod = methods.find((method) => method.methodCode === session.value?.defaultMethodCode);
   if (defaultMethod) return defaultMethod;
   const firstGroup = methodGroups.value[0];
   return firstGroup ? preferredGroupMethod(firstGroup) : methods[0];
@@ -1338,17 +1401,21 @@ function isBankMethod(method: PaymentCashierMethod | undefined) {
 
 function isOfflineMethod(method: PaymentCashierMethod | undefined) {
   if (!method) return false;
-  return method.instrumentType === 'OFFLINE_TRANSFER'
-    || method.interactionType === 'OFFLINE_TRANSFER'
-    || method.methodCode === 'CORPORATE_OFFLINE_ACCOUNT';
+  return (
+    method.instrumentType === 'OFFLINE_TRANSFER' ||
+    method.interactionType === 'OFFLINE_TRANSFER' ||
+    method.methodCode === 'CORPORATE_OFFLINE_ACCOUNT'
+  );
 }
 
 function isQrMethod(method: PaymentCashierMethod | undefined) {
   if (!method) return false;
-  return method.paymentMaterialType === 'QR'
-    || method.instrumentType === 'WECHAT'
-    || method.instrumentType === 'ALIPAY'
-    || method.interactionType === 'SCAN_QR';
+  return (
+    method.paymentMaterialType === 'QR' ||
+    method.instrumentType === 'WECHAT' ||
+    method.instrumentType === 'ALIPAY' ||
+    method.interactionType === 'SCAN_QR'
+  );
 }
 
 async function renderQrImage(content: string) {
@@ -1377,7 +1444,6 @@ function formatExpire(value: string, now: number) {
   const seconds = Math.floor((diff % 60000) / 1000);
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
-
 </script>
 
 <style scoped>
@@ -1743,7 +1809,7 @@ function formatExpire(value: string, now: number) {
     transparent 8px,
     transparent 16px
   );
-  content: "";
+  content: '';
 }
 
 .transfer-check::before {

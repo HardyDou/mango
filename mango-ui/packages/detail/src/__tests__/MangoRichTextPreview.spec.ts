@@ -21,7 +21,7 @@ vi.mock('@mango/common', () => ({
 }));
 
 vi.mock('@mango/file', () => ({
-  fileApi: { preview, previewContent },
+  useFileApi: () => ({ preview, previewContent }),
   MangoFilePreviewDialog: defineComponent({
     name: 'MangoFilePreviewDialog',
     props: {

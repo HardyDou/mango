@@ -310,7 +310,6 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
 import {
   defaultFileSettings,
-  fileSettingsApi,
   formatBytes,
   parseExtensions,
   parseTextList,
@@ -318,7 +317,9 @@ import {
   stringifyTextList,
   type FileSettings,
 } from '../../api/fileSettings';
+import { useFileSettingsApi } from '../../composables/useFileApi';
 
+const fileSettingsApi = useFileSettingsApi();
 const loading = ref(false);
 const saving = ref(false);
 const formRef = ref<FormInstance>();
