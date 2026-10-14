@@ -17,7 +17,6 @@ import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -80,22 +79,7 @@ public class ImageFileCompressProvider implements IFileCompressProvider {
         if (targetSizeBytes == null) {
             return List.of(CompressionSettings.of(compression));
         }
-        List<CompressionSettings> result = new ArrayList<>();
-        switch (compression) {
-            case LOW -> {
-                result.add(CompressionSettings.of(FileCompression.LOW));
-                result.add(CompressionSettings.of(FileCompression.MEDIUM));
-                result.add(CompressionSettings.of(FileCompression.HIGH));
-            }
-            case MEDIUM -> {
-                result.add(CompressionSettings.of(FileCompression.MEDIUM));
-                result.add(CompressionSettings.of(FileCompression.HIGH));
-            }
-            case HIGH -> result.add(CompressionSettings.of(FileCompression.HIGH));
-            case NONE -> {
-            }
-        }
-        return result;
+        return CompressionLadder.from(compression).stream().map(CompressionSettings::of).toList();
     }
 
     private byte[] compressImage(BufferedImage source, String format, CompressionSettings settings) throws java.io.IOException {
