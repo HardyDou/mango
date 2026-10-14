@@ -113,14 +113,14 @@ const users = await userApi.page({ pageNum: 1, pageSize: 20 });
 
 常用返回字段：
 
-| 数据 | 字段                                                                               |
-| ---- | ---------------------------------------------------------------------------------- |
-| 应用 | `appCode`、`appName`、`appType`、`deployMode`、`entryUrl`                          |
-| 菜单 | `id`、`parentId`、`menuType`、`path`、`component`、`perms`、`moduleCode`           |
-| 角色 | `id`、`roleName`、`roleCode`、`appCode`、`realm`、`actorType`                      |
-| 用户 | `userId`、`memberId`、`username`、`nickname`、`status`、`tenantId`、`orgRelations` |
-| 组织 | `id`、`name`、`parentId`、`sort`、`children`                                       |
-| 岗位 | `id`、`postCode`、`postName`、`sort`、`status`                                     |
+| 数据 | 字段                                                                                |
+| ---- | ----------------------------------------------------------------------------------- |
+| 应用 | `appCode`、`appName`、`appType`、`deployMode`、`entryUrl`                           |
+| 菜单 | `id`、`parentId`、`menuType`、`path`、`component`、`perms`、`moduleCode`、`visible` |
+| 角色 | `id`、`roleName`、`roleCode`、`appCode`、`realm`、`actorType`                       |
+| 用户 | `userId`、`memberId`、`username`、`nickname`、`status`、`tenantId`、`orgRelations`  |
+| 组织 | `id`、`name`、`parentId`、`sort`、`children`                                        |
+| 岗位 | `id`、`postCode`、`postName`、`sort`、`status`                                      |
 
 角色数据权限页面行为：
 
@@ -153,7 +153,7 @@ const users = await userApi.page({ pageNum: 1, pageSize: 20 });
 
 ## 7. 管理入口
 
-菜单的 component 字段应与上面的默认页面 key 保持一致。角色管理的「分配权限」弹框直接展示后端可分配菜单树，后端返回的按钮节点会与菜单节点一起展示，供角色按需勾选授权。弹框初始化只把角色已授权的叶子节点交给树组件，祖先目录由树组件显示为半选，不会因此勾选未授权兄弟节点；保存时提交全选节点与半选祖先的去重并集，角色菜单 API 和字符串 ID 语义不变。
+菜单管理弹框中，页面菜单和目录可通过“导航显示”设置 `visible=1`（显示）或 `visible=0`（隐藏）；隐藏只影响顶部/侧边导航，不取消角色、租户、菜单或接口权限。菜单的 component 字段应与上面的默认页面 key 保持一致。角色管理的「分配权限」弹框直接展示后端可分配菜单树，后端返回的按钮节点会与菜单节点一起展示，供角色按需勾选授权。弹框初始化只把角色已授权的叶子节点交给树组件，祖先目录由树组件显示为半选，不会因此勾选未授权兄弟节点；保存时提交全选节点与半选祖先的去重并集，角色菜单 API 和字符串 ID 语义不变。
 
 应用管理的新增和编辑应用弹框使用 `@mango/common` 的 `MangoDialog` 作为弹框外壳，表单字段、提交参数和 `appApi` 调用保持不变。该弹框接入只统一顶部、内容滚动区和底部按钮区样式，不改变应用管理页面 key、菜单权限、按钮权限、后端接口或数据结构。
 

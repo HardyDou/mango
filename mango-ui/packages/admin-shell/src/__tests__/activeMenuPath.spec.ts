@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveActiveMenuPath, type ActiveMenuNode } from '../layout/navMenu/activeMenuPath';
+import { filterMenusForNavigation, resolveActiveMenuPath, type ActiveMenuNode } from '../layout/navMenu/activeMenuPath';
 
 const menus: ActiveMenuNode[] = [
   {
@@ -20,5 +20,24 @@ describe('resolveActiveMenuPath', () => {
 
   it('does not treat a sibling route with the same prefix as a child route', () => {
     expect(resolveActiveMenuPath(menus, '/components/uploader')).toBe('');
+  });
+
+  it('highlights the nearest visible ancestor for a hidden route with an unrelated path', () => {
+    const menusWithHiddenRoute: ActiveMenuNode[] = [
+      {
+        path: '/system',
+        children: [
+          {
+            path: '/system/permission',
+            children: [{ path: '/system/menu-package', meta: { isHide: true } }],
+          },
+        ],
+      },
+    ];
+
+    const visibleMenus = filterMenusForNavigation(menusWithHiddenRoute);
+
+    expect(resolveActiveMenuPath(visibleMenus, '/system/menu-package')).toBe('/system/permission');
+    expect(visibleMenus[0].children?.[0].children).toEqual([]);
   });
 });
