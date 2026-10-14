@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-14T04:30:56.012Z",
+  "generatedAt": "2026-10-14T05:04:31.331Z",
   "releaseKind": "mixed",
   "release": {
     "tag": "v2026.10.14-maven-1.0.58-fileproc-pdf-compress-release",
@@ -3448,25 +3448,32 @@
     "docs": null
   },
   "source": {
-    "commit": "c11086dc998be4f66163fe28b09a503efbed6d82",
-    "tree": "28cba483dfa65a01808b0f5d2da676b651244b5b"
+    "commit": "5ddfee12b28e20c8ac3c2fbb3625c2fe9dc0b9e9",
+    "tree": "d73fece897c9281b09d91f2d94f46bfa54edb885"
   },
   "sourceFiles": [
     ".github/workflows/frontend-quality.yml",
     "CHANGELOG.md",
+    "mango-business-starter/business-pmo/mango-baseline/README.md",
     "mango-business-starter/business-pmo/mango-baseline/agents/02-tech-lead-agent.md",
     "mango-business-starter/business-pmo/mango-baseline/agents/03-dev-agent.md",
     "mango-business-starter/business-pmo/mango-baseline/agents/05-pmo-agent.md",
     "mango-business-starter/business-pmo/mango-baseline/baseline.json",
+    "mango-business-starter/business-pmo/mango-baseline/contracts/business-requirements.json",
+    "mango-business-starter/business-pmo/mango-baseline/contracts/implementation-plan.json",
+    "mango-business-starter/business-pmo/mango-baseline/contracts/system-requirements.json",
+    "mango-business-starter/business-pmo/mango-baseline/contracts/technical-design.json",
     "mango-business-starter/business-pmo/mango-baseline/rules/03-ai-coding-redlines.md",
     "mango-business-starter/business-pmo/mango-baseline/rules/backend/02-naming.md",
     "mango-business-starter/business-pmo/mango-baseline/rules/index.json",
+    "mango-business-starter/business-pmo/mango-baseline/rules/product/05-document-lifecycle.md",
     "mango-business-starter/business-pmo/mango-baseline/skills/mango-defect-fix/SKILL.md",
     "mango-business-starter/business-pmo/mango-baseline/skills/mango-design-technical/SKILL.md",
     "mango-business-starter/business-pmo/mango-baseline/skills/mango-engineering/SKILL.md",
     "mango-business-starter/business-pmo/mango-baseline/skills/mango-module-development/SKILL.md",
     "mango-business-starter/business-pmo/mango-baseline/skills/mango-plan-implementation/SKILL.md",
     "mango-business-starter/business-pmo/mango-baseline/skills/mango-review-pr/SKILL.md",
+    "mango-catalog/catalog.lock.json",
     "mango-docs/capabilities/README.md",
     "mango-docs/designs/2026-10-09-issue-1017-main-local-startup-design.md",
     "mango-docs/evidence/2026-10-12-issue-983-upload-timeout-delivery.md",
@@ -3505,13 +3512,20 @@
     "mango-docs/plans/2026-10-10-issue-1010-frontend-quality-gate-phase-one-decision-review.md",
     "mango-docs/plans/2026-10-10-issue-1010-frontend-quality-gate-phase-one.md",
     "mango-docs/plans/2026-10-14-hidden-menu-route-delivery-record.md",
+    "mango-pmo/README.md",
     "mango-pmo/agents/02-tech-lead-agent.md",
     "mango-pmo/agents/03-dev-agent.md",
     "mango-pmo/agents/05-pmo-agent.md",
     "mango-pmo/baselines/mango-check/no-new-violations-baseline.json",
+    "mango-pmo/contracts/business-requirements.json",
+    "mango-pmo/contracts/implementation-plan.json",
+    "mango-pmo/contracts/system-requirements.json",
+    "mango-pmo/contracts/technical-design.json",
+    "mango-pmo/plugin-src/.codex-plugin/plugin.json",
     "mango-pmo/rules/03-ai-coding-redlines.md",
     "mango-pmo/rules/backend/02-naming.md",
     "mango-pmo/rules/index.json",
+    "mango-pmo/rules/product/05-document-lifecycle.md",
     "mango-pmo/skills/mango-defect-fix/SKILL.md",
     "mango-pmo/skills/mango-design-technical/SKILL.md",
     "mango-pmo/skills/mango-engineering/SKILL.md",
@@ -3519,6 +3533,11 @@
     "mango-pmo/skills/mango-plan-implementation/SKILL.md",
     "mango-pmo/skills/mango-review-pr/SKILL.md",
     "mango-pmo/tests/agent-text-output-rule.test.mjs",
+    "mango-pmo/tests/document-contract/document-contract.test.mjs",
+    "mango-pmo/tests/document-contract/fixtures/valid/business-requirements.md",
+    "mango-pmo/tests/document-contract/fixtures/valid/implementation-plan.md",
+    "mango-pmo/tests/document-contract/fixtures/valid/system-requirements.md",
+    "mango-pmo/tests/document-contract/fixtures/valid/technical-design.md",
     "mango-pmo/tests/skills/evals.json",
     "mango-pmo/tests/skills/run-issue-1002-blank-context.mjs",
     "mango-ui/.changeset/batch-role-assignment.md",
@@ -3530,6 +3549,7 @@
     "mango-ui/.changeset/october-platform-release.md",
     "mango-ui/.changeset/release-baseline.json",
     "mango-ui/.changeset/release-notes.txt",
+    "mango-ui/.changeset/release-plan.json",
     "mango-ui/apps/mango-admin-cms-app/src/main.ts",
     "mango-ui/apps/mango-admin-shell/e2e/specs/runtime-composition.spec.ts",
     "mango-ui/apps/mango-admin/e2e/specs/system-management-pages.spec.ts",
@@ -3584,8 +3604,13 @@
     "mango-ui/packages/http-client/src/index.spec.ts",
     "mango-ui/packages/http-client/src/index.ts",
     "mango-ui/packages/mango-cli/README.md",
+    "mango-ui/packages/mango-cli/release-versions.json",
     "mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs",
     "mango-ui/packages/mango-cli/src/index.mjs",
+    "mango-ui/packages/mango-cli/templates/business-module/frontend/packages/{{moduleKebab}}-api/package.json.template",
+    "mango-ui/packages/mango-cli/templates/business-module/frontend/packages/{{moduleKebab}}/package.json.template",
+    "mango-ui/packages/mango-cli/templates/full/README.md",
+    "mango-ui/packages/mango-cli/templates/full/frontend/package.json.template",
     "mango-ui/packages/mango-cli/templates/full/mango.dev.json",
     "mango-ui/packages/notice/src/views/inbound/inbound-message.vue",
     "mango-ui/packages/payment/src/components/PaymentCashier.vue",
@@ -3596,6 +3621,7 @@
     "mango-ui/packages/rbac/src/views/user/index.vue",
     "mango-ui/packages/template/src/views/templates/index.vue",
     "mango-ui/packages/workflow/src/views/start-process/index.vue",
+    "mango-ui/pnpm-lock.yaml",
     "mango-ui/scripts/quality/check-affected.mjs",
     "mango-ui/scripts/quality/frontend-quality-workflow.test.mjs",
     "mango-ui/scripts/quality/pr-quality-policy.mjs",
@@ -3726,6 +3752,36 @@
       "reason": "published-pmo-source"
     },
     {
+      "file": "mango-pmo/contracts/business-requirements.json",
+      "packageName": "@mango/pmo",
+      "reason": "published-pmo-source"
+    },
+    {
+      "file": "mango-pmo/contracts/implementation-plan.json",
+      "packageName": "@mango/pmo",
+      "reason": "published-pmo-source"
+    },
+    {
+      "file": "mango-pmo/contracts/system-requirements.json",
+      "packageName": "@mango/pmo",
+      "reason": "published-pmo-source"
+    },
+    {
+      "file": "mango-pmo/contracts/technical-design.json",
+      "packageName": "@mango/pmo",
+      "reason": "published-pmo-source"
+    },
+    {
+      "file": "mango-pmo/plugin-src/.codex-plugin/plugin.json",
+      "packageName": "@mango/pmo",
+      "reason": "published-pmo-source"
+    },
+    {
+      "file": "mango-pmo/README.md",
+      "packageName": "@mango/pmo",
+      "reason": "published-pmo-source"
+    },
+    {
       "file": "mango-pmo/rules/03-ai-coding-redlines.md",
       "packageName": "@mango/pmo",
       "reason": "published-pmo-source"
@@ -3737,6 +3793,11 @@
     },
     {
       "file": "mango-pmo/rules/index.json",
+      "packageName": "@mango/pmo",
+      "reason": "published-pmo-source"
+    },
+    {
+      "file": "mango-pmo/rules/product/05-document-lifecycle.md",
       "packageName": "@mango/pmo",
       "reason": "published-pmo-source"
     },
@@ -3976,6 +4037,11 @@
       "reason": "published-package-path"
     },
     {
+      "file": "mango-ui/packages/mango-cli/release-versions.json",
+      "packageName": "@mango/cli",
+      "reason": "published-package-path"
+    },
+    {
       "file": "mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs",
       "packageName": "@mango/cli",
       "reason": "published-package-path"
@@ -3986,7 +4052,27 @@
       "reason": "published-package-path"
     },
     {
+      "file": "mango-ui/packages/mango-cli/templates/business-module/frontend/packages/{{moduleKebab}}-api/package.json.template",
+      "packageName": "@mango/cli",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/mango-cli/templates/business-module/frontend/packages/{{moduleKebab}}/package.json.template",
+      "packageName": "@mango/cli",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/mango-cli/templates/full/frontend/package.json.template",
+      "packageName": "@mango/cli",
+      "reason": "published-package-path"
+    },
+    {
       "file": "mango-ui/packages/mango-cli/templates/full/mango.dev.json",
+      "packageName": "@mango/cli",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/mango-cli/templates/full/README.md",
       "packageName": "@mango/cli",
       "reason": "published-package-path"
     },
@@ -5777,6 +5863,7 @@
           "io.mango.infra.context:mango-infra-context-api",
           "io.mango.infra.persistence:mango-infra-persistence-api",
           "io.mango.platform.authorization:mango-authorization-api",
+          "io.mango.platform.identity:mango-identity-api",
           "io.mango.platform.system:mango-system-api"
         ]
       },
@@ -5838,6 +5925,7 @@
         "classifier": null,
         "dependencies": [
           "io.mango.common:mango-common",
+          "io.mango.infra.log:mango-infra-log-api",
           "io.mango.infra.module:mango-infra-module-api",
           "io.mango.infra.persistence:mango-infra-persistence-api",
           "io.mango.infra.web:mango-infra-web-starter",
@@ -7338,8 +7426,8 @@
   "versionPolicyDigest": "c4c4c80d533dde047a59627c915cf87e3570606c2d329023ce6896544c50ee12",
   "releasePlanIdentity": {
     "schemaVersion": 1,
-    "sourceCommitOid": "c11086dc998be4f66163fe28b09a503efbed6d82",
-    "sourceTreeOid": "28cba483dfa65a01808b0f5d2da676b651244b5b",
+    "sourceCommitOid": "5ddfee12b28e20c8ac3c2fbb3625c2fe9dc0b9e9",
+    "sourceTreeOid": "d73fece897c9281b09d91f2d94f46bfa54edb885",
     "catalogDigest": "5cb7718710759833da803ec2d1d767bbada4ca94df60ec836c8e172b26a0371e",
     "previousBaselineDigest": "794477f667a5fea88eb18c36bd0b6ab88dbbb2fa180d2052e7b8bf65ad5f21dc",
     "changesetsDigest": "522f4307c15e02d8d6241dc605f77f780884ec8475e8c8be83cafc300f5187b7",
@@ -8918,5 +9006,5 @@
       "@mango/cli"
     ]
   },
-  "planDigest": "143ab89536eda853f10c90bf10ae354d2a84e8318623a9f3a2d15b25195d1219"
+  "planDigest": "1cdbd0231a943ccd4c44e2a936974d33afd64cc579bd92272f4e3cc2e7a2edcc"
 }

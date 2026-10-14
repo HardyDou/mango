@@ -25,6 +25,7 @@ import {
 } from './release-cli-template-lib.mjs';
 import {
   assertPmoVersionedFileProjection,
+  isPmoVersionedFileAlreadyProjected,
   PMO_VERSION_PROJECTION_PATHS,
   projectPmoVersionedFile,
 } from './release-pmo-plugin-lib.mjs';
@@ -138,12 +139,30 @@ function applyPlanProjection(releasePlan, packages) {
   }
 }
 
+/**
+ * 应用版本投影，并跳过已投影到目标版本的树。
+ *
+ * 发布投影可以重复应用：在已应用过投影的提交上重新规划时，文件已包含目标版本，
+ * 此时不应再要求源版本前置条件。
+ */
+function applyVersionProjection(path, targetVersion, project) {
+  const sourceContent = readGitFile(repoRoot, releasePlanSourceCommit(), path);
+  if (targetVersion && sourceContent.includes(targetVersion)) return;
+  const projectedContent = project(sourceContent);
+  if (sourceContent === projectedContent) return;
+  writeFileSync(join(repoRoot, path), projectedContent);
+}
+
+function releasePlanSourceCommit() {
+  return resolveGitSource(repoRoot).commit;
+}
+
 function applyCliReadmeProjection(releasePlan) {
   const cli = releasePlan.packages.find((entry) => entry.name === '@mango/cli');
   if (!cli) return;
-  const sourceContent = readGitFile(repoRoot, releasePlan.source.commit, CLI_README_PATH);
-  const projectedContent = projectCliReadmeVersion(sourceContent, cli.sourceVersion, cli.targetVersion);
-  writeFileSync(join(repoRoot, CLI_README_PATH), projectedContent);
+  applyVersionProjection(CLI_README_PATH, cli.targetVersion, (sourceContent) =>
+    projectCliReadmeVersion(sourceContent, cli.sourceVersion, cli.targetVersion),
+  );
 }
 
 function applyPmoPluginProjection(releasePlan) {
@@ -151,6 +170,7 @@ function applyPmoPluginProjection(releasePlan) {
   if (!pmo) return;
   for (const path of PMO_VERSION_PROJECTION_PATHS) {
     const sourceContent = readGitFile(repoRoot, releasePlan.source.commit, path);
+    if (isPmoVersionedFileAlreadyProjected(path, sourceContent, pmo.targetVersion)) continue;
     const projectedContent = projectPmoVersionedFile(path, sourceContent, pmo.sourceVersion, pmo.targetVersion);
     writeFileSync(join(repoRoot, path), projectedContent);
   }
@@ -172,22 +192,22 @@ function applyBusinessPmoBaselineProjection(releasePlan) {
 function applyCliFullFrontendTemplateProjection(releasePlan) {
   const cli = releasePlan.packages.find((entry) => entry.name === '@mango/cli');
   if (!cli) return;
-  const sourceContent = readGitFile(repoRoot, releasePlan.source.commit, CLI_FULL_FRONTEND_PACKAGE_TEMPLATE_PATH);
-  const projectedContent = projectCliFullFrontendTemplateVersion(sourceContent, cli.sourceVersion, cli.targetVersion);
-  writeFileSync(join(repoRoot, CLI_FULL_FRONTEND_PACKAGE_TEMPLATE_PATH), projectedContent);
+  applyVersionProjection(CLI_FULL_FRONTEND_PACKAGE_TEMPLATE_PATH, cli.targetVersion, (sourceContent) =>
+    projectCliFullFrontendTemplateVersion(sourceContent, cli.sourceVersion, cli.targetVersion),
+  );
 }
 
 function applyCliFullReadmeProjection(releasePlan) {
   const cli = releasePlan.packages.find((entry) => entry.name === '@mango/cli');
   const pmo = releasePlan.packages.find((entry) => entry.name === '@mango/pmo');
   if (!cli || !pmo || !releasePlan.maven?.targetVersion) return;
-  const sourceContent = readGitFile(repoRoot, releasePlan.source.commit, CLI_FULL_README_TEMPLATE_PATH);
-  const projectedContent = projectCliFullReadmeTuple(sourceContent, {
-    mavenVersion: releasePlan.maven.targetVersion,
-    pmoVersion: pmo.targetVersion,
-    cliVersion: cli.targetVersion,
-  });
-  writeFileSync(join(repoRoot, CLI_FULL_README_TEMPLATE_PATH), projectedContent);
+  applyVersionProjection(CLI_FULL_README_TEMPLATE_PATH, cli.targetVersion, (sourceContent) =>
+    projectCliFullReadmeTuple(sourceContent, {
+      mavenVersion: releasePlan.maven.targetVersion,
+      pmoVersion: pmo.targetVersion,
+      cliVersion: cli.targetVersion,
+    }),
+  );
 }
 
 function projectedManagedVersions(releasePlan, current) {

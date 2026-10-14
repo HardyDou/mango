@@ -21,6 +21,32 @@ export const PMO_VERSION_PROJECTION_PATHS = [
   ...PMO_TEXT_VERSION_PATHS,
 ];
 
+/**
+ * 判断某个 PMO 版本投影文件是否已经投影到目标版本。
+ *
+ * 发布投影可以重复应用：在已应用过投影的提交上重新规划时，文件已包含目标版本，
+ * 此时不应再要求源版本前置条件。
+ */
+export function isPmoVersionedFileAlreadyProjected(path, content, targetVersion) {
+  if (!targetVersion) return false;
+  if (path === PMO_PLUGIN_MANIFEST_PATH) {
+    try {
+      return JSON.parse(content).version === targetVersion;
+    } catch {
+      return false;
+    }
+  }
+  if (PMO_CONTRACT_PATHS.includes(path)) {
+    try {
+      return JSON.parse(content).metadata?.fixed?.pmoVersion === targetVersion;
+    } catch {
+      return false;
+    }
+  }
+  if (!PMO_TEXT_VERSION_PATHS.includes(path)) return false;
+  return content.includes(targetVersion);
+}
+
 export function projectPmoPluginVersion(content, sourceVersion, targetVersion) {
   if (!sourceVersion || !targetVersion) throw new Error('PMO plugin projection requires source and target versions');
   const manifest = JSON.parse(content);
