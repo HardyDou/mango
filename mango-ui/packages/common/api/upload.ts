@@ -1,6 +1,11 @@
 import request, { get, post } from '../utils/request';
 import type { ApiId, HttpClient, HttpProgress } from '@mango/api-schema';
 
+/**
+ * FormData 请求必须显式声明 multipart，避免宿主默认的 application/json 头让 axios 把 FormData 序列化成 JSON。
+ */
+const MULTIPART_HEADERS = { 'Content-Type': 'multipart/form-data' } as const;
+
 export type FileId = ApiId;
 
 export interface UploadResult {
@@ -197,6 +202,7 @@ export function createUploadApi(httpClient?: HttpClient): UploadApi {
         method: 'POST',
         url: '/file/files',
         body: formData,
+        headers: MULTIPART_HEADERS,
         ...uploadRequestOptions(options),
       })
       .then(toUploadResult);
@@ -215,6 +221,7 @@ export function createUploadApi(httpClient?: HttpClient): UploadApi {
           method: 'POST',
           url: '/file/files/batch',
           body: formData,
+          headers: MULTIPART_HEADERS,
           ...uploadRequestOptions(options),
         })
         .then((records) => records.map(toUploadResult));

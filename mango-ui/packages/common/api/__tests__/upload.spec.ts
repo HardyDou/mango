@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getUploadedFileDetail, normalizeFileAccessUrl, uploadImage } from '../upload';
+import type { HttpClient } from '@mango/api-schema';
+import { createUploadApi, getUploadedFileDetail, normalizeFileAccessUrl, uploadImage } from '../upload';
 import { get, post } from '../../utils/request';
 
 vi.mock('../../utils/request', () => ({
@@ -45,5 +46,37 @@ describe('upload API contract', () => {
 
     expect(result.url).toBe('mango-file:456');
     expect(result.previewUrl).toBeUndefined();
+  });
+
+  it('实例上传以 multipart 头提交 FormData，避免被 JSON 默认头改写', async () => {
+    const request = vi.fn().mockResolvedValue({ id: '1', fileName: 'a.pdf', fileSize: 8 });
+    const api = createUploadApi({ request } as unknown as HttpClient);
+    const file = new File(['pdf'], 'a.pdf', { type: 'application/pdf' });
+
+    await api.uploadFile(file);
+
+    const upload = request.mock.calls[0]?.[0] as { method: string; url: string; headers?: unknown; body?: unknown };
+    expect(upload).toMatchObject({
+      method: 'POST',
+      url: '/file/files',
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    expect(upload.body).toBeInstanceOf(FormData);
+  });
+
+  it('实例批量上传以 multipart 头提交 FormData', async () => {
+    const request = vi.fn().mockResolvedValue([]);
+    const api = createUploadApi({ request } as unknown as HttpClient);
+
+    await api.uploadMultiple([new File(['a'], 'a.pdf'), new File(['b'], 'b.pdf')]);
+
+    const batch = request.mock.calls[0]?.[0] as { method: string; url: string; headers?: unknown; body?: unknown };
+    expect(batch).toMatchObject({
+      method: 'POST',
+      url: '/file/files/batch',
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    expect(batch.body).toBeInstanceOf(FormData);
+    expect((batch.body as FormData).getAll('files')).toHaveLength(2);
   });
 });
