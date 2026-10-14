@@ -1,3 +1,13 @@
+## 1.2.20 - 2026-10-14
+
+### Fixed
+
+- Propagate the multipart upload fix through the generated Mango npm dependency closure so consumers receive `@mango/file@1.1.4` and `@mango/common@2.1.4`.
+
+### Upgrade Notes
+
+- Upgrade the complete npm tuple through `@mango/cli@1.2.20`; Maven and documentation artifacts remain at 1.0.58.
+
 ## 1.2.19 - 2026-10-14
 
 ### Changed
