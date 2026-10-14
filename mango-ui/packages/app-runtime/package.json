@@ -1,6 +1,6 @@
 {
   "name": "@mango/app-runtime",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "private": false,
   "main": "./dist/index.js",
   "exports": {
@@ -19,7 +19,7 @@
     "package.json"
   ],
   "dependencies": {
-    "@mango/api-schema": "workspace:1.0.3",
+    "@mango/api-schema": "workspace:1.0.4",
     "vue-router": "^4.1.6",
     "wujie": "^1.0.29"
   },

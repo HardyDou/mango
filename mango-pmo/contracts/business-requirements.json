@@ -25,7 +25,7 @@
     ],
     "fixed": {
       "documentType": "business-requirements",
-      "pmoVersion": "1.4.6",
+      "pmoVersion": "1.4.7",
       "schemaRevision": "1",
       "upstreamDocumentId": "NONE",
       "upstreamDocumentHash": "NONE"
@@ -47,7 +47,8 @@
       "1.4.2",
       "1.4.3",
       "1.4.4",
-      "1.4.5"
+      "1.4.5",
+      "1.4.6"
     ]
   },
   "localPrefixes": [
