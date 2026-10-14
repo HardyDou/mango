@@ -9,7 +9,12 @@
     data-action="detail.workflow.open"
   >
     <template #main>
-      <div ref="pageRootRef" class="mango-collapse-detail-page" :class="{ 'is-with-actions': hasVisibleActions }">
+      <div
+        ref="pageRootRef"
+        class="mango-collapse-detail-page"
+        :class="{ 'is-with-actions': hasVisibleActions }"
+        :style="{ maxWidth }"
+      >
         <MangoPageBackBar
           v-if="showBackBar"
           :title="title"
@@ -301,11 +306,13 @@ import type {
 } from './MangoCollapseDetailPage.types';
 
 const SLOT_SEGMENT_PATTERN = /^[A-Za-z][A-Za-z0-9-]*$/;
+const MAX_WIDTH_PATTERN = /^(?:0|(?:\d+(?:\.\d+)?))(?:px|%)$/;
 const IMPLICIT_TAB_NAME = '__mango-collapse-detail-default';
 
 defineOptions({ name: 'MangoCollapseDetailPage' });
 
 const props = withDefaults(defineProps<MangoCollapseDetailPageProps>(), {
+  maxWidth: '1280px',
   panels: undefined,
   tabs: undefined,
   responsive: undefined,
@@ -334,6 +341,15 @@ const props = withDefaults(defineProps<MangoCollapseDetailPageProps>(), {
   errorText: '',
   emptyDescription: '暂无详情信息',
 });
+function normalizeMaxWidth(value: string) {
+  const normalized = value.trim();
+  if (!MAX_WIDTH_PATTERN.test(normalized)) {
+    throw new Error('MangoCollapseDetailPage: maxWidth 必须是 px 或百分比值，例如 1280px 或 100%');
+  }
+  return normalized;
+}
+
+const maxWidth = computed(() => normalizeMaxWidth(props.maxWidth));
 const emit = defineEmits<MangoCollapseDetailPageEmits>();
 const slots = useSlots();
 const drawerRef = ref<MangoSideDrawerShellExpose>();
@@ -732,7 +748,6 @@ defineExpose<MangoCollapseDetailPageExpose>({
   display: flex;
   box-sizing: border-box;
   width: 100%;
-  max-width: 1280px;
   min-width: 0;
   margin-inline: auto;
   flex-direction: column;
@@ -938,8 +953,6 @@ defineExpose<MangoCollapseDetailPageExpose>({
 
 @media (width <= 760px) {
   .mango-collapse-detail-page {
-    max-width: none;
-
     --mango-collapse-page-gap: 12px;
   }
 
