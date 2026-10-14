@@ -28,13 +28,14 @@ public class GhostscriptPdfFileCompressProvider implements IFileCompressProvider
     private static final String PDF_CONTENT_TYPE = "application/pdf";
     private static final String MISSING_EXECUTABLE_MESSAGE =
             "无法执行 Ghostscript，请确认已安装 Ghostscript 并配置 mango.fileproc.compress.ghostscript-path";
+    private static final Duration DEFAULT_TIMEOUT = Duration.ofMinutes(15);
 
     private final String ghostscriptPath;
     private final Duration timeout;
 
     public GhostscriptPdfFileCompressProvider(String ghostscriptPath, Duration timeout) {
         this.ghostscriptPath = StringUtils.hasText(ghostscriptPath) ? ghostscriptPath.trim() : "gs";
-        this.timeout = timeout == null || timeout.isZero() || timeout.isNegative() ? Duration.ofMinutes(15) : timeout;
+        this.timeout = timeout == null || timeout.isZero() || timeout.isNegative() ? DEFAULT_TIMEOUT : timeout;
     }
 
     @Override

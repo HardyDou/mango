@@ -14,16 +14,28 @@ import java.util.Optional;
 record PdfGhostscriptSettings(String pdfSettings, int imageResolution, int jpegQuality) {
 
     private static final String EBOOK = "/ebook";
+    private static final int LOW_RESOLUTION = 200;
+    private static final int LOW_JPEG_QUALITY = 85;
+    private static final int STANDARD_RESOLUTION = 150;
+    private static final int STANDARD_JPEG_QUALITY = 80;
+    private static final int MEDIUM_RESOLUTION = 120;
+    private static final int MEDIUM_JPEG_QUALITY = 72;
+    private static final int HIGH_RESOLUTION = 96;
+    private static final int HIGH_JPEG_QUALITY = 62;
+    private static final int EXTREME_RESOLUTION = 60;
+    private static final int EXTREME_JPEG_QUALITY = 50;
+    private static final int UNCOMPRESSED_RESOLUTION = 300;
+    private static final int UNCOMPRESSED_JPEG_QUALITY = 90;
 
     static PdfGhostscriptSettings of(FileCompression compression) {
         FileCompression resolved = compression == null ? FileCompression.NONE : compression;
         return switch (resolved) {
-            case LOW -> new PdfGhostscriptSettings(EBOOK, 200, 85);
-            case STANDARD -> new PdfGhostscriptSettings(EBOOK, 150, 80);
-            case MEDIUM -> new PdfGhostscriptSettings(EBOOK, 120, 72);
-            case HIGH -> new PdfGhostscriptSettings(EBOOK, 96, 62);
-            case EXTREME -> new PdfGhostscriptSettings(EBOOK, 60, 50);
-            case NONE -> new PdfGhostscriptSettings(EBOOK, 300, 90);
+            case LOW -> new PdfGhostscriptSettings(EBOOK, LOW_RESOLUTION, LOW_JPEG_QUALITY);
+            case STANDARD -> new PdfGhostscriptSettings(EBOOK, STANDARD_RESOLUTION, STANDARD_JPEG_QUALITY);
+            case MEDIUM -> new PdfGhostscriptSettings(EBOOK, MEDIUM_RESOLUTION, MEDIUM_JPEG_QUALITY);
+            case HIGH -> new PdfGhostscriptSettings(EBOOK, HIGH_RESOLUTION, HIGH_JPEG_QUALITY);
+            case EXTREME -> new PdfGhostscriptSettings(EBOOK, EXTREME_RESOLUTION, EXTREME_JPEG_QUALITY);
+            case NONE -> new PdfGhostscriptSettings(EBOOK, UNCOMPRESSED_RESOLUTION, UNCOMPRESSED_JPEG_QUALITY);
         };
     }
 

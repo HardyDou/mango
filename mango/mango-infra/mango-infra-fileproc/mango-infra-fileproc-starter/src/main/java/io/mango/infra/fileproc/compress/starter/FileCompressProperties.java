@@ -8,6 +8,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "mango.fileproc.compress")
 public class FileCompressProperties {
 
+    private static final long DEFAULT_TIMEOUT_SECONDS = 900L;
+
     /**
      * 是否启用文件压缩自动配置。
      */
@@ -21,7 +23,7 @@ public class FileCompressProperties {
     /**
      * 单次 Ghostscript 压缩超时时间，单位秒。
      */
-    private long timeoutSeconds = 900;
+    private long timeoutSeconds = DEFAULT_TIMEOUT_SECONDS;
 
     public boolean isEnabled() {
         return enabled;
