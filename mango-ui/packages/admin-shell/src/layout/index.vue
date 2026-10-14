@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
   <div class="mango-layout-root" :class="`mango-layout-root--${layoutStore.layout}`">
     <LayoutHeader v-if="showTopHeader" key="top-header" />
@@ -29,6 +30,7 @@ import { useScrollbar } from '../composables/useScrollbar';
 import { Local } from '@mango/common/utils/storage';
 import { mittBus } from '@mango/common/utils/mitt';
 import { containsMenuPath } from '@mango/common/utils/menuTree';
+import { filterMenusForNavigation } from './navMenu/activeMenuPath';
 import { useChangeColor } from '@mango/common/utils/theme';
 
 const LayoutAside = defineAsyncComponent(() => import('./component/aside.vue'));
@@ -61,7 +63,7 @@ watch(
     const activeTop = activeTopRoutePath.value
       ? routesList.value.find((item) => item.path === activeTopRoutePath.value)
       : routesList.value.find((item) => containsMenuPath(item as never, route.path));
-    menuList.value = activeTop?.children?.length ? activeTop.children : [];
+    menuList.value = activeTop?.children?.length ? filterMenusForNavigation(activeTop.children) : [];
   },
   { immediate: true },
 );
