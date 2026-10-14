@@ -2,9 +2,10 @@ package io.mango.infra.fileproc.compress;
 
 import io.mango.infra.fileproc.compress.command.CompressFileCommand;
 import io.mango.infra.fileproc.compress.enums.FileCompression;
+import io.mango.infra.fileproc.compress.service.CompressionSettings;
 import io.mango.infra.fileproc.compress.service.DefaultFileCompressApi;
+import io.mango.infra.fileproc.compress.service.GhostscriptPdfFileCompressProvider;
 import io.mango.infra.fileproc.compress.service.ImageFileCompressProvider;
-import io.mango.infra.fileproc.compress.service.PdfRasterFileCompressProvider;
 import io.mango.infra.fileproc.compress.vo.CompressFileResultVO;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -12,6 +13,7 @@ import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.graphics.image.JPEGFactory;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
 import javax.imageio.ImageIO;
@@ -20,6 +22,7 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.time.Duration;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -28,7 +31,7 @@ class FileCompressApiTest {
 
     private final FileCompressApi compressApi = new DefaultFileCompressApi(List.of(
             new ImageFileCompressProvider(),
-            new PdfRasterFileCompressProvider()));
+            new GhostscriptPdfFileCompressProvider("gs", Duration.ofMinutes(5))));
 
     @Test
     void compress_图片按档位缩小尺寸并保持图片可读取() throws Exception {
@@ -51,7 +54,8 @@ class FileCompressApiTest {
     }
 
     @Test
-    void compress_Pdf按栅格化方案输出可读取Pdf() throws Exception {
+    void compress_Pdf输出可读取且文字保持矢量文字() throws Exception {
+        Assumptions.assumeTrue(ghostscriptAvailable(), "本机未安装 Ghostscript，跳过真实压缩验证");
         byte[] source = samplePdfWithImage();
 
         CompressFileResultVO result = compressApi.compress(new CompressFileCommand(
@@ -83,6 +87,28 @@ class FileCompressApiTest {
 
         assertThat(result.content()).containsExactly(source);
         assertThat(result.targetReached()).isTrue();
+    }
+
+    @Test
+    void compressionSettings_五档强度递减输出质量参数() {
+        assertThat(CompressionSettings.of(FileCompression.LOW).pdfRenderDpi()).isEqualTo(200F);
+        assertThat(CompressionSettings.of(FileCompression.STANDARD).pdfRenderDpi()).isEqualTo(150F);
+        assertThat(CompressionSettings.of(FileCompression.MEDIUM).pdfRenderDpi()).isEqualTo(120F);
+        assertThat(CompressionSettings.of(FileCompression.HIGH).pdfRenderDpi()).isEqualTo(96F);
+        assertThat(CompressionSettings.of(FileCompression.EXTREME).pdfRenderDpi()).isEqualTo(60F);
+        assertThat(FileCompression.of("extreme")).isEqualTo(FileCompression.EXTREME);
+        assertThat(FileCompression.of("standard")).isEqualTo(FileCompression.STANDARD);
+        assertThat(FileCompression.of(null)).isEqualTo(FileCompression.NONE);
+    }
+
+    private boolean ghostscriptAvailable() {
+        try {
+            Process process = new ProcessBuilder("gs", "--version").redirectErrorStream(true).start();
+            boolean finished = process.waitFor(10, java.util.concurrent.TimeUnit.SECONDS);
+            return finished && process.exitValue() == 0;
+        } catch (Exception ex) {
+            return false;
+        }
     }
 
     private byte[] samplePdfWithImage() throws Exception {

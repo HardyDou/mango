@@ -1,8 +1,8 @@
 package io.mango.infra.fileproc.compress.starter;
 
 import io.mango.infra.fileproc.compress.FileCompressApi;
+import io.mango.infra.fileproc.compress.service.GhostscriptPdfFileCompressProvider;
 import io.mango.infra.fileproc.compress.service.ImageFileCompressProvider;
-import io.mango.infra.fileproc.compress.service.PdfRasterFileCompressProvider;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -18,11 +18,18 @@ class FileCompressAutoConfigurationTest {
     void withDefaultProperties_registersCompressionBeans() {
         contextRunner.run(context -> {
             assertThat(context).hasSingleBean(ImageFileCompressProvider.class);
-            assertThat(context).hasSingleBean(PdfRasterFileCompressProvider.class);
+            assertThat(context).hasSingleBean(GhostscriptPdfFileCompressProvider.class);
             assertThat(context).hasSingleBean(FileCompressApi.class);
             assertThat(context.getBean(FileCompressApi.class).supports("demo.pdf", "application/pdf")).isTrue();
             assertThat(context.getBean(FileCompressApi.class).supports("demo.jpg", "image/jpeg")).isTrue();
         });
+    }
+
+    @Test
+    void withGhostscriptProperties_registersConfiguredPath() {
+        contextRunner
+                .withPropertyValues("mango.fileproc.compress.ghostscript-path=/opt/gs/bin/gs")
+                .run(context -> assertThat(context).hasSingleBean(GhostscriptPdfFileCompressProvider.class));
     }
 
     @Test
@@ -32,7 +39,7 @@ class FileCompressAutoConfigurationTest {
                 .run(context -> {
                     assertThat(context).doesNotHaveBean(FileCompressApi.class);
                     assertThat(context).doesNotHaveBean(ImageFileCompressProvider.class);
-                    assertThat(context).doesNotHaveBean(PdfRasterFileCompressProvider.class);
+                    assertThat(context).doesNotHaveBean(GhostscriptPdfFileCompressProvider.class);
                 });
     }
 }

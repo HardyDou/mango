@@ -117,6 +117,14 @@ export interface FileUploadPolicy {
   multipartThreshold: number;
 }
 
+/** 文件下载参数。 */
+export interface FileDownloadOptions {
+  /** 压缩档位，取值为 none、low、standard、medium、high、extreme；缺省表示不压缩。 */
+  compression?: string;
+  /** 单文件目标大小，单位字节；设置后服务端会按目标体积提升压缩强度。 */
+  perFileTargetSizeBytes?: number;
+}
+
 export interface CreateFileUploadSessionCommand extends FileUploadParams {
   fileName: string;
   fileSize: number;
@@ -195,8 +203,8 @@ export interface FileApi {
   ): Promise<boolean>;
   completeUploadSession(sessionId: FileId, options?: FileUploadOptions): Promise<FileRecord>;
   abortUploadSession(sessionId: FileId, options?: FileUploadOptions): Promise<boolean>;
-  downloadUrl(id: FileId): string;
-  download(id: FileId): Promise<BinaryDownloadResponse>;
+  downloadUrl(id: FileId, options?: FileDownloadOptions): string;
+  download(id: FileId, options?: FileDownloadOptions): Promise<BinaryDownloadResponse>;
 }
 
 export class FileHttpError extends Error implements HttpError {
@@ -344,12 +352,12 @@ export function createFileApi(httpClient?: HttpClient): FileApi {
         url: `/file/files/uploads/${encodeURIComponent(String(sessionId))}`,
         ...uploadRequestOptions(options),
       }),
-    downloadUrl,
-    download: async (id) => {
+    downloadUrl: (id, options) => downloadUrl(id, options),
+    download: async (id, options) => {
       const response = await transport.request<Blob | BinaryDownloadResponse>({
         method: 'GET',
         url: '/file/files/download',
-        query: { id },
+        query: downloadQuery(id, options),
         responseType: 'blob',
       });
       const result = toBinaryDownloadResponse(response);
@@ -414,8 +422,25 @@ export function isFileAccessUrl(value?: string): boolean {
   return /^(https?:|data:|blob:)/i.test(value) || value.startsWith('/') || isProtectedApiUrl(value);
 }
 
-export function downloadUrl(id: FileId): string {
-  return `/api/file/files/download?id=${encodeURIComponent(String(id))}`;
+export function downloadQuery(id: FileId, options?: FileDownloadOptions) {
+  return {
+    id,
+    ...(options?.compression ? { compression: options.compression } : {}),
+    ...(typeof options?.perFileTargetSizeBytes === 'number'
+      ? { perFileTargetSizeBytes: options.perFileTargetSizeBytes }
+      : {}),
+  };
+}
+
+export function downloadUrl(id: FileId, options?: FileDownloadOptions): string {
+  const query = new URLSearchParams({ id: String(id) });
+  if (options?.compression) {
+    query.set('compression', options.compression);
+  }
+  if (typeof options?.perFileTargetSizeBytes === 'number') {
+    query.set('perFileTargetSizeBytes', String(options.perFileTargetSizeBytes));
+  }
+  return `/api/file/files/download?${query.toString()}`;
 }
 
 export async function downloadFileRecord(
