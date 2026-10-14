@@ -30,6 +30,7 @@ import {
 } from './release-pmo-plugin-lib.mjs';
 import {
   gitChangedFiles,
+  gitReleaseImpactFiles,
   readGitFile,
   resolveBaseline,
   resolveReleaseBaselineAnchor,
@@ -367,9 +368,9 @@ function resolvePlanInput() {
       baselineTree: baseline.tree,
       sourceCommit: source.commit,
     });
-    const committedFiles = gitChangedFiles(repoRoot, baselineAnchor, source.commit);
+    const committedFiles = gitReleaseImpactFiles(repoRoot, baselineAnchor, source.commit);
     if (includeWorkingTree) {
-      const filesWithWorkingTree = gitChangedFiles(repoRoot, baselineAnchor, source.commit, true);
+      const filesWithWorkingTree = gitReleaseImpactFiles(repoRoot, baselineAnchor, source.commit, true);
       if (JSON.stringify(filesWithWorkingTree) !== JSON.stringify(committedFiles)) {
         throw new Error('release plan source must be committed before planning; working-tree source cannot be sealed');
       }

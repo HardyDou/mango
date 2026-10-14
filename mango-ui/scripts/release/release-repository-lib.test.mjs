@@ -6,6 +6,7 @@ import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 import {
   gitChangedFiles,
+  isVersionOnlyPackageJsonChangeText,
   readGitFile,
   resolveReleaseBaselineAnchor,
   resolveGitSource,
@@ -191,3 +192,22 @@ function git(repoRoot, args) {
   if (result.status !== 0) throw new Error(result.stderr || result.stdout);
   return result.stdout.trim();
 }
+
+test('isVersionOnlyPackageJsonChangeText ignores version and dependency version references', () => {
+  const base = JSON.stringify({ name: '@mango/a', version: '1.0.0', dependencies: { '@mango/b': '1.0.0' } });
+  const head = JSON.stringify({ name: '@mango/a', version: '1.0.1', dependencies: { '@mango/b': '1.0.1' } });
+  assert.equal(isVersionOnlyPackageJsonChangeText(base, head), true);
+});
+
+test('isVersionOnlyPackageJsonChangeText detects real package changes', () => {
+  const base = JSON.stringify({ name: '@mango/a', version: '1.0.0', exports: { '.': './src/index.ts' } });
+  const moved = JSON.stringify({ name: '@mango/a', version: '1.0.1', exports: { '.': './dist/index.mjs' } });
+  assert.equal(isVersionOnlyPackageJsonChangeText(base, moved), false);
+  const added = JSON.stringify({
+    name: '@mango/a',
+    version: '1.0.1',
+    dependencies: { '@mango/b': '1.0.0', '@mango/c': '1.0.0' },
+  });
+  assert.equal(isVersionOnlyPackageJsonChangeText(base, added), false);
+  assert.equal(isVersionOnlyPackageJsonChangeText(base, undefined), false);
+});

@@ -37,6 +37,66 @@ export function gitChangedFiles(repoRoot, baseRef, headRef = 'HEAD', includeWork
   return [...files].sort();
 }
 
+/**
+ * 判断 package.json 变更是否只涉及发布机制字段。
+ *
+ * 发布投影会批量修改各包的 `version`，以及依赖引用中指向本批次的版本号。
+ * 这些属于发布机制变更，不是消费者可见的源码影响，不能反过来要求新的 Changeset 声明。
+ * 新增/删除依赖、修改 exports、脚本或其它字段仍然计为源码影响。
+ */
+export function isVersionOnlyPackageJsonChangeText(baseText, headText) {
+  if (typeof baseText !== 'string' || typeof headText !== 'string') return false;
+  try {
+    return stablePackageJsonShape(baseText) === stablePackageJsonShape(headText);
+  } catch {
+    return false;
+  }
+}
+
+const DEPENDENCY_FIELDS = ['dependencies', 'devDependencies', 'optionalDependencies', 'peerDependencies'];
+
+function stablePackageJsonShape(text) {
+  const json = JSON.parse(text);
+  const normalized = { ...json };
+  delete normalized.version;
+  for (const field of DEPENDENCY_FIELDS) {
+    const value = normalized[field];
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      normalized[field] = Object.fromEntries(Object.keys(value).sort().map((name) => [name, '<version>']));
+    }
+  }
+  return stableStringify(normalized);
+}
+
+function stableStringify(value) {
+  if (Array.isArray(value)) return `[${value.map(stableStringify).join(',')}]`;
+  if (value && typeof value === 'object') {
+    return `{${Object.keys(value)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${stableStringify(value[key])}`)
+      .join(',')}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function isVersionOnlyPackageJsonChange(repoRoot, mergeBase, headRef, file) {
+  if (!/(?:^|\/)package\.json$/u.test(file)) return false;
+  const baseResult = runGit(repoRoot, ['show', `${mergeBase}:${file}`], { allowFailure: true });
+  const headResult = runGit(repoRoot, ['show', `${headRef}:${file}`], { allowFailure: true });
+  if (baseResult.status !== 0 || headResult.status !== 0) return false;
+  return isVersionOnlyPackageJsonChangeText(baseResult.stdout, headResult.stdout);
+}
+
+/**
+ * 与 {@link gitChangedFiles} 相同，但排除仅发布机制字段变化的 package.json。
+ */
+export function gitReleaseImpactFiles(repoRoot, baseRef, headRef = 'HEAD', includeWorkingTree = false) {
+  const mergeBase = gitValue(repoRoot, ['merge-base', baseRef, headRef]);
+  return gitChangedFiles(repoRoot, baseRef, headRef, includeWorkingTree).filter(
+    (file) => !isVersionOnlyPackageJsonChange(repoRoot, mergeBase, headRef, file),
+  );
+}
+
 export function resolveGitSource(repoRoot, ref = 'HEAD') {
   return {
     commit: gitValue(repoRoot, ['rev-parse', `${ref}^{commit}`]),
