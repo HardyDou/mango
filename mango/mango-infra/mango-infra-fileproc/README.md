@@ -7,7 +7,7 @@
 
 - 模板渲染：TEXT、HTML、DOCX、XLSX 等输入渲染为目标格式。
 - 格式转换：HTML/TEXT、Office/PDF、图片/PDF、PDF/图片、TIFF/PDF、PDF/OFD、DOCX/OFD、同格式透传。
-- 文件压缩：图片、扫描件 PDF 按档位或目标大小压缩。
+- 文件压缩：图片按档位压缩；PDF 用 Ghostscript 重写结构并降采样图像，支持档位或目标大小，纯文字页保持矢量文字。
 - PDF 操作：合并、加水印、结构压缩、压缩到目标大小。
 - Aspose license 装载：Words、Cells、Slides、PDF、Imaging。
 - LibreOffice/JODConverter Office 转 PDF。
@@ -34,7 +34,7 @@
 子模块：
 
 - `mango-infra-fileproc-api`：`FileCompressApi`、`RenderApi`、`ConvertApi`、`AsposeLicenseApi`、命令、枚举和 VO。
-- `mango-infra-fileproc-core`：压缩器、渲染器、转换器、注册表、Aspose 和 LibreOffice 适配。
+- `mango-infra-fileproc-core`：压缩器、渲染器、转换器、注册表、Ghostscript、Aspose 和 LibreOffice 适配。
 - `mango-infra-fileproc-starter`：自动配置和配置属性。
 
 命令边界：
@@ -101,20 +101,24 @@ CompressFileResultVO result = fileCompressApi.compress(new CompressFileCommand(
 | 配置项 | 默认值 | 含义 |
 |--------|--------|------|
 | `enabled` | `true` | 是否启用文件压缩自动配置。 |
+| `ghostscript-path` | `gs` | Ghostscript 可执行文件路径；未配置时使用系统 PATH 中的 `gs`。 |
+| `timeout-seconds` | `900` | 单次 Ghostscript 压缩超时时间，单位秒。 |
 
 自动注册的压缩能力：
 
 - `ImageFileCompressProvider`：支持 JPG、JPEG 和 PNG 图片压缩。
-- `PdfRasterFileCompressProvider`：支持 PDF 页面栅格化后重新封装压缩，适合扫描件 PDF。
+- `GhostscriptPdfFileCompressProvider`：调用 Ghostscript 重写 PDF 结构并降采样图像，适合扫描件 PDF；输入以流方式写入临时文件，纯文字页保持矢量文字，输出不变小时保留原文件。未安装 Ghostscript 时明确失败。
 
-压缩档位：
+压缩档位（强度递增，强度越高体积越小、清晰度越低）：
 
 | 档位 | 语义 |
 |------|------|
 | `NONE` | 不压缩。 |
 | `LOW` | 轻度压缩，优先清晰度。 |
+| `STANDARD` | 标准压缩。 |
 | `MEDIUM` | 中度压缩，平衡清晰度与体积。 |
 | `HIGH` | 强压缩，优先体积。 |
+| `EXTREME` | 极限压缩，体积最小、清晰度最低。 |
 
 `targetSizeBytes` 表示单个输入文件的目标大小，不表示批量任务或 ZIP 总大小。若文件已经小于等于目标大小，压缩器直接返回原内容。
 
