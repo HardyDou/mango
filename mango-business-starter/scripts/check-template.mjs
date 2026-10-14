@@ -300,7 +300,7 @@ const contentChecks = [
       '"style": "./style.css"',
       '"./style.css": "./style.css"',
       '"mangoAdmin"',
-      '"@mango/app-runtime": "1.0.7"',
+      '"@mango/app-runtime": "1.0.6"',
       "register{{modulePascal}}Pages",
     ],
   },
@@ -335,7 +335,7 @@ const contentChecks = [
   },
   {
     file: "frontend/apps/{{projectKebab}}-admin/package.json",
-    patterns: ['"@mango/app-runtime": "1.0.7"'],
+    patterns: ['"@mango/app-runtime": "1.0.6"'],
   },
   {
     file: "topologies/monolith/README.md",

@@ -98,6 +98,7 @@ if (checkOnly) {
 applyPlanProjection(plan, packageIndex);
 applyPmoPluginProjection(plan);
 applyBusinessPmoBaselineProjection(plan);
+applyBusinessStarterTemplateCheckerProjection(plan);
 applyCliReadmeProjection(plan);
 applyCliFullFrontendTemplateProjection(plan);
 applyCliFullReadmeProjection(plan);
@@ -174,6 +175,19 @@ function applyPmoPluginProjection(releasePlan) {
     const projectedContent = projectPmoVersionedFile(path, sourceContent, pmo.sourceVersion, pmo.targetVersion);
     writeFileSync(join(repoRoot, path), projectedContent);
   }
+}
+
+function applyBusinessStarterTemplateCheckerProjection(releasePlan) {
+  const path = 'mango-business-starter/scripts/check-template.mjs';
+  const sourceContent = readGitFile(repoRoot, releasePlan.source.commit, path);
+  let projected = sourceContent;
+  for (const entry of releasePlan.packages) {
+    if (!entry.sourceVersion || !entry.targetVersion) continue;
+    projected = projected
+      .split(`"${entry.name}": "${entry.sourceVersion}"`)
+      .join(`"${entry.name}": "${entry.targetVersion}"`);
+  }
+  if (projected !== sourceContent) writeFileSync(join(repoRoot, path), projected);
 }
 
 function applyBusinessPmoBaselineProjection(releasePlan) {
