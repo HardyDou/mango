@@ -231,6 +231,12 @@ export const DEFAULT_CHUNK_SIZE = 10 * 1024 * 1024;
 export const DEFAULT_UPLOAD_TIMEOUT_MS = 10 * 60 * 1000;
 export const DEFAULT_UPLOAD_INACTIVITY_TIMEOUT_MS = 60 * 1000;
 
+/**
+ * FormData 请求必须显式声明 multipart，否则宿主默认的 application/json 头会让
+ * axios 把 FormData 序列化成 JSON，后端 /file/files 会因非 multipart 请求返回 500。
+ */
+const MULTIPART_HEADERS = { 'Content-Type': 'multipart/form-data' } as const;
+
 export function createFileApi(httpClient?: HttpClient): FileApi {
   const transport = httpClient || getLegacyHttpClient();
   const settingsApi = createFileSettingsApi(transport);
@@ -296,6 +302,7 @@ export function createFileApi(httpClient?: HttpClient): FileApi {
         method: 'POST',
         url: '/file/files/batch',
         body: formData,
+        headers: MULTIPART_HEADERS,
         ...uploadRequestOptions(options),
       });
       return Array.isArray(items) ? items.map(fromBackendFileRecord) : [];
@@ -328,6 +335,7 @@ export function createFileApi(httpClient?: HttpClient): FileApi {
         method: 'POST',
         url: `/file/files/uploads/${encodeURIComponent(String(sessionId))}/parts`,
         body: formData,
+        headers: MULTIPART_HEADERS,
         ...uploadRequestOptions(options),
       });
     },
@@ -521,6 +529,7 @@ async function uploadSimple(
     method: 'POST',
     url: '/file/files',
     body: formData,
+    headers: MULTIPART_HEADERS,
     ...uploadRequestOptions(options),
   });
   return fromBackendFileRecord(item);
