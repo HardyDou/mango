@@ -1,3 +1,16 @@
+## 1.2.19 - 2026-10-14
+
+### Changed
+
+- Lock the Mango Maven 1.0.58 and @mango/pmo@1.4.7 platform tuple.
+- Publish the complete npm dependency closure through @mango/cli@1.2.19.
+- Include reuse-first governance, Agent text-output rules, upload timeout configuration and PDF download compression parameters.
+
+### Upgrade Notes
+
+- Upgrade @mango/cli and @mango/pmo together, then verify generated project PMO checks and clean published-package consumption.
+- Use the Maven 1.0.58 platform coordinates and do not publish application fat JARs.
+
 ## 1.2.18 - 2026-10-08
 
 ### Changed

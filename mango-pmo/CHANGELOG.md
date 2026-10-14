@@ -1,5 +1,16 @@
 # Mango PMO Changelog
 
+## 1.4.7 - 2026-10-14
+
+### Changed
+
+- Publish the reuse-first AI change governance, Agent text-output rules and updated document-contract fixtures.
+- Include the Skill evaluation cases and the synchronized Business Starter PMO baseline at version 1.4.7.
+
+### Upgrade Notes
+
+- Upgrade @mango/pmo and @mango/cli together and synchronize the Business Starter baseline.
+
 ## 1.4.6 - 2026-10-08
 
 ### Changed
