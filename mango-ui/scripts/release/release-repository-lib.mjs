@@ -237,8 +237,8 @@ export function assertCleanWorktree(repoRoot, { ignoredPaths = [] } = {}) {
     .split(/\r?\n/u)
     .filter(Boolean)
     .filter((line) => {
-      const path = line.slice(3).trim();
-      return !ignored.has(path);
+      const path = line.slice(3).trim().replace(/^"/u, '').replace(/"$/u, '');
+      return ![...ignored].some((candidate) => path === candidate || path.endsWith(`/${candidate}`));
     });
   if (dirty.length > 0) throw new Error(`release preparation requires a clean worktree:\n${dirty.join('\n')}`);
 }
