@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-14T06:08:08.962Z",
+  "generatedAt": "2026-10-14T07:56:24.862Z",
   "releaseKind": "mixed",
   "release": {
     "tag": "v2026.10.14-maven-1.0.58-fileproc-pdf-compress-release",
@@ -3448,8 +3448,8 @@
     "docs": null
   },
   "source": {
-    "commit": "72c06f0513f784bc81ee384c491585c9f6ef96d5",
-    "tree": "f1dcd9ff9cdca3e9fdb247ca672b432c63040ca3"
+    "commit": "c3eaeb3bdf3d3b429072be273461870715520492",
+    "tree": "6caf87d443d643d2acea032aef114351cd9bb8dd"
   },
   "sourceFiles": [
     ".github/workflows/frontend-quality.yml",
@@ -3473,10 +3473,12 @@
     "mango-business-starter/business-pmo/mango-baseline/skills/mango-module-development/SKILL.md",
     "mango-business-starter/business-pmo/mango-baseline/skills/mango-plan-implementation/SKILL.md",
     "mango-business-starter/business-pmo/mango-baseline/skills/mango-review-pr/SKILL.md",
+    "mango-business-starter/scripts/check-template.mjs",
     "mango-catalog/catalog.lock.json",
     "mango-docs/capabilities/README.md",
     "mango-docs/designs/2026-10-09-issue-1017-main-local-startup-design.md",
     "mango-docs/evidence/2026-10-12-issue-983-upload-timeout-delivery.md",
+    "mango-docs/evidence/2026-10-14-detail-max-width/standard-delivery-record.md",
     "mango-docs/evidence/issue-1002/candidate-skill-evals.json",
     "mango-docs/evidence/issue-1002/eval-packet/ac-1002-06-semantic-report.json",
     "mango-docs/evidence/issue-1002/eval-packet/issue-1002-defect-root-cause-minimal-fix.answer.md",
@@ -3542,6 +3544,7 @@
     "mango-pmo/tests/skills/evals.json",
     "mango-pmo/tests/skills/run-issue-1002-blank-context.mjs",
     "mango-ui/.changeset/batch-role-assignment.md",
+    "mango-ui/.changeset/detail-max-width.md",
     "mango-ui/.changeset/fileproc-pdf-ghostscript-compress.md",
     "mango-ui/.changeset/frontend-package-maintenance.md",
     "mango-ui/.changeset/issue-1002-reuse-first-governance.md",
@@ -3580,7 +3583,11 @@
     "mango-ui/packages/common/components/RichTextViewer/index.vue",
     "mango-ui/packages/common/composables/useUploadApi.ts",
     "mango-ui/packages/common/index.ts",
+    "mango-ui/packages/detail/README.md",
+    "mango-ui/packages/detail/src/MangoCollapseDetailPage.types.ts",
+    "mango-ui/packages/detail/src/MangoCollapseDetailPage.vue",
     "mango-ui/packages/detail/src/MangoRichTextPreview.vue",
+    "mango-ui/packages/detail/src/__tests__/MangoCollapseDetailPage.spec.ts",
     "mango-ui/packages/detail/src/__tests__/MangoRichTextPreview.spec.ts",
     "mango-ui/packages/file/README.md",
     "mango-ui/packages/file/src/__tests__/commonMock.ts",
@@ -3694,6 +3701,11 @@
       "id": "batch-role-assignment",
       "file": ".changeset/batch-role-assignment.md",
       "sha256": "2a89e488d7c3ea0938bd07a682875907142c8dba8c673fa75ba083385fb588c8"
+    },
+    {
+      "id": "detail-max-width",
+      "file": ".changeset/detail-max-width.md",
+      "sha256": "8940d81a60c372d5438d8927c8d9d287ee10642deb37d35623928dc5fd995c15"
     },
     {
       "id": "fileproc-pdf-ghostscript-compress",
@@ -3940,6 +3952,21 @@
     {
       "file": "mango-ui/packages/common/index.ts",
       "packageName": "@mango/common",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/detail/README.md",
+      "packageName": "@mango/detail",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/detail/src/MangoCollapseDetailPage.types.ts",
+      "packageName": "@mango/detail",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/detail/src/MangoCollapseDetailPage.vue",
+      "packageName": "@mango/detail",
       "reason": "published-package-path"
     },
     {
@@ -4287,6 +4314,10 @@
       "direct": true,
       "generated": false,
       "reasons": [
+        {
+          "source": "changeset:detail-max-width",
+          "summary": "为 MangoCollapseDetailPage 增加可配置的 maxWidth，默认值为 1280px，支持 px 和百分比单位。"
+        },
         {
           "source": "changeset:issue-983-upload-timeout",
           "summary": "上传请求支持独立的总超时与无进度超时配置，并同步文件、富文本预览与请求客户端的契约与实现（#983）。"
@@ -7432,11 +7463,11 @@
   "versionPolicyDigest": "c4c4c80d533dde047a59627c915cf87e3570606c2d329023ce6896544c50ee12",
   "releasePlanIdentity": {
     "schemaVersion": 1,
-    "sourceCommitOid": "72c06f0513f784bc81ee384c491585c9f6ef96d5",
-    "sourceTreeOid": "f1dcd9ff9cdca3e9fdb247ca672b432c63040ca3",
+    "sourceCommitOid": "c3eaeb3bdf3d3b429072be273461870715520492",
+    "sourceTreeOid": "6caf87d443d643d2acea032aef114351cd9bb8dd",
     "catalogDigest": "5cb7718710759833da803ec2d1d767bbada4ca94df60ec836c8e172b26a0371e",
     "previousBaselineDigest": "794477f667a5fea88eb18c36bd0b6ab88dbbb2fa180d2052e7b8bf65ad5f21dc",
-    "changesetsDigest": "522f4307c15e02d8d6241dc605f77f780884ec8475e8c8be83cafc300f5187b7",
+    "changesetsDigest": "16c7a67d63884df3a2f5c428eacfe24ce6af2f21a403933816165f6655dcb993",
     "releaseNotesDigest": "3b9f9b1c81808035d971893f2bc4505cbf0975c01f62e53a2ed2c6e5be0b3d95",
     "versionPolicyDigest": "c4c4c80d533dde047a59627c915cf87e3570606c2d329023ce6896544c50ee12",
     "resolvedTuple": [
@@ -9012,5 +9043,5 @@
       "@mango/cli"
     ]
   },
-  "planDigest": "59aad913e12923037e0c067d538f95fb9e9bedd902d84897a99df571f269a067"
+  "planDigest": "a4ea636e00732e5194248ceccee25fdd7046a266ff87a8105633b4344a49d377"
 }
