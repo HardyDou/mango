@@ -159,7 +159,7 @@ export function verifyReleasePlanSource({
   });
   assertAncestor(repoRoot, source.commit, headRef, 'release plan source is not an ancestor of the final HEAD');
 
-  const actualSourceFiles = gitChangedFiles(repoRoot, baselineAnchor, source.commit);
+  const actualSourceFiles = gitReleaseImpactFiles(repoRoot, baselineAnchor, source.commit);
   if (JSON.stringify(actualSourceFiles) !== JSON.stringify(sourceFiles)) {
     throw new Error('release plan sourceFiles does not match the baseline-to-source Git diff');
   }
