@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-14T05:17:01.274Z",
+  "generatedAt": "2026-10-14T05:18:08.477Z",
   "releaseKind": "mixed",
   "release": {
     "tag": "v2026.10.14-maven-1.0.58-fileproc-pdf-compress-release",
@@ -3448,8 +3448,8 @@
     "docs": null
   },
   "source": {
-    "commit": "c7cb263d2d8913eb8245189dbff7f8ad1401f7c6",
-    "tree": "a93fa6bd21110933ca8d440ed4ac4c96e6765e4f"
+    "commit": "66f8d40e142e283f6ffa110a7310f478726cbd61",
+    "tree": "e6cb8e0296ed492029c600598b1e727cf83eaea5"
   },
   "sourceFiles": [
     ".github/workflows/frontend-quality.yml",
@@ -3512,6 +3512,7 @@
     "mango-docs/plans/2026-10-10-issue-1010-frontend-quality-gate-phase-one-decision-review.md",
     "mango-docs/plans/2026-10-10-issue-1010-frontend-quality-gate-phase-one.md",
     "mango-docs/plans/2026-10-14-hidden-menu-route-delivery-record.md",
+    "mango-pmo/CHANGELOG.md",
     "mango-pmo/README.md",
     "mango-pmo/agents/02-tech-lead-agent.md",
     "mango-pmo/agents/03-dev-agent.md",
@@ -3603,6 +3604,7 @@
     "mango-ui/packages/file/vitest.config.ts",
     "mango-ui/packages/http-client/src/index.spec.ts",
     "mango-ui/packages/http-client/src/index.ts",
+    "mango-ui/packages/mango-cli/CHANGELOG.md",
     "mango-ui/packages/mango-cli/README.md",
     "mango-ui/packages/mango-cli/release-versions.json",
     "mango-ui/packages/mango-cli/scripts/check-generated-backend-gate.mjs",
@@ -7429,8 +7431,8 @@
   "versionPolicyDigest": "c4c4c80d533dde047a59627c915cf87e3570606c2d329023ce6896544c50ee12",
   "releasePlanIdentity": {
     "schemaVersion": 1,
-    "sourceCommitOid": "c7cb263d2d8913eb8245189dbff7f8ad1401f7c6",
-    "sourceTreeOid": "a93fa6bd21110933ca8d440ed4ac4c96e6765e4f",
+    "sourceCommitOid": "66f8d40e142e283f6ffa110a7310f478726cbd61",
+    "sourceTreeOid": "e6cb8e0296ed492029c600598b1e727cf83eaea5",
     "catalogDigest": "5cb7718710759833da803ec2d1d767bbada4ca94df60ec836c8e172b26a0371e",
     "previousBaselineDigest": "794477f667a5fea88eb18c36bd0b6ab88dbbb2fa180d2052e7b8bf65ad5f21dc",
     "changesetsDigest": "522f4307c15e02d8d6241dc605f77f780884ec8475e8c8be83cafc300f5187b7",
@@ -9009,5 +9011,5 @@
       "@mango/cli"
     ]
   },
-  "planDigest": "89b3ef8dad241ead844d231032b99718cd1eca276452557d7adad4a012169750"
+  "planDigest": "5b9f6bd24f837d235c4b0f44550c16744acc62a7d8aa7984fdc0bb0b07126459"
 }
