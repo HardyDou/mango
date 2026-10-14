@@ -2,7 +2,7 @@
 
 ## v2026.10.14-maven-1.0.58-fileproc-pdf-compress-release - Maven 1.0.58 - npm 31 packages including @mango/common@2.1.3 @mango/pmo@1.4.7 @mango/cli@1.2.19 - 2026-10-14
 
-Status: `PENDING`. Release plan digest `472ceb6cb16a6de9bfee50460f0d9eff7c705c1feec5c7bd816983686c655491`.
+Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `a4ea636e00732e5194248ceccee25fdd7046a266ff87a8105633b4344a49d377`; prepared candidate `454fea3fbf0813e0853b1f4193a151f4cda610f28e02161a5841533738a26bc7` is published and verified from both registry roles with a pure consume-registry consumer. Tag and GitHub Release are `CREATED_AND_VERIFIED`.
 
 ### Pull Requests
 
