@@ -47,6 +47,7 @@
 | I-04 | D-03 | 4 | Authorization/Admin Shell README | 使用说明与接口语义一致 |
 | I-05 | D-04 | 5 | `mango-ui/packages/rbac/src/views/menu/index.vue`、`mango-ui/packages/rbac/README.md` | 管理员可在菜单表单设置显示或隐藏，并在列表回看结果 |
 | I-06 | D-05 | 6 | `mango-ui/packages/admin-shell/src/layout/component/aside.vue`、`layout/index.vue`、`navMenu/activeMenuPath.ts`、`navMenu/vertical.vue`、`navMenu/subItem.vue`、`activeMenuPath.spec.ts` | 隐藏路由访问时最近可见祖先菜单展开并高亮 |
+| I-07 | D-01 | 7 | `mango/mango-platform/mango-authorization/mango-authorization-core/src/main/java/io/mango/authorization/core/service/impl/MenuService.java` | 清偿该文件存量 checkstyle/spotbugs 问题，使 `no-new-violations` 门禁不再把 main 遗留的基线漂移误判为本次新增违规；`updateMenu` 非空字段写入抽取为 `applyMenuUpdates`/`setIfNotNull`，魔法数 `3` 提取为 `MENU_TYPE_BUTTON`，两处 `parentId` 三元表达式改为 `Objects.requireNonNullElse`，行为等价 |
 
 ## 6. 验收映射与结果
 
@@ -58,9 +59,12 @@
 | R-03 | RBAC 包测试与表单静态检查 | `pnpm -F @mango/rbac test`；`pnpm exec prettier --check packages/rbac/src/views/menu/index.vue` | PASS，3 files，9 tests；Prettier PASS | command output |
 | R-03 | RBAC 表单 ESLint | `pnpm exec eslint packages/rbac/src/views/menu/index.vue` | BLOCKED，存量 `vue/multi-word-component-names`（`index.vue`） | command output；与本次字段改动无关 |
 | 全部改动 | 后端编译/质量入口 | `mvn -f mango/pom.xml -pl :mango-authorization-api,:mango-authorization-core -am -DskipTests verify` | PASS；已有 PMD processing warnings，无本次改动失败 | Maven terminal output |
+| I-07 | Java 质量门禁（CI 同款） | `mvn -f mango/pom.xml -pl ":mango-architecture-verification,mango-platform/mango-authorization/mango-authorization-core" -DskipTests -Dmango.architecture.skip=false -Dmango.architecture.mode=changed -Dmango.architecture.requireFullReactor=false -Dmango.architecture.base=85a6fd8113f592b5883caeea56fa5fa4a7e91082 -Dmango.check.changedOnly=true -Dmango.check.gate=no-new-violations -Dmango.check.baseRef=85a6fd8113f592b5883caeea56fa5fa4a7e91082 verify` | PASS，`gateStatus=PASS`，`newIssueCount=0`，`baselineIssueCount=101` | `mango/target/mango-static-report.json`；命令输出 |
+| I-07 | 后端集成测试回归 | `mvn -f mango/pom.xml -pl :mango-authorization-api,:mango-authorization-core -am -Dtest=MenuServiceImplIntegrationTest -Dsurefire.failIfNoSpecifiedTests=false test` | PASS，5 tests，0 failures | Surefire 报告 |
 | 全部改动 | Diff 检查 | `git diff --check` | PASS | command output |
 
 ## 7. 例外与剩余风险
 
 - 未执行真实浏览器登录、菜单后台新增、页面点击和直接 URL 访问；本次已用后端菜单集成测试和 Admin Shell 路由契约测试覆盖核心行为，真实环境联调仍需按 R-01 至 R-03 在运行中的管理后台复核。
 - 首次直接执行单模块 Maven 测试因未构建当前 Reactor 的 `mango-authorization-api` 快照而失败；改用包含 API/Core 的 Reactor 定向测试后通过，未修改该无关基线问题。
+- `Java gates` 曾报 `newIssues=25`：根因是 main 上 `MenuServiceImpl.java` 已在提交 `8f6f7fab9`（PR #519）按命名规范重命名为 `MenuService.java`，但静态分析基线 `mango-pmo/baselines/mango-check/no-new-violations-baseline.json` 仍记录旧路径，导致该文件存量问题在本次被误判为新增违规。本次选择不改受治理的基线（避免切到 governance 全量模式），改为清偿 `MenuService.java` 内这 25 个存量问题（I-07）。命名规范是否放开 `*ServiceImpl` 后缀、以及剩余自有 `*ServiceImpl` 类的迁移，属于独立治理议题，不在本 PR 处理。

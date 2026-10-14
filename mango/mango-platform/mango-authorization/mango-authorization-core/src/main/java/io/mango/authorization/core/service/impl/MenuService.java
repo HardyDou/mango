@@ -2,6 +2,7 @@ package io.mango.authorization.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.toolkit.support.SFunction;
 import io.mango.authorization.api.enums.AuthorizationCode;
 import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.api.command.MenuCommand;
@@ -38,6 +39,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -48,6 +50,8 @@ import java.util.stream.Collectors;
 @Service("permissionMenuServiceImpl")
 @RequiredArgsConstructor
 public class MenuService implements IMenuService {
+
+    private static final int MENU_TYPE_BUTTON = 3;
 
     private final MenuMapper menuMapper;
     private final SubjectRoleBindingMapper subjectRoleBindingMapper;
@@ -166,7 +170,7 @@ public class MenuService implements IMenuService {
         }
         applyRuntimeConfig(menus);
         Map<Long, List<MenuEntity>> childrenByParentId = menus.stream()
-                .collect(Collectors.groupingBy(menu -> menu.getParentId() == null ? 0L : menu.getParentId()));
+                .collect(Collectors.groupingBy(menu -> Objects.requireNonNullElse(menu.getParentId(), 0L)));
         Set<Long> menuIds = menus.stream()
                 .map(MenuEntity::getMenuId)
                 .collect(Collectors.toCollection(HashSet::new));
@@ -479,7 +483,7 @@ public class MenuService implements IMenuService {
                             .thenComparing(MenuEntity::getMenuId, Comparator.nullsLast(Long::compareTo)))
                     .collect(Collectors.toList());
             this.childrenByParentId = this.sortedMenus.stream()
-                    .collect(Collectors.groupingBy(menu -> menu.getParentId() == null ? 0L : menu.getParentId()));
+                    .collect(Collectors.groupingBy(menu -> Objects.requireNonNullElse(menu.getParentId(), 0L)));
         }
 
         private static String firstText(String... values) {
@@ -572,26 +576,7 @@ public class MenuService implements IMenuService {
         // 只更新非空字段。
         LambdaUpdateWrapper<MenuEntity> wrapper = new LambdaUpdateWrapper<>();
         wrapper.eq(MenuEntity::getId, menuId);
-        if (menu.getAppCode() != null) wrapper.set(MenuEntity::getAppCode, menu.getAppCode());
-        if (menu.getModuleCode() != null) wrapper.set(MenuEntity::getModuleCode, menu.getModuleCode());
-        if (menu.getParentId() != null) wrapper.set(MenuEntity::getParentId, menu.getParentId());
-        if (menu.getMenuType() != null) wrapper.set(MenuEntity::getMenuType, menu.getMenuType());
-        if (menu.getMenuName() != null) wrapper.set(MenuEntity::getMenuName, menu.getMenuName());
-        if (menu.getMenuCode() != null) wrapper.set(MenuEntity::getMenuCode, menu.getMenuCode());
-        if (menu.getPath() != null) wrapper.set(MenuEntity::getPath, menu.getPath());
-        if (menu.getIcon() != null) wrapper.set(MenuEntity::getIcon, menu.getIcon());
-        if (menu.getSort() != null) wrapper.set(MenuEntity::getSort, menu.getSort());
-        if (menu.getStatus() != null) wrapper.set(MenuEntity::getStatus, menu.getStatus());
-        if (menu.getVisible() != null) wrapper.set(MenuEntity::getVisible, menu.getVisible());
-        if (menu.getComponent() != null) wrapper.set(MenuEntity::getComponent, menu.getComponent());
-        if (menu.getKeepAlive() != null) wrapper.set(MenuEntity::getKeepAlive, menu.getKeepAlive());
-        if (menu.getEmbedded() != null) wrapper.set(MenuEntity::getEmbedded, menu.getEmbedded());
-        if (menu.getRedirect() != null) wrapper.set(MenuEntity::getRedirect, menu.getRedirect());
-        if (menu.getPermissions() != null) wrapper.set(MenuEntity::getPermissions, menu.getPermissions());
-        if (menu.getApiCodes() != null) wrapper.set(MenuEntity::getApiCodes, menu.getApiCodes());
-        if (menu.getButtonType() != null) wrapper.set(MenuEntity::getButtonType, menu.getButtonType());
-        if (menu.getButtonDisplayRule() != null) wrapper.set(MenuEntity::getButtonDisplayRule, menu.getButtonDisplayRule());
-        if (menu.getRemark() != null) wrapper.set(MenuEntity::getRemark, menu.getRemark());
+        applyMenuUpdates(wrapper, menu);
         // createBy、createTime、delFlag 不在普通更新中修改。
 
         int rows = menuMapper.update(null, wrapper);
@@ -603,6 +588,35 @@ public class MenuService implements IMenuService {
             saveRuntimeConfig(menu);
         }
         return rows > 0;
+    }
+
+    private void applyMenuUpdates(LambdaUpdateWrapper<MenuEntity> wrapper, MenuEntity menu) {
+        setIfNotNull(wrapper, MenuEntity::getAppCode, menu.getAppCode());
+        setIfNotNull(wrapper, MenuEntity::getModuleCode, menu.getModuleCode());
+        setIfNotNull(wrapper, MenuEntity::getParentId, menu.getParentId());
+        setIfNotNull(wrapper, MenuEntity::getMenuType, menu.getMenuType());
+        setIfNotNull(wrapper, MenuEntity::getMenuName, menu.getMenuName());
+        setIfNotNull(wrapper, MenuEntity::getMenuCode, menu.getMenuCode());
+        setIfNotNull(wrapper, MenuEntity::getPath, menu.getPath());
+        setIfNotNull(wrapper, MenuEntity::getIcon, menu.getIcon());
+        setIfNotNull(wrapper, MenuEntity::getSort, menu.getSort());
+        setIfNotNull(wrapper, MenuEntity::getStatus, menu.getStatus());
+        setIfNotNull(wrapper, MenuEntity::getVisible, menu.getVisible());
+        setIfNotNull(wrapper, MenuEntity::getComponent, menu.getComponent());
+        setIfNotNull(wrapper, MenuEntity::getKeepAlive, menu.getKeepAlive());
+        setIfNotNull(wrapper, MenuEntity::getEmbedded, menu.getEmbedded());
+        setIfNotNull(wrapper, MenuEntity::getRedirect, menu.getRedirect());
+        setIfNotNull(wrapper, MenuEntity::getPermissions, menu.getPermissions());
+        setIfNotNull(wrapper, MenuEntity::getApiCodes, menu.getApiCodes());
+        setIfNotNull(wrapper, MenuEntity::getButtonType, menu.getButtonType());
+        setIfNotNull(wrapper, MenuEntity::getButtonDisplayRule, menu.getButtonDisplayRule());
+        setIfNotNull(wrapper, MenuEntity::getRemark, menu.getRemark());
+    }
+
+    private void setIfNotNull(LambdaUpdateWrapper<MenuEntity> wrapper, SFunction<MenuEntity, ?> column, Object value) {
+        if (value != null) {
+            wrapper.set(column, value);
+        }
     }
 
     @Override
@@ -686,7 +700,7 @@ public class MenuService implements IMenuService {
     }
 
     private String normalizePageType(MenuEntity menu) {
-        if (menu != null && Integer.valueOf(3).equals(menu.getMenuType())) {
+        if (menu != null && Integer.valueOf(MENU_TYPE_BUTTON).equals(menu.getMenuType())) {
             return "BUTTON";
         }
         String pageType = menu == null ? null : menu.getPageType();
@@ -701,7 +715,7 @@ public class MenuService implements IMenuService {
     }
 
     private String defaultPageType(MenuEntity menu) {
-        if (menu != null && Integer.valueOf(3).equals(menu.getMenuType())) {
+        if (menu != null && Integer.valueOf(MENU_TYPE_BUTTON).equals(menu.getMenuType())) {
             return "BUTTON";
         }
         if (menu != null && Integer.valueOf(1).equals(menu.getEmbedded())) {
