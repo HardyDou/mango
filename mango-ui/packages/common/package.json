@@ -142,7 +142,7 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
-    "@mango/api-schema": "workspace:1.0.3",
+    "@mango/api-schema": "workspace:1.0.4",
     "@vitejs/plugin-vue": "^4.0.0",
     "@vue/test-utils": "^2.4.3",
     "happy-dom": "^14.12.0",
