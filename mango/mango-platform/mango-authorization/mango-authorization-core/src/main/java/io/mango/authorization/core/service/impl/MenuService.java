@@ -85,6 +85,7 @@ public class MenuService implements IMenuService {
         if (enabledMenus.isEmpty()) {
             return new ArrayList<>();
         }
+        applyRuntimeConfig(enabledMenus);
 
         List<MenuEntity> scopedMenus;
         if (hasAllMenuAccess(scopedQuery)) {
@@ -334,7 +335,7 @@ public class MenuService implements IMenuService {
                 .anyMatch("*:*"::equals);
     }
 
-    private Set<Long> resolveAuthorizedMenuIds(AuthorizationQuery query, List<MenuEntity> visibleMenus) {
+    private Set<Long> resolveAuthorizedMenuIds(AuthorizationQuery query, List<MenuEntity> enabledMenus) {
         List<Long> roleIds = listSubjectRoleIds(query);
         if (roleIds.isEmpty()) {
             return Collections.emptySet();
@@ -350,17 +351,26 @@ public class MenuService implements IMenuService {
             return Collections.emptySet();
         }
 
-        Map<Long, MenuEntity> menuById = visibleMenus.stream()
+        Map<Long, MenuEntity> menuById = enabledMenus.stream()
                 .collect(Collectors.toMap(MenuEntity::getMenuId, menu -> menu));
         Set<Long> authorizedIds = new LinkedHashSet<>();
         for (Long menuId : directlyAssignedMenuIds) {
             MenuEntity menu = menuById.get(menuId);
-            if (menu == null || Integer.valueOf(0).equals(menu.getVisible())) {
+            if (menu == null
+                    || (Integer.valueOf(0).equals(menu.getVisible()) && !isNavigableMenu(menu))) {
                 continue;
             }
             collectMenuWithAncestors(menuId, menuById, authorizedIds);
         }
         return authorizedIds;
+    }
+
+    private boolean isNavigableMenu(MenuEntity menu) {
+        if (!Integer.valueOf(2).equals(menu.getMenuType()) || !StringUtils.hasText(menu.getPath())) {
+            return false;
+        }
+        return StringUtils.hasText(menu.getComponent())
+                || (isExternalPageType(menu.getPageType()) && StringUtils.hasText(menu.getExternalUrl()));
     }
 
     private List<Long> listSubjectRoleIds(AuthorizationQuery query) {
