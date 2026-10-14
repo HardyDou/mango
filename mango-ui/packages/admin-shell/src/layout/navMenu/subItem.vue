@@ -1,17 +1,11 @@
 <template>
-  <template
-    v-for="val in chil"
-    :key="val.path"
-  >
+  <template v-for="val in chil" :key="val.path">
     <el-menu-item
       v-if="!val.children || val.children.length === 0"
       :index="val.path"
       :style="getMenuIndentStyle(level)"
     >
-      <el-icon
-        v-if="val.meta?.icon"
-        class="menu-icon"
-      >
+      <el-icon v-if="val.meta?.icon" class="menu-icon">
         <component :is="iconMap[val.meta.icon]" />
       </el-icon>
       <span>{{ val.meta?.title || val.name }}</span>
@@ -20,20 +14,15 @@
       v-else
       :index="val.path"
       :style="getMenuIndentStyle(level)"
+      :class="{ 'is-active': val.path === activePath }"
     >
       <template #title>
-        <el-icon
-          v-if="val.meta?.icon"
-          class="menu-icon"
-        >
+        <el-icon v-if="val.meta?.icon" class="menu-icon">
           <component :is="iconMap[val.meta.icon]" />
         </el-icon>
         <span>{{ val.meta?.title || val.name }}</span>
       </template>
-      <SubItem
-        :chil="val.children"
-        :level="level + 1"
-      />
+      <SubItem :chil="val.children" :level="level + 1" :active-path="activePath" />
     </el-sub-menu>
   </template>
 </template>
@@ -52,10 +41,12 @@ withDefaults(
   defineProps<{
     chil: MenuItem[];
     level?: number;
+    activePath?: string;
   }>(),
   {
     level: 2,
-  }
+    activePath: '',
+  },
 );
 
 const ROOT_MENU_INDENT = 20;

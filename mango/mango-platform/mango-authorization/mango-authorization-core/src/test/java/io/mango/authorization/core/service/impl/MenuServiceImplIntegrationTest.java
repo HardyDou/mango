@@ -101,17 +101,23 @@ class MenuServiceImplIntegrationTest {
     }
 
     @Test
-    @DisplayName("listUserMenus should apply login default role and skip directly hidden menus")
-    void listUserMenusAppliesLoginDefaultRoleAndSkipsDirectlyHiddenMenus() {
+    @DisplayName("listUserMenus should return authorized hidden page menus for route registration")
+    void listUserMenusReturnsAuthorizedHiddenPageMenusForRouteRegistration() {
         seedEnabledModule("mango-file");
         seedRole(20L, 1L, SubjectAuthorityService.ROLE_LOGIN);
         seedMenu(menu(10L, 0L, "File", "file", 1, 1, "mango-file"));
         seedMenu(menu(11L, 10L, "File List", "file:list", 2, 1, "mango-file"));
-        MenuEntity hiddenMenu = menu(12L, 10L, "File Basic", "file:basic-login", 2, 2, "mango-file");
+        MenuEntity hiddenMenu = menu(12L, 10L, "File Detail", "file:detail", 2, 2, "mango-file");
         hiddenMenu.setVisible(0);
+        hiddenMenu.setPath("/file/detail");
+        hiddenMenu.setComponent("file/detail/index");
         seedMenu(hiddenMenu);
+        MenuEntity hiddenPermission = menu(13L, 10L, "File Basic Permission", "file:basic-login", 2, 3, "mango-file");
+        hiddenPermission.setVisible(0);
+        seedMenu(hiddenPermission);
         seedRoleMenu(1L, 1L, 20L, 11L);
         seedRoleMenu(2L, 1L, 20L, 12L);
+        seedRoleMenu(3L, 1L, 20L, 13L);
 
         List<MenuVO> result = service.listUserMenus(
                 menuQuery("internal-admin", null, null, null, null, 1, "tree"),
@@ -121,7 +127,11 @@ class MenuServiceImplIntegrationTest {
         assertThat(result.get(0).getMenuId()).isEqualTo(10L);
         assertThat(result.get(0).getChildren())
                 .extracting(MenuVO::getMenuId)
-                .containsExactly(11L);
+                .containsExactly(11L, 12L);
+        assertThat(result.get(0).getChildren())
+                .filteredOn(menu -> Long.valueOf(12L).equals(menu.getMenuId()))
+                .singleElement()
+                .satisfies(menu -> assertThat(menu.getVisible()).isZero());
     }
 
     @Test

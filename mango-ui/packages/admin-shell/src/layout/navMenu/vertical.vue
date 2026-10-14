@@ -1,5 +1,7 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
   <el-menu
+    ref="menuRef"
     router
     :default-active="activeMenuPath"
     background-color="transparent"
@@ -9,14 +11,18 @@
     class="nav-menu-vertical"
   >
     <template v-for="val in menuList" :key="val.path">
-      <el-sub-menu v-if="val.children && val.children.length > 0" :index="val.path">
+      <el-sub-menu
+        v-if="val.children && val.children.length > 0"
+        :index="val.path"
+        :class="{ 'is-active': val.path === activeMenuPath }"
+      >
         <template #title>
           <el-icon v-if="val.meta?.icon" class="menu-icon">
             <component :is="iconMap[val.meta.icon]" />
           </el-icon>
           <span>{{ val.meta?.title || val.name }}</span>
         </template>
-        <SubItem :chil="val.children" :level="2" />
+        <SubItem :chil="val.children" :level="2" :active-path="activeMenuPath" />
       </el-sub-menu>
       <el-menu-item v-else :index="val.path">
         <el-icon v-if="val.meta?.icon" class="menu-icon">
@@ -29,7 +35,7 @@
 </template>
 
 <script setup lang="ts" name="navMenuVertical">
-import { computed, defineAsyncComponent } from 'vue';
+import { computed, defineAsyncComponent, nextTick, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useLayoutStore } from '../../stores/layout';
 import { iconMap } from '@mango/common/utils/iconConfig';
@@ -51,8 +57,37 @@ const props = defineProps<{
 
 const route = useRoute();
 const layoutStore = useLayoutStore();
+const menuRef = ref<{ open?: (index: string) => void }>();
 
 const activeMenuPath = computed(() => resolveActiveMenuPath(props.menuList, route.path) || route.path);
+
+const findMenu = (menus: MenuItem[], path: string): MenuItem | undefined => {
+  for (const menu of menus) {
+    if (menu.path === path) {
+      return menu;
+    }
+    const child = findMenu(menu.children || [], path);
+    if (child) {
+      return child;
+    }
+  }
+  return undefined;
+};
+
+watch(
+  activeMenuPath,
+  (path) => {
+    if (!path) {
+      return;
+    }
+    void nextTick(() => {
+      if (findMenu(props.menuList, path)?.children?.length) {
+        menuRef.value?.open?.(path);
+      }
+    });
+  },
+  { immediate: true },
+);
 </script>
 
 <style scoped lang="scss">
@@ -76,7 +111,8 @@ const activeMenuPath = computed(() => resolveActiveMenuPath(props.menuList, rout
     }
   }
 
-  :deep(.el-menu-item.is-active) {
+  :deep(.el-menu-item.is-active),
+  :deep(.el-sub-menu.is-active > .el-sub-menu__title) {
     color: var(--mango-color-primary) !important;
     background-color: var(--mango-color-menu-active-bg) !important;
   }

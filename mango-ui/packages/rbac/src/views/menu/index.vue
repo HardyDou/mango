@@ -104,6 +104,14 @@
             <DictTag dict-code="sys_normal_disable" :value="row.status" size="small" />
           </template>
         </el-table-column>
+        <el-table-column label="导航显示" width="100">
+          <template #default="{ row }">
+            <el-tag v-if="row.menuType !== 3" :type="row.visible === 0 ? 'info' : 'success'" size="small">
+              {{ row.visible === 0 ? '隐藏' : '显示' }}
+            </el-tag>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
         <el-table-column label="接口权限码" min-width="200">
           <template #default="{ row }">
             <el-tag
@@ -257,6 +265,12 @@
             />
           </el-form-item>
         </template>
+        <el-form-item v-if="form.menuType !== 3" label="导航显示" prop="visible">
+          <el-radio-group v-model="form.visible">
+            <el-radio :value="1">显示</el-radio>
+            <el-radio :value="0">隐藏</el-radio>
+          </el-radio-group>
+        </el-form-item>
         <el-form-item label="排序" prop="sort">
           <el-input-number v-model="form.sort" :min="0" :max="9999" />
         </el-form-item>

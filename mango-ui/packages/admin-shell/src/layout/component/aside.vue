@@ -1,8 +1,6 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
-  <div
-    v-show="!isTagsViewCurrenFull"
-    class="h100"
-  >
+  <div v-show="!isTagsViewCurrenFull" class="h100">
     <!-- 移动端遮罩层 -->
     <div
       v-if="layoutStore.isMobileMenuOpen"
@@ -16,11 +14,7 @@
       :class="[setCollapseStyle, { 'aside-mobile-open': layoutStore.isMobileMenuOpen }]"
     >
       <Logo v-if="layoutStore.isShowLogo && (layoutStore.layout === 'defaults' || layoutStore.layout === 'columns')" />
-      <el-scrollbar
-        class="flex-auto"
-        @mouseenter="onAsideEnterLeave(true)"
-        @mouseleave="onAsideEnterLeave(false)"
-      >
+      <el-scrollbar class="flex-auto" @mouseenter="onAsideEnterLeave(true)" @mouseleave="onAsideEnterLeave(false)">
         <Vertical
           v-if="layoutStore.layout !== 'columns'"
           :menu-list="menuList"
@@ -45,6 +39,7 @@ import { useLayoutStore } from '../../stores/layout';
 import { useTagsViewRoutes } from '../../stores/tagsViewRoutes';
 import { mittBus } from '@mango/common/utils/mitt';
 import { containsMenuPath, type MangoMenuTreeNode } from '@mango/common/utils/menuTree';
+import { filterMenusForNavigation } from '../navMenu/activeMenuPath';
 
 const Logo = defineAsyncComponent(() => import('../logo/index.vue'));
 const Vertical = defineAsyncComponent(() => import('../navMenu/vertical.vue'));
@@ -74,9 +69,7 @@ const getSideMenus = (items: any[], topPath?: string): any[] => {
   if (!items || items.length === 0) {
     return [];
   }
-  const activeTop = topPath
-    ? items.find(item => item.path === topPath)
-    : findRouteTop(items, route.path);
+  const activeTop = topPath ? items.find((item) => item.path === topPath) : findRouteTop(items, route.path);
   if (!activeTop) {
     return filterVisibleMenus(items);
   }
@@ -84,27 +77,20 @@ const getSideMenus = (items: any[], topPath?: string): any[] => {
   return filterVisibleMenus(menus);
 };
 
-const filterVisibleMenus = <T extends { meta?: { isHide?: boolean }; children?: T[] }>(items: T[]): T[] => {
-  return items
-    .filter(item => !item.meta?.isHide)
-    .map(item => ({
-      ...item,
-      children: item.children ? filterVisibleMenus(item.children) : item.children,
-    }));
-};
+const filterVisibleMenus = (items: MangoMenuTreeNode[]) => filterMenusForNavigation(items);
 
 watch(
   () => [routesList.value, activeTopRoutePath.value, route.path],
   () => {
     if (layoutStore.layout === 'defaults') {
-      menuList.value = routesList.value.filter(item => !item.meta?.isHide);
+      menuList.value = filterVisibleMenus(routesList.value);
       return;
     }
     if (layoutStore.layout !== 'columns') {
       menuList.value = getSideMenus(routesList.value, activeTopRoutePath.value);
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 // 路由变化时关闭移动端菜单
@@ -116,7 +102,7 @@ watch(
       storesRoutesList.setActiveTopRoutePath(matchedTop.path);
     }
     layoutStore.closeMobileMenu();
-  }
+  },
 );
 
 const setShowAside = computed(() => {
@@ -203,7 +189,9 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   overflow-x: hidden !important;
-  transition: width var(--mango-transition-duration), left var(--mango-transition-duration);
+  transition:
+    width var(--mango-transition-duration),
+    left var(--mango-transition-duration);
   width: var(--mango-aside-width) !important;
   min-width: var(--mango-aside-width) !important;
   max-width: var(--mango-aside-width) !important;

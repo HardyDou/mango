@@ -365,6 +365,32 @@ describe('admin-shell menu contract', () => {
     expect(filtered[0].children?.map((menu) => menu.menuName)).toEqual(['站点管理']);
   });
 
+  it('keeps authorized backend hidden pages as routes while hiding them from navigation', () => {
+    const backendMenu: ShellMenu = {
+      appCode: 'internal-admin',
+      moduleCode: 'mango-notice',
+      menuId: 'notice-hidden-page',
+      menuName: '消息详情',
+      menuCode: 'notice:hidden-page',
+      parentId: 0,
+      menuType: MenuTypeEnum.MENU,
+      path: '/message-center/detail',
+      component: 'notice/detail/index',
+      sort: 1,
+      status: 1,
+      visible: 0,
+      pageType: 'LOCAL_ROUTE',
+      children: [],
+    };
+
+    const filtered = filterMenuForRouteByFeatures([backendMenu], new Set(['notice']));
+    const route = toShellRouteMenu(filtered[0]);
+
+    expect(route.path).toBe('/message-center/detail');
+    expect(route.sourceMenu.component).toBe('notice/detail/index');
+    expect(route.meta?.isHide).toBe(true);
+  });
+
   it('keeps package hidden routes registered without exposing them as visible menus', () => {
     registerModulePages({
       moduleCode: 'mango-workflow',

@@ -123,7 +123,7 @@
 
 `authorization-common-bootstrap.yml` 会为平台租户初始化 `ROLE_LOGIN` 和 `ROLE_ANONYMOUS`。机构创建或启动基线对账时，`AuthorizationTenantProvisioner` 会为每个启用机构补齐这两个系统角色，并复制平台角色的默认菜单授权；业务代码不应给普通成员逐个绑定这两个角色。
 
-登录态权限集合只读取当前角色已授权菜单的 `apiCodes` 字段，不读取 `menuCode`。因此 `menuCode` 可以稳定表达菜单可见性，`apiCodes` 才表达真实接口/动作权限。隐藏菜单 `visible=0` 可以只授予基础权限，不会把父级菜单带入用户菜单树。
+登录态权限集合只读取当前角色已授权菜单的 `apiCodes` 字段，不读取 `menuCode`。因此 `menuCode` 可以稳定表达菜单可见性，`apiCodes` 才表达真实接口/动作权限。隐藏菜单 `visible=0` 可以只授予基础权限；如果隐藏菜单同时配置了页面 `path` 和 `component`（或外链运行配置），用户菜单接口会保留它用于前端路由注册，但不会显示在导航菜单中。只有用于承载基础权限、没有可运行页面的隐藏菜单仍不会进入用户菜单树。
 
 ## 6. 配置说明
 
@@ -272,7 +272,7 @@ Mango API 资源按访问模式分为三类：
 | POST | `/authorization/api-resources/register` | 批量注册 API 资源 |
 | GET | `/authorization/api-resources/access-decision` | 查询 method + path 的访问模式和权限码 |
 | POST | `/authorization/api-resources/cache/refresh` | 刷新 API 资源运行时缓存 |
-| GET | `/authorization/menus/user` | 查询当前用户可见菜单 |
+| GET | `/authorization/menus/user` | 查询当前用户可用菜单树；已授权的隐藏页面菜单也会返回用于路由注册 |
 | GET | `/authorization/menus` | 查询菜单列表或树 |
 | POST/PUT/DELETE | `/authorization/menus` | 创建、更新、删除菜单 |
 | GET/POST/PUT/DELETE | `/authorization/roles` | 角色管理 |
