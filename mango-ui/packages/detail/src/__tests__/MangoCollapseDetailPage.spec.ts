@@ -101,6 +101,20 @@ function mountPage(props: Record<string, unknown> = {}) {
 }
 
 describe('MangoCollapseDetailPage', () => {
+  it('默认使用 1280px 最大宽度，并支持 px 或百分比配置', () => {
+    const defaultPage = mountPage();
+    expect((defaultPage.find('.mango-collapse-detail-page').element as HTMLElement).style.maxWidth).toBe('1280px');
+
+    const percentagePage = mountPage({ maxWidth: '80%' });
+    expect((percentagePage.find('.mango-collapse-detail-page').element as HTMLElement).style.maxWidth).toBe('80%');
+
+    const pixelPage = mountPage({ maxWidth: '960px' });
+    expect((pixelPage.find('.mango-collapse-detail-page').element as HTMLElement).style.maxWidth).toBe('960px');
+  });
+
+  it('拒绝不带 px 或百分比单位的最大宽度', () => {
+    expect(() => mountPage({ maxWidth: '1280' })).toThrow('maxWidth 必须是 px 或百分比值');
+  });
   it('默认展开全部面板，并在关闭自动展开后应用指定 Key', () => {
     const automatic = mountPage();
     expect(automatic.findComponent({ name: 'ElCollapse' }).props('modelValue')).toEqual(['base', 'files']);
