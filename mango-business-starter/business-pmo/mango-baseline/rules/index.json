@@ -1,5 +1,5 @@
 {
-  "version": 21,
+  "version": 22,
   "always": [
     {
       "path": "rules/00-dev-flow.md",
@@ -117,7 +117,7 @@
     },
     "backend.naming": {
       "path": "rules/backend/02-naming.md",
-      "reason": "后端命名规范"
+      "reason": "后端命名规范、服务实现后缀 XxxService 或 XxxServiceImpl 与同模块一致性"
     },
     "backend.api": {
       "path": "rules/backend/03-api.md",
