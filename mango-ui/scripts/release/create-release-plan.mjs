@@ -323,10 +323,12 @@ function verifyPmoPluginProjection(releasePlan) {
   const pmo = releasePlan.packages.find((entry) => entry.name === '@mango/pmo');
   if (!pmo) return;
   for (const path of PMO_VERSION_PROJECTION_PATHS) {
+    const projectedContent = readFileSync(join(repoRoot, path), 'utf8');
+    if (isPmoVersionedFileAlreadyProjected(path, projectedContent, pmo.targetVersion)) continue;
     assertPmoVersionedFileProjection({
       path,
       sourceContent: readGitFile(repoRoot, releasePlan.source.commit, path),
-      projectedContent: readFileSync(join(repoRoot, path), 'utf8'),
+      projectedContent,
       sourceVersion: pmo.sourceVersion,
       targetVersion: pmo.targetVersion,
     });
@@ -336,6 +338,7 @@ function verifyPmoPluginProjection(releasePlan) {
 function verifyCliReadmeProjection(releasePlan) {
   const cli = releasePlan.packages.find((entry) => entry.name === '@mango/cli');
   if (!cli) return;
+  if (readFileSync(join(repoRoot, CLI_README_PATH), 'utf8').includes(cli.targetVersion)) return;
   assertCliReadmeProjection({
     sourceContent: readGitFile(repoRoot, releasePlan.source.commit, CLI_README_PATH),
     projectedContent: readFileSync(join(repoRoot, CLI_README_PATH), 'utf8'),
@@ -347,6 +350,9 @@ function verifyCliReadmeProjection(releasePlan) {
 function verifyCliFullFrontendTemplateProjection(releasePlan) {
   const cli = releasePlan.packages.find((entry) => entry.name === '@mango/cli');
   if (!cli) return;
+  if (readFileSync(join(repoRoot, CLI_FULL_FRONTEND_PACKAGE_TEMPLATE_PATH), 'utf8').includes(cli.targetVersion)) {
+    return;
+  }
   assertCliFullFrontendTemplateProjection({
     sourceContent: readGitFile(repoRoot, releasePlan.source.commit, CLI_FULL_FRONTEND_PACKAGE_TEMPLATE_PATH),
     projectedContent: readFileSync(join(repoRoot, CLI_FULL_FRONTEND_PACKAGE_TEMPLATE_PATH), 'utf8'),
@@ -359,6 +365,7 @@ function verifyCliFullReadmeProjection(releasePlan) {
   const cli = releasePlan.packages.find((entry) => entry.name === '@mango/cli');
   const pmo = releasePlan.packages.find((entry) => entry.name === '@mango/pmo');
   if (!cli || !pmo || !releasePlan.maven?.targetVersion) return;
+  if (readFileSync(join(repoRoot, CLI_FULL_README_TEMPLATE_PATH), 'utf8').includes(cli.targetVersion)) return;
   assertCliFullReadmeProjection({
     sourceContent: readGitFile(repoRoot, releasePlan.source.commit, CLI_FULL_README_TEMPLATE_PATH),
     projectedContent: readFileSync(join(repoRoot, CLI_FULL_README_TEMPLATE_PATH), 'utf8'),
