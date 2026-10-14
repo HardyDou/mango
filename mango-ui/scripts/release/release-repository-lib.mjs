@@ -224,9 +224,23 @@ export function restoredPublishedBaselines({
   return restored;
 }
 
-export function assertCleanWorktree(repoRoot) {
-  const dirty = gitValue(repoRoot, ['status', '--porcelain']);
-  if (dirty) throw new Error(`release preparation requires a clean worktree:\n${dirty}`);
+/**
+ * 断言工作区干净。
+ *
+ * `ignoredPaths` 用于排除发布工具会确定性重建的产物：lockfile 由 plan/prepare
+ * 各自执行 `pnpm install` 生成，不同 pnpm 序列化会产生等价但字节不同的 YAML，
+ * 不能作为“未提交源码变更”阻断发布。
+ */
+export function assertCleanWorktree(repoRoot, { ignoredPaths = [] } = {}) {
+  const ignored = new Set(ignoredPaths);
+  const dirty = gitValue(repoRoot, ['status', '--porcelain'])
+    .split(/\r?\n/u)
+    .filter(Boolean)
+    .filter((line) => {
+      const path = line.slice(3).trim();
+      return !ignored.has(path);
+    });
+  if (dirty.length > 0) throw new Error(`release preparation requires a clean worktree:\n${dirty.join('\n')}`);
 }
 
 function assertAncestor(repoRoot, ancestor, descendant, message) {
