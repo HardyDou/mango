@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-14T05:05:32.943Z",
+  "generatedAt": "2026-10-14T05:06:34.120Z",
   "releaseKind": "mixed",
   "release": {
     "tag": "v2026.10.14-maven-1.0.58-fileproc-pdf-compress-release",
@@ -3448,8 +3448,8 @@
     "docs": null
   },
   "source": {
-    "commit": "c7ab7e1686f7e4b64368bb64df8344e26f98b7dd",
-    "tree": "74cb4894dbeb3d470e98625ed4926c4e61278286"
+    "commit": "4dfccdd05565bc2f8fb8466703009b5194c5e783",
+    "tree": "132e6778ae3494829d76e7d58c8d3b86a6d54154"
   },
   "sourceFiles": [
     ".github/workflows/frontend-quality.yml",
@@ -7427,8 +7427,8 @@
   "versionPolicyDigest": "c4c4c80d533dde047a59627c915cf87e3570606c2d329023ce6896544c50ee12",
   "releasePlanIdentity": {
     "schemaVersion": 1,
-    "sourceCommitOid": "c7ab7e1686f7e4b64368bb64df8344e26f98b7dd",
-    "sourceTreeOid": "74cb4894dbeb3d470e98625ed4926c4e61278286",
+    "sourceCommitOid": "4dfccdd05565bc2f8fb8466703009b5194c5e783",
+    "sourceTreeOid": "132e6778ae3494829d76e7d58c8d3b86a6d54154",
     "catalogDigest": "5cb7718710759833da803ec2d1d767bbada4ca94df60ec836c8e172b26a0371e",
     "previousBaselineDigest": "794477f667a5fea88eb18c36bd0b6ab88dbbb2fa180d2052e7b8bf65ad5f21dc",
     "changesetsDigest": "522f4307c15e02d8d6241dc605f77f780884ec8475e8c8be83cafc300f5187b7",
@@ -9007,5 +9007,5 @@
       "@mango/cli"
     ]
   },
-  "planDigest": "b5c0d066ca6a6f53656ed4ee798fb1c3e4436a41b74f4174bf642535077e247c"
+  "planDigest": "a651c061e259e3bd3d9dfbbd7ae6eef3a9eab71f84c86fb704fdc83c1c59ea57"
 }
