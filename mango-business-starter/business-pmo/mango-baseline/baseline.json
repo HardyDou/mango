@@ -3,7 +3,7 @@
   "packageVersion": "1.4.7",
   "schemaVersion": 2,
   "source": "mango-pmo",
-  "sourceCommit": "66f8d40e142e283f6ffa110a7310f478726cbd61",
+  "sourceCommit": "72c06f0513f784bc81ee384c491585c9f6ef96d5",
   "bundleSha256": "52b34cc1daaae08a9fe20f99a760f099b79734dd45ae971258d1a13fb805623c",
   "contracts": [
     {
