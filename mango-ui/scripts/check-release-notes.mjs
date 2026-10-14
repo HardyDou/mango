@@ -58,7 +58,9 @@ export function runReleaseNotesCheck(argv = process.argv.slice(2)) {
   }
 
   if (args.notesFile) {
-    const notesPath = resolve(workspaceRoot, args.notesFile);
+    const notesPath = existsSync(resolve(workspaceRoot, args.notesFile))
+      ? resolve(workspaceRoot, args.notesFile)
+      : resolve(repoRoot, args.notesFile);
     if (!existsSync(notesPath)) {
       errors.push(`Release notes file is missing: ${args.notesFile}.`);
     } else {

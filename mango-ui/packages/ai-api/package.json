@@ -1,6 +1,6 @@
 {
   "name": "@mango/ai-api",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -22,7 +22,7 @@
     "package.json"
   ],
   "dependencies": {
-    "@mango/api-schema": "workspace:1.0.3"
+    "@mango/api-schema": "workspace:1.0.4"
   },
   "devDependencies": {
     "typescript": "^5.9.3",

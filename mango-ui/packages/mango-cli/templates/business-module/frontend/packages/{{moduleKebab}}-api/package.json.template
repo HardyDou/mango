@@ -5,6 +5,6 @@
   "type": "module",
   "main": "src/index.ts",
   "dependencies": {
-    "@mango/api-schema": "1.0.3"
+    "@mango/api-schema": "1.0.4"
   }
 }

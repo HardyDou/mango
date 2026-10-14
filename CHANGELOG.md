@@ -1,5 +1,95 @@
 # Mango Changelog
 
+## v2026.10.14-maven-1.0.58-fileproc-pdf-compress-release - Maven 1.0.58 - npm 31 packages including @mango/common@2.1.3 @mango/pmo@1.4.7 @mango/cli@1.2.19 - 2026-10-14
+
+Status: `PENDING`. Release plan digest `472ceb6cb16a6de9bfee50460f0d9eff7c705c1feec5c7bd816983686c655491`.
+
+### Pull Requests
+
+- [PR #1017](https://github.com/HardyDou/mango/pull/1017) Added local Mango main-repository lifecycle startup. Packages: @mango/cli@1.2.19 and generated npm dependents. Business Adaptation: use the documented local startup entry for Mango main development; no consumer runtime change.
+- [PR #1021](https://github.com/HardyDou/mango/pull/1021) Fixed the Wujie lifecycle race that blanked reopened RBAC tabs. Packages: @mango/admin-shell@1.0.79, @mango/app-runtime@1.0.7 and generated npm dependents through @mango/cli@1.2.19. Business Adaptation: verify reopened RBAC tabs still render content in shell hybrid mode.
+- [PR #1022](https://github.com/HardyDou/mango/pull/1022) Added multi-member batch role assignment and removal to RBAC member management. Packages: @mango/rbac@1.0.39 and generated npm dependents through @mango/cli@1.2.19. Business Adaptation: use the batch actions and verify member role changes persist.
+- [PR #1024](https://github.com/HardyDou/mango/pull/1024) Changed reuse-first AI change governance, Agent text output rules and Skill evaluations. Packages: @mango/pmo@1.4.7, @mango/cli@1.2.19 and generated npm dependents. Business Adaptation: synchronize the PMO baseline and follow the current redline and text-output contracts.
+- [PR #1025](https://github.com/HardyDou/mango/pull/1025) Changed PMO delivery records and document-contract fixtures. Packages: @mango/pmo@1.4.7 and generated npm dependents. Business Adaptation: rerun document-contract checks with the current fixtures.
+- [PR #1026](https://github.com/HardyDou/mango/pull/1026) Fixed file uploads to support independent total and inactivity timeouts. Packages: @mango/common@2.1.3, @mango/api-schema@1.0.4, @mango/http-client@1.0.2, @mango/detail@1.1.3, @mango/file@1.1.3, @mango/auth@1.0.38, @mango/cms@1.0.38, @mango/notice@1.0.54, @mango/payment@1.0.41, @mango/template@1.0.50, @mango/workflow@1.0.58 and generated npm dependents through @mango/cli@1.2.19. Business Adaptation: configure upload timeouts per consumer and verify large-file uploads.
+- [PR #1028](https://github.com/HardyDou/mango/pull/1028) Changed PDF compression to a streaming Ghostscript provider with five compression levels. Packages: Mango Maven/docs 1.0.58, @mango/file@1.1.3 and generated npm dependents through @mango/cli@1.2.19. Business Adaptation: install Ghostscript in the runtime image, optionally set mango.fileproc.compress.ghostscript-path and timeout-seconds, and verify compressed PDF output.
+- [PR #1029](https://github.com/HardyDou/mango/pull/1029) Fixed hidden menu routes and nearest-visible-ancestor highlighting. Packages: @mango/admin-shell@1.0.79 and generated npm dependents through @mango/cli@1.2.19. Business Adaptation: verify hidden menu children resolve to the nearest visible ancestor highlight.
+
+### Fixed
+
+- Reopened RBAC tabs no longer render blank in shell hybrid mode.
+- File uploads no longer fail when a consumer needs a total timeout longer than the inactivity timeout.
+- Hidden menu routes now highlight the nearest visible ancestor instead of losing menu state.
+
+### Added
+
+- Multi-member batch role assignment and removal in RBAC member management.
+- Independent upload total-timeout and inactivity-timeout configuration.
+- Five-level PDF compression (NONE/LOW/STANDARD/MEDIUM/HIGH/EXTREME) with Ghostscript-based structure rewrite and image downsampling.
+
+### Changed
+
+- Replace the PDFBox page-raster PDF compression provider with a streaming Ghostscript provider that keeps vector text, streams input through temporary files, supports target size and keeps the original when output is not smaller.
+- Add `mango.fileproc.compress.ghostscript-path` and `mango.fileproc.compress.timeout-seconds`; missing Ghostscript now fails explicitly.
+- Add optional `compression` and `perFileTargetSizeBytes` to `@mango/file` `downloadUrl(id, options)` and `download(id, options)`.
+- Advance the non-application Mango Maven reactor and `io.mango:mango-docs-bundle` from 1.0.57 to 1.0.58.
+- Publish the machine-generated npm dependency closure in topology order from @mango/api-schema@1.0.4 through @mango/cli@1.2.19.
+- Publish @mango/pmo@1.4.7 and the matching Business Starter and CLI PMO projections.
+
+### Versions
+
+- Mango Maven non-application reactor and `io.mango:mango-docs-bundle`: 1.0.57 -> 1.0.58.
+- npm closure: @mango/api-schema@1.0.4, @mango/ai-api@1.1.1, @mango/app-runtime@1.0.7, @mango/http-client@1.0.2, @mango/common@2.1.3, @mango/admin-extension@1.0.10, @mango/ai@1.1.8, @mango/auth@1.0.38, @mango/file@1.1.3, @mango/detail@1.1.3, @mango/grid-layout@1.0.27, @mango/grid-widgets@1.0.33, @mango/home@1.0.26, @mango/pmo@1.4.7, @mango/rbac@1.0.39, @mango/site-shell@1.0.23, @mango/system@1.0.47, @mango/admin-pages@1.0.48, @mango/calendar@1.0.49, @mango/cms@1.0.38, @mango/job@1.0.42, @mango/link@1.0.35, @mango/notice@1.0.54, @mango/numgen@1.0.50, @mango/payment@1.0.41, @mango/template@1.0.50, @mango/workflow@1.0.58, @mango/admin-shell@1.0.79, @mango/workflow-business-example@1.0.57, @mango/admin@1.1.15 and @mango/cli@1.2.19.
+- No Mango application fat JAR is published in the default Maven batch.
+
+### Published Packages
+
+1. Publish the sealed non-application Maven reactor and `io.mango:mango-docs-bundle:1.0.58` to the Maven publish registry, then verify both Maven registry roles.
+2. Publish the npm topology in machine-generated dependency order, ending at `@mango/cli@1.2.19`, then verify every package from the npm consume registry.
+3. Verify one clean mixed consumer, create the immutable tag `v2026.10.14-maven-1.0.58-fileproc-pdf-compress-release`, and create the GitHub Release only after registry and consumer verification.
+
+### Business Impact
+
+- Maven consumers receive the Ghostscript-based PDF compression provider and the five compression levels; PDF compression now requires Ghostscript in the runtime image.
+- Frontend consumers receive independent upload timeouts, RBAC batch role actions, hidden-menu ancestor highlighting, RBAC tab recovery and PDF download compression parameters.
+- PMO-managed repositories receive the reuse-first governance, Agent text-output rules and updated document-contract fixtures.
+- No destructive database migration, application deployment or production traffic change is included.
+
+### Upgrade Estimate
+
+- Audience: generated Mango applications, direct frontend package consumers, Maven platform consumers, PDF compression runtime operators and PMO-managed business repositories.
+- Engineering Effort: 30 to 60 minutes for standard generated consumers; 1 to 2 hours for custom Admin Shell, upload-timeout, PDF compression or PMO integrations.
+- Execution Window: 60 to 150 minutes including dependency updates, Ghostscript installation in the runtime image, clean Maven/npm resolution, PMO checks and registry propagation.
+- Service Downtime: no framework-mandated downtime; PDF compression requires a runtime image rebuild and service restart in the consumer's normal release window.
+- Rollback Effort: 20 to 45 minutes to restore Maven/docs 1.0.57, CLI 1.2.18 and the previous immutable npm tuple.
+- Assumptions: Java 21, Node 22.23.1, Ghostscript available in the runtime image, configured Nexus Maven/npm roles, clean consumer installs and representative upload, PDF compression, RBAC and menu fixtures.
+
+### Upgrade Notes
+
+1. Upgrade Maven/docs to 1.0.58 and install the complete npm tuple listed above, ending at @mango/cli@1.2.19.
+2. Install Ghostscript in the PDF compression runtime image; optionally set `mango.fileproc.compress.ghostscript-path` and `mango.fileproc.compress.timeout-seconds`.
+3. Upgrade @mango/pmo@1.4.7 and @mango/cli@1.2.19 together in PMO-managed repositories; synchronize the Business Starter baseline.
+4. Verify upload timeout configuration, PDF compression from the file service download path, RBAC batch role actions, hidden-menu ancestor highlighting and reopened RBAC tabs from a clean published-package consumer.
+5. Do not publish application fat JARs or overwrite any immutable coordinate.
+
+### Verification
+
+- Run `mango release registry doctor` for npm publish/consume and Maven publish/consume roles.
+- Run catalog, release impact, package exports, admin-style, module-style, PMO projection, CLI version, generated backend, release-plan, release-notes and local release checks before prepare.
+- Prepare one sealed candidate from the final clean source tree and verify the recorded npm and Maven checksums.
+- After publication, re-resolve the sealed Maven coordinates and the 31 npm packages from both publish and consume registries, then run one pure consume-registry mixed consumer.
+- Verify Ghostscript PDF compression on a scanned PDF and on a text PDF, upload timeout behavior, RBAC batch role actions and hidden-menu ancestor highlighting.
+
+### Rollback
+
+- Restore consumers to Maven/docs 1.0.57, @mango/cli@1.2.18 and the previous immutable npm tuple through their normal application release process; never republish or overwrite coordinates.
+- Revert PMO-managed repositories to the prior @mango/pmo and CLI pair if governance checks expose an integration issue.
+- No database rollback or production traffic rollback is required because this batch contains no destructive migration or deployment action.
+
+### Audit History
+
+- PRs #997, #998 and #999 are the prior 1.0.56 release preparation, capability documentation and closeout records; PRs #1003 through #1015 belong to the published 1.0.57 batch. They are retained here as audit history and are not release-bearing changes in this batch.
+
 ## v2026.10.08-maven-1.0.57-admin-layout-data-table-release - Maven 1.0.57 - npm 28 packages including @mango/common@2.1.2 @mango/pmo@1.4.6 @mango/cli@1.2.18 - 2026-10-08
 
 Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `042b54e4fca0ed1ef396bcbf580f1d6e55609e3f0abf5e6467d91f5bc2e64188`; prepared candidate `2e4babde6ff247bd4e562df7f9478929276b5f2ec54142730843640ea1adc3e2` is published and verified from both registry roles with a pure consume-registry consumer. Tag and GitHub Release are `CREATED_AND_VERIFIED`.

@@ -159,7 +159,7 @@ export function verifyReleasePlanSource({
   });
   assertAncestor(repoRoot, source.commit, headRef, 'release plan source is not an ancestor of the final HEAD');
 
-  const actualSourceFiles = gitChangedFiles(repoRoot, baselineAnchor, source.commit);
+  const actualSourceFiles = gitReleaseImpactFiles(repoRoot, baselineAnchor, source.commit);
   if (JSON.stringify(actualSourceFiles) !== JSON.stringify(sourceFiles)) {
     throw new Error('release plan sourceFiles does not match the baseline-to-source Git diff');
   }
@@ -224,9 +224,23 @@ export function restoredPublishedBaselines({
   return restored;
 }
 
-export function assertCleanWorktree(repoRoot) {
-  const dirty = gitValue(repoRoot, ['status', '--porcelain']);
-  if (dirty) throw new Error(`release preparation requires a clean worktree:\n${dirty}`);
+/**
+ * 断言工作区干净。
+ *
+ * `ignoredPaths` 用于排除发布工具会确定性重建的产物：lockfile 由 plan/prepare
+ * 各自执行 `pnpm install` 生成，不同 pnpm 序列化会产生等价但字节不同的 YAML，
+ * 不能作为“未提交源码变更”阻断发布。
+ */
+export function assertCleanWorktree(repoRoot, { ignoredPaths = [] } = {}) {
+  const ignored = new Set(ignoredPaths);
+  const dirty = gitValue(repoRoot, ['status', '--porcelain'])
+    .split(/\r?\n/u)
+    .filter(Boolean)
+    .filter((line) => {
+      const path = line.replace(/^\s*[A-Z?!]{1,2}\s+/u, '').trim().replace(/^"/u, '').replace(/"$/u, '');
+      return ![...ignored].some((candidate) => path === candidate || path.endsWith(`/${candidate}`));
+    });
+  if (dirty.length > 0) throw new Error(`release preparation requires a clean worktree:\n${dirty.join('\n')}`);
 }
 
 function assertAncestor(repoRoot, ancestor, descendant, message) {
