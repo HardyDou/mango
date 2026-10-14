@@ -89,6 +89,7 @@ export type MangoCollapseActionsAlign = 'left' | 'center' | 'right';
 
 export interface MangoCollapseDetailPageProps {
   title: string;
+  maxWidth?: string;
   panels?: MangoCollapsePanel[];
   tabs?: MangoCollapseTab[];
   responsive?: MangoCollapseResponsive;
