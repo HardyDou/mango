@@ -417,7 +417,10 @@ function resolvePlanInput() {
 
 function runLockfileUpdate() {
   const command = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
-  const result = spawnSync(command, ['install', '--lockfile-only', '--ignore-scripts'], {
+  // 使用完整 install，保证 lockfile 与 node_modules 同步。
+  // 仅 lockfile 的更新会让后续 `pnpm exec` 触发自动 install 并重写 lockfile，
+  // 使 prepare 的干净工作区前置条件无法满足。
+  const result = spawnSync(command, ['install', '--ignore-scripts'], {
     cwd: workspaceRoot,
     stdio: 'inherit',
   });
