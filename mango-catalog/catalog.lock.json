@@ -1,10 +1,10 @@
 {
   "architectureGraph": {
-    "reportSha256": "5cc7af0127e230a60489aadf02be4dcc13ec3fad2845f5a8c3cd0b843cc75400",
+    "reportSha256": "47306eb8a39123094784e3931f5ced57f4ed71368082018362a72c29912c978b",
     "schemaVersion": 1,
     "workspaceCount": 42
   },
-  "catalogDigest": "33c7db6ef5d5607363cd66a9853f812510a4f0ef5cbbe2c05ba94ee56a95c3ae",
+  "catalogDigest": "145aec79202f8687fe90a7a92e80f8f85db12bbf27e386299784798582babf96",
   "maven": {
     "dependencyManagementSets": [
       {
@@ -5056,6 +5056,15 @@
             "version": "1.0.0-SNAPSHOT"
           },
           {
+            "artifactId": "mango-identity-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.identity",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
             "artifactId": "mango-system-api",
             "classifier": null,
             "groupId": "io.mango.platform.system",
@@ -5215,6 +5224,15 @@
             "artifactId": "mango-common",
             "classifier": null,
             "groupId": "io.mango.common",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-log-api",
+            "classifier": null,
+            "groupId": "io.mango.infra.log",
             "optional": false,
             "scope": "compile",
             "type": "jar",
