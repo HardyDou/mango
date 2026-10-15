@@ -1,3 +1,18 @@
+## 1.2.21 - 2026-10-15
+
+### Fixed
+
+- Propagate the `@mango/admin-extension` global singleton fix so generated projects resolve one page registry and module menus no longer return 404 after partial upgrades.
+
+### Changed
+
+- Lock the Mango Maven 1.0.59 and `@mango/pmo@1.4.7` platform tuple, and raise the default file upload limit to 10GB through the generated frontend and backend templates.
+
+### Upgrade Notes
+
+- Upgrade the complete npm tuple through `@mango/cli@1.2.21` together; `@mango/admin-extension` is now a host-provided peer dependency.
+- Upgrade Maven/docs to 1.0.59 and confirm `pnpm why @mango/admin-extension` reports a single version.
+
 ## 1.2.20 - 2026-10-14
 
 ### Fixed
