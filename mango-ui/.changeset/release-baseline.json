@@ -1,27 +1,27 @@
 {
   "schemaVersion": 1,
   "baselineKind": "normal",
-  "tag": "v2026.10.14-maven-1.0.58-fileproc-pdf-compress-release",
-  "commit": "c1cc61d37db76468db48ca049ac2623c85ac8481",
-  "tree": "70e2cae2185a75446f92b6eab4bb78a66f24e80c",
-  "planDigest": "a4ea636e00732e5194248ceccee25fdd7046a266ff87a8105633b4344a49d377",
-  "preparedCandidateId": "454fea3fbf0813e0853b1f4193a151f4cda610f28e02161a5841533738a26bc7",
+  "tag": "v2026.10.14-npm-file-upload-multipart-release",
+  "commit": "e4b8c3b5fc0d39c69faf723c7d7c946d521b836b",
+  "tree": "c7e4410368ebbec88ac8c60b7231d187064fe21f",
+  "planDigest": "966eb02ebf1b8d05c0d3f73599b29934e9e7da14746174d3c97baf9605a10696",
+  "preparedCandidateId": "38bf96489d54e8d122dda65811ecdd61ff49c254b8a2d0bd9bba8546858ce9fb",
   "packages": {
     "@mango/admin": {
       "publishedRanges": [
         {
           "name": "@mango/admin-pages",
-          "range": "1.0.48",
+          "range": "1.0.49",
           "section": "dependencies"
         },
         {
           "name": "@mango/admin-shell",
-          "range": "1.0.79",
+          "range": "1.0.80",
           "section": "dependencies"
         },
         {
           "name": "@mango/ai",
-          "range": "1.1.8",
+          "range": "1.1.9",
           "section": "peerDependencies"
         },
         {
@@ -31,143 +31,143 @@
         },
         {
           "name": "@mango/auth",
-          "range": "1.0.38",
-          "section": "dependencies"
-        },
-        {
-          "name": "@mango/calendar",
-          "range": "1.0.49",
-          "section": "peerDependencies"
-        },
-        {
-          "name": "@mango/cms",
-          "range": "1.0.38",
-          "section": "dependencies"
-        },
-        {
-          "name": "@mango/common",
-          "range": "2.1.3",
-          "section": "dependencies"
-        },
-        {
-          "name": "@mango/file",
-          "range": "1.1.3",
-          "section": "peerDependencies"
-        },
-        {
-          "name": "@mango/grid-layout",
-          "range": "1.0.27",
-          "section": "dependencies"
-        },
-        {
-          "name": "@mango/grid-widgets",
-          "range": "1.0.33",
-          "section": "dependencies"
-        },
-        {
-          "name": "@mango/job",
-          "range": "1.0.42",
-          "section": "dependencies"
-        },
-        {
-          "name": "@mango/link",
-          "range": "1.0.35",
-          "section": "dependencies"
-        },
-        {
-          "name": "@mango/notice",
-          "range": "1.0.54",
-          "section": "peerDependencies"
-        },
-        {
-          "name": "@mango/numgen",
-          "range": "1.0.50",
-          "section": "peerDependencies"
-        },
-        {
-          "name": "@mango/payment",
-          "range": "1.0.41",
-          "section": "peerDependencies"
-        },
-        {
-          "name": "@mango/rbac",
           "range": "1.0.39",
           "section": "dependencies"
         },
         {
-          "name": "@mango/system",
-          "range": "1.0.47",
-          "section": "dependencies"
-        },
-        {
-          "name": "@mango/template",
+          "name": "@mango/calendar",
           "range": "1.0.50",
           "section": "peerDependencies"
         },
         {
+          "name": "@mango/cms",
+          "range": "1.0.39",
+          "section": "dependencies"
+        },
+        {
+          "name": "@mango/common",
+          "range": "2.1.4",
+          "section": "dependencies"
+        },
+        {
+          "name": "@mango/file",
+          "range": "1.1.4",
+          "section": "peerDependencies"
+        },
+        {
+          "name": "@mango/grid-layout",
+          "range": "1.0.28",
+          "section": "dependencies"
+        },
+        {
+          "name": "@mango/grid-widgets",
+          "range": "1.0.34",
+          "section": "dependencies"
+        },
+        {
+          "name": "@mango/job",
+          "range": "1.0.43",
+          "section": "dependencies"
+        },
+        {
+          "name": "@mango/link",
+          "range": "1.0.36",
+          "section": "dependencies"
+        },
+        {
+          "name": "@mango/notice",
+          "range": "1.0.55",
+          "section": "peerDependencies"
+        },
+        {
+          "name": "@mango/numgen",
+          "range": "1.0.51",
+          "section": "peerDependencies"
+        },
+        {
+          "name": "@mango/payment",
+          "range": "1.0.42",
+          "section": "peerDependencies"
+        },
+        {
+          "name": "@mango/rbac",
+          "range": "1.0.40",
+          "section": "dependencies"
+        },
+        {
+          "name": "@mango/system",
+          "range": "1.0.48",
+          "section": "dependencies"
+        },
+        {
+          "name": "@mango/template",
+          "range": "1.0.51",
+          "section": "peerDependencies"
+        },
+        {
           "name": "@mango/workflow-business-example",
-          "range": "1.0.57",
+          "range": "1.0.58",
           "section": "peerDependencies"
         },
         {
           "name": "@mango/workflow",
-          "range": "1.0.58",
+          "range": "1.0.59",
           "section": "peerDependencies"
         }
       ],
-      "sri": "sha512-MfUGPTIpxJkgtxorrS/GhRX7Qa3RGVWQ4tG58dWvfJTkYHkosAyZe8EcYk3s5ecrxH2xBIY/Gdy3huN58f8dXg==",
-      "tarballSha256": "52bc7d315fc7d26c4196b5f8125ffe67c3375667804f8b28e878b8419a4fd61b",
-      "version": "1.1.15"
+      "sri": "sha512-5AGtKSuA66lacuUPGRh7hIE2k+hArpFSLnBSvYk/Br+GuS5ZbO5mY29/VpqMwM1OKmNDePqkzLkEWPWt38ZntQ==",
+      "tarballSha256": "62c3350894b57e020f944482b23f49b67879c91a363e5455273bb7f476874e65",
+      "version": "1.1.16"
     },
     "@mango/admin-extension": {
       "publishedRanges": [
         {
           "name": "@mango/common",
-          "range": "2.1.3",
+          "range": "2.1.4",
           "section": "dependencies"
         }
       ],
-      "sri": "sha512-gm6BQ5PK2yV187KzLGPfx+NxziIxGrxlsuWcfo2X2pXkFAZ49g43ulDX9yABdR0j4Y2lqfTJOwSd+b0sJ9lGZA==",
-      "tarballSha256": "ef0f224955686b0f8c1bd7ba8541d92438b03725c30dcffa74e000295939f476",
-      "version": "1.0.10"
+      "sri": "sha512-BYf+KZ7u71w8XdBw5vgkH2RWxK4kHBNtrGfb0u0BoIm8zM4FgaWQJH7EKDgztGSl6GFksd95g2SugO99DuIFKg==",
+      "tarballSha256": "34fe79ad7ee84e8c6220402f07a96281be6ecbfc9669f21f5f18b3cd05a38beb",
+      "version": "1.0.11"
     },
     "@mango/admin-pages": {
       "publishedRanges": [
         {
           "name": "@mango/admin-extension",
-          "range": "1.0.10",
+          "range": "1.0.11",
           "section": "dependencies"
         },
         {
           "name": "@mango/auth",
-          "range": "1.0.38",
-          "section": "dependencies"
-        },
-        {
-          "name": "@mango/common",
-          "range": "2.1.3",
-          "section": "dependencies"
-        },
-        {
-          "name": "@mango/rbac",
           "range": "1.0.39",
           "section": "dependencies"
         },
         {
+          "name": "@mango/common",
+          "range": "2.1.4",
+          "section": "dependencies"
+        },
+        {
+          "name": "@mango/rbac",
+          "range": "1.0.40",
+          "section": "dependencies"
+        },
+        {
           "name": "@mango/system",
-          "range": "1.0.47",
+          "range": "1.0.48",
           "section": "dependencies"
         }
       ],
-      "sri": "sha512-87Ka1JSr42kalZ7beyD8NjdUwtcIRVdzLdrTQlauoFIEdnil1sgMxqdIpBJFc3KR3EAAnWIjk1pZ3qIVDBAEcw==",
-      "tarballSha256": "d17bb4a1c04800dbb4a2f409e1237d1862c0cdbbfedf47ff29727ed2cd6b880f",
-      "version": "1.0.48"
+      "sri": "sha512-+R8UuUk5KI5FsbbI5uQvEU62Lrye8usu6QZCN7+jbglaw2qXjmM6i0jpxrrHq6qad5z09xQ2yq/MoA9AXf9pbQ==",
+      "tarballSha256": "64c455950e27b748e1006c2f54d4b9654f4a1f65392bba88523cd166ac6a5ee5",
+      "version": "1.0.49"
     },
     "@mango/admin-shell": {
       "publishedRanges": [
         {
           "name": "@mango/admin-pages",
-          "range": "1.0.48",
+          "range": "1.0.49",
           "section": "dependencies"
         },
         {
@@ -177,47 +177,47 @@
         },
         {
           "name": "@mango/auth",
-          "range": "1.0.38",
+          "range": "1.0.39",
           "section": "dependencies"
         },
         {
           "name": "@mango/common",
-          "range": "2.1.3",
+          "range": "2.1.4",
           "section": "dependencies"
         },
         {
           "name": "@mango/file",
-          "range": "1.1.3",
+          "range": "1.1.4",
           "section": "dependencies"
         },
         {
           "name": "@mango/file",
-          "range": "1.1.3",
+          "range": "1.1.4",
           "section": "peerDependencies"
         },
         {
           "name": "@mango/grid-layout",
-          "range": "1.0.27",
+          "range": "1.0.28",
           "section": "dependencies"
         },
         {
           "name": "@mango/grid-layout",
-          "range": "1.0.27",
+          "range": "1.0.28",
           "section": "peerDependencies"
         },
         {
           "name": "@mango/grid-widgets",
-          "range": "1.0.33",
+          "range": "1.0.34",
           "section": "dependencies"
         },
         {
           "name": "@mango/grid-widgets",
-          "range": "1.0.33",
+          "range": "1.0.34",
           "section": "peerDependencies"
         },
         {
           "name": "@mango/home",
-          "range": "1.0.26",
+          "range": "1.0.27",
           "section": "dependencies"
         },
         {
@@ -227,44 +227,44 @@
         },
         {
           "name": "@mango/job",
-          "range": "1.0.42",
+          "range": "1.0.43",
           "section": "dependencies"
         },
         {
           "name": "@mango/notice",
-          "range": "1.0.54",
+          "range": "1.0.55",
           "section": "dependencies"
         },
         {
           "name": "@mango/notice",
-          "range": "1.0.54",
+          "range": "1.0.55",
           "section": "peerDependencies"
         },
         {
           "name": "@mango/rbac",
-          "range": "1.0.39",
+          "range": "1.0.40",
           "section": "dependencies"
         },
         {
           "name": "@mango/workflow",
-          "range": "1.0.58",
+          "range": "1.0.59",
           "section": "dependencies"
         },
         {
           "name": "@mango/workflow",
-          "range": "1.0.58",
+          "range": "1.0.59",
           "section": "peerDependencies"
         }
       ],
-      "sri": "sha512-vw3kKRzNFchZLkZvfW3e1Pgd55XHcqbJbPjjB5Y16enx6skNmN9kH0gw45LvpVfLwWdhJBG4EXwEm26tPYQcXw==",
-      "tarballSha256": "d881e0188945ec85ec808bac4e182d593931a53e84c65711dc79bcd51d90e290",
-      "version": "1.0.79"
+      "sri": "sha512-2vxSJvThxsnapzV+SGJtTQBtpkag/y2FwDN5qF/WoBg7OE8DloSf+5WtgRKY6cpMziYRxXE5G+B5wXpnAD+LPA==",
+      "tarballSha256": "7cbbe0e7d4465a40d1486f0e02565f5272f8db645d0f2ef22819105f80c1213b",
+      "version": "1.0.80"
     },
     "@mango/ai": {
       "publishedRanges": [
         {
           "name": "@mango/admin-extension",
-          "range": "1.0.10",
+          "range": "1.0.11",
           "section": "dependencies"
         },
         {
@@ -284,13 +284,13 @@
         },
         {
           "name": "@mango/common",
-          "range": "2.1.3",
+          "range": "2.1.4",
           "section": "dependencies"
         }
       ],
-      "sri": "sha512-5a8Muc8FqygG1qOnlnPKaNUiFwrihAmFepaU3woDBg+vDby9ehnySMaNkKusoEXW+AiMDl3WtQ5rBhfB+kq/7w==",
-      "tarballSha256": "d34c45dd9c7ff1cdea502ebcb51b253b8dbae3aab6fb663aad07deffdaea8ee8",
-      "version": "1.1.8"
+      "sri": "sha512-xhL6b00FUljp/bXkPrdEbGmkeDfSz/dF7y8TbBs/TuvwcjQR9TJowYaSzbpEKnNhmVRBdyjqq/7o918qDYMBTw==",
+      "tarballSha256": "db1515a252abe074436fd846a8cd7f31973bb7f8ea0a30656a1dbd07db82dd57",
+      "version": "1.1.9"
     },
     "@mango/ai-api": {
       "publishedRanges": [
@@ -331,19 +331,19 @@
         },
         {
           "name": "@mango/common",
-          "range": "2.1.3",
+          "range": "2.1.4",
           "section": "dependencies"
         }
       ],
-      "sri": "sha512-e79fg7/GsVJ4L4ag4+DrpBm0EQnA70HXx3QExdv5Q7JlqJjvOLpxIFgswpRI8+1T2Y6FH2GS2HKCeWO8kIX4PA==",
-      "tarballSha256": "798dc8ddaaea634f21eb73709202fa34908370ad6f8e3029b19500f84974a2f8",
-      "version": "1.0.38"
+      "sri": "sha512-r+KIBlYt0CSUl0XWFgWXCGGDuRFuM08m8MCdBxNw3GzHrrtqjp1b0oFyL9PrWA90AutuTAcJoekTZUa8tLeeRA==",
+      "tarballSha256": "d2e2b6b155e4ce19924a8e97e698a19c9754ac240c4824f66962de96b5230d64",
+      "version": "1.0.39"
     },
     "@mango/calendar": {
       "publishedRanges": [
         {
           "name": "@mango/admin-pages",
-          "range": "1.0.48",
+          "range": "1.0.49",
           "section": "dependencies"
         },
         {
@@ -353,18 +353,18 @@
         },
         {
           "name": "@mango/common",
-          "range": "2.1.3",
+          "range": "2.1.4",
           "section": "dependencies"
         },
         {
           "name": "@mango/grid-widgets",
-          "range": "1.0.33",
+          "range": "1.0.34",
           "section": "dependencies"
         }
       ],
-      "sri": "sha512-dyRbde8eVoBtHQRfZn1hl9nYuH0ZD2xVzeHkjjveIN670rTTVdHeKKcM51p1j1AEqcL24ZJ+trhLFKca5SmQIw==",
-      "tarballSha256": "ad84f760cfa572c99577e377339457492b00f66723b15a2dd72794aa8c2bd37f",
-      "version": "1.0.49"
+      "sri": "sha512-dYmVMzZ8t5qeZjZVLMhXCOzSHRBnci2M4gMsY33emStqPMuc0RZm7DsOe10hWrFJOpC0yo5e2khJ7q/8D3+b8A==",
+      "tarballSha256": "eee158a2706d3933c45bbd4e2f3bd64a685c03a345203805aecef967af3426c4",
+      "version": "1.0.50"
     },
     "@mango/cli": {
       "publishedRanges": [
@@ -374,15 +374,15 @@
           "section": "dependencies"
         }
       ],
-      "sri": "sha512-yl2EnZ+hBQ5znnF/m7Fas5Poe94cbap/nmhPEGvaJVh69vZwcTe9NriiJEej0eg/9IOvb7oMWTTTnQszW4dUlQ==",
-      "tarballSha256": "71ce872f094ecea10232318fe553a7977ee10e62a7fa6ac3105fa721a7a70814",
-      "version": "1.2.19"
+      "sri": "sha512-2IxeTTa222J9D7iL66XCJYoq7yiXmtH28cgMgseC9SvjK43Cf3dbKljIX+5i+VmD63gNVmxXC80MdSaglNQuNg==",
+      "tarballSha256": "01ac6bdfc0701bade8a8b1faff7f1a0abd2416ab3c7728d542e4013a110f1812",
+      "version": "1.2.20"
     },
     "@mango/cms": {
       "publishedRanges": [
         {
           "name": "@mango/admin-pages",
-          "range": "1.0.48",
+          "range": "1.0.49",
           "section": "dependencies"
         },
         {
@@ -397,18 +397,18 @@
         },
         {
           "name": "@mango/common",
-          "range": "2.1.3",
+          "range": "2.1.4",
           "section": "dependencies"
         },
         {
           "name": "@mango/file",
-          "range": "1.1.3",
+          "range": "1.1.4",
           "section": "dependencies"
         }
       ],
-      "sri": "sha512-6+oA9RdH0kWkjb+F5RKTnYWwiRrMaJeGs9Fe1vZVgWiynXJ7UO5z7MmEnZKS0R/cz2GQsvHaJDT1pu1cXmPviw==",
-      "tarballSha256": "c54e6f094fe4656ceae9b7565702252d8835b5c419a9978b25d5a573793ce7fd",
-      "version": "1.0.38"
+      "sri": "sha512-A8ew2s1SKXSFP+m8vTpJMI5InQJmRGwnYZRb8mHGWcnO2oG9Cz8rw7lNmr4fQBXgsMckH8WYZxOe9wT6rQQzFA==",
+      "tarballSha256": "90f7844f8627f6f5f4f1d00cf0351e83341e9b4f8d6b96e11e8beb9169fe0e5c",
+      "version": "1.0.39"
     },
     "@mango/common": {
       "publishedRanges": [
@@ -418,32 +418,32 @@
           "section": "dependencies"
         }
       ],
-      "sri": "sha512-F1hIQWxEZ9Hr3FaOcBdZE/9AjetQSvtMUXyX10TjEOgt9e7/Nub5Eg8G+0TOnNK+WWSO/14zx5yIRt1WQhjy5A==",
-      "tarballSha256": "858f6401ee71d9e894c20a4ebe3f3af561f1f98e534b9aae4263f716c77b1b68",
-      "version": "2.1.3"
+      "sri": "sha512-eCOsbzN1Pf5i6goujOZPWOVJqhZiBinQDMKIzl2xGiFGTXyLB2fbKmlApEf+BLWQ4FcV8D4jgVJwJ1u4IQK0CA==",
+      "tarballSha256": "7b71504e367d360b78656e4d44f02eca824fb3e3c15ce4ef35d69d252f8613c3",
+      "version": "2.1.4"
     },
     "@mango/detail": {
       "publishedRanges": [
         {
           "name": "@mango/common",
-          "range": "2.1.3",
+          "range": "2.1.4",
           "section": "peerDependencies"
         },
         {
           "name": "@mango/file",
-          "range": "1.1.3",
+          "range": "1.1.4",
           "section": "peerDependencies"
         }
       ],
-      "sri": "sha512-Xzj6w75kmbIETAuRWQV7FZG+Pv6Itu6LrnRajD0Co3ek/fC6VLT9QpdD/QizKg4u1s/9OAJxL0rBmtCDr2IYBw==",
-      "tarballSha256": "f23e5726e4dd03c8e2a082a8050308c80255a35346e500a1729077b78b6381a6",
-      "version": "1.1.3"
+      "sri": "sha512-Q9To1yMSPda+r916c1lCKumHD26Gshkq0yhfO67uSRvpz0Bsx/RBvVM5m0MaMLkZVKd8DMSa5g1wWPBjzQ0qYQ==",
+      "tarballSha256": "9424ef64ed6fef59f1973322caf73e7b7fc2ccacae5b62c1ef20ee9ab2960b63",
+      "version": "1.1.4"
     },
     "@mango/file": {
       "publishedRanges": [
         {
           "name": "@mango/admin-extension",
-          "range": "1.0.10",
+          "range": "1.0.11",
           "section": "dependencies"
         },
         {
@@ -453,37 +453,37 @@
         },
         {
           "name": "@mango/common",
-          "range": "2.1.3",
+          "range": "2.1.4",
           "section": "dependencies"
         }
       ],
-      "sri": "sha512-yKBJVYxenQkdeWebjQKnLY4HMykKXQ5L2p7j6fk6MVUCNDcD9etnutXXdHTlvd2wEbafwbNqg/8QyJ+0XSYfkg==",
-      "tarballSha256": "4546d02fbee751c23d30d08e86fd69d457847ca7552df38fe16baffff84f1b6b",
-      "version": "1.1.3"
+      "sri": "sha512-PXnfr9p8unFqMbFl461zbxWAdW/q4fJjBuATN3wZWcsjDM2zvpZa0a9Xkcw1wBDaqrpX7BojzjlQK0LgTiqmPQ==",
+      "tarballSha256": "7682ef3c3e147c30bc56d52cb948b1c60a2af7beb82b30b18c545cee83c9910b",
+      "version": "1.1.4"
     },
     "@mango/grid-layout": {
       "publishedRanges": [
         {
           "name": "@mango/common",
-          "range": "2.1.3",
+          "range": "2.1.4",
           "section": "dependencies"
         }
       ],
-      "sri": "sha512-ZWA0lkhXd2zrPFABN99UORazmlZXelTKv9XLmMEd1I+wHYv1sc1whlRo7oTrt6r/Zw4PYL0kp5sF9ROQQ5zXjg==",
-      "tarballSha256": "d57e33eed7fda50a2b7ab0d1359b2e311288a38c5a80e5328107ac8700d04d52",
-      "version": "1.0.27"
+      "sri": "sha512-1TLgIqINlSj0GmISrPqIvVO5A4p0aFOZGfr3rWJErBdv5JIhE+Zyb9uqJm30QnxqX/etr/HC4pWFcJChGFrCXg==",
+      "tarballSha256": "e17183d8b011551417919ccb5c9261f167b86ba7dff2aff6684d1c2002776693",
+      "version": "1.0.28"
     },
     "@mango/grid-widgets": {
       "publishedRanges": [
         {
           "name": "@mango/grid-layout",
-          "range": "1.0.27",
+          "range": "1.0.28",
           "section": "dependencies"
         }
       ],
-      "sri": "sha512-QziNarukT/ATYBO59F4TKckht5YI/SU6NZPAXmmiWVUMZQmY6fwk+PWAo2cE5WydVxR6Ec/xFsfjZk/Q7Mcqxg==",
-      "tarballSha256": "5bedc42b1d59bf82aec789df75e0991b9189ecb37f1ede0357a3a2598e656d33",
-      "version": "1.0.33"
+      "sri": "sha512-PaKmFjVqRF0HQePYig9mlsuqmaKUNpRd6HTSJyDOMWq0U9BlhR49q/K+/onMA9/7PmniAWzFyPHOsppXLGLapw==",
+      "tarballSha256": "bab2e827db516f4ca7795578ccc3cfced237109e7cd16dc0d5083b2afd217b05",
+      "version": "1.0.34"
     },
     "@mango/home": {
       "publishedRanges": [
@@ -494,13 +494,13 @@
         },
         {
           "name": "@mango/common",
-          "range": "2.1.3",
+          "range": "2.1.4",
           "section": "dependencies"
         }
       ],
-      "sri": "sha512-Y7bP0W2q4zCd2v9+zJcKolCjmLNRZkv8VZQQ4e6NRcrJTvdUIAN/f6z8Wq1zsiHZ59OSXdmn4dXkv1oUlUnafA==",
-      "tarballSha256": "b8661b4c24edb927d9adf589f04397232e2d72c022dbbb5c6635557401704be8",
-      "version": "1.0.26"
+      "sri": "sha512-oN8KTzpyQtwKO+ta0OGkmg3LP6h2FPwQqvhAsWK/lE2P34aEuJVvp6c2F/Guo/0kQVFAf4iyx0yu0fGlJbjm6g==",
+      "tarballSha256": "86f71b298732af0be478502497a9a332862eef473700136d3f3a3fd7a7659a65",
+      "version": "1.0.27"
     },
     "@mango/http-client": {
       "publishedRanges": [
@@ -518,34 +518,34 @@
       "publishedRanges": [
         {
           "name": "@mango/admin-pages",
-          "range": "1.0.48",
+          "range": "1.0.49",
           "section": "dependencies"
         },
         {
           "name": "@mango/common",
-          "range": "2.1.3",
+          "range": "2.1.4",
           "section": "dependencies"
         }
       ],
-      "sri": "sha512-WnnjMdVoFuxaZvN1W+hfUz4rjkATCIvu/iZPJJqX76R0dv/GPqYT0YtMyu5T1EY6eOJEdUloLtq8LnhZlRuzWg==",
-      "tarballSha256": "5757a403e7e4dcecccdfbbfe29b9e069f4e584190ef8993602f603ff00b08652",
-      "version": "1.0.42"
+      "sri": "sha512-qp29ErZYX7ZfdPWru/FOV2+fZeSET+uKpx52fOHiFPRB5w6fmXLEPjkNa95/GRfPVOSaJbTo3ZmG7q7FERwcBg==",
+      "tarballSha256": "5402e3be06e06fb816f2d8465d7606434f5708291175330dab267b27ae6c14da",
+      "version": "1.0.43"
     },
     "@mango/link": {
       "publishedRanges": [
         {
           "name": "@mango/admin-pages",
-          "range": "1.0.48",
+          "range": "1.0.49",
           "section": "dependencies"
         },
         {
           "name": "@mango/common",
-          "range": "2.1.3",
+          "range": "2.1.4",
           "section": "dependencies"
         },
         {
           "name": "@mango/grid-widgets",
-          "range": "1.0.33",
+          "range": "1.0.34",
           "section": "dependencies"
         },
         {
@@ -554,9 +554,9 @@
           "section": "dependencies"
         }
       ],
-      "sri": "sha512-P3RXGZoRzh06kTNLgzQMZDwX/chF9ZM+432ni6VAWUSzzKGkPF9PQ+nRlDjtXKoO8qNllxvfY7EubFe3o5PCDg==",
-      "tarballSha256": "28e3b845e77566047e7257f85fe86a35e431d9409241e34a0fc7abd6b866529d",
-      "version": "1.0.35"
+      "sri": "sha512-v/JmPxpLywseiVz4L3TrVipKoSZbNKcnmRQq5Dxqf3hBy+YiFr5l3eteSq7tZs89/nkwF1H2gs6nXmYsjgV72Q==",
+      "tarballSha256": "a85c9832b532436bc96c88961edfdc980e480b4f8a1ac777ad5f2bff1ac42e84",
+      "version": "1.0.36"
     },
     "@mango/link-page": {
       "publishedRanges": [
@@ -574,34 +574,34 @@
       "publishedRanges": [
         {
           "name": "@mango/admin-pages",
-          "range": "1.0.48",
+          "range": "1.0.49",
           "section": "dependencies"
         },
         {
           "name": "@mango/common",
-          "range": "2.1.3",
+          "range": "2.1.4",
           "section": "dependencies"
         },
         {
           "name": "@mango/grid-widgets",
-          "range": "1.0.33",
+          "range": "1.0.34",
           "section": "dependencies"
         },
         {
           "name": "@mango/system",
-          "range": "1.0.47",
+          "range": "1.0.48",
           "section": "dependencies"
         }
       ],
-      "sri": "sha512-UlCt+DhbgyBXRJJ3/1cYsrPYew8Fxn0PvTScbkvpj+pIV56J376UHTcFbkaSi4WrsCU9C6ayf8STk1jkkBpoAw==",
-      "tarballSha256": "8ebf3d2140c706e9a06a331b582a0a9332f428640b522b29eb3c64e8309a6773",
-      "version": "1.0.54"
+      "sri": "sha512-enCZ20XG2GcU6iNM9SY8WqY68Brin2Q69vtaZH51k0OvMDxuaTcUp4d2yFCnfcsGpXMleMVf9sknPUDasHAyFw==",
+      "tarballSha256": "53111dbdb459fbb450da21a5a09337b349ecbf686966c21bd3fcbd0ff3f357fc",
+      "version": "1.0.55"
     },
     "@mango/numgen": {
       "publishedRanges": [
         {
           "name": "@mango/admin-pages",
-          "range": "1.0.48",
+          "range": "1.0.49",
           "section": "dependencies"
         },
         {
@@ -611,24 +611,24 @@
         },
         {
           "name": "@mango/common",
-          "range": "2.1.3",
+          "range": "2.1.4",
           "section": "dependencies"
         },
         {
           "name": "@mango/system",
-          "range": "1.0.47",
+          "range": "1.0.48",
           "section": "dependencies"
         }
       ],
-      "sri": "sha512-NI4v6078z5A8QGn2wDZVG6EY/TJ/T2+vYkPTL5Sj3uEm0nNGMKk8lfFasDHY0O2ZByMbkQSWjpz6lHZd+dn4Ng==",
-      "tarballSha256": "df6bbfc2cfca20d9a4d02e442a36cbf2b205aa603dc22298f78408fbf8a70eb6",
-      "version": "1.0.50"
+      "sri": "sha512-g62gq/hNHydFv1LoPtWsiolWfKkl0Xjrh2WhiS9u+Eb3WHYJu7aeyoMnNxVRcN4+g6w//Rx9+TQNamaAiPSScA==",
+      "tarballSha256": "81cb4634bef89e487cc74cbcf37a79f5141e2d1b461175770a02b3a7a573f1cc",
+      "version": "1.0.51"
     },
     "@mango/payment": {
       "publishedRanges": [
         {
           "name": "@mango/admin-pages",
-          "range": "1.0.48",
+          "range": "1.0.49",
           "section": "dependencies"
         },
         {
@@ -638,18 +638,18 @@
         },
         {
           "name": "@mango/common",
-          "range": "2.1.3",
+          "range": "2.1.4",
           "section": "dependencies"
         },
         {
           "name": "@mango/file",
-          "range": "1.1.3",
+          "range": "1.1.4",
           "section": "dependencies"
         }
       ],
-      "sri": "sha512-mVHt6YFOu/S67QVS9F+15BKWUHni0/+Zg4VyrNViw54xM6G8fQf9zYyNbp84if8EAGMVqbbf+mauhvW8jZO4uw==",
-      "tarballSha256": "8fdf3ccfe9dd784cf2c7b70a8a0124aa0207b3927b5b8823d51cb46841a32af1",
-      "version": "1.0.41"
+      "sri": "sha512-iJdrgmpA/IoT8m8wuGuuVwStqh985w3BW/GTGMNj/Z+BsC/AtjZtO2Id+ejUOOi2JkdM74rLQSwUqUGXI0mAmA==",
+      "tarballSha256": "69fac043674406790da37aa1ee2b3790237a6ce1e59d8a89dce796236048fbb5",
+      "version": "1.0.42"
     },
     "@mango/pmo": {
       "publishedRanges": [],
@@ -671,25 +671,25 @@
         },
         {
           "name": "@mango/common",
-          "range": "2.1.3",
+          "range": "2.1.4",
           "section": "dependencies"
         }
       ],
-      "sri": "sha512-HUtLkM//wiwA+FitCKA+WoJCFkQrpx2W8clKXsDRoyuly5MtHIdBNSq49mUsAkj9rW8YUejr/Ie8MLAn6p1wpA==",
-      "tarballSha256": "a4ce7743b2044d959d8a761453ea7c635bf6ece4ffeb2829d835088645317835",
-      "version": "1.0.39"
+      "sri": "sha512-ShD65Kp3bgVabMSommLlIedhzzPajnEPfwzSxRs7K0BvNtSQqbr/BHBkgO+iIq+4hPaaEFXj65Zau0TzBU8brQ==",
+      "tarballSha256": "66f170c0048611d75eacc0e2bd90dcefc5213119c14c8dae27ba88381a3cf36e",
+      "version": "1.0.40"
     },
     "@mango/site-shell": {
       "publishedRanges": [
         {
           "name": "@mango/common",
-          "range": "2.1.3",
+          "range": "2.1.4",
           "section": "dependencies"
         }
       ],
-      "sri": "sha512-hQQd0jwaW9ac5d5v9OqzT0SqT+K+u9lOdG9NyMh9gPZE0PhqVzg2hZILxsii11/5bYGa3NrKjea5y/pPTuQf4g==",
-      "tarballSha256": "e879ec3572ee30d4cbbd4107f834b790e98b5280748345be8f1ba5d2a209e873",
-      "version": "1.0.23"
+      "sri": "sha512-CiT8yEouOqSQr2oU70NuEz3k4had3UAt+1NYJPKFUED3fb8TVeLfBoEfairJjhmCL8gFuegy6sUY1Ut5aXdJ9g==",
+      "tarballSha256": "b6359dea05181ed202b6fe4ba1b78d6505c969b889cd80007ae6405e5ec2a629",
+      "version": "1.0.24"
     },
     "@mango/system": {
       "publishedRanges": [
@@ -700,61 +700,61 @@
         },
         {
           "name": "@mango/common",
-          "range": "2.1.3",
+          "range": "2.1.4",
           "section": "dependencies"
         },
         {
           "name": "@mango/file",
-          "range": "1.1.3",
+          "range": "1.1.4",
           "section": "peerDependencies"
         },
         {
           "name": "@mango/grid-widgets",
-          "range": "1.0.33",
+          "range": "1.0.34",
           "section": "dependencies"
         },
         {
           "name": "@mango/rbac",
-          "range": "1.0.39",
+          "range": "1.0.40",
           "section": "dependencies"
         }
       ],
-      "sri": "sha512-MqDci+s6j2JIHa2wZ2C0HClbQFio0WT+pg8uDK4x9/ngqQ8TsUv4hatPggUnE+tYfiIOafALII8nEPRbP/ZYKQ==",
-      "tarballSha256": "c37e4faeef07dc96cf0b365bc2af57082346250e1658656a8d61cad0bbf1cf1e",
-      "version": "1.0.47"
+      "sri": "sha512-/P3VdNwU1lVHAvOX90YfgZNibG9nPBixmBvuivOlLIO28uWlajqZr8wlpMqeLOP3dbHPKgvRD1qBFf1+FTZptw==",
+      "tarballSha256": "86d06d83819bdda4d17811e52ff6347b524b55df8b5bfcff3f93d52979d0dc85",
+      "version": "1.0.48"
     },
     "@mango/template": {
       "publishedRanges": [
         {
           "name": "@mango/admin-pages",
-          "range": "1.0.48",
+          "range": "1.0.49",
           "section": "dependencies"
         },
         {
           "name": "@mango/common",
-          "range": "2.1.3",
+          "range": "2.1.4",
           "section": "dependencies"
         },
         {
           "name": "@mango/file",
-          "range": "1.1.3",
+          "range": "1.1.4",
           "section": "dependencies"
         },
         {
           "name": "@mango/system",
-          "range": "1.0.47",
+          "range": "1.0.48",
           "section": "dependencies"
         }
       ],
-      "sri": "sha512-eXlwinEi8uX2JofBfO50CVnmxQbfTHN9cl6qFtpigdnXNlhgFVhGmAsYlOWeVCFGhIZCkr14DvPpoIwufofVLg==",
-      "tarballSha256": "947d36083290831699b22b2597a22c5978dfe7e18ef1c66176092765b761914b",
-      "version": "1.0.50"
+      "sri": "sha512-hZ/GSIWim+jQQkMitGu6Mn3YE130ofYIqaYMwqHxAm7zzJQzdgPN4juayvFmWbb4Ns+2fsxqlL1ttVgHSdQmdw==",
+      "tarballSha256": "5ec92298412aa42c1806a15a92fc8aee10dd4faf82e86c3587bc6df9bf70d02c",
+      "version": "1.0.51"
     },
     "@mango/workflow": {
       "publishedRanges": [
         {
           "name": "@mango/admin-pages",
-          "range": "1.0.48",
+          "range": "1.0.49",
           "section": "dependencies"
         },
         {
@@ -764,45 +764,45 @@
         },
         {
           "name": "@mango/common",
-          "range": "2.1.3",
+          "range": "2.1.4",
           "section": "dependencies"
         },
         {
           "name": "@mango/file",
-          "range": "1.1.3",
+          "range": "1.1.4",
           "section": "dependencies"
         },
         {
           "name": "@mango/grid-widgets",
-          "range": "1.0.33",
+          "range": "1.0.34",
           "section": "dependencies"
         },
         {
           "name": "@mango/system",
-          "range": "1.0.47",
+          "range": "1.0.48",
           "section": "dependencies"
         }
       ],
-      "sri": "sha512-nTSKBbWYsIm6n8/OwGU+6djyer7CFdhpk53dYXwRxTGBpBO23EUnordxz5yiCn72whsp8+JlOHWLX8cvnkH6Sg==",
-      "tarballSha256": "fbf41cc7d488a7f6a0165c9f58ee3a784aaa1e75d5cf6074c4e26e5d54120f7d",
-      "version": "1.0.58"
+      "sri": "sha512-ih9l6xdW7pRCfel0s4/4iiWJYlzJkdGJBjoBMX4B9BCH8tp6e48CQfOcXWJfhCQ/L5aVbGNLzrf/h+oYDi0LGA==",
+      "tarballSha256": "e4b36da3c2958811ecd4041bc74f3f9214087233b16f72d9c763be5afa39ccc9",
+      "version": "1.0.59"
     },
     "@mango/workflow-business-example": {
       "publishedRanges": [
         {
           "name": "@mango/admin-pages",
-          "range": "1.0.48",
+          "range": "1.0.49",
           "section": "dependencies"
         },
         {
           "name": "@mango/workflow",
-          "range": "1.0.58",
+          "range": "1.0.59",
           "section": "dependencies"
         }
       ],
-      "sri": "sha512-L3kJO+1VTygh8fBkTdVosNEKW+cP+WzAlLyH6W2Eqf4mtx00IswQBkJPgoAYeGuqvObim54pzpN2Eiiv5nYUAg==",
-      "tarballSha256": "ecbf8587fdaa8a9d934de834fb9a65d811d214d519f7e3ff984aeb50e90c8fe6",
-      "version": "1.0.57"
+      "sri": "sha512-VlqvQbyy6ktmhYXI3CIwT84cNF8IGLJWI2TfQ+23rud5zVRH44Dg04s+Ke0Bticw0U2i0QgQgH9MiQan/o91+g==",
+      "tarballSha256": "e79627137515d0aa227ebea35031319237ea09b3a6db736a6c551336e9e3eb8c",
+      "version": "1.0.58"
     }
   },
   "maven": {

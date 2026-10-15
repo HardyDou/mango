@@ -2,7 +2,7 @@
 
 ## v2026.10.14-npm-file-upload-multipart-release - npm 26 packages including @mango/common@2.1.4 @mango/file@1.1.4 @mango/cli@1.2.20 - 2026-10-14
 
-Status: `PENDING`. Release plan digest `966eb02ebf1b8d05c0d3f73599b29934e9e7da14746174d3c97baf9605a10696`; Mango Maven and docs remain at 1.0.58.
+Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `966eb02ebf1b8d05c0d3f73599b29934e9e7da14746174d3c97baf9605a10696`; prepared candidate `38bf96489d54e8d122dda65811ecdd61ff49c254b8a2d0bd9bba8546858ce9fb` is published and verified from both npm registry roles with a pure consume-registry consumer. Tag and GitHub Release are `CREATED_AND_VERIFIED`; Mango Maven and docs remain at 1.0.58.
 
 ### Pull Requests
 
