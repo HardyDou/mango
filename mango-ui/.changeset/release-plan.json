@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-15T04:27:00.741Z",
+  "generatedAt": "2026-10-15T04:32:59.993Z",
   "releaseKind": "mixed",
   "release": {
     "tag": "v2026.10.15-maven-npm-admin-extension-10g-release",
@@ -3490,8 +3490,8 @@
     "docs": null
   },
   "source": {
-    "commit": "1575fa679b2f90c7431ac8eeb9b5dc5c6a923b0f",
-    "tree": "d5e9b77912c245c60da6e57059cd1a9ff89a770d"
+    "commit": "3208e5a218ad1030af641785e02f5355d17c4e43",
+    "tree": "ac4056d7828d117218695c3b073c4b5e8a562839"
   },
   "sourceFiles": [
     "CHANGELOG.md",
@@ -3519,6 +3519,8 @@
     "mango-ui/packages/admin-pages/README.md",
     "mango-ui/packages/admin-pages/package.json",
     "mango-ui/packages/admin/build-style-deps.mjs",
+    "mango-ui/packages/admin/package.json",
+    "mango-ui/packages/admin/vite.config.ts",
     "mango-ui/packages/ai/README.md",
     "mango-ui/packages/ai/package.json",
     "mango-ui/packages/file/README.md",
@@ -3599,6 +3601,16 @@
     },
     {
       "file": "mango-ui/packages/admin/build-style-deps.mjs",
+      "packageName": "@mango/admin",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/admin/package.json",
+      "packageName": "@mango/admin",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/admin/vite.config.ts",
       "packageName": "@mango/admin",
       "reason": "published-package-path"
     },
@@ -3970,6 +3982,7 @@
         }
       ],
       "releaseDependencies": [
+        "@mango/admin-extension",
         "@mango/admin-pages",
         "@mango/admin-shell",
         "@mango/ai",
@@ -6719,14 +6732,14 @@
     ],
     "reason": "Git impact includes Mango Maven production sources"
   },
-  "catalogDigest": "7900616b652736fbf9d1dc4789f593c45a4bbb1311adda2accbe62c8a9977bca",
+  "catalogDigest": "2bd29ac62784d4aaf864c4b32b5dcc2413b4c31fb8feb6766db034f4eb79a531",
   "previousBaselineDigest": "03a21b5864df3dbac95a6c95f879071ac7522181a52b33afedbd6788492c08f3",
   "versionPolicyDigest": "c4c4c80d533dde047a59627c915cf87e3570606c2d329023ce6896544c50ee12",
   "releasePlanIdentity": {
     "schemaVersion": 1,
-    "sourceCommitOid": "1575fa679b2f90c7431ac8eeb9b5dc5c6a923b0f",
-    "sourceTreeOid": "d5e9b77912c245c60da6e57059cd1a9ff89a770d",
-    "catalogDigest": "7900616b652736fbf9d1dc4789f593c45a4bbb1311adda2accbe62c8a9977bca",
+    "sourceCommitOid": "3208e5a218ad1030af641785e02f5355d17c4e43",
+    "sourceTreeOid": "ac4056d7828d117218695c3b073c4b5e8a562839",
+    "catalogDigest": "2bd29ac62784d4aaf864c4b32b5dcc2413b4c31fb8feb6766db034f4eb79a531",
     "previousBaselineDigest": "03a21b5864df3dbac95a6c95f879071ac7522181a52b33afedbd6788492c08f3",
     "changesetsDigest": "b1956b9d0fcf848882594f2d85651461b9087f8162f0f8565bc3dfe9ff689027",
     "releaseNotesDigest": "abb9c7ce05e2fabe4441c2185a4b4a22b52b41b95baa7127850b1cf0cfe0685b",
@@ -8280,5 +8293,5 @@
       "@mango/cli"
     ]
   },
-  "planDigest": "080c23aae9bc638a41f2815201a75c58776d5be8462aee94e6ac6ce74d813c3e"
+  "planDigest": "10812f36311a697b7df99ba09a2cd597e24e80ec7c82e3ea7feb58e32a09aff1"
 }

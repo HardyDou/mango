@@ -1,10 +1,10 @@
 {
   "architectureGraph": {
-    "reportSha256": "fef455cfe857100b5ee149a3911967e5175af263d41c44f3335465e7047e8457",
+    "reportSha256": "b8d8a92c77c3e3cc98066b9326d4556b39a03b65924a09f57803dd9e26c5af2f",
     "schemaVersion": 1,
     "workspaceCount": 42
   },
-  "catalogDigest": "7900616b652736fbf9d1dc4789f593c45a4bbb1311adda2accbe62c8a9977bca",
+  "catalogDigest": "2bd29ac62784d4aaf864c4b32b5dcc2413b4c31fb8feb6766db034f4eb79a531",
   "maven": {
     "dependencyManagementSets": [
       {
