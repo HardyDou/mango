@@ -2,7 +2,7 @@
 
 ## v2026.10.15-maven-npm-admin-extension-10g-release - Maven 1.0.59 - npm 19 packages including @mango/admin-extension@1.1.0 @mango/file@1.2.0 @mango/cli@1.2.21 - 2026-10-15
 
-Status: `PENDING`. Maven non-application reactor and docs bundle advance 1.0.58 -> 1.0.59; the npm closure advances through @mango/cli@1.2.21.
+Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `014edb92eaed468bcb7ea2a18cab723ce0a65ca2fdd68746503d0178ce156795`; prepared candidate `9d9255f3652734bdd089b84b1600b1befc59c0f0d172c5f2409cc44e8d6731df` is published and verified from both Maven and npm registry roles with a clean consume-registry consumer. Tag and GitHub Release are `CREATED_AND_VERIFIED`; the Maven non-application reactor and `io.mango:mango-docs-bundle` are at 1.0.59, and the npm closure is published through `@mango/cli@1.2.21`.
 
 ### Pull Requests
 
