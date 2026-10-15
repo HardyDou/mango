@@ -1,5 +1,61 @@
 # Mango Changelog
 
+## v2026.10.14-npm-file-upload-multipart-release - npm 26 packages including @mango/common@2.1.4 @mango/file@1.1.4 @mango/cli@1.2.20 - 2026-10-14
+
+Status: `PENDING`. Release plan digest `966eb02ebf1b8d05c0d3f73599b29934e9e7da14746174d3c97baf9605a10696`; Mango Maven and docs remain at 1.0.58.
+
+### Pull Requests
+
+- [PR #1042](https://github.com/HardyDou/mango/pull/1042) Fixed file uploads below the multipart threshold by declaring `multipart/form-data` for FormData requests. Packages: @mango/common@2.1.4, @mango/file@1.1.4 and generated npm dependents through @mango/cli@1.2.20. Business Adaptation: upgrade the npm tuple and remove any explicit multipart workaround.
+
+### Fixed
+
+- Small files now upload successfully through `@mango/file` and the `@mango/common` instance upload helpers when the host HTTP client defaults to `application/json`.
+
+### Versions
+
+- npm closure: @mango/common@2.1.4, @mango/admin-extension@1.0.11, @mango/ai@1.1.9, @mango/auth@1.0.39, @mango/file@1.1.4, @mango/detail@1.1.4, @mango/grid-layout@1.0.28, @mango/grid-widgets@1.0.34, @mango/home@1.0.27, @mango/rbac@1.0.40, @mango/site-shell@1.0.24, @mango/system@1.0.48, @mango/admin-pages@1.0.49, @mango/calendar@1.0.50, @mango/cms@1.0.39, @mango/job@1.0.43, @mango/link@1.0.36, @mango/notice@1.0.55, @mango/numgen@1.0.51, @mango/payment@1.0.42, @mango/template@1.0.51, @mango/workflow@1.0.59, @mango/admin-shell@1.0.80, @mango/workflow-business-example@1.0.58, @mango/admin@1.1.16 and @mango/cli@1.2.20.
+- Maven and documentation artifacts remain at 1.0.58; no Maven coordinate is published in this npm-only batch.
+
+### Published Packages
+
+- Publish the 26-package npm topology in machine-generated dependency order, ending at `@mango/cli@1.2.20`, then verify every package from the npm consume registry.
+- Verify one clean consume-registry consumer, create the immutable tag `v2026.10.14-npm-file-upload-multipart-release`, and create the GitHub Release only after registry and consumer verification.
+
+### Business Impact
+
+- Affected consumers are business frontends using `@mango/file`, `@mango/common` and the generated dependent package tuple.
+- No API, data, database, menu, permission, tenant or configuration change is included. Consumers may remove explicit multipart header workarounds after upgrading.
+
+### Upgrade Estimate
+
+- Audience: teams consuming Mango npm packages.
+- Engineering Effort: low; upgrade the complete npm tuple and rebuild.
+- Execution Window: one deployment window with no database work.
+- Service Downtime: none.
+- Rollback Effort: low; restore the previous immutable npm tuple.
+- Assumptions: consumers resolve packages from the Mango npm registry.
+
+### Upgrade Notes
+
+- Upgrade `@mango/file` to 1.1.4 and `@mango/common` to 2.1.4 with the generated dependents through `@mango/cli@1.2.20`.
+- Remove explicit multipart Content-Type workarounds and verify small-file uploads through the normal file API.
+
+### Verification
+
+- Run the release plan, release-notes, package tests/builds and sealed-candidate checks.
+- Upload a file below the multipart threshold and assert `multipart/form-data` plus HTTP 200 from the real file-management flow.
+- After publication, verify all 26 packages from both npm registry roles and run a clean consume-registry consumer.
+
+### Rollback
+
+- Restore the previous immutable npm tuple, including `@mango/file@1.1.3` and `@mango/common@2.1.3`; no data rollback is required.
+- Never republish an immutable coordinate.
+
+### Audit History
+
+- [PR #1043](https://github.com/HardyDou/mango/pull/1043) Docs-only real-link acceptance evidence for #1041; not release-bearing.
+
 ## v2026.10.14-maven-1.0.58-fileproc-pdf-compress-release - Maven 1.0.58 - npm 31 packages including @mango/common@2.1.3 @mango/pmo@1.4.7 @mango/cli@1.2.19 - 2026-10-14
 
 Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `a4ea636e00732e5194248ceccee25fdd7046a266ff87a8105633b4344a49d377`; prepared candidate `454fea3fbf0813e0853b1f4193a151f4cda610f28e02161a5841533738a26bc7` is published and verified from both registry roles with a pure consume-registry consumer. Tag and GitHub Release are `CREATED_AND_VERIFIED`.
