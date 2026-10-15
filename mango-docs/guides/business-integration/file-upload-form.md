@@ -145,6 +145,8 @@ Mango 各层默认单文件上限已统一为 10GB：Spring `spring.servlet.mult
 
 业务页面不需要为 HTTP IP 单独配置 `MUpload`。浏览器没有 Web Crypto 时，组件会省略客户端 SHA-256，后端使用 `SERVER_CHUNK` 接收并在合并后计算哈希。本次上传不能在上传前命中秒传，完成后生成的哈希映射可供后续相同文件使用；HTTPS 或 localhost 环境仍保留客户端哈希、秒传和存储支持时的 `S3_MULTIPART`。
 
+`@mango/file` 依赖全局单例 `@mango/admin-extension`（`peerDependencies`），升级 `@mango/file` 时必须把 `@mango/admin-extension` 与其余 Mango 包整套升级到同一发布批次，禁止只升单包；否则页面注册表会劈裂，全站模块菜单 404。
+
 业务项目升级后至少验证：
 
 1. HTTP IP 页面上传达到临界值的文件，不再出现 `crypto.subtle.digest` 异常。

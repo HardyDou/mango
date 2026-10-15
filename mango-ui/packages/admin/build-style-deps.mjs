@@ -7,7 +7,6 @@ const packages = [
   '@mango/api-schema',
   '@mango/http-client',
   '@mango/common',
-  '@mango/admin-extension',
   '@mango/auth',
   '@mango/app-runtime',
   '@mango/rbac',

@@ -76,6 +76,8 @@ URL 字段职责：
 pnpm add @mango/file
 ```
 
+`@mango/admin-extension` 是本包的 `peerDependencies`，由宿主应用提供唯一版本；它与其余 Mango 包必须整套升级到同一发布批次，禁止只升单包。
+
 注册管理页面：
 
 ```ts
