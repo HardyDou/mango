@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-15T04:32:59.993Z",
+  "generatedAt": "2026-10-15T04:59:00.004Z",
   "releaseKind": "mixed",
   "release": {
     "tag": "v2026.10.15-maven-npm-admin-extension-10g-release",
@@ -3490,8 +3490,8 @@
     "docs": null
   },
   "source": {
-    "commit": "3208e5a218ad1030af641785e02f5355d17c4e43",
-    "tree": "ac4056d7828d117218695c3b073c4b5e8a562839"
+    "commit": "6bdb65f734fe86ce289ff4a8d5e48692883b9de7",
+    "tree": "85e905b13df49e3ae487a2c914199c6252ea2e0d"
   },
   "sourceFiles": [
     "CHANGELOG.md",
@@ -6737,8 +6737,8 @@
   "versionPolicyDigest": "c4c4c80d533dde047a59627c915cf87e3570606c2d329023ce6896544c50ee12",
   "releasePlanIdentity": {
     "schemaVersion": 1,
-    "sourceCommitOid": "3208e5a218ad1030af641785e02f5355d17c4e43",
-    "sourceTreeOid": "ac4056d7828d117218695c3b073c4b5e8a562839",
+    "sourceCommitOid": "6bdb65f734fe86ce289ff4a8d5e48692883b9de7",
+    "sourceTreeOid": "85e905b13df49e3ae487a2c914199c6252ea2e0d",
     "catalogDigest": "2bd29ac62784d4aaf864c4b32b5dcc2413b4c31fb8feb6766db034f4eb79a531",
     "previousBaselineDigest": "03a21b5864df3dbac95a6c95f879071ac7522181a52b33afedbd6788492c08f3",
     "changesetsDigest": "b1956b9d0fcf848882594f2d85651461b9087f8162f0f8565bc3dfe9ff689027",
@@ -8293,5 +8293,5 @@
       "@mango/cli"
     ]
   },
-  "planDigest": "10812f36311a697b7df99ba09a2cd597e24e80ec7c82e3ea7feb58e32a09aff1"
+  "planDigest": "014edb92eaed468bcb7ea2a18cab723ce0a65ca2fdd68746503d0178ce156795"
 }
