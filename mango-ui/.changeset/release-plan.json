@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-15T04:23:04.439Z",
+  "generatedAt": "2026-10-15T04:27:00.741Z",
   "releaseKind": "mixed",
   "release": {
     "tag": "v2026.10.15-maven-npm-admin-extension-10g-release",
     "title": "Mango release v2026.10.15-maven-npm-admin-extension-10g-release",
     "notesFile": ".changeset/release-notes.txt",
-    "notesSha256": "367731ce6e7d8d09378a44fa031e162b96d5c89ba09aa1faad359b94b50bc826"
+    "notesSha256": "abb9c7ce05e2fabe4441c2185a4b4a22b52b41b95baa7127850b1cf0cfe0685b"
   },
   "baseline": {
     "kind": "successful-release",
@@ -3490,16 +3490,19 @@
     "docs": null
   },
   "source": {
-    "commit": "b29c3edc2e35a8f6871169061b0f813d21d0b8ad",
-    "tree": "f52ebef492cfd0d06b0e165311c03d235b86f381"
+    "commit": "1575fa679b2f90c7431ac8eeb9b5dc5c6a923b0f",
+    "tree": "d5e9b77912c245c60da6e57059cd1a9ff89a770d"
   },
   "sourceFiles": [
     "CHANGELOG.md",
+    "mango-catalog/catalog.lock.json",
     "mango-docs/guides/business-integration/file-upload-form.md",
     "mango-ui/.changeset/admin-extension-singleton.md",
     "mango-ui/.changeset/file-upload-default-limit-10g.md",
     "mango-ui/.changeset/issue-1041-file-multipart-header.md",
     "mango-ui/.changeset/release-baseline.json",
+    "mango-ui/.changeset/release-notes.txt",
+    "mango-ui/.changeset/release-plan.json",
     "mango-ui/apps/mango-admin-cms-app/package.json",
     "mango-ui/apps/mango-admin-rbac-app/package.json",
     "mango-ui/apps/mango-admin-shell/package.json",
@@ -3524,12 +3527,15 @@
     "mango-ui/packages/file/src/api/fileSettings.ts",
     "mango-ui/packages/file/src/components/README.md",
     "mango-ui/packages/file/src/views/settings/index.vue",
+    "mango-ui/packages/mango-cli/CHANGELOG.md",
     "mango-ui/packages/mango-cli/README.md",
+    "mango-ui/packages/mango-cli/release-versions.json",
     "mango-ui/packages/mango-cli/scripts/check-cli.mjs",
     "mango-ui/packages/mango-cli/src/index.mjs",
     "mango-ui/packages/mango-cli/templates/business-module/frontend/packages/{{moduleKebab}}/package.json.template",
     "mango-ui/packages/mango-cli/templates/full/README.md",
     "mango-ui/packages/mango-cli/templates/full/backend/app/src/main/resources/application.yml",
+    "mango-ui/packages/mango-cli/templates/full/frontend/package.json.template",
     "mango-ui/pnpm-lock.yaml",
     "mango/mango-app/README.md",
     "mango/mango-app/microservice/mango-platform-app/src/main/resources/application.yml",
@@ -3637,6 +3643,11 @@
       "reason": "published-package-path"
     },
     {
+      "file": "mango-ui/packages/mango-cli/release-versions.json",
+      "packageName": "@mango/cli",
+      "reason": "published-package-path"
+    },
+    {
       "file": "mango-ui/packages/mango-cli/scripts/check-cli.mjs",
       "packageName": "@mango/cli",
       "reason": "published-package-path"
@@ -3653,6 +3664,11 @@
     },
     {
       "file": "mango-ui/packages/mango-cli/templates/full/backend/app/src/main/resources/application.yml",
+      "packageName": "@mango/cli",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/mango-cli/templates/full/frontend/package.json.template",
       "packageName": "@mango/cli",
       "reason": "published-package-path"
     },
@@ -6708,12 +6724,12 @@
   "versionPolicyDigest": "c4c4c80d533dde047a59627c915cf87e3570606c2d329023ce6896544c50ee12",
   "releasePlanIdentity": {
     "schemaVersion": 1,
-    "sourceCommitOid": "b29c3edc2e35a8f6871169061b0f813d21d0b8ad",
-    "sourceTreeOid": "f52ebef492cfd0d06b0e165311c03d235b86f381",
+    "sourceCommitOid": "1575fa679b2f90c7431ac8eeb9b5dc5c6a923b0f",
+    "sourceTreeOid": "d5e9b77912c245c60da6e57059cd1a9ff89a770d",
     "catalogDigest": "7900616b652736fbf9d1dc4789f593c45a4bbb1311adda2accbe62c8a9977bca",
     "previousBaselineDigest": "03a21b5864df3dbac95a6c95f879071ac7522181a52b33afedbd6788492c08f3",
     "changesetsDigest": "b1956b9d0fcf848882594f2d85651461b9087f8162f0f8565bc3dfe9ff689027",
-    "releaseNotesDigest": "367731ce6e7d8d09378a44fa031e162b96d5c89ba09aa1faad359b94b50bc826",
+    "releaseNotesDigest": "abb9c7ce05e2fabe4441c2185a4b4a22b52b41b95baa7127850b1cf0cfe0685b",
     "versionPolicyDigest": "c4c4c80d533dde047a59627c915cf87e3570606c2d329023ce6896544c50ee12",
     "resolvedTuple": [
       {
@@ -8264,5 +8280,5 @@
       "@mango/cli"
     ]
   },
-  "planDigest": "55520a75ade796df3c1d1e6942fe191893e8bd807b747898c7edf4c7456deacf"
+  "planDigest": "080c23aae9bc638a41f2815201a75c58776d5be8462aee94e6ac6ce74d813c3e"
 }
