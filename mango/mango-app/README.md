@@ -67,6 +67,7 @@ mvn -f mango/pom.xml -pl :mango-business-app -am spring-boot:run
 | `.env.development` | `MANGO_FILE_ROOT` | 本地文件存储根目录。 |
 | `.env.development` | `MANGO_CRYPTO_SM4_SECRET_KEY` | SM4 密钥，`mango workspace init` 会写入本地工作区环境。 |
 | `mango-monolith-app/application.yml` | `mango.persistence.flyway.modules.*.enabled` | 控制单体各能力模块 migration。 |
+| `mango-monolith-app/application.yml`、`mango-platform-app/application.yml` | `spring.servlet.multipart.max-file-size`、`spring.servlet.multipart.max-request-size` | 默认 `10GB`，与文件中心默认单文件上限一致；超过 20MiB 的上传走文件中心分片链路。 |
 | `mango-gateway-app/application.yml` | `spring.cloud.gateway.routes` | 微服务路由到 platform 和 business。 |
 | `mango-platform-app/application.yml` | YAML 中 `mango` -> `flyway` -> `enabled` | 当前微服务示例默认关闭 Flyway。 |
 | `mango-business-app/application.yml` | YAML 中 `mango` -> `flyway` -> `enabled` | 当前业务服务示例默认关闭 Flyway。 |

@@ -83,7 +83,7 @@ export function configureFileSettingsApi(httpClient: HttpClient): FileSettingsAp
 export const fileSettingsApi = createFileSettingsApi();
 
 export const defaultFileSettings: FileSettings = {
-  maxSize: 100 * 1024 * 1024,
+  maxSize: 10 * 1024 * 1024 * 1024,
   allowedExtensions: [],
   blockedExtensions: ['exe', 'bat', 'cmd', 'sh', 'jar'],
   defaultAccessLevel: 'PRIVATE',

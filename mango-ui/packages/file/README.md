@@ -262,7 +262,7 @@ const rows = [
 
 - 管理端在“文件配置”页面保存 `maxSize`。
 - 后端可配置 `mango.file.upload.max-size`。
-- `MUpload.size`、`MUpload.sizes` 只是前端提前拦截，最终以后端 `maxSize` 为准。
+- `MUpload.size`、`MUpload.sizes` 只是前端提前拦截，默认文件中心单文件上限为 10GB，最终以后端 `maxSize` 为准。
 
 配置分片上传：
 

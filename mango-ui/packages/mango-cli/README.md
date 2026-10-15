@@ -187,6 +187,8 @@ mango docs pull --project-dir demo-custom --version 1.0.1 --maven-repository "$M
 
 当前源码生成的 `backend/pom.xml` 还会显式管理 `flyway-core` 与 `flyway-mysql` 11.20.3，避免回落到 Spring Boot 3.5.14 BOM 中只测试到 MySQL 8.1 的 Flyway 11.7.2。两个 Flyway artifact 必须保持完全相同的版本；该基线覆盖 MySQL 8.4。
 
+当前源码生成的 `backend/app/src/main/resources/application.yml` 默认把 `spring.servlet.multipart.max-file-size` 和 `spring.servlet.multipart.max-request-size` 设为 `10GB`，与文件中心默认单文件上限一致；超过 20MiB 的上传仍走文件中心分片链路。业务项目按实际部署磁盘和网关/反向代理容量覆盖这两个值。
+
 ### 6.3 docs bundle
 
 `mango docs` 解决业务仓不下载 Mango 源码时的文档可达性问题。版本解析顺序为：命令参数 `--version`、`mango.config.json.mangoBackendVersion`、`backend/pom.xml` 或 `pom.xml` 中的 `<mango.version>`、CLI 随包 `release-versions.json.maven.mangoBackend`。

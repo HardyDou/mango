@@ -139,7 +139,9 @@ const categories: MangoAttachmentUploadCategory[] = [
 | -------------------- | ---------------------------------------------------------------- |
 | `multipartEnabled`   | 是否启用分片上传；关闭后文件走普通上传。                         |
 | `multipartThreshold` | 进入分片上传的临界值，单位字节，默认 `20971520`（20 MiB）。      |
-| `maxSize`            | 文件中心单文件上限；`MUpload` 与组件自身限制同时存在时取较小值。 |
+| `maxSize`            | 文件中心单文件上限，默认 `10737418240`（10GB）；`MUpload` 与组件自身限制同时存在时取较小值。 |
+
+Mango 各层默认单文件上限已统一为 10GB：Spring `spring.servlet.multipart.max-file-size`/`max-request-size`、文件中心 `maxSize`、`@mango/file` 组件默认值、Nginx `client_max_body_size` 和 CLI full 模板默认值。超过 20MiB 的上传仍进入分片链路；升级到旧默认 100MB 的存量配置由迁移统一提升到 10GB，显式设置过的其它值保持不变。
 
 业务页面不需要为 HTTP IP 单独配置 `MUpload`。浏览器没有 Web Crypto 时，组件会省略客户端 SHA-256，后端使用 `SERVER_CHUNK` 接收并在合并后计算哈希。本次上传不能在上传前命中秒传，完成后生成的哈希映射可供后续相同文件使用；HTTPS 或 localhost 环境仍保留客户端哈希、秒传和存储支持时的 `S3_MULTIPART`。
 
@@ -150,7 +152,7 @@ const categories: MangoAttachmentUploadCategory[] = [
 1. HTTP IP 页面上传达到临界值的文件，不再出现 `crypto.subtle.digest` 异常。
 2. 开启分片时上传会话按环境返回 `SERVER_CHUNK` 或 `S3_MULTIPART`，关闭分片时改走普通上传。
 3. 临界值和 `maxSize` 修改后，新上传请求读取当前租户最新配置。
-4. Spring/Tomcat、网关和反向代理的请求大小及超时足以承载普通上传或单个分片。
+4. Spring/Tomcat、网关和反向代理的请求大小及超时足以承载普通上传或单个分片；默认值已按 10GB 单文件、20MiB 分片阈值对齐。
 
 ## 6. 最小闭环
 

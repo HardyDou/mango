@@ -358,7 +358,7 @@ function readQueryParam(value: string, name: string) {
 
 function settingsSavePayload(settings: FileSettings) {
   return {
-    maxSize: settings.maxSize || 104857600,
+    maxSize: settings.maxSize || 10737418240,
     allowedExtensions: ['txt', 'png', 'jpg', 'pdf'],
     blockedExtensions: ['exe', 'bat', 'cmd', 'sh', 'jar'],
     defaultAccessLevel: settings.defaultAccessLevel || 'PRIVATE',

@@ -20,7 +20,7 @@ public class FileProperties {
     private static final long DEFAULT_CONNECT_TIMEOUT_MILLIS = 3000L;
     private static final long DEFAULT_READ_TIMEOUT_MILLIS = 10000L;
     private static final long DEFAULT_UPLOAD_EXPIRE_SECONDS = 900L;
-    private static final long DEFAULT_UPLOAD_MAX_SIZE = 100L * 1024L * 1024L;
+    private static final long DEFAULT_UPLOAD_MAX_SIZE = 10L * 1024L * 1024L * 1024L;
     private static final long DEFAULT_MULTIPART_THRESHOLD = 20L * 1024L * 1024L;
     private static final long DEFAULT_REMOTE_IMAGE_MAX_SIZE = 10L * 1024L * 1024L;
     private static final int DEFAULT_MAX_REDIRECTS = 3;
