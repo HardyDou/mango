@@ -76,6 +76,8 @@ URL 字段职责：
 pnpm add @mango/file
 ```
 
+`@mango/admin-extension` 是本包的 `peerDependencies`，由宿主应用提供唯一版本；它与其余 Mango 包必须整套升级到同一发布批次，禁止只升单包。
+
 注册管理页面：
 
 ```ts
@@ -260,7 +262,7 @@ const rows = [
 
 - 管理端在“文件配置”页面保存 `maxSize`。
 - 后端可配置 `mango.file.upload.max-size`。
-- `MUpload.size`、`MUpload.sizes` 只是前端提前拦截，最终以后端 `maxSize` 为准。
+- `MUpload.size`、`MUpload.sizes` 只是前端提前拦截，默认文件中心单文件上限为 10GB，最终以后端 `maxSize` 为准。
 
 配置分片上传：
 

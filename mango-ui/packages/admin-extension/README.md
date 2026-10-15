@@ -32,6 +32,17 @@ registerModulePages({
 
 `@mango/admin-pages/core`、`@mango/admin-pages/features` 和 `@mango/admin-pages/notice` 继续 re-export 同一份实现，因此已发布消费者不会得到第二个注册表实例。这三个兼容子路径保留到下一个主版本；在仓外消费者完成迁移并经独立发布说明确认后才会删除。
 
+### 3.1 全局单例与宿主依赖
+
+页面注册表是**全局单例**。本包对 `@mango/admin-pages`、`@mango/ai`、`@mango/file` 和业务模块包以 `peerDependencies` 暴露，由最终宿主应用（`mango-admin`、各微前端 app 或 `mango create` 生成项目）统一安装**唯一一个** `@mango/admin-extension` 版本。任何一次单包升级只要把 `@mango/admin-extension` 拉到与其余包不同的版本，pnpm 就会装出两份物理副本，导致“注册表劈裂”：业务包写入 A 表、Shell 从 B 表查询，最终全站模块菜单 404。
+
+运行时同时做两重保护：
+
+1. 页面注册表挂在 `globalThis` 上，同版本的多个副本也共用同一份 Map，不再各写各的。
+2. 发现两个不同版本同时加载时，直接抛出“检测到多个 @mango/admin-extension 版本”错误，替代静默 404。
+
+升级业务项目时，`@mango/admin-extension` 必须与其余 Mango 包（`@mango/admin`、`@mango/admin-pages`、`@mango/file`、`@mango/ai` 等）整套升级到同一发布批次，禁止只升单包。
+
 ## 4. 配置说明
 
 本包没有环境变量或 YAML 配置。页面注册使用 `moduleCode`、`pages`、可选 `routes` 和可选制品元数据；功能集合使用 `core`、`full`、功能数组或布尔映射。字段语义与 [Admin Pages README](../admin-pages/README.md) 的配置说明保持一致。
@@ -54,7 +65,7 @@ registerModulePages({
 
 ## 8. 快速开始
 
-1. 在领域前端包中添加对 `@mango/admin-extension` 的精确版本依赖。
+1. 在领域前端包把 `@mango/admin-extension` 声明为 `peerDependencies`，由宿主应用提供唯一版本。
 2. 从 `@mango/admin-extension/core` 导入 `registerModulePages()`。
 3. 用与后端菜单一致的 `moduleCode` 和 component key 注册页面。
 4. 在 Admin 启动的 feature registrar 中调用领域注册函数。
@@ -68,6 +79,10 @@ registerModulePages({
 **新旧导入路径的注册结果不一致**
 
 检查应用是否安装了同一发布 tuple 中的 `@mango/admin-extension` 和 `@mango/admin-pages`，以及打包配置是否保留了 `@mango/admin-extension/*` 外部导入。
+
+**启动时报“检测到多个 @mango/admin-extension 版本”**
+
+说明依赖树里存在两份 `@mango/admin-extension`。执行 `pnpm why @mango/admin-extension` 和 `ls node_modules/.pnpm/@mango+admin-extension@*`，确认只剩一个版本；把整套 Mango 包升级到同一批次，或在宿主 `pnpm.overrides` 强制 `@mango/admin-extension` 单版本。
 
 ## 10. 相关文档
 

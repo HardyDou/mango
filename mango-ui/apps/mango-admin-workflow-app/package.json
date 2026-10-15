@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@mango/app-runtime": "workspace:*",
+    "@mango/admin-extension": "workspace:*",
     "@mango/admin-pages": "workspace:*",
     "@mango/auth": "workspace:*",
     "@mango/common": "workspace:*",

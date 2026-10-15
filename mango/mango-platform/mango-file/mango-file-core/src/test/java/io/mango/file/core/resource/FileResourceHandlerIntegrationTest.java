@@ -77,7 +77,7 @@ class FileResourceHandlerIntegrationTest {
 
         assertThat(storageConfigs).hasSize(1);
         assertThat(settings).hasSize(1);
-        assertThat(settings.getFirst().getVersion()).isEqualTo(6);
+        assertThat(settings.getFirst().getVersion()).isEqualTo(7);
         assertThat(settings.getFirst().getSyncMode()).isEqualTo(ResourceSyncMode.INIT_ONLY);
         assertThat(count("file_storage_config")).isOne();
         assertThat(count("file_settings")).isOne();
@@ -91,6 +91,7 @@ class FileResourceHandlerIntegrationTest {
         assertThat(intValue("file_settings", "access_token_expire_seconds", "id = 1")).isEqualTo(86400);
         assertThat(intValue("file_settings", "preview_expire_seconds", "id = 1")).isEqualTo(86400);
         assertThat(intValue("file_settings", "archive_retain_days", "id = 1")).isEqualTo(180);
+        assertThat(longValue("file_settings", "max_size", "id = 1")).isEqualTo(10737418240L);
         assertThat(longValue("file_settings", "preview_max_size", "id = 1")).isEqualTo(209715200L);
         assertThat(intValue("file_settings", "multipart_enabled", "id = 1")).isOne();
         assertThat(longValue("file_settings", "multipart_threshold", "id = 1")).isEqualTo(20971520L);
@@ -235,7 +236,7 @@ class FileResourceHandlerIntegrationTest {
                     id bigint not null,
                     tenant_id bigint not null default 1,
                     org_id bigint,
-                    max_size bigint not null default 104857600,
+                    max_size bigint not null default 10737418240,
                     allowed_extensions varchar(1000),
                     blocked_extensions varchar(1000) default 'exe,bat,cmd,sh,jar',
                     default_access_level varchar(32) not null default 'PRIVATE',

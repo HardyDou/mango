@@ -57,6 +57,8 @@ registerExampleAdminPages();
 
 现有仓外代码可以继续从 `@mango/admin-pages/core`、`features` 和 `notice` 导入；新建的领域包使用 `@mango/admin-extension` 的对应子路径。兼容子路径保留到下一个主版本，并只在仓外消费者迁移和发布说明完成后删除。
 
+`@mango/admin-extension` 是全局单例，本包以 `peerDependencies` 声明它，由宿主应用（`mango-admin`、各微前端 app 或 `mango create` 生成项目）提供唯一版本。请勿在本包或应用里再安装第二个 `@mango/admin-extension` 版本，否则页面注册表会劈裂、模块菜单 404。见 [Admin Extension README](../admin-extension/README.md#31-全局单例与宿主依赖)。
+
 ## 4. 配置说明
 
 页面注册配置：

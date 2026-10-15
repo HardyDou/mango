@@ -330,9 +330,9 @@ const previewExternalExtensionsText = ref('');
 const allowedContentTypesText = ref('');
 const blockedContentTypesText = ref('');
 const serverUploadLimit = {
-  maxFileSize: 512 * 1024 * 1024,
-  maxRequestSize: 1024 * 1024 * 1024,
-  maxFileSizeMb: 512,
+  maxFileSize: 10 * 1024 * 1024 * 1024,
+  maxRequestSize: 10 * 1024 * 1024 * 1024,
+  maxFileSizeMb: 10 * 1024,
 };
 
 const maxSizeMb = computed({

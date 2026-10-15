@@ -22,4 +22,9 @@ class FilePropertiesTest {
 
         assertThat(properties.getAssetRoot()).isEqualTo("/opt/mango/bootstrap-assets");
     }
+
+    @Test
+    void defaultsUploadLimitToTenGigabytes() {
+        assertThat(new FileProperties().getUpload().getMaxSize()).isEqualTo(10L * 1024L * 1024L * 1024L);
+    }
 }

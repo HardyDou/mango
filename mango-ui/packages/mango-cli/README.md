@@ -187,6 +187,8 @@ mango docs pull --project-dir demo-custom --version 1.0.1 --maven-repository "$M
 
 当前源码生成的 `backend/pom.xml` 还会显式管理 `flyway-core` 与 `flyway-mysql` 11.20.3，避免回落到 Spring Boot 3.5.14 BOM 中只测试到 MySQL 8.1 的 Flyway 11.7.2。两个 Flyway artifact 必须保持完全相同的版本；该基线覆盖 MySQL 8.4。
 
+当前源码生成的 `backend/app/src/main/resources/application.yml` 默认把 `spring.servlet.multipart.max-file-size` 和 `spring.servlet.multipart.max-request-size` 设为 `10GB`，与文件中心默认单文件上限一致；超过 20MiB 的上传仍走文件中心分片链路。业务项目按实际部署磁盘和网关/反向代理容量覆盖这两个值。
+
 ### 6.3 docs bundle
 
 `mango docs` 解决业务仓不下载 Mango 源码时的文档可达性问题。版本解析顺序为：命令参数 `--version`、`mango.config.json.mangoBackendVersion`、`backend/pom.xml` 或 `pom.xml` 中的 `<mango.version>`、CLI 随包 `release-versions.json.maven.mangoBackend`。
@@ -434,6 +436,8 @@ CLI 绝不自动安装 Playwright、下载 Chromium或修改项目。缺少依�
 | `templates/business-module`                  | 随 CLI 发布的业务模块模板                       | 后端目录必须与 `mango-business-starter` canonical 模板完全一致                                                             |
 
 已发布 CLI 直接从包内 `templates/business-module` 执行 `mango module add`，不依赖 Mango 源仓路径。后端镜像以 `mango-business-starter` 为 canonical 源，发布和测试前执行 `pnpm --filter @mango/cli run check:business-module-template`；路径集合或任一文件 hash 不一致时必须先同步模板。模板源码中的 `module.properties.template` 会生成真实的 `module.properties`，避免源码占位符被仓库架构扫描误判；生成项目的模块发现、菜单、权限、租户和运行时行为不变。
+
+生成项目的 `frontend/package.json` 会显式声明单一 `@mango/admin-extension`，业务模块模板只把它作为 `peerDependencies`。`@mango/admin-extension` 是全局页面注册表单例：`mango create`/`mango module add` 生成的项目必须与其他 Mango 包整套升级到同一发布批次，禁止只升单个包，否则会出现两份注册表并导致全站模块菜单 404。
 
 ## 8. 数据与初始化
 

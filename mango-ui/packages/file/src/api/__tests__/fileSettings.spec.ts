@@ -6,6 +6,7 @@ describe('file settings defaults', () => {
   it('allows duplicate uploads by auto-renaming files by default', () => {
     expect(defaultFileSettings.duplicateNameStrategy).toBe('AUTO_RENAME');
     expect(defaultFileSettings.duplicateCheckDirectoryScoped).toBe(true);
+    expect(defaultFileSettings.maxSize).toBe(10 * 1024 * 1024 * 1024);
     expect(defaultFileSettings.multipartEnabled).toBe(true);
     expect(defaultFileSettings.multipartThreshold).toBe(20 * 1024 * 1024);
   });

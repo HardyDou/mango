@@ -127,6 +127,7 @@ const ADMIN_FULL_MODULES = OFFICIAL_MODULES.filter((module) =>
 const CORE_FRONTEND_PACKAGES = uniqueBy(
   [
     { name: '@mango/admin', versionKey: 'mangoAdmin' },
+    { name: '@mango/admin-extension', versionKey: 'mangoAdminExtension' },
     { name: '@mango/admin-pages', versionKey: 'mangoAdminPages' },
     { name: '@mango/app-runtime', versionKey: 'mangoAppRuntime' },
     { name: '@mango/http-client', versionKey: 'mangoHttpClient' },

@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@mango/admin": "workspace:*",
+    "@mango/admin-extension": "workspace:*",
     "@mango/admin-shell": "workspace:*",
     "@mango/admin-pages": "workspace:*",
     "@mango/app-runtime": "workspace:*",

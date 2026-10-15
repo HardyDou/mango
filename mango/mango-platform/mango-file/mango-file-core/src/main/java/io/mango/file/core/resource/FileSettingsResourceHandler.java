@@ -24,7 +24,7 @@ public class FileSettingsResourceHandler implements ResourceHandler {
 
     private static final String TARGET_TABLE = "file_settings";
     private static final long DEFAULT_TENANT_ID = 1L;
-    private static final long DEFAULT_MAX_SIZE = 104857600L;
+    private static final long DEFAULT_MAX_SIZE = 10L * 1024L * 1024L * 1024L;
     private static final long DEFAULT_MULTIPART_THRESHOLD = 20971520L;
     private static final long DEFAULT_DIRECT_UPLOAD_EXPIRE_SECONDS = 900L;
     private static final long DEFAULT_ACCESS_EXPIRE_SECONDS = 86400L;
@@ -45,7 +45,7 @@ public class FileSettingsResourceHandler implements ResourceHandler {
                 .resourceType(resourceType())
                 .fieldDescription("settingsId", "文件中心配置稳定 ID，可选；不填时使用资源 ID。")
                 .fieldDescription("tenantId", "租户 ID，默认 1；同一租户只允许一条配置。")
-                .fieldDescription("maxSize", "单文件最大大小，单位字节，默认 104857600。")
+                .fieldDescription("maxSize", "单文件最大大小，单位字节，默认 10737418240（10GB）。")
                 .fieldDescription("allowedExtensions", "允许上传扩展名，逗号分隔；为空表示不限制。")
                 .fieldDescription("blockedExtensions", "禁止上传扩展名，默认 exe,bat,cmd,sh,jar。")
                 .fieldDescription("defaultAccessLevel", "默认访问级别，默认 PRIVATE。")
