@@ -815,6 +815,9 @@ importers:
         specifier: '>=4.1.6 <5'
         version: 4.6.4(vue@3.5.13(typescript@5.9.3))
     devDependencies:
+      '@mango/admin-extension':
+        specifier: workspace:*
+        version: link:../admin-extension
       '@vitejs/plugin-vue':
         specifier: 6.0.8
         version: 6.0.8(vite@7.3.6(@types/node@22.20.1)(jiti@2.6.1)(sass@1.101.0)(terser@5.46.1)(yaml@2.8.3))(vue@3.5.13(typescript@5.9.3))
