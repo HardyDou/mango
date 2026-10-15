@@ -62,8 +62,8 @@ mvn -f mango/pom.xml -pl :mango-monolith-app -am spring-boot:run \
 |------|---------------|
 | `server.port` | `${MANGO_BACKEND_PORT:5555}` |
 | `spring.datasource.*` | 使用 `MANGO_DB_*` 环境变量。 |
-| `spring.servlet.multipart.max-file-size` | `512MB`。 |
-| `spring.servlet.multipart.max-request-size` | `1024MB`。 |
+| `spring.servlet.multipart.max-file-size` | `10GB`。 |
+| `spring.servlet.multipart.max-request-size` | `10GB`。 |
 | `mango.kv.store.type` | `jdbc`。 |
 | `mango.file.storage-type` | `LOCAL`。 |
 | `mango.file.local.root-path` | `${MANGO_FILE_ROOT:./data/files}`。 |
