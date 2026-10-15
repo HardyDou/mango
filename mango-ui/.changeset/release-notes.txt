@@ -1,100 +1,79 @@
 ## Pull Requests
 
-- [PR #1042](https://github.com/HardyDou/mango/pull/1042) Fixed file uploads that failed below the multipart threshold because the request Content-Type stayed application/json. Packages: @mango/file@1.1.4, @mango/common@2.1.4 and generated npm dependents through @mango/cli@1.2.20. Business Adaptation: upgrade the npm tuple and remove the explicit multipart workaround in business upload helpers.
+- [PR #1049](https://github.com/HardyDou/mango/pull/1049) Fixed the全站模块菜单 404 caused by split `@mango/admin-extension` page registries. Packages: @mango/admin-extension@1.1.0, @mango/admin-pages@1.1.0, @mango/ai@1.2.0, @mango/file@1.2.0, @mango/admin@1.1.17 and the generated npm dependents through @mango/cli@1.2.21. Business Adaptation: upgrade the complete Mango npm tuple in one batch; never upgrade a single Mango package in isolation.
+- [PR #1048](https://github.com/HardyDou/mango/pull/1048) Changed the default single-file upload limit to 10GB across Spring multipart, the file service defaults, the file Flyway default, `@mango/file`, CLI templates and Nginx. Packages: Mango Maven/docs 1.0.59, @mango/file@1.2.0, @mango/cli@1.2.21. Business Adaptation: upgrade Maven/docs to 1.0.59, run file migration V6, and confirm disk and gateway capacity.
+- [PR #1047](https://github.com/HardyDou/mango/pull/1047) Changed release closeout bookkeeping for the previous npm multipart batch only; documentation-only audit entry superseded by this batch. Packages: none. Business Adaptation: none.
 
 ## Fixed
 
-- Files below the multipart threshold (default 20 MiB) upload again: @mango/file upload, uploadBatch and uploadServerPart, and the @mango/common instance upload helpers, now declare multipart/form-data so the host JSON default header no longer serializes FormData into JSON.
+- Module menus stay reachable after upgrading generated projects: `@mango/admin-extension` keeps a single global page registry on `globalThis` and throws a clear error instead of silently returning 404 when two versions load at once.
+- `@mango/admin-extension` is now a `peerDependencies` contract for `@mango/admin-pages`, `@mango/ai`, `@mango/file` and business module templates, so a host application provides exactly one version.
+
+## Changed
+
+- Default single-file upload limit is now 10GB (10737418240 bytes) across Spring `max-file-size`/`max-request-size`, file settings, the file Flyway default, `@mango/file` component defaults, CLI full templates and Nginx `client_max_body_size`; the 20MiB multipart threshold is unchanged, so uploads above 20MiB still use the multipart session flow.
+- File Flyway V6 updates only rows still on the previous 100MB default to 10GB, keeping any explicitly configured value.
 
 ## Versions
 
-- @mango/common: 2.1.3 -> 2.1.4
-- @mango/admin-extension: 1.0.10 -> 1.0.11
-- @mango/ai: 1.1.8 -> 1.1.9
-- @mango/auth: 1.0.38 -> 1.0.39
-- @mango/file: 1.1.3 -> 1.1.4
-- @mango/detail: 1.1.3 -> 1.1.4
-- @mango/grid-layout: 1.0.27 -> 1.0.28
-- @mango/grid-widgets: 1.0.33 -> 1.0.34
-- @mango/home: 1.0.26 -> 1.0.27
-- @mango/rbac: 1.0.39 -> 1.0.40
-- @mango/site-shell: 1.0.23 -> 1.0.24
-- @mango/system: 1.0.47 -> 1.0.48
-- @mango/admin-pages: 1.0.48 -> 1.0.49
-- @mango/calendar: 1.0.49 -> 1.0.50
-- @mango/cms: 1.0.38 -> 1.0.39
-- @mango/job: 1.0.42 -> 1.0.43
-- @mango/link: 1.0.35 -> 1.0.36
-- @mango/notice: 1.0.54 -> 1.0.55
-- @mango/numgen: 1.0.50 -> 1.0.51
-- @mango/payment: 1.0.41 -> 1.0.42
-- @mango/template: 1.0.50 -> 1.0.51
-- @mango/workflow: 1.0.58 -> 1.0.59
-- @mango/admin-shell: 1.0.79 -> 1.0.80
-- @mango/workflow-business-example: 1.0.57 -> 1.0.58
-- @mango/admin: 1.1.15 -> 1.1.16
-- @mango/cli: 1.2.19 -> 1.2.20
+- Maven non-application reactor and `io.mango:mango-docs-bundle`: 1.0.58 -> 1.0.59
+- npm closure: @mango/admin-extension 1.0.11 -> 1.1.0, @mango/ai 1.1.9 -> 1.2.0, @mango/file 1.1.4 -> 1.2.0, @mango/detail 1.1.4 -> 1.1.5, @mango/system 1.0.48 -> 1.0.49, @mango/admin-pages 1.0.49 -> 1.1.0, @mango/calendar 1.0.50 -> 1.0.51, @mango/cms 1.0.39 -> 1.0.40, @mango/job 1.0.43 -> 1.0.44, @mango/link 1.0.36 -> 1.0.37, @mango/notice 1.0.55 -> 1.0.56, @mango/numgen 1.0.51 -> 1.0.52, @mango/payment 1.0.42 -> 1.0.43, @mango/template 1.0.51 -> 1.0.52, @mango/workflow 1.0.59 -> 1.0.60, @mango/admin-shell 1.0.80 -> 1.0.81, @mango/workflow-business-example 1.0.58 -> 1.0.59, @mango/admin 1.1.16 -> 1.1.17, @mango/cli 1.2.20 -> 1.2.21
 
 ## Published Packages
 
-- @mango/common@2.1.4
-- @mango/admin-extension@1.0.11
-- @mango/ai@1.1.9
-- @mango/auth@1.0.39
-- @mango/file@1.1.4
-- @mango/detail@1.1.4
-- @mango/grid-layout@1.0.28
-- @mango/grid-widgets@1.0.34
-- @mango/home@1.0.27
-- @mango/rbac@1.0.40
-- @mango/site-shell@1.0.24
-- @mango/system@1.0.48
-- @mango/admin-pages@1.0.49
-- @mango/calendar@1.0.50
-- @mango/cms@1.0.39
-- @mango/job@1.0.43
-- @mango/link@1.0.36
-- @mango/notice@1.0.55
-- @mango/numgen@1.0.51
-- @mango/payment@1.0.42
-- @mango/template@1.0.51
-- @mango/workflow@1.0.59
-- @mango/admin-shell@1.0.80
-- @mango/workflow-business-example@1.0.58
-- @mango/admin@1.1.16
-- @mango/cli@1.2.20
+- @mango/admin-extension@1.1.0
+- @mango/ai@1.2.0
+- @mango/file@1.2.0
+- @mango/detail@1.1.5
+- @mango/system@1.0.49
+- @mango/admin-pages@1.1.0
+- @mango/calendar@1.0.51
+- @mango/cms@1.0.40
+- @mango/job@1.0.44
+- @mango/link@1.0.37
+- @mango/notice@1.0.56
+- @mango/numgen@1.0.52
+- @mango/payment@1.0.43
+- @mango/template@1.0.52
+- @mango/workflow@1.0.60
+- @mango/admin-shell@1.0.81
+- @mango/workflow-business-example@1.0.59
+- @mango/admin@1.1.17
+- @mango/cli@1.2.21
+- Maven: io.mango non-application reactor and io.mango:mango-docs-bundle 1.0.59
 
 ## Business Impact
 
-- Affected consumers: business frontends that consume @mango/file, @mango/common and the dependent admin packages through the published npm tuple.
-- No API, data, database, menu, permission, tenant or configuration change. Maven and docs stay on 1.0.58; this batch is npm-only.
-- Consumers that added an explicit multipart Content-Type workaround can remove it after upgrading.
+- Affected consumers: business frontends that consume `@mango/file`, `@mango/admin-extension`, `@mango/admin-pages`, `@mango/ai` and the generated Mango npm tuple, plus backend deployments that use the file upload capability.
+- The admin-extension fix is a consumer-visible dependency contract change: the host application must provide exactly one `@mango/admin-extension` version, and all Mango packages must be upgraded as one batch.
+- The upload change raises the default single-file limit to 10GB; file records, menus, permissions and tenant boundaries are unchanged, and files above 20MiB continue to use multipart uploads.
 
 ## Upgrade Estimate
 
-- Audience: teams consuming @mango/file and @mango/common from the Mango npm registry.
-- Engineering Effort: low; replace the npm tuple and rebuild.
-- Execution Window: one deployment window; no database work.
-- Service Downtime: none for the npm-only release.
-- Rollback Effort: low; restore the previous npm tuple.
-- Assumptions: consumers resolve @mango packages from the Mango registry and do not pin workspace links.
+- Audience: teams that consume the Mango npm tuple for admin frontends and teams that deploy the Mango file upload capability on the backend.
+- Engineering Effort: medium; upgrade the complete npm tuple, upgrade Maven/docs to 1.0.59, and confirm `pnpm why @mango/admin-extension` resolves a single version.
+- Execution Window: one deployment window; backend migration V6 runs during startup.
+- Service Downtime: none expected; the Flyway migration only updates a default value and the admin fix is a build-time dependency change.
+- Rollback Effort: medium; restore the previous npm tuple and Maven/docs 1.0.58, no data rollback is required.
+- Assumptions: consumers resolve Mango packages from the Mango registries, do not pin workspace links, and upgrade the whole tuple together.
 
 ## Upgrade Notes
 
-- Upgrade @mango/file to 1.1.4 and @mango/common to 2.1.4 together with the generated dependents through @mango/cli@1.2.20.
-- Remove the explicit multipart Content-Type workaround from business upload helpers (for example uploadPdfForCompression.ts) and verify small-file uploads through the normal file API.
+- Upgrade the complete npm closure ending at `@mango/cli@1.2.21` together. Never upgrade only `@mango/file`, `@mango/admin-extension` or any single Mango package.
+- Before deploying, run `pnpm why @mango/admin-extension` and confirm only one version is installed; if more than one appears, align the tuple or add a host `pnpm.overrides` entry.
+- Upgrade Maven/docs to 1.0.59 so the file migration V6 runs, and confirm runtime disk capacity, Nginx `client_max_body_size` and gateway timeout for large uploads.
+- Regenerate or upgrade generated projects with `@mango/cli@1.2.21`; generated `frontend/package.json` now declares a single `@mango/admin-extension`.
 
 ## Verification
 
-- Unit and contract tests: pnpm --filter @mango/file test and pnpm --filter @mango/common test.
-- Builds: pnpm --filter @mango/file build and pnpm --filter @mango/common build.
-- Real link: upload a file below the multipart threshold through the file management page and assert the request Content-Type is multipart/form-data and the response is HTTP 200.
+- Unit and contract tests: pnpm --filter @mango/admin-extension test, pnpm --filter @mango/admin-pages test, pnpm --filter @mango/file test and pnpm --filter @mango/cli test.
+- Backend module gate: mvn -pl :mango-file-core verify, including FileResourceHandlerIntegrationTest and FileServiceConcurrentSaveIntegrationTest.
+- Frontend PR gate: pnpm check:pr, pnpm admin:styles:check and pnpm admin:module-styles:check.
+- Release back-check: Maven coordinates and npm tarballs are resolved again from the publish and consume registries, and one clean consume-registry consumer installs the published CLI and generated project.
+- Dependency singleton check: pnpm why @mango/admin-extension reports a single version, and node_modules/.pnpm contains a single @mango/admin-extension directory.
 
 ## Rollback
 
-- Roll back by restoring the previous versions @mango/file@1.1.3 and @mango/common@2.1.3 plus the previous dependent tuple, and keep the uploaded file records; no data rollback is required.
-- Published npm coordinates are immutable; rollback uses a consumer-side version pin, never a republish.
-
-## Audit History
-
-- [PR #1043](https://github.com/HardyDou/mango/pull/1043) Docs-only real-link acceptance evidence for the #1041 fix; not a release-bearing package change.
+- Roll back by restoring the previous npm tuple ending at @mango/cli@1.2.20 and Maven/docs 1.0.58; file records and uploaded files do not require data rollback.
+- Published npm and Maven coordinates are immutable; rollback uses consumer-side version pinning, never a republish.
+- If only the upload limit must be reverted, set the tenant `maxSize` in file settings explicitly instead of rolling back the whole batch.

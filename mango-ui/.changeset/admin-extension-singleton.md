@@ -1,4 +1,5 @@
 ---
+'@mango/admin': patch
 '@mango/admin-extension': minor
 '@mango/admin-pages': minor
 '@mango/ai': minor

@@ -2,6 +2,10 @@ import { defineConfig } from 'vite';
 
 const externalPackages = [
   '@mango/admin-shell',
+  '@mango/admin-extension',
+  '@mango/admin-extension/core',
+  '@mango/admin-extension/features',
+  '@mango/admin-extension/notice',
   '@mango/admin-pages',
   '@mango/auth',
   '@mango/calendar/admin-pages',
