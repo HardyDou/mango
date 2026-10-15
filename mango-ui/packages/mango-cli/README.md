@@ -435,6 +435,8 @@ CLI 绝不自动安装 Playwright、下载 Chromium或修改项目。缺少依�
 
 已发布 CLI 直接从包内 `templates/business-module` 执行 `mango module add`，不依赖 Mango 源仓路径。后端镜像以 `mango-business-starter` 为 canonical 源，发布和测试前执行 `pnpm --filter @mango/cli run check:business-module-template`；路径集合或任一文件 hash 不一致时必须先同步模板。模板源码中的 `module.properties.template` 会生成真实的 `module.properties`，避免源码占位符被仓库架构扫描误判；生成项目的模块发现、菜单、权限、租户和运行时行为不变。
 
+生成项目的 `frontend/package.json` 会显式声明单一 `@mango/admin-extension`，业务模块模板只把它作为 `peerDependencies`。`@mango/admin-extension` 是全局页面注册表单例：`mango create`/`mango module add` 生成的项目必须与其他 Mango 包整套升级到同一发布批次，禁止只升单个包，否则会出现两份注册表并导致全站模块菜单 404。
+
 ## 8. 数据与初始化
 
 `@mango/cli` 自身不包含数据库 migration，也不会直接连接数据库。数据库结构和初始化数据来自生成项目引用的后端模块。

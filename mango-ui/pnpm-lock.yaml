@@ -131,6 +131,9 @@ importers:
       '@mango/admin':
         specifier: workspace:*
         version: link:../../packages/admin
+      '@mango/admin-extension':
+        specifier: workspace:*
+        version: link:../../packages/admin-extension
       '@mango/admin-pages':
         specifier: workspace:*
         version: link:../../packages/admin-pages
@@ -369,6 +372,9 @@ importers:
       '@element-plus/icons-vue':
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
+      '@mango/admin-extension':
+        specifier: workspace:*
+        version: link:../../packages/admin-extension
       '@mango/admin-pages':
         specifier: workspace:*
         version: link:../../packages/admin-pages
@@ -418,6 +424,9 @@ importers:
       '@element-plus/icons-vue':
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
+      '@mango/admin-extension':
+        specifier: workspace:*
+        version: link:../../packages/admin-extension
       '@mango/admin-pages':
         specifier: workspace:*
         version: link:../../packages/admin-pages
@@ -467,6 +476,9 @@ importers:
       '@mango/admin':
         specifier: workspace:*
         version: link:../../packages/admin
+      '@mango/admin-extension':
+        specifier: workspace:*
+        version: link:../../packages/admin-extension
       '@mango/admin-pages':
         specifier: workspace:*
         version: link:../../packages/admin-pages
@@ -546,6 +558,9 @@ importers:
       '@element-plus/icons-vue':
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
+      '@mango/admin-extension':
+        specifier: workspace:*
+        version: link:../../packages/admin-extension
       '@mango/admin-pages':
         specifier: workspace:*
         version: link:../../packages/admin-pages
@@ -595,6 +610,9 @@ importers:
       '@element-plus/icons-vue':
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
+      '@mango/admin-extension':
+        specifier: workspace:*
+        version: link:../../packages/admin-extension
       '@mango/admin-pages':
         specifier: workspace:*
         version: link:../../packages/admin-pages
@@ -829,9 +847,6 @@ importers:
 
   packages/admin-pages:
     dependencies:
-      '@mango/admin-extension':
-        specifier: workspace:1.0.11
-        version: link:../admin-extension
       '@mango/auth':
         specifier: workspace:1.0.39
         version: link:../auth
@@ -848,6 +863,9 @@ importers:
         specifier: '>=3.5.13 <4'
         version: 3.5.13(typescript@5.9.3)
     devDependencies:
+      '@mango/admin-extension':
+        specifier: workspace:*
+        version: link:../admin-extension
       typescript:
         specifier: 5.9.3
         version: 5.9.3
@@ -936,9 +954,6 @@ importers:
       '@element-plus/icons-vue':
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
-      '@mango/admin-extension':
-        specifier: workspace:1.0.11
-        version: link:../admin-extension
       '@mango/ai-api':
         specifier: workspace:1.1.1
         version: link:../ai-api
@@ -961,6 +976,9 @@ importers:
         specifier: '>=3.5.13 <4'
         version: 3.5.13(typescript@5.9.3)
     devDependencies:
+      '@mango/admin-extension':
+        specifier: workspace:*
+        version: link:../admin-extension
       '@types/markdown-it':
         specifier: 14.1.2
         version: 14.1.2
@@ -1289,9 +1307,6 @@ importers:
       '@element-plus/icons-vue':
         specifier: 2.3.2
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
-      '@mango/admin-extension':
-        specifier: workspace:1.0.11
-        version: link:../admin-extension
       '@mango/api-schema':
         specifier: workspace:1.0.4
         version: link:../api-schema
@@ -1305,6 +1320,9 @@ importers:
         specifier: '>=3.5.13 <4'
         version: 3.5.13(typescript@5.9.3)
     devDependencies:
+      '@mango/admin-extension':
+        specifier: workspace:*
+        version: link:../admin-extension
       '@vitejs/plugin-vue':
         specifier: 6.0.8
         version: 6.0.8(vite@7.3.6(@types/node@22.20.1)(jiti@2.6.1)(sass@1.101.0)(terser@5.46.1)(yaml@2.8.3))(vue@3.5.13(typescript@5.9.3))

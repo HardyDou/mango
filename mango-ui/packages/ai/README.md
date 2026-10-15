@@ -18,8 +18,10 @@
 ## 3. 接入方式
 
 ```bash
-pnpm add @mango/ai @mango/ai-api @mango/admin-extension element-plus vue vue-router
+pnpm add @mango/ai @mango/ai-api element-plus vue vue-router
 ```
+
+`@mango/admin-extension` 是本包的 `peerDependencies`，必须由宿主应用提供**唯一一个**版本；它与其余 Mango 包必须整套升级到同一发布批次，禁止只升单包。
 
 ```ts
 import { registerMangoAiAdminPages } from '@mango/ai/admin-pages';

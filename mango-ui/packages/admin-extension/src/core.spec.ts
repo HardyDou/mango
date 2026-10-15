@@ -1,6 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { getRegisteredModulePagesSnapshot, probeRegisteredPage, registerModulePages } from './core';
+
+const PAGE_REGISTRY_KEY = Symbol.for('@mango/admin-extension.page-registry');
+const PAGE_REGISTRY_VERSION_KEY = Symbol.for('@mango/admin-extension.page-registry.version');
 
 describe('module page runtime diagnostics', () => {
   it('returns a deeply immutable registration snapshot with package version', () => {
@@ -80,5 +83,19 @@ describe('module page runtime diagnostics', () => {
       status: 'FAIL',
       reasonCode: 'VUE_COMPONENT_INVALID',
     });
+  });
+
+  it('keeps one global page registry and fails loudly on version skew', async () => {
+    const scope = globalThis as unknown as Record<symbol, unknown>;
+    const loadedVersion = scope[PAGE_REGISTRY_VERSION_KEY];
+    expect(scope[PAGE_REGISTRY_KEY]).toBeDefined();
+    expect(typeof loadedVersion).toBe('string');
+
+    vi.resetModules();
+    scope[PAGE_REGISTRY_VERSION_KEY] = '0.0.0-skew';
+    await expect(import('./core')).rejects.toThrow('多个 @mango/admin-extension 版本');
+
+    scope[PAGE_REGISTRY_VERSION_KEY] = loadedVersion;
+    vi.resetModules();
   });
 });
