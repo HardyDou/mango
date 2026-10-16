@@ -11,6 +11,8 @@ import java.util.List;
 public class CmsContentVO {
     @Schema(description = "主键 ID")
     private Long id;
+    @Schema(description = "内容编码")
+    private String code;
     @Schema(description = "标题")
     private String title;
     @Schema(description = "副标题")

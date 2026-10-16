@@ -17,6 +17,8 @@ public class SiteBannerVO {
     private String mediaType;
     @Schema(description = "媒体文件 ID")
     private String mediaFileId;
+    @Schema(description = "媒体地址")
+    private String mediaUrl;
     @Schema(description = "跳转地址")
     private String jumpUrl;
     @Schema(description = "排序值")

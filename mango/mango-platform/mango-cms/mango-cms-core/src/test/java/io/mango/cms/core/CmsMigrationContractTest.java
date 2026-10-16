@@ -34,14 +34,15 @@ class CmsMigrationContractTest {
             "cms_site_setting");
 
     @Test
-    @DisplayName("CMS should expose one clean V1 migration")
-    void cmsExposesOneCleanV1Migration() throws IOException {
+    @DisplayName("CMS should expose clean versioned migrations")
+    void cmsExposesCleanVersionedMigrations() throws IOException {
         try (Stream<Path> migrations = Files.list(MIGRATION_DIR)) {
             assertThat(migrations
                     .filter(Files::isRegularFile)
                     .filter(path -> path.getFileName().toString().matches("V[0-9]+__.+\\.sql"))
                     .toList())
-                    .containsExactly(BASELINE);
+                    .extracting(path -> path.getFileName().toString())
+                    .containsExactlyInAnyOrder("V1__init_mango_cms.sql", "V2__add_content_code.sql");
         }
     }
 

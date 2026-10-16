@@ -29,6 +29,7 @@ class CmsResourceDeclarationContractTest {
             CmsResourceTypes.SITE,
             CmsResourceTypes.SITE_SETTING,
             CmsResourceTypes.SITE_CATEGORY,
+            CmsResourceTypes.CONTENT_CATEGORY,
             CmsResourceTypes.CONTENT,
             CmsResourceTypes.CONTENT_PUBLISH,
             CmsResourceTypes.NAVIGATION,
@@ -57,7 +58,7 @@ class CmsResourceDeclarationContractTest {
         List<DeclaredResource> demo = declarations(DEMO_ROOT, "cms-demo-");
 
         assertThat(FORMAL_ROOT.resolve("cms-common-menu.json")).isRegularFile();
-        assertThat(demo).hasSize(71);
+        assertThat(demo).hasSize(74);
         assertThat(types(demo)).containsExactlyInAnyOrderElementsOf(DEMO_TYPES);
         assertThat(demo).allSatisfy(resource -> {
             assertThat(resource.moduleCode()).isEqualTo("cms");

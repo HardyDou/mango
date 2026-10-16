@@ -16,8 +16,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.springframework.web.servlet.function.RequestPredicates.GET;
-import static org.springframework.web.servlet.function.RouterFunctions.route;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -31,9 +29,7 @@ class CmsPublicFileHttpContractTest {
         byte[] bytes = new byte[]{1, 2, 3, 4};
         when(service.publicFile(eq(99L), any())).thenReturn(new FileDownloadVO(
                 new ByteArrayInputStream(bytes), "站点 logo.png", "image/png", bytes.length));
-        CmsPublicFileEndpoint endpoint = new CmsPublicFileEndpoint(service);
-        MockMvc mvc = MockMvcBuilders.routerFunctions(
-                route(GET("/cms/open/files/public-preview"), endpoint::handle)).build();
+        MockMvc mvc = MockMvcBuilders.standaloneSetup(new CmsPublicFileEndpoint(service)).build();
 
         byte[] body = mvc.perform(get("/cms/open/files/public-preview")
                         .queryParam("id", "99")
@@ -53,9 +49,7 @@ class CmsPublicFileHttpContractTest {
         ICmsSiteService service = mock(ICmsSiteService.class);
         when(service.publicFile(eq(100L), any())).thenReturn(new FileDownloadVO(
                 new ByteArrayInputStream(new byte[0]), "empty.bin", " ", 0L));
-        CmsPublicFileEndpoint endpoint = new CmsPublicFileEndpoint(service);
-        MockMvc mvc = MockMvcBuilders.routerFunctions(
-                route(GET("/cms/open/files/public-preview"), endpoint::handle)).build();
+        MockMvc mvc = MockMvcBuilders.standaloneSetup(new CmsPublicFileEndpoint(service)).build();
 
         mvc.perform(get("/cms/open/files/public-preview")
                         .queryParam("id", "100")

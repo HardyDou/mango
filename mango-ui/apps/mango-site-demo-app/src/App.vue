@@ -469,7 +469,7 @@ async function loadNewsList(pageNum: number) {
     const page = await cmsSiteApi.pageContents({ ...query, page: next, size: newsPage.value.pageSize });
     newsList.value = page?.list || [];
     newsPage.value = {
-      pageNum: Number(page?.pageNum || page?.page || next),
+      pageNum: Number(page?.page || next),
       pageSize: newsPage.value.pageSize,
       total: Number(page?.total || 0),
     };

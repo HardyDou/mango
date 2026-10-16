@@ -72,6 +72,7 @@ export interface SiteBanner {
   subtitle?: string;
   mediaType?: string;
   mediaFileId?: string;
+  mediaUrl?: string;
   jumpUrl?: string;
   startTime?: string;
   endTime?: string;
@@ -108,6 +109,7 @@ export interface SiteAdvertisement {
 
 export interface SiteContent {
   id?: ApiId;
+  code?: string;
   title?: string;
   subtitle?: string;
   summary?: string;
@@ -124,6 +126,8 @@ export interface SiteContent {
   author?: string;
   categoryId?: ApiId;
   categoryName?: string;
+  top?: boolean;
+  sort?: number;
   seoTitle?: string;
   seoKeywords?: string;
   seoDescription?: string;
@@ -142,6 +146,7 @@ export interface PageResult<T> {
   page: number;
   size: number;
   pages?: number;
+  /** Compatibility aliases for older public-site callers. */
   pageNum?: number;
   pageSize?: number;
 }
@@ -158,15 +163,52 @@ const SiteShellKey: InjectionKey<SiteShellState> = Symbol('MangoSiteShell');
 export const cmsSiteApi = {
   resolveSite: (params: SiteResolveQuery) => get<SiteResolve>('/cms/open/sites/resolve', publicRequest(params)),
   detailSite: (params: SiteResolveQuery) => get<CmsSite>('/cms/open/sites/detail', publicRequest(params)),
-  treeCategories: (params: SiteResolveQuery) => get<SiteCategory[]>('/cms/open/site-categories/tree', publicRequest(params)),
-  listNavigations: (params: SiteResolveQuery & { navType?: string }) => get<SiteNavigation[]>('/cms/open/navigations/list', publicRequest(params)),
-  listBanners: (params: SiteResolveQuery & { position?: string }) => get<SiteBanner[]>('/cms/open/banners/list', publicRequest(params)),
-  listAdvertisements: (params: SiteResolveQuery & { position?: string }) => get<SiteAdvertisement[]>('/cms/open/advertisements/list', publicRequest(params)),
-  pageContents: (params: SiteResolveQuery & { page?: number; size?: number; pageNum?: number; pageSize?: number; categoryId?: ApiId; keyword?: string; recommendationType?: string }) =>
-    get<PageResult<SiteContent>>('/cms/open/contents/page', publicRequest(params)),
-  detailContent: (params: SiteResolveQuery & { contentId: ApiId; categoryId?: ApiId }) =>
+  treeCategories: (params: SiteResolveQuery) =>
+    get<SiteCategory[]>('/cms/open/site-categories/tree', publicRequest(params)),
+  listNavigations: (params: SiteResolveQuery & { navType?: string }) =>
+    get<SiteNavigation[]>('/cms/open/navigations/list', publicRequest(params)),
+  listBanners: (params: SiteResolveQuery & { position?: string }) =>
+    get<SiteBanner[]>('/cms/open/banners/list', publicRequest(params)),
+  listAdvertisements: (params: SiteResolveQuery & { position?: string }) =>
+    get<SiteAdvertisement[]>('/cms/open/advertisements/list', publicRequest(params)),
+  pageContents: (
+    params: SiteResolveQuery & {
+      page?: number;
+      size?: number;
+      pageNum?: number;
+      pageSize?: number;
+      categoryId?: ApiId;
+      keyword?: string;
+      recommendationType?: string;
+    },
+  ) =>
+    get<PageResult<SiteContent>>('/cms/open/contents/page', publicRequest(normalizePageQuery(params))).then(
+      normalizePageResult,
+    ),
+  detailContent: (params: SiteResolveQuery & { contentId?: ApiId; code?: string; categoryId?: ApiId }) =>
     get<SiteContent>('/cms/open/contents/detail', publicRequest(params)),
 };
+
+function normalizePageQuery<T extends Record<string, unknown>>(params: T) {
+  const { page, size, pageNum, pageSize, ...rest } = params as T & {
+    page?: number;
+    size?: number;
+    pageNum?: number;
+    pageSize?: number;
+  };
+  const normalized: Record<string, unknown> = { ...rest };
+  if (page !== undefined) normalized.page = page;
+  else if (pageNum !== undefined) normalized.page = pageNum;
+  if (size !== undefined) normalized.size = size;
+  else if (pageSize !== undefined) normalized.size = pageSize;
+  return normalized;
+}
+
+function normalizePageResult<T>(result: PageResult<T>) {
+  const page = result.page ?? result.pageNum ?? 1;
+  const size = result.size ?? result.pageSize ?? 10;
+  return { ...result, page, size, pageNum: page, pageSize: size };
+}
 
 function publicRequest<T extends Record<string, unknown>>(params: T) {
   return { params, ignoreToken: true, silentError: true };

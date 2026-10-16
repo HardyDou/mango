@@ -25,10 +25,11 @@ describe('CMS resource request lifecycle', () => {
       ),
     );
 
-    expect(calls).toHaveLength(9);
+    expect(calls).toHaveLength(10);
     expect(calls.map((call) => call.method).sort()).toEqual([
       'pageAdDeliveries',
       'pageAdvertisements',
+      'pageBanners',
       'pageContentTags',
       'pageContents',
       'pageNavigations',

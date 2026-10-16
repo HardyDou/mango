@@ -229,6 +229,7 @@ export function createCmsResourceConfigs(cmsApi: CmsApi) {
     editor: {
       defaults: { contentType: 'ARTICLE' },
       fields: [
+        { prop: 'code', label: '内容编码' },
         { prop: 'title', label: '标题', required: true, span: 24 },
         { prop: 'subtitle', label: '副标题', span: 24 },
         { prop: 'contentType', label: '内容类型', type: 'select', optionKey: 'contentType', required: true },
@@ -260,6 +261,7 @@ export function createCmsResourceConfigs(cmsApi: CmsApi) {
         {
           title: '基础信息',
           fields: [
+            { prop: 'code', label: '内容编码' },
             { prop: 'title', label: '标题', detailSpan: 2 },
             { prop: 'subtitle', label: '副标题', detailSpan: 2 },
             { prop: 'contentType', label: '内容类型', optionKey: 'contentType' },
@@ -419,6 +421,57 @@ export function createCmsResourceConfigs(cmsApi: CmsApi) {
           optionKey: 'openTarget',
           visibleWhen: { jumpType: 'URL' },
         },
+        { prop: 'sort', label: '排序', type: 'number' },
+        { prop: 'status', label: '状态', type: 'select', optionKey: 'status', required: true },
+      ],
+    },
+  };
+
+  const bannerConfig: CmsResourceConfig = {
+    key: 'banners',
+    title: 'Banner 管理',
+    description: '维护站点首页和页面 Banner，公开接口返回可直接访问的媒体地址。',
+    filterSite: true,
+    statusField: true,
+    canToggleStatus: true,
+    columns: [
+      { prop: 'title', subProp: 'position', label: 'Banner', type: 'name', minWidth: 240 },
+      { prop: 'siteId', label: '站点', type: 'site', minWidth: 160 },
+      { prop: 'mediaType', label: '媒体类型', optionKey: 'mediaType', width: 110 },
+      { prop: 'status', label: '状态', type: 'status', width: 100 },
+      { prop: 'sort', label: '排序', width: 90 },
+    ],
+    page: (query, options) => cmsApi.pageBanners(query, options) as Promise<CmsPageData>,
+    create: (data) => cmsApi.createBanner(data),
+    update: (data) => cmsApi.updateBanner(data),
+    updateStatus: cmsApi.updateBannerStatus,
+    remove: cmsApi.deleteBanner,
+    editor: {
+      defaults: { mediaType: 'IMAGE', status: 'ENABLED', sort: 0 },
+      fields: [
+        { prop: 'siteId', label: '所属站点', type: 'select', optionKey: 'sites', required: true },
+        { prop: 'position', label: '展示位置', required: true },
+        { prop: 'title', label: '标题', required: true },
+        { prop: 'subtitle', label: '副标题' },
+        { prop: 'mediaType', label: '媒体类型', type: 'select', optionKey: 'mediaType', required: true },
+        {
+          prop: 'mediaFileId',
+          label: '媒体文件',
+          type: 'upload',
+          required: true,
+          upload: {
+            display: 'thumbnail',
+            count: 1,
+            fmt: 'jpg,png,jpeg,webp,mp4,webm',
+            bizType: 'cms-banner',
+            purpose: 'cms-banner-media',
+            accessLevel: 'PUBLIC_READ',
+            buttonText: '上传媒体',
+          },
+        },
+        { prop: 'jumpUrl', label: '跳转链接', span: 24 },
+        { prop: 'startTime', label: '开始时间', type: 'datetime' },
+        { prop: 'endTime', label: '结束时间', type: 'datetime' },
         { prop: 'sort', label: '排序', type: 'number' },
         { prop: 'status', label: '状态', type: 'select', optionKey: 'status', required: true },
       ],
@@ -641,6 +694,7 @@ export function createCmsResourceConfigs(cmsApi: CmsApi) {
   return {
     adDeliveryConfig,
     advertisementConfig,
+    bannerConfig,
     contentCategoryConfig,
     contentConfig,
     contentTagConfig,

@@ -620,15 +620,13 @@ async function loadContents() {
       ...siteQuery.value,
       page: pageNum,
       size: pageSize,
-      pageNum,
-      pageSize,
       categoryId: categoryId || undefined,
     });
     contents.value = page.list || [];
     contentPage.value = {
       total: Number(page.total || 0),
-      pageNum: Number(page.pageNum || page.page || 1),
-      pageSize: Number(page.pageSize || page.size || contentPage.value.pageSize),
+      pageNum: Number(page.page || 1),
+      pageSize: Number(page.size || contentPage.value.pageSize),
     };
     selectedContent.value = null;
   } catch (err) {

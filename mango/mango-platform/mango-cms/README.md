@@ -147,15 +147,15 @@ mango:
 
 ## 8. API 与扩展
 
-公开消费接口前缀为 `/cms/open`，后台管理接口前缀为 `/cms`。接口禁止路径变量，ID 和筛选条件通过 `Query`、`Command` 或 query 参数传递。分页查询统一使用 `XxxPageQuery` 和 `R<PageResult<XxxVO>>`。
+公开消费接口前缀为 `/cms/open`，后台管理接口前缀为 `/cms`。接口禁止路径变量，ID 和筛选条件通过 `Query`、`Command` 或 query 参数传递。分页查询统一使用 `XxxPageQuery` 和 `R<PageResult<XxxVO>>`。HTTP 直连接口使用 `page`/`size` 参数；`@mango/cms` 管理包使用 `pageNum`/`pageSize`，并在请求层映射为 `page`/`size`，不能把管理包字段名直接发送给后端。
 
-公开消费接口标注 `@ApiAccess(mode = PUBLIC)`，由 `CmsPermitPathBeanPostProcessor` 自动注入 `/cms/open/**` 到认证放行路径，无需应用手工配置。公开素材接口 `/cms/open/files/public-preview` 仅返回站点 Logo、Banner 媒体、已发布内容封面/附件和有效广告投放引用的文件。
+公开消费接口标注 `@ApiAccess(mode = PUBLIC)`，由 `CmsPermitPathBeanPostProcessor` 自动注入 `/cms/open/**` 到认证放行路径，无需应用手工配置。公开素材接口 `/cms/open/files/public-preview` 仅返回站点 Logo、Banner 媒体、已发布内容封面/附件和有效广告投放引用的文件，并通过 API_RESOURCE 注册为 PUBLIC。
 
 ## 9. 数据与初始化
 
 CMS 按数据用途分层登记：
 
-- Flyway 只负责 DDL。新库通过 `db/migration/mango-cms/V1__init_mango_cms.sql` 一次创建最终表结构，不写菜单、业务数据或演示数据。
+- Flyway 只负责 DDL。新库通过 `db/migration/mango-cms/V1__init_mango_cms.sql` 创建基础表结构，后续结构变更使用同目录版本迁移，不写菜单、业务数据或演示数据。
 - 正式资源放在 `META-INF/mango/resources/`。CMS 当前只登记 `cms-common-menu.json`；此类资源默认同步。
 - 必须初始化的业务数据也应按资源类型放在 `META-INF/mango/resources/`，不能写进 Flyway。CMS 当前没有必须初始化的业务数据。
 - 演示资源按 CMS 业务类型拆分放在 `META-INF/mango/demo/`，默认不加载；仅在明确开启 Demo 时同步。
@@ -181,11 +181,12 @@ mango:
 | `cms_banner` | 站点 Banner |
 | `cms_advertisement` | 广告位 |
 | `cms_ad_delivery` | 广告投放 |
+| `cms_content_category` | 内容池通用分类 |
 | `cms_content` | 内容池 |
 | `cms_content_publish` | 内容发布关系 |
 | `cms_site_setting` | 站点扩展配置 |
 
-显式 Demo 共登记 71 条资源，包括 3 个站点及其配置、栏目、导航、Banner、广告、投放、内容和发布关系。文件 ID 保持为空，因此 Demo 不依赖文件模块的预置记录。
+显式 Demo 共登记 74 条资源，包括 3 个站点及其配置、栏目、内容分类、导航、Banner、广告、投放、内容和发布关系。文件 ID 保持为空，因此 Demo 不依赖文件模块的预置记录。内容的 `categoryId` 指向 `cms_content_category`，发布关系的 `categoryId` 指向 `cms_site_category`，两者不能混用。
 
 ## 10. 管理入口
 

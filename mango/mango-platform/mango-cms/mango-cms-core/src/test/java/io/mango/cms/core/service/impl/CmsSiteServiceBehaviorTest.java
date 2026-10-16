@@ -4,11 +4,14 @@ import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.mango.cms.api.enums.CmsContentStatus;
 import io.mango.cms.api.enums.CmsPublishStatus;
+import io.mango.cms.api.query.SiteBannerQuery;
 import io.mango.cms.api.query.SiteContentDetailQuery;
 import io.mango.cms.api.query.SiteContentPageQuery;
 import io.mango.cms.api.query.SiteResolveQuery;
+import io.mango.cms.api.vo.SiteBannerVO;
 import io.mango.cms.api.vo.SiteContentVO;
 import io.mango.cms.api.vo.SiteResolveVO;
+import io.mango.cms.core.entity.CmsBannerEntity;
 import io.mango.cms.core.entity.CmsContentEntity;
 import io.mango.cms.core.entity.CmsContentPublishEntity;
 import io.mango.cms.core.entity.CmsSiteCategoryEntity;
@@ -165,6 +168,49 @@ class CmsSiteServiceBehaviorTest {
     }
 
     @Test
+    void listBanners_returnsDirectMediaUrlForPublicBanner() {
+        CmsSiteEntity site = site(10L, "tenant-a", "main", "www.example.test");
+        CmsBannerEntity banner = new CmsBannerEntity();
+        banner.setId(30L);
+        banner.setTenantId("tenant-a");
+        banner.setSiteId(10L);
+        banner.setPosition("HOME_HERO");
+        banner.setMediaType("IMAGE");
+        banner.setMediaFileId("100");
+        banner.setStatus(CmsSupport.ENABLED);
+        when(siteMapper.selectList(any())).thenReturn(List.of(site));
+        when(advertisementMapper.selectList(any())).thenReturn(List.of());
+        when(bannerMapper.selectList(any())).thenReturn(List.of(banner));
+        CmsSiteService service = service(null);
+
+        List<SiteBannerVO> result = service.listBanners(bannerQuery("www.example.test"));
+
+        assertThat(result).singleElement().extracting(SiteBannerVO::getMediaUrl)
+                .isEqualTo("/api/cms/open/files/public-preview?id=100&domain=www.example.test");
+    }
+
+    @Test
+    void detailContent_canResolvePublishedContentByCode() {
+        CmsSiteEntity site = site(10L, "tenant-a", "main", "www.example.test");
+        CmsContentEntity content = content(20L, "tenant-a", CmsContentStatus.PUBLISHED.name());
+        content.setCode("release-2026");
+        CmsContentPublishEntity publish = publish(30L, 20L, 10L, 40L);
+        when(siteMapper.selectList(any())).thenReturn(List.of(site));
+        when(contentMapper.selectOne(any())).thenReturn(content);
+        when(publishMapper.selectList(any())).thenReturn(List.of(publish));
+        when(siteCategoryMapper.selectById(40L)).thenReturn(null);
+        CmsSiteService service = service(null);
+        SiteContentDetailQuery query = contentQuery(20L);
+        query.setContentId(null);
+        query.setCode("release-2026");
+
+        SiteContentVO result = service.detailContent(query);
+
+        assertThat(result).extracting(SiteContentVO::getCode, SiteContentVO::getTop, SiteContentVO::getSort)
+                .containsExactly("release-2026", false, null);
+    }
+
+    @Test
     void publicFile_allowsSiteLogoAndRestoresCallerTenantContext() {
         MangoContextHolder.set(MangoContextSnapshot.empty().withSecurity(
                 1L, 2L, "caller-tenant", "caller", "ADMIN", "user", "org", 3L, "admin"));
@@ -244,6 +290,12 @@ class CmsSiteServiceBehaviorTest {
 
     private static SiteResolveQuery domainQuery(String domain) {
         SiteResolveQuery query = new SiteResolveQuery();
+        query.setDomain(domain);
+        return query;
+    }
+
+    private static SiteBannerQuery bannerQuery(String domain) {
+        SiteBannerQuery query = new SiteBannerQuery();
         query.setDomain(domain);
         return query;
     }

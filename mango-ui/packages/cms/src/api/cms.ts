@@ -104,6 +104,20 @@ export interface CmsContent extends CmsBaseRecord {
   reviewComment?: string;
 }
 
+export interface CmsBanner extends CmsBaseRecord {
+  siteId?: ApiId;
+  position?: string;
+  title?: string;
+  subtitle?: string;
+  mediaType?: 'IMAGE' | 'VIDEO';
+  mediaFileId?: string;
+  jumpUrl?: string;
+  startTime?: string;
+  endTime?: string;
+  sort?: number;
+  status?: CmsStatus;
+}
+
 export interface CmsContentPublish extends CmsBaseRecord {
   contentId?: ApiId;
   contentTitle?: string;
@@ -324,6 +338,13 @@ export function createCmsApi(httpClient: HttpClient) {
     rejectContent: (id: ApiId, reviewComment?: string) => post<boolean>('/cms/contents/reject', { id, reviewComment }),
     offlineContent: (id: ApiId) => post<boolean>('/cms/contents/offline', { id }),
     deleteContent: (id: ApiId) => del<boolean>('/cms/contents', { params: { id } }),
+
+    pageBanners: (params: CmsPageQuery, options?: CmsRequestOptions) =>
+      pageGet<CmsBanner>('/cms/banners/page', params, options),
+    createBanner: (data: CmsBanner) => post<ApiId>('/cms/banners', data),
+    updateBanner: (data: CmsBanner) => put<boolean>('/cms/banners', data),
+    updateBannerStatus: (id: ApiId, status: CmsStatus) => put<boolean>('/cms/banners/status', { id, status }),
+    deleteBanner: (id: ApiId) => del<boolean>('/cms/banners', { params: { id } }),
 
     pagePublishes: (params: CmsPageQuery, options?: CmsRequestOptions) =>
       pageGet<CmsContentPublish>('/cms/content-publishes/page', params, options),

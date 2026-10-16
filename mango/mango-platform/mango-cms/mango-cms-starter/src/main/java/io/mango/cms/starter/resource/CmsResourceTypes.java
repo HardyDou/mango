@@ -8,6 +8,7 @@ public final class CmsResourceTypes {
     public static final String SITE = "CMS_SITE";
     public static final String SITE_SETTING = "CMS_SITE_SETTING";
     public static final String SITE_CATEGORY = "CMS_SITE_CATEGORY";
+    public static final String CONTENT_CATEGORY = "CMS_CONTENT_CATEGORY";
     public static final String CONTENT = "CMS_CONTENT";
     public static final String CONTENT_PUBLISH = "CMS_CONTENT_PUBLISH";
     public static final String NAVIGATION = "CMS_NAVIGATION";

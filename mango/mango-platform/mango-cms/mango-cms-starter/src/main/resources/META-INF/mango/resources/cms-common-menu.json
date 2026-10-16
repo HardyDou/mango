@@ -207,12 +207,29 @@
                         "children": [
                           {
                             "menuType": 2,
+                            "menuName": "Banner 管理",
+                            "menuCode": "cms:banner",
+                            "path": "/cms/banners",
+                            "icon": "Picture",
+                            "component": "cms/banners/index",
+                            "sort": 1,
+                            "apiCodes": [
+                              "cms:banner:list",
+                              "cms:banner:query",
+                              "cms:banner:add",
+                              "cms:banner:edit",
+                              "cms:banner:status",
+                              "cms:banner:delete"
+                            ]
+                          },
+                          {
+                            "menuType": 2,
                             "menuName": "广告位管理",
                             "menuCode": "cms:advertisement",
                             "path": "/cms/advertisements",
                             "icon": "Tickets",
                             "component": "cms/advertisements/index",
-                            "sort": 1,
+                            "sort": 2,
                             "apiCodes": [
                               "cms:advertisement:list",
                               "cms:advertisement:query",
@@ -229,7 +246,7 @@
                             "path": "/cms/ad-deliveries",
                             "icon": "PictureFilled",
                             "component": "cms/ad-deliveries/index",
-                            "sort": 2,
+                            "sort": 3,
                             "apiCodes": [
                               "cms:ad-delivery:list",
                               "cms:ad-delivery:query",

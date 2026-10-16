@@ -1,4 +1,5 @@
 import vue from '@vitejs/plugin-vue';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'path';
 import { defineConfig, loadEnv, ConfigEnv } from 'vite';
 import vueSetupExtend from 'vite-plugin-vue-setup-extend';
@@ -13,6 +14,9 @@ import {
 import { createMangoApiProxy } from '../../build-config/apiProxy';
 import { excludeMockServiceWorkerFromProductionBuild } from '../../build-config/mockServiceWorkerBuild.mjs';
 
+const adminExtensionVersion = JSON.parse(
+  readFileSync(new URL('../../packages/admin-extension/package.json', import.meta.url), 'utf8'),
+).version;
 const ALLOWED_PROXY_HOSTS = ['127.0.0.1', 'localhost'];
 
 function validateProxyTarget(target: string): string {
@@ -194,6 +198,7 @@ const viteConfig = defineConfig((mode: ConfigEnv) => {
       __VERSION__: JSON.stringify(process.env.npm_package_version),
       __NEXT_NAME__: JSON.stringify(process.env.npm_package_name),
       __MANGO_FRONTEND_MODE__: JSON.stringify(resolveMangoFrontendMode()),
+      __MANGO_ADMIN_EXTENSION_VERSION__: JSON.stringify(adminExtensionVersion),
     },
   };
 });

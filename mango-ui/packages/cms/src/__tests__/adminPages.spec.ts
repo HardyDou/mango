@@ -10,6 +10,7 @@ const cmsPages = [
   ['cms/content-tags/index', 'ContentTagsView.vue'],
   ['cms/content-publishes/index', 'ContentPublishesView.vue'],
   ['cms/navigations/index', 'NavigationsView.vue'],
+  ['cms/banners/index', 'BannersView.vue'],
   ['cms/advertisements/index', 'AdvertisementsView.vue'],
   ['cms/ad-deliveries/index', 'AdDeliveriesView.vue'],
 ] as const;

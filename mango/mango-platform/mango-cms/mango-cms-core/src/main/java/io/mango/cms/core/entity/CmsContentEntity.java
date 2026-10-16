@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 @Setter
 @TableName("cms_content")
 public class CmsContentEntity extends CmsBaseTenantEntity {
+    private String code;
     private String title;
     private String subtitle;
     private String summary;

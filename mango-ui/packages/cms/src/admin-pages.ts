@@ -18,6 +18,7 @@ export function registerMangoCmsAdminPages() {
       'cms/content-tags/index': () => import('./views/ContentTagsView.vue').then((module) => module.default),
       'cms/content-publishes/index': () => import('./views/ContentPublishesView.vue').then((module) => module.default),
       'cms/navigations/index': () => import('./views/NavigationsView.vue').then((module) => module.default),
+      'cms/banners/index': () => import('./views/BannersView.vue').then((module) => module.default),
       'cms/advertisements/index': () => import('./views/AdvertisementsView.vue').then((module) => module.default),
       'cms/ad-deliveries/index': () => import('./views/AdDeliveriesView.vue').then((module) => module.default),
     },

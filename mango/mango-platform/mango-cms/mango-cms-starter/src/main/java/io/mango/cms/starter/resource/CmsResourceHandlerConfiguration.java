@@ -6,6 +6,7 @@ import io.mango.cms.core.entity.CmsAdDeliveryEntity;
 import io.mango.cms.core.entity.CmsAdvertisementEntity;
 import io.mango.cms.core.entity.CmsBannerEntity;
 import io.mango.cms.core.entity.CmsBaseTenantEntity;
+import io.mango.cms.core.entity.CmsContentCategoryEntity;
 import io.mango.cms.core.entity.CmsContentEntity;
 import io.mango.cms.core.entity.CmsContentPublishEntity;
 import io.mango.cms.core.entity.CmsNavigationEntity;
@@ -15,6 +16,7 @@ import io.mango.cms.core.entity.CmsSiteSettingEntity;
 import io.mango.cms.core.mapper.CmsAdDeliveryMapper;
 import io.mango.cms.core.mapper.CmsAdvertisementMapper;
 import io.mango.cms.core.mapper.CmsBannerMapper;
+import io.mango.cms.core.mapper.CmsContentCategoryMapper;
 import io.mango.cms.core.mapper.CmsContentMapper;
 import io.mango.cms.core.mapper.CmsContentPublishMapper;
 import io.mango.cms.core.mapper.CmsNavigationMapper;
@@ -35,6 +37,7 @@ import static io.mango.cms.starter.resource.CmsResourceTypes.ADVERTISEMENT;
 import static io.mango.cms.starter.resource.CmsResourceTypes.AD_DELIVERY;
 import static io.mango.cms.starter.resource.CmsResourceTypes.BANNER;
 import static io.mango.cms.starter.resource.CmsResourceTypes.CONTENT;
+import static io.mango.cms.starter.resource.CmsResourceTypes.CONTENT_CATEGORY;
 import static io.mango.cms.starter.resource.CmsResourceTypes.CONTENT_PUBLISH;
 import static io.mango.cms.starter.resource.CmsResourceTypes.NAVIGATION;
 import static io.mango.cms.starter.resource.CmsResourceTypes.SITE;
@@ -75,13 +78,22 @@ public class CmsResourceHandlerConfiguration {
     }
 
     @Bean
+    ResourceHandler cmsContentCategoryResourceHandler(CmsContentCategoryMapper mapper, ObjectMapper objectMapper) {
+        return handler(mapper, objectMapper, CmsContentCategoryEntity.class, CONTENT_CATEGORY, "cms_content_category",
+                fields("targetId", "tenantId", "orgId", "parentId", "categoryCode", "categoryName", "sort",
+                        "status", "remark"),
+                required("targetId", "tenantId", "parentId", "categoryCode", "categoryName", "sort", "status"),
+                List.of());
+    }
+
+    @Bean
     ResourceHandler cmsContentResourceHandler(CmsContentMapper mapper, ObjectMapper objectMapper) {
         return handler(mapper, objectMapper, CmsContentEntity.class, CONTENT, "cms_content",
                 fields("targetId", "tenantId", "orgId", "title", "subtitle", "summary", "contentType",
                         "coverFileId", "body", "externalUrl", "attachmentFileId", "videoFileId", "source",
-                        "author", "categoryId", "seoTitle", "seoKeywords", "seoDescription", "status",
+                        "author", "code", "categoryId", "seoTitle", "seoKeywords", "seoDescription", "status",
                         "publishTime", "offlineTime", "reviewComment"),
-                required("targetId", "tenantId", "title", "contentType", "status"), List.of(SITE_CATEGORY));
+                required("targetId", "tenantId", "title", "contentType", "status"), List.of(CONTENT_CATEGORY));
     }
 
     @Bean

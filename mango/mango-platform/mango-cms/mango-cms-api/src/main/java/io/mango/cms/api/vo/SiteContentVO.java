@@ -9,6 +9,8 @@ import java.time.LocalDateTime;
 public class SiteContentVO {
     @Schema(description = "主键 ID")
     private Long id;
+    @Schema(description = "内容编码")
+    private String code;
     @Schema(description = "标题")
     private String title;
     @Schema(description = "副标题")
@@ -41,6 +43,10 @@ public class SiteContentVO {
     private Long categoryId;
     @Schema(description = "分类名称")
     private String categoryName;
+    @Schema(description = "是否置顶")
+    private Boolean top;
+    @Schema(description = "排序值")
+    private Integer sort;
     @Schema(description = "SEO 标题")
     private String seoTitle;
     @Schema(description = "SEO 关键词")

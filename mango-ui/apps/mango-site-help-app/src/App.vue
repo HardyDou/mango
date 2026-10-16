@@ -222,7 +222,7 @@ const categories = ref<CmsSiteCategory[]>([]);
 const navigations = ref<CmsNavigation[]>([]);
 const heroAds = ref<CmsAdvertisement[]>([]);
 const ads = ref<CmsAdvertisement[]>([]);
-const contents = ref<PageResult<CmsContent>>({ list: [], total: 0, page: 1, size: 10, pageNum: 1, pageSize: 10 });
+const contents = ref<PageResult<CmsContent>>({ list: [], total: 0, page: 1, size: 10 });
 const selectedContent = ref<CmsContent | null>(null);
 const keyword = ref('');
 const categoryId = ref<ApiId>('');
@@ -271,8 +271,8 @@ async function loadContents() {
   try {
     const nextPage = await cmsSiteApi.pageContents({
       ...siteQuery.value,
-      pageNum: 1,
-      pageSize: 10,
+      page: 1,
+      size: 10,
       keyword: keyword.value || undefined,
       categoryId: categoryId.value || undefined,
     });

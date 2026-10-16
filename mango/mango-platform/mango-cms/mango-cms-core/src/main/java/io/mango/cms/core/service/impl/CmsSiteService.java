@@ -125,7 +125,7 @@ public class CmsSiteService implements ICmsSiteService {
         LocalDateTime now = LocalDateTime.now();
         List<SiteBannerVO> deliveryBanners = listEffectiveDeliveries(site, resolved.getPosition(), CmsAdPositionType.BANNER.name(), now)
                 .stream()
-                .map(this::toPublicBannerVO)
+                .map(item -> toPublicBannerVO(site, item))
                 .toList();
         if (!deliveryBanners.isEmpty()) {
             return deliveryBanners;
@@ -138,7 +138,7 @@ public class CmsSiteService implements ICmsSiteService {
                 .orderByAsc(CmsBannerEntity::getSort));
         return records.stream()
                 .filter(item -> CmsSupport.isEffective(item.getStartTime(), item.getEndTime(), now))
-                .map(this::toPublicBannerVO)
+                .map(item -> toPublicBannerVO(site, item))
                 .toList();
     }
 
@@ -222,7 +222,14 @@ public class CmsSiteService implements ICmsSiteService {
     public SiteContentVO detailContent(SiteContentDetailQuery query) {
         Require.notNull(query, CmsCode.CMS_BUSINESS_ERROR, "内容详情查询不能为空");
         CmsSiteEntity site = resolveSiteEntity(toResolveQuery(query));
-        CmsContentEntity content = contentMapper.selectById(query.getContentId());
+        Require.isTrue(query.getContentId() != null || StringUtils.hasText(query.getCode()),
+                CmsCode.CMS_BUSINESS_ERROR, "内容 ID 或内容编码不能为空");
+        CmsContentEntity content = query.getContentId() != null
+                ? contentMapper.selectById(query.getContentId())
+                : contentMapper.selectOne(new LambdaQueryWrapper<CmsContentEntity>()
+                .eq(CmsContentEntity::getTenantId, site.getTenantId())
+                .eq(CmsContentEntity::getCode, query.getCode().trim())
+                .last("limit 1"));
         Require.notNull(content, CmsCode.CMS_BUSINESS_ERROR, "内容不存在");
         Require.isTrue(publicContent(content, site.getTenantId(), LocalDateTime.now()), CmsCode.CMS_BUSINESS_ERROR, "内容不存在");
         CmsContentPublishEntity publish = findEffectivePublish(site, content.getId(), query.getCategoryId(), LocalDateTime.now());
@@ -434,7 +441,7 @@ public class CmsSiteService implements ICmsSiteService {
         return vo;
     }
 
-    private SiteBannerVO toPublicBannerVO(CmsBannerEntity entity) {
+    private SiteBannerVO toPublicBannerVO(CmsSiteEntity site, CmsBannerEntity entity) {
         SiteBannerVO vo = new SiteBannerVO();
         vo.setId(entity.getId());
         vo.setPosition(entity.getPosition());
@@ -442,12 +449,13 @@ public class CmsSiteService implements ICmsSiteService {
         vo.setSubtitle(entity.getSubtitle());
         vo.setMediaType(entity.getMediaType());
         vo.setMediaFileId(entity.getMediaFileId());
+        vo.setMediaUrl(publicFileUrl(site, entity.getMediaFileId()));
         vo.setJumpUrl(entity.getJumpUrl());
         vo.setSort(entity.getSort());
         return vo;
     }
 
-    private SiteBannerVO toPublicBannerVO(AdDeliveryWithPosition item) {
+    private SiteBannerVO toPublicBannerVO(CmsSiteEntity site, AdDeliveryWithPosition item) {
         CmsAdDeliveryEntity delivery = item.delivery();
         CmsAdvertisementEntity position = item.position();
         SiteBannerVO vo = new SiteBannerVO();
@@ -461,6 +469,7 @@ public class CmsSiteService implements ICmsSiteService {
         vo.setMediaFileId(CmsAdvertisementType.VIDEO.name().equals(delivery.getMaterialType())
                 ? delivery.getVideoFileId()
                 : firstImageFileId(delivery));
+        vo.setMediaUrl(publicFileUrl(site, vo.getMediaFileId()));
         vo.setJumpUrl(delivery.getJumpUrl());
         vo.setSort(delivery.getSort());
         return vo;
@@ -645,6 +654,7 @@ public class CmsSiteService implements ICmsSiteService {
     private SiteContentVO toPublicContentVO(CmsSiteEntity site, CmsContentEntity entity, CmsContentPublishEntity publish) {
         SiteContentVO vo = new SiteContentVO();
         vo.setId(entity.getId());
+        vo.setCode(entity.getCode());
         vo.setTitle(entity.getTitle());
         vo.setSubtitle(entity.getSubtitle());
         vo.setSummary(entity.getSummary());
@@ -661,6 +671,8 @@ public class CmsSiteService implements ICmsSiteService {
         vo.setAuthor(entity.getAuthor());
         if (publish != null) {
             vo.setCategoryId(publish.getCategoryId());
+            vo.setTop(Boolean.TRUE.equals(publish.getTop()));
+            vo.setSort(publish.getSort());
             CmsSiteCategoryEntity category = siteCategoryMapper.selectById(publish.getCategoryId());
             if (category != null) {
                 vo.setCategoryName(category.getCategoryName());

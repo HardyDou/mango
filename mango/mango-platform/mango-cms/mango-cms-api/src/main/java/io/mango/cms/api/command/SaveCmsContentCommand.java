@@ -19,6 +19,11 @@ public class SaveCmsContentCommand {
     @Positive(message = "主键 ID 必须大于 0")
     private Long id;
 
+    @Size(max = 128, message = "内容编码最多128个字符")
+    @Pattern(regexp = "|[A-Za-z0-9][A-Za-z0-9._-]*", message = "内容编码只能包含字母、数字、点、下划线和短横线")
+    @Schema(description = "内容编码")
+    private String code;
+
     @NotBlank(message = "标题不能为空")
     @Size(max = 255, message = "标题最多255个字符")
     @Schema(description = "标题")

@@ -82,8 +82,10 @@ Main API helper:
 | `cmsSiteApi.listNavigations(params)` | `GET /cms/open/navigations/list` | Read navigation by `navType`. |
 | `cmsSiteApi.listBanners(params)` | `GET /cms/open/banners/list` | Read banner records by position. |
 | `cmsSiteApi.listAdvertisements(params)` | `GET /cms/open/advertisements/list` | Read advertisement deliveries by position. |
-| `cmsSiteApi.pageContents(params)` | `GET /cms/open/contents/page` | Read published content pages. |
-| `cmsSiteApi.detailContent(params)` | `GET /cms/open/contents/detail` | Read one published content detail. |
+| `cmsSiteApi.pageContents(params)` | `GET /cms/open/contents/page` | Read published content pages. HTTP parameters use `page`/`size`. |
+| `cmsSiteApi.detailContent(params)` | `GET /cms/open/contents/detail` | Read one published content detail by `contentId` or stable `code`. |
+
+`pageContents()` also accepts legacy `pageNum`/`pageSize` callers and converts them to backend-standard `page`/`size` parameters.
 
 State helpers:
 
@@ -105,11 +107,11 @@ This frontend package does not initialize database records, menus, permissions, 
 | Data | Source |
 |------|--------|
 | Site metadata, SEO, categories, navigation, banners, advertisements, and content | Backend `mango-cms` public APIs under `/cms/open/**`. |
-| Public image and media preview URLs | Backend CMS and file capabilities derive them at runtime from file IDs. |
+| Public image and media preview URLs | Backend CMS and file capabilities derive them at runtime from file IDs and return them as `coverUrl`, `mediaUrl`, or equivalent URL fields. |
 | Initial site query | Host app route, domain, or explicit `siteCode`. |
 | Page layout and navigation rendering | Host site app. |
 
-Public CMS APIs only return enabled, visible, published, and valid-time data according to backend `mango-cms` filtering.
+Public CMS APIs only return enabled, visible, published, and valid-time data according to backend `mango-cms` filtering. `SiteContent` includes `code`, `top`, and `sort`; `SiteBanner` includes `mediaUrl` for direct media rendering.
 
 ## 7. 管理入口
 
