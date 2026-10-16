@@ -10,6 +10,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class SiteContentDetailQuery extends SiteBaseQuery {
 
+    @Positive(message = "内容 ID 必须大于 0")
     @Schema(description = "内容 ID，与内容编码至少提供一个")
     private Long contentId;
 
