@@ -87,7 +87,7 @@
 | TASK-009 | SAC-010 | 导出当前筛选结果并默认脱敏 | 服务层组装 CSV，手机号/邮箱脱敏 | `InformationSubmissionService.exportCsv`、`SubmissionsView.vue` | `mango-ui/packages/information/README.md` | `mango-docs/designs/issue-1055-information-collection/technical-design.md` | `mango-ui/apps/mango-admin/e2e/specs/information-collection.spec.ts` | `mango-docs/evidence/issue-1055/acceptance-evidence.md` | 接口验收（脱敏结果） | DONE | `mango-docs/evidence/issue-1055/acceptance-evidence.md` |
 | TASK-010 | SAC-011 | 表单与提交记录失败语义 | 重复编码、已关闭、有记录不可删除均返回业务错误码 | `InformationCode`、`InformationFormService`、`InformationSubmissionService` | `mango/mango-platform/mango-information/README.md` | `mango-docs/designs/issue-1055-information-collection/technical-design.md` | `mango-ui/apps/mango-admin/e2e/specs/information-collection.spec.ts` | `mango-docs/evidence/issue-1055/acceptance-evidence.md` | 接口验收（失败分支） | DONE | `mango-docs/evidence/issue-1055/acceptance-evidence.md` |
 | TASK-011 | SAC-012 | 前端包边界与架构门禁 | FE2 依赖 FE1 `@mango/admin-extension`，不新增 FE2→FE3 例外 | `packages/information/package.json`、`vite.config.ts` | `mango-ui/packages/information/README.md` | `mango-docs/designs/issue-1055-information-collection/technical-design.md` | `mango-ui/apps/mango-admin/e2e/specs/information-collection.spec.ts` | `mango-docs/evidence/issue-1055/acceptance-evidence.md` | 架构与边界检查 | DONE | `mango-docs/evidence/issue-1055/acceptance-evidence.md` |
-| TASK-012 | SAC-001 | 后端字段校验、租户、SK 与状态的自动化集成测试 | 需要隔离测试库的集成测试套件 | `mango-platform/mango-information/mango-information-core/src/test` | `mango/mango-platform/mango-information/README.md` | `mango-docs/designs/issue-1055-information-collection/implementation-plan.md` | `mango-ui/apps/mango-admin/e2e/specs/information-collection.spec.ts` | `mango-docs/evidence/issue-1055/acceptance-evidence.md` | EXCEPTION：本轮以真实接口与数据库核对替代 | EXCEPTION | `mango-docs/evidence/issue-1055/acceptance-evidence.md` |
+| TASK-012 | SAC-001 | 后端字段校验、租户、SK 与状态的自动化集成测试 | H2 MySQL 兼容模式集成测试覆盖服务层真实持久化链路 | `mango-platform/mango-information/mango-information-core/src/test/java/io/mango/information/core/service/impl/InformationServiceIntegrationTest.java` | `mango/mango-platform/mango-information/README.md` | `mango-docs/designs/issue-1055-information-collection/implementation-plan.md` | `mango-ui/apps/mango-admin/e2e/specs/information-collection.spec.ts` | `mango-docs/evidence/issue-1055/acceptance-evidence.md` | `mvn -pl mango-platform/mango-information/mango-information-core test` | DONE | `mango-docs/evidence/issue-1055/acceptance-evidence.md` |
 
 ### 5.7 测试用例登记与自动化判断
 
@@ -102,7 +102,7 @@
 | TC-007 | AC-007 | 导出当前筛选结果与默认脱敏 | P1 | API | MANUAL | 手机号字段 | CSV 脱敏 `138****00` | `GET /information/submissions/export` | `acceptance-evidence.md` | MANUAL |
 | TC-008 | AC-008 | 字段定义变更后历史记录快照 | P1 | API | MANUAL | 修改定义后读旧记录 | 快照表与提交值对齐 | 数据库核对 | `acceptance-evidence.md` | MANUAL |
 | TC-009 | AC-009 | 多租户隔离与租户归属 | P0 | API | MANUAL | 匿名提交 | `tenant_id` 由服务端确定 | 数据库核对 | `acceptance-evidence.md` | MANUAL |
-| TC-010 | AC-010 | 后端自动化集成测试全覆盖 | P0 | API | EXCEPTION | 隔离测试库 | 待补 | EXCEPTION：本轮以真实接口与数据库核对替代 | EXCEPTION：未固化为可重复执行的集成测试，后续补齐 | CANDIDATE |
+| TC-010 | AC-010 | 后端自动化集成测试全覆盖 | P0 | API | AUTO | H2 MySQL 兼容内存库、两租户 | 服务层真实 Mapper 与租户拦截器 | `mvn -pl mango-platform/mango-information/mango-information-core test` | `acceptance-evidence.md` | AUTOMATED |
 
 ### 5.8 测试结果基线
 
@@ -115,7 +115,7 @@
 | BASE-005 | TASK-005 | TC-004, TC-005, TC-009 | `mango-ui/apps/mango-admin/e2e/specs/information-collection.spec.ts` | 后端接口实测（curl） | 真实后端 | 真实库与表单 | 匿名与服务端 | PASS：校验、幂等、SK 与租户归属符合设计 | 无 | `mango-docs/evidence/issue-1055/acceptance-evidence.md` | 无 |
 | BASE-006 | TASK-006 | TC-007, TC-008 | `mango-ui/apps/mango-admin/e2e/specs/information-collection.spec.ts` | 后端接口实测（curl） | 真实后端 | 真实库与表单 | `tenantId=1` / `admin` | PASS：导出脱敏与快照落库 | 无 | `mango-docs/evidence/issue-1055/acceptance-evidence.md` | 无 |
 | BASE-007 | TASK-011 | TC-001, TC-003 | `mango-ui/apps/mango-admin/e2e/specs/information-collection.spec.ts` | `pnpm architecture:check && pnpm frontend-boundaries:check && pnpm component-contracts:check && pnpm admin:styles:check` | mango-ui workspace | 不适用 | 不适用 | PASS：架构与门禁通过 | 无 | `mango-docs/evidence/issue-1055/acceptance-evidence.md` | 无 |
-| BASE-008 | TASK-012 | TC-010 | `mango-ui/apps/mango-admin/e2e/specs/information-collection.spec.ts` | 不适用 | 不适用 | 不适用 | 不适用 | EXCEPTION：后端自动化集成测试未覆盖全部分支 | EXCEPTION：以真实接口与数据库核对替代 | `mango-docs/evidence/issue-1055/acceptance-evidence.md` | 无 |
+| BASE-008 | TASK-012 | TC-010 | `mango-platform/mango-information/mango-information-core/src/test/java/io/mango/information/core/service/impl/InformationServiceIntegrationTest.java` | `mvn -pl mango-platform/mango-information/mango-information-core test` | JDK 21 / H2 MySQL 模式 | 内存库 `information`，两租户 | `tenantId=1`、`tenantId=2` | PASS：8 个用例全部通过 | 无 | `mango-docs/evidence/issue-1055/acceptance-evidence.md` | 无 |
 
 ### 5.9 验收记录
 
@@ -130,7 +130,7 @@
 | TASK-009 | TC-007 | `GET /information/submissions/export` | 导出与脱敏 | 手机号字段 | CSV 仅含当前筛选记录，手机号脱敏为 `138****00` | 非 UI | 管理接口 200 | `acceptance-evidence.md` | DONE |
 | TASK-007 | TC-009 | `information_submission` 表 | 租户归属 | 匿名提交 | `tenant_id=1` 由服务端写入 | 非 UI | 不适用 | `acceptance-evidence.md` | DONE |
 | TASK-008 | TC-001 | `/authorization/menus/user` 与 `GET /information/open/forms/detail` | 菜单与公开资源 | 管理员与匿名 | 菜单含 `information:forms`/`information:submissions`；公开接口匿名 200 | 菜单可见 | 接口 200 | `acceptance-evidence.md` | DONE |
-| TASK-012 | TC-010 | 后端集成测试 | 自动化覆盖 | 不适用 | EXCEPTION：未全部固化 | 不适用 | 不适用 | `acceptance-evidence.md` 未验证项 | EXCEPTION |
+| TASK-012 | TC-010 | `InformationServiceIntegrationTest` | 服务层自动化集成测试 | H2 MySQL 兼容内存库、两租户 | 8 个用例覆盖 migration、校验、快照、幂等、SK、状态、导出与租户隔离 | 服务层测试，无页面交互 | 不走 HTTP，断言持久化与异常语义 | `mvn -pl mango-platform/mango-information/mango-information-core test` | DONE |
 
 ### 5.10 业务开发交接输出
 
@@ -140,7 +140,6 @@
 
 ## 6. 风险与限制
 
-- `EXCEPTION`（TASK-012）：后端字段校验、租户隔离、SK 与状态流转目前以真实接口与数据库核对验证，尚未全部固化为可重复执行的集成测试用例。
 - `EXCEPTION`：`@mango/admin-extension` 的范围外使能修复需在后续发布批次单独说明。
 - `EXCEPTION`：托管表单当前注册在 `mango-admin` 宿主应用；独立对外托管站点的承载应用仍待确认。
 - 本契约基于 `AGENT_ONLY` 复核，不代表人工审批结论。
