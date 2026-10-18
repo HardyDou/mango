@@ -45,6 +45,7 @@
     "@mango/common": "workspace:2.1.4",
     "@mango/grid-layout": "workspace:1.0.28",
     "@mango/grid-widgets": "workspace:1.0.34",
+    "@mango/information": "workspace:1.0.0",
     "@mango/job": "workspace:1.0.44",
     "@mango/link": "workspace:1.0.37",
     "@mango/rbac": "workspace:1.0.40",

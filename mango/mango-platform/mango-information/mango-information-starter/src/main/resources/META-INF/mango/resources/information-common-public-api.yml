@@ -1,0 +1,35 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: information
+    module-name: mango-information
+    declarations:
+      API_RESOURCE:
+        - id: "2951400000000010551"
+          version: 1
+          biz-key: api.information.GET.information.open.forms.detail
+          name: 查询托管表单定义
+          target-module: authorization
+          fields:
+            moduleName: { type: STRING, value: mango-information }
+            httpMethod: { type: STRING, value: GET }
+            pathPattern: { type: STRING, value: /information/open/forms/detail }
+            resourceCode: { type: STRING, value: "GET:/information/open/forms/detail" }
+            accessMode: { type: STRING, value: PUBLIC }
+            handlerClass: { type: STRING, value: io.mango.information.starter.controller.InformationPublicController }
+            handlerMethod: { type: STRING, value: detail }
+            description: { type: STRING, value: 查询已发布信息采集表单 }
+        - id: "2951400000000010552"
+          version: 1
+          biz-key: api.information.POST.information.open.forms.submit
+          name: 提交信息采集数据
+          target-module: authorization
+          fields:
+            moduleName: { type: STRING, value: mango-information }
+            httpMethod: { type: STRING, value: POST }
+            pathPattern: { type: STRING, value: /information/open/forms/submit }
+            resourceCode: { type: STRING, value: "POST:/information/open/forms/submit" }
+            accessMode: { type: STRING, value: PUBLIC }
+            handlerClass: { type: STRING, value: io.mango.information.starter.controller.InformationPublicController }
+            handlerMethod: { type: STRING, value: submit }
+            description: { type: STRING, value: 提交信息采集数据 }

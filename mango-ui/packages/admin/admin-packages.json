@@ -30,6 +30,10 @@
       "style": "@mango/job/style.css"
     },
     {
+      "name": "@mango/information",
+      "style": "@mango/information/style.css"
+    },
+    {
       "name": "@mango/link",
       "style": "@mango/link/style.css"
     },

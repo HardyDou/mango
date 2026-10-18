@@ -1,0 +1,36 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "information",
+      "moduleName": "信息采集中心",
+      "moduleDependencies": ["system"],
+      "declarations": {
+        "AUTH_MENU": [
+          {
+            "id": "2951400000000001055",
+            "version": 1,
+            "bizKey": "information.menu.internal-admin",
+            "name": "信息采集中心菜单",
+            "targetModule": "authorization",
+            "fields": {
+              "appCode": {"type": "STRING", "value": "internal-admin"},
+              "moduleCode": {"type": "STRING", "value": "mango-information"},
+              "moduleName": {"type": "STRING", "value": "信息采集中心"},
+              "sort": {"type": "INT", "value": 35},
+              "packageCodes": {"type": "LIST", "value": ["platform_admin", "institution_collaboration"]},
+              "roleCodes": {"type": "LIST", "value": []},
+              "menus": {"type": "LIST", "value": [
+                {"menuType": 1, "menuName": "信息采集中心", "menuCode": "information", "parentCode": "data", "path": "/information", "icon": "Collection", "sort": 35, "redirect": "/information/forms", "children": [
+                  {"menuType": 2, "menuName": "表单管理", "menuCode": "information:forms", "path": "/information/forms", "icon": "Tickets", "component": "information/forms/index", "sort": 1, "apiCodes": ["information:form:list", "information:form:query", "information:form:add", "information:form:edit", "information:form:delete"]},
+                  {"menuType": 2, "menuName": "提交记录", "menuCode": "information:submissions", "path": "/information/submissions", "icon": "DocumentChecked", "component": "information/submissions/index", "sort": 2, "apiCodes": ["information:submission:list", "information:submission:query", "information:submission:process", "information:submission:export"]},
+                  {"menuType": 2, "menuName": "托管表单", "menuCode": "information:hosted", "path": "/information/hosted", "icon": "EditPen", "component": "information/hosted/index", "sort": 3, "visible": 0}
+                ]}
+              ]}
+            }
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,26 @@
+.information-page {
+  min-height: 100%;
+}
+.information-page .information-json {
+  max-height: 360px;
+  overflow: auto;
+  margin: 0;
+  white-space: pre-wrap;
+  font-size: 12px;
+}
+.information-hosted-page {
+  min-height: 100%;
+  padding: 24px;
+  background: var(--mango-bg-color, #f5f7fa);
+}
+.information-hosted-card {
+  max-width: 720px;
+  margin: 0 auto;
+}
+.information-hosted-card h2 {
+  margin: 0 0 6px;
+}
+.information-hosted-card p {
+  margin: 0;
+  color: var(--el-text-color-secondary);
+}

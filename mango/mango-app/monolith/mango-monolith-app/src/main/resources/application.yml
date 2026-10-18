@@ -165,6 +165,8 @@ mango:
           enabled: true
         mango-cms:
           enabled: true
+        mango-information:
+          enabled: true
   ip-location:
     enabled: true
     provider: ip2region

@@ -123,6 +123,12 @@ export function generateStaticRoutes(): RouteRecordRaw[] {
       meta: { title: '支付结果确认', isAffix: false },
     },
     {
+      path: '/information/hosted',
+      name: 'InformationHostedForm',
+      component: () => componentsMap['information/hosted/index']?.() ?? import('@/views/error/404.vue'),
+      meta: { title: '信息采集', isAffix: false },
+    },
+    {
       path: '/',
       name: 'Layout',
       component: MangoAdminLayout,

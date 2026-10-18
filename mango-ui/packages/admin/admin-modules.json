@@ -58,6 +58,19 @@
     },
     {
       "cliOptional": false,
+      "cliVersionKey": "mangoInformation",
+      "code": "information",
+      "packageName": "@mango/information",
+      "registrars": [
+        {
+          "import": "@mango/information/admin-pages",
+          "name": "registerMangoInformationAdminPages"
+        }
+      ],
+      "style": "@mango/information/style.css"
+    },
+    {
+      "cliOptional": false,
       "cliVersionKey": "mangoLink",
       "code": "link",
       "packageName": "@mango/link",

@@ -21,6 +21,7 @@ const packages = [
   '@mango/workflow',
   '@mango/admin-shell',
   '@mango/cms',
+  '@mango/information',
   '@mango/link-openapi',
   '@mango/link',
   '@mango/ai-api',
