@@ -45,19 +45,6 @@
     },
     {
       "cliOptional": false,
-      "cliVersionKey": "mangoJob",
-      "code": "job",
-      "packageName": "@mango/job",
-      "registrars": [
-        {
-          "import": "@mango/job/admin-pages",
-          "name": "registerMangoJobAdminPages"
-        }
-      ],
-      "style": "@mango/job/style.css"
-    },
-    {
-      "cliOptional": false,
       "cliVersionKey": "mangoInformation",
       "code": "information",
       "packageName": "@mango/information",
@@ -68,6 +55,19 @@
         }
       ],
       "style": "@mango/information/style.css"
+    },
+    {
+      "cliOptional": false,
+      "cliVersionKey": "mangoJob",
+      "code": "job",
+      "packageName": "@mango/job",
+      "registrars": [
+        {
+          "import": "@mango/job/admin-pages",
+          "name": "registerMangoJobAdminPages"
+        }
+      ],
+      "style": "@mango/job/style.css"
     },
     {
       "cliOptional": false,
