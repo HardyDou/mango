@@ -24,5 +24,4 @@ export {
   submissionStatusLabel,
   submissionStatusTone,
 } from './domain/status';
-export { default as InformationFormSurface } from './components/InformationFormSurface.vue';
 export { registerMangoInformationAdminPages } from './admin-pages';
