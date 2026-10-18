@@ -18,6 +18,7 @@ export default defineConfig({
         '@mango/common',
         'element-plus',
         'vue',
+        'vue-router',
       ],
       output: { entryFileNames: '[name].js' },
     },

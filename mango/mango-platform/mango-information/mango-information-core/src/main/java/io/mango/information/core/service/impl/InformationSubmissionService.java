@@ -215,23 +215,50 @@ public class InformationSubmissionService implements IInformationSubmissionServi
         return vo;
     }
 
+    private static final Set<String> DISPLAY_ONLY_FIELD_TYPES = Set.of("static", "divider");
+
     private void validateValues(String definitionJson, Map<String, Object> values) {
         try {
             JsonNode fields = objectMapper.readTree(definitionJson);
             Set<String> definedCodes = new HashSet<>();
             for (JsonNode field : fields) {
-                definedCodes.add(field.path("fieldCode").asText());
                 String code = field.path("fieldCode").asText();
+                definedCodes.add(code);
+                if (DISPLAY_ONLY_FIELD_TYPES.contains(field.path("fieldType").asText())) {
+                    continue;
+                }
                 Object value = values.get(code);
-                if (field.path("required").asBoolean(false) && (value == null || !StringUtils.hasText(String.valueOf(value)))) {
+                if (field.path("required").asBoolean(false) && isEmptyValue(value)) {
                     Require.isTrue(false, InformationCode.INVALID_SUBMISSION, "字段 " + code + " 不能为空");
                 }
             }
-            values.keySet().forEach(code -> Require.isTrue(definedCodes.contains(code), InformationCode.INVALID_SUBMISSION, "未知字段：" + code));
+            values.keySet().forEach(code -> {
+                Require.isTrue(definedCodes.contains(code), InformationCode.INVALID_SUBMISSION, "未知字段：" + code);
+                Require.isTrue(!isDisplayOnlyCode(fields, code), InformationCode.INVALID_SUBMISSION, "展示组件不接受提交值：" + code);
+            });
         } catch (Exception e) {
-            if (e instanceof BizException) throw (BizException) e;
+            if (e instanceof BizException bizException) throw bizException;
             throw new IllegalArgumentException(InformationCode.INVALID_SUBMISSION.getMessage(), e);
         }
+    }
+
+    private boolean isEmptyValue(Object value) {
+        if (value == null) {
+            return true;
+        }
+        if (value instanceof java.util.Collection<?> collection) {
+            return collection.isEmpty();
+        }
+        return !StringUtils.hasText(String.valueOf(value));
+    }
+
+    private boolean isDisplayOnlyCode(JsonNode fields, String code) {
+        for (JsonNode field : fields) {
+            if (code.equals(field.path("fieldCode").asText())) {
+                return DISPLAY_ONLY_FIELD_TYPES.contains(field.path("fieldType").asText());
+            }
+        }
+        return false;
     }
 
     private String write(Object value) {

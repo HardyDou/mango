@@ -6,7 +6,9 @@ import io.mango.common.exception.BizException;
 import io.mango.information.api.command.ProcessInformationSubmissionCommand;
 import io.mango.information.api.command.SaveInformationFormCommand;
 import io.mango.information.api.command.SubmitInformationCommand;
+import io.mango.information.api.enums.InformationFormStatus;
 import io.mango.information.api.enums.InformationSubmissionStatus;
+import io.mango.information.api.command.UpdateInformationFormStatusCommand;
 import io.mango.information.api.query.InformationFormPageQuery;
 import io.mango.information.api.query.InformationSubmissionPageQuery;
 import io.mango.information.api.vo.InformationFormDetailVO;
@@ -210,6 +212,26 @@ class InformationServiceIntegrationTest {
         assertThat(intValue("information_submission", "count(*)", "tenant_id = '2'")).isEqualTo(1);
     }
 
+    @Test
+    void updateStatus_andRegenerateSecret_rotateFormLifecycle() {
+        Long formId = createPublishedForm("lifecycle-form");
+        String before = formService.detail(formId).getServerSecret();
+
+        UpdateInformationFormStatusCommand status = new UpdateInformationFormStatusCommand();
+        status.setId(formId);
+        status.setStatus(InformationFormStatus.DISABLED);
+        assertThat(formService.updateStatus(status)).isTrue();
+        assertThat(formService.detail(formId).getStatus()).isEqualTo(InformationFormStatus.DISABLED);
+        assertThatThrownBy(() -> submissionService.submit(
+                submitCommand("lifecycle-form", Map.of("name", "停用", "phone", "13800138000"), "key-disabled"), false))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("未发布");
+
+        String rotated = formService.regenerateSecret(formId);
+        assertThat(rotated).isNotEqualTo(before);
+        assertThat(formService.detail(formId).getServerSecret()).isEqualTo(rotated);
+    }
+
     private Long createPublishedForm(String formCode) {
         SaveInformationFormCommand command = new SaveInformationFormCommand();
         command.setFormCode(formCode);
@@ -217,7 +239,7 @@ class InformationServiceIntegrationTest {
         command.setDescription("集成测试表单");
         command.setDefinitionJson(DEFINITION);
         command.setSuccessMessage("提交成功");
-        command.setPublished(true);
+        command.setStatus(InformationFormStatus.PUBLISHED);
         return formService.save(command);
     }
 

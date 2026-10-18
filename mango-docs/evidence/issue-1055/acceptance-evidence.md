@@ -20,14 +20,14 @@
 
 | 台账 ID | 用例 ID | 页面/接口 | 功能点 | 测试数据 | 关键断言 | UI/交互检查 | console/network 结果 | 截图/trace/日志 | 结论 |
 |---|---|---|---|---|---|---|---|---|---|
-| TASK-008 | TC-001 | `GET /authorization/menus/user`、`GET /information/forms/page` | 菜单与表单查询 | 管理员登录后的真实租户 | 菜单含 `information:forms`、`information:submissions`、`information:hosted`；列表返回已发布表单 | 侧边菜单显示“信息采集中心”，页面级 `data-page` 存在 | 接口 HTTP 200，页面无 Vue 运行时错误 | `screenshots/01-form-list.png` | DONE |
-| TASK-002 | TC-001 | `/information/forms` 详情与配置 | 表单详情、服务端 SK、配置保存 | 表单 `customer-contact` | 详情展示托管入口与服务端 SK；配置对话框标签正确；重复编码返回 `105501` | 详情与配置对话框可开合 | 接口 HTTP 200 + 业务错误码 | `screenshots/02-form-detail.png`、`screenshots/03-form-config.png` | DONE |
-| TASK-003 | TC-003 | `/information/submissions` | 动态提交列与详情 | 真实提交记录 | 固定列（提交编号/时间/状态/来源页面）+ 当前表单动态列 + 操作列；详情展示提交 JSON | 列表与详情对话框可用 | 接口 HTTP 200 | `screenshots/04-submission-list.png`、`screenshots/05-submission-detail.png` | DONE |
-| TASK-004 | TC-002 | `/#/information/hosted?formCode=customer-contact` | 匿名托管表单提交 | 姓名、手机号、需求描述 | 未登录可打开表单并提交，提交后展示成功态与提示语 | 必填校验生效，提交按钮有 loading | 公开接口匿名 HTTP 200 | `screenshots/06-hosted-form.png`、`screenshots/07-hosted-submit-success.png` | DONE |
+| TASK-008 | TC-001 | `GET /authorization/menus/user`、`GET /information/forms/page` | 菜单与表单查询 | 管理员登录后的真实租户 | 信息采集中心下只有 `表单管理` 一个可见菜单；列表按原型返回表单名称/编码/备注/状态/提交量/创建日期/更新日期/创建人 | 侧边菜单与原型一致，页面级 `data-page` 存在 | 接口 HTTP 200，页面无 Vue 运行时错误 | `screenshots/01-form-list.png` | DONE |
+| TASK-002 | TC-001 | `/#/information/forms/:id/detail`、`.../config` | 表单详情、字段配置、可视化配置 | 表单 `customer-contact` | 详情按原型展示 3 列描述表、字段配置表和接入方式卡片；配置页按原型提供控件工具箱、预览画布和字段属性面板；重复编码返回 `105501` | 详情返回栏与操作按钮可点，配置页三列布局可见 | 接口 HTTP 200 + 业务错误码 | `screenshots/02-form-detail.png`、`screenshots/03-form-config.png` | DONE |
+| TASK-003 | TC-003 | `/#/information/forms/:id/submissions` | 动态提交列与处理抽屉 | 真实提交记录 | 固定列（提交编号/时间/状态/来源页面）+ 当前表单动态列 + 操作列；工具栏含返回详情页、表单上下文、待处理计数和导出；抽屉含记录摘要、脱敏字段、处理备注与状态 | 列表与抽屉可用，手机号脱敏为 `136****00` | 接口 HTTP 200 | `screenshots/05-submission-list.png`、`screenshots/06-submission-detail.png` | DONE |
+| TASK-004 | TC-002 | `/#/information/hosted?formCode=customer-contact` | 匿名托管表单提交 | 姓名、手机号、需求描述 | 未登录可打开原型同款托管表单并提交，提交后展示成功结果弹窗 | 必填校验生效，提交按钮有 loading | 公开接口匿名 HTTP 200 | `screenshots/07-hosted-form.png`、`screenshots/08-hosted-submit-success.png` | DONE |
 | TASK-005 | TC-004 | `POST /information/open/forms/submit` | 服务端 SK 校验 | 错误 SK、正确 SK | 错误 SK 返回 `105507`；正确 SK 成功写入提交 | 接口层验收，无页面交互 | 公开接口返回 HTTP 200，业务码为预期错误码 | 本节接口记录 | DONE |
 | TASK-005 | TC-005 | `POST /information/open/forms/submit` | 必填、未知字段与幂等 | 缺 `phone`、未知字段 `hack`、重复幂等键 | 分别返回 `105505`、`105505`、同一提交编号 | 接口层验收，无页面交互 | 公开接口返回 HTTP 200，业务码为预期错误码 | 本节接口记录 | DONE |
 | TASK-003 | TC-006 | `PUT /information/submissions/process` | 状态流转与已关闭限制 | COMPLETED → CLOSED → PROCESSING | 前两次成功，已关闭再处理返回 `105506` | 接口层验收，无页面交互 | 管理接口返回 HTTP 200，业务码为预期错误码 | 本节接口记录 | DONE |
-| TASK-009 | TC-007 | `GET /information/submissions/export` | 导出与默认脱敏 | 手机号字段 | CSV 仅含当前表单记录，手机号脱敏为 `138****00` | 接口层验收，无页面交互 | 导出接口返回 HTTP 200，响应体为 CSV 文本 | 本节接口记录 | DONE |
+| TASK-009 | TC-007 | `GET /information/submissions/export` | 导出与默认脱敏 | 手机号字段 | CSV 仅含当前表单记录，手机号脱敏为 `138****00`；列表和详情同样脱敏 | 列表、抽屉和导出三处展示一致的脱敏结果 | 导出接口返回 HTTP 200，响应体为 CSV 文本 | `screenshots/05-submission-list.png`、`screenshots/06-submission-detail.png` | DONE |
 | TASK-006 | TC-008 | 数据库与提交详情 | 历史记录字段快照 | 提交后回读 `information_submission_snapshot` | 每条提交存在字段定义快照，且与提交值字段对齐 | 接口层验收，无页面交互 | 数据库会话直接读取快照列，无 HTTP 调用 | 本节数据库记录 | DONE |
 | TASK-007 | TC-009 | `information_submission` 表 | 租户归属 | 匿名提交 | `tenant_id=1` 由服务端写入，请求体不接受租户覆盖 | 接口层验收，无页面交互 | 数据库会话直接读取快照列，无 HTTP 调用 | 本节数据库记录 | DONE |
 | TASK-011 | TC-001 | 前端包与门禁 | 架构与样式边界 | `@mango/information` | `pnpm architecture:check` 0 错误且未新增例外 | 接口层验收，无页面交互 | 门禁脚本标准输出，无网络请求 | 本节门禁记录 | DONE |
@@ -37,8 +37,8 @@
 
 | 模块 | 页面 | 功能点 1 | 功能点 2 | UI 细节 | 截图/trace | 结论 |
 |---|---|---|---|---|---|---|
-| `mango-information` | 后台表单与提交记录 | 列表、详情、配置可用 | 动态列与处理状态可用 | 菜单高亮与页面级 `data-page` 正常 | `screenshots/01`~`05` | DONE |
-| `mango-information` | 匿名托管表单 | 匿名打开 | 匿名提交成功 | 独立页面无管理端外壳 | `screenshots/06`、`screenshots/07` | DONE |
+| `mango-information` | 后台表单列表、详情、配置、接入与提交记录 | 五个原型页面按原型结构可用 | 动态列、脱敏和处理抽屉可用 | 菜单高亮与页面级 `data-page` 正常 | `screenshots/01`~`06` | DONE |
+| `mango-information` | 匿名托管表单 | 匿名打开 | 匿名提交成功 | 独立页面无管理端外壳，含原型同款品牌行与提交结果弹窗 | `screenshots/07`、`screenshots/08` | DONE |
 | `@mango/information` 包 | 构建与类型 | `pnpm --filter @mango/information build` | `vue-tsc --noEmit` | 产出 index/admin-pages 与页面 chunk | 本节构建记录 | DONE |
 | `apps/mango-admin` | 生产构建 | `pnpm --filter mango-admin build` | 信息采集页面 chunk 产出 | 构建成功，无 chunk 解析失败 | 本节构建记录 | DONE |
 | `mango-information` 后端 | 模块与聚合验证 | `mvn -pl mango-platform/mango-information/mango-information-starter -am -DskipTests verify` | `mvn -pl mango-admin-starter -am -DskipTests verify` | 两次均 BUILD SUCCESS | 本节构建记录 | DONE |

@@ -1,5 +1,6 @@
 package io.mango.information.api.command;
 
+import io.mango.information.api.enums.InformationFormStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -21,16 +22,17 @@ public class SaveInformationFormCommand implements Serializable {
     @Size(max = 128, message = "表单名称不能超过128个字符")
     private String formName;
 
-    @Size(max = 1000, message = "表单说明不能超过1000个字符")
+    @Size(max = 1000, message = "备注不能超过1000个字符")
     private String description;
 
     @NotBlank(message = "字段定义不能为空")
     @Size(max = 1048576, message = "字段定义不能超过1MB")
-    @Schema(description = "JSON 字段定义，数组元素包含 fieldCode、fieldName、fieldType、required、sort")
+    @Schema(description = "JSON 字段定义，元素包含 fieldCode、fieldName、fieldType、required、placeholder、options、sort")
     private String definitionJson;
 
     @Size(max = 255, message = "成功提示不能超过255个字符")
     private String successMessage;
 
-    private Boolean published;
+    @Schema(description = "表单状态：DRAFT、PUBLISHED、DISABLED；为空时新建默认草稿，修改时保持原状态")
+    private InformationFormStatus status;
 }

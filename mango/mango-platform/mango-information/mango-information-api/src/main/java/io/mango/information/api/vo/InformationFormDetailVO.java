@@ -17,6 +17,8 @@ public class InformationFormDetailVO {
     private InformationFormStatus status;
     private String serverSecret;
     private String hostedPath;
+    private Long submissionCount;
+    private String createdByName;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

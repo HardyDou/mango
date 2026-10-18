@@ -16,5 +16,7 @@ public class InformationFormVO {
     private Integer fieldCount;
     private Long submissionCount;
     private String hostedPath;
+    private String createdByName;
+    private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
