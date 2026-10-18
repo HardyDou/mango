@@ -8,14 +8,15 @@ const evidenceDir = resolve(
 );
 
 const formCode = process.env.MANGO_INFO_FORM_CODE || 'customer-contact';
+const formId = process.env.MANGO_INFO_FORM_ID || '2111647649335427074';
+
+async function shot(page: Page, filename: string, fullPage = true) {
+  mkdirSync(evidenceDir, { recursive: true });
+  await page.screenshot({ path: resolve(evidenceDir, filename), fullPage });
+}
 
 async function goBack(page: Page) {
   await page.getByRole('button', { name: '返回' }).first().click();
-}
-
-async function shot(page: Page, filename: string) {
-  mkdirSync(evidenceDir, { recursive: true });
-  await page.screenshot({ path: resolve(evidenceDir, filename), fullPage: true });
 }
 
 async function login(page: Page) {
@@ -33,57 +34,47 @@ async function login(page: Page) {
 }
 
 test.describe('@p0 @information 信息采集中心', () => {
-  test('表单管理与详情、配置、接入、提交记录页面可用', async ({ page }) => {
+  test('表单管理与详情、设计器、接入页面可用', async ({ page }) => {
     await login(page);
 
-    // 表单管理：菜单只有“表单管理”，列表列与原型一致
+    // 表单管理：原型列与操作
     await page.goto('/#/information/forms');
     await expect(page.locator('[data-page="information.forms"]')).toBeVisible();
-    // 列表按更新时间排序，先按编码过滤，保证用例只作用于目标表单
     await page.getByPlaceholder('名称/编码').first().fill(formCode);
-    await page.getByRole('button', { name: '查询' }).click();
-    await expect(page.locator('.el-table__body tr')).toHaveCount(1);
-    await expect(page.getByText(formCode)).toBeVisible();
+    await page.getByRole('button', { name: '查询', exact: true }).click();
     for (const label of ['表单名称', '表单编码', '备注', '状态', '提交量', '创建日期', '更新日期', '创建人', '操作']) {
       await expect(page.getByRole('columnheader', { name: label, exact: true })).toBeVisible();
     }
-    await expect(page.getByRole('button', { name: '提交记录' }).first()).toBeVisible();
-    await expect(page.getByRole('button', { name: '接入' }).first()).toBeVisible();
+    const targetRow = page.locator('.el-table__body tr', { hasText: formCode }).first();
+    await expect(targetRow).toBeVisible();
     await shot(page, '01-form-list.png');
 
     // 表单详情
-    await page.getByRole('button', { name: '详情', exact: true }).first().click();
+    await targetRow.getByRole('button', { name: '详情', exact: true }).click();
     await expect(page.locator('[data-page="information.form.detail"]')).toBeVisible();
     await expect(page.getByText('返回列表页')).toBeVisible();
     await expect(page.getByText('字段配置')).toBeVisible();
     await expect(page.locator('.information-section-title').filter({ hasText: '接入方式' })).toBeVisible();
     await shot(page, '02-form-detail.png');
 
-    // 表单配置（可视化搭建）
+    // 表单设计：复用平台表单设计器
     await page.getByRole('button', { name: '配置表单' }).click();
     await expect(page.locator('[data-page="information.form.config"]')).toBeVisible();
-    await expect(page.getByRole('heading', { name: '添加控件' })).toBeVisible();
-    await expect(page.getByText('基础字段', { exact: true })).toBeVisible();
-    await expect(page.getByRole('heading', { name: '字段属性' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: '当前字段' })).toBeVisible();
+    const designer = page.locator('[data-surface="information.form.designer"]');
+    await expect(designer).toBeVisible({ timeout: 20000 });
+    await expect(designer.getByRole('heading', { name: '基础组件' })).toBeVisible();
+    await expect(designer.getByText('表单配置', { exact: true })).toBeVisible();
+    await expect(designer.getByText('姓名', { exact: true }).first()).toBeVisible();
+    await expect(designer.getByText('手机号', { exact: true }).first()).toBeVisible();
+    await shot(page, '03-form-designer.png');
 
-    // 画布中选中字段后，右侧字段属性跟随切换（对齐原型）
-    await expect(page.locator('.information-canvas-field.is-selected')).toContainText('姓名');
-    await page.locator('.information-canvas-field[data-field-code="phone"]').click();
-    await expect(page.locator('.information-canvas-field.is-selected')).toContainText('手机号');
-    await expect(page.locator('input[data-field-config="label"]')).toHaveValue('手机号');
-    await expect(page.locator('input[data-field-config="code"]')).toHaveValue('phone');
-    await expect(page.locator('.information-canvas-field.is-selected')).toHaveAttribute('data-field-code', 'phone');
-    await shot(page, '03-form-config-selected.png');
-    await page.locator('.information-canvas-field[data-field-code="name"]').click();
-    await expect(page.locator('input[data-field-config="label"]')).toHaveValue('姓名');
-    await shot(page, '03-form-config.png');
-
-    // 保存后右侧字段属性仍停留在当前编辑字段（不丢内容）
+    // 保存后规则保持不变
     await page.getByRole('button', { name: '保存配置' }).click();
     await expect(page.getByText('配置已保存')).toBeVisible();
-    await expect(page.locator('input[data-field-config="label"]')).toHaveValue('姓名');
-    await expect(page.locator('.information-canvas-field')).toHaveCount(3);
+    await page.reload();
+    const designerAfterReload = page.locator('[data-surface="information.form.designer"]');
+    await expect(designerAfterReload).toBeVisible({ timeout: 20000 });
+    await expect(designerAfterReload.getByText('需求描述', { exact: true }).first()).toBeVisible();
 
     // 接入方式
     await goBack(page);
@@ -95,14 +86,23 @@ test.describe('@p0 @information 信息采集中心', () => {
     await expect(page.getByText('需要表单专属 SK')).toBeVisible();
     await expect(page.locator('.information-browser-url')).toContainText('/#/information/hosted?formCode=');
     await shot(page, '04-form-hosted.png');
+  });
 
-    // 提交记录
-    await goBack(page);
-    await expect(page.locator('[data-page="information.form.detail"]')).toBeVisible();
-    await page.getByRole('button', { name: '提交记录' }).click();
+  test('提交记录是独立菜单入口且不依赖表单详情', async ({ page }) => {
+    await login(page);
+    await page.goto('/#/information/submissions');
     await expect(page.locator('[data-page="information.form.submissions"]')).toBeVisible();
-    await expect(page.getByText('返回详情页')).toBeVisible();
-    for (const label of ['提交编号', '提交时间', '状态', '来源页面']) {
+    // 独立入口：没有返回详情页按钮
+    await expect(page.getByText('返回详情页')).toHaveCount(0);
+    // 通过表单筛选切换当前表单
+    await expect(page.locator('[data-filter="form"]')).toBeVisible();
+
+    const formFilter = page.locator('[data-filter="form"]');
+    await formFilter.click();
+    await page.getByRole('option', { name: new RegExp(formCode) }).click();
+    await expect(page.locator('[data-filter="form"]')).toContainText(formCode);
+
+    for (const label of ['提交编号', '提交时间', '状态', '来源页面', '姓名', '手机号']) {
       await expect(page.getByRole('columnheader', { name: label, exact: true })).toBeVisible();
     }
     await shot(page, '05-submission-list.png');
@@ -111,7 +111,6 @@ test.describe('@p0 @information 信息采集中心', () => {
     const drawer = page.locator('.el-drawer');
     await expect(drawer.getByText('提交详情')).toBeVisible();
     await expect(drawer.getByText('处理备注')).toBeVisible();
-    await expect(drawer).toBeVisible();
     await page.waitForTimeout(600);
     mkdirSync(evidenceDir, { recursive: true });
     await page.screenshot({ path: resolve(evidenceDir, '06-submission-detail.png') });
@@ -122,28 +121,31 @@ test.describe('@p0 @information 信息采集中心', () => {
     const token = await page.evaluate(() => sessionStorage.getItem('MANGO_TOKEN') || '');
     const headers = { Authorization: `Bearer ${token}`, 'X-Mango-Tenant-Id': '1' };
 
-    // 准备一张字段与 customer-contact 完全不同的表单，保证用例独立于其他数据
+    // 用设计器规则形状（form-create rules）准备一张字段完全不同的表单
     const definitionJson = JSON.stringify([
-      { fieldCode: 'company', fieldName: '公司名称', fieldType: 'text', required: true, sort: 1 },
       {
-        fieldCode: 'scale',
-        fieldName: '企业规模',
-        fieldType: 'select',
-        required: true,
-        sort: 2,
+        type: 'input',
+        field: 'company',
+        title: '公司名称',
+        props: { placeholder: '请输入公司名称' },
+        validate: [{ required: true, message: '请填写公司名称' }],
+      },
+      {
+        type: 'select',
+        field: 'scale',
+        title: '企业规模',
         options: [
           { label: '小型', value: 's' },
           { label: '大型', value: 'l' },
         ],
       },
-      { fieldCode: 'tip', fieldName: '说明', fieldType: 'static', content: '仅展示', sort: 3 },
+      { type: 'elDivider', title: '以下为展示区' },
     ]);
     const existing = await page.request.get('/api/information/forms/page', {
       headers,
       params: { page: '1', size: '1', keyword: 'e2e-dynamic-columns' },
     });
-    const existingBody = await existing.json();
-    const existingId = existingBody?.data?.list?.[0]?.id;
+    const existingId = (await existing.json())?.data?.list?.[0]?.id;
     const save = await page.request.post('/api/information/forms/save', {
       headers,
       data: {
@@ -166,21 +168,17 @@ test.describe('@p0 @information 信息采集中心', () => {
     expect(submit.status()).toBe(200);
     expect((await submit.json()).success).toBeTruthy();
 
-    await page.goto('/#/information/forms');
-    await page.getByPlaceholder('名称/编码').first().fill('e2e-dynamic-columns');
-    await page.getByRole('button', { name: '查询' }).click();
-    await page.getByRole('button', { name: '提交记录' }).first().click();
+    await page.goto('/#/information/submissions');
+    await page.locator('[data-filter="form"]').click();
+    await page.getByRole('option', { name: /e2e-dynamic-columns/ }).click();
 
-    await expect(page.locator('[data-page="information.form.submissions"]')).toBeVisible();
     for (const label of ['提交编号', '提交时间', '状态', '来源页面', '公司名称', '企业规模']) {
       await expect(page.getByRole('columnheader', { name: label, exact: true })).toBeVisible();
     }
-    // 其它表单的字段不得出现；展示型控件不生成列
-    for (const label of ['手机号', '需求描述', '说明']) {
+    for (const label of ['手机号', '需求描述', '以下为展示区']) {
       await expect(page.getByRole('columnheader', { name: label, exact: true })).toHaveCount(0);
     }
     await expect(page.getByRole('cell', { name: '动态列验证公司' }).first()).toBeVisible();
-    // 选择型控件展示选项标签而不是存储值
     await expect(page.getByRole('cell', { name: '大型', exact: true }).first()).toBeVisible();
     await shot(page, '09-submission-dynamic-columns.png');
   });
@@ -191,7 +189,7 @@ test.describe('@p0 @information 信息采集中心', () => {
     const page = await context.newPage();
     await page.goto(`/#/information/hosted?formCode=${formCode}`);
     await expect(page.locator('[data-page="information.hosted"]')).toBeVisible();
-    await expect(page).not.toHaveURL(/\/#\/login/);
+    await expect(page).not.toHaveURL(/#\/login/);
     await expect(page.getByRole('heading', { name: '客户联系表' })).toBeVisible();
     await shot(page, '07-hosted-form.png');
 
@@ -204,5 +202,13 @@ test.describe('@p0 @information 信息采集中心', () => {
     mkdirSync(evidenceDir, { recursive: true });
     await page.screenshot({ path: resolve(evidenceDir, '08-hosted-submit-success.png') });
     await context.close();
+  });
+
+  test('表单详情入口可直达提交记录并预选当前表单', async ({ page }) => {
+    await login(page);
+    await page.goto(`/#/information/forms/${formId}/detail`);
+    await page.getByRole('button', { name: '提交记录' }).click();
+    await expect(page.locator('[data-page="information.form.submissions"]')).toBeVisible();
+    await expect(page.locator('[data-filter="form"]')).toContainText(formCode);
   });
 });

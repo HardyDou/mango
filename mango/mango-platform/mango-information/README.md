@@ -11,10 +11,11 @@
 | 能力 | 用途 | 常用入口 |
 |------|------|----------|
 | 表单管理 | 创建、配置、发布、停用、删除表单 | 后台页面 `/information/forms`；`GET /information/forms/page`、`POST /information/forms/save` |
+| 表单设计 | 可视化设计采集项，规则由前端表单设计器产出 | 后台页面 `/#/information/forms/{id}/config`（复用 `form-create-designer`） |
 | 表单详情与接入信息 | 查看编码、字段数、提交数、托管入口和服务端 SK | `GET /information/forms/detail` |
 | 托管表单 | 访客直接填写并提交 | 页面 `/#/information/hosted?formCode=<code>`；`GET /information/open/forms/detail`、`POST /information/open/forms/submit` |
 | 服务端接入 | 业务系统用当前表单专属 SK 代为提交 | `POST /information/open/forms/submit`（携带 `serverSecret`） |
-| 提交记录 | 固定列 + 当前表单动态采集项列 + 操作列 | 后台页面 `/information/submissions`；`GET /information/submissions/page` |
+| 提交记录 | 独立菜单入口；固定列 + 当前表单动态采集项列 + 操作列 | 后台页面 `/information/submissions`；`GET /information/submissions/page` |
 | 提交处理 | 更新为待处理、处理中、已完成、已关闭并写备注 | `PUT /information/submissions/process` |
 | 导出 | 导出当前筛选结果，手机号与邮箱默认脱敏 | `GET /information/submissions/export` |
 
@@ -83,7 +84,19 @@ registerMangoInformationAdminPages();
 | `/information/open/forms/detail` | GET | PUBLIC | 匿名查询已发布表单定义 |
 | `/information/open/forms/submit` | POST | PUBLIC | 匿名提交；携带 `serverSecret` 时按服务端接入校验 |
 
-字段定义 JSON 为数组，每个元素至少包含 `fieldCode`、`fieldName`、`fieldType`，并支持 `required` 与 `sort`。服务端按该定义校验必填项与未知字段。
+### 表单定义格式
+
+`definitionJson` 是前端表单设计器产出的 form-create 规则数组，例如：
+
+```json
+[
+  { "type": "input", "field": "name", "title": "姓名", "validate": [{ "required": true }] },
+  { "type": "select", "field": "city", "title": "城市", "options": [{ "label": "北京", "value": "bj" }] },
+  { "type": "elDivider", "title": "展示区" }
+]
+```
+
+服务端按规则的 `field` / `title` / `type` 提取采集项：带 `field` 的规则参与必填校验与提交记录动态列；没有 `field` 的布局与展示规则（`elDivider`、`elAlert`、`text` 等）不参与校验，也不接受提交值。历史 `{fieldCode, fieldName, fieldType}` 形状仍被兼容。
 
 ## 6. 数据与初始化
 

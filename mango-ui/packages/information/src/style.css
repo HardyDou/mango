@@ -78,9 +78,31 @@
 
 .information-builder {
   display: grid;
-  grid-template-columns: 220px minmax(260px, 1fr) 320px;
+  grid-template-columns: 220px minmax(260px, 1fr) 340px;
   gap: 12px;
   align-items: start;
+}
+
+/*
+ * 三栏各自独立滚动并吸顶：表单设置较长时字段属性仍可滚动到，不需要先滚过整页。
+ */
+.information-builder__side,
+.information-builder__config,
+.information-builder__canvas {
+  position: sticky;
+  top: 12px;
+  max-height: calc(100vh - 150px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.information-builder__canvas {
+  padding: 16px;
+}
+
+.information-builder__config .el-card__body,
+.information-builder__side .el-card__body {
+  padding: 16px;
 }
 
 .information-builder__side,
@@ -246,9 +268,27 @@
   position: relative;
   padding: 10px;
   margin: 0 -10px 10px;
-  cursor: pointer;
+  cursor: grab;
   border: 1px solid transparent;
   border-radius: 4px;
+}
+
+.information-canvas-field.is-dragging {
+  opacity: 0.45;
+}
+
+.information-canvas-field.is-drop-target {
+  border-color: var(--mango-color-primary, #2e5cf6);
+  border-style: dashed;
+}
+
+.information-canvas-handle {
+  position: absolute;
+  top: 12px;
+  left: -14px;
+  color: #b6c0cf;
+  font-size: 12px;
+  cursor: grab;
 }
 
 .information-canvas-field:hover {
@@ -641,5 +681,36 @@
   .information-hosted-layout,
   .information-builder {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.information-config-meta {
+  margin-bottom: -12px;
+}
+
+.information-config-meta__grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0 12px;
+}
+
+.information-designer-card .el-card__body {
+  padding: 0;
+}
+
+.information-designer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 10px;
+}
+
+.information-designer-host {
+  border-top: 1px solid var(--mango-border-light, #e5ebf3);
+}
+
+@media (width <= 1180px) {
+  .information-config-meta__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }

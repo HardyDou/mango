@@ -12,11 +12,13 @@ export default defineConfig({
     rollupOptions: {
       external: [
         '@element-plus/icons-vue',
+        '@form-create/element-ui',
         '@mango/admin-extension/core',
         '@mango/api-schema',
         '@mango/app-runtime',
         '@mango/common',
         'element-plus',
+        'form-create-designer',
         'vue',
         'vue-router',
       ],

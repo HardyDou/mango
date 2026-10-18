@@ -91,7 +91,8 @@ import { MangoDescriptionList, MangoPageBackBar, MangoStatusText } from '@mango/
 import { useInformationApi } from '../composables/useInformationApi';
 import type { InformationFormDetail } from '../api/information';
 import { formatCount, formatDate, formStatusLabel, formStatusTone } from '../domain/status';
-import { fieldTypeLabel, parseFields } from '../domain/fields';
+import { fieldTypeLabel } from '../domain/fields';
+import { parseRules, rulesToFields } from '../domain/rules';
 
 const api = useInformationApi();
 const route = useRoute();
@@ -102,7 +103,7 @@ const loading = ref(false);
 const errorMessage = ref('');
 
 const formId = computed(() => String(route.params.id || ''));
-const fields = computed(() => parseFields(detail.value?.definitionJson));
+const fields = computed(() => rulesToFields(parseRules(detail.value?.definitionJson)));
 const hostedUrl = computed(() =>
   detail.value?.formCode ? `${window.location.origin}/#/information/hosted?formCode=${detail.value.formCode}` : '-',
 );

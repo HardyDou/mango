@@ -3,19 +3,9 @@ import './style.css';
 export { createInformationApi } from './api/information';
 export type * from './api/information';
 export { useInformationApi } from './composables/useInformationApi';
-export {
-  FIELD_TOOLBOX_GROUPS,
-  displayFieldValue,
-  fieldTypeLabel,
-  isDisplayOnly,
-  isUnsupported,
-  maskSensitiveValue,
-  needsOptions,
-  nextFieldCode,
-  parseFields,
-  stringifyFields,
-} from './domain/fields';
-export type { InformationFieldDefinition, InformationFieldOption, InformationFieldType } from './domain/fields';
+export { fieldTypeLabel, isDisplayOnly } from './domain/fields';
+export { displayFieldValue, maskSensitiveValue, parseRules, rulesToFields } from './domain/rules';
+export type { FormCreateRule, InformationFieldDefinition, InformationFieldOption } from './domain/rules';
 export {
   formatCount,
   formatDate,

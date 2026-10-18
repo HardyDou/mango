@@ -21,6 +21,7 @@ import io.mango.information.core.mapper.InformationFormMapper;
 import io.mango.information.core.mapper.InformationSubmissionMapper;
 import io.mango.information.core.service.IInformationFormService;
 import io.mango.information.core.service.InformationActorNameProvider;
+import io.mango.information.core.support.InformationDefinition;
 import io.mango.infra.context.api.MangoContextHolder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
@@ -227,22 +228,22 @@ public class InformationFormService implements IInformationFormService {
 
     private int fieldCount(String json) {
         try {
-            return objectMapper.readTree(json).size();
+            return InformationDefinition.fields(objectMapper.readTree(json)).size();
         } catch (Exception e) {
             return 0;
         }
     }
 
+    /** 定义必须是 JSON 数组，且至少包含一个可提交采集项，字段编码不可重复。 */
     private void validateDefinition(String json) {
         try {
             JsonNode node = objectMapper.readTree(json);
-            Require.isTrue(node.isArray() && !node.isEmpty(), InformationCode.INVALID_FORM_DEFINITION);
+            Require.isTrue(node.isArray(), InformationCode.INVALID_FORM_DEFINITION);
+            List<InformationDefinition.Field> fields = InformationDefinition.fields(node);
+            Require.isTrue(!fields.isEmpty(), InformationCode.INVALID_FORM_DEFINITION);
             Set<String> codes = new LinkedHashSet<>();
-            for (JsonNode field : node) {
-                Require.isTrue(field.hasNonNull("fieldCode") && field.hasNonNull("fieldName") && field.hasNonNull("fieldType"),
-                        InformationCode.INVALID_FORM_DEFINITION);
-                String code = field.path("fieldCode").asText();
-                Require.isTrue(codes.add(code), InformationCode.INVALID_FORM_DEFINITION, "字段编码重复：" + code);
+            for (InformationDefinition.Field field : fields) {
+                Require.isTrue(codes.add(field.code()), InformationCode.INVALID_FORM_DEFINITION, "字段编码重复：" + field.code());
             }
         } catch (BizException e) {
             throw e;

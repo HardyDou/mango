@@ -115,7 +115,7 @@ import { MangoListPage, MangoListPanel, MangoSearchPanel, MangoStatusText, Pagin
 import { useInformationApi } from '../composables/useInformationApi';
 import type { InformationForm, InformationFormStatus } from '../api/information';
 import { formatCount, formatDate, formStatusLabel, formStatusTone } from '../domain/status';
-import { stringifyFields } from '../domain/fields';
+import { stringifyRules } from '../domain/rules';
 
 const api = useInformationApi();
 const router = useRouter();
@@ -184,7 +184,7 @@ async function submitCreate() {
       formCode: createForm.formCode.trim(),
       formName: createForm.formName.trim(),
       description: createForm.description,
-      definitionJson: stringifyFields([]),
+      definitionJson: stringifyRules([]),
       status: createForm.status,
     });
     createVisible.value = false;

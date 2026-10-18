@@ -64,8 +64,8 @@
 
 ### 5.4 菜单、页面与权限变化
 
-- 菜单：`信息采集中心` → `表单管理`（`information:forms`）唯一可见菜单；表单详情、配置、接入方式和提交记录是表单上下文内的隐藏路由，不作为全局菜单。
-- 页面：表单列表（PG-001）、表单详情（PG-002）、表单可视化配置（PG-003）、提交记录与处理抽屉（PG-004）、接入方式与托管表单（PG-005）。
+- 菜单：`信息采集中心` → `表单管理`（`information:forms`）、`提交记录`（`information:submissions`）；表单详情、设计、接入是表单上下文内的隐藏路由。
+- 页面：表单列表（PG-001）、表单详情（PG-002）、表单设计（PG-003，复用平台表单设计器）、提交记录与处理抽屉（PG-004，独立菜单）、接入方式与托管表单（PG-005）。
 - 权限：后台接口按 `ApiAccess(LOGIN)` 声明并复用 `information:*` 权限码；公开入口按 `PUBLIC` 声明；租户由服务端确定，客户端不得覆盖。
 
 ### 5.5 测试范围
@@ -110,8 +110,8 @@
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | BASE-001 | TASK-001 | TC-001 | `mango-ui/apps/mango-admin/e2e/specs/information-collection.spec.ts` | `mvn -pl mango-platform/mango-information/mango-information-core test` | JDK 21 / Maven 3.9 | `mango_dev_mango_information_collection_084` | `tenantId=1` | PASS：migration 契约测试通过 | 无 | `mango-docs/evidence/issue-1055/acceptance-evidence.md` | 无 |
 | BASE-002 | TASK-002 | TC-001, TC-003 | `mango-ui/apps/mango-admin/e2e/specs/information-collection.spec.ts` | `PLAYWRIGHT_USE_EXTERNAL_WEBSERVER=true npx playwright test e2e/specs/information-collection.spec.ts --project=chromium` | Chromium / vite 7.3.6 | 真实后端 `18084` + `mango-admin` `30084` | `tenantId=1` / `admin` | PASS：2 个用例通过 | 无 | `mango-docs/evidence/issue-1055/screenshots/01-form-list.png` | 无 |
-| BASE-003 | TASK-003 | TC-003, TC-006 | `mango-ui/apps/mango-admin/e2e/specs/information-collection.spec.ts` | 同上 | Chromium | 真实后端 | `tenantId=1` / `admin` | PASS：提交记录与处理状态可用 | 无 | `mango-docs/evidence/issue-1055/screenshots/04-submission-list.png` | 无 |
-| BASE-004 | TASK-004 | TC-002 | `mango-ui/apps/mango-admin/e2e/specs/information-collection.spec.ts` | 同上（匿名会话） | Chromium | 真实后端 | 匿名访客 | PASS：匿名打开并提交成功 | 无 | `mango-docs/evidence/issue-1055/screenshots/07-hosted-submit-success.png` | 无 |
+| BASE-003 | TASK-003 | TC-003, TC-006 | `mango-ui/apps/mango-admin/e2e/specs/information-collection.spec.ts` | 同上 | Chromium | 真实后端 | `tenantId=1` / `admin` | PASS：提交记录与处理状态可用 | 无 | `mango-docs/evidence/issue-1055/screenshots/05-submission-list.png` | 无 |
+| BASE-004 | TASK-004 | TC-002 | `mango-ui/apps/mango-admin/e2e/specs/information-collection.spec.ts` | 同上（匿名会话） | Chromium | 真实后端 | 匿名访客 | PASS：匿名打开并提交成功 | 无 | `mango-docs/evidence/issue-1055/screenshots/08-hosted-submit-success.png` | 无 |
 | BASE-005 | TASK-005 | TC-004, TC-005, TC-009 | `mango-ui/apps/mango-admin/e2e/specs/information-collection.spec.ts` | 后端接口实测（curl） | 真实后端 | 真实库与表单 | 匿名与服务端 | PASS：校验、幂等、SK 与租户归属符合设计 | 无 | `mango-docs/evidence/issue-1055/acceptance-evidence.md` | 无 |
 | BASE-006 | TASK-006 | TC-007, TC-008 | `mango-ui/apps/mango-admin/e2e/specs/information-collection.spec.ts` | 后端接口实测（curl） | 真实后端 | 真实库与表单 | `tenantId=1` / `admin` | PASS：导出脱敏与快照落库 | 无 | `mango-docs/evidence/issue-1055/acceptance-evidence.md` | 无 |
 | BASE-007 | TASK-011 | TC-001, TC-003 | `mango-ui/apps/mango-admin/e2e/specs/information-collection.spec.ts` | `pnpm architecture:check && pnpm frontend-boundaries:check && pnpm component-contracts:check && pnpm admin:styles:check` | mango-ui workspace | 不适用 | 不适用 | PASS：架构与门禁通过 | 无 | `mango-docs/evidence/issue-1055/acceptance-evidence.md` | 无 |
@@ -121,9 +121,9 @@
 
 | 台账 ID | 用例 ID | 页面/接口 | 功能点 | 测试数据 | 关键断言 | UI/交互检查 | console/network 结果 | 截图/trace/日志 | 结论 |
 |---|---|---|---|---|---|---|---|---|---|
-| TASK-002 | TC-001 | `/information/forms` | 表单列表、详情、配置 | 表单 `customer-contact` | 列表展示编码/字段数/提交数与操作列；详情展示托管入口与 SK | 对话框可开合，标签与按钮可见 | 页面无 Vue 运行时错误 | `screenshots/01-form-list.png`、`screenshots/02-form-detail.png`、`screenshots/03-form-config.png` | DONE |
-| TASK-003 | TC-003 | `/information/submissions` | 提交记录动态列与详情 | 真实提交记录 | 固定列 + 动态列渲染，详情展示 JSON 提交值 | 列表与抽屉交互正常 | 列表接口 200 | `screenshots/04-submission-list.png`、`screenshots/05-submission-detail.png` | DONE |
-| TASK-004 | TC-002 | `/#/information/hosted?formCode=customer-contact` | 匿名托管表单提交 | 姓名/手机号/需求描述 | 匿名打开成功，提交后展示成功态 | 表单校验与按钮可用 | 公开接口匿名返回 200 | `screenshots/06-hosted-form.png`、`screenshots/07-hosted-submit-success.png` | DONE |
+| TASK-002 | TC-001 | `/#/information/forms`、`.../detail`、`.../config` | 表单列表、详情与表单设计 | 表单 `customer-contact` | 列表展示原型九列与操作；详情展示 3 列描述表、字段配置表与接入卡片；配置页复用平台表单设计器 | 返回栏、设计器组件面板与属性面板可见 | 页面无 Vue 运行时错误 | `screenshots/01-form-list.png`、`screenshots/02-form-detail.png`、`screenshots/03-form-designer.png` | DONE |
+| TASK-003 | TC-003 | `/#/information/submissions` | 独立菜单入口、动态列与处理抽屉 | 真实提交记录 | 独立菜单直达；表单下拉筛选；固定列 + 当前表单动态列；抽屉处理 | 列表与抽屉交互正常，无返回按钮 | 列表接口 200 | `screenshots/05-submission-list.png`、`screenshots/06-submission-detail.png` | DONE |
+| TASK-004 | TC-002 | `/#/information/hosted?formCode=customer-contact` | 匿名托管表单提交 | 姓名/手机号/需求描述 | 匿名打开成功，提交后展示成功态 | 表单校验与按钮可用 | 公开接口匿名返回 200 | `screenshots/07-hosted-form.png`、`screenshots/08-hosted-submit-success.png` | DONE |
 | TASK-005 | TC-004 | `POST /information/open/forms/submit` | SK 校验 | 错误 SK / 正确 SK | 错误 SK 返回 `105507`，正确 SK 写入提交 | 非 UI | 匿名接口 200 + 业务错误码 | `acceptance-evidence.md` | DONE |
 | TASK-005 | TC-005 | `POST /information/open/forms/submit` | 必填、未知字段与幂等 | 缺必填、未知字段、重复幂等键 | 返回 `105505`；重复幂等键返回同一提交编号 | 非 UI | 匿名接口 200 + 业务错误码 | `acceptance-evidence.md` | DONE |
 | TASK-003 | TC-006 | `PUT /information/submissions/process` | 状态流转与已关闭限制 | COMPLETED/CLOSED/PROCESSING | 前两次成功，已关闭再处理返回 `105506` | 非 UI | 管理接口 200 + 业务错误码 | `acceptance-evidence.md` | DONE |

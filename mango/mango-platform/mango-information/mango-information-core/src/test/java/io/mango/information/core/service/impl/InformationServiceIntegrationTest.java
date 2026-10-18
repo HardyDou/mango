@@ -213,6 +213,44 @@ class InformationServiceIntegrationTest {
     }
 
     @Test
+    void saveForm_acceptsFormCreateRulesDefinition() {
+        // 设计器产出的是 form-create 规则形状：{type, field, title, validate, children}
+        String designerRules = """
+                [{"type":"input","field":"company","title":"公司名称","props":{"placeholder":"请输入公司名称"},
+                  "validate":[{"required":true,"message":"请填写公司名称"}]},
+                 {"type":"select","field":"scale","title":"企业规模","options":[{"label":"小型","value":"s"},{"label":"大型","value":"l"}]},
+                 {"type":"elDivider","title":"以下为展示区"},
+                 {"type":"input","field":"contact","title":"联系人","children":[]}]
+                """;
+        SaveInformationFormCommand command = new SaveInformationFormCommand();
+        command.setFormCode("designer-form");
+        command.setFormName("设计器表单");
+        command.setDefinitionJson(designerRules);
+        command.setStatus(InformationFormStatus.PUBLISHED);
+        Long formId = formService.save(command);
+
+        assertThat(formService.page(new InformationFormPageQuery()).getList())
+                .singleElement()
+                .satisfies(vo -> assertThat(vo.getFieldCount()).isEqualTo(3));
+        assertThat(formService.detail(formId).getSubmissionCount()).isZero();
+
+        // 必填来自 validate 数组，展示型规则不参与校验
+        assertThatThrownBy(() -> submissionService.submit(
+                submitCommand("designer-form", Map.of("scale", "s"), "key-1"), false))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("company");
+
+        assertThat(submissionService.submit(
+                submitCommand("designer-form", Map.of("company", "芒果", "scale", "l", "contact", "张三"), "key-2"), false)
+                .getSubmissionNo()).startsWith("IC-");
+
+        // 展示型规则不是采集项，不接受提交值
+        assertThatThrownBy(() -> submissionService.submit(
+                submitCommand("designer-form", Map.of("company", "芒果", "scale", "l", "elDivider", "x"), "key-3"), false))
+                .isInstanceOf(BizException.class);
+    }
+
+    @Test
     void updateStatus_andRegenerateSecret_rotateFormLifecycle() {
         Long formId = createPublishedForm("lifecycle-form");
         String before = formService.detail(formId).getServerSecret();

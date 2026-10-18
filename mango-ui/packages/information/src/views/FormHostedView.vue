@@ -28,10 +28,8 @@
             <InformationFormSurface
               :form-name="detail?.formName"
               :description="detail?.description"
-              :fields="fields"
+              :rules="rules"
               :values="previewValues"
-              :submit-label="'提交'"
-              show-submit
               disabled
               plain
               footnote="提交即表示您同意我们按隐私政策使用相关信息"
@@ -107,7 +105,7 @@ import { MangoPageBackBar, MangoStatusText } from '@mango/common';
 import InformationFormSurface from '../components/InformationFormSurface.vue';
 import { useInformationApi } from '../composables/useInformationApi';
 import type { InformationFormDetail } from '../api/information';
-import { defaultValueFor, parseFields } from '../domain/fields';
+import { parseRules, rulesToFields, type FormCreateRule } from '../domain/rules';
 
 const api = useInformationApi();
 const route = useRoute();
@@ -119,9 +117,9 @@ const regenerating = ref(false);
 const errorMessage = ref('');
 
 const formId = computed(() => String(route.params.id || ''));
-const fields = computed(() => parseFields(detail.value?.definitionJson));
+const rules = computed<FormCreateRule[]>(() => parseRules(detail.value?.definitionJson));
 const previewValues = computed(() =>
-  Object.fromEntries(fields.value.map((field) => [field.fieldCode, defaultValueFor(field)])),
+  Object.fromEntries(rulesToFields(rules.value).map((field) => [field.fieldCode, ''])),
 );
 /** 对外分享地址必须是绝对地址，访客直接打开即可提交，无需登录。 */
 const hostedUrl = computed(() =>

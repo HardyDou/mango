@@ -22,6 +22,7 @@ import io.mango.information.core.entity.InformationSubmissionSnapshotEntity;
 import io.mango.information.core.mapper.InformationSubmissionMapper;
 import io.mango.information.core.mapper.InformationSubmissionSnapshotMapper;
 import io.mango.information.core.service.IInformationSubmissionService;
+import io.mango.information.core.support.InformationDefinition;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import lombok.RequiredArgsConstructor;
@@ -215,29 +216,25 @@ public class InformationSubmissionService implements IInformationSubmissionServi
         return vo;
     }
 
-    private static final Set<String> DISPLAY_ONLY_FIELD_TYPES = Set.of("static", "divider");
-
+    /** 按表单定义校验提交值：展示型规则不参与，未知字段与缺失必填都拒绝。 */
     private void validateValues(String definitionJson, Map<String, Object> values) {
         try {
-            JsonNode fields = objectMapper.readTree(definitionJson);
+            List<InformationDefinition.Field> fields = InformationDefinition.fields(objectMapper.readTree(definitionJson));
             Set<String> definedCodes = new HashSet<>();
-            for (JsonNode field : fields) {
-                String code = field.path("fieldCode").asText();
-                definedCodes.add(code);
-                if (DISPLAY_ONLY_FIELD_TYPES.contains(field.path("fieldType").asText())) {
+            for (InformationDefinition.Field field : fields) {
+                definedCodes.add(field.code());
+                if (InformationDefinition.displayOnly(field)) {
                     continue;
                 }
-                Object value = values.get(code);
-                if (field.path("required").asBoolean(false) && isEmptyValue(value)) {
-                    Require.isTrue(false, InformationCode.INVALID_SUBMISSION, "字段 " + code + " 不能为空");
+                if (field.required() && isEmptyValue(values.get(field.code()))) {
+                    Require.isTrue(false, InformationCode.INVALID_SUBMISSION, "字段 " + field.code() + " 不能为空");
                 }
             }
-            values.keySet().forEach(code -> {
-                Require.isTrue(definedCodes.contains(code), InformationCode.INVALID_SUBMISSION, "未知字段：" + code);
-                Require.isTrue(!isDisplayOnlyCode(fields, code), InformationCode.INVALID_SUBMISSION, "展示组件不接受提交值：" + code);
-            });
+            values.keySet().forEach(code -> Require.isTrue(definedCodes.contains(code),
+                    InformationCode.INVALID_SUBMISSION, "未知字段：" + code));
+        } catch (BizException bizException) {
+            throw bizException;
         } catch (Exception e) {
-            if (e instanceof BizException bizException) throw bizException;
             throw new IllegalArgumentException(InformationCode.INVALID_SUBMISSION.getMessage(), e);
         }
     }
@@ -250,15 +247,6 @@ public class InformationSubmissionService implements IInformationSubmissionServi
             return collection.isEmpty();
         }
         return !StringUtils.hasText(String.valueOf(value));
-    }
-
-    private boolean isDisplayOnlyCode(JsonNode fields, String code) {
-        for (JsonNode field : fields) {
-            if (code.equals(field.path("fieldCode").asText())) {
-                return DISPLAY_ONLY_FIELD_TYPES.contains(field.path("fieldType").asText());
-            }
-        }
-        return false;
     }
 
     private String write(Object value) {

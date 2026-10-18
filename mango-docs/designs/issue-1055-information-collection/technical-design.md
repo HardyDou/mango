@@ -38,7 +38,9 @@ upstreamDocumentHash: 2650490f26b349b2f3f6e89da9e740f53245377da4e98ebd19aca3dadb
 | DEC-004 | 表单专属 SK 保存方式 | 浏览器生成；数据库明文；摘要比对 | 服务端生成随机 SK，保存摘要，后台仅通过服务层读取当前值并支持轮换 | 公开页面不接触 SK；轮换可使旧 SK 失效 | IR-003, NFR-002 | 否 | 需要 SK 轮换和服务端校验 | 现有密钥展示策略需与安全负责人复核 | 安全复核要求不可逆展示时调整为一次性展示 |
 | DEC-005 | 管理端页面复用方式 | 新建宿主页面；新增领域 package 注册页面 | 新增 `@mango/information`，通过 `@mango/admin/full` 注册 | 遵循前端 package 边界，单体和微前端复用 | PG-001~005, REDLINE-REUSE-010 | 否 | admin manifest、样式聚合和页面注册同步变更 | 前后端模块需同时接入 | package 构建或样式门禁失败时停止集成 |
 | DEC-006 | FE2 领域包如何接入页面注册表 | 依赖 FE3 `@mango/admin-pages`（沿用历史例外）；依赖 FE1 `@mango/admin-extension` | 依赖 FE1 `@mango/admin-extension`（peer + dev） | 架构检查要求 FE2 只能依赖 FE0/FE1/FE2；历史 FE2→admin-pages 例外正在废止，新包不得新增债务 | PG-001, REDLINE-REUSE-010 | 否 | package.json、vite external 和 admin-pages 入口改为 admin-extension | 无 | 平台未发布 admin-extension 时回到 admin-pages 并登记例外 |
-| DEC-007 | 托管表单页面的访问身份 | 复用后台登录态；登记为公开路由 | 在宿主应用登记公开路由并加入免登录白名单 | FR-008 要求访客无需登录即可提交；托管页面不应携带后台外壳 | FR-008, FR-009, BT-015 | 否 | 需要宿主应用路由和守卫变更 | 公开路由暴露面增加，需只暴露当前表单定义 | 公开路由被鉴权拒绝时回到登录后访问并登记偏差 |
+| DEC-007 | 托管表单页面的访问身份 | 复用后台登录态；登记为公开路由 | 在宿主应用登记公开路由并加入免登录白名单 | FR-008 要求访客无需登录即可提交；托管页面不应携带后台外壳；分享地址使用绝对地址 | FR-008, FR-009, BT-015 | 否 | 需要宿主应用路由和守卫变更 | 公开路由暴露面增加，需只暴露当前表单定义 | 公开路由被鉴权拒绝时回到登录后访问并登记偏差 |
+| DEC-008 | 表单定义与设计器来源 | 自建配置界面；复用平台表单设计器 | 复用 `form-create-designer`（与工作流表单设计器同源），定义以 form-create 规则 JSON 存储 | 自建配置界面缺少拖拽、选中与属性联动，维护成本高；平台已有成熟设计器 | PG-003, BT-004, BT-013, DR-002 | 否 | 前端包新增 form-create 依赖；后端定义解析需兼容规则形状 | 规则结构变化会影响动态列与校验 | 设计器不可用时回退到自建字段表单并登记偏差 |
+| DEC-009 | 提交记录入口 | 表单上下文内页面；全局独立菜单 | 独立菜单入口，按表单筛选，不依赖表单详情 | 产品负责人明确要求独立入口，并去掉返回按钮 | PG-004, BT-006, BT-012 | 否 | 菜单新增一项；提交记录页需要表单筛选器 | 跨表单查询需按所选表单限定范围 | 筛选器缺失时回退到表单详情入口 |
 
 ## 2. 模块与依赖边界
 
@@ -118,8 +120,8 @@ upstreamDocumentHash: 2650490f26b349b2f3f6e89da9e740f53245377da4e98ebd19aca3dadb
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | UI-001 | PG-001, BT-001~008 | 表单列表 | information/forms/index | MangoListPage、MangoSearchPanel、MangoListPanel、el-table | API-001 | API-001~005 | 菜单和按钮权限 | 空、加载、错误、无权 | data-page=information.forms、data-action=information.form.create | 复用现有 CMS 列表骨架，不复制业务实现 | FE-API、FE-TEST |
 | UI-002 | PG-002, BT-003, BT-005, BT-006, BT-009~012 | 表单详情 | information/forms/detail | el-card、el-descriptions、el-table、el-drawer | API-002 | API-002 | 当前表单权限 | 加载、错误、无权 | data-page=information.form.detail | 页面私有结构 | FE-VUE |
-| UI-003 | PG-003, BT-004, BT-010, BT-013~014 | 表单配置 | information/forms/config | el-form、el-form-item、el-select、el-switch、el-card | API-002/003 | API-002/003 | 编辑权限 | 校验、保存中、错误 | data-page=information.form.config、data-action=information.form.save | 页面私有结构 | FE-VUE |
-| UI-004 | PG-004, BT-006, BT-012, BT-015~018 | 当前表单提交记录 | information/forms/submissions | MangoSearchPanel、el-table、el-drawer、Pagination | API-004 | API-004/005 | 当前表单记录权限 | 空、加载、错误、无权 | data-page=information.form.submissions、data-action=information.submission.detail | 复用现有列表骨架，动态列由 API 字段定义驱动 | FE-API、FE-TEST |
+| UI-003 | PG-003, BT-004, BT-010, BT-013~014 | 表单设计 | information/forms/config | form-create-designer、MangoPageBackBar、el-form、el-card | API-002/003 | API-002/003 | 编辑权限 | 校验、保存中、错误 | data-page=information.form.config、data-surface=information.form.designer、data-action=information.form.save | 复用平台表单设计器，不自建拖拽与属性面板 | FE-VUE |
+| UI-004 | PG-004, BT-006, BT-012, BT-015~018 | 提交记录 | information/submissions/index | MangoSearchPanel、MangoListPanel、el-table、el-drawer、Pagination | API-004 | API-004/005 | 当前表单记录权限 | 空、加载、错误、无权 | data-page=information.form.submissions、data-filter=form、data-action=information.submission.detail | 复用现有列表骨架，动态列由 API 字段定义驱动 | FE-API、FE-TEST |
 | UI-005 | PG-005, BT-019 | 托管表单 | information/open/forms/detail | el-form、动态控件、成功结果 | API-007 | API-006/007 | 仅启用表单可提交 | 停用、校验失败、提交失败 | data-page=information.hosted-form、data-action=information.hosted.submit | 页面私有结构，不携带 SK | FE-API、FE-TEST |
 
 ## 10. 测试设计与验收映射
@@ -174,7 +176,7 @@ upstreamDocumentHash: 2650490f26b349b2f3f6e89da9e740f53245377da4e98ebd19aca3dadb
 | NFR-002 | DEC-004, SEC-003 | TC-007 | SK 不暴露。 |
 | NFR-003 | FLOW-002, ERR-002, ERR-004 | TC-004 | 失败一致性。 |
 | NFR-004 | DEC-002, DB-002, UI-004 | TC-002, TC-006 | 动态列和历史快照。 |
-| NFR-005 | ERR-001~005, UI-001~005, DEC-006, DEC-007 | TC-008 | 失败反馈，含 FE2 包边界与托管表单匿名路由决策。 |
+| NFR-005 | ERR-001~005, UI-001~005, DEC-006, DEC-007, DEC-008, DEC-009 | TC-008 | 失败反馈，含 FE2 包边界、托管表单匿名路由、表单设计器来源和提交记录入口决策。 |
 | SAC-001 | API-001~003, UI-001, UI-003 | TC-001 | 创建配置验收。 |
 | SAC-002 | FLOW-002, API-006, API-004 | TC-002 | 多表单动态列。 |
 | SAC-003 | DM-003, API-004~005, UI-004 | TC-003 | 记录处理。 |

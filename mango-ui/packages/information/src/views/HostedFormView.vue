@@ -9,12 +9,12 @@
         <InformationFormSurface
           :form-name="form?.formName"
           :description="form?.description"
-          :fields="fields"
+          :rules="rules"
           :values="values"
-          :submit-label="'提交'"
+          :surface-key="surfaceKey"
           :submitting="submitting"
           footnote="提交即表示您同意我们按隐私政策使用相关信息"
-          @update:value="setValue"
+          @update:values="replaceValues"
           @submit="submit"
         />
       </template>
@@ -35,7 +35,7 @@ import { ElMessage } from 'element-plus';
 import InformationFormSurface from '../components/InformationFormSurface.vue';
 import { useInformationApi } from '../composables/useInformationApi';
 import type { PublicInformationForm } from '../api/information';
-import { defaultValueFor, parseFields } from '../domain/fields';
+import { parseRules, rulesToFields, type FormCreateRule } from '../domain/rules';
 
 const api = useInformationApi();
 const form = ref<PublicInformationForm>();
@@ -45,8 +45,8 @@ const errorMessage = ref('');
 const successVisible = ref(false);
 const successMessage = ref('');
 const values = reactive<Record<string, unknown>>({});
-
-const fields = ref(parseFields());
+const rules = ref<FormCreateRule[]>([]);
+const surfaceKey = ref(0);
 
 function currentFormCode(): string {
   const hash = window.location.hash || '';
@@ -56,19 +56,27 @@ function currentFormCode(): string {
   return decodeURIComponent(pathCode || query.get('formCode') || '');
 }
 
-function applyFields() {
-  fields.value = parseFields(form.value?.definitionJson);
-  fields.value.forEach((field) => {
-    values[field.fieldCode] = defaultValueFor(field);
+function resetValues() {
+  Object.keys(values).forEach((key) => {
+    delete values[key];
   });
 }
 
-function setValue(fieldCode: string, value: unknown) {
-  values[fieldCode] = value;
+function applyFields() {
+  rules.value = form.value ? parseRules(form.value.definitionJson) : [];
+  resetValues();
+  rulesToFields(rules.value).forEach((field) => {
+    values[field.fieldCode] = field.fieldType === 'checkbox' ? [] : '';
+  });
+  surfaceKey.value += 1;
+}
+
+function replaceValues(next: Record<string, unknown>) {
+  Object.assign(values, next);
 }
 
 function validate(): string | null {
-  for (const field of fields.value) {
+  for (const field of rulesToFields(rules.value)) {
     if (!field.required) {
       continue;
     }

@@ -9,7 +9,7 @@
         "AUTH_MENU": [
           {
             "id": "2951400000000001055",
-            "version": 2,
+            "version": 3,
             "bizKey": "information.menu.internal-admin",
             "name": "信息采集中心菜单",
             "targetModule": "authorization",
@@ -22,7 +22,8 @@
               "roleCodes": {"type": "LIST", "value": []},
               "menus": {"type": "LIST", "value": [
                 {"menuType": 1, "menuName": "信息采集中心", "menuCode": "information", "parentCode": "data", "path": "/information", "icon": "Collection", "sort": 35, "redirect": "/information/forms", "children": [
-                  {"menuType": 2, "menuName": "表单管理", "menuCode": "information:forms", "path": "/information/forms", "icon": "Tickets", "component": "information/forms/index", "sort": 1, "apiCodes": ["information:form:list", "information:form:query", "information:form:add", "information:form:edit", "information:form:delete", "information:form:status", "information:form:secret"]}
+                  {"menuType": 2, "menuName": "表单管理", "menuCode": "information:forms", "path": "/information/forms", "icon": "Tickets", "component": "information/forms/index", "sort": 1, "apiCodes": ["information:form:list", "information:form:query", "information:form:add", "information:form:edit", "information:form:delete", "information:form:status", "information:form:secret"]},
+                  {"menuType": 2, "menuName": "提交记录", "menuCode": "information:submissions", "path": "/information/submissions", "icon": "DocumentChecked", "component": "information/submissions/index", "sort": 2, "apiCodes": ["information:submission:list", "information:submission:query", "information:submission:process", "information:submission:export"]}
                 ]}
               ]}
             }

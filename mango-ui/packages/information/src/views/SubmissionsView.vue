@@ -16,10 +16,23 @@
 
     <MangoListPanel>
       <template #actions>
-        <el-button @click="goDetail">‹ 返回详情页</el-button>
         <span class="information-form-context">
-          <strong>{{ form?.formName || '-' }}</strong>
-          <span class="information-code">{{ form?.formCode || '-' }}</span>
+          <strong>表单</strong>
+          <el-select
+            v-model="query.formId"
+            data-filter="form"
+            filterable
+            placeholder="请选择表单"
+            style="width: 260px"
+            @change="onFormChange"
+          >
+            <el-option
+              v-for="item in formOptions"
+              :key="item.id"
+              :label="`${item.formName}（${item.formCode}）`"
+              :value="item.id"
+            />
+          </el-select>
         </span>
       </template>
       <template #view-actions>
@@ -143,19 +156,24 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { MangoListPanel, MangoSearchPanel, MangoStatusText, Pagination } from '@mango/common';
 import { useInformationApi } from '../composables/useInformationApi';
-import type { InformationFormDetail, InformationSubmission, InformationSubmissionStatus } from '../api/information';
+import type {
+  InformationForm,
+  InformationFormDetail,
+  InformationSubmission,
+  InformationSubmissionStatus,
+} from '../api/information';
 import { formatDateTime, submissionStatusLabel, submissionStatusTone } from '../domain/status';
-import { displayFieldValue, parseFields, type InformationFieldDefinition } from '../domain/fields';
+import { displayFieldValue, parseRules, rulesToFields, type InformationFieldDefinition } from '../domain/rules';
 
 const api = useInformationApi();
 const route = useRoute();
-const router = useRouter();
 
-const query = reactive({ pageNum: 1, pageSize: 10, keyword: '', status: '' });
+const query = reactive({ pageNum: 1, pageSize: 10, keyword: '', status: '', formId: '' as string });
+const formOptions = ref<InformationForm[]>([]);
 const rows = ref<InformationSubmission[]>([]);
 const total = ref(0);
 const pendingCount = ref(0);
@@ -169,9 +187,9 @@ const processRemark = ref('');
 const processStatus = ref<InformationSubmissionStatus>('PENDING');
 const processing = ref(false);
 
-const formId = computed(() => String(route.params.id || ''));
+const formId = computed(() => query.formId || String(route.params.id || ''));
 const columns = computed<InformationFieldDefinition[]>(() =>
-  parseFields(form.value?.definitionJson).filter(
+  rulesToFields(parseRules(form.value?.definitionJson)).filter(
     (field) => field.fieldType !== 'static' && field.fieldType !== 'divider',
   ),
 );
@@ -201,7 +219,36 @@ function cellValue(row: InformationSubmission, field: InformationFieldDefinition
   return display === '' ? '-' : display;
 }
 
+/** 独立菜单入口：先加载可选表单，再按当前选中表单查询记录。 */
+async function loadForms() {
+  try {
+    const routeFormId = String(route.params.id || '');
+    if (routeFormId) {
+      query.formId = routeFormId;
+    }
+    const result = await api.pageForms({ pageNum: 1, pageSize: 100 });
+    formOptions.value = result.list;
+    if (!query.formId && result.list.length) {
+      query.formId = result.list[0].id || '';
+    }
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : '表单列表加载失败';
+  }
+}
+
+function onFormChange() {
+  query.pageNum = 1;
+  return load();
+}
+
 async function load() {
+  if (!formId.value) {
+    rows.value = [];
+    total.value = 0;
+    pendingCount.value = 0;
+    form.value = undefined;
+    return;
+  }
   loading.value = true;
   errorMessage.value = '';
   try {
@@ -276,9 +323,8 @@ async function exportRows() {
   }
 }
 
-function goDetail() {
-  return router.push(`/information/forms/${formId.value}/detail`);
-}
-
-onMounted(load);
+onMounted(async () => {
+  await loadForms();
+  await load();
+});
 </script>
