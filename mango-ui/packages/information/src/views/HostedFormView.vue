@@ -2,7 +2,13 @@
   <div class="information-hosted-public" data-page="information.hosted">
     <div class="information-hosted-public__card">
       <div v-if="loading" class="information-hosted-public__state">表单加载中…</div>
-      <el-result v-else-if="errorMessage" icon="warning" title="表单暂不可用" :sub-title="errorMessage" />
+      <div v-else-if="errorMessage" class="information-hosted-public__error">
+        <el-result icon="warning" title="表单暂不可用" :sub-title="errorMessage">
+          <template #extra>
+            <el-button type="primary" data-hosted-action="retry" @click="load">重新加载</el-button>
+          </template>
+        </el-result>
+      </div>
 
       <template v-else>
         <div class="information-hosted-logo">MANGO · ENTERPRISE</div>
@@ -23,7 +29,8 @@
     <el-dialog v-model="successVisible" width="420px" :show-close="false" :close-on-click-modal="false" align-center>
       <el-result icon="success" title="提交成功" :sub-title="successMessage" />
       <template #footer>
-        <el-button type="primary" @click="successVisible = false">知道了</el-button>
+        <el-button data-hosted-action="again" @click="submitAgain">再填一份</el-button>
+        <el-button type="primary" data-hosted-action="close" @click="successVisible = false">完成</el-button>
       </template>
     </el-dialog>
   </div>
@@ -126,12 +133,17 @@ async function submit() {
     });
     successMessage.value = result.message || form.value.successMessage || '提交成功';
     successVisible.value = true;
-    applyFields();
   } catch (error) {
     ElMessage.error(error instanceof Error ? error.message : '提交失败');
   } finally {
     submitting.value = false;
   }
+}
+
+/** 提交成功后清空录入，方便同一访客继续提交下一份。 */
+function submitAgain() {
+  successVisible.value = false;
+  applyFields();
 }
 
 onMounted(load);

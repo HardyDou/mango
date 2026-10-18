@@ -1,8 +1,15 @@
 <template>
   <div class="information-page" data-page="information.form.config">
-    <MangoPageBackBar title="返回详情页" :show-refresh="false" @back="goDetail">
+    <MangoPageBackBar title="返回详情页" :show-refresh="false" @back="onBack">
       <template #extra>
-        <el-button type="primary" data-action="information.form.save" :loading="saving" @click="save">
+        <span v-if="dirty" class="information-dirty-hint">有未保存的修改</span>
+        <el-button
+          type="primary"
+          data-action="information.form.save"
+          :loading="saving"
+          :disabled="!dirty && !firstSave"
+          @click="save"
+        >
           保存配置
         </el-button>
       </template>
@@ -43,11 +50,19 @@
     <el-card shadow="never" class="information-card information-designer-card">
       <div class="information-designer-head">
         <span class="information-section-title">表单设计</span>
+        <span class="information-designer-meta">
+          采集项 {{ columnFields.length }} 项 · 提交量 {{ detail?.submissionCount ?? 0 }}
+        </span>
         <el-button link type="primary" data-action="information.form.designer-json" @click="jsonVisible = true">
           查看表单 JSON
         </el-button>
       </div>
-      <div class="information-designer-host" data-surface="information.form.designer">
+      <div
+        class="information-designer-host"
+        data-surface="information.form.designer"
+        @click="onWorkspaceInteraction"
+        @keydown="onWorkspaceInteraction"
+      >
         <FcDesigner ref="designerRef" :config="designerConfig" :height="designerHeight" @save="syncFromDesigner" />
       </div>
     </el-card>
@@ -59,7 +74,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { MangoPageBackBar } from '@mango/common';
@@ -67,7 +82,7 @@ import FcDesigner from 'form-create-designer';
 import 'form-create-designer/src/style/index.css';
 import 'form-create-designer/src/style/icon.css';
 import { useInformationApi } from '../composables/useInformationApi';
-import type { InformationFormStatus } from '../api/information';
+import type { InformationFormDetail, InformationFormStatus } from '../api/information';
 import {
   normalizeDesignerRules,
   parseRules,
@@ -88,6 +103,10 @@ const jsonVisible = ref(false);
 const designerRef = ref<InstanceType<typeof FcDesigner>>();
 const designerConfig = { showSaveBtn: false, showJsonPreview: false, showDevice: false, showLanguage: false };
 
+const detail = ref<InformationFormDetail>();
+const designerDirty = ref(false);
+const savedSignature = ref('');
+const firstSave = ref(false);
 const form = reactive({
   formName: '',
   formCode: '',
@@ -98,6 +117,13 @@ const form = reactive({
 const rules = ref<FormCreateRule[]>([]);
 
 const columnFields = computed(() => rulesToFields(rules.value));
+const metaSignature = computed(() =>
+  JSON.stringify([form.formName, form.formCode, form.description, form.successMessage, form.status]),
+);
+/** 只比较设置区快照与设计区点击，避免加载数据本身被当成修改。 */
+const dirty = computed(
+  () => designerDirty.value || (savedSignature.value !== '' && metaSignature.value !== savedSignature.value),
+);
 const designerHeight = computed(() => `calc(100vh - ${formId.value ? 300 : 300}px)`);
 const prettyRules = computed(() => JSON.stringify(rules.value, null, 2));
 
@@ -106,6 +132,24 @@ function syncFromDesigner() {
     return;
   }
   rules.value = normalizeDesignerRules((designerRef.value.getRule() || []) as unknown as FormCreateRule[]);
+  markDirty();
+}
+
+function markDirty() {
+  designerDirty.value = true;
+}
+
+/** 设计器内部改动不会冒泡成 Vue 事件，用点击与按键在页面层兜底标记「未保存」。 */
+function onWorkspaceInteraction() {
+  markDirty();
+}
+
+function onBeforeUnload(event: BeforeUnloadEvent) {
+  if (!dirty.value) {
+    return;
+  }
+  event.preventDefault();
+  event.returnValue = '';
 }
 
 function applyRulesToDesigner() {
@@ -122,14 +166,19 @@ async function load() {
   loading.value = true;
   errorMessage.value = '';
   try {
-    const detail = await api.detailForm(formId.value);
-    form.formName = detail.formName || '';
-    form.formCode = detail.formCode || '';
-    form.description = detail.description || '';
-    form.successMessage = detail.successMessage || '提交成功';
-    form.status = detail.status || 'PUBLISHED';
-    rules.value = normalizeDesignerRules(parseRules(detail.definitionJson));
+    const loaded = await api.detailForm(formId.value);
+    detail.value = loaded;
+    form.formName = loaded.formName || '';
+    form.formCode = loaded.formCode || '';
+    form.description = loaded.description || '';
+    form.successMessage = loaded.successMessage || '提交成功';
+    form.status = loaded.status || 'PUBLISHED';
+    rules.value = normalizeDesignerRules(parseRules(loaded.definitionJson));
     applyRulesToDesigner();
+    designerDirty.value = false;
+    firstSave.value = !rules.value.length;
+    await nextTick();
+    savedSignature.value = metaSignature.value;
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '表单配置加载失败';
   } finally {
@@ -164,6 +213,9 @@ async function save() {
       status: form.status,
     });
     ElMessage.success('配置已保存');
+    designerDirty.value = false;
+    firstSave.value = false;
+    await load();
   } catch (error) {
     ElMessage.error(error instanceof Error ? error.message : '保存失败');
   } finally {
@@ -171,12 +223,28 @@ async function save() {
   }
 }
 
+function leaveConfirm(): boolean {
+  return !dirty.value || window.confirm('有未保存的修改，确认离开？');
+}
+
 function goDetail() {
   return router.push(`/information/forms/${formId.value}/detail`);
+}
+
+function onBack() {
+  if (!leaveConfirm()) {
+    return;
+  }
+  return goDetail();
 }
 
 onMounted(async () => {
   await load();
   applyRulesToDesigner();
+  window.addEventListener('beforeunload', onBeforeUnload);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('beforeunload', onBeforeUnload);
 });
 </script>

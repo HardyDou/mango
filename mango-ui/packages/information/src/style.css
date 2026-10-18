@@ -714,3 +714,36 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+
+.information-access-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.information-dirty-hint {
+  margin-right: 10px;
+  color: #b88230;
+  font-size: 12px;
+}
+
+.information-designer-meta {
+  margin-right: auto;
+  margin-left: 12px;
+  color: var(--mango-text-color-regular, #5f6b7a);
+  font-size: 12px;
+}
+
+.information-designer-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.information-hosted-public__error {
+  padding: 8px 0;
+}
+
+.information-page .el-table__row {
+  cursor: pointer;
+}

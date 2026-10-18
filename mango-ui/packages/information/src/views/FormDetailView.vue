@@ -65,18 +65,32 @@
           <div class="information-access-card">
             <div class="information-access-label">
               <strong>托管表单</strong>
-              <MangoStatusText tone="success">可用</MangoStatusText>
+              <MangoStatusText :tone="detail?.status === 'PUBLISHED' ? 'success' : 'info'">
+                {{ detail?.status === 'PUBLISHED' ? '可用' : '停用中' }}
+              </MangoStatusText>
             </div>
-            <p>直接使用平台渲染页面。</p>
+            <p>直接使用平台渲染页面，访客无需登录即可提交。</p>
             <span class="information-code">{{ hostedUrl }}</span>
+            <div class="information-access-actions">
+              <el-button link type="primary" data-access-action="copy-hosted" @click="copyHosted">复制地址</el-button>
+              <el-button link type="primary" data-access-action="open-hosted" @click="openHosted">打开页面</el-button>
+            </div>
           </div>
           <div class="information-access-card">
             <div class="information-access-label">
               <strong>API</strong>
-              <MangoStatusText tone="success">可用</MangoStatusText>
+              <MangoStatusText :tone="detail?.status === 'PUBLISHED' ? 'success' : 'info'">
+                {{ detail?.status === 'PUBLISHED' ? '可用' : '停用中' }}
+              </MangoStatusText>
             </div>
-            <p>自定义页面按表单编码提交。</p>
+            <p>自定义页面按表单编码提交；服务端调用需携带当前表单专属 SK。</p>
             <span class="information-code">POST /information/open/forms/{{ detail?.formCode }}/submit</span>
+            <div class="information-access-actions">
+              <el-button link type="primary" data-access-action="copy-endpoint" @click="copyEndpoint"
+                >复制接口</el-button
+              >
+              <el-button link type="primary" @click="goHosted">查看接入方式</el-button>
+            </div>
           </div>
         </div>
       </div>
@@ -87,6 +101,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { ElMessage } from 'element-plus';
 import { MangoDescriptionList, MangoPageBackBar, MangoStatusText } from '@mango/common';
 import { useInformationApi } from '../composables/useInformationApi';
 import type { InformationFormDetail } from '../api/information';
@@ -129,6 +144,32 @@ async function load() {
   } finally {
     loading.value = false;
   }
+}
+
+function endpoint(): string {
+  return `/information/open/forms/${detail.value?.formCode || ''}/submit`;
+}
+
+/** 接入动作失败时提示手动复制，避免只有点击没有反馈。 */
+async function copyText(value: string, successText: string, failureHint: string) {
+  try {
+    await navigator.clipboard.writeText(value);
+    ElMessage.success(successText);
+  } catch {
+    ElMessage.warning(failureHint);
+  }
+}
+
+function copyHosted() {
+  return copyText(hostedUrl.value, '托管表单地址已复制', '浏览器未授权剪贴板，请手动选择地址复制');
+}
+
+function copyEndpoint() {
+  return copyText(endpoint(), '接口路径已复制', '浏览器未授权剪贴板，请手动选择路径复制');
+}
+
+function openHosted() {
+  window.open(hostedUrl.value, '_blank', 'noopener');
 }
 
 function goList() {

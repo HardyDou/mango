@@ -79,8 +79,11 @@
             </p>
             <div class="information-api-box">
               <span class="information-api-key">X-Mango-SK</span>
-              <span class="information-api-value">{{ secretText }}</span>
-              <el-button link type="primary" @click="copySecret">复制</el-button>
+              <span class="information-api-value">{{ secretVisible ? detail?.serverSecret || '-' : secretText }}</span>
+              <el-button link type="primary" data-secret-action="toggle" @click="secretVisible = !secretVisible">
+                {{ secretVisible ? '隐藏' : '显示' }}
+              </el-button>
+              <el-button link type="primary" data-secret-action="copy" @click="copySecret">复制</el-button>
             </div>
             <el-button
               style="margin-top: 10px"
@@ -114,6 +117,7 @@ const router = useRouter();
 const detail = ref<InformationFormDetail>();
 const loading = ref(false);
 const regenerating = ref(false);
+const secretVisible = ref(false);
 const errorMessage = ref('');
 
 const formId = computed(() => String(route.params.id || ''));
@@ -145,17 +149,25 @@ async function load() {
   }
 }
 
-async function copyUrl() {
-  await navigator.clipboard?.writeText(hostedUrl.value);
-  ElMessage.success('页面地址已复制');
+/** 复制失败时给出可手动选择的兜底提示，避免静默失败。 */
+async function copyText(value: string, successText: string, failureHint: string) {
+  try {
+    await navigator.clipboard.writeText(value);
+    ElMessage.success(successText);
+  } catch {
+    ElMessage.warning(failureHint);
+  }
 }
 
-async function copySecret() {
+function copyUrl() {
+  return copyText(hostedUrl.value, '页面地址已复制，可直接发给访客', '浏览器未授权剪贴板，请手动选择地址复制');
+}
+
+function copySecret() {
   if (!detail.value?.serverSecret) {
-    return;
+    return Promise.resolve();
   }
-  await navigator.clipboard?.writeText(detail.value.serverSecret);
-  ElMessage.success('服务端密钥已复制');
+  return copyText(detail.value.serverSecret, '服务端密钥已复制', '浏览器未授权剪贴板，请先点「显示」再手动复制');
 }
 
 function openHostedPage() {
@@ -166,14 +178,19 @@ function openHostedPage() {
 
 async function regenerate() {
   try {
-    await ElMessageBox.confirm('重新生成后旧密钥立即失效，确认继续？', '重新生成密钥', { type: 'warning' });
+    await ElMessageBox.confirm('重新生成后旧密钥立即失效，已上线的服务端调用会失败，确认继续？', '重新生成密钥', {
+      type: 'warning',
+      confirmButtonText: '重新生成',
+      cancelButtonText: '取消',
+    });
   } catch {
     return;
   }
   regenerating.value = true;
   try {
     await api.regenerateFormSecret(formId.value);
-    ElMessage.success('密钥已更新');
+    secretVisible.value = true;
+    ElMessage.success('密钥已更新，请同步到服务端环境变量');
     await load();
   } catch (error) {
     ElMessage.error(error instanceof Error ? error.message : '密钥更新失败');

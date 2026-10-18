@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { openSelectByAnchor } from '../support/element-plus';
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -55,6 +56,8 @@ test.describe('@p0 @information 信息采集中心', () => {
     await expect(page.getByText('返回列表页')).toBeVisible();
     await expect(page.getByText('字段配置')).toBeVisible();
     await expect(page.locator('.information-section-title').filter({ hasText: '接入方式' })).toBeVisible();
+    await expect(page.locator('[data-access-action="copy-hosted"]')).toBeVisible();
+    await expect(page.locator('[data-access-action="open-hosted"]')).toBeVisible();
     await shot(page, '02-form-detail.png');
 
     // 表单设计：复用平台表单设计器
@@ -68,9 +71,15 @@ test.describe('@p0 @information 信息采集中心', () => {
     await expect(designer.getByText('手机号', { exact: true }).first()).toBeVisible();
     await shot(page, '03-form-designer.png');
 
+    // 初始无改动时保存按钮不可点，交互后出现未保存提示
+    await expect(page.getByRole('button', { name: '保存配置' })).toBeDisabled();
+    await page.locator('[data-surface="information.form.designer"]').click();
+    await expect(page.getByText('有未保存的修改')).toBeVisible();
+
     // 保存后规则保持不变
     await page.getByRole('button', { name: '保存配置' }).click();
     await expect(page.getByText('配置已保存')).toBeVisible();
+    await expect(page.getByRole('button', { name: '保存配置' })).toBeDisabled();
     await page.reload();
     const designerAfterReload = page.locator('[data-surface="information.form.designer"]');
     await expect(designerAfterReload).toBeVisible({ timeout: 20000 });
@@ -79,12 +88,15 @@ test.describe('@p0 @information 信息采集中心', () => {
     // 接入方式
     await goBack(page);
     await expect(page.locator('[data-page="information.form.detail"]')).toBeVisible();
-    await page.getByRole('button', { name: '接入方式' }).click();
+    await page.getByRole('button', { name: '接入方式', exact: true }).click();
     await expect(page.locator('[data-page="information.form.hosted"]')).toBeVisible();
     await expect(page.getByText('使用方式 ② · 托管页面')).toBeVisible();
     await expect(page.getByText('无需密钥')).toBeVisible();
     await expect(page.getByText('需要表单专属 SK')).toBeVisible();
     await expect(page.locator('.information-browser-url')).toContainText('/#/information/hosted?formCode=');
+    await expect(page.locator('[data-secret-action="copy"]')).toBeVisible();
+    await page.locator('[data-secret-action="toggle"]').click();
+    await expect(page.locator('.information-api-value')).toContainText('pWE5');
     await shot(page, '04-form-hosted.png');
   });
 
@@ -97,8 +109,7 @@ test.describe('@p0 @information 信息采集中心', () => {
     // 通过表单筛选切换当前表单
     await expect(page.locator('[data-filter="form"]')).toBeVisible();
 
-    const formFilter = page.locator('[data-filter="form"]');
-    await formFilter.click();
+    await openSelectByAnchor(page, 'submission-form');
     await page.getByRole('option', { name: new RegExp(formCode) }).click();
     await expect(page.locator('[data-filter="form"]')).toContainText(formCode);
 
@@ -107,7 +118,9 @@ test.describe('@p0 @information 信息采集中心', () => {
     }
     await shot(page, '05-submission-list.png');
 
-    await page.getByRole('button', { name: '详情', exact: true }).first().click();
+    // 行点击也能打开抽屉，并且筛选写入地址栏
+    await expect(page).toHaveURL(/formId=/);
+    await page.locator('.el-table__body tr').first().click();
     const drawer = page.locator('.el-drawer');
     await expect(drawer.getByText('提交详情')).toBeVisible();
     await expect(drawer.getByText('处理备注')).toBeVisible();
@@ -169,7 +182,7 @@ test.describe('@p0 @information 信息采集中心', () => {
     expect((await submit.json()).success).toBeTruthy();
 
     await page.goto('/#/information/submissions');
-    await page.locator('[data-filter="form"]').click();
+    await openSelectByAnchor(page, 'submission-form');
     await page.getByRole('option', { name: /e2e-dynamic-columns/ }).click();
 
     for (const label of ['提交编号', '提交时间', '状态', '来源页面', '公司名称', '企业规模']) {
@@ -201,6 +214,8 @@ test.describe('@p0 @information 信息采集中心', () => {
     await page.waitForTimeout(600);
     mkdirSync(evidenceDir, { recursive: true });
     await page.screenshot({ path: resolve(evidenceDir, '08-hosted-submit-success.png') });
+    await page.locator('[data-hosted-action="again"]').click();
+    await expect(page.getByPlaceholder('请输入姓名')).toHaveValue('');
     await context.close();
   });
 

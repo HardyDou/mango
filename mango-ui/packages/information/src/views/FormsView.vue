@@ -26,7 +26,14 @@
         </template>
       </el-alert>
 
-      <el-table v-loading="loading" :data="rows" row-key="id" empty-text="暂无表单">
+      <el-table
+        v-loading="loading"
+        :data="rows"
+        row-key="id"
+        :empty-text="
+          query.keyword || query.status ? '没有匹配的表单，试试调整筛选条件' : '暂无表单，点击右上角「新增」开始'
+        "
+      >
         <el-table-column label="表单名称" min-width="170" show-overflow-tooltip>
           <template #default="{ row }">{{ row.formName || '-' }}</template>
         </el-table-column>
@@ -188,7 +195,7 @@ async function submitCreate() {
       status: createForm.status,
     });
     createVisible.value = false;
-    ElMessage.success('保存成功');
+    ElMessage.success('表单已创建，接下来配置采集项');
     await router.push(`/information/forms/${id}/config`);
   } catch (error) {
     ElMessage.error(error instanceof Error ? error.message : '保存失败');

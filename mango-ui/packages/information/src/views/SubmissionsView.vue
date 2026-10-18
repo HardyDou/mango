@@ -2,7 +2,14 @@
   <div class="information-page" data-page="information.form.submissions">
     <MangoSearchPanel :model="query" :columns="4" @search="search" @reset="reset">
       <el-form-item label="表单">
-        <el-select v-model="query.formId" data-filter="form" filterable placeholder="请选择表单" @change="onFormChange">
+        <el-select
+          v-model="query.formId"
+          data-filter="form"
+          data-select="submission-form"
+          filterable
+          placeholder="请选择表单"
+          @change="onFormChange"
+        >
           <el-option
             v-for="item in formOptions"
             :key="item.id"
@@ -15,7 +22,7 @@
         <el-input v-model="query.keyword" placeholder="姓名/手机号/内容" clearable @keyup.enter="search" />
       </el-form-item>
       <el-form-item label="状态">
-        <el-select v-model="query.status" placeholder="全部" clearable>
+        <el-select v-model="query.status" data-select="submission-status" placeholder="全部" clearable>
           <el-option label="待处理" value="PENDING" />
           <el-option label="处理中" value="PROCESSING" />
           <el-option label="已完成" value="COMPLETED" />
@@ -39,7 +46,14 @@
         </template>
       </el-alert>
 
-      <el-table v-loading="loading" :data="rows" row-key="id" empty-text="暂无提交记录">
+      <el-table
+        v-loading="loading"
+        :data="rows"
+        row-key="id"
+        highlight-current-row
+        empty-text="请选择表单后查看提交记录"
+        @row-click="openDrawer"
+      >
         <el-table-column label="提交编号" width="215" fixed="left">
           <template #default="{ row }"
             ><span class="information-code information-nowrap">{{ row.submissionNo }}</span></template
@@ -56,7 +70,7 @@
           </template>
         </el-table-column>
         <el-table-column label="来源页面" min-width="190" show-overflow-tooltip>
-          <template #default="{ row }">{{ row.sourcePage || '-' }}</template>
+          <template #default="{ row }">{{ sourceLabel(row.sourcePage) }}</template>
         </el-table-column>
         <el-table-column
           v-for="field in columns"
@@ -69,7 +83,7 @@
         </el-table-column>
         <el-table-column label="操作" width="90" fixed="right">
           <template #default="{ row }">
-            <el-button link type="primary" @click="openDrawer(row)">详情</el-button>
+            <el-button link type="primary" @click.stop="openDrawer(row)">详情</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -80,7 +94,7 @@
           v-model:limit="query.pageSize"
           :total="total"
           :page-sizes="[10, 20, 50, 100]"
-          @pagination="load"
+          @pagination="onPageChange"
         />
       </template>
     </MangoListPanel>
@@ -146,7 +160,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { MangoListPanel, MangoSearchPanel, MangoStatusText, Pagination } from '@mango/common';
 import { useInformationApi } from '../composables/useInformationApi';
@@ -161,6 +175,7 @@ import { displayFieldValue, parseRules, rulesToFields, type InformationFieldDefi
 
 const api = useInformationApi();
 const route = useRoute();
+const router = useRouter();
 
 const query = reactive({ pageNum: 1, pageSize: 10, keyword: '', status: '', formId: '' as string });
 const formOptions = ref<InformationForm[]>([]);
@@ -203,24 +218,59 @@ function parseValues(valuesJson?: string): Record<string, unknown> {
   }
 }
 
+/** 来源页面只展示可读的域名与路径，完整地址放在悬浮提示里。 */
+function sourceLabel(sourcePage?: string): string {
+  if (!sourcePage) {
+    return '-';
+  }
+  try {
+    const url = new URL(sourcePage);
+    const hashPath = url.hash.replace(/^#/, '');
+    return `${url.host}${hashPath || url.pathname}`;
+  } catch {
+    return sourcePage;
+  }
+}
+
 function cellValue(row: InformationSubmission, field: InformationFieldDefinition): string {
   const value = parseValues(row.valuesJson)[field.fieldCode];
   const display = displayFieldValue(field, value);
   return display === '' ? '-' : display;
 }
 
+/** 筛选状态写入地址栏，刷新或把链接发给同事时能保持同一视图。 */
+function syncQueryToUrl() {
+  router.replace({
+    query: {
+      ...(query.formId ? { formId: query.formId } : {}),
+      ...(query.keyword ? { keyword: query.keyword } : {}),
+      ...(query.status ? { status: query.status } : {}),
+      ...(query.pageNum > 1 ? { page: String(query.pageNum) } : {}),
+    },
+  });
+}
+
+function readQueryFromUrl() {
+  const { formId: urlFormId, keyword, status, page } = route.query;
+  if (typeof urlFormId === 'string' && urlFormId) {
+    query.formId = urlFormId;
+  } else {
+    query.formId = String(route.params.id || '');
+  }
+  query.keyword = typeof keyword === 'string' ? keyword : '';
+  query.status = typeof status === 'string' ? status : '';
+  query.pageNum = Number(page) > 0 ? Number(page) : 1;
+}
+
 /** 独立菜单入口：先加载可选表单，再按当前选中表单查询记录。 */
 async function loadForms() {
   try {
-    const routeFormId = String(route.params.id || '');
-    if (routeFormId) {
-      query.formId = routeFormId;
-    }
     const result = await api.pageForms({ pageNum: 1, pageSize: 100 });
     formOptions.value = result.list;
     if (!query.formId && result.list.length) {
       query.formId = result.list[0].id || '';
     }
+    syncQueryToUrl();
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '表单列表加载失败';
   }
@@ -256,6 +306,7 @@ async function load() {
   } finally {
     loading.value = false;
   }
+  syncQueryToUrl();
 }
 
 function search() {
@@ -267,6 +318,10 @@ function reset() {
   query.keyword = '';
   query.status = '';
   return search();
+}
+
+function onPageChange() {
+  return load();
 }
 
 function openDrawer(row: InformationSubmission) {
@@ -307,13 +362,14 @@ async function exportRows() {
     link.download = `${form.value?.formCode || 'information'}-submissions-${Date.now()}.csv`;
     link.click();
     URL.revokeObjectURL(url);
-    ElMessage.success('导出成功');
+    ElMessage.success(`已导出 ${total.value} 条记录（手机号等个人信息已脱敏）`);
   } catch (error) {
     ElMessage.error(error instanceof Error ? error.message : '导出失败');
   }
 }
 
 onMounted(async () => {
+  readQueryFromUrl();
   await loadForms();
   await load();
 });
