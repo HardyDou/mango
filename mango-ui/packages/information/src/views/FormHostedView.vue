@@ -123,8 +123,9 @@ const fields = computed(() => parseFields(detail.value?.definitionJson));
 const previewValues = computed(() =>
   Object.fromEntries(fields.value.map((field) => [field.fieldCode, defaultValueFor(field)])),
 );
+/** 对外分享地址必须是绝对地址，访客直接打开即可提交，无需登录。 */
 const hostedUrl = computed(() =>
-  detail.value?.formCode ? `/information/hosted?formCode=${detail.value.formCode}` : '-',
+  detail.value?.formCode ? `${window.location.origin}/#/information/hosted?formCode=${detail.value.formCode}` : '-',
 );
 const secretText = computed(() => {
   const secret = detail.value?.serverSecret;

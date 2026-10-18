@@ -220,6 +220,127 @@
   border-radius: 4px;
 }
 
+.information-canvas-card {
+  max-width: 535px;
+  padding: 28px;
+  margin: 0 auto;
+  background: #fff;
+  border: 1px solid var(--mango-border-light, #e5ebf3);
+  border-radius: 6px;
+}
+
+.information-canvas-title {
+  margin-bottom: 6px;
+  font-size: 20px;
+  font-weight: 750;
+}
+
+.information-canvas-desc {
+  margin-bottom: 24px;
+  color: var(--mango-text-color-regular, #5f6b7a);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.information-canvas-field {
+  position: relative;
+  padding: 10px;
+  margin: 0 -10px 10px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+
+.information-canvas-field:hover {
+  border-color: #c7d2fe;
+}
+
+.information-canvas-field.is-selected {
+  background: #fbfcff;
+  border-color: #9db0ff;
+}
+
+.information-canvas-field.is-selected::after {
+  position: absolute;
+  top: -9px;
+  right: 7px;
+  padding: 2px 6px;
+  color: var(--mango-color-primary, #2e5cf6);
+  font-size: 9px;
+  content: '已选中';
+  background: #e7edff;
+  border-radius: 4px;
+}
+
+.information-canvas-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--mango-text-color, #243044);
+}
+
+.information-canvas-required {
+  margin-left: 3px;
+  color: #e15b64;
+}
+
+.information-canvas-placeholder {
+  padding: 11px;
+  color: #a8abb2;
+  font-size: 13px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+}
+
+.information-canvas-placeholder--textarea {
+  min-height: 68px;
+}
+
+.information-canvas-divider {
+  height: 1px;
+  background: var(--mango-border-light, #e5ebf3);
+}
+
+.information-canvas-static {
+  color: var(--mango-text-color-regular, #5f6b7a);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.information-canvas-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: none;
+  width: 20px;
+  height: 20px;
+  color: #f56c6c;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  background: #fff;
+  border: 1px solid #f3c9c9;
+  border-radius: 50%;
+}
+
+.information-canvas-field:hover .information-canvas-remove,
+.information-canvas-field.is-selected .information-canvas-remove {
+  display: block;
+}
+
+.information-canvas-submit {
+  width: 100%;
+  padding: 10px;
+  margin-top: 7px;
+  color: #fff;
+  font-size: 13px;
+  background: var(--mango-color-primary, #2e5cf6);
+  border: 0;
+  border-radius: 4px;
+  opacity: 0.55;
+}
+
 .information-form-card {
   max-width: 560px;
   padding: 24px 26px;

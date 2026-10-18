@@ -111,6 +111,7 @@ withDefaults(
     footnote?: string;
   }>(),
   {
+    formName: '',
     description: '',
     values: () => ({}),
     submitLabel: '提交',

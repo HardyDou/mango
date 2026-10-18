@@ -5,6 +5,7 @@ export type * from './api/information';
 export { useInformationApi } from './composables/useInformationApi';
 export {
   FIELD_TOOLBOX_GROUPS,
+  displayFieldValue,
   fieldTypeLabel,
   isDisplayOnly,
   isUnsupported,

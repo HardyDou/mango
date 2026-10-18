@@ -149,7 +149,7 @@ import { MangoListPanel, MangoSearchPanel, MangoStatusText, Pagination } from '@
 import { useInformationApi } from '../composables/useInformationApi';
 import type { InformationFormDetail, InformationSubmission, InformationSubmissionStatus } from '../api/information';
 import { formatDateTime, submissionStatusLabel, submissionStatusTone } from '../domain/status';
-import { maskSensitiveValue, parseFields, type InformationFieldDefinition } from '../domain/fields';
+import { displayFieldValue, parseFields, type InformationFieldDefinition } from '../domain/fields';
 
 const api = useInformationApi();
 const route = useRoute();
@@ -183,8 +183,8 @@ const currentTitle = computed(() => {
   const values = parseValues(current.value.valuesJson);
   const first = columns.value[0];
   const value = first ? values[first.fieldCode] : undefined;
-  const masked = first ? maskSensitiveValue(first.fieldType, value) : '';
-  return masked || current.value.submissionNo || '提交详情';
+  const display = first ? displayFieldValue(first, value) : '';
+  return display || current.value.submissionNo || '提交详情';
 });
 
 function parseValues(valuesJson?: string): Record<string, unknown> {
@@ -197,8 +197,8 @@ function parseValues(valuesJson?: string): Record<string, unknown> {
 
 function cellValue(row: InformationSubmission, field: InformationFieldDefinition): string {
   const value = parseValues(row.valuesJson)[field.fieldCode];
-  const masked = maskSensitiveValue(field.fieldType, value);
-  return masked === '' ? '-' : masked;
+  const display = displayFieldValue(field, value);
+  return display === '' ? '-' : display;
 }
 
 async function load() {

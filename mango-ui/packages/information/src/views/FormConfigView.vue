@@ -41,17 +41,14 @@
       </el-card>
 
       <div class="information-builder__canvas">
-        <div class="information-form-card">
-          <InformationFormSurface
-            :form-name="form.formName"
-            :description="form.description"
-            :fields="fields"
-            :values="previewValues"
-            :submit-label="'提交'"
-            show-submit
-            disabled
-          />
-        </div>
+        <FieldCanvas
+          :form-name="form.formName"
+          :description="form.description"
+          :fields="fields"
+          :active-index="activeIndex"
+          @select="activeIndex = $event"
+          @remove="removeField"
+        />
       </div>
 
       <el-card shadow="never" class="information-builder__config">
@@ -76,13 +73,13 @@
           <h3 class="information-builder__title">字段属性</h3>
           <template v-if="activeField">
             <label class="information-config-label">字段标签</label>
-            <el-input v-model="activeField.fieldName" />
+            <el-input v-model="activeField.fieldName" data-field-config="label" />
             <label class="information-config-label">字段类型</label>
-            <el-select v-model="activeField.fieldType" style="width: 100%">
+            <el-select v-model="activeField.fieldType" style="width: 100%" data-field-config="type">
               <el-option v-for="type in selectableTypes" :key="type" :label="fieldTypeLabel(type)" :value="type" />
             </el-select>
             <label class="information-config-label">字段编码</label>
-            <el-input v-model="activeField.fieldCode" />
+            <el-input v-model="activeField.fieldCode" data-field-config="code" />
             <label class="information-config-label">提示文字</label>
             <el-input v-model="activeField.placeholder" />
             <label v-if="activeField.fieldType === 'static'" class="information-config-label">说明内容</label>
@@ -164,6 +161,7 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { MangoPageBackBar } from '@mango/common';
+import FieldCanvas from '../components/FieldCanvas.vue';
 import InformationFormSurface from '../components/InformationFormSurface.vue';
 import { useInformationApi } from '../composables/useInformationApi';
 import type { InformationFormStatus } from '../api/information';
@@ -227,8 +225,11 @@ async function load() {
     form.description = detail.description || '';
     form.successMessage = detail.successMessage || '提交成功';
     form.status = detail.status || 'PUBLISHED';
+    const previousIndex = activeIndex.value;
     fields.value = parseFields(detail.definitionJson);
-    activeIndex.value = fields.value.length ? 0 : -1;
+    activeIndex.value = fields.value.length
+      ? Math.min(previousIndex >= 0 ? previousIndex : 0, fields.value.length - 1)
+      : -1;
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '表单配置加载失败';
   } finally {
@@ -242,7 +243,7 @@ function addField(fieldType: InformationFieldType) {
     return;
   }
   fields.value.push({
-    fieldCode: nextFieldCode(fields.value, fieldType),
+    fieldCode: nextFieldCode(fields.value),
     fieldName: fieldTypeLabel(fieldType),
     fieldType,
     required: !isDisplayOnly(fieldType),

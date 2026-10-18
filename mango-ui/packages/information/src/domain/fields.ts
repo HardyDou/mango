@@ -159,7 +159,7 @@ export function stringifyFields(fields: InformationFieldDefinition[]): string {
 }
 
 /** 生成未占用的字段编码，避免同表单内重复。 */
-export function nextFieldCode(fields: InformationFieldDefinition[], fieldType: InformationFieldType): string {
+export function nextFieldCode(fields: InformationFieldDefinition[]): string {
   const base = `field${fields.length + 1}`;
   const used = new Set(fields.map((field) => field.fieldCode));
   let candidate = base;
@@ -192,6 +192,20 @@ export function maskSensitiveValue(fieldType: string | undefined, value: unknown
     return at <= 1 ? '***' : `${text.slice(0, 1)}***${text.slice(at)}`;
   }
   return text;
+}
+
+/** 选择型控件按选项标签展示，其余控件按脱敏规则展示。 */
+export function displayFieldValue(field: InformationFieldDefinition, value: unknown): string {
+  if (value === undefined || value === null || value === '') {
+    return '';
+  }
+  if (needsOptions(field.fieldType)) {
+    const options = field.options || [];
+    const values = Array.isArray(value) ? value : [value];
+    const labels = values.map((item) => options.find((option) => option.value === String(item))?.label ?? String(item));
+    return labels.join('、');
+  }
+  return maskSensitiveValue(field.fieldType, value);
 }
 
 export function defaultValueFor(field: InformationFieldDefinition): unknown {

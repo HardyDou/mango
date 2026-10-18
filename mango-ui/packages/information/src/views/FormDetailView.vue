@@ -104,7 +104,7 @@ const errorMessage = ref('');
 const formId = computed(() => String(route.params.id || ''));
 const fields = computed(() => parseFields(detail.value?.definitionJson));
 const hostedUrl = computed(() =>
-  detail.value?.formCode ? `/information/hosted?formCode=${detail.value.formCode}` : '-',
+  detail.value?.formCode ? `${window.location.origin}/#/information/hosted?formCode=${detail.value.formCode}` : '-',
 );
 const summaryItems = computed(() => [
   { key: 'formName', label: '表单名称', value: detail.value?.formName },
