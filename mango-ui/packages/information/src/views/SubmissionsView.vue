@@ -1,6 +1,16 @@
 <template>
   <div class="information-page" data-page="information.form.submissions">
     <MangoSearchPanel :model="query" :columns="4" @search="search" @reset="reset">
+      <el-form-item label="表单">
+        <el-select v-model="query.formId" data-filter="form" filterable placeholder="请选择表单" @change="onFormChange">
+          <el-option
+            v-for="item in formOptions"
+            :key="item.id"
+            :label="`${item.formName}（${item.formCode}）`"
+            :value="item.id"
+          />
+        </el-select>
+      </el-form-item>
       <el-form-item label="关键字">
         <el-input v-model="query.keyword" placeholder="姓名/手机号/内容" clearable @keyup.enter="search" />
       </el-form-item>
@@ -15,26 +25,6 @@
     </MangoSearchPanel>
 
     <MangoListPanel>
-      <template #actions>
-        <span class="information-form-context">
-          <strong>表单</strong>
-          <el-select
-            v-model="query.formId"
-            data-filter="form"
-            filterable
-            placeholder="请选择表单"
-            style="width: 260px"
-            @change="onFormChange"
-          >
-            <el-option
-              v-for="item in formOptions"
-              :key="item.id"
-              :label="`${item.formName}（${item.formCode}）`"
-              :value="item.id"
-            />
-          </el-select>
-        </span>
-      </template>
       <template #view-actions>
         <MangoStatusText v-if="pendingCount" tone="warning">{{ pendingCount }} 条待处理</MangoStatusText>
         <el-button data-action="information.submission.export" :disabled="!rows.length" @click="exportRows">
