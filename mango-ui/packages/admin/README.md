@@ -158,3 +158,5 @@ import '@mango/admin/style-full.css';
 - `@mango/admin@1.0.45` 聚合 `@mango/admin-pages@1.0.20`、`@mango/file@1.0.21`、
   `@mango/admin-shell@1.0.40` 及本批次下游模块。相对 `1.0.44` 不回退运行源码，主要用于交付完整 README 和
   一致的精确依赖闭包。
+
+- Issue #1055：`@mango/admin/full` 新增聚合 `@mango/information`（`registerMangoInformationAdminPages`）及其 `style.css`。`admin-modules.json`、`generated-package-styles.css`、`style-full.css`、`src/full.ts` 和 `admin-packages.json` 为同批次生成物，默认入口、`full` 子入口与既有页面注册协议不变。
