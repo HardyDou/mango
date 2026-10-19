@@ -10,6 +10,7 @@
 - 方案风险：L2 - 移除 `CmsSiteService` 匿名分支校验并保留唯一性与下游租户绑定；不改数据库、权限放行、Controller 路由和前端契约。
 - 最终风险：L2
 - 工作区决策：CREATE：`/Users/hardy/Work/mango-issue-1056`，分支 `fix/issue-1056-cms-anonymous-site-code`
+- PR：https://github.com/HardyDou/mango/pull/1058（关联 Issue #1056）
 - Non-downgradable facts：AUTHORIZATION/TENANT - 匿名解析选择器涉及匿名访问边界；未申请降级，按 L2 默认 STANDARD 执行。
 - 决策复核：`AGENT_ONLY`；未指定外部同行评审。
 
@@ -58,6 +59,7 @@
 | SR-004 | 域名解析行为回归 | 同上，`resolveSite_returnsTheSingleEnabledDomainSite`、`resolveSite_rejectsMissingOrAmbiguousSite` | PASS | 同上 |
 | SR-001, SR-002, SR-003 | 修复前失效基线 | 修复前 `CmsSupportTest.validateResolveScope_匿名解析只能使用域名` 断言 `匿名站点解析不能使用站点编码`；修复后该断言删除并由 `anonymousResolve_acceptsSiteCode` 取代 | PASS：新用例在旧实现下会抛 `匿名站点解析必须提供域名` | `git diff` 中删除的旧断言 |
 | 静态编译（M09） | 编译与测试执行 | 同上命令完成 `mango-cms-api`/`core`/`starter`/`starter-remote` 编译 | PASS | Maven 构建输出与 surefire 报告 |
+| 全部 | 外部状态回读（M15） | `gh pr checks 1058 --repo HardyDou/mango`；`gh pr view 1058 --repo HardyDou/mango --json baseRefName,headRefOid,files` | PASS：base `main`、head `c8f5b0cda015042a09bb71743d8536b08d3f3f6c`、6 个文件；`pr-contract-check`、`pmo-doc-check`、`frontend-pr-quality`、`Java gates`、`Documentation gates` 均为 pass | `https://github.com/HardyDou/mango/pull/1058` |
 
 ## 7. 例外与剩余风险
 
