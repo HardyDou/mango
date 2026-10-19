@@ -121,7 +121,7 @@ const site = await cmsSiteApi.resolveSite(createSiteResolveQuery(undefined, wind
 4. 创建顶部和底部导航，关联栏目或外部链接。
 5. 创建内容，编辑富文本正文，设置封面、来源和作者。
 6. 将内容发布到站点栏目，设置发布状态、置顶和推荐。
-7. 站点前台通过 `@mango/site-shell` 按 `domain` 解析站点并读取已发布内容。
+7. 站点前台通过 `@mango/site-shell` 按 `domain` 或 `siteCode` 解析站点并读取已发布内容。
 
 ## 6. 配置说明
 
@@ -194,7 +194,7 @@ CMS 管理页面通过 `@mango/cms` 注册，菜单由 `cms-common-menu.json` �
 ## 11. 问题排查
 
 - 站点前台接口返回 401：确认 `mango-cms-starter` 已启用，`CmsPermitPathBeanPostProcessor` 已将 `/cms/open/**` 注入放行路径。
-- 站点解析返回"站点不存在或不唯一"：确认请求按 `domain` 解析，且库中对应域名存在唯一启用站点。
+- 站点解析返回"站点不存在或不唯一"：确认请求提供的 `domain` 或 `siteCode` 在当前租户范围内只对应一个启用站点；解析范围由当前租户上下文或部署配置的默认租户限定，只有部署关闭租户拦截时匿名请求才覆盖全部租户。
 - 内容列表为空：确认内容状态为 `PUBLISHED`，发布关系 `publish_status` 为 `PUBLISHED`，且在有效期内。
 - 公开素材 403：确认文件被站点 Logo、Banner 媒体、已发布内容或有效广告投放引用。
 
