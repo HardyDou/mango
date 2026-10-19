@@ -30,8 +30,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /**
  * CMS 站点解析真实数据库集成测试。
  *
- * <p>用 H2 MySQL 模式和模块 V1 DDL 驱动真实 {@link CmsSiteMapper}，证明匿名与带租户上下文两种解析都
- * 通过真实 SQL 按 {@code site_code} / {@code domain} 过滤，并保持启用状态、逻辑删除和跨租户唯一性语义。
+ * <p>用 H2 MySQL 模式和模块 V1 DDL 驱动真实 {@link CmsSiteMapper}，开启与生产一致的租户拦截器，证明匿名与带租户
+ * 上下文两种解析都通过真实 SQL 按 {@code site_code} / {@code domain} 过滤，并保持启用状态、逻辑删除、默认租户范围和
+ * 上下文租户隔离语义。
  */
 @SpringBootTest(classes = {
         DataSourceAutoConfiguration.class,
@@ -47,7 +48,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
         "spring.datasource.password=",
         "spring.datasource.driver-class-name=org.h2.Driver",
         "spring.flyway.enabled=false",
-        "mango.persistence.mybatis-plus.tenant.enabled=false"
+        "mango.persistence.mybatis-plus.tenant.default-tenant-id=" + CmsSiteResolveIntegrationTest.DEFAULT_TENANT
 })
 @Sql(scripts = "classpath:db/migration/mango-cms/V1__init_mango_cms.sql",
         executionPhase = Sql.ExecutionPhase.BEFORE_TEST_CLASS)
@@ -55,6 +56,8 @@ class CmsSiteResolveIntegrationTest {
 
     private static final String TENANT_A = "tenant-a";
     private static final String TENANT_B = "tenant-b";
+
+    static final String DEFAULT_TENANT = TENANT_A;
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -111,13 +114,15 @@ class CmsSiteResolveIntegrationTest {
     }
 
     @Test
-    void resolveSite_anonymousSiteCodeRejectsAmbiguousTenantsInRealDatabase() {
+    void resolveSite_anonymousSiteCodeIsScopedToTheConfiguredDefaultTenant() {
         siteMapper.insert(site(104L, TENANT_A, "main", "a.example.test", CmsSupport.ENABLED, 0));
         siteMapper.insert(site(105L, TENANT_B, "main", "b.example.test", CmsSupport.ENABLED, 0));
 
-        assertThatThrownBy(() -> siteService.resolveSite(siteCodeQuery("main")))
-                .isInstanceOf(BizException.class)
-                .hasMessage("站点不存在或不唯一");
+        SiteResolveVO result = siteService.resolveSite(siteCodeQuery("main"));
+
+        assertThat(result)
+                .extracting(SiteResolveVO::getSiteId, SiteResolveVO::getSiteCode)
+                .containsExactly(104L, "main");
     }
 
     @Test
@@ -134,16 +139,22 @@ class CmsSiteResolveIntegrationTest {
     }
 
     @Test
-    void resolveSite_tenantContextRestrictsSiteCodeToTheCurrentTenant() {
+    void resolveSite_siteCodeCannotReachAnotherTenant() {
         siteMapper.insert(site(108L, TENANT_A, "main", "a.example.test", CmsSupport.ENABLED, 0));
         siteMapper.insert(site(109L, TENANT_B, "main", "b.example.test", CmsSupport.ENABLED, 0));
+        siteMapper.insert(site(110L, TENANT_B, "only-b", "c.example.test", CmsSupport.ENABLED, 0));
         MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId(TENANT_B));
 
         SiteResolveVO result = siteService.resolveSite(siteCodeQuery("main"));
+        SiteResolveVO tenantOnly = siteService.resolveSite(siteCodeQuery("only-b"));
 
         assertThat(result)
                 .extracting(SiteResolveVO::getSiteId, SiteResolveVO::getSiteCode)
                 .containsExactly(109L, "main");
+        assertThat(tenantOnly.getSiteId()).isEqualTo(110L);
+        assertThatThrownBy(() -> siteService.resolveSite(siteCodeQuery("missing-in-tenant")))
+                .isInstanceOf(BizException.class)
+                .hasMessage("站点不存在或不唯一");
     }
 
     private static SiteResolveQuery siteCodeQuery(String siteCode) {
