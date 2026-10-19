@@ -1,7 +1,7 @@
 <template>
   <form-create
     v-model:api="api"
-    :rule="rules"
+    :rule="runtimeRules"
     :option="options"
     :model-value="values"
     :disabled="disabled"
@@ -19,7 +19,9 @@ import type {
   Options as FormCreateOptions,
   Rule as FormCreateRule,
 } from '@form-create/element-ui';
-import type { FormCreateRule as InformationRule } from '../domain/rules';
+import InformationUploadField from './InformationUploadField.vue';
+import InformationEditorField from './InformationEditorField.vue';
+import { toRuntimeRules, type FormCreateRule as InformationRule } from '../domain/rules';
 
 const props = withDefaults(
   defineProps<{
@@ -49,6 +51,9 @@ const emit = defineEmits<{
  */
 const instance = getCurrentInstance();
 instance?.appContext.app.use(formCreate as never);
+// 上传与富文本控件改用 Mango 组件，文件统一落到 mango-file
+instance?.appContext.app.component('InformationUploadField', InformationUploadField);
+instance?.appContext.app.component('InformationEditorField', InformationEditorField);
 
 const api = ref<FormCreateApi>();
 const options: FormCreateOptions = {
@@ -58,20 +63,24 @@ const options: FormCreateOptions = {
   onSubmit: (formData: Record<string, unknown>) => emit('submit', formData),
 };
 
-/** 设计器产出的规则结构与 form-create 的 Rule 一致，这里只做类型收窄。 */
-const rules = ref(props.rules as unknown as FormCreateRule[]);
+/** 渲染前把上传与富文本控件替换为 Mango 组件，其余规则结构与 form-create 一致。 */
+function buildRules(): FormCreateRule[] {
+  return toRuntimeRules(props.rules) as unknown as FormCreateRule[];
+}
+
+const runtimeRules = ref(buildRules());
 
 watch(
   () => props.rules,
   (next) => {
-    rules.value = next as unknown as FormCreateRule[];
-    api.value?.reloadRule?.(rules.value as never);
+    runtimeRules.value = toRuntimeRules(next) as unknown as FormCreateRule[];
+    api.value?.reloadRule?.(runtimeRules.value as never);
   },
 );
 watch(
   () => props.runtimeKey,
   () => {
-    rules.value = props.rules as unknown as FormCreateRule[];
+    runtimeRules.value = buildRules();
   },
 );
 

@@ -17,6 +17,8 @@ export interface InformationFieldDefinition {
   options?: InformationFieldOption[];
   content?: string;
   sort?: number;
+  /** 子表单/表格表单的行内字段，用于把值里的字段编码展示成标题。 */
+  children?: InformationFieldDefinition[];
 }
 
 export interface FormCreateRule {
@@ -199,6 +201,39 @@ export function parseRules(definitionJson?: string): FormCreateRule[] {
   }
 }
 
+/** 子表单/表格表单的行内字段，取值来自列定义或子规则。 */
+function rowFieldsOf(rule: FormCreateRule): InformationFieldDefinition[] {
+  const columns = (rule.props as Record<string, unknown> | undefined)?.columns;
+  if (Array.isArray(columns)) {
+    return columns
+      .filter((column): column is Record<string, unknown> => Boolean(column) && typeof column === 'object')
+      .map((column, index) => {
+        const ruleList = Array.isArray(column.rule) ? (column.rule as FormCreateRule[]) : [];
+        const inner = ruleList[0];
+        return {
+          fieldCode: String(inner?.field || `column${index + 1}`),
+          fieldName: String(column.label || inner?.title || inner?.field || `第${index + 1}列`),
+          fieldType: inner ? normalizeFieldType(inner) : 'input',
+          sort: index + 1,
+        };
+      });
+  }
+  const children: InformationFieldDefinition[] = [];
+  walkRules(rule.children, (child) => {
+    if (isInputRule(child)) {
+      children.push({
+        fieldCode: String(child.field),
+        fieldName: String(child.title || child.field),
+        fieldType: normalizeFieldType(child),
+        sort: children.length + 1,
+      });
+    }
+  });
+  return children;
+}
+
+const SUBFORM_FIELD_TYPES = new Set(['group', 'subform', 'tableform']);
+
 /** 从规则中提取可提交的采集项，用于提交记录动态列和值展示。 */
 export function rulesToFields(rules: FormCreateRule[]): InformationFieldDefinition[] {
   const fields: InformationFieldDefinition[] = [];
@@ -206,14 +241,16 @@ export function rulesToFields(rules: FormCreateRule[]): InformationFieldDefiniti
     if (!isInputRule(rule)) {
       return;
     }
+    const fieldType = normalizeFieldType(rule);
     fields.push({
       fieldCode: String(rule.field),
       fieldName: String(rule.title || rule.field),
-      fieldType: normalizeFieldType(rule),
+      fieldType,
       required: ruleRequired(rule),
       placeholder: rulePlaceholder(rule),
       options: ruleOptions(rule),
       sort: fields.length + 1,
+      ...(SUBFORM_FIELD_TYPES.has(fieldType.toLowerCase()) ? { children: rowFieldsOf(rule) } : {}),
     });
   });
   return fields;
@@ -285,6 +322,38 @@ export function rulesToMangoFields(rules: FormCreateRule[]): MangoFormFieldConfi
   return configs;
 }
 
+/**
+ * 平台里上传与富文本有现成的 Mango 组件，文件统一落到 mango-file。
+ * 渲染前把设计器规则替换为对应 Mango 组件，其余控件保持原样。
+ */
+export function toRuntimeRules(rules: FormCreateRule[]): FormCreateRule[] {
+  const transform = (items: FormCreateRule[]): FormCreateRule[] =>
+    (items || []).map((rule) => {
+      const next: FormCreateRule = { ...rule };
+      if (Array.isArray(rule.children) && rule.children.length) {
+        next.children = transform(rule.children);
+      }
+      const type = String(rule.type || '');
+      if (type === 'upload') {
+        const limit = Number((rule.props as Record<string, unknown> | undefined)?.limit ?? 1) || 1;
+        next.type = 'InformationUploadField';
+        next.props = {
+          ...(rule.props || {}),
+          limit,
+          listType: String((rule.props as Record<string, unknown> | undefined)?.listType || 'text'),
+          multiple: Boolean((rule.props as Record<string, unknown> | undefined)?.multiple),
+        };
+        delete (next.props as Record<string, unknown>).action;
+        delete (next.props as Record<string, unknown>).onSuccess;
+      } else if (type === 'editor') {
+        next.type = 'InformationEditorField';
+        next.props = { ...(rule.props || {}) };
+      }
+      return next;
+    });
+  return transform(rules);
+}
+
 /** 让设计器在字段标题/编码缺失时给出可读兜底，避免出现空白字段块。 */
 export function normalizeDesignerRules(rules: FormCreateRule[]): FormCreateRule[] {
   const used = new Set<string>();
@@ -325,21 +394,56 @@ export function maskSensitiveValue(fieldType: string | undefined, value: unknown
 }
 
 /** 选择型控件按选项标签展示，其余按脱敏规则展示。 */
+/**
+ * 采集值展示规则：
+ * - 选择型控件优先显示选项标签；
+ * - 多选、子表单、表格表单等数组/对象值序列化为可读文本，避免出现 [object Object]；
+ * - 其余按脱敏规则展示。
+ */
 export function displayFieldValue(field: InformationFieldDefinition, value: unknown): string {
   if (value === undefined || value === null || value === '') {
     return '';
   }
   const options = field.options || [];
-  if (
-    options.length &&
-    (field.fieldType === 'select' || field.fieldType === 'radio' || field.fieldType === 'checkbox')
-  ) {
+  const selectLike = ['select', 'radio', 'checkbox'].includes(field.fieldType);
+  if (options.length && selectLike) {
     const values = Array.isArray(value) ? value : [value];
     return values
       .map((item) => options.find((option) => option.value === String(item))?.label ?? String(item))
       .join('、');
   }
+  const labels = new Map((field.children || []).map((child) => [child.fieldCode, child.fieldName]));
+  if (Array.isArray(value)) {
+    if (!value.length) {
+      return '';
+    }
+    return value.map((item) => formatComplexValue(item, labels)).join('；');
+  }
+  if (typeof value === 'object') {
+    return formatComplexValue(value, labels);
+  }
   return maskSensitiveValue(field.fieldType, value);
+}
+
+/** 子表单/表格表单等对象值按 `字段: 值` 拼接，保证列表、抽屉和导出都可读。 */
+function formatComplexValue(value: unknown, labels?: Map<string, string>): string {
+  if (value === null || value === undefined) {
+    return '';
+  }
+  if (typeof value !== 'object') {
+    return String(value);
+  }
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => formatComplexValue(item, labels))
+      .filter(Boolean)
+      .join('、');
+  }
+  const record = value as Record<string, unknown>;
+  return Object.entries(record)
+    .filter(([, item]) => item !== undefined && item !== null && item !== '')
+    .map(([key, item]) => `${labels?.get(key) || key}: ${formatComplexValue(item, labels)}`)
+    .join('，');
 }
 
 export function stringifyRules(rules: FormCreateRule[]): string {

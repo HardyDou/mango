@@ -4,7 +4,7 @@
     "schemaVersion": 1,
     "workspaceCount": 43
   },
-  "catalogDigest": "320fbabfb983c4c0329333ddd66f59ba537e32bc280f7f283e7075da48b9a8dd",
+  "catalogDigest": "5109b7177bf961d28bff922a26985857d901e0a2920a1c4f5e077a4167f9dcea",
   "maven": {
     "dependencyManagementSets": [
       {
@@ -7142,6 +7142,15 @@
             "version": "1.0.0-SNAPSHOT"
           },
           {
+            "artifactId": "mango-file-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.file",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
             "artifactId": "mango-information-api",
             "classifier": null,
             "groupId": "io.mango.platform.information",
@@ -7166,6 +7175,15 @@
             "artifactId": "mango-authorization-api",
             "classifier": null,
             "groupId": "io.mango.platform.authorization",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-file-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.file",
             "optional": false,
             "scope": "compile",
             "type": "jar",

@@ -12,6 +12,7 @@
     <name>Mango Information Collection Core</name>
     <dependencies>
         <dependency><groupId>io.mango.platform.information</groupId><artifactId>mango-information-api</artifactId><version>${project.version}</version></dependency>
+        <dependency><groupId>io.mango.platform.file</groupId><artifactId>mango-file-api</artifactId><version>${project.version}</version></dependency>
         <dependency><groupId>io.mango.infra.context</groupId><artifactId>mango-infra-context-api</artifactId><version>${project.version}</version></dependency>
         <dependency><groupId>io.mango.infra.persistence</groupId><artifactId>mango-infra-persistence-api</artifactId><version>${project.version}</version></dependency>
         <dependency><groupId>io.mango.infra.persistence</groupId><artifactId>mango-infra-persistence-starter</artifactId><version>${project.version}</version><scope>test</scope></dependency>

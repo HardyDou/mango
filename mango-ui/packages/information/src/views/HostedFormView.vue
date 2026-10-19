@@ -38,14 +38,19 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue';
+import { onMounted, provide, reactive, ref } from 'vue';
+import { inject } from 'vue';
 import { ElMessage } from 'element-plus';
+import { MANGO_HTTP_CLIENT_KEY } from '@mango/app-runtime';
+import type { HttpClient } from '@mango/api-schema';
+import { createInformationPublicFileClient } from '../api/publicFileClient';
 import InformationFormSurface from '../components/InformationFormSurface.vue';
 import { useInformationApi } from '../composables/useInformationApi';
 import type { PublicInformationForm } from '../api/information';
 import { parseRules, type FormCreateRule } from '../domain/rules';
 
 const api = useInformationApi();
+
 const form = ref<PublicInformationForm>();
 const loading = ref(false);
 const submitting = ref(false);
@@ -56,6 +61,13 @@ const values = reactive<Record<string, unknown>>({});
 const rules = ref<FormCreateRule[]>([]);
 const surfaceKey = ref(0);
 const surfaceRef = ref<InstanceType<typeof InformationFormSurface>>();
+
+// 匿名页面没有登录态，把文件上传与预览请求改写为当前表单的公开入口
+const hostClient = inject<HttpClient | undefined>(MANGO_HTTP_CLIENT_KEY, undefined);
+const publicFormCode = () => form.value?.formCode || currentFormCode();
+if (hostClient) {
+  provide(MANGO_HTTP_CLIENT_KEY, createInformationPublicFileClient(hostClient, publicFormCode));
+}
 
 function currentFormCode(): string {
   const hash = window.location.hash || '';

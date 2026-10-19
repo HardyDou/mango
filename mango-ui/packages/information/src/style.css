@@ -430,9 +430,30 @@
   text-overflow: ellipsis;
 }
 
+/*
+ * 预览区固定为浏览器视口大小并内部滚动：长表单不会撑破模拟窗口，
+ * 也避免整页被一张超长预览拉长。
+ */
 .information-browser-body {
-  padding: 22px 16px;
+  height: 460px;
+  padding: 16px 14px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   background: var(--mango-bg-main, #f3f5f8);
+}
+
+.information-browser-body .information-surface__head {
+  margin-bottom: 12px;
+}
+
+.information-browser-body .information-surface__title {
+  font-size: 17px;
+}
+
+.information-browser-body .information-form-card {
+  max-width: none;
+  padding: 18px 16px;
+  box-shadow: none;
 }
 
 .information-mode-pill {
@@ -760,4 +781,52 @@
 
 .information-form-context .el-select {
   min-width: 220px;
+}
+
+.information-upload-field {
+  width: 100%;
+}
+
+.information-upload-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0;
+  margin: 10px 0 0;
+  list-style: none;
+}
+
+.information-upload-item {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 10px;
+  font-size: 12px;
+  background: #f8f9fb;
+  border: 1px solid var(--mango-border-light, #e5ebf3);
+  border-radius: 4px;
+}
+
+.information-upload-list.is-card .information-upload-item {
+  flex-direction: column;
+  width: 108px;
+}
+
+.information-upload-thumb {
+  width: 88px;
+  height: 66px;
+  border-radius: 4px;
+}
+
+.information-upload-name {
+  max-width: 220px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.information-upload-tip {
+  margin: 8px 0 0;
+  color: var(--mango-text-color-regular, #5f6b7a);
+  font-size: 12px;
 }
