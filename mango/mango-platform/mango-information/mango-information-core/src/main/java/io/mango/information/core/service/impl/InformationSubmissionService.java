@@ -100,7 +100,7 @@ public class InformationSubmissionService implements IInformationSubmissionServi
                 csv.append(csvCell(String.valueOf(record.getId()))).append(',').append(csvCell(String.valueOf(record.getSubmittedAt()))).append(',')
                         .append(csvCell(statusLabel(record.getStatus()))).append(',').append(csvCell(record.getSourcePage()));
                 for (InformationDefinition.Field field : columns.values()) {
-                    csv.append(',').append(csvCell(mask(field.type(), values.get(field.code()))));
+                    csv.append(',').append(csvCell(readable(field.type(), values.get(field.code()))));
                 }
                 csv.append('\n');
             }
@@ -114,24 +114,20 @@ public class InformationSubmissionService implements IInformationSubmissionServi
         return switch (status) { case "PENDING" -> "待处理"; case "PROCESSING" -> "处理中"; case "COMPLETED" -> "已完成"; case "CLOSED" -> "已关闭"; default -> status; };
     }
 
-    /** 复杂值（多选、子表单、表格表单等）序列化为可读 JSON，避免导出出现 [object Object]。 */
-    private String mask(String fieldType, Object value) {
+    /**
+     * 复杂值（多选、子表单、表格表单等）序列化为可读 JSON，避免导出出现 [object Object]。
+     *
+     * <p>导出按原值输出：提交记录仅对有查看权限的角色开放，手机号等字段不再脱敏，
+     * 便于处理人直接回访。</p>
+     */
+    private String readable(String fieldType, Object value) {
         if (value == null) {
             return "";
         }
         if (value instanceof java.util.Collection<?> || value instanceof java.util.Map<?, ?>) {
             return writeQuietly(value);
         }
-        String text = String.valueOf(value);
-        String type = fieldType == null ? "" : fieldType.toLowerCase(java.util.Locale.ROOT);
-        if (type.contains("phone") || type.contains("mobile") || type.contains("tel")) {
-            return text.length() <= 4 ? "***" : text.substring(0, Math.min(3, text.length())) + "****" + text.substring(Math.max(0, text.length() - 2));
-        }
-        if (type.contains("email")) {
-            int at = text.indexOf('@');
-            return at <= 1 ? "***" : text.substring(0, 1) + "***" + text.substring(at);
-        }
-        return text;
+        return String.valueOf(value);
     }
 
     private String writeQuietly(Object value) {

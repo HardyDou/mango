@@ -2,7 +2,6 @@
   <div class="information-page" data-page="information.form.detail">
     <MangoPageBackBar title="返回列表页" :show-refresh="false" @back="goList">
       <template #extra>
-        <el-button @click="goHosted">接入方式</el-button>
         <el-button @click="goSubmissions">提交记录</el-button>
         <el-button type="primary" @click="goConfig">配置表单</el-button>
       </template>
@@ -15,94 +14,170 @@
       </template>
     </el-alert>
 
-    <el-card v-loading="loading" shadow="never" class="information-card">
-      <div class="information-detail-head">
-        <div>
-          <h2 class="information-detail-title">{{ detail?.formName || '-' }}</h2>
-          <div class="information-detail-meta">
-            <span class="information-code">{{ detail?.formCode || '-' }}</span>
-            <span> · 创建人：{{ detail?.createdByName || '-' }}</span>
+    <div v-loading="loading" class="information-detail-body">
+      <!-- 上：基础信息 -->
+      <el-card shadow="never" class="information-card">
+        <div class="information-detail-head">
+          <div>
+            <h2 class="information-detail-title">{{ detail?.formName || '-' }}</h2>
+            <div class="information-detail-meta">
+              <span class="information-code">{{ detail?.formCode || '-' }}</span>
+              <span> · 创建人：{{ detail?.createdByName || '-' }}</span>
+            </div>
           </div>
+          <MangoStatusText :tone="formStatusTone(detail?.status)">{{
+            formStatusLabel(detail?.status)
+          }}</MangoStatusText>
         </div>
-        <MangoStatusText :tone="formStatusTone(detail?.status)">{{ formStatusLabel(detail?.status) }}</MangoStatusText>
-      </div>
+        <MangoDescriptionList :items="summaryItems" display="table" :column="3" label-width="96" />
+      </el-card>
 
-      <MangoDescriptionList :items="summaryItems" display="table" :column="3" label-width="96" />
-
-      <div class="information-section">
-        <div class="information-section-title">字段配置</div>
-        <el-table :data="fields" row-key="fieldCode" empty-text="尚未配置采集项">
-          <el-table-column label="字段标签" min-width="150">
-            <template #default="{ row }">{{ row.fieldName }}</template>
-          </el-table-column>
-          <el-table-column label="字段编码" min-width="140">
-            <template #default="{ row }"
-              ><span class="information-code">{{ row.fieldCode }}</span></template
-            >
-          </el-table-column>
-          <el-table-column label="字段类型" width="120">
-            <template #default="{ row }">{{ fieldTypeLabel(row.fieldType) }}</template>
-          </el-table-column>
-          <el-table-column label="必填" width="90">
-            <template #default="{ row }">
-              <MangoStatusText :tone="row.required ? 'success' : 'neutral'">{{
-                row.required ? '是' : '否'
-              }}</MangoStatusText>
-            </template>
-          </el-table-column>
-          <el-table-column label="提示文字" min-width="180" show-overflow-tooltip>
-            <template #default="{ row }">{{ row.placeholder || '-' }}</template>
-          </el-table-column>
-          <el-table-column label="排序" width="80">
-            <template #default="{ row }">{{ row.sort }}</template>
-          </el-table-column>
-        </el-table>
-      </div>
-
-      <div class="information-section">
+      <!-- 下：左侧页面方式（用法 + 页面预览），右侧接口方式（用法 + 字段） -->
+      <div class="information-section" data-surface="information.form.access">
         <div class="information-section-title">接入方式</div>
-        <div class="information-access-grid">
-          <div class="information-access-card">
-            <div class="information-access-label">
-              <strong>托管表单</strong>
+        <p class="information-access-hint">
+          接入方式分为两种：<strong>页面接入</strong>把托管页面地址发给访客，免登录直接填写；<strong>接口接入</strong>在自己的服务端调用提交接口，需要当前表单专属
+          SK。
+        </p>
+        <div class="information-detail-split">
+          <el-card shadow="never" class="information-card information-access-method" data-access-method="page">
+            <div class="information-access-head">
+              <span class="information-mode-pill">方式 ① · 页面接入</span>
               <MangoStatusText :tone="detail?.status === 'PUBLISHED' ? 'success' : 'info'">
-                {{ detail?.status === 'PUBLISHED' ? '可用' : '停用中' }}
+                {{ detail?.status === 'PUBLISHED' ? '无需密钥' : '停用中' }}
               </MangoStatusText>
             </div>
-            <p>直接使用平台渲染页面，访客无需登录即可提交。</p>
-            <span class="information-code">{{ hostedUrl }}</span>
+            <p class="information-access-desc">访客直接打开下面这个地址即可填写提交，无需登录，也不需要任何密钥。</p>
+            <div class="information-api-box">
+              <span class="information-api-url">{{ hostedUrl }}</span>
+              <el-button link type="primary" data-access-action="copy-hosted" @click="copyHosted">复制</el-button>
+            </div>
+
+            <div class="information-access-points">
+              <div class="information-access-point">
+                <h4>适合快速上线</h4>
+                <p>配置完成后即可获得页面地址，适用于反馈、报名、咨询等标准采集场景。</p>
+              </div>
+              <div class="information-access-point">
+                <h4>复用同一份定义</h4>
+                <p>页面字段、必填规则和校验规则来自当前启用表单，不与接口模式分叉。</p>
+              </div>
+              <div class="information-access-point">
+                <h4>可嵌入业务页面</h4>
+                <p>后续可提供 iframe 或组件嵌入，但不在本轮 MVP 中设计嵌入协议。</p>
+              </div>
+            </div>
+
             <div class="information-access-actions">
-              <el-button link type="primary" data-access-action="copy-hosted" @click="copyHosted">复制地址</el-button>
               <el-button link type="primary" data-access-action="open-hosted" @click="openHosted">打开页面</el-button>
             </div>
-          </div>
-          <div class="information-access-card">
-            <div class="information-access-label">
-              <strong>API</strong>
-              <MangoStatusText :tone="detail?.status === 'PUBLISHED' ? 'success' : 'info'">
-                {{ detail?.status === 'PUBLISHED' ? '可用' : '停用中' }}
+
+            <div class="information-hosted-preview" data-surface="information.hosted.preview">
+              <div class="information-browser">
+                <div class="information-browser-bar">
+                  <span class="information-browser-dot" />
+                  <span class="information-browser-dot" />
+                  <span class="information-browser-dot" />
+                  <span class="information-browser-url">{{ hostedUrl }}</span>
+                </div>
+                <div class="information-browser-body">
+                  <div class="information-form-card">
+                    <div class="information-hosted-logo">MANGO · ENTERPRISE</div>
+                    <InformationFormSurface
+                      :form-name="detail?.formName"
+                      :description="detail?.description"
+                      :rules="rules"
+                      :values="previewValues"
+                      :runtime-key="rules.length"
+                      disabled
+                      plain
+                      footnote="提交即表示您同意我们按隐私政策使用相关信息"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </el-card>
+
+          <el-card shadow="never" class="information-card information-access-method" data-access-method="api">
+            <div class="information-access-head">
+              <span class="information-mode-pill">方式 ② · 接口接入</span>
+              <MangoStatusText :tone="detail?.status === 'PUBLISHED' ? 'warning' : 'info'">
+                {{ detail?.status === 'PUBLISHED' ? '需要表单专属 SK' : '停用中' }}
               </MangoStatusText>
             </div>
-            <p>自定义页面按表单编码提交；服务端调用需携带当前表单专属 SK。</p>
-            <span class="information-code">POST /information/open/forms/{{ detail?.formCode }}/submit</span>
-            <div class="information-access-actions">
-              <el-button link type="primary" data-access-action="copy-endpoint" @click="copyEndpoint"
-                >复制接口</el-button
-              >
-              <el-button link type="primary" @click="goHosted">查看接入方式</el-button>
+            <p class="information-access-desc">
+              在自己的服务端调用提交接口，用表单专属 SK 鉴权。SK 只放在服务端环境变量中，不得写入浏览器代码。
+            </p>
+
+            <div class="information-api-box">
+              <span class="information-api-method">POST</span>
+              <span class="information-api-url">{{ endpoint() }}</span>
+              <el-button link type="primary" data-access-action="copy-endpoint" @click="copyEndpoint">复制</el-button>
             </div>
-          </div>
+            <div class="information-api-box">
+              <span class="information-api-key">X-Mango-SK</span>
+              <span class="information-api-value">{{ secretVisible ? detail?.serverSecret || '-' : secretText }}</span>
+              <el-button link type="primary" data-secret-action="toggle" @click="secretVisible = !secretVisible">
+                {{ secretVisible ? '隐藏' : '显示' }}
+              </el-button>
+              <el-button link type="primary" data-secret-action="copy" @click="copySecret">复制</el-button>
+            </div>
+
+            <div class="information-access-points">
+              <div class="information-access-point">
+                <h4>不依赖浏览器</h4>
+                <p>服务端直接提交，可接入既有业务系统、批处理任务或第三方系统对接。</p>
+              </div>
+              <div class="information-access-point">
+                <h4>同一套校验</h4>
+                <p>必填、类型与字段白名单与页面方式一致，绕过页面的请求同样会被拦截。</p>
+              </div>
+              <div class="information-access-point">
+                <h4>密钥可轮换</h4>
+                <p>SK 始终显示并可重新生成，重新生成后旧密钥立即失效，限制在当前租户与表单。</p>
+              </div>
+            </div>
+
+            <div class="information-access-actions">
+              <el-button :loading="regenerating" data-action="information.form.regenerate-secret" @click="regenerate">
+                重新生成密钥
+              </el-button>
+            </div>
+
+            <div class="information-fields">
+              <div class="information-section-title">字段配置</div>
+              <div v-if="fields.length" class="information-fields__list">
+                <div v-for="field in fields" :key="field.fieldCode" class="information-fields__row">
+                  <span class="information-fields__index">{{ field.sort }}</span>
+                  <div class="information-fields__main">
+                    <div class="information-fields__title">
+                      <strong>{{ field.fieldName }}</strong>
+                      <span class="information-code">{{ field.fieldCode }}</span>
+                      <MangoStatusText v-if="field.required" tone="danger">必填</MangoStatusText>
+                    </div>
+                    <div class="information-fields__meta">
+                      {{ fieldTypeLabel(field.fieldType)
+                      }}<template v-if="field.placeholder"> · {{ field.placeholder }}</template>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <el-empty v-else description="尚未配置采集项" :image-size="60" />
+            </div>
+          </el-card>
         </div>
       </div>
-    </el-card>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import { MangoDescriptionList, MangoPageBackBar, MangoStatusText } from '@mango/common';
+import InformationFormSurface from '../components/InformationFormSurface.vue';
 import { useInformationApi } from '../composables/useInformationApi';
 import type { InformationFormDetail } from '../api/information';
 import { formatCount, formatDate, formStatusLabel, formStatusTone } from '../domain/status';
@@ -115,10 +190,18 @@ const router = useRouter();
 
 const detail = ref<InformationFormDetail>();
 const loading = ref(false);
+const regenerating = ref(false);
+const secretVisible = ref(false);
 const errorMessage = ref('');
 
 const formId = computed(() => String(route.params.id || ''));
-const fields = computed(() => rulesToFields(parseRules(detail.value?.definitionJson)));
+const rules = computed(() => parseRules(detail.value?.definitionJson));
+const fields = computed(() => rulesToFields(rules.value));
+const previewValues = computed(() => Object.fromEntries(fields.value.map((field) => [field.fieldCode, ''])));
+const secretText = computed(() => {
+  const secret = detail.value?.serverSecret;
+  return secret ? `${secret.slice(0, 8)}••••••••` : '-';
+});
 const hostedUrl = computed(() =>
   detail.value?.formCode ? `${window.location.origin}/#/information/hosted?formCode=${detail.value.formCode}` : '-',
 );
@@ -172,14 +255,40 @@ function openHosted() {
   window.open(hostedUrl.value, '_blank', 'noopener');
 }
 
+function copySecret() {
+  return copyText(detail.value?.serverSecret || '', 'SK 已复制', '浏览器未授权剪贴板，请先点击显示再手动复制');
+}
+
+/** 轮换密钥前二次确认：旧密钥会立即失效，已接入的服务端需要同步替换。 */
+async function regenerate() {
+  regenerating.value = true;
+  try {
+    await ElMessageBox.confirm('重新生成后旧密钥立即失效，已接入的服务端需要同步替换。是否继续？', '重新生成密钥', {
+      type: 'warning',
+      confirmButtonText: '重新生成',
+      cancelButtonText: '取消',
+    });
+    // 接口只返回新密钥，这里同步到详情上，避免为了拿密钥再打一次详情接口
+    const secret = await api.regenerateFormSecret(formId.value);
+    if (detail.value) {
+      detail.value = { ...detail.value, serverSecret: secret };
+    }
+    secretVisible.value = false;
+    ElMessage.success('密钥已重新生成');
+  } catch (error) {
+    if (error !== 'cancel' && error !== 'close') {
+      ElMessage.error(error instanceof Error ? error.message : '密钥生成失败');
+    }
+  } finally {
+    regenerating.value = false;
+  }
+}
+
 function goList() {
   return router.push('/information/forms');
 }
 function goConfig() {
   return router.push(`/information/forms/${formId.value}/config`);
-}
-function goHosted() {
-  return router.push(`/information/forms/${formId.value}/hosted`);
 }
 function goSubmissions() {
   return router.push(`/information/forms/${formId.value}/submissions`);

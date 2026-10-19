@@ -15,7 +15,6 @@ export function registerMangoInformationAdminPages() {
       'information/forms/config': () => import('./views/FormConfigView.vue').then((module) => module.default),
       'information/submissions/index': () => import('./views/SubmissionsView.vue').then((module) => module.default),
       'information/forms/submissions': () => import('./views/SubmissionsView.vue').then((module) => module.default),
-      'information/forms/hosted': () => import('./views/FormHostedView.vue').then((module) => module.default),
       'information/hosted/index': () => import('./views/HostedFormView.vue').then((module) => module.default),
     },
     routes: [
@@ -31,13 +30,6 @@ export function registerMangoInformationAdminPages() {
         component: 'information/forms/config',
         menuName: '表单配置',
         menuCode: 'information:form-config',
-        visible: 0,
-      },
-      {
-        path: '/information/forms/:id/hosted',
-        component: 'information/forms/hosted',
-        menuName: '接入方式',
-        menuCode: 'information:form-hosted',
         visible: 0,
       },
       {

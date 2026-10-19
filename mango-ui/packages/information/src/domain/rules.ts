@@ -1,6 +1,6 @@
 /**
  * 表单定义在存储层使用 form-create 规则 JSON（设计器直接产出），
- * 本模块负责规则与「采集项」视图模型之间的互转，供提交列、脱敏、托管渲染和旧数据兼容使用。
+ * 本模块负责规则与「采集项」视图模型之间的互转，供提交列、展示、托管渲染和旧数据兼容使用。
  */
 
 export interface InformationFieldOption {
@@ -117,21 +117,28 @@ function textProp(rule: FormCreateRule, key: string): string {
   return value === undefined || value === null ? '' : String(value);
 }
 
-/** 把 form-create 控件类型归一为采集项类型，用于脱敏、列标题和展示。 */
+/** 输入框的原生类型与采集项类型的对应关系（与设计器「类型」选项一致）。 */
+const INPUT_NATIVE_TYPES: Record<string, string> = {
+  tel: 'phone',
+  phone: 'phone',
+  mobile: 'phone',
+  email: 'email',
+  url: 'url',
+  password: 'password',
+  number: 'number',
+  date: 'date',
+  time: 'time',
+  month: 'month',
+  'datetime-local': 'datetime',
+  search: 'search',
+};
+
+/** 把 form-create 控件类型归一为采集项类型，用于列标题和展示。 */
 export function normalizeFieldType(rule: FormCreateRule): string {
   const type = String(rule.type || 'input');
   const nativeType = textProp(rule, 'type').toLowerCase();
   if (type === 'input') {
-    if (nativeType === 'tel' || nativeType === 'phone' || nativeType === 'mobile') {
-      return 'phone';
-    }
-    if (nativeType === 'email') {
-      return 'email';
-    }
-    if (nativeType === 'number') {
-      return 'number';
-    }
-    return 'text';
+    return INPUT_NATIVE_TYPES[nativeType] || 'text';
   }
   if (type === 'inputNumber') {
     return 'number';
@@ -421,29 +428,11 @@ export function normalizeDesignerRules(rules: FormCreateRule[]): FormCreateRule[
   return rules;
 }
 
-/** 列表和详情默认脱敏：手机号保留前三后二，邮箱保留首字符与域名。 */
-export function maskSensitiveValue(fieldType: string | undefined, value: unknown): string {
-  if (value === undefined || value === null || value === '') {
-    return '';
-  }
-  const text = Array.isArray(value) ? value.join('、') : String(value);
-  const type = (fieldType || '').toLowerCase();
-  if (type.includes('phone') || type.includes('mobile') || type.includes('tel')) {
-    return text.length <= 4 ? '***' : `${text.slice(0, 3)}****${text.slice(-2)}`;
-  }
-  if (type.includes('email')) {
-    const at = text.indexOf('@');
-    return at <= 1 ? '***' : `${text.slice(0, 1)}***${text.slice(at)}`;
-  }
-  return text;
-}
-
-/** 选择型控件按选项标签展示，其余按脱敏规则展示。 */
 /**
  * 采集值展示规则：
  * - 选择型控件优先显示选项标签；
  * - 多选、子表单、表格表单等数组/对象值序列化为可读文本，避免出现 [object Object]；
- * - 其余按脱敏规则展示。
+ * - 其余按原值展示：提交记录面向有查看权限的角色，手机号等字段不脱敏，便于直接回访。
  */
 export function displayFieldValue(field: InformationFieldDefinition, value: unknown): string {
   if (value === undefined || value === null || value === '') {
@@ -467,7 +456,7 @@ export function displayFieldValue(field: InformationFieldDefinition, value: unkn
   if (typeof value === 'object') {
     return formatComplexValue(value, labels);
   }
-  return maskSensitiveValue(field.fieldType, value);
+  return Array.isArray(value) ? value.join('、') : String(value);
 }
 
 /** 子表单/表格表单等对象值按 `字段: 值` 拼接，保证列表、抽屉和导出都可读。 */

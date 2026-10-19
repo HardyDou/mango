@@ -97,7 +97,7 @@
         </el-table-column>
         <el-table-column label="操作" width="90" fixed="right">
           <template #default="{ row }">
-            <el-button link type="primary" @click.stop="openDrawer(row)">详情</el-button>
+            <el-button link type="primary" data-row-action="process" @click.stop="openDrawer(row)">处理</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -140,7 +140,7 @@
           </div>
         </div>
 
-        <div class="information-note">个人信息仅对拥有提交记录查看权限的角色展示。当前列表已默认脱敏。</div>
+        <div class="information-note">提交记录仅对拥有查看权限的角色开放，字段按原始值展示，便于直接回访。</div>
 
         <div class="information-drawer-remark">
           <label>处理备注</label>
@@ -467,7 +467,7 @@ async function exportRows() {
     link.download = `${form.value?.formCode || 'information'}-submissions-${Date.now()}.csv`;
     link.click();
     URL.revokeObjectURL(url);
-    ElMessage.success(`已导出 ${total.value} 条记录（手机号等个人信息已脱敏）`);
+    ElMessage.success(`已导出 ${total.value} 条记录`);
   } catch (error) {
     ElMessage.error(error instanceof Error ? error.message : '导出失败');
   }

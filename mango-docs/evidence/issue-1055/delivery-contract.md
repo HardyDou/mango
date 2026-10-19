@@ -64,13 +64,13 @@
 
 ### 5.4 菜单、页面与权限变化
 
-- 菜单：`信息采集管理` → `表单管理`（`information:forms`）、`提交记录`（`information:submissions`）；表单详情、设计、接入是表单上下文内的隐藏路由。
-- 页面：表单列表（PG-001）、表单详情（PG-002）、表单设计（PG-003，复用平台表单设计器）、提交记录与处理抽屉（PG-004，独立菜单）、接入方式与托管表单（PG-005）。
+- 菜单：`信息采集管理` → `表单管理`（`information:forms`）、`提交记录`（`information:submissions`）；表单详情、表单设计是表单上下文内的隐藏路由，接入方式已并入详情页，不再单独成页。
+- 页面：表单列表（PG-001，行操作：详情、配置、提交记录、停用、删除）、表单详情与接入方式（PG-002，含模拟浏览器预览和页面/接口两种接入）、表单设计（PG-003，复用平台表单设计器）、提交记录与处理抽屉（PG-004，独立菜单，行操作为「处理」）、托管表单（PG-005，匿名访问）。
 - 权限：后台接口按 `ApiAccess(LOGIN)` 声明并复用 `information:*` 权限码；公开入口按 `PUBLIC` 声明；租户由服务端确定，客户端不得覆盖。
 
 ### 5.5 测试范围
 
-后端 migration 契约、表单保存与唯一性、删除保护、公开提交校验与幂等、SK 校验、提交查询与状态流转、导出脱敏、租户归属；前端 API factory、页面构建、后台页面与匿名托管表单端到端验收；后端与前端门禁。
+后端 migration 契约、表单保存与唯一性、删除保护、公开提交校验与幂等、SK 校验、提交查询与状态流转、导出按原值、租户归属；前端 API factory、页面构建、后台页面与匿名托管表单端到端验收；后端与前端门禁。
 
 ### 5.6 交付台账
 
@@ -84,7 +84,7 @@
 | TASK-006 | SAC-006 | 历史提交按字段快照可读 | 提交时写 `information_submission_snapshot` | `InformationSubmissionSnapshotEntity`、`V1__init_mango_information.sql` | `mango/mango-platform/mango-information/README.md` | `mango-docs/designs/issue-1055-information-collection/technical-design.md` | `mango-ui/apps/mango-admin/e2e/specs/information-collection.spec.ts` | `mango-docs/evidence/issue-1055/acceptance-evidence.md` | 数据库与接口核对 | DONE | `mango-docs/evidence/issue-1055/acceptance-evidence.md` |
 | TASK-007 | SAC-007 | 多租户隔离，客户端不得覆盖租户 | 服务端按表单解析租户并设置上下文 | `InformationFormService`、`InformationSubmissionService` | `mango/mango-platform/mango-information/README.md` | `mango-docs/designs/issue-1055-information-collection/technical-design.md` | `mango-ui/apps/mango-admin/e2e/specs/information-collection.spec.ts` | `mango-docs/evidence/issue-1055/acceptance-evidence.md` | 数据库租户列核对 | DONE | `mango-docs/evidence/issue-1055/acceptance-evidence.md` |
 | TASK-008 | SAC-008 | 菜单与公开 API 资源随启动同步 | Resource Registry `AUTH_MENU` 与 `API_RESOURCE` 声明 | `information-common-menu.json`、`information-common-public-api.yml` | `mango/mango-platform/mango-information/README.md` | `mango-docs/designs/issue-1055-information-collection/technical-design.md` | `mango-ui/apps/mango-admin/e2e/specs/information-collection.spec.ts` | `mango-docs/evidence/issue-1055/acceptance-evidence.md` | 启动后菜单与匿名接口核对 | DONE | `mango-docs/evidence/issue-1055/acceptance-evidence.md` |
-| TASK-009 | SAC-010 | 导出当前筛选结果并默认脱敏 | 服务层组装 CSV，手机号/邮箱在列表、详情和导出统一脱敏 | `InformationSubmissionService.exportCsv`、`FormSubmissionsView.vue`、`domain/fields.ts` | `mango-ui/packages/information/README.md` | `mango-docs/designs/issue-1055-information-collection/technical-design.md` | `mango-ui/apps/mango-admin/e2e/specs/information-collection.spec.ts` | `mango-docs/evidence/issue-1055/acceptance-evidence.md` | 接口验收（脱敏结果） | DONE | `mango-docs/evidence/issue-1055/acceptance-evidence.md` |
+| TASK-009 | SAC-010 | 导出当前筛选结果（不脱敏） | 服务层组装 CSV，列表、抽屉和导出统一按原值展示 | `InformationSubmissionService.exportCsv`、`FormSubmissionsView.vue`、`domain/fields.ts` | `mango-ui/packages/information/README.md` | `mango-docs/designs/issue-1055-information-collection/technical-design.md` | `mango-ui/apps/mango-admin/e2e/specs/information-collection.spec.ts` | `mango-docs/evidence/issue-1055/acceptance-evidence.md` | 接口验收（脱敏结果） | DONE | `mango-docs/evidence/issue-1055/acceptance-evidence.md` |
 | TASK-010 | SAC-011 | 表单与提交记录失败语义 | 重复编码、已关闭、有记录不可删除均返回业务错误码 | `InformationCode`、`InformationFormService`、`InformationSubmissionService` | `mango/mango-platform/mango-information/README.md` | `mango-docs/designs/issue-1055-information-collection/technical-design.md` | `mango-ui/apps/mango-admin/e2e/specs/information-collection.spec.ts` | `mango-docs/evidence/issue-1055/acceptance-evidence.md` | 接口验收（失败分支） | DONE | `mango-docs/evidence/issue-1055/acceptance-evidence.md` |
 | TASK-011 | SAC-012 | 前端包边界、原型页面结构与架构门禁 | FE2 依赖 FE1 `@mango/admin-extension`；五个原型页面按原型结构实现；不新增 FE2→FE3 例外 | `packages/information/package.json`、`vite.config.ts`、`src/views`、`src/components`、`src/domain` | `mango-ui/packages/information/README.md` | `mango-docs/designs/issue-1055-information-collection/technical-design.md` | `mango-ui/apps/mango-admin/e2e/specs/information-collection.spec.ts` | `mango-docs/evidence/issue-1055/acceptance-evidence.md` | 架构与边界检查 | DONE | `mango-docs/evidence/issue-1055/acceptance-evidence.md` |
 | TASK-012 | SAC-001 | 后端字段校验、租户、SK 与状态的自动化集成测试 | H2 MySQL 兼容模式集成测试覆盖服务层真实持久化链路 | `mango-platform/mango-information/mango-information-core/src/test/java/io/mango/information/core/service/impl/InformationServiceIntegrationTest.java` | `mango/mango-platform/mango-information/README.md` | `mango-docs/designs/issue-1055-information-collection/implementation-plan.md` | `mango-ui/apps/mango-admin/e2e/specs/information-collection.spec.ts` | `mango-docs/evidence/issue-1055/acceptance-evidence.md` | `mvn -pl mango-platform/mango-information/mango-information-core test` | DONE | `mango-docs/evidence/issue-1055/acceptance-evidence.md` |
@@ -99,7 +99,7 @@
 | TC-004 | AC-004 | 服务端 SK 校验与失败语义 | P0 | API | MANUAL | 错误与正确 SK | 错误码 `105507` | `POST /information/open/forms/submit` | `acceptance-evidence.md` | MANUAL |
 | TC-005 | AC-005 | 必填、未知字段与幂等提交 | P0 | API | MANUAL | 缺必填、未知字段、重复幂等键 | 错误码 `105505` 与同一记录ID | 同上 | `acceptance-evidence.md` | MANUAL |
 | TC-006 | AC-006 | 处理状态流转与已关闭限制 | P0 | API | MANUAL | COMPLETED/CLOSED/PROCESSING | 错误码 `105506` | `PUT /information/submissions/process` | `acceptance-evidence.md` | MANUAL |
-| TC-007 | AC-007 | 导出当前筛选结果与默认脱敏 | P1 | API | MANUAL | 手机号字段 | CSV 脱敏 `138****00` | `GET /information/submissions/export` | `acceptance-evidence.md` | MANUAL |
+| TC-007 | AC-007 | 导出当前筛选结果（不脱敏） | P1 | API | MANUAL | 手机号字段 | CSV 原值 `13800138000` | `GET /information/submissions/export` | `acceptance-evidence.md` | MANUAL |
 | TC-008 | AC-008 | 字段定义变更后历史记录快照 | P1 | API | MANUAL | 修改定义后读旧记录 | 快照表与提交值对齐 | 数据库核对 | `acceptance-evidence.md` | MANUAL |
 | TC-009 | AC-009 | 多租户隔离与租户归属 | P0 | API | MANUAL | 匿名提交 | `tenant_id` 由服务端确定 | 数据库核对 | `acceptance-evidence.md` | MANUAL |
 | TC-010 | AC-010 | 后端自动化集成测试全覆盖 | P0 | API | AUTO | H2 MySQL 兼容内存库、两租户 | 服务层真实 Mapper 与租户拦截器 | `mvn -pl mango-platform/mango-information/mango-information-core test` | `acceptance-evidence.md` | AUTOMATED |
@@ -113,7 +113,7 @@
 | BASE-003 | TASK-003 | TC-003, TC-006 | `mango-ui/apps/mango-admin/e2e/specs/information-collection.spec.ts` | 同上 | Chromium | 真实后端 | `tenantId=1` / `admin` | PASS：提交记录与处理状态可用 | 无 | `mango-docs/evidence/issue-1055/screenshots/05-submission-list.png` | 无 |
 | BASE-004 | TASK-004 | TC-002 | `mango-ui/apps/mango-admin/e2e/specs/information-collection.spec.ts` | 同上（匿名会话） | Chromium | 真实后端 | 匿名访客 | PASS：匿名打开并提交成功 | 无 | `mango-docs/evidence/issue-1055/screenshots/08-hosted-submit-success.png` | 无 |
 | BASE-005 | TASK-005 | TC-004, TC-005, TC-009 | `mango-ui/apps/mango-admin/e2e/specs/information-collection.spec.ts` | 后端接口实测（curl） | 真实后端 | 真实库与表单 | 匿名与服务端 | PASS：校验、幂等、SK 与租户归属符合设计 | 无 | `mango-docs/evidence/issue-1055/acceptance-evidence.md` | 无 |
-| BASE-006 | TASK-006 | TC-007, TC-008 | `mango-ui/apps/mango-admin/e2e/specs/information-collection.spec.ts` | 后端接口实测（curl） | 真实后端 | 真实库与表单 | `tenantId=1` / `admin` | PASS：导出脱敏与快照落库 | 无 | `mango-docs/evidence/issue-1055/acceptance-evidence.md` | 无 |
+| BASE-006 | TASK-006 | TC-007, TC-008 | `mango-ui/apps/mango-admin/e2e/specs/information-collection.spec.ts` | 后端接口实测（curl） | 真实后端 | 真实库与表单 | `tenantId=1` / `admin` | PASS：导出原值与快照落库 | 无 | `mango-docs/evidence/issue-1055/acceptance-evidence.md` | 无 |
 | BASE-007 | TASK-011 | TC-001, TC-003 | `mango-ui/apps/mango-admin/e2e/specs/information-collection.spec.ts` | `pnpm architecture:check && pnpm frontend-boundaries:check && pnpm component-contracts:check && pnpm admin:styles:check` | mango-ui workspace | 不适用 | 不适用 | PASS：架构与门禁通过 | 无 | `mango-docs/evidence/issue-1055/acceptance-evidence.md` | 无 |
 | BASE-008 | TASK-012 | TC-010 | `mango-platform/mango-information/mango-information-core/src/test/java/io/mango/information/core/service/impl/InformationServiceIntegrationTest.java` | `mvn -pl mango-platform/mango-information/mango-information-core test` | JDK 21 / H2 MySQL 模式 | 内存库 `information`，两租户 | `tenantId=1`、`tenantId=2` | PASS：8 个用例全部通过 | 无 | `mango-docs/evidence/issue-1055/acceptance-evidence.md` | 无 |
 
@@ -127,7 +127,7 @@
 | TASK-005 | TC-004 | `POST /information/open/forms/submit` | SK 校验 | 错误 SK / 正确 SK | 错误 SK 返回 `105507`，正确 SK 写入提交 | 非 UI | 匿名接口 200 + 业务错误码 | `acceptance-evidence.md` | DONE |
 | TASK-005 | TC-005 | `POST /information/open/forms/submit` | 必填、未知字段与幂等 | 缺必填、未知字段、重复幂等键 | 返回 `105505`；重复幂等键返回同一记录ID | 非 UI | 匿名接口 200 + 业务错误码 | `acceptance-evidence.md` | DONE |
 | TASK-003 | TC-006 | `PUT /information/submissions/process` | 状态流转与已关闭限制 | COMPLETED/CLOSED/PROCESSING | 前两次成功，已关闭再处理返回 `105506` | 非 UI | 管理接口 200 + 业务错误码 | `acceptance-evidence.md` | DONE |
-| TASK-009 | TC-007 | `GET /information/submissions/export` | 导出与脱敏 | 手机号字段 | CSV 仅含当前筛选记录，手机号脱敏为 `138****00` | 非 UI | 管理接口 200 | `acceptance-evidence.md` | DONE |
+| TASK-009 | TC-007 | `GET /information/submissions/export` | 导出按原值 | 手机号字段 | CSV 仅含当前筛选记录，手机号按原值输出 `13800138000` | 非 UI | 管理接口 200 | `acceptance-evidence.md` | DONE |
 | TASK-007 | TC-009 | `information_submission` 表 | 租户归属 | 匿名提交 | `tenant_id=1` 由服务端写入 | 非 UI | 不适用 | `acceptance-evidence.md` | DONE |
 | TASK-008 | TC-001 | `/authorization/menus/user` 与 `GET /information/open/forms/detail` | 菜单与公开资源 | 管理员与匿名 | 菜单含 `information:forms`/`information:submissions`；公开接口匿名 200 | 菜单可见 | 接口 200 | `acceptance-evidence.md` | DONE |
 | TASK-012 | TC-010 | `InformationServiceIntegrationTest` | 服务层自动化集成测试 | H2 MySQL 兼容内存库、两租户 | 8 个用例覆盖 migration、校验、快照、幂等、SK、状态、导出与租户隔离 | 服务层测试，无页面交互 | 不走 HTTP，断言持久化与异常语义 | `mvn -pl mango-platform/mango-information/mango-information-core test` | DONE |

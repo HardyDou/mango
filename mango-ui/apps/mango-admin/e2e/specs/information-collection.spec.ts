@@ -102,25 +102,77 @@ test.describe('@p0 @information 信息采集管理', () => {
     await goBack(page);
     await expect(page.locator('[data-page="information.forms"]')).toBeVisible();
 
-    // 接入方式同样从列表进入，返回也直接回列表
+    // 列表行操作只保留 详情、配置、提交记录、停用、删除
     await page.getByPlaceholder('名称/编码').first().fill(formCode);
     await page.getByRole('button', { name: '查询', exact: true }).click();
     const hostedRow = page.locator('.el-table__body tr', { hasText: formCode }).first();
     await expect(hostedRow).toBeVisible();
-    await hostedRow.getByRole('button', { name: '接入' }).click();
-    await expect(page.locator('[data-page="information.form.hosted"]')).toBeVisible();
-    await expect(page.getByText('使用方式 ② · 托管页面')).toBeVisible();
+    for (const label of ['详情', '配置', '提交记录', '停用', '删除']) {
+      await expect(hostedRow.getByRole('button', { name: label, exact: true })).toBeVisible();
+    }
+    await expect(hostedRow.getByRole('button', { name: '接入', exact: true })).toHaveCount(0);
+
+    // 接入内容已合并进详情页，不再有独立接入页面
+    await hostedRow.getByRole('button', { name: '详情', exact: true }).click();
+    await expect(page.locator('[data-page="information.form.detail"]')).toBeVisible();
+    await expect(page.locator('[data-surface="information.form.access"]')).toBeVisible();
+    // 接入方式明确分为页面与接口两种，且左侧页面、右侧接口
+    await expect(page.getByText('方式 ① · 页面接入')).toBeVisible();
+    await expect(page.getByText('方式 ② · 接口接入')).toBeVisible();
     await expect(page.getByText('无需密钥')).toBeVisible();
     await expect(page.getByText('需要表单专属 SK')).toBeVisible();
     await expect(page.locator('.information-browser-url')).toContainText('/#/information/hosted?formCode=');
+    await expect(page.locator('[data-access-method="page"]')).toContainText(formCode);
+    await expect(page.locator('[data-access-method="api"]')).toContainText(
+      `/information/open/forms/${formCode}/submit`,
+    );
     await expect(page.locator('[data-secret-action="copy"]')).toBeVisible();
     await expect(page.locator('.information-api-value')).toContainText('••••');
     await page.locator('[data-secret-action="toggle"]').click();
     await expect(page.locator('.information-api-value')).not.toContainText('••••');
-    await shot(page, '04-form-hosted.png');
+
+    // 上基础信息，下左页面方式（含模拟浏览器预览、字段）右接口方式
+    const summaryBox = await page
+      .locator('[data-page="information.form.detail"] .information-card')
+      .first()
+      .boundingBox();
+    const previewBox = await page.locator('[data-surface="information.hosted.preview"]').boundingBox();
+    const pageBox = await page.locator('[data-access-method="page"]').boundingBox();
+    const apiBox = await page.locator('[data-access-method="api"]').boundingBox();
+    expect(summaryBox).not.toBeNull();
+    expect(previewBox).not.toBeNull();
+    expect(pageBox).not.toBeNull();
+    expect(apiBox).not.toBeNull();
+    // 基础信息在最上面，下面两栏并排：左页面、右接口
+    expect(summaryBox!.y).toBeLessThan(pageBox!.y);
+    expect(pageBox!.x).toBeLessThan(apiBox!.x);
+    expect(Math.abs(pageBox!.y - apiBox!.y)).toBeLessThan(4);
+    // 页面预览属于左栏，字段配置属于右栏
+    expect(previewBox!.x).toBeGreaterThanOrEqual(pageBox!.x);
+    expect(previewBox!.x).toBeLessThan(apiBox!.x);
+    await expect(page.locator('[data-access-method="api"]').getByText('字段配置')).toBeVisible();
+    await expect(page.locator('[data-access-method="page"]').getByText('字段配置')).toHaveCount(0);
+    await shot(page, '04-form-detail-access.png');
 
     await goBack(page);
     await expect(page.locator('[data-page="information.forms"]')).toBeVisible();
+  });
+
+  // 平台设计器默认只给「输入框」6 个原生类型，采集常用的手机号/邮箱/网址等在补丁后才可选
+  test('表单设计的输入框类型覆盖采集常用类型', async ({ page }) => {
+    await login(page);
+    await page.goto(`/#/information/forms/${formId}/config`);
+    const designer = page.locator('[data-surface="information.form.designer"]');
+    await expect(designer).toBeVisible({ timeout: 20000 });
+
+    await designer.locator('.fc-form-title', { hasText: '姓名' }).first().click({ force: true });
+    await designer.locator('.el-form-item', { hasText: '类型' }).first().locator('.el-select').click();
+    const optionLocator = page.locator('.el-select-dropdown__item:visible');
+    await expect(optionLocator.first()).toBeVisible();
+    const typeOptions = await optionLocator.allInnerTexts();
+    for (const option of ['文本', '手机号', '邮箱', '网址', '密码', '数字', '日期', '时间']) {
+      expect(typeOptions).toContain(option);
+    }
   });
 
   test('提交记录是独立菜单入口且不依赖表单详情', async ({ page }) => {
@@ -175,8 +227,11 @@ test.describe('@p0 @information 信息采集管理', () => {
     await expect(page.locator('[data-filter="form"]')).toContainText('e2e-submissions', { timeout: 30000 });
     await shot(page, '05-submission-list.png');
 
-    // 行点击也能打开抽屉
-    await page.locator('.el-table__body tr').first().click();
+    // 行操作是「处理」，点击后打开处理抽屉
+    const firstRow = page.locator('.el-table__body tr').first();
+    await expect(firstRow.getByRole('button', { name: '处理', exact: true })).toBeVisible();
+    await expect(firstRow.getByRole('button', { name: '详情', exact: true })).toHaveCount(0);
+    await firstRow.getByRole('button', { name: '处理', exact: true }).click();
     const drawer = page.locator('.el-drawer');
     await expect(drawer.getByText('提交详情')).toBeVisible();
     await expect(drawer.getByText('处理备注')).toBeVisible();
@@ -452,16 +507,20 @@ test.describe('@p0 @information 信息采集管理', () => {
       }
     });
     const token = await page.evaluate(() => sessionStorage.getItem('MANGO_TOKEN'));
-    const created = await page.request.post('/api/information/forms/save', {
-      headers: { Authorization: `Bearer ${token}`, 'X-Mango-Tenant-Id': '1' },
+    const headers = { Authorization: `Bearer ${token}`, 'X-Mango-Tenant-Id': '1' };
+    // 编码唯一，用时间戳后缀保证用例可重复执行，结束时再清理掉
+    const code = `e2e-subform-${Date.now().toString(36)}`;
+    const saved = await page.request.post('/api/information/forms/save', {
+      headers,
       data: {
-        formCode: 'e2e-subform',
+        formCode: code,
         formName: 'E2E 子表单表单',
         definitionJson: JSON.stringify(legacyDefinition),
         status: 'PUBLISHED',
       },
     });
-    const createdId = (await created.json()).data.id ?? (await created.json()).data;
+    const createdId = (await saved.json()).data;
+    expect(createdId).toBeTruthy();
 
     await page.goto(`/#/information/forms/${createdId}/config`);
     const designer = page.locator('[data-surface="information.form.designer"]');
@@ -471,6 +530,8 @@ test.describe('@p0 @information 信息采集管理', () => {
     await expect(designer).toContainText('成员明细');
     await expect(designer).toContainText('费用明细');
     expect(errors.filter((item) => item.includes('Cannot read properties'))).toEqual([]);
+
+    await page.request.delete('/api/information/forms', { headers, params: { id: createdId } });
   });
 
   test('表单详情入口可直达提交记录并预选当前表单', async ({ page }) => {

@@ -71,7 +71,6 @@
           <template #default="{ row }">
             <el-button link type="primary" @click="openDetail(row)">详情</el-button>
             <el-button link type="primary" @click="openConfig(row)">配置</el-button>
-            <el-button link type="primary" @click="openHosted(row)">接入</el-button>
             <el-button link type="primary" @click="openSubmissions(row)">提交记录</el-button>
             <el-button v-if="row.status === 'PUBLISHED'" link type="warning" @click="toggleStatus(row, 'DISABLED')">
               停用
@@ -260,9 +259,6 @@ function openDetail(row: InformationForm) {
 }
 function openConfig(row: InformationForm) {
   return router.push(`/information/forms/${row.id}/config`);
-}
-function openHosted(row: InformationForm) {
-  return router.push(`/information/forms/${row.id}/hosted`);
 }
 function openSubmissions(row: InformationForm) {
   return router.push(`/information/forms/${row.id}/submissions`);

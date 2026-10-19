@@ -104,6 +104,54 @@ const jsonVisible = ref(false);
 const designerRef = ref<InstanceType<typeof FcDesigner>>();
 const designerConfig = { showSaveBtn: false, showJsonPreview: false, showDevice: false, showLanguage: false };
 
+/**
+ * 平台设计器给「输入框」的「类型」只提供 6 个原生类型，采集场景常用的
+ * 手机号、邮箱、网址、密码都不在列表里，只能手填值，这里在其基础上补齐。
+ */
+const INPUT_TYPE_OPTIONS = [
+  { label: '文本', value: 'text' },
+  { label: '手机号', value: 'tel' },
+  { label: '邮箱', value: 'email' },
+  { label: '网址', value: 'url' },
+  { label: '密码', value: 'password' },
+  { label: '数字', value: 'number' },
+  { label: '日期', value: 'date' },
+  { label: '时间', value: 'time' },
+  { label: '月份', value: 'month' },
+  { label: '日期时间', value: 'datetime-local' },
+  { label: '搜索', value: 'search' },
+];
+
+interface DesignerInputPropsItem {
+  field?: string;
+  options?: Array<{ label: string; value: string }>;
+}
+
+/**
+ * 设计器没有公开「改某个控件属性项」的 API，`addComponent` 会整体替换控件配置并把控件
+ * 再插一次左侧菜单，因此这里只包装实例上已注册的 `input` 配置，替换其 props 生成函数。
+ * 全部使用可选链：设计器升级导致结构变化时最多补不齐选项，不会让页面报错。
+ */
+function extendInputTypeOptions() {
+  const internals = designerRef.value as unknown as {
+    dragRuleList?: Record<string, { props?: (rule: unknown, ctx: unknown) => DesignerInputPropsItem[] }>;
+  };
+  const inputRule = internals?.dragRuleList?.input;
+  const originalProps = inputRule?.props;
+  if (!inputRule || !originalProps) {
+    return;
+  }
+  inputRule.props = (rule, ctx) => {
+    const items = originalProps(rule, ctx) || [];
+    items
+      .filter((item) => item.field === 'type')
+      .forEach((item) => {
+        item.options = INPUT_TYPE_OPTIONS.map((option) => ({ ...option }));
+      });
+    return items;
+  };
+}
+
 const detail = ref<InformationFormDetail>();
 const designerDirty = ref(false);
 const savedSignature = ref('');
@@ -157,6 +205,7 @@ function applyRulesToDesigner() {
   if (!designerRef.value) {
     return;
   }
+  extendInputTypeOptions();
   designerRef.value.setRule(toDesignerRules(rules.value) as never);
 }
 

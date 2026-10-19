@@ -18,7 +18,7 @@
 | 公开文件上传 | 匿名托管表单先领票据再上传，文件保存到 mango-file | 票据 `POST /information/open/forms/{formCode}/upload-ticket`；上传 `POST .../files`（`X-Mango-Upload-Ticket` 头）；预览 `GET .../files/preview?id=` |
 | 提交记录 | 独立菜单入口；固定列 + 当前表单动态采集项列 + 操作列 | 后台页面 `/information/submissions`；`GET /information/submissions/page` |
 | 提交处理 | 更新为待处理、处理中、已完成、已关闭并写备注 | `PUT /information/submissions/process` |
-| 导出 | 导出当前筛选结果，手机号与邮箱默认脱敏 | `GET /information/submissions/export` |
+| 导出 | 导出当前筛选结果，字段按原始值输出（不脱敏） | `GET /information/submissions/export` |
 
 ## 3. 接入方式
 
