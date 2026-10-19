@@ -62,15 +62,39 @@ class CmsSiteServiceBehaviorTest {
     }
 
     @Test
-    void anonymousResolve_rejectsSiteCodeAndRequiresDomain() {
+    void anonymousResolve_acceptsSiteCode() {
+        CmsSiteEntity site = site(10L, "tenant-a", "main", "www.example.test");
+        when(siteMapper.selectList(any())).thenReturn(List.of(site));
         CmsSiteService service = service(null);
-        SiteResolveQuery query = new SiteResolveQuery();
-        query.setSiteCode("main");
 
-        assertThatThrownBy(() -> service.resolveSite(query))
+        SiteResolveVO result = service.resolveSite(siteCodeQuery("main"));
+
+        assertThat(result)
+                .extracting(SiteResolveVO::getSiteId, SiteResolveVO::getSiteCode)
+                .containsExactly(10L, "main");
+        verify(siteMapper).selectList(any());
+    }
+
+    @Test
+    void anonymousResolve_requiresSiteCodeOrDomain() {
+        CmsSiteService service = service(null);
+
+        assertThatThrownBy(() -> service.resolveSite(new SiteResolveQuery()))
                 .isInstanceOf(BizException.class)
-                .hasMessage("匿名站点解析必须提供域名");
+                .hasMessage("站点编码或域名不能为空");
         verify(siteMapper, never()).selectList(any());
+    }
+
+    @Test
+    void anonymousResolve_rejectsAmbiguousSiteCodeAcrossTenants() {
+        when(siteMapper.selectList(any())).thenReturn(List.of(
+                site(1L, "tenant-a", "main", "a.example.test"),
+                site(2L, "tenant-b", "main", "b.example.test")));
+        CmsSiteService service = service(null);
+
+        assertThatThrownBy(() -> service.resolveSite(siteCodeQuery("main")))
+                .isInstanceOf(BizException.class)
+                .hasMessage("站点不存在或不唯一");
     }
 
     @Test
