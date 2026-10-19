@@ -1,6 +1,7 @@
 package io.mango.information.api.command;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -12,6 +13,8 @@ import java.util.Map;
 
 /** 公开或服务端信息采集提交命令。 */
 @Data
+@SuppressFBWarnings(value = {"EI_EXPOSE_REP", "EI_EXPOSE_REP2"},
+        justification = "请求体 DTO：字段值表即绑定目标，按平台 DTO 约定不做额外拷贝")
 public class SubmitInformationCommand implements Serializable {
     @NotBlank(message = "表单编码不能为空")
     @Size(max = 64, message = "表单编码不能超过64个字符")
