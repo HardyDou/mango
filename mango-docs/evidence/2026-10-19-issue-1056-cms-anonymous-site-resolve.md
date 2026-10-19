@@ -17,7 +17,7 @@
 
 - 目标：匿名调用 `GET /cms/open/sites/resolve` 时可使用 `siteCode` 或 `domain` 二选一解析启用站点，消除 `匿名站点解析必须提供域名` 与 `匿名站点解析不能使用站点编码` 两条限制。
 - 成功条件：匿名 `siteCode` 能解析唯一启用站点；`siteCode` 与 `domain` 同时缺失时返回 `站点编码或域名不能为空`；匿名跨租户存在同 `siteCode` 时返回 `站点不存在或不唯一`；匿名 `domain` 解析结果与错误消息不变；解析结果仍绑定目标站点 `tenantId`；CMS 后端测试通过。
-- 处理范围：`CmsSiteService.resolveSiteEntity` 匿名校验、`CmsSupportTest`、`CmsSiteServiceBehaviorTest`、`mango-cms/README.md` 排查说明、本记录。
+- 处理范围：`CmsSiteService.resolveSiteEntity` 匿名校验、`CmsSupportTest`、`CmsSiteServiceBehaviorTest`、`CmsSiteResolveHttpContractTest`、`mango-cms/README.md` 排查说明、本记录。
 - 不处理范围：不新增 `cms_site_domain` 多域名映射表和站点表单；不改 `@mango/site-shell` 前端解析逻辑；不改 `CmsSiteController` 路由、`@ApiAccess` 放行路径、权限码或数据库结构。
 
 ## 3. 可观察系统要求
@@ -45,14 +45,16 @@
 |---|---|---|---|---|
 | IM-001 | TD-001 | 1 | `CmsSiteService.java` | 移除 `validateResolveScope` 方法及其调用，匿名与有租户解析共用唯一性校验 |
 | IM-002 | TD-001, TD-003 | 2 | `CmsSupportTest.java`、`CmsSiteServiceBehaviorTest.java` | 删除已失效校验测试，新增匿名 `siteCode` 成功、参数缺失、跨租户歧义三个用例 |
-| IM-003 | TD-004 | 3 | `mango/mango-platform/mango-cms/README.md` | 快速开始与问题排查说明 `domain`/`siteCode` 二选一及匿名歧义语义 |
-| IM-004 | TD-004 | 4 | 本记录 | 目标、决定、验证证据和剩余风险可追溯 |
+| IM-003 | TD-001, TD-002 | 3 | `mango-cms-starter/.../CmsSiteResolveHttpContractTest.java` | 新增 `GET /cms/open/sites/resolve` MockMvc 接口测试：匿名 `siteCode` 成功、缺参 400、跨租户歧义 400 |
+| IM-004 | TD-004 | 4 | `mango/mango-platform/mango-cms/README.md` | 快速开始与问题排查说明 `domain`/`siteCode` 二选一及匿名歧义语义 |
+| IM-005 | TD-004 | 5 | 本记录 | 目标、决定、验证证据和剩余风险可追溯 |
 
 ## 6. 验收映射与结果
 
 | 要求 ID | 验证方式 | 命令或步骤 | 结果 | 证据 |
 |---|---|---|---|---|
 | SR-001, SR-002, SR-003, SR-004, SR-005 | 定向单元测试（M10） | `mvn -f mango/mango-platform/mango-cms/pom.xml test` | PASS：CMS 四模块全部通过；`mango-cms-core` 27 条（`CmsSiteServiceBehaviorTest` 11、`CmsSupportTest` 3、`CmsAdminServiceSecurityTest` 11、`CmsMigrationContractTest` 2），失败/错误/跳过 0 | `mango-cms-core/target/surefire-reports/` 各 `*.txt` |
+| SR-001, SR-002, SR-003 | HTTP 接口测试（M12） | 同上命令，`CmsSiteResolveHttpContractTest` 经 MockMvc 调用 `GET /cms/open/sites/resolve` | PASS：匿名 `siteCode` 返回 `success=true`/`code=200`/`data.siteCode=main`；缺参返回 `code=400`/`站点编码或域名不能为空`；跨租户歧义返回 `code=400`/`站点不存在或不唯一`，3/3 | `mango-cms-starter/target/surefire-reports/io.mango.cms.starter.controller.CmsSiteResolveHttpContractTest.txt` |
 | SR-004 | 域名解析行为回归 | 同上，`resolveSite_returnsTheSingleEnabledDomainSite`、`resolveSite_rejectsMissingOrAmbiguousSite` | PASS | 同上 |
 | SR-001, SR-002, SR-003 | 修复前失效基线 | 修复前 `CmsSupportTest.validateResolveScope_匿名解析只能使用域名` 断言 `匿名站点解析不能使用站点编码`；修复后该断言删除并由 `anonymousResolve_acceptsSiteCode` 取代 | PASS：新用例在旧实现下会抛 `匿名站点解析必须提供域名` | `git diff` 中删除的旧断言 |
 | 静态编译（M09） | 编译与测试执行 | 同上命令完成 `mango-cms-api`/`core`/`starter`/`starter-remote` 编译 | PASS | Maven 构建输出与 surefire 报告 |
@@ -60,6 +62,6 @@
 ## 7. 例外与剩余风险
 
 - 未修改已批准的 `mango-docs/designs/cms-architecture-debt/technical-design.md`：其 `SEC-002`、`API-003`、`TC-002` 记录的“匿名只能按域名解析”是那次债务治理任务的状态；该 TDD 已被 `implementation-plan.md` 的 `upstreamDocumentHash` 锁定，就地修改会破坏生命周期 handoff。本记录以 TD-004 明确取代该口径。
-- 未执行真实浏览器或真实后端 HTTP 验收（M13/M12）：本改动不涉及 UI，且 `CmsSiteController` 路由与 query 绑定未变化，行为变化由 `mango-cms-core` 服务层用例观察；HTTP 契约由既有 `CmsControllerContractTest` 路由断言保护。
+- 未执行真实浏览器或真实后端 HTTP 验收（M13）：本改动无 UI，接口行为已由 `CmsSiteResolveHttpContractTest` 在 MockMvc 层真实调用 `CmsSiteController` + `CmsSiteService` 证明；未启动真实 MySQL 后端复测匿名 `siteCode` 全链路。
 - 匿名 `siteCode` 在多个租户使用相同编码时返回 `站点不存在或不唯一`，与 `domain` 匿名解析的歧义语义一致；平台不新增“按租户域名绑定 siteCode”的消歧能力，需要多入口访问同一站点时由业务侧统一使用 `siteCode` 或在单租户内保证唯一。
 - 发布：本修复属 Maven 平台物料，随下一批 Maven 版本发布；本记录不声明已发布。
