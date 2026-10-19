@@ -152,6 +152,22 @@ test.describe('@p0 @information 信息采集管理', () => {
     expect(previewBox!.x).toBeLessThan(apiBox!.x);
     await expect(page.locator('[data-access-method="api"]').getByText('字段配置')).toBeVisible();
     await expect(page.locator('[data-access-method="page"]').getByText('字段配置')).toHaveCount(0);
+    // 左栏给页面地址、页面效果与嵌入代码
+    await expect(page.locator('[data-access-method="page"] .information-browser-url')).toContainText('formCode=');
+    await expect(page.locator('[data-sample="embed"]')).toContainText('<iframe');
+    await expect(page.locator('[data-sample="embed"]')).toContainText(`formCode=${formCode}`);
+    // 右栏给接口地址、SK 与多语言接入示例
+    for (const label of ['cURL', 'Postman', 'Java', 'JavaScript', 'Python']) {
+      await expect(
+        page.locator('.information-code-tabs .el-tabs__item').filter({ hasText: new RegExp(`^${label}$`) }),
+      ).toBeVisible();
+    }
+    await expect(page.locator('[data-sample="curl"]')).toContainText('X-Mango-SK');
+    await page
+      .locator('.information-code-tabs .el-tabs__item')
+      .filter({ hasText: /^Python$/ })
+      .click();
+    await expect(page.locator('[data-sample="python"]')).toContainText('requests.post');
     await shot(page, '04-form-detail-access.png');
 
     await goBack(page);

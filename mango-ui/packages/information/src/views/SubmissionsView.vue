@@ -65,7 +65,7 @@
         :data="rows"
         row-key="id"
         highlight-current-row
-        empty-text="请选择表单后查看提交记录"
+        :empty-text="emptyText"
         @row-click="openDrawer"
       >
         <el-table-column label="记录ID" width="206" fixed="left" show-overflow-tooltip>
@@ -214,6 +214,9 @@ const query = reactive({
   startTime: '' as string,
   endTime: '' as string,
 });
+/** 没选表单时提示去选，选了但没数据时说明该表单确实还没有提交。 */
+const emptyText = computed(() => (query.formId ? '该表单暂无提交记录' : '请选择表单后查看提交记录'));
+
 const timeRange = ref<[string, string] | null>(null);
 /** 常用时间窗口，减少手工选择。 */
 const timeShortcuts = [

@@ -50,6 +50,8 @@
 | TASK-018 | TC-016 | `/#/information/forms/:id/detail` | 详情页按「上基础信息 / 下左页面・右接口」布局 | 表单 `customer-contact` | 顶部为表单摘要卡片（名称、编码、状态、6 项描述表）；下方左右两栏，左栏「方式 ① · 页面接入」含用法说明、免登录地址、复制按钮与模拟浏览器预览，右栏「方式 ② · 接口接入」含用法说明、`POST` 路径、`X-Mango-SK` 与字段配置 | 两栏并排且左页面右接口，预览在左栏内，字段配置只在右栏出现 | 接口 HTTP 200 | `screenshots/02-form-detail.png` | DONE |
 | TASK-019 | TC-017 | `/#/information/forms/:id/config` | 输入框「类型」覆盖采集常用类型 | 平台设计器默认只提供 6 个原生类型 | 在平台默认（文字/数字/时间/日期/月份/日期时间）之外补齐「手机号、邮箱、网址、密码、搜索」，共 11 项 | 属性面板「类型」下拉可看到并按业务选择 | 平台设计器实例内包装，不改动其它模块 | `pnpm --filter mango-admin exec playwright test e2e/specs/information-collection.spec.ts` | DONE |
 | TASK-020 | TC-018 | 提交记录列表、处理抽屉与导出 | 字段一律不脱敏 | 手机号 `13600136000`、`13800138000` | 列表、抽屉、导出三处都按原值展示，后端导出与前端展示均去掉脱敏分支 | 列表可直接看到完整手机号 | 接口 HTTP 200 + CSV 文本断言 | `screenshots/05-submission-list.png` | DONE |
+| TASK-021 | TC-019 | `/#/information/forms/:id/detail` | 页面接入给地址/效果/嵌入代码，接口接入给多语言示例 | 表单 `customer-contact` | 左栏含「页面地址」「页面效果（模拟浏览器）」「页面嵌入」三段，嵌入代码为带域名与 `formCode` 的 `<iframe>`；右栏含「接口地址」「表单专属 SK」「接入代码示例」「字段配置」，示例覆盖 cURL、Postman、Java、JavaScript、Python 五种并带复制按钮 | 两个卡片头部各有底色区分页面与接口，代码可一键复制 | 接口 HTTP 200 | `screenshots/02-form-detail.png` | DONE |
+| TASK-022 | TC-020 | 表单列表与提交记录 | 列表操作列完整可见、空态文案准确 | 1600×1000 视口、选中有 0 条记录的表单 | 操作列固定右侧且五个按钮完整可见；提交记录在已选表单无数据时提示「该表单暂无提交记录」，未选表单时提示「请选择表单后查看提交记录」，无数据时导出按钮禁用 | 操作列不被裁切，空态与导出状态随筛选变化 | 接口 HTTP 200 | `screenshots/01-form-list.png`、`screenshots/05-submission-list.png` | DONE |
 
 ## 4. 回归抽查记录
 

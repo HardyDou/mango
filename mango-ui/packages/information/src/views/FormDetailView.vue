@@ -47,54 +47,56 @@
                 {{ detail?.status === 'PUBLISHED' ? '无需密钥' : '停用中' }}
               </MangoStatusText>
             </div>
-            <p class="information-access-desc">访客直接打开下面这个地址即可填写提交，无需登录，也不需要任何密钥。</p>
-            <div class="information-api-box">
-              <span class="information-api-url">{{ hostedUrl }}</span>
-              <el-button link type="primary" data-access-action="copy-hosted" @click="copyHosted">复制</el-button>
-            </div>
+            <div class="information-access-method__body">
+              <p class="information-access-desc">把下面的地址发给访客，打开即可填写提交，无需登录也不需要密钥。</p>
 
-            <div class="information-access-points">
-              <div class="information-access-point">
-                <h4>适合快速上线</h4>
-                <p>配置完成后即可获得页面地址，适用于反馈、报名、咨询等标准采集场景。</p>
-              </div>
-              <div class="information-access-point">
-                <h4>复用同一份定义</h4>
-                <p>页面字段、必填规则和校验规则来自当前启用表单，不与接口模式分叉。</p>
-              </div>
-              <div class="information-access-point">
-                <h4>可嵌入业务页面</h4>
-                <p>后续可提供 iframe 或组件嵌入，但不在本轮 MVP 中设计嵌入协议。</p>
-              </div>
-            </div>
-
-            <div class="information-access-actions">
-              <el-button link type="primary" data-access-action="open-hosted" @click="openHosted">打开页面</el-button>
-            </div>
-
-            <div class="information-hosted-preview" data-surface="information.hosted.preview">
-              <div class="information-browser">
-                <div class="information-browser-bar">
-                  <span class="information-browser-dot" />
-                  <span class="information-browser-dot" />
-                  <span class="information-browser-dot" />
-                  <span class="information-browser-url">{{ hostedUrl }}</span>
+              <div class="information-access-field">
+                <div class="information-access-subtitle">页面地址</div>
+                <div class="information-api-box">
+                  <span class="information-api-url">{{ hostedUrl }}</span>
+                  <el-button link type="primary" data-access-action="copy-hosted" @click="copyHosted">复制</el-button>
                 </div>
-                <div class="information-browser-body">
-                  <div class="information-form-card">
-                    <div class="information-hosted-logo">MANGO · ENTERPRISE</div>
-                    <InformationFormSurface
-                      :form-name="detail?.formName"
-                      :description="detail?.description"
-                      :rules="rules"
-                      :values="previewValues"
-                      :runtime-key="rules.length"
-                      disabled
-                      plain
-                      footnote="提交即表示您同意我们按隐私政策使用相关信息"
-                    />
+              </div>
+
+              <div class="information-access-field">
+                <div class="information-access-subtitle">页面效果</div>
+                <div class="information-hosted-preview" data-surface="information.hosted.preview">
+                  <div class="information-browser">
+                    <div class="information-browser-bar">
+                      <span class="information-browser-dot" />
+                      <span class="information-browser-dot" />
+                      <span class="information-browser-dot" />
+                      <span class="information-browser-url">{{ hostedUrl }}</span>
+                    </div>
+                    <div class="information-browser-body">
+                      <div class="information-form-card">
+                        <div class="information-hosted-logo">MANGO · ENTERPRISE</div>
+                        <InformationFormSurface
+                          :form-name="detail?.formName"
+                          :description="detail?.description"
+                          :rules="rules"
+                          :values="previewValues"
+                          :runtime-key="rules.length"
+                          disabled
+                          plain
+                          footnote="提交即表示您同意我们按隐私政策使用相关信息"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
+              </div>
+
+              <div class="information-access-field">
+                <div class="information-access-subtitle">
+                  <span>页面嵌入</span>
+                  <el-button link type="primary" data-access-action="copy-embed" @click="copyEmbed">复制代码</el-button>
+                </div>
+                <pre class="information-code-block" data-sample="embed"><code>{{ embedCode }}</code></pre>
+              </div>
+
+              <div class="information-access-actions">
+                <el-button link type="primary" data-access-action="open-hosted" @click="openHosted">打开页面</el-button>
               </div>
             </div>
           </el-card>
@@ -106,64 +108,84 @@
                 {{ detail?.status === 'PUBLISHED' ? '需要表单专属 SK' : '停用中' }}
               </MangoStatusText>
             </div>
-            <p class="information-access-desc">
-              在自己的服务端调用提交接口，用表单专属 SK 鉴权。SK 只放在服务端环境变量中，不得写入浏览器代码。
-            </p>
+            <div class="information-access-method__body">
+              <p class="information-access-desc">
+                在自己的服务端调用提交接口，用表单专属 SK 鉴权。SK 只放服务端环境变量，不得写入浏览器代码。
+              </p>
 
-            <div class="information-api-box">
-              <span class="information-api-method">POST</span>
-              <span class="information-api-url">{{ endpoint() }}</span>
-              <el-button link type="primary" data-access-action="copy-endpoint" @click="copyEndpoint">复制</el-button>
-            </div>
-            <div class="information-api-box">
-              <span class="information-api-key">X-Mango-SK</span>
-              <span class="information-api-value">{{ secretVisible ? detail?.serverSecret || '-' : secretText }}</span>
-              <el-button link type="primary" data-secret-action="toggle" @click="secretVisible = !secretVisible">
-                {{ secretVisible ? '隐藏' : '显示' }}
-              </el-button>
-              <el-button link type="primary" data-secret-action="copy" @click="copySecret">复制</el-button>
-            </div>
-
-            <div class="information-access-points">
-              <div class="information-access-point">
-                <h4>不依赖浏览器</h4>
-                <p>服务端直接提交，可接入既有业务系统、批处理任务或第三方系统对接。</p>
+              <div class="information-access-field">
+                <div class="information-access-subtitle">接口地址</div>
+                <div class="information-api-box">
+                  <span class="information-api-method">POST</span>
+                  <span class="information-api-url">{{ endpoint() }}</span>
+                  <el-button link type="primary" data-access-action="copy-endpoint" @click="copyEndpoint"
+                    >复制</el-button
+                  >
+                </div>
               </div>
-              <div class="information-access-point">
-                <h4>同一套校验</h4>
-                <p>必填、类型与字段白名单与页面方式一致，绕过页面的请求同样会被拦截。</p>
-              </div>
-              <div class="information-access-point">
-                <h4>密钥可轮换</h4>
-                <p>SK 始终显示并可重新生成，重新生成后旧密钥立即失效，限制在当前租户与表单。</p>
-              </div>
-            </div>
 
-            <div class="information-access-actions">
-              <el-button :loading="regenerating" data-action="information.form.regenerate-secret" @click="regenerate">
-                重新生成密钥
-              </el-button>
-            </div>
+              <div class="information-access-field">
+                <div class="information-access-subtitle">表单专属 SK</div>
+                <div class="information-api-box">
+                  <span class="information-api-key">X-Mango-SK</span>
+                  <span class="information-api-value">{{
+                    secretVisible ? detail?.serverSecret || '-' : secretText
+                  }}</span>
+                  <el-button link type="primary" data-secret-action="toggle" @click="secretVisible = !secretVisible">
+                    {{ secretVisible ? '隐藏' : '显示' }}
+                  </el-button>
+                  <el-button link type="primary" data-secret-action="copy" @click="copySecret">复制</el-button>
+                </div>
+                <div class="information-access-actions">
+                  <el-button
+                    :loading="regenerating"
+                    data-action="information.form.regenerate-secret"
+                    @click="regenerate"
+                  >
+                    重新生成密钥
+                  </el-button>
+                </div>
+              </div>
 
-            <div class="information-fields">
-              <div class="information-section-title">字段配置</div>
-              <div v-if="fields.length" class="information-fields__list">
-                <div v-for="field in fields" :key="field.fieldCode" class="information-fields__row">
-                  <span class="information-fields__index">{{ field.sort }}</span>
-                  <div class="information-fields__main">
-                    <div class="information-fields__title">
-                      <strong>{{ field.fieldName }}</strong>
-                      <span class="information-code">{{ field.fieldCode }}</span>
-                      <MangoStatusText v-if="field.required" tone="danger">必填</MangoStatusText>
-                    </div>
-                    <div class="information-fields__meta">
-                      {{ fieldTypeLabel(field.fieldType)
-                      }}<template v-if="field.placeholder"> · {{ field.placeholder }}</template>
+              <div class="information-access-field">
+                <div class="information-access-subtitle">
+                  <span>接入代码示例</span>
+                  <el-button
+                    link
+                    type="primary"
+                    data-access-action="copy-sample"
+                    @click="copySample(currentSample.code)"
+                  >
+                    复制代码
+                  </el-button>
+                </div>
+                <el-tabs v-model="sampleTab" class="information-code-tabs">
+                  <el-tab-pane v-for="sample in samples" :key="sample.key" :label="sample.label" :name="sample.key">
+                    <pre class="information-code-block" :data-sample="sample.key"><code>{{ sample.code }}</code></pre>
+                  </el-tab-pane>
+                </el-tabs>
+              </div>
+
+              <div class="information-fields">
+                <div class="information-access-subtitle">字段配置</div>
+                <div v-if="fields.length" class="information-fields__list">
+                  <div v-for="field in fields" :key="field.fieldCode" class="information-fields__row">
+                    <span class="information-fields__index">{{ field.sort }}</span>
+                    <div class="information-fields__main">
+                      <div class="information-fields__title">
+                        <strong>{{ field.fieldName }}</strong>
+                        <span class="information-code">{{ field.fieldCode }}</span>
+                        <MangoStatusText v-if="field.required" tone="danger">必填</MangoStatusText>
+                      </div>
+                      <div class="information-fields__meta">
+                        {{ fieldTypeLabel(field.fieldType)
+                        }}<template v-if="field.placeholder"> · {{ field.placeholder }}</template>
+                      </div>
                     </div>
                   </div>
                 </div>
+                <el-empty v-else description="尚未配置采集项" :image-size="60" />
               </div>
-              <el-empty v-else description="尚未配置采集项" :image-size="60" />
             </div>
           </el-card>
         </div>
@@ -183,6 +205,7 @@ import type { InformationFormDetail } from '../api/information';
 import { formatCount, formatDate, formStatusLabel, formStatusTone } from '../domain/status';
 import { fieldTypeLabel } from '../domain/fields';
 import { parseRules, rulesToFields } from '../domain/rules';
+import { buildAccessSamples, buildEmbedCode, type AccessSampleContext } from '../domain/accessSamples';
 
 const api = useInformationApi();
 const route = useRoute();
@@ -191,6 +214,7 @@ const router = useRouter();
 const detail = ref<InformationFormDetail>();
 const loading = ref(false);
 const regenerating = ref(false);
+const sampleTab = ref('curl');
 const secretVisible = ref(false);
 const errorMessage = ref('');
 
@@ -198,6 +222,19 @@ const formId = computed(() => String(route.params.id || ''));
 const rules = computed(() => parseRules(detail.value?.definitionJson));
 const fields = computed(() => rulesToFields(rules.value));
 const previewValues = computed(() => Object.fromEntries(fields.value.map((field) => [field.fieldCode, ''])));
+const sampleContext = computed<AccessSampleContext>(() => ({
+  origin: window.location.origin,
+  host: window.location.host,
+  formCode: detail.value?.formCode || '<formCode>',
+  formName: detail.value?.formName || '信息采集表单',
+  hostedUrl: hostedUrl.value,
+}));
+const embedCode = computed(() => buildEmbedCode(sampleContext.value));
+const samples = computed(() => buildAccessSamples(sampleContext.value));
+const currentSample = computed(
+  () => samples.value.find((sample) => sample.key === sampleTab.value) || samples.value[0],
+);
+
 const secretText = computed(() => {
   const secret = detail.value?.serverSecret;
   return secret ? `${secret.slice(0, 8)}••••••••` : '-';
@@ -249,6 +286,14 @@ function copyHosted() {
 
 function copyEndpoint() {
   return copyText(endpoint(), '接口路径已复制', '浏览器未授权剪贴板，请手动选择路径复制');
+}
+
+function copyEmbed() {
+  return copyText(embedCode.value, '嵌入代码已复制', '浏览器未授权剪贴板，请手动选择代码复制');
+}
+
+function copySample(code: string) {
+  return copyText(code, '示例代码已复制', '浏览器未授权剪贴板，请手动选择代码复制');
 }
 
 function openHosted() {

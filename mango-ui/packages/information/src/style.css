@@ -406,9 +406,8 @@
 }
 
 .information-fields {
-  padding-top: 12px;
-  margin-top: 2px;
-  border-top: 1px dashed var(--mango-border-light, #e5ebf3);
+  padding-top: 14px;
+  border-top: 1px solid var(--mango-border-light, #e5ebf3);
 }
 
 .information-fields__list {
@@ -476,16 +475,30 @@
 }
 
 .information-access-hint {
-  margin: 0 0 14px;
+  margin: 0 0 16px;
   color: var(--mango-text-color-regular, #5f6b7a);
-  font-size: 12px;
-  line-height: 1.8;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.information-access-hint strong {
+  color: var(--mango-text-color, #243044);
+  font-weight: 600;
+}
+
+.information-access-method .el-card__body {
+  padding: 0;
+}
+
+.information-access-method__body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px 18px 18px;
 }
 
 .information-access-method {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  overflow: hidden;
 }
 
 .information-access-method .information-hosted-preview {
@@ -499,39 +512,87 @@
 
 .information-access-head {
   display: flex;
+  gap: 12px;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  min-height: 48px;
+  padding: 0 18px;
+  border-bottom: 1px solid var(--mango-border-light, #e5ebf3);
+  border-radius: 6px 6px 0 0;
+}
+
+/* 两种接入方式的头部各给一层底色，一眼区分页面与接口 */
+[data-access-method='page'] .information-access-head {
+  background: var(--mango-color-primary-lighter, #eef4ff);
+}
+
+[data-access-method='api'] .information-access-head {
+  background: #fdf6ec;
+}
+
+.information-access-head .information-mode-pill {
+  padding: 0;
+  color: var(--mango-text-color, #243044);
+  font-size: 14px;
+  font-weight: 600;
+  background: transparent;
 }
 
 .information-access-desc {
   margin: 0;
   color: var(--mango-text-color-regular, #5f6b7a);
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.7;
 }
 
-.information-access-points {
+.information-access-field {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding-top: 12px;
-  margin-top: 2px;
-  border-top: 1px dashed var(--mango-border-light, #e5ebf3);
+  gap: 8px;
 }
 
-.information-access-point h4 {
-  margin: 0 0 3px;
-  color: var(--mango-text-color-primary, #1f2d3d);
+.information-access-subtitle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--mango-text-color, #243044);
   font-size: 13px;
   font-weight: 600;
+  line-height: 1.4;
 }
 
-.information-access-point p {
+.information-code-block {
+  padding: 12px 14px;
   margin: 0;
-  color: var(--mango-text-color-regular, #5f6b7a);
+  overflow-x: auto;
+  color: #243044;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 12px;
   line-height: 1.7;
+  white-space: pre;
+  background: var(--mango-bg-main, #f3f5f8);
+  border: 1px solid var(--mango-border-light, #e5ebf3);
+  border-radius: 6px;
+}
+
+.information-code-tabs .el-tabs__header {
+  margin: 0 0 8px;
+}
+
+.information-code-tabs .el-tabs__item {
+  height: 32px;
+  padding: 0 14px;
+  font-size: 12px;
+  line-height: 32px;
+}
+
+.information-code-tabs .el-tabs__nav-wrap::after {
+  height: 1px;
+}
+
+.information-code-tabs .el-tabs__content {
+  overflow: visible;
 }
 
 .information-api-url {
@@ -623,8 +684,7 @@
   display: flex;
   gap: 8px;
   align-items: center;
-  padding: 9px 12px;
-  margin-top: 9px;
+  padding: 10px 12px;
   overflow: hidden;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 12px;

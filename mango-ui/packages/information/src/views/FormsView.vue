@@ -34,16 +34,16 @@
           query.keyword || query.status ? '没有匹配的表单，试试调整筛选条件' : '暂无表单，点击右上角「新增」开始'
         "
       >
-        <el-table-column label="表单名称" min-width="170" show-overflow-tooltip>
+        <el-table-column label="表单名称" min-width="150" show-overflow-tooltip>
           <template #default="{ row }">{{ row.formName || '-' }}</template>
         </el-table-column>
-        <el-table-column label="表单编码" min-width="172">
+        <el-table-column label="表单编码" min-width="164">
           <template #default="{ row }">
             <span class="information-code">{{ row.formCode }}</span>
             <el-button link type="primary" data-row-action="copy-code" @click="copyCode(row)">复制</el-button>
           </template>
         </el-table-column>
-        <el-table-column label="备注" min-width="170" show-overflow-tooltip>
+        <el-table-column label="备注" min-width="150" show-overflow-tooltip>
           <template #default="{ row }">{{ row.description || '-' }}</template>
         </el-table-column>
         <el-table-column label="状态" width="96">
@@ -64,10 +64,10 @@
         <el-table-column label="更新日期" width="118">
           <template #default="{ row }">{{ formatDate(row.updatedAt) }}</template>
         </el-table-column>
-        <el-table-column label="创建人" width="110">
+        <el-table-column label="创建人" width="100" show-overflow-tooltip>
           <template #default="{ row }">{{ row.createdByName || '-' }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="330" fixed="right">
+        <el-table-column label="操作" fixed="right" width="272">
           <template #default="{ row }">
             <el-button link type="primary" @click="openDetail(row)">详情</el-button>
             <el-button link type="primary" @click="openConfig(row)">配置</el-button>
