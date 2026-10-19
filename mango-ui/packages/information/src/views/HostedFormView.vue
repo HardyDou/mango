@@ -13,11 +13,12 @@
       <template v-else>
         <div class="information-hosted-logo">MANGO · ENTERPRISE</div>
         <InformationFormSurface
+          ref="surfaceRef"
           :form-name="form?.formName"
           :description="form?.description"
           :rules="rules"
           :values="values"
-          :surface-key="surfaceKey"
+          :runtime-key="surfaceKey"
           :submitting="submitting"
           footnote="提交即表示您同意我们按隐私政策使用相关信息"
           @update:values="replaceValues"
@@ -42,7 +43,7 @@ import { ElMessage } from 'element-plus';
 import InformationFormSurface from '../components/InformationFormSurface.vue';
 import { useInformationApi } from '../composables/useInformationApi';
 import type { PublicInformationForm } from '../api/information';
-import { parseRules, rulesToFields, type FormCreateRule } from '../domain/rules';
+import { parseRules, type FormCreateRule } from '../domain/rules';
 
 const api = useInformationApi();
 const form = ref<PublicInformationForm>();
@@ -54,6 +55,7 @@ const successMessage = ref('');
 const values = reactive<Record<string, unknown>>({});
 const rules = ref<FormCreateRule[]>([]);
 const surfaceKey = ref(0);
+const surfaceRef = ref<InstanceType<typeof InformationFormSurface>>();
 
 function currentFormCode(): string {
   const hash = window.location.hash || '';
@@ -72,28 +74,11 @@ function resetValues() {
 function applyFields() {
   rules.value = form.value ? parseRules(form.value.definitionJson) : [];
   resetValues();
-  rulesToFields(rules.value).forEach((field) => {
-    values[field.fieldCode] = field.fieldType === 'checkbox' ? [] : '';
-  });
   surfaceKey.value += 1;
 }
 
 function replaceValues(next: Record<string, unknown>) {
   Object.assign(values, next);
-}
-
-function validate(): string | null {
-  for (const field of rulesToFields(rules.value)) {
-    if (!field.required) {
-      continue;
-    }
-    const value = values[field.fieldCode];
-    const empty = value === undefined || value === null || value === '' || (Array.isArray(value) && !value.length);
-    if (empty) {
-      return `请填写${field.fieldName}`;
-    }
-  }
-  return null;
 }
 
 async function load() {
@@ -115,19 +100,21 @@ async function load() {
 }
 
 async function submit() {
-  const invalid = validate();
-  if (invalid) {
-    ElMessage.warning(invalid);
-    return;
-  }
   if (!form.value) {
     return;
   }
+  // 校验与取值都交给 form-create，避免规则与自定义校验分叉
+  const valid = await surfaceRef.value?.validate();
+  if (!valid) {
+    ElMessage.warning('请先补全标有 * 的必填项');
+    return;
+  }
+  const payload = surfaceRef.value?.formData() ?? { ...values };
   submitting.value = true;
   try {
     const result = await api.submitPublic({
       formCode: form.value.formCode,
-      values: { ...values },
+      values: payload,
       sourcePage: window.location.href,
       idempotencyKey: `information-${Date.now()}-${Math.random().toString(36).slice(2)}`,
     });
@@ -143,7 +130,9 @@ async function submit() {
 /** 提交成功后清空录入，方便同一访客继续提交下一份。 */
 function submitAgain() {
   successVisible.value = false;
-  applyFields();
+  rules.value = form.value ? parseRules(form.value.definitionJson) : [];
+  resetValues();
+  surfaceKey.value += 1;
 }
 
 onMounted(load);

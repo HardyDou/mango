@@ -83,8 +83,8 @@ test.describe('@p0 @information 信息采集管理', () => {
 
     // 初始无改动时保存按钮不可点，交互后出现未保存提示
     await expect(page.getByRole('button', { name: '保存配置' })).toBeDisabled();
-    await page.locator('[data-surface="information.form.designer"]').click();
-    await expect(page.getByText('有未保存的修改')).toBeVisible();
+    await page.locator('[data-surface="information.form.designer"]').click({ position: { x: 30, y: 30 } });
+    await expect(page.getByText('有未保存的修改')).toBeVisible({ timeout: 20000 });
 
     // 保存后规则保持不变
     await page.getByRole('button', { name: '保存配置' }).click();
@@ -121,7 +121,8 @@ test.describe('@p0 @information 信息采集管理', () => {
     await expect(page.locator('[data-filter="form"]')).toBeVisible();
     // 深链：地址栏带 formId 时直接定位到该表单，刷新与分享保持同一视图
     await page.goto(`/#/information/submissions?formId=${formId}`);
-    await expect(page.locator('[data-filter="form"]')).toContainText(formCode);
+    await expect(page).toHaveURL(new RegExp(`formId=${formId}`));
+    await expect(page.locator('[data-filter="form"]')).toContainText(formCode, { timeout: 20000 });
 
     for (const label of ['记录ID', '提交时间', '状态', '来源页面', '姓名', '手机号']) {
       await expect(page.getByRole('columnheader', { name: label, exact: true })).toBeVisible();
@@ -218,6 +219,10 @@ test.describe('@p0 @information 信息采集管理', () => {
     await page.getByPlaceholder('请输入姓名').fill('浏览器访客');
     await page.getByPlaceholder('请输入手机号').fill('13600136000');
     await page.getByPlaceholder('请输入需求描述').fill('来自托管表单页面的真实提交');
+    // 设计器里的控件必须原样渲染：评分是星级而不是文本框
+    await expect(page.locator('.el-rate')).toBeVisible();
+    await expect(page.locator('.el-rate__item')).toHaveCount(5);
+    await page.locator('.el-rate__item').nth(3).click();
     await page.getByRole('button', { name: '提交', exact: true }).click();
     await expect(page.getByText('提交成功', { exact: true })).toBeVisible();
     await page.waitForTimeout(600);

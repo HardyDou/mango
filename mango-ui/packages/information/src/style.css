@@ -757,3 +757,7 @@
 .information-page .el-table__row .el-button + .el-button {
   margin-left: 6px;
 }
+
+.information-form-context .el-select {
+  min-width: 220px;
+}

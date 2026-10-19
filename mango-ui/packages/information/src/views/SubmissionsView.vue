@@ -7,7 +7,8 @@
           data-filter="form"
           data-select="submission-form"
           filterable
-          placeholder="请选择表单"
+          :loading="formsLoading"
+          :placeholder="formsLoading ? '表单加载中…' : '请选择表单'"
           @change="onFormChange"
         >
           <el-option
@@ -186,7 +187,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { MangoListPanel, MangoSearchPanel, MangoStatusText, Pagination } from '@mango/common';
@@ -240,6 +241,7 @@ function onTimeRangeChange(value: [string, string] | null) {
   return load();
 }
 const formOptions = ref<InformationForm[]>([]);
+const formsLoading = ref(false);
 const rows = ref<InformationSubmission[]>([]);
 const total = ref(0);
 const pendingCount = ref(0);
@@ -305,18 +307,26 @@ function cellValue(row: InformationSubmission, field: InformationFieldDefinition
   return display === '' ? '-' : display;
 }
 
+/** 地址栏与页面状态双向同步时，跳过由本页写回造成的回声。 */
+let syncingFromUrl = false;
+
 /** 筛选状态写入地址栏，刷新或把链接发给同事时能保持同一视图。 */
 function syncQueryToUrl() {
-  router.replace({
-    query: {
-      ...(query.formId ? { formId: query.formId } : {}),
-      ...(query.keyword ? { keyword: query.keyword } : {}),
-      ...(query.status ? { status: query.status } : {}),
-      ...(query.startTime ? { startTime: query.startTime } : {}),
-      ...(query.endTime ? { endTime: query.endTime } : {}),
-      ...(query.pageNum > 1 ? { page: String(query.pageNum) } : {}),
-    },
-  });
+  syncingFromUrl = true;
+  router
+    .replace({
+      query: {
+        ...(query.formId ? { formId: query.formId } : {}),
+        ...(query.keyword ? { keyword: query.keyword } : {}),
+        ...(query.status ? { status: query.status } : {}),
+        ...(query.startTime ? { startTime: query.startTime } : {}),
+        ...(query.endTime ? { endTime: query.endTime } : {}),
+        ...(query.pageNum > 1 ? { page: String(query.pageNum) } : {}),
+      },
+    })
+    .finally(() => {
+      syncingFromUrl = false;
+    });
 }
 
 function readQueryFromUrl() {
@@ -336,6 +346,7 @@ function readQueryFromUrl() {
 
 /** 独立菜单入口：先加载可选表单，再按当前选中表单查询记录。 */
 async function loadForms() {
+  formsLoading.value = true;
   try {
     const result = await api.pageForms({ pageNum: 1, pageSize: 100 });
     formOptions.value = result.list;
@@ -345,6 +356,8 @@ async function loadForms() {
     syncQueryToUrl();
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '表单列表加载失败';
+  } finally {
+    formsLoading.value = false;
   }
 }
 
@@ -449,6 +462,21 @@ async function exportRows() {
     ElMessage.error(error instanceof Error ? error.message : '导出失败');
   }
 }
+
+watch(
+  () => route.query,
+  async () => {
+    if (syncingFromUrl) {
+      return;
+    }
+    const before = `${query.formId}|${query.keyword}|${query.status}|${query.startTime}|${query.endTime}|${query.pageNum}`;
+    readQueryFromUrl();
+    const after = `${query.formId}|${query.keyword}|${query.status}|${query.startTime}|${query.endTime}|${query.pageNum}`;
+    if (before !== after) {
+      await load();
+    }
+  },
+);
 
 onMounted(async () => {
   readQueryFromUrl();

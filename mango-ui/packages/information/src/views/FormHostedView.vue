@@ -30,6 +30,7 @@
               :description="detail?.description"
               :rules="rules"
               :values="previewValues"
+              :runtime-key="rules.length"
               disabled
               plain
               footnote="提交即表示您同意我们按隐私政策使用相关信息"

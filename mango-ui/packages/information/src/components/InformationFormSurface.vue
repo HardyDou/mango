@@ -4,16 +4,18 @@
       <h2 class="information-surface__title">{{ formName || '未命名表单' }}</h2>
       <p v-if="description" class="information-surface__desc">{{ description }}</p>
     </div>
-    <FormCreate
-      :key="surfaceKey"
-      :config="config"
-      :model-value="values"
-      :show-actions="false"
+    <InformationFormRuntime
+      ref="runtimeRef"
+      :key="runtimeKeyValue"
+      :rules="rules"
+      :values="values"
+      :runtime-key="runtimeKeyValue"
       :disabled="disabled"
-      @update:model-value="emit('update:values', $event)"
+      :preview="disabled"
+      @update:values="emit('update:values', $event)"
     />
     <div v-if="showSubmit" class="information-surface__actions">
-      <el-button type="primary" :loading="submitting" :disabled="disabled" @click="emit('submit')">
+      <el-button type="primary" :loading="submitting" :disabled="disabled" @click="onSubmit">
         {{ submitLabel }}
       </el-button>
     </div>
@@ -22,10 +24,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { FormCreate } from '@mango/common';
+import { computed, ref } from 'vue';
+import InformationFormRuntime from './InformationFormRuntime.vue';
 import type { FormCreateRule } from '../domain/rules';
-import { rulesToMangoFields } from '../domain/rules';
 
 const props = withDefaults(
   defineProps<{
@@ -39,7 +40,7 @@ const props = withDefaults(
     disabled?: boolean;
     plain?: boolean;
     footnote?: string;
-    surfaceKey?: string | number;
+    runtimeKey?: string | number;
   }>(),
   {
     formName: '',
@@ -51,7 +52,7 @@ const props = withDefaults(
     disabled: false,
     plain: false,
     footnote: '',
-    surfaceKey: 0,
+    runtimeKey: 0,
   },
 );
 
@@ -60,10 +61,16 @@ const emit = defineEmits<{
   'update:values': [values: Record<string, unknown>];
 }>();
 
-const config = computed(() => ({
-  name: `information-surface-${props.surfaceKey}`,
-  fields: rulesToMangoFields(props.rules),
-  labelPosition: 'top' as const,
-  showRequiredMark: true,
-}));
+const runtimeRef = ref<InstanceType<typeof InformationFormRuntime>>();
+const runtimeKeyValue = computed(() => props.runtimeKey);
+
+function onSubmit() {
+  emit('submit');
+}
+
+defineExpose({
+  validate: () => runtimeRef.value?.validate() ?? Promise.resolve(false),
+  formData: () => runtimeRef.value?.formData() ?? {},
+  reset: () => runtimeRef.value?.reset(),
+});
 </script>
