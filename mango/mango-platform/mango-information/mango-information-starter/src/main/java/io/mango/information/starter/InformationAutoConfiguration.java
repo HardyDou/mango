@@ -25,7 +25,8 @@ import org.springframework.context.annotation.ComponentScan;
 @ComponentScan({
     "io.mango.information.core.service",
     "io.mango.information.starter.controller",
-    "io.mango.information.starter.endpoint"
+    "io.mango.information.starter.endpoint",
+    "io.mango.information.starter.resource"
 })
 public class InformationAutoConfiguration {
 

@@ -110,7 +110,73 @@ registerMangoInformationAdminPages();
 
 控件支持范围与设计器一致，由前端 form-create 运行时渲染，包括输入、数字、选择、单选、多选、开关、评分、滑块、日期时间、颜色、级联、树形、上传、富文本、子表单、表格表单以及栅格/卡片/标签页等布局；`group`、`subForm`、`tableForm` 计为一个采集项，其子字段是行模板，不单独成为提交字段。多选与子表单等复杂值按 JSON 原样保存，提交记录列、详情和导出统一序列化为可读文本。
 
-## 6. 数据与初始化
+## 6. 用 Resource Registry 内置表单
+
+业务模块可以把自己的采集表单随代码发布，由 Resource Registry 在启动时同步到 `information_form`，不需要人工在后台建表。
+
+### 6.1 资源类型与幂等键
+
+- 资源类型：`INFORMATION_FORM`
+- 目标表：`information_form`
+- 幂等键：`tenantId + formCode`；同一份声明重复同步只更新定义，不会产生重复表单
+- 租户作用域：声明中的 `tenantId` 决定写入哪个租户，缺省为 `1`
+- 主键：`targetId` 可选；不填时优先取资源声明 ID，取不到则自动生成
+
+### 6.2 声明格式
+
+放在模块自己的 `META-INF/mango/resources/*.yml`（或 `.json`）里，与菜单、API 资源同一套资源清单：
+
+```yaml
+mango:
+  resource:
+    schema-version: 1
+    module-code: mango-example
+    module-name: mango-example
+    declarations:
+      INFORMATION_FORM:
+        - id: "2951400000000099001"
+          version: 1
+          biz-key: information.form.example-feedback
+          name: 示例反馈表
+          target-module: information
+          fields:
+            tenantId: { type: STRING, value: "1" }
+            formCode: { type: STRING, value: example-feedback }
+            formName: { type: STRING, value: 示例反馈表 }
+            description: { type: STRING, value: 随代码发布的内置采集表单 }
+            successMessage: { type: STRING, value: 提交成功 }
+            status: { type: STRING, value: PUBLISHED }
+            definitionJson:
+              type: STRING
+              value: |
+                [
+                  {"type":"input","field":"name","title":"姓名","validate":[{"required":true,"message":"请填写姓名"}]},
+                  {"type":"select","field":"topic","title":"咨询类型","options":[{"label":"产品","value":"product"}]},
+                  {"type":"rate","field":"score","title":"满意度","props":{"max":5}}
+                ]
+```
+
+### 6.3 字段说明
+
+| 字段 | 必填 | 说明 |
+|------|------|------|
+| `formCode` | 是 | 表单编码，租户内唯一，托管地址按它访问 |
+| `formName` | 是 | 表单名称 |
+| `definitionJson` | 是 | form-create 规则数组 JSON，与表单设计器产物同构；至少含一个带 `field` 的采集项 |
+| `tenantId` | 否 | 写入的租户，默认 `1` |
+| `targetId` | 否 | 表单主键，默认取资源声明 ID 或自动生成 |
+| `description` | 否 | 备注 |
+| `successMessage` | 否 | 提交成功提示，默认「提交成功」 |
+| `status` | 否 | `DRAFT`、`PUBLISHED`、`DISABLED`，默认 `PUBLISHED` |
+
+### 6.4 行为与边界
+
+- 新增时自动生成服务端 SK；后续同步只覆盖定义与元信息，**不会重置 SK**，避免影响已接入的服务端调用。
+- 声明更新即覆盖：内置表单的定义以资源声明为准，后台对内置表单的字段修改会在下次同步被覆盖；需要人工维护的表单不要用资源声明，直接在后台创建。
+- 停用：资源声明被置为停用或删除时，处理器把表单状态改为 `DISABLED`（`disable`）或删除记录（`delete`）。
+- 定义非法（缺少必填字段、`definitionJson` 不是数组或没有可提交采集项）时同步失败并阻断启动，避免带病发布。
+
+## 7. 数据与初始化
 
 | 表 | 说明 |
 |----|------|
@@ -125,7 +191,7 @@ registerMangoInformationAdminPages();
 - 菜单：`mango-information-starter/src/main/resources/META-INF/mango/resources/information-common-menu.json`
 - 公开 API：`mango-information-starter/src/main/resources/META-INF/mango/resources/information-common-public-api.yml`
 
-## 7. 失败语义与边界
+## 8. 失败语义与边界
 
 - 浏览器提交和托管表单不携带服务端 SK；服务端接入必须使用当前表单专属 SK。
 - 客户端不得覆盖租户归属；租户由服务端按解析到的表单确定。

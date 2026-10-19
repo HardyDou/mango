@@ -459,5 +459,26 @@ class InformationServiceIntegrationTest {
         ObjectMapper objectMapper() {
             return new ObjectMapper();
         }
+
+        /** 本用例只验证表单与提交链路，文件能力用替身占位。 */
+        @Bean
+        io.mango.file.api.IFileContentProvider fileContentProvider() {
+            return new io.mango.file.api.IFileContentProvider() {
+                @Override
+                public io.mango.file.api.vo.FileRecordVO save(io.mango.file.api.command.SaveFileCommand command) {
+                    return null;
+                }
+
+                @Override
+                public io.mango.file.api.vo.FileDownloadVO download(Long id) {
+                    return null;
+                }
+
+                @Override
+                public io.mango.file.api.vo.FileDownloadVO downloadForService(Long id) {
+                    return null;
+                }
+            };
+        }
     }
 }

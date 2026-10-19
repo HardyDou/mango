@@ -4,7 +4,7 @@
     "schemaVersion": 1,
     "workspaceCount": 43
   },
-  "catalogDigest": "5109b7177bf961d28bff922a26985857d901e0a2920a1c4f5e077a4167f9dcea",
+  "catalogDigest": "9bc56a0bf9ad1656353a3adf877272d6fa1c95306da00a897651b4e0448b1b86",
   "maven": {
     "dependencyManagementSets": [
       {
@@ -7172,6 +7172,15 @@
         "classifier": null,
         "dependencies": [
           {
+            "artifactId": "mango-infra-persistence-starter",
+            "classifier": null,
+            "groupId": "io.mango.infra.persistence",
+            "optional": false,
+            "scope": "test",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
             "artifactId": "mango-authorization-api",
             "classifier": null,
             "groupId": "io.mango.platform.authorization",
@@ -7202,6 +7211,15 @@
             "artifactId": "mango-information-core",
             "classifier": null,
             "groupId": "io.mango.platform.information",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-resource-support",
+            "classifier": null,
+            "groupId": "io.mango.platform.resource",
             "optional": false,
             "scope": "compile",
             "type": "jar",
