@@ -106,7 +106,7 @@ public class InformationSubmissionService implements IInformationSubmissionServi
             }
             return csv.toString();
         } catch (Exception e) {
-            throw new IllegalArgumentException("导出提交记录失败", e);
+            throw new IllegalArgumentException("导出采集记录失败", e);
         }
     }
 
@@ -117,7 +117,7 @@ public class InformationSubmissionService implements IInformationSubmissionServi
     /**
      * 复杂值（多选、子表单、表格表单等）序列化为可读 JSON，避免导出出现 [object Object]。
      *
-     * <p>导出按原值输出：提交记录仅对有查看权限的角色开放，手机号等字段不再脱敏，
+     * <p>导出按原值输出：采集记录仅对有查看权限的角色开放，手机号等字段不再脱敏，
      * 便于处理人直接回访。</p>
      */
     private String readable(String fieldType, Object value) {

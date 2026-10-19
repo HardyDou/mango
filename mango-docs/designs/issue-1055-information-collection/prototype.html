@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Mango 信息采集管理 · 原型</title>
+  <title>Mango 信息采集 · 原型</title>
   <style>
     :root {
       /* Mirrors @mango/common/theme admin-standard tokens. Final implementation should use Element Plus components. */
@@ -273,11 +273,11 @@
       <nav class="nav">
         <button class="active" data-view="forms"><span class="nav-icon">▦</span>表单管理</button>
       </nav>
-      <div class="sidebar-footer">信息采集管理<br />独立于 CMS 内容模型<br /><span style="color:#53627a">prototype / v0.1</span></div>
+      <div class="sidebar-footer">信息采集<br />独立于 CMS 内容模型<br /><span style="color:#53627a">prototype / v0.1</span></div>
     </aside>
     <main class="main">
       <header class="topbar">
-        <div class="tabbar"><span>首页</span><span>内容中心 ×</span><span class="current" data-view="forms">表单管理 ×</span><span data-view="detail">表单详情 ×</span><span data-view="submissions">提交记录 ×</span><span>系统设置 ×</span></div>
+        <div class="tabbar"><span>首页</span><span>内容中心 ×</span><span class="current" data-view="forms">表单管理 ×</span><span data-view="detail">表单详情 ×</span><span data-view="submissions">采集记录 ×</span><span>系统设置 ×</span></div>
       </header>
       <div class="content">
         <section class="view active" id="view-forms">
@@ -291,17 +291,17 @@
             <table class="table">
               <thead><tr><th>表单名称</th><th>表单编码</th><th>备注</th><th>状态</th><th>提交量</th><th>创建日期</th><th>更新日期</th><th>创建人</th><th>操作</th></tr></thead>
               <tbody>
-                <tr><td>官网咨询反馈</td><td><span class="code">website-consult</span></td><td>官网咨询入口</td><td><span class="status green">启用</span></td><td>1,286</td><td>2026-10-01</td><td>2026-10-17</td><td>管理员</td><td><button class="btn text" data-view="detail">详情</button><button class="btn text" data-view="builder">配置</button><button class="btn text" data-view="hosted">接入</button><button class="btn text" data-view="submissions">提交记录</button><button class="btn text" style="color:#e6a23c">停用</button><button class="btn text" style="color:#f56c6c">删除</button></td></tr>
-                <tr><td>产品试用申请</td><td><span class="code">product-trial</span></td><td>试用申请表</td><td><span class="status green">启用</span></td><td>429</td><td>2026-09-20</td><td>2026-10-16</td><td>管理员</td><td><button class="btn text" data-view="detail">详情</button><button class="btn text" data-view="builder">配置</button><button class="btn text" data-view="hosted">接入</button><button class="btn text" data-view="submissions">提交记录</button><button class="btn text" style="color:#e6a23c">停用</button><button class="btn text" style="color:#f56c6c">删除</button></td></tr>
-                <tr><td>服务满意度调查</td><td><span class="code">service-survey</span></td><td>服务回访</td><td><span class="status green">启用</span></td><td>86</td><td>2026-10-15</td><td>2026-10-15</td><td>张三</td><td><button class="btn text" data-view="detail">详情</button><button class="btn text" data-view="builder">配置</button><button class="btn text" data-view="hosted">接入</button><button class="btn text" data-view="submissions">提交记录</button><button class="btn text" style="color:#e6a23c">停用</button><button class="btn text" style="color:#f56c6c">删除</button></td></tr>
-                <tr><td>官网反馈线索</td><td><span class="code">official-feedback</span></td><td>历史反馈表</td><td><span class="status gray">停用</span></td><td>214</td><td>2026-08-12</td><td>2026-10-12</td><td>管理员</td><td><button class="btn text" data-view="detail">详情</button><button class="btn text" data-view="builder">配置</button><button class="btn text" data-view="hosted">接入</button><button class="btn text" data-view="submissions">提交记录</button><button class="btn text" style="color:#67c23a">启用</button><button class="btn text" style="color:#f56c6c">删除</button></td></tr>
+                <tr><td>官网咨询反馈</td><td><span class="code">website-consult</span></td><td>官网咨询入口</td><td><span class="status green">启用</span></td><td>1,286</td><td>2026-10-01</td><td>2026-10-17</td><td>管理员</td><td><button class="btn text" data-view="detail">详情</button><button class="btn text" data-view="builder">配置</button><button class="btn text" data-view="hosted">接入</button><button class="btn text" data-view="submissions">采集记录</button><button class="btn text" style="color:#e6a23c">停用</button><button class="btn text" style="color:#f56c6c">删除</button></td></tr>
+                <tr><td>产品试用申请</td><td><span class="code">product-trial</span></td><td>试用申请表</td><td><span class="status green">启用</span></td><td>429</td><td>2026-09-20</td><td>2026-10-16</td><td>管理员</td><td><button class="btn text" data-view="detail">详情</button><button class="btn text" data-view="builder">配置</button><button class="btn text" data-view="hosted">接入</button><button class="btn text" data-view="submissions">采集记录</button><button class="btn text" style="color:#e6a23c">停用</button><button class="btn text" style="color:#f56c6c">删除</button></td></tr>
+                <tr><td>服务满意度调查</td><td><span class="code">service-survey</span></td><td>服务回访</td><td><span class="status green">启用</span></td><td>86</td><td>2026-10-15</td><td>2026-10-15</td><td>张三</td><td><button class="btn text" data-view="detail">详情</button><button class="btn text" data-view="builder">配置</button><button class="btn text" data-view="hosted">接入</button><button class="btn text" data-view="submissions">采集记录</button><button class="btn text" style="color:#e6a23c">停用</button><button class="btn text" style="color:#f56c6c">删除</button></td></tr>
+                <tr><td>官网反馈线索</td><td><span class="code">official-feedback</span></td><td>历史反馈表</td><td><span class="status gray">停用</span></td><td>214</td><td>2026-08-12</td><td>2026-10-12</td><td>管理员</td><td><button class="btn text" data-view="detail">详情</button><button class="btn text" data-view="builder">配置</button><button class="btn text" data-view="hosted">接入</button><button class="btn text" data-view="submissions">采集记录</button><button class="btn text" style="color:#67c23a">启用</button><button class="btn text" style="color:#f56c6c">删除</button></td></tr>
               </tbody>
             </table>
           </div>
         </section>
 
         <section class="view" id="view-detail">
-          <div class="page-head"><div class="page-title-with-back" data-view="forms" style="cursor:pointer"><button class="page-back" aria-label="返回表单列表">‹</button><span class="return-label">返回列表页</span></div><div class="actions"><button class="btn" data-view="hosted">接入方式</button><button class="btn" data-view="submissions">提交记录</button><button class="btn primary" data-view="builder">配置表单</button></div></div>
+          <div class="page-head"><div class="page-title-with-back" data-view="forms" style="cursor:pointer"><button class="page-back" aria-label="返回表单列表">‹</button><span class="return-label">返回列表页</span></div><div class="actions"><button class="btn" data-view="hosted">接入方式</button><button class="btn" data-view="submissions">采集记录</button><button class="btn primary" data-view="builder">配置表单</button></div></div>
           <div class="panel">
             <div class="panel-body">
               <div class="detail-header"><div><h2>官网咨询反馈</h2><div class="detail-meta"><span class="code">website-consult</span> · 创建人：管理员</div></div><span class="status green">启用</span></div>
@@ -421,7 +421,7 @@
   <div class="drawer-mask" id="submission-drawer" role="dialog" aria-modal="true" aria-labelledby="submission-drawer-title">
     <aside class="drawer">
       <div class="drawer-head"><h3 id="submission-drawer-title">提交详情</h3><button class="dialog-close" data-submission-close>×</button></div>
-      <div class="drawer-body"><div class="record"><div><h3 class="record-title">张先生</h3><div class="record-meta">今天 10:24 · 官网首页 · 匿名提交</div></div><span class="status orange">待处理</span></div><div class="record-fields"><div class="record-field"><label>联系电话</label><span>138****2098</span></div><div class="record-field"><label>咨询类型</label><span>产品咨询</span></div><div class="record-field" style="grid-column:1/-1"><label>需求描述</label><span>希望了解企业版的部署方式和报价。</span></div></div><div class="note">个人信息仅对拥有提交记录查看权限的角色展示。当前列表已默认脱敏。</div><div style="margin-top:20px"><label style="display:block;color:#7c899d;font-size:11px;margin-bottom:7px">处理备注</label><textarea class="textarea" rows="3" placeholder="记录跟进结果"></textarea></div></div>
+      <div class="drawer-body"><div class="record"><div><h3 class="record-title">张先生</h3><div class="record-meta">今天 10:24 · 官网首页 · 匿名提交</div></div><span class="status orange">待处理</span></div><div class="record-fields"><div class="record-field"><label>联系电话</label><span>138****2098</span></div><div class="record-field"><label>咨询类型</label><span>产品咨询</span></div><div class="record-field" style="grid-column:1/-1"><label>需求描述</label><span>希望了解企业版的部署方式和报价。</span></div></div><div class="note">个人信息仅对拥有采集记录查看权限的角色展示。当前列表已默认脱敏。</div><div style="margin-top:20px"><label style="display:block;color:#7c899d;font-size:11px;margin-bottom:7px">处理备注</label><textarea class="textarea" rows="3" placeholder="记录跟进结果"></textarea></div></div>
       <div class="drawer-foot"><button class="btn" data-submission-close>取消</button><button class="btn primary" data-submission-close>保存并更新</button></div>
     </aside>
   </div>
@@ -438,7 +438,7 @@
     </div>
   </div>
   <script>
-    const titles = { forms: '表单管理', builder: '表单配置', detail: '表单详情', hosted: '托管表单', submissions: '提交记录' };
+    const titles = { forms: '表单管理', builder: '表单配置', detail: '表单详情', hosted: '托管表单', submissions: '采集记录' };
     function showView(name, updateHash = true) {
       if (!titles[name]) return;
       document.querySelectorAll('.view').forEach((view) => view.classList.toggle('active', view.id === `view-${name}`));

@@ -71,7 +71,7 @@
           <template #default="{ row }">
             <el-button link type="primary" @click="openDetail(row)">详情</el-button>
             <el-button link type="primary" @click="openConfig(row)">配置</el-button>
-            <el-button link type="primary" @click="openSubmissions(row)">提交记录</el-button>
+            <el-button link type="primary" @click="openSubmissions(row)">采集记录</el-button>
             <el-button v-if="row.status === 'PUBLISHED'" link type="warning" @click="toggleStatus(row, 'DISABLED')">
               停用
             </el-button>
@@ -241,7 +241,7 @@ async function copyCode(row: InformationForm) {
 
 async function remove(row: InformationForm) {
   try {
-    await ElMessageBox.confirm('确认删除该表单？已有提交记录的表单不可删除。', '删除确认', { type: 'warning' });
+    await ElMessageBox.confirm('确认删除该表单？已有采集记录的表单不可删除。', '删除确认', { type: 'warning' });
   } catch {
     return;
   }

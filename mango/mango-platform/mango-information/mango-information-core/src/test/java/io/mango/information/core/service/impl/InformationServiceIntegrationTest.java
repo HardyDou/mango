@@ -201,7 +201,7 @@ class InformationServiceIntegrationTest {
         InformationSubmissionPageQuery query = new InformationSubmissionPageQuery();
         String csv = submissionService.exportCsv(query);
 
-        // 提交记录面向有查看权限的角色，导出按原值输出，手机号不脱敏
+        // 采集记录面向有查看权限的角色，导出按原值输出，手机号不脱敏
         assertThat(csv).contains("姓名").contains("手机号");
         assertThat(csv).contains("张三").contains("13800138000");
     }

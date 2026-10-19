@@ -35,7 +35,7 @@ export function registerMangoInformationAdminPages() {
       {
         path: '/information/forms/:id/submissions',
         component: 'information/forms/submissions',
-        menuName: '提交记录',
+        menuName: '采集记录',
         menuCode: 'information:form-submissions',
         visible: 0,
       },

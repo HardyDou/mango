@@ -84,4 +84,4 @@ pnpm -F @mango/admin-shell build
 
 ## 11. Issue #1055 影响说明
 
-信息采集管理新增 `information/forms/index`、`information/submissions/index` 与 `information/hosted/index` 三个页面 key，并新增一个免登录公开路由 `/information/hosted`。菜单页面排障流程、既有页面 key 对照关系和后端菜单同步机制均不变；排查信息采集页面时，请确认宿主应用已注册 `registerMangoInformationAdminPages` 且样式包已加载。
+信息采集新增 `information/forms/index`、`information/submissions/index` 与 `information/hosted/index` 三个页面 key，并新增一个免登录公开路由 `/information/hosted`。菜单页面排障流程、既有页面 key 对照关系和后端菜单同步机制均不变；排查信息采集页面时，请确认宿主应用已注册 `registerMangoInformationAdminPages` 且样式包已加载。

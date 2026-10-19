@@ -96,10 +96,15 @@ export function buildSampleValues(fields: AccessSampleField[]): Record<string, u
   return Object.fromEntries(fields.map((field) => [field.fieldCode, sampleValue(field)]));
 }
 
-function payload(context: AccessSampleContext): string {
+/**
+ * 请求体载荷。SK 走请求体字段 `serverSecret`（后端 `SubmitInformationCommand`），
+ * 不是请求头，示例里按语言替换成各自的注入方式。
+ */
+function payload(context: AccessSampleContext, secretPlaceholder: string): string {
   return JSON.stringify(
     {
       formCode: context.formCode,
+      serverSecret: secretPlaceholder,
       values: buildSampleValues(context.fields),
       idempotencyKey: 'order-20260101-001',
     },
@@ -124,7 +129,6 @@ export function buildEmbedCode(context: AccessSampleContext): string {
 /** 服务端接入示例：覆盖 cURL、Postman、Java、JavaScript、Python 五种常用方式。 */
 export function buildAccessSamples(context: AccessSampleContext): AccessCodeSample[] {
   const url = submitUrl(context);
-  const body = payload(context);
   const { host, formCode } = context;
   return [
     {
@@ -133,34 +137,32 @@ export function buildAccessSamples(context: AccessSampleContext): AccessCodeSamp
       code: [
         `curl -X POST '${url}' \\`,
         "  -H 'Content-Type: application/json' \\",
-        "  -H 'X-Mango-SK: $MANGO_INFORMATION_SK' \\",
-        `  -d '${indent(body, 2)}'`,
+        `  -d '${indent(payload(context, '<填当前表单专属 SK>'), 2)}'`,
       ].join('\n'),
     },
     {
       key: 'postman',
       label: 'Postman',
       code: [
-        `POST /information/open/forms/${formCode}/submit HTTP/1.1`,
+        `POST /information/open/forms/submit HTTP/1.1`,
         `Host: ${host}`,
         'Content-Type: application/json',
-        'X-Mango-SK: {{mangoInformationSk}}',
         '',
-        body,
+        payload(context, '{{mangoInformationSk}}'),
       ].join('\n'),
     },
     {
       key: 'java',
       label: 'Java',
       code: [
-        '// JDK 11+ 内置 HttpClient，无需额外依赖',
+        '// JDK 11+ 内置 HttpClient，无需额外依赖；SK 从环境变量读取后写入请求体',
+        'String serverSecret = System.getenv("MANGO_INFORMATION_SK");',
         'String body = """',
-        indent(body, 8),
-        '        """;',
+        indent(payload(context, '%s'), 8),
+        '        """.formatted(serverSecret);',
         'HttpRequest request = HttpRequest.newBuilder()',
         `        .uri(URI.create("${url}"))`,
         '        .header("Content-Type", "application/json")',
-        '        .header("X-Mango-SK", System.getenv("MANGO_INFORMATION_SK"))',
         '        .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8))',
         '        .build();',
         'HttpResponse<String> response = HttpClient.newHttpClient()',
@@ -175,12 +177,10 @@ export function buildAccessSamples(context: AccessSampleContext): AccessCodeSamp
         '// 只在服务端调用：浏览器里放 SK 会被访客拿到',
         `const response = await fetch('${url}', {`,
         "  method: 'POST',",
-        '  headers: {',
-        "    'Content-Type': 'application/json',",
-        "    'X-Mango-SK': process.env.MANGO_INFORMATION_SK,",
-        '  },',
+        "  headers: { 'Content-Type': 'application/json' },",
         '  body: JSON.stringify({',
         `    formCode: '${formCode}',`,
+        '    serverSecret: process.env.MANGO_INFORMATION_SK,',
         `    values: ${JSON.stringify(buildSampleValues(context.fields))},`,
         "    idempotencyKey: 'order-20260101-001',",
         '  }),',
@@ -197,9 +197,9 @@ export function buildAccessSamples(context: AccessSampleContext): AccessCodeSamp
         '',
         'response = requests.post(',
         `    "${url}",`,
-        '    headers={"X-Mango-SK": os.environ["MANGO_INFORMATION_SK"]},',
         '    json={',
         `        "formCode": "${formCode}",`,
+        '        "serverSecret": os.environ["MANGO_INFORMATION_SK"],',
         `        "values": ${JSON.stringify(buildSampleValues(context.fields))},`,
         '        "idempotencyKey": "order-20260101-001",',
         '    },',

@@ -7,10 +7,10 @@ import lombok.Data;
 
 import java.io.Serializable;
 
-/** 提交记录处理命令。 */
+/** 采集记录处理命令。 */
 @Data
 public class ProcessInformationSubmissionCommand implements Serializable {
-    @NotNull(message = "提交记录ID不能为空")
+    @NotNull(message = "采集记录ID不能为空")
     private Long id;
     @NotNull(message = "处理状态不能为空")
     @Schema(description = "处理状态：PENDING、PROCESSING、COMPLETED、CLOSED")

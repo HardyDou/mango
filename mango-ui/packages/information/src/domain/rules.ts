@@ -286,7 +286,7 @@ function rowFieldsOf(rule: FormCreateRule): InformationFieldDefinition[] {
 
 const SUBFORM_FIELD_TYPES = new Set(['group', 'subform', 'tableform']);
 
-/** 从规则中提取可提交的采集项，用于提交记录动态列和值展示。 */
+/** 从规则中提取可提交的采集项，用于采集记录动态列和值展示。 */
 export function rulesToFields(rules: FormCreateRule[]): InformationFieldDefinition[] {
   const fields: InformationFieldDefinition[] = [];
   walkRules(rules, (rule) => {
@@ -432,7 +432,7 @@ export function normalizeDesignerRules(rules: FormCreateRule[]): FormCreateRule[
  * 采集值展示规则：
  * - 选择型控件优先显示选项标签；
  * - 多选、子表单、表格表单等数组/对象值序列化为可读文本，避免出现 [object Object]；
- * - 其余按原值展示：提交记录面向有查看权限的角色，手机号等字段不脱敏，便于直接回访。
+ * - 其余按原值展示：采集记录面向有查看权限的角色，手机号等字段不脱敏，便于直接回访。
  */
 export function displayFieldValue(field: InformationFieldDefinition, value: unknown): string {
   if (value === undefined || value === null || value === '') {

@@ -140,7 +140,7 @@
           </div>
         </div>
 
-        <div class="information-note">提交记录仅对拥有查看权限的角色开放，字段按原始值展示，便于直接回访。</div>
+        <div class="information-note">采集记录仅对拥有查看权限的角色开放，字段按原始值展示，便于直接回访。</div>
 
         <div class="information-drawer-remark">
           <label>处理备注</label>
@@ -215,7 +215,7 @@ const query = reactive({
   endTime: '' as string,
 });
 /** 没选表单时提示去选，选了但没数据时说明该表单确实还没有提交。 */
-const emptyText = computed(() => (query.formId ? '该表单暂无提交记录' : '请选择表单后查看提交记录'));
+const emptyText = computed(() => (query.formId ? '该表单暂无采集记录' : '请选择表单后查看采集记录'));
 
 const timeRange = ref<[string, string] | null>(null);
 /** 常用时间窗口，减少手工选择。 */
@@ -407,7 +407,7 @@ async function load() {
     total.value = page.total;
     pendingCount.value = pending.total;
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : '提交记录加载失败';
+    errorMessage.value = error instanceof Error ? error.message : '采集记录加载失败';
   } finally {
     loading.value = false;
   }

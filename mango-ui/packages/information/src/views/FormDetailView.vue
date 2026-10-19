@@ -2,7 +2,7 @@
   <div class="information-page" data-page="information.form.detail">
     <MangoPageBackBar title="返回列表页" :show-refresh="false" @back="goList">
       <template #extra>
-        <el-button @click="goSubmissions">提交记录</el-button>
+        <el-button @click="goSubmissions">采集记录</el-button>
         <el-button type="primary" @click="goConfig">配置表单</el-button>
       </template>
     </MangoPageBackBar>
@@ -131,7 +131,7 @@
               <div class="information-access-field">
                 <div class="information-access-subtitle">表单专属 SK</div>
                 <div class="information-api-box">
-                  <span class="information-api-key">X-Mango-SK</span>
+                  <span class="information-api-key">serverSecret</span>
                   <span class="information-api-value">{{
                     secretVisible ? detail?.serverSecret || '-' : secretText
                   }}</span>

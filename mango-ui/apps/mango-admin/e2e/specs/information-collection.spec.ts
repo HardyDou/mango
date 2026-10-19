@@ -44,7 +44,7 @@ async function login(page: Page) {
   await page.waitForURL('**/#/home');
 }
 
-test.describe('@p0 @information 信息采集管理', () => {
+test.describe('@p0 @information 信息采集', () => {
   // 设计器与 form-create 运行时的首屏渲染较重，统一放宽用例超时
   test.describe.configure({ timeout: 90000 });
 
@@ -102,12 +102,12 @@ test.describe('@p0 @information 信息采集管理', () => {
     await goBack(page);
     await expect(page.locator('[data-page="information.forms"]')).toBeVisible();
 
-    // 列表行操作只保留 详情、配置、提交记录、停用、删除
+    // 列表行操作只保留 详情、配置、采集记录、停用、删除
     await page.getByPlaceholder('名称/编码').first().fill(formCode);
     await page.getByRole('button', { name: '查询', exact: true }).click();
     const hostedRow = page.locator('.el-table__body tr', { hasText: formCode }).first();
     await expect(hostedRow).toBeVisible();
-    for (const label of ['详情', '配置', '提交记录', '停用', '删除']) {
+    for (const label of ['详情', '配置', '采集记录', '停用', '删除']) {
       await expect(hostedRow.getByRole('button', { name: label, exact: true })).toBeVisible();
     }
     await expect(hostedRow.getByRole('button', { name: '接入', exact: true })).toHaveCount(0);
@@ -162,7 +162,10 @@ test.describe('@p0 @information 信息采集管理', () => {
         page.locator('.information-code-tabs .el-tabs__item').filter({ hasText: new RegExp(`^${label}$`) }),
       ).toBeVisible();
     }
-    await expect(page.locator('[data-sample="curl"]')).toContainText('X-Mango-SK');
+    // SK 走请求体字段 serverSecret，示例里不能再出现请求头写法
+    await expect(page.locator('[data-sample="curl"]')).toContainText('serverSecret');
+    await expect(page.locator('[data-sample="curl"]')).not.toContainText('X-Mango-SK');
+    await expect(page.locator('.information-api-key')).toContainText('serverSecret');
     await page
       .locator('.information-code-tabs .el-tabs__item')
       .filter({ hasText: /^Python$/ })
@@ -191,7 +194,7 @@ test.describe('@p0 @information 信息采集管理', () => {
     }
   });
 
-  test('提交记录是独立菜单入口且不依赖表单详情', async ({ page }) => {
+  test('采集记录是独立菜单入口且不依赖表单详情', async ({ page }) => {
     await login(page);
     const token = await page.evaluate(() => sessionStorage.getItem('MANGO_TOKEN') || '');
     const headers = { Authorization: `Bearer ${token}`, 'X-Mango-Tenant-Id': '1' };
@@ -217,14 +220,14 @@ test.describe('@p0 @information 信息采集管理', () => {
       data: {
         ...(existingId ? { id: existingId } : {}),
         formCode: 'e2e-submissions',
-        formName: '提交记录验证表',
+        formName: '采集记录验证表',
         definitionJson,
         status: 'PUBLISHED',
       },
     });
     const formId = (await save.json()).data as string;
     const submit = await page.request.post('/api/information/open/forms/submit', {
-      data: { formCode: 'e2e-submissions', values: { name: '提交记录访客', phone: '13800138000' }, sourcePage: 'e2e' },
+      data: { formCode: 'e2e-submissions', values: { name: '采集记录访客', phone: '13800138000' }, sourcePage: 'e2e' },
     });
     expect(submit.status()).toBe(200);
 
@@ -256,7 +259,7 @@ test.describe('@p0 @information 信息采集管理', () => {
     await page.screenshot({ path: resolve(evidenceDir, '06-submission-detail.png') });
   });
 
-  test('提交记录列随表单字段定义动态变化', async ({ page }) => {
+  test('采集记录列随表单字段定义动态变化', async ({ page }) => {
     await login(page);
     const token = await page.evaluate(() => sessionStorage.getItem('MANGO_TOKEN') || '');
     const headers = { Authorization: `Bearer ${token}`, 'X-Mango-Tenant-Id': '1' };
@@ -490,7 +493,7 @@ test.describe('@p0 @information 信息采集管理', () => {
     await expect(page.locator('.el-rate__item')).toHaveCount(5);
     await page.locator('.el-rate__item').nth(3).click();
     await page.getByRole('button', { name: '提交', exact: true }).click();
-    await expect(page.getByText('提交成功', { exact: true })).toBeVisible();
+    await expect(page.getByText('提交成功', { exact: true }).first()).toBeVisible();
     await page.waitForTimeout(600);
     mkdirSync(evidenceDir, { recursive: true });
     await page.screenshot({ path: resolve(evidenceDir, '08-hosted-submit-success.png') });
@@ -550,10 +553,10 @@ test.describe('@p0 @information 信息采集管理', () => {
     await page.request.delete('/api/information/forms', { headers, params: { id: createdId } });
   });
 
-  test('表单详情入口可直达提交记录并预选当前表单', async ({ page }) => {
+  test('表单详情入口可直达采集记录并预选当前表单', async ({ page }) => {
     await login(page);
     await page.goto(`/#/information/forms/${formId}/detail`);
-    await page.getByRole('button', { name: '提交记录' }).click();
+    await page.getByRole('button', { name: '采集记录' }).click();
     await expect(page.locator('[data-page="information.form.submissions"]')).toBeVisible();
     await expect(page.locator('[data-filter="form"]')).toContainText(formCode);
   });

@@ -5,7 +5,7 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 
-/** 信息采集提交记录。 */
+/** 信息采集采集记录。 */
 @Data
 public class InformationSubmissionVO {
     private Long id;

@@ -9,7 +9,7 @@ import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 
-/** 提交记录分页查询。 */
+/** 采集记录分页查询。 */
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class InformationSubmissionPageQuery extends PageQuery {

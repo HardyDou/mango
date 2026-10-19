@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS `information_form` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_information_form_tenant_code` (`tenant_id`,`form_code`),
   KEY `idx_information_form_status` (`tenant_id`,`status`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='信息采集表单';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='信息采集表单';
 
 CREATE TABLE IF NOT EXISTS `information_submission` (
   `id` bigint NOT NULL COMMENT '提交记录ID',
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS `information_submission` (
   KEY `idx_information_submission_form` (`tenant_id`,`form_id`),
   KEY `idx_information_submission_status` (`tenant_id`,`status`),
   KEY `idx_information_submission_time` (`tenant_id`,`submitted_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='信息采集提交记录';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='信息采集提交记录';
 
 CREATE TABLE IF NOT EXISTS `information_submission_snapshot` (
   `id` bigint NOT NULL COMMENT '快照ID',
@@ -57,4 +57,4 @@ CREATE TABLE IF NOT EXISTS `information_submission_snapshot` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_information_snapshot_submission` (`submission_id`),
   KEY `idx_information_snapshot_form` (`tenant_id`,`form_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='信息采集字段定义快照';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='信息采集字段定义快照';

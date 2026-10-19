@@ -91,7 +91,7 @@ export interface InformationUploadTicket {
 }
 
 export interface InformationSubmissionResult {
-  /** 提交记录主键，可用于查询详情。 */
+  /** 采集记录主键，可用于查询详情。 */
   id: InformationId;
   message: string;
 }

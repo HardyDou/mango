@@ -146,7 +146,7 @@ public class InformationFormService implements IInformationFormService {
         InformationFormEntity form = select(id);
         Require.isTrue(submissionMapper.selectCount(new LambdaQueryWrapper<InformationSubmissionEntity>()
                 .eq(StringUtils.hasText(MangoContextHolder.tenantId()), InformationSubmissionEntity::getTenantId, MangoContextHolder.tenantId())
-                .eq(InformationSubmissionEntity::getFormId, form.getId())) == 0, InformationCode.INVALID_SUBMISSION, "已有提交记录的表单不可删除");
+                .eq(InformationSubmissionEntity::getFormId, form.getId())) == 0, InformationCode.INVALID_SUBMISSION, "已有采集记录的表单不可删除");
         return formMapper.deleteById(form.getId()) > 0;
     }
 

@@ -7,7 +7,7 @@ import io.mango.information.api.query.InformationSubmissionPageQuery;
 import io.mango.information.api.vo.InformationSubmissionVO;
 import jakarta.validation.Valid;
 
-/** 信息采集提交记录管理 API。 */
+/** 信息采集采集记录管理 API。 */
 public interface InformationSubmissionApi {
     R<PageResult<InformationSubmissionVO>> page(@Valid InformationSubmissionPageQuery query);
     R<InformationSubmissionVO> detail(Long id);
