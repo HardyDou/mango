@@ -85,6 +85,11 @@ export interface SubmitInformationPayload {
   serverSecret?: string;
 }
 
+export interface InformationUploadTicket {
+  ticket: string;
+  expiresIn: number;
+}
+
 export interface InformationSubmissionResult {
   /** 提交记录主键，可用于查询详情。 */
   id: InformationId;
@@ -144,6 +149,8 @@ export function createInformationApi(httpClient: HttpClient) {
     processSubmission: (data: { id: InformationId; status: InformationSubmissionStatus; processRemark?: string }) =>
       put<boolean>('/information/submissions/process', data),
 
+    uploadTicket: (formCode: string) =>
+      post<InformationUploadTicket>(`/information/open/forms/${encodeURIComponent(formCode)}/upload-ticket`),
     publicForm: (formCode: string) => get<PublicInformationForm>('/information/open/forms/detail', { formCode }),
     submitPublic: (data: SubmitInformationPayload) =>
       post<InformationSubmissionResult>('/information/open/forms/submit', data),

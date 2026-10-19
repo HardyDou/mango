@@ -1,6 +1,6 @@
 <template>
   <div class="information-page" data-page="information.form.config">
-    <MangoPageBackBar title="返回详情页" :show-refresh="false" @back="onBack">
+    <MangoPageBackBar title="返回列表页" :show-refresh="false" @back="onBack">
       <template #extra>
         <span v-if="dirty" class="information-dirty-hint">有未保存的修改</span>
         <el-button
@@ -227,15 +227,16 @@ function leaveConfirm(): boolean {
   return !dirty.value || window.confirm('有未保存的修改，确认离开？');
 }
 
-function goDetail() {
-  return router.push(`/information/forms/${formId.value}/detail`);
+/** 配置是从列表发起的编辑动作，返回时直接回列表，不再经过详情。 */
+function goList() {
+  return router.push('/information/forms');
 }
 
 function onBack() {
   if (!leaveConfirm()) {
     return;
   }
-  return goDetail();
+  return goList();
 }
 
 onMounted(async () => {

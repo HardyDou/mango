@@ -1,6 +1,6 @@
 <template>
   <div class="information-page" data-page="information.form.hosted">
-    <MangoPageBackBar title="返回详情页" :show-refresh="false" @back="goDetail">
+    <MangoPageBackBar title="返回列表页" :show-refresh="false" @back="goList">
       <template #extra>
         <el-button @click="copyUrl">复制页面地址</el-button>
         <el-button type="primary" @click="openHostedPage">打开页面 ↗</el-button>
@@ -200,8 +200,9 @@ async function regenerate() {
   }
 }
 
-function goDetail() {
-  return router.push(`/information/forms/${formId.value}/detail`);
+/** 接入是从列表发起的查看动作，返回时直接回列表。 */
+function goList() {
+  return router.push('/information/forms');
 }
 
 onMounted(load);

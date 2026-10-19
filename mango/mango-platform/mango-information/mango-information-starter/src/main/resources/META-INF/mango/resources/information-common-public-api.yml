@@ -33,6 +33,18 @@ mango:
             handlerClass: { type: STRING, value: io.mango.information.starter.controller.InformationPublicController }
             handlerMethod: { type: STRING, value: submit }
             description: { type: STRING, value: 提交信息采集数据 }
+        - id: "2951400000000010555"
+          version: 1
+          biz-key: api.information.POST.information.open.forms.upload-ticket
+          name: 匿名领取上传票据
+          target-module: authorization
+          fields:
+            moduleName: { type: STRING, value: mango-information }
+            httpMethod: { type: STRING, value: POST }
+            pathPattern: { type: STRING, value: /information/open/forms/**/upload-ticket }
+            resourceCode: { type: STRING, value: "POST:/information/open/forms/**/upload-ticket" }
+            accessMode: { type: STRING, value: PUBLIC }
+            description: { type: STRING, value: 匿名领取表单短效上传票据 }
         - id: "2951400000000010553"
           version: 1
           biz-key: api.information.POST.information.open.forms.files

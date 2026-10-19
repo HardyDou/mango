@@ -98,10 +98,16 @@ test.describe('@p0 @information 信息采集管理', () => {
     await expect(designerAfterReload).toBeVisible({ timeout: 20000 });
     await expect(designerAfterReload.getByText('需求描述', { exact: true }).first()).toBeVisible();
 
-    // 接入方式
+    // 配置是从列表发起的编辑动作，返回直接回列表
     await goBack(page);
-    await expect(page.locator('[data-page="information.form.detail"]')).toBeVisible();
-    await page.getByRole('button', { name: '接入方式', exact: true }).click();
+    await expect(page.locator('[data-page="information.forms"]')).toBeVisible();
+
+    // 接入方式同样从列表进入，返回也直接回列表
+    await page.getByPlaceholder('名称/编码').first().fill(formCode);
+    await page.getByRole('button', { name: '查询', exact: true }).click();
+    const hostedRow = page.locator('.el-table__body tr', { hasText: formCode }).first();
+    await expect(hostedRow).toBeVisible();
+    await hostedRow.getByRole('button', { name: '接入' }).click();
     await expect(page.locator('[data-page="information.form.hosted"]')).toBeVisible();
     await expect(page.getByText('使用方式 ② · 托管页面')).toBeVisible();
     await expect(page.getByText('无需密钥')).toBeVisible();
@@ -112,6 +118,9 @@ test.describe('@p0 @information 信息采集管理', () => {
     await page.locator('[data-secret-action="toggle"]').click();
     await expect(page.locator('.information-api-value')).not.toContainText('••••');
     await shot(page, '04-form-hosted.png');
+
+    await goBack(page);
+    await expect(page.locator('[data-page="information.forms"]')).toBeVisible();
   });
 
   test('提交记录是独立菜单入口且不依赖表单详情', async ({ page }) => {
@@ -325,6 +334,70 @@ test.describe('@p0 @information 信息采集管理', () => {
     await hosted.locator('.el-slider__runway').click();
     await hosted.getByRole('button', { name: '提交', exact: true }).click();
     await expect(hosted.getByText('提交成功', { exact: true }).first()).toBeVisible();
+    await context.close();
+  });
+
+  test('匿名访客上传附件需先取票据且文件落到文件模块', async ({ page, browser }) => {
+    await login(page);
+    const token = await page.evaluate(() => sessionStorage.getItem('MANGO_TOKEN') || '');
+    const headers = { Authorization: `Bearer ${token}`, 'X-Mango-Tenant-Id': '1' };
+    const definitionJson = JSON.stringify([
+      { type: 'input', field: 'name', title: '姓名', props: { placeholder: '请输入姓名' } },
+      { type: 'upload', field: 'attachment', title: '附件', props: { limit: 2, multiple: true } },
+    ]);
+    const existing = await page.request.get('/api/information/forms/page', {
+      headers,
+      params: { page: '1', size: '1', keyword: 'e2e-upload-ticket' },
+    });
+    const existingId = (await existing.json())?.data?.list?.[0]?.id;
+    const save = await page.request.post('/api/information/forms/save', {
+      headers,
+      data: {
+        ...(existingId ? { id: existingId } : {}),
+        formCode: 'e2e-upload-ticket',
+        formName: '上传票据验证表',
+        definitionJson,
+        status: 'PUBLISHED',
+      },
+    });
+    expect(save.status()).toBe(200);
+
+    const context = await browser.newContext();
+    const hosted = await context.newPage();
+    const calls: Array<{ url: string; status: number; ticket?: string }> = [];
+    hosted.on('request', (request) => {
+      if (request.url().includes('/information/open/forms/e2e-upload-ticket/files') && request.method() === 'POST') {
+        calls.push({ url: request.url(), status: 0, ticket: request.headers()['x-mango-upload-ticket'] });
+      }
+    });
+    hosted.on('response', (response) => {
+      if (
+        response.url().includes('/information/open/forms/e2e-upload-ticket/files') &&
+        response.request().method() === 'POST'
+      ) {
+        const last = calls[calls.length - 1];
+        if (last) {
+          last.status = response.status();
+        }
+      }
+    });
+
+    await hosted.goto('/#/information/hosted?formCode=e2e-upload-ticket');
+    await hosted.waitForTimeout(3500);
+    await expect(hosted.locator('[data-upload-action="add"]')).toBeVisible();
+    await hosted.locator('.information-upload-field .el-upload__input').setInputFiles({
+      name: 'e2e-upload.txt',
+      mimeType: 'text/plain',
+      buffer: Buffer.from('mango information upload ticket'),
+    });
+    await expect(hosted.locator('.information-upload-list')).toBeVisible({ timeout: 20000 });
+    await expect(hosted.locator('.information-upload-name')).toContainText('e2e-upload');
+    await shot(hosted, '11-hosted-upload.png');
+
+    // 上传必须携带短效票据，且只有一次成功请求
+    expect(calls.length).toBeGreaterThan(0);
+    expect(calls[0].ticket).toBeTruthy();
+    expect(calls.some((call) => call.status === 200)).toBe(true);
     await context.close();
   });
 

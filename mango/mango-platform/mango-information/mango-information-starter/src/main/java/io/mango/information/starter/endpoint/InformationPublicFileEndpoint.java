@@ -4,6 +4,7 @@ import io.mango.common.result.Require;
 import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.information.api.enums.InformationCode;
 import io.mango.information.api.vo.InformationFileVO;
+import io.mango.information.api.vo.InformationUploadTicketVO;
 import io.mango.information.core.service.impl.InformationFileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.InputStreamResource;
@@ -31,13 +32,24 @@ public class InformationPublicFileEndpoint {
 
     private final InformationFileService fileService;
 
-    /** 匿名上传：表单编码来自路径，限制由服务层校验。 */
+    /** 匿名领取短效上传票据：票据绑定表单并带有效期。 */
+    public ServerResponse ticket(ServerRequest request) {
+        String formCode = formCode(request);
+        InformationUploadTicketVO ticket = fileService.issueTicket(formCode);
+        return ServerResponse.ok().body(ticket);
+    }
+
+    /** 匿名上传：必须携带有效票据，大小与类型限制由服务层按配置决定。 */
     public ServerResponse upload(ServerRequest request) throws IOException, ServletException {
         String formCode = formCode(request);
+        String ticket = request.headers().firstHeader("X-Mango-Upload-Ticket");
+        if (ticket == null) {
+            ticket = request.param("ticket").orElse(null);
+        }
         Part file = request.multipartData().getFirst("file");
         Require.notNull(file, InformationCode.INVALID_SUBMISSION, "上传文件不能为空");
-        InformationFileVO result = fileService.upload(
-                formCode, file.getSubmittedFileName(), file.getContentType(), file.getSize(), file.getInputStream());
+        InformationFileVO result = fileService.upload(formCode, file.getSubmittedFileName(), file.getContentType(),
+                file.getSize(), file.getInputStream(), ticket);
         return ServerResponse.ok().body(result);
     }
 

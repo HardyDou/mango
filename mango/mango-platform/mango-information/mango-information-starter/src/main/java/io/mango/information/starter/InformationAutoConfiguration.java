@@ -39,6 +39,7 @@ public class InformationAutoConfiguration {
     @Bean
     public RouterFunction<ServerResponse> informationPublicFileRoutes(InformationPublicFileEndpoint endpoint) {
         return route()
+                .POST("/information/open/forms/{formCode}/upload-ticket", endpoint::ticket)
                 .POST("/information/open/forms/{formCode}/files", endpoint::upload)
                 .GET("/information/open/forms/{formCode}/files/detail", endpoint::detail)
                 .GET("/information/open/forms/{formCode}/files/preview", endpoint::preview)

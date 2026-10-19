@@ -7,6 +7,7 @@ import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.file.api.vo.FileRecordVO;
 import io.mango.information.api.enums.InformationCode;
 import io.mango.information.api.vo.InformationFileVO;
+import io.mango.information.api.vo.InformationUploadTicketVO;
 import io.mango.information.core.entity.InformationFormEntity;
 import io.mango.information.core.service.IInformationFileService;
 import io.mango.information.core.service.IInformationFormService;
@@ -43,24 +44,49 @@ public class InformationFileService implements IInformationFileService {
     private final IInformationFormService formService;
     private final IFileContentProvider fileContentProvider;
 
+    /**
+     * 大小与扩展名限制开关。
+     * <p>
+     * 首版按产品负责人确认不启用；上传仍必须先获取短效票据，票据始终校验。
+     */
+    @Value("${mango.information.upload.restrict:false}")
+    private boolean restrict;
+
+    /** 上传票据有效期，单位秒。 */
+    @Value("${mango.information.upload.ticket-ttl-seconds:600}")
+    private long ticketTtlSeconds;
+
     @Value("${mango.information.upload.max-size-bytes:20971520}")
     private long maxSizeBytes;
 
     @Value("${mango.information.upload.allowed-extensions:}")
     private String allowedExtensions;
 
-    /** 公开预览地址的签名密钥，用于把文件内容访问绑定到具体表单。 */
+    /** 公开预览地址的签名密钥，仅在启用限制时参与校验。 */
     @Value("${mango.information.upload.sign-secret:}")
     private String signSecret;
 
     @Override
-    public InformationFileVO upload(String formCode, String fileName, String contentType, long fileSize, InputStream inputStream) {
+    public InformationUploadTicketVO issueTicket(String formCode) {
+        formService.selectPublished(formCode);
+        long expiresAt = System.currentTimeMillis() / 1000 + ticketTtlSeconds;
+        InformationUploadTicketVO vo = new InformationUploadTicketVO();
+        vo.setTicket(expiresAt + "." + signTicket(formCode, expiresAt));
+        vo.setExpiresIn(ticketTtlSeconds);
+        return vo;
+    }
+
+    @Override
+    public InformationFileVO upload(String formCode, String fileName, String contentType, long fileSize, InputStream inputStream, String ticket) {
+        Require.isTrue(verifyTicket(formCode, ticket), InformationCode.INVALID_SUBMISSION, "上传票据无效或已过期，请重新打开页面");
         InformationFormEntity form = formService.selectPublished(formCode);
         Require.isTrue(StringUtils.hasText(fileName), InformationCode.INVALID_SUBMISSION, "文件名不能为空");
         Require.isTrue(fileSize > 0, InformationCode.INVALID_SUBMISSION, "文件大小必须大于 0");
-        Require.isTrue(fileSize <= maxSizeBytes, InformationCode.INVALID_SUBMISSION,
-                "文件不能超过 " + (maxSizeBytes / 1024 / 1024) + "MB");
-        Require.isTrue(allowed(fileName), InformationCode.INVALID_SUBMISSION, "不允许上传该类型的文件");
+        if (restrict) {
+            Require.isTrue(fileSize <= maxSizeBytes, InformationCode.INVALID_SUBMISSION,
+                    "文件不能超过 " + (maxSizeBytes / 1024 / 1024) + "MB");
+            Require.isTrue(allowed(fileName), InformationCode.INVALID_SUBMISSION, "不允许上传该类型的文件");
+        }
 
         SaveFileCommand command = new SaveFileCommand();
         command.setInputStream(inputStream);
@@ -102,7 +128,7 @@ public class InformationFileService implements IInformationFileService {
         vo.setFileSize(record.getFileSize());
         vo.setContentType(record.getContentType());
         String base = "/information/open/forms/" + formCode + "/files/preview?id=" + record.getId()
-                + "&sig=" + sign(formCode, record.getId());
+                + (restrict ? "&sig=" + sign(formCode, record.getId()) : "");
         vo.setUrl(base);
         vo.setPreviewUrl(base);
         vo.setDownloadUrl(base);
@@ -111,19 +137,59 @@ public class InformationFileService implements IInformationFileService {
 
     /** 下载地址在 detail 中同样带签名，保证前端拿到即可预览。 */
     private String previewUrl(String formCode, Long id) {
-        return "/information/open/forms/" + formCode + "/files/preview?id=" + id + "&sig=" + sign(formCode, id);
+        return "/information/open/forms/" + formCode + "/files/preview?id=" + id
+                + (restrict ? "&sig=" + sign(formCode, id) : "");
     }
 
     /**
-     * 公开预览只读取本表单上传的文件：租户由表单归属决定，内容访问必须带有效签名。
+     * 公开预览读取文件：租户由表单归属决定；启用限制时要求携带有效签名。
      */
     public FileDownloadVO download(String formCode, Long id, String signature) {
-        Require.isTrue(verify(formCode, id, signature), InformationCode.INVALID_SUBMISSION, "文件预览地址无效或已过期");
+        if (restrict) {
+            Require.isTrue(verify(formCode, id, signature), InformationCode.INVALID_SUBMISSION, "文件预览地址无效或已过期");
+        }
         InformationFormEntity form = formService.selectPublished(formCode);
         FileDownloadVO download = withTenantContext(form.getTenantId(),
                 () -> fileContentProvider.downloadForService(id));
         Require.notNull(download, InformationCode.INVALID_SUBMISSION, "文件不存在");
         return download;
+    }
+
+    /** 票据 = 过期时间 + 表单绑定签名，短效且不可跨表单复用。 */
+    private String signTicket(String formCode, long expiresAt) {
+        return signPayload(formCode + ":ticket:" + expiresAt);
+    }
+
+    private boolean verifyTicket(String formCode, String ticket) {
+        if (!StringUtils.hasText(ticket)) {
+            return false;
+        }
+        int separator = ticket.indexOf('.');
+        if (separator <= 0) {
+            return false;
+        }
+        long expiresAt;
+        try {
+            expiresAt = Long.parseLong(ticket.substring(0, separator));
+        } catch (NumberFormatException e) {
+            return false;
+        }
+        if (expiresAt < System.currentTimeMillis() / 1000) {
+            return false;
+        }
+        String expected = expiresAt + "." + signTicket(formCode, expiresAt);
+        return MessageDigest.isEqual(expected.getBytes(StandardCharsets.UTF_8), ticket.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private String signPayload(String payload) {
+        String secret = StringUtils.hasText(signSecret) ? signSecret : "mango-information-upload";
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+            return HexFormat.of().formatHex(mac.doFinal(payload.getBytes(StandardCharsets.UTF_8))).substring(0, 32);
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to sign information payload", e);
+        }
     }
 
     private String sign(String formCode, Long id) {
