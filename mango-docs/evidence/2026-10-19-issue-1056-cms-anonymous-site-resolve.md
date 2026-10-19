@@ -31,7 +31,7 @@
 | SR-003 | 匿名 `GET /cms/open/sites/resolve?siteCode=<code>` | 多个租户存在同 `siteCode` | 拒绝请求，不猜测租户 | 400 `站点不存在或不唯一` | `anonymousResolve_rejectsAmbiguousSiteCodeAcrossTenants` 通过 |
 | SR-004 | 匿名 `GET /cms/open/sites/resolve?domain=<host>` | 库中存在唯一启用域名站点 | 与修复前一致的 `SiteResolveVO` 与错误消息 | 无匹配时保持 400 `站点不存在或不唯一` | `resolveSite_returnsTheSingleEnabledDomainSite`、`resolveSite_rejectsMissingOrAmbiguousSite` 通过 |
 | SR-005 | 公开内容、栏目、导航、Banner、广告、文件读取 | 已按匿名 `siteCode` 解析出站点 | 下游查询继续绑定解析站点的 `tenantId`/`siteId`，不跨租户泄露 | 公开资格不满足时按既有语义返回不存在或空 | 既有 `CmsSiteServiceBehaviorTest` 公开读取用例保持通过 |
-| SR-006 | 真实数据库上的站点解析 | H2 `MODE=MySQL` 执行模块 V1 DDL，真实 `CmsSiteMapper` 读写 `cms_site` | `site_code`、`domain`、`status`、`deleted`、`tenant_id` 条件由真实 SQL 生效 | 无匹配、停用、逻辑删除或多租户同码时返回 400 `站点不存在或不唯一` | `CmsSiteResolveIntegrationTest` 6/6 通过 |
+| SR-006 | 真实数据库上的站点解析 | H2 `MODE=MySQL` 执行模块 V1 DDL，开启生产一致的租户拦截器，真实 `CmsSiteMapper` 读写 `cms_site` | `site_code`、`domain`、`status`、`deleted` 条件与租户范围（默认租户或上下文租户）由真实 SQL 生效 | 无匹配、停用、逻辑删除或不在当前租户范围时返回 400 `站点不存在或不唯一` | `CmsSiteResolveIntegrationTest` 6/6 通过 |
 
 ## 4. 技术决定
 
@@ -41,7 +41,7 @@
 | TD-002 | SR-004, SR-005 | 不改 Controller、`@ApiAccess`、权限码、数据库和下游租户绑定逻辑；`domain` 解析优先级和既有错误消息不变 | 无额外生产路径 | 无需回滚，未改这些契约 |
 | TD-003 | SR-001, SR-002, SR-003 | 复用 `SiteBaseQuery` 已有 `siteCode`/`domain` 字段和 `siteMapper` 既有查询，不新增表、字段、接口或依赖，满足 `REDLINE-REUSE-010` 与 `REDLINE-MINIMAL-020` | 无新增公共类型 | 无需回滚，无新增结构 |
 | TD-004 | 全部 | 更新模块 README 排查说明；历史 `cms-architecture-debt` TDD 的 `SEC-002`/`API-003`/`TC-002` 关于“匿名只能按域名解析”的表述由本记录取代，不就地修改已批准且被生命周期哈希链接的 TDD | `mango/mango-platform/mango-cms/README.md`、本记录 | 恢复 README 文案 |
-| TD-005 | SR-006 | 在 `mango-cms-core` 增加 test 范围 `mango-infra-persistence-starter` 与 `h2` 依赖，用 H2 `MODE=MySQL` 加模块 V1 DDL 驱动真实 `CmsSiteMapper`；不新增生产依赖、不改生产配置 | `mango-cms-core/pom.xml`、`CmsSiteResolveIntegrationTest.java` | 删除新增测试与两条 test 依赖 |
+| TD-005 | SR-006 | 在 `mango-cms-core` 增加 test 范围 `mango-infra-persistence-starter` 与 `h2` 依赖，用 H2 `MODE=MySQL` 加模块 V1 DDL 驱动真实 `CmsSiteMapper`，并开启生产一致的租户拦截器与默认租户；不新增生产依赖、不改生产配置 | `mango-cms-core/pom.xml`、`CmsSiteResolveIntegrationTest.java` | 删除新增测试与两条 test 依赖 |
 
 ## 5. 实施清单
 
@@ -52,7 +52,7 @@
 | IM-003 | TD-001, TD-002 | 3 | `mango-cms-starter/.../CmsSiteResolveHttpContractTest.java` | 新增 `GET /cms/open/sites/resolve` MockMvc 接口测试：匿名 `siteCode` 成功、缺参 400、跨租户歧义 400 |
 | IM-004 | TD-004 | 4 | `mango/mango-platform/mango-cms/README.md` | 快速开始与问题排查说明 `domain`/`siteCode` 二选一及匿名歧义语义 |
 | IM-005 | TD-004 | 5 | 本记录 | 目标、决定、验证证据和剩余风险可追溯 |
-| IM-006 | TD-005 | 6 | `mango-cms-core/pom.xml`、`CmsSiteResolveIntegrationTest.java` | H2 `MODE=MySQL` + V1 DDL + 真实 `CmsSiteMapper`，覆盖匿名 `siteCode`/`domain`、域名优先、跨租户歧义、停用与逻辑删除、租户上下文隔离 |
+| IM-006 | TD-005 | 6 | `mango-cms-core/pom.xml`、`CmsSiteResolveIntegrationTest.java` | H2 `MODE=MySQL` + V1 DDL + 真实 `CmsSiteMapper` + 租户拦截器，覆盖匿名 `siteCode`/`domain`、域名优先、默认租户范围、停用与逻辑删除、上下文租户隔离 |
 
 ## 6. 验收映射与结果
 
@@ -64,12 +64,13 @@
 | SR-001, SR-002, SR-003 | 修复前失效基线 | 修复前 `CmsSupportTest.validateResolveScope_匿名解析只能使用域名` 断言 `匿名站点解析不能使用站点编码`；修复后该断言删除并由 `anonymousResolve_acceptsSiteCode` 取代 | PASS：新用例在旧实现下会抛 `匿名站点解析必须提供域名` | `git diff` 中删除的旧断言 |
 | 静态编译（M09） | 编译与测试执行 | 同上命令完成 `mango-cms-api`/`core`/`starter`/`starter-remote` 编译 | PASS | Maven 构建输出与 surefire 报告 |
 | 全部 | 外部状态回读（M15） | `gh pr checks 1058 --repo HardyDou/mango`；`gh pr view 1058 --repo HardyDou/mango --json baseRefName,headRefOid,files` | PASS：base `main`、head `c8f5b0cda015042a09bb71743d8536b08d3f3f6c`、6 个文件；`pr-contract-check`、`pmo-doc-check`、`frontend-pr-quality`、`Java gates`、`Documentation gates` 均为 pass | `https://github.com/HardyDou/mango/pull/1058` |
-| SR-001, SR-003, SR-006 | 真实数据库集成测试（M11） | `mvn -f mango/mango-platform/mango-cms/pom.xml -pl mango-cms-core -Dtest=CmsSiteResolveIntegrationTest test`；再次执行 `mvn -f mango/mango-platform/mango-cms/pom.xml test` | PASS：`CmsSiteResolveIntegrationTest` 6/6，H2 `MODE=MySQL` 加 V1 DDL 驱动真实 `CmsSiteMapper`；全量 CMS 测试 `mango-cms-core` 33 条、`mango-cms-starter` 19 条、`mango-cms-starter-remote` 5 条，失败/错误/跳过 0 | `mango-cms-core/target/surefire-reports/io.mango.cms.core.service.impl.CmsSiteResolveIntegrationTest.txt` |
+| SR-001, SR-003, SR-006 | 真实数据库集成测试（M11） | `mvn -f mango/mango-platform/mango-cms/pom.xml -pl mango-cms-core -Dtest=CmsSiteResolveIntegrationTest test`；再次执行 `mvn -f mango/mango-platform/mango-cms/pom.xml test` | PASS：`CmsSiteResolveIntegrationTest` 6/6，H2 `MODE=MySQL` 加 V1 DDL 驱动真实 `CmsSiteMapper`，并开启租户拦截器与 `default-tenant-id=tenant-a`（与 `mango-monolith-app` 配置一致）；全量 CMS 测试 `mango-cms-core` 33 条、`mango-cms-starter` 19 条、`mango-cms-starter-remote` 5 条，失败/错误/跳过 0 | `mango-cms-core/target/surefire-reports/io.mango.cms.core.service.impl.CmsSiteResolveIntegrationTest.txt` |
 
 ## 7. 例外与剩余风险
 
-- M11 补充说明：PR #1058 原先只执行 M10（Mockito 替换 `CmsSiteMapper`）和 M12（MockMvc），未执行真实数据库集成测试，因此 `site_code` 列映射、`status`/`deleted`/`tenant_id` 条件没有在真实 SQL 上被证明；该缺口由 PR #1059 的 `CmsSiteResolveIntegrationTest` 补齐。原任务 worktree 与分支已在 #1058 合并后清理，本次按 `rules/00-dev-flow.md` §3.4.2 从 `main` 重建 worktree，未另起无关联实现分支。
+- M11 补充说明：PR #1058 原先只执行 M10（Mockito 替换 `CmsSiteMapper`）和 M12（MockMvc），未执行真实数据库集成测试，因此 `site_code` 列映射、`status`/`deleted` 条件没有在真实 SQL 上被证明；该缺口由 PR #1059 的 `CmsSiteResolveIntegrationTest` 补齐。PR #1059 初版关闭了租户拦截器，未覆盖生产默认的租户范围语义；本次在开启租户拦截器与默认租户后重跑并修正 README 排查说明。原任务 worktree 与分支已在 #1058 合并后清理，本次按 `rules/00-dev-flow.md` §3.4.2 从 `main` 重建 worktree，未另起无关联实现分支。
+- 未实现“一个站点映射多个域名”（`cms_site_domain`）：已登记为 https://github.com/HardyDou/mango/issues/1060（enhancement, P2）。
 - 未修改已批准的 `mango-docs/designs/cms-architecture-debt/technical-design.md`：其 `SEC-002`、`API-003`、`TC-002` 记录的“匿名只能按域名解析”是那次债务治理任务的状态；该 TDD 已被 `implementation-plan.md` 的 `upstreamDocumentHash` 锁定，就地修改会破坏生命周期 handoff。本记录以 TD-004 明确取代该口径。
 - 未执行真实浏览器或真实后端 HTTP 验收（M13）：本改动无 UI，接口行为已由 `CmsSiteResolveHttpContractTest` 在 MockMvc 层真实调用 `CmsSiteController` + `CmsSiteService` 证明；M11 使用 H2 `MODE=MySQL`，未启动真实 MySQL 后端复测匿名 `siteCode` 全链路。
-- 匿名 `siteCode` 在多个租户使用相同编码时返回 `站点不存在或不唯一`，与 `domain` 匿名解析的歧义语义一致；平台不新增“按租户域名绑定 siteCode”的消歧能力，需要多入口访问同一站点时由业务侧统一使用 `siteCode` 或在单租户内保证唯一。
+- 匿名 `siteCode` 的解析范围由当前租户上下文或部署配置的默认租户限定（`mango-monolith-app` 默认 `mango.persistence.mybatis-plus.tenant.default-tenant-id=1`）；只有部署显式关闭租户拦截时，匿名请求才覆盖全部租户，此时多租户同码返回 `站点不存在或不唯一`。`CmsSiteServiceBehaviorTest` 的歧义用例证明服务层在查询返回多行时的拒绝语义，`CmsSiteResolveIntegrationTest` 证明真实租户范围下的解析结果。模块 README 排查说明已按此修正。
 - 发布：本修复属 Maven 平台物料，随下一批 Maven 版本发布；本记录不声明已发布。

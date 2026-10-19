@@ -194,7 +194,7 @@ CMS 管理页面通过 `@mango/cms` 注册，菜单由 `cms-common-menu.json` �
 ## 11. 问题排查
 
 - 站点前台接口返回 401：确认 `mango-cms-starter` 已启用，`CmsPermitPathBeanPostProcessor` 已将 `/cms/open/**` 注入放行路径。
-- 站点解析返回"站点不存在或不唯一"：确认请求提供的 `domain` 或 `siteCode` 在可见范围内只对应一个启用站点；匿名请求不限定租户，若多个租户使用同一 `siteCode`，需要改用 `domain` 或补全站点的 `domain` 才能唯一解析。
+- 站点解析返回"站点不存在或不唯一"：确认请求提供的 `domain` 或 `siteCode` 在当前租户范围内只对应一个启用站点；解析范围由当前租户上下文或部署配置的默认租户限定，只有部署关闭租户拦截时匿名请求才覆盖全部租户。
 - 内容列表为空：确认内容状态为 `PUBLISHED`，发布关系 `publish_status` 为 `PUBLISHED`，且在有效期内。
 - 公开素材 403：确认文件被站点 Logo、Banner 媒体、已发布内容或有效广告投放引用。
 
