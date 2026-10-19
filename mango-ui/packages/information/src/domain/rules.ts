@@ -41,6 +41,51 @@ export function isInputRule(rule?: FormCreateRule | null): boolean {
 /** 子表单/表格表单本身是一个字段，children 是行模板，不再当作顶层字段。 */
 const SUBFORM_TYPES = new Set(['group', 'subform', 'tableform']);
 
+/**
+ * 把存储的规则转换成设计器可以安全加载的形状。
+ *
+ * 设计器的子表单/表格表单在加载时会直接读 `props`（`subForm.loadRule` 取 `props.rule`、
+ * `tableForm.loadRule` 取 `props.columns[].style`），缺少这些字段会抛错导致画布空白，
+ * 因此这里统一补齐 `props`，并把 `children` 还原成设计器期望的结构。
+ */
+export function toDesignerRules(rules: FormCreateRule[] | undefined): FormCreateRule[] {
+  return (rules || []).map(normalizeRuleForDesigner);
+}
+
+function normalizeRuleForDesigner(rule: FormCreateRule): FormCreateRule {
+  const type = String(rule.type || '').toLowerCase();
+  const props: Record<string, unknown> = { ...(rule.props || {}) };
+  const children = Array.isArray(rule.children) ? rule.children.map(normalizeRuleForDesigner) : [];
+
+  if (type === 'tableform') {
+    props.columns = toDesignerColumns(rule, props);
+    // 表格表单的列由 props.columns 描述，children 由设计器自行生成。
+    return { ...rule, props, children: [] };
+  }
+
+  if (SUBFORM_TYPES.has(type) && children.length) {
+    // 子表单/分组的行内字段在设计器里存于 props.rule。
+    props.rule = children;
+  }
+
+  return { ...rule, props, children };
+}
+
+function toDesignerColumns(rule: FormCreateRule, props: Record<string, unknown>): unknown[] {
+  const raw = Array.isArray(props.columns) ? props.columns : [];
+  const source = raw.length ? raw : Array.isArray(rule.children) ? rule.children : [];
+  return source.map((column) => {
+    const item = (column || {}) as Record<string, unknown>;
+    const style = (item.style || {}) as Record<string, unknown>;
+    return {
+      label: String(item.label ?? item.title ?? ''),
+      required: Boolean(item.required),
+      style: { width: String(style.width ?? ''), color: String(style.color ?? '') },
+      rule: Array.isArray(item.rule) ? item.rule : [],
+    };
+  });
+}
+
 export function walkRules(rules: FormCreateRule[] | undefined, visit: (rule: FormCreateRule) => void): void {
   for (const rule of rules || []) {
     if (!rule || typeof rule !== 'object') {

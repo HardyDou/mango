@@ -42,6 +42,9 @@
 | TASK-007 | TC-009 | `information_submission` 表 | 租户归属 | 匿名提交 | `tenant_id=1` 由服务端写入，请求体不接受租户覆盖 | 接口层验收，无页面交互 | 数据库会话直接读取快照列，无 HTTP 调用 | 本节数据库记录 | DONE |
 | TASK-011 | TC-001 | 前端包与门禁 | 架构与样式边界 | `@mango/information` | `pnpm architecture:check` 0 错误且未新增例外 | 接口层验收，无页面交互 | 门禁脚本标准输出，无网络请求 | 本节门禁记录 | DONE |
 | TASK-012 | TC-010 | `InformationServiceIntegrationTest` | 字段校验、快照、幂等、SK、状态、导出与租户隔离 | H2 MySQL 兼容内存库、两租户、两份表单 | 7 个用例覆盖必填/未知字段、幂等同号、SK 拒绝、已关闭拒绝、手机号脱敏、租户隔离 | 服务层集成测试，无页面交互 | 不发起 HTTP，直接断言持久化结果 | `mvn -pl mango-platform/mango-information/mango-information-core test` | DONE |
+| TASK-013 | TC-011 | `informationDesignerRules.spec.ts` | 子表单/表格表单的规则可以安全载入设计器 | `group` 定义缺少 `props`、表格表单列缺少 `style` | 4 个用例：补齐 `props.rule`、补齐列 `style/rule`、保留既有结构、转换后仍被采集项解析识别 | 前端单测，无页面交互 | `toDesignerRules` 是纯函数，直接断言输出 | `pnpm --filter @mango/information test` | DONE |
+| TASK-014 | TC-012 | 信息采集管理员 | 重新打开含子表单/表格表单的表单设计器不报错 | 以缺少 `props` 的历史定义创建 `e2e-subform` 表单 | 画布不出现空态提示、`成员明细` 与 `费用明细` 均渲染、控制台无 `Cannot read properties` 报错 | 浏览器交互，需 admin/admin123 | 定义通过后台接口写入，模拟历史数据 | `pnpm --filter mango-admin exec playwright test e2e/specs/information-collection.spec.ts` | DONE |
+| TASK-015 | TC-013 | 信息采集管理员 | 托管表单与设计器预览的 label 不再悬空 | 表单含多选分组控件 | 页面内 `label[for]` 全部有对应元素（修复前 2 处悬空） | 浏览器交互，匿名可访问 | 修复在运行时渲染后校正，分组控件仍由 `aria-labelledby` 关联 | Playwright 探针 + 托管表单 E2E | DONE |
 
 ## 4. 回归抽查记录
 

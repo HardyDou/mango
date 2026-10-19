@@ -88,6 +88,7 @@ import {
   parseRules,
   rulesToFields,
   stringifyRules,
+  toDesignerRules,
   type FormCreateRule,
 } from '../domain/rules';
 
@@ -124,7 +125,7 @@ const metaSignature = computed(() =>
 const dirty = computed(
   () => designerDirty.value || (savedSignature.value !== '' && metaSignature.value !== savedSignature.value),
 );
-const designerHeight = computed(() => `calc(100vh - ${formId.value ? 300 : 300}px)`);
+const designerHeight = computed(() => 'calc(100vh - 250px)');
 const prettyRules = computed(() => JSON.stringify(rules.value, null, 2));
 
 function syncFromDesigner() {
@@ -156,7 +157,7 @@ function applyRulesToDesigner() {
   if (!designerRef.value) {
     return;
   }
-  designerRef.value.setRule(rules.value as never);
+  designerRef.value.setRule(toDesignerRules(rules.value) as never);
 }
 
 async function load() {

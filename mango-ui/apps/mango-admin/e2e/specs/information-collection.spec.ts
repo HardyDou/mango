@@ -428,6 +428,51 @@ test.describe('@p0 @information 信息采集管理', () => {
     await context.close();
   });
 
+  // 回归：历史定义里子表单没有 props，设计器加载时会抛错并留下空白画布
+  test('包含子表单与表格表单的表单可以再次打开设计器', async ({ page }) => {
+    await login(page);
+    const legacyDefinition = [
+      {
+        type: 'group',
+        field: 'members',
+        title: '成员明细',
+        children: [{ type: 'input', field: 'memberName', title: '成员姓名' }],
+      },
+      {
+        type: 'tableForm',
+        field: 'rows',
+        title: '费用明细',
+        children: [{ type: 'input', field: 'itemName', title: '项目' }],
+      },
+    ];
+    const errors: string[] = [];
+    page.on('console', (message) => {
+      if (message.type() === 'error') {
+        errors.push(message.text());
+      }
+    });
+    const token = await page.evaluate(() => sessionStorage.getItem('MANGO_TOKEN'));
+    const created = await page.request.post('/api/information/forms/save', {
+      headers: { Authorization: `Bearer ${token}`, 'X-Mango-Tenant-Id': '1' },
+      data: {
+        formCode: 'e2e-subform',
+        formName: 'E2E 子表单表单',
+        definitionJson: JSON.stringify(legacyDefinition),
+        status: 'PUBLISHED',
+      },
+    });
+    const createdId = (await created.json()).data.id ?? (await created.json()).data;
+
+    await page.goto(`/#/information/forms/${createdId}/config`);
+    const designer = page.locator('[data-surface="information.form.designer"]');
+    await expect(designer).toBeVisible();
+    // 画布不能因为加载失败而变成空态，子表单与表格表单都要渲染出来
+    await expect(designer).not.toContainText('拖拽左侧列表中的组件到此处');
+    await expect(designer).toContainText('成员明细');
+    await expect(designer).toContainText('费用明细');
+    expect(errors.filter((item) => item.includes('Cannot read properties'))).toEqual([]);
+  });
+
   test('表单详情入口可直达提交记录并预选当前表单', async ({ page }) => {
     await login(page);
     await page.goto(`/#/information/forms/${formId}/detail`);

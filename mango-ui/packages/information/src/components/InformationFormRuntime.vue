@@ -1,5 +1,6 @@
 <template>
   <form-create
+    ref="rootRef"
     v-model:api="api"
     :rule="runtimeRules"
     :option="options"
@@ -12,7 +13,7 @@
 </template>
 
 <script setup lang="ts">
-import { getCurrentInstance, ref, watch } from 'vue';
+import { getCurrentInstance, nextTick, onMounted, ref, watch } from 'vue';
 import formCreate from '@form-create/element-ui';
 import type {
   Api as FormCreateApi,
@@ -56,6 +57,36 @@ instance?.appContext.app.component('InformationUploadField', InformationUploadFi
 instance?.appContext.app.component('InformationEditorField', InformationEditorField);
 
 const api = ref<FormCreateApi>();
+const rootRef = ref<{ $el?: HTMLElement } | null>(null);
+
+/**
+ * Element Plus 在「控件只注册了一个 input id」时会把 label 的 for 指向它，
+ * 但分组控件（如多选）本身不渲染这个 id，于是留下悬空的 for。
+ * 这里在渲染后清掉悬空 for：分组控件已由 aria-labelledby 关联，不损失可访问性。
+ */
+function fixDanglingLabelFor() {
+  const root = rootRef.value?.$el;
+  if (!root) {
+    return;
+  }
+  root.querySelectorAll('label[for]').forEach((label) => {
+    const target = label.getAttribute('for');
+    if (target && !root.querySelector(`[id="${CSS.escape(target)}"]`) && !document.getElementById(target)) {
+      label.removeAttribute('for');
+    }
+  });
+}
+
+/** 表单渲染与规则重载后都要校正一次，避免动画或懒加载留下悬空 for。 */
+async function scheduleLabelFix() {
+  await nextTick();
+  fixDanglingLabelFor();
+  window.setTimeout(fixDanglingLabelFor, 0);
+}
+
+onMounted(() => {
+  void scheduleLabelFix();
+});
 const options: FormCreateOptions = {
   form: { labelPosition: 'top', labelWidth: 'auto', showMessage: true },
   submitBtn: { show: false },
@@ -75,12 +106,14 @@ watch(
   (next) => {
     runtimeRules.value = toRuntimeRules(next) as unknown as FormCreateRule[];
     api.value?.reloadRule?.(runtimeRules.value as never);
+    void scheduleLabelFix();
   },
 );
 watch(
   () => props.runtimeKey,
   () => {
     runtimeRules.value = buildRules();
+    void scheduleLabelFix();
   },
 );
 

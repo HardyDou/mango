@@ -706,7 +706,17 @@
 }
 
 .information-config-meta {
-  margin-bottom: -12px;
+  margin-bottom: -14px;
+}
+
+.information-config-meta .el-form-item {
+  margin-bottom: 10px;
+}
+
+.information-config-meta .el-form-item__label {
+  padding-bottom: 2px;
+  font-size: 12px;
+  line-height: 18px;
 }
 
 .information-config-meta__grid {
