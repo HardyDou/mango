@@ -474,6 +474,14 @@
   align-items: start;
 }
 
+.information-access-section .el-card__body {
+  padding: 20px;
+}
+
+.information-access-section .information-section-title {
+  margin-bottom: 8px;
+}
+
 .information-access-hint {
   margin: 0 0 16px;
   color: var(--mango-text-color-regular, #5f6b7a);
@@ -499,6 +507,7 @@
 
 .information-access-method {
   overflow: hidden;
+  background: var(--mango-bg-color, #fff);
 }
 
 .information-access-method .information-hosted-preview {

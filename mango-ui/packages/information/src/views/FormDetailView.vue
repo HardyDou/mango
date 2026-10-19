@@ -32,8 +32,12 @@
         <MangoDescriptionList :items="summaryItems" display="table" :column="3" label-width="96" />
       </el-card>
 
-      <!-- 下：左侧页面方式（用法 + 页面预览），右侧接口方式（用法 + 字段） -->
-      <div class="information-section" data-surface="information.form.access">
+      <!-- 下：接入方式白色卡片，内部左页面方式、右接口方式 -->
+      <el-card
+        shadow="never"
+        class="information-card information-access-section"
+        data-surface="information.form.access"
+      >
         <div class="information-section-title">接入方式</div>
         <p class="information-access-hint">
           接入方式分为两种：<strong>页面接入</strong>把托管页面地址发给访客，免登录直接填写；<strong>接口接入</strong>在自己的服务端调用提交接口，需要当前表单专属
@@ -189,7 +193,7 @@
             </div>
           </el-card>
         </div>
-      </div>
+      </el-card>
     </div>
   </div>
 </template>
@@ -228,6 +232,7 @@ const sampleContext = computed<AccessSampleContext>(() => ({
   formCode: detail.value?.formCode || '<formCode>',
   formName: detail.value?.formName || '信息采集表单',
   hostedUrl: hostedUrl.value,
+  fields: fields.value,
 }));
 const embedCode = computed(() => buildEmbedCode(sampleContext.value));
 const samples = computed(() => buildAccessSamples(sampleContext.value));
