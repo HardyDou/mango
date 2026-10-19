@@ -13,13 +13,21 @@ public enum InformationCode implements BizCode {
     SUBMISSION_CLOSED("已关闭的采集记录不可继续处理"),
     SERVER_SECRET_INVALID("服务端密钥无效");
 
+    private static final int BASE_CODE = 105500;
+
     private final String message;
 
-    InformationCode(String message) { this.message = message; }
+    InformationCode(String message) {
+        this.message = message;
+    }
 
     @Override
-    public int getCode() { return 105500 + ordinal(); }
+    public int getCode() {
+        return BASE_CODE + ordinal();
+    }
 
     @Override
-    public String getMessage() { return message; }
+    public String getMessage() {
+        return message;
+    }
 }

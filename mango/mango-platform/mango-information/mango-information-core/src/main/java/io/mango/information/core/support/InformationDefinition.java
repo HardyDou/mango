@@ -15,6 +15,13 @@ import java.util.Set;
  */
 public final class InformationDefinition {
 
+    /**
+     * 布局容器没有自己的值，需要继续下钻；
+     * 子表单/表格表单本身就是一个字段，children 是行模板，不能再当成顶层字段。
+     */
+    private static final Set<String> SUBFORM_TYPES = Set.of("group", "subform", "tableform");
+
+
     private InformationDefinition() {
     }
 
@@ -29,12 +36,6 @@ public final class InformationDefinition {
         collect(definition, result, seen);
         return result;
     }
-
-    /**
-     * 布局容器没有自己的值，需要继续下钻；
-     * 子表单/表格表单本身就是一个字段，children 是行模板，不能再当成顶层字段。
-     */
-    private static final Set<String> SUBFORM_TYPES = Set.of("group", "subform", "tableform");
 
     private static void collect(JsonNode node, List<Field> result, Set<String> seen) {
         if (node == null || !node.isArray()) {

@@ -24,11 +24,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /** 信息采集表单管理接口。 */
 @RestController
 @RequestMapping("/information/forms")
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Spring 容器管理的单例依赖，构造后不对外暴露"))
 @Validated
 @Tag(name = "信息采集表单")
 public class InformationFormController implements InformationFormApi {

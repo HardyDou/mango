@@ -16,11 +16,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /** 信息采集公开接入接口。 */
 @RestController
 @RequestMapping("/information/open")
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Spring 容器管理的单例依赖，构造后不对外暴露"))
 @Validated
 @Tag(name = "信息采集公开接入")
 public class InformationPublicController implements InformationPublicApi {
@@ -34,8 +36,11 @@ public class InformationPublicController implements InformationPublicApi {
     public R<InformationPublicFormVO> detail(@RequestParam String formCode) {
         InformationFormDetailVO source = formService.publicDetail(formCode);
         InformationPublicFormVO vo = new InformationPublicFormVO();
-        vo.setFormCode(source.getFormCode()); vo.setFormName(source.getFormName()); vo.setDescription(source.getDescription());
-        vo.setDefinitionJson(source.getDefinitionJson()); vo.setSuccessMessage(source.getSuccessMessage());
+        vo.setFormCode(source.getFormCode());
+        vo.setFormName(source.getFormName());
+        vo.setDescription(source.getDescription());
+        vo.setDefinitionJson(source.getDefinitionJson());
+        vo.setSuccessMessage(source.getSuccessMessage());
         return R.ok(vo);
     }
 

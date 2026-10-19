@@ -29,23 +29,31 @@ public class InformationSubmissionController implements InformationSubmissionApi
     @GetMapping("/page")
     @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "分页查询信息采集采集记录")
     @Operation(summary = "分页查询采集记录")
-    public R<PageResult<InformationSubmissionVO>> page(@ParameterObject InformationSubmissionPageQuery query) { return R.ok(service.page(query)); }
+    public R<PageResult<InformationSubmissionVO>> page(@ParameterObject InformationSubmissionPageQuery query) {
+        return R.ok(service.page(query));
+    }
 
     @Override
     @GetMapping("/detail")
     @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "查询信息采集采集记录")
     @Operation(summary = "查询采集记录")
-    public R<InformationSubmissionVO> detail(@RequestParam Long id) { return R.ok(service.detail(id)); }
+    public R<InformationSubmissionVO> detail(@RequestParam Long id) {
+        return R.ok(service.detail(id));
+    }
 
     @Override
     @GetMapping("/export")
     @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "导出信息采集采集记录")
     @Operation(summary = "导出采集记录")
-    public R<String> export(@ParameterObject InformationSubmissionPageQuery query) { return R.ok(service.exportCsv(query)); }
+    public R<String> export(@ParameterObject InformationSubmissionPageQuery query) {
+        return R.ok(service.exportCsv(query));
+    }
 
     @Override
     @PutMapping("/process")
     @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "处理信息采集采集记录")
     @Operation(summary = "更新处理状态")
-    public R<Boolean> process(@RequestBody ProcessInformationSubmissionCommand command) { return R.ok(service.process(command)); }
+    public R<Boolean> process(@RequestBody ProcessInformationSubmissionCommand command) {
+        return R.ok(service.process(command));
+    }
 }

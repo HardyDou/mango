@@ -19,6 +19,7 @@ import org.springframework.web.servlet.function.ServerResponse;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import io.mango.common.exception.BizException;
 
 /**
  * 信息采集公开文件入口。
@@ -47,7 +48,10 @@ public class InformationPublicFileEndpoint {
             ticket = request.param("ticket").orElse(null);
         }
         Part file = request.multipartData().getFirst("file");
-        Require.notNull(file, InformationCode.INVALID_SUBMISSION, "上传文件不能为空");
+        if (file == null) {
+            // 显式判空：Require 的断言对静态分析不可见，会留下潜在空指针告警
+            throw new BizException(InformationCode.INVALID_SUBMISSION.getCode(), "上传文件不能为空");
+        }
         InformationFileVO result = fileService.upload(formCode, file.getSubmittedFileName(), file.getContentType(),
                 file.getSize(), file.getInputStream(), ticket);
         return ServerResponse.ok().body(result);

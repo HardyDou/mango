@@ -12,13 +12,15 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * 基于平台身份能力的人员显示名适配。
  * <p>
  * 只用于界面展示；查询失败时返回空映射，列表和详情回退展示兜底文案，不阻断主流程。
  */
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Spring 容器管理的单例依赖，构造后不对外暴露"))
 public class IdentityInformationActorNameProvider implements InformationActorNameProvider {
 
     private static final int MAX_BATCH = IdentityUserBatchRequest.MAX_IDENTIFIERS;

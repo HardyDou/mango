@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * 内置采集表单资源处理器。
@@ -27,8 +28,13 @@ import org.springframework.util.StringUtils;
  * 同一租户下以 formCode 作为幂等键，重复同步只更新定义，不会生成重复表单。
  */
 @Component
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Spring 容器管理的单例依赖，构造后不对外暴露"))
 public class InformationFormResourceHandler implements ResourceHandler {
+
+    /** 内置表单密钥随机字节数。 */
+    private static final int SECRET_BYTES = 24;
+    private static final java.security.SecureRandom RANDOM = new java.security.SecureRandom();
 
     private static final String TARGET_TABLE = "information_form";
     private static final String DEFAULT_TENANT_ID = "1";
@@ -148,10 +154,10 @@ public class InformationFormResourceHandler implements ResourceHandler {
         String targetId = text(resource, "targetId", null);
         if (StringUtils.hasText(targetId)) {
             Require.isTrue(targetId.matches("\\d+"), InformationCode.INVALID_FORM_DEFINITION, "targetId 必须为正整数");
-            return Long.valueOf(targetId);
+            return Long.parseLong(targetId);
         }
         String resourceId = resource.getId();
-        return resourceId != null && resourceId.matches("\\d+") ? Long.valueOf(resourceId) : IdWorker.getId();
+        return resourceId != null && resourceId.matches("\\d+") ? Long.parseLong(resourceId) : IdWorker.getId();
     }
 
     private String status(ResourceDeclaration resource) {
@@ -164,8 +170,8 @@ public class InformationFormResourceHandler implements ResourceHandler {
     }
 
     private String newSecret() {
-        byte[] bytes = new byte[24];
-        new java.security.SecureRandom().nextBytes(bytes);
+        byte[] bytes = new byte[SECRET_BYTES];
+        RANDOM.nextBytes(bytes);
         return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 

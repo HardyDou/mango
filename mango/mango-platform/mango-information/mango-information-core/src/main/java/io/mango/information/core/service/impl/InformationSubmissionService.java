@@ -37,10 +37,14 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import java.nio.charset.StandardCharsets;
 
 /** 信息采集提交服务。 */
 @Service
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Spring 容器管理的单例依赖，构造后不对外暴露"))
 public class InformationSubmissionService implements IInformationSubmissionService {
     private final InformationSubmissionMapper submissionMapper;
     private final InformationSubmissionSnapshotMapper snapshotMapper;
@@ -105,13 +109,19 @@ public class InformationSubmissionService implements IInformationSubmissionServi
                 csv.append('\n');
             }
             return csv.toString();
-        } catch (Exception e) {
+        } catch (JsonProcessingException e) {
             throw new IllegalArgumentException("导出采集记录失败", e);
         }
     }
 
     private String statusLabel(String status) {
-        return switch (status) { case "PENDING" -> "待处理"; case "PROCESSING" -> "处理中"; case "COMPLETED" -> "已完成"; case "CLOSED" -> "已关闭"; default -> status; };
+        return switch (status) {
+            case "PENDING" -> "待处理";
+            case "PROCESSING" -> "处理中";
+            case "COMPLETED" -> "已完成";
+            case "CLOSED" -> "已关闭";
+            default -> status;
+        };
     }
 
     /**
@@ -140,7 +150,9 @@ public class InformationSubmissionService implements IInformationSubmissionServi
 
     private String csvCell(Object value) {
         String text = value == null ? "" : String.valueOf(value);
-        if (text.startsWith("=") || text.startsWith("+") || text.startsWith("-") || text.startsWith("@")) text = "'" + text;
+        if (text.startsWith("=") || text.startsWith("+") || text.startsWith("-") || text.startsWith("@")) {
+            text = "'" + text;
+        }
         return '"' + text.replace("\"", "\"\"") + '"';
     }
 
@@ -151,7 +163,7 @@ public class InformationSubmissionService implements IInformationSubmissionServi
         if (serverRequest) {
             Require.isTrue(StringUtils.hasText(command.getServerSecret()), InformationCode.SERVER_SECRET_INVALID);
             String actual = InformationFormService.digest(command.getServerSecret());
-            Require.isTrue(MessageDigest.isEqual(actual.getBytes(), form.getServerSecretDigest().getBytes()), InformationCode.SERVER_SECRET_INVALID);
+            Require.isTrue(MessageDigest.isEqual(actual.getBytes(StandardCharsets.UTF_8), form.getServerSecretDigest().getBytes(StandardCharsets.UTF_8)), InformationCode.SERVER_SECRET_INVALID);
         }
         validateValues(form.getDefinitionJson(), command.getValues());
         return withTenantContext(form.getTenantId(), () -> doSubmit(form, command));
@@ -232,13 +244,18 @@ public class InformationSubmissionService implements IInformationSubmissionServi
 
     private InformationSubmissionVO toVO(InformationSubmissionEntity entity) {
         InformationSubmissionVO vo = new InformationSubmissionVO();
-        vo.setId(entity.getId()); vo.setFormId(entity.getFormId());
+        vo.setId(entity.getId());
+        vo.setFormId(entity.getFormId());
         vo.setFormCode(entity.getFormCode());
         InformationFormEntity form = formService.select(entity.getFormId());
-        vo.setFormName(form.getFormName()); vo.setDefinitionJson(form.getDefinitionJson());
-        vo.setValuesJson(entity.getValuesJson()); vo.setSourcePage(entity.getSourcePage());
-        vo.setStatus(InformationSubmissionStatus.valueOf(entity.getStatus())); vo.setProcessRemark(entity.getProcessRemark());
-        vo.setSubmittedAt(entity.getSubmittedAt()); vo.setUpdatedAt(entity.getUpdatedAt());
+        vo.setFormName(form.getFormName());
+        vo.setDefinitionJson(form.getDefinitionJson());
+        vo.setValuesJson(entity.getValuesJson());
+        vo.setSourcePage(entity.getSourcePage());
+        vo.setStatus(InformationSubmissionStatus.valueOf(entity.getStatus()));
+        vo.setProcessRemark(entity.getProcessRemark());
+        vo.setSubmittedAt(entity.getSubmittedAt());
+        vo.setUpdatedAt(entity.getUpdatedAt());
         return vo;
     }
 
@@ -276,8 +293,11 @@ public class InformationSubmissionService implements IInformationSubmissionServi
     }
 
     private String write(Object value) {
-        try { return objectMapper.writeValueAsString(value); }
-        catch (Exception e) { throw new IllegalArgumentException(InformationCode.INVALID_SUBMISSION.getMessage(), e); }
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException(InformationCode.INVALID_SUBMISSION.getMessage(), e);
+        }
     }
 
     private InformationSubmissionResultVO result(Long id, String message) {

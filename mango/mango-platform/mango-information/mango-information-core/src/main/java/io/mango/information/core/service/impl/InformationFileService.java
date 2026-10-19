@@ -26,6 +26,7 @@ import java.security.MessageDigest;
 import java.util.HexFormat;
 import java.util.Locale;
 import java.util.Set;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * 信息采集公开上传服务。
@@ -34,8 +35,13 @@ import java.util.Set;
  * 校验表单状态与上传限制后，通过 mango-file 的服务能力保存文件，文件仍归文件模块管理。
  */
 @Service
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Spring 容器管理的单例依赖，构造后不对外暴露"))
 public class InformationFileService implements IInformationFileService {
+
+    private static final long MILLIS_PER_SECOND = 1000L;
+    private static final int BYTES_PER_KILOBYTE = 1024;
+    private static final int SIGNATURE_HEX_LENGTH = 32;
 
     private static final Set<String> DEFAULT_ALLOWED_EXTENSIONS = Set.of(
             "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "csv", "zip", "rar",
@@ -69,7 +75,7 @@ public class InformationFileService implements IInformationFileService {
     @Override
     public InformationUploadTicketVO issueTicket(String formCode) {
         formService.selectPublished(formCode);
-        long expiresAt = System.currentTimeMillis() / 1000 + ticketTtlSeconds;
+        long expiresAt = System.currentTimeMillis() / MILLIS_PER_SECOND + ticketTtlSeconds;
         InformationUploadTicketVO vo = new InformationUploadTicketVO();
         vo.setTicket(expiresAt + "." + signTicket(formCode, expiresAt));
         vo.setExpiresIn(ticketTtlSeconds);
@@ -84,7 +90,7 @@ public class InformationFileService implements IInformationFileService {
         Require.isTrue(fileSize > 0, InformationCode.INVALID_SUBMISSION, "文件大小必须大于 0");
         if (restrict) {
             Require.isTrue(fileSize <= maxSizeBytes, InformationCode.INVALID_SUBMISSION,
-                    "文件不能超过 " + (maxSizeBytes / 1024 / 1024) + "MB");
+                    "文件不能超过 " + (maxSizeBytes / BYTES_PER_KILOBYTE / BYTES_PER_KILOBYTE) + "MB");
             Require.isTrue(allowed(fileName), InformationCode.INVALID_SUBMISSION, "不允许上传该类型的文件");
         }
 
@@ -174,7 +180,7 @@ public class InformationFileService implements IInformationFileService {
         } catch (NumberFormatException e) {
             return false;
         }
-        if (expiresAt < System.currentTimeMillis() / 1000) {
+        if (expiresAt < System.currentTimeMillis() / MILLIS_PER_SECOND) {
             return false;
         }
         String expected = expiresAt + "." + signTicket(formCode, expiresAt);
@@ -186,7 +192,7 @@ public class InformationFileService implements IInformationFileService {
         try {
             Mac mac = Mac.getInstance("HmacSHA256");
             mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
-            return HexFormat.of().formatHex(mac.doFinal(payload.getBytes(StandardCharsets.UTF_8))).substring(0, 32);
+            return HexFormat.of().formatHex(mac.doFinal(payload.getBytes(StandardCharsets.UTF_8))).substring(0, SIGNATURE_HEX_LENGTH);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to sign information payload", e);
         }
@@ -198,7 +204,7 @@ public class InformationFileService implements IInformationFileService {
             Mac mac = Mac.getInstance("HmacSHA256");
             mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
             byte[] digest = mac.doFinal((formCode + ":" + id).getBytes(StandardCharsets.UTF_8));
-            return HexFormat.of().formatHex(digest).substring(0, 32);
+            return HexFormat.of().formatHex(digest).substring(0, SIGNATURE_HEX_LENGTH);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to sign information file url", e);
         }

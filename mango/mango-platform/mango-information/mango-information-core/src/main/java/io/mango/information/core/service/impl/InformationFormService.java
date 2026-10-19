@@ -39,11 +39,16 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /** 信息采集表单服务。 */
 @Service
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Spring 容器管理的单例依赖，构造后不对外暴露"))
 public class InformationFormService implements IInformationFormService {
+
+    /** 表单专属密钥随机字节数。 */
+    private static final int SECRET_BYTES = 24;
     private static final SecureRandom RANDOM = new SecureRandom();
     private final InformationFormMapper formMapper;
     private final InformationSubmissionMapper submissionMapper;
@@ -253,7 +258,7 @@ public class InformationFormService implements IInformationFormService {
     }
 
     private String newSecret() {
-        byte[] bytes = new byte[24];
+        byte[] bytes = new byte[SECRET_BYTES];
         RANDOM.nextBytes(bytes);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
