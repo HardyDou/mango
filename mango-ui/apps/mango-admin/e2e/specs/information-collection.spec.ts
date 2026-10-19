@@ -45,6 +45,9 @@ async function login(page: Page) {
 }
 
 test.describe('@p0 @information 信息采集管理', () => {
+  // 设计器与 form-create 运行时的首屏渲染较重，统一放宽用例超时
+  test.describe.configure({ timeout: 90000 });
+
   test('表单管理与详情、设计器、接入页面可用', async ({ page }) => {
     await login(page);
 
@@ -113,24 +116,57 @@ test.describe('@p0 @information 信息采集管理', () => {
 
   test('提交记录是独立菜单入口且不依赖表单详情', async ({ page }) => {
     await login(page);
+    const token = await page.evaluate(() => sessionStorage.getItem('MANGO_TOKEN') || '');
+    const headers = { Authorization: `Bearer ${token}`, 'X-Mango-Tenant-Id': '1' };
+
+    // 用例自建表单与记录，避免依赖其它用例或演示数据
+    const definitionJson = JSON.stringify([
+      {
+        type: 'input',
+        field: 'name',
+        title: '姓名',
+        props: { placeholder: '请输入姓名' },
+        validate: [{ required: true, message: '请填写姓名' }],
+      },
+      { type: 'input', field: 'phone', title: '手机号', props: { type: 'tel' } },
+    ]);
+    const existing = await page.request.get('/api/information/forms/page', {
+      headers,
+      params: { page: '1', size: '1', keyword: 'e2e-submissions' },
+    });
+    const existingId = (await existing.json())?.data?.list?.[0]?.id;
+    const save = await page.request.post('/api/information/forms/save', {
+      headers,
+      data: {
+        ...(existingId ? { id: existingId } : {}),
+        formCode: 'e2e-submissions',
+        formName: '提交记录验证表',
+        definitionJson,
+        status: 'PUBLISHED',
+      },
+    });
+    const formId = (await save.json()).data as string;
+    const submit = await page.request.post('/api/information/open/forms/submit', {
+      data: { formCode: 'e2e-submissions', values: { name: '提交记录访客', phone: '13800138000' }, sourcePage: 'e2e' },
+    });
+    expect(submit.status()).toBe(200);
+
     await page.goto('/#/information/submissions');
     await expect(page.locator('[data-page="information.form.submissions"]')).toBeVisible();
     // 独立入口：没有返回详情页按钮
     await expect(page.getByText('返回详情页')).toHaveCount(0);
-    // 通过表单筛选切换当前表单
     await expect(page.locator('[data-filter="form"]')).toBeVisible();
+
     // 深链：地址栏带 formId 时直接定位到该表单，刷新与分享保持同一视图
     await page.goto(`/#/information/submissions?formId=${formId}`);
     await expect(page).toHaveURL(new RegExp(`formId=${formId}`));
-    await expect(page.locator('[data-filter="form"]')).toContainText(formCode, { timeout: 20000 });
-
     for (const label of ['记录ID', '提交时间', '状态', '来源页面', '姓名', '手机号']) {
       await expect(page.getByRole('columnheader', { name: label, exact: true })).toBeVisible();
     }
+    await expect(page.locator('[data-filter="form"]')).toContainText('e2e-submissions', { timeout: 30000 });
     await shot(page, '05-submission-list.png');
 
-    // 行点击也能打开抽屉，并且筛选写入地址栏
-    await expect(page).toHaveURL(/formId=/);
+    // 行点击也能打开抽屉
     await page.locator('.el-table__body tr').first().click();
     const drawer = page.locator('.el-drawer');
     await expect(drawer.getByText('提交详情')).toBeVisible();
@@ -204,6 +240,92 @@ test.describe('@p0 @information 信息采集管理', () => {
     await expect(page.getByRole('cell', { name: '动态列验证公司' }).first()).toBeVisible();
     await expect(page.getByRole('cell', { name: '大型', exact: true }).first()).toBeVisible();
     await shot(page, '09-submission-dynamic-columns.png');
+  });
+
+  test('托管页面按设计器规则渲染全部控件', async ({ page, browser }) => {
+    await login(page);
+    const token = await page.evaluate(() => sessionStorage.getItem('MANGO_TOKEN') || '');
+    const headers = { Authorization: `Bearer ${token}`, 'X-Mango-Tenant-Id': '1' };
+    // tableForm 在设计器里存运行时形态：列定义在 props.columns
+    const definitionJson = JSON.stringify([
+      {
+        type: 'input',
+        field: 'name',
+        title: '姓名',
+        props: { placeholder: '请输入姓名' },
+        validate: [{ required: true, message: '请填写姓名' }],
+      },
+      { type: 'inputNumber', field: 'amount', title: '金额' },
+      { type: 'select', field: 'city', title: '城市', options: [{ label: '北京', value: 'bj' }] },
+      { type: 'radio', field: 'level', title: '级别', options: [{ label: '重要', value: 'high' }] },
+      { type: 'checkbox', field: 'channels', title: '渠道', options: [{ label: '电话', value: 'tel' }] },
+      { type: 'switch', field: 'agreed', title: '同意条款' },
+      { type: 'rate', field: 'score', title: '评分', props: { max: 5 } },
+      { type: 'slider', field: 'weight', title: '权重', props: { min: 0, max: 100 } },
+      { type: 'datePicker', field: 'visitDate', title: '到访日期' },
+      { type: 'colorPicker', field: 'brandColor', title: '品牌色' },
+      { type: 'elDivider', title: '分组' },
+      { type: 'elAlert', props: { title: '补充信息' } },
+      {
+        type: 'tableForm',
+        field: 'rows',
+        title: '明细表',
+        props: {
+          columns: [
+            { label: '项目', style: {}, rule: [{ type: 'input', field: 'itemName', title: '项目' }] },
+            { label: '数量', style: {}, rule: [{ type: 'inputNumber', field: 'itemQty', title: '数量' }] },
+          ],
+        },
+        children: [],
+      },
+    ]);
+    const existing = await page.request.get('/api/information/forms/page', {
+      headers,
+      params: { page: '1', size: '1', keyword: 'e2e-controls' },
+    });
+    const existingId = (await existing.json())?.data?.list?.[0]?.id;
+    const save = await page.request.post('/api/information/forms/save', {
+      headers,
+      data: {
+        ...(existingId ? { id: existingId } : {}),
+        formCode: 'e2e-controls',
+        formName: '控件渲染验证表',
+        definitionJson,
+        status: 'PUBLISHED',
+      },
+    });
+    expect(save.status()).toBe(200);
+
+    const context = await browser.newContext();
+    const hosted = await context.newPage();
+    await hosted.goto('/#/information/hosted?formCode=e2e-controls');
+    await expect(hosted.getByRole('heading', { name: '控件渲染验证表' })).toBeVisible({ timeout: 20000 });
+    // 设计器里的控件必须原样渲染，而不是退化成文本框
+    for (const selector of [
+      '.el-rate',
+      '.el-slider',
+      '.el-switch',
+      '.el-radio-group',
+      '.el-checkbox-group',
+      '.el-color-picker',
+      '.el-divider',
+      '.el-alert',
+    ]) {
+      await expect(hosted.locator(selector).first()).toBeVisible();
+    }
+    await expect(hosted.locator('.el-rate__item')).toHaveCount(5);
+    await expect(hosted.locator('table th').filter({ hasText: '项目' })).toBeVisible();
+    await expect(hosted.locator('table th').filter({ hasText: '数量' })).toBeVisible();
+    mkdirSync(evidenceDir, { recursive: true });
+    await hosted.screenshot({ path: resolve(evidenceDir, '10-hosted-all-controls.png'), fullPage: true });
+
+    // 评分与滑块的值必须进入提交值
+    await hosted.getByPlaceholder('请输入姓名').fill('全控件');
+    await hosted.locator('.el-rate__item').nth(4).click();
+    await hosted.locator('.el-slider__runway').click();
+    await hosted.getByRole('button', { name: '提交', exact: true }).click();
+    await expect(hosted.getByText('提交成功', { exact: true }).first()).toBeVisible();
+    await context.close();
   });
 
   test('匿名访客可打开托管表单并提交', async ({ browser }) => {

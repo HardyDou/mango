@@ -36,12 +36,19 @@ export function isInputRule(rule?: FormCreateRule | null): boolean {
   return Boolean(rule && typeof rule.field === 'string' && rule.field.trim());
 }
 
+/** 子表单/表格表单本身是一个字段，children 是行模板，不再当作顶层字段。 */
+const SUBFORM_TYPES = new Set(['group', 'subform', 'tableform']);
+
 export function walkRules(rules: FormCreateRule[] | undefined, visit: (rule: FormCreateRule) => void): void {
   for (const rule of rules || []) {
     if (!rule || typeof rule !== 'object') {
       continue;
     }
     visit(rule);
+    const type = String(rule.type || '').toLowerCase();
+    if (SUBFORM_TYPES.has(type) && isInputRule(rule)) {
+      continue;
+    }
     if (Array.isArray(rule.children) && rule.children.length) {
       walkRules(rule.children, visit);
     }

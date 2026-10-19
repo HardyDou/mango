@@ -307,26 +307,36 @@ function cellValue(row: InformationSubmission, field: InformationFieldDefinition
   return display === '' ? '-' : display;
 }
 
-/** 地址栏与页面状态双向同步时，跳过由本页写回造成的回声。 */
-let syncingFromUrl = false;
+/** 本页最近一次写回的地址参数，用于区分「自己的回声」和「外部导航」。 */
+let lastWrittenQuery = '';
+
+function currentQuerySignature(): string {
+  return JSON.stringify({
+    ...(query.formId ? { formId: query.formId } : {}),
+    ...(query.keyword ? { keyword: query.keyword } : {}),
+    ...(query.status ? { status: query.status } : {}),
+    ...(query.startTime ? { startTime: query.startTime } : {}),
+    ...(query.endTime ? { endTime: query.endTime } : {}),
+    ...(query.pageNum > 1 ? { page: String(query.pageNum) } : {}),
+  });
+}
+
+function routeQuerySignature(): string {
+  const { formId: urlFormId, keyword, status, startTime, endTime, page } = route.query;
+  return JSON.stringify({
+    ...(typeof urlFormId === 'string' && urlFormId ? { formId: urlFormId } : {}),
+    ...(typeof keyword === 'string' && keyword ? { keyword } : {}),
+    ...(typeof status === 'string' && status ? { status } : {}),
+    ...(typeof startTime === 'string' && startTime ? { startTime } : {}),
+    ...(typeof endTime === 'string' && endTime ? { endTime } : {}),
+    ...(typeof page === 'string' && Number(page) > 1 ? { page } : {}),
+  });
+}
 
 /** 筛选状态写入地址栏，刷新或把链接发给同事时能保持同一视图。 */
 function syncQueryToUrl() {
-  syncingFromUrl = true;
-  router
-    .replace({
-      query: {
-        ...(query.formId ? { formId: query.formId } : {}),
-        ...(query.keyword ? { keyword: query.keyword } : {}),
-        ...(query.status ? { status: query.status } : {}),
-        ...(query.startTime ? { startTime: query.startTime } : {}),
-        ...(query.endTime ? { endTime: query.endTime } : {}),
-        ...(query.pageNum > 1 ? { page: String(query.pageNum) } : {}),
-      },
-    })
-    .finally(() => {
-      syncingFromUrl = false;
-    });
+  lastWrittenQuery = currentQuerySignature();
+  router.replace({ query: JSON.parse(lastWrittenQuery) as Record<string, string> });
 }
 
 function readQueryFromUrl() {
@@ -466,13 +476,13 @@ async function exportRows() {
 watch(
   () => route.query,
   async () => {
-    if (syncingFromUrl) {
+    // 只有外部导航（深链、前进后退）才需要重新读取；自己的写回直接跳过
+    if (routeQuerySignature() === lastWrittenQuery) {
       return;
     }
-    const before = `${query.formId}|${query.keyword}|${query.status}|${query.startTime}|${query.endTime}|${query.pageNum}`;
+    const before = currentQuerySignature();
     readQueryFromUrl();
-    const after = `${query.formId}|${query.keyword}|${query.status}|${query.startTime}|${query.endTime}|${query.pageNum}`;
-    if (before !== after) {
+    if (before !== currentQuerySignature()) {
       await load();
     }
   },

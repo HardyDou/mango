@@ -265,6 +265,61 @@ class InformationServiceIntegrationTest {
     }
 
     @Test
+    void saveForm_supportsRichControlTypesAndComplexValues() {
+        // 覆盖设计器常见控件：选择、评分、滑块、颜色、日期时间、子表单与表格表单
+        String rules = """
+                [{"type":"input","field":"name","title":"姓名","validate":[{"required":true}]},
+                 {"type":"checkbox","field":"channels","title":"渠道","options":[{"label":"电话","value":"tel"},{"label":"邮件","value":"mail"}]},
+                 {"type":"rate","field":"score","title":"评分","props":{"max":5}},
+                 {"type":"slider","field":"weight","title":"权重","props":{"min":0,"max":100}},
+                 {"type":"colorPicker","field":"brandColor","title":"品牌色"},
+                 {"type":"datePicker","field":"visitDate","title":"到访日期","props":{"type":"date"}},
+                 {"type":"timePicker","field":"visitTime","title":"到访时间","props":{"type":"time"}},
+                 {"type":"elDivider","title":"分组"},
+                 {"type":"group","field":"members","title":"成员","children":[
+                   {"type":"input","field":"memberName","title":"成员姓名"},
+                   {"type":"inputNumber","field":"memberAge","title":"年龄"}]},
+                 {"type":"tableForm","field":"rows","title":"明细","children":[
+                   {"type":"input","field":"itemName","title":"项目"}]}]
+                """;
+        SaveInformationFormCommand command = new SaveInformationFormCommand();
+        command.setFormCode("rich-controls");
+        command.setFormName("全控件表");
+        command.setDefinitionJson(rules);
+        command.setStatus(InformationFormStatus.PUBLISHED);
+        Long formId = formService.save(command);
+
+        // 子表单/表格表单计为一个字段，内部模板不再单独成为提交字段
+        assertThat(formService.page(new InformationFormPageQuery()).getList())
+                .singleElement()
+                .satisfies(vo -> assertThat(vo.getFieldCount()).isEqualTo(9));
+
+        Map<String, Object> values = new java.util.LinkedHashMap<>();
+        values.put("name", "复杂值");
+        values.put("channels", java.util.List.of("tel", "mail"));
+        values.put("score", 4);
+        values.put("weight", 80);
+        values.put("brandColor", "#2e5cf6");
+        values.put("visitDate", "2026-10-20");
+        values.put("visitTime", "09:30:00");
+        values.put("members", java.util.List.of(Map.of("memberName", "张三", "memberAge", 30)));
+        values.put("rows", java.util.List.of(Map.of("itemName", "服务费")));
+        submissionService.submit(submitCommand("rich-controls", values, "rich-1"), false);
+
+        io.mango.information.api.vo.InformationSubmissionVO row =
+                submissionService.page(new InformationSubmissionPageQuery()).getList().get(0);
+        assertThat(row.getValuesJson()).contains("channels").contains("members").contains("rows");
+
+        // 导出中复杂值必须序列化为可读 JSON，而不是 [object Object]
+        String csv = submissionService.exportCsv(new InformationSubmissionPageQuery());
+        // 子表单/表格表单作为一列导出，内容为可读 JSON，内部模板不单独成列
+        assertThat(csv).contains("姓名").contains("成员").contains("明细");
+        assertThat(csv).contains("复杂值").contains("memberName").doesNotContain("[object Object]");
+        assertThat(csv).doesNotContain("成员姓名");
+        assertThat(formId).isNotNull();
+    }
+
+    @Test
     void updateStatus_andRegenerateSecret_rotateFormLifecycle() {
         Long formId = createPublishedForm("lifecycle-form");
         String before = formService.detail(formId).getServerSecret();

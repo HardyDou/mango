@@ -79,22 +79,28 @@ public class InformationSubmissionService implements IInformationSubmissionServi
         LambdaQueryWrapper<InformationSubmissionEntity> wrapper = queryWrapper(query);
         wrapper.orderByDesc(InformationSubmissionEntity::getSubmittedAt);
         List<InformationSubmissionEntity> records = submissionMapper.selectList(wrapper);
-        Map<String, JsonNode> fieldDefinitions = new LinkedHashMap<>();
+        Map<String, InformationDefinition.Field> columns = new LinkedHashMap<>();
         try {
+            // 列集合取当前筛选结果涉及表单的字段并集，展示型规则不导出
             for (InformationSubmissionEntity record : records) {
                 InformationFormEntity form = formService.select(record.getFormId());
-                for (JsonNode field : objectMapper.readTree(form.getDefinitionJson())) fieldDefinitions.putIfAbsent(field.path("fieldCode").asText(), field);
+                for (InformationDefinition.Field field : InformationDefinition.fields(objectMapper.readTree(form.getDefinitionJson()))) {
+                    if (!InformationDefinition.displayOnly(field)) {
+                        columns.putIfAbsent(field.code(), field);
+                    }
+                }
             }
             StringBuilder csv = new StringBuilder("记录ID,提交时间,状态,来源页面");
-            for (JsonNode field : fieldDefinitions.values()) csv.append(',').append(csvCell(field.path("fieldName").asText(field.path("fieldCode").asText())));
+            for (InformationDefinition.Field field : columns.values()) {
+                csv.append(',').append(csvCell(field.name()));
+            }
             csv.append('\n');
             for (InformationSubmissionEntity record : records) {
                 Map<String, Object> values = objectMapper.readValue(record.getValuesJson(), Map.class);
                 csv.append(csvCell(String.valueOf(record.getId()))).append(',').append(csvCell(String.valueOf(record.getSubmittedAt()))).append(',')
                         .append(csvCell(statusLabel(record.getStatus()))).append(',').append(csvCell(record.getSourcePage()));
-                for (JsonNode field : fieldDefinitions.values()) {
-                    String code = field.path("fieldCode").asText();
-                    csv.append(',').append(csvCell(mask(field.path("fieldType").asText(), values.get(code))));
+                for (InformationDefinition.Field field : columns.values()) {
+                    csv.append(',').append(csvCell(mask(field.type(), values.get(field.code()))));
                 }
                 csv.append('\n');
             }
@@ -108,12 +114,32 @@ public class InformationSubmissionService implements IInformationSubmissionServi
         return switch (status) { case "PENDING" -> "待处理"; case "PROCESSING" -> "处理中"; case "COMPLETED" -> "已完成"; case "CLOSED" -> "已关闭"; default -> status; };
     }
 
+    /** 复杂值（多选、子表单、表格表单等）序列化为可读 JSON，避免导出出现 [object Object]。 */
     private String mask(String fieldType, Object value) {
-        if (value == null) return "";
+        if (value == null) {
+            return "";
+        }
+        if (value instanceof java.util.Collection<?> || value instanceof java.util.Map<?, ?>) {
+            return writeQuietly(value);
+        }
         String text = String.valueOf(value);
-        if (fieldType.toLowerCase().contains("phone") || fieldType.toLowerCase().contains("mobile") || fieldType.toLowerCase().contains("tel")) return text.length() <= 4 ? "***" : text.substring(0, Math.min(3, text.length())) + "****" + text.substring(Math.max(0, text.length() - 2));
-        if (fieldType.toLowerCase().contains("email")) { int at = text.indexOf('@'); return at <= 1 ? "***" : text.substring(0, 1) + "***" + text.substring(at); }
+        String type = fieldType == null ? "" : fieldType.toLowerCase(java.util.Locale.ROOT);
+        if (type.contains("phone") || type.contains("mobile") || type.contains("tel")) {
+            return text.length() <= 4 ? "***" : text.substring(0, Math.min(3, text.length())) + "****" + text.substring(Math.max(0, text.length() - 2));
+        }
+        if (type.contains("email")) {
+            int at = text.indexOf('@');
+            return at <= 1 ? "***" : text.substring(0, 1) + "***" + text.substring(at);
+        }
         return text;
+    }
+
+    private String writeQuietly(Object value) {
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (Exception e) {
+            return String.valueOf(value);
+        }
     }
 
     private String csvCell(Object value) {

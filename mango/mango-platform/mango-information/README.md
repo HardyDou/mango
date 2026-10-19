@@ -96,7 +96,9 @@ registerMangoInformationAdminPages();
 ]
 ```
 
-服务端按规则的 `field` / `title` / `type` 提取采集项：带 `field` 的规则参与必填校验与提交记录动态列；没有 `field` 的布局与展示规则（`elDivider`、`elAlert`、`text` 等）不参与校验，也不接受提交值。历史 `{fieldCode, fieldName, fieldType}` 形状仍被兼容。
+服务端按规则的 `field` / `title` / `type` 提取采集项：带 `field` 的规则参与必填校验与提交记录动态列；没有 `field` 的布局与展示规则（`elDivider`、`elAlert` 等）不参与校验，也不接受提交值。历史 `{fieldCode, fieldName, fieldType}` 形状仍被兼容。
+
+控件支持范围与设计器一致，由前端 form-create 运行时渲染，包括输入、数字、选择、单选、多选、开关、评分、滑块、日期时间、颜色、级联、树形、上传、富文本、子表单、表格表单以及栅格/卡片/标签页等布局；`group`、`subForm`、`tableForm` 计为一个采集项，其子字段是行模板，不单独成为提交字段。多选与子表单等复杂值按 JSON 原样保存，提交记录列、详情和导出统一序列化为可读文本。
 
 ## 6. 数据与初始化
 

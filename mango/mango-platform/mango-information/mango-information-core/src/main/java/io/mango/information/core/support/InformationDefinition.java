@@ -30,11 +30,19 @@ public final class InformationDefinition {
         return result;
     }
 
+    /**
+     * 布局容器没有自己的值，需要继续下钻；
+     * 子表单/表格表单本身就是一个字段，children 是行模板，不能再当成顶层字段。
+     */
+    private static final Set<String> SUBFORM_TYPES = Set.of("group", "subform", "tableform");
+
     private static void collect(JsonNode node, List<Field> result, Set<String> seen) {
         if (node == null || !node.isArray()) {
             return;
         }
         for (JsonNode rule : node) {
+            String type = text(rule, "type");
+            String normalizedType = type == null ? "" : type.toLowerCase(java.util.Locale.ROOT);
             String code = text(rule, "field");
             if (!hasText(code)) {
                 code = text(rule, "fieldCode");
@@ -44,11 +52,14 @@ public final class InformationDefinition {
                 if (!hasText(name)) {
                     name = text(rule, "fieldName");
                 }
-                String type = text(rule, "type");
-                if (!hasText(type)) {
-                    type = text(rule, "fieldType");
+                String fieldType = type;
+                if (!hasText(fieldType)) {
+                    fieldType = text(rule, "fieldType");
                 }
-                result.add(new Field(code, hasText(name) ? name : code, hasText(type) ? type : "input", required(rule)));
+                result.add(new Field(code, hasText(name) ? name : code, hasText(fieldType) ? fieldType : "input", required(rule)));
+            }
+            if (SUBFORM_TYPES.contains(normalizedType) && hasText(code)) {
+                continue;
             }
             collect(rule.get("children"), result, seen);
         }
@@ -73,10 +84,15 @@ public final class InformationDefinition {
         return false;
     }
 
-    /** 展示型与布局型规则不参与提交值校验。 */
+    /**
+     * 展示型与布局型规则不参与提交值校验。
+     * <p>
+     * 注意：设计器的「文字」组件类型同为 `text`，但它没有 field，不会进入采集项；
+     * 旧定义的 `text` 表示单行文本，是可提交字段，不能当作展示组件过滤。
+     */
     public static boolean displayOnly(Field field) {
         String type = field.type() == null ? "" : field.type().toLowerCase(java.util.Locale.ROOT);
-        return Set.of("divider", "eldivider", "static", "elalert", "text", "html", "eltag", "elimage", "elbutton")
+        return Set.of("divider", "eldivider", "static", "elalert", "html", "eltag", "elimage", "elbutton")
                 .contains(type);
     }
 
