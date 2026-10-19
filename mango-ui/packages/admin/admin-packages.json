@@ -26,6 +26,10 @@
       "style": "@mango/grid-widgets/style.css"
     },
     {
+      "name": "@mango/information",
+      "style": "@mango/information/style.css"
+    },
+    {
       "name": "@mango/job",
       "style": "@mango/job/style.css"
     },

@@ -61,3 +61,12 @@ export async function chooseElementPlusOption(option: Locator): Promise<void> {
   await expect(option).toBeVisible();
   await option.click({ force: true });
 }
+
+/**
+ * 带 `data-*` 语义锚点的 Element Plus 下拉：业务用例只传锚点，
+ * 组件内部 wrapper 结构变化时只改这里。
+ */
+export async function openSelectByAnchor(scope: Locator | Page, anchor: string): Promise<void> {
+  const root = scope.locator(`[data-select="${anchor}"]`);
+  await root.locator('xpath=.//div[contains(@class, "el-select__wrapper")]').first().click();
+}

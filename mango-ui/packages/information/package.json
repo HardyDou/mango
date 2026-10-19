@@ -1,0 +1,78 @@
+{
+  "name": "@mango/information",
+  "version": "1.0.0",
+  "private": false,
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./admin-pages": {
+      "types": "./dist/admin-pages.d.ts",
+      "import": "./dist/admin-pages.js"
+    },
+    "./style.css": "./dist/style.css"
+  },
+  "scripts": {
+    "build": "vite build && node ../../scripts/generate-package-types.mjs",
+    "test": "vitest run"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "package.json"
+  ],
+  "dependencies": {
+    "@element-plus/icons-vue": "2.3.2",
+    "@mango/api-schema": "workspace:1.0.4",
+    "@mango/app-runtime": "workspace:1.0.7",
+    "@mango/common": "workspace:2.1.4",
+    "@form-create/element-ui": "3.2.42",
+    "form-create-designer": "3.2.11-oem"
+  },
+  "peerDependencies": {
+    "@mango/admin-extension": "workspace:1.1.0",
+    "element-plus": ">=2.14.1 <3",
+    "vue": ">=3.5.13 <4",
+    "vue-router": ">=4.1.6 <5"
+  },
+  "devDependencies": {
+    "@mango/admin-extension": "workspace:*",
+    "@vitejs/plugin-vue": "^4.0.0",
+    "@mango/http-client": "workspace:1.0.2",
+    "typescript": "^5.9.3",
+    "vite": "^4.3.3",
+    "vitest": "4.1.10",
+    "vue-router": "4.6.4"
+  },
+  "publishConfig": {
+    "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
+  },
+  "types": "./dist/index.d.ts",
+  "mangoArchitecture": {
+    "architectureLayer": "FE2",
+    "role": "domain",
+    "domain": "information",
+    "ownerRole": "Frontend Standards Owner",
+    "sourceExports": {
+      ".": {
+        "source": "./src/index.ts",
+        "kind": "code"
+      },
+      "./admin-pages": {
+        "source": "./src/admin-pages.ts",
+        "kind": "code"
+      }
+    },
+    "nonCodeExports": {
+      "./style.css": {
+        "source": "./src/style.css",
+        "dist": "./dist/style.css",
+        "generation": "build"
+      }
+    }
+  }
+}

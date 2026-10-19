@@ -18,6 +18,7 @@
     "@mango/file": "1.2.0",
     "@mango/grid-layout": "1.0.28",
     "@mango/grid-widgets": "1.0.34",
+    "@mango/information": "1.0.0",
     "@mango/job": "1.0.44",
     "@mango/link": "1.0.37",
     "@mango/link-openapi": "1.0.4",

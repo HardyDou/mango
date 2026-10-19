@@ -155,3 +155,7 @@ Maven 依赖：
 - [Mango Monolith App README](../mango-app/monolith/mango-monolith-app/README.md)
 - [Mango 后端根 README](../README.md)
 - [Mango 能力地图](../../mango-docs/capabilities/README.md)
+
+### Issue #1055 信息采集模块装配影响
+
+`mango-admin-starter` 新增 `io.mango.platform.information:mango-information-starter` 依赖，随单体与业务聚合自动装配信息采集模块。装配入口、既有模块顺序和公开 API 不变；信息采集模块自身可通过 `mango.information.enabled=false` 关闭。
