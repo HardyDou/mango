@@ -29,6 +29,19 @@
           <el-option label="已关闭" value="CLOSED" />
         </el-select>
       </el-form-item>
+      <el-form-item label="提交时间">
+        <el-date-picker
+          v-model="timeRange"
+          data-select="submission-time"
+          type="datetimerange"
+          value-format="YYYY-MM-DDTHH:mm:ss"
+          range-separator="至"
+          start-placeholder="开始时间"
+          end-placeholder="结束时间"
+          :shortcuts="timeShortcuts"
+          @change="onTimeRangeChange"
+        />
+      </el-form-item>
     </MangoSearchPanel>
 
     <MangoListPanel>
@@ -54,9 +67,9 @@
         empty-text="请选择表单后查看提交记录"
         @row-click="openDrawer"
       >
-        <el-table-column label="提交编号" width="215" fixed="left">
+        <el-table-column label="记录ID" width="206" fixed="left" show-overflow-tooltip>
           <template #default="{ row }"
-            ><span class="information-code information-nowrap">{{ row.submissionNo }}</span></template
+            ><span class="information-code information-nowrap">{{ row.id }}</span></template
           >
         </el-table-column>
         <el-table-column label="提交时间" width="170">
@@ -140,7 +153,21 @@
             <el-option label="已完成" value="COMPLETED" />
             <el-option label="已关闭" value="CLOSED" />
           </el-select>
+          <div class="information-quick-actions">
+            <el-button
+              v-for="item in quickActions"
+              :key="item.status"
+              link
+              type="primary"
+              :disabled="current.status === 'CLOSED'"
+              :data-quick-action="item.status"
+              @click="processStatus = item.status"
+            >
+              {{ item.label }}
+            </el-button>
+          </div>
         </div>
+        <p v-if="current.status === 'CLOSED'" class="information-note">该记录已关闭，只能查看，不能再修改处理状态。</p>
       </div>
       <template #footer>
         <el-button @click="drawerVisible = false">取消</el-button>
@@ -177,7 +204,41 @@ const api = useInformationApi();
 const route = useRoute();
 const router = useRouter();
 
-const query = reactive({ pageNum: 1, pageSize: 10, keyword: '', status: '', formId: '' as string });
+const query = reactive({
+  pageNum: 1,
+  pageSize: 10,
+  keyword: '',
+  status: '',
+  formId: '' as string,
+  startTime: '' as string,
+  endTime: '' as string,
+});
+const timeRange = ref<[string, string] | null>(null);
+/** 常用时间窗口，减少手工选择。 */
+const timeShortcuts = [
+  { text: '今天', value: () => [startOfToday(), new Date()] },
+  { text: '近 7 天', value: () => [daysAgo(6), new Date()] },
+  { text: '近 30 天', value: () => [daysAgo(29), new Date()] },
+];
+
+function startOfToday(): Date {
+  const date = new Date();
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+function daysAgo(days: number): Date {
+  const date = startOfToday();
+  date.setDate(date.getDate() - days);
+  return date;
+}
+
+function onTimeRangeChange(value: [string, string] | null) {
+  query.startTime = value?.[0] || '';
+  query.endTime = value?.[1] || '';
+  query.pageNum = 1;
+  return load();
+}
 const formOptions = ref<InformationForm[]>([]);
 const rows = ref<InformationSubmission[]>([]);
 const total = ref(0);
@@ -191,6 +252,12 @@ const current = ref<InformationSubmission>();
 const processRemark = ref('');
 const processStatus = ref<InformationSubmissionStatus>('PENDING');
 const processing = ref(false);
+/** 抽屉里的常用处理动作，等价于选择对应状态。 */
+const quickActions: Array<{ status: InformationSubmissionStatus; label: string }> = [
+  { status: 'PROCESSING', label: '标记处理中' },
+  { status: 'COMPLETED', label: '标记已完成' },
+  { status: 'CLOSED', label: '关闭记录' },
+];
 
 const formId = computed(() => query.formId || String(route.params.id || ''));
 const columns = computed<InformationFieldDefinition[]>(() =>
@@ -207,7 +274,7 @@ const currentTitle = computed(() => {
   const first = columns.value[0];
   const value = first ? values[first.fieldCode] : undefined;
   const display = first ? displayFieldValue(first, value) : '';
-  return display || current.value.submissionNo || '提交详情';
+  return display || `#${current.value.id ?? ''}` || '提交详情';
 });
 
 function parseValues(valuesJson?: string): Record<string, unknown> {
@@ -245,13 +312,15 @@ function syncQueryToUrl() {
       ...(query.formId ? { formId: query.formId } : {}),
       ...(query.keyword ? { keyword: query.keyword } : {}),
       ...(query.status ? { status: query.status } : {}),
+      ...(query.startTime ? { startTime: query.startTime } : {}),
+      ...(query.endTime ? { endTime: query.endTime } : {}),
       ...(query.pageNum > 1 ? { page: String(query.pageNum) } : {}),
     },
   });
 }
 
 function readQueryFromUrl() {
-  const { formId: urlFormId, keyword, status, page } = route.query;
+  const { formId: urlFormId, keyword, status, page, startTime, endTime } = route.query;
   if (typeof urlFormId === 'string' && urlFormId) {
     query.formId = urlFormId;
   } else {
@@ -259,6 +328,9 @@ function readQueryFromUrl() {
   }
   query.keyword = typeof keyword === 'string' ? keyword : '';
   query.status = typeof status === 'string' ? status : '';
+  query.startTime = typeof startTime === 'string' ? startTime : '';
+  query.endTime = typeof endTime === 'string' ? endTime : '';
+  timeRange.value = query.startTime && query.endTime ? [query.startTime, query.endTime] : null;
   query.pageNum = Number(page) > 0 ? Number(page) : 1;
 }
 
@@ -295,7 +367,14 @@ async function load() {
     const [detail, page, pending] = await Promise.all([
       api.detailForm(formId.value),
       api.pageSubmissions({ ...query, formId: formId.value }),
-      api.pageSubmissions({ pageNum: 1, pageSize: 1, status: 'PENDING', formId: formId.value }),
+      api.pageSubmissions({
+        pageNum: 1,
+        pageSize: 1,
+        status: 'PENDING',
+        formId: formId.value,
+        startTime: query.startTime,
+        endTime: query.endTime,
+      }),
     ]);
     form.value = detail;
     rows.value = page.list;
@@ -317,6 +396,9 @@ function search() {
 function reset() {
   query.keyword = '';
   query.status = '';
+  query.startTime = '';
+  query.endTime = '';
+  timeRange.value = null;
   return search();
 }
 
@@ -342,7 +424,7 @@ async function saveProcess() {
       status: processStatus.value,
       processRemark: processRemark.value,
     });
-    ElMessage.success('处理结果已保存');
+    ElMessage.success(`已更新为「${submissionStatusLabel(processStatus.value)}」`);
     drawerVisible.value = false;
     await load();
   } catch (error) {

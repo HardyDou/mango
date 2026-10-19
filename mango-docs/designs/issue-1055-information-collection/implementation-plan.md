@@ -14,7 +14,7 @@ upstreamDocumentId: TDD-INFO-COLLECTION-001
 upstreamDocumentHash: e677159930c7afa66ea423f5d38c80971d2219aa443e70e38db22e32d174f540
 ---
 
-# Mango 信息采集中心实施计划
+# Mango 信息采集管理实施计划
 
 > **先读：这份文档要回答什么**
 > - **一句话目标：** 按已确认系统需求和技术设计，交付真实信息采集后端模块、管理端页面、公开托管入口和逐项验收证据。

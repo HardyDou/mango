@@ -14,7 +14,6 @@ import java.time.LocalDateTime;
 public class InformationSubmissionEntity extends TenantEntity {
     private Long formId;
     private String formCode;
-    private String submissionNo;
     private String valuesJson;
     private String sourcePage;
     private String idempotencyKey;

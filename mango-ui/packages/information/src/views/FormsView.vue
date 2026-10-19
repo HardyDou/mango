@@ -37,10 +37,11 @@
         <el-table-column label="表单名称" min-width="170" show-overflow-tooltip>
           <template #default="{ row }">{{ row.formName || '-' }}</template>
         </el-table-column>
-        <el-table-column label="表单编码" min-width="150">
-          <template #default="{ row }"
-            ><span class="information-code">{{ row.formCode }}</span></template
-          >
+        <el-table-column label="表单编码" min-width="172">
+          <template #default="{ row }">
+            <span class="information-code">{{ row.formCode }}</span>
+            <el-button link type="primary" data-row-action="copy-code" @click="copyCode(row)">复制</el-button>
+          </template>
         </el-table-column>
         <el-table-column label="备注" min-width="170" show-overflow-tooltip>
           <template #default="{ row }">{{ row.description || '-' }}</template>
@@ -51,7 +52,11 @@
           </template>
         </el-table-column>
         <el-table-column label="提交量" width="96" align="right">
-          <template #default="{ row }">{{ formatCount(row.submissionCount) }}</template>
+          <template #default="{ row }">
+            <el-button link type="primary" data-row-action="submissions" @click="openSubmissions(row)">
+              {{ formatCount(row.submissionCount) }}
+            </el-button>
+          </template>
         </el-table-column>
         <el-table-column label="创建日期" width="118">
           <template #default="{ row }">{{ formatDate(row.createdAt) }}</template>
@@ -204,13 +209,34 @@ async function submitCreate() {
   }
 }
 
+/** 停用会让托管页面和 API 立即不可提交，先确认再执行。 */
 async function toggleStatus(row: InformationForm, status: InformationFormStatus) {
+  if (status === 'DISABLED') {
+    try {
+      await ElMessageBox.confirm(`停用后「${row.formName}」的托管页面和 API 将无法提交，确认停用？`, '停用表单', {
+        type: 'warning',
+        confirmButtonText: '停用',
+        cancelButtonText: '取消',
+      });
+    } catch {
+      return;
+    }
+  }
   try {
     await api.updateFormStatus(row.id!, status);
     ElMessage.success(status === 'PUBLISHED' ? '已启用' : '已停用');
     await load();
   } catch (error) {
     ElMessage.error(error instanceof Error ? error.message : '状态更新失败');
+  }
+}
+
+async function copyCode(row: InformationForm) {
+  try {
+    await navigator.clipboard.writeText(row.formCode || '');
+    ElMessage.success('表单编码已复制');
+  } catch {
+    ElMessage.warning('浏览器未授权剪贴板，请手动选择编码复制');
   }
 }
 

@@ -27,7 +27,6 @@ export interface InformationFormDetail extends InformationForm {
 
 export interface InformationSubmission {
   id?: InformationId;
-  submissionNo?: string;
   formId?: InformationId;
   formCode?: string;
   formName?: string;
@@ -46,6 +45,10 @@ export interface InformationPageQuery {
   keyword?: string;
   status?: string;
   formId?: InformationId | '';
+  /** 提交时间下界，ISO 字符串，含边界 */
+  startTime?: string;
+  /** 提交时间上界，ISO 字符串，含边界 */
+  endTime?: string;
 }
 
 export interface InformationPageResult<T> {
@@ -83,7 +86,8 @@ export interface SubmitInformationPayload {
 }
 
 export interface InformationSubmissionResult {
-  submissionNo: string;
+  /** 提交记录主键，可用于查询详情。 */
+  id: InformationId;
   message: string;
 }
 

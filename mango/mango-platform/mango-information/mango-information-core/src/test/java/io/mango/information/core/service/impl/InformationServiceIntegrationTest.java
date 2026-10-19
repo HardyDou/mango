@@ -118,12 +118,11 @@ class InformationServiceIntegrationTest {
         InformationSubmissionResultVO second = submissionService.submit(
                 submitCommand("contact-form", Map.of("name", "李四", "phone", "13900139000"), "key-2"), false);
 
-        assertThat(repeated.getSubmissionNo()).isEqualTo(first.getSubmissionNo());
-        assertThat(second.getSubmissionNo()).isNotEqualTo(first.getSubmissionNo());
+        assertThat(repeated.getId()).isEqualTo(first.getId());
+        assertThat(second.getId()).isNotEqualTo(first.getId());
         assertThat(intValue("information_submission", "count(*)")).isEqualTo(2);
         assertThat(intValue("information_submission_snapshot", "count(*)")).isEqualTo(2);
-        assertThat(stringValue("information_submission", "tenant_id", "submission_no = '" + first.getSubmissionNo() + "'"))
-                .isEqualTo("1");
+        assertThat(stringValue("information_submission", "tenant_id", "id = " + first.getId())).isEqualTo("1");
         assertThat(submissionService.page(new InformationSubmissionPageQuery()).getList())
                 .hasSize(2)
                 .allSatisfy(vo -> assertThat(vo.getDefinitionJson()).contains("phone"));
@@ -161,21 +160,36 @@ class InformationServiceIntegrationTest {
         SubmitInformationCommand valid = submitCommand(
                 "contact-form", Map.of("name", "张三", "phone", "13800138000"), "key-2");
         valid.setServerSecret(detail.getServerSecret());
-        assertThat(submissionService.submit(valid, true).getSubmissionNo()).startsWith("IC-");
+        assertThat(submissionService.submit(valid, true).getId()).isNotNull();
     }
 
     @Test
     void process_rejectsClosedSubmission() {
         createPublishedForm("contact-form");
-        String submissionNo = submissionService.submit(
-                submitCommand("contact-form", Map.of("name", "张三", "phone", "13800138000"), "key-1"), false).getSubmissionNo();
-        Long submissionId = longValue("information_submission", "id", "submission_no = '" + submissionNo + "'");
+        Long submissionId = submissionService.submit(
+                submitCommand("contact-form", Map.of("name", "张三", "phone", "13800138000"), "key-1"), false).getId();
 
         assertThat(process(submissionId, InformationSubmissionStatus.COMPLETED)).isTrue();
         assertThat(process(submissionId, InformationSubmissionStatus.CLOSED)).isTrue();
         assertThatThrownBy(() -> process(submissionId, InformationSubmissionStatus.PROCESSING))
                 .isInstanceOf(BizException.class)
                 .hasMessageContaining("已关闭");
+    }
+
+    @Test
+    void page_filtersBySubmittedTimeRange() {
+        createPublishedForm("time-range-form");
+        submissionService.submit(
+                submitCommand("time-range-form", Map.of("name", "时间范围", "phone", "13800138000"), "key-1"), false);
+
+        InformationSubmissionPageQuery future = new InformationSubmissionPageQuery();
+        future.setStartTime(java.time.LocalDateTime.now().plusDays(1));
+        assertThat(submissionService.page(future).getList()).isEmpty();
+
+        InformationSubmissionPageQuery today = new InformationSubmissionPageQuery();
+        today.setStartTime(java.time.LocalDateTime.now().minusDays(1));
+        today.setEndTime(java.time.LocalDateTime.now().plusMinutes(5));
+        assertThat(submissionService.page(today).getList()).hasSize(1);
     }
 
     @Test
@@ -207,7 +221,7 @@ class InformationServiceIntegrationTest {
         assertThat(formService.page(new InformationFormPageQuery()).getList()).hasSize(1);
         assertThat(submissionService.page(new InformationSubmissionPageQuery()).getList())
                 .singleElement()
-                .satisfies(vo -> assertThat(vo.getSubmissionNo()).startsWith("IC-"));
+                .satisfies(vo -> assertThat(vo.getId()).isNotNull());
         assertThat(intValue("information_submission", "count(*)", "tenant_id = '1'")).isEqualTo(1);
         assertThat(intValue("information_submission", "count(*)", "tenant_id = '2'")).isEqualTo(1);
     }
@@ -242,7 +256,7 @@ class InformationServiceIntegrationTest {
 
         assertThat(submissionService.submit(
                 submitCommand("designer-form", Map.of("company", "芒果", "scale", "l", "contact", "张三"), "key-2"), false)
-                .getSubmissionNo()).startsWith("IC-");
+                .getId()).isNotNull();
 
         // 展示型规则不是采集项，不接受提交值
         assertThatThrownBy(() -> submissionService.submit(
@@ -330,7 +344,6 @@ class InformationServiceIntegrationTest {
                   org_id bigint DEFAULT NULL,
                   form_id bigint NOT NULL,
                   form_code varchar(64) NOT NULL,
-                  submission_no varchar(64) NOT NULL,
                   values_json text NOT NULL,
                   source_page varchar(500) DEFAULT NULL,
                   idempotency_key varchar(128) DEFAULT NULL,
@@ -342,7 +355,6 @@ class InformationServiceIntegrationTest {
                   updated_by bigint DEFAULT NULL,
                   updated_at datetime DEFAULT NULL,
                   PRIMARY KEY (id),
-                  UNIQUE KEY uk_information_submission_tenant_no (tenant_id, submission_no),
                   UNIQUE KEY uk_information_submission_idempotency (tenant_id, form_id, idempotency_key)
                 )
                 """);

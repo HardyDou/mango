@@ -7,13 +7,22 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.time.LocalDateTime;
+
 /** 提交记录分页查询。 */
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class InformationSubmissionPageQuery extends PageQuery {
     private Long formId;
     private InformationSubmissionStatus status;
+
     @Size(max = 128, message = "关键词不能超过128个字符")
-    @Schema(description = "匹配提交编号、来源页面或提交内容")
+    @Schema(description = "匹配来源页面或提交内容")
     private String keyword;
+
+    @Schema(description = "提交时间下界，含边界")
+    private LocalDateTime startTime;
+
+    @Schema(description = "提交时间上界，含边界")
+    private LocalDateTime endTime;
 }

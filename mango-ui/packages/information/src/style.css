@@ -747,3 +747,13 @@
 .information-page .el-table__row {
   cursor: pointer;
 }
+
+.information-quick-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.information-page .el-table__row .el-button + .el-button {
+  margin-left: 6px;
+}

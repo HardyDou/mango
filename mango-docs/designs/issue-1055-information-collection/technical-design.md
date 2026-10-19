@@ -14,7 +14,7 @@ upstreamDocumentId: SRS-INFO-COLLECTION-001
 upstreamDocumentHash: 2650490f26b349b2f3f6e89da9e740f53245377da4e98ebd19aca3dadbf70525
 ---
 
-# Mango 信息采集中心技术设计文档
+# Mango 信息采集管理技术设计文档
 
 > **先读：这份文档要回答什么**
 > - **一句话目标：** 在 Mango 中新增独立信息采集模块，使用真实租户表单和提交记录持久化，提供后台管理、托管提交和服务端提交入口。

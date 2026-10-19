@@ -32,19 +32,16 @@ import org.springframework.util.StringUtils;
 
 import java.security.MessageDigest;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 /** 信息采集提交服务。 */
 @Service
 @RequiredArgsConstructor
 public class InformationSubmissionService implements IInformationSubmissionService {
-    private static final DateTimeFormatter NO_TIME = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
     private final InformationSubmissionMapper submissionMapper;
     private final InformationSubmissionSnapshotMapper snapshotMapper;
     private final InformationFormService formService;
@@ -53,14 +50,7 @@ public class InformationSubmissionService implements IInformationSubmissionServi
     @Override
     public PageResult<InformationSubmissionVO> page(InformationSubmissionPageQuery query) {
         InformationSubmissionPageQuery resolved = query == null ? new InformationSubmissionPageQuery() : query;
-        LambdaQueryWrapper<InformationSubmissionEntity> wrapper = tenantWrapper();
-        if (resolved.getFormId() != null) wrapper.eq(InformationSubmissionEntity::getFormId, resolved.getFormId());
-        if (resolved.getStatus() != null) wrapper.eq(InformationSubmissionEntity::getStatus, resolved.getStatus().name());
-        if (StringUtils.hasText(resolved.getKeyword())) {
-            wrapper.and(w -> w.like(InformationSubmissionEntity::getSubmissionNo, resolved.getKeyword())
-                    .or().like(InformationSubmissionEntity::getSourcePage, resolved.getKeyword())
-                    .or().like(InformationSubmissionEntity::getValuesJson, resolved.getKeyword()));
-        }
+        LambdaQueryWrapper<InformationSubmissionEntity> wrapper = queryWrapper(resolved);
         wrapper.orderByDesc(InformationSubmissionEntity::getSubmittedAt);
         IPage<InformationSubmissionEntity> page = submissionMapper.selectPage(new Page<>(resolved.getPage(), resolved.getSize()), wrapper);
         return PageResult.of(page.getRecords().stream().map(this::toVO).toList(), page.getTotal(), page.getCurrent(), page.getSize());
@@ -86,15 +76,7 @@ public class InformationSubmissionService implements IInformationSubmissionServi
 
     @Override
     public String exportCsv(InformationSubmissionPageQuery query) {
-        InformationSubmissionPageQuery resolved = query == null ? new InformationSubmissionPageQuery() : query;
-        LambdaQueryWrapper<InformationSubmissionEntity> wrapper = tenantWrapper();
-        if (resolved.getFormId() != null) wrapper.eq(InformationSubmissionEntity::getFormId, resolved.getFormId());
-        if (resolved.getStatus() != null) wrapper.eq(InformationSubmissionEntity::getStatus, resolved.getStatus().name());
-        if (StringUtils.hasText(resolved.getKeyword())) {
-            wrapper.and(w -> w.like(InformationSubmissionEntity::getSubmissionNo, resolved.getKeyword())
-                    .or().like(InformationSubmissionEntity::getSourcePage, resolved.getKeyword())
-                    .or().like(InformationSubmissionEntity::getValuesJson, resolved.getKeyword()));
-        }
+        LambdaQueryWrapper<InformationSubmissionEntity> wrapper = queryWrapper(query);
         wrapper.orderByDesc(InformationSubmissionEntity::getSubmittedAt);
         List<InformationSubmissionEntity> records = submissionMapper.selectList(wrapper);
         Map<String, JsonNode> fieldDefinitions = new LinkedHashMap<>();
@@ -103,12 +85,12 @@ public class InformationSubmissionService implements IInformationSubmissionServi
                 InformationFormEntity form = formService.select(record.getFormId());
                 for (JsonNode field : objectMapper.readTree(form.getDefinitionJson())) fieldDefinitions.putIfAbsent(field.path("fieldCode").asText(), field);
             }
-            StringBuilder csv = new StringBuilder("提交编号,提交时间,状态,来源页面");
+            StringBuilder csv = new StringBuilder("记录ID,提交时间,状态,来源页面");
             for (JsonNode field : fieldDefinitions.values()) csv.append(',').append(csvCell(field.path("fieldName").asText(field.path("fieldCode").asText())));
             csv.append('\n');
             for (InformationSubmissionEntity record : records) {
                 Map<String, Object> values = objectMapper.readValue(record.getValuesJson(), Map.class);
-                csv.append(csvCell(record.getSubmissionNo())).append(',').append(csvCell(String.valueOf(record.getSubmittedAt()))).append(',')
+                csv.append(csvCell(String.valueOf(record.getId()))).append(',').append(csvCell(String.valueOf(record.getSubmittedAt()))).append(',')
                         .append(csvCell(statusLabel(record.getStatus()))).append(',').append(csvCell(record.getSourcePage()));
                 for (JsonNode field : fieldDefinitions.values()) {
                     String code = field.path("fieldCode").asText();
@@ -160,14 +142,13 @@ public class InformationSubmissionService implements IInformationSubmissionServi
                     .eq(InformationSubmissionEntity::getIdempotencyKey, command.getIdempotencyKey())
                     .last("LIMIT 1"));
             if (old != null) {
-                return result(old.getSubmissionNo(), form.getSuccessMessage());
+                return result(old.getId(), form.getSuccessMessage());
             }
         }
         LocalDateTime now = LocalDateTime.now();
         InformationSubmissionEntity entity = new InformationSubmissionEntity();
         entity.setFormId(form.getId());
         entity.setFormCode(form.getFormCode());
-        entity.setSubmissionNo("IC-" + now.format(NO_TIME) + "-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
         entity.setValuesJson(write(command.getValues()));
         entity.setSourcePage(command.getSourcePage());
         entity.setIdempotencyKey(command.getIdempotencyKey());
@@ -179,7 +160,7 @@ public class InformationSubmissionService implements IInformationSubmissionServi
         snapshot.setFormId(form.getId());
         snapshot.setDefinitionJson(form.getDefinitionJson());
         snapshotMapper.insert(snapshot);
-        return result(entity.getSubmissionNo(), form.getSuccessMessage());
+        return result(entity.getId(), form.getSuccessMessage());
     }
 
     private InformationSubmissionResultVO withTenantContext(String tenantId, java.util.function.Supplier<InformationSubmissionResultVO> supplier) {
@@ -194,6 +175,29 @@ public class InformationSubmissionService implements IInformationSubmissionServi
         }
     }
 
+    /** 列表、导出和待处理计数共用同一套筛选条件，避免口径不一致。 */
+    private LambdaQueryWrapper<InformationSubmissionEntity> queryWrapper(InformationSubmissionPageQuery query) {
+        InformationSubmissionPageQuery resolved = query == null ? new InformationSubmissionPageQuery() : query;
+        LambdaQueryWrapper<InformationSubmissionEntity> wrapper = tenantWrapper();
+        if (resolved.getFormId() != null) {
+            wrapper.eq(InformationSubmissionEntity::getFormId, resolved.getFormId());
+        }
+        if (resolved.getStatus() != null) {
+            wrapper.eq(InformationSubmissionEntity::getStatus, resolved.getStatus().name());
+        }
+        if (resolved.getStartTime() != null) {
+            wrapper.ge(InformationSubmissionEntity::getSubmittedAt, resolved.getStartTime());
+        }
+        if (resolved.getEndTime() != null) {
+            wrapper.le(InformationSubmissionEntity::getSubmittedAt, resolved.getEndTime());
+        }
+        if (StringUtils.hasText(resolved.getKeyword())) {
+            wrapper.and(w -> w.like(InformationSubmissionEntity::getSourcePage, resolved.getKeyword())
+                    .or().like(InformationSubmissionEntity::getValuesJson, resolved.getKeyword()));
+        }
+        return wrapper;
+    }
+
     private InformationSubmissionEntity select(Long id) {
         InformationSubmissionEntity entity = submissionMapper.selectOne(tenantWrapper().eq(InformationSubmissionEntity::getId, id).last("LIMIT 1"));
         return Require.nonNull(entity, InformationCode.SUBMISSION_NOT_FOUND);
@@ -206,7 +210,7 @@ public class InformationSubmissionService implements IInformationSubmissionServi
 
     private InformationSubmissionVO toVO(InformationSubmissionEntity entity) {
         InformationSubmissionVO vo = new InformationSubmissionVO();
-        vo.setId(entity.getId()); vo.setSubmissionNo(entity.getSubmissionNo()); vo.setFormId(entity.getFormId());
+        vo.setId(entity.getId()); vo.setFormId(entity.getFormId());
         vo.setFormCode(entity.getFormCode());
         InformationFormEntity form = formService.select(entity.getFormId());
         vo.setFormName(form.getFormName()); vo.setDefinitionJson(form.getDefinitionJson());
@@ -254,7 +258,10 @@ public class InformationSubmissionService implements IInformationSubmissionServi
         catch (Exception e) { throw new IllegalArgumentException(InformationCode.INVALID_SUBMISSION.getMessage(), e); }
     }
 
-    private InformationSubmissionResultVO result(String no, String message) {
-        InformationSubmissionResultVO result = new InformationSubmissionResultVO(); result.setSubmissionNo(no); result.setMessage(message); return result;
+    private InformationSubmissionResultVO result(Long id, String message) {
+        InformationSubmissionResultVO result = new InformationSubmissionResultVO();
+        result.setId(id);
+        result.setMessage(message);
+        return result;
     }
 }

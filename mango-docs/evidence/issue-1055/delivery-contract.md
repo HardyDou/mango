@@ -1,8 +1,8 @@
-# Issue #1055 信息采集中心 交付契约
+# Issue #1055 信息采集管理 交付契约
 
 ## 1. 目标
 
-在 Mango 中新增独立的信息采集中心，与 CMS 解耦、不建立站点概念：授权人员管理表单与采集项，访客通过托管入口或业务自建入口提交，运营人员处理当前表单的提交记录，形成真实数据库、真实租户隔离和真实公开入口的完整闭环。
+在 Mango 中新增独立的信息采集管理，与 CMS 解耦、不建立站点概念：授权人员管理表单与采集项，访客通过托管入口或业务自建入口提交，运营人员处理当前表单的提交记录，形成真实数据库、真实租户隔离和真实公开入口的完整闭环。
 
 ## 2. 范围
 
@@ -64,7 +64,7 @@
 
 ### 5.4 菜单、页面与权限变化
 
-- 菜单：`信息采集中心` → `表单管理`（`information:forms`）、`提交记录`（`information:submissions`）；表单详情、设计、接入是表单上下文内的隐藏路由。
+- 菜单：`信息采集管理` → `表单管理`（`information:forms`）、`提交记录`（`information:submissions`）；表单详情、设计、接入是表单上下文内的隐藏路由。
 - 页面：表单列表（PG-001）、表单详情（PG-002）、表单设计（PG-003，复用平台表单设计器）、提交记录与处理抽屉（PG-004，独立菜单）、接入方式与托管表单（PG-005）。
 - 权限：后台接口按 `ApiAccess(LOGIN)` 声明并复用 `information:*` 权限码；公开入口按 `PUBLIC` 声明；租户由服务端确定，客户端不得覆盖。
 
@@ -97,7 +97,7 @@
 | TC-002 | AC-002 | 匿名托管表单渲染与提交 | P0 | E2E | AUTO | 已发布表单 `customer-contact` | 表单标签与成功结果 | 同上 | `acceptance-evidence.md` | AUTOMATED |
 | TC-003 | AC-003 | 提交记录列表、动态列与详情 | P0 | E2E | AUTO | 真实提交记录 | `data-page="information.submissions"` | 同上 | `acceptance-evidence.md` | AUTOMATED |
 | TC-004 | AC-004 | 服务端 SK 校验与失败语义 | P0 | API | MANUAL | 错误与正确 SK | 错误码 `105507` | `POST /information/open/forms/submit` | `acceptance-evidence.md` | MANUAL |
-| TC-005 | AC-005 | 必填、未知字段与幂等提交 | P0 | API | MANUAL | 缺必填、未知字段、重复幂等键 | 错误码 `105505` 与同一提交编号 | 同上 | `acceptance-evidence.md` | MANUAL |
+| TC-005 | AC-005 | 必填、未知字段与幂等提交 | P0 | API | MANUAL | 缺必填、未知字段、重复幂等键 | 错误码 `105505` 与同一记录ID | 同上 | `acceptance-evidence.md` | MANUAL |
 | TC-006 | AC-006 | 处理状态流转与已关闭限制 | P0 | API | MANUAL | COMPLETED/CLOSED/PROCESSING | 错误码 `105506` | `PUT /information/submissions/process` | `acceptance-evidence.md` | MANUAL |
 | TC-007 | AC-007 | 导出当前筛选结果与默认脱敏 | P1 | API | MANUAL | 手机号字段 | CSV 脱敏 `138****00` | `GET /information/submissions/export` | `acceptance-evidence.md` | MANUAL |
 | TC-008 | AC-008 | 字段定义变更后历史记录快照 | P1 | API | MANUAL | 修改定义后读旧记录 | 快照表与提交值对齐 | 数据库核对 | `acceptance-evidence.md` | MANUAL |
@@ -125,7 +125,7 @@
 | TASK-003 | TC-003 | `/#/information/submissions` | 独立菜单入口、动态列与处理抽屉 | 真实提交记录 | 独立菜单直达；表单下拉筛选；固定列 + 当前表单动态列；抽屉处理 | 列表与抽屉交互正常，无返回按钮 | 列表接口 200 | `screenshots/05-submission-list.png`、`screenshots/06-submission-detail.png` | DONE |
 | TASK-004 | TC-002 | `/#/information/hosted?formCode=customer-contact` | 匿名托管表单提交 | 姓名/手机号/需求描述 | 匿名打开成功，提交后展示成功态 | 表单校验与按钮可用 | 公开接口匿名返回 200 | `screenshots/07-hosted-form.png`、`screenshots/08-hosted-submit-success.png` | DONE |
 | TASK-005 | TC-004 | `POST /information/open/forms/submit` | SK 校验 | 错误 SK / 正确 SK | 错误 SK 返回 `105507`，正确 SK 写入提交 | 非 UI | 匿名接口 200 + 业务错误码 | `acceptance-evidence.md` | DONE |
-| TASK-005 | TC-005 | `POST /information/open/forms/submit` | 必填、未知字段与幂等 | 缺必填、未知字段、重复幂等键 | 返回 `105505`；重复幂等键返回同一提交编号 | 非 UI | 匿名接口 200 + 业务错误码 | `acceptance-evidence.md` | DONE |
+| TASK-005 | TC-005 | `POST /information/open/forms/submit` | 必填、未知字段与幂等 | 缺必填、未知字段、重复幂等键 | 返回 `105505`；重复幂等键返回同一记录ID | 非 UI | 匿名接口 200 + 业务错误码 | `acceptance-evidence.md` | DONE |
 | TASK-003 | TC-006 | `PUT /information/submissions/process` | 状态流转与已关闭限制 | COMPLETED/CLOSED/PROCESSING | 前两次成功，已关闭再处理返回 `105506` | 非 UI | 管理接口 200 + 业务错误码 | `acceptance-evidence.md` | DONE |
 | TASK-009 | TC-007 | `GET /information/submissions/export` | 导出与脱敏 | 手机号字段 | CSV 仅含当前筛选记录，手机号脱敏为 `138****00` | 非 UI | 管理接口 200 | `acceptance-evidence.md` | DONE |
 | TASK-007 | TC-009 | `information_submission` 表 | 租户归属 | 匿名提交 | `tenant_id=1` 由服务端写入 | 非 UI | 不适用 | `acceptance-evidence.md` | DONE |

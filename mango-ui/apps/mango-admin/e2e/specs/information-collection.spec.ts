@@ -1,5 +1,4 @@
 import { expect, test, type Page } from '@playwright/test';
-import { openSelectByAnchor } from '../support/element-plus';
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -9,11 +8,22 @@ const evidenceDir = resolve(
 );
 
 const formCode = process.env.MANGO_INFO_FORM_CODE || 'customer-contact';
-const formId = process.env.MANGO_INFO_FORM_ID || '2111647649335427074';
+const formId = process.env.MANGO_INFO_FORM_ID || '2111981833178341377';
 
 async function shot(page: Page, filename: string, fullPage = true) {
   mkdirSync(evidenceDir, { recursive: true });
   await page.screenshot({ path: resolve(evidenceDir, filename), fullPage });
+}
+
+/** 表单列表按编码取主键，供深链用例定位目标表单。 */
+async function loadFormId(page: Page, code: string): Promise<string> {
+  const token = await page.evaluate(() => sessionStorage.getItem('MANGO_TOKEN') || '');
+  const response = await page.request.get('/api/information/forms/page', {
+    headers: { Authorization: `Bearer ${token}`, 'X-Mango-Tenant-Id': '1' },
+    params: { page: '1', size: '1', keyword: code },
+  });
+  const body = await response.json();
+  return String(body?.data?.list?.[0]?.id ?? '');
 }
 
 async function goBack(page: Page) {
@@ -34,7 +44,7 @@ async function login(page: Page) {
   await page.waitForURL('**/#/home');
 }
 
-test.describe('@p0 @information 信息采集中心', () => {
+test.describe('@p0 @information 信息采集管理', () => {
   test('表单管理与详情、设计器、接入页面可用', async ({ page }) => {
     await login(page);
 
@@ -95,8 +105,9 @@ test.describe('@p0 @information 信息采集中心', () => {
     await expect(page.getByText('需要表单专属 SK')).toBeVisible();
     await expect(page.locator('.information-browser-url')).toContainText('/#/information/hosted?formCode=');
     await expect(page.locator('[data-secret-action="copy"]')).toBeVisible();
+    await expect(page.locator('.information-api-value')).toContainText('••••');
     await page.locator('[data-secret-action="toggle"]').click();
-    await expect(page.locator('.information-api-value')).toContainText('pWE5');
+    await expect(page.locator('.information-api-value')).not.toContainText('••••');
     await shot(page, '04-form-hosted.png');
   });
 
@@ -108,12 +119,11 @@ test.describe('@p0 @information 信息采集中心', () => {
     await expect(page.getByText('返回详情页')).toHaveCount(0);
     // 通过表单筛选切换当前表单
     await expect(page.locator('[data-filter="form"]')).toBeVisible();
-
-    await openSelectByAnchor(page, 'submission-form');
-    await page.getByRole('option', { name: new RegExp(formCode) }).click();
+    // 深链：地址栏带 formId 时直接定位到该表单，刷新与分享保持同一视图
+    await page.goto(`/#/information/submissions?formId=${formId}`);
     await expect(page.locator('[data-filter="form"]')).toContainText(formCode);
 
-    for (const label of ['提交编号', '提交时间', '状态', '来源页面', '姓名', '手机号']) {
+    for (const label of ['记录ID', '提交时间', '状态', '来源页面', '姓名', '手机号']) {
       await expect(page.getByRole('columnheader', { name: label, exact: true })).toBeVisible();
     }
     await shot(page, '05-submission-list.png');
@@ -181,11 +191,10 @@ test.describe('@p0 @information 信息采集中心', () => {
     expect(submit.status()).toBe(200);
     expect((await submit.json()).success).toBeTruthy();
 
-    await page.goto('/#/information/submissions');
-    await openSelectByAnchor(page, 'submission-form');
-    await page.getByRole('option', { name: /e2e-dynamic-columns/ }).click();
+    const dynamicFormId = existingId || (await loadFormId(page, 'e2e-dynamic-columns'));
+    await page.goto(`/#/information/submissions?formId=${dynamicFormId}`);
 
-    for (const label of ['提交编号', '提交时间', '状态', '来源页面', '公司名称', '企业规模']) {
+    for (const label of ['记录ID', '提交时间', '状态', '来源页面', '公司名称', '企业规模']) {
       await expect(page.getByRole('columnheader', { name: label, exact: true })).toBeVisible();
     }
     for (const label of ['手机号', '需求描述', '以下为展示区']) {

@@ -9,7 +9,6 @@ import java.time.LocalDateTime;
 @Data
 public class InformationSubmissionVO {
     private Long id;
-    private String submissionNo;
     private Long formId;
     private String formCode;
     private String formName;
