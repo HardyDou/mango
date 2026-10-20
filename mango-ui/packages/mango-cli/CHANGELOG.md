@@ -1,3 +1,14 @@
+## 1.3.2 - 2026-10-20
+
+### Fixed
+
+- Keep package hidden routes registered for admin modules that declare no admin feature, so information collection detail pages open instead of 404.
+
+### Changed
+
+- Lock the CLI Maven matrix to Maven `1.0.62`.
+- Ship `@mango/information@1.1.1` with configuration-driven admin sub-page routes declared in `AUTH_MENU`.
+
 ## 1.3.1 - 2026-10-20
 
 ### Changed

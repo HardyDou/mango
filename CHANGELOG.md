@@ -1,5 +1,74 @@
 # Mango Changelog
 
+## v2026.10.20-maven-1.0.62-information-routing-release - Maven 1.0.62 - @mango/information@1.1.1 @mango/admin-shell@1.0.83 @mango/admin@1.2.1 @mango/cli@1.3.2 - 2026-10-20
+
+Status: `PENDING`. Release plan and sealed candidate are recorded before publication; the immutable tag and GitHub Release are created only after Maven and npm consume verification.
+
+### Pull Requests
+
+- [PR #1069](https://github.com/HardyDou/mango/pull/1069) Fixed hidden package routes being dropped for modules without a declared admin feature. Packages: `@mango/admin-shell@1.0.83` and generated dependents. Business Adaptation: no configuration change; the fix removes an internal filter.
+- [PR #1070](https://github.com/HardyDou/mango/pull/1070) Changed information collection sub-pages to configuration-driven routes declared in `AUTH_MENU`. Packages: Maven/docs `1.0.62` (`io.mango:mango-parent`, `mango-information-starter` menu declaration version 6), `@mango/information@1.1.1`, `@mango/admin@1.2.1`, `@mango/cli@1.3.2`. Business Adaptation: upgrade the complete tuple, run Resource Registry menu sync, and use the new static routes with `query.id`.
+- [PR #1067](https://github.com/HardyDou/mango/pull/1067) Changed (audit record only, no artifact in this batch): closeout record for the already published `v2026.10.20-maven-1.0.61-cli-1.3.1-cms-public-api-release`. Packages: none in this batch. Business Adaptation: no action.
+
+### Fixed
+
+- Information collection 表单详情、表单配置、采集记录处理 从表单列表点击后返回 404：包内隐藏路由未注册，路由完全丢失。
+- `@mango/admin-shell` 不再用重复的硬编码 feature 映射过滤包内隐藏路由，未声明 feature 的模块默认启用。
+
+### Changed
+
+- 信息采集三个管理子页面改为 `AUTH_MENU` 中 `visible: 0` 的隐藏菜单，路径为静态 `/information/form-detail`、`/information/form-config` 和 `/information/form-submissions`，通过 `query.id` 定位表单。
+- `@mango/information` 删除包内 `routes` 注册，只保留页面 key 注册；路由来源收敛为后端菜单配置。
+
+### Versions
+
+- Maven non-application reactor and `io.mango:mango-docs-bundle`: `1.0.61` -> `1.0.62`.
+- npm: `@mango/admin-shell` `1.0.82` -> `1.0.83`, `@mango/information` `1.1.0` -> `1.1.1`, `@mango/admin` `1.2.0` -> `1.2.1`, `@mango/cli` `1.3.1` -> `1.3.2`.
+- `@mango/pmo` stays at `1.4.7`; other npm coordinates are unchanged.
+
+### Published Packages
+
+1. Publish the sealed non-application Maven reactor and `io.mango:mango-docs-bundle:1.0.62`, then verify both Maven registry roles.
+2. Publish `@mango/admin-shell@1.0.83`, `@mango/information@1.1.1`, `@mango/admin@1.2.1` and `@mango/cli@1.3.2` in the machine-planned order and verify both npm registry roles.
+3. Run one aggregate clean Maven consumer plus a clean npm consumer that installs `@mango/cli@1.3.2` and generates a project without a workspace link.
+4. Create Tag `v2026.10.20-maven-1.0.62-information-routing-release` and its GitHub Release only after consume verification succeeds.
+
+### Business Impact
+
+- 业务后台用户重新获得信息采集「详情」「配置（设计器）」「采集记录处理」入口，列表行操作与详情页按钮可直接打开。
+- `mango-information-starter` 的 `AUTH_MENU` 资源版本从 5 升到 6，升级后必须执行 Resource Registry 同步，三个隐藏菜单才会进入用户菜单。
+- 管理接口、公开托管表单地址、权限码和数据库结构不变；旧深链 `/information/forms/:id/*` 在 1.1.0 中始终返回 404，因此没有可用链接需要兼容。
+- No deployment, traffic change or data migration is included.
+
+### Upgrade Estimate
+
+- Audience: 使用信息采集模块的业务后台，以及自定义 Admin 前端使用 `@mango/admin-shell` 的项目。
+- Engineering Effort: low; upgrade the full tuple, run Resource Registry menu sync, then click through the three information pages.
+- Execution Window: 30 to 60 minutes including dependency upgrade, service restart, resource sync and page verification.
+- Service Downtime: none expected beyond the consumer's normal restart window.
+- Rollback Effort: low; restore Maven/docs `1.0.61` and the previous npm tuple without republishing.
+- Assumptions: Java 21 consumer build, configured registries, `mango-information-starter` deployed with the standard `mango-admin-starter` assembly, and a working Resource Registry sync step.
+
+### Upgrade Notes
+
+1. Upgrade Maven/docs to `1.0.62` and the npm tuple `@mango/admin-shell@1.0.83`, `@mango/information@1.1.1`, `@mango/admin@1.2.1`, `@mango/cli@1.3.2`.
+2. Run the deployment's Resource Registry sync and confirm `AUTH_MENU` for `mango-information` reached version 6.
+3. Confirm `authorization_menu` contains `information:form-detail`、`information:form-config`、`information:form-submissions` with `visible = 0` and the user's role/package grants them.
+4. Open 信息采集 → 表单管理，依次点击「详情」「配置」「采集记录」，确认页面加载且设计器可保存、处理抽屉可提交。
+5. 前端如有自定义页面直接拼 `/information/forms/:id/*` 链接，改为 `/information/form-detail?id=`、`/information/form-config?id=`、`/information/form-submissions?id=`。
+
+### Verification
+
+- Maven: resolve `io.mango:mango-information-starter:1.0.62` and `io.mango:mango-docs-bundle:1.0.62` from the consume registry and compare sealed checksums.
+- npm: resolve `@mango/admin-shell@1.0.83`、`@mango/information@1.1.1`、`@mango/admin@1.2.1`、`@mango/cli@1.3.2` from publish and consume registries and compare sealed integrity.
+- Repository gates: `mango release plan`、`mango release prepare`、`mango release publish` evidence、`node mango-pmo/tools/audit-module-readmes.mjs`、`node mango-pmo/tools/audit-readme-source-facts.mjs`.
+- Consumer assertion: 列表行操作打开三个页面不再 404；`information-common-menu.json` 的 `component` 与 `@mango/information` 注册页面 key 一致；`adminPages.spec.ts` 在包内保证不再注册路由。
+
+### Rollback
+
+- Restore consumers to Maven/docs `1.0.61` and the previous npm tuple through their normal dependency release process; never overwrite published `1.0.62` coordinates.
+- If the new hidden menus must be withdrawn, disable them through a reviewed menu resource change rather than editing published artifacts; published coordinates stay immutable.
+
 ## v2026.10.20-maven-1.0.61-cli-1.3.1-cms-public-api-release - Maven 1.0.61 - @mango/cli@1.3.1 - 2026-10-20
 
 Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `409fe09ca8ae6f6f2756109d0f118da9f1578cb97422d43f1b79f72785131f35` for release plan `a0e2cd0869ebc1f628e31dc2f7116ae4a06200488211c3796e07010b026c5cd5` and prepared candidate `be89e965bdd5b44b959e4f7f3f15d6a914447c61d6f65d49f97ef593a4d5da07` is `COMPLETED`: all 196 Maven/docs coordinates at `1.0.61` and `@mango/cli@1.3.1` match the sealed candidate in both publish and consume registries, the clean consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`.

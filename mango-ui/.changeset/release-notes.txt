@@ -1,65 +1,64 @@
 ## Pull Requests
 
-- [PR #1065](https://github.com/HardyDou/mango/pull/1065) Fixed anonymous CMS API access and removed the duplicate permit-path mechanism. Packages: Maven/docs `1.0.61` (`io.mango:mango-parent`, `mango-cms-starter`, `mango-information-starter`, `mango-link-starter`, `mango-file-preview-starter` documentation only) and `@mango/cli@1.3.1`. Business Adaptation: after upgrading to `1.0.61`, remove hand-written `/cms/open/**`, `/information/open/**` and `/link/open/**` entries from `mango.auth.security.permit-paths`, keep `mango-authorization-resource-access-starter` assembled, and rerun Resource Registry sync so the new `API_RESOURCE` declarations reach `authorization_api_resource`.
-- [PR #1063](https://github.com/HardyDou/mango/pull/1063) Changed (audit record only, no artifact in this batch): closeout record for the already published `v2026.10.19-maven-1.0.60-information-collection-release`. Packages: none in this batch. Business Adaptation: no action.
+- [PR #1069](https://github.com/HardyDou/mango/pull/1069) Fixed hidden package routes being dropped for modules without a declared admin feature. Packages: `@mango/admin-shell@1.0.83` and generated dependents. Business Adaptation: no configuration change; the fix removes an internal filter.
+- [PR #1070](https://github.com/HardyDou/mango/pull/1070) Changed information collection sub-pages to configuration-driven routes declared in `AUTH_MENU`. Packages: Maven/docs `1.0.62` (`io.mango:mango-parent`, `mango-information-starter` menu declaration version 6), `@mango/information@1.1.1`, `@mango/admin@1.2.1`, `@mango/cli@1.3.2`. Business Adaptation: upgrade the complete tuple, run Resource Registry menu sync, and use the new static routes with `query.id`.
+- [PR #1067](https://github.com/HardyDou/mango/pull/1067) Changed (audit record only, no artifact in this batch): closeout record for the already published `v2026.10.20-maven-1.0.61-cli-1.3.1-cms-public-api-release`. Packages: none in this batch. Business Adaptation: no action.
 
 ## Fixed
 
-- CMS anonymous consumer endpoints now resolve through `API_RESOURCE` declarations instead of an unmatched path falling back to the `LOGIN` policy, so `/cms/open/**` requests stop returning 401.
-- `GET /link/open/public-links/list` now has an explicit `PUBLIC` declaration; it previously relied on a wildcard permit path.
+- Information collection 表单详情、表单配置、采集记录处理 从表单列表点击后返回 404：包内隐藏路由未注册，路由完全丢失。
+- `@mango/admin-shell` 不再用重复的硬编码 feature 映射过滤包内隐藏路由，未声明 feature 的模块默认启用。
 
 ## Changed
 
-- Anonymous API access for CMS, Information and Link is decided only by `API_RESOURCE` declarations. The `CmsPermitPathBeanPostProcessor`, `InformationPermitPathBeanPostProcessor` and `LinkPermitPathBeanPostProcessor` classes are deleted and the monolith `application.yml` no longer hardcodes `/cms/open/**`.
-- `FilePreviewPermitPathBeanPostProcessor` is kept because its list is dominated by kkFileView third-party static assets that cannot be expressed as `API_RESOURCE`; the class documents the remaining business entries that still need convergence.
+- 信息采集三个管理子页面改为 `AUTH_MENU` 中 `visible: 0` 的隐藏菜单，路径为静态 `/information/form-detail`、`/information/form-config` 和 `/information/form-submissions`，通过 `query.id` 定位表单。
+- `@mango/information` 删除包内 `routes` 注册，只保留页面 key 注册；路由来源收敛为后端菜单配置。
 
 ## Versions
 
-- Maven non-application reactor and `io.mango:mango-docs-bundle`: `1.0.60` -> `1.0.61`.
-- npm: `@mango/cli` `1.3.0` -> `1.3.1`; `@mango/pmo` stays at `1.4.7` and no other npm package is republished.
-- `mango-ui/packages/mango-cli/release-versions.json`: Maven lock `1.0.60` -> `1.0.61` and `@mango/cli` `1.3.0` -> `1.3.1`.
+- Maven non-application reactor and `io.mango:mango-docs-bundle`: `1.0.61` -> `1.0.62`.
+- npm: `@mango/admin-shell` `1.0.82` -> `1.0.83`, `@mango/information` `1.1.0` -> `1.1.1`, `@mango/admin` `1.2.0` -> `1.2.1`, `@mango/cli` `1.3.1` -> `1.3.2`.
+- `@mango/pmo` stays at `1.4.7`; other npm coordinates are unchanged.
 
 ## Published Packages
 
-1. Publish the sealed non-application Maven reactor and `io.mango:mango-docs-bundle:1.0.61` through the repository batch entry, then verify both Maven registry roles.
-2. Publish `@mango/cli@1.3.1` from the sealed tarball and verify the npm publish and consume registries.
-3. Run one aggregate clean Maven consumer plus a clean CLI consumer that installs the published CLI without a workspace link.
-4. Create Tag `v2026.10.20-maven-1.0.61-cms-public-api-release` and its GitHub Release only after consume verification succeeds.
+1. Publish the sealed non-application Maven reactor and `io.mango:mango-docs-bundle:1.0.62`, then verify both Maven registry roles.
+2. Publish `@mango/admin-shell@1.0.83`, `@mango/information@1.1.1`, `@mango/admin@1.2.1` and `@mango/cli@1.3.2` in the machine-planned order and verify both npm registry roles.
+3. Run one aggregate clean Maven consumer plus a clean npm consumer that installs `@mango/cli@1.3.2` and generates a project without a workspace link.
+4. Create Tag `v2026.10.20-maven-1.0.62-information-routing-release` and its GitHub Release only after consume verification succeeds.
 
 ## Business Impact
 
-- Backend consumers that call CMS anonymous site APIs receive working anonymous access instead of 401.
-- Consumers that currently hand-configure anonymous permit paths for CMS, Information or Link lose a redundant configuration and must rely on the synced `API_RESOURCE` rows.
-- Applications assembled without `mango-authorization-resource-access-starter` no longer receive a wildcard bypass; they must add the starter (`mango-admin-starter` already includes it).
-- Frontend packages, CLI behaviour, PMO rules, generated templates and database schema are unchanged. No deployment, traffic change or data migration is included.
+- 业务后台用户重新获得信息采集「详情」「配置（设计器）」「采集记录处理」入口，列表行操作与详情页按钮可直接打开。
+- `mango-information-starter` 的 `AUTH_MENU` 资源版本从 5 升到 6，升级后必须执行 Resource Registry 同步，三个隐藏菜单才会进入用户菜单。
+- 管理接口、公开托管表单地址、权限码和数据库结构不变；旧深链 `/information/forms/:id/*` 在 1.1.0 中始终返回 404，因此没有可用链接需要兼容。
+- No deployment, traffic change or data migration is included.
 
 ## Upgrade Estimate
 
-- Audience: Mango backend consumers on `1.0.60`, especially projects that call `/cms/open/**`, `/information/open/**` or `/link/open/**` anonymously.
-- Engineering Effort: low; upgrade the Maven/docs coordinate, confirm the resource-access starter is present, trigger a Resource Registry sync and rerun the anonymous regression.
-- Execution Window: 30 to 60 minutes including dependency upgrade, service restart, registry propagation and anonymous smoke checks.
+- Audience: 使用信息采集模块的业务后台，以及自定义 Admin 前端使用 `@mango/admin-shell` 的项目。
+- Engineering Effort: low; upgrade the full tuple, run Resource Registry menu sync, then click through the three information pages.
+- Execution Window: 30 to 60 minutes including dependency upgrade, service restart, resource sync and page verification.
 - Service Downtime: none expected beyond the consumer's normal restart window.
-- Rollback Effort: low; restore Maven/docs `1.0.60` without republishing, and re-add the permit-path entries if an application must keep anonymous access on the older starter.
-- Assumptions: Java 21 consumer build, configured Nexus Maven registries, `mango-admin-starter` or an equivalent assembly that includes `mango-authorization-resource-access-starter`, and a running Resource Registry sync step.
+- Rollback Effort: low; restore Maven/docs `1.0.61` and the previous npm tuple without republishing.
+- Assumptions: Java 21 consumer build, configured registries, `mango-information-starter` deployed with the standard `mango-admin-starter` assembly, and a working Resource Registry sync step.
 
 ## Upgrade Notes
 
-1. Upgrade the Maven/docs coordinate from `1.0.60` to `1.0.61` and rebuild the consumer.
-2. Confirm `mango-authorization-resource-access-starter` is on the runtime classpath; the standard `mango-admin-starter` assembly already provides it.
-3. Remove `/cms/open/**`, `/information/open/**` and `/link/open/**` from `mango.auth.security.permit-paths`; keep the framework paths such as `/error`, `/v3/api-docs/**` and realtime transports.
-4. Run the Resource Registry sync used by the deployment, then confirm `authorization_api_resource` contains the CMS, Information and Link `PUBLIC` rows.
-5. Verify one anonymous request per affected family: `GET /cms/open/sites/resolve`, `GET /information/open/forms/detail` and `GET /link/open/public-links/list`.
-6. Keep `FilePreviewPermitPathBeanPostProcessor` behaviour unchanged; `/file-preview/files/**` convergence is a separate task.
+1. Upgrade Maven/docs to `1.0.62` and the npm tuple `@mango/admin-shell@1.0.83`, `@mango/information@1.1.1`, `@mango/admin@1.2.1`, `@mango/cli@1.3.2`.
+2. Run the deployment's Resource Registry sync and confirm `AUTH_MENU` for `mango-information` reached version 6.
+3. Confirm `authorization_menu` contains `information:form-detail`、`information:form-config`、`information:form-submissions` with `visible = 0` and the user's role/package grants them.
+4. Open 信息采集 → 表单管理，依次点击「详情」「配置」「采集记录」，确认页面加载且设计器可保存、处理抽屉可提交。
+5. 前端如有自定义页面直接拼 `/information/forms/:id/*` 链接，改为 `/information/form-detail?id=`、`/information/form-config?id=`、`/information/form-submissions?id=`。
 
 ## Verification
 
-- Maven: resolve `io.mango:mango-cms-starter:1.0.61`, `io.mango:mango-information-starter:1.0.61` and `io.mango:mango-link-starter:1.0.61` plus `io.mango:mango-docs-bundle:1.0.61` from the consume registry and compare sealed checksums.
-- Repository gates: `mango release plan`, `mango release prepare`, `mango release publish` evidence, `node mango-pmo/tools/audit-module-readmes.mjs` and `node mango-pmo/tools/audit-readme-source-facts.mjs`.
-- Consumer assertion: an anonymous `GET /cms/open/sites/resolve?siteCode=main` returns `R.ok` data instead of 401 with no token, and authenticated `/cms/**` management calls still require their permission codes.
-- Declarations: `CmsPublicApiDeclarationContractTest`, `InformationPublicApiDeclarationContractTest` and `LinkPublicApiDeclarationContractTest` fail if a public entry loses its exact `PUBLIC` declaration.
+- Maven: resolve `io.mango:mango-information-starter:1.0.62` and `io.mango:mango-docs-bundle:1.0.62` from the consume registry and compare sealed checksums.
+- npm: resolve `@mango/admin-shell@1.0.83`、`@mango/information@1.1.1`、`@mango/admin@1.2.1`、`@mango/cli@1.3.2` from publish and consume registries and compare sealed integrity.
+- Repository gates: `mango release plan`、`mango release prepare`、`mango release publish` evidence、`node mango-pmo/tools/audit-module-readmes.mjs`、`node mango-pmo/tools/audit-readme-source-facts.mjs`.
+- Consumer assertion: 列表行操作打开三个页面不再 404；`information-common-menu.json` 的 `component` 与 `@mango/information` 注册页面 key 一致；`adminPages.spec.ts` 在包内保证不再注册路由。
 
 ## Rollback
 
-- Restore consumers to Maven/docs `1.0.60` through their normal dependency release process; never overwrite published `1.0.61` coordinates.
-- If an application must stay on `1.0.60` and needs anonymous access, re-add the previous permit-path entries and the previous starter combination; record the reason in the application's own configuration history.
-- Disable CMS, Information or Link capabilities only through the reviewed consumer configuration change, not by editing published artifacts.
+- Restore consumers to Maven/docs `1.0.61` and the previous npm tuple through their normal dependency release process; never overwrite published `1.0.62` coordinates.
+- If the new hidden menus must be withdrawn, disable them through a reviewed menu resource change rather than editing published artifacts; published coordinates stay immutable.
