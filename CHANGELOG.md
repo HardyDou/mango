@@ -2,7 +2,7 @@
 
 ## v2026.10.20-maven-1.0.61-cli-1.3.1-cms-public-api-release - Maven 1.0.61 - @mango/cli@1.3.1 - 2026-10-20
 
-Status: `PENDING`. Release plan and sealed candidate are recorded before publication; the immutable tag and GitHub Release are created only after Maven and npm consume verification.
+Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `409fe09ca8ae6f6f2756109d0f118da9f1578cb97422d43f1b79f72785131f35` for release plan `a0e2cd0869ebc1f628e31dc2f7116ae4a06200488211c3796e07010b026c5cd5` and prepared candidate `be89e965bdd5b44b959e4f7f3f15d6a914447c61d6f65d49f97ef593a4d5da07` is `COMPLETED`: all 196 Maven/docs coordinates at `1.0.61` and `@mango/cli@1.3.1` match the sealed candidate in both publish and consume registries, the clean consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`.
 
 ### Pull Requests
 
