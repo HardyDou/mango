@@ -1,76 +1,65 @@
 ## Pull Requests
 
-- PR #1049 Fixed the source-mode `@mango/admin-extension` page registry version fallback that could make the Admin page registry fail with a 404. Packages: `@mango/admin-extension@1.1.1`, `@mango/admin@1.2.0` and the generated npm dependents through `@mango/cli@1.3.0`. Business Adaptation: upgrade the complete Mango npm tuple together; source-mode consumers no longer require the build-time version constant.
-- PR #1057 Added the information collection capability, including form design, configuration, public hosting, submission processing, file upload and submission management. Packages: Mango Maven/docs `1.0.60`, `@mango/information@1.1.0`, `@mango/admin@1.2.0`, `@mango/cli@1.3.0` and the generated npm dependents. Business Adaptation: upgrade the complete tuple, enable the information module, and verify menu, permission, tenant and file-storage configuration in the consumer.
-- PR #1058 Fixed anonymous CMS site resolution by `siteCode`. Packages: Mango Maven/docs `1.0.60`. Business Adaptation: verify anonymous site resolution by site code in the consumer's real database and HTTP entry point.
-- PR #1059 Changed CMS site-resolution integration coverage to use the production tenant scope with a real database. Packages: Mango Maven/docs `1.0.60`. Business Adaptation: rerun the anonymous site-resolution flow with the consumer tenant boundary.
-- PR #1061 Fixed CMS site-resolution tenant parity in the integration path. Packages: Mango Maven/docs `1.0.60`. Business Adaptation: verify site resolution with the production-equivalent tenant scope after upgrading Maven/docs.
+- [PR #1065](https://github.com/HardyDou/mango/pull/1065) Fixed anonymous CMS API access and removed the duplicate permit-path mechanism. Packages: Maven/docs `1.0.61` (`io.mango:mango-parent`, `mango-cms-starter`, `mango-information-starter`, `mango-link-starter`, `mango-file-preview-starter` documentation only) and `@mango/cli@1.3.1`. Business Adaptation: after upgrading to `1.0.61`, remove hand-written `/cms/open/**`, `/information/open/**` and `/link/open/**` entries from `mango.auth.security.permit-paths`, keep `mango-authorization-resource-access-starter` assembled, and rerun Resource Registry sync so the new `API_RESOURCE` declarations reach `authorization_api_resource`.
+- [PR #1063](https://github.com/HardyDou/mango/pull/1063) Changed (audit record only, no artifact in this batch): closeout record for the already published `v2026.10.19-maven-1.0.60-information-collection-release`. Packages: none in this batch. Business Adaptation: no action.
 
 ## Fixed
 
-- Source-mode Admin page registration now uses `dev` when the build-time `@mango/admin-extension` version constant is not injected, while built artifacts continue to use their injected version.
-- Anonymous CMS site resolution now accepts the site code and applies the production-equivalent tenant scope.
-
-## Added
-
-- Add the information collection platform module and its frontend package.
-- Add form definition, field rules, public form hosting, submission snapshots, file upload tickets, menu resources and permission declarations for information collection.
+- CMS anonymous consumer endpoints now resolve through `API_RESOURCE` declarations instead of an unmatched path falling back to the `LOGIN` policy, so `/cms/open/**` requests stop returning 401.
+- `GET /link/open/public-links/list` now has an explicit `PUBLIC` declaration; it previously relied on a wildcard permit path.
 
 ## Changed
 
-- Advance the non-application Mango Maven reactor and `io.mango:mango-docs-bundle` from `1.0.59` to `1.0.60` across the machine-generated publishable coordinate set.
-- Publish the machine-generated 20-package npm closure in topology order from `@mango/admin-extension@1.1.1` through `@mango/cli@1.3.0`.
-- Publish `@mango/information@1.1.0` and include it in the Admin aggregate and CLI module projection.
+- Anonymous API access for CMS, Information and Link is decided only by `API_RESOURCE` declarations. The `CmsPermitPathBeanPostProcessor`, `InformationPermitPathBeanPostProcessor` and `LinkPermitPathBeanPostProcessor` classes are deleted and the monolith `application.yml` no longer hardcodes `/cms/open/**`.
+- `FilePreviewPermitPathBeanPostProcessor` is kept because its list is dominated by kkFileView third-party static assets that cannot be expressed as `API_RESOURCE`; the class documents the remaining business entries that still need convergence.
 
 ## Versions
 
-- Maven non-application reactor and `io.mango:mango-docs-bundle`: `1.0.59` -> `1.0.60`.
-- npm closure: `@mango/admin-extension@1.1.1`, `@mango/ai@1.2.1`, `@mango/file@1.2.1`, `@mango/detail@1.1.6`, `@mango/information@1.1.0`, `@mango/system@1.0.50`, `@mango/admin-pages@1.1.1`, `@mango/calendar@1.0.52`, `@mango/cms@1.0.41`, `@mango/job@1.0.45`, `@mango/link@1.0.38`, `@mango/notice@1.0.57`, `@mango/numgen@1.0.53`, `@mango/payment@1.0.44`, `@mango/template@1.0.53`, `@mango/workflow@1.0.61`, `@mango/admin-shell@1.0.82`, `@mango/workflow-business-example@1.0.60`, `@mango/admin@1.2.0`, `@mango/cli@1.3.0`.
-- `@mango/pmo` remains at `1.4.7`; it is not changed by this candidate.
+- Maven non-application reactor and `io.mango:mango-docs-bundle`: `1.0.60` -> `1.0.61`.
+- npm: `@mango/cli` `1.3.0` -> `1.3.1`; `@mango/pmo` stays at `1.4.7` and no other npm package is republished.
+- `mango-ui/packages/mango-cli/release-versions.json`: Maven lock `1.0.60` -> `1.0.61` and `@mango/cli` `1.3.0` -> `1.3.1`.
 
 ## Published Packages
 
-1. Publish the sealed non-application Maven reactor and `io.mango:mango-docs-bundle:1.0.60` to the Maven publish registry, then verify the Maven publish and consume registries.
-2. Publish the 20-package npm topology in machine-generated dependency order, ending at `@mango/cli@1.3.0`, then verify every package from the npm consume registry.
-3. Verify one clean mixed consumer, create the immutable tag `v2026.10.19-maven-1.0.60-information-collection-release`, and create the GitHub Release only after registry and consumer verification.
+1. Publish the sealed non-application Maven reactor and `io.mango:mango-docs-bundle:1.0.61` through the repository batch entry, then verify both Maven registry roles.
+2. Publish `@mango/cli@1.3.1` from the sealed tarball and verify the npm publish and consume registries.
+3. Run one aggregate clean Maven consumer plus a clean CLI consumer that installs the published CLI without a workspace link.
+4. Create Tag `v2026.10.20-maven-1.0.61-cms-public-api-release` and its GitHub Release only after consume verification succeeds.
 
 ## Business Impact
 
-- Backend consumers receive information collection APIs, persistence, resource declarations, menu and permission initialization, public form hosting and submission processing at Maven/docs `1.0.60`.
-- Frontend consumers receive the new `@mango/information` package and the generated Admin/CLI tuple. Form data, submission snapshots, upload tickets, tenant ownership and permission checks must be verified in the consuming application.
-- CMS consumers receive anonymous site-code resolution with production-equivalent tenant scope.
-- The candidate contains no application fat JAR publication and no production deployment or traffic change.
+- Backend consumers that call CMS anonymous site APIs receive working anonymous access instead of 401.
+- Consumers that currently hand-configure anonymous permit paths for CMS, Information or Link lose a redundant configuration and must rely on the synced `API_RESOURCE` rows.
+- Applications assembled without `mango-authorization-resource-access-starter` no longer receive a wildcard bypass; they must add the starter (`mango-admin-starter` already includes it).
+- Frontend packages, CLI behaviour, PMO rules, generated templates and database schema are unchanged. No deployment, traffic change or data migration is included.
 
 ## Upgrade Estimate
 
-- Audience: Mango backend consumers, generated Admin frontends, direct npm consumers, information-collection adopters and CMS anonymous-site consumers.
-- Engineering Effort: medium; upgrade the complete Maven/npm/CLI tuple, enable the information module, review menu and permission assignments, and run the CMS and information-collection smoke flows.
-- Execution Window: 60 to 150 minutes including dependency installation, database migration, registry propagation and clean-consumer verification.
-- Service Downtime: no framework-mandated downtime; consumers should use their normal restart window for Flyway initialization and frontend rebuild.
-- Rollback Effort: medium; restore Maven/docs `1.0.59` and the previous published npm tuple, then disable the information module if it was enabled. Published coordinates are immutable and are never overwritten.
-- Assumptions: Java 21, Node 22.23.1, configured Maven/npm publish and consume registries, a MySQL test database, tenant and administrator fixtures, and a representative file-storage backend.
+- Audience: Mango backend consumers on `1.0.60`, especially projects that call `/cms/open/**`, `/information/open/**` or `/link/open/**` anonymously.
+- Engineering Effort: low; upgrade the Maven/docs coordinate, confirm the resource-access starter is present, trigger a Resource Registry sync and rerun the anonymous regression.
+- Execution Window: 30 to 60 minutes including dependency upgrade, service restart, registry propagation and anonymous smoke checks.
+- Service Downtime: none expected beyond the consumer's normal restart window.
+- Rollback Effort: low; restore Maven/docs `1.0.60` without republishing, and re-add the permit-path entries if an application must keep anonymous access on the older starter.
+- Assumptions: Java 21 consumer build, configured Nexus Maven registries, `mango-admin-starter` or an equivalent assembly that includes `mango-authorization-resource-access-starter`, and a running Resource Registry sync step.
 
 ## Upgrade Notes
 
-1. Upgrade Maven/docs to `1.0.60` and install the complete npm tuple ending at `@mango/cli@1.3.0`; do not upgrade `@mango/information` or `@mango/admin` in isolation.
-2. Add the information starter to the backend consumer, run the module migration, and verify menu, permission, tenant and file-storage configuration.
-3. Register the information frontend pages from `@mango/information/admin-pages`, include `@mango/information/style.css`, and verify form design, public submission, upload and submission-management flows.
-4. Verify anonymous CMS site resolution by site code with the production-equivalent tenant scope.
-5. Run `pnpm why @mango/admin-extension` in frontend consumers and confirm that only the release tuple's version is installed.
+1. Upgrade the Maven/docs coordinate from `1.0.60` to `1.0.61` and rebuild the consumer.
+2. Confirm `mango-authorization-resource-access-starter` is on the runtime classpath; the standard `mango-admin-starter` assembly already provides it.
+3. Remove `/cms/open/**`, `/information/open/**` and `/link/open/**` from `mango.auth.security.permit-paths`; keep the framework paths such as `/error`, `/v3/api-docs/**` and realtime transports.
+4. Run the Resource Registry sync used by the deployment, then confirm `authorization_api_resource` contains the CMS, Information and Link `PUBLIC` rows.
+5. Verify one anonymous request per affected family: `GET /cms/open/sites/resolve`, `GET /information/open/forms/detail` and `GET /link/open/public-links/list`.
+6. Keep `FilePreviewPermitPathBeanPostProcessor` behaviour unchanged; `/file-preview/files/**` convergence is a separate task.
 
 ## Verification
 
-- Plan and source checks: `mango release plan --tag v2026.10.19-maven-1.0.60-information-collection-release --maven-version 1.0.60`, catalog check, release impact check and release-notes check.
-- Frontend package checks: information package unit tests, package exports, consumer typecheck, Admin style checks and the affected information UI/E2E flow.
-- Backend checks: the affected Maven modules' unit/integration/API checks, the information migration contract, information service integration tests and CMS site-resolution tests with a real database and tenant scope.
-- Release back-check: resolve every sealed Maven coordinate and npm tarball from both registry roles, then run one clean consume-registry mixed consumer and the generated information-module flow.
+- Maven: resolve `io.mango:mango-cms-starter:1.0.61`, `io.mango:mango-information-starter:1.0.61` and `io.mango:mango-link-starter:1.0.61` plus `io.mango:mango-docs-bundle:1.0.61` from the consume registry and compare sealed checksums.
+- Repository gates: `mango release plan`, `mango release prepare`, `mango release publish` evidence, `node mango-pmo/tools/audit-module-readmes.mjs` and `node mango-pmo/tools/audit-readme-source-facts.mjs`.
+- Consumer assertion: an anonymous `GET /cms/open/sites/resolve?siteCode=main` returns `R.ok` data instead of 401 with no token, and authenticated `/cms/**` management calls still require their permission codes.
+- Declarations: `CmsPublicApiDeclarationContractTest`, `InformationPublicApiDeclarationContractTest` and `LinkPublicApiDeclarationContractTest` fail if a public entry loses its exact `PUBLIC` declaration.
 
 ## Rollback
 
-- Restore consumers to Maven/docs `1.0.59` and the previous immutable npm tuple through their normal dependency release process; never republish or overwrite `1.0.60` or any npm coordinate.
-- If the information module was enabled, remove its consumer registration only through the reviewed consumer rollback procedure; preserve submitted business data unless a separate data rollback is approved.
-- If CMS site-code behavior must be reverted, pin the consumer to the prior Maven/docs release while retaining the published `1.0.60` artifacts for audit.
-
-## Audit History
-
-- PR #1050 and PR #1051 are the preparation and closeout records for the already published `v2026.10.15-maven-npm-admin-extension-10g-release`; they are retained as audit history and are not new business capabilities in this batch.
+- Restore consumers to Maven/docs `1.0.60` through their normal dependency release process; never overwrite published `1.0.61` coordinates.
+- If an application must stay on `1.0.60` and needs anonymous access, re-add the previous permit-path entries and the previous starter combination; record the reason in the application's own configuration history.
+- Disable CMS, Information or Link capabilities only through the reviewed consumer configuration change, not by editing published artifacts.

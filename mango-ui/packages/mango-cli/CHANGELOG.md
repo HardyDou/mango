@@ -1,3 +1,10 @@
+## 1.3.1 - 2026-10-20
+
+### Changed
+
+- Lock the CLI Maven matrix to Maven `1.0.61`.
+- Align generated projects with the `1.0.61` platform tuple where anonymous CMS, Information and Link access is decided only by `API_RESOURCE` declarations.
+
 ## 1.3.0 - 2026-10-20
 
 ### Added
