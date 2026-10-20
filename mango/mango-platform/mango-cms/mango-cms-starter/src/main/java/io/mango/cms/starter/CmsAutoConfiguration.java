@@ -25,11 +25,6 @@ import static org.springframework.web.servlet.function.RouterFunctions.route;
 public class CmsAutoConfiguration {
 
     @Bean
-    public static CmsPermitPathBeanPostProcessor cmsPermitPathBeanPostProcessor() {
-        return new CmsPermitPathBeanPostProcessor();
-    }
-
-    @Bean
     public RouterFunction<ServerResponse> cmsPublicFileRoutes(CmsPublicFileEndpoint endpoint) {
         return route(GET("/cms/open/files/public-preview"), endpoint::handle);
     }
