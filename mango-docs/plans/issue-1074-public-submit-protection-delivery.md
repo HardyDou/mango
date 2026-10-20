@@ -51,7 +51,8 @@
 |---|---|---|---|---|
 | AC-1074-01/02/03/05 | 单元测试 | `mvn -pl mango-platform/mango-information/mango-information-starter -am -Dtest='*Information*ProtectionTest' -Dsurefire.failIfNoSpecifiedTests=false -DfailIfNoTests=false test` | PASS | `InformationSubmitProtectionTest` |
 | AC-1074-04 | API/Controller 测试 | `mvn -pl mango-platform/mango-information/mango-information-starter -am -Dtest='*Information*' -Dsurefire.failIfNoSpecifiedTests=false -DfailIfNoTests=false test` | PASS | `InformationPublicControllerTest` |
-| 编译与架构质量 | Maven 验证 | `mvn -pl mango-platform/mango-information/mango-information-starter -am -DskipTests verify` | PASS | Maven reactor 输出 |
+| 编译与架构质量 | Maven 验证 | `mvn -pl mango-platform/mango-information/mango-information-starter -am verify` | PASS | Maven reactor 输出 |
+| KV/测试物料专项 | Mango 检查 | `mvn -f mango/pom.xml -pl :mango-architecture-verification io.mango.tools.maven.plugin:mango-maven-plugin:1.0.0-SNAPSHOT:check -Drule=test-fixture -DbaseDir="$PWD" -Dmango.check.changedOnly=true -Dmango.check.gate=no-new-violations -Dmango.check.baseRef=origin/main` | PASS | Mango test-fixture 输出 |
 | 能力说明 | 文档检查 | `git diff --check`；PR 能力文档门禁 | 待最终 PR head 回读 | 模块 README、技术设计、验收证据 |
 
 ## 7. 例外与剩余风险
