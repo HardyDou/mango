@@ -2,6 +2,12 @@ import { registerModulePages } from '@mango/admin-extension/core';
 
 let registered = false;
 
+/**
+ * 注册信息采集后台页面。
+ *
+ * <p>页面路由由后端 `AUTH_MENU` 配置驱动（`information-common-menu.json`），包内不再注册隐藏路由：
+ * 表单详情、表单配置、采集记录处理都是 `visible: 0` 的隐藏菜单，路径固定并用 `query.id` 定位表单。
+ */
 export function registerMangoInformationAdminPages() {
   if (registered) {
     return;
@@ -17,35 +23,5 @@ export function registerMangoInformationAdminPages() {
       'information/forms/submissions': () => import('./views/SubmissionsView.vue').then((module) => module.default),
       'information/hosted/index': () => import('./views/HostedFormView.vue').then((module) => module.default),
     },
-    routes: [
-      {
-        path: '/information/forms/:id/detail',
-        component: 'information/forms/detail',
-        menuName: '表单详情',
-        menuCode: 'information:form-detail',
-        visible: 0,
-      },
-      {
-        path: '/information/forms/:id/config',
-        component: 'information/forms/config',
-        menuName: '表单配置',
-        menuCode: 'information:form-config',
-        visible: 0,
-      },
-      {
-        path: '/information/forms/:id/submissions',
-        component: 'information/forms/submissions',
-        menuName: '采集记录',
-        menuCode: 'information:form-submissions',
-        visible: 0,
-      },
-      {
-        path: '/information/hosted',
-        component: 'information/hosted/index',
-        menuName: '托管表单',
-        menuCode: 'information:hosted',
-        visible: 0,
-      },
-    ],
   });
 }

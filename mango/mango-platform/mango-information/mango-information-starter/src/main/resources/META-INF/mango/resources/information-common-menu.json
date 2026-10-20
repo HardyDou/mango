@@ -9,7 +9,7 @@
         "AUTH_MENU": [
           {
             "id": "2951400000000001055",
-            "version": 5,
+            "version": 6,
             "bizKey": "information.menu.internal-admin",
             "name": "信息采集菜单",
             "targetModule": "authorization",
@@ -22,7 +22,11 @@
               "roleCodes": {"type": "LIST", "value": []},
               "menus": {"type": "LIST", "value": [
                 {"menuType": 1, "menuName": "信息采集", "menuCode": "information", "parentCode": "data", "path": "/information", "icon": "Collection", "sort": 35, "redirect": "/information/forms", "children": [
-                  {"menuType": 2, "menuName": "表单管理", "menuCode": "information:forms", "path": "/information/forms", "icon": "Tickets", "component": "information/forms/index", "sort": 1, "apiCodes": ["information:form:list", "information:form:query", "information:form:add", "information:form:edit", "information:form:delete", "information:form:status", "information:form:secret"]},
+                  {"menuType": 2, "menuName": "表单管理", "menuCode": "information:forms", "path": "/information/forms", "icon": "Tickets", "component": "information/forms/index", "sort": 1, "apiCodes": ["information:form:list", "information:form:query", "information:form:add", "information:form:edit", "information:form:delete", "information:form:status", "information:form:secret"], "children": [
+                    {"menuType": 2, "menuName": "表单详情", "menuCode": "information:form-detail", "path": "/information/form-detail", "icon": "Document", "component": "information/forms/detail", "sort": 11, "visible": 0, "apiCodes": ["information:form:query", "information:form:secret"], "remark": "列表页行操作打开的隐藏页面，通过 query id 定位表单，不作为导航菜单展示"},
+                    {"menuType": 2, "menuName": "表单配置", "menuCode": "information:form-config", "path": "/information/form-config", "icon": "Edit", "component": "information/forms/config", "sort": 12, "visible": 0, "apiCodes": ["information:form:query", "information:form:edit"], "remark": "表单设计器隐藏页面，通过 query id 定位表单，不作为导航菜单展示"},
+                    {"menuType": 2, "menuName": "采集记录处理", "menuCode": "information:form-submissions", "path": "/information/form-submissions", "icon": "DocumentChecked", "component": "information/forms/submissions", "sort": 13, "visible": 0, "apiCodes": ["information:submission:list", "information:submission:query", "information:submission:process", "information:submission:export"], "remark": "按表单筛选采集记录的隐藏页面，通过 query id 定位表单，不作为导航菜单展示"}
+                  ]},
                   {"menuType": 2, "menuName": "采集记录", "menuCode": "information:submissions", "path": "/information/submissions", "icon": "DocumentChecked", "component": "information/submissions/index", "sort": 2, "apiCodes": ["information:submission:list", "information:submission:query", "information:submission:process", "information:submission:export"]}
                 ]}
               ]}

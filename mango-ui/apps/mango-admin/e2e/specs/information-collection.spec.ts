@@ -180,7 +180,7 @@ test.describe('@p0 @information 信息采集', () => {
   // 平台设计器默认只给「输入框」6 个原生类型，采集常用的手机号/邮箱/网址等在补丁后才可选
   test('表单设计的输入框类型覆盖采集常用类型', async ({ page }) => {
     await login(page);
-    await page.goto(`/#/information/forms/${formId}/config`);
+    await page.goto(`/#/information/form-config?id=${formId}`);
     const designer = page.locator('[data-surface="information.form.designer"]');
     await expect(designer).toBeVisible({ timeout: 20000 });
 
@@ -541,7 +541,7 @@ test.describe('@p0 @information 信息采集', () => {
     const createdId = (await saved.json()).data;
     expect(createdId).toBeTruthy();
 
-    await page.goto(`/#/information/forms/${createdId}/config`);
+    await page.goto(`/#/information/form-config?id=${createdId}`);
     const designer = page.locator('[data-surface="information.form.designer"]');
     await expect(designer).toBeVisible();
     // 画布不能因为加载失败而变成空态，子表单与表格表单都要渲染出来
@@ -555,7 +555,7 @@ test.describe('@p0 @information 信息采集', () => {
 
   test('表单详情入口可直达采集记录并预选当前表单', async ({ page }) => {
     await login(page);
-    await page.goto(`/#/information/forms/${formId}/detail`);
+    await page.goto(`/#/information/form-detail?id=${formId}`);
     await page.getByRole('button', { name: '采集记录' }).click();
     await expect(page.locator('[data-page="information.form.submissions"]')).toBeVisible();
     await expect(page.locator('[data-filter="form"]')).toContainText(formCode);

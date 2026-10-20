@@ -96,7 +96,7 @@ const api = useInformationApi();
 const route = useRoute();
 const router = useRouter();
 
-const formId = computed(() => String(route.params.id || ''));
+const formId = computed(() => String(route.query.id || ''));
 const loading = ref(false);
 const saving = ref(false);
 const errorMessage = ref('');

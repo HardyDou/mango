@@ -222,7 +222,7 @@ const sampleTab = ref('curl');
 const secretVisible = ref(false);
 const errorMessage = ref('');
 
-const formId = computed(() => String(route.params.id || ''));
+const formId = computed(() => String(route.query.id || ''));
 const rules = computed(() => parseRules(detail.value?.definitionJson));
 const fields = computed(() => rulesToFields(rules.value));
 const previewValues = computed(() => Object.fromEntries(fields.value.map((field) => [field.fieldCode, ''])));
@@ -338,10 +338,10 @@ function goList() {
   return router.push('/information/forms');
 }
 function goConfig() {
-  return router.push(`/information/forms/${formId.value}/config`);
+  return router.push({ path: '/information/form-config', query: { id: formId.value } });
 }
 function goSubmissions() {
-  return router.push(`/information/forms/${formId.value}/submissions`);
+  return router.push({ path: '/information/form-submissions', query: { id: formId.value } });
 }
 
 onMounted(load);
