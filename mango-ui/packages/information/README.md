@@ -12,6 +12,8 @@ Mango 信息采集前端包，提供表单管理、采集记录、托管表单�
 | 采集记录 | `information/submissions/index` | 独立菜单入口，按表单筛选、动态列与处理抽屉                                                                                                                    |
 | 托管表单 | `information/hosted/index`      | 匿名公开表单，无需登录                                                                                                                                        |
 
+表单详情、表单设计、采集记录是包内注册的隐藏路由（`/information/forms/:id/detail`、`/information/forms/:id/config`、`/information/forms/:id/submissions`），由列表行操作跳转，不出现在菜单树中。`@mango/admin-shell` 按模块 feature 注册包内隐藏路由；`mango-information` 未声明 feature，默认启用，因此这些页面不需要额外菜单配置。
+
 表单定义以 form-create 规则 JSON 存储，历史 `{fieldCode, fieldName, fieldType}` 形状会被自动升级。
 
 ## 1. 概览
