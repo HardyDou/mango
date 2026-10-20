@@ -1,0 +1,21 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: link
+    module-name: mango-link
+    declarations:
+      API_RESOURCE:
+        - id: "807245613893456101"
+          version: 1
+          biz-key: api.mango-link.GET.link.open.public-links.list
+          name: 查询公开网址
+          target-module: authorization
+          fields:
+            moduleName: { type: STRING, value: mango-link }
+            httpMethod: { type: STRING, value: GET }
+            pathPattern: { type: STRING, value: /link/open/public-links/list }
+            resourceCode: { type: STRING, value: "GET:/link/open/public-links/list" }
+            accessMode: { type: STRING, value: PUBLIC }
+            handlerClass: { type: STRING, value: io.mango.link.starter.controller.LinkOpenController }
+            handlerMethod: { type: STRING, value: listPublicItems }
+            description: { type: STRING, value: 匿名查询指定租户已启用且公开的网址列表 }

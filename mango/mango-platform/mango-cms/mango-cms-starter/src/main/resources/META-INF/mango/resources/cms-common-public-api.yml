@@ -1,0 +1,133 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: cms
+    module-name: mango-cms
+    declarations:
+      API_RESOURCE:
+        - id: "805317693470015044"
+          version: 1
+          biz-key: api.mango-cms.GET.cms.open.sites.resolve
+          name: 解析公开站点
+          target-module: authorization
+          fields:
+            moduleName: { type: STRING, value: mango-cms }
+            httpMethod: { type: STRING, value: GET }
+            pathPattern: { type: STRING, value: /cms/open/sites/resolve }
+            resourceCode: { type: STRING, value: "GET:/cms/open/sites/resolve" }
+            accessMode: { type: STRING, value: PUBLIC }
+            handlerClass: { type: STRING, value: io.mango.cms.starter.controller.CmsSiteController }
+            handlerMethod: { type: STRING, value: resolveSite }
+            description: { type: STRING, value: 解析公开站点 }
+        - id: "876439174015672230"
+          version: 1
+          biz-key: api.mango-cms.GET.cms.open.sites.detail
+          name: 查询公开站点信息
+          target-module: authorization
+          fields:
+            moduleName: { type: STRING, value: mango-cms }
+            httpMethod: { type: STRING, value: GET }
+            pathPattern: { type: STRING, value: /cms/open/sites/detail }
+            resourceCode: { type: STRING, value: "GET:/cms/open/sites/detail" }
+            accessMode: { type: STRING, value: PUBLIC }
+            handlerClass: { type: STRING, value: io.mango.cms.starter.controller.CmsSiteController }
+            handlerMethod: { type: STRING, value: detailSite }
+            description: { type: STRING, value: 查询公开站点信息 }
+        - id: "812954604459568127"
+          version: 1
+          biz-key: api.mango-cms.GET.cms.open.site-categories.tree
+          name: 查询公开栏目树
+          target-module: authorization
+          fields:
+            moduleName: { type: STRING, value: mango-cms }
+            httpMethod: { type: STRING, value: GET }
+            pathPattern: { type: STRING, value: /cms/open/site-categories/tree }
+            resourceCode: { type: STRING, value: "GET:/cms/open/site-categories/tree" }
+            accessMode: { type: STRING, value: PUBLIC }
+            handlerClass: { type: STRING, value: io.mango.cms.starter.controller.CmsSiteController }
+            handlerMethod: { type: STRING, value: treeCategories }
+            description: { type: STRING, value: 查询公开栏目树 }
+        - id: "858331318913033664"
+          version: 1
+          biz-key: api.mango-cms.GET.cms.open.navigations.list
+          name: 查询公开导航
+          target-module: authorization
+          fields:
+            moduleName: { type: STRING, value: mango-cms }
+            httpMethod: { type: STRING, value: GET }
+            pathPattern: { type: STRING, value: /cms/open/navigations/list }
+            resourceCode: { type: STRING, value: "GET:/cms/open/navigations/list" }
+            accessMode: { type: STRING, value: PUBLIC }
+            handlerClass: { type: STRING, value: io.mango.cms.starter.controller.CmsSiteController }
+            handlerMethod: { type: STRING, value: listNavigations }
+            description: { type: STRING, value: 查询公开导航 }
+        - id: "879549143806168402"
+          version: 1
+          biz-key: api.mango-cms.GET.cms.open.banners.list
+          name: 查询有效 Banner
+          target-module: authorization
+          fields:
+            moduleName: { type: STRING, value: mango-cms }
+            httpMethod: { type: STRING, value: GET }
+            pathPattern: { type: STRING, value: /cms/open/banners/list }
+            resourceCode: { type: STRING, value: "GET:/cms/open/banners/list" }
+            accessMode: { type: STRING, value: PUBLIC }
+            handlerClass: { type: STRING, value: io.mango.cms.starter.controller.CmsSiteController }
+            handlerMethod: { type: STRING, value: listBanners }
+            description: { type: STRING, value: 查询有效 Banner }
+        - id: "843288974368896510"
+          version: 1
+          biz-key: api.mango-cms.GET.cms.open.advertisements.list
+          name: 查询有效广告
+          target-module: authorization
+          fields:
+            moduleName: { type: STRING, value: mango-cms }
+            httpMethod: { type: STRING, value: GET }
+            pathPattern: { type: STRING, value: /cms/open/advertisements/list }
+            resourceCode: { type: STRING, value: "GET:/cms/open/advertisements/list" }
+            accessMode: { type: STRING, value: PUBLIC }
+            handlerClass: { type: STRING, value: io.mango.cms.starter.controller.CmsSiteController }
+            handlerMethod: { type: STRING, value: listAdvertisements }
+            description: { type: STRING, value: 查询有效广告 }
+        - id: "816271467667268488"
+          version: 1
+          biz-key: api.mango-cms.GET.cms.open.contents.page
+          name: 分页查询公开内容
+          target-module: authorization
+          fields:
+            moduleName: { type: STRING, value: mango-cms }
+            httpMethod: { type: STRING, value: GET }
+            pathPattern: { type: STRING, value: /cms/open/contents/page }
+            resourceCode: { type: STRING, value: "GET:/cms/open/contents/page" }
+            accessMode: { type: STRING, value: PUBLIC }
+            handlerClass: { type: STRING, value: io.mango.cms.starter.controller.CmsSiteController }
+            handlerMethod: { type: STRING, value: pageContents }
+            description: { type: STRING, value: 分页查询公开内容 }
+        - id: "855416945222259307"
+          version: 1
+          biz-key: api.mango-cms.GET.cms.open.contents.detail
+          name: 查询公开内容详情
+          target-module: authorization
+          fields:
+            moduleName: { type: STRING, value: mango-cms }
+            httpMethod: { type: STRING, value: GET }
+            pathPattern: { type: STRING, value: /cms/open/contents/detail }
+            resourceCode: { type: STRING, value: "GET:/cms/open/contents/detail" }
+            accessMode: { type: STRING, value: PUBLIC }
+            handlerClass: { type: STRING, value: io.mango.cms.starter.controller.CmsSiteController }
+            handlerMethod: { type: STRING, value: detailContent }
+            description: { type: STRING, value: 查询公开内容详情 }
+        - id: "848802615093452038"
+          version: 1
+          biz-key: api.mango-cms.GET.cms.open.files.public-preview
+          name: 读取公开文件
+          target-module: authorization
+          fields:
+            moduleName: { type: STRING, value: mango-cms }
+            httpMethod: { type: STRING, value: GET }
+            pathPattern: { type: STRING, value: /cms/open/files/public-preview }
+            resourceCode: { type: STRING, value: "GET:/cms/open/files/public-preview" }
+            accessMode: { type: STRING, value: PUBLIC }
+            handlerClass: { type: STRING, value: io.mango.cms.starter.endpoint.CmsPublicFileEndpoint }
+            handlerMethod: { type: STRING, value: handle }
+            description: { type: STRING, value: 读取公开文件 }

@@ -201,7 +201,9 @@ mango:
 
 ## 9. 管理入口
 
-后台菜单由 `information-common-menu.json` 注册，页面由 `@mango/information` 的 `registerMangoInformationAdminPages()` 注册。管理接口使用 `information:form:*`、`information:submission:*` 权限资源；公开接口由 `information-common-public-api.yml` 放行，不要求登录。业务应用仍应由自身登录、租户和角色配置决定哪些管理人员可见菜单。
+后台菜单由 `information-common-menu.json` 注册，页面由 `@mango/information` 的 `registerMangoInformationAdminPages()` 注册。管理接口使用 `information:form:*`、`information:submission:*` 权限资源；公开接口由 `information-common-public-api.yml` 的 `API_RESOURCE` 声明 `accessMode=PUBLIC` 放行，不要求登录。
+
+匿名访问只有这一个判定入口：请求由 `ApiResourceAuthorizationManager` 按 `authorization_api_resource` 匹配，资源未匹配时按 `LOGIN` 处理并返回 401。应用必须装配 `mango-authorization-resource-access-starter`（`mango-admin-starter` 已包含）并完成 Resource Registry 同步；`mango.auth.security.permit-paths` 不需要手工配置 `/information/open/**`。业务应用仍应由自身登录、租户和角色配置决定哪些管理人员可见菜单。
 
 ## 10. 快速开始
 

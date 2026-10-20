@@ -149,14 +149,18 @@ mango:
 
 公开消费接口前缀为 `/cms/open`，后台管理接口前缀为 `/cms`。接口禁止路径变量，ID 和筛选条件通过 `Query`、`Command` 或 query 参数传递。分页查询统一使用 `XxxPageQuery` 和 `R<PageResult<XxxVO>>`。
 
-公开消费接口标注 `@ApiAccess(mode = PUBLIC)`，由 `CmsPermitPathBeanPostProcessor` 自动注入 `/cms/open/**` 到认证放行路径，无需应用手工配置。公开素材接口 `/cms/open/files/public-preview` 仅返回站点 Logo、Banner 媒体、已发布内容封面/附件和有效广告投放引用的文件。
+公开消费接口标注 `@ApiAccess(mode = PUBLIC)`，并在 `META-INF/mango/resources/cms-common-public-api.yml` 中按 `API_RESOURCE` 声明 `accessMode=PUBLIC`：站点解析、站点详情、栏目树、导航、Banner、广告、内容分页、内容详情共 8 个接口，以及公开素材接口 `GET /cms/open/files/public-preview`。
+
+匿名访问只有这一个判定入口：请求由 `ApiResourceAuthorizationManager` 按 `authorization_api_resource` 匹配，资源未匹配时按 `LOGIN` 处理并返回 401。因此新增 `/cms/open` 公开接口必须同时补声明，且应用必须装配 `mango-authorization-resource-access-starter`（`mango-admin-starter` 已包含）并完成 Resource Registry 同步。CMS 不再向 `mango.auth.security.permit-paths` 注入通配放行路径，`application.yml` 也不需要手工配置 `/cms/open/**`。
+
+公开素材接口仅返回站点 Logo、Banner 媒体、已发布内容封面/附件和有效广告投放引用的文件。
 
 ## 9. 数据与初始化
 
 CMS 按数据用途分层登记：
 
 - Flyway 只负责 DDL。新库通过 `db/migration/mango-cms/V1__init_mango_cms.sql` 一次创建最终表结构，不写菜单、业务数据或演示数据。
-- 正式资源放在 `META-INF/mango/resources/`。CMS 当前只登记 `cms-common-menu.json`；此类资源默认同步。
+- 正式资源放在 `META-INF/mango/resources/`。CMS 当前登记 `cms-common-menu.json` 和 `cms-common-public-api.yml`；此类资源默认同步，其中 `cms-common-public-api.yml` 是匿名放行的唯一判定来源。
 - 必须初始化的业务数据也应按资源类型放在 `META-INF/mango/resources/`，不能写进 Flyway。CMS 当前没有必须初始化的业务数据。
 - 演示资源按 CMS 业务类型拆分放在 `META-INF/mango/demo/`，默认不加载；仅在明确开启 Demo 时同步。
 
@@ -193,7 +197,7 @@ CMS 管理页面通过 `@mango/cms` 注册，菜单由 `cms-common-menu.json` �
 
 ## 11. 问题排查
 
-- 站点前台接口返回 401：确认 `mango-cms-starter` 已启用，`CmsPermitPathBeanPostProcessor` 已将 `/cms/open/**` 注入放行路径。
+- 站点前台接口返回 401：确认 `mango-cms-starter` 已启用，`cms-common-public-api.yml` 的 `API_RESOURCE` 声明已同步到 `authorization_api_resource`，且应用装配了 `mango-authorization-resource-access-starter`；任一条件缺失时请求按默认 `LOGIN` 处理。
 - 站点解析返回"站点不存在或不唯一"：确认请求提供的 `domain` 或 `siteCode` 在当前租户范围内只对应一个启用站点；解析范围由当前租户上下文或部署配置的默认租户限定，只有部署关闭租户拦截时匿名请求才覆盖全部租户。
 - 内容列表为空：确认内容状态为 `PUBLISHED`，发布关系 `publish_status` 为 `PUBLISHED`，且在有效期内。
 - 公开素材 403：确认文件被站点 Logo、Banner 媒体、已发布内容或有效广告投放引用。

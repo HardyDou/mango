@@ -26,11 +26,6 @@ import static org.springframework.web.servlet.function.RouterFunctions.route;
 public class LinkAutoConfiguration {
 
     @Bean
-    public static LinkPermitPathBeanPostProcessor linkPermitPathBeanPostProcessor() {
-        return new LinkPermitPathBeanPostProcessor();
-    }
-
-    @Bean
     public RouterFunction<ServerResponse> linkRedirectRoutes(LinkRedirectEndpoint endpoint) {
         return route(GET("/link/open/redirect"), endpoint::redirect)
                 .andRoute(GET("/link/open/jump"), endpoint::jump)

@@ -30,12 +30,6 @@ import org.springframework.context.annotation.ComponentScan;
 })
 public class InformationAutoConfiguration {
 
-    /** 公开上传与预览以表单为边界，追加免登录放行路径。 */
-    @Bean
-    public static InformationPermitPathBeanPostProcessor informationPermitPathBeanPostProcessor() {
-        return new InformationPermitPathBeanPostProcessor();
-    }
-
     /** 公开文件入口以函数式路由声明，避免把二进制协议塞进管理接口契约。 */
     @Bean
     public RouterFunction<ServerResponse> informationPublicFileRoutes(InformationPublicFileEndpoint endpoint) {
