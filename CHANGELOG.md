@@ -2,7 +2,7 @@
 
 ## v2026.10.20-maven-1.0.63-information-baseline-release - Maven 1.0.63 - @mango/cli@1.3.3 - 2026-10-20
 
-Status: `PENDING`. Release plan and sealed candidate are recorded before publication; the immutable tag and GitHub Release are created only after Maven and npm consume verification.
+Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `221e6057aa1ec5f9833dd93953d7c6540258d5f3ec40f230c2b3b02b2e495b04` for release plan `e921be9c503538d5d5720fb6b297c5ece37f73e695d88077709e82a9ca71c66f` and prepared candidate `79f1c81416d5e9149e7fae27244d2d145b19c8a52e934f6e4f605d01b12a18a5` is `COMPLETED`: all 196 Maven/docs coordinates at `1.0.63` and `@mango/cli@1.3.3` match the sealed candidate in both publish and consume registries, the clean consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`.
 
 ### Pull Requests
 
