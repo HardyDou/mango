@@ -200,7 +200,7 @@ async function submitCreate() {
     });
     createVisible.value = false;
     ElMessage.success('表单已创建，接下来配置采集项');
-    await router.push(`/information/forms/${id}/config`);
+    await router.push({ path: '/information/form-config', query: { id: String(id) } });
   } catch (error) {
     ElMessage.error(error instanceof Error ? error.message : '保存失败');
   } finally {
@@ -255,13 +255,13 @@ async function remove(row: InformationForm) {
 }
 
 function openDetail(row: InformationForm) {
-  return router.push(`/information/forms/${row.id}/detail`);
+  return router.push({ path: '/information/form-detail', query: { id: String(row.id) } });
 }
 function openConfig(row: InformationForm) {
-  return router.push(`/information/forms/${row.id}/config`);
+  return router.push({ path: '/information/form-config', query: { id: String(row.id) } });
 }
 function openSubmissions(row: InformationForm) {
-  return router.push(`/information/forms/${row.id}/submissions`);
+  return router.push({ path: '/information/form-submissions', query: { id: String(row.id) } });
 }
 
 onMounted(load);
