@@ -1,6 +1,6 @@
 {
   "name": "@mango/file",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -31,7 +31,7 @@
     "@mango/common": "workspace:2.1.4"
   },
   "peerDependencies": {
-    "@mango/admin-extension": "workspace:1.1.0",
+    "@mango/admin-extension": "workspace:1.1.1",
     "element-plus": ">=2.14.1 <3",
     "vue": ">=3.5.13 <4"
   },

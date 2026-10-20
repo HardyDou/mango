@@ -1,5 +1,82 @@
 # Mango Changelog
 
+## v2026.10.19-maven-1.0.60-information-collection-release - Maven 1.0.60 - npm 20 packages including @mango/information@1.1.0 @mango/admin@1.2.0 @mango/cli@1.3.0 - 2026-10-20
+
+Status: `PENDING`. Release plan digest `a882bd3f4c71c3efe5bf09147b9ab0ddd231078b79e3804f25f02e8d0e6ade34`; the candidate is prepared from the successful baseline `v2026.10.15-maven-npm-admin-extension-10g-release` and must be published and verified before the immutable tag and GitHub Release are created.
+
+### Pull Requests
+
+- [PR #1049](https://github.com/HardyDou/mango/pull/1049) Fixed the source-mode `@mango/admin-extension` page registry version fallback. Packages: `@mango/admin-extension@1.1.1`, `@mango/admin@1.2.0` and generated npm dependents through `@mango/cli@1.3.0`. Business Adaptation: upgrade the complete Mango npm tuple together.
+- [PR #1057](https://github.com/HardyDou/mango/pull/1057) Added information collection. Packages: Mango Maven/docs `1.0.60`, `@mango/information@1.1.0`, `@mango/admin@1.2.0`, `@mango/cli@1.3.0` and generated npm dependents. Business Adaptation: configure and verify menus, permissions, tenants and file storage.
+- [PR #1058](https://github.com/HardyDou/mango/pull/1058) Fixed anonymous CMS site resolution by site code. Packages: Mango Maven/docs `1.0.60`. Business Adaptation: verify anonymous site resolution through the real database and HTTP entry point.
+- [PR #1059](https://github.com/HardyDou/mango/pull/1059) Changed CMS site-resolution integration coverage to use the production tenant scope. Packages: Mango Maven/docs `1.0.60`. Business Adaptation: rerun the site-resolution flow with the consumer tenant boundary.
+- [PR #1061](https://github.com/HardyDou/mango/pull/1061) Fixed CMS site-resolution tenant parity. Packages: Mango Maven/docs `1.0.60`. Business Adaptation: verify site resolution with the production-equivalent tenant scope.
+
+### Fixed
+
+- Source-mode Admin page registration now falls back to `dev` when the build-time version constant is not injected.
+- Anonymous CMS site resolution now accepts the site code and applies the production-equivalent tenant scope.
+
+### Added
+
+- Add the information collection platform module and frontend package, including form design, public hosting, submissions and uploads.
+
+### Changed
+
+- Advance the non-application Mango Maven reactor and `io.mango:mango-docs-bundle` from `1.0.59` to `1.0.60`.
+- Publish the machine-generated 20-package npm closure through `@mango/cli@1.3.0`.
+- Add `@mango/information@1.1.0` to the Admin aggregate and CLI module projection.
+
+### Versions
+
+- Maven non-application reactor and `io.mango:mango-docs-bundle`: `1.0.59` -> `1.0.60`.
+- npm closure: `@mango/admin-extension@1.1.1`, `@mango/ai@1.2.1`, `@mango/file@1.2.1`, `@mango/detail@1.1.6`, `@mango/information@1.1.0`, `@mango/system@1.0.50`, `@mango/admin-pages@1.1.1`, `@mango/calendar@1.0.52`, `@mango/cms@1.0.41`, `@mango/job@1.0.45`, `@mango/link@1.0.38`, `@mango/notice@1.0.57`, `@mango/numgen@1.0.53`, `@mango/payment@1.0.44`, `@mango/template@1.0.53`, `@mango/workflow@1.0.61`, `@mango/admin-shell@1.0.82`, `@mango/workflow-business-example@1.0.60`, `@mango/admin@1.2.0`, `@mango/cli@1.3.0`.
+- `@mango/pmo` remains at `1.4.7`.
+
+### Published Packages
+
+1. Publish the sealed non-application Maven reactor and `io.mango:mango-docs-bundle:1.0.60`, then verify both Maven registry roles.
+2. Publish the 20-package npm topology in machine-generated order, then verify every package from the npm consume registry.
+3. Verify one clean mixed consumer before creating tag `v2026.10.19-maven-1.0.60-information-collection-release` and its GitHub Release.
+
+### Business Impact
+
+- Backend consumers receive information collection APIs, migration, resources, menus, permissions and public submission handling at Maven/docs `1.0.60`.
+- Frontend consumers receive the new information package and the generated Admin/CLI tuple.
+- CMS consumers receive anonymous site-code resolution with production-equivalent tenant scope.
+- No application fat JAR, production deployment or traffic change is included.
+
+### Upgrade Estimate
+
+- Audience: Mango backend consumers, generated Admin frontends, direct npm consumers, information-collection adopters and CMS anonymous-site consumers.
+- Engineering Effort: medium; upgrade the complete tuple, enable the information module, review permissions and run real CMS/information flows.
+- Execution Window: 60 to 150 minutes including migration, registry propagation and consumer verification.
+- Service Downtime: none expected; consumers use their normal restart window.
+- Rollback Effort: medium; restore Maven/docs `1.0.59` and the previous npm tuple without republishing.
+- Assumptions: Java 21, Node 22.23.1, configured registries, MySQL, tenant/admin fixtures and file storage.
+
+### Upgrade Notes
+
+1. Upgrade Maven/docs to `1.0.60` and the complete npm tuple ending at `@mango/cli@1.3.0`.
+2. Add the information starter, run its migration, and verify menu, permission, tenant and file-storage configuration.
+3. Register information frontend pages, include its stylesheet, and verify design, public submission, upload and submission-management flows.
+4. Verify anonymous CMS site resolution by site code with the production-equivalent tenant scope.
+
+### Verification
+
+- Run the release plan, catalog, release-impact, package exports, consumer typecheck and release-notes checks.
+- Run affected frontend unit/UI checks and affected Maven unit/integration/API checks with real database tenant fixtures.
+- Resolve sealed Maven coordinates and npm tarballs from both registry roles, then run one clean consume-registry mixed consumer.
+
+### Rollback
+
+- Restore consumers to Maven/docs `1.0.59` and the previous immutable npm tuple through their normal dependency release process.
+- Never overwrite published coordinates. Disable the information module only through the reviewed consumer rollback procedure.
+
+### Audit History
+
+- PR #1050 and PR #1051 are preparation and closeout records for the already published `v2026.10.15-maven-npm-admin-extension-10g-release`; they are not new capabilities in this batch.
+
 ## v2026.10.15-maven-npm-admin-extension-10g-release - Maven 1.0.59 - npm 19 packages including @mango/admin-extension@1.1.0 @mango/file@1.2.0 @mango/cli@1.2.21 - 2026-10-15
 
 Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `014edb92eaed468bcb7ea2a18cab723ce0a65ca2fdd68746503d0178ce156795`; prepared candidate `9d9255f3652734bdd089b84b1600b1befc59c0f0d172c5f2409cc44e8d6731df` is published and verified from both Maven and npm registry roles with a clean consume-registry consumer. Tag and GitHub Release are `CREATED_AND_VERIFIED`; the Maven non-application reactor and `io.mango:mango-docs-bundle` are at 1.0.59, and the npm closure is published through `@mango/cli@1.2.21`.
