@@ -1,3 +1,23 @@
+## 1.3.0 - 2026-10-20
+
+### Added
+
+- Add the information collection module to generated Mango projects, including the frontend package, Admin module projection and backend Maven 1.0.60 tuple.
+
+### Fixed
+
+- Keep source-mode `@mango/admin-extension` page registration usable when the build-time version constant is not injected.
+- Propagate the CMS anonymous site-code resolution and tenant-scope fixes through the Maven 1.0.60 platform tuple.
+
+### Changed
+
+- Lock the Mango Maven/docs version at 1.0.60 and publish the complete 20-package npm closure through `@mango/cli@1.3.0`.
+
+### Upgrade Notes
+
+- Upgrade the complete Mango npm tuple and Maven/docs 1.0.60 together.
+- Enable the information module only after reviewing its menu, permission, tenant and file-storage configuration.
+
 ## 1.2.21 - 2026-10-15
 
 ### Fixed

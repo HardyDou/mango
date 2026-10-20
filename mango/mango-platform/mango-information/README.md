@@ -198,3 +198,33 @@ mango:
 - 校验失败不形成采集记录；幂等键命中时返回同一记录ID。
 - 已关闭的采集记录不可继续处理。
 - 已发布表单才能被公开查询和提交；停用或草稿状态返回业务错误。
+
+## 9. 管理入口
+
+后台菜单由 `information-common-menu.json` 注册，页面由 `@mango/information` 的 `registerMangoInformationAdminPages()` 注册。管理接口使用 `information:form:*`、`information:submission:*` 权限资源；公开接口由 `information-common-public-api.yml` 放行，不要求登录。业务应用仍应由自身登录、租户和角色配置决定哪些管理人员可见菜单。
+
+## 10. 快速开始
+
+1. 引入 `mango-information-starter`，并按部署配置启用 `mango.information.enabled`。
+2. 显式确认 `mango.persistence.flyway.modules.mango-information.enabled`，启动完成后检查三张信息采集表已创建。
+3. 前端注册信息采集页面并加载 `@mango/information/style.css`，确认菜单与权限资源同步成功。
+4. 创建并发布一份表单，使用托管地址提交一条记录，再在采集记录页面处理、导出并核对字段快照。
+5. 需要业务系统代提交时，从表单详情取得专属 SK，仅在服务端请求中发送 `serverSecret`；浏览器和托管页面不得暴露该值。
+
+## 11. 问题排查
+
+- 菜单或页面 404：确认 `information-common-menu.json` 已同步、前端 registrar 已执行且页面 key 与菜单 `component` 一致。
+- 启动提示迁移未声明：检查 `mango.persistence.flyway.modules.mango-information.enabled` 与 starter/classpath 配置。
+- 公开表单不存在：确认表单编码、租户解析和状态为 `PUBLISHED`；匿名请求按默认租户解析。
+- 提交被拒：检查字段定义、幂等键、表单状态和服务端 SK；公开浏览器提交不应携带 SK。
+- 上传失败：确认先领取与表单编码绑定的短效票据，检查票据请求头、文件存储配置和票据有效期。
+- 业务接口未返回数据：检查当前登录人的菜单/API 权限与租户上下文，不要用前端菜单显示代替后端授权检查。
+
+## 12. 相关文档
+
+- [能力地图](../../../mango-docs/capabilities/README.md)
+- [信息采集前端包](../../../mango-ui/packages/information/README.md)
+- [文件能力](../mango-file/README.md)
+- [资源注册](../mango-resource/README.md)
+- [授权能力](../mango-authorization/README.md)
+- [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
