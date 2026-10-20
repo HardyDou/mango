@@ -1,5 +1,68 @@
 # Mango Changelog
 
+## v2026.10.20-maven-1.0.63-information-baseline-release - Maven 1.0.63 - @mango/cli@1.3.3 - 2026-10-20
+
+Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `221e6057aa1ec5f9833dd93953d7c6540258d5f3ec40f230c2b3b02b2e495b04` for release plan `e921be9c503538d5d5720fb6b297c5ece37f73e695d88077709e82a9ca71c66f` and prepared candidate `79f1c81416d5e9149e7fae27244d2d145b19c8a52e934f6e4f605d01b12a18a5` is `COMPLETED`: all 196 Maven/docs coordinates at `1.0.63` and `@mango/cli@1.3.3` match the sealed candidate in both publish and consume registries, the clean consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`.
+
+### Pull Requests
+
+- [PR #1078](https://github.com/HardyDou/mango/pull/1078) Fixed `MANGO-BASELINE-040` by keeping resource-declared information forms out of the portable database baseline. Packages: Maven/docs `1.0.63` (`io.mango:mango-parent`, `mango-information-starter`) and `@mango/cli@1.3.3`. Business Adaptation: regenerate the consumer database baseline and let bootstrap recreate built-in forms at deploy time.
+
+### Fixed
+
+- `mango:baseline-generate`（`MANGO_BSQL_ENABLED=true`）在 `MANGO-BASELINE-023` 之后仍会因内置表单的随机 `server_secret` 触发 `MANGO-BASELINE-040`：`InformationFormResourceHandler` 现在声明 `ResourceBaselinePolicy.ENVIRONMENT_REQUIRED`，基线构建跳过表单落库，两次干净回放保持一致。
+- 部署期行为不变：Resource Registry bootstrap 仍以真实随机密钥创建内置表单，服务端接入密钥保持不可预测。
+
+### Changed
+
+- `mango-information-starter` 增加处理器的基线策略声明和回归测试，information README 记录「内置表单不进入可移植基线」的边界与原因。
+
+### Versions
+
+- Maven non-application reactor and `io.mango:mango-docs-bundle`: `1.0.62` -> `1.0.63`.
+- npm: `@mango/cli` `1.3.2` -> `1.3.3`; `@mango/admin-shell`、`@mango/information`、`@mango/admin`、`@mango/pmo` 均不变。
+
+### Published Packages
+
+1. Publish the sealed non-application Maven reactor and `io.mango:mango-docs-bundle:1.0.63`, then verify both Maven registry roles.
+2. Publish `@mango/cli@1.3.3` from the sealed tarball and verify both npm registry roles.
+3. Run one aggregate clean Maven consumer plus a clean CLI consumer installed from the consume registry.
+4. Create Tag `v2026.10.20-maven-1.0.63-information-baseline-release` and its GitHub Release only after consume verification succeeds.
+
+### Business Impact
+
+- 使用 `mango:baseline-generate` 构建数据库基线的业务项目不再因为信息采集内置表单的随机密钥而失败。
+- 已经生成过包含表单行的旧基线的项目，需要重新生成基线；部署期 bootstrap 会按资源声明重新创建内置表单并生成新的随机密钥。
+- 前端包、菜单、公开接口、权限码和数据库结构均不变；不包含部署、流量切换或数据迁移。
+
+### Upgrade Estimate
+
+- Audience: 使用 `mango:baseline-generate` 生成冷基线的业务项目，以及使用 Resource Registry 声明内置采集表单的模块。
+- Engineering Effort: low; upgrade Maven/docs and CLI, then rerun the baseline generation build once.
+- Execution Window: 20 to 40 minutes including dependency upgrade and one baseline regeneration build.
+- Service Downtime: none expected beyond the consumer's normal restart window.
+- Rollback Effort: low; restore Maven/docs `1.0.62` and `@mango/cli@1.3.2` without republishing.
+- Assumptions: Java 21 consumer build, MySQL instance available for baseline generation, and a deployment pipeline that runs Resource Registry bootstrap.
+
+### Upgrade Notes
+
+1. Upgrade Maven/docs to `1.0.63` and `@mango/cli@1.3.3`.
+2. Rerun `mango:baseline-generate`（`MANGO_BSQL_ENABLED=true`）确认 `MANGO-BASELINE-040` 消失，构建产物中 `db/baseline/information/` 不再包含表单数据行。
+3. 部署时确认 Resource Registry bootstrap 正常执行，`information_form` 中内置表单由 bootstrap 创建，`server_secret` 为新生成的随机值。
+4. 不要手工回填或复制旧基线中的 `server_secret`，也不要提交基线 SQL 到 Git。
+
+### Verification
+
+- Maven: resolve `io.mango:mango-information-starter:1.0.63` and `io.mango:mango-docs-bundle:1.0.63` from the consume registry and compare sealed checksums.
+- npm: resolve `@mango/cli@1.3.3` from publish and consume registries and compare sealed integrity.
+- Repository gates: `mango release plan`、`mango release prepare`、`mango release publish` evidence、`node mango-pmo/tools/audit-module-readmes.mjs`、`node mango-pmo/tools/audit-readme-source-facts.mjs`.
+- Consumer assertion: baseline generation completes without `MANGO-BASELINE-040`, and the deployed instance still lists built-in forms with distinct `server_secret` values.
+
+### Rollback
+
+- Restore consumers to Maven/docs `1.0.62` and `@mango/cli@1.3.2` through their normal dependency release process; never overwrite published `1.0.63` coordinates.
+- A regenerated baseline can be regenerated again from the restored coordinate set; published artifacts stay immutable and no database rows are rolled back.
+
 ## v2026.10.20-maven-1.0.62-information-routing-release - Maven 1.0.62 - @mango/information@1.1.1 @mango/admin-shell@1.0.83 @mango/admin@1.2.1 @mango/cli@1.3.2 - 2026-10-20
 
 Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `cd769f1a120c279bf4ab0b81ae51eaa05de14205369dc15995e2cb055dc51846` for release plan `d97a33f4180d7080a78cce37514df1f72713a0614d3eba14dd3dd1f5e8c39efb` and prepared candidate `1fb8d5e717d469ea20ad5a41f631e1ea64f002035efdc426e2a463513729ff6a` is `COMPLETED`: all 196 Maven/docs coordinates at `1.0.62` and the npm tuple `@mango/admin-shell@1.0.83`、`@mango/information@1.1.1`、`@mango/admin@1.2.1`、`@mango/cli@1.3.2` match the sealed candidate in both publish and consume registries, the clean consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`.

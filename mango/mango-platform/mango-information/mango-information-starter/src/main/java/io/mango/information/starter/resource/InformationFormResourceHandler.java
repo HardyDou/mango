@@ -11,6 +11,7 @@ import io.mango.information.core.entity.InformationFormEntity;
 import io.mango.information.core.service.impl.InformationFormService;
 import io.mango.information.core.mapper.InformationFormMapper;
 import io.mango.information.core.support.InformationDefinition;
+import io.mango.resource.support.ResourceBaselinePolicy;
 import io.mango.resource.support.ResourceHandler;
 import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.model.ResourceHandlerSpec;
@@ -45,6 +46,18 @@ public class InformationFormResourceHandler implements ResourceHandler {
     @Override
     public String resourceType() {
         return InformationResourceTypes.FORM;
+    }
+
+    /**
+     * 内置表单不进入可移植数据库基线。
+     *
+     * <p>新建表单时生成随机服务端密钥（`server_secret` 与摘要），两次干净回放必然不同，
+     * 无法满足 `MANGO-BASELINE-040` 的可移植基线确定性要求。该密钥属于部署期运行时状态，
+     * 因此声明为环境依赖：基线构建跳过表单落库，部署时由 Resource Registry bootstrap 以真实随机密钥创建。
+     */
+    @Override
+    public ResourceBaselinePolicy baselinePolicy() {
+        return ResourceBaselinePolicy.ENVIRONMENT_REQUIRED;
     }
 
     @Override
