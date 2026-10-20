@@ -741,7 +741,7 @@ importers:
         specifier: workspace:1.1.1
         version: link:../admin-pages
       '@mango/admin-shell':
-        specifier: workspace:1.0.82
+        specifier: workspace:1.0.83
         version: link:../admin-shell
       '@mango/ai':
         specifier: workspace:1.2.1
@@ -771,7 +771,7 @@ importers:
         specifier: workspace:1.0.34
         version: link:../grid-widgets
       '@mango/information':
-        specifier: workspace:1.1.0
+        specifier: workspace:1.1.1
         version: link:../information
       '@mango/job':
         specifier: workspace:1.0.45
