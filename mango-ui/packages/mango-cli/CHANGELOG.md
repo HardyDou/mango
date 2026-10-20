@@ -1,3 +1,13 @@
+## 1.3.3 - 2026-10-20
+
+### Fixed
+
+- Keep resource-declared information forms out of the portable database baseline, so `MANGO_BSQL_ENABLED=true` builds no longer fail with `MANGO-BASELINE-040`.
+
+### Changed
+
+- Lock the CLI Maven matrix to Maven `1.0.63`.
+
 ## 1.3.2 - 2026-10-20
 
 ### Fixed
