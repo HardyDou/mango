@@ -1,64 +1,58 @@
 ## Pull Requests
 
-- [PR #1069](https://github.com/HardyDou/mango/pull/1069) Fixed hidden package routes being dropped for modules without a declared admin feature. Packages: `@mango/admin-shell@1.0.83` and generated dependents. Business Adaptation: no configuration change; the fix removes an internal filter.
-- [PR #1070](https://github.com/HardyDou/mango/pull/1070) Changed information collection sub-pages to configuration-driven routes declared in `AUTH_MENU`. Packages: Maven/docs `1.0.62` (`io.mango:mango-parent`, `mango-information-starter` menu declaration version 6), `@mango/information@1.1.1`, `@mango/admin@1.2.1`, `@mango/cli@1.3.2`. Business Adaptation: upgrade the complete tuple, run Resource Registry menu sync, and use the new static routes with `query.id`.
-- [PR #1067](https://github.com/HardyDou/mango/pull/1067) Changed (audit record only, no artifact in this batch): closeout record for the already published `v2026.10.20-maven-1.0.61-cli-1.3.1-cms-public-api-release`. Packages: none in this batch. Business Adaptation: no action.
+- [PR #1078](https://github.com/HardyDou/mango/pull/1078) Fixed `MANGO-BASELINE-040` by keeping resource-declared information forms out of the portable database baseline. Packages: Maven/docs `1.0.63` (`io.mango:mango-parent`, `mango-information-starter`) and `@mango/cli@1.3.3`. Business Adaptation: regenerate the consumer database baseline and let bootstrap recreate built-in forms at deploy time.
 
 ## Fixed
 
-- Information collection 表单详情、表单配置、采集记录处理 从表单列表点击后返回 404：包内隐藏路由未注册，路由完全丢失。
-- `@mango/admin-shell` 不再用重复的硬编码 feature 映射过滤包内隐藏路由，未声明 feature 的模块默认启用。
+- `mango:baseline-generate`（`MANGO_BSQL_ENABLED=true`）在 `MANGO-BASELINE-023` 之后仍会因内置表单的随机 `server_secret` 触发 `MANGO-BASELINE-040`：`InformationFormResourceHandler` 现在声明 `ResourceBaselinePolicy.ENVIRONMENT_REQUIRED`，基线构建跳过表单落库，两次干净回放保持一致。
+- 部署期行为不变：Resource Registry bootstrap 仍以真实随机密钥创建内置表单，服务端接入密钥保持不可预测。
 
 ## Changed
 
-- 信息采集三个管理子页面改为 `AUTH_MENU` 中 `visible: 0` 的隐藏菜单，路径为静态 `/information/form-detail`、`/information/form-config` 和 `/information/form-submissions`，通过 `query.id` 定位表单。
-- `@mango/information` 删除包内 `routes` 注册，只保留页面 key 注册；路由来源收敛为后端菜单配置。
+- `mango-information-starter` 增加处理器的基线策略声明和回归测试，information README 记录「内置表单不进入可移植基线」的边界与原因。
 
 ## Versions
 
-- Maven non-application reactor and `io.mango:mango-docs-bundle`: `1.0.61` -> `1.0.62`.
-- npm: `@mango/admin-shell` `1.0.82` -> `1.0.83`, `@mango/information` `1.1.0` -> `1.1.1`, `@mango/admin` `1.2.0` -> `1.2.1`, `@mango/cli` `1.3.1` -> `1.3.2`.
-- `@mango/pmo` stays at `1.4.7`; other npm coordinates are unchanged.
+- Maven non-application reactor and `io.mango:mango-docs-bundle`: `1.0.62` -> `1.0.63`.
+- npm: `@mango/cli` `1.3.2` -> `1.3.3`; `@mango/admin-shell`、`@mango/information`、`@mango/admin`、`@mango/pmo` 均不变。
 
 ## Published Packages
 
-1. Publish the sealed non-application Maven reactor and `io.mango:mango-docs-bundle:1.0.62`, then verify both Maven registry roles.
-2. Publish `@mango/admin-shell@1.0.83`, `@mango/information@1.1.1`, `@mango/admin@1.2.1` and `@mango/cli@1.3.2` in the machine-planned order and verify both npm registry roles.
-3. Run one aggregate clean Maven consumer plus a clean npm consumer that installs `@mango/cli@1.3.2` and generates a project without a workspace link.
-4. Create Tag `v2026.10.20-maven-1.0.62-information-routing-release` and its GitHub Release only after consume verification succeeds.
+1. Publish the sealed non-application Maven reactor and `io.mango:mango-docs-bundle:1.0.63`, then verify both Maven registry roles.
+2. Publish `@mango/cli@1.3.3` from the sealed tarball and verify both npm registry roles.
+3. Run one aggregate clean Maven consumer plus a clean CLI consumer installed from the consume registry.
+4. Create Tag `v2026.10.20-maven-1.0.63-information-baseline-release` and its GitHub Release only after consume verification succeeds.
 
 ## Business Impact
 
-- 业务后台用户重新获得信息采集「详情」「配置（设计器）」「采集记录处理」入口，列表行操作与详情页按钮可直接打开。
-- `mango-information-starter` 的 `AUTH_MENU` 资源版本从 5 升到 6，升级后必须执行 Resource Registry 同步，三个隐藏菜单才会进入用户菜单。
-- 管理接口、公开托管表单地址、权限码和数据库结构不变；旧深链 `/information/forms/:id/*` 在 1.1.0 中始终返回 404，因此没有可用链接需要兼容。
-- No deployment, traffic change or data migration is included.
+- 使用 `mango:baseline-generate` 构建数据库基线的业务项目不再因为信息采集内置表单的随机密钥而失败。
+- 已经生成过包含表单行的旧基线的项目，需要重新生成基线；部署期 bootstrap 会按资源声明重新创建内置表单并生成新的随机密钥。
+- 前端包、菜单、公开接口、权限码和数据库结构均不变；不包含部署、流量切换或数据迁移。
 
 ## Upgrade Estimate
 
-- Audience: 使用信息采集模块的业务后台，以及自定义 Admin 前端使用 `@mango/admin-shell` 的项目。
-- Engineering Effort: low; upgrade the full tuple, run Resource Registry menu sync, then click through the three information pages.
-- Execution Window: 30 to 60 minutes including dependency upgrade, service restart, resource sync and page verification.
+- Audience: 使用 `mango:baseline-generate` 生成冷基线的业务项目，以及使用 Resource Registry 声明内置采集表单的模块。
+- Engineering Effort: low; upgrade Maven/docs and CLI, then rerun the baseline generation build once.
+- Execution Window: 20 to 40 minutes including dependency upgrade and one baseline regeneration build.
 - Service Downtime: none expected beyond the consumer's normal restart window.
-- Rollback Effort: low; restore Maven/docs `1.0.61` and the previous npm tuple without republishing.
-- Assumptions: Java 21 consumer build, configured registries, `mango-information-starter` deployed with the standard `mango-admin-starter` assembly, and a working Resource Registry sync step.
+- Rollback Effort: low; restore Maven/docs `1.0.62` and `@mango/cli@1.3.2` without republishing.
+- Assumptions: Java 21 consumer build, MySQL instance available for baseline generation, and a deployment pipeline that runs Resource Registry bootstrap.
 
 ## Upgrade Notes
 
-1. Upgrade Maven/docs to `1.0.62` and the npm tuple `@mango/admin-shell@1.0.83`, `@mango/information@1.1.1`, `@mango/admin@1.2.1`, `@mango/cli@1.3.2`.
-2. Run the deployment's Resource Registry sync and confirm `AUTH_MENU` for `mango-information` reached version 6.
-3. Confirm `authorization_menu` contains `information:form-detail`、`information:form-config`、`information:form-submissions` with `visible = 0` and the user's role/package grants them.
-4. Open 信息采集 → 表单管理，依次点击「详情」「配置」「采集记录」，确认页面加载且设计器可保存、处理抽屉可提交。
-5. 前端如有自定义页面直接拼 `/information/forms/:id/*` 链接，改为 `/information/form-detail?id=`、`/information/form-config?id=`、`/information/form-submissions?id=`。
+1. Upgrade Maven/docs to `1.0.63` and `@mango/cli@1.3.3`.
+2. Rerun `mango:baseline-generate`（`MANGO_BSQL_ENABLED=true`）确认 `MANGO-BASELINE-040` 消失，构建产物中 `db/baseline/information/` 不再包含表单数据行。
+3. 部署时确认 Resource Registry bootstrap 正常执行，`information_form` 中内置表单由 bootstrap 创建，`server_secret` 为新生成的随机值。
+4. 不要手工回填或复制旧基线中的 `server_secret`，也不要提交基线 SQL 到 Git。
 
 ## Verification
 
-- Maven: resolve `io.mango:mango-information-starter:1.0.62` and `io.mango:mango-docs-bundle:1.0.62` from the consume registry and compare sealed checksums.
-- npm: resolve `@mango/admin-shell@1.0.83`、`@mango/information@1.1.1`、`@mango/admin@1.2.1`、`@mango/cli@1.3.2` from publish and consume registries and compare sealed integrity.
+- Maven: resolve `io.mango:mango-information-starter:1.0.63` and `io.mango:mango-docs-bundle:1.0.63` from the consume registry and compare sealed checksums.
+- npm: resolve `@mango/cli@1.3.3` from publish and consume registries and compare sealed integrity.
 - Repository gates: `mango release plan`、`mango release prepare`、`mango release publish` evidence、`node mango-pmo/tools/audit-module-readmes.mjs`、`node mango-pmo/tools/audit-readme-source-facts.mjs`.
-- Consumer assertion: 列表行操作打开三个页面不再 404；`information-common-menu.json` 的 `component` 与 `@mango/information` 注册页面 key 一致；`adminPages.spec.ts` 在包内保证不再注册路由。
+- Consumer assertion: baseline generation completes without `MANGO-BASELINE-040`, and the deployed instance still lists built-in forms with distinct `server_secret` values.
 
 ## Rollback
 
-- Restore consumers to Maven/docs `1.0.61` and the previous npm tuple through their normal dependency release process; never overwrite published `1.0.62` coordinates.
-- If the new hidden menus must be withdrawn, disable them through a reviewed menu resource change rather than editing published artifacts; published coordinates stay immutable.
+- Restore consumers to Maven/docs `1.0.62` and `@mango/cli@1.3.2` through their normal dependency release process; never overwrite published `1.0.63` coordinates.
+- A regenerated baseline can be regenerated again from the restored coordinate set; published artifacts stay immutable and no database rows are rolled back.
