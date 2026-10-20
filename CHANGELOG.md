@@ -2,7 +2,7 @@
 
 ## v2026.10.19-maven-1.0.60-information-collection-release - Maven 1.0.60 - npm 20 packages including @mango/information@1.1.0 @mango/admin@1.2.0 @mango/cli@1.3.0 - 2026-10-20
 
-Status: `PENDING`. Release plan digest `a882bd3f4c71c3efe5bf09147b9ab0ddd231078b79e3804f25f02e8d0e6ade34`; the candidate is prepared from the successful baseline `v2026.10.15-maven-npm-admin-extension-10g-release` and must be published and verified before the immutable tag and GitHub Release are created.
+Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `535705c77ca9b7424097baeb0ada46752974e0144a1dd65751834ace812cfb3c` for release plan `a882bd3f4c71c3efe5bf09147b9ab0ddd231078b79e3804f25f02e8d0e6ade34` and prepared candidate `c5ccb7efcbc7fa8f6281f479dc56ed661105a925ffc41e0975a30f3db399a793` is `COMPLETED`: all 196 Maven/docs coordinates at `1.0.60` and all 20 npm packages through `@mango/cli@1.3.0` match the sealed candidate in both publish and consume registries, the clean consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`.
 
 ### Pull Requests
 
