@@ -7,6 +7,7 @@ import io.mango.information.core.entity.InformationFormEntity;
 import io.mango.information.core.mapper.InformationFormMapper;
 import io.mango.infra.persistence.starter.PersistenceAuditAutoConfiguration;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
+import io.mango.resource.support.ResourceBaselinePolicy;
 import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.model.ResourceField;
 import io.mango.resource.api.enums.ResourceFieldType;
@@ -93,6 +94,11 @@ class InformationFormResourceHandlerTest {
                   UNIQUE KEY uk_information_form_tenant_code (tenant_id, form_code)
                 )
                 """);
+    }
+
+    @Test
+    void baselinePolicy_isEnvironmentRequiredBecauseServerSecretIsRandom() {
+        assertThat(handler.baselinePolicy()).isEqualTo(ResourceBaselinePolicy.ENVIRONMENT_REQUIRED);
     }
 
     @Test
