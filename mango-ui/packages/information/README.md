@@ -12,6 +12,8 @@ Mango 信息采集前端包，提供表单管理、采集记录、托管表单�
 | 采集记录 | `information/submissions/index` | 独立菜单入口，按表单筛选、动态列与处理抽屉                                                                                                                    |
 | 托管表单 | `information/hosted/index`      | 匿名公开表单，无需登录                                                                                                                                        |
 
+表单详情、表单设计、采集记录是包内注册的隐藏路由（`/information/forms/:id/detail`、`/information/forms/:id/config`、`/information/forms/:id/submissions`），由列表行操作跳转，不出现在菜单树中。`@mango/admin-shell` 按模块 feature 注册包内隐藏路由；`mango-information` 未声明 feature，默认启用，因此这些页面不需要额外菜单配置。
+
 表单定义以 form-create 规则 JSON 存储，历史 `{fieldCode, fieldName, fieldType}` 形状会被自动升级。
 
 ## 1. 概览
@@ -59,7 +61,17 @@ registerMangoInformationAdminPages();
 
 ## 7. 管理入口
 
-管理页面入口为 `/information/forms`、`/information/forms/:id/detail`、`/information/forms/:id/config` 和 `/information/submissions`；匿名托管页面为 `/information/hosted?formCode=<code>`。页面 key 与菜单 `component` 必须一致，管理 API 仍由服务端权限和租户边界最终校验。
+管理页面入口全部由后端 `AUTH_MENU` 配置驱动，包内不注册隐藏路由：
+
+| 页面         | 路由                            | 菜单编码                       | 可见性       | 定位参数           |
+| ------------ | ------------------------------- | ------------------------------ | ------------ | ------------------ |
+| 表单管理     | `/information/forms`            | `information:forms`            | 可见         | 无                 |
+| 采集记录     | `/information/submissions`      | `information:submissions`      | 可见         | 通过表单选择器筛选 |
+| 表单详情     | `/information/form-detail`      | `information:form-detail`      | `visible: 0` | `query.id`         |
+| 表单配置     | `/information/form-config`      | `information:form-config`      | `visible: 0` | `query.id`         |
+| 采集记录处理 | `/information/form-submissions` | `information:form-submissions` | `visible: 0` | `query.id`         |
+
+匿名托管页面为 `/information/hosted?formCode=<code>`。隐藏页面由列表行操作或详情页按钮以 `router.push({ path, query: { id } })` 打开，路由和组件由菜单配置决定；页面 key 必须与菜单 `component` 一致，管理 API 仍由服务端权限和租户边界最终校验。新增管理页面时，先在该模块的 `*-common-menu.json` 声明菜单（含 `visible: 0` 的隐藏页），再在 `registerMangoInformationAdminPages()` 注册同名页面 key，禁止在包内另写 `routes`。
 
 ## 8. 快速开始
 

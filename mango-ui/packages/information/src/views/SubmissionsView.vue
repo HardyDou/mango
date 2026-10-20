@@ -264,7 +264,7 @@ const quickActions: Array<{ status: InformationSubmissionStatus; label: string }
   { status: 'CLOSED', label: '关闭记录' },
 ];
 
-const formId = computed(() => query.formId || String(route.params.id || ''));
+const formId = computed(() => query.formId || String(route.query.id || ''));
 const columns = computed<InformationFieldDefinition[]>(() =>
   rulesToFields(parseRules(form.value?.definitionJson)).filter(
     (field) => field.fieldType !== 'static' && field.fieldType !== 'divider',
@@ -344,11 +344,7 @@ function syncQueryToUrl() {
 
 function readQueryFromUrl() {
   const { formId: urlFormId, keyword, status, page, startTime, endTime } = route.query;
-  if (typeof urlFormId === 'string' && urlFormId) {
-    query.formId = urlFormId;
-  } else {
-    query.formId = String(route.params.id || '');
-  }
+  query.formId = typeof urlFormId === 'string' && urlFormId ? urlFormId : String(route.query.id || '');
   query.keyword = typeof keyword === 'string' ? keyword : '';
   query.status = typeof status === 'string' ? status : '';
   query.startTime = typeof startTime === 'string' ? startTime : '';
