@@ -2,7 +2,7 @@
 
 ## v2026.10.20-maven-1.0.62-information-routing-release - Maven 1.0.62 - @mango/information@1.1.1 @mango/admin-shell@1.0.83 @mango/admin@1.2.1 @mango/cli@1.3.2 - 2026-10-20
 
-Status: `PENDING`. Release plan and sealed candidate are recorded before publication; the immutable tag and GitHub Release are created only after Maven and npm consume verification.
+Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `cd769f1a120c279bf4ab0b81ae51eaa05de14205369dc15995e2cb055dc51846` for release plan `d97a33f4180d7080a78cce37514df1f72713a0614d3eba14dd3dd1f5e8c39efb` and prepared candidate `1fb8d5e717d469ea20ad5a41f631e1ea64f002035efdc426e2a463513729ff6a` is `COMPLETED`: all 196 Maven/docs coordinates at `1.0.62` and the npm tuple `@mango/admin-shell@1.0.83`、`@mango/information@1.1.1`、`@mango/admin@1.2.1`、`@mango/cli@1.3.2` match the sealed candidate in both publish and consume registries, the clean consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`.
 
 ### Pull Requests
 
