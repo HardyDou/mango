@@ -9,14 +9,13 @@ import io.mango.information.api.vo.InformationPublicFormVO;
 import io.mango.information.api.vo.InformationSubmissionResultVO;
 import io.mango.information.api.vo.InformationFormDetailVO;
 import io.mango.information.core.service.IInformationFormService;
-import io.mango.information.core.service.IInformationSubmissionService;
+import io.mango.information.starter.support.InformationPublicSubmissionExecutor;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.RequiredArgsConstructor;
-import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /** 信息采集公开接入接口。 */
 @RestController
@@ -27,7 +26,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 @Tag(name = "信息采集公开接入")
 public class InformationPublicController implements InformationPublicApi {
     private final IInformationFormService formService;
-    private final IInformationSubmissionService submissionService;
+    private final InformationPublicSubmissionExecutor submissionExecutor;
 
     @Override
     @GetMapping("/forms/detail")
@@ -49,6 +48,6 @@ public class InformationPublicController implements InformationPublicApi {
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "提交信息采集数据")
     @Operation(summary = "提交表单数据")
     public R<InformationSubmissionResultVO> submit(@RequestBody SubmitInformationCommand command) {
-        return R.ok(submissionService.submit(command, StringUtils.hasText(command.getServerSecret())));
+        return R.ok(submissionExecutor.submit(command));
     }
 }
