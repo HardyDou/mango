@@ -303,6 +303,33 @@ class ResourceRegistrySyncServiceIntegrationTest {
     }
 
     @Test
+    void registryConflictsAreReportedTogetherInOneFailure() {
+        provider.setDeclarations(List.of(
+                activeDeclaration("1900000000000000001", 1, "guarantee.apply.submit", "提交申请通知"),
+                activeDeclaration("1900000000000000002", 1, "guarantee.apply.reject", "驳回通知")));
+        jdbcTemplate.update("""
+                insert into resource_registry (
+                    id, resource_id, resource_version, app_code, service_code, resource_type,
+                    module_code, biz_key, name, target_module, target_table, target_id,
+                    source_hash, sync_mode, status
+                ) values
+                (90007, '1900000000000000997', 1, 'baohan-system-backend', 'baohan-system-backend',
+                 'MESSAGE_TEMPLATE', 'guarantee', 'guarantee.apply.submit', '历史声明', 'notice',
+                 'message_template', 91007, 'legacy-hash', 'AUTO', 'ACTIVE'),
+                (90008, '1900000000000000996', 1, 'baohan-system-backend', 'baohan-system-backend',
+                 'MESSAGE_TEMPLATE', 'guarantee', 'guarantee.apply.reject', '历史声明', 'notice',
+                 'message_template', 91008, 'legacy-hash', 'AUTO', 'ACTIVE')
+                """);
+
+        assertThatThrownBy(syncService::sync)
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("2 conflicts")
+                .hasMessageContaining("MESSAGE_TEMPLATE:guarantee.apply.submit")
+                .hasMessageContaining("MESSAGE_TEMPLATE:guarantee.apply.reject")
+                .hasMessageContaining("README.md section 14");
+    }
+
+    @Test
     void registryConflictMessageNamesBothResourceIdsAndSources() {
         jdbcTemplate.update("""
                 insert into resource_registry (
