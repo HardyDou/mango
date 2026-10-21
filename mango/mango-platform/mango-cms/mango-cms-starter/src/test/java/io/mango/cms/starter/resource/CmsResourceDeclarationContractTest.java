@@ -33,7 +33,6 @@ class CmsResourceDeclarationContractTest {
             CmsResourceTypes.CONTENT,
             CmsResourceTypes.CONTENT_PUBLISH,
             CmsResourceTypes.NAVIGATION,
-            CmsResourceTypes.BANNER,
             CmsResourceTypes.ADVERTISEMENT,
             CmsResourceTypes.AD_DELIVERY);
     private static final Set<String> FILE_ID_FIELDS = Set.of(
@@ -58,7 +57,7 @@ class CmsResourceDeclarationContractTest {
         List<DeclaredResource> demo = declarations(DEMO_ROOT, "cms-demo-");
 
         assertThat(FORMAL_ROOT.resolve("cms-common-menu.json")).isRegularFile();
-        assertThat(demo).hasSize(74);
+        assertThat(demo).hasSize(77);
         assertThat(types(demo)).containsExactlyInAnyOrderElementsOf(DEMO_TYPES);
         assertThat(demo).allSatisfy(resource -> {
             assertThat(resource.moduleCode()).isEqualTo("cms");

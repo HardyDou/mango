@@ -4,21 +4,17 @@ import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.mango.cms.api.enums.CmsContentStatus;
 import io.mango.cms.api.enums.CmsPublishStatus;
-import io.mango.cms.api.query.SiteBannerQuery;
 import io.mango.cms.api.query.SiteContentDetailQuery;
 import io.mango.cms.api.query.SiteContentPageQuery;
 import io.mango.cms.api.query.SiteResolveQuery;
-import io.mango.cms.api.vo.SiteBannerVO;
 import io.mango.cms.api.vo.SiteContentVO;
 import io.mango.cms.api.vo.SiteResolveVO;
-import io.mango.cms.core.entity.CmsBannerEntity;
 import io.mango.cms.core.entity.CmsContentEntity;
 import io.mango.cms.core.entity.CmsContentPublishEntity;
 import io.mango.cms.core.entity.CmsSiteCategoryEntity;
 import io.mango.cms.core.entity.CmsSiteEntity;
 import io.mango.cms.core.mapper.CmsAdDeliveryMapper;
 import io.mango.cms.core.mapper.CmsAdvertisementMapper;
-import io.mango.cms.core.mapper.CmsBannerMapper;
 import io.mango.cms.core.mapper.CmsContentMapper;
 import io.mango.cms.core.mapper.CmsContentPublishMapper;
 import io.mango.cms.core.mapper.CmsNavigationMapper;
@@ -53,7 +49,6 @@ class CmsSiteServiceBehaviorTest {
     private final CmsSiteMapper siteMapper = mock(CmsSiteMapper.class);
     private final CmsSiteCategoryMapper siteCategoryMapper = mock(CmsSiteCategoryMapper.class);
     private final CmsNavigationMapper navigationMapper = mock(CmsNavigationMapper.class);
-    private final CmsBannerMapper bannerMapper = mock(CmsBannerMapper.class);
     private final CmsAdvertisementMapper advertisementMapper = mock(CmsAdvertisementMapper.class);
     private final CmsAdDeliveryMapper adDeliveryMapper = mock(CmsAdDeliveryMapper.class);
     private final CmsContentMapper contentMapper = mock(CmsContentMapper.class);
@@ -192,28 +187,6 @@ class CmsSiteServiceBehaviorTest {
     }
 
     @Test
-    void listBanners_returnsDirectMediaUrlForPublicBanner() {
-        CmsSiteEntity site = site(10L, "tenant-a", "main", "www.example.test");
-        CmsBannerEntity banner = new CmsBannerEntity();
-        banner.setId(30L);
-        banner.setTenantId("tenant-a");
-        banner.setSiteId(10L);
-        banner.setPosition("HOME_HERO");
-        banner.setMediaType("IMAGE");
-        banner.setMediaFileId("100");
-        banner.setStatus(CmsSupport.ENABLED);
-        when(siteMapper.selectList(any())).thenReturn(List.of(site));
-        when(advertisementMapper.selectList(any())).thenReturn(List.of());
-        when(bannerMapper.selectList(any())).thenReturn(List.of(banner));
-        CmsSiteService service = service(null);
-
-        List<SiteBannerVO> result = service.listBanners(bannerQuery("www.example.test"));
-
-        assertThat(result).singleElement().extracting(SiteBannerVO::getMediaUrl)
-                .isEqualTo("/api/cms/open/files/public-preview?id=100&domain=www.example.test");
-    }
-
-    @Test
     void publicFile_allowsSiteLogoAndRestoresCallerTenantContext() {
         MangoContextHolder.set(MangoContextSnapshot.empty().withSecurity(
                 1L, 2L, "caller-tenant", "caller", "ADMIN", "user", "org", 3L, "admin"));
@@ -242,8 +215,7 @@ class CmsSiteServiceBehaviorTest {
         MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("tenant-a"));
         CmsSiteEntity site = site(10L, "tenant-a", "main", "www.example.test");
         when(siteMapper.selectList(any())).thenReturn(List.of(site));
-        when(bannerMapper.selectList(any())).thenReturn(List.of());
-        when(contentMapper.selectList(any())).thenReturn(List.of());
+                when(contentMapper.selectList(any())).thenReturn(List.of());
         when(advertisementMapper.selectList(any())).thenReturn(List.of());
         IFileContentProvider fileApi = mock(IFileContentProvider.class);
         CmsSiteService service = service(fileApi);
@@ -287,7 +259,7 @@ class CmsSiteServiceBehaviorTest {
     }
 
     private CmsSiteService service(IFileContentProvider fileApi) {
-        return new CmsSiteService(siteMapper, siteCategoryMapper, navigationMapper, bannerMapper,
+        return new CmsSiteService(siteMapper, siteCategoryMapper, navigationMapper,
                 advertisementMapper, adDeliveryMapper, contentMapper, publishMapper, provider(fileApi));
     }
 
@@ -297,11 +269,6 @@ class CmsSiteServiceBehaviorTest {
         return query;
     }
 
-    private static SiteBannerQuery bannerQuery(String domain) {
-        SiteBannerQuery query = new SiteBannerQuery();
-        query.setDomain(domain);
-        return query;
-    }
 
     private static SiteResolveQuery siteCodeQuery(String siteCode) {
         SiteResolveQuery query = new SiteResolveQuery();

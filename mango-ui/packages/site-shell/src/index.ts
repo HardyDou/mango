@@ -65,20 +65,6 @@ export interface SiteNavigation {
   sort?: number;
 }
 
-export interface SiteBanner {
-  id?: ApiId;
-  position?: string;
-  title?: string;
-  subtitle?: string;
-  mediaType?: string;
-  mediaFileId?: string;
-  mediaUrl?: string;
-  jumpUrl?: string;
-  startTime?: string;
-  endTime?: string;
-  sort?: number;
-}
-
 export interface SiteAdvertisement {
   id?: ApiId;
   adCode?: string;
@@ -135,7 +121,6 @@ export interface SiteContent {
 
 export type CmsSiteCategory = SiteCategory;
 export type CmsNavigation = SiteNavigation;
-export type CmsBanner = SiteBanner;
 export type CmsAdvertisement = SiteAdvertisement;
 export type CmsContent = SiteContent;
 
@@ -166,8 +151,6 @@ export const cmsSiteApi = {
     get<SiteCategory[]>('/cms/open/site-categories/tree', publicRequest(params)),
   listNavigations: (params: SiteResolveQuery & { navType?: string }) =>
     get<SiteNavigation[]>('/cms/open/navigations/list', publicRequest(params)),
-  listBanners: (params: SiteResolveQuery & { position?: string }) =>
-    get<SiteBanner[]>('/cms/open/banners/list', publicRequest(params)),
   listAdvertisements: (params: SiteResolveQuery & { position?: string }) =>
     get<SiteAdvertisement[]>('/cms/open/advertisements/list', publicRequest(params)),
   pageContents: (

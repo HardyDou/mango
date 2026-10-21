@@ -4,7 +4,6 @@ import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.cms.api.CmsAdDeliveryApi;
 import io.mango.cms.api.CmsAdvertisementApi;
-import io.mango.cms.api.CmsBannerApi;
 import io.mango.cms.api.CmsContentApi;
 import io.mango.cms.api.CmsContentCategoryApi;
 import io.mango.cms.api.CmsContentPublishApi;
@@ -39,7 +38,6 @@ class CmsControllerContractTest {
             new ApiControllerPair(CmsContentApi.class, CmsContentController.class),
             new ApiControllerPair(CmsContentPublishApi.class, CmsContentPublishController.class),
             new ApiControllerPair(CmsNavigationApi.class, CmsNavigationController.class),
-            new ApiControllerPair(CmsBannerApi.class, CmsBannerController.class),
             new ApiControllerPair(CmsAdvertisementApi.class, CmsAdvertisementController.class),
             new ApiControllerPair(CmsAdDeliveryApi.class, CmsAdDeliveryController.class),
             new ApiControllerPair(CmsSiteSettingApi.class, CmsSiteSettingController.class));

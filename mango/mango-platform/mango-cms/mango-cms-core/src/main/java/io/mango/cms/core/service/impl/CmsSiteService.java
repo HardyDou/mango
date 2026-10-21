@@ -6,19 +6,16 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.mango.cms.api.enums.CmsAdPositionType;
 import io.mango.cms.api.enums.CmsAdvertisementType;
 import io.mango.cms.api.enums.CmsAccessType;
-import io.mango.cms.api.enums.CmsBannerMediaType;
 import io.mango.cms.api.enums.CmsContentStatus;
 import io.mango.cms.api.enums.CmsPublishStatus;
 import io.mango.cms.api.enums.CmsCode;
 import io.mango.cms.api.query.SiteAdvertisementQuery;
-import io.mango.cms.api.query.SiteBannerQuery;
 import io.mango.cms.api.query.SiteCategoryQuery;
 import io.mango.cms.api.query.SiteContentDetailQuery;
 import io.mango.cms.api.query.SiteContentPageQuery;
 import io.mango.cms.api.query.SiteNavigationQuery;
 import io.mango.cms.api.query.SiteResolveQuery;
 import io.mango.cms.api.vo.SiteAdvertisementVO;
-import io.mango.cms.api.vo.SiteBannerVO;
 import io.mango.cms.api.vo.SiteCategoryVO;
 import io.mango.cms.api.vo.SiteContentVO;
 import io.mango.cms.api.vo.SiteNavigationVO;
@@ -26,7 +23,6 @@ import io.mango.cms.api.vo.SiteResolveVO;
 import io.mango.cms.api.vo.SiteVO;
 import io.mango.cms.core.entity.CmsAdDeliveryEntity;
 import io.mango.cms.core.entity.CmsAdvertisementEntity;
-import io.mango.cms.core.entity.CmsBannerEntity;
 import io.mango.cms.core.entity.CmsContentEntity;
 import io.mango.cms.core.entity.CmsContentPublishEntity;
 import io.mango.cms.core.entity.CmsNavigationEntity;
@@ -34,7 +30,6 @@ import io.mango.cms.core.entity.CmsSiteCategoryEntity;
 import io.mango.cms.core.entity.CmsSiteEntity;
 import io.mango.cms.core.mapper.CmsAdDeliveryMapper;
 import io.mango.cms.core.mapper.CmsAdvertisementMapper;
-import io.mango.cms.core.mapper.CmsBannerMapper;
 import io.mango.cms.core.mapper.CmsContentMapper;
 import io.mango.cms.core.mapper.CmsContentPublishMapper;
 import io.mango.cms.core.mapper.CmsNavigationMapper;
@@ -72,7 +67,6 @@ public class CmsSiteService implements ICmsSiteService {
     private final CmsSiteMapper siteMapper;
     private final CmsSiteCategoryMapper siteCategoryMapper;
     private final CmsNavigationMapper navigationMapper;
-    private final CmsBannerMapper bannerMapper;
     private final CmsAdvertisementMapper advertisementMapper;
     private final CmsAdDeliveryMapper adDeliveryMapper;
     private final CmsContentMapper contentMapper;
@@ -116,30 +110,6 @@ public class CmsSiteService implements ICmsSiteService {
                 .eq(CmsNavigationEntity::getStatus, CmsSupport.ENABLED)
                 .orderByAsc(CmsNavigationEntity::getSort));
         return records.stream().map(this::toPublicNavigationVO).toList();
-    }
-
-    @Override
-    public List<SiteBannerVO> listBanners(SiteBannerQuery query) {
-        SiteBannerQuery resolved = query == null ? new SiteBannerQuery() : query;
-        CmsSiteEntity site = resolveSiteEntity(toResolveQuery(resolved));
-        LocalDateTime now = LocalDateTime.now();
-        List<SiteBannerVO> deliveryBanners = listEffectiveDeliveries(site, resolved.getPosition(), CmsAdPositionType.BANNER.name(), now)
-                .stream()
-                .map(item -> toPublicBannerVO(site, item))
-                .toList();
-        if (!deliveryBanners.isEmpty()) {
-            return deliveryBanners;
-        }
-        List<CmsBannerEntity> records = bannerMapper.selectList(new LambdaQueryWrapper<CmsBannerEntity>()
-                .eq(CmsBannerEntity::getTenantId, site.getTenantId())
-                .eq(CmsBannerEntity::getSiteId, site.getId())
-                .eq(StringUtils.hasText(resolved.getPosition()), CmsBannerEntity::getPosition, resolved.getPosition())
-                .eq(CmsBannerEntity::getStatus, CmsSupport.ENABLED)
-                .orderByAsc(CmsBannerEntity::getSort));
-        return records.stream()
-                .filter(item -> CmsSupport.isEffective(item.getStartTime(), item.getEndTime(), now))
-                .map(item -> toPublicBannerVO(site, item))
-                .toList();
     }
 
     @Override
@@ -330,15 +300,6 @@ public class CmsSiteService implements ICmsSiteService {
         return resolve;
     }
 
-    private SiteResolveQuery toResolveQuery(SiteBannerQuery query) {
-        SiteResolveQuery resolve = new SiteResolveQuery();
-        if (query != null) {
-            resolve.setSiteCode(query.getSiteCode());
-            resolve.setDomain(query.getDomain());
-        }
-        return resolve;
-    }
-
     private SiteResolveQuery toResolveQuery(SiteAdvertisementQuery query) {
         SiteResolveQuery resolve = new SiteResolveQuery();
         if (query != null) {
@@ -423,40 +384,6 @@ public class CmsSiteService implements ICmsSiteService {
         vo.setExternalUrl(entity.getExternalUrl());
         vo.setOpenTarget(entity.getOpenTarget());
         vo.setSort(entity.getSort());
-        return vo;
-    }
-
-    private SiteBannerVO toPublicBannerVO(CmsSiteEntity site, CmsBannerEntity entity) {
-        SiteBannerVO vo = new SiteBannerVO();
-        vo.setId(entity.getId());
-        vo.setPosition(entity.getPosition());
-        vo.setTitle(entity.getTitle());
-        vo.setSubtitle(entity.getSubtitle());
-        vo.setMediaType(entity.getMediaType());
-        vo.setMediaFileId(entity.getMediaFileId());
-        vo.setMediaUrl(publicFileUrl(site, entity.getMediaFileId()));
-        vo.setJumpUrl(entity.getJumpUrl());
-        vo.setSort(entity.getSort());
-        return vo;
-    }
-
-    private SiteBannerVO toPublicBannerVO(CmsSiteEntity site, AdDeliveryWithPosition item) {
-        CmsAdDeliveryEntity delivery = item.delivery();
-        CmsAdvertisementEntity position = item.position();
-        SiteBannerVO vo = new SiteBannerVO();
-        vo.setId(delivery.getId());
-        vo.setPosition(position.getPosition());
-        vo.setTitle(StringUtils.hasText(delivery.getTitle()) ? delivery.getTitle() : delivery.getDeliveryName());
-        vo.setSubtitle(delivery.getTextContent());
-        vo.setMediaType(CmsAdvertisementType.VIDEO.name().equals(delivery.getMaterialType())
-                ? CmsBannerMediaType.VIDEO.name()
-                : CmsBannerMediaType.IMAGE.name());
-        vo.setMediaFileId(CmsAdvertisementType.VIDEO.name().equals(delivery.getMaterialType())
-                ? delivery.getVideoFileId()
-                : firstImageFileId(delivery));
-        vo.setMediaUrl(publicFileUrl(site, vo.getMediaFileId()));
-        vo.setJumpUrl(delivery.getJumpUrl());
-        vo.setSort(delivery.getSort());
         return vo;
     }
 
@@ -552,27 +479,10 @@ public class CmsSiteService implements ICmsSiteService {
         if (fileId.equals(String.valueOf(site.getLogoFileId()))) {
             return true;
         }
-        if (isPublicBannerFile(site, fileId)) {
-            return true;
-        }
         if (isPublicContentFile(site, fileId)) {
             return true;
         }
         return isPublicAdFile(site, fileId);
-    }
-
-    /**
-     * 判断文件是否为当前启用站点有效 Banner 的媒体素材。
-     */
-    private boolean isPublicBannerFile(CmsSiteEntity site, String fileId) {
-        LocalDateTime now = LocalDateTime.now();
-        return bannerMapper.selectList(new LambdaQueryWrapper<CmsBannerEntity>()
-                        .eq(CmsBannerEntity::getTenantId, site.getTenantId())
-                        .eq(CmsBannerEntity::getSiteId, site.getId())
-                        .eq(CmsBannerEntity::getStatus, CmsSupport.ENABLED))
-                .stream()
-                .filter(item -> CmsSupport.isEffective(item.getStartTime(), item.getEndTime(), now))
-                .anyMatch(item -> fileId.equals(String.valueOf(item.getMediaFileId())));
     }
 
     private boolean isPublicContentFile(CmsSiteEntity site, String fileId) {

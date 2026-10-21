@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.cms.core.entity.CmsAdDeliveryEntity;
 import io.mango.cms.core.entity.CmsAdvertisementEntity;
-import io.mango.cms.core.entity.CmsBannerEntity;
 import io.mango.cms.core.entity.CmsBaseTenantEntity;
 import io.mango.cms.core.entity.CmsContentCategoryEntity;
 import io.mango.cms.core.entity.CmsContentEntity;
@@ -15,7 +14,6 @@ import io.mango.cms.core.entity.CmsSiteEntity;
 import io.mango.cms.core.entity.CmsSiteSettingEntity;
 import io.mango.cms.core.mapper.CmsAdDeliveryMapper;
 import io.mango.cms.core.mapper.CmsAdvertisementMapper;
-import io.mango.cms.core.mapper.CmsBannerMapper;
 import io.mango.cms.core.mapper.CmsContentCategoryMapper;
 import io.mango.cms.core.mapper.CmsContentMapper;
 import io.mango.cms.core.mapper.CmsContentPublishMapper;
@@ -35,7 +33,6 @@ import java.util.Set;
 
 import static io.mango.cms.starter.resource.CmsResourceTypes.ADVERTISEMENT;
 import static io.mango.cms.starter.resource.CmsResourceTypes.AD_DELIVERY;
-import static io.mango.cms.starter.resource.CmsResourceTypes.BANNER;
 import static io.mango.cms.starter.resource.CmsResourceTypes.CONTENT;
 import static io.mango.cms.starter.resource.CmsResourceTypes.CONTENT_CATEGORY;
 import static io.mango.cms.starter.resource.CmsResourceTypes.CONTENT_PUBLISH;
@@ -113,15 +110,6 @@ public class CmsResourceHandlerConfiguration {
                         "categoryId", "contentId", "externalUrl", "openTarget", "sort", "status"),
                 required("targetId", "tenantId", "siteId", "navType", "navName", "jumpType", "sort", "status"),
                 List.of(SITE, SITE_CATEGORY, CONTENT));
-    }
-
-    @Bean
-    ResourceHandler cmsBannerResourceHandler(CmsBannerMapper mapper, ObjectMapper objectMapper) {
-        return handler(mapper, objectMapper, CmsBannerEntity.class, BANNER, "cms_banner",
-                fields("targetId", "tenantId", "orgId", "siteId", "position", "title", "subtitle", "mediaType",
-                        "mediaFileId", "jumpUrl", "startTime", "endTime", "sort", "status"),
-                required("targetId", "tenantId", "siteId", "position", "title", "mediaType", "sort", "status"),
-                List.of(SITE));
     }
 
     @Bean
