@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { configureMangoAdminShell } from '../config';
 import {
   createNotFoundRouteMenu,
+  createRegisteredHiddenRouteMenus,
   filterMenuForRouteByFeatures,
   findUnexpectedTopLevelMenus,
   isRunnableMenu,
@@ -389,6 +391,70 @@ describe('admin-shell menu contract', () => {
     expect(route.path).toBe('/message-center/detail');
     expect(route.sourceMenu.component).toBe('notice/detail/index');
     expect(route.meta?.isHide).toBe(true);
+  });
+
+  it('registers hidden routes for a module without a declared admin feature', () => {
+    configureMangoAdminShell({ features: ['authorization', 'system'] });
+    registerModulePages({
+      moduleCode: 'mango-information',
+      pages: {
+        'information/forms/detail': async () => ({}),
+        'information/forms/config': async () => ({}),
+        'information/forms/submissions': async () => ({}),
+      },
+      routes: [
+        { path: '/information/forms/:id/detail', component: 'information/forms/detail', menuName: '表单详情' },
+        { path: '/information/forms/:id/config', component: 'information/forms/config', menuName: '表单配置' },
+        {
+          path: '/information/forms/:id/submissions',
+          component: 'information/forms/submissions',
+          menuName: '采集记录',
+        },
+      ],
+    });
+
+    const registered = createRegisteredHiddenRouteMenus();
+    const informationRoutes = registered.filter((route) => route.sourceMenu.moduleCode === 'mango-information');
+
+    expect(informationRoutes.map((route) => route.sourceMenu.path).sort()).toEqual([
+      '/information/forms/:id/config',
+      '/information/forms/:id/detail',
+      '/information/forms/:id/submissions',
+    ]);
+    expect(informationRoutes.every((route) => route.sourceMenu.visible === 0)).toBe(true);
+  });
+
+  it('skips hidden routes whose declared admin feature is disabled', () => {
+    configureMangoAdminShell({ features: ['authorization', 'system'] });
+    registerModulePages({
+      moduleCode: 'mango-notice',
+      pages: {
+        'notice/disabled-detail': async () => ({}),
+      },
+      routes: [
+        { path: '/message-center/disabled-detail', component: 'notice/disabled-detail', menuName: '停用模块详情' },
+      ],
+    });
+
+    const registered = createRegisteredHiddenRouteMenus();
+
+    expect(registered.some((route) => route.sourceMenu.path === '/message-center/disabled-detail')).toBe(false);
+    expect(registered.some((route) => route.sourceMenu.moduleCode === 'mango-notice')).toBe(false);
+  });
+
+  it('registers hidden routes whose declared admin feature is enabled', () => {
+    configureMangoAdminShell({ features: ['authorization', 'system', 'workflow'] });
+    registerModulePages({
+      moduleCode: 'mango-workflow',
+      pages: {
+        'workflow/enabled-apply': async () => ({}),
+      },
+      routes: [{ path: '/workflow/enabled-apply', component: 'workflow/enabled-apply', menuName: '启用模块申请' }],
+    });
+
+    const registered = createRegisteredHiddenRouteMenus();
+
+    expect(registered.some((route) => route.sourceMenu.path === '/workflow/enabled-apply')).toBe(true);
   });
 
   it('keeps package hidden routes registered without exposing them as visible menus', () => {

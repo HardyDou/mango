@@ -9,7 +9,7 @@
 | 项目          | 值                                                                                                                                        |
 | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | NPM 包        | `@mango/cli`                                                                                                                              |
-| 当前发布版本  | `1.2.21`                                                                                                                                  |
+| 当前发布版本  | `1.3.3`                                                                                                                                   |
 | bin 命令      | `mango`、`mango-cli`                                                                                                                      |
 | 命令入口      | `src/index.mjs`                                                                                                                           |
 | 发布 registry | 由发布配置或 `MANGO_RELEASE_NPM_PUBLISH_REGISTRY` 注入                                                                                    |
@@ -71,8 +71,8 @@ CLI 不负责：
 
 ```bash
 npm view @mango/pmo@1.3.8 version --registry "$MANGO_NPM_REGISTRY"
-npm view @mango/cli@1.2.21 version --registry "$MANGO_NPM_REGISTRY"
-npm install -g @mango/cli@1.2.21 --registry "$MANGO_NPM_REGISTRY"
+npm view @mango/cli@1.3.3 version --registry "$MANGO_NPM_REGISTRY"
+npm install -g @mango/cli@1.3.3 --registry "$MANGO_NPM_REGISTRY"
 ```
 
 两个查询都返回精确版本后，该批次才可供业务项目安装。PMO 升级会整体同步 baseline、Agent 入口和 `.agents/skills`，不需要逐个安装 Skill。
@@ -766,6 +766,10 @@ full preset 会在生成的 `application.yml` 中显式启用 `mango.event.outbo
 ### 1.0.66 发布影响
 
 `@mango/cli@1.0.66` 是不回退运行时代码的前向文档发布：同步新的前端 npm 版本锁和业务 starter 依赖，使已更正的 package README 进入实际发布包。本次 CLI 不改变命令行参数、workspace 端口分配、模板生成逻辑或后端 Maven `1.0.13` 基线。业务项目应按本批次版本锁成组升级，不要混用上一批次的精确 `@mango/*` 依赖。
+
+### Issue #1055 目录与版本矩阵影响
+
+`@mango/cli` 的打包目录清单与版本矩阵新增 `information` 模块：`admin-modules.json` 与 `module-projections.json` 由 `pnpm catalog -- --write` 生成，`release-versions.json` 锁定 `@mango/information@1.0.0`。`mango init`、`mango add`、`mango workspace`、`mango dev` 与 `mango pmo` 的命令语义、模板结构和参数均不变；生成项目会按默认 preset 装配信息采集模块及其前端包。
 
 - [PMO 总流程](../../../mango-pmo/rules/00-dev-flow.md)
 - [AI 编码红线](../../../mango-pmo/rules/03-ai-coding-redlines.md)

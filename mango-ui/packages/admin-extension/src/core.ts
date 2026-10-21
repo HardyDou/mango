@@ -52,6 +52,12 @@ export type MangoPageRoute = {
 
 declare const __MANGO_ADMIN_EXTENSION_VERSION__: string;
 
+/**
+ * 构建期注入当前包版本；源码直连开发（source 模式）未注入时退回 dev，避免整站 404。
+ */
+const ADMIN_EXTENSION_VERSION: string =
+  typeof __MANGO_ADMIN_EXTENSION_VERSION__ === 'string' ? __MANGO_ADMIN_EXTENSION_VERSION__ : 'dev';
+
 type MangoPageRegistryState = {
   pageLoaders: Map<string, MangoPageLoader>;
   moduleByPage: Map<string, string>;
@@ -78,9 +84,9 @@ function resolvePageRegistry(): MangoPageRegistryState {
   const existing = scope[PAGE_REGISTRY_GLOBAL_KEY];
   const loadedVersion = scope[PAGE_REGISTRY_VERSION_GLOBAL_KEY];
   if (existing) {
-    if (loadedVersion && loadedVersion !== __MANGO_ADMIN_EXTENSION_VERSION__) {
+    if (loadedVersion && loadedVersion !== ADMIN_EXTENSION_VERSION) {
       throw new Error(
-        `[mango/admin-extension] 检测到多个 @mango/admin-extension 版本同时加载（已加载 ${loadedVersion}，当前 ${__MANGO_ADMIN_EXTENSION_VERSION__}）。` +
+        `[mango/admin-extension] 检测到多个 @mango/admin-extension 版本同时加载（已加载 ${loadedVersion}，当前 ${ADMIN_EXTENSION_VERSION}）。` +
           ' 页面注册表是全局单例，版本不一致会导致模块菜单 404。' +
           ' 请对齐依赖树中的 @mango/admin-extension 版本并整套升级同一发布批次。',
       );
@@ -94,7 +100,7 @@ function resolvePageRegistry(): MangoPageRegistryState {
     moduleRegistrations: new Map<string, { packageName?: string; packageVersion?: string }>(),
   };
   scope[PAGE_REGISTRY_GLOBAL_KEY] = created;
-  scope[PAGE_REGISTRY_VERSION_GLOBAL_KEY] = __MANGO_ADMIN_EXTENSION_VERSION__;
+  scope[PAGE_REGISTRY_VERSION_GLOBAL_KEY] = ADMIN_EXTENSION_VERSION;
   return created;
 }
 

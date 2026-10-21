@@ -1,10 +1,10 @@
 {
   "architectureGraph": {
-    "reportSha256": "b8d8a92c77c3e3cc98066b9326d4556b39a03b65924a09f57803dd9e26c5af2f",
+    "reportSha256": "4d57b8b187cf84d957095c60ffeb52a6f15d86d1bddf65ad88ae114aa2df2bd6",
     "schemaVersion": 1,
-    "workspaceCount": 42
+    "workspaceCount": 43
   },
-  "catalogDigest": "2bd29ac62784d4aaf864c4b32b5dcc2413b4c31fb8feb6766db034f4eb79a531",
+  "catalogDigest": "45f5e368c63866a8b6795bb5f3de0808be1d79998c79a4e7902c06a50a4d4688",
   "maven": {
     "dependencyManagementSets": [
       {
@@ -883,6 +883,33 @@
             "version": "1.0.0-SNAPSHOT"
           },
           {
+            "artifactId": "mango-information-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.information",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-information-core",
+            "classifier": null,
+            "groupId": "io.mango.platform.information",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-information-starter",
+            "classifier": null,
+            "groupId": "io.mango.platform.information",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
             "artifactId": "mango-job-api",
             "classifier": null,
             "groupId": "io.mango.platform.job",
@@ -1333,7 +1360,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "digest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5"
+        "digest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b"
       },
       {
         "dependencies": [
@@ -2094,6 +2121,33 @@
             "version": "1.0.0-SNAPSHOT"
           },
           {
+            "artifactId": "mango-information-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.information",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-information-core",
+            "classifier": null,
+            "groupId": "io.mango.platform.information",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-information-starter",
+            "classifier": null,
+            "groupId": "io.mango.platform.information",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
             "artifactId": "mango-job-api",
             "classifier": null,
             "groupId": "io.mango.platform.job",
@@ -2508,7 +2562,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "digest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce"
+        "digest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8"
       }
     ],
     "excludedCoordinateCount": 29,
@@ -2804,13 +2858,13 @@
         "version": "1.0.0-SNAPSHOT"
       }
     ],
-    "publishableCoordinateCount": 191,
+    "publishableCoordinateCount": 195,
     "publishableCoordinates": [
       {
         "artifactId": "mango-common",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "jar",
         "groupId": "io.mango.common",
         "modulePath": "mango-common",
@@ -2831,7 +2885,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.extension.ai",
         "modulePath": "mango-extension/mango-ai/mango-ai-api",
@@ -2933,7 +2987,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.extension.ai",
         "modulePath": "mango-extension/mango-ai/mango-ai-core",
@@ -3017,7 +3071,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.extension.ai",
         "modulePath": "mango-extension/mango-ai/mango-ai-starter",
@@ -3028,7 +3082,7 @@
         "artifactId": "mango-ai",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "pom",
         "groupId": "io.mango.extension.ai",
         "modulePath": "mango-extension/mango-ai",
@@ -3039,7 +3093,7 @@
         "artifactId": "mango-extension",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "pom",
         "groupId": "io.mango.extension",
         "modulePath": "mango-extension",
@@ -3060,7 +3114,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.bootstrap",
         "modulePath": "mango-infra/mango-infra-bootstrap/mango-infra-bootstrap-api",
@@ -3081,7 +3135,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.bootstrap",
         "modulePath": "mango-infra/mango-infra-bootstrap/mango-infra-bootstrap-core",
@@ -3111,7 +3165,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.bootstrap",
         "modulePath": "mango-infra/mango-infra-bootstrap/mango-infra-bootstrap-starter",
@@ -3122,7 +3176,7 @@
         "artifactId": "mango-infra-bootstrap",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "pom",
         "groupId": "io.mango.infra.bootstrap",
         "modulePath": "mango-infra/mango-infra-bootstrap",
@@ -3143,7 +3197,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.context",
         "modulePath": "mango-infra/mango-infra-context/mango-infra-context-api",
@@ -3173,7 +3227,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.context",
         "modulePath": "mango-infra/mango-infra-context/mango-infra-context-starter",
@@ -3194,7 +3248,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.context",
         "modulePath": "mango-infra/mango-infra-context/mango-infra-context-support",
@@ -3205,7 +3259,7 @@
         "artifactId": "mango-infra-context",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "pom",
         "groupId": "io.mango.infra.context",
         "modulePath": "mango-infra/mango-infra-context",
@@ -3226,7 +3280,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.crypto",
         "modulePath": "mango-infra/mango-infra-crypto",
@@ -3265,7 +3319,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.doc",
         "modulePath": "mango-infra/mango-infra-doc",
@@ -3286,7 +3340,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.docsign",
         "modulePath": "mango-infra/mango-infra-docsign/mango-infra-docsign-api",
@@ -3307,7 +3361,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.docsign",
         "modulePath": "mango-infra/mango-infra-docsign/mango-infra-docsign-core",
@@ -3328,7 +3382,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.docsign",
         "modulePath": "mango-infra/mango-infra-docsign/mango-infra-docsign-starter",
@@ -3339,7 +3393,7 @@
         "artifactId": "mango-infra-docsign",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "pom",
         "groupId": "io.mango.infra.docsign",
         "modulePath": "mango-infra/mango-infra-docsign",
@@ -3369,7 +3423,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.event",
         "modulePath": "mango-infra/mango-infra-event/mango-infra-event-api",
@@ -3408,7 +3462,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.event",
         "modulePath": "mango-infra/mango-infra-event/mango-infra-event-core",
@@ -3456,7 +3510,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.event",
         "modulePath": "mango-infra/mango-infra-event/mango-infra-event-starter",
@@ -3467,7 +3521,7 @@
         "artifactId": "mango-infra-event",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "pom",
         "groupId": "io.mango.infra.event",
         "modulePath": "mango-infra/mango-infra-event",
@@ -3488,7 +3542,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.excel",
         "modulePath": "mango-infra/mango-infra-excel-starter",
@@ -3545,7 +3599,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.feign",
         "modulePath": "mango-infra/mango-infra-feign",
@@ -3566,7 +3620,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.fileproc",
         "modulePath": "mango-infra/mango-infra-fileproc/mango-infra-fileproc-api",
@@ -3587,7 +3641,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.fileproc",
         "modulePath": "mango-infra/mango-infra-fileproc/mango-infra-fileproc-core",
@@ -3608,7 +3662,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.fileproc",
         "modulePath": "mango-infra/mango-infra-fileproc/mango-infra-fileproc-starter",
@@ -3619,7 +3673,7 @@
         "artifactId": "mango-infra-fileproc",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "pom",
         "groupId": "io.mango.infra.fileproc",
         "modulePath": "mango-infra/mango-infra-fileproc",
@@ -3640,7 +3694,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.ip.location",
         "modulePath": "mango-infra/mango-infra-ip-location/mango-infra-ip-location-api",
@@ -3661,7 +3715,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.ip.location",
         "modulePath": "mango-infra/mango-infra-ip-location/mango-infra-ip-location-core",
@@ -3691,7 +3745,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.ip.location",
         "modulePath": "mango-infra/mango-infra-ip-location/mango-infra-ip-location-starter",
@@ -3702,7 +3756,7 @@
         "artifactId": "mango-infra-ip-location",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "pom",
         "groupId": "io.mango.infra.ip.location",
         "modulePath": "mango-infra/mango-infra-ip-location",
@@ -3723,7 +3777,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.kv",
         "modulePath": "mango-infra/mango-infra-kv/mango-infra-kv-api",
@@ -3762,7 +3816,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.kv",
         "modulePath": "mango-infra/mango-infra-kv/mango-infra-kv-core",
@@ -3801,7 +3855,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.kv",
         "modulePath": "mango-infra/mango-infra-kv/mango-infra-kv-starter",
@@ -3812,7 +3866,7 @@
         "artifactId": "mango-infra-kv",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "pom",
         "groupId": "io.mango.infra.kv",
         "modulePath": "mango-infra/mango-infra-kv",
@@ -3833,7 +3887,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.log",
         "modulePath": "mango-infra/mango-infra-log-api",
@@ -3854,7 +3908,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.log",
         "modulePath": "mango-infra/mango-infra-log",
@@ -3875,7 +3929,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.module",
         "modulePath": "mango-infra/mango-infra-module/mango-infra-module-api",
@@ -3896,7 +3950,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.module",
         "modulePath": "mango-infra/mango-infra-module/mango-infra-module-core",
@@ -3926,7 +3980,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.module",
         "modulePath": "mango-infra/mango-infra-module/mango-infra-module-starter",
@@ -3937,7 +3991,7 @@
         "artifactId": "mango-infra-module",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "pom",
         "groupId": "io.mango.infra.module",
         "modulePath": "mango-infra/mango-infra-module",
@@ -3958,7 +4012,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.persistence",
         "modulePath": "mango-infra/mango-infra-persistence/mango-infra-persistence-api",
@@ -4015,7 +4069,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.persistence",
         "modulePath": "mango-infra/mango-infra-persistence/mango-infra-persistence-starter",
@@ -4063,7 +4117,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.persistence",
         "modulePath": "mango-infra/mango-infra-persistence/mango-infra-persistence-web-starter",
@@ -4074,7 +4128,7 @@
         "artifactId": "mango-infra-persistence",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "pom",
         "groupId": "io.mango.infra.persistence",
         "modulePath": "mango-infra/mango-infra-persistence",
@@ -4095,7 +4149,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.realtime",
         "modulePath": "mango-infra/mango-infra-realtime/mango-infra-realtime-api",
@@ -4125,7 +4179,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.realtime",
         "modulePath": "mango-infra/mango-infra-realtime/mango-infra-realtime-core",
@@ -4164,7 +4218,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.realtime",
         "modulePath": "mango-infra/mango-infra-realtime/mango-infra-realtime-starter-remote",
@@ -4212,7 +4266,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.realtime",
         "modulePath": "mango-infra/mango-infra-realtime/mango-infra-realtime-starter",
@@ -4242,7 +4296,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.realtime",
         "modulePath": "mango-infra/mango-infra-realtime/mango-infra-realtime-support",
@@ -4253,7 +4307,7 @@
         "artifactId": "mango-infra-realtime",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "pom",
         "groupId": "io.mango.infra.realtime",
         "modulePath": "mango-infra/mango-infra-realtime",
@@ -4274,7 +4328,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.sensitive",
         "modulePath": "mango-infra/mango-infra-sensitive/mango-infra-sensitive-api",
@@ -4295,7 +4349,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.sensitive",
         "modulePath": "mango-infra/mango-infra-sensitive/mango-infra-sensitive-core",
@@ -4316,7 +4370,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.sensitive",
         "modulePath": "mango-infra/mango-infra-sensitive/mango-infra-sensitive-starter",
@@ -4327,7 +4381,7 @@
         "artifactId": "mango-infra-sensitive",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "pom",
         "groupId": "io.mango.infra.sensitive",
         "modulePath": "mango-infra/mango-infra-sensitive",
@@ -4348,7 +4402,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.web",
         "modulePath": "mango-infra/mango-infra-web/mango-infra-web-api",
@@ -4405,7 +4459,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.web",
         "modulePath": "mango-infra/mango-infra-web/mango-infra-web-starter",
@@ -4416,7 +4470,7 @@
         "artifactId": "mango-infra-web-support",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.infra.web",
         "modulePath": "mango-infra/mango-infra-web/mango-infra-web-support",
@@ -4427,7 +4481,7 @@
         "artifactId": "mango-infra-web",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "pom",
         "groupId": "io.mango.infra.web",
         "modulePath": "mango-infra/mango-infra-web",
@@ -4438,7 +4492,7 @@
         "artifactId": "mango-infra",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "pom",
         "groupId": "io.mango.infra",
         "modulePath": "mango-infra",
@@ -4449,7 +4503,7 @@
         "artifactId": "mango-access-api",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.access",
         "modulePath": "mango-platform/mango-access/mango-access-api",
@@ -4488,7 +4542,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.access",
         "modulePath": "mango-platform/mango-access/mango-access-core",
@@ -4527,7 +4581,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.access",
         "modulePath": "mango-platform/mango-access/mango-access-gateway-starter",
@@ -4575,7 +4629,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.access",
         "modulePath": "mango-platform/mango-access/mango-access-web-starter",
@@ -4586,7 +4640,7 @@
         "artifactId": "mango-access",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "pom",
         "groupId": "io.mango.platform.access",
         "modulePath": "mango-platform/mango-access",
@@ -4607,7 +4661,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.auth",
         "modulePath": "mango-platform/mango-auth/mango-auth-api",
@@ -4745,7 +4799,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.auth",
         "modulePath": "mango-platform/mango-auth/mango-auth-core",
@@ -4784,7 +4838,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.auth",
         "modulePath": "mango-platform/mango-auth/mango-auth-starter-remote",
@@ -4958,7 +5012,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.auth",
         "modulePath": "mango-platform/mango-auth/mango-auth-starter",
@@ -4969,7 +5023,7 @@
         "artifactId": "mango-auth",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "pom",
         "groupId": "io.mango.platform.auth",
         "modulePath": "mango-platform/mango-auth",
@@ -4999,7 +5053,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.authorization",
         "modulePath": "mango-platform/mango-authorization/mango-authorization-api",
@@ -5074,7 +5128,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.authorization",
         "modulePath": "mango-platform/mango-authorization/mango-authorization-core",
@@ -5095,7 +5149,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.authorization",
         "modulePath": "mango-platform/mango-authorization/mango-authorization-resource-access-starter",
@@ -5170,7 +5224,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.authorization",
         "modulePath": "mango-platform/mango-authorization/mango-authorization-resource-sync-starter",
@@ -5209,7 +5263,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.authorization",
         "modulePath": "mango-platform/mango-authorization/mango-authorization-starter-remote",
@@ -5365,7 +5419,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.authorization",
         "modulePath": "mango-platform/mango-authorization/mango-authorization-starter",
@@ -5404,7 +5458,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.authorization",
         "modulePath": "mango-platform/mango-authorization/mango-authorization-support",
@@ -5415,7 +5469,7 @@
         "artifactId": "mango-authorization",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "pom",
         "groupId": "io.mango.platform.authorization",
         "modulePath": "mango-platform/mango-authorization",
@@ -5436,7 +5490,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "jar",
         "groupId": "io.mango.platform.calendar",
         "modulePath": "mango-platform/mango-calendar/mango-calendar-api",
@@ -5493,7 +5547,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "jar",
         "groupId": "io.mango.platform.calendar",
         "modulePath": "mango-platform/mango-calendar/mango-calendar-core",
@@ -5523,7 +5577,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "jar",
         "groupId": "io.mango.platform.calendar",
         "modulePath": "mango-platform/mango-calendar/mango-calendar-starter-remote",
@@ -5589,7 +5643,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "jar",
         "groupId": "io.mango.platform.calendar",
         "modulePath": "mango-platform/mango-calendar/mango-calendar-starter",
@@ -5600,7 +5654,7 @@
         "artifactId": "mango-calendar",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "pom",
         "groupId": "io.mango.platform.calendar",
         "modulePath": "mango-platform/mango-calendar",
@@ -5630,7 +5684,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "jar",
         "groupId": "io.mango.platform.captcha",
         "modulePath": "mango-platform/mango-captcha/mango-captcha-api",
@@ -5660,7 +5714,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "jar",
         "groupId": "io.mango.platform.captcha",
         "modulePath": "mango-platform/mango-captcha/mango-captcha-core",
@@ -5699,7 +5753,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "jar",
         "groupId": "io.mango.platform.captcha",
         "modulePath": "mango-platform/mango-captcha/mango-captcha-starter-remote",
@@ -5747,7 +5801,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "jar",
         "groupId": "io.mango.platform.captcha",
         "modulePath": "mango-platform/mango-captcha/mango-captcha-starter",
@@ -5758,7 +5812,7 @@
         "artifactId": "mango-captcha",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "pom",
         "groupId": "io.mango.platform.captcha",
         "modulePath": "mango-platform/mango-captcha",
@@ -5779,7 +5833,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "jar",
         "groupId": "io.mango.platform.cms",
         "modulePath": "mango-platform/mango-cms/mango-cms-api",
@@ -5818,6 +5872,15 @@
             "version": "1.0.0-SNAPSHOT"
           },
           {
+            "artifactId": "mango-infra-persistence-starter",
+            "classifier": null,
+            "groupId": "io.mango.infra.persistence",
+            "optional": false,
+            "scope": "test",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
             "artifactId": "mango-cms-api",
             "classifier": null,
             "groupId": "io.mango.platform.cms",
@@ -5836,7 +5899,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "jar",
         "groupId": "io.mango.platform.cms",
         "modulePath": "mango-platform/mango-cms/mango-cms-core",
@@ -5866,7 +5929,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "jar",
         "groupId": "io.mango.platform.cms",
         "modulePath": "mango-platform/mango-cms/mango-cms-starter-remote",
@@ -5932,7 +5995,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "jar",
         "groupId": "io.mango.platform.cms",
         "modulePath": "mango-platform/mango-cms/mango-cms-starter",
@@ -5943,7 +6006,7 @@
         "artifactId": "mango-cms",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "pom",
         "groupId": "io.mango.platform.cms",
         "modulePath": "mango-platform/mango-cms",
@@ -5964,7 +6027,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "jar",
         "groupId": "io.mango.platform.domain",
         "modulePath": "mango-platform/mango-domain/mango-domain-api",
@@ -6021,7 +6084,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "jar",
         "groupId": "io.mango.platform.domain",
         "modulePath": "mango-platform/mango-domain/mango-domain-core",
@@ -6051,7 +6114,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "jar",
         "groupId": "io.mango.platform.domain",
         "modulePath": "mango-platform/mango-domain/mango-domain-starter-remote",
@@ -6108,7 +6171,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "jar",
         "groupId": "io.mango.platform.domain",
         "modulePath": "mango-platform/mango-domain/mango-domain-starter",
@@ -6119,7 +6182,7 @@
         "artifactId": "mango-domain",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "pom",
         "groupId": "io.mango.platform.domain",
         "modulePath": "mango-platform/mango-domain",
@@ -6140,7 +6203,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.file.preview",
         "modulePath": "mango-platform/mango-file-preview/mango-file-preview-api",
@@ -6197,7 +6260,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.file.preview",
         "modulePath": "mango-platform/mango-file-preview/mango-file-preview-core",
@@ -6208,7 +6271,7 @@
         "artifactId": "mango-file-preview-engine",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.file.preview",
         "modulePath": "mango-platform/mango-file-preview/mango-file-preview-engine",
@@ -6265,7 +6328,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.file.preview",
         "modulePath": "mango-platform/mango-file-preview/mango-file-preview-starter",
@@ -6276,7 +6339,7 @@
         "artifactId": "mango-file-preview",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "pom",
         "groupId": "io.mango.platform.file.preview",
         "modulePath": "mango-platform/mango-file-preview",
@@ -6297,7 +6360,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.file",
         "modulePath": "mango-platform/mango-file/mango-file-api",
@@ -6390,7 +6453,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.file",
         "modulePath": "mango-platform/mango-file/mango-file-core",
@@ -6420,7 +6483,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.file",
         "modulePath": "mango-platform/mango-file/mango-file-starter-remote",
@@ -6468,7 +6531,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.file",
         "modulePath": "mango-platform/mango-file/mango-file-starter",
@@ -6479,7 +6542,7 @@
         "artifactId": "mango-file",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "pom",
         "groupId": "io.mango.platform.file",
         "modulePath": "mango-platform/mango-file",
@@ -6500,7 +6563,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "jar",
         "groupId": "io.mango.platform.gridlayout",
         "modulePath": "mango-platform/mango-grid-layout/mango-grid-layout-api",
@@ -6557,7 +6620,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "jar",
         "groupId": "io.mango.platform.gridlayout",
         "modulePath": "mango-platform/mango-grid-layout/mango-grid-layout-core",
@@ -6605,7 +6668,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "jar",
         "groupId": "io.mango.platform.gridlayout",
         "modulePath": "mango-platform/mango-grid-layout/mango-grid-layout-starter",
@@ -6616,7 +6679,7 @@
         "artifactId": "mango-grid-layout",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "pom",
         "groupId": "io.mango.platform.gridlayout",
         "modulePath": "mango-platform/mango-grid-layout",
@@ -6637,7 +6700,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "jar",
         "groupId": "io.mango.platform.home",
         "modulePath": "mango-platform/mango-home/mango-home-api",
@@ -6694,7 +6757,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "jar",
         "groupId": "io.mango.platform.home",
         "modulePath": "mango-platform/mango-home/mango-home-core",
@@ -6760,7 +6823,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "jar",
         "groupId": "io.mango.platform.home",
         "modulePath": "mango-platform/mango-home/mango-home-starter",
@@ -6771,7 +6834,7 @@
         "artifactId": "mango-home",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "pom",
         "groupId": "io.mango.platform.home",
         "modulePath": "mango-platform/mango-home",
@@ -6792,7 +6855,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.identity",
         "modulePath": "mango-platform/mango-identity/mango-identity-api",
@@ -6885,7 +6948,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.identity",
         "modulePath": "mango-platform/mango-identity/mango-identity-core",
@@ -6915,7 +6978,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.identity",
         "modulePath": "mango-platform/mango-identity/mango-identity-starter-remote",
@@ -7017,7 +7080,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.identity",
         "modulePath": "mango-platform/mango-identity/mango-identity-starter",
@@ -7028,10 +7091,165 @@
         "artifactId": "mango-identity",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "pom",
         "groupId": "io.mango.platform.identity",
         "modulePath": "mango-platform/mango-identity",
+        "packaging": "pom",
+        "version": "1.0.0-SNAPSHOT"
+      },
+      {
+        "artifactId": "mango-information-api",
+        "classifier": null,
+        "dependencies": [
+          {
+            "artifactId": "mango-common",
+            "classifier": null,
+            "groupId": "io.mango.common",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          }
+        ],
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
+        "extension": "jar",
+        "groupId": "io.mango.platform.information",
+        "modulePath": "mango-platform/mango-information/mango-information-api",
+        "packaging": "jar",
+        "version": "1.0.0-SNAPSHOT"
+      },
+      {
+        "artifactId": "mango-information-core",
+        "classifier": null,
+        "dependencies": [
+          {
+            "artifactId": "mango-infra-context-api",
+            "classifier": null,
+            "groupId": "io.mango.infra.context",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-persistence-api",
+            "classifier": null,
+            "groupId": "io.mango.infra.persistence",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-persistence-starter",
+            "classifier": null,
+            "groupId": "io.mango.infra.persistence",
+            "optional": false,
+            "scope": "test",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-file-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.file",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-information-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.information",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          }
+        ],
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
+        "extension": "jar",
+        "groupId": "io.mango.platform.information",
+        "modulePath": "mango-platform/mango-information/mango-information-core",
+        "packaging": "jar",
+        "version": "1.0.0-SNAPSHOT"
+      },
+      {
+        "artifactId": "mango-information-starter",
+        "classifier": null,
+        "dependencies": [
+          {
+            "artifactId": "mango-infra-persistence-starter",
+            "classifier": null,
+            "groupId": "io.mango.infra.persistence",
+            "optional": false,
+            "scope": "test",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-authorization-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.authorization",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-file-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.file",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-identity-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.identity",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-information-core",
+            "classifier": null,
+            "groupId": "io.mango.platform.information",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-resource-support",
+            "classifier": null,
+            "groupId": "io.mango.platform.resource",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          }
+        ],
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
+        "extension": "jar",
+        "groupId": "io.mango.platform.information",
+        "modulePath": "mango-platform/mango-information/mango-information-starter",
+        "packaging": "jar",
+        "version": "1.0.0-SNAPSHOT"
+      },
+      {
+        "artifactId": "mango-information",
+        "classifier": null,
+        "dependencies": [],
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
+        "extension": "pom",
+        "groupId": "io.mango.platform.information",
+        "modulePath": "mango-platform/mango-information",
         "packaging": "pom",
         "version": "1.0.0-SNAPSHOT"
       },
@@ -7049,7 +7267,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "jar",
         "groupId": "io.mango.platform.job",
         "modulePath": "mango-platform/mango-job/mango-job-api",
@@ -7133,7 +7351,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "jar",
         "groupId": "io.mango.platform.job",
         "modulePath": "mango-platform/mango-job/mango-job-core",
@@ -7172,7 +7390,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "jar",
         "groupId": "io.mango.platform.job",
         "modulePath": "mango-platform/mango-job/mango-job-starter-remote",
@@ -7265,7 +7483,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "jar",
         "groupId": "io.mango.platform.job",
         "modulePath": "mango-platform/mango-job/mango-job-starter",
@@ -7322,7 +7540,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "jar",
         "groupId": "io.mango.platform.job",
         "modulePath": "mango-platform/mango-job/mango-job-support",
@@ -7333,7 +7551,7 @@
         "artifactId": "mango-job",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "pom",
         "groupId": "io.mango.platform.job",
         "modulePath": "mango-platform/mango-job",
@@ -7354,7 +7572,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "jar",
         "groupId": "io.mango.platform.link",
         "modulePath": "mango-platform/mango-link/mango-link-api",
@@ -7420,7 +7638,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "jar",
         "groupId": "io.mango.platform.link",
         "modulePath": "mango-platform/mango-link/mango-link-core",
@@ -7477,7 +7695,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "jar",
         "groupId": "io.mango.platform.link",
         "modulePath": "mango-platform/mango-link/mango-link-starter",
@@ -7488,7 +7706,7 @@
         "artifactId": "mango-link",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "pom",
         "groupId": "io.mango.platform.link",
         "modulePath": "mango-platform/mango-link",
@@ -7518,7 +7736,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.notice",
         "modulePath": "mango-platform/mango-notice/mango-notice-api",
@@ -7539,7 +7757,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.notice",
         "modulePath": "mango-platform/mango-notice/mango-notice-channel-dingtalk",
@@ -7569,7 +7787,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.notice",
         "modulePath": "mango-platform/mango-notice/mango-notice-channel-email",
@@ -7599,7 +7817,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.notice",
         "modulePath": "mango-platform/mango-notice/mango-notice-channel-site",
@@ -7620,7 +7838,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.notice",
         "modulePath": "mango-platform/mango-notice/mango-notice-channel-sms",
@@ -7641,7 +7859,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.notice",
         "modulePath": "mango-platform/mango-notice/mango-notice-channel-wechat-official",
@@ -7671,7 +7889,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.notice",
         "modulePath": "mango-platform/mango-notice/mango-notice-channel-wecom",
@@ -7908,7 +8126,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.notice",
         "modulePath": "mango-platform/mango-notice/mango-notice-core",
@@ -7947,7 +8165,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.notice",
         "modulePath": "mango-platform/mango-notice/mango-notice-starter-remote",
@@ -8085,7 +8303,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.notice",
         "modulePath": "mango-platform/mango-notice/mango-notice-starter",
@@ -8133,7 +8351,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.notice",
         "modulePath": "mango-platform/mango-notice/mango-notice-support",
@@ -8144,7 +8362,7 @@
         "artifactId": "mango-notice",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "pom",
         "groupId": "io.mango.platform.notice",
         "modulePath": "mango-platform/mango-notice",
@@ -8165,7 +8383,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "jar",
         "groupId": "io.mango.platform.numgen",
         "modulePath": "mango-platform/mango-numgen/mango-numgen-api",
@@ -8267,7 +8485,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "jar",
         "groupId": "io.mango.platform.numgen",
         "modulePath": "mango-platform/mango-numgen/mango-numgen-core",
@@ -8297,7 +8515,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "jar",
         "groupId": "io.mango.platform.numgen",
         "modulePath": "mango-platform/mango-numgen/mango-numgen-starter-remote",
@@ -8327,7 +8545,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "jar",
         "groupId": "io.mango.platform.numgen",
         "modulePath": "mango-platform/mango-numgen/mango-numgen-starter",
@@ -8338,7 +8556,7 @@
         "artifactId": "mango-numgen",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "pom",
         "groupId": "io.mango.platform.numgen",
         "modulePath": "mango-platform/mango-numgen",
@@ -8359,7 +8577,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.org",
         "modulePath": "mango-platform/mango-org/mango-org-api",
@@ -8425,7 +8643,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.org",
         "modulePath": "mango-platform/mango-org/mango-org-core",
@@ -8455,7 +8673,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.org",
         "modulePath": "mango-platform/mango-org/mango-org-starter-remote",
@@ -8503,7 +8721,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.org",
         "modulePath": "mango-platform/mango-org/mango-org-starter",
@@ -8514,7 +8732,7 @@
         "artifactId": "mango-org",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "pom",
         "groupId": "io.mango.platform.org",
         "modulePath": "mango-platform/mango-org",
@@ -8535,7 +8753,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.payment",
         "modulePath": "mango-platform/mango-payment/mango-payment-api",
@@ -8637,7 +8855,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.payment",
         "modulePath": "mango-platform/mango-payment/mango-payment-core",
@@ -8676,7 +8894,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.payment",
         "modulePath": "mango-platform/mango-payment/mango-payment-starter-remote",
@@ -8760,7 +8978,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.payment",
         "modulePath": "mango-platform/mango-payment/mango-payment-starter",
@@ -8771,7 +8989,7 @@
         "artifactId": "mango-payment",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "pom",
         "groupId": "io.mango.platform.payment",
         "modulePath": "mango-platform/mango-payment",
@@ -8801,7 +9019,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.resource",
         "modulePath": "mango-platform/mango-resource/mango-resource-api",
@@ -8894,7 +9112,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.resource",
         "modulePath": "mango-platform/mango-resource/mango-resource-core",
@@ -8933,7 +9151,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.resource",
         "modulePath": "mango-platform/mango-resource/mango-resource-starter-remote",
@@ -8990,7 +9208,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.resource",
         "modulePath": "mango-platform/mango-resource/mango-resource-starter",
@@ -9020,7 +9238,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.resource",
         "modulePath": "mango-platform/mango-resource/mango-resource-support",
@@ -9068,7 +9286,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.resource",
         "modulePath": "mango-platform/mango-resource/mango-resource-sync-starter",
@@ -9079,7 +9297,7 @@
         "artifactId": "mango-resource",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "pom",
         "groupId": "io.mango.platform.resource",
         "modulePath": "mango-platform/mango-resource",
@@ -9109,7 +9327,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.system",
         "modulePath": "mango-platform/mango-system/mango-system-api",
@@ -9256,7 +9474,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.system",
         "modulePath": "mango-platform/mango-system/mango-system-core",
@@ -9331,7 +9549,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.system",
         "modulePath": "mango-platform/mango-system/mango-system-starter",
@@ -9342,7 +9560,7 @@
         "artifactId": "mango-system",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "pom",
         "groupId": "io.mango.platform.system",
         "modulePath": "mango-platform/mango-system",
@@ -9363,7 +9581,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.template",
         "modulePath": "mango-platform/mango-template/mango-template-api",
@@ -9456,7 +9674,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.template",
         "modulePath": "mango-platform/mango-template/mango-template-core",
@@ -9486,7 +9704,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.template",
         "modulePath": "mango-platform/mango-template/mango-template-starter-remote",
@@ -9543,7 +9761,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.template",
         "modulePath": "mango-platform/mango-template/mango-template-starter",
@@ -9554,7 +9772,7 @@
         "artifactId": "mango-template",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "pom",
         "groupId": "io.mango.platform.template",
         "modulePath": "mango-platform/mango-template",
@@ -9575,7 +9793,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.workflow",
         "modulePath": "mango-platform/mango-workflow/mango-workflow-api",
@@ -9677,7 +9895,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.workflow",
         "modulePath": "mango-platform/mango-workflow/mango-workflow-core",
@@ -9707,7 +9925,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.workflow",
         "modulePath": "mango-platform/mango-workflow/mango-workflow-starter-remote",
@@ -9809,7 +10027,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango.platform.workflow",
         "modulePath": "mango-platform/mango-workflow/mango-workflow-starter",
@@ -9820,7 +10038,7 @@
         "artifactId": "mango-workflow",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "pom",
         "groupId": "io.mango.platform.workflow",
         "modulePath": "mango-platform/mango-workflow",
@@ -9831,7 +10049,7 @@
         "artifactId": "mango-platform",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "pom",
         "groupId": "io.mango.platform",
         "modulePath": "mango-platform",
@@ -9861,7 +10079,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "jar",
         "groupId": "io.mango.tools.maven.plugin",
         "modulePath": "mango-tools/mango-maven-plugin",
@@ -9882,7 +10100,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "jar",
         "groupId": "io.mango.tools",
         "modulePath": "mango-tools/mango-architecture-rules",
@@ -9893,7 +10111,7 @@
         "artifactId": "mango-architecture-verification",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "pom",
         "groupId": "io.mango.tools",
         "modulePath": "mango-tools/mango-architecture-verification",
@@ -9904,7 +10122,7 @@
         "artifactId": "mango-tools",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "pom",
         "groupId": "io.mango.tools",
         "modulePath": "mango-tools",
@@ -10132,6 +10350,15 @@
             "version": "1.0.0-SNAPSHOT"
           },
           {
+            "artifactId": "mango-information-starter",
+            "classifier": null,
+            "groupId": "io.mango.platform.information",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
             "artifactId": "mango-job-starter",
             "classifier": null,
             "groupId": "io.mango.platform.job",
@@ -10231,7 +10458,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "jar",
         "groupId": "io.mango",
         "modulePath": "mango-admin-starter",
@@ -10242,7 +10469,7 @@
         "artifactId": "mango-bom",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "pom",
         "groupId": "io.mango",
         "modulePath": "mango-bom",
@@ -10253,7 +10480,7 @@
         "artifactId": "mango-parent",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "0fca34697311cc20d77aabd0a253c5cc76b0898d4c64d70296a99d07e005c9d5",
+        "dependencyManagementDigest": "c069071f7cdb7137b225a1b4e919247e1e0a45b5fdfe43f1ecb2cb341406666b",
         "extension": "pom",
         "groupId": "io.mango",
         "modulePath": "mango-parent",
@@ -10264,7 +10491,7 @@
         "artifactId": "mango",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "b1a29dca84a7fa41bb4fc5d31d81385d6e7167efe7351491f2cd9aa9db96b5ce",
+        "dependencyManagementDigest": "c0a22bba1a728d478485066b96d1d69e73a08e3ac5ae299fd3915568d4c2bce8",
         "extension": "pom",
         "groupId": "io.mango",
         "modulePath": ".",
@@ -10272,7 +10499,7 @@
         "version": "1.0.0-SNAPSHOT"
       }
     ],
-    "reactorModuleCount": 220,
+    "reactorModuleCount": 224,
     "schemaVersion": 1,
     "sourceModel": "maven-effective-pom"
   },
@@ -10491,6 +10718,34 @@
       ],
       "moduleId": "grid-widgets",
       "owner": "module:grid-widgets",
+      "presetMembership": "default",
+      "schemaVersion": 1
+    },
+    {
+      "adminIntegration": {
+        "aggregateOwner": "@mango/admin",
+        "registrarExports": [
+          {
+            "package": "@mango/information",
+            "subpath": "./admin-pages",
+            "symbol": "registerMangoInformationAdminPages"
+          }
+        ],
+        "styleEntries": [
+          {
+            "package": "@mango/information",
+            "subpath": "./style.css"
+          }
+        ]
+      },
+      "backendStarters": [
+        ":mango-information-starter"
+      ],
+      "frontendPackages": [
+        "@mango/information"
+      ],
+      "moduleId": "information",
+      "owner": "module:information",
       "presetMembership": "default",
       "schemaVersion": 1
     },
@@ -10830,7 +11085,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.1.17"
+      "version": "1.2.1"
     },
     {
       "name": "@mango/admin-extension",
@@ -10885,7 +11140,7 @@
         }
       ],
       "publicResources": [],
-      "version": "1.1.0"
+      "version": "1.1.1"
     },
     {
       "name": "@mango/admin-pages",
@@ -10967,7 +11222,7 @@
         }
       ],
       "publicResources": [],
-      "version": "1.1.0"
+      "version": "1.1.1"
     },
     {
       "name": "@mango/admin-shell",
@@ -11121,7 +11376,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.81"
+      "version": "1.0.83"
     },
     {
       "name": "@mango/ai",
@@ -11166,7 +11421,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.2.0"
+      "version": "1.2.1"
     },
     {
       "name": "@mango/ai-api",
@@ -11358,7 +11613,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.51"
+      "version": "1.0.52"
     },
     {
       "name": "@mango/cli",
@@ -11380,7 +11635,7 @@
       "path": "mango-ui/packages/mango-cli",
       "publicEntries": [],
       "publicResources": [],
-      "version": "1.2.21"
+      "version": "1.3.3"
     },
     {
       "name": "@mango/cms",
@@ -11425,7 +11680,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.40"
+      "version": "1.0.41"
     },
     {
       "name": "@mango/common",
@@ -11740,7 +11995,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.1.5"
+      "version": "1.1.6"
     },
     {
       "name": "@mango/file",
@@ -11785,7 +12040,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.2.0"
+      "version": "1.2.1"
     },
     {
       "name": "@mango/grid-layout",
@@ -11916,6 +12171,51 @@
       "version": "1.0.2"
     },
     {
+      "name": "@mango/information",
+      "npmProjection": {
+        "exports": {
+          ".": {
+            "import": "./dist/index.js",
+            "types": "./dist/index.d.ts"
+          },
+          "./admin-pages": {
+            "import": "./dist/admin-pages.js",
+            "types": "./dist/admin-pages.d.ts"
+          },
+          "./style.css": "./dist/style.css"
+        },
+        "files": [
+          "README.md",
+          "dist",
+          "package.json"
+        ],
+        "types": "./dist/index.d.ts"
+      },
+      "owner": "package:@mango/information",
+      "path": "mango-ui/packages/information",
+      "publicEntries": [
+        {
+          "kind": "code",
+          "source": "./src/index.ts",
+          "subpath": "."
+        },
+        {
+          "kind": "code",
+          "source": "./src/admin-pages.ts",
+          "subpath": "./admin-pages"
+        }
+      ],
+      "publicResources": [
+        {
+          "dist": "./dist/style.css",
+          "generation": "build",
+          "source": "./src/style.css",
+          "subpath": "./style.css"
+        }
+      ],
+      "version": "1.1.1"
+    },
+    {
       "name": "@mango/job",
       "npmProjection": {
         "exports": {
@@ -11958,7 +12258,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.44"
+      "version": "1.0.45"
     },
     {
       "name": "@mango/link",
@@ -12012,7 +12312,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.37"
+      "version": "1.0.38"
     },
     {
       "name": "@mango/link-openapi",
@@ -12184,7 +12484,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.56"
+      "version": "1.0.57"
     },
     {
       "name": "@mango/numgen",
@@ -12229,7 +12529,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.52"
+      "version": "1.0.53"
     },
     {
       "name": "@mango/payment",
@@ -12274,7 +12574,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.43"
+      "version": "1.0.44"
     },
     {
       "name": "@mango/pmo",
@@ -12457,7 +12757,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.49"
+      "version": "1.0.50"
     },
     {
       "name": "@mango/template",
@@ -12502,7 +12802,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.52"
+      "version": "1.0.53"
     },
     {
       "name": "@mango/workflow",
@@ -12574,7 +12874,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.60"
+      "version": "1.0.61"
     },
     {
       "name": "@mango/workflow-business-example",
@@ -12619,7 +12919,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.59"
+      "version": "1.0.60"
     }
   ],
   "projections": {
@@ -12667,6 +12967,19 @@
           "code": "grid-widgets",
           "packageName": "@mango/grid-widgets",
           "style": "@mango/grid-widgets/style.css"
+        },
+        {
+          "cliOptional": false,
+          "cliVersionKey": "mangoInformation",
+          "code": "information",
+          "packageName": "@mango/information",
+          "registrars": [
+            {
+              "import": "@mango/information/admin-pages",
+              "name": "registerMangoInformationAdminPages"
+            }
+          ],
+          "style": "@mango/information/style.css"
         },
         {
           "cliOptional": false,
@@ -13027,6 +13340,31 @@
             "style": "@mango/grid-widgets/style.css"
           },
           "moduleId": "grid-widgets",
+          "presetMembership": "default",
+          "resourceCopies": []
+        },
+        {
+          "backendStarters": [
+            {
+              "artifactId": "mango-information-starter",
+              "groupId": "io.mango.platform.information"
+            }
+          ],
+          "configFragments": [],
+          "dependsOn": [],
+          "frontend": {
+            "cliVersionKey": "mangoInformation",
+            "code": "information",
+            "packageName": "@mango/information",
+            "registrars": [
+              {
+                "import": "@mango/information/admin-pages",
+                "name": "registerMangoInformationAdminPages"
+              }
+            ],
+            "style": "@mango/information/style.css"
+          },
+          "moduleId": "information",
           "presetMembership": "default",
           "resourceCopies": []
         },

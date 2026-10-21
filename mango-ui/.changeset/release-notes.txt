@@ -1,79 +1,58 @@
 ## Pull Requests
 
-- [PR #1049](https://github.com/HardyDou/mango/pull/1049) Fixed the全站模块菜单 404 caused by split `@mango/admin-extension` page registries. Packages: @mango/admin-extension@1.1.0, @mango/admin-pages@1.1.0, @mango/ai@1.2.0, @mango/file@1.2.0, @mango/admin@1.1.17 and the generated npm dependents through @mango/cli@1.2.21. Business Adaptation: upgrade the complete Mango npm tuple in one batch; never upgrade a single Mango package in isolation.
-- [PR #1048](https://github.com/HardyDou/mango/pull/1048) Changed the default single-file upload limit to 10GB across Spring multipart, the file service defaults, the file Flyway default, `@mango/file`, CLI templates and Nginx. Packages: Mango Maven/docs 1.0.59, @mango/file@1.2.0, @mango/cli@1.2.21. Business Adaptation: upgrade Maven/docs to 1.0.59, run file migration V6, and confirm disk and gateway capacity.
-- [PR #1047](https://github.com/HardyDou/mango/pull/1047) Changed release closeout bookkeeping for the previous npm multipart batch only; documentation-only audit entry superseded by this batch. Packages: none. Business Adaptation: none.
+- [PR #1078](https://github.com/HardyDou/mango/pull/1078) Fixed `MANGO-BASELINE-040` by keeping resource-declared information forms out of the portable database baseline. Packages: Maven/docs `1.0.63` (`io.mango:mango-parent`, `mango-information-starter`) and `@mango/cli@1.3.3`. Business Adaptation: regenerate the consumer database baseline and let bootstrap recreate built-in forms at deploy time.
 
 ## Fixed
 
-- Module menus stay reachable after upgrading generated projects: `@mango/admin-extension` keeps a single global page registry on `globalThis` and throws a clear error instead of silently returning 404 when two versions load at once.
-- `@mango/admin-extension` is now a `peerDependencies` contract for `@mango/admin-pages`, `@mango/ai`, `@mango/file` and business module templates, so a host application provides exactly one version.
+- `mango:baseline-generate`（`MANGO_BSQL_ENABLED=true`）在 `MANGO-BASELINE-023` 之后仍会因内置表单的随机 `server_secret` 触发 `MANGO-BASELINE-040`：`InformationFormResourceHandler` 现在声明 `ResourceBaselinePolicy.ENVIRONMENT_REQUIRED`，基线构建跳过表单落库，两次干净回放保持一致。
+- 部署期行为不变：Resource Registry bootstrap 仍以真实随机密钥创建内置表单，服务端接入密钥保持不可预测。
 
 ## Changed
 
-- Default single-file upload limit is now 10GB (10737418240 bytes) across Spring `max-file-size`/`max-request-size`, file settings, the file Flyway default, `@mango/file` component defaults, CLI full templates and Nginx `client_max_body_size`; the 20MiB multipart threshold is unchanged, so uploads above 20MiB still use the multipart session flow.
-- File Flyway V6 updates only rows still on the previous 100MB default to 10GB, keeping any explicitly configured value.
+- `mango-information-starter` 增加处理器的基线策略声明和回归测试，information README 记录「内置表单不进入可移植基线」的边界与原因。
 
 ## Versions
 
-- Maven non-application reactor and `io.mango:mango-docs-bundle`: 1.0.58 -> 1.0.59
-- npm closure: @mango/admin-extension 1.0.11 -> 1.1.0, @mango/ai 1.1.9 -> 1.2.0, @mango/file 1.1.4 -> 1.2.0, @mango/detail 1.1.4 -> 1.1.5, @mango/system 1.0.48 -> 1.0.49, @mango/admin-pages 1.0.49 -> 1.1.0, @mango/calendar 1.0.50 -> 1.0.51, @mango/cms 1.0.39 -> 1.0.40, @mango/job 1.0.43 -> 1.0.44, @mango/link 1.0.36 -> 1.0.37, @mango/notice 1.0.55 -> 1.0.56, @mango/numgen 1.0.51 -> 1.0.52, @mango/payment 1.0.42 -> 1.0.43, @mango/template 1.0.51 -> 1.0.52, @mango/workflow 1.0.59 -> 1.0.60, @mango/admin-shell 1.0.80 -> 1.0.81, @mango/workflow-business-example 1.0.58 -> 1.0.59, @mango/admin 1.1.16 -> 1.1.17, @mango/cli 1.2.20 -> 1.2.21
+- Maven non-application reactor and `io.mango:mango-docs-bundle`: `1.0.62` -> `1.0.63`.
+- npm: `@mango/cli` `1.3.2` -> `1.3.3`; `@mango/admin-shell`、`@mango/information`、`@mango/admin`、`@mango/pmo` 均不变。
 
 ## Published Packages
 
-- @mango/admin-extension@1.1.0
-- @mango/ai@1.2.0
-- @mango/file@1.2.0
-- @mango/detail@1.1.5
-- @mango/system@1.0.49
-- @mango/admin-pages@1.1.0
-- @mango/calendar@1.0.51
-- @mango/cms@1.0.40
-- @mango/job@1.0.44
-- @mango/link@1.0.37
-- @mango/notice@1.0.56
-- @mango/numgen@1.0.52
-- @mango/payment@1.0.43
-- @mango/template@1.0.52
-- @mango/workflow@1.0.60
-- @mango/admin-shell@1.0.81
-- @mango/workflow-business-example@1.0.59
-- @mango/admin@1.1.17
-- @mango/cli@1.2.21
-- Maven: io.mango non-application reactor and io.mango:mango-docs-bundle 1.0.59
+1. Publish the sealed non-application Maven reactor and `io.mango:mango-docs-bundle:1.0.63`, then verify both Maven registry roles.
+2. Publish `@mango/cli@1.3.3` from the sealed tarball and verify both npm registry roles.
+3. Run one aggregate clean Maven consumer plus a clean CLI consumer installed from the consume registry.
+4. Create Tag `v2026.10.20-maven-1.0.63-information-baseline-release` and its GitHub Release only after consume verification succeeds.
 
 ## Business Impact
 
-- Affected consumers: business frontends that consume `@mango/file`, `@mango/admin-extension`, `@mango/admin-pages`, `@mango/ai` and the generated Mango npm tuple, plus backend deployments that use the file upload capability.
-- The admin-extension fix is a consumer-visible dependency contract change: the host application must provide exactly one `@mango/admin-extension` version, and all Mango packages must be upgraded as one batch.
-- The upload change raises the default single-file limit to 10GB; file records, menus, permissions and tenant boundaries are unchanged, and files above 20MiB continue to use multipart uploads.
+- 使用 `mango:baseline-generate` 构建数据库基线的业务项目不再因为信息采集内置表单的随机密钥而失败。
+- 已经生成过包含表单行的旧基线的项目，需要重新生成基线；部署期 bootstrap 会按资源声明重新创建内置表单并生成新的随机密钥。
+- 前端包、菜单、公开接口、权限码和数据库结构均不变；不包含部署、流量切换或数据迁移。
 
 ## Upgrade Estimate
 
-- Audience: teams that consume the Mango npm tuple for admin frontends and teams that deploy the Mango file upload capability on the backend.
-- Engineering Effort: medium; upgrade the complete npm tuple, upgrade Maven/docs to 1.0.59, and confirm `pnpm why @mango/admin-extension` resolves a single version.
-- Execution Window: one deployment window; backend migration V6 runs during startup.
-- Service Downtime: none expected; the Flyway migration only updates a default value and the admin fix is a build-time dependency change.
-- Rollback Effort: medium; restore the previous npm tuple and Maven/docs 1.0.58, no data rollback is required.
-- Assumptions: consumers resolve Mango packages from the Mango registries, do not pin workspace links, and upgrade the whole tuple together.
+- Audience: 使用 `mango:baseline-generate` 生成冷基线的业务项目，以及使用 Resource Registry 声明内置采集表单的模块。
+- Engineering Effort: low; upgrade Maven/docs and CLI, then rerun the baseline generation build once.
+- Execution Window: 20 to 40 minutes including dependency upgrade and one baseline regeneration build.
+- Service Downtime: none expected beyond the consumer's normal restart window.
+- Rollback Effort: low; restore Maven/docs `1.0.62` and `@mango/cli@1.3.2` without republishing.
+- Assumptions: Java 21 consumer build, MySQL instance available for baseline generation, and a deployment pipeline that runs Resource Registry bootstrap.
 
 ## Upgrade Notes
 
-- Upgrade the complete npm closure ending at `@mango/cli@1.2.21` together. Never upgrade only `@mango/file`, `@mango/admin-extension` or any single Mango package.
-- Before deploying, run `pnpm why @mango/admin-extension` and confirm only one version is installed; if more than one appears, align the tuple or add a host `pnpm.overrides` entry.
-- Upgrade Maven/docs to 1.0.59 so the file migration V6 runs, and confirm runtime disk capacity, Nginx `client_max_body_size` and gateway timeout for large uploads.
-- Regenerate or upgrade generated projects with `@mango/cli@1.2.21`; generated `frontend/package.json` now declares a single `@mango/admin-extension`.
+1. Upgrade Maven/docs to `1.0.63` and `@mango/cli@1.3.3`.
+2. Rerun `mango:baseline-generate`（`MANGO_BSQL_ENABLED=true`）确认 `MANGO-BASELINE-040` 消失，构建产物中 `db/baseline/information/` 不再包含表单数据行。
+3. 部署时确认 Resource Registry bootstrap 正常执行，`information_form` 中内置表单由 bootstrap 创建，`server_secret` 为新生成的随机值。
+4. 不要手工回填或复制旧基线中的 `server_secret`，也不要提交基线 SQL 到 Git。
 
 ## Verification
 
-- Unit and contract tests: pnpm --filter @mango/admin-extension test, pnpm --filter @mango/admin-pages test, pnpm --filter @mango/file test and pnpm --filter @mango/cli test.
-- Backend module gate: mvn -pl :mango-file-core verify, including FileResourceHandlerIntegrationTest and FileServiceConcurrentSaveIntegrationTest.
-- Frontend PR gate: pnpm check:pr, pnpm admin:styles:check and pnpm admin:module-styles:check.
-- Release back-check: Maven coordinates and npm tarballs are resolved again from the publish and consume registries, and one clean consume-registry consumer installs the published CLI and generated project.
-- Dependency singleton check: pnpm why @mango/admin-extension reports a single version, and node_modules/.pnpm contains a single @mango/admin-extension directory.
+- Maven: resolve `io.mango:mango-information-starter:1.0.63` and `io.mango:mango-docs-bundle:1.0.63` from the consume registry and compare sealed checksums.
+- npm: resolve `@mango/cli@1.3.3` from publish and consume registries and compare sealed integrity.
+- Repository gates: `mango release plan`、`mango release prepare`、`mango release publish` evidence、`node mango-pmo/tools/audit-module-readmes.mjs`、`node mango-pmo/tools/audit-readme-source-facts.mjs`.
+- Consumer assertion: baseline generation completes without `MANGO-BASELINE-040`, and the deployed instance still lists built-in forms with distinct `server_secret` values.
 
 ## Rollback
 
-- Roll back by restoring the previous npm tuple ending at @mango/cli@1.2.20 and Maven/docs 1.0.58; file records and uploaded files do not require data rollback.
-- Published npm and Maven coordinates are immutable; rollback uses consumer-side version pinning, never a republish.
-- If only the upload limit must be reverted, set the tenant `maxSize` in file settings explicitly instead of rolling back the whole batch.
+- Restore consumers to Maven/docs `1.0.62` and `@mango/cli@1.3.2` through their normal dependency release process; never overwrite published `1.0.63` coordinates.
+- A regenerated baseline can be regenerated again from the restored coordinate set; published artifacts stay immutable and no database rows are rolled back.

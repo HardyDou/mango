@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mango 信息采集 · 原型</title>
+  <style>
+    :root {
+      /* Mirrors @mango/common/theme admin-standard tokens. Final implementation should use Element Plus components. */
+      --ink: var(--mango-text-color, #243044);
+      --muted: var(--mango-text-color-regular, #5f6b7a);
+      --line: var(--mango-border-light, #e5ebf3);
+      --panel: var(--mango-bg-color, #ffffff);
+      --canvas: var(--mango-bg-main, #f3f5f8);
+      --brand: var(--mango-color-primary, #2e5cf6);
+      --brand-dark: var(--mango-color-primary-dark, #1e3cc4);
+      --brand-soft: var(--mango-color-primary-lighter, #eef4ff);
+      --green: var(--el-color-success, #67c23a);
+      --green-soft: var(--el-color-success-light-9, #f0f9eb);
+      --orange: var(--el-color-warning, #e6a23c);
+      --orange-soft: var(--el-color-warning-light-9, #fdf6ec);
+      --shadow: var(--mango-shadow-light, 0 6px 18px rgba(30, 62, 120, .08));
+      font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    :root {
+      --mango-color-primary: #2e5cf6;
+      --mango-color-primary-dark: #1e3cc4;
+      --mango-color-primary-lighter: #eef4ff;
+      --mango-bg-main: #f3f5f8;
+      --mango-bg-color: #ffffff;
+      --mango-border-light: #e5ebf3;
+      --mango-text-color: #243044;
+      --mango-text-color-regular: #5f6b7a;
+      --mango-shadow-light: 0 6px 18px rgba(30, 62, 120, .08);
+      --el-color-success: #67c23a;
+      --el-color-success-light-9: #f0f9eb;
+      --el-color-warning: #e6a23c;
+      --el-color-warning-light-9: #fdf6ec;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--ink); background: var(--canvas); }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    .global-header { height: 74px; display: flex; align-items: center; gap: 40px; padding: 0 28px; color: #fff; background: #0f75ad; }
+    .global-brand { min-width: 255px; display: flex; align-items: center; gap: 10px; font-size: 21px; letter-spacing: .02em; }
+    .global-brand small { align-self: flex-end; margin: 0 0 16px -82px; font-size: 7px; letter-spacing: .18em; opacity: .9; }
+    .global-nav { display: flex; align-items: stretch; height: 100%; gap: 4px; font-size: 16px; }
+    .global-nav span { display: flex; align-items: center; padding: 0 18px; white-space: nowrap; }
+    .global-nav span.active { background: rgba(255,255,255,.18); border-radius: 4px; }
+    .global-user { margin-left: auto; display: flex; align-items: center; gap: 18px; font-size: 13px; white-space: nowrap; }
+    .app { display: grid; grid-template-columns: 292px 1fr; min-height: calc(100vh - 107px); }
+    .sidebar { background: #0f75ad; color: #fff; padding: 20px 0; }
+    .brand { display: flex; align-items: center; gap: 11px; color: #fff; font-weight: 700; font-size: 17px; padding: 0 12px 32px; }
+    .brand-mark { width: 30px; height: 30px; border-radius: 5px; display: grid; place-items: center; background: rgba(255,255,255,.95); color: #0f75ad; font-size: 16px; font-weight: 800; }
+    .nav-label { padding: 0 34px 10px; font-size: 12px; color: rgba(255,255,255,.72); text-transform: uppercase; letter-spacing: .1em; }
+    .nav { display: grid; gap: 0; }
+    .nav button { border: 0; background: transparent; color: #fff; text-align: left; padding: 15px 34px; display: flex; gap: 15px; align-items: center; font-size: 16px; width: 100%; }
+    .nav button:hover { background: rgba(255,255,255,.12); }
+    .nav button.active { background: #eaf3fa; color: #0f75ad; box-shadow: inset 4px 0 #0f75ad; }
+    .nav-icon { width: 20px; text-align: center; opacity: .95; }
+    .sidebar-footer { border-top: 1px solid rgba(255,255,255,.18); margin-top: 34px; padding: 18px 34px; font-size: 12px; color: rgba(255,255,255,.72); line-height: 1.7; }
+    .main { min-width: 0; background: var(--canvas); }
+    .topbar { height: 52px; padding: 0 28px; background: #fff; color: #606266; border-bottom: 1px solid var(--line); display: flex; align-items: stretch; overflow: hidden; }
+    .tabbar { display: flex; gap: 0; height: 100%; align-items: stretch; overflow: hidden; white-space: nowrap; }
+    .tabbar span { display: flex; align-items: center; padding: 0 20px; color: #606266; font-size: 13px; }
+    .tabbar span.current { color: #0f75ad; border-bottom: 3px solid #0f75ad; background: #fff; font-weight: 600; }
+    .tabbar span:hover { background: #f5f7fa; }
+    .user { display: flex; align-items: center; gap: 10px; font-size: 13px; color: #606266; }
+    .avatar { width: 31px; height: 31px; border-radius: 50%; background: #e5e7eb; color: #606266; display: grid; place-items: center; font-weight: 700; }
+    .content { padding: 16px 16px 40px; max-width: none; margin: 0; }
+    .view { display: none; }
+    .view.active { display: block; }
+    .page-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; margin-bottom: 16px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+    .page-title-with-back { display: flex; align-items: center; gap: 14px; }
+    .page-back { width: 38px; height: 38px; padding: 0; border: 0; border-radius: 50%; background: #f0f2f5; color: #606266; font-size: 28px; line-height: 1; cursor: pointer; }
+    .page-back:hover { background: #e6e8eb; color: var(--brand); }
+    .page-title-with-back h1 { margin-bottom: 6px; }
+    .return-label { font-size: 20px; font-weight: 650; color: #303133; }
+    h1 { margin: 0 0 7px; font-size: 25px; letter-spacing: -.025em; }
+    h2 { margin: 0; font-size: 17px; }
+    h3 { margin: 0; font-size: 14px; }
+    .sub { margin: 0; color: var(--muted); font-size: 13px; }
+    .actions { display: flex; gap: 10px; }
+    .btn { border: 1px solid #dcdfe6; background: #fff; color: #606266; border-radius: 4px; padding: 8px 15px; font-size: 13px; font-weight: 500; }
+    .btn:hover { border-color: #c5d0e4; background: #fafbfe; }
+    .btn.primary { border-color: var(--brand); background: var(--brand); color: #fff; box-shadow: 0 5px 12px #315efb2b; }
+    .btn.primary:hover { background: var(--brand-dark); }
+    .btn.text { border: 0; color: var(--brand); background: transparent; padding-left: 4px; padding-right: 4px; }
+    .panel { border: 1px solid var(--line); background: var(--panel); border-radius: 6px; box-shadow: none; overflow: hidden; }
+    .mango-search-panel { border: 1px solid var(--line); background: var(--panel); border-radius: 6px; padding: 24px 28px; display: flex; align-items: center; gap: 36px; margin-bottom: 16px; }
+    .search-item { display: flex; align-items: center; gap: 12px; min-width: 290px; }
+    .search-item label { color: #606266; font-size: 14px; white-space: nowrap; }
+    .search-item .input, .search-item .select { width: 220px; }
+    .search-actions { display: flex; gap: 16px; margin-left: auto; }
+    .list-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 22px 24px 16px; }
+    .list-toolbar-group { display: flex; align-items: center; gap: 12px; }
+    .form-context { display: flex; align-items: center; gap: 8px; color: var(--ink); font-size: 13px; }
+    .form-context .code { color: var(--muted); }
+    .detail-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 18px; margin-bottom: 18px; border-bottom: 1px solid var(--line); }
+    .detail-header h2 { font-size: 20px; margin-bottom: 8px; }
+    .detail-meta { color: var(--muted); font-size: 12px; }
+    .description-grid { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--line); border-bottom: 0; }
+    .description-item { display: grid; grid-template-columns: 92px 1fr; min-height: 44px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); font-size: 13px; }
+    .description-item:nth-child(3n) { border-right: 0; }
+    .description-item label { padding: 12px; color: #909399; background: #f8f9fb; }
+    .description-item span { padding: 12px; color: #303133; }
+    .detail-section { margin-top: 20px; }
+    .detail-section-title { font-size: 15px; font-weight: 650; margin-bottom: 12px; }
+    .access-card { border: 1px solid var(--line); border-radius: 4px; padding: 14px; margin-bottom: 12px; }
+    .access-card p { color: var(--muted); font-size: 12px; line-height: 1.6; margin: 9px 0; }
+    .access-label { display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+    .dialog-mask { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; align-items: center; justify-content: center; z-index: 10; }
+    .dialog-mask.open { display: flex; }
+    .dialog { width: 560px; background: #fff; border-radius: 4px; box-shadow: 0 18px 48px rgba(0,0,0,.18); }
+    .dialog-head { padding: 18px 20px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; }
+    .dialog-head h3 { font-size: 16px; }
+    .dialog-close { border: 0; background: transparent; color: #909399; font-size: 20px; }
+    .dialog-body { padding: 22px 24px 8px; }
+    .dialog-form-item { margin-bottom: 17px; }
+    .dialog-form-item label { display: block; color: #606266; font-size: 13px; margin-bottom: 8px; }
+    .dialog-form-item.required label::after { content: ' *'; color: #f56c6c; }
+    .dialog-foot { padding: 14px 20px; text-align: right; border-top: 1px solid var(--line); }
+    .dialog-foot .btn { margin-left: 8px; }
+    .drawer-mask { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: none; justify-content: flex-end; z-index: 11; }
+    .drawer-mask.open { display: flex; }
+    .drawer { width: 480px; max-width: 100%; height: 100%; background: #fff; box-shadow: -8px 0 24px rgba(0,0,0,.12); display: flex; flex-direction: column; }
+    .drawer-head { display: flex; justify-content: space-between; align-items: center; padding: 18px 22px; border-bottom: 1px solid var(--line); }
+    .drawer-head h3 { font-size: 16px; }
+    .drawer-body { flex: 1; overflow: auto; padding: 22px; }
+    .drawer-foot { padding: 14px 22px; border-top: 1px solid var(--line); text-align: right; }
+    .drawer-foot .btn { margin-left: 8px; }
+    .panel-head { padding: 18px 20px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; }
+    .panel-body { padding: 20px; }
+    .toolbar { display: flex; gap: 9px; align-items: center; margin-bottom: 14px; }
+    .input, .select, .textarea { width: 100%; border: 1px solid #dcdfe6; border-radius: 4px; padding: 8px 11px; color: var(--ink); background: #fff; outline: none; font-size: 13px; }
+    .input:focus, .select:focus, .textarea:focus { border-color: #7190ff; box-shadow: 0 0 0 3px #315efb14; }
+    .toolbar .input { max-width: 235px; }
+    .toolbar .select { width: 130px; }
+    .table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .table th { text-align: left; color: #8290a6; font-weight: 600; font-size: 11px; background: #fbfcfe; }
+    .table th, .table td { padding: 15px 14px; border-bottom: 1px solid #eef1f5; }
+    .table tr:last-child td { border-bottom: 0; }
+    .table td:first-child { color: #273554; font-weight: 600; }
+    .status { display: inline-flex; align-items: center; gap: 5px; border-radius: 20px; padding: 4px 9px; font-size: 11px; font-weight: 650; }
+    .status::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+    .status.green { color: var(--green); background: var(--green-soft); }
+    .status.orange { color: var(--orange); background: var(--orange-soft); }
+    .status.gray { color: #7e8a9e; background: #f0f2f6; }
+    .code { color: #5c6a82; background: #f5f7fb; border-radius: 5px; padding: 4px 7px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+    .empty { text-align: center; padding: 55px 20px; color: var(--muted); font-size: 13px; }
+    .empty-icon { font-size: 30px; margin-bottom: 10px; opacity: .7; }
+
+    /* builder */
+    .builder-layout { display: grid; grid-template-columns: 235px minmax(400px, 1fr) 310px; gap: 18px; align-items: start; }
+    .builder-side { padding: 18px; }
+    .builder-side h3 { margin-bottom: 14px; }
+    .toolbox-group { margin-bottom: 15px; }
+    .toolbox-title { color: #909399; font-size: 11px; margin-bottom: 7px; }
+    .field-option { border: 1px solid var(--line); padding: 8px 9px; border-radius: 4px; display: flex; gap: 8px; align-items: center; color: #606266; margin-bottom: 6px; background: #fff; font-size: 12px; }
+    .field-option:hover { border-color: var(--brand); color: var(--brand); background: var(--brand-soft); }
+    .field-icon { width: 22px; height: 22px; display: grid; place-items: center; background: var(--brand-soft); color: var(--brand); border-radius: 4px; font-size: 11px; }
+    .field-add { margin-left: auto; color: #a4afc0; }
+    .helper { font-size: 11px; color: #99a4b4; line-height: 1.6; margin-top: 17px; }
+    .builder-canvas { background: #eef1f7; padding: 27px; min-height: 585px; border-radius: 12px; border: 1px solid #e1e6f0; }
+    .form-card { max-width: 535px; margin: 0 auto; background: #fff; border: 1px solid var(--line); border-radius: 6px; padding: 28px; box-shadow: none; }
+    .form-card .form-title { font-size: 20px; font-weight: 750; margin-bottom: 6px; }
+    .form-card .form-desc { font-size: 12px; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
+    .form-field { position: relative; border: 1px solid transparent; border-radius: 4px; padding: 10px; margin: 0 -10px 10px; }
+    .form-field.selected { border-color: #9db0ff; background: #fbfcff; }
+    .form-field.selected::after { content: '已选中'; position: absolute; right: 7px; top: -9px; color: var(--brand); background: #e7edff; padding: 2px 6px; border-radius: 4px; font-size: 9px; }
+    .field-label { display: block; font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 8px; }
+    .required { color: #e15b64; margin-left: 3px; }
+    .field-placeholder { color: #a8abb2; font-size: 13px; border: 1px solid #dcdfe6; border-radius: 4px; padding: 11px; }
+    .field-placeholder.textarea-placeholder { min-height: 68px; }
+    .config { padding: 20px; }
+    .config .section { border-bottom: 1px solid var(--line); padding-bottom: 20px; margin-bottom: 20px; }
+    .config .section:last-child { border-bottom: 0; margin-bottom: 0; padding-bottom: 0; }
+    .config label { display: block; color: var(--muted); font-size: 13px; margin: 0 0 8px; }
+    .config .input, .config .select, .config .textarea { margin-bottom: 14px; }
+    .config .select { height: 36px; }
+    .toggle-row { display: flex; justify-content: space-between; align-items: center; margin: 12px 0; font-size: 12px; color: #526178; }
+    .toggle { width: 34px; height: 19px; border-radius: 20px; background: #c6cedb; padding: 2px; }
+    .toggle.on { background: var(--brand); }
+    .toggle i { display: block; width: 15px; height: 15px; border-radius: 50%; background: #fff; transition: transform .15s; }
+    .toggle.on i { transform: translateX(15px); }
+    .publish-card { background: var(--brand-soft); border: 1px solid #dce4ff; border-radius: 8px; padding: 12px; font-size: 11px; color: #52618a; line-height: 1.7; }
+    .publish-card .code { display: block; margin-top: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* hosted */
+    .hosted-layout { display: grid; grid-template-columns: minmax(500px, 1.4fr) minmax(300px, .8fr); gap: 20px; align-items: start; }
+    .browser { border: 1px solid #dfe5ee; background: #eef1f7; border-radius: 12px; overflow: hidden; box-shadow: var(--shadow); }
+    .browser-bar { height: 38px; background: #fff; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 6px; padding: 0 13px; }
+    .browser-dot { width: 8px; height: 8px; border-radius: 50%; background: #d7dce5; }
+    .browser-url { margin-left: 10px; border-radius: 5px; color: #8490a3; background: #f5f7fb; padding: 5px 12px; font: 10px ui-monospace, monospace; flex: 1; }
+    .hosted-page { min-height: 594px; padding: 55px 25px; display: grid; place-items: start center; background: linear-gradient(160deg, #f7f9ff 0%, #edf3ff 100%); }
+    .hosted-form { width: 100%; max-width: 490px; background: #fff; padding: 34px 39px; border-radius: 12px; box-shadow: 0 18px 45px rgba(53,76,145,.13); }
+    .hosted-logo { color: var(--brand); font-weight: 800; font-size: 13px; letter-spacing: .08em; margin-bottom: 24px; }
+    .hosted-form h2 { font-size: 23px; margin-bottom: 8px; }
+    .hosted-form .sub { line-height: 1.7; margin-bottom: 25px; }
+    .hosted-field { margin-bottom: 15px; }
+    .hosted-field label { display: block; font-weight: 650; font-size: 12px; color: #34425d; margin-bottom: 7px; }
+    .hosted-field .input, .hosted-field .textarea { background: #fbfcfe; }
+    .hosted-form .btn { width: 100%; margin-top: 8px; padding: 11px; }
+    .hosted-foot { text-align: center; color: #a2adbd; font-size: 10px; margin-top: 18px; }
+    .info-list { display: grid; gap: 11px; }
+    .info-item { padding: 15px; border-radius: 9px; border: 1px solid var(--line); background: #fff; }
+    .info-item h3 { margin-bottom: 6px; }
+    .info-item p { margin: 0; color: var(--muted); line-height: 1.6; font-size: 12px; }
+    .mode-pill { display: inline-flex; color: var(--brand); background: var(--brand-soft); padding: 4px 8px; border-radius: 5px; font-size: 10px; margin-bottom: 20px; }
+    .api-box { background: #192238; color: #dbe4ff; padding: 15px; border-radius: 4px; font: 11px/1.8 ui-monospace, SFMono-Regular, Menlo, monospace; overflow: auto; }
+    .api-box .key { color: #8fc7ff; }
+    .api-box .string { color: #b7e4ba; }
+
+    /* submissions */
+    .detail-layout { display: grid; grid-template-columns: 1.25fr .75fr; gap: 18px; }
+    .record { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
+    .record-title { margin-bottom: 6px; }
+    .record-meta { color: var(--muted); font-size: 11px; font-weight: 400; }
+    .record-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
+    .record-field { padding: 12px; border-radius: 8px; background: #f8f9fc; }
+    .record-field label { display: block; color: #8a96aa; font-size: 10px; margin-bottom: 6px; }
+    .record-field span { font-size: 13px; color: #35435d; }
+    .timeline { display: grid; gap: 16px; margin-top: 8px; }
+    .timeline-item { position: relative; padding-left: 22px; font-size: 12px; color: #5e6b81; }
+    .timeline-item::before { content: ''; position: absolute; width: 8px; height: 8px; border: 2px solid var(--brand); background: white; border-radius: 50%; left: 0; top: 2px; }
+    .timeline-item:not(:last-child)::after { content: ''; position: absolute; width: 1px; background: #dce3f3; height: 22px; left: 5px; top: 14px; }
+    .timeline-item time { display: block; color: #a1acbc; font-size: 10px; margin-top: 4px; }
+    .note { background: #fff9eb; border: 1px solid #f7e5b8; color: #8f6b27; padding: 11px; border-radius: 7px; font-size: 11px; line-height: 1.6; margin-top: 17px; }
+    @media (max-width: 1080px) {
+      .mango-search-panel { flex-wrap: wrap; gap: 16px; }
+      .search-actions { width: 100%; margin-left: 0; justify-content: flex-end; }
+      .description-grid { grid-template-columns: repeat(2, 1fr); }
+      .description-item:nth-child(3n) { border-right: 1px solid var(--line); }
+      .description-item:nth-child(2n) { border-right: 0; }
+      .builder-layout { grid-template-columns: 210px 1fr; }
+      .config { grid-column: 1 / -1; }
+      .hosted-layout, .detail-layout { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 760px) {
+      .global-header { padding: 0 14px; }
+      .global-brand { min-width: 0; }
+      .global-brand strong, .global-brand small, .global-nav { display: none; }
+      .app { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .content { padding: 22px 16px 40px; }
+      .mango-search-panel { padding: 16px; }
+      .search-item { width: 100%; min-width: 0; }
+      .search-item .input, .search-item .select { flex: 1; width: auto; }
+      .description-grid { grid-template-columns: 1fr; }
+      .description-item, .description-item:nth-child(2n), .description-item:nth-child(3n) { border-right: 0; }
+      .dialog { width: calc(100% - 32px); }
+      .topbar { padding: 0 16px; }
+      .builder-layout { grid-template-columns: 1fr; }
+      .builder-side { display: none; }
+      .builder-canvas { padding: 15px; }
+      .form-card, .hosted-form { padding: 24px 20px; }
+      .page-head { gap: 15px; flex-direction: column; }
+      .toolbar { flex-wrap: wrap; }
+      .table { min-width: 720px; }
+      .panel.table-scroll { overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+  <header class="global-header">
+    <div class="global-brand"><span class="brand-mark">M</span><strong>云信保科技</strong><small>YUNXINBAOKEJI</small></div>
+    <nav class="global-nav"><span>⌂ 首页</span><span>⚙ 系统管理</span><span class="active">▣ 平台能力</span><span>↗ 网址导航</span><span>▤ 保函业务</span></nav>
+    <div class="global-user"><span>⌕</span><span>◯</span><span>◉ 芒果集团⌄</span><span class="avatar">管</span><span>Administrator⌄</span></div>
+  </header>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="nav-label">信息采集</div>
+      <nav class="nav">
+        <button class="active" data-view="forms"><span class="nav-icon">▦</span>表单管理</button>
+      </nav>
+      <div class="sidebar-footer">信息采集<br />独立于 CMS 内容模型<br /><span style="color:#53627a">prototype / v0.1</span></div>
+    </aside>
+    <main class="main">
+      <header class="topbar">
+        <div class="tabbar"><span>首页</span><span>内容中心 ×</span><span class="current" data-view="forms">表单管理 ×</span><span data-view="detail">表单详情 ×</span><span data-view="submissions">采集记录 ×</span><span>系统设置 ×</span></div>
+      </header>
+      <div class="content">
+        <section class="view active" id="view-forms">
+          <div class="mango-search-panel">
+            <div class="search-item"><label>关键字：</label><input class="input" placeholder="名称/编码" /></div>
+            <div class="search-item"><label>状态：</label><select class="select"><option>全部</option><option>启用</option><option>停用</option></select></div>
+            <div class="search-actions"><button class="btn primary">⌕ 查询</button><button class="btn">↻ 重置</button></div>
+          </div>
+          <div class="panel table-scroll">
+            <div class="list-toolbar"><button class="btn primary" data-dialog-open>新增</button></div>
+            <table class="table">
+              <thead><tr><th>表单名称</th><th>表单编码</th><th>备注</th><th>状态</th><th>提交量</th><th>创建日期</th><th>更新日期</th><th>创建人</th><th>操作</th></tr></thead>
+              <tbody>
+                <tr><td>官网咨询反馈</td><td><span class="code">website-consult</span></td><td>官网咨询入口</td><td><span class="status green">启用</span></td><td>1,286</td><td>2026-10-01</td><td>2026-10-17</td><td>管理员</td><td><button class="btn text" data-view="detail">详情</button><button class="btn text" data-view="builder">配置</button><button class="btn text" data-view="hosted">接入</button><button class="btn text" data-view="submissions">采集记录</button><button class="btn text" style="color:#e6a23c">停用</button><button class="btn text" style="color:#f56c6c">删除</button></td></tr>
+                <tr><td>产品试用申请</td><td><span class="code">product-trial</span></td><td>试用申请表</td><td><span class="status green">启用</span></td><td>429</td><td>2026-09-20</td><td>2026-10-16</td><td>管理员</td><td><button class="btn text" data-view="detail">详情</button><button class="btn text" data-view="builder">配置</button><button class="btn text" data-view="hosted">接入</button><button class="btn text" data-view="submissions">采集记录</button><button class="btn text" style="color:#e6a23c">停用</button><button class="btn text" style="color:#f56c6c">删除</button></td></tr>
+                <tr><td>服务满意度调查</td><td><span class="code">service-survey</span></td><td>服务回访</td><td><span class="status green">启用</span></td><td>86</td><td>2026-10-15</td><td>2026-10-15</td><td>张三</td><td><button class="btn text" data-view="detail">详情</button><button class="btn text" data-view="builder">配置</button><button class="btn text" data-view="hosted">接入</button><button class="btn text" data-view="submissions">采集记录</button><button class="btn text" style="color:#e6a23c">停用</button><button class="btn text" style="color:#f56c6c">删除</button></td></tr>
+                <tr><td>官网反馈线索</td><td><span class="code">official-feedback</span></td><td>历史反馈表</td><td><span class="status gray">停用</span></td><td>214</td><td>2026-08-12</td><td>2026-10-12</td><td>管理员</td><td><button class="btn text" data-view="detail">详情</button><button class="btn text" data-view="builder">配置</button><button class="btn text" data-view="hosted">接入</button><button class="btn text" data-view="submissions">采集记录</button><button class="btn text" style="color:#67c23a">启用</button><button class="btn text" style="color:#f56c6c">删除</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="view" id="view-detail">
+          <div class="page-head"><div class="page-title-with-back" data-view="forms" style="cursor:pointer"><button class="page-back" aria-label="返回表单列表">‹</button><span class="return-label">返回列表页</span></div><div class="actions"><button class="btn" data-view="hosted">接入方式</button><button class="btn" data-view="submissions">采集记录</button><button class="btn primary" data-view="builder">配置表单</button></div></div>
+          <div class="panel">
+            <div class="panel-body">
+              <div class="detail-header"><div><h2>官网咨询反馈</h2><div class="detail-meta"><span class="code">website-consult</span> · 创建人：管理员</div></div><span class="status green">启用</span></div>
+              <div class="description-grid"><div class="description-item"><label>表单名称</label><span>官网咨询反馈</span></div><div class="description-item"><label>表单编码</label><span>website-consult</span></div><div class="description-item"><label>备注</label><span>官网咨询入口</span></div><div class="description-item"><label>提交量</label><span>1,286</span></div><div class="description-item"><label>创建日期</label><span>2026-10-01</span></div><div class="description-item"><label>更新日期</label><span>2026-10-17</span></div></div>
+              <div class="detail-section"><div class="detail-section-title">字段配置</div><table class="table"><thead><tr><th>字段标签</th><th>字段编码</th><th>字段类型</th><th>必填</th><th>提示文字</th><th>排序</th></tr></thead><tbody><tr><td>您的姓名</td><td><span class="code">name</span></td><td>单行文本</td><td><span class="status green">是</span></td><td>请输入姓名</td><td>1</td></tr><tr><td>联系电话</td><td><span class="code">phone</span></td><td>手机号</td><td><span class="status green">是</span></td><td>请输入手机号</td><td>2</td></tr><tr><td>咨询类型</td><td><span class="code">consultType</span></td><td>下拉选择</td><td><span class="status green">是</span></td><td>请选择咨询类型</td><td>3</td></tr><tr><td>需求描述</td><td><span class="code">description</span></td><td>多行文本</td><td>否</td><td>请描述需求</td><td>4</td></tr></tbody></table></div>
+              <div class="detail-section"><div class="detail-section-title">接入方式</div><div class="hosted-layout"><div class="access-card"><div class="access-label"><strong>托管表单</strong><span class="status green">可用</span></div><p>直接使用平台渲染页面。</p><span class="code">/forms/website-consult</span></div><div class="access-card"><div class="access-label"><strong>API</strong><span class="status green">可用</span></div><p>自定义页面按表单编码提交。</p><span class="code">POST /information/open/forms/website-consult/submit</span></div></div></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="view-builder">
+          <div class="page-head">
+            <div class="page-title-with-back" data-view="detail" style="cursor:pointer"><button class="page-back" aria-label="返回表单详情">‹</button><span class="return-label">返回详情页</span></div>
+            <div class="actions"><button class="btn">预览</button><button class="btn primary" id="save-btn">保存配置</button></div>
+          </div>
+          <div class="builder-layout">
+            <div class="panel builder-side">
+              <h3>添加控件</h3>
+              <div class="toolbox-group"><div class="toolbox-title">基础字段</div>
+                <div class="field-option"><span class="field-icon">T</span><span>单行文本</span><span class="field-add">＋</span></div>
+                <div class="field-option"><span class="field-icon">▤</span><span>多行文本</span><span class="field-add">＋</span></div>
+                <div class="field-option"><span class="field-icon">#</span><span>数字</span><span class="field-add">＋</span></div>
+                <div class="field-option"><span class="field-icon">☎</span><span>手机号</span><span class="field-add">＋</span></div>
+                <div class="field-option"><span class="field-icon">@</span><span>邮箱</span><span class="field-add">＋</span></div>
+              </div>
+              <div class="toolbox-group"><div class="toolbox-title">选择字段</div>
+                <div class="field-option"><span class="field-icon">◉</span><span>单选</span><span class="field-add">＋</span></div>
+                <div class="field-option"><span class="field-icon">☑</span><span>多选</span><span class="field-add">＋</span></div>
+                <div class="field-option"><span class="field-icon">⌄</span><span>下拉选择</span><span class="field-add">＋</span></div>
+              </div>
+              <div class="toolbox-group"><div class="toolbox-title">日期与附件</div>
+                <div class="field-option"><span class="field-icon">▣</span><span>日期</span><span class="field-add">＋</span></div>
+                <div class="field-option"><span class="field-icon">↑</span><span>文件上传（P1）</span><span class="field-add">＋</span></div>
+              </div>
+              <div class="toolbox-group"><div class="toolbox-title">展示组件</div>
+                <div class="field-option"><span class="field-icon">≡</span><span>说明文字</span><span class="field-add">＋</span></div>
+                <div class="field-option"><span class="field-icon">—</span><span>分割线</span><span class="field-add">＋</span></div>
+              </div>
+              <p class="helper">控件添加后可配置标签、提示、默认值、必填和校验规则。所有控件由托管页面和 API 共用同一份定义。</p>
+            </div>
+            <div class="builder-canvas">
+              <div class="form-card">
+                <div class="form-title">官网咨询反馈</div>
+                <div class="form-desc">留下您的需求，我们会在 1 个工作日内与您联系。</div>
+                <div class="form-field selected"><label class="field-label">您的姓名<span class="required">*</span></label><div class="field-placeholder">请输入姓名</div></div>
+                <div class="form-field"><label class="field-label">联系电话<span class="required">*</span></label><div class="field-placeholder">请输入手机号</div></div>
+                <div class="form-field"><label class="field-label">咨询类型<span class="required">*</span></label><div class="field-placeholder">请选择咨询类型　⌄</div></div>
+                <div class="form-field"><label class="field-label">需求描述</label><div class="field-placeholder textarea-placeholder">请描述您希望了解的内容</div></div>
+                <button class="btn primary" style="width:100%;margin-top:7px">提交咨询</button>
+              </div>
+            </div>
+            <div class="panel config">
+              <div class="section"><h3 style="margin-bottom:15px">表单设置</h3><label>表单名称</label><input class="input" value="官网咨询反馈" /><label>表单编码</label><input class="input" value="website-consult" /><label>备注</label><textarea class="textarea" rows="2">官网咨询入口</textarea><label style="margin-top:12px">状态</label><select class="select"><option>启用</option><option>停用</option></select></div>
+              <div class="section"><h3 style="margin-bottom:15px">字段属性</h3><label>字段标签</label><input class="input" value="您的姓名" /><label>字段类型</label><select class="select"><option>单行文本</option><option>手机号</option><option>邮箱</option></select><label style="margin-top:12px">提示文字</label><input class="input" value="请输入姓名" /><div class="toggle-row"><span>必填字段</span><span class="toggle on"><i></i></span></div></div>
+              <div class="section"><h3 style="margin-bottom:15px">当前字段</h3><div style="font-size:12px;color:#526178;line-height:2.4"><div>☷　您的姓名　<span class="required">必填</span></div><div>☷　联系电话　<span class="required">必填</span></div><div>☷　咨询类型　<span class="required">必填</span></div><div>☷　需求描述</div></div></div>
+              <div class="publish-card">保存后可选择一种接入方式：<br />① 自定义页面调用 API<br />② 直接使用托管表单页面<span class="code">/information/open/forms/website-consult</span></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="view-hosted">
+          <div class="page-head">
+            <div class="page-title-with-back" data-view="detail" style="cursor:pointer"><button class="page-back" aria-label="返回表单详情">‹</button><span class="return-label">返回详情页</span></div>
+            <div class="actions"><button class="btn">复制页面地址</button><button class="btn primary">打开页面 ↗</button></div>
+          </div>
+          <div class="hosted-layout">
+            <div class="browser">
+              <div class="browser-bar"><span class="browser-dot"></span><span class="browser-dot"></span><span class="browser-dot"></span><span class="browser-url">https://example.com/information/open/forms/website-consult</span></div>
+              <div class="hosted-page">
+                <div class="hosted-form">
+                  <div class="hosted-logo">MANGO · ENTERPRISE</div>
+                  <h2>官网咨询反馈</h2>
+                  <p class="sub">留下您的需求，我们会在 1 个工作日内与您联系。</p>
+                  <div class="hosted-field"><label>您的姓名 <span class="required">*</span></label><input class="input" placeholder="请输入姓名" /></div>
+                  <div class="hosted-field"><label>联系电话 <span class="required">*</span></label><input class="input" placeholder="请输入手机号" /></div>
+                  <div class="hosted-field"><label>咨询类型 <span class="required">*</span></label><select class="select"><option>请选择咨询类型</option><option>产品咨询</option><option>服务咨询</option><option>合作咨询</option></select></div>
+                  <div class="hosted-field"><label>需求描述</label><textarea class="textarea" placeholder="请描述您希望了解的内容"></textarea></div>
+                  <button class="btn primary">提交咨询</button>
+                  <div class="hosted-foot">提交即表示您同意我们按隐私政策使用相关信息</div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <span class="mode-pill">使用方式 ② · 托管页面</span>
+              <div class="info-list">
+                <div class="info-item"><h3>适合快速上线</h3><p>配置完成后即可获得页面地址。适用于反馈、报名、咨询等标准采集场景。</p></div>
+                <div class="info-item"><h3>复用同一份定义</h3><p>页面字段、必填规则和校验规则来自当前启用表单，不与 API 模式分叉。</p></div>
+                <div class="info-item"><h3>可嵌入业务页面</h3><p>后续可提供 iframe 或组件嵌入，但不在本轮 MVP 中设计嵌入协议。</p></div>
+              </div>
+              <div style="margin-top:18px" class="panel"><div class="panel-head"><h3>接入方式</h3></div><div class="panel-body">
+                <div class="access-card"><div class="access-label"><strong>浏览器页面 / 托管页面</strong><span class="status green">无需密钥</span></div><p>使用公开表单编码提交。平台通过启用状态、字段校验、限流和验证码控制滥用。</p><div class="api-box"><span style="color:#96a4c4">POST</span> /information/open/forms/website-consult/submit</div></div>
+                <div class="access-card"><div class="access-label"><strong>服务端 API</strong><span class="status orange">需要表单专属 SK</span></div><p>表单专属 SK 只放在服务端环境变量中，不得写入浏览器代码。后台始终显示当前表单 SK，可复制、重新生成，并限制到当前租户和表单。</p><div class="api-box"><span class="key">X-Mango-SK</span>: mango_live_7c82••••••••</div><button class="btn" style="margin-top:10px">重新生成密钥</button></div>
+              </div></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="view-submissions">
+          <div class="mango-search-panel">
+            <div class="search-item"><label>关键字：</label><input class="input" placeholder="姓名/手机号/内容" /></div>
+            <div class="search-item"><label>状态：</label><select class="select"><option>全部</option><option>待处理</option><option>处理中</option><option>已完成</option><option>已关闭</option></select></div>
+            <div class="search-actions"><button class="btn primary">⌕ 查询</button><button class="btn">↻ 重置</button></div>
+          </div>
+          <div class="panel table-scroll">
+            <div class="list-toolbar"><div class="list-toolbar-group"><button class="btn" data-view="detail">‹ 返回详情页</button><span class="form-context"><strong>官网咨询反馈</strong><span class="code">website-consult</span></span></div><div class="list-toolbar-group"><span class="status orange">37 条待处理</span><button class="btn">导出记录</button></div></div>
+            <table class="table"><thead><tr><th>记录ID</th><th>提交时间</th><th>状态</th><th>来源页面</th><th>您的姓名</th><th>联系电话</th><th>咨询类型</th><th>需求描述</th><th>操作</th></tr></thead><tbody>
+              <tr><td><span class="code">SUB-001286</span></td><td>今天 10:24</td><td><span class="status orange">待处理</span></td><td>官网首页</td><td>张先生</td><td>138****2098</td><td>产品咨询</td><td>了解企业版部署方式和报价</td><td><button class="btn text">详情</button></td></tr>
+              <tr><td><span class="code">SUB-001285</span></td><td>今天 09:51</td><td><span class="status green">处理中</span></td><td>产品介绍页</td><td>李女士</td><td>186****7312</td><td>合作咨询</td><td>希望了解合作方式</td><td><button class="btn text">详情</button></td></tr>
+              <tr><td><span class="code">SUB-001284</span></td><td>昨天 16:05</td><td><span class="status gray">已完成</span></td><td>常见问题页</td><td>陈先生</td><td>139****4120</td><td>服务咨询</td><td>咨询服务支持范围</td><td><button class="btn text">详情</button></td></tr>
+              <tr><td><span class="code">SUB-001283</span></td><td>昨天 15:42</td><td><span class="status orange">待处理</span></td><td>官网首页</td><td>王女士</td><td>150****8801</td><td>产品咨询</td><td>咨询产品能力</td><td><button class="btn text">详情</button></td></tr>
+            </tbody></table>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+  <div class="drawer-mask" id="submission-drawer" role="dialog" aria-modal="true" aria-labelledby="submission-drawer-title">
+    <aside class="drawer">
+      <div class="drawer-head"><h3 id="submission-drawer-title">提交详情</h3><button class="dialog-close" data-submission-close>×</button></div>
+      <div class="drawer-body"><div class="record"><div><h3 class="record-title">张先生</h3><div class="record-meta">今天 10:24 · 官网首页 · 匿名提交</div></div><span class="status orange">待处理</span></div><div class="record-fields"><div class="record-field"><label>联系电话</label><span>138****2098</span></div><div class="record-field"><label>咨询类型</label><span>产品咨询</span></div><div class="record-field" style="grid-column:1/-1"><label>需求描述</label><span>希望了解企业版的部署方式和报价。</span></div></div><div class="note">个人信息仅对拥有采集记录查看权限的角色展示。当前列表已默认脱敏。</div><div style="margin-top:20px"><label style="display:block;color:#7c899d;font-size:11px;margin-bottom:7px">处理备注</label><textarea class="textarea" rows="3" placeholder="记录跟进结果"></textarea></div></div>
+      <div class="drawer-foot"><button class="btn" data-submission-close>取消</button><button class="btn primary" data-submission-close>保存并更新</button></div>
+    </aside>
+  </div>
+  <div class="dialog-mask" id="create-dialog" role="dialog" aria-modal="true" aria-labelledby="create-dialog-title">
+    <div class="dialog">
+      <div class="dialog-head"><h3 id="create-dialog-title">新增表单</h3><button class="dialog-close" data-dialog-close>×</button></div>
+      <div class="dialog-body">
+        <div class="dialog-form-item required"><label>表单名称</label><input class="input" placeholder="请输入表单名称" /></div>
+        <div class="dialog-form-item required"><label>表单编码</label><input class="input" placeholder="请输入表单编码" /></div>
+        <div class="dialog-form-item"><label>备注</label><textarea class="textarea" rows="3" placeholder="请输入备注"></textarea></div>
+        <div class="dialog-form-item"><label>状态</label><select class="select"><option>启用</option><option>停用</option></select></div>
+      </div>
+      <div class="dialog-foot"><button class="btn" data-dialog-close>取消</button><button class="btn primary" data-dialog-close>保存</button></div>
+    </div>
+  </div>
+  <script>
+    const titles = { forms: '表单管理', builder: '表单配置', detail: '表单详情', hosted: '托管表单', submissions: '采集记录' };
+    function showView(name, updateHash = true) {
+      if (!titles[name]) return;
+      document.querySelectorAll('.view').forEach((view) => view.classList.toggle('active', view.id === `view-${name}`));
+      document.querySelectorAll('[data-view]').forEach((button) => button.classList.toggle('active', button.dataset.view === name));
+      document.querySelectorAll('.tabbar span[data-view]').forEach((tab) => tab.classList.toggle('current', tab.dataset.view === name));
+      if (updateHash) history.replaceState(null, '', `#${name}`);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    document.querySelectorAll('[data-view]').forEach((button) => button.addEventListener('click', () => showView(button.dataset.view)));
+    const initialView = window.location.hash.slice(1);
+    if (titles[initialView]) showView(initialView, false);
+    const submissionDrawer = document.querySelector('#submission-drawer');
+    document.querySelectorAll('#view-submissions .btn.text').forEach((button) => button.addEventListener('click', () => submissionDrawer.classList.add('open')));
+    document.querySelectorAll('[data-submission-close]').forEach((button) => button.addEventListener('click', () => submissionDrawer.classList.remove('open')));
+    submissionDrawer.addEventListener('click', (event) => { if (event.target === submissionDrawer) submissionDrawer.classList.remove('open'); });
+    const createDialog = document.querySelector('#create-dialog');
+    document.querySelectorAll('[data-dialog-open]').forEach((button) => button.addEventListener('click', () => createDialog.classList.add('open')));
+    document.querySelectorAll('[data-dialog-close]').forEach((button) => button.addEventListener('click', () => createDialog.classList.remove('open')));
+    createDialog.addEventListener('click', (event) => { if (event.target === createDialog) createDialog.classList.remove('open'); });
+    document.querySelector('#save-btn').addEventListener('click', (event) => {
+      event.currentTarget.textContent = '已保存 ✓';
+      event.currentTarget.style.background = '#67c23a';
+    });
+  </script>
+</body>
+</html>

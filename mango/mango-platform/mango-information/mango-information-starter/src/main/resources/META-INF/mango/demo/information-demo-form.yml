@@ -1,0 +1,30 @@
+# 演示用内置表单：随代码发布，启动时由 Resource Registry 同步到 information_form。
+# 仅用于本地演示环境，业务模块请在自己的资源清单中声明 INFORMATION_FORM。
+mango:
+  resource:
+    schema-version: 1
+    module-code: mango-information
+    module-name: mango-information
+    declarations:
+      INFORMATION_FORM:
+        - id: "2951400000000099001"
+          version: 1
+          biz-key: information.form.demo-feedback
+          name: 演示内置反馈表
+          target-module: information
+          fields:
+            tenantId: { type: STRING, value: "1" }
+            formCode: { type: STRING, value: demo-feedback }
+            formName: { type: STRING, value: 演示内置反馈表 }
+            description: { type: STRING, value: 通过 Resource Registry 声明的内置采集表单 }
+            successMessage: { type: STRING, value: 提交成功，感谢您的反馈 }
+            status: { type: STRING, value: PUBLISHED }
+            definitionJson:
+              type: STRING
+              value: |
+                [
+                  {"type":"input","field":"name","title":"姓名","props":{"placeholder":"请输入姓名"},"validate":[{"required":true,"message":"请填写姓名"}]},
+                  {"type":"input","field":"phone","title":"手机号","props":{"type":"tel","placeholder":"请输入手机号"}},
+                  {"type":"select","field":"topic","title":"咨询类型","options":[{"label":"产品咨询","value":"product"},{"label":"服务咨询","value":"service"}]},
+                  {"type":"rate","field":"score","title":"满意度","props":{"max":5}}
+                ]

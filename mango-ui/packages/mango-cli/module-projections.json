@@ -201,6 +201,31 @@
     {
       "backendStarters": [
         {
+          "artifactId": "mango-information-starter",
+          "groupId": "io.mango.platform.information"
+        }
+      ],
+      "configFragments": [],
+      "dependsOn": [],
+      "frontend": {
+        "cliVersionKey": "mangoInformation",
+        "code": "information",
+        "packageName": "@mango/information",
+        "registrars": [
+          {
+            "import": "@mango/information/admin-pages",
+            "name": "registerMangoInformationAdminPages"
+          }
+        ],
+        "style": "@mango/information/style.css"
+      },
+      "moduleId": "information",
+      "presetMembership": "default",
+      "resourceCopies": []
+    },
+    {
+      "backendStarters": [
+        {
           "artifactId": "mango-job-starter",
           "groupId": "io.mango.platform.job"
         }

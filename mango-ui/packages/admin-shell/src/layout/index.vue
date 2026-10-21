@@ -26,7 +26,7 @@ import { storeToRefs } from 'pinia';
 import { useThemeStore } from '../stores/theme';
 import { useLayoutStore } from '../stores/layout';
 import { useRoutesList } from '../stores/routesList';
-import { useScrollbar } from '../composables/useScrollbar';
+import { useScrollbar, type LayoutMainScrollbarHost } from '../composables/useScrollbar';
 import { Local } from '@mango/common/utils/storage';
 import { mittBus } from '@mango/common/utils/mitt';
 import { containsMenuPath } from '@mango/common/utils/menuTree';
@@ -46,7 +46,7 @@ const storesRoutesList = useRoutesList();
 const route = useRoute();
 const { routesList, activeTopRoutePath } = storeToRefs(storesRoutesList);
 const { isTagsview } = storeToRefs(layoutStore);
-const layoutMainRef = ref();
+const layoutMainRef = ref<LayoutMainScrollbarHost>();
 const { updateScrollbar, initScrollHeight } = useScrollbar(layoutMainRef);
 const { getDarkColor, getLightColor } = useChangeColor();
 

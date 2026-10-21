@@ -1,3 +1,51 @@
+## 1.3.3 - 2026-10-20
+
+### Fixed
+
+- Keep resource-declared information forms out of the portable database baseline, so `MANGO_BSQL_ENABLED=true` builds no longer fail with `MANGO-BASELINE-040`.
+
+### Changed
+
+- Lock the CLI Maven matrix to Maven `1.0.63`.
+
+## 1.3.2 - 2026-10-20
+
+### Fixed
+
+- Keep package hidden routes registered for admin modules that declare no admin feature, so information collection detail pages open instead of 404.
+
+### Changed
+
+- Lock the CLI Maven matrix to Maven `1.0.62`.
+- Ship `@mango/information@1.1.1` with configuration-driven admin sub-page routes declared in `AUTH_MENU`.
+
+## 1.3.1 - 2026-10-20
+
+### Changed
+
+- Lock the CLI Maven matrix to Maven `1.0.61`.
+- Align generated projects with the `1.0.61` platform tuple where anonymous CMS, Information and Link access is decided only by `API_RESOURCE` declarations.
+
+## 1.3.0 - 2026-10-20
+
+### Added
+
+- Add the information collection module to generated Mango projects, including the frontend package, Admin module projection and backend Maven 1.0.60 tuple.
+
+### Fixed
+
+- Keep source-mode `@mango/admin-extension` page registration usable when the build-time version constant is not injected.
+- Propagate the CMS anonymous site-code resolution and tenant-scope fixes through the Maven 1.0.60 platform tuple.
+
+### Changed
+
+- Lock the Mango Maven/docs version at 1.0.60 and publish the complete 20-package npm closure through `@mango/cli@1.3.0`.
+
+### Upgrade Notes
+
+- Upgrade the complete Mango npm tuple and Maven/docs 1.0.60 together.
+- Enable the information module only after reviewing its menu, permission, tenant and file-storage configuration.
+
 ## 1.2.21 - 2026-10-15
 
 ### Fixed

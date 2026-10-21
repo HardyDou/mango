@@ -1,7 +1,7 @@
 mango:
   resource:
     schema-version: 1
-    module-code: authorization
+    module-code: cms
     module-name: mango-cms
     declarations:
       API_RESOURCE:

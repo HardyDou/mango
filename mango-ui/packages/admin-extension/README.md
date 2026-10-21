@@ -98,3 +98,15 @@ pnpm -C mango-ui --filter @mango/admin-extension test
 pnpm -C mango-ui --filter @mango/admin-extension build
 pnpm -C mango-ui architecture:check
 ```
+
+## 12. Issue #1055 source 模式构造期常量回退
+
+`src/core.ts` 现在通过 `typeof __MANGO_ADMIN_EXTENSION_VERSION__ === 'string'` 读取当前包版本：构建产物仍由 `vite.config.ts` 的 `define` 注入精确版本，未注入的 source 直连开发模式回退为 `dev`，不再因为缺少构造期常量让整个管理端渲染空白。页面注册表仍挂在 `globalThis` 单例上，多副本版本不一致时依旧直接报错。
+
+验证入口不变：
+
+```bash
+pnpm -C mango-ui --filter @mango/admin-extension test
+pnpm -C mango-ui --filter @mango/admin-extension build
+pnpm -C mango-ui architecture:check
+```

@@ -16,7 +16,7 @@ import { defineAsyncComponent, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useLayoutStore } from '../../stores/layout';
-import { useScrollbar } from '../../composables/useScrollbar';
+import { useScrollbar, type LayoutMainScrollbarHost } from '../../composables/useScrollbar';
 
 const LayoutAside = defineAsyncComponent(() => import('../component/aside.vue'));
 const LayoutHeader = defineAsyncComponent(() => import('../component/header.vue'));
@@ -24,7 +24,7 @@ const LayoutMain = defineAsyncComponent(() => import('../component/main.vue'));
 const LayoutWorkspaceNav = defineAsyncComponent(() => import('../navBars/workspaceNav/index.vue'));
 
 const route = useRoute();
-const layoutMainRef = ref();
+const layoutMainRef = ref<LayoutMainScrollbarHost>();
 const layoutStore = useLayoutStore();
 const { layout, isCollapse, isTagsview } = storeToRefs(layoutStore);
 
@@ -35,7 +35,7 @@ watch(
   () => {
     initScrollHeight();
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 // Watch only properties that affect scrollbar layout
@@ -43,7 +43,7 @@ watch(
   () => [isCollapse.value, layout.value, isTagsview.value],
   () => {
     updateScrollbar();
-  }
+  },
 );
 </script>
 

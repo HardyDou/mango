@@ -1,6 +1,6 @@
 {
   "name": "@mango/admin-pages",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -48,10 +48,10 @@
     "@mango/auth": "workspace:1.0.39",
     "@mango/common": "workspace:2.1.4",
     "@mango/rbac": "workspace:1.0.40",
-    "@mango/system": "workspace:1.0.49"
+    "@mango/system": "workspace:1.0.50"
   },
   "peerDependencies": {
-    "@mango/admin-extension": "workspace:1.1.0",
+    "@mango/admin-extension": "workspace:1.1.1",
     "vue": ">=3.5.13 <4"
   },
   "devDependencies": {

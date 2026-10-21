@@ -251,7 +251,6 @@ public class CmsSiteService implements ICmsSiteService {
         Require.notNull(query, CmsCode.CMS_BUSINESS_ERROR, "站点查询不能为空");
         Require.isTrue(StringUtils.hasText(query.getSiteCode()) || StringUtils.hasText(query.getDomain()), CmsCode.CMS_BUSINESS_ERROR, "站点编码或域名不能为空");
         String tenantId = CmsSupport.currentTenantIdOrNull();
-        validateResolveScope(query, tenantId);
         LambdaQueryWrapper<CmsSiteEntity> wrapper = new LambdaQueryWrapper<CmsSiteEntity>()
                 .eq(StringUtils.hasText(tenantId), CmsSiteEntity::getTenantId, tenantId)
                 .eq(CmsSiteEntity::getStatus, CmsSupport.ENABLED);
@@ -263,13 +262,6 @@ public class CmsSiteService implements ICmsSiteService {
         List<CmsSiteEntity> sites = siteMapper.selectList(wrapper);
         Require.isTrue(sites.size() == 1, CmsCode.CMS_BUSINESS_ERROR, "站点不存在或不唯一");
         return sites.get(0);
-    }
-
-    static void validateResolveScope(SiteResolveQuery query, String tenantId) {
-        if (!StringUtils.hasText(tenantId)) {
-            Require.isTrue(StringUtils.hasText(query.getDomain()), CmsCode.CMS_BUSINESS_ERROR, "匿名站点解析必须提供域名");
-            Require.isTrue(!StringUtils.hasText(query.getSiteCode()), CmsCode.CMS_BUSINESS_ERROR, "匿名站点解析不能使用站点编码");
-        }
     }
 
     private LambdaQueryWrapper<CmsContentPublishEntity> effectivePublishWrapper(String tenantId,
