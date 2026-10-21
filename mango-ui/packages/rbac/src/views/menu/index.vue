@@ -271,6 +271,10 @@
             <el-radio :value="0">隐藏</el-radio>
           </el-radio-group>
         </el-form-item>
+        <el-form-item v-if="form.menuType !== 3" label="路由缓存" prop="keepAlive">
+          <el-switch v-model="form.keepAlive" :active-value="1" :inactive-value="0" />
+          <span class="form-hint">开启后切换页签保留搜索条件和表单状态</span>
+        </el-form-item>
         <el-form-item label="排序" prop="sort">
           <el-input-number v-model="form.sort" :min="0" :max="9999" />
         </el-form-item>
@@ -439,6 +443,7 @@ const form = reactive<SysMenuVO & { groupCode?: string }>({
   sort: 0,
   status: 1,
   visible: 1,
+  keepAlive: 1,
   apiCodes: '',
   buttonType: '',
   buttonDisplayRule: '',
@@ -600,6 +605,7 @@ function handleEdit(row: SysMenuVO) {
     sort: row.sort,
     status: row.status,
     visible: row.visible,
+    keepAlive: row.keepAlive ?? 1,
     apiCodes: row.apiCodes,
     buttonType: row.buttonType || '',
     buttonDisplayRule: row.buttonDisplayRule || '',
@@ -634,6 +640,7 @@ async function handleSubmit() {
       moduleCode: form.moduleCode || 'mango-system',
       pageType: form.menuType === 3 ? 'BUTTON' : form.pageType,
       embedded: form.menuType !== 3 && form.pageType === 'IFRAME' ? 1 : 0,
+      keepAlive: form.menuType === 3 ? 0 : (form.keepAlive ?? 1),
       component: form.pageType === 'LOCAL_ROUTE' ? form.component : '',
       externalUrl: form.pageType === 'IFRAME' || form.pageType === 'EXTERNAL_LINK' ? form.externalUrl : '',
       buttonType: form.menuType === 3 ? form.buttonType || '' : '',
@@ -735,5 +742,10 @@ onMounted(() => {
 .permission-tag {
   margin-right: 4px;
   margin-bottom: 2px;
+}
+.form-hint {
+  margin-left: 8px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 </style>

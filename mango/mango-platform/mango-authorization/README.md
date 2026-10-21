@@ -100,6 +100,7 @@
 | `component` | 前端页面 key，必须和对应 npm 包注册的页面 key 一致 |
 | `pageType` | `LOCAL_ROUTE`、`MICRO_ROUTE`、`IFRAME`、`EXTERNAL_LINK`、`BUTTON` |
 | `menuCode` | 菜单可见性编码，只决定用户能看到哪些菜单 |
+| `keepAlive` | 路由缓存开关：`1` 表示切换页签保留页面状态，页面菜单默认 `1`，目录和按钮为 `0` |
 | `apiCodes` | 当前菜单携带的接口/动作权限码，分配菜单后自动授予 |
 
 如果新增的是 admin 页面插件，先在对应前端包 README 里确认页面 key，再把相同 key 写入 authorization 菜单清单。
