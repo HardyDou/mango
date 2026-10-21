@@ -600,6 +600,7 @@ delete from resource_registry where resource_type = '<类型>' and biz_key = '<b
 - `resource_registry` 只保存登记与审计信息。删除登记行不会删除 `target_table` / `target_id` 指向的目标数据，权限、菜单、模板等目标数据保持不变。
 - 禁止直接改 `resource_id` 字段来消除冲突：这会破坏登记行与目标数据的关联和变更历史。
 - 升级前先确认重复声明已消除，否则下次发布还会重现。同一 `resourceType + bizKey` 只应有一个声明来源。
+- 框架不会自动接管 `resource_id` 不同的历史登记行：同一 `resourceType + bizKey` 出现不同 `resourceId` 时固定 fail-closed，只按上述步骤一次性清理，不提供自动改身份或别名能力。该限制是有意保留的：重复声明是唯一能被暴露的信号，自动接管后同类问题将不再可见。
 
 ## 15. 相关文档
 
