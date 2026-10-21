@@ -19,7 +19,7 @@ import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useLayoutStore } from '../../stores/layout';
 import { useRoutesList } from '../../stores/routesList';
-import { useScrollbar } from '../../composables/useScrollbar';
+import { useScrollbar, type LayoutMainScrollbarHost } from '../../composables/useScrollbar';
 import { containsMenuPath } from '@mango/common/utils/menuTree';
 
 const LayoutHeader = defineAsyncComponent(() => import('../component/header.vue'));
@@ -28,7 +28,7 @@ const LayoutWorkspaceNav = defineAsyncComponent(() => import('../navBars/workspa
 const NavMenuHorizontal = defineAsyncComponent(() => import('../navMenu/horizontal.vue'));
 
 const route = useRoute();
-const layoutMainRef = ref();
+const layoutMainRef = ref<LayoutMainScrollbarHost>();
 const layoutStore = useLayoutStore();
 const { isCollapse, isFixedHeader, isTagsview, layout } = storeToRefs(layoutStore);
 const storesRoutesList = useRoutesList();
@@ -40,11 +40,11 @@ watch(
   () => [routesList.value, activeTopRoutePath.value, route.path],
   () => {
     const activeTop = activeTopRoutePath.value
-      ? routesList.value.find(item => item.path === activeTopRoutePath.value)
-      : routesList.value.find(item => containsMenuPath(item, route.path));
+      ? routesList.value.find((item) => item.path === activeTopRoutePath.value)
+      : routesList.value.find((item) => containsMenuPath(item, route.path));
     menuList.value = activeTop?.children?.length ? activeTop.children : [];
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 const { updateScrollbar, initScrollHeight } = useScrollbar(layoutMainRef);
@@ -54,20 +54,15 @@ watch(
   () => {
     initScrollHeight();
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 // Watch only properties that affect scrollbar layout
 watch(
-  () => [
-    isCollapse.value,
-    isFixedHeader.value,
-    isTagsview.value,
-    layout.value
-  ],
+  () => [isCollapse.value, isFixedHeader.value, isTagsview.value, layout.value],
   () => {
     updateScrollbar();
-  }
+  },
 );
 </script>
 

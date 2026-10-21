@@ -27,4 +27,21 @@ describe('responsive layout stability', () => {
     expect(mainSource).not.toContain('<template v-if="!enableFixedShell">');
     expect(mainSource).not.toContain('v-else\n      class="layout-main-body');
   });
+
+  it('exposes the content scroll operations to the layout host', () => {
+    const mainSource = readSource('src/layout/component/main.vue');
+
+    expect(mainSource).toContain('const resetContentScroll = (): boolean =>');
+    expect(mainSource).toContain('defineExpose({ updateScrollbar, resetContentScroll });');
+    expect(mainSource).toContain('[mango-shell] failed to reset content scroll: scrollbar wrap is not ready');
+  });
+
+  it('keeps the tab cache host mounted when a non-cached page is active', () => {
+    const parentSource = readSource('src/layout/routerView/parent.vue');
+
+    expect(parentSource).toContain('<keep-alive>');
+    expect(parentSource).not.toContain('<keep-alive v-if="route.meta.keepAlive">');
+    expect(parentSource).toContain(':is="Component" v-if="route.meta.keepAlive"');
+    expect(parentSource).toContain(':is="Component" v-if="!route.meta.keepAlive"');
+  });
 });
