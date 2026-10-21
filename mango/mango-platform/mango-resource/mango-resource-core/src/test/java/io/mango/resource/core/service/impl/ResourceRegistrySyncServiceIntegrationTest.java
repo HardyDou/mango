@@ -303,6 +303,29 @@ class ResourceRegistrySyncServiceIntegrationTest {
     }
 
     @Test
+    void registryConflictMessageNamesBothResourceIdsAndSources() {
+        jdbcTemplate.update("""
+                insert into resource_registry (
+                    id, resource_id, resource_version, app_code, service_code, resource_type,
+                    module_code, biz_key, name, target_module, target_table, target_id,
+                    source_hash, sync_mode, status
+                ) values (
+                    90006, '1900000000000000999', 1, 'baohan-system-backend', 'baohan-system-backend',
+                    'MESSAGE_TEMPLATE', 'guarantee', 'guarantee.apply.submit', '历史声明', 'notice',
+                    'message_template', 91001, 'legacy-hash', 'AUTO', 'ACTIVE'
+                )
+                """);
+
+        assertThatThrownBy(syncService::sync)
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("Resource bizKey already registered by another id")
+                .hasMessageContaining("MESSAGE_TEMPLATE:guarantee.apply.submit")
+                .hasMessageContaining("existing={resourceId=1900000000000000999")
+                .hasMessageContaining("appCode=baohan-system-backend")
+                .hasMessageContaining("declared={resourceId=1900000000000000001");
+    }
+
+    @Test
     void diagnosticSnapshotFailureDoesNotReverseSuccessfulSynchronization() {
         sqlStatementCounter.failOnInvocation(ResourceRegistryMapper.class, "selectByResourceIds", 2);
 

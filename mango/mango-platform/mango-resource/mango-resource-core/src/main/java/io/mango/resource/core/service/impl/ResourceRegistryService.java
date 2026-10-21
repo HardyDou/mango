@@ -818,10 +818,21 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
             ResourceRegistryRow rowByBizKey = registrySnapshot.findByTypeAndBizKey(
                     declaration.getResourceType(), declaration.getBizKey());
             if (rowByBizKey != null && !declaration.getId().equals(rowByBizKey.getResourceId())) {
-                conflict("Resource bizKey already registered by another id: "
-                        + declaration.getResourceType() + ":" + declaration.getBizKey());
+                conflict(registryConflictMessage(declaration, rowByBizKey));
             }
         }
+    }
+
+    private String registryConflictMessage(ResourceDeclaration declaration, ResourceRegistryRow row) {
+        return "Resource bizKey already registered by another id: "
+                + declaration.getResourceType() + ":" + declaration.getBizKey()
+                + "; existing={resourceId=" + row.getResourceId()
+                + ", appCode=" + row.getAppCode()
+                + ", serviceCode=" + row.getServiceCode()
+                + ", syncMode=" + row.getSyncMode() + "}"
+                + "; declared={resourceId=" + declaration.getId()
+                + ", appCode=" + declaration.getAppCode()
+                + ", serviceCode=" + declaration.getServiceCode() + "}";
     }
 
     private void validateRequired(ResourceDeclaration declaration) {
