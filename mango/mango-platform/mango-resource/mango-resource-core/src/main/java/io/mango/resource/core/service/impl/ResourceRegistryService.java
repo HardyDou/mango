@@ -1171,6 +1171,11 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
                             "缺失资源禁用时未找到处理器: " + row.getResourceType()
                                     + ", resourceId=" + row.getResourceId()
                                     + ", targetModule=" + row.getTargetModule());
+                    if (!StringUtils.hasText(row.getTenantId())) {
+                        log.warn("Mango resource missing disable skipped: remote tenant scope is unavailable, resourceType={}, resourceId={}",
+                                row.getResourceType(), row.getResourceId());
+                        continue;
+                    }
                     ResourceSyncResult result = dispatcher.disable(disabled);
                     assertOperationCanContinue();
                     repository.updateStatus(row, ResourceStatus.REMOVED.name(), row.getSourceHash());
@@ -1179,6 +1184,9 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
                     continue;
                 }
                 ResourceDeclaration disabled = fromRow(row);
+                if (!prepareTenantScopedDeclaration(row, handler, disabled)) {
+                    continue;
+                }
                 ResourceSyncResult result = handlerInvoker.disable(handler, disabled);
                 assertOperationCanContinue();
                 repository.updateStatus(row, ResourceStatus.REMOVED.name(), row.getSourceHash());
@@ -1280,6 +1288,21 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
                 || declaration.getStatus() == ResourceStatus.REMOVED;
     }
 
+    private boolean prepareTenantScopedDeclaration(ResourceRegistryRow row, ResourceHandler handler,
+                                                    ResourceDeclaration declaration) {
+        String tenantField = handler.executionTenantField();
+        if (!StringUtils.hasText(tenantField)) {
+            return true;
+        }
+        if (!StringUtils.hasText(row.getTenantId())) {
+            log.warn("Mango resource missing disable skipped: tenant scope is unavailable, resourceType={}, resourceId={}",
+                    row.getResourceType(), row.getResourceId());
+            return false;
+        }
+        declaration.putField(tenantField, field(ResourceFieldType.STRING, row.getTenantId().trim()));
+        return true;
+    }
+
     private ResourceDeclaration fromRow(ResourceRegistryRow row) {
         ResourceDeclaration declaration = new ResourceDeclaration();
         declaration.setId(row.getResourceId());
@@ -1291,6 +1314,9 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
         declaration.setBizKey(row.getBizKey());
         declaration.setTargetModule(row.getTargetModule());
         declaration.setStatus(ResourceStatus.REMOVED);
+        if (StringUtils.hasText(row.getTenantId())) {
+            declaration.putField("tenantId", field(ResourceFieldType.STRING, row.getTenantId().trim()));
+        }
         if (row.getTargetId() != null) {
             declaration.putField("targetId", field(ResourceFieldType.LONG, row.getTargetId()));
         }

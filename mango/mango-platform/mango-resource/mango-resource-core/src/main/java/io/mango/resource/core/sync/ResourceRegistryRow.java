@@ -25,6 +25,7 @@ public class ResourceRegistryRow {
     private String targetTable;
     private Long targetId;
     private String sourceHash;
+    private String tenantId;
     private ResourceSyncMode syncMode;
     private String status;
     @JsonIgnore

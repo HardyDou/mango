@@ -386,6 +386,8 @@ Flyway 路径：`mango-resource-core/src/main/resources/db/migration/resource`�
 
 资源注册中心只保存声明索引和同步审计数据。字典、系统参数、消息模板、编号规则、工作流配置等目标资源仍由目标模块自己的 migration 和资源处理器维护。
 
+`resource_registry` 的资源 ID 和 `resourceType + bizKey` 是全局唯一身份，不按可空 `tenant_id` 分区。历史版本曾将 `tenant_id` 放入唯一键，MySQL 对 `NULL` 允许重复；`V3__normalize_resource_registry_unique_keys.sql` 会在同一老库增量升级时移除该歧义。历史 `NULL tenant_id` 记录在缺失资源禁用阶段不能安全推导租户上下文时只告警并跳过，不阻断 Bootstrap。
+
 Runtime 前由 `ResourceBootstrapStepContributor` 扫描并幂等同步 `BOOTSTRAP_REQUIRED` 声明；Runtime 中由 `ResourceEventualReconciliationWorker` 只对账 `RUNTIME_EVENTUAL` 声明。本地注册中心由 `ResourceRegistryService` 完成目标资源 upsert、disable 和 delete。
 
 Runtime eventual worker 每轮仍重新收集声明，并使用独立 canonical mapper 计算包含当前 Bootstrap authority、来源服务、受管模块和声明内容的 fingerprint。fingerprint 与本进程最近一次成功提交相同时跳过远程全量注册并只记录 DEBUG；声明或 authority 变化时重新提交，远程失败不会推进成功 fingerprint，下一轮继续重试。该状态不持久化，应用重启后的首次轮次会重新提交。
