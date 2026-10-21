@@ -2,7 +2,6 @@ package io.mango.cms.starter.remote;
 
 import io.mango.cms.api.CmsAdDeliveryApi;
 import io.mango.cms.api.CmsAdvertisementApi;
-import io.mango.cms.api.CmsBannerApi;
 import io.mango.cms.api.CmsContentApi;
 import io.mango.cms.api.CmsContentCategoryApi;
 import io.mango.cms.api.CmsContentPublishApi;
@@ -42,7 +41,6 @@ class CmsRemoteAdapterContractTest {
             pair(CmsContentApi.class, CmsContentFeignClient.class, "/cms"),
             pair(CmsContentPublishApi.class, CmsContentPublishFeignClient.class, "/cms"),
             pair(CmsNavigationApi.class, CmsNavigationFeignClient.class, "/cms"),
-            pair(CmsBannerApi.class, CmsBannerFeignClient.class, "/cms"),
             pair(CmsAdvertisementApi.class, CmsAdvertisementFeignClient.class, "/cms"),
             pair(CmsAdDeliveryApi.class, CmsAdDeliveryFeignClient.class, "/cms"),
             pair(CmsSiteSettingApi.class, CmsSiteSettingFeignClient.class, "/cms"),
@@ -52,10 +50,10 @@ class CmsRemoteAdapterContractTest {
             GetMapping.class, PostMapping.class, PutMapping.class, DeleteMapping.class);
 
     @Test
-    void remoteAdapters_完整覆盖十二个能力Api() {
-        assertThat(PAIRS).hasSize(12);
+    void remoteAdapters_完整覆盖十一个能力Api() {
+        assertThat(PAIRS).hasSize(11);
         assertThat(PAIRS.stream().mapToInt(pair -> pair.feignType().getDeclaredMethods().length).sum())
-                .isEqualTo(74);
+                .isEqualTo(67);
         for (ApiFeignPair pair : PAIRS) {
             assertThat(pair.feignType().getInterfaces())
                     .as(pair.feignType().getSimpleName())

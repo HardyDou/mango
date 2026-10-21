@@ -52,7 +52,7 @@
                 <span class="grad-text">内容管理平台</span><br />
                 让每一次发布<span class="grad-text-warm">可信可溯</span>
               </h1>
-              <p class="hero-sub">{{ heroBanner?.subtitle || heroSubtitle }}</p>
+              <p class="hero-sub">{{ heroBanner?.textContent || heroSubtitle }}</p>
               <div class="hero-actions">
                 <button class="btn btn-primary" @click="go('products')">
                   探索产品能力
@@ -262,7 +262,7 @@
         <div class="news-hero" :style="newsHeroStyle()">
           <p class="kicker"><span class="kicker-dot"></span>NEWS</p>
           <h1 class="page-title">新闻<span class="grad-text">动态</span></h1>
-          <p class="page-desc">{{ newsHeroBanner?.subtitle || '了解演示站点的最新进展与行业洞察' }}</p>
+          <p class="page-desc">{{ newsHeroAd?.textContent || '了解演示站点的最新进展与行业洞察' }}</p>
         </div>
         <div class="section-shell">
           <div v-if="newsLoading && !newsList.length" class="news-empty">内容加载中...</div>
@@ -377,7 +377,7 @@
 
 <script setup lang="ts">
 import { computed, h, onMounted, onUnmounted, ref, nextTick, type Component } from 'vue';
-import { cmsSiteApi, createSiteResolveQuery, applySiteSeo, type SiteResolve, type SiteNavigation, type SiteBanner, type SiteContent, type SiteAdvertisement } from '@mango/site-shell';
+import { cmsSiteApi, createSiteResolveQuery, applySiteSeo, type SiteResolve, type SiteNavigation, type SiteContent, type SiteAdvertisement } from '@mango/site-shell';
 import { CAPABILITIES, SOLUTIONS, HIGHLIGHTS, CLIENTS } from './mock';
 
 type View = 'home' | 'products' | 'solutions' | 'news' | 'news-detail' | 'about';
@@ -386,8 +386,8 @@ type FooterNavigationGroup = { title: string; items: SiteNavigation[] };
 const site = ref<SiteResolve | null>(null);
 const topNavigations = ref<SiteNavigation[]>([]);
 const footerNavigations = ref<SiteNavigation[]>([]);
-const banners = ref<SiteBanner[]>([]);
-const newsHeroBanner = ref<SiteBanner | null>(null);
+const homeHeroAd = ref<SiteAdvertisement | null>(null);
+const newsHeroAd = ref<SiteAdvertisement | null>(null);
 const aboutHeroAd = ref<SiteAdvertisement | null>(null);
 const homeNews = ref<SiteContent[]>([]);
 const newsList = ref<SiteContent[]>([]);
@@ -412,7 +412,7 @@ const footerNavigationGroups = computed(() => {
   });
   return Array.from(groups, ([title, items]) => ({ title, items })) as FooterNavigationGroup[];
 });
-const heroBanner = computed(() => banners.value.find(b => b.position === 'HOME_HERO') || banners.value[0] || null);
+const heroBanner = computed(() => homeHeroAd.value);
 const heroSubtitle = '全线上秒级发布 · 智能审核 · 数据穿透 · 服务企业官网、帮助中心与行业门户';
 const topNews = computed(() => homeNews.value);
 const newsTotalPages = computed(() => Math.max(1, Math.ceil(newsPage.value.total / newsPage.value.pageSize)));
@@ -469,7 +469,7 @@ async function loadNewsList(pageNum: number) {
     const page = await cmsSiteApi.pageContents({ ...query, page: next, size: newsPage.value.pageSize });
     newsList.value = page?.list || [];
     newsPage.value = {
-      pageNum: Number(page?.pageNum || page?.page || next),
+      pageNum: Number(page?.page || next),
       pageSize: newsPage.value.pageSize,
       total: Number(page?.total || 0),
     };
@@ -581,13 +581,12 @@ function newsCoverStyle(item: SiteContent, index: number) {
   };
 }
 
-function bannerMediaUrl(banner: SiteBanner | null): string {
-  if (!banner?.mediaFileId) return '';
-  return `/api/cms/open/files/public-preview?id=${encodeURIComponent(banner.mediaFileId)}&domain=${encodeURIComponent(window.location.host)}`;
+function heroMediaUrl(ad: SiteAdvertisement | null): string {
+  return ad?.imageUrl || ad?.coverUrl || '';
 }
 
 function newsHeroStyle(): Record<string, string> {
-  const url = bannerMediaUrl(newsHeroBanner.value);
+  const url = heroMediaUrl(newsHeroAd.value);
   if (url) {
     return {
       backgroundImage: `linear-gradient(180deg, rgba(6,8,26,0.45), rgba(6,8,26,0.82)), url(${url})`,
@@ -699,20 +698,20 @@ async function loadData() {
     const [topNavs, footerNavs, bnrs, newsBnrs] = await Promise.all([
       cmsSiteApi.listNavigations({ ...query, navType: 'TOP' }),
       cmsSiteApi.listNavigations({ ...query, navType: 'FOOTER' }),
-      cmsSiteApi.listBanners(query),
-      cmsSiteApi.listBanners({ ...query, position: 'NEWS_HERO' }),
+      cmsSiteApi.listAdvertisements({ ...query, position: 'HOME_HERO' }),
+      cmsSiteApi.listAdvertisements({ ...query, position: 'NEWS_HERO' }),
     ]);
     topNavigations.value = sortBySort(topNavs);
     footerNavigations.value = sortBySort(footerNavs);
-    banners.value = sortBySort(bnrs);
-    newsHeroBanner.value = sortBySort(newsBnrs)[0] || null;
+    homeHeroAd.value = sortBySort(bnrs)[0] || null;
+    newsHeroAd.value = sortBySort(newsBnrs)[0] || null;
     const aboutAds = await cmsSiteApi.listAdvertisements({ ...query, position: 'ABOUT_HERO' });
     aboutHeroAd.value = sortBySort(aboutAds)[0] || null;
   } catch {
     topNavigations.value = [];
     footerNavigations.value = [];
-    banners.value = [];
-    newsHeroBanner.value = null;
+    homeHeroAd.value = null;
+    newsHeroAd.value = null;
     aboutHeroAd.value = null;
   }
   try {

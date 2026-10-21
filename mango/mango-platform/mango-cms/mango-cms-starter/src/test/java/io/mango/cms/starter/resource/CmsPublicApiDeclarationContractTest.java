@@ -52,7 +52,7 @@ class CmsPublicApiDeclarationContractTest {
             expected.put(resourceCode, declaration);
         }
 
-        assertThat(expected).hasSize(8);
+        assertThat(expected).hasSize(7);
         List<String> declaredCodes = List.of(
                 Stream.concat(expected.keySet().stream(), Stream.of(PUBLIC_FILE_RESOURCE_CODE))
                         .toArray(String[]::new));

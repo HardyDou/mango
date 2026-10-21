@@ -3,7 +3,6 @@ package io.mango.cms.starter.controller;
 import io.mango.cms.core.entity.CmsSiteEntity;
 import io.mango.cms.core.mapper.CmsAdDeliveryMapper;
 import io.mango.cms.core.mapper.CmsAdvertisementMapper;
-import io.mango.cms.core.mapper.CmsBannerMapper;
 import io.mango.cms.core.mapper.CmsContentMapper;
 import io.mango.cms.core.mapper.CmsContentPublishMapper;
 import io.mango.cms.core.mapper.CmsNavigationMapper;
@@ -33,7 +32,6 @@ class CmsSiteResolveHttpContractTest {
     private final CmsSiteMapper siteMapper = mock(CmsSiteMapper.class);
     private final CmsSiteCategoryMapper siteCategoryMapper = mock(CmsSiteCategoryMapper.class);
     private final CmsNavigationMapper navigationMapper = mock(CmsNavigationMapper.class);
-    private final CmsBannerMapper bannerMapper = mock(CmsBannerMapper.class);
     private final CmsAdvertisementMapper advertisementMapper = mock(CmsAdvertisementMapper.class);
     private final CmsAdDeliveryMapper adDeliveryMapper = mock(CmsAdDeliveryMapper.class);
     private final CmsContentMapper contentMapper = mock(CmsContentMapper.class);
@@ -80,7 +78,7 @@ class CmsSiteResolveHttpContractTest {
 
     private MockMvc mvc() {
         CmsSiteService service = new CmsSiteService(siteMapper, siteCategoryMapper, navigationMapper,
-                bannerMapper, advertisementMapper, adDeliveryMapper, contentMapper, publishMapper, provider());
+                advertisementMapper, adDeliveryMapper, contentMapper, publishMapper, provider());
         return MockMvcBuilders.standaloneSetup(new CmsSiteController(service))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();

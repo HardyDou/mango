@@ -14,7 +14,6 @@ import io.mango.cms.core.entity.CmsSiteCategoryEntity;
 import io.mango.cms.core.entity.CmsSiteEntity;
 import io.mango.cms.core.mapper.CmsAdDeliveryMapper;
 import io.mango.cms.core.mapper.CmsAdvertisementMapper;
-import io.mango.cms.core.mapper.CmsBannerMapper;
 import io.mango.cms.core.mapper.CmsContentCategoryMapper;
 import io.mango.cms.core.mapper.CmsContentMapper;
 import io.mango.cms.core.mapper.CmsContentPublishMapper;
@@ -60,7 +59,6 @@ class CmsAdminServiceSecurityTest {
     private final CmsContentMapper contentMapper = mock(CmsContentMapper.class);
     private final CmsContentPublishMapper publishMapper = mock(CmsContentPublishMapper.class);
     private final CmsNavigationMapper navigationMapper = mock(CmsNavigationMapper.class);
-    private final CmsBannerMapper bannerMapper = mock(CmsBannerMapper.class);
     private final CmsAdvertisementMapper advertisementMapper = mock(CmsAdvertisementMapper.class);
     private final CmsAdDeliveryMapper adDeliveryMapper = mock(CmsAdDeliveryMapper.class);
 
@@ -256,7 +254,6 @@ class CmsAdminServiceSecurityTest {
                 siteCategoryMapper,
                 publishMapper,
                 navigationMapper,
-                bannerMapper,
                 advertisementMapper,
                 adDeliveryMapper,
                 mock(ICmsSiteSettingService.class),

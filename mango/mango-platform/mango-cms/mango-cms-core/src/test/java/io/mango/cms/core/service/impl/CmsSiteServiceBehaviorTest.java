@@ -15,7 +15,6 @@ import io.mango.cms.core.entity.CmsSiteCategoryEntity;
 import io.mango.cms.core.entity.CmsSiteEntity;
 import io.mango.cms.core.mapper.CmsAdDeliveryMapper;
 import io.mango.cms.core.mapper.CmsAdvertisementMapper;
-import io.mango.cms.core.mapper.CmsBannerMapper;
 import io.mango.cms.core.mapper.CmsContentMapper;
 import io.mango.cms.core.mapper.CmsContentPublishMapper;
 import io.mango.cms.core.mapper.CmsNavigationMapper;
@@ -50,7 +49,6 @@ class CmsSiteServiceBehaviorTest {
     private final CmsSiteMapper siteMapper = mock(CmsSiteMapper.class);
     private final CmsSiteCategoryMapper siteCategoryMapper = mock(CmsSiteCategoryMapper.class);
     private final CmsNavigationMapper navigationMapper = mock(CmsNavigationMapper.class);
-    private final CmsBannerMapper bannerMapper = mock(CmsBannerMapper.class);
     private final CmsAdvertisementMapper advertisementMapper = mock(CmsAdvertisementMapper.class);
     private final CmsAdDeliveryMapper adDeliveryMapper = mock(CmsAdDeliveryMapper.class);
     private final CmsContentMapper contentMapper = mock(CmsContentMapper.class);
@@ -217,8 +215,7 @@ class CmsSiteServiceBehaviorTest {
         MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("tenant-a"));
         CmsSiteEntity site = site(10L, "tenant-a", "main", "www.example.test");
         when(siteMapper.selectList(any())).thenReturn(List.of(site));
-        when(bannerMapper.selectList(any())).thenReturn(List.of());
-        when(contentMapper.selectList(any())).thenReturn(List.of());
+                when(contentMapper.selectList(any())).thenReturn(List.of());
         when(advertisementMapper.selectList(any())).thenReturn(List.of());
         IFileContentProvider fileApi = mock(IFileContentProvider.class);
         CmsSiteService service = service(fileApi);
@@ -262,7 +259,7 @@ class CmsSiteServiceBehaviorTest {
     }
 
     private CmsSiteService service(IFileContentProvider fileApi) {
-        return new CmsSiteService(siteMapper, siteCategoryMapper, navigationMapper, bannerMapper,
+        return new CmsSiteService(siteMapper, siteCategoryMapper, navigationMapper,
                 advertisementMapper, adDeliveryMapper, contentMapper, publishMapper, provider(fileApi));
     }
 
@@ -271,6 +268,7 @@ class CmsSiteServiceBehaviorTest {
         query.setDomain(domain);
         return query;
     }
+
 
     private static SiteResolveQuery siteCodeQuery(String siteCode) {
         SiteResolveQuery query = new SiteResolveQuery();

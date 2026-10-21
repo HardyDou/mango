@@ -20,7 +20,6 @@ class CmsRemoteAutoConfigurationTest {
             CmsContentFeignClient.class,
             CmsContentPublishFeignClient.class,
             CmsNavigationFeignClient.class,
-            CmsBannerFeignClient.class,
             CmsAdvertisementFeignClient.class,
             CmsAdDeliveryFeignClient.class,
             CmsSiteSettingFeignClient.class,

@@ -120,6 +120,9 @@ Main API helper groups:
 
 Shared TypeScript types include `ApiId`, `PageResult`, `CmsSite`, `CmsContent`, `CmsContentPublish`, `CmsNavigation`, `CmsAdvertisement`, `CmsAdDelivery`, `CmsStatus`, and `CmsContentStatus`.
 
+Page queries accept `pageNum`/`pageSize` and map them to the backend `page`/`size` parameters. The backend `PageQuery` also accepts `pageNum`/`pageSize`, so direct HTTP callers no longer fall back to the default page size silently.
+
+
 `createCmsApi(httpClient)` is the preferred API entry. `cmsApi` delegates to the historical global request client only for source compatibility and should not be used by new pages.
 
 ## 6. 数据与初始化
@@ -128,7 +131,7 @@ This frontend package does not create database tables, menus, or default records
 
 | Data                                                                          | Source                                                                             |
 | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| Sites, categories, content, navigation, advertisements, and publish relations | Backend `mango-cms` module.                                                        |
+| Sites, categories, content, navigation, advertisements, and publish relations | Backend `mango-cms` module.                                          |
 | Menus and button permissions                                                  | Backend `mango-cms` resource file `META-INF/mango/resources/cms-common-menu.json`. |
 | File picker, image preview, and upload records                                | `@mango/file` and backend `mango-file`.                                            |
 | Admin page registration                                                       | `registerMangoCmsAdminPages()` writes page loaders into `@mango/admin-pages`.      |
@@ -191,6 +194,10 @@ Confirm the host application also integrates `@mango/file` and backend `mango-fi
 - [Capability docs rule](../../../mango-pmo/rules/08-capability-docs.md)
 
 ## 11. Change Impact
+
+- Unreleased: site-scoped site-category options in the publish editor (the option list now loads per selected site instead of concatenating every site). See Issue #1053.
+
+## 12. Change Impact History
 
 - `@mango/cms@1.0.10` aligns exact dependencies to `@mango/admin-pages@1.0.20` and `@mango/file@1.0.21`.
   CMS APIs, page keys, permissions, tenant boundaries, and runtime behavior are unchanged from `1.0.9`.

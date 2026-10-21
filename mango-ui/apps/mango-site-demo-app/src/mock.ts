@@ -1,7 +1,7 @@
 /**
  * 演示站点页面自有结构化内容（产品能力、解决方案、数据亮点、客户）。
  *
- * 站点信息、导航、Banner、广告、新闻等内容均来自 CMS 公开接口，
+ * 站点信息、导航、广告投放、新闻等内容均来自 CMS 公开接口，
  * 不在此处维护仿真数据；本文件只承载官网视觉区块的自有展示结构。
  */
 
@@ -46,7 +46,7 @@ export const CAPABILITIES: Capability[] = [
     code: 'multisite',
     name: '多站点管理',
     tagline: '官网 · 帮助 · 门户',
-    description: '一套平台支撑多个站点，按域名解析站点，独立栏目、导航、Banner 与广告位配置。',
+    description: '一套平台支撑多个站点，按域名解析站点，独立栏目、导航、广告位与投放配置。',
     features: ['按域名解析站点', '独立栏目与导航', '多站点广告投放', '开放 API 生态'],
     icon: 'network',
   },
@@ -69,7 +69,7 @@ export const SOLUTIONS: Solution[] = [
     industry: '企业官网',
     title: '企业官网站点',
     description: '为企业提供从站点搭建、栏目规划、内容发布到 SEO 优化的全流程官网解决方案。',
-    highlights: ['多栏目内容管理', '导航与 Banner 配置', 'SEO 自动优化', '响应式主题'],
+    highlights: ['多栏目内容管理', '导航与广告投放配置', 'SEO 自动优化', '响应式主题'],
   },
   {
     code: 'help',

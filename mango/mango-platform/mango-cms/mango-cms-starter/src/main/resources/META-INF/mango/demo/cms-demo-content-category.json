@@ -1,0 +1,76 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "cms",
+      "moduleName": "内容管理",
+      "declarations": {
+        "CMS_CONTENT_CATEGORY": [
+          {
+            "id": "20260714110000101",
+            "version": 1,
+            "bizKey": "cms.content-category.2070000000000000201",
+            "name": "CMS 演示数据 内容分类 新闻资讯",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": { "type": "LONG", "value": "2070000000000000201" },
+              "tenantId": { "type": "STRING", "value": "1" },
+              "orgId": { "type": "LONG", "value": "1" },
+              "createdBy": { "type": "LONG", "value": "1" },
+              "updatedBy": { "type": "LONG", "value": "1" },
+              "parentId": { "type": "LONG", "value": "0" },
+              "categoryCode": { "type": "STRING", "value": "NEWS" },
+              "categoryName": { "type": "STRING", "value": "新闻资讯" },
+              "sort": { "type": "INT", "value": "1" },
+              "status": { "type": "STRING", "value": "ENABLED" },
+              "remark": { "type": "STRING", "value": "CMS 演示内容分类" }
+            }
+          },
+          {
+            "id": "20260714110000102",
+            "version": 1,
+            "bizKey": "cms.content-category.2070000000000000202",
+            "name": "CMS 演示数据 内容分类 帮助文档",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": { "type": "LONG", "value": "2070000000000000202" },
+              "tenantId": { "type": "STRING", "value": "1" },
+              "orgId": { "type": "LONG", "value": "1" },
+              "createdBy": { "type": "LONG", "value": "1" },
+              "updatedBy": { "type": "LONG", "value": "1" },
+              "parentId": { "type": "LONG", "value": "0" },
+              "categoryCode": { "type": "STRING", "value": "HELP" },
+              "categoryName": { "type": "STRING", "value": "帮助文档" },
+              "sort": { "type": "INT", "value": "2" },
+              "status": { "type": "STRING", "value": "ENABLED" },
+              "remark": { "type": "STRING", "value": "CMS 演示内容分类" }
+            }
+          },
+          {
+            "id": "20260714110000103",
+            "version": 1,
+            "bizKey": "cms.content-category.2070000000000000203",
+            "name": "CMS 演示数据 内容分类 企业介绍",
+            "targetModule": "cms",
+            "syncMode": "INIT_ONLY",
+            "fields": {
+              "targetId": { "type": "LONG", "value": "2070000000000000203" },
+              "tenantId": { "type": "STRING", "value": "1" },
+              "orgId": { "type": "LONG", "value": "1" },
+              "createdBy": { "type": "LONG", "value": "1" },
+              "updatedBy": { "type": "LONG", "value": "1" },
+              "parentId": { "type": "LONG", "value": "0" },
+              "categoryCode": { "type": "STRING", "value": "ABOUT" },
+              "categoryName": { "type": "STRING", "value": "企业介绍" },
+              "sort": { "type": "INT", "value": "3" },
+              "status": { "type": "STRING", "value": "ENABLED" },
+              "remark": { "type": "STRING", "value": "CMS 演示内容分类" }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

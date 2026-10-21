@@ -36,4 +36,37 @@ class PageQueryTest {
 
         assertThat(query).isInstanceOf(Query.class);
     }
+
+    @Test
+    void setPageNum_aliasesPage() {
+        PageQuery query = new PageQuery();
+        query.setPageNum(3L);
+
+        assertThat(query.getPage()).isEqualTo(3);
+    }
+
+    @Test
+    void setPageSize_aliasesSizeAndKeepsClamp() {
+        PageQuery query = new PageQuery();
+        query.setPageSize(50L);
+
+        assertThat(query.getSize()).isEqualTo(50);
+
+        query.setPageSize(1000L);
+
+        assertThat(query.getSize()).isEqualTo(500);
+    }
+
+    @Test
+    void setAliases_ignoreNullValues() {
+        PageQuery query = new PageQuery();
+        query.setPage(2);
+        query.setSize(20);
+
+        query.setPageNum(null);
+        query.setPageSize(null);
+
+        assertThat(query.getPage()).isEqualTo(2);
+        assertThat(query.getSize()).isEqualTo(20);
+    }
 }
