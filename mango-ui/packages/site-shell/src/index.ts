@@ -109,7 +109,6 @@ export interface SiteAdvertisement {
 
 export interface SiteContent {
   id?: ApiId;
-  code?: string;
   title?: string;
   subtitle?: string;
   summary?: string;
@@ -185,7 +184,7 @@ export const cmsSiteApi = {
     get<PageResult<SiteContent>>('/cms/open/contents/page', publicRequest(normalizePageQuery(params))).then(
       normalizePageResult,
     ),
-  detailContent: (params: SiteResolveQuery & { contentId?: ApiId; code?: string; categoryId?: ApiId }) =>
+  detailContent: (params: SiteResolveQuery & { contentId: ApiId; categoryId?: ApiId }) =>
     get<SiteContent>('/cms/open/contents/detail', publicRequest(params)),
 };
 

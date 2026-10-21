@@ -142,15 +142,6 @@ public class CmsContentService implements ICmsContentService {
 
     private void applyContent(CmsContentEntity entity, SaveCmsContentCommand command) {
         Require.notNull(command, CmsCode.CMS_BUSINESS_ERROR, "内容保存命令不能为空");
-        String code = CmsSupport.trimToNull(command.getCode());
-        if (code != null) {
-            long sameCode = contentMapper.selectCount(new QueryWrapper<CmsContentEntity>()
-                    .eq("tenant_id", CmsSupport.currentTenantId())
-                    .eq("code", code)
-                    .ne(command.getId() != null, "id", command.getId()));
-            Require.isTrue(sameCode == 0, CmsCode.CMS_BUSINESS_ERROR, "内容编码已存在");
-        }
-        entity.setCode(code);
         entity.setTitle(CmsSupport.trimRequired(command.getTitle(), "标题不能为空"));
         entity.setSubtitle(CmsSupport.trimToNull(command.getSubtitle()));
         entity.setSummary(CmsSupport.trimToNull(command.getSummary()));
@@ -212,7 +203,6 @@ public class CmsContentService implements ICmsContentService {
     private CmsContentVO toContentVO(CmsContentEntity e) {
         CmsContentVO vo = new CmsContentVO();
         vo.setId(e.getId());
-        vo.setCode(e.getCode());
         vo.setTitle(e.getTitle());
         vo.setSubtitle(e.getSubtitle());
         vo.setSummary(e.getSummary());

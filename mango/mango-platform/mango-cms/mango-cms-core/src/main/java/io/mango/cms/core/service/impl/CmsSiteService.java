@@ -222,14 +222,7 @@ public class CmsSiteService implements ICmsSiteService {
     public SiteContentVO detailContent(SiteContentDetailQuery query) {
         Require.notNull(query, CmsCode.CMS_BUSINESS_ERROR, "内容详情查询不能为空");
         CmsSiteEntity site = resolveSiteEntity(toResolveQuery(query));
-        Require.isTrue(query.getContentId() != null || StringUtils.hasText(query.getCode()),
-                CmsCode.CMS_BUSINESS_ERROR, "内容 ID 或内容编码不能为空");
-        CmsContentEntity content = query.getContentId() != null
-                ? contentMapper.selectById(query.getContentId())
-                : contentMapper.selectOne(new LambdaQueryWrapper<CmsContentEntity>()
-                .eq(CmsContentEntity::getTenantId, site.getTenantId())
-                .eq(CmsContentEntity::getCode, query.getCode().trim())
-                .last("limit 1"));
+        CmsContentEntity content = contentMapper.selectById(query.getContentId());
         Require.notNull(content, CmsCode.CMS_BUSINESS_ERROR, "内容不存在");
         Require.isTrue(publicContent(content, site.getTenantId(), LocalDateTime.now()), CmsCode.CMS_BUSINESS_ERROR, "内容不存在");
         CmsContentPublishEntity publish = findEffectivePublish(site, content.getId(), query.getCategoryId(), LocalDateTime.now());
@@ -646,7 +639,6 @@ public class CmsSiteService implements ICmsSiteService {
     private SiteContentVO toPublicContentVO(CmsSiteEntity site, CmsContentEntity entity, CmsContentPublishEntity publish) {
         SiteContentVO vo = new SiteContentVO();
         vo.setId(entity.getId());
-        vo.setCode(entity.getCode());
         vo.setTitle(entity.getTitle());
         vo.setSubtitle(entity.getSubtitle());
         vo.setSummary(entity.getSummary());

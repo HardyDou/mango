@@ -214,27 +214,6 @@ class CmsSiteServiceBehaviorTest {
     }
 
     @Test
-    void detailContent_canResolvePublishedContentByCode() {
-        CmsSiteEntity site = site(10L, "tenant-a", "main", "www.example.test");
-        CmsContentEntity content = content(20L, "tenant-a", CmsContentStatus.PUBLISHED.name());
-        content.setCode("release-2026");
-        CmsContentPublishEntity publish = publish(30L, 20L, 10L, 40L);
-        when(siteMapper.selectList(any())).thenReturn(List.of(site));
-        when(contentMapper.selectOne(any())).thenReturn(content);
-        when(publishMapper.selectList(any())).thenReturn(List.of(publish));
-        when(siteCategoryMapper.selectById(40L)).thenReturn(null);
-        CmsSiteService service = service(null);
-        SiteContentDetailQuery query = contentQuery(20L);
-        query.setContentId(null);
-        query.setCode("release-2026");
-
-        SiteContentVO result = service.detailContent(query);
-
-        assertThat(result).extracting(SiteContentVO::getCode, SiteContentVO::getTop, SiteContentVO::getSort)
-                .containsExactly("release-2026", false, null);
-    }
-
-    @Test
     void publicFile_allowsSiteLogoAndRestoresCallerTenantContext() {
         MangoContextHolder.set(MangoContextSnapshot.empty().withSecurity(
                 1L, 2L, "caller-tenant", "caller", "ADMIN", "user", "org", 3L, "admin"));

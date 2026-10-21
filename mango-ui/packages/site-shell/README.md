@@ -82,10 +82,10 @@ Main API helper:
 | `cmsSiteApi.listNavigations(params)` | `GET /cms/open/navigations/list` | Read navigation by `navType`. |
 | `cmsSiteApi.listBanners(params)` | `GET /cms/open/banners/list` | Read banner records by position. |
 | `cmsSiteApi.listAdvertisements(params)` | `GET /cms/open/advertisements/list` | Read advertisement deliveries by position. |
-| `cmsSiteApi.pageContents(params)` | `GET /cms/open/contents/page` | Read published content pages. HTTP parameters use `page`/`size`. |
-| `cmsSiteApi.detailContent(params)` | `GET /cms/open/contents/detail` | Read one published content detail by `contentId` or stable `code`. |
+| `cmsSiteApi.pageContents(params)` | `GET /cms/open/contents/page` | Read published content pages. Sends `page`/`size` and normalizes the response to both `page`/`size` and `pageNum`/`pageSize`. |
+| `cmsSiteApi.detailContent(params)` | `GET /cms/open/contents/detail` | Read one published content detail by `contentId`. |
 
-`pageContents()` also accepts legacy `pageNum`/`pageSize` callers and converts them to backend-standard `page`/`size` parameters.
+`pageContents()` also accepts legacy `pageNum`/`pageSize` callers and converts them to backend-standard `page`/`size` parameters. The backend `PageQuery` accepts both names, so direct HTTP callers no longer fall back to the default page size silently.
 
 State helpers:
 
@@ -111,7 +111,7 @@ This frontend package does not initialize database records, menus, permissions, 
 | Initial site query | Host app route, domain, or explicit `siteCode`. |
 | Page layout and navigation rendering | Host site app. |
 
-Public CMS APIs only return enabled, visible, published, and valid-time data according to backend `mango-cms` filtering. `SiteContent` includes `code`, `top`, and `sort`; `SiteBanner` includes `mediaUrl` for direct media rendering.
+Public CMS APIs only return enabled, visible, published, and valid-time data according to backend `mango-cms` filtering. `SiteContent` includes `top` and `sort`; `SiteBanner` includes `mediaUrl` for direct media rendering.
 
 ## 7. 管理入口
 

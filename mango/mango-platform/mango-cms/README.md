@@ -159,7 +159,7 @@ mango:
 
 CMS 按数据用途分层登记：
 
-- Flyway 只负责 DDL。新库通过 `db/migration/mango-cms/V1__init_mango_cms.sql` 创建基础表结构，后续结构变更使用同目录版本迁移（如 `V2__add_content_code.sql`），不写菜单、业务数据或演示数据。
+- Flyway 只负责 DDL。新库通过 `db/migration/mango-cms/V1__init_mango_cms.sql` 一次创建最终表结构，不写菜单、业务数据或演示数据。
 - 正式资源放在 `META-INF/mango/resources/`。CMS 当前登记 `cms-common-menu.json` 和 `cms-common-public-api.yml`；此类资源默认同步，其中 `cms-common-public-api.yml` 是匿名放行的唯一判定来源。
 - 必须初始化的业务数据也应按资源类型放在 `META-INF/mango/resources/`，不能写进 Flyway。CMS 当前没有必须初始化的业务数据。
 - 演示资源按 CMS 业务类型拆分放在 `META-INF/mango/demo/`，默认不加载；仅在明确开启 Demo 时同步。
@@ -182,7 +182,7 @@ mango:
 | `cms_site` | 站点基础信息与 SEO 配置 |
 | `cms_site_category` | 站点栏目树 |
 | `cms_navigation` | 顶部和底部导航 |
-| `cms_banner` | 站点 Banner |
+| `cms_banner` | 站点 Banner。历史能力，已由广告投放取代，不提供后台菜单入口。 |
 | `cms_advertisement` | 广告位 |
 | `cms_ad_delivery` | 广告投放 |
 | `cms_content_category` | 内容池通用分类 |
