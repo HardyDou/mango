@@ -1,33 +1,41 @@
 import { nextTick, type Ref } from 'vue';
 
+export interface LayoutMainScrollbarHost {
+  updateScrollbar: () => boolean;
+  resetContentScroll: () => boolean;
+}
+
 /**
  * 滚动条逻辑 composable
  * 消除 layout 文件中的重复代码
  */
-export function useScrollbar(
-  layoutMainRef: Ref<Record<string, any> | undefined>,
-  layoutScrollbarRef?: Ref<Record<string, any> | undefined>
-) {
+export function useScrollbar(layoutMainRef: Ref<LayoutMainScrollbarHost | undefined>) {
   const updateScrollbar = () => {
-    if (layoutScrollbarRef?.value) {
-      layoutScrollbarRef.value.update();
+    const layoutMain = layoutMainRef.value;
+    if (!layoutMain) {
+      console.error('[mango-shell] failed to update content scrollbar: LayoutMain is not ready');
+      return false;
     }
-    layoutMainRef.value?.layoutMainScrollbarRef?.update();
+    return layoutMain.updateScrollbar();
+  };
+
+  const resetContentScroll = () => {
+    const layoutMain = layoutMainRef.value;
+    if (!layoutMain) {
+      console.error('[mango-shell] failed to reset content scroll: LayoutMain is not ready');
+      return false;
+    }
+    return layoutMain.resetContentScroll();
   };
 
   const initScrollHeight = () => {
     nextTick(() => {
       setTimeout(() => {
         updateScrollbar();
-        if (layoutScrollbarRef?.value?.wrapRef) {
-          layoutScrollbarRef.value.wrapRef.scrollTop = 0;
-        }
-        if (layoutMainRef.value?.layoutMainScrollbarRef?.wrapRef) {
-          layoutMainRef.value.layoutMainScrollbarRef.wrapRef.scrollTop = 0;
-        }
+        resetContentScroll();
       }, 500);
     });
   };
 
-  return { updateScrollbar, initScrollHeight };
+  return { updateScrollbar, resetContentScroll, initScrollHeight };
 }

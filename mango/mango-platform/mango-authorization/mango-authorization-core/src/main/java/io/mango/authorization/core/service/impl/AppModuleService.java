@@ -384,7 +384,8 @@ public class AppModuleService implements IAppModuleService {
         menu.setAppCode(context.appCode());
         menu.setModuleCode(context.moduleCode());
         menu.setParentId(parentId == null ? Long.valueOf(0L) : parentId);
-        menu.setMenuType(item.getMenuType() == null ? Integer.valueOf(2) : item.getMenuType());
+        Integer menuType = item.getMenuType() == null ? Integer.valueOf(2) : item.getMenuType();
+        menu.setMenuType(menuType);
         menu.setMenuName(item.getMenuName());
         menu.setPath(item.getPath());
         menu.setIcon(item.getIcon());
@@ -392,7 +393,8 @@ public class AppModuleService implements IAppModuleService {
         menu.setStatus(item.getStatus() == null ? Integer.valueOf(1) : item.getStatus());
         menu.setVisible(item.getVisible() == null ? Integer.valueOf(1) : item.getVisible());
         menu.setComponent(item.getComponent());
-        menu.setKeepAlive(item.getKeepAlive() == null ? Integer.valueOf(0) : item.getKeepAlive());
+        Integer keepAlive = item.getKeepAlive();
+        menu.setKeepAlive(keepAlive == null ? (menuType == 2 ? Integer.valueOf(1) : Integer.valueOf(0)) : keepAlive);
         menu.setEmbedded(item.getEmbedded() == null ? Integer.valueOf(0) : item.getEmbedded());
         menu.setRedirect(item.getRedirect());
         menu.setApiCodes(joinPermissions(item.getApiCodes()));
