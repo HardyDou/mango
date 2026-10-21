@@ -602,6 +602,8 @@ delete from resource_registry where resource_type = '<类型>' and biz_key = '<b
 - 升级前先确认重复声明已消除，否则下次发布还会重现。同一 `resourceType + bizKey` 只应有一个声明来源。
 - 框架不会自动接管 `resource_id` 不同的历史登记行：同一 `resourceType + bizKey` 出现不同 `resourceId` 时固定 fail-closed，只按上述步骤一次性清理，不提供自动改身份或别名能力。该限制是有意保留的：重复声明是唯一能被暴露的信号，自动接管后同类问题将不再可见。
 
+- 一次同步会汇总报告全部登记冲突，而不是遇到第一条就退出：报错首行为 `Mango resource registry found N conflicts`，随后按序号列出每条 `resourceType:bizKey` 的既有 id、来源与声明 id、来源，末行给出本节的修复位置。生产库存在多条身份漂移时，按该清单一次性清理即可，不需要逐条重启试错。
+
 ## 15. 相关文档
 
 - [Resource Registry 设计方案](../../../mango-docs/designs/mango-resource-registry-design.md)

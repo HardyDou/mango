@@ -776,16 +776,18 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
     private void validateDeclarations(List<ResourceDeclaration> declarations) {
         Set<String> ids = new HashSet<>();
         Set<String> bizKeys = new HashSet<>();
+        List<String> conflicts = new ArrayList<>();
         for (ResourceDeclaration declaration : declarations) {
             validateRequired(declaration);
             if (!ids.add(declaration.getId())) {
-                conflict("Duplicate resource id: " + declaration.getId());
+                conflicts.add("Duplicate resource id: " + declaration.getId());
             }
             String bizKey = declaration.getResourceType() + ":" + declaration.getBizKey();
             if (!bizKeys.add(bizKey)) {
-                conflict("Duplicate resource type and bizKey: " + bizKey);
+                conflicts.add("Duplicate resource type and bizKey: " + bizKey);
             }
         }
+        failOnConflicts(conflicts);
     }
 
     private List<ResourceDeclaration> excludeManagedShadowedDeclarations(
@@ -814,13 +816,15 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
 
     private void validateRegistryConflicts(List<ResourceDeclaration> declarations,
                                            ResourceRegistrySnapshot registrySnapshot) {
+        List<String> conflicts = new ArrayList<>();
         for (ResourceDeclaration declaration : declarations) {
             ResourceRegistryRow rowByBizKey = registrySnapshot.findByTypeAndBizKey(
                     declaration.getResourceType(), declaration.getBizKey());
             if (rowByBizKey != null && !declaration.getId().equals(rowByBizKey.getResourceId())) {
-                conflict(registryConflictMessage(declaration, rowByBizKey));
+                conflicts.add(registryConflictMessage(declaration, rowByBizKey));
             }
         }
+        failOnConflicts(conflicts);
     }
 
     private String registryConflictMessage(ResourceDeclaration declaration, ResourceRegistryRow row) {
@@ -854,10 +858,42 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
     }
 
     private void conflict(String message) {
-        if (properties.isFailOnConflict()) {
-            Require.isTrue(false, ResourceCode.RESOURCE_CONFLICT, message);
+        failOnConflicts(List.of(message));
+    }
+
+    /**
+     * 一次性报告全部资源登记冲突。
+     *
+     * <p>历史库常见多条身份漂移同时存在。逐条 fail-fast 会让运维每修一条就重启一次；
+     * 这里聚合为一份可执行清单，失败语义不变（仍然 fail-closed，不修改任何数据）。
+     *
+     * @param conflicts 冲突描述；为空时直接返回
+     */
+    private void failOnConflicts(List<String> conflicts) {
+        if (conflicts.isEmpty()) {
+            return;
         }
-        log.warn(message);
+        if (!properties.isFailOnConflict()) {
+            conflicts.forEach(log::warn);
+            return;
+        }
+        Require.isTrue(false, ResourceCode.RESOURCE_CONFLICT, aggregatedConflictMessage(conflicts));
+    }
+
+    private String aggregatedConflictMessage(List<String> conflicts) {
+        if (conflicts.size() == 1) {
+            return conflicts.get(0);
+        }
+        StringBuilder message = new StringBuilder("Mango resource registry found ")
+                .append(conflicts.size())
+                .append(" conflicts; resolve all of them before the next sync:")
+                .append(System.lineSeparator());
+        for (int index = 0; index < conflicts.size(); index++) {
+            message.append("  ").append(index + 1).append(". ").append(conflicts.get(index))
+                    .append(System.lineSeparator());
+        }
+        message.append("Remediation steps: mango/mango-platform/mango-resource/README.md section 14");
+        return message.toString();
     }
 
     private void syncDeprecated(ResourceDeclaration declaration, boolean force,
