@@ -196,6 +196,9 @@ Handler 按这些稳定身份幂等查询和写入，而不是把运行时生成
 解析到目标时，Handler 不写入不稳定外键并保持同步可重入，使后续 Bootstrap、EVENTUAL reconciliation 或显式同步
 能够重试收敛；格式非法、类型不匹配等不可能满足的引用则明确失败。
 
+已发布声明的 `id` 视为冻结。修改 `id` 等于新增一个资源，并让旧资源变成清单缺席；需要调整身份时必须同时显式退役旧资源，
+不得直接复用或改写已发布 `id`。同一 `resourceType + bizKey` 只应有一个声明来源，重复声明会让升级在资源同步阶段中断。
+
 ### 6.2 兼容性排序提示（不建议使用）
 
 以下能力继续兼容已有声明，但不得作为新 Resource 业务关系的正确性前提：
@@ -545,12 +548,58 @@ authorization_api_resource         API_RESOURCE 访问模式正确
 | 现象 | 处理方式 |
 |------|----------|
 | 启动时报资源冲突 | 检查声明文件中的 `id` 和 `resourceType + bizKey` 是否重复。 |
+| 启动时报 `Resource bizKey already registered by another id` | 同一 `resourceType + bizKey` 已存在不同 `resourceId` 的历史登记行，按 14.1 处理。 |
 | 资源未覆盖目标数据 | 检查注册表中的 `sync_mode` 是否为 `AUTO`，以及声明 `version` 或内容 hash 是否变化。 |
 | 多实例重复同步 | 检查 `mango-infra-kv` 是否提供 `ILeaseLocker`、续租是否成功，以及 `lock-ttl-seconds` 是否覆盖一次批次。 |
 | 同一错误持续刷屏或启动已 UP 但资源未完成 | 查看 `resourceStartupHealthIndicator` 的 participant 状态；`PERMANENT_FAILED` 需修正声明 snapshot，`TRANSIENT_WAIT` 查看下次退避重试和底层连接。 |
 | 微服务未上报资源 | 检查业务服务是否引入 `mango-resource-starter-remote` 和 `mango-resource-sync-starter`，并确认注册中心接口可访问。 |
 | 声明文件未加载 | 检查文件是否位于 `META-INF/mango/resources/`，扩展名是否为 `.json`、`.yml` 或 `.yaml`。 |
 | 模块诊断的 Resource 条件不是 PASS | 只有本 JVM 本次同步后的声明 fingerprint、registry sourceHash/status/target 与当前声明全部一致才通过；未拿到锁、旧 PASS 刷新失败或仅有历史 SUCCESS 都返回 UNKNOWN/FAIL。 |
+
+### 14.1 同一 bizKey 已由另一个 resourceId 注册
+
+同步或 `bootstrap apply` 抛出：
+
+```text
+Resource bizKey already registered by another id: API_RESOURCE:<bizKey>;
+existing={resourceId=<旧ID>, appCode=<旧来源>, serviceCode=<旧服务>, syncMode=AUTO};
+declared={resourceId=<新ID>, appCode=<当前来源>, serviceCode=<当前服务>}
+```
+
+含义：`resource_registry` 中同一 `resourceType + bizKey` 已有登记行，但它保存的 `resource_id` 与当前声明不同。
+最常见原因是同一资源被两个声明来源声明过：平台制品 `META-INF/mango/resources/` 与业务应用
+`mango.authorization.resource-sync.resources`。
+
+处理顺序：
+
+1. 只读确认两条数据来源：
+
+```sql
+select resource_id, resource_type, biz_key, app_code, service_code, sync_mode, status, target_id, updated_at
+from resource_registry
+where resource_type = '<类型>' and biz_key = '<bizKey>';
+```
+
+2. 在发布恢复点之后、升级之前执行。先备份目标行：
+
+```sql
+create table resource_registry_bak_<时间戳> as
+select * from resource_registry where resource_type = '<类型>' and biz_key = '<bizKey>';
+```
+
+3. 删除冲突的登记行，但不要动目标表：
+
+```sql
+delete from resource_registry where resource_type = '<类型>' and biz_key = '<bizKey>';
+```
+
+4. 重新执行 `bootstrap apply`；当前声明会重新登记一行，Handler 按业务身份重新解析目标。
+
+注意：
+
+- `resource_registry` 只保存登记与审计信息。删除登记行不会删除 `target_table` / `target_id` 指向的目标数据，权限、菜单、模板等目标数据保持不变。
+- 禁止直接改 `resource_id` 字段来消除冲突：这会破坏登记行与目标数据的关联和变更历史。
+- 升级前先确认重复声明已消除，否则下次发布还会重现。同一 `resourceType + bizKey` 只应有一个声明来源。
 
 ## 15. 相关文档
 
