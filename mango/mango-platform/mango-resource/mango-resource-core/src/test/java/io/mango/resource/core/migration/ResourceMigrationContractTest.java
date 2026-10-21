@@ -14,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ResourceMigrationContractTest {
 
     private static final String V1_MIGRATION = "db/migration/resource/V1__init_resource_registry.sql";
+    private static final String V3_MIGRATION = "db/migration/resource/V3__normalize_resource_registry_unique_keys.sql";
     private static final List<String> RESOURCE_TABLES = List.of(
             "resource_registry",
             "resource_sync_log",
@@ -40,6 +41,17 @@ class ResourceMigrationContractTest {
                             .map(column -> "`" + column + "`")
                             .toArray(String[]::new));
         }
+    }
+
+    @Test
+    void v3MakesRegistryIdentityUniqueAcrossNullTenantRows() throws IOException {
+        String migration = readClasspathResource(V3_MIGRATION);
+
+        assertThat(migration)
+                .contains("DROP INDEX `uk_resource_registry_resource_id`")
+                .contains("DROP INDEX `uk_resource_registry_type_biz_key`")
+                .contains("UNIQUE KEY `uk_resource_registry_resource_id` (`resource_id`)")
+                .contains("UNIQUE KEY `uk_resource_registry_type_biz_key` (`resource_type`, `biz_key`)");
     }
 
     @Test

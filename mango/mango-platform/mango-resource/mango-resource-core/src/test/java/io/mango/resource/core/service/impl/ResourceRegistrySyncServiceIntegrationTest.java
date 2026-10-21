@@ -131,6 +131,9 @@ class ResourceRegistrySyncServiceIntegrationTest {
     private DeferredResourceHandler deferredResourceHandler;
 
     @Autowired
+    private TenantScopedResourceHandler tenantScopedResourceHandler;
+
+    @Autowired
     private SqlStatementCounter sqlStatementCounter;
 
     @Autowired
@@ -151,6 +154,7 @@ class ResourceRegistrySyncServiceIntegrationTest {
         handler.resetUpsertCount();
         handler.resetPreservation();
         handler.setEnvironmentRequired(false);
+        tenantScopedResourceHandler.clearDisableTenants();
         resourceRegistryProperties.setBaselineBuildEnabled(false);
         dispatcher.reset();
         syncOrderRecorder.clear();
@@ -993,6 +997,38 @@ class ResourceRegistrySyncServiceIntegrationTest {
     }
 
     @Test
+    void syncSkipsMissingTenantScopedResourceFromLegacyNullTenantRegistryRow() {
+        ResourceDeclaration declaration = genericDeclaration(
+                "1900000000000000010", "TENANT_TEST_RESOURCE", "guarantee.tenant-test", "tenant-test");
+        field(declaration, "tenantId", ResourceFieldType.STRING, "1");
+        provider.setDeclaration(declaration);
+
+        syncService.sync();
+        provider.clear();
+        syncService.sync();
+
+        assertThat(registryStatus(declaration.getId())).isEqualTo("ACTIVE");
+        assertThat(tenantScopedResourceHandler.disableTenants()).isEmpty();
+    }
+
+    @Test
+    void syncUsesRegistryTenantWhenDisablingTenantScopedLegacyResource() {
+        ResourceDeclaration declaration = genericDeclaration(
+                "1900000000000000011", "TENANT_TEST_RESOURCE", "guarantee.tenant-test-2", "tenant-test");
+        field(declaration, "tenantId", ResourceFieldType.STRING, "1");
+        provider.setDeclaration(declaration);
+
+        syncService.sync();
+        jdbcTemplate.update("update resource_registry set tenant_id = '2' where resource_id = ?",
+                declaration.getId());
+        provider.clear();
+        syncService.sync();
+
+        assertThat(registryStatus(declaration.getId())).isEqualTo("REMOVED");
+        assertThat(tenantScopedResourceHandler.disableTenants()).containsExactly("2");
+    }
+
+    @Test
     void remoteSyncDisablesMissingOnlyWithinSameSourceService() {
         ResourceDeclaration serviceA = activeDeclaration(1, "服务A");
         serviceA.setId("1900000000000000003");
@@ -1226,6 +1262,13 @@ class ResourceRegistrySyncServiceIntegrationTest {
         declaration.setTargetModule(targetModule);
         declaration.setFields(new LinkedHashMap<>());
         return declaration;
+    }
+
+    private void field(ResourceDeclaration declaration, String name, ResourceFieldType type, Object value) {
+        ResourceField field = new ResourceField();
+        field.setType(type);
+        field.setValue(value);
+        declaration.putField(name, field);
     }
 
     private ResourceDeclaration activeDeclaration(String id, int version, String bizKey, String titleValue) {
@@ -1594,6 +1637,11 @@ class ResourceRegistrySyncServiceIntegrationTest {
         }
 
         @Bean
+        TenantScopedResourceHandler tenantScopedResourceHandler() {
+            return new TenantScopedResourceHandler();
+        }
+
+        @Bean
         ProviderResourceHandler providerResourceHandler() {
             return new ProviderResourceHandler();
         }
@@ -1658,6 +1706,40 @@ class ResourceRegistrySyncServiceIntegrationTest {
         @Override
         public ResourceSyncResult disable(ResourceDeclaration resource) {
             return ResourceSyncResult.of(94002L, "test_provider", "disabled");
+        }
+    }
+
+    static class TenantScopedResourceHandler implements ResourceHandler {
+
+        private final List<String> disableTenants = new ArrayList<>();
+
+        @Override
+        public String resourceType() {
+            return "TENANT_TEST_RESOURCE";
+        }
+
+        @Override
+        public String executionTenantField() {
+            return "tenantId";
+        }
+
+        @Override
+        public ResourceSyncResult upsert(ResourceDeclaration resource) {
+            return ResourceSyncResult.of(95001L, "tenant_test_resource", "ok");
+        }
+
+        @Override
+        public ResourceSyncResult disable(ResourceDeclaration resource) {
+            disableTenants.add(io.mango.infra.context.api.MangoContextHolder.tenantId());
+            return ResourceSyncResult.of(95001L, "tenant_test_resource", "disabled");
+        }
+
+        List<String> disableTenants() {
+            return List.copyOf(disableTenants);
+        }
+
+        void clearDisableTenants() {
+            disableTenants.clear();
         }
     }
 
