@@ -14,7 +14,7 @@
       v-else
       :index="val.path"
       :style="getMenuIndentStyle(level)"
-      :class="{ 'is-active': val.path === activePath }"
+      :class="{ 'is-active': activePaths.includes(val.path) }"
     >
       <template #title>
         <el-icon v-if="val.meta?.icon" class="menu-icon">
@@ -22,7 +22,7 @@
         </el-icon>
         <span>{{ val.meta?.title || val.name }}</span>
       </template>
-      <SubItem :chil="val.children" :level="level + 1" :active-path="activePath" />
+      <SubItem :chil="val.children" :level="level + 1" :active-paths="activePaths" />
     </el-sub-menu>
   </template>
 </template>
@@ -41,11 +41,11 @@ withDefaults(
   defineProps<{
     chil: MenuItem[];
     level?: number;
-    activePath?: string;
+    activePaths?: string[];
   }>(),
   {
     level: 2,
-    activePath: '',
+    activePaths: () => [],
   },
 );
 

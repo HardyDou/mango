@@ -3,6 +3,7 @@ export interface ActiveMenuNode {
   meta?: {
     activePaths?: string[];
     isHide?: boolean;
+    [key: string]: unknown;
   };
   children?: ActiveMenuNode[];
 }
@@ -27,24 +28,37 @@ function collectHiddenDescendantPaths(menus: ActiveMenuNode[]): string[] {
   ]);
 }
 
-export function resolveActiveMenuPath<T extends ActiveMenuNode>(menus: T[], path: string): string {
-  let activePath = '';
+export function resolveActiveMenuPaths<T extends ActiveMenuNode>(menus: T[], path: string): string[] {
+  let activePaths: string[] = [];
+  let matchedPathLength = -1;
 
-  const visit = (menu: T) => {
-    const matchesMenuPath = menu.path && isSameOrChildPath(menu.path, path);
-    const matchesHiddenDescendant = menu.meta?.activePaths?.some((activePath) => isSameOrChildPath(activePath, path));
-    if (menu.path && (matchesMenuPath || matchesHiddenDescendant) && menu.path.length >= activePath.length) {
-      activePath = menu.path;
+  const visit = (menu: T, ancestorPaths: string[]) => {
+    const menuPath = menu.path;
+    const matchesMenuPath = Boolean(menuPath && isSameOrChildPath(menuPath, path));
+    const matchesHiddenDescendant = Boolean(
+      menu.meta?.activePaths?.some((activePath) => isSameOrChildPath(activePath, path)),
+    );
+    const menuPaths = menuPath ? [...ancestorPaths, menuPath] : ancestorPaths;
+
+    if (menuPath && (matchesMenuPath || matchesHiddenDescendant) && menuPath.length >= matchedPathLength) {
+      activePaths = menuPaths;
+      matchedPathLength = menuPath.length;
     }
+
     for (const child of (menu.children || []) as T[]) {
-      visit(child);
+      visit(child, menuPaths);
     }
   };
 
   for (const menu of menus) {
-    visit(menu);
+    visit(menu, []);
   }
-  return activePath;
+  return activePaths;
+}
+
+export function resolveActiveMenuPath<T extends ActiveMenuNode>(menus: T[], path: string): string {
+  const activePaths = resolveActiveMenuPaths(menus, path);
+  return activePaths[activePaths.length - 1] || '';
 }
 
 function isSameOrChildPath(menuPath: string, path: string): boolean {
