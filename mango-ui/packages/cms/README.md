@@ -19,6 +19,7 @@ The package does not implement the public site frontend. Public site application
 | Content pool management           | `CmsContentsView`, `cmsApi.pageContents()`                   |
 | Content publish management        | `CmsContentPublishesView`, `cmsApi.pagePublishes()`          |
 | Navigation management             | `CmsNavigationsView`, `cmsApi.pageNavigations()`             |
+| Banner management                 | `BannersView`, `cmsApi.pageBanners()`                         |
 | Advertisement slot management     | `CmsAdvertisementsView`, `cmsApi.pageAdvertisements()`       |
 | Advertisement delivery management | `CmsAdDeliveriesView`, `cmsApi.pageAdDeliveries()`           |
 | Inline advertisement rendering    | `MAd`                                                        |
@@ -100,6 +101,7 @@ Registered page keys:
 | `cms/content-tags/index`       | `CmsContentTagsView`       |
 | `cms/content-publishes/index`  | `CmsContentPublishesView`  |
 | `cms/navigations/index`        | `CmsNavigationsView`       |
+| `cms/banners/index`            | `BannersView`              |
 | `cms/advertisements/index`     | `CmsAdvertisementsView`    |
 | `cms/ad-deliveries/index`      | `CmsAdDeliveriesView`      |
 
@@ -114,11 +116,16 @@ Main API helper groups:
 | Contents           | `pageContents()`, `detailContent()`, `createContent()`, `updateContent()`, `submitContent()`, `approveContent()`, `rejectContent()`, `offlineContent()`, `deleteContent()`                        |
 | Publishes          | `pagePublishes()`, `publishContents()`, `offlinePublish()`, `deletePublish()`                                                                                                                     |
 | Navigations        | `pageNavigations()`, `createNavigation()`, `updateNavigation()`, `updateNavigationStatus()`, `deleteNavigation()`                                                                                 |
+| Banners            | `pageBanners()`, `createBanner()`, `updateBanner()`, `updateBannerStatus()`, `deleteBanner()`                                                                                                     |
 | Advertisements     | `pageAdvertisements()`, `createAdvertisement()`, `updateAdvertisement()`, `updateAdvertisementStatus()`, `deleteAdvertisement()`                                                                  |
 | Ad deliveries      | `pageAdDeliveries()`, `createAdDelivery()`, `updateAdDelivery()`, `updateAdDeliveryStatus()`, `deleteAdDelivery()`                                                                                |
 | Site settings      | `detailSiteSetting()`, `saveSiteSetting()`                                                                                                                                                        |
 
-Shared TypeScript types include `ApiId`, `PageResult`, `CmsSite`, `CmsContent`, `CmsContentPublish`, `CmsNavigation`, `CmsAdvertisement`, `CmsAdDelivery`, `CmsStatus`, and `CmsContentStatus`.
+Shared TypeScript types include `ApiId`, `PageResult`, `CmsSite`, `CmsContent`, `CmsContentPublish`, `CmsNavigation`, `CmsBanner`, `CmsAdvertisement`, `CmsAdDelivery`, `CmsStatus`, and `CmsContentStatus`.
+
+Page queries accept `pageNum`/`pageSize` and map them to the backend `page`/`size` parameters. The backend `PageQuery` also accepts `pageNum`/`pageSize`, so direct HTTP callers no longer fall back to the default page size silently.
+
+The content editor and detail view include `code` (内容编码), which is unique per tenant on the backend. Leave it empty to keep using the content ID as the public address.
 
 `createCmsApi(httpClient)` is the preferred API entry. `cmsApi` delegates to the historical global request client only for source compatibility and should not be used by new pages.
 
@@ -128,7 +135,7 @@ This frontend package does not create database tables, menus, or default records
 
 | Data                                                                          | Source                                                                             |
 | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| Sites, categories, content, navigation, advertisements, and publish relations | Backend `mango-cms` module.                                                        |
+| Sites, categories, content, navigation, banners, advertisements, and publish relations | Backend `mango-cms` module.                                                 |
 | Menus and button permissions                                                  | Backend `mango-cms` resource file `META-INF/mango/resources/cms-common-menu.json`. |
 | File picker, image preview, and upload records                                | `@mango/file` and backend `mango-file`.                                            |
 | Admin page registration                                                       | `registerMangoCmsAdminPages()` writes page loaders into `@mango/admin-pages`.      |
@@ -146,10 +153,11 @@ The backend CMS menu components should match these page keys:
 | `@/views/cms/content-tags/index.vue`       | `cms/content-tags/index`       |
 | `@/views/cms/content-publishes/index.vue`  | `cms/content-publishes/index`  |
 | `@/views/cms/navigations/index.vue`        | `cms/navigations/index`        |
+| `banners/index`                            | `cms/banners/index`            |
 | `@/views/cms/advertisements/index.vue`     | `cms/advertisements/index`     |
 | `@/views/cms/ad-deliveries/index.vue`      | `cms/ad-deliveries/index`      |
 
-Common permission codes use the `cms:*` prefix, for example `cms:site:list`, `cms:content:list`, `cms:content:approve`, `cms:navigation:list`, and `cms:advertisement:list`. Tenant and permission checks are enforced by the backend management APIs.
+Common permission codes use the `cms:*` prefix, for example `cms:site:list`, `cms:content:list`, `cms:content:approve`, `cms:navigation:list`, `cms:banner:list`, and `cms:advertisement:list`. Tenant and permission checks are enforced by the backend management APIs.
 
 ## 8. 快速开始
 
@@ -158,7 +166,7 @@ Common permission codes use the `cms:*` prefix, for example `cms:site:list`, `cm
 3. Import `@mango/cms/style.css`.
 4. Call `registerMangoCmsAdminPages()` during admin bootstrap.
 5. Ensure backend menu `component` values match the page keys in this README.
-6. Open the CMS menu and create site, category, navigation, content, publish, advertisement, and delivery records.
+6. Open the CMS menu and create site, category, navigation, banner, content, publish, advertisement, and delivery records.
 
 ## 9. 问题排查
 
@@ -191,6 +199,10 @@ Confirm the host application also integrates `@mango/file` and backend `mango-fi
 - [Capability docs rule](../../../mango-pmo/rules/08-capability-docs.md)
 
 ## 11. Change Impact
+
+- Unreleased: adds the Banner management page and API helpers (`cms/banners/index`, `pageBanners`/`createBanner`/`updateBanner`/`updateBannerStatus`/`deleteBanner`), the content `code` field in the editor and detail view, and site-scoped site-category options in the publish editor. See Issue #1053.
+
+## 12. Change Impact History
 
 - `@mango/cms@1.0.10` aligns exact dependencies to `@mango/admin-pages@1.0.20` and `@mango/file@1.0.21`.
   CMS APIs, page keys, permissions, tenant boundaries, and runtime behavior are unchanged from `1.0.9`.
