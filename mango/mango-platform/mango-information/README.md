@@ -73,6 +73,12 @@ registerMangoInformationAdminPages();
 | `application.yml` | `mango.information.upload.max-size-bytes` | `20971520` | 启用限制时的单文件大小上限 | 超出直接拒绝，不写文件记录 | `InformationFileService` |
 | `application.yml` | `mango.information.upload.allowed-extensions` | 常见文档与图片类型 | 启用限制时允许的扩展名 | 不合规类型直接拒绝 | `InformationFileService` |
 | `application.yml` | `mango.information.upload.sign-secret` | 模块默认值 | 票据与预览签名密钥 | 生产建议替换为独立密钥 | `InformationFileService` |
+| `application.yml` | `mango.information.public-submit.protection.enabled` | `true` | 是否启用公开提交防刷 | 关闭后不计数、不触发验证码；生产建议保持开启 | `InformationSubmitProtection` |
+| `application.yml` | `mango.information.public-submit.protection.window-seconds` | `60` | 共享 KV 固定窗口长度（秒） | 风险阈值与硬上限均在此窗口内计算 | `InformationSubmitProtection` |
+| `application.yml` | `mango.information.public-submit.protection.risk-threshold` | `10` | 触发验证码的请求数 | 达到阈值后必须携带一次性验证码 | `InformationSubmitProtection` |
+| `application.yml` | `mango.information.public-submit.protection.max-requests` | `30` | 固定窗口最大请求数 | 超过后返回 HTTP 429，且不写入采集记录 | `InformationSubmitProtection` |
+| `application.yml` | `mango.information.public-submit.protection.key-dimension` | `IP_AND_FORM` | 限流维度 | 可选 `IP` 或 `IP_AND_FORM` | `InformationSubmitProtection` |
+| `application.yml` | `mango.information.public-submit.protection.fail-open` | `true` | KV 故障时是否放行 | `false` 时返回 HTTP 503；多实例生产应使用共享 KV 并按安全要求选择 | `InformationSubmitProtection` |
 | `application.yml` | `mango.persistence.mybatis-plus.tenant.default-tenant-id` | `1` | 无租户上下文时的默认租户 | 匿名公开请求按默认租户解析表单，写入时由持久化层填充租户 | `PersistenceMybatisPlusAutoConfiguration` |
 
 ## 5. API 与扩展
@@ -88,11 +94,31 @@ registerMangoInformationAdminPages();
 | `/information/submissions/export` | GET | LOGIN | 导出当前筛选结果（CSV 文本） |
 | `/information/submissions/process` | PUT | LOGIN | 更新处理状态与备注 |
 | `/information/open/forms/detail` | GET | PUBLIC | 匿名查询已发布表单定义 |
-| `/information/open/forms/submit` | POST | PUBLIC | 匿名提交；携带 `serverSecret` 时按服务端接入校验 |
+| `/information/open/forms/submit` | POST | PUBLIC | 匿名提交；携带 `serverSecret` 时按服务端接入校验；达到风险阈值后使用 `X-Captcha-Key`、`X-Captcha-Code`、可选 `X-Captcha-Type` / `X-Captcha-Point` 头完成一次性验证码校验 |
 | `/information/open/forms/{formCode}/upload-ticket` | POST | PUBLIC | 匿名领取短效上传票据，票据绑定表单编码并带有效期 |
 | `/information/open/forms/{formCode}/files` | POST | PUBLIC | 匿名上传当前表单附件，必须携带有效票据；文件保存到 mango-file |
 | `/information/open/forms/{formCode}/files/detail` | GET | PUBLIC | 匿名查询本表单已上传文件信息 |
 | `/information/open/forms/{formCode}/files/preview` | GET | PUBLIC | 匿名读取文件内容；启用限制时要求表单签名 |
+
+### 公开提交接入与风控重试
+
+首次提交保持原有 JSON 请求体不变：
+
+```http
+POST /information/open/forms/submit
+Content-Type: application/json
+
+{"formCode":"feedback","values":{"name":"访客"},"idempotencyKey":"visitor-20261020-001"}
+```
+
+正常请求直接处理，不需要验证码。达到风险阈值时，接口返回 HTTP `428` 和 `SUBMISSION_CAPTCHA_REQUIRED`，客户端按以下步骤处理：
+
+1. 保留原请求体和 `idempotencyKey`，调用现有验证码接口 `GET /captcha/arithmetic` 获取验证码图片和 `key`。
+2. 用户完成计算后，使用同一个请求体重新调用提交接口，并增加请求头 `X-Captcha-Key`、`X-Captcha-Code`；使用非算术验证码时再传 `X-Captcha-Type`，滑块或点选验证码的参数传 `X-Captcha-Point`。
+3. 重试成功返回 `200`；验证码错误返回 `400`，客户端应重新获取验证码后再重试；固定窗口超过硬上限返回 `429`，客户端应读取 `Retry-After` 秒数后再重试。
+4. `428`、`400`、`429`、`503` 均发生在提交服务调用前，不会写入采集记录。
+
+服务端接入仍可在 JSON 中携带表单专属 `serverSecret`，但密钥只能保存在服务端。服务端调用方也必须按上述 `428 -> 获取验证码 -> 带 Header 重试` 流程处理，禁止把 `serverSecret` 暴露给浏览器。
 
 ### 表单定义格式
 
@@ -197,6 +223,8 @@ mango:
 - 浏览器提交和托管表单不携带服务端 SK；服务端接入必须使用当前表单专属 SK。
 - 客户端不得覆盖租户归属；租户由服务端按解析到的表单确定。
 - 校验失败不形成采集记录；幂等键命中时返回同一记录ID。
+- 公开提交正常请求不强制验证码；达到风险阈值后返回 HTTP 428 要求验证码，验证码错误返回 HTTP 400，超过固定窗口硬上限返回 HTTP 429，以上情况均不写入记录。
+- 限流计数使用共享 KV，键按配置选择 IP 或 IP+表单；KV 故障按 `fail-open` 配置处理。
 - 已关闭的采集记录不可继续处理。
 - 已发布表单才能被公开查询和提交；停用或草稿状态返回业务错误。
 
