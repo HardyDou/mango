@@ -19,6 +19,7 @@
 | 从 Maven 1.0.21 升到 1.0.22 | [Java API 升级](./maven-1.0.21-to-1.0.22-java-api-upgrade.md) | 需要处理 Java 类型或公开 API 迁移的项目 |
 | 从 1.0.30/1.0.3x 升到 1.0.31 | [Mango 1.0.31 升级](./mango-1.0.30-to-1.0.31-upgrade.md) | 需要整体对齐 Maven、npm、CLI、PMO 和 Bootstrap 的项目 |
 | 升级 Workflow 办理人身份契约 | [办理人身份升级](./workflow-assignee-identity-upgrade.md) | 使用 `assigneeDisplayName`、参与关系或历史身份数据的项目 |
+| 升级到删除 CMS Banner 能力的版本 | [CMS Banner 能力删除升级](./cms-banner-removal-upgrade.md) | **所有**升级到该版本的项目：按项目情况执行注册行清理、数据归档与前端适配 |
 
 ### 治理与修复
 
