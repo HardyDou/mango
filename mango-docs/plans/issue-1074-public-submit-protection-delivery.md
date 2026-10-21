@@ -33,7 +33,7 @@
 |---|---|---|---|---|
 | DEC-1074-01 | AC-1074-01/05 | 复用 `IKvStore.increment`，默认按 IP+表单建立 SHA-256 业务键；窗口、风险阈值、硬上限和维度配置化 | `InformationSubmitProtection`、Information starter | 关闭 `mango.information.public-submit.protection.enabled` |
 | DEC-1074-02 | AC-1074-02/03 | 复用 `CaptchaApi`；保持提交 JSON 不变，风险重试通过 `X-Captcha-Key`、`X-Captcha-Code` 等请求头传递 | `InformationSubmitProtection`、`InformationPublicController` | 关闭保护配置；不保留第二套提交路径 |
-| DEC-1074-03 | AC-1074-04 | 429 携带 `Retry-After`，拒绝在调用 `IInformationSubmissionService` 前发生 | Controller、API 错误码和测试 | 回滚 starter 保护 bean 与错误码变更 |
+| DEC-1074-03 | AC-1074-04 | 429 携带 `Retry-After`，公开提交编排器在调用 `IInformationSubmissionService` 前拒绝请求；Controller 只返回成功结果，拒绝由专用异常适配器映射 | Controller、公开提交编排器、异常适配器、API 错误码和测试 | 回滚 starter 保护 bean 与错误码变更 |
 | DEC-1074-04 | AC-1074-02/03 | `serverSecret` 仍只允许服务端使用；浏览器不得暴露密钥 | README 接入说明 | 仅通过服务端调用，不提供浏览器兼容兜底 |
 
 ## 5. 实施清单
@@ -41,7 +41,7 @@
 | ID | 对应决定 | 顺序 | 改动路径 | 完成条件 |
 |---|---|---|---|---|
 | TASK-1074-01 | DEC-1074-01 | 1 | `mango-information-starter` 配置与保护实现 | 编译通过，KV 窗口和配置生效 |
-| TASK-1074-02 | DEC-1074-02/03 | 2 | Controller、错误码、Captcha 头处理 | 428/400/429/503 语义可验证，429 返回 Retry-After |
+| TASK-1074-02 | DEC-1074-02/03 | 2 | Controller、公开提交编排器、异常适配器、错误码、Captcha 头处理 | 428/400/429/503 语义可验证，429 返回 Retry-After，架构门禁通过 |
 | TASK-1074-03 | DEC-1074-04 | 3 | `mango-information/README.md` | 浏览器与服务端接入流程可按文档执行 |
 | TASK-1074-04 | 全部 | 4 | 测试与 `mango-docs/designs/issue-1074-public-submit-protection` | 自动化验证和证据记录完成 |
 
@@ -53,6 +53,7 @@
 | AC-1074-04 | API/Controller 测试 | `mvn -pl mango-platform/mango-information/mango-information-starter -am -Dtest='*Information*' -Dsurefire.failIfNoSpecifiedTests=false -DfailIfNoTests=false test` | PASS | `InformationPublicControllerTest` |
 | 编译与架构质量 | Maven 验证 | `mvn -pl mango-platform/mango-information/mango-information-starter -am verify` | PASS | Maven reactor 输出 |
 | KV/测试物料专项 | Mango 检查 | `mvn -f mango/pom.xml -pl :mango-architecture-verification io.mango.tools.maven.plugin:mango-maven-plugin:1.0.0-SNAPSHOT:check -Drule=test-fixture -DbaseDir="$PWD" -Dmango.check.changedOnly=true -Dmango.check.gate=no-new-violations -Dmango.check.baseRef=origin/main` | PASS | Mango test-fixture 输出 |
+| CI 等价 Java 门禁 | Maven 架构与静态质量 | `mvn -f mango/pom.xml -pl :mango-architecture-verification,mango-platform/mango-information/mango-information-api,mango-platform/mango-information/mango-information-starter -DskipTests -Dmango.architecture.skip=false -Dmango.architecture.mode=changed -Dmango.architecture.requireFullReactor=false -Dmango.architecture.base=1ebacb14084ca0795123b5b0cbda00bc2fc0f49b -Dmango.check.changedOnly=true -Dmango.check.gate=no-new-violations -Dmango.check.baseRef=1ebacb14084ca0795123b5b0cbda00bc2fc0f49b verify` | PASS | `target/mango-architecture-report.json`、`target/mango-static-report.json` |
 | 能力说明 | 文档检查 | `git diff --check`；PR 能力文档门禁 | 待最终 PR head 回读 | 模块 README、技术设计、验收证据 |
 
 ## 7. 例外与剩余风险

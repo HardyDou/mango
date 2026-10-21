@@ -10,8 +10,8 @@ import io.mango.information.starter.config.InformationSubmitProtectionProperties
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.kv.api.IKvStore;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.util.StringUtils;
 
@@ -28,7 +28,6 @@ import java.util.Locale;
  * 超过硬上限时在进入提交事务前返回 429。</p>
  */
 @Slf4j
-@RequiredArgsConstructor
 public class InformationSubmitProtection {
 
     public static final String HEADER_CAPTCHA_KEY = "X-Captcha-Key";
@@ -36,11 +35,24 @@ public class InformationSubmitProtection {
     public static final String HEADER_CAPTCHA_TYPE = "X-Captcha-Type";
     public static final String HEADER_CAPTCHA_POINT = "X-Captcha-Point";
 
+    private static final int ALLOWED_STATUS = HttpStatus.OK.value();
+    private static final int CAPTCHA_REQUIRED_STATUS = HttpStatus.PRECONDITION_REQUIRED.value();
+    private static final int CAPTCHA_INVALID_STATUS = HttpStatus.BAD_REQUEST.value();
+    private static final int RATE_LIMITED_STATUS = HttpStatus.TOO_MANY_REQUESTS.value();
+    private static final int PROTECTION_UNAVAILABLE_STATUS = HttpStatus.SERVICE_UNAVAILABLE.value();
     private static final String KEY_PREFIX = "information:public-submit:v1:";
 
     private final ObjectProvider<IKvStore> kvStoreProvider;
     private final ObjectProvider<CaptchaApi> captchaApiProvider;
     private final InformationSubmitProtectionProperties properties;
+
+    public InformationSubmitProtection(ObjectProvider<IKvStore> kvStoreProvider,
+            ObjectProvider<CaptchaApi> captchaApiProvider,
+            InformationSubmitProtectionProperties properties) {
+        this.kvStoreProvider = kvStoreProvider;
+        this.captchaApiProvider = captchaApiProvider;
+        this.properties = copyProperties(properties);
+    }
 
     public Decision check(HttpServletRequest request, String formCode) {
         if (!properties.isEnabled()) {
@@ -113,6 +125,17 @@ public class InformationSubmitProtection {
         return properties.isFailOpen() ? Decision.allow() : Decision.protectionUnavailable(message);
     }
 
+    private InformationSubmitProtectionProperties copyProperties(InformationSubmitProtectionProperties source) {
+        InformationSubmitProtectionProperties copy = new InformationSubmitProtectionProperties();
+        copy.setEnabled(source.isEnabled());
+        copy.setWindowSeconds(source.getWindowSeconds());
+        copy.setRiskThreshold(source.getRiskThreshold());
+        copy.setMaxRequests(source.getMaxRequests());
+        copy.setKeyDimension(source.getKeyDimension());
+        copy.setFailOpen(source.isFailOpen());
+        return copy;
+    }
+
     private String buildKey(String clientIp, String formCode) {
         String dimension = properties.getKeyDimension() == InformationSubmitProtectionProperties.KeyDimension.IP
                 ? clientIp
@@ -138,26 +161,27 @@ public class InformationSubmitProtection {
     public record Decision(boolean allowed, int status, InformationCode code, String message,
             long retryAfterSeconds) {
         static Decision allow() {
-            return new Decision(true, 200, null, null, 0);
+            return new Decision(true, ALLOWED_STATUS, null, null, 0);
         }
 
         static Decision captchaRequired() {
-            return new Decision(false, 428, InformationCode.SUBMISSION_CAPTCHA_REQUIRED,
+            return new Decision(false, CAPTCHA_REQUIRED_STATUS, InformationCode.SUBMISSION_CAPTCHA_REQUIRED,
                     InformationCode.SUBMISSION_CAPTCHA_REQUIRED.getMessage(), 0);
         }
 
         static Decision captchaInvalid() {
-            return new Decision(false, 400, InformationCode.SUBMISSION_CAPTCHA_INVALID,
+            return new Decision(false, CAPTCHA_INVALID_STATUS, InformationCode.SUBMISSION_CAPTCHA_INVALID,
                     InformationCode.SUBMISSION_CAPTCHA_INVALID.getMessage(), 0);
         }
 
         static Decision rateLimited(long retryAfterSeconds) {
-            return new Decision(false, 429, InformationCode.SUBMISSION_RATE_LIMITED,
+            return new Decision(false, RATE_LIMITED_STATUS, InformationCode.SUBMISSION_RATE_LIMITED,
                     InformationCode.SUBMISSION_RATE_LIMITED.getMessage(), retryAfterSeconds);
         }
 
         static Decision protectionUnavailable(String message) {
-            return new Decision(false, 503, InformationCode.SUBMISSION_PROTECTION_UNAVAILABLE, message, 0);
+            return new Decision(false, PROTECTION_UNAVAILABLE_STATUS,
+                    InformationCode.SUBMISSION_PROTECTION_UNAVAILABLE, message, 0);
         }
     }
 }
