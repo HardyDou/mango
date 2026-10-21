@@ -54,4 +54,30 @@ public class PageQuery extends Query {
         }
         return Math.min(size, MAX_SIZE);
     }
+
+    /**
+     * 兼容前端管理包使用的 {@code pageNum} 参数名。
+     *
+     * <p>HTTP 直连接口使用 {@code page}，前端包使用 {@code pageNum}；无法识别的参数名会被
+     * Servlet 参数绑定静默忽略并回落默认分页，导致数据被截断而不报错。这里显式映射，
+     * 保证两种命名等价。
+     *
+     * @param pageNum 当前页，从 1 开始；为空时保持原值
+     */
+    public void setPageNum(Long pageNum) {
+        if (pageNum != null) {
+            this.page = pageNum;
+        }
+    }
+
+    /**
+     * 兼容前端管理包使用的 {@code pageSize} 参数名。
+     *
+     * @param pageSize 每页大小，最大 500；为空时保持原值
+     */
+    public void setPageSize(Long pageSize) {
+        if (pageSize != null) {
+            this.size = pageSize;
+        }
+    }
 }

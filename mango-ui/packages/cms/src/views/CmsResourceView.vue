@@ -391,7 +391,9 @@ import { MUpload, downloadUrl } from '@mango/file';
 import { requestErrorMessage, type ApiId, type CmsPageQuery, type CmsRequestOptions, type CmsSite } from '../api/cms';
 import { useCmsApi } from '../composables/useCmsApi';
 
-type CmsRow = Record<string, unknown> & { id?: ApiId; status?: string; publishStatus?: string };
+// CMS resources use heterogeneous API records; keep the shared editor boundary dynamic.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type CmsRow = Record<string, any> & { id?: ApiId };
 
 type OptionItem = {
   label: string;
@@ -665,11 +667,7 @@ async function loadEditorOptions() {
       contentCategoryOptions.value = (await cmsApi.treeContentCategories({ status: 'ENABLED' })) as CmsRow[];
     }
     if (fields.some((field) => field.optionKey === 'siteCategories')) {
-      siteCategoryOptions.value = [];
-      for (const site of siteOptions.value.filter((site) => site.id)) {
-        const tree = await cmsApi.treeSiteCategories({ siteId: site.id });
-        siteCategoryOptions.value.push(...(tree as CmsRow[]));
-      }
+      await loadSiteCategoryOptions();
     }
     if (fields.some((field) => field.optionKey === 'advertisements')) {
       const page = await cmsApi.pageAdvertisements({ pageNum: 1, pageSize: 500 });
@@ -677,6 +675,19 @@ async function loadEditorOptions() {
     }
   } catch (error) {
     errorMessage.value = requestErrorMessage(error, '关联选项加载失败');
+  }
+}
+
+async function loadSiteCategoryOptions(siteId = form.siteId) {
+  siteCategoryOptions.value = [];
+  if (!siteId) {
+    return;
+  }
+  try {
+    const tree = await cmsApi.treeSiteCategories({ siteId: String(siteId) });
+    siteCategoryOptions.value = tree as CmsRow[];
+  } catch (error) {
+    errorMessage.value = requestErrorMessage(error, '栏目选项加载失败');
   }
 }
 
@@ -755,6 +766,9 @@ function openEditor(row?: CmsRow) {
     .forEach(() => {
       form.parentId = '0';
     });
+  if (props.config.editor?.fields.some((field) => field.optionKey === 'siteCategories')) {
+    void loadSiteCategoryOptions(form.siteId);
+  }
   editorVisible.value = true;
 }
 
@@ -767,6 +781,9 @@ function openDetail(row: CmsRow) {
 function handleEditorFieldChange(field: FieldConfig) {
   if (field.prop === 'siteId') {
     normalizeSiteScopedFields();
+    if (props.config.editor?.fields.some((item) => item.optionKey === 'siteCategories')) {
+      void loadSiteCategoryOptions(form.siteId);
+    }
   }
   if (field.prop === 'adId') {
     normalizeAdMaterialType();

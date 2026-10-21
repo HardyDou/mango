@@ -1,14 +1,12 @@
 package io.mango.cms.core.service;
 
 import io.mango.cms.api.query.SiteAdvertisementQuery;
-import io.mango.cms.api.query.SiteBannerQuery;
 import io.mango.cms.api.query.SiteCategoryQuery;
 import io.mango.cms.api.query.SiteContentDetailQuery;
 import io.mango.cms.api.query.SiteContentPageQuery;
 import io.mango.cms.api.query.SiteNavigationQuery;
 import io.mango.cms.api.query.SiteResolveQuery;
 import io.mango.cms.api.vo.SiteAdvertisementVO;
-import io.mango.cms.api.vo.SiteBannerVO;
 import io.mango.cms.api.vo.SiteCategoryVO;
 import io.mango.cms.api.vo.SiteContentVO;
 import io.mango.cms.api.vo.SiteNavigationVO;
@@ -54,13 +52,6 @@ public interface ICmsSiteService {
      */
     List<SiteNavigationVO> listNavigations(@Valid SiteNavigationQuery query);
 
-    /**
-     * Executes the CMS listBanners domain operation.
-     *
-     * @param query operation input
-     * @return List<SiteBannerVO> operation result
-     */
-    List<SiteBannerVO> listBanners(@Valid SiteBannerQuery query);
 
     /**
      * Executes the CMS listAdvertisements domain operation.

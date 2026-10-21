@@ -13,14 +13,12 @@ import io.mango.cms.api.query.CmsSitePageQuery;
 import io.mango.cms.api.vo.CmsSiteVO;
 import io.mango.cms.core.entity.CmsAdDeliveryEntity;
 import io.mango.cms.core.entity.CmsAdvertisementEntity;
-import io.mango.cms.core.entity.CmsBannerEntity;
 import io.mango.cms.core.entity.CmsContentPublishEntity;
 import io.mango.cms.core.entity.CmsNavigationEntity;
 import io.mango.cms.core.entity.CmsSiteCategoryEntity;
 import io.mango.cms.core.entity.CmsSiteEntity;
 import io.mango.cms.core.mapper.CmsAdDeliveryMapper;
 import io.mango.cms.core.mapper.CmsAdvertisementMapper;
-import io.mango.cms.core.mapper.CmsBannerMapper;
 import io.mango.cms.core.mapper.CmsContentPublishMapper;
 import io.mango.cms.core.mapper.CmsNavigationMapper;
 import io.mango.cms.core.mapper.CmsSiteCategoryMapper;
@@ -53,7 +51,6 @@ public class CmsSiteAdminService implements ICmsSiteAdminService {
     private final CmsSiteCategoryMapper siteCategoryMapper;
     private final CmsContentPublishMapper publishMapper;
     private final CmsNavigationMapper navigationMapper;
-    private final CmsBannerMapper bannerMapper;
     private final CmsAdvertisementMapper advertisementMapper;
     private final CmsAdDeliveryMapper adDeliveryMapper;
     private final ICmsSiteSettingService siteSettingService;
@@ -105,7 +102,7 @@ public class CmsSiteAdminService implements ICmsSiteAdminService {
     @Override
     public Boolean deleteSite(Long id) {
         CmsSiteEntity entity = requireSite(id);
-        Require.isTrue(countBySite(id) == 0, CmsCode.CMS_BUSINESS_ERROR, "站点已被栏目、导航、Banner、广告或发布关系引用，不能删除");
+        Require.isTrue(countBySite(id) == 0, CmsCode.CMS_BUSINESS_ERROR, "站点已被栏目、导航、广告或发布关系引用，不能删除");
         return siteMapper.deleteById(entity.getId()) > 0;
     }
 
@@ -159,7 +156,6 @@ public class CmsSiteAdminService implements ICmsSiteAdminService {
         String tenantId = CmsSupport.currentTenantId();
         return siteCategoryMapper.selectCount(new LambdaQueryWrapper<CmsSiteCategoryEntity>().eq(CmsSiteCategoryEntity::getTenantId, tenantId).eq(CmsSiteCategoryEntity::getSiteId, siteId))
                 + navigationMapper.selectCount(new LambdaQueryWrapper<CmsNavigationEntity>().eq(CmsNavigationEntity::getTenantId, tenantId).eq(CmsNavigationEntity::getSiteId, siteId))
-                + bannerMapper.selectCount(new LambdaQueryWrapper<CmsBannerEntity>().eq(CmsBannerEntity::getTenantId, tenantId).eq(CmsBannerEntity::getSiteId, siteId))
                 + advertisementMapper.selectCount(new LambdaQueryWrapper<CmsAdvertisementEntity>().eq(CmsAdvertisementEntity::getTenantId, tenantId).eq(CmsAdvertisementEntity::getSiteId, siteId))
                 + adDeliveryMapper.selectCount(new LambdaQueryWrapper<CmsAdDeliveryEntity>().eq(CmsAdDeliveryEntity::getTenantId, tenantId).eq(CmsAdDeliveryEntity::getSiteId, siteId))
                 + publishMapper.selectCount(new LambdaQueryWrapper<CmsContentPublishEntity>().eq(CmsContentPublishEntity::getTenantId, tenantId).eq(CmsContentPublishEntity::getSiteId, siteId));

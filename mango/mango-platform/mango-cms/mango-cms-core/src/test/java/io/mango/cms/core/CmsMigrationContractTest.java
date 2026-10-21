@@ -28,21 +28,29 @@ class CmsMigrationContractTest {
             "cms_content_tag_rel",
             "cms_content_publish",
             "cms_navigation",
-            "cms_banner",
             "cms_advertisement",
             "cms_ad_delivery",
             "cms_site_setting");
 
     @Test
-    @DisplayName("CMS should expose one clean V1 migration")
-    void cmsExposesOneCleanV1Migration() throws IOException {
+    @DisplayName("CMS should expose the V1 baseline plus the banner removal migration")
+    void cmsExposesVersionedMigrations() throws IOException {
         try (Stream<Path> migrations = Files.list(MIGRATION_DIR)) {
             assertThat(migrations
                     .filter(Files::isRegularFile)
                     .filter(path -> path.getFileName().toString().matches("V[0-9]+__.+\\.sql"))
+                    .map(path -> path.getFileName().toString())
                     .toList())
-                    .containsExactly(BASELINE);
+                    .containsExactlyInAnyOrder("V1__init_mango_cms.sql", "V2__drop_cms_banner.sql");
         }
+    }
+
+    @Test
+    @DisplayName("CMS must not create or keep the removed banner table")
+    void cmsDropsRemovedBannerTable() throws IOException {
+        assertThat(Files.readString(BASELINE, StandardCharsets.UTF_8)).doesNotContain("cms_banner");
+        assertThat(Files.readString(MIGRATION_DIR.resolve("V2__drop_cms_banner.sql"), StandardCharsets.UTF_8))
+                .contains("DROP TABLE IF EXISTS `cms_banner`");
     }
 
     @Test

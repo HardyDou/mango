@@ -61,20 +61,6 @@ mango:
             handlerClass: { type: STRING, value: io.mango.cms.starter.controller.CmsSiteController }
             handlerMethod: { type: STRING, value: listNavigations }
             description: { type: STRING, value: 查询公开导航 }
-        - id: "879549143806168402"
-          version: 1
-          biz-key: api.mango-cms.GET.cms.open.banners.list
-          name: 查询有效 Banner
-          target-module: authorization
-          fields:
-            moduleName: { type: STRING, value: mango-cms }
-            httpMethod: { type: STRING, value: GET }
-            pathPattern: { type: STRING, value: /cms/open/banners/list }
-            resourceCode: { type: STRING, value: "GET:/cms/open/banners/list" }
-            accessMode: { type: STRING, value: PUBLIC }
-            handlerClass: { type: STRING, value: io.mango.cms.starter.controller.CmsSiteController }
-            handlerMethod: { type: STRING, value: listBanners }
-            description: { type: STRING, value: 查询有效 Banner }
         - id: "843288974368896510"
           version: 1
           biz-key: api.mango-cms.GET.cms.open.advertisements.list

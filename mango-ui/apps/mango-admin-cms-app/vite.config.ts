@@ -1,4 +1,5 @@
 import vue from '@vitejs/plugin-vue';
+import { readFileSync } from 'node:fs';
 import { defineConfig, loadEnv, type ConfigEnv } from 'vite';
 import { resolve } from 'path';
 import { createAllowedOrigins, createPreviewCorsHeaders } from './vite.cors';
@@ -8,6 +9,10 @@ import {
   createMangoWorkspaceAliases,
 } from '../../build-config/mangoAliases';
 import { createMangoApiProxy } from '../../build-config/apiProxy';
+
+const adminExtensionVersion = JSON.parse(
+  readFileSync(new URL('../../packages/admin-extension/package.json', import.meta.url), 'utf8'),
+).version;
 
 export default defineConfig((mode: ConfigEnv) => {
   assertMangoPackageModeDist(__dirname, { command: mode.command });
@@ -20,6 +25,7 @@ export default defineConfig((mode: ConfigEnv) => {
     base: env.VITE_PUBLIC_PATH || '/',
     plugins: [vue()],
     define: {
+      __MANGO_ADMIN_EXTENSION_VERSION__: JSON.stringify(adminExtensionVersion),
       'process.env.NODE_ENV': JSON.stringify(mode.mode === 'production' ? 'production' : 'development'),
       'process.env': {},
     },

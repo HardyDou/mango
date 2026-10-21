@@ -41,6 +41,10 @@ public class SiteContentVO {
     private Long categoryId;
     @Schema(description = "分类名称")
     private String categoryName;
+    @Schema(description = "是否置顶")
+    private Boolean top;
+    @Schema(description = "排序值")
+    private Integer sort;
     @Schema(description = "SEO 标题")
     private String seoTitle;
     @Schema(description = "SEO 关键词")

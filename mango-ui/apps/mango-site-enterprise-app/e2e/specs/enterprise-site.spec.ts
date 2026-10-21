@@ -196,18 +196,6 @@ test.beforeEach(async ({ page }) => {
       return;
     }
 
-    if (path.endsWith('/banners/list')) {
-      await route.fulfill({
-        status: 410,
-        json: {
-          code: 410,
-          success: false,
-          msg: 'Banner 已并入广告投放接口，官网不得再读取旧 Banner 接口。',
-        },
-      });
-      return;
-    }
-
     if (path.endsWith('/advertisements/list')) {
       const position = url.searchParams.get('position') || 'HOME_FLOAT';
       const ads: Record<string, Array<Record<string, unknown>>> = {

@@ -98,9 +98,11 @@ PageResult<OrderVO> result = PageResult.of(rows, total, query.getPage(), query.g
 
 | 字段 | 默认值 | 规则 |
 |------|--------|------|
-| `page` | `1` | 小于 1 时按 1 处理。 |
-| `size` | `10` | 小于等于 0 时按 10 处理。 |
+| `page` | `1` | 小于 1 时按 1 处理；HTTP 也接受别名 `pageNum`。 |
+| `size` | `10` | 小于等于 0 时按 10 处理；HTTP 也接受别名 `pageSize`。 |
 | 最大 `size` | `500` | 超过 500 时按 500 处理。 |
+
+`pageNum`、`pageSize` 是前端管理包使用的参数名，后端通过 `setPageNum`、`setPageSize` 映射到 `page`、`size`。没有这层映射时，Servlet 参数绑定会静默忽略无法识别的参数名，导致调用方以为按 50 条分页、实际按默认 10 条返回。
 
 ## 7. API 与扩展
 | 类型 | 能力 |
@@ -110,7 +112,7 @@ PageResult<OrderVO> result = PageResult.of(rows, total, query.getPage(), query.g
 | `CommonCode` | 通用错误码：成功、参数错误、未登录、权限不足、资源不存在、系统繁忙。 |
 | `BizException` | 业务异常，携带 `code` 和异常消息。 |
 | `Query` | 查询请求基础类。 |
-| `PageQuery` | 分页查询请求，规范化页码和分页大小。 |
+| `PageQuery` | 分页查询请求，规范化页码和分页大小；HTTP 同时接受 `page`/`size` 与 `pageNum`/`pageSize`。 |
 | `PageResult<T>` | 分页返回，字段为 `list`、`total`、`page`、`size`、`pages`。 |
 | `Require` | 断言和失败工具；支持 `BizCode`、细化消息、返回非空值的 `nonNull`、cause 保留，以及补偿后的运行时异常原样重抛。 |
 
