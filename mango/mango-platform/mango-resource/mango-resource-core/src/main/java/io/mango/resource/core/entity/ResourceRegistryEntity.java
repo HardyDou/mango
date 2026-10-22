@@ -28,6 +28,7 @@ public class ResourceRegistryEntity extends TenantEntity {
     private Long targetId;
     private String sourceHash;
     private String syncMode;
+    private String ownership;
     private String status;
     private LocalDateTime lastSyncTime;
 }

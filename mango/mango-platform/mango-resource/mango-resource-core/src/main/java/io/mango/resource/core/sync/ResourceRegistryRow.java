@@ -1,6 +1,7 @@
 package io.mango.resource.core.sync;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.mango.resource.api.enums.ResourceOwnership;
 import io.mango.resource.api.enums.ResourceSyncMode;
 import lombok.Data;
 
@@ -27,6 +28,7 @@ public class ResourceRegistryRow {
     private String sourceHash;
     private String tenantId;
     private ResourceSyncMode syncMode;
+    private ResourceOwnership ownership = ResourceOwnership.UNKNOWN;
     private String status;
     @JsonIgnore
     private LocalDateTime lastSyncTime;

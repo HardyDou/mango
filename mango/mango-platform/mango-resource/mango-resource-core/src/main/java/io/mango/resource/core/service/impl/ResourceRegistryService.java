@@ -16,6 +16,7 @@ import io.mango.resource.support.ResourceBaselinePolicy;
 import io.mango.resource.support.ResourceTargetDispatcher;
 import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.api.enums.ResourceStatus;
+import io.mango.resource.api.enums.ResourceOwnership;
 import io.mango.resource.api.enums.ResourceSyncMode;
 import io.mango.resource.api.enums.ResourceSyncDisposition;
 import io.mango.resource.api.enums.ResourceExecutionPhase;
@@ -51,6 +52,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -475,6 +477,8 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
             assertOperationCanContinue();
             String hash = hasher.hash(declaration);
             Long rowId = repository.insert(declaration, hash, result.getTargetId(), result.getTargetTable());
+            repository.updateOwnership(repository.findByResourceId(declaration.getId()),
+                    ResourceOwnership.MANUAL_TAKEOVER);
             repository.insertSyncLog(rowId, "CREATE", "SUCCESS", result.getMessage());
             repository.insertChangeLog(rowId, "CREATE", null, toJson(declaration));
             log.info("Mango resource managed record created: resourceId={}, type={}, bizKey={}",
@@ -520,6 +524,8 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
             Require.notNull(row, ResourceCode.RESOURCE_NOT_FOUND, "资源注册记录不存在: " + resourceId);
             String before = toJson(row);
             repository.updateSyncMode(row, syncMode.name());
+            repository.updateOwnership(row, syncMode == ResourceSyncMode.SYNC_ONCE
+                    ? ResourceOwnership.MANUAL_TAKEOVER : ResourceOwnership.RESOURCE_MANAGED);
             ResourceRegistryRow updated = repository.findByResourceId(resourceId);
             repository.insertSyncLog(row.getId(), "SYNC_MODE", "SUCCESS",
                     "Resource sync mode is " + syncMode.name());
@@ -808,6 +814,46 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
         return effective;
     }
 
+
+    /**
+     * 判断登记行归属：人工接管与未知来源的行不得被声明覆盖或停用。
+     * 未知来源的行在声明能证明归属（同来源应用/服务/模块）时升级为 Resource 管理。
+     */
+    private boolean adoptOrRejectOwnership(ResourceRegistryRow row, ResourceDeclaration declaration) {
+        if (row == null) {
+            return true;
+        }
+        ResourceOwnership ownership = row.getOwnership() == null
+                ? ResourceOwnership.UNKNOWN : row.getOwnership();
+        if (ownership == ResourceOwnership.MANUAL_TAKEOVER) {
+            repository.insertSyncLog(row.getId(), "SKIP", "SKIPPED", "Resource ownership is MANUAL_TAKEOVER");
+            log.info("Mango resource skipped by manual takeover: resourceType={}, resourceId={}",
+                    row.getResourceType(), row.getResourceId());
+            return false;
+        }
+        if (ownership != ResourceOwnership.UNKNOWN) {
+            return true;
+        }
+        if (!sameSource(row, declaration)) {
+            repository.insertSyncLog(row.getId(), "SKIP", "SKIPPED",
+                    "Resource ownership is UNKNOWN and cannot be proven by the declaration");
+            log.warn("Mango resource skipped by unknown ownership: resourceType={}, resourceId={}",
+                    row.getResourceType(), row.getResourceId());
+            return false;
+        }
+        repository.updateOwnership(row, ResourceOwnership.RESOURCE_MANAGED);
+        row.setOwnership(ResourceOwnership.RESOURCE_MANAGED);
+        log.info("Mango resource ownership adopted as RESOURCE_MANAGED: resourceType={}, resourceId={}",
+                row.getResourceType(), row.getResourceId());
+        return true;
+    }
+
+    private boolean sameSource(ResourceRegistryRow row, ResourceDeclaration declaration) {
+        return Objects.equals(row.getAppCode(), declaration.getAppCode())
+                && Objects.equals(row.getServiceCode(), declaration.getServiceCode())
+                && Objects.equals(row.getModuleCode(), declaration.getModuleCode());
+    }
+
     private boolean isManagedSyncMode(ResourceSyncMode syncMode) {
         return syncMode == ResourceSyncMode.SYNC_ONCE;
     }
@@ -899,6 +945,9 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
         String hash = hasher.hash(declaration);
         ResourceRegistryRow row = registrySnapshot.findByResourceId(declaration.getId());
         validateVersion(row, declaration);
+        if (!adoptOrRejectOwnership(row, declaration)) {
+            return;
+        }
         if (!force && isUnchanged(row, declaration, hash)) {
             return;
         }
@@ -922,6 +971,9 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
         String hash = hasher.hash(declaration);
         ResourceRegistryRow row = registrySnapshot.findByResourceId(declaration.getId());
         validateVersion(row, declaration);
+        if (!adoptOrRejectOwnership(row, declaration)) {
+            return;
+        }
         if (!force && isUnchanged(row, declaration, hash)) {
             return;
         }
@@ -997,12 +1049,18 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
         String hash = hasher.hash(declaration);
         ResourceRegistryRow row = registrySnapshot.findByResourceId(declaration.getId());
         validateVersion(row, declaration);
+        if (!adoptOrRejectOwnership(row, declaration)) {
+            return;
+        }
         ResourceDeclaration effectiveDeclaration = declaration;
         if (row != null) {
             effectiveDeclaration = withEffectiveSyncMode(declaration, row.getSyncMode());
         }
         allDeclarationsByType.computeIfAbsent(declaration.getResourceType(), key -> new ArrayList<>())
                 .add(effectiveDeclaration);
+        if (!adoptOrRejectOwnership(row, declaration)) {
+            return;
+        }
         if (!force && isUnchanged(row, declaration, hash)) {
             return;
         }
@@ -1091,6 +1149,7 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
         assertOperationCanContinue();
         repository.updateStatusAndSyncMode(row, ResourceStatus.REMOVED.name(),
                 ResourceSyncMode.SYNC_ONCE.name(), row.getSourceHash());
+        repository.updateOwnership(row, ResourceOwnership.MANUAL_TAKEOVER);
         String changeType = "DISABLE";
         if (physical) {
             changeType = "DELETE";

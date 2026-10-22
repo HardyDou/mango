@@ -358,6 +358,21 @@ mango:
 
 声明文件中 `sync-mode` 支持 `SYNC_ONCE`、`sync-once`、`sync_once` 写法；旧值 `INIT_ONLY`、`MANUAL`、`LOCKED` 读取时映射为 `SYNC_ONCE` 并输出弃用告警，`AUTO` 映射为 `SYNC_ALWAYS`。新声明只写新值。
 
+### 9.x 资源归属（ownership）
+
+`resource_registry.ownership` 记录这条登记行归谁所有，决定声明能否覆盖或停用它：
+
+| 归属 | 含义 | 声明能否覆盖 | 声明缺失能否停用 |
+|---|---|---|---|
+| `RESOURCE_MANAGED` | 由 Resource 声明创建或更新，未被人工接管 | 能 | 能 |
+| `MANUAL_TAKEOVER` | 运行时被人工接管（后台新增资源、后台切换同步模式、后台删除） | 不能 | 不能 |
+| `UNKNOWN` | 历史数据无法证明来源 | 不能，除非声明能证明归属 | 不能 |
+
+- 新登记行写入 `RESOURCE_MANAGED`；升级前已存在的行默认 `UNKNOWN`（`V4__add_resource_registry_ownership.sql`）。
+- `UNKNOWN` 行在声明能证明归属（同来源 `app_code` / `service_code` / `module_code`）时自动升级为 `RESOURCE_MANAGED`，之后恢复正常同步；无法证明的行只跳过并记录 `SKIP`，不覆盖、不停用。
+- `MANUAL_TAKEOVER` 行只记录 `SKIP`；要交还声明管理，用 `PUT /resource/registries/sync-mode` 切回 `SYNC_ALWAYS`，归属回到 `RESOURCE_MANAGED`。
+- 缺失停用（finalize）只扫描 `RESOURCE_MANAGED` 且 `sync_mode = SYNC_ALWAYS`、`status <> REMOVED` 的行，因此升级前无法证明归属的历史资源不会被自动删除。
+
 字段类型支持：
 
 | 类型 | 说明 |

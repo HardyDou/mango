@@ -1118,6 +1118,66 @@ class ResourceRegistrySyncServiceIntegrationTest {
     }
 
     @Test
+    void unknownOwnershipRowIsAdoptedWhenDeclarationProvesSource() {
+        ResourceDeclaration declaration = activeDeclaration(1, "归属未知的模板");
+        declaration.setId("1900000000000000030");
+        declaration.setBizKey("guarantee.ownership.adopt");
+        provider.setDeclaration(declaration);
+        syncService.sync();
+
+        jdbcTemplate.update("update resource_registry set ownership = 'UNKNOWN' where resource_id = ?",
+                declaration.getId());
+        assertThat(registryOwnership(declaration.getId())).isEqualTo("UNKNOWN");
+
+        declaration.setVersion(2);
+        declaration.putField("title", fieldOf("归属证明后更新"));
+        provider.setDeclaration(declaration);
+        syncService.sync();
+
+        assertThat(registryOwnership(declaration.getId())).isEqualTo("RESOURCE_MANAGED");
+        assertThat(registryVersion(declaration.getId())).isEqualTo(2);
+    }
+
+    @Test
+    void manualTakeoverRowIsNotOverwrittenByDeclaration() {
+        ResourceDeclaration declaration = activeDeclaration(1, "人工接管前");
+        declaration.setId("1900000000000000031");
+        declaration.setBizKey("guarantee.ownership.takeover");
+        provider.setDeclaration(declaration);
+        syncService.sync();
+
+        syncService.updateResourceSyncMode(declaration.getId(), ResourceSyncMode.SYNC_ONCE);
+        assertThat(registryOwnership(declaration.getId())).isEqualTo("MANUAL_TAKEOVER");
+
+        declaration.setVersion(2);
+        declaration.putField("title", fieldOf("人工接管后不应被覆盖"));
+        provider.setDeclaration(declaration);
+        syncService.sync();
+
+        assertThat(registryVersion(declaration.getId())).isEqualTo(1);
+        assertThat(registryOwnership(declaration.getId())).isEqualTo("MANUAL_TAKEOVER");
+    }
+
+    @Test
+    void unknownOwnershipMissingRowIsNotDisabled() {
+        jdbcTemplate.update("""
+                insert into resource_registry (
+                    id, resource_id, resource_version, app_code, service_code, resource_type,
+                    module_code, biz_key, name, target_module, target_table, target_id,
+                    source_hash, sync_mode, ownership, status
+                ) values (
+                    90008, '1900000000000000032', 1, 'local', 'local', 'MESSAGE_TEMPLATE',
+                    'guarantee', 'guarantee.ownership.unknown', '归属未知的模板', 'guarantee',
+                    'message_template', 90008, 'unknown-hash', 'SYNC_ALWAYS', 'UNKNOWN', 'ACTIVE'
+                )
+                """);
+
+        syncService.syncRemote("local", "local", List.of("guarantee"), List.of());
+
+        assertThat(registryStatus("1900000000000000032")).isEqualTo("ACTIVE");
+    }
+
+    @Test
     void remoteSyncDisablesMissingOnlyWithinSameSourceService() {
         ResourceDeclaration serviceA = activeDeclaration(1, "服务A");
         serviceA.setId("1900000000000000003");
@@ -1497,6 +1557,7 @@ class ResourceRegistrySyncServiceIntegrationTest {
                     target_id bigint,
                     source_hash varchar(64),
                     sync_mode varchar(32) not null,
+                    ownership varchar(32) not null default 'UNKNOWN',
                     status varchar(32) not null,
                     last_sync_time timestamp,
                     tenant_id varchar(64),
@@ -1580,6 +1641,23 @@ class ResourceRegistrySyncServiceIntegrationTest {
                  where sync_type = 'DISABLE'
                    and resource_id = (select id from resource_registry where resource_id = ?)
                 """, Long.class, resourceId);
+    }
+
+    private String registryOwnership(String resourceId) {
+        return jdbcTemplate.queryForObject(
+                "select ownership from resource_registry where resource_id = ?", String.class, resourceId);
+    }
+
+    private Integer registryVersion(String resourceId) {
+        return jdbcTemplate.queryForObject(
+                "select resource_version from resource_registry where resource_id = ?", Integer.class, resourceId);
+    }
+
+    private ResourceField fieldOf(Object value) {
+        ResourceField field = new ResourceField();
+        field.setType(ResourceFieldType.STRING);
+        field.setValue(value);
+        return field;
     }
 
     private String registryStatus(String resourceId) {

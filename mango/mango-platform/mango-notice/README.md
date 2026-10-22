@@ -897,3 +897,7 @@ Notice 当前不提供演示数据。以后新增示例业务或示例账号时�
 ## 资源声明同步模式（#1098）
 
 资源声明的 `sync-mode` 已收敛为 `SYNC_ALWAYS` 和 `SYNC_ONCE`：`AUTO` 映射为 `SYNC_ALWAYS`，`INIT_ONLY`、`MANUAL`、`LOCKED` 映射为 `SYNC_ONCE`。旧值仍可读取并会在启动时输出弃用告警，新声明只写新值。语义与迁移规则见 `mango-resource` README 的 `sync-mode` 章节。
+
+## 资源归属（#1098）
+
+资源登记行新增 `ownership`：`RESOURCE_MANAGED` 可被声明覆盖与停用，`MANUAL_TAKEOVER` 与 `UNKNOWN` 不再被声明覆盖或停用。本模块资源声明不受影响，语义与迁移规则见 `mango-resource` README 的 ownership 章节。
