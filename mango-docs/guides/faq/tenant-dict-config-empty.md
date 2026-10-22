@@ -85,3 +85,5 @@ pnpm -F @mango/admin-shell build
 ## 8. 历史变更
 
 详细版本影响见[租户基础数据排障历史索引](../../changelog/business-integration/tenant-dict-config-empty.md)。
+
+> Issue #1098 影响说明：资源声明的 `sync-mode` 收敛为 `SYNC_ALWAYS` / `SYNC_ONCE`（旧值 `AUTO`、`INIT_ONLY`、`MANUAL`、`LOCKED` 仍可读取并映射）。本场景涉及的数据初始化、租户边界、权限判定与页面行为不变。

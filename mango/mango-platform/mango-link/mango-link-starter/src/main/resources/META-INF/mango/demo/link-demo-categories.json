@@ -12,7 +12,7 @@
             "bizKey": "link.category.enterprise-navigation",
             "name": "企业导航演示分类",
             "targetModule": "link",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {"type": "LONG", "value": "2026070103060100001"},
               "tenantId": {"type": "STRING", "value": "1"},
@@ -33,7 +33,7 @@
             "bizKey": "link.category.guarantee-business",
             "name": "保函业务演示分类",
             "targetModule": "link",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {"type": "LONG", "value": "202607100101000001"},
               "tenantId": {"type": "STRING", "value": "1"},
@@ -54,7 +54,7 @@
             "bizKey": "link.category.guarantee-tools",
             "name": "保函工具演示分类",
             "targetModule": "link",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {"type": "LONG", "value": "202607100101000002"},
               "tenantId": {"type": "STRING", "value": "1"},
@@ -75,7 +75,7 @@
             "bizKey": "link.category.guarantee-other",
             "name": "保函辅助演示分类",
             "targetModule": "link",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {"type": "LONG", "value": "202607100101000003"},
               "tenantId": {"type": "STRING", "value": "1"},

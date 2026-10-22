@@ -28,7 +28,7 @@ class ResourceContentHasherTest {
     void hashChangesWhenSyncModeChanges() {
         ResourceDeclaration first = declaration(1);
         ResourceDeclaration second = declaration(1);
-        second.setSyncMode(ResourceSyncMode.MANUAL);
+        second.setSyncMode(ResourceSyncMode.SYNC_ONCE);
 
         assertThat(hasher.hash(first)).isNotEqualTo(hasher.hash(second));
     }

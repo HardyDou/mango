@@ -12,7 +12,7 @@
             "bizKey": "cms.site-setting.2070000000000000901",
             "name": "CMS 演示数据 cms_site_setting 2070000000000000901",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -70,7 +70,7 @@
             "bizKey": "cms.site-setting.2070000000000001901",
             "name": "CMS 演示数据 cms_site_setting 2070000000000001901",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -128,7 +128,7 @@
             "bizKey": "cms.site-setting.2070000000000002901",
             "name": "CMS 演示数据 cms_site_setting 2070000000000002901",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",

@@ -12,7 +12,7 @@
             "bizKey": "cms.navigation.2070000000000000201",
             "name": "CMS 演示数据 cms_navigation 2070000000000000201",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -82,7 +82,7 @@
             "bizKey": "cms.navigation.2070000000000000202",
             "name": "CMS 演示数据 cms_navigation 2070000000000000202",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -152,7 +152,7 @@
             "bizKey": "cms.navigation.2070000000000000203",
             "name": "CMS 演示数据 cms_navigation 2070000000000000203",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -222,7 +222,7 @@
             "bizKey": "cms.navigation.2070000000000000204",
             "name": "CMS 演示数据 cms_navigation 2070000000000000204",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -292,7 +292,7 @@
             "bizKey": "cms.navigation.2070000000000000205",
             "name": "CMS 演示数据 cms_navigation 2070000000000000205",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -362,7 +362,7 @@
             "bizKey": "cms.navigation.2070000000000000301",
             "name": "CMS 演示数据 cms_navigation 2070000000000000301",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -432,7 +432,7 @@
             "bizKey": "cms.navigation.2070000000000000302",
             "name": "CMS 演示数据 cms_navigation 2070000000000000302",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -502,7 +502,7 @@
             "bizKey": "cms.navigation.2070000000000000303",
             "name": "CMS 演示数据 cms_navigation 2070000000000000303",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -572,7 +572,7 @@
             "bizKey": "cms.navigation.2070000000000000304",
             "name": "CMS 演示数据 cms_navigation 2070000000000000304",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -642,7 +642,7 @@
             "bizKey": "cms.navigation.2070000000000001201",
             "name": "CMS 演示数据 cms_navigation 2070000000000001201",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -712,7 +712,7 @@
             "bizKey": "cms.navigation.2070000000000001202",
             "name": "CMS 演示数据 cms_navigation 2070000000000001202",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -782,7 +782,7 @@
             "bizKey": "cms.navigation.2070000000000001203",
             "name": "CMS 演示数据 cms_navigation 2070000000000001203",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -852,7 +852,7 @@
             "bizKey": "cms.navigation.2070000000000001204",
             "name": "CMS 演示数据 cms_navigation 2070000000000001204",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -922,7 +922,7 @@
             "bizKey": "cms.navigation.2070000000000002201",
             "name": "CMS 演示数据 cms_navigation 2070000000000002201",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -992,7 +992,7 @@
             "bizKey": "cms.navigation.2070000000000002202",
             "name": "CMS 演示数据 cms_navigation 2070000000000002202",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -1062,7 +1062,7 @@
             "bizKey": "cms.navigation.2070000000000002203",
             "name": "CMS 演示数据 cms_navigation 2070000000000002203",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -1132,7 +1132,7 @@
             "bizKey": "cms.navigation.2070000000000002204",
             "name": "CMS 演示数据 cms_navigation 2070000000000002204",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -1202,7 +1202,7 @@
             "bizKey": "cms.navigation.2070000000000002205",
             "name": "CMS 演示数据 cms_navigation 2070000000000002205",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -1272,7 +1272,7 @@
             "bizKey": "cms.navigation.2070000000000002301",
             "name": "CMS 演示数据 cms_navigation 2070000000000002301",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -1342,7 +1342,7 @@
             "bizKey": "cms.navigation.2070000000000002302",
             "name": "CMS 演示数据 cms_navigation 2070000000000002302",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -1412,7 +1412,7 @@
             "bizKey": "cms.navigation.2070000000000002303",
             "name": "CMS 演示数据 cms_navigation 2070000000000002303",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -1482,7 +1482,7 @@
             "bizKey": "cms.navigation.2070000000000002304",
             "name": "CMS 演示数据 cms_navigation 2070000000000002304",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",

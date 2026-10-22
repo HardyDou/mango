@@ -281,7 +281,7 @@ class NoticeMessageTemplateResourceHandlerIntegrationTest {
         ResourceDeclaration declaration = messageTemplateDeclaration("系统标题", true);
         declaration.setAppCode("notice-it");
         declaration.setServiceCode("notice-service");
-        declaration.setSyncMode(io.mango.resource.api.enums.ResourceSyncMode.AUTO);
+        declaration.setSyncMode(io.mango.resource.api.enums.ResourceSyncMode.SYNC_ALWAYS);
         handler.upsert(declaration);
 
         assertThat(registryService.registerDeclarations(registryCommand(1, List.of(declaration)))).isTrue();

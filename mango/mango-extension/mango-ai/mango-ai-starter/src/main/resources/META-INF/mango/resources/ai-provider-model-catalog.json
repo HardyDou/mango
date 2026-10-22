@@ -12,7 +12,7 @@
             "bizKey": "ai.provider.deepseek",
             "name": "DeepSeek",
             "targetModule": "mango-ai",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": { "type": "LONG", "value": "2951400000000001001" },
               "tenantId": { "type": "STRING", "value": "1" },
@@ -28,7 +28,7 @@
             "bizKey": "ai.provider.volcengine-ark",
             "name": "火山方舟",
             "targetModule": "mango-ai",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": { "type": "LONG", "value": "2951400000000001002" },
               "tenantId": { "type": "STRING", "value": "1" },
@@ -44,7 +44,7 @@
             "bizKey": "ai.provider.alibaba-dashscope",
             "name": "阿里云百炼",
             "targetModule": "mango-ai",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": { "type": "LONG", "value": "2951400000000001003" },
               "tenantId": { "type": "STRING", "value": "1" },
@@ -60,7 +60,7 @@
             "bizKey": "ai.provider.zhipu",
             "name": "智谱 AI",
             "targetModule": "mango-ai",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": { "type": "LONG", "value": "2951400000000001004" },
               "tenantId": { "type": "STRING", "value": "1" },
@@ -76,7 +76,7 @@
             "bizKey": "ai.provider.siliconflow",
             "name": "硅基流动",
             "targetModule": "mango-ai",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": { "type": "LONG", "value": "2951400000000001005" },
               "tenantId": { "type": "STRING", "value": "1" },
@@ -92,7 +92,7 @@
             "bizKey": "ai.provider.kimi",
             "name": "Kimi",
             "targetModule": "mango-ai",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": { "type": "LONG", "value": "2951400000000001006" },
               "tenantId": { "type": "STRING", "value": "1" },
@@ -108,7 +108,7 @@
             "bizKey": "ai.provider.openai-compatible",
             "name": "OpenAI 兼容协议",
             "targetModule": "mango-ai",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": { "type": "LONG", "value": "2951400000000001007" },
               "tenantId": { "type": "STRING", "value": "1" },
@@ -124,7 +124,7 @@
             "bizKey": "ai.provider.ollama",
             "name": "Ollama",
             "targetModule": "mango-ai",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": { "type": "LONG", "value": "2951400000000001008" },
               "tenantId": { "type": "STRING", "value": "1" },
@@ -142,7 +142,7 @@
             "bizKey": "ai.model.deepseek.deepseek-chat",
             "name": "DeepSeek Chat",
             "targetModule": "mango-ai",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": { "type": "LONG", "value": "2951400000000002001" },
               "tenantId": { "type": "STRING", "value": "1" },
@@ -162,7 +162,7 @@
             "bizKey": "ai.model.volcengine-ark.doubao-seed-1-6",
             "name": "豆包 Seed 1.6",
             "targetModule": "mango-ai",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": { "type": "LONG", "value": "2951400000000002002" },
               "tenantId": { "type": "STRING", "value": "1" },
@@ -182,7 +182,7 @@
             "bizKey": "ai.model.alibaba-dashscope.qwen-plus",
             "name": "Qwen Plus",
             "targetModule": "mango-ai",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": { "type": "LONG", "value": "2951400000000002003" },
               "tenantId": { "type": "STRING", "value": "1" },
@@ -202,7 +202,7 @@
             "bizKey": "ai.model.zhipu.glm-4-plus",
             "name": "GLM-4 Plus",
             "targetModule": "mango-ai",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": { "type": "LONG", "value": "2951400000000002004" },
               "tenantId": { "type": "STRING", "value": "1" },
@@ -222,7 +222,7 @@
             "bizKey": "ai.model.siliconflow.deepseek-v3",
             "name": "DeepSeek V3",
             "targetModule": "mango-ai",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": { "type": "LONG", "value": "2951400000000002005" },
               "tenantId": { "type": "STRING", "value": "1" },
@@ -242,7 +242,7 @@
             "bizKey": "ai.model.kimi.moonshot-v1-128k",
             "name": "Moonshot V1 128K",
             "targetModule": "mango-ai",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": { "type": "LONG", "value": "2951400000000002006" },
               "tenantId": { "type": "STRING", "value": "1" },
@@ -262,7 +262,7 @@
             "bizKey": "ai.model.openai-compatible.gpt-4o-mini",
             "name": "GPT-4o Mini",
             "targetModule": "mango-ai",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": { "type": "LONG", "value": "2951400000000002007" },
               "tenantId": { "type": "STRING", "value": "1" },
@@ -282,7 +282,7 @@
             "bizKey": "ai.model.ollama.llama3-2",
             "name": "Llama 3.2",
             "targetModule": "mango-ai",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": { "type": "LONG", "value": "2951400000000002008" },
               "tenantId": { "type": "STRING", "value": "1" },

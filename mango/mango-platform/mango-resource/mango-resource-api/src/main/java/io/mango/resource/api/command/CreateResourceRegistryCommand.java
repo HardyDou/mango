@@ -39,7 +39,7 @@ public class CreateResourceRegistryCommand implements Serializable {
 
     @NotNull(message = "同步模式不能为空")
     @Schema(description = "同步模式，默认 MANUAL 表示后台托管", requiredMode = Schema.RequiredMode.REQUIRED)
-    private ResourceSyncMode syncMode = ResourceSyncMode.MANUAL;
+    private ResourceSyncMode syncMode = ResourceSyncMode.SYNC_ONCE;
 
     @NotBlank(message = "资源字段JSON不能为空")
     @Schema(description = "资源字段JSON对象，结构与资源声明 fields 一致", requiredMode = Schema.RequiredMode.REQUIRED)

@@ -12,7 +12,7 @@
             "bizKey": "payment.tenant.TENANT_1",
             "name": "默认支付租户",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",

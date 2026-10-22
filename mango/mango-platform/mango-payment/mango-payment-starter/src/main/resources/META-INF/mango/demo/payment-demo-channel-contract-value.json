@@ -12,7 +12,7 @@
             "bizKey": "payment.channel-contract-value.331001.mangoPayScenario",
             "name": "mangoPayScenario",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -50,7 +50,7 @@
             "bizKey": "payment.channel-contract-value.331001.merchantNo",
             "name": "merchantNo",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",

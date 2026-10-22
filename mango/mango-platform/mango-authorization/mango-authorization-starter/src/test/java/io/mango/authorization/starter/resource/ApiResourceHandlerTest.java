@@ -36,7 +36,7 @@ class ApiResourceHandlerTest {
         List<ResourceDeclaration> declarations = new ArrayList<>();
         List<ApiResourceEntity> entities = new ArrayList<>();
         for (int index = 0; index < 980; index++) {
-            declarations.add(declaration(index, ResourceSyncMode.AUTO));
+            declarations.add(declaration(index, ResourceSyncMode.SYNC_ALWAYS));
             entities.add(entity(index));
         }
         when(service.registerApiResources(any())).thenReturn(new ApiResourceRegisterResultVO(980, 980, 0));
@@ -56,8 +56,8 @@ class ApiResourceHandlerTest {
         IApiResourceService service = mock(IApiResourceService.class);
         ApiResourceMapper mapper = mock(ApiResourceMapper.class);
         ApiResourceHandler handler = new ApiResourceHandler(service, mapper);
-        ResourceDeclaration manual = declaration(1, ResourceSyncMode.MANUAL);
-        ResourceDeclaration initOnly = declaration(2, ResourceSyncMode.INIT_ONLY);
+        ResourceDeclaration manual = declaration(1, ResourceSyncMode.SYNC_ONCE);
+        ResourceDeclaration initOnly = declaration(2, ResourceSyncMode.SYNC_ONCE);
         List<ApiResourceEntity> entities = List.of(entity(1), entity(2));
         when(service.registerApiResources(any())).thenReturn(new ApiResourceRegisterResultVO(2, 0, 2));
         when(mapper.selectList(any())).thenReturn(entities);
@@ -76,8 +76,8 @@ class ApiResourceHandlerTest {
         IApiResourceService service = mock(IApiResourceService.class);
         ApiResourceMapper mapper = mock(ApiResourceMapper.class);
         ApiResourceHandler handler = new ApiResourceHandler(service, mapper);
-        ResourceDeclaration changed = declaration(1, ResourceSyncMode.AUTO);
-        ResourceDeclaration unchanged = declaration(2, ResourceSyncMode.AUTO);
+        ResourceDeclaration changed = declaration(1, ResourceSyncMode.SYNC_ALWAYS);
+        ResourceDeclaration unchanged = declaration(2, ResourceSyncMode.SYNC_ALWAYS);
         when(service.upsertApiResources(any())).thenReturn(new ApiResourceRegisterResultVO(1, 0, 1));
         when(mapper.selectList(any())).thenReturn(List.of(entity(1)));
         ResourceSyncContext context = ResourceSyncContext.of(

@@ -212,7 +212,7 @@ public class ResourceRegistryRepository {
         row.setTargetId(entity.getTargetId());
         row.setSourceHash(entity.getSourceHash());
         row.setTenantId(entity.getTenantId());
-        row.setSyncMode(ResourceSyncMode.valueOf(entity.getSyncMode()));
+        row.setSyncMode(ResourceSyncMode.from(entity.getSyncMode()));
         row.setStatus(entity.getStatus());
         row.setLastSyncTime(entity.getLastSyncTime());
         return row;

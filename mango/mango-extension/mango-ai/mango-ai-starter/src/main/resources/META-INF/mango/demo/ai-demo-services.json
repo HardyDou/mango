@@ -12,7 +12,7 @@
             "bizKey": "ai.demo.prompt.general-chat-assistant",
             "name": "通用对话助手 Prompt",
             "targetModule": "mango-ai",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": { "type": "LONG", "value": "2951400000000003001" },
               "tenantId": { "type": "STRING", "value": "1" },
@@ -31,7 +31,7 @@
             "bizKey": "ai.demo.prompt.contract-five-elements",
             "name": "合同五要素识别 Prompt",
             "targetModule": "mango-ai",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": { "type": "LONG", "value": "2951400000000003002" },
               "tenantId": { "type": "STRING", "value": "1" },
@@ -50,7 +50,7 @@
             "bizKey": "ai.demo.prompt.text-sentiment-classification",
             "name": "文本情感分类 Prompt",
             "targetModule": "mango-ai",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": { "type": "LONG", "value": "2951400000000003003" },
               "tenantId": { "type": "STRING", "value": "1" },
@@ -71,7 +71,7 @@
             "bizKey": "ai.demo.skill.contract-review",
             "name": "合同分析助手 Skill",
             "targetModule": "mango-ai",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": { "type": "LONG", "value": "2951400000000004001" },
               "tenantId": { "type": "STRING", "value": "1" },
@@ -89,7 +89,7 @@
             "bizKey": "ai.demo.skill.sentiment-classifier",
             "name": "情感分类器 Skill",
             "targetModule": "mango-ai",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": { "type": "LONG", "value": "2951400000000004002" },
               "tenantId": { "type": "STRING", "value": "1" },
@@ -109,7 +109,7 @@
             "bizKey": "ai.demo.service.assistant-general",
             "name": "通用对话助手",
             "targetModule": "mango-ai",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": { "type": "LONG", "value": "2951400000000005001" },
               "tenantId": { "type": "STRING", "value": "1" },
@@ -130,7 +130,7 @@
             "bizKey": "ai.demo.service.contract-five-elements",
             "name": "合同五要素识别",
             "targetModule": "mango-ai",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": { "type": "LONG", "value": "2951400000000005002" },
               "tenantId": { "type": "STRING", "value": "1" },
@@ -152,7 +152,7 @@
             "bizKey": "ai.demo.service.text-sentiment",
             "name": "文本情感分类",
             "targetModule": "mango-ai",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": { "type": "LONG", "value": "2951400000000005003" },
               "tenantId": { "type": "STRING", "value": "1" },

@@ -12,7 +12,7 @@ mango:
           biz-key: identity.user.admin
           name: 平台管理员
           target-module: identity
-          sync-mode: INIT_ONLY
+          sync-mode: SYNC_ONCE
           fields:
             targetId: { type: LONG, value: 1 }
             memberId: { type: LONG, value: 1001 }
@@ -38,7 +38,7 @@ mango:
           biz-key: identity.user.admin-root-org
           name: 平台管理员根组织关系
           target-module: identity
-          sync-mode: INIT_ONLY
+          sync-mode: SYNC_ONCE
           fields:
             targetId: { type: LONG, value: 7421519422447286235 }
             tenantId: { type: LONG, value: 1 }
