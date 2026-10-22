@@ -375,6 +375,9 @@ mango:
 - `MANUAL_TAKEOVER` 行只记录 `SKIP`；要交还声明管理，用 `PUT /resource/registries/sync-mode` 切回 `SYNC_ALWAYS`，归属回到 `RESOURCE_MANAGED`。
 - 缺失停用（finalize）只扫描 `RESOURCE_MANAGED` 且 `sync_mode = SYNC_ALWAYS`、`status <> REMOVED` 的行，因此升级前无法证明归属的历史资源不会被自动删除。
 
+- 归属认领只要求身份一致（同 `resourceId` + `resourceType` + `bizKey`）；来源 `app_code` / `service_code` / `module_code` 漂移时会输出 `WARN` 并完成认领，不再静默跳过。
+- 每次 `finalize` 会输出一行 `Mango resource ownership unproven`，汇总无法证明归属、因此保持原状的缺失资源条数与类型分布；该日志只读，不修改任何数据。需要收敛时，按目标表反查真实归属后人工改归属，或提供一次性收敛脚本（不在自动流程内）。
+
 字段类型支持：
 
 | 类型 | 说明 |

@@ -1178,6 +1178,49 @@ class ResourceRegistrySyncServiceIntegrationTest {
     }
 
     @Test
+    void sourceDriftedUnknownRowIsAdoptedByIdentityAndUpdated() {
+        ResourceDeclaration declaration = activeDeclaration(1, "来源漂移前");
+        declaration.setId("1900000000000000033");
+        declaration.setBizKey("guarantee.ownership.source-drift");
+        provider.setDeclaration(declaration);
+        syncService.sync();
+
+        jdbcTemplate.update("""
+                update resource_registry
+                   set ownership = 'UNKNOWN', app_code = 'legacy-app', service_code = 'legacy-service'
+                 where resource_id = ?
+                """, declaration.getId());
+
+        declaration.setVersion(2);
+        declaration.putField("title", fieldOf("来源漂移后仍应按身份认领并更新"));
+        provider.setDeclaration(declaration);
+        syncService.sync();
+
+        assertThat(registryOwnership(declaration.getId())).isEqualTo("RESOURCE_MANAGED");
+        assertThat(registryVersion(declaration.getId())).isEqualTo(2);
+    }
+
+    @Test
+    void unprovenOwnershipRowsStayActiveAndAreReported() {
+        jdbcTemplate.update("""
+                insert into resource_registry (
+                    id, resource_id, resource_version, app_code, service_code, resource_type,
+                    module_code, biz_key, name, target_module, target_table, target_id,
+                    source_hash, sync_mode, ownership, status
+                ) values (
+                    90009, '1900000000000000034', 1, 'platform-admin', 'service-a', 'API_RESOURCE',
+                    'guarantee', 'guarantee.ownership.unproven', '未证明归属', 'authorization',
+                    'authorization_api_resource', 90009, 'unproven-hash', 'SYNC_ALWAYS', 'UNKNOWN', 'ACTIVE'
+                )
+                """);
+
+        syncService.syncRemote("platform-admin", "service-a", List.of("guarantee"), List.of());
+
+        assertThat(registryStatus("1900000000000000034")).isEqualTo("ACTIVE");
+        assertThat(registryOwnership("1900000000000000034")).isEqualTo("UNKNOWN");
+    }
+
+    @Test
     void remoteSyncDisablesMissingOnlyWithinSameSourceService() {
         ResourceDeclaration serviceA = activeDeclaration(1, "服务A");
         serviceA.setId("1900000000000000003");
@@ -1658,6 +1701,15 @@ class ResourceRegistrySyncServiceIntegrationTest {
         field.setType(ResourceFieldType.STRING);
         field.setValue(value);
         return field;
+    }
+
+    private long skipLogCount(String resourceId, String messageFragment) {
+        return jdbcTemplate.queryForObject("""
+                select count(*) from resource_sync_log
+                 where sync_type = 'SKIP'
+                   and message like ?
+                   and resource_id = (select id from resource_registry where resource_id = ?)
+                """, Long.class, "%" + messageFragment + "%", resourceId);
     }
 
     private String registryStatus(String resourceId) {
