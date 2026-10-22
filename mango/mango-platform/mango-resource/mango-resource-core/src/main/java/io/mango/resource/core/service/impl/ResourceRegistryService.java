@@ -1209,38 +1209,50 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
         List<String> managedModules = modules.stream().sorted().toList();
         for (ResourceRegistryRow row : repository.listBySourceAndModules(appCode, serviceCode, managedModules)) {
             assertOperationCanContinue();
-            if (!seenResourceIds.contains(row.getResourceId()) && row.getSyncMode() == ResourceSyncMode.AUTO) {
-                ResourceHandler handler = handlerMap.get(row.getResourceType());
-                if (handler == null) {
-                    ResourceDeclaration disabled = fromRow(row);
-                    ResourceTargetDispatcher dispatcher = targetDispatcher(disabled);
-                    Require.notNull(dispatcher, ResourceCode.RESOURCE_NOT_FOUND,
-                            "缺失资源禁用时未找到处理器: " + row.getResourceType()
-                                    + ", resourceId=" + row.getResourceId()
-                                    + ", targetModule=" + row.getTargetModule());
-                    if (!StringUtils.hasText(row.getTenantId())) {
-                        log.warn("Mango resource missing disable skipped: remote tenant scope is unavailable, resourceType={}, resourceId={}",
-                                row.getResourceType(), row.getResourceId());
-                        continue;
-                    }
-                    ResourceSyncResult result = dispatcher.disable(disabled);
-                    assertOperationCanContinue();
-                    repository.updateStatus(row, ResourceStatus.REMOVED.name(), row.getSourceHash());
-                    repository.insertSyncLog(row.getId(), "DISABLE", "SUCCESS", result.getMessage());
-                    repository.insertChangeLog(row.getId(), "DISABLE", toJson(row), toJson(disabled));
-                    continue;
-                }
-                ResourceDeclaration disabled = fromRow(row);
-                if (!prepareTenantScopedDeclaration(row, handler, disabled)) {
-                    continue;
-                }
-                ResourceSyncResult result = handlerInvoker.disable(handler, disabled);
+            if (seenResourceIds.contains(row.getResourceId()) || row.getSyncMode() != ResourceSyncMode.AUTO) {
+                continue;
+            }
+            try {
+                disableMissingRow(row, handlerMap);
+            } catch (RuntimeException exception) {
                 assertOperationCanContinue();
-                repository.updateStatus(row, ResourceStatus.REMOVED.name(), row.getSourceHash());
-                repository.insertSyncLog(row.getId(), "DISABLE", "SUCCESS", result.getMessage());
-                repository.insertChangeLog(row.getId(), "DISABLE", toJson(row), toJson(disabled));
+                log.warn("Mango resource missing disable skipped: disable failed, resourceType={}, resourceId={}, reason={}",
+                        row.getResourceType(), row.getResourceId(), exception.getMessage());
             }
         }
+    }
+
+    /**
+     * 停用单个缺失资源。该方法内的失败不得中断 Bootstrap：资源数据是预制默认配置，
+     * 运行时状态优先，无法停用的历史行只告警并保留原状态。
+     */
+    private void disableMissingRow(ResourceRegistryRow row, Map<String, ResourceHandler> handlerMap) {
+        ResourceHandler handler = handlerMap.get(row.getResourceType());
+        ResourceDeclaration disabled = fromRow(row);
+        ResourceSyncResult result;
+        if (handler == null) {
+            ResourceTargetDispatcher dispatcher = targetDispatcher(disabled);
+            if (dispatcher == null) {
+                log.warn("Mango resource missing disable skipped: no handler or dispatcher, resourceType={}, resourceId={}, targetModule={}",
+                        row.getResourceType(), row.getResourceId(), row.getTargetModule());
+                return;
+            }
+            if (!StringUtils.hasText(row.getTenantId())) {
+                log.warn("Mango resource missing disable skipped: remote tenant scope is unavailable, resourceType={}, resourceId={}",
+                        row.getResourceType(), row.getResourceId());
+                return;
+            }
+            result = dispatcher.disable(disabled);
+        } else {
+            if (!prepareTenantScopedDeclaration(row, handler, disabled)) {
+                return;
+            }
+            result = handlerInvoker.disable(handler, disabled);
+        }
+        assertOperationCanContinue();
+        repository.updateStatus(row, ResourceStatus.REMOVED.name(), row.getSourceHash());
+        repository.insertSyncLog(row.getId(), "DISABLE", "SUCCESS", result.getMessage());
+        repository.insertChangeLog(row.getId(), "DISABLE", toJson(row), toJson(disabled));
     }
 
     private Map<String, ResourceSyncResult> syncActiveBatchByTarget(
