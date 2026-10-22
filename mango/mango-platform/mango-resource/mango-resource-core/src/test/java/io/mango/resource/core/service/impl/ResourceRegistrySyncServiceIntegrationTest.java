@@ -706,11 +706,11 @@ class ResourceRegistrySyncServiceIntegrationTest {
         ResourceDeclaration initOnly = activeDeclaration(
                 "1900000000000000002", 1, "guarantee.init-only", "初始化资源");
         initOnly.setModuleCode("guarantee");
-        initOnly.setSyncMode(ResourceSyncMode.INIT_ONLY);
+        initOnly.setSyncMode(ResourceSyncMode.SYNC_ONCE);
         ResourceDeclaration manual = activeDeclaration(
                 "1900000000000000003", 1, "guarantee.manual", "人工资源");
         manual.setModuleCode("guarantee");
-        manual.setSyncMode(ResourceSyncMode.MANUAL);
+        manual.setSyncMode(ResourceSyncMode.SYNC_ONCE);
         ResourceDeclaration workflow = activeDeclaration(
                 "1900000000000000004", 1, "workflow.auto", "流程资源");
         workflow.setModuleCode("workflow");
@@ -767,7 +767,7 @@ class ResourceRegistrySyncServiceIntegrationTest {
                 "1900000000000000001", 1, "guarantee.apply.active", "正常资源");
         ResourceDeclaration initOnly = activeDeclaration(
                 "1900000000000000002", 1, "guarantee.apply.init-only", "初始化资源");
-        initOnly.setSyncMode(ResourceSyncMode.INIT_ONLY);
+        initOnly.setSyncMode(ResourceSyncMode.SYNC_ONCE);
         ResourceDeclaration disabled = activeDeclaration(
                 "1900000000000000003", 1, "guarantee.apply.disabled", "禁用资源");
         disabled.setStatus(ResourceStatus.DISABLED);
@@ -907,41 +907,41 @@ class ResourceRegistrySyncServiceIntegrationTest {
     @Test
     void syncCreatesInitOnlyResourceOnFirstSync() {
         ResourceDeclaration declaration = activeDeclaration(1, "初始化标题");
-        declaration.setSyncMode(ResourceSyncMode.INIT_ONLY);
+        declaration.setSyncMode(ResourceSyncMode.SYNC_ONCE);
         provider.setDeclaration(declaration);
 
         syncService.sync();
 
         ResourceRegistryEntity registry = registryMapper.selectByResourceId("1900000000000000001");
         assertThat(registry.getResourceVersion()).isEqualTo(1);
-        assertThat(registry.getSyncMode()).isEqualTo("INIT_ONLY");
+        assertThat(registry.getSyncMode()).isEqualTo("SYNC_ONCE");
         assertThat(stringValue("message_template", "title")).isEqualTo("初始化标题");
     }
 
     @Test
     void syncAutoAndInitOnlyFirstSyncWriteSameTargetRowsForFiveDeclarations() {
-        provider.setDeclarations(fiveDeclarations(ResourceSyncMode.AUTO, 1, "初始化标题"));
+        provider.setDeclarations(fiveDeclarations(ResourceSyncMode.SYNC_ALWAYS, 1, "初始化标题"));
         syncService.sync();
         List<MessageTemplateRow> autoRows = messageTemplateRows();
 
         rebuildTables();
         dispatcher.reset();
-        provider.setDeclarations(fiveDeclarations(ResourceSyncMode.INIT_ONLY, 1, "初始化标题"));
+        provider.setDeclarations(fiveDeclarations(ResourceSyncMode.SYNC_ONCE, 1, "初始化标题"));
         syncService.sync();
 
         assertThat(messageTemplateRows()).containsExactlyElementsOf(autoRows);
         assertThat(registryRows()).containsExactly(
-                new RegistryRow("1900000000000000001", 1, "guarantee.apply.case-1", "INIT_ONLY", "ACTIVE", 91001L),
-                new RegistryRow("1900000000000000002", 1, "guarantee.apply.case-2", "INIT_ONLY", "ACTIVE", 91002L),
-                new RegistryRow("1900000000000000003", 1, "guarantee.apply.case-3", "INIT_ONLY", "ACTIVE", 91003L),
-                new RegistryRow("1900000000000000004", 1, "guarantee.apply.case-4", "INIT_ONLY", "ACTIVE", 91004L),
-                new RegistryRow("1900000000000000005", 1, "guarantee.apply.case-5", "INIT_ONLY", "ACTIVE", 91005L)
+                new RegistryRow("1900000000000000001", 1, "guarantee.apply.case-1", "SYNC_ONCE", "ACTIVE", 91001L),
+                new RegistryRow("1900000000000000002", 1, "guarantee.apply.case-2", "SYNC_ONCE", "ACTIVE", 91002L),
+                new RegistryRow("1900000000000000003", 1, "guarantee.apply.case-3", "SYNC_ONCE", "ACTIVE", 91003L),
+                new RegistryRow("1900000000000000004", 1, "guarantee.apply.case-4", "SYNC_ONCE", "ACTIVE", 91004L),
+                new RegistryRow("1900000000000000005", 1, "guarantee.apply.case-5", "SYNC_ONCE", "ACTIVE", 91005L)
         );
     }
 
     @Test
     void syncKeepsRuntimeTargetRowsForFiveInitOnlyDeclarationsWhenUpgraded() {
-        provider.setDeclarations(fiveDeclarations(ResourceSyncMode.INIT_ONLY, 1, "初始化标题"));
+        provider.setDeclarations(fiveDeclarations(ResourceSyncMode.SYNC_ONCE, 1, "初始化标题"));
         syncService.sync();
         jdbcTemplate.update("update message_template set title = '运行时修改-1' where id = 91001");
         jdbcTemplate.update("update message_template set title = '运行时修改-2' where id = 91002");
@@ -950,16 +950,16 @@ class ResourceRegistrySyncServiceIntegrationTest {
         jdbcTemplate.update("update message_template set title = '运行时修改-5' where id = 91005");
         List<MessageTemplateRow> runtimeRows = messageTemplateRows();
 
-        provider.setDeclarations(fiveDeclarations(ResourceSyncMode.INIT_ONLY, 2, "升级标题"));
+        provider.setDeclarations(fiveDeclarations(ResourceSyncMode.SYNC_ONCE, 2, "升级标题"));
         syncService.sync();
 
         assertThat(messageTemplateRows()).containsExactlyElementsOf(runtimeRows);
         assertThat(registryRows()).containsExactly(
-                new RegistryRow("1900000000000000001", 2, "guarantee.apply.case-1", "INIT_ONLY", "ACTIVE", 91001L),
-                new RegistryRow("1900000000000000002", 2, "guarantee.apply.case-2", "INIT_ONLY", "ACTIVE", 91002L),
-                new RegistryRow("1900000000000000003", 2, "guarantee.apply.case-3", "INIT_ONLY", "ACTIVE", 91003L),
-                new RegistryRow("1900000000000000004", 2, "guarantee.apply.case-4", "INIT_ONLY", "ACTIVE", 91004L),
-                new RegistryRow("1900000000000000005", 2, "guarantee.apply.case-5", "INIT_ONLY", "ACTIVE", 91005L)
+                new RegistryRow("1900000000000000001", 2, "guarantee.apply.case-1", "SYNC_ONCE", "ACTIVE", 91001L),
+                new RegistryRow("1900000000000000002", 2, "guarantee.apply.case-2", "SYNC_ONCE", "ACTIVE", 91002L),
+                new RegistryRow("1900000000000000003", 2, "guarantee.apply.case-3", "SYNC_ONCE", "ACTIVE", 91003L),
+                new RegistryRow("1900000000000000004", 2, "guarantee.apply.case-4", "SYNC_ONCE", "ACTIVE", 91004L),
+                new RegistryRow("1900000000000000005", 2, "guarantee.apply.case-5", "SYNC_ONCE", "ACTIVE", 91005L)
         );
         assertThat(jdbcTemplate.queryForList(
                 "select sync_type from resource_sync_log order by id", String.class))
@@ -970,19 +970,19 @@ class ResourceRegistrySyncServiceIntegrationTest {
     @Test
     void syncKeepsRuntimeTargetWhenInitOnlyDeclarationChanges() {
         ResourceDeclaration first = activeDeclaration(1, "初始化标题");
-        first.setSyncMode(ResourceSyncMode.INIT_ONLY);
+        first.setSyncMode(ResourceSyncMode.SYNC_ONCE);
         provider.setDeclaration(first);
         syncService.sync();
         jdbcTemplate.update("update message_template set title = '运行时修改' where id = 91001");
 
         ResourceDeclaration upgraded = activeDeclaration(2, "升级包标题");
-        upgraded.setSyncMode(ResourceSyncMode.INIT_ONLY);
+        upgraded.setSyncMode(ResourceSyncMode.SYNC_ONCE);
         provider.setDeclaration(upgraded);
         syncService.sync();
 
         ResourceRegistryEntity registry = registryMapper.selectByResourceId("1900000000000000001");
         assertThat(registry.getResourceVersion()).isEqualTo(2);
-        assertThat(registry.getSyncMode()).isEqualTo("INIT_ONLY");
+        assertThat(registry.getSyncMode()).isEqualTo("SYNC_ONCE");
         assertThat(stringValue("message_template", "title")).isEqualTo("运行时修改");
         assertThat(count("resource_sync_log")).isEqualTo(2);
         assertThat(count("resource_change_log")).isEqualTo(2);
@@ -1010,14 +1010,14 @@ class ResourceRegistrySyncServiceIntegrationTest {
     void syncUpdatesRegistrySyncModeWhenDeclarationChanges() {
         syncService.sync();
         ResourceDeclaration manualDeclaration = activeDeclaration(2, "提交申请");
-        manualDeclaration.setSyncMode(ResourceSyncMode.MANUAL);
+        manualDeclaration.setSyncMode(ResourceSyncMode.SYNC_ONCE);
         provider.setDeclaration(manualDeclaration);
 
         syncService.sync();
 
         ResourceRegistryEntity registry = registryMapper.selectByResourceId("1900000000000000001");
         assertThat(registry.getResourceVersion()).isEqualTo(2);
-        assertThat(registry.getSyncMode()).isEqualTo("MANUAL");
+        assertThat(registry.getSyncMode()).isEqualTo("SYNC_ONCE");
     }
 
     @Test
@@ -1240,7 +1240,7 @@ class ResourceRegistrySyncServiceIntegrationTest {
     void managedRecordShadowsSystemDeclarationWithSameBizKey() {
         ResourceDeclaration managed = activeDeclaration(
                 "1900000000000000099", 1, "guarantee.apply.submit", "后台托管");
-        managed.setSyncMode(ResourceSyncMode.MANUAL);
+        managed.setSyncMode(ResourceSyncMode.SYNC_ONCE);
         assertThat(syncService.syncRemote(
                 "platform-admin", "service-managed", List.of(managed))).isTrue();
 
@@ -1250,7 +1250,7 @@ class ResourceRegistrySyncServiceIntegrationTest {
 
         assertThat(registryRows()).hasSize(1);
         assertThat(registryRows().get(0).resourceId()).isEqualTo("1900000000000000099");
-        assertThat(registryRows().get(0).syncMode()).isEqualTo("MANUAL");
+        assertThat(registryRows().get(0).syncMode()).isEqualTo("SYNC_ONCE");
         assertThat(messageTemplateRows()).hasSize(1);
         assertThat(messageTemplateRows().get(0).title()).isEqualTo("后台托管");
     }
@@ -1277,14 +1277,14 @@ class ResourceRegistrySyncServiceIntegrationTest {
     void createManagedResourceCreatesManualRegistryRecord() {
         ResourceDeclaration managed = activeDeclaration(
                 "1900000000000000099", 1, "guarantee.managed", "后台新增");
-        managed.setSyncMode(ResourceSyncMode.MANUAL);
+        managed.setSyncMode(ResourceSyncMode.SYNC_ONCE);
         managed.setExecutionPhase(ResourceExecutionPhase.MANUAL);
 
         String resourceId = syncService.createManagedResource(managed);
 
         assertThat(resourceId).isEqualTo("1900000000000000099");
         assertThat(registryRows()).hasSize(1);
-        assertThat(registryRows().get(0).syncMode()).isEqualTo("MANUAL");
+        assertThat(registryRows().get(0).syncMode()).isEqualTo("SYNC_ONCE");
         assertThat(messageTemplateRows()).hasSize(1);
         assertThat(messageTemplateRows().get(0).title()).isEqualTo("后台新增");
     }
@@ -1293,14 +1293,14 @@ class ResourceRegistrySyncServiceIntegrationTest {
     void updateResourceSyncModeChangesOwnership() {
         provider.setDeclaration(activeDeclaration(1, "提交申请"));
         syncService.sync();
-        assertThat(registryRows().get(0).syncMode()).isEqualTo("AUTO");
+        assertThat(registryRows().get(0).syncMode()).isEqualTo("SYNC_ALWAYS");
         String sourceHash = jdbcTemplate.queryForObject(
                 "select source_hash from resource_registry limit 1", String.class);
         long changeLogCount = count("resource_change_log");
 
-        syncService.updateResourceSyncMode("1900000000000000001", ResourceSyncMode.MANUAL);
+        syncService.updateResourceSyncMode("1900000000000000001", ResourceSyncMode.SYNC_ONCE);
 
-        assertThat(registryRows().get(0).syncMode()).isEqualTo("MANUAL");
+        assertThat(registryRows().get(0).syncMode()).isEqualTo("SYNC_ONCE");
         assertThat(jdbcTemplate.queryForObject(
                 "select source_hash from resource_registry limit 1", String.class))
                 .isEqualTo(sourceHash);
@@ -1325,7 +1325,7 @@ class ResourceRegistrySyncServiceIntegrationTest {
         assertThat(registryRows()).singleElement()
                 .satisfies(row -> {
                     assertThat(row.resourceId()).isEqualTo(resourceId);
-                    assertThat(row.syncMode()).isEqualTo("MANUAL");
+                    assertThat(row.syncMode()).isEqualTo("SYNC_ONCE");
                     assertThat(row.status()).isEqualTo("ACTIVE");
                     assertThat(row.bizKey()).isEqualTo("guarantee.apply.submit");
                 });

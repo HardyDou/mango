@@ -10,6 +10,7 @@ import io.mango.resource.core.mapper.ResourceChangeLogMapper;
 import io.mango.resource.core.mapper.ResourceRegistryMapper;
 import io.mango.resource.core.mapper.ResourceSyncLogMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
  * 资源注册中心仓储。
  */
 @RequiredArgsConstructor
+@Slf4j
 public class ResourceRegistryRepository {
 
     private final ResourceRegistryMapper registryMapper;
@@ -212,7 +214,11 @@ public class ResourceRegistryRepository {
         row.setTargetId(entity.getTargetId());
         row.setSourceHash(entity.getSourceHash());
         row.setTenantId(entity.getTenantId());
-        row.setSyncMode(ResourceSyncMode.valueOf(entity.getSyncMode()));
+        if (ResourceSyncMode.isLegacy(entity.getSyncMode())) {
+            log.warn("Mango resource registry uses deprecated sync mode: resourceId={}, value={}, migrated={}",
+                    entity.getResourceId(), entity.getSyncMode(), ResourceSyncMode.from(entity.getSyncMode()));
+        }
+        row.setSyncMode(ResourceSyncMode.from(entity.getSyncMode()));
         row.setStatus(entity.getStatus());
         row.setLastSyncTime(entity.getLastSyncTime());
         return row;

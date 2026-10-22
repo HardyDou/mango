@@ -78,7 +78,7 @@ class FileResourceHandlerIntegrationTest {
         assertThat(storageConfigs).hasSize(1);
         assertThat(settings).hasSize(1);
         assertThat(settings.getFirst().getVersion()).isEqualTo(7);
-        assertThat(settings.getFirst().getSyncMode()).isEqualTo(ResourceSyncMode.INIT_ONLY);
+        assertThat(settings.getFirst().getSyncMode()).isEqualTo(ResourceSyncMode.SYNC_ONCE);
         assertThat(count("file_storage_config")).isOne();
         assertThat(count("file_settings")).isOne();
         assertThat(stringValue("file_storage_config", "storage_type", "id = 1")).isEqualTo("LOCAL");
@@ -104,7 +104,7 @@ class FileResourceHandlerIntegrationTest {
 
         assertThat(storageConfigs).singleElement().satisfies(declaration -> {
             assertThat(declaration.getBizKey()).isEqualTo("file.storage.minio-local-dev");
-            assertThat(declaration.getSyncMode()).isEqualTo(ResourceSyncMode.INIT_ONLY);
+            assertThat(declaration.getSyncMode()).isEqualTo(ResourceSyncMode.SYNC_ONCE);
             assertThat(declaration.getFields().get("storageType").getValue()).isEqualTo("MINIO");
         });
     }

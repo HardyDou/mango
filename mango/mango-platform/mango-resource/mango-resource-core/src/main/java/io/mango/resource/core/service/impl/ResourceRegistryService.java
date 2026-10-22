@@ -809,9 +809,7 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
     }
 
     private boolean isManagedSyncMode(ResourceSyncMode syncMode) {
-        return syncMode == ResourceSyncMode.MANUAL
-                || syncMode == ResourceSyncMode.INIT_ONLY
-                || syncMode == ResourceSyncMode.LOCKED;
+        return syncMode == ResourceSyncMode.SYNC_ONCE;
     }
 
     private void validateRegistryConflicts(List<ResourceDeclaration> declarations,
@@ -904,7 +902,7 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
         if (!force && isUnchanged(row, declaration, hash)) {
             return;
         }
-        if (row != null && row.getSyncMode() != ResourceSyncMode.AUTO) {
+        if (row != null && row.getSyncMode() != ResourceSyncMode.SYNC_ALWAYS) {
             repository.insertSyncLog(row.getId(), "SKIP", "SKIPPED", "Resource sync mode is " + row.getSyncMode());
             return;
         }
@@ -927,7 +925,7 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
         if (!force && isUnchanged(row, declaration, hash)) {
             return;
         }
-        if (row != null && row.getSyncMode() != ResourceSyncMode.AUTO) {
+        if (row != null && row.getSyncMode() != ResourceSyncMode.SYNC_ALWAYS) {
             repository.insertSyncLog(row.getId(), "SKIP", "SKIPPED", "Resource sync mode is " + row.getSyncMode());
             return;
         }
@@ -1012,7 +1010,7 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
             skipInitOnlyTargetUpdate(row, declaration, hash);
             return;
         }
-        if (row != null && row.getSyncMode() != ResourceSyncMode.AUTO) {
+        if (row != null && row.getSyncMode() != ResourceSyncMode.SYNC_ALWAYS) {
             repository.insertSyncLog(row.getId(), "SKIP", "SKIPPED",
                     "Resource sync mode is " + row.getSyncMode());
             return;
@@ -1092,7 +1090,7 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
         }
         assertOperationCanContinue();
         repository.updateStatusAndSyncMode(row, ResourceStatus.REMOVED.name(),
-                ResourceSyncMode.MANUAL.name(), row.getSourceHash());
+                ResourceSyncMode.SYNC_ONCE.name(), row.getSourceHash());
         String changeType = "DISABLE";
         if (physical) {
             changeType = "DELETE";
@@ -1169,10 +1167,10 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
     }
 
     private boolean shouldPreserveInitOnlyTarget(ResourceRegistryRow row, ResourceDeclaration declaration) {
-        if (row == null || declaration.getSyncMode() != ResourceSyncMode.INIT_ONLY) {
+        if (row == null || declaration.getSyncMode() != ResourceSyncMode.SYNC_ONCE) {
             return false;
         }
-        return row.getSyncMode() == ResourceSyncMode.AUTO || row.getSyncMode() == ResourceSyncMode.INIT_ONLY;
+        return row.getSyncMode() == ResourceSyncMode.SYNC_ALWAYS || row.getSyncMode() == ResourceSyncMode.SYNC_ONCE;
     }
 
     private ResourceDeclaration withEffectiveSyncMode(ResourceDeclaration declaration, ResourceSyncMode syncMode) {
@@ -1209,7 +1207,7 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
         List<String> managedModules = modules.stream().sorted().toList();
         for (ResourceRegistryRow row : repository.listBySourceAndModules(appCode, serviceCode, managedModules)) {
             assertOperationCanContinue();
-            if (seenResourceIds.contains(row.getResourceId()) || row.getSyncMode() != ResourceSyncMode.AUTO) {
+            if (seenResourceIds.contains(row.getResourceId()) || row.getSyncMode() != ResourceSyncMode.SYNC_ALWAYS) {
                 continue;
             }
             try {

@@ -12,7 +12,7 @@
             "bizKey": "cms.advertisement.2070000000000000701",
             "name": "CMS 演示数据 cms_advertisement 2070000000000000701",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -106,7 +106,7 @@
             "bizKey": "cms.advertisement.2070000000000001701",
             "name": "CMS 演示数据 cms_advertisement 2070000000000001701",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -200,7 +200,7 @@
             "bizKey": "cms.advertisement.2070000000000002701",
             "name": "CMS 演示数据 cms_advertisement 2070000000000002701",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -294,7 +294,7 @@
             "bizKey": "cms.advertisement.2070000000000002702",
             "name": "CMS 演示数据 cms_advertisement 2070000000000002702",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -388,7 +388,7 @@
             "bizKey": "cms.advertisement.2070000000000000901",
             "name": "CMS 演示数据 广告位 demo-home-hero",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -482,7 +482,7 @@
             "bizKey": "cms.advertisement.2070000000000000902",
             "name": "CMS 演示数据 广告位 demo-news-hero",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",

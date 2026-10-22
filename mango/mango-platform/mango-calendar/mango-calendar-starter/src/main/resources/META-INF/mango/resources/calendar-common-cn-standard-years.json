@@ -12,7 +12,7 @@
             "bizKey": "calendar.year.tenant-1.CN_STANDARD.2025",
             "name": "中国标准工作日历 2025",
             "targetModule": "calendar",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "tenantId": { "type": "STRING", "value": "1" },
               "calendarCode": { "type": "STRING", "value": "CN_STANDARD" },
@@ -63,7 +63,7 @@
             "bizKey": "calendar.year.tenant-1.CN_STANDARD.2026",
             "name": "中国标准工作日历 2026",
             "targetModule": "calendar",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "tenantId": { "type": "STRING", "value": "1" },
               "calendarCode": { "type": "STRING", "value": "CN_STANDARD" },

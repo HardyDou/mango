@@ -12,7 +12,7 @@
             "bizKey": "payment.channel-contract.MANGO_PAY_MANGO_TECH",
             "name": "芒果科技芒果支付签约",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -70,7 +70,7 @@
             "bizKey": "payment.channel-contract.ALLINPAY_MANGO_TECH",
             "name": "芒果科技通联支付签约",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -124,7 +124,7 @@
             "bizKey": "payment.channel-contract.HUAXIA_BANK_MANGO_TECH",
             "name": "芒果科技华夏银行签约",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -182,7 +182,7 @@
             "bizKey": "payment.channel-contract.OFFLINE_COLLECTION_MANGO_TECH",
             "name": "芒果科技线下收款签约",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -240,7 +240,7 @@
             "bizKey": "payment.channel-contract.MANGO_PAY_MANGO_SERVICE",
             "name": "芒果服务芒果支付签约",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -298,7 +298,7 @@
             "bizKey": "payment.channel-contract.ALLINPAY_MANGO_SERVICE",
             "name": "芒果服务通联支付签约",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -356,7 +356,7 @@
             "bizKey": "payment.channel-contract.HUAXIA_BANK_MANGO_SERVICE",
             "name": "芒果服务华夏银行签约",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -414,7 +414,7 @@
             "bizKey": "payment.channel-contract.OFFLINE_COLLECTION_MANGO_SERVICE",
             "name": "芒果服务线下收款签约",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -472,7 +472,7 @@
             "bizKey": "payment.channel-contract.FUIOU_PAY_MANGO_TECH",
             "name": "芒果科技富友支付签约",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",

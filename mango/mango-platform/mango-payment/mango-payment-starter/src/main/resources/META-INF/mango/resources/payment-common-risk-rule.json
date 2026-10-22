@@ -12,7 +12,7 @@
             "bizKey": "payment.risk-rule.DEFAULT_POSITIVE_AMOUNT",
             "name": "默认支付金额正数校验",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",

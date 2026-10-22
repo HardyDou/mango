@@ -21,7 +21,7 @@ class ResourceDeclarationBuilderTest {
                 .bizKey("guarantee.apply.submit")
                 .name("担保申请提交消息")
                 .targetModule("notice")
-                .syncMode(ResourceSyncMode.MANUAL)
+                .syncMode(ResourceSyncMode.SYNC_ONCE)
                 .string("title", "申请已提交")
                 .string("blank", " ")
                 .longValue("tenantId", 100L)
@@ -36,7 +36,7 @@ class ResourceDeclarationBuilderTest {
         assertThat(declaration.getModuleName()).isEqualTo("担保");
         assertThat(declaration.getBizKey()).isEqualTo("guarantee.apply.submit");
         assertThat(declaration.getTargetModule()).isEqualTo("notice");
-        assertThat(declaration.getSyncMode()).isEqualTo(ResourceSyncMode.MANUAL);
+        assertThat(declaration.getSyncMode()).isEqualTo(ResourceSyncMode.SYNC_ONCE);
         assertThat(declaration.getFields()).containsOnlyKeys("title", "tenantId", "channels", "body");
         assertThat(declaration.getFields().get("title").getType()).isEqualTo(ResourceFieldType.STRING);
         assertThat(declaration.getFields().get("tenantId").getValue()).isEqualTo(100L);

@@ -12,7 +12,7 @@
             "bizKey": "payment.method-route-rule-item.334001.333023",
             "name": "334001",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -58,7 +58,7 @@
             "bizKey": "payment.method-route-rule-item.334002.333003",
             "name": "334002",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -104,7 +104,7 @@
             "bizKey": "payment.method-route-rule-item.334003.333026",
             "name": "334003",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -150,7 +150,7 @@
             "bizKey": "payment.method-route-rule-item.334004.333024",
             "name": "334004",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -196,7 +196,7 @@
             "bizKey": "payment.method-route-rule-item.334005.333012",
             "name": "334005",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -242,7 +242,7 @@
             "bizKey": "payment.method-route-rule-item.334006.333025",
             "name": "334006",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -288,7 +288,7 @@
             "bizKey": "payment.method-route-rule-item.334007.333014",
             "name": "334007",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -334,7 +334,7 @@
             "bizKey": "payment.method-route-rule-item.334008.333016",
             "name": "334008",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -380,7 +380,7 @@
             "bizKey": "payment.method-route-rule-item.334009.333017",
             "name": "334009",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -426,7 +426,7 @@
             "bizKey": "payment.method-route-rule-item.334010.333018",
             "name": "334010",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -472,7 +472,7 @@
             "bizKey": "payment.method-route-rule-item.334011.333019",
             "name": "334011",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -518,7 +518,7 @@
             "bizKey": "payment.method-route-rule-item.334012.333020",
             "name": "334012",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -564,7 +564,7 @@
             "bizKey": "payment.method-route-rule-item.334013.333022",
             "name": "334013",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",

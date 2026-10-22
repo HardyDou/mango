@@ -917,3 +917,7 @@ Flyway 路径：`mango-file-core/src/main/resources/db/migration/file`。
 - [File Preview](../mango-file-preview/README.md)
 - [Fileproc](../../mango-infra/mango-infra-fileproc/README.md)
 - [Mango 能力地图](../../../mango-docs/capabilities/README.md)
+
+## 资源声明同步模式（#1098）
+
+资源声明的 `sync-mode` 已收敛为 `SYNC_ALWAYS` 和 `SYNC_ONCE`：`AUTO` 映射为 `SYNC_ALWAYS`，`INIT_ONLY`、`MANUAL`、`LOCKED` 映射为 `SYNC_ONCE`。旧值仍可读取并会在启动时输出弃用告警，新声明只写新值。语义与迁移规则见 `mango-resource` README 的 `sync-mode` 章节。

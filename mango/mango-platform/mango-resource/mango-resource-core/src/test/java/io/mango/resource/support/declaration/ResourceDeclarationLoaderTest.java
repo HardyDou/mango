@@ -133,7 +133,7 @@ class ResourceDeclarationLoaderTest {
         List<ResourceDeclaration> declarations = new ResourceDeclarationLoader(new ObjectMapper(), properties).load();
 
         assertThat(declarations).hasSize(1);
-        assertThat(declarations.get(0).getSyncMode()).isEqualTo(ResourceSyncMode.INIT_ONLY);
+        assertThat(declarations.get(0).getSyncMode()).isEqualTo(ResourceSyncMode.SYNC_ONCE);
     }
 
     @Test
@@ -168,7 +168,7 @@ class ResourceDeclarationLoaderTest {
         List<ResourceDeclaration> declarations = new ResourceDeclarationLoader(new ObjectMapper(), properties).load();
 
         assertThat(declarations).hasSize(1);
-        assertThat(declarations.get(0).getSyncMode()).isEqualTo(ResourceSyncMode.INIT_ONLY);
+        assertThat(declarations.get(0).getSyncMode()).isEqualTo(ResourceSyncMode.SYNC_ONCE);
     }
 
     @Test

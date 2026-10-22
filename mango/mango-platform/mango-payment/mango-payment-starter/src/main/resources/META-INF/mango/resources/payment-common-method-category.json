@@ -12,7 +12,7 @@
             "bizKey": "payment.method-category.PERSONAL",
             "name": "对私",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -54,7 +54,7 @@
             "bizKey": "payment.method-category.CORPORATE",
             "name": "对公",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -96,7 +96,7 @@
             "bizKey": "payment.method-category.WECHAT",
             "name": "微信",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -138,7 +138,7 @@
             "bizKey": "payment.method-category.ALIPAY",
             "name": "支付宝",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -180,7 +180,7 @@
             "bizKey": "payment.method-category.UNIONPAY",
             "name": "银联",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -222,7 +222,7 @@
             "bizKey": "payment.method-category.BANK_CARD",
             "name": "银行卡",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -264,7 +264,7 @@
             "bizKey": "payment.method-category.WALLET",
             "name": "钱包",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -306,7 +306,7 @@
             "bizKey": "payment.method-category.DEBIT_CARD",
             "name": "储蓄卡",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -348,7 +348,7 @@
             "bizKey": "payment.method-category.CREDIT_CARD",
             "name": "信用卡",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -390,7 +390,7 @@
             "bizKey": "payment.method-category.EBANK",
             "name": "网银",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -432,7 +432,7 @@
             "bizKey": "payment.method-category.OFFLINE_TRANSFER",
             "name": "线下转账",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -474,7 +474,7 @@
             "bizKey": "payment.method-category.QR_CODE.360301",
             "name": "扫码",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -516,7 +516,7 @@
             "bizKey": "payment.method-category.H5_REDIRECT.360302",
             "name": "H5 跳转",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -558,7 +558,7 @@
             "bizKey": "payment.method-category.MINIAPP.360303",
             "name": "小程序",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -600,7 +600,7 @@
             "bizKey": "payment.method-category.QR_CODE.360311",
             "name": "扫码",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -642,7 +642,7 @@
             "bizKey": "payment.method-category.H5_REDIRECT.360312",
             "name": "H5 跳转",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -684,7 +684,7 @@
             "bizKey": "payment.method-category.MINIAPP.360313",
             "name": "小程序",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -726,7 +726,7 @@
             "bizKey": "payment.method-category.QR_CODE.360321",
             "name": "扫码",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -768,7 +768,7 @@
             "bizKey": "payment.method-category.DEBIT_QUICK",
             "name": "储蓄卡快捷",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -810,7 +810,7 @@
             "bizKey": "payment.method-category.CREDIT_QUICK",
             "name": "信用卡快捷",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -852,7 +852,7 @@
             "bizKey": "payment.method-category.WALLET_QUICK",
             "name": "钱包快捷",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -894,7 +894,7 @@
             "bizKey": "payment.method-category.BANK_GATEWAY",
             "name": "网银跳转",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -936,7 +936,7 @@
             "bizKey": "payment.method-category.ACCOUNT_TRANSFER",
             "name": "账号转账",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -978,7 +978,7 @@
             "bizKey": "payment.method-category.QUICK_PAY.360371",
             "name": "快捷支付",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -1020,7 +1020,7 @@
             "bizKey": "payment.method-category.QUICK_PAY.360372",
             "name": "快捷支付",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",

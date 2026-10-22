@@ -10,7 +10,7 @@ mango:
           biz-key: authorization.role.tenant-1.admin
           name: 芒果集团平台管理员
           target-module: authorization
-          sync-mode: INIT_ONLY
+          sync-mode: SYNC_ONCE
           fields:
             targetId: { type: LONG, value: 1 }
             tenantId: { type: LONG, value: 1 }
@@ -29,7 +29,7 @@ mango:
           biz-key: authorization.subject-role.tenant-1.admin
           name: 芒果集团平台管理员角色绑定
           target-module: authorization
-          sync-mode: INIT_ONLY
+          sync-mode: SYNC_ONCE
           fields:
             tenantId: { type: LONG, value: 1 }
             subjectId: { type: LONG, value: 1001 }

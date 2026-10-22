@@ -73,7 +73,7 @@ public class ResourceAdminController implements ResourceAdminApi {
 
     @PutMapping("/registries/sync-mode")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:resource:registry:edit")
-    @Operation(summary = "更新资源同步模式", description = "后台显式接管或交还资源所有权，切换 AUTO/INIT_ONLY/MANUAL/LOCKED")
+    @Operation(summary = "更新资源同步模式", description = "后台显式接管或交还资源所有权，切换 SYNC_ALWAYS/SYNC_ONCE（旧值 AUTO/INIT_ONLY/MANUAL/LOCKED 兼容读取）")
     public R<Boolean> updateResourceSyncMode(@RequestBody UpdateResourceSyncModeCommand command) {
         return R.ok(resourceAdminService.updateResourceSyncMode(command));
     }

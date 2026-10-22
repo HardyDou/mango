@@ -12,7 +12,7 @@
             "bizKey": "cms.content-category.2070000000000000201",
             "name": "CMS 演示数据 内容分类 新闻资讯",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": { "type": "LONG", "value": "2070000000000000201" },
               "tenantId": { "type": "STRING", "value": "1" },
@@ -33,7 +33,7 @@
             "bizKey": "cms.content-category.2070000000000000202",
             "name": "CMS 演示数据 内容分类 帮助文档",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": { "type": "LONG", "value": "2070000000000000202" },
               "tenantId": { "type": "STRING", "value": "1" },
@@ -54,7 +54,7 @@
             "bizKey": "cms.content-category.2070000000000000203",
             "name": "CMS 演示数据 内容分类 企业介绍",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": { "type": "LONG", "value": "2070000000000000203" },
               "tenantId": { "type": "STRING", "value": "1" },

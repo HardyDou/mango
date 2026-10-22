@@ -18,7 +18,7 @@
 |------|------|----------|
 | 正式内置资源，例如菜单、字典、流程定义、预置文件、系统配置 | `META-INF/mango/resources/` | 默认 `BOOTSTRAP_REQUIRED`，由 Bootstrap 在 Runtime 前同步。 |
 | 演示站点、演示角色、演示流程、演示日历、sample job | `META-INF/mango/demo/` | 只有 `mango.resource.registry.demo-enabled=true` 才扫描。 |
-| 首次初始化后用户或业务运行时会改的数据 | Resource 声明 | 使用 `sync-mode: INIT_ONLY`。 |
+| 首次初始化后用户或业务运行时会改的数据 | Resource 声明 | 使用 `sync-mode: SYNC_ONCE`（旧值 `INIT_ONLY`）。 |
 | 表结构、索引、约束、大 SQL、停机升级 SQL | Flyway | 见 `mango-infra-persistence` README。 |
 | 用户创建的业务单据、流程实例、任务实例、日历事件、用户改的角色授权 | 业务 Owner Service | 不进入 Resource 声明。 |
 
@@ -50,7 +50,7 @@ Resource 声明的 `execution-phase` 与 `sync-mode` 正交：
 | 重试 | 使用 `NOT EXISTS` 或明确的 `ON DUPLICATE KEY UPDATE`；禁止 `INSERT IGNORE`。 |
 | 测试 | 覆盖当前源、历史与当前共存、运行期数据、部分失败重试、重复执行。 |
 
-后台 `MANUAL`/`INIT_ONLY`/`LOCKED` 记录优先于系统声明；删除写 tombstone，系统同步不重建。
+后台 `SYNC_ONCE` 记录优先于系统声明；删除写 tombstone，系统同步不重建。旧值 `MANUAL`/`INIT_ONLY`/`LOCKED` 兼容读取并映射为 `SYNC_ONCE`。
 
 ### 1.4 后台数据与指纹
 
@@ -58,8 +58,8 @@ Resource 声明的 `execution-phase` 与 `sync-mode` 正交：
 
 | 操作 | 做法 |
 |---|---|
-| 增 | 使用 `MANUAL` 或 `INIT_ONLY`，不要使用 `AUTO`。 |
-| 改 | 可被后台修改的声明使用 `INIT_ONLY`，Handler 返回 `PRESERVED`。 |
+| 增 | 使用 `SYNC_ONCE`（旧值 `MANUAL`/`INIT_ONLY`），不要使用 `SYNC_ALWAYS`。 |
+| 改 | 可被后台修改的声明使用 `SYNC_ONCE`，Handler 返回 `PRESERVED`。 |
 | 删 | 调用 `DELETE /resource/registries` 写 tombstone；不要直删表。 |
 | 变更声明 | 按升级流程递增 `version` 和 generation，不改历史清单。 |
 
@@ -81,7 +81,7 @@ Resource 声明的 `execution-phase` 与 `sync-mode` 正交：
 - 采集 classpath JSON/YAML 资源声明和 Java `ResourceProvider` 声明。
 - 将声明写入 `resource_registry`，并记录同步日志和变更日志。
 - 按资源类型调用目标模块 `ResourceHandler` 完成创建、更新、禁用和删除。
-- 支持 `AUTO`、`INIT_ONLY`、`MANUAL`、`LOCKED` 同步模式和强制同步。
+- 支持 `SYNC_ALWAYS`、`SYNC_ONCE` 同步模式和强制同步；`AUTO`、`INIT_ONLY`、`MANUAL`、`LOCKED` 为兼容读取的旧值。
 - 支持 `BOOTSTRAP_REQUIRED`、`RUNTIME_EVENTUAL`、`MANUAL` 执行阶段和 generation fencing。
 - 支持正式资源和 demo 资源目录隔离，demo 默认不扫描。
 - 支持本地单体注册中心和微服务远程上报两种拓扑。
@@ -324,7 +324,7 @@ mango:
           biz-key: payment.numgen.pay-order-no
           name: 支付订单号
           target-module: numgen
-          sync-mode: AUTO
+          sync-mode: SYNC_ALWAYS
           status: ACTIVE
           fields:
             generatorId: { type: LONG, value: 900000000002 }
@@ -345,7 +345,7 @@ mango:
 | `biz-key` | `STRING` | 是 | 资源业务稳定键，推荐 `业务域.对象.动作`。 |
 | `name` | `STRING` | 否 | 资源显示名。 |
 | `target-module` | `STRING` | 是 | 消费资源的目标模块。 |
-| `sync-mode` | `ENUM` | 否 | `AUTO`、`INIT_ONLY`、`MANUAL`、`LOCKED`，默认 `AUTO`。 |
+| `sync-mode` | `ENUM` | 否 | `SYNC_ALWAYS`、`SYNC_ONCE`，默认 `SYNC_ALWAYS`；旧值 `AUTO`、`INIT_ONLY`、`MANUAL`、`LOCKED` 兼容读取。 |
 | `status` | `ENUM` | 否 | `ACTIVE`、`DISABLED`、`DEPRECATED`、`REMOVED`，默认 `ACTIVE`。 |
 | `fields` | `MAP` | 是 | 目标模块定义的字段。 |
 
@@ -353,12 +353,10 @@ mango:
 
 | 模式 | 行为 | 适用场景 |
 |------|------|----------|
-| `AUTO` | 声明版本或内容变化时自动调用目标 handler 覆盖目标数据。 | 后续升级应由模块持续维护的数据。 |
-| `INIT_ONLY` | 首次同步创建目标数据；目标已存在后只更新 registry 声明元数据，不覆盖目标业务表。 | 菜单、角色、流程模板等初始化后允许用户或业务运行时修改的数据。 |
-| `MANUAL` | registry 已接管为人工维护后跳过声明同步。 | 运维或管理员临时接管的资源。 |
-| `LOCKED` | registry 锁定后跳过声明同步。 | 禁止声明继续改动的保护资源。 |
+| `SYNC_ALWAYS` | 声明版本或内容变化时调用目标 handler 覆盖目标数据；声明从清单消失时停用目标。 | 后续升级应由模块持续维护的数据（菜单、按钮权限、接口资源、字典）。 |
+| `SYNC_ONCE` | 首次同步创建目标数据；目标已存在后只更新 registry 声明元数据，不覆盖目标业务表，也不因声明消失而停用。 | 用户、组织、岗位、成员绑定、表单、提示词、行政区划、支付渠道等铺底/业务数据。 |
 
-声明文件中 `sync-mode` 支持 `INIT_ONLY`、`init-only` 和 `init_only` 写法。
+声明文件中 `sync-mode` 支持 `SYNC_ONCE`、`sync-once`、`sync_once` 写法；旧值 `INIT_ONLY`、`MANUAL`、`LOCKED` 读取时映射为 `SYNC_ONCE` 并输出弃用告警，`AUTO` 映射为 `SYNC_ALWAYS`。新声明只写新值。
 
 字段类型支持：
 
@@ -418,7 +416,7 @@ Spring Boot 可执行 JAR 将上述 `META-INF` 条目保留在 JAR 根目录。B
 | hash 相同且状态满足当前 EXPAND/FINALIZE | 不解析模块内部声明，不调用 Handler，不写 registry、sync log 或 change log。 |
 | hash 变化 | 解析并校验该模块完整声明，按模块协调；成功后才写 receipt。 |
 | EXPAND 成功 | receipt 进入 `EXPANDED`；不禁用缺失资源。 |
-| FINALIZE 成功 | receipt 进入 `FINALIZED`；只禁用该变化模块内缺失的 Registry-owned `AUTO`。 |
+| FINALIZE 成功 | receipt 进入 `FINALIZED`；只禁用该变化模块内缺失的 Registry-owned `SYNC_ALWAYS` 资源。 |
 | 协调失败或 generation fence 失效 | 不推进 receipt，下次用旧成功状态重试。 |
 
 构建 POM、Boot JAR 检查以及与 cold baseline、sealed release manifest 的关系见[业务 API 构建期 cold baseline](../../../mango-docs/guides/operations/build-time-cold-baseline.md)。
@@ -441,12 +439,12 @@ Spring Boot 可执行 JAR 将上述 `META-INF` 条目保留在 JAR 根目录。B
 | 场景 | 行为 |
 |------|------|
 | 新资源 | 写入 `resource_registry`，调用目标模块 `ResourceHandler.upsert`。 |
-| hash 或 version 变化 | `AUTO` 允许覆盖目标资源；`INIT_ONLY` 已存在时只更新 registry 元数据；`MANUAL`、`LOCKED` 跳过。 |
+| hash 或 version 变化 | `SYNC_ALWAYS` 允许覆盖目标资源；`SYNC_ONCE` 已存在时只更新 registry 元数据。 |
 | version 回退 | 拒绝同步，避免旧声明覆盖新资源。 |
 | 声明状态为 `DISABLED` | 调用目标模块 `disable`，目标模块负责逻辑禁用。 |
 | 声明状态为 `DEPRECATED` | 只更新注册中心声明状态和审计，目标资源继续可读，不调用 `upsert` 或 `disable`。 |
 | 声明状态为 `REMOVED` | 调用目标模块 `delete`；目标模块不支持物理删除时降级为 `disable`。 |
-| `AUTO` 声明在 FINALIZE 中缺失 | Registry 只用持久化的 `targetId/targetTable` 重建删除输入；目标 Handler 必须按该稳定目标身份停用或明确失败，不能要求已经从 classpath 消失的原声明字段。 |
+| `SYNC_ALWAYS` 声明在 FINALIZE 中缺失 | Registry 只用持久化的 `targetId/targetTable` 重建删除输入；目标 Handler 必须按该稳定目标身份停用，不能要求已经从 classpath 消失的原声明字段；停用失败只告警跳过，不阻断启动（#1095）。 |
 | 强制同步 | 后台 `/resource/sync/force` 触发，跳过 hash 未变化限制。 |
 
 同一批 active 声明如果包含跨类型依赖，Resource Registry 仍兼容按目标 `ResourceHandler.dependsOnResourceTypes()`
@@ -482,8 +480,8 @@ Handler 可以按 Resource 显式启用运行时修改退避：
 | `POST /resource/declarations/register` | 远程服务上报资源声明。 |
 | `GET /resource/registries/page` | 查询注册资源。 |
 | `POST /resource/sync/force` | 强制重新同步。 |
-| `POST /resource/registries` | 新增托管资源；默认 `syncMode=MANUAL`，`fields` 使用与声明一致的 JSON 对象。 |
-| `PUT /resource/registries/sync-mode` | 显式切换资源 `syncMode`，用于接管或交还系统同步。 |
+| `POST /resource/registries` | 新增托管资源；默认 `syncMode=SYNC_ONCE`，`fields` 使用与声明一致的 JSON 对象。 |
+| `PUT /resource/registries/sync-mode` | 显式切换资源 `syncMode`（`SYNC_ALWAYS`/`SYNC_ONCE`），用于接管或交还系统同步；旧值入参兼容并归一。 |
 | `DELETE /resource/registries` | 删除注册资源，支持逻辑删除和物理删除。 |
 | `GET /resource/sync-logs/page` | 查询同步日志。 |
 | `GET /resource/change-logs/page` | 查询变更日志。 |
@@ -549,7 +547,7 @@ authorization_api_resource         API_RESOURCE 访问模式正确
 |------|----------|
 | 启动时报资源冲突 | 检查声明文件中的 `id` 和 `resourceType + bizKey` 是否重复。 |
 | 启动时报 `Resource bizKey already registered by another id` | 同一 `resourceType + bizKey` 已存在不同 `resourceId` 的历史登记行，按 14.1 处理。 |
-| 资源未覆盖目标数据 | 检查注册表中的 `sync_mode` 是否为 `AUTO`，以及声明 `version` 或内容 hash 是否变化。 |
+| 资源未覆盖目标数据 | 检查注册表中的 `sync_mode` 是否为 `SYNC_ALWAYS`，以及声明 `version` 或内容 hash 是否变化。 |
 | 多实例重复同步 | 检查 `mango-infra-kv` 是否提供 `ILeaseLocker`、续租是否成功，以及 `lock-ttl-seconds` 是否覆盖一次批次。 |
 | 同一错误持续刷屏或启动已 UP 但资源未完成 | 查看 `resourceStartupHealthIndicator` 的 participant 状态；`PERMANENT_FAILED` 需修正声明 snapshot，`TRANSIENT_WAIT` 查看下次退避重试和底层连接。 |
 | 微服务未上报资源 | 检查业务服务是否引入 `mango-resource-starter-remote` 和 `mango-resource-sync-starter`，并确认注册中心接口可访问。 |
@@ -562,7 +560,7 @@ authorization_api_resource         API_RESOURCE 访问模式正确
 
 ```text
 Resource bizKey already registered by another id: API_RESOURCE:<bizKey>;
-existing={resourceId=<旧ID>, appCode=<旧来源>, serviceCode=<旧服务>, syncMode=AUTO};
+existing={resourceId=<旧ID>, appCode=<旧来源>, serviceCode=<旧服务>, syncMode=SYNC_ALWAYS};
 declared={resourceId=<新ID>, appCode=<当前来源>, serviceCode=<当前服务>}
 ```
 

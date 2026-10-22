@@ -85,7 +85,7 @@ public class AuthRoleDataScopeResourceHandler implements ResourceHandler {
         RoleEntity role = requiredRole(resource);
         String resourceCode = fields.requiredString(resource, "resourceCode");
         RoleDataScopeEntity entity = findScope(role, resourceCode);
-        if (entity != null && resource.getSyncMode() == ResourceSyncMode.INIT_ONLY) {
+        if (entity != null && resource.getSyncMode() == ResourceSyncMode.SYNC_ONCE) {
             return ResourceSyncResult.of(entity.getId(), TARGET_TABLE,
                     "Auth role data scope preserved for INIT_ONLY: " + role.getRoleCode() + "/" + resourceCode);
         }

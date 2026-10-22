@@ -152,8 +152,8 @@ public class OrgUnitResourceHandler implements ResourceHandler {
 
     private boolean isManagedSync(ResourceDeclaration resource) {
         return resource.getSyncMode() == null
-                || resource.getSyncMode() == ResourceSyncMode.AUTO
-                || resource.getSyncMode() == ResourceSyncMode.INIT_ONLY;
+                || resource.getSyncMode() == ResourceSyncMode.SYNC_ALWAYS
+                || resource.getSyncMode() == ResourceSyncMode.SYNC_ONCE;
     }
 
     private Set<String> collectDeclaredOrgCodes(List<ResourceDeclaration> resources) {

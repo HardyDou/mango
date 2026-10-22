@@ -50,7 +50,7 @@ mango:
           biz-key: file.settings.default
           name: 文件中心默认配置
           target-module: file
-          sync-mode: INIT_ONLY
+          sync-mode: SYNC_ONCE
           fields:
             settingsId:
               type: LONG
