@@ -834,18 +834,30 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
         if (ownership != ResourceOwnership.UNKNOWN) {
             return true;
         }
-        if (!sameSource(row, declaration)) {
+        if (!sameIdentity(row, declaration)) {
             repository.insertSyncLog(row.getId(), "SKIP", "SKIPPED",
-                    "Resource ownership is UNKNOWN and cannot be proven by the declaration");
+                    "Resource ownership is UNKNOWN and the declaration identity differs");
             log.warn("Mango resource skipped by unknown ownership: resourceType={}, resourceId={}",
                     row.getResourceType(), row.getResourceId());
             return false;
+        }
+        if (!sameSource(row, declaration)) {
+            log.warn("Mango resource ownership adopted across drifted source: resourceType={}, resourceId={}, "
+                            + "registryAppCode={}, declaredAppCode={}, registryModule={}, declaredModule={}",
+                    row.getResourceType(), row.getResourceId(), row.getAppCode(), declaration.getAppCode(),
+                    row.getModuleCode(), declaration.getModuleCode());
         }
         repository.updateOwnership(row, ResourceOwnership.RESOURCE_MANAGED);
         row.setOwnership(ResourceOwnership.RESOURCE_MANAGED);
         log.info("Mango resource ownership adopted as RESOURCE_MANAGED: resourceType={}, resourceId={}",
                 row.getResourceType(), row.getResourceId());
         return true;
+    }
+
+    private boolean sameIdentity(ResourceRegistryRow row, ResourceDeclaration declaration) {
+        return Objects.equals(row.getResourceId(), declaration.getId())
+                && Objects.equals(row.getResourceType(), declaration.getResourceType())
+                && Objects.equals(row.getBizKey(), declaration.getBizKey());
     }
 
     private boolean sameSource(ResourceRegistryRow row, ResourceDeclaration declaration) {
@@ -1261,11 +1273,19 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
         return moduleCodes;
     }
 
+
     private void disableMissing(String appCode, String serviceCode, Set<String> modules, Set<String> seenResourceIds,
                                 Map<String, ResourceHandler> handlerMap) {
         List<String> managedModules = modules.stream().sorted().toList();
+        Map<String, Long> unprovenByType = new LinkedHashMap<>();
         for (ResourceRegistryRow row : repository.listBySourceAndModules(appCode, serviceCode, managedModules)) {
             assertOperationCanContinue();
+            if (row.getOwnership() != null && row.getOwnership() != ResourceOwnership.RESOURCE_MANAGED) {
+                if (!seenResourceIds.contains(row.getResourceId())) {
+                    unprovenByType.merge(row.getResourceType(), 1L, Long::sum);
+                }
+                continue;
+            }
             if (seenResourceIds.contains(row.getResourceId()) || row.getSyncMode() != ResourceSyncMode.SYNC_ALWAYS) {
                 continue;
             }
@@ -1276,6 +1296,12 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
                 log.warn("Mango resource missing disable skipped: disable failed, resourceType={}, resourceId={}, reason={}",
                         row.getResourceType(), row.getResourceId(), exception.getMessage());
             }
+        }
+        long unproven = unprovenByType.values().stream().mapToLong(Long::longValue).sum();
+        if (unproven > 0) {
+            log.warn("Mango resource ownership unproven: {} missing rows stay untouched, reason=UNKNOWN/MANUAL_TAKEOVER; "
+                            + "appCode={}, serviceCode={}, byType={}",
+                    unproven, appCode, serviceCode, unprovenByType);
         }
     }
 
