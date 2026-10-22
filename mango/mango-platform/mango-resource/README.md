@@ -572,6 +572,8 @@ declared={resourceId=<新ID>, appCode=<当前来源>, serviceCode=<当前服务>
 
 处理顺序：
 
+0. 先在恢复点副本上执行一次 `bootstrap apply`。冲突失败是**可恢复状态**：`V3` 已成功、`resource_registry` 数据未被破坏，`mango_bootstrap_control` 停在 `FAILED` 只表示本次候选未完成；清理冲突行后用同一 generation 重跑即可，不需要回滚数据库或重建环境。
+
 1. 只读确认两条数据来源：
 
 ```sql
@@ -587,13 +589,19 @@ create table resource_registry_bak_<时间戳> as
 select * from resource_registry where resource_type = '<类型>' and biz_key = '<bizKey>';
 ```
 
-3. 删除冲突的登记行，但不要动目标表：
+3. 删除冲突的登记行，但不要动目标表。先按 `resource_id` 关联清理同步/变更日志，避免留下悬空引用：
 
 ```sql
+delete l from resource_sync_log l join resource_registry r on r.id = l.resource_id
+ where r.resource_type = '<类型>' and r.biz_key = '<bizKey>';
+delete c from resource_change_log c join resource_registry r on r.id = c.resource_id
+ where r.resource_type = '<类型>' and r.biz_key = '<bizKey>';
 delete from resource_registry where resource_type = '<类型>' and biz_key = '<bizKey>';
 ```
 
-4. 重新执行 `bootstrap apply`；当前声明会重新登记一行，Handler 按业务身份重新解析目标。
+4. 重新执行 `bootstrap apply`（`--strategy=rolling`），然后 `bootstrap finalize`；当前声明会重新登记一行，Handler 按业务身份重新解析目标。
+
+5. 校验清理是无损的：新登记行的 `target_id` 应与清理前登记行指向同一个目标行（Handler 按业务身份复用既有目标数据，不新建副本）。`API_RESOURCE` 实测：清理前 `target_id=6673508641616300253`，清理后新登记行 `target_id` 仍为 `6673508641616300253`，`authorization_api_resource` 中 `resource_code` 对应的行数和 id 均未变化。
 
 注意：
 
@@ -603,6 +611,49 @@ delete from resource_registry where resource_type = '<类型>' and biz_key = '<b
 - 框架不会自动接管 `resource_id` 不同的历史登记行：同一 `resourceType + bizKey` 出现不同 `resourceId` 时固定 fail-closed，只按上述步骤一次性清理，不提供自动改身份或别名能力。该限制是有意保留的：重复声明是唯一能被暴露的信号，自动接管后同类问题将不再可见。
 
 - 一次同步会汇总报告全部登记冲突，而不是遇到第一条就退出：报错首行为 `Mango resource registry found N conflicts`，随后按序号列出每条 `resourceType:bizKey` 的既有 id、来源与声明 id、来源，末行给出本节的修复位置。生产库存在多条身份漂移时，按该清单一次性清理即可，不需要逐条重启试错。
+
+- 重复执行 `bootstrap finalize` 会对已 `REMOVED` 的历史行再次写入 `DISABLE` 日志（`disableMissing` 的行查询不按 `status` 过滤）。不影响数据正确性与启动，但会放大 `resource_sync_log` / `resource_change_log`；排查时按 `created_at` 区分批次。
+
+- `mango.resource.registry.fail-on-conflict=false` **不能**用来绕过本冲突。`V3` 之后 `(resource_type, biz_key)` 已是唯一键：关掉开关只会把冲突降级为 WARN，随后的 upsert 仍会撞唯一键并抛出 `Duplicate entry '<类型>-<bizKey>' for key 'resource_registry.uk_resource_registry_type_biz_key'`，失去可定位的冲突信息。必须先按 14.1 清理。
+
+### 14.2 `V3` 唯一键迁移失败后的恢复
+
+老库存在 `tenant_id IS NULL` 的**物理重复身份**（同一 `resource_id` 或同一 `resourceType + bizKey` 两行）时，`V3__normalize_resource_registry_unique_keys.sql` 会失败：
+
+```text
+Migration of schema `<db>` to version "3 - normalize resource registry unique keys" failed!
+Message    : Duplicate entry 'SYSTEM_DICT-system.dict.user-sex' for key 'resource_registry.uk_resource_registry_type_biz_key'
+```
+
+MySQL 8 的多子句 `ALTER` 是原子的：失败后旧唯一键和索引保持不变，数据不会被改坏。但 Flyway 会在 `flyway_schema_history_resource` 留下 `version=3, success=0`，此时**直接重试**会停在：
+
+```text
+FlywayValidateException: Validate failed: Migrations have failed validation
+Detected failed migration to version 3 (normalize resource registry unique keys).
+Please remove any half-completed changes then run repair to fix the schema history.
+```
+
+恢复顺序：
+
+1. 用 14.1 步骤 1 的只读查询确认重复组，并备份重复行：
+
+```sql
+select resource_id, count(*) from resource_registry group by resource_id having count(*) > 1;
+select resource_type, biz_key, count(*) from resource_registry
+ group by resource_type, biz_key having count(*) > 1;
+create table resource_registry_bak_dup_<时间戳> as
+select * from resource_registry where tenant_id is null;
+```
+
+2. 清理重复行（保留哪一行按 `status`、`target_id`、`last_sync_time` 判断，并核对 `target_table` 中目标是否存在）。
+
+3. 删除失败的历史行（等价 `flyway repair`，Mango 不提供独立 repair 命令）：
+
+```sql
+delete from flyway_schema_history_resource where version = '3' and success = 0;
+```
+
+4. 重新执行 `bootstrap apply`，确认 `flyway_schema_history_resource` 出现 `3 / success=1`、`uk_*` 只为 `(resource_id)` 与 `(resource_type, biz_key)`、`mango_bootstrap_control` 推进到 `FINALIZED`。
 
 ## 15. 相关文档
 
