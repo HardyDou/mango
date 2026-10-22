@@ -2,8 +2,6 @@ package io.mango.resource.api.enums;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Locale;
 import java.util.Map;
@@ -15,13 +13,12 @@ import java.util.Map;
  * {@link #SYNC_ONCE} 表示只保证资源存在：不存在时创建，之后不覆盖、也不因声明消失而停用。
  *
  * <p>历史值 {@code AUTO}、{@code INIT_ONLY}、{@code MANUAL}、{@code LOCKED} 仅在读取时兼容，
- * 统一映射为上述两个值并在使用旧值时输出告警；新写入只产生 {@code SYNC_ALWAYS} 或 {@code SYNC_ONCE}。
+ * 统一映射为上述两个值；新写入只产生 {@code SYNC_ALWAYS} 或 {@code SYNC_ONCE}。
+ * 调用方可使用 {@link #isLegacy(String)} 判断是否需要输出弃用告警。
  */
 public enum ResourceSyncMode {
     SYNC_ALWAYS,
     SYNC_ONCE;
-
-    private static final Logger log = LoggerFactory.getLogger(ResourceSyncMode.class);
 
     private static final Map<String, ResourceSyncMode> LEGACY_VALUES = Map.of(
             "AUTO", SYNC_ALWAYS,
@@ -34,9 +31,7 @@ public enum ResourceSyncMode {
         if (value == null || value.isBlank()) {
             return SYNC_ALWAYS;
         }
-        String normalized = value.trim()
-                .replace('-', '_')
-                .toUpperCase(Locale.ROOT);
+        String normalized = normalize(value);
         for (ResourceSyncMode mode : values()) {
             if (mode.name().equals(normalized)) {
                 return mode;
@@ -44,14 +39,24 @@ public enum ResourceSyncMode {
         }
         ResourceSyncMode mapped = LEGACY_VALUES.get(normalized);
         if (mapped != null) {
-            log.warn("Mango resource sync mode is deprecated: value={}, migrated={}", normalized, mapped);
             return mapped;
         }
         throw new IllegalArgumentException("Unsupported resource sync mode: " + value);
     }
 
+    /**
+     * 判断给定原始值是否为已弃用的历史值。
+     */
+    public static boolean isLegacy(String value) {
+        return value != null && LEGACY_VALUES.containsKey(normalize(value));
+    }
+
     @JsonValue
     public String value() {
         return name();
+    }
+
+    private static String normalize(String value) {
+        return value.trim().replace('-', '_').toUpperCase(Locale.ROOT);
     }
 }
