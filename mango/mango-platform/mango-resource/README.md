@@ -356,6 +356,8 @@ mango:
 | `SYNC_ALWAYS` | 声明版本或内容变化时调用目标 handler 覆盖目标数据；声明从清单消失时停用目标。 | 后续升级应由模块持续维护的数据（菜单、按钮权限、接口资源、字典）。 |
 | `SYNC_ONCE` | 首次同步创建目标数据；目标已存在后只更新 registry 声明元数据，不覆盖目标业务表，也不因声明消失而停用。 | 用户、组织、岗位、成员绑定、表单、提示词、行政区划、支付渠道等铺底/业务数据。 |
 
+升级约束：`ResourceSyncMode` 的旧常量在编译期被各模块处理器直接引用，升级必须把 `mango-resource-*` 与引用它的 starter 整批发布；只升级 `mango-resource-api`/`mango-resource-core` 会在运行期抛 `NoSuchFieldError`（本地真实库验证复现）。
+
 声明文件中 `sync-mode` 支持 `SYNC_ONCE`、`sync-once`、`sync_once` 写法；旧值 `INIT_ONLY`、`MANUAL`、`LOCKED` 读取时映射为 `SYNC_ONCE` 并输出弃用告警，`AUTO` 映射为 `SYNC_ALWAYS`。新声明只写新值。
 
 ### 9.x 资源归属（ownership）
