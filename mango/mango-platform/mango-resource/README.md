@@ -613,6 +613,9 @@ delete from resource_registry where resource_type = '<类型>' and biz_key = '<b
 - 一次同步会汇总报告全部登记冲突，而不是遇到第一条就退出：报错首行为 `Mango resource registry found N conflicts`，随后按序号列出每条 `resourceType:bizKey` 的既有 id、来源与声明 id、来源，末行给出本节的修复位置。生产库存在多条身份漂移时，按该清单一次性清理即可，不需要逐条重启试错。
 
 - 重复执行 `bootstrap finalize` 会对已 `REMOVED` 的历史行再次写入 `DISABLE` 日志（`disableMissing` 的行查询不按 `status` 过滤）。不影响数据正确性与启动，但会放大 `resource_sync_log` / `resource_change_log`；排查时按 `created_at` 区分批次。
+- `finalize` 的缺失停用遵循「资源数据是预制默认配置、运行时状态优先」：已 `REMOVED` 的行不再被选中（`status <> 'REMOVED'`），因此重复执行 `finalize` 不会重复调用 Handler、重复写 `DISABLE` 日志或刷新目标表 `updated_at`。资源重新被声明时走 `syncActive`，登记恢复 `ACTIVE` 并由 Handler 重新 upsert。
+- 缺失资源停用失败（找不到 Handler/Dispatcher、Handler 抛错）只告警并保留原状态，不中断 Bootstrap；应用关闭时的中断仍按 `assertOperationCanContinue` 生效。运行时漂移（登记 `REMOVED`、目标被手工改回启用）不会被自动纠正。
+
 
 - `mango.resource.registry.fail-on-conflict=false` **不能**用来绕过本冲突。`V3` 之后 `(resource_type, biz_key)` 已是唯一键：关掉开关只会把冲突降级为 WARN，随后的 upsert 仍会撞唯一键并抛出 `Duplicate entry '<类型>-<bizKey>' for key 'resource_registry.uk_resource_registry_type_biz_key'`，失去可定位的冲突信息。必须先按 14.1 清理。
 

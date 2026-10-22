@@ -1079,6 +1079,45 @@ class ResourceRegistrySyncServiceIntegrationTest {
     }
 
     @Test
+    void disableMissingDoesNotReprocessRemovedRegistryRows() {
+        ResourceDeclaration declaration = genericDeclaration(
+                "1900000000000000020", "TENANT_TEST_RESOURCE", "guarantee.tenant-reprocess", "tenant-test");
+        field(declaration, "tenantId", ResourceFieldType.STRING, "1");
+
+        syncService.syncRemote("platform-admin", "service-a", List.of(declaration));
+        jdbcTemplate.update("update resource_registry set tenant_id = '1' where resource_id = ?",
+                declaration.getId());
+        syncService.syncRemote("platform-admin", "service-a", List.of("guarantee"), List.of());
+
+        assertThat(registryStatus(declaration.getId())).isEqualTo("REMOVED");
+        long disableLogsAfterFirstFinalize = disableLogCount(declaration.getId());
+        assertThat(disableLogsAfterFirstFinalize).isEqualTo(1);
+
+        syncService.syncRemote("platform-admin", "service-a", List.of("guarantee"), List.of());
+
+        assertThat(registryStatus(declaration.getId())).isEqualTo("REMOVED");
+        assertThat(disableLogCount(declaration.getId())).isEqualTo(disableLogsAfterFirstFinalize);
+        assertThat(tenantScopedResourceHandler.disableTenants()).containsExactly("1");
+    }
+
+    @Test
+    void removedResourceBecomesActiveAgainWhenDeclaredAgain() {
+        ResourceDeclaration declaration = genericDeclaration(
+                "1900000000000000021", "TENANT_TEST_RESOURCE", "guarantee.tenant-revive", "tenant-test");
+        field(declaration, "tenantId", ResourceFieldType.STRING, "1");
+
+        syncService.syncRemote("platform-admin", "service-a", List.of(declaration));
+        jdbcTemplate.update("update resource_registry set tenant_id = '1' where resource_id = ?",
+                declaration.getId());
+        syncService.syncRemote("platform-admin", "service-a", List.of("guarantee"), List.of());
+        assertThat(registryStatus(declaration.getId())).isEqualTo("REMOVED");
+
+        syncService.syncRemote("platform-admin", "service-a", List.of(declaration));
+
+        assertThat(registryStatus(declaration.getId())).isEqualTo("ACTIVE");
+    }
+
+    @Test
     void remoteSyncDisablesMissingOnlyWithinSameSourceService() {
         ResourceDeclaration serviceA = activeDeclaration(1, "服务A");
         serviceA.setId("1900000000000000003");
@@ -1127,7 +1166,7 @@ class ResourceRegistrySyncServiceIntegrationTest {
     }
 
     @Test
-    void syncFailsWhenMissingAutoResourceHasNoLocalHandlerOrRemoteDispatcher() {
+    void syncSkipsMissingAutoResourceWithoutLocalHandlerOrRemoteDispatcher() {
         jdbcTemplate.update("""
                 insert into resource_registry (
                     id, resource_id, resource_version, app_code, service_code, resource_type,
@@ -1140,12 +1179,10 @@ class ResourceRegistrySyncServiceIntegrationTest {
                 )
                 """);
 
-        assertThatThrownBy(() -> syncService.syncRemote(
-                "platform-admin", "orphan-service", List.of("guarantee"), List.of()))
-                .isInstanceOf(BizException.class)
-                .hasMessageContaining("缺失资源禁用时未找到处理器")
-                .hasMessageContaining("UNSUPPORTED_TEMPLATE")
-                .hasMessageContaining("unsupported-notice");
+        syncService.syncRemote("platform-admin", "orphan-service", List.of("guarantee"), List.of());
+
+        ResourceRegistryEntity registry = registryMapper.selectByResourceId("1900000000000000005");
+        assertThat(registry.getStatus()).isEqualTo("ACTIVE");
     }
 
     @Test
@@ -1535,6 +1572,14 @@ class ResourceRegistrySyncServiceIntegrationTest {
     private int intValue(String tableName, String columnName) {
         Integer value = jdbcTemplate.queryForObject("select " + columnName + " from " + tableName + " limit 1", Integer.class);
         return value == null ? 0 : value;
+    }
+
+    private long disableLogCount(String resourceId) {
+        return jdbcTemplate.queryForObject("""
+                select count(*) from resource_sync_log
+                 where sync_type = 'DISABLE'
+                   and resource_id = (select id from resource_registry where resource_id = ?)
+                """, Long.class, resourceId);
     }
 
     private String registryStatus(String resourceId) {

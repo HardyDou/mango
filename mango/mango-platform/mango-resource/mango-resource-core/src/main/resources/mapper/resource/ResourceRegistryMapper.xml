@@ -56,6 +56,7 @@
         from resource_registry
         where app_code = #{appCode}
           and service_code = #{serviceCode}
+          and status &lt;&gt; 'REMOVED'
           and module_code in
         <foreach collection="moduleCodes" item="moduleCode" open="(" separator="," close=")">
             #{moduleCode}
