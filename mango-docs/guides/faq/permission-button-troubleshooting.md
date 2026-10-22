@@ -75,3 +75,5 @@ pnpm -F @mango/admin-shell build
 详细版本影响见[按钮权限排障历史索引](../../changelog/business-integration/permission-button-troubleshooting.md)。
 
 > Issue #1098 影响说明：资源声明的 `sync-mode` 收敛为 `SYNC_ALWAYS` / `SYNC_ONCE`（旧值 `AUTO`、`INIT_ONLY`、`MANUAL`、`LOCKED` 仍可读取并映射）。本场景涉及的数据初始化、租户边界、权限判定与页面行为不变。
+
+> Issue #1098 影响说明：资源登记行新增 `ownership`，`MANUAL_TAKEOVER` 与 `UNKNOWN` 行不再被声明覆盖或停用；本场景的数据初始化、租户边界与权限判定结果不变。
