@@ -1,3 +1,13 @@
+## 1.3.5 - 2026-10-23
+
+### Changed
+
+- Lock the CLI Maven matrix to Maven `1.1.1`.
+- Ship `@mango/pmo@1.4.8`, which carries the module README `升级与兼容` convention and the per-batch upgrade page mechanism.
+
+### Fixed
+
+- Generated projects keep the bootstrap deploy sequence `plan -> apply --strategy=rolling -> finalize -> verify` after the finalize idempotency fix.
 ## 1.3.4 - 2026-10-21
 
 ### Changed

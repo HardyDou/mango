@@ -27,7 +27,7 @@
     ],
     "fixed": {
       "documentType": "system-requirements",
-      "pmoVersion": "1.4.7",
+      "pmoVersion": "1.4.8",
       "schemaRevision": "1"
     },
     "historicalPmoVersions": [
@@ -48,7 +48,8 @@
       "1.4.3",
       "1.4.4",
       "1.4.5",
-      "1.4.6"
+      "1.4.6",
+      "1.4.7"
     ]
   },
   "localPrefixes": [
