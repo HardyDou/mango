@@ -2,7 +2,7 @@
 
 ## v2026.10.23-maven-1.1.1-pmo-upgrade-record-release - io.mango:mango-parent Maven 1.1.1 - npm @mango/pmo@1.4.8 + @mango/cli@1.3.5 - 2026-10-23
 
-Status: `PENDING`. Release plan and sealed candidate are recorded before publication; the immutable tag and GitHub Release are created only after Maven and npm consume verification.
+Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `f0856139e95a71555a67d8f21bb162ddb233b8f845322c335d2779a7d33e1bd3` for release plan `694573715580ce48737464da8726688844402db5fb74201b593139b5f183320d` and prepared candidate `b93e16104e792e7f0f316f5910ace59ba37fe5c34365f333f70670e0fbb3fb8a` is `COMPLETED`: all 196 Maven/docs coordinates at `1.1.1`, `@mango/pmo@1.4.8` and `@mango/cli@1.3.5` match the sealed candidate in both publish and consume registries, the clean consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`.
 
 ### Pull Requests
 
