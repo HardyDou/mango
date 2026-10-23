@@ -29,8 +29,10 @@ const publicDocs = [
   'mango-docs/guides/operations/README.md',
   'mango-docs/guides/operations/build-time-cold-baseline.md',
   'mango-docs/guides/operations/ci-cd-release-practices.md',
+  'mango-docs/guides/operations/cms-banner-removal-upgrade.md',
   'mango-docs/guides/operations/history-debt-remediation.md',
   'mango-docs/guides/operations/mango-1.0.30-to-1.0.31-upgrade.md',
+  'mango-docs/guides/operations/mango-1.0.63-to-1.1.0-upgrade.md',
   'mango-docs/guides/operations/maven-1.0.21-to-1.0.22-java-api-upgrade.md',
   'mango-docs/guides/operations/resource-reset-incremental-release.md',
   'mango-docs/guides/operations/workflow-assignee-identity-upgrade.md',
@@ -239,8 +241,10 @@ const sidebar = [
       { text: '构建期 cold baseline', link: '/mango-docs/guides/operations/build-time-cold-baseline' },
       { text: 'Resource 重置与增量发布', link: '/mango-docs/guides/operations/resource-reset-incremental-release' },
       { text: 'Mango 1.0.31 升级', link: '/mango-docs/guides/operations/mango-1.0.30-to-1.0.31-upgrade' },
+      { text: 'Mango 1.0.63 → 1.1.0 升级', link: '/mango-docs/guides/operations/mango-1.0.63-to-1.1.0-upgrade' },
       { text: 'Maven Java API 升级', link: '/mango-docs/guides/operations/maven-1.0.21-to-1.0.22-java-api-upgrade' },
       { text: 'Workflow 办理人升级', link: '/mango-docs/guides/operations/workflow-assignee-identity-upgrade' },
+      { text: 'CMS Banner 能力删除升级', link: '/mango-docs/guides/operations/cms-banner-removal-upgrade' },
       { text: '历史债务修复', link: '/mango-docs/guides/operations/history-debt-remediation' }
     ]
   },
