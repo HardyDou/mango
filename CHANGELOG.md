@@ -1,5 +1,90 @@
 # Mango Changelog
 
+## v2026.10.21-maven-1.1.0-resource-sync-ownership-release - io.mango:mango-parent Maven 1.1.0 - npm 17 packages including @mango/site-shell@2.0.0 @mango/admin@2.0.0 @mango/cli@1.3.4 - 2026-10-21
+
+Status: `PENDING`. Release plan and sealed candidate are recorded before publication; the immutable tag and GitHub Release are created only after Maven and npm consume verification.
+
+### Pull Requests
+
+- [PR #1082] Added:(https://github.com/HardyDou/mango/pull/1082) Added risk-based protection for anonymous information collection submissions. Packages: Maven/docs `1.1.0` (`io.mango:mango-parent`, `mango-information-api`, `mango-information-starter`). Business Adaptation: review `mango.information.submit-protection.*` configuration and rerun public submission regression.
+- [PR #1084] Fixed:(https://github.com/HardyDou/mango/pull/1084) Fixed legacy incremental resource upgrades being blocked during sync. Packages: Maven/docs `1.1.0` (`mango-resource-core`). Business Adaptation: rerun startup and confirm resource sync completes without manual intervention.
+- [PR #1085] Fixed:(https://github.com/HardyDou/mango/pull/1085) Fixed admin shell content scroll reset and lost tab search state. Packages: `@mango/admin-shell@1.0.84`, `@mango/admin@2.0.0`. Business Adaptation: refresh admin frontend bundle after upgrading.
+- [PR #1088](https://github.com/HardyDou/mango/pull/1088) Changed (breaking removal): the retired CMS banner capability and closed remaining public site delivery gaps. Packages: Maven/docs `1.1.0` (`mango-cms-api`, `mango-cms-core`, `mango-cms-starter`), `@mango/site-shell@2.0.0`, `@mango/cms@1.0.42`, `@mango/admin@2.0.0`. Business Adaptation: delete banner usages, menus and data by the documented runbook, and migrate site pages to the supported content APIs.
+- [PR #1089] Fixed:(https://github.com/HardyDou/mango/pull/1089) Fixed the registry `bizKey` conflict message to name both sources. Packages: Maven/docs `1.1.0` (`mango-resource-core`). Business Adaptation: no action; failure messages are clearer.
+- [PR #1091] Fixed:(https://github.com/HardyDou/mango/pull/1091) Fixed resource registry conflicts to report every conflict in one failure. Packages: Maven/docs `1.1.0` (`mango-resource-core`). Business Adaptation: read the aggregated conflict list instead of fixing one item per restart.
+- [PR #1097] Fixed:(https://github.com/HardyDou/mango/pull/1097) Fixed removed resources being reprocessed and bootstrap stalling. Packages: Maven/docs `1.1.0` (`mango-resource-core`). Business Adaptation: confirm bootstrap completes on an upgraded database.
+- [PR #1098](https://github.com/HardyDou/mango/pull/1098) Changed (breaking enum convergence): resource sync modes to `SYNC_ALWAYS`/`SYNC_ONCE`, recorded resource ownership, and stopped touching taken-over data (PRs #1101, #1102, #1103, #1104). Packages: Maven/docs `1.1.0` (`mango-resource-api`, `mango-resource-core`, `mango-resource-starter`), `@mango/admin@2.0.0`, `@mango/cli@1.3.4`. Business Adaptation: replace `AUTO`/`INIT_ONLY`/`MANUAL`/`LOCKED` declarations with the new modes, apply `V3`/`V4` migrations, and review ownership diagnostics.
+- [PR #1080](https://github.com/HardyDou/mango/pull/1080) Changed (audit record only, no artifact in this batch): release record for the already published `v2026.10.20-maven-1.0.63-information-baseline-release`. Packages: none in this batch. Business Adaptation: no action.
+- [PR #1081](https://github.com/HardyDou/mango/pull/1081) Changed (audit record only, no artifact in this batch): closeout record for the already published `v2026.10.20-maven-1.0.63-information-baseline-release`. Packages: none in this batch. Business Adaptation: no action.
+
+### Fixed
+
+- 遗留资源在增量升级时不再被重复处理，bootstrap 不再中途停滞。
+- 资源注册冲突一次返回全部冲突项，并同时指出冲突双方来源。
+- Admin 菜单树父级高亮保持正确，内容区滚动在路由切换后复位，页签搜索状态不再丢失。
+
+### Added
+
+- 信息采集匿名提交增加基于风险的提交保护，可按配置调整阈值与处置动作。
+- 资源注册表记录资源所有权（`V4` 迁移），被接管的资源不再被后续声明覆盖。
+
+### Changed
+
+- 资源同步模式收敛为 `SYNC_ALWAYS` 与 `SYNC_ONCE`，历史值仅保留读取兼容并输出弃用告警；新增 `V3` 迁移规范化唯一键。
+- CMS banner 能力下线：删除 `CmsBannerApi` 及其 API/VO/Entity/Mapper/Service、banner 菜单与 `cms_banner` 相关数据路径；站点前台改由内容与广告能力承载。
+- `@mango/site-shell` 主版本升级：移除 `SiteBanner`、`CmsBanner` 类型与 `listBanners` 调用。
+
+### Versions
+
+- Maven non-application reactor and `io.mango:mango-docs-bundle`: `1.0.63` -> `1.1.0`.
+- npm: `@mango/site-shell` `1.0.24` -> `2.0.0`; `@mango/admin` `1.2.1` -> `2.0.0`; `@mango/admin-shell` `1.0.83` -> `1.0.84`; `@mango/rbac` `1.0.40` -> `1.0.41`; `@mango/cms` `1.0.41` -> `1.0.42`; `@mango/cli` `1.3.3` -> `1.3.4`.
+- npm closure (machine-planned order): `@mango/rbac@1.0.41`、`@mango/site-shell@2.0.0`、`@mango/system@1.0.51`、`@mango/admin-pages@1.1.2`、`@mango/calendar@1.0.53`、`@mango/cms@1.0.42`、`@mango/job@1.0.46`、`@mango/link@1.0.39`、`@mango/notice@1.0.58`、`@mango/numgen@1.0.54`、`@mango/payment@1.0.45`、`@mango/template@1.0.54`、`@mango/workflow@1.0.62`、`@mango/admin-shell@1.0.84`、`@mango/workflow-business-example@1.0.61`、`@mango/admin@2.0.0`、`@mango/cli@1.3.4`.
+- `@mango/pmo` stays at `1.4.7`; `@mango/information` stays at `1.1.1` because its changes are backend-only.
+
+### Published Packages
+
+1. Publish the sealed non-application Maven reactor and `io.mango:mango-docs-bundle:1.1.0`, then verify both Maven registry roles.
+2. Publish `@mango/site-shell@2.0.0`, `@mango/cms@1.0.42`, `@mango/rbac@1.0.41`, `@mango/admin-shell@1.0.84`, `@mango/admin@2.0.0` and `@mango/cli@1.3.4` in the machine-planned order and verify both npm registry roles.
+3. Run one aggregate clean Maven consumer plus a clean npm consumer that installs `@mango/cli@1.3.4` and generates a project without a workspace link.
+4. Create Tag `v2026.10.21-maven-1.1.0-resource-sync-ownership-release` and its GitHub Release only after consume verification succeeds.
+
+### Business Impact
+
+- 后端消费者：资源同步模式枚举收紧为两个值，历史值读取兼容但会告警；资源所有权与唯一键迁移随 `V3`/`V4` 执行；CMS banner API 与表被移除。
+- 前端消费者：`@mango/site-shell` 2.0.0 移除 `SiteBanner`/`CmsBanner` 与 `listBanners`，站点前台必须改用内容/广告接口；Admin 需随 `@mango/admin` 2.0.0 升级。
+- 运维：首次升级会执行资源迁移，建议在维护窗口内启动并观察所有权诊断，确认没有未证明归属的资源。
+- 不包含应用部署、流量切换或数据库回滚。
+
+### Upgrade Estimate
+
+- Audience: 使用 Mango 资源注册表、CMS 站点前台或信息采集匿名提交的业务项目。
+- Engineering Effort: medium; replace legacy sync modes, remove banner usages and menus, run migrations, and re-verify public site pages.
+- Execution Window: 90 to 180 minutes including migration, resource ownership diagnostics and page regression.
+- Service Downtime: one planned restart window; the migration runs during startup.
+- Rollback Effort: medium; restore Maven/docs `1.0.63` and the previous npm tuple, and restore the pre-upgrade database snapshot if banner data must return.
+- Assumptions: MySQL 8 consumer database, Java 21 build, Node 22.23.1 frontend build, and an operator available to review ownership diagnostics.
+
+### Upgrade Notes
+
+1. 升级 Maven/docs 到 `1.1.0` 与 npm 闭包（site-shell 2.0.0、admin 2.0.0、cms 1.0.42、rbac 1.0.41、admin-shell 1.0.84、cli 1.3.4）。
+2. 把所有 `sync-mode: AUTO|INIT_ONLY|MANUAL|LOCKED` 声明改为 `SYNC_ALWAYS` 或 `SYNC_ONCE`；历史值只在读取时兼容并输出弃用告警。
+3. 启动前备份数据库，启动后确认 `V3`/`V4` 迁移执行成功，并检查资源所有权诊断没有未证明归属项。
+4. 删除 banner 相关调用：`CmsBannerApi`、`SiteBanner`/`CmsBanner` 类型、`listBanners`、banner 菜单与页面配置，改用内容与广告接口。
+5. 回归匿名信息采集提交，确认风控阈值与处置动作符合预期。
+6. 刷新 Admin 前端构建产物，确认菜单高亮、滚动复位与页签搜索状态正常。
+
+### Verification
+
+- Maven: resolve `io.mango:mango-resource-api:1.1.0`、`io.mango:mango-cms-api:1.1.0`、`io.mango:mango-information-api:1.1.0` 与 `io.mango:mango-docs-bundle:1.1.0` 从 consume registry 并比对封存校验和。
+- npm: resolve `@mango/site-shell@2.0.0`、`@mango/admin@2.0.0`、`@mango/cli@1.3.4` 等从 publish 与 consume registry 并比对封存 integrity。
+- Repository gates: `mango release plan`、`mango release prepare`、`mango release publish` 证据，以及 README 双审计。
+- Consumer assertion: 升级库能完成 `V3`/`V4` 迁移与资源同步；站点前台不再引用 banner 接口；匿名提交风控生效；Admin 菜单与滚动行为正常。
+
+### Rollback
+
+- 通过正常依赖发布流程把消费者回退到 Maven/docs `1.0.63` 与上一版 npm tuple；已发布的 `1.1.0` 坐标不可覆盖。
+- 若 banner 数据必须恢复，使用升级前的数据库备份回滚；不要手工修改已发布制品或反向改写迁移脚本。
+
 ## v2026.10.20-maven-1.0.63-information-baseline-release - Maven 1.0.63 - @mango/cli@1.3.3 - 2026-10-20
 
 Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `221e6057aa1ec5f9833dd93953d7c6540258d5f3ec40f230c2b3b02b2e495b04` for release plan `e921be9c503538d5d5720fb6b297c5ece37f73e695d88077709e82a9ca71c66f` and prepared candidate `79f1c81416d5e9149e7fae27244d2d145b19c8a52e934f6e4f605d01b12a18a5` is `COMPLETED`: all 196 Maven/docs coordinates at `1.0.63` and `@mango/cli@1.3.3` match the sealed candidate in both publish and consume registries, the clean consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`.

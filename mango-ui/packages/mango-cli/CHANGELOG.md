@@ -1,3 +1,14 @@
+## 1.3.4 - 2026-10-21
+
+### Changed
+
+- Lock the CLI Maven matrix to Maven `1.1.0`.
+- Ship the resource sync-mode convergence, resource ownership migrations, CMS banner removal and information submission protection through the platform tuple.
+
+### Fixed
+
+- Keep generated projects aligned with `@mango/site-shell@2.0.0` and `@mango/admin@2.0.0` after the CMS banner capability removal.
+
 ## 1.3.3 - 2026-10-20
 
 ### Fixed
