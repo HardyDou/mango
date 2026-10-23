@@ -52,6 +52,8 @@ Agent 必须先按明确证据区分以下概念，不得因为单独出现 `wor
 - 能力索引更新到 `mango-docs/capabilities/README.md`。
 - 长期规则更新到 `mango-pmo/rules/**`，并同步 `mango-pmo/rules/index.json`。
 - 历史方案、交付事实和证据保留在 `mango-docs/designs/**`、`mango-docs/plans/**` 或 `mango-docs/evidence/**`。
+- 模块升级记录写在模块 README 的「升级与兼容」小节，按版本追加一行：适用版本、变更、影响、需要做的事、验证、回滚。仅在公开 API、配置、枚举、菜单权限、初始化数据或数据库迁移变化时记录，纯内部重构不记录。只记本模块细节，批次级版本矩阵与执行顺序由 `mango-docs/guides/operations/mango-<旧版本>-to-<新版本>-upgrade.md` 承载，两边互相链接。
+- 「升级与兼容」是书写规范，不是新增阻塞门禁：README 审计不校验该小节，存量模块在改动该 README 时顺带补齐即可，不做批量回填，不增加提交成本。
 
 ## 4. 可不更新
 
