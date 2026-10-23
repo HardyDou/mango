@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-23T01:44:27.337Z",
+  "generatedAt": "2026-10-23T01:48:05.193Z",
   "releaseKind": "mixed",
   "release": {
     "tag": "v2026.10.21-maven-1.1.0-resource-sync-ownership-release",
@@ -3582,11 +3582,12 @@
     "docs": null
   },
   "source": {
-    "commit": "a0d30b611fc408b4a19c7c2b9083dc38d50dd937",
-    "tree": "fa3d23f67e3271acdf76f39eb99e73853726f49a"
+    "commit": "5de46a36f6990783808efda7addeaad53cb8d686",
+    "tree": "4ef80b764293ac86a77e7dbfaac3f49394d52c6c"
   },
   "sourceFiles": [
     "CHANGELOG.md",
+    "mango-catalog/catalog.lock.json",
     "mango-docs/designs/issue-1074-public-submit-protection/acceptance-evidence.md",
     "mango-docs/designs/issue-1074-public-submit-protection/technical-design.md",
     "mango-docs/evidence/2026-10-22-issue-1084-resource-incremental-upgrade/acceptance-report.md",
@@ -3604,6 +3605,7 @@
     "mango-ui/.changeset/issue-1053-cms-public-site-gaps.md",
     "mango-ui/.changeset/release-baseline.json",
     "mango-ui/.changeset/release-notes.txt",
+    "mango-ui/.changeset/release-plan.json",
     "mango-ui/.changeset/resource-sync-ownership.md",
     "mango-ui/apps/mango-admin-cms-app/vite.config.ts",
     "mango-ui/apps/mango-admin-rbac-app/vite.config.ts",
@@ -3632,10 +3634,14 @@
     "mango-ui/packages/cms/README.md",
     "mango-ui/packages/cms/src/views/CmsResourceView.vue",
     "mango-ui/packages/mango-cli/CHANGELOG.md",
+    "mango-ui/packages/mango-cli/README.md",
+    "mango-ui/packages/mango-cli/release-versions.json",
+    "mango-ui/packages/mango-cli/templates/full/frontend/package.json.template",
     "mango-ui/packages/rbac/README.md",
     "mango-ui/packages/rbac/src/views/menu/index.vue",
     "mango-ui/packages/site-shell/README.md",
     "mango-ui/packages/site-shell/src/index.ts",
+    "mango-ui/pnpm-lock.yaml",
     "mango/mango-common/README.md",
     "mango/mango-common/src/main/java/io/mango/common/po/PageQuery.java",
     "mango/mango-common/src/test/java/io/mango/common/po/PageQueryTest.java",
@@ -3795,7 +3801,7 @@
   ],
   "legacyReconciliation": null,
   "restoredPublishedBaselines": [],
-  "directPackages": ["@mango/admin-shell", "@mango/cms", "@mango/rbac", "@mango/site-shell"],
+  "directPackages": ["@mango/admin-shell", "@mango/cli", "@mango/cms", "@mango/rbac", "@mango/site-shell"],
   "classifiedFiles": [
     {
       "file": "mango-ui/packages/admin-shell/README.md",
@@ -3855,6 +3861,21 @@
     {
       "file": "mango-ui/packages/cms/src/views/CmsResourceView.vue",
       "packageName": "@mango/cms",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/mango-cli/README.md",
+      "packageName": "@mango/cli",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/mango-cli/release-versions.json",
+      "packageName": "@mango/cli",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/mango-cli/templates/full/frontend/package.json.template",
+      "packageName": "@mango/cli",
       "reason": "published-package-path"
     },
     {
@@ -4164,7 +4185,7 @@
       "sourceVersion": "1.3.3",
       "targetVersion": "1.3.4",
       "type": "patch",
-      "direct": false,
+      "direct": true,
       "generated": false,
       "reasons": [
         {
@@ -5913,7 +5934,9 @@
         "extension": "jar",
         "classifier": null,
         "dependencies": [
+          "io.mango.infra.kv:mango-infra-kv-api",
           "io.mango.platform.authorization:mango-authorization-api",
+          "io.mango.platform.captcha:mango-captcha-api",
           "io.mango.platform.file:mango-file-api",
           "io.mango.platform.identity:mango-identity-api",
           "io.mango.platform.information:mango-information-core",
@@ -6941,8 +6964,8 @@
   "versionPolicyDigest": "c4c4c80d533dde047a59627c915cf87e3570606c2d329023ce6896544c50ee12",
   "releasePlanIdentity": {
     "schemaVersion": 1,
-    "sourceCommitOid": "a0d30b611fc408b4a19c7c2b9083dc38d50dd937",
-    "sourceTreeOid": "fa3d23f67e3271acdf76f39eb99e73853726f49a",
+    "sourceCommitOid": "5de46a36f6990783808efda7addeaad53cb8d686",
+    "sourceTreeOid": "4ef80b764293ac86a77e7dbfaac3f49394d52c6c",
     "catalogDigest": "47bddc34fa1ef9daed60aef14b83fbcc7ac4199731de9f6e02cc0e4eca969723",
     "previousBaselineDigest": "b7dd8ab23c247de351184ca68f1eee308d2f79950c72434e39dfdea14a1b29c0",
     "changesetsDigest": "c1e15da381d94769aec57e015f72849ab763d58c6a58deab43e52f33a3a068ef",
@@ -8526,5 +8549,5 @@
       "@mango/cli"
     ]
   },
-  "planDigest": "6c8a1760852f2f15bcc1163c678b286bde164bebbfa4066e152c39c0296ecbe2"
+  "planDigest": "9a635580412d86c1dca315cdcbbe0d17dc93c1f56f516bb0649d10baa517f958"
 }
