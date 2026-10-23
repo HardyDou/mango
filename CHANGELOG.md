@@ -2,7 +2,7 @@
 
 ## v2026.10.21-maven-1.1.0-resource-sync-ownership-release - io.mango:mango-parent Maven 1.1.0 - npm 17 packages including @mango/site-shell@2.0.0 @mango/admin@2.0.0 @mango/cli@1.3.4 - 2026-10-21
 
-Status: `PENDING`. Release plan and sealed candidate are recorded before publication; the immutable tag and GitHub Release are created only after Maven and npm consume verification.
+Status: `PUBLISHED_AND_VERIFIED`. Canonical manifest SHA-256 `34319c0ff205ee9c86a018855beee85bc8a05f41dbc32856dbf3a8a73f5ba228` for release plan `6c8a1760852f2f15bcc1163c678b286bde164bebbfa4066e152c39c0296ecbe2` and prepared candidate `fda68d3163222b204c4de744d3556a935acedd89017b72eacdbf91185618ef39` is `COMPLETED`: all 196 Maven/docs coordinates at `1.1.0` and the 17 npm packages including `@mango/site-shell@2.0.0`, `@mango/admin@2.0.0` and `@mango/cli@1.3.4` match the sealed candidate in both publish and consume registries, the clean consume-registry consumer passed, and Tag plus GitHub Release are `CREATED_AND_VERIFIED`.
 
 ### Pull Requests
 
