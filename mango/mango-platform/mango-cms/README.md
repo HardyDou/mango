@@ -256,6 +256,7 @@ CREATE TABLE cms_banner_archive AS SELECT * FROM cms_banner;
 - [演示站点 App](../../../mango-ui/apps/mango-site-demo-app)
 - [企业官网站点 App](../../../mango-ui/apps/mango-site-enterprise-app)
 - [帮助中心站点 App](../../../mango-ui/apps/mango-site-help-app)
+- [Mango 1.0.63 → 1.1.0 升级](../../../mango-docs/guides/operations/mango-1.0.63-to-1.1.0-upgrade.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
 
 ## 14. 变更影响记录

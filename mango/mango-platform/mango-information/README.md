@@ -257,5 +257,6 @@ mango:
 - [信息采集前端包](../../../mango-ui/packages/information/README.md)
 - [文件能力](../mango-file/README.md)
 - [资源注册](../mango-resource/README.md)
+- [Mango 1.0.63 → 1.1.0 升级](../../../mango-docs/guides/operations/mango-1.0.63-to-1.1.0-upgrade.md)
 - [授权能力](../mango-authorization/README.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
