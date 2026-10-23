@@ -239,6 +239,32 @@ class BootstrapResourcePerformanceIntegrationTest {
                         .as("new generation with unchanged modules must complete within 10 seconds")
                         .isLessThan(WARM_LIMIT_MILLIS);
 
+                Map<String, Object> stableControlState = bootstrapControlRow(jdbcTemplate);
+                long executionsBeforeRepeatedFinalize = count(jdbcTemplate, "mango_bootstrap_execution");
+                long stepsBeforeRepeatedFinalize = count(jdbcTemplate, "mango_bootstrap_step_execution");
+                long repeatedFinalizeStarted = System.nanoTime();
+                BootstrapOutcome repeatedFinalizeOutcome = orchestrator.execute(
+                        request(BootstrapAction.FINALIZE, 2L));
+                long repeatedFinalizeElapsed = elapsedMillis(repeatedFinalizeStarted);
+
+                assertThat(repeatedFinalizeOutcome.state())
+                        .as("re-publishing the same build must stay idempotent instead of reporting a missing candidate")
+                        .isEqualTo("FINALIZED");
+                assertThat(repeatedFinalizeOutcome.executionId()).isNull();
+                assertThat(repeatedFinalizeOutcome.executedSteps()).isZero();
+                assertThat(bootstrapControlRow(jdbcTemplate)).isEqualTo(stableControlState);
+                assertThat(count(jdbcTemplate, "mango_bootstrap_execution"))
+                        .isEqualTo(executionsBeforeRepeatedFinalize);
+                assertThat(count(jdbcTemplate, "mango_bootstrap_step_execution"))
+                        .isEqualTo(stepsBeforeRepeatedFinalize);
+                assertThat(count(jdbcTemplate, "resource_sync_log")).isEqualTo(syncLogCount);
+                assertThat(receipt(jdbcTemplate, STORAGE_MODULE).generation()).isOne();
+                assertThat(receipt(jdbcTemplate, FILE_MODULE).generation()).isOne();
+                assertThat(receipt(jdbcTemplate, WORKFLOW_MODULE).generation()).isOne();
+                assertThat(repeatedFinalizeElapsed)
+                        .as("repeated finalize for an already stable generation must not execute steps")
+                        .isLessThan(WARM_LIMIT_MILLIS);
+
                 provider.setDeclarations(concat(
                         foundationDeclarations, fileDeclarations, workflowDeclarations(2)));
                 BootstrapOrchestrator workflowChangeOrchestrator = bootstrapOrchestrator(
@@ -884,6 +910,15 @@ class BootstrapResourcePerformanceIntegrationTest {
         return jdbcTemplate.queryForObject("""
                 select state from mango_bootstrap_control where environment_key = ?
                 """, String.class, "bootstrap-resource-performance");
+    }
+
+    private Map<String, Object> bootstrapControlRow(JdbcTemplate jdbcTemplate) {
+        return jdbcTemplate.queryForMap("""
+                select stable_generation, stable_fingerprint, candidate_generation, candidate_fingerprint,
+                       authoritative_generation, state, fencing_token, release_id, build_revision, completed_at
+                  from mango_bootstrap_control
+                 where environment_key = ?
+                """, "bootstrap-resource-performance");
     }
 
     private String workflowDefinitionName(JdbcTemplate jdbcTemplate, int index) {

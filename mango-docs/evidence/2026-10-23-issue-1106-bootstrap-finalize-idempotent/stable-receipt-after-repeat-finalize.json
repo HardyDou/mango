@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "environmentKey": "it-1106",
+  "databaseName": "mango_it_app_1106",
+  "releaseId": "it-release",
+  "buildRevision": "it-revision-g2",
+  "stableGeneration": 2,
+  "stableFingerprint": "a970f9623148cdeaae85b1f9ea00da6381da120697b022203c5f794832d1ef9b",
+  "state": "FINALIZED"
+}
