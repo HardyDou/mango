@@ -1,5 +1,21 @@
 # Mango PMO Changelog
 
+## 1.4.8 - 2026-10-23
+
+### Added
+
+- Module READMEs gain a versioned `升级与兼容` section convention covering applicable versions, change, impact, required actions, verification and rollback.
+- `mango-release` Skill Readiness now requires a generated per-batch upgrade page and documents how it is generated, checked, published and shipped in the docs bundle.
+
+### Changed
+
+- Capability documentation rules describe the module upgrade record scope, the split with the batch-level upgrade page, and state that the section is not a blocking gate.
+- `rules/index.json` version 22 -> 23.
+
+### Upgrade Notes
+
+- Upgrade @mango/pmo and @mango/cli together and synchronize the Business Starter baseline; no business code change is required.
+
 ## 1.4.7 - 2026-10-14
 
 ### Changed

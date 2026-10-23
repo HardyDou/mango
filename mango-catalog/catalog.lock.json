@@ -4,7 +4,7 @@
     "schemaVersion": 1,
     "workspaceCount": 43
   },
-  "catalogDigest": "47bddc34fa1ef9daed60aef14b83fbcc7ac4199731de9f6e02cc0e4eca969723",
+  "catalogDigest": "e9539c9e6b157df0ca003af2d2ffb52b1364f86206ad73f9981f9ec9df4febfc",
   "maven": {
     "dependencyManagementSets": [
       {
@@ -11653,7 +11653,7 @@
       "path": "mango-ui/packages/mango-cli",
       "publicEntries": [],
       "publicResources": [],
-      "version": "1.3.4"
+      "version": "1.3.5"
     },
     {
       "name": "@mango/cms",
@@ -12648,7 +12648,7 @@
           "subpath": "./skills/*"
         }
       ],
-      "version": "1.4.7"
+      "version": "1.4.8"
     },
     {
       "name": "@mango/rbac",
