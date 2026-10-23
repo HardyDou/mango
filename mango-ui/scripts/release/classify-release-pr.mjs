@@ -40,6 +40,7 @@ export function classifyReleasePullRequest(files) {
 export function isReleaseOnlyFile(file) {
   return (
     file === 'CHANGELOG.md' ||
+    /^mango-docs\/guides\/operations\/mango-[0-9.]+-to-[0-9.]+-upgrade\.md$/u.test(file) ||
     file === 'mango-pmo/CHANGELOG.md' ||
     file === 'mango-catalog/catalog.lock.json' ||
     PMO_VERSION_PROJECTION_PATHS.includes(file) ||

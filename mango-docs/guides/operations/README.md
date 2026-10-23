@@ -14,6 +14,8 @@
 
 ### 升级与兼容
 
+每个 Maven 发布批次都会自动生成一份升级页面 `mango-docs/guides/operations/mango-<旧版本>-to-<新版本>-upgrade.md`：`mango release plan` 依据封存计划与发布说明生成，`check-release-plan` 校验其存在且与计划一致，文档站自动收录，`mango-docs-bundle` 随批次交付给业务项目。升级前先在上表找到对应版本条目，再按页面内的升级前检查、依赖升级、迁移验证、业务回归和 Agent 执行清单执行。
+
 | 任务 | 入口 | 适用对象 |
 |---|---|---|
 | 从 Maven 1.0.21 升到 1.0.22 | [Java API 升级](./maven-1.0.21-to-1.0.22-java-api-upgrade.md) | 需要处理 Java 类型或公开 API 迁移的项目 |

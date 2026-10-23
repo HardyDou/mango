@@ -39,6 +39,7 @@ import {
   restoredPublishedBaselines,
   verifyReleasePlanSource,
 } from './release-repository-lib.mjs';
+import { assertUpgradeGuide, generateUpgradeGuide } from './generate-upgrade-guide.mjs';
 import { assertReleaseNodeVersion } from '../../packages/mango-cli/src/release-runtime.mjs';
 
 const workspaceRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -71,6 +72,11 @@ const pendingChangesets = readPendingChangesets(workspaceRoot);
 if (checkOnly && storedPlan && successfulBaseline?.planDigest === storedPlan.planDigest) {
   assertCompletedReleaseBaseline(storedPlan, successfulBaseline);
   verifyPlanProjection(storedPlan, packageIndex, managedVersions, { historicalCompleted: true });
+  assertUpgradeGuide({
+    repoRoot,
+    plan: storedPlan,
+    notes: readFileSync(join(workspaceRoot, storedPlan.release.notesFile), 'utf8'),
+  });
   console.log(`Completed release plan check PASS ${storedPlan.planDigest}`);
   if (pendingChangesets.length > 0) {
     console.log(`${pendingChangesets.length} pending Changeset(s) belong to the next release plan`);
@@ -86,6 +92,11 @@ if (checkOnly) {
   if (!previousPlan) throw new Error('release plan does not exist');
   assertEquivalentPlan(previousPlan, plan);
   verifyPlanProjection(previousPlan, packageIndex, managedVersions);
+  assertUpgradeGuide({
+    repoRoot,
+    plan: previousPlan,
+    notes: readFileSync(join(workspaceRoot, previousPlan.release.notesFile), 'utf8'),
+  });
   console.log(`Release plan check PASS ${previousPlan.planDigest}`);
   console.log(
     previousPlan.order
@@ -115,6 +126,12 @@ if (projectedCatalog.catalogDigest !== plan.catalogDigest) {
   assertReleasePlanShape(plan);
 }
 writeJson(planPath, plan);
+const upgradeGuide = generateUpgradeGuide({
+  repoRoot,
+  plan,
+  notes: readFileSync(join(workspaceRoot, plan.release.notesFile), 'utf8'),
+});
+console.log(`Upgrade guide ${upgradeGuide.action}: ${upgradeGuide.relativePath}`);
 if (!skipLockfile) runLockfileUpdate();
 runProjectionFormatting();
 console.log(`Release plan written: ${planPath}`);
