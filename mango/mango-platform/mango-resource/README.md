@@ -678,6 +678,7 @@ delete from flyway_schema_history_resource where version = '3' and success = 0;
 
 ## 15. 相关文档
 
+- [Mango 1.0.63 → 1.1.0 升级](../../../mango-docs/guides/operations/mango-1.0.63-to-1.1.0-upgrade.md)
 - [Resource Registry 设计方案](../../../mango-docs/designs/mango-resource-registry-design.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
 
