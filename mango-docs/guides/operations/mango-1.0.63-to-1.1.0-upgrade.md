@@ -1,3 +1,4 @@
+<!-- mango-release-upgrade-guide: manual -->
 # Mango 1.0.63 → 1.1.0 升级指南
 
 **适用对象：所有使用 Maven `1.0.63` 及更早版本、准备升级到 `1.1.0` 的业务项目。** 本文同时面向人和 Agent：人按章节顺序阅读，Agent 按第 9 节的执行清单逐条落地。
@@ -18,11 +19,11 @@
 | `@mango/cli` | `1.3.3` | `1.3.4` | 否 |
 | `@mango/pmo` | `1.4.7` | 不变 | — |
 
-npm 必须整体升级到本批次闭包，不要只挑其中几个包；`@mango/admin` 2.0.0 依赖新的 `site-shell` 2.0.0。
+npm 需要整体升级到本批次闭包，不要只挑其中几个包；`@mango/admin` 2.0.0 依赖新的 `site-shell` 2.0.0。
 
 ## 2. 变更摘要
 
-| 变更 | 影响对象 | 必须做的事 |
+| 变更 | 影响对象 | 需要做的事 |
 |---|---|---|
 | 资源同步模式收敛为 `SYNC_ALWAYS` / `SYNC_ONCE` | 所有自定义 Resource 声明 | 改写旧值 `AUTO`/`INIT_ONLY`/`MANUAL`/`LOCKED` |
 | `V3__normalize_resource_registry_unique_keys.sql` | 老库 `resource_registry` | 升级前检查物理重复身份 |
@@ -109,7 +110,7 @@ sync-mode: SYNC_ONCE
 
 ### 4.3 清理 Banner 残留
 
-用到 CMS Banner 的项目必须先执行 [CMS Banner 能力删除升级](./cms-banner-removal-upgrade.md) 第 3 节：归档 `cms_banner`、删除 `resource_type = 'CMS_BANNER'` 的注册行。**未清理会导致 Bootstrap 在缺失资源停用阶段失败。**
+用到 CMS Banner 的项目需要先执行 [CMS Banner 能力删除升级](./cms-banner-removal-upgrade.md) 第 3 节：归档 `cms_banner`、删除 `resource_type = 'CMS_BANNER'` 的注册行。**未清理会导致 Bootstrap 在缺失资源停用阶段失败。**
 
 ### 4.4 升级依赖
 
@@ -163,7 +164,7 @@ pnpm install
 |---|---|---|
 | `mango.information.public-submit.protection.enabled` | `true` | 关闭后不计数、不触发验证码 |
 | `mango.information.public-submit.protection.window-seconds` | `60` | 固定窗口长度 |
-| `mango.information.public-submit.protection.risk-threshold` | `10` | 达到后必须携带一次性验证码 |
+| `mango.information.public-submit.protection.risk-threshold` | `10` | 达到后需要携带一次性验证码 |
 | `mango.information.public-submit.protection.max-requests` | `30` | 超过返回 HTTP 429，且不写入采集记录 |
 | `mango.information.public-submit.protection.key-dimension` | `IP_AND_FORM` | 可选 `IP` |
 | `mango.information.public-submit.protection.fail-open` | `true` | KV 故障时放行；`false` 时返回 503 |
@@ -212,7 +213,7 @@ SELECT sync_mode, COUNT(*) FROM resource_registry GROUP BY sync_mode;
 |---|---|---|---|
 | 1 | 读 `mango-docs/capabilities/README.md`、`mango/mango-platform/mango-resource/README.md`、目标模块 README | 拿到当前 `sync-mode`、ownership、迁移口径 | 文档与本文冲突时以当前分支 README 为准，先报告冲突 |
 | 2 | 执行第 3 节 A/B grep | 得到待改声明与 Banner 引用清单 | 有 Banner 引用则先做 Banner 指南，不并行 |
-| 3 | 执行第 3 节 C 查询 | 无物理重复身份 | 有重复则按 README 14.2 清理后再继续，不得跳过 |
+| 3 | 执行第 3 节 C 查询 | 无物理重复身份 | 有重复则按 README 14.2 清理后再继续，不要跳过 |
 | 4 | 备份数据库与前端锁版本 | 备份可恢复 | 无备份不继续 |
 | 5 | 改写旧 `sync-mode`（第 4.2 节） | 声明中不再出现旧值 | 语义不明时按“是否由用户/运行时修改”判断，不确定则保持 `SYNC_ONCE` 并登记待确认 |
 | 6 | 升级 Maven 到 `1.1.0`，npm 到本批次闭包 | `pnpm install` 成功，无 peer 冲突 | 出现 `SiteBanner`/`listBanners` 编译错误属预期，按 4.5 改写后再装 |
@@ -221,7 +222,7 @@ SELECT sync_mode, COUNT(*) FROM resource_registry GROUP BY sync_mode;
 | 9 | 回归第 7 节运行项 | 6 项全部通过 | 任一项失败保留日志与 receipt，不重复重启试错 |
 | 10 | 记录证据 | 迁移输出、ownership 未证明条数、回归结果写入交付记录 | 无证据视为未完成 |
 
-Agent 禁止事项：
+Agent 不要事项：
 
 - 不要用 `mango.resource.registry.fail-on-conflict=false` 绕过注册冲突，`V3` 之后唯一键仍会拦下。
 - 不要为消除冲突直接改 `resource_id`。
