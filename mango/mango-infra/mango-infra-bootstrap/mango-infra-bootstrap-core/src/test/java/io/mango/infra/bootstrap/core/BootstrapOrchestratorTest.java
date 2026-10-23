@@ -123,6 +123,80 @@ class BootstrapOrchestratorTest {
     }
 
     @Test
+    void finalizeActionReturnsFinalizedForGenerationThatIsAlreadyStable() {
+        AtomicInteger finalizeExecutions = new AtomicInteger();
+        BootstrapStepContributor contributor = contributor(
+                step("EXPAND", BootstrapPhase.EXPAND, Set.of(), new AtomicInteger()),
+                step("FINALIZE", BootstrapPhase.FINALIZE, Set.of("EXPAND"), finalizeExecutions));
+        BootstrapOrchestrator orchestrator = orchestrator(List.of(contributor));
+        String fingerprint = new BootstrapPlanBuilder(hasher)
+                .build("release", "revision", List.of(contributor))
+                .manifestFingerprint();
+        when(repository.findControl("test")).thenReturn(java.util.Optional.of(
+                new BootstrapControl("test", 2, fingerprint, null, null, 2, "FINALIZED", 9)));
+
+        BootstrapOutcome outcome = orchestrator.execute(request(BootstrapAction.FINALIZE, BootstrapStrategy.ROLLING));
+
+        assertThat(outcome.state()).isEqualTo("FINALIZED");
+        assertThat(outcome.executionId()).isNull();
+        assertThat(outcome.executedSteps()).isZero();
+        assertThat(finalizeExecutions).hasValue(0);
+        verify(repository, never()).startExecution(anyString(), any(), anyString(), anyLong());
+        verify(repository, never()).beginFinalize(anyString(), anyLong(), anyString(), anyLong());
+        verify(repository, never()).markFinalized(anyString(), anyLong(), anyString(), anyLong());
+    }
+
+    @Test
+    void finalizeActionRejectsAlreadyStableGenerationWithDifferentContent() {
+        AtomicInteger finalizeExecutions = new AtomicInteger();
+        BootstrapOrchestrator orchestrator = orchestrator(List.of(contributor(
+                step("FINALIZE", BootstrapPhase.FINALIZE, Set.of(), finalizeExecutions))));
+        when(repository.findControl("test")).thenReturn(java.util.Optional.of(
+                new BootstrapControl("test", 2, "other-fingerprint", null, null, 2, "FINALIZED", 9)));
+
+        assertThatThrownBy(() -> orchestrator.execute(
+                request(BootstrapAction.FINALIZE, BootstrapStrategy.ROLLING)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("BOOTSTRAP_GENERATION_ALREADY_RELEASED: generation=2");
+
+        assertThat(finalizeExecutions).hasValue(0);
+        verify(repository, never()).markFinalized(anyString(), anyLong(), anyString(), anyLong());
+    }
+
+    @Test
+    void finalizeActionKeepsCandidateMissingForUnpreparedGeneration() {
+        AtomicInteger finalizeExecutions = new AtomicInteger();
+        BootstrapOrchestrator orchestrator = orchestrator(List.of(contributor(
+                step("FINALIZE", BootstrapPhase.FINALIZE, Set.of(), finalizeExecutions))));
+        when(repository.findControl("test")).thenReturn(java.util.Optional.of(
+                new BootstrapControl("test", 1, "stable", null, null, 1, "FINALIZED", 9)));
+
+        assertThatThrownBy(() -> orchestrator.execute(
+                request(BootstrapAction.FINALIZE, BootstrapStrategy.ROLLING)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("BOOTSTRAP_CANDIDATE_MISSING: generation=2");
+
+        assertThat(finalizeExecutions).hasValue(0);
+    }
+
+    @Test
+    void finalizeActionKeepsCandidateMissingWhileAnotherGenerationIsPending() {
+        AtomicInteger finalizeExecutions = new AtomicInteger();
+        BootstrapOrchestrator orchestrator = orchestrator(List.of(contributor(
+                step("FINALIZE", BootstrapPhase.FINALIZE, Set.of(), finalizeExecutions))));
+        when(repository.findControl("test")).thenReturn(java.util.Optional.of(
+                new BootstrapControl("test", 2, "stable", 3L, "pending", 3, "EXPANDED", 9)));
+
+        assertThatThrownBy(() -> orchestrator.execute(
+                request(BootstrapAction.FINALIZE, BootstrapStrategy.ROLLING)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("BOOTSTRAP_CANDIDATE_MISSING: generation=2");
+
+        assertThat(finalizeExecutions).hasValue(0);
+        verify(repository, never()).markFinalized(anyString(), anyLong(), anyString(), anyLong());
+    }
+
+    @Test
     void finalizePreconditionFailureKeepsExpandedCandidateRetryable() {
         AtomicInteger finalizeExecutions = new AtomicInteger();
         BootstrapStepContributor contributor = contributor(

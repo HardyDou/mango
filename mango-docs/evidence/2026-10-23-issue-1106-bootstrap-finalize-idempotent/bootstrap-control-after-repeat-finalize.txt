@@ -1,0 +1,10 @@
+*************************** 1. row ***************************
+       stable_generation: 1
+      stable_fingerprint: 29fa8d8350c3149fc5c60edf0f148121fa1171a4c47d2a27226a5253c78350dd
+    candidate_generation: NULL
+   candidate_fingerprint: NULL
+authoritative_generation: 1
+                   state: FINALIZED
+           fencing_token: 1
+              release_id: it-release
+          build_revision: it-revision

@@ -124,6 +124,15 @@ public final class BootstrapOrchestrator {
     private BootstrapOutcome finalizeCandidate(BootstrapInvocation request, BootstrapPlan plan) {
         BootstrapControl control = repository.findControl(request.environmentKey())
                 .orElseThrow(() -> new IllegalStateException("BOOTSTRAP_RECEIPT_MISSING"));
+        // Finalize already cleared the candidate for this generation, so a repeated finalize reports success
+        // instead of a missing candidate; the fingerprint proves the release content did not change.
+        if (control.candidateGeneration() == null && control.stableGeneration() == request.generation()) {
+            if (!plan.manifestFingerprint().equals(control.stableFingerprint())) {
+                throw new IllegalStateException(
+                        "BOOTSTRAP_GENERATION_ALREADY_RELEASED: generation=" + request.generation());
+            }
+            return new BootstrapOutcome(null, plan.manifestFingerprint(), "FINALIZED", 0, 0);
+        }
         if (control.candidateGeneration() == null || control.candidateGeneration() != request.generation()) {
             throw new IllegalStateException("BOOTSTRAP_CANDIDATE_MISSING: generation=" + request.generation());
         }
