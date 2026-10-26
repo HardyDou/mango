@@ -91,3 +91,5 @@ pnpm -F @mango/admin-shell build
 > Issue #1098 认领修正：来源（app/service/module）漂移的历史行现在按身份（`resourceId` + 类型 + `bizKey`）认领并恢复正常同步；无法证明归属的行保持原状，并在 finalize 汇总输出。租户、字典、系统配置与权限判定结果不变。
 
 > Issue #1098 影响说明：资源登记行新增 `ownership`，`MANUAL_TAKEOVER` 与 `UNKNOWN` 行不再被声明覆盖或停用；本场景的数据初始化、租户边界与权限判定结果不变。
+
+> Issue #1111 影响说明：`V5__normalize_legacy_resource_sync_modes.sql` 只把 `resource_registry.sync_mode` 的历史持久化值收敛为 `SYNC_ALWAYS` / `SYNC_ONCE`，不重放 Resource Handler，不修改字典、系统配置、租户数据、目标资源表或权限关系；本场景的数据初始化和租户边界不变。

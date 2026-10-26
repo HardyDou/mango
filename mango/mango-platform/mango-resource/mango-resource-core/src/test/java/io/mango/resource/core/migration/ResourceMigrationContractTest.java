@@ -15,6 +15,7 @@ class ResourceMigrationContractTest {
 
     private static final String V1_MIGRATION = "db/migration/resource/V1__init_resource_registry.sql";
     private static final String V3_MIGRATION = "db/migration/resource/V3__normalize_resource_registry_unique_keys.sql";
+    private static final String V5_MIGRATION = "db/migration/resource/V5__normalize_legacy_resource_sync_modes.sql";
     private static final List<String> RESOURCE_TABLES = List.of(
             "resource_registry",
             "resource_sync_log",
@@ -52,6 +53,25 @@ class ResourceMigrationContractTest {
                 .contains("DROP INDEX `uk_resource_registry_type_biz_key`")
                 .contains("UNIQUE KEY `uk_resource_registry_resource_id` (`resource_id`)")
                 .contains("UNIQUE KEY `uk_resource_registry_type_biz_key` (`resource_type`, `biz_key`)");
+    }
+
+    @Test
+    void v5NormalizesPersistedLegacySyncModesWithoutChangingTargetData() throws IOException {
+        String migration = readClasspathResource(V5_MIGRATION);
+
+        assertThat(migration)
+                .contains("SET `sync_mode` = CASE `sync_mode`")
+                .contains("WHEN 'AUTO' THEN 'SYNC_ALWAYS'")
+                .contains("WHEN 'INIT_ONLY' THEN 'SYNC_ONCE'")
+                .contains("WHEN 'MANUAL' THEN 'SYNC_ONCE'")
+                .contains("WHEN 'LOCKED' THEN 'SYNC_ONCE'")
+                .contains("WHERE `sync_mode` IN ('AUTO', 'INIT_ONLY', 'MANUAL', 'LOCKED')")
+                .doesNotContain("resource_version")
+                .doesNotContain("source_hash")
+                .doesNotContain("target_id")
+                .doesNotContain("target_table")
+                .doesNotContain("SET `status`")
+                .doesNotContain("SET `ownership`");
     }
 
     @Test
