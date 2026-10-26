@@ -1,6 +1,7 @@
 package io.mango.authorization.api.command;
 
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
+import io.mango.authorization.api.enums.ApiResourceSource;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -19,6 +20,12 @@ public class ApiResourceRegisterCommand {
     @Schema(description = "稳定 API 资源 ID，普通运行时扫描可为空")
     @Positive
     private Long resourceId;
+
+    /**
+     * API 资源登记来源。未指定时按固定资源声明处理，兼容显式资源登记调用方。
+     */
+    @Schema(description = "API 资源登记来源")
+    private ApiResourceSource source = ApiResourceSource.FIXED_DECLARATION;
 
     /**
      * 稳定 Mango 模块名，不随部署服务变化。

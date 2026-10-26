@@ -30,6 +30,22 @@ class ModuleDiagnosticPermissionResourceContractTest {
         }
     }
 
+    @Test
+    void apiResourcePermissionMenuIsBoundToVisiblePermissionMenu() throws Exception {
+        try (InputStream input = getClass().getClassLoader().getResourceAsStream(RESOURCE)) {
+            assertThat(input).isNotNull();
+            JsonNode root = new ObjectMapper().readTree(input);
+            JsonNode item = findMenu(root, "system:api-resource");
+
+            assertThat(item).isNotNull();
+            assertThat(item.path("menuType").asInt()).isEqualTo(2);
+            assertThat(item.path("path").asText()).isEqualTo("/system/api-resource");
+            assertThat(item.path("component").asText()).isEqualTo("system/api-resource/index");
+            assertThat(item.path("parentCode").asText()).isEqualTo("system:permission");
+            assertThat(textValues(item.path("apiCodes"))).containsExactly("system:api-resource:list");
+        }
+    }
+
     private JsonNode findMenu(JsonNode node, String menuCode) {
         if (node.isObject() && menuCode.equals(node.path("menuCode").asText())) {
             return node;

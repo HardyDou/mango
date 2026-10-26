@@ -1,6 +1,7 @@
 package io.mango.authorization.starter.resource;
 
 import io.mango.authorization.api.command.ApiResourceRegisterCommand;
+import io.mango.authorization.api.enums.ApiResourceSource;
 import io.mango.authorization.api.vo.ApiResourceRegisterResultVO;
 import io.mango.authorization.core.entity.ApiResourceEntity;
 import io.mango.authorization.core.mapper.ApiResourceMapper;
@@ -90,6 +91,26 @@ class ApiResourceHandlerTest {
         assertThat(results).containsOnlyKeys(changed.getId());
         verify(service).upsertApiResources(org.mockito.ArgumentMatchers.argThat(commands -> commands.size() == 1));
         verify(service, never()).registerApiResources(any());
+    }
+
+    @Test
+    void declarationSourceIsPassedToApiResourceRegistration() {
+        IApiResourceService service = mock(IApiResourceService.class);
+        ApiResourceMapper mapper = mock(ApiResourceMapper.class);
+        ApiResourceHandler handler = new ApiResourceHandler(service, mapper);
+        ResourceDeclaration declaration = declaration(1, ResourceSyncMode.SYNC_ALWAYS);
+        field(declaration, "source", ApiResourceSource.CONTROLLER_SCAN.name());
+        when(service.registerApiResources(any())).thenReturn(new ApiResourceRegisterResultVO(1, 1, 0));
+        when(mapper.selectList(any())).thenReturn(List.of(entity(1)));
+
+        handler.upsertBatch(List.of(declaration));
+
+        org.mockito.ArgumentCaptor<List<ApiResourceRegisterCommand>> captor =
+                org.mockito.ArgumentCaptor.captor();
+        verify(service).registerApiResources(captor.capture());
+        assertThat(captor.getValue()).singleElement()
+                .extracting(ApiResourceRegisterCommand::getSource)
+                .isEqualTo(ApiResourceSource.CONTROLLER_SCAN);
     }
 
     private ResourceDeclaration declaration(int index, ResourceSyncMode syncMode) {

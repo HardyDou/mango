@@ -2,7 +2,11 @@ package io.mango.authorization.core.service;
 
 import io.mango.authorization.api.vo.ApiResourceAccessDecisionVO;
 import io.mango.authorization.api.command.ApiResourceRegisterCommand;
+import io.mango.authorization.api.query.ApiResourcePageQuery;
+import io.mango.authorization.api.vo.ApiResourceFilterOptionsVO;
 import io.mango.authorization.api.vo.ApiResourceRegisterResultVO;
+import io.mango.authorization.api.vo.ApiResourceVO;
+import io.mango.common.vo.PageResult;
 
 import java.util.List;
 
@@ -39,4 +43,19 @@ public interface IApiResourceService {
      * 清理运行时资源缓存。
      */
     void refreshRuntimeCache();
+
+    /**
+     * 分页查询 API 资源登记明细。
+     *
+     * @param query 分页与筛选条件
+     * @return API 资源分页结果
+     */
+    PageResult<ApiResourceVO> pageApiResources(ApiResourcePageQuery query);
+
+    /**
+     * 查询 API 资源的模块与领域筛选维度。
+     *
+     * @return 筛选维度
+     */
+    ApiResourceFilterOptionsVO listApiResourceFilterOptions();
 }

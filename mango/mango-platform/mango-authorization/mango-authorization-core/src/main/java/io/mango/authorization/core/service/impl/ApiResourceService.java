@@ -1,15 +1,21 @@
 package io.mango.authorization.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.mango.authorization.api.enums.AuthorizationCode;
+import io.mango.authorization.api.query.ApiResourcePageQuery;
 import io.mango.authorization.api.vo.ApiResourceAccessDecisionVO;
+import io.mango.authorization.api.vo.ApiResourceFilterOptionsVO;
+import io.mango.authorization.api.vo.ApiResourceVO;
 import io.mango.authorization.api.command.ApiResourceRegisterCommand;
 import io.mango.authorization.api.vo.ApiResourceRegisterResultVO;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
+import io.mango.authorization.api.enums.ApiResourceSource;
 import io.mango.authorization.core.entity.ApiResourceEntity;
 import io.mango.authorization.core.mapper.ApiResourceMapper;
 import io.mango.authorization.core.service.IApiResourceService;
 import io.mango.common.result.Require;
+import io.mango.common.vo.PageResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -42,6 +48,14 @@ public class ApiResourceService implements IApiResourceService {
     private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
     private static final int MAX_DECISION_CACHE_SIZE = 10_000;
     private static final int MAX_REGISTER_BATCH_SIZE = 10_000;
+    private static final String CONFIGURED_HANDLER_CLASS = "configuration";
+    private static final String ROOT_DOMAIN = "root";
+    private static final Comparator<RouteCandidate> ROUTE_PRECEDENCE = Comparator
+            .comparingInt((RouteCandidate candidate) -> -sourceRank(candidate.source()))
+            .thenComparingInt(candidate -> -handlerRank(candidate.handlerClass()))
+            .thenComparingInt(candidate -> candidate.inBatch() ? 0 : 1)
+            .thenComparing(candidate -> candidate.moduleName() == null ? "" : candidate.moduleName())
+            .thenComparing(candidate -> candidate.id() == null ? Long.MAX_VALUE : candidate.id());
 
     private final ApiResourceMapper apiResourceMapper;
 
@@ -82,16 +96,15 @@ public class ApiResourceService implements IApiResourceService {
         if (validResources.isEmpty()) {
             return new ApiResourceRegisterResultVO(0, 0, 0);
         }
+        int scannedCount = validResources.size();
         validResources = deduplicate(validResources);
+        validResources = excludeCoveredByActiveFixed(validResources);
 
         Set<String> currentResourceKeys = validResources.stream()
                 .map(resource -> resourceKey(
                         resource.getModuleName(),
                         resource.getHttpMethod(),
                         resource.getPathPattern()))
-                .collect(Collectors.toSet());
-        Set<String> currentRouteKeys = validResources.stream()
-                .map(resource -> routeKey(resource.getHttpMethod(), resource.getPathPattern()))
                 .collect(Collectors.toSet());
         Map<String, ApiResourceEntity> existingIndex = loadExistingIndex(validResources);
         List<ApiResourceEntity> creates = new ArrayList<>();
@@ -110,7 +123,8 @@ public class ApiResourceService implements IApiResourceService {
         }
         List<ApiResourceEntity> staleResources = disableStaleResources
                 ? loadStaleAutoScannedResources(validResources, currentResourceKeys) : List.of();
-        List<ApiResourceEntity> duplicateRouteResources = loadDuplicateRouteResources(validResources, currentResourceKeys, currentRouteKeys);
+        List<ApiResourceEntity> duplicateRouteResources =
+                resolveRouteOwnershipConflicts(validResources, creates, updates);
         staleResources.forEach(resource -> resource.setStatus(0));
         duplicateRouteResources.forEach(resource -> resource.setStatus(0));
         updates.addAll(staleResources);
@@ -126,10 +140,10 @@ public class ApiResourceService implements IApiResourceService {
             log.info("API resource stale entries disabled: count={}", staleResources.size());
         }
         if (!duplicateRouteResources.isEmpty()) {
-            log.info("API resource duplicate route entries disabled: count={}", duplicateRouteResources.size());
+            log.info("API resource shadowed route entries disabled: count={}", duplicateRouteResources.size());
         }
         clearRuntimeCache();
-        return new ApiResourceRegisterResultVO(validResources.size(), creates.size(), updates.size());
+        return new ApiResourceRegisterResultVO(scannedCount, creates.size(), updates.size());
     }
 
     @Override
@@ -157,6 +171,92 @@ public class ApiResourceService implements IApiResourceService {
     @Override
     public void refreshRuntimeCache() {
         clearRuntimeCache();
+    }
+
+    @Override
+    public PageResult<ApiResourceVO> pageApiResources(ApiResourcePageQuery query) {
+        ApiResourcePageQuery validated = Require.nonNull(
+                query, AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR, "API 资源分页查询条件不能为空");
+        Page<ApiResourceEntity> page = apiResourceMapper.selectPage(
+                Page.of(validated.getPage(), validated.getSize()),
+                pageWrapper(validated));
+        return PageResult.of(page.getRecords().stream().map(this::toVo).toList(),
+                page.getTotal(), page.getCurrent(), page.getSize());
+    }
+
+    @Override
+    public ApiResourceFilterOptionsVO listApiResourceFilterOptions() {
+        ApiResourceFilterOptionsVO options = new ApiResourceFilterOptionsVO();
+        options.setModules(distinctColumn(ApiResourceEntity::getModuleName));
+        options.setDomains(distinctColumn(ApiResourceEntity::getDomain));
+        return options;
+    }
+
+    private List<String> distinctColumn(
+            com.baomidou.mybatisplus.core.toolkit.support.SFunction<ApiResourceEntity, String> column) {
+        return apiResourceMapper.selectList(new LambdaQueryWrapper<ApiResourceEntity>()
+                        .select(column)
+                        .groupBy(column))
+                .stream()
+                .map(column)
+                .filter(StringUtils::hasText)
+                .sorted()
+                .toList();
+    }
+
+    private LambdaQueryWrapper<ApiResourceEntity> pageWrapper(ApiResourcePageQuery query) {
+        LambdaQueryWrapper<ApiResourceEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(StringUtils.hasText(query.getModuleName()),
+                ApiResourceEntity::getModuleName, query.getModuleName());
+        wrapper.eq(StringUtils.hasText(query.getDomain()), ApiResourceEntity::getDomain, query.getDomain());
+        wrapper.eq(query.getSource() != null, ApiResourceEntity::getSource, query.getSource() == null
+                ? null : query.getSource().name());
+        wrapper.eq(StringUtils.hasText(query.getAccessMode()),
+                ApiResourceEntity::getAccessMode, query.getAccessMode());
+        wrapper.eq(query.getStatus() != null, ApiResourceEntity::getStatus, query.getStatus());
+        if (StringUtils.hasText(query.getKeyword())) {
+            wrapper.and(nested -> nested
+                    .like(ApiResourceEntity::getPathPattern, query.getKeyword())
+                    .or().like(ApiResourceEntity::getResourceCode, query.getKeyword())
+                    .or().like(ApiResourceEntity::getPermissionCode, query.getKeyword())
+                    .or().like(ApiResourceEntity::getHandlerClass, query.getKeyword()));
+        }
+        wrapper.orderByAsc(ApiResourceEntity::getDomain)
+                .orderByAsc(ApiResourceEntity::getPathPattern)
+                .orderByAsc(ApiResourceEntity::getHttpMethod);
+        return wrapper;
+    }
+
+    private ApiResourceVO toVo(ApiResourceEntity entity) {
+        ApiResourceVO vo = new ApiResourceVO();
+        vo.setId(entity.getId());
+        vo.setModuleName(entity.getModuleName());
+        vo.setDomain(entity.getDomain());
+        vo.setSource(parseSource(entity.getSource()));
+        vo.setHttpMethod(entity.getHttpMethod());
+        vo.setPathPattern(entity.getPathPattern());
+        vo.setResourceCode(entity.getResourceCode());
+        vo.setPermissionCode(entity.getPermissionCode());
+        vo.setAccessMode(entity.getAccessMode());
+        vo.setHandlerClass(entity.getHandlerClass());
+        vo.setHandlerMethod(entity.getHandlerMethod());
+        vo.setDescription(entity.getDescription());
+        vo.setStatus(entity.getStatus());
+        vo.setCreateTime(entity.getCreateTime());
+        vo.setUpdateTime(entity.getUpdateTime());
+        return vo;
+    }
+
+    private ApiResourceSource parseSource(String value) {
+        if (!StringUtils.hasText(value)) {
+            return ApiResourceSource.FIXED_DECLARATION;
+        }
+        try {
+            return ApiResourceSource.valueOf(value);
+        } catch (IllegalArgumentException exception) {
+            log.warn("Unknown API resource source: {}", value);
+            return ApiResourceSource.FIXED_DECLARATION;
+        }
     }
 
     private Map<String, ApiResourceEntity> loadExistingIndex(List<ApiResourceRegisterCommand> resources) {
@@ -201,10 +301,17 @@ public class ApiResourceService implements IApiResourceService {
                 .collect(Collectors.toList());
     }
 
-    private List<ApiResourceEntity> loadDuplicateRouteResources(
+    /**
+     * 按 HTTP 方法和路径确定唯一有效登记行，并禁用被固定声明或当前批次覆盖的历史行。
+     *
+     * <p>同一路由只能有一个有效 API 资源。优先级顺序为：固定声明高于人工登记，人工登记高于 Controller 扫描；
+     * 同为固定声明时，带具体 handler 的声明高于仅配置路径的声明；仍相等时当前批次优先，再按模块名和记录主键升序，
+     * 保证同步顺序不影响结果。
+     */
+    private List<ApiResourceEntity> resolveRouteOwnershipConflicts(
             List<ApiResourceRegisterCommand> resources,
-            Set<String> currentResourceKeys,
-            Set<String> currentRouteKeys) {
+            List<ApiResourceEntity> creates,
+            List<ApiResourceEntity> updates) {
         List<String> pathPatterns = resources.stream()
                 .map(ApiResourceRegisterCommand::getPathPattern)
                 .filter(StringUtils::hasText)
@@ -213,31 +320,147 @@ public class ApiResourceService implements IApiResourceService {
         if (pathPatterns.isEmpty()) {
             return List.of();
         }
-        return apiResourceMapper.selectList(new LambdaQueryWrapper<ApiResourceEntity>()
+        Map<String, ApiResourceEntity> batchEntities = new HashMap<>();
+        creates.forEach(entity -> batchEntities.put(
+                resourceKey(entity.getModuleName(), entity.getHttpMethod(), entity.getPathPattern()), entity));
+        updates.forEach(entity -> batchEntities.put(
+                resourceKey(entity.getModuleName(), entity.getHttpMethod(), entity.getPathPattern()), entity));
+        Map<String, List<RouteCandidate>> candidatesByRoute = new LinkedHashMap<>();
+        for (ApiResourceEntity persisted : apiResourceMapper.selectList(new LambdaQueryWrapper<ApiResourceEntity>()
                 .in(ApiResourceEntity::getPathPattern, pathPatterns)
-                .eq(ApiResourceEntity::getStatus, 1))
-                .stream()
-                .filter(resource -> currentRouteKeys.contains(routeKey(resource.getHttpMethod(), resource.getPathPattern())))
-                .filter(resource -> !currentResourceKeys.contains(resourceKey(
-                        resource.getModuleName(),
-                        resource.getHttpMethod(),
-                        resource.getPathPattern())))
-                .collect(Collectors.toList());
+                .eq(ApiResourceEntity::getStatus, 1))) {
+            String uniqueKey = resourceKey(
+                    persisted.getModuleName(), persisted.getHttpMethod(), persisted.getPathPattern());
+            if (batchEntities.containsKey(uniqueKey)) {
+                continue;
+            }
+            candidatesByRoute.computeIfAbsent(
+                    routeKey(persisted.getHttpMethod(), persisted.getPathPattern()), key -> new ArrayList<>())
+                    .add(new RouteCandidate(persisted.getSource(), persisted.getHandlerClass(),
+                            persisted.getModuleName(), persisted.getId(), false, persisted));
+        }
+        for (ApiResourceRegisterCommand resource : resources) {
+            ApiResourceEntity entity = batchEntities.get(resourceKey(
+                    resource.getModuleName(), resource.getHttpMethod(), resource.getPathPattern()));
+            if (entity == null) {
+                continue;
+            }
+            candidatesByRoute.computeIfAbsent(
+                    routeKey(resource.getHttpMethod(), resource.getPathPattern()), key -> new ArrayList<>())
+                    .add(new RouteCandidate(resource.getSource() == null ? null : resource.getSource().name(),
+                            resource.getHandlerClass(), resource.getModuleName(), entity.getId(), true, entity));
+        }
+        List<ApiResourceEntity> shadowed = new ArrayList<>();
+        for (List<RouteCandidate> candidates : candidatesByRoute.values()) {
+            if (candidates.size() < 2) {
+                continue;
+            }
+            RouteCandidate winner = candidates.stream().min(ROUTE_PRECEDENCE).orElseThrow();
+            for (RouteCandidate candidate : candidates) {
+                if (candidate != winner && candidate.entity().getId() != null) {
+                    log.info("API resource route shadowed: httpMethod={}, path={}, winner={}, shadowed={}",
+                            candidate.entity().getHttpMethod(), candidate.entity().getPathPattern(),
+                            winner.moduleName(), candidate.moduleName());
+                    shadowed.add(candidate.entity());
+                }
+            }
+        }
+        return shadowed;
+    }
+
+    private static int sourceRank(String source) {
+        if (ApiResourceSource.FIXED_DECLARATION.name().equals(source)) {
+            return 3;
+        }
+        if (ApiResourceSource.MANUAL.name().equals(source)) {
+            return 2;
+        }
+        return 1;
+    }
+
+    private static int handlerRank(String handlerClass) {
+        if (!StringUtils.hasText(handlerClass)) {
+            return 0;
+        }
+        if (CONFIGURED_HANDLER_CLASS.equals(handlerClass)) {
+            return 1;
+        }
+        return 2;
+    }
+
+    private List<ApiResourceRegisterCommand> excludeCoveredByActiveFixed(
+            List<ApiResourceRegisterCommand> resources) {
+        List<String> pathPatterns = resources.stream()
+                .map(ApiResourceRegisterCommand::getPathPattern)
+                .filter(StringUtils::hasText)
+                .distinct()
+                .toList();
+        if (pathPatterns.isEmpty()) {
+            return resources;
+        }
+        List<ApiResourceEntity> activeFixed = apiResourceMapper.selectList(new LambdaQueryWrapper<ApiResourceEntity>()
+                .in(ApiResourceEntity::getPathPattern, pathPatterns)
+                .eq(ApiResourceEntity::getSource, ApiResourceSource.FIXED_DECLARATION.name())
+                .eq(ApiResourceEntity::getStatus, 1));
+        if (activeFixed.isEmpty()) {
+            return resources;
+        }
+        return resources.stream()
+                .filter(resource -> ApiResourceSource.FIXED_DECLARATION.name().equals(sourceName(resource))
+                        || activeFixed.stream().noneMatch(fixed -> routeMatches(
+                        fixed.getHttpMethod(), fixed.getPathPattern(),
+                        resource.getHttpMethod(), resource.getPathPattern())))
+                .toList();
+    }
+
+    private String sourceName(ApiResourceRegisterCommand resource) {
+        return resource.getSource() == null
+                ? ApiResourceSource.FIXED_DECLARATION.name() : resource.getSource().name();
+    }
+
+    private boolean routeMatches(String leftMethod, String leftPath, String rightMethod, String rightPath) {
+        return methodMatches(leftMethod, rightMethod)
+                && (leftPath.equals(rightPath)
+                || PATH_MATCHER.match(leftPath, rightPath)
+                || PATH_MATCHER.match(rightPath, leftPath));
     }
 
     private List<ApiResourceRegisterCommand> deduplicate(List<ApiResourceRegisterCommand> resources) {
         Map<String, ApiResourceRegisterCommand> index = new LinkedHashMap<>();
-        resources.forEach(resource -> index.put(resourceKey(
-                resource.getModuleName(),
-                resource.getHttpMethod(),
-                resource.getPathPattern()), resource));
+        for (ApiResourceRegisterCommand resource : resources) {
+            String key = routeKey(resource.getHttpMethod(), resource.getPathPattern());
+            ApiResourceRegisterCommand previous = index.get(key);
+            if (previous == null || routeCandidate(resource, true).compareTo(routeCandidate(previous, true)) < 0) {
+                index.put(key, resource);
+            }
+        }
         return new ArrayList<>(index.values());
+    }
+
+    private RouteCandidate routeCandidate(ApiResourceRegisterCommand resource, boolean inBatch) {
+        return new RouteCandidate(resource.getSource() == null ? null : resource.getSource().name(),
+                resource.getHandlerClass(), resource.getModuleName(), resource.getResourceId(), inBatch, null);
     }
 
     private List<ApiResourceEntity> deduplicateEntities(List<ApiResourceEntity> resources) {
         Map<Long, ApiResourceEntity> index = new LinkedHashMap<>();
         resources.forEach(resource -> index.put(resource.getId(), resource));
         return new ArrayList<>(index.values());
+    }
+
+    /** 同一 HTTP 方法和路径的登记行优先级。 */
+    private record RouteCandidate(
+            String source,
+            String handlerClass,
+            String moduleName,
+            Long id,
+            boolean inBatch,
+            ApiResourceEntity entity) implements Comparable<RouteCandidate> {
+
+        @Override
+        public int compareTo(RouteCandidate other) {
+            return ROUTE_PRECEDENCE.compare(this, other);
+        }
     }
 
     private List<ApiResourceEntity> activeResources() {
@@ -310,6 +533,9 @@ public class ApiResourceService implements IApiResourceService {
 
     private void merge(ApiResourceEntity entity, ApiResourceRegisterCommand resource) {
         entity.setModuleName(resource.getModuleName());
+        entity.setDomain(resolveDomain(resource.getPathPattern()));
+        entity.setSource(resource.getSource() == null
+                ? ApiResourceSource.FIXED_DECLARATION.name() : resource.getSource().name());
         entity.setHttpMethod(resource.getHttpMethod());
         entity.setPathPattern(resource.getPathPattern());
         entity.setResourceCode(defaultResourceCode(resource));
@@ -319,6 +545,20 @@ public class ApiResourceService implements IApiResourceService {
         entity.setHandlerMethod(resource.getHandlerMethod());
         entity.setDescription(resource.getDescription());
         entity.setStatus(1);
+    }
+
+    private String resolveDomain(String pathPattern) {
+        if (!StringUtils.hasText(pathPattern) || !pathPattern.startsWith("/")) {
+            return ROOT_DOMAIN;
+        }
+        String remaining = pathPattern.substring(1);
+        int separator = remaining.indexOf('/');
+        String segment = separator < 0 ? remaining : remaining.substring(0, separator);
+        if (!StringUtils.hasText(segment) || segment.contains("*") || segment.contains("{")
+                || segment.contains(".")) {
+            return ROOT_DOMAIN;
+        }
+        return segment;
     }
 
     private String defaultResourceCode(ApiResourceRegisterCommand resource) {

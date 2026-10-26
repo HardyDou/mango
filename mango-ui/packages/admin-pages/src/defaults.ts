@@ -35,6 +35,7 @@ export function registerDefaultAdminPages(options: RegisterDefaultAdminPagesOpti
         'system/post/index': () => import('@mango/rbac').then((m) => m.PostView),
         'system/app/index': () => import('@mango/rbac').then((m) => m.AppView),
         'system/permission/index': () => import('@mango/rbac').then((m) => m.PermissionView),
+        'system/api-resource/index': () => import('@mango/rbac').then((m) => m.ApiResourceView),
       },
     },
     {

@@ -14,6 +14,7 @@
 - `UserView`
 - `OrgView`
 - `PermissionView`
+- `ApiResourceView`
 - `AppView`
 - `PostView`
 - `appApi`、`menuApi`、`menuPackageApi`、`orgApi`、`postApi`、`roleApi`、`userApi` 相关导出。
@@ -41,6 +42,7 @@
 | `system/user/index`         | `UserView`        |
 | `system/org/index`          | `OrgView`         |
 | `system/permission/index`   | `PermissionView`  |
+| `system/api-resource/index` | `ApiResourceView` |
 | `system/app/index`          | `AppView`         |
 | `system/post/index`         | `PostView`        |
 

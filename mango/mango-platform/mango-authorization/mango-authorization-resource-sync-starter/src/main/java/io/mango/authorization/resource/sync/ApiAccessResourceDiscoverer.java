@@ -2,8 +2,10 @@ package io.mango.authorization.resource.sync;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.authorization.api.annotation.ApiAccess;
+import io.mango.authorization.api.annotation.ApiResourceIgnore;
 import io.mango.authorization.api.command.ApiResourceRegisterCommand;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
+import io.mango.authorization.api.enums.ApiResourceSource;
 import io.mango.infra.module.api.ModuleInfo;
 import io.mango.infra.module.api.ModuleInfoRegistry;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +20,7 @@ import org.springframework.web.servlet.mvc.condition.PatternsRequestCondition;
 import org.springframework.web.servlet.mvc.condition.RequestMethodsRequestCondition;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
+import org.springframework.util.AntPathMatcher;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -36,11 +39,14 @@ import java.util.Set;
         justification = "Spring injects managed MVC and configuration collaborators; copying them is not valid"))
 public class ApiAccessResourceDiscoverer {
 
+    private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
+
     private final RequestMappingHandlerMapping handlerMapping;
     private final ObjectProvider<ModuleInfoRegistry> moduleInfoRegistryProvider;
     private final ApiResourceSyncProperties properties;
 
     public List<ApiResourceRegisterCommand> discover() {
+        List<ApiResourceRegisterCommand> fixedResources = configuredResources();
         List<ApiResourceRegisterCommand> resources = new ArrayList<>();
         Map<RequestMappingInfo, HandlerMethod> handlerMethods = handlerMapping.getHandlerMethods();
         for (Map.Entry<RequestMappingInfo, HandlerMethod> entry : handlerMethods.entrySet()) {
@@ -55,11 +61,14 @@ public class ApiAccessResourceDiscoverer {
                     continue;
                 }
                 for (String httpMethod : methods) {
+                    if (isCoveredByFixedResource(fixedResources, httpMethod, path)) {
+                        continue;
+                    }
                     resources.add(toDefinition(handler, httpMethod, path));
                 }
             }
         }
-        resources.addAll(configuredResources());
+        resources.addAll(fixedResources);
         resources.sort(Comparator
                 .comparing(ApiResourceRegisterCommand::getPathPattern)
                 .thenComparing(ApiResourceRegisterCommand::getHttpMethod));
@@ -89,6 +98,7 @@ public class ApiAccessResourceDiscoverer {
         }
 
         ApiResourceRegisterCommand definition = new ApiResourceRegisterCommand();
+        definition.setSource(ApiResourceSource.FIXED_DECLARATION);
         definition.setModuleName(StringUtils.hasText(resource.getModuleName())
                 ? resource.getModuleName()
                 : fallbackModuleName());
@@ -112,7 +122,35 @@ public class ApiAccessResourceDiscoverer {
     private boolean shouldInclude(HandlerMethod handler) {
         Class<?> beanType = handler.getBeanType();
         String className = beanType.getName();
-        return splitConfig(properties.getIncludePackages()).stream().anyMatch(className::startsWith);
+        return splitConfig(properties.getIncludePackages()).stream().anyMatch(className::startsWith)
+                && !isIgnored(beanType, handler.getMethod());
+    }
+
+    private boolean isIgnored(Class<?> handlerType, Method handlerMethod) {
+        if (AnnotatedElementUtils.findMergedAnnotation(handlerType, ApiResourceIgnore.class) != null) {
+            return true;
+        }
+        Method target = targetMethod(handlerType, handlerMethod);
+        return AnnotatedElementUtils.findMergedAnnotation(target, ApiResourceIgnore.class) != null;
+    }
+
+    private boolean isCoveredByFixedResource(
+            List<ApiResourceRegisterCommand> fixedResources, String httpMethod, String path) {
+        return fixedResources.stream()
+                .anyMatch(resource -> methodMatches(resource.getHttpMethod(), httpMethod)
+                        && pathMatches(resource.getPathPattern(), path));
+    }
+
+    private boolean methodMatches(String configuredMethod, String discoveredMethod) {
+        return "ALL".equalsIgnoreCase(configuredMethod)
+                || "ALL".equalsIgnoreCase(discoveredMethod)
+                || configuredMethod.equalsIgnoreCase(discoveredMethod);
+    }
+
+    private boolean pathMatches(String configuredPath, String discoveredPath) {
+        return configuredPath.equals(discoveredPath)
+                || PATH_MATCHER.match(configuredPath, discoveredPath)
+                || PATH_MATCHER.match(discoveredPath, configuredPath);
     }
 
     private Set<String> resolvePaths(RequestMappingInfo info) {
@@ -143,6 +181,7 @@ public class ApiAccessResourceDiscoverer {
         Method method = handler.getMethod();
         AccessDeclaration access = resolveAccess(handler.getBeanType(), method);
         ApiResourceRegisterCommand definition = new ApiResourceRegisterCommand();
+        definition.setSource(ApiResourceSource.CONTROLLER_SCAN);
         definition.setModuleName(resolveModuleName(path));
         definition.setHttpMethod(httpMethod);
         definition.setPathPattern(path);

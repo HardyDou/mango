@@ -1,9 +1,9 @@
 package io.mango.authorization.starter.controller;
 
 import io.mango.authorization.api.ApiResourceApi;
+import io.mango.authorization.api.command.ApiResourceRegisterRequest;
 import io.mango.authorization.api.query.ApiResourceAccessDecisionQuery;
 import io.mango.authorization.api.vo.ApiResourceAccessDecisionVO;
-import io.mango.authorization.api.command.ApiResourceRegisterRequest;
 import io.mango.authorization.api.vo.ApiResourceRegisterResultVO;
 import io.mango.authorization.core.service.IApiResourceService;
 import io.mango.common.result.R;
