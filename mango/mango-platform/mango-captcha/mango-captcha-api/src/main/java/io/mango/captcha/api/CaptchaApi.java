@@ -7,9 +7,11 @@ import io.mango.captcha.api.dto.CaptchaResponse;
 import io.mango.captcha.api.dto.CaptchaSendRequest;
 import io.mango.captcha.api.dto.CaptchaTypesResponse;
 import io.mango.captcha.api.dto.CaptchaVerifyRequest;
+import io.mango.captcha.api.validation.OptionalEnumSelection;
 import io.mango.common.result.R;
 import io.mango.infra.web.api.Inner;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.validation.annotation.Validated;
 
 /**
@@ -41,7 +43,9 @@ public interface CaptchaApi {
      * @param difficulty 会话难度，可为空；为空时使用全局默认难度
      * @return 统一响应，包含验证码键、图片、实际题型和实际难度
      */
-    R<CaptchaResponse> generateGraphic(GraphicCaptchaType type, CaptchaDifficulty difficulty);
+    R<CaptchaResponse> generateGraphic(
+            @NotNull(groups = OptionalEnumSelection.class) GraphicCaptchaType type,
+            @NotNull(groups = OptionalEnumSelection.class) CaptchaDifficulty difficulty);
 
     /**
      * 生成供用户拖动并完成拼图的滑块验证码。

@@ -13,6 +13,12 @@ import io.mango.captcha.core.properties.GraphicCaptchaProperties;
  */
 public class DefaultGraphicCaptchaGenerator implements GraphicCaptchaGenerator {
 
+    private static final int SIMPLE_LENGTH = 4;
+
+    private static final int MEDIUM_LENGTH = 5;
+
+    private static final int COMPLEX_LENGTH = 6;
+
     private final GraphicCaptchaProperties properties;
 
     public DefaultGraphicCaptchaGenerator() {
@@ -27,9 +33,9 @@ public class DefaultGraphicCaptchaGenerator implements GraphicCaptchaGenerator {
     public CaptchaResponse generate(CaptchaDifficulty difficulty) {
         CaptchaDifficulty actualDifficulty = difficulty == null ? CaptchaDifficulty.SIMPLE : difficulty;
         int length = switch (actualDifficulty) {
-            case SIMPLE -> 4;
-            case MEDIUM -> 5;
-            case COMPLEX -> 6;
+            case SIMPLE -> SIMPLE_LENGTH;
+            case MEDIUM -> MEDIUM_LENGTH;
+            case COMPLEX -> COMPLEX_LENGTH;
         };
         if (properties.getCharacters() == null || properties.getCharacters().isBlank()) {
             throw new IllegalStateException("图形验证码字符集不能为空");
