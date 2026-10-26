@@ -1,6 +1,8 @@
 package io.mango.captcha.api.dto;
 
+import io.mango.captcha.api.constant.CaptchaDifficulty;
 import io.mango.captcha.api.constant.CaptchaType;
+import io.mango.captcha.api.constant.GraphicCaptchaType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -21,4 +23,10 @@ public class CaptchaTypesResponse implements Serializable {
 
     @Schema(description = "当前验证码存储实现")
     private String currentStorage;
+
+    @Schema(description = "统一图形验证码默认题型")
+    private GraphicCaptchaType defaultGraphicType;
+
+    @Schema(description = "统一图形验证码默认难度")
+    private CaptchaDifficulty defaultGraphicDifficulty;
 }

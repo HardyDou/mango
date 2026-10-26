@@ -1,6 +1,8 @@
 package io.mango.captcha.core.service;
 
+import io.mango.captcha.api.constant.CaptchaDifficulty;
 import io.mango.captcha.api.constant.CaptchaType;
+import io.mango.captcha.api.constant.GraphicCaptchaType;
 import io.mango.captcha.api.dto.BehaviorCaptchaVerifyResponse;
 import io.mango.captcha.api.dto.CaptchaResponse;
 import io.mango.captcha.api.dto.CaptchaVerifyRequest;
@@ -11,14 +13,18 @@ import io.mango.captcha.core.generator.ArithmeticCaptchaGenerator;
 import io.mango.captcha.core.generator.BehaviorCaptchaEngine;
 import io.mango.captcha.core.generator.BlockPuzzleCaptchaGenerator;
 import io.mango.captcha.core.generator.ClickWordCaptchaGenerator;
+import io.mango.captcha.core.generator.GraphicCaptchaGenerator;
+import io.mango.captcha.core.properties.GraphicCaptchaProperties;
 import io.mango.captcha.core.service.impl.CaptchaService;
 import io.mango.common.exception.BizException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Arrays;
 import java.util.List;
@@ -42,6 +48,11 @@ class CaptchaServiceTest {
     private ArithmeticCaptchaGenerator arithmeticCaptchaService;
 
     @Mock
+    private GraphicCaptchaGenerator graphicCaptchaService;
+
+    private GraphicCaptchaProperties graphicCaptchaProperties;
+
+    @Mock
     private BlockPuzzleCaptchaGenerator blockPuzzleCaptchaService;
 
     @Mock
@@ -58,9 +69,12 @@ class CaptchaServiceTest {
 
     @BeforeEach
     void setUp() {
+        graphicCaptchaProperties = new GraphicCaptchaProperties();
         captchaService = new CaptchaService(
                 kvStore,
                 arithmeticCaptchaService,
+                graphicCaptchaService,
+                graphicCaptchaProperties,
                 blockPuzzleCaptchaService,
                 clickWordCaptchaService,
                 behaviorCaptchaService,
@@ -81,7 +95,58 @@ class CaptchaServiceTest {
 
         assertNotNull(result);
         assertEquals(CaptchaType.ARITHMETIC, result.getType());
-        verify(kvStore).set(startsWith("captcha:"), eq("5"), anyLong());
+        verify(kvStore).set(startsWith("captcha:"), contains("\"answer\":\"5\""), anyLong());
+    }
+
+    @Test
+    void generate_graphicType_savesSessionWithoutExposingAnswer() {
+        CaptchaResponse arithmeticResponse = new CaptchaResponse();
+        arithmeticResponse.setImage("data:image/png;base64,xxx");
+        arithmeticResponse.setExtra("8");
+        when(arithmeticCaptchaService.generate(CaptchaDifficulty.SIMPLE)).thenReturn(arithmeticResponse);
+
+        CaptchaResponse result = captchaService.generateGraphic(GraphicCaptchaType.ARITHMETIC, CaptchaDifficulty.SIMPLE);
+
+        assertEquals(CaptchaType.GRAPHIC, result.getType());
+        assertEquals(GraphicCaptchaType.ARITHMETIC, result.getGraphicType());
+        assertEquals(CaptchaDifficulty.SIMPLE, result.getDifficulty());
+        assertNull(result.getExtra());
+        verify(kvStore).set(startsWith("captcha:"), contains("\"answer\":\"8\""), anyLong());
+    }
+
+    @Test
+    void verify_graphicSessionUsesServerStoredAnswerAndIsSingleUse() {
+        CaptchaResponse arithmeticResponse = new CaptchaResponse();
+        arithmeticResponse.setImage("data:image/png;base64,xxx");
+        arithmeticResponse.setExtra("8");
+        when(arithmeticCaptchaService.generate(CaptchaDifficulty.SIMPLE)).thenReturn(arithmeticResponse);
+
+        CaptchaResponse generated = captchaService.generateGraphic(GraphicCaptchaType.ARITHMETIC, CaptchaDifficulty.SIMPLE);
+        ArgumentCaptor<String> storedCaptor = ArgumentCaptor.forClass(String.class);
+        verify(kvStore).set(startsWith("captcha:"), storedCaptor.capture(), anyLong());
+        when(kvStore.get("captcha:" + generated.getKey())).thenReturn(storedCaptor.getValue());
+
+        CaptchaVerifyRequest request = new CaptchaVerifyRequest();
+        request.setKey(generated.getKey());
+        request.setType(CaptchaType.GRAPHIC);
+        request.setCode("8");
+
+        assertTrue(captchaService.verify(request));
+        verify(kvStore).delete("captcha:" + generated.getKey());
+    }
+
+    @Test
+    void generate_graphicType_doesNotLowerDefaultDifficulty() {
+        CaptchaResponse graphicResponse = new CaptchaResponse();
+        graphicResponse.setImage("data:image/png;base64,xxx");
+        graphicResponse.setExtra("A7KQ");
+        when(graphicCaptchaService.generate(CaptchaDifficulty.MEDIUM)).thenReturn(graphicResponse);
+        graphicCaptchaProperties.setDefaultLevel(CaptchaDifficulty.MEDIUM);
+
+        CaptchaResponse result = captchaService.generateGraphic(GraphicCaptchaType.ALPHANUMERIC, CaptchaDifficulty.SIMPLE);
+
+        assertEquals(CaptchaDifficulty.MEDIUM, result.getDifficulty());
+        verify(graphicCaptchaService).generate(CaptchaDifficulty.MEDIUM);
     }
 
     @Test
@@ -328,8 +393,9 @@ class CaptchaServiceTest {
         List<CaptchaType> types = captchaService.getTypes().getTypes();
 
         assertNotNull(types);
-        assertEquals(6, types.size());
+        assertEquals(7, types.size());
         assertTrue(types.contains(CaptchaType.ARITHMETIC));
+        assertTrue(types.contains(CaptchaType.GRAPHIC));
         assertTrue(types.contains(CaptchaType.BLOCK_PUZZLE));
         assertTrue(types.contains(CaptchaType.CLICK_WORD));
         assertTrue(types.contains(CaptchaType.BEHAVIOR));

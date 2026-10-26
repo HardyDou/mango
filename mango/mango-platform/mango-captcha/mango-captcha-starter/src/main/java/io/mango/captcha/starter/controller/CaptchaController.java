@@ -3,6 +3,8 @@ package io.mango.captcha.starter.controller;
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.captcha.api.CaptchaApi;
+import io.mango.captcha.api.constant.CaptchaDifficulty;
+import io.mango.captcha.api.constant.GraphicCaptchaType;
 import io.mango.captcha.api.dto.BehaviorCaptchaVerifyResponse;
 import io.mango.captcha.api.dto.CaptchaResponse;
 import io.mango.captcha.api.dto.CaptchaSendRequest;
@@ -12,6 +14,7 @@ import io.mango.captcha.core.service.ICaptchaService;
 import io.mango.common.result.R;
 import io.mango.infra.web.api.Inner;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
@@ -19,6 +22,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -46,6 +50,17 @@ public class CaptchaController implements CaptchaApi {
     @Operation(summary = "生成算术验证码", description = "生成算术表达式验证码")
     public R<CaptchaResponse> generateArithmetic() {
         return R.ok(captchaService.generateArithmetic());
+    }
+
+    @Override
+    @GetMapping("/graphic")
+    @Operation(summary = "生成图形验证码", description = "按全局默认策略或会话参数生成图形验证码")
+    public R<CaptchaResponse> generateGraphic(
+            @Parameter(description = "会话题型，可为空时使用全局默认")
+            @RequestParam(value = "type", required = false) GraphicCaptchaType type,
+            @Parameter(description = "会话难度，可为空时使用全局默认")
+            @RequestParam(value = "level", required = false) CaptchaDifficulty difficulty) {
+        return R.ok(captchaService.generateGraphic(type, difficulty));
     }
 
     @Override

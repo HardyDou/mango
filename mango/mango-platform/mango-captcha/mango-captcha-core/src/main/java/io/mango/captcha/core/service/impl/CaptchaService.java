@@ -2,7 +2,9 @@ package io.mango.captcha.core.service.impl;
 
 import cn.hutool.core.lang.UUID;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mango.captcha.api.constant.CaptchaDifficulty;
 import io.mango.captcha.api.constant.CaptchaType;
+import io.mango.captcha.api.constant.GraphicCaptchaType;
 import io.mango.captcha.api.enums.CaptchaCode;
 import io.mango.captcha.api.dto.BehaviorCaptchaVerifyResponse;
 import io.mango.captcha.api.dto.CaptchaResponse;
@@ -15,6 +17,8 @@ import io.mango.captcha.api.spi.SmsProvider;
 import io.mango.captcha.core.generator.ArithmeticCaptchaGenerator;
 import io.mango.captcha.core.generator.BlockPuzzleCaptchaGenerator;
 import io.mango.captcha.core.generator.ClickWordCaptchaGenerator;
+import io.mango.captcha.core.generator.GraphicCaptchaGenerator;
+import io.mango.captcha.core.properties.GraphicCaptchaProperties;
 import io.mango.captcha.core.service.ICaptchaService;
 import io.mango.common.result.Require;
 import io.mango.infra.kv.api.IKvStore;
@@ -49,6 +53,8 @@ public class CaptchaService implements ICaptchaService {
 
     private final IKvStore kvStore;
     private final ArithmeticCaptchaGenerator arithmeticCaptchaService;
+    private final GraphicCaptchaGenerator graphicCaptchaService;
+    private final GraphicCaptchaProperties graphicCaptchaProperties;
     private final BlockPuzzleCaptchaGenerator blockPuzzleCaptchaService;
     private final ClickWordCaptchaGenerator clickWordCaptchaService;
     private final BehaviorCaptchaEngine behaviorCaptchaService;
@@ -75,9 +81,11 @@ public class CaptchaService implements ICaptchaService {
             case ARITHMETIC:
                 CaptchaResponse arithmetic = arithmeticCaptchaService.generate();
                 response.setImage(arithmetic.getImage());
+                response.setDifficulty(CaptchaDifficulty.SIMPLE);
                 response.setExpireTime(defaultTtl);
-                response.setExtra(arithmetic.getExtra());
-                kvStore.set(KEY_PREFIX + key, arithmetic.getExtra(), defaultTtl);
+                kvStore.set(KEY_PREFIX + key,
+                        createArithmeticSession(arithmetic.getExtra()),
+                        defaultTtl);
                 break;
             case BLOCK_PUZZLE:
                 CaptchaResponse puzzle = blockPuzzleCaptchaService.generate();
@@ -115,12 +123,34 @@ public class CaptchaService implements ICaptchaService {
         CaptchaTypesResponse response = new CaptchaTypesResponse();
         response.setTypes(Arrays.asList(CaptchaType.values()));
         response.setCurrentStorage(kvStore.getClass().getSimpleName());
+        response.setDefaultGraphicType(graphicCaptchaProperties.getDefaultType());
+        response.setDefaultGraphicDifficulty(graphicCaptchaProperties.getDefaultLevel());
         return response;
     }
 
     @Override
     public CaptchaResponse generateArithmetic() {
         return generate(CaptchaType.ARITHMETIC);
+    }
+
+    @Override
+    public CaptchaResponse generateGraphic(GraphicCaptchaType type, CaptchaDifficulty difficulty) {
+        GraphicCaptchaType actualType = resolveGraphicType(type);
+        CaptchaDifficulty actualDifficulty = resolveGraphicDifficulty(difficulty);
+        CaptchaResponse generated = actualType == GraphicCaptchaType.ARITHMETIC
+                ? arithmeticCaptchaService.generate(actualDifficulty)
+                : graphicCaptchaService.generate(actualDifficulty);
+
+        String key = UUID.randomUUID().toString(true);
+        CaptchaResponse response = new CaptchaResponse();
+        response.setKey(key);
+        response.setType(CaptchaType.GRAPHIC);
+        response.setGraphicType(actualType);
+        response.setDifficulty(actualDifficulty);
+        response.setImage(generated.getImage());
+        response.setExpireTime(defaultTtl);
+        kvStore.set(KEY_PREFIX + key, createGraphicSession(actualType, actualDifficulty, generated.getExtra()), defaultTtl);
+        return response;
     }
 
     @Override
@@ -152,10 +182,14 @@ public class CaptchaService implements ICaptchaService {
         // 如果type为空，根据验证参数推断类型
         // pointJson非空 → 滑块验证
         // 否则 → 算术/短信/邮件验证码
-        if (request.getType() == CaptchaType.BEHAVIOR) {
+        if (request.getType() == CaptchaType.GRAPHIC) {
+            result = verifyGraphic(stored, request.getCode());
+        } else if (request.getType() == CaptchaType.BEHAVIOR) {
             result = verifyBehavior(key, stored, request.getPointJson());
         } else if (request.getType() == CaptchaType.CLICK_WORD) {
             result = verifyClickWord(stored, request.getPointJson());
+        } else if (request.getType() == CaptchaType.ARITHMETIC) {
+            result = verifyArithmetic(stored, request.getCode());
         } else if (isBlockPuzzleRequest(request)) {
             // 滑块验证：比较X坐标
             try {
@@ -176,8 +210,8 @@ public class CaptchaService implements ICaptchaService {
                 result = false;
             }
         } else {
-            // 算术/短信/邮件验证码：直接比较答案
-            result = stored.equalsIgnoreCase(request.getCode());
+            // 算术/短信/邮件验证码：比较服务端保存的答案
+            result = verifySessionAnswer(stored, request.getCode());
         }
 
         if (result) {
@@ -252,6 +286,71 @@ public class CaptchaService implements ICaptchaService {
             sb.append(ThreadLocalRandom.current().nextInt(DIGIT_BOUND));
         }
         return sb.toString();
+    }
+
+    private GraphicCaptchaType resolveGraphicType(GraphicCaptchaType requested) {
+        GraphicCaptchaType actual = requested == null ? graphicCaptchaProperties.getDefaultType() : requested;
+        Require.isTrue(graphicCaptchaProperties.getAllowedTypes().contains(actual), CaptchaCode.CAPTCHA_INVALID, "不支持的图形验证码题型");
+        return actual;
+    }
+
+    private CaptchaDifficulty resolveGraphicDifficulty(CaptchaDifficulty requested) {
+        CaptchaDifficulty actual = requested == null ? graphicCaptchaProperties.getDefaultLevel() : requested;
+        Require.isTrue(graphicCaptchaProperties.getAllowedLevels().contains(actual), CaptchaCode.CAPTCHA_INVALID, "不支持的图形验证码难度");
+        CaptchaDifficulty defaultLevel = graphicCaptchaProperties.getDefaultLevel();
+        return actual.atLeast(defaultLevel) ? actual : defaultLevel;
+    }
+
+    private String createGraphicSession(GraphicCaptchaType type, CaptchaDifficulty difficulty, String answer) {
+        return createCaptchaSession(CaptchaType.GRAPHIC.name(), type, difficulty, answer);
+    }
+
+    private String createArithmeticSession(String answer) {
+        return createCaptchaSession(CaptchaType.ARITHMETIC.name(), GraphicCaptchaType.ARITHMETIC,
+                CaptchaDifficulty.SIMPLE, answer);
+    }
+
+    private String createCaptchaSession(String captchaType, GraphicCaptchaType type,
+                                        CaptchaDifficulty difficulty, String answer) {
+        var session = objectMapper.createObjectNode();
+        session.put("captchaType", captchaType);
+        session.put("type", type.name());
+        session.put("difficulty", difficulty.name());
+        session.put("answer", answer);
+        return session.toString();
+    }
+
+    private boolean verifyGraphic(String stored, String code) {
+        return verifySessionAnswer(stored, code, CaptchaType.GRAPHIC.name());
+    }
+
+    private boolean verifyArithmetic(String stored, String code) {
+        return verifySessionAnswer(stored, code, CaptchaType.ARITHMETIC.name());
+    }
+
+    private boolean verifySessionAnswer(String stored, String code) {
+        return verifySessionAnswer(stored, code, null);
+    }
+
+    private boolean verifySessionAnswer(String stored, String code, String expectedCaptchaType) {
+        if (code == null || code.isBlank()) {
+            return false;
+        }
+        try {
+            String answer = stored;
+            if (stored != null && stored.trim().startsWith("{")) {
+                var session = objectMapper.readTree(stored);
+                if (expectedCaptchaType != null
+                        && !expectedCaptchaType.equals(session.path("captchaType").asText())) {
+                    return false;
+                }
+                answer = session.path("answer").asText(null);
+            }
+            return answer != null && answer.equalsIgnoreCase(code.trim());
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            log.warn("图形验证码会话解析失败");
+            return false;
+        }
     }
 
     private String createBehaviorChallenge(String key) {
