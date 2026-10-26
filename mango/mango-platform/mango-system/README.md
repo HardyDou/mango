@@ -439,3 +439,7 @@ module-path=/system
 
 - 本次在系统资源声明中新增 `system:user:unlock` 菜单/权限资源，用于让用户管理页的解锁按钮进入正式资源和角色授权链路。该变更只补充权限资源，不改变字典、系统配置、机构、行政区划、登录日志和操作日志接口路径，也不改变现有 `sys.login.lockCount` 等安全配置键的读取方式。
 - 登录日志、操作日志和行政区划 API 契约改由 starter controller 承载，core 只保留内部 service/entity/mapper。该变更不改变 `/system/log/*`、`/system/area/*` HTTP 路径、权限码、行政区划返回语义和初始化数据。
+
+## 资源声明同步模式（#1098）
+
+资源声明的 `sync-mode` 已收敛为 `SYNC_ALWAYS` 和 `SYNC_ONCE`：`AUTO` 映射为 `SYNC_ALWAYS`，`INIT_ONLY`、`MANUAL`、`LOCKED` 映射为 `SYNC_ONCE`。旧值仍可读取并会在启动时输出弃用告警，新声明只写新值。语义与迁移规则见 `mango-resource` README 的 `sync-mode` 章节。

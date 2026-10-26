@@ -12,7 +12,7 @@
             "bizKey": "cms.ad-delivery.2070000000000001801",
             "name": "CMS 演示数据 cms_ad_delivery 2070000000000001801",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -114,7 +114,7 @@
             "bizKey": "cms.ad-delivery.2070000000000002801",
             "name": "CMS 演示数据 cms_ad_delivery 2070000000000002801",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -216,7 +216,7 @@
             "bizKey": "cms.ad-delivery.2070000000000002802",
             "name": "CMS 演示数据 cms_ad_delivery 2070000000000002802",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -318,7 +318,7 @@
             "bizKey": "cms.ad-delivery.2070000000000000901",
             "name": "CMS 演示数据 广告投放 演示站点首页主视觉投放",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -420,7 +420,7 @@
             "bizKey": "cms.ad-delivery.2070000000000000902",
             "name": "CMS 演示数据 广告投放 演示站点新闻页主视觉投放",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",

@@ -30,7 +30,7 @@ class WorkflowResourceDeclarationContractTest {
                 .contains("definitionKey: { type: STRING, value: expense_reimbursement }")
                 .contains("definitionKey: { type: STRING, value: contract_seal_approval }")
                 .contains("definitionKey: { type: STRING, value: leave_application }");
-        assertThat(count(declaration, "sync-mode: INIT_ONLY")).isEqualTo(4);
+        assertThat(count(declaration, "sync-mode: SYNC_ONCE")).isEqualTo(4);
         assertThat(count(declaration, "- id: \"")).isEqualTo(4);
     }
 
@@ -48,7 +48,7 @@ class WorkflowResourceDeclarationContractTest {
                 .orElseThrow();
 
         assertThat(scope.getModuleCode()).isEqualTo("workflow");
-        assertThat(scope.getSyncMode()).isEqualTo(ResourceSyncMode.INIT_ONLY);
+        assertThat(scope.getSyncMode()).isEqualTo(ResourceSyncMode.SYNC_ONCE);
         assertThat(scope.getFields()).satisfies(fields -> {
             assertThat(fields.get("tenantId").getValue()).isEqualTo(1);
             assertThat(fields.get("appCode").getValue()).isEqualTo("internal-admin");

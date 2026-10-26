@@ -10,7 +10,7 @@ mango:
           biz-key: file.storage.minio-local-dev
           name: MinIO 本地联调
           target-module: file
-          sync-mode: INIT_ONLY
+          sync-mode: SYNC_ONCE
           fields:
             storageConfigId: { type: LONG, value: 2 }
             tenantId: { type: LONG, value: 1 }

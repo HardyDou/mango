@@ -14,7 +14,7 @@
       <el-sub-menu
         v-if="val.children && val.children.length > 0"
         :index="val.path"
-        :class="{ 'is-active': val.path === activeMenuPath }"
+        :class="{ 'is-active': activeMenuPaths.includes(val.path) }"
       >
         <template #title>
           <el-icon v-if="val.meta?.icon" class="menu-icon">
@@ -22,7 +22,7 @@
           </el-icon>
           <span>{{ val.meta?.title || val.name }}</span>
         </template>
-        <SubItem :chil="val.children" :level="2" :active-path="activeMenuPath" />
+        <SubItem :chil="val.children" :level="2" :active-paths="activeMenuPaths" />
       </el-sub-menu>
       <el-menu-item v-else :index="val.path">
         <el-icon v-if="val.meta?.icon" class="menu-icon">
@@ -39,7 +39,7 @@ import { computed, defineAsyncComponent, nextTick, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useLayoutStore } from '../../stores/layout';
 import { iconMap } from '@mango/common/utils/iconConfig';
-import { resolveActiveMenuPath } from './activeMenuPath';
+import { resolveActiveMenuPath, resolveActiveMenuPaths } from './activeMenuPath';
 
 const SubItem = defineAsyncComponent(() => import('./subItem.vue'));
 
@@ -59,6 +59,7 @@ const route = useRoute();
 const layoutStore = useLayoutStore();
 const menuRef = ref<{ open?: (index: string) => void }>();
 
+const activeMenuPaths = computed(() => resolveActiveMenuPaths(props.menuList, route.path));
 const activeMenuPath = computed(() => resolveActiveMenuPath(props.menuList, route.path) || route.path);
 
 const findMenu = (menus: MenuItem[], path: string): MenuItem | undefined => {

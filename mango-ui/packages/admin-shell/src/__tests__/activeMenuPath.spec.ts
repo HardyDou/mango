@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { filterMenusForNavigation, resolveActiveMenuPath, type ActiveMenuNode } from '../layout/navMenu/activeMenuPath';
+import {
+  filterMenusForNavigation,
+  resolveActiveMenuPath,
+  resolveActiveMenuPaths,
+  type ActiveMenuNode,
+} from '../layout/navMenu/activeMenuPath';
 
 const menus: ActiveMenuNode[] = [
   {
@@ -20,6 +25,18 @@ describe('resolveActiveMenuPath', () => {
 
   it('does not treat a sibling route with the same prefix as a child route', () => {
     expect(resolveActiveMenuPath(menus, '/components/uploader')).toBe('');
+  });
+
+  it('keeps tree ancestors active when menu paths are unrelated', () => {
+    const menusWithUnrelatedPaths: ActiveMenuNode[] = [
+      {
+        path: '/a/b/c/d',
+        children: [{ path: '/a/1/2/3' }],
+      },
+    ];
+
+    expect(resolveActiveMenuPaths(menusWithUnrelatedPaths, '/a/1/2/3')).toEqual(['/a/b/c/d', '/a/1/2/3']);
+    expect(resolveActiveMenuPath(menusWithUnrelatedPaths, '/a/1/2/3')).toBe('/a/1/2/3');
   });
 
   it('highlights the nearest visible ancestor for a hidden route with an unrelated path', () => {

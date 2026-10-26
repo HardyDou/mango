@@ -12,7 +12,7 @@
             "bizKey": "payment.channel.MANGO_PAY.MANGO_PAY",
             "name": "芒果支付",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -70,7 +70,7 @@
             "bizKey": "payment.channel.ALLINPAY.PROD",
             "name": "通联支付",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -120,7 +120,7 @@
             "bizKey": "payment.channel.HUAXIA_BANK.PROD",
             "name": "华夏银行",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -170,7 +170,7 @@
             "bizKey": "payment.channel.OFFLINE_COLLECTION.OFFLINE_COLLECTION",
             "name": "线下收款",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -228,7 +228,7 @@
             "bizKey": "payment.channel.FUIOU_PAY.PROD",
             "name": "富友支付",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",

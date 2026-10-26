@@ -12,7 +12,7 @@
             "bizKey": "payment.channel-capability.330001.PERSONAL_WECHAT_QR.WEB.MANGO_PAY",
             "name": "PERSONAL_WECHAT_QR",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -78,7 +78,7 @@
             "bizKey": "payment.channel-capability.330001.CORPORATE_OFFLINE_ACCOUNT.WEB.MANGO_PAY",
             "name": "CORPORATE_OFFLINE_ACCOUNT",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -144,7 +144,7 @@
             "bizKey": "payment.channel-capability.330001.PERSONAL_ALIPAY_H5.H5.MANGO_PAY",
             "name": "PERSONAL_ALIPAY_H5",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -210,7 +210,7 @@
             "bizKey": "payment.channel-capability.330001.CORPORATE_EBANK_REDIRECT.WEB.MANGO_PAY",
             "name": "CORPORATE_EBANK_REDIRECT",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -276,7 +276,7 @@
             "bizKey": "payment.channel-capability.330002.PERSONAL_WECHAT_QR.WEB.PROD",
             "name": "PERSONAL_WECHAT_QR",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -342,7 +342,7 @@
             "bizKey": "payment.channel-capability.330002.PERSONAL_ALIPAY_H5.H5.PROD",
             "name": "PERSONAL_ALIPAY_H5",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -408,7 +408,7 @@
             "bizKey": "payment.channel-capability.330001.PERSONAL_UNIONPAY_QR.WEB.MANGO_PAY",
             "name": "PERSONAL_UNIONPAY_QR",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -474,7 +474,7 @@
             "bizKey": "payment.channel-capability.330001.PERSONAL_DEBIT_QUICK.WEB.MANGO_PAY",
             "name": "PERSONAL_DEBIT_QUICK",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -540,7 +540,7 @@
             "bizKey": "payment.channel-capability.330001.PERSONAL_CREDIT_QUICK.WEB.MANGO_PAY",
             "name": "PERSONAL_CREDIT_QUICK",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -606,7 +606,7 @@
             "bizKey": "payment.channel-capability.330001.PERSONAL_WALLET_QUICK.WEB.MANGO_PAY",
             "name": "PERSONAL_WALLET_QUICK",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -672,7 +672,7 @@
             "bizKey": "payment.channel-capability.330001.PERSONAL_ALIPAY_QR.WEB.MANGO_PAY",
             "name": "PERSONAL_ALIPAY_QR",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -738,7 +738,7 @@
             "bizKey": "payment.channel-capability.330001.PERSONAL_ALIPAY_PC.WEB.MANGO_PAY",
             "name": "PERSONAL_ALIPAY_PC",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -804,7 +804,7 @@
             "bizKey": "payment.channel-capability.330001.PERSONAL_EBANK_REDIRECT.WEB.MANGO_PAY",
             "name": "PERSONAL_EBANK_REDIRECT",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -870,7 +870,7 @@
             "bizKey": "payment.channel-capability.330004.CORPORATE_OFFLINE_ACCOUNT.WEB.OFFLINE_COLLECTION",
             "name": "CORPORATE_OFFLINE_ACCOUNT",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -936,7 +936,7 @@
             "bizKey": "payment.channel-capability.330003.CORPORATE_EBANK_REDIRECT.WEB.PROD",
             "name": "CORPORATE_EBANK_REDIRECT",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -1002,7 +1002,7 @@
             "bizKey": "payment.channel-capability.330005.PERSONAL_ALIPAY_QR.WEB.PROD",
             "name": "PERSONAL_ALIPAY_QR",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -1068,7 +1068,7 @@
             "bizKey": "payment.channel-capability.330005.PERSONAL_WECHAT_QR.WEB.PROD",
             "name": "PERSONAL_WECHAT_QR",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -1134,7 +1134,7 @@
             "bizKey": "payment.channel-capability.330005.PERSONAL_EBANK_REDIRECT.WEB.PROD",
             "name": "PERSONAL_EBANK_REDIRECT",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -1200,7 +1200,7 @@
             "bizKey": "payment.channel-capability.330005.CORPORATE_EBANK_REDIRECT.WEB.PROD",
             "name": "CORPORATE_EBANK_REDIRECT",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",

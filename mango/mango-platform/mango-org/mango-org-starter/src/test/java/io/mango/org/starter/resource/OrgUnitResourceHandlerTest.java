@@ -31,8 +31,8 @@ class OrgUnitResourceHandlerTest {
     void upsertBatchOrdersChildAfterDeclaredParent() {
         ResourceDeclaration child = orgUnit("2951300000000009102", "org.child", "DEPT", "部门", "ROOT");
         ResourceDeclaration parent = orgUnit("2951300000000009101", "org.parent", "ROOT", "总部", null);
-        child.setSyncMode(ResourceSyncMode.INIT_ONLY);
-        parent.setSyncMode(ResourceSyncMode.INIT_ONLY);
+        child.setSyncMode(ResourceSyncMode.SYNC_ONCE);
+        parent.setSyncMode(ResourceSyncMode.SYNC_ONCE);
         SysOrgEntity parentEntity = new SysOrgEntity();
         parentEntity.setId(100L);
         parentEntity.setTenantId(1L);

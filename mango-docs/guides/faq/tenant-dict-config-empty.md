@@ -8,9 +8,12 @@
 
 > Issue #983 影响说明：本次调整不改变租户、字典、系统配置或资源初始化；文件上传超时配置不影响本排障路径。
 
-> Issue #1084 影响说明：老库 `resource_registry.tenant_id` 为空时，增量启动会先执行 Resource Registry 兼容同步；无法安全推导租户的历史缺失资源只告警跳过，不应被当作租户基础数据异常而删除。
+> Issue #1084 影响说明：老库 `resource_registry.tenant_id` 为空时，增量启动会先执行 Resource Registry 兼容同步；无法安全推导租户的历史缺失资源只告警跳过，不要被当作租户基础数据异常而删除。
+> Issue #1087 影响说明：资源登记冲突（同一 `resourceType + bizKey` 的历史 `resourceId` 与当前声明不一致）仍然 fail-closed，本 FAQ 的租户数据结论不变；区别只是失败信息会一次列出全部冲突，按 `mango-resource/README.md` 14.1 清理后重试。清理是无损的：新登记行会复用原 `target_id` 指向的目标数据。若 `V3__normalize_resource_registry_unique_keys.sql` 因物理重复行失败，按同文件 14.2 恢复（清理重复行 + 删除 `success=0` 的历史行）；`fail-on-conflict=false` 不能用来绕过。
 
 > Issue #1087 影响说明：本次只补全资源登记冲突的报错信息与排查说明（见 Resource README 14.1），不改变租户、字典、系统配置、资源初始化或权限判定行为。
+
+> Issue #1095 影响说明：`bootstrap finalize` 不再重复停用已 `REMOVED` 的历史资源，缺失资源停用失败只告警跳过、不阻断启动（见 Resource README 14.1）；租户、字典、系统配置、资源初始化与权限判定结果不变。
 
 ## 2. 阅读顺序
 
@@ -82,3 +85,9 @@ pnpm -F @mango/admin-shell build
 ## 8. 历史变更
 
 详细版本影响见[租户基础数据排障历史索引](../../changelog/business-integration/tenant-dict-config-empty.md)。
+
+> Issue #1098 影响说明：资源声明的 `sync-mode` 收敛为 `SYNC_ALWAYS` / `SYNC_ONCE`（旧值 `AUTO`、`INIT_ONLY`、`MANUAL`、`LOCKED` 仍可读取并映射）。本场景涉及的数据初始化、租户边界、权限判定与页面行为不变。
+
+> Issue #1098 认领修正：来源（app/service/module）漂移的历史行现在按身份（`resourceId` + 类型 + `bizKey`）认领并恢复正常同步；无法证明归属的行保持原状，并在 finalize 汇总输出。租户、字典、系统配置与权限判定结果不变。
+
+> Issue #1098 影响说明：资源登记行新增 `ownership`，`MANUAL_TAKEOVER` 与 `UNKNOWN` 行不再被声明覆盖或停用；本场景的数据初始化、租户边界与权限判定结果不变。

@@ -22,6 +22,15 @@ function assertIncludes(file, patterns, failures) {
   }
 }
 
+function assertMatches(file, patterns, failures) {
+  const text = read(file);
+  for (const pattern of patterns) {
+    if (!pattern.test(text)) {
+      failures.push(`${file}: missing expected pattern "${pattern}"`);
+    }
+  }
+}
+
 function assertNotIncludes(file, patterns, failures) {
   const text = read(file);
   for (const pattern of patterns) {
@@ -182,9 +191,13 @@ for (const guide of walkMarkdown('mango-docs/guides')) {
 assertIncludes('mango-pmo/templates/module-readme.md', [
   '## 1. 概览',
   '## 3. 接入方式',
-  '## 10. 问题排查',
-  '## 11. 相关文档'
+  '## 10. 问题排查'
 ], failures);
+assertMatches(
+  'mango-pmo/templates/module-readme.md',
+  [/^## (?:11|12)\. 相关文档$/m],
+  failures
+);
 assertNotIncludes('mango-pmo/templates/module-readme.md', ['## 10. 验证方式', '质量检查'], failures);
 
 assertIncludes('.github/pull_request_template.md', [

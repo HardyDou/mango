@@ -1,6 +1,6 @@
 # CMS Banner 能力删除升级指南
 
-**适用对象：所有升级到包含 `V2__drop_cms_banner.sql` 的 Maven 版本的 Mango 业务项目。** 不限于某个项目，也不限于已经接入 CMS 的项目。本文按「你的项目属于哪种情况」给出各自必须执行的动作。
+**适用对象：所有升级到包含 `V2__drop_cms_banner.sql` 的 Maven 版本的 Mango 业务项目。** 不限于某个项目，也不限于已经接入 CMS 的项目。本文按「你的项目属于哪种情况」给出各自需要执行的动作。
 
 变更来源：Mango Issue #1053 / PR #1088。Banner 能力已由「广告位 + 广告投放」取代，`cms_banner` 表与相关接口整体删除，**表数据删除不可恢复**。
 
@@ -9,7 +9,7 @@
 | 对象 | 变更 | 对业务项目的影响 |
 |---|---|---|
 | `cms_banner` 表 | `V2__drop_cms_banner.sql` 执行 `DROP TABLE IF EXISTS cms_banner` | 表中历史数据不可恢复 |
-| `CMS_BANNER` 资源类型与处理器 | 从框架删除 | 存量 `resource_registry` 行必须在升级前清理，否则启动失败 |
+| `CMS_BANNER` 资源类型与处理器 | 从框架删除 | 存量 `resource_registry` 行需要在升级前清理，否则启动失败 |
 | 后台接口 `/cms/banners/**` 与 Banner 菜单 | 删除 | 后台不再有 Banner 维护入口 |
 | 公开接口 `GET /cms/open/banners/list` | 删除 | 站点主视觉统一改用 `GET /cms/open/advertisements/list` |
 | `@mango/site-shell` | 移除 `listBanners`、`SiteBanner`、`CmsBanner` | 前端包升级后相关调用编译失败，需改为 `listAdvertisements`、`SiteAdvertisement` |
@@ -35,15 +35,15 @@ FROM authorization_api_resource
 WHERE resource_code LIKE 'cms:banner%';
 ```
 
-| 情况 | 判定 | 必须执行的动作 |
+| 情况 | 判定 | 需要执行的动作 |
 |---|---|---|
 | 未启用 `mango-cms` | `mango-cms-starter` 不在依赖中 | A=0、B 查询报「表不存在」：直接升级，无需其它动作（仍建议执行第 5 节验证） |
 | 启用 CMS，从未使用 Banner | A=0、B=0 | 直接升级；第 3 节可跳过 |
 | 启用 CMS，曾有 Banner 数据 | B>0 | 执行第 3.1 归档，再按 A 判断是否清理 |
-| 启用 CMS，A>0 | A>0 | **必须**执行第 3.2 清理，否则启动失败 |
+| 启用 CMS，A>0 | A>0 | **需要**执行第 3.2 清理，否则启动失败 |
 | 站点或后台调用过 Banner 接口 | 见第 4 节代码自检 | 执行第 3 节 + 第 6 节前端/后台适配 |
 
-## 3. 升级前必须执行的动作
+## 3. 升级前需要执行的动作
 
 ### 3.1 归档 Banner 业务数据（可选，B>0 时建议）
 
@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS cms_banner_archive AS SELECT * FROM cms_banner;
 
 `V2` 执行后 `cms_banner` 不再存在，未归档的数据无法恢复。
 
-### 3.2 清理 Banner 注册行（A>0 时必须）
+### 3.2 清理 Banner 注册行（A>0 时需要）
 
 不执行时，新版本启动的 Bootstrap 资源同步阶段会失败：
 

@@ -4,7 +4,7 @@
     "schemaVersion": 1,
     "workspaceCount": 43
   },
-  "catalogDigest": "45f5e368c63866a8b6795bb5f3de0808be1d79998c79a4e7902c06a50a4d4688",
+  "catalogDigest": "e9539c9e6b157df0ca003af2d2ffb52b1364f86206ad73f9981f9ec9df4febfc",
   "maven": {
     "dependencyManagementSets": [
       {
@@ -7181,6 +7181,15 @@
         "classifier": null,
         "dependencies": [
           {
+            "artifactId": "mango-infra-kv-api",
+            "classifier": null,
+            "groupId": "io.mango.infra.kv",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
             "artifactId": "mango-infra-persistence-starter",
             "classifier": null,
             "groupId": "io.mango.infra.persistence",
@@ -7193,6 +7202,15 @@
             "artifactId": "mango-authorization-api",
             "classifier": null,
             "groupId": "io.mango.platform.authorization",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-captcha-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.captcha",
             "optional": false,
             "scope": "compile",
             "type": "jar",
@@ -11085,7 +11103,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.2.1"
+      "version": "2.0.0"
     },
     {
       "name": "@mango/admin-extension",
@@ -11222,7 +11240,7 @@
         }
       ],
       "publicResources": [],
-      "version": "1.1.1"
+      "version": "1.1.2"
     },
     {
       "name": "@mango/admin-shell",
@@ -11376,7 +11394,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.83"
+      "version": "1.0.84"
     },
     {
       "name": "@mango/ai",
@@ -11613,7 +11631,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.52"
+      "version": "1.0.53"
     },
     {
       "name": "@mango/cli",
@@ -11635,7 +11653,7 @@
       "path": "mango-ui/packages/mango-cli",
       "publicEntries": [],
       "publicResources": [],
-      "version": "1.3.3"
+      "version": "1.3.5"
     },
     {
       "name": "@mango/cms",
@@ -11680,7 +11698,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.41"
+      "version": "1.0.42"
     },
     {
       "name": "@mango/common",
@@ -12258,7 +12276,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.45"
+      "version": "1.0.46"
     },
     {
       "name": "@mango/link",
@@ -12312,7 +12330,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.38"
+      "version": "1.0.39"
     },
     {
       "name": "@mango/link-openapi",
@@ -12484,7 +12502,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.57"
+      "version": "1.0.58"
     },
     {
       "name": "@mango/numgen",
@@ -12529,7 +12547,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.53"
+      "version": "1.0.54"
     },
     {
       "name": "@mango/payment",
@@ -12574,7 +12592,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.44"
+      "version": "1.0.45"
     },
     {
       "name": "@mango/pmo",
@@ -12630,7 +12648,7 @@
           "subpath": "./skills/*"
         }
       ],
-      "version": "1.4.7"
+      "version": "1.4.8"
     },
     {
       "name": "@mango/rbac",
@@ -12666,7 +12684,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.40"
+      "version": "1.0.41"
     },
     {
       "name": "@mango/site-shell",
@@ -12694,7 +12712,7 @@
         }
       ],
       "publicResources": [],
-      "version": "1.0.24"
+      "version": "2.0.0"
     },
     {
       "name": "@mango/system",
@@ -12757,7 +12775,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.50"
+      "version": "1.0.51"
     },
     {
       "name": "@mango/template",
@@ -12802,7 +12820,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.53"
+      "version": "1.0.54"
     },
     {
       "name": "@mango/workflow",
@@ -12874,7 +12892,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.61"
+      "version": "1.0.62"
     },
     {
       "name": "@mango/workflow-business-example",
@@ -12919,7 +12937,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.60"
+      "version": "1.0.61"
     }
   ],
   "projections": {

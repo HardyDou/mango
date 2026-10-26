@@ -62,7 +62,7 @@ class CmsResourceDeclarationContractTest {
         assertThat(demo).allSatisfy(resource -> {
             assertThat(resource.moduleCode()).isEqualTo("cms");
             assertThat(resource.targetModule()).isEqualTo("cms");
-            assertThat(resource.syncMode()).isEqualTo("INIT_ONLY");
+            assertThat(resource.syncMode()).isEqualTo("SYNC_ONCE");
         });
         assertThat(demo.stream().map(DeclaredResource::id)).doesNotHaveDuplicates();
         assertThat(demo.stream().map(DeclaredResource::bizKey)).doesNotHaveDuplicates();

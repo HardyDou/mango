@@ -12,7 +12,7 @@
             "bizKey": "payment.channel-field-template.330001.merchantNo",
             "name": "商户号",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -82,7 +82,7 @@
             "bizKey": "payment.channel-field-template.330001.apiSecret",
             "name": "接口密钥",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -152,7 +152,7 @@
             "bizKey": "payment.channel-field-template.330001.certificateFileId",
             "name": "商户证书文件",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -222,7 +222,7 @@
             "bizKey": "payment.channel-field-template.330001.mangoPayScenario",
             "name": "芒果支付场景",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",

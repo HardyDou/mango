@@ -1,6 +1,7 @@
 package io.mango.resource.core.sync;
 
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
+import io.mango.resource.api.enums.ResourceOwnership;
 import io.mango.resource.api.enums.ResourceSyncMode;
 import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.core.entity.ResourceChangeLogEntity;
@@ -10,6 +11,7 @@ import io.mango.resource.core.mapper.ResourceChangeLogMapper;
 import io.mango.resource.core.mapper.ResourceRegistryMapper;
 import io.mango.resource.core.mapper.ResourceSyncLogMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
@@ -21,6 +23,7 @@ import java.util.stream.Collectors;
  * 资源注册中心仓储。
  */
 @RequiredArgsConstructor
+@Slf4j
 public class ResourceRegistryRepository {
 
     private final ResourceRegistryMapper registryMapper;
@@ -106,6 +109,7 @@ public class ResourceRegistryRepository {
         entity.setTargetId(targetId);
         entity.setSourceHash(hash);
         entity.setSyncMode(declaration.getSyncMode().name());
+        entity.setOwnership(ResourceOwnership.RESOURCE_MANAGED.name());
         entity.setStatus(declaration.getStatus().name());
         entity.setLastSyncTime(effectiveSyncTime);
         entity.setCreatedAt(now);
@@ -135,6 +139,8 @@ public class ResourceRegistryRepository {
         entity.setTargetId(targetId);
         entity.setSourceHash(hash);
         entity.setSyncMode(declaration.getSyncMode().name());
+        entity.setOwnership(row.getOwnership() == null
+                ? ResourceOwnership.UNKNOWN.name() : row.getOwnership().name());
         entity.setStatus(declaration.getStatus().name());
         entity.setLastSyncTime(effectiveSyncTime);
         entity.setUpdatedAt(now);
@@ -147,6 +153,14 @@ public class ResourceRegistryRepository {
         entity.setStatus(status);
         entity.setSourceHash(hash);
         entity.setLastSyncTime(LocalDateTime.now());
+        entity.setUpdatedAt(LocalDateTime.now());
+        registryMapper.updateById(entity);
+    }
+
+    public void updateOwnership(ResourceRegistryRow row, ResourceOwnership ownership) {
+        ResourceRegistryEntity entity = new ResourceRegistryEntity();
+        entity.setId(row.getId());
+        entity.setOwnership(ownership.name());
         entity.setUpdatedAt(LocalDateTime.now());
         registryMapper.updateById(entity);
     }
@@ -212,7 +226,13 @@ public class ResourceRegistryRepository {
         row.setTargetId(entity.getTargetId());
         row.setSourceHash(entity.getSourceHash());
         row.setTenantId(entity.getTenantId());
-        row.setSyncMode(ResourceSyncMode.valueOf(entity.getSyncMode()));
+        row.setOwnership(entity.getOwnership() == null
+                ? ResourceOwnership.UNKNOWN : ResourceOwnership.from(entity.getOwnership()));
+        if (ResourceSyncMode.isLegacy(entity.getSyncMode())) {
+            log.warn("Mango resource registry uses deprecated sync mode: resourceId={}, value={}, migrated={}",
+                    entity.getResourceId(), entity.getSyncMode(), ResourceSyncMode.from(entity.getSyncMode()));
+        }
+        row.setSyncMode(ResourceSyncMode.from(entity.getSyncMode()));
         row.setStatus(entity.getStatus());
         row.setLastSyncTime(entity.getLastSyncTime());
         return row;

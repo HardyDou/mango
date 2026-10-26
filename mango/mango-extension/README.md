@@ -122,3 +122,7 @@ V10 将会话字段定义为最近一次成功回复的模型摘要，并在每�
 - [Mango 能力地图](../../mango-docs/capabilities/README.md)
 - [AI 统一会话交付记录](../../mango-docs/plans/2026-08-24-ai-service-chat-delivery-record.md)
 - [能力说明维护规范](../../mango-pmo/rules/08-capability-docs.md)
+
+## 资源声明同步模式（#1098）
+
+资源声明的 `sync-mode` 已收敛为 `SYNC_ALWAYS` 和 `SYNC_ONCE`：`AUTO` 映射为 `SYNC_ALWAYS`，`INIT_ONLY`、`MANUAL`、`LOCKED` 映射为 `SYNC_ONCE`。旧值仍可读取并会在启动时输出弃用告警，新声明只写新值。语义与迁移规则见 `mango-resource` README 的 `sync-mode` 章节。

@@ -16,6 +16,7 @@ import io.mango.resource.support.ResourceBaselinePolicy;
 import io.mango.resource.support.ResourceTargetDispatcher;
 import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.api.enums.ResourceStatus;
+import io.mango.resource.api.enums.ResourceOwnership;
 import io.mango.resource.api.enums.ResourceSyncMode;
 import io.mango.resource.api.enums.ResourceSyncDisposition;
 import io.mango.resource.api.enums.ResourceExecutionPhase;
@@ -51,6 +52,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -475,6 +477,8 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
             assertOperationCanContinue();
             String hash = hasher.hash(declaration);
             Long rowId = repository.insert(declaration, hash, result.getTargetId(), result.getTargetTable());
+            repository.updateOwnership(repository.findByResourceId(declaration.getId()),
+                    ResourceOwnership.MANUAL_TAKEOVER);
             repository.insertSyncLog(rowId, "CREATE", "SUCCESS", result.getMessage());
             repository.insertChangeLog(rowId, "CREATE", null, toJson(declaration));
             log.info("Mango resource managed record created: resourceId={}, type={}, bizKey={}",
@@ -520,6 +524,8 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
             Require.notNull(row, ResourceCode.RESOURCE_NOT_FOUND, "资源注册记录不存在: " + resourceId);
             String before = toJson(row);
             repository.updateSyncMode(row, syncMode.name());
+            repository.updateOwnership(row, syncMode == ResourceSyncMode.SYNC_ONCE
+                    ? ResourceOwnership.MANUAL_TAKEOVER : ResourceOwnership.RESOURCE_MANAGED);
             ResourceRegistryRow updated = repository.findByResourceId(resourceId);
             repository.insertSyncLog(row.getId(), "SYNC_MODE", "SUCCESS",
                     "Resource sync mode is " + syncMode.name());
@@ -776,16 +782,18 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
     private void validateDeclarations(List<ResourceDeclaration> declarations) {
         Set<String> ids = new HashSet<>();
         Set<String> bizKeys = new HashSet<>();
+        List<String> conflicts = new ArrayList<>();
         for (ResourceDeclaration declaration : declarations) {
             validateRequired(declaration);
             if (!ids.add(declaration.getId())) {
-                conflict("Duplicate resource id: " + declaration.getId());
+                conflicts.add("Duplicate resource id: " + declaration.getId());
             }
             String bizKey = declaration.getResourceType() + ":" + declaration.getBizKey();
             if (!bizKeys.add(bizKey)) {
-                conflict("Duplicate resource type and bizKey: " + bizKey);
+                conflicts.add("Duplicate resource type and bizKey: " + bizKey);
             }
         }
+        failOnConflicts(conflicts);
     }
 
     private List<ResourceDeclaration> excludeManagedShadowedDeclarations(
@@ -806,21 +814,73 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
         return effective;
     }
 
+
+    /**
+     * 判断登记行归属：人工接管与未知来源的行不得被声明覆盖或停用。
+     * 未知来源的行在声明能证明归属（同来源应用/服务/模块）时升级为 Resource 管理。
+     */
+    private boolean adoptOrRejectOwnership(ResourceRegistryRow row, ResourceDeclaration declaration) {
+        if (row == null) {
+            return true;
+        }
+        ResourceOwnership ownership = row.getOwnership() == null
+                ? ResourceOwnership.UNKNOWN : row.getOwnership();
+        if (ownership == ResourceOwnership.MANUAL_TAKEOVER) {
+            repository.insertSyncLog(row.getId(), "SKIP", "SKIPPED", "Resource ownership is MANUAL_TAKEOVER");
+            log.info("Mango resource skipped by manual takeover: resourceType={}, resourceId={}",
+                    row.getResourceType(), row.getResourceId());
+            return false;
+        }
+        if (ownership != ResourceOwnership.UNKNOWN) {
+            return true;
+        }
+        if (!sameIdentity(row, declaration)) {
+            repository.insertSyncLog(row.getId(), "SKIP", "SKIPPED",
+                    "Resource ownership is UNKNOWN and the declaration identity differs");
+            log.warn("Mango resource skipped by unknown ownership: resourceType={}, resourceId={}",
+                    row.getResourceType(), row.getResourceId());
+            return false;
+        }
+        if (!sameSource(row, declaration)) {
+            log.warn("Mango resource ownership adopted across drifted source: resourceType={}, resourceId={}, "
+                            + "registryAppCode={}, declaredAppCode={}, registryModule={}, declaredModule={}",
+                    row.getResourceType(), row.getResourceId(), row.getAppCode(), declaration.getAppCode(),
+                    row.getModuleCode(), declaration.getModuleCode());
+        }
+        repository.updateOwnership(row, ResourceOwnership.RESOURCE_MANAGED);
+        row.setOwnership(ResourceOwnership.RESOURCE_MANAGED);
+        log.info("Mango resource ownership adopted as RESOURCE_MANAGED: resourceType={}, resourceId={}",
+                row.getResourceType(), row.getResourceId());
+        return true;
+    }
+
+    private boolean sameIdentity(ResourceRegistryRow row, ResourceDeclaration declaration) {
+        return Objects.equals(row.getResourceId(), declaration.getId())
+                && Objects.equals(row.getResourceType(), declaration.getResourceType())
+                && Objects.equals(row.getBizKey(), declaration.getBizKey());
+    }
+
+    private boolean sameSource(ResourceRegistryRow row, ResourceDeclaration declaration) {
+        return Objects.equals(row.getAppCode(), declaration.getAppCode())
+                && Objects.equals(row.getServiceCode(), declaration.getServiceCode())
+                && Objects.equals(row.getModuleCode(), declaration.getModuleCode());
+    }
+
     private boolean isManagedSyncMode(ResourceSyncMode syncMode) {
-        return syncMode == ResourceSyncMode.MANUAL
-                || syncMode == ResourceSyncMode.INIT_ONLY
-                || syncMode == ResourceSyncMode.LOCKED;
+        return syncMode == ResourceSyncMode.SYNC_ONCE;
     }
 
     private void validateRegistryConflicts(List<ResourceDeclaration> declarations,
                                            ResourceRegistrySnapshot registrySnapshot) {
+        List<String> conflicts = new ArrayList<>();
         for (ResourceDeclaration declaration : declarations) {
             ResourceRegistryRow rowByBizKey = registrySnapshot.findByTypeAndBizKey(
                     declaration.getResourceType(), declaration.getBizKey());
             if (rowByBizKey != null && !declaration.getId().equals(rowByBizKey.getResourceId())) {
-                conflict(registryConflictMessage(declaration, rowByBizKey));
+                conflicts.add(registryConflictMessage(declaration, rowByBizKey));
             }
         }
+        failOnConflicts(conflicts);
     }
 
     private String registryConflictMessage(ResourceDeclaration declaration, ResourceRegistryRow row) {
@@ -854,10 +914,42 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
     }
 
     private void conflict(String message) {
-        if (properties.isFailOnConflict()) {
-            Require.isTrue(false, ResourceCode.RESOURCE_CONFLICT, message);
+        failOnConflicts(List.of(message));
+    }
+
+    /**
+     * 一次性报告全部资源登记冲突。
+     *
+     * <p>历史库常见多条身份漂移同时存在。逐条 fail-fast 会让运维每修一条就重启一次；
+     * 这里聚合为一份可执行清单，失败语义不变（仍然 fail-closed，不修改任何数据）。
+     *
+     * @param conflicts 冲突描述；为空时直接返回
+     */
+    private void failOnConflicts(List<String> conflicts) {
+        if (conflicts.isEmpty()) {
+            return;
         }
-        log.warn(message);
+        if (!properties.isFailOnConflict()) {
+            conflicts.forEach(log::warn);
+            return;
+        }
+        Require.isTrue(false, ResourceCode.RESOURCE_CONFLICT, aggregatedConflictMessage(conflicts));
+    }
+
+    private String aggregatedConflictMessage(List<String> conflicts) {
+        if (conflicts.size() == 1) {
+            return conflicts.get(0);
+        }
+        StringBuilder message = new StringBuilder("Mango resource registry found ")
+                .append(conflicts.size())
+                .append(" conflicts; resolve all of them before the next sync:")
+                .append(System.lineSeparator());
+        for (int index = 0; index < conflicts.size(); index++) {
+            message.append("  ").append(index + 1).append(". ").append(conflicts.get(index))
+                    .append(System.lineSeparator());
+        }
+        message.append("Remediation steps: mango/mango-platform/mango-resource/README.md section 14");
+        return message.toString();
     }
 
     private void syncDeprecated(ResourceDeclaration declaration, boolean force,
@@ -865,10 +957,13 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
         String hash = hasher.hash(declaration);
         ResourceRegistryRow row = registrySnapshot.findByResourceId(declaration.getId());
         validateVersion(row, declaration);
+        if (!adoptOrRejectOwnership(row, declaration)) {
+            return;
+        }
         if (!force && isUnchanged(row, declaration, hash)) {
             return;
         }
-        if (row != null && row.getSyncMode() != ResourceSyncMode.AUTO) {
+        if (row != null && row.getSyncMode() != ResourceSyncMode.SYNC_ALWAYS) {
             repository.insertSyncLog(row.getId(), "SKIP", "SKIPPED", "Resource sync mode is " + row.getSyncMode());
             return;
         }
@@ -888,10 +983,13 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
         String hash = hasher.hash(declaration);
         ResourceRegistryRow row = registrySnapshot.findByResourceId(declaration.getId());
         validateVersion(row, declaration);
+        if (!adoptOrRejectOwnership(row, declaration)) {
+            return;
+        }
         if (!force && isUnchanged(row, declaration, hash)) {
             return;
         }
-        if (row != null && row.getSyncMode() != ResourceSyncMode.AUTO) {
+        if (row != null && row.getSyncMode() != ResourceSyncMode.SYNC_ALWAYS) {
             repository.insertSyncLog(row.getId(), "SKIP", "SKIPPED", "Resource sync mode is " + row.getSyncMode());
             return;
         }
@@ -963,12 +1061,18 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
         String hash = hasher.hash(declaration);
         ResourceRegistryRow row = registrySnapshot.findByResourceId(declaration.getId());
         validateVersion(row, declaration);
+        if (!adoptOrRejectOwnership(row, declaration)) {
+            return;
+        }
         ResourceDeclaration effectiveDeclaration = declaration;
         if (row != null) {
             effectiveDeclaration = withEffectiveSyncMode(declaration, row.getSyncMode());
         }
         allDeclarationsByType.computeIfAbsent(declaration.getResourceType(), key -> new ArrayList<>())
                 .add(effectiveDeclaration);
+        if (!adoptOrRejectOwnership(row, declaration)) {
+            return;
+        }
         if (!force && isUnchanged(row, declaration, hash)) {
             return;
         }
@@ -976,7 +1080,7 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
             skipInitOnlyTargetUpdate(row, declaration, hash);
             return;
         }
-        if (row != null && row.getSyncMode() != ResourceSyncMode.AUTO) {
+        if (row != null && row.getSyncMode() != ResourceSyncMode.SYNC_ALWAYS) {
             repository.insertSyncLog(row.getId(), "SKIP", "SKIPPED",
                     "Resource sync mode is " + row.getSyncMode());
             return;
@@ -1056,7 +1160,8 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
         }
         assertOperationCanContinue();
         repository.updateStatusAndSyncMode(row, ResourceStatus.REMOVED.name(),
-                ResourceSyncMode.MANUAL.name(), row.getSourceHash());
+                ResourceSyncMode.SYNC_ONCE.name(), row.getSourceHash());
+        repository.updateOwnership(row, ResourceOwnership.MANUAL_TAKEOVER);
         String changeType = "DISABLE";
         if (physical) {
             changeType = "DELETE";
@@ -1133,10 +1238,10 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
     }
 
     private boolean shouldPreserveInitOnlyTarget(ResourceRegistryRow row, ResourceDeclaration declaration) {
-        if (row == null || declaration.getSyncMode() != ResourceSyncMode.INIT_ONLY) {
+        if (row == null || declaration.getSyncMode() != ResourceSyncMode.SYNC_ONCE) {
             return false;
         }
-        return row.getSyncMode() == ResourceSyncMode.AUTO || row.getSyncMode() == ResourceSyncMode.INIT_ONLY;
+        return row.getSyncMode() == ResourceSyncMode.SYNC_ALWAYS || row.getSyncMode() == ResourceSyncMode.SYNC_ONCE;
     }
 
     private ResourceDeclaration withEffectiveSyncMode(ResourceDeclaration declaration, ResourceSyncMode syncMode) {
@@ -1168,43 +1273,69 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
         return moduleCodes;
     }
 
+
     private void disableMissing(String appCode, String serviceCode, Set<String> modules, Set<String> seenResourceIds,
                                 Map<String, ResourceHandler> handlerMap) {
         List<String> managedModules = modules.stream().sorted().toList();
+        Map<String, Long> unprovenByType = new LinkedHashMap<>();
         for (ResourceRegistryRow row : repository.listBySourceAndModules(appCode, serviceCode, managedModules)) {
             assertOperationCanContinue();
-            if (!seenResourceIds.contains(row.getResourceId()) && row.getSyncMode() == ResourceSyncMode.AUTO) {
-                ResourceHandler handler = handlerMap.get(row.getResourceType());
-                if (handler == null) {
-                    ResourceDeclaration disabled = fromRow(row);
-                    ResourceTargetDispatcher dispatcher = targetDispatcher(disabled);
-                    Require.notNull(dispatcher, ResourceCode.RESOURCE_NOT_FOUND,
-                            "缺失资源禁用时未找到处理器: " + row.getResourceType()
-                                    + ", resourceId=" + row.getResourceId()
-                                    + ", targetModule=" + row.getTargetModule());
-                    if (!StringUtils.hasText(row.getTenantId())) {
-                        log.warn("Mango resource missing disable skipped: remote tenant scope is unavailable, resourceType={}, resourceId={}",
-                                row.getResourceType(), row.getResourceId());
-                        continue;
-                    }
-                    ResourceSyncResult result = dispatcher.disable(disabled);
-                    assertOperationCanContinue();
-                    repository.updateStatus(row, ResourceStatus.REMOVED.name(), row.getSourceHash());
-                    repository.insertSyncLog(row.getId(), "DISABLE", "SUCCESS", result.getMessage());
-                    repository.insertChangeLog(row.getId(), "DISABLE", toJson(row), toJson(disabled));
-                    continue;
+            if (row.getOwnership() != null && row.getOwnership() != ResourceOwnership.RESOURCE_MANAGED) {
+                if (!seenResourceIds.contains(row.getResourceId())) {
+                    unprovenByType.merge(row.getResourceType(), 1L, Long::sum);
                 }
-                ResourceDeclaration disabled = fromRow(row);
-                if (!prepareTenantScopedDeclaration(row, handler, disabled)) {
-                    continue;
-                }
-                ResourceSyncResult result = handlerInvoker.disable(handler, disabled);
+                continue;
+            }
+            if (seenResourceIds.contains(row.getResourceId()) || row.getSyncMode() != ResourceSyncMode.SYNC_ALWAYS) {
+                continue;
+            }
+            try {
+                disableMissingRow(row, handlerMap);
+            } catch (RuntimeException exception) {
                 assertOperationCanContinue();
-                repository.updateStatus(row, ResourceStatus.REMOVED.name(), row.getSourceHash());
-                repository.insertSyncLog(row.getId(), "DISABLE", "SUCCESS", result.getMessage());
-                repository.insertChangeLog(row.getId(), "DISABLE", toJson(row), toJson(disabled));
+                log.warn("Mango resource missing disable skipped: disable failed, resourceType={}, resourceId={}, reason={}",
+                        row.getResourceType(), row.getResourceId(), exception.getMessage());
             }
         }
+        long unproven = unprovenByType.values().stream().mapToLong(Long::longValue).sum();
+        if (unproven > 0) {
+            log.warn("Mango resource ownership unproven: {} missing rows stay untouched, reason=UNKNOWN/MANUAL_TAKEOVER; "
+                            + "appCode={}, serviceCode={}, byType={}",
+                    unproven, appCode, serviceCode, unprovenByType);
+        }
+    }
+
+    /**
+     * 停用单个缺失资源。该方法内的失败不得中断 Bootstrap：资源数据是预制默认配置，
+     * 运行时状态优先，无法停用的历史行只告警并保留原状态。
+     */
+    private void disableMissingRow(ResourceRegistryRow row, Map<String, ResourceHandler> handlerMap) {
+        ResourceHandler handler = handlerMap.get(row.getResourceType());
+        ResourceDeclaration disabled = fromRow(row);
+        ResourceSyncResult result;
+        if (handler == null) {
+            ResourceTargetDispatcher dispatcher = targetDispatcher(disabled);
+            if (dispatcher == null) {
+                log.warn("Mango resource missing disable skipped: no handler or dispatcher, resourceType={}, resourceId={}, targetModule={}",
+                        row.getResourceType(), row.getResourceId(), row.getTargetModule());
+                return;
+            }
+            if (!StringUtils.hasText(row.getTenantId())) {
+                log.warn("Mango resource missing disable skipped: remote tenant scope is unavailable, resourceType={}, resourceId={}",
+                        row.getResourceType(), row.getResourceId());
+                return;
+            }
+            result = dispatcher.disable(disabled);
+        } else {
+            if (!prepareTenantScopedDeclaration(row, handler, disabled)) {
+                return;
+            }
+            result = handlerInvoker.disable(handler, disabled);
+        }
+        assertOperationCanContinue();
+        repository.updateStatus(row, ResourceStatus.REMOVED.name(), row.getSourceHash());
+        repository.insertSyncLog(row.getId(), "DISABLE", "SUCCESS", result.getMessage());
+        repository.insertChangeLog(row.getId(), "DISABLE", toJson(row), toJson(disabled));
     }
 
     private Map<String, ResourceSyncResult> syncActiveBatchByTarget(

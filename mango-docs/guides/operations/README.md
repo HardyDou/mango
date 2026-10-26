@@ -14,11 +14,14 @@
 
 ### 升级与兼容
 
+每个 Maven 发布批次都会自动生成一份升级页面 `mango-docs/guides/operations/mango-<旧版本>-to-<新版本>-upgrade.md`：`mango release plan` 依据封存计划与发布说明生成，`check-release-plan` 校验其存在且与计划一致，文档站自动收录，`mango-docs-bundle` 随批次交付给业务项目。升级前先在上表找到对应版本条目，再按页面内的升级前检查、依赖升级、迁移验证、业务回归和 Agent 执行清单执行。
+
 | 任务 | 入口 | 适用对象 |
 |---|---|---|
 | 从 Maven 1.0.21 升到 1.0.22 | [Java API 升级](./maven-1.0.21-to-1.0.22-java-api-upgrade.md) | 需要处理 Java 类型或公开 API 迁移的项目 |
 | 从 1.0.30/1.0.3x 升到 1.0.31 | [Mango 1.0.31 升级](./mango-1.0.30-to-1.0.31-upgrade.md) | 需要整体对齐 Maven、npm、CLI、PMO 和 Bootstrap 的项目 |
 | 升级 Workflow 办理人身份契约 | [办理人身份升级](./workflow-assignee-identity-upgrade.md) | 使用 `assigneeDisplayName`、参与关系或历史身份数据的项目 |
+| 从 1.0.63 升到 1.1.0 | [Mango 1.0.63 → 1.1.0 升级](./mango-1.0.63-to-1.1.0-upgrade.md) | **所有**使用 `1.0.63` 及更早版本的项目：同步模式收敛、资源归属迁移、CMS Banner 删除与前端主版本升级 |
 | 升级到删除 CMS Banner 能力的版本 | [CMS Banner 能力删除升级](./cms-banner-removal-upgrade.md) | **所有**升级到该版本的项目：按项目情况执行注册行清理、数据归档与前端适配 |
 
 ### 治理与修复

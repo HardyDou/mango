@@ -140,7 +140,7 @@ public class AuthMenuResourceHandler implements ResourceHandler {
     }
 
     private boolean isAutoSync(ResourceDeclaration resource) {
-        return resource.getSyncMode() == null || resource.getSyncMode() == ResourceSyncMode.AUTO;
+        return resource.getSyncMode() == null || resource.getSyncMode() == ResourceSyncMode.SYNC_ALWAYS;
     }
 
     @Override

@@ -35,7 +35,7 @@ public class ResourceDeclaration {
     @JsonAlias("target-module")
     private String targetModule;
     @JsonAlias("sync-mode")
-    private ResourceSyncMode syncMode = ResourceSyncMode.AUTO;
+    private ResourceSyncMode syncMode = ResourceSyncMode.SYNC_ALWAYS;
     @JsonAlias("execution-phase")
     private ResourceExecutionPhase executionPhase = ResourceExecutionPhase.BOOTSTRAP_REQUIRED;
     private ResourceStatus status = ResourceStatus.ACTIVE;

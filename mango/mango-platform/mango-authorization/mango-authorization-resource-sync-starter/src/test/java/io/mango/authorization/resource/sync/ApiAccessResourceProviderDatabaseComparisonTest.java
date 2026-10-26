@@ -169,7 +169,7 @@ class ApiAccessResourceProviderDatabaseComparisonTest {
                 .peek(resource -> {
                     String pathPattern = String.valueOf(resource.getFields().get("pathPattern").getValue());
                     if ("/resource-sync/login".equals(pathPattern)) {
-                        resource.setSyncMode(ResourceSyncMode.MANUAL);
+                        resource.setSyncMode(ResourceSyncMode.SYNC_ONCE);
                     }
                 })
                 .toList());

@@ -10,7 +10,7 @@ mango:
           biz-key: workflow.role-data-scope.tenant-1-admin-definition-list
           name: 默认管理员流程定义管理数据权限
           target-module: workflow
-          sync-mode: INIT_ONLY
+          sync-mode: SYNC_ONCE
           fields:
             tenantId: { type: LONG, value: 1 }
             appCode: { type: STRING, value: internal-admin }
@@ -23,7 +23,7 @@ mango:
           biz-key: workflow.definition.expense-reimbursement
           name: 费用报销审批
           target-module: workflow
-          sync-mode: INIT_ONLY
+          sync-mode: SYNC_ONCE
           fields:
             tenantId: { type: STRING, value: "1" }
             domainCode: { type: STRING, value: COMMON }
@@ -52,7 +52,7 @@ mango:
           biz-key: workflow.definition.contract-seal-approval
           name: 合同用印审批
           target-module: workflow
-          sync-mode: INIT_ONLY
+          sync-mode: SYNC_ONCE
           fields:
             tenantId: { type: STRING, value: "1" }
             domainCode: { type: STRING, value: COMMON }
@@ -81,7 +81,7 @@ mango:
           biz-key: workflow.definition.leave-application
           name: 请假申请
           target-module: workflow
-          sync-mode: INIT_ONLY
+          sync-mode: SYNC_ONCE
           fields:
             tenantId: { type: STRING, value: "1" }
             domainCode: { type: STRING, value: COMMON }
