@@ -206,6 +206,23 @@ mango:
 
 Controller 扫描、Gateway route 扫描和 `resources[]` 会被 Resource Provider 转换为 `mango-resource` 的 `API_RESOURCE` 资源声明，再由资源注册中心调用授权模块的 `ApiResourceHandler` 写入 `authorization_api_resource`。
 
+### 固定 API_RESOURCE 声明与 Controller 扫描
+
+`resource-provider.enabled` 默认启用。Controller 扫描产生的 API 声明使用由模块、HTTP 方法和路径计算出的稳定资源 ID，并以 `RUNTIME_EVENTUAL` 方式由后台对账。
+
+如果模块已经在 `META-INF/mango/resources/*.yml|yaml|json` 中为同一个接口声明了固定 `API_RESOURCE`，不要再让 Controller 扫描该接口。保留固定声明作为唯一来源，并将路径加入排除项：
+
+```yaml
+mango:
+  authorization:
+    resource-sync:
+      exclude-paths: /error,/actuator/**,/module/open/example
+```
+
+固定声明通常承载稳定资源 ID、访问模式或授权目标关系。出现同一 `resourceType + bizKey` 对应不同资源 ID 时，Resource Registry 会 fail-closed；不要删除目标业务资源，也不要关闭冲突校验来绕过问题。升级或新增模块后，应等待至少一个 eventual 对账周期，并检查日志中是否出现 `Resource bizKey already registered by another id`。
+
+如果接口没有固定资源声明，则可以使用 Controller 自动扫描；非 Controller 资源继续使用 `resources[]` 或固定资源文件。一个接口只选择一种声明来源。
+
 `resources[]` 字段：
 
 | 字段 | 默认值 | 含义 |

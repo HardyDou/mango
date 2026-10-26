@@ -360,6 +360,8 @@ mango:
 
 声明文件中 `sync-mode` 支持 `SYNC_ONCE`、`sync-once`、`sync_once` 写法；旧值 `INIT_ONLY`、`MANUAL`、`LOCKED` 读取时映射为 `SYNC_ONCE` 并输出弃用告警，`AUTO` 映射为 `SYNC_ALWAYS`。新声明只写新值。
 
+已执行过 1.1.0 或 1.1.1 的老库，由 `V5__normalize_legacy_resource_sync_modes.sql` 将 `resource_registry.sync_mode` 中的旧持久化值一次性归一为 `SYNC_ALWAYS` 或 `SYNC_ONCE`。该迁移只修改 Registry 元数据，不调用 Resource Handler，不修改目标资源表、ownership、版本或 Hash；升级后旧值查询应返回 0 行。
+
 ### 9.x 资源归属（ownership）
 
 `resource_registry.ownership` 记录这条登记行归谁所有，决定声明能否覆盖或停用它：
@@ -408,6 +410,15 @@ Flyway 路径：`mango-resource-core/src/main/resources/db/migration/resource`�
 资源注册中心只保存声明索引和同步审计数据。字典、系统参数、消息模板、编号规则、工作流配置等目标资源仍由目标模块自己的 migration 和资源处理器维护。
 
 `resource_registry` 的资源 ID 和 `resourceType + bizKey` 是全局唯一身份，不按可空 `tenant_id` 分区。历史版本曾将 `tenant_id` 放入唯一键，MySQL 对 `NULL` 允许重复；`V3__normalize_resource_registry_unique_keys.sql` 会在同一老库增量升级时移除该歧义。历史 `NULL tenant_id` 记录在缺失资源禁用阶段不能安全推导租户上下文时只告警并跳过，不阻断 Bootstrap。
+
+`V5__normalize_legacy_resource_sync_modes.sql` 只收敛历史 `sync_mode` 存储值：`AUTO` 变为 `SYNC_ALWAYS`，`INIT_ONLY`、`MANUAL`、`LOCKED` 变为 `SYNC_ONCE`。迁移不会重放目标 Handler；执行后可用以下查询确认旧值已清零：
+
+```sql
+SELECT sync_mode, COUNT(*)
+FROM resource_registry
+WHERE sync_mode IN ('AUTO', 'INIT_ONLY', 'MANUAL', 'LOCKED')
+GROUP BY sync_mode;
+```
 
 Runtime 前由 `ResourceBootstrapStepContributor` 扫描并幂等同步 `BOOTSTRAP_REQUIRED` 声明；Runtime 中由 `ResourceEventualReconciliationWorker` 只对账 `RUNTIME_EVENTUAL` 声明。本地注册中心由 `ResourceRegistryService` 完成目标资源 upsert、disable 和 delete。
 
