@@ -18,6 +18,10 @@ public class ApiResourceEntity extends AuthorizationBaseEntity {
 
     private String moduleName;
 
+    private String domain;
+
+    private String source;
+
     private String httpMethod;
 
     private String pathPattern;

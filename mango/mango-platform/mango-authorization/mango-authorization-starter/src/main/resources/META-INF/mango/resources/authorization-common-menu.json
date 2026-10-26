@@ -9,7 +9,7 @@
         "AUTH_MENU": [
           {
             "id": "2951300000000008101",
-            "version": 4,
+            "version": 5,
             "bizKey": "authorization.menu.internal-admin",
             "name": "授权基础菜单",
             "targetModule": "authorization",
@@ -114,6 +114,23 @@
                       "system:resource:sync-log:list",
                       "system:resource:change-log:list",
                       "system:resource:handler:list"
+                    ]
+                  },
+                  {
+                    "parentCode": "system:permission",
+                    "menuType": 2,
+                    "menuName": "权限标识",
+                    "menuCode": "system:api-resource",
+                    "path": "/system/api-resource",
+                    "icon": "Key",
+                    "component": "system/api-resource/index",
+                    "sort": 8,
+                    "remark": "接口资源登记来源、领域与权限标识查询",
+                    "packageCodes": [
+                      "platform_admin"
+                    ],
+                    "apiCodes": [
+                      "system:api-resource:list"
                     ]
                   },
                   {

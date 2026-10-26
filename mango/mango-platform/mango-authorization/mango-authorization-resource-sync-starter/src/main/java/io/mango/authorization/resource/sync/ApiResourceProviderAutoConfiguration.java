@@ -1,6 +1,7 @@
 package io.mango.authorization.resource.sync;
 
 import io.mango.infra.module.api.ModuleInfoRegistry;
+import io.mango.resource.support.declaration.ResourceDeclarationLoader;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -46,7 +47,9 @@ public class ApiResourceProviderAutoConfiguration {
     @ConditionalOnBean(ApiAccessResourceDiscoverer.class)
     public ApiAccessResourceProvider apiAccessResourceProvider(ApiAccessResourceDiscoverer discoverer,
                                                               ApiResourceSyncProperties properties,
-                                                              ApiResourceDeclarationConverter converter) {
-        return new ApiAccessResourceProvider(discoverer, properties, converter);
+                                                              ApiResourceDeclarationConverter converter,
+                                                              ObjectProvider<ResourceDeclarationLoader> declarationLoader) {
+        return new ApiAccessResourceProvider(discoverer, properties, converter,
+                declarationLoader.getIfAvailable());
     }
 }

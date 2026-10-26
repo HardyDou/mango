@@ -206,6 +206,8 @@ mango:
 
 Controller 扫描、Gateway route 扫描和 `resources[]` 会被 Resource Provider 转换为 `mango-resource` 的 `API_RESOURCE` 资源声明，再由资源注册中心调用授权模块的 `ApiResourceHandler` 写入 `authorization_api_resource`。
 
+固定声明与 Controller 扫描命中相同 HTTP 方法和路径时，固定声明优先：这里的固定声明包括 `META-INF/mango/resources/*.{yml,yaml,json}` 中的 `API_RESOURCE` 和 `resources[]` 配置。扫描结果不再生成新的有效资源，已有扫描记录会按正常同步语义停用，固定声明保留原稳定资源 ID、模块名、访问模式和权限码。不同方法、不同路径和通配路径之间的冲突仍由 Resource Registry 的冲突校验阻断。
+
 `resources[]` 字段：
 
 | 字段 | 默认值 | 含义 |
@@ -231,6 +233,8 @@ Controller 扫描、Gateway route 扫描和 `resources[]` 会被 Resource Provid
 | `@ApiAccess` | 自定义 | 直接指定模式、权限码、描述和 Resource 版本 |
 
 API Resource 版本默认是 `1`。当接口的资源内容或访问语义发生变更时，在 `@ApiAccess` 或组合注解上显式递增 `version`；运行时 MVC 扫描会将该版本透传到 Resource Registry。组合注解（如 `@PublicAccess(version = 2)`）与 `@ApiAccess(version = 2)` 语义一致。版本必须与同一资源的 `META-INF/mango/resources/*.yml` 静态声明保持一致，否则 Resource Registry 的版本保护会拒绝回退声明。
+
+`@ApiResourceIgnore` 可标注在 Controller 类或方法上，使该类型或方法不参与 API Resource 扫描。它只影响资源发现结果，不改变接口映射、访问控制、固定资源声明或已存在的授权关系。需要保留稳定资源 ID 的接口应继续使用固定 `API_RESOURCE` 声明，不要用忽略注解删除固定声明。
 
 ### 8.1 基础接口默认授权
 

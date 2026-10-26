@@ -26,6 +26,8 @@ public class ApiResourceDeclarationConverter {
                 .name(command.getDescription())
                 .targetModule(TARGET_MODULE)
                 .string("moduleName", command.getModuleName())
+                .string("source", command.getSource() == null
+                        ? "FIXED_DECLARATION" : command.getSource().name())
                 .string("httpMethod", command.getHttpMethod())
                 .string("pathPattern", command.getPathPattern())
                 .string("resourceCode", command.getResourceCode())

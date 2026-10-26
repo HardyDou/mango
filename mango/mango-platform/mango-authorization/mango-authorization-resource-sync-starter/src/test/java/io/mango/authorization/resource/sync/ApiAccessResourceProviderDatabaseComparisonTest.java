@@ -218,6 +218,8 @@ class ApiAccessResourceProviderDatabaseComparisonTest {
                 create table authorization_api_resource (
                     id bigint primary key,
                     module_name varchar(128) not null,
+                    source varchar(32) not null default 'FIXED_DECLARATION',
+                    domain varchar(128) not null default 'root',
                     http_method varchar(16) not null,
                     path_pattern varchar(512) not null,
                     resource_code varchar(640) not null,
