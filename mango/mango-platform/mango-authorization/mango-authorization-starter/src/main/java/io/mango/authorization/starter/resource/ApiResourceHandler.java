@@ -88,7 +88,7 @@ public class ApiResourceHandler implements ResourceHandler {
             List<ResourceDeclaration> resources,
             List<ApiResourceRegisterCommand> commands) {
         boolean requiresProtection = resources.stream()
-                .anyMatch(resource -> resource.getSyncMode() != ResourceSyncMode.AUTO);
+                .anyMatch(resource -> resource.getSyncMode() != ResourceSyncMode.SYNC_ALWAYS);
         if (!requiresProtection) {
             return Map.of();
         }
@@ -96,7 +96,7 @@ public class ApiResourceHandler implements ResourceHandler {
         Map<String, ApiResourceEntity> protectedResources = new LinkedHashMap<>();
         for (int index = 0; index < resources.size(); index++) {
             ResourceDeclaration resource = resources.get(index);
-            if (resource.getSyncMode() == ResourceSyncMode.AUTO) {
+            if (resource.getSyncMode() == ResourceSyncMode.SYNC_ALWAYS) {
                 continue;
             }
             ApiResourceEntity entity = existingResources.get(ApiResourceKey.from(commands.get(index)));

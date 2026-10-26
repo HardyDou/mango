@@ -12,7 +12,7 @@
             "bizKey": "cms.ad-delivery.2070000000000001801",
             "name": "CMS 演示数据 cms_ad_delivery 2070000000000001801",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -114,7 +114,7 @@
             "bizKey": "cms.ad-delivery.2070000000000002801",
             "name": "CMS 演示数据 cms_ad_delivery 2070000000000002801",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -216,7 +216,7 @@
             "bizKey": "cms.ad-delivery.2070000000000002802",
             "name": "CMS 演示数据 cms_ad_delivery 2070000000000002802",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -289,6 +289,210 @@
               "jumpUrl": {
                 "type": "STRING",
                 "value": "/news"
+              },
+              "openTarget": {
+                "type": "STRING",
+                "value": "SELF"
+              },
+              "startTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "endTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "sort": {
+                "type": "INT",
+                "value": 1
+              },
+              "status": {
+                "type": "STRING",
+                "value": "ENABLED"
+              }
+            }
+          },
+          {
+            "id": "20260714110000074",
+            "version": 1,
+            "bizKey": "cms.ad-delivery.2070000000000000901",
+            "name": "CMS 演示数据 广告投放 演示站点首页主视觉投放",
+            "targetModule": "cms",
+            "syncMode": "SYNC_ONCE",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000000901"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "createdBy": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "updatedBy": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000000001"
+              },
+              "adId": {
+                "type": "LONG",
+                "value": "2070000000000000901"
+              },
+              "deliveryName": {
+                "type": "STRING",
+                "value": "演示站点首页主视觉投放"
+              },
+              "materialType": {
+                "type": "STRING",
+                "value": "TEXT"
+              },
+              "title": {
+                "type": "STRING",
+                "value": "内容管理平台 · 让每一次发布可信可溯"
+              },
+              "textContent": {
+                "type": "STRING",
+                "value": "全线上内容发布 · 多站点管理 · 数据穿透"
+              },
+              "richContent": {
+                "type": "STRING",
+                "value": null
+              },
+              "htmlContent": {
+                "type": "STRING",
+                "value": null
+              },
+              "imageFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "imageFileIds": {
+                "type": "STRING",
+                "value": null
+              },
+              "videoFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "coverFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "jumpUrl": {
+                "type": "STRING",
+                "value": "#products"
+              },
+              "openTarget": {
+                "type": "STRING",
+                "value": "SELF"
+              },
+              "startTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "endTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "sort": {
+                "type": "INT",
+                "value": 1
+              },
+              "status": {
+                "type": "STRING",
+                "value": "ENABLED"
+              }
+            }
+          },
+          {
+            "id": "20260714110000075",
+            "version": 1,
+            "bizKey": "cms.ad-delivery.2070000000000000902",
+            "name": "CMS 演示数据 广告投放 演示站点新闻页主视觉投放",
+            "targetModule": "cms",
+            "syncMode": "SYNC_ONCE",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000000902"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "createdBy": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "updatedBy": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000000001"
+              },
+              "adId": {
+                "type": "LONG",
+                "value": "2070000000000000902"
+              },
+              "deliveryName": {
+                "type": "STRING",
+                "value": "演示站点新闻页主视觉投放"
+              },
+              "materialType": {
+                "type": "STRING",
+                "value": "TEXT"
+              },
+              "title": {
+                "type": "STRING",
+                "value": "新闻动态"
+              },
+              "textContent": {
+                "type": "STRING",
+                "value": "了解演示站点的最新进展与行业洞察"
+              },
+              "richContent": {
+                "type": "STRING",
+                "value": null
+              },
+              "htmlContent": {
+                "type": "STRING",
+                "value": null
+              },
+              "imageFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "imageFileIds": {
+                "type": "STRING",
+                "value": null
+              },
+              "videoFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "coverFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "jumpUrl": {
+                "type": "STRING",
+                "value": "#products"
               },
               "openTarget": {
                 "type": "STRING",

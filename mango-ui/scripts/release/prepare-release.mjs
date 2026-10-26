@@ -38,6 +38,9 @@ import {
 } from './release-prepare-lib.mjs';
 import { assertCleanWorktree, gitValue } from './release-repository-lib.mjs';
 import { acquireReleaseLock } from './release-lock-lib.mjs';
+
+/** 发布工具会在 plan/prepare 阶段确定性重建的 lockfile 路径。 */
+const RELEASE_LOCKFILE_PATH = 'mango-ui/pnpm-lock.yaml';
 import { verifyPmoPackageRoot } from './pmo-package-verifier-lib.mjs';
 import { assertReleaseNodeVersion } from '../../packages/mango-cli/src/release-runtime.mjs';
 
@@ -59,7 +62,7 @@ if (plan.order.length > 0 && !consumeRegistry) {
   throw new Error('prepare requires --consume-registry or MANGO_RELEASE_NPM_CONSUME_REGISTRY for npm candidates');
 }
 if (consumeRegistry) assertRegistryUrl(consumeRegistry, 'npm consume registry');
-assertCleanWorktree(repoRoot);
+assertCleanWorktree(repoRoot, { ignoredPaths: [RELEASE_LOCKFILE_PATH] });
 runChecked(process.execPath, [join(workspaceRoot, 'scripts/release/check-release-plan.mjs')], repoRoot);
 
 const source = {

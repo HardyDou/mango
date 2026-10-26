@@ -75,6 +75,7 @@ const defaultVersions = {
   mangoFile: readReleasedMangoPackageVersion('file', '1.0.6'),
   mangoGridLayout: readReleasedMangoPackageVersion('grid-layout', '1.0.0'),
   mangoGridWidgets: readReleasedMangoPackageVersion('grid-widgets', '1.0.0'),
+  mangoInformation: readReleasedMangoPackageVersion('information', '1.0.0'),
   mangoJob: readReleasedMangoPackageVersion('job', '1.0.0'),
   mangoLink: readReleasedMangoPackageVersion('link', '1.0.0'),
   mangoNotice: readReleasedMangoPackageVersion('notice', '1.0.6'),
@@ -127,6 +128,7 @@ const ADMIN_FULL_MODULES = OFFICIAL_MODULES.filter((module) =>
 const CORE_FRONTEND_PACKAGES = uniqueBy(
   [
     { name: '@mango/admin', versionKey: 'mangoAdmin' },
+    { name: '@mango/admin-extension', versionKey: 'mangoAdminExtension' },
     { name: '@mango/admin-pages', versionKey: 'mangoAdminPages' },
     { name: '@mango/app-runtime', versionKey: 'mangoAppRuntime' },
     { name: '@mango/http-client', versionKey: 'mangoHttpClient' },

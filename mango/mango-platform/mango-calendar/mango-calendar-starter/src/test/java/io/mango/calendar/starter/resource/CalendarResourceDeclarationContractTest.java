@@ -34,10 +34,10 @@ class CalendarResourceDeclarationContractTest {
         JsonNode definitions = required.at("/mango/resource/declarations/CALENDAR_DEFINITION");
         JsonNode years = baselineYears.at("/mango/resource/declarations/CALENDAR_YEAR");
         assertThat(definitions).hasSize(1);
-        assertThat(definitions.get(0).path("syncMode").asText()).isEqualTo("INIT_ONLY");
+        assertThat(definitions.get(0).path("syncMode").asText()).isEqualTo("SYNC_ONCE");
         assertThat(definitions.get(0).at("/fields/calendarCode/value").asText()).isEqualTo("CN_STANDARD");
         assertThat(years).hasSize(2);
-        assertThat(years).allSatisfy(year -> assertThat(year.path("syncMode").asText()).isEqualTo("INIT_ONLY"));
+        assertThat(years).allSatisfy(year -> assertThat(year.path("syncMode").asText()).isEqualTo("SYNC_ONCE"));
         assertThat(years.get(0).at("/fields/year/value").asInt()).isEqualTo(2025);
         assertThat(years.get(0).at("/fields/items/value")).hasSize(33);
         assertThat(years.get(1).at("/fields/year/value").asInt()).isEqualTo(2026);

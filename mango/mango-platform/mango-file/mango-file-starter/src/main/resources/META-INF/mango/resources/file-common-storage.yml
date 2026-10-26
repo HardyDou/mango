@@ -46,11 +46,11 @@ mango:
               value: 系统默认本地文件存储
       FILE_SETTINGS:
         - id: "2026061801000000101"
-          version: 6
+          version: 7
           biz-key: file.settings.default
           name: 文件中心默认配置
           target-module: file
-          sync-mode: INIT_ONLY
+          sync-mode: SYNC_ONCE
           fields:
             settingsId:
               type: LONG
@@ -60,7 +60,7 @@ mango:
               value: 1
             maxSize:
               type: LONG
-              value: 104857600
+              value: 10737418240
             blockedExtensions:
               type: STRING
               value: exe,bat,cmd,sh,jar

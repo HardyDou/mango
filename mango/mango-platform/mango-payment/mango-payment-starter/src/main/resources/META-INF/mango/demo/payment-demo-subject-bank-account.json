@@ -12,7 +12,7 @@
             "bizKey": "payment.subject-bank-account.320001.622200000000000001",
             "name": "芒果科技有限公司",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -58,7 +58,7 @@
             "bizKey": "payment.subject-bank-account.320002.622200000000000002",
             "name": "芒果服务有限公司",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",

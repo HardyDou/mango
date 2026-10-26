@@ -550,7 +550,7 @@ public class MenuService implements IMenuService {
             menu.setVisible(1);
         }
         if (menu.getKeepAlive() == null) {
-            menu.setKeepAlive(0);
+            menu.setKeepAlive(menu.getMenuType() != null && menu.getMenuType() == 2 ? 1 : 0);
         }
         if (menu.getEmbedded() == null) {
             menu.setEmbedded(0);

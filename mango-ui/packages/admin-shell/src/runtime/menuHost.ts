@@ -1,6 +1,6 @@
 import { computed, ref } from 'vue';
 import { get } from '@mango/common/utils/request';
-import { getRegisteredPageRoutes, normalizeComponentPath } from '@mango/admin-pages/core';
+import { getRegisteredPageRoutes, normalizeComponentPath, type MangoPageRoute } from '@mango/admin-pages/core';
 import {
   isMangoAdminFeatureEnabled,
   resolveMangoAdminFeatures,
@@ -70,8 +70,10 @@ export function useMenuHost() {
   const activeTopPath = ref('');
   const activeMenuPath = ref('');
 
-  const topMenus = computed(() => menus.value.filter(menu => !menu.meta?.isHide));
-  const activeTopMenu = computed(() => topMenus.value.find(menu => menu.path === activeTopPath.value) || topMenus.value[0]);
+  const topMenus = computed(() => menus.value.filter((menu) => !menu.meta?.isHide));
+  const activeTopMenu = computed(
+    () => topMenus.value.find((menu) => menu.path === activeTopPath.value) || topMenus.value[0],
+  );
   const sideMenus = computed(() => {
     const activeTop = activeTopMenu.value;
     if (!activeTop) {
@@ -91,7 +93,7 @@ export function useMenuHost() {
       });
       menus.value = [
         withMenuSource(createHomeRouteMenu(), 'shell'),
-        ...filterMenuForRoute(response || []).map(menu => toShellRouteMenu(withMenuSource(menu, 'backend'))),
+        ...filterMenuForRoute(response || []).map((menu) => toShellRouteMenu(withMenuSource(menu, 'backend'))),
         ...createRegisteredHiddenRouteMenus(),
         ...createDevRouteMenus(),
         ...createAccountRouteMenus(),
@@ -163,26 +165,31 @@ function filterMenuForRoute(menus: ShellMenu[]): ShellMenu[] {
   return filterMenuForRouteByFeatures(menus, enabledFeatures);
 }
 
-export function filterMenuForRouteByFeatures(menus: ShellMenu[], enabledFeatures: Set<MangoAdminFeatureCode>): ShellMenu[] {
+export function filterMenuForRouteByFeatures(
+  menus: ShellMenu[],
+  enabledFeatures: Set<MangoAdminFeatureCode>,
+): ShellMenu[] {
   return menus
-    .filter(menu => menu.menuType !== MenuTypeEnum.BUTTON)
-    .filter(menu => !isDeprecatedMenu(menu))
-    .filter(menu => {
+    .filter((menu) => menu.menuType !== MenuTypeEnum.BUTTON)
+    .filter((menu) => !isDeprecatedMenu(menu))
+    .filter((menu) => {
       const moduleCode = menu.moduleCode || inferModuleCode(menu.component, menu.path);
       return isMangoAdminFeatureEnabled(enabledFeatures, resolveMangoAdminModuleFeature(moduleCode));
     })
-    .map(menu => ({
+    .map((menu) => ({
       ...menu,
       children: menu.children ? filterMenuForRouteByFeatures(menu.children, enabledFeatures) : [],
     }))
-    .filter(menu => menu.menuType === MenuTypeEnum.MENU || (menu.children && menu.children.length > 0));
+    .filter((menu) => menu.menuType === MenuTypeEnum.MENU || (menu.children && menu.children.length > 0));
 }
 
 function isDeprecatedMenu(menu: ShellMenu) {
   const component = normalizeComponentPath(menu.component);
-  return menu.menuCode === 'cms:site-setting'
-    || menu.path === '/cms/site-settings'
-    || component === 'cms/site-settings/index';
+  return (
+    menu.menuCode === 'cms:site-setting' ||
+    menu.path === '/cms/site-settings' ||
+    component === 'cms/site-settings/index'
+  );
 }
 
 export function toShellRouteMenu(menu: ShellMenu): ShellRouteMenu {
@@ -193,10 +200,7 @@ export function toShellRouteMenu(menu: ShellMenu): ShellRouteMenu {
     moduleCode,
     meta: {
       ...(menu.meta || {}),
-      diagnostics: [
-        ...(menu.meta?.diagnostics || []),
-        ...diagnostics,
-      ],
+      diagnostics: [...(menu.meta?.diagnostics || []), ...diagnostics],
       menuContractError: diagnostics[0] || menu.meta?.menuContractError,
     },
   };
@@ -221,11 +225,11 @@ export function toShellRouteMenu(menu: ShellMenu): ShellRouteMenu {
 
 function resolveMenuDiagnostics(menu: ShellMenu): string[] {
   if (
-    menu.menuType === MenuTypeEnum.MENU
-    && menu.visible !== 0
-    && menu.pageType !== 'IFRAME'
-    && menu.pageType !== 'EXTERNAL_LINK'
-    && !menu.component
+    menu.menuType === MenuTypeEnum.MENU &&
+    menu.visible !== 0 &&
+    menu.pageType !== 'IFRAME' &&
+    menu.pageType !== 'EXTERNAL_LINK' &&
+    !menu.component
   ) {
     return [`菜单配置缺少 component：${menu.menuCode || menu.menuName || menu.path}`];
   }
@@ -261,14 +265,16 @@ function inferModuleCode(component?: string, path?: string) {
   if (target.includes('calendar/')) {
     return 'mango-calendar';
   }
-  if (target.includes('system/dict')
-    || target.includes('system/operation-log')
-    || target.includes('system/login-log')
-    || target.includes('system/tenant')
-    || target.includes('system/config')
-    || target.includes('system/public-path')
-    || target.includes('system/area')
-    || target.includes('system/file')) {
+  if (
+    target.includes('system/dict') ||
+    target.includes('system/operation-log') ||
+    target.includes('system/login-log') ||
+    target.includes('system/tenant') ||
+    target.includes('system/config') ||
+    target.includes('system/public-path') ||
+    target.includes('system/area') ||
+    target.includes('system/file')
+  ) {
     return 'mango-system';
   }
   if (target.includes('system/')) {
@@ -299,24 +305,29 @@ function createHomeRouteMenu(): ShellRouteMenu {
 }
 
 export function createNotFoundRouteMenu(path = '/404'): ShellRouteMenu {
-  return toShellRouteMenu(withMenuSource({
-    appCode: 'internal-admin',
-    moduleCode: 'mango-shell',
-    menuId: 'shell-not-found',
-    menuName: '404',
-    menuCode: 'shell:not-found',
-    parentId: 0,
-    menuType: MenuTypeEnum.MENU,
-    path,
-    component: 'error/404',
-    icon: 'Warning',
-    sort: -999,
-    status: 1,
-    visible: 0,
-    keepAlive: 0,
-    pageType: 'LOCAL_ROUTE',
-    children: [],
-  }, 'fallback'));
+  return toShellRouteMenu(
+    withMenuSource(
+      {
+        appCode: 'internal-admin',
+        moduleCode: 'mango-shell',
+        menuId: 'shell-not-found',
+        menuName: '404',
+        menuCode: 'shell:not-found',
+        parentId: 0,
+        menuType: MenuTypeEnum.MENU,
+        path,
+        component: 'error/404',
+        icon: 'Warning',
+        sort: -999,
+        status: 1,
+        visible: 0,
+        keepAlive: 0,
+        pageType: 'LOCAL_ROUTE',
+        children: [],
+      },
+      'fallback',
+    ),
+  );
 }
 
 export function resolveDirectoryRouteRedirect(menu: ShellRouteMenu | undefined, currentPath: string): string {
@@ -327,11 +338,15 @@ export function resolveDirectoryRouteRedirect(menu: ShellRouteMenu | undefined, 
   return targetPath && targetPath !== currentPath ? targetPath : '';
 }
 
-export function shouldShowDevCenter(options: MangoAdminShellDevCenterOptions = getMangoAdminShellOptions().devCenter || {}) {
+export function shouldShowDevCenter(
+  options: MangoAdminShellDevCenterOptions = getMangoAdminShellOptions().devCenter || {},
+) {
   if (typeof options.visible === 'boolean') {
     return options.visible;
   }
-  const deployEnv = normalizeDeployEnv(options.deployEnv || import.meta.env.VITE_MANGO_DEPLOY_ENV || import.meta.env.MODE);
+  const deployEnv = normalizeDeployEnv(
+    options.deployEnv || import.meta.env.VITE_MANGO_DEPLOY_ENV || import.meta.env.MODE,
+  );
   if (isProductionLikeEnv(deployEnv)) {
     return false;
   }
@@ -394,59 +409,66 @@ function createDevRouteMenus(): ShellRouteMenu[] {
   ];
 }
 
-function createRegisteredHiddenRouteMenus(): ShellRouteMenu[] {
+/**
+ * 把模块包注册的隐藏路由转成路由菜单。
+ *
+ * <p>是否注册只看模块自身的 feature：没有声明 feature 的模块（例如 `mango-information`、
+ * `mango-cms`）默认启用，不能因为没有出现在 feature 映射里就被丢掉，否则包内详情页会 404。
+ */
+export function createRegisteredHiddenRouteMenus(): ShellRouteMenu[] {
   const enabledFeatures = resolveMangoAdminFeatures(getMangoAdminShellOptions().features);
-  const moduleCodes = Array.from(new Set(Array.from(enabledFeatures).map(feature => FEATURE_MODULE_MAP[feature]).filter(Boolean)));
-  return getRegisteredPageRoutes(moduleCodes)
-    .map((route, index) => toShellRouteMenu(withMenuSource({
-      appCode: 'internal-admin',
-      moduleCode: route.moduleCode,
-      menuId: `registered-hidden:${route.moduleCode}:${route.path}`,
-      menuName: route.menuName || route.path,
-      menuCode: route.menuCode || `registered-hidden:${route.moduleCode}:${route.path}`,
-      parentId: 0,
-      menuType: MenuTypeEnum.MENU,
-      path: route.path,
-      component: route.component,
-      icon: route.icon,
-      sort: route.sort ?? (900000 + index),
-      status: 1,
-      visible: route.visible ?? 0,
-      keepAlive: route.keepAlive ?? 0,
-      pageType: 'LOCAL_ROUTE',
-      children: [],
-    }, 'shell')));
+  return getRegisteredPageRoutes()
+    .filter((route: MangoPageRoute & { moduleCode: string }) =>
+      isMangoAdminFeatureEnabled(enabledFeatures, resolveMangoAdminModuleFeature(route.moduleCode)),
+    )
+    .map((route, index) =>
+      toShellRouteMenu(
+        withMenuSource(
+          {
+            appCode: 'internal-admin',
+            moduleCode: route.moduleCode,
+            menuId: `registered-hidden:${route.moduleCode}:${route.path}`,
+            menuName: route.menuName || route.path,
+            menuCode: route.menuCode || `registered-hidden:${route.moduleCode}:${route.path}`,
+            parentId: 0,
+            menuType: MenuTypeEnum.MENU,
+            path: route.path,
+            component: route.component,
+            icon: route.icon,
+            sort: route.sort ?? 900000 + index,
+            status: 1,
+            visible: route.visible ?? 0,
+            keepAlive: route.keepAlive ?? 0,
+            pageType: 'LOCAL_ROUTE',
+            children: [],
+          },
+          'shell',
+        ),
+      ),
+    );
 }
 
 function createComponentDemoMenus(): ShellMenu[] {
   const enabledFeatures = resolveMangoAdminFeatures(getMangoAdminShellOptions().features);
-  return getMangoAdminShellOptions().devCenter?.pages?.()
-    .filter(page => !page.feature || enabledFeatures.has(page.feature))
-    .map(page => ({
-      ...page,
-      appCode: 'internal-admin',
-      moduleCode: 'mango-shell',
-      parentId: 'shell-develop-components',
-      menuType: MenuTypeEnum.MENU,
-      status: 1,
-      visible: 1,
-      meta: { source: 'shell' },
-      keepAlive: 1,
-      pageType: 'LOCAL_ROUTE',
-      children: [],
-    })) || [];
+  return (
+    getMangoAdminShellOptions()
+      .devCenter?.pages?.()
+      .filter((page) => !page.feature || enabledFeatures.has(page.feature))
+      .map((page) => ({
+        ...page,
+        appCode: 'internal-admin',
+        moduleCode: 'mango-shell',
+        parentId: 'shell-develop-components',
+        menuType: MenuTypeEnum.MENU,
+        status: 1,
+        visible: 1,
+        meta: { source: 'shell' },
+        keepAlive: 1,
+        pageType: 'LOCAL_ROUTE',
+        children: [],
+      })) || []
+  );
 }
-
-const FEATURE_MODULE_MAP = {
-  authorization: 'mango-authorization',
-  system: 'mango-system',
-  workflow: 'mango-workflow',
-  file: 'mango-file',
-  template: 'mango-template',
-  notice: 'mango-notice',
-  numgen: 'mango-numgen',
-  calendar: 'mango-calendar',
-} as const;
 
 function withMenuSource(menu: ShellMenu, source: ShellMenuSource): ShellMenu {
   return {
@@ -455,7 +477,7 @@ function withMenuSource(menu: ShellMenu, source: ShellMenuSource): ShellMenu {
       ...(menu.meta || {}),
       source: menu.meta?.source || source,
     },
-    children: menu.children?.map(child => withMenuSource(child, source)),
+    children: menu.children?.map((child) => withMenuSource(child, source)),
   };
 }
 
@@ -480,19 +502,26 @@ function createAccountRouteMenus(): ShellRouteMenu[] {
   ];
 }
 
-function createAccountRouteMenu(menu: Pick<ShellMenu, 'menuId' | 'menuName' | 'menuCode' | 'path' | 'component' | 'icon'>): ShellRouteMenu {
-  return toShellRouteMenu(withMenuSource({
-    ...menu,
-    appCode: 'internal-admin',
-    moduleCode: 'mango-authorization',
-    parentId: 0,
-    menuType: MenuTypeEnum.MENU,
-    sort: 0,
-    status: 1,
-    visible: 0,
-    pageType: 'LOCAL_ROUTE',
-    children: [],
-  }, 'shell'));
+function createAccountRouteMenu(
+  menu: Pick<ShellMenu, 'menuId' | 'menuName' | 'menuCode' | 'path' | 'component' | 'icon'>,
+): ShellRouteMenu {
+  return toShellRouteMenu(
+    withMenuSource(
+      {
+        ...menu,
+        appCode: 'internal-admin',
+        moduleCode: 'mango-authorization',
+        parentId: 0,
+        menuType: MenuTypeEnum.MENU,
+        sort: 0,
+        status: 1,
+        visible: 0,
+        pageType: 'LOCAL_ROUTE',
+        children: [],
+      },
+      'shell',
+    ),
+  );
 }
 
 export { containsMenuPath };
@@ -513,8 +542,7 @@ export function resolveMenuPathByCode(menus: ShellRouteMenu[], menuCode: string)
   }
   const target = findMenuByCode(menus, normalizedCode);
   if (!target) {
-    return getRegisteredPageRoutes()
-      .find(route => route.menuCode === normalizedCode)?.path || '';
+    return getRegisteredPageRoutes().find((route) => route.menuCode === normalizedCode)?.path || '';
   }
   if (target.sourceMenu && isExplicitlyNavigableMenu(target)) {
     return target.path;
@@ -574,7 +602,8 @@ function resolvePlainRouteMenu(menu: ShellRouteMenu): ShellRouteMenu | undefined
       return target;
     }
   }
-  return resolveFirstMenuNode(menu, item => Boolean(item.path && (!item.children || item.children.length === 0))) as ShellRouteMenu | undefined;
+  return resolveFirstMenuNode(menu, (item) => Boolean(item.path && (!item.children || item.children.length === 0))) as
+    ShellRouteMenu | undefined;
 }
 
 function resolveRunnableRedirectMenu(menu: ShellRouteMenu): ShellRouteMenu | undefined {
@@ -597,6 +626,10 @@ export function isRunnableMenu(menu?: ShellRouteMenu): boolean {
   return source.menuType === MenuTypeEnum.MENU && Boolean(source.component);
 }
 
-export function findUnexpectedTopLevelMenus(uiTopMenus: string[], backendTopMenus: string[], allowedShellMenus: string[]) {
-  return uiTopMenus.filter(name => !backendTopMenus.includes(name) && !allowedShellMenus.includes(name));
+export function findUnexpectedTopLevelMenus(
+  uiTopMenus: string[],
+  backendTopMenus: string[],
+  allowedShellMenus: string[],
+) {
+  return uiTopMenus.filter((name) => !backendTopMenus.includes(name) && !allowedShellMenus.includes(name));
 }

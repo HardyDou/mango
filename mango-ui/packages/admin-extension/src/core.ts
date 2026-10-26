@@ -50,10 +50,61 @@ export type MangoPageRoute = {
   keepAlive?: number;
 };
 
-const pageLoaders = new Map<string, MangoPageLoader>();
-const moduleByPage = new Map<string, string>();
-const routeRegistries = new Map<string, MangoPageRoute[]>();
-const moduleRegistrations = new Map<string, { packageName?: string; packageVersion?: string }>();
+declare const __MANGO_ADMIN_EXTENSION_VERSION__: string;
+
+/**
+ * 构建期注入当前包版本；源码直连开发（source 模式）未注入时退回 dev，避免整站 404。
+ */
+const ADMIN_EXTENSION_VERSION: string =
+  typeof __MANGO_ADMIN_EXTENSION_VERSION__ === 'string' ? __MANGO_ADMIN_EXTENSION_VERSION__ : 'dev';
+
+type MangoPageRegistryState = {
+  pageLoaders: Map<string, MangoPageLoader>;
+  moduleByPage: Map<string, string>;
+  routeRegistries: Map<string, MangoPageRoute[]>;
+  moduleRegistrations: Map<string, { packageName?: string; packageVersion?: string }>;
+};
+
+const PAGE_REGISTRY_GLOBAL_KEY = Symbol.for('@mango/admin-extension.page-registry');
+const PAGE_REGISTRY_VERSION_GLOBAL_KEY = Symbol.for('@mango/admin-extension.page-registry.version');
+
+type MangoPageRegistryGlobal = typeof globalThis & {
+  [PAGE_REGISTRY_GLOBAL_KEY]?: MangoPageRegistryState;
+  [PAGE_REGISTRY_VERSION_GLOBAL_KEY]?: string;
+};
+
+/**
+ * 页面注册表必须是全局单例。依赖树中一旦出现两个 @mango/admin-extension 物理副本，
+ * 各副本会各持一份模块级 Map，业务包写入 A、admin-shell 从 B 查询，最终静默 404。
+ * 这里把状态挂到 globalThis，使同版本的多个副本也共用同一份注册表；
+ * 同时记录加载版本，发现版本不一致时直接报错，避免再次退化成静默 404。
+ */
+function resolvePageRegistry(): MangoPageRegistryState {
+  const scope = globalThis as MangoPageRegistryGlobal;
+  const existing = scope[PAGE_REGISTRY_GLOBAL_KEY];
+  const loadedVersion = scope[PAGE_REGISTRY_VERSION_GLOBAL_KEY];
+  if (existing) {
+    if (loadedVersion && loadedVersion !== ADMIN_EXTENSION_VERSION) {
+      throw new Error(
+        `[mango/admin-extension] 检测到多个 @mango/admin-extension 版本同时加载（已加载 ${loadedVersion}，当前 ${ADMIN_EXTENSION_VERSION}）。` +
+          ' 页面注册表是全局单例，版本不一致会导致模块菜单 404。' +
+          ' 请对齐依赖树中的 @mango/admin-extension 版本并整套升级同一发布批次。',
+      );
+    }
+    return existing;
+  }
+  const created: MangoPageRegistryState = {
+    pageLoaders: new Map<string, MangoPageLoader>(),
+    moduleByPage: new Map<string, string>(),
+    routeRegistries: new Map<string, MangoPageRoute[]>(),
+    moduleRegistrations: new Map<string, { packageName?: string; packageVersion?: string }>(),
+  };
+  scope[PAGE_REGISTRY_GLOBAL_KEY] = created;
+  scope[PAGE_REGISTRY_VERSION_GLOBAL_KEY] = ADMIN_EXTENSION_VERSION;
+  return created;
+}
+
+const { pageLoaders, moduleByPage, routeRegistries, moduleRegistrations } = resolvePageRegistry();
 
 export function normalizeComponentPath(componentPath?: string) {
   return (componentPath || '')

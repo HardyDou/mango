@@ -134,8 +134,8 @@ npm --prefix frontend run build
 | 配置入口 | 字段 / Key | 默认值 | 含义 | 影响行为 | 源码入口 |
 |----------|------------|--------|------|----------|----------|
 | `application.yml` | `server.port` | `${MANGO_BACKEND_PORT:5555}` | 后端端口 | 本地后端监听端口 | `backend/app/src/main/resources/application.yml` |
-| `application.yml` | `spring.servlet.multipart.max-file-size` | `512MB` | 单文件上传上限 | 影响文件上传请求 | `application.yml` |
-| `application.yml` | `spring.servlet.multipart.max-request-size` | `1024MB` | 单次请求上传上限 | 影响批量上传请求 | `application.yml` |
+| `application.yml` | `spring.servlet.multipart.max-file-size` | `10GB` | 单文件上传上限 | 影响文件上传请求 | `application.yml` |
+| `application.yml` | `spring.servlet.multipart.max-request-size` | `10GB` | 单次请求上传上限 | 影响批量上传请求 | `application.yml` |
 | `application.yml` | `spring.datasource.url` | MySQL 本地 URL | 数据库连接 | Flyway、MyBatis、平台模块数据 | `application.yml` |
 | `application.yml` | `mango.security.jwt.secret` | 模板默认字符串 | JWT 密钥 | 生产必须覆盖 | `application.yml` |
 | `application.yml` | `mango.auth.security.permit-paths` | swagger、health、realtime 等路径 | 放行路径 | 不走认证拦截 | `application.yml` |
@@ -245,7 +245,7 @@ full preset 会启用授权、身份、组织、系统等平台模块的 migrati
 | Maven verify 报 quality gate failure | 模块元数据、持久化边界、P3C/PMD、Checkstyle 或 SpotBugs 失败 | 查看 `backend/target/mango-quality-report.json` 和对应模块 `target` 报告并修复源码 |
 | 首次补回 `module.properties` 后历史问题全部变成新增 | 模块身份扩大了门禁可见范围，但尚未完成受控首次纳管 | 不在业务 PR 抬高预算；按 `business-pmo/README.md` 建立独立纳管 PR，使用完整 inventory 写入并由 CI 复验 |
 | 后端 health 卡住且 `mango_dev_*` 数据库不存在 | `MANGO_DB_AUTO_CREATE` 未启用、本机缺少 `mysql` 命令，或 `.mango/dev-workspace.env` 中 MySQL 连接配置不可用 | 查 `command -v mysql`、`MANGO_DB_AUTO_CREATE`、`MANGO_DB_HOST`、`MANGO_DB_PORT`、`MANGO_DB_USERNAME`、`MANGO_DB_PASSWORD` 和 `.mango/run/logs/{{projectKebab}}-service.log`；如果 CLI 没有输出 `ensured database` 或 `failed to auto-create database`，按 Mango issue runbook 登记 |
-| 文件上传大小不符合预期 | multipart 上限仍是模板默认值 | 修改 `spring.servlet.multipart.max-file-size` 和 `max-request-size` |
+| 文件上传大小不符合预期 | multipart 上限仍是模板默认值 | 修改 `spring.servlet.multipart.max-file-size` 和 `max-request-size`；模板默认均为 10GB |
 | Office 预览不可用 | `MANGO_OFFICE_PLUGIN_ENABLED=false` | 安装并确认 Office 插件后再启用 |
 | 菜单没有初始化 | 对应模块 migration 或资源同步未执行 | 查 Flyway history、资源同步日志和授权模块配置 |
 | 系统事件菜单请求 404 | 已有项目未启用领域事件 Outbox，或 KV Outbox 存储未就绪 | 确认 `mango.event.outbox.enabled=true`、`mango.kv.store.type=jdbc` 和 Outbox 表已由当前 Bootstrap/Flyway 链初始化 |
@@ -256,9 +256,9 @@ full preset 会启用授权、身份、组织、系统等平台模块的 migrati
 
 ### Issue #690 升级合同
 
-本模板随 Maven `1.0.57`、`@mango/pmo@1.4.6`、`@mango/cli@1.2.18` 完整 tuple 覆盖 CLI 自带业务模块模板、Maven plugin、Bootstrap/runtime、Resource、BSQL、Boot JAR、前端生成物和真实业务回归。业务项目若曾使用 Maven `1.0.30` 或其它 `1.0.3x` 组合，必须同时升级发布说明中的 Maven、PMO、CLI 和前端矩阵，不能只替换一个 Maven 或 CLI 版本。
+本模板随 Maven `1.1.1`、`@mango/pmo@1.4.8`、`@mango/cli@1.3.5` 完整 tuple 覆盖 CLI 自带业务模块模板、Maven plugin、Bootstrap/runtime、Resource、BSQL、Boot JAR、前端生成物和真实业务回归。业务项目若曾使用 Maven `1.0.30` 或其它 `1.0.3x` 组合，必须同时升级发布说明中的 Maven、PMO、CLI 和前端矩阵，不能只替换一个 Maven 或 CLI 版本。
 
-升级顺序：备份项目与数据库，安装 `@mango/cli@1.2.18`，先执行 `mango pmo upgrade --project-dir . --to 1.4.6 --dry-run` 并审阅 baseline/Skill 与历史文档合同变化，再执行实际升级与 `mango pmo check --project-dir . --locked`；统一把 `backend/pom.xml` 的 `<mango.version>`/`mango-bom` 保持为 `1.0.57`，在 `frontend` 安装根 `CHANGELOG.md` 的精确 npm 矩阵并执行冻结安装和 `pnpm check`，再执行 `mango workspace init`、`mvn -f backend/pom.xml verify`、`mvn -f backend/pom.xml install`、`mango dev doctor` 和 `mango dev start`。既有数据库采用 `bootstrap plan -> apply --strategy=rolling -> verify -> runtime -> finalize`；首次空库才使用 `cold`。验收包含真实登录、菜单/权限、个人中心四个扩展入口、CRUD、401、生产构建、Boot JAR、独立 Maven consumer、BSQL baseline 和新业务模块模板自检。失败时保留 receipt/审计日志，停止候选 generation 并按 `bootstrap abort` 回滚，不手工删库。
+升级顺序：备份项目与数据库，安装 `@mango/cli@1.3.5`，先执行 `mango pmo upgrade --project-dir . --to 1.4.8 --dry-run` 并审阅 baseline/Skill 与历史文档合同变化，再执行实际升级与 `mango pmo check --project-dir . --locked`；统一把 `backend/pom.xml` 的 `<mango.version>`/`mango-bom` 保持为 `1.1.1`，在 `frontend` 安装根 `CHANGELOG.md` 的精确 npm 矩阵并执行冻结安装和 `pnpm check`，再执行 `mango workspace init`、`mvn -f backend/pom.xml verify`、`mvn -f backend/pom.xml install`、`mango dev doctor` 和 `mango dev start`。既有数据库采用 `bootstrap plan -> apply --strategy=rolling -> verify -> runtime -> finalize`；首次空库才使用 `cold`。验收包含真实登录、菜单/权限、个人中心四个扩展入口、CRUD、401、生产构建、Boot JAR、独立 Maven consumer、BSQL baseline 和新业务模块模板自检。失败时保留 receipt/审计日志，停止候选 generation 并按 `bootstrap abort` 回滚，不手工删库。
 
 生成业务模块时，资源声明使用 `META-INF/mango/resources/*.json|yml|yaml`，由 Bootstrap 处理 `BOOTSTRAP_REQUIRED`，由 Runtime eventual worker 处理 `RUNTIME_EVENTUAL`；不要恢复旧的 `resource-manifest.json` 作为新模块模板。
 - [业务 PMO 入口](./business-pmo/README.md)

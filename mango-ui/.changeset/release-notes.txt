@@ -1,88 +1,77 @@
 ## Pull Requests
 
-- [PR #1003](https://github.com/HardyDou/mango/pull/1003) Added unified management layouts and department navigation. Packages: @mango/admin-shell@1.0.78 and generated npm dependents through @mango/cli@1.2.18. Business Adaptation: upgrade the complete npm tuple and verify management navigation and department entry flows.
-- [PR #1004](https://github.com/HardyDou/mango/pull/1004) Fixed future-date system log queries. Packages: @mango/system@1.0.46 and generated npm dependents through @mango/cli@1.2.18. Business Adaptation: verify future-date query filters and empty-result behavior.
-- [PR #1005](https://github.com/HardyDou/mango/pull/1005) Changed understanding-first governance and business PMO synchronization. Packages: @mango/pmo@1.4.6, @mango/cli@1.2.18 and generated npm dependents. Business Adaptation: synchronize the PMO baseline and use the current reading-entry and comprehension contracts.
-- [PR #1006](https://github.com/HardyDou/mango/pull/1006) Changed capability-document checks to handle large diffs. Packages: @mango/pmo@1.4.6 and @mango/cli@1.2.18. Business Adaptation: rerun capability checks on large repository changes without changing their scope rules.
-- [PR #1007](https://github.com/HardyDou/mango/pull/1007) Changed PMO scope checks to handle large diffs. Packages: @mango/pmo@1.4.6 and @mango/cli@1.2.18. Business Adaptation: run PMO scope checks against large changesets with the same required boundaries.
-- [PR #1008](https://github.com/HardyDou/mango/pull/1008) Changed release scope checks to handle large diffs. Packages: @mango/pmo@1.4.6 and @mango/cli@1.2.18. Business Adaptation: plan releases from large source diffs without manually editing the release closure.
-- [PR #1009](https://github.com/HardyDou/mango/pull/1009) Changed business integration guides and preserved their current entry paths. Packages: Mango Maven/docs 1.0.57, @mango/pmo@1.4.6 and @mango/cli@1.2.18. Business Adaptation: follow the updated integration guide paths and upgrade notes.
-- [PR #1011](https://github.com/HardyDou/mango/pull/1011) Changed Java 21 module-refactor verification. Packages: Mango Maven/docs 1.0.57 and @mango/cli@1.2.18. Business Adaptation: validate affected Maven modules with the Java 21 baseline before consumer rollout.
-- [PR #1012](https://github.com/HardyDou/mango/pull/1012) Fixed decision-review validation and preserved legacy FAQ URLs. Packages: @mango/pmo@1.4.6, @mango/cli@1.2.18 and generated npm dependents. Business Adaptation: keep existing FAQ links while applying the current decision-review contract.
-- [PR #1013](https://github.com/HardyDou/mango/pull/1013) Added MangoDataTable switch-column support. Packages: @mango/common@2.1.2 and generated npm dependents through @mango/cli@1.2.18. Business Adaptation: use the documented switch column type and verify table rendering, values and events.
-- [PR #1015](https://github.com/HardyDou/mango/pull/1015) Changed Admin Shell login E2E institution selection and merged-head evidence. Packages: @mango/admin-shell@1.0.78 and generated npm dependents through @mango/cli@1.2.18. Business Adaptation: run the login flow with explicit institution selection and retain the updated P0 evidence.
+- [PR #1114](https://github.com/HardyDou/mango/pull/1114) Fixed: repeated `bootstrap finalize` for the same released generation now returns `FINALIZED` instead of failing, and the deployment call sequence is stated as one contract. Packages: Maven/docs `1.1.1` (`mango-infra-bootstrap-core`, `mango-infra-bootstrap-starter`). Business Adaptation: upgrade the bootstrap coordinates and keep `plan -> apply --strategy=rolling -> finalize -> verify`; delete deploy-script prechecks that inspect the control table.
+- [PR #1112](https://github.com/HardyDou/mango/pull/1112) Added: every Maven batch now generates a reader-facing upgrade page, publishes it to the docs site and ships it inside the docs bundle. Packages: Maven/docs `1.1.1` (`mango-docs-bundle`), `@mango/pmo@1.4.8`, `@mango/cli@1.3.5`. Business Adaptation: read the generated upgrade page under `mango-docs/guides/operations/` before upgrading; `mango docs pull` now returns that page.
+- [PR #1113](https://github.com/HardyDou/mango/pull/1113) Changed: module READMEs gain a versioned `升级与兼容` section convention that records impact, required actions, verification and rollback without adding a blocking gate. Packages: `@mango/pmo@1.4.8`, `@mango/cli@1.3.5`. Business Adaptation: no action for consumers; module owners fill the section when they change a public surface.
+- [PR #1108](https://github.com/HardyDou/mango/pull/1108) Added: the `Mango 1.0.63 -> 1.1.0` upgrade guide covering sync-mode convergence, ownership migration, CMS banner removal and the frontend major upgrades. Packages: Maven/docs `1.1.1` (`mango-docs-bundle`). Business Adaptation: follow the guide for any consumer still on `1.0.63` or earlier.
+- [PR #1109](https://github.com/HardyDou/mango/pull/1109) Changed: the CMS banner removal guide and the `1.0.63 -> 1.1.0` guide are now part of the published docs site instead of returning 404. Packages: Maven/docs `1.1.1` (`mango-docs-bundle`). Business Adaptation: none; the previously missing pages resolve after upgrade.
+- [PR #1115](https://github.com/HardyDou/mango/pull/1115) Changed (audit record only, no artifact in this batch): pre-written release-notes entry and evidence for the bootstrap finalize idempotency fix. Packages: none in this batch. Business Adaptation: no action.
 
 ## Fixed
 
-- Allow system log queries whose end date is later than the current date.
-- Preserve legacy FAQ URLs while validating the current decision-review contract.
-- Keep Admin Shell login verification aligned with institution selection.
+- 同一构建版本重复执行 `bootstrap finalize` 不再报 `BOOTSTRAP_CANDIDATE_MISSING`：已 `FINALIZED` 且 fingerprint 未变的同一 generation 直接返回 `FINALIZED`（0 步，控制表与执行表不变化），内容不同时返回 `BOOTSTRAP_GENERATION_ALREADY_RELEASED`。
+- 文档站不再因为人工白名单遗漏而让升级指南 404：`mango-docs/guides/operations/mango-*-to-*-upgrade.md` 自动收录并进入侧边栏。
+- `check-governance-intent` 在 `main` 上的既有失败已修复：CMS Banner 指南与租户 FAQ 改为操作化表述，生成模板同样规避规则化措辞。
 
 ## Added
 
-- Add MangoDataTable switch-column support with the public component contract.
-- Add unified management layouts and department navigation.
-- Add the PMO comprehension and understanding-first governance contract to the published PMO projection.
+- 每个 Maven 发布批次由 `mango release plan` 自动生成一份升级页面，内容覆盖版本矩阵、变更摘要、升级前检查、依赖升级、迁移与启动验证、业务回归、回滚边界和 Agent 执行清单。
+- `check-release-plan` 在 CI 与 `release prepare` 中校验升级页面存在且与计划一致；页面随 `mango-docs-bundle` 交付给业务项目。
+- 模块 README 新增「升级与兼容」书写规范：按版本记录适用版本、变更、影响、需要做的事、验证与回滚。
 
 ## Changed
 
-- Advance the non-application Mango Maven reactor and `io.mango:mango-docs-bundle` from 1.0.56 to 1.0.57 across 192 coordinates.
-- Publish the machine-generated 28-package npm dependency closure in topology order from @mango/common@2.1.2 through @mango/cli@1.2.18.
-- Publish @mango/pmo@1.4.6 and the matching Business Starter and CLI PMO projections.
-- Make release, PMO scope and capability checks resilient to large diffs without changing their declared ownership boundaries.
-- Keep Maven, npm, CLI, PMO, template and generated Business Starter projections on one release plan and immutable source tree.
+- `mango-release` Skill 的 Readiness 增加升级页面要求，并说明生成、校验、发布与交付链路。
+- `mango-pmo` 规则索引版本 22 → 23，能力说明规范新增模块升级记录条款（明确不新增阻塞门禁）。
+- `mango-docs-bundle` 内容更新：新增升级页面机制、模块升级记录模板与上述指南。
 
 ## Versions
 
-- Mango Maven non-application reactor and `io.mango:mango-docs-bundle`: 1.0.56 -> 1.0.57 across 192 coordinates.
-- npm closure: @mango/common@2.1.2, @mango/admin-extension@1.0.9, @mango/ai@1.1.7, @mango/auth@1.0.37, @mango/file@1.1.2, @mango/detail@1.1.2, @mango/grid-layout@1.0.26, @mango/grid-widgets@1.0.32, @mango/home@1.0.25, @mango/link-page@1.0.9, @mango/pmo@1.4.6, @mango/rbac@1.0.38, @mango/site-shell@1.0.22, @mango/system@1.0.46, @mango/admin-pages@1.0.47, @mango/calendar@1.0.48, @mango/cms@1.0.37, @mango/job@1.0.41, @mango/link@1.0.34, @mango/notice@1.0.53, @mango/numgen@1.0.49, @mango/payment@1.0.40, @mango/template@1.0.49, @mango/workflow@1.0.57, @mango/admin-shell@1.0.78, @mango/workflow-business-example@1.0.56, @mango/admin@1.1.14 and @mango/cli@1.2.18.
-- No Mango application fat JAR is published in the default Maven batch.
+- `io.mango:mango-parent`, the non-application Maven reactor and `io.mango:mango-docs-bundle`: `1.1.0` -> `1.1.1`.
+- npm: `@mango/pmo` `1.4.7` -> `1.4.8`; `@mango/cli` `1.3.3` -> `1.3.5` via dependency closure (`@mango/cli` `1.3.4` -> `1.3.5`).
+- 其余 Maven 坐标与 npm 包随批次统一推进到 `1.1.1` / 依赖闭包版本。
 
 ## Published Packages
 
-1. Publish the sealed 192-coordinate non-application Maven reactor and `io.mango:mango-docs-bundle:1.0.57` to the Maven publish registry, then verify both Maven registry roles.
-2. Publish the 28-package npm topology in machine-generated dependency order, ending at `@mango/cli@1.2.18`, then verify every package from the npm consume registry.
-3. Verify one clean mixed consumer, create the immutable tag `v2026.10.08-maven-1.0.57-admin-layout-data-table-release`, and create the GitHub Release only after registry and consumer verification.
+1. Publish the sealed non-application Maven reactor and `io.mango:mango-docs-bundle:1.1.1`, then verify both Maven registry roles.
+2. Publish the machine-planned npm closure (`@mango/pmo@1.4.8`, `@mango/cli@1.3.5`) and verify both npm registry roles.
+3. Run one aggregate clean Maven consumer plus a clean npm consumer that installs `@mango/cli@1.3.5` and generates a project without a workspace link.
+4. Create Tag `v2026.10.23-maven-1.1.1-pmo-upgrade-record-release` and its GitHub Release only after consume verification succeeds.
 
 ## Business Impact
 
-- Generated frontend consumers receive the unified management layout, department navigation and MangoDataTable switch-column capability.
-- System consumers receive future-date log query support.
-- PMO-managed repositories receive the understanding-first governance, decision-review validation and large-diff checker updates.
-- Java consumers receive the completed Java 21 module-refactor verification baseline with Maven 1.0.57.
-- Existing FAQ URLs remain valid, and no application deployment, production traffic change or destructive database migration is included.
+- 后端消费者：`mango-infra-bootstrap-*` 的重复 finalize 行为变为幂等；其余 Maven 坐标仅为版本推进，无契约变化。
+- 部署脚本：按 `plan -> apply --strategy=rolling -> finalize -> verify` 调用即可，不再需要自行推断控制表是否需要 finalize。
+- PMO 消费者：`@mango/pmo@1.4.8` 带模块升级记录规范与升级页面机制；`mango pmo upgrade` 后业务仓可读到同口径文档。
+- 文档：`mango docs pull` 在 `1.1.1` 下能拉到本批次升级页面与模块 README 模板。
+- 不包含应用部署、流量切换或数据库回滚。
 
 ## Upgrade Estimate
 
-- Audience: generated Mango applications, direct frontend package consumers, Maven platform consumers and PMO-managed business repositories.
-- Engineering Effort: 30 to 60 minutes for standard generated consumers; 1 to 2 hours for custom Admin Shell, DataTable or PMO integrations.
-- Execution Window: 45 to 120 minutes including dependency updates, clean Maven/npm resolution, PMO checks and registry propagation.
-- Service Downtime: no framework-mandated downtime; consumers use their normal dependency rollout and restart window.
-- Rollback Effort: 20 to 45 minutes to restore Maven/docs 1.0.56, CLI 1.2.17 and the previous immutable npm tuple.
-- Assumptions: Java 21, Node 22.23.1, configured Nexus Maven/npm roles, clean consumer installs and representative login/table/log-query fixtures.
+- Audience: 使用 Mango `1.1.0` 或更早版本的业务项目，尤其是自建部署引擎调用 bootstrap 的项目。
+- Engineering Effort: low; 替换 Maven/npm 版本并按升级页核对部署脚本即可，无业务代码改动。
+- Execution Window: 30 to 60 minutes including migration-free restart and bootstrap 验证。
+- Service Downtime: one planned restart window；本次批次无数据库迁移。
+- Rollback Effort: low; 回退到 `1.1.0` 与 PMO `1.4.7`、CLI `1.3.4`，已写入的 `FINALIZED` 状态无需修复。
+- Assumptions: MySQL 8 consumer database, Java 21 build, Node 22.23.1 frontend build, and an operator able to run one bootstrap sequence.
 
 ## Upgrade Notes
 
-1. Upgrade Maven/docs to 1.0.57 and install the complete npm tuple listed above, ending at @mango/cli@1.2.18.
-2. Upgrade @mango/pmo@1.4.6 and @mango/cli@1.2.18 together in PMO-managed repositories; synchronize the Business Starter baseline.
-3. Verify management navigation, institution-selected login, MangoDataTable switch columns and future-date system log queries from a clean published-package consumer.
-4. Run the current PMO reading-entry, decision-review, capability-document and large-diff checks; do not mix workspace links with published dependencies.
-5. Do not publish application fat JARs or overwrite any immutable coordinate.
+1. 升级 Maven/docs 到 `1.1.1`，npm 到 `@mango/pmo@1.4.8` 与 `@mango/cli@1.3.5`。
+2. 先读 `mango-docs/guides/operations/` 下与本批次对应的升级页面，按页面执行升级前检查与验证。
+3. 部署引擎遵循 `plan -> apply --strategy=rolling -> finalize -> verify` 统一序列；删除自行判断“是否需要 finalize”的预检。
+4. 重复执行同一版本发布会返回 `FINALIZED` 而非失败；若返回 `BOOTSTRAP_GENERATION_ALREADY_RELEASED`，说明同一 generation 的内容已变化，需要新 generation。
+5. 本批次无数据库迁移，升级后确认 `mango_bootstrap_control` 为 `FINALIZED`、`flyway_schema_history_resource` 无新增失败记录即可。
 
 ## Verification
 
-- Run `mango release registry doctor` for npm publish/consume and Maven publish/consume roles.
-- Run catalog, release impact, package exports, admin-style, module-style, PMO projection, CLI version, generated backend, release-plan, release-notes and local release checks before prepare.
-- Prepare one sealed candidate from the final clean source tree and verify the recorded npm and Maven checksums.
-- After publication, re-resolve all 192 Maven coordinates and 28 npm packages from both publish and consume registries, then run one pure consume-registry mixed consumer.
-- Verify Admin Shell institution selection, MangoDataTable switch-column value and event behavior, future-date log filters, PMO decision-review validation and legacy FAQ URLs.
+- Maven: 从 consume registry 解析 `io.mango:mango-infra-bootstrap-core:1.1.1`、`io.mango:mango-infra-bootstrap-starter:1.1.1` 与 `io.mango:mango-docs-bundle:1.1.1` 并比对封存校验和。
+- npm: 从 publish 与 consume registry 解析 `@mango/pmo@1.4.8`、`@mango/cli@1.3.5` 并比对封存 integrity。
+- Repository gates: `mango release plan`、`mango release prepare`、`mango release publish` 证据，README 双审计与 PMO 门禁。
+- Consumer assertion: 升级库重复执行 `bootstrap finalize` 两次均返回 `FINALIZED`；`mango docs pull` 能读到本批次升级页；`mango pmo upgrade --to 1.4.8` 后模块 README 模板含「升级与兼容」。
 
 ## Rollback
 
-- Restore consumers to Maven/docs 1.0.56, @mango/cli@1.2.17 and the previous immutable npm tuple through their normal application release process; never republish or overwrite coordinates.
-- Revert PMO-managed repositories to the prior @mango/pmo and CLI pair if governance checks expose an integration issue.
-- No database rollback or production traffic rollback is required because this batch contains no destructive migration or deployment action.
-
-## Audit History
-
-- PRs #997, #998 and #999 are the prior 1.0.56 release preparation, capability documentation and closeout records; they are retained here as audit history and are not release-bearing changes in this batch.
+- 通过正常依赖发布流程把消费者回退到 Maven/docs `1.1.0` 与 PMO `1.4.7`、CLI `1.3.4`；已发布的 `1.1.1` 坐标不可覆盖。
+- 本批次无数据库迁移，回退不需要恢复数据库快照；`mango_bootstrap_control` 中已写入的 `FINALIZED` 状态可被旧版本继续使用。
+- 文档回退仅影响可读性，不影响运行时。

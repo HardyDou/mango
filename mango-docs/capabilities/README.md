@@ -72,6 +72,7 @@
 | 模块 | 能做什么 | 说明入口 |
 |---|---|---|
 | CMS | 提供内容、栏目和内容运营管理能力。 | [CMS README](../../mango/mango-platform/mango-cms/README.md) |
+| Information | 提供表单定义、托管表单、公开提交、文件上传和采集记录处理能力。 | [Information README](../../mango/mango-platform/mango-information/README.md) |
 | Home | 提供用户首页、首页模板和工作台能力。 | [Home README](../../mango/mango-platform/mango-home/README.md) |
 | Link | 提供网址导航、链接分类和个人收藏。 | [Link README](../../mango/mango-platform/mango-link/README.md) |
 | Payment | 提供支付订单、渠道、签名和回调处理。 | [Payment README](../../mango/mango-platform/mango-payment/README.md) |
@@ -87,6 +88,7 @@
 | RBAC | 提供菜单、角色、权限、数据范围和成员批量角色管理页面。 | [RBAC README](../../mango-ui/packages/rbac/README.md) |
 | `@mango/file` | 提供上传、附件列表、文件预览和文件管理页面。上传 API 支持可选实例级 `HttpClient`；未传入时保留原有默认请求路径，上传总超时和无进度超时独立配置。`downloadUrl(id, options)` 与 `download(id, options)` 支持 `compression` 与 `perFileTargetSizeBytes`，可由文件服务直接返回压缩内容。 | [File Frontend README](../../mango-ui/packages/file/README.md) |
 | `@mango/workflow` | 提供流程管理页面、审批组件和 Workflow API。 | [Workflow Frontend README](../../mango-ui/packages/workflow/README.md) |
+| `@mango/information` | 提供表单管理、表单设计、托管表单、公开提交、文件上传和采集记录页面及类型化 API。 | [Information Frontend README](../../mango-ui/packages/information/README.md) |
 | `@mango/job` | 提供任务管理和调度页面。 | [Job Frontend README](../../mango-ui/packages/job/README.md) |
 | `@mango/notice` | 提供消息中心、通知管理和通知展示组件。 | [Notice Frontend README](../../mango-ui/packages/notice/README.md) |
 | Mango CLI | 提供项目创建、workspace、开发、PMO 和交付命令。 | [CLI README](../../mango-ui/packages/mango-cli/README.md) |

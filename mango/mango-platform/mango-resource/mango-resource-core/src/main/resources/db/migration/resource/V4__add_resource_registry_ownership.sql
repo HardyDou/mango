@@ -1,0 +1,4 @@
+ALTER TABLE `resource_registry`
+  ADD COLUMN `ownership` varchar(32) NOT NULL DEFAULT 'UNKNOWN'
+    COMMENT '资源归属：RESOURCE_MANAGED、MANUAL_TAKEOVER、UNKNOWN'
+    AFTER `sync_mode`;

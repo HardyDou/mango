@@ -10,6 +10,10 @@ import java.util.Set;
 
 /**
  * 将 kkFileView 内置资源加入 Mango 认证层公共路径。
+ *
+ * <p>这里保留通配放行是因为清单主体是第三方静态资源（`pdfjs/**`、`js/**`、`images/**` 等）
+ * 与 kkFileView 自带的根路径处理器，它们不是 API 接口，不能声明为 `API_RESOURCE`。
+ * 清单中的 `/file-preview/files/**` 等业务入口仍是待收敛项，收敛前不得删除本类。
  */
 public class FilePreviewPermitPathBeanPostProcessor implements BeanPostProcessor {
 

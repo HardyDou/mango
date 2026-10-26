@@ -16,7 +16,6 @@ Use this package when a frontend needs to consume published CMS data without joi
 | Read site detail | `cmsSiteApi.detailSite()` |
 | Read public category tree | `cmsSiteApi.treeCategories()` |
 | Read public navigation | `cmsSiteApi.listNavigations()` |
-| Read public banners | `cmsSiteApi.listBanners()` |
 | Read public advertisements | `cmsSiteApi.listAdvertisements()` |
 | Read published content list | `cmsSiteApi.pageContents()` |
 | Read published content detail | `cmsSiteApi.detailContent()` |
@@ -80,10 +79,11 @@ Main API helper:
 | `cmsSiteApi.detailSite(params)` | `GET /cms/open/sites/detail` | Read detailed site configuration. |
 | `cmsSiteApi.treeCategories(params)` | `GET /cms/open/site-categories/tree` | Read visible category tree. |
 | `cmsSiteApi.listNavigations(params)` | `GET /cms/open/navigations/list` | Read navigation by `navType`. |
-| `cmsSiteApi.listBanners(params)` | `GET /cms/open/banners/list` | Read banner records by position. |
 | `cmsSiteApi.listAdvertisements(params)` | `GET /cms/open/advertisements/list` | Read advertisement deliveries by position. |
-| `cmsSiteApi.pageContents(params)` | `GET /cms/open/contents/page` | Read published content pages. |
-| `cmsSiteApi.detailContent(params)` | `GET /cms/open/contents/detail` | Read one published content detail. |
+| `cmsSiteApi.pageContents(params)` | `GET /cms/open/contents/page` | Read published content pages. Sends `page`/`size` and normalizes the response to both `page`/`size` and `pageNum`/`pageSize`. |
+| `cmsSiteApi.detailContent(params)` | `GET /cms/open/contents/detail` | Read one published content detail by `contentId`. |
+
+`pageContents()` also accepts legacy `pageNum`/`pageSize` callers and converts them to backend-standard `page`/`size` parameters. The backend `PageQuery` accepts both names, so direct HTTP callers no longer fall back to the default page size silently.
 
 State helpers:
 
@@ -96,7 +96,7 @@ State helpers:
 | `createSiteResolveQuery(siteCode, domain)` | Creates a normalized site resolve query. |
 | `applySiteSeo(site)` | Applies title, keywords, and description to the current document. |
 
-Shared TypeScript types include `ApiId`, `SiteResolveQuery`, `SiteResolve`, `CmsSite`, `SiteCategory`, `SiteNavigation`, `SiteBanner`, `SiteAdvertisement`, `SiteContent`, `PageResult`, and `SiteShellState`.
+Shared TypeScript types include `ApiId`, `SiteResolveQuery`, `SiteResolve`, `CmsSite`, `SiteCategory`, `SiteNavigation`, `SiteAdvertisement`, `SiteContent`, `PageResult`, and `SiteShellState`.
 
 ## 6. 数据与初始化
 
@@ -104,12 +104,12 @@ This frontend package does not initialize database records, menus, permissions, 
 
 | Data | Source |
 |------|--------|
-| Site metadata, SEO, categories, navigation, banners, advertisements, and content | Backend `mango-cms` public APIs under `/cms/open/**`. |
-| Public image and media preview URLs | Backend CMS and file capabilities derive them at runtime from file IDs. |
+| Site metadata, SEO, categories, navigation, advertisements, and content | Backend `mango-cms` public APIs under `/cms/open/**`. |
+| Public image and media preview URLs | Backend CMS and file capabilities derive them at runtime from file IDs and return them as `coverUrl`, `mediaUrl`, or equivalent URL fields. |
 | Initial site query | Host app route, domain, or explicit `siteCode`. |
 | Page layout and navigation rendering | Host site app. |
 
-Public CMS APIs only return enabled, visible, published, and valid-time data according to backend `mango-cms` filtering.
+Public CMS APIs only return enabled, visible, published, and valid-time data according to backend `mango-cms` filtering. `SiteContent` includes `top` and `sort`; `SiteAdvertisement` returns directly usable `imageUrl`/`coverUrl` for hero and banner rendering.
 
 ## 7. 管理入口
 
@@ -120,10 +120,10 @@ The public backend API prefix is `/cms/open/**`. These APIs are registered as pu
 ## 8. 快速开始
 
 1. Enable backend `mango-cms-starter` and run CMS migrations.
-2. Create a CMS site, domain, category tree, navigation, banners, and published content in Mango Admin.
+2. Create a CMS site, domain, category tree, navigation, advertisement positions, deliveries, and published content in Mango Admin.
 3. Install `@mango/site-shell` in the public site App.
 4. Resolve the site by `siteCode` or browser domain.
-5. Load navigation, categories, banners, advertisements, and published content through `cmsSiteApi`.
+5. Load navigation, categories, advertisements, and published content through `cmsSiteApi`.
 6. Render the visual pages in the host site App.
 7. Use `applySiteSeo()` or `createSiteShellState().resolve()` to apply SEO metadata.
 

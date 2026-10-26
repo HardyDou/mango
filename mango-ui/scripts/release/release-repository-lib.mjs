@@ -37,6 +37,66 @@ export function gitChangedFiles(repoRoot, baseRef, headRef = 'HEAD', includeWork
   return [...files].sort();
 }
 
+/**
+ * 判断 package.json 变更是否只涉及发布机制字段。
+ *
+ * 发布投影会批量修改各包的 `version`，以及依赖引用中指向本批次的版本号。
+ * 这些属于发布机制变更，不是消费者可见的源码影响，不能反过来要求新的 Changeset 声明。
+ * 新增/删除依赖、修改 exports、脚本或其它字段仍然计为源码影响。
+ */
+export function isVersionOnlyPackageJsonChangeText(baseText, headText) {
+  if (typeof baseText !== 'string' || typeof headText !== 'string') return false;
+  try {
+    return stablePackageJsonShape(baseText) === stablePackageJsonShape(headText);
+  } catch {
+    return false;
+  }
+}
+
+const DEPENDENCY_FIELDS = ['dependencies', 'devDependencies', 'optionalDependencies', 'peerDependencies'];
+
+function stablePackageJsonShape(text) {
+  const json = JSON.parse(text);
+  const normalized = { ...json };
+  delete normalized.version;
+  for (const field of DEPENDENCY_FIELDS) {
+    const value = normalized[field];
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      normalized[field] = Object.fromEntries(Object.keys(value).sort().map((name) => [name, '<version>']));
+    }
+  }
+  return stableStringify(normalized);
+}
+
+function stableStringify(value) {
+  if (Array.isArray(value)) return `[${value.map(stableStringify).join(',')}]`;
+  if (value && typeof value === 'object') {
+    return `{${Object.keys(value)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${stableStringify(value[key])}`)
+      .join(',')}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function isVersionOnlyPackageJsonChange(repoRoot, mergeBase, headRef, file) {
+  if (!/(?:^|\/)package\.json$/u.test(file)) return false;
+  const baseResult = runGit(repoRoot, ['show', `${mergeBase}:${file}`], { allowFailure: true });
+  const headResult = runGit(repoRoot, ['show', `${headRef}:${file}`], { allowFailure: true });
+  if (baseResult.status !== 0 || headResult.status !== 0) return false;
+  return isVersionOnlyPackageJsonChangeText(baseResult.stdout, headResult.stdout);
+}
+
+/**
+ * 与 {@link gitChangedFiles} 相同，但排除仅发布机制字段变化的 package.json。
+ */
+export function gitReleaseImpactFiles(repoRoot, baseRef, headRef = 'HEAD', includeWorkingTree = false) {
+  const mergeBase = gitValue(repoRoot, ['merge-base', baseRef, headRef]);
+  return gitChangedFiles(repoRoot, baseRef, headRef, includeWorkingTree).filter(
+    (file) => !isVersionOnlyPackageJsonChange(repoRoot, mergeBase, headRef, file),
+  );
+}
+
 export function resolveGitSource(repoRoot, ref = 'HEAD') {
   return {
     commit: gitValue(repoRoot, ['rev-parse', `${ref}^{commit}`]),
@@ -99,7 +159,7 @@ export function verifyReleasePlanSource({
   });
   assertAncestor(repoRoot, source.commit, headRef, 'release plan source is not an ancestor of the final HEAD');
 
-  const actualSourceFiles = gitChangedFiles(repoRoot, baselineAnchor, source.commit);
+  const actualSourceFiles = gitReleaseImpactFiles(repoRoot, baselineAnchor, source.commit);
   if (JSON.stringify(actualSourceFiles) !== JSON.stringify(sourceFiles)) {
     throw new Error('release plan sourceFiles does not match the baseline-to-source Git diff');
   }
@@ -164,9 +224,23 @@ export function restoredPublishedBaselines({
   return restored;
 }
 
-export function assertCleanWorktree(repoRoot) {
-  const dirty = gitValue(repoRoot, ['status', '--porcelain']);
-  if (dirty) throw new Error(`release preparation requires a clean worktree:\n${dirty}`);
+/**
+ * 断言工作区干净。
+ *
+ * `ignoredPaths` 用于排除发布工具会确定性重建的产物：lockfile 由 plan/prepare
+ * 各自执行 `pnpm install` 生成，不同 pnpm 序列化会产生等价但字节不同的 YAML，
+ * 不能作为“未提交源码变更”阻断发布。
+ */
+export function assertCleanWorktree(repoRoot, { ignoredPaths = [] } = {}) {
+  const ignored = new Set(ignoredPaths);
+  const dirty = gitValue(repoRoot, ['status', '--porcelain'])
+    .split(/\r?\n/u)
+    .filter(Boolean)
+    .filter((line) => {
+      const path = line.replace(/^\s*[A-Z?!]{1,2}\s+/u, '').trim().replace(/^"/u, '').replace(/"$/u, '');
+      return ![...ignored].some((candidate) => path === candidate || path.endsWith(`/${candidate}`));
+    });
+  if (dirty.length > 0) throw new Error(`release preparation requires a clean worktree:\n${dirty.join('\n')}`);
 }
 
 function assertAncestor(repoRoot, ancestor, descendant, message) {

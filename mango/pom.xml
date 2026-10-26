@@ -590,6 +590,21 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.mango.platform.information</groupId>
+                <artifactId>mango-information-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.platform.information</groupId>
+                <artifactId>mango-information-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.platform.information</groupId>
+                <artifactId>mango-information-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.mango.platform.calendar</groupId>
                 <artifactId>mango-calendar-starter</artifactId>
                 <version>${project.version}</version>

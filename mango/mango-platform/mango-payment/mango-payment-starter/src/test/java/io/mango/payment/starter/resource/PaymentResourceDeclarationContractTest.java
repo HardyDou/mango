@@ -62,7 +62,7 @@ class PaymentResourceDeclarationContractTest {
         assertThat(all).allSatisfy(resource -> {
             assertThat(resource.moduleCode()).isEqualTo("payment");
             assertThat(resource.targetModule()).isEqualTo("payment");
-            assertThat(resource.syncMode()).isEqualTo("INIT_ONLY");
+            assertThat(resource.syncMode()).isEqualTo("SYNC_ONCE");
         });
         assertThat(all.stream().map(DeclaredResource::id)).doesNotHaveDuplicates();
         assertThat(all.stream().map(DeclaredResource::bizKey)).doesNotHaveDuplicates();

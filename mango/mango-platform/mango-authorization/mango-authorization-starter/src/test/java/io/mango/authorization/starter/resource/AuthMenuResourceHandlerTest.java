@@ -188,7 +188,7 @@ class AuthMenuResourceHandlerTest {
                         "menuCode", "workflow",
                         "path", "/workflow"
                 )));
-        manualParent.setSyncMode(ResourceSyncMode.MANUAL);
+        manualParent.setSyncMode(ResourceSyncMode.SYNC_ONCE);
         when(appModuleService.registerResourceManifest(org.mockito.ArgumentMatchers.any())).thenReturn(1);
 
         Map<String, ResourceSyncResult> results = handler.upsertBatch(List.of(child, manualParent));

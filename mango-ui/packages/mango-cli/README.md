@@ -9,7 +9,7 @@
 | 项目          | 值                                                                                                                                        |
 | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | NPM 包        | `@mango/cli`                                                                                                                              |
-| 当前发布版本  | `1.2.18`                                                                                                                                  |
+| 当前发布版本  | `1.3.5`                                                                                                                                   |
 | bin 命令      | `mango`、`mango-cli`                                                                                                                      |
 | 命令入口      | `src/index.mjs`                                                                                                                           |
 | 发布 registry | 由发布配置或 `MANGO_RELEASE_NPM_PUBLISH_REGISTRY` 注入                                                                                    |
@@ -71,8 +71,8 @@ CLI 不负责：
 
 ```bash
 npm view @mango/pmo@1.3.8 version --registry "$MANGO_NPM_REGISTRY"
-npm view @mango/cli@1.2.18 version --registry "$MANGO_NPM_REGISTRY"
-npm install -g @mango/cli@1.2.18 --registry "$MANGO_NPM_REGISTRY"
+npm view @mango/cli@1.3.5 version --registry "$MANGO_NPM_REGISTRY"
+npm install -g @mango/cli@1.3.5 --registry "$MANGO_NPM_REGISTRY"
 ```
 
 两个查询都返回精确版本后，该批次才可供业务项目安装。PMO 升级会整体同步 baseline、Agent 入口和 `.agents/skills`，不需要逐个安装 Skill。
@@ -186,6 +186,8 @@ mango docs pull --project-dir demo-custom --version 1.0.1 --maven-repository "$M
 生成项目的后端 Mango jar 版本由 `backend/pom.xml` 中的 `<mango.version>` 统一锁定。默认值来自当前 CLI 随包发布的 `release-versions.json.maven.mangoBackend`，业务项目选择版本时优先固定 `@mango/cli` 版本；需要验证其它后端平台版本时，再通过 `mango init --mango-version <version>` 或项目内 `mango.config.json` 的 `mangoBackendVersion` 明确覆盖。
 
 当前源码生成的 `backend/pom.xml` 还会显式管理 `flyway-core` 与 `flyway-mysql` 11.20.3，避免回落到 Spring Boot 3.5.14 BOM 中只测试到 MySQL 8.1 的 Flyway 11.7.2。两个 Flyway artifact 必须保持完全相同的版本；该基线覆盖 MySQL 8.4。
+
+当前源码生成的 `backend/app/src/main/resources/application.yml` 默认把 `spring.servlet.multipart.max-file-size` 和 `spring.servlet.multipart.max-request-size` 设为 `10GB`，与文件中心默认单文件上限一致；超过 20MiB 的上传仍走文件中心分片链路。业务项目按实际部署磁盘和网关/反向代理容量覆盖这两个值。
 
 ### 6.3 docs bundle
 
@@ -434,6 +436,8 @@ CLI 绝不自动安装 Playwright、下载 Chromium或修改项目。缺少依�
 | `templates/business-module`                  | 随 CLI 发布的业务模块模板                       | 后端目录必须与 `mango-business-starter` canonical 模板完全一致                                                             |
 
 已发布 CLI 直接从包内 `templates/business-module` 执行 `mango module add`，不依赖 Mango 源仓路径。后端镜像以 `mango-business-starter` 为 canonical 源，发布和测试前执行 `pnpm --filter @mango/cli run check:business-module-template`；路径集合或任一文件 hash 不一致时必须先同步模板。模板源码中的 `module.properties.template` 会生成真实的 `module.properties`，避免源码占位符被仓库架构扫描误判；生成项目的模块发现、菜单、权限、租户和运行时行为不变。
+
+生成项目的 `frontend/package.json` 会显式声明单一 `@mango/admin-extension`，业务模块模板只把它作为 `peerDependencies`。`@mango/admin-extension` 是全局页面注册表单例：`mango create`/`mango module add` 生成的项目必须与其他 Mango 包整套升级到同一发布批次，禁止只升单个包，否则会出现两份注册表并导致全站模块菜单 404。
 
 ## 8. 数据与初始化
 
@@ -762,6 +766,10 @@ full preset 会在生成的 `application.yml` 中显式启用 `mango.event.outbo
 ### 1.0.66 发布影响
 
 `@mango/cli@1.0.66` 是不回退运行时代码的前向文档发布：同步新的前端 npm 版本锁和业务 starter 依赖，使已更正的 package README 进入实际发布包。本次 CLI 不改变命令行参数、workspace 端口分配、模板生成逻辑或后端 Maven `1.0.13` 基线。业务项目应按本批次版本锁成组升级，不要混用上一批次的精确 `@mango/*` 依赖。
+
+### Issue #1055 目录与版本矩阵影响
+
+`@mango/cli` 的打包目录清单与版本矩阵新增 `information` 模块：`admin-modules.json` 与 `module-projections.json` 由 `pnpm catalog -- --write` 生成，`release-versions.json` 锁定 `@mango/information@1.0.0`。`mango init`、`mango add`、`mango workspace`、`mango dev` 与 `mango pmo` 的命令语义、模板结构和参数均不变；生成项目会按默认 preset 装配信息采集模块及其前端包。
 
 - [PMO 总流程](../../../mango-pmo/rules/00-dev-flow.md)
 - [AI 编码红线](../../../mango-pmo/rules/03-ai-coding-redlines.md)

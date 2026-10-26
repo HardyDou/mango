@@ -37,13 +37,41 @@ const contentMode = computed(() => getMangoAdminShellOptions().contentMode || 'r
 const layoutStore = useLayoutStore();
 const { isFooter, layout } = storeToRefs(layoutStore);
 
-const layoutMainScrollbarRef = ref();
+interface LayoutMainScrollbar {
+  update: () => void;
+  wrapRef?: HTMLElement;
+}
+
+const layoutMainScrollbarRef = ref<LayoutMainScrollbar>();
 const showFooter = computed(() => isFooter.value);
 const enableFixedShell = computed(() => layout.value === 'defaults' || layout.value === 'columns');
 const enableEdgeFooter = computed(() => ['defaults', 'classic', 'columns'].includes(layout.value));
 const layoutMainStyle = computed(() => ({
   '--mango-layout-footer-height': showFooter.value ? '40px' : '0px',
 }));
+
+const updateScrollbar = (): boolean => {
+  const scrollbar = layoutMainScrollbarRef.value;
+  if (!scrollbar) {
+    console.error('[mango-shell] failed to update content scrollbar: scrollbar is not ready');
+    return false;
+  }
+  scrollbar.update();
+  return true;
+};
+
+const resetContentScroll = (): boolean => {
+  const wrapRef = layoutMainScrollbarRef.value?.wrapRef;
+  if (!wrapRef) {
+    console.error('[mango-shell] failed to reset content scroll: scrollbar wrap is not ready');
+    return false;
+  }
+  wrapRef.scrollTop = 0;
+  return true;
+};
+
+// Layout components use these methods instead of reaching into Element Plus internals.
+defineExpose({ updateScrollbar, resetContentScroll });
 
 const setBacktopClass = computed(() => {
   const wrapRef = layoutMainScrollbarRef.value?.wrapRef;

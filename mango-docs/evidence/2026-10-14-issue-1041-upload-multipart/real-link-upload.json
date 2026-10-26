@@ -1,0 +1,31 @@
+{
+  "generatedAt": "2026-10-14T12:15:23.249Z",
+  "environment": {
+    "frontend": "http://127.0.0.1:30045",
+    "backend": "http://127.0.0.1:18045",
+    "database": "mango_dev_mango_045",
+    "tenant": "芒果集团",
+    "user": "admin"
+  },
+  "scenario": "文件管理页上传 8 KB PDF，低于 20 MiB 分片阈值，走普通上传 fileApi.upload",
+  "file": {
+    "path": "/tmp/mango-1041-small-1791980120162.pdf",
+    "sizeBytes": 8218
+  },
+  "request": {
+    "method": "POST",
+    "url": "http://127.0.0.1:30045/api/file/files",
+    "contentType": "multipart/form-data; boundary=----WebKitFormBoundarygu2Yoe02rXi9UwUS"
+  },
+  "response": {
+    "status": 200,
+    "success": true,
+    "code": 200,
+    "fileId": "2110343702679126017",
+    "fileName": "mango-1041-small-1791980120162.pdf",
+    "contentType": "application/pdf",
+    "fileSize": "8218"
+  },
+  "screenshot": "real-link-upload.png",
+  "result": "PASS"
+}

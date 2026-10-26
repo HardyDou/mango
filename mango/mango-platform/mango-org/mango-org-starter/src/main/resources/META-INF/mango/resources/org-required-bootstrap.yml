@@ -10,7 +10,7 @@ mango:
           biz-key: org.unit.default-root
           name: 芒果集团
           target-module: org
-          sync-mode: INIT_ONLY
+          sync-mode: SYNC_ONCE
           fields:
             targetId: { type: LONG, value: 1 }
             tenantId: { type: LONG, value: 1 }
@@ -25,7 +25,7 @@ mango:
           biz-key: org.post.default-group-admin
           name: 集团管理员
           target-module: org
-          sync-mode: INIT_ONLY
+          sync-mode: SYNC_ONCE
           fields:
             targetId: { type: LONG, value: 1 }
             tenantId: { type: LONG, value: 1 }
@@ -39,7 +39,7 @@ mango:
           biz-key: org.post.default-dept-manager
           name: 部门负责人
           target-module: org
-          sync-mode: INIT_ONLY
+          sync-mode: SYNC_ONCE
           fields:
             targetId: { type: LONG, value: 2 }
             tenantId: { type: LONG, value: 1 }
@@ -53,7 +53,7 @@ mango:
           biz-key: org.post.default-rd-engineer
           name: 研发工程师
           target-module: org
-          sync-mode: INIT_ONLY
+          sync-mode: SYNC_ONCE
           fields:
             targetId: { type: LONG, value: 3 }
             tenantId: { type: LONG, value: 1 }

@@ -10,7 +10,7 @@ mango:
           biz-key: system.tenant.default
           name: 芒果集团
           target-module: system
-          sync-mode: INIT_ONLY
+          sync-mode: SYNC_ONCE
           fields:
             targetId: { type: LONG, value: 1 }
             tenantName: { type: STRING, value: 芒果集团 }

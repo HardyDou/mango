@@ -179,29 +179,6 @@ CREATE TABLE IF NOT EXISTS cms_navigation (
     KEY idx_cms_navigation_site (tenant_id, site_id, nav_type, status, deleted)
 );
 
-CREATE TABLE IF NOT EXISTS cms_banner (
-    id BIGINT PRIMARY KEY,
-    tenant_id VARCHAR(64) NOT NULL,
-    org_id BIGINT NULL,
-    site_id BIGINT NOT NULL,
-    position VARCHAR(64) NOT NULL,
-    title VARCHAR(255) NOT NULL,
-    subtitle VARCHAR(255) NULL,
-    media_type VARCHAR(32) NOT NULL,
-    media_file_id VARCHAR(128) NULL,
-    jump_url VARCHAR(512) NULL,
-    start_time DATETIME NULL,
-    end_time DATETIME NULL,
-    sort INT NOT NULL DEFAULT 0,
-    status VARCHAR(32) NOT NULL,
-    deleted TINYINT NOT NULL DEFAULT 0,
-    created_by BIGINT NULL,
-    created_at DATETIME NULL,
-    updated_by BIGINT NULL,
-    updated_at DATETIME NULL,
-    KEY idx_cms_banner_site (tenant_id, site_id, position, status, deleted)
-);
-
 CREATE TABLE IF NOT EXISTS cms_advertisement (
     id BIGINT PRIMARY KEY,
     tenant_id VARCHAR(64) NOT NULL,

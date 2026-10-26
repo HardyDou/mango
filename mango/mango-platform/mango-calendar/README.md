@@ -348,3 +348,7 @@ mango:
 - [@mango/calendar 前端包](../../../mango-ui/packages/calendar/README.md)
 - [Authorization 使用说明](../mango-authorization/README.md)
 - [能力文档维护规则](../../../mango-pmo/rules/08-capability-docs.md)
+
+## 资源声明同步模式（#1098）
+
+资源声明的 `sync-mode` 已收敛为 `SYNC_ALWAYS` 和 `SYNC_ONCE`：`AUTO` 映射为 `SYNC_ALWAYS`，`INIT_ONLY`、`MANUAL`、`LOCKED` 映射为 `SYNC_ONCE`。旧值仍可读取并会在启动时输出弃用告警，新声明只写新值。语义与迁移规则见 `mango-resource` README 的 `sync-mode` 章节。

@@ -145,6 +145,7 @@ Maven 依赖：
 - 引入后没有表：starter 进入 classpath 不等于 migration 已打开。
 - 引入后菜单为空：检查 authorization 初始化和角色授权。
 - 服务太重：不要用聚合 starter，改为按需引入具体 starter。
+- 发布收尾报 `BOOTSTRAP_CANDIDATE_MISSING`：先确认是否同一构建版本重发。升级到包含 Issue #1106 修复的 Maven 版本后，同一 generation 重复 `finalize` 幂等返回 `FINALIZED`；否则表示请求 generation 既不是当前 stable，也没有已准备候选，需按 [mango-infra-bootstrap](../mango-infra/mango-infra-bootstrap/README.md) §7.1 的调用契约排查。
 
 ## 12. 相关文档
 - [后端模块规范](../../mango-pmo/rules/backend/05-module.md)
@@ -155,3 +156,7 @@ Maven 依赖：
 - [Mango Monolith App README](../mango-app/monolith/mango-monolith-app/README.md)
 - [Mango 后端根 README](../README.md)
 - [Mango 能力地图](../../mango-docs/capabilities/README.md)
+
+### Issue #1055 信息采集模块装配影响
+
+`mango-admin-starter` 新增 `io.mango.platform.information:mango-information-starter` 依赖，随单体与业务聚合自动装配信息采集模块。装配入口、既有模块顺序和公开 API 不变；信息采集模块自身可通过 `mango.information.enabled=false` 关闭。

@@ -2,7 +2,6 @@ package io.mango.cms.starter.controller;
 
 import io.mango.cms.api.CmsAdDeliveryApi;
 import io.mango.cms.api.CmsAdvertisementApi;
-import io.mango.cms.api.CmsBannerApi;
 import io.mango.cms.api.CmsContentApi;
 import io.mango.cms.api.CmsContentCategoryApi;
 import io.mango.cms.api.CmsContentPublishApi;
@@ -38,7 +37,6 @@ class CmsApiSurfaceContractTest {
             CmsContentApi.class,
             CmsContentPublishApi.class,
             CmsNavigationApi.class,
-            CmsBannerApi.class,
             CmsAdvertisementApi.class,
             CmsAdDeliveryApi.class,
             CmsSiteSettingApi.class);
@@ -46,15 +44,15 @@ class CmsApiSurfaceContractTest {
     @Test
     void splitManagementApis_keepCompleteLegacyJavaContract() {
         assertThat(MANAGEMENT_APIS.stream().mapToInt(type -> type.getDeclaredMethods().length).sum())
-                .isEqualTo(66);
+                .isEqualTo(60);
         assertThat(contractFingerprint(MANAGEMENT_APIS, false))
-                .isEqualTo("27344edbc29ac735186a866a189b66db3eb75e994709a1169e1a9f9e4a037d06");
+                .isEqualTo("d7987864c2c4137ea01dc5163dbb388d1bc40f22641cab1ceae2ddf783226ba5");
     }
 
     @Test
     void publicSiteApi_keepsItsCompleteJavaContract() {
         assertThat(contractFingerprint(List.of(CmsSiteApi.class), true))
-                .isEqualTo("f3b47db53ba377390133ca7186b6fc00e28d448b4426a010ce4fbfb0e598652b");
+                .isEqualTo("6f8d43a319a0ab5d27e6102419371b38ca872895e1689f1372a808362277209b");
     }
 
     private static String contractFingerprint(List<Class<?>> apiTypes, boolean includeTypeContract) {

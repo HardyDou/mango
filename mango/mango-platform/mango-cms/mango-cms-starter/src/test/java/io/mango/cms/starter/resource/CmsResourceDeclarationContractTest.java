@@ -29,10 +29,10 @@ class CmsResourceDeclarationContractTest {
             CmsResourceTypes.SITE,
             CmsResourceTypes.SITE_SETTING,
             CmsResourceTypes.SITE_CATEGORY,
+            CmsResourceTypes.CONTENT_CATEGORY,
             CmsResourceTypes.CONTENT,
             CmsResourceTypes.CONTENT_PUBLISH,
             CmsResourceTypes.NAVIGATION,
-            CmsResourceTypes.BANNER,
             CmsResourceTypes.ADVERTISEMENT,
             CmsResourceTypes.AD_DELIVERY);
     private static final Set<String> FILE_ID_FIELDS = Set.of(
@@ -57,12 +57,12 @@ class CmsResourceDeclarationContractTest {
         List<DeclaredResource> demo = declarations(DEMO_ROOT, "cms-demo-");
 
         assertThat(FORMAL_ROOT.resolve("cms-common-menu.json")).isRegularFile();
-        assertThat(demo).hasSize(71);
+        assertThat(demo).hasSize(77);
         assertThat(types(demo)).containsExactlyInAnyOrderElementsOf(DEMO_TYPES);
         assertThat(demo).allSatisfy(resource -> {
             assertThat(resource.moduleCode()).isEqualTo("cms");
             assertThat(resource.targetModule()).isEqualTo("cms");
-            assertThat(resource.syncMode()).isEqualTo("INIT_ONLY");
+            assertThat(resource.syncMode()).isEqualTo("SYNC_ONCE");
         });
         assertThat(demo.stream().map(DeclaredResource::id)).doesNotHaveDuplicates();
         assertThat(demo.stream().map(DeclaredResource::bizKey)).doesNotHaveDuplicates();

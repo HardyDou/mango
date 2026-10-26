@@ -12,7 +12,7 @@
             "bizKey": "cms.site-category.2070000000000000101",
             "name": "CMS 演示数据 cms_site_category 2070000000000000101",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -98,7 +98,7 @@
             "bizKey": "cms.site-category.2070000000000000102",
             "name": "CMS 演示数据 cms_site_category 2070000000000000102",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -184,7 +184,7 @@
             "bizKey": "cms.site-category.2070000000000000103",
             "name": "CMS 演示数据 cms_site_category 2070000000000000103",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -270,7 +270,7 @@
             "bizKey": "cms.site-category.2070000000000000104",
             "name": "CMS 演示数据 cms_site_category 2070000000000000104",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -356,7 +356,7 @@
             "bizKey": "cms.site-category.2070000000000000105",
             "name": "CMS 演示数据 cms_site_category 2070000000000000105",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -442,7 +442,7 @@
             "bizKey": "cms.site-category.2070000000000001101",
             "name": "CMS 演示数据 cms_site_category 2070000000000001101",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -528,7 +528,7 @@
             "bizKey": "cms.site-category.2070000000000001102",
             "name": "CMS 演示数据 cms_site_category 2070000000000001102",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -614,7 +614,7 @@
             "bizKey": "cms.site-category.2070000000000001103",
             "name": "CMS 演示数据 cms_site_category 2070000000000001103",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -700,7 +700,7 @@
             "bizKey": "cms.site-category.2070000000000001104",
             "name": "CMS 演示数据 cms_site_category 2070000000000001104",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -786,7 +786,7 @@
             "bizKey": "cms.site-category.2070000000000002101",
             "name": "CMS 演示数据 cms_site_category 2070000000000002101",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -872,7 +872,7 @@
             "bizKey": "cms.site-category.2070000000000002102",
             "name": "CMS 演示数据 cms_site_category 2070000000000002102",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -958,7 +958,7 @@
             "bizKey": "cms.site-category.2070000000000002103",
             "name": "CMS 演示数据 cms_site_category 2070000000000002103",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -1044,7 +1044,7 @@
             "bizKey": "cms.site-category.2070000000000002104",
             "name": "CMS 演示数据 cms_site_category 2070000000000002104",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",

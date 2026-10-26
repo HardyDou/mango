@@ -15,7 +15,6 @@ import io.mango.cms.core.entity.CmsSiteCategoryEntity;
 import io.mango.cms.core.entity.CmsSiteEntity;
 import io.mango.cms.core.mapper.CmsAdDeliveryMapper;
 import io.mango.cms.core.mapper.CmsAdvertisementMapper;
-import io.mango.cms.core.mapper.CmsBannerMapper;
 import io.mango.cms.core.mapper.CmsContentMapper;
 import io.mango.cms.core.mapper.CmsContentPublishMapper;
 import io.mango.cms.core.mapper.CmsNavigationMapper;
@@ -50,7 +49,6 @@ class CmsSiteServiceBehaviorTest {
     private final CmsSiteMapper siteMapper = mock(CmsSiteMapper.class);
     private final CmsSiteCategoryMapper siteCategoryMapper = mock(CmsSiteCategoryMapper.class);
     private final CmsNavigationMapper navigationMapper = mock(CmsNavigationMapper.class);
-    private final CmsBannerMapper bannerMapper = mock(CmsBannerMapper.class);
     private final CmsAdvertisementMapper advertisementMapper = mock(CmsAdvertisementMapper.class);
     private final CmsAdDeliveryMapper adDeliveryMapper = mock(CmsAdDeliveryMapper.class);
     private final CmsContentMapper contentMapper = mock(CmsContentMapper.class);
@@ -62,15 +60,39 @@ class CmsSiteServiceBehaviorTest {
     }
 
     @Test
-    void anonymousResolve_rejectsSiteCodeAndRequiresDomain() {
+    void anonymousResolve_acceptsSiteCode() {
+        CmsSiteEntity site = site(10L, "tenant-a", "main", "www.example.test");
+        when(siteMapper.selectList(any())).thenReturn(List.of(site));
         CmsSiteService service = service(null);
-        SiteResolveQuery query = new SiteResolveQuery();
-        query.setSiteCode("main");
 
-        assertThatThrownBy(() -> service.resolveSite(query))
+        SiteResolveVO result = service.resolveSite(siteCodeQuery("main"));
+
+        assertThat(result)
+                .extracting(SiteResolveVO::getSiteId, SiteResolveVO::getSiteCode)
+                .containsExactly(10L, "main");
+        verify(siteMapper).selectList(any());
+    }
+
+    @Test
+    void anonymousResolve_requiresSiteCodeOrDomain() {
+        CmsSiteService service = service(null);
+
+        assertThatThrownBy(() -> service.resolveSite(new SiteResolveQuery()))
                 .isInstanceOf(BizException.class)
-                .hasMessage("匿名站点解析必须提供域名");
+                .hasMessage("站点编码或域名不能为空");
         verify(siteMapper, never()).selectList(any());
+    }
+
+    @Test
+    void anonymousResolve_rejectsAmbiguousSiteCodeAcrossTenants() {
+        when(siteMapper.selectList(any())).thenReturn(List.of(
+                site(1L, "tenant-a", "main", "a.example.test"),
+                site(2L, "tenant-b", "main", "b.example.test")));
+        CmsSiteService service = service(null);
+
+        assertThatThrownBy(() -> service.resolveSite(siteCodeQuery("main")))
+                .isInstanceOf(BizException.class)
+                .hasMessage("站点不存在或不唯一");
     }
 
     @Test
@@ -193,8 +215,7 @@ class CmsSiteServiceBehaviorTest {
         MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("tenant-a"));
         CmsSiteEntity site = site(10L, "tenant-a", "main", "www.example.test");
         when(siteMapper.selectList(any())).thenReturn(List.of(site));
-        when(bannerMapper.selectList(any())).thenReturn(List.of());
-        when(contentMapper.selectList(any())).thenReturn(List.of());
+                when(contentMapper.selectList(any())).thenReturn(List.of());
         when(advertisementMapper.selectList(any())).thenReturn(List.of());
         IFileContentProvider fileApi = mock(IFileContentProvider.class);
         CmsSiteService service = service(fileApi);
@@ -238,7 +259,7 @@ class CmsSiteServiceBehaviorTest {
     }
 
     private CmsSiteService service(IFileContentProvider fileApi) {
-        return new CmsSiteService(siteMapper, siteCategoryMapper, navigationMapper, bannerMapper,
+        return new CmsSiteService(siteMapper, siteCategoryMapper, navigationMapper,
                 advertisementMapper, adDeliveryMapper, contentMapper, publishMapper, provider(fileApi));
     }
 
@@ -247,6 +268,7 @@ class CmsSiteServiceBehaviorTest {
         query.setDomain(domain);
         return query;
     }
+
 
     private static SiteResolveQuery siteCodeQuery(String siteCode) {
         SiteResolveQuery query = new SiteResolveQuery();

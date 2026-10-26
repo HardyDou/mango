@@ -145,7 +145,7 @@ registerMangoLinkAdminPages();
 | GET | `/link/visible-links/jump?url=https%3A%2F%2Fexample.com&source=COMPANY` | 是 | 保留登录上下文，按 URL 跳转并记录当前用户。 |
 | GET | `/link/visible-links/redirect?id=123&source=COMPANY` | 是 | 按当前用户可见网址 ID 校验、记录访问并返回原生 HTTP 302。 |
 
-公开接口不读取登录上下文。登录页面应调用 `/link/visible-links/list`；两类接口返回项都包含 `source`。当系统配置开启时，公开项使用 `/link/open/jump`，登录可见项使用 `/link/visible-links/jump`，不能用 PUBLIC 路由承载公司、收藏或个人网址。
+公开接口不读取登录上下文，匿名放行由 `link-common-public-api.yml` 与 `LinkPublicRedirectResourceProvider` 的 `API_RESOURCE` 声明决定：注解式控制器声明 `accessMode=PUBLIC`，函数式跳转路由同时声明 `PUBLIC` 和 `LOGIN`，受保护路由不得声明为 `PUBLIC`。应用必须装配 `mango-authorization-resource-access-starter`（`mango-admin-starter` 已包含）并完成 Resource Registry 同步；`mango.auth.security.permit-paths` 不需要手工配置 `/link/open/**`。登录页面应调用 `/link/visible-links/list`；两类接口返回项都包含 `source`。当系统配置开启时，公开项使用 `/link/open/jump`，登录可见项使用 `/link/visible-links/jump`，不能用 PUBLIC 路由承载公司、收藏或个人网址。
 
 ### 8.2 系统配置
 
@@ -253,3 +253,7 @@ mvn -q -DskipTests mango:check -Drule=persistence-schema
 - [网址导航交付台账](../../../mango-docs/evidence/2026-07-01-link-navigation-delivery-contract.md)
 - [@mango/link 前端管理包](../../../mango-ui/packages/link/README.md)
 - [@mango/link-page 独立页面包](../../../mango-ui/packages/link-page/README.md)
+
+## 资源声明同步模式（#1098）
+
+资源声明的 `sync-mode` 已收敛为 `SYNC_ALWAYS` 和 `SYNC_ONCE`：`AUTO` 映射为 `SYNC_ALWAYS`，`INIT_ONLY`、`MANUAL`、`LOCKED` 映射为 `SYNC_ONCE`。旧值仍可读取并会在启动时输出弃用告警，新声明只写新值。语义与迁移规则见 `mango-resource` README 的 `sync-mode` 章节。

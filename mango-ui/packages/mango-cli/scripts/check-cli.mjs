@@ -1606,7 +1606,7 @@ try {
   if (
     businessUiPackageJson.style !== './style.css' ||
     businessUiPackageJson.exports?.['./style.css'] !== './style.css' ||
-    businessUiPackageJson.dependencies?.['@mango/admin-extension'] !== releaseVersions.npm['@mango/admin-extension'] ||
+    businessUiPackageJson.peerDependencies?.['@mango/admin-extension'] !== releaseVersions.npm['@mango/admin-extension'] ||
     businessUiPackageJson.dependencies?.['@mango/admin-pages'] !== undefined ||
     businessUiPackageJson.dependencies?.['@mango/app-runtime'] !== releaseVersions.npm['@mango/app-runtime'] ||
     businessUiPackageJson.mangoAdmin?.businessDomainCode !== 'CONTRACT' ||

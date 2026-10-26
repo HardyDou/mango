@@ -12,7 +12,7 @@
             "bizKey": "calendar.definition.tenant-1.CN_STANDARD",
             "name": "中国标准工作日历",
             "targetModule": "calendar",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "tenantId": { "type": "STRING", "value": "1" },
               "calendarCode": { "type": "STRING", "value": "CN_STANDARD" },

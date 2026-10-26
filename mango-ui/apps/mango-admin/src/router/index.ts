@@ -120,7 +120,7 @@ router.beforeEach(async (to, from, next) => {
   document.title = title ? `${title} - ${appTitle}` : appTitle;
 
   // 白名单路由直接放行
-  const whiteList = ['/login', '/provider-callback', '/404', '/401', '/payment/gateway-result'];
+  const whiteList = ['/login', '/provider-callback', '/404', '/401', '/payment/gateway-result', '/information/hosted'];
   if (whiteList.includes(to.path)) {
     next();
     return;

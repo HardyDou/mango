@@ -4,6 +4,8 @@
 
 用户登录后能看到菜单，但点击菜单出现空白页、404、组件加载失败或接口无权限。
 
+> Issue #1083 影响说明：页面菜单默认开启路由缓存（`keep_alive=1`），不改变菜单可见性、页面 key 或授权资源；菜单打不开时仍按本页逐项排查。
+
 > Issue #983 影响说明：本次调整不改变菜单、页面注册或权限资源；文件上传超时能力不会改变 RBAC 排障步骤。
 
 ## 2. 阅读顺序
@@ -81,3 +83,11 @@ pnpm -F @mango/admin-shell build
 ## 10. 历史变更
 
 详细版本影响见[菜单页面排障历史索引](../../changelog/business-integration/rbac-menu-page-troubleshooting.md)。
+
+## 11. Issue #1055 影响说明
+
+信息采集新增 `information/forms/index`、`information/submissions/index` 与 `information/hosted/index` 三个页面 key，并新增一个免登录公开路由 `/information/hosted`。菜单页面排障流程、既有页面 key 对照关系和后端菜单同步机制均不变；排查信息采集页面时，请确认宿主应用已注册 `registerMangoInformationAdminPages` 且样式包已加载。
+
+> Issue #1098 影响说明：资源声明的 `sync-mode` 收敛为 `SYNC_ALWAYS` / `SYNC_ONCE`（旧值 `AUTO`、`INIT_ONLY`、`MANUAL`、`LOCKED` 仍可读取并映射）。本场景涉及的数据初始化、租户边界、权限判定与页面行为不变。
+
+> Issue #1098 影响说明：资源登记行新增 `ownership`，`MANUAL_TAKEOVER` 与 `UNKNOWN` 行不再被声明覆盖或停用；本场景的数据初始化、租户边界与权限判定结果不变。

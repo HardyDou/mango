@@ -40,6 +40,7 @@ export function classifyReleasePullRequest(files) {
 export function isReleaseOnlyFile(file) {
   return (
     file === 'CHANGELOG.md' ||
+    /^mango-docs\/guides\/operations\/mango-[0-9.]+-to-[0-9.]+-upgrade\.md$/u.test(file) ||
     file === 'mango-pmo/CHANGELOG.md' ||
     file === 'mango-catalog/catalog.lock.json' ||
     PMO_VERSION_PROJECTION_PATHS.includes(file) ||
@@ -54,6 +55,7 @@ export function isReleaseOnlyFile(file) {
     file === 'mango-ui/packages/mango-cli/README.md' ||
     file === CLI_FULL_README_TEMPLATE_PATH ||
     /^mango-ui\/packages\/mango-cli\/templates\/.+\/package\.json\.template$/u.test(file) ||
+    file === 'mango-business-starter/scripts/check-template.mjs' ||
     /^mango-business-starter\/business-pmo\/mango-baseline\//u.test(file) ||
     /^mango-business-starter\/.+\/package\.json$/u.test(file)
   );

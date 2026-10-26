@@ -404,13 +404,13 @@ bucket / object_name / preview_url / download_url / presigned_url
 
 ### 5.2 限制上传大小
 
-默认限制写在应用 YAML：
+默认限制写在应用 YAML，默认单文件上限为 10GB：
 
 ```yaml
 mango:
   file:
     upload:
-      max-size: 104857600
+      max-size: 10737418240
 ```
 
 运行时限制在管理端“文件配置”页面设置 `maxSize`，或调用：
@@ -545,7 +545,7 @@ mango:
       root-path: ./data/files
       public-path: /file/local-objects
     upload:
-      max-size: 104857600
+      max-size: 10737418240
       allowed-extensions: []
       blocked-extensions: [exe, bat, cmd, sh, jar]
       instant-upload-enabled: true
@@ -571,7 +571,7 @@ mango:
 | `public-base-url` | 空 | 对外访问基准地址，例如网关地址。 |
 | `local.root-path` | `./data/files` | 本地文件落盘目录。 |
 | `local.public-path` | `/file/local-objects` | 本地对象读取路径。 |
-| `upload.max-size` | `104857600` | 单文件最大字节数，默认 100MB。 |
+| `upload.max-size` | `10737418240` | 单文件最大字节数，默认 10GB。 |
 | `upload.allowed-extensions` | `[]` | 扩展名白名单，空表示不限制。 |
 | `upload.blocked-extensions` | `exe,bat,cmd,sh,jar` | 扩展名黑名单。 |
 | `upload.instant-upload-enabled` | `true` | 是否默认开启秒传。 |
@@ -670,7 +670,7 @@ mango-file-starter/src/main/resources/META-INF/mango/resources/file-common-stora
 |------|------|------|------|
 | `settingsId` | `LONG` | 否 | 文件中心配置稳定 ID，不填时使用资源 ID。 |
 | `tenantId` | `LONG` | 否 | 租户 ID，默认 `1`。 |
-| `maxSize` | `LONG` | 否 | 单文件最大大小，默认 `104857600`。 |
+| `maxSize` | `LONG` | 否 | 单文件最大大小，默认 `10737418240`（10GB）。 |
 | `allowedExtensions` | `STRING` | 否 | 允许上传扩展名，逗号分隔；为空表示不限制。 |
 | `blockedExtensions` | `STRING` | 否 | 禁止上传扩展名，默认 `exe,bat,cmd,sh,jar`。 |
 | `defaultAccessLevel` | `STRING` | 否 | 默认访问级别，默认 `PRIVATE`。 |
@@ -917,3 +917,7 @@ Flyway 路径：`mango-file-core/src/main/resources/db/migration/file`。
 - [File Preview](../mango-file-preview/README.md)
 - [Fileproc](../../mango-infra/mango-infra-fileproc/README.md)
 - [Mango 能力地图](../../../mango-docs/capabilities/README.md)
+
+## 资源声明同步模式（#1098）
+
+资源声明的 `sync-mode` 已收敛为 `SYNC_ALWAYS` 和 `SYNC_ONCE`：`AUTO` 映射为 `SYNC_ALWAYS`，`INIT_ONLY`、`MANUAL`、`LOCKED` 映射为 `SYNC_ONCE`。旧值仍可读取并会在启动时输出弃用告警，新声明只写新值。语义与迁移规则见 `mango-resource` README 的 `sync-mode` 章节。

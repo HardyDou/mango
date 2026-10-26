@@ -4,6 +4,8 @@
 
 用户能打开页面，但新增、编辑、删除、导出、审批等按钮不显示或点击后返回无权限。
 
+> Issue #1083 影响说明：页面菜单默认开启路由缓存，只影响页签切换后的页面状态；按钮权限码、API 权限和授权资源均未变化。
+
 > Issue #983 影响说明：本次调整不改变按钮权限、API 权限或授权资源；文件上传超时错误仍沿用现有权限链路。
 
 ## 2. 阅读顺序
@@ -71,3 +73,7 @@ pnpm -F @mango/admin-shell build
 ## 8. 历史变更
 
 详细版本影响见[按钮权限排障历史索引](../../changelog/business-integration/permission-button-troubleshooting.md)。
+
+> Issue #1098 影响说明：资源声明的 `sync-mode` 收敛为 `SYNC_ALWAYS` / `SYNC_ONCE`（旧值 `AUTO`、`INIT_ONLY`、`MANUAL`、`LOCKED` 仍可读取并映射）。本场景涉及的数据初始化、租户边界、权限判定与页面行为不变。
+
+> Issue #1098 影响说明：资源登记行新增 `ownership`，`MANUAL_TAKEOVER` 与 `UNKNOWN` 行不再被声明覆盖或停用；本场景的数据初始化、租户边界与权限判定结果不变。

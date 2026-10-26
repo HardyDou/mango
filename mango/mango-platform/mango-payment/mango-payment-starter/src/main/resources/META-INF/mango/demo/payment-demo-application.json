@@ -12,7 +12,7 @@
             "bizKey": "payment.application.app_order_center",
             "name": "订单中心示例应用",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -66,7 +66,7 @@
             "bizKey": "payment.application.app_member_center",
             "name": "会员中心示例应用",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",

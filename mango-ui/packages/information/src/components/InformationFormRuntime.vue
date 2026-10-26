@@ -1,0 +1,154 @@
+<template>
+  <form-create
+    ref="rootRef"
+    v-model:api="api"
+    :rule="runtimeRules"
+    :option="options"
+    :model-value="values"
+    :disabled="disabled"
+    :preview="preview"
+    class="information-runtime-form"
+    @update:model-value="emit('update:values', $event)"
+  />
+</template>
+
+<script setup lang="ts">
+import { getCurrentInstance, nextTick, onMounted, ref, watch } from 'vue';
+import formCreate from '@form-create/element-ui';
+import type {
+  Api as FormCreateApi,
+  Options as FormCreateOptions,
+  Rule as FormCreateRule,
+} from '@form-create/element-ui';
+import InformationUploadField from './InformationUploadField.vue';
+import InformationEditorField from './InformationEditorField.vue';
+import { toRuntimeRules, type FormCreateRule as InformationRule } from '../domain/rules';
+
+const props = withDefaults(
+  defineProps<{
+    rules: InformationRule[];
+    values?: Record<string, unknown>;
+    disabled?: boolean;
+    preview?: boolean;
+    /** 结构变化时重建表单，避免规则与内部状态不一致 */
+    runtimeKey?: string | number;
+  }>(),
+  {
+    values: () => ({}),
+    disabled: false,
+    preview: false,
+    runtimeKey: 0,
+  },
+);
+
+const emit = defineEmits<{
+  'update:values': [values: Record<string, unknown>];
+  submit: [values: Record<string, unknown>];
+}>();
+
+/**
+ * 运行时直接使用表单设计器同源的 form-create 渲染，
+ * 设计器里能用到的控件（评分、滑块、上传、子表单、布局等）在托管页面保持同样形态。
+ */
+const instance = getCurrentInstance();
+instance?.appContext.app.use(formCreate as never);
+// 上传与富文本控件改用 Mango 组件，文件统一落到 mango-file
+instance?.appContext.app.component('InformationUploadField', InformationUploadField);
+instance?.appContext.app.component('InformationEditorField', InformationEditorField);
+
+const api = ref<FormCreateApi>();
+const rootRef = ref<{ $el?: HTMLElement } | null>(null);
+
+/**
+ * Element Plus 在「控件只注册了一个 input id」时会把 label 的 for 指向它，
+ * 但分组控件（如多选）本身不渲染这个 id，于是留下悬空的 for。
+ * 这里在渲染后清掉悬空 for：分组控件已由 aria-labelledby 关联，不损失可访问性。
+ */
+function fixDanglingLabelFor() {
+  const root = rootRef.value?.$el;
+  if (!root) {
+    return;
+  }
+  root.querySelectorAll('label[for]').forEach((label) => {
+    const target = label.getAttribute('for');
+    if (target && !root.querySelector(`[id="${CSS.escape(target)}"]`) && !document.getElementById(target)) {
+      label.removeAttribute('for');
+    }
+  });
+}
+
+/** 表单渲染与规则重载后都要校正一次，避免动画或懒加载留下悬空 for。 */
+async function scheduleLabelFix() {
+  await nextTick();
+  fixDanglingLabelFor();
+  window.setTimeout(fixDanglingLabelFor, 0);
+}
+
+onMounted(() => {
+  void scheduleLabelFix();
+});
+const options: FormCreateOptions = {
+  form: { labelPosition: 'top', labelWidth: 'auto', showMessage: true },
+  submitBtn: { show: false },
+  resetBtn: { show: false },
+  onSubmit: (formData: Record<string, unknown>) => emit('submit', formData),
+};
+
+/** 渲染前把上传与富文本控件替换为 Mango 组件，其余规则结构与 form-create 一致。 */
+function buildRules(): FormCreateRule[] {
+  return toRuntimeRules(props.rules) as unknown as FormCreateRule[];
+}
+
+const runtimeRules = ref(buildRules());
+
+watch(
+  () => props.rules,
+  (next) => {
+    runtimeRules.value = toRuntimeRules(next) as unknown as FormCreateRule[];
+    api.value?.reloadRule?.(runtimeRules.value as never);
+    void scheduleLabelFix();
+  },
+);
+watch(
+  () => props.runtimeKey,
+  () => {
+    runtimeRules.value = buildRules();
+    void scheduleLabelFix();
+  },
+);
+
+watch(
+  () => props.values,
+  (next) => {
+    if (next && api.value) {
+      api.value.coverValue(next);
+    }
+  },
+);
+
+defineExpose({
+  /** 校验通过返回 true，失败时由 form-create 在字段上展示错误。 */
+  async validate(): Promise<boolean> {
+    if (!api.value) {
+      return false;
+    }
+    try {
+      await api.value.validate();
+      return true;
+    } catch {
+      return false;
+    }
+  },
+  formData(): Record<string, unknown> {
+    return (api.value?.formData() as Record<string, unknown>) || {};
+  },
+  reset(): void {
+    api.value?.resetFields();
+  },
+  clear(): void {
+    if (api.value) {
+      api.value.coverValue({});
+    }
+  },
+});
+</script>

@@ -12,7 +12,7 @@
             "bizKey": "payment.cashier-config.350001",
             "name": "订单中心 Web 收银台",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -70,7 +70,7 @@
             "bizKey": "payment.cashier-config.350002",
             "name": "会员中心 Web 收银台",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -128,7 +128,7 @@
             "bizKey": "payment.cashier-config.350003",
             "name": "会员中心 App 收银台",
             "targetModule": "payment",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",

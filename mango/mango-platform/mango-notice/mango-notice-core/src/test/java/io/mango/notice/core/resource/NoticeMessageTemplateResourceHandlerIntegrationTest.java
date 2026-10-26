@@ -281,7 +281,7 @@ class NoticeMessageTemplateResourceHandlerIntegrationTest {
         ResourceDeclaration declaration = messageTemplateDeclaration("系统标题", true);
         declaration.setAppCode("notice-it");
         declaration.setServiceCode("notice-service");
-        declaration.setSyncMode(io.mango.resource.api.enums.ResourceSyncMode.AUTO);
+        declaration.setSyncMode(io.mango.resource.api.enums.ResourceSyncMode.SYNC_ALWAYS);
         handler.upsert(declaration);
 
         assertThat(registryService.registerDeclarations(registryCommand(1, List.of(declaration)))).isTrue();
@@ -636,7 +636,8 @@ class NoticeMessageTemplateResourceHandlerIntegrationTest {
                     module_code varchar(64) not null, biz_key varchar(128) not null,
                     name varchar(128), target_module varchar(64) not null,
                     target_table varchar(128), target_id bigint, source_hash varchar(64),
-                    sync_mode varchar(32) not null, status varchar(32) not null,
+                    sync_mode varchar(32) not null,
+                    ownership varchar(32) not null default 'UNKNOWN', status varchar(32) not null,
                     last_sync_time timestamp, tenant_id varchar(64), org_id bigint,
                     created_by bigint, created_at timestamp, updated_by bigint, updated_at timestamp
                 )

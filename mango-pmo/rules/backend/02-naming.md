@@ -19,7 +19,7 @@
 - 对外接口：`XxxApi`
 - 内部服务：`IXxxService`
 - 对外接口实现：`XxxController`、`XxxFeignClient`
-- 内部服务实现：`XxxService`
+- 内部服务实现：`XxxService` 或 `XxxServiceImpl`（机器门禁两者均接受；同一模块内保持一致）
 - 扩展接口：`I...Provider`、`I...Checker`、`I...Validator`
 
 ## 3. 禁止后缀
@@ -37,7 +37,7 @@
 ## 5. 领域词规则
 
 - 同一业务概念在模块、包、类、表中使用同一领域词。
-- 不允许同一模块出现多套命名。
+- 不允许同一模块出现多套命名；服务实现后缀在同一模块内保持一致（全用 `XxxService` 或全用 `XxxServiceImpl`）。
 - `XxxApi` 名称只表达跨模块能力，不使用 `Registry`、`Dispatcher`、`Manager`、`Session` 等内部实现词。
 - 历史命名迁移后不保留第二套新实现。
 

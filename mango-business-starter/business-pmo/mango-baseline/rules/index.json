@@ -1,5 +1,5 @@
 {
-  "version": 21,
+  "version": 23,
   "always": [
     {
       "path": "rules/00-dev-flow.md",
@@ -117,7 +117,7 @@
     },
     "backend.naming": {
       "path": "rules/backend/02-naming.md",
-      "reason": "后端命名规范"
+      "reason": "后端命名规范、服务实现后缀 XxxService 或 XxxServiceImpl 与同模块一致性"
     },
     "backend.api": {
       "path": "rules/backend/03-api.md",
@@ -201,7 +201,7 @@
     },
     "product.documentLifecycle": {
       "path": "rules/product/05-document-lifecycle.md",
-      "reason": "BRD、SRS、TDD、实施计划顺序、人类阅读摘要、追踪、PMO 1.4.6 当前合同与受控历史版本及精确章节变体门禁"
+      "reason": "BRD、SRS、TDD、实施计划顺序、人类阅读摘要、追踪、PMO 1.4.8 当前合同与受控历史版本及精确章节变体门禁"
     },
     "frontend.adminUiCommon": {
       "path": "rules/frontend/07-admin-ui-common.md",

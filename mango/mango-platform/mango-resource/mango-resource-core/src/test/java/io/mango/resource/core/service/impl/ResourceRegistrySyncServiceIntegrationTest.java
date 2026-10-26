@@ -131,6 +131,9 @@ class ResourceRegistrySyncServiceIntegrationTest {
     private DeferredResourceHandler deferredResourceHandler;
 
     @Autowired
+    private TenantScopedResourceHandler tenantScopedResourceHandler;
+
+    @Autowired
     private SqlStatementCounter sqlStatementCounter;
 
     @Autowired
@@ -151,6 +154,7 @@ class ResourceRegistrySyncServiceIntegrationTest {
         handler.resetUpsertCount();
         handler.resetPreservation();
         handler.setEnvironmentRequired(false);
+        tenantScopedResourceHandler.clearDisableTenants();
         resourceRegistryProperties.setBaselineBuildEnabled(false);
         dispatcher.reset();
         syncOrderRecorder.clear();
@@ -296,6 +300,56 @@ class ResourceRegistrySyncServiceIntegrationTest {
         assertThatThrownBy(syncService::sync)
                 .isInstanceOf(BizException.class)
                 .hasMessageContaining("Duplicate resource id");
+    }
+
+    @Test
+    void registryConflictsAreReportedTogetherInOneFailure() {
+        provider.setDeclarations(List.of(
+                activeDeclaration("1900000000000000001", 1, "guarantee.apply.submit", "提交申请通知"),
+                activeDeclaration("1900000000000000002", 1, "guarantee.apply.reject", "驳回通知")));
+        jdbcTemplate.update("""
+                insert into resource_registry (
+                    id, resource_id, resource_version, app_code, service_code, resource_type,
+                    module_code, biz_key, name, target_module, target_table, target_id,
+                    source_hash, sync_mode, status
+                ) values
+                (90007, '1900000000000000997', 1, 'baohan-system-backend', 'baohan-system-backend',
+                 'MESSAGE_TEMPLATE', 'guarantee', 'guarantee.apply.submit', '历史声明', 'notice',
+                 'message_template', 91007, 'legacy-hash', 'AUTO', 'ACTIVE'),
+                (90008, '1900000000000000996', 1, 'baohan-system-backend', 'baohan-system-backend',
+                 'MESSAGE_TEMPLATE', 'guarantee', 'guarantee.apply.reject', '历史声明', 'notice',
+                 'message_template', 91008, 'legacy-hash', 'AUTO', 'ACTIVE')
+                """);
+
+        assertThatThrownBy(syncService::sync)
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("2 conflicts")
+                .hasMessageContaining("MESSAGE_TEMPLATE:guarantee.apply.submit")
+                .hasMessageContaining("MESSAGE_TEMPLATE:guarantee.apply.reject")
+                .hasMessageContaining("README.md section 14");
+    }
+
+    @Test
+    void registryConflictMessageNamesBothResourceIdsAndSources() {
+        jdbcTemplate.update("""
+                insert into resource_registry (
+                    id, resource_id, resource_version, app_code, service_code, resource_type,
+                    module_code, biz_key, name, target_module, target_table, target_id,
+                    source_hash, sync_mode, status
+                ) values (
+                    90006, '1900000000000000999', 1, 'baohan-system-backend', 'baohan-system-backend',
+                    'MESSAGE_TEMPLATE', 'guarantee', 'guarantee.apply.submit', '历史声明', 'notice',
+                    'message_template', 91001, 'legacy-hash', 'AUTO', 'ACTIVE'
+                )
+                """);
+
+        assertThatThrownBy(syncService::sync)
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("Resource bizKey already registered by another id")
+                .hasMessageContaining("MESSAGE_TEMPLATE:guarantee.apply.submit")
+                .hasMessageContaining("existing={resourceId=1900000000000000999")
+                .hasMessageContaining("appCode=baohan-system-backend")
+                .hasMessageContaining("declared={resourceId=1900000000000000001");
     }
 
     @Test
@@ -652,11 +706,11 @@ class ResourceRegistrySyncServiceIntegrationTest {
         ResourceDeclaration initOnly = activeDeclaration(
                 "1900000000000000002", 1, "guarantee.init-only", "初始化资源");
         initOnly.setModuleCode("guarantee");
-        initOnly.setSyncMode(ResourceSyncMode.INIT_ONLY);
+        initOnly.setSyncMode(ResourceSyncMode.SYNC_ONCE);
         ResourceDeclaration manual = activeDeclaration(
                 "1900000000000000003", 1, "guarantee.manual", "人工资源");
         manual.setModuleCode("guarantee");
-        manual.setSyncMode(ResourceSyncMode.MANUAL);
+        manual.setSyncMode(ResourceSyncMode.SYNC_ONCE);
         ResourceDeclaration workflow = activeDeclaration(
                 "1900000000000000004", 1, "workflow.auto", "流程资源");
         workflow.setModuleCode("workflow");
@@ -713,7 +767,7 @@ class ResourceRegistrySyncServiceIntegrationTest {
                 "1900000000000000001", 1, "guarantee.apply.active", "正常资源");
         ResourceDeclaration initOnly = activeDeclaration(
                 "1900000000000000002", 1, "guarantee.apply.init-only", "初始化资源");
-        initOnly.setSyncMode(ResourceSyncMode.INIT_ONLY);
+        initOnly.setSyncMode(ResourceSyncMode.SYNC_ONCE);
         ResourceDeclaration disabled = activeDeclaration(
                 "1900000000000000003", 1, "guarantee.apply.disabled", "禁用资源");
         disabled.setStatus(ResourceStatus.DISABLED);
@@ -853,41 +907,41 @@ class ResourceRegistrySyncServiceIntegrationTest {
     @Test
     void syncCreatesInitOnlyResourceOnFirstSync() {
         ResourceDeclaration declaration = activeDeclaration(1, "初始化标题");
-        declaration.setSyncMode(ResourceSyncMode.INIT_ONLY);
+        declaration.setSyncMode(ResourceSyncMode.SYNC_ONCE);
         provider.setDeclaration(declaration);
 
         syncService.sync();
 
         ResourceRegistryEntity registry = registryMapper.selectByResourceId("1900000000000000001");
         assertThat(registry.getResourceVersion()).isEqualTo(1);
-        assertThat(registry.getSyncMode()).isEqualTo("INIT_ONLY");
+        assertThat(registry.getSyncMode()).isEqualTo("SYNC_ONCE");
         assertThat(stringValue("message_template", "title")).isEqualTo("初始化标题");
     }
 
     @Test
     void syncAutoAndInitOnlyFirstSyncWriteSameTargetRowsForFiveDeclarations() {
-        provider.setDeclarations(fiveDeclarations(ResourceSyncMode.AUTO, 1, "初始化标题"));
+        provider.setDeclarations(fiveDeclarations(ResourceSyncMode.SYNC_ALWAYS, 1, "初始化标题"));
         syncService.sync();
         List<MessageTemplateRow> autoRows = messageTemplateRows();
 
         rebuildTables();
         dispatcher.reset();
-        provider.setDeclarations(fiveDeclarations(ResourceSyncMode.INIT_ONLY, 1, "初始化标题"));
+        provider.setDeclarations(fiveDeclarations(ResourceSyncMode.SYNC_ONCE, 1, "初始化标题"));
         syncService.sync();
 
         assertThat(messageTemplateRows()).containsExactlyElementsOf(autoRows);
         assertThat(registryRows()).containsExactly(
-                new RegistryRow("1900000000000000001", 1, "guarantee.apply.case-1", "INIT_ONLY", "ACTIVE", 91001L),
-                new RegistryRow("1900000000000000002", 1, "guarantee.apply.case-2", "INIT_ONLY", "ACTIVE", 91002L),
-                new RegistryRow("1900000000000000003", 1, "guarantee.apply.case-3", "INIT_ONLY", "ACTIVE", 91003L),
-                new RegistryRow("1900000000000000004", 1, "guarantee.apply.case-4", "INIT_ONLY", "ACTIVE", 91004L),
-                new RegistryRow("1900000000000000005", 1, "guarantee.apply.case-5", "INIT_ONLY", "ACTIVE", 91005L)
+                new RegistryRow("1900000000000000001", 1, "guarantee.apply.case-1", "SYNC_ONCE", "ACTIVE", 91001L),
+                new RegistryRow("1900000000000000002", 1, "guarantee.apply.case-2", "SYNC_ONCE", "ACTIVE", 91002L),
+                new RegistryRow("1900000000000000003", 1, "guarantee.apply.case-3", "SYNC_ONCE", "ACTIVE", 91003L),
+                new RegistryRow("1900000000000000004", 1, "guarantee.apply.case-4", "SYNC_ONCE", "ACTIVE", 91004L),
+                new RegistryRow("1900000000000000005", 1, "guarantee.apply.case-5", "SYNC_ONCE", "ACTIVE", 91005L)
         );
     }
 
     @Test
     void syncKeepsRuntimeTargetRowsForFiveInitOnlyDeclarationsWhenUpgraded() {
-        provider.setDeclarations(fiveDeclarations(ResourceSyncMode.INIT_ONLY, 1, "初始化标题"));
+        provider.setDeclarations(fiveDeclarations(ResourceSyncMode.SYNC_ONCE, 1, "初始化标题"));
         syncService.sync();
         jdbcTemplate.update("update message_template set title = '运行时修改-1' where id = 91001");
         jdbcTemplate.update("update message_template set title = '运行时修改-2' where id = 91002");
@@ -896,16 +950,16 @@ class ResourceRegistrySyncServiceIntegrationTest {
         jdbcTemplate.update("update message_template set title = '运行时修改-5' where id = 91005");
         List<MessageTemplateRow> runtimeRows = messageTemplateRows();
 
-        provider.setDeclarations(fiveDeclarations(ResourceSyncMode.INIT_ONLY, 2, "升级标题"));
+        provider.setDeclarations(fiveDeclarations(ResourceSyncMode.SYNC_ONCE, 2, "升级标题"));
         syncService.sync();
 
         assertThat(messageTemplateRows()).containsExactlyElementsOf(runtimeRows);
         assertThat(registryRows()).containsExactly(
-                new RegistryRow("1900000000000000001", 2, "guarantee.apply.case-1", "INIT_ONLY", "ACTIVE", 91001L),
-                new RegistryRow("1900000000000000002", 2, "guarantee.apply.case-2", "INIT_ONLY", "ACTIVE", 91002L),
-                new RegistryRow("1900000000000000003", 2, "guarantee.apply.case-3", "INIT_ONLY", "ACTIVE", 91003L),
-                new RegistryRow("1900000000000000004", 2, "guarantee.apply.case-4", "INIT_ONLY", "ACTIVE", 91004L),
-                new RegistryRow("1900000000000000005", 2, "guarantee.apply.case-5", "INIT_ONLY", "ACTIVE", 91005L)
+                new RegistryRow("1900000000000000001", 2, "guarantee.apply.case-1", "SYNC_ONCE", "ACTIVE", 91001L),
+                new RegistryRow("1900000000000000002", 2, "guarantee.apply.case-2", "SYNC_ONCE", "ACTIVE", 91002L),
+                new RegistryRow("1900000000000000003", 2, "guarantee.apply.case-3", "SYNC_ONCE", "ACTIVE", 91003L),
+                new RegistryRow("1900000000000000004", 2, "guarantee.apply.case-4", "SYNC_ONCE", "ACTIVE", 91004L),
+                new RegistryRow("1900000000000000005", 2, "guarantee.apply.case-5", "SYNC_ONCE", "ACTIVE", 91005L)
         );
         assertThat(jdbcTemplate.queryForList(
                 "select sync_type from resource_sync_log order by id", String.class))
@@ -916,19 +970,19 @@ class ResourceRegistrySyncServiceIntegrationTest {
     @Test
     void syncKeepsRuntimeTargetWhenInitOnlyDeclarationChanges() {
         ResourceDeclaration first = activeDeclaration(1, "初始化标题");
-        first.setSyncMode(ResourceSyncMode.INIT_ONLY);
+        first.setSyncMode(ResourceSyncMode.SYNC_ONCE);
         provider.setDeclaration(first);
         syncService.sync();
         jdbcTemplate.update("update message_template set title = '运行时修改' where id = 91001");
 
         ResourceDeclaration upgraded = activeDeclaration(2, "升级包标题");
-        upgraded.setSyncMode(ResourceSyncMode.INIT_ONLY);
+        upgraded.setSyncMode(ResourceSyncMode.SYNC_ONCE);
         provider.setDeclaration(upgraded);
         syncService.sync();
 
         ResourceRegistryEntity registry = registryMapper.selectByResourceId("1900000000000000001");
         assertThat(registry.getResourceVersion()).isEqualTo(2);
-        assertThat(registry.getSyncMode()).isEqualTo("INIT_ONLY");
+        assertThat(registry.getSyncMode()).isEqualTo("SYNC_ONCE");
         assertThat(stringValue("message_template", "title")).isEqualTo("运行时修改");
         assertThat(count("resource_sync_log")).isEqualTo(2);
         assertThat(count("resource_change_log")).isEqualTo(2);
@@ -956,14 +1010,14 @@ class ResourceRegistrySyncServiceIntegrationTest {
     void syncUpdatesRegistrySyncModeWhenDeclarationChanges() {
         syncService.sync();
         ResourceDeclaration manualDeclaration = activeDeclaration(2, "提交申请");
-        manualDeclaration.setSyncMode(ResourceSyncMode.MANUAL);
+        manualDeclaration.setSyncMode(ResourceSyncMode.SYNC_ONCE);
         provider.setDeclaration(manualDeclaration);
 
         syncService.sync();
 
         ResourceRegistryEntity registry = registryMapper.selectByResourceId("1900000000000000001");
         assertThat(registry.getResourceVersion()).isEqualTo(2);
-        assertThat(registry.getSyncMode()).isEqualTo("MANUAL");
+        assertThat(registry.getSyncMode()).isEqualTo("SYNC_ONCE");
     }
 
     @Test
@@ -990,6 +1044,180 @@ class ResourceRegistrySyncServiceIntegrationTest {
         ResourceRegistryEntity registry = registryMapper.selectByResourceId("1900000000000000001");
         assertThat(registry.getStatus()).isEqualTo("REMOVED");
         assertThat(intValue("message_template", "enabled")).isZero();
+    }
+
+    @Test
+    void syncSkipsMissingTenantScopedResourceFromLegacyNullTenantRegistryRow() {
+        ResourceDeclaration declaration = genericDeclaration(
+                "1900000000000000010", "TENANT_TEST_RESOURCE", "guarantee.tenant-test", "tenant-test");
+        field(declaration, "tenantId", ResourceFieldType.STRING, "1");
+        provider.setDeclaration(declaration);
+
+        syncService.sync();
+        provider.clear();
+        syncService.sync();
+
+        assertThat(registryStatus(declaration.getId())).isEqualTo("ACTIVE");
+        assertThat(tenantScopedResourceHandler.disableTenants()).isEmpty();
+    }
+
+    @Test
+    void syncUsesRegistryTenantWhenDisablingTenantScopedLegacyResource() {
+        ResourceDeclaration declaration = genericDeclaration(
+                "1900000000000000011", "TENANT_TEST_RESOURCE", "guarantee.tenant-test-2", "tenant-test");
+        field(declaration, "tenantId", ResourceFieldType.STRING, "1");
+        provider.setDeclaration(declaration);
+
+        syncService.sync();
+        jdbcTemplate.update("update resource_registry set tenant_id = '2' where resource_id = ?",
+                declaration.getId());
+        provider.clear();
+        syncService.sync();
+
+        assertThat(registryStatus(declaration.getId())).isEqualTo("REMOVED");
+        assertThat(tenantScopedResourceHandler.disableTenants()).containsExactly("2");
+    }
+
+    @Test
+    void disableMissingDoesNotReprocessRemovedRegistryRows() {
+        ResourceDeclaration declaration = genericDeclaration(
+                "1900000000000000020", "TENANT_TEST_RESOURCE", "guarantee.tenant-reprocess", "tenant-test");
+        field(declaration, "tenantId", ResourceFieldType.STRING, "1");
+
+        syncService.syncRemote("platform-admin", "service-a", List.of(declaration));
+        jdbcTemplate.update("update resource_registry set tenant_id = '1' where resource_id = ?",
+                declaration.getId());
+        syncService.syncRemote("platform-admin", "service-a", List.of("guarantee"), List.of());
+
+        assertThat(registryStatus(declaration.getId())).isEqualTo("REMOVED");
+        long disableLogsAfterFirstFinalize = disableLogCount(declaration.getId());
+        assertThat(disableLogsAfterFirstFinalize).isEqualTo(1);
+
+        syncService.syncRemote("platform-admin", "service-a", List.of("guarantee"), List.of());
+
+        assertThat(registryStatus(declaration.getId())).isEqualTo("REMOVED");
+        assertThat(disableLogCount(declaration.getId())).isEqualTo(disableLogsAfterFirstFinalize);
+        assertThat(tenantScopedResourceHandler.disableTenants()).containsExactly("1");
+    }
+
+    @Test
+    void removedResourceBecomesActiveAgainWhenDeclaredAgain() {
+        ResourceDeclaration declaration = genericDeclaration(
+                "1900000000000000021", "TENANT_TEST_RESOURCE", "guarantee.tenant-revive", "tenant-test");
+        field(declaration, "tenantId", ResourceFieldType.STRING, "1");
+
+        syncService.syncRemote("platform-admin", "service-a", List.of(declaration));
+        jdbcTemplate.update("update resource_registry set tenant_id = '1' where resource_id = ?",
+                declaration.getId());
+        syncService.syncRemote("platform-admin", "service-a", List.of("guarantee"), List.of());
+        assertThat(registryStatus(declaration.getId())).isEqualTo("REMOVED");
+
+        syncService.syncRemote("platform-admin", "service-a", List.of(declaration));
+
+        assertThat(registryStatus(declaration.getId())).isEqualTo("ACTIVE");
+    }
+
+    @Test
+    void unknownOwnershipRowIsAdoptedWhenDeclarationProvesSource() {
+        ResourceDeclaration declaration = activeDeclaration(1, "归属未知的模板");
+        declaration.setId("1900000000000000030");
+        declaration.setBizKey("guarantee.ownership.adopt");
+        provider.setDeclaration(declaration);
+        syncService.sync();
+
+        jdbcTemplate.update("update resource_registry set ownership = 'UNKNOWN' where resource_id = ?",
+                declaration.getId());
+        assertThat(registryOwnership(declaration.getId())).isEqualTo("UNKNOWN");
+
+        declaration.setVersion(2);
+        declaration.putField("title", fieldOf("归属证明后更新"));
+        provider.setDeclaration(declaration);
+        syncService.sync();
+
+        assertThat(registryOwnership(declaration.getId())).isEqualTo("RESOURCE_MANAGED");
+        assertThat(registryVersion(declaration.getId())).isEqualTo(2);
+    }
+
+    @Test
+    void manualTakeoverRowIsNotOverwrittenByDeclaration() {
+        ResourceDeclaration declaration = activeDeclaration(1, "人工接管前");
+        declaration.setId("1900000000000000031");
+        declaration.setBizKey("guarantee.ownership.takeover");
+        provider.setDeclaration(declaration);
+        syncService.sync();
+
+        syncService.updateResourceSyncMode(declaration.getId(), ResourceSyncMode.SYNC_ONCE);
+        assertThat(registryOwnership(declaration.getId())).isEqualTo("MANUAL_TAKEOVER");
+
+        declaration.setVersion(2);
+        declaration.putField("title", fieldOf("人工接管后不应被覆盖"));
+        provider.setDeclaration(declaration);
+        syncService.sync();
+
+        assertThat(registryVersion(declaration.getId())).isEqualTo(1);
+        assertThat(registryOwnership(declaration.getId())).isEqualTo("MANUAL_TAKEOVER");
+    }
+
+    @Test
+    void unknownOwnershipMissingRowIsNotDisabled() {
+        jdbcTemplate.update("""
+                insert into resource_registry (
+                    id, resource_id, resource_version, app_code, service_code, resource_type,
+                    module_code, biz_key, name, target_module, target_table, target_id,
+                    source_hash, sync_mode, ownership, status
+                ) values (
+                    90008, '1900000000000000032', 1, 'local', 'local', 'MESSAGE_TEMPLATE',
+                    'guarantee', 'guarantee.ownership.unknown', '归属未知的模板', 'guarantee',
+                    'message_template', 90008, 'unknown-hash', 'SYNC_ALWAYS', 'UNKNOWN', 'ACTIVE'
+                )
+                """);
+
+        syncService.syncRemote("local", "local", List.of("guarantee"), List.of());
+
+        assertThat(registryStatus("1900000000000000032")).isEqualTo("ACTIVE");
+    }
+
+    @Test
+    void sourceDriftedUnknownRowIsAdoptedByIdentityAndUpdated() {
+        ResourceDeclaration declaration = activeDeclaration(1, "来源漂移前");
+        declaration.setId("1900000000000000033");
+        declaration.setBizKey("guarantee.ownership.source-drift");
+        provider.setDeclaration(declaration);
+        syncService.sync();
+
+        jdbcTemplate.update("""
+                update resource_registry
+                   set ownership = 'UNKNOWN', app_code = 'legacy-app', service_code = 'legacy-service'
+                 where resource_id = ?
+                """, declaration.getId());
+
+        declaration.setVersion(2);
+        declaration.putField("title", fieldOf("来源漂移后仍应按身份认领并更新"));
+        provider.setDeclaration(declaration);
+        syncService.sync();
+
+        assertThat(registryOwnership(declaration.getId())).isEqualTo("RESOURCE_MANAGED");
+        assertThat(registryVersion(declaration.getId())).isEqualTo(2);
+    }
+
+    @Test
+    void unprovenOwnershipRowsStayActiveAndAreReported() {
+        jdbcTemplate.update("""
+                insert into resource_registry (
+                    id, resource_id, resource_version, app_code, service_code, resource_type,
+                    module_code, biz_key, name, target_module, target_table, target_id,
+                    source_hash, sync_mode, ownership, status
+                ) values (
+                    90009, '1900000000000000034', 1, 'platform-admin', 'service-a', 'API_RESOURCE',
+                    'guarantee', 'guarantee.ownership.unproven', '未证明归属', 'authorization',
+                    'authorization_api_resource', 90009, 'unproven-hash', 'SYNC_ALWAYS', 'UNKNOWN', 'ACTIVE'
+                )
+                """);
+
+        syncService.syncRemote("platform-admin", "service-a", List.of("guarantee"), List.of());
+
+        assertThat(registryStatus("1900000000000000034")).isEqualTo("ACTIVE");
+        assertThat(registryOwnership("1900000000000000034")).isEqualTo("UNKNOWN");
     }
 
     @Test
@@ -1041,7 +1269,7 @@ class ResourceRegistrySyncServiceIntegrationTest {
     }
 
     @Test
-    void syncFailsWhenMissingAutoResourceHasNoLocalHandlerOrRemoteDispatcher() {
+    void syncSkipsMissingAutoResourceWithoutLocalHandlerOrRemoteDispatcher() {
         jdbcTemplate.update("""
                 insert into resource_registry (
                     id, resource_id, resource_version, app_code, service_code, resource_type,
@@ -1054,12 +1282,10 @@ class ResourceRegistrySyncServiceIntegrationTest {
                 )
                 """);
 
-        assertThatThrownBy(() -> syncService.syncRemote(
-                "platform-admin", "orphan-service", List.of("guarantee"), List.of()))
-                .isInstanceOf(BizException.class)
-                .hasMessageContaining("缺失资源禁用时未找到处理器")
-                .hasMessageContaining("UNSUPPORTED_TEMPLATE")
-                .hasMessageContaining("unsupported-notice");
+        syncService.syncRemote("platform-admin", "orphan-service", List.of("guarantee"), List.of());
+
+        ResourceRegistryEntity registry = registryMapper.selectByResourceId("1900000000000000005");
+        assertThat(registry.getStatus()).isEqualTo("ACTIVE");
     }
 
     @Test
@@ -1117,7 +1343,7 @@ class ResourceRegistrySyncServiceIntegrationTest {
     void managedRecordShadowsSystemDeclarationWithSameBizKey() {
         ResourceDeclaration managed = activeDeclaration(
                 "1900000000000000099", 1, "guarantee.apply.submit", "后台托管");
-        managed.setSyncMode(ResourceSyncMode.MANUAL);
+        managed.setSyncMode(ResourceSyncMode.SYNC_ONCE);
         assertThat(syncService.syncRemote(
                 "platform-admin", "service-managed", List.of(managed))).isTrue();
 
@@ -1127,7 +1353,7 @@ class ResourceRegistrySyncServiceIntegrationTest {
 
         assertThat(registryRows()).hasSize(1);
         assertThat(registryRows().get(0).resourceId()).isEqualTo("1900000000000000099");
-        assertThat(registryRows().get(0).syncMode()).isEqualTo("MANUAL");
+        assertThat(registryRows().get(0).syncMode()).isEqualTo("SYNC_ONCE");
         assertThat(messageTemplateRows()).hasSize(1);
         assertThat(messageTemplateRows().get(0).title()).isEqualTo("后台托管");
     }
@@ -1154,14 +1380,14 @@ class ResourceRegistrySyncServiceIntegrationTest {
     void createManagedResourceCreatesManualRegistryRecord() {
         ResourceDeclaration managed = activeDeclaration(
                 "1900000000000000099", 1, "guarantee.managed", "后台新增");
-        managed.setSyncMode(ResourceSyncMode.MANUAL);
+        managed.setSyncMode(ResourceSyncMode.SYNC_ONCE);
         managed.setExecutionPhase(ResourceExecutionPhase.MANUAL);
 
         String resourceId = syncService.createManagedResource(managed);
 
         assertThat(resourceId).isEqualTo("1900000000000000099");
         assertThat(registryRows()).hasSize(1);
-        assertThat(registryRows().get(0).syncMode()).isEqualTo("MANUAL");
+        assertThat(registryRows().get(0).syncMode()).isEqualTo("SYNC_ONCE");
         assertThat(messageTemplateRows()).hasSize(1);
         assertThat(messageTemplateRows().get(0).title()).isEqualTo("后台新增");
     }
@@ -1170,14 +1396,14 @@ class ResourceRegistrySyncServiceIntegrationTest {
     void updateResourceSyncModeChangesOwnership() {
         provider.setDeclaration(activeDeclaration(1, "提交申请"));
         syncService.sync();
-        assertThat(registryRows().get(0).syncMode()).isEqualTo("AUTO");
+        assertThat(registryRows().get(0).syncMode()).isEqualTo("SYNC_ALWAYS");
         String sourceHash = jdbcTemplate.queryForObject(
                 "select source_hash from resource_registry limit 1", String.class);
         long changeLogCount = count("resource_change_log");
 
-        syncService.updateResourceSyncMode("1900000000000000001", ResourceSyncMode.MANUAL);
+        syncService.updateResourceSyncMode("1900000000000000001", ResourceSyncMode.SYNC_ONCE);
 
-        assertThat(registryRows().get(0).syncMode()).isEqualTo("MANUAL");
+        assertThat(registryRows().get(0).syncMode()).isEqualTo("SYNC_ONCE");
         assertThat(jdbcTemplate.queryForObject(
                 "select source_hash from resource_registry limit 1", String.class))
                 .isEqualTo(sourceHash);
@@ -1202,7 +1428,7 @@ class ResourceRegistrySyncServiceIntegrationTest {
         assertThat(registryRows()).singleElement()
                 .satisfies(row -> {
                     assertThat(row.resourceId()).isEqualTo(resourceId);
-                    assertThat(row.syncMode()).isEqualTo("MANUAL");
+                    assertThat(row.syncMode()).isEqualTo("SYNC_ONCE");
                     assertThat(row.status()).isEqualTo("ACTIVE");
                     assertThat(row.bizKey()).isEqualTo("guarantee.apply.submit");
                 });
@@ -1226,6 +1452,13 @@ class ResourceRegistrySyncServiceIntegrationTest {
         declaration.setTargetModule(targetModule);
         declaration.setFields(new LinkedHashMap<>());
         return declaration;
+    }
+
+    private void field(ResourceDeclaration declaration, String name, ResourceFieldType type, Object value) {
+        ResourceField field = new ResourceField();
+        field.setType(type);
+        field.setValue(value);
+        declaration.putField(name, field);
     }
 
     private ResourceDeclaration activeDeclaration(String id, int version, String bizKey, String titleValue) {
@@ -1367,6 +1600,7 @@ class ResourceRegistrySyncServiceIntegrationTest {
                     target_id bigint,
                     source_hash varchar(64),
                     sync_mode varchar(32) not null,
+                    ownership varchar(32) not null default 'UNKNOWN',
                     status varchar(32) not null,
                     last_sync_time timestamp,
                     tenant_id varchar(64),
@@ -1442,6 +1676,40 @@ class ResourceRegistrySyncServiceIntegrationTest {
     private int intValue(String tableName, String columnName) {
         Integer value = jdbcTemplate.queryForObject("select " + columnName + " from " + tableName + " limit 1", Integer.class);
         return value == null ? 0 : value;
+    }
+
+    private long disableLogCount(String resourceId) {
+        return jdbcTemplate.queryForObject("""
+                select count(*) from resource_sync_log
+                 where sync_type = 'DISABLE'
+                   and resource_id = (select id from resource_registry where resource_id = ?)
+                """, Long.class, resourceId);
+    }
+
+    private String registryOwnership(String resourceId) {
+        return jdbcTemplate.queryForObject(
+                "select ownership from resource_registry where resource_id = ?", String.class, resourceId);
+    }
+
+    private Integer registryVersion(String resourceId) {
+        return jdbcTemplate.queryForObject(
+                "select resource_version from resource_registry where resource_id = ?", Integer.class, resourceId);
+    }
+
+    private ResourceField fieldOf(Object value) {
+        ResourceField field = new ResourceField();
+        field.setType(ResourceFieldType.STRING);
+        field.setValue(value);
+        return field;
+    }
+
+    private long skipLogCount(String resourceId, String messageFragment) {
+        return jdbcTemplate.queryForObject("""
+                select count(*) from resource_sync_log
+                 where sync_type = 'SKIP'
+                   and message like ?
+                   and resource_id = (select id from resource_registry where resource_id = ?)
+                """, Long.class, "%" + messageFragment + "%", resourceId);
     }
 
     private String registryStatus(String resourceId) {
@@ -1594,6 +1862,11 @@ class ResourceRegistrySyncServiceIntegrationTest {
         }
 
         @Bean
+        TenantScopedResourceHandler tenantScopedResourceHandler() {
+            return new TenantScopedResourceHandler();
+        }
+
+        @Bean
         ProviderResourceHandler providerResourceHandler() {
             return new ProviderResourceHandler();
         }
@@ -1658,6 +1931,40 @@ class ResourceRegistrySyncServiceIntegrationTest {
         @Override
         public ResourceSyncResult disable(ResourceDeclaration resource) {
             return ResourceSyncResult.of(94002L, "test_provider", "disabled");
+        }
+    }
+
+    static class TenantScopedResourceHandler implements ResourceHandler {
+
+        private final List<String> disableTenants = new ArrayList<>();
+
+        @Override
+        public String resourceType() {
+            return "TENANT_TEST_RESOURCE";
+        }
+
+        @Override
+        public String executionTenantField() {
+            return "tenantId";
+        }
+
+        @Override
+        public ResourceSyncResult upsert(ResourceDeclaration resource) {
+            return ResourceSyncResult.of(95001L, "tenant_test_resource", "ok");
+        }
+
+        @Override
+        public ResourceSyncResult disable(ResourceDeclaration resource) {
+            disableTenants.add(io.mango.infra.context.api.MangoContextHolder.tenantId());
+            return ResourceSyncResult.of(95001L, "tenant_test_resource", "disabled");
+        }
+
+        List<String> disableTenants() {
+            return List.copyOf(disableTenants);
+        }
+
+        void clearDisableTenants() {
+            disableTenants.clear();
         }
     }
 

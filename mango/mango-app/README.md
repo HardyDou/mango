@@ -67,6 +67,7 @@ mvn -f mango/pom.xml -pl :mango-business-app -am spring-boot:run
 | `.env.development` | `MANGO_FILE_ROOT` | 本地文件存储根目录。 |
 | `.env.development` | `MANGO_CRYPTO_SM4_SECRET_KEY` | SM4 密钥，`mango workspace init` 会写入本地工作区环境。 |
 | `mango-monolith-app/application.yml` | `mango.persistence.flyway.modules.*.enabled` | 控制单体各能力模块 migration。 |
+| `mango-monolith-app/application.yml`、`mango-platform-app/application.yml` | `spring.servlet.multipart.max-file-size`、`spring.servlet.multipart.max-request-size` | 默认 `10GB`，与文件中心默认单文件上限一致；超过 20MiB 的上传走文件中心分片链路。 |
 | `mango-gateway-app/application.yml` | `spring.cloud.gateway.routes` | 微服务路由到 platform 和 business。 |
 | `mango-platform-app/application.yml` | YAML 中 `mango` -> `flyway` -> `enabled` | 当前微服务示例默认关闭 Flyway。 |
 | `mango-business-app/application.yml` | YAML 中 `mango` -> `flyway` -> `enabled` | 当前业务服务示例默认关闭 Flyway。 |
@@ -146,3 +147,7 @@ app 层只装配权限能力。菜单、权限和租户数据由 `mango-authoriz
 ### Issue #661 文件打包大小控制影响
 
 `mango-file` 新增可选的 `packageFilesWithSizeControl` Java/HTTP/Feign 入口，文件预览 app 的测试替身仅同步公共 `FileApi` 方法以保持编译兼容。现有 app 装配、服务路由、启动配置、文件上传、预览和下载入口均不变；需要控制单个 ZIP 最终大小的业务调用方应直接使用文件模块的新入口。
+
+### Issue #1055 信息采集模块迁移开关
+
+单体 `application.yml` 的 `mango.persistence.flyway.modules.mango-information.enabled=true` 声明信息采集模块迁移。未声明而 classpath 存在该模块迁移时启动会失败并提示补声明；既有模块迁移开关、Flyway 顺序和单体启动入口不变。

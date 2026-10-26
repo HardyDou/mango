@@ -100,6 +100,7 @@
 | `component` | 前端页面 key，必须和对应 npm 包注册的页面 key 一致 |
 | `pageType` | `LOCAL_ROUTE`、`MICRO_ROUTE`、`IFRAME`、`EXTERNAL_LINK`、`BUTTON` |
 | `menuCode` | 菜单可见性编码，只决定用户能看到哪些菜单 |
+| `keepAlive` | 路由缓存开关：`1` 表示切换页签保留页面状态，页面菜单默认 `1`，目录和按钮为 `0` |
 | `apiCodes` | 当前菜单携带的接口/动作权限码，分配菜单后自动授予 |
 
 如果新增的是 admin 页面插件，先在对应前端包 README 里确认页面 key，再把相同 key 写入 authorization 菜单清单。
@@ -770,3 +771,11 @@ Resource Registry 还支持授权基线声明：
 
 - PermissionApi 契约由 `PermissionController` 承载，授权菜单服务只暴露内部权限码查询能力。该变更不改变权限码来源、菜单资源同步、角色授权链路和 `/authorization/permissions` 对外路径。
 - Issue #835 只修复已有数据库中缺失 `AUTH_ROLE_DATA_SCOPE` 的 FINALIZE 停用合同；声明格式、正常 upsert、`INIT_ONLY`、API、菜单和前端能力不变。
+
+## 资源声明同步模式（#1098）
+
+资源声明的 `sync-mode` 已收敛为 `SYNC_ALWAYS` 和 `SYNC_ONCE`：`AUTO` 映射为 `SYNC_ALWAYS`，`INIT_ONLY`、`MANUAL`、`LOCKED` 映射为 `SYNC_ONCE`。旧值仍可读取并会在启动时输出弃用告警，新声明只写新值。语义与迁移规则见 `mango-resource` README 的 `sync-mode` 章节。
+
+## 资源归属（#1098）
+
+资源登记行新增 `ownership`：`RESOURCE_MANAGED` 可被声明覆盖与停用，`MANUAL_TAKEOVER` 与 `UNKNOWN` 不再被声明覆盖或停用。本模块资源声明不受影响，语义与迁移规则见 `mango-resource` README 的 ownership 章节。

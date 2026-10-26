@@ -5,7 +5,7 @@
 `mango-business-starter` 是 Mango 业务项目和业务模块的模板资产目录。它提供三类能力：
 
 - 业务模块模板：后端 `api`、`core`、`starter`、`starter-remote` 四层模块，前端 API 包和页面包。
-- 业务 PMO baseline：业务仓库内可独立执行的 preflight、交付契约检查、角色规则和示例台账。
+- 业务 PMO baseline：业务仓库内可独立执行的 preflight、交付契约检查、角色规则和示例台账；其中 `templates/module-readme.md` 约定模块 README 用「升级与兼容」小节按版本记录升级要点，纯书写规范、不参与门禁。
 - 拓扑说明：单体和微服务模式下业务模块依赖、远程调用和菜单页面接入方式。
 
 `@mango/cli` 使用本目录的方式有边界：`mango init --preset full` 读取 CLI 包内 `templates/full`；`mango module add` 会优先读取 CLI 包内 `templates/business-module`，当前该目录不存在时回退到本目录。

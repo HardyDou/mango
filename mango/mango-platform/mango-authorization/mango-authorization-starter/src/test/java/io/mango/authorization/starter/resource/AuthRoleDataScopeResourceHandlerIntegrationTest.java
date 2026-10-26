@@ -115,7 +115,7 @@ class AuthRoleDataScopeResourceHandlerIntegrationTest {
         seedRole(1001L, 1L, "internal-admin", "ROLE_DEMO");
         ResourceSyncResult created = handler.upsert(resource());
         ResourceDeclaration initOnly = resource();
-        initOnly.setSyncMode(ResourceSyncMode.INIT_ONLY);
+        initOnly.setSyncMode(ResourceSyncMode.SYNC_ONCE);
         put(initOnly, "scopeMode", ResourceFieldType.STRING, "ALL");
         initOnly.removeField("scopeValues");
 

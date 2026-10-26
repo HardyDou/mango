@@ -12,7 +12,7 @@
             "bizKey": "cms.advertisement.2070000000000000701",
             "name": "CMS 演示数据 cms_advertisement 2070000000000000701",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -106,7 +106,7 @@
             "bizKey": "cms.advertisement.2070000000000001701",
             "name": "CMS 演示数据 cms_advertisement 2070000000000001701",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -200,7 +200,7 @@
             "bizKey": "cms.advertisement.2070000000000002701",
             "name": "CMS 演示数据 cms_advertisement 2070000000000002701",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -294,7 +294,7 @@
             "bizKey": "cms.advertisement.2070000000000002702",
             "name": "CMS 演示数据 cms_advertisement 2070000000000002702",
             "targetModule": "cms",
-            "syncMode": "INIT_ONLY",
+            "syncMode": "SYNC_ONCE",
             "fields": {
               "targetId": {
                 "type": "LONG",
@@ -363,6 +363,194 @@
               "jumpUrl": {
                 "type": "STRING",
                 "value": "/news"
+              },
+              "startTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "endTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "sort": {
+                "type": "INT",
+                "value": 2
+              },
+              "status": {
+                "type": "STRING",
+                "value": "ENABLED"
+              }
+            }
+          },
+          {
+            "id": "20260714110000072",
+            "version": 1,
+            "bizKey": "cms.advertisement.2070000000000000901",
+            "name": "CMS 演示数据 广告位 demo-home-hero",
+            "targetModule": "cms",
+            "syncMode": "SYNC_ONCE",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000000901"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "createdBy": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "updatedBy": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000000001"
+              },
+              "adCode": {
+                "type": "STRING",
+                "value": "demo-home-hero"
+              },
+              "adName": {
+                "type": "STRING",
+                "value": "demo-home-hero"
+              },
+              "position": {
+                "type": "STRING",
+                "value": "HOME_HERO"
+              },
+              "positionType": {
+                "type": "STRING",
+                "value": "BANNER"
+              },
+              "supportedMaterialTypes": {
+                "type": "STRING",
+                "value": "SINGLE_IMAGE"
+              },
+              "width": {
+                "type": "INT",
+                "value": null
+              },
+              "height": {
+                "type": "INT",
+                "value": null
+              },
+              "remark": {
+                "type": "STRING",
+                "value": "关于我们页主视觉广告位"
+              },
+              "adType": {
+                "type": "STRING",
+                "value": null
+              },
+              "materialFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "jumpUrl": {
+                "type": "STRING",
+                "value": "/about"
+              },
+              "startTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "endTime": {
+                "type": "DATETIME",
+                "value": null
+              },
+              "sort": {
+                "type": "INT",
+                "value": 1
+              },
+              "status": {
+                "type": "STRING",
+                "value": "ENABLED"
+              }
+            }
+          },
+          {
+            "id": "20260714110000073",
+            "version": 1,
+            "bizKey": "cms.advertisement.2070000000000000902",
+            "name": "CMS 演示数据 广告位 demo-news-hero",
+            "targetModule": "cms",
+            "syncMode": "SYNC_ONCE",
+            "fields": {
+              "targetId": {
+                "type": "LONG",
+                "value": "2070000000000000902"
+              },
+              "tenantId": {
+                "type": "STRING",
+                "value": "1"
+              },
+              "orgId": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "createdBy": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "updatedBy": {
+                "type": "LONG",
+                "value": "1"
+              },
+              "siteId": {
+                "type": "LONG",
+                "value": "2070000000000000001"
+              },
+              "adCode": {
+                "type": "STRING",
+                "value": "demo-news-hero"
+              },
+              "adName": {
+                "type": "STRING",
+                "value": "demo-news-hero"
+              },
+              "position": {
+                "type": "STRING",
+                "value": "NEWS_HERO"
+              },
+              "positionType": {
+                "type": "STRING",
+                "value": "BANNER"
+              },
+              "supportedMaterialTypes": {
+                "type": "STRING",
+                "value": "SINGLE_IMAGE"
+              },
+              "width": {
+                "type": "INT",
+                "value": null
+              },
+              "height": {
+                "type": "INT",
+                "value": null
+              },
+              "remark": {
+                "type": "STRING",
+                "value": "关于我们页主视觉广告位"
+              },
+              "adType": {
+                "type": "STRING",
+                "value": null
+              },
+              "materialFileId": {
+                "type": "STRING",
+                "value": null
+              },
+              "jumpUrl": {
+                "type": "STRING",
+                "value": "/about"
               },
               "startTime": {
                 "type": "DATETIME",

@@ -1,4 +1,5 @@
 import vue from '@vitejs/plugin-vue';
+import { readFileSync } from 'node:fs';
 import { defineConfig, loadEnv, type ConfigEnv, type Plugin } from 'vite';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
@@ -6,6 +7,9 @@ import { mangoMicroManualChunks } from '../../build-config/microChunks';
 import { assertMangoPackageModeDist, createMangoWorkspaceAliases } from '../../build-config/mangoAliases';
 import { createMangoApiProxy } from '../../build-config/apiProxy';
 
+const adminExtensionVersion = JSON.parse(
+  readFileSync(new URL('../../packages/admin-extension/package.json', import.meta.url), 'utf8'),
+).version;
 const ALLOWED_PROXY_HOSTS = ['127.0.0.1', 'localhost'];
 const DEV_ALLOWED_HOSTS = [
   'localhost',
@@ -62,6 +66,9 @@ export default defineConfig((mode: ConfigEnv) => {
   return {
     base: env.VITE_PUBLIC_PATH || '/',
     plugins: [vue(), runtimeConfigDevPlugin(process.env.VITE_MANGO_RUNTIME_CONFIG_FILE)],
+    define: {
+      __MANGO_ADMIN_EXTENSION_VERSION__: JSON.stringify(adminExtensionVersion),
+    },
     resolve: {
       alias: createMangoWorkspaceAliases({
         appDir: __dirname,

@@ -86,6 +86,7 @@ const panels: MangoCollapsePanel[] = [
 | 属性 | 默认值 | 说明 |
 | --- | --- | --- |
 | `title` | 必填 | 页面标题。 |
+| `maxWidth` | `1280px` | 页面最大宽度，仅支持带单位的 `px` 或百分比值，例如 `960px`、`80%`。 |
 | `panels` / `tabs` | `undefined` | 二选一；直接面板或 Tab 下的面板配置。两者同时传入会报错。 |
 | `responsive` | `undefined` | 描述列表栅格响应式配置：`gutter`、`span`、`xs`、`sm`、`md`、`lg`、`xl`。 |
 | `activeTab` / `defaultActiveTab` | `undefined` | 受控/初始 Tab 名称。 |

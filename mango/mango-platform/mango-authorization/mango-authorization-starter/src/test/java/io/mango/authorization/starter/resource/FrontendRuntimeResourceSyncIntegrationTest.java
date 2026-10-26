@@ -346,6 +346,7 @@ class FrontendRuntimeResourceSyncIntegrationTest {
                     target_id bigint,
                     source_hash varchar(64),
                     sync_mode varchar(32) not null,
+                    ownership varchar(32) not null default 'UNKNOWN',
                     status varchar(32) not null,
                     last_sync_time timestamp,
                     tenant_id varchar(64),

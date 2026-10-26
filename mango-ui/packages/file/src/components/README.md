@@ -271,7 +271,7 @@ const fileIds = ref<string[]>([]);
 - 分片开关和临界值读取 `GET /file/settings` 的 `multipartEnabled`、`multipartThreshold`；读取失败时默认启用并使用 `20MiB` 临界值。
 - HTTP IP 等非安全上下文不能使用 Web Crypto 时，大文件自动省略客户端哈希并降级为服务端分片，不会因 `crypto.subtle` 不可用中断。
 - 秒传命中时，后端返回 `instant=true` 和 `fileRecord`，组件直接回写。
-- `fmt`、`size`、`sizes` 是组件预检查；`MUpload` 还会读取 `GET /file/settings` 的 `maxSize`，存在两类限制时取较小值，后端仍做最终校验。
+- `fmt`、`size`、`sizes` 是组件预检查；`MUpload` 还会读取 `GET /file/settings` 的 `maxSize`（默认 10GB），存在两类限制时取较小值，后端仍做最终校验。
 
 `FilePreviewPanel` props：
 
