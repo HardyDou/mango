@@ -184,7 +184,8 @@ function extractReleaseSections(notes = '') {
     const start = notes.indexOf(`# ${heading}`);
     if (start < 0) continue;
     const bodyStart = notes.indexOf('\n', start) + 1;
-    const next = notes.indexOf('\n# ', bodyStart);
+    const nextHeading = notes.slice(bodyStart).match(/\n#{1,6} /u);
+    const next = nextHeading ? bodyStart + nextHeading.index : -1;
     const body = notes.slice(bodyStart, next < 0 ? notes.length : next).trim();
     if (body) sections.push(`### ${heading}\n\n${body}`);
   }

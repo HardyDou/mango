@@ -65,6 +65,8 @@ test('generateUpgradeGuide creates, updates and preserves files deterministicall
     assert.ok(written.includes('`@mango/cli@1.3.4`'));
     assert.ok(written.includes('### Fixed'));
     assert.ok(written.includes('Fixed the bootstrap stall.'));
+    assert.equal((written.match(/### Added/g) ?? []).length, 1);
+    assert.equal((written.match(/### Changed/g) ?? []).length, 1);
     assert.ok(written.includes('## 8. Agent 执行清单'));
     assert.ok(written.includes('v2026.10.21-maven-1.1.0-test-release'));
 

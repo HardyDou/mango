@@ -783,3 +783,7 @@ Resource Registry 还支持授权基线声明：
 ## 资源归属（#1098）
 
 资源登记行新增 `ownership`：`RESOURCE_MANAGED` 可被声明覆盖与停用，`MANUAL_TAKEOVER` 与 `UNKNOWN` 不再被声明覆盖或停用。本模块资源声明不受影响，语义与迁移规则见 `mango-resource` README 的 ownership 章节。
+
+## 17. 升级与兼容
+
+- `1.1.2`：API Resource 增加固定声明、Controller 扫描和人工登记来源的去重与查询能力，并新增权限标识页面。升级时执行授权模块 V4 迁移、重新同步 `AUTH_MENU`，确认 `system:api-resource:list` 权限和固定声明优先级；回滚前按发布升级指南处理数据库快照。

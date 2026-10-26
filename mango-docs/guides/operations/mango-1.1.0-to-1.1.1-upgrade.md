@@ -28,7 +28,6 @@
 ### Fixed
 
 - 同一构建版本重复执行 `bootstrap finalize` 不再报 `BOOTSTRAP_CANDIDATE_MISSING`：已 `FINALIZED` 且 fingerprint 未变的同一 generation 直接返回 `FINALIZED`（0 步，控制表与执行表不变化），内容不同时返回 `BOOTSTRAP_GENERATION_ALREADY_RELEASED`。
-- Resource Registry 旧 `sync_mode` 由新增的 `V5__normalize_legacy_resource_sync_modes.sql` 一次性归一：`AUTO` → `SYNC_ALWAYS`，`INIT_ONLY`、`MANUAL`、`LOCKED` → `SYNC_ONCE`。
 - 文档站不再因为人工白名单遗漏而让升级指南 404：`mango-docs/guides/operations/mango-*-to-*-upgrade.md` 自动收录并进入侧边栏。
 - `check-governance-intent` 在 `main` 上的既有失败已修复：CMS Banner 指南与租户 FAQ 改为操作化表述，生成模板同样规避规则化措辞。
 
@@ -69,9 +68,9 @@
 
 - Audience: 使用 Mango `1.1.0` 或更早版本的业务项目，尤其是自建部署引擎调用 bootstrap 的项目。
 - Engineering Effort: low; 替换 Maven/npm 版本并按升级页核对部署脚本即可，无业务代码改动。
-- Execution Window: 30 to 60 minutes including database migration, restart and Bootstrap verification; assess lock waits for large tables.
-- Service Downtime: one planned restart window including the Resource migration; reserve extra time for large-table locks.
-- Rollback Effort: medium; dependency rollback is low effort, but database snapshot recovery is required before returning to versions that cannot read the new sync_mode values.
+- Execution Window: 30 to 60 minutes including migration-free restart and bootstrap 验证。
+- Service Downtime: one planned restart window；本次批次无数据库迁移。
+- Rollback Effort: low; 回退到 `1.1.0` 与 PMO `1.4.7`、CLI `1.3.4`，已写入的 `FINALIZED` 状态无需修复。
 - Assumptions: MySQL 8 consumer database, Java 21 build, Node 22.23.1 frontend build, and an operator able to run one bootstrap sequence.
 
 ## Upgrade Notes
@@ -80,7 +79,7 @@
 2. 先读 `mango-docs/guides/operations/` 下与本批次对应的升级页面，按页面执行升级前检查与验证。
 3. 部署引擎遵循 `plan -> apply --strategy=rolling -> finalize -> verify` 统一序列；删除自行判断“是否需要 finalize”的预检。
 4. 重复执行同一版本发布会返回 `FINALIZED` 而非失败；若返回 `BOOTSTRAP_GENERATION_ALREADY_RELEASED`，说明同一 generation 的内容已变化，需要新 generation。
-5. 执行 Resource Flyway 迁移，确认 `V5__normalize_legacy_resource_sync_modes.sql` 成功；查询 `resource_registry.sync_mode` 中 `AUTO`、`INIT_ONLY`、`MANUAL`、`LOCKED` 均为 0，再确认 `mango_bootstrap_control` 为 `FINALIZED`、`flyway_schema_history_resource` 无失败记录。
+5. 本批次无数据库迁移，升级后确认 `mango_bootstrap_control` 为 `FINALIZED`、`flyway_schema_history_resource` 无新增失败记录即可。
 
 ## Verification
 
@@ -92,7 +91,7 @@
 ## Rollback
 
 - 通过正常依赖发布流程把消费者回退到 Maven/docs `1.1.0` 与 PMO `1.4.7`、CLI `1.3.4`；已发布的 `1.1.1` 坐标不可覆盖。
-- V5 会持久化写入新的 sync_mode，回退到无法识别 `SYNC_ALWAYS`/`SYNC_ONCE` 的 1.0.63 或更早版本前必须恢复升级前数据库快照；代码回退本身不等于数据回滚。
+- 本批次无数据库迁移，回退不需要恢复数据库快照；`mango_bootstrap_control` 中已写入的 `FINALIZED` 状态可被旧版本继续使用。
 - 文档回退仅影响可读性，不影响运行时。
 
 ### Added
@@ -132,9 +131,9 @@
 
 - Audience: 使用 Mango `1.1.0` 或更早版本的业务项目，尤其是自建部署引擎调用 bootstrap 的项目。
 - Engineering Effort: low; 替换 Maven/npm 版本并按升级页核对部署脚本即可，无业务代码改动。
-- Execution Window: 30 to 60 minutes including database migration, restart and Bootstrap verification; assess lock waits for large tables.
-- Service Downtime: one planned restart window including the Resource migration; reserve extra time for large-table locks.
-- Rollback Effort: medium; dependency rollback is low effort, but database snapshot recovery is required before returning to versions that cannot read the new sync_mode values.
+- Execution Window: 30 to 60 minutes including migration-free restart and bootstrap 验证。
+- Service Downtime: one planned restart window；本次批次无数据库迁移。
+- Rollback Effort: low; 回退到 `1.1.0` 与 PMO `1.4.7`、CLI `1.3.4`，已写入的 `FINALIZED` 状态无需修复。
 - Assumptions: MySQL 8 consumer database, Java 21 build, Node 22.23.1 frontend build, and an operator able to run one bootstrap sequence.
 
 ## Upgrade Notes
@@ -143,7 +142,7 @@
 2. 先读 `mango-docs/guides/operations/` 下与本批次对应的升级页面，按页面执行升级前检查与验证。
 3. 部署引擎遵循 `plan -> apply --strategy=rolling -> finalize -> verify` 统一序列；删除自行判断“是否需要 finalize”的预检。
 4. 重复执行同一版本发布会返回 `FINALIZED` 而非失败；若返回 `BOOTSTRAP_GENERATION_ALREADY_RELEASED`，说明同一 generation 的内容已变化，需要新 generation。
-5. 执行 Resource Flyway 迁移，确认 `V5__normalize_legacy_resource_sync_modes.sql` 成功；查询 `resource_registry.sync_mode` 中 `AUTO`、`INIT_ONLY`、`MANUAL`、`LOCKED` 均为 0，再确认 `mango_bootstrap_control` 为 `FINALIZED`、`flyway_schema_history_resource` 无失败记录。
+5. 本批次无数据库迁移，升级后确认 `mango_bootstrap_control` 为 `FINALIZED`、`flyway_schema_history_resource` 无新增失败记录即可。
 
 ## Verification
 
@@ -155,7 +154,7 @@
 ## Rollback
 
 - 通过正常依赖发布流程把消费者回退到 Maven/docs `1.1.0` 与 PMO `1.4.7`、CLI `1.3.4`；已发布的 `1.1.1` 坐标不可覆盖。
-- V5 会持久化写入新的 sync_mode，回退到无法识别 `SYNC_ALWAYS`/`SYNC_ONCE` 的 1.0.63 或更早版本前必须恢复升级前数据库快照；代码回退本身不等于数据回滚。
+- 本批次无数据库迁移，回退不需要恢复数据库快照；`mango_bootstrap_control` 中已写入的 `FINALIZED` 状态可被旧版本继续使用。
 - 文档回退仅影响可读性，不影响运行时。
 
 ### Changed
@@ -189,9 +188,9 @@
 
 - Audience: 使用 Mango `1.1.0` 或更早版本的业务项目，尤其是自建部署引擎调用 bootstrap 的项目。
 - Engineering Effort: low; 替换 Maven/npm 版本并按升级页核对部署脚本即可，无业务代码改动。
-- Execution Window: 30 to 60 minutes including database migration, restart and Bootstrap verification; assess lock waits for large tables.
-- Service Downtime: one planned restart window including the Resource migration; reserve extra time for large-table locks.
-- Rollback Effort: medium; dependency rollback is low effort, but database snapshot recovery is required before returning to versions that cannot read the new sync_mode values.
+- Execution Window: 30 to 60 minutes including migration-free restart and bootstrap 验证。
+- Service Downtime: one planned restart window；本次批次无数据库迁移。
+- Rollback Effort: low; 回退到 `1.1.0` 与 PMO `1.4.7`、CLI `1.3.4`，已写入的 `FINALIZED` 状态无需修复。
 - Assumptions: MySQL 8 consumer database, Java 21 build, Node 22.23.1 frontend build, and an operator able to run one bootstrap sequence.
 
 ## Upgrade Notes
@@ -200,7 +199,7 @@
 2. 先读 `mango-docs/guides/operations/` 下与本批次对应的升级页面，按页面执行升级前检查与验证。
 3. 部署引擎遵循 `plan -> apply --strategy=rolling -> finalize -> verify` 统一序列；删除自行判断“是否需要 finalize”的预检。
 4. 重复执行同一版本发布会返回 `FINALIZED` 而非失败；若返回 `BOOTSTRAP_GENERATION_ALREADY_RELEASED`，说明同一 generation 的内容已变化，需要新 generation。
-5. 执行 Resource Flyway 迁移，确认 `V5__normalize_legacy_resource_sync_modes.sql` 成功；查询 `resource_registry.sync_mode` 中 `AUTO`、`INIT_ONLY`、`MANUAL`、`LOCKED` 均为 0，再确认 `mango_bootstrap_control` 为 `FINALIZED`、`flyway_schema_history_resource` 无失败记录。
+5. 本批次无数据库迁移，升级后确认 `mango_bootstrap_control` 为 `FINALIZED`、`flyway_schema_history_resource` 无新增失败记录即可。
 
 ## Verification
 
@@ -212,17 +211,16 @@
 ## Rollback
 
 - 通过正常依赖发布流程把消费者回退到 Maven/docs `1.1.0` 与 PMO `1.4.7`、CLI `1.3.4`；已发布的 `1.1.1` 坐标不可覆盖。
-- V5 会持久化写入新的 sync_mode，回退到无法识别 `SYNC_ALWAYS`/`SYNC_ONCE` 的 1.0.63 或更早版本前必须恢复升级前数据库快照；代码回退本身不等于数据回滚。
+- 本批次无数据库迁移，回退不需要恢复数据库快照；`mango_bootstrap_control` 中已写入的 `FINALIZED` 状态可被旧版本继续使用。
 - 文档回退仅影响可读性，不影响运行时。
 
 ## 3. 升级前检查
 
 1. 确认数据库备份可恢复，尤其是 Resource Registry、Flyway history、Bootstrap receipt 和业务目标表。
 2. 阅读当前版本对应的模块 README、能力地图和本文引用的专项指南。
-3. 对 Resource Registry 统计旧 sync_mode 数量，记录迁移前结果；确认数据库备份可恢复。
-4. 检查业务项目是否引用本批次删除或收紧的 API、配置、枚举、菜单或前端导出。
-5. 记录当前 Maven、npm、CLI、PMO 版本以及构建锁文件；不要混用不同发布批次。
-6. 先在预发布数据库执行只读检查，再进入维护窗口。
+3. 检查业务项目是否引用本批次删除或收紧的 API、配置、枚举、菜单或前端导出。
+4. 记录当前 Maven、npm、CLI、PMO 版本以及构建锁文件；不要混用不同发布批次。
+5. 先在预发布数据库执行只读检查，再进入维护窗口。
 
 ## 4. 依赖升级
 
@@ -253,30 +251,10 @@ CLI 生成项目使用本批次的 `@mango/cli`；不要用旧的全局 CLI 覆�
 
 ## 5. 数据库与启动验证
 
-1. 备份后在维护窗口启动一次升级候选，等待 Flyway 与 Resource Bootstrap 完成。
-2. 迁移前记录以下查询结果，确认旧值数量和 Registry 行数：
-
-   ```sql
-   SELECT sync_mode, COUNT(*)
-   FROM resource_registry
-   GROUP BY sync_mode;
-   ```
-
-3. 确认 `V5__normalize_legacy_resource_sync_modes.sql` 执行成功；迁移只更新 `resource_registry.sync_mode`，不重放目标 Handler。
-4. 迁移后确认以下查询返回 0 行，并核对 Registry 行数、ownership、版本、Hash、状态和目标 ID 未变化：
-
-   ```sql
-   SELECT sync_mode, COUNT(*)
-   FROM resource_registry
-   WHERE sync_mode IN ('AUTO', 'INIT_ONLY', 'MANUAL', 'LOCKED')
-   GROUP BY sync_mode;
-   ```
-
-5. 启动验证完成后确认 Bootstrap receipt 最终为 `FINALIZED`。
-6. 确认所有新增迁移成功，Bootstrap receipt 最终为 `FINALIZED`。
-7. 对 Resource Registry 检查唯一键、同步模式、归属字段和冲突诊断。
-8. 对固定 API_RESOURCE 声明执行 Controller 扫描重叠检查。`resource-provider.enabled` 在 1.0.63、1.1.0 和 1.1.1 默认均为启用；同一接口若保留固定声明，应在 `mango.authorization.resource-sync.exclude-paths` 中排除对应路径。不要删除目标业务资源或关闭 fail-closed 冲突校验。
-9. 对业务模块执行本文第 2 节涉及的专项验证；迁移失败或身份冲突时停止，不要通过手工修改 Flyway history 绕过。
+1. 备份后启动一次升级候选，等待 Flyway 与 Resource Bootstrap 完成。
+2. 确认所有新增迁移成功，Bootstrap receipt 最终为 `FINALIZED`。
+3. 对 Resource Registry 检查唯一键、同步模式、归属字段和冲突诊断。
+4. 对业务模块执行本文第 2 节涉及的专项验证；迁移失败或身份冲突时停止，不要通过手工修改 Flyway history 绕过。
 
 ## 6. 业务回归
 
@@ -284,12 +262,11 @@ CLI 生成项目使用本批次的 `@mango/cli`；不要用旧的全局 CLI 覆�
 - 前端构建、路由、页面注册、公开站点和已变更的 npm 导出。
 - CLI 生成项目、PMO baseline、docs bundle 和 clean consumer。
 - 对本批次 release notes 的 `Fixed`、`Added`、`Changed` 项逐项保留验证证据。
-- API Resource 声明来源检查：固定 `META-INF/mango/resources/*.yml|yaml|json` 声明与 Controller 自动扫描不得为同一 `resourceType + bizKey` 生成不同资源 ID；升级后至少等待一个 eventual 对账周期并检查 `Resource bizKey already registered by another id`。
 
 ## 7. 回滚边界
 
 - 已发布的 Maven/npm 坐标不可覆盖，只能发布新版本或回退消费者依赖。
-- Resource V5 是一次性数据归一迁移；不可逆数据操作需要在升级前完成归档或备份，回退旧版本前恢复数据库快照。
+- 数据库迁移是否可逆以对应模块 README 为准；不可逆数据操作需要在升级前完成归档或备份。
 - 代码回退不等于数据回滚；保留升级前数据库快照、Bootstrap receipt、迁移日志和前端构建产物。
 
 ## 8. Agent 执行清单

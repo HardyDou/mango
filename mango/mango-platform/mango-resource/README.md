@@ -698,3 +698,7 @@ delete from flyway_schema_history_resource where version = '3' and success = 0;
 使用 Maven `1.0.30` 或其它 `1.0.3x` 组合的业务模块，升级到 Maven `1.0.31` / PMO `1.3.9` / CLI `1.0.96` 完整 tuple 时，将旧 `resource-manifest.json` 迁移为 `META-INF/mango/resources/<module>-common-*.json|yml|yaml` typed declaration，并按目标 handler 的 `ResourceHandlerSpec` 校验字段。正式内置资源默认 `BOOTSTRAP_REQUIRED`；需要非阻断对账的资源显式使用 `RUNTIME_EVENTUAL`。不要把历史 Flyway seed、demo 数据或用户可修改数据复制为正式 Resource 声明。
 
 升级验证至少检查空库 Resource/菜单、已有库不重建、依赖资源拓扑、manifest fingerprint 和 Runtime readiness。出现 handler 缺失、声明 schema 错误或 generation/fingerprint 不匹配时，保留同步日志和 Bootstrap receipt，确认完整 `1.0.31` tuple 后使用新 generation 重新 plan/apply/verify，修复声明或回滚候选 generation；不要删库、手工改 Bootstrap 审计表或通过手工 SQL 绕过同步。
+
+## 17. 升级与兼容
+
+- `1.1.2`：新增 V5 迁移，将历史 `AUTO`、`INIT_ONLY`、`MANUAL`、`LOCKED` 归一为 `SYNC_ALWAYS` 或 `SYNC_ONCE`。迁移只改 Registry 元数据，不改目标资源、ownership、版本、Hash、状态或 target ID；升级后确认旧值为 0，回滚到不识别新值的旧版本前必须恢复升级前数据库快照。

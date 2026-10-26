@@ -164,3 +164,7 @@ registerExampleAdminPages();
 - v2026.07.11-npm-lock-sync-release 新增开发中心搜索面板页面描述：`demo/components/SearchPanelView` 对应
   `/components/search-panel`，由 `@mango/admin-shell` 提供页面 loader。该入口仅用于开发中心示例，不新增后端
   菜单、接口、角色权限、租户数据或业务页面注册要求。
+
+## 12. 升级与兼容
+
+- `1.2.0`：默认页面注册新增 `system/api-resource/index`，供 RBAC 权限标识页面使用。升级后确认页面注册与后端 `AUTH_MENU` component key 一致；其它既有页面注册保持兼容。

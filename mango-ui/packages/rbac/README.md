@@ -206,3 +206,7 @@ const users = await userApi.page({ pageNum: 1, pageSize: 20 });
 - Issue #805 待发布修复在 `postApi` 边界将后端分页字段 `total`、`current`、`size` 的 numeric string 转为 number，并将已确认的 Element Plus Radio value 用法从废弃 `label` 迁移到 `value`。后端大 ID 仍按字符串传递；岗位分页 API、表单值、页面 key、菜单、权限和租户语义不变。
 
 - 本次用户管理页新增锁定状态、密码状态、解锁按钮常驻展示、重置密码弹窗和首次登录密码提示。用户列表仍使用 `userApi` 既有接口，只是把重置密码从 prompt 改成完整表单并统一接入密码策略提示；`system:user:unlock` 需要后端权限资源和角色授权同时生效，未授权时按钮会禁用或接口会返回无权限。该变更不改变用户列表、角色授权、组织和岗位页面的 component key、页面注册方式和接口路径。
+
+## 12. 升级与兼容
+
+- `1.1.0`：新增 `ApiResourceView` 权限标识页面及 `apiResourceApi` 查询封装。升级后确认页面 key `system/api-resource/index` 已由 `@mango/admin-pages` 注册，并为用户授予 `system:api-resource:list`；旧授权页面和接口保持兼容。
