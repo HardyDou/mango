@@ -1,12 +1,13 @@
 # Captcha
 
-验证码组件集。`CaptchaSelector` 统一选择/承载算术、图片滑块、点选文字、无感行为、Canvas 滑块、短信、邮件七种验证方式，七个子组件也可单独使用。
+验证码组件集。`CaptchaSelector` 统一选择/承载统一图形、算术、图片滑块、点选文字、无感行为、Canvas 滑块、短信、邮件八种验证方式，八个子组件也可单独使用。
 
 ## 导入
 
 ```ts
 import {
   CaptchaSelector,
+  GraphicCaptcha,
   ArithmeticCaptcha,
   BlockPuzzleCaptcha,
   ClickWordCaptcha,
@@ -30,7 +31,7 @@ import type {
 
 | 名称 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `type` | `CaptchaType` | `undefined` | 固定验证码类型。传入后只渲染对应子组件；不传时渲染七个页签供用户切换，默认选中 `CaptchaType.CANVAS_SLIDER` |
+| `type` | `CaptchaType` | `undefined` | 固定验证码类型。传入后只渲染对应子组件；不传时渲染八个页签供用户切换，默认选中 `CaptchaType.CANVAS_SLIDER` |
 | `mode` | `'embedded' \| 'trigger' \| 'popup'` | `'embedded'` | 展示模式。仅向 `BLOCK_PUZZLE`、`CANVAS_SLIDER` 两个滑块子组件透传 |
 
 展示模式说明：
@@ -43,9 +44,9 @@ import type {
 
 | 名称 | 参数 | 说明 |
 |------|------|------|
-| `success` | `key: string, code?: string, type?: CaptchaType` | 任一子组件验证通过时触发，`type` 为当前验证方式；算术和无感行为会携带 `code` |
+| `success` | `key: string, code?: string, type?: CaptchaType` | 任一子组件验证通过时触发，`type` 为当前验证方式；图形、算术和无感行为会携带 `code` |
 | `refresh` | - | 子组件刷新题目时触发（短信、邮件子组件不触发） |
-| `inputChange` | `value: string, type?: CaptchaType` | 算术验证码输入内容变化时触发 |
+| `inputChange` | `value: string, type?: CaptchaType` | 图形、算术验证码输入内容变化时触发 |
 
 ### Expose
 
@@ -56,11 +57,11 @@ import type {
 
 ## 子组件共享契约
 
-七个子组件挂载后即自动准备题目（短信、邮件除外，需先填写目标并点击发送），并对外保持一致的方法与成功事件：
+八个子组件挂载后即自动准备题目（短信、邮件除外，需先填写目标并点击发送），并对外保持一致的方法与成功事件：
 
 | 契约项 | 签名 | 说明 |
 |--------|------|------|
-| `success` 事件 | `(key: string, code?: string) => void` | 验证通过时抛出后端/本地会话 `key`；算术、无感行为额外携带 `code` |
+| `success` 事件 | `(key: string, code?: string) => void` | 验证通过时抛出后端/本地会话 `key`；图形、算术、无感行为额外携带 `code` |
 | `refresh()` 方法 | - | 重新生成题目并清空输入、错误与通过状态 |
 | `verify()` 方法 | `() => Promise<boolean>` | 主动触发校验并返回是否通过 |
 | 自动初始化 | - | 挂载时自动调用 `refresh()`（短信、邮件除外） |
@@ -69,6 +70,7 @@ import type {
 
 | 子组件 | `CaptchaType` | Props | 后端端点 | 交互与校验载荷 | 额外 Events |
 |--------|---------------|-------|----------|----------------|-------------|
+| `GraphicCaptcha` | `GRAPHIC` | `graphicType?`、`difficulty?` | `GET /captcha/graphic`、`POST /captcha/verify` | 支持统一默认策略、字母数字和算术图形验证码；校验传 `code` | `refresh`、`inputChange` |
 | `ArithmeticCaptcha` | `ARITHMETIC` | 无 | `GET /captcha/arithmetic`、`POST /captcha/verify` | 展示计算题图片，输入计算结果，回车提交；校验传 `code` | `refresh`、`inputChange` |
 | `BlockPuzzleCaptcha` | `BLOCK_PUZZLE` | `mode?: 'embedded' \| 'trigger' \| 'popup'`（默认 `embedded`） | `GET /captcha/block-puzzle`、`POST /captcha/verify` | 鼠标/触屏拖动拼图块，松手提交；校验传 `pointJson: { x, y }`（按原图尺寸换算）；失败自动换图 | `refresh` |
 | `ClickWordCaptcha` | `CLICK_WORD` | 无 | `GET /captcha/click-word`、`POST /captcha/verify` | 按提示依次点击图片文字，点满数量自动提交；校验传 `pointJson: { points: [{ x, y }] }`；支持“重选” | `refresh` |
@@ -83,6 +85,7 @@ import type {
 
 ```ts
 enum CaptchaType {
+  GRAPHIC = 'GRAPHIC',
   ARITHMETIC = 'ARITHMETIC',
   BLOCK_PUZZLE = 'BLOCK_PUZZLE',
   CLICK_WORD = 'CLICK_WORD',
@@ -95,7 +98,9 @@ enum CaptchaType {
 interface CaptchaResponse {
   key: string;
   type: CaptchaType;
-  image?: string;            // 算术/点选文字题图（dataURL 或图片地址）
+  graphicType?: 'ARITHMETIC' | 'ALPHANUMERIC';
+  difficulty?: 'SIMPLE' | 'MEDIUM' | 'COMPLEX';
+  image?: string;            // 图形/算术/点选文字题图（dataURL 或图片地址）
   backgroundImage?: string;  // 拼图背景图
   sliderImage?: string;      // 拼图滑块图
   backgroundWidth?: number;  // 原图宽，用于坐标换算
@@ -135,12 +140,13 @@ interface CaptchaTypesResponse {
 | 方法 | 端点 | 说明 |
 |------|------|------|
 | GET | `/captcha/types` | 查询启用的验证码类型与当前存储方式 |
-| GET | `/captcha/arithmetic` | 生成算术验证码 |
+| GET | `/captcha/graphic` | 生成统一图形验证码，可选题型和难度 |
+| GET | `/captcha/arithmetic` | 生成兼容旧接口的简单算术验证码 |
 | GET | `/captcha/block-puzzle` | 生成图片滑块拼图 |
 | GET | `/captcha/click-word` | 生成点选文字验证码 |
 | GET | `/captcha/behavior` | 初始化无感行为验证会话 |
 | POST | `/captcha/behavior/verify` | 行为验证评分，返回 `BehaviorCaptchaVerifyResult` |
-| POST | `/captcha/verify` | 统一校验（算术/拼图/点选/短信/邮件），返回 `boolean` |
+| POST | `/captcha/verify` | 统一校验（图形/算术/拼图/点选/短信/邮件），返回 `boolean` |
 | POST | `/auth/captcha/send` | 发送短信/邮件验证码，返回验证码 `key` |
 
 ## 使用示例

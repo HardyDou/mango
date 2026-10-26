@@ -152,6 +152,7 @@ export type {
   MangoDialogProps,
 } from './components/MangoDialog/types';
 export { default as CaptchaSelector } from './components/Captcha/index.vue';
+export { default as GraphicCaptcha } from './components/Captcha/GraphicCaptcha.vue';
 export { default as ArithmeticCaptcha } from './components/Captcha/ArithmeticCaptcha.vue';
 export { default as BlockPuzzleCaptcha } from './components/Captcha/BlockPuzzleCaptcha.vue';
 export { default as ClickWordCaptcha } from './components/Captcha/ClickWordCaptcha.vue';

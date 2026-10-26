@@ -2,6 +2,7 @@ import { get, post } from '../utils/request';
 
 export enum CaptchaType {
   ARITHMETIC = 'ARITHMETIC',
+  GRAPHIC = 'GRAPHIC',
   BLOCK_PUZZLE = 'BLOCK_PUZZLE',
   CLICK_WORD = 'CLICK_WORD',
   BEHAVIOR = 'BEHAVIOR',
@@ -10,9 +11,22 @@ export enum CaptchaType {
   EMAIL = 'EMAIL',
 }
 
+export enum GraphicCaptchaType {
+  ARITHMETIC = 'ARITHMETIC',
+  ALPHANUMERIC = 'ALPHANUMERIC',
+}
+
+export enum CaptchaDifficulty {
+  SIMPLE = 'SIMPLE',
+  MEDIUM = 'MEDIUM',
+  COMPLEX = 'COMPLEX',
+}
+
 export interface CaptchaResponse {
   key: string;
   type: CaptchaType;
+  graphicType?: GraphicCaptchaType;
+  difficulty?: CaptchaDifficulty;
   image?: string;
   backgroundImage?: string;
   sliderImage?: string;
@@ -45,6 +59,8 @@ export interface BehaviorCaptchaVerifyResult {
 export interface CaptchaTypesResponse {
   types: CaptchaType[];
   currentStorage: string;
+  defaultGraphicType?: GraphicCaptchaType;
+  defaultGraphicDifficulty?: CaptchaDifficulty;
 }
 
 export function getCaptchaTypes() {
@@ -53,6 +69,15 @@ export function getCaptchaTypes() {
 
 export function generateArithmetic() {
   return get<CaptchaResponse>('/captcha/arithmetic');
+}
+
+export function generateGraphic(type?: GraphicCaptchaType, difficulty?: CaptchaDifficulty) {
+  return get<CaptchaResponse>('/captcha/graphic', {
+    params: {
+      type,
+      level: difficulty,
+    },
+  });
 }
 
 export function generateBlockPuzzle() {

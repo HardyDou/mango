@@ -1,5 +1,7 @@
 package io.mango.captcha.api;
 
+import io.mango.captcha.api.constant.CaptchaDifficulty;
+import io.mango.captcha.api.constant.GraphicCaptchaType;
 import io.mango.captcha.api.dto.BehaviorCaptchaVerifyResponse;
 import io.mango.captcha.api.dto.CaptchaResponse;
 import io.mango.captcha.api.dto.CaptchaSendRequest;
@@ -31,6 +33,15 @@ public interface CaptchaApi {
      * @return 统一响应，包含验证码键、图片和有效期
      */
     R<CaptchaResponse> generateArithmetic();
+
+    /**
+     * 生成按全局默认策略或会话参数决定题型和难度的图形验证码。
+     *
+     * @param type 会话题型，可为空；为空时使用全局默认题型
+     * @param difficulty 会话难度，可为空；为空时使用全局默认难度
+     * @return 统一响应，包含验证码键、图片、实际题型和实际难度
+     */
+    R<CaptchaResponse> generateGraphic(GraphicCaptchaType type, CaptchaDifficulty difficulty);
 
     /**
      * 生成供用户拖动并完成拼图的滑块验证码。

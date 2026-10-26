@@ -444,7 +444,8 @@ API 加密环境变量：
 | `getUploadedFileDetail(id)` | `GET /file/files/detail`                               | 查询文件详情。                       |
 | `downloadUploadedFile(id)`  | `GET /file/files/download`                             | 下载文件，返回原始 blob response。   |
 | `getCaptchaTypes()`         | `GET /captcha/types`                                   | 查询验证码类型和存储。               |
-| `generateArithmetic()`      | `GET /captcha/arithmetic`                              | 生成算术验证码。                     |
+| `generateArithmetic()`      | `GET /captcha/arithmetic`                              | 生成兼容旧接口的算术验证码。         |
+| `generateGraphic(type, level)` | `GET /captcha/graphic`                              | 按全局默认策略或会话参数生成图形验证码。 |
 | `generateBlockPuzzle()`     | `GET /captcha/block-puzzle`                            | 生成拼图验证码。                     |
 | `generateClickWord()`       | `GET /captcha/click-word`                              | 生成点选验证码。                     |
 | `generateBehavior()`        | `GET /captcha/behavior`                                | 生成行为验证码。                     |

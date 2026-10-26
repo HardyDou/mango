@@ -63,6 +63,7 @@ class CaptchaRemoteHttpIntegrationTest {
 
             assertThat(client.getTypes().getData().getCurrentStorage()).isEqualTo("TestKvStore");
             assertThat(client.generateArithmetic().getData().getKey()).isEqualTo("remote-key");
+            assertThat(client.generateGraphic(null, null).getData().getKey()).isEqualTo("remote-key");
             assertThat(client.generateBlockPuzzle().getData().getKey()).isEqualTo("remote-key");
             assertThat(client.generateClickWord().getData().getKey()).isEqualTo("remote-key");
             assertThat(client.generateBehavior().getData().getKey()).isEqualTo("remote-key");
@@ -84,6 +85,7 @@ class CaptchaRemoteHttpIntegrationTest {
         assertThat(REQUESTS).extracting(RecordedRequest::methodAndPath).containsExactly(
                 "GET /captcha/types",
                 "GET /captcha/arithmetic",
+                "GET /captcha/graphic",
                 "GET /captcha/block-puzzle",
                 "GET /captcha/click-word",
                 "GET /captcha/behavior",
@@ -94,8 +96,8 @@ class CaptchaRemoteHttpIntegrationTest {
             assertThat(request.internalCall()).isEqualTo("true");
             assertThat(request.signature()).isNotBlank();
         });
-        assertThat(REQUESTS.get(5).body()).contains("\"key\":\"remote-key\"", "\"code\":\"7\"");
-        assertThat(REQUESTS.get(7).body()).contains("\"target\":\"13800138000\"", "\"businessType\":\"login\"");
+        assertThat(REQUESTS.get(6).body()).contains("\"key\":\"remote-key\"", "\"code\":\"7\"");
+        assertThat(REQUESTS.get(8).body()).contains("\"target\":\"13800138000\"", "\"businessType\":\"login\"");
     }
 
     private static void handle(HttpExchange exchange) throws IOException {
@@ -123,6 +125,11 @@ class CaptchaRemoteHttpIntegrationTest {
             return "{\"code\":200,\"success\":true,\"msg\":\"success\","
                     + "\"data\":{\"key\":\"remote-key\",\"score\":0.9,\"passed\":true,"
                     + "\"riskLevel\":\"LOW\",\"suggestAction\":\"ALLOW\",\"reason\":\"OK\"}}";
+        }
+        if ("/captcha/graphic".equals(path)) {
+            return "{\"code\":200,\"success\":true,\"msg\":\"success\","
+                    + "\"data\":{\"key\":\"remote-key\",\"type\":\"GRAPHIC\","
+                    + "\"graphicType\":\"ARITHMETIC\",\"difficulty\":\"SIMPLE\",\"expireTime\":300}}";
         }
         if ("/captcha/verify".equals(path)) {
             return "{\"code\":200,\"success\":true,\"msg\":\"success\",\"data\":true}";

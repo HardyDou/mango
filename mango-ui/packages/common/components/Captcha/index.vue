@@ -19,12 +19,7 @@
       />
       <template v-if="showPopupFooter" #footer>
         <el-button @click="closePopup(false)">取消</el-button>
-        <el-button
-          type="primary"
-          @click="confirmPopup"
-        >
-          确认
-        </el-button>
+        <el-button type="primary" @click="confirmPopup"> 确认 </el-button>
       </template>
     </el-dialog>
   </div>
@@ -38,12 +33,10 @@
       @refresh="handleRefresh"
       @input-change="onInputChange"
     />
-    <el-tabs
-      v-else
-      v-model="currentType"
-      class="captcha-type-tabs"
-      @tab-change="handleTabChange"
-    >
+    <el-tabs v-else v-model="currentType" class="captcha-type-tabs" @tab-change="handleTabChange">
+      <el-tab-pane label="统一图形" name="GRAPHIC">
+        <GraphicCaptcha ref="graphicRef" @success="onSuccess" @refresh="handleRefresh" @input-change="onInputChange" />
+      </el-tab-pane>
       <el-tab-pane label="算术" name="ARITHMETIC">
         <ArithmeticCaptcha
           ref="arithmeticRef"
@@ -53,34 +46,16 @@
         />
       </el-tab-pane>
       <el-tab-pane label="图片滑块" name="BLOCK_PUZZLE">
-        <BlockPuzzleCaptcha
-          ref="blockPuzzleRef"
-          :mode="mode"
-          @success="onSuccess"
-          @refresh="handleRefresh"
-        />
+        <BlockPuzzleCaptcha ref="blockPuzzleRef" :mode="mode" @success="onSuccess" @refresh="handleRefresh" />
       </el-tab-pane>
       <el-tab-pane label="点选文字" name="CLICK_WORD">
-        <ClickWordCaptcha
-          ref="clickWordRef"
-          @success="onSuccess"
-          @refresh="handleRefresh"
-        />
+        <ClickWordCaptcha ref="clickWordRef" @success="onSuccess" @refresh="handleRefresh" />
       </el-tab-pane>
       <el-tab-pane label="无感行为" name="BEHAVIOR">
-        <BehaviorCaptcha
-          ref="behaviorRef"
-          @success="onSuccess"
-          @refresh="handleRefresh"
-        />
+        <BehaviorCaptcha ref="behaviorRef" @success="onSuccess" @refresh="handleRefresh" />
       </el-tab-pane>
       <el-tab-pane label="Canvas滑块" name="CANVAS_SLIDER">
-        <CanvasSliderCaptcha
-          ref="canvasSliderRef"
-          :mode="mode"
-          @success="onSuccess"
-          @refresh="handleRefresh"
-        />
+        <CanvasSliderCaptcha ref="canvasSliderRef" :mode="mode" @success="onSuccess" @refresh="handleRefresh" />
       </el-tab-pane>
       <el-tab-pane label="短信" name="SMS">
         <SmsCaptcha ref="smsRef" @success="onSuccess" />
@@ -95,6 +70,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue';
 import { CaptchaType } from '../../api/captcha';
+import GraphicCaptcha from './GraphicCaptcha.vue';
 import ArithmeticCaptcha from './ArithmeticCaptcha.vue';
 import BlockPuzzleCaptcha from './BlockPuzzleCaptcha.vue';
 import ClickWordCaptcha from './ClickWordCaptcha.vue';
@@ -105,12 +81,15 @@ import EmailCaptcha from './EmailCaptcha.vue';
 
 type CaptchaDisplayMode = 'embedded' | 'trigger' | 'popup';
 
-const props = withDefaults(defineProps<{
-  type?: CaptchaType;
-  mode?: CaptchaDisplayMode;
-}>(), {
-  mode: 'embedded',
-});
+const props = withDefaults(
+  defineProps<{
+    type?: CaptchaType;
+    mode?: CaptchaDisplayMode;
+  }>(),
+  {
+    mode: 'embedded',
+  },
+);
 
 const emit = defineEmits<{
   success: [key: string, code?: string, type?: CaptchaType];
@@ -122,6 +101,7 @@ const fixedType = computed(() => props.type);
 const mode = computed(() => props.mode);
 const isPopupMode = computed(() => mode.value === 'popup');
 const currentType = ref<CaptchaType>(props.type ?? CaptchaType.CANVAS_SLIDER);
+const graphicRef = ref<InstanceType<typeof GraphicCaptcha> | null>(null);
 const arithmeticRef = ref<InstanceType<typeof ArithmeticCaptcha> | null>(null);
 const blockPuzzleRef = ref<InstanceType<typeof BlockPuzzleCaptcha> | null>(null);
 const clickWordRef = ref<InstanceType<typeof ClickWordCaptcha> | null>(null);
@@ -135,6 +115,7 @@ let popupResolver: ((passed: boolean) => void) | null = null;
 let popupPromise: Promise<boolean> | null = null;
 
 const componentMap = {
+  [CaptchaType.GRAPHIC]: GraphicCaptcha,
   [CaptchaType.ARITHMETIC]: ArithmeticCaptcha,
   [CaptchaType.BLOCK_PUZZLE]: BlockPuzzleCaptcha,
   [CaptchaType.CLICK_WORD]: ClickWordCaptcha,
@@ -154,6 +135,7 @@ const currentComponentProps = computed(() => {
 
 const currentRef = computed(() => {
   const refs: Partial<Record<CaptchaType, { refresh?: () => void; verify?: () => Promise<boolean> } | null>> = {
+    [CaptchaType.GRAPHIC]: graphicRef.value,
     [CaptchaType.ARITHMETIC]: arithmeticRef.value,
     [CaptchaType.BLOCK_PUZZLE]: blockPuzzleRef.value,
     [CaptchaType.CLICK_WORD]: clickWordRef.value,
@@ -166,12 +148,11 @@ const currentRef = computed(() => {
 });
 
 const currentVerifier = computed(() => currentRef.value?.verify);
-const showPopupFooter = computed(() => [
-  CaptchaType.ARITHMETIC,
-  CaptchaType.BEHAVIOR,
-  CaptchaType.SMS,
-  CaptchaType.EMAIL,
-].includes(currentType.value));
+const showPopupFooter = computed(() =>
+  [CaptchaType.GRAPHIC, CaptchaType.ARITHMETIC, CaptchaType.BEHAVIOR, CaptchaType.SMS, CaptchaType.EMAIL].includes(
+    currentType.value,
+  ),
+);
 const popupWidth = computed(() => {
   if ([CaptchaType.BLOCK_PUZZLE, CaptchaType.CANVAS_SLIDER].includes(currentType.value)) {
     return '340px';
@@ -182,11 +163,15 @@ const popupWidth = computed(() => {
   return '420px';
 });
 
-watch(() => props.type, (type) => {
-  if (type) {
-    currentType.value = type;
-  }
-}, { immediate: true });
+watch(
+  () => props.type,
+  (type) => {
+    if (type) {
+      currentType.value = type;
+    }
+  },
+  { immediate: true },
+);
 
 function onSuccess(key: string, code?: string) {
   popupVerified.value = true;
@@ -203,6 +188,9 @@ function handleTabChange(type: string | number) {
 
 function setFixedRef(instance: unknown) {
   const refreshable = instance as { refresh?: () => void; verify?: () => Promise<boolean> } | null;
+  if (currentType.value === CaptchaType.GRAPHIC) {
+    graphicRef.value = refreshable as InstanceType<typeof GraphicCaptcha> | null;
+  }
   if (currentType.value === CaptchaType.ARITHMETIC) {
     arithmeticRef.value = refreshable as InstanceType<typeof ArithmeticCaptcha> | null;
   }
