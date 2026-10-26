@@ -3,8 +3,13 @@ package io.mango.authorization.core.service.impl;
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import io.mango.authorization.api.command.ApiResourceRegisterCommand;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
+import io.mango.authorization.api.enums.ApiResourceSource;
+import io.mango.authorization.api.query.ApiResourcePageQuery;
 import io.mango.authorization.api.vo.ApiResourceAccessDecisionVO;
+import io.mango.authorization.api.vo.ApiResourceFilterOptionsVO;
 import io.mango.authorization.api.vo.ApiResourceRegisterResultVO;
+import io.mango.authorization.api.vo.ApiResourceVO;
+import io.mango.common.vo.PageResult;
 import io.mango.authorization.core.entity.ApiResourceEntity;
 import io.mango.authorization.core.mapper.ApiResourceMapper;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
@@ -63,6 +68,8 @@ class ApiResourceServiceImplIntegrationTest {
                 create table authorization_api_resource (
                     id bigint primary key,
                     module_name varchar(128) not null,
+                    source varchar(32) not null default 'FIXED_DECLARATION',
+                    domain varchar(128) not null default 'root',
                     http_method varchar(16) not null,
                     path_pattern varchar(512) not null,
                     resource_code varchar(640) not null,
@@ -218,6 +225,91 @@ class ApiResourceServiceImplIntegrationTest {
         assertThat(decision.permissionCode()).isNull();
     }
 
+    @Test
+    @DisplayName("fixed declaration should keep active and disable controller scan on the same route")
+    void fixedDeclarationShouldKeepActiveAndDisableControllerScan() {
+        ApiResourceRegisterCommand scanned = command("mango-file-preview", "GET", "/favicon.ico",
+                "cn.keking.web.controller.OnlinePreviewController");
+        scanned.setSource(ApiResourceSource.CONTROLLER_SCAN);
+        service.registerApiResources(List.of(scanned));
+
+        ApiResourceRegisterCommand fixed = command("mango-infra-doc", "GET", "/favicon.ico", "configuration");
+        fixed.setSource(ApiResourceSource.FIXED_DECLARATION);
+        ApiResourceRegisterResultVO result = service.registerApiResources(List.of(fixed));
+
+        assertThat(apiResourceRows("mango-file-preview", "GET", "/favicon.ico")).singleElement()
+                .extracting(ApiResourceEntity::getStatus).isEqualTo(0);
+        assertThat(apiResourceRows("mango-infra-doc", "GET", "/favicon.ico")).singleElement()
+                .satisfies(resource -> {
+                    assertThat(resource.getStatus()).isEqualTo(1);
+                    assertThat(resource.getSource()).isEqualTo(ApiResourceSource.FIXED_DECLARATION.name());
+                });
+        assertThat(result.created()).isEqualTo(1);
+
+        ApiResourceAccessDecisionVO decision = service.resolveAccessDecision("GET", "/favicon.ico");
+        assertThat(decision.matched()).isTrue();
+        assertThat(decision.accessMode()).isEqualTo(ApiResourceAccessMode.LOGIN);
+    }
+
+    @Test
+    @DisplayName("controller scan should not create a duplicate when a fixed declaration already exists")
+    void controllerScanShouldNotDuplicateExistingFixedDeclaration() {
+        ApiResourceRegisterCommand fixed = command("mango-infra-doc", "GET", "/favicon.ico", "configuration");
+        fixed.setSource(ApiResourceSource.FIXED_DECLARATION);
+        service.registerApiResources(List.of(fixed));
+
+        ApiResourceRegisterCommand scanned = command("mango-file-preview", "GET", "/favicon.ico",
+                "cn.keking.web.controller.OnlinePreviewController");
+        scanned.setSource(ApiResourceSource.CONTROLLER_SCAN);
+        service.registerApiResources(List.of(scanned));
+
+        assertThat(apiResourceMapper.selectList(null))
+                .filteredOn(resource -> "/favicon.ico".equals(resource.getPathPattern()))
+                .singleElement()
+                .satisfies(resource -> {
+                    assertThat(resource.getModuleName()).isEqualTo("mango-infra-doc");
+                    assertThat(resource.getStatus()).isEqualTo(1);
+                });
+    }
+
+    @Test
+    @DisplayName("page query should filter by module, domain, source and keyword")
+    void pageQueryShouldFilterAndExposeDomainAndSource() {
+        seedResource(60L, "mango-auth", "POST", "/auth/login",
+                "io.mango.auth.starter.controller.AuthController", 1, null, ApiResourceAccessMode.PUBLIC);
+        seedResource(61L, "mango-system", "GET", "/system/users",
+                "io.mango.system.starter.controller.SysUserController", 1, "system:user:list",
+                ApiResourceAccessMode.PERMISSION);
+
+        ApiResourcePageQuery query = new ApiResourcePageQuery();
+        query.setModuleName("mango-auth");
+        query.setDomain("auth");
+        query.setSource(ApiResourceSource.FIXED_DECLARATION);
+        query.setKeyword("login");
+
+        PageResult<ApiResourceVO> page = service.pageApiResources(query);
+
+        assertThat(page.getTotal()).isEqualTo(1);
+        assertThat(page.getList()).singleElement().satisfies(resource -> {
+            assertThat(resource.getModuleName()).isEqualTo("mango-auth");
+            assertThat(resource.getDomain()).isEqualTo("auth");
+            assertThat(resource.getSource()).isEqualTo(ApiResourceSource.FIXED_DECLARATION);
+            assertThat(resource.getPathPattern()).isEqualTo("/auth/login");
+        });
+
+        ApiResourceFilterOptionsVO options = service.listApiResourceFilterOptions();
+        assertThat(options.getModules()).contains("mango-auth", "mango-system");
+        assertThat(options.getDomains()).contains("auth", "system");
+    }
+
+    private List<ApiResourceEntity> apiResourceRows(String moduleName, String httpMethod, String pathPattern) {
+        return apiResourceMapper.selectList(null).stream()
+                .filter(resource -> moduleName.equals(resource.getModuleName()))
+                .filter(resource -> httpMethod.equals(resource.getHttpMethod()))
+                .filter(resource -> pathPattern.equals(resource.getPathPattern()))
+                .toList();
+    }
+
     private ApiResourceRegisterCommand command(String moduleName, String httpMethod, String path, String handlerClass) {
         ApiResourceRegisterCommand command = new ApiResourceRegisterCommand();
         command.setModuleName(moduleName);
@@ -250,12 +342,25 @@ class ApiResourceServiceImplIntegrationTest {
                               ApiResourceAccessMode accessMode) {
         jdbcTemplate.update("""
                         insert into authorization_api_resource
-                        (id, module_name, http_method, path_pattern, resource_code, permission_code,
+                        (id, module_name, domain, http_method, path_pattern, resource_code, permission_code,
                          access_mode, handler_class, handler_method, status, deleted)
-                        values (?, ?, ?, ?, ?, ?, ?, ?, 'tree', ?, 0)
+                        values (?, ?, ?, ?, ?, ?, ?, ?, ?, 'tree', ?, 0)
                         """,
-                id, moduleName, httpMethod, path, httpMethod + ":" + path, permissionCode,
+                id, moduleName, domain(path), httpMethod, path, httpMethod + ":" + path, permissionCode,
                 accessMode.name(), handlerClass, status);
+    }
+
+    private String domain(String path) {
+        if (!path.startsWith("/")) {
+            return "root";
+        }
+        String remaining = path.substring(1);
+        int separator = remaining.indexOf('/');
+        String segment = separator < 0 ? remaining : remaining.substring(0, separator);
+        if (segment.isBlank() || segment.contains("*") || segment.contains("{") || segment.contains(".")) {
+            return "root";
+        }
+        return segment;
     }
 
     @Configuration

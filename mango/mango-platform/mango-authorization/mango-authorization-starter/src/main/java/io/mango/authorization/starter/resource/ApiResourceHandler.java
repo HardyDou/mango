@@ -3,6 +3,7 @@ package io.mango.authorization.starter.resource;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.mango.authorization.api.command.ApiResourceRegisterCommand;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
+import io.mango.authorization.api.enums.ApiResourceSource;
 import io.mango.authorization.core.entity.ApiResourceEntity;
 import io.mango.authorization.core.mapper.ApiResourceMapper;
 import io.mango.authorization.core.service.IApiResourceService;
@@ -144,6 +145,9 @@ public class ApiResourceHandler implements ResourceHandler {
     private ApiResourceRegisterCommand toCommand(ResourceDeclaration resource) {
         ApiResourceRegisterCommand command = new ApiResourceRegisterCommand();
         command.setModuleName(requiredString(resource, "moduleName"));
+        String source = stringField(resource, "source");
+        command.setSource(StringUtils.hasText(source)
+                ? ApiResourceSource.valueOf(source) : ApiResourceSource.FIXED_DECLARATION);
         command.setHttpMethod(requiredString(resource, "httpMethod"));
         command.setPathPattern(requiredString(resource, "pathPattern"));
         command.setResourceId(AuthorizationResourceIds.declaredOrStable(

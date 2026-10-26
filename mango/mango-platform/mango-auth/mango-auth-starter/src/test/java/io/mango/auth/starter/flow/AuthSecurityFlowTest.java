@@ -17,6 +17,8 @@ import io.mango.auth.core.store.PasswordResetTicketStore;
 import io.mango.auth.starter.config.AuthSecurityConfig;
 import io.mango.auth.starter.controller.AuthController;
 import io.mango.captcha.api.CaptchaApi;
+import io.mango.captcha.api.constant.CaptchaDifficulty;
+import io.mango.captcha.api.constant.GraphicCaptchaType;
 import io.mango.captcha.api.dto.BehaviorCaptchaVerifyResponse;
 import io.mango.captcha.api.dto.CaptchaResponse;
 import io.mango.captcha.api.dto.CaptchaSendRequest;
@@ -919,6 +921,11 @@ class AuthSecurityFlowTest {
 
         @Override
         public R<CaptchaResponse> generateArithmetic() {
+            return R.ok(new CaptchaResponse());
+        }
+
+        @Override
+        public R<CaptchaResponse> generateGraphic(GraphicCaptchaType type, CaptchaDifficulty difficulty) {
             return R.ok(new CaptchaResponse());
         }
 

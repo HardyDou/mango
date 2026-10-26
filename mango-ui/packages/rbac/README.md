@@ -27,6 +27,7 @@
 | 组织和成员                    | `OrgView`、`orgApi`                 | `mango-org`                                          |
 | 岗位管理                      | `PostView`、`postApi`               | `mango-org`                                          |
 | 权限资源查看                  | `PermissionView`                    | `mango-authorization`                                |
+| 权限标识查看                  | `ApiResourceView`                   | `mango-authorization`                                |
 
 ## 3. 接入方式
 
@@ -97,6 +98,7 @@ const users = await userApi.page({ pageNum: 1, pageSize: 20 });
 | `OrgView`         | `system/org/index`          | 组织树和组织成员。                                                                                                                                               |
 | `PostView`        | `system/post/index`         | 岗位管理。                                                                                                                                                       |
 | `PermissionView`  | `system/permission/index`   | 权限资源查看。                                                                                                                                                   |
+| `ApiResourceView` | `system/api-resource/index` | 权限标识查看：按模块、领域、登记来源、访问模式和状态查看固定声明与 Controller 扫描结果。                                                                          |
 
 主要 API：
 
@@ -105,6 +107,7 @@ const users = await userApi.page({ pageNum: 1, pageSize: 20 });
 | `appApi`         | `/authorization/apps`                                                              | 应用列表、详情、创建、更新、删除、运行时应用。                                                                      |
 | `appModuleApi`   | `/authorization/app-modules`                                                       | 应用模块绑定、同步菜单、运行策略。                                                                                  |
 | `menuApi`        | `/authorization/menus`                                                             | 用户菜单、菜单树、详情、创建、更新、删除。                                                                          |
+| `apiResourceApi` | `/authorization/api-resources`                                                     | 权限标识分页、模块与领域筛选维度，区分固定声明、Controller 扫描和人工登记。                                          |
 | `menuPackageApi` | `/authorization/menu-packages`                                                     | 菜单包 CRUD。                                                                                                       |
 | `roleApi`        | `/authorization/roles`、`/authorization/data-scopes`、`/authorization/roles/batch` | 角色 CRUD、角色菜单、可分配菜单、主体角色绑定、成员直接角色批量摘要、租户范围批量角色预览/添加/删除和角色数据权限。 |
 | `userApi`        | `/identity/users/page`、`/identity/users/account-availability`                     | 用户分页、账号三态查询、租户成员软移出、重置密码、企微同步和外部身份绑定。                                          |

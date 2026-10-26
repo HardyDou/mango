@@ -84,6 +84,7 @@ class AuthorizationDiagnosticIntegrationTest {
                     id bigint primary key,
                     tenant_id varchar(64) not null,
                     module_name varchar(100) not null,
+                    source varchar(32) not null default 'FIXED_DECLARATION',
                     http_method varchar(16) not null,
                     path_pattern varchar(255) not null,
                     resource_code varchar(255),

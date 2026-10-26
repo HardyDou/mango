@@ -1,5 +1,7 @@
 package io.mango.captcha.core.service;
 
+import io.mango.captcha.api.constant.CaptchaDifficulty;
+import io.mango.captcha.api.constant.GraphicCaptchaType;
 import io.mango.captcha.api.dto.BehaviorCaptchaVerifyResponse;
 import io.mango.captcha.api.dto.CaptchaResponse;
 import io.mango.captcha.api.dto.CaptchaSendRequest;
@@ -24,6 +26,15 @@ public interface ICaptchaService {
      * @return 算术验证码响应
      */
     CaptchaResponse generateArithmetic();
+
+    /**
+     * 按全局默认策略或会话参数创建图形验证码。
+     *
+     * @param type 会话题型，可为空
+     * @param difficulty 会话难度，可为空
+     * @return 图形验证码响应
+     */
+    CaptchaResponse generateGraphic(GraphicCaptchaType type, CaptchaDifficulty difficulty);
 
     /**
      * 创建滑块拼图图片并保存服务端坐标。

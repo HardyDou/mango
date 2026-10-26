@@ -28,7 +28,7 @@
 | KV | 提供 Memory、Redis、JDBC 等键值、锁和临时状态存储。 | 不替代业务数据库。 | [KV README](../../mango/mango-infra/mango-infra-kv/README.md) |
 | Web | 提供 HTTP、请求上下文、错误响应和 Web 安全基础。 | 不定义具体业务 API。 | [Web README](../../mango/mango-infra/mango-infra-web/README.md) |
 | Feign | 提供服务间 HTTP 调用和远程 API 适配。 | 不负责业务重试策略和数据权限。 | [Feign README](../../mango/mango-infra/mango-infra-feign/README.md) |
-| Fileproc | 提供 Office、PDF、图片和文档转换处理。 | 不保存文件记录或决定文件权限。 | [Fileproc README](../../mango/mango-infra/mango-infra-fileproc/README.md) |
+| Fileproc | 提供 Office、PDF、图片和文档转换处理。PDF 压缩使用 Ghostscript 重写结构并降采样图像，保留矢量文字。 | 不保存文件记录或决定文件权限。 | [Fileproc README](../../mango/mango-infra/mango-infra-fileproc/README.md) |
 | Realtime | 提供 WebSocket、SSE 和跨实例实时消息传递。 | 不负责消息业务模板和接收人规则。 | [Realtime README](../../mango/mango-infra/mango-infra-realtime/README.md) |
 | Sensitive | 提供敏感字段处理和安全边界。 | 不拥有业务密钥或租户权限模型。 | [Sensitive README](../../mango/mango-infra/mango-infra-sensitive/README.md) |
 | Module | 提供模块元数据、装配和运行态诊断。 | 不替代模块自身健康检查。 | [Module README](../../mango/mango-infra/mango-infra-module/README.md) |
@@ -42,7 +42,7 @@
 | Auth | 提供登录、认证 Provider、登录回调和登录态接入。 | [Auth README](../../mango/mango-platform/mango-auth/README.md) |
 | Identity | 管理用户、租户成员、身份标识和成员生命周期。 | [Identity README](../../mango/mango-platform/mango-identity/README.md) |
 | Org | 管理组织、部门、岗位、组织树和成员组织关系。 | [Org README](../../mango/mango-platform/mango-org/README.md) |
-| Authorization | 管理菜单、API 资源、角色、角色数据范围、成员角色批量绑定和授权关系。 | [Authorization README](../../mango/mango-platform/mango-authorization/README.md) |
+| Authorization | 管理菜单、API 资源、权限标识、角色、角色数据范围、成员角色批量绑定和授权关系。固定 API 资源声明与 Controller 扫描按方法和路径自动去重，固定声明优先。 | [Authorization README](../../mango/mango-platform/mango-authorization/README.md) |
 | Access | 提供权限检查、访问拦截和统一访问控制基础。 | [Access README](../../mango/mango-platform/mango-access/README.md) |
 | Captcha | 提供验证码生成、校验和认证流程配套能力。 | [Captcha README](../../mango/mango-platform/mango-captcha/README.md) |
 
@@ -85,8 +85,8 @@
 | Admin Shell | 提供管理端运行壳、菜单装配、登录后初始化和页面承载。 | [Admin Shell README](../../mango-ui/packages/admin-shell/README.md) |
 | Admin Pages | 提供管理页面注册表和页面插件接入。 | [Admin Pages README](../../mango-ui/packages/admin-pages/README.md) |
 | Common | 提供公共组件、主题变量、API 契约和前端工具。 | [Common README](../../mango-ui/packages/common/README.md) |
-| RBAC | 提供菜单、角色、权限、数据范围和成员批量角色管理页面。 | [RBAC README](../../mango-ui/packages/rbac/README.md) |
-| `@mango/file` | 提供上传、附件列表、文件预览和文件管理页面。上传 API 支持可选实例级 `HttpClient`；未传入时保留原有默认请求路径，上传总超时和无进度超时独立配置。 | [File Frontend README](../../mango-ui/packages/file/README.md) |
+| RBAC | 提供菜单、角色、权限、权限标识、数据范围和成员批量角色管理页面。 | [RBAC README](../../mango-ui/packages/rbac/README.md) |
+| `@mango/file` | 提供上传、附件列表、文件预览和文件管理页面。上传 API 支持可选实例级 `HttpClient`；未传入时保留原有默认请求路径，上传总超时和无进度超时独立配置。`downloadUrl(id, options)` 与 `download(id, options)` 支持 `compression` 与 `perFileTargetSizeBytes`，可由文件服务直接返回压缩内容。 | [File Frontend README](../../mango-ui/packages/file/README.md) |
 | `@mango/workflow` | 提供流程管理页面、审批组件和 Workflow API。 | [Workflow Frontend README](../../mango-ui/packages/workflow/README.md) |
 | `@mango/information` | 提供表单管理、表单设计、托管表单、公开提交、文件上传和采集记录页面及类型化 API。 | [Information Frontend README](../../mango-ui/packages/information/README.md) |
 | `@mango/job` | 提供任务管理和调度页面。 | [Job Frontend README](../../mango-ui/packages/job/README.md) |

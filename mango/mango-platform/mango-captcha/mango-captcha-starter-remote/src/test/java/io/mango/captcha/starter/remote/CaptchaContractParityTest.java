@@ -1,6 +1,8 @@
 package io.mango.captcha.starter.remote;
 
 import io.mango.captcha.api.CaptchaApi;
+import io.mango.captcha.api.constant.CaptchaDifficulty;
+import io.mango.captcha.api.constant.GraphicCaptchaType;
 import io.mango.captcha.api.dto.CaptchaSendRequest;
 import io.mango.captcha.api.dto.CaptchaVerifyRequest;
 import io.mango.captcha.starter.controller.CaptchaController;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -29,6 +32,7 @@ class CaptchaContractParityTest {
     private static final Map<String, Endpoint> ENDPOINTS = Map.of(
             "getTypes", new Endpoint("GET", "/types", null),
             "generateArithmetic", new Endpoint("GET", "/arithmetic", null),
+            "generateGraphic", new Endpoint("GET", "/graphic", null),
             "generateBlockPuzzle", new Endpoint("GET", "/block-puzzle", null),
             "generateClickWord", new Endpoint("GET", "/click-word", null),
             "generateBehavior", new Endpoint("GET", "/behavior", null),
@@ -87,6 +91,12 @@ class CaptchaContractParityTest {
     private static void assertEndpoint(Method method, Endpoint endpoint) {
         assertThat(httpVerb(method)).isEqualTo(endpoint.verb());
         assertThat(mappingPath(method)).isEqualTo(endpoint.path());
+        if (method.getName().equals("generateGraphic")) {
+            assertThat(method.getParameterTypes()).containsExactly(GraphicCaptchaType.class, CaptchaDifficulty.class);
+            assertThat(method.getParameters()[0].isAnnotationPresent(RequestParam.class)).isTrue();
+            assertThat(method.getParameters()[1].isAnnotationPresent(RequestParam.class)).isTrue();
+            return;
+        }
         if (endpoint.requestType() == null) {
             assertThat(method.getParameters()).isEmpty();
             return;
@@ -98,6 +108,9 @@ class CaptchaContractParityTest {
     }
 
     private static void assertValidationOwnedByApi(Method apiMethod, Method controllerMethod, Method feignMethod) {
+        if (apiMethod.getName().equals("generateGraphic")) {
+            return;
+        }
         if (apiMethod.getParameterCount() == 0) {
             return;
         }

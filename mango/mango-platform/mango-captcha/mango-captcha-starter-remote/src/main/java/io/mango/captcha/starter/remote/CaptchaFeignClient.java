@@ -1,6 +1,8 @@
 package io.mango.captcha.starter.remote;
 
 import io.mango.captcha.api.CaptchaApi;
+import io.mango.captcha.api.constant.CaptchaDifficulty;
+import io.mango.captcha.api.constant.GraphicCaptchaType;
 import io.mango.captcha.api.dto.BehaviorCaptchaVerifyResponse;
 import io.mango.captcha.api.dto.CaptchaResponse;
 import io.mango.captcha.api.dto.CaptchaSendRequest;
@@ -11,6 +13,7 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 
 /**
  * 验证码 Feign 适配器。
@@ -35,6 +38,19 @@ public interface CaptchaFeignClient extends CaptchaApi {
     @Override
     @GetMapping("/arithmetic")
     R<CaptchaResponse> generateArithmetic();
+
+    /**
+     * 通过远程验证码服务生成统一图形验证码。
+     *
+     * @param type 会话题型
+     * @param difficulty 会话难度
+     * @return 统一响应，包含验证码键、图片、实际题型和实际难度
+     */
+    @Override
+    @GetMapping("/graphic")
+    R<CaptchaResponse> generateGraphic(
+            @RequestParam(value = "type", required = false) GraphicCaptchaType type,
+            @RequestParam(value = "level", required = false) CaptchaDifficulty difficulty);
 
     /**
      * 通过远程验证码服务生成滑块验证码。

@@ -10,14 +10,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 class AuthorizationDemoResourceContractTest {
 
     @Test
-    void demoRolesOnlyCoverTheSingleDefaultTenant() throws IOException {
+    void demoRolesOnlyCoverTheSingleDefaultTenantAndUseSyncOnce() throws IOException {
         String demo = resource("META-INF/mango/demo/authorization-demo-role.yml");
 
         assertThat(demo)
                 .contains("authorization.role.tenant-1.admin")
                 .contains("value: 平台超级管理员")
                 .doesNotContain("tenant-2", "tenant-3", "tenant-4", "value: 租户管理员");
-        assertThat(count(demo, "sync-mode: INIT_ONLY")).isEqualTo(2);
+        assertThat(count(demo, "sync-mode: SYNC_ONCE")).isEqualTo(2);
+        assertThat(demo).doesNotContain("sync-mode: INIT_ONLY");
     }
 
     private String resource(String path) throws IOException {
