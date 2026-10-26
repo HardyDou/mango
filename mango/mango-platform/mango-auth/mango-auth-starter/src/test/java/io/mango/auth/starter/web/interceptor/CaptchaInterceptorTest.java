@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.auth.api.enums.AuthCode;
 import io.mango.auth.api.spi.CaptchaConfigService;
 import io.mango.captcha.api.CaptchaApi;
+import io.mango.captcha.api.constant.CaptchaDifficulty;
+import io.mango.captcha.api.constant.GraphicCaptchaType;
 import io.mango.captcha.api.dto.BehaviorCaptchaVerifyResponse;
 import io.mango.captcha.api.dto.CaptchaResponse;
 import io.mango.captcha.api.dto.CaptchaSendRequest;
@@ -129,6 +131,11 @@ class CaptchaInterceptorTest {
 
         @Override
         public R<CaptchaResponse> generateArithmetic() {
+            return R.ok(new CaptchaResponse());
+        }
+
+        @Override
+        public R<CaptchaResponse> generateGraphic(GraphicCaptchaType type, CaptchaDifficulty difficulty) {
             return R.ok(new CaptchaResponse());
         }
 

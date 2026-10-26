@@ -1,5 +1,12 @@
+import groovy.json.JsonSlurper
+
+def manifestFile = new File(basedir, 'target/generated-resources/META-INF/mango/baseline-manifest.json')
+def manifest = new JsonSlurper().parse(manifestFile)
+def resourceBaselinePath = manifest.modules.find { it.module == 'resource' }?.baselineResource
+assert resourceBaselinePath != null: 'Manifest is missing the resource baseline path'
+
 def jar = new java.util.jar.JarFile(new File(basedir, 'target/resource-baseline-package-1.0.0.jar'))
-assert jar.getEntry('BOOT-INF/classes/db/baseline/resource/B2__baseline.sql') != null
+assert jar.getEntry("BOOT-INF/classes/${resourceBaselinePath}") != null
 assert jar.getEntry('BOOT-INF/classes/db/baseline/kv/B1__baseline.sql') != null
 assert jar.getEntry('BOOT-INF/classes/db/baseline/guarantee/B1__baseline.sql') != null
 assert jar.getEntry('META-INF/mango/baseline-manifest.json') != null
@@ -18,7 +25,7 @@ assert guaranteeBaseline.contains("CONVERT(X'${portableBizKey}' USING utf8mb4)")
 assert !guaranteeBaseline.contains(environmentBizKey)
 assert !guaranteeBaseline.contains(runtimeOnlyMarker)
 
-def resourceBaseline = new File(basedir, 'target/generated-resources/db/baseline/resource/B2__baseline.sql').text
+def resourceBaseline = new File(basedir, "target/generated-resources/${resourceBaselinePath}").text
 assert resourceBaseline.contains("CONVERT(X'${portableBizKey}' USING utf8mb4)")
 assert !resourceBaseline.contains(environmentBizKey)
 assert !resourceBaseline.contains('INSERT IGNORE INTO `resource_module_receipt`')
