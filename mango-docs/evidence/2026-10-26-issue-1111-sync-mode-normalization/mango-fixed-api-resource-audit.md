@@ -31,4 +31,4 @@ Mango 平台内也存在与 `baohan-system` 相同的声明来源重叠模式：
 2. 移除固定声明，统一使用 Controller 自动扫描；或
 3. 保留固定声明，并为各应用显式维护 `exclude-paths`。
 
-当前 Issue #1111 的 V5 迁移、测试、文档和 baohan-system 根因 Issue 已完成；该审计结果是后续独立治理项。
+当前 Issue #1111 的 V5 迁移、测试、文档和 baohan-system 根因 Issue 已完成；该审计结果是后续独立治理项，已登记 Mango Issue #1122：https://github.com/HardyDou/mango/issues/1122。
