@@ -61,6 +61,7 @@
 - 已完成本机 `baohan_test` 数据副本的真实迁移、字段不变性和幂等性验证；完整候选制品的 Flyway 自动发现 V5 尚未验证。
 - 已按正常测试环境清理方式在副本中备份并删除旧 `mango-link` Registry 行；源库 `baohan_test` 未修改。
 - `baohan-system` 启动与 Bootstrap 已通过，但后台 eventual worker 仍报告另一条 `guarantee-verification` 身份冲突；该冲突不属于 Issue #1111，已登记为 baohan-system Issue #1829，不能作为本次修复的失败依据，也不能把整套业务环境声明为无告警。
+- 对 Mango 源码固定 `API_RESOURCE` 声明执行了独立审计：5 个文件、27 条固定声明，其中 24 条与默认 `io.mango` MVC 扫描范围存在可确认重叠；该问题未混入 Issue #1111，审计记录见 `mango-fixed-api-resource-audit.md`，后续需单独评审唯一声明来源方案。
 - 大表更新可能产生锁等待；本次 2652 行迁移在本机副本执行成功，发布前仍应评估目标库行数、低峰窗口和超时/回滚预案。
 - 回退到无法识别 `SYNC_ALWAYS`/`SYNC_ONCE` 的 1.0.63 版本仍存在兼容风险，回退前需使用备份恢复或确认旧版本兼容策略。
-- 已创建 baohan-system Issue #1829；本 Mango worktree 的提交操作待本次文档检查完成后执行，未执行 push、PR 或发布。
+- 已创建 baohan-system Issue #1829；Mango worktree 已完成本地 commit `dac282e086cef0bb4cf1f3576feeb57fcc5c5d83`，未执行 push、PR 或发布。
