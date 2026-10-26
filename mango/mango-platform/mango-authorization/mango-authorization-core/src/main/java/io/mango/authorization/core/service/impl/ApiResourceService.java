@@ -50,12 +50,18 @@ public class ApiResourceService implements IApiResourceService {
     private static final int MAX_REGISTER_BATCH_SIZE = 10_000;
     private static final String CONFIGURED_HANDLER_CLASS = "configuration";
     private static final String ROOT_DOMAIN = "root";
+    private static final int SOURCE_RANK_FIXED = 3;
+    private static final int SOURCE_RANK_MANUAL = 2;
+    private static final int SOURCE_RANK_SCAN = 1;
+    private static final int HANDLER_RANK_CONCRETE = 2;
+    private static final int HANDLER_RANK_CONFIGURED = 1;
+    private static final int HANDLER_RANK_NONE = 0;
     private static final Comparator<RouteCandidate> ROUTE_PRECEDENCE = Comparator
             .comparingInt((RouteCandidate candidate) -> -sourceRank(candidate.source()))
             .thenComparingInt(candidate -> -handlerRank(candidate.handlerClass()))
             .thenComparingInt(candidate -> candidate.inBatch() ? 0 : 1)
             .thenComparing(candidate -> candidate.moduleName() == null ? "" : candidate.moduleName())
-            .thenComparing(candidate -> candidate.id() == null ? Long.MAX_VALUE : candidate.id());
+            .thenComparingLong(candidate -> candidate.id() == null ? Long.MAX_VALUE : candidate.id());
 
     private final ApiResourceMapper apiResourceMapper;
 
@@ -370,22 +376,22 @@ public class ApiResourceService implements IApiResourceService {
 
     private static int sourceRank(String source) {
         if (ApiResourceSource.FIXED_DECLARATION.name().equals(source)) {
-            return 3;
+            return SOURCE_RANK_FIXED;
         }
         if (ApiResourceSource.MANUAL.name().equals(source)) {
-            return 2;
+            return SOURCE_RANK_MANUAL;
         }
-        return 1;
+        return SOURCE_RANK_SCAN;
     }
 
     private static int handlerRank(String handlerClass) {
         if (!StringUtils.hasText(handlerClass)) {
-            return 0;
+            return HANDLER_RANK_NONE;
         }
         if (CONFIGURED_HANDLER_CLASS.equals(handlerClass)) {
-            return 1;
+            return HANDLER_RANK_CONFIGURED;
         }
-        return 2;
+        return HANDLER_RANK_CONCRETE;
     }
 
     private List<ApiResourceRegisterCommand> excludeCoveredByActiveFixed(

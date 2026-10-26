@@ -1,5 +1,6 @@
 package io.mango.authorization.resource.sync;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.authorization.api.command.ApiResourceRegisterCommand;
 import io.mango.resource.support.ResourceProvider;
 import io.mango.resource.support.ResourceTypes;
@@ -27,6 +28,8 @@ public class ApiAccessResourceProvider implements ResourceProvider {
         this(discoverer, properties, converter, null);
     }
 
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Spring injects managed declaration loader; copying it is not valid")
     public ApiAccessResourceProvider(ApiAccessResourceDiscoverer discoverer,
                                      ApiResourceSyncProperties properties,
                                      ApiResourceDeclarationConverter converter,

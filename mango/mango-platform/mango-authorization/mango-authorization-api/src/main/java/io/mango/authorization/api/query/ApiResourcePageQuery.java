@@ -14,6 +14,8 @@ import lombok.Data;
 @Schema(description = "API 资源分页查询")
 public class ApiResourcePageQuery {
 
+    private static final long DEFAULT_PAGE_SIZE = 10L;
+
     @Min(value = 1, message = "当前页必须大于等于1")
     @Schema(description = "当前页，从1开始")
     private long page = 1L;
@@ -21,7 +23,7 @@ public class ApiResourcePageQuery {
     @Min(value = 1, message = "每页大小必须大于等于1")
     @Max(value = 500, message = "每页大小不能超过500")
     @Schema(description = "每页大小，最大500")
-    private long size = 10L;
+    private long size = DEFAULT_PAGE_SIZE;
 
     @Size(max = 128, message = "模块名不能超过128个字符")
     @Schema(description = "来源模块名，例如 mango-auth")
@@ -38,6 +40,8 @@ public class ApiResourcePageQuery {
     @Schema(description = "访问模式：PUBLIC/LOGIN/PERMISSION/INTERNAL")
     private String accessMode;
 
+    @Min(value = 0, message = "资源状态只能为0或1")
+    @Max(value = 1, message = "资源状态只能为0或1")
     @Schema(description = "资源状态：1-启用，0-禁用")
     private Integer status;
 
