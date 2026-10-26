@@ -5,6 +5,7 @@ import io.mango.authorization.api.annotation.ApiResourceIgnore;
 import io.mango.authorization.api.command.ApiResourceRegisterCommand;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.authorization.api.enums.ApiResourceSource;
+import io.swagger.v3.oas.annotations.Operation;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
@@ -81,6 +82,15 @@ class ApiAccessResourceDiscovererTest {
                 .isEqualTo(ApiResourceSource.CONTROLLER_SCAN);
     }
 
+    @Test
+    @DisplayName("controller scan should use OpenAPI operation summary as description")
+    void controllerScanShouldUseOperationSummaryAsDescription() {
+        List<ApiResourceRegisterCommand> resources = discover();
+
+        assertThat(find(resources, "GET", "/discover/described").getDescription())
+                .isEqualTo("查询接口说明");
+    }
+
     private List<ApiResourceRegisterCommand> discover() {
         return discover(new ApiResourceSyncProperties());
     }
@@ -134,6 +144,12 @@ class ApiAccessResourceDiscovererTest {
         @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "Fixed candidate")
         @GetMapping("/fixed")
         String fixedGet() {
+            return "ok";
+        }
+
+        @Operation(summary = "查询接口说明")
+        @GetMapping("/described")
+        String described() {
             return "ok";
         }
 

@@ -70,31 +70,45 @@
         data-surface="api-resource.table"
         :data-state="tableState"
       >
-        <el-table-column prop="moduleName" label="模块" min-width="150" show-overflow-tooltip />
-        <el-table-column prop="domain" label="领域" width="130" show-overflow-tooltip />
+        <el-table-column label="接口" min-width="300" show-overflow-tooltip>
+          <template #default="{ row }">
+            <div class="api-resource-cell">
+              <el-tag size="small" effect="plain">{{ row.httpMethod }}</el-tag>
+              <span class="api-resource-path">{{ row.pathPattern }}</span>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="description" label="接口说明" min-width="220" show-overflow-tooltip>
+          <template #default="{ row }">
+            <span v-if="row.description">{{ row.description }}</span>
+            <span v-else class="api-resource-empty">-</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="moduleName" label="所属模块" min-width="150" show-overflow-tooltip />
+        <el-table-column prop="domain" label="路径领域" width="130" show-overflow-tooltip />
+        <el-table-column label="权限标识 / 资源编码" min-width="220" show-overflow-tooltip>
+          <template #default="{ row }">
+            <div v-if="row.permissionCode || row.resourceCode" class="api-resource-cell api-resource-cell--stack">
+              <span v-if="row.permissionCode">{{ row.permissionCode }}</span>
+              <span v-if="row.resourceCode && row.resourceCode !== row.permissionCode" class="api-resource-cell__muted">
+                资源编码：{{ row.resourceCode }}
+              </span>
+              <span v-else-if="row.permissionCode" class="api-resource-cell__muted">资源编码同权限标识</span>
+            </div>
+            <span v-else class="api-resource-empty">-</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="访问模式" width="110">
+          <template #default="{ row }">
+            <el-tag :type="accessModeTagType(row.accessMode)" size="small">
+              {{ accessModeLabel(row.accessMode) }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="source" label="登记来源" width="130">
           <template #default="{ row }">
             <el-tag :type="sourceTagType(row.source)" size="small" effect="plain">
               {{ sourceLabel(row.source) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="httpMethod" label="方法" width="90" />
-        <el-table-column label="接口路径" min-width="260" show-overflow-tooltip>
-          <template #default="{ row }">
-            <span class="api-resource-path">{{ row.pathPattern }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="权限标识" min-width="200" show-overflow-tooltip>
-          <template #default="{ row }">
-            <span v-if="row.permissionCode">{{ row.permissionCode }}</span>
-            <span v-else class="api-resource-empty">-</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="访问模式" width="120">
-          <template #default="{ row }">
-            <el-tag :type="accessModeTagType(row.accessMode)" size="small">
-              {{ accessModeLabel(row.accessMode) }}
             </el-tag>
           </template>
         </el-table-column>
@@ -109,11 +123,15 @@
             <DictTag dict-code="sys_normal_disable" :value="row.status" size="small" />
           </template>
         </el-table-column>
-        <el-table-column label="更新时间" width="180">
+        <el-table-column label="创建 / 更新时间" width="190">
           <template #default="{ row }">
-            {{ row.updateTime || '-' }}
+            <div class="api-resource-cell api-resource-cell--stack api-resource-cell__muted">
+              <span>创建：{{ row.createTime || '-' }}</span>
+              <span>更新：{{ row.updateTime || '-' }}</span>
+            </div>
           </template>
         </el-table-column>
+        <el-table-column prop="id" label="资源 ID" width="180" show-overflow-tooltip />
       </el-table>
 
       <template #pagination>
@@ -257,6 +275,24 @@ onMounted(() => {
 
 .api-resource-path {
   font-family: var(--el-font-family-mono, monospace);
+}
+
+.api-resource-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.api-resource-cell--stack {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.api-resource-cell__muted {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
 }
 
 .api-resource-empty {

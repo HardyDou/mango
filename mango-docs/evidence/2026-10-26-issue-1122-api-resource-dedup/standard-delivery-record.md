@@ -48,6 +48,7 @@
 | I-6 | AC-1 ~ AC-5 | 6 | 模块 README、Views README、能力地图 | 能力说明与代码一致 |
 | I-7 | AC-1 | 7 | `AuthorizationDemoResourceContractTest` | demo 资源契约与当前 `SYNC_ONCE` 基线一致 |
 | I-8 | AC-1 | 8 | `ApiAccessResourceProvider` | 固定文件声明覆盖同模块、同方法、同路径的 Controller 扫描结果 |
+| I-9 | AC-3 | 9 | `api-resource/index.vue` | 合并重复字段，同时展示接口说明、资源 ID 和创建/更新时间 |
 
 ## 6. 验收映射与结果
 
@@ -64,7 +65,7 @@
 | AC-3 | 前端构建 | `pnpm --filter @mango/rbac... build` | PASS | `@mango/rbac` dist 构建完成 |
 | AC-3 | 前端 API 测试 | `pnpm -F @mango/rbac test` | PASS | `apiResource.spec.ts` 覆盖查询参数和分页字段映射 |
 | AC-3 | 前端 lint | `pnpm exec eslint packages/rbac/src/views/api-resource/index.vue packages/rbac/src/api/apiResource.ts packages/rbac/src/index.ts packages/admin-pages/src/defaults.ts` | PASS | 无 lint 错误 |
-| AC-3 | 浏览器验证 | Playwright 登录后打开 `/#/system/api-resource` | PASS | 页面加载真实接口，显示 Controller 扫描和固定登记来源 |
+| AC-3 | 浏览器验证 | Playwright 登录后打开 `/#/system/api-resource` | PASS | 页面加载真实接口，显示 Controller 扫描和固定登记来源；表头为接口、接口说明、所属模块、路径领域、权限标识 / 资源编码、访问模式、登记来源、处理入口、状态、创建 / 更新时间、资源 ID；console 无错误 |
 
 ## 7. 例外与剩余风险
 

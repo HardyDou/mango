@@ -8,6 +8,7 @@ import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.authorization.api.enums.ApiResourceSource;
 import io.mango.infra.module.api.ModuleInfo;
 import io.mango.infra.module.api.ModuleInfoRegistry;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.ObjectProvider;
@@ -187,9 +188,7 @@ public class ApiAccessResourceDiscoverer {
         definition.setPathPattern(path);
         definition.setHandlerClass(handler.getBeanType().getName());
         definition.setHandlerMethod(method.getName());
-        definition.setDescription(StringUtils.hasText(access.description())
-                ? access.description()
-                : handler.getBeanType().getSimpleName() + "#" + method.getName());
+        definition.setDescription(resolveDescription(handler, method, access));
         definition.setVersion(access.version());
         if (access.mode() == ApiResourceAccessMode.PERMISSION) {
             if (!StringUtils.hasText(access.permissionCode())) {
@@ -204,6 +203,26 @@ public class ApiAccessResourceDiscoverer {
             definition.setAccessMode(access.mode());
         }
         return definition;
+    }
+
+    private String resolveDescription(HandlerMethod handler, Method method, AccessDeclaration access) {
+        if (StringUtils.hasText(access.description())) {
+            return access.description();
+        }
+        Operation operation = AnnotatedElementUtils.findMergedAnnotation(
+                targetMethod(handler.getBeanType(), method), Operation.class);
+        if (operation == null) {
+            operation = AnnotatedElementUtils.findMergedAnnotation(method, Operation.class);
+        }
+        if (operation != null) {
+            if (StringUtils.hasText(operation.summary())) {
+                return operation.summary();
+            }
+            if (StringUtils.hasText(operation.description())) {
+                return operation.description();
+            }
+        }
+        return handler.getBeanType().getSimpleName() + "#" + method.getName();
     }
 
     private String resolveModuleName(String path) {
