@@ -47,12 +47,14 @@
 | I-5 | D-5 | 5 | 菜单 JSON、`@mango/rbac`、`admin-pages` | RBAC 构建和 lint 通过 |
 | I-6 | AC-1 ~ AC-5 | 6 | 模块 README、Views README、能力地图 | 能力说明与代码一致 |
 | I-7 | AC-1 | 7 | `AuthorizationDemoResourceContractTest` | demo 资源契约与当前 `SYNC_ONCE` 基线一致 |
+| I-8 | AC-1 | 8 | `ApiAccessResourceProvider` | 固定文件声明覆盖同模块、同方法、同路径的 Controller 扫描结果 |
 
 ## 6. 验收映射与结果
 
 | 要求 ID | 验证方式 | 命令或步骤 | 结果 | 证据 |
 |---|---|---|---|---|
 | AC-1 | 单元测试 | `mvn -o -pl :mango-authorization-resource-sync-starter -am -Dtest=ApiAccessResourceDiscovererTest ... test` | PASS | 本记录第 7 节 |
+| AC-1 | 固定文件去重测试 | `ApiAccessResourceProviderTest` | PASS | 固定 YAML 声明的同模块、同方法、同路径不再输出扫描结果 |
 | AC-1 | 集成测试 | `mvn -o -pl :mango-authorization-core -am test` | PASS | `ApiResourceServiceImplIntegrationTest` |
 | AC-2 | 单元测试 | 同上 Discoverer 测试 | PASS | 类级和方法级忽略用例 |
 | AC-3 | 集成测试 | `ApiResourceServiceImplIntegrationTest#pageQueryShouldFilterAndExposeDomainAndSource` | PASS | 模块、领域、来源和关键词筛选 |
@@ -62,9 +64,11 @@
 | AC-3 | 前端构建 | `pnpm --filter @mango/rbac... build` | PASS | `@mango/rbac` dist 构建完成 |
 | AC-3 | 前端 API 测试 | `pnpm -F @mango/rbac test` | PASS | `apiResource.spec.ts` 覆盖查询参数和分页字段映射 |
 | AC-3 | 前端 lint | `pnpm exec eslint packages/rbac/src/views/api-resource/index.vue packages/rbac/src/api/apiResource.ts packages/rbac/src/index.ts packages/admin-pages/src/defaults.ts` | PASS | 无 lint 错误 |
+| AC-3 | 浏览器验证 | Playwright 登录后打开 `/#/system/api-resource` | PASS | 页面加载真实接口，显示 Controller 扫描和固定登记来源 |
 
 ## 7. 例外与剩余风险
 
-- 未执行真实浏览器 UI 验收，未验证真实数据库下的菜单、分页、筛选、空状态和错误状态。
-- 未执行真实数据库 migration 回放，仅通过实体建表和 Maven 模块校验。
+- 已在本地启动服务验证：后端 `18006`、前端 `30006`、数据库 `mango_dev_mango_issue_1122_006`。
+- 已通过浏览器确认“权限标识”菜单可展开、页面可打开、真实接口返回 Controller 扫描和固定登记两类来源。
+- 真实 MySQL migration 已在本地工作区数据库执行；未在业务生产副本回放。
 - 未提交、Push、创建 PR 或发布。

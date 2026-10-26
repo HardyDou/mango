@@ -206,7 +206,7 @@ mango:
 
 Controller 扫描、Gateway route 扫描和 `resources[]` 会被 Resource Provider 转换为 `mango-resource` 的 `API_RESOURCE` 资源声明，再由资源注册中心调用授权模块的 `ApiResourceHandler` 写入 `authorization_api_resource`。
 
-固定声明与 Controller 扫描命中相同 HTTP 方法和路径时，固定声明优先：扫描结果不再生成新的有效资源，已有扫描记录会按正常同步语义停用，固定声明保留原稳定资源 ID、模块名、访问模式和权限码。不同方法、不同路径和通配路径之间的冲突仍由 Resource Registry 的冲突校验阻断。
+固定声明与 Controller 扫描命中相同 HTTP 方法和路径时，固定声明优先：这里的固定声明包括 `META-INF/mango/resources/*.{yml,yaml,json}` 中的 `API_RESOURCE` 和 `resources[]` 配置。扫描结果不再生成新的有效资源，已有扫描记录会按正常同步语义停用，固定声明保留原稳定资源 ID、模块名、访问模式和权限码。不同方法、不同路径和通配路径之间的冲突仍由 Resource Registry 的冲突校验阻断。
 
 `resources[]` 字段：
 
