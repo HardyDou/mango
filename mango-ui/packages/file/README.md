@@ -321,8 +321,8 @@ const rows = [
 | `completeUploadPart(sessionId, command)`                   | `PUT /file/files/uploads/{sessionId}/parts`       | 确认直传分片。         |
 | `completeUploadSession(sessionId)`                         | `POST /file/files/uploads/{sessionId}/complete`   | 完成上传。             |
 | `abortUploadSession(sessionId)`                            | `DELETE /file/files/uploads/{sessionId}`          | 取消上传。             |
-| `downloadUrl(id)`                                          | `/api/file/files/download?id=...`                 | 拼接下载地址。         |
-| `download(id)`                                             | `GET /file/files/download`                        | 下载二进制。           |
+| `downloadUrl(id, options?)`                                | `/api/file/files/download?id=...`                 | 拼接下载地址；`options` 支持 `compression`（`none`/`low`/`standard`/`medium`/`high`/`extreme`）与 `perFileTargetSizeBytes`。 |
+| `download(id, options?)`                                   | `GET /file/files/download`                        | 下载二进制；`options` 同上，由文件服务直接返回压缩后的内容。 |
 
 `fileStorageApi`：
 
