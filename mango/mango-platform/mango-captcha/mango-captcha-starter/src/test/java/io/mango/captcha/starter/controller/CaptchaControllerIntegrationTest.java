@@ -6,6 +6,7 @@ import io.mango.captcha.api.enums.CaptchaCode;
 import io.mango.captcha.api.constant.CaptchaType;
 import io.mango.captcha.api.dto.CaptchaVerifyRequest;
 import io.mango.captcha.core.service.ICaptchaService;
+import io.mango.infra.kv.api.IKvStore;
 import io.mango.captcha.starter.config.CaptchaAutoConfiguration;
 import io.mango.infra.web.starter.GlobalExceptionHandler;
 import org.junit.jupiter.api.Test;
@@ -48,6 +49,9 @@ class CaptchaControllerIntegrationTest {
     @Autowired
     private ICaptchaService captchaService;
 
+    @Autowired
+    private IKvStore kvStore;
+
     @Test
     void captchaApiBean_isProvidedByController() {
         assertThat(captchaApi).isInstanceOf(CaptchaController.class);
@@ -62,7 +66,7 @@ class CaptchaControllerIntegrationTest {
                 .andExpect(jsonPath("$.data.types").isArray())
                 .andExpect(jsonPath("$.data.types[*]").value(
                         org.hamcrest.Matchers.containsInAnyOrder(
-                                "ARITHMETIC", "BLOCK_PUZZLE", "CLICK_WORD", "BEHAVIOR", "SMS", "EMAIL"
+                                "ARITHMETIC", "GRAPHIC", "BLOCK_PUZZLE", "CLICK_WORD", "BEHAVIOR", "SMS", "EMAIL"
                         )
                 ))
                 .andExpect(jsonPath("$.data.currentStorage").exists());
@@ -81,6 +85,30 @@ class CaptchaControllerIntegrationTest {
         // 验证返回的 key 可以用于后续验证
         String response = result.getResponse().getContentAsString();
         assert response.contains("\"key\"");
+    }
+
+    @Test
+    void generateGraphic_returnsSimpleArithmeticByDefault() throws Exception {
+        mockMvc.perform(get("/captcha/graphic"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.type").value("GRAPHIC"))
+                .andExpect(jsonPath("$.data.graphicType").value("ARITHMETIC"))
+                .andExpect(jsonPath("$.data.difficulty").value("SIMPLE"))
+                .andExpect(jsonPath("$.data.key").exists())
+                .andExpect(jsonPath("$.data.image").exists())
+                .andExpect(jsonPath("$.data.extra").doesNotExist());
+    }
+
+    @Test
+    void generateGraphic_acceptsSessionTypeAndDifficulty() throws Exception {
+        mockMvc.perform(get("/captcha/graphic")
+                        .param("type", "ALPHANUMERIC")
+                        .param("level", "MEDIUM"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.type").value("GRAPHIC"))
+                .andExpect(jsonPath("$.data.graphicType").value("ALPHANUMERIC"))
+                .andExpect(jsonPath("$.data.difficulty").value("MEDIUM"));
     }
 
     @Test
@@ -176,7 +204,7 @@ class CaptchaControllerIntegrationTest {
         String response = generateResult.getResponse().getContentAsString();
         var node = objectMapper.readTree(response);
         String key = node.get("data").get("key").asText();
-        String answer = node.get("data").get("extra").asText();
+        String answer = objectMapper.readTree(kvStore.get("captcha:" + key)).path("answer").asText();
 
         // 2. 使用正确答案验证
         CaptchaVerifyRequest verifyRequest = new CaptchaVerifyRequest();
@@ -202,7 +230,7 @@ class CaptchaControllerIntegrationTest {
         String response = generateResult.getResponse().getContentAsString();
         var node = objectMapper.readTree(response);
         String key = node.get("data").get("key").asText();
-        String answer = node.get("data").get("extra").asText();
+        String answer = objectMapper.readTree(kvStore.get("captcha:" + key)).path("answer").asText();
 
         // 2. 第一次验证成功
         CaptchaVerifyRequest verifyRequest = new CaptchaVerifyRequest();

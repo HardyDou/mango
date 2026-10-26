@@ -13,6 +13,11 @@ public enum CaptchaType {
     ARITHMETIC("算术验证码"),
 
     /**
+     * 统一图形验证码，题型和难度由服务端会话策略决定。
+     */
+    GRAPHIC("图形验证码"),
+
+    /**
      * 滑块验证码 - 拖动滑块完成拼图
      */
     BLOCK_PUZZLE("滑块验证码"),

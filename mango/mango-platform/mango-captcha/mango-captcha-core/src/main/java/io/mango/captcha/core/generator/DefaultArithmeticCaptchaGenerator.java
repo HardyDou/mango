@@ -2,29 +2,28 @@ package io.mango.captcha.core.generator;
 
 import cn.hutool.captcha.CaptchaUtil;
 import cn.hutool.captcha.LineCaptcha;
-import cn.hutool.captcha.generator.MathGenerator;
-import cn.hutool.captcha.generator.RandomGenerator;
-import io.mango.captcha.api.dto.CaptchaResponse;
+import cn.hutool.captcha.generator.CodeGenerator;
+import io.mango.captcha.api.constant.CaptchaDifficulty;
 import io.mango.captcha.api.constant.CaptchaType;
-import lombok.extern.slf4j.Slf4j;
+import io.mango.captcha.api.dto.CaptchaResponse;
 import org.springframework.beans.factory.annotation.Value;
 
-import java.util.Base64;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * 算术验证码实现
- *
- * @author Mango
+ * 算术验证码实现。
  */
-@Slf4j
 public class DefaultArithmeticCaptchaGenerator implements ArithmeticCaptchaGenerator {
 
     private static final int DEFAULT_WIDTH = 120;
     private static final int DEFAULT_HEIGHT = 40;
-    private static final String OPERATOR_ADD = "+";
-    private static final String OPERATOR_SUBTRACT = "-";
-    private static final String OPERATOR_MULTIPLY = "×";
+    private static final int SIMPLE_MAX_OPERAND = 9;
+    private static final int MEDIUM_MAX_OPERAND = 20;
+    private static final int COMPLEX_LEFT_MAX_OPERAND = 50;
+    private static final int COMPLEX_RIGHT_MAX_OPERAND = 20;
+    private static final String SIMPLE_OPERATORS = "+-";
+    private static final String MEDIUM_OPERATORS = "+-×";
+    private static final String COMPLEX_OPERATORS = "+-";
 
     @Value("${mango.captcha.ttl:300}")
     private long defaultTtl;
@@ -37,55 +36,95 @@ public class DefaultArithmeticCaptchaGenerator implements ArithmeticCaptchaGener
 
     @Override
     public CaptchaResponse generate() {
-        // 使用数学表达式验证码 - 使用默认构造器
-        MathGenerator mathGenerator = new MathGenerator();
-        LineCaptcha captcha = CaptchaUtil.createLineCaptcha(width, height);
-        captcha.setGenerator(mathGenerator);
-        captcha.createCode();
-        String code = captcha.getCode();
+        return generate(CaptchaDifficulty.SIMPLE);
+    }
 
-        // 计算实际答案
-        int answer = calculateAnswer(code);
-        String imageBase64 = captcha.getImageBase64();
+    @Override
+    public CaptchaResponse generate(CaptchaDifficulty difficulty) {
+        CaptchaDifficulty actualDifficulty = difficulty == null ? CaptchaDifficulty.SIMPLE : difficulty;
+        ArithmeticProblem problem = createProblem(actualDifficulty);
+        LineCaptcha captcha = CaptchaUtil.createLineCaptcha(width, height);
+        captcha.setGenerator(new FixedCodeGenerator(problem.expression(), problem.answer()));
+        captcha.createCode();
 
         CaptchaResponse response = new CaptchaResponse();
         response.setType(CaptchaType.ARITHMETIC);
-        response.setImage("data:image/png;base64," + imageBase64);
-        response.setExtra(String.valueOf(answer));
+        response.setDifficulty(actualDifficulty);
+        response.setImage("data:image/png;base64," + captcha.getImageBase64());
+        response.setExtra(String.valueOf(problem.answer()));
         response.setExpireTime(defaultTtl);
-
-        log.debug("生成算术验证码: code={}, answer={}", code, answer);
-
         return response;
     }
 
-    private int calculateAnswer(String expression) {
-        // 解析 "3+2=?" 格式的表达式
-        try {
-            String exp = expression.replace("=", "?");
-            String[] parts = exp.split("[?]");
-            if (parts.length > 0) {
-                String mathExp = parts[0].trim();
-                return evaluateExpression(mathExp);
-            }
-        } catch (Exception e) {
-            log.error("解析验证码表达式失败: {}", expression, e);
-        }
-        return 0;
+    private ArithmeticProblem createProblem(CaptchaDifficulty difficulty) {
+        return switch (difficulty) {
+            case SIMPLE -> createSingleOperation(SIMPLE_MAX_OPERAND, SIMPLE_OPERATORS);
+            case MEDIUM -> createSingleOperation(MEDIUM_MAX_OPERAND, MEDIUM_OPERATORS);
+            case COMPLEX -> createTwoStepOperation();
+        };
     }
 
-    private int evaluateExpression(String exp) {
-        exp = exp.trim();
-        if (exp.contains(OPERATOR_ADD)) {
-            String[] parts = exp.split("\\+");
-            return Integer.parseInt(parts[0].trim()) + Integer.parseInt(parts[1].trim());
-        } else if (exp.contains(OPERATOR_SUBTRACT)) {
-            String[] parts = exp.split(OPERATOR_SUBTRACT);
-            return Integer.parseInt(parts[0].trim()) - Integer.parseInt(parts[1].trim());
-        } else if (exp.contains(OPERATOR_MULTIPLY)) {
-            String[] parts = exp.split(OPERATOR_MULTIPLY);
-            return Integer.parseInt(parts[0].trim()) * Integer.parseInt(parts[1].trim());
+    private ArithmeticProblem createSingleOperation(int maxOperand, String operators) {
+        ThreadLocalRandom random = ThreadLocalRandom.current();
+        char operator = operators.charAt(random.nextInt(operators.length()));
+        int operandMax = operator == '×' ? Math.min(maxOperand, SIMPLE_MAX_OPERAND) : maxOperand;
+        int left = random.nextInt(1, operandMax + 1);
+        int right = random.nextInt(1, operandMax + 1);
+        if (operator == '-' && left < right) {
+            int temporary = left;
+            left = right;
+            right = temporary;
         }
-        return 0;
+        int answer = calculate(left, operator, right);
+        return new ArithmeticProblem(left + String.valueOf(operator) + right + "=?", answer);
+    }
+
+    private ArithmeticProblem createTwoStepOperation() {
+        ThreadLocalRandom random = ThreadLocalRandom.current();
+        int left = random.nextInt(1, COMPLEX_LEFT_MAX_OPERAND + 1);
+        int middle = random.nextInt(1, COMPLEX_RIGHT_MAX_OPERAND + 1);
+        int right = random.nextInt(1, COMPLEX_RIGHT_MAX_OPERAND + 1);
+        char firstOperator = COMPLEX_OPERATORS.charAt(random.nextInt(COMPLEX_OPERATORS.length()));
+        char secondOperator = COMPLEX_OPERATORS.charAt(random.nextInt(COMPLEX_OPERATORS.length()));
+        int answer = calculate(calculate(left, firstOperator, middle), secondOperator, right);
+        if (answer < 0) {
+            return new ArithmeticProblem(left + "+" + middle + "+" + right + "=?",
+                    left + middle + right);
+        }
+        return new ArithmeticProblem(left + String.valueOf(firstOperator) + middle
+                + secondOperator + right + "=?", answer);
+    }
+
+    private int calculate(int left, char operator, int right) {
+        return switch (operator) {
+            case '+' -> left + right;
+            case '-' -> left - right;
+            case '×' -> left * right;
+            default -> throw new IllegalArgumentException("不支持的算术运算符: " + operator);
+        };
+    }
+
+    private record ArithmeticProblem(String expression, int answer) {
+    }
+
+    private static final class FixedCodeGenerator implements CodeGenerator {
+
+        private final String expression;
+        private final int answer;
+
+        private FixedCodeGenerator(String expression, int answer) {
+            this.expression = expression;
+            this.answer = answer;
+        }
+
+        @Override
+        public String generate() {
+            return expression;
+        }
+
+        @Override
+        public boolean verify(String code, String userInput) {
+            return String.valueOf(answer).equals(userInput);
+        }
     }
 }

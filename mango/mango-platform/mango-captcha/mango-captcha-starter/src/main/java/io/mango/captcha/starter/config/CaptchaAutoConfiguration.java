@@ -11,6 +11,9 @@ import io.mango.captcha.core.generator.DefaultArithmeticCaptchaGenerator;
 import io.mango.captcha.core.generator.DefaultBehaviorCaptchaEngine;
 import io.mango.captcha.core.generator.DefaultBlockPuzzleCaptchaGenerator;
 import io.mango.captcha.core.generator.DefaultClickWordCaptchaGenerator;
+import io.mango.captcha.core.generator.DefaultGraphicCaptchaGenerator;
+import io.mango.captcha.core.generator.GraphicCaptchaGenerator;
+import io.mango.captcha.core.properties.GraphicCaptchaProperties;
 import io.mango.captcha.core.service.impl.CaptchaService;
 import io.mango.captcha.starter.controller.CaptchaController;
 import io.mango.captcha.starter.properties.CaptchaProperties;
@@ -20,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -43,6 +47,19 @@ public class CaptchaAutoConfiguration {
     @ConditionalOnMissingBean(ArithmeticCaptchaGenerator.class)
     public ArithmeticCaptchaGenerator arithmeticCaptchaService() {
         return new DefaultArithmeticCaptchaGenerator();
+    }
+
+    @Bean
+    @ConfigurationProperties(prefix = "mango.captcha.graphic")
+    @ConditionalOnMissingBean(GraphicCaptchaProperties.class)
+    public GraphicCaptchaProperties graphicCaptchaProperties() {
+        return new GraphicCaptchaProperties();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(GraphicCaptchaGenerator.class)
+    public GraphicCaptchaGenerator graphicCaptchaService(GraphicCaptchaProperties properties) {
+        return new DefaultGraphicCaptchaGenerator(properties);
     }
 
     @Bean

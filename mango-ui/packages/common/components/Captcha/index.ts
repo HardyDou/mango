@@ -1,4 +1,5 @@
 export { default as CaptchaSelector } from './index.vue';
+export { default as GraphicCaptcha } from './GraphicCaptcha.vue';
 export { default as ArithmeticCaptcha } from './ArithmeticCaptcha.vue';
 export { default as BlockPuzzleCaptcha } from './BlockPuzzleCaptcha.vue';
 export { default as ClickWordCaptcha } from './ClickWordCaptcha.vue';

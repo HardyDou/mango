@@ -19,7 +19,8 @@
 | 能力 | 用途 | 常用入口 |
 |------|------|----------|
 | 验证码类型查询 | 前端判断后端支持哪些验证码 | `GET /captcha/types` |
-| 算术验证码 | 登录、低风险表单的人机校验 | `GET /captcha/arithmetic`、`POST /captcha/verify` |
+| 统一图形验证码 | 按全局默认策略或会话参数生成字母数字/算术验证码 | `GET /captcha/graphic`、`POST /captcha/verify` |
+| 算术验证码 | 兼容旧接口的登录、低风险表单人机校验 | `GET /captcha/arithmetic`、`POST /captcha/verify` |
 | 滑块验证码 | 拖动滑块拼图校验 | `GET /captcha/block-puzzle`、`POST /captcha/verify` |
 | 点选文字验证码 | 按提示点击图片文字 | `GET /captcha/click-word`、`POST /captcha/verify` |
 | 无感行为验证 | 前端采集行为数据，后端给出风险评分 | `GET /captcha/behavior`、`POST /captcha/behavior/verify` |
@@ -45,7 +46,8 @@
 | API | 用途 |
 |-----|------|
 | `CaptchaApi.getTypes()` | 查询支持的验证码类型和实际存储实现。 |
-| `CaptchaApi.generateArithmetic()` | 生成算术验证码。 |
+| `CaptchaApi.generateArithmetic()` | 生成兼容旧接口的简单算术验证码。 |
+| `CaptchaApi.generateGraphic(type, difficulty)` | 按全局默认策略或会话参数生成图形验证码。 |
 | `CaptchaApi.generateBlockPuzzle()` | 生成滑块验证码。 |
 | `CaptchaApi.generateClickWord()` | 生成点选文字验证码。 |
 | `CaptchaApi.generateBehavior()` | 生成行为验证码挑战。 |
@@ -106,7 +108,10 @@ String captchaKey = result.getData();
 ```ts
 import {
   CaptchaType,
+  GraphicCaptchaType,
+  CaptchaDifficulty,
   generateArithmetic,
+  generateGraphic,
   generateBlockPuzzle,
   generateClickWord,
   generateBehavior,
@@ -115,7 +120,19 @@ import {
 } from '@mango/common/api/captcha';
 ```
 
-算术验证码：
+统一图形验证码：
+
+```ts
+const captcha = await generateGraphic(GraphicCaptchaType.ALPHANUMERIC, CaptchaDifficulty.SIMPLE);
+
+await verifyCaptcha({
+  key: captcha.key,
+  type: CaptchaType.GRAPHIC,
+  code: userInput,
+});
+```
+
+兼容旧接口的算术验证码：
 
 ```ts
 const captcha = await generateArithmetic();
@@ -139,7 +156,7 @@ await verifyCaptcha({
 });
 ```
 
-登录页获取验证码使用 `@mango/auth`，它通过 `@mango/common/api/captcha` 调用 `/captcha/arithmetic`。短信和邮件登录调用的是 `POST /auth/captcha/send`，该接口属于 `mango-auth`，不是 `mango-captcha` 的 HTTP controller。
+登录页获取验证码使用 `@mango/auth`，旧登录链路继续调用 `/captcha/arithmetic`。新业务可调用 `/captcha/graphic`，省略题型和难度时使用服务端全局默认策略。短信和邮件登录调用的是 `POST /auth/captcha/send`，该接口属于 `mango-auth`，不是 `mango-captcha` 的 HTTP controller。
 
 `@mango/common` 包内提供验证码组件；这些组件是业务可复用组件，不依赖 Admin Pages。
 
@@ -188,6 +205,19 @@ mango:
       enabled: true
       width: 120
       height: 40
+    graphic:
+      default-type: ARITHMETIC
+      default-level: SIMPLE
+      allowed-types:
+        - ARITHMETIC
+        - ALPHANUMERIC
+      allowed-levels:
+        - SIMPLE
+        - MEDIUM
+        - COMPLEX
+      width: 120
+      height: 40
+      characters: 23456789ABCDEFGHJKLMNPQRSTUVWXYZ
     block-puzzle:
       enabled: true
       width: 280
@@ -221,9 +251,17 @@ mango:
 |------|--------|------|
 | `mango.captcha.ttl` | `300` | 默认有效期，单位秒。算术、滑块和通用发送接口默认使用它。 |
 | `mango.captcha.storage` | `auto` | 兼容保留字段；实际存储实现由注入的 `IKvStore` 决定。 |
-| `mango.captcha.arithmetic.enabled` | `true` | 算术验证码启用标识。 |
+| `mango.captcha.arithmetic.enabled` | `true` | 兼容保留的算术验证码启用标识。 |
 | `mango.captcha.arithmetic.width` | `120` | 算术验证码图片宽度。 |
 | `mango.captcha.arithmetic.height` | `40` | 算术验证码图片高度。 |
+| `mango.captcha.graphic.default-type` | `ARITHMETIC` | 统一图形验证码默认题型。 |
+| `mango.captcha.graphic.default-level` | `SIMPLE` | 默认难度；匿名会话不能低于该级别。 |
+| `mango.captcha.graphic.allowed-types` | `ARITHMETIC,ALPHANUMERIC` | 会话允许选择的题型。 |
+| `mango.captcha.graphic.allowed-levels` | `SIMPLE,MEDIUM,COMPLEX` | 会话允许选择的难度。 |
+| `mango.captcha.graphic.width` | `120` | 字母数字图形验证码图片宽度。 |
+| `mango.captcha.graphic.height` | `40` | 字母数字图形验证码图片高度。 |
+| `mango.captcha.graphic.interfere-count` | `2` | 默认干扰线数量。 |
+| `mango.captcha.graphic.characters` | `23456789ABCDEFGHJKLMNPQRSTUVWXYZ` | 字母数字字符集；默认排除易混淆字符。 |
 | `mango.captcha.block-puzzle.enabled` | `true` | 滑块验证码启用标识。 |
 | `mango.captcha.block-puzzle.width` | `280` | 滑块背景图生成宽度。 |
 | `mango.captcha.block-puzzle.height` | `160` | 滑块背景图生成高度。 |
@@ -250,9 +288,16 @@ mango:
 | 字段 | 说明 |
 |------|------|
 | `key` | 验证码键。生成或发送验证码后返回，校验时必传。 |
-| `type` | 验证码类型。可为空；服务端会按参数推断部分类型。 |
+| `type` | 验证码类型。图形验证码校验使用 `GRAPHIC`。 |
 | `code` | 用户输入的文字、数字、短信或邮件验证码。 |
 | `pointJson` | 滑块、点选文字、无感行为验证提交的坐标或行为数据。 |
+
+`GET /captcha/graphic` 查询参数：
+
+| 参数 | 说明 |
+|------|------|
+| `type` | `ARITHMETIC` 或 `ALPHANUMERIC`，为空使用全局默认题型。 |
+| `level` | `SIMPLE`、`MEDIUM` 或 `COMPLEX`，为空使用全局默认级别；低于默认级别时不会降级。 |
 
 `CaptchaSendRequest`：
 
@@ -270,8 +315,10 @@ mango:
 | 字段 | 说明 |
 |------|------|
 | `key` | 验证码键。 |
-| `type` | 验证码类型。 |
-| `image` | 算术或点选文字验证码图片，Base64 data URL。 |
+| `type` | 验证码类型。统一图形验证码返回 `GRAPHIC`。 |
+| `graphicType` | 统一图形验证码实际题型。 |
+| `difficulty` | 统一图形验证码实际难度。 |
+| `image` | 算术、字母数字或点选文字验证码图片，Base64 data URL。 |
 | `backgroundImage` | 滑块背景图，Base64 data URL。 |
 | `sliderImage` | 滑块拼图片，Base64 data URL。 |
 | `backgroundWidth` | 滑块背景图生成宽度。 |
@@ -281,7 +328,7 @@ mango:
 | `y` | 滑块目标 Y 坐标，用于渲染拼图块。 |
 | `expireTime` | 过期时间，单位秒。 |
 | `target` | 点选文字提示或短信/邮件目标。 |
-| `extra` | 额外数据。算术验证码当前会返回答案，生产登录链路不要依赖前端自行判定，应以服务端校验为准。 |
+| `extra` | 额外数据。公开图形验证码接口不返回答案；答案只保存在服务端会话中。 |
 
 `BehaviorCaptchaVerifyResponse`：
 

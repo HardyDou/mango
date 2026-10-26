@@ -1,5 +1,6 @@
 package io.mango.captcha.core.service;
 
+import io.mango.captcha.api.constant.CaptchaDifficulty;
 import io.mango.captcha.api.constant.CaptchaType;
 import io.mango.captcha.api.dto.CaptchaResponse;
 import io.mango.captcha.core.generator.DefaultArithmeticCaptchaGenerator;
@@ -34,6 +35,23 @@ class ArithmeticCaptchaServiceTest {
         assertEquals(CaptchaType.ARITHMETIC, response.getType());
         assertNotNull(response.getImage());
         assertTrue(response.getImage().startsWith("data:image/png;base64,"));
+        assertNotNull(response.getExtra());
+    }
+
+    @Test
+    void generate_defaultDifficultyIsSimpleAndAnswerFitsQuickMentalMathRange() {
+        CaptchaResponse response = arithmeticCaptchaService.generate();
+
+        assertEquals(CaptchaDifficulty.SIMPLE, response.getDifficulty());
+        int answer = Integer.parseInt(response.getExtra());
+        assertTrue(answer >= 0 && answer <= 18);
+    }
+
+    @Test
+    void generate_mediumDifficultyProducesMediumCaptcha() {
+        CaptchaResponse response = arithmeticCaptchaService.generate(CaptchaDifficulty.MEDIUM);
+
+        assertEquals(CaptchaDifficulty.MEDIUM, response.getDifficulty());
         assertNotNull(response.getExtra());
     }
 
