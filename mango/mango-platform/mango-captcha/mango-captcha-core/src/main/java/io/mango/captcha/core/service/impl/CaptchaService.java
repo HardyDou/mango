@@ -72,21 +72,16 @@ public class CaptchaService implements ICaptchaService {
     private int emailCodeLength;
 
     private CaptchaResponse generate(CaptchaType type) {
+        if (type == CaptchaType.ARITHMETIC) {
+            return generateGraphicCaptcha(null, null, CaptchaType.ARITHMETIC);
+        }
+
         String key = UUID.randomUUID().toString(true);
         CaptchaResponse response = new CaptchaResponse();
         response.setKey(key);
         response.setType(type);
 
         switch (type) {
-            case ARITHMETIC:
-                CaptchaResponse arithmetic = arithmeticCaptchaService.generate();
-                response.setImage(arithmetic.getImage());
-                response.setDifficulty(CaptchaDifficulty.SIMPLE);
-                response.setExpireTime(defaultTtl);
-                kvStore.set(KEY_PREFIX + key,
-                        createArithmeticSession(arithmetic.getExtra()),
-                        defaultTtl);
-                break;
             case BLOCK_PUZZLE:
                 CaptchaResponse puzzle = blockPuzzleCaptchaService.generate();
                 response.setBackgroundImage(puzzle.getBackgroundImage());
@@ -135,6 +130,12 @@ public class CaptchaService implements ICaptchaService {
 
     @Override
     public CaptchaResponse generateGraphic(GraphicCaptchaType type, CaptchaDifficulty difficulty) {
+        return generateGraphicCaptcha(type, difficulty, CaptchaType.GRAPHIC);
+    }
+
+    private CaptchaResponse generateGraphicCaptcha(GraphicCaptchaType type,
+                                                   CaptchaDifficulty difficulty,
+                                                   CaptchaType responseType) {
         GraphicCaptchaType actualType = resolveGraphicType(type);
         CaptchaDifficulty actualDifficulty = resolveGraphicDifficulty(difficulty);
         CaptchaResponse generated = actualType == GraphicCaptchaType.ARITHMETIC
@@ -144,12 +145,14 @@ public class CaptchaService implements ICaptchaService {
         String key = UUID.randomUUID().toString(true);
         CaptchaResponse response = new CaptchaResponse();
         response.setKey(key);
-        response.setType(CaptchaType.GRAPHIC);
+        response.setType(responseType);
         response.setGraphicType(actualType);
         response.setDifficulty(actualDifficulty);
         response.setImage(generated.getImage());
         response.setExpireTime(defaultTtl);
-        kvStore.set(KEY_PREFIX + key, createGraphicSession(actualType, actualDifficulty, generated.getExtra()), defaultTtl);
+        kvStore.set(KEY_PREFIX + key,
+                createGraphicSession(responseType, actualType, actualDifficulty, generated.getExtra()),
+                defaultTtl);
         return response;
     }
 
@@ -301,13 +304,9 @@ public class CaptchaService implements ICaptchaService {
         return actual.atLeast(defaultLevel) ? actual : defaultLevel;
     }
 
-    private String createGraphicSession(GraphicCaptchaType type, CaptchaDifficulty difficulty, String answer) {
-        return createCaptchaSession(CaptchaType.GRAPHIC.name(), type, difficulty, answer);
-    }
-
-    private String createArithmeticSession(String answer) {
-        return createCaptchaSession(CaptchaType.ARITHMETIC.name(), GraphicCaptchaType.ARITHMETIC,
-                CaptchaDifficulty.SIMPLE, answer);
+    private String createGraphicSession(CaptchaType captchaType, GraphicCaptchaType type,
+                                        CaptchaDifficulty difficulty, String answer) {
+        return createCaptchaSession(captchaType.name(), type, difficulty, answer);
     }
 
     private String createCaptchaSession(String captchaType, GraphicCaptchaType type,

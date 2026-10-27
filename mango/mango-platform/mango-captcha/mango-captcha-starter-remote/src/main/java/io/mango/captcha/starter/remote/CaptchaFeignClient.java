@@ -31,9 +31,9 @@ public interface CaptchaFeignClient extends CaptchaApi {
     R<CaptchaTypesResponse> getTypes();
 
     /**
-     * 通过远程验证码服务生成算术验证码。
+     * 通过远程验证码服务按统一默认策略生成图形验证码。
      *
-     * @return 统一响应，包含验证码键、图片和有效期
+     * @return 统一响应，包含验证码键、图片、实际图形题型和有效期
      */
     @Override
     @GetMapping("/arithmetic")
@@ -45,8 +45,10 @@ public interface CaptchaFeignClient extends CaptchaApi {
      * @param type 会话题型
      * @param difficulty 会话难度
      * @return 统一响应，包含验证码键、图片、实际题型和实际难度
+     * @deprecated 使用 {@link #generateArithmetic()}；该方法仅保留远程消费者兼容。
      */
     @Override
+    @Deprecated
     @GetMapping("/graphic")
     R<CaptchaResponse> generateGraphic(
             @RequestParam(value = "type", required = false) GraphicCaptchaType type,

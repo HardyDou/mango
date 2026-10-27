@@ -13,10 +13,10 @@ public class GraphicCaptchaProperties {
 
     private static final int DEFAULT_WIDTH = 120;
     private static final int DEFAULT_HEIGHT = 40;
-    private static final int DEFAULT_INTERFERE_COUNT = 2;
-    private static final String DEFAULT_CHARACTERS = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+    private static final int DEFAULT_INTERFERE_COUNT = 1;
+    private static final String DEFAULT_CHARACTERS = "ABCDEFGHJKLMNPQRSTUVWXYZ";
 
-    private GraphicCaptchaType defaultType = GraphicCaptchaType.ARITHMETIC;
+    private GraphicCaptchaType defaultType = GraphicCaptchaType.ALPHANUMERIC;
     private CaptchaDifficulty defaultLevel = CaptchaDifficulty.SIMPLE;
     private List<GraphicCaptchaType> allowedTypes = List.of(
             GraphicCaptchaType.ARITHMETIC, GraphicCaptchaType.ALPHANUMERIC);

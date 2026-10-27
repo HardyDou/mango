@@ -85,17 +85,41 @@ class CaptchaServiceTest {
     }
 
     @Test
-    void generate_arithmeticType_savesToStorage() {
-        CaptchaResponse arithmeticResponse = new CaptchaResponse();
-        arithmeticResponse.setImage("data:image/png;base64,xxx");
-        arithmeticResponse.setExtra("5");
-        when(arithmeticCaptchaService.generate()).thenReturn(arithmeticResponse);
+    void generate_arithmeticType_usesUnifiedGraphicPolicy() {
+        CaptchaResponse graphicResponse = new CaptchaResponse();
+        graphicResponse.setImage("data:image/png;base64,xxx");
+        graphicResponse.setExtra("A5B7");
+        when(graphicCaptchaService.generate(CaptchaDifficulty.SIMPLE)).thenReturn(graphicResponse);
 
         CaptchaResponse result = captchaService.generateArithmetic();
 
         assertNotNull(result);
         assertEquals(CaptchaType.ARITHMETIC, result.getType());
-        verify(kvStore).set(startsWith("captcha:"), contains("\"answer\":\"5\""), anyLong());
+        assertEquals(GraphicCaptchaType.ALPHANUMERIC, result.getGraphicType());
+        verify(kvStore).set(startsWith("captcha:"),
+                contains("\"captchaType\":\"ARITHMETIC\""), anyLong());
+        verify(kvStore).set(startsWith("captcha:"), contains("\"answer\":\"A5B7\""), anyLong());
+    }
+
+    @Test
+    void verify_arithmeticGraphicSessionAcceptsTheLegacyArithmeticType() {
+        CaptchaResponse graphicResponse = new CaptchaResponse();
+        graphicResponse.setImage("data:image/png;base64,xxx");
+        graphicResponse.setExtra("A5B7");
+        when(graphicCaptchaService.generate(CaptchaDifficulty.SIMPLE)).thenReturn(graphicResponse);
+
+        CaptchaResponse generated = captchaService.generateArithmetic();
+        ArgumentCaptor<String> storedCaptor = ArgumentCaptor.forClass(String.class);
+        verify(kvStore).set(startsWith("captcha:"), storedCaptor.capture(), anyLong());
+        when(kvStore.get("captcha:" + generated.getKey())).thenReturn(storedCaptor.getValue());
+
+        CaptchaVerifyRequest request = new CaptchaVerifyRequest();
+        request.setKey(generated.getKey());
+        request.setType(CaptchaType.ARITHMETIC);
+        request.setCode("a5b7");
+
+        assertTrue(captchaService.verify(request));
+        verify(kvStore).delete("captcha:" + generated.getKey());
     }
 
     @Test
