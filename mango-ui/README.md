@@ -84,6 +84,8 @@ pnpm -C mango-ui --filter mango-admin dev -- --host 0.0.0.0 --port 5175
 VITE_ADMIN_PROXY_PATH=http://127.0.0.1:5555 pnpm -C mango-ui --filter mango-admin dev -- --host 0.0.0.0 --port 5175
 ```
 
+开发环境下可从 `开发中心 > 组件库 > 字典组件` 打开字典使用帮助示例，路由为 `/components/dict`；示例使用真实 `dictDataApi.options()` 和 `dictDataApi.tree()` 接口，不替代 `系统管理 > 字典管理` 的维护页面。
+
 微前端启动：
 
 ```bash

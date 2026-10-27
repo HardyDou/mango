@@ -454,7 +454,8 @@ API 加密环境变量：
 | `sendEmail(email)`          | `POST /auth/captcha/send`                              | 发送登录邮箱验证码。                 |
 | `getOrgTree(params)`        | `GET /org/tree`                                        | 组织树。                             |
 | `getAreaTree(params)`       | `GET /system/area/tree` 或 `GET /system/area/children` | 地区树或子节点。                     |
-| `listDictOptions(typeCode)` | `GET /system/dict/data/options`                        | 字典选项。                           |
+| `listDictOptions(typeCode)` | `GET /system/dict/data/options`                        | FLAT 字典选项。                     |
+| `listDictTree(typeCode)`    | `GET /system/dict/data/tree`                           | TREE 字典树。                       |
 
 组件导出：
 
@@ -472,7 +473,7 @@ API 加密环境变量：
 | `Pagination`                                                              | 分页器，支持对齐、`page/limit` 双向绑定和同轮变更事件合并。                                    |
 | `MangoDialog`                                                             | 管理端通用弹框外壳，统一标题区、关闭按钮、内容滚动区和底部按钮区。                             |
 | `MangoAvatar`                                                             | 统一显示普通图片地址或 `mango-file:{id}` 文件标识，并负责受保护头像的下载回显和对象 URL 回收。 |
-| `DictSelect`、`DictTag`                                                   | 字典选择和展示。                                                                               |
+| `DictSelect`、`DictTag`                                                   | 统一的 FLAT/TREE 字典选择和字典展示；通过 `shape`、`multiple`、`leafOnly` 和显示参数控制行为。       |
 | `OrgSelector`、`UserSelector`                                             | 组织和用户选择。                                                                               |
 | `CaptchaSelector`、各验证码组件                                           | 验证码展示和交互。                                                                             |
 | `ChinaArea`                                                               | 行政区域选择。                                                                                 |

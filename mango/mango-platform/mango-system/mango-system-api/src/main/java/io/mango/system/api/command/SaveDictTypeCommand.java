@@ -21,6 +21,9 @@ public class SaveDictTypeCommand {
     @Size(max = 100, message = "dictName长度不能超过100")
     @Schema(description = "字典类型名称")
     private String dictName;
+    @Schema(description = "字典形态：FLAT/TREE，默认 FLAT")
+    @Size(max = 16, message = "shape长度不能超过16")
+    private String shape;
     @Size(max = 64, message = "domainCode长度不能超过64")
     @Schema(description = "业务域编码")
     private String domainCode;

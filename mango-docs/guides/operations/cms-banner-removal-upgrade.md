@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS cms_banner_archive AS SELECT * FROM cms_banner;
 
 正常路径不需要手工删除：Resource Registry 只在完整且成功的 `FINALIZE` 快照中回收缺失的 `SYNC_ALWAYS` 资源；历史 `UNKNOWN` 行仅在来源范围一致时接管。回收会删除可定位的目标行，并保留 `resource_registry.status = 'REMOVED'` 墓碑，重复执行幂等。
 
-如果旧版本无法生成完整 `FINALIZE`，或升级前必须先删除已移除资源类型，则按以下顺序执行（可重复执行，无副作用）：
+如果旧版本无法生成完整 `FINALIZE`，或升级前需要先删除已移除资源类型，则按以下顺序执行（可重复执行，无副作用）：
 
 ```sql
 -- 备份被删除的注册行（可选，建议保留）
@@ -107,7 +107,7 @@ ORDER BY installed_rank DESC LIMIT 3;
 -- Banner 表已删除（应返回空结果）
 SHOW TABLES LIKE 'cms_banner';
 
--- Registry 仅保留墓碑，不应仍有 ACTIVE 行
+-- Registry 仅保留墓碑，正常情况下不再有 ACTIVE 行
 SELECT status, COUNT(*) FROM resource_registry
 WHERE resource_type = 'CMS_BANNER'
 GROUP BY status;
@@ -119,7 +119,7 @@ WHERE path_pattern = '/cms/open/banners/list';
 
 应用侧确认：
 
-1. 启动日志出现 `Mango resource registry sync complete`，`bootstrap control` 最终为 `FINALIZED`；若发生回收失败，不应写入新的 `FINALIZED` 回执，下一次启动会重试。
+1. 启动日志出现 `Mango resource registry sync complete`，`bootstrap control` 最终为 `FINALIZED`；若发生回收失败，不会写入新的 `FINALIZED` 回执，下一次启动会重试。
 2. 未启用 CMS 的项目：以上 SQL 中 `cms_banner` 相关项本就不存在，只需确认启动与发布正常。
 3. 启用 CMS 的项目：后台「内容运营 → 投放管理」只有「广告位管理」和「广告投放管理」。
 4. 站点前台主视觉来自 `GET /cms/open/advertisements/list` 且返回 200；不再请求 `/cms/open/banners/list`（该接口现在返回 404 属预期）。

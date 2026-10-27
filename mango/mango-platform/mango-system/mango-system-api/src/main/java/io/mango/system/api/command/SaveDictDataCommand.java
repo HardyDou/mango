@@ -22,6 +22,9 @@ public class SaveDictDataCommand {
     @Size(max = 100, message = "dictValue长度不能超过100")
     @Schema(description = "字典值")
     private String dictValue;
+    @Size(max = 100, message = "parentValue长度不能超过100")
+    @Schema(description = "父节点值，空值表示根节点")
+    private String parentValue;
     @NotBlank(message = "dictType不能为空")
     @Size(max = 50, message = "dictType长度不能超过50")
     @Schema(description = "字典类型编码")

@@ -37,12 +37,20 @@ function createDevelopMenu(): MenuItem {
         name: 'DevelopComponents',
         meta: { title: '组件库', icon: 'Box' },
         redirect: DEV_COMPONENT_DEMO_REDIRECT,
-        children: DEV_COMPONENT_DEMO_PAGES.map((page) => ({
-          path: page.path,
-          name: page.menuCode,
-          meta: { title: page.menuName, icon: page.icon },
-          component: componentsMap[page.component] as NonNullable<RouteRecordRaw['component']>,
-        })),
+        children: [
+          ...DEV_COMPONENT_DEMO_PAGES.map((page) => ({
+            path: page.path,
+            name: page.menuCode,
+            meta: { title: page.menuName, icon: page.icon },
+            component: componentsMap[page.component] as NonNullable<RouteRecordRaw['component']>,
+          })),
+          {
+            path: '/components/dict',
+            name: 'mango-admin:components:dict',
+            meta: { title: '字典组件', icon: 'Collection' },
+            component: componentsMap['demo/components/DictView'] as NonNullable<RouteRecordRaw['component']>,
+          },
+        ],
       },
       {
         path: '/develop/capabilities',

@@ -5,6 +5,7 @@ import io.mango.system.api.command.SaveDictDataCommand;
 import io.mango.system.api.command.SaveDictTypeCommand;
 import io.mango.system.api.vo.DictDataVO;
 import io.mango.system.api.vo.DictOptionVO;
+import io.mango.system.api.vo.DictTreeNodeVO;
 import io.mango.system.api.vo.DictTypeVO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -28,4 +29,5 @@ public interface DictApi {
     R<Boolean> updateData(@Valid SaveDictDataCommand command);
     R<Boolean> deleteData(@NotNull Long id);
     R<List<DictOptionVO>> getOptions(@NotBlank @Size(max = 50) String typeCode);
+    R<List<DictTreeNodeVO>> getTreeOptions(@NotBlank @Size(max = 50) String typeCode);
 }

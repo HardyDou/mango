@@ -12,6 +12,7 @@ public class DictDataEntity extends TenantEntity {
     private String dictType;
     private String dictLabel;
     private String dictValue;
+    private String parentValue;
     private Integer sort;
     private Integer status;
     private String remark;

@@ -18,7 +18,7 @@
 
 | 能力               | 使用入口                                                                  | 后端依赖                              |
 | ------------------ | ------------------------------------------------------------------------- | ------------------------------------- |
-| 字典类型和字典数据 | `DictView`、`dictTypeApi`、`dictDataApi`                                  | `mango-system`                        |
+| 字典类型和字典数据 | `DictView`、`dictTypeApi`、`dictDataApi`；支持 FLAT 列表和 TREE 树形表格维护 | `mango-system`                        |
 | 系统配置           | `ConfigView`、`SystemConfigPanel`、`configApi`、`paramApi`                | `mango-system`                        |
 | 网站配置           | `AdminBrandingView`、`adminBrandingApi`                                   | `mango-system`、`@mango/file`         |
 | 租户               | `TenantView`、`tenantApi`                                                 | `mango-system`、`mango-authorization` |
@@ -62,6 +62,7 @@ import '@mango/system/style.css';
 
 ```ts
 const statusOptions = await dictDataApi.options('order_status');
+const categoryTree = await dictDataApi.tree('product_category');
 const domains = await domainApi.enabledTree();
 ```
 
@@ -121,7 +122,7 @@ import '@mango/system/style.css';
 | `ParticipantSelector` | `userOptions`、`roleOptions`、`postOptions`、`orgTreeOptions`、`targetLoading`    | 控制参与人候选项。                                                   |
 | `SystemConfigPanel`   | `domainCodes`、`domainLabels`、`keyword`、`readonly`、`showRefresh`、`typeFilter` | 控制业务域配置卡片、详情和编辑能力。                                 |
 
-系统配置和字典是后端数据，不是前端构建配置。业务页面要通过 `configApi.list({ domainCode })`、`dictDataApi.options(typeCode)` 读取。
+系统配置和字典是后端数据，不是前端构建配置。业务页面要通过 `configApi.list({ domainCode })`、`dictDataApi.options(typeCode)` 读取平铺选项；需要层级结构时显式调用 `dictDataApi.tree(typeCode)`。字典管理页按类型形态使用列表或可编辑树形表格。
 
 ## 5. API 与扩展
 
@@ -155,7 +156,7 @@ import '@mango/system/style.css';
 | API                | 主要接口                                                             | 能力                                               |
 | ------------------ | -------------------------------------------------------------------- | -------------------------------------------------- |
 | `dictTypeApi`      | `/system/dict/type/list`                                             | 字典类型列表、详情、创建、更新、删除。             |
-| `dictDataApi`      | `/system/dict/data/list`、`/system/dict/data/options`                | 字典数据维护和选项读取。                           |
+| `dictDataApi`      | `/system/dict/data/list`、`/system/dict/data/options`、`/system/dict/data/tree` | 字典数据维护、向后兼容的平铺选项和显式树形选项读取。 |
 | `configApi`        | `/system/config/list`、`/system/config/type`、`/system/config/value` | 系统配置 CRUD、按组读取、分组列表和值更新。        |
 | `adminBrandingApi` | `/system/admin-branding`、`/system/admin-branding/public`            | 网站配置读取、保存和未登录公共读取。               |
 | `paramApi`         | `/system/config/list`、`/system/config/value`                        | 参数维护和值更新。                                 |
@@ -171,6 +172,8 @@ import '@mango/system/style.css';
 
 | 数据     | 字段                                                                                                                                                               |
 | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 字典类型 | `name`、`code`、`shape`（`FLAT`/`TREE`）                                                                                                                          |
+| 字典数据 | `label`、`value`、`parentValue`、`children`、`sort`、`status`                                                                                                    |
 | 字典选项 | `label`、`value`、`sort`、`status`                                                                                                                                 |
 | 系统配置 | `id`、`configKey`、`configValue`、`configName`、`domainCode`、`valueType`、`options`、`editable`、`status`                                                         |
 | 网站配置 | `title`、`shortTitle`、`subtitle`、`loginTitle`、`loginSubtitle`、`logoFile`、`logoIconFile`、`faviconFile`、`loginImageFile`、`footerCopyright`、`icp`、`contact` |

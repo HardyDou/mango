@@ -75,6 +75,32 @@ class SystemDictResourceHandlerIntegrationTest {
     }
 
     @Test
+    void upsertDefaultsMissingShapeToFlat() throws Exception {
+        ResourceDeclaration declaration = dictDeclaration("授权角色类型", List.of(
+                item(100L, "系统角色", "1", 1, 1)
+        ));
+        declaration.getFields().remove("shape");
+
+        handler.upsert(declaration);
+
+        assertThat(stringValue("sys_dict_type", "shape", "dict_type = 'authorization_role_type'"))
+                .isEqualTo("FLAT");
+    }
+
+    @Test
+    void upsertSupportsTreeParentValues() throws Exception {
+        ResourceDeclaration declaration = dictDeclaration("授权角色类型", List.of(
+                item(100L, "系统角色", "root", 1, 1),
+                item(101L, "业务角色", "child", "root", 2, 1)
+        ));
+        declaration.getFields().get("shape").setValue("TREE");
+
+        handler.upsert(declaration);
+
+        assertThat(stringValue("sys_dict_data", "parent_value", "id = 101")).isEqualTo("root");
+    }
+
+    @Test
     void upsertUpdatesDictAndDisablesRemovedItems() throws Exception {
         handler.upsert(dictDeclaration("授权角色类型", List.of(
                 item(100L, "系统角色", "1", 1, 1),
@@ -129,6 +155,7 @@ class SystemDictResourceHandlerIntegrationTest {
         field(declaration, "typeId", ResourceFieldType.LONG, 10L);
         field(declaration, "dictType", ResourceFieldType.STRING, "authorization_role_type");
         field(declaration, "dictName", ResourceFieldType.STRING, dictName);
+        field(declaration, "shape", ResourceFieldType.STRING, "FLAT");
         field(declaration, "domainCode", ResourceFieldType.STRING, "AUTHORIZATION");
         field(declaration, "remark", ResourceFieldType.STRING, "授权模块角色类型");
         field(declaration, "items", ResourceFieldType.LIST, items);
@@ -152,6 +179,17 @@ class SystemDictResourceHandlerIntegrationTest {
         );
     }
 
+    private Map<String, Object> item(Long id, String label, String value, String parentValue, int sort, int status) {
+        return Map.of(
+                "id", id,
+                "label", label,
+                "value", value,
+                "parentValue", parentValue,
+                "sort", sort,
+                "status", status
+        );
+    }
+
     private void rebuildTables() throws Exception {
         execute("drop table if exists sys_dict_data");
         execute("drop table if exists sys_dict_type");
@@ -160,6 +198,7 @@ class SystemDictResourceHandlerIntegrationTest {
                     id bigint primary key,
                     dict_type varchar(50) not null,
                     dict_name varchar(100) not null,
+                    shape varchar(16) not null default 'FLAT',
                     domain_code varchar(64) not null default 'COMMON',
                     status tinyint not null default 1,
                     remark varchar(500),
@@ -178,6 +217,7 @@ class SystemDictResourceHandlerIntegrationTest {
                     dict_type varchar(50) not null,
                     dict_label varchar(100) not null,
                     dict_value varchar(100) not null,
+                    parent_value varchar(100),
                     sort int not null default 0,
                     status tinyint not null default 1,
                     remark varchar(500),

@@ -678,3 +678,64 @@ mango:
                   sort: 30
                   status: 1
                   remark: 发布到运营公告频道
+        - id: "2170000000000002005"
+          version: 1
+          biz-key: system.dict.component-tree
+          name: 字典组件示例树
+          target-module: system
+          fields:
+            typeId:
+              type: LONG
+              value: 2170000000000002005
+            dictType:
+              type: STRING
+              value: system_demo_tree
+            dictName:
+              type: STRING
+              value: 字典组件示例树
+            domainCode:
+              type: STRING
+              value: COMMON
+            shape:
+              type: STRING
+              value: TREE
+            remark:
+              type: STRING
+              value: 开发中心字典组件示例使用的 TREE 字典
+            items:
+              type: LIST
+              value:
+                - id: 2170000000000002501
+                  label: 办公用品
+                  value: office_supplies
+                  sort: 10
+                  status: 1
+                - id: 2170000000000002502
+                  label: 纸张
+                  value: paper
+                  parentValue: office_supplies
+                  sort: 10
+                  status: 1
+                - id: 2170000000000002503
+                  label: 笔
+                  value: pen
+                  parentValue: office_supplies
+                  sort: 20
+                  status: 1
+                - id: 2170000000000002504
+                  label: 数码设备
+                  value: digital_devices
+                  sort: 20
+                  status: 1
+                - id: 2170000000000002505
+                  label: 电脑
+                  value: computer
+                  parentValue: digital_devices
+                  sort: 10
+                  status: 1
+                - id: 2170000000000002506
+                  label: 显示器
+                  value: monitor
+                  parentValue: digital_devices
+                  sort: 20
+                  status: 1
