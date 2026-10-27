@@ -112,6 +112,8 @@ export {
   installShellApp,
 } from './appBootstrap';
 export { isElementPlusMessageBoxCancellation } from './errorHandling';
+export { default as MangoDevCodeBlock } from './views/demo/components/DemoCodeBlock.vue';
+export { default as MangoDevDocLayout } from './views/demo/components/DemoDocLayout.vue';
 export { configureMangoAdminShell, getMangoAdminShellOptions };
 export { ensureFeatureRegistrars };
 export type {

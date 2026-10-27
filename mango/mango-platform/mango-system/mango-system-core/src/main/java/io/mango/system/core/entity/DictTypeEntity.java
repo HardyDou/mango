@@ -11,6 +11,7 @@ import lombok.Setter;
 public class DictTypeEntity extends TenantEntity {
     private String dictType;
     private String dictName;
+    private String shape;
     private String domainCode;
     private Integer status;
     private String remark;

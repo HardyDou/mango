@@ -82,7 +82,7 @@
 
 | 包 | 能做什么 | 说明入口 |
 |---|---|---|
-| Admin Shell | 提供管理端运行壳、菜单装配、登录后初始化和页面承载。 | [Admin Shell README](../../mango-ui/packages/admin-shell/README.md) |
+| Admin Shell | 提供管理端运行壳、菜单装配、登录后初始化、页面承载，以及开发中心示例的右侧文档导航和代码展示基础组件。 | [Admin Shell README](../../mango-ui/packages/admin-shell/README.md) |
 | Admin Pages | 提供管理页面注册表和页面插件接入。 | [Admin Pages README](../../mango-ui/packages/admin-pages/README.md) |
 | Common | 提供公共组件、主题变量、API 契约和前端工具。 | [Common README](../../mango-ui/packages/common/README.md) |
 | RBAC | 提供菜单、角色、权限、权限标识、数据范围和成员批量角色管理页面。 | [RBAC README](../../mango-ui/packages/rbac/README.md) |

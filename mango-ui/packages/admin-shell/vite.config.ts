@@ -66,6 +66,8 @@ export default defineConfig({
         'dev-base-pages': 'src/views/demo/registerBaseDevPages.ts',
         'dev-upload-page': 'src/views/demo/components/UploadView.vue',
         'dev-workflow-page': 'src/views/demo/components/WorkflowComponentsView.vue',
+        'dev-code-block': 'src/views/demo/components/DemoCodeBlock.vue',
+        'dev-demo-layout': 'src/views/demo/components/DemoDocLayout.vue',
       },
       formats: ['es'],
     },

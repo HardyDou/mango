@@ -5,6 +5,7 @@ import io.mango.common.exception.BizException;
 import io.mango.system.api.command.SaveDictDataCommand;
 import io.mango.system.api.command.SaveDictTypeCommand;
 import io.mango.system.api.vo.DictOptionVO;
+import io.mango.system.api.vo.DictTreeNodeVO;
 import io.mango.system.core.entity.DictDataEntity;
 import io.mango.system.core.entity.DictTypeEntity;
 import io.mango.system.core.mapper.DictDataMapper;
@@ -21,6 +22,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -68,6 +70,18 @@ class DictServiceImplTest {
     }
 
     @Test
+    void createTypeDefaultsToFlatShape() {
+        when(dictTypeMapper.insert((DictTypeEntity) any())).thenAnswer(invocation -> {
+            DictTypeEntity entity = invocation.getArgument(0);
+            entity.setId(2L);
+            return 1;
+        });
+
+        assertThat(dictService.createType(typeCommand(null))).isEqualTo(2L);
+        verify(dictTypeMapper).insert(argThat((DictTypeEntity entity) -> "FLAT".equals(entity.getShape())));
+    }
+
+    @Test
     void updateTypeRejectsMissingId() {
         assertThatThrownBy(() -> dictService.updateType(typeCommand(null)))
                 .isInstanceOf(BizException.class)
@@ -84,7 +98,28 @@ class DictServiceImplTest {
     }
 
     @Test
+    void treeOptionsBuildNestedValues() {
+        DictTypeEntity treeType = type(1L, "type1", "Type 1");
+        treeType.setShape("TREE");
+        DictDataEntity root = data(1L, "Root", "root");
+        DictDataEntity child = data(2L, "Child", "child");
+        child.setParentValue("root");
+        when(dictTypeMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(treeType);
+        when(dictDataMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(List.of(root, child));
+
+        List<DictTreeNodeVO> tree = dictService.getTreeOptions("type1");
+
+        assertThat(tree).singleElement().satisfies(node -> {
+            assertThat(node.getDictValue()).isEqualTo("root");
+            assertThat(node.getChildren()).singleElement()
+                    .extracting(DictTreeNodeVO::getDictValue).isEqualTo("child");
+        });
+    }
+
+    @Test
     void createDataAndOptionsKeepOriginalMapping() {
+        when(dictTypeMapper.selectOne(any(LambdaQueryWrapper.class)))
+                .thenReturn(type(1L, "type1", "Type 1"));
         when(dictDataMapper.insert(any(DictDataEntity.class))).thenReturn(1);
         when(dictDataMapper.selectList(any(LambdaQueryWrapper.class)))
                 .thenReturn(List.of(data(1L, "Label", "value")));

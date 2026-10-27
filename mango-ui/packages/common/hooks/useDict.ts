@@ -1,8 +1,5 @@
 import { computed, onMounted, ref, unref, watch, type Ref } from 'vue';
-import { listDictOptions, type DictOption } from '../api/dict';
-
-const dictCache = new Map<string, DictOption[]>();
-const loadingCache = new Map<string, Promise<DictOption[]>>();
+import { clearDictOptionCache, listDictOptions, type DictOption } from '../api/dict';
 
 export type DictTypeRef = string | Ref<string | undefined>;
 
@@ -19,24 +16,14 @@ export function useDict(typeCode: DictTypeRef) {
       return options.value;
     }
 
-    if (!force && dictCache.has(code)) {
-      options.value = dictCache.get(code) || [];
-      return options.value;
-    }
-
     loading.value = true;
     try {
-      const request = force || !loadingCache.has(code)
-        ? listDictOptions(code)
-        : loadingCache.get(code)!;
-      loadingCache.set(code, request);
-      const data = await request;
-      dictCache.set(code, data);
+      // 选项缓存统一由 api 层维护，避免 hook 与 api 两份缓存不同步。
+      const data = await listDictOptions(code, force);
       options.value = data;
       return data;
     } finally {
       loading.value = false;
-      loadingCache.delete(code);
     }
   };
 
@@ -78,11 +65,5 @@ export function useDict(typeCode: DictTypeRef) {
 }
 
 export function clearDictCache(typeCode?: string) {
-  if (typeCode) {
-    dictCache.delete(typeCode);
-    loadingCache.delete(typeCode);
-    return;
-  }
-  dictCache.clear();
-  loadingCache.clear();
+  clearDictOptionCache(typeCode);
 }

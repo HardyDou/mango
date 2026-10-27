@@ -16,16 +16,20 @@ class SystemMigrationContractTest {
             "(?im)^\\s*(insert\\s+into|update\\s+[^`\\s]|delete\\s+from|alter\\s+table)\\b");
 
     @Test
-    void freshDatabaseUsesSingleDdlOnlyV1() throws Exception {
+    void migrationsKeepV1BaselineAndAddTreePatch() throws Exception {
         try (var files = Files.list(MIGRATION_ROOT)) {
-            assertThat(files.filter(Files::isRegularFile).map(path -> path.getFileName().toString()).toList())
-                    .containsExactly("V1__init_system.sql");
+            assertThat(files.filter(Files::isRegularFile).map(path -> path.getFileName().toString()).sorted().toList())
+                    .containsExactly("V1__init_system.sql", "V2__dict_tree.sql");
         }
         String sql = Files.readString(MIGRATION_ROOT.resolve("V1__init_system.sql"), StandardCharsets.UTF_8);
+        String treePatch = Files.readString(MIGRATION_ROOT.resolve("V2__dict_tree.sql"), StandardCharsets.UTF_8);
 
         assertThat(DATA_OR_PATCH_STATEMENT.matcher(sql).find()).isFalse();
         assertThat(sql.toLowerCase()).containsOnlyOnce("create table if not exists `sys_tenant`");
         assertThat(count(sql.toLowerCase(), "create table if not exists")).isEqualTo(9);
+        assertThat(treePatch.toLowerCase()).contains("alter table `sys_dict_type`")
+                .contains("alter table `sys_dict_data`")
+                .contains("parent_value");
     }
 
     @Test
