@@ -2,7 +2,7 @@
 
 ## v2026.10.27-maven-1.1.2-captcha-resource-release - io.mango:mango-parent Maven 1.1.2 - npm captcha/resource closure - 2026-10-27
 
-Status: `PENDING`. This release is authorized by the user and is being prepared from the sealed source tuple; publication, consume verification, Tag and GitHub Release remain ordered by the Mango release state machine.
+Status: `PUBLISHED_AND_VERIFIED`. The sealed source tuple was published to both Maven/npm registry roles, the clean consume-registry consumer passed, and Tag plus GitHub Release were created and verified by the Mango release state machine.
 
 ### Pull Requests
 
