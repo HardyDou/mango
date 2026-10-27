@@ -31,6 +31,14 @@ public interface IApiResourceService {
     ApiResourceRegisterResultVO upsertApiResources(List<ApiResourceRegisterCommand> resources);
 
     /**
+     * Physically removes one API resource and invalidates runtime decision caches.
+     *
+     * @param resourceId target API resource ID
+     * @return whether a row was removed
+     */
+    boolean deleteApiResource(Long resourceId);
+
+    /**
      * 根据请求方法和路径解析运行时访问决策。
      *
      * @param httpMethod HTTP 方法

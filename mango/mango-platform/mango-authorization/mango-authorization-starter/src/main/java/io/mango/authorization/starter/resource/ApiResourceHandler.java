@@ -142,6 +142,22 @@ public class ApiResourceHandler implements ResourceHandler {
         return ResourceSyncResult.of(targetId, "authorization_api_resource", "api resource already missing");
     }
 
+    @Override
+    public boolean supportsPhysicalDelete() {
+        return true;
+    }
+
+    @Override
+    public ResourceSyncResult delete(ResourceDeclaration resource) {
+        Long targetId = longField(resource, "targetId");
+        ApiResourceEntity entity = targetId == null ? find(toCommand(resource)) : apiResourceMapper.selectById(targetId);
+        if (entity == null) {
+            return ResourceSyncResult.of(targetId, "authorization_api_resource", "api resource already missing");
+        }
+        apiResourceService.deleteApiResource(entity.getId());
+        return ResourceSyncResult.of(entity.getId(), "authorization_api_resource", "api resource deleted");
+    }
+
     private ApiResourceRegisterCommand toCommand(ResourceDeclaration resource) {
         ApiResourceRegisterCommand command = new ApiResourceRegisterCommand();
         command.setModuleName(requiredString(resource, "moduleName"));

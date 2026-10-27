@@ -11,6 +11,7 @@ import io.mango.resource.api.enums.ResourceSyncMode;
 import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.model.ResourceField;
 import io.mango.resource.support.model.ResourceSyncContext;
+import io.mango.resource.support.model.ResourceSyncResult;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
@@ -91,6 +92,24 @@ class ApiResourceHandlerTest {
         assertThat(results).containsOnlyKeys(changed.getId());
         verify(service).upsertApiResources(org.mockito.ArgumentMatchers.argThat(commands -> commands.size() == 1));
         verify(service, never()).registerApiResources(any());
+    }
+
+    @Test
+    void deletePhysicallyRemovesApiResourceThroughService() {
+        IApiResourceService service = mock(IApiResourceService.class);
+        ApiResourceMapper mapper = mock(ApiResourceMapper.class);
+        ApiResourceHandler handler = new ApiResourceHandler(service, mapper);
+        ResourceDeclaration declaration = declaration(1, ResourceSyncMode.SYNC_ALWAYS);
+        ApiResourceEntity entity = entity(1);
+        field(declaration, "targetId", String.valueOf(entity.getId()));
+        when(mapper.selectById(entity.getId())).thenReturn(entity);
+        when(service.deleteApiResource(entity.getId())).thenReturn(true);
+
+        ResourceSyncResult result = handler.delete(declaration);
+
+        assertThat(result.getTargetId()).isEqualTo(entity.getId());
+        assertThat(result.getMessage()).isEqualTo("api resource deleted");
+        verify(service).deleteApiResource(entity.getId());
     }
 
     @Test

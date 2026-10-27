@@ -153,6 +153,17 @@ public class ApiResourceService implements IApiResourceService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean deleteApiResource(Long resourceId) {
+        if (resourceId == null) {
+            return false;
+        }
+        boolean deleted = apiResourceMapper.deleteById(resourceId) > 0;
+        clearRuntimeCache();
+        return deleted;
+    }
+
+    @Override
     public ApiResourceAccessDecisionVO resolveAccessDecision(String httpMethod, String path) {
         if (!StringUtils.hasText(httpMethod) || !StringUtils.hasText(path)) {
             return ApiResourceAccessDecisionVO.unmatched(ApiResourceAccessMode.LOGIN);

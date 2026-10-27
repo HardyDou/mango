@@ -34,7 +34,7 @@ Resource 声明的 `execution-phase` 与 `sync-mode` 正交：
 | `RUNTIME_EVENTUAL` | Runtime 后台 worker | 不阻断流量，只有权威 generation 可持续对账。 |
 | `MANUAL` | 管理员显式入口 | 只进入计划，不自动物化。 |
 
-`bootstrap apply --strategy=rolling` 的 expand 只新增或更新，不因本代 manifest 缺失而禁用旧资源。`bootstrap finalize` 才处理 `disableMissing` 和显式删除。所有远程注册命令携带 environment、generation、manifest fingerprint 和 fencing token；旧实例无法覆盖新代资源。
+`bootstrap apply --strategy=rolling` 的 expand 只新增或更新，不因本代 manifest 缺失而回收旧资源。`bootstrap finalize` 才基于完整模块快照处理缺失资源和显式删除。所有远程注册命令携带 environment、generation、manifest fingerprint 和 fencing token；旧实例无法覆盖新代资源。
 
 历史 Flyway 中如果保留旧字典、旧菜单或旧 demo seed，只能作为历史库兼容证据，不能作为新增资源声明模板。新增或调整字典、菜单、角色、工作流等小资源时，先看当前 handler 是否开放，再按本 README 的 Resource 声明和 `sync-mode` 处理。
 
@@ -370,15 +370,15 @@ mango:
 |---|---|---|---|
 | `RESOURCE_MANAGED` | 由 Resource 声明创建或更新，未被人工接管 | 能 | 能 |
 | `MANUAL_TAKEOVER` | 运行时被人工接管（后台新增资源、后台切换同步模式、后台删除） | 不能 | 不能 |
-| `UNKNOWN` | 历史数据无法证明来源 | 不能，除非声明能证明归属 | 不能 |
+| `UNKNOWN` | 历史数据无法证明来源 | 不能，除非声明能证明归属 | 仅完整 FINALIZE 且来源范围一致时允许接管回收 |
 
 - 新登记行写入 `RESOURCE_MANAGED`；升级前已存在的行默认 `UNKNOWN`（`V4__add_resource_registry_ownership.sql`）。
-- `UNKNOWN` 行在声明能证明归属（同来源 `app_code` / `service_code` / `module_code`）时自动升级为 `RESOURCE_MANAGED`，之后恢复正常同步；无法证明的行只跳过并记录 `SKIP`，不覆盖、不停用。
-- `MANUAL_TAKEOVER` 行只记录 `SKIP`；要交还声明管理，用 `PUT /resource/registries/sync-mode` 切回 `SYNC_ALWAYS`，归属回到 `RESOURCE_MANAGED`。
-- 缺失停用（finalize）只扫描 `RESOURCE_MANAGED` 且 `sync_mode = SYNC_ALWAYS`、`status <> REMOVED` 的行，因此升级前无法证明归属的历史资源不会被自动删除。
+- `UNKNOWN` 行在声明能证明归属（同来源 `app_code` / `service_code` / `module_code`）时自动升级为 `RESOURCE_MANAGED`，之后恢复正常同步；缺失资源只有在完整成功的 `FINALIZE` 快照中，且来源范围一致、`sync_mode = SYNC_ALWAYS` 时才允许接管并回收。
+- `MANUAL_TAKEOVER` 行始终受保护；要交还声明管理，用 `PUT /resource/registries/sync-mode` 切回 `SYNC_ALWAYS`，归属回到 `RESOURCE_MANAGED`。
+- `EXPAND`、部分扫描和 `SYNC_ONCE` 不表达删除语义。无法证明来源的 `UNKNOWN` 行在普通同步中只告警并保持原状态。
 
 - 归属认领只要求身份一致（同 `resourceId` + `resourceType` + `bizKey`）；来源 `app_code` / `service_code` / `module_code` 漂移时会输出 `WARN` 并完成认领，不再静默跳过。
-- 每次 `finalize` 会输出一行 `Mango resource ownership unproven`，汇总无法证明归属、因此保持原状的缺失资源条数与类型分布；该日志只读，不修改任何数据。需要收敛时，按目标表反查真实归属后人工改归属，或提供一次性收敛脚本（不在自动流程内）。
+- 每次 `FINALIZE` 会输出一行 `Mango resource ownership unproven`，汇总被人工接管或来源无法证明、因此保持原状的缺失资源条数与类型分布。回收成功后保留 `resource_registry` 的 `REMOVED` 墓碑，稳定 ID、`source_hash` 和审计历史不变。
 
 字段类型支持：
 
@@ -444,11 +444,12 @@ Spring Boot 可执行 JAR 将上述 `META-INF` 条目保留在 JAR 根目录。B
 
 | receipt 条件 | 行为 |
 |--------------|------|
-| hash 相同且状态满足当前 EXPAND/FINALIZE | 不解析模块内部声明，不调用 Handler，不写 registry、sync log 或 change log。 |
+| hash 相同且状态满足 EXPAND | 不解析模块内部声明，不调用 Handler，不写 registry、sync log 或 change log。 |
+| hash 相同且状态满足 FINALIZE | 仍解析并校验完整模块快照，只执行缺失资源对账；不会因旧 receipt 隐藏历史残留。 |
 | hash 变化 | 解析并校验该模块完整声明，按模块协调；成功后才写 receipt。 |
-| EXPAND 成功 | receipt 进入 `EXPANDED`；不禁用缺失资源。 |
-| FINALIZE 成功 | receipt 进入 `FINALIZED`；只禁用该变化模块内缺失的 Registry-owned `SYNC_ALWAYS` 资源。 |
-| 协调失败或 generation fence 失效 | 不推进 receipt，下次用旧成功状态重试。 |
+| EXPAND 成功 | receipt 进入 `EXPANDED`；不回收缺失资源。 |
+| FINALIZE 成功 | 所有模块同步成功后才回收缺失的 `SYNC_ALWAYS` 资源；目标支持时物理删除，Registry 保留 `REMOVED` 墓碑并进入 `FINALIZED`。 |
+| 协调、回收失败或 generation fence 失效 | 不推进本次成功 receipt；目标已完成的动作必须可重试且幂等。 |
 
 构建 POM、Boot JAR 检查以及与 cold baseline、sealed release manifest 的关系见[业务 API 构建期 cold baseline](../../../mango-docs/guides/operations/build-time-cold-baseline.md)。
 
@@ -475,7 +476,7 @@ Spring Boot 可执行 JAR 将上述 `META-INF` 条目保留在 JAR 根目录。B
 | 声明状态为 `DISABLED` | 调用目标模块 `disable`，目标模块负责逻辑禁用。 |
 | 声明状态为 `DEPRECATED` | 只更新注册中心声明状态和审计，目标资源继续可读，不调用 `upsert` 或 `disable`。 |
 | 声明状态为 `REMOVED` | 调用目标模块 `delete`；目标模块不支持物理删除时降级为 `disable`。 |
-| `SYNC_ALWAYS` 声明在 FINALIZE 中缺失 | Registry 只用持久化的 `targetId/targetTable` 重建删除输入；目标 Handler 必须按该稳定目标身份停用，不能要求已经从 classpath 消失的原声明字段；停用失败只告警跳过，不阻断启动（#1095）。 |
+| `SYNC_ALWAYS` 声明在完整 FINALIZE 中缺失 | Registry 只用持久化的 `targetId/targetTable` 重建删除输入；目标 Handler 按稳定目标身份执行 `delete`，不要求已经从 classpath 消失的原声明字段；物理删除不支持时由 Handler 降级为 `disable`。 |
 | 强制同步 | 后台 `/resource/sync/force` 触发，跳过 hash 未变化限制。 |
 
 同一批 active 声明如果包含跨类型依赖，Resource Registry 仍兼容按目标 `ResourceHandler.dependsOnResourceTypes()`
@@ -641,9 +642,8 @@ delete from resource_registry where resource_type = '<类型>' and biz_key = '<b
 
 - 一次同步会汇总报告全部登记冲突，而不是遇到第一条就退出：报错首行为 `Mango resource registry found N conflicts`，随后按序号列出每条 `resourceType:bizKey` 的既有 id、来源与声明 id、来源，末行给出本节的修复位置。生产库存在多条身份漂移时，按该清单一次性清理即可，不需要逐条重启试错。
 
-- 重复执行 `bootstrap finalize` 会对已 `REMOVED` 的历史行再次写入 `DISABLE` 日志（`disableMissing` 的行查询不按 `status` 过滤）。不影响数据正确性与启动，但会放大 `resource_sync_log` / `resource_change_log`；排查时按 `created_at` 区分批次。
-- `finalize` 的缺失停用遵循「资源数据是预制默认配置、运行时状态优先」：已 `REMOVED` 的行不再被选中（`status <> 'REMOVED'`），因此重复执行 `finalize` 不会重复调用 Handler、重复写 `DISABLE` 日志或刷新目标表 `updated_at`。资源重新被声明时走 `syncActive`，登记恢复 `ACTIVE` 并由 Handler 重新 upsert。
-- 缺失资源停用失败（找不到 Handler/Dispatcher、Handler 抛错）只告警并保留原状态，不中断 Bootstrap；应用关闭时的中断仍按 `assertOperationCanContinue` 生效。运行时漂移（登记 `REMOVED`、目标被手工改回启用）不会被自动纠正。
+- `FINALIZE` 只扫描 `status <> 'REMOVED'` 的 Registry 行；重复执行不会重复调用 Handler、重复写成功回收日志或刷新已回收目标。资源重新被声明时走 `syncActive`，登记恢复 `ACTIVE` 并由 Handler 重新 upsert。
+- 完整 FINALIZE 的目标回收失败会冒泡，不写入新的成功 receipt，下一次以同一稳定身份重试；普通启动同步仍保持失败告警兼容。应用关闭时的中断仍按 `assertOperationCanContinue` 生效。
 
 
 - `mango.resource.registry.fail-on-conflict=false` **不能**用来绕过本冲突。`V3` 之后 `(resource_type, biz_key)` 已是唯一键：关掉开关只会把冲突降级为 WARN，随后的 upsert 仍会撞唯一键并抛出 `Duplicate entry '<类型>-<bizKey>' for key 'resource_registry.uk_resource_registry_type_biz_key'`，失去可定位的冲突信息。必须先按 14.1 清理。

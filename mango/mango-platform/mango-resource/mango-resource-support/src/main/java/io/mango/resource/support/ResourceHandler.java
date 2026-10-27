@@ -145,4 +145,14 @@ public interface ResourceHandler {
     default ResourceSyncResult delete(ResourceDeclaration resource) {
         return disable(resource);
     }
+
+    /**
+     * Whether {@link #delete(ResourceDeclaration)} physically removes the target row.
+     * The default delete implementation falls back to logical disable.
+     *
+     * @return true when delete is physical
+     */
+    default boolean supportsPhysicalDelete() {
+        return false;
+    }
 }
