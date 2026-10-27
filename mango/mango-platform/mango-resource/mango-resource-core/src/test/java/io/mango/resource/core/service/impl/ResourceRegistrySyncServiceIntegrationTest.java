@@ -534,7 +534,7 @@ class ResourceRegistrySyncServiceIntegrationTest {
     }
 
     @Test
-    void finalizedModuleSkipsBeforeParsingOnRepeatedFinalize() {
+    void finalizedModuleRequiresAValidSnapshotOnRepeatedFinalize() {
         ResourceDeclaration declaration = activeDeclaration(1, "提交申请");
         RegisterResourceDeclarationsCommand finalize = moduleCommand(
                 ResourceApplyMode.FINALIZE, "guarantee", List.of(declaration));
@@ -544,7 +544,9 @@ class ResourceRegistrySyncServiceIntegrationTest {
         handler.resetUpsertCount();
         finalize.getModuleManifests().get(0).setDeclarations("not-json");
 
-        assertThat(syncService.registerDeclarations(finalize)).isTrue();
+        assertThatThrownBy(() -> syncService.registerDeclarations(finalize))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("资源声明JSON格式不正确");
 
         assertThat(handler.upsertCount()).isZero();
         assertThat(count("resource_sync_log")).isEqualTo(syncLogCount);
@@ -699,7 +701,7 @@ class ResourceRegistrySyncServiceIntegrationTest {
     }
 
     @Test
-    void finalizeRemovalOnlyDisablesAutoResourcesInChangedModule() {
+    void finalizeRemovalPhysicallyRemovesAutoResourcesInChangedModule() {
         ResourceDeclaration auto = activeDeclaration(
                 "1900000000000000001", 1, "guarantee.auto", "自动资源");
         auto.setModuleCode("guarantee");
@@ -718,27 +720,46 @@ class ResourceRegistrySyncServiceIntegrationTest {
                 moduleManifest("guarantee", List.of(), List.of(auto, initOnly, manual)),
                 moduleManifest("workflow", List.of(), List.of(workflow)));
         assertThat(syncService.registerDeclarations(initial)).isTrue();
+        String removedSourceHash = jdbcTemplate.queryForObject(
+                "select source_hash from resource_registry where resource_id = ?", String.class, auto.getId());
 
         ResourceModuleManifestCommand unchangedWorkflow = moduleManifest(
                 "workflow", List.of(), List.of(workflow));
-        unchangedWorkflow.setDeclarations("not-json");
         RegisterResourceDeclarationsCommand removeGuarantee = moduleCommand(ResourceApplyMode.FINALIZE,
                 moduleManifest("guarantee", List.of(), List.of()), unchangedWorkflow);
 
         assertThat(syncService.registerDeclarations(removeGuarantee)).isTrue();
 
         assertThat(registryStatus(auto.getId())).isEqualTo("REMOVED");
+        assertThat(jdbcTemplate.queryForObject(
+                "select source_hash from resource_registry where resource_id = ?", String.class, auto.getId()))
+                .isEqualTo(removedSourceHash);
         assertThat(registryStatus(initOnly.getId())).isEqualTo("ACTIVE");
         assertThat(registryStatus(manual.getId())).isEqualTo("ACTIVE");
         assertThat(registryStatus(workflow.getId())).isEqualTo("ACTIVE");
         assertThat(jdbcTemplate.queryForObject(
-                "select enabled from message_template where id = 91001", Integer.class)).isZero();
+                "select count(*) from message_template where id = 91001", Integer.class)).isZero();
         assertThat(jdbcTemplate.queryForObject(
                 "select enabled from message_template where id = 91002", Integer.class)).isOne();
         assertThat(jdbcTemplate.queryForObject(
                 "select enabled from message_template where id = 91003", Integer.class)).isOne();
         assertThat(jdbcTemplate.queryForObject(
                 "select enabled from message_template where id = 91004", Integer.class)).isOne();
+        long syncLogsAfterRemoval = count("resource_sync_log");
+        String finalizedModuleHash = jdbcTemplate.queryForObject(
+                "select module_hash from resource_module_receipt where module_code = 'guarantee'", String.class);
+        String finalizedManifestFingerprint = jdbcTemplate.queryForObject(
+                "select manifest_fingerprint from resource_module_receipt order by module_code limit 1", String.class);
+
+        assertThat(syncService.registerDeclarations(removeGuarantee)).isTrue();
+
+        assertThat(count("resource_sync_log")).isEqualTo(syncLogsAfterRemoval);
+        assertThat(jdbcTemplate.queryForObject(
+                "select module_hash from resource_module_receipt where module_code = 'guarantee'", String.class))
+                .isEqualTo(finalizedModuleHash);
+        assertThat(jdbcTemplate.queryForObject(
+                "select manifest_fingerprint from resource_module_receipt order by module_code limit 1", String.class))
+                .isEqualTo(finalizedManifestFingerprint);
     }
 
     @Test
@@ -1087,6 +1108,9 @@ class ResourceRegistrySyncServiceIntegrationTest {
         syncService.syncRemote("platform-admin", "service-a", List.of(declaration));
         jdbcTemplate.update("update resource_registry set tenant_id = '1' where resource_id = ?",
                 declaration.getId());
+        assertThat(jdbcTemplate.queryForObject(
+                "select sync_mode from resource_registry where resource_id = ?", String.class,
+                declaration.getId())).isEqualTo("SYNC_ALWAYS");
         syncService.syncRemote("platform-admin", "service-a", List.of("guarantee"), List.of());
 
         assertThat(registryStatus(declaration.getId())).isEqualTo("REMOVED");
@@ -1159,7 +1183,7 @@ class ResourceRegistrySyncServiceIntegrationTest {
     }
 
     @Test
-    void unknownOwnershipMissingRowIsNotDisabled() {
+    void unknownOwnershipMissingRowIsNotDisabledOutsideFinalize() {
         jdbcTemplate.update("""
                 insert into resource_registry (
                     id, resource_id, resource_version, app_code, service_code, resource_type,
@@ -1175,6 +1199,31 @@ class ResourceRegistrySyncServiceIntegrationTest {
         syncService.syncRemote("local", "local", List.of("guarantee"), List.of());
 
         assertThat(registryStatus("1900000000000000032")).isEqualTo("ACTIVE");
+    }
+
+    @Test
+    void finalizeAdoptsAndPhysicallyRemovesUnknownSyncAlwaysRow() {
+        jdbcTemplate.update("""
+                insert into resource_registry (
+                    id, resource_id, resource_version, app_code, service_code, resource_type,
+                    module_code, biz_key, name, target_module, target_table, target_id,
+                    source_hash, sync_mode, ownership, status
+                ) values (
+                    90008, '1900000000000000032', 1, 'local', 'local', 'MESSAGE_TEMPLATE',
+                    'guarantee', 'guarantee.ownership.unknown', '归属未知的模板', 'guarantee',
+                    'message_template', 90008, 'unknown-hash', 'SYNC_ALWAYS', 'UNKNOWN', 'ACTIVE'
+                )
+                """.replace("'local', 'local', 'MESSAGE_TEMPLATE'", "'test-app', 'test-service', 'MESSAGE_TEMPLATE'"));
+
+        assertThat(syncService.registerDeclarations(moduleCommand(
+                ResourceApplyMode.FINALIZE,
+                moduleManifest("guarantee", List.of(), List.of())))).isTrue();
+
+        assertThat(registryStatus("1900000000000000032")).isEqualTo("REMOVED");
+        assertThat(registryOwnership("1900000000000000032")).isEqualTo("RESOURCE_MANAGED");
+        assertThat(jdbcTemplate.queryForObject(
+                "select source_hash from resource_registry where resource_id = '1900000000000000032'", String.class))
+                .isEqualTo("unknown-hash");
     }
 
     @Test

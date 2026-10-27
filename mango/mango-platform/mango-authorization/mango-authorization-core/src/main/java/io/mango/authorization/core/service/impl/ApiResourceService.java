@@ -153,6 +153,15 @@ public class ApiResourceService implements IApiResourceService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean deleteApiResource(Long resourceId) {
+        Require.notNull(resourceId, AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR, "API资源ID不能为空");
+        boolean deleted = apiResourceMapper.deleteById(resourceId) > 0;
+        clearRuntimeCache();
+        return deleted;
+    }
+
+    @Override
     public ApiResourceAccessDecisionVO resolveAccessDecision(String httpMethod, String path) {
         if (!StringUtils.hasText(httpMethod) || !StringUtils.hasText(path)) {
             return ApiResourceAccessDecisionVO.unmatched(ApiResourceAccessMode.LOGIN);
