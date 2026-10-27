@@ -9,6 +9,7 @@ import io.mango.authorization.api.IAuthorizationProvider;
 import io.mango.authorization.api.ITokenProvider;
 import io.mango.authorization.api.command.ApiResourceRegisterRequest;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
+import io.mango.authorization.api.enums.ApiResourceSource;
 import io.mango.authorization.api.query.ApiResourceAccessDecisionQuery;
 import io.mango.authorization.api.vo.ApiResourceAccessDecisionVO;
 import io.mango.authorization.api.vo.ApiResourceRegisterResultVO;
@@ -151,6 +152,34 @@ class AccessEvaluatorTest {
         return new AccessEvaluator(properties, tokenProvider, resourceApi, authorizationProvider);
     }
 
+    @Test
+    @DisplayName("外部路径决策矩阵：应用路径优先、人工接管覆盖、Gateway 路径兜底")
+    void check_shouldResolveExternalPathDecisionMatrix() {
+        resourceApi.decisions = Map.of(
+                "GET /api/controller-wins",
+                new ApiResourceAccessDecisionVO(true, ApiResourceAccessMode.LOGIN, null),
+                "GET /controller-wins",
+                new ApiResourceAccessDecisionVO(true, ApiResourceAccessMode.PUBLIC, null),
+                "POST /api/manual-wins",
+                new ApiResourceAccessDecisionVO(true, ApiResourceAccessMode.LOGIN, null, ApiResourceSource.MANUAL),
+                "POST /manual-wins",
+                new ApiResourceAccessDecisionVO(true, ApiResourceAccessMode.PUBLIC, null),
+                "GET /api/gateway-only",
+                new ApiResourceAccessDecisionVO(true, ApiResourceAccessMode.PUBLIC, null),
+                "GET /gateway-only",
+                ApiResourceAccessDecisionVO.unmatched(ApiResourceAccessMode.LOGIN));
+
+        assertEquals(AccessResultVO.Status.ALLOW_ANONYMOUS,
+                evaluator().check("GET", "/api/controller-wins", null, null).status(),
+                "Controller 应用路径必须优先于 Gateway 外部路径默认策略");
+        assertEquals(AccessResultVO.Status.UNAUTHORIZED,
+                evaluator().check("POST", "/api/manual-wins", null, null).status(),
+                "Gateway 路径上的人工接管必须覆盖应用路径声明");
+        assertEquals(AccessResultVO.Status.ALLOW_ANONYMOUS,
+                evaluator().check("GET", "/api/gateway-only", null, null).status(),
+                "应用路径无资源时必须回落到 Gateway 路径");
+    }
+
     private void assertUnavailable(AccessResultVO result, String message) {
         assertEquals(AccessResultVO.Status.SERVICE_UNAVAILABLE, result.status());
         assertEquals(message, result.message());
@@ -161,6 +190,7 @@ class AccessEvaluatorTest {
         private ApiResourceAccessMode mode = ApiResourceAccessMode.LOGIN;
         private String permissionCode;
         private R<ApiResourceAccessDecisionVO> response;
+        private Map<String, ApiResourceAccessDecisionVO> decisions = Map.of();
         private boolean returnNull;
         private boolean throwFailure;
         private int calls;
@@ -174,6 +204,8 @@ class AccessEvaluatorTest {
             if (throwFailure) throw new IllegalStateException("offline");
             if (returnNull) return null;
             if (response != null) return response;
+            ApiResourceAccessDecisionVO byPath = decisions.get(query.getHttpMethod() + " " + query.getPath());
+            if (byPath != null) return R.ok(byPath);
             return R.ok(new ApiResourceAccessDecisionVO(true, mode, permissionCode));
         }
 

@@ -130,7 +130,8 @@
                       "platform_admin"
                     ],
                     "apiCodes": [
-                      "system:api-resource:list"
+                      "system:api-resource:list",
+                      "system:api-resource:manual"
                     ]
                   },
                   {

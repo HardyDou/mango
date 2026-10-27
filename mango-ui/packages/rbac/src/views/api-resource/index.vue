@@ -59,7 +59,7 @@
         type="info"
         :closable="false"
         show-icon
-        title="同一接口只保留一条启用记录。固定声明优先于 Controller 扫描，被覆盖的记录显示为禁用。"
+        title="人工接管优先级最高：保存后该接口只按人工配置判定，Controller 扫描与固定声明不再覆盖；解除接管后代码声明重新生效。"
       />
 
       <el-table
@@ -132,23 +132,105 @@
           </template>
         </el-table-column>
         <el-table-column prop="id" label="资源 ID" width="180" show-overflow-tooltip />
+        <el-table-column label="操作" width="150" fixed="right">
+          <template #default="{ row }">
+            <el-button
+              link
+              type="primary"
+              size="small"
+              data-action="api-resource.edit"
+              @click="handleEdit(row)"
+            >
+              编辑
+            </el-button>
+            <el-button
+              v-if="row.source === 'MANUAL'"
+              link
+              type="danger"
+              size="small"
+              data-action="api-resource.release"
+              @click="handleRelease(row)"
+            >
+              解除接管
+            </el-button>
+          </template>
+        </el-table-column>
       </el-table>
 
       <template #pagination>
         <Pagination v-model:page="query.pageNum" v-model:limit="query.pageSize" :total="total" @pagination="loadData" />
       </template>
     </MangoListPanel>
+
+    <el-dialog
+      v-model="dialogVisible"
+      title="编辑接口权限"
+      width="560px"
+      data-surface="api-resource.form"
+      destroy-on-close
+    >
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="96px">
+        <el-form-item label="接口">
+          <span class="api-resource-path">{{ form.httpMethod }} {{ form.pathPattern }}</span>
+        </el-form-item>
+        <el-form-item label="所属模块">
+          <span>{{ form.moduleName }}</span>
+        </el-form-item>
+        <el-form-item label="当前来源">
+          <el-tag :type="sourceTagType(editingSource)" size="small" effect="plain">
+            {{ sourceLabel(editingSource) }}
+          </el-tag>
+        </el-form-item>
+        <el-form-item label="访问模式" prop="accessMode">
+          <el-radio-group v-model="form.accessMode" data-field="api-resource.access-mode">
+            <el-radio v-for="item in accessModeOptions" :key="item.value" :value="item.value">
+              {{ item.label }}
+            </el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item
+          v-if="form.accessMode === 'PERMISSION'"
+          label="权限标识"
+          prop="permissionCode"
+        >
+          <el-input
+            v-model="form.permissionCode"
+            data-field="api-resource.permission-code"
+            placeholder="例如 system:user:list"
+            clearable
+          />
+        </el-form-item>
+        <el-form-item label="接管说明">
+          <el-input
+            v-model="form.description"
+            data-field="api-resource.description"
+            type="textarea"
+            :rows="2"
+            maxlength="200"
+            show-word-limit
+            placeholder="说明为什么需要人工接管，例如上游系统回调需要匿名访问"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="submitLoading" data-action="api-resource.submit" @click="handleSubmit">
+          保存并接管
+        </el-button>
+      </template>
+    </el-dialog>
   </MangoListPage>
 </template>
 
 <script setup lang="ts" name="SystemApiResource">
 import { DictTag, MangoListPage, MangoListPanel, MangoSearchPanel, Pagination } from '@mango/common';
 import { computed, onMounted, reactive, ref } from 'vue';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import {
   apiResourceApi,
   type ApiResourceAccessMode,
   type ApiResourceFilterOptionsVO,
+  type ApiResourceManualCommand,
   type ApiResourceQuery,
   type ApiResourceSource,
   type ApiResourceVO,
@@ -168,6 +250,34 @@ const accessModeOptions: Array<{ label: string; value: ApiResourceAccessMode }> 
 ];
 
 const loading = ref(false);
+const submitLoading = ref(false);
+const dialogVisible = ref(false);
+const editingSource = ref<ApiResourceSource>('CONTROLLER_SCAN');
+const formRef = ref<FormInstance>();
+const form = reactive<ApiResourceManualCommand>({
+  moduleName: '',
+  httpMethod: '',
+  pathPattern: '',
+  accessMode: 'LOGIN',
+  permissionCode: '',
+  description: '',
+});
+
+const rules: FormRules = {
+  accessMode: [{ required: true, message: '请选择访问模式', trigger: 'change' }],
+  permissionCode: [
+    {
+      validator: (_rule, value: string, callback) => {
+        if (form.accessMode === 'PERMISSION' && !String(value || '').trim()) {
+          callback(new Error('权限模式必须填写权限标识'));
+          return;
+        }
+        callback();
+      },
+      trigger: 'blur',
+    },
+  ],
+};
 const tableData = ref<ApiResourceVO[]>([]);
 const total = ref(0);
 const filterOptions = reactive<ApiResourceFilterOptionsVO>({ modules: [], domains: [] });
@@ -260,6 +370,58 @@ function accessModeTagType(accessMode: ApiResourceAccessMode) {
 function handlerLabel(row: ApiResourceVO) {
   const handlerClass = (row.handlerClass || '').split('.').pop() || row.handlerClass || '';
   return row.handlerMethod ? `${handlerClass}#${row.handlerMethod}` : handlerClass;
+}
+
+function handleEdit(row: ApiResourceVO) {
+  editingSource.value = row.source;
+  form.moduleName = row.moduleName;
+  form.httpMethod = row.httpMethod;
+  form.pathPattern = row.pathPattern;
+  form.accessMode = row.accessMode;
+  form.permissionCode = row.permissionCode || '';
+  form.description = row.description || '';
+  dialogVisible.value = true;
+}
+
+async function handleSubmit() {
+  const valid = await formRef.value?.validate().catch(() => false);
+  if (!valid) {
+    return;
+  }
+  submitLoading.value = true;
+  try {
+    await apiResourceApi.saveManual({ ...form });
+    ElMessage.success('已保存并接管该接口权限');
+    dialogVisible.value = false;
+    await loadData();
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '保存接口权限失败');
+  } finally {
+    submitLoading.value = false;
+  }
+}
+
+async function handleRelease(row: ApiResourceVO) {
+  try {
+    await ElMessageBox.confirm(
+      `确认解除 ${row.httpMethod} ${row.pathPattern} 的人工接管？解除后代码声明重新生效。`,
+      '解除人工接管',
+      { type: 'warning' },
+    );
+  } catch {
+    return;
+  }
+  try {
+    await apiResourceApi.releaseManual({
+      moduleName: row.moduleName,
+      httpMethod: row.httpMethod,
+      pathPattern: row.pathPattern,
+    });
+    ElMessage.success('已解除人工接管');
+    await loadData();
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '解除人工接管失败');
+  }
 }
 
 onMounted(() => {

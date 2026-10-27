@@ -42,7 +42,7 @@
 | Auth | 提供登录、认证 Provider、登录回调和登录态接入。 | [Auth README](../../mango/mango-platform/mango-auth/README.md) |
 | Identity | 管理用户、租户成员、身份标识和成员生命周期。 | [Identity README](../../mango/mango-platform/mango-identity/README.md) |
 | Org | 管理组织、部门、岗位、组织树和成员组织关系。 | [Org README](../../mango/mango-platform/mango-org/README.md) |
-| Authorization | 管理菜单、API 资源、权限标识、角色、角色数据范围、成员角色批量绑定和授权关系。固定 API 资源声明与 Controller 扫描按方法和路径自动去重，固定声明优先。 | [Authorization README](../../mango/mango-platform/mango-authorization/README.md) |
+| Authorization | 管理菜单、API 资源、权限标识、角色、角色数据范围、成员角色批量绑定和授权关系。固定 API 资源声明与 Controller 扫描按方法和路径自动去重；人工接管优先于固定声明、Gateway 显式声明和 Controller 扫描，固定声明优先于 Controller 扫描。 | [Authorization README](../../mango/mango-platform/mango-authorization/README.md) |
 | Access | 提供权限检查、访问拦截和统一访问控制基础。 | [Access README](../../mango/mango-platform/mango-access/README.md) |
 | Captcha | 提供验证码生成、校验和认证流程配套能力。 | [Captcha README](../../mango/mango-platform/mango-captcha/README.md) |
 

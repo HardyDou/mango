@@ -1,4 +1,4 @@
-import { get } from '@mango/common/utils/request';
+import { get, post, put } from '@mango/common/utils/request';
 import type { ApiId } from '@mango/api-schema';
 
 /** 接口资源登记来源。 */
@@ -61,13 +61,45 @@ interface BackendPageResult<T> {
   current?: number | string;
 }
 
+/** 人工接管命令：接管后该路由由人工配置绝对控制。 */
+export interface ApiResourceManualCommand {
+  moduleName: string;
+  httpMethod: string;
+  pathPattern: string;
+  accessMode: ApiResourceAccessMode;
+  permissionCode?: string;
+  description?: string;
+}
+
+/** 释放人工接管的定位条件。 */
+export interface ApiResourceManualQuery {
+  moduleName: string;
+  httpMethod: string;
+  pathPattern: string;
+}
+
 export const apiResourceApi = {
   page: (params: ApiResourceQuery) =>
     get<BackendPageResult<ApiResourceVO>>('/authorization/api-resources/page', {
       params: toBackendQuery(params),
     }).then((data) => toPageResult(data, params)),
   filterOptions: () => get<ApiResourceFilterOptionsVO>('/authorization/api-resources/filter-options'),
+  saveManual: (command: ApiResourceManualCommand) =>
+    post<void>('/authorization/api-resources/manual', toManualCommand(command)),
+  releaseManual: (query: ApiResourceManualQuery) =>
+    put<void>('/authorization/api-resources/manual/release', undefined, { params: query }),
 };
+
+function toManualCommand(command: ApiResourceManualCommand) {
+  return {
+    moduleName: command.moduleName,
+    httpMethod: command.httpMethod,
+    pathPattern: command.pathPattern,
+    accessMode: command.accessMode,
+    permissionCode: command.accessMode === 'PERMISSION' ? command.permissionCode : undefined,
+    description: command.description || undefined,
+  };
+}
 
 function toBackendQuery(params: ApiResourceQuery) {
   return {
