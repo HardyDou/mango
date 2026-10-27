@@ -1,77 +1,81 @@
 ## Pull Requests
 
-- [PR #1114](https://github.com/HardyDou/mango/pull/1114) Fixed: repeated `bootstrap finalize` for the same released generation now returns `FINALIZED` instead of failing, and the deployment call sequence is stated as one contract. Packages: Maven/docs `1.1.1` (`mango-infra-bootstrap-core`, `mango-infra-bootstrap-starter`). Business Adaptation: upgrade the bootstrap coordinates and keep `plan -> apply --strategy=rolling -> finalize -> verify`; delete deploy-script prechecks that inspect the control table.
-- [PR #1112](https://github.com/HardyDou/mango/pull/1112) Added: every Maven batch now generates a reader-facing upgrade page, publishes it to the docs site and ships it inside the docs bundle. Packages: Maven/docs `1.1.1` (`mango-docs-bundle`), `@mango/pmo@1.4.8`, `@mango/cli@1.3.5`. Business Adaptation: read the generated upgrade page under `mango-docs/guides/operations/` before upgrading; `mango docs pull` now returns that page.
-- [PR #1113](https://github.com/HardyDou/mango/pull/1113) Changed: module READMEs gain a versioned `升级与兼容` section convention that records impact, required actions, verification and rollback without adding a blocking gate. Packages: `@mango/pmo@1.4.8`, `@mango/cli@1.3.5`. Business Adaptation: no action for consumers; module owners fill the section when they change a public surface.
-- [PR #1108](https://github.com/HardyDou/mango/pull/1108) Added: the `Mango 1.0.63 -> 1.1.0` upgrade guide covering sync-mode convergence, ownership migration, CMS banner removal and the frontend major upgrades. Packages: Maven/docs `1.1.1` (`mango-docs-bundle`). Business Adaptation: follow the guide for any consumer still on `1.0.63` or earlier.
-- [PR #1109](https://github.com/HardyDou/mango/pull/1109) Changed: the CMS banner removal guide and the `1.0.63 -> 1.1.0` guide are now part of the published docs site instead of returning 404. Packages: Maven/docs `1.1.1` (`mango-docs-bundle`). Business Adaptation: none; the previously missing pages resolve after upgrade.
-- [PR #1115](https://github.com/HardyDou/mango/pull/1115) Changed (audit record only, no artifact in this batch): pre-written release-notes entry and evidence for the bootstrap finalize idempotency fix. Packages: none in this batch. Business Adaptation: no action.
+- [PR #1121](https://github.com/HardyDou/mango/pull/1121) Added unified graphic captcha support with arithmetic/alphanumeric types, difficulty policy, `/captcha/graphic`, `CaptchaApi.generateGraphic` and the reusable `GraphicCaptcha` frontend component. Packages: Maven `mango-captcha-*`, `@mango/common@2.2.0` and dependent npm closure. Business Adaptation: existing captcha types remain compatible; consumers using the new graphic mode must upgrade the matching Maven captcha tuple and `@mango/common`.
+- [PR #1123](https://github.com/HardyDou/mango/pull/1123) Fixed duplicate API Resource registration by preferring fixed declarations over Controller scans, added `@ApiResourceIgnore`, source/domain filtering and the permission identifier page. Packages: Maven `mango-authorization-*`, `@mango/rbac@1.1.0`, `@mango/admin-pages@1.2.0` and dependent npm closure. Business Adaptation: run the authorization V4 migration, resync `AUTH_MENU`, and grant `system:api-resource:list` to operators who need the page.
+- [PR #1125](https://github.com/HardyDou/mango/pull/1125) Fixed upgraded Resource Registry databases retaining legacy `sync_mode` values. Packages: Maven `mango-resource-*` and `mango-docs-bundle`. Business Adaptation: allow V5 to normalize `AUTO`/`INIT_ONLY`/`MANUAL`/`LOCKED`, verify old-value count is zero, and keep a database snapshot before upgrade.
+- [PR #1030](https://github.com/HardyDou/mango/pull/1030) Changed: synchronized Fileproc PDF compression and frontend file download documentation. Packages: `mango-docs-bundle`, `@mango/file@1.2.2`. Business Adaptation: no runtime code change; consumers can follow the documented compression options when the corresponding backend capability is enabled.
+- [PR #1124](https://github.com/HardyDou/mango/pull/1124) Changed (test-only): aligned captcha stubs and baseline verification with current main. Packages: none independently; included as audit context only. Business Adaptation: no action.
 
 ## Fixed
 
-- 同一构建版本重复执行 `bootstrap finalize` 不再报 `BOOTSTRAP_CANDIDATE_MISSING`：已 `FINALIZED` 且 fingerprint 未变的同一 generation 直接返回 `FINALIZED`（0 步，控制表与执行表不变化），内容不同时返回 `BOOTSTRAP_GENERATION_ALREADY_RELEASED`。
-- 文档站不再因为人工白名单遗漏而让升级指南 404：`mango-docs/guides/operations/mango-*-to-*-upgrade.md` 自动收录并进入侧边栏。
-- `check-governance-intent` 在 `main` 上的既有失败已修复：CMS Banner 指南与租户 FAQ 改为操作化表述，生成模板同样规避规则化措辞。
+- Resource Registry legacy persisted sync modes are normalized by V5: `AUTO` → `SYNC_ALWAYS`; `INIT_ONLY`, `MANUAL` and `LOCKED` → `SYNC_ONCE`.
+- API Resource registration no longer lets a Controller scan shadow a fixed declaration for the same route; the fixed declaration keeps the stable resource identity and access semantics.
+- Resource migration is idempotent and does not modify target resource data, ownership, version, source hash, status or target ID.
 
 ## Added
 
-- 每个 Maven 发布批次由 `mango release plan` 自动生成一份升级页面，内容覆盖版本矩阵、变更摘要、升级前检查、依赖升级、迁移与启动验证、业务回归、回滚边界和 Agent 执行清单。
-- `check-release-plan` 在 CI 与 `release prepare` 中校验升级页面存在且与计划一致；页面随 `mango-docs-bundle` 交付给业务项目。
-- 模块 README 新增「升级与兼容」书写规范：按版本记录适用版本、变更、影响、需要做的事、验证与回滚。
+- Unified graphic captcha generation with configurable type and difficulty, backend Java API, HTTP API and frontend component.
+- API Resource source/domain query dimensions, `@ApiResourceIgnore` and the `system/api-resource/index` permission identifier page.
+- A generated `Mango 1.1.1 → 1.1.2` upgrade page shipped in the docs bundle.
 
 ## Changed
 
-- `mango-release` Skill 的 Readiness 增加升级页面要求，并说明生成、校验、发布与交付链路。
-- `mango-pmo` 规则索引版本 22 → 23，能力说明规范新增模块升级记录条款（明确不新增阻塞门禁）。
-- `mango-docs-bundle` 内容更新：新增升级页面机制、模块升级记录模板与上述指南。
+- Authorization menu resource version advances to include the permission identifier page and `system:api-resource:list`.
+- Resource upgrade documentation now includes V5 verification and rollback boundaries; the published `1.1.0 → 1.1.1` page remains limited to the already published tuple.
+- Module READMEs record the public captcha, authorization, resource and frontend upgrade impacts without introducing a blocking documentation gate.
 
 ## Versions
 
-- `io.mango:mango-parent`, the non-application Maven reactor and `io.mango:mango-docs-bundle`: `1.1.0` -> `1.1.1`.
-- npm: `@mango/pmo` `1.4.7` -> `1.4.8`; `@mango/cli` `1.3.3` -> `1.3.5` via dependency closure (`@mango/cli` `1.3.4` -> `1.3.5`).
-- 其余 Maven 坐标与 npm 包随批次统一推进到 `1.1.1` / 依赖闭包版本。
+- `io.mango:mango-parent`, the non-application Maven reactor and `io.mango:mango-docs-bundle`: `1.1.1` → `1.1.2`.
+- Direct npm packages: `@mango/common` `2.1.4` → `2.2.0`; `@mango/rbac` `1.0.41` → `1.1.0`; `@mango/admin-pages` `1.1.2` → `1.2.0`; `@mango/file` `1.2.1` → `1.2.2`.
+- npm dependency closure: `@mango/admin-extension` `1.1.1` → `1.1.2`, `@mango/ai` `1.2.1` → `1.2.2`, `@mango/auth` `1.0.39` → `1.0.40`, `@mango/detail` `1.1.6` → `1.1.7`, `@mango/grid-layout` `1.0.28` → `1.0.29`, `@mango/grid-widgets` `1.0.34` → `1.0.35`, `@mango/home` `1.0.27` → `1.0.28`, `@mango/information` `1.1.1` → `1.1.2`, `@mango/site-shell` `2.0.0` → `2.0.1`, `@mango/system` `1.0.51` → `1.0.52`, `@mango/calendar` `1.0.53` → `1.0.54`, `@mango/cms` `1.0.42` → `1.0.43`, `@mango/job` `1.0.46` → `1.0.47`, `@mango/link` `1.0.39` → `1.0.40`, `@mango/notice` `1.0.58` → `1.0.59`, `@mango/numgen` `1.0.54` → `1.0.55`, `@mango/payment` `1.0.45` → `1.0.46`, `@mango/template` `1.0.54` → `1.0.55`, `@mango/workflow` `1.0.62` → `1.0.63`, `@mango/admin-shell` `1.0.84` → `1.0.85`, `@mango/workflow-business-example` `1.0.61` → `1.0.62`, `@mango/admin` `2.0.0` → `2.0.1` and `@mango/cli` `1.3.5` → `1.3.6`.
+- `@mango/pmo` remains `1.4.8`; no PMO source change is included in this batch.
 
 ## Published Packages
 
-1. Publish the sealed non-application Maven reactor and `io.mango:mango-docs-bundle:1.1.1`, then verify both Maven registry roles.
-2. Publish the machine-planned npm closure (`@mango/pmo@1.4.8`, `@mango/cli@1.3.5`) and verify both npm registry roles.
-3. Run one aggregate clean Maven consumer plus a clean npm consumer that installs `@mango/cli@1.3.5` and generates a project without a workspace link.
-4. Create Tag `v2026.10.23-maven-1.1.1-pmo-upgrade-record-release` and its GitHub Release only after consume verification succeeds.
+1. Publish the sealed non-application Maven reactor and `io.mango:mango-docs-bundle:1.1.2` with the Captcha, Authorization and Resource Registry changes.
+2. Publish the machine-planned npm closure: `@mango/common@2.2.0`, `@mango/rbac@1.1.0`, `@mango/admin-pages@1.2.0`, `@mango/file@1.2.2`, dependent packages and `@mango/cli@1.3.6`.
+3. Verify both Maven registry roles and both npm registry roles, then run one clean Maven consumer and one clean CLI consumer without workspace links.
+4. Create Tag `v2026.10.27-maven-1.1.2-captcha-resource-release` and its GitHub Release only after consume verification succeeds.
 
 ## Business Impact
 
-- 后端消费者：`mango-infra-bootstrap-*` 的重复 finalize 行为变为幂等；其余 Maven 坐标仅为版本推进，无契约变化。
-- 部署脚本：按 `plan -> apply --strategy=rolling -> finalize -> verify` 调用即可，不再需要自行推断控制表是否需要 finalize。
-- PMO 消费者：`@mango/pmo@1.4.8` 带模块升级记录规范与升级页面机制；`mango pmo upgrade` 后业务仓可读到同口径文档。
-- 文档：`mango docs pull` 在 `1.1.1` 下能拉到本批次升级页面与模块 README 模板。
-- 不包含应用部署、流量切换或数据库回滚。
+- Backend consumers: upgrade the full Maven tuple to `1.1.2`; V5 changes only `resource_registry.sync_mode`, but old-version rollback below the new enum values requires restoring the pre-upgrade database snapshot.
+- Captcha consumers: existing captcha flows remain available; new graphic captcha consumers use `/captcha/graphic` and the `GraphicCaptcha` component. Public graphic responses do not expose the answer through `extra`.
+- Authorization consumers: the new permission identifier page requires the V4 migration, resource synchronization and `system:api-resource:list`; fixed API declarations remain the authoritative route source when scans overlap.
+- Frontend consumers: upgrade the machine-planned npm closure together; `@mango/pmo` stays at `1.4.8`.
+- Fileproc consumers: the file compression documentation is synchronized; this commit does not add a new file runtime endpoint.
+- This batch does not deploy applications, switch traffic or alter business target tables through V5.
 
 ## Upgrade Estimate
 
-- Audience: 使用 Mango `1.1.0` 或更早版本的业务项目，尤其是自建部署引擎调用 bootstrap 的项目。
-- Engineering Effort: low; 替换 Maven/npm 版本并按升级页核对部署脚本即可，无业务代码改动。
-- Execution Window: 30 to 60 minutes including migration-free restart and bootstrap 验证。
-- Service Downtime: one planned restart window；本次批次无数据库迁移。
-- Rollback Effort: low; 回退到 `1.1.0` 与 PMO `1.4.7`、CLI `1.3.4`，已写入的 `FINALIZED` 状态无需修复。
-- Assumptions: MySQL 8 consumer database, Java 21 build, Node 22.23.1 frontend build, and an operator able to run one bootstrap sequence.
+- Audience: Mango `1.1.1` consumers using Resource Registry, Authorization API resources, Captcha or the affected frontend packages; older consumers should follow the generated guide and prior migration guides in order.
+- Engineering Effort: medium; upgrade the complete dependency tuple, run Flyway/resource verification, resync authorization resources and perform targeted captcha/RBAC regression.
+- Execution Window: 60 to 120 minutes, including migration, restart, resource synchronization and clean consumer verification; reserve extra time for Resource Registry lock waits.
+- Service Downtime: one planned restart window for Flyway V4/V5 and Bootstrap verification; no application traffic switch is included.
+- Rollback Effort: medium; package rollback is straightforward, but restore the pre-upgrade database snapshot before returning to a consumer that cannot read `SYNC_ALWAYS`/`SYNC_ONCE`.
+- Assumptions: MySQL 8, Java 21, Node 22.23.1, a backed-up consumer database and an operator able to verify Resource Registry and authorization state.
 
 ## Upgrade Notes
 
-1. 升级 Maven/docs 到 `1.1.1`，npm 到 `@mango/pmo@1.4.8` 与 `@mango/cli@1.3.5`。
-2. 先读 `mango-docs/guides/operations/` 下与本批次对应的升级页面，按页面执行升级前检查与验证。
-3. 部署引擎遵循 `plan -> apply --strategy=rolling -> finalize -> verify` 统一序列；删除自行判断“是否需要 finalize”的预检。
-4. 重复执行同一版本发布会返回 `FINALIZED` 而非失败；若返回 `BOOTSTRAP_GENERATION_ALREADY_RELEASED`，说明同一 generation 的内容已变化，需要新 generation。
-5. 本批次无数据库迁移，升级后确认 `mango_bootstrap_control` 为 `FINALIZED`、`flyway_schema_history_resource` 无新增失败记录即可。
+1. Upgrade Maven/docs to `1.1.2` and install the machine-planned npm tuple, including `@mango/common@2.2.0`, `@mango/rbac@1.1.0`, `@mango/admin-pages@1.2.0`, `@mango/file@1.2.2` and `@mango/cli@1.3.6`.
+2. Read `mango-1.1.1-to-1.1.2-upgrade.md` before deployment. Keep the published `1.1.0-to-1.1.1` guide separate from this batch.
+3. Back up the database, run Flyway V4/V5, and confirm `AUTO`, `INIT_ONLY`, `MANUAL` and `LOCKED` counts are zero while target IDs, ownership, source hashes, versions and statuses remain unchanged.
+4. Confirm Resource Registry Bootstrap reaches `FINALIZED`; then verify the fixed API declaration and Controller scan produce one authoritative API Resource per method/path.
+5. Resync `AUTH_MENU`, confirm `system/api-resource:list`, and verify `/system/api-resource/index` opens with real API Resource data.
+6. For graphic captcha, verify `/captcha/graphic`, `/captcha/verify`, type/difficulty defaults, refresh behavior and failed-answer behavior. Existing arithmetic and other captcha flows must continue to pass.
 
 ## Verification
 
-- Maven: 从 consume registry 解析 `io.mango:mango-infra-bootstrap-core:1.1.1`、`io.mango:mango-infra-bootstrap-starter:1.1.1` 与 `io.mango:mango-docs-bundle:1.1.1` 并比对封存校验和。
-- npm: 从 publish 与 consume registry 解析 `@mango/pmo@1.4.8`、`@mango/cli@1.3.5` 并比对封存 integrity。
-- Repository gates: `mango release plan`、`mango release prepare`、`mango release publish` 证据，README 双审计与 PMO 门禁。
-- Consumer assertion: 升级库重复执行 `bootstrap finalize` 两次均返回 `FINALIZED`；`mango docs pull` 能读到本批次升级页；`mango pmo upgrade --to 1.4.8` 后模块 README 模板含「升级与兼容」。
+- Plan: `mango release plan`, `check-release-plan` and release-notes checker pass for Maven `1.1.2`, the npm closure and the generated upgrade page.
+- Maven: build the sealed non-application reactor, run the Resource V5 migration contract and affected Captcha/Authorization integration tests, then resolve `mango-resource-core`, `mango-captcha-starter`, `mango-authorization-starter` and `mango-docs-bundle` from the consume registry.
+- npm: build and export-check the closure; resolve the sealed integrity for `@mango/common@2.2.0`, `@mango/rbac@1.1.0`, `@mango/admin-pages@1.2.0`, `@mango/file@1.2.2` and `@mango/cli@1.3.6` from both npm roles.
+- Consumer assertions: clean MySQL upgrade leaves no legacy sync modes; Bootstrap is `FINALIZED`; fixed API declarations win duplicate scans; permission identifier page is registered and authorized; graphic captcha generates and verifies; clean CLI generation has no workspace link.
+- Repository gates: catalog, release impact, PMO baseline, package exports, module README audits, generated backend gate, clean Maven consumer, clean npm consumer and GitHub Tag/Release back-check.
 
 ## Rollback
 
-- 通过正常依赖发布流程把消费者回退到 Maven/docs `1.1.0` 与 PMO `1.4.7`、CLI `1.3.4`；已发布的 `1.1.1` 坐标不可覆盖。
-- 本批次无数据库迁移，回退不需要恢复数据库快照；`mango_bootstrap_control` 中已写入的 `FINALIZED` 状态可被旧版本继续使用。
-- 文档回退仅影响可读性，不影响运行时。
+- Published coordinates are immutable; roll consumers back through a new dependency change to Maven/docs `1.1.1`, the previous npm tuple and `@mango/cli@1.3.5`.
+- If V5 has already executed, restore the pre-upgrade database snapshot before using a consumer version that cannot read `SYNC_ALWAYS` or `SYNC_ONCE`; code rollback alone is insufficient.
+- V4 authorization columns are also part of the database history; follow the authorization module rollback guidance and do not edit historical Flyway migrations.
+- Do not republish or overwrite any `1.1.2` or npm `1.1.2`-batch coordinate.

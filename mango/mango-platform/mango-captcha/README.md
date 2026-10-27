@@ -382,3 +382,7 @@ captcha 模块没有 DDL、演示数据、菜单或权限初始化。验证码�
 - [Auth 使用说明](../mango-auth/README.md)
 - [@mango/common 前端包](../../../mango-ui/packages/common/README.md)
 - [能力文档维护规则](../../../mango-pmo/rules/08-capability-docs.md)
+
+## 14. 升级与兼容
+
+- `1.1.2`：新增统一图形验证码 API、题型/难度配置和 `GraphicCaptcha` 前端组件。旧算术、滑块、点选、行为、短信和邮件验证码保持兼容；使用新能力的消费者需要同时升级 Captcha Maven 依赖与 `@mango/common`，验证 `/captcha/graphic` 和 `/captcha/verify`，回滚时移除新入口并恢复上一版本依赖。

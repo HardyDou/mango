@@ -703,4 +703,8 @@ const toolbarKeys = ['bold', 'color', '|', 'numberedList', 'bulletedList', '|', 
 - `@mango/common@1.0.17` 发布主题 token 和 `MangoSearchPanel` 搜索面板布局修复。主题 CSS 继续通过
   `@mango/common/theme/index.css` 和公开主题入口消费；搜索项不需要展开时，底部更多操作行保留固定高度，
   只隐藏展开/收起按钮，查询、重置、字段栅格、事件和公开 props 不变。
+
+## 12. 升级与兼容
+
+- `2.2.0`：新增统一图形验证码 API、类型导出、`GraphicCaptcha` 组件和 `CaptchaSelector` 页签。旧验证码组件保持兼容；升级后验证 `generateGraphic()`、统一校验事件和后端验证码接口，回滚时移除新组件调用并恢复 `2.1.4`。
 - 本次新增 `PasswordPolicyHint` 组件和 `passwordPolicy` 工具，用于统一展示密码规则和强弱判断。它们只影响前端密码提示和表单校验，不改变 request、Session、菜单、权限、租户头、公开 API 路径或后端存储结构。包的公开入口已通过 `@mango/common` 主入口和 `./components/PasswordPolicyHint/index.vue` 子路径导出。

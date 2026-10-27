@@ -1,3 +1,14 @@
+## 1.3.6 - 2026-10-27
+
+### Changed
+
+- Lock the CLI Maven matrix to Maven `1.1.2`.
+- Ship the graphic captcha, API Resource de-duplication, permission identifier page and Resource Registry sync-mode normalization release tuple.
+
+### Upgrade Notes
+
+- Upgrade the complete Maven/docs and npm dependency closure from the sealed release plan; do not mix this CLI with the previous batch.
+
 ## 1.3.5 - 2026-10-23
 
 ### Changed
