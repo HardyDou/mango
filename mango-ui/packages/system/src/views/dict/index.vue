@@ -73,13 +73,22 @@
 
           <template #actions>
             <span class="current-type">{{ currentType ? `当前字典：${currentType.name}` : '请选择字典类型' }}</span>
-            <el-button type="primary" plain :disabled="!currentType" @click="handleAddData">新增数据</el-button>
+            <el-button type="primary" plain :disabled="!currentType" @click="handleAddData()">
+              {{ currentType?.shape === 'TREE' ? '新增根节点' : '新增数据' }}
+            </el-button>
           </template>
 
-          <!-- 数据表格 -->
-          <el-table v-loading="dataLoading" :data="dataList" stripe>
-            <el-table-column prop="label" label="标签" />
-            <el-table-column prop="value" label="值" />
+          <!-- FLAT 字典使用列表；TREE 字典使用树形表格维护父子关系。 -->
+          <el-table
+            v-loading="dataLoading"
+            :data="dataList"
+            row-key="id"
+            :tree-props="{ children: 'children' }"
+            stripe
+          >
+            <el-table-column prop="label" label="标签" min-width="180" />
+            <el-table-column prop="value" label="值" min-width="160" />
+            <el-table-column prop="parentValue" label="父节点" min-width="140" />
             <el-table-column prop="sort" label="排序" width="80" />
             <el-table-column prop="status" label="状态" width="80">
               <template #default="{ row }">
@@ -91,17 +100,21 @@
                 {{ formatDate(row.createTime) }}
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="150" fixed="right">
+            <el-table-column label="操作" width="220" fixed="right">
               <template #default="{ row }">
+                <el-button v-if="currentType?.shape === 'TREE'" link type="primary" size="small" @click="handleAddData(row)">
+                  新增子节点
+                </el-button>
                 <el-button link type="primary" size="small" @click="handleEditData(row)"> 编辑 </el-button>
                 <el-button link type="danger" size="small" @click="handleDeleteData(row)"> 删除 </el-button>
               </template>
             </el-table-column>
           </el-table>
 
-          <!-- 分页 -->
+          <!-- FLAT 字典分页；TREE 字典一次加载树形数据。 -->
           <template #pagination>
             <Pagination
+              v-if="currentType?.shape !== 'TREE'"
               v-model:page="dataQuery.pageNum"
               v-model:limit="dataQuery.pageSize"
               :total="dataTotal"
@@ -120,6 +133,12 @@
         </el-form-item>
         <el-form-item label="类型编码" prop="code">
           <el-input v-model="typeForm.code" placeholder="请输入类型编码" :disabled="!!typeForm.id" />
+        </el-form-item>
+        <el-form-item label="字典形态" prop="shape">
+          <el-radio-group v-model="typeForm.shape" :disabled="!!typeForm.id">
+            <el-radio value="FLAT">平铺</el-radio>
+            <el-radio value="TREE">树形</el-radio>
+          </el-radio-group>
         </el-form-item>
         <el-form-item label="业务域" prop="domainCode">
           <DomainSelector v-model="typeForm.domainCode" placeholder="请选择业务域" />
@@ -156,6 +175,16 @@
         <el-form-item label="值" prop="value">
           <el-input v-model="dataForm.value" placeholder="请输入值" />
         </el-form-item>
+        <el-form-item v-if="currentType?.shape === 'TREE'" label="父节点" prop="parentValue">
+          <el-tree-select
+            v-model="dataForm.parentValue"
+            :data="parentTreeOptions"
+            clearable
+            check-strictly
+            node-key="value"
+            placeholder="请选择父节点，留空表示根节点"
+          />
+        </el-form-item>
         <el-form-item label="排序" prop="sort">
           <el-input-number v-model="dataForm.sort" :min="0" :max="9999" />
         </el-form-item>
@@ -179,11 +208,17 @@
 </template>
 
 <script setup lang="ts" name="SystemDict">
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import { Search } from '@element-plus/icons-vue';
-import { DictTag, MangoListPanel, MangoSearchPanel, Pagination, formatDate, useDict } from '@mango/common';
+import { DictTag, MangoListPanel, MangoSearchPanel, Pagination, clearDictOptionCache, clearDictTreeCache, formatDate, useDict } from '@mango/common';
 import { dictTypeApi, dictDataApi, type DictType, type DictData } from '../../api/dict';
+
+type ParentTreeNode = {
+  value: string;
+  label: string;
+  children?: ParentTreeNode[];
+};
 import DomainSelector from '../../components/DomainSelector/index.vue';
 import DomainSideTree from '../../components/DomainSideTree/index.vue';
 
@@ -203,6 +238,7 @@ const typeForm = reactive<DictType>({
   code: '',
   domainCode: 'COMMON',
   description: '',
+  shape: 'FLAT',
   sort: 0,
   status: 1,
 });
@@ -211,6 +247,22 @@ const typeRules: FormRules = {
   name: [{ required: true, message: '请输入类型名称', trigger: 'blur' }],
   code: [{ required: true, message: '请输入类型编码', trigger: 'blur' }],
 };
+
+const parentTreeOptions = computed<ParentTreeNode[]>(() => {
+  // 编辑时排除自身及后代，避免提交循环引用
+  const editingValue = dataForm.id ? dataForm.value : undefined;
+  return toParentTreeNodes(excludeSubtree(dataList.value, editingValue));
+});
+
+function excludeSubtree(nodes: DictData[], value?: string): DictData[] {
+  if (!value) return nodes;
+  return nodes
+    .filter((node) => node.value !== value)
+    .map((node) => ({
+      ...node,
+      children: node.children ? excludeSubtree(node.children, value) : node.children,
+    }));
+}
 
 /**
  * 加载字典类型列表
@@ -276,6 +328,7 @@ function handleAddType() {
   typeForm.code = '';
   typeForm.domainCode = typeDomainCode.value || 'COMMON';
   typeForm.description = '';
+  typeForm.shape = 'FLAT';
   typeForm.sort = 0;
   typeForm.status = 1;
   typeDialogVisible.value = true;
@@ -309,6 +362,7 @@ function handleEditType(row: DictType) {
   typeForm.code = row.code;
   typeForm.domainCode = row.domainCode || 'COMMON';
   typeForm.description = row.description || '';
+  typeForm.shape = row.shape || 'FLAT';
   typeForm.sort = row.sort || 0;
   typeForm.status = row.status ?? 1;
   typeDialogVisible.value = true;
@@ -324,6 +378,7 @@ function handleDeleteType(row: DictType) {
       try {
         await dictTypeApi.delete(row.id!);
         ElMessage.success('删除成功');
+        invalidateDictCache(row.code);
         if (currentType.value?.id === row.id) {
           currentType.value = null;
           dataList.value = [];
@@ -356,6 +411,7 @@ const dataForm = reactive<DictData>({
   dictType: '',
   label: '',
   value: '',
+  parentValue: undefined,
   sort: 0,
   status: 1,
   extra: '',
@@ -374,6 +430,12 @@ async function loadDataList() {
 
   dataLoading.value = true;
   try {
+    if (currentType.value.shape === 'TREE') {
+      const tree = await dictDataApi.tree(currentType.value.code);
+      dataList.value = filterTreeByKeyword(tree, dataQuery.keyword);
+      dataTotal.value = countTreeNodes(dataList.value);
+      return;
+    }
     const data = await dictDataApi.list({
       ...dataQuery,
       typeId: currentType.value.id,
@@ -409,13 +471,14 @@ function handleDataReset() {
 /**
  * 新增数据
  */
-function handleAddData() {
+function handleAddData(parent?: DictData) {
   if (!currentType.value) return;
   dataForm.id = undefined;
   dataForm.typeId = currentType.value.id!;
   dataForm.dictType = currentType.value.code;
   dataForm.label = '';
   dataForm.value = '';
+  dataForm.parentValue = parent?.value;
   dataForm.sort = 0;
   dataForm.status = 1;
   dataForm.extra = '';
@@ -431,6 +494,7 @@ function handleEditData(row: DictData) {
   dataForm.dictType = row.dictType || currentType.value?.code || '';
   dataForm.label = row.label;
   dataForm.value = row.value;
+  dataForm.parentValue = row.parentValue;
   dataForm.sort = row.sort || 0;
   dataForm.status = row.status || 1;
   dataForm.extra = row.extra || '';
@@ -453,9 +517,11 @@ async function handleDataSubmit() {
       ElMessage.success('新增成功');
     }
     dataDialogVisible.value = false;
+    invalidateDictCache(dataForm.dictType || currentType.value?.code);
     loadDataList();
   } catch (error) {
-    console.error('提交失败:', error);
+    // 校验类错误已由全局提示展示，避免重复输出 error 级日志
+    console.warn('提交失败:', error);
   }
 }
 
@@ -472,12 +538,49 @@ function handleDeleteData(row: DictData) {
       try {
         await dictDataApi.delete(row.id!);
         ElMessage.success('删除成功');
+        invalidateDictCache(row.dictType || currentType.value?.code);
         loadDataList();
       } catch (error) {
-        console.error('删除失败:', error);
+        console.warn('删除失败:', error);
       }
     })
     .catch(() => {});
+}
+
+/**
+ * 字典数据变更后清理公共组件缓存，避免业务页面仍展示旧选项。
+ */
+function invalidateDictCache(typeCode?: string) {
+  if (!typeCode) return;
+  clearDictOptionCache(typeCode);
+  clearDictTreeCache(typeCode);
+}
+
+function filterTreeByKeyword(nodes: DictData[], keyword?: string): DictData[] {
+  const normalized = keyword?.trim().toLowerCase();
+  if (!normalized) return nodes;
+  return nodes.reduce<DictData[]>((result, node) => {
+    const children = filterTreeByKeyword(node.children || [], normalized);
+    const matched = [node.label, node.value, node.parentValue]
+      .filter(Boolean)
+      .some((value) => String(value).toLowerCase().includes(normalized));
+    if (matched || children.length > 0) {
+      result.push({ ...node, children });
+    }
+    return result;
+  }, []);
+}
+
+function countTreeNodes(nodes: DictData[]): number {
+  return nodes.reduce((total, node) => total + 1 + countTreeNodes(node.children || []), 0);
+}
+
+function toParentTreeNodes(nodes: DictData[]): ParentTreeNode[] {
+  return nodes.map((node) => ({
+    value: node.value,
+    label: `${node.label}（${node.value}）`,
+    children: node.children?.length ? toParentTreeNodes(node.children) : undefined,
+  }));
 }
 
 // ==================== 生命周期 ====================

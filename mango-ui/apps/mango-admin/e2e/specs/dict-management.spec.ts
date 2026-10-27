@@ -19,6 +19,58 @@ const companyATenant: LoginTenant = {
   tenantName: 'A公司',
 };
 
+async function listLoginTenants(request: APIRequestContext) {
+  const response = await request.post(e2eApi('/auth/login-institutions'), {
+    data: { username: 'admin', realm: 'INTERNAL', appCode: 'internal-admin' },
+  });
+  expect(response.ok()).toBeTruthy();
+  const body = await response.json();
+  return (body.data || []) as Array<LoginTenant & { memberId?: string }>;
+}
+
+/**
+ * 优先使用演示数据中的 A 公司；演示数据缺失时创建一个隔离机构，测试结束后归档。
+ */
+async function ensureCompanyTenant(request: APIRequestContext, platformToken: string) {
+  const tenants = await listLoginTenants(request);
+  const existing = tenants.find((tenant) => tenant.tenantCode === companyATenant.tenantCode);
+  if (existing) {
+    return { tenant: existing, createdTenantId: undefined as string | undefined };
+  }
+  const unique = Date.now();
+  const tenantCode = `e2e_dict_tenant_${unique}`;
+  const tenantName = `E2E字典机构${unique}`;
+  const response = await request.post(e2eApi('/system/tenant'), {
+    headers: { Authorization: `Bearer ${platformToken}` },
+    data: {
+      tenantName,
+      tenantCode,
+      institutionType: 'ENTERPRISE',
+      packageId: 2,
+      status: 1,
+      contact: 'E2E字典管理员',
+      mobile: '13900000009',
+      email: `${tenantCode}@example.com`,
+    },
+  });
+  expect(response.status()).toBeLessThan(500);
+  const body = await response.json();
+  if (!response.ok() || !(body.success || body.code === 200)) {
+    return null;
+  }
+  const tenantId = String(body.data);
+  return { tenant: { tenantId, tenantCode, tenantName }, createdTenantId: tenantId };
+}
+
+async function archiveTenant(request: APIRequestContext, token: string, tenantId?: string) {
+  if (!tenantId) return;
+  await request
+    .put(e2eApi(`/system/tenant/status?id=${tenantId}&status=9`), {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    .catch(() => undefined);
+}
+
 async function loginToken(request: APIRequestContext, tenant: LoginTenant) {
   const response = await request.post(e2eApi('/auth/login'), {
     data: {
@@ -40,11 +92,17 @@ async function loginToken(request: APIRequestContext, tenant: LoginTenant) {
 
 async function loginPage(page: Page, tenant: LoginTenant) {
   await page.goto('/#/login');
-  await page.locator('.tenant-select').click();
-  await page.getByRole('option', { name: new RegExp(tenant.tenantName) }).click();
-  await page.fill('input[placeholder="用户名"]', 'admin');
-  await page.fill('input[placeholder="密码"]', 'admin123');
-  await page.click('button:has-text("登 录")');
+  await page.fill('input[placeholder="请输入用户名"]', 'admin');
+  await page.fill('input[placeholder="请输入密码"]', 'admin123');
+  await page.locator('input[placeholder="请输入密码"]').blur();
+
+  const tenantSelect = page.locator('.tenant-select');
+  if (await tenantSelect.count()) {
+    await tenantSelect.click();
+    await page.getByRole('option', { name: new RegExp(tenant.tenantName) }).click();
+  }
+
+  await page.getByRole('button', { name: /^登\s*录$/ }).click();
   await page.waitForURL('**/#/home', { timeout: 10000 });
 }
 
@@ -222,37 +280,50 @@ test.describe('T10 字典管理页面真实接口闭环', () => {
   });
 
   test('A 公司不可见字典管理入口，维护接口返回 403，选项接口可读', async ({ page, request }) => {
-    const companyToken = await loginToken(request, companyATenant);
+    const platformToken = await loginToken(request, platformTenant);
+    const ensured = await ensureCompanyTenant(request, platformToken);
+    if (!ensured) {
+      test.skip(true, '当前环境无第二机构，且平台管理员无机构创建权限，无法准备隔离机构');
+      return;
+    }
+    const { tenant: companyTenant, createdTenantId } = ensured;
 
-    const listResponse = await request.get(e2eApi('/system/dict/type/list'), {
-      headers: { Authorization: `Bearer ${companyToken}` },
-    });
-    expect(listResponse.status()).toBe(403);
+    try {
+      const companyToken = await loginToken(request, companyTenant);
 
-    const createResponse = await request.post(e2eApi('/system/dict/type'), {
-      headers: { Authorization: `Bearer ${companyToken}` },
-      data: {
-        dictName: `无权字典${Date.now()}`,
-        dictType: `deny_dict_${Date.now()}`,
-        status: 1,
-      },
-    });
-    expect(createResponse.status()).toBe(403);
+      const listResponse = await request.get(e2eApi('/system/dict/type/list'), {
+        headers: { Authorization: `Bearer ${companyToken}` },
+      });
+      expect(listResponse.status()).toBe(403);
 
-    const optionsResponse = await request.get(e2eApi('/system/dict/data/options?typeCode=sys_normal_disable'), {
-      headers: { Authorization: `Bearer ${companyToken}` },
-    });
-    expect(optionsResponse.status()).toBe(200);
-    const optionsBody = await optionsResponse.json();
-    expect(optionsBody.data).toEqual([
-      { label: '启用', value: '1' },
-      { label: '禁用', value: '0' },
-    ]);
+      const createResponse = await request.post(e2eApi('/system/dict/type'), {
+        headers: { Authorization: `Bearer ${companyToken}` },
+        data: {
+          dictName: `无权字典${Date.now()}`,
+          dictType: `deny_dict_${Date.now()}`,
+          status: 1,
+        },
+      });
+      expect(createResponse.status()).toBe(403);
 
-    await loginPage(page, companyATenant);
-    await expect(page.getByRole('button', { name: '系统管理' })).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText('基础数据')).toHaveCount(0);
-    await expect(page.getByText('字典管理')).toHaveCount(0);
-    await expectNoAuthError(page);
+      const optionsResponse = await request.get(
+        e2eApi('/system/dict/data/options?typeCode=sys_normal_disable'),
+        { headers: { Authorization: `Bearer ${companyToken}` } },
+      );
+      expect(optionsResponse.status()).toBe(200);
+      const optionsBody = await optionsResponse.json();
+      expect(optionsBody.data).toEqual([
+        { label: '启用', value: '1' },
+        { label: '禁用', value: '0' },
+      ]);
+
+      await loginPage(page, companyTenant);
+      await expect(page.getByRole('button', { name: '系统管理' })).toBeVisible({ timeout: 10000 });
+      await expect(page.getByText('基础数据')).toHaveCount(0);
+      await expect(page.getByText('字典管理')).toHaveCount(0);
+      await expectNoAuthError(page);
+    } finally {
+      await archiveTenant(request, platformToken, createdTenantId);
+    }
   });
 });

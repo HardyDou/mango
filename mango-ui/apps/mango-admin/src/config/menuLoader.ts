@@ -102,7 +102,18 @@ function createFrontendMenuConfig(): MenuConfigItem[] {
             icon: 'Box',
           },
           redirect: DEV_COMPONENT_DEMO_REDIRECT,
-          children: DEV_COMPONENT_DEMO_PAGES.map(page => ({
+          children: [
+            ...DEV_COMPONENT_DEMO_PAGES,
+            {
+              menuId: 'mango-admin-components-dict',
+              menuName: '字典组件',
+              menuCode: 'mango-admin:components:dict',
+              path: '/components/dict',
+              component: 'demo/components/DictView',
+              icon: 'Collection',
+              sort: 13,
+            },
+          ].map(page => ({
             path: page.path,
             name: page.menuCode,
             meta: {

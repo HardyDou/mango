@@ -157,6 +157,10 @@ Shell 主应用和 runtime outlet 统一通过 `installShellApp()` 安装同一�
 | `home-user`       | 用户首页视图页面组件。           |
 | `dev-pages`       | 开发中心页面注册。               |
 | `dev-base-pages`  | 基础能力开发页注册。             |
+| `dev-demo-layout` | 组件示例文档布局，提供右侧页面导航。 |
+| `dev-code-block`  | 组件示例代码展示、复制和折叠区域。   |
+
+组件示例页应复用 `@mango/admin-shell/dev-demo-layout` 和 `@mango/admin-shell/dev-code-block`：页面按示例纵向排列，`toc-items` 提供右侧导航；每个示例同时渲染真实组件、显示结果和可展开代码。示例页自身只负责文档排版，不承载被展示组件的运行样式。
 
 ### Feature Registrars
 

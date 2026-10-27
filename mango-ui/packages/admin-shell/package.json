@@ -62,6 +62,14 @@
       "types": "./dist/dev-workflow-page.d.ts",
       "import": "./dist/dev-workflow-page.js"
     },
+    "./dev-code-block": {
+      "types": "./dist/dev-code-block.d.ts",
+      "import": "./dist/dev-code-block.js"
+    },
+    "./dev-demo-layout": {
+      "types": "./dist/dev-demo-layout.d.ts",
+      "import": "./dist/dev-demo-layout.js"
+    },
     "./style.css": "./style.css"
   },
   "scripts": {
@@ -190,6 +198,14 @@
       },
       "./dev-workflow-page": {
         "source": "./src/views/demo/components/WorkflowComponentsView.vue",
+        "kind": "code"
+      },
+      "./dev-code-block": {
+        "source": "./src/views/demo/components/DemoCodeBlock.vue",
+        "kind": "code"
+      },
+      "./dev-demo-layout": {
+        "source": "./src/views/demo/components/DemoDocLayout.vue",
         "kind": "code"
       }
     },

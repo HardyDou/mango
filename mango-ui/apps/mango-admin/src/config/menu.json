@@ -136,6 +136,15 @@
               "icon": "Connection"
             },
             "component": "demo/components/RealtimeView"
+          },
+          {
+            "path": "/components/dict",
+            "name": "DictComponent",
+            "meta": {
+              "title": "字典组件",
+              "icon": "Collection"
+            },
+            "component": "demo/components/DictView"
           }
         ]
       },
