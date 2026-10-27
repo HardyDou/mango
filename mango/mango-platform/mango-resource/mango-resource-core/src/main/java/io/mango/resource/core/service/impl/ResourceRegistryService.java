@@ -284,81 +284,12 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
             return Boolean.FALSE;
         }
         try {
-            int skipped = 0;
-            int applied = 0;
             long startedNanos = System.nanoTime();
             List<FinalizeModuleWork> finalizeWorks = new ArrayList<>();
-            List<ResourceModuleManifestCommand> pending = new ArrayList<>(orderedModules);
-            while (!pending.isEmpty()) {
-                List<ResourceModuleManifestCommand> deferred = new ArrayList<>();
-                DependencyNotReadyException deferredFailure = null;
-                boolean progressed = false;
-                for (ResourceModuleManifestCommand module : pending) {
-                    generationFence.assertAuthoritative(writeAuthority);
-                    long moduleStartedNanos = System.nanoTime();
-                    try {
-                        List<ResourceDeclaration> declarations = null;
-                        if (applyMode == ResourceApplyMode.FINALIZE) {
-                            // FINALIZE is a complete snapshot. Always validate and reconcile it even when
-                            // the receipt has the same hash; the receipt must not hide historical residue.
-                            declarations = parseDeclarations(module.getDeclarations());
-                            validateModuleManifest(module, declarations);
-                        }
-                        boolean receiptSatisfied = moduleReceiptRepository.isSatisfied(
-                                command.getEnvironmentKey(), command.getAppCode(), command.getServiceCode(),
-                                module.getModuleCode(), module.getModuleHash(), applyMode);
-                        if (applyMode != ResourceApplyMode.FINALIZE && receiptSatisfied) {
-                            skipped++;
-                            progressed = true;
-                            log.info("Mango resource module skipped: module={}, mode={}, hash={}, durationMs={}",
-                                    module.getModuleCode(), applyMode, module.getModuleHash(),
-                                    elapsedMillis(moduleStartedNanos));
-                            continue;
-                        }
-                        if (declarations == null) {
-                            declarations = parseDeclarations(module.getDeclarations());
-                            validateModuleManifest(module, declarations);
-                        }
-                        List<ResourceDeclaration> selectedDeclarations = selectDeclarations(declarations, applyMode);
-                        if (applyMode == ResourceApplyMode.FINALIZE) {
-                            // Defer all missing-resource cleanup until every module in this FINALIZE
-                            // snapshot has synchronized successfully.
-                            if (!receiptSatisfied) {
-                                doSync(command.getAppCode(), command.getServiceCode(), selectedDeclarations,
-                                        List.of(module.getModuleCode()), false, false);
-                            }
-                            finalizeWorks.add(new FinalizeModuleWork(module, selectedDeclarations, receiptSatisfied));
-                        } else {
-                            doSync(command.getAppCode(), command.getServiceCode(), selectedDeclarations,
-                                    List.of(module.getModuleCode()), false, false);
-                            generationFence.assertAuthoritative(writeAuthority);
-                            moduleReceiptRepository.recordSuccess(
-                                    command.getEnvironmentKey(), command.getAppCode(), command.getServiceCode(),
-                                    module.getModuleCode(), module.getModuleHash(), command.getGeneration(),
-                                    command.getManifestFingerprint(), applyMode, declarations.size());
-                            applied++;
-                            log.info("Mango resource module applied: module={}, mode={}, declarations={}, hash={}, durationMs={}",
-                                    module.getModuleCode(), applyMode, declarations.size(), module.getModuleHash(),
-                                    elapsedMillis(moduleStartedNanos));
-                        }
-                        progressed = true;
-                    } catch (DependencyNotReadyException exception) {
-                        deferred.add(module);
-                        if (deferredFailure == null) {
-                            deferredFailure = exception;
-                        }
-                        log.info("Mango resource module deferred until dependency is ready: module={}, reason={}",
-                                module.getModuleCode(), exception.getMessage());
-                    }
-                }
-                if (deferred.isEmpty()) {
-                    break;
-                }
-                if (!progressed) {
-                    return Require.rethrow(deferredFailure);
-                }
-                pending = deferred;
-            }
+            ModuleProcessingSummary summary = processPendingModules(
+                    command, applyMode, generationFence, writeAuthority, orderedModules, finalizeWorks);
+            int skipped = summary.skipped();
+            int applied = summary.applied();
             if (applyMode == ResourceApplyMode.FINALIZE) {
                 // Only after the whole snapshot is known to be applicable may the second pass
                 // reclaim omitted resources.
@@ -398,6 +329,107 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
         } finally {
             lease.close();
         }
+    }
+
+    private ModuleProcessingSummary processPendingModules(
+            RegisterResourceDeclarationsCommand command,
+            ResourceApplyMode applyMode,
+            BootstrapGenerationFence generationFence,
+            BootstrapWriteAuthority writeAuthority,
+            List<ResourceModuleManifestCommand> orderedModules,
+            List<FinalizeModuleWork> finalizeWorks) {
+        int skipped = 0;
+        int applied = 0;
+        List<ResourceModuleManifestCommand> pending = new ArrayList<>(orderedModules);
+        while (!pending.isEmpty()) {
+            List<ResourceModuleManifestCommand> deferred = new ArrayList<>();
+            DependencyNotReadyException deferredFailure = null;
+            boolean progressed = false;
+            for (ResourceModuleManifestCommand module : pending) {
+                ModuleProcessingResult result = processModule(
+                        command, applyMode, generationFence, writeAuthority, module, finalizeWorks);
+                if (result.deferred()) {
+                    deferred.add(module);
+                    if (deferredFailure == null) {
+                        deferredFailure = result.failure();
+                    }
+                } else {
+                    progressed = true;
+                    skipped += result.skipped() ? 1 : 0;
+                    applied += result.applied() ? 1 : 0;
+                }
+            }
+            if (deferred.isEmpty()) {
+                break;
+            }
+            if (!progressed) {
+                return Require.rethrow(deferredFailure);
+            }
+            pending = deferred;
+        }
+        return new ModuleProcessingSummary(skipped, applied);
+    }
+
+    private ModuleProcessingResult processModule(
+            RegisterResourceDeclarationsCommand command,
+            ResourceApplyMode applyMode,
+            BootstrapGenerationFence generationFence,
+            BootstrapWriteAuthority writeAuthority,
+            ResourceModuleManifestCommand module,
+            List<FinalizeModuleWork> finalizeWorks) {
+        generationFence.assertAuthoritative(writeAuthority);
+        long moduleStartedNanos = System.nanoTime();
+        try {
+            List<ResourceDeclaration> declarations = applyMode == ResourceApplyMode.FINALIZE
+                    ? parseDeclarations(module.getDeclarations()) : null;
+            if (declarations != null) {
+                validateModuleManifest(module, declarations);
+            }
+            boolean receiptSatisfied = moduleReceiptRepository.isSatisfied(
+                    command.getEnvironmentKey(), command.getAppCode(), command.getServiceCode(),
+                    module.getModuleCode(), module.getModuleHash(), applyMode);
+            if (applyMode != ResourceApplyMode.FINALIZE && receiptSatisfied) {
+                log.info("Mango resource module skipped: module={}, mode={}, hash={}, durationMs={}",
+                        module.getModuleCode(), applyMode, module.getModuleHash(), elapsedMillis(moduleStartedNanos));
+                return new ModuleProcessingResult(false, true, false, null);
+            }
+            if (declarations == null) {
+                declarations = parseDeclarations(module.getDeclarations());
+                validateModuleManifest(module, declarations);
+            }
+            List<ResourceDeclaration> selectedDeclarations = selectDeclarations(declarations, applyMode);
+            if (applyMode == ResourceApplyMode.FINALIZE) {
+                // Defer all missing-resource cleanup until every module in this FINALIZE snapshot has synchronized.
+                if (!receiptSatisfied) {
+                    doSync(command.getAppCode(), command.getServiceCode(), selectedDeclarations,
+                            List.of(module.getModuleCode()), false, false);
+                }
+                finalizeWorks.add(new FinalizeModuleWork(module, selectedDeclarations, receiptSatisfied));
+                return new ModuleProcessingResult(false, false, false, null);
+            }
+            doSync(command.getAppCode(), command.getServiceCode(), selectedDeclarations,
+                    List.of(module.getModuleCode()), false, false);
+            generationFence.assertAuthoritative(writeAuthority);
+            moduleReceiptRepository.recordSuccess(
+                    command.getEnvironmentKey(), command.getAppCode(), command.getServiceCode(),
+                    module.getModuleCode(), module.getModuleHash(), command.getGeneration(),
+                    command.getManifestFingerprint(), applyMode, declarations.size());
+            log.info("Mango resource module applied: module={}, mode={}, declarations={}, hash={}, durationMs={}",
+                    module.getModuleCode(), applyMode, declarations.size(), module.getModuleHash(),
+                    elapsedMillis(moduleStartedNanos));
+            return new ModuleProcessingResult(false, false, true, null);
+        } catch (DependencyNotReadyException exception) {
+            log.info("Mango resource module deferred until dependency is ready: module={}, reason={}",
+                    module.getModuleCode(), exception.getMessage());
+            return new ModuleProcessingResult(true, false, false, exception);
+        }
+    }
+
+    private record ModuleProcessingSummary(int skipped, int applied) {
+    }
+
+    private record ModuleProcessingResult(boolean deferred, boolean skipped, boolean applied,
+                                          DependencyNotReadyException failure) {
     }
 
     private record FinalizeModuleWork(ResourceModuleManifestCommand module,
@@ -1379,7 +1411,7 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
             } catch (RuntimeException exception) {
                 assertOperationCanContinue();
                 if (failOnCleanupError) {
-                    throw exception;
+                    Require.rethrow(exception);
                 }
                 log.warn("Mango resource missing disable skipped: disable failed, resourceType={}, resourceId={}, reason={}",
                         row.getResourceType(), row.getResourceId(), exception.getMessage());

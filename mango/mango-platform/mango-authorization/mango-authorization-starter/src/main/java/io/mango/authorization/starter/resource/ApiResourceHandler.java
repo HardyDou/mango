@@ -15,6 +15,7 @@ import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.model.ResourceField;
 import io.mango.resource.support.model.ResourceSyncContext;
 import io.mango.resource.support.model.ResourceSyncResult;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -28,6 +29,8 @@ import java.util.Map;
  */
 @Component
 @RequiredArgsConstructor
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Spring-injected service and mapper ports are intentionally retained by this handler")
 public class ApiResourceHandler implements ResourceHandler {
 
     private final IApiResourceService apiResourceService;

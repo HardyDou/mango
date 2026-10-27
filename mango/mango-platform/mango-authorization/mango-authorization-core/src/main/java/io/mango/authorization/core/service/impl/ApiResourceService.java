@@ -155,9 +155,7 @@ public class ApiResourceService implements IApiResourceService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean deleteApiResource(Long resourceId) {
-        if (resourceId == null) {
-            return false;
-        }
+        Require.notNull(resourceId, AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR, "API资源ID不能为空");
         boolean deleted = apiResourceMapper.deleteById(resourceId) > 0;
         clearRuntimeCache();
         return deleted;
