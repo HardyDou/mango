@@ -93,3 +93,5 @@ pnpm -F @mango/admin-shell build
 > Issue #1098 影响说明：资源登记行新增 `ownership`，`MANUAL_TAKEOVER` 与 `UNKNOWN` 行不再被声明覆盖或停用；本场景的数据初始化、租户边界与权限判定结果不变。
 
 > Issue #1111 影响说明：`V5__normalize_legacy_resource_sync_modes.sql` 只把 `resource_registry.sync_mode` 的历史持久化值收敛为 `SYNC_ALWAYS` / `SYNC_ONCE`，不重放 Resource Handler，不修改字典、系统配置、租户数据、目标资源表或权限关系；本场景的数据初始化和租户边界不变。
+
+> Issue #1110 影响说明：完整 `FINALIZE` 的缺失资源回收只作用于同一来源范围内可证明归属的 Resource 登记；`UNKNOWN`、`SYNC_ONCE` 和 `MANUAL_TAKEOVER` 仍受保护，不改变租户、字典、系统配置或数据隔离排障结论。

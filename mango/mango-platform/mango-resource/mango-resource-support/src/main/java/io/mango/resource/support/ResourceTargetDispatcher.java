@@ -55,4 +55,13 @@ public interface ResourceTargetDispatcher {
      * @return 同步结果。
      */
     ResourceSyncResult delete(ResourceDeclaration declaration);
+
+    /**
+     * Whether {@link #delete(ResourceDeclaration)} physically removes the target row.
+     *
+     * @return true when delete is physical
+     */
+    default boolean supportsPhysicalDelete() {
+        return false;
+    }
 }

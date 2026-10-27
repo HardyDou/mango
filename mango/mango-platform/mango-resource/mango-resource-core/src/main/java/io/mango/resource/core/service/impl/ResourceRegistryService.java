@@ -149,13 +149,20 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
 
     boolean syncRemote(String appCode, String serviceCode, List<String> managedModuleCodes,
                        List<ResourceDeclaration> declarations, boolean disableMissingResources) {
+        return syncRemote(appCode, serviceCode, managedModuleCodes, declarations,
+                disableMissingResources, false, false);
+    }
+
+    private boolean syncRemote(String appCode, String serviceCode, List<String> managedModuleCodes,
+                               List<ResourceDeclaration> declarations, boolean disableMissingResources,
+                               boolean reclaimUnknownOwnership, boolean physicalDelete) {
         if (!beginOperation()) {
             log.info("Mango resource registry remote sync deferred: application is shutting down");
             return false;
         }
         try {
-            return syncRemoteWhileRunning(
-                    appCode, serviceCode, managedModuleCodes, declarations, disableMissingResources);
+            return syncRemoteWhileRunning(appCode, serviceCode, managedModuleCodes, declarations,
+                    disableMissingResources, reclaimUnknownOwnership, physicalDelete);
         } finally {
             endOperation();
         }
@@ -163,7 +170,9 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
 
     private boolean syncRemoteWhileRunning(String appCode, String serviceCode, List<String> managedModuleCodes,
                                            List<ResourceDeclaration> declarations,
-                                           boolean disableMissingResources) {
+                                           boolean disableMissingResources,
+                                           boolean reclaimUnknownOwnership,
+                                           boolean physicalDelete) {
         invalidateDiagnosticStatus("RESOURCE_SYNC_ATTEMPT_STARTED");
         try {
             requireText(appCode, "Resource remote appCode is required");
@@ -183,7 +192,7 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
             }
             try {
                 doSync(appCode.trim(), serviceCode.trim(), declarations, managedModuleCodes, false,
-                        disableMissingResources);
+                        disableMissingResources, reclaimUnknownOwnership, physicalDelete);
                 return true;
             } finally {
                 lease.close();
@@ -229,6 +238,8 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
         List<ResourceDeclaration> selectedDeclarations = selectDeclarations(declarations, validatedApplyMode);
         boolean synchronizedNow = syncRemote(
                 validatedCommand.getAppCode(), validatedCommand.getServiceCode(), moduleCodes, selectedDeclarations,
+                validatedApplyMode == ResourceApplyMode.FINALIZE,
+                validatedApplyMode == ResourceApplyMode.FINALIZE,
                 validatedApplyMode == ResourceApplyMode.FINALIZE);
         if (!synchronizedNow) {
             return Boolean.FALSE;
@@ -273,59 +284,41 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
             return Boolean.FALSE;
         }
         try {
-            int skipped = 0;
-            int applied = 0;
             long startedNanos = System.nanoTime();
-            List<ResourceModuleManifestCommand> pending = new ArrayList<>(orderedModules);
-            while (!pending.isEmpty()) {
-                List<ResourceModuleManifestCommand> deferred = new ArrayList<>();
-                DependencyNotReadyException deferredFailure = null;
-                boolean progressed = false;
-                for (ResourceModuleManifestCommand module : pending) {
+            List<FinalizeModuleWork> finalizeWorks = new ArrayList<>();
+            ModuleProcessingSummary summary = processPendingModules(
+                    command, applyMode, generationFence, writeAuthority, orderedModules, finalizeWorks);
+            int skipped = summary.skipped();
+            int applied = summary.applied();
+            if (applyMode == ResourceApplyMode.FINALIZE) {
+                // Only after the whole snapshot is known to be applicable may the second pass
+                // reclaim omitted resources.
+                for (FinalizeModuleWork work : finalizeWorks) {
                     generationFence.assertAuthoritative(writeAuthority);
-                    long moduleStartedNanos = System.nanoTime();
-                    try {
-                        if (moduleReceiptRepository.isSatisfied(
-                                command.getEnvironmentKey(), command.getAppCode(), command.getServiceCode(),
-                                module.getModuleCode(), module.getModuleHash(), applyMode)) {
-                            skipped++;
-                            progressed = true;
-                            log.info("Mango resource module skipped: module={}, mode={}, hash={}, durationMs={}",
-                                    module.getModuleCode(), applyMode, module.getModuleHash(),
-                                    elapsedMillis(moduleStartedNanos));
-                            continue;
-                        }
-                        List<ResourceDeclaration> declarations = parseDeclarations(module.getDeclarations());
-                        validateModuleManifest(module, declarations);
-                        List<ResourceDeclaration> selectedDeclarations = selectDeclarations(declarations, applyMode);
-                        doSync(command.getAppCode(), command.getServiceCode(), selectedDeclarations,
-                                List.of(module.getModuleCode()), false, applyMode == ResourceApplyMode.FINALIZE);
-                        generationFence.assertAuthoritative(writeAuthority);
+                    ResourceModuleManifestCommand module = work.module();
+                    doSync(command.getAppCode(), command.getServiceCode(), work.declarations(),
+                            List.of(module.getModuleCode()), false, true, true, true);
+                }
+                // Do not write any new FINALIZED receipt until every module cleanup has succeeded.
+                for (FinalizeModuleWork work : finalizeWorks) {
+                    generationFence.assertAuthoritative(writeAuthority);
+                    ResourceModuleManifestCommand module = work.module();
+                    if (!work.receiptSatisfied()) {
                         moduleReceiptRepository.recordSuccess(
                                 command.getEnvironmentKey(), command.getAppCode(), command.getServiceCode(),
                                 module.getModuleCode(), module.getModuleHash(), command.getGeneration(),
-                                command.getManifestFingerprint(), applyMode, declarations.size());
+                                command.getManifestFingerprint(), applyMode, module.getDeclarationCount());
                         applied++;
-                        progressed = true;
                         log.info("Mango resource module applied: module={}, mode={}, declarations={}, hash={}, durationMs={}",
-                                module.getModuleCode(), applyMode, declarations.size(), module.getModuleHash(),
-                                elapsedMillis(moduleStartedNanos));
-                    } catch (DependencyNotReadyException exception) {
-                        deferred.add(module);
-                        if (deferredFailure == null) {
-                            deferredFailure = exception;
-                        }
-                        log.info("Mango resource module deferred until dependency is ready: module={}, reason={}",
-                                module.getModuleCode(), exception.getMessage());
+                                module.getModuleCode(), applyMode, module.getDeclarationCount(), module.getModuleHash(),
+                                elapsedMillis(startedNanos));
+                    } else {
+                        skipped++;
+                        log.info("Mango resource module reconciled from receipt: module={}, mode={}, hash={}, durationMs={}",
+                                module.getModuleCode(), applyMode, module.getModuleHash(),
+                                elapsedMillis(startedNanos));
                     }
                 }
-                if (deferred.isEmpty()) {
-                    break;
-                }
-                if (!progressed) {
-                    return Require.rethrow(deferredFailure);
-                }
-                pending = deferred;
             }
             log.info("Mango resource module coordination complete: mode={}, modules={}, applied={}, skipped={}, durationMs={}",
                     applyMode, orderedModules.size(), applied, skipped, elapsedMillis(startedNanos));
@@ -336,6 +329,112 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
         } finally {
             lease.close();
         }
+    }
+
+    private ModuleProcessingSummary processPendingModules(
+            RegisterResourceDeclarationsCommand command,
+            ResourceApplyMode applyMode,
+            BootstrapGenerationFence generationFence,
+            BootstrapWriteAuthority writeAuthority,
+            List<ResourceModuleManifestCommand> orderedModules,
+            List<FinalizeModuleWork> finalizeWorks) {
+        int skipped = 0;
+        int applied = 0;
+        List<ResourceModuleManifestCommand> pending = new ArrayList<>(orderedModules);
+        while (!pending.isEmpty()) {
+            List<ResourceModuleManifestCommand> deferred = new ArrayList<>();
+            DependencyNotReadyException deferredFailure = null;
+            boolean progressed = false;
+            for (ResourceModuleManifestCommand module : pending) {
+                ModuleProcessingResult result = processModule(
+                        command, applyMode, generationFence, writeAuthority, module, finalizeWorks);
+                if (result.deferred()) {
+                    deferred.add(module);
+                    if (deferredFailure == null) {
+                        deferredFailure = result.failure();
+                    }
+                } else {
+                    progressed = true;
+                    skipped += result.skipped() ? 1 : 0;
+                    applied += result.applied() ? 1 : 0;
+                }
+            }
+            if (deferred.isEmpty()) {
+                break;
+            }
+            if (!progressed) {
+                return Require.rethrow(deferredFailure);
+            }
+            pending = deferred;
+        }
+        return new ModuleProcessingSummary(skipped, applied);
+    }
+
+    private ModuleProcessingResult processModule(
+            RegisterResourceDeclarationsCommand command,
+            ResourceApplyMode applyMode,
+            BootstrapGenerationFence generationFence,
+            BootstrapWriteAuthority writeAuthority,
+            ResourceModuleManifestCommand module,
+            List<FinalizeModuleWork> finalizeWorks) {
+        generationFence.assertAuthoritative(writeAuthority);
+        long moduleStartedNanos = System.nanoTime();
+        try {
+            List<ResourceDeclaration> declarations = applyMode == ResourceApplyMode.FINALIZE
+                    ? parseDeclarations(module.getDeclarations()) : null;
+            if (declarations != null) {
+                validateModuleManifest(module, declarations);
+            }
+            boolean receiptSatisfied = moduleReceiptRepository.isSatisfied(
+                    command.getEnvironmentKey(), command.getAppCode(), command.getServiceCode(),
+                    module.getModuleCode(), module.getModuleHash(), applyMode);
+            if (applyMode != ResourceApplyMode.FINALIZE && receiptSatisfied) {
+                log.info("Mango resource module skipped: module={}, mode={}, hash={}, durationMs={}",
+                        module.getModuleCode(), applyMode, module.getModuleHash(), elapsedMillis(moduleStartedNanos));
+                return new ModuleProcessingResult(false, true, false, null);
+            }
+            if (declarations == null) {
+                declarations = parseDeclarations(module.getDeclarations());
+                validateModuleManifest(module, declarations);
+            }
+            List<ResourceDeclaration> selectedDeclarations = selectDeclarations(declarations, applyMode);
+            if (applyMode == ResourceApplyMode.FINALIZE) {
+                // Defer all missing-resource cleanup until every module in this FINALIZE snapshot has synchronized.
+                if (!receiptSatisfied) {
+                    doSync(command.getAppCode(), command.getServiceCode(), selectedDeclarations,
+                            List.of(module.getModuleCode()), false, false);
+                }
+                finalizeWorks.add(new FinalizeModuleWork(module, selectedDeclarations, receiptSatisfied));
+                return new ModuleProcessingResult(false, false, false, null);
+            }
+            doSync(command.getAppCode(), command.getServiceCode(), selectedDeclarations,
+                    List.of(module.getModuleCode()), false, false);
+            generationFence.assertAuthoritative(writeAuthority);
+            moduleReceiptRepository.recordSuccess(
+                    command.getEnvironmentKey(), command.getAppCode(), command.getServiceCode(),
+                    module.getModuleCode(), module.getModuleHash(), command.getGeneration(),
+                    command.getManifestFingerprint(), applyMode, declarations.size());
+            log.info("Mango resource module applied: module={}, mode={}, declarations={}, hash={}, durationMs={}",
+                    module.getModuleCode(), applyMode, declarations.size(), module.getModuleHash(),
+                    elapsedMillis(moduleStartedNanos));
+            return new ModuleProcessingResult(false, false, true, null);
+        } catch (DependencyNotReadyException exception) {
+            log.info("Mango resource module deferred until dependency is ready: module={}, reason={}",
+                    module.getModuleCode(), exception.getMessage());
+            return new ModuleProcessingResult(true, false, false, exception);
+        }
+    }
+
+    private record ModuleProcessingSummary(int skipped, int applied) {
+    }
+
+    private record ModuleProcessingResult(boolean deferred, boolean skipped, boolean applied,
+                                          DependencyNotReadyException failure) {
+    }
+
+    private record FinalizeModuleWork(ResourceModuleManifestCommand module,
+                                       List<ResourceDeclaration> declarations,
+                                       boolean receiptSatisfied) {
     }
 
     private void validateModuleManifest(ResourceModuleManifestCommand module,
@@ -563,6 +662,13 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
 
     private void doSync(String appCode, String serviceCode, List<ResourceDeclaration> declarations,
                         List<String> managedModuleCodes, boolean force, boolean disableMissingResources) {
+        doSync(appCode, serviceCode, declarations, managedModuleCodes, force, disableMissingResources,
+                false, false);
+    }
+
+    private void doSync(String appCode, String serviceCode, List<ResourceDeclaration> declarations,
+                        List<String> managedModuleCodes, boolean force, boolean disableMissingResources,
+                        boolean reclaimUnknownOwnership, boolean physicalDelete) {
         Map<String, ResourceHandler> handlerMap = loadHandlers();
         List<ResourceDeclaration> safeDeclarations = declarations;
         if (safeDeclarations == null) {
@@ -575,7 +681,8 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
                     .map(String::trim)
                     .forEach(modules::add);
         }
-        doSync(appCode, serviceCode, safeDeclarations, handlerMap, modules, force, disableMissingResources);
+        doSync(appCode, serviceCode, safeDeclarations, handlerMap, modules, force, disableMissingResources,
+                reclaimUnknownOwnership, physicalDelete);
     }
 
     private void doSync(String appCode, String serviceCode, List<ResourceDeclaration> declarations,
@@ -587,6 +694,14 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
     private void doSync(String appCode, String serviceCode, List<ResourceDeclaration> declarations,
                         Map<String, ResourceHandler> handlerMap,
                         Set<String> managedModuleCodes, boolean force, boolean disableMissingResources) {
+        doSync(appCode, serviceCode, declarations, handlerMap, managedModuleCodes, force,
+                disableMissingResources, false, false);
+    }
+
+    private void doSync(String appCode, String serviceCode, List<ResourceDeclaration> declarations,
+                        Map<String, ResourceHandler> handlerMap,
+                        Set<String> managedModuleCodes, boolean force, boolean disableMissingResources,
+                        boolean reclaimUnknownOwnership, boolean physicalDelete) {
         assertOperationCanContinue();
         declarations.forEach(declaration -> applySource(declaration, appCode, serviceCode));
         Map<String, ModuleObservation> observations = observeDeclarations(declarations);
@@ -612,7 +727,8 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
             }
             syncActiveBatch(activeDeclarations, handlerMap, force, registrySnapshot);
             if (disableMissingResources) {
-                disableMissing(appCode, serviceCode, managedModuleCodes, seenResourceIds, handlerMap);
+                disableMissing(appCode, serviceCode, managedModuleCodes, seenResourceIds, handlerMap,
+                        reclaimUnknownOwnership, physicalDelete, reclaimUnknownOwnership && physicalDelete);
             }
             observeDiagnosticCompletion(observations, declarations, handlerMap);
             log.info("Mango resource registry sync complete: declarations={}, effective={}",
@@ -1275,24 +1391,28 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
 
 
     private void disableMissing(String appCode, String serviceCode, Set<String> modules, Set<String> seenResourceIds,
-                                Map<String, ResourceHandler> handlerMap) {
+                                Map<String, ResourceHandler> handlerMap, boolean reclaimUnknownOwnership,
+                                boolean physicalDelete, boolean failOnCleanupError) {
         List<String> managedModules = modules.stream().sorted().toList();
         Map<String, Long> unprovenByType = new LinkedHashMap<>();
         for (ResourceRegistryRow row : repository.listBySourceAndModules(appCode, serviceCode, managedModules)) {
             assertOperationCanContinue();
-            if (row.getOwnership() != null && row.getOwnership() != ResourceOwnership.RESOURCE_MANAGED) {
-                if (!seenResourceIds.contains(row.getResourceId())) {
-                    unprovenByType.merge(row.getResourceType(), 1L, Long::sum);
-                }
-                continue;
-            }
             if (seenResourceIds.contains(row.getResourceId()) || row.getSyncMode() != ResourceSyncMode.SYNC_ALWAYS) {
                 continue;
             }
+            boolean unknownOwnership = row.getOwnership() == ResourceOwnership.UNKNOWN;
+            if (row.getOwnership() == ResourceOwnership.MANUAL_TAKEOVER
+                    || (unknownOwnership && !reclaimUnknownOwnership)) {
+                unprovenByType.merge(row.getResourceType(), 1L, Long::sum);
+                continue;
+            }
             try {
-                disableMissingRow(row, handlerMap);
+                disableMissingRow(row, handlerMap, physicalDelete, unknownOwnership, failOnCleanupError);
             } catch (RuntimeException exception) {
                 assertOperationCanContinue();
+                if (failOnCleanupError) {
+                    Require.rethrow(exception);
+                }
                 log.warn("Mango resource missing disable skipped: disable failed, resourceType={}, resourceId={}, reason={}",
                         row.getResourceType(), row.getResourceId(), exception.getMessage());
             }
@@ -1306,36 +1426,64 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
     }
 
     /**
-     * 停用单个缺失资源。该方法内的失败不得中断 Bootstrap：资源数据是预制默认配置，
-     * 运行时状态优先，无法停用的历史行只告警并保留原状态。
+     * 回收单个缺失资源。普通启动同步保持兼容：失败只告警；完整 FINALIZE
+     * 快照则必须让失败冒泡，避免写入成功回执并确保下次可以重试。
      */
-    private void disableMissingRow(ResourceRegistryRow row, Map<String, ResourceHandler> handlerMap) {
+    private void disableMissingRow(ResourceRegistryRow row, Map<String, ResourceHandler> handlerMap,
+                                    boolean physicalDelete, boolean adoptUnknownOwnership,
+                                    boolean failOnCleanupError) {
         ResourceHandler handler = handlerMap.get(row.getResourceType());
         ResourceDeclaration disabled = fromRow(row);
         ResourceSyncResult result;
+        boolean physicalTargetDelete = false;
         if (handler == null) {
             ResourceTargetDispatcher dispatcher = targetDispatcher(disabled);
             if (dispatcher == null) {
-                log.warn("Mango resource missing disable skipped: no handler or dispatcher, resourceType={}, resourceId={}, targetModule={}",
+                log.warn("Mango resource missing cleanup has no handler or dispatcher, resourceType={}, resourceId={}, targetModule={}",
                         row.getResourceType(), row.getResourceId(), row.getTargetModule());
+                if (failOnCleanupError) {
+                    markMissingRowRemoved(row, adoptUnknownOwnership,
+                            "target handler unavailable; registry tombstone recorded", true);
+                }
                 return;
             }
             if (!StringUtils.hasText(row.getTenantId())) {
+                if (failOnCleanupError) {
+                    Require.isTrue(false, ResourceCode.RESOURCE_INVALID,
+                            "远程资源缺少租户范围: " + row.getResourceId());
+                }
                 log.warn("Mango resource missing disable skipped: remote tenant scope is unavailable, resourceType={}, resourceId={}",
                         row.getResourceType(), row.getResourceId());
                 return;
             }
-            result = dispatcher.disable(disabled);
+            physicalTargetDelete = physicalDelete && dispatcher.supportsPhysicalDelete();
+            result = physicalDelete ? dispatcher.delete(disabled) : dispatcher.disable(disabled);
         } else {
             if (!prepareTenantScopedDeclaration(row, handler, disabled)) {
+                if (failOnCleanupError) {
+                    Require.isTrue(false, ResourceCode.RESOURCE_INVALID,
+                            "资源缺少租户范围: " + row.getResourceId());
+                }
                 return;
             }
-            result = handlerInvoker.disable(handler, disabled);
+            physicalTargetDelete = physicalDelete && handler.supportsPhysicalDelete();
+            result = physicalDelete
+                    ? handlerInvoker.delete(handler, disabled) : handlerInvoker.disable(handler, disabled);
         }
         assertOperationCanContinue();
+        markMissingRowRemoved(row, adoptUnknownOwnership, result.getMessage(), physicalTargetDelete);
+    }
+
+    private void markMissingRowRemoved(ResourceRegistryRow row, boolean adoptUnknownOwnership,
+                                       String message, boolean physicalDelete) {
+        if (adoptUnknownOwnership) {
+            repository.updateOwnership(row, ResourceOwnership.RESOURCE_MANAGED);
+            row.setOwnership(ResourceOwnership.RESOURCE_MANAGED);
+        }
         repository.updateStatus(row, ResourceStatus.REMOVED.name(), row.getSourceHash());
-        repository.insertSyncLog(row.getId(), "DISABLE", "SUCCESS", result.getMessage());
-        repository.insertChangeLog(row.getId(), "DISABLE", toJson(row), toJson(disabled));
+        String changeType = physicalDelete ? "DELETE" : "DISABLE";
+        repository.insertSyncLog(row.getId(), changeType, "SUCCESS", message);
+        repository.insertChangeLog(row.getId(), changeType, toJson(row), toJson(fromRow(row)));
     }
 
     private Map<String, ResourceSyncResult> syncActiveBatchByTarget(

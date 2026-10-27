@@ -768,7 +768,7 @@ Resource Registry 还支持授权基线声明：
 | 资源类型 | 作用 |
 |----------|------|
 | `AUTH_ROLE` | 按 `tenantId + appCode + realm + actorType + roleCode` 幂等创建或更新角色，禁用时停用角色。 |
-| `AUTH_ROLE_DATA_SCOPE` | 按 `tenantId + appCode + roleCode + resourceCode` 声明角色数据权限，`scopeValues` 保存为 JSON 数组；`INIT_ONLY` 首次接管已有目标时保留运行时配置。FINALIZE 清理已缺失的 `AUTO` 声明时，Handler 通过 Registry `targetId` 读取真实目标租户并精确停用，不依赖已消失声明的字段。 |
+| `AUTH_ROLE_DATA_SCOPE` | 按 `tenantId + appCode + roleCode + resourceCode` 声明角色数据权限，`scopeValues` 保存为 JSON 数组；`INIT_ONLY` 首次接管已有目标时保留运行时配置。完整 FINALIZE 清理缺失声明时，Handler 通过 Registry `targetId` 读取真实目标租户并精确回收，不依赖已消失声明的字段。 |
 | `AUTH_SUBJECT_ROLE` | 按 `subjectId`、`subjectCode`、`memberNo` 或 `username` 解析成员主体，并通过 `roleCodes` 确保角色绑定；禁用时移除声明中的角色绑定。 |
 
 同一轮资源同步中，`AUTH_MENU` 依赖 `AUTH_ROLE`。Resource Registry 会先同步角色，再同步菜单；当角色声明发生创建或更新时，也会重放依赖它的菜单声明，补齐 `roleCodes` 对应的 `authorization_role_menu` 绑定。
@@ -812,7 +812,8 @@ Resource Registry 还支持授权基线声明：
 ## 16. 变更影响记录
 
 - PermissionApi 契约由 `PermissionController` 承载，授权菜单服务只暴露内部权限码查询能力。该变更不改变权限码来源、菜单资源同步、角色授权链路和 `/authorization/permissions` 对外路径。
-- Issue #835 只修复已有数据库中缺失 `AUTH_ROLE_DATA_SCOPE` 的 FINALIZE 停用合同；声明格式、正常 upsert、`INIT_ONLY`、API、菜单和前端能力不变。
+- Issue #835 只修复已有数据库中缺失 `AUTH_ROLE_DATA_SCOPE` 的 FINALIZE 回收合同；声明格式、正常 upsert、`INIT_ONLY`、API、菜单和前端能力不变。
+- Issue #1110：`API_RESOURCE` 的完整 FINALIZE 缺失回收会物理删除 `authorization_api_resource` 目标行并刷新运行时访问决策缓存；`resource_registry` 保留 `REMOVED` 墓碑。
 
 ## 资源声明同步模式（#1098）
 
@@ -820,7 +821,7 @@ Resource Registry 还支持授权基线声明：
 
 ## 资源归属（#1098）
 
-资源登记行新增 `ownership`：`RESOURCE_MANAGED` 可被声明覆盖与停用，`MANUAL_TAKEOVER` 与 `UNKNOWN` 不再被声明覆盖或停用。本模块资源声明不受影响，语义与迁移规则见 `mango-resource` README 的 ownership 章节。
+资源登记行新增 `ownership`：`RESOURCE_MANAGED` 可被声明覆盖与回收，`MANUAL_TAKEOVER` 始终受保护；`UNKNOWN` 只在来源范围一致的完整 FINALIZE 快照中允许接管并回收。本模块资源声明不受影响，语义与迁移规则见 `mango-resource` README 的 ownership 章节。
 
 ## 17. 升级与兼容
 

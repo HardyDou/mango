@@ -79,3 +79,5 @@ pnpm -F @mango/admin-shell build
 > Issue #1098 影响说明：资源登记行新增 `ownership`，`MANUAL_TAKEOVER` 与 `UNKNOWN` 行不再被声明覆盖或停用；本场景的数据初始化、租户边界与权限判定结果不变。
 
 > Issue #1122 影响说明：`PERMISSION` 接口的权限标识和资源编码默认同值，权限标识页面会将两者合并展示。Controller 扫描结果优先使用 `@Operation.summary` 作为中文接口说明；固定声明与扫描命中同一方法、路径时固定声明优先，按钮权限判定和角色授权流程不变。
+
+> Issue #1110 影响说明：通用资源回收仅在完整成功的 `FINALIZE` 快照中处理缺失资源，并按来源和 ownership 保护人工接管记录。`API_RESOURCE` 目标删除及授权缓存刷新不会改变按钮权限码、菜单授权关系或当前租户权限判定；本 FAQ 的按钮排障步骤保持不变。

@@ -15,6 +15,7 @@ import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.model.ResourceField;
 import io.mango.resource.support.model.ResourceSyncContext;
 import io.mango.resource.support.model.ResourceSyncResult;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -28,6 +29,8 @@ import java.util.Map;
  */
 @Component
 @RequiredArgsConstructor
+@SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+        justification = "Spring-injected service and mapper ports are intentionally retained by this handler")
 public class ApiResourceHandler implements ResourceHandler {
 
     private final IApiResourceService apiResourceService;
@@ -140,6 +143,22 @@ public class ApiResourceHandler implements ResourceHandler {
             return ResourceSyncResult.of(entity.getId(), "authorization_api_resource", "api resource disabled");
         }
         return ResourceSyncResult.of(targetId, "authorization_api_resource", "api resource already missing");
+    }
+
+    @Override
+    public boolean supportsPhysicalDelete() {
+        return true;
+    }
+
+    @Override
+    public ResourceSyncResult delete(ResourceDeclaration resource) {
+        Long targetId = longField(resource, "targetId");
+        ApiResourceEntity entity = targetId == null ? find(toCommand(resource)) : apiResourceMapper.selectById(targetId);
+        if (entity == null) {
+            return ResourceSyncResult.of(targetId, "authorization_api_resource", "api resource already missing");
+        }
+        apiResourceService.deleteApiResource(entity.getId());
+        return ResourceSyncResult.of(entity.getId(), "authorization_api_resource", "api resource deleted");
     }
 
     private ApiResourceRegisterCommand toCommand(ResourceDeclaration resource) {
