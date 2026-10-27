@@ -93,3 +93,5 @@ pnpm -F @mango/admin-shell build
 > Issue #1098 影响说明：资源登记行新增 `ownership`，`MANUAL_TAKEOVER` 与 `UNKNOWN` 行不再被声明覆盖或停用；本场景的数据初始化、租户边界与权限判定结果不变。
 
 > Issue #1122 影响说明：新增“系统管理 / 权限管理 / 权限标识”页面，页面 key 为 `system/api-resource/index`，接口权限码为 `system:api-resource:list`。原有菜单、页面 key、角色授权和租户绑定流程不变；同一 API 只保留一条有效登记，固定声明优先于 Controller 扫描。
+
+> Issue #1110 影响说明：资源 `FINALIZE` 缺失回收和 `API_RESOURCE` 物理删除只处理已证明来源的过期登记及其目标行，不改变菜单页面 key、角色授权、租户绑定或接口访问排障步骤。
