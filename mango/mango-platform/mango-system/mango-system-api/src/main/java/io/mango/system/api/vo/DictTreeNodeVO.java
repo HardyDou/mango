@@ -1,6 +1,5 @@
 package io.mango.system.api.vo;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -9,8 +8,6 @@ import java.util.List;
 
 @Data
 @Schema(description = "树形字典节点")
-@SuppressFBWarnings(value = {"EI_EXPOSE_REP", "EI_EXPOSE_REP2"},
-        justification = "Tree VO exposes its children list for JSON serialization and tree assembly")
 public class DictTreeNodeVO {
     @Schema(description = "字典数据 ID")
     private Long id;
@@ -29,5 +26,26 @@ public class DictTreeNodeVO {
     @Schema(description = "备注")
     private String remark;
     @Schema(description = "子节点")
-    private List<DictTreeNodeVO> children = new ArrayList<>();
+    private final List<DictTreeNodeVO> children = new ArrayList<>();
+
+    /**
+     * 返回子节点快照，避免外部直接持有可变集合。
+     */
+    public List<DictTreeNodeVO> getChildren() {
+        return List.copyOf(children);
+    }
+
+    public void setChildren(List<DictTreeNodeVO> children) {
+        this.children.clear();
+        if (children != null) {
+            this.children.addAll(children);
+        }
+    }
+
+    /**
+     * 追加子节点，供树装配时使用。
+     */
+    public void addChild(DictTreeNodeVO child) {
+        this.children.add(child);
+    }
 }

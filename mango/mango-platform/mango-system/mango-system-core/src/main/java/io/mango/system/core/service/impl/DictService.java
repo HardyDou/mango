@@ -246,7 +246,7 @@ public class DictService implements IDictService {
             } else {
                 DictTreeNodeVO parent = nodes.get(entity.getParentValue());
                 if (parent != null) {
-                    parent.getChildren().add(node);
+                    parent.addChild(node);
                 }
             }
         }
