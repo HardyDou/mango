@@ -76,9 +76,12 @@ public class AccessEvaluator {
         if (credential == null || !credential.startsWith(ITokenProvider.BEARER_PREFIX)) {
             return AccessResultVO.unauthorized("缺少或非法的 Authorization 请求头");
         }
+        return authorizeAuthenticated(new AccessCheck(httpMethod, path, credential, accessMode, decision));
+    }
 
+    private AccessResultVO authorizeAuthenticated(AccessCheck check) {
         try {
-            String token = credential.substring(ITokenProvider.BEARER_PREFIX.length());
+            String token = check.credential().substring(ITokenProvider.BEARER_PREFIX.length());
             if (!tokenProvider.validateToken(token)) {
                 return AccessResultVO.unauthorized("Token 无效或已过期");
             }
@@ -90,27 +93,36 @@ public class AccessEvaluator {
             if (contextResult != null) {
                 return contextResult;
             }
-            String permissionCode = normalizePermission(decision.permissionCode());
-            if (properties.isRequirePermissionCode()
-                    && accessMode == ApiResourceAccessMode.PERMISSION
-                    && permissionCode == null) {
-                return AccessResultVO.forbidden("接口未声明权限码");
-            }
-            if (accessMode == ApiResourceAccessMode.PERMISSION) {
-                PermissionLookup permissionLookup = hasPermission(principal, permissionCode);
-                if (!permissionLookup.available) {
-                    return AccessResultVO.unavailable(AUTHORIZATION_UNAVAILABLE);
-                }
-                if (!permissionLookup.granted) {
-                    return AccessResultVO.forbidden("权限不足");
-                }
-            }
-            return AccessResultVO.allowAuthenticated(principal);
+            AccessResultVO permissionResult = validatePermission(principal, check);
+            return permissionResult != null ? permissionResult : AccessResultVO.allowAuthenticated(principal);
         } catch (RuntimeException exception) {
             log.warn("访问凭证服务调用失败，拒绝本次访问: method={}, path={}, reason={}",
-                    httpMethod, path, exception.getMessage());
+                    check.httpMethod(), check.path(), exception.getMessage());
             return AccessResultVO.unavailable("认证服务暂不可用");
         }
+    }
+
+    private AccessResultVO validatePermission(AccessPrincipalVO principal, AccessCheck check) {
+        String permissionCode = normalizePermission(check.decision().permissionCode());
+        boolean permissionMode = check.accessMode() == ApiResourceAccessMode.PERMISSION;
+        if (properties.isRequirePermissionCode() && permissionMode && permissionCode == null) {
+            return AccessResultVO.forbidden("接口未声明权限码");
+        }
+        if (!permissionMode) {
+            return null;
+        }
+        PermissionLookup permissionLookup = hasPermission(principal, permissionCode);
+        if (!permissionLookup.available) {
+            return AccessResultVO.unavailable(AUTHORIZATION_UNAVAILABLE);
+        }
+        return permissionLookup.granted ? null : AccessResultVO.forbidden("权限不足");
+    }
+
+    private record AccessCheck(String httpMethod,
+                               String path,
+                               String credential,
+                               ApiResourceAccessMode accessMode,
+                               ApiResourceAccessDecisionVO decision) {
     }
 
     private AccessResultVO validateContext(AccessPrincipalVO principal) {
@@ -278,8 +290,16 @@ public class AccessEvaluator {
             this.granted = granted;
         }
 
-        private static PermissionLookup granted() { return new PermissionLookup(true, true); }
-        private static PermissionLookup denied() { return new PermissionLookup(true, false); }
-        private static PermissionLookup unavailable() { return new PermissionLookup(false, false); }
+        private static PermissionLookup granted() {
+            return new PermissionLookup(true, true);
+        }
+
+        private static PermissionLookup denied() {
+            return new PermissionLookup(true, false);
+        }
+
+        private static PermissionLookup unavailable() {
+            return new PermissionLookup(false, false);
+        }
     }
 }
