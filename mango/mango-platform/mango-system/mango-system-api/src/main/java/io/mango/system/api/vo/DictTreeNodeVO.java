@@ -1,5 +1,6 @@
 package io.mango.system.api.vo;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -8,6 +9,8 @@ import java.util.List;
 
 @Data
 @Schema(description = "树形字典节点")
+@SuppressFBWarnings(value = {"EI_EXPOSE_REP", "EI_EXPOSE_REP2"},
+        justification = "Tree VO exposes its children list for JSON serialization and tree assembly")
 public class DictTreeNodeVO {
     @Schema(description = "字典数据 ID")
     private Long id;
