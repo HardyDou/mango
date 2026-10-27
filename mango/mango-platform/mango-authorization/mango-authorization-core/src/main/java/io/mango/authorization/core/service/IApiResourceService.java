@@ -1,7 +1,9 @@
 package io.mango.authorization.core.service;
 
 import io.mango.authorization.api.vo.ApiResourceAccessDecisionVO;
+import io.mango.authorization.api.command.ApiResourceManualCommand;
 import io.mango.authorization.api.command.ApiResourceRegisterCommand;
+import io.mango.authorization.api.query.ApiResourceManualQuery;
 import io.mango.authorization.api.query.ApiResourcePageQuery;
 import io.mango.authorization.api.vo.ApiResourceFilterOptionsVO;
 import io.mango.authorization.api.vo.ApiResourceRegisterResultVO;
@@ -58,4 +60,18 @@ public interface IApiResourceService {
      * @return 筛选维度
      */
     ApiResourceFilterOptionsVO listApiResourceFilterOptions();
+
+    /**
+     * 人工接管或更新同一路由的访问模式，接管记录在运行时优先于其它来源。
+     *
+     * @param command 人工接管命令
+     */
+    void saveManualApiResource(ApiResourceManualCommand command);
+
+    /**
+     * 释放人工接管，使 Controller 扫描或固定声明可以重新生效。
+     *
+     * @param query 目标路由
+     */
+    void releaseManualApiResource(ApiResourceManualQuery query);
 }

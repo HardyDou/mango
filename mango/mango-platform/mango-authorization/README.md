@@ -206,7 +206,37 @@ mango:
 
 Controller 扫描、Gateway route 扫描和 `resources[]` 会被 Resource Provider 转换为 `mango-resource` 的 `API_RESOURCE` 资源声明，再由资源注册中心调用授权模块的 `ApiResourceHandler` 写入 `authorization_api_resource`。
 
-固定声明与 Controller 扫描命中相同 HTTP 方法和路径时，固定声明优先：这里的固定声明包括 `META-INF/mango/resources/*.{yml,yaml,json}` 中的 `API_RESOURCE` 和 `resources[]` 配置。扫描结果不再生成新的有效资源，已有扫描记录会按正常同步语义停用，固定声明保留原稳定资源 ID、模块名、访问模式和权限码。不同方法、不同路径和通配路径之间的冲突仍由 Resource Registry 的冲突校验阻断。
+API 资源允许由 Controller、固定声明、Gateway 和人工登记多个来源提供，但同一有效路由只能有一个运行时访问决策。人工登记（`source=MANUAL`）是最高控制来源：已有人工记录不会被非人工同步覆盖，跨模块同路由冲突时人工记录保持生效。没有人工登记时，固定声明（`META-INF/mango/resources/*.{yml,yaml,json}` 中的 `API_RESOURCE` 和 `resources[]` 配置）高于 Controller 扫描；Gateway 默认策略只在应用路径没有生效资源时作为外部路由兜底。固定声明只会提前覆盖相同 HTTP 方法和精确路径，通配路径与精确 Controller 路径同时保留，由运行时匹配优先级决定结果。
+
+### 7.1 人工接管与生效优先级
+
+同一 HTTP 方法和路径只保留一个运行时访问决策，优先级固定为：
+
+```text
+人工接管（source=MANUAL） > 固定声明 / Gateway 显式声明 > Controller 扫描 > Gateway 默认策略（LOGIN）
+```
+
+人工接管使用管理接口维护，不需要改代码：
+
+```http
+POST /authorization/api-resources/manual
+{
+  "moduleName": "mango-guarantee",
+  "httpMethod": "POST",
+  "pathPattern": "/guarantee/open/apply",
+  "accessMode": "PUBLIC",
+  "description": "上游系统回调，人工确认匿名开放"
+}
+```
+
+- 人工接管记录存在且启用时，Controller 扫描、固定声明、Gateway 声明都不能覆盖它；同模块同方法和同路径的扫描写入会被跳过并输出 `registration skipped by manual control` 日志。
+- 运行时不回退到低优先级声明：只要该路由存在启用的人工记录，就只使用人工记录。
+- 人工记录使用独立模块编码 `manual-control`，不会覆盖 Controller 扫描行；接管期间两条记录同时启用，由运行时优先级决定结果。
+- 保存和释放都会立即清理运行时缓存，修改后下一次请求即生效，不需要重启。
+- 释放接管使用 `PUT /authorization/api-resources/manual/release?moduleName=...&httpMethod=...&pathPattern=...`；释放只停用人工记录，Controller 扫描行仍启用，因此匿名/登录行为立即恢复。
+- 管理端“权限标识”页面（`system/api-resource/index`）的编辑动作调用上述两个接口，保存即人工接管，行上出现“解除接管”动作。
+- 不需要人工介入的普通接口仍只写 `@ApiAccess`，不要为同一接口重复维护 `API_RESOURCE` 或 Gateway 元数据。
+- 不要直接改 `authorization_api_resource` 的 `access_mode`：运行时缓存不会自动失效，且下次资源同步会被声明覆盖。需要人工控制时使用接管接口。
 
 `resources[]` 字段：
 
@@ -230,7 +260,7 @@ Controller 扫描、Gateway route 扫描和 `resources[]` 会被 Resource Provid
 | `@LoginApi` | LOGIN | 登录后访问，不要求权限码 |
 | `@PermissionAccess("code")` | PERMISSION | 登录后且具备指定权限码 |
 | `@InternalApi` | INTERNAL | 内部接口，外部 access 入口拒绝 |
-| `@ApiAccess` | 自定义 | 直接指定模式、权限码、描述和 Resource 版本 |
+| `@ApiAccess` | 自定义 | Controller 的默认访问声明；同一路由没有人工接管时生效 |
 
 API Resource 版本默认是 `1`。当接口的资源内容或访问语义发生变更时，在 `@ApiAccess` 或组合注解上显式递增 `version`；运行时 MVC 扫描会将该版本透传到 Resource Registry。组合注解（如 `@PublicAccess(version = 2)`）与 `@ApiAccess(version = 2)` 语义一致。版本必须与同一资源的 `META-INF/mango/resources/*.yml` 静态声明保持一致，否则 Resource Registry 的版本保护会拒绝回退声明。
 
@@ -258,9 +288,10 @@ Mango API 资源按访问模式分为三类：
 
 运行时匹配和资源同步规则：
 
-- 同一个 HTTP method + path 只应保留当前扫描模块的有效访问模式。资源同步发现旧模块遗留的 active API 资源与当前扫描结果同路由但 module/resource key 不一致时，会禁用旧资源，避免旧 `PERMISSION` 覆盖当前 Controller 上声明的 `LOGIN` 或 `PUBLIC`。
+- 同一个 HTTP method + path 只应保留当前扫描模块的有效访问模式。人工登记记录不会被 Controller、固定声明或 Gateway 同键更新。
+- Gateway 请求配置了外部 API 前缀时，先按剥离前缀后的应用路径查询；应用路径没有资源时，再按 Gateway 外部路径查询。这样普通 Controller 的 `@ApiAccess(PUBLIC)` 不需要重复配置 Gateway 元数据。
 - 运行时查询访问决策时优先匹配精确路径，再匹配非通配路径，最后才按路径长度匹配通配符或路径变量模式。例如 `/notice/site/my/messages/read-all` 的精确 `LOGIN` 声明优先于 `/notice/site/my/messages/**` 的 `PERMISSION` 声明。
-- 如果业务升级后基础接口仍返回 403，先确认资源同步是否已重新执行，再检查 `authorization_api_resource` 中同 method + path 的旧 active 记录是否已被禁用，最后刷新 API 资源运行时缓存。
+- 如果业务升级后基础接口仍返回 401/403，先确认资源同步是否已重新执行，再检查 `authorization_api_resource` 中是否存在 active 的人工记录、应用路径记录和 Gateway 外部路径记录，最后刷新 API 资源运行时缓存。
 
 业务接入方式：
 
@@ -277,6 +308,10 @@ Mango API 资源按访问模式分为三类：
 | POST | `/authorization/api-resources/register` | 批量注册 API 资源 |
 | GET | `/authorization/api-resources/access-decision` | 查询 method + path 的访问模式和权限码 |
 | POST | `/authorization/api-resources/cache/refresh` | 刷新 API 资源运行时缓存 |
+| GET | `/authorization/api-resources/page` | 分页查询权限标识，需要 `system:api-resource:list` |
+| GET | `/authorization/api-resources/filter-options` | 查询权限标识筛选维度，需要 `system:api-resource:list` |
+| POST | `/authorization/api-resources/manual` | 人工接管接口资源，需要 `system:api-resource:manual` |
+| PUT | `/authorization/api-resources/manual/release` | 释放人工接管，需要 `system:api-resource:manual` |
 | GET | `/authorization/menus/user` | 查询当前用户可用菜单树；已授权的隐藏页面菜单也会返回用于路由注册 |
 | GET | `/authorization/menus` | 查询菜单列表或树 |
 | POST/PUT/DELETE | `/authorization/menus` | 创建、更新、删除菜单 |
@@ -750,7 +785,10 @@ Resource Registry 还支持授权基线声明：
 
 | 现象 | 排查点 |
 |------|--------|
-| 接口权限不生效 | 查 `authorization_api_resource` 是否有正确的 `http_method + path_pattern + access_mode + permission_code` |
+| 接口权限不生效 | 查 `authorization_api_resource` 是否有正确的 `http_method + path_pattern + access_mode + permission_code`；同路由存在启用的人工接管记录时，只认人工记录 |
+| `@ApiAccess(PUBLIC)` 仍返回 401 | 先确认应用路径（去掉 Gateway 外部前缀）是否已登记；再查同路由是否存在更高优先级的固定声明或人工接管记录；最后调 `/authorization/api-resources/cache/refresh` |
+| 人工接管后仍拿到代码声明 | 确认人工记录 `source=MANUAL` 且 `status=1`，模块名、HTTP 方法和路径与应用路径一致，然后刷新缓存 |
+| 释放接管后仍为人工策略 | 释放只停用人工记录；需再执行一次资源同步让 Controller 扫描或固定声明重建访问模式，然后刷新缓存 |
 | PERMISSION 同步失败 | `@PermissionAccess` 或 `@ApiAccess(mode=PERMISSION)` 必须填写权限码；同时检查 `resource_registry` 和 `resource_sync_log` |
 | 菜单不显示 | 查 `authorization_app_module.status`、菜单 `status/visible`、角色菜单绑定、当前 `appCode` |
 | manifest 写了 `roleCodes` 但没授权 | 查 `AUTH_ROLE` 角色声明是否同步成功、`resource_sync_log` 是否有 `AUTH_MENU` 重放记录，以及 `authorization_role_menu` 是否已有绑定；不要手工直写授权表 |
@@ -786,4 +824,5 @@ Resource Registry 还支持授权基线声明：
 
 ## 17. 升级与兼容
 
+- `1.1.3`：API 资源多来源生效优先级统一为“人工接管 > 固定声明/Gateway 显式声明 > Controller 扫描 > Gateway 默认 LOGIN”；新增 `system:api-resource:manual` 权限和 `/authorization/api-resources/manual` 人工接管接口；Gateway 请求先按应用路径决策、再回落外部路径。不新增表字段、不修改旧注册协议：既有 `FIXED_DECLARATION`、`CONTROLLER_SCAN`、`MANUAL` 数据继续读取，历史 `MANUAL` 记录升级后自动具备最高运行时优先级。升级后重新同步 `AUTH_MENU`，执行一次 API 资源同步并刷新缓存；若业务依赖旧排序（`FIXED_DECLARATION > MANUAL`），升级前需确认是否有同路由的人工记录。
 - `1.1.2`：API Resource 增加固定声明、Controller 扫描和人工登记来源的去重与查询能力，并新增权限标识页面。升级时执行授权模块 V4 迁移、重新同步 `AUTH_MENU`，确认 `system:api-resource:list` 权限和固定声明优先级；回滚前按发布升级指南处理数据库快照。

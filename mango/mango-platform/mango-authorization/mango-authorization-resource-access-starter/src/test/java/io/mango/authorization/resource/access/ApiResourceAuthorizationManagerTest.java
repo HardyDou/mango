@@ -9,6 +9,7 @@ import io.mango.authorization.api.command.ApiResourceRegisterCommand;
 import io.mango.authorization.api.command.ApiResourceRegisterRequest;
 import io.mango.authorization.api.vo.ApiResourceRegisterResultVO;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
+import io.mango.authorization.api.enums.ApiResourceSource;
 import io.mango.authorization.api.query.ApiResourceAccessDecisionQuery;
 import io.mango.common.result.R;
 import io.mango.authorization.api.vo.SecurityPrincipalVO;
@@ -106,18 +107,32 @@ class ApiResourceAuthorizationManagerTest {
     }
 
     @Test
-    @DisplayName("external api prefix should be stripped when resource decision is unmatched")
-    void externalApiPrefixShouldBeStrippedWhenResourceDecisionIsUnmatched() {
-        PathDecisionApi api = new PathDecisionApi(Map.of(
-                "POST /api/payment/channel-callbacks/fuiou", ApiResourceAccessDecisionVO.unmatched(ApiResourceAccessMode.LOGIN),
-                "POST /payment/channel-callbacks/fuiou", new ApiResourceAccessDecisionVO(true, ApiResourceAccessMode.PUBLIC, null)
-        ));
+    @DisplayName("external path decision matrix covers controller priority, manual override and gateway fallback")
+    void externalPathDecisionMatrixCoversAllResolutionRules() {
         IAuthorizationProvider authorizationProvider =
                 query -> AuthorizationSnapshotVO.of(List.of(), List.of(), List.of());
+        PathDecisionApi api = new PathDecisionApi(Map.of(
+                "POST /api/controller-wins", new ApiResourceAccessDecisionVO(
+                        true, ApiResourceAccessMode.LOGIN, null),
+                "POST /controller-wins", new ApiResourceAccessDecisionVO(
+                        true, ApiResourceAccessMode.PUBLIC, null),
+                "POST /api/manual-wins", new ApiResourceAccessDecisionVO(
+                        true, ApiResourceAccessMode.INTERNAL, null, ApiResourceSource.MANUAL),
+                "POST /manual-wins", new ApiResourceAccessDecisionVO(
+                        true, ApiResourceAccessMode.PUBLIC, null),
+                "POST /api/gateway-only", new ApiResourceAccessDecisionVO(
+                        true, ApiResourceAccessMode.PUBLIC, null),
+                "POST /gateway-only", ApiResourceAccessDecisionVO.unmatched(ApiResourceAccessMode.LOGIN)
+        ));
         ApiResourceAuthorizationManager manager = new ApiResourceAuthorizationManager(api, authorizationProvider);
 
-        assertTrue(manager.check(() -> null, context("POST", "/api/payment/channel-callbacks/fuiou")).isGranted());
-        assertEquals(2, api.resolveCount);
+        assertTrue(manager.check(() -> null, context("POST", "/api/controller-wins")).isGranted(),
+                "controller application path must win over gateway LOGIN");
+        assertFalse(manager.check(() -> null, context("POST", "/api/manual-wins")).isGranted(),
+                "manual takeover on the gateway path must win over controller PUBLIC");
+        assertTrue(manager.check(() -> null, context("POST", "/api/gateway-only")).isGranted(),
+                "gateway path must stay usable when no application path is registered");
+        assertEquals(6, api.resolveCount);
     }
 
     private ApiResourceAuthorizationManager manager(

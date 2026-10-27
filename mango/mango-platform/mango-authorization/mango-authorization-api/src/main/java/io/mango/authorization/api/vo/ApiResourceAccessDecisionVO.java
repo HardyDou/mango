@@ -1,8 +1,8 @@
 package io.mango.authorization.api.vo;
 
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
+import io.mango.authorization.api.enums.ApiResourceSource;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -13,7 +13,6 @@ import lombok.NoArgsConstructor;
  */
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 @Schema(description = "运行时API资源访问决策")
 public class ApiResourceAccessDecisionVO {
 
@@ -25,6 +24,25 @@ public class ApiResourceAccessDecisionVO {
 
     @Schema(description = "访问模式为PERMISSION时需要的权限码")
     private String permissionCode;
+
+    @Schema(description = "生效资源来源")
+    private ApiResourceSource source;
+
+    public ApiResourceAccessDecisionVO(boolean matched,
+                                       ApiResourceAccessMode accessMode,
+                                       String permissionCode) {
+        this(matched, accessMode, permissionCode, null);
+    }
+
+    public ApiResourceAccessDecisionVO(boolean matched,
+                                       ApiResourceAccessMode accessMode,
+                                       String permissionCode,
+                                       ApiResourceSource source) {
+        this.matched = matched;
+        this.accessMode = accessMode;
+        this.permissionCode = permissionCode;
+        this.source = source;
+    }
 
     public static ApiResourceAccessDecisionVO unmatched(ApiResourceAccessMode defaultMode) {
         return new ApiResourceAccessDecisionVO(false, defaultMode, null);
@@ -40,5 +58,9 @@ public class ApiResourceAccessDecisionVO {
 
     public String permissionCode() {
         return permissionCode;
+    }
+
+    public ApiResourceSource source() {
+        return source;
     }
 }

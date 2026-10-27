@@ -63,6 +63,30 @@ class ApiAccessResourceDiscovererTest {
     }
 
     @Test
+    @DisplayName("fixed wildcard should not suppress exact controller scan")
+    void fixedWildcardShouldNotSuppressExactControllerScan() {
+        ApiResourceSyncProperties properties = new ApiResourceSyncProperties();
+        properties.setIncludePackages("io.mango.authorization.resource.sync");
+        properties.setExcludePaths("/error");
+        properties.setResources(List.of(resource("GET", "/discover/**")));
+
+        List<ApiResourceRegisterCommand> resources = discover(properties);
+
+        assertThat(resources)
+                .filteredOn(resource -> "GET".equals(resource.getHttpMethod()))
+                .filteredOn(resource -> "/discover/plain".equals(resource.getPathPattern()))
+                .singleElement()
+                .satisfies(resource -> assertThat(resource.getSource())
+                        .isEqualTo(ApiResourceSource.CONTROLLER_SCAN));
+        assertThat(resources)
+                .filteredOn(resource -> "GET".equals(resource.getHttpMethod()))
+                .filteredOn(resource -> "/discover/**".equals(resource.getPathPattern()))
+                .singleElement()
+                .satisfies(resource -> assertThat(resource.getSource())
+                        .isEqualTo(ApiResourceSource.FIXED_DECLARATION));
+    }
+
+    @Test
     @DisplayName("class level ApiResourceIgnore should skip every method of the controller")
     void classLevelIgnoreShouldSkipAllMethods() {
         List<ApiResourceRegisterCommand> resources = discover();

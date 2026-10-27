@@ -10,6 +10,7 @@ import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.api.IAuthorizationProvider;
 import io.mango.authorization.api.ITokenProvider;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
+import io.mango.authorization.api.enums.ApiResourceSource;
 import io.mango.authorization.api.query.ApiResourceAccessDecisionQuery;
 import io.mango.authorization.api.vo.ApiResourceAccessDecisionVO;
 import io.mango.authorization.api.vo.AuthorizationSnapshotVO;
@@ -130,18 +131,22 @@ public class AccessEvaluator {
     }
 
     private DecisionLookup resolveDecision(String httpMethod, String path) {
-        DecisionLookup first = resolveDecisionOnce(httpMethod, path);
-        if (!first.available || isMatched(first.decision)) {
-            return first;
-        }
         String applicationPath = stripExternalApiPrefix(path);
-        if (applicationPath != null) {
-            DecisionLookup fallback = resolveDecisionOnce(httpMethod, applicationPath);
-            if (!fallback.available || isMatched(fallback.decision)) {
-                return fallback;
-            }
+        DecisionLookup application = applicationPath == null
+                ? DecisionLookup.available(ApiResourceAccessDecisionVO.unmatched(ApiResourceAccessMode.LOGIN))
+                : resolveDecisionOnce(httpMethod, applicationPath);
+        if (!application.available || isManual(application.decision)) {
+            return application;
         }
-        return DecisionLookup.available(ApiResourceAccessDecisionVO.unmatched(ApiResourceAccessMode.LOGIN));
+        DecisionLookup external = resolveDecisionOnce(httpMethod, path);
+        if (!external.available || isManual(external.decision)) {
+            return external;
+        }
+        return isMatched(application.decision) ? application : external;
+    }
+
+    private boolean isManual(ApiResourceAccessDecisionVO decision) {
+        return isMatched(decision) && ApiResourceSource.MANUAL.equals(decision.source());
     }
 
     private DecisionLookup resolveDecisionOnce(String httpMethod, String path) {

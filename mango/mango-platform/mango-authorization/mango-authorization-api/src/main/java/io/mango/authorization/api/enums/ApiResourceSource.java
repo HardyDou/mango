@@ -14,6 +14,6 @@ public enum ApiResourceSource {
     /** Spring MVC Controller 自动扫描。 */
     CONTROLLER_SCAN,
 
-    /** 后台或其它运行时管理入口。 */
+    /** 数据库或后台人工登记，拥有最高运行时控制优先级。 */
     MANUAL
 }
