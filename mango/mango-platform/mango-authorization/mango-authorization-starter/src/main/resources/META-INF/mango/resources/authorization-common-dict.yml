@@ -22,7 +22,7 @@ mango:
               value: 授权角色类型
             domainCode:
               type: STRING
-              value: AUTHORIZATION
+              value: AUTH
             remark:
               type: STRING
               value: 授权模块角色类型
@@ -56,7 +56,7 @@ mango:
               value: 授权菜单类型
             domainCode:
               type: STRING
-              value: AUTHORIZATION
+              value: AUTH
             remark:
               type: STRING
               value: 授权模块菜单节点类型

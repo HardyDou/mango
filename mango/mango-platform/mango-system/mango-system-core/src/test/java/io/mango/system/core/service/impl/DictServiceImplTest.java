@@ -185,6 +185,26 @@ class DictServiceImplTest {
                 .isEqualTo(List.of("ORDER"));
     }
 
+    @Test
+    void updateDataClearsGroupsAndParentValueWhenEmpty() {
+        DictDataEntity current = data(9L, "Label", "value");
+        current.setDictGroups("ORDER");
+        current.setParentValue("root");
+        when(dictDataMapper.selectById(9L)).thenReturn(current);
+        when(dictTypeMapper.selectOne(any(LambdaQueryWrapper.class)))
+                .thenReturn(type(1L, "type1", "Type 1"));
+        when(dictDataMapper.updateById(any(DictDataEntity.class))).thenReturn(1);
+
+        SaveDictDataCommand command = dataCommand();
+        command.setId(9L);
+        command.setGroups(List.of());
+        command.setParentValue("  ");
+        dictService.updateData(command);
+
+        verify(dictDataMapper).updateById(argThat((DictDataEntity entity) ->
+                entity.getDictGroups() == null && entity.getParentValue() == null));
+    }
+
     private SaveDictTypeCommand typeCommand(Long id) {
         SaveDictTypeCommand command = new SaveDictTypeCommand();
         command.setId(id);

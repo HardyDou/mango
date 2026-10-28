@@ -44,7 +44,7 @@
               <div class="type-info">
                 <span class="type-name">{{ item.name }}</span>
                 <span class="type-code">{{ item.code }}</span>
-                <span class="type-domain">{{ item.domainCode || 'COMMON' }}</span>
+                <span class="type-domain">{{ domainName(item.domainCode) }}</span>
               </div>
               <div class="type-actions">
                 <DictTag dict-code="sys_normal_disable" :value="item.status" size="small" />
@@ -147,7 +147,7 @@
           </el-radio-group>
         </el-form-item>
         <el-form-item label="业务域" prop="domainCode">
-          <DomainSelector v-model="typeForm.domainCode" placeholder="请选择业务域" />
+          <DomainSelector v-model="typeForm.domainCode" value-key="domainCode" placeholder="请选择业务域" />
         </el-form-item>
         <el-form-item label="描述" prop="description">
           <el-input v-model="typeForm.description" type="textarea" placeholder="请输入描述" />
@@ -232,6 +232,7 @@ import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'elem
 import { Search } from '@element-plus/icons-vue';
 import { DictTag, MangoListPanel, MangoSearchPanel, Pagination, clearDictOptionCache, clearDictTreeCache, formatDate, useDict } from '@mango/common';
 import { dictTypeApi, dictDataApi, type DictType, type DictData } from '../../api/dict';
+import { domainApi } from '../../api/domain';
 
 type ParentTreeNode = {
   value: string;
@@ -242,6 +243,37 @@ import DomainSelector from '../../components/DomainSelector/index.vue';
 import DomainSideTree from '../../components/DomainSideTree/index.vue';
 
 const { options: statusOptions } = useDict('sys_normal_disable');
+
+const domainNames = ref<Record<string, string>>({});
+
+/**
+ * 业务域按编码展示中文名称，未命中时回退编码，避免管理端出现裸编码。
+ */
+function domainName(code?: string) {
+  if (!code) {
+    return '公共';
+  }
+  return domainNames.value[code] ?? code;
+}
+
+async function loadDomainNames() {
+  try {
+    const tree = await domainApi.enabledTree();
+    const map: Record<string, string> = {};
+    const walk = (nodes: typeof tree) => {
+      for (const node of nodes) {
+        map[node.domainCode] = node.domainName;
+        if (node.children?.length) {
+          walk(node.children);
+        }
+      }
+    };
+    walk(tree);
+    domainNames.value = map;
+  } catch {
+    domainNames.value = {};
+  }
+}
 
 // ==================== 类型列表 ====================
 const typeKeyword = ref('');
@@ -623,6 +655,7 @@ function toParentTreeNodes(nodes: DictData[]): ParentTreeNode[] {
 
 // ==================== 生命周期 ====================
 onMounted(() => {
+  void loadDomainNames();
   loadTypeList();
 });
 </script>

@@ -1,0 +1,37 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: org
+    module-name: 组织
+    declarations:
+      BUSINESS_DOMAIN:
+        - id: "2026080202000000300"
+          version: 1
+          biz-key: org.domain.org
+          name: 组织域
+          target-module: domain
+          fields:
+            domainId:
+              type: LONG
+              value: 300
+            domainCode:
+              type: STRING
+              value: ORG
+            domainShortCode:
+              type: STRING
+              value: ORG
+            domainName:
+              type: STRING
+              value: 组织域
+            parentId:
+              type: LONG
+              value: 0
+            sort:
+              type: INT
+              value: 12
+            status:
+              type: INT
+              value: 1
+            remark:
+              type: STRING
+              value: 组织架构与岗位业务域
