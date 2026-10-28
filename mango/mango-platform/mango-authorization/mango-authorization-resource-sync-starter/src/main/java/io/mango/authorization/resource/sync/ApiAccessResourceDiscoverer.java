@@ -21,8 +21,6 @@ import org.springframework.web.servlet.mvc.condition.PatternsRequestCondition;
 import org.springframework.web.servlet.mvc.condition.RequestMethodsRequestCondition;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
-import org.springframework.util.AntPathMatcher;
-
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,8 +37,6 @@ import java.util.Set;
         value = "EI_EXPOSE_REP2",
         justification = "Spring injects managed MVC and configuration collaborators; copying them is not valid"))
 public class ApiAccessResourceDiscoverer {
-
-    private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
 
     private final RequestMappingHandlerMapping handlerMapping;
     private final ObjectProvider<ModuleInfoRegistry> moduleInfoRegistryProvider;
@@ -149,9 +145,8 @@ public class ApiAccessResourceDiscoverer {
     }
 
     private boolean pathMatches(String configuredPath, String discoveredPath) {
-        return configuredPath.equals(discoveredPath)
-                || PATH_MATCHER.match(configuredPath, discoveredPath)
-                || PATH_MATCHER.match(discoveredPath, configuredPath);
+        // 只屏蔽同一精确路由；更宽的固定模式必须保留 Controller 精确声明，交由运行时优先级选择。
+        return configuredPath.equals(discoveredPath);
     }
 
     private Set<String> resolvePaths(RequestMappingInfo info) {
