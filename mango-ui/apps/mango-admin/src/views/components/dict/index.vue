@@ -177,6 +177,54 @@
       </div>
     </section>
 
+    <section id="display" class="doc-section">
+      <h2>回显模式：DictDisplay</h2>
+      <p>
+        列表、详情等只读场景使用 DictDisplay 把 value 转成 label。它与 DictSelect 共用字典编码和缓存，单值/多值自动识别，默认纯文本、多值用「、」连接，树形字典可切换为完整路径。
+      </p>
+      <div class="demo-block">
+        <div class="demo-source">
+          <el-descriptions :column="1" border class="display-panel">
+            <el-descriptions-item label="普通字典 · 单值">
+              <DictDisplay dict-type="sys_normal_disable" :value="'1'" data-action="display-flat-single" />
+            </el-descriptions-item>
+            <el-descriptions-item label="普通字典 · 多值">
+              <DictDisplay dict-type="sys_normal_disable" :value="['1', '0']" data-action="display-flat-multi" />
+            </el-descriptions-item>
+            <el-descriptions-item label="普通字典 · 标签样式">
+              <DictDisplay
+                dict-type="sys_normal_disable"
+                :value="['1', '0']"
+                mode="tag"
+                tag-type="success"
+                data-action="display-flat-tag"
+              />
+            </el-descriptions-item>
+            <el-descriptions-item label="普通字典 · 空值">
+              <DictDisplay dict-type="sys_normal_disable" :value="undefined" data-action="display-flat-empty" />
+            </el-descriptions-item>
+            <el-descriptions-item label="树形字典 · 末级 label">
+              <DictDisplay dict-type="system_demo_tree" shape="TREE" :value="'paper'" data-action="display-tree-label" />
+            </el-descriptions-item>
+            <el-descriptions-item label="树形字典 · 多值路径">
+              <DictDisplay
+                dict-type="system_demo_tree"
+                shape="TREE"
+                :value="['paper', 'computer']"
+                display-format="path"
+                data-action="display-tree-path"
+              />
+            </el-descriptions-item>
+          </el-descriptions>
+        </div>
+        <div class="op-btns" data-action="toggle-display-code" @click="toggleCode('display')">
+          <el-icon><component :is="codeVisible.display ? ArrowUp : ArrowDown" /></el-icon>
+          <span>{{ codeVisible.display ? '隐藏代码' : '显示代码' }}</span>
+        </div>
+        <DemoCodeBlock v-show="codeVisible.display" :code="displayCode" />
+      </div>
+    </section>
+
     <section id="props" class="doc-section api-section">
       <h2>组件参数</h2>
       <el-table :data="propsTable" size="small" border>
@@ -259,7 +307,7 @@
 <script setup lang="ts" name="DictComponentDemo">
 import { ref } from 'vue';
 import { ArrowDown, ArrowUp } from '@element-plus/icons-vue';
-import { DictSelect } from '@mango/common';
+import { DictDisplay, DictSelect } from '@mango/common';
 import DemoCodeBlock from '@mango/admin-shell/dev-code-block';
 import DemoDocLayout from '@mango/admin-shell/dev-demo-layout';
 
@@ -267,6 +315,7 @@ const tocItems = [
   { id: 'flat', label: '基础用法' },
   { id: 'tree-single', label: '树形字典' },
   { id: 'tree-multiple', label: '树形字典-选择策略' },
+  { id: 'display', label: '回显模式：DictDisplay' },
   { id: 'props', label: '组件参数' },
   { id: 'slots', label: '插槽' },
   { id: 'events', label: '事件和方法' },
@@ -369,6 +418,25 @@ const treeSingleCode = `<div class="form-row">
     filterable
   />
 </div>`;
+
+const displayCode = `<!-- 列表 / 详情：value 转 label，单值多值自动识别 -->
+<DictDisplay dict-type="sys_normal_disable" :value="row.status" />
+
+<!-- 多值默认用顿号连接 -->
+<DictDisplay dict-type="sys_normal_disable" :value="row.statuses" />
+
+<!-- 状态列：标签样式 -->
+<DictDisplay dict-type="sys_normal_disable" :value="row.statuses" mode="tag" tag-type="success" />
+
+<!-- 树形字典：默认末级 label，需要上下文时展示完整路径 -->
+<DictDisplay dict-type="system_demo_tree" shape="TREE" :value="row.category" />
+<DictDisplay
+  dict-type="system_demo_tree"
+  shape="TREE"
+  :value="row.categories"
+  display-format="path"
+  display-separator=" / "
+/>`;
 
 const slotCode = `<DictSelect
   v-model="categoryValue"
@@ -488,6 +556,10 @@ function toggleCode(key: string) {
   margin-bottom: 8px;
   color: var(--el-text-color-regular);
   font-size: 13px;
+}
+
+.display-panel {
+  max-width: 720px;
 }
 
 .api-subtitle {
