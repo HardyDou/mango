@@ -62,6 +62,10 @@ public class ApiResourceService implements IApiResourceService {
     private static final int HANDLER_RANK_CONCRETE = 2;
     private static final int HANDLER_RANK_CONFIGURED = 1;
     private static final int HANDLER_RANK_NONE = 0;
+    private static final Comparator<ApiResourceEntity> ROUTE_PRECEDENCE_ENTITY = Comparator
+            .comparingInt((ApiResourceEntity resource) -> -sourceRank(resource.getSource()))
+            .thenComparingLong(ApiResourceEntity::getId);
+
     private static final Comparator<RouteCandidate> ROUTE_PRECEDENCE = Comparator
             .comparingInt((RouteCandidate candidate) -> -sourceRank(candidate.source()))
             .thenComparingInt(candidate -> -handlerRank(candidate.handlerClass()))
@@ -312,10 +316,6 @@ public class ApiResourceService implements IApiResourceService {
     private boolean isManualOverride(ApiResourceEntity resource) {
         return resource.getManualOverride() != null && resource.getManualOverride() == MANUAL_OVERRIDE_ON;
     }
-
-    private static final Comparator<ApiResourceEntity> ROUTE_PRECEDENCE_ENTITY = Comparator
-            .comparingInt((ApiResourceEntity resource) -> -sourceRank(resource.getSource()))
-            .thenComparingLong(ApiResourceEntity::getId);
 
     private List<String> distinctColumn(
             com.baomidou.mybatisplus.core.toolkit.support.SFunction<ApiResourceEntity, String> column) {
