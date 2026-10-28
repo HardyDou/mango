@@ -95,3 +95,11 @@
 - 是否允许选择非叶子节点暂按 TREE 节点均可维护、消费端自行选择的最小契约处理；如业务消费者要求叶子节点限制，需要另行扩展字典类型策略。
 - 字典选项在 `@mango/common` 按编码共享缓存并合并并发请求；字典管理页保存后会自动清理对应缓存，已通过浏览器实测（管理页新增选项后示例页无需刷新即可见）。其它入口修改字典时需调用 `clearDictOptionCache` / `clearDictTreeCache` 或 `reload(true)`。
 - 字典管理 E2E 的第二机构用例依赖演示租户 `company_a` 或机构创建权限；本环境两者均无，用例自动 skip 并标注原因，不影响平台字典维护闭环验证。
+
+## 8. 追加：只读回显组件 DictDisplay
+
+- 场景：列表、详情、打印等只读位置需要把字典 `value` 转成 `label`，原 `DictTag` 仅覆盖 FLAT 单值标签样式。
+- 方案：新增 `@mango/common` `DictDisplay`，与 `DictSelect` 共用字典编码、接口与缓存，`DictTag` 保留兼容。
+- 能力：FLAT/TREE、单值/多值自动识别、纯文本或标签样式、多值分隔符、TREE 完整路径与路径分隔符、空值文案、未知值回退原始值。
+- 默认：文本样式、多值用「、」连接、TREE 显示末级 label、空值显示 `-`。
+- 验证：`DictDisplay.spec.ts` 10 个用例；开发中心新增「回显模式：DictDisplay」示例与 E2E 断言；`@mango/common` 测试 396 通过、包构建与 `mango-admin` 构建通过。

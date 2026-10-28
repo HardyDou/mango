@@ -109,11 +109,19 @@ export { default as MangoAvatar } from './components/MangoAvatar/index.vue';
 export { default as IconSelector } from './components/IconSelector/index.vue';
 export { default as DictTag } from './components/DictTag/index.vue';
 export { default as DictSelect } from './components/DictSelect/index.vue';
+export { default as DictDisplay } from './components/DictDisplay/index.vue';
 export type {
   DictDisplayFormat,
+  DictDisplayItem,
+  DictDisplayMode,
+  DictDisplayShape,
+  DictDisplayValue,
+} from './components/DictDisplay/types';
+export type {
+  DictSelectDisplayFormat,
   DictSelectValue,
   DictShape,
-} from './components/DictSelect/index.vue';
+} from './components/DictSelect/types';
 export { default as RightToolbar } from './components/RightToolbar/index.vue';
 export { default as FormCreate } from './components/FormCreate/index.vue';
 export type {

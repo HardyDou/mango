@@ -105,6 +105,7 @@ const rows = await get('/system/dict/data/options', {
 <script setup lang="ts">
 import {
   DictSelect,
+  DictDisplay,
   MangoDetailPage,
   MangoDataTable,
   MangoDialog,
@@ -473,7 +474,7 @@ API 加密环境变量：
 | `Pagination`                                                              | 分页器，支持对齐、`page/limit` 双向绑定和同轮变更事件合并。                                    |
 | `MangoDialog`                                                             | 管理端通用弹框外壳，统一标题区、关闭按钮、内容滚动区和底部按钮区。                             |
 | `MangoAvatar`                                                             | 统一显示普通图片地址或 `mango-file:{id}` 文件标识，并负责受保护头像的下载回显和对象 URL 回收。 |
-| `DictSelect`、`DictTag`                                                   | 统一的 FLAT/TREE 字典选择和字典展示；通过 `shape`、`multiple`、`leafOnly` 和显示参数控制行为。       |
+| `DictSelect`、`DictDisplay`、`DictTag`                                    | 统一的 FLAT/TREE 字典选择与只读回显；`DictSelect` 负责录入，`DictDisplay` 负责列表/详情把 value 转 label，`DictTag` 保留旧的标签展示。 |
 | `OrgSelector`、`UserSelector`                                             | 组织和用户选择。                                                                               |
 | `CaptchaSelector`、各验证码组件                                           | 验证码展示和交互。                                                                             |
 | `ChinaArea`                                                               | 行政区域选择。                                                                                 |
@@ -637,7 +638,7 @@ const toolbarKeys = ['bold', 'color', '|', 'numberedList', 'bulletedList', '|', 
 | 数据              | 后端来源                | 前端消费                                                  |
 | ----------------- | ----------------------- | --------------------------------------------------------- |
 | token、用户、租户 | auth、identity、system  | request 请求头、Session、权限函数。                       |
-| 字典              | system 字典             | `DictSelect`、`DictTag`、`useDict`、`listDictOptions()`。 |
+| 字典              | system 字典             | `DictSelect`、`DictDisplay`、`DictTag`、`useDict`、`listDictOptions()`。 |
 | 组织              | org                     | `OrgSelector`、`getOrgTree()`。                           |
 | 地区              | system area             | `ChinaArea`、`getAreaTree()`。                            |
 | 文件              | file                    | 上传、下载、文件详情 API。                                |
