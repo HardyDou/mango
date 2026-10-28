@@ -13,6 +13,10 @@ export interface ApiResourceVO {
   moduleName: string;
   domain: string;
   source: ApiResourceSource;
+  /** 是否被人工接管：true 时访问模式来自人工配置。 */
+  manualOverride?: boolean;
+  /** 接管前的访问模式，未接管时为空。 */
+  originAccessMode?: ApiResourceAccessMode;
   httpMethod: string;
   pathPattern: string;
   resourceCode?: string;
@@ -69,6 +73,8 @@ export interface ApiResourceManualCommand {
   accessMode: ApiResourceAccessMode;
   permissionCode?: string;
   description?: string;
+  /** 当前是否为人工接管（仅用于页面状态展示，不提交）。 */
+  manualOverride?: boolean;
 }
 
 /** 释放人工接管的定位条件。 */
@@ -96,7 +102,7 @@ function toManualCommand(command: ApiResourceManualCommand) {
     httpMethod: command.httpMethod,
     pathPattern: command.pathPattern,
     accessMode: command.accessMode,
-    permissionCode: command.accessMode === 'PERMISSION' ? command.permissionCode : undefined,
+    permissionCode: command.accessMode === 'PERMISSION' ? command.permissionCode : command.permissionCode || undefined,
     description: command.description || undefined,
   };
 }
