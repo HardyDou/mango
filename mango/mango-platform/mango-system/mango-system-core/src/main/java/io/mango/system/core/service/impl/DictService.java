@@ -30,6 +30,11 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class DictService implements IDictService {
 
+    private static final int MAX_GROUP_LENGTH = 32;
+    private static final int MAX_GROUP_COUNT = 20;
+    private static final int MAX_GROUPS_LENGTH = 255;
+    private static final String GROUP_VALUE_PATTERN = "[A-Za-z0-9_-]+";
+
     private final DictTypeMapper dictTypeMapper;
     private final DictDataMapper dictDataMapper;
 
@@ -329,17 +334,17 @@ public class DictService implements IDictService {
             if (value == null) {
                 continue;
             }
-            Require.isTrue(value.length() <= 32, SystemCode.SYSTEM_INVALID, "分组标记长度不能超过32");
-            Require.isTrue(value.matches("[A-Za-z0-9_-]+"), SystemCode.SYSTEM_INVALID,
+            Require.isTrue(value.length() <= MAX_GROUP_LENGTH, SystemCode.SYSTEM_INVALID, "分组标记长度不能超过32");
+            Require.isTrue(value.matches(GROUP_VALUE_PATTERN), SystemCode.SYSTEM_INVALID,
                     "分组标记只能包含字母、数字、下划线和短横线");
             normalized.add(value);
         }
         if (normalized.isEmpty()) {
             return null;
         }
-        Require.isTrue(normalized.size() <= 20, SystemCode.SYSTEM_INVALID, "分组数量不能超过20");
+        Require.isTrue(normalized.size() <= MAX_GROUP_COUNT, SystemCode.SYSTEM_INVALID, "分组数量不能超过20");
         String joined = String.join(",", normalized);
-        Require.isTrue(joined.length() <= 255, SystemCode.SYSTEM_INVALID, "分组标记总长度不能超过255");
+        Require.isTrue(joined.length() <= MAX_GROUPS_LENGTH, SystemCode.SYSTEM_INVALID, "分组标记总长度不能超过255");
         return joined;
     }
 
