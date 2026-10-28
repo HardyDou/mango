@@ -34,10 +34,10 @@
       @input-change="onInputChange"
     />
     <el-tabs v-else v-model="currentType" class="captcha-type-tabs" @tab-change="handleTabChange">
-      <el-tab-pane label="统一图形" name="GRAPHIC">
+      <el-tab-pane label="统一图形（不建议）" name="GRAPHIC">
         <GraphicCaptcha ref="graphicRef" @success="onSuccess" @refresh="handleRefresh" @input-change="onInputChange" />
       </el-tab-pane>
-      <el-tab-pane label="算术" name="ARITHMETIC">
+      <el-tab-pane label="默认图形" name="ARITHMETIC">
         <ArithmeticCaptcha
           ref="arithmeticRef"
           @success="onSuccess"

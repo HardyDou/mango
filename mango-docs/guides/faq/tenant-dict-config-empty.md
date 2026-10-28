@@ -95,3 +95,5 @@ pnpm -F @mango/admin-shell build
 > Issue #1111 影响说明：`V5__normalize_legacy_resource_sync_modes.sql` 只把 `resource_registry.sync_mode` 的历史持久化值收敛为 `SYNC_ALWAYS` / `SYNC_ONCE`，不重放 Resource Handler，不修改字典、系统配置、租户数据、目标资源表或权限关系；本场景的数据初始化和租户边界不变。
 
 > Issue #1110 影响说明：完整 `FINALIZE` 的缺失资源回收只作用于同一来源范围内可证明归属的 Resource 登记；`UNKNOWN`、`SYNC_ONCE` 和 `MANUAL_TAKEOVER` 仍受保护，不改变租户、字典、系统配置或数据隔离排障结论。
+
+> Issue #1134 影响说明：Shell 验证码演示页仅调整验证码生成入口和展示文案，不改变租户上下文、字典、系统配置或基础数据；本 FAQ 的租户和字典排障步骤保持不变。

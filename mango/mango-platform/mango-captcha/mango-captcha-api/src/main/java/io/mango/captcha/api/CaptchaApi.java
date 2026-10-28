@@ -30,9 +30,9 @@ public interface CaptchaApi {
     R<CaptchaTypesResponse> getTypes();
 
     /**
-     * 生成供用户计算并填写答案的算术验证码。
+     * 按统一默认策略生成图形验证码，并保留 ARITHMETIC 响应类型兼容旧消费者。
      *
-     * @return 统一响应，包含验证码键、图片和有效期
+     * @return 统一响应，包含验证码键、图片、实际图形题型和有效期
      */
     R<CaptchaResponse> generateArithmetic();
 
@@ -42,7 +42,9 @@ public interface CaptchaApi {
      * @param type 会话题型，可为空；为空时使用全局默认题型
      * @param difficulty 会话难度，可为空；为空时使用全局默认难度
      * @return 统一响应，包含验证码键、图片、实际题型和实际难度
+     * @deprecated 使用 {@link #generateArithmetic()}；该方法仅保留兼容已接入的图形验证码消费者。
      */
+    @Deprecated
     R<CaptchaResponse> generateGraphic(
             @NotNull(groups = OptionalEnumSelection.class) GraphicCaptchaType type,
             @NotNull(groups = OptionalEnumSelection.class) CaptchaDifficulty difficulty);

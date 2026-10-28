@@ -47,14 +47,15 @@ public class CaptchaController implements CaptchaApi {
 
     @Override
     @GetMapping("/arithmetic")
-    @Operation(summary = "生成算术验证码", description = "生成算术表达式验证码")
+    @Operation(summary = "生成默认图形验证码", description = "按统一默认策略生成图形验证码，保留 ARITHMETIC 类型兼容旧消费者")
     public R<CaptchaResponse> generateArithmetic() {
         return R.ok(captchaService.generateArithmetic());
     }
 
     @Override
+    @Deprecated
     @GetMapping("/graphic")
-    @Operation(summary = "生成图形验证码", description = "按全局默认策略或会话参数生成图形验证码")
+    @Operation(summary = "生成图形验证码（不建议使用）", description = "兼容已接入消费者；新接入请使用 /captcha/arithmetic")
     public R<CaptchaResponse> generateGraphic(
             @Parameter(description = "会话题型，可为空时使用全局默认")
             @RequestParam(value = "type", required = false) GraphicCaptchaType type,

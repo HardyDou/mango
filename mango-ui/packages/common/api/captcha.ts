@@ -71,6 +71,9 @@ export function generateArithmetic() {
   return get<CaptchaResponse>('/captcha/arithmetic');
 }
 
+/**
+ * @deprecated 推荐使用 generateArithmetic()；该方法仅保留已接入图形验证码消费者的兼容能力。
+ */
 export function generateGraphic(type?: GraphicCaptchaType, difficulty?: CaptchaDifficulty) {
   return get<CaptchaResponse>('/captcha/graphic', {
     params: {

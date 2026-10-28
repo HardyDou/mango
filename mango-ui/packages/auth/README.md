@@ -195,7 +195,7 @@ API 封装：
 | `getLoginTenantOptions()`                                   | `GET /system/tenant/login-options`           | 读取登录租户选项。                           |
 | `getUserInfo()`                                             | `GET /auth/info`                             | 获取当前登录用户。                           |
 | `logout()`                                                  | `POST /auth/logout`                          | 退出登录。                                   |
-| `getCaptcha()`                                              | `GET /captcha/arithmetic`                    | 获取算术验证码。                             |
+| `getCaptcha()`                                              | `GET /captcha/arithmetic`                    | 获取按统一默认策略生成的图形验证码。         |
 | `updatePassword(data)`                                      | `PUT /identity/me/password`                  | 校验旧密码后修改当前用户密码。               |
 | `getSystemConfig()`                                         | `GET /system/config/type`                    | 读取系统配置。                               |
 | `getCurrentUserProfile()`                                   | `GET /identity/me/profile`                   | 读取真实个人资料。                           |

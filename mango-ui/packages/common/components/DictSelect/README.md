@@ -119,3 +119,50 @@
 - 选项缓存按字典编码共享，`listDictOptions` / `listDictTree` 并发请求会自动合并。
 - 字典管理页在新增、修改、删除字典数据或类型后会自动清理对应缓存。
 - 其它入口修改字典后，可调用 `clearDictOptionCache(typeCode)` / `clearDictTreeCache(typeCode)`，或 `reload(true)` 强制刷新。
+
+## 概览
+
+`DictSelect` 是 `@mango/common` 的统一字典选择组件，面向管理端表单和筛选场景，支持 FLAT 普通字典和 TREE 树形字典。
+
+## 功能清单
+
+| 能力 | 入口 |
+|------|------|
+| FLAT 字典选择 | `shape="FLAT"`、`GET /system/dict/data/options` |
+| TREE 字典选择 | `shape="TREE"`、`GET /system/dict/data/tree` |
+| 缓存与刷新 | `reload(true)`、字典缓存清理 API |
+| 多选与路径回显 | `multiple`、`displayFormat="path"` |
+
+## 接入方式
+
+从 `@mango/common` 导入 `DictSelect`，宿主应用需要提供 Vue、Element Plus、Pinia 和 Mango 请求运行时；组件内部通过 `useDict` 请求字典 API。
+
+## 配置说明
+
+组件配置通过 Props 提供，默认 `shape="FLAT"`、`multiple=false`、`leafOnly=true`、`clearable=true`、`displayFormat="label"`；TREE 场景按需配置 `checkStrictly`、`displaySeparator` 和 `filterable`。
+
+## API 与扩展
+
+公开 Props、事件、插槽和 Expose 方法见上文。组件支持 `selected` 插槽自定义 TREE 选中项展示，并通过 `change` 事件返回节点和路径信息。
+
+## 数据与初始化
+
+组件不要求业务预先请求或转换字典数据。FLAT 数据来自 `/system/dict/data/options`，TREE 数据来自 `/system/dict/data/tree`；字典数据由后端 system 字典管理能力维护。
+
+## 管理入口
+
+字典内容在管理端系统字典页面维护；选择组件本身不注册菜单、按钮权限或独立管理入口，后端权限由 system 字典接口负责。
+
+## 快速开始
+
+安装并引入 `@mango/common` 后，将 `DictSelect` 绑定到表单字段，传入 `dict-type`；TREE 场景设置 `shape="TREE"`。不要在业务页面重复实现字典请求、children 转换或路径格式化。
+
+## 问题排查
+
+显示原始值时检查 `dict-type`、后端字典数据和请求权限；TREE 无数据时检查 `/system/dict/data/tree` 响应；缓存未刷新时调用 `reload(true)` 或对应缓存清理 API。
+
+## 相关文档
+
+- [Common 包说明](../../README.md)
+- [DictTag 组件](../DictTag/README.md)
+- [能力说明规范](../../../../../mango-pmo/rules/08-capability-docs.md)
