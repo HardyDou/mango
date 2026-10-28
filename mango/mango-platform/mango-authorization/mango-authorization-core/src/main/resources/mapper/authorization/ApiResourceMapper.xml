@@ -14,4 +14,35 @@
           and module_name = #{moduleName}
           and deleted = 0
     </select>
+    <select id="selectIncludingDeletedByModuleNames"
+            resultType="io.mango.authorization.core.entity.ApiResourceEntity">
+        select id, module_name, source, manual_override, origin_source, origin_access_mode,
+               origin_permission_code, origin_description, domain, http_method, path_pattern,
+               resource_code, permission_code, access_mode, handler_class, handler_method,
+               description, status, create_time, update_time, deleted, created_by, created_at,
+               updated_by, updated_at, tenant_id, org_id
+        from authorization_api_resource
+        where deleted = 0
+           or module_name in
+        <foreach collection="moduleNames" item="moduleName" open="(" separator="," close=")">
+            #{moduleName}
+        </foreach>
+    </select>
+    <update id="reviveSoftDeleted">
+        update authorization_api_resource
+        set module_name = #{entity.moduleName},
+            domain = #{entity.domain},
+            source = #{entity.source},
+            http_method = #{entity.httpMethod},
+            path_pattern = #{entity.pathPattern},
+            resource_code = #{entity.resourceCode},
+            permission_code = #{entity.permissionCode},
+            access_mode = #{entity.accessMode},
+            handler_class = #{entity.handlerClass},
+            handler_method = #{entity.handlerMethod},
+            description = #{entity.description},
+            status = #{entity.status},
+            deleted = 0
+        where id = #{entity.id}
+    </update>
 </mapper>

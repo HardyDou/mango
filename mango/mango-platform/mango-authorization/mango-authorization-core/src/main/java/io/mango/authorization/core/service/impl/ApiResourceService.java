@@ -132,6 +132,8 @@ public class ApiResourceService implements IApiResourceService {
                     resource.getPathPattern()));
             if (existing == null) {
                 creates.add(toEntity(resource));
+            } else if (isSoftDeleted(existing)) {
+                reviveSoftDeleted(existing, resource);
             } else if (isManualOverride(existing)) {
                 log.info("API resource registration skipped by manual override: httpMethod={}, path={}, module={}",
                         resource.getHttpMethod(), resource.getPathPattern(), existing.getModuleName());
@@ -386,6 +388,28 @@ public class ApiResourceService implements IApiResourceService {
         }
     }
 
+    /**
+     * 判断资源行是否已被逻辑删除。
+     *
+     * <p>唯一键不含 {@code deleted}，软删除行仍占用路由，重新声明时必须复活而不是插入新行。
+     */
+    private boolean isSoftDeleted(ApiResourceEntity entity) {
+        return entity.getDeleted() != null && entity.getDeleted() != 0;
+    }
+
+    /**
+     * 复活历史软删除行，复用原主键，避免与唯一键冲突。
+     *
+     * <p>{@code deleted} 是 {@code @TableLogic} 字段，{@code updateById} 不会把它写回 0，
+     * 因此必须用显式 update 恢复。
+     */
+    private void reviveSoftDeleted(ApiResourceEntity entity, ApiResourceRegisterCommand resource) {
+        log.info("Revive soft-deleted API resource: httpMethod={}, path={}, module={}",
+                resource.getHttpMethod(), resource.getPathPattern(), resource.getModuleName());
+        merge(entity, resource);
+        apiResourceMapper.reviveSoftDeleted(entity);
+    }
+
     private Map<String, ApiResourceEntity> loadExistingIndex(List<ApiResourceRegisterCommand> resources) {
         List<String> moduleNames = resources.stream()
                 .map(ApiResourceRegisterCommand::getModuleName)
@@ -395,13 +419,15 @@ public class ApiResourceService implements IApiResourceService {
         if (moduleNames.isEmpty()) {
             return Map.of();
         }
-        List<ApiResourceEntity> existingResources = apiResourceMapper.selectList(new LambdaQueryWrapper<ApiResourceEntity>()
-                .in(ApiResourceEntity::getModuleName, moduleNames));
+        List<ApiResourceEntity> existingResources = apiResourceMapper.selectIncludingDeletedByModuleNames(moduleNames);
         Map<String, ApiResourceEntity> index = new HashMap<>(existingResources.size());
-        existingResources.forEach(resource -> index.put(resourceKey(
-                resource.getModuleName(),
-                resource.getHttpMethod(),
-                resource.getPathPattern()), resource));
+        for (ApiResourceEntity resource : existingResources) {
+            String key = resourceKey(resource.getModuleName(), resource.getHttpMethod(), resource.getPathPattern());
+            ApiResourceEntity current = index.get(key);
+            if (current == null || isSoftDeleted(current)) {
+                index.put(key, resource);
+            }
+        }
         return index;
     }
 

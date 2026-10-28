@@ -49,7 +49,8 @@ import static org.assertj.core.api.Assertions.assertThat;
         "spring.datasource.password=",
         "spring.datasource.driver-class-name=org.h2.Driver",
         "spring.flyway.enabled=false",
-        "mango.persistence.mybatis-plus.tenant.enabled=false"
+        "mango.persistence.mybatis-plus.tenant.enabled=false",
+        "mybatis-plus.mapper-locations=classpath*:/mapper/**/*.xml"
 })
 @DisplayName("ApiResourceService 集成测试")
 class ApiResourceServiceImplIntegrationTest {
@@ -112,6 +113,55 @@ class ApiResourceServiceImplIntegrationTest {
         assertThat(result.updated()).isEqualTo(2);
         assertThat(apiResourceMapper.selectById(1L).getStatus()).isEqualTo(1);
         assertThat(apiResourceMapper.selectById(2L).getStatus()).isZero();
+    }
+
+    @Test
+    @DisplayName("registerApiResources should revive a soft-deleted resource instead of failing on unique key")
+    void registerApiResourcesRevivesSoftDeletedResource() {
+        seedResource(11L, "mango-file-preview", "GET", "/file-preview/files/preview-entry",
+                "io.mango.file.preview.controller.FilePreviewController", 1);
+        jdbcTemplate.update("update authorization_api_resource set deleted = 1 where id = ?", 11L);
+
+        ApiResourceRegisterResultVO result = service.registerApiResources(List.of(command("mango-file-preview", "GET",
+                "/file-preview/files/preview-entry", "io.mango.file.preview.controller.FilePreviewController")));
+        assertThat(result.created()).isZero();
+        assertThat(result.updated()).isZero();
+        Integer rowCount = jdbcTemplate.queryForObject(
+                "select count(*) from authorization_api_resource where module_name = ? and http_method = ? and path_pattern = ?",
+                Integer.class, "mango-file-preview", "GET", "/file-preview/files/preview-entry");
+        assertThat(rowCount).isEqualTo(1);
+        Integer deleted = jdbcTemplate.queryForObject(
+                "select deleted from authorization_api_resource where id = ?", Integer.class, 11L);
+        assertThat(deleted).isZero();
+        assertThat(apiResourceMapper.selectById(11L).getStatus()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("registerApiResources should keep working when both active and soft-deleted rows share a route")
+    void registerApiResourcesPrefersActiveRowWhenRouteIsDuplicated() {
+        seedResource(21L, "mango-file-preview", "GET", "/file-preview/files/preview-content",
+                "io.mango.file.preview.controller.FilePreviewController", 1);
+        jdbcTemplate.update("""
+                insert into authorization_api_resource
+                (id, module_name, source, domain, http_method, path_pattern, resource_code, permission_code,
+                 access_mode, handler_class, handler_method, status, deleted)
+                values (22, 'mango-file-preview', 'FIXED_DECLARATION', 'file-preview', 'GET',
+                        '/file-preview/files/preview-content', 'GET:/file-preview/files/preview-content', null,
+                        'LOGIN', 'io.mango.file.preview.controller.FilePreviewController', 'content', 0, 1)
+                """);
+
+        service.registerApiResources(List.of(command("mango-file-preview", "GET",
+                "/file-preview/files/preview-content", "io.mango.file.preview.controller.FilePreviewController")));
+
+        Integer activeCount = jdbcTemplate.queryForObject("""
+                select count(*) from authorization_api_resource
+                where module_name = 'mango-file-preview'
+                  and path_pattern = '/file-preview/files/preview-content'
+                  and deleted = 0
+                """, Integer.class);
+        assertThat(activeCount).isEqualTo(1);
+        ApiResourceAccessDecisionVO decision = service.resolveAccessDecision("GET", "/file-preview/files/preview-content");
+        assertThat(decision.matched()).isTrue();
     }
 
     @Test
