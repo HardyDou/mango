@@ -5,6 +5,7 @@ import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.api.IAuthorizationProvider;
 import io.mango.authorization.api.vo.ApiResourceAccessDecisionVO;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
+import io.mango.authorization.api.enums.ApiResourceSource;
 import io.mango.authorization.api.query.ApiResourceAccessDecisionQuery;
 import io.mango.common.result.R;
 import io.mango.authorization.api.vo.SecurityPrincipalVO;
@@ -60,16 +61,25 @@ public class ApiResourceAuthorizationManager implements AuthorizationManager<Req
     }
 
     private ApiResourceAccessDecisionVO resolveAccessDecision(String httpMethod, String path) {
-        ApiResourceAccessDecisionVO decision = resolveAccessDecisionOnce(httpMethod, path);
-        if (decision.matched()) {
-            return decision;
-        }
         String applicationPath = stripExternalApiPrefix(path);
-        if (applicationPath == null) {
-            return decision;
+        ApiResourceAccessDecisionVO applicationDecision = applicationPath == null
+                ? ApiResourceAccessDecisionVO.unmatched(ApiResourceAccessMode.LOGIN)
+                : resolveAccessDecisionOnce(httpMethod, applicationPath);
+        if (isManualDecision(applicationDecision)) {
+            return applicationDecision;
         }
-        ApiResourceAccessDecisionVO applicationDecision = resolveAccessDecisionOnce(httpMethod, applicationPath);
-        return applicationDecision.matched() ? applicationDecision : decision;
+
+        // Controller 的应用路径是业务访问声明；Gateway 外部路径用于兜底，或发现更高优先级的人工接管。
+        ApiResourceAccessDecisionVO gatewayDecision = resolveAccessDecisionOnce(httpMethod, path);
+        if (isManualDecision(gatewayDecision)) {
+            return gatewayDecision;
+        }
+        return applicationDecision.matched() ? applicationDecision : gatewayDecision;
+    }
+
+    private boolean isManualDecision(ApiResourceAccessDecisionVO decision) {
+        return decision != null && decision.matched()
+                && ApiResourceSource.MANUAL.equals(decision.source());
     }
 
     private ApiResourceAccessDecisionVO resolveAccessDecisionOnce(String httpMethod, String path) {

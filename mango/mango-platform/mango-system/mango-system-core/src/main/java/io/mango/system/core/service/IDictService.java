@@ -4,6 +4,7 @@ import io.mango.system.api.command.SaveDictDataCommand;
 import io.mango.system.api.command.SaveDictTypeCommand;
 import io.mango.system.api.vo.DictDataVO;
 import io.mango.system.api.vo.DictOptionVO;
+import io.mango.system.api.vo.DictTreeNodeVO;
 import io.mango.system.api.vo.DictTypeVO;
 
 import java.util.List;
@@ -20,4 +21,5 @@ public interface IDictService {
     Boolean updateData(SaveDictDataCommand command);
     Boolean deleteData(Long id);
     List<DictOptionVO> getOptions(String typeCode);
+    List<DictTreeNodeVO> getTreeOptions(String typeCode);
 }

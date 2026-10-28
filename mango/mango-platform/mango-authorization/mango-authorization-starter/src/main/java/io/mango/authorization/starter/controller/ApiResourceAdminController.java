@@ -2,7 +2,9 @@ package io.mango.authorization.starter.controller;
 
 import io.mango.authorization.api.ApiResourceAdminApi;
 import io.mango.authorization.api.annotation.ApiAccess;
+import io.mango.authorization.api.command.ApiResourceManualCommand;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
+import io.mango.authorization.api.query.ApiResourceManualQuery;
 import io.mango.authorization.api.query.ApiResourcePageQuery;
 import io.mango.authorization.api.vo.ApiResourceFilterOptionsVO;
 import io.mango.authorization.api.vo.ApiResourceVO;
@@ -15,6 +17,9 @@ import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -47,5 +52,27 @@ public class ApiResourceAdminController implements ApiResourceAdminApi {
     @Override
     public R<ApiResourceFilterOptionsVO> listApiResourceFilterOptions() {
         return R.ok(apiResourceService.listApiResourceFilterOptions());
+    }
+
+    @PostMapping("/manual")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:api-resource:manual")
+    @Operation(summary = "人工接管接口资源",
+            description = "按模块、HTTP 方法和路径登记人工资源，接管后优先于 Controller 扫描、固定声明和 Gateway 默认策略")
+    @Override
+    public R<Void> saveManualApiResource(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "人工接管命令")
+            @RequestBody ApiResourceManualCommand command) {
+        apiResourceService.saveManualApiResource(command);
+        return R.ok();
+    }
+
+    @PutMapping("/manual/release")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:api-resource:manual")
+    @Operation(summary = "释放接口资源人工接管",
+            description = "停用人工接管记录，使 Controller 扫描或固定声明在下次同步后重新生效")
+    @Override
+    public R<Void> releaseManualApiResource(@ParameterObject ApiResourceManualQuery query) {
+        apiResourceService.releaseManualApiResource(query);
+        return R.ok();
     }
 }

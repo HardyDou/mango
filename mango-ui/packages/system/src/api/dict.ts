@@ -10,11 +10,15 @@ import type { ApiId } from '@mango/api-schema';
 
 // ==================== 类型定义 ====================
 
+/** 字典形态 */
+export type DictShape = 'FLAT' | 'TREE';
+
 /** 字典类型 */
 export interface DictType {
   id?: ApiId;
   name: string;
   code: string;
+  shape?: DictShape;
   domainCode?: string;
   description?: string;
   sort?: number;
@@ -30,6 +34,8 @@ export interface DictData {
   dictType?: string;
   label: string;
   value: string;
+  parentValue?: string;
+  children?: DictData[];
   sort?: number;
   status?: number;
   extra?: string;
@@ -140,6 +146,12 @@ export const dictDataApi = {
     return del<boolean>('/system/dict/data', { params: { id } });
   },
 
+  /** 获取指定 TREE 字典的嵌套选项。 */
+  tree: (typeCode: string) => {
+    return get<any[]>('/system/dict/data/tree', { params: { typeCode } })
+      .then((list) => list.map((item) => fromBackendData(item)));
+  },
+
   /**
    * 获取指定类型的字典数据（用于下拉选项）
    * @param typeCode 字典类型编码
@@ -155,6 +167,7 @@ function fromBackendType(item: any): DictType {
     id: item.id,
     name: item.dictName ?? item.name,
     code: item.dictType ?? item.code,
+    shape: item.shape === 'TREE' ? 'TREE' : 'FLAT',
     domainCode: item.domainCode ?? 'COMMON',
     description: item.remark ?? item.description,
     sort: item.sort ?? 0,
@@ -169,6 +182,7 @@ function toBackendType(item: DictType) {
     id: item.id,
     dictName: item.name,
     dictType: item.code,
+    shape: item.shape || 'FLAT',
     domainCode: item.domainCode || 'COMMON',
     status: item.status,
     remark: item.description,
@@ -182,6 +196,8 @@ function fromBackendData(item: any, typeId?: ApiId): DictData {
     dictType: item.dictType,
     label: item.dictLabel ?? item.label,
     value: item.dictValue ?? item.value,
+    parentValue: item.parentValue,
+    children: Array.isArray(item.children) ? item.children.map((child: any) => fromBackendData(child, typeId)) : undefined,
     sort: item.sort ?? 0,
     status: item.status ?? 1,
     extra: item.extra,
@@ -196,6 +212,7 @@ function fromBackendOption(item: any): DictData {
     typeId: '0',
     label: item.label ?? item.dictLabel,
     value: item.value ?? item.dictValue,
+    parentValue: item.parentValue,
     sort: item.sort ?? 0,
     status: item.status ?? 1,
   };
@@ -207,6 +224,7 @@ function toBackendData(item: DictData) {
     dictLabel: item.label,
     dictValue: item.value,
     dictType: item.dictType,
+    parentValue: item.parentValue,
     sort: item.sort,
     status: item.status,
   };

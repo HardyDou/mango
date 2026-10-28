@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { get } from '@mango/common/utils/request';
+import { get, post, put } from '@mango/common/utils/request';
 import { apiResourceApi } from '../apiResource';
 
 vi.mock('@mango/common/utils/request', () => ({
   get: vi.fn(),
+  post: vi.fn(),
+  put: vi.fn(),
 }));
 
 describe('api resource API contract', () => {
@@ -82,6 +84,61 @@ describe('api resource API contract', () => {
         accessMode: undefined,
         status: undefined,
         keyword: undefined,
+      },
+    });
+  });
+
+  it('sends manual takeover with the permission code only for permission mode', async () => {
+    vi.mocked(post).mockResolvedValue(undefined);
+
+    await apiResourceApi.saveManual({
+      moduleName: 'mango-guarantee',
+      httpMethod: 'POST',
+      pathPattern: '/guarantee/open/apply',
+      accessMode: 'PERMISSION',
+      permissionCode: 'guarantee:apply:create',
+      description: '上游回调',
+    });
+    await apiResourceApi.saveManual({
+      moduleName: 'mango-guarantee',
+      httpMethod: 'POST',
+      pathPattern: '/guarantee/open/apply',
+      accessMode: 'PUBLIC',
+      permissionCode: 'ignored:code',
+    });
+
+    expect(post).toHaveBeenNthCalledWith(1, '/authorization/api-resources/manual', {
+      moduleName: 'mango-guarantee',
+      httpMethod: 'POST',
+      pathPattern: '/guarantee/open/apply',
+      accessMode: 'PERMISSION',
+      permissionCode: 'guarantee:apply:create',
+      description: '上游回调',
+    });
+    expect(post).toHaveBeenNthCalledWith(2, '/authorization/api-resources/manual', {
+      moduleName: 'mango-guarantee',
+      httpMethod: 'POST',
+      pathPattern: '/guarantee/open/apply',
+      accessMode: 'PUBLIC',
+      permissionCode: undefined,
+      description: undefined,
+    });
+  });
+
+  it('releases manual takeover with route identity as query parameters', async () => {
+    vi.mocked(put).mockResolvedValue(undefined);
+
+    await apiResourceApi.releaseManual({
+      moduleName: 'mango-guarantee',
+      httpMethod: 'POST',
+      pathPattern: '/guarantee/open/apply',
+    });
+
+    expect(put).toHaveBeenCalledWith('/authorization/api-resources/manual/release', undefined, {
+      params: {
+        moduleName: 'mango-guarantee',
+        httpMethod: 'POST',
+        pathPattern: '/guarantee/open/apply',
       },
     });
   });

@@ -9,6 +9,7 @@ import io.mango.system.api.command.SaveDictDataCommand;
 import io.mango.system.api.command.SaveDictTypeCommand;
 import io.mango.system.api.vo.DictDataVO;
 import io.mango.system.api.vo.DictOptionVO;
+import io.mango.system.api.vo.DictTreeNodeVO;
 import io.mango.system.api.vo.DictTypeVO;
 import io.mango.system.core.service.IDictService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -128,5 +129,13 @@ public class SysDictController implements DictApi {
     @Operation(summary = "获取字典选项", description = "获取字典选项并返回处理结果")
     public R<List<DictOptionVO>> getOptions(@Parameter(description = "字典类型编码", required = true) @RequestParam("typeCode") String typeCode) {
         return R.ok(dictService.getOptions(typeCode));
+    }
+
+    @Override
+    @GetMapping("/data/tree")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "获取树形字典选项")
+    @Operation(summary = "获取树形字典选项", description = "获取 TREE 字典的嵌套选项")
+    public R<List<DictTreeNodeVO>> getTreeOptions(@Parameter(description = "字典类型编码", required = true) @RequestParam("typeCode") String typeCode) {
+        return R.ok(dictService.getTreeOptions(typeCode));
     }
 }

@@ -52,7 +52,7 @@
 
 | API | 用法 |
 |-----|------|
-| `DictApi` | 字典类型、字典数据、字典选项读取和维护。业务表单通常调用 `getOptions(typeCode)`。 |
+| `DictApi` | 字典类型、字典数据、字典选项读取和维护。字典类型支持 `FLAT`（默认）和 `TREE`；业务表单继续调用 `getOptions(typeCode)`，树形消费者显式调用 `getTreeOptions(typeCode)`。 |
 | `SysConfigApi` | 系统配置列表、详情、创建、修改、删除、按配置键取值。业务开关通常调用 `getValue(configKey)`，布尔和整数配置可调用 `getBooleanValue(configKey, defaultValue)`、`getIntegerValue(configKey, defaultValue)`。 |
 | `SysTenantApi` | 机构列表、详情、新增、修改、删除和状态调整。 |
 | `SysAreaApi` | 行政区划树、子级、详情、adcode、启用区划读取。 |
@@ -107,7 +107,7 @@ import '@mango/system/style.css';
 
 1. 业务模块需要读取字典或配置时，在后端引入 `mango-system-api`。
 2. 宿主应用需要提供系统管理能力时，引入 `mango-system-starter`，启动后执行 `system` migration。
-3. 字典类字段先在 `sys_dict_type` 登记类型，再在 `sys_dict_data` 登记选项，业务通过 `DictApi.getOptions(typeCode)` 或 `GET /system/dict/data/options` 读取。
+3. 字典类字段先在 `sys_dict_type` 登记类型，再在 `sys_dict_data` 登记选项；未声明 `shape` 的旧字典按 `FLAT` 处理。平铺业务通过 `DictApi.getOptions(typeCode)` 或 `GET /system/dict/data/options` 读取，树形消费者显式使用 `DictApi.getTreeOptions(typeCode)` 或 `GET /system/dict/data/tree`。
 4. 运行时开关、阈值、文案等放入 `sys_config`，业务通过 `SysConfigApi.getValue(configKey)` 读取；需要后台控制面板展示时补充 `domainCode`、`valueType`、`optionSource`、`dictType`、`options`、`editable` 等元数据。
 5. 管理后台接入 `@mango/system` 页面或 API 封装，并在菜单资源中绑定对应页面和权限码。
 6. 新建机构时必须选择 `packageId`，系统会触发机构初始化扩展点，并把机构绑定到套餐。
@@ -201,10 +201,11 @@ mango-system-starter/src/main/resources/META-INF/mango/resources/system-common-m
 | `typeId` | `LONG` | 否 | 字典类型稳定 ID，不填时使用资源 ID。 |
 | `dictType` | `STRING` | 是 | 字典类型编码，全局唯一。 |
 | `dictName` | `STRING` | 是 | 字典类型名称。 |
+| `shape` | `STRING` | 否 | `FLAT` 或 `TREE`，默认 `FLAT`。 |
 | `domainCode` | `STRING` | 否 | 业务域编码，默认 `COMMON`。 |
 | `status` | `INT` | 否 | `1` 启用，`0` 禁用，默认 `1`。 |
 | `remark` | `STRING` | 否 | 备注。 |
-| `items` | `OBJECT[]` | 是 | 字典项列表，每项支持 `id`、`label`、`value`、`sort`、`status`、`remark`。 |
+| `items` | `OBJECT[]` | 是 | 字典项列表，每项支持 `id`、`label`、`value`、`parentValue`、`sort`、`status`、`remark`；TREE 项的 `parentValue` 为空表示根节点。 |
 
 ### 7.2 SYSTEM_CONFIG
 
@@ -282,7 +283,8 @@ mango-system-starter/src/main/resources/META-INF/mango/resources/system-common-m
 | 新增字典数据 | `POST /system/dict/data` | `system:dict:data:add` |
 | 修改字典数据 | `PUT /system/dict/data` | `system:dict:data:edit` |
 | 删除字典数据 | `DELETE /system/dict/data` | `system:dict:data:delete` |
-| 字典选项 | `GET /system/dict/data/options` | 登录可访问 |
+| 字典选项（保持平铺） | `GET /system/dict/data/options` | 登录可访问 |
+| 树形字典选项 | `GET /system/dict/data/tree` | 登录可访问 |
 | 系统配置列表 | `GET /system/config/list` | `system:config:list` |
 | 系统配置详情 | `GET /system/config/detail` | `system:config:query` |
 | 新增系统配置 | `POST /system/config` | `system:config:add` |
@@ -352,8 +354,8 @@ Flyway 路径：`mango-system-core/src/main/resources/db/migration/system`。
 
 | 表 | 用途 |
 |----|------|
-| `sys_dict_type` | 字典类型，包含 `dict_type`、`dict_name`、`domain_code`、`status`。 |
-| `sys_dict_data` | 字典数据，包含 `dict_type`、`dict_label`、`dict_value`、`sort`、`status`。 |
+| `sys_dict_type` | 字典类型，包含 `dict_type`、`dict_name`、`shape`、`domain_code`、`status`。`shape` 未声明时按 `FLAT` 处理。 |
+| `sys_dict_data` | 字典数据，包含 `dict_type`、`dict_label`、`dict_value`、`parent_value`、`sort`、`status`。 |
 | `sys_config` | 系统配置，包含 `config_key`、`config_value`、`config_name`、`type`、`domain_code`、`value_type`、`options`、`editable`、`status`。 |
 | `sys_tenant` | 机构，包含机构编码、名称、类型、套餐、能力编码、状态和联系人信息。 |
 | `sys_login_log` | 登录日志。 |
@@ -365,6 +367,7 @@ Flyway 路径：`mango-system-core/src/main/resources/db/migration/system`。
 初始化内容：
 
 - `V1__init_system.sql` 创建系统基础表，并初始化默认机构、行政区划和国际化表。
+- `V2__dict_tree.sql` 为字典类型增加 `shape`，为字典数据增加可空 `parent_value` 和父节点索引；旧数据保持 `FLAT` 语义。
 - `V5__personal_config.sql` 创建 `sys_personal_config`。
 - `V6__retire_route_management.sql` 删除历史 `system_route_type` 字典并移除 `sys_route_conf`。
 - `V7__dict_domain.sql` 给 `sys_dict_type` 增加 `domain_code`。

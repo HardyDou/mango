@@ -42,7 +42,8 @@ class ModuleDiagnosticPermissionResourceContractTest {
             assertThat(item.path("path").asText()).isEqualTo("/system/api-resource");
             assertThat(item.path("component").asText()).isEqualTo("system/api-resource/index");
             assertThat(item.path("parentCode").asText()).isEqualTo("system:permission");
-            assertThat(textValues(item.path("apiCodes"))).containsExactly("system:api-resource:list");
+            assertThat(textValues(item.path("apiCodes")))
+                    .containsExactly("system:api-resource:list", "system:api-resource:manual");
         }
     }
 

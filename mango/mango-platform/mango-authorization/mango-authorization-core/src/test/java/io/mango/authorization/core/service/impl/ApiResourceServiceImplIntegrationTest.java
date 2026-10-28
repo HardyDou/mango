@@ -1,9 +1,11 @@
 package io.mango.authorization.core.service.impl;
 
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
+import io.mango.authorization.api.command.ApiResourceManualCommand;
 import io.mango.authorization.api.command.ApiResourceRegisterCommand;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.authorization.api.enums.ApiResourceSource;
+import io.mango.authorization.api.query.ApiResourceManualQuery;
 import io.mango.authorization.api.query.ApiResourcePageQuery;
 import io.mango.authorization.api.vo.ApiResourceAccessDecisionVO;
 import io.mango.authorization.api.vo.ApiResourceFilterOptionsVO;
@@ -273,6 +275,75 @@ class ApiResourceServiceImplIntegrationTest {
     }
 
     @Test
+    @DisplayName("manual takeover dominates scan, fixed and gateway sources and stays releasable")
+    void manualTakeoverShouldDominateAllOtherSourcesAndStayReleasable() {
+        ApiResourceRegisterCommand scanned = command("mango-guarantee", "POST", "/guarantee/open/apply",
+                "io.mango.guarantee.OpenController");
+        scanned.setSource(ApiResourceSource.CONTROLLER_SCAN);
+        scanned.setAccessMode(ApiResourceAccessMode.LOGIN);
+        service.registerApiResources(List.of(scanned));
+        assertThat(service.resolveAccessDecision("POST", "/guarantee/open/apply").source())
+                .isEqualTo(ApiResourceSource.CONTROLLER_SCAN);
+
+        ApiResourceManualCommand manual = new ApiResourceManualCommand();
+        manual.setModuleName("mango-guarantee");
+        manual.setHttpMethod("post");
+        manual.setPathPattern("/guarantee/open/apply");
+        manual.setAccessMode(ApiResourceAccessMode.PUBLIC);
+        manual.setDescription("人工接管为匿名开放");
+        service.saveManualApiResource(manual);
+
+        assertThat(service.resolveAccessDecision("POST", "/guarantee/open/apply"))
+                .satisfies(decision -> {
+                    assertThat(decision.matched()).isTrue();
+                    assertThat(decision.accessMode()).isEqualTo(ApiResourceAccessMode.PUBLIC);
+                    assertThat(decision.source()).isEqualTo(ApiResourceSource.MANUAL);
+                });
+
+        ApiResourceRegisterCommand fixed = command("mango-gateway", "POST", "/guarantee/open/apply",
+                "configuration");
+        fixed.setSource(ApiResourceSource.FIXED_DECLARATION);
+        fixed.setAccessMode(ApiResourceAccessMode.LOGIN);
+        service.registerApiResources(List.of(fixed));
+
+        ApiResourceRegisterCommand rescan = command("mango-guarantee", "POST", "/guarantee/open/apply",
+                "io.mango.guarantee.OpenController");
+        rescan.setSource(ApiResourceSource.CONTROLLER_SCAN);
+        rescan.setAccessMode(ApiResourceAccessMode.LOGIN);
+        service.registerApiResources(List.of(rescan));
+
+        assertThat(apiResourceRows("mango-guarantee", "POST", "/guarantee/open/apply"))
+                .filteredOn(resource -> ApiResourceSource.CONTROLLER_SCAN.name().equals(resource.getSource()))
+                .singleElement()
+                .extracting(ApiResourceEntity::getStatus)
+                .as("人工接管不停用 Controller 扫描行，解除接管后可立即恢复")
+                .isEqualTo(1);
+        assertThat(service.resolveAccessDecision("POST", "/guarantee/open/apply"))
+                .satisfies(decision -> {
+                    assertThat(decision.accessMode()).isEqualTo(ApiResourceAccessMode.PUBLIC);
+                    assertThat(decision.source()).isEqualTo(ApiResourceSource.MANUAL);
+                });
+
+        ApiResourceManualQuery release = new ApiResourceManualQuery();
+        release.setModuleName("mango-guarantee");
+        release.setHttpMethod("POST");
+        release.setPathPattern("/guarantee/open/apply");
+        service.releaseManualApiResource(release);
+
+        ApiResourceRegisterCommand afterRelease = command("mango-guarantee", "POST",
+                "/guarantee/open/apply", "io.mango.guarantee.OpenController");
+        afterRelease.setSource(ApiResourceSource.CONTROLLER_SCAN);
+        afterRelease.setAccessMode(ApiResourceAccessMode.LOGIN);
+        service.registerApiResources(List.of(afterRelease));
+
+        assertThat(service.resolveAccessDecision("POST", "/guarantee/open/apply"))
+                .satisfies(decision -> {
+                    assertThat(decision.accessMode()).isEqualTo(ApiResourceAccessMode.LOGIN);
+                    assertThat(decision.source()).isEqualTo(ApiResourceSource.CONTROLLER_SCAN);
+                });
+    }
+
+    @Test
     @DisplayName("page query should filter by module, domain, source and keyword")
     void pageQueryShouldFilterAndExposeDomainAndSource() {
         seedResource(60L, "mango-auth", "POST", "/auth/login",
@@ -342,9 +413,27 @@ class ApiResourceServiceImplIntegrationTest {
                               ApiResourceAccessMode accessMode) {
         jdbcTemplate.update("""
                         insert into authorization_api_resource
-                        (id, module_name, domain, http_method, path_pattern, resource_code, permission_code,
+                        (id, module_name, source, domain, http_method, path_pattern, resource_code, permission_code,
                          access_mode, handler_class, handler_method, status, deleted)
-                        values (?, ?, ?, ?, ?, ?, ?, ?, ?, 'tree', ?, 0)
+                        values (?, ?, 'FIXED_DECLARATION', ?, ?, ?, ?, ?, ?, ?, 'tree', ?, 0)
+                        """,
+                id, moduleName, domain(path), httpMethod, path, httpMethod + ":" + path, permissionCode,
+                accessMode.name(), handlerClass, status);
+    }
+
+    private void seedManualResource(Long id,
+                                    String moduleName,
+                                    String httpMethod,
+                                    String path,
+                                    String handlerClass,
+                                    int status,
+                                    String permissionCode,
+                                    ApiResourceAccessMode accessMode) {
+        jdbcTemplate.update("""
+                        insert into authorization_api_resource
+                        (id, module_name, source, domain, http_method, path_pattern, resource_code, permission_code,
+                         access_mode, handler_class, handler_method, status, deleted)
+                        values (?, ?, 'MANUAL', ?, ?, ?, ?, ?, ?, ?, 'manual', ?, 0)
                         """,
                 id, moduleName, domain(path), httpMethod, path, httpMethod + ":" + path, permissionCode,
                 accessMode.name(), handlerClass, status);

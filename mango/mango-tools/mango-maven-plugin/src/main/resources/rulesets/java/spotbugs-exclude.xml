@@ -9,6 +9,8 @@
         <Bug pattern="EI_EXPOSE_REP2"/>
         <Or>
             <Class name="io.mango.authorization.starter.AuthorizationDataScopeProvider"/>
+            <Class name="io.mango.authorization.starter.controller.ApiResourceAdminController"/>
+            <Class name="io.mango.access.core.auth.AccessEvaluator"/>
             <Class name="io.mango.access.starter.web.config.AccessWebAutoConfiguration"/>
             <Class name="io.mango.identity.core.adapter.AuthorizationRoleBindingAdapter"/>
             <Class name="io.mango.identity.core.service.impl.IdentitySecurityPolicyService"/>

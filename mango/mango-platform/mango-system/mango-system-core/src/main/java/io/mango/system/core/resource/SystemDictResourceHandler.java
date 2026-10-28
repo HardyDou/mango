@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.mango.resource.support.ResourceHandler;
 import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.support.model.ResourceDeclaration;
+import io.mango.system.api.enums.DictShapeEnum;
 import io.mango.resource.support.model.ResourceField;
 import io.mango.resource.support.model.ResourceHandlerSpec;
 import io.mango.resource.support.model.ResourceSyncResult;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -51,16 +53,18 @@ public class SystemDictResourceHandler implements ResourceHandler {
                 .fieldDescription("typeId", "字典类型表稳定 ID，可选；不填时使用资源 ID。")
                 .fieldDescription("dictType", "字典类型编码，全局唯一。")
                 .fieldDescription("dictName", "字典类型名称。")
+                .fieldDescription("shape", "字典形态：FLAT 或 TREE，默认 FLAT。")
                 .fieldDescription("domainCode", "业务域编码，默认 COMMON。")
                 .fieldDescription("status", "状态：1 启用，0 禁用。")
                 .fieldDescription("remark", "字典类型备注。")
-                .fieldDescription("items", "字典项列表，每项支持 id、label、value、sort、status、remark。")
+                .fieldDescription("items", "字典项列表，每项支持 id、label、value、parentValue、sort、status、remark。")
                 .build();
     }
 
     @Override
     public ResourceSyncResult upsert(ResourceDeclaration resource) {
         DictPayload payload = DictPayload.from(resource);
+        validatePayload(payload);
         DictTypeEntity type = findType(payload.dictType());
         if (type == null) {
             type = new DictTypeEntity();
@@ -131,6 +135,7 @@ public class SystemDictResourceHandler implements ResourceHandler {
     private void applyType(DictTypeEntity type, DictPayload payload) {
         LocalDateTime now = LocalDateTime.now();
         type.setDictName(payload.dictName());
+        type.setShape(payload.shape());
         type.setDomainCode(payload.domainCode());
         type.setStatus(payload.status());
         type.setRemark(payload.remark());
@@ -147,6 +152,7 @@ public class SystemDictResourceHandler implements ResourceHandler {
         LocalDateTime now = LocalDateTime.now();
         data.setDictLabel(item.label());
         data.setDictValue(item.value());
+        data.setParentValue(item.parentValue());
         data.setSort(item.sort());
         data.setStatus(item.status());
         data.setRemark(item.remark());
@@ -206,7 +212,7 @@ public class SystemDictResourceHandler implements ResourceHandler {
                 .last("limit 1"));
     }
 
-    private record DictPayload(Long typeId, String dictType, String dictName, String domainCode, Integer status,
+    private record DictPayload(Long typeId, String dictType, String dictName, String shape, String domainCode, Integer status,
                                String remark, List<DictItemPayload> items) {
 
         private static DictPayload from(ResourceDeclaration resource) {
@@ -215,6 +221,7 @@ public class SystemDictResourceHandler implements ResourceHandler {
                     fieldLong(resource, "typeId", false, Long.valueOf(resource.getId())),
                     dictType,
                     fieldText(resource, "dictName", true),
+                    normalizeShape(fieldText(resource, "shape", false)),
                     defaultText(fieldText(resource, "domainCode", false), "COMMON"),
                     fieldInt(resource, "status", false, ENABLED),
                     fieldText(resource, "remark", false),
@@ -225,7 +232,7 @@ public class SystemDictResourceHandler implements ResourceHandler {
         }
     }
 
-    private record DictItemPayload(Long id, String label, String value, Integer sort, Integer status, String remark) {
+    private record DictItemPayload(Long id, String label, String value, String parentValue, Integer sort, Integer status, String remark) {
 
         private static DictItemPayload from(Object value) {
             if (!(value instanceof Map<?, ?> map)) {
@@ -235,11 +242,48 @@ public class SystemDictResourceHandler implements ResourceHandler {
                     toLong(map.get("id"), false, null),
                     requiredText(map.get("label"), "SYSTEM_DICT item label is required"),
                     requiredText(map.get("value"), "SYSTEM_DICT item value is required"),
+                    toText(map.get("parentValue")),
                     toInt(map.get("sort"), false, 0),
                     toInt(map.get("status"), false, ENABLED),
                     toText(map.get("remark"))
             );
         }
+    }
+
+    private static void validatePayload(DictPayload payload) {
+        Map<String, DictItemPayload> itemsByValue = new HashMap<>();
+        for (DictItemPayload item : payload.items()) {
+            if (itemsByValue.put(item.value(), item) != null) {
+                throw new IllegalStateException("SYSTEM_DICT item value must be unique: " + item.value());
+            }
+            if (DictShapeEnum.FLAT.getCode().equals(payload.shape()) && item.parentValue() != null) {
+                throw new IllegalStateException("FLAT SYSTEM_DICT item cannot have parentValue: " + item.value());
+            }
+        }
+        if (DictShapeEnum.TREE.getCode().equals(payload.shape())) {
+            for (DictItemPayload item : payload.items()) {
+                Set<String> visited = new HashSet<>();
+                String cursor = item.parentValue();
+                while (cursor != null && !cursor.isBlank()) {
+                    if (!visited.add(cursor) || cursor.equals(item.value())) {
+                        throw new IllegalStateException("SYSTEM_DICT item has cyclic parentValue: " + item.value());
+                    }
+                    DictItemPayload parent = itemsByValue.get(cursor);
+                    if (parent == null) {
+                        throw new IllegalStateException("SYSTEM_DICT parentValue does not exist: " + cursor);
+                    }
+                    cursor = parent.parentValue();
+                }
+            }
+        }
+    }
+
+    private static String normalizeShape(String shape) {
+        DictShapeEnum normalized = DictShapeEnum.fromCode(shape);
+        if (normalized == null) {
+            throw new IllegalStateException("SYSTEM_DICT shape must be FLAT or TREE");
+        }
+        return normalized.getCode();
     }
 
     private static String fieldText(ResourceDeclaration resource, String name, boolean required) {
