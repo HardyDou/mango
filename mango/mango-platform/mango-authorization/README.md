@@ -213,10 +213,23 @@ API 资源允许由 Controller、固定声明、Gateway 和人工登记多个来
 同一 HTTP 方法和路径只保留一个运行时访问决策，优先级固定为：
 
 ```text
-人工接管（source=MANUAL） > 固定声明 / Gateway 显式声明 > Controller 扫描 > Gateway 默认策略（LOGIN）
+人工接管 > 固定声明 / Gateway 显式声明 > Controller 扫描 > Gateway 默认策略（LOGIN）
 ```
 
-人工接管使用管理接口维护，不需要改代码：
+人工接管**不新增记录、不修改模块归属**，而是在该路由已有的声明行上打覆盖标记：
+
+| 字段 | 含义 |
+|------|------|
+| `manual_override` | 1 表示当前由人工接管 |
+| `origin_source`、`origin_access_mode`、`origin_permission_code`、`origin_description` | 接管前的原值快照，释放时原样还原 |
+
+行为：
+
+- 接管只覆盖访问模式、权限标识和描述；`module_name`、`resource_code`、`handler_class`、`handler_method` 保持原声明值。
+- 切到 `PUBLIC` / `LOGIN` 时**不清空** `permission_code`，切回 `PERMISSION` 时自动带出，不需要重新录入。
+- 接管期间资源同步跳过该行：既不覆盖，也不停用。
+- 释放时用快照还原 `source`、`access_mode`、`permission_code`、`description` 并清除标记，不产生禁用残留行；若该路由没有原始声明（历史独立接管行），释放直接删除该行。
+- 保存和释放都会立即清理运行时缓存，单实例部署下一次请求即生效。
 
 ```http
 POST /authorization/api-resources/manual
@@ -229,16 +242,9 @@ POST /authorization/api-resources/manual
 }
 ```
 
-- 人工接管记录存在且启用时，Controller 扫描、固定声明、Gateway 声明都不能覆盖它；同模块同方法和同路径的扫描写入会被跳过并输出 `registration skipped by manual control` 日志。
-- 运行时不回退到低优先级声明：只要该路由存在启用的人工记录，就只使用人工记录。
-- 人工记录使用独立模块编码 `manual-control`，不会覆盖 Controller 扫描行；接管期间两条记录同时启用，由运行时优先级决定结果。
-- 保存和释放都会立即清理运行时缓存，修改后下一次请求即生效，不需要重启。
-- 释放接管使用 `PUT /authorization/api-resources/manual/release?moduleName=...&httpMethod=...&pathPattern=...`；释放只停用人工记录，Controller 扫描行仍启用，因此匿名/登录行为立即恢复。
-- 管理端“权限标识”页面（`system/api-resource/index`）的编辑动作调用上述两个接口，保存即人工接管，行上出现“解除接管”动作。
-- 不需要人工介入的普通接口仍只写 `@ApiAccess`，不要为同一接口重复维护 `API_RESOURCE` 或 Gateway 元数据。
-- 不要直接改 `authorization_api_resource` 的 `access_mode`：运行时缓存不会自动失效，且下次资源同步会被声明覆盖。需要人工控制时使用接管接口。
+管理端「权限标识」页面：访问模式列展示「人工接管」标记，行内提供「编辑」和「解除接管」，保存即接管，解除即还原。
 
-`resources[]` 字段：
+`resources[]` 字段：`resources[]` 字段：
 
 | 字段 | 默认值 | 含义 |
 |------|--------|------|
@@ -825,5 +831,5 @@ Resource Registry 还支持授权基线声明：
 
 ## 17. 升级与兼容
 
-- `1.1.3`：API 资源多来源生效优先级统一为“人工接管 > 固定声明/Gateway 显式声明 > Controller 扫描 > Gateway 默认 LOGIN”；新增 `system:api-resource:manual` 权限和 `/authorization/api-resources/manual` 人工接管接口；Gateway 请求先按应用路径决策、再回落外部路径。不新增表字段、不修改旧注册协议：既有 `FIXED_DECLARATION`、`CONTROLLER_SCAN`、`MANUAL` 数据继续读取，历史 `MANUAL` 记录升级后自动具备最高运行时优先级。升级后重新同步 `AUTH_MENU`，执行一次 API 资源同步并刷新缓存；若业务依赖旧排序（`FIXED_DECLARATION > MANUAL`），升级前需确认是否有同路由的人工记录。
+- `1.1.3`：API 资源多来源生效优先级统一为“人工接管 > 固定声明/Gateway 显式声明 > Controller 扫描 > Gateway 默认 LOGIN”；新增 `system:api-resource:manual` 权限和 `/authorization/api-resources/manual` 人工接管接口；Gateway 请求先按应用路径决策、再回落外部路径。升级执行授权模块 V5 迁移，把历史 `manual-control` 接管行合并回同路由声明行（快照写入 `origin_*`），并删除合并后的重复行；升级后重新同步 `AUTH_MENU` 并刷新缓存。
 - `1.1.2`：API Resource 增加固定声明、Controller 扫描和人工登记来源的去重与查询能力，并新增权限标识页面。升级时执行授权模块 V4 迁移、重新同步 `AUTH_MENU`，确认 `system:api-resource:list` 权限和固定声明优先级；回滚前按发布升级指南处理数据库快照。

@@ -71,6 +71,11 @@ class ApiResourceServiceImplIntegrationTest {
                     id bigint primary key,
                     module_name varchar(128) not null,
                     source varchar(32) not null default 'FIXED_DECLARATION',
+                    manual_override tinyint not null default 0,
+                    origin_source varchar(32),
+                    origin_access_mode varchar(32),
+                    origin_permission_code varchar(255),
+                    origin_description varchar(255),
                     domain varchar(128) not null default 'root',
                     http_method varchar(16) not null,
                     path_pattern varchar(512) not null,
@@ -275,12 +280,13 @@ class ApiResourceServiceImplIntegrationTest {
     }
 
     @Test
-    @DisplayName("manual takeover dominates scan, fixed and gateway sources and stays releasable")
-    void manualTakeoverShouldDominateAllOtherSourcesAndStayReleasable() {
+    @DisplayName("manual takeover marks the same row without touching module or permission code and release restores it")
+    void manualTakeoverMarksSameRowAndReleaseRestoresIt() {
         ApiResourceRegisterCommand scanned = command("mango-guarantee", "POST", "/guarantee/open/apply",
                 "io.mango.guarantee.OpenController");
         scanned.setSource(ApiResourceSource.CONTROLLER_SCAN);
-        scanned.setAccessMode(ApiResourceAccessMode.LOGIN);
+        scanned.setAccessMode(ApiResourceAccessMode.PERMISSION);
+        scanned.setPermissionCode("guarantee:apply:create");
         service.registerApiResources(List.of(scanned));
         assertThat(service.resolveAccessDecision("POST", "/guarantee/open/apply").source())
                 .isEqualTo(ApiResourceSource.CONTROLLER_SCAN);
@@ -293,36 +299,35 @@ class ApiResourceServiceImplIntegrationTest {
         manual.setDescription("人工接管为匿名开放");
         service.saveManualApiResource(manual);
 
+        assertThat(apiResourceMapper.selectList(null))
+                .filteredOn(resource -> "/guarantee/open/apply".equals(resource.getPathPattern()))
+                .as("接管只允许一条记录，不再复制 manual-control 行")
+                .singleElement()
+                .satisfies(resource -> {
+                    assertThat(resource.getModuleName()).as("模块归属保持不变").isEqualTo("mango-guarantee");
+                    assertThat(resource.getManualOverride()).isEqualTo(1);
+                    assertThat(resource.getAccessMode()).isEqualTo(ApiResourceAccessMode.PUBLIC.name());
+                    assertThat(resource.getPermissionCode()).as("权限标识不被清空").isEqualTo("guarantee:apply:create");
+                    assertThat(resource.getOriginAccessMode()).isEqualTo(ApiResourceAccessMode.PERMISSION.name());
+                    assertThat(resource.getOriginPermissionCode()).isEqualTo("guarantee:apply:create");
+                    assertThat(resource.getStatus()).isEqualTo(1);
+                });
         assertThat(service.resolveAccessDecision("POST", "/guarantee/open/apply"))
                 .satisfies(decision -> {
-                    assertThat(decision.matched()).isTrue();
                     assertThat(decision.accessMode()).isEqualTo(ApiResourceAccessMode.PUBLIC);
-                    assertThat(decision.source()).isEqualTo(ApiResourceSource.MANUAL);
+                    assertThat(decision.manualOverride()).isTrue();
                 });
-
-        ApiResourceRegisterCommand fixed = command("mango-gateway", "POST", "/guarantee/open/apply",
-                "configuration");
-        fixed.setSource(ApiResourceSource.FIXED_DECLARATION);
-        fixed.setAccessMode(ApiResourceAccessMode.LOGIN);
-        service.registerApiResources(List.of(fixed));
 
         ApiResourceRegisterCommand rescan = command("mango-guarantee", "POST", "/guarantee/open/apply",
                 "io.mango.guarantee.OpenController");
         rescan.setSource(ApiResourceSource.CONTROLLER_SCAN);
-        rescan.setAccessMode(ApiResourceAccessMode.LOGIN);
+        rescan.setAccessMode(ApiResourceAccessMode.PERMISSION);
+        rescan.setPermissionCode("guarantee:apply:create");
         service.registerApiResources(List.of(rescan));
 
-        assertThat(apiResourceRows("mango-guarantee", "POST", "/guarantee/open/apply"))
-                .filteredOn(resource -> ApiResourceSource.CONTROLLER_SCAN.name().equals(resource.getSource()))
-                .singleElement()
-                .extracting(ApiResourceEntity::getStatus)
-                .as("人工接管不停用 Controller 扫描行，解除接管后可立即恢复")
-                .isEqualTo(1);
-        assertThat(service.resolveAccessDecision("POST", "/guarantee/open/apply"))
-                .satisfies(decision -> {
-                    assertThat(decision.accessMode()).isEqualTo(ApiResourceAccessMode.PUBLIC);
-                    assertThat(decision.source()).isEqualTo(ApiResourceSource.MANUAL);
-                });
+        assertThat(service.resolveAccessDecision("POST", "/guarantee/open/apply").accessMode())
+                .as("同步不得覆盖人工接管")
+                .isEqualTo(ApiResourceAccessMode.PUBLIC);
 
         ApiResourceManualQuery release = new ApiResourceManualQuery();
         release.setModuleName("mango-guarantee");
@@ -330,17 +335,40 @@ class ApiResourceServiceImplIntegrationTest {
         release.setPathPattern("/guarantee/open/apply");
         service.releaseManualApiResource(release);
 
-        ApiResourceRegisterCommand afterRelease = command("mango-guarantee", "POST",
-                "/guarantee/open/apply", "io.mango.guarantee.OpenController");
-        afterRelease.setSource(ApiResourceSource.CONTROLLER_SCAN);
-        afterRelease.setAccessMode(ApiResourceAccessMode.LOGIN);
-        service.registerApiResources(List.of(afterRelease));
-
+        assertThat(apiResourceMapper.selectList(null))
+                .filteredOn(resource -> "/guarantee/open/apply".equals(resource.getPathPattern()))
+                .singleElement()
+                .satisfies(resource -> {
+                    assertThat(resource.getManualOverride()).isZero();
+                    assertThat(resource.getSource()).isEqualTo(ApiResourceSource.CONTROLLER_SCAN.name());
+                    assertThat(resource.getAccessMode()).isEqualTo(ApiResourceAccessMode.PERMISSION.name());
+                    assertThat(resource.getPermissionCode()).isEqualTo("guarantee:apply:create");
+                    assertThat(resource.getOriginSource()).isNull();
+                });
         assertThat(service.resolveAccessDecision("POST", "/guarantee/open/apply"))
                 .satisfies(decision -> {
-                    assertThat(decision.accessMode()).isEqualTo(ApiResourceAccessMode.LOGIN);
-                    assertThat(decision.source()).isEqualTo(ApiResourceSource.CONTROLLER_SCAN);
+                    assertThat(decision.accessMode()).isEqualTo(ApiResourceAccessMode.PERMISSION);
+                    assertThat(decision.permissionCode()).isEqualTo("guarantee:apply:create");
+                    assertThat(decision.manualOverride()).isFalse();
                 });
+    }
+
+    @Test
+    @DisplayName("release deletes a legacy manual row that has no declared origin")
+    void releaseDeletesLegacyManualRowWithoutOrigin() {
+        jdbcTemplate.update("""
+                        insert into authorization_api_resource
+                        (id, module_name, source, manual_override, domain, http_method, path_pattern, resource_code,
+                         permission_code, access_mode, handler_class, handler_method, description, status, deleted)
+                        values (990113000000000021, 'manual-control', 'MANUAL', 1, 'openapi', 'POST', '/openapi/callback',
+                                'POST:/openapi/callback', null, 'PUBLIC', 'manual', 'migrated', '历史接管', 1, 0)
+                        """);
+
+        service.releaseManualApiResource(manualQuery("manual-control", "POST", "/openapi/callback"));
+
+        assertThat(apiResourceMapper.selectList(null))
+                .as("没有声明来源的接管记录解除后直接删除，不留禁用垃圾行")
+                .noneMatch(resource -> "/openapi/callback".equals(resource.getPathPattern()));
     }
 
     @Test
@@ -419,6 +447,32 @@ class ApiResourceServiceImplIntegrationTest {
                         """,
                 id, moduleName, domain(path), httpMethod, path, httpMethod + ":" + path, permissionCode,
                 accessMode.name(), handlerClass, status);
+    }
+
+    private ApiResourceEntity manualEntity(String moduleName, String httpMethod, String path) {
+        ApiResourceEntity entity = new ApiResourceEntity();
+        entity.setTenantId("default");
+        entity.setModuleName(moduleName);
+        entity.setDomain(domain(path));
+        entity.setSource(ApiResourceSource.CONTROLLER_SCAN.name());
+        entity.setHttpMethod(httpMethod);
+        entity.setPathPattern(path);
+        entity.setResourceCode(httpMethod + ":" + path);
+        entity.setAccessMode(ApiResourceAccessMode.LOGIN.name());
+        entity.setHandlerClass("io.mango.openapi.CallbackController");
+        entity.setHandlerMethod("callback");
+        entity.setDescription("开放回调");
+        entity.setStatus(1);
+        entity.setDeleted(0);
+        return entity;
+    }
+
+    private ApiResourceManualQuery manualQuery(String moduleName, String httpMethod, String path) {
+        ApiResourceManualQuery query = new ApiResourceManualQuery();
+        query.setModuleName(moduleName);
+        query.setHttpMethod(httpMethod);
+        query.setPathPattern(path);
+        return query;
     }
 
     private void seedManualResource(Long id,

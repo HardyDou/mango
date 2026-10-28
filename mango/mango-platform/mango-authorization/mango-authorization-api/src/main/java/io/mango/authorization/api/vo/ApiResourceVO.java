@@ -25,6 +25,12 @@ public class ApiResourceVO {
     @Schema(description = "登记来源")
     private ApiResourceSource source;
 
+    @Schema(description = "是否被人工接管：true 时访问模式来自人工配置")
+    private Boolean manualOverride;
+
+    @Schema(description = "接管前的访问模式，未接管时为空")
+    private String originAccessMode;
+
     @Schema(description = "HTTP 方法")
     private String httpMethod;
 
