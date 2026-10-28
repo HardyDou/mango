@@ -1090,6 +1090,39 @@
       "testEvidence": [
         "components/DictDisplay/__tests__/DictDisplay.spec.ts"
       ]
+    },
+    {
+      "name": "DictDisplay",
+      "exportKey": "./components/DictDisplay/index.vue",
+      "exportName": "default",
+      "level": "C4",
+      "hostProfile": "host-agnostic",
+      "environmentProfile": "browser-only",
+      "distribution": [
+        "npm"
+      ],
+      "deploymentModes": [
+        "monolith",
+        "microfrontend"
+      ],
+      "stability": "stable",
+      "ownerRole": "Frontend Standards Owner",
+      "styleExportKeys": [
+        "./style.css",
+        "./theme/index.css"
+      ],
+      "docs": {
+        "path": "components/DictDisplay/README.md",
+        "requiredSections": [
+          "概览",
+          "接入方式",
+          "API 与扩展",
+          "问题排查"
+        ]
+      },
+      "testEvidence": [
+        "components/DictDisplay/__tests__/DictDisplay.spec.ts"
+      ]
     }
   ],
   "legacyComponentExports": [
