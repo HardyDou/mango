@@ -296,10 +296,12 @@ Resource Registry 能否同步某个资源类型，以运行时是否装配对�
 | `mango-job` | `JOB_DEFINITION` |
 | `mango-file` | `FILE_STORAGE_CONFIG`、`FILE_SETTINGS` |
 | `mango-ai` | `AI_PROVIDER_CONNECTION`、`AI_MODEL`、`AI_PROMPT`、`AI_SKILL`、`AI_SERVICE` |
+| `mango-cms` | `CMS_SITE`、`CMS_SITE_SETTING`、`CMS_SITE_CATEGORY`、`CMS_CONTENT_CATEGORY`、`CMS_CONTENT`、`CMS_CONTENT_PUBLISH`、`CMS_NAVIGATION`、`CMS_ADVERTISEMENT`、`CMS_AD_DELIVERY` |
 
 声明新资源前先确认：
 
 - 目标应用已经依赖对应目标模块 starter 或 core，并能装配该类型的 `ResourceHandler`。
+- CMS 内容分类等资源必须使用目标模块提供的 `ResourceHandler`，不能把 Resource 声明误当作 Flyway 或运行时业务 CRUD。
 - 字段名和字段类型以目标 handler 暴露的 `ResourceHandlerSpec` 为准，可通过 `/resource/handler-specs` 查看当前应用实际装配结果。
 - 资源声明只能证明 Resource Registry 调用了目标 handler；是否覆盖目标模块业务语义，要由目标模块自己的 README、集成测试或验收用例说明。
 

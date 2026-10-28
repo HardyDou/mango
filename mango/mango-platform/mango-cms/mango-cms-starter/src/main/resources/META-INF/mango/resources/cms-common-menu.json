@@ -119,7 +119,7 @@
                           },
                           {
                             "menuType": 2,
-                            "menuName": "发布管理",
+                            "menuName": "发布记录",
                             "menuCode": "cms:publish",
                             "path": "/cms/content-publishes",
                             "icon": "Promotion",

@@ -27,7 +27,7 @@
 | 公开素材 | 读取站点公开文件素材 | `GET /cms/open/files/public-preview` |
 | 站点管理 | 维护站点、站点配置 | 管理接口 / 前端 CMS 管理页面 |
 | 内容管理 | 维护内容池、内容分类、标签 | 管理接口 / 前端 CMS 管理页面 |
-| 发布管理 | 维护内容发布关系、上下线、置顶和推荐 | 管理接口 / 前端 CMS 管理页面 |
+| 发布记录 | 查看内容发布到哪些站点栏目，维护上下线、置顶和推荐 | 管理接口 / 前端 CMS 管理页面 |
 
 ## 3. 后端接入
 
@@ -109,7 +109,7 @@ import { cmsSiteApi, createSiteResolveQuery } from '@mango/site-shell';
 const site = await cmsSiteApi.resolveSite(createSiteResolveQuery(undefined, window.location.host));
 ```
 
-管理后台使用 `@mango/cms` 管理页面包，提供站点、栏目、导航、广告、内容和发布管理页面。
+管理后台使用 `@mango/cms` 管理页面包，提供站点、栏目、导航、广告、内容、发布记录页面。
 
 ## 5. 快速开始
 
@@ -159,8 +159,39 @@ CMS 按数据用途分层登记：
 
 - Flyway 只负责 DDL。新库通过 `db/migration/mango-cms/V1__init_mango_cms.sql` 一次创建最终表结构，不写菜单、业务数据或演示数据。
 - 正式资源放在 `META-INF/mango/resources/`。CMS 当前登记 `cms-common-menu.json` 和 `cms-common-public-api.yml`；此类资源默认同步，其中 `cms-common-public-api.yml` 是匿名放行的唯一判定来源。
-- 必须初始化的业务数据也应按资源类型放在 `META-INF/mango/resources/`，不能写进 Flyway。CMS 当前没有必须初始化的业务数据。
+- 必须初始化的业务数据也应按资源类型放在 `META-INF/mango/resources/`，不能写进 Flyway。业务项目可以通过 `CMS_CONTENT_CATEGORY` 声明内置内容分类；这些分类属于正式业务数据，不需要开启 Demo。
 - 演示资源按 CMS 业务类型拆分放在 `META-INF/mango/demo/`，默认不加载；仅在明确开启 Demo 时同步。
+
+业务项目声明内置内容分类时，资源文件放在业务模块的 `META-INF/mango/resources/`，使用稳定的 `targetId`、业务唯一的 `categoryCode`，并把根分类的 `parentId` 设为 `0`。示例：
+
+```yaml
+mango:
+  resource:
+    schema-version: 1
+    module-code: example-content
+    module-name: 示例内容
+    declarations:
+      CMS_CONTENT_CATEGORY:
+        - id: "2070000000000000001"
+          version: 1
+          biz-key: example-content.category.news
+          name: 新闻分类
+          target-module: cms
+          sync-mode: SYNC_ONCE
+          fields:
+            targetId: { type: LONG, value: 2070000000000000001 }
+            tenantId: { type: STRING, value: "1" }
+            createdBy: { type: LONG, value: 1 }
+            updatedBy: { type: LONG, value: 1 }
+            parentId: { type: LONG, value: 0 }
+            categoryCode: { type: STRING, value: NEWS }
+            categoryName: { type: STRING, value: 新闻 }
+            sort: { type: INT, value: 10 }
+            status: { type: STRING, value: ENABLED }
+            remark: { type: STRING, value: 内置内容分类 }
+```
+
+`CMS_CONTENT_CATEGORY` 的目标表是 `cms_content_category`。Resource Registry 只负责声明同步，运行时用户新增或修改的分类仍通过 CMS 管理接口维护。
 
 本地显式开启 Demo：
 

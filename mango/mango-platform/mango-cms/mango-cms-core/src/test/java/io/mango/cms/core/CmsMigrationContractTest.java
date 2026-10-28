@@ -33,7 +33,7 @@ class CmsMigrationContractTest {
             "cms_site_setting");
 
     @Test
-    @DisplayName("CMS should expose the V1 baseline plus the banner removal migration")
+    @DisplayName("CMS should expose the V1 baseline plus the follow-up migrations")
     void cmsExposesVersionedMigrations() throws IOException {
         try (Stream<Path> migrations = Files.list(MIGRATION_DIR)) {
             assertThat(migrations
@@ -41,7 +41,10 @@ class CmsMigrationContractTest {
                     .filter(path -> path.getFileName().toString().matches("V[0-9]+__.+\\.sql"))
                     .map(path -> path.getFileName().toString())
                     .toList())
-                    .containsExactlyInAnyOrder("V1__init_mango_cms.sql", "V2__drop_cms_banner.sql");
+                    .containsExactlyInAnyOrder(
+                            "V1__init_mango_cms.sql",
+                            "V2__drop_cms_banner.sql",
+                            "V3__cms_publish_history.sql");
         }
     }
 

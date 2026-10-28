@@ -25,7 +25,9 @@
 
     <MangoListPanel>
       <template #actions>
-        <el-button v-if="config.editor" type="primary" plain @click="openEditor()">新增</el-button>
+        <el-button v-if="config.editor && config.canCreate !== false" type="primary" plain @click="openEditor()"
+          >新增</el-button
+        >
       </template>
 
       <el-alert v-if="errorMessage" class="cms-error" type="error" :closable="false" show-icon>
@@ -73,7 +75,7 @@
             </span>
             <div v-else-if="column.type === 'name'" class="cms-name-cell">
               <div class="cms-name-text">
-                <strong>{{ formatValue(row, column.prop) }}</strong>
+                <strong>{{ formatValue(row, column.prop) || column.emptyText || '-' }}</strong>
                 <span v-if="column.subProp">{{ formatValue(row, column.subProp) }}</span>
               </div>
             </div>
@@ -105,60 +107,57 @@
         <el-table-column label="更新时间" width="170" show-overflow-tooltip>
           <template #default="{ row }">{{ row.updatedAt || row.createdAt || '-' }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="300" fixed="right">
+        <el-table-column label="操作" width="260" fixed="right">
           <template #default="{ row }">
             <div class="cms-actions">
               <el-button v-if="config.detail" link type="primary" @click="openDetail(row)">详情</el-button>
-              <el-button v-if="config.editor" link type="primary" @click="openEditor(row)">编辑</el-button>
-              <el-button
-                v-if="config.canToggleStatus && rowStatus(row) === 'ENABLED'"
-                link
-                type="warning"
-                @click="changeStatus(row, 'DISABLED')"
-                >禁用</el-button
+              <el-button v-if="config.editor && config.canEdit !== false" link type="primary" @click="openEditor(row)"
+                >编辑</el-button
               >
-              <el-button
-                v-if="config.canToggleStatus && rowStatus(row) === 'DISABLED'"
-                link
-                type="success"
-                @click="changeStatus(row, 'ENABLED')"
-                >启用</el-button
-              >
-              <el-button
-                v-if="config.key === 'contents' && row.status === 'DRAFT'"
-                link
-                type="primary"
-                @click="submitContent(row)"
-                >提交</el-button
-              >
-              <el-button
-                v-if="config.key === 'contents' && row.status === 'PENDING_REVIEW'"
-                link
-                type="success"
-                @click="approveContent(row)"
-                >通过</el-button
-              >
-              <el-button
-                v-if="config.key === 'contents' && row.status === 'PENDING_REVIEW'"
-                link
-                type="warning"
-                @click="rejectContent(row)"
-                >驳回</el-button
-              >
-              <el-button
-                v-if="config.key === 'contents' && row.status === 'PUBLISHED'"
-                link
-                type="warning"
-                @click="offlineContent(row)"
-                >下线</el-button
-              >
-              <el-button
-                v-if="config.key === 'contentPublishes' && row.publishStatus === 'PUBLISHED'"
-                link
-                type="warning"
-                @click="offlinePublish(row)"
-                >下线</el-button
-              >
+              <template v-if="config.key === 'contents'">
+                <el-button v-if="row.status === 'DRAFT'" link type="primary" @click="submitContent(row)"
+                  >提交</el-button
+                >
+                <el-button v-if="row.status === 'PENDING_REVIEW'" link type="success" @click="approveContent(row)"
+                  >通过</el-button
+                >
+                <el-button
+                  v-if="config.canPublish && row.status === 'PUBLISHED'"
+                  link
+                  type="primary"
+                  @click="openPublishDialog(row)"
+                  >发布</el-button
+                >
+                <el-button v-if="row.status === 'PENDING_REVIEW'" link type="warning" @click="rejectContent(row)"
+                  >驳回</el-button
+                >
+                <el-button v-if="row.status === 'PUBLISHED'" link type="warning" @click="offlineContent(row)"
+                  >下线</el-button
+                >
+              </template>
+              <template v-else>
+                <el-button
+                  v-if="config.canToggleStatus && rowStatus(row) === 'ENABLED'"
+                  link
+                  type="warning"
+                  @click="changeStatus(row, 'DISABLED')"
+                  >禁用</el-button
+                >
+                <el-button
+                  v-if="config.canToggleStatus && rowStatus(row) === 'DISABLED'"
+                  link
+                  type="success"
+                  @click="changeStatus(row, 'ENABLED')"
+                  >启用</el-button
+                >
+                <el-button
+                  v-if="config.key === 'contentPublishes' && row.publishStatus === 'PUBLISHED'"
+                  link
+                  type="warning"
+                  @click="offlinePublish(row)"
+                  >下线</el-button
+                >
+              </template>
               <el-button v-if="config.remove" link type="danger" @click="deleteRow(row)">删除</el-button>
             </div>
           </template>
@@ -305,6 +304,126 @@
       </template>
     </el-dialog>
 
+    <MangoDialog v-model="publishVisible" title="发布内容" width="720px" destroy-on-close append-to-body>
+      <div class="cms-publish-summary">
+        <span>发布内容</span>
+        <strong>{{ publishContent?.title || '-' }}</strong>
+      </div>
+      <el-form label-width="96px" class="cms-publish-form">
+        <div class="cms-form-section-title">发布目标</div>
+        <el-row :gutter="14">
+          <el-col :span="24">
+            <el-form-item label="站点" required>
+              <el-select
+                v-model="publishForm.siteId"
+                clearable
+                filterable
+                placeholder="请选择站点"
+                style="width: 100%"
+                @change="handlePublishSiteChange"
+              >
+                <el-option
+                  v-for="site in siteOptions"
+                  :key="site.id"
+                  :label="site.siteName || site.siteCode"
+                  :value="site.id"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="24">
+            <el-form-item label="发布栏目" required>
+              <el-tree-select
+                v-model="publishForm.categoryIds"
+                :data="publishSiteCategoryOptions"
+                :props="{ label: 'label', value: 'value', children: 'children', disabled: 'disabled' }"
+                check-strictly
+                clearable
+                filterable
+                multiple
+                collapse-tags
+                collapse-tags-tooltip
+                node-key="value"
+                :disabled="!publishForm.siteId"
+                :placeholder="publishForm.siteId ? '请选择发布栏目' : '请先选择站点'"
+                style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <div class="cms-form-section-title">展示设置</div>
+        <el-row :gutter="14">
+          <el-col :span="24">
+            <el-form-item label="置顶范围">
+              <el-radio-group v-model="publishForm.topScope">
+                <el-radio v-for="item in topScopeOptions" :key="item.value" :value="item.value">
+                  {{ item.label }}
+                </el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
+          <el-col :span="24">
+            <el-form-item label="推荐位置">
+              <el-radio-group v-model="publishForm.recommendationType">
+                <el-radio v-for="item in recommendationTypeOptions" :key="item.value" :value="item.value">
+                  {{ item.label }}
+                </el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <div class="cms-form-section-title">发布安排</div>
+        <el-row :gutter="14">
+          <el-col :span="publishForm.publishMode === 'SCHEDULED' ? 12 : 24">
+            <el-form-item label="发布方式">
+              <el-radio-group v-model="publishForm.publishMode">
+                <el-radio value="IMMEDIATE">立即发布</el-radio>
+                <el-radio value="SCHEDULED">定时发布</el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
+          <el-col v-if="publishForm.publishMode === 'SCHEDULED'" :span="12">
+            <el-form-item label="发布日期" required>
+              <el-date-picker
+                v-model="publishForm.scheduledPublishTime"
+                type="datetime"
+                value-format="YYYY-MM-DDTHH:mm:ss"
+                clearable
+                placeholder="请选择发布日期"
+                style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="publishForm.validity === 'DATE' ? 12 : 24">
+            <el-form-item label="有效期">
+              <el-radio-group v-model="publishForm.validity">
+                <el-radio value="PERMANENT">永久</el-radio>
+                <el-radio value="DATE">具体日期</el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
+          <el-col v-if="publishForm.validity === 'DATE'" :span="12">
+            <el-form-item label="有效期至" required>
+              <el-date-picker
+                v-model="publishForm.offlineTime"
+                type="datetime"
+                value-format="YYYY-MM-DDTHH:mm:ss"
+                clearable
+                placeholder="请选择下线时间"
+                style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </el-form>
+      <template #footer>
+        <el-button @click="publishVisible = false">取消</el-button>
+        <el-button type="primary" :loading="publishSaving" @click="savePublish">发布</el-button>
+      </template>
+    </MangoDialog>
+
     <MangoDialog
       v-model="detailVisible"
       :title="config.key === 'contents' ? '文章详情' : `${config.title}详情`"
@@ -346,12 +465,12 @@
         <p v-if="formatValue(detailRow, 'summary')" class="cms-article-summary">
           {{ formatValue(detailRow, 'summary') }}
         </p>
-        <div
+        <RichTextViewer
           v-if="hasRichTextValue(detailRow, 'body')"
           class="cms-detail-richtext cms-article-body"
-          v-html="formatRichTextValue(detailRow, { prop: 'body', label: '正文', type: 'richText' })"
+          :content="String(detailRow.body || '')"
+          empty-text="暂无正文内容"
         />
-        <el-empty v-else class="cms-article-empty" description="暂无正文内容" :image-size="72" />
       </article>
       <div v-else class="cms-detail">
         <section v-for="group in config.detail?.groups" :key="group.title" class="cms-detail-section">
@@ -363,10 +482,10 @@
               :label="field.label"
               :span="field.detailSpan || 1"
             >
-              <div
+              <RichTextViewer
                 v-if="field.type === 'richText'"
                 class="cms-detail-richtext"
-                v-html="formatRichTextValue(detailRow, field)"
+                :content="String(detailRow[field.prop] || '')"
               />
               <span v-else class="cms-detail-value" :class="{ 'cms-detail-value--long': field.type === 'textarea' }">
                 {{ formatDetailValue(detailRow, field) }}
@@ -386,7 +505,15 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import type { FormInstance, FormRules } from 'element-plus';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { Editor, MangoDialog, MangoListPage, MangoListPanel, MangoSearchPanel, Pagination } from '@mango/common';
+import {
+  Editor,
+  MangoDialog,
+  MangoListPage,
+  MangoListPanel,
+  MangoSearchPanel,
+  Pagination,
+  RichTextViewer,
+} from '@mango/common';
 import { MUpload, downloadUrl } from '@mango/file';
 import { requestErrorMessage, type ApiId, type CmsPageQuery, type CmsRequestOptions, type CmsSite } from '../api/cms';
 import { useCmsApi } from '../composables/useCmsApi';
@@ -451,6 +578,18 @@ type ColumnConfig = {
   optionKey?: string;
   minWidth?: number;
   width?: number;
+  emptyText?: string;
+};
+
+type PublishForm = {
+  siteId: ApiId | '';
+  categoryIds: ApiId[];
+  publishMode: 'IMMEDIATE' | 'SCHEDULED';
+  scheduledPublishTime?: string;
+  topScope: string;
+  recommendationType: string;
+  validity: 'PERMANENT' | 'DATE';
+  offlineTime?: string;
 };
 
 type PageData = {
@@ -482,6 +621,9 @@ export type CmsResourceConfig = {
   page: (query: CmsPageQuery, options?: CmsRequestOptions) => Promise<PageData>;
   create?: (data: CmsRow) => Promise<unknown>;
   update?: (data: CmsRow) => Promise<unknown>;
+  canCreate?: boolean;
+  canEdit?: boolean;
+  canPublish?: boolean;
   updateStatus?: (id: ApiId, status: 'ENABLED' | 'DISABLED') => Promise<unknown>;
   remove?: (id: ApiId) => Promise<unknown>;
   normalizePayload?: (payload: CmsRow, form: CmsRow) => CmsRow;
@@ -590,6 +732,17 @@ const saving = ref(false);
 const errorMessage = ref('');
 const editorVisible = ref(false);
 const detailVisible = ref(false);
+const publishVisible = ref(false);
+const publishSaving = ref(false);
+const publishContent = ref<CmsRow>();
+const publishForm = reactive<PublishForm>({
+  siteId: '',
+  categoryIds: [],
+  publishMode: 'IMMEDIATE',
+  topScope: 'NONE',
+  recommendationType: 'NONE',
+  validity: 'PERMANENT',
+});
 const formRef = ref<FormInstance>();
 const form = reactive<CmsRow>({});
 const detailRow = reactive<CmsRow>({});
@@ -598,6 +751,26 @@ const contentOptions = ref<CmsRow[]>([]);
 const contentCategoryOptions = ref<CmsRow[]>([]);
 const siteCategoryOptions = ref<CmsRow[]>([]);
 const advertisementOptions = ref<CmsRow[]>([]);
+
+const topScopeOptions: OptionItem[] = [
+  { label: '不置顶', value: 'NONE' },
+  { label: '栏目置顶', value: 'CATEGORY' },
+  { label: '站点置顶', value: 'SITE' },
+];
+
+const recommendationTypeOptions: OptionItem[] = [
+  { label: '不推荐', value: 'NONE' },
+  { label: '首页推荐', value: 'HOME' },
+  { label: '热门推荐', value: 'HOT' },
+  { label: '编辑推荐', value: 'EDITOR' },
+];
+
+const publishSiteCategoryOptions = computed(() =>
+  toTreeOptions(siteCategoryOptions.value, {
+    nameKey: 'categoryName',
+    codeKey: 'categoryCode',
+  }),
+);
 
 const visibleEditorFields = computed(() =>
   (props.config.editor?.fields || []).filter((field) => isFieldVisible(field)),
@@ -636,13 +809,18 @@ async function loadResource() {
   advertisementOptions.value = [];
   editorVisible.value = false;
   detailVisible.value = false;
+  publishVisible.value = false;
   await loadSiteOptions();
   await loadEditorOptions();
   await loadRows();
 }
 
 async function loadSiteOptions() {
-  if (!props.config.filterSite && !props.config.editor?.fields.some((field) => field.optionKey === 'sites')) {
+  if (
+    !props.config.filterSite &&
+    !props.config.canPublish &&
+    !props.config.editor?.fields.some((field) => field.optionKey === 'sites')
+  ) {
     return;
   }
   try {
@@ -772,6 +950,80 @@ function openEditor(row?: CmsRow) {
   editorVisible.value = true;
 }
 
+function resetPublishForm() {
+  publishForm.siteId = '';
+  publishForm.categoryIds = [];
+  publishForm.publishMode = 'IMMEDIATE';
+  publishForm.scheduledPublishTime = undefined;
+  publishForm.topScope = 'NONE';
+  publishForm.recommendationType = 'NONE';
+  publishForm.validity = 'PERMANENT';
+  publishForm.offlineTime = undefined;
+}
+
+function handlePublishSiteChange() {
+  publishForm.categoryIds = [];
+  void loadSiteCategoryOptions(publishForm.siteId);
+}
+
+async function openPublishDialog(row: CmsRow) {
+  publishContent.value = row;
+  resetPublishForm();
+  publishVisible.value = true;
+}
+
+function validatePublishForm() {
+  if (!publishContent.value?.id) {
+    ElMessage.error('发布内容不存在');
+    return false;
+  }
+  if (!publishForm.siteId) {
+    ElMessage.error('请选择发布站点');
+    return false;
+  }
+  if (!publishForm.categoryIds.length) {
+    ElMessage.error('请选择至少一个发布栏目');
+    return false;
+  }
+  if (publishForm.publishMode === 'SCHEDULED' && !publishForm.scheduledPublishTime) {
+    ElMessage.error('定时发布必须选择发布日期');
+    return false;
+  }
+  if (publishForm.validity === 'DATE' && !publishForm.offlineTime) {
+    ElMessage.error('有效期选择具体日期时必须填写有效期至');
+    return false;
+  }
+  return true;
+}
+
+async function savePublish() {
+  if (!validatePublishForm() || !publishContent.value?.id) {
+    return;
+  }
+  publishSaving.value = true;
+  try {
+    await cmsApi.publishContents({
+      contentIds: [String(publishContent.value.id)],
+      siteId: String(publishForm.siteId),
+      categoryIds: publishForm.categoryIds.map(String),
+      scheduledPublishTime:
+        publishForm.publishMode === 'SCHEDULED' ? publishForm.scheduledPublishTime || undefined : undefined,
+      offlineTime: publishForm.validity === 'DATE' ? publishForm.offlineTime || undefined : undefined,
+      top: publishForm.topScope !== 'NONE',
+      topScope: publishForm.topScope,
+      recommended: publishForm.recommendationType !== 'NONE',
+      recommendationType: publishForm.recommendationType,
+    });
+    ElMessage.success(`已发布到 ${publishForm.categoryIds.length} 个栏目`);
+    publishVisible.value = false;
+    await loadRows();
+  } catch (error) {
+    ElMessage.error(requestErrorMessage(error, '发布失败'));
+  } finally {
+    publishSaving.value = false;
+  }
+}
+
 function openDetail(row: CmsRow) {
   Object.keys(detailRow).forEach((key) => delete detailRow[key]);
   Object.assign(detailRow, row);
@@ -814,7 +1066,7 @@ function normalizeAdMaterialType() {
 }
 
 async function saveRow() {
-  if (!props.config.editor || !props.config.create || !props.config.update) {
+  if (!props.config.editor || !props.config.update || (!form.id && !props.config.create)) {
     return;
   }
   await formRef.value?.validate();
@@ -897,7 +1149,7 @@ async function approveContent(row: CmsRow) {
     return;
   }
   await cmsApi.approveContent(row.id, '审核通过');
-  ElMessage.success('内容已发布');
+  ElMessage.success('审核已通过');
   await loadRows();
 }
 
@@ -1122,11 +1374,6 @@ function formatDetailValue(row: CmsRow, field: FieldConfig) {
   return String(value || '-');
 }
 
-function formatRichTextValue(row: CmsRow, field: FieldConfig) {
-  const html = String(row[field.prop] || '').trim();
-  return html ? sanitizeRichText(html) : '<span class="cms-muted">-</span>';
-}
-
 function hasRichTextValue(row: CmsRow, prop: string) {
   return String(row[prop] || '').trim().length > 0;
 }
@@ -1134,28 +1381,6 @@ function hasRichTextValue(row: CmsRow, prop: string) {
 function safeExternalUrl(value: unknown) {
   const url = String(value || '').trim();
   return /^https?:\/\//i.test(url) ? url : '';
-}
-
-function sanitizeRichText(html: string) {
-  const template = document.createElement('template');
-  template.innerHTML = html;
-  template.content
-    .querySelectorAll('script, style, iframe, object, embed, link, meta')
-    .forEach((element) => element.remove());
-  template.content.querySelectorAll('*').forEach((element) => {
-    Array.from(element.attributes).forEach((attribute) => {
-      const name = attribute.name.toLowerCase();
-      const value = attribute.value.trim();
-      if (name.startsWith('on') || name === 'style') {
-        element.removeAttribute(attribute.name);
-        return;
-      }
-      if ((name === 'href' || name === 'src') && /^(javascript|data):/i.test(value)) {
-        element.removeAttribute(attribute.name);
-      }
-    });
-  });
-  return template.innerHTML;
 }
 
 function statusTag(value: unknown) {
@@ -1198,9 +1423,5 @@ function formatValue(row: CmsRow, prop?: string) {
     return value ? '是' : '否';
   }
   return value as string | number | undefined;
-}
-
-function flattenTree(records: CmsRow[]): CmsRow[] {
-  return records.flatMap((record) => [record, ...flattenTree((record.children || []) as CmsRow[])]);
 }
 </script>

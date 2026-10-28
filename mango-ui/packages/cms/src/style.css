@@ -149,7 +149,16 @@
 .cms-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  align-items: center;
+  gap: 0;
+}
+
+.cms-actions .el-button + .el-button {
+  margin-left: 6px;
+}
+
+.cms-actions .el-button {
+  margin-left: 0;
 }
 
 .cms-pagination {
@@ -167,6 +176,34 @@
 
 .cms-form-section-title:not(:first-child) {
   margin-top: 16px;
+}
+
+.cms-publish-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  color: var(--el-text-color-secondary);
+}
+
+.cms-publish-summary strong {
+  color: var(--el-text-color-primary);
+}
+
+.cms-publish-form .cms-form-section-title {
+  margin: 4px 0 12px;
+  padding-left: 8px;
+  border-left: 3px solid var(--el-color-primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.cms-publish-form .cms-form-section-title:not(:first-child) {
+  margin-top: 18px;
+}
+
+.cms-publish-form .el-form-item {
+  margin-bottom: 16px;
 }
 
 .cms-check-button-group {

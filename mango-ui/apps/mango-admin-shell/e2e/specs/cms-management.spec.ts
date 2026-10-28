@@ -83,11 +83,16 @@ async function apiDelete(request: APIRequestContext, token: string, path: string
   }
 }
 
-async function openCmsPage(page: Page, path: string, title: string) {
+async function openCmsPage(page: Page, path: string, title: string, options: { canCreate?: boolean } = {}) {
   await page.goto(`/#${path}`);
   await page.waitForURL(`**/#${path}`, { timeout: 10000 });
   await waitCmsReady(page);
-  await expect(cmsPage(page).getByRole('button', { name: '新增', exact: true }), `${title}应可新增资源`).toBeVisible();
+  const createButton = cmsPage(page).getByRole('button', { name: '新增', exact: true });
+  if (options.canCreate === false) {
+    await expect(createButton, `${title}不应提供新增资源入口`).toHaveCount(0);
+    return;
+  }
+  await expect(createButton, `${title}应可新增资源`).toBeVisible();
 }
 
 async function searchKeyword(page: Page, keyword: string) {
@@ -304,14 +309,19 @@ test.describe('CMS 管理后台 E2E', () => {
     const contentId = asId(content?.id);
     expect(content?.status).toBe('PUBLISHED');
 
-    await openCmsPage(page, '/cms/content-publishes', '内容发布');
+    await openCmsPage(page, '/cms/contents', '内容管理');
+    await searchKeyword(page, keyword);
+    await rowByText(page, updatedContentTitle).getByRole('button', { name: '发布', exact: true }).first().click();
+    const publishDialog = firstDialog(page);
+    await expect(publishDialog).toBeVisible({ timeout: 10000 });
+    await selectValue(publishDialog, '站点', updatedSiteName);
+    await selectValues(publishDialog, '发布栏目', [siteCategoryName]);
+    await publishDialog.getByRole('button', { name: '发布', exact: true }).click();
+    await expect(page.getByText('已发布到 1 个栏目')).toBeVisible({ timeout: 10000 });
+    await expect(publishDialog).toBeHidden({ timeout: 10000 });
+
+    await openCmsPage(page, '/cms/content-publishes', '发布记录', { canCreate: false });
     await selectSearchSite(page, updatedSiteName);
-    await createByDialog(page, updatedContentTitle, async (dialog) => {
-      await selectValues(dialog, '发布内容', [updatedContentTitle]);
-      await selectValue(dialog, '所属站点', updatedSiteName);
-      await selectValues(dialog, '发布栏目', [siteCategoryName]);
-      await dialog.getByLabel('排序', { exact: true }).fill('1');
-    });
     await expect(rowByText(page, updatedContentTitle)).toContainText('已发布', { timeout: 10000 });
     await rowByText(page, updatedContentTitle).getByRole('button', { name: '下线' }).click();
     await expect(page.getByText('发布关系已下线')).toBeVisible({ timeout: 10000 });

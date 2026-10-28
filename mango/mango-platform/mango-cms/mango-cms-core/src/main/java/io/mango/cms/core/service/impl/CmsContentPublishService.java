@@ -75,7 +75,8 @@ public class CmsContentPublishService implements ICmsContentPublishService {
             CmsContentEntity content = requireContent(contentId);
             Require.isTrue(CmsContentStatus.PUBLISHED.name().equals(content.getStatus()), CmsCode.CMS_BUSINESS_ERROR, "只有审核通过内容可以发布");
             for (Long categoryId : command.getCategoryIds()) {
-                upsertPublish(command, contentId, categoryId);
+                closeActivePublish(command.getSiteId(), contentId, categoryId);
+                createPublish(command, contentId, categoryId);
             }
         }
         return true;
@@ -97,21 +98,37 @@ public class CmsContentPublishService implements ICmsContentPublishService {
         return publishMapper.deleteById(entity.getId()) > 0;
     }
 
-    private void upsertPublish(BatchCmsContentPublishCommand command, Long contentId, Long categoryId) {
-        CmsContentPublishEntity entity = publishMapper.selectOne(new LambdaQueryWrapper<CmsContentPublishEntity>()
+    /**
+     * 同一内容在同一站点栏目下只保留一条生效记录；重新发布时把旧记录置为已下线并保留历史。
+     */
+    private void closeActivePublish(Long siteId, Long contentId, Long categoryId) {
+        CmsContentPublishEntity active = findActivePublish(siteId, contentId, categoryId);
+        if (active == null) {
+            return;
+        }
+        active.setPublishStatus(CmsPublishStatus.OFFLINE.name());
+        active.setOfflineTime(LocalDateTime.now());
+        publishMapper.updateById(active);
+    }
+
+    private CmsContentPublishEntity findActivePublish(Long siteId, Long contentId, Long categoryId) {
+        return publishMapper.selectOne(new LambdaQueryWrapper<CmsContentPublishEntity>()
                 .eq(CmsContentPublishEntity::getTenantId, CmsSupport.currentTenantId())
                 .eq(CmsContentPublishEntity::getContentId, contentId)
-                .eq(CmsContentPublishEntity::getSiteId, command.getSiteId())
+                .eq(CmsContentPublishEntity::getSiteId, siteId)
                 .eq(CmsContentPublishEntity::getCategoryId, categoryId)
+                .in(CmsContentPublishEntity::getPublishStatus,
+                        CmsPublishStatus.PUBLISHED.name(), CmsPublishStatus.SCHEDULED.name())
+                .orderByDesc(CmsContentPublishEntity::getId)
                 .last("LIMIT 1"));
-        boolean create = entity == null;
-        if (create) {
-            entity = new CmsContentPublishEntity();
-            entity.setTenantId(CmsSupport.currentTenantId());
-            entity.setContentId(contentId);
-            entity.setSiteId(command.getSiteId());
-            entity.setCategoryId(categoryId);
-        }
+    }
+
+    private void createPublish(BatchCmsContentPublishCommand command, Long contentId, Long categoryId) {
+        CmsContentPublishEntity entity = new CmsContentPublishEntity();
+        entity.setTenantId(CmsSupport.currentTenantId());
+        entity.setContentId(contentId);
+        entity.setSiteId(command.getSiteId());
+        entity.setCategoryId(categoryId);
         if (command.getScheduledPublishTime() == null) {
             entity.setPublishStatus(CmsPublishStatus.PUBLISHED.name());
         } else {
@@ -127,11 +144,7 @@ public class CmsContentPublishService implements ICmsContentPublishService {
         entity.setRecommendationType(CmsSupport.enumNameOrDefault(CmsRecommendationType.class,
                 command.getRecommendationType(), CmsRecommendationType.NONE.name(), "推荐类型非法"));
         entity.setSort(CmsSupport.defaultSort(command.getSort()));
-        if (create) {
-            publishMapper.insert(entity);
-        } else {
-            publishMapper.updateById(entity);
-        }
+        publishMapper.insert(entity);
     }
 
     private QueryWrapper<CmsContentPublishEntity> publishWrapper(CmsContentPublishPageQuery query) {
@@ -142,7 +155,8 @@ public class CmsContentPublishService implements ICmsContentPublishService {
                 .eq(query.getSiteId() != null, "site_id", query.getSiteId())
                 .eq(query.getCategoryId() != null, "category_id", query.getCategoryId())
                 .eq(StringUtils.hasText(query.getStatus()), "publish_status", query.getStatus())
-                .orderByDesc("updated_at");
+                .orderByDesc("publish_time")
+                .orderByDesc("id");
         if (StringUtils.hasText(keyword)) {
             String escaped = escapeSqlLike(keyword);
             String pattern = "'%" + escaped + "%'";
