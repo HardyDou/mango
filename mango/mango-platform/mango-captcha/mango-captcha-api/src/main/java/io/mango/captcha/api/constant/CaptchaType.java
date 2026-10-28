@@ -8,9 +8,9 @@ package io.mango.captcha.api.constant;
 public enum CaptchaType {
 
     /**
-     * 算术验证码 - 简单计算题
+     * 默认图形验证码的兼容类型标识，历史名称为算术验证码。
      */
-    ARITHMETIC("算术验证码"),
+    ARITHMETIC("默认图形验证码"),
 
     /**
      * 统一图形验证码，题型和难度由服务端会话策略决定。

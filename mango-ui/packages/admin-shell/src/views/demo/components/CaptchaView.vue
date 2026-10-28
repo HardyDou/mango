@@ -7,8 +7,10 @@
     :toc-items="tocItems"
   >
     <section id="arithmetic" class="doc-section">
-      <h2>算术验证码</h2>
-      <p>适合登录、表单提交等轻量校验场景；用户输入计算结果后组件触发 success，业务表单再携带 captchaKey 提交。</p>
+      <h2>默认图形验证码</h2>
+      <p>
+        适合登录、表单提交等轻量校验场景；用户输入图片中的验证码后组件触发 success，业务表单再携带 captchaKey 提交。
+      </p>
       <div class="demo-block">
         <div class="demo-source">
           <div class="mock-form-card arithmetic-card">
@@ -23,7 +25,12 @@
                     <el-input v-model="arithmeticForm.title" placeholder="请输入申请标题" />
                   </el-form-item>
                   <el-form-item label="申请说明">
-                    <el-input v-model="arithmeticForm.description" type="textarea" :rows="3" placeholder="请输入申请说明" />
+                    <el-input
+                      v-model="arithmeticForm.description"
+                      type="textarea"
+                      :rows="3"
+                      placeholder="请输入申请说明"
+                    />
                   </el-form-item>
                 </el-form>
                 <div class="mock-actions">
@@ -114,9 +121,7 @@
                   @refresh="() => handleRefresh('blockPopup')"
                 />
                 <div class="mock-actions slider-popup-actions">
-                  <el-button type="danger" @click="submitBlockPopupDemo">
-                    提交表单并验证
-                  </el-button>
+                  <el-button type="danger" @click="submitBlockPopupDemo"> 提交表单并验证 </el-button>
                   <span>{{ captchaResults.blockPopup ? '弹窗滑块校验已通过' : '提交时会弹出滑块验证码' }}</span>
                 </div>
                 <div v-if="submitResults.blockPopup" class="mock-result">{{ submitResults.blockPopup }}</div>
@@ -185,7 +190,10 @@
 
     <section id="behavior" class="doc-section">
       <h2>无感行为验证</h2>
-      <p>适合登录、注册和高频表单提交。用户点击验证条后，组件提交已静默采集的行为和设备特征，后端返回 score、riskLevel 和 suggestAction。</p>
+      <p>
+        适合登录、注册和高频表单提交。用户点击验证条后，组件提交已静默采集的行为和设备特征，后端返回 score、riskLevel 和
+        suggestAction。
+      </p>
       <div class="demo-block">
         <div class="demo-source">
           <div class="mock-form-card behavior-card">
@@ -388,7 +396,7 @@ interface CaptchaResult {
 }
 
 const tocItems = [
-  { id: 'arithmetic', label: '算术验证码' },
+  { id: 'arithmetic', label: '默认图形验证码' },
   { id: 'block', label: '图片滑块验证码' },
   { id: 'click-word', label: '点选文字验证码' },
   { id: 'behavior', label: '无感行为验证' },
@@ -588,29 +596,54 @@ const selectorCode = `<template>
 
 const propsTable = [
   { name: 'type', description: '固定验证码类型；不传时展示综合选择器', type: 'CaptchaType', defaultValue: '-' },
-  { name: 'mode', description: '图片滑块 / Canvas 滑块展示形态；trigger 为触发式，embedded 为嵌入式，popup 为弹出式', type: "'trigger' | 'embedded' | 'popup'", defaultValue: 'embedded' },
+  {
+    name: 'mode',
+    description: '图片滑块 / Canvas 滑块展示形态；trigger 为触发式，embedded 为嵌入式，popup 为弹出式',
+    type: "'trigger' | 'embedded' | 'popup'",
+    defaultValue: 'embedded',
+  },
 ];
 
 const eventsTable = [
-  { name: 'success', description: '验证码通过后触发，业务表单应保存 key 并在确认提交时携带', payload: '(key: string, code?: string, type?: CaptchaType) => void' },
+  {
+    name: 'success',
+    description: '验证码通过后触发，业务表单应保存 key 并在确认提交时携带',
+    payload: '(key: string, code?: string, type?: CaptchaType) => void',
+  },
   { name: 'refresh', description: '刷新图形验证码后触发，业务表单应清空已保存的验证码结果', payload: '() => void' },
   { name: 'refresh', description: '组件暴露方法，用于刷新当前验证码', payload: '() => void' },
 ];
 
 const responseTable = [
   { name: 'key', description: '验证码键，提交业务接口或 verify 接口时使用', example: 'captcha-key' },
-  { name: 'type', description: '验证码类型', example: 'ARITHMETIC / BLOCK_PUZZLE / CLICK_WORD / BEHAVIOR / SMS / EMAIL' },
-  { name: 'image', description: '算术或点选文字验证码图片', example: 'data:image/png;base64,...' },
+  {
+    name: 'type',
+    description: '验证码类型',
+    example: 'ARITHMETIC / BLOCK_PUZZLE / CLICK_WORD / BEHAVIOR / SMS / EMAIL',
+  },
+  { name: 'image', description: '图形或点选文字验证码图片', example: 'data:image/png;base64,...' },
   { name: 'backgroundImage', description: '图片滑块背景图，已经绘制目标缺口', example: 'data:image/png;base64,...' },
-  { name: 'sliderImage', description: '图片滑块小图，由后端从 backgroundImage 对应位置裁剪生成', example: 'data:image/png;base64,...' },
+  {
+    name: 'sliderImage',
+    description: '图片滑块小图，由后端从 backgroundImage 对应位置裁剪生成',
+    example: 'data:image/png;base64,...',
+  },
   { name: 'backgroundWidth', description: '图片滑块背景图生成宽度；前端按该宽度等比换算 x 坐标', example: '280' },
   { name: 'backgroundHeight', description: '图片滑块背景图生成高度；前端按该高度保持图片比例', example: '160' },
   { name: 'sliderSize', description: '图片滑块小图生成尺寸；前端按背景缩放比例同步缩放', example: '50' },
   { name: 'x', description: '图片滑块目标 X 坐标；组件内部提交 pointJson 时使用', example: '128' },
   { name: 'y', description: '图片滑块目标 Y 坐标；组件内部渲染小图高度时使用', example: '54' },
   { name: 'expireTime', description: '过期时间，单位秒', example: '300' },
-  { name: 'target', description: '短信或邮件验证码发送目标；点选文字验证码中为点击顺序提示', example: '13800138000 / 云,山,月' },
-  { name: 'extra', description: '点选文字验证码返回图片宽高和点击数量；正确坐标只保存在后端缓存', example: '{"width":320,"height":180,"pointCount":3}' },
+  {
+    name: 'target',
+    description: '短信或邮件验证码发送目标；点选文字验证码中为点击顺序提示',
+    example: '13800138000 / 云,山,月',
+  },
+  {
+    name: 'extra',
+    description: '点选文字验证码返回图片宽高和点击数量；正确坐标只保存在后端缓存',
+    example: '{"width":320,"height":180,"pointCount":3}',
+  },
   { name: 'score', description: '无感行为验证返回评分，0.0 到 1.0，分数越高越像真人', example: '0.86' },
   { name: 'riskLevel', description: '无感行为验证风险等级', example: 'LOW / MEDIUM / HIGH' },
   { name: 'suggestAction', description: '无感行为验证建议业务动作', example: 'ALLOW / SECONDARY_VERIFY / DENY' },

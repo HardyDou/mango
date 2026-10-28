@@ -1,6 +1,5 @@
 package io.mango.captcha.core.generator;
 
-import cn.hutool.captcha.CaptchaUtil;
 import cn.hutool.captcha.LineCaptcha;
 import cn.hutool.captcha.generator.CodeGenerator;
 import io.mango.captcha.api.constant.CaptchaDifficulty;
@@ -34,6 +33,9 @@ public class DefaultArithmeticCaptchaGenerator implements ArithmeticCaptchaGener
     @Value("${mango.captcha.arithmetic.height:40}")
     private int height = DEFAULT_HEIGHT;
 
+    @Value("${mango.captcha.graphic.interfere-count:1}")
+    private int interfereCount = 1;
+
     @Override
     public CaptchaResponse generate() {
         return generate(CaptchaDifficulty.SIMPLE);
@@ -43,8 +45,11 @@ public class DefaultArithmeticCaptchaGenerator implements ArithmeticCaptchaGener
     public CaptchaResponse generate(CaptchaDifficulty difficulty) {
         CaptchaDifficulty actualDifficulty = difficulty == null ? CaptchaDifficulty.SIMPLE : difficulty;
         ArithmeticProblem problem = createProblem(actualDifficulty);
-        LineCaptcha captcha = CaptchaUtil.createLineCaptcha(width, height);
-        captcha.setGenerator(new FixedCodeGenerator(problem.expression(), problem.answer()));
+        LineCaptcha captcha = new LineCaptcha(
+                width,
+                height,
+                new FixedCodeGenerator(problem.expression(), problem.answer()),
+                interfereCount);
         captcha.createCode();
 
         CaptchaResponse response = new CaptchaResponse();

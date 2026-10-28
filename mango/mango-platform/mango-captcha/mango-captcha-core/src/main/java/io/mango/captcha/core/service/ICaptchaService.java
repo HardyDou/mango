@@ -21,9 +21,9 @@ public interface ICaptchaService {
     CaptchaTypesResponse getTypes();
 
     /**
-     * 创建算术表达式图片并保存一次性答案。
+     * 按统一默认策略创建图形验证码并保存一次性答案。
      *
-     * @return 算术验证码响应
+     * @return 使用 ARITHMETIC 类型兼容标识的图形验证码响应
      */
     CaptchaResponse generateArithmetic();
 
