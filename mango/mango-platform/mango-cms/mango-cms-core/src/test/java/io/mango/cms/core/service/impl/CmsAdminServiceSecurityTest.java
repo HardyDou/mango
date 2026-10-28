@@ -10,6 +10,7 @@ import io.mango.cms.api.command.UpdateCmsContentReviewCommand;
 import io.mango.cms.api.enums.CmsContentStatus;
 import io.mango.cms.api.query.CmsSitePageQuery;
 import io.mango.cms.core.entity.CmsContentEntity;
+import io.mango.cms.core.entity.CmsContentPublishEntity;
 import io.mango.cms.core.entity.CmsSiteCategoryEntity;
 import io.mango.cms.core.entity.CmsSiteEntity;
 import io.mango.cms.core.mapper.CmsAdDeliveryMapper;
@@ -175,14 +176,14 @@ class CmsAdminServiceSecurityTest {
     }
 
     @Test
-    void submitContent_rejectsStatesOtherThanDraftOrRejected() {
+    void submitContent_rejectsPublishedContent() {
         CmsContentEntity content = content(32L, CmsContentStatus.PUBLISHED.name());
         when(contentMapper.selectOne(any(Wrapper.class))).thenReturn(content);
         CmsContentService service = contentService(null, null);
 
         assertThatThrownBy(() -> service.submitContent(offlineCommand(32L)))
                 .isInstanceOf(BizException.class)
-                .hasMessage("只有草稿或驳回内容可以提交审核");
+                .hasMessage("只有草稿、驳回或已下线内容可以提交审核");
         verify(contentMapper, never()).updateById(any(CmsContentEntity.class));
     }
 
@@ -228,6 +229,74 @@ class CmsAdminServiceSecurityTest {
     }
 
     @Test
+    void offlineContent_offlinesActivePublishRecords() {
+        CmsContentEntity content = content(37L, CmsContentStatus.PUBLISHED.name());
+        when(contentMapper.selectOne(any(Wrapper.class))).thenReturn(content);
+        when(contentMapper.updateById(any(CmsContentEntity.class))).thenReturn(1);
+        CmsContentService service = contentService(null, null);
+        CmsOfflineCommand command = new CmsOfflineCommand();
+        command.setId(37L);
+
+        assertThat(service.offlineContent(command)).isTrue();
+        assertThat(content.getStatus()).isEqualTo(CmsContentStatus.OFFLINE.name());
+        assertThat(content.getOfflineTime()).isNotNull();
+        verify(publishMapper).update(any(), any(Wrapper.class));
+    }
+
+    @Test
+    void offlineContentAllowsResubmitAfterOffline() {
+        CmsContentEntity content = content(38L, CmsContentStatus.OFFLINE.name());
+        when(contentMapper.selectOne(any(Wrapper.class))).thenReturn(content);
+        when(contentMapper.updateById(any(CmsContentEntity.class))).thenReturn(1);
+        CmsContentService service = contentService(null, null);
+        CmsOfflineCommand command = new CmsOfflineCommand();
+        command.setId(38L);
+
+        assertThat(service.submitContent(command)).isTrue();
+        assertThat(content.getStatus()).isEqualTo(CmsContentStatus.PENDING_REVIEW.name());
+    }
+
+    @Test
+    void deleteContent_removesPublishRelationsAndTagRelations() {
+        CmsContentEntity content = content(36L, CmsContentStatus.OFFLINE.name());
+        when(contentMapper.selectOne(any(Wrapper.class))).thenReturn(content);
+        when(contentMapper.deleteById(any(Long.class))).thenReturn(1);
+        CmsContentService service = contentService(null, null);
+
+        assertThat(service.deleteContent(36L)).isTrue();
+        verify(publishMapper).delete(any(Wrapper.class));
+        verify(contentTagRelMapper).delete(any(Wrapper.class));
+    }
+
+    @Test
+    void publishContents_closesActiveRecordAndKeepsHistory() {
+        CmsSiteEntity site = new CmsSiteEntity();
+        site.setId(41L);
+        CmsSiteCategoryEntity category = new CmsSiteCategoryEntity();
+        category.setId(42L);
+        category.setSiteId(41L);
+        CmsContentEntity content = content(43L, CmsContentStatus.PUBLISHED.name());
+        CmsContentPublishEntity active = new CmsContentPublishEntity();
+        active.setId(50L);
+        active.setPublishStatus("PUBLISHED");
+        when(siteMapper.selectOne(any(Wrapper.class))).thenReturn(site);
+        when(siteCategoryMapper.selectOne(any(Wrapper.class))).thenReturn(category);
+        when(contentMapper.selectOne(any(Wrapper.class))).thenReturn(content);
+        when(publishMapper.selectOne(any(Wrapper.class))).thenReturn(active);
+        CmsContentPublishService service = publishService(null);
+        BatchCmsContentPublishCommand command = new BatchCmsContentPublishCommand();
+        command.setSiteId(41L);
+        command.setContentIds(List.of(43L));
+        command.setCategoryIds(List.of(42L));
+
+        assertThat(service.publishContents(command)).isTrue();
+        assertThat(active.getPublishStatus()).isEqualTo("OFFLINE");
+        assertThat(active.getOfflineTime()).isNotNull();
+        verify(publishMapper).updateById(active);
+        verify(publishMapper).insert(any(CmsContentPublishEntity.class));
+    }
+
+    @Test
     void publishContents_rejectsCategoryFromAnotherSite() {
         CmsSiteEntity site = new CmsSiteEntity();
         site.setId(41L);
@@ -267,6 +336,7 @@ class CmsAdminServiceSecurityTest {
                 contentTagMapper,
                 contentTagRelMapper,
                 contentMapper,
+                publishMapper,
                 provider(dataScopeApplier),
                 provider(fileApi));
     }

@@ -1,6 +1,7 @@
 package io.mango.cms.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -10,15 +11,18 @@ import io.mango.cms.api.command.UpdateCmsContentReviewCommand;
 import io.mango.cms.api.enums.CmsCode;
 import io.mango.cms.api.enums.CmsContentStatus;
 import io.mango.cms.api.enums.CmsContentType;
+import io.mango.cms.api.enums.CmsPublishStatus;
 import io.mango.cms.api.query.CmsContentPageQuery;
 import io.mango.cms.api.vo.CmsContentTagVO;
 import io.mango.cms.api.vo.CmsContentVO;
 import io.mango.cms.core.entity.CmsContentCategoryEntity;
 import io.mango.cms.core.entity.CmsContentEntity;
+import io.mango.cms.core.entity.CmsContentPublishEntity;
 import io.mango.cms.core.entity.CmsContentTagEntity;
 import io.mango.cms.core.entity.CmsContentTagRelEntity;
 import io.mango.cms.core.mapper.CmsContentCategoryMapper;
 import io.mango.cms.core.mapper.CmsContentMapper;
+import io.mango.cms.core.mapper.CmsContentPublishMapper;
 import io.mango.cms.core.mapper.CmsContentTagMapper;
 import io.mango.cms.core.mapper.CmsContentTagRelMapper;
 import io.mango.cms.core.service.ICmsContentService;
@@ -53,6 +57,7 @@ public class CmsContentService implements ICmsContentService {
     private final CmsContentTagMapper contentTagMapper;
     private final CmsContentTagRelMapper contentTagRelMapper;
     private final CmsContentMapper contentMapper;
+    private final CmsContentPublishMapper contentPublishMapper;
     private final ObjectProvider<DataScopeApplier> dataScopeApplierProvider;
     private final ObjectProvider<FileApi> fileApiProvider;
 
@@ -89,7 +94,8 @@ public class CmsContentService implements ICmsContentService {
         CmsContentEntity entity = requireContent(command.getId());
         Require.isTrue(CmsContentStatus.DRAFT.name().equals(entity.getStatus())
                 || CmsContentStatus.REJECTED.name().equals(entity.getStatus())
-                || CmsContentStatus.PUBLISHED.name().equals(entity.getStatus()), CmsCode.CMS_BUSINESS_ERROR, "当前内容状态不能编辑");
+                || CmsContentStatus.PUBLISHED.name().equals(entity.getStatus())
+                || CmsContentStatus.OFFLINE.name().equals(entity.getStatus()), CmsCode.CMS_BUSINESS_ERROR, "当前内容状态不能编辑");
         applyContent(entity, command);
         boolean updated = contentMapper.updateById(entity) > 0;
         saveContentTags(entity.getId(), command.getTagIds());
@@ -100,7 +106,8 @@ public class CmsContentService implements ICmsContentService {
     public Boolean submitContent(CmsOfflineCommand command) {
         CmsContentEntity entity = requireContent(command.getId());
         Require.isTrue(CmsContentStatus.DRAFT.name().equals(entity.getStatus())
-                || CmsContentStatus.REJECTED.name().equals(entity.getStatus()), CmsCode.CMS_BUSINESS_ERROR, "只有草稿或驳回内容可以提交审核");
+                || CmsContentStatus.REJECTED.name().equals(entity.getStatus())
+                || CmsContentStatus.OFFLINE.name().equals(entity.getStatus()), CmsCode.CMS_BUSINESS_ERROR, "只有草稿、驳回或已下线内容可以提交审核");
         entity.setStatus(CmsContentStatus.PENDING_REVIEW.name());
         return contentMapper.updateById(entity) > 0;
     }
@@ -125,18 +132,39 @@ public class CmsContentService implements ICmsContentService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Boolean offlineContent(CmsOfflineCommand command) {
         Require.notNull(command, CmsCode.CMS_BUSINESS_ERROR, "内容下线命令不能为空");
         CmsContentEntity entity = requireContent(command.getId());
+        LocalDateTime now = LocalDateTime.now();
         entity.setStatus(CmsContentStatus.OFFLINE.name());
-        entity.setOfflineTime(LocalDateTime.now());
+        entity.setOfflineTime(now);
+        offlineActivePublishes(entity.getId(), now);
         return contentMapper.updateById(entity) > 0;
     }
 
+    /**
+     * 内容下线时连带下线全部生效中的发布记录，避免内容已下线但发布关系仍显示已发布。
+     */
+    private void offlineActivePublishes(Long contentId, LocalDateTime offlineTime) {
+        contentPublishMapper.update(null, new LambdaUpdateWrapper<CmsContentPublishEntity>()
+                .eq(CmsContentPublishEntity::getContentId, contentId)
+                .in(CmsContentPublishEntity::getPublishStatus,
+                        CmsPublishStatus.PUBLISHED.name(), CmsPublishStatus.SCHEDULED.name())
+                .set(CmsContentPublishEntity::getPublishStatus, CmsPublishStatus.OFFLINE.name())
+                .set(CmsContentPublishEntity::getOfflineTime, offlineTime));
+    }
+
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Boolean deleteContent(Long id) {
         CmsContentEntity entity = requireContent(id);
         Require.isTrue(!CmsContentStatus.PUBLISHED.name().equals(entity.getStatus()), CmsCode.CMS_BUSINESS_ERROR, "已发布内容需先下线再删除");
+        contentPublishMapper.delete(new LambdaQueryWrapper<CmsContentPublishEntity>()
+                .eq(CmsContentPublishEntity::getContentId, entity.getId()));
+        contentTagRelMapper.delete(new LambdaQueryWrapper<CmsContentTagRelEntity>()
+                .eq(CmsContentTagRelEntity::getTenantId, CmsSupport.currentTenantId())
+                .eq(CmsContentTagRelEntity::getContentId, entity.getId()));
         return contentMapper.deleteById(entity.getId()) > 0;
     }
 
