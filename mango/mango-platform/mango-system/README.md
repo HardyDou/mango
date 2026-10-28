@@ -16,7 +16,7 @@
 
 | 能力 | 说明 | 常用入口 |
 |------|------|----------|
-| 字典 | 维护字典类型、字典数据，给表单下拉、筛选项、标签展示提供选项 | `DictApi`、`/system/dict`、`dictTypeApi`、`dictDataApi` |
+| 字典 | 维护字典类型、字典数据，给表单下拉、筛选项、标签展示提供选项；字典项支持分组标记，消费方按组取子集 | `DictApi`、`/system/dict`、`dictTypeApi`、`dictDataApi` |
 | 系统配置 | 维护运行时配置键值和业务域配置控制面板，例如安全开关、业务开关、上传/邮件/短信分组参数 | `SysConfigApi`、`/system/config`、`configApi`、`SystemConfigPanel` |
 | 网站配置 | 维护 Admin 登录页、后台框架展开 Logo、折叠 Logo、浏览器标题、favicon 和页脚展示信息 | `/system/admin-branding`、`AdminBrandingView`、`adminBrandingApi` |
 | 机构 | 维护机构空间、机构类型、机构状态、机构套餐绑定，登录页读取启用机构选项 | `SysTenantApi`、`/system/tenant`、`tenantApi` |
@@ -107,7 +107,7 @@ import '@mango/system/style.css';
 
 1. 业务模块需要读取字典或配置时，在后端引入 `mango-system-api`。
 2. 宿主应用需要提供系统管理能力时，引入 `mango-system-starter`，启动后执行 `system` migration。
-3. 字典类字段先在 `sys_dict_type` 登记类型，再在 `sys_dict_data` 登记选项；未声明 `shape` 的旧字典按 `FLAT` 处理。平铺业务通过 `DictApi.getOptions(typeCode)` 或 `GET /system/dict/data/options` 读取，树形消费者显式使用 `DictApi.getTreeOptions(typeCode)` 或 `GET /system/dict/data/tree`。
+3. 字典类字段先在 `sys_dict_type` 登记类型，再在 `sys_dict_data` 登记选项；未声明 `shape` 的旧字典按 `FLAT` 处理。字典项可用 `groups` 声明所属分组（可多个），不配置时保持全量语义。平铺业务通过 `DictApi.getOptions(typeCode)` 或 `GET /system/dict/data/options` 读取，树形消费者显式使用 `DictApi.getTreeOptions(typeCode)` 或 `GET /system/dict/data/tree`。
 4. 运行时开关、阈值、文案等放入 `sys_config`，业务通过 `SysConfigApi.getValue(configKey)` 读取；需要后台控制面板展示时补充 `domainCode`、`valueType`、`optionSource`、`dictType`、`options`、`editable` 等元数据。
 5. 管理后台接入 `@mango/system` 页面或 API 封装，并在菜单资源中绑定对应页面和权限码。
 6. 新建机构时必须选择 `packageId`，系统会触发机构初始化扩展点，并把机构绑定到套餐。

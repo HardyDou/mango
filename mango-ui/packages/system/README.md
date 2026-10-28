@@ -173,8 +173,8 @@ import '@mango/system/style.css';
 | 数据     | 字段                                                                                                                                                               |
 | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | 字典类型 | `name`、`code`、`shape`（`FLAT`/`TREE`）                                                                                                                          |
-| 字典数据 | `label`、`value`、`parentValue`、`children`、`sort`、`status`                                                                                                    |
-| 字典选项 | `label`、`value`、`sort`、`status`                                                                                                                                 |
+| 字典数据 | `label`、`value`、`parentValue`、`groups`、`children`、`sort`、`status`                                                                                           |
+| 字典选项 | `label`、`value`、`groups`、`sort`、`status`                                                                                                                        |
 | 系统配置 | `id`、`configKey`、`configValue`、`configName`、`domainCode`、`valueType`、`options`、`editable`、`status`                                                         |
 | 网站配置 | `title`、`shortTitle`、`subtitle`、`loginTitle`、`loginSubtitle`、`logoFile`、`logoIconFile`、`faviconFile`、`loginImageFile`、`footerCopyright`、`icp`、`contact` |
 | 租户     | `id`、`tenantCode`、`tenantName`、`status`                                                                                                                         |

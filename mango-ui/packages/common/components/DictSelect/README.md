@@ -54,6 +54,9 @@
 | `numberValue` | `boolean` | `false` | FLAT 是否将 value 转为 number。 |
 | `showAnyOption` | `boolean` | `false` | FLAT 单选是否显示“不限”。 |
 | `collapseTags` | `boolean` | `true` | 多选时是否折叠标签；true 显示 `+N` 数量，false 显示全部标签。 |
+| `group` | `string \| string[]` | `undefined` | 分组过滤；不传表示全量，传入后只保留命中该分组的值（多项按 OR）。 |
+| `includeValues` | `Array<string \| number>` | `undefined` | 白名单，在分组结果上继续限定可见值。 |
+| `excludeValues` | `Array<string \| number>` | `undefined` | 黑名单，在分组结果上继续剔除值。 |
 
 ## Events
 
@@ -87,6 +90,29 @@
 - `system_demo_tree` 是系统内置的 TREE 示例字典，包含办公用品、数码设备及其子节点。
 
 业务页面不需要手工请求 API、转换 children、编写路径格式化函数或猜测试数据；这些能力由组件属性、事件、插槽和 Expose 方法提供。
+
+## 分组过滤
+
+同一个字典可以给每个值配置一个或多个分组标记（如 `ORDER`、`AFTER_SALE`），组件按当前场景取子集：
+
+- 不传 `group`：返回全量（含未分组项），与旧行为一致。
+- 传 `group`：只保留命中该组的值，未分组项不命中；多个分组按 OR 处理。
+- `includeValues` 与 `excludeValues` 在同一层叠加：先限定白名单，再剔除黑名单。
+- TREE 场景：命中组的值保留，未命中的祖先仅作为结构节点保留并置为不可选，保证层级不断裂。
+
+```vue
+<!-- A 处只看 ORDER 组 -->
+<DictSelect dict-type="system_demo_group" group="ORDER" v-model="form.status" />
+
+<!-- 组内再收窄 -->
+<DictSelect
+  dict-type="system_demo_group"
+  group="ORDER"
+  :include-values="['2', '3']"
+  :exclude-values="['3']"
+  v-model="form.status"
+/>
+```
 
 ## 缓存与刷新
 

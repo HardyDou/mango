@@ -57,7 +57,7 @@ public class SystemDictResourceHandler implements ResourceHandler {
                 .fieldDescription("domainCode", "业务域编码，默认 COMMON。")
                 .fieldDescription("status", "状态：1 启用，0 禁用。")
                 .fieldDescription("remark", "字典类型备注。")
-                .fieldDescription("items", "字典项列表，每项支持 id、label、value、parentValue、sort、status、remark。")
+                .fieldDescription("items", "字典项列表，每项支持 id、label、value、parentValue、groups、sort、status、remark。")
                 .build();
     }
 
@@ -153,6 +153,7 @@ public class SystemDictResourceHandler implements ResourceHandler {
         data.setDictLabel(item.label());
         data.setDictValue(item.value());
         data.setParentValue(item.parentValue());
+        data.setDictGroups(item.groups() == null || item.groups().isEmpty() ? null : String.join(",", item.groups()));
         data.setSort(item.sort());
         data.setStatus(item.status());
         data.setRemark(item.remark());
@@ -232,7 +233,8 @@ public class SystemDictResourceHandler implements ResourceHandler {
         }
     }
 
-    private record DictItemPayload(Long id, String label, String value, String parentValue, Integer sort, Integer status, String remark) {
+    private record DictItemPayload(Long id, String label, String value, String parentValue, List<String> groups,
+                                   Integer sort, Integer status, String remark) {
 
         private static DictItemPayload from(Object value) {
             if (!(value instanceof Map<?, ?> map)) {
@@ -243,6 +245,7 @@ public class SystemDictResourceHandler implements ResourceHandler {
                     requiredText(map.get("label"), "SYSTEM_DICT item label is required"),
                     requiredText(map.get("value"), "SYSTEM_DICT item value is required"),
                     toText(map.get("parentValue")),
+                    toGroups(map.get("groups")),
                     toInt(map.get("sort"), false, 0),
                     toInt(map.get("status"), false, ENABLED),
                     toText(map.get("remark"))
@@ -296,6 +299,23 @@ public class SystemDictResourceHandler implements ResourceHandler {
 
     private static Integer fieldInt(ResourceDeclaration resource, String name, boolean required, Integer defaultValue) {
         return toInt(fieldValue(resource, name, required), required, defaultValue);
+    }
+
+    private static List<String> toGroups(Object value) {
+        if (value == null) {
+            return List.of();
+        }
+        if (!(value instanceof List<?> list)) {
+            throw new IllegalStateException("SYSTEM_DICT item groups must be string list");
+        }
+        java.util.LinkedHashSet<String> groups = new java.util.LinkedHashSet<>();
+        for (Object item : list) {
+            String group = toText(item);
+            if (group != null) {
+                groups.add(group);
+            }
+        }
+        return List.copyOf(groups);
     }
 
     private static List<?> fieldList(ResourceDeclaration resource, String name) {

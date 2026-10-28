@@ -30,6 +30,11 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class DictService implements IDictService {
 
+    private static final int MAX_GROUP_LENGTH = 32;
+    private static final int MAX_GROUP_COUNT = 20;
+    private static final int MAX_GROUPS_LENGTH = 255;
+    private static final String GROUP_VALUE_PATTERN = "[A-Za-z0-9_-]+";
+
     private final DictTypeMapper dictTypeMapper;
     private final DictDataMapper dictDataMapper;
 
@@ -196,6 +201,7 @@ public class DictService implements IDictService {
         entity.setDictLabel(command.getDictLabel());
         entity.setDictValue(command.getDictValue());
         entity.setParentValue(trim(command.getParentValue()));
+        entity.setDictGroups(normalizeGroups(command.getGroups()));
         entity.setSort(command.getSort());
         entity.setStatus(command.getStatus());
         entity.setRemark(command.getRemark());
@@ -220,6 +226,7 @@ public class DictService implements IDictService {
         vo.setDictLabel(entity.getDictLabel());
         vo.setDictValue(entity.getDictValue());
         vo.setParentValue(entity.getParentValue());
+        vo.setGroups(splitGroups(entity.getDictGroups()));
         vo.setSort(entity.getSort());
         vo.setStatus(entity.getStatus());
         vo.setRemark(entity.getRemark());
@@ -230,6 +237,7 @@ public class DictService implements IDictService {
         DictOptionVO vo = new DictOptionVO();
         vo.setLabel(entity.getDictLabel());
         vo.setValue(entity.getDictValue());
+        vo.setGroups(splitGroups(entity.getDictGroups()));
         return vo;
     }
 
@@ -260,6 +268,7 @@ public class DictService implements IDictService {
         vo.setDictLabel(entity.getDictLabel());
         vo.setDictValue(entity.getDictValue());
         vo.setParentValue(entity.getParentValue());
+        vo.setGroups(splitGroups(entity.getDictGroups()));
         vo.setSort(entity.getSort());
         vo.setStatus(entity.getStatus());
         vo.setRemark(entity.getRemark());
@@ -310,6 +319,41 @@ public class DictService implements IDictService {
         return dictDataMapper.selectCount(new LambdaQueryWrapper<DictDataEntity>()
                 .eq(DictDataEntity::getDictType, dictType)
                 .eq(DictDataEntity::getParentValue, value)) > 0;
+    }
+
+    /**
+     * 归一化分组标记：去空白、去重并保持声明顺序；空集合写入 null，保持旧数据语义不变。
+     */
+    private String normalizeGroups(List<String> groups) {
+        if (groups == null || groups.isEmpty()) {
+            return null;
+        }
+        Set<String> normalized = new java.util.LinkedHashSet<>();
+        for (String group : groups) {
+            String value = trim(group);
+            if (value == null) {
+                continue;
+            }
+            Require.isTrue(value.length() <= MAX_GROUP_LENGTH, SystemCode.SYSTEM_INVALID, "分组标记长度不能超过32");
+            Require.isTrue(value.matches(GROUP_VALUE_PATTERN), SystemCode.SYSTEM_INVALID,
+                    "分组标记只能包含字母、数字、下划线和短横线");
+            normalized.add(value);
+        }
+        if (normalized.isEmpty()) {
+            return null;
+        }
+        Require.isTrue(normalized.size() <= MAX_GROUP_COUNT, SystemCode.SYSTEM_INVALID, "分组数量不能超过20");
+        String joined = String.join(",", normalized);
+        Require.isTrue(joined.length() <= MAX_GROUPS_LENGTH, SystemCode.SYSTEM_INVALID, "分组标记总长度不能超过255");
+        return joined;
+    }
+
+    private List<String> splitGroups(String groups) {
+        String normalized = trim(groups);
+        if (normalized == null) {
+            return List.of();
+        }
+        return List.of(normalized.split(","));
     }
 
     private String normalizeShape(String shape, String defaultShape) {

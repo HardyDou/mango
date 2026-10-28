@@ -213,6 +213,7 @@ function generateCommonSubpathTypes(root) {
     'IconSelector',
     'DictTag',
     'DictSelect',
+    'DictDisplay',
     'PasswordPolicyHint',
     'MangoDialog',
   ];

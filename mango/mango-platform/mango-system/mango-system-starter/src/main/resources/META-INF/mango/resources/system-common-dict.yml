@@ -739,3 +739,60 @@ mango:
                   parentValue: digital_devices
                   sort: 20
                   status: 1
+        - id: "2170000000000002006"
+          version: 1
+          biz-key: system.dict.component-group
+          name: 字典组件分组示例
+          target-module: system
+          fields:
+            typeId:
+              type: LONG
+              value: 2170000000000002006
+            dictType:
+              type: STRING
+              value: system_demo_group
+            dictName:
+              type: STRING
+              value: 字典组件分组示例
+            domainCode:
+              type: STRING
+              value: COMMON
+            shape:
+              type: STRING
+              value: FLAT
+            remark:
+              type: STRING
+              value: 开发中心字典组件分组过滤示例
+            items:
+              type: LIST
+              value:
+                - id: 2170000000000002601
+                  label: 值1
+                  value: "1"
+                  groups:
+                    - ORDER
+                  sort: 10
+                  status: 1
+                - id: 2170000000000002602
+                  label: 值2
+                  value: "2"
+                  groups:
+                    - ORDER
+                    - AFTER_SALE
+                  sort: 20
+                  status: 1
+                - id: 2170000000000002603
+                  label: 值3
+                  value: "3"
+                  groups:
+                    - ORDER
+                    - AFTER_SALE
+                  sort: 30
+                  status: 1
+                - id: 2170000000000002604
+                  label: 值4
+                  value: "4"
+                  groups:
+                    - AFTER_SALE
+                  sort: 40
+                  status: 1

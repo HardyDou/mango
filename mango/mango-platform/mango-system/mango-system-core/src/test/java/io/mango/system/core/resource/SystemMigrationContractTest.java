@@ -19,10 +19,11 @@ class SystemMigrationContractTest {
     void migrationsKeepV1BaselineAndAddTreePatch() throws Exception {
         try (var files = Files.list(MIGRATION_ROOT)) {
             assertThat(files.filter(Files::isRegularFile).map(path -> path.getFileName().toString()).sorted().toList())
-                    .containsExactly("V1__init_system.sql", "V2__dict_tree.sql");
+                    .containsExactly("V1__init_system.sql", "V2__dict_tree.sql", "V3__dict_data_groups.sql");
         }
         String sql = Files.readString(MIGRATION_ROOT.resolve("V1__init_system.sql"), StandardCharsets.UTF_8);
         String treePatch = Files.readString(MIGRATION_ROOT.resolve("V2__dict_tree.sql"), StandardCharsets.UTF_8);
+        String groupsPatch = Files.readString(MIGRATION_ROOT.resolve("V3__dict_data_groups.sql"), StandardCharsets.UTF_8);
 
         assertThat(DATA_OR_PATCH_STATEMENT.matcher(sql).find()).isFalse();
         assertThat(sql.toLowerCase()).containsOnlyOnce("create table if not exists `sys_tenant`");
@@ -30,6 +31,8 @@ class SystemMigrationContractTest {
         assertThat(treePatch.toLowerCase()).contains("alter table `sys_dict_type`")
                 .contains("alter table `sys_dict_data`")
                 .contains("parent_value");
+        assertThat(groupsPatch.toLowerCase()).contains("alter table `sys_dict_data`")
+                .contains("dict_groups");
     }
 
     @Test

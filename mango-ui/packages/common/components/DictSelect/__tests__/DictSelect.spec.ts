@@ -333,6 +333,87 @@ describe('DictSelect', () => {
     expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([[]]);
   });
 
+  it('group 过滤只保留组内值，其余分组不可见', async () => {
+    listDictOptions.mockResolvedValue([
+      { label: '值1', value: '1', groups: ['A'] },
+      { label: '值2', value: '2', groups: ['A', 'B'] },
+      { label: '值3', value: '3', groups: ['A', 'B'] },
+      { label: '值4', value: '4', groups: ['B'] },
+    ]);
+
+    const wrapper = mount(DictSelect, {
+      props: { dictType: 'demo_group', shape: 'FLAT', group: 'A' },
+      global: { stubs },
+    });
+    await flush();
+
+    expect(wrapper.findAll('.el-option').map((item) => item.text())).toEqual(['值1', '值2', '值3']);
+  });
+
+  it('未配置 group 时保留全部值，含未分组项', async () => {
+    listDictOptions.mockResolvedValue([
+      { label: '值1', value: '1', groups: ['A'] },
+      { label: '值2', value: '2', groups: [] },
+    ]);
+
+    const wrapper = mount(DictSelect, {
+      props: { dictType: 'demo_group', shape: 'FLAT' },
+      global: { stubs },
+    });
+    await flush();
+
+    expect(wrapper.findAll('.el-option').map((item) => item.text())).toEqual(['值1', '值2']);
+  });
+
+  it('include 与 exclude 叠加在分组之上', async () => {
+    listDictOptions.mockResolvedValue([
+      { label: '值1', value: '1', groups: ['A'] },
+      { label: '值2', value: '2', groups: ['A'] },
+      { label: '值3', value: '3', groups: ['A'] },
+      { label: '值4', value: '4', groups: ['B'] },
+    ]);
+
+    const wrapper = mount(DictSelect, {
+      props: {
+        dictType: 'demo_group',
+        shape: 'FLAT',
+        group: 'A',
+        includeValues: ['2', '3', '4'],
+        excludeValues: ['3'],
+      },
+      global: { stubs },
+    });
+    await flush();
+
+    expect(wrapper.findAll('.el-option').map((item) => item.text())).toEqual(['值2']);
+  });
+
+  it('TREE 按组过滤时保留祖先结构并禁用非组内祖先', async () => {
+    listDictTree.mockResolvedValue([
+      {
+        label: '办公用品',
+        value: 'office_supplies',
+        children: [
+          { label: '纸张', value: 'paper', groups: ['A'] },
+          { label: '笔', value: 'pen', groups: ['B'] },
+        ],
+      },
+    ]);
+
+    const wrapper = mount(DictSelect, {
+      props: { dictType: 'demo_tree', shape: 'TREE', group: 'A', multiple: true },
+      global: { stubs },
+    });
+    await flush();
+
+    const data = wrapper.findComponent(ElTreeSelectStub).props('data') as any[];
+    expect(data).toHaveLength(1);
+    expect(data[0].value).toBe('office_supplies');
+    expect(data[0].disabled).toBe(true);
+    expect(data[0].children.map((child: any) => child.value)).toEqual(['paper']);
+    expect(data[0].children[0].disabled).toBe(false);
+  });
+
   it('getSelectedNodes 和 getSelectedPaths 返回当前选择', async () => {
     const wrapper = mount(DictSelect, {
       props: { dictType: 'system_demo_tree', shape: 'TREE', multiple: true, modelValue: ['paper', 'pen'] },

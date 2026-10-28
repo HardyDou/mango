@@ -57,6 +57,22 @@ describe('dict api cache', () => {
     expect(get).toHaveBeenCalledTimes(3);
   });
 
+  it('options 暴露分组并兼容逗号串', async () => {
+    get.mockResolvedValue([
+      { label: '值1', value: '1', groups: ['ORDER', 'AFTER_SALE'] },
+      { label: '值2', value: '2', groups: 'ORDER,AFTER_SALE' },
+      { label: '值3', value: '3' },
+    ]);
+
+    const options = await listDictOptions('grouped_dict');
+
+    expect(options.map((item) => item.groups)).toEqual([
+      ['ORDER', 'AFTER_SALE'],
+      ['ORDER', 'AFTER_SALE'],
+      [],
+    ]);
+  });
+
   it('并发请求同一字典只发起一次', async () => {
     get.mockResolvedValue([{ label: '启用', value: '1' }]);
 
