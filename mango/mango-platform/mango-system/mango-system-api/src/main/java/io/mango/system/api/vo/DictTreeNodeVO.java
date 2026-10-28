@@ -19,6 +19,8 @@ public class DictTreeNodeVO {
     private String dictValue;
     @Schema(description = "父节点值，空值表示根节点")
     private String parentValue;
+    @Schema(description = "分组标记，空列表表示未分组")
+    private List<String> groups = new ArrayList<>();
     @Schema(description = "排序号")
     private Integer sort;
     @Schema(description = "状态：0-禁用，1-启用")
@@ -27,6 +29,17 @@ public class DictTreeNodeVO {
     private String remark;
     @Schema(description = "子节点")
     private final List<DictTreeNodeVO> children = new ArrayList<>();
+
+    /**
+     * 返回分组快照，避免直接暴露可变集合。
+     */
+    public List<String> getGroups() {
+        return List.copyOf(groups);
+    }
+
+    public void setGroups(List<String> groups) {
+        this.groups = groups == null ? new ArrayList<>() : new ArrayList<>(groups);
+    }
 
     /**
      * 返回子节点快照，避免外部直接持有可变集合。

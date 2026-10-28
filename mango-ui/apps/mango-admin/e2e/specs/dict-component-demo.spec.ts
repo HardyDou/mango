@@ -28,6 +28,15 @@ test('@p1 @system 字典组件直接使用统一 DictSelect 展示 FLAT 和 TREE
   await expect(page.locator('[data-action="display-tree-label"]')).toHaveText('纸张');
   await expect(page.locator('[data-action="display-tree-path"]')).toContainText('办公用品 / 纸张');
 
+  await expect(page.locator('[data-action="group-order-display"]')).toHaveText('值1', { timeout: 15000 });
+  await expect(page.locator('[data-action="group-after-sale-display"]')).toHaveText('值4');
+  await expect(page.locator('[data-action="group-narrow-display"]')).toHaveText('值2');
+
+  await page.locator('[data-action="group-order-select"] .el-select__wrapper').click();
+  await expect(page.locator('.el-select-dropdown:visible .el-select-dropdown__item')).toHaveCount(3);
+  await expect(page.locator('.el-select-dropdown:visible .el-select-dropdown__item').nth(2)).toHaveText('值3');
+  await page.keyboard.press('Escape');
+
   await expect(page.getByText('仅叶子节点可选', { exact: true })).toBeVisible();
   await expect(page.getByText('system_demo_tree', { exact: true })).toBeVisible();
 

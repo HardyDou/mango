@@ -52,6 +52,9 @@ import { DictDisplay } from '@mango/common';
 | `displaySeparator` | `' / '` | 路径分隔符。 |
 | `emptyText` | `'-'` | 空值文案。 |
 | `tagType` / `tagEffect` / `tagSize` | `''` / `'light'` / `'default'` | 标签模式配置。 |
+| `group` | `undefined` | 分组过滤；不传显示全量，传入后只显示该组内的值（多组按 OR）。 |
+| `includeValues` | `undefined` | 白名单，在分组结果上继续限定显示值。 |
+| `excludeValues` | `undefined` | 黑名单，在分组结果上继续剔除值。 |
 
 ## API 与扩展
 
@@ -70,6 +73,18 @@ FLAT 数据来自 `GET /system/dict/data/options`，TREE 数据来自 `GET /syst
 ## 快速开始
 
 安装并引入 `@mango/common` 后，将 `DictDisplay` 放在列表、详情或打印视图中，传入 `dict-type` 和 `value`。需要编辑时使用 `DictSelect`，不要在业务页面重复实现字典请求和 label 转换。
+
+## 分组过滤
+
+- 不传 `group`：显示全量，保持向后兼容。
+- 传 `group`：只显示命中该分组的值，其余值直接不渲染（不显示原始 value）；未分组项不命中任何组。
+- `includeValues` / `excludeValues` 与 `group` 叠加，顺序为：组过滤 → 白名单 → 黑名单。
+- 列表 A 与详情 B 可用不同 `group` 展示同一字段的不同子集，例如 A 展示 `ORDER` 组、B 展示 `AFTER_SALE` 组。
+
+```vue
+<DictDisplay dict-type="system_demo_group" group="ORDER" :value="row.statuses" />
+<DictDisplay dict-type="system_demo_group" group="AFTER_SALE" :value="row.statuses" />
+```
 
 ## 默认行为与缓存
 

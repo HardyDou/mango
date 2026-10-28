@@ -103,3 +103,13 @@
 - 能力：FLAT/TREE、单值/多值自动识别、纯文本或标签样式、多值分隔符、TREE 完整路径与路径分隔符、空值文案、未知值回退原始值。
 - 默认：文本样式、多值用「、」连接、TREE 显示末级 label、空值显示 `-`。
 - 验证：`DictDisplay.spec.ts` 10 个用例；开发中心新增「回显模式：DictDisplay」示例与 E2E 断言；`@mango/common` 测试 396 通过、包构建与 `mango-admin` 构建通过。
+
+## 9. 追加：字典项分组过滤
+
+- 场景：同一个字典在 A 处只允许/显示 1、2、3，在 B 处只允许/显示 2、3、4。
+- 数据模型：`sys_dict_data.dict_groups`（逗号分隔，可空），API 暴露 `groups: string[]`；空表示未分组。
+- 语义：不传 `group` 时全量（向后兼容）；传 `group` 时只保留命中该组的值（多组 OR），未分组项不命中；`includeValues` / `excludeValues` 在同层叠加，顺序为 组 → include → exclude。
+- TREE：命中值保留，未命中祖先仅作结构节点并置为不可选。
+- 组件：`DictSelect`、`DictDisplay` 同时支持 `group` / `includeValues` / `excludeValues`；管理端字典数据表单与列表支持分组维护。
+- 内置示例：`system_demo_group`（值1 属 ORDER；值2、3 属 ORDER+AFTER_SALE；值4 属 AFTER_SALE）。
+- 验证：后端 20 个字典用例通过（分组归一化、非法标记、树节点分组、资源同步分组）；`@mango/common` 组件用例覆盖分组、白名单/黑名单与 TREE 祖先禁用；开发中心新增「分组过滤」示例并通过 E2E。

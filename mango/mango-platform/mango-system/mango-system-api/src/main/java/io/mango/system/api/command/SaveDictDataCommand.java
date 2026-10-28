@@ -8,6 +8,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Data
 @Schema(description = "保存字典数据命令")
 public class SaveDictDataCommand {
@@ -38,4 +41,18 @@ public class SaveDictDataCommand {
     @Schema(description = "备注")
     @Size(max = 500, message = "备注长度不正确")
     private String remark;
+    @Size(max = 20, message = "分组数量不能超过20")
+    @Schema(description = "分组标记，可属于多个分组；空值表示未分组")
+    private List<@Size(max = 32, message = "分组标记长度不能超过32") String> groups = new ArrayList<>();
+
+    /**
+     * 返回分组快照，避免直接暴露可变集合。
+     */
+    public List<String> getGroups() {
+        return List.copyOf(groups);
+    }
+
+    public void setGroups(List<String> groups) {
+        this.groups = groups == null ? new ArrayList<>() : new ArrayList<>(groups);
+    }
 }

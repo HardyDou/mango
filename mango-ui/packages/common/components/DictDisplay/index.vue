@@ -26,7 +26,7 @@
 <script setup lang="ts" name="DictDisplay">
 import { computed, ref, watch } from 'vue';
 import { listDictOptions, listDictTree, type DictTreeOption } from '../../api/dict';
-import { indexDictTree } from '../../utils/dictTree';
+import { createDictValueFilter, indexDictTree } from '../../utils/dictTree';
 import type {
   DictDisplayFormat,
   DictDisplayItem,
@@ -47,6 +47,9 @@ const props = withDefaults(defineProps<{
   tagType?: '' | 'primary' | 'success' | 'info' | 'warning' | 'danger';
   tagEffect?: 'light' | 'dark' | 'plain';
   tagSize?: 'large' | 'default' | 'small';
+  group?: string | string[];
+  includeValues?: Array<string | number>;
+  excludeValues?: Array<string | number>;
 }>(), {
   shape: 'FLAT',
   value: undefined,
@@ -58,6 +61,9 @@ const props = withDefaults(defineProps<{
   tagType: '',
   tagEffect: 'light',
   tagSize: 'default',
+  group: undefined,
+  includeValues: undefined,
+  excludeValues: undefined,
 });
 
 const emit = defineEmits<{
@@ -65,8 +71,16 @@ const emit = defineEmits<{
   (event: 'loaded', items: DictDisplayItem[]): void;
 }>();
 
-const flatOptions = ref<Map<string, string>>(new Map());
+const flatOptions = ref<Map<string, { label: string; groups: string[] }>>(new Map());
 const treeIndex = ref<Map<string, { node: DictTreeOption; path: DictTreeOption[] }>>(new Map());
+
+const valueFilter = computed(() =>
+  createDictValueFilter({
+    group: props.group,
+    includeValues: props.includeValues,
+    excludeValues: props.excludeValues,
+  })
+);
 
 const normalizedValues = computed(() => {
   const { value } = props;
@@ -78,25 +92,35 @@ const normalizedValues = computed(() => {
 });
 
 const items = computed<DictDisplayItem[]>(() =>
-  normalizedValues.value.map((value) => {
-    if (props.shape === 'TREE') {
-      const entry = treeIndex.value.get(value);
-      const path = entry ? entry.path.map((node) => node.label) : [];
-      const label = entry?.node.label ?? value;
-      const text = props.displayFormat === 'path' && path.length > 0
-        ? path.join(props.displaySeparator)
-        : label;
-      return { value, label, path, text, known: Boolean(entry) };
-    }
-    const label = flatOptions.value.get(value);
-    return {
-      value,
-      label: label ?? value,
-      path: [],
-      text: label ?? value,
-      known: label !== undefined,
-    };
-  })
+  normalizedValues.value
+    .filter((value) => {
+      if (props.shape === 'TREE') {
+        const entry = treeIndex.value.get(value);
+        return valueFilter.value({ value, groups: entry?.node.groups });
+      }
+      const option = flatOptions.value.get(value);
+      // 未命中字典时仍按 include/exclude 与分组判断；无分组配置时保持原回退行为
+      return valueFilter.value({ value, groups: option?.groups });
+    })
+    .map((value) => {
+      if (props.shape === 'TREE') {
+        const entry = treeIndex.value.get(value);
+        const path = entry ? entry.path.map((node) => node.label) : [];
+        const label = entry?.node.label ?? value;
+        const text = props.displayFormat === 'path' && path.length > 0
+          ? path.join(props.displaySeparator)
+          : label;
+        return { value, label, path, text, known: Boolean(entry) };
+      }
+      const option = flatOptions.value.get(value);
+      return {
+        value,
+        label: option?.label ?? value,
+        path: [],
+        text: option?.label ?? value,
+        known: option !== undefined,
+      };
+    })
 );
 
 async function reload(force = false): Promise<void> {
@@ -112,7 +136,9 @@ async function reload(force = false): Promise<void> {
       treeIndex.value = indexDictTree(data);
     } else {
       const data = await listDictOptions(props.dictType, force);
-      flatOptions.value = new Map(data.map((item) => [String(item.value), item.label]));
+      flatOptions.value = new Map(
+        data.map((item) => [String(item.value), { label: item.label, groups: item.groups ?? [] }])
+      );
     }
     emit('loaded', items.value);
   } catch (error) {

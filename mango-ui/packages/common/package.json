@@ -109,6 +109,10 @@
     "./api/*": {
       "types": "./dist/api/*.d.ts",
       "import": "./dist/api/*.js"
+    },
+    "./components/DictDisplay/index.vue": {
+      "types": "./dist/components/DictDisplay/index.d.ts",
+      "import": "./dist/components/DictDisplay/index.js"
     }
   },
   "scripts": {
@@ -266,6 +270,10 @@
         "sourcePattern": "./api/*.ts",
         "kind": "code",
         "expiresAt": "2027-01-18"
+      },
+      "./components/DictDisplay/index.vue": {
+        "source": "./components/DictDisplay/index.vue",
+        "kind": "code"
       }
     },
     "nonCodeExports": {

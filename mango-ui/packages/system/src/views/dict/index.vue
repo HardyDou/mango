@@ -89,6 +89,12 @@
             <el-table-column prop="label" label="标签" min-width="180" />
             <el-table-column prop="value" label="值" min-width="160" />
             <el-table-column prop="parentValue" label="父节点" min-width="140" />
+            <el-table-column label="分组" min-width="160">
+              <template #default="{ row }">
+                <span v-if="row.groups?.length">{{ row.groups.join('、') }}</span>
+                <span v-else class="dict-groups-empty">未分组</span>
+              </template>
+            </el-table-column>
             <el-table-column prop="sort" label="排序" width="80" />
             <el-table-column prop="status" label="状态" width="80">
               <template #default="{ row }">
@@ -185,6 +191,19 @@
             placeholder="请选择父节点，留空表示根节点"
           />
         </el-form-item>
+        <el-form-item label="分组" prop="groups">
+          <el-select
+            v-model="dataForm.groups"
+            multiple
+            filterable
+            allow-create
+            default-first-option
+            :reserve-keyword="false"
+            placeholder="可选；不填表示未分组，可输入新分组回车创建"
+          >
+            <el-option v-for="group in groupOptions" :key="group" :label="group" :value="group" />
+          </el-select>
+        </el-form-item>
         <el-form-item label="排序" prop="sort">
           <el-input-number v-model="dataForm.sort" :min="0" :max="9999" />
         </el-form-item>
@@ -247,6 +266,22 @@ const typeRules: FormRules = {
   name: [{ required: true, message: '请输入类型名称', trigger: 'blur' }],
   code: [{ required: true, message: '请输入类型编码', trigger: 'blur' }],
 };
+
+const groupOptions = computed<string[]>(() => {
+  const groups = new Set<string>();
+  const walk = (nodes: DictData[]) => {
+    for (const node of nodes) {
+      for (const group of node.groups ?? []) {
+        groups.add(group);
+      }
+      if (node.children?.length) {
+        walk(node.children);
+      }
+    }
+  };
+  walk(dataList.value);
+  return [...groups].sort();
+});
 
 const parentTreeOptions = computed<ParentTreeNode[]>(() => {
   // 编辑时排除自身及后代，避免提交循环引用
@@ -412,6 +447,7 @@ const dataForm = reactive<DictData>({
   label: '',
   value: '',
   parentValue: undefined,
+  groups: [],
   sort: 0,
   status: 1,
   extra: '',
@@ -479,6 +515,7 @@ function handleAddData(parent?: DictData) {
   dataForm.label = '';
   dataForm.value = '';
   dataForm.parentValue = parent?.value;
+  dataForm.groups = [];
   dataForm.sort = 0;
   dataForm.status = 1;
   dataForm.extra = '';
@@ -495,6 +532,7 @@ function handleEditData(row: DictData) {
   dataForm.label = row.label;
   dataForm.value = row.value;
   dataForm.parentValue = row.parentValue;
+  dataForm.groups = row.groups ? [...row.groups] : [];
   dataForm.sort = row.sort || 0;
   dataForm.status = row.status || 1;
   dataForm.extra = row.extra || '';
@@ -561,7 +599,7 @@ function filterTreeByKeyword(nodes: DictData[], keyword?: string): DictData[] {
   if (!normalized) return nodes;
   return nodes.reduce<DictData[]>((result, node) => {
     const children = filterTreeByKeyword(node.children || [], normalized);
-    const matched = [node.label, node.value, node.parentValue]
+    const matched = [node.label, node.value, node.parentValue, ...(node.groups ?? [])]
       .filter(Boolean)
       .some((value) => String(value).toLowerCase().includes(normalized));
     if (matched || children.length > 0) {
@@ -590,6 +628,10 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
+.dict-groups-empty {
+  color: var(--el-text-color-placeholder);
+}
+
 .dict-container {
   padding: 0;
 }

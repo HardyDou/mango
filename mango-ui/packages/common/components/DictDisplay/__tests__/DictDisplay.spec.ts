@@ -164,6 +164,61 @@ describe('DictDisplay', () => {
     expect(wrapper.emitted('error')).toBeTruthy();
   });
 
+  it('group 过滤只显示组内值', async () => {
+    listDictOptions.mockResolvedValue([
+      { label: '值1', value: '1', groups: ['A'] },
+      { label: '值2', value: '2', groups: ['A', 'B'] },
+      { label: '值3', value: '3', groups: ['A', 'B'] },
+      { label: '值4', value: '4', groups: ['B'] },
+    ]);
+
+    const wrapper = mount(DictDisplay, {
+      props: { dictType: 'demo_group', value: ['1', '2', '3', '4'], group: 'A' },
+      global: { stubs },
+    });
+    await flush();
+
+    expect(wrapper.text()).toBe('值1、值2、值3');
+  });
+
+  it('未配置 group 时显示全部值，保持向后兼容', async () => {
+    listDictOptions.mockResolvedValue([
+      { label: '值1', value: '1', groups: ['A'] },
+      { label: '值2', value: '2', groups: ['B'] },
+      { label: '值3', value: '3', groups: [] },
+    ]);
+
+    const wrapper = mount(DictDisplay, {
+      props: { dictType: 'demo_group', value: ['1', '2', '3'] },
+      global: { stubs },
+    });
+    await flush();
+
+    expect(wrapper.text()).toBe('值1、值2、值3');
+  });
+
+  it('include 与 exclude 在回显侧同样生效', async () => {
+    listDictOptions.mockResolvedValue([
+      { label: '值1', value: '1', groups: ['A'] },
+      { label: '值2', value: '2', groups: ['A'] },
+      { label: '值3', value: '3', groups: ['A'] },
+    ]);
+
+    const wrapper = mount(DictDisplay, {
+      props: {
+        dictType: 'demo_group',
+        value: ['1', '2', '3'],
+        group: 'A',
+        includeValues: ['2', '3'],
+        excludeValues: ['3'],
+      },
+      global: { stubs },
+    });
+    await flush();
+
+    expect(wrapper.text()).toBe('值2');
+  });
+
   it('暴露 getItems 与 reload(force)', async () => {
     const wrapper = mount(DictDisplay, {
       props: { dictType: 'system_demo_tree', shape: 'TREE', value: 'paper', displayFormat: 'path' },
