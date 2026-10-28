@@ -6,6 +6,8 @@ export interface DictOption {
   type?: string;
   sort?: number;
   status?: number;
+  /** 分组标记；空数组表示未分组 */
+  groups?: string[];
 }
 
 export interface DictTreeOption extends DictOption {
@@ -19,6 +21,7 @@ interface BackendDictTreeOption {
   value?: string;
   dictValue?: string;
   parentValue?: string;
+  groups?: string[] | string;
   children?: BackendDictTreeOption[];
   type?: string;
   dictType?: string;
@@ -101,7 +104,18 @@ function fromBackendOption(item: BackendDictTreeOption): DictOption {
     type: item.type ?? item.dictType,
     sort: item.sort ?? 0,
     status: item.status ?? 1,
+    groups: normalizeGroups(item.groups),
   };
+}
+
+function normalizeGroups(groups?: string[] | string): string[] {
+  if (!groups) {
+    return [];
+  }
+  const list = Array.isArray(groups) ? groups : String(groups).split(',');
+  return list
+    .map((group) => String(group).trim())
+    .filter((group, index, all) => group.length > 0 && all.indexOf(group) === index);
 }
 
 function fromBackendTreeOption(item: BackendDictTreeOption): DictTreeOption {

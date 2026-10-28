@@ -3,6 +3,8 @@ package io.mango.system.api.vo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 @Schema(description = "字典数据视图")
 public class DictDataVO {
@@ -16,6 +18,8 @@ public class DictDataVO {
     private String dictValue;
     @Schema(description = "父节点值，空值表示根节点")
     private String parentValue;
+    @Schema(description = "分组标记，空列表表示未分组")
+    private List<String> groups;
     @Schema(description = "排序号")
     private Integer sort;
     @Schema(description = "状态：0-禁用，1-启用")

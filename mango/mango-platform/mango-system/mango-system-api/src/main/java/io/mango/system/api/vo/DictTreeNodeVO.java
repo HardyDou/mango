@@ -19,6 +19,8 @@ public class DictTreeNodeVO {
     private String dictValue;
     @Schema(description = "父节点值，空值表示根节点")
     private String parentValue;
+    @Schema(description = "分组标记，空列表表示未分组")
+    private List<String> groups;
     @Schema(description = "排序号")
     private Integer sort;
     @Schema(description = "状态：0-禁用，1-启用")

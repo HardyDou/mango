@@ -79,7 +79,7 @@
 <script setup lang="ts" name="DictSelect">
 import { computed, ref, watch } from 'vue';
 import { listDictOptions, listDictTree, type DictOption, type DictTreeOption } from '../../api/dict';
-import { indexDictTree } from '../../utils/dictTree';
+import { createDictValueFilter, filterDictTree, indexDictTree } from '../../utils/dictTree';
 import type { DictSelectDisplayFormat, DictSelectValue, DictShape } from './types';
 
 interface DictSelectTreeOption extends DictTreeOption {
@@ -120,6 +120,9 @@ const props = withDefaults(defineProps<{
   displayFormat?: DictSelectDisplayFormat;
   displaySeparator?: string;
   noDataText?: string;
+  group?: string | string[];
+  includeValues?: Array<string | number>;
+  excludeValues?: Array<string | number>;
 }>(), {
   modelValue: undefined,
   shape: 'FLAT',
@@ -142,6 +145,9 @@ const props = withDefaults(defineProps<{
   displayFormat: 'label',
   displaySeparator: ' / ',
   noDataText: '暂无数据',
+  group: undefined,
+  includeValues: undefined,
+  excludeValues: undefined,
 });
 
 const emit = defineEmits<{
@@ -152,12 +158,34 @@ const emit = defineEmits<{
   (event: 'error', error: unknown): void;
 }>();
 
-const flatOptions = ref<DictOption[]>([]);
-const treeOptions = ref<DictSelectTreeOption[]>([]);
+const rawFlatOptions = ref<DictOption[]>([]);
+const rawTreeOptions = ref<DictTreeOption[]>([]);
 const loading = ref(false);
 const errorMessage = ref('');
 const flatSelectRef = ref<SelectInstance>();
 const treeSelectRef = ref<TreeSelectInstance>();
+
+const valueFilter = computed(() =>
+  createDictValueFilter({
+    group: props.group,
+    includeValues: props.includeValues,
+    excludeValues: props.excludeValues,
+  })
+);
+
+const flatOptions = computed(() =>
+  rawFlatOptions.value.filter((item) => valueFilter.value({ value: item.value, groups: item.groups }))
+);
+
+const filteredTree = computed(() =>
+  filterDictTree(rawTreeOptions.value, (item) =>
+    valueFilter.value({ value: item.value, groups: (item as DictTreeOption).groups })
+  )
+);
+
+const treeOptions = computed<DictSelectTreeOption[]>(() =>
+  mapTreeOptions(filteredTree.value.nodes, props.leafOnly, filteredTree.value.matched)
+);
 
 const treeProps = computed(() => ({
   value: 'value',
@@ -183,8 +211,8 @@ const selectedValues = computed(() => {
 });
 async function reload(force = false) {
   if (!props.dictType) {
-    flatOptions.value = [];
-    treeOptions.value = [];
+    rawFlatOptions.value = [];
+    rawTreeOptions.value = [];
     return [];
   }
 
@@ -192,15 +220,14 @@ async function reload(force = false) {
   errorMessage.value = '';
   try {
     if (props.shape === 'TREE') {
-      const data = await listDictTree(props.dictType, force);
-      treeOptions.value = mapTreeOptions(data, props.leafOnly);
+      rawTreeOptions.value = await listDictTree(props.dictType, force);
       return treeOptions.value;
     }
-    flatOptions.value = await listDictOptions(props.dictType, force);
+    rawFlatOptions.value = await listDictOptions(props.dictType, force);
     return flatOptions.value;
   } catch (error) {
-    flatOptions.value = [];
-    treeOptions.value = [];
+    rawFlatOptions.value = [];
+    rawTreeOptions.value = [];
     errorMessage.value = error instanceof Error ? error.message : '字典加载失败，请检查字典编码和权限。';
     emit('error', error);
     return [];
@@ -209,11 +236,15 @@ async function reload(force = false) {
   }
 }
 
-function mapTreeOptions(nodes: DictTreeOption[], leafOnly: boolean): DictSelectTreeOption[] {
+function mapTreeOptions(
+  nodes: DictTreeOption[],
+  leafOnly: boolean,
+  matched: Set<string>
+): DictSelectTreeOption[] {
   return nodes.map((node) => ({
     ...node,
-    disabled: leafOnly && Boolean(node.children?.length),
-    children: node.children ? mapTreeOptions(node.children, leafOnly) : undefined,
+    disabled: (leafOnly && Boolean(node.children?.length)) || !matched.has(String(node.value)),
+    children: node.children ? mapTreeOptions(node.children, leafOnly, matched) : undefined,
   }));
 }
 
@@ -324,7 +355,7 @@ function blur() {
   else flatSelectRef.value?.blur();
 }
 
-watch(() => [props.dictType, props.shape, props.leafOnly], () => {
+watch(() => [props.dictType, props.shape], () => {
   void reload();
 }, { immediate: true });
 

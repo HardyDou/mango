@@ -136,6 +136,55 @@ class DictServiceImplTest {
         assertThat(dictService).isInstanceOf(IDictService.class);
     }
 
+    @Test
+    void groupsAreNormalizedOnWriteAndExposedOnRead() {
+        when(dictTypeMapper.selectOne(any(LambdaQueryWrapper.class)))
+                .thenReturn(type(1L, "type1", "Type 1"));
+        when(dictDataMapper.insert(any(DictDataEntity.class))).thenReturn(1);
+
+        SaveDictDataCommand command = dataCommand();
+        command.setGroups(List.of(" ORDER ", "AFTER_SALE", "ORDER", " "));
+        dictService.createData(command);
+
+        verify(dictDataMapper).insert(argThat((DictDataEntity entity) ->
+                "ORDER,AFTER_SALE".equals(entity.getDictGroups())));
+
+        DictDataEntity stored = data(1L, "Label", "value");
+        stored.setDictGroups("ORDER,AFTER_SALE");
+        when(dictDataMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(List.of(stored));
+
+        assertThat(dictService.getOptions("type1")).singleElement()
+                .extracting(DictOptionVO::getGroups)
+                .isEqualTo(List.of("ORDER", "AFTER_SALE"));
+    }
+
+    @Test
+    void groupsRejectInvalidMarkers() {
+        when(dictTypeMapper.selectOne(any(LambdaQueryWrapper.class)))
+                .thenReturn(type(1L, "type1", "Type 1"));
+
+        SaveDictDataCommand command = dataCommand();
+        command.setGroups(List.of("ORDER GROUP"));
+
+        assertThatThrownBy(() -> dictService.createData(command))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("分组标记");
+    }
+
+    @Test
+    void treeNodesExposeGroups() {
+        DictTypeEntity treeType = type(1L, "type1", "Type 1");
+        treeType.setShape("TREE");
+        DictDataEntity root = data(1L, "Root", "root");
+        root.setDictGroups("ORDER");
+        when(dictTypeMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(treeType);
+        when(dictDataMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(List.of(root));
+
+        assertThat(dictService.getTreeOptions("type1")).singleElement()
+                .extracting(DictTreeNodeVO::getGroups)
+                .isEqualTo(List.of("ORDER"));
+    }
+
     private SaveDictTypeCommand typeCommand(Long id) {
         SaveDictTypeCommand command = new SaveDictTypeCommand();
         command.setId(id);

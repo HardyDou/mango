@@ -225,6 +225,98 @@
       </div>
     </section>
 
+    <section id="group" class="doc-section">
+      <h2>分组过滤：group / include / exclude</h2>
+      <p>
+        同一个字典可以给每个值打一个或多个分组标记（如 ORDER、AFTER_SALE）。组件不传 group 时保持全量；传 group 时只取该组内的值；再叠加 include 白名单与 exclude 黑名单做点对点微调。内置示例字典 system_demo_group：值1 属于 ORDER，值2、3 同属两组，值4 属于 AFTER_SALE。
+      </p>
+      <div class="demo-block">
+        <div class="demo-source">
+          <div class="tree-single-row">
+            <div class="tree-use-case">
+              <div class="tree-use-case__title">A 处：ORDER 组</div>
+              <div class="tree-use-case__label">可选值</div>
+              <DictSelect
+                v-model="groupOrderValue"
+                dict-type="system_demo_group"
+                group="ORDER"
+                placeholder="只显示 ORDER 组"
+                clearable
+                data-action="group-order-select"
+              />
+              <div class="tree-use-case__label group-display-label">回显</div>
+              <DictDisplay
+                dict-type="system_demo_group"
+                group="ORDER"
+                :value="groupOrderValue"
+                data-action="group-order-display"
+              />
+            </div>
+            <div class="tree-use-case">
+              <div class="tree-use-case__title">B 处：AFTER_SALE 组</div>
+              <div class="tree-use-case__label">可选值</div>
+              <DictSelect
+                v-model="groupAfterSaleValue"
+                dict-type="system_demo_group"
+                group="AFTER_SALE"
+                placeholder="只显示 AFTER_SALE 组"
+                clearable
+                data-action="group-after-sale-select"
+              />
+              <div class="tree-use-case__label group-display-label">回显</div>
+              <DictDisplay
+                dict-type="system_demo_group"
+                group="AFTER_SALE"
+                :value="groupAfterSaleValue"
+                data-action="group-after-sale-display"
+              />
+            </div>
+            <div class="tree-use-case">
+              <div class="tree-use-case__title">组内再收窄</div>
+              <div class="tree-use-case__label">include=[2,3] 且 exclude=[3]</div>
+              <DictSelect
+                v-model="groupNarrowValue"
+                dict-type="system_demo_group"
+                group="ORDER"
+                :include-values="['2', '3']"
+                :exclude-values="['3']"
+                placeholder="只剩值2"
+                clearable
+                data-action="group-narrow-select"
+              />
+              <div class="tree-use-case__label group-display-label">回显</div>
+              <DictDisplay
+                dict-type="system_demo_group"
+                group="ORDER"
+                :include-values="['2', '3']"
+                :exclude-values="['3']"
+                :value="groupNarrowValue"
+                data-action="group-narrow-display"
+              />
+            </div>
+            <div class="tree-use-case">
+              <div class="tree-use-case__title">不传 group（全量）</div>
+              <div class="tree-use-case__label">可选值</div>
+              <DictSelect
+                v-model="groupAllValue"
+                dict-type="system_demo_group"
+                placeholder="显示全部值"
+                clearable
+                data-action="group-all-select"
+              />
+              <div class="tree-use-case__label group-display-label">回显</div>
+              <DictDisplay dict-type="system_demo_group" :value="groupAllValue" data-action="group-all-display" />
+            </div>
+          </div>
+        </div>
+        <div class="op-btns" data-action="toggle-group-code" @click="toggleCode('group')">
+          <el-icon><component :is="codeVisible.group ? ArrowUp : ArrowDown" /></el-icon>
+          <span>{{ codeVisible.group ? '隐藏代码' : '显示代码' }}</span>
+        </div>
+        <DemoCodeBlock v-show="codeVisible.group" :code="groupCode" />
+      </div>
+    </section>
+
     <section id="props" class="doc-section api-section">
       <h2>组件参数</h2>
       <el-table :data="propsTable" size="small" border>
@@ -316,6 +408,7 @@ const tocItems = [
   { id: 'tree-single', label: '树形字典' },
   { id: 'tree-multiple', label: '树形字典-选择策略' },
   { id: 'display', label: '回显模式：DictDisplay' },
+  { id: 'group', label: '分组过滤：group / include / exclude' },
   { id: 'props', label: '组件参数' },
   { id: 'slots', label: '插槽' },
   { id: 'events', label: '事件和方法' },
@@ -330,6 +423,10 @@ const treeSimpleMultipleValues = ref<string[]>(['paper']);
 const treeSimpleMultipleAllValues = ref<string[]>(['paper', 'pen', 'computer']);
 const slotDemoValue = ref<string>('paper');
 const treeMultipleValues = ref<string[]>(['paper']);
+const groupOrderValue = ref<string>('1');
+const groupAfterSaleValue = ref<string>('4');
+const groupNarrowValue = ref<string>('2');
+const groupAllValue = ref<string>('1');
 
 const treeMultipleLeafOnly = ref(false);
 const treeMultipleRef = ref<InstanceType<typeof DictSelect>>();
@@ -418,6 +515,26 @@ const treeSingleCode = `<div class="form-row">
     filterable
   />
 </div>`;
+
+const groupCode = `<!-- 值可属于多个分组：值2、3 同时属于 ORDER 与 AFTER_SALE -->
+<!-- A 处只看 ORDER 组：值1、值2、值3 -->
+<DictSelect dict-type="system_demo_group" group="ORDER" v-model="form.status" />
+<DictDisplay dict-type="system_demo_group" group="ORDER" :value="row.status" />
+
+<!-- B 处只看 AFTER_SALE 组：值2、值3、值4 -->
+<DictDisplay dict-type="system_demo_group" group="AFTER_SALE" :value="row.status" />
+
+<!-- 组内再收窄：先取 ORDER 组，再限定 include 并剔除 exclude -->
+<DictSelect
+  dict-type="system_demo_group"
+  group="ORDER"
+  :include-values="['2', '3']"
+  :exclude-values="['3']"
+  v-model="form.status"
+/>
+
+<!-- 不传 group 时保持全量，向后兼容 -->
+<DictSelect dict-type="system_demo_group" v-model="form.status" />`;
 
 const displayCode = `<!-- 列表 / 详情：value 转 label，单值多值自动识别 -->
 <DictDisplay dict-type="sys_normal_disable" :value="row.status" />
@@ -560,6 +677,10 @@ function toggleCode(key: string) {
 
 .display-panel {
   max-width: 720px;
+}
+
+.group-display-label {
+  margin-top: 10px;
 }
 
 .api-subtitle {

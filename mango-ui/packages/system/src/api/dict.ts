@@ -35,6 +35,7 @@ export interface DictData {
   label: string;
   value: string;
   parentValue?: string;
+  groups?: string[];
   children?: DictData[];
   sort?: number;
   status?: number;
@@ -197,6 +198,7 @@ function fromBackendData(item: any, typeId?: ApiId): DictData {
     label: item.dictLabel ?? item.label,
     value: item.dictValue ?? item.value,
     parentValue: item.parentValue,
+    groups: normalizeGroups(item.groups),
     children: Array.isArray(item.children) ? item.children.map((child: any) => fromBackendData(child, typeId)) : undefined,
     sort: item.sort ?? 0,
     status: item.status ?? 1,
@@ -225,9 +227,20 @@ function toBackendData(item: DictData) {
     dictValue: item.value,
     dictType: item.dictType,
     parentValue: item.parentValue,
+    groups: item.groups,
     sort: item.sort,
     status: item.status,
   };
+}
+
+function normalizeGroups(groups?: string[] | string): string[] {
+  if (!groups) {
+    return [];
+  }
+  const list = Array.isArray(groups) ? groups : String(groups).split(',');
+  return list
+    .map((group) => String(group).trim())
+    .filter((group, index, all) => group.length > 0 && all.indexOf(group) === index);
 }
 
 function filterByKeyword<T extends { name?: string; code?: string; label?: string; value?: string }>(list: T[], keyword?: string): T[] {

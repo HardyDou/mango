@@ -75,6 +75,23 @@ class SystemDictResourceHandlerIntegrationTest {
     }
 
     @Test
+    void upsertPersistsItemGroups() throws Exception {
+        Map<String, Object> grouped = new LinkedHashMap<>(Map.of(
+                "id", 100L,
+                "label", "系统角色",
+                "value", "1",
+                "sort", 1,
+                "status", 1
+        ));
+        grouped.put("groups", List.of("ORDER", "AFTER_SALE"));
+
+        handler.upsert(dictDeclaration("授权角色类型", List.of(grouped)));
+
+        assertThat(stringValue("sys_dict_data", "dict_groups", "id = 100"))
+                .isEqualTo("ORDER,AFTER_SALE");
+    }
+
+    @Test
     void upsertDefaultsMissingShapeToFlat() throws Exception {
         ResourceDeclaration declaration = dictDeclaration("授权角色类型", List.of(
                 item(100L, "系统角色", "1", 1, 1)
@@ -218,6 +235,7 @@ class SystemDictResourceHandlerIntegrationTest {
                     dict_label varchar(100) not null,
                     dict_value varchar(100) not null,
                     parent_value varchar(100),
+                    dict_groups varchar(255),
                     sort int not null default 0,
                     status tinyint not null default 1,
                     remark varchar(500),

@@ -77,6 +77,9 @@ import { DictDisplay } from '@mango/common';
 | `tagType` | `'' \| 'primary' \| 'success' \| 'info' \| 'warning' \| 'danger'` | `''` | `mode=tag` 的标签类型。 |
 | `tagEffect` | `'light' \| 'dark' \| 'plain'` | `'light'` | 标签风格。 |
 | `tagSize` | `'large' \| 'default' \| 'small'` | `'default'` | 标签尺寸。 |
+| `group` | `string \| string[]` | `undefined` | 分组过滤；不传显示全量，传入后只显示该组内的值。 |
+| `includeValues` | `Array<string \| number>` | `undefined` | 白名单，在分组结果上继续限定显示值。 |
+| `excludeValues` | `Array<string \| number>` | `undefined` | 黑名单，在分组结果上继续剔除值。 |
 
 ## Events
 
@@ -108,6 +111,18 @@ interface DictDisplayItem {
 - 树形字典默认显示末级 `label`，需要上下文时改 `display-format="path"`。
 - 值为空显示 `-`；未命中字典显示原始 `value`，不隐藏数据问题。
 - 字典加载失败不抛异常，回退原始值并触发 `error` 事件。
+
+## 分组过滤
+
+- 不传 `group`：显示全量，保持向后兼容。
+- 传 `group`：只显示命中该分组的值，其余值直接不渲染（不显示原始 value）。
+- `includeValues` / `excludeValues` 与 `group` 叠加，顺序为：组过滤 → 白名单 → 黑名单。
+- 列表 A 与详情 B 可用不同 `group` 展示同一字段的不同子集，例如 A 展示 `ORDER` 组、B 展示 `AFTER_SALE` 组。
+
+```vue
+<DictDisplay dict-type="system_demo_group" group="ORDER" :value="row.statuses" />
+<DictDisplay dict-type="system_demo_group" group="AFTER_SALE" :value="row.statuses" />
+```
 
 ## 缓存
 
