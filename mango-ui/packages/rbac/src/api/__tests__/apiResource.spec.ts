@@ -88,7 +88,7 @@ describe('api resource API contract', () => {
     });
   });
 
-  it('sends manual takeover with the permission code only for permission mode', async () => {
+  it('sends manual takeover and keeps the permission code across mode switches', async () => {
     vi.mocked(post).mockResolvedValue(undefined);
 
     await apiResourceApi.saveManual({
@@ -120,7 +120,7 @@ describe('api resource API contract', () => {
       httpMethod: 'POST',
       pathPattern: '/guarantee/open/apply',
       accessMode: 'PUBLIC',
-      permissionCode: undefined,
+      permissionCode: 'ignored:code',
       description: undefined,
     });
   });

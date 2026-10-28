@@ -28,6 +28,9 @@ public class ApiResourceAccessDecisionVO {
     @Schema(description = "生效资源来源")
     private ApiResourceSource source;
 
+    @Schema(description = "是否由人工接管产生本次决策")
+    private boolean manualOverride;
+
     public ApiResourceAccessDecisionVO(boolean matched,
                                        ApiResourceAccessMode accessMode,
                                        String permissionCode) {
@@ -62,5 +65,9 @@ public class ApiResourceAccessDecisionVO {
 
     public ApiResourceSource source() {
         return source;
+    }
+
+    public boolean manualOverride() {
+        return manualOverride;
     }
 }

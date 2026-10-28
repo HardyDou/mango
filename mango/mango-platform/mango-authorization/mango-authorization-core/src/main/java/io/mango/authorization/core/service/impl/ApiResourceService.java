@@ -1,6 +1,7 @@
 package io.mango.authorization.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.mango.authorization.api.enums.AuthorizationCode;
 import io.mango.authorization.api.command.ApiResourceManualCommand;
@@ -51,9 +52,8 @@ public class ApiResourceService implements IApiResourceService {
     private static final int MAX_DECISION_CACHE_SIZE = 10_000;
     private static final int MAX_REGISTER_BATCH_SIZE = 10_000;
     private static final String CONFIGURED_HANDLER_CLASS = "configuration";
-    private static final String MANUAL_MODULE_NAME = "manual-control";
-    private static final String MANUAL_HANDLER_CLASS = "manual";
-    private static final String MANUAL_HANDLER_METHOD = "mango.authorization.api-resource.manual";
+    private static final int MANUAL_OVERRIDE_OFF = 0;
+    private static final int MANUAL_OVERRIDE_ON = 1;
     private static final String ROOT_DOMAIN = "root";
     /** 人工登记是运行时最高控制来源，兼容既有 source=MANUAL 数据。 */
     private static final int SOURCE_RANK_MANUAL = 3;
@@ -62,6 +62,10 @@ public class ApiResourceService implements IApiResourceService {
     private static final int HANDLER_RANK_CONCRETE = 2;
     private static final int HANDLER_RANK_CONFIGURED = 1;
     private static final int HANDLER_RANK_NONE = 0;
+    private static final Comparator<ApiResourceEntity> ROUTE_PRECEDENCE_ENTITY = Comparator
+            .comparingInt((ApiResourceEntity resource) -> -sourceRank(resource.getSource()))
+            .thenComparingLong(ApiResourceEntity::getId);
+
     private static final Comparator<RouteCandidate> ROUTE_PRECEDENCE = Comparator
             .comparingInt((RouteCandidate candidate) -> -sourceRank(candidate.source()))
             .thenComparingInt(candidate -> -handlerRank(candidate.handlerClass()))
@@ -128,8 +132,8 @@ public class ApiResourceService implements IApiResourceService {
                     resource.getPathPattern()));
             if (existing == null) {
                 creates.add(toEntity(resource));
-            } else if (isActiveManualResource(existing) && !isManualSource(resource)) {
-                log.info("API resource registration skipped by manual control: httpMethod={}, path={}, module={}",
+            } else if (isManualOverride(existing)) {
+                log.info("API resource registration skipped by manual override: httpMethod={}, path={}, module={}",
                         resource.getHttpMethod(), resource.getPathPattern(), existing.getModuleName());
             } else {
                 merge(existing, resource);
@@ -222,36 +226,31 @@ public class ApiResourceService implements IApiResourceService {
         ApiResourceManualCommand validated = Require.nonNull(
                 command, AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR, "人工接管 API 资源命令不能为空");
         String httpMethod = validated.getHttpMethod().trim().toUpperCase();
+        ApiResourceEntity entity = requireOverridableResource(validated, httpMethod);
         if (validated.getAccessMode() == ApiResourceAccessMode.PERMISSION) {
-            Require.isTrue(StringUtils.hasText(validated.getPermissionCode()),
+            boolean hasPermissionCode = StringUtils.hasText(validated.getPermissionCode())
+                    || StringUtils.hasText(entity.getPermissionCode())
+                    || StringUtils.hasText(entity.getOriginPermissionCode());
+            Require.isTrue(hasPermissionCode,
                     AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR, "访问模式 PERMISSION 必须声明权限码");
         }
-        ApiResourceEntity existing = apiResourceMapper.selectOne(new LambdaQueryWrapper<ApiResourceEntity>()
-                .eq(ApiResourceEntity::getModuleName, MANUAL_MODULE_NAME)
-                .eq(ApiResourceEntity::getHttpMethod, httpMethod)
-                .eq(ApiResourceEntity::getPathPattern, validated.getPathPattern())
-                .last("limit 1"));
-        ApiResourceEntity entity = existing == null ? new ApiResourceEntity() : existing;
-        entity.setTenantId(existing == null ? "default" : existing.getTenantId());
-        entity.setModuleName(MANUAL_MODULE_NAME);
-        entity.setDomain(resolveDomain(validated.getPathPattern()));
-        entity.setSource(ApiResourceSource.MANUAL.name());
-        entity.setHttpMethod(httpMethod);
-        entity.setPathPattern(validated.getPathPattern());
-        entity.setResourceCode(defaultManualResourceCode(validated, httpMethod));
-        entity.setPermissionCode(validated.getAccessMode() == ApiResourceAccessMode.PERMISSION
-                ? validated.getPermissionCode() : null);
+        if (!isManualOverride(entity)) {
+            entity.setOriginSource(entity.getSource());
+            entity.setOriginAccessMode(entity.getAccessMode());
+            entity.setOriginPermissionCode(entity.getPermissionCode());
+            entity.setOriginDescription(entity.getDescription());
+        }
+        entity.setManualOverride(MANUAL_OVERRIDE_ON);
         entity.setAccessMode(validated.getAccessMode().name());
-        entity.setHandlerClass(MANUAL_HANDLER_CLASS);
-        entity.setHandlerMethod(MANUAL_HANDLER_METHOD);
-        entity.setDescription(manualDescription(validated));
+        if (StringUtils.hasText(validated.getPermissionCode())) {
+            entity.setPermissionCode(validated.getPermissionCode());
+        }
+        if (StringUtils.hasText(validated.getDescription())) {
+            entity.setDescription(validated.getDescription());
+        }
         entity.setStatus(1);
         entity.setDeleted(0);
-        if (existing == null) {
-            apiResourceMapper.insert(entity);
-        } else {
-            apiResourceMapper.updateById(entity);
-        }
+        apiResourceMapper.updateById(entity);
         clearRuntimeCache();
     }
 
@@ -261,38 +260,61 @@ public class ApiResourceService implements IApiResourceService {
         ApiResourceManualQuery validated = Require.nonNull(
                 query, AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR, "释放人工接管查询条件不能为空");
         String httpMethod = validated.getHttpMethod().trim().toUpperCase();
-        List<ApiResourceEntity> manualRows = apiResourceMapper.selectList(
-                new LambdaQueryWrapper<ApiResourceEntity>()
-                        .eq(ApiResourceEntity::getHttpMethod, httpMethod)
-                        .eq(ApiResourceEntity::getPathPattern, validated.getPathPattern())
-                        .eq(ApiResourceEntity::getSource, ApiResourceSource.MANUAL.name()));
-        ApiResourceEntity existing = manualRows.stream()
-                .filter(resource -> MANUAL_MODULE_NAME.equals(resource.getModuleName()))
-                .findFirst()
-                .or(() -> manualRows.stream()
-                        .filter(resource -> validated.getModuleName().equals(resource.getModuleName()))
-                        .findFirst())
-                .orElse(null);
-        Require.nonNull(existing, AuthorizationCode.AUTHORIZATION_BUSINESS_ERROR,
-                "未找到可释放的人工接管资源");
-        existing.setStatus(0);
-        apiResourceMapper.updateById(existing);
+        ApiResourceEntity entity = requireManualOverride(validated, httpMethod);
+        if (!StringUtils.hasText(entity.getOriginSource())) {
+            // 没有原始声明的人工资源，解除后不再保留记录。
+            apiResourceMapper.deleteById(entity.getId());
+            clearRuntimeCache();
+            return;
+        }
+        apiResourceMapper.update(null, new LambdaUpdateWrapper<ApiResourceEntity>()
+                .eq(ApiResourceEntity::getId, entity.getId())
+                .set(ApiResourceEntity::getSource, entity.getOriginSource())
+                .set(ApiResourceEntity::getAccessMode, entity.getOriginAccessMode())
+                .set(ApiResourceEntity::getPermissionCode, entity.getOriginPermissionCode())
+                .set(ApiResourceEntity::getDescription, entity.getOriginDescription())
+                .set(ApiResourceEntity::getManualOverride, MANUAL_OVERRIDE_OFF)
+                .set(ApiResourceEntity::getOriginSource, null)
+                .set(ApiResourceEntity::getOriginAccessMode, null)
+                .set(ApiResourceEntity::getOriginPermissionCode, null)
+                .set(ApiResourceEntity::getOriginDescription, null));
         clearRuntimeCache();
     }
 
     /**
-     * 人工接管记录使用独立模块编码，避免覆盖 Controller 扫描行；释放后扫描声明仍在，可立即恢复。
+     * 人工接管只覆盖访问模式与权限标识，不改变模块归属、资源编码和处理入口。
      */
-    private String manualDescription(ApiResourceManualCommand command) {
-        if (StringUtils.hasText(command.getDescription())) {
-            return command.getDescription();
-        }
-        return "人工接管：" + command.getModuleName();
+    private ApiResourceEntity requireOverridableResource(ApiResourceManualCommand command, String httpMethod) {
+        List<ApiResourceEntity> candidates = apiResourceMapper.selectList(
+                new LambdaQueryWrapper<ApiResourceEntity>()
+                        .eq(ApiResourceEntity::getHttpMethod, httpMethod)
+                        .eq(ApiResourceEntity::getPathPattern, command.getPathPattern())
+                        .eq(ApiResourceEntity::getStatus, 1));
+        return candidates.stream()
+                .filter(resource -> command.getModuleName().equals(resource.getModuleName()))
+                .findFirst()
+                .or(() -> candidates.stream().filter(this::isManualOverride).findFirst())
+                .or(() -> candidates.stream().min(ROUTE_PRECEDENCE_ENTITY))
+                .orElseThrow(() -> new IllegalStateException("API 资源不存在，请先完成资源同步后再接管: "
+                        + httpMethod + " " + command.getPathPattern()));
     }
 
-    private String defaultManualResourceCode(ApiResourceManualCommand command, String httpMethod) {
-        return StringUtils.hasText(command.getPermissionCode())
-                ? command.getPermissionCode() : httpMethod + ":" + command.getPathPattern();
+    private ApiResourceEntity requireManualOverride(ApiResourceManualQuery query, String httpMethod) {
+        List<ApiResourceEntity> candidates = apiResourceMapper.selectList(
+                new LambdaQueryWrapper<ApiResourceEntity>()
+                        .eq(ApiResourceEntity::getHttpMethod, httpMethod)
+                        .eq(ApiResourceEntity::getPathPattern, query.getPathPattern())
+                        .eq(ApiResourceEntity::getManualOverride, MANUAL_OVERRIDE_ON));
+        return candidates.stream()
+                .filter(resource -> query.getModuleName().equals(resource.getModuleName()))
+                .findFirst()
+                .or(() -> candidates.stream().findFirst())
+                .orElseThrow(() -> new IllegalStateException("未找到可解除的人工接管资源: "
+                        + httpMethod + " " + query.getPathPattern()));
+    }
+
+    private boolean isManualOverride(ApiResourceEntity resource) {
+        return resource.getManualOverride() != null && resource.getManualOverride() == MANUAL_OVERRIDE_ON;
     }
 
     private List<String> distinctColumn(
@@ -336,6 +358,8 @@ public class ApiResourceService implements IApiResourceService {
         vo.setModuleName(entity.getModuleName());
         vo.setDomain(entity.getDomain());
         vo.setSource(parseSource(entity.getSource()));
+        vo.setManualOverride(isManualOverride(entity));
+        vo.setOriginAccessMode(entity.getOriginAccessMode());
         vo.setHttpMethod(entity.getHttpMethod());
         vo.setPathPattern(entity.getPathPattern());
         vo.setResourceCode(entity.getResourceCode());
@@ -397,6 +421,7 @@ public class ApiResourceService implements IApiResourceService {
                 .in(ApiResourceEntity::getHandlerClass, handlerClasses)
                 .eq(ApiResourceEntity::getStatus, 1))
                 .stream()
+                .filter(resource -> !isManualOverride(resource))
                 .filter(resource -> !currentResourceKeys.contains(resourceKey(
                         resource.getModuleName(),
                         resource.getHttpMethod(),
@@ -459,11 +484,14 @@ public class ApiResourceService implements IApiResourceService {
                 continue;
             }
             RouteCandidate winner = candidates.stream().min(ROUTE_PRECEDENCE).orElseThrow();
-            if (ApiResourceSource.MANUAL.name().equals(winner.source())) {
+            if (isManualOverride(winner.entity())) {
                 // 人工接管只在运行时分流，不停用其它声明；解除接管后可立即恢复代码声明。
                 continue;
             }
             for (RouteCandidate candidate : candidates) {
+                if (isManualOverride(candidate.entity())) {
+                    continue;
+                }
                 if (candidate != winner && candidate.entity() != null) {
                     log.info("API resource route shadowed: httpMethod={}, path={}, winner={}, shadowed={}",
                             candidate.entity().getHttpMethod(), candidate.entity().getPathPattern(),
@@ -534,15 +562,6 @@ public class ApiResourceService implements IApiResourceService {
                 && (leftPath.equals(rightPath)
                 || PATH_MATCHER.match(leftPath, rightPath)
                 || PATH_MATCHER.match(rightPath, leftPath));
-    }
-
-    private boolean isActiveManualResource(ApiResourceEntity resource) {
-        return ApiResourceSource.MANUAL.name().equals(resource.getSource())
-                && Integer.valueOf(1).equals(resource.getStatus());
-    }
-
-    private boolean isManualSource(ApiResourceRegisterCommand resource) {
-        return ApiResourceSource.MANUAL.equals(resource.getSource());
     }
 
     private List<ApiResourceRegisterCommand> deduplicate(List<ApiResourceRegisterCommand> resources) {
@@ -694,8 +713,10 @@ public class ApiResourceService implements IApiResourceService {
 
     private ApiResourceAccessDecisionVO toDecision(ApiResourceEntity resource) {
         ApiResourceAccessMode mode = parseAccessMode(resource.getAccessMode());
-        return new ApiResourceAccessDecisionVO(true, mode, resource.getPermissionCode(),
-                parseSource(resource.getSource()));
+        ApiResourceAccessDecisionVO decision = new ApiResourceAccessDecisionVO(true, mode,
+                resource.getPermissionCode(), parseSource(resource.getSource()));
+        decision.setManualOverride(isManualOverride(resource));
+        return decision;
     }
 
     private ApiResourceAccessMode parseAccessMode(String value) {
@@ -722,7 +743,7 @@ public class ApiResourceService implements IApiResourceService {
 
     private Comparator<ApiResourceEntity> resourceMatchComparator(String path) {
         return Comparator
-                .comparingInt((ApiResourceEntity resource) -> manualControlScore(resource.getSource()))
+                .comparingInt(this::manualControlScore)
                 .reversed()
                 .thenComparing(Comparator.comparingInt((ApiResourceEntity resource) -> exactPathScore(resource.getPathPattern(), path))
                         .reversed())
@@ -733,8 +754,8 @@ public class ApiResourceService implements IApiResourceService {
                 .thenComparing(ApiResourceEntity::getId, Comparator.nullsLast(Comparator.naturalOrder()));
     }
 
-    private int manualControlScore(String source) {
-        return ApiResourceSource.MANUAL.name().equals(source) ? 1 : 0;
+    private int manualControlScore(ApiResourceEntity resource) {
+        return isManualOverride(resource) || ApiResourceSource.MANUAL.name().equals(resource.getSource()) ? 1 : 0;
     }
 
     private int exactPathScore(String pattern, String path) {

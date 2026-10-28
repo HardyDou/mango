@@ -98,11 +98,14 @@
             <span v-else class="api-resource-empty">-</span>
           </template>
         </el-table-column>
-        <el-table-column label="访问模式" width="110">
+        <el-table-column label="访问模式" width="170">
           <template #default="{ row }">
-            <el-tag :type="accessModeTagType(row.accessMode)" size="small">
-              {{ accessModeLabel(row.accessMode) }}
-            </el-tag>
+            <div class="api-resource-cell">
+              <el-tag :type="accessModeTagType(row.accessMode)" size="small">
+                {{ accessModeLabel(row.accessMode) }}
+              </el-tag>
+              <el-tag v-if="row.manualOverride" type="warning" size="small" effect="plain">人工接管</el-tag>
+            </div>
           </template>
         </el-table-column>
         <el-table-column prop="source" label="登记来源" width="130">
@@ -144,7 +147,7 @@
               编辑
             </el-button>
             <el-button
-              v-if="row.source === 'MANUAL'"
+              v-if="row.manualOverride && row.status === 1"
               link
               type="danger"
               size="small"
@@ -176,9 +179,14 @@
         <el-form-item label="所属模块">
           <span>{{ form.moduleName }}</span>
         </el-form-item>
-        <el-form-item label="当前来源">
+        <el-form-item label="登记来源">
           <el-tag :type="sourceTagType(editingSource)" size="small" effect="plain">
             {{ sourceLabel(editingSource) }}
+          </el-tag>
+        </el-form-item>
+        <el-form-item label="接管状态">
+          <el-tag :type="form.manualOverride ? 'warning' : 'info'" size="small" effect="plain">
+            {{ form.manualOverride ? '人工接管中' : '跟随代码声明' }}
           </el-tag>
         </el-form-item>
         <el-form-item label="访问模式" prop="accessMode">
@@ -261,6 +269,7 @@ const form = reactive<ApiResourceManualCommand>({
   accessMode: 'LOGIN',
   permissionCode: '',
   description: '',
+  manualOverride: false,
 });
 
 const rules: FormRules = {
@@ -378,8 +387,9 @@ function handleEdit(row: ApiResourceVO) {
   form.httpMethod = row.httpMethod;
   form.pathPattern = row.pathPattern;
   form.accessMode = row.accessMode;
-  form.permissionCode = row.permissionCode || '';
+  form.permissionCode = row.permissionCode || row.originPermissionCode || '';
   form.description = row.description || '';
+  form.manualOverride = Boolean(row.manualOverride);
   dialogVisible.value = true;
 }
 
