@@ -445,8 +445,8 @@ API 加密环境变量：
 | `getUploadedFileDetail(id)` | `GET /file/files/detail`                               | 查询文件详情。                       |
 | `downloadUploadedFile(id)`  | `GET /file/files/download`                             | 下载文件，返回原始 blob response。   |
 | `getCaptchaTypes()`         | `GET /captcha/types`                                   | 查询验证码类型和存储。               |
-| `generateArithmetic()`      | `GET /captcha/arithmetic`                              | 生成兼容旧接口的算术验证码。         |
-| `generateGraphic(type, level)` | `GET /captcha/graphic`                              | 按全局默认策略或会话参数生成图形验证码。 |
+| `generateArithmetic()`         | `GET /captcha/arithmetic`                              | 按统一默认策略生成图形验证码，推荐使用。   |
+| `generateGraphic(type, level)` | `GET /captcha/graphic`                                 | 已接入消费者的兼容入口，新接入不建议使用。 |
 | `generateBlockPuzzle()`     | `GET /captcha/block-puzzle`                            | 生成拼图验证码。                     |
 | `generateClickWord()`       | `GET /captcha/click-word`                              | 生成点选验证码。                     |
 | `generateBehavior()`        | `GET /captcha/behavior`                                | 生成行为验证码。                     |
@@ -708,5 +708,5 @@ const toolbarKeys = ['bold', 'color', '|', 'numberedList', 'bulletedList', '|', 
 
 ## 12. 升级与兼容
 
-- `2.2.0`：新增统一图形验证码 API、类型导出、`GraphicCaptcha` 组件和 `CaptchaSelector` 页签。旧验证码组件保持兼容；升级后验证 `generateGraphic()`、统一校验事件和后端验证码接口，回滚时移除新组件调用并恢复 `2.1.4`。
+- `2.2.0`：新增统一图形验证码 API、类型导出、`GraphicCaptcha` 组件和 `CaptchaSelector` 页签。旧验证码组件保持兼容；现有消费者可继续使用 `generateGraphic()`，新接入推荐使用 `generateArithmetic()`。
 - 本次新增 `PasswordPolicyHint` 组件和 `passwordPolicy` 工具，用于统一展示密码规则和强弱判断。它们只影响前端密码提示和表单校验，不改变 request、Session、菜单、权限、租户头、公开 API 路径或后端存储结构。包的公开入口已通过 `@mango/common` 主入口和 `./components/PasswordPolicyHint/index.vue` 子路径导出。

@@ -1,20 +1,15 @@
 <template>
   <div class="captcha-card">
     <div class="captcha-header">
-      <span>请完成下方计算题</span>
+      <span>请输入图片中的验证码</span>
       <el-button link type="primary" @click="refresh">刷新</el-button>
     </div>
     <div class="captcha-body">
       <button class="captcha-image-button" type="button" title="点击刷新验证码" @click="refresh">
-        <img v-if="captchaData?.image" :src="captchaData.image" alt="Arithmetic captcha">
+        <img v-if="captchaData?.image" :src="captchaData.image" alt="Graphic captcha" />
         <span v-else class="captcha-placeholder">加载中...</span>
       </button>
-      <el-input
-        v-model="userInput"
-        class="captcha-input"
-        placeholder="请输入计算结果"
-        @keyup.enter="handleVerify"
-      />
+      <el-input v-model="userInput" class="captcha-input" placeholder="请输入验证码" @keyup.enter="handleVerify" />
     </div>
     <div v-if="errorMessage" class="error-msg">{{ errorMessage }}</div>
   </div>
@@ -51,7 +46,7 @@ async function verify() {
     return false;
   }
   if (!userInput.value.trim()) {
-    errorMessage.value = '请输入计算结果';
+    errorMessage.value = '请输入验证码';
     return false;
   }
 

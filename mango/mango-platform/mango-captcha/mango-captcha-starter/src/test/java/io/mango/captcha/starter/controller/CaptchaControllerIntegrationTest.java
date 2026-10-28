@@ -78,6 +78,7 @@ class CaptchaControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.type").value("ARITHMETIC"))
+                .andExpect(jsonPath("$.data.graphicType").value("ALPHANUMERIC"))
                 .andExpect(jsonPath("$.data.key").exists())
                 .andExpect(jsonPath("$.data.image").exists())
                 .andReturn();
@@ -88,12 +89,12 @@ class CaptchaControllerIntegrationTest {
     }
 
     @Test
-    void generateGraphic_returnsSimpleArithmeticByDefault() throws Exception {
+    void generateGraphic_returnsSimpleAlphanumericByDefault() throws Exception {
         mockMvc.perform(get("/captcha/graphic"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.type").value("GRAPHIC"))
-                .andExpect(jsonPath("$.data.graphicType").value("ARITHMETIC"))
+                .andExpect(jsonPath("$.data.graphicType").value("ALPHANUMERIC"))
                 .andExpect(jsonPath("$.data.difficulty").value("SIMPLE"))
                 .andExpect(jsonPath("$.data.key").exists())
                 .andExpect(jsonPath("$.data.image").exists())

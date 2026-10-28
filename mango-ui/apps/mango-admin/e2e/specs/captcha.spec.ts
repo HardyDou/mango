@@ -71,8 +71,9 @@ test.describe('验证码组件 E2E', () => {
     await arithmeticResponseOnLoad;
     await expect(page.getByRole('heading', { name: '验证码组件' })).toBeVisible();
     const arithmeticPanel = page.locator('section#arithmetic');
-    await expect(arithmeticPanel.getByRole('heading', { name: '算术验证码' })).toBeVisible();
-    await expect(arithmeticPanel.locator('img[alt="Arithmetic captcha"]')).toBeVisible();
+    await expect(arithmeticPanel.getByRole('heading', { name: '默认图形验证码' })).toBeVisible();
+    await expect(arithmeticPanel.getByText('请输入图片中的验证码')).toBeVisible();
+    await expect(arithmeticPanel.locator('img[alt="Graphic captcha"]')).toBeVisible();
 
     const arithmeticResponsePromise = page.waitForResponse((response) => {
       return response.status() === 200 && response.url().includes('/api/captcha/arithmetic');
@@ -82,11 +83,12 @@ test.describe('验证码组件 E2E', () => {
     const arithmeticBody = await arithmeticResponse.json();
     expect(arithmeticBody.data).toMatchObject({
       type: 'ARITHMETIC',
+      graphicType: 'ALPHANUMERIC',
       expireTime: '300',
     });
     expect(arithmeticBody.data.key).toBeTruthy();
     expect(arithmeticBody.data.image).toContain('data:image/png;base64,');
-    await expect(arithmeticPanel.locator('img[alt="Arithmetic captcha"]')).toBeVisible();
+    await expect(arithmeticPanel.locator('img[alt="Graphic captcha"]')).toBeVisible();
 
     const blockPuzzlePanel = page.locator('section#block');
     await expect(blockPuzzlePanel.getByRole('heading', { name: '图片滑块验证码' })).toBeVisible();
