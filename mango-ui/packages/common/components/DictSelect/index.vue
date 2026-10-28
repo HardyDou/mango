@@ -79,10 +79,8 @@
 <script setup lang="ts" name="DictSelect">
 import { computed, ref, watch } from 'vue';
 import { listDictOptions, listDictTree, type DictOption, type DictTreeOption } from '../../api/dict';
-
-export type DictShape = 'FLAT' | 'TREE';
-export type DictSelectValue = string | number | Array<string | number> | undefined;
-export type DictDisplayFormat = 'label' | 'path';
+import { indexDictTree } from '../../utils/dictTree';
+import type { DictSelectDisplayFormat, DictSelectValue, DictShape } from './types';
 
 interface DictSelectTreeOption extends DictTreeOption {
   disabled?: boolean;
@@ -119,7 +117,7 @@ const props = withDefaults(defineProps<{
   leafOnly?: boolean;
   checkStrictly?: boolean;
   defaultExpandAll?: boolean;
-  displayFormat?: DictDisplayFormat;
+  displayFormat?: DictSelectDisplayFormat;
   displaySeparator?: string;
   noDataText?: string;
 }>(), {
@@ -174,9 +172,10 @@ const selectedNodes = computed(() => {
   }
   return selectedPaths.value.map((path) => path.at(-1)).filter((node): node is DictTreeOption => Boolean(node));
 });
+const treeIndex = computed(() => indexDictTree(treeOptions.value));
 const selectedPaths = computed(() => {
   if (props.shape === 'FLAT') return [];
-  return selectedValues.value.map((value) => findNodePath(treeOptions.value, String(value)));
+  return selectedValues.value.map((value) => treeIndex.value.get(String(value))?.path ?? []);
 });
 const selectedValues = computed(() => {
   if (props.modelValue === undefined || props.modelValue === '') return [];
@@ -234,7 +233,7 @@ function handleClear() {
 
 function formatTreeLabel(value: string | number, fallbackLabel: string) {
   if (props.displayFormat !== 'path') return fallbackLabel;
-  const path = findNodePath(treeOptions.value, String(value));
+  const path = treeIndex.value.get(String(value))?.path ?? [];
   return path.length > 0 ? path.map((node) => node.label).join(props.displaySeparator) : fallbackLabel;
 }
 
@@ -261,7 +260,7 @@ function emitHalfCheckedChange() {
   }
   for (const value of halfCheckedValues) {
     if (!current.has(value)) {
-      const previous = findNodePath(treeOptions.value, value).at(-1);
+      const previous = treeIndex.value.get(value)?.node;
       if (previous) emit('check-change', previous, false, false);
     }
   }
@@ -283,7 +282,7 @@ function resolveSelection(value: DictSelectValue) {
     };
   }
   const paths = normalizeValueArray(value)
-    .map((item) => findNodePath(treeOptions.value, item))
+    .map((item) => treeIndex.value.get(item)?.path ?? [])
     .filter((path) => path.length > 0);
   return {
     nodes: paths.map((path) => path.at(-1)).filter((node): node is DictTreeOption => Boolean(node)),
@@ -323,16 +322,6 @@ function focus() {
 function blur() {
   if (props.shape === 'TREE') treeSelectRef.value?.blur();
   else flatSelectRef.value?.blur();
-}
-
-function findNodePath(nodes: DictSelectTreeOption[], value: string, parents: DictTreeOption[] = []): DictTreeOption[] {
-  for (const node of nodes) {
-    const currentPath = [...parents, node];
-    if (node.value === value) return currentPath;
-    const childPath = findNodePath(node.children ?? [], value, currentPath);
-    if (childPath.length > 0) return childPath;
-  }
-  return [];
 }
 
 watch(() => [props.dictType, props.shape, props.leafOnly], () => {

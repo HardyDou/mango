@@ -21,6 +21,13 @@ test('@p1 @system 字典组件直接使用统一 DictSelect 展示 FLAT 和 TREE
   await expect(page.locator('[data-action="tree-multiple-select"]')).toBeVisible();
   await expect(page.locator('[data-action="tree-single-select"]')).toContainText('纸张', { timeout: 15000 });
   await expect(page.locator('[data-action="tree-display-select"]')).toContainText('办公用品 / 纸张', { timeout: 15000 });
+  await expect(page.locator('[data-action="display-flat-single"]')).toHaveText('启用', { timeout: 15000 });
+  await expect(page.locator('[data-action="display-flat-multi"]')).toContainText('禁用');
+  await expect(page.locator('[data-action="display-flat-tag"] .el-tag')).toHaveCount(2);
+  await expect(page.locator('[data-action="display-flat-empty"]')).toHaveText('-');
+  await expect(page.locator('[data-action="display-tree-label"]')).toHaveText('纸张');
+  await expect(page.locator('[data-action="display-tree-path"]')).toContainText('办公用品 / 纸张');
+
   await expect(page.getByText('仅叶子节点可选', { exact: true })).toBeVisible();
   await expect(page.getByText('system_demo_tree', { exact: true })).toBeVisible();
 
