@@ -3,7 +3,7 @@
     v-model="innerValue"
     :data="options"
     :props="treeProps"
-    node-key="id"
+    :node-key="valueKey"
     :multiple="multiple"
     :check-strictly="checkStrictly"
     :clearable="clearable"
@@ -31,12 +31,14 @@ const props = withDefaults(defineProps<{
   disabled?: boolean;
   checkStrictly?: boolean;
   placeholder?: string;
+  valueKey?: 'id' | 'domainCode';
 }>(), {
   multiple: false,
   clearable: true,
   disabled: false,
   checkStrictly: true,
   placeholder: '请选择业务域',
+  valueKey: 'id',
 });
 
 const emit = defineEmits<{
@@ -48,11 +50,11 @@ const loading = ref(false);
 const options = ref<DomainItem[]>([]);
 const innerValue = ref<DomainSelectorValue>(props.modelValue);
 
-const treeProps = {
+const treeProps = computed(() => ({
   label: 'domainName',
-  value: 'id',
+  value: props.valueKey,
   children: 'children',
-};
+}));
 
 watch(
   () => props.modelValue,

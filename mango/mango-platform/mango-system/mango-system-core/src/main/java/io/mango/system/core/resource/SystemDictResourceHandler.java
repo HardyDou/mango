@@ -1,6 +1,7 @@
 package io.mango.system.core.resource;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import io.mango.resource.support.ResourceHandler;
 import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.support.model.ResourceDeclaration;
@@ -112,10 +113,10 @@ public class SystemDictResourceHandler implements ResourceHandler {
         type.setStatus(DISABLED);
         dictTypeMapper.updateById(type);
 
-        DictDataEntity data = new DictDataEntity();
-        data.setStatus(DISABLED);
-        data.setUpdatedAt(LocalDateTime.now());
-        dictDataMapper.update(data, new LambdaQueryWrapper<DictDataEntity>().eq(DictDataEntity::getDictType, dictType));
+        dictDataMapper.update(null, new LambdaUpdateWrapper<DictDataEntity>()
+                .eq(DictDataEntity::getDictType, dictType)
+                .set(DictDataEntity::getStatus, DISABLED)
+                .set(DictDataEntity::getUpdatedAt, LocalDateTime.now()));
         return ResourceSyncResult.of(type.getId(), TARGET_TABLE, "System dict disabled: " + dictType);
     }
 
