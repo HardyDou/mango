@@ -3,8 +3,8 @@
   "packageVersion": "1.4.8",
   "schemaVersion": 2,
   "source": "mango-pmo",
-  "sourceCommit": "6b1b42b131b26e099fa33a904859ced3d76e5cf6",
-  "bundleSha256": "a95f659f4f2608946c9e37b8d06f31422a40e0fcf8d39c0d7e7f54d12c3633e1",
+  "sourceCommit": "e16e3b0a8590e76d70cb30075a7c76803b2d9abe",
+  "bundleSha256": "5eff76d1bc2bfb6d2eac393f4c82470e9c8d49171ea2ae36796b2509b2ea6d8e",
   "contracts": [
     {
       "contractId": "business-requirements",
@@ -1211,8 +1211,8 @@
     },
     {
       "path": "tools/branch-protection-policy.mjs",
-      "sha256": "db6dcedcbeee1b6a1b9d2637a3c5f3b719e1f28bfc3bb28083500278fea393ea",
-      "size": 3182,
+      "sha256": "91be4cdbc69f1a8426e421e9606c2663e46d5a4a2ab91b7da11cc2f0716fca4c",
+      "size": 3205,
       "kind": "tool",
       "mode": "0644"
     },
@@ -1288,8 +1288,8 @@
     },
     {
       "path": "tools/check-governance-intent.mjs",
-      "sha256": "5edbead2f7a348ab4bf5aa16a4723f8cf63c6eda7d91f74ace7b47c30e54b063",
-      "size": 13701,
+      "sha256": "5f5ddaeabdb65d1acaa6cc3cc4bf99f9ef5ef48cafb54fe26bcb330868cd9984",
+      "size": 13717,
       "kind": "tool",
       "mode": "0644"
     },
@@ -1470,8 +1470,8 @@
     },
     {
       "path": "tools/risk-verification.mjs",
-      "sha256": "9991d145f33c1f8ff451bc58bc5d1551b4eb80c3fad0a1fca221ebef6975d3ca",
-      "size": 14248,
+      "sha256": "3aeca6310b686057d0ac0e48d06b59c23b40fb2095bec793b1523c976ec7997b",
+      "size": 15498,
       "kind": "tool",
       "mode": "0644"
     },

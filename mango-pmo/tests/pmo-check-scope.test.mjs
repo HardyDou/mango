@@ -268,16 +268,10 @@ test('CI reruns when policy-resolved assurance selections change and keeps expli
     'utf8',
   );
   const preflightJob = workflow.match(/\n  preflight_scope:\n[\s\S]*?(?=\n  release_plan:)/)?.[0] ?? '';
-  assert.match(
-    preflightJob,
-    /Set up pnpm for release projection classification[\s\S]*?pnpm\/action-setup@v4/,
-  );
-  assert.ok(
-    preflightJob.indexOf('Set up pnpm for release projection classification')
-      < preflightJob.indexOf('Classify release plan gate'),
-    'Release projection classification must run after pnpm is available',
-  );
-  assert.match(workflow, /pull_request:\n\s+types: \[opened, edited, synchronize, reopened\]/);
+  assert.doesNotMatch(preflightJob, /pnpm\/action-setup@v4/);
+  assert.doesNotMatch(preflightJob, /pnpm install --frozen-lockfile/);
+  assert.match(workflow, /pull_request:\n\s+types: \[opened, synchronize, reopened\]/);
+  assert.doesNotMatch(workflow, /pmo-doc-check[\s\S]*?types: \[opened, edited, synchronize, reopened\]/);
   assert.match(
     workflow,
     /concurrency:\n\s+group: pmo-doc-check-\$\{\{ github\.event\.pull_request\.number \}\}\n\s+cancel-in-progress: true/,
@@ -296,8 +290,8 @@ test('CI reruns when policy-resolved assurance selections change and keeps expli
   assert.match(workflow, /generated_backend: \$\{\{ steps\.scope\.outputs\.generated_backend \}\}/);
   assert.match(workflow, /m09: \$\{\{ steps\.assurance\.outputs\.m09 \}\}/);
   assert.match(workflow, /assurance-ci-scope\.mjs --body \.pr-body\.md >> "\$GITHUB_OUTPUT"/);
-  assert.match(workflow, /Test document contracts, lifecycle routing, and Skills\n\s+if: needs\.preflight_scope\.outputs\.pmo == 'true'/);
-  assert.match(workflow, /Run selected static PMO checks\n\s+if: needs\.preflight_scope\.outputs\.pmo == 'true'/);
+  assert.match(workflow, /Test document contracts, lifecycle routing, and Skills\n\s+if: needs\.preflight_scope\.outputs\.pmo == 'true' && needs\.preflight_scope\.outputs\.m10 == 'true'/);
+  assert.match(workflow, /Run selected static PMO checks\n\s+if: needs\.preflight_scope\.outputs\.pmo == 'true' && needs\.preflight_scope\.outputs\.m09 == 'true'/);
   assert.match(workflow, /outputs\.m11 == 'true'/);
   assert.match(workflow, /outputs\.m08 == 'true'/);
   assert.match(
@@ -357,6 +351,7 @@ test('CI reruns when policy-resolved assurance selections change and keeps expli
   assert.match(stableSummary, /needs: \[preflight_scope, release_plan, pmo, cli_js, java, docs\]/);
   assert.match(stableSummary, /if: \$\{\{ always\(\) \}\}/);
   assert.match(stableSummary, /success\|skipped\) ;;/);
+  assert.match(stableSummary, /GITHUB_STEP_SUMMARY/);
   assert.match(stableSummary, /\*\) exit 1 ;;/);
 });
 

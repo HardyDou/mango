@@ -132,7 +132,7 @@ if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).
   const base = argument('--base');
   const head = argument('--head') || 'HEAD';
   if (!base) throw new Error('classify-release-pr requires --base');
-  const result = spawnSync('git', ['diff', '--name-only', `${base}..${head}`], {
+  const result = spawnSync('git', ['diff', '--name-only', `${base}...${head}`], {
     encoding: 'utf8',
     maxBuffer: 64 * 1024 * 1024,
   });

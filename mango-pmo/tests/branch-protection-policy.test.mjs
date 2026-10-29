@@ -14,7 +14,7 @@ test('current single-owner policy preserves fast contract, heavy PMO, and histor
   assert.deepEqual(validateBranchProtectionPolicy(currentPolicy), []);
 });
 
-for (const context of ['pr-contract-check', 'pmo-doc-check']) {
+for (const context of ['frontend-pr-quality', 'pr-contract-check', 'pmo-doc-check']) {
   test(`single-owner policy cannot disable the required ${context} check`, () => {
     const policy = structuredClone(currentPolicy);
     policy.requiredStatusChecks.contexts = policy.requiredStatusChecks.contexts.filter(
@@ -59,7 +59,8 @@ test('PR body edits run only the trusted lightweight contract gate', () => {
   assert.match(workflow, /types: \[opened, edited, reopened, synchronize, ready_for_review\]/);
   assert.match(workflow, /ref: \$\{\{ github\.event\.pull_request\.base\.sha \}\}/);
   assert.match(workflow, /sparse-checkout: \|[\s\S]*?check-capability-docs\.mjs[\s\S]*?risk-verification\.mjs/);
-  assert.match(workflow, /git fetch --no-tags origin "\$BASE_SHA" "\$HEAD_SHA"/);
+  assert.match(workflow, /git fetch --no-tags origin "\$BASE_SHA" "refs\/pull\/\$PR_NUMBER\/head"/);
+  assert.match(workflow, /git cat-file -e "\$HEAD_SHA\^\{commit\}"/);
   assert.match(workflow, /node mango-pmo\/tools\/risk-verification\.mjs/);
   assert.match(workflow, /node mango-pmo\/tools\/check-capability-docs\.mjs[\s\S]*?--base \$\{\{ github\.event\.pull_request\.base\.sha \}\}[\s\S]*?--head \$\{\{ github\.event\.pull_request\.head\.sha \}\}/);
   assert.match(workflow, /group: pr-contract-check-\$\{\{ github\.event\.pull_request\.number \}\}/);
