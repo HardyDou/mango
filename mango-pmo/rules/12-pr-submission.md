@@ -4,13 +4,13 @@
 
 - 本规范统一约束 Mango 主仓和安装 Mango PMO baseline 的业务仓如何提交任务 Pull Request。
 - “提交 PR”包括提交前本地核验、必要的本地 Commit、Push 当前任务分支、创建或更新 PR，以及远端 PR 回读。
-- 本规范不负责实现、PR Review、审批、合并、Mango 组件发布、业务应用发布或部署。
+- 本规范不负责实现、PR Review、审批、Mango 组件发布、业务应用发布或部署；未经授权不得私自合并 PR。
 
 ## 2. 授权边界
 
 - 用户明确要求“提交 PR”或“创建 PR”时，视为授权在当前任务 worktree 完成必要的 Commit、Push 和创建或更新 PR，不再把三个机械步骤拆开重复询问。
 - 用户只要求“提交代码”时只允许本地 Commit；只要求“Push”时只允许 Push 已授权分支。
-- PR 提交授权不包含 PR 合并、force push、Tag、GitHub Release、registry 发布、业务部署、流量切换或回滚。
+- 未经明确授权，不得私自合并 PR；PR 提交授权也不包含 force push、Tag、GitHub Release、registry 发布、业务部署、流量切换或回滚。
 - 外部写入前必须确认远端仓库、base、head 和当前任务范围；事实不明时执行 `ASK`。
 
 ## 3. 提交前检查
@@ -56,4 +56,4 @@
 - 禁止混入其它任务、其它 worktree 或用户未授权文件。
 - 禁止为通过检查而关闭 required check、缩小 workflow 触发范围、修改基线或删除失败测试。
 - 禁止仅凭 Commit/Push/PR 命令退出码声称远端提交成功。
-- 禁止在 PR 提交 Skill 内自动 Review、Approve、Merge、发布或部署。
+- 未经明确授权，不得在 PR 提交 Skill 内自动 Review、Approve、Merge、发布或部署。
