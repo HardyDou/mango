@@ -11,7 +11,7 @@
     },
     {
       "path": "rules/13-agent-text-output.md",
-      "reason": "所有 Agent 文本输出的受控语言、重点顺序、证据和失败边界"
+      "reason": "所有 Agent 文本输出的受控语言、重点顺序、极简回复方式、证据和失败边界"
     },
     {
       "path": "rules/14-decision-expert-review.md",
@@ -69,7 +69,7 @@
     },
     "process.agentTextOutput": {
       "path": "rules/13-agent-text-output.md",
-      "reason": "所有 Agent 文本输出的受控语言、重点顺序、证据和失败边界"
+      "reason": "所有 Agent 文本输出的受控语言、重点顺序、极简回复方式、证据和失败边界"
     },
     "process.decisionExpertReview": {
       "path": "rules/14-decision-expert-review.md",
