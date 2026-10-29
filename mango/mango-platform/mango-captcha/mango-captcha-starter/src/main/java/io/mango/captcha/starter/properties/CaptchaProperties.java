@@ -28,6 +28,7 @@ public class CaptchaProperties {
     private static final int DEFAULT_TOLERANCE = 24;
     private static final int DEFAULT_CODE_LENGTH = 6;
     private static final int DEFAULT_SMS_PERIOD_SECONDS = 60;
+    private static final boolean DEFAULT_SMS_FIXED_CODE_ENABLED = false;
 
     /**
      * 兼容保留的存储策略配置；实际存储实现由应用注入的 IKvStore 决定。
@@ -100,6 +101,14 @@ public class CaptchaProperties {
         private int length = DEFAULT_CODE_LENGTH;
         private int period = DEFAULT_SMS_PERIOD_SECONDS;
         private String provider = "default";
+        /**
+         * 是否启用固定短信验证码；仅适用于开发和测试环境。
+         */
+        private boolean fixedCodeEnabled = DEFAULT_SMS_FIXED_CODE_ENABLED;
+        /**
+         * 固定短信验证码值。启用固定验证码时必须为纯数字。
+         */
+        private String fixedCode;
     }
 
     @Data

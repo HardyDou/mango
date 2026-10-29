@@ -71,6 +71,12 @@ public class CaptchaService implements ICaptchaService {
     @Value("${mango.captcha.email.length:6}")
     private int emailCodeLength;
 
+    @Value("${mango.captcha.sms.fixed-code-enabled:false}")
+    private boolean fixedSmsCodeEnabled;
+
+    @Value("${mango.captcha.sms.fixed-code:}")
+    private String fixedSmsCode;
+
     private CaptchaResponse generate(CaptchaType type) {
         if (type == CaptchaType.ARITHMETIC) {
             return generateGraphicCaptcha(null, null, CaptchaType.ARITHMETIC);
@@ -263,13 +269,14 @@ public class CaptchaService implements ICaptchaService {
         if (type == CaptchaType.SMS) {
             codeLength = smsCodeLength;
         }
-        String code = generateCode(codeLength);
+        String code = generateCode(type, codeLength);
         String key = KEY_PREFIX + businessType + ":" + target;
 
         log.info("验证码已生成: type={}, target={}, businessType={}", type, target, businessType);
 
         boolean sent = switch (type) {
-            case SMS -> !smsProviders.isEmpty() && smsProviders.get(0).send(target, null, code);
+            case SMS -> fixedSmsCodeEnabled
+                    || (!smsProviders.isEmpty() && smsProviders.get(0).send(target, null, code));
             case EMAIL -> !emailProviders.isEmpty()
                     && emailProviders.get(0).send(target, MESSAGE_SUBJECT, MESSAGE_PREFIX + code);
             default -> false;
@@ -283,7 +290,13 @@ public class CaptchaService implements ICaptchaService {
         return key;
     }
 
-    private String generateCode(int length) {
+    private String generateCode(CaptchaType type, int length) {
+        if (type == CaptchaType.SMS && fixedSmsCodeEnabled) {
+            Require.isTrue(fixedSmsCode != null && fixedSmsCode.matches("\\d+"),
+                    CaptchaCode.CAPTCHA_INVALID, "固定短信验证码必须为纯数字");
+            return fixedSmsCode;
+        }
+
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < length; i++) {
             sb.append(ThreadLocalRandom.current().nextInt(DIGIT_BOUND));

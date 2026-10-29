@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.captcha.api.CaptchaApi;
 import io.mango.captcha.api.enums.CaptchaCode;
 import io.mango.captcha.api.constant.CaptchaType;
+import io.mango.captcha.api.dto.CaptchaSendRequest;
 import io.mango.captcha.api.dto.CaptchaVerifyRequest;
 import io.mango.captcha.core.service.ICaptchaService;
 import io.mango.infra.kv.api.IKvStore;
@@ -20,6 +21,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -34,6 +36,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(classes = CaptchaAutoConfiguration.class)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@TestPropertySource(properties = {
+        "mango.captcha.sms.fixed-code-enabled=true",
+        "mango.captcha.sms.fixed-code=0000"
+})
 @Import({TestConfig.class, GlobalExceptionHandler.class, RedisAutoConfiguration.class, DataSourceAutoConfiguration.class, HttpMessageConvertersAutoConfiguration.class, WebMvcAutoConfiguration.class})
 class CaptchaControllerIntegrationTest {
 
@@ -145,6 +151,23 @@ class CaptchaControllerIntegrationTest {
                 .andExpect(jsonPath("$.data.key").exists())
                 .andExpect(jsonPath("$.data.expireTime").exists())
                 .andExpect(jsonPath("$.data.extra").exists());
+    }
+
+    @Test
+    void sendSms_withConfiguredFixedCode_savesAndVerifies() {
+        CaptchaSendRequest sendRequest = new CaptchaSendRequest();
+        sendRequest.setType(CaptchaType.SMS);
+        sendRequest.setTarget("13800138000");
+        sendRequest.setBusinessType("LOGIN");
+
+        String key = captchaService.send(sendRequest);
+
+        assertThat(key).isEqualTo("captcha:LOGIN:13800138000");
+        CaptchaVerifyRequest verifyRequest = new CaptchaVerifyRequest();
+        verifyRequest.setKey(key.substring("captcha:".length()));
+        verifyRequest.setType(CaptchaType.SMS);
+        verifyRequest.setCode("0000");
+        assertThat(captchaService.verify(verifyRequest)).isTrue();
     }
 
     @Test
