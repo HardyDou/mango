@@ -109,7 +109,7 @@
     },
     "process.prSubmission": {
       "path": "rules/12-pr-submission.md",
-      "reason": "Mango 主仓与业务仓统一 PR 提交、授权、精确暂存、Push、创建或更新 PR 和远端回读规范"
+      "reason": "Mango 主仓与业务仓统一 PR 提交、授权、精确暂存、Push、创建或更新 PR、远端回读和合并授权边界规范"
     },
     "backend.code": {
       "path": "rules/backend/01-code.md",
