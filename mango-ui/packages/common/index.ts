@@ -120,6 +120,7 @@ export type {
 export type {
   DictSelectDisplayFormat,
   DictSelectValue,
+  DictSelectVariant,
   DictShape,
 } from './components/DictSelect/types';
 export { default as RightToolbar } from './components/RightToolbar/index.vue';

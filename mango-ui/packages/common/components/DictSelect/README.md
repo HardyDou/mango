@@ -1,6 +1,6 @@
 # DictSelect
 
-统一的 FLAT/TREE 字典选择组件。业务页面只传 `dictType` 和 `v-model`；通过 `shape` 控制内部使用普通下拉选择还是树形选择。
+统一的 FLAT/TREE 字典选择组件。业务页面只传 `dictType` 和 `v-model`；通过 `shape` 控制字典形态，通过 `variant` 控制 FLAT 字典使用下拉、单选按钮或多选按钮样式。
 
 ## 普通字典
 
@@ -14,6 +14,44 @@
 ```
 
 支持单选、多选、搜索、清空和已有值回显。
+
+### 按钮样式
+
+```vue
+<!-- 单选按钮；modelValue 为单个 value -->
+<DictSelect
+  v-model="status"
+  dict-type="sys_normal_disable"
+  variant="radio-button"
+  button-class="my-dict-buttons"
+/>
+
+<!-- 多选按钮；modelValue 为 value 数组 -->
+<DictSelect
+  v-model="statuses"
+  dict-type="sys_normal_disable"
+  variant="checkbox-button"
+/>
+```
+
+`radio-button` 和 `checkbox-button` 只适用于 `shape="FLAT"`。`TREE` 字典始终使用树形选择器；树形多选通过 `multiple` 显示复选框。按钮样式没有下拉清空图标，需要清空时可将 `v-model` 设为 `undefined`/`[]`，或调用组件的 `clear()` 方法。
+
+按钮组支持通过 `buttonClass` 和 `buttonStyle` 自定义外层样式；按钮内部样式可通过后代选择器覆盖 Element Plus 样式：
+
+```vue
+<DictSelect
+  v-model="status"
+  dict-type="sys_normal_disable"
+  variant="radio-button"
+  button-class="my-dict-buttons"
+/>
+
+<style scoped>
+.my-dict-buttons :deep(.el-radio-button__inner) {
+  border-radius: 6px;
+}
+</style>
+```
 
 ## TREE 字典
 
@@ -41,14 +79,17 @@
 |------|------|--------|------|
 | `modelValue` | `string \| number \| Array<string \| number>` | `undefined` | 选中值；多选时为数组。 |
 | `dictType` | `string` | 必填 | 字典编码。 |
-| `shape` | `'FLAT' \| 'TREE'` | `'FLAT'` | `FLAT` 使用普通下拉，`TREE` 使用树形选择。 |
-| `multiple` | `boolean` | `false` | 是否多选。TREE 多选显示复选框。 |
+| `shape` | `'FLAT' \| 'TREE'` | `'FLAT'` | `FLAT` 使用平铺字典，`TREE` 使用树形字典。 |
+| `variant` | `'select' \| 'radio-button' \| 'checkbox-button'` | `'select'` | FLAT 的选择样式；`select` 为下拉，`radio-button` 为单选按钮，`checkbox-button` 为多选按钮。TREE 忽略按钮样式并使用树形选择器。 |
+| `buttonClass` | `string` | `undefined` | 按钮组外层 class；只对按钮样式生效。 |
+| `buttonStyle` | `StyleValue` | `undefined` | 按钮组外层内联样式；只对按钮样式生效。 |
+| `multiple` | `boolean` | `false` | `select` 样式是否多选；TREE 多选显示复选框。`radio-button` 固定单选，`checkbox-button` 固定多选。 |
 | `leafOnly` | `boolean` | `true` | TREE 专用；true 禁用父节点，仅允许叶子节点；false 时父节点可选。 |
 | `checkStrictly` | `boolean` | `false` | TREE 专用；false 时父子联动（勾选父节点即级联子节点，部分选中为半选），true 时父子不联动；单选需要选父节点时需同时设置该项。 |
 | `displayFormat` | `'label' \| 'path'` | `'label'` | TREE 回显格式；label 显示节点 label，path 显示完整路径。 |
 | `displaySeparator` | `string` | `' / '` | `displayFormat=path` 时的路径分隔符，可配置为 `-`。 |
 | `placeholder` | `string` | `'请选择'` | 占位文本。 |
-| `clearable` | `boolean` | `true` | 是否可清空。 |
+| `clearable` | `boolean` | `true` | 下拉/树形选择是否可清空；按钮样式没有清空图标，请使用 `v-model` 或 `clear()`。 |
 | `disabled` | `boolean` | `false` | 是否禁用。 |
 | `filterable` | `boolean` | `false` | 是否支持搜索；TREE 默认由示例显式开启。 |
 | `numberValue` | `boolean` | `false` | FLAT 是否将 value 转为 number。 |
@@ -131,6 +172,7 @@
 | FLAT 字典选择 | `shape="FLAT"`、`GET /system/dict/data/options` |
 | TREE 字典选择 | `shape="TREE"`、`GET /system/dict/data/tree` |
 | 缓存与刷新 | `reload(true)`、字典缓存清理 API |
+| 下拉、单选按钮与多选按钮 | `variant="select"`、`variant="radio-button"`、`variant="checkbox-button"` |
 | 多选与路径回显 | `multiple`、`displayFormat="path"` |
 
 ## 接入方式
