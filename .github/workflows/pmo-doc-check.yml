@@ -2,16 +2,20 @@ name: PMO Documentation Checks
 
 on:
   pull_request:
-    types: [opened, edited, synchronize, reopened]
+    types: [opened, synchronize, reopened]
 
 concurrency:
   group: pmo-doc-check-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   preflight_scope:
     name: Preflight and scope
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       pmo: ${{ steps.scope.outputs.pmo }}
       backend: ${{ steps.scope.outputs.backend }}
@@ -39,19 +43,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up pnpm for release projection classification
-        uses: pnpm/action-setup@v4
-        with:
-          version: 11.10.0
-          run_install: false
-
       - name: Set up Node.js for common PMO gates
         uses: actions/setup-node@v4
         with:
           node-version: "22.23.1"
-
-      - name: Install frontend dependencies for release projection classification
-        run: pnpm install --frozen-lockfile --dir mango-ui --registry=https://registry.npmjs.org/
 
       - name: Read policy-resolved assurance selections
         id: assurance
@@ -81,6 +76,7 @@ jobs:
     needs: preflight_scope
     if: needs.preflight_scope.outputs.release_plan_check == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -105,17 +101,12 @@ jobs:
       needs.preflight_scope.outputs.m10 == 'true' ||
       needs.preflight_scope.outputs.m11 == 'true')
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Set up pnpm for PMO tarball verification
-        uses: pnpm/action-setup@v4
-        with:
-          version: 11.10.0
-          run_install: false
 
       - name: Set up Node.js for PMO gates
         uses: actions/setup-node@v4
@@ -123,7 +114,7 @@ jobs:
           node-version: "22.23.1"
 
       - name: Test document contracts, lifecycle routing, and Skills
-        if: needs.preflight_scope.outputs.pmo == 'true'
+        if: needs.preflight_scope.outputs.pmo == 'true' && needs.preflight_scope.outputs.m10 == 'true'
         run: |
           node --test \
             mango-pmo/tests/architecture-debt-budget.test.mjs \
@@ -141,7 +132,7 @@ jobs:
           node mango-pmo/tests/skills/check-delivery-mode-history-cases.mjs
 
       - name: Run selected static PMO checks
-        if: needs.preflight_scope.outputs.pmo == 'true'
+        if: needs.preflight_scope.outputs.pmo == 'true' && needs.preflight_scope.outputs.m09 == 'true'
         run: |
           node mango-pmo/tools/check-pmo-preflight.mjs
           node mango-pmo/tools/check-governance-intent.mjs
@@ -161,6 +152,7 @@ jobs:
       needs.preflight_scope.outputs.distribution == 'true') &&
       (needs.preflight_scope.outputs.m09 == 'true' || needs.preflight_scope.outputs.m11 == 'true')
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -219,6 +211,7 @@ jobs:
       needs.preflight_scope.outputs.m10 == 'true' ||
       needs.preflight_scope.outputs.m11 == 'true')
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -392,6 +385,7 @@ jobs:
     needs: preflight_scope
     if: needs.preflight_scope.outputs.m08 == 'true' || needs.preflight_scope.outputs.m09 == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -431,6 +425,7 @@ jobs:
     needs: [preflight_scope, release_plan, pmo, cli_js, java, docs]
     if: ${{ always() }}
     runs-on: ubuntu-latest
+    timeout-minutes: 2
     steps:
       - name: Aggregate PMO gate results
         env:
@@ -441,6 +436,18 @@ jobs:
           JAVA_RESULT: ${{ needs.java.result }}
           DOCS_RESULT: ${{ needs.docs.result }}
         run: |
+          {
+            echo '### PMO gate results'
+            echo '| Job | Result |'
+            echo '| --- | --- |'
+            echo "| preflight_scope | $PREFLIGHT_SCOPE_RESULT |"
+            echo "| release_plan | $RELEASE_PLAN_RESULT |"
+            echo "| pmo | $PMO_RESULT |"
+            echo "| cli_js | $CLI_JS_RESULT |"
+            echo "| java | $JAVA_RESULT |"
+            echo "| docs | $DOCS_RESULT |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
           for result in \
             "$PREFLIGHT_SCOPE_RESULT" \
             "$RELEASE_PLAN_RESULT" \

@@ -1,4 +1,4 @@
-const REQUIRED_CONTEXTS = ['pr-contract-check', 'pmo-doc-check'];
+const REQUIRED_CONTEXTS = ['frontend-pr-quality', 'pr-contract-check', 'pmo-doc-check'];
 const GOVERNANCE_MODES = new Set(['single-owner', 'multi-maintainer']);
 
 export function validateBranchProtectionPolicy(policy) {

@@ -42,6 +42,26 @@ test('policy-resolved delivery mode and assurance measures pass', () => {
   });
 });
 
+test('minimal valid assurance selections and evidence are not placeholders', () => {
+  const result = validateRiskVerification(body({
+    selections: 'M01=CREATE; M09=ENABLE',
+    evidence: 'M01 - task worktree; M09 - static checker output',
+  }));
+  assert.deepEqual(result.failures, []);
+  assert.deepEqual(result.assessment.assuranceSelections, {
+    M01: 'CREATE',
+    M09: 'ENABLE',
+  });
+});
+
+test('invalid assurance entries identify the failing entry', () => {
+  const result = validateRiskVerification(body({
+    selections: 'M01=CREATE; M09=NOT_A_MEASURE',
+  }));
+  const failures = result.failures.join('\\n');
+  assert.match(failures, /unsupported value for M09/);
+});
+
 test('canonical business PR template matches the delivery-assurance contract', () => {
   assert.deepEqual(validateRiskVerificationTemplate(canonicalTemplate).failures, []);
 });
