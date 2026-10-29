@@ -2375,14 +2375,21 @@ function prepareManagedMangoLifecycle(context, appName, app, logPath) {
       if (!failure.includes('BOOTSTRAP_FINGERPRINT_MISMATCH')) {
         fail(`${appName}: bootstrap verify failed, see ${relativeOrAbsolute(process.cwd(), logPath)}`);
       }
-      generation = highestGeneration + 1;
-      runColdBootstrap(appName, app, lifecycle, generation, logPath, false);
+      const retryCandidate =
+        control.candidateGeneration > control.stableGeneration &&
+        ['EXPANDED', 'FINALIZING', 'FINALIZE_FAILED'].includes(control.state);
+      generation = retryCandidate ? control.candidateGeneration : highestGeneration + 1;
+      if (retryCandidate) {
+        runRollingFinalize(appName, app, lifecycle, generation, logPath);
+      } else {
+        runRollingBootstrap(appName, app, lifecycle, generation, logPath);
+      }
     }
   } else {
     generation = Math.max(1, control.candidateGeneration);
-    if (!runColdBootstrap(appName, app, lifecycle, generation, logPath, true)) {
+    if (!runBootstrapApply(appName, app, lifecycle, generation, logPath, 'cold', true)) {
       generation = highestGeneration + 1;
-      runColdBootstrap(appName, app, lifecycle, generation, logPath, false);
+      runBootstrapApply(appName, app, lifecycle, generation, logPath, 'cold', false);
     }
   }
   app.springArgs = buildManagedLifecycleSpringArgs(app.springArgs, 'runtime', lifecycle, generation);
@@ -2407,13 +2414,13 @@ function assertManagedLifecycleWorkspaceDatabase(context, appName, app) {
   }
 }
 
-function runColdBootstrap(appName, app, lifecycle, generation, logPath, allowFingerprintMismatch) {
+function runBootstrapApply(appName, app, lifecycle, generation, logPath, strategy, allowFingerprintMismatch) {
   const logOffset = getLogFileSize(logPath);
   const result = runManagedMangoLifecycleCommand(
     app,
-    buildManagedLifecycleSpringArgs(app.springArgs, 'bootstrap', lifecycle, generation, 'apply'),
+    buildManagedLifecycleSpringArgs(app.springArgs, 'bootstrap', lifecycle, generation, 'apply', strategy),
     logPath,
-    `${appName}: applying cold bootstrap generation ${generation}`,
+    `${appName}: applying ${strategy} bootstrap generation ${generation}`,
   );
   if (result.status === 0) {
     return true;
@@ -2423,6 +2430,23 @@ function runColdBootstrap(appName, app, lifecycle, generation, logPath, allowFin
     return false;
   }
   fail(`${appName}: bootstrap apply failed, see ${relativeOrAbsolute(process.cwd(), logPath)}`);
+}
+
+function runRollingBootstrap(appName, app, lifecycle, generation, logPath) {
+  runBootstrapApply(appName, app, lifecycle, generation, logPath, 'rolling', false);
+  runRollingFinalize(appName, app, lifecycle, generation, logPath);
+}
+
+function runRollingFinalize(appName, app, lifecycle, generation, logPath) {
+  const result = runManagedMangoLifecycleCommand(
+    app,
+    buildManagedLifecycleSpringArgs(app.springArgs, 'bootstrap', lifecycle, generation, 'finalize', 'rolling'),
+    logPath,
+    `${appName}: finalizing rolling bootstrap generation ${generation}`,
+  );
+  if (result.status !== 0) {
+    fail(`${appName}: bootstrap finalize failed, see ${relativeOrAbsolute(process.cwd(), logPath)}`);
+  }
 }
 
 function runManagedMangoLifecycleCommand(app, springArgs, logPath, message) {
@@ -2456,12 +2480,13 @@ function buildLocalLifecycleIdentity(context, appName, app) {
 function readBootstrapGenerationState(dbEnv, environmentKey) {
   const dbName = dbEnv.MANGO_DB_NAME || '';
   if (!/^mango_dev_[a-zA-Z0-9_]+$/.test(dbName)) {
-    return { stableGeneration: 0, candidateGeneration: 0 };
+    return { stableGeneration: 0, candidateGeneration: 0, state: '' };
   }
   const escapedEnvironmentKey = environmentKey.replace(/'/gu, "''");
   const result = runMysqlStatement(
     dbEnv,
-    `SELECT stable_generation, COALESCE(candidate_generation, 0) FROM \`${dbName}\`.mango_bootstrap_control ` +
+    `SELECT stable_generation, COALESCE(candidate_generation, 0), stable_fingerprint, ` +
+      `candidate_fingerprint, state FROM \`${dbName}\`.mango_bootstrap_control ` +
       `WHERE environment_key = '${escapedEnvironmentKey}' LIMIT 1;`,
     {
       cwd: process.cwd(),
@@ -2470,24 +2495,20 @@ function readBootstrapGenerationState(dbEnv, environmentKey) {
     },
   );
   if (result.status !== 0) {
-    return { stableGeneration: 0, candidateGeneration: 0 };
+    return { stableGeneration: 0, candidateGeneration: 0, state: '' };
   }
   const row = String(result.stdout || '')
     .split(/\r?\n/u)
-    .map((line) =>
-      line
-        .trim()
-        .split(/\s+/u)
-        .map((value) => Number.parseInt(value, 10)),
-    )
-    .find((values) => values.length >= 2 && values.every((value) => Number.isInteger(value)));
+    .map((line) => line.trim().split(/\s+/u))
+    .find((values) => values.length >= 2 && Number.isInteger(Number.parseInt(values[0], 10)));
   return {
-    stableGeneration: Math.max(0, row?.[0] || 0),
-    candidateGeneration: Math.max(0, row?.[1] || 0),
+    stableGeneration: Math.max(0, Number.parseInt(row?.[0], 10) || 0),
+    candidateGeneration: Math.max(0, Number.parseInt(row?.[1], 10) || 0),
+    state: row?.[4] || '',
   };
 }
 
-function buildManagedLifecycleSpringArgs(configuredArgs, mode, lifecycle, generation, action = '') {
+function buildManagedLifecycleSpringArgs(configuredArgs, mode, lifecycle, generation, action = '', strategy = 'cold') {
   const remaining = [...configuredArgs];
   if (isMangoLifecycleMode(remaining[0])) {
     const configuredMode = remaining.shift();
@@ -2504,8 +2525,8 @@ function buildManagedLifecycleSpringArgs(configuredArgs, mode, lifecycle, genera
       !argument.startsWith('--mango.bootstrap.strategy='),
   );
   const prefix = mode === 'bootstrap' ? ['bootstrap', action] : ['runtime'];
-  if (mode === 'bootstrap' && action === 'apply') {
-    prefix.push('--mango.bootstrap.strategy=cold');
+  if (mode === 'bootstrap' && ['apply', 'finalize'].includes(action)) {
+    prefix.push(`--mango.bootstrap.strategy=${strategy}`);
   }
   return [
     ...prefix,

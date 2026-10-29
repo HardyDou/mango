@@ -2,21 +2,28 @@ package io.mango.infra.bootstrap.starter;
 
 import io.mango.infra.bootstrap.api.BootstrapAction;
 import io.mango.infra.bootstrap.api.BootstrapMode;
+import io.mango.infra.bootstrap.api.BootstrapStrategy;
+import io.mango.infra.bootstrap.core.BootstrapControl;
+import io.mango.infra.bootstrap.core.BootstrapInvocation;
 import io.mango.infra.bootstrap.core.BootstrapOrchestrator;
 import io.mango.infra.bootstrap.core.BootstrapOutcome;
 import io.mango.infra.bootstrap.core.BootstrapSchemaMigrator;
 import io.mango.infra.bootstrap.core.JdbcBootstrapRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.ArgumentCaptor;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -70,9 +77,83 @@ class BootstrapCommandRunnerTest {
                 environment, startupState).run(mock(ApplicationArguments.class));
 
         verify(schemaMigrator).migrate();
+        ArgumentCaptor<BootstrapInvocation> invocation = ArgumentCaptor.forClass(BootstrapInvocation.class);
+        verify(orchestrator).execute(invocation.capture());
+        assertThat(invocation.getValue().strategy()).isEqualTo(BootstrapStrategy.COLD);
         assertThat(startupState.requireIdentity()).isEqualTo(new MangoLocalRuntimeIdentity(
                 "local-mango_023-mango-backend", "local-mango_023-mango-backend", "revision-1", 1,
                 FINGERPRINT));
+    }
+
+    @Test
+    void localStartupUsesRollingApplyAndFinalizeWhenStableFingerprintChanges() {
+        BootstrapProperties bootstrap = bootstrapProperties(BootstrapAction.APPLY);
+        bootstrap.setLocalStartup(true);
+        MangoReleaseProperties release = releaseProperties();
+        BootstrapOrchestrator orchestrator = mock(BootstrapOrchestrator.class);
+        BootstrapSchemaMigrator schemaMigrator = mock(BootstrapSchemaMigrator.class);
+        JdbcBootstrapRepository repository = mock(JdbcBootstrapRepository.class);
+        MangoLocalStartupState startupState = new MangoLocalStartupState();
+        when(orchestrator.manifestFingerprint("local-mango_023-mango-backend", "revision-1"))
+                .thenReturn(FINGERPRINT);
+        when(repository.findControl("local-mango_023-mango-backend")).thenReturn(Optional.of(new BootstrapControl(
+                "local-mango_023-mango-backend", 1, "a".repeat(64), null, null, 1, "FINALIZED", 1)));
+        when(orchestrator.execute(any())).thenReturn(
+                new BootstrapOutcome("execution-1", FINGERPRINT, "EXPANDED", 3, 0),
+                new BootstrapOutcome("execution-2", FINGERPRINT, "FINALIZED", 2, 0));
+        BootstrapReceiptWriter writer = writer(bootstrap);
+        MockEnvironment environment = new MockEnvironment()
+                .withProperty("spring.application.name", "ignored-app")
+                .withProperty("MANGO_WORKSPACE_ID", "mango_023")
+                .withProperty("MANGO_LOCAL_LIFECYCLE_KEY", "mango-backend")
+                .withProperty("MANGO_MAVEN_REVISION_QUALIFIER", "revision-1");
+
+        new BootstrapCommandRunner(bootstrap, release, orchestrator, schemaMigrator, repository, writer,
+                environment, startupState).run(mock(ApplicationArguments.class));
+
+        ArgumentCaptor<BootstrapInvocation> invocations = ArgumentCaptor.forClass(BootstrapInvocation.class);
+        verify(orchestrator, times(2)).execute(invocations.capture());
+        List<BootstrapInvocation> values = invocations.getAllValues();
+        assertThat(values).extracting(BootstrapInvocation::action)
+                .containsExactly(BootstrapAction.APPLY, BootstrapAction.FINALIZE);
+        assertThat(values).extracting(BootstrapInvocation::strategy)
+                .containsExactly(BootstrapStrategy.ROLLING, BootstrapStrategy.ROLLING);
+        assertThat(values).extracting(BootstrapInvocation::generation).containsOnly(2L);
+        assertThat(startupState.requireIdentity().generation()).isEqualTo(2L);
+    }
+
+    @Test
+    void localStartupRetriesABlockedRollingFinalizeCandidate() {
+        BootstrapProperties bootstrap = bootstrapProperties(BootstrapAction.APPLY);
+        bootstrap.setLocalStartup(true);
+        MangoReleaseProperties release = releaseProperties();
+        BootstrapOrchestrator orchestrator = mock(BootstrapOrchestrator.class);
+        BootstrapSchemaMigrator schemaMigrator = mock(BootstrapSchemaMigrator.class);
+        JdbcBootstrapRepository repository = mock(JdbcBootstrapRepository.class);
+        MangoLocalStartupState startupState = new MangoLocalStartupState();
+        when(orchestrator.manifestFingerprint("local-mango_023-mango-backend", "revision-1"))
+                .thenReturn(FINGERPRINT);
+        when(repository.findControl("local-mango_023-mango-backend")).thenReturn(Optional.of(new BootstrapControl(
+                "local-mango_023-mango-backend", 1, "a".repeat(64), 2L, FINGERPRINT,
+                2, "FINALIZE_FAILED", 2)));
+        when(orchestrator.execute(any())).thenReturn(
+                new BootstrapOutcome("execution-2", FINGERPRINT, "FINALIZED", 2, 0));
+        BootstrapReceiptWriter writer = writer(bootstrap);
+        MockEnvironment environment = new MockEnvironment()
+                .withProperty("spring.application.name", "ignored-app")
+                .withProperty("MANGO_WORKSPACE_ID", "mango_023")
+                .withProperty("MANGO_LOCAL_LIFECYCLE_KEY", "mango-backend")
+                .withProperty("MANGO_MAVEN_REVISION_QUALIFIER", "revision-1");
+
+        new BootstrapCommandRunner(bootstrap, release, orchestrator, schemaMigrator, repository, writer,
+                environment, startupState).run(mock(ApplicationArguments.class));
+
+        ArgumentCaptor<BootstrapInvocation> invocation = ArgumentCaptor.forClass(BootstrapInvocation.class);
+        verify(orchestrator).execute(invocation.capture());
+        assertThat(invocation.getValue().action()).isEqualTo(BootstrapAction.FINALIZE);
+        assertThat(invocation.getValue().strategy()).isEqualTo(BootstrapStrategy.ROLLING);
+        assertThat(invocation.getValue().generation()).isEqualTo(2L);
+        assertThat(startupState.requireIdentity().generation()).isEqualTo(2L);
     }
 
     @Test

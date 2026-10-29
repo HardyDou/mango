@@ -91,7 +91,7 @@
 | `@mango/information` | 提供表单管理、表单设计、托管表单、公开提交、文件上传和采集记录页面及类型化 API。 | [Information Frontend README](../../mango-ui/packages/information/README.md) |
 | `@mango/job` | 提供任务管理和调度页面。 | [Job Frontend README](../../mango-ui/packages/job/README.md) |
 | `@mango/notice` | 提供消息中心、通知管理和通知展示组件。 | [Notice Frontend README](../../mango-ui/packages/notice/README.md) |
-| Mango CLI | 提供项目创建、workspace、开发、PMO 和交付命令。 | [CLI README](../../mango-ui/packages/mango-cli/README.md) |
+| Mango CLI | 提供项目创建、workspace、开发、PMO 和交付命令；本地 Mango 应用启动支持空库 cold bootstrap 与已有 stable generation 的 rolling apply/finalize。 | [CLI README](../../mango-ui/packages/mango-cli/README.md) |
 
 ## 5. 业务项目和治理能力
 

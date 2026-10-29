@@ -8,7 +8,7 @@
 
 - App 入口调用 `MangoApplication.run(primarySource, args)`。
 - 当前入口要求第一个参数为 `bootstrap` 或 `runtime`。
-- `mango dev start` 负责工作区数据库校验、generation 选择、cold bootstrap、回执读取和 runtime 参数注入。
+- `mango dev start` 负责工作区数据库校验、generation 选择、bootstrap 策略编排、回执读取和 runtime 参数注入：空库使用 cold apply，已有 stable generation 的 fingerprint 变化使用 rolling apply + finalize。
 - Persistence 在未配置 `mango.bootstrap.mode` 时支持兼容直启，但该路径不能满足本任务的 Bootstrap、Resource、generation 和 Runtime lease 合同。
 - 现有工作区使用 `.mango/workspace.json` 和 `.mango/dev-workspace.env` 保存端口、数据库和 Maven revision。
 
@@ -16,7 +16,7 @@
 
 1. IDEA 直接运行任意 Mango App 的 `main` 方法时，不要求手工配置 Mango 生命周期参数。
 2. 本地 main 启动复用当前工作区配置和已有数据库。
-3. 已有数据库只执行必要的增量 migration，不执行 cold baseline。
+3. 已有数据库只执行必要的增量 migration，不执行 cold baseline；stable fingerprint 变化时使用 rolling apply + finalize。
 4. 本地启动的 Bootstrap、Resource、fingerprint、receipt 和 Runtime lease 行为与 `mango dev start` 等价。
 5. 单体、微服务由各 App 自身集成决定，不新增拓扑选择。
 6. 显式 `bootstrap`/`runtime` 参数继续使用现有生产生命周期路径。
@@ -35,7 +35,7 @@
 - 参数首项为 `bootstrap` 或 `runtime`：沿用现有显式生命周期入口。
 - 无参数或仅包含普通 Spring 参数：进入本地托管启动入口。
 - 本地托管入口先启动一个非 Web 的 Bootstrap context，再关闭该 context，随后使用生成的本地 release tuple 启动 Runtime context。
-- 本地 Bootstrap 使用 `apply + cold` 语义，已有 stable generation 且 fingerprint 未变化时复用现有 generation，不重复执行步骤。
+- 本地 Bootstrap 对空库或没有可复用 stable generation 的数据库使用 `apply + cold` 语义；已有 stable generation 且 fingerprint 未变化时复用现有 generation，不重复执行步骤；stable fingerprint 变化时使用 `apply + rolling`，随后执行 `finalize + rolling`。
 
 ### 2. 本地工作区配置
 
@@ -60,7 +60,7 @@ Bootstrap 完成并写入 receipt 后，本地入口把同一 environment、rele
 ## 失败边界
 
 - 未初始化工作区、数据库不是 `mango_dev_*`、数据库连接失败或端口被占用时，启动失败并给出具体原因。
-- 已有数据库 migration、资源声明或 manifest fingerprint 不一致时，先执行本地 Bootstrap；Bootstrap 失败则不启动 Runtime。
+- 已有数据库 migration、资源声明或 manifest fingerprint 不一致时，先执行本地 Bootstrap；已有 stable generation 的 fingerprint 变化走 rolling apply + finalize，finalize 在旧 Runtime lease 未排空时失败；Bootstrap 失败则不启动 Runtime。
 - 不允许通过本地启动入口自动操作非工作区数据库。
 - 生产显式入口不使用本地自动配置和本地 generation 推导。
 

@@ -87,16 +87,10 @@ final class BootstrapCommandRunner implements ApplicationRunner, Ordered {
 
         schemaMigrator.migrate();
         BootstrapControl control = repository.findControl(environmentKey).orElse(null);
-        boolean reuseStable = control != null
-                && control.stableGeneration() > 0
-                && fingerprint.equals(control.stableFingerprint());
-        long generation = reuseStable ? control.stableGeneration() : nextGeneration(control);
-        BootstrapOutcome outcome = reuseStable
-                ? new BootstrapOutcome(null, fingerprint, "FINALIZED", 0, 0)
-                : orchestrator.execute(new BootstrapInvocation(
-                        environmentKey, releaseId, revision, generation, null,
-                        BootstrapAction.APPLY, BootstrapStrategy.COLD, bootstrapProperties.getPhase(),
-                        bootstrapProperties.getLockTimeoutSeconds()));
+        LocalBootstrapExecution execution = executeLocalBootstrap(
+                environmentKey, releaseId, revision, fingerprint, control);
+        BootstrapOutcome outcome = execution.outcome();
+        long generation = execution.generation();
         if (!"FINALIZED".equals(outcome.state())) {
             throw new IllegalStateException("MANGO_LOCAL_BOOTSTRAP_NOT_FINALIZED: state=" + outcome.state());
         }
@@ -108,6 +102,64 @@ final class BootstrapCommandRunner implements ApplicationRunner, Ordered {
                     environmentKey, releaseId, revision, generation, outcome.manifestFingerprint()));
         }
         logOutcome(outcome, generation);
+    }
+
+    private LocalBootstrapExecution executeLocalBootstrap(String environmentKey,
+                                                            String releaseId,
+                                                            String revision,
+                                                            String fingerprint,
+                                                            BootstrapControl control) {
+        if (isStableFingerprint(control, fingerprint)) {
+            return new LocalBootstrapExecution(control.stableGeneration(),
+                    new BootstrapOutcome(null, fingerprint, "FINALIZED", 0, 0));
+        }
+        boolean retryRollingFinalize = shouldRetryRollingFinalize(control, fingerprint);
+        long generation = retryRollingFinalize ? control.candidateGeneration() : nextGeneration(control);
+        if (retryRollingFinalize) {
+            return executeLocalBootstrapStep(environmentKey, releaseId, revision, generation,
+                    BootstrapAction.FINALIZE, BootstrapStrategy.ROLLING);
+        }
+        if (hasStableGeneration(control)) {
+            executeLocalBootstrapStep(environmentKey, releaseId, revision, generation,
+                    BootstrapAction.APPLY, BootstrapStrategy.ROLLING);
+            return executeLocalBootstrapStep(environmentKey, releaseId, revision, generation,
+                    BootstrapAction.FINALIZE, BootstrapStrategy.ROLLING);
+        }
+        return executeLocalBootstrapStep(environmentKey, releaseId, revision, generation,
+                BootstrapAction.APPLY, BootstrapStrategy.COLD);
+    }
+
+    private LocalBootstrapExecution executeLocalBootstrapStep(String environmentKey,
+                                                                String releaseId,
+                                                                String revision,
+                                                                long generation,
+                                                                BootstrapAction action,
+                                                                BootstrapStrategy strategy) {
+        return new LocalBootstrapExecution(generation, orchestrator.execute(new BootstrapInvocation(
+                environmentKey, releaseId, revision, generation, null, action, strategy,
+                bootstrapProperties.getPhase(), bootstrapProperties.getLockTimeoutSeconds())));
+    }
+
+    private static boolean isStableFingerprint(BootstrapControl control, String fingerprint) {
+        return hasStableGeneration(control) && fingerprint.equals(control.stableFingerprint());
+    }
+
+    private static boolean shouldRetryRollingFinalize(BootstrapControl control, String fingerprint) {
+        if (!hasStableGeneration(control) || control.candidateGeneration() == null) {
+            return false;
+        }
+        return control.candidateGeneration() > control.stableGeneration()
+                && fingerprint.equals(control.candidateFingerprint())
+                && ("EXPANDED".equals(control.state())
+                || "FINALIZING".equals(control.state())
+                || "FINALIZE_FAILED".equals(control.state()));
+    }
+
+    private static boolean hasStableGeneration(BootstrapControl control) {
+        return control != null && control.stableGeneration() > 0;
+    }
+
+    private record LocalBootstrapExecution(long generation, BootstrapOutcome outcome) {
     }
 
     private static long nextGeneration(BootstrapControl control) {
