@@ -170,6 +170,21 @@ X-Captcha-Type: ARITHMETIC
 
 默认 `SmsProvider`、`EmailProvider` 只是默认实现。生产环境需要在业务应用中提供自己的 Bean：
 
+开发和测试环境可以启用固定短信验证码，跳过短信供应商并把配置值保存到验证码会话中，仍使用正常的发送和校验接口：
+
+```yaml
+mango:
+  captcha:
+    sms:
+      fixed-code-enabled: true
+      fixed-code: "0000"
+```
+
+也可以使用环境变量 `MANGO_CAPTCHA_SMS_FIXED_CODE_ENABLED=true` 和
+`MANGO_CAPTCHA_SMS_FIXED_CODE=0000`。生产环境保持 `fixed-code-enabled: false`（默认值），继续使用真实 `SmsProvider`。
+
+固定验证码只作用于 `SMS`，邮件验证码和图形验证码不受影响；固定值必须为纯数字。
+
 ```java
 @Bean
 public SmsProvider smsProvider() {
@@ -223,6 +238,7 @@ mango:
       length: 6
       period: 60
       provider: default
+      fixed-code-enabled: false
     email:
       enabled: true
       length: 6
@@ -263,6 +279,8 @@ mango:
 | `mango.captcha.sms.length` | `6` | 短信验证码数字长度。 |
 | `mango.captcha.sms.period` | `60` | 短信发送间隔配置字段，单位秒。 |
 | `mango.captcha.sms.provider` | `default` | 短信供应商配置字段。生产环境应提供 `SmsProvider` Bean。 |
+| `mango.captcha.sms.fixed-code-enabled` | `false` | 是否启用固定短信验证码；开发/测试环境可设为 `true`，生产环境保持 `false`。 |
+| `mango.captcha.sms.fixed-code` | 空 | 固定短信验证码值；启用固定验证码时必须为纯数字。 |
 | `mango.captcha.email.enabled` | `true` | 邮件验证码启用标识。 |
 | `mango.captcha.email.length` | `6` | 邮件验证码数字长度。 |
 | `mango.captcha.email.provider` | `default` | 邮件供应商配置字段。生产环境应提供 `EmailProvider` Bean。 |
