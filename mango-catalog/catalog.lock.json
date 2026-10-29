@@ -1,10 +1,10 @@
 {
   "architectureGraph": {
-    "reportSha256": "4d57b8b187cf84d957095c60ffeb52a6f15d86d1bddf65ad88ae114aa2df2bd6",
+    "reportSha256": "892994b442bf382bf74c9ae9da310047b03f5a0b68b93809943e4783a6ea6d58",
     "schemaVersion": 1,
     "workspaceCount": 43
   },
-  "catalogDigest": "c825f9a345ac06211421fb3eabcbcc5b24784c1ac84d0d96cebf9271f1a5e0e4",
+  "catalogDigest": "a1911e671b0d5780ab2480f767ccd323a04df10b297011a60efc1ab449603630",
   "maven": {
     "dependencyManagementSets": [
       {
@@ -11254,6 +11254,14 @@
             "import": "./dist/dev-base-pages.js",
             "types": "./dist/dev-base-pages.d.ts"
           },
+          "./dev-code-block": {
+            "import": "./dist/dev-code-block.js",
+            "types": "./dist/dev-code-block.d.ts"
+          },
+          "./dev-demo-layout": {
+            "import": "./dist/dev-demo-layout.js",
+            "types": "./dist/dev-demo-layout.d.ts"
+          },
           "./dev-pages": {
             "import": "./dist/dev-pages.js",
             "types": "./dist/dev-pages.d.ts"
@@ -11324,6 +11332,16 @@
           "kind": "code",
           "source": "./src/views/demo/registerBaseDevPages.ts",
           "subpath": "./dev-base-pages"
+        },
+        {
+          "kind": "code",
+          "source": "./src/views/demo/components/DemoCodeBlock.vue",
+          "subpath": "./dev-code-block"
+        },
+        {
+          "kind": "code",
+          "source": "./src/views/demo/components/DemoDocLayout.vue",
+          "subpath": "./dev-demo-layout"
         },
         {
           "kind": "code",
@@ -11712,6 +11730,10 @@
             "import": "./dist/api/*.js",
             "types": "./dist/api/*.d.ts"
           },
+          "./components/DictDisplay/index.vue": {
+            "import": "./dist/components/DictDisplay/index.js",
+            "types": "./dist/components/DictDisplay/index.d.ts"
+          },
           "./components/DictSelect/index.vue": {
             "import": "./dist/components/DictSelect/index.js",
             "types": "./dist/components/DictSelect/index.d.ts"
@@ -11830,6 +11852,11 @@
           "kind": "code",
           "sourcePattern": "./api/*.ts",
           "subpath": "./api/*"
+        },
+        {
+          "kind": "code",
+          "source": "./components/DictDisplay/index.vue",
+          "subpath": "./components/DictDisplay/index.vue"
         },
         {
           "kind": "code",

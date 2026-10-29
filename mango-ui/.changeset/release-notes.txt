@@ -1,81 +1,74 @@
 ## Pull Requests
 
-- [PR #1121](https://github.com/HardyDou/mango/pull/1121) Added unified graphic captcha support with arithmetic/alphanumeric types, difficulty policy, `/captcha/graphic`, `CaptchaApi.generateGraphic` and the reusable `GraphicCaptcha` frontend component. Packages: Maven `mango-captcha-*`, `@mango/common@2.2.0` and dependent npm closure. Business Adaptation: existing captcha types remain compatible; consumers using the new graphic mode must upgrade the matching Maven captcha tuple and `@mango/common`.
-- [PR #1123](https://github.com/HardyDou/mango/pull/1123) Fixed duplicate API Resource registration by preferring fixed declarations over Controller scans, added `@ApiResourceIgnore`, source/domain filtering and the permission identifier page. Packages: Maven `mango-authorization-*`, `@mango/rbac@1.1.0`, `@mango/admin-pages@1.2.0` and dependent npm closure. Business Adaptation: run the authorization V4 migration, resync `AUTH_MENU`, and grant `system:api-resource:list` to operators who need the page.
-- [PR #1125](https://github.com/HardyDou/mango/pull/1125) Fixed upgraded Resource Registry databases retaining legacy `sync_mode` values. Packages: Maven `mango-resource-*` and `mango-docs-bundle`. Business Adaptation: allow V5 to normalize `AUTO`/`INIT_ONLY`/`MANUAL`/`LOCKED`, verify old-value count is zero, and keep a database snapshot before upgrade.
-- [PR #1030](https://github.com/HardyDou/mango/pull/1030) Changed: synchronized Fileproc PDF compression and frontend file download documentation. Packages: `mango-docs-bundle`, `@mango/file@1.2.2`. Business Adaptation: no runtime code change; consumers can follow the documented compression options when the corresponding backend capability is enabled.
-- [PR #1124](https://github.com/HardyDou/mango/pull/1124) Changed (test-only): aligned captcha stubs and baseline verification with current main. Packages: none independently; included as audit context only. Business Adaptation: no action.
+- PR #1129 Fixed Resource Registry FINALIZE reconciliation. Packages: Mango Maven/docs 1.1.3 and affected Resource/Authorization coordinates. Business Adaptation: upgrade the backend and verify FINALIZE reconciliation and tombstone behavior.
+- PR #1131 Added API Resource source priority and manual control. Packages: Mango Maven/docs 1.1.3, @mango/rbac and generated npm closure. Business Adaptation: review API Resource priority and grant the manual-control permission deliberately.
+- PR #1132 Added FLAT/TREE dictionaries and unified DictSelect. Packages: Mango Maven/docs 1.1.3, @mango/common, @mango/system and generated npm closure. Business Adaptation: use the documented shape and tree options while retaining FLAT defaults.
+- PR #1134 Changed arithmetic and graphic captcha behavior. Packages: Mango Maven/docs 1.1.3, @mango/common, @mango/auth, @mango/admin-shell and generated npm closure. Business Adaptation: use the unified graphic captcha default and retain the compatibility endpoint during migration.
+- PR #1135 Added DictDisplay and shared dictionary tree utilities. Packages: @mango/common and generated npm closure. Business Adaptation: use DictDisplay for read-only dictionary labels and paths.
+- PR #1137 Changed API Resource manual takeover to a single-row snapshot model. Packages: Mango Maven/docs 1.1.3, @mango/rbac and generated npm closure. Business Adaptation: back up authorization data before applying V5 and verify release/restore behavior.
+- PR #1138 Added dictionary group filtering. Packages: Mango Maven/docs 1.1.3, @mango/common, @mango/system and generated npm closure. Business Adaptation: assign groups before enabling group-filtered consumers.
+- PR #1139 Fixed clearing dictionary groups/parents and domain display. Packages: Mango Maven/docs 1.1.3, @mango/system and generated npm closure. Business Adaptation: restart once for resource declarations and verify cleared values.
+- PR #1140 Changed CMS publishing to retain publish history. Packages: Mango Maven/docs 1.1.3 and @mango/cms. Business Adaptation: back up CMS data, apply the publish-history migration, and verify publish/offline/re-publish flows.
+- PR #1142 Fixed revival of soft-deleted API Resources. Packages: Mango Maven/docs 1.1.3 and Authorization coordinates. Business Adaptation: verify startup synchronization after upgrading the authorization schema.
+- PR #1143 Changed PMO Agent output guidance. Packages: @mango/pmo and @mango/cli. Business Adaptation: refresh the PMO baseline and use the concise response contract.
+- PR #1146 Changed local bootstrap to rolling apply/finalize and added fixed SMS-code test support. Packages: Mango Maven/docs 1.1.3, @mango/cli and affected platform coordinates. Business Adaptation: use fixed codes only in non-production test environments and run rolling bootstrap checks.
+- PR #1148 Added dictionary button selection styles. Packages: @mango/common and generated npm closure. Business Adaptation: select the documented button style in dictionary consumers.
+- PR #1149 Changed Skill merge authorization guidance. Packages: @mango/pmo and @mango/cli. Business Adaptation: refresh the PMO/CLI tuple before using merge authorization commands.
 
 ## Fixed
 
-- Resource Registry legacy persisted sync modes are normalized by V5: `AUTO` → `SYNC_ALWAYS`; `INIT_ONLY`, `MANUAL` and `LOCKED` → `SYNC_ONCE`.
-- API Resource registration no longer lets a Controller scan shadow a fixed declaration for the same route; the fixed declaration keeps the stable resource identity and access semantics.
-- Resource migration is idempotent and does not modify target resource data, ownership, version, source hash, status or target ID.
+- 修复 Resource Registry FINALIZE 缺失资源回收、API Resource 软删除恢复、字典清空保存和 CMS 发布记录一致性问题。
 
 ## Added
 
-- Unified graphic captcha generation with configurable type and difficulty, backend Java API, HTTP API and frontend component.
-- API Resource source/domain query dimensions, `@ApiResourceIgnore` and the `system/api-resource/index` permission identifier page.
-- A generated `Mango 1.1.1 → 1.1.2` upgrade page shipped in the docs bundle.
+- 新增 FLAT/TREE 字典、字典分组过滤、DictDisplay、API Resource 人工接管和非生产固定验证码测试支持。
 
 ## Changed
 
-- Authorization menu resource version advances to include the permission identifier page and `system:api-resource:list`.
-- Resource upgrade documentation now includes V5 verification and rollback boundaries; the published `1.1.0 → 1.1.1` page remains limited to the already published tuple.
-- Module READMEs record the public captcha, authorization, resource and frontend upgrade impacts without introducing a blocking documentation gate.
+- 统一图形验证码行为，改进 CMS 发布历史模型，调整本地 rolling bootstrap，并同步 PMO/CLI 治理契约。
 
 ## Versions
 
-- `io.mango:mango-parent`, the non-application Maven reactor and `io.mango:mango-docs-bundle`: `1.1.1` → `1.1.2`.
-- Direct npm packages: `@mango/common` `2.1.4` → `2.2.0`; `@mango/rbac` `1.0.41` → `1.1.0`; `@mango/admin-pages` `1.1.2` → `1.2.0`; `@mango/file` `1.2.1` → `1.2.2`.
-- npm dependency closure: `@mango/admin-extension` `1.1.1` → `1.1.2`, `@mango/ai` `1.2.1` → `1.2.2`, `@mango/auth` `1.0.39` → `1.0.40`, `@mango/detail` `1.1.6` → `1.1.7`, `@mango/grid-layout` `1.0.28` → `1.0.29`, `@mango/grid-widgets` `1.0.34` → `1.0.35`, `@mango/home` `1.0.27` → `1.0.28`, `@mango/information` `1.1.1` → `1.1.2`, `@mango/site-shell` `2.0.0` → `2.0.1`, `@mango/system` `1.0.51` → `1.0.52`, `@mango/calendar` `1.0.53` → `1.0.54`, `@mango/cms` `1.0.42` → `1.0.43`, `@mango/job` `1.0.46` → `1.0.47`, `@mango/link` `1.0.39` → `1.0.40`, `@mango/notice` `1.0.58` → `1.0.59`, `@mango/numgen` `1.0.54` → `1.0.55`, `@mango/payment` `1.0.45` → `1.0.46`, `@mango/template` `1.0.54` → `1.0.55`, `@mango/workflow` `1.0.62` → `1.0.63`, `@mango/admin-shell` `1.0.84` → `1.0.85`, `@mango/workflow-business-example` `1.0.61` → `1.0.62`, `@mango/admin` `2.0.0` → `2.0.1` and `@mango/cli` `1.3.5` → `1.3.6`.
-- `@mango/pmo` remains `1.4.8`; no PMO source change is included in this batch.
+- Maven/docs target: `1.1.3`.
+- npm target: the machine-generated 27-package dependency closure recorded in `mango-ui/.changeset/release-plan.json`; unchanged compatibility coordinates remain listed there.
+- Previous successful release: Maven/docs `1.1.2`, npm closure from `v2026.10.27-maven-1.1.2-captcha-resource-release`.
 
 ## Published Packages
 
-1. Publish the sealed non-application Maven reactor and `io.mango:mango-docs-bundle:1.1.2` with the Captcha, Authorization and Resource Registry changes.
-2. Publish the machine-planned npm closure: `@mango/common@2.2.0`, `@mango/rbac@1.1.0`, `@mango/admin-pages@1.2.0`, `@mango/file@1.2.2`, dependent packages and `@mango/cli@1.3.6`.
-3. Verify both Maven registry roles and both npm registry roles, then run one clean Maven consumer and one clean CLI consumer without workspace links.
-4. Create Tag `v2026.10.27-maven-1.1.2-captcha-resource-release` and its GitHub Release only after consume verification succeeds.
+- Planned topology: Maven non-app reactor plus `io.mango:mango-docs-bundle:1.1.3`, followed by the machine-generated npm closure ending at `@mango/cli`.
+- The exact coordinate list and deliberate non-published app artifacts are sealed by the release plan; `mango-app/**` fat jars are excluded from the default Maven batch.
 
 ## Business Impact
 
-- Backend consumers: upgrade the full Maven tuple to `1.1.2`; V5 changes only `resource_registry.sync_mode`, but old-version rollback below the new enum values requires restoring the pre-upgrade database snapshot.
-- Captcha consumers: existing captcha flows remain available; new graphic captcha consumers use `/captcha/graphic` and the `GraphicCaptcha` component. Public graphic responses do not expose the answer through `extra`.
-- Authorization consumers: the new permission identifier page requires the V4 migration, resource synchronization and `system:api-resource:list`; fixed API declarations remain the authoritative route source when scans overlap.
-- Frontend consumers: upgrade the machine-planned npm closure together; `@mango/pmo` stays at `1.4.8`.
-- Fileproc consumers: the file compression documentation is synchronized; this commit does not add a new file runtime endpoint.
-- This batch does not deploy applications, switch traffic or alter business target tables through V5.
+- Backend consumers must apply the Resource, Authorization, System and CMS migrations with a database backup and a controlled maintenance window. Lock waits, migration timeout handling and rollback boundaries are documented in the generated upgrade guide.
+- Frontend consumers using dictionary, captcha, RBAC or CMS packages must upgrade the complete generated npm tuple. Existing FLAT dictionary behavior and the captcha compatibility endpoint remain available during migration.
+- PMO-managed consumers must upgrade `@mango/pmo` and `@mango/cli` together and refresh the generated baseline. Unrelated modules and app fat jars are not published by this batch.
 
 ## Upgrade Estimate
 
-- Audience: Mango `1.1.1` consumers using Resource Registry, Authorization API resources, Captcha or the affected frontend packages; older consumers should follow the generated guide and prior migration guides in order.
-- Engineering Effort: medium; upgrade the complete dependency tuple, run Flyway/resource verification, resync authorization resources and perform targeted captcha/RBAC regression.
-- Execution Window: 60 to 120 minutes, including migration, restart, resource synchronization and clean consumer verification; reserve extra time for Resource Registry lock waits.
-- Service Downtime: one planned restart window for Flyway V4/V5 and Bootstrap verification; no application traffic switch is included.
-- Rollback Effort: medium; package rollback is straightforward, but restore the pre-upgrade database snapshot before returning to a consumer that cannot read `SYNC_ALWAYS`/`SYNC_ONCE`.
-- Assumptions: MySQL 8, Java 21, Node 22.23.1, a backed-up consumer database and an operator able to verify Resource Registry and authorization state.
+- Audience: Mango backend consumers, Admin frontend consumers, and PMO-managed generated projects using Resource, Authorization, Captcha, System, CMS or dictionary packages.
+- Engineering Effort: 0.5-2 engineer-days per consumer, depending on database migrations, API Resource manual-control review, CMS publishing integration, and dictionary/captcha usage.
+- Execution Window: 1-4 hours per consumer; add a separate backup and verification window for production databases.
+- Service Downtime: Prefer a controlled backend restart and migration window; no planned downtime for frontend-only consumers, but CMS/Authorization migrations require the backend maintenance policy.
+- Rollback Effort: 0.5-1 engineer-day for code rollback plus database restore or forward-fix review; immutable published coordinates are never overwritten.
+- Assumptions: Consumers have a tested database backup, can run Flyway migrations, can restart the backend, and can verify permissions, tenants, publishing records and public captcha flows.
 
 ## Upgrade Notes
 
-1. Upgrade Maven/docs to `1.1.2` and install the machine-planned npm tuple, including `@mango/common@2.2.0`, `@mango/rbac@1.1.0`, `@mango/admin-pages@1.2.0`, `@mango/file@1.2.2` and `@mango/cli@1.3.6`.
-2. Read `mango-1.1.1-to-1.1.2-upgrade.md` before deployment. Keep the published `1.1.0-to-1.1.1` guide separate from this batch.
-3. Back up the database, run Flyway V4/V5, and confirm `AUTO`, `INIT_ONLY`, `MANUAL` and `LOCKED` counts are zero while target IDs, ownership, source hashes, versions and statuses remain unchanged.
-4. Confirm Resource Registry Bootstrap reaches `FINALIZED`; then verify the fixed API declaration and Controller scan produce one authoritative API Resource per method/path.
-5. Resync `AUTH_MENU`, confirm `system/api-resource:list`, and verify `/system/api-resource/index` opens with real API Resource data.
-6. For graphic captcha, verify `/captcha/graphic`, `/captcha/verify`, type/difficulty defaults, refresh behavior and failed-answer behavior. Existing arithmetic and other captcha flows must continue to pass.
+1. Upgrade Maven/docs to `1.1.3` before applying the generated npm closure.
+2. Back up each affected database. Review Authorization V5, System V2/V3, and CMS V3 migration effects, lock waits, timeout handling and restore boundaries in the generated `mango-1.1.2-to-1.1.3` guide.
+3. Upgrade the exact npm tuple from the release plan. Do not mix package versions from different release batches.
+4. Review API Resource manual takeover rows and permissions, dictionary TREE/group configuration, CMS publish-history consumers, and captcha endpoint usage.
+5. PMO-managed projects must run `mango pmo upgrade`, refresh the baseline, and run the locked PMO check.
 
 ## Verification
 
-- Plan: `mango release plan`, `check-release-plan` and release-notes checker pass for Maven `1.1.2`, the npm closure and the generated upgrade page.
-- Maven: build the sealed non-application reactor, run the Resource V5 migration contract and affected Captcha/Authorization integration tests, then resolve `mango-resource-core`, `mango-captcha-starter`, `mango-authorization-starter` and `mango-docs-bundle` from the consume registry.
-- npm: build and export-check the closure; resolve the sealed integrity for `@mango/common@2.2.0`, `@mango/rbac@1.1.0`, `@mango/admin-pages@1.2.0`, `@mango/file@1.2.2` and `@mango/cli@1.3.6` from both npm roles.
-- Consumer assertions: clean MySQL upgrade leaves no legacy sync modes; Bootstrap is `FINALIZED`; fixed API declarations win duplicate scans; permission identifier page is registered and authorized; graphic captcha generates and verifies; clean CLI generation has no workspace link.
-- Repository gates: catalog, release impact, PMO baseline, package exports, module README audits, generated backend gate, clean Maven consumer, clean npm consumer and GitHub Tag/Release back-check.
+- Run the release plan, package exports, catalog, PMO baseline, Maven affected-module tests, frontend package tests/builds, generated-project checks, and clean consumer checks recorded by `mango release prepare`.
+- Verify both Maven publish/consume registries and npm publish/consume registries for exact versions and checksums.
+- Verify Resource/Authorization migrations, API Resource access priority and release, dictionary FLAT/TREE/group behavior, captcha generation/validation, CMS publish/offline/re-publish history, and PMO/CLI installation in a clean consumer.
 
 ## Rollback
 
-- Published coordinates are immutable; roll consumers back through a new dependency change to Maven/docs `1.1.1`, the previous npm tuple and `@mango/cli@1.3.5`.
-- If V5 has already executed, restore the pre-upgrade database snapshot before using a consumer version that cannot read `SYNC_ALWAYS` or `SYNC_ONCE`; code rollback alone is insufficient.
-- V4 authorization columns are also part of the database history; follow the authorization module rollback guidance and do not edit historical Flyway migrations.
-- Do not republish or overwrite any `1.1.2` or npm `1.1.2`-batch coordinate.
+- Stop the consumer deployment, restore the pre-upgrade database backup when migration rollback is required, and revert consumer code to the previous complete tuple.
+- Do not overwrite or delete immutable Maven/npm coordinates. If a publication or registry read is ambiguous, use the same prepared candidate and the Mango release recovery state machine.
+- Re-run consumer verification after restore or forward-fix; retain migration and release evidence.
