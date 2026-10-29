@@ -1,6 +1,6 @@
 ---
 name: mango-submit-pr
-description: Submit a task pull request from either the Mango source repository or a Mango business repository. Use for the explicitly authorized local commit, task-branch push, PR creation or update, and remote readback sequence after implementation checks pass. Do not use to implement, review, approve, merge, release Mango components, or deploy a business application.
+description: Submit a task pull request from either the Mango source repository or a Mango business repository. Use for the explicitly authorized local commit, task-branch push, PR creation or update, and remote readback sequence after implementation checks pass. Review, approval, merge, release, and deployment are separate actions and require their own explicit authorization.
 ---
 
 # Mango PR Submission
@@ -15,7 +15,7 @@ Run PMO preflight with role `dev`, phase `verify`, the actual task, and every ch
 
 1. “提交 PR” or “创建 PR” authorizes the necessary local task Commit, Push of the current task branch, and creation or update of its PR as one operation.
 2. “提交代码” authorizes only the local Commit. “Push” authorizes only the named current task branch Push.
-3. Never infer merge, approval, force push, registry publication, Tag, GitHub Release, business deployment, traffic change, or rollback authorization.
+3. Never infer merge, approval, force push, registry publication, Tag, GitHub Release, business deployment, traffic change, or rollback authorization. Never merge a PR without explicit authorization.
 4. Return `ASK` when repository, task scope, base, head, remote, or authorization is materially ambiguous.
 
 ## Prepare The Exact Change
@@ -38,6 +38,6 @@ If a Runner exposes a deterministic failure that the local entry did not reprodu
 
 ## Stop Conditions
 
-`STOP` on unexplained changes, failed or missing required local checks, a required Runner check without a local equivalent, base conflicts, sensitive files, remote mismatch, failed Push, incorrect PR base/head, stale remote head, or an attempt to combine PR submission with merge/release/deployment.
+`STOP` on unexplained changes, failed or missing required local checks, a required Runner check without a local equivalent, base conflicts, sensitive files, remote mismatch, failed Push, incorrect PR base/head, stale remote head, or an unauthorized merge, release, or deployment attempt.
 
 With an empty context, return `ASK` for the repository/task, target base, and exact requested submission action. Never guess a branch or stage the whole repository.
