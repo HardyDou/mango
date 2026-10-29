@@ -37,6 +37,7 @@ Status: `PENDING`. This release is authorized by the user and is being prepared 
 
 - Maven/docs: `1.1.2` → `1.1.3`.
 - npm closure: 28 packages, from `@mango/common@2.3.0` through `@mango/cli@1.3.7`; the complete tuple is sealed in the release plan.
+- Exact npm targets: `@mango/common@2.3.0`, `@mango/admin-extension@1.1.3`, `@mango/ai@1.2.3`, `@mango/auth@1.0.41`, `@mango/file@1.2.3`, `@mango/detail@1.1.8`, `@mango/grid-layout@1.0.30`, `@mango/grid-widgets@1.0.36`, `@mango/home@1.0.29`, `@mango/information@1.1.3`, `@mango/pmo@1.4.9`, `@mango/rbac@1.2.0`, `@mango/site-shell@2.0.2`, `@mango/system@1.1.0`, `@mango/admin-pages@1.2.1`, `@mango/calendar@1.0.55`, `@mango/cms@1.1.0`, `@mango/job@1.0.48`, `@mango/link@1.0.41`, `@mango/notice@1.0.60`, `@mango/numgen@1.0.56`, `@mango/payment@1.0.47`, `@mango/template@1.0.56`, `@mango/workflow@1.0.64`, `@mango/admin-shell@1.1.0`, `@mango/workflow-business-example@1.0.63`, `@mango/admin@2.0.2`, `@mango/cli@1.3.7`.
 - `@mango/pmo`: `1.4.8` → `1.4.9`; `@mango/cli`: `1.3.6` → `1.3.7`.
 
 ### Published Packages
