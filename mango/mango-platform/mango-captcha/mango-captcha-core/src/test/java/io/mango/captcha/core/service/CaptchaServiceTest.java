@@ -337,6 +337,38 @@ class CaptchaServiceTest {
     }
 
     @Test
+    void send_withFixedSmsCode_enabled_savesConfiguredCodeWithoutProvider() {
+        ReflectionTestUtils.setField(captchaService, "fixedSmsCodeEnabled", true);
+        ReflectionTestUtils.setField(captchaService, "fixedSmsCode", "0000");
+
+        CaptchaSendRequest request = new CaptchaSendRequest();
+        request.setType(CaptchaType.SMS);
+        request.setTarget("13800138000");
+        request.setBusinessType("LOGIN");
+
+        String key = captchaService.send(request);
+
+        assertEquals("captcha:LOGIN:13800138000", key);
+        verify(kvStore).set(eq("captcha:LOGIN:13800138000"), eq("0000"), anyLong());
+        verifyNoInteractions(smsProvider);
+    }
+
+    @Test
+    void send_withFixedSmsCode_nonNumeric_rejectsConfiguration() {
+        ReflectionTestUtils.setField(captchaService, "fixedSmsCodeEnabled", true);
+        ReflectionTestUtils.setField(captchaService, "fixedSmsCode", "ABCD");
+
+        CaptchaSendRequest request = new CaptchaSendRequest();
+        request.setType(CaptchaType.SMS);
+        request.setTarget("13800138000");
+        request.setBusinessType("LOGIN");
+
+        assertThrows(BizException.class, () -> captchaService.send(request));
+        verifyNoInteractions(smsProvider);
+        verify(kvStore, never()).set(anyString(), anyString(), anyLong());
+    }
+
+    @Test
     void send_withEmailType_generatesCodeAndSaves() {
         when(emailProvider.send(anyString(), any(), any())).thenReturn(true);
 
