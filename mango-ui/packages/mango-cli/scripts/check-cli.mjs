@@ -716,6 +716,8 @@ try {
     assertDevWorkspaceRejectsNonCiFriendlyMavenPom(projectRoot);
     assertDevWorkspaceUsesMavenReactor(projectRoot);
     assertManagedBootstrapAdvancesFailedCandidate(projectRoot);
+    assertManagedBootstrapRollsStableGeneration(projectRoot);
+    assertManagedBootstrapRejectsActiveOldRuntime(projectRoot);
     assertLegacySpringApplicationSkipsManagedBootstrap(projectRoot);
     assertCommandDevWorkspaceAutoCreatesDatabase(projectRoot);
     assertDevWorkspaceReportsMissingMysql(projectRoot);
@@ -2801,6 +2803,156 @@ function assertManagedBootstrapAdvancesFailedCandidate(projectRoot) {
     !mavenCalls[2]?.includes('--mango.release.generation=2')
   ) {
     throw new Error(`fingerprint drift must advance a failed candidate generation:\n${calls.join('\n')}`);
+  }
+}
+
+function assertManagedBootstrapRollsStableGeneration(projectRoot) {
+  const fakeBinDir = join(projectRoot, '.runtime/rolling-bootstrap-bin');
+  const callLog = join(projectRoot, '.runtime/rolling-bootstrap-calls.log');
+  mkdirSync(fakeBinDir, { recursive: true });
+  writeFileSync(
+    join(fakeBinDir, 'mysql'),
+    [
+      '#!/usr/bin/env sh',
+      `echo "mysql:$*" >> "${callLog}"`,
+      'case "$*" in',
+      '  *"mango_bootstrap_control"*) printf "1\\t0\\n" ;;',
+      'esac',
+      'exit 0',
+      '',
+    ].join('\n'),
+  );
+  writeFileSync(
+    join(fakeBinDir, 'mvn'),
+    [
+      '#!/usr/bin/env sh',
+      `echo "mvn:$*" >> "${callLog}"`,
+      'case "$*" in',
+      '  *"-Dspring-boot.run.arguments=bootstrap verify"*)',
+      '    echo "BOOTSTRAP_FINGERPRINT_MISMATCH: scope=verify" >&2',
+      '    exit 1',
+      '    ;;',
+      '  *"bootstrap apply"*"--mango.bootstrap.strategy=rolling"*"--mango.release.generation=2"*) exit 0 ;;',
+      '  *"bootstrap finalize"*"--mango.bootstrap.strategy=rolling"*"--mango.release.generation=2"*) exit 0 ;;',
+      'esac',
+      'exit 17',
+      '',
+    ].join('\n'),
+  );
+  chmodExecutable(join(fakeBinDir, 'mysql'));
+  chmodExecutable(join(fakeBinDir, 'mvn'));
+  rmSync(callLog, { force: true });
+  rmSync(join(projectRoot, '.mango'), { recursive: true, force: true });
+  const result = spawnSync(
+    'env',
+    [
+      `MANGO_WORKSPACE_REGISTRY=${join(projectRoot, '.runtime/rolling-bootstrap-workspaces.json')}`,
+      `PATH=${fakeBinDir}:/usr/bin:/bin:/usr/sbin:/sbin`,
+      process.execPath,
+      cli,
+      'dev',
+      'start',
+      'mango-full-acceptance-service',
+    ],
+    {
+      cwd: projectRoot,
+      encoding: 'utf8',
+    },
+  );
+  const output = `${result.stdout}\n${result.stderr}`;
+  if (result.status === 0 || !output.includes('exited before becoming healthy')) {
+    throw new Error(`stable fingerprint drift must reach the runtime command after rolling finalize:\n${output}`);
+  }
+  const calls = waitForCallLogLines(callLog, 8);
+  const mavenCalls = calls.filter((line) => line.startsWith('mvn:'));
+  if (
+    mavenCalls.length !== 4 ||
+    !mavenCalls[0]?.includes('-Dspring-boot.run.arguments=bootstrap verify') ||
+    !mavenCalls[1]?.includes('-Dspring-boot.run.arguments=bootstrap apply') ||
+    !mavenCalls[1]?.includes('--mango.bootstrap.strategy=rolling') ||
+    !mavenCalls[1]?.includes('--mango.release.generation=2') ||
+    !mavenCalls[2]?.includes('-Dspring-boot.run.arguments=bootstrap finalize') ||
+    !mavenCalls[2]?.includes('--mango.bootstrap.strategy=rolling') ||
+    !mavenCalls[2]?.includes('--mango.release.generation=2') ||
+    !mavenCalls[3]?.includes('-Dspring-boot.run.arguments=runtime') ||
+    !mavenCalls[3]?.includes('--mango.release.generation=2')
+  ) {
+    throw new Error(`stable fingerprint drift must use rolling apply, finalize, then runtime:\n${calls.join('\n')}`);
+  }
+}
+
+function assertManagedBootstrapRejectsActiveOldRuntime(projectRoot) {
+  const fakeBinDir = join(projectRoot, '.runtime/rolling-bootstrap-active-runtime-bin');
+  const callLog = join(projectRoot, '.runtime/rolling-bootstrap-active-runtime-calls.log');
+  mkdirSync(fakeBinDir, { recursive: true });
+  writeFileSync(
+    join(fakeBinDir, 'mysql'),
+    [
+      '#!/usr/bin/env sh',
+      `echo "mysql:$*" >> "${callLog}"`,
+      'case "$*" in',
+      '  *"mango_bootstrap_control"*) printf "1\\t0\\n" ;;',
+      'esac',
+      'exit 0',
+      '',
+    ].join('\n'),
+  );
+  writeFileSync(
+    join(fakeBinDir, 'mvn'),
+    [
+      '#!/usr/bin/env sh',
+      `echo "mvn:$*" >> "${callLog}"`,
+      'case "$*" in',
+      '  *"-Dspring-boot.run.arguments=bootstrap verify"*)',
+      '    echo "BOOTSTRAP_FINGERPRINT_MISMATCH: scope=verify" >&2',
+      '    exit 1',
+      '    ;;',
+      '  *"bootstrap apply"*"--mango.bootstrap.strategy=rolling"*"--mango.release.generation=2"*) exit 0 ;;',
+      '  *"bootstrap finalize"*"--mango.bootstrap.strategy=rolling"*"--mango.release.generation=2"*)',
+      '    echo "OLD_RUNTIME_INSTANCES_ACTIVE: count=1" >&2',
+      '    exit 1',
+      '    ;;',
+      'esac',
+      'exit 17',
+      '',
+    ].join('\n'),
+  );
+  chmodExecutable(join(fakeBinDir, 'mysql'));
+  chmodExecutable(join(fakeBinDir, 'mvn'));
+  rmSync(callLog, { force: true });
+  rmSync(join(projectRoot, '.mango'), { recursive: true, force: true });
+  const result = spawnSync(
+    'env',
+    [
+      `MANGO_WORKSPACE_REGISTRY=${join(projectRoot, '.runtime/rolling-bootstrap-active-runtime-workspaces.json')}`,
+      `PATH=${fakeBinDir}:/usr/bin:/bin:/usr/sbin:/sbin`,
+      process.execPath,
+      cli,
+      'dev',
+      'start',
+      'mango-full-acceptance-service',
+    ],
+    {
+      cwd: projectRoot,
+      encoding: 'utf8',
+    },
+  );
+  const output = `${result.stdout}\n${result.stderr}`;
+  if (result.status === 0 || !output.includes('bootstrap finalize failed')) {
+    throw new Error(`active old Runtime must block rolling finalize:\n${output}`);
+  }
+  const calls = waitForCallLogLines(callLog, 6);
+  const mavenCalls = calls.filter((line) => line.startsWith('mvn:'));
+  if (
+    mavenCalls.length !== 3 ||
+    !mavenCalls[0]?.includes('-Dspring-boot.run.arguments=bootstrap verify') ||
+    !mavenCalls[1]?.includes('-Dspring-boot.run.arguments=bootstrap apply') ||
+    !mavenCalls[1]?.includes('--mango.bootstrap.strategy=rolling') ||
+    !mavenCalls[2]?.includes('-Dspring-boot.run.arguments=bootstrap finalize') ||
+    !mavenCalls[2]?.includes('--mango.bootstrap.strategy=rolling') ||
+    mavenCalls.some((line) => line.includes('-Dspring-boot.run.arguments=runtime'))
+  ) {
+    throw new Error(`active old Runtime must prevent runtime startup after failed finalize:\n${calls.join('\n')}`);
   }
 }
 

@@ -271,8 +271,11 @@ class BootstrapResourcePerformanceIntegrationTest {
                         dataSource, context.getBean(JdbcBootstrapRepository.class),
                         registryProperties, collector, registryService, objectMapper);
                 long workflowChangeStarted = System.nanoTime();
+                BootstrapOutcome workflowChangeApplyOutcome = workflowChangeOrchestrator.execute(
+                        request(BootstrapAction.APPLY, 3L, BootstrapStrategy.ROLLING));
+                assertThat(workflowChangeApplyOutcome.state()).isEqualTo("EXPANDED");
                 BootstrapOutcome workflowChangeOutcome = workflowChangeOrchestrator.execute(
-                        request(BootstrapAction.APPLY, 3L));
+                        request(BootstrapAction.FINALIZE, 3L, BootstrapStrategy.ROLLING));
                 long workflowChangeElapsed = elapsedMillis(workflowChangeStarted);
 
                 assertThat(workflowChangeOutcome.state()).isEqualTo("FINALIZED");
@@ -459,14 +462,18 @@ class BootstrapResourcePerformanceIntegrationTest {
     }
 
     private BootstrapInvocation request(BootstrapAction action) {
-        return request(action, 1L);
+        return request(action, 1L, BootstrapStrategy.COLD);
     }
 
     private BootstrapInvocation request(BootstrapAction action, long generation) {
+        return request(action, generation, BootstrapStrategy.COLD);
+    }
+
+    private BootstrapInvocation request(BootstrapAction action, long generation, BootstrapStrategy strategy) {
         return new BootstrapInvocation(
                 "bootstrap-resource-performance", "performance-release-" + generation,
                 "performance-revision-" + generation,
-                generation, null, action, BootstrapStrategy.COLD, null, 30);
+                generation, null, action, strategy, null, 30);
     }
 
     private MangoContextSnapshot performanceContext() {
