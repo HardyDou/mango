@@ -24,8 +24,6 @@ const PLACEHOLDERS = new Set([
   'na',
   'none / list each skipped type and reason',
   'confirmed / not applicable - evidence',
-  'm01=create; m09=enable',
-  'm01 - evidence; m09 - evidence',
   'tbd',
   'todo',
 ]);
@@ -82,8 +80,11 @@ function parseMeasureEntries(value, separatorPattern, entryPattern) {
   return entries;
 }
 
+const SELECTION_ENTRY_PATTERN = /^(M(?:0[1-9]|1[0-6]))\s*=\s*([A-Z_]+)$/u;
+const EVIDENCE_ENTRY_PATTERN = /^(M(?:0[1-9]|1[0-6]))\s*[-:：]\s*(.+)$/u;
+
 function parseSelections(value) {
-  const entries = parseMeasureEntries(value, /[;；,，]/u, /^(M(?:0[1-9]|1[0-6]))\s*=\s*([A-Z_]+)$/u);
+  const entries = parseMeasureEntries(value, /[;；,，]/u, SELECTION_ENTRY_PATTERN);
   if (!entries) return null;
   for (const [id, selectedValue] of entries) {
     if (!ASSURANCE_VALUES.get(id)?.includes(selectedValue)) return null;
@@ -92,7 +93,21 @@ function parseSelections(value) {
 }
 
 function parseEvidence(value) {
-  return parseMeasureEntries(value, /[;；]/u, /^(M(?:0[1-9]|1[0-6]))\s*[-:：]\s*(.+)$/u);
+  return parseMeasureEntries(value, /[;；]/u, EVIDENCE_ENTRY_PATTERN);
+}
+
+function describeMeasureFailure(value, separatorPattern, entryPattern, allowedValues) {
+  if (isPlaceholder(value)) return 'received an empty or placeholder value';
+  for (const item of value.split(separatorPattern).map(entry => entry.trim()).filter(Boolean)) {
+    const match = entryPattern.exec(item);
+    if (!match) return `invalid entry format: "${item}"`;
+    if (isPlaceholder(match[2])) return `entry "${item}" contains a placeholder value`;
+    const id = match[1].toUpperCase();
+    if (allowedValues && !allowedValues.get(id)?.includes(match[2])) {
+      return `entry "${item}" uses an unsupported value for ${id}`;
+    }
+  }
+  return 'contains duplicate or otherwise invalid entries';
 }
 
 function parseNonDowngradableFacts(value) {
@@ -185,10 +200,29 @@ export function validateRiskVerification(markdown) {
       failures.push('"Assurance baseline" must use "RESOLVED - policy facts and exception evidence" or a human-confirmed legacy baseline');
     }
     if (!selections || selections.size === 0) {
-      failures.push('"Assurance selections" must list exact resolved M01-M16 values, for example M01=CREATE; M09=ENABLE');
+      const detail = describeMeasureFailure(
+        fieldValue(section, fieldLabel('assuranceSelections')),
+        /[;；,，]/u,
+        SELECTION_ENTRY_PATTERN,
+        ASSURANCE_VALUES,
+      );
+      failures.push(
+        '"Assurance selections" must list exact resolved M01-M16 values, for example M01=CREATE; M09=ENABLE'
+          + (detail ? `: ${detail}` : ''),
+      );
     }
     if (isPlaceholder(assuranceReasoning)) failures.push('"Assurance reasoning" must explain why the confirmed set protects the task goal');
-    if (!evidence) failures.push('"Assurance evidence" must use "Mxx - concrete evidence" entries separated by semicolons');
+    if (!evidence) {
+      const detail = describeMeasureFailure(
+        fieldValue(section, fieldLabel('assuranceEvidence')),
+        /[;；]/u,
+        EVIDENCE_ENTRY_PATTERN,
+      );
+      failures.push(
+        '"Assurance evidence" must use "Mxx - concrete evidence" entries separated by semicolons'
+          + (detail ? `: ${detail}` : ''),
+      );
+    }
     if (isPlaceholder(residualRisks)) failures.push('"Residual risks" must be concrete or None');
 
     if (selections && evidence) {
