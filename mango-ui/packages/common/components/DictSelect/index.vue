@@ -1,7 +1,44 @@
 <template>
   <div class="dict-select">
+    <el-radio-group
+      v-if="shape === 'FLAT' && variant === 'radio-button'"
+      :class="['dict-select__button-group', buttonClass]"
+      :style="buttonStyle"
+      :model-value="buttonModelValue"
+      :disabled="disabled"
+      @update:model-value="handleUpdate"
+      @change="handleChange"
+    >
+      <el-radio-button v-if="showAnyOption" :value="anyOptionValue">{{ anyOptionLabel }}</el-radio-button>
+      <el-radio-button
+        v-for="item in flatOptions"
+        :key="item.value"
+        :value="numberValue ? Number(item.value) : item.value"
+      >
+        {{ item.label }}
+      </el-radio-button>
+    </el-radio-group>
+
+    <el-checkbox-group
+      v-else-if="shape === 'FLAT' && variant === 'checkbox-button'"
+      :class="['dict-select__button-group', buttonClass]"
+      :style="buttonStyle"
+      :model-value="buttonModelValue"
+      :disabled="disabled"
+      @update:model-value="handleUpdate"
+      @change="handleChange"
+    >
+      <el-checkbox-button
+        v-for="item in flatOptions"
+        :key="item.value"
+        :value="numberValue ? Number(item.value) : item.value"
+      >
+        {{ item.label }}
+      </el-checkbox-button>
+    </el-checkbox-group>
+
     <el-select
-      v-if="shape === 'FLAT'"
+      v-else-if="shape === 'FLAT'"
       ref="flatSelectRef"
       class="dict-select__control"
       :model-value="modelValue"
@@ -9,7 +46,7 @@
       :clearable="clearable"
       :disabled="disabled"
       :loading="loading"
-      :multiple="multiple"
+      :multiple="isFlatMultiple"
       :filterable="filterable"
       :collapse-tags="collapseTags"
       :collapse-tags-tooltip="collapseTagsTooltip"
@@ -19,7 +56,7 @@
       @change="handleChange"
       @clear="handleClear"
     >
-      <el-option v-if="showAnyOption && !multiple" :label="anyOptionLabel" :value="anyOptionValue" />
+      <el-option v-if="showAnyOption && !isFlatMultiple" :label="anyOptionLabel" :value="anyOptionValue" />
       <el-option
         v-for="item in flatOptions"
         :key="item.value"
@@ -77,10 +114,10 @@
 </template>
 
 <script setup lang="ts" name="DictSelect">
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, type StyleValue } from 'vue';
 import { listDictOptions, listDictTree, type DictOption, type DictTreeOption } from '../../api/dict';
 import { createDictValueFilter, filterDictTree, indexDictTree } from '../../utils/dictTree';
-import type { DictSelectDisplayFormat, DictSelectValue, DictShape } from './types';
+import type { DictSelectDisplayFormat, DictSelectValue, DictSelectVariant, DictShape } from './types';
 
 interface DictSelectTreeOption extends DictTreeOption {
   disabled?: boolean;
@@ -101,6 +138,9 @@ const props = withDefaults(defineProps<{
   modelValue?: DictSelectValue;
   dictType: string;
   shape?: DictShape;
+  variant?: DictSelectVariant;
+  buttonClass?: string;
+  buttonStyle?: StyleValue;
   placeholder?: string;
   clearable?: boolean;
   disabled?: boolean;
@@ -126,6 +166,7 @@ const props = withDefaults(defineProps<{
 }>(), {
   modelValue: undefined,
   shape: 'FLAT',
+  variant: 'select',
   placeholder: '请选择',
   clearable: true,
   disabled: false,
@@ -164,6 +205,17 @@ const loading = ref(false);
 const errorMessage = ref('');
 const flatSelectRef = ref<SelectInstance>();
 const treeSelectRef = ref<TreeSelectInstance>();
+
+const isFlatMultiple = computed(() => {
+  if (props.shape !== 'FLAT') return props.multiple;
+  if (props.variant === 'radio-button') return false;
+  if (props.variant === 'checkbox-button') return true;
+  return props.multiple;
+});
+const buttonModelValue = computed(() => {
+  if (props.variant === 'checkbox-button' && !Array.isArray(props.modelValue)) return [];
+  return props.modelValue;
+});
 
 const valueFilter = computed(() =>
   createDictValueFilter({
@@ -299,7 +351,7 @@ function emitHalfCheckedChange() {
 }
 
 function normalizeValue(value: DictSelectValue): DictSelectValue {
-  if (props.showAnyOption && !props.multiple && value === props.anyOptionValue) return undefined;
+  if (props.showAnyOption && !isFlatMultiple.value && value === props.anyOptionValue) return undefined;
   if (props.shape === 'FLAT' && props.numberValue && Array.isArray(value)) return value.map(Number);
   if (props.shape === 'FLAT' && props.numberValue && value !== undefined && value !== '') return Number(value);
   return value;
@@ -340,7 +392,7 @@ function getHalfCheckedNodes() {
 }
 
 function clear() {
-  emit('update:modelValue', props.multiple ? [] : undefined);
+  emit('update:modelValue', isFlatMultiple.value ? [] : undefined);
   halfCheckedValues.clear();
   emit('clear');
 }

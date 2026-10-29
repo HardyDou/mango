@@ -59,6 +59,42 @@
       </div>
     </section>
 
+    <section id="button" class="doc-section">
+      <h2>按钮样式</h2>
+      <p>FLAT 字典可以按表单密度选择下拉、单选按钮或多选按钮样式；按钮样式仍使用同一套字典接口和 value。</p>
+      <div class="demo-block">
+        <div class="demo-source">
+          <div class="button-style-row">
+            <div class="button-style-item">
+              <div class="flat-select-label">单选按钮</div>
+              <DictSelect
+                v-model="flatRadioValue"
+                dict-type="sys_normal_disable"
+                variant="radio-button"
+                button-class="dict-button-radio"
+                data-action="flat-radio-button"
+              />
+            </div>
+            <div class="button-style-item">
+              <div class="flat-select-label">多选按钮</div>
+              <DictSelect
+                v-model="flatCheckboxValues"
+                dict-type="sys_normal_disable"
+                variant="checkbox-button"
+                button-class="dict-button-checkbox"
+                data-action="flat-checkbox-button"
+              />
+            </div>
+          </div>
+        </div>
+        <div class="op-btns" data-action="toggle-button-code" @click="toggleCode('button')">
+          <el-icon><component :is="codeVisible.button ? ArrowUp : ArrowDown" /></el-icon>
+          <span>{{ codeVisible.button ? '隐藏代码' : '显示代码' }}</span>
+        </div>
+        <DemoCodeBlock v-show="codeVisible.button" :code="buttonCode" />
+      </div>
+    </section>
+
     <section id="tree-single" class="doc-section">
       <h2>树形字典</h2>
       <p>内置示例字典为 system_demo_tree。以下使用同一个「物品分类」字典，展示单选、多选和路径回显。</p>
@@ -405,6 +441,7 @@ import DemoDocLayout from '@mango/admin-shell/dev-demo-layout';
 
 const tocItems = [
   { id: 'flat', label: '基础用法' },
+  { id: 'button', label: '按钮样式' },
   { id: 'tree-single', label: '树形字典' },
   { id: 'tree-multiple', label: '树形字典-选择策略' },
   { id: 'display', label: '回显模式：DictDisplay' },
@@ -417,6 +454,8 @@ const tocItems = [
 
 const flatSingleValue = ref<string>('1');
 const flatMultipleValues = ref<string[]>(['1', '0']);
+const flatRadioValue = ref<string>('1');
+const flatCheckboxValues = ref<string[]>(['1']);
 const treeSingleValue = ref<string>('paper');
 const treeFormatValue = ref<string>('paper');
 const treeSimpleMultipleValues = ref<string[]>(['paper']);
@@ -432,6 +471,7 @@ const treeMultipleLeafOnly = ref(false);
 const treeMultipleRef = ref<InstanceType<typeof DictSelect>>();
 const codeVisible = ref<Record<string, boolean>>({
   flat: false,
+  button: false,
   treeSingle: false,
   treeMultiple: false,
   slots: false,
@@ -463,6 +503,32 @@ const flatCode = `<div class="form-row">
     clearable
   />
 </div>`;
+
+const buttonCode = `<div class="form-row">
+  <!-- 单选按钮：modelValue 为单个 value -->
+  <DictSelect
+    v-model="status"
+    dict-type="sys_normal_disable"
+    variant="radio-button"
+    button-class="dict-button-radio"
+  />
+
+  <!-- 多选按钮：modelValue 为 value 数组 -->
+  <DictSelect
+    v-model="statuses"
+    dict-type="sys_normal_disable"
+    variant="checkbox-button"
+    button-class="dict-button-checkbox"
+  />
+
+</div>
+
+<style scoped>
+.dict-button-radio :deep(.el-radio-button__inner),
+.dict-button-checkbox :deep(.el-checkbox-button__inner) {
+  border-radius: 6px;
+}
+</style>`;
 
 const treeSingleCode = `<div class="form-row">
   <!-- 默认单选：仅允许选择叶子节点 -->
@@ -577,7 +643,9 @@ const treeMultipleCode = `<DictSelect
 />`;
 
 const propsTable = [
-  { component: 'DictSelect', name: 'shape', description: '选择字典形态；FLAT 使用下拉选择，TREE 使用树形选择。', type: "'FLAT' | 'TREE'", defaultValue: 'FLAT' },
+  { component: 'DictSelect', name: 'shape', description: '选择字典形态；FLAT 使用平铺字典，TREE 使用树形选择。', type: "'FLAT' | 'TREE'", defaultValue: 'FLAT' },
+  { component: 'DictSelect', name: 'variant', description: 'FLAT 的选择样式；select 为下拉，radio-button 为单选按钮，checkbox-button 为多选按钮。', type: "'select' | 'radio-button' | 'checkbox-button'", defaultValue: 'select' },
+  { component: 'DictSelect', name: 'buttonClass / buttonStyle', description: '按钮组外层 class 和内联样式；可通过 class 的后代选择器自定义 Element Plus 按钮内部样式。', type: 'string / StyleValue', defaultValue: 'undefined' },
   { component: 'DictSelect', name: 'dictType', description: '字典编码；shape=FLAT 调用 options，shape=TREE 调用 tree。', type: 'string', defaultValue: '必填' },
   { component: 'DictSelect', name: 'modelValue', description: '单选 value 或多选 value[]；已有值会自动回显。', type: 'string | string[]', defaultValue: 'undefined' },
   { component: 'DictSelect', name: 'multiple', description: '是否启用多选；TREE 多选显示复选框和半选中状态。', type: 'boolean', defaultValue: 'false' },
@@ -635,6 +703,22 @@ function toggleCode(key: string) {
 
 .flat-select-item--wide {
   min-width: 240px;
+}
+
+.button-style-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.button-style-item {
+  min-width: 280px;
+}
+
+.button-style-item :deep(.dict-button-radio .el-radio-button__inner),
+.button-style-item :deep(.dict-button-checkbox .el-checkbox-button__inner) {
+  border-radius: 6px;
 }
 
 .flat-select-label {

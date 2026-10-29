@@ -32,6 +32,46 @@ const ElOptionStub = defineComponent({
   },
 });
 
+const ElRadioGroupStub = defineComponent({
+  name: 'ElRadioGroup',
+  props: {
+    modelValue: { default: undefined },
+    disabled: { type: Boolean, default: false },
+  },
+  emits: ['update:modelValue', 'change'],
+  setup(props, { slots }) {
+    return () => h('div', { class: 'el-radio-group', 'data-value': String(props.modelValue) }, slots.default?.());
+  },
+});
+
+const ElRadioButtonStub = defineComponent({
+  name: 'ElRadioButton',
+  props: { value: { default: undefined } },
+  setup(props, { slots }) {
+    return () => h('span', { class: 'el-radio-button', 'data-value': String(props.value) }, slots.default?.());
+  },
+});
+
+const ElCheckboxGroupStub = defineComponent({
+  name: 'ElCheckboxGroup',
+  props: {
+    modelValue: { default: undefined },
+    disabled: { type: Boolean, default: false },
+  },
+  emits: ['update:modelValue', 'change'],
+  setup(props, { slots }) {
+    return () => h('div', { class: 'el-checkbox-group', 'data-value': JSON.stringify(props.modelValue) }, slots.default?.());
+  },
+});
+
+const ElCheckboxButtonStub = defineComponent({
+  name: 'ElCheckboxButton',
+  props: { value: { default: undefined } },
+  setup(props, { slots }) {
+    return () => h('span', { class: 'el-checkbox-button', 'data-value': String(props.value) }, slots.default?.());
+  },
+});
+
 const halfCheckedNodesMock: any[] = [];
 
 const ElTreeSelectStub = defineComponent({
@@ -98,6 +138,10 @@ const ElAlertStub = defineComponent({
 const stubs = {
   'el-select': ElSelectStub,
   'el-option': ElOptionStub,
+  'el-radio-group': ElRadioGroupStub,
+  'el-radio-button': ElRadioButtonStub,
+  'el-checkbox-group': ElCheckboxGroupStub,
+  'el-checkbox-button': ElCheckboxButtonStub,
   'el-tree-select': ElTreeSelectStub,
   'el-alert': ElAlertStub,
 };
@@ -145,6 +189,43 @@ describe('DictSelect', () => {
     expect(listDictTree).not.toHaveBeenCalled();
     expect(wrapper.find('.el-select').exists()).toBe(true);
     expect(wrapper.findAll('.el-option').map((item) => item.text())).toEqual(['启用', '禁用']);
+  });
+
+  it('FLAT radio-button 样式渲染单选按钮并透传选择事件', async () => {
+    const wrapper = mount(DictSelect, {
+      props: {
+        dictType: 'sys_normal_disable',
+        shape: 'FLAT',
+        variant: 'radio-button',
+        modelValue: '1',
+        showAnyOption: true,
+      },
+      global: { stubs },
+    });
+    await flush();
+
+    expect(wrapper.find('.el-radio-group').exists()).toBe(true);
+    expect(wrapper.findAll('.el-radio-button').map((item) => item.text())).toEqual(['不限', '启用', '禁用']);
+    wrapper.findComponent(ElRadioGroupStub).vm.$emit('update:modelValue', '0');
+    expect(wrapper.emitted('update:modelValue')).toEqual([['0']]);
+  });
+
+  it('FLAT checkbox-button 样式渲染多选按钮并使用数组值', async () => {
+    const wrapper = mount(DictSelect, {
+      props: {
+        dictType: 'sys_normal_disable',
+        shape: 'FLAT',
+        variant: 'checkbox-button',
+        modelValue: ['1'],
+      },
+      global: { stubs },
+    });
+    await flush();
+
+    expect(wrapper.find('.el-checkbox-group').attributes('data-value')).toBe('["1"]');
+    expect(wrapper.findAll('.el-checkbox-button').map((item) => item.text())).toEqual(['启用', '禁用']);
+    wrapper.findComponent(ElCheckboxGroupStub).vm.$emit('change', ['1', '0']);
+    expect(wrapper.emitted('change')?.[0]?.[0]).toEqual(['1', '0']);
   });
 
   it('TREE 形态加载树形字典并按 label 回显', async () => {
