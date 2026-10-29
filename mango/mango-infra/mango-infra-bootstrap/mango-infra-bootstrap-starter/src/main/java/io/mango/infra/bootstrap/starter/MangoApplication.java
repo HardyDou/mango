@@ -67,7 +67,6 @@ public final class MangoApplication {
         Map<String, Object> bootstrapDefaults = new LinkedHashMap<>();
         bootstrapDefaults.put("mango.bootstrap.mode", "bootstrap");
         bootstrapDefaults.put("mango.bootstrap.action", "apply");
-        bootstrapDefaults.put("mango.bootstrap.strategy", "cold");
         bootstrapDefaults.put("mango.bootstrap.local-startup", "true");
         bootstrapDefaults.put("spring.flyway.enabled", "false");
         bootstrapDefaults.put("spring.task.scheduling.enabled", "false");

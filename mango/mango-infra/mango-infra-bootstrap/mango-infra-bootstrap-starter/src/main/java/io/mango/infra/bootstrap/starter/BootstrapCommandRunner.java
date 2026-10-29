@@ -90,13 +90,42 @@ final class BootstrapCommandRunner implements ApplicationRunner, Ordered {
         boolean reuseStable = control != null
                 && control.stableGeneration() > 0
                 && fingerprint.equals(control.stableFingerprint());
-        long generation = reuseStable ? control.stableGeneration() : nextGeneration(control);
-        BootstrapOutcome outcome = reuseStable
-                ? new BootstrapOutcome(null, fingerprint, "FINALIZED", 0, 0)
-                : orchestrator.execute(new BootstrapInvocation(
-                        environmentKey, releaseId, revision, generation, null,
-                        BootstrapAction.APPLY, BootstrapStrategy.COLD, bootstrapProperties.getPhase(),
-                        bootstrapProperties.getLockTimeoutSeconds()));
+        boolean rollingUpgrade = control != null
+                && control.stableGeneration() > 0
+                && !reuseStable;
+        boolean retryRollingFinalize = rollingUpgrade
+                && control.candidateGeneration() != null
+                && control.candidateGeneration() > control.stableGeneration()
+                && fingerprint.equals(control.candidateFingerprint())
+                && ("EXPANDED".equals(control.state())
+                || "FINALIZING".equals(control.state())
+                || "FINALIZE_FAILED".equals(control.state()));
+        long generation = reuseStable
+                ? control.stableGeneration()
+                : retryRollingFinalize ? control.candidateGeneration() : nextGeneration(control);
+        BootstrapOutcome outcome;
+        if (reuseStable) {
+            outcome = new BootstrapOutcome(null, fingerprint, "FINALIZED", 0, 0);
+        } else if (retryRollingFinalize) {
+            outcome = orchestrator.execute(new BootstrapInvocation(
+                    environmentKey, releaseId, revision, generation, null,
+                    BootstrapAction.FINALIZE, BootstrapStrategy.ROLLING, bootstrapProperties.getPhase(),
+                    bootstrapProperties.getLockTimeoutSeconds()));
+        } else if (rollingUpgrade) {
+            orchestrator.execute(new BootstrapInvocation(
+                    environmentKey, releaseId, revision, generation, null,
+                    BootstrapAction.APPLY, BootstrapStrategy.ROLLING, bootstrapProperties.getPhase(),
+                    bootstrapProperties.getLockTimeoutSeconds()));
+            outcome = orchestrator.execute(new BootstrapInvocation(
+                    environmentKey, releaseId, revision, generation, null,
+                    BootstrapAction.FINALIZE, BootstrapStrategy.ROLLING, bootstrapProperties.getPhase(),
+                    bootstrapProperties.getLockTimeoutSeconds()));
+        } else {
+            outcome = orchestrator.execute(new BootstrapInvocation(
+                    environmentKey, releaseId, revision, generation, null,
+                    BootstrapAction.APPLY, BootstrapStrategy.COLD, bootstrapProperties.getPhase(),
+                    bootstrapProperties.getLockTimeoutSeconds()));
+        }
         if (!"FINALIZED".equals(outcome.state())) {
             throw new IllegalStateException("MANGO_LOCAL_BOOTSTRAP_NOT_FINALIZED: state=" + outcome.state());
         }

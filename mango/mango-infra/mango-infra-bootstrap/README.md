@@ -90,8 +90,8 @@ MangoApplication.run(MyApplication.class, args);
 
 | 场景 | 序列 |
 |------|------|
-| 空库首次发布 | `plan` → `apply --strategy=cold` → `verify` → 接流 |
-| 版本升级 | `plan` → `apply --strategy=rolling` → 接流并排空旧 generation → `finalize` → `verify` |
+| 空库首次发布 | `plan` → `apply --mango.bootstrap.strategy=cold` → `verify` → 接流 |
+| 版本升级 | `plan` → `apply --mango.bootstrap.strategy=rolling` → 接流并排空旧 generation → `finalize --mango.bootstrap.strategy=rolling` → `verify` |
 | 同一构建版本重发 | 沿用升级序列；`apply` 和 `finalize` 都幂等返回，不需要任何预检 |
 | 数据重建（RESET） | `verify` |
 
@@ -160,7 +160,7 @@ MangoApplication.run(MyApplication.class, args);
 
 ## 10. 快速开始
 
-本地 Mango 主仓、CLI 新生成项目以及已迁移到 `MangoApplication.run` 的业务项目，使用 `mango dev start backend` 或直接在 IDEA 运行无参数 `main()` 时，都会在当前 worktree 的 `mango_dev_*` 独立数据库中自动准备 bootstrap 回执、执行必要 Flyway 增量迁移并启动 runtime。两种入口复用同一 Bootstrap/Runtime 校验；CLI 会向进程传递 `MANGO_LOCAL_LIFECYCLE_KEY`，保证 lifecycle identity 一致。存量 `SpringApplication.run` 项目继续走兼容直启，不会被 CLI 自动切换生命周期。CLI 与 IDEA 的本地编排不替代测试、预发或生产发布流程；这些环境仍按下列命令显式管理 generation、策略和切流。
+本地 Mango 主仓、CLI 新生成项目以及已迁移到 `MangoApplication.run` 的业务项目，使用 `mango dev start backend` 或直接在 IDEA 运行无参数 `main()` 时，都会在当前 worktree 的 `mango_dev_*` 独立数据库中自动准备 bootstrap 回执、执行必要 Flyway 增量迁移并启动 runtime。空库使用 cold apply；已有 stable generation 且 fingerprint 变化时使用 rolling apply，再执行 rolling finalize，保留已有业务数据。finalize 会检查旧 Runtime lease，旧实例未排空时启动失败，不会把候选 generation 切为 stable。两种入口复用同一 Bootstrap/Runtime 校验；CLI 会向进程传递 `MANGO_LOCAL_LIFECYCLE_KEY`，保证 lifecycle identity 一致。存量 `SpringApplication.run` 项目继续走兼容直启，不会被 CLI 自动切换生命周期。CLI 与 IDEA 的本地编排不替代测试、预发或生产发布流程；这些环境仍按下列命令显式管理 generation、策略和切流。
 
 本地托管入口从当前目录向上查找 `.mango/dev-workspace.env`，读取 workspace、数据库和端口配置；当 `MANGO_DB_AUTO_CREATE=true` 时，仅允许自动创建 `mango_dev_*` 数据库。应用仍必须通过 `MangoApplication.run(App.class, args)` 接入，不能用 `SpringApplication.run` 绕过 Mango 门禁。显式传入 `bootstrap` 或 `runtime` 时保持生产生命周期语义，不启用本地托管。
 
@@ -181,8 +181,8 @@ java -jar app.jar runtime --mango.release.id=2026.07.27 \
 后续滚动升级：
 
 ```text
-bootstrap plan -> bootstrap apply --strategy=rolling -> 启动新 Runtime
--> 切流并排空旧 Runtime -> bootstrap finalize
+bootstrap plan -> bootstrap apply --mango.bootstrap.strategy=rolling -> 启动新 Runtime
+-> 切流并排空旧 Runtime -> bootstrap finalize --mango.bootstrap.strategy=rolling
 ```
 
 finalize 前撤回候选版本：

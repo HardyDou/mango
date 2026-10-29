@@ -216,7 +216,7 @@ CLI 从当前目录向上查找 `mango.dev.json`。本地工作区分配事实�
 - 检测到多个后端或前端 app 时，`groups.backend`、`groups.frontend` 会包含全部 app，`groups.default` 只取第一个后端和第一个前端，并在计划中提示人工确认。
 - 已存在业务自有 `mango.dev.json` 时不会覆盖；需要本机临时改路径时使用 `.mango/dev-workspace.local.json`。
 
-新模板和自动生成的 Spring Boot 清单通过 `processMode` 声明 `runtime`。`mango dev start` 发现后端源码使用 `MangoApplication.run`（或 app 显式配置 `mangoLifecycle: true`）时，会在 worktree 独立的 `mango_dev_*` 数据库上编排本地生命周期：空库先执行 generation 1 的 `bootstrap apply --mango.bootstrap.strategy=cold`；已有稳定 generation 先执行 `bootstrap verify`，fingerprint 未变化时直接复用，发生 `BOOTSTRAP_FINGERPRINT_MISMATCH` 时使用下一 generation 重新 cold apply；最后以相同 environment、release、revision 和 generation 启动 `runtime`。直接在 IDEA 运行 `MangoApplication.run(App.class)` 的无参数 `main()` 复用同一托管生命周期、数据库边界和 identity 合同，不需要手工填写 lifecycle、release、generation 或 fingerprint 参数。多后端项目按 `workspaceId + appName` 隔离 lifecycle key，避免共享数据库时串用回执。自动 bootstrap 前还会校验已解析的 MySQL datasource 必须明确指向当前 `mango_dev_*` 数据库，缺失或不一致时直接拒绝，避免误操作其它数据库。
+新模板和自动生成的 Spring Boot 清单通过 `processMode` 声明 `runtime`。`mango dev start` 发现后端源码使用 `MangoApplication.run`（或 app 显式配置 `mangoLifecycle: true`）时，会在 worktree 独立的 `mango_dev_*` 数据库上编排本地生命周期：空库先执行 generation 1 的 `bootstrap apply --mango.bootstrap.strategy=cold`；已有稳定 generation 先执行 `bootstrap verify`，fingerprint 未变化时直接复用，发生 `BOOTSTRAP_FINGERPRINT_MISMATCH` 时使用下一 generation 执行 `bootstrap apply --mango.bootstrap.strategy=rolling`，再执行 `bootstrap finalize --mango.bootstrap.strategy=rolling`，最后以相同 environment、release、revision 和 generation 启动 `runtime`。finalize 会检查旧 Runtime lease，旧实例未排空时启动失败而不切换候选 generation。直接在 IDEA 运行 `MangoApplication.run(App.class)` 的无参数 `main()` 复用同一托管生命周期、数据库边界和 identity 合同，不需要手工填写 lifecycle、release、generation 或 fingerprint 参数；已有 stable generation 且 fingerprint 变化时同样执行 rolling apply + finalize。多后端项目按 `workspaceId + appName` 隔离 lifecycle key，避免共享数据库时串用回执。自动 bootstrap 前还会校验已解析的 MySQL datasource 必须明确指向当前 `mango_dev_*` 数据库，缺失或不一致时直接拒绝，避免误操作其它数据库。
 
 旧 workspace 可能在 `MANGO_BACKEND_ADDITIONAL_ARGS` 的同一参数字符串开头重复写入与 `processMode` 一致的 `runtime`。CLI 会兼容移除这一个旧前缀并保留后续实际参数；独立的 `runtime`、冲突的 `bootstrap`、参数中其它位置或多次出现的模式仍会失败。新配置只通过 `processMode` 声明模式，不应在 `app.args` 或额外参数中重复填写。
 
@@ -561,7 +561,7 @@ Issue #690 覆盖 CLI、Maven plugin、Bootstrap/runtime、Resource、BSQL、Boo
    pnpm exec mango dev start
    ```
 
-6. 对既有库按 `bootstrap plan -> apply --strategy=rolling -> verify -> runtime -> finalize` 执行；首次空库才使用 `--strategy=cold`。确认 receipt 的 environment、generation、revision、fingerprint 全部匹配，确认旧 Runtime lease 已排空后再 finalize。
+6. 对既有库按 `bootstrap plan -> apply --mango.bootstrap.strategy=rolling -> verify -> runtime -> finalize --mango.bootstrap.strategy=rolling` 执行；首次空库才使用 `--mango.bootstrap.strategy=cold`。确认 receipt 的 environment、generation、revision、fingerprint 全部匹配，确认旧 Runtime lease 已排空后再 finalize。
 7. 业务验收至少覆盖登录、菜单/权限、一个真实 CRUD、API 未登录返回 401、前端生产构建、Boot JAR `java -jar` 启动、独立 Maven consumer 和 BSQL baseline。任何一步失败，停止候选 generation，按 Bootstrap README 的 `abort`/回滚流程处理，不要手工删表或覆盖旧回执。
 
 #### #690 修复特性清单
