@@ -105,6 +105,7 @@ Maven 依赖：
 - `mango-workflow-starter`
 - `mango-job-starter`
 - `mango-cms-starter`
+- `mango-information-starter`
 - `mango-calendar-starter`
 - `mango-grid-layout-starter`
 - `mango-home-starter`
