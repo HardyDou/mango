@@ -1,5 +1,16 @@
 # Mango PMO Changelog
 
+## 1.4.9 - 2026-10-29
+
+### Changed
+
+- Add the Agent concise-response contract and clarify PR merge authorization in the PMO rules, Skills and generated Business Starter baseline.
+- Keep the release, PMO and CLI projections aligned for the Maven/docs `1.1.3` batch.
+
+### Upgrade Notes
+
+- Upgrade `@mango/pmo@1.4.9` together with `@mango/cli@1.3.7`, synchronize the Business Starter baseline and rerun locked PMO checks.
+
 ## 1.4.8 - 2026-10-23
 
 ### Added
