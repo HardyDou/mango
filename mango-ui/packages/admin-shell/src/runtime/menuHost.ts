@@ -535,6 +535,18 @@ export function resolveAccessibleMenuPath(menu?: ShellRouteMenu): string {
   return target?.path || '';
 }
 
+export function resolveNoticeTargetPath(menus: ShellRouteMenu[], targetKey: string): string {
+  const normalizedTarget = targetKey.trim();
+  if (!normalizedTarget) {
+    return '';
+  }
+  if (normalizedTarget.startsWith('/')) {
+    const target = findMenuByPath(menus, normalizedTarget);
+    return target && isExplicitlyNavigableMenu(target) ? target.path : '';
+  }
+  return resolveMenuPathByCode(menus, normalizedTarget);
+}
+
 export function resolveMenuPathByCode(menus: ShellRouteMenu[], menuCode: string): string {
   const normalizedCode = menuCode.trim();
   if (!normalizedCode) {

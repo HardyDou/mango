@@ -1,3 +1,4 @@
+import { getMangoNoticeNavigationProvider } from '@mango/admin-pages/notice';
 import type { RouteLocationRaw, Router } from 'vue-router';
 
 const NOTICE_TARGET_PATHS: Readonly<Record<string, string>> = {
@@ -37,10 +38,18 @@ export function resolveNoticeTargetLocation(
   const mappedPath = resolveNoticeTargetPath(targetKey);
   if (mappedPath) return { path: mappedPath, query };
   if (isSafeNoticePath(targetKey)) {
+    const provider = getMangoNoticeNavigationProvider();
+    if (provider) {
+      const resolvedPath = provider.resolveTargetPath(targetKey);
+      return resolvedPath ? { path: resolvedPath, query } : undefined;
+    }
     const resolved = router.resolve({ path: targetKey });
     const accessible = resolved.matched.some((record) => !record.path.includes(':pathMatch'));
     return accessible ? { path: targetKey, query } : undefined;
   }
+  const provider = getMangoNoticeNavigationProvider();
+  const resolvedPath = provider?.resolveTargetPath(targetKey);
+  if (resolvedPath) return { path: resolvedPath, query };
   return router.hasRoute(targetKey) ? { name: targetKey, query } : undefined;
 }
 

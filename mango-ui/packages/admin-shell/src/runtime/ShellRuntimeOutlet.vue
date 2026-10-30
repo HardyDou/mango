@@ -22,12 +22,14 @@ import {
   containsMenuPath,
   createNotFoundRouteMenu,
   resolveDirectoryRouteRedirect,
+  resolveNoticeTargetPath,
   useMenuHost,
   type ShellRouteMenu,
 } from './menuHost';
 import { useRoutesList } from '../stores/routesList';
 import { useTagsViewRoutes } from '../stores/tagsViewRoutes';
 import { createTagSnapshot } from '@mango/common/utils/tagsView';
+import { registerMangoNoticeNavigationProvider, resetMangoNoticeNavigationProvider } from '@mango/admin-pages/notice';
 
 const route = useRoute();
 const router = useRouter();
@@ -51,6 +53,10 @@ async function initShellRuntime() {
   try {
     await Promise.all([loadRuntimeApps(), loadMenus()]);
     routesListStore.setRoutesList(menus.value);
+    registerMangoNoticeNavigationProvider({
+      resolveTargetPath: (targetKey) =>
+        resolveNoticeTargetPath(routesListStore.routesList as ShellRouteMenu[], targetKey) || undefined,
+    });
 
     await renderCurrentRoute();
   } catch (error) {
@@ -155,6 +161,7 @@ onMounted(() => {
   window.addEventListener('mango-tags-view-refresh', onRefreshRequest);
 });
 onBeforeUnmount(() => {
+  resetMangoNoticeNavigationProvider();
   void dispose();
   window.removeEventListener('mango-tags-view-refresh', onRefreshRequest);
 });

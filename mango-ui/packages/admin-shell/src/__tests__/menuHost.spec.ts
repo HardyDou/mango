@@ -8,6 +8,7 @@ import {
   isRunnableMenu,
   resolveAccessibleMenuPath,
   resolveMenuPathByCode,
+  resolveNoticeTargetPath,
   resolveDirectoryRouteRedirect,
   shouldShowDevCenter,
   MenuTypeEnum,
@@ -207,6 +208,40 @@ describe('admin-shell menu contract', () => {
     } as ShellRouteMenu;
 
     expect(resolveMenuPathByCode([menu], 'notice:site-message')).toBe('/message-center/site-message');
+  });
+
+  it('resolves an authorized dynamic ShellMenu path as a Notice target', () => {
+    const menu = createRouteMenu({
+      menuCode: 'guarantee:payment-vouchers',
+      path: '/guarantee/finance/payment-vouchers',
+      component: 'guarantee/payment-vouchers/index',
+    });
+
+    expect(resolveNoticeTargetPath([menu], '/guarantee/finance/payment-vouchers')).toBe(
+      '/guarantee/finance/payment-vouchers',
+    );
+    expect(resolveNoticeTargetPath([menu], 'guarantee:payment-vouchers')).toBe('/guarantee/finance/payment-vouchers');
+  });
+
+  it('rejects a missing or non-runnable dynamic ShellMenu Notice target', () => {
+    const missingComponent = createRouteMenu({
+      menuCode: 'guarantee:missing',
+      path: '/guarantee/missing',
+    });
+
+    expect(resolveNoticeTargetPath([missingComponent], '/guarantee/unknown')).toBe('');
+    expect(resolveNoticeTargetPath([missingComponent], '/guarantee/missing')).toBe('');
+  });
+
+  it('allows hidden runnable ShellMenu pages as direct Notice targets', () => {
+    const hiddenMenu = createRouteMenu({
+      menuCode: 'notice:hidden',
+      path: '/notice/hidden',
+      component: 'notice/hidden/index',
+      visible: 0,
+    });
+
+    expect(resolveNoticeTargetPath([hiddenMenu], '/notice/hidden')).toBe('/notice/hidden');
   });
 
   it('returns an empty path when a menu code is missing or not navigable', () => {
