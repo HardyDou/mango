@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-30T02:00:12.756Z",
+  "generatedAt": "2026-10-30T01:36:23.660Z",
   "releaseKind": "mixed",
   "release": {
     "tag": "v2026.10.29-maven-1.1.3-dict-captcha-cms-release",
     "title": "Mango release v2026.10.29-maven-1.1.3-dict-captcha-cms-release",
     "notesFile": ".changeset/release-notes.txt",
-    "notesSha256": "da3796ae9fd00146830274de207fb2b378716a89c834ecc1091d713f9eca56aa"
+    "notesSha256": "831dfaac90c9a08130982689e9aa8a69515cdcc8065060d4a98185f4ec8eac04"
   },
   "baseline": {
     "kind": "successful-release",
@@ -3582,28 +3582,22 @@
     "docs": null
   },
   "source": {
-    "commit": "bf6e3662dddc46dc7bb3a19464079f0136cc1122",
-    "tree": "c50570a49638d1c8ac0949b8f818b5a59c7847ab"
+    "commit": "aeee3516ec594661dde252fe6e7a9f5f79bbd65b",
+    "tree": "cabe60a1109a976703d8801dbe9d3bfee8a27e04"
   },
   "sourceFiles": [
     ".github/workflows/pmo-doc-check.yml",
     ".github/workflows/pr-contract-check.yml",
     "AGENTS.md",
     "CHANGELOG.md",
-    "mango-business-starter/business-pmo/mango-baseline/README.md",
     "mango-business-starter/business-pmo/mango-baseline/agents/03-dev-agent.md",
     "mango-business-starter/business-pmo/mango-baseline/baseline.json",
-    "mango-business-starter/business-pmo/mango-baseline/contracts/business-requirements.json",
-    "mango-business-starter/business-pmo/mango-baseline/contracts/implementation-plan.json",
-    "mango-business-starter/business-pmo/mango-baseline/contracts/system-requirements.json",
-    "mango-business-starter/business-pmo/mango-baseline/contracts/technical-design.json",
     "mango-business-starter/business-pmo/mango-baseline/rules/12-pr-submission.md",
     "mango-business-starter/business-pmo/mango-baseline/rules/13-agent-text-output.md",
     "mango-business-starter/business-pmo/mango-baseline/rules/frontend/01-vue-code.md",
     "mango-business-starter/business-pmo/mango-baseline/rules/frontend/03-component-development.md",
     "mango-business-starter/business-pmo/mango-baseline/rules/frontend/04-test.md",
     "mango-business-starter/business-pmo/mango-baseline/rules/index.json",
-    "mango-business-starter/business-pmo/mango-baseline/rules/product/05-document-lifecycle.md",
     "mango-business-starter/business-pmo/mango-baseline/skills/mango-engineering/SKILL.md",
     "mango-business-starter/business-pmo/mango-baseline/skills/mango-qa-verification/SKILL.md",
     "mango-business-starter/business-pmo/mango-baseline/skills/mango-review-pr/SKILL.md",
@@ -3634,35 +3628,21 @@
     "mango-docs/guides/faq/rbac-menu-page-troubleshooting.md",
     "mango-docs/guides/faq/tenant-dict-config-empty.md",
     "mango-docs/guides/operations/cms-banner-removal-upgrade.md",
-    "mango-docs/guides/operations/mango-1.1.2-to-1.1.3-upgrade.md",
     "mango-docs/plans/2026-10-29-captcha-fixed-code-delivery-record.md",
     "mango-docs/plans/2026-10-29-issue-1133-rolling-local-bootstrap.md",
     "mango-docs/plans/issue-1128-flat-tree-dict.md",
-    "mango-pmo/CHANGELOG.md",
-    "mango-pmo/README.md",
     "mango-pmo/agents/03-dev-agent.md",
-    "mango-pmo/contracts/business-requirements.json",
-    "mango-pmo/contracts/implementation-plan.json",
-    "mango-pmo/contracts/system-requirements.json",
-    "mango-pmo/contracts/technical-design.json",
-    "mango-pmo/plugin-src/.codex-plugin/plugin.json",
     "mango-pmo/rules/12-pr-submission.md",
     "mango-pmo/rules/13-agent-text-output.md",
     "mango-pmo/rules/frontend/01-vue-code.md",
     "mango-pmo/rules/frontend/03-component-development.md",
     "mango-pmo/rules/frontend/04-test.md",
     "mango-pmo/rules/index.json",
-    "mango-pmo/rules/product/05-document-lifecycle.md",
     "mango-pmo/skills/mango-engineering/SKILL.md",
     "mango-pmo/skills/mango-qa-verification/SKILL.md",
     "mango-pmo/skills/mango-review-pr/SKILL.md",
     "mango-pmo/skills/mango-submit-pr/SKILL.md",
     "mango-pmo/tests/branch-protection-policy.test.mjs",
-    "mango-pmo/tests/document-contract/document-contract.test.mjs",
-    "mango-pmo/tests/document-contract/fixtures/valid/business-requirements.md",
-    "mango-pmo/tests/document-contract/fixtures/valid/implementation-plan.md",
-    "mango-pmo/tests/document-contract/fixtures/valid/system-requirements.md",
-    "mango-pmo/tests/document-contract/fixtures/valid/technical-design.md",
     "mango-pmo/tests/pmo-check-scope.test.mjs",
     "mango-pmo/tests/risk-verification.test.mjs",
     "mango-pmo/tools/branch-protection-policy.mjs",
@@ -3673,7 +3653,6 @@
     "mango-ui/.changeset/dict-captcha-authorization-pmo.md",
     "mango-ui/.changeset/release-baseline.json",
     "mango-ui/.changeset/release-notes.txt",
-    "mango-ui/.changeset/release-plan.json",
     "mango-ui/README.md",
     "mango-ui/apps/mango-admin-shell/e2e/specs/cms-management.spec.ts",
     "mango-ui/apps/mango-admin-shell/e2e/specs/cms-operations-buttons.spec.ts",
@@ -3716,14 +3695,9 @@
     "mango-ui/packages/common/index.ts",
     "mango-ui/packages/common/package.json",
     "mango-ui/packages/common/utils/dictTree.ts",
-    "mango-ui/packages/mango-cli/CHANGELOG.md",
     "mango-ui/packages/mango-cli/README.md",
-    "mango-ui/packages/mango-cli/release-versions.json",
     "mango-ui/packages/mango-cli/scripts/check-cli.mjs",
     "mango-ui/packages/mango-cli/src/index.mjs",
-    "mango-ui/packages/mango-cli/templates/business-module/frontend/packages/{{moduleKebab}}/package.json.template",
-    "mango-ui/packages/mango-cli/templates/full/README.md",
-    "mango-ui/packages/mango-cli/templates/full/frontend/package.json.template",
     "mango-ui/packages/rbac/src/api/__tests__/apiResource.spec.ts",
     "mango-ui/packages/rbac/src/api/apiResource.ts",
     "mango-ui/packages/rbac/src/views/api-resource/index.vue",
@@ -3731,7 +3705,6 @@
     "mango-ui/packages/system/src/api/dict.ts",
     "mango-ui/packages/system/src/components/DomainSelector/index.vue",
     "mango-ui/packages/system/src/views/dict/index.vue",
-    "mango-ui/pnpm-lock.yaml",
     "mango-ui/scripts/generate-package-types.mjs",
     "mango-ui/scripts/release/classify-release-pr.mjs",
     "mango/mango-admin-starter/README.md",
@@ -3844,36 +3817,6 @@
       "reason": "published-pmo-source"
     },
     {
-      "file": "mango-pmo/contracts/business-requirements.json",
-      "packageName": "@mango/pmo",
-      "reason": "published-pmo-source"
-    },
-    {
-      "file": "mango-pmo/contracts/implementation-plan.json",
-      "packageName": "@mango/pmo",
-      "reason": "published-pmo-source"
-    },
-    {
-      "file": "mango-pmo/contracts/system-requirements.json",
-      "packageName": "@mango/pmo",
-      "reason": "published-pmo-source"
-    },
-    {
-      "file": "mango-pmo/contracts/technical-design.json",
-      "packageName": "@mango/pmo",
-      "reason": "published-pmo-source"
-    },
-    {
-      "file": "mango-pmo/plugin-src/.codex-plugin/plugin.json",
-      "packageName": "@mango/pmo",
-      "reason": "published-pmo-source"
-    },
-    {
-      "file": "mango-pmo/README.md",
-      "packageName": "@mango/pmo",
-      "reason": "published-pmo-source"
-    },
-    {
       "file": "mango-pmo/rules/12-pr-submission.md",
       "packageName": "@mango/pmo",
       "reason": "published-pmo-source"
@@ -3900,11 +3843,6 @@
     },
     {
       "file": "mango-pmo/rules/index.json",
-      "packageName": "@mango/pmo",
-      "reason": "published-pmo-source"
-    },
-    {
-      "file": "mango-pmo/rules/product/05-document-lifecycle.md",
       "packageName": "@mango/pmo",
       "reason": "published-pmo-source"
     },
@@ -4084,32 +4022,12 @@
       "reason": "published-package-path"
     },
     {
-      "file": "mango-ui/packages/mango-cli/release-versions.json",
-      "packageName": "@mango/cli",
-      "reason": "published-package-path"
-    },
-    {
       "file": "mango-ui/packages/mango-cli/scripts/check-cli.mjs",
       "packageName": "@mango/cli",
       "reason": "published-package-path"
     },
     {
       "file": "mango-ui/packages/mango-cli/src/index.mjs",
-      "packageName": "@mango/cli",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/mango-cli/templates/business-module/frontend/packages/{{moduleKebab}}/package.json.template",
-      "packageName": "@mango/cli",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/mango-cli/templates/full/frontend/package.json.template",
-      "packageName": "@mango/cli",
-      "reason": "published-package-path"
-    },
-    {
-      "file": "mango-ui/packages/mango-cli/templates/full/README.md",
       "packageName": "@mango/cli",
       "reason": "published-package-path"
     },
@@ -7436,12 +7354,12 @@
   "versionPolicyDigest": "c4c4c80d533dde047a59627c915cf87e3570606c2d329023ce6896544c50ee12",
   "releasePlanIdentity": {
     "schemaVersion": 1,
-    "sourceCommitOid": "bf6e3662dddc46dc7bb3a19464079f0136cc1122",
-    "sourceTreeOid": "c50570a49638d1c8ac0949b8f818b5a59c7847ab",
+    "sourceCommitOid": "aeee3516ec594661dde252fe6e7a9f5f79bbd65b",
+    "sourceTreeOid": "cabe60a1109a976703d8801dbe9d3bfee8a27e04",
     "catalogDigest": "c70398bbfba2f977c7b00fa86474ebff5e26f8e03744394a3033f6b69247d96a",
     "previousBaselineDigest": "126da439f22a5b31baec34b9d9b8b9261d81e63833e0ba11558a997f10914c8d",
     "changesetsDigest": "684adec83ebc30c99f4c494e9b94298562eb4562d3f4d91dcd366b3f14011426",
-    "releaseNotesDigest": "da3796ae9fd00146830274de207fb2b378716a89c834ecc1091d713f9eca56aa",
+    "releaseNotesDigest": "831dfaac90c9a08130982689e9aa8a69515cdcc8065060d4a98185f4ec8eac04",
     "versionPolicyDigest": "c4c4c80d533dde047a59627c915cf87e3570606c2d329023ce6896544c50ee12",
     "resolvedTuple": [
       {
@@ -9043,5 +8961,5 @@
       "@mango/cli"
     ]
   },
-  "planDigest": "e04656adb4763b1b2c2eeb9a36414c900bba6b44b56251e54b1eec5f20c39439"
+  "planDigest": "583ac31f376d29197c30676a51acf20594be7a76238e400e378215c71e95d15b"
 }
