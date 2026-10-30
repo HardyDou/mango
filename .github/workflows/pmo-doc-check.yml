@@ -43,6 +43,13 @@ jobs:
         with:
           fetch-depth: 0
 
+      # The canonical PMO package and release projection checks invoke pnpm directly.
+      - name: Set up pnpm for common PMO gates
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.10.0
+          run_install: false
+
       - name: Set up Node.js for common PMO gates
         uses: actions/setup-node@v4
         with:
