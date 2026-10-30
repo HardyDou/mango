@@ -1,5 +1,85 @@
 # Mango Changelog
 
+## v2026.10.29-maven-1.1.3-dict-captcha-cms-release - io.mango:mango-parent Maven 1.1.3 - npm dictionary/captcha/authorization/CMS/PMO closure - 2026-10-29
+
+Status: `PENDING`. This release is authorized by the user and is being prepared from the sealed source tuple; publication, consume verification, Tag and GitHub Release remain ordered by the Mango release state machine.
+
+### Pull Requests
+
+- [PR #1129](https://github.com/HardyDou/mango/pull/1129) Fixed Resource Registry FINALIZE reconciliation. Packages: Mango Maven/docs 1.1.3 and affected Resource/Authorization coordinates. Business Adaptation: upgrade the backend and verify FINALIZE reconciliation and tombstone behavior.
+- [PR #1131](https://github.com/HardyDou/mango/pull/1131) Added API Resource source priority and manual control. Packages: Mango Maven/docs 1.1.3, @mango/rbac@1.2.0 and generated npm closure. Business Adaptation: review API Resource priority and grant the manual-control permission deliberately.
+- [PR #1132](https://github.com/HardyDou/mango/pull/1132) Added FLAT/TREE dictionaries and unified DictSelect. Packages: Mango Maven/docs 1.1.3, @mango/common@2.3.0, @mango/system@1.1.0 and generated npm closure. Business Adaptation: use the documented shape and tree options while retaining FLAT defaults.
+- [PR #1134](https://github.com/HardyDou/mango/pull/1134) Changed arithmetic and graphic captcha behavior. Packages: Mango Maven/docs 1.1.3, @mango/common@2.3.0, @mango/auth@1.0.41, @mango/admin-shell@1.1.0 and generated npm closure. Business Adaptation: use the unified graphic captcha default and retain the compatibility endpoint during migration.
+- [PR #1135](https://github.com/HardyDou/mango/pull/1135) Added DictDisplay and shared dictionary tree utilities. Packages: @mango/common@2.3.0 and generated npm closure. Business Adaptation: use DictDisplay for read-only dictionary labels and paths.
+- [PR #1137](https://github.com/HardyDou/mango/pull/1137) Changed API Resource manual takeover to a single-row snapshot model. Packages: Mango Maven/docs 1.1.3, @mango/rbac@1.2.0 and generated npm closure. Business Adaptation: back up authorization data before applying V5 and verify release/restore behavior.
+- [PR #1138](https://github.com/HardyDou/mango/pull/1138) Added dictionary group filtering. Packages: Mango Maven/docs 1.1.3, @mango/common@2.3.0, @mango/system@1.1.0 and generated npm closure. Business Adaptation: assign groups before enabling group-filtered consumers.
+- [PR #1139](https://github.com/HardyDou/mango/pull/1139) Fixed clearing dictionary groups/parents and domain display. Packages: Mango Maven/docs 1.1.3, @mango/system@1.1.0 and generated npm closure. Business Adaptation: restart once for resource declarations and verify cleared values.
+- [PR #1140](https://github.com/HardyDou/mango/pull/1140) Changed CMS publishing to retain publish history. Packages: Mango Maven/docs 1.1.3 and @mango/cms@1.1.0. Business Adaptation: back up CMS data, apply the publish-history migration, and verify publish/offline/re-publish flows.
+- [PR #1142](https://github.com/HardyDou/mango/pull/1142) Fixed revival of soft-deleted API Resources. Packages: Mango Maven/docs 1.1.3 and Authorization coordinates. Business Adaptation: verify startup synchronization after upgrading the authorization schema.
+- [PR #1143](https://github.com/HardyDou/mango/pull/1143) Changed PMO Agent output guidance. Packages: @mango/pmo@1.4.9 and @mango/cli@1.3.7. Business Adaptation: refresh the PMO baseline and use the concise response contract.
+- [PR #1146](https://github.com/HardyDou/mango/pull/1146) Changed local bootstrap to rolling apply/finalize and added fixed SMS-code test support. Packages: Mango Maven/docs 1.1.3, @mango/cli@1.3.7 and affected platform coordinates. Business Adaptation: use fixed codes only in non-production test environments and run rolling bootstrap checks.
+- [PR #1148](https://github.com/HardyDou/mango/pull/1148) Added dictionary button selection styles. Packages: @mango/common@2.3.0 and generated npm closure. Business Adaptation: select the documented button style in dictionary consumers.
+- [PR #1149](https://github.com/HardyDou/mango/pull/1149) Changed Skill merge authorization guidance. Packages: @mango/pmo@1.4.9 and @mango/cli@1.3.7. Business Adaptation: refresh the PMO/CLI tuple before using merge authorization commands.
+
+### Fixed
+
+- Resource Registry FINALIZE 缺失资源回收、API Resource 软删除恢复、字典清空保存和 CMS 发布记录一致性问题。
+
+### Added
+
+- FLAT/TREE 字典、字典分组过滤、DictDisplay、API Resource 人工接管和非生产固定验证码测试支持。
+
+### Changed
+
+- 统一图形验证码行为，改进 CMS 发布历史模型，调整本地 rolling bootstrap，并同步 PMO/CLI 治理契约。
+
+### Versions
+
+- Maven/docs: `1.1.2` → `1.1.3`.
+- npm closure: 28 packages, from `@mango/common@2.3.0` through `@mango/cli@1.3.7`; the complete tuple is sealed in the release plan.
+- `@mango/pmo`: `1.4.8` → `1.4.9`; `@mango/cli`: `1.3.6` → `1.3.7`.
+
+### Published Packages
+
+1. Publish the sealed non-application Maven reactor and `io.mango:mango-docs-bundle:1.1.3`.
+2. Publish the machine-planned 28-package npm closure in topology order, ending with `@mango/cli@1.3.7`.
+3. Do not publish `mango-app/**` fat jars in the default Maven batch.
+
+### Business Impact
+
+- Backend consumers must back up affected databases and apply Resource, Authorization, System and CMS migrations in a controlled maintenance window.
+- Frontend consumers must upgrade the complete npm tuple; existing FLAT dictionary behavior and the captcha compatibility endpoint remain available during migration.
+- PMO-managed consumers must upgrade `@mango/pmo@1.4.9` and `@mango/cli@1.3.7` together and refresh the generated baseline.
+
+### Upgrade Estimate
+
+- Audience: Mango backend consumers, Admin frontend consumers, and PMO-managed generated projects using Resource, Authorization, Captcha, System, CMS or dictionary packages.
+- Engineering Effort: 0.5-2 engineer-days per consumer, depending on migrations and public API usage.
+- Execution Window: 1-4 hours per consumer, plus a production database backup and verification window.
+- Service Downtime: one controlled backend restart/migration window; no planned downtime for frontend-only consumers.
+- Rollback Effort: 0.5-1 engineer-day for code rollback plus database restore or forward-fix review.
+- Assumptions: consumers have tested backups, Java 21, Node 22.23.1, Flyway access and permission/tenant test data.
+
+### Upgrade Notes
+
+1. Upgrade Maven/docs to `1.1.3` before applying the exact npm tuple.
+2. Back up each affected database and review Authorization V5, System V2/V3 and CMS V3 migration lock/rollback boundaries in `mango-1.1.2-to-1.1.3-upgrade.md`.
+3. Upgrade the exact npm closure; do not mix package versions from different release batches.
+4. Review API Resource manual takeover rows, dictionary TREE/group configuration, CMS publish-history consumers and captcha endpoint usage.
+5. PMO-managed projects must run `mango pmo upgrade`, refresh the baseline and run the locked PMO check.
+
+### Verification
+
+- Run the release plan, catalog, PMO baseline, affected Maven tests, frontend tests/builds, generated-project checks and clean consumer checks recorded by `mango release prepare`.
+- Verify exact versions and checksums in both Maven registry roles and both npm registry roles.
+- Verify Resource/Authorization migrations, API Resource priority/release, dictionary behavior, captcha generation/validation, CMS publish history and PMO/CLI installation in clean consumers.
+
+### Rollback
+
+- Stop the consumer deployment, restore the pre-upgrade database backup when migration rollback is required, and revert to the previous complete tuple.
+- Never overwrite immutable coordinates. If registry state is ambiguous, use the same prepared candidate through the Mango recovery state machine.
+
+
 ## v2026.10.27-maven-1.1.2-captcha-resource-release - io.mango:mango-parent Maven 1.1.2 - npm captcha/resource closure - 2026-10-27
 
 Status: `PUBLISHED_AND_VERIFIED`. The sealed source tuple was published to both Maven/npm registry roles, the clean consume-registry consumer passed, and Tag plus GitHub Release were created and verified by the Mango release state machine.

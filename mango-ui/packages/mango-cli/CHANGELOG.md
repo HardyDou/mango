@@ -1,3 +1,14 @@
+## 1.3.7 - 2026-10-29
+
+### Changed
+
+- Lock the CLI Maven matrix to Maven `1.1.3` and the complete 28-package npm closure.
+- Ship the rolling bootstrap/local resource changes, fixed non-production SMS-code test support and PMO merge-authorization guidance.
+
+### Upgrade Notes
+
+- Upgrade `@mango/cli@1.3.7`, `@mango/pmo@1.4.9`, Maven/docs `1.1.3` and the exact generated npm tuple together.
+
 ## 1.3.6 - 2026-10-27
 
 ### Changed
