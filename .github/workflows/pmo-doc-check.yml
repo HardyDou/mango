@@ -55,6 +55,13 @@ jobs:
         with:
           node-version: "22.23.1"
 
+      - name: Install release classifier dependencies
+        run: >-
+          pnpm --dir mango-ui install
+          --frozen-lockfile
+          --ignore-scripts
+          --filter mango-ui
+
       - name: Read policy-resolved assurance selections
         id: assurance
         env:
