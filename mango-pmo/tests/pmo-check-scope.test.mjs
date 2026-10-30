@@ -269,6 +269,7 @@ test('CI reruns when policy-resolved assurance selections change and prepares co
   );
   const preflightJob = workflow.match(/\n  preflight_scope:\n[\s\S]*?(?=\n  release_plan:)/)?.[0] ?? '';
   assert.match(preflightJob, /pnpm\/action-setup@v4/);
+  assert.match(preflightJob, /actions\/setup-node@v4/);
   assert.match(
     preflightJob,
     /pnpm --dir mango-ui install[\s\S]*?--frozen-lockfile[\s\S]*?--ignore-scripts[\s\S]*?--filter mango-ui[\s\S]*?--registry=https:\/\/registry\.npmjs\.org\//,
