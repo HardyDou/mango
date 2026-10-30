@@ -17,6 +17,7 @@
 ## 1. 元数据
 
 - 任务 ID：`issue-1153-notice-dynamic-route`
+- Pull Request：`#1156`（已创建，等待检查）
 - 交付模式：STANDARD
 - 需求影响：L2 - 影响已登录用户的通知主操作、业务页面导航、权限和异常边界。
 - 方案风险：L2 - 修改共享 Notice 目标解析、Admin Shell 动态菜单解析和跨包 provider 边界。
