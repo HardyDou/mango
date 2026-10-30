@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-30T01:39:53.308Z",
+  "generatedAt": "2026-10-30T02:00:12.756Z",
   "releaseKind": "mixed",
   "release": {
     "tag": "v2026.10.29-maven-1.1.3-dict-captcha-cms-release",
@@ -3582,8 +3582,8 @@
     "docs": null
   },
   "source": {
-    "commit": "46130c83a46a4d6e794a13a29640d851a5689367",
-    "tree": "e6e58f3a071f683bdf971e8e88f352f4a2ca9eae"
+    "commit": "bf6e3662dddc46dc7bb3a19464079f0136cc1122",
+    "tree": "c50570a49638d1c8ac0949b8f818b5a59c7847ab"
   },
   "sourceFiles": [
     ".github/workflows/pmo-doc-check.yml",
@@ -7436,8 +7436,8 @@
   "versionPolicyDigest": "c4c4c80d533dde047a59627c915cf87e3570606c2d329023ce6896544c50ee12",
   "releasePlanIdentity": {
     "schemaVersion": 1,
-    "sourceCommitOid": "46130c83a46a4d6e794a13a29640d851a5689367",
-    "sourceTreeOid": "e6e58f3a071f683bdf971e8e88f352f4a2ca9eae",
+    "sourceCommitOid": "bf6e3662dddc46dc7bb3a19464079f0136cc1122",
+    "sourceTreeOid": "c50570a49638d1c8ac0949b8f818b5a59c7847ab",
     "catalogDigest": "c70398bbfba2f977c7b00fa86474ebff5e26f8e03744394a3033f6b69247d96a",
     "previousBaselineDigest": "126da439f22a5b31baec34b9d9b8b9261d81e63833e0ba11558a997f10914c8d",
     "changesetsDigest": "684adec83ebc30c99f4c494e9b94298562eb4562d3f4d91dcd366b3f14011426",
@@ -9043,5 +9043,5 @@
       "@mango/cli"
     ]
   },
-  "planDigest": "7cb3d287149ed78040a983779d3f6cd2a8624990a6bef2e30a18a0b3d8f7beee"
+  "planDigest": "e04656adb4763b1b2c2eeb9a36414c900bba6b44b56251e54b1eec5f20c39439"
 }
