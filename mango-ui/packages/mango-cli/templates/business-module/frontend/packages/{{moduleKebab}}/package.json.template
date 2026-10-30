@@ -25,7 +25,7 @@
     "@{{projectKebab}}/{{moduleKebab}}-api": "workspace:{{projectVersion}}",
     "@mango/api-schema": "1.0.4",
     "@mango/app-runtime": "{{mangoAppRuntimeVersion}}",
-    "@mango/common": "2.2.0",
+    "@mango/common": "2.3.0",
     "element-plus": "2.14.1"
   },
   "peerDependencies": {
