@@ -262,14 +262,19 @@ test('configured backend paths fail closed when their root POM is absent', t => 
   );
 });
 
-test('CI reruns when policy-resolved assurance selections change and keeps explicit architecture prerequisites', () => {
+test('CI reruns when policy-resolved assurance selections change and prepares common PMO gates', () => {
   const workflow = fs.readFileSync(
     new URL('../../.github/workflows/pmo-doc-check.yml', import.meta.url),
     'utf8',
   );
   const preflightJob = workflow.match(/\n  preflight_scope:\n[\s\S]*?(?=\n  release_plan:)/)?.[0] ?? '';
-  assert.doesNotMatch(preflightJob, /pnpm\/action-setup@v4/);
-  assert.doesNotMatch(preflightJob, /pnpm install --frozen-lockfile/);
+  assert.match(preflightJob, /pnpm\/action-setup@v4/);
+  assert.match(preflightJob, /actions\/setup-node@v4/);
+  assert.match(preflightJob, /node-version: "22\.23\.1"/);
+  assert.match(
+    preflightJob,
+    /pnpm --dir mango-ui install[\s\S]*?--frozen-lockfile[\s\S]*?--ignore-scripts[\s\S]*?--filter mango-ui[\s\S]*?--registry=https:\/\/registry\.npmjs\.org\//,
+  );
   assert.match(workflow, /pull_request:\n\s+types: \[opened, synchronize, reopened\]/);
   assert.doesNotMatch(workflow, /pmo-doc-check[\s\S]*?types: \[opened, edited, synchronize, reopened\]/);
   assert.match(
