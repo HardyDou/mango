@@ -1,5 +1,22 @@
-import { describe, expect, it } from 'vitest';
-import { isSafeNoticePath, normalizeNoticeQuery, noticeFallbackTargetKey, resolveNoticeTargetPath } from './targets';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { createMemoryHistory, createRouter } from 'vue-router';
+import { registerMangoNoticeNavigationProvider, resetMangoNoticeNavigationProvider } from '@mango/admin-pages/notice';
+import {
+  isSafeNoticePath,
+  normalizeNoticeQuery,
+  noticeFallbackTargetKey,
+  resolveNoticeTargetLocation,
+  resolveNoticeTargetPath,
+} from './targets';
+
+const router = createRouter({
+  history: createMemoryHistory(),
+  routes: [{ path: '/:pathMatch(.*)*', name: 'ShellMenu', component: {} }],
+});
+
+afterEach(() => {
+  resetMangoNoticeNavigationProvider();
+});
 
 describe('notice target paths', () => {
   it('resolves account profile targets to the shell profile path', () => {
@@ -12,6 +29,31 @@ describe('notice target paths', () => {
 
   it('leaves unknown targets for named-route resolution', () => {
     expect(resolveNoticeTargetPath('unknown:target')).toBeUndefined();
+  });
+
+  it('delegates ShellMenu path validation to the host navigation provider', () => {
+    const resolveTargetPath = vi.fn((targetKey: string) =>
+      targetKey === '/guarantee/finance/payment-vouchers' ? targetKey : undefined,
+    );
+    registerMangoNoticeNavigationProvider({ resolveTargetPath });
+
+    expect(
+      resolveNoticeTargetLocation(router, '/guarantee/finance/payment-vouchers', {
+        receiptId: 'receipt-1',
+        orderNo: 'order-1',
+        focus: 'payment-confirm',
+      }),
+    ).toEqual({
+      path: '/guarantee/finance/payment-vouchers',
+      query: { receiptId: 'receipt-1', orderNo: 'order-1', focus: 'payment-confirm' },
+    });
+    expect(resolveTargetPath).toHaveBeenCalledWith('/guarantee/finance/payment-vouchers');
+  });
+
+  it('rejects a catch-all path when the host menu provider cannot resolve it', () => {
+    registerMangoNoticeNavigationProvider({ resolveTargetPath: () => undefined });
+
+    expect(resolveNoticeTargetLocation(router, '/guarantee/unknown')).toBeUndefined();
   });
 
   it('只接受站内绝对路径并过滤导航元数据和对象查询参数', () => {

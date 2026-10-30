@@ -19,7 +19,12 @@ export type MangoNoticeBellProvider = {
   getReminderSetting: () => Promise<Partial<MangoNoticeBellRuntimeConfig>>;
 };
 
+export type MangoNoticeNavigationProvider = {
+  resolveTargetPath: (targetKey: string) => string | undefined;
+};
+
 const noticeBellProvider = shallowRef<MangoNoticeBellProvider>();
+const noticeNavigationProvider = shallowRef<MangoNoticeNavigationProvider>();
 
 export function registerMangoNoticeBellProvider(provider: MangoNoticeBellProvider) {
   noticeBellProvider.value = provider;
@@ -27,6 +32,18 @@ export function registerMangoNoticeBellProvider(provider: MangoNoticeBellProvide
 
 export function getMangoNoticeBellProvider() {
   return noticeBellProvider.value;
+}
+
+export function registerMangoNoticeNavigationProvider(provider: MangoNoticeNavigationProvider) {
+  noticeNavigationProvider.value = provider;
+}
+
+export function getMangoNoticeNavigationProvider() {
+  return noticeNavigationProvider.value;
+}
+
+export function resetMangoNoticeNavigationProvider() {
+  noticeNavigationProvider.value = undefined;
 }
 
 export type MangoNoticeBellProps = {

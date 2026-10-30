@@ -5,6 +5,12 @@ export { default as NoticeClientMessageCenter } from './client/NoticeClientMessa
 export { default as NoticeClientReceiveSetting } from './client/NoticeClientReceiveSetting.vue';
 export type { NoticeBellViewAllOptions, NoticeClientBellRuntimeConfig } from './client/types';
 export type { NoticeInteractionPayload } from './client/interaction';
+export {
+  registerMangoNoticeNavigationProvider,
+  getMangoNoticeNavigationProvider,
+  resetMangoNoticeNavigationProvider,
+} from '@mango/admin-pages/notice';
+export type { MangoNoticeNavigationProvider } from '@mango/admin-pages/notice';
 export { buildNoticeActionInput, buildNoticeInteraction } from './client/interaction';
 export {
   isSafeNoticePath,

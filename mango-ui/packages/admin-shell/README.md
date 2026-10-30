@@ -144,19 +144,19 @@ Shell 主应用和 runtime outlet 统一通过 `installShellApp()` 安装同一�
 
 子入口：
 
-| 子入口            | 内容                             |
-| ----------------- | -------------------------------- |
-| `runtime`         | 运行时页面挂载。                 |
-| `menu`            | 菜单加载和菜单路由转换。         |
-| `stores`          | 用户、布局、主题、偏好等 store。 |
-| `router`          | Shell 路由。                     |
-| `home`            | 首页组件。                       |
-| `home-management` | 首页管理兼容页面组件。           |
-| `home-templates`  | 首页模板页面组件。               |
-| `home-list`       | 首页列表页面组件。               |
-| `home-user`       | 用户首页视图页面组件。           |
-| `dev-pages`       | 开发中心页面注册。               |
-| `dev-base-pages`  | 基础能力开发页注册。             |
+| 子入口            | 内容                                 |
+| ----------------- | ------------------------------------ |
+| `runtime`         | 运行时页面挂载。                     |
+| `menu`            | 菜单加载和菜单路由转换。             |
+| `stores`          | 用户、布局、主题、偏好等 store。     |
+| `router`          | Shell 路由。                         |
+| `home`            | 首页组件。                           |
+| `home-management` | 首页管理兼容页面组件。               |
+| `home-templates`  | 首页模板页面组件。                   |
+| `home-list`       | 首页列表页面组件。                   |
+| `home-user`       | 用户首页视图页面组件。               |
+| `dev-pages`       | 开发中心页面注册。                   |
+| `dev-base-pages`  | 基础能力开发页注册。                 |
 | `dev-demo-layout` | 组件示例文档布局，提供右侧页面导航。 |
 | `dev-code-block`  | 组件示例代码展示、复制和折叠区域。   |
 
@@ -232,7 +232,7 @@ Shell 顶部通知铃铛只负责展示站内消息入口和跳转，不定义�
 
 铃铛的“查看全部”和“接收配置”会从 Shell 当前菜单树按 `menuCode` 解析真实路径，再交给通配 `ShellMenu` 路由挂载页面；动态菜单编码不是 Vue Router 命名路由。接收配置由 Notice 页面注册表声明，规范路由为 `/message-center/receive-setting`，旧 `/notice/receive-setting` 只保留为隐藏兼容路由。目标菜单或页面不存在时，Shell 显示不可访问提示，不向 Vue 错误处理器抛出未匹配命名路由异常。
 
-`@mango/admin-shell@1.0.55` 承接 Notice 的统一交互载荷：未读超过 10 条时，铃铛分类项进入消息中心对应的 `category + unreadOnly=true` 筛选；单条消息和详情主操作优先使用已注册的安全目标路径或命名目标，失败时再尝试 `fallbackTargetKey`。Shell 只使用当前动态路由表执行跳转，不把通知数据当作任意外部 URL，也不改变菜单、页面 key 或权限契约。
+`@mango/admin-shell@1.0.55` 承接 Notice 的统一交互载荷：未读超过 10 条时，铃铛分类项进入消息中心对应的 `category + unreadOnly=true` 筛选；单条消息和详情主操作优先使用已注册的安全目标路径或命名目标，失败时再尝试 `fallbackTargetKey`。Shell 通过 Notice navigation provider 使用当前动态菜单树和页面运行配置解析目标，不把通知数据当作任意外部 URL，也不改变菜单、页面 key 或权限契约。业务自定义弹窗和页面局部调整仍由 `interaction` 事件消费者处理。
 
 ### Menu Contract
 
