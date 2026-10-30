@@ -61,6 +61,7 @@ jobs:
           --frozen-lockfile
           --ignore-scripts
           --filter mango-ui
+          --registry=https://registry.npmjs.org/
 
       - name: Read policy-resolved assurance selections
         id: assurance
