@@ -1,3 +1,77 @@
+## v2026.10.31-maven-1.1.5-resource-tenant-release - Mango Maven/docs 1.1.5 Resource Registry tenant-scope follow-up - 2026-10-31
+
+Status: `PENDING`. Release plan digest `bcc9500745d221d4f3fe3f0e2b812f62596076b2d16f3a65c2d8e1b0d750d375`; Maven publication, consume verification, Tag and GitHub Release remain pending.
+
+### Pull Requests
+
+- Changed: [PR #1162](https://github.com/HardyDou/mango/pull/1162) Closed the previous Maven/docs `1.1.4` publication. Packages: none; release metadata only. Business Adaptation: no consumer action; establishes the successful `1.1.4` baseline.
+- [PR #1164](https://github.com/HardyDou/mango/pull/1164) Added explicit tenant-scope contracts to Authorization and Calendar Resource Handlers and persisted the declared tenant scope in Resource Registry. Packages: the complete Maven/docs `1.1.5` tuple and generated `@mango/cli@1.3.10` compatibility closure. Business Adaptation: upgrade the complete tuple and verify tenant-scoped cleanup plus unchanged handling of historical tenantless rows.
+
+### Fixed
+
+- Authorization and Calendar tenant-scoped Resource Handlers now declare `tenantId` as their execution scope.
+- Resource Registry persists the declared tenant scope for valid tenant-scoped resources.
+- Historical Registry rows with missing `tenant_id` remain warning-only: no tenant is guessed, no Handler is invoked and no row is modified.
+
+### Added
+
+- Integration coverage for Authorization, Calendar and Resource Registry tenant-scope contracts.
+- README and FAQ guidance for tenant-scoped cleanup and historical tenantless rows.
+
+### Changed
+
+- The complete non-application Maven/docs tuple advances from `1.1.4` to `1.1.5`.
+- `@mango/cli` advances from `1.3.9` to `1.3.10` as the generated Maven compatibility closure.
+- Real-tenant cleanup and unrelated cleanup failures retain their existing fail-closed behavior.
+
+### Versions
+
+- Maven/docs: `1.1.4` → `1.1.5`; 196 sealed Maven coordinates, including `io.mango:mango-docs-bundle:1.1.5`.
+- npm: `@mango/cli@1.3.9` → `@mango/cli@1.3.10`; no other npm package is republished.
+- Exact topology, dependency order and checksums are generated in `mango-ui/.changeset/release-plan.json`.
+
+### Published Packages
+
+- Publish all 196 non-application Maven coordinates in release-plan order.
+- Publish `@mango/cli@1.3.10` as the generated compatibility closure.
+- Application fat jars and coordinates outside the sealed plan are excluded.
+
+### Business Impact
+
+- Consumers using Resource Registry Bootstrap FINALIZE can process valid tenant-scoped Authorization and Calendar resources with an explicit tenant context.
+- Historical tenantless rows remain unchanged and require separately approved ownership migration if cleanup is needed.
+- No database migration is introduced; the complete Maven/docs tuple must be upgraded together.
+
+### Upgrade Estimate
+
+- Audience: Mango backend consumers using Resource Registry synchronization, Bootstrap FINALIZE, Authorization or Calendar Resource Handlers.
+- Engineering Effort: 0.5-1 engineer-day per consumer for dependency upgrade, startup verification and tenant-scope regression.
+- Execution Window: 1-2 hours per consumer including backup, restart and FINALIZE validation.
+- Service Downtime: one controlled backend restart window; no database migration is introduced.
+- Rollback Effort: 0.5 engineer-day to restore the complete Maven `1.1.4` tuple and verified CLI tuple.
+- Assumptions: consumers have recoverable backups, tenant-scoped test data, Maven consume-registry access and permission to inspect Resource Registry logs.
+
+### Upgrade Notes
+
+1. Upgrade the complete Mango Maven/docs tuple from `1.1.4` to `1.1.5`; do not update only one starter or module.
+2. Upgrade CLI consumers to `@mango/cli@1.3.10` when the CLI is used.
+3. Back up the database and verify valid tenant-scoped Resource Registry rows before Bootstrap or FINALIZE.
+4. Run FINALIZE and confirm historical rows with missing `tenant_id` produce warnings and are skipped without Handler invocation or row mutation.
+5. Run valid Authorization and Calendar tenant cleanup cases and an unrelated cleanup-error case; confirm real failures remain fail-closed.
+
+### Verification
+
+- Resource Registry, Authorization and Calendar integration tests passed before merge; README, FAQ and delivery-record checks passed.
+- The Maven reactor and docs bundle will be built once from the sealed candidate; all 196 coordinates will be checked in publish and consume registries with matching checksums.
+- A clean consumer will resolve Maven `1.1.5` and CLI `1.3.10` from the consume registries and execute the Resource Registry tenant-scope regression.
+
+### Rollback
+
+- Restore consumers to the complete Maven/docs `1.1.4` tuple and the previously verified CLI `1.3.9` tuple; immutable coordinates are never overwritten.
+- Preserve the database backup and Bootstrap/FINALIZE logs; rollback does not mutate historical tenantless rows.
+- If registry visibility is ambiguous, stop and resume read-only status/repair using the same prepared candidate; never create a second candidate for the same coordinates.
+
+
 ## v2026.10.31-maven-1.1.4-resource-legacy-tenant-release - Mango Maven/docs 1.1.4 Resource Registry compatibility fix - 2026-10-31
 
 Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `cf627b06dcb1145462a30657c164ffb409e3b8626644c3dda918244ae3b72dca`; prepared candidate `f012f1751d05df8571b2d60383548d924bbcebfd2eb8ebc38ff156ee64d803c3` completed publication and consume verification for 1 npm package and 196 Maven coordinates. Tag and GitHub Release were created and verified.

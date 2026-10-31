@@ -1,3 +1,14 @@
+## 1.3.10 - 2026-10-31
+
+### Changed
+
+- Lock the CLI Maven matrix to Maven `1.1.5` and the generated 196-coordinate Maven/docs release closure.
+- Keep generated consumer guidance aligned with the explicit tenant-scope contracts for Authorization and Calendar Resource Handlers.
+
+### Upgrade Notes
+
+- Upgrade `@mango/cli@1.3.10` together with the complete Maven/docs `1.1.5` tuple; do not mix release batches.
+
 ## 1.3.9 - 2026-10-31
 
 ### Changed
