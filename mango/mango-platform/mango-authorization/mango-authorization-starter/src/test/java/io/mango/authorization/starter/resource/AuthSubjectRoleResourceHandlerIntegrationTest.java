@@ -178,6 +178,11 @@ class AuthSubjectRoleResourceHandlerIntegrationTest {
     }
 
     @Test
+    void exposesTenantExecutionScopeForLegacyRegistryCleanup() {
+        assertThat(handler.executionTenantField()).isEqualTo("tenantId");
+    }
+
+    @Test
     void upsertKeepsSubjectIdCompatibilityThroughRealMapper() {
         ResourceSyncResult result = handler.upsert(resource("subjectId", 301L));
 

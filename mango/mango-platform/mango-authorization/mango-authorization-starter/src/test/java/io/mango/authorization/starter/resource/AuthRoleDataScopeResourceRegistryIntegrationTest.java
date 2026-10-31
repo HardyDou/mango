@@ -113,6 +113,9 @@ class AuthRoleDataScopeResourceRegistryIntegrationTest {
                 select target_id from resource_registry where resource_id = ?
                 """, Long.class, declaration.getId());
         assertThat(targetId).isNotNull();
+        assertThat(jdbcTemplate.queryForObject("""
+                select tenant_id from resource_registry where resource_id = ?
+                """, String.class, declaration.getId())).isEqualTo("2");
         assertThat(scopeStatus(targetId)).isEqualTo(1);
         assertThat(registryStatus(declaration.getId())).isEqualTo("ACTIVE");
 

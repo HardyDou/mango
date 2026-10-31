@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import io.mango.resource.api.enums.ResourceOwnership;
 import io.mango.resource.api.enums.ResourceSyncMode;
 import io.mango.resource.support.model.ResourceDeclaration;
+import io.mango.resource.support.model.ResourceField;
 import io.mango.resource.core.entity.ResourceChangeLogEntity;
 import io.mango.resource.core.entity.ResourceRegistryEntity;
 import io.mango.resource.core.entity.ResourceSyncLogEntity;
@@ -105,6 +106,7 @@ public class ResourceRegistryRepository {
         entity.setBizKey(declaration.getBizKey());
         entity.setName(declaration.getName());
         entity.setTargetModule(declaration.getTargetModule());
+        setTenantId(entity, declaration);
         entity.setTargetTable(targetTable);
         entity.setTargetId(targetId);
         entity.setSourceHash(hash);
@@ -135,6 +137,7 @@ public class ResourceRegistryRepository {
         entity.setBizKey(declaration.getBizKey());
         entity.setName(declaration.getName());
         entity.setTargetModule(declaration.getTargetModule());
+        setTenantId(entity, declaration);
         entity.setTargetTable(targetTable);
         entity.setTargetId(targetId);
         entity.setSourceHash(hash);
@@ -145,6 +148,13 @@ public class ResourceRegistryRepository {
         entity.setLastSyncTime(effectiveSyncTime);
         entity.setUpdatedAt(now);
         registryMapper.updateById(entity);
+    }
+
+    private void setTenantId(ResourceRegistryEntity entity, ResourceDeclaration declaration) {
+        ResourceField tenantField = declaration.getFields().get("tenantId");
+        if (tenantField != null && tenantField.getValue() != null) {
+            entity.setTenantId(String.valueOf(tenantField.getValue()));
+        }
     }
 
     public void updateStatus(ResourceRegistryRow row, String status, String hash) {
