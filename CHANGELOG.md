@@ -1,3 +1,70 @@
+## v2026.10.31-maven-1.1.4-resource-legacy-tenant-release - Mango Maven/docs 1.1.4 Resource Registry compatibility fix - 2026-10-31
+
+Status: `PENDING`. Release plan digest `cf627b06dcb1145462a30657c164ffb409e3b8626644c3dda918244ae3b72dca`; Maven publication, consume verification, Tag and GitHub Release remain pending.
+
+### Pull Requests
+
+- [PR #1159](https://github.com/HardyDou/mango/pull/1159) Fixed Resource Registry FINALIZE handling for historical tenantless rows. Packages: all 195 non-application Maven coordinates including `io.mango:mango-docs-bundle:1.1.4`, plus `@mango/cli@1.3.9`. Business Adaptation: upgrade the complete Maven/docs tuple and verify legacy tenantless rows are skipped without mutation while real-tenant cleanup remains unchanged.
+- [PR #1160](https://github.com/HardyDou/mango/pull/1160) Changed the previous npm release closeout. Packages: none; audit-only. Business Adaptation: no consumer action; this advances the successful release baseline.
+
+### Fixed
+
+- Resource Registry FINALIZE logs and skips historical rows with missing `tenant_id` without guessing a tenant, invoking a handler or modifying the row.
+- Real-tenant rows and other cleanup failures retain the existing fail-closed behavior.
+
+### Added
+
+- Integration coverage and delivery evidence for legacy tenantless Resource Registry rows.
+
+### Changed
+
+- All 195 non-application Maven coordinates and the docs bundle advance from `1.1.3` to `1.1.4`.
+- `@mango/cli` advances from `1.3.8` to `1.3.9` as the generated Maven compatibility closure.
+
+### Versions
+
+- Maven/docs: `1.1.3` → `1.1.4`; 195 non-application coordinates plus `io.mango:mango-docs-bundle:1.1.4`.
+- npm: `@mango/cli@1.3.8` → `@mango/cli@1.3.9`; no prior Notice tuple republish.
+- Exact topology and checksums are in `mango-ui/.changeset/release-plan.json`.
+
+### Published Packages
+
+- Publish the generated non-application Maven reactor and docs bundle in release-plan order, plus the planned CLI package.
+- Application fat jars and coordinates outside the sealed plan are excluded.
+
+### Business Impact
+
+- Historical tenantless Resource Registry rows no longer block FINALIZE and remain unchanged for separately approved ownership cleanup.
+- Real tenant cleanup and unrelated errors retain existing semantics; no tenant or authorization data is inferred or rewritten.
+
+### Upgrade Estimate
+
+- Audience: Mango backend consumers using Resource Registry FINALIZE and Maven/docs coordinates.
+- Engineering Effort: 0.5-1 engineer-day per consumer for dependency upgrade and regression verification.
+- Execution Window: 1-2 hours including backup, restart and FINALIZE validation.
+- Service Downtime: one controlled backend restart window; no database migration is introduced.
+- Rollback Effort: 0.5 engineer-day to restore the complete Maven `1.1.3` tuple.
+- Assumptions: consumers have recoverable backups, tenant-scoped test data and Maven consume-registry access.
+
+### Upgrade Notes
+
+1. Upgrade the complete Maven/docs tuple from `1.1.3` to `1.1.4`, not a single starter.
+2. Upgrade CLI consumers to `@mango/cli@1.3.9` as the planned closure.
+3. Verify tenantless historical rows are warned and skipped without handler invocation or row mutation.
+4. Verify real-tenant cleanup and unrelated cleanup errors preserve existing behavior.
+
+### Verification
+
+- Resource Registry focused tests and module verification passed before merge.
+- Candidate preparation sealed 1 npm tarball and 196 Maven coordinates; the mixed candidate consumer passed.
+- Publish and consume registry back-check, pure consumer, Tag and GitHub Release remain pending.
+
+### Rollback
+
+- Restore the previous complete Maven/docs `1.1.3` tuple and verified CLI tuple; immutable coordinates are never overwritten.
+- Preserve database backups and FINALIZE logs; if registry state is ambiguous, use read-only status/repair with the same candidate.
+
+
 ## v2026.10.30-npm-notice-dynamic-route-release - npm Notice dynamic ShellMenu route closure - 2026-10-31
 
 Status: `PUBLISHED_AND_VERIFIED`. All 20 sealed npm tarballs were published and matched in npm-hosted and npm-group; the clean consume-registry consumer passed, and Tag plus GitHub Release were created and verified.

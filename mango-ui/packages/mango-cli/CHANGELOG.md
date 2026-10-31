@@ -1,3 +1,14 @@
+## 1.3.9 - 2026-10-31
+
+### Changed
+
+- Lock the CLI Maven matrix to Maven `1.1.4` and the generated non-application Maven/docs release closure.
+- Keep Resource Registry legacy tenantless-row upgrade guidance aligned with the `1.1.4` release plan.
+
+### Upgrade Notes
+
+- Upgrade `@mango/cli@1.3.9` together with the complete Maven/docs `1.1.4` tuple; do not mix release batches.
+
 ## 1.3.8 - 2026-10-31
 
 ### Changed
