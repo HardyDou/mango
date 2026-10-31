@@ -1,3 +1,70 @@
+## v2026.10.30-npm-notice-dynamic-route-release - npm Notice dynamic ShellMenu route closure - 2026-10-31
+
+Status: `PENDING`. The release plan is prepared but npm publication, consume verification, Tag and GitHub Release are not complete.
+
+### Pull Requests
+
+- PR #1156 Fixed Notice ROUTE actions for authorized dynamic ShellMenu paths. Packages: @mango/admin-extension@1.1.4, @mango/admin-pages@1.2.2, @mango/admin-shell@1.1.1, @mango/notice@1.0.61 and the generated npm closure through @mango/cli@1.3.8. Business Adaptation: upgrade the complete npm tuple so Notice actions can resolve authorized dynamic menu paths while custom interaction events remain host-handled.
+
+### Fixed
+
+- 修复 Notice ROUTE 对授权动态 ShellMenu 路径的解析；站内信和顶部铃铛动作复用当前用户菜单树，保留 query 参数和自定义 interaction 事件行为。
+
+### Added
+
+- 无新增公共功能；本批次仅发布动态 Notice 导航修复及依赖闭包版本。
+
+### Changed
+
+- @mango/admin-extension、@mango/admin-pages、@mango/admin-shell 和 @mango/notice 及其运行时依赖按生成拓扑统一升版。
+
+### Versions
+
+- Maven/docs：本批次不发布，继续使用已发布的 1.1.3。
+- npm 目标版本：@mango/admin-extension@1.1.4、@mango/ai@1.2.4、@mango/file@1.2.4、@mango/detail@1.1.9、@mango/information@1.1.4、@mango/system@1.1.1、@mango/admin-pages@1.2.2、@mango/calendar@1.0.56、@mango/cms@1.1.1、@mango/job@1.0.49、@mango/link@1.0.42、@mango/notice@1.0.61、@mango/numgen@1.0.57、@mango/payment@1.0.48、@mango/template@1.0.57、@mango/workflow@1.0.65、@mango/admin-shell@1.1.1、@mango/workflow-business-example@1.0.64、@mango/admin@2.0.3、@mango/cli@1.3.8。
+
+### Published Packages
+
+- 按 release plan 的生成顺序发布上述 20 个 npm 包到 npm-hosted，并从 npm-hosted 与 npm-group 回查精确版本、tarball 内容和完整性。
+- 不发布 Maven 坐标、应用 fat jar 或其它未列入 release plan 的制品。
+
+### Business Impact
+
+- Admin Shell 消费者升级后，Notice ROUTE 可以进入当前用户已授权且可运行的动态菜单路径；未授权、缺失或不安全目标仍不得导航。
+- Notice 独立宿主保留静态/命名路由兼容行为；业务自定义弹窗和页面调整继续通过 interaction 事件由宿主处理。
+- 本批次不修改后端接口、数据库、迁移、权限数据或租户数据。
+
+### Upgrade Estimate
+
+- Audience: 使用 @mango/notice、@mango/admin-shell、@mango/admin-extension 或 @mango/admin 的 Mango Admin 前端项目。
+- Engineering Effort: 0.25-0.5 engineer-day per consumer for the complete npm tuple update and targeted Notice navigation regression.
+- Execution Window: 30-60 minutes per consumer, including install, build and dynamic-menu regression.
+- Service Downtime: none expected; this is a frontend npm-only release with no backend or database migration.
+- Rollback Effort: 0.25 engineer-day to restore the previous complete npm tuple; immutable published versions are not overwritten.
+- Assumptions: consumers use the published npm group, have an authorized dynamic ShellMenu test account, and can run the affected package tests/build.
+
+### Upgrade Notes
+
+1. Upgrade the complete 20-package npm tuple from the release plan; do not mix versions across release batches.
+2. Run the consumer build and verify a Notice ROUTE action from both the message center and notification bell reaches an authorized dynamic ShellMenu path.
+3. Verify `receiptId`, `orderNo` and `focus` query values remain available where applicable.
+4. Verify custom `interaction` events remain host-handled and unauthorized or missing menu targets do not navigate.
+5. No Maven, database migration, backend restart or production data rollback is required for this batch.
+
+### Verification
+
+- Release plan, catalog, package exports and release-note checks run during `mango release prepare`.
+- Affected package tests: @mango/admin-extension 6 tests, @mango/notice 54 tests and @mango/admin-shell 100 tests.
+- Affected package builds: @mango/admin-extension, @mango/notice and @mango/admin-shell.
+- Post-publication verification must resolve every target version from npm-hosted and npm-group, inspect tarball integrity, and run one clean consumer using the npm-group registry.
+
+### Rollback
+
+- Revert consumers to the previous complete npm tuple recorded by the successful baseline; do not overwrite any published coordinate.
+- If registry state is ambiguous, stop and use the same prepared candidate with `mango release status` or `mango release repair --authorize`; do not republish a coordinate.
+- No database rollback is applicable because this batch contains no backend or migration change.
+
+
 # Mango Changelog
 
 ## v2026.10.29-maven-1.1.3-dict-captcha-cms-release - io.mango:mango-parent Maven 1.1.3 - npm dictionary/captcha/authorization/CMS/PMO closure - 2026-10-29
