@@ -1,6 +1,6 @@
 ## v2026.10.31-maven-1.1.4-resource-legacy-tenant-release - Mango Maven/docs 1.1.4 Resource Registry compatibility fix - 2026-10-31
 
-Status: `PENDING`. Release plan digest `cf627b06dcb1145462a30657c164ffb409e3b8626644c3dda918244ae3b72dca`; Maven publication, consume verification, Tag and GitHub Release remain pending.
+Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `cf627b06dcb1145462a30657c164ffb409e3b8626644c3dda918244ae3b72dca`; prepared candidate `f012f1751d05df8571b2d60383548d924bbcebfd2eb8ebc38ff156ee64d803c3` completed publication and consume verification for 1 npm package and 196 Maven coordinates. Tag and GitHub Release were created and verified.
 
 ### Pull Requests
 
@@ -57,7 +57,8 @@ Status: `PENDING`. Release plan digest `cf627b06dcb1145462a30657c164ffb409e3b862
 
 - Resource Registry focused tests and module verification passed before merge.
 - Candidate preparation sealed 1 npm tarball and 196 Maven coordinates; the mixed candidate consumer passed.
-- Publish and consume registry back-check, pure consumer, Tag and GitHub Release remain pending.
+- Publish and consume registry back-check passed in npm-hosted/npm-group and maven-releases/maven-public; the pure consume-registry consumer passed. Manifest: `.runtime/mango-release/cf627b06dcb1145462a30657c164ffb409e3b8626644c3dda918244ae3b72dca/manifest.json`.
+- Tag `v2026.10.31-maven-1.1.4-resource-legacy-tenant-release` and its GitHub Release were created and verified against the sealed source commit.
 
 ### Rollback
 
