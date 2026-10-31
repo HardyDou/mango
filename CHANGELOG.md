@@ -1,6 +1,6 @@
 ## v2026.10.31-maven-1.1.5-resource-tenant-release - Mango Maven/docs 1.1.5 Resource Registry tenant-scope follow-up - 2026-10-31
 
-Status: `PENDING`. Release plan digest `bcc9500745d221d4f3fe3f0e2b812f62596076b2d16f3a65c2d8e1b0d750d375`; Maven publication, consume verification, Tag and GitHub Release remain pending.
+Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `bcc9500745d221d4f3fe3f0e2b812f62596076b2d16f3a65c2d8e1b0d750d375`; prepared candidate `3ea3157b9d2d05a250b9a21e77328578367b2cce85d66c300bb66daace9c55ed` completed publication and consume verification for `@mango/cli@1.3.10` and 196 Maven coordinates. Tag and GitHub Release were created and verified.
 
 ### Pull Requests
 
@@ -62,8 +62,8 @@ Status: `PENDING`. Release plan digest `bcc9500745d221d4f3fe3f0e2b812f62596076b2
 ### Verification
 
 - Resource Registry, Authorization and Calendar integration tests passed before merge; README, FAQ and delivery-record checks passed.
-- The Maven reactor and docs bundle will be built once from the sealed candidate; all 196 coordinates will be checked in publish and consume registries with matching checksums.
-- A clean consumer will resolve Maven `1.1.5` and CLI `1.3.10` from the consume registries and execute the Resource Registry tenant-scope regression.
+- The Maven reactor and docs bundle were built once from the sealed candidate; all 196 coordinates were checked in publish and consume registries with matching checksums.
+- A clean consumer resolved Maven `1.1.5` and CLI `1.3.10` from the consume registries and passed the pure consume-registry verification.
 
 ### Rollback
 
