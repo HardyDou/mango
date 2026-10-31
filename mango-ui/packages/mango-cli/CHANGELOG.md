@@ -1,3 +1,14 @@
+## 1.3.8 - 2026-10-31
+
+### Changed
+
+- Lock the CLI npm dependency matrix to the Notice dynamic ShellMenu route release tuple through `@mango/cli@1.3.8`; Maven/docs remains at `1.1.3`.
+- Propagate the Notice ROUTE dynamic-menu resolution fix to generated frontend consumers.
+
+### Upgrade Notes
+
+- Upgrade the complete 20-package npm tuple through `@mango/cli@1.3.8`; no Maven migration is included.
+
 ## 1.3.7 - 2026-10-29
 
 ### Changed
