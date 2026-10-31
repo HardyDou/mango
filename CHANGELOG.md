@@ -1,6 +1,6 @@
 ## v2026.10.30-npm-notice-dynamic-route-release - npm Notice dynamic ShellMenu route closure - 2026-10-31
 
-Status: `PENDING`. The release plan is prepared but npm publication, consume verification, Tag and GitHub Release are not complete.
+Status: `PUBLISHED_AND_VERIFIED`. All 20 sealed npm tarballs were published and matched in npm-hosted and npm-group; the clean consume-registry consumer passed, and Tag plus GitHub Release were created and verified.
 
 ### Pull Requests
 
@@ -56,12 +56,12 @@ Status: `PENDING`. The release plan is prepared but npm publication, consume ver
 - Release plan, catalog, package exports and release-note checks run during `mango release prepare`.
 - Affected package tests: @mango/admin-extension 6 tests, @mango/notice 54 tests and @mango/admin-shell 100 tests.
 - Affected package builds: @mango/admin-extension, @mango/notice and @mango/admin-shell.
-- Post-publication verification must resolve every target version from npm-hosted and npm-group, inspect tarball integrity, and run one clean consumer using the npm-group registry.
+- Post-publication verification passed for every target version from npm-hosted and npm-group, including tarball integrity and one clean consumer using the npm-group registry. Manifest: `.runtime/mango-release/d42f56096df880087c798080ad230c9fe37c27ff56223e5db3e2ebe400dc71f8/manifest.json`; candidate: `80de3d7139766fe48255071a66c2d8724d18d72d32a6ba7470ca76aa9201a56c`.
 
 ### Rollback
 
 - Revert consumers to the previous complete npm tuple recorded by the successful baseline; do not overwrite any published coordinate.
-- If registry state is ambiguous, stop and use the same prepared candidate with `mango release status` or `mango release repair --authorize`; do not republish a coordinate.
+- Registry state was fully verified for the candidate. If a later consumer issue occurs, revert to the previous complete npm tuple; do not republish or overwrite a coordinate.
 - No database rollback is applicable because this batch contains no backend or migration change.
 
 
