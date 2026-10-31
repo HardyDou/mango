@@ -43,6 +43,11 @@ public class CalendarYearResourceHandler implements ResourceHandler {
     }
 
     @Override
+    public String executionTenantField() {
+        return "tenantId";
+    }
+
+    @Override
     public List<String> dependsOnResourceTypes() {
         return List.of(CalendarResourceTypes.DEFINITION);
     }
