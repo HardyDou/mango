@@ -1075,6 +1075,8 @@ class ResourceRegistrySyncServiceIntegrationTest {
         provider.setDeclaration(declaration);
 
         syncService.sync();
+        jdbcTemplate.update("update resource_registry set tenant_id = null where resource_id = ?",
+                declaration.getId());
         provider.clear();
         syncService.sync();
 
@@ -1090,6 +1092,8 @@ class ResourceRegistrySyncServiceIntegrationTest {
 
         assertThat(syncService.registerDeclarations(moduleCommand(
                 ResourceApplyMode.EXPAND, "guarantee", List.of(declaration)))).isTrue();
+        jdbcTemplate.update("update resource_registry set tenant_id = null where resource_id = ?",
+                declaration.getId());
         assertThat(jdbcTemplate.queryForObject(
                 "select tenant_id from resource_registry where resource_id = ?", String.class,
                 declaration.getId())).isNull();

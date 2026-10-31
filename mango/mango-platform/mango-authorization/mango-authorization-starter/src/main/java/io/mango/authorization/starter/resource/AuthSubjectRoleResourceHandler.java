@@ -48,6 +48,11 @@ public class AuthSubjectRoleResourceHandler implements ResourceHandler {
     }
 
     @Override
+    public String executionTenantField() {
+        return "tenantId";
+    }
+
+    @Override
     public ResourceHandlerSpec spec() {
         return ResourceHandlerSpec.builder()
                 .resourceType(resourceType())

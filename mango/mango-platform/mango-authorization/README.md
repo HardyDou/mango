@@ -775,7 +775,7 @@ Resource Registry 还支持授权基线声明：
 |----------|------|
 | `AUTH_ROLE` | 按 `tenantId + appCode + realm + actorType + roleCode` 幂等创建或更新角色，禁用时停用角色。 |
 | `AUTH_ROLE_DATA_SCOPE` | 按 `tenantId + appCode + roleCode + resourceCode` 声明角色数据权限，`scopeValues` 保存为 JSON 数组；`INIT_ONLY` 首次接管已有目标时保留运行时配置。完整 FINALIZE 清理缺失声明时，Handler 通过 Registry `targetId` 读取真实目标租户并精确回收，不依赖已消失声明的字段。 |
-| `AUTH_SUBJECT_ROLE` | 按 `subjectId`、`subjectCode`、`memberNo` 或 `username` 解析成员主体，并通过 `roleCodes` 确保角色绑定；禁用时移除声明中的角色绑定。 |
+| `AUTH_SUBJECT_ROLE` | 按 `subjectId`、`subjectCode`、`memberNo` 或 `username` 解析成员主体，并通过 `roleCodes` 确保角色绑定；禁用时移除声明中的角色绑定。处理器执行租户字段为 `tenantId`，历史 Registry 行缺失租户范围时由 Resource Registry 在调用前跳过。 |
 
 同一轮资源同步中，`AUTH_MENU` 依赖 `AUTH_ROLE`。Resource Registry 会先同步角色，再同步菜单；当角色声明发生创建或更新时，也会重放依赖它的菜单声明，补齐 `roleCodes` 对应的 `authorization_role_menu` 绑定。
 
@@ -805,6 +805,7 @@ Resource Registry 还支持授权基线声明：
 | 模块诊断的 Authorization 条件失败 | Resource 当前声明已 APPLIED，但菜单或 API 物化行有缺失；响应只给 expected/missing 计数和 page key，不暴露 API path、handler、用户、角色或租户。 |
 | 批量角色预览为空 | 检查当前租户上下文、角色是否启用、身份成员目录是否装配，以及组织范围是否属于当前租户；不要直接写 `authorization_subject_role` |
 | FINALIZE 报 `AUTH_ROLE_DATA_SCOPE field is required: tenantId` | 这是旧 Handler 无法消费 Registry `targetId` 的升级缺陷；升级到包含 Issue #835 修复的 Maven 版本后重试原 generation，不要保留废弃声明、手工改授权表或重建已有数据库。 |
+| FINALIZE 报 `AUTH_SUBJECT_ROLE field is required: tenantId` | 说明运行中的授权 Handler 未声明租户执行字段。升级到包含 Issue #1158 后续修复的 Maven 版本后重试原 generation；历史 Registry 行缺失 `tenant_id` 时应由 Resource Registry 告警跳过，不调用 Handler、不修改该行。 |
 
 ## 15. 相关文档
 

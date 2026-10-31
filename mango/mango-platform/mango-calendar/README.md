@@ -113,6 +113,10 @@ boolean workday = calendarApi.isWorkday(query).getData();
 
 `mango-calendar-starter-remote` 提供 `CalendarFeignClient`，服务名 `mango-calendar`，路径 `/calendar`。远程 starter 只覆盖工作日计算和农历查询接口；日历定义、年度初始化、日期维护是日历服务侧管理能力。
 
+### 3.3 Resource Registry 租户边界
+
+日历定义和年度资源通过 Resource Registry 按 `tenantId` 执行租户范围处理。升级或 Bootstrap FINALIZE 遇到历史 `tenant_id IS NULL` 的登记行时，只记录告警并跳过该行，不猜测或补写租户、不调用日历 Handler，也不修改 Registry 原状态；有效租户资源仍按原租户上下文清理，其他真实清理异常仍保持阻断语义。
+
 ## 4. 前端接入
 
 前端包是 `@mango/calendar`。它属于 `admin-pages` 配套插件，提供管理后台页面和 API 封装，不是官网、营销站或 C 端普通日历组件。

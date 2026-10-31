@@ -97,3 +97,5 @@ pnpm -F @mango/admin-shell build
 > Issue #1110 影响说明：资源 `FINALIZE` 缺失回收和 `API_RESOURCE` 物理删除只处理已证明来源的过期登记及其目标行，不改变菜单页面 key、角色授权、租户绑定或接口访问排障步骤。
 
 > Issue #1134 影响说明：Shell 验证码演示页仅调整验证码生成入口和展示文案，不改变菜单、页面 key、角色授权、租户绑定或菜单页面排障步骤。
+
+> Issue #1158 影响说明：授权租户型 Resource Handler 明确声明 `tenantId` 执行范围，历史 `tenant_id IS NULL` 登记行在 Resource Registry FINALIZE 时只告警跳过，不调用 Handler、不修改登记行；菜单、页面 key、角色授权和租户绑定排障步骤不变。

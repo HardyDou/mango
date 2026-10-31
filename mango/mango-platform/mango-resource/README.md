@@ -186,6 +186,8 @@ Resource 声明的 `execution-phase` 与 `sync-mode` 正交：
 | `ResourceSynchronizationStatus` | 暴露 Runtime 可用性参与者的当前状态。 |
 | `ResourceSynchronizationCompletedEvent` | 初次失败后的重试首次成功时发布，驱动同 JVM 下游幂等对账。 |
 
+租户型 `ResourceHandler` 必须通过 `executionTenantField()` 声明资源声明中的租户字段，通常为 `tenantId`。完整 FINALIZE 回收缺失资源时，Resource Registry 会先检查该字段；历史 Registry 行缺少租户范围时只告警跳过，不调用 Handler、不修改 Registry 行，也不猜测租户。有效租户行和其它真实清理失败仍保持原有处理与 fail-closed 语义。
+
 ### 6.1 稳定引用与幂等处理
 
 跨模块 Resource 关系推荐使用固定 `resourceId`、领域 `code` / `bizCode` 或 `resourceType + bizKey` 表达。目标
