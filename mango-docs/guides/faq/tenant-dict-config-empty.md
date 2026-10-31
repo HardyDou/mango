@@ -8,7 +8,7 @@
 
 > Issue #983 影响说明：本次调整不改变租户、字典、系统配置或资源初始化；文件上传超时配置不影响本排障路径。
 
-> Issue #1084 影响说明：老库 `resource_registry.tenant_id` 为空时，增量启动会先执行 Resource Registry 兼容同步；无法安全推导租户的历史缺失资源只告警跳过，不要被当作租户基础数据异常而删除。
+> Issue #1084 / #1158 影响说明：老库 `resource_registry.tenant_id` 为空时，Resource Registry 兼容同步和完整 FINALIZE 都不得猜测租户。无法安全推导租户的历史缺失资源只告警跳过，保持 Registry 原状态，不阻断 Bootstrap，也不能被当作租户基础数据异常而删除。
 > Issue #1087 影响说明：资源登记冲突（同一 `resourceType + bizKey` 的历史 `resourceId` 与当前声明不一致）仍然 fail-closed，本 FAQ 的租户数据结论不变；区别只是失败信息会一次列出全部冲突，按 `mango-resource/README.md` 14.1 清理后重试。清理是无损的：新登记行会复用原 `target_id` 指向的目标数据。若 `V3__normalize_resource_registry_unique_keys.sql` 因物理重复行失败，按同文件 14.2 恢复（清理重复行 + 删除 `success=0` 的历史行）；`fail-on-conflict=false` 不能用来绕过。
 
 > Issue #1087 影响说明：本次只补全资源登记冲突的报错信息与排查说明（见 Resource README 14.1），不改变租户、字典、系统配置、资源初始化或权限判定行为。

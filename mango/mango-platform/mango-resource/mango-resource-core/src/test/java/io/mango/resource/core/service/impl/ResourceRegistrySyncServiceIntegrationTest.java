@@ -1083,6 +1083,26 @@ class ResourceRegistrySyncServiceIntegrationTest {
     }
 
     @Test
+    void finalizeSkipsLegacyNullTenantResourceWithoutBlockingBootstrap() {
+        ResourceDeclaration declaration = genericDeclaration(
+                "1900000000000000012", "TENANT_TEST_RESOURCE", "guarantee.tenant-finalize", "tenant-test");
+        field(declaration, "tenantId", ResourceFieldType.STRING, "1");
+
+        assertThat(syncService.registerDeclarations(moduleCommand(
+                ResourceApplyMode.EXPAND, "guarantee", List.of(declaration)))).isTrue();
+        assertThat(jdbcTemplate.queryForObject(
+                "select tenant_id from resource_registry where resource_id = ?", String.class,
+                declaration.getId())).isNull();
+
+        assertThat(syncService.registerDeclarations(moduleCommand(
+                ResourceApplyMode.FINALIZE, moduleManifest("guarantee", List.of(), List.of())))).isTrue();
+
+        assertThat(registryStatus(declaration.getId())).isEqualTo("ACTIVE");
+        assertThat(stringValue("resource_module_receipt", "state")).isEqualTo("FINALIZED");
+        assertThat(tenantScopedResourceHandler.disableTenants()).isEmpty();
+    }
+
+    @Test
     void syncUsesRegistryTenantWhenDisablingTenantScopedLegacyResource() {
         ResourceDeclaration declaration = genericDeclaration(
                 "1900000000000000011", "TENANT_TEST_RESOURCE", "guarantee.tenant-test-2", "tenant-test");

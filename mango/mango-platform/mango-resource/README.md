@@ -645,7 +645,7 @@ delete from resource_registry where resource_type = '<类型>' and biz_key = '<b
 - 一次同步会汇总报告全部登记冲突，而不是遇到第一条就退出：报错首行为 `Mango resource registry found N conflicts`，随后按序号列出每条 `resourceType:bizKey` 的既有 id、来源与声明 id、来源，末行给出本节的修复位置。生产库存在多条身份漂移时，按该清单一次性清理即可，不需要逐条重启试错。
 
 - `FINALIZE` 只扫描 `status <> 'REMOVED'` 的 Registry 行；重复执行不会重复调用 Handler、重复写成功回收日志或刷新已回收目标。资源重新被声明时走 `syncActive`，登记恢复 `ACTIVE` 并由 Handler 重新 upsert。
-- 完整 FINALIZE 的目标回收失败会冒泡，不写入新的成功 receipt，下一次以同一稳定身份重试；普通启动同步仍保持失败告警兼容。应用关闭时的中断仍按 `assertOperationCanContinue` 生效。
+- 完整 FINALIZE 的目标回收失败会冒泡，不写入新的成功 receipt，下一次以同一稳定身份重试；但历史 Registry 行缺少租户范围时不得猜测租户，目标 Handler 不执行、Registry 行保持原状态并只告警，不能阻断当前 Bootstrap。普通启动同步仍保持失败告警兼容。应用关闭时的中断仍按 `assertOperationCanContinue` 生效。
 
 
 - `mango.resource.registry.fail-on-conflict=false` **不能**用来绕过本冲突。`V3` 之后 `(resource_type, biz_key)` 已是唯一键：关掉开关只会把冲突降级为 WARN，随后的 upsert 仍会撞唯一键并抛出 `Duplicate entry '<类型>-<bizKey>' for key 'resource_registry.uk_resource_registry_type_biz_key'`，失去可定位的冲突信息。必须先按 14.1 清理。

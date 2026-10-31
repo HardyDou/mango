@@ -1448,10 +1448,8 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
                 return;
             }
             if (!StringUtils.hasText(row.getTenantId())) {
-                if (failOnCleanupError) {
-                    Require.isTrue(false, ResourceCode.RESOURCE_INVALID,
-                            "远程资源缺少租户范围: " + row.getResourceId());
-                }
+                // Legacy rows may lack tenant scope. Never infer a tenant for a destructive
+                // operation; preserve the row and let an approved migration handle it.
                 log.warn("Mango resource missing disable skipped: remote tenant scope is unavailable, resourceType={}, resourceId={}",
                         row.getResourceType(), row.getResourceId());
                 return;
@@ -1460,10 +1458,8 @@ public class ResourceRegistryService implements IResourceRegistryService, SmartL
             result = physicalDelete ? dispatcher.delete(disabled) : dispatcher.disable(disabled);
         } else {
             if (!prepareTenantScopedDeclaration(row, handler, disabled)) {
-                if (failOnCleanupError) {
-                    Require.isTrue(false, ResourceCode.RESOURCE_INVALID,
-                            "资源缺少租户范围: " + row.getResourceId());
-                }
+                // A tenant-scoped legacy row without tenant_id cannot be safely disabled.
+                // Keep it untouched; other cleanup failures remain fail-closed below.
                 return;
             }
             physicalTargetDelete = physicalDelete && handler.supportsPhysicalDelete();
