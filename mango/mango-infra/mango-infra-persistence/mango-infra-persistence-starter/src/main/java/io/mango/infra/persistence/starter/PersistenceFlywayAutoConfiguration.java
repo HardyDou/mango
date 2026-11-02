@@ -63,6 +63,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Stream;
 import java.util.TreeMap;
 
 /**
@@ -274,6 +275,7 @@ public class PersistenceFlywayAutoConfiguration {
                         .add(target);
             }
             validateColdBaselineRouting(groups);
+            int moduleCount = 0;
             int applied = 0;
             for (Map.Entry<String, List<ColdBaselineTarget>> entry : groups.entrySet()) {
                 List<ColdBaselineTarget> group = entry.getValue().stream()
@@ -283,13 +285,16 @@ public class PersistenceFlywayAutoConfiguration {
                 ResolvedDataSource resolvedDataSource = resolveDataSource(
                         dataSource, first.migration(), registry, first.registeredDataSourceName());
                 try {
-                    applied += applyColdBaselineGroup(entry.getKey(), group, resolvedDataSource.dataSource());
+                    ColdBaselineGroupResult result = applyColdBaselineGroup(
+                            entry.getKey(), group, resolvedDataSource.dataSource());
+                    moduleCount += result.moduleCount();
+                    applied += result.applied();
                 } finally {
                     closeModuleDataSource(resolvedDataSource);
                 }
             }
             return new PersistenceFlywayBootstrapExecutor.MigrationSummary(
-                    modules.size(), applied, "COLD_BASELINE");
+                    moduleCount, applied, "COLD_BASELINE");
         } catch (Exception exception) {
             if (exception instanceof IllegalStateException illegalStateException) {
                 throw illegalStateException;
@@ -341,23 +346,23 @@ public class PersistenceFlywayAutoConfiguration {
                 target.registeredDataSourceName(), target.logicalDataSourceKey());
     }
 
-    private int applyColdBaselineGroup(String logicalKey,
-                                       List<ColdBaselineTarget> targets,
-                                       DataSource dataSource) {
+    private ColdBaselineGroupResult applyColdBaselineGroup(String logicalKey,
+                                                           List<ColdBaselineTarget> targets,
+                                                           DataSource dataSource) {
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         if (skipColdBaselineGroup(jdbcTemplate, logicalKey)) {
-            return 0;
+            return new ColdBaselineGroupResult(0, 0);
         }
         List<ColdBaselineModule> modules = resolveColdBaselineModules(targets);
         validateColdBaselineDataSourceGroup(logicalKey, modules);
         ensureColdBaselineStateTables(jdbcTemplate);
         String fingerprint = coldBaselineGroupFingerprint(logicalKey, modules);
         if (startColdBaselineGroup(jdbcTemplate, dataSource, logicalKey, fingerprint)) {
-            return 0;
+            return new ColdBaselineGroupResult(0, 0);
         }
         int applied = applyPendingColdBaselineModules(jdbcTemplate, dataSource, logicalKey, modules);
         completeColdBaselineGroup(jdbcTemplate, logicalKey, fingerprint);
-        return applied;
+        return new ColdBaselineGroupResult(modules.size(), applied);
     }
 
     private boolean skipColdBaselineGroup(JdbcTemplate jdbcTemplate, String logicalKey) {
@@ -387,17 +392,76 @@ public class PersistenceFlywayAutoConfiguration {
     }
 
     private List<ColdBaselineModule> resolveColdBaselineModules(List<ColdBaselineTarget> targets) {
-        return targets.stream()
-                .map(target -> {
-                    try {
-                        return resolveColdBaselineModule(target);
-                    } catch (IOException exception) {
-                        throw new IllegalStateException(
-                                "Mango cold baseline resource inspection failed: module="
-                                        + target.migration().name(), exception);
-                    }
-                })
-                .toList();
+        List<ColdBaselineModule> modules = new ArrayList<>();
+        for (ColdBaselineTarget target : targets) {
+            if (!hasColdBaselineArtifacts(target.migration())) {
+                log.warn("Mango cold baseline skipped module without migrations or baseline SQL: module={}",
+                        target.migration().name());
+                continue;
+            }
+            modules.add(requireColdBaselineModule(target));
+        }
+        return List.copyOf(modules);
+    }
+
+    private ColdBaselineModule requireColdBaselineModule(ColdBaselineTarget target) {
+        try {
+            return resolveColdBaselineModule(target);
+        } catch (IOException exception) {
+            throw new IllegalStateException(
+                    "Mango cold baseline resource inspection failed: module="
+                            + target.migration().name(), exception);
+        }
+    }
+
+    private boolean hasColdBaselineArtifacts(ModuleMigration migration) {
+        PersistenceFlywayProperties.BaselineConfig baseline = migration.config().getBaseline();
+        if (baseline != null && StringUtils.hasText(baseline.getLocation())) {
+            return true;
+        }
+        if (hasResources("classpath*:db/baseline/" + migration.name() + "/B*__baseline.sql")) {
+            return true;
+        }
+        for (String location : migration.locations()) {
+            if (hasResources(migrationPattern(location)) || hasFilesystemSql(location)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasResources(String pattern) {
+        try {
+            return new PathMatchingResourcePatternResolver().getResources(pattern).length > 0;
+        } catch (IOException exception) {
+            throw new IllegalStateException("Mango migration resource inspection failed: pattern=" + pattern,
+                    exception);
+        }
+    }
+
+    private String migrationPattern(String location) {
+        String trimmed = location.trim();
+        if (trimmed.startsWith("classpath:")) {
+            return "classpath*:" + trimmed.substring("classpath:".length()) + "/*.sql";
+        }
+        return trimmed + "/*.sql";
+    }
+
+    private boolean hasFilesystemSql(String location) {
+        String trimmed = location.trim();
+        if (!trimmed.startsWith("filesystem:")) {
+            return false;
+        }
+        Path directory = Path.of(trimmed.substring("filesystem:".length()));
+        if (!Files.isDirectory(directory)) {
+            return false;
+        }
+        try (Stream<Path> files = Files.list(directory)) {
+            return files.anyMatch(file -> file.getFileName().toString().endsWith(".sql"));
+        } catch (IOException exception) {
+            throw new IllegalStateException("Mango migration resource inspection failed: location=" + location,
+                    exception);
+        }
     }
 
     private boolean startColdBaselineGroup(JdbcTemplate jdbcTemplate,
@@ -1178,6 +1242,9 @@ public class PersistenceFlywayAutoConfiguration {
     private record ModuleMigration(String name,
                                    List<String> locations,
                                    PersistenceFlywayProperties.ModuleConfig config) {
+    }
+
+    private record ColdBaselineGroupResult(int moduleCount, int applied) {
     }
 
     private record ColdBaselineTarget(ModuleMigration migration,

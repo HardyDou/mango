@@ -310,7 +310,7 @@ mango:
 | `upgrade-locations-enabled` | `true` | 是否启用默认外部升级目录；目录存在时追加到未显式配置 locations 的模块 |
 | `upgrade-root` | 空 | 默认外部升级根目录；为空时按 `mango.upgrade.root`、`MANGO_UPGRADE_DIR`、`mango.home`/`MANGO_HOME`、`/opt/mango/upgrade` 解析 |
 | `cold-baseline.enabled` | `false` | 是否允许 Bootstrap 对真正空库执行每模块当前基线；Mango CLI full 模板通过 `MANGO_COLD_BASELINE_ENABLED` 控制，默认 `false` |
-| `modules.<module>.enabled` | `true` | 是否执行当前模块迁移；声明的模块必须真实拥有 `db/migration/<module>` 下的 migration，空声明会在空库 cold baseline 时 fail closed |
+| `modules.<module>.enabled` | `true` | 是否执行当前模块迁移；声明但没有 migration 的模块在 cold baseline 时会被跳过并记录 WARN；有 migration 但缺 B 时才 fail closed |
 | `modules.<module>.skip-reason` | 空 | `enabled=false` 且 classpath 存在当前模块 migration 时必须填写的跳过原因 |
 | `modules.<module>.baseline-on-migrate` | `true` | 存量库无 history table 时是否从 baseline 接管 |
 | `modules.<module>.out-of-order` | `false` | 是否允许非顺序版本补跑 |

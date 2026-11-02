@@ -23,6 +23,7 @@ class PersistenceColdBaselineIntegrationTest {
     private static final List<String> EXISTING_TEST_MODULES = List.of(
             "another-test",
             "business-upgrade",
+            "cold-missing-snapshot",
             "comparison-data",
             "link",
             "payment",
@@ -362,6 +363,45 @@ class PersistenceColdBaselineIntegrationTest {
                         .hasMessageContaining("count=2"));
     }
 
+    @Test
+    void applyColdBaseline_declaredModuleWithoutMigrations_isSkipped() {
+        DataSource dataSource = h2DataSource("cold_baseline_empty_module");
+
+        contextRunner
+                .withPropertyValues(coldBaselineProperties(
+                        "mango.persistence.flyway.modules.cold-alpha.enabled=true",
+                        "mango.persistence.flyway.modules.cold-empty.enabled=true"))
+                .withBean(DataSource.class, () -> dataSource)
+                .run(context -> {
+                    PersistenceFlywayBootstrapExecutor.MigrationSummary summary = context
+                            .getBean(PersistenceFlywayBootstrapExecutor.class)
+                            .applyColdBaseline();
+                    JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+
+                    assertThat(summary.moduleCount()).isEqualTo(1);
+                    assertThat(summary.migrationCount()).isEqualTo(1);
+                    assertThat(tableExists(jdbcTemplate, "cold_alpha_record")).isTrue();
+                    assertThat(tableExists(jdbcTemplate, "flyway_schema_history_cold_empty")).isFalse();
+                    assertThat(jdbcTemplate.queryForObject(
+                            "SELECT COUNT(*) FROM mango_cold_baseline_module WHERE module_code = 'cold-empty'",
+                            Integer.class)).isZero();
+                });
+    }
+
+    @Test
+    void applyColdBaseline_moduleWithMigrationsButNoSnapshot_isRejected() {
+        contextRunner
+                .withPropertyValues(coldBaselineProperties(
+                        "mango.persistence.flyway.modules.cold-missing-snapshot.enabled=true"))
+                .withBean(DataSource.class, () -> h2DataSource("cold_baseline_missing_snapshot"))
+                .run(context -> assertThatThrownBy(() -> context
+                        .getBean(PersistenceFlywayBootstrapExecutor.class)
+                        .applyColdBaseline())
+                        .hasMessageContaining("requires exactly one current SQL per module")
+                        .hasMessageContaining("module=cold-missing-snapshot")
+                        .hasMessageContaining("count=0"));
+    }
+
     private void applySingleAlphaBaseline(DataSource dataSource) {
         contextRunner
                 .withPropertyValues(coldBaselineProperties(
@@ -384,13 +424,14 @@ class PersistenceColdBaselineIntegrationTest {
     }
 
     private static String[] coldBaselineProperties(String... properties) {
-        List<String> values = new ArrayList<>(Arrays.asList(properties));
-        values.add("mango.persistence.flyway.cold-baseline.enabled=true");
+        List<String> values = new ArrayList<>();
         for (String module : EXISTING_TEST_MODULES) {
             values.add("mango.persistence.flyway.modules." + module + ".enabled=false");
             values.add("mango.persistence.flyway.modules." + module
                     + ".skip-reason=not part of cold baseline scenario");
         }
+        values.add("mango.persistence.flyway.cold-baseline.enabled=true");
+        values.addAll(Arrays.asList(properties));
         return values.toArray(String[]::new);
     }
 

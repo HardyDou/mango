@@ -52,6 +52,8 @@ Mango CLI 生成的 full 后端会在最终 API 应用中预置 `mango:baseline-
 
 生成器虽然启动最终业务应用，但构建专用 Bootstrap 只选择 Mango Resource contributor。业务自定义 `BootstrapStepContributor`、租户对账和其它运行期步骤不在构建期执行清单中；它们仍在目标环境的正常 Bootstrap 中执行。初始化数据的归属和构建期边界遵循 [数据库规范](../../../mango-pmo/rules/backend/04-db.md)，Resource 目标是否可进入 BSQL 由各 `ResourceHandler.baselinePolicy()` 决定。
 
+生成器和运行时的验证基线是 MySQL 8.4；其它 MySQL 版本未列入当前发布验证范围，需要时先补对应版本的 CI 作业。
+
 `characterSet` 和 `collation` 的默认值分别是 `utf8mb4`、`utf8mb4_unicode_ci`，与 Mango CLI 创建的标准业务数据库一致。通常无需在 POM 重复声明；示例显式写出是为了让业务制品的数据库语义可审计。正式目标空库的字符集组合及例外边界以 [数据库规范](../../../mango-pmo/rules/backend/04-db.md) 为准。
 
 ## 4. Jenkins 构建
@@ -194,5 +196,5 @@ jar tf target/*.jar | grep -E '^META-INF/mango/(resource-bootstrap-manifest.json
 - `Resource baseline generation currently requires one datasource group`：当前应用级 Resource 物化不能跨多个逻辑 datasource group；收敛为一个 group，或暂不启用 Resource baseline。
 - `Resource baseline build mode requires ...`：不要在部署命令中手工打开构建专用开关；确认使用 `mango:baseline-generate` 启动最终应用，并且应用已装配 `mango-resource-sync-starter`。
 - `stored routines and events are not supported`：当前生成器不静默遗漏存储过程、函数或事件；将其迁移方案单独评审。
-- `Mango cold baseline requires exactly one current SQL per module: ... count=0`：应用在 `mango.persistence.flyway.modules` 声明了没有 migration 的模块（例如历史遗留的 `notification`）。删除该模块声明，或补上真实 migration 后重新构建；不得手工往制品塞 B。
+- `Mango cold baseline requires exactly one current SQL per module: ... count=0`：该模块有 `db/migration/<module>` 下的 V migration，但制品内缺少对应 B。重新构建 BSQL 制品，或删除该模块声明；不得手工往制品塞 B。既没有 migration 也没有 B 的模块声明会被跳过并记录 WARN 日志，建议清理这类历史声明。
 - Jenkins 没有 MySQL：为该构建增加临时 MySQL 8.4 service/container，而不是改业务 datasource 或把生成推迟到部署服务器。
