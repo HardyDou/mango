@@ -376,8 +376,8 @@
       ],
       "configFragments": [
         {
-          "content": "  kv:\n    store:\n      type: jdbc\n    capability:\n      enabled: true\n      locker: true\n      token-store: true\n      outbox: true\n  event:\n    outbox:\n      enabled: true\n",
-          "sha256": "1431847b85c80656aff502b5c7784774d93f6a509699afbe6357483c6a00ef33",
+          "content": "  kv:\n    store:\n      type: jdbc\n    capability:\n      enabled: true\n      cache: true\n      locker: true\n      rate-limiter: true\n      token-store: true\n      outbox: true\n  event:\n    outbox:\n      enabled: true\n",
+          "sha256": "1c3533dfb400464fc965a591a42d9a6b8157a4c70c9b9b4c0d596939c013ccea",
           "targetPath": "templates/full/backend/app/src/main/resources/application.yml"
         }
       ],

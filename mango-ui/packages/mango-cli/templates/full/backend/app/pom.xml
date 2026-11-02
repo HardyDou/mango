@@ -29,6 +29,25 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>io.mango.tools.maven.plugin</groupId>
+                <artifactId>mango-maven-plugin</artifactId>
+                <version>${mango.version}</version>
+                <executions>
+                    <execution>
+                        <id>generate-cold-baselines</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>baseline-generate</goal>
+                        </goals>
+                        <configuration>
+                            <enabled>${mango.baseline.enabled}</enabled>
+                            <jdbcUrl>${env.MANGO_BASELINE_JDBC_URL}</jdbcUrl>
+                            <resourceApplicationClass>{{basePackage}}.{{projectPascal}}Application</resourceApplicationClass>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring-boot.version}</version>
