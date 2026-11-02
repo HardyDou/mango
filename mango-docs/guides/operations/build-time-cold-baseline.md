@@ -32,42 +32,21 @@ target/generated-resources/META-INF/mango/baseline-manifest.json
 
 ## 3. API POM
 
-在最终 API 应用的构建 profile 中绑定 goal；不要把这段 execution 放进每个业务模块：
+Mango CLI 生成的 full 后端会在最终 API 应用中预置 `mango:baseline-generate` execution。业务 POM 只需要声明 Mango 模块，不需要维护 `includedModules`、`moduleOrder`、`moduleGroups` 或 `copy-resources`。
+
+构建父 POM 默认设置：
 
 ```xml
-<plugin>
-    <groupId>io.mango.tools.maven.plugin</groupId>
-    <artifactId>mango-maven-plugin</artifactId>
-    <version>${mango.version}</version>
-    <executions>
-        <execution>
-            <id>generate-cold-baselines</id>
-            <phase>prepare-package</phase>
-            <goals>
-                <goal>baseline-generate</goal>
-            </goals>
-            <configuration>
-                <includedModules>system,identity,authorization,workflow,file,business</includedModules>
-                <moduleOrder>system,identity,authorization,workflow,file,business</moduleOrder>
-                <moduleGroups>system=main,identity=main,authorization=main,workflow=main,file=main,business=main</moduleGroups>
-                <characterSet>utf8mb4</characterSet>
-                <collation>utf8mb4_unicode_ci</collation>
-                <resourceApplicationClass>com.example.BusinessApplication</resourceApplicationClass>
-                <resourceTimeoutSeconds>300</resourceTimeoutSeconds>
-                <resourceAdditionalClasspathElements>
-                    <resourceAdditionalClasspathElement>
-                        ${project.basedir}/../bootstrap-assets
-                    </resourceAdditionalClasspathElement>
-                </resourceAdditionalClasspathElements>
-            </configuration>
-        </execution>
-    </executions>
-</plugin>
+<mango.baseline.enabled>false</mango.baseline.enabled>
 ```
+
+`mango-build` 或 CI 在需要 BSQL 的后端构建中统一传入 `-Dmango.baseline.enabled=true`，并提供一次性构建数据库 URL；关闭时插件会清理旧的 generated BSQL 和 manifest，避免 plain 制品残留基线。
+
+非 CLI 生成的历史业务项目仍可以显式绑定同一个 goal 作为迁移入口。此时模块清单默认从最终 runtime classpath 的 V migration 发现，只有存在真实的 datasource 分组或外部 Resource 资产时才需要额外配置。
 
 只生成 Flyway baseline 时，可以把模块映射到不同 group。启用 `resourceApplicationClass` 后，当前版本要求所有模块位于同一个 datasource group；多 group 会在创建临时 schema 前失败，不能通过拆分执行绕过应用级 Resource 一致性。
 
-启用 `resourceApplicationClass` 的 Resource baseline 绑定到 `prepare-package`：此时最终业务主类和运行时 classpath 已编译完成，生成的 BSQL/manifest 仍会在 Boot repackage 前进入最终 JAR。未配置 `resourceApplicationClass` 的纯 Flyway baseline 可以继续使用较早阶段，但不能据此声明已物化 Resource。
+启用 `resourceApplicationClass` 的 Resource baseline 绑定到 `prepare-package`：此时最终业务主类和运行时 classpath 已编译完成，生成的 BSQL/manifest 仍会在 Boot repackage 前进入最终 JAR。构建节点还必须提供最终应用启动所需的非数据库环境变量（例如 `MANGO_CRYPTO_SM4_SECRET_KEY`）；这些值应来自 CI Secret，不得写入 POM、模板默认值或 manifest。未配置 `resourceApplicationClass` 的纯 Flyway baseline 可以继续使用较早阶段，但不能据此声明已物化 Resource。
 
 业务应用把大文件等资产保留在 JAR 外部时，使用 `resourceAdditionalClasspathElements` 把最终运行时会提供的只读目录或 JAR 加入构建期 Resource baseline 应用。相对路径按最终应用模块的 `${project.basedir}` 解析；路径不存在或不可读时构建直接失败。该参数只影响构建期 Java 子进程，不会把目录复制进应用 JAR；Docker 镜像或部署包仍需按业务运行时约定携带相同资产，并通过 `loader.path` 等正式入口加入运行时 classpath。
 
@@ -81,9 +60,10 @@ Jenkins 节点本身不需要预装 MySQL。流水线为 API 构建启动一个�
 
 ```bash
 export MANGO_BASELINE_DB_PASSWORD="$CI_BASELINE_DB_PASSWORD"
+export MANGO_BASELINE_JDBC_URL='jdbc:mysql://127.0.0.1:33060/mysql?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai'
 
 mvn -pl business-api -am package \
-  -Dmango.baseline.jdbcUrl='jdbc:mysql://127.0.0.1:33060/mysql?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai' \
+  -Dmango.baseline.enabled=true \
   -Dmango.baseline.username=root \
   -Dmango.baseline.passwordEnv=MANGO_BASELINE_DB_PASSWORD \
   -Dmango.baseline.characterSet=utf8mb4 \
@@ -92,7 +72,7 @@ mvn -pl business-api -am package \
 
 临时账号需要创建和删除临时 schema 的权限。Jenkins 只传构建数据库 URL 和目标 schema 语义；插件不读取 `spring.datasource.*`，也不会修改业务环境的数据库连接。构建机 MySQL 即使默认使用 `utf8mb4_0900_ai_ci`，生成器创建的三类临时 schema 仍使用上述目标值。
 
-构建 profile 只在主分支正式 API 制品任务启用。PR 任务继续执行 migration 命名、重复版本、checksum 和升级测试，但不产出正式 B。
+构建任务通过 `mango.baseline.enabled` 选择是否生成 BSQL。PR 任务继续执行 migration 命名、重复版本、checksum 和升级测试；未启用 BSQL 的任务不会产出或保留 BSQL。
 
 ## 5. 制品验收
 
@@ -113,13 +93,28 @@ manifest 包含目标字符集、目标排序规则、模块、逻辑数据源 g
 
 ## 6. 运行时选择
 
+Mango CLI 生成的 full 后端通过环境变量控制运行时是否使用制品内 B：
+
+```yaml
+mango:
+  persistence:
+    flyway:
+      cold-baseline:
+        enabled: ${MANGO_COLD_BASELINE_ENABLED:false}
+```
+
+默认 `false`，因此 plain 制品在空库仍按 V 顺序初始化。发布 BSQL 制品时，构建侧 `-Dmango.baseline.enabled=true` 与部署侧 `MANGO_COLD_BASELINE_ENABLED=true` 必须同时启用；只开启构建而不开启运行时，空库会回退为 V 回放，结果正确但失去加速效果。
+
+部署侧同一个值必须贯穿 `bootstrap apply`、`bootstrap finalize` 和 `runtime`：该开关进入 Bootstrap fingerprint，三段命令混用会报 `BOOTSTRAP_FINGERPRINT_MISMATCH`。
+
 | 数据库状态 | Bootstrap 行为 |
 |------------|----------------|
 | 真正空库且启用 cold baseline | 执行制品内 B，建立模块原 history table 基线，再执行高于 B 版本的新 V。 |
 | 已有模块 history | 忽略 B，继续增量 V。 |
+| 空库启用 cold baseline 但缺少某模块 B | fail closed；说明模块声明与制品不一致。 |
 | 非空但没有一致的 history/回执 | fail closed；按环境恢复方案处理，不自动用 B 覆盖。 |
 
-Runtime 不生成 B，也不访问构建数据库。部署 Bootstrap 只消费制品中的 B 和 manifest；已有库继续执行未执行的 V。
+Runtime 不生成 B，也不访问构建数据库。部署 Bootstrap 只消费制品中的 B 和 manifest；已有库继续执行未执行的 V。切换制品不会要求重建数据库：从 plain 制品切到 BSQL 制品时，Bootstrap 记录 `Mango cold baseline skipped for existing datasource`；从 BSQL 制品切回 plain 制品只继续执行缺失的 V。
 
 ## 7. Resource、Workflow 与文件
 
@@ -199,4 +194,5 @@ jar tf target/*.jar | grep -E '^META-INF/mango/(resource-bootstrap-manifest.json
 - `Resource baseline generation currently requires one datasource group`：当前应用级 Resource 物化不能跨多个逻辑 datasource group；收敛为一个 group，或暂不启用 Resource baseline。
 - `Resource baseline build mode requires ...`：不要在部署命令中手工打开构建专用开关；确认使用 `mango:baseline-generate` 启动最终应用，并且应用已装配 `mango-resource-sync-starter`。
 - `stored routines and events are not supported`：当前生成器不静默遗漏存储过程、函数或事件；将其迁移方案单独评审。
+- `Mango cold baseline requires exactly one current SQL per module: ... count=0`：应用在 `mango.persistence.flyway.modules` 声明了没有 migration 的模块（例如历史遗留的 `notification`）。删除该模块声明，或补上真实 migration 后重新构建；不得手工往制品塞 B。
 - Jenkins 没有 MySQL：为该构建增加临时 MySQL 8.4 service/container，而不是改业务 datasource 或把生成推迟到部署服务器。

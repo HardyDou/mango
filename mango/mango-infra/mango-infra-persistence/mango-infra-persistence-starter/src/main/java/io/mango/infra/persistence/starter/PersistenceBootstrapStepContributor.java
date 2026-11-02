@@ -97,11 +97,42 @@ public final class PersistenceBootstrapStepContributor implements BootstrapStepC
             if (moduleConfig == null) {
                 moduleConfig = new PersistenceFlywayProperties.ModuleConfig();
             }
-            BaselineArtifact artifact = resolveBaselineArtifact(resolver, module, moduleConfig);
             inventory.add("cold-baseline=" + logicalDataSourceKey(module, moduleConfig)
-                    + "|" + module + "|" + artifact.version() + "|" + artifact.checksum());
+                    + "|" + module + "|" + baselineAvailability(resolver, module, moduleConfig));
         }
         return inventory;
+    }
+
+    private String baselineAvailability(PathMatchingResourcePatternResolver resolver,
+                                        String module,
+                                        PersistenceFlywayProperties.ModuleConfig moduleConfig) {
+        try {
+            PersistenceFlywayProperties.BaselineConfig baseline = moduleConfig.getBaseline();
+            if (baseline != null && StringUtils.hasText(baseline.getLocation())) {
+                String location = baseline.getLocation().trim();
+                Resource resource = new DefaultResourceLoader().getResource(location);
+                if (!resource.exists() || !resource.isReadable()) {
+                    return "configured-location-missing:" + location;
+                }
+                return "configured-location=" + location + ":" + resourceChecksum(resource);
+            }
+            String pattern = "classpath*:db/baseline/" + module + "/B*__baseline.sql";
+            Resource[] resources = resolver.getResources(pattern);
+            if (resources.length != 1) {
+                return "discovered-count=" + resources.length;
+            }
+            Resource resource = resources[0];
+            String filename = resource.getFilename() == null ? "<unknown>" : resource.getFilename();
+            return "discovered=" + filename + ":" + resourceChecksum(resource);
+        } catch (IOException exception) {
+            return "unavailable:" + exception.getClass().getSimpleName();
+        }
+    }
+
+    private String resourceChecksum(Resource resource) throws IOException {
+        try (InputStream input = resource.getInputStream()) {
+            return sha256(input.readAllBytes());
+        }
     }
 
     private List<String> coldBaselineModules(PathMatchingResourcePatternResolver resolver) throws IOException {
@@ -128,48 +159,6 @@ public final class PersistenceBootstrapStepContributor implements BootstrapStepC
         return List.copyOf(modules);
     }
 
-    private BaselineArtifact resolveBaselineArtifact(PathMatchingResourcePatternResolver resolver,
-                                                     String module,
-                                                     PersistenceFlywayProperties.ModuleConfig moduleConfig)
-            throws IOException {
-        PersistenceFlywayProperties.BaselineConfig baseline = moduleConfig.getBaseline();
-        Resource resource;
-        if (baseline != null && StringUtils.hasText(baseline.getLocation())) {
-            resource = new DefaultResourceLoader().getResource(baseline.getLocation().trim());
-            if (!resource.exists() || !resource.isReadable()) {
-                throw new IllegalStateException("Mango cold baseline SQL is not readable: module=" + module
-                        + ", location=" + baseline.getLocation());
-            }
-        } else {
-            String pattern = "classpath*:db/baseline/" + module + "/B*__baseline.sql";
-            Resource[] resources = resolver.getResources(pattern);
-            if (resources.length != 1) {
-                throw new IllegalStateException("Mango cold baseline requires exactly one current SQL per module: "
-                        + "module=" + module + ", pattern=" + pattern + ", count=" + resources.length);
-            }
-            resource = resources[0];
-        }
-        String version = baseline != null && StringUtils.hasText(baseline.getVersion())
-                ? baseline.getVersion().trim() : baselineVersion(resource, module);
-        try (InputStream input = resource.getInputStream()) {
-            return new BaselineArtifact(version, sha256(input.readAllBytes()));
-        }
-    }
-
-    private String baselineVersion(Resource resource, String module) {
-        String filename = resource.getFilename();
-        if (!StringUtils.hasText(filename)
-                || !filename.startsWith("B")
-                || !filename.endsWith("__baseline.sql")) {
-            throw new IllegalStateException("Mango cold baseline filename must match B{version}__baseline.sql: module="
-                    + module + ", filename=" + filename);
-        }
-        String version = filename.substring(1, filename.length() - "__baseline.sql".length());
-        if (!StringUtils.hasText(version)) {
-            throw new IllegalStateException("Mango cold baseline version is empty: module=" + module);
-        }
-        return version;
-    }
 
     private String logicalDataSourceKey(String module,
                                         PersistenceFlywayProperties.ModuleConfig moduleConfig) {
@@ -330,8 +319,5 @@ public final class PersistenceBootstrapStepContributor implements BootstrapStepC
         public BootstrapStepResult execute(BootstrapExecutionContext context) {
             return migrateAndVerify(BootstrapPhase.FINALIZE);
         }
-    }
-
-    private record BaselineArtifact(String version, String checksum) {
     }
 }

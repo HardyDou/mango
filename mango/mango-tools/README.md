@@ -217,7 +217,8 @@ META-INF
 
 | 参数 | 默认值 | 说明 |
 |------|--------|------|
-| `mango.baseline.jdbcUrl` | 无 | 一次性 MySQL 服务器 JDBC URL；必填，URL 中原数据库名不会被使用。 |
+| `mango.baseline.enabled` | `true` | 是否生成并打包 BSQL；CLI full 后端通过构建父 POM 默认关闭，由 Mango 构建任务按目标显式开启。关闭时清理旧的 generated baseline 资源。 |
+| `mango.baseline.jdbcUrl` | 无 | 一次性 MySQL 服务器 JDBC URL；启用 BSQL 时必填，URL 中原数据库名不会被使用。 |
 | `mango.baseline.username` | `root` | 一次性数据库账号。 |
 | `mango.baseline.passwordEnv` | `MANGO_BASELINE_DB_PASSWORD` | 保存密码的环境变量名；密码不进入 POM、manifest 或日志。 |
 | `mango.baseline.characterSet` | `utf8mb4` | replay、determinism 和 verify schema 使用的目标字符集；默认与 Mango CLI 创建的业务数据库一致。 |

@@ -36,6 +36,7 @@ mango:
   bootstrap:
     receipt-directory: ${MANGO_BOOTSTRAP_RECEIPT_DIRECTORY:../.mango/bootstrap}
   security:
+    default-chain-enabled: false
     jwt:
       secret: ${JWT_SECRET:mango-secret-key-for-jwt-token-generation-must-be-at-least-256-bits}
   auth:
@@ -76,6 +77,8 @@ mango:
       tenant:
         default-tenant-id: ${MANGO_DEFAULT_TENANT_ID:1}
     flyway:
+      cold-baseline:
+        enabled: ${MANGO_COLD_BASELINE_ENABLED:false}
       modules:
         system:
           enabled: true
@@ -92,8 +95,6 @@ mango:
           enabled: true
         org:
           enabled: true
-        captcha:
-          enabled: true
         file:
           enabled: true
         resource:
@@ -109,8 +110,6 @@ mango:
           out-of-order: true
         kv:
           enabled: true
-        notification:
-          enabled: true
         calendar:
           enabled: true
         numgen:
@@ -125,9 +124,13 @@ mango:
           ignore-missing-migrations: true
         link:
           enabled: true
+        ai:
+          enabled: true
         grid-layout:
           enabled: true
         mango-cms:
+          enabled: true
+        mango-information:
           enabled: true
         # mango-cli:business-flyway-modules:start
 {{backendBusinessFlywayModules}}

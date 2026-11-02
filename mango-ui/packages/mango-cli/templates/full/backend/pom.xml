@@ -31,6 +31,7 @@
         <flyway.version>{{flywayVersion}}</flyway.version>
         <spring-cloud.version>{{springCloudVersion}}</spring-cloud.version>
         <mango.version>{{mangoBackendVersion}}</mango.version>
+        <mango.baseline.enabled>false</mango.baseline.enabled>
         <springdoc-openapi.version>{{springdocOpenapiVersion}}</springdoc-openapi.version>
         <swagger-annotations.version>{{swaggerAnnotationsVersion}}</swagger-annotations.version>
         <mango.architecture.mode>full</mango.architecture.mode>

@@ -37,8 +37,35 @@ class BaselineGenerateMojoTest {
     }
 
     @Test
+    void disabledGenerationClearsPreviouslyGeneratedResources(@TempDir Path directory) throws Exception {
+        Path generated = directory.resolve("generated");
+        Path classes = directory.resolve("classes");
+        Files.createDirectories(generated.resolve("db/baseline/old"));
+        Files.createDirectories(generated.resolve("META-INF/mango"));
+        Files.createDirectories(classes.resolve("db/baseline/old"));
+        Files.createDirectories(classes.resolve("META-INF/mango"));
+        Files.writeString(generated.resolve("db/baseline/old/B1__baseline.sql"), "old");
+        Files.writeString(generated.resolve("META-INF/mango/baseline-manifest.json"), "old");
+        Files.writeString(classes.resolve("db/baseline/old/B1__baseline.sql"), "old");
+        Files.writeString(classes.resolve("META-INF/mango/baseline-manifest.json"), "old");
+
+        BaselineGenerateMojo mojo = new BaselineGenerateMojo();
+        setField(mojo, "enabled", false);
+        setField(mojo, "outputDirectory", generated.toFile());
+        setField(mojo, "classesDirectory", classes.toFile());
+
+        mojo.execute();
+
+        assertFalse(Files.exists(generated.resolve("db/baseline")));
+        assertFalse(Files.exists(generated.resolve("META-INF/mango/baseline-manifest.json")));
+        assertFalse(Files.exists(classes.resolve("db/baseline")));
+        assertFalse(Files.exists(classes.resolve("META-INF/mango/baseline-manifest.json")));
+    }
+
+    @Test
     void resourceApplicationMustBeCompiledBeforeBaselineGeneration(@TempDir Path directory) throws Exception {
         BaselineGenerateMojo mojo = new BaselineGenerateMojo();
+        setField(mojo, "enabled", true);
         setField(mojo, "jdbcUrl", "jdbc:mysql://127.0.0.1:3306/mysql");
         setField(mojo, "username", "root");
         setField(mojo, "schemaPrefix", "mango_baseline_test");
