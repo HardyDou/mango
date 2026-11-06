@@ -1,0 +1,42 @@
+{
+  "1500x1000": {
+    "dialog": {
+      "title": "新增角色",
+      "overlayDisplay": "flex",
+      "dialog": {
+        "w": 560,
+        "h": 603,
+        "x": 470,
+        "y": 198.5,
+        "margin": "198.5px 470px"
+      },
+      "centeredX": true,
+      "centeredY": true,
+      "body": {
+        "clientHeight": 481,
+        "scrollHeight": 481
+      }
+    },
+    "console": []
+  },
+  "2560x1415": {
+    "dialog": {
+      "title": "新增角色",
+      "overlayDisplay": "flex",
+      "dialog": {
+        "w": 560,
+        "h": 603,
+        "x": 1000,
+        "y": 406,
+        "margin": "406px 1000px"
+      },
+      "centeredX": true,
+      "centeredY": true,
+      "body": {
+        "clientHeight": 481,
+        "scrollHeight": 481
+      }
+    },
+    "console": []
+  }
+}

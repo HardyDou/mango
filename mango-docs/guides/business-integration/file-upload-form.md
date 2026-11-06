@@ -229,6 +229,7 @@ FileRecordVO pdfFile = fileApi.mergeToPdf(command).getData();
 | 点击预览触发下载             | 是否把 `/api/file/files/download` 或 `/file/files/download` 写入了 `previewUrl`；详情预览应使用有效 `previewUrl` 或文档预览服务链接，没有可用预览地址时展示下载查看提示 |
 | ZIP 打包失败                 | `entries.path` 是否为空、重复、包含绝对路径或 `..`，源文件是否处于可下载的已完成状态                                                                                    |
 | PDF 合并失败                 | `targetFormat` 是否为 `PDF`，源文件是否为 PDF、JPG/JPEG、PNG、TIFF、DOC、DOCX，fileproc 转换和 PDF 合并能力是否已配置，源文件是否处于可下载的已完成状态                 |
+| POI 5 解析 xlsx/docx 抛 `NoSuchFieldError ... DocumentFactory Factory` | 应用依赖树是否包含 `org.apache.poi:ooxml-schemas`；升级 `mango-file-preview-engine` 到包含 Issue #1171 修复的版本后删除应用 POM 中手工添加的 `ooxml-schemas` 排除，见 [File Preview README](../../../mango/mango-platform/mango-file-preview/README.md) |
 
 ## 10. 验证命令
 

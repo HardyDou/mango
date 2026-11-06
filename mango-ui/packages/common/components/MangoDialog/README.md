@@ -117,6 +117,12 @@ function focusDialog() {
 </template>
 ```
 
+## 布局行为
+
+- 默认水平、垂直居中，高度随内容自适应，最大高度为视口高度的 90%
+- 内容超出最大高度时由内容区独立滚动，弹框底部不留空白
+- 开启 `draggable` 或 `resizable` 并开始交互后改用固定定位，位置由拖拽和缩放结果接管
+
 ## 拖拽和缩放行为
 
 - `draggable` 和 `resizable` 相互独立，内容仍由 slots 提供
