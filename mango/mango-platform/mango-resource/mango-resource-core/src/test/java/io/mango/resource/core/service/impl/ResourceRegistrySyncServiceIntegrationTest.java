@@ -29,6 +29,7 @@ import io.mango.resource.api.enums.ResourceSyncMode;
 import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.model.ResourceField;
 import io.mango.resource.support.model.ResourceSyncContext;
+import io.mango.resource.support.model.ResourceHandlerSpec;
 import io.mango.resource.support.model.ResourceSyncResult;
 import io.mango.resource.support.config.ResourceRegistryProperties;
 import io.mango.resource.support.declaration.ResourceDeclarationCollector;
@@ -57,6 +58,7 @@ import org.apache.ibatis.session.RowBounds;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration;
 import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration;
@@ -89,11 +91,16 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
         PersistenceMybatisPlusAutoConfiguration.class,
         ResourceRegistrySyncServiceIntegrationTest.TestConfig.class
 })
+/**
+ * 默认在 H2(MODE=MySQL) 上执行；设置 MANGO_REGISTRY_IT_DB_URL 等环境变量后，
+ * 同一批用例可对真实 MySQL 执行（数据库名必须以 {@code _resource_it} 结尾）。
+ * 真实 MySQL 回归命令见 mango/mango-platform/mango-resource/README.md。
+ */
 @TestPropertySource(properties = {
-        "spring.datasource.url=jdbc:h2:mem:resource_registry;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
-        "spring.datasource.username=sa",
-        "spring.datasource.password=",
-        "spring.datasource.driver-class-name=org.h2.Driver",
+        "spring.datasource.url=${MANGO_REGISTRY_IT_DB_URL:jdbc:h2:mem:resource_registry;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE}",
+        "spring.datasource.username=${MANGO_REGISTRY_IT_DB_USERNAME:sa}",
+        "spring.datasource.password=${MANGO_REGISTRY_IT_DB_PASSWORD:}",
+        "spring.datasource.driver-class-name=${MANGO_REGISTRY_IT_DB_DRIVER:org.h2.Driver}",
         "spring.flyway.enabled=false",
         "mango.persistence.mybatis-plus.tenant.enabled=false",
         "mybatis-plus.mapper-locations=classpath:/mapper/resource/*.xml"
@@ -145,8 +152,18 @@ class ResourceRegistrySyncServiceIntegrationTest {
     @Autowired
     private ResourceRegistryProperties resourceRegistryProperties;
 
+    @Autowired
+    private AuthSubjectRoleLikeResourceHandler authSubjectRoleLikeResourceHandler;
+
+    @Autowired
+    private IdentityUserLikeResourceHandler identityUserLikeResourceHandler;
+
+    @Value("${spring.datasource.url}")
+    private String datasourceUrl;
+
     @BeforeEach
     void setUp() {
+        assertDedicatedDatabase();
         syncService.start();
         rebuildTables();
         provider.setDeclaration(activeDeclaration(1, "提交申请"));
@@ -155,6 +172,8 @@ class ResourceRegistrySyncServiceIntegrationTest {
         handler.resetPreservation();
         handler.setEnvironmentRequired(false);
         tenantScopedResourceHandler.clearDisableTenants();
+        authSubjectRoleLikeResourceHandler.clearDisabled();
+        identityUserLikeResourceHandler.clearDisabled();
         resourceRegistryProperties.setBaselineBuildEnabled(false);
         dispatcher.reset();
         syncOrderRecorder.clear();
@@ -1107,6 +1126,47 @@ class ResourceRegistrySyncServiceIntegrationTest {
     }
 
     @Test
+    void finalizeSkipsLegacyNullTenantAuthSubjectRoleRowWithoutCallingHandler() {
+        ResourceDeclaration declaration = genericDeclaration("1900000000000000131", "AUTH_SUBJECT_ROLE",
+                "guarantee.subject-role.legacy", "authorization");
+        field(declaration, "tenantId", ResourceFieldType.STRING, "1");
+
+        assertThat(syncService.registerDeclarations(moduleCommand(
+                ResourceApplyMode.EXPAND, "guarantee", List.of(declaration)))).isTrue();
+        jdbcTemplate.update("update resource_registry set tenant_id = null where resource_id = ?",
+                declaration.getId());
+
+        assertThat(syncService.registerDeclarations(moduleCommand(
+                ResourceApplyMode.FINALIZE, moduleManifest("guarantee", List.of(), List.of())))).isTrue();
+
+        assertThat(registryStatus(declaration.getId())).isEqualTo("ACTIVE");
+        assertThat(jdbcTemplate.queryForObject(
+                "select tenant_id from resource_registry where resource_id = ?", String.class,
+                declaration.getId())).isNull();
+        assertThat(stringValue("resource_module_receipt", "state")).isEqualTo("FINALIZED");
+        assertThat(authSubjectRoleLikeResourceHandler.disabledResourceIds()).isEmpty();
+    }
+
+    @Test
+    void finalizeSkipsLegacyNullTenantIdentityUserRowWithoutCallingHandler() {
+        ResourceDeclaration declaration = genericDeclaration("1900000000000000132", "IDENTITY_USER",
+                "guarantee.user.legacy", "identity");
+        field(declaration, "tenantId", ResourceFieldType.STRING, "1");
+
+        assertThat(syncService.registerDeclarations(moduleCommand(
+                ResourceApplyMode.EXPAND, "guarantee", List.of(declaration)))).isTrue();
+        jdbcTemplate.update("update resource_registry set tenant_id = null where resource_id = ?",
+                declaration.getId());
+
+        assertThat(syncService.registerDeclarations(moduleCommand(
+                ResourceApplyMode.FINALIZE, moduleManifest("guarantee", List.of(), List.of())))).isTrue();
+
+        assertThat(registryStatus(declaration.getId())).isEqualTo("ACTIVE");
+        assertThat(stringValue("resource_module_receipt", "state")).isEqualTo("FINALIZED");
+        assertThat(identityUserLikeResourceHandler.disabledResourceIds()).isEmpty();
+    }
+
+    @Test
     void syncUsesRegistryTenantWhenDisablingTenantScopedLegacyResource() {
         ResourceDeclaration declaration = genericDeclaration(
                 "1900000000000000011", "TENANT_TEST_RESOURCE", "guarantee.tenant-test-2", "tenant-test");
@@ -1634,6 +1694,17 @@ class ResourceRegistrySyncServiceIntegrationTest {
         }
     }
 
+    private void assertDedicatedDatabase() {
+        if (datasourceUrl == null || !datasourceUrl.startsWith("jdbc:mysql:")) {
+            return;
+        }
+        String withoutScheme = datasourceUrl.substring(datasourceUrl.indexOf("//") + 2);
+        String database = withoutScheme.substring(withoutScheme.indexOf('/') + 1).split("[?;]")[0];
+        assertThat(database)
+                .as("真实 MySQL 回归必须使用独立数据库，库名以 _resource_it 结尾，实际为 %s", database)
+                .endsWith("_resource_it");
+    }
+
     private void rebuildTables() {
         jdbcTemplate.execute("drop table if exists resource_module_receipt");
         jdbcTemplate.execute("drop table if exists resource_change_log");
@@ -1692,7 +1763,7 @@ class ResourceRegistrySyncServiceIntegrationTest {
                     resource_id bigint,
                     sync_type varchar(32) not null,
                     result varchar(32) not null,
-                    message clob,
+                    message text,
                     tenant_id varchar(64),
                     org_id bigint,
                     created_by bigint,
@@ -1707,8 +1778,8 @@ class ResourceRegistrySyncServiceIntegrationTest {
                     resource_id bigint,
                     change_type varchar(32) not null,
                     operator_id bigint,
-                    before_content clob,
-                    after_content clob,
+                    before_content text,
+                    after_content text,
                     tenant_id varchar(64),
                     org_id bigint,
                     created_by bigint,
@@ -1895,6 +1966,16 @@ class ResourceRegistrySyncServiceIntegrationTest {
         }
 
         @Bean
+        AuthSubjectRoleLikeResourceHandler authSubjectRoleLikeResourceHandler() {
+            return new AuthSubjectRoleLikeResourceHandler();
+        }
+
+        @Bean
+        IdentityUserLikeResourceHandler identityUserLikeResourceHandler() {
+            return new IdentityUserLikeResourceHandler();
+        }
+
+        @Bean
         RecordingResourceTargetDispatcher recordingResourceTargetDispatcher() {
             return new RecordingResourceTargetDispatcher();
         }
@@ -2004,6 +2085,100 @@ class ResourceRegistrySyncServiceIntegrationTest {
         @Override
         public ResourceSyncResult disable(ResourceDeclaration resource) {
             return ResourceSyncResult.of(94002L, "test_provider", "disabled");
+        }
+    }
+
+    static class AuthSubjectRoleLikeResourceHandler implements ResourceHandler {
+
+        private final List<String> disabledResourceIds = new ArrayList<>();
+
+        @Override
+        public String resourceType() {
+            return "AUTH_SUBJECT_ROLE";
+        }
+
+        @Override
+        public String executionTenantField() {
+            return "tenantId";
+        }
+
+        @Override
+        public ResourceHandlerSpec spec() {
+            return ResourceHandlerSpec.builder()
+                    .resourceType(resourceType())
+                    .requiredField("tenantId")
+                    .fieldDescription("roleCodes", "角色编码列表。")
+                    .build();
+        }
+
+        @Override
+        public ResourceSyncResult upsert(ResourceDeclaration resource) {
+            return ResourceSyncResult.of(96001L, "authorization_subject_role", "ok");
+        }
+
+        @Override
+        public ResourceSyncResult disable(ResourceDeclaration resource) {
+            ResourceField tenantField = resource.getFields() == null ? null : resource.getFields().get("tenantId");
+            if (tenantField == null || tenantField.getValue() == null) {
+                throw new IllegalStateException("AUTH_SUBJECT_ROLE field is required: tenantId");
+            }
+            disabledResourceIds.add(resource.getId());
+            return ResourceSyncResult.of(96001L, "authorization_subject_role", "disabled");
+        }
+
+        List<String> disabledResourceIds() {
+            return List.copyOf(disabledResourceIds);
+        }
+
+        void clearDisabled() {
+            disabledResourceIds.clear();
+        }
+    }
+
+    static class IdentityUserLikeResourceHandler implements ResourceHandler {
+
+        private final List<String> disabledResourceIds = new ArrayList<>();
+
+        @Override
+        public String resourceType() {
+            return "IDENTITY_USER";
+        }
+
+        @Override
+        public String executionTenantField() {
+            return "tenantId";
+        }
+
+        @Override
+        public ResourceHandlerSpec spec() {
+            return ResourceHandlerSpec.builder()
+                    .resourceType(resourceType())
+                    .requiredField("tenantId")
+                    .fieldDescription("username", "用户名。")
+                    .build();
+        }
+
+        @Override
+        public ResourceSyncResult upsert(ResourceDeclaration resource) {
+            return ResourceSyncResult.of(96002L, "identity_user", "ok");
+        }
+
+        @Override
+        public ResourceSyncResult disable(ResourceDeclaration resource) {
+            ResourceField tenantField = resource.getFields() == null ? null : resource.getFields().get("tenantId");
+            if (tenantField == null || tenantField.getValue() == null) {
+                throw new IllegalStateException("IDENTITY_USER field is required: tenantId");
+            }
+            disabledResourceIds.add(resource.getId());
+            return ResourceSyncResult.of(96002L, "identity_user", "disabled");
+        }
+
+        List<String> disabledResourceIds() {
+            return List.copyOf(disabledResourceIds);
+        }
+
+        void clearDisabled() {
+            disabledResourceIds.clear();
         }
     }
 

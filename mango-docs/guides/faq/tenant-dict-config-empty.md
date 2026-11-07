@@ -97,3 +97,5 @@ pnpm -F @mango/admin-shell build
 > Issue #1110 影响说明：完整 `FINALIZE` 的缺失资源回收只作用于同一来源范围内可证明归属的 Resource 登记；`UNKNOWN`、`SYNC_ONCE` 和 `MANUAL_TAKEOVER` 仍受保护，不改变租户、字典、系统配置或数据隔离排障结论。
 
 > Issue #1134 影响说明：Shell 验证码演示页仅调整验证码生成入口和展示文案，不改变租户上下文、字典、系统配置或基础数据；本 FAQ 的租户和字典排障步骤保持不变。
+
+> Issue #1158 影响说明：Maven `1.1.5` 起，`resource_registry` 中 `tenant_id` 为空的历史行在同步与 `FINALIZE` 清理时只输出 `Mango resource missing disable skipped: tenant scope is unavailable` 告警并跳过，不猜测租户、不调用 Resource Handler、不修改该行，`fail-open=false` 下应用仍可完成启动。看到该告警不需要清库、补写 `tenant_id` 或改 Bootstrap 审计表；真实租户行的清理失败仍保持 fail-closed。本 FAQ 的租户、字典与基础数据排障步骤不变。
