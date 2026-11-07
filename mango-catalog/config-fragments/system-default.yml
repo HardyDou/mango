@@ -3,7 +3,9 @@
       type: jdbc
     capability:
       enabled: true
+      cache: true
       locker: true
+      rate-limiter: true
       token-store: true
       outbox: true
   event:
