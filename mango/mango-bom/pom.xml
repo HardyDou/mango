@@ -27,6 +27,7 @@
         <bytedeco.version>1.5.12</bytedeco.version>
         <commons-cli.version>1.11.0</commons-cli.version>
         <commons-compress.version>1.28.0</commons-compress.version>
+        <xz.version>1.10</xz.version>
         <commons-fileupload.version>1.6.0</commons-fileupload.version>
         <commons-imaging.version>1.0.0-alpha6</commons-imaging.version>
         <commons-io.version>2.16.1</commons-io.version>
@@ -941,6 +942,11 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-compress</artifactId>
                 <version>${commons-compress.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.tukaani</groupId>
+                <artifactId>xz</artifactId>
+                <version>${xz.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-io</groupId>
