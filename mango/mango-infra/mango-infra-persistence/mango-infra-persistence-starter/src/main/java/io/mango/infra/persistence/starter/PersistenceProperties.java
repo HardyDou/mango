@@ -1,6 +1,9 @@
 package io.mango.infra.persistence.starter;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.ArrayList;
@@ -16,6 +19,8 @@ public class PersistenceProperties {
     /**
      * Flyway 迁移配置。
      */
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Spring configuration binding intentionally exposes this nested property bean"))
     private final Flyway flyway = new Flyway();
 
     /**
@@ -26,11 +31,15 @@ public class PersistenceProperties {
     /**
      * 审计字段配置。
      */
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Spring configuration binding intentionally exposes this nested property bean"))
     private final Audit audit = new Audit();
 
     /**
      * 数据库结构校验配置。
      */
+    @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+            justification = "Spring configuration binding intentionally exposes this nested property bean"))
     private final SchemaValidation schemaValidation = new SchemaValidation();
 
     @Data
@@ -46,11 +55,15 @@ public class PersistenceProperties {
         /**
          * 分页插件配置。
          */
+        @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+                justification = "Spring configuration binding intentionally exposes this nested property bean"))
         private final Pagination pagination = new Pagination();
 
         /**
          * 租户行级隔离配置。
          */
+        @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+                justification = "Spring configuration binding intentionally exposes this nested property bean"))
         private final Tenant tenant = new Tenant();
     }
 
@@ -99,6 +112,10 @@ public class PersistenceProperties {
         /**
          * 不参与租户自动过滤的表，支持以 * 结尾的前缀匹配。
          */
+        @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+                justification = "Spring configuration binding intentionally exposes this mutable table list"))
+        @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+                justification = "Spring configuration binding intentionally stores this mutable table list"))
         private List<String> excludedTables = new ArrayList<>(
                 List.of("flyway_schema_history*", "databasechangelog", "databasechangeloglock",
                         "kv_record", "infra_kv_entry",
@@ -136,12 +153,20 @@ public class PersistenceProperties {
         /**
          * 必须存在的字段。
          */
+        @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+                justification = "Spring configuration binding intentionally exposes this mutable column list"))
+        @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+                justification = "Spring configuration binding intentionally stores this mutable column list"))
         private List<String> requiredColumns = new ArrayList<>(
                 List.of("created_by", "created_at", "updated_by", "updated_at", "tenant_id", "org_id"));
 
         /**
          * 不参与校验的表名，支持以 * 结尾的前缀匹配。
          */
+        @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+                justification = "Spring configuration binding intentionally exposes this mutable table list"))
+        @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+                justification = "Spring configuration binding intentionally stores this mutable table list"))
         private List<String> excludedTables = new ArrayList<>(
                 List.of("flyway_schema_history*", "databasechangelog", "databasechangeloglock",
                         "kv_record", "infra_kv_entry", "sys_login_log", "sys_operation_log",

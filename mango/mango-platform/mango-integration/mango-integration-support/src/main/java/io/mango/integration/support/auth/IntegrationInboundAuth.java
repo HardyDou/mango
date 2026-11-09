@@ -5,7 +5,10 @@ import javax.crypto.Mac;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Locale;
@@ -17,6 +20,10 @@ import java.util.Map;
  * <p>供业务域校验回调签名并解密报文，避免各业务域重复实现签名与 AES 逻辑。</p>
  */
 public final class IntegrationInboundAuth {
+
+    private static final int SECONDS_TIMESTAMP_LENGTH = 10;
+    private static final long MILLIS_PER_SECOND = 1000L;
+    private static final int AES_IV_LENGTH = 16;
 
     private final IntegrationAuthConfig config;
 
@@ -75,9 +82,9 @@ public final class IntegrationInboundAuth {
         }
         long windowSeconds = Long.parseLong(config.param("replayWindowSeconds", "300"));
         try {
-            long value = timestamp.length() > 10
-                    ? Long.parseLong(timestamp) : Long.parseLong(timestamp) * 1000L;
-            return Math.abs(System.currentTimeMillis() - value) <= windowSeconds * 1000L;
+            long value = timestamp.length() > SECONDS_TIMESTAMP_LENGTH
+                    ? Long.parseLong(timestamp) : Long.parseLong(timestamp) * MILLIS_PER_SECOND;
+            return Math.abs(System.currentTimeMillis() - value) <= windowSeconds * MILLIS_PER_SECOND;
         } catch (NumberFormatException exception) {
             return false;
         }
@@ -96,12 +103,12 @@ public final class IntegrationInboundAuth {
         try {
             byte[] key = Base64.getDecoder().decode(config.credential(config.param("keyField", null)));
             byte[] payload = Base64.getDecoder().decode(encrypted);
-            byte[] iv = Arrays.copyOfRange(payload, 0, 16);
-            byte[] data = Arrays.copyOfRange(payload, 16, payload.length);
+            byte[] iv = Arrays.copyOfRange(payload, 0, AES_IV_LENGTH);
+            byte[] data = Arrays.copyOfRange(payload, AES_IV_LENGTH, payload.length);
             Cipher cipher = Cipher.getInstance(config.param("cipher", "AES/CBC/PKCS5Padding"));
             cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, "AES"), new IvParameterSpec(iv));
             return new String(cipher.doFinal(data), StandardCharsets.UTF_8);
-        } catch (Exception exception) {
+        } catch (GeneralSecurityException | IllegalArgumentException exception) {
             throw new IllegalStateException("报文解密失败");
         }
     }
@@ -116,7 +123,7 @@ public final class IntegrationInboundAuth {
                 hex.append(String.format(Locale.ROOT, "%02x", value));
             }
             return hex.toString();
-        } catch (Exception exception) {
+        } catch (NoSuchAlgorithmException | InvalidKeyException exception) {
             throw new IllegalStateException("签名计算失败");
         }
     }

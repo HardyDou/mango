@@ -34,6 +34,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -182,7 +183,7 @@ public class IntegrationCredentialService implements IIntegrationCredentialServi
         JsonNode fields = root.get("fields");
         Require.isTrue(fields != null && fields.isArray(),
                 IntegrationCode.INTEGRATION_BUSINESS_ERROR, "连接器认证规范缺少字段声明");
-        for (JsonNode field : fields) {
+        for (JsonNode field : Objects.requireNonNull(fields)) {
             String code = field.path("fieldCode").asText(null);
             if (code == null || code.isBlank()) {
                 continue;

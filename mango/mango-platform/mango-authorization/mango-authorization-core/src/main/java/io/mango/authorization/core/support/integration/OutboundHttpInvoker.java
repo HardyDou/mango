@@ -17,6 +17,10 @@ import java.util.Locale;
 public class OutboundHttpInvoker {
 
     private static final int MAX_MESSAGE_LENGTH = 200;
+    private static final int HTTP_SUCCESS_MIN = 200;
+    private static final int HTTP_SUCCESS_MAX = 400;
+    private static final long RETRY_BACKOFF_MILLIS = 150L;
+    private static final long NANOS_PER_MILLI = 1_000_000L;
 
     private final boolean allowPrivateNetwork;
 
@@ -68,7 +72,8 @@ public class OutboundHttpInvoker {
                     .build();
             HttpResponse<Void> response = client.send(httpRequest, HttpResponse.BodyHandlers.discarding());
             long elapsed = elapsedMs(startedAt);
-            boolean success = response.statusCode() >= 200 && response.statusCode() < 400;
+            boolean success = response.statusCode() >= HTTP_SUCCESS_MIN
+                    && response.statusCode() < HTTP_SUCCESS_MAX;
             return OutboundResult.builder()
                     .success(success)
                     .statusCode(response.statusCode())
@@ -119,7 +124,7 @@ public class OutboundHttpInvoker {
 
     private void sleepBeforeRetry(int attempt) {
         try {
-            Thread.sleep(150L * (attempt + 1));
+            Thread.sleep(RETRY_BACKOFF_MILLIS * (attempt + 1));
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
         }
@@ -135,7 +140,7 @@ public class OutboundHttpInvoker {
     }
 
     private long elapsedMs(long startedAt) {
-        return (System.nanoTime() - startedAt) / 1_000_000L;
+        return (System.nanoTime() - startedAt) / NANOS_PER_MILLI;
     }
 
     private String truncate(String message) {

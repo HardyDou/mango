@@ -1,7 +1,6 @@
 package io.mango.integration.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.common.result.Require;
 import io.mango.integration.api.enums.IntegrationCode;
 import io.mango.integration.api.vo.IntegrationCredentialFieldVO;
@@ -24,9 +23,7 @@ import java.util.Map;
  * 集成声明读取实现。
  */
 @Service
-@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(
-        value = "EI_EXPOSE_REP2",
-        justification = "Spring injects managed mappers and credential service"))
+@RequiredArgsConstructor
 public class IntegrationDeclarationProviderImpl implements IntegrationDeclarationProvider {
 
     private static final String CALLBACK_PATH_PREFIX = "/integration/callback/";

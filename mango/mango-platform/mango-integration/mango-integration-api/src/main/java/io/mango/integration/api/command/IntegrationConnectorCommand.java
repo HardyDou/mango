@@ -10,6 +10,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -67,4 +68,22 @@ public class IntegrationConnectorCommand implements Serializable {
     @Size(max = 500, message = "文档地址最多500个字符")
     @Schema(description = "文档地址")
     private String docsUrl;
+
+    /**
+     * 返回标签副本，避免外部修改内部集合。
+     *
+     * @return 标签副本
+     */
+    public List<String> getTags() {
+        return tags == null ? null : new ArrayList<>(tags);
+    }
+
+    /**
+     * 保存标签副本，避免外部集合后续变更影响命令。
+     *
+     * @param tags 标签列表
+     */
+    public void setTags(List<String> tags) {
+        this.tags = tags == null ? null : new ArrayList<>(tags);
+    }
 }

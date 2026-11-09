@@ -22,11 +22,16 @@ public final class IntegrationTokenCache {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final long REFRESH_MARGIN_SECONDS = 30L;
+    private static final long CONNECT_TIMEOUT_SECONDS = 5L;
+    private static final long REQUEST_TIMEOUT_SECONDS = 10L;
+    private static final int HTTP_SUCCESS_MIN = 200;
+    private static final int HTTP_SUCCESS_MAX = 300;
+    private static final long MILLIS_PER_SECOND = 1000L;
 
     private final Map<String, Cached> cache = new ConcurrentHashMap<>();
     private final HttpClient httpClient = HttpClient.newBuilder()
             .version(HttpClient.Version.HTTP_1_1)
-            .connectTimeout(Duration.ofSeconds(5))
+            .connectTimeout(Duration.ofSeconds(CONNECT_TIMEOUT_SECONDS))
             .build();
 
     /**
@@ -70,13 +75,13 @@ public final class IntegrationTokenCache {
         }
         HttpRequest request = HttpRequest.newBuilder(URI.create(tokenUrl))
                 .version(HttpClient.Version.HTTP_1_1)
-                .timeout(Duration.ofSeconds(10))
+                .timeout(Duration.ofSeconds(REQUEST_TIMEOUT_SECONDS))
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .POST(HttpRequest.BodyPublishers.ofString(body.toString()))
                 .build();
         try {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() < 200 || response.statusCode() >= 300) {
+            if (response.statusCode() < HTTP_SUCCESS_MIN || response.statusCode() >= HTTP_SUCCESS_MAX) {
                 throw new IllegalStateException("令牌接口返回非成功状态");
             }
             JsonNode root = OBJECT_MAPPER.readTree(response.body());
@@ -87,7 +92,7 @@ public final class IntegrationTokenCache {
             }
             long expiresIn = root.path(config.param("expiresField", "expires_in")).asLong(0L);
             long ttl = Math.max(expiresIn - REFRESH_MARGIN_SECONDS, 0L);
-            return new Cached(token, System.currentTimeMillis() + ttl * 1000L);
+            return new Cached(token, System.currentTimeMillis() + ttl * MILLIS_PER_SECOND);
         } catch (IllegalStateException exception) {
             throw exception;
         } catch (InterruptedException exception) {

@@ -16,6 +16,7 @@ import java.io.Serializable;
 public class IntegrationInstancePageQuery implements Serializable {
 
     private static final long serialVersionUID = 1L;
+    private static final long DEFAULT_PAGE_SIZE = 20L;
 
     @Min(value = 1, message = "当前页必须大于等于1")
     @Schema(description = "当前页")
@@ -24,7 +25,7 @@ public class IntegrationInstancePageQuery implements Serializable {
     @Min(value = 1, message = "每页大小必须大于等于1")
     @Max(value = 200, message = "每页大小不能超过200")
     @Schema(description = "每页条数")
-    private long size = 20L;
+    private long size = DEFAULT_PAGE_SIZE;
 
     @Size(max = 128, message = "关键词最多128个字符")
     @Schema(description = "实例编码或名称关键词")

@@ -31,6 +31,9 @@ public final class IntegrationClient {
     private static final int DEFAULT_TIMEOUT_MS = 5000;
     private static final int DEFAULT_RETRY_MAX = 0;
     private static final int MAX_BODY_LENGTH = 4000;
+    private static final int HTTP_SUCCESS_MIN = 200;
+    private static final int HTTP_SUCCESS_MAX = 300;
+    private static final long NANOS_PER_MILLI = 1_000_000L;
 
     private final String baseUrl;
     private final int timeoutMs;
@@ -154,7 +157,8 @@ public final class IntegrationClient {
             auth.apply(builder, method, uri);
             HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
             long elapsed = elapsedMs(startedAt);
-            boolean success = response.statusCode() >= 200 && response.statusCode() < 300;
+            boolean success = response.statusCode() >= HTTP_SUCCESS_MIN
+                    && response.statusCode() < HTTP_SUCCESS_MAX;
             return IntegrationCallResult.builder()
                     .success(success)
                     .statusCode(response.statusCode())
@@ -246,7 +250,7 @@ public final class IntegrationClient {
     }
 
     private long elapsedMs(long startedAt) {
-        return (System.nanoTime() - startedAt) / 1_000_000L;
+        return (System.nanoTime() - startedAt) / NANOS_PER_MILLI;
     }
 
     private String truncate(String body) {

@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 import java.time.LocalDateTime;
 
@@ -54,4 +55,22 @@ public class IntegrationConnectorVO implements Serializable {
 
     @Schema(description = "更新时间")
     private LocalDateTime updatedAt;
+
+    /**
+     * 返回标签副本，避免外部修改内部集合。
+     *
+     * @return 标签副本
+     */
+    public List<String> getTags() {
+        return tags == null ? null : new ArrayList<>(tags);
+    }
+
+    /**
+     * 保存标签副本，避免外部集合后续变更影响结果对象。
+     *
+     * @param tags 标签列表
+     */
+    public void setTags(List<String> tags) {
+        this.tags = tags == null ? null : new ArrayList<>(tags);
+    }
 }

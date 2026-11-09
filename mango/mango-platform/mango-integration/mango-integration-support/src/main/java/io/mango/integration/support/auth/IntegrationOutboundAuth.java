@@ -6,6 +6,8 @@ import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpRequest;
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.Locale;
 
@@ -119,7 +121,7 @@ public final class IntegrationOutboundAuth {
                 hex.append(String.format(Locale.ROOT, "%02x", value));
             }
             return hex.toString();
-        } catch (Exception exception) {
+        } catch (NoSuchAlgorithmException | InvalidKeyException exception) {
             throw new IllegalStateException("签名计算失败");
         }
     }

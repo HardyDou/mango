@@ -17,7 +17,6 @@ import io.mango.integration.core.entity.IntegrationCredentialEntity;
 import io.mango.integration.core.entity.IntegrationInstanceEntity;
 import io.mango.integration.core.mapper.IntegrationCredentialMapper;
 import io.mango.integration.core.entity.IntegrationCallLogEntity;
-import io.mango.integration.core.entity.IntegrationConnectorEntity;
 import io.mango.integration.core.mapper.IntegrationCallLogMapper;
 import io.mango.integration.core.mapper.IntegrationConnectorMapper;
 import io.mango.integration.core.mapper.IntegrationInstanceMapper;
@@ -48,6 +47,8 @@ import java.util.Set;
 public class IntegrationInstanceService implements IIntegrationInstanceService {
 
     private static final String CALLBACK_PATH_PREFIX = "/integration/callback/";
+    private static final int DEFAULT_CALL_LOG_LIMIT = 50;
+    private static final int MAX_CALL_LOG_LIMIT = 200;
     private static final String PROD = "PROD";
     private static final String TEST = "TEST";
 
@@ -197,7 +198,8 @@ public class IntegrationInstanceService implements IIntegrationInstanceService {
     @Override
     public java.util.List<io.mango.integration.api.vo.IntegrationCallLogVO> callLogs(String instanceCode, Integer limit) {
         IntegrationInstanceEntity instance = requireInstance(instanceCode);
-        int size = limit == null || limit <= 0 ? 50 : Math.min(limit, 200);
+        int size = limit == null || limit <= 0
+                ? DEFAULT_CALL_LOG_LIMIT : Math.min(limit, MAX_CALL_LOG_LIMIT);
         return callLogMapper.selectList(new LambdaQueryWrapper<IntegrationCallLogEntity>()
                         .eq(IntegrationCallLogEntity::getTenantId, currentTenantId())
                         .eq(IntegrationCallLogEntity::getInstanceCode, instance.getInstanceCode())
@@ -333,49 +335,63 @@ public class IntegrationInstanceService implements IIntegrationInstanceService {
             }
             JsonNode rule = properties.get(name);
             String text = value.asText();
-            String dictCode = rule.path("dictCode").asText(null);
-            if (StringUtils.hasText(dictCode)) {
-                validateDictValue(dictCode, text, name);
-            }
-            JsonNode enumNode = rule.get("enum");
-            if (enumNode != null && enumNode.isArray() && enumNode.size() > 0) {
-                boolean matched = false;
-                for (JsonNode option : enumNode) {
-                    if (option.asText().equals(text)) {
-                        matched = true;
-                        break;
-                    }
-                }
-                Require.isTrue(matched, IntegrationCode.INTEGRATION_BUSINESS_ERROR,
-                        "配置取值不在允许范围内：" + name);
-            }
-            String pattern = rule.path("pattern").asText(null);
-            if (pattern != null && !pattern.isBlank()) {
-                Require.isTrue(text.matches(pattern), IntegrationCode.INTEGRATION_BUSINESS_ERROR,
-                        "配置格式不符合要求：" + name);
-            }
-            int minLength = rule.path("minLength").asInt(-1);
-            if (minLength >= 0) {
-                Require.isTrue(text.length() >= minLength, IntegrationCode.INTEGRATION_BUSINESS_ERROR,
-                        "配置长度小于最小值：" + name);
-            }
-            int maxLength = rule.path("maxLength").asInt(-1);
-            if (maxLength >= 0) {
-                Require.isTrue(text.length() <= maxLength, IntegrationCode.INTEGRATION_BUSINESS_ERROR,
-                        "配置长度超过最大值：" + name);
-            }
-            if (value.isNumber()) {
-                double number = value.asDouble();
-                JsonNode minimum = rule.get("minimum");
-                if (minimum != null && number < minimum.asDouble()) {
-                    Require.isTrue(false, IntegrationCode.INTEGRATION_BUSINESS_ERROR, "配置数值小于最小值：" + name);
-                }
-                JsonNode maximum = rule.get("maximum");
-                if (maximum != null && number > maximum.asDouble()) {
-                    Require.isTrue(false, IntegrationCode.INTEGRATION_BUSINESS_ERROR, "配置数值超过最大值：" + name);
-                }
-            }
+            validateDictRule(rule, text, name);
+            validateEnumRule(rule, text, name);
+            validateTextRule(rule, text, name);
+            validateNumberRule(rule, value, name);
         });
+    }
+
+    private void validateDictRule(JsonNode rule, String text, String name) {
+        String dictCode = rule.path("dictCode").asText(null);
+        if (StringUtils.hasText(dictCode)) {
+            validateDictValue(dictCode, text, name);
+        }
+    }
+
+    private void validateEnumRule(JsonNode rule, String text, String name) {
+        JsonNode enumNode = rule.get("enum");
+        if (enumNode == null || !enumNode.isArray() || enumNode.isEmpty()) {
+            return;
+        }
+        for (JsonNode option : enumNode) {
+            if (option.asText().equals(text)) {
+                return;
+            }
+        }
+        Require.isTrue(false, IntegrationCode.INTEGRATION_BUSINESS_ERROR,
+                "配置取值不在允许范围内：" + name);
+    }
+
+    private void validateTextRule(JsonNode rule, String text, String name) {
+        String pattern = rule.path("pattern").asText(null);
+        if (pattern != null && !pattern.isBlank()) {
+            Require.isTrue(text.matches(pattern), IntegrationCode.INTEGRATION_BUSINESS_ERROR,
+                    "配置格式不符合要求：" + name);
+        }
+        int minLength = rule.path("minLength").asInt(-1);
+        if (minLength >= 0) {
+            Require.isTrue(text.length() >= minLength, IntegrationCode.INTEGRATION_BUSINESS_ERROR,
+                    "配置长度小于最小值：" + name);
+        }
+        int maxLength = rule.path("maxLength").asInt(-1);
+        if (maxLength >= 0) {
+            Require.isTrue(text.length() <= maxLength, IntegrationCode.INTEGRATION_BUSINESS_ERROR,
+                    "配置长度超过最大值：" + name);
+        }
+    }
+
+    private void validateNumberRule(JsonNode rule, JsonNode value, String name) {
+        if (!value.isNumber()) {
+            return;
+        }
+        double number = value.asDouble();
+        JsonNode minimum = rule.get("minimum");
+        Require.isTrue(minimum == null || number >= minimum.asDouble(),
+                IntegrationCode.INTEGRATION_BUSINESS_ERROR, "配置数值小于最小值：" + name);
+        JsonNode maximum = rule.get("maximum");
+        Require.isTrue(maximum == null || number <= maximum.asDouble(),
+                IntegrationCode.INTEGRATION_BUSINESS_ERROR, "配置数值超过最大值：" + name);
     }
 
     private String normalizeCapabilities(IntegrationConnectorEntity connector, String capabilitiesJson) {

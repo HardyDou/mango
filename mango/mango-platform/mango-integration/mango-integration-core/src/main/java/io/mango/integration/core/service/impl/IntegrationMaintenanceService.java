@@ -1,7 +1,6 @@
 package io.mango.integration.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.common.result.Require;
 import io.mango.integration.api.command.IntegrationMaintenanceCleanupCommand;
 import io.mango.integration.api.enums.IntegrationCode;
@@ -16,15 +15,17 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 /**
  * 集成模块维护服务实现。
  */
 @Service
-@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(
-        value = "EI_EXPOSE_REP2",
-        justification = "Spring injects managed mappers"))
+@RequiredArgsConstructor
 public class IntegrationMaintenanceService implements IIntegrationMaintenanceService {
+
+    private static final int MIN_RETENTION_DAYS = 1;
+    private static final int MAX_RETENTION_DAYS = 3650;
 
     private final IntegrationCallLogMapper callLogMapper;
     private final IntegrationCredentialAccessLogMapper accessLogMapper;
@@ -35,9 +36,10 @@ public class IntegrationMaintenanceService implements IIntegrationMaintenanceSer
         IntegrationMaintenanceCleanupCommand validated = Require.nonNull(
                 command, IntegrationCode.INTEGRATION_BUSINESS_ERROR, "清理命令不能为空");
         Integer retentionDays = validated.getRetentionDays();
-        Require.isTrue(retentionDays != null && retentionDays >= 1 && retentionDays <= 3650,
+        Require.isTrue(retentionDays != null
+                        && retentionDays >= MIN_RETENTION_DAYS && retentionDays <= MAX_RETENTION_DAYS,
                 IntegrationCode.INTEGRATION_BUSINESS_ERROR, "保留天数必须在1到3650之间");
-        LocalDateTime cutoff = LocalDateTime.now().minusDays(retentionDays);
+        LocalDateTime cutoff = LocalDateTime.now().minusDays(Objects.requireNonNull(retentionDays));
         String resource = validated.getResource() == null ? "" : validated.getResource().trim().toUpperCase();
         int deleted = switch (resource) {
             case "CALL_LOG" -> callLogMapper.delete(

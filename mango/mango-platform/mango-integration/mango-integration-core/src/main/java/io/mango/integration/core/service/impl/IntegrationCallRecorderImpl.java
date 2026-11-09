@@ -1,6 +1,5 @@
 package io.mango.integration.core.service.impl;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.integration.core.entity.IntegrationCallLogEntity;
 import io.mango.integration.core.mapper.IntegrationCallLogMapper;
@@ -14,10 +13,10 @@ import org.springframework.util.StringUtils;
  * 集成调用记录写入实现。
  */
 @Service
-@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(
-        value = "EI_EXPOSE_REP2",
-        justification = "Spring injects the managed mapper"))
+@RequiredArgsConstructor
 public class IntegrationCallRecorderImpl implements IntegrationCallRecorder {
+
+    private static final int MAX_MESSAGE_LENGTH = 500;
 
     private final IntegrationCallLogMapper callLogMapper;
 
@@ -44,6 +43,6 @@ public class IntegrationCallRecorderImpl implements IntegrationCallRecorder {
         if (message == null) {
             return null;
         }
-        return message.length() <= 500 ? message : message.substring(0, 500);
+        return message.length() <= MAX_MESSAGE_LENGTH ? message : message.substring(0, MAX_MESSAGE_LENGTH);
     }
 }

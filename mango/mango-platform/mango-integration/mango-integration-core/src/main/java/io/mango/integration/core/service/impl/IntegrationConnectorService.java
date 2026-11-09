@@ -3,6 +3,7 @@ package io.mango.integration.core.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.integration.api.command.IntegrationConnectorCommand;
@@ -149,7 +150,7 @@ public class IntegrationConnectorService implements IIntegrationConnectorService
             JsonNode node = objectMapper.readTree(json);
             Require.isTrue(node != null && node.isObject(),
                     IntegrationCode.INTEGRATION_BUSINESS_ERROR, message);
-        } catch (Exception exception) {
+        } catch (JsonProcessingException exception) {
             Require.isTrue(false, IntegrationCode.INTEGRATION_BUSINESS_ERROR, message);
         }
     }
@@ -162,7 +163,7 @@ public class IntegrationConnectorService implements IIntegrationConnectorService
             JsonNode node = objectMapper.readTree(json);
             Require.isTrue(node != null && node.isArray(),
                     IntegrationCode.INTEGRATION_BUSINESS_ERROR, message);
-        } catch (Exception exception) {
+        } catch (JsonProcessingException exception) {
             Require.isTrue(false, IntegrationCode.INTEGRATION_BUSINESS_ERROR, message);
         }
     }
@@ -230,7 +231,7 @@ public class IntegrationConnectorService implements IIntegrationConnectorService
         vo.setDocsUrl(entity.getDocsUrl());
         Long count = instanceMapper.selectCount(new LambdaQueryWrapper<IntegrationInstanceEntity>()
                 .eq(IntegrationInstanceEntity::getConnectorCode, entity.getConnectorCode()));
-        vo.setInstanceCount(count == null ? 0L : count);
+        vo.setInstanceCount(count == null ? Long.valueOf(0L) : count);
         vo.setUpdatedAt(entity.getUpdatedAt());
         return vo;
     }

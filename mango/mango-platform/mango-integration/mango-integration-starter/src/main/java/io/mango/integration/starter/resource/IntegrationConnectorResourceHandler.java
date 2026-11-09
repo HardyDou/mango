@@ -1,6 +1,5 @@
 package io.mango.integration.starter.resource;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.mango.integration.api.command.IntegrationConnectorCommand;
 import io.mango.integration.core.service.IIntegrationConnectorService;
 import io.mango.resource.support.ResourceHandler;
@@ -21,9 +20,7 @@ import java.util.List;
  * <p>连接器定义由部署侧声明并同步，保存即生效；声明缺失时停用连接器，不删除数据。</p>
  */
 @Component
-@RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(
-        value = "EI_EXPOSE_REP2",
-        justification = "Spring injects the managed connector service; copying it is not valid"))
+@RequiredArgsConstructor
 public class IntegrationConnectorResourceHandler implements ResourceHandler {
 
     private static final String TARGET_TABLE = "integration_connector";

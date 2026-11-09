@@ -1,5 +1,6 @@
 package io.mango.integration.support.auth;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -44,7 +45,7 @@ public final class IntegrationAuthConfig {
                     paramsNode.fields().forEachRemaining(entry ->
                             params.put(entry.getKey(), entry.getValue().asText()));
                 }
-            } catch (Exception exception) {
+            } catch (JsonProcessingException exception) {
                 throw new IllegalArgumentException("认证规范不是合法JSON");
             }
         }
