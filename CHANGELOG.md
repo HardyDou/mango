@@ -1,6 +1,6 @@
 ## v2026.11.09-maven-1.2.0-integration-release - Mango Maven/docs 1.2.0 integration application management release - 2026-11-09
 
-Status: `PENDING`. Release plan digest `3825fcbedd22ad74d0759af67ce7684de4bdc3a30924ad2d0fee5d9cb183f7c0`; Maven/npm publication, consume verification, Tag and GitHub Release remain pending.
+Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `3825fcbedd22ad74d0759af67ce7684de4bdc3a30924ad2d0fee5d9cb183f7c0`; prepared candidate `b0b472c217519588c648046171a6861de1536470e864fe2f1ab07568aea5268d` completed publication and consume verification for 27 npm packages and 201 Maven coordinates. Tag and GitHub Release were created and verified.
 
 ### Pull Requests
 
@@ -89,7 +89,7 @@ Status: `PENDING`. Release plan digest `3825fcbedd22ad74d0759af67ce7684de4bdc3a3
 - Resource Registry integration tests run on H2 by default and on real MySQL 8.4 via `MANGO_REGISTRY_IT_DB_*`.
 - Frontend verification captured measured dialog layout evidence at 1500x1000 and 2560x1415 before and after the change, and the admin bundle builds with the new page keys.
 - `catalog:check` reports `PASS ... maven=200` on the source commit and the release plan re-computes 201 coordinates with matching topology.
-- The Maven reactor and docs bundle are built once from the sealed candidate; all 201 coordinates are checked in publish and consume registries with matching checksums, and a clean consumer resolves Maven `1.2.0` plus the 27 sealed npm tarballs from the consume registries.
+- The Maven reactor and docs bundle were built once from the sealed candidate; all 201 coordinates were checked in publish and consume registries with matching checksums, and a clean consumer resolved Maven `1.2.0` plus the 27 sealed npm tarballs from the consume registries.
 
 ### Rollback
 
