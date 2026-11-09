@@ -706,3 +706,20 @@ delete from flyway_schema_history_resource where version = '3' and success = 0;
 ## 17. 升级与兼容
 
 - `1.1.2`：新增 V5 迁移，将历史 `AUTO`、`INIT_ONLY`、`MANUAL`、`LOCKED` 归一为 `SYNC_ALWAYS` 或 `SYNC_ONCE`。迁移只改 Registry 元数据，不改目标资源、ownership、版本、Hash、状态或 target ID；升级后确认旧值为 0，回滚到不识别新值的旧版本前必须恢复升级前数据库快照。
+- `1.1.5`：Authorization、Calendar 等租户型 Handler 显式声明 `executionTenantField()=tenantId`。Registry 中 `tenant_id` 为空的历史行在同步和 `FINALIZE` 清理时只告警跳过：不猜测租户、不调用 Handler、不修改行；真实租户行与其它清理异常仍保持 fail-closed。
+
+### 17.1 历史无租户 Registry 行回归验证
+
+默认 `ResourceRegistrySyncServiceIntegrationTest` 在 H2(MODE=MySQL) 上执行。需要真实 MySQL 回归时，使用独立数据库（库名必须以 `_resource_it` 结尾，测试会在建表前校验，防止误用业务库）：
+
+```bash
+mysql -h127.0.0.1 -uroot -e "drop database if exists mango_dev_resource_it; create database mango_dev_resource_it character set utf8mb4"
+MANGO_REGISTRY_IT_DB_URL='jdbc:mysql://127.0.0.1:3306/mango_dev_resource_it?useSSL=false&allowPublicKeyRetrieval=true' \
+MANGO_REGISTRY_IT_DB_USERNAME=root \
+MANGO_REGISTRY_IT_DB_PASSWORD= \
+MANGO_REGISTRY_IT_DB_DRIVER=com.mysql.cj.jdbc.Driver \
+mvn -pl mango-platform/mango-resource/mango-resource-core test \
+  -Dtest='ResourceRegistrySyncServiceIntegrationTest#finalizeSkipsLegacyNullTenantAuthSubjectRoleRowWithoutCallingHandler+finalizeSkipsLegacyNullTenantIdentityUserRowWithoutCallingHandler+finalizeSkipsLegacyNullTenantResourceWithoutBlockingBootstrap'
+```
+
+这两条用例分别以 `AUTH_SUBJECT_ROLE` 和 `IDENTITY_USER` 声明 `tenantId` 必填的 Handler，断言历史无租户行保持 `ACTIVE`、`tenant_id` 仍为 `NULL`、模块 receipt 进入 `FINALIZED` 且 Handler 的 `disable` 未被调用。
