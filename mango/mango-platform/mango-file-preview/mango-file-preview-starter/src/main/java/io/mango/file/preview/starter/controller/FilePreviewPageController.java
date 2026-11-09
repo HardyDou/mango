@@ -6,6 +6,7 @@ import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.file.preview.api.vo.FilePreviewLinkVO;
 import io.mango.file.preview.core.service.IFilePreviewService;
+import io.mango.file.preview.core.service.model.FilePreviewMode;
 import io.mango.file.preview.core.task.IFilePreviewTaskService;
 import io.mango.file.preview.api.vo.FilePreviewTaskVO;
 import io.mango.common.result.R;
@@ -74,25 +75,27 @@ public class FilePreviewPageController {
             @RequestParam(value = "ready", defaultValue = "false") boolean ready,
             @Parameter(description = "是否确认继续转换大文件")
             @RequestParam(value = "allowLargeFile", defaultValue = "false") boolean allowLargeFile) {
-        FilePreviewTaskVO task = filePreviewService.previewTaskByToken(token, allowLargeFile);
-        if (!ready) {
-            if (task.getStatus() != io.mango.file.preview.api.enums.FilePreviewTaskStatus.SUCCEEDED) {
-                return progressPage(token, task);
-            }
+        FilePreviewMode mode = filePreviewService.previewMode(token);
+        // 原生 PDF 不需要转换，直接按入口令牌读取文件内容并交给 PDF.js。
+        if (mode == FilePreviewMode.NATIVE_PDF) {
+            return pdfViewerPage(token, false);
+        }
+        // 压缩包、表格、图片、文本等格式由预览引擎按文件类型渲染，不进入 PDF 转换队列。
+        if (mode == FilePreviewMode.ENGINE) {
+            return redirectView(filePreviewService.createEnginePreviewByToken(token).getPreviewUrl());
         }
         // Office 转换成功后优先使用已经持久化的 PDF，避免再次进入 LibreOffice。
         // 仍然通过 PDF.js 页面展示，避免浏览器直接打开 PDF 产物时使用原生 PDF 查看器。
+        FilePreviewTaskVO task = filePreviewService.previewTaskByToken(token, allowLargeFile);
+        if (!ready && task.getStatus() != io.mango.file.preview.api.enums.FilePreviewTaskStatus.SUCCEEDED) {
+            return progressPage(token, task);
+        }
         if (task.getStatus() == io.mango.file.preview.api.enums.FilePreviewTaskStatus.SUCCEEDED
                 && task.getPreviewFileId() != null) {
             return pdfViewerPage(token, true);
         }
-        // 原生 PDF 不需要转换，直接按入口令牌读取文件内容并交给 PDF.js。
-        if (task.getStatus() == io.mango.file.preview.api.enums.FilePreviewTaskStatus.SUCCEEDED
-                && filePreviewService.isPdfPreview(token)) {
-            return pdfViewerPage(token, false);
-        }
-        FilePreviewLinkVO link = filePreviewService.createEnginePreviewByToken(token);
-        return redirectView(link.getPreviewUrl());
+        // 转换任务未产出可用产物时退回预览引擎，由引擎给出该格式的预览结果。
+        return redirectView(filePreviewService.createEnginePreviewByToken(token).getPreviewUrl());
     }
 
     @GetMapping(value = "/files/preview-artifact")

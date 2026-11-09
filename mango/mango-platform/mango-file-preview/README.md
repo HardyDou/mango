@@ -140,7 +140,7 @@ cache:
 | `mango.file-preview.enabled` | `true` | 是否启用文件预览自动配置 |
 | `mango.file-preview.engine-path` | `/onlinePreview` | 预览引擎入口路径 |
 | `mango.file-preview.source-path` | `/file-preview/sources` | 预览引擎读取源文件的短期 URL 前缀 |
-| `mango.file-preview.source-base-url` | 当前请求地址 | 预览引擎读取源文件时使用的内部服务地址；部署在网关后时建议配置为集群内部地址，避免流量经外部入口绕回 |
+| `mango.file-preview.source-base-url` | 当前请求地址 | 预览引擎读取源文件时使用的内部服务地址；部署在网关后时建议配置为集群内部地址，避免流量经外部入口绕回。配置后其 host 会自动加入引擎信任列表，无需重复写 `trust.host` |
 | `mango.file-preview.source-token-expire-seconds` | `86400` | 入口 token 和源文件 token 有效期，单位秒 |
 | `mango.file-preview.standalone-ui-enabled` | `false` | 是否允许访问 kkFileView 独立首页和演示文件管理入口 |
 | `mango.file-preview.conversion.worker-count` | `2` | 每个预览实例的转换 Worker 数量，同时决定默认 LibreOffice 进程数量 |
@@ -151,6 +151,8 @@ cache:
 Office 转换任务按文件内容版本生成稳定转换键；同一文件同一版本不区分 PDF/图片模式只允许一个底层转换，不同文件由固定大小的转换 Worker 池并行处理。`mango.file-preview.conversion.worker-count` 是唯一并发配置，默认 2；页面展示、任务消费能力和默认 LibreOffice 进程数量保持一致。未显式配置 `office.plugin.server.ports` 时，端口从 `office-base-port` 开始按 Worker 数量连续生成；显式配置端口列表时，数量不一致会在启动阶段失败。普通 PDF 预览和图片预览共用同一协调器；任务 Worker 使用 infra-kv 分布式槽位和文件版本租约，多个实例共同遵守同一并发上限。请求超时只结束当前请求视图，在途 LibreOffice 任务完成前不会启动同键的第二个转换，避免 `forceUpdatedCache` 形成输出竞争和 Office 断连。转换结果先写入唯一临时文件，校验成功后再原子替换缓存；源文件通过 `fileId` 对应的 `IFileContentProvider.downloadForService` 流读取，不会为大文件构造整文件字节数组。
 
 Office 转换后的 PDF 由 PDF.js 通过同源 `/file-preview/generated?token=...&fileName=...` 读取，不再经 `/getCorsFile` 回源。该接口虽然属于 PUBLIC 路由，但必须携带有效 source token，并校验 token 对应的 `fileId` 与转换文件名；token 过期后不能继续读取转换结果。原始文件仍只由引擎使用同一 source token 从内部 `source-base-url` 下载。
+
+引擎的 `/onlinePreview`、`/getCorsFile` 仍接受任意 URL，必须保留 host 白名单防止被当作 SSRF 代理。配置 `source-base-url` 后，其 host 由 `FilePreviewTrustHostInitializer` 在启动时自动加入信任列表；只有未配置 `source-base-url` 或使用其它引擎入口时才需要手工配置引擎侧 `trust.host`。
 
 `mango-file-preview-engine` 也支持独立引擎端口配置：
 
@@ -188,6 +190,9 @@ HTTP 接口前缀是 `/file-preview`。
 | GET | `/file-preview/files/preview-link?fileId=...` | PERMISSION (`file:files:download`) | 创建短期预览入口 |
 | GET | `/file-preview/files/preview?fileId=...` | PERMISSION (`file:files:download`) | 按文件 ID forward 到预览页 |
 | GET | `/file-preview/files/preview-entry?token=...` | PUBLIC | 使用已签发入口 token 进入预览 |
+| GET | `/file-preview/files/preview-progress?token=...` | PUBLIC | 查询 Office 转换进度 |
+| GET | `/file-preview/files/preview-content?token=...` | PUBLIC | 原生 PDF 读取原文件交给 PDF.js |
+| GET | `/file-preview/files/preview-artifact?token=...` | PUBLIC | Office 转换产物读取（同为 token 鉴权） |
 | GET | `/file-preview/sources?token=...` | PUBLIC | 预览引擎读取源文件流 |
 | GET | `/file-preview/generated?token=...&fileName=...` | PUBLIC | 在 source token 有效期内读取对应的转换 PDF |
 
@@ -203,6 +208,18 @@ token 行为：
 |-------|----------|----------|------|
 | 入口 token | `file-preview:entry:` | `/files/preview-link` | 公开入口换取引擎预览链接 |
 | 源文件 token | `file-preview:source:` | `/files/preview` 或 `/files/preview-entry` | 预览引擎读取源文件 |
+
+入口 token 换取预览页后，按文件扩展名决定渲染方式：
+
+| 文件类型 | 渲染方式 |
+|----------|----------|
+| PDF（含 `application/pdf` 内容类型） | 平台 PDF.js 页面读取 `/preview-content` |
+| `doc`、`docx`、`ppt`、`pptx`、`odt`、`ods`、`odp` | 异步队列转换为 PDF，PDF.js 页面读取 `/preview-artifact` |
+| 压缩包、表格、图片、文本、媒体等其余格式 | 直接跳到预览引擎 `/onlinePreview`，由引擎按类型渲染；引擎不支持的格式由引擎返回明确提示 |
+
+Office 转换统一使用 LibreOffice/JODConverter；只有显式关闭 `mango.fileproc.convert.office-to-pdf-enabled` 时才回退 Aspose。XLSX/CSV 的引擎 Web 预览不依赖引擎 Office 插件。
+
+压缩包（`zip`、`rar`、`7z` 等）由引擎的压缩包预览页渲染，内部文件通过 `/compressed-file` 读取，不再进入 PDF 转换队列。
 
 ## 9. 返回字段
 
@@ -266,6 +283,9 @@ token 行为：
 /directory
 /compressed-file
 /file-preview/files/preview-entry
+/file-preview/files/preview-progress
+/file-preview/files/preview-content
+/file-preview/files/preview-artifact
 /file-preview/sources
 /file-preview/generated
 /pdfjs/**
@@ -284,8 +304,10 @@ token 行为：
 | 现象 | 排查点 |
 |------|--------|
 | 创建预览链接失败 | 检查当前账号是否拥有 `file:files:download`、文件是否存在、租户上下文和文件可见性是否正确 |
-| 预览页能打开但文件加载失败 | 检查 `/file-preview/sources` 和 `/file-preview/generated` 是否被网关放行，token 是否过期，转换 PDF 是否已生成 |
+| 预览页能打开但文件加载失败 | 检查 `/file-preview/sources`、`/file-preview/files/preview-content`、`/file-preview/files/preview-artifact` 是否被网关放行，token 是否过期，转换 PDF 是否已生成 |
 | Office 预览失败 | 检查预览引擎、LibreOffice、Aspose license 和 `mango-infra-fileproc` |
+| iframe 内嵌 Office 预览返回 401 | 确认 `/file-preview/files/preview-artifact` 在 permit 白名单和 API 资源中均为 PUBLIC，且网关不额外要求登录 |
+| 压缩包进入 PDF 转换并提示失败 | 检查 `FilePreviewMode` 是否把该扩展名判为 `ENGINE`，压缩包不应调用平台转换 |
 | 不希望暴露 kkFileView 首页 | 保持 `mango.file-preview.standalone-ui-enabled=false` |
 | 反向代理下源文件 URL 不对 | 检查请求 scheme、host、port、context path，以及代理头是否正确传递 |
 | 预览 token 过快失效 | 调整 `mango.file-preview.source-token-expire-seconds` |

@@ -12,6 +12,9 @@ class ConvertFormatTest {
         assertThat(ConvertFormat.parse("text")).contains(ConvertFormat.TEXT);
         assertThat(ConvertFormat.parse("HTML")).contains(ConvertFormat.HTML);
         assertThat(ConvertFormat.parse("docx")).contains(ConvertFormat.DOCX);
+        assertThat(ConvertFormat.parse("odt")).contains(ConvertFormat.ODT);
+        assertThat(ConvertFormat.parse("ods")).contains(ConvertFormat.ODS);
+        assertThat(ConvertFormat.parse("odp")).contains(ConvertFormat.ODP);
         assertThat(ConvertFormat.parse("JPG")).contains(ConvertFormat.JPEG);
         assertThat(ConvertFormat.parse("jpg")).contains(ConvertFormat.JPEG);
         assertThat(ConvertFormat.parse("pdf")).contains(ConvertFormat.PDF);

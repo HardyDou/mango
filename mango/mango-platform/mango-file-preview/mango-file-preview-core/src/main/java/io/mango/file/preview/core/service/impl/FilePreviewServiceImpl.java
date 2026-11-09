@@ -13,6 +13,7 @@ import io.mango.file.preview.core.gateway.FilePreviewFileGateway;
 import io.mango.file.preview.core.service.IFilePreviewService;
 import io.mango.file.preview.core.task.IFilePreviewTaskService;
 import io.mango.file.preview.api.vo.FilePreviewTaskVO;
+import io.mango.file.preview.core.service.model.FilePreviewMode;
 import io.mango.file.preview.core.service.model.FilePreviewSource;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
@@ -181,14 +182,20 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
     }
 
     @Override
-    public boolean isPdfPreview(String token) {
+    public FilePreviewMode previewMode(String token) {
         PreviewToken previewToken = readPreviewToken(token);
         MangoContextSnapshot previous = MangoContextHolder.get();
         try {
             MangoContextHolder.set(previewToken.context());
             FileRecordVO record = fileRecord(previewToken.fileId());
-            String extension = StringUtils.getFilenameExtension(record.getFileName());
-            return "pdf".equalsIgnoreCase(extension) || "application/pdf".equalsIgnoreCase(record.getContentType());
+            FilePreviewMode mode = FilePreviewMode.of(FilePreviewMode.extension(record.getFileExt(), record.getFileName()));
+            if (mode == FilePreviewMode.NATIVE_PDF) {
+                return mode;
+            }
+            // 扩展名缺失或与实际内容不一致时，按声明的 PDF 内容类型兜底。
+            return "application/pdf".equalsIgnoreCase(record.getContentType())
+                    ? FilePreviewMode.NATIVE_PDF
+                    : mode;
         } finally {
             MangoContextHolder.set(previous);
         }

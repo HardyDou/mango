@@ -36,13 +36,20 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -76,6 +83,9 @@ class MangoFilePreviewAppFlowTest {
 
     private static final Long FILE_ID = 10001L;
     private static final String FILE_NAME = "readme.txt";
+    private static final Long ARCHIVE_FILE_ID = 10002L;
+    private static final String ARCHIVE_FILE_NAME = "bundle.zip";
+    private static final String ARCHIVE_ENTRY_NAME = "hello.txt";
     private static final String ENGINE_FILE_NAME_PREFIX = "file-10001-";
     private static final String FILE_CONTENT = "Mango file preview E2E";
 
@@ -119,6 +129,46 @@ class MangoFilePreviewAppFlowTest {
         assertThat(previewResponse.getBody()).contains(ENGINE_FILE_NAME_PREFIX).contains(".txt");
         assertThat(previewResponse.getBody()).contains(Base64.getEncoder()
                 .encodeToString((FILE_CONTENT + "\r\n").getBytes(StandardCharsets.UTF_8)));
+    }
+
+    @Test
+    @DisplayName("archive preview should route to engine compressed preview instead of PDF conversion")
+    void archivePreviewShouldRouteToEngineCompressedPreview() throws Exception {
+        ResponseEntity<String> linkResponse = restTemplate.getForEntity(baseUrl()
+                + "/file-preview/files/preview-link?fileId=" + ARCHIVE_FILE_ID, String.class);
+        assertThat(linkResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode body = objectMapper.readTree(linkResponse.getBody());
+        assertThat(body.at("/data/fileName").asText()).isEqualTo(ARCHIVE_FILE_NAME);
+        String previewUrl = body.at("/data/previewUrl").asText();
+
+        HttpClient httpClient = HttpClient.newBuilder()
+                .followRedirects(HttpClient.Redirect.NEVER)
+                .build();
+        HttpResponse<String> entryResponse = httpClient.send(
+                HttpRequest.newBuilder(URI.create(baseUrl() + previewUrl.replaceFirst("^/api", "")))
+                        .GET().build(), HttpResponse.BodyHandlers.ofString());
+
+        assertThat(entryResponse.statusCode()).isEqualTo(HttpStatus.FOUND.value());
+        String engineLocation = entryResponse.headers().firstValue("Location").orElseThrow();
+        assertThat(engineLocation).startsWith("/api/onlinePreview?url=");
+
+        ResponseEntity<String> previewResponse = restTemplate.getForEntity(
+                URI.create(baseUrl() + engineLocation.replaceFirst("^/api", "")), String.class);
+        assertThat(previewResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(previewResponse.getBody())
+                .contains("compressed-file?kkCompressfileKey=")
+                .doesNotContain("暂不支持该文件格式转换为 PDF");
+
+        Matcher treeMatcher = Pattern.compile("var url = \"http://\" \\+ '([^']+)';")
+                .matcher(previewResponse.getBody());
+        assertThat(treeMatcher.find()).isTrue();
+        String directoryUrls = URLEncoder.encode(Base64.getEncoder()
+                .encodeToString(("http://" + treeMatcher.group(1)).getBytes(StandardCharsets.UTF_8)),
+                StandardCharsets.UTF_8);
+        ResponseEntity<String> treeResponse = restTemplate.getForEntity(
+                URI.create(baseUrl() + "/directory?urls=" + directoryUrls), String.class);
+        assertThat(treeResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(treeResponse.getBody()).contains(ARCHIVE_ENTRY_NAME);
     }
 
     @Test
@@ -214,6 +264,15 @@ class MangoFilePreviewAppFlowTest {
 
         @Override
         public R<FileRecordVO> get(Long id) {
+            if (ARCHIVE_FILE_ID.equals(id)) {
+                FileRecordVO archive = new FileRecordVO();
+                archive.setId(ARCHIVE_FILE_ID);
+                archive.setFileName(ARCHIVE_FILE_NAME);
+                archive.setFileExt("zip");
+                archive.setFileSize((long) archiveContent().length);
+                archive.setContentType("application/zip");
+                return R.ok(archive);
+            }
             if (!FILE_ID.equals(id)) {
                 return R.fail("文件不存在");
             }
@@ -282,9 +341,27 @@ class MangoFilePreviewAppFlowTest {
 
         @Override
         public FileDownloadVO downloadForService(Long id) {
+            if (ARCHIVE_FILE_ID.equals(id)) {
+                byte[] archive = archiveContent();
+                return new FileDownloadVO(new ByteArrayInputStream(archive), ARCHIVE_FILE_NAME,
+                        "application/zip", archive.length);
+            }
             byte[] content = FILE_CONTENT.getBytes(StandardCharsets.UTF_8);
             return new FileDownloadVO(new ByteArrayInputStream(content), FILE_NAME,
                     "text/plain;charset=UTF-8", content.length);
+        }
+    }
+
+    private static byte[] archiveContent() {
+        try (ByteArrayOutputStream output = new ByteArrayOutputStream();
+             ZipOutputStream zip = new ZipOutputStream(output)) {
+            zip.putNextEntry(new ZipEntry(ARCHIVE_ENTRY_NAME));
+            zip.write("archive entry".getBytes(StandardCharsets.UTF_8));
+            zip.closeEntry();
+            zip.finish();
+            return output.toByteArray();
+        } catch (IOException exception) {
+            throw new IllegalStateException("Unable to build test archive", exception);
         }
     }
 }
