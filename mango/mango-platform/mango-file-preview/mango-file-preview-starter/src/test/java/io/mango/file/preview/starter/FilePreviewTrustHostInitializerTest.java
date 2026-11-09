@@ -1,7 +1,6 @@
 package io.mango.file.preview.starter;
 
 import cn.keking.config.ConfigConstants;
-import io.mango.file.preview.core.config.FilePreviewProperties;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -17,10 +16,7 @@ class FilePreviewTrustHostInitializerTest {
     @Test
     void run_addsSourceBaseHostWithoutLosingConfiguredHosts() {
         ConfigConstants.setTrustHostValue("localhost,preview.mango.test");
-        FilePreviewProperties properties = new FilePreviewProperties();
-        properties.setSourceBaseUrl("http://127.0.0.1:18018/internal/");
-
-        new FilePreviewTrustHostInitializer(properties).run(null);
+        new FilePreviewTrustHostInitializer("http://127.0.0.1:18018/internal/").run(null);
 
         assertThat(ConfigConstants.getTrustHostSet())
                 .contains("localhost", "preview.mango.test", "127.0.0.1");
@@ -29,9 +25,7 @@ class FilePreviewTrustHostInitializerTest {
     @Test
     void run_whenSourceBaseUrlMissing_keepsConfiguredHosts() {
         ConfigConstants.setTrustHostValue("localhost");
-        FilePreviewProperties properties = new FilePreviewProperties();
-
-        new FilePreviewTrustHostInitializer(properties).run(null);
+        new FilePreviewTrustHostInitializer(null).run(null);
 
         assertThat(ConfigConstants.getTrustHostSet()).containsExactly("localhost");
     }
@@ -39,10 +33,7 @@ class FilePreviewTrustHostInitializerTest {
     @Test
     void run_whenSourceBaseUrlInvalid_keepsConfiguredHosts() {
         ConfigConstants.setTrustHostValue("localhost");
-        FilePreviewProperties properties = new FilePreviewProperties();
-        properties.setSourceBaseUrl("not a valid url");
-
-        new FilePreviewTrustHostInitializer(properties).run(null);
+        new FilePreviewTrustHostInitializer("not a valid url").run(null);
 
         assertThat(ConfigConstants.getTrustHostSet()).containsExactly("localhost");
     }

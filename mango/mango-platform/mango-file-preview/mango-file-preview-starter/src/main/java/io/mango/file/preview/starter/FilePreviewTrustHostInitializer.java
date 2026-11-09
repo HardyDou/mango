@@ -1,7 +1,6 @@
 package io.mango.file.preview.starter;
 
 import cn.keking.config.ConfigConstants;
-import io.mango.file.preview.core.config.FilePreviewProperties;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,11 +26,11 @@ public class FilePreviewTrustHostInitializer implements ApplicationRunner, Order
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FilePreviewTrustHostInitializer.class);
 
-    private final FilePreviewProperties properties;
+    private final String sourceBaseUrl;
 
     @Override
     public void run(ApplicationArguments args) {
-        String baseUrl = properties.getSourceBaseUrl();
+        String baseUrl = sourceBaseUrl;
         if (!StringUtils.hasText(baseUrl)) {
             return;
         }

@@ -5,6 +5,7 @@ import cn.keking.model.FileAttribute;
 import cn.keking.model.FileType;
 import cn.keking.utils.RarUtils;
 import cn.keking.web.filter.BaseUrlFilter;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import net.sf.sevenzipjbinding.ExtractOperationResult;
 import net.sf.sevenzipjbinding.IInArchive;
 import net.sf.sevenzipjbinding.SevenZip;
@@ -53,9 +54,12 @@ public class CompressFileReader {
     private static final String SEVEN_ZIP_SUFFIX = "7-zip";
     private static final String PACKAGE_PATH = "_";
     private static final String PASSWORD_MESSAGE = "password";
+    private static final int BUFFER_SIZE = 8192;
 
     private final FileHandlerService fileHandlerService;
 
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+            justification = "Spring-managed collaborator is injected once and retained for the reader lifetime")
     public CompressFileReader(FileHandlerService fileHandlerService) {
         this.fileHandlerService = fileHandlerService;
     }
@@ -93,7 +97,7 @@ public class CompressFileReader {
                     Files.createDirectories(filePathInsideArchive);
                     continue;
                 }
-                Files.createDirectories(filePathInsideArchive.getParent());
+                createParentDirectories(filePathInsideArchive);
                 try (OutputStream out = new BufferedOutputStream(new FileOutputStream(filePathInsideArchive.toFile(), false))) {
                     zipInputStream.transferTo(out);
                 }
@@ -111,14 +115,14 @@ public class CompressFileReader {
         File file = new File(filePath);
         try (SevenZFile sevenZFile = password == null ? new SevenZFile(file) : new SevenZFile(file, password)) {
             SevenZArchiveEntry entry;
-            byte[] buffer = new byte[8192];
+            byte[] buffer = new byte[BUFFER_SIZE];
             while ((entry = sevenZFile.getNextEntry()) != null) {
                 Path filePathInsideArchive = getFilePathInsideArchive(entry.getName(), folderPath);
                 if (entry.isDirectory()) {
                     Files.createDirectories(filePathInsideArchive);
                     continue;
                 }
-                Files.createDirectories(filePathInsideArchive.getParent());
+                createParentDirectories(filePathInsideArchive);
                 try (OutputStream out = new BufferedOutputStream(new FileOutputStream(filePathInsideArchive.toFile(), false))) {
                     int length;
                     while ((length = sevenZFile.read(buffer)) > 0) {
@@ -189,11 +193,18 @@ public class CompressFileReader {
         }
         Path normalizedPath = getFilePathInsideArchive(insideFileName, folderPath);
         try {
-            Files.createDirectories(normalizedPath.getParent());
+            createParentDirectories(normalizedPath);
         } catch (IOException e) {
             throw new RuntimeException("Failed to create directory: " + normalizedPath.getParent(), e);
         }
         return normalizedPath;
+    }
+
+    private void createParentDirectories(Path path) throws IOException {
+        Path parent = path.getParent();
+        if (parent != null) {
+            Files.createDirectories(parent);
+        }
     }
 
     private Path getFilePathInsideArchive(String insideFileName, Path folderPath) {

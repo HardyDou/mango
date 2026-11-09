@@ -56,7 +56,7 @@ public class FilePreviewAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public FilePreviewTrustHostInitializer filePreviewTrustHostInitializer(FilePreviewProperties properties) {
-        return new FilePreviewTrustHostInitializer(properties);
+        return new FilePreviewTrustHostInitializer(properties.getSourceBaseUrl());
     }
 
     @Bean
