@@ -682,6 +682,8 @@ Workflow 参数校验约束统一由 `mango-workflow-api` 的 `XxxApi` 契约声
 
 `POST /workflow/tasks/return` 用于把当前任务退回到历史用户任务节点，流程实例保持运行。入参支持 `targetTaskDefinitionKey`；不传时默认退回当前流程实例中最近一个已完成的不同用户任务节点。默认退回策略面向串行用户任务链路；并行、多实例、重复节点或需要固定业务语义的复杂流程，应在节点动作配置或业务审批页中显式传入 `targetTaskDefinitionKey`。接口返回结构与 `complete-result` 一致，业务审批页可以直接使用刷新后的 `currentTasks` 快照同步当前节点和当前办理人。退回场景也会发布 `workflow.task.advanced`，其中 `completedTask*` 表示发起退回的源任务。
 
+退回不要求回退连线或目标节点动作配置，目标只接受已完成历史用户任务。退回是失败可见的操作：引擎变更活动状态后，若目标节点没有待办任务，或流程推进后仍停原节点，调用以 `TASK_INVALID` 失败并回滚；成功响应的 `actionResult` 为 `RETURN`。
+
 工作流领域事件：
 
 | 事件类型 | 发布时机 | 主要用途 |

@@ -4,6 +4,8 @@
 
 ## 7. 变更影响记录
 
+- Issue #1179 修复审批退回的静默成功：`POST /workflow/tasks/return` 在引擎变更活动状态后校验目标节点确实产生待办任务，并在流程推进后校验没有停在原节点；不满足时以 `TASK_INVALID` 失败并回滚，不再返回成功。成功响应的 `actionResult` 由错误的 `COMPLETE` 改为 `RETURN`。退回仍然不需要回退连线、不需要目标节点动作配置、不需要历史活动 ID，只要求目标节点在当前实例已完成历史中存在；业务审批发起、通过、驳回、撤回、事件类型、权限、租户隔离和页面 key 不变，业务侧只需要把退回失败按错误处理，不要先写“已退回”。
+
 - Issue #732 新增租户隔离的 Workflow 参与关系 API 和审批节点自动派单。业务可通过 `participantUserIds` 原子声明只读参与人，历史参与关系与任务操作权限保持分离；流程设计器中旧节点缺少 `assignmentMode` 时按 `CLAIM`，显式 `AUTO` 时可使用数据库游标保护的 `ROUND_ROBIN`、按活动任务数选择的 `LEAST_TASKS` 或流程实例最近处理人优先的 `AFFINITY`（未命中回退 `LEAST_TASKS`），空候选返回 `AUTO_ASSIGN_NO_CANDIDATE` 并回滚。设计器候选项改由 Workflow 自有接口和可替换 `WorkflowDesignerOptionProvider` 提供，只使用 Workflow 定义权限并从可信上下文派生租户。V3 仅回填可证明的稳定用户 ID，username-only 历史不授权。
 
 - Issue #870 为业务申请详情、历史、最新进度和流程详情增加 `WorkflowBusinessApplyDataPermissionProvider` 扩展点。业务模块在同一 Workflow 运行时中注册 Provider，并按 `businessType` 从自己的业务表校验 owner、组织和租户；普通业务员不再依赖全局 `workflow:business-apply:detail`。Workflow 使用持久化申请事实构造权限上下文，无权时返回 `APPLY_ACCESS_DENIED`，批量进度过滤无权记录。Provider 运行在实际承载 Workflow 服务的应用中，业务查询通过公开 Workflow API 完成；完整接入边界见 [Workflow README](../../../mango/mango-platform/mango-workflow/README.md#业务申请数据权限)，长期能力文档边界见 [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)。升级验证覆盖业务详情正反权限用例和业务代理兼容路径移除。

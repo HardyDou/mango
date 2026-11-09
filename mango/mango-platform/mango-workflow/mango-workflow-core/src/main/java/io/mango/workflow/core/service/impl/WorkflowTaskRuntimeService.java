@@ -79,6 +79,7 @@ import io.mango.workflow.core.service.IWorkflowTaskRuntimeService;
 import io.mango.workflow.core.service.IWorkflowParticipationService;
 import io.mango.workflow.core.service.WorkflowTaskAdvanceResult;
 import io.mango.workflow.core.support.WorkflowNodeActionConfigResolver;
+import io.mango.workflow.core.support.WorkflowReturnTargetSupport;
 import lombok.RequiredArgsConstructor;
 import org.flowable.engine.HistoryService;
 import org.flowable.engine.RepositoryService;
@@ -430,7 +431,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
                 command.getComment(),
                 advanceResult.ended(),
                 advanceResult.businessApply());
-        return toCompleteResult(task, advanceResult);
+        return toCompleteResult(WorkflowTaskAction.COMPLETE, task, advanceResult);
     }
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -493,11 +494,14 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
                 .processInstanceId(task.getProcessInstanceId())
                 .moveActivityIdTo(task.getTaskDefinitionKey(), targetTaskDefinitionKey)
                 .changeState();
+        WorkflowReturnTargetSupport.ensureTargetTaskCreated(taskService, task, targetTaskDefinitionKey);
         saveRecord(task, WorkflowTaskAction.RETURN, command.getComment(),
-                returnVariables(json(command.getVariables()), targetTaskDefinitionKey));
+                WorkflowReturnTargetSupport.returnVariables(json(command.getVariables()), targetTaskDefinitionKey));
         updateFormInstance(task.getProcessInstanceId(), variables, WorkflowInstanceStatus.RUNNING);
         triggerEventNotify(task, variables);
         WorkflowTaskAdvanceResult advanceResult = advanceRuntimeTasks(task.getProcessInstanceId());
+        WorkflowReturnTargetSupport.ensureLeftSourceNode(taskService, task, targetTaskDefinitionKey,
+                advanceResult.ended());
         WorkflowFormInstanceEntity formInstance = findFormInstance(task.getProcessInstanceId());
         workflowEventPublisher.publishTaskAdvanced(
                 task,
@@ -506,7 +510,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
                 command.getComment(),
                 advanceResult.ended(),
                 advanceResult.businessApply());
-        return toCompleteResult(task, advanceResult);
+        return toCompleteResult(WorkflowTaskAction.RETURN, task, advanceResult);
     }
 
     @Override
@@ -712,12 +716,13 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
                 workflowBusinessApplyService.findByProcessInstance(processInstanceId));
     }
 
-    private WorkflowTaskCompleteResultVO toCompleteResult(Task completedTask, WorkflowTaskAdvanceResult advanceResult) {
+    private WorkflowTaskCompleteResultVO toCompleteResult(WorkflowTaskAction action, Task previousTask,
+                                                          WorkflowTaskAdvanceResult advanceResult) {
         WorkflowTaskCompleteResultVO vo = new WorkflowTaskCompleteResultVO();
-        vo.setActionResult(WorkflowTaskAction.COMPLETE);
-        vo.setCompletedTaskId(completedTask.getId());
-        vo.setCompletedTaskName(completedTask.getName());
-        vo.setCompletedTaskDefinitionKey(completedTask.getTaskDefinitionKey());
+        vo.setActionResult(action);
+        vo.setCompletedTaskId(previousTask.getId());
+        vo.setCompletedTaskName(previousTask.getName());
+        vo.setCompletedTaskDefinitionKey(previousTask.getTaskDefinitionKey());
         vo.setProcessInstanceId(advanceResult.processInstanceId());
         vo.setEnded(advanceResult.ended());
         WorkflowBusinessApplyVO apply = advanceResult.businessApply();
@@ -815,42 +820,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
     }
 
     private String resolveReturnTarget(Task task, String configuredTarget) {
-        String target = trim(configuredTarget);
-        if (StringUtils.hasText(target)) {
-            ensureHistoricTarget(task, target);
-            return target;
-        }
-        List<HistoricTaskInstance> historicTasks = historyService.createHistoricTaskInstanceQuery()
-                .processInstanceId(task.getProcessInstanceId())
-                .finished()
-                .orderByHistoricTaskInstanceEndTime()
-                .desc()
-                .list();
-        for (HistoricTaskInstance historicTask : historicTasks) {
-            String taskDefinitionKey = trim(historicTask.getTaskDefinitionKey());
-            if (StringUtils.hasText(taskDefinitionKey) && !taskDefinitionKey.equals(task.getTaskDefinitionKey())) {
-                return taskDefinitionKey;
-            }
-        }
-        Require.isTrue(false, WorkflowCode.TASK_INVALID, "没有可退回的历史节点");
-        return "";
-    }
-
-    private void ensureHistoricTarget(Task task, String targetTaskDefinitionKey) {
-        long count = historyService.createHistoricTaskInstanceQuery()
-                .processInstanceId(task.getProcessInstanceId())
-                .taskDefinitionKey(targetTaskDefinitionKey)
-                .finished()
-                .count();
-        Require.isTrue(count > 0, WorkflowCode.TASK_INVALID, "目标退回节点不在已完成历史中");
-        Require.isTrue(!targetTaskDefinitionKey.equals(task.getTaskDefinitionKey()),
-                WorkflowCode.TASK_INVALID, "不能退回当前节点");
-    }
-
-    private Map<String, Object> returnVariables(Map<String, Object> variables, String targetTaskDefinitionKey) {
-        Map<String, Object> result = new LinkedHashMap<>(variables == null ? Map.of() : variables);
-        result.put("targetTaskDefinitionKey", targetTaskDefinitionKey);
-        return result;
+        return WorkflowReturnTargetSupport.resolveTarget(historyService, task, configuredTarget);
     }
 
     @Override

@@ -48,6 +48,16 @@ public interface WorkflowTaskRuntimeApi {
 
     R<WorkflowTaskActionResultVO> rejectWithResult(@Valid RejectWorkflowTaskCommand command);
 
+    /**
+     * 把当前任务退回历史用户任务节点。
+     * <p>
+     * 退回使用流程引擎的变更活动状态能力，不要求源节点与目标节点之间存在回退连线，也不要求在目标节点配置退回动作；
+     * 只有当前任务的 {@code returnTask} 动作必须启用。{@code targetTaskDefinitionKey} 必须是在当前流程实例中已完成过的
+     * 用户任务节点；省略时退回最近一个已完成的不同用户任务节点。
+     * <p>
+     * 退回成功后返回 {@code actionResult=RETURN} 和刷新后的当前任务快照。目标节点没有产生可办理任务、或流程仍停在原节点时，
+     * 调用以 {@code TASK_INVALID} 失败并回滚，不会返回成功。
+     */
     R<WorkflowTaskCompleteResultVO> returnTask(@Valid ReturnWorkflowTaskCommand command);
 
     R<Boolean> saveDraft(@Valid SaveWorkflowTaskDraftCommand command);
