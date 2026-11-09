@@ -6,9 +6,9 @@
 
 | 项 | 要求 | 检查方式 |
 |---|---|---|
-| Crypto 密钥 | `mango.crypto.sm4.secret-key` 必须由环境变量注入，禁止使用仓库默认值 | 检查部署配置与 `MANGO_CRYPTO_SM4_SECRET_KEY` |
-| 连接测试网络边界 | 默认 `mango.integration.test.allow-private-network=false`；确需内网目标时才开启 | 检查配置；开启需安全评审 |
-| 数据库账号 | 应用账号只具备所需表读写权限；外部只读账号不得访问 `integration_credential` | 检查 DB 授权 |
+| Crypto 密钥 | `mango.crypto.sm4.secret-key` 由环境变量注入，仓库默认值仅用于本地开发 | 检查部署配置与 `MANGO_CRYPTO_SM4_SECRET_KEY` |
+| 连接测试网络边界 | 默认 `mango.integration.test.allow-private-network=false`；确需内网目标时再开启 | 检查配置；开启需安全评审 |
+| 数据库账号 | 应用账号只具备所需表读写权限；`integration_credential` 仅对应用账号开放 | 检查 DB 授权 |
 | 数据库备份 | 备份加密；证书以文本入库，备份即包含证书 | 检查备份策略 |
 | Flyway | `mango.persistence.flyway.modules.integration.enabled=true` | 启动日志确认 integration 模块迁移成功 |
 | 租户排除 | `integration_connector` 在 `excludedTables` 中 | 检查 `PersistenceProperties` 生效配置 |
@@ -18,10 +18,10 @@
 | 项 | 要求 |
 |---|---|
 | 连接器来源 | 生产连接器应为 `source=DECLARED`，由声明文件维护 |
-| 声明文件 | `integration-connectors.json` 随代码版本发布，变更需走代码评审 |
-| 页面维护连接器 | 仅允许 `source=MANUAL` 的连接器在页面编辑 |
+| 声明文件 | `integration-connectors.json` 随代码版本发布，变更走代码评审 |
+| 页面维护连接器 | 页面只编辑 `source=MANUAL` 的连接器 |
 | 凭证 | 生产凭证由运维/业务方录入，Secret 只写不读；证书文本可读但接口返回掩码 |
-| 权限 | 写操作仅授予平台管理员角色：`integration:connector:edit`、`integration:credential:add/rotate`、`integration:instance:add/edit`、`integration:maintenance:cleanup` |
+| 权限 | 写操作只授予平台管理员角色：`integration:connector:edit`、`integration:credential:add/rotate`、`integration:instance:add/edit`、`integration:maintenance:cleanup` |
 
 ## 3. 发布前回归
 
@@ -59,3 +59,5 @@ pnpm --filter mango-admin test:e2e -- e2e/specs/integration-application-manageme
 - 系统字典值校验依赖 `DictApi`，字典服务不可用时放行
 - 无删除能力，只能停用
 - 无回调订阅与验签编排，回调仍由业务域实现
+
+安全与权限的长期规则见 [后端安全规范](../../../mango-pmo/rules/backend/06-security.md) 与 [交付契约](../../../mango-pmo/rules/01-delivery-contract.md)。
