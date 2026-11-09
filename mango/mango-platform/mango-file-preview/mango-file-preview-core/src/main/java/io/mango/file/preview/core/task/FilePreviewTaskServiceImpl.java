@@ -246,11 +246,11 @@ public class FilePreviewTaskServiceImpl implements IFilePreviewTaskService {
             update(task, FilePreviewTaskStatus.FAILED, PROGRESS_COMPLETE,
                     ex.getMessage() == null ? "预览生成失败，请下载原文件查看" : ex.getMessage());
         } catch (Throwable fatal) {
-            // 第三方转换库的静态初始化失败会抛 Error；不落 FAILED 会让任务永久停在 PROCESSING。
+            // 第三方转换库的静态初始化失败会抛 Error；必须落 FAILED，否则任务会永久停在 PROCESSING。
+            // 已记录带上下文的错误堆栈，不再向 Worker 线程重新抛出，避免线程池重复输出同类堆栈。
             LOGGER.error("文件预览转换发生不可恢复错误，fileId={}, fileSize={}",
                     record.getId(), record.getFileSize(), fatal);
             update(task, FilePreviewTaskStatus.FAILED, PROGRESS_COMPLETE, "预览生成失败，请下载原文件查看");
-            throw fatal;
         } finally {
             leaseLocker.release(workerSlot);
             leaseLocker.release(lease);
