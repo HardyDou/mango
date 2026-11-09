@@ -393,3 +393,7 @@ Shell 会注册 unauthorized handler 并清理 session 后跳转 `/login`。检�
 
 - 本次 PR 仅在开发中心 Editor 示例中展示 `@mango/common` 富文本工具栏精简配置和图片值写入类型；不改变 Shell 菜单加载接口、动态路由匹配、页面注册方式、角色授权、按钮权限、租户绑定、登录态装配、启动方式和运行时页面加载协议。
 - Issue #1134 仅更新 Shell 内验证码演示页面对统一 captcha API 的调用和文案；不改变 Shell 菜单加载、页面注册、权限、租户、登录态或运行时路由契约。
+
+## 消息交互与目标兜底
+
+顶部铃铛和站内信详情复用 `@mango/notice` 的 `openNoticeTarget()`：先解析消息 `targetKey`（静态平台目标、当前用户运行时菜单、已注册页面路由），再尝试参数里的 `fallbackTargetKey`，最后退回消息中心（`notice:site-message` → `/profile?tab=notice-site-message`）。兜底到消息中心时提示「消息目标未注册，已打开消息中心」；只有连消息中心都不可用时才提示「目标未注册或当前无权访问」。Shell 不解析业务页面权限，菜单授权仍由宿主菜单决定。
