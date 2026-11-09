@@ -1,0 +1,284 @@
+{
+  "childNode": {
+    "bpmnType": "userTask",
+    "childNode": {
+      "bpmnType": "userTask",
+      "childNode": {
+        "bpmnType": "exclusiveGateway",
+        "childNode": null,
+        "conditionNodes": [
+          {
+            "bpmnType": "sequenceFlow",
+            "childNode": {
+              "bpmnType": "userTask",
+              "childNode": null,
+              "conditionNodes": [],
+              "executionType": "USER_TASK",
+              "id": "risk_manager_review",
+              "nodeName": "经理复核",
+              "nodeType": "APPROVAL",
+              "properties": {
+                "approvalConfig": {
+                  "actions": {
+                    "addSign": {
+                      "enabled": false,
+                      "label": "加签",
+                      "order": 30,
+                      "requireComment": false
+                    },
+                    "complete": {
+                      "enabled": true,
+                      "label": "终审提交",
+                      "order": 50,
+                      "requireComment": false
+                    },
+                    "reject": {
+                      "danger": true,
+                      "enabled": true,
+                      "label": "驳回",
+                      "order": 40,
+                      "requireComment": true
+                    },
+                    "returnTask": {
+                      "danger": false,
+                      "enabled": true,
+                      "label": "退回主管",
+                      "order": 35,
+                      "requireComment": true
+                    },
+                    "save": {
+                      "enabled": true,
+                      "label": "暂存",
+                      "order": 10,
+                      "requireComment": false
+                    },
+                    "transfer": {
+                      "enabled": false,
+                      "label": "转办",
+                      "order": 20,
+                      "requireComment": false
+                    }
+                  },
+                  "approvalMode": "OR_SIGN",
+                  "assigneeIds": [
+                    "finance"
+                  ],
+                  "assigneeType": null,
+                  "emptyAssigneeStrategy": null,
+                  "emptyAssigneeUserIds": [],
+                  "eventNotify": {
+                    "enabled": false,
+                    "method": "POST",
+                    "timeoutMillis": 5000,
+                    "type": "HTTP"
+                  },
+                  "extension": {
+                    "approvePageKey": "guarantee.risk.review",
+                    "sectionPreset": "RISK_MANAGER_REVIEW"
+                  },
+                  "formPermissions": {},
+                  "formUserField": null,
+                  "formUserFieldType": "USER",
+                  "initiatorSelectMultiple": false,
+                  "orgIds": [],
+                  "postIds": [],
+                  "rejectStrategy": "END_PROCESS",
+                  "roleIds": [],
+                  "assignmentMode": null,
+                  "userIds": []
+                }
+              }
+            },
+            "conditionExpression": "${submitManager == '是' || managerReviewRequired == true}",
+            "conditionNodes": [],
+            "executionType": "NONE",
+            "id": "risk_branch_to_manager",
+            "nodeName": "提交经理",
+            "nodeType": "EXCLUSIVE_BRANCH",
+            "properties": {
+              "conditionEditMode": "EXPRESSION"
+            }
+          },
+          {
+            "bpmnType": "sequenceFlow",
+            "childNode": null,
+            "conditionExpression": "",
+            "conditionNodes": [],
+            "executionType": "NONE",
+            "id": "risk_branch_supervisor_finish",
+            "nodeName": "主管直接通过",
+            "nodeType": "EXCLUSIVE_BRANCH",
+            "properties": {
+              "conditionEditMode": "EXPRESSION"
+            }
+          }
+        ],
+        "executionType": "NONE",
+        "id": "risk_manager_branch",
+        "nodeName": "是否提交经理",
+        "nodeType": "EXCLUSIVE_GATEWAY",
+        "properties": {}
+      },
+      "conditionNodes": [],
+      "executionType": "USER_TASK",
+      "id": "risk_supervisor_review",
+      "nodeName": "主管审核",
+      "nodeType": "APPROVAL",
+      "properties": {
+        "approvalConfig": {
+          "actions": {
+            "addSign": {
+              "enabled": false,
+              "label": "加签",
+              "order": 30,
+              "requireComment": false
+            },
+            "complete": {
+              "enabled": true,
+              "label": "提交",
+              "order": 50,
+              "requireComment": false
+            },
+            "reject": {
+              "danger": true,
+              "enabled": true,
+              "label": "驳回",
+              "order": 40,
+              "requireComment": true
+            },
+            "returnTask": {
+              "danger": false,
+              "enabled": true,
+              "label": "退回专员",
+              "order": 35,
+              "requireComment": true
+            },
+            "save": {
+              "enabled": true,
+              "label": "暂存",
+              "order": 10,
+              "requireComment": false
+            },
+            "transfer": {
+              "enabled": false,
+              "label": "转办",
+              "order": 20,
+              "requireComment": false
+            }
+          },
+          "approvalMode": "COUNTERSIGN",
+          "assigneeIds": [
+            "admin"
+          ],
+          "assigneeType": null,
+          "emptyAssigneeStrategy": null,
+          "emptyAssigneeUserIds": [],
+          "eventNotify": {
+            "enabled": false,
+            "method": "POST",
+            "timeoutMillis": 5000,
+            "type": "HTTP"
+          },
+          "extension": {
+            "approvePageKey": "guarantee.risk.review",
+            "sectionPreset": "RISK_SUPERVISOR_REVIEW"
+          },
+          "formPermissions": {},
+          "initiatorSelectMultiple": false,
+          "orgIds": [],
+          "postIds": [],
+          "rejectStrategy": "END_PROCESS",
+          "roleIds": [],
+          "assignmentMode": null,
+          "userIds": [],
+          "formUserField": null
+        }
+      }
+    },
+    "conditionNodes": [],
+    "executionType": "USER_TASK",
+    "id": "risk_specialist_review",
+    "nodeName": "尽职调查",
+    "nodeType": "APPROVAL",
+    "properties": {
+      "approvalConfig": {
+        "actions": {
+          "addSign": {
+            "enabled": false,
+            "label": "加签",
+            "order": 30,
+            "requireComment": false
+          },
+          "claim": {
+            "enabled": true,
+            "label": "领取",
+            "order": 5,
+            "requireComment": false
+          },
+          "complete": {
+            "enabled": true,
+            "label": "提交主管",
+            "order": 50,
+            "requireComment": false
+          },
+          "reject": {
+            "danger": true,
+            "enabled": true,
+            "label": "拒绝承保",
+            "order": 40,
+            "requireComment": true
+          },
+          "save": {
+            "enabled": true,
+            "label": "暂存",
+            "order": 10,
+            "requireComment": false
+          },
+          "transfer": {
+            "enabled": false,
+            "label": "转办",
+            "order": 20,
+            "requireComment": false
+          },
+          "unclaim": {
+            "enabled": true,
+            "label": "释放",
+            "order": 6,
+            "requireComment": false
+          }
+        },
+        "approvalMode": "COUNTERSIGN",
+        "assigneeIds": [
+          "admin"
+        ],
+        "assigneeType": null,
+        "emptyAssigneeStrategy": null,
+        "emptyAssigneeUserIds": [],
+        "eventNotify": {
+          "enabled": false,
+          "method": "POST",
+          "timeoutMillis": 5000,
+          "type": "HTTP"
+        },
+        "extension": {
+          "approvePageKey": "guarantee.risk.review",
+          "sectionPreset": "RISK_SPECIALIST_REVIEW"
+        },
+        "formPermissions": {},
+        "initiatorSelectMultiple": false,
+        "orgIds": [],
+        "postIds": [],
+        "rejectStrategy": "END_PROCESS",
+        "roleIds": [],
+        "assignmentMode": null,
+        "userIds": [],
+        "formUserField": null
+      }
+    }
+  },
+  "conditionNodes": [],
+  "id": "startEvent",
+  "nodeName": "发起人",
+  "nodeType": "ROOT",
+  "properties": {}
+}

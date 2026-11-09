@@ -28,6 +28,7 @@
 | U1179-03 | 退回成功响应 | 退回真实生效 | `actionResult` 为 `RETURN` | 不适用 | 服务级测试断言 `WorkflowTaskAction.RETURN` |
 | U1179-05 | 业务精确调用形态 | 显式 `targetTaskDefinitionKey` + `variables` 含 `targetTaskDefinitionKey`/`decision` | 真实引擎与真实 Mapper 下任务移动到目标节点 | 失败时 `TASK_INVALID` | `WorkflowTaskRuntimeServiceIntegrationTest.returnTaskWithExplicitTargetAndClientVariablesMovesRuntimeTask` 通过 |
 | U1179-06 | 目标为网关或汇聚 | `targetTaskDefinitionKey` 为网关/汇聚节点 | 解析到上游最近的已完成用户任务后退回 | 多个候选或无候选时 `TASK_INVALID` | 真实引擎用例覆盖汇聚目标解析、汇聚直通回原节点、分支网关无上游时失败 |
+| U1179-07 | 业务真实定义 | 业务仓 `WF_GUARANTEE_RISK_REVIEW` 的 `designerJson`（含排他网关、经理复核会签、`returnTask` 动作配置） | 复审退回到初审成功，申请当前任务刷新为初审 | 失败时 `TASK_INVALID` | `WorkflowTaskRuntimeServiceIntegrationTest.returnTaskMovesRuntimeTaskOnBusinessRiskReviewDesignerModel` 通过（测试资源 `src/test/resources/workflow/issue-1179-risk-review-designer.json`，仅把办理人改为测试用户） |
 | U1179-04 | 业务接入方 | 阅读接入指南 | 明确无需回退连线、无需目标节点动作配置、无需历史活动 ID、目标必须是已完成历史用户任务 | 文档与实现一致 | `node mango-pmo/tools/check-business-guides.mjs` 通过 |
 
 ## 4. 技术决定
@@ -58,6 +59,8 @@
 | U1179-02 | 服务级集成测试 | 同上 | PASS：`returnTaskFailsWhenProcessStaysOnSourceNode` 断言 `退回未生效` 且不发布 `workflow.task.advanced` | 本会话 surefire 输出 |
 | U1179-05 | 端到端集成测试（真实 Flowable 引擎 + 真实 Mapper） | `mvn -pl mango-platform/mango-workflow/mango-workflow-core test -Dtest=WorkflowTaskRuntimeServiceIntegrationTest` | PASS：3 个用例通过，显式目标与业务变量组合下任务从 `finance_approve` 退回到 `manager_approve`，`actionResult=RETURN` | 本会话 surefire 输出 |
 | U1179-06 | 真实引擎集成测试 | `-Dtest=WorkflowReturnTaskEngineTest` | PASS：5 个用例，含汇聚网关直通回原节点、汇聚目标解析到初审、分支网关无上游时失败 | 本会话 surefire 输出 |
+| U1179-07 | 业务真实定义回放（真实引擎 + 真实 Mapper） | `-Dtest=WorkflowTaskRuntimeServiceIntegrationTest` | PASS：4 个用例；业务 `designerJson` 下复审退回到初审成功，`ACT_RU_TASK` 只剩初审，申请当前任务同步 | 本会话 surefire 输出 |
+| 业务本地库历史核对（只读） | `mango_dev_baohan_risk` 库 | 2026-11-04 15:16 至 2026-11-05 18:47 共 8 次退回记录，`ACT_HI_TASKINST` 均出现 `Delete Reason = Change activity to risk_specialist_review` 并新建 `risk_specialist_review` 任务；`ACT_RU_TASK` 停留在 `risk_specialist_review`，`ASSIGNEE_` 为空、`ACT_RU_IDENTITYLINK` 为 `candidate / ROLE:...`，`workflow_business_apply_current_task` 为 `risk_specialist_review / UNCLAIMED` | 只读 SQL 查询（本会话） |
 | 模块回归 | 模块全量测试与质量门禁 | `mvn -pl mango-platform/mango-workflow/mango-workflow-api,mango-platform/mango-workflow/mango-workflow-core,mango-platform/mango-workflow/mango-workflow-starter verify` | PASS：workflow-core 95 个测试通过（4 个既有跳过）、starter 39 个测试通过 | 本会话 Maven 输出 |
 | 架构门禁 | changed 模式架构门禁 | `mvn -f mango/pom.xml -pl <api,core> -Dmango.architecture.skip=false -Dmango.architecture.mode=changed -Dmango.architecture.requireFullReactor=false mango:architecture` | PASS：`blocking=0`；同模块存量 `MANGO-ARCH-BEAN-002` 由债务预算承载，未扩大 | 本会话 `mango-architecture-report.json` |
 | Mango 专项检查 | `mango:check` 新增违规对比 | `mvn -f mango/pom.xml -pl mango-platform/mango-workflow/mango-workflow-core mango:check` | 新增违规数 443，与 `main` 基线一致（未被本次改动增加）；该目标在 `main` 也因仓库存量违规而 FAIL | 本会话命令输出对比 |
@@ -69,6 +72,7 @@
 - 未用业务仓 `mango-baohan/mango-baohan-risk` 的真实库和真实流程定义复现原始现场；本次用同等流程形态（排他网关 + 空默认分支 + 汇聚 → 复审）在真实 Flowable 7.0.0 引擎上验证。原始现场若另有数据或版本差异，仍以业务侧重跑退回为准。
 - 原始现场“静默成功”的触发条件未直接命中：真实引擎实验证明移动到非活动节点会抛异常，因此原因只可能是退回后被自动推进或调用方读取了旧快照（含调用方事务回滚）。本次按 fail-closed 修复根因类别；业务侧复现时接口现在会明确失败并给出目标节点与原节点。
 - 业务在同版本发布前的构建上仍会看到静默成功：修复未发布前无法观察到新错误语义，需升级到包含本 PR 的版本后重跑。
+- 业务本地库历史显示退回本身在 2026-11-04/05 的 8 次操作中均生效，但目标节点任务为未认领的候选组任务（`ASSIGNEE_` 为空）。若业务按“我的待办”或旧快照判断，会误判为未移动；退回后的办理人派单/可见性不属于本次修复范围，需要业务按 `currentTasks` 与候选组可见性判断，或单独立项。
 - `mvn -pl ... mango:check` 在 `main` 也存在 443 条存量违规而整体 FAIL，属于仓库既有状态；本次只保证未新增违规。
 - 描述统计型 SpotBugs 存量告警（`EI_EXPOSE_REP*`、`BX_UNBOXING_IMMEDIATELY_REBOXED` 等）在本次改动前已存在，未由本任务扩大。
 - 前端未改动：`@mango/workflow` 已包含 `RETURN` 动作类型，任务详情页失败时只提示错误、不跳转，无需新增界面。
