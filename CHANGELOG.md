@@ -1,3 +1,109 @@
+## v2026.11.09-maven-1.2.0-integration-release - Mango Maven/docs 1.2.0 integration application management release - 2026-11-09
+
+Status: `PENDING`. Release plan digest `3825fcbedd22ad74d0759af67ce7684de4bdc3a30924ad2d0fee5d9cb183f7c0`; Maven/npm publication, consume verification, Tag and GitHub Release remain pending.
+
+### Pull Requests
+
+- Added: [PR #1178](https://github.com/HardyDou/mango/pull/1178) Delivered the integration application management capability: new `mango-integration` Maven module (api/support/core/starter), connector definitions, encrypted credentials with rotation history and read audit, connection instances, declaration SPI, auth toolkit, unified `IntegrationClient` with call records, admin pages for definitions and instances, plus micro-application overview and frontend runtime health check in authorization. Packages: five new Maven coordinates `io.mango.platform.integration:mango-integration{,-api,-support,-core,-starter}:1.2.0`, `@mango/rbac@1.3.0`, `@mango/admin-pages@1.3.0` and the generated npm closure. Business Adaptation: upgrade the complete tuple, declare the `integration` Flyway module, grant the new menu and permission codes through Resource Registry, and configure the SM4 key required by credential encryption.
+- Fixed: [PR #1177](https://github.com/HardyDou/mango/pull/1177) Routed file preview by file extension so archives no longer enter PDF conversion, made Office conversion artifacts readable inside the embedded preview iframe without a second login, preferred LibreOffice with explicit Aspose fallback, added ODT/ODS/ODP, moved 7z to commons-compress, and trusted the configured `source-base-url` host automatically. Packages: the Maven tuple containing `io.mango.platform.file.preview:mango-file-preview-{api,core,engine,starter}:1.2.0`, `io.mango.infra.fileproc:mango-infra-fileproc*:1.2.0` and the generated `@mango/cli@1.3.11` closure. Business Adaptation: upgrade the tuple, then review `mango.file-preview.source-base-url` and remove manual `trust.host` duplication.
+- Fixed: [PR #1180](https://github.com/HardyDou/mango/pull/1180) Made workflow task return fail-closed: returning to a completed user task resolves gateway targets upstream, and a return that leaves the process on the original node or produces no pending task now fails with `TASK_INVALID` and rolls back instead of reporting silent success. Packages: the Maven tuple containing `io.mango.platform.workflow:mango-workflow-*:1.2.0`. Business Adaptation: upgrade the tuple; approval pages that call `POST /workflow/tasks/return` must handle the new failure instead of assuming success.
+- Fixed: [PR #1167](https://github.com/HardyDou/mango/pull/1167) Unified the build-time cold baseline switch: `mango.baseline.enabled` with stale BSQL and manifest cleanup, database-state-first runtime decision, migration-less modules skipped with a WARN during cold baseline, CLI full backend template preset generation execution plus `MANGO_COLD_BASELINE_ENABLED`, real Flyway module declarations, KV cache/rate-limiter enabled and the duplicate authorization security chain removed. Packages: the complete Maven/docs `1.2.0` tuple and generated `@mango/cli@1.3.11` closure. Business Adaptation: decide per build whether the artifact ships a baseline via `-Dmango.baseline.enabled=true`; plain builds now clean stale generated baseline resources.
+- Fixed: [PR #1173](https://github.com/HardyDou/mango/pull/1173) Centered `MangoDialog` inside the Element Plus `align-center` overlay (#1169) and removed the unused xdocreport POI 3 converters that leaked `org.apache.poi:ooxml-schemas:1.1` into consumers of `mango-file-preview-engine` (#1171). Packages: `@mango/common@2.3.1` with its generated npm closure and the Maven tuple containing `io.mango.platform.file.preview:mango-file-preview-engine:1.2.0`. Business Adaptation: upgrade the npm closure and delete manual `org.apache.poi:ooxml-schemas` exclusions from consumer POMs.
+- Added: [PR #1176](https://github.com/HardyDou/mango/pull/1176) Added real MySQL regression coverage for historical tenantless Resource Registry rows across `AUTH_SUBJECT_ROLE` and `IDENTITY_USER`, with a switchable `MANGO_REGISTRY_IT_DB_*` datasource and a `_resource_it` database guard. Packages: none published; test sources and documentation only. Business Adaptation: no dependency action; the published docs bundle carries the new README and FAQ wording.
+- Changed: [PR #1181](https://github.com/HardyDou/mango/pull/1181) Regenerated the stale Catalog projection for the `mango-integration` coordinates and aligned the system KV capability fragment with the platform monolith. Packages: none; track-derived governance files only. Business Adaptation: no consumer action; this restores the published Catalog and CLI projections used by the release plan.
+- Changed: [PR #1166](https://github.com/HardyDou/mango/pull/1166) Closed out the previously completed Maven/docs `1.1.5` publication. Packages: none; release metadata only. Business Adaptation: no consumer action; this establishes the successful `1.1.5` baseline for the current batch.
+
+### Fixed
+
+- File preview now selects the rendering path by file extension: PDF files use PDF.js directly, Office documents and ODT/ODS/ODP convert asynchronously, and archives, spreadsheets, images, text and media go straight to the engine instead of failing in PDF conversion.
+- Office conversion artifacts can be read inside the embedded preview iframe without a second login; `preview-progress`, `preview-content` and `preview-artifact` are public endpoints guarded by the entry token.
+- Office conversion prefers LibreOffice and only falls back to Aspose when `mango.fileproc.convert.office-to-pdf-enabled` is explicitly disabled; a conversion `Error` now records the failure and marks the task `FAILED` instead of leaving a stuck task.
+- Configuring `mango.file-preview.source-base-url` automatically adds its host to the engine trust list, so gateway deployments no longer duplicate `trust.host` entries.
+- Workflow task return is fail-closed: a return that leaves the process on the original node or yields no pending task fails with `TASK_INVALID` and rolls back, and gateway targets resolve upstream to the nearest completed user task.
+- `mango-file-preview-engine` no longer passes `org.apache.poi:ooxml-schemas:1.1` to consumers, so POI 5 workbook parsing no longer fails with `NoSuchFieldError ... DocumentFactory Factory`.
+- `MangoDialog` is centered under Element Plus `align-center` and its height follows the content instead of being stretched to `--mango-dialog-max-height`.
+- Cold baseline resolves database state before reading `B*` resources, skips migration-less declared modules with a WARN, and cleans stale generated baseline resources when the build switch is off.
+
+### Added
+
+- `mango-integration` platform module: connector definitions with config/auth schemas, capability and tag metadata, encrypted credentials with rotation history and read audit, connection instances with connection testing, declaration SPI, auth toolkit and a unified `IntegrationClient` that records calls.
+- Admin pages for integration applications, integration connectors and micro applications, registered through `@mango/rbac` and `@mango/admin-pages` with `integration:*` permission codes and `AUTH_MENU` resource declarations.
+- Micro-application overview and frontend runtime health check in `mango-authorization`.
+- `mango.baseline.enabled` build switch with stale-resource cleanup and the `MANGO_COLD_BASELINE_ENABLED` runtime switch in the CLI full backend template.
+- `check-cli` guards for Flyway module declarations, KV capabilities, the security filter chain and the cold baseline switch in generated projects.
+- Real MySQL regression coverage for historical tenantless Resource Registry rows.
+
+### Changed
+
+- The complete non-application Maven/docs tuple advances from `1.1.5` to `1.2.0` with 201 coordinates, because the batch introduces the new `mango-integration` module and a consumer-visible file-preview and workflow behavior change.
+- npm: `@mango/common` `2.3.0` → `2.3.1`, `@mango/rbac` `1.2.0` → `1.3.0`, `@mango/admin-pages` `1.2.2` → `1.3.0`, `@mango/cli` `1.3.10` → `1.3.11`, plus the generated patch closure.
+- The monolith and CLI full backend template declare the `integration` Flyway module and no longer declare the migration-less `notification` module.
+- The platform Catalog projection is regenerated so the tracked Maven coordinate list includes the integration modules.
+
+### Versions
+
+- Maven/docs: `1.1.5` → `1.2.0`; 201 sealed Maven coordinates, including `io.mango:mango-docs-bundle:1.2.0` and the five `io.mango.platform.integration:mango-integration*` coordinates.
+- npm: 27 packages advance; `@mango/rbac` and `@mango/admin-pages` take a minor bump for new public views, API and page keys, and the remaining packages take their generated patch step.
+- Exact topology, dependency order and checksums are generated in `mango-ui/.changeset/release-plan.json`.
+
+### Published Packages
+
+- Publish all 201 non-application Maven coordinates in release-plan order, including the integration module closure.
+- Publish the 27 sealed npm tarballs in plan order: `@mango/common@2.3.1`, `@mango/admin-extension@1.1.5`, `@mango/ai@1.2.5`, `@mango/auth@1.0.42`, `@mango/file@1.2.5`, `@mango/detail@1.1.10`, `@mango/grid-layout@1.0.31`, `@mango/grid-widgets@1.0.37`, `@mango/home@1.0.30`, `@mango/information@1.1.5`, `@mango/rbac@1.3.0`, `@mango/site-shell@2.0.3`, `@mango/system@1.1.2`, `@mango/admin-pages@1.3.0`, `@mango/calendar@1.0.57`, `@mango/cms@1.1.2`, `@mango/job@1.0.50`, `@mango/link@1.0.43`, `@mango/notice@1.0.62`, `@mango/numgen@1.0.58`, `@mango/payment@1.0.49`, `@mango/template@1.0.58`, `@mango/workflow@1.0.66`, `@mango/admin-shell@1.1.2`, `@mango/workflow-business-example@1.0.65`, `@mango/admin@2.0.4`, `@mango/cli@1.3.11`.
+- Application fat jars and coordinates outside the sealed plan are excluded; `@mango/pmo` is unchanged because no PMO rule, contract, Agent or Skill file changed in this batch.
+
+### Business Impact
+
+- Consumers that add `mango-integration-starter` gain integration connector, credential and instance management with tenant-scoped tables, `integration:*` permission codes and `AUTH_MENU` resource declarations; menus and buttons arrive through Resource Registry, not Flyway SQL.
+- Integration credentials are stored encrypted for secret fields and masked for certificates; saving and rotating writes rotation history, and business reads write an access log without credential plaintext.
+- File preview behavior becomes extension-driven: archives no longer fail in PDF conversion, Office artifacts load inside the iframe, and the engine host allowlist stays enforced for SSRF protection.
+- Workflow task return no longer reports silent success; business approval pages must handle `TASK_INVALID` for returns that cannot move the process.
+- Cold baseline behavior is now decided by database state first, so plain artifacts stay usable against existing databases while empty-database bootstrap still fails closed when a baseline is required but missing.
+- Frontend consumers get centered dialogs, three new registered admin page keys and the new RBAC views and APIs; existing page keys and menus are unchanged.
+- Consumers upgrading to the new module must declare the `integration` Flyway module and provide the SM4 secret used by credential encryption; no destructive migration is introduced for existing modules.
+
+### Upgrade Estimate
+
+- Audience: Mango backend consumers adopting the integration capability, consumers of file preview or workflow task return, and frontend consumers of the Mango npm closure.
+- Engineering Effort: 1-2 engineer-days for a consumer adopting integration application management (dependency, Flyway declaration, SM4 key, Resource Registry menu授权, admin page verification); 0.5 engineer-day for consumers that only upgrade the tuple; 0.5 engineer-day for the frontend closure upgrade and dialog regression.
+- Execution Window: 2-3 hours per consumer including backup, build, restart, Flyway verification and permission check.
+- Service Downtime: one controlled backend restart window and one frontend deployment window; existing modules receive no destructive migration.
+- Rollback Effort: 1 engineer-day per consumer to restore the complete Maven `1.1.5` tuple and the previously verified npm closure, plus restoring the database snapshot when the integration migrations must be undone.
+- Assumptions: consumers have recoverable database backups, a disposable empty database for cold baseline verification, Maven and npm consume-registry access, an SM4 secret available to the runtime, and permission to publish menu resources through Resource Registry.
+
+### Upgrade Notes
+
+1. Upgrade the complete Mango Maven/docs tuple from `1.1.5` to `1.2.0`; do not update only one starter or module.
+2. To adopt integration application management, add `io.mango.platform.integration:mango-integration-starter:1.2.0`, declare `mango.persistence.flyway.modules.integration.enabled=true`, and apply migrations `V1`–`V5`.
+3. Provide the credential encryption key: set `MANGO_CRYPTO_SM4_SECRET_KEY` (or the `mango.crypto.sm4.secret-key` property) in the runtime that stores integration credentials.
+4. Publish and verify the integration menu resources so `integration:connector:*`, `integration:credential:*`, `integration:instance:*` and `integration:maintenance:cleanup` reach the roles that need them.
+5. Review `mango.file-preview.source-base-url` for gateway deployments; when it is set, delete duplicated engine `trust.host` entries and confirm archives, Office documents and spreadsheets preview correctly.
+6. Update approval pages that call `POST /workflow/tasks/return` so a `TASK_INVALID` response is surfaced to the operator instead of being treated as success.
+7. Decide the build baseline switch: pass `-Dmango.baseline.enabled=true` with `MANGO_BASELINE_DB_PASSWORD` only in the build that ships `B*` resources, and leave it disabled for plain builds.
+8. Upgrade the npm closure to the versions listed in `Versions`, run `pnpm install`, rebuild the admin bundle, and regenerate generated projects so Flyway module declarations, KV capabilities and the security filter chain match `1.2.0`.
+
+### Verification
+
+- `mvn verify` passed for the affected modules before merge: integration api/core/starter tests, file preview and fileproc conversion tests, workflow return engine tests, persistence cold baseline integration scenarios and the Maven baseline plugin tests.
+- File preview flow tests cover archive routing and Office artifact access through the embedded iframe; workflow return tests cover `TASK_INVALID` rollback and `RETURN` success.
+- Resource Registry integration tests run on H2 by default and on real MySQL 8.4 via `MANGO_REGISTRY_IT_DB_*`.
+- Frontend verification captured measured dialog layout evidence at 1500x1000 and 2560x1415 before and after the change, and the admin bundle builds with the new page keys.
+- `catalog:check` reports `PASS ... maven=200` on the source commit and the release plan re-computes 201 coordinates with matching topology.
+- The Maven reactor and docs bundle are built once from the sealed candidate; all 201 coordinates are checked in publish and consume registries with matching checksums, and a clean consumer resolves Maven `1.2.0` plus the 27 sealed npm tarballs from the consume registries.
+
+### Rollback
+
+- Restore consumers to the complete Maven/docs `1.1.5` tuple and the previously verified npm closure; immutable coordinates are never overwritten.
+- Dropping the integration module means removing its starter dependency and Flyway declaration; the created `integration_*` tables must be archived or restored from the pre-upgrade snapshot rather than edited by hand.
+- File preview and workflow rollback is a code rollback only; no data written by this batch needs repair.
+- Preserve the database backup, Bootstrap receipt and Flyway history; rolling code back does not undo migrations.
+- If registry visibility is ambiguous, stop and resume read-only status/repair using the same prepared candidate; never create a second candidate for the same coordinates.
+
+### Audit History
+
+- [PR #1169](https://github.com/HardyDou/mango/pull/1169), [PR #1171](https://github.com/HardyDou/mango/pull/1171), [PR #1174](https://github.com/HardyDou/mango/pull/1174), [PR #1175](https://github.com/HardyDou/mango/pull/1175), [PR #1179](https://github.com/HardyDou/mango/pull/1179) and [PR #1158](https://github.com/HardyDou/mango/pull/1158) were delivered through the release-bearing PRs listed above; they are referenced here for traceability and are not separate entries in this batch.
+
+
 ## v2026.10.31-maven-1.1.5-resource-tenant-release - Mango Maven/docs 1.1.5 Resource Registry tenant-scope follow-up - 2026-10-31
 
 Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `bcc9500745d221d4f3fe3f0e2b812f62596076b2d16f3a65c2d8e1b0d750d375`; prepared candidate `3ea3157b9d2d05a250b9a21e77328578367b2cce85d66c300bb66daace9c55ed` completed publication and consume verification for `@mango/cli@1.3.10` and 196 Maven coordinates. Tag and GitHub Release were created and verified.
