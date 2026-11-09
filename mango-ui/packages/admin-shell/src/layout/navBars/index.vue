@@ -95,8 +95,7 @@ import type { RealtimeOptions } from '@mango/common/utils/realtime/types';
 import { resolveMangoAdminFeatures } from '@mango/admin-pages/features';
 import { getMangoNoticeBellProvider } from '@mango/admin-pages/notice';
 import {
-  noticeFallbackTargetKey,
-  resolveNoticeTargetLocation,
+  openNoticeTarget,
   type NoticeClientBellRuntimeConfig,
   type NoticeBellViewAllOptions,
   type NoticeInteractionPayload,
@@ -213,37 +212,13 @@ async function handleNoticeInteraction(payload: NoticeInteractionPayload) {
     payload.onComplete?.(false);
     return;
   }
-  const fallbackTargetKey = noticeFallbackTargetKey(payload.params);
-  const location = resolveNoticeTargetLocation(router, payload.targetKey, payload.params);
-  const fallbackLocation =
-    fallbackTargetKey && fallbackTargetKey !== payload.targetKey
-      ? resolveNoticeTargetLocation(router, fallbackTargetKey, payload.params)
-      : undefined;
-  const targetLocation = location || fallbackLocation;
-  if (!targetLocation) {
-    ElMessage.warning('目标未注册或当前无权访问');
-    payload.onComplete?.(false);
-    return;
-  }
-  try {
-    await router.push(targetLocation);
-    payload.onComplete?.(true);
-    if (!location && fallbackLocation) {
-      ElMessage.warning('原页面不可访问，已打开通用工作流页面');
-    }
-  } catch (error) {
-    console.warn('Notice target navigation failed', payload.targetKey, error);
-    if (location && fallbackLocation) {
-      try {
-        await router.push(fallbackLocation);
-        payload.onComplete?.(true);
-        ElMessage.warning('原页面不可访问，已打开通用工作流页面');
-        return;
-      } catch (fallbackError) {
-        console.warn('Notice fallback navigation failed', fallbackTargetKey, fallbackError);
-      }
-    }
-    payload.onComplete?.(false);
+  const resolution = await openNoticeTarget(router, payload.targetKey, payload.params);
+  payload.onComplete?.(resolution !== 'none');
+  if (resolution === 'fallback') {
+    ElMessage.warning('原页面不可访问，已打开通用页面');
+  } else if (resolution === 'message-center') {
+    ElMessage.warning('消息目标未注册，已打开消息中心');
+  } else if (resolution === 'none') {
     ElMessage.warning('目标未注册或当前无权访问');
   }
 }

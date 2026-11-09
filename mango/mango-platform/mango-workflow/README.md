@@ -744,7 +744,7 @@ Workflow 参数校验约束统一由 `mango-workflow-api` 的 `XxxApi` 契约声
 
 `workflow.process.completed` 和 `workflow.process.rejected` 使用业务申请中的 `applicantId`，分别向原申请人发送一次最终结果通知。草稿、认领、取消认领、撤回、任务驳回和通用 `workflow.process.ended` 事件不产生默认通知。事件异步转为 Notice 时会连同 `tenantId`、`appCode`、`realm` 恢复应用上下文，确保角色候选目标按原应用和登录域解析。
 
-Maven `1.0.29` 会把业务申请快照中的 `customConfig.viewPath` 派生到 `WorkflowBusinessApplyVO` 和 `WorkflowEventPayloadVO`。完成、拒绝和结束类 Notice 优先使用安全的应用内 `viewPath` 作为查看目标，并在目标参数中携带对应的通用 Workflow `fallbackTargetKey`；没有配置、配置为外部地址或目标不可访问时，前端回退到已办、我发起等通用页面。该字段只读派生，不新增数据库列，不把任意外部 URL 交给 Shell 路由。
+Maven `1.0.29` 会把业务申请快照中的 `customConfig.viewPath` 派生到 `WorkflowBusinessApplyVO` 和 `WorkflowEventPayloadVO`。完成、拒绝和结束类 Notice 优先使用安全的应用内 `viewPath` 作为查看目标，并在目标参数中携带对应的通用 Workflow `fallbackTargetKey`；没有配置、配置为外部地址或目标不可访问时，前端回退到已办、我发起等通用页面。终态消息的目标是办理人视角的菜单页（`workflow:task:done` 等），收件人没有对应菜单授权时，平台统一给出 `fallbackTargetKey=notice:site-message`，前端退到消息中心，不再出现“目标未注册或当前无权访问”的死路。业务需要按钮直达自己的详情页时，必须在申请快照的 `customConfig.viewPath` 配置站内路径。该字段只读派生，不新增数据库列，不把任意外部 URL 交给 Shell 路由。
 
 事件消费选择：
 

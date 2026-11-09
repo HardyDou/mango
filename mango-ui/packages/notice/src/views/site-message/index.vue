@@ -14,7 +14,7 @@ import { ElMessage } from 'element-plus';
 import NoticeClientMessageCenter from '../../client/NoticeClientMessageCenter.vue';
 import type { NoticeInteractionPayload } from '../../client/interaction';
 import type { NoticeSiteMessageCategory } from '../../types/notice';
-import { noticeFallbackTargetKey, resolveNoticeTargetLocation } from './targets';
+import { openNoticeTarget } from './targets';
 
 defineOptions({ name: 'NoticeSiteMessageView' });
 
@@ -47,37 +47,13 @@ async function openNamedTarget(
   params?: Record<string, unknown>,
   onComplete?: (success: boolean) => void,
 ) {
-  const fallbackTargetKey = noticeFallbackTargetKey(params);
-  const location = resolveNoticeTargetLocation(router, targetKey, params);
-  const fallbackLocation =
-    fallbackTargetKey && fallbackTargetKey !== targetKey
-      ? resolveNoticeTargetLocation(router, fallbackTargetKey, params)
-      : undefined;
-  const targetLocation = location || fallbackLocation;
-  if (!targetLocation) {
-    ElMessage.warning('目标未注册或当前无权访问');
-    onComplete?.(false);
-    return;
-  }
-  try {
-    await router.push(targetLocation);
-    onComplete?.(true);
-    if (!location && fallbackLocation) {
-      ElMessage.warning('原页面不可访问，已打开通用工作流页面');
-    }
-  } catch (error) {
-    console.warn('Notice target navigation failed', targetKey, error);
-    if (location && fallbackLocation) {
-      try {
-        await router.push(fallbackLocation);
-        onComplete?.(true);
-        ElMessage.warning('原页面不可访问，已打开通用工作流页面');
-        return;
-      } catch (fallbackError) {
-        console.warn('Notice fallback navigation failed', fallbackTargetKey, fallbackError);
-      }
-    }
-    onComplete?.(false);
+  const resolution = await openNoticeTarget(router, targetKey, params);
+  onComplete?.(resolution !== 'none');
+  if (resolution === 'fallback') {
+    ElMessage.warning('原页面不可访问，已打开通用页面');
+  } else if (resolution === 'message-center') {
+    ElMessage.warning('消息目标未注册，已打开消息中心');
+  } else if (resolution === 'none') {
     ElMessage.warning('目标未注册或当前无权访问');
   }
 }

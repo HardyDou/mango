@@ -4,6 +4,9 @@
 
 ## 7. 变更影响记录
 
+- Issue #1182 修复消息自定义按钮打开失败：工作流终态消息缺少可达兜底时，平台下发 `fallbackTargetKey=notice:site-message`，前端按「主目标 → fallbackTargetKey → 消息中心」解析，解析不到才提示原因，不再把用户停在“目标未注册或当前无权访问”。通知目标、事件类型、权限码、申请状态流转和审批接口不变；业务需要按钮直达自己的详情页时，在申请快照 `customConfig.viewPath` 配置站内路径。
+
+
 - Issue #1179 修复审批退回的静默成功：`POST /workflow/tasks/return` 在引擎变更活动状态后校验目标节点确实产生待办任务，并在流程推进后校验没有停在原节点；不满足时以 `TASK_INVALID` 失败并回滚，不再返回成功。成功响应的 `actionResult` 由错误的 `COMPLETE` 改为 `RETURN`。退回仍然不需要回退连线、不需要目标节点动作配置、不需要历史活动 ID；目标为网关或汇聚时按流程定义解析到上游最近的已完成用户任务，多个候选或无候选时报错；业务审批发起、通过、驳回、撤回、事件类型、权限、租户隔离和页面 key 不变，业务侧只需要把退回失败按错误处理，不要先写“已退回”。
 
 - Issue #732 新增租户隔离的 Workflow 参与关系 API 和审批节点自动派单。业务可通过 `participantUserIds` 原子声明只读参与人，历史参与关系与任务操作权限保持分离；流程设计器中旧节点缺少 `assignmentMode` 时按 `CLAIM`，显式 `AUTO` 时可使用数据库游标保护的 `ROUND_ROBIN`、按活动任务数选择的 `LEAST_TASKS` 或流程实例最近处理人优先的 `AFFINITY`（未命中回退 `LEAST_TASKS`），空候选返回 `AUTO_ASSIGN_NO_CANDIDATE` 并回滚。设计器候选项改由 Workflow 自有接口和可替换 `WorkflowDesignerOptionProvider` 提供，只使用 Workflow 定义权限并从可信上下文派生租户。V3 仅回填可证明的稳定用户 ID，username-only 历史不授权。

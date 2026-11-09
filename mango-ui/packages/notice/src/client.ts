@@ -13,10 +13,13 @@ export {
 export type { MangoNoticeNavigationProvider } from '@mango/admin-pages/notice';
 export { buildNoticeActionInput, buildNoticeInteraction } from './client/interaction';
 export {
+  NOTICE_MESSAGE_CENTER_TARGET_KEY,
   isSafeNoticePath,
   normalizeNoticeQuery,
   noticeFallbackTargetKey,
+  openNoticeTarget,
   resolveNoticeTargetLocation,
   resolveNoticeTargetPath,
+  type NoticeTargetResolution,
 } from './client/targets';
 export { getNoticeReminderSetting, saveNoticeReminderSetting } from './api/notice';

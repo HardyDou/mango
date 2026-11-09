@@ -104,6 +104,8 @@ Mango 的默认审批通知只消费 `workflow.task.advanced`、`workflow.proces
 对应发送记录收敛为取消且不重试；渠道配置解析失败、Identity 查询异常等真实运行故障仍按发送失败处理。业务状态回写仍按
 本节事件接入方式独立处理，默认通知不替代业务状态机，也不改变流程 API、权限或租户边界。
 
+终态消息（通过、驳回、结束）的「查看申请」按钮目标在业务没有提供 `customConfig.viewPath` 时是工作流的办理人视角页面（`workflow:task:done`、`workflow:task:initiated`）。收件人没有审批中心菜单授权时，平台会下发 `fallbackTargetKey=notice:site-message`，前端退到消息中心，因此按钮始终可用。要让按钮直达业务申请详情，业务侧在申请快照的 `customConfig.viewPath` 配置站内绝对路径（例如 `/guarantee/apply/detail`），前端会带着消息参数跳转。
+
 `POST /workflow/tasks/return` 会把当前任务退回到最近一个已完成的不同用户任务节点，或退回到 `targetTaskDefinitionKey` 指定的历史节点。串行流程可以不传目标节点；并行、多实例、重复审批节点或业务语义固定的流程，应在流程节点动作配置或业务审批页中显式传入 `targetTaskDefinitionKey`。接口返回结构与 `complete-result` 一致，业务侧应使用返回的 `currentTasks` 或订阅 `workflow.task.advanced` 刷新业务单据当前节点和当前办理人；退回不会发布 `workflow.task.completed`，也不会把流程状态改为驳回。
 
 退回的使用约束：

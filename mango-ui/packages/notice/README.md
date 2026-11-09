@@ -202,7 +202,7 @@ stop();
 
 个人消息和接收设置接口使用权限码完成资源校验；接收设置展示业务类型还依赖只读权限 `notice:business:view`。这些最小权限由后端 Notice 菜单资源绑定到内置 `ROLE_LOGIN`，所有已登录用户无需额外业务角色即可使用；`ROLE_ANONYMOUS` 不包含个人消息或 Realtime 建连权限。
 
-工作台消息卡的“查看全部”默认进入 `/message-center/site-message`。消息中心已迁入个人中心，入口分别为 `/profile?tab=notice-site-message`、`/profile?tab=notice-announcement-user` 和 `/profile?tab=notice-receive-setting`；执行 `registerMangoNoticeAdminPages()` 后，Shell 会从 registrar 返回的 `profileSections` 自动装配这三个入口。旧站内信路径 `/notice/site-message` 和旧通知设置路径 `/notice/receive-setting` 仅作为隐藏兼容入口保留。业务消息携带的其它 `targetKey` 可以是宿主已注册的命名 Vue 路由，也可以是经过校验且当前用户可访问的应用内绝对路径；未注册、越权或不安全的目标会显示“目标未注册或当前无权访问”。
+工作台消息卡的“查看全部”默认进入 `/message-center/site-message`。消息中心已迁入个人中心，入口分别为 `/profile?tab=notice-site-message`、`/profile?tab=notice-announcement-user` 和 `/profile?tab=notice-receive-setting`；执行 `registerMangoNoticeAdminPages()` 后，Shell 会从 registrar 返回的 `profileSections` 自动装配这三个入口。旧站内信路径 `/notice/site-message` 和旧通知设置路径 `/notice/receive-setting` 仅作为隐藏兼容入口保留。业务消息携带的其它 `targetKey` 可以是宿主已注册的命名 Vue 路由，也可以是经过校验且当前用户可访问的应用内绝对路径；目标解析顺序是：静态平台目标 → 当前用户运行时菜单 → 已注册页面路由 → `params.fallbackTargetKey` → 消息中心（`notice:site-message` → `/notice/site-message`）。只有连消息中心都不可用时才提示“目标未注册或当前无权访问”，业务自定义按钮不会再把用户停在死路。
 
 ### 7.4 站内信动作接入
 
@@ -299,7 +299,7 @@ async function openNoticeTarget(payload: {
 3. 处理器读取 `params` 中的隐藏业务上下文。
 4. 流程需要提交后端命令时，业务模块调用自己的业务接口；如果要沿用通知动作状态，则配套一个 `EVENT` 动作或由业务后端回写动作结果。
 
-未注册 FLOW 目标时，组件只显示兜底流程弹窗或提示“目标未注册或当前无权访问”。这通常表示业务前端还没有接入对应 `targetKey`，不是通知发送失败。
+未注册 FLOW 目标时，组件先尝试 `fallbackTargetKey`，再退到消息中心；两者都不可用时只提示“目标未注册或当前无权访问”。这通常表示业务前端还没有接入对应 `targetKey`，不是通知发送失败。
 
 #### 7.4.6 EVENT 处理
 
@@ -334,7 +334,8 @@ executeMySiteMessageAction(messageId, actionCode, input);
 | ---------------------------- | -------------------------------------------------------- | ------------------------------------------ |
 | 按钮不显示                   | 后端没有传 `messageActions`，或动作状态为 `DISABLED`     | 检查站内信详情接口返回的 `actions`。       |
 | 按钮名称不对                 | 消息场景无法识别，且后端 `actionLabel` 不符合业务语义    | 补齐消息场景，或修正 `actionLabel`。       |
-| 提示目标未注册或当前无权访问 | `targetKey` 未注册、路径不安全或当前用户不能进入目标页面 | 注册命名目标，或修正路径、菜单和权限。     |
+| 提示消息目标未注册，已打开消息中心 | `targetKey` 未注册或当前用户不能进入目标页面，平台已退到消息中心 | 注册命名目标，或让后端提供 `viewPath`/`fallbackTargetKey`。 |
+| 提示目标未注册或当前无权访问 | 连消息中心目标也不可用（宿主未注册消息中心页面） | 注册命名目标，或修正路径、菜单和权限。     |
 | 点击 EVENT 后按钮灰掉        | 正常行为，命令已提交并处于 `PROCESSING`                  | 等业务订阅方回写成功或失败。               |
 | 业务 ID 没在弹窗里显示       | 正常行为，业务上下文是隐藏参数                           | 在目标业务页面展示需要给用户看的业务信息。 |
 
