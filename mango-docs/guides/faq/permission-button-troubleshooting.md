@@ -87,3 +87,5 @@ pnpm -F @mango/admin-shell build
 > Issue #1158 影响说明：授权租户型 Resource Handler 明确声明 `tenantId` 执行范围，历史 `tenant_id IS NULL` 登记行在 Resource Registry FINALIZE 时只告警跳过，不调用 Handler、不修改登记行；按钮权限码、接口权限、授权资源和当前租户权限判定排障步骤不变。
 
 > Issue #971 影响说明：集成应用新增接口权限码 `integration:connector:list|add|edit|status`、`integration:credential:list|add|rotate`、`integration:instance:list|add|edit|status|test`、`integration:maintenance:cleanup`，并挂在菜单 `integration:definition` / `integration:application` 的 `apiCodes` 上。原有按钮权限码、接口权限和授权关系不变；按钮无权限时仍按本页步骤排查。
+
+> Issue #1182 影响说明：`@mango/admin-shell` 顶部铃铛与站内信详情改为按「目标 → `fallbackTargetKey` → 消息中心」解析消息按钮跳转，解析不到时退到消息中心。本场景涉及的菜单、页面 key、按钮权限码、接口鉴权、租户隔离和权限判定结果不变。
