@@ -146,7 +146,8 @@ public class ConvertAutoConfiguration {
     }
 
     @Bean
-    @Order(100)
+    // 必须排在 Aspose 转换器（10-12）之前：Office 文档转 PDF 默认使用 LibreOffice。
+    @Order(5)
     @ConditionalOnMissingBean
     @ConditionalOnProperty(prefix = "mango.fileproc.convert", name = "office-to-pdf-enabled",
             havingValue = "true", matchIfMissing = true)

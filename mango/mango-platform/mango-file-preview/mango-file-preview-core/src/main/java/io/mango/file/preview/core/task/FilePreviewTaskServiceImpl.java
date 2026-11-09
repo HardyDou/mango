@@ -10,6 +10,7 @@ import io.mango.file.preview.api.enums.FilePreviewCode;
 import io.mango.file.preview.api.vo.FilePreviewTaskVO;
 import io.mango.file.preview.core.config.FilePreviewProperties;
 import io.mango.file.preview.core.gateway.FilePreviewFileGateway;
+import io.mango.file.preview.core.service.model.FilePreviewMode;
 import io.mango.infra.fileproc.convert.ConvertApi;
 import io.mango.infra.fileproc.convert.command.ConvertCommand;
 import io.mango.infra.fileproc.convert.enums.ConvertFormat;
@@ -31,9 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.time.Instant;
-import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -59,11 +58,6 @@ public class FilePreviewTaskServiceImpl implements IFilePreviewTaskService {
     private static final int PROGRESS_SAVING = 85;
     private static final int PROGRESS_COMPLETE = 100;
     private static final long WORKER_POLL_INTERVAL_MILLIS = 100L;
-    private static final Set<String> OFFICE_EXTENSIONS = Set.of("doc", "docx", "ppt", "pptx");
-    private static final Set<String> DIRECT_PREVIEW_EXTENSIONS = Set.of(
-            "pdf", "ofd", "png", "jpg", "jpeg", "tif", "tiff", "txt", "md", "html", "htm",
-            "xls", "xlsx",
-            "dwg", "dxf", "dwf", "dwt", "stl", "step", "stp", "iges", "igs");
 
     private final FilePreviewFileGateway fileGateway;
     private final IFileContentProvider contentProvider;
@@ -199,7 +193,8 @@ public class FilePreviewTaskServiceImpl implements IFilePreviewTaskService {
         try {
             update(task, FilePreviewTaskStatus.PROCESSING, PROGRESS_PENDING, "正在读取原文件");
             String extension = extension(record);
-            if (DIRECT_PREVIEW_EXTENSIONS.contains(extension) && !OFFICE_EXTENSIONS.contains(extension)) {
+            if (FilePreviewMode.of(extension) != FilePreviewMode.PDF_CONVERSION) {
+                // 压缩包、表格、图片等格式由预览引擎渲染，平台不进入 PDF 转换队列。
                 update(task, FilePreviewTaskStatus.SUCCEEDED, PROGRESS_COMPLETE, "预览已就绪");
                 touch(task);
                 return;
@@ -250,6 +245,12 @@ public class FilePreviewTaskServiceImpl implements IFilePreviewTaskService {
                     record.getId(), record.getFileSize(), ex.getMessage(), ex);
             update(task, FilePreviewTaskStatus.FAILED, PROGRESS_COMPLETE,
                     ex.getMessage() == null ? "预览生成失败，请下载原文件查看" : ex.getMessage());
+        } catch (Throwable fatal) {
+            // 第三方转换库的静态初始化失败会抛 Error；必须落 FAILED，否则任务会永久停在 PROCESSING。
+            // 已记录带上下文的错误堆栈，不再向 Worker 线程重新抛出，避免线程池重复输出同类堆栈。
+            LOGGER.error("文件预览转换发生不可恢复错误，fileId={}, fileSize={}",
+                    record.getId(), record.getFileSize(), fatal);
+            update(task, FilePreviewTaskStatus.FAILED, PROGRESS_COMPLETE, "预览生成失败，请下载原文件查看");
         } finally {
             leaseLocker.release(workerSlot);
             leaseLocker.release(lease);
@@ -362,17 +363,11 @@ public class FilePreviewTaskServiceImpl implements IFilePreviewTaskService {
     }
 
     private String extension(FileRecordVO record) {
-        String extension = record.getFileExt();
-        if (extension == null || extension.isBlank()) {
-            String name = record.getFileName();
-            int dot = name == null ? -1 : name.lastIndexOf('.');
-            extension = dot < 0 ? "" : name.substring(dot + 1);
-        }
-        return extension.toLowerCase(Locale.ROOT);
+        return FilePreviewMode.extension(record.getFileExt(), record.getFileName());
     }
 
     private boolean exceedsOfficePreviewLimit(FileRecordVO record) {
-        return OFFICE_EXTENSIONS.contains(extension(record))
+        return FilePreviewMode.of(extension(record)) == FilePreviewMode.PDF_CONVERSION
                 && record.getFileSize() != null
                 && record.getFileSize() > fileGateway.previewMaxSize();
     }

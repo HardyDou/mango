@@ -26,6 +26,8 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ConvertAutoConfigurationTest {
@@ -57,11 +59,42 @@ class ConvertAutoConfigurationTest {
             assertThat(service.canConvert(ConvertFormat.HTML, ConvertFormat.TEXT)).isTrue();
             assertThat(service.canConvert(ConvertFormat.TEXT, ConvertFormat.TEXT)).isTrue();
             assertThat(service.canConvert(ConvertFormat.DOCX, ConvertFormat.PDF)).isTrue();
+            assertThat(service.canConvert(ConvertFormat.ODT, ConvertFormat.PDF)).isTrue();
+            assertThat(service.canConvert(ConvertFormat.ODS, ConvertFormat.PDF)).isTrue();
+            assertThat(service.canConvert(ConvertFormat.ODP, ConvertFormat.PDF)).isTrue();
             assertThat(service.canConvert(ConvertFormat.PDF, ConvertFormat.PNG)).isTrue();
             assertThat(service.canConvert(ConvertFormat.TIFF, ConvertFormat.PDF)).isTrue();
             assertThat(service.canConvert(ConvertFormat.PDF, ConvertFormat.OFD)).isTrue();
             assertThat(service.canConvert(ConvertFormat.DOCX, ConvertFormat.OFD)).isTrue();
         });
+    }
+
+    @Test
+    void officeToPdf_prefersLocalLibreOfficeOverAsposeForOfficeDocuments() {
+        contextRunner.run(context -> {
+            ConvertRegistry registry = context.getBean(ConvertRegistry.class);
+            assertThat(registry.providers().indexOf(context.getBean(OfficeToPdfConvertProvider.class)))
+                    .isLessThan(registry.providers().indexOf(context.getBean(AsposeWordToPdfConvertProvider.class)))
+                    .isLessThan(registry.providers().indexOf(context.getBean(AsposeExcelToPdfConvertProvider.class)))
+                    .isLessThan(registry.providers().indexOf(context.getBean(AsposeSlideToPdfConvertProvider.class)));
+            for (ConvertFormat source : List.of(ConvertFormat.DOC, ConvertFormat.DOCX, ConvertFormat.XLS,
+                    ConvertFormat.XLSX, ConvertFormat.PPT, ConvertFormat.PPTX, ConvertFormat.ODT,
+                    ConvertFormat.ODS, ConvertFormat.ODP)) {
+                assertThat(registry.findProvider(source, ConvertFormat.PDF))
+                        .containsInstanceOf(OfficeToPdfConvertProvider.class);
+            }
+        });
+    }
+
+    @Test
+    void officeToPdf_whenDisabled_usesAsposeAsConfiguredFallback() {
+        contextRunner
+                .withPropertyValues("mango.fileproc.convert.office-to-pdf-enabled=false")
+                .run(context -> {
+                    ConvertRegistry registry = context.getBean(ConvertRegistry.class);
+                    assertThat(registry.findProvider(ConvertFormat.PPTX, ConvertFormat.PDF))
+                            .containsInstanceOf(AsposeSlideToPdfConvertProvider.class);
+                });
     }
 
     @Test
@@ -78,6 +111,9 @@ class ConvertAutoConfigurationTest {
                             new ConvertFormatPairVO(ConvertFormat.XLSX, ConvertFormat.PDF),
                             new ConvertFormatPairVO(ConvertFormat.PPT, ConvertFormat.PDF),
                             new ConvertFormatPairVO(ConvertFormat.PPTX, ConvertFormat.PDF),
+                            new ConvertFormatPairVO(ConvertFormat.ODT, ConvertFormat.PDF),
+                            new ConvertFormatPairVO(ConvertFormat.ODS, ConvertFormat.PDF),
+                            new ConvertFormatPairVO(ConvertFormat.ODP, ConvertFormat.PDF),
                             new ConvertFormatPairVO(ConvertFormat.TEXT, ConvertFormat.PDF),
                             new ConvertFormatPairVO(ConvertFormat.HTML, ConvertFormat.PDF),
                             new ConvertFormatPairVO(ConvertFormat.PDF, ConvertFormat.PNG),

@@ -9,6 +9,7 @@ import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.file.api.vo.FileRecordVO;
 import io.mango.file.preview.core.config.FilePreviewProperties;
 import io.mango.file.preview.core.gateway.FilePreviewFileGateway;
+import io.mango.file.preview.core.service.model.FilePreviewMode;
 import io.mango.file.preview.core.task.IFilePreviewTaskService;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
@@ -191,6 +192,24 @@ class FilePreviewServiceImplTest {
         assertThatThrownBy(() -> service.createEnginePreviewByToken(token))
                 .hasMessageContaining("预览令牌无效或已过期");
         assertThat(tokenStore.values).doesNotContainKey("file-preview:entry:" + token);
+    }
+
+    @Test
+    void previewMode_按扩展名选择渲染方式() {
+        assertThat(previewModeOf(new StubFileApi("demo.pdf"))).isEqualTo(FilePreviewMode.NATIVE_PDF);
+        assertThat(previewModeOf(new StubFileApi("demo.docx"))).isEqualTo(FilePreviewMode.PDF_CONVERSION);
+        assertThat(previewModeOf(new StubFileApi("demo.odt"))).isEqualTo(FilePreviewMode.PDF_CONVERSION);
+        assertThat(previewModeOf(new StubFileApi("demo.ods"))).isEqualTo(FilePreviewMode.PDF_CONVERSION);
+        assertThat(previewModeOf(new StubFileApi("demo.odp"))).isEqualTo(FilePreviewMode.PDF_CONVERSION);
+        assertThat(previewModeOf(new StubFileApi("demo.xlsx"))).isEqualTo(FilePreviewMode.ENGINE);
+        assertThat(previewModeOf(new StubFileApi("demo.zip"))).isEqualTo(FilePreviewMode.ENGINE);
+        assertThat(previewModeOf(new StubFileApi("demo.rar"))).isEqualTo(FilePreviewMode.ENGINE);
+        assertThat(previewModeOf(new StubFileApi("demo.7z"))).isEqualTo(FilePreviewMode.ENGINE);
+    }
+
+    private FilePreviewMode previewModeOf(FileApi fileApi) {
+        FilePreviewServiceImpl service = service(new FilePreviewProperties(), fileApi);
+        return service.previewMode(service.createPreview(100L).getPreviewToken());
     }
 
     private FilePreviewServiceImpl service() {

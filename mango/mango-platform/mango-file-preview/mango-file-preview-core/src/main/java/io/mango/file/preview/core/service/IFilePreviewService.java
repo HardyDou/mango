@@ -2,6 +2,7 @@ package io.mango.file.preview.core.service;
 
 import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.file.preview.api.vo.FilePreviewLinkVO;
+import io.mango.file.preview.core.service.model.FilePreviewMode;
 import io.mango.file.preview.core.service.model.FilePreviewSource;
 import io.mango.file.preview.api.vo.FilePreviewTaskVO;
 
@@ -51,9 +52,9 @@ public interface IFilePreviewService {
     FileDownloadVO downloadPreviewSource(String token);
 
     /**
-     * 判断预览入口对应的原文件是否为 PDF。
+     * 判断预览入口对应的文件使用哪种渲染方式。
      */
-    boolean isPdfPreview(String token);
+    FilePreviewMode previewMode(String token);
 
     /**
      * 打开预览源文件。

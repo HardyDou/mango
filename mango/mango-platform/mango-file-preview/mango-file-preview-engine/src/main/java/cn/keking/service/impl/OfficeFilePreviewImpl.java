@@ -84,18 +84,19 @@ public class OfficeFilePreviewImpl implements FilePreview {
 
     @Override
     public String filePreviewHandle(String url, Model model, FileAttribute fileAttribute) {
-        if (!isOfficeManagerAvailable()) {
-            return otherFilePreview.notSupportedFile(model, fileAttribute, "Mango 文件预览暂未启用 Office 转换能力，请下载文件查看，或联系管理员启用文档转换服务");
-        }
         String officePreviewType = fileAttribute.getOfficePreviewType();
         String cacheName = fileAttribute.getCacheName();  //转换后的文件名
         String convertStatusResult = checkAndHandleConvertStatus(model, fileAttribute.getName(), cacheName, fileAttribute);
         if (convertStatusResult != null) {
             return convertStatusResult;
         }
+        // XLSX/CSV 的 Web 预览不依赖 LibreOffice，插件未启用时仍需可用。
         String webPreview = handleWebPreview(url, model, fileAttribute);
         if (webPreview != null) {
             return webPreview;
+        }
+        if (!isOfficeManagerAvailable()) {
+            return otherFilePreview.notSupportedFile(model, fileAttribute, "Mango 文件预览暂未启用 Office 转换能力，请下载文件查看，或联系管理员启用文档转换服务");
         }
         String imagePreview = handleImagePreview(model, fileAttribute, officePreviewType);
         if (imagePreview != null) {

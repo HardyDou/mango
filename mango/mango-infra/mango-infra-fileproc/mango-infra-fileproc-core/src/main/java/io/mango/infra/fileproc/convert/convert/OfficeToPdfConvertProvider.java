@@ -31,6 +31,9 @@ public class OfficeToPdfConvertProvider implements IConvertProvider {
                 || sourceFormat == ConvertFormat.XLSX
                 || sourceFormat == ConvertFormat.PPT
                 || sourceFormat == ConvertFormat.PPTX
+                || sourceFormat == ConvertFormat.ODT
+                || sourceFormat == ConvertFormat.ODS
+                || sourceFormat == ConvertFormat.ODP
                 || sourceFormat == ConvertFormat.HTML
                 || sourceFormat == ConvertFormat.TEXT);
     }

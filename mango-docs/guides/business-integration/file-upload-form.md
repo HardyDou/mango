@@ -126,10 +126,12 @@ const categories: MangoAttachmentUploadCategory[] = [
 | 租户数据 | 文件记录、业务单据和当前登录用户处于同一租户上下文                                                                                                                                     |
 | 前端组件 | `MUpload` 返回 `fileId`、`fileIds` 或 token，详情页按文件 ID 回显；不要把 `previewUrl`、`downloadUrl` 或临时 `blob:` 地址提交给业务接口；`FilePreviewPanel` 不会把下载地址当作预览地址 |
 | 菜单页面 | 使用文件中心管理页时，页面 key 和菜单 component 对齐                                                                                                                                   |
-| 预览链路 | 直接预览只需 file-preview 与文件读取能力；Office 转换另需 fileproc 转换能力                                                                                                                                          |
+| 预览链路 | 直接预览只需 file-preview 与文件读取能力；Office 转换另需 fileproc 转换能力；压缩包（zip/rar/7z）、表格、图片、文本和媒体由预览引擎直接渲染，不经过 PDF 转换 |
 | 业务语义 | 编辑、删除业务单据时，附件解绑或物理清理策略清晰                                                                                                                                       |
 
 预览宿主同时启用 KV `token-store` 和 `locker` 能力。缺少 `FileSettingsApi` 时，Office 大小限制使用 200 MiB 默认值；缺少 `ConvertApi` 时，直接预览仍可用，Office 转换任务返回 `FAILED` 和下载原文件提示。这不改变上传、下载 API、菜单、权限或租户边界，配置入口见 [File Preview README](../../../mango/mango-platform/mango-file-preview/README.md)。
+
+文件预览按扩展名选择渲染方式：PDF 和 Office 文档使用平台 PDF.js 页面，其中 `doc`、`docx`、`ppt`、`pptx` 先转换为 PDF 产物；压缩包、表格、图片、文本、媒体等其余格式直接交给预览引擎按类型渲染。iframe 内嵌预览依赖 `/file-preview/files/preview-artifact` 和 `/file-preview/files/preview-content` 保持 PUBLIC，二者只接受短期 token。
 
 ### 5.1 大文件和 HTTP IP 环境
 

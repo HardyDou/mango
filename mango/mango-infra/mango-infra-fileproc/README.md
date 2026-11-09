@@ -171,10 +171,10 @@ mango:
 |--------|--------|------|
 | `enabled` | `true` | 是否启用转换自动配置。 |
 | `html-to-text-enabled` | `true` | 注册 HTML 转文本转换器。 |
-| `office-to-pdf-enabled` | `true` | 注册 LibreOffice/JODConverter Office 转 PDF。 |
-| `aspose-word-to-pdf-enabled` | `true` | 注册 Aspose Word 转 PDF。 |
-| `aspose-excel-to-pdf-enabled` | `true` | 注册 Aspose Excel 转 PDF。 |
-| `aspose-slide-to-pdf-enabled` | `true` | 注册 Aspose PPT 转 PDF。 |
+| `office-to-pdf-enabled` | `true` | 注册 LibreOffice/JODConverter Office 转 PDF；Office 文档转 PDF 默认优先使用该转换器。 |
+| `aspose-word-to-pdf-enabled` | `true` | 注册 Aspose Word 转 PDF；仅在 `office-to-pdf-enabled=false` 时被选中。 |
+| `aspose-excel-to-pdf-enabled` | `true` | 注册 Aspose Excel 转 PDF；仅在 `office-to-pdf-enabled=false` 时被选中。 |
+| `aspose-slide-to-pdf-enabled` | `true` | 注册 Aspose PPT 转 PDF；仅在 `office-to-pdf-enabled=false` 时被选中。 |
 | `aspose-pdf-to-image-enabled` | `true` | 注册 Aspose PDF 转图片。 |
 | `aspose-imaging-enabled` | `true` | 注册 Aspose 图片格式转换。 |
 | `image-to-pdf-enabled` | `true` | 注册 ImageIO/PDFBox 图片转 PDF 转换器，支持 PNG、JPG/JPEG，默认优先用于手机照片等图片合 PDF 场景。 |
@@ -187,6 +187,8 @@ mango:
 | `office-task-execution-timeout` | `300000` | Office 单任务超时时间，单位毫秒。 |
 
 `LocalOfficeHomeResolver` 会尝试常见安装目录，包括项目目录下的 `LibreOfficePortable`、Linux 的 LibreOffice 目录和 OpenOffice 目录。
+
+Office 文档（`doc/docx/xls/xlsx/ppt/pptx/odt/ods/odp/html/text`）转 PDF 固定优先使用 LibreOffice/JODConverter。Aspose Word、Excel、Slide 只作为显式配置回退：只有关闭 `office-to-pdf-enabled` 时才会被选中，避免无有效 license 的 Aspose 抢占首选项并输出评估水印或抛出环境相关异常。
 
 OFD 转换使用 Apache-2.0 的 OFDRW 2.4.0。Mango 直接使用 `ofdrw-graphics2d`，并用仓内 PDFBox 3 渲染页面，避免 OFDRW `ofdrw-converter` 2.4.0 所依赖 PDFBox 2 与 Mango PDFBox 3 的二进制冲突。
 

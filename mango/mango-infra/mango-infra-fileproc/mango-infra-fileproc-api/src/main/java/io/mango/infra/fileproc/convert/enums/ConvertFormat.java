@@ -38,6 +38,18 @@ public enum ConvertFormat {
      */
     PPTX("application/vnd.openxmlformats-officedocument.presentationml.presentation", "pptx"),
     /**
+     * OpenDocument 文本文档。
+     */
+    ODT("application/vnd.oasis.opendocument.text", "odt"),
+    /**
+     * OpenDocument 表格。
+     */
+    ODS("application/vnd.oasis.opendocument.spreadsheet", "ods"),
+    /**
+     * OpenDocument 演示文稿。
+     */
+    ODP("application/vnd.oasis.opendocument.presentation", "odp"),
+    /**
      * PDF 文档。
      */
     PDF("application/pdf", "pdf"),

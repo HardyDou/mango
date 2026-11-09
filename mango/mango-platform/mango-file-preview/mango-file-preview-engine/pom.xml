@@ -28,6 +28,7 @@
         <ffmpeg.version>7.1.1-1.5.12</ffmpeg.version>
         <sevenzipjbinding.version>16.02-2.01</sevenzipjbinding.version>
         <junrar.version>7.5.5</junrar.version>
+        <xz.version>1.10</xz.version>
         <rocksdb.version>5.17.2</rocksdb.version>
         <concurrentlinkedhashmap.version>1.4.2</concurrentlinkedhashmap.version>
         <commons-net.version>3.12.0</commons-net.version>
@@ -124,6 +125,15 @@
             <groupId>com.github.junrar</groupId>
             <artifactId>junrar</artifactId>
             <version>${junrar.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-compress</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.tukaani</groupId>
+            <artifactId>xz</artifactId>
+            <version>${xz.version}</version>
         </dependency>
         <dependency>
             <groupId>com.github.jai-imageio</groupId>

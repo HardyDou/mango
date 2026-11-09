@@ -126,7 +126,7 @@ npm --prefix frontend run build
 | `.mango/dev-workspace.env` | `MANGO_DB_USERNAME` | `root` | 数据库用户名 | 注入 datasource | Mango CLI |
 | `.mango/dev-workspace.env` | `MANGO_DB_PASSWORD` | 空字符串 | 数据库密码 | 注入 datasource | Mango CLI |
 | `.mango/dev-workspace.env` | `MANGO_DB_AUTO_CREATE` | `true` | 数据库自动创建开关 | `mango dev start` 启动 Spring Boot app 前调用本机 `mysql` 创建 `mango_dev_*` 工作区数据库 | Mango CLI |
-| `.mango/dev-workspace.env` | `MANGO_OFFICE_PLUGIN_ENABLED` | `false` | Office 转 PDF 开关 | 影响 fileproc 和 office plugin | Mango CLI |
+| `.mango/dev-workspace.env` | `MANGO_OFFICE_PLUGIN_ENABLED` | `false` | 预览引擎 Office 插件开关 | 注入引擎的 `office.plugin.enabled`；不再控制 fileproc 的 LibreOffice 转 PDF | Mango CLI |
 | `.mango/dev-workspace.env` | `MANGO_BACKEND_ADDITIONAL_ARGS` | 空字符串 | 后端额外参数 | 追加到 Spring Boot args | Mango CLI |
 
 ### 6.2 后端 application.yml
@@ -148,7 +148,7 @@ npm --prefix frontend run build
 | `application.yml` | `mango.ip-location.xdb-location` | `file:./config/ip-location/ip2region_v4.xdb` | IP 库位置 | IP 定位能力读取该文件 | `application.yml` |
 | `application.yml` | `mango.file.storage-type` | `LOCAL` | 文件存储类型 | 默认使用本地文件存储 | `application.yml` |
 | `application.yml` | `mango.file.local.root-path` | `${MANGO_FILE_ROOT:./data/files}` | 本地文件根目录 | 文件上传落盘位置 | `application.yml` |
-| `application.yml` | `mango.fileproc.convert.office-to-pdf-enabled` | `${MANGO_OFFICE_PLUGIN_ENABLED:false}` | Office 转 PDF | 控制预览转换能力 | `application.yml` |
+| `application.yml` | `mango.fileproc.convert.office-to-pdf-enabled` | `true` | LibreOffice 转 PDF | Office 文档转 PDF 默认使用本地 LibreOffice，优先于 Aspose；显式关闭后回退 Aspose | `application.yml` |
 | `application.yml` | `mango.workflow.enabled` | `true` | 工作流能力开关 | 启用 workflow starter 能力 | `application.yml` |
 | `application.yml` | `mango.job.probe.enabled` | `${MANGO_JOB_PROBE_ENABLED:true}` | job 探针开关 | 影响 job 管理探测 | `application.yml` |
 | `application.yml` | `springdoc.packages-to-scan` | `io.mango,{{basePackage}}` | OpenAPI 扫描包 | 扫描 Mango 和业务接口 | `application.yml` |
