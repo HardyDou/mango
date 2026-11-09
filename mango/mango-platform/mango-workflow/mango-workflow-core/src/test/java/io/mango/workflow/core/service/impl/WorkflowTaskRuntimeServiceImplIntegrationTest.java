@@ -24,6 +24,7 @@ import io.mango.workflow.api.command.TransferWorkflowTaskCommand;
 import io.mango.workflow.api.command.WorkflowJsonRequest;
 import io.mango.workflow.api.enums.WorkflowApplyStatus;
 import io.mango.workflow.api.enums.WorkflowInstanceStatus;
+import io.mango.workflow.api.enums.WorkflowTaskAction;
 import io.mango.workflow.api.query.WorkflowBusinessApplyPageQuery;
 import io.mango.workflow.api.request.WorkflowBusinessApplyProgressBatchRequest;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyProgressBatchVO;
@@ -151,6 +152,8 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
     private RepositoryService repositoryService;
     @Autowired
     private WorkflowCandidateGroupProvider candidateGroupProvider;
+    @Autowired
+    private WorkflowAssigneeResolver assigneeResolver;
     @Autowired
     private IWorkflowParticipationService workflowParticipationService;
     @Autowired
@@ -421,6 +424,7 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
         verify(stateBuilder).moveActivityIdTo("supervisor_approve", "risk_specialist_review");
         verify(stateBuilder).changeState();
         verify(runtimeService, never()).deleteProcessInstance(any(), any());
+        assertThat(result.getActionResult()).isEqualTo(WorkflowTaskAction.RETURN);
         assertThat(result.getEnded()).isFalse();
         assertThat(result.getCurrentTasks()).singleElement()
                 .returns("task-3", WorkflowBusinessApplyCurrentTaskVO::getTaskId)
@@ -432,6 +436,58 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
         assertThat(operationLog.entries()).containsSubsequence(
                 "refreshCurrentTasksAndReturn:proc-1",
                 "publishTaskAdvanced:proc-1");
+    }
+
+    @Test
+    void returnTaskFailsWhenTargetNodeKeepsNoPendingTask() {
+        insertFormInstance("proc-1", "{\"existing\":true}", WorkflowInstanceStatus.RUNNING.name());
+        Task currentTask = task("task-2", "supervisor_approve", "proc-1", "pd-1", "anonymous");
+        TaskQuery query = taskQuery(currentTask, 0L, List.of());
+        when(taskService.createTaskQuery()).thenReturn(query);
+        HistoricTaskInstance historicTask = mock(HistoricTaskInstance.class);
+        when(historicTask.getTaskDefinitionKey()).thenReturn("risk_specialist_review");
+        HistoricTaskInstanceQuery historicTaskQuery = mock(HistoricTaskInstanceQuery.class, Answers.RETURNS_SELF);
+        when(historyService.createHistoricTaskInstanceQuery()).thenReturn(historicTaskQuery);
+        when(historicTaskQuery.list()).thenReturn(List.of(historicTask));
+        ChangeActivityStateBuilder stateBuilder = mock(ChangeActivityStateBuilder.class, Answers.RETURNS_SELF);
+        when(runtimeService.createChangeActivityStateBuilder()).thenReturn(stateBuilder);
+        ReturnWorkflowTaskCommand command = new ReturnWorkflowTaskCommand();
+        command.setTaskId("task-2");
+        command.setComment("退回");
+
+        assertThatThrownBy(() -> service.returnTask(command))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("退回未生效")
+                .hasMessageContaining("risk_specialist_review");
+        assertThat(records()).isEmpty();
+    }
+
+    @Test
+    void returnTaskFailsWhenProcessStaysOnSourceNode() {
+        insertFormInstance("proc-1", "{\"existing\":true}", WorkflowInstanceStatus.RUNNING.name());
+        HistoricVariableInstanceQuery variableQuery = mock(HistoricVariableInstanceQuery.class, Answers.RETURNS_SELF);
+        when(historyService.createHistoricVariableInstanceQuery()).thenReturn(variableQuery);
+        when(assigneeResolver.applyEmptyStrategy(any(), any(), any()))
+                .thenReturn(WorkflowAssigneeResolver.ResolvedAssignees.none());
+        Task currentTask = task("task-2", "supervisor_approve", "proc-1", "pd-1", "anonymous");
+        TaskQuery query = taskQuery(currentTask, 1L, List.of(currentTask));
+        when(taskService.createTaskQuery()).thenReturn(query);
+        HistoricTaskInstance historicTask = mock(HistoricTaskInstance.class);
+        when(historicTask.getTaskDefinitionKey()).thenReturn("risk_specialist_review");
+        HistoricTaskInstanceQuery historicTaskQuery = mock(HistoricTaskInstanceQuery.class, Answers.RETURNS_SELF);
+        when(historyService.createHistoricTaskInstanceQuery()).thenReturn(historicTaskQuery);
+        when(historicTaskQuery.list()).thenReturn(List.of(historicTask));
+        ChangeActivityStateBuilder stateBuilder = mock(ChangeActivityStateBuilder.class, Answers.RETURNS_SELF);
+        when(runtimeService.createChangeActivityStateBuilder()).thenReturn(stateBuilder);
+        ReturnWorkflowTaskCommand command = new ReturnWorkflowTaskCommand();
+        command.setTaskId("task-2");
+        command.setComment("退回");
+
+        assertThatThrownBy(() -> service.returnTask(command))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("退回未生效")
+                .hasMessageContaining("supervisor_approve");
+        assertThat(operationLog.entries()).noneMatch(entry -> entry.startsWith("publishTaskAdvanced"));
     }
 
     @Test

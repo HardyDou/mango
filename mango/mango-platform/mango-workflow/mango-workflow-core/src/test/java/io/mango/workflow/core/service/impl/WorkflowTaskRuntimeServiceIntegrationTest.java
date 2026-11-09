@@ -14,8 +14,11 @@ import io.mango.workflow.api.WorkflowEventTypes;
 import io.mango.workflow.api.command.CompleteWorkflowTaskCommand;
 import io.mango.workflow.api.command.CreateWorkflowBusinessApplyCommand;
 import io.mango.workflow.api.command.ReturnWorkflowTaskCommand;
+import io.mango.workflow.api.command.WorkflowJsonRequest;
+import io.mango.workflow.api.enums.WorkflowTaskAction;
 import io.mango.workflow.api.enums.WorkflowApplyStatus;
 import io.mango.workflow.core.engine.WorkflowAssigneeResolver;
+import io.mango.workflow.core.engine.WorkflowDesignerBpmnConverter;
 import io.mango.workflow.core.engine.WorkflowCandidateGroupProvider;
 import io.mango.workflow.core.event.WorkflowEventPublisher;
 import io.mango.workflow.core.identity.WorkflowAssigneeIdentityService;
@@ -87,6 +90,8 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
     private IWorkflowBusinessApplyService businessApplyService;
     @Autowired
     private IWorkflowTaskRuntimeService taskRuntimeService;
+    @Autowired
+    private WorkflowAssigneeResolver assigneeResolver;
     @Autowired
     private CollectingDomainEventPublisher eventPublisher;
 
@@ -202,6 +207,119 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
                 .containsEntry("applyId", started.applyId())
                 .containsEntry("currentTaskDefinitionKeys", "manager_approve")
                 .containsEntry("currentAssigneeNames", "admin");
+    }
+
+    @Test
+    void returnTaskWithExplicitTargetAndClientVariablesMovesRuntimeTask() {
+        StartedWorkflow started = startIssue233Workflow("BIZ-1179");
+        Task managerTask = taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("manager_approve")
+                .singleResult();
+        CompleteWorkflowTaskCommand completeCommand = new CompleteWorkflowTaskCommand();
+        completeCommand.setTaskId(managerTask.getId());
+        completeCommand.setComment("提交财务");
+        taskRuntimeService.completeWithResult(completeCommand);
+
+        Task financeTask = taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("finance_approve")
+                .singleResult();
+        switchUser(1002L, "finance");
+        ReturnWorkflowTaskCommand returnCommand = new ReturnWorkflowTaskCommand();
+        returnCommand.setTaskId(financeTask.getId());
+        returnCommand.setTargetTaskDefinitionKey("manager_approve");
+        returnCommand.setComment("退回");
+        returnCommand.setVariables(io.mango.workflow.api.command.WorkflowJsonRequest.of(Map.of(
+                "targetTaskDefinitionKey", "manager_approve",
+                "decision", "RETURN")));
+
+        var result = taskRuntimeService.returnTask(returnCommand);
+
+        assertThat(result.getActionResult()).isEqualTo(io.mango.workflow.api.enums.WorkflowTaskAction.RETURN);
+        assertThat(result.getCurrentTasks()).singleElement()
+                .returns("manager_approve", task -> task.getTaskDefinitionKey());
+        assertThat(taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("manager_approve")
+                .count()).isEqualTo(1);
+        assertThat(taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("finance_approve")
+                .count()).isZero();
+    }
+
+    @Test
+    void returnTaskMovesRuntimeTaskOnBusinessRiskReviewDesignerModel() throws Exception {
+        ObjectMapper objectMapper = new ObjectMapper()
+                .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        WorkflowDesignerBpmnConverter converter = new WorkflowDesignerBpmnConverter(objectMapper, assigneeResolver);
+        String designerJson;
+        try (var stream = java.util.Objects.requireNonNull(
+                getClass().getResourceAsStream("/workflow/issue-1179-risk-review-designer.json"))) {
+            designerJson = new String(stream.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+        }
+        String processKey = "WF_GUARANTEE_RISK_REVIEW";
+        repositoryService.createDeployment()
+                .name("issue-1179-risk-review")
+                .addBpmnModel(processKey + ".bpmn20.xml", converter.toModel(designerJson, processKey, "保函风控审核"))
+                .deploy();
+        ProcessDefinition processDefinition = repositoryService.createProcessDefinitionQuery()
+                .processDefinitionKey(processKey).latestVersion().singleResult();
+
+        CreateWorkflowBusinessApplyCommand applyCommand = new CreateWorkflowBusinessApplyCommand();
+        applyCommand.setBusinessType("GUARANTEE");
+        applyCommand.setBusinessKey("BIZ-1179-RISK");
+        applyCommand.setApplyTitle("Issue 1179 业务流程复现");
+        applyCommand.setProcessDefinitionKey(processKey);
+        Long applyId = businessApplyService.create(applyCommand).getId();
+        ProcessInstance instance = runtimeService.startProcessInstanceByKey(processKey, "BIZ-1179-RISK", Map.of(
+                "businessType", "GUARANTEE",
+                "businessKey", "BIZ-1179-RISK",
+                "applyId", String.valueOf(applyId),
+                "mangoInitiator", "admin",
+                "submitManager", "是",
+                "managerReviewRequired", true
+        ));
+        businessApplyService.markProcessStarted(new WorkflowProcessStartedContext(
+                applyId, 1179L, processKey, processDefinition.getId(), processDefinition.getName(),
+                instance.getProcessInstanceId()));
+
+        Task specialistTask = taskService.createTaskQuery()
+                .processInstanceId(instance.getProcessInstanceId())
+                .taskDefinitionKey("risk_specialist_review")
+                .singleResult();
+        assertThat(specialistTask).isNotNull();
+        CompleteWorkflowTaskCommand completeCommand = new CompleteWorkflowTaskCommand();
+        completeCommand.setTaskId(specialistTask.getId());
+        completeCommand.setComment("初审通过");
+        taskRuntimeService.completeWithResult(completeCommand);
+
+        Task supervisorTask = taskService.createTaskQuery()
+                .processInstanceId(instance.getProcessInstanceId())
+                .taskDefinitionKey("risk_supervisor_review")
+                .singleResult();
+        assertThat(supervisorTask).isNotNull();
+        ReturnWorkflowTaskCommand returnCommand = new ReturnWorkflowTaskCommand();
+        returnCommand.setTaskId(supervisorTask.getId());
+        returnCommand.setTargetTaskDefinitionKey("risk_specialist_review");
+        returnCommand.setComment("退回专员");
+        returnCommand.setVariables(WorkflowJsonRequest.of(Map.of(
+                "targetTaskDefinitionKey", "risk_specialist_review",
+                "decision", "RETURN")));
+
+        var result = taskRuntimeService.returnTask(returnCommand);
+
+        assertThat(result.getActionResult()).isEqualTo(WorkflowTaskAction.RETURN);
+        assertThat(result.getCurrentTasks()).singleElement()
+                .returns("risk_specialist_review", task -> task.getTaskDefinitionKey());
+        assertThat(taskService.createTaskQuery()
+                .processInstanceId(instance.getProcessInstanceId())
+                .taskDefinitionKey("risk_specialist_review").count()).isEqualTo(1);
+        assertThat(taskService.createTaskQuery()
+                .processInstanceId(instance.getProcessInstanceId())
+                .taskDefinitionKey("risk_supervisor_review").count()).isZero();
+        assertThat(currentTaskDefinitionKeys(applyId)).containsExactly("risk_specialist_review");
     }
 
     private void switchUser(Long userId, String principalName) {
