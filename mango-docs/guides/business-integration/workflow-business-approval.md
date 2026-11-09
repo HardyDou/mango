@@ -110,7 +110,9 @@ Mango 的默认审批通知只消费 `workflow.task.advanced`、`workflow.proces
 
 - 退回由流程引擎的变更活动状态能力完成，源节点与目标节点之间**不需要**回退连线（`sequenceFlow`），也不需要目标节点声明退回动作。
 - 只有**当前任务节点**需要启用 `returnTask` 动作；动作配置中的 `targetTaskDefinitionKey` 是默认退回目标。
-- `targetTaskDefinitionKey` 只接受**当前流程实例中已完成的用户任务节点**；退回不需要历史活动 ID。网关、汇聚、服务任务和从未执行过的节点不能作为目标，传入时返回 `TASK_INVALID`。目标节点、失败语义和返回结构的完整定义见[Workflow 后端 README](../../../mango/mango-platform/mango-workflow/README.md#3-后端接入)。
+- `targetTaskDefinitionKey` 指向**当前流程实例中已完成的用户任务节点**；退回不需要历史活动 ID。
+- 把网关或汇聚节点当作退回目标时（设计器里上一个节点常常就是网关），平台按流程定义向上游解析到最近的已完成用户任务：唯一时直接退回该节点，多个时报错并列出候选，分支网关上游没有用户任务时报错。不要依赖“退回网关”本身，汇聚网关会把执行直接带回原节点。
+- 目标节点、失败语义和返回结构的完整定义见[Workflow 后端 README](../../../mango/mango-platform/mango-workflow/README.md#3-后端接入)。
 - 退回是失败可见的操作：引擎变更活动状态后，若目标节点没有产生待办任务，或当前任务仍停在原节点，接口以 `TASK_INVALID`（`流程任务参数非法`）失败并回滚整笔事务，不会返回成功。业务侧按错误提示处理，不要先写“已退回”。
 - 成功响应中的 `actionResult` 是 `RETURN`，不是 `COMPLETE`；业务侧可用于区分通过和退回，但不要用 `applyStatus` 单独判断退回，退回不会改申请状态。
 

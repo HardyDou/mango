@@ -2,15 +2,27 @@ package io.mango.workflow.core.support;
 
 import io.mango.common.result.Require;
 import io.mango.workflow.api.enums.WorkflowCode;
+import org.flowable.bpmn.model.BpmnModel;
+import org.flowable.bpmn.model.FlowElement;
+import org.flowable.bpmn.model.SequenceFlow;
+import org.flowable.bpmn.model.StartEvent;
+import org.flowable.bpmn.model.UserTask;
 import org.flowable.engine.HistoryService;
+import org.flowable.engine.RepositoryService;
 import org.flowable.engine.TaskService;
 import org.flowable.task.api.Task;
 import org.flowable.task.api.history.HistoricTaskInstance;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 退回目标解析与退回生效校验。
@@ -26,12 +38,26 @@ public final class WorkflowReturnTargetSupport {
     private WorkflowReturnTargetSupport() {
     }
 
-    /** 解析退回目标：优先使用显式配置，否则取最近一个已完成的不同用户任务节点。 */
-    public static String resolveTarget(HistoryService historyService, Task task, String configuredTarget) {
+    /**
+     * 解析退回目标：优先使用显式配置，否则取最近一个已完成的不同用户任务节点。
+     * <p>
+     * 显式目标必须是用户任务。业务把上一个节点（网关、汇聚）当作退回目标时，按流程定义向上游找最近的可退回用户任务：
+     * 唯一时直接使用，多个时报错并列出候选，不依赖网关条件重新求值。
+     */
+    public static String resolveTarget(HistoryService historyService, RepositoryService repositoryService,
+                                      Task task, String configuredTarget) {
         String target = configuredTarget == null ? "" : configuredTarget.trim();
         if (StringUtils.hasText(target)) {
-            ensureHistoricTarget(historyService, task, target);
-            return target;
+            if (isFinishedUserTask(historyService, task, target)) {
+                requireNotCurrentNode(task, target);
+                return target;
+            }
+            String resolved = resolveUpstreamUserTask(historyService, repositoryService, task, target);
+            Require.isTrue(resolved != null, WorkflowCode.TASK_INVALID,
+                    "目标节点「" + target + "」不是用户任务，且其上游没有可退回的已完成用户任务；"
+                            + "可直接指定已完成的历史用户任务节点");
+            requireNotCurrentNode(task, resolved);
+            return resolved;
         }
         List<HistoricTaskInstance> historicTasks = historyService.createHistoricTaskInstanceQuery()
                 .processInstanceId(task.getProcessInstanceId())
@@ -50,13 +76,73 @@ public final class WorkflowReturnTargetSupport {
         return "";
     }
 
-    private static void ensureHistoricTarget(HistoryService historyService, Task task, String targetTaskDefinitionKey) {
+    private static boolean isFinishedUserTask(HistoryService historyService, Task task, String taskDefinitionKey) {
         long count = historyService.createHistoricTaskInstanceQuery()
                 .processInstanceId(task.getProcessInstanceId())
-                .taskDefinitionKey(targetTaskDefinitionKey)
+                .taskDefinitionKey(taskDefinitionKey)
                 .finished()
                 .count();
-        Require.isTrue(count > 0, WorkflowCode.TASK_INVALID, "目标退回节点不在已完成历史中");
+        return count > 0;
+    }
+
+    /**
+     * 从非用户任务目标（网关、汇聚、服务任务）沿入参连线向上游找最近的已完成用户任务，最多返回一个候选。
+     */
+    private static String resolveUpstreamUserTask(HistoryService historyService, RepositoryService repositoryService,
+                                                  Task task, String targetTaskDefinitionKey) {
+        BpmnModel model = repositoryService.getBpmnModel(task.getProcessDefinitionId());
+        if (model == null || model.getMainProcess() == null
+                || model.getMainProcess().getFlowElement(targetTaskDefinitionKey) == null) {
+            return null;
+        }
+        Set<String> finishedTaskKeys = new LinkedHashSet<>();
+        for (HistoricTaskInstance historicTask : historyService.createHistoricTaskInstanceQuery()
+                .processInstanceId(task.getProcessInstanceId())
+                .finished()
+                .list()) {
+            String taskDefinitionKey = historicTask.getTaskDefinitionKey() == null
+                    ? "" : historicTask.getTaskDefinitionKey().trim();
+            if (StringUtils.hasText(taskDefinitionKey) && !taskDefinitionKey.equals(task.getTaskDefinitionKey())) {
+                finishedTaskKeys.add(taskDefinitionKey);
+            }
+        }
+        Set<String> candidates = new LinkedHashSet<>();
+        Deque<FlowElement> pending = new ArrayDeque<>();
+        Set<String> visited = new HashSet<>();
+        pending.add(model.getMainProcess().getFlowElement(targetTaskDefinitionKey));
+        while (!pending.isEmpty() && candidates.size() < 2) {
+            FlowElement current = pending.poll();
+            if (current == null || !visited.add(current.getId())) {
+                continue;
+            }
+            for (SequenceFlow incoming : incomingFlows(model, current)) {
+                FlowElement source = model.getMainProcess().getFlowElement(incoming.getSourceRef());
+                if (source instanceof UserTask userTask) {
+                    if (finishedTaskKeys.contains(userTask.getId())) {
+                        candidates.add(userTask.getId());
+                    }
+                } else if (source != null && !(source instanceof StartEvent)) {
+                    pending.add(source);
+                }
+            }
+        }
+        Require.isTrue(candidates.size() <= 1, WorkflowCode.TASK_INVALID,
+                "目标节点「" + targetTaskDefinitionKey + "」不是用户任务，其上游存在多个可退回节点："
+                        + String.join(", ", candidates) + "，请直接指定其中一个");
+        return candidates.isEmpty() ? null : candidates.iterator().next();
+    }
+
+    private static List<SequenceFlow> incomingFlows(BpmnModel model, FlowElement element) {
+        List<SequenceFlow> flows = new java.util.ArrayList<>();
+        model.getMainProcess().getFlowElements().stream()
+                .filter(SequenceFlow.class::isInstance)
+                .map(SequenceFlow.class::cast)
+                .filter(flow -> element.getId().equals(flow.getTargetRef()))
+                .forEach(flows::add);
+        return flows;
+    }
+
+    private static void requireNotCurrentNode(Task task, String targetTaskDefinitionKey) {
         Require.isTrue(!targetTaskDefinitionKey.equals(task.getTaskDefinitionKey()),
                 WorkflowCode.TASK_INVALID, "不能退回当前节点");
     }

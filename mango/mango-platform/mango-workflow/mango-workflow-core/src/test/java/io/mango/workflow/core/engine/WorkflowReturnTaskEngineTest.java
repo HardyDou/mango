@@ -1,6 +1,7 @@
 package io.mango.workflow.core.engine;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mango.workflow.core.support.WorkflowReturnTargetSupport;
 import org.flowable.engine.ProcessEngine;
 import org.flowable.engine.ProcessEngineConfiguration;
 import org.flowable.engine.RepositoryService;
@@ -18,6 +19,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -89,6 +91,55 @@ class WorkflowReturnTaskEngineTest {
                         .moveActivityIdTo("not_active_activity", "risk_specialist_review")
                         .changeState())
                 .hasMessageContaining("not_active_activity");
+    }
+
+    @Test
+    void mergeGatewayTargetResolvesToUpstreamCompletedUserTask() {
+        deployGatewayReviewProcess();
+        String processInstanceId = runtimeService.startProcessInstanceByKey(PROCESS_KEY,
+                Map.of("needInitialReview", true)).getId();
+        taskService.complete(singleTask(processInstanceId).getId());
+        Task supervisorReview = singleTask(processInstanceId);
+        assertThat(supervisorReview.getTaskDefinitionKey()).isEqualTo("risk_supervisor_review");
+
+        String resolved = WorkflowReturnTargetSupport.resolveTarget(
+                processEngine.getHistoryService(), repositoryService, supervisorReview,
+                "risk_review_type_branch_merge");
+        assertThat(resolved).isEqualTo("risk_specialist_review");
+
+        runtimeService.createChangeActivityStateBuilder()
+                .processInstanceId(processInstanceId)
+                .moveActivityIdTo(supervisorReview.getTaskDefinitionKey(), resolved)
+                .changeState();
+
+        assertThat(singleTask(processInstanceId).getTaskDefinitionKey()).isEqualTo("risk_specialist_review");
+    }
+
+    @Test
+    void branchGatewayTargetWithoutUpstreamCompletedTaskFails() {
+        deployGatewayReviewProcess();
+        String processInstanceId = runtimeService.startProcessInstanceByKey(PROCESS_KEY,
+                Map.of("needInitialReview", false)).getId();
+        Task supervisorReview = singleTask(processInstanceId);
+
+        assertThatThrownBy(() -> WorkflowReturnTargetSupport.resolveTarget(
+                processEngine.getHistoryService(), repositoryService, supervisorReview, "risk_review_type_branch"))
+                .hasMessageContaining("上游没有可退回的已完成用户任务");
+    }
+
+    @Test
+    void movingToMergeGatewayItselfFallsThroughBackToSourceNode() {
+        deployGatewayReviewProcess();
+        String processInstanceId = runtimeService.startProcessInstanceByKey(PROCESS_KEY,
+                Map.of("needInitialReview", true)).getId();
+        taskService.complete(singleTask(processInstanceId).getId());
+
+        runtimeService.createChangeActivityStateBuilder()
+                .processInstanceId(processInstanceId)
+                .moveActivityIdTo("risk_supervisor_review", "risk_review_type_branch_merge")
+                .changeState();
+
+        assertThat(singleTask(processInstanceId).getTaskDefinitionKey()).isEqualTo("risk_supervisor_review");
     }
 
     private Task singleTask(String processInstanceId) {

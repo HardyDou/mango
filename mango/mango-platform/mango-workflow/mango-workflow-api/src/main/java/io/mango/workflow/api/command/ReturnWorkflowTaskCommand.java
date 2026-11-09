@@ -22,7 +22,7 @@ public class ReturnWorkflowTaskCommand {
     @NotBlank(message = "任务ID不能为空")
     private String taskId;
 
-    @Schema(description = "目标历史节点定义Key，只接受当前流程实例中已完成的用户任务节点，不需要历史活动ID；为空时退回最近一个已完成的不同用户任务节点")
+    @Schema(description = "目标历史节点定义Key，指向当前流程实例中已完成的用户任务节点，不需要历史活动ID；传网关或汇聚时解析到上游最近的已完成用户任务；为空时退回最近一个已完成的不同用户任务节点")
     @Size(max = 128, message = "目标节点定义Key最多128个字符")
     private String targetTaskDefinitionKey;
 

@@ -820,7 +820,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
     }
 
     private String resolveReturnTarget(Task task, String configuredTarget) {
-        return WorkflowReturnTargetSupport.resolveTarget(historyService, task, configuredTarget);
+        return WorkflowReturnTargetSupport.resolveTarget(historyService, repositoryService, task, configuredTarget);
     }
 
     @Override
