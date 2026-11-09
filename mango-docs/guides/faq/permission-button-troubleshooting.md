@@ -85,3 +85,5 @@ pnpm -F @mango/admin-shell build
 > Issue #1134 影响说明：Shell 验证码演示页仅调整验证码生成入口和展示文案，不改变按钮权限码、接口权限或授权资源；本 FAQ 的按钮排障步骤保持不变。
 
 > Issue #1158 影响说明：授权租户型 Resource Handler 明确声明 `tenantId` 执行范围，历史 `tenant_id IS NULL` 登记行在 Resource Registry FINALIZE 时只告警跳过，不调用 Handler、不修改登记行；按钮权限码、接口权限、授权资源和当前租户权限判定排障步骤不变。
+
+> Issue #971 影响说明：集成应用新增接口权限码 `integration:connector:list|add|edit|status`、`integration:credential:list|add|rotate`、`integration:instance:list|add|edit|status|test`、`integration:maintenance:cleanup`，并挂在菜单 `integration:definition` / `integration:application` 的 `apiCodes` 上。原有按钮权限码、接口权限和授权关系不变；按钮无权限时仍按本页步骤排查。
