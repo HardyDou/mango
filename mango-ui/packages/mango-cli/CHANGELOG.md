@@ -1,3 +1,21 @@
+## 1.3.11 - 2026-11-09
+
+### Added
+
+- Ship the integration application management template wiring: the full backend template declares the `integration` Flyway module so generated projects can apply `mango-integration` migrations `V1`–`V5`.
+- Preset the cold baseline generation execution on the final API application and expose `MANGO_COLD_BASELINE_ENABLED` for the runtime switch.
+
+### Changed
+
+- Lock the CLI Maven matrix to Maven `1.2.0` and the generated 201-coordinate Maven/docs release closure.
+- Align generated Flyway module declarations with the platform monolith, enable KV `cache` and `rate-limiter` capabilities, and remove the duplicate authorization security filter chain.
+- File preview defaults follow the extension-driven routing and `source-base-url` trust behavior shipped in `1.2.0`.
+
+### Upgrade Notes
+
+- Upgrade `@mango/cli@1.3.11` together with the complete Maven/docs `1.2.0` tuple; do not mix release batches.
+- Regenerate or upgrade generated projects so Flyway module declarations, KV capabilities, preview defaults and the security filter chain match `1.2.0`.
+
 ## 1.3.10 - 2026-10-31
 
 ### Changed
