@@ -14,7 +14,8 @@
 
 | 能力 | 说明 |
 |------|------|
-| 应用入口 | 管理 `internal-admin` 等应用编码、登录上下文和前端运行配置 |
+| 应用入口 | 管理 `internal-admin` 等应用编码、登录上下文和前端运行配置；面向人员使用的逻辑应用 |
+| 集成应用 | 在当前部署登记外部合作系统的服务端身份，可同时承载入站接入（外部系统调用 Mango）和出站连接（Mango 调用外部系统）；入站密钥由 Mango 签发，出站凭证由合作方提供，两者独立加密；tenantId 仅作为预留字段 |
 | API 资源 | 保存 method、path、access mode、permission code，供 `mango-access` 判断请求策略 |
 | API 资源同步 | 通过 `mango-resource` 的 `API_RESOURCE` 资源类型扫描 Controller 注解、配置资源和 Gateway route，并同步到 `authorization_api_resource` |
 | 菜单管理 | 保存目录、菜单、按钮权限、页面 key、路由、运行类型和可见状态 |
@@ -30,7 +31,11 @@
 | 前端运行时 | 返回应用 runtime descriptor 和模块运行策略 |
 | 模块运行态诊断 | 批量核对当前 Resource 推导的菜单/API 需求与真实物化行，只输出计数和安全 page key |
 
-## 3. 后端接入
+## 3. 应用管理边界
+
+逻辑应用、登录上下文、微应用运行单元与菜单授权仍属于本模块；连接器定义、集成凭证与连接实例已拆分到独立模块 `mango-integration`，见 `mango/mango-platform/mango-integration/README.md`。
+
+## 4. 后端接入
 
 业务代码只需要注解、命令对象或 Java API 时依赖 API 包：
 
@@ -86,7 +91,7 @@
 </dependency>
 ```
 
-## 4. 前端接入
+## 5. 前端接入
 
 `mango-authorization` 的菜单数据被 `@mango/admin-shell` 消费。Shell 登录后调用当前用户菜单接口，把菜单里的 `component` 字段匹配到已注册的前端页面 key。
 
@@ -105,7 +110,7 @@
 
 如果新增的是 admin 页面插件，先在对应前端包 README 里确认页面 key，再把相同 key 写入 authorization 菜单清单。
 
-## 5. 快速开始
+## 6. 快速开始
 
 新增一个业务模块的菜单和接口权限，按这个顺序做：
 
@@ -126,7 +131,7 @@
 
 登录态权限集合只读取当前角色已授权菜单的 `apiCodes` 字段，不读取 `menuCode`。因此 `menuCode` 可以稳定表达菜单可见性，`apiCodes` 才表达真实接口/动作权限。隐藏菜单 `visible=0` 可以只授予基础权限；如果隐藏菜单同时配置了页面 `path` 和 `component`（或外链运行配置），用户菜单接口会保留它用于前端路由注册，但不会显示在导航菜单中。只有用于承载基础权限、没有可运行页面的隐藏菜单仍不会进入用户菜单树。
 
-## 6. 配置说明
+## 7. 配置说明
 
 `mango-authorization-starter` 在没有业务认证模块时提供一条默认安全链。完整管理端同时引入 `mango-auth-starter`，必须显式关闭该兜底链，由 Auth 主链统一完成 token 恢复和 API 资源授权，避免两条 `any request` 链并存：
 
@@ -181,7 +186,7 @@ mango:
     deploy-profile: monolith
 ```
 
-## 7. YAML 配置字段
+## 8. YAML 配置字段
 
 | 配置项 | 默认值 | 含义 |
 |--------|--------|------|

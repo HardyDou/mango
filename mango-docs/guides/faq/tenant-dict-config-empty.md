@@ -8,7 +8,7 @@
 
 > Issue #983 影响说明：本次调整不改变租户、字典、系统配置或资源初始化；文件上传超时配置不影响本排障路径。
 
-> Issue #1084 / #1158 影响说明：老库 `resource_registry.tenant_id` 为空时，Resource Registry 兼容同步和完整 FINALIZE 都不得猜测租户。所有声明了租户执行字段的 Handler（至少 `IDENTITY_USER`、`AUTH_SUBJECT_ROLE`）在调用前统一跳过无法安全推导租户的历史缺失资源，只告警、保持 Registry 原状态、不阻断 Bootstrap，也不能被当作租户基础数据异常而删除。
+> Issue #1084 / #1158 影响说明：老库 `resource_registry.tenant_id` 为空时，Resource Registry 兼容同步和完整 FINALIZE 都不猜测租户。所有声明了租户执行字段的 Handler（至少 `IDENTITY_USER`、`AUTH_SUBJECT_ROLE`）在调用前统一跳过无法安全推导租户的历史缺失资源，只告警、保持 Registry 原状态、不阻断 Bootstrap，也不能被当作租户基础数据异常而删除。
 > Issue #1087 影响说明：资源登记冲突（同一 `resourceType + bizKey` 的历史 `resourceId` 与当前声明不一致）仍然 fail-closed，本 FAQ 的租户数据结论不变；区别只是失败信息会一次列出全部冲突，按 `mango-resource/README.md` 14.1 清理后重试。清理是无损的：新登记行会复用原 `target_id` 指向的目标数据。若 `V3__normalize_resource_registry_unique_keys.sql` 因物理重复行失败，按同文件 14.2 恢复（清理重复行 + 删除 `success=0` 的历史行）；`fail-on-conflict=false` 不能用来绕过。
 
 > Issue #1087 影响说明：本次只补全资源登记冲突的报错信息与排查说明（见 Resource README 14.1），不改变租户、字典、系统配置、资源初始化或权限判定行为。
@@ -99,3 +99,5 @@ pnpm -F @mango/admin-shell build
 > Issue #1134 影响说明：Shell 验证码演示页仅调整验证码生成入口和展示文案，不改变租户上下文、字典、系统配置或基础数据；本 FAQ 的租户和字典排障步骤保持不变。
 
 > Issue #1158 影响说明：Maven `1.1.5` 起，`resource_registry` 中 `tenant_id` 为空的历史行在同步与 `FINALIZE` 清理时只输出 `Mango resource missing disable skipped: tenant scope is unavailable` 告警并跳过，不猜测租户、不调用 Resource Handler、不修改该行，`fail-open=false` 下应用仍可完成启动。看到该告警不需要清库、补写 `tenant_id` 或改 Bootstrap 审计表；真实租户行的清理失败仍保持 fail-closed。本 FAQ 的租户、字典与基础数据排障步骤不变。
+
+> Issue #971 影响说明：新增系统字典 `integration_connector_category`（支付/消息/身份/文件/其他），随 `system-common-dict.yml` 声明同步；`integration_connector` 与 `authorization_*` 表一致列入租户自动过滤排除表，`integration_credential`、`integration_instance` 等业务表仍带 `tenant_id` 并受租户隔离。字典为空或租户上下文缺失时仍按本页步骤排查。

@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS `integration_call_log` (
+    `id` bigint NOT NULL COMMENT '主键',
+    `tenant_id` varchar(64) NOT NULL DEFAULT 'default' COMMENT '租户标识',
+    `org_id` bigint DEFAULT NULL COMMENT '组织标识',
+    `instance_code` varchar(64) NOT NULL COMMENT '实例编码',
+    `connector_code` varchar(64) NOT NULL COMMENT '连接器编码',
+    `http_method` varchar(16) NOT NULL COMMENT '请求方法',
+    `path` varchar(500) NOT NULL COMMENT '请求路径',
+    `status_code` int NOT NULL DEFAULT 0 COMMENT '响应状态码，0 表示未建立连接',
+    `elapsed_ms` bigint NOT NULL DEFAULT 0 COMMENT '耗时毫秒',
+    `success` tinyint NOT NULL DEFAULT 0 COMMENT '是否成功',
+    `message` varchar(500) DEFAULT NULL COMMENT '结果说明',
+    `created_by` bigint DEFAULT NULL COMMENT '创建人',
+    `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_by` bigint DEFAULT NULL COMMENT '更新人',
+    `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    KEY `idx_integration_call_log_instance` (`instance_code`, `created_at`),
+    KEY `idx_integration_call_log_connector` (`connector_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='集成调用记录';

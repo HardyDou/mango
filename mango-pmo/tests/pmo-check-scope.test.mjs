@@ -268,8 +268,10 @@ test('CI reruns when policy-resolved assurance selections change and keeps expli
     'utf8',
   );
   const preflightJob = workflow.match(/\n  preflight_scope:\n[\s\S]*?(?=\n  release_plan:)/)?.[0] ?? '';
-  assert.doesNotMatch(preflightJob, /pnpm\/action-setup@v4/);
-  assert.doesNotMatch(preflightJob, /pnpm install --frozen-lockfile/);
+  // The release classifier added in #1152 needs the pnpm workspace dependencies,
+  // so preflight sets up pnpm and installs them from the frozen lockfile.
+  assert.match(preflightJob, /pnpm\/action-setup@v4/);
+  assert.match(preflightJob, /pnpm --dir mango-ui install[\s\S]*?--frozen-lockfile/);
   assert.match(workflow, /pull_request:\n\s+types: \[opened, synchronize, reopened\]/);
   assert.doesNotMatch(workflow, /pmo-doc-check[\s\S]*?types: \[opened, edited, synchronize, reopened\]/);
   assert.match(

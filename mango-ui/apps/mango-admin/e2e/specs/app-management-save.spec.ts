@@ -2,11 +2,14 @@ import { expect, test } from '@playwright/test';
 
 async function login(page: import('@playwright/test').Page) {
   await page.goto('/#/login');
-  await page.locator('.tenant-select').click();
-  await page.getByRole('option', { name: /芒果集团/ }).click();
-  await page.fill('input[placeholder="用户名"]', 'admin');
-  await page.fill('input[placeholder="密码"]', 'admin123');
-  await page.click('button:has-text("登 录")');
+  const tenantSelect = page.locator('.tenant-select');
+  if (await tenantSelect.count()) {
+    await tenantSelect.click();
+    await page.getByRole('option', { name: /芒果集团/ }).click();
+  }
+  await page.locator('input[placeholder="用户名"], input[placeholder="请输入用户名"]').first().fill('admin');
+  await page.locator('input[placeholder="密码"], input[placeholder="请输入密码"]').first().fill('admin123');
+  await page.getByRole('button', { name: /登\s*录/ }).click();
   await page.waitForURL('**/#/home', { timeout: 10000 });
 }
 
@@ -14,10 +17,13 @@ function namedDialog(page: import('@playwright/test').Page, title: string) {
   return page.locator('.el-dialog').filter({ hasText: title }).last();
 }
 
-test.describe('应用管理保存联调', () => {
-  test('@p0 @authorization 编辑应用保存使用真实接口并保持登录态', async ({ page }) => {
-    const appListResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/authorization/apps') && response.request().method() === 'GET' && response.status() === 200
+test.describe('逻辑应用保存联调', () => {
+  test('@p0 @authorization 编辑逻辑应用保存使用真实接口并保持登录态', async ({ page }) => {
+    const appListResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/authorization/apps') &&
+        response.request().method() === 'GET' &&
+        response.status() === 200,
     );
     await login(page);
     await page.goto('/#/system/app');
@@ -35,8 +41,8 @@ test.describe('应用管理保存联调', () => {
     const editDialog = namedDialog(page, '编辑应用');
     await expect(editDialog).toBeVisible();
 
-    const updateResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/authorization/apps') && response.request().method() === 'PUT'
+    const updateResponsePromise = page.waitForResponse(
+      (response) => response.url().includes('/api/authorization/apps') && response.request().method() === 'PUT',
     );
     await editDialog.getByRole('button', { name: '确定' }).click();
     const updateResponse = await updateResponsePromise;
@@ -58,7 +64,7 @@ test.describe('应用管理保存联调', () => {
     await expect(page.locator('text=/401|未登录|未授权|登录已过期|请重新登录|应用入口不存在/')).toHaveCount(0);
   });
 
-  test('新增、选择图标、编辑、删除应用主流程正常', async ({ page }) => {
+  test('新增、选择图标、编辑、删除逻辑应用主流程正常', async ({ page }) => {
     await login(page);
 
     const suffix = Date.now();
@@ -82,8 +88,8 @@ test.describe('应用管理保存联调', () => {
     await iconDialog.locator('.icon-item', { hasText: 'Home' }).first().click();
     await expect(iconDialog).toBeHidden();
 
-    const createResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/authorization/apps') && response.request().method() === 'POST'
+    const createResponsePromise = page.waitForResponse(
+      (response) => response.url().includes('/api/authorization/apps') && response.request().method() === 'POST',
     );
     await createDialog.getByRole('button', { name: '确定' }).click();
     const createResponse = await createResponsePromise;
@@ -104,8 +110,8 @@ test.describe('应用管理保存联调', () => {
     await expect(editDialog).toBeVisible();
     await editDialog.locator('input').nth(0).fill(updatedName);
 
-    const updateResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/authorization/apps') && response.request().method() === 'PUT'
+    const updateResponsePromise = page.waitForResponse(
+      (response) => response.url().includes('/api/authorization/apps') && response.request().method() === 'PUT',
     );
     await editDialog.getByRole('button', { name: '确定' }).click();
     const updateResponse = await updateResponsePromise;
@@ -124,8 +130,8 @@ test.describe('应用管理保存联调', () => {
     const updatedRow = page.locator('.el-table__body-wrapper tr', { hasText: appCode }).first();
     await updatedRow.getByRole('button', { name: '删除' }).click();
     await expect(page.getByText(`确认删除应用「${updatedName}」?`)).toBeVisible();
-    const deleteResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/authorization/apps') && response.request().method() === 'DELETE'
+    const deleteResponsePromise = page.waitForResponse(
+      (response) => response.url().includes('/api/authorization/apps') && response.request().method() === 'DELETE',
     );
     await page.getByRole('button', { name: '确定' }).last().click();
     const deleteResponse = await deleteResponsePromise;

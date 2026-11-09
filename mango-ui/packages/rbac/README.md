@@ -17,7 +17,10 @@
 
 | 能力                          | 使用入口                            | 后端依赖                                             |
 | ----------------------------- | ----------------------------------- | ---------------------------------------------------- |
-| 应用管理                      | `AppView`、`appApi`                 | `mango-authorization`                                |
+| 逻辑应用                      | `AppView`、`appApi`                 | `mango-authorization`                                |
+| 微应用                        | `MicroApplicationView`              | `mango-authorization`                                |
+| 应用定义                      | `IntegrationConnectorView`          | `mango-authorization`                                |
+| 集成应用                      | `IntegrationApplicationView`、`integrationModel` | `mango-authorization`                                |
 | 应用模块绑定和运行策略        | `appModuleApi`                      | `mango-authorization`、`@mango/app-runtime`          |
 | 菜单和按钮资源                | `MenuView`、`menuApi`               | `mango-authorization`                                |
 | 菜单包                        | `MenuPackageView`、`menuPackageApi` | `mango-authorization`                                |
@@ -90,7 +93,11 @@ const users = await userApi.page({ pageNum: 1, pageSize: 20 });
 
 | 导出              | 默认页面 key                | 管理能力                                                                                                                                                         |
 | ----------------- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `AppView`         | `system/app/index`          | 应用管理。                                                                                                                                                       |
+| `AppView`         | `system/app/index`          | 逻辑应用：应用入口、登录上下文、前端运行配置和模块绑定。                                                                                                          |
+| `MicroApplicationView` | `system/micro-application/index` | 微应用总览：只读展示运行单元入口、版本、健康检查和被引用模块数，登记由部署资源声明完成。 |
+| `IntegrationConnectorView` | `integration/definition/index` | 应用定义：连接器只读清单与规范查看，租户不可编辑。 |
+| `IntegrationApplicationView` | `integration/application/index` | 集成应用：选择连接器、按配置规范动态渲染、填写凭证、授权能力、启停；敏感字段只写不读。 |
+
 | `MenuView`        | `system/menu/index`         | 菜单和按钮资源管理。                                                                                                                                             |
 | `MenuPackageView` | `system/menu-package/index` | 菜单包管理。                                                                                                                                                     |
 | `RoleView`        | `system/role/index`         | 角色和菜单/按钮授权。                                                                                                                                            |
@@ -104,7 +111,8 @@ const users = await userApi.page({ pageNum: 1, pageSize: 20 });
 
 | API              | 主要接口                                                                           | 能力                                                                                                                |
 | ---------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `appApi`         | `/authorization/apps`                                                              | 应用列表、详情、创建、更新、删除、运行时应用。                                                                      |
+| `appApi`         | `/authorization/apps`                                                              | 逻辑应用列表、详情、创建、更新、删除、运行时应用。                                                                  |
+| `integrationApplicationApi` | `/integration/instances`                                 | 集成应用分页、详情、创建、更新、启停、入站密钥轮换、出站凭证更新和连接测试；入站密钥只在创建/轮换成功响应中返回一次。 |
 | `appModuleApi`   | `/authorization/app-modules`                                                       | 应用模块绑定、同步菜单、运行策略。                                                                                  |
 | `menuApi`        | `/authorization/menus`                                                             | 用户菜单、菜单树、详情、创建、更新、删除。                                                                          |
 | `apiResourceApi` | `/authorization/api-resources`                                                     | 权限标识分页、模块与领域筛选维度，区分固定声明、Controller 扫描和人工登记。                                          |

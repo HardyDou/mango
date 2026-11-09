@@ -99,3 +99,5 @@ pnpm -F @mango/admin-shell build
 > Issue #1134 影响说明：Shell 验证码演示页仅调整验证码生成入口和展示文案，不改变菜单、页面 key、角色授权、租户绑定或菜单页面排障步骤。
 
 > Issue #1158 影响说明：授权租户型 Resource Handler 明确声明 `tenantId` 执行范围，历史 `tenant_id IS NULL` 登记行在 Resource Registry FINALIZE 时只告警跳过，不调用 Handler、不修改登记行；菜单、页面 key、角色授权和租户绑定排障步骤不变。
+
+> Issue #971 影响说明：新增“平台能力 / 集成管理 / 应用定义（`integration/definition`）”与“平台能力 / 集成管理 / 集成应用（`integration/application`）”两个菜单页面，微应用总览复用 `authorization_frontend_app_registry` 只读展示；菜单权限码为 `integration:definition` 与 `integration:application`。原有菜单、页面 key、角色授权和租户绑定流程不变；菜单打不开时仍按本页步骤排查。

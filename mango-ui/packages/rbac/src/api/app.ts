@@ -100,6 +100,21 @@ export const appApi = {
   delete: (appId: ApiId) => del<boolean>('/authorization/apps', { params: { appId } }),
 };
 
+export interface FrontendAppHealthCheckResult {
+  runtimeCode: string;
+  targetUrl?: string;
+  success: boolean;
+  statusCode?: number;
+  elapsedMs?: number;
+  message?: string;
+  checkedAt?: string;
+}
+
+export const frontendAppApi = {
+  checkHealth: (runtimeCode: string) =>
+    post<FrontendAppHealthCheckResult>('/authorization/frontend-apps/health-check', { runtimeCode }),
+};
+
 export const appModuleApi = {
   list: (params: { appCode?: string; status?: number } = {}) =>
     get<AppModuleBinding[]>('/authorization/app-modules', { params }),

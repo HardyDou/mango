@@ -118,6 +118,9 @@ mango:
         authorization:
           enabled: true
           out-of-order: true
+        integration:
+          enabled: true
+          out-of-order: true
         identity:
           enabled: true
         auth:

@@ -210,6 +210,26 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.mango.platform.integration</groupId>
+                <artifactId>mango-integration-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.platform.integration</groupId>
+                <artifactId>mango-integration-support</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.platform.integration</groupId>
+                <artifactId>mango-integration-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.platform.integration</groupId>
+                <artifactId>mango-integration-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.mango.platform.identity</groupId>
                 <artifactId>mango-identity-api</artifactId>
                 <version>${project.version}</version>

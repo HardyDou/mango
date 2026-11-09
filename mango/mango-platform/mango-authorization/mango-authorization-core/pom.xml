@@ -37,6 +37,13 @@
             <artifactId>mango-common</artifactId>
         </dependency>
 
+        <!-- Secret 加密能力 -->
+        <dependency>
+            <groupId>io.mango.infra.crypto</groupId>
+            <artifactId>mango-infra-crypto</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- Mango 基础上下文能力 -->
         <dependency>
             <groupId>io.mango.infra.context</groupId>

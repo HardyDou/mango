@@ -1,6 +1,7 @@
 package io.mango.authorization.starter;
 
 import io.mango.authorization.core.config.FrontendRuntimeProperties;
+import io.mango.authorization.core.config.OutboundNetworkProperties;
 import io.mango.authorization.core.mapper.RoleMapper;
 import io.mango.authorization.core.service.IRoleDataScopeService;
 import io.mango.identity.api.TenantMemberProvider;
@@ -23,7 +24,7 @@ import org.springframework.context.annotation.ComponentScan;
 @AutoConfiguration
 @ConditionalOnClass(RoleMapper.class)
 @MapperScan("io.mango.authorization.core.mapper")
-@EnableConfigurationProperties(FrontendRuntimeProperties.class)
+@EnableConfigurationProperties({FrontendRuntimeProperties.class, OutboundNetworkProperties.class})
 @ComponentScan({
     "io.mango.authorization.core.service",
     "io.mango.authorization.starter"

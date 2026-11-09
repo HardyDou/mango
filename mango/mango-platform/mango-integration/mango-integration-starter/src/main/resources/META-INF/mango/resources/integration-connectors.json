@@ -1,0 +1,68 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "integration",
+      "moduleName": "集成应用模块",
+      "moduleDependencies": [
+        "system"
+      ],
+      "declarations": {
+        "INTEGRATION_CONNECTOR": [
+          {
+            "id": "2960000000000000201",
+            "version": 3,
+            "bizKey": "integration.connector.wecom-message",
+            "name": "企业微信应用消息连接器",
+            "targetModule": "integration",
+            "fields": {
+              "connectorCode": {
+                "type": "STRING",
+                "value": "wecom-message"
+              },
+              "connectorName": {
+                "type": "STRING",
+                "value": "企业微信应用消息"
+              },
+              "category": {
+                "type": "STRING",
+                "value": "MESSAGE"
+              },
+              "provider": {
+                "type": "STRING",
+                "value": "WECOM"
+              },
+              "status": {
+                "type": "INT",
+                "value": 1
+              },
+              "tags": {
+                "type": "LIST",
+                "value": [
+                  "企微",
+                  "消息"
+                ]
+              },
+              "docsUrl": {
+                "type": "STRING",
+                "value": "https://developer.work.weixin.qq.com/document"
+              },
+              "configSchema": {
+                "type": "STRING",
+                "value": "{\"type\":\"object\",\"required\":[\"apiBaseUrl\"],\"properties\":{\"apiBaseUrl\":{\"type\":\"string\",\"title\":\"接口地址\",\"component\":\"INPUT\",\"default\":\"https://qyapi.weixin.qq.com\",\"pattern\":\"^https://.*\"},\"msgType\":{\"type\":\"string\",\"title\":\"消息类型\",\"component\":\"SYSTEM_DICT\",\"dictCode\":\"sys_normal_disable\"}}}"
+              },
+              "authSchema": {
+                "type": "STRING",
+                "value": "{\"authMode\":\"OAUTH2\",\"params\":{\"tokenUrl\":\"https://qyapi.weixin.qq.com/cgi-bin/gettoken\",\"clientIdParam\":\"corpid\",\"clientSecretParam\":\"corpsecret\",\"tokenField\":\"access_token\",\"expiresField\":\"expires_in\",\"clientIdField\":\"corpId\",\"clientSecretField\":\"corpSecret\"},\"fields\":[{\"fieldCode\":\"corpId\",\"label\":\"企业 ID\",\"type\":\"STRING\",\"required\":true},{\"fieldCode\":\"corpSecret\",\"label\":\"应用 Secret\",\"type\":\"SECRET\",\"required\":true},{\"fieldCode\":\"platformCert\",\"label\":\"平台证书\",\"type\":\"CERT\",\"required\":false}]}"
+              },
+              "capabilitiesJson": {
+                "type": "STRING",
+                "value": "[{\"code\":\"message.send\",\"name\":\"发送应用消息\",\"description\":\"向成员发送企业微信应用消息\"},{\"code\":\"token.refresh\",\"name\":\"刷新令牌\",\"description\":\"主动刷新 access_token\"}]"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

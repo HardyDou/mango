@@ -42,7 +42,8 @@
 | Auth | 提供登录、认证 Provider、登录回调和登录态接入。 | [Auth README](../../mango/mango-platform/mango-auth/README.md) |
 | Identity | 管理用户、租户成员、身份标识和成员生命周期。 | [Identity README](../../mango/mango-platform/mango-identity/README.md) |
 | Org | 管理组织、部门、岗位、组织树和成员组织关系。 | [Org README](../../mango/mango-platform/mango-org/README.md) |
-| Authorization | 管理菜单、API 资源、权限标识、角色、角色数据范围、成员角色批量绑定和授权关系。固定 API 资源声明与 Controller 扫描按方法和路径自动去重；人工接管优先于固定声明、Gateway 显式声明和 Controller 扫描，固定声明优先于 Controller 扫描。 | [Authorization README](../../mango/mango-platform/mango-authorization/README.md) |
+| Integration | 提供连接器定义、集成凭证与连接实例的定义与声明（配置规范、认证规范、能力清单、凭证加密与轮换），并附带出站认证、令牌缓存、回调验签与解密工具类；不提供运行时调用。 | [Integration README](../../mango/mango-platform/mango-integration/README.md) |
+| Authorization | 管理菜单、API 资源、权限标识、角色、角色数据范围、成员角色批量绑定和授权关系；同时提供逻辑应用管理、微应用总览，以及“连接器定义 + 凭证 + 连接实例”的集成应用声明模型（配置按规范校验、凭证加密可轮换、能力按清单授权；只负责定义与声明，运行由业务域实现）；当前 Mango 部署按单租户能力运行，不宣称多租户运行时隔离，也不提供接口级授权、行级数据权限和调用审计。固定 API 资源声明与 Controller 扫描按方法和路径自动去重；人工接管优先于固定声明、Gateway 显式声明和 Controller 扫描，固定声明优先于 Controller 扫描。集成应用的入站认证本期只有 CLIENT_SECRET 具备运行时校验，其余方式和接口级授权不在本期能力范围内。 | [Authorization README](../../mango/mango-platform/mango-authorization/README.md) |
 | Access | 提供权限检查、访问拦截和统一访问控制基础。 | [Access README](../../mango/mango-platform/mango-access/README.md) |
 | Captcha | 提供验证码生成、校验和认证流程配套能力。 | [Captcha README](../../mango/mango-platform/mango-captcha/README.md) |
 
@@ -85,7 +86,7 @@
 | Admin Shell | 提供管理端运行壳、菜单装配、登录后初始化、页面承载，以及开发中心示例的右侧文档导航和代码展示基础组件。 | [Admin Shell README](../../mango-ui/packages/admin-shell/README.md) |
 | Admin Pages | 提供管理页面注册表和页面插件接入。 | [Admin Pages README](../../mango-ui/packages/admin-pages/README.md) |
 | Common | 提供公共组件、主题变量、API 契约和前端工具。 | [Common README](../../mango-ui/packages/common/README.md) |
-| RBAC | 提供菜单、角色、权限、权限标识、数据范围和成员批量角色管理页面。 | [RBAC README](../../mango-ui/packages/rbac/README.md) |
+| RBAC | 提供菜单、角色、权限、权限标识、数据范围、逻辑应用、微应用总览和集成应用管理页面。 | [RBAC README](../../mango-ui/packages/rbac/README.md) |
 | `@mango/file` | 提供上传、附件列表、文件预览和文件管理页面。上传 API 支持可选实例级 `HttpClient`；未传入时保留原有默认请求路径，上传总超时和无进度超时独立配置。`downloadUrl(id, options)` 与 `download(id, options)` 支持 `compression` 与 `perFileTargetSizeBytes`，可由文件服务直接返回压缩内容。 | [File Frontend README](../../mango-ui/packages/file/README.md) |
 | `@mango/workflow` | 提供流程管理页面、审批组件和 Workflow API。 | [Workflow Frontend README](../../mango-ui/packages/workflow/README.md) |
 | `@mango/information` | 提供表单管理、表单设计、托管表单、公开提交、文件上传和采集记录页面及类型化 API。 | [Information Frontend README](../../mango-ui/packages/information/README.md) |

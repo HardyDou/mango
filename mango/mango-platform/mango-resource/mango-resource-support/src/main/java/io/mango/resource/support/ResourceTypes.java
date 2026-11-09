@@ -24,6 +24,7 @@ public final class ResourceTypes {
     public static final String IDENTITY_USER = "IDENTITY_USER";
     public static final String FRONTEND_APP_REGISTRY = "FRONTEND_APP_REGISTRY";
     public static final String FRONTEND_MODULE_RUNTIME_STRATEGY = "FRONTEND_MODULE_RUNTIME_STRATEGY";
+    public static final String INTEGRATION_CONNECTOR = "INTEGRATION_CONNECTOR";
     public static final String MESSAGE_EVENT = "MESSAGE_EVENT";
     public static final String MESSAGE_CHANNEL = "MESSAGE_CHANNEL";
     public static final String MESSAGE_TEMPLATE = "MESSAGE_TEMPLATE";
