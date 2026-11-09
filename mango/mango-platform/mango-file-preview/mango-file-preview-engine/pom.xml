@@ -78,22 +78,12 @@
             <artifactId>poi-ooxml</artifactId>
             <version>${poi.version}</version>
         </dependency>
-        <dependency>
-            <groupId>fr.opensagres.xdocreport</groupId>
-            <artifactId>org.apache.poi.xwpf.converter.core</artifactId>
-            <version>${xdocreport.version}</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>poi</artifactId>
-                    <groupId>org.apache.poi</groupId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>fr.opensagres.xdocreport</groupId>
-            <artifactId>org.apache.poi.xwpf.converter.xhtml</artifactId>
-            <version>${xdocreport.version}</version>
-        </dependency>
+        <!--
+            fr.opensagres.xdocreport.document 仅用于 fr.opensagres.xdocreport.core.io.IOUtils。
+            禁止引入组织为 org.apache.poi.xwpf.converter.* 的旧转换器：它们会传递
+            org.apache.poi:ooxml-schemas:1.1（POI 3.x 时代的 schema），与 POI 5.x 的
+            poi-ooxml-lite 冲突，使消费方的 POI 5 解析抛 NoSuchFieldError（Issue #1171）。
+        -->
         <dependency>
             <groupId>fr.opensagres.xdocreport</groupId>
             <artifactId>fr.opensagres.xdocreport.document</artifactId>

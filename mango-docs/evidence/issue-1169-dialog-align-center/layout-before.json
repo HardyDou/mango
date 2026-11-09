@@ -1,0 +1,218 @@
+{
+  "short-2560x1415": {
+    "overlay": {
+      "w": 2560,
+      "h": 1415,
+      "x": 0,
+      "y": 0,
+      "display": "flex"
+    },
+    "dialog": {
+      "w": 600,
+      "h": 1273.5,
+      "x": 0,
+      "y": 0,
+      "margin": "0px",
+      "maxHeight": "1273.5px",
+      "offsetFromOverlayLeft": 0,
+      "offsetFromOverlayRight": 1960,
+      "offsetFromOverlayTop": 0,
+      "offsetFromOverlayBottom": 141.5
+    },
+    "body": {
+      "clientHeight": 1128,
+      "scrollHeight": 1128,
+      "contentFits": true
+    }
+  },
+  "tall-2560x1415": {
+    "overlay": {
+      "w": 2560,
+      "h": 1415,
+      "x": 0,
+      "y": 0,
+      "display": "flex"
+    },
+    "dialog": {
+      "w": 600,
+      "h": 1273.5,
+      "x": 0,
+      "y": 0,
+      "margin": "0px",
+      "maxHeight": "1273.5px",
+      "offsetFromOverlayLeft": 0,
+      "offsetFromOverlayRight": 1960,
+      "offsetFromOverlayTop": 0,
+      "offsetFromOverlayBottom": 141.5
+    },
+    "body": {
+      "clientHeight": 1128,
+      "scrollHeight": 2440,
+      "contentFits": false
+    }
+  },
+  "drag-2560x1415": {
+    "before": {
+      "overlay": {
+        "w": 2560,
+        "h": 1415,
+        "x": 0,
+        "y": 0,
+        "display": "flex"
+      },
+      "dialog": {
+        "w": 600,
+        "h": 1273.5,
+        "x": 0,
+        "y": 0,
+        "margin": "0px",
+        "maxHeight": "1273.5px",
+        "offsetFromOverlayLeft": 0,
+        "offsetFromOverlayRight": 1960,
+        "offsetFromOverlayTop": 0,
+        "offsetFromOverlayBottom": 141.5
+      },
+      "body": {
+        "clientHeight": 1202,
+        "scrollHeight": 1202,
+        "contentFits": true
+      }
+    },
+    "after": {
+      "overlay": {
+        "w": 2560,
+        "h": 1415,
+        "x": 0,
+        "y": 0,
+        "display": "flex"
+      },
+      "dialog": {
+        "w": 600,
+        "h": 1273.5,
+        "x": -120,
+        "y": -80,
+        "margin": "0px",
+        "maxHeight": "none",
+        "offsetFromOverlayLeft": -120,
+        "offsetFromOverlayRight": 2080,
+        "offsetFromOverlayTop": -80,
+        "offsetFromOverlayBottom": 221.5
+      },
+      "body": {
+        "clientHeight": 1218,
+        "scrollHeight": 1218,
+        "contentFits": true
+      }
+    }
+  },
+  "console-2560x1415": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "short-1500x1000": {
+    "overlay": {
+      "w": 1500,
+      "h": 1000,
+      "x": 0,
+      "y": 0,
+      "display": "flex"
+    },
+    "dialog": {
+      "w": 600,
+      "h": 900,
+      "x": 0,
+      "y": 0,
+      "margin": "0px",
+      "maxHeight": "900px",
+      "offsetFromOverlayLeft": 0,
+      "offsetFromOverlayRight": 900,
+      "offsetFromOverlayTop": 0,
+      "offsetFromOverlayBottom": 100
+    },
+    "body": {
+      "clientHeight": 754,
+      "scrollHeight": 754,
+      "contentFits": true
+    }
+  },
+  "tall-1500x1000": {
+    "overlay": {
+      "w": 1500,
+      "h": 1000,
+      "x": 0,
+      "y": 0,
+      "display": "flex"
+    },
+    "dialog": {
+      "w": 600,
+      "h": 900,
+      "x": 0,
+      "y": 0,
+      "margin": "0px",
+      "maxHeight": "900px",
+      "offsetFromOverlayLeft": 0,
+      "offsetFromOverlayRight": 900,
+      "offsetFromOverlayTop": 0,
+      "offsetFromOverlayBottom": 100
+    },
+    "body": {
+      "clientHeight": 754,
+      "scrollHeight": 2440,
+      "contentFits": false
+    }
+  },
+  "drag-1500x1000": {
+    "before": {
+      "overlay": {
+        "w": 1500,
+        "h": 1000,
+        "x": 0,
+        "y": 0,
+        "display": "flex"
+      },
+      "dialog": {
+        "w": 600,
+        "h": 900,
+        "x": 0,
+        "y": 0,
+        "margin": "0px",
+        "maxHeight": "900px",
+        "offsetFromOverlayLeft": 0,
+        "offsetFromOverlayRight": 900,
+        "offsetFromOverlayTop": 0,
+        "offsetFromOverlayBottom": 100
+      },
+      "body": {
+        "clientHeight": 828,
+        "scrollHeight": 828,
+        "contentFits": true
+      }
+    },
+    "after": {
+      "overlay": {
+        "w": 1500,
+        "h": 1000,
+        "x": 0,
+        "y": 0,
+        "display": "flex"
+      },
+      "dialog": {
+        "w": 600,
+        "h": 900,
+        "x": -120,
+        "y": -80,
+        "margin": "0px",
+        "maxHeight": "none",
+        "offsetFromOverlayLeft": -120,
+        "offsetFromOverlayRight": 1020,
+        "offsetFromOverlayTop": -80,
+        "offsetFromOverlayBottom": 180
+      },
+      "body": {
+        "clientHeight": 844,
+        "scrollHeight": 844,
+        "contentFits": true
+      }
+    }
+  },
+  "console-1500x1000": []
+}

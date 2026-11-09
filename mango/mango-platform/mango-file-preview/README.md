@@ -315,3 +315,12 @@ mvn -f mango/pom.xml -pl :mango-file-preview-app -am \
 ### Issue #661 文件打包大小控制影响
 
 `mango-file` 的公共 `FileApi` 新增 `packageFilesWithSizeControl` 后，本模块测试替身同步该方法以保持消费者编译兼容。文件预览模块不调用新打包入口，预览 URL、源文件 token、转换缓存、权限、租户和浏览器验收流程均不变。
+
+### Issue #1171 xdocreport 旧 schema 依赖移除
+
+`mango-file-preview-engine` 不再传递 `fr.opensagres.xdocreport:org.apache.poi.xwpf.converter.core` 和 `org.apache.poi.xwpf.converter.xhtml`。这两个转换器未被引擎代码使用，却会传递 POI 3.x 时代的 `org.apache.poi:ooxml-schemas:1.1`，与 POI 5.2.5 的 `poi-ooxml-lite` 冲突，使消费方基于 POI 5 的 `WorkbookFactory` 解析抛 `NoSuchFieldError ... DocumentFactory Factory`。
+
+- 影响：`mango-file-preview-engine` 和 `mango-file-preview-starter` 的依赖树不再包含 `org.apache.poi:ooxml-schemas`；引擎仍保留 `fr.opensagres.xdocreport.document`，因为 `OnlinePreviewController` 使用其中的 `IOUtils`。
+- 需要做的事：业务项目升级到包含本修复的引擎或 starter 版本后，删除应用 POM 里为 `mango-file-preview-engine` 手工添加的 `org.apache.poi:ooxml-schemas` 排除；无需新增其它依赖。
+- 验证：`mvn -o -pl :mango-file-preview-engine,:mango-file-preview-starter dependency:tree -Dincludes=org.apache.poi:ooxml-schemas` 无输出，`mvn -pl :mango-file-preview-engine test` 通过。
+- 回滚：恢复这两个转换器依赖即可回到旧依赖图，但会同时恢复 POI 5 解析冲突。

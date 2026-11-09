@@ -43,7 +43,10 @@ public final class BaselineGenerateMojo extends AbstractMojo {
     private static final String BASELINE_RESOURCE_ROOT = "db/baseline";
     private static final String BASELINE_MANIFEST_PATH = "META-INF/mango/baseline-manifest.json";
 
-    @Parameter(property = "mango.baseline.jdbcUrl", required = true)
+    @Parameter(property = "mango.baseline.enabled", defaultValue = "true")
+    private boolean enabled;
+
+    @Parameter(property = "mango.baseline.jdbcUrl")
     private String jdbcUrl;
 
     @Parameter(property = "mango.baseline.username", defaultValue = "root")
@@ -112,6 +115,10 @@ public final class BaselineGenerateMojo extends AbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
+        if (!enabled) {
+            clearGeneratedResources();
+            return;
+        }
         validateConfiguration();
         String password = password();
         Set<String> includes = parseModuleSet(includedModules, "includedModules");
@@ -289,6 +296,22 @@ public final class BaselineGenerateMojo extends AbstractMojo {
                     "MANGO-BASELINE-033 configure mango.baseline.passwordEnv or explicitly allow an empty password");
         }
         return "";
+    }
+
+    private void clearGeneratedResources() throws MojoExecutionException {
+        try {
+            if (outputDirectory != null) {
+                deleteRecursively(outputDirectory.toPath().resolve(BASELINE_RESOURCE_ROOT));
+                Files.deleteIfExists(outputDirectory.toPath().resolve(BASELINE_MANIFEST_PATH));
+            }
+            if (classesDirectory != null) {
+                deleteRecursively(classesDirectory.toPath().resolve(BASELINE_RESOURCE_ROOT));
+                Files.deleteIfExists(classesDirectory.toPath().resolve(BASELINE_MANIFEST_PATH));
+            }
+        } catch (IOException exception) {
+            throw new MojoExecutionException(
+                    "MANGO-BASELINE-054 failed to clear disabled baseline resources", exception);
+        }
     }
 
     private void registerGeneratedResources(Path directory) {

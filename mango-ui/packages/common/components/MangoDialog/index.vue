@@ -229,7 +229,10 @@ defineExpose<MangoDialogExpose>({
   flex-direction: column;
   max-width: var(--mango-dialog-max-width);
   max-height: var(--mango-dialog-max-height);
-  margin: 0;
+  /* align-center 下 Element Plus 把 .el-overlay-dialog 设为 flex 容器，
+     只有 auto 外边距才能在水平、垂直两个方向居中，并阻止交叉轴 stretch
+     把弹框高度拉满 max-height（Issue #1169）。 */
+  margin: auto;
   padding: 0;
   overflow: hidden;
 }

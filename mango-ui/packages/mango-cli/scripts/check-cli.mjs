@@ -371,9 +371,24 @@ try {
   if (!/capability:\s*[\s\S]*?locker:\s*true/u.test(generatedApplicationYml)) {
     throw new Error('generated full backend must enable the KV locker capability');
   }
+  for (const capability of ['cache', 'rate-limiter', 'token-store']) {
+    if (!new RegExp(`capability:\\s*[\\s\\S]*?${capability}:\\s*true`, 'u').test(generatedApplicationYml)) {
+      throw new Error(`generated full backend must enable the KV ${capability} capability required by platform starters`);
+    }
+  }
+  if (!/security:\s*[\s\S]*?default-chain-enabled:\s*false/u.test(generatedApplicationYml)) {
+    throw new Error(
+      'generated full backend must disable the authorization default security filter chain; ' +
+        'the auth starter already registers the any-request chain',
+    );
+  }
+  if (!/cold-baseline:\s*[\s\S]*?enabled:\s*\$\{MANGO_COLD_BASELINE_ENABLED:false\}/u.test(generatedApplicationYml)) {
+    throw new Error('generated full backend must expose the ${MANGO_COLD_BASELINE_ENABLED:false} runtime switch');
+  }
   if (!/event:\s*[\s\S]*?outbox:\s*[\s\S]*?enabled:\s*true/u.test(generatedApplicationYml)) {
     throw new Error('generated full backend must enable the domain event outbox for the system event menu');
   }
+  assertFlywayModulesDeclared(generatedApplicationYml);
   if (
     !pom.includes('<flyway.version>11.20.3</flyway.version>') ||
     !pom.includes('<artifactId>flyway-core</artifactId>') ||
@@ -1731,6 +1746,88 @@ try {
 function assertEqual(actual, expected, field) {
   if (actual !== expected) {
     throw new Error(`${field} expected ${expected}, got ${actual}`);
+  }
+}
+
+function flywayModuleNames(applicationYml, source) {
+  const lines = applicationYml.split(/\r?\n/u);
+  const flywayIndex = lines.findIndex((line) => /^\s*flyway:\s*$/u.test(line));
+  const modulesIndex =
+    flywayIndex < 0 ? -1 : lines.findIndex((line, index) => index > flywayIndex && /^\s*modules:\s*$/u.test(line));
+  if (modulesIndex < 0) {
+    throw new Error(`${source} must declare mango.persistence.flyway.modules`);
+  }
+  const modulesIndent = lines[modulesIndex].search(/\S/u);
+  const names = new Set();
+  for (const line of lines.slice(modulesIndex + 1)) {
+    if (line.trim() === '') {
+      continue;
+    }
+    const indent = line.search(/\S/u);
+    if (indent <= modulesIndent) {
+      break;
+    }
+    if (indent !== modulesIndent + 2) {
+      continue;
+    }
+    const name = line.trim().match(/^([A-Za-z0-9_-]+):/u)?.[1];
+    if (name) {
+      names.add(name);
+    }
+  }
+  return names;
+}
+
+function platformMonolithFlywayModules() {
+  const monolithPath = resolve(
+    packageRoot,
+    '../../..',
+    'mango/mango-app/monolith/mango-monolith-app/src/main/resources/application.yml',
+  );
+  return flywayModuleNames(readFileSync(monolithPath, 'utf8'), 'platform monolith application.yml');
+}
+
+function repositoryFlywayModules() {
+  const modules = new Set();
+  const migrationSuffix = join('src', 'main', 'resources', 'db', 'migration');
+  const stack = [resolve(packageRoot, '../../../mango')];
+  while (stack.length > 0) {
+    const current = stack.pop();
+    if (current.endsWith(migrationSuffix)) {
+      for (const entry of readdirSync(current, { withFileTypes: true })) {
+        if (entry.isDirectory()) {
+          modules.add(entry.name);
+        }
+      }
+      continue;
+    }
+    for (const entry of readdirSync(current, { withFileTypes: true })) {
+      if (!entry.isDirectory() || entry.name === 'target' || entry.name.startsWith('.')) {
+        continue;
+      }
+      stack.push(join(current, entry.name));
+    }
+  }
+  return modules;
+}
+
+function assertFlywayModulesDeclared(generatedApplicationYml) {
+  const declared = flywayModuleNames(generatedApplicationYml, 'generated full backend application.yml');
+  const repositoryModules = repositoryFlywayModules();
+  const platformModules = [...platformMonolithFlywayModules()].filter((module) => repositoryModules.has(module));
+  const missing = platformModules.filter((module) => !declared.has(module));
+  const extra = [...declared].filter((module) => !repositoryModules.has(module));
+  if (missing.length > 0) {
+    throw new Error(
+      `generated full backend must declare every platform Flyway module: missing=${missing.join(',')}; ` +
+        'undeclared classpath migrations fail closed at bootstrap',
+    );
+  }
+  if (extra.length > 0) {
+    throw new Error(
+      `generated full backend declares Flyway modules without migrations in the platform repository: ` +
+        `extra=${extra.join(',')}; modules without migrations block cold baseline generation`,
+    );
   }
 }
 

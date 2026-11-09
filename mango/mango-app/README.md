@@ -151,3 +151,7 @@ app 层只装配权限能力。菜单、权限和租户数据由 `mango-authoriz
 ### Issue #1055 信息采集模块迁移开关
 
 单体 `application.yml` 的 `mango.persistence.flyway.modules.mango-information.enabled=true` 声明信息采集模块迁移。未声明而 classpath 存在该模块迁移时启动会失败并提示补声明；既有模块迁移开关、Flyway 顺序和单体启动入口不变。
+
+### Issue #1167 单体 Flyway 模块声明与冷基线
+
+单体 `application.yml` 不再声明没有 migration 的 `notification` 模块；`mango.persistence.flyway.modules` 只列真实拥有 `db/migration/<module>` 的模块。启用构建期冷基线时，声明了空模块会在空库 fail closed。单体启动、模块顺序、已有库增量迁移和现有配置项均不变。

@@ -142,8 +142,6 @@ mango:
           out-of-order: true
         kv:
           enabled: true
-        notification:
-          enabled: true
         calendar:
           enabled: true
         numgen:

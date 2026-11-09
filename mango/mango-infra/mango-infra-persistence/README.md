@@ -309,8 +309,8 @@ mango:
 | `enabled` | `true` | 全局迁移开关 |
 | `upgrade-locations-enabled` | `true` | 是否启用默认外部升级目录；目录存在时追加到未显式配置 locations 的模块 |
 | `upgrade-root` | 空 | 默认外部升级根目录；为空时按 `mango.upgrade.root`、`MANGO_UPGRADE_DIR`、`mango.home`/`MANGO_HOME`、`/opt/mango/upgrade` 解析 |
-| `cold-baseline.enabled` | `false` | 是否允许 Bootstrap 对真正空库执行每模块当前基线 |
-| `modules.<module>.enabled` | `true` | 是否执行当前模块迁移 |
+| `cold-baseline.enabled` | `false` | 是否允许 Bootstrap 对真正空库执行每模块当前基线；Mango CLI full 模板通过 `MANGO_COLD_BASELINE_ENABLED` 控制，默认 `false` |
+| `modules.<module>.enabled` | `true` | 是否执行当前模块迁移；声明但没有 migration 的模块在 cold baseline 时会被跳过并记录 WARN；有 migration 但缺 B 时才 fail closed |
 | `modules.<module>.skip-reason` | 空 | `enabled=false` 且 classpath 存在当前模块 migration 时必须填写的跳过原因 |
 | `modules.<module>.baseline-on-migrate` | `true` | 存量库无 history table 时是否从 baseline 接管 |
 | `modules.<module>.out-of-order` | `false` | 是否允许非顺序版本补跑 |
@@ -425,7 +425,7 @@ mango:
 
 ### 6.5 Cold Baseline
 
-模块历史 migration 很多时，主分支 API 制品构建将 `mango:baseline-generate` 绑定到 `generate-resources`，从模块最终 V 生成当前完整基线：
+模块历史 migration 很多时，主分支 API 制品构建将 `mango:baseline-generate` 绑定到最终 API 应用的 `prepare-package`，从模块最终 V 生成当前完整基线。Mango CLI full 后端模板已经预置该 execution；业务构建通过 `-Dmango.baseline.enabled=true` 决定是否生成 BSQL，默认 plain 构建会清理旧的 generated baseline 资源：
 
 ```text
 target/generated-resources/db/baseline/<module>/B<version>__baseline.sql
@@ -472,8 +472,8 @@ Bootstrap 消费制品时按逻辑数据源分组，并按数据源 key、模块
 | 数据库状态 | 执行路径 |
 |------------|----------|
 | 全新空库且 `cold-baseline.enabled=true` | 先执行每模块唯一 `B*`，再执行高于 `B<version>` 的 expand migration。 |
-| 全新空库但未准备完整 `B*` | fail closed；关闭 cold baseline 后才能从 V1 回放。 |
-| 已有模块 history 的数据库 | 不执行 cold baseline，继续按模块执行 expand/finalize 增量。 |
+| 全新空库且 cold baseline 已开启但未准备完整 `B*` | fail closed；关闭 cold baseline 后才能从 V1 回放。 |
+| 已有业务表或模块 history 的数据库 | 在解析 BSQL 前跳过 cold baseline，继续按模块执行 expand/finalize 增量；制品可以在 plain 与 BSQL 之间切换。 |
 | 半初始化且没有完成回执 | MySQL DDL 不可事务回滚；删除并重建该一次性空库后重试。 |
 
 性能回归入口为仓库根目录 `scripts/tests/bootstrap-performance.sh`。当前 MySQL 8.4 基线使用 5 个模块、375 张表、37,500 行和 16,372,270 SQL 字节，实测 4.805 秒；该数字是开发机证据，不替代目标环境验收。
