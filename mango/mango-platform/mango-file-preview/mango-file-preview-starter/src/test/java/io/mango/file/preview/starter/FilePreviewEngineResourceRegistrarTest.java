@@ -48,6 +48,12 @@ class FilePreviewEngineResourceRegistrarTest {
                 })
                 .anySatisfy(resource -> {
                     assertThat(resource.getHttpMethod()).isEqualTo("GET");
+                    assertThat(resource.getPathPattern()).isEqualTo("/file-preview/files/preview-artifact");
+                    assertThat(resource.getResourceCode()).isEqualTo("GET:/file-preview/files/preview-artifact");
+                    assertThat(resource.getAccessMode()).isEqualTo(ApiResourceAccessMode.PUBLIC);
+                })
+                .anySatisfy(resource -> {
+                    assertThat(resource.getHttpMethod()).isEqualTo("GET");
                     assertThat(resource.getPathPattern()).isEqualTo("/file-preview/sources");
                     assertThat(resource.getResourceCode()).isEqualTo("GET:/file-preview/sources");
                     assertThat(resource.getAccessMode()).isEqualTo(ApiResourceAccessMode.PUBLIC);
@@ -61,6 +67,12 @@ class FilePreviewEngineResourceRegistrarTest {
 
         assertThat(api.resources)
                 .noneMatch(resource -> "/file-*.pdf".equals(resource.getPathPattern()));
+    }
+
+    @Test
+    void permitPaths_allowGeneratedArtifactByTokenSoEmbeddedOfficePreviewDoesNotRequireLogin() {
+        assertThat(FilePreviewPermitPathBeanPostProcessor.permitPaths())
+                .contains("/file-preview/files/preview-content", "/file-preview/files/preview-artifact");
     }
 
     @Test

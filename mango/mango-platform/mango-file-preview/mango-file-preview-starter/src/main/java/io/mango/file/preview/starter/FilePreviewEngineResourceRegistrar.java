@@ -34,6 +34,7 @@ public class FilePreviewEngineResourceRegistrar implements ApplicationRunner, Or
                 publicGet("/file-preview/files/preview-entry", "文件预览临时入口"),
                 publicGet("/file-preview/files/preview-progress", "文件预览转换状态"),
                 publicGet("/file-preview/files/preview-content", "文件预览原始内容"),
+                publicGet("/file-preview/files/preview-artifact", "文件预览已生成产物"),
                 publicGet("/file-preview/sources", "读取文件预览源文件"),
                 publicGet("/file-preview/generated", "读取转换后的预览文件"),
                 publicGet("/pdfjs/**", "PDF 预览静态资源"),

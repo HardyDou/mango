@@ -157,7 +157,8 @@ mango:
       root-path: ${MANGO_FILE_ROOT:./data/files}
   fileproc:
     convert:
-      office-to-pdf-enabled: ${MANGO_OFFICE_PLUGIN_ENABLED:false}
+      # Office 文档转 PDF 默认优先使用本地 LibreOffice；只有显式关闭时才回退 Aspose。
+      office-to-pdf-enabled: true
   workflow:
     enabled: true
   job:

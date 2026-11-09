@@ -3,6 +3,7 @@ package io.mango.file.preview.starter.controller;
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.contract.BinaryHttpAdapter;
+import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
@@ -27,6 +28,10 @@ class FilePreviewControllerAccessModeTest {
     void tokenPreviewEndpointsRemainPublicBecauseTheyRequireShortLivedTokens() throws NoSuchMethodException {
         assertAccessMode(FilePreviewPageController.class, "redirectPreviewEntry",
                 ApiResourceAccessMode.PUBLIC, "", String.class);
+        assertAccessMode(FilePreviewPageController.class, "previewArtifact",
+                ApiResourceAccessMode.PUBLIC, "", String.class, HttpServletResponse.class);
+        assertAccessMode(FilePreviewPageController.class, "previewContent",
+                ApiResourceAccessMode.PUBLIC, "", String.class, HttpServletResponse.class);
         assertAccessMode(FilePreviewSourceController.class, "source",
                 ApiResourceAccessMode.PUBLIC, "", String.class);
         assertAccessMode(FilePreviewSourceController.class, "generated",

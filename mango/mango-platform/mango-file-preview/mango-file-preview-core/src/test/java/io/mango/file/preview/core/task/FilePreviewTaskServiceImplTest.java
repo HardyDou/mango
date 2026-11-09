@@ -137,6 +137,56 @@ class FilePreviewTaskServiceImplTest {
     }
 
     @Test
+    void archiveUsesEnginePreviewWithoutPdfConversion() throws Exception {
+        FileApi fileApi = mock(FileApi.class);
+        IFileContentProvider contentProvider = mock(IFileContentProvider.class);
+        ConvertApi convertApi = mock(ConvertApi.class);
+        ITokenStore taskStore = mock(ITokenStore.class);
+        FileRecordVO record = record(48L, "bundle.zip");
+        when(fileApi.get(48L)).thenReturn(io.mango.common.result.R.ok(record));
+        FilePreviewTaskServiceImpl service = new FilePreviewTaskServiceImpl(
+                new FilePreviewFileGateway(fileApi, contentProvider), contentProvider, convertApi,
+                taskStore, availableLeaseLocker(), new ObjectMapper().registerModule(new JavaTimeModule()),
+                new FilePreviewProperties(), testExecutor());
+
+        service.submit(48L, false);
+        await(() -> service.status(48L, false).getStatus() == FilePreviewTaskStatus.SUCCEEDED);
+
+        FilePreviewTaskVO result = service.status(48L, false);
+        assertThat(result.getPreviewFileId()).isNull();
+        verify(convertApi, never()).canConvert(any(), any());
+        verify(convertApi, never()).convert(any());
+        verify(contentProvider, never()).save(any());
+    }
+
+    @Test
+    void converterErrorMarksTaskFailedInsteadOfStayingProcessing() throws Exception {
+        FileApi fileApi = mock(FileApi.class);
+        IFileContentProvider contentProvider = mock(IFileContentProvider.class);
+        ConvertApi convertApi = mock(ConvertApi.class);
+        ITokenStore taskStore = mock(ITokenStore.class);
+        FileRecordVO record = record(49L, "slides.pptx");
+        when(fileApi.get(49L)).thenReturn(io.mango.common.result.R.ok(record));
+        when(convertApi.canConvert(any(), any())).thenReturn(true);
+        when(contentProvider.downloadForService(49L)).thenReturn(new FileDownloadVO(
+                new ByteArrayInputStream(new byte[]{4}), "slides.pptx",
+                "application/vnd.openxmlformats-officedocument.presentationml.presentation", 1));
+        when(convertApi.convert(any())).thenThrow(new ExceptionInInitializerError("unsupported culture"));
+        FilePreviewTaskServiceImpl service = new FilePreviewTaskServiceImpl(
+                new FilePreviewFileGateway(fileApi, contentProvider), contentProvider, convertApi,
+                taskStore, availableLeaseLocker(), new ObjectMapper().registerModule(new JavaTimeModule()),
+                new FilePreviewProperties(), testExecutor());
+
+        service.submit(49L, false);
+        await(() -> service.status(49L, false).getStatus() == FilePreviewTaskStatus.FAILED);
+
+        FilePreviewTaskVO result = service.status(49L, false);
+        assertThat(result.getProgress()).isEqualTo(100);
+        assertThat(result.getMessage()).isEqualTo("预览生成失败，请下载原文件查看");
+        assertThat(result.getPreviewFileId()).isNull();
+    }
+
+    @Test
     void submit_withoutConversionCapability_reportsExplicitFailure() throws Exception {
         FileApi fileApi = mock(FileApi.class);
         IFileContentProvider contentProvider = mock(IFileContentProvider.class);
