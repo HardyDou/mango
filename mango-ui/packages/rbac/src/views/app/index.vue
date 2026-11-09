@@ -1,12 +1,41 @@
 <!-- mango-page-baseline-exception list: 应用列表接口返回当前平台应用集合，不支持分页列表语义；模块运行策略仍在列表上下文抽屉中维护。 -->
 <template>
   <MangoListPage class="app-page" data-page="system.app">
+    <template #search>
+      <MangoSearchPanel :model="query" :columns="3" @search="applySearch" @reset="resetSearch">
+        <el-form-item label="应用名称">
+          <el-input
+            v-model="query.keyword"
+            clearable
+            class="app-page__keyword"
+            placeholder="名称或应用编码"
+            @keyup.enter="applySearch"
+          />
+        </el-form-item>
+        <el-form-item label="入口类型">
+          <el-select v-model="query.appType" clearable placeholder="全部">
+            <el-option v-for="item in appTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-select v-model="query.status" clearable placeholder="全部">
+            <el-option
+              v-for="item in statusOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="Number(item.value)"
+            />
+          </el-select>
+        </el-form-item>
+      </MangoSearchPanel>
+    </template>
+
     <MangoListPanel>
       <template #actions>
         <el-button type="primary" plain @click="handleAdd">新增应用</el-button>
       </template>
 
-      <el-table v-loading="loading" :data="tableData" stripe>
+      <el-table v-loading="loading" :data="filteredApps" stripe empty-text="暂无逻辑应用">
         <el-table-column prop="appName" label="应用名称" min-width="160" />
         <el-table-column prop="appCode" label="应用编码" min-width="160" />
         <el-table-column prop="appType" label="入口类型" width="120">
@@ -78,119 +107,157 @@
     <MangoDialog
       v-model="dialogVisible"
       :title="form.appId ? '编辑应用' : '新增应用'"
-      width="min(640px, 92vw)"
+      width="min(680px, 94vw)"
       destroy-on-close
     >
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
-        <el-form-item label="应用名称" prop="appName">
-          <el-input v-model="form.appName" />
-        </el-form-item>
-        <el-form-item label="应用编码" prop="appCode">
-          <el-input v-model="form.appCode" :disabled="!!form.appId" />
-        </el-form-item>
-        <el-form-item label="入口类型" prop="appType">
-          <el-select v-model="form.appType">
-            <el-option v-for="item in appTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="部署模式" prop="deployMode">
-          <el-select v-model="form.deployMode">
-            <el-option v-for="item in deployModeOptions" :key="item.value" :label="item.label" :value="item.value" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="入口地址" prop="entryUrl" v-if="form.appType !== 'LOCAL'">
-          <el-input v-model="form.entryUrl" placeholder="远程入口、iframe 或外链地址" />
-        </el-form-item>
-        <el-form-item label="挂载路径" prop="mountPath">
-          <el-input v-model="form.mountPath" placeholder="/micro/workflow" />
-        </el-form-item>
-        <el-form-item label="激活规则" prop="activeRule">
-          <el-input v-model="form.activeRule" placeholder="/workflow/**" />
-        </el-form-item>
-        <el-form-item label="运行框架">
-          <el-select v-model="form.framework" clearable filterable>
-            <el-option v-for="item in frameworkOptions" :key="item.value" :label="item.label" :value="item.value" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="版本">
-          <el-input v-model="form.version" placeholder="例如 1.0.0" />
-        </el-form-item>
-        <el-form-item label="健康检查">
-          <el-input v-model="form.healthCheckUrl" placeholder="健康检查地址" />
-        </el-form-item>
-        <el-form-item label="沙箱" v-if="form.appType === 'MICRO_APP' || form.deployMode !== 'EMBEDDED'">
-          <el-switch v-model="form.sandboxEnabled" />
-        </el-form-item>
-        <el-form-item label="样式隔离">
-          <el-select v-model="form.styleIsolation">
-            <el-option
-              v-for="item in styleIsolationOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="登录上下文" prop="loginContexts">
-          <div class="context-editor">
-            <div v-for="(context, index) in form.loginContexts" :key="index" class="context-row">
-              <div class="context-fields">
-                <DictSelect
-                  v-model="context.realm"
-                  dict-type="auth_realm"
-                  placeholder="登录域"
-                  filterable
-                  @change="handleRealmChange(context)"
-                />
-                <DictSelect
-                  v-model="context.actorType"
-                  dict-type="auth_actor_type"
-                  placeholder="操作者类型"
-                  filterable
-                />
-              </div>
-              <div class="context-actions">
-                <el-checkbox :model-value="context.defaultFlag === 1" @change="setDefaultContext(index)">
-                  默认
-                </el-checkbox>
-                <div class="status-switch">
-                  <span>启用</span>
-                  <el-switch v-model="context.status" :active-value="1" :inactive-value="0" />
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" class="app-form">
+        <el-tabs v-model="formTab" class="app-form-tabs">
+          <el-tab-pane label="基础信息" name="basic">
+            <el-form-item label="应用名称" prop="appName">
+              <el-input v-model="form.appName" placeholder="展示给使用者的应用名称" />
+            </el-form-item>
+            <el-form-item label="应用编码" prop="appCode">
+              <el-input v-model="form.appCode" :disabled="!!form.appId" placeholder="例如 internal-admin" />
+              <div class="section-hint">唯一标识，创建后不可修改，菜单和权限按它关联。</div>
+            </el-form-item>
+            <div class="form-grid">
+              <el-form-item label="入口类型" prop="appType">
+                <el-select v-model="form.appType">
+                  <el-option v-for="item in appTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="部署模式" prop="deployMode">
+                <el-select v-model="form.deployMode">
+                  <el-option
+                    v-for="item in deployModeOptions"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  />
+                </el-select>
+              </el-form-item>
+            </div>
+            <el-form-item v-if="form.appType !== 'LOCAL'" label="入口地址" prop="entryUrl">
+              <el-input v-model="form.entryUrl" placeholder="远程入口、iframe 或外链地址" />
+            </el-form-item>
+            <el-form-item label="图标" prop="icon">
+              <div class="icon-picker-field">
+                <div class="icon-preview">
+                  <el-icon v-if="form.icon" size="18">
+                    <component :is="form.icon" />
+                  </el-icon>
+                  <span v-else>-</span>
                 </div>
-                <el-button link type="danger" :disabled="form.loginContexts.length <= 1" @click="removeContext(index)">
-                  删除
-                </el-button>
+                <el-input v-model="form.icon" readonly placeholder="请选择应用图标" />
+                <el-button @click="openIconSelector"> 选择 </el-button>
+                <el-button v-if="form.icon" link type="danger" @click="form.icon = ''"> 清空 </el-button>
               </div>
+            </el-form-item>
+            <div class="form-grid">
+              <el-form-item label="状态" prop="status">
+                <el-radio-group v-model="form.status">
+                  <el-radio v-for="item in statusOptions" :key="item.value" :value="Number(item.value)">
+                    {{ item.label }}
+                  </el-radio>
+                </el-radio-group>
+              </el-form-item>
+              <el-form-item label="排序" prop="sort">
+                <el-input-number v-model="form.sort" :min="0" :max="9999" />
+              </el-form-item>
             </div>
-            <el-button class="context-add-button" @click="addContext"> 新增登录上下文 </el-button>
-          </div>
-        </el-form-item>
-        <el-form-item label="图标" prop="icon">
-          <div class="icon-picker-field">
-            <div class="icon-preview">
-              <el-icon v-if="form.icon" size="18">
-                <component :is="form.icon" />
-              </el-icon>
-              <span v-else>-</span>
+            <el-form-item label="备注" prop="remark">
+              <el-input v-model="form.remark" type="textarea" :rows="2" placeholder="说明应用用途或负责人" />
+            </el-form-item>
+          </el-tab-pane>
+
+          <el-tab-pane label="运行配置" name="runtime">
+            <el-form-item label="挂载路径" prop="mountPath">
+              <el-input v-model="form.mountPath" placeholder="/micro/workflow" />
+              <div class="section-hint">页面在什么路径下渲染，留空表示使用应用默认路径。</div>
+            </el-form-item>
+            <el-form-item label="激活规则" prop="activeRule">
+              <el-input v-model="form.activeRule" placeholder="/workflow/**" />
+              <div class="section-hint">微前端路由命中规则，仅微应用和远程入口需要。</div>
+            </el-form-item>
+            <div class="form-grid">
+              <el-form-item label="运行框架">
+                <el-select v-model="form.framework" clearable filterable>
+                  <el-option
+                    v-for="item in frameworkOptions"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="版本">
+                <el-input v-model="form.version" placeholder="例如 1.0.0" />
+              </el-form-item>
             </div>
-            <el-input v-model="form.icon" readonly placeholder="请选择应用图标" />
-            <el-button @click="openIconSelector"> 选择 </el-button>
-            <el-button v-if="form.icon" @click="form.icon = ''"> 清空 </el-button>
-          </div>
-        </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-radio-group v-model="form.status">
-            <el-radio v-for="item in statusOptions" :key="item.value" :value="Number(item.value)">
-              {{ item.label }}
-            </el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="排序" prop="sort">
-          <el-input-number v-model="form.sort" :min="0" :max="9999" />
-        </el-form-item>
-        <el-form-item label="备注" prop="remark">
-          <el-input v-model="form.remark" type="textarea" :rows="3" />
-        </el-form-item>
+            <el-form-item label="健康检查">
+              <el-input v-model="form.healthCheckUrl" placeholder="健康检查地址" />
+              <div class="section-hint">独立部署或远程应用被探测时使用，内置应用可留空。</div>
+            </el-form-item>
+            <div class="form-grid">
+              <el-form-item label="样式隔离">
+                <el-select v-model="form.styleIsolation">
+                  <el-option
+                    v-for="item in styleIsolationOptions"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  />
+                </el-select>
+              </el-form-item>
+              <el-form-item v-if="form.appType === 'MICRO_APP' || form.deployMode !== 'EMBEDDED'" label="沙箱">
+                <el-switch v-model="form.sandboxEnabled" />
+              </el-form-item>
+            </div>
+          </el-tab-pane>
+
+          <el-tab-pane label="登录上下文" name="contexts">
+            <el-form-item label="登录上下文" prop="loginContexts">
+              <div class="context-editor">
+                <div class="section-hint">决定谁可以用什么身份进入该应用；多个上下文时需指定一个默认项。</div>
+                <div v-for="(context, index) in form.loginContexts" :key="index" class="context-row">
+                  <div class="context-fields">
+                    <DictSelect
+                      v-model="context.realm"
+                      dict-type="auth_realm"
+                      placeholder="登录域"
+                      filterable
+                      @change="handleRealmChange(context)"
+                    />
+                    <DictSelect
+                      v-model="context.actorType"
+                      dict-type="auth_actor_type"
+                      placeholder="操作者类型"
+                      filterable
+                    />
+                  </div>
+                  <div class="context-actions">
+                    <el-checkbox :model-value="context.defaultFlag === 1" @change="setDefaultContext(index)">
+                      默认
+                    </el-checkbox>
+                    <div class="status-switch">
+                      <span>启用</span>
+                      <el-switch v-model="context.status" :active-value="1" :inactive-value="0" />
+                    </div>
+                    <el-button
+                      link
+                      type="danger"
+                      :disabled="form.loginContexts.length <= 1"
+                      @click="removeContext(index)"
+                    >
+                      删除
+                    </el-button>
+                  </div>
+                </div>
+                <el-button class="context-add-button" @click="addContext"> 新增登录上下文 </el-button>
+              </div>
+            </el-form-item>
+          </el-tab-pane>
+        </el-tabs>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false"> 取消 </el-button>
@@ -256,9 +323,25 @@
             </el-select>
           </template>
         </el-table-column>
-        <el-table-column prop="runtimeCode" label="运行单元" min-width="170">
+        <el-table-column prop="runtimeCode" label="运行单元" min-width="190">
           <template #default="{ row }">
-            <el-input v-model="row.runtimeCode" size="small" />
+            <el-select
+              v-if="row.pageType === 'MICRO_ROUTE'"
+              v-model="row.runtimeCode"
+              size="small"
+              filterable
+              allow-create
+              default-first-option
+              placeholder="选择微应用"
+            >
+              <el-option
+                v-for="item in microAppOptions"
+                :key="item.appCode"
+                :label="`${item.appName}（${item.appCode}）`"
+                :value="item.appCode"
+              />
+            </el-select>
+            <span v-else class="muted">本地页面无需运行单元</span>
           </template>
         </el-table-column>
         <el-table-column prop="status" label="状态" width="100">
@@ -277,7 +360,15 @@
 </template>
 
 <script setup lang="ts" name="SystemApp">
-import { DictSelect, DictTag, IconSelector, MangoDialog, MangoListPage, MangoListPanel } from '@mango/common';
+import {
+  DictSelect,
+  DictTag,
+  IconSelector,
+  MangoDialog,
+  MangoListPage,
+  MangoListPanel,
+  MangoSearchPanel,
+} from '@mango/common';
 import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import { useDict } from '@mango/common/hooks/useDict';
@@ -336,11 +427,18 @@ const actorTypeByRealm: Record<string, string> = {
   FINANCIAL: 'FINANCIAL_USER',
 };
 
+const query = reactive({
+  keyword: '',
+  appType: undefined as string | undefined,
+  status: undefined as number | undefined,
+});
+const appliedQuery = reactive({ ...query });
 const loading = ref(false);
 const submitLoading = ref(false);
 const moduleLoading = ref(false);
 const strategyLoading = ref(false);
 const dialogVisible = ref(false);
+const formTab = ref('basic');
 const moduleDrawerVisible = ref(false);
 const tableData = ref<AuthorizationApp[]>([]);
 const moduleBindings = ref<AppModuleBinding[]>([]);
@@ -379,6 +477,35 @@ const rules: FormRules = {
   loginContexts: [{ required: true, validator: validateLoginContexts, trigger: 'change' }],
   status: [{ required: true, message: '请选择状态', trigger: 'change' }],
 };
+
+const microAppOptions = computed(() => tableData.value.filter((app) => app.appType === 'MICRO_APP'));
+
+const filteredApps = computed(() => {
+  const keyword = appliedQuery.keyword.trim().toLowerCase();
+  return tableData.value.filter((app) => {
+    if (app.appType === 'MICRO_APP') {
+      return false;
+    }
+    const matchesKeyword =
+      !keyword ||
+      (app.appName || '').toLowerCase().includes(keyword) ||
+      (app.appCode || '').toLowerCase().includes(keyword);
+    const matchesType = !appliedQuery.appType || app.appType === appliedQuery.appType;
+    const matchesStatus = appliedQuery.status === undefined || app.status === appliedQuery.status;
+    return matchesKeyword && matchesType && matchesStatus;
+  });
+});
+
+function applySearch() {
+  Object.assign(appliedQuery, query);
+}
+
+function resetSearch() {
+  query.keyword = '';
+  query.appType = undefined;
+  query.status = undefined;
+  applySearch();
+}
 
 const iconValue = computed({
   get: () => form.icon || '',
@@ -420,11 +547,13 @@ function resetForm() {
 }
 
 function handleAdd() {
+  formTab.value = 'basic';
   resetForm();
   dialogVisible.value = true;
 }
 
 function handleEdit(row: AuthorizationApp) {
+  formTab.value = 'basic';
   Object.assign(form, {
     ...row,
     appType: row.appType || 'LOCAL',
@@ -675,7 +804,54 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
-.app-container {
+.app-page {
+  min-width: 0;
+
+  .app-page__keyword {
+    width: 100%;
+  }
+
+  .app-form-tabs {
+    :deep(.el-tabs__header) {
+      margin-bottom: 16px;
+    }
+
+    :deep(.el-tabs__item) {
+      font-size: 14px;
+    }
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 12px;
+  }
+
+  .muted {
+    color: var(--el-text-color-secondary);
+    font-size: 12px;
+  }
+
+  .section-hint {
+    width: 100%;
+    margin-top: 4px;
+    color: var(--el-text-color-secondary);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  @media (width <= 720px) {
+    .form-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .field-hint {
+    color: var(--el-text-color-secondary);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
   .card-header {
     display: flex;
     align-items: center;

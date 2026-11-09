@@ -796,3 +796,55 @@ mango:
                     - AFTER_SALE
                   sort: 40
                   status: 1
+        - id: "2026061800500009901"
+          version: 1
+          biz-key: system.dict.integration-connector-category
+          name: 集成连接器用途分类
+          target-module: system
+          fields:
+            typeId:
+              type: LONG
+              value: 9901
+            dictType:
+              type: STRING
+              value: integration_connector_category
+            dictName:
+              type: STRING
+              value: 集成连接器用途分类
+            domainCode:
+              type: STRING
+              value: COMMON
+            shape:
+              type: STRING
+              value: FLAT
+            remark:
+              type: STRING
+              value: 集成连接器用途分类，例如支付、消息
+            items:
+              type: LIST
+              value:
+                - id: 990101
+                  label: 支付
+                  value: PAYMENT
+                  sort: 10
+                  status: 1
+                - id: 990102
+                  label: 消息
+                  value: MESSAGE
+                  sort: 20
+                  status: 1
+                - id: 990103
+                  label: 身份
+                  value: IDENTITY
+                  sort: 30
+                  status: 1
+                - id: 990104
+                  label: 文件
+                  value: FILE
+                  sort: 40
+                  status: 1
+                - id: 990105
+                  label: 其他
+                  value: OTHER
+                  sort: 50
+                  status: 1

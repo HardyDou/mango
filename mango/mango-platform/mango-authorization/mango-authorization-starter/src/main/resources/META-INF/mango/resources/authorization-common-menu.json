@@ -9,7 +9,7 @@
         "AUTH_MENU": [
           {
             "id": "2951300000000008101",
-            "version": 5,
+            "version": 10,
             "bizKey": "authorization.menu.internal-admin",
             "name": "授权基础菜单",
             "targetModule": "authorization",
@@ -149,15 +149,29 @@
                     ]
                   },
                   {
-                    "menuType": 2,
+                    "menuType": 1,
                     "menuName": "应用管理",
+                    "menuCode": "system:application",
+                    "path": "/system/application",
+                    "icon": "Box",
+                    "sort": 2,
+                    "redirect": "/system/app",
+                    "remark": "逻辑应用与集成应用统一入口",
+                    "parentCode": "system",
+                    "packageCodes": [
+                      "platform_admin"
+                    ]
+                  },
+                  {
+                    "menuType": 2,
+                    "menuName": "逻辑应用",
                     "menuCode": "system:app",
                     "path": "/system/app",
                     "icon": "Box",
                     "component": "system/app/index",
-                    "sort": 2,
-                    "remark": "授权应用入口管理",
-                    "parentCode": "system",
+                    "sort": 1,
+                    "remark": "面向人员使用的逻辑应用入口、登录上下文和运行配置",
+                    "parentCode": "system:application",
                     "packageCodes": [
                       "platform_admin"
                     ],
@@ -167,6 +181,24 @@
                       "authorization:app:add",
                       "authorization:app:edit",
                       "authorization:app:delete"
+                    ]
+                  },
+                  {
+                    "menuType": 2,
+                    "menuName": "微应用",
+                    "menuCode": "system:micro-application",
+                    "path": "/system/micro-application",
+                    "icon": "Grid",
+                    "component": "system/micro-application/index",
+                    "sort": 2,
+                    "remark": "前端运行单元总览：入口、版本、健康检查和被引用模块",
+                    "parentCode": "system:application",
+                    "packageCodes": [
+                      "platform_admin"
+                    ],
+                    "apiCodes": [
+                      "authorization:app:list",
+                      "authorization:app:query"
                     ]
                   }
                 ]

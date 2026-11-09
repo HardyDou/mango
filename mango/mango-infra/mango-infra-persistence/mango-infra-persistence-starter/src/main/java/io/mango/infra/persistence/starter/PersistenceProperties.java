@@ -109,6 +109,7 @@ public class PersistenceProperties {
                         "authorization_app", "authorization_app_login_context",
                         "authorization_app_module", "authorization_frontend_app_registry", "frontend_menu_runtime_config",
                         "authorization_frontend_module_runtime_strategy",
+                        "integration_connector",
                         "identity_user", "tenant_member", "tenant_member_org"));
     }
 

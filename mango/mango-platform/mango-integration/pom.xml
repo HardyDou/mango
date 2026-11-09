@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.mango</groupId>
+        <artifactId>mango</artifactId>
+        <version>${revision}</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+
+    <groupId>io.mango.platform.integration</groupId>
+
+    <artifactId>mango-integration</artifactId>
+    <packaging>pom</packaging>
+
+    <name>Mango Integration</name>
+    <description>Mango Integration Module - connector definitions, credentials, and connection instances</description>
+
+    <modules>
+        <module>mango-integration-api</module>
+        <module>mango-integration-support</module>
+        <module>mango-integration-core</module>
+        <module>mango-integration-starter</module>
+    </modules>
+
+</project>

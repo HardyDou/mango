@@ -68,6 +68,10 @@
             <artifactId>mango-authorization-starter</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.mango.platform.integration</groupId>
+            <artifactId>mango-integration-starter</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.mango.platform.authorization</groupId>
             <artifactId>mango-authorization-resource-sync-starter</artifactId>
         </dependency>

@@ -1,0 +1,111 @@
+{
+  "mango": {
+    "resource": {
+      "schemaVersion": 1,
+      "moduleCode": "integration",
+      "moduleName": "集成应用模块",
+      "moduleDependencies": [
+        "system"
+      ],
+      "declarations": {
+        "AUTH_MENU": [
+          {
+            "id": "2960000000000000101",
+            "version": 2,
+            "bizKey": "integration.menu.internal-admin",
+            "name": "集成管理菜单",
+            "targetModule": "integration",
+            "fields": {
+              "appCode": {
+                "type": "STRING",
+                "value": "internal-admin"
+              },
+              "moduleCode": {
+                "type": "STRING",
+                "value": "mango-integration"
+              },
+              "moduleName": {
+                "type": "STRING",
+                "value": "集成应用模块"
+              },
+              "sort": {
+                "type": "INT",
+                "value": 6
+              },
+              "packageCodes": {
+                "type": "LIST",
+                "value": []
+              },
+              "roleCodes": {
+                "type": "LIST",
+                "value": []
+              },
+              "menus": {
+                "type": "LIST",
+                "value": [
+                  {
+                    "menuType": 1,
+                    "menuName": "集成管理",
+                    "menuCode": "integration",
+                    "path": "/integration",
+                    "icon": "Connection",
+                    "sort": 6,
+                    "redirect": "/integration/definition",
+                    "remark": "外部系统连接器定义与连接实例",
+                    "parentCode": "data",
+                    "packageCodes": [
+                      "platform_admin"
+                    ]
+                  },
+                  {
+                    "menuType": 2,
+                    "menuName": "应用定义",
+                    "menuCode": "integration:definition",
+                    "path": "/integration/definition",
+                    "icon": "Files",
+                    "component": "integration/definition/index",
+                    "sort": 1,
+                    "remark": "连接器定义：配置规范、认证规范、能力清单",
+                    "parentCode": "integration",
+                    "packageCodes": [
+                      "platform_admin"
+                    ],
+                    "apiCodes": [
+                      "integration:connector:list",
+                      "integration:connector:query",
+                      "integration:connector:edit",
+                      "integration:maintenance:cleanup"
+                    ]
+                  },
+                  {
+                    "menuType": 2,
+                    "menuName": "集成应用",
+                    "menuCode": "integration:application",
+                    "path": "/integration/application",
+                    "icon": "Link",
+                    "component": "integration/application/index",
+                    "sort": 2,
+                    "remark": "连接实例：配置值、凭证、能力授权与回调路径",
+                    "parentCode": "integration",
+                    "packageCodes": [
+                      "platform_admin"
+                    ],
+                    "apiCodes": [
+                      "integration:instance:list",
+                      "integration:instance:query",
+                      "integration:instance:add",
+                      "integration:instance:edit",
+                      "integration:credential:list",
+                      "integration:credential:add",
+                      "integration:credential:rotate"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

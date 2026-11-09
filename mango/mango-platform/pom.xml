@@ -22,6 +22,7 @@
         <module>mango-access</module>
         <module>mango-resource</module>
         <module>mango-authorization</module>
+        <module>mango-integration</module>
         <module>mango-auth</module>
         <module>mango-identity</module>
         <module>mango-captcha</module>
