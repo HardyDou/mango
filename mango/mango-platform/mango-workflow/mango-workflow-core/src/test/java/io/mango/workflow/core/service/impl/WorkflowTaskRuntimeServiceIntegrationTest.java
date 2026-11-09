@@ -204,6 +204,46 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
                 .containsEntry("currentAssigneeNames", "admin");
     }
 
+    @Test
+    void returnTaskWithExplicitTargetAndClientVariablesMovesRuntimeTask() {
+        StartedWorkflow started = startIssue233Workflow("BIZ-1179");
+        Task managerTask = taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("manager_approve")
+                .singleResult();
+        CompleteWorkflowTaskCommand completeCommand = new CompleteWorkflowTaskCommand();
+        completeCommand.setTaskId(managerTask.getId());
+        completeCommand.setComment("提交财务");
+        taskRuntimeService.completeWithResult(completeCommand);
+
+        Task financeTask = taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("finance_approve")
+                .singleResult();
+        switchUser(1002L, "finance");
+        ReturnWorkflowTaskCommand returnCommand = new ReturnWorkflowTaskCommand();
+        returnCommand.setTaskId(financeTask.getId());
+        returnCommand.setTargetTaskDefinitionKey("manager_approve");
+        returnCommand.setComment("退回");
+        returnCommand.setVariables(io.mango.workflow.api.command.WorkflowJsonRequest.of(Map.of(
+                "targetTaskDefinitionKey", "manager_approve",
+                "decision", "RETURN")));
+
+        var result = taskRuntimeService.returnTask(returnCommand);
+
+        assertThat(result.getActionResult()).isEqualTo(io.mango.workflow.api.enums.WorkflowTaskAction.RETURN);
+        assertThat(result.getCurrentTasks()).singleElement()
+                .returns("manager_approve", task -> task.getTaskDefinitionKey());
+        assertThat(taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("manager_approve")
+                .count()).isEqualTo(1);
+        assertThat(taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("finance_approve")
+                .count()).isZero();
+    }
+
     private void switchUser(Long userId, String principalName) {
         MangoContextHolder.set(MangoContextSnapshot.empty()
                 .withSecurity(userId, "1", principalName, "default", "USER", "ORG", userId, principalName));

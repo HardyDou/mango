@@ -26,6 +26,8 @@
 | U1179-01 | `POST /workflow/tasks/return` | 当前任务启用 `returnTask`，`targetTaskDefinitionKey` 为已完成历史用户任务 | 引擎把执行移动到目标节点并生成待办任务 | 目标节点无待办任务时返回 `TASK_INVALID`，事务回滚 | 真实 Flowable 引擎测试通过；服务校验在无待办时抛 `BizException` |
 | U1179-02 | 同上 | 目标节点审批人为空被自动通过，流程回到原节点 | 识别为自相矛盾的退回结果并失败 | 返回 `TASK_INVALID`，提示目标节点无待办且流程仍在原节点 | 服务级测试断言失败且不发布 `workflow.task.advanced` |
 | U1179-03 | 退回成功响应 | 退回真实生效 | `actionResult` 为 `RETURN` | 不适用 | 服务级测试断言 `WorkflowTaskAction.RETURN` |
+| U1179-05 | 业务精确调用形态 | 显式 `targetTaskDefinitionKey` + `variables` 含 `targetTaskDefinitionKey`/`decision` | 真实引擎与真实 Mapper 下任务移动到目标节点 | 失败时 `TASK_INVALID` | `WorkflowTaskRuntimeServiceIntegrationTest.returnTaskWithExplicitTargetAndClientVariablesMovesRuntimeTask` 通过 |
+| U1179-06 | 目标为网关或汇聚 | `targetTaskDefinitionKey` 为网关/汇聚节点 | 解析到上游最近的已完成用户任务后退回 | 多个候选或无候选时 `TASK_INVALID` | 真实引擎用例覆盖汇聚目标解析、汇聚直通回原节点、分支网关无上游时失败 |
 | U1179-04 | 业务接入方 | 阅读接入指南 | 明确无需回退连线、无需目标节点动作配置、无需历史活动 ID、目标必须是已完成历史用户任务 | 文档与实现一致 | `node mango-pmo/tools/check-business-guides.mjs` 通过 |
 
 ## 4. 技术决定
@@ -54,6 +56,8 @@
 | U1179-01 | 真实引擎集成测试 | `mvn -pl mango-platform/mango-workflow/mango-workflow-core test -Dtest=WorkflowReturnTaskEngineTest` | PASS：排他网关分支汇聚流程中，`moveActivityIdTo` 退回到历史节点后 `ACT_RU_TASK` 定义 key 为 `risk_specialist_review`；移动到非活动节点抛异常 | `WorkflowReturnTaskEngineTest` 2 个用例通过（本会话 surefire 输出） |
 | U1179-01/U1179-03 | 服务级集成测试 | `mvn -pl mango-platform/mango-workflow/mango-workflow-core test -Dtest=WorkflowTaskRuntimeServiceImplIntegrationTest` | PASS：15 个用例通过，含 `returnTaskMovesToPreviousHistoricNode...`、`returnTaskFailsWhenTargetNodeKeepsNoPendingTask` | 本会话 surefire 输出 |
 | U1179-02 | 服务级集成测试 | 同上 | PASS：`returnTaskFailsWhenProcessStaysOnSourceNode` 断言 `退回未生效` 且不发布 `workflow.task.advanced` | 本会话 surefire 输出 |
+| U1179-05 | 端到端集成测试（真实 Flowable 引擎 + 真实 Mapper） | `mvn -pl mango-platform/mango-workflow/mango-workflow-core test -Dtest=WorkflowTaskRuntimeServiceIntegrationTest` | PASS：3 个用例通过，显式目标与业务变量组合下任务从 `finance_approve` 退回到 `manager_approve`，`actionResult=RETURN` | 本会话 surefire 输出 |
+| U1179-06 | 真实引擎集成测试 | `-Dtest=WorkflowReturnTaskEngineTest` | PASS：5 个用例，含汇聚网关直通回原节点、汇聚目标解析到初审、分支网关无上游时失败 | 本会话 surefire 输出 |
 | 模块回归 | 模块全量测试与质量门禁 | `mvn -pl mango-platform/mango-workflow/mango-workflow-api,mango-platform/mango-workflow/mango-workflow-core,mango-platform/mango-workflow/mango-workflow-starter verify` | PASS：workflow-core 95 个测试通过（4 个既有跳过）、starter 39 个测试通过 | 本会话 Maven 输出 |
 | 架构门禁 | changed 模式架构门禁 | `mvn -f mango/pom.xml -pl <api,core> -Dmango.architecture.skip=false -Dmango.architecture.mode=changed -Dmango.architecture.requireFullReactor=false mango:architecture` | PASS：`blocking=0`；同模块存量 `MANGO-ARCH-BEAN-002` 由债务预算承载，未扩大 | 本会话 `mango-architecture-report.json` |
 | Mango 专项检查 | `mango:check` 新增违规对比 | `mvn -f mango/pom.xml -pl mango-platform/mango-workflow/mango-workflow-core mango:check` | 新增违规数 443，与 `main` 基线一致（未被本次改动增加）；该目标在 `main` 也因仓库存量违规而 FAIL | 本会话命令输出对比 |
@@ -63,7 +67,8 @@
 ## 7. 例外与剩余风险
 
 - 未用业务仓 `mango-baohan/mango-baohan-risk` 的真实库和真实流程定义复现原始现场；本次用同等流程形态（排他网关 + 空默认分支 + 汇聚 → 复审）在真实 Flowable 7.0.0 引擎上验证。原始现场若另有数据或版本差异，仍以业务侧重跑退回为准。
-- 原始现场“静默成功”的触发条件未直接命中：真实引擎实验证明移动到非活动节点会抛异常，因此原因只可能是退回后被自动推进或调用方读取了旧快照。本次按 fail-closed 修复根因类别，业务侧若再次复现，接口现在会明确失败并给出目标节点与原节点。
+- 原始现场“静默成功”的触发条件未直接命中：真实引擎实验证明移动到非活动节点会抛异常，因此原因只可能是退回后被自动推进或调用方读取了旧快照（含调用方事务回滚）。本次按 fail-closed 修复根因类别；业务侧复现时接口现在会明确失败并给出目标节点与原节点。
+- 业务在同版本发布前的构建上仍会看到静默成功：修复未发布前无法观察到新错误语义，需升级到包含本 PR 的版本后重跑。
 - `mvn -pl ... mango:check` 在 `main` 也存在 443 条存量违规而整体 FAIL，属于仓库既有状态；本次只保证未新增违规。
 - 描述统计型 SpotBugs 存量告警（`EI_EXPOSE_REP*`、`BX_UNBOXING_IMMEDIATELY_REBOXED` 等）在本次改动前已存在，未由本任务扩大。
 - 前端未改动：`@mango/workflow` 已包含 `RETURN` 动作类型，任务详情页失败时只提示错误、不跳转，无需新增界面。
