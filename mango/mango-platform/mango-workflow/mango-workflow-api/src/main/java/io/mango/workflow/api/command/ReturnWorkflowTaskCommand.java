@@ -26,6 +26,10 @@ public class ReturnWorkflowTaskCommand {
     @Size(max = 128, message = "目标节点定义Key最多128个字符")
     private String targetTaskDefinitionKey;
 
+    @Schema(description = "退回后目标任务的办理人，传用户ID（identity_user.id，推荐）或用户名；仅当本次退回在目标节点新建唯一任务时生效，目标用户必须是当前租户启用成员，否则退回整体失败")
+    @Size(max = 64, message = "退回目标办理人最多64个字符")
+    private String targetAssigneeUserId;
+
     @Schema(description = "退回意见")
     @Size(max = 1000, message = "退回意见最多1000个字符")
     private String comment;

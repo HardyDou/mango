@@ -58,6 +58,10 @@ public interface WorkflowTaskRuntimeApi {
      * <p>
      * 退回成功后返回 {@code actionResult=RETURN} 和刷新后的当前任务快照。目标节点没有产生可办理任务、或流程仍停在原节点时，
      * 调用以 {@code TASK_INVALID} 失败并回滚，不会返回成功。
+     * <p>
+     * 可选 {@code targetAssigneeUserId} 指定退回后目标任务的办理人。它只要求调用人能办理当前任务，
+     * 不要求调用人是目标节点候选人或具备目标节点的 {@code transfer} 动作。目标用户必须是当前租户启用成员；
+     * 指定办理人优先于目标节点的原配置和自动派单结果；本次退回必须在目标节点只新建一条任务，否则以 {@code TASK_INVALID} 失败并回滚。
      */
     R<WorkflowTaskCompleteResultVO> returnTask(@Valid ReturnWorkflowTaskCommand command);
 

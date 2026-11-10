@@ -123,10 +123,10 @@ import java.util.Set;
 public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
 
     private static final String CLAIMED_FROM_CANDIDATE_VARIABLE = "mangoClaimedFromCandidate";
-
     private static final String DEFAULT_REJECT_REASON = "审批驳回";
-    private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {
-    };
+    private static final String LIMIT_ONE = "limit 1";
+    private static final String EMPTY_ASSIGNEE_AUTO_END_REASON = "审批人为空，系统自动结束";
+    private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {};
 
     private final TaskService taskService;
     private final RuntimeService runtimeService;
@@ -484,6 +484,10 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         ensureCurrentUserCanOperate(task);
 
         String targetTaskDefinitionKey = resolveReturnTarget(task, command.getTargetTaskDefinitionKey());
+        String targetAssigneeUserId = WorkflowReturnTaskAssigner.resolveTargetAssignee(
+                trim(command.getTargetAssigneeUserId()), this::resolveUserId, this::memberId);
+        Set<String> existingTargetTaskIds = WorkflowReturnTaskAssigner.existingTargetTaskIds(
+                taskService, task.getProcessInstanceId(), targetTaskDefinitionKey, targetAssigneeUserId);
         Map<String, Object> variables = mergeVariables(task.getProcessInstanceId(), json(command.getVariables()));
         if (StringUtils.hasText(command.getComment())) {
             taskService.addComment(task.getId(), task.getProcessInstanceId(), command.getComment().trim());
@@ -496,10 +500,15 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
                 .changeState();
         WorkflowReturnTargetSupport.ensureTargetTaskCreated(taskService, task, targetTaskDefinitionKey);
         saveRecord(task, WorkflowTaskAction.RETURN, command.getComment(),
-                WorkflowReturnTargetSupport.returnVariables(json(command.getVariables()), targetTaskDefinitionKey));
+                WorkflowReturnTargetSupport.returnVariables(
+                        json(command.getVariables()), targetTaskDefinitionKey, targetAssigneeUserId));
         updateFormInstance(task.getProcessInstanceId(), variables, WorkflowInstanceStatus.RUNNING);
         triggerEventNotify(task, variables);
-        WorkflowTaskAdvanceResult advanceResult = advanceRuntimeTasks(task.getProcessInstanceId());
+        WorkflowTaskAdvanceResult advanceResult = WorkflowReturnTaskAssigner.assignIfRequested(
+                advanceRuntimeTasks(task.getProcessInstanceId()), taskService, task.getProcessInstanceId(),
+                targetTaskDefinitionKey, existingTargetTaskIds, targetAssigneeUserId,
+                () -> syncCurrentAssignees(task.getProcessInstanceId()),
+                () -> workflowBusinessApplyService.refreshCurrentTasksAndReturn(task.getProcessInstanceId()));
         WorkflowReturnTargetSupport.ensureLeftSourceNode(taskService, task, targetTaskDefinitionKey,
                 advanceResult.ended());
         WorkflowFormInstanceEntity formInstance = findFormInstance(task.getProcessInstanceId());
@@ -883,7 +892,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         if (StringUtils.hasText(processDefinitionId)) {
             WorkflowDefinitionEntity definition = definitionMapper.selectOne(new LambdaQueryWrapper<WorkflowDefinitionEntity>()
                     .eq(WorkflowDefinitionEntity::getProcessDefinitionId, processDefinitionId)
-                    .last("limit 1"));
+                    .last(LIMIT_ONE));
             if (definition != null) {
                 return definition;
             }
@@ -900,7 +909,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
                 new LambdaQueryWrapper<WorkflowDefinitionVersionEntity>()
                         .eq(WorkflowDefinitionVersionEntity::getProcessDefinitionId, processDefinitionId)
                         .orderByDesc(WorkflowDefinitionVersionEntity::getId)
-                        .last("limit 1"));
+                        .last(LIMIT_ONE));
         if (version != null && StringUtils.hasText(version.getDesignerJson())) {
             return version.getDesignerJson();
         }
@@ -908,7 +917,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         if (definition == null || !processDefinitionId.equals(definition.getProcessDefinitionId())) {
             definition = definitionMapper.selectOne(new LambdaQueryWrapper<WorkflowDefinitionEntity>()
                     .eq(WorkflowDefinitionEntity::getProcessDefinitionId, processDefinitionId)
-                    .last("limit 1"));
+                    .last(LIMIT_ONE));
         }
         return definition == null || !processDefinitionId.equals(definition.getProcessDefinitionId())
                 ? null
@@ -1082,7 +1091,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
                         WorkflowBusinessApplyEntity::getProcessDefinitionKey)
                 .eq(WorkflowBusinessApplyEntity::getProcessInstanceId, processInstanceId)
                 .orderByDesc(WorkflowBusinessApplyEntity::getId)
-                .last("limit 1"));
+                .last(LIMIT_ONE));
     }
 
     private boolean currentUserCanClaim(Task task) {
@@ -1154,7 +1163,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
     private WorkflowFormInstanceEntity findFormInstance(String processInstanceId) {
         return formInstanceMapper.selectOne(new LambdaQueryWrapper<WorkflowFormInstanceEntity>()
                 .eq(WorkflowFormInstanceEntity::getProcessInstanceId, processInstanceId)
-                .last("limit 1"));
+                .last(LIMIT_ONE));
     }
 
     private Map<String, Object> mergeVariables(String processInstanceId, Map<String, Object> submitted) {
@@ -1642,15 +1651,15 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
             return true;
         }
         if (strategy == WorkflowEmptyAssigneeStrategy.AUTO_END) {
-            saveRecord(task, WorkflowTaskAction.AUTO_END, "审批人为空，系统自动结束", variables);
-            runtimeService.deleteProcessInstance(task.getProcessInstanceId(), "审批人为空，系统自动结束");
+            saveRecord(task, WorkflowTaskAction.AUTO_END, EMPTY_ASSIGNEE_AUTO_END_REASON, variables);
+            runtimeService.deleteProcessInstance(task.getProcessInstanceId(), EMPTY_ASSIGNEE_AUTO_END_REASON);
             updateFormInstance(task.getProcessInstanceId(), variables, WorkflowInstanceStatus.ENDED);
             workflowBusinessApplyService.markTerminated(new WorkflowTaskStatusContext(
-                    task.getProcessInstanceId(), "审批人为空，系统自动结束",
+                    task.getProcessInstanceId(), EMPTY_ASSIGNEE_AUTO_END_REASON,
                     task.getId(), task.getTaskDefinitionKey()));
             WorkflowBusinessApplyVO apply = workflowBusinessApplyService.findByProcessInstance(task.getProcessInstanceId());
             workflowEventPublisher.publishProcessEnded(task.getProcessInstanceId(), findFormInstance(task.getProcessInstanceId()),
-                    variables, "审批人为空，系统自动结束", apply);
+                    variables, EMPTY_ASSIGNEE_AUTO_END_REASON, apply);
             return true;
         }
         return false;
