@@ -1,6 +1,6 @@
 ## v2026.11.10-maven-1.3.0-pmd7-workflow-notice-release - Mango Maven/docs 1.3.0 PMD 7 and workflow notification release - 2026-11-10
 
-Status: `PENDING`. Release plan digest `7e5709e63dade4bdf0cdbd4a574fd3e5fc5c350a15d45dc547d3f7c030700fe6`; Maven/npm publication, consume verification, Tag and GitHub Release remain pending.
+Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `7e5709e63dade4bdf0cdbd4a574fd3e5fc5c350a15d45dc547d3f7c030700fe6`; prepared candidate `1843fd07cc8e4d38611121910d83a1850cb560c0ded388938a721351f3f2a5b4` completed publication and consume verification for 4 npm packages and 201 Maven coordinates. Tag and GitHub Release were created and verified.
 
 ### Pull Requests
 
@@ -78,7 +78,7 @@ Status: `PENDING`. Release plan digest `7e5709e63dade4bdf0cdbd4a574fd3e5fc5c350a
 - The PMD 7 baseline workflow regenerated the complete inventory and the committed baseline matches the upgraded ruleset.
 - Notice target fallback is covered by the frontend target specs added with the fix; workflow notification changes are covered by the workflow module integration tests and the documented verification entry.
 - `catalog:check` reports a consistent Catalog projection on the source commit and the release plan re-computes 201 coordinates with matching topology.
-- The Maven reactor and docs bundle are built once from the sealed candidate; all 201 coordinates are checked in publish and consume registries with matching checksums, and a clean consumer resolves Maven `1.3.0` plus the four sealed npm tarballs from the consume registries.
+- The Maven reactor and docs bundle were built once from the sealed candidate; all 201 coordinates were checked in publish and consume registries with matching checksums, and a clean consumer resolved Maven `1.3.0` plus the four sealed npm tarballs from the consume registries.
 
 ### Rollback
 
