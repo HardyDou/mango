@@ -108,7 +108,7 @@ Mango 的默认审批通知只消费 `workflow.task.advanced`、`workflow.proces
 
 | 字段 | 作用 | 约束 |
 |------|------|------|
-| `viewPath` | 站内绝对路径，例如 `/guarantee/apply/detail` | 必须以 `/` 开头，不含 `?`、`#`、反斜杠和控制字符；外部 URL 被丢弃。 |
+| `viewPath` | 站内绝对路径，例如 `/guarantee/apply/detail` | 以 `/` 开头，不含 `?`、`#`、反斜杠和控制字符；外部 URL 被丢弃。 |
 | `viewQuery` | 点开页面时要带上的查询参数 | 只保留单层标量值；声明后站内信目标只携带这些参数。用于“点开列表并定位到目标行”这类场景。 |
 | `viewActionLabel` | 按钮文案，例如「去确认」 | 最长 32 个字符；缺省时使用默认文案。 |
 
