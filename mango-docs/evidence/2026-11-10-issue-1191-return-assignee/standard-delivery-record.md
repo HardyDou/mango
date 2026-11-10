@@ -38,13 +38,14 @@
 | D-2 | AC-1、AC-2 | 目标用户先通过 `resolveUserId` 解析为 `identity_user.id`，再通过 `TenantMemberProvider` 校验当前机构启用成员；规范化后写入 assignee 和审计变量 | `WorkflowTaskRuntimeService` 的 `resolveReturnTargetAssignee` | 删除校验和字段处理，恢复原退回路径 |
 | D-3 | AC-1、AC-3 | 退回前记录目标节点已有任务 ID；退回推进后只接受“本次新建”的唯一任务，避免并行分支下误指派已有任务 | `WorkflowReturnTargetSupport` 的 `targetTaskIds`、`requireNewTargetTask`；`WorkflowTaskRuntimeService.assignReturnedTask` | 删除新参数分支，恢复原退回路径 |
 | D-4 | AC-1、AC-4 | 指派后调用 `syncCurrentAssignees` 和 `refreshCurrentTasksAndReturn`，保证参与人投影、业务当前任务和通知载荷一致；失败由现有事务边界整体回滚 | `WorkflowTaskRuntimeService` 退回事务 | 同等回退 |
+| D-5 | AC-1、AC-3 | 将可选办理人解析、目标前置任务快照和新生任务指派收敛到 `WorkflowReturnTaskAssigner`，避免 `WorkflowTaskRuntimeService` 类复杂度越过既有基线，同时保持退回主流程可读 | `WorkflowTaskRuntimeService`、`WorkflowReturnTaskAssigner` | 删除新类并把逻辑内联回退回方法 |
 
 ## 5. 实施清单
 
 | ID | 对应决定 | 顺序 | 改动路径 | 完成条件 |
 |---|---|---|---|---|
 | IM-01 | D-1 | 1 | `mango-workflow-api` 的 `ReturnWorkflowTaskCommand.java`、`WorkflowTaskRuntimeApi.java` | 契约编译通过，字段有中文文档 |
-| IM-02 | D-2、D-4 | 2 | `WorkflowTaskRuntimeService.java` | 无效用户、非成员、成功指派和回滚测试通过 |
+| IM-02 | D-2、D-4、D-5 | 2 | `WorkflowTaskRuntimeService.java`、`WorkflowReturnTaskAssigner.java` | 无效用户、非成员、成功指派和回滚测试通过；架构门禁 newIssues=0 |
 | IM-03 | D-3 | 3 | `WorkflowReturnTargetSupport.java` | 新建唯一任务识别和多任务拒绝测试通过 |
 | IM-04 | M08 | 4 | Workflow README、能力地图、业务接入指南、变更记录 | 四类能力文档审计通过 |
 | IM-05 | M10、M11 | 5 | `WorkflowTaskRuntimeServiceImplIntegrationTest.java`、`WorkflowTaskRuntimeServiceIntegrationTest.java` | 契约测试和真实 Flowable 集成测试通过 |
