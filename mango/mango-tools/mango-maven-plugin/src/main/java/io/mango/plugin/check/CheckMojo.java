@@ -443,7 +443,7 @@ public class CheckMojo extends AbstractMojo {
     @Parameter(property = "mango.check.spotbugsIncludeFilterFile")
     private String spotbugsIncludeFilterFile;
 
-    /** Optional directory containing checkstyle.xml, pmd-p3c.xml and spotbugs-security.xml. */
+    /** Optional directory containing checkstyle.xml, pmd-mango.xml and spotbugs-security.xml. */
     @Parameter(property = "mango.check.rulesetDir")
     private String rulesetDir;
 
@@ -911,8 +911,8 @@ public class CheckMojo extends AbstractMojo {
         } else if (PMD_GOAL.equals(goal)) {
             String ruleset = new BundledRulesetResolver(CheckMojo.class.getClassLoader())
                     .resolve(rootPath, pmdRulesets, rulesetDir, BundledRulesetResolver.PMD_RESOURCE,
-                            "pmd-p3c.xml",
-                            "config/quality/pmd-p3c.xml", "config/quality/pmd.xml");
+                            "pmd-mango.xml",
+                            "config/quality/pmd-mango.xml", "config/quality/pmd.xml");
             command.add("-Dmango.check.pmdRulesetsPath=" + ruleset);
             reportDelegatedRuleset("PMD rulesets", ruleset);
         } else if (SPOTBUGS_GOAL.equals(goal)) {
@@ -1372,6 +1372,7 @@ public class CheckMojo extends AbstractMojo {
 
     private void parsePmdReport(Path report) throws MojoExecutionException {
         Document document = loadXml(report);
+        recordPmdProcessingErrors(report, document);
         NodeList violations = document.getElementsByTagName("violation");
         for (int i = 0; i < violations.getLength(); i++) {
             Element violation = (Element) violations.item(i);
@@ -1388,6 +1389,32 @@ public class CheckMojo extends AbstractMojo {
                     ruleName,
                     SOURCE_PMD);
         }
+    }
+
+    private void recordPmdProcessingErrors(Path report, Document document) {
+        NodeList errors = document.getElementsByTagName("error");
+        if (errors.getLength() == 0) {
+            return;
+        }
+        Element first = (Element) errors.item(0);
+        String fileName = first.getAttribute("filename");
+        String message = first.getAttribute("msg");
+        if (message == null || message.isBlank()) {
+            message = normalizeWhitespace(first.getTextContent());
+        }
+        if (message != null && message.length() > 200) {
+            message = message.substring(0, 200);
+        }
+        result.addToolFailure(
+                SOURCE_PMD,
+                "PMD report contains "
+                        + errors.getLength()
+                        + " file processing error(s) in "
+                        + report.getFileName()
+                        + "; first: "
+                        + fileName
+                        + " - "
+                        + message);
     }
 
     private String extractPmdFilename(Element violation) {

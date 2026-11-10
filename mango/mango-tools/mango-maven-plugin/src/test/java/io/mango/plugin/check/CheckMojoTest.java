@@ -1780,6 +1780,25 @@ class CheckMojoTest {
     }
 
     @Test
+    void parsePmdReport_withProcessingError_recordsBlockingToolFailure() throws Exception {
+        Path report = tempDir.resolve("pmd.xml");
+        Files.writeString(report, """
+                <pmd><error filename="Demo.java" msg="PMDException: unsupported class"/></pmd>
+                """);
+        CheckMojo mojo = new CheckMojo();
+        CheckResult result = new CheckResult();
+        setField(mojo, "result", result);
+
+        Method parse = CheckMojo.class.getDeclaredMethod("parsePmdReport", Path.class);
+        parse.setAccessible(true);
+        parse.invoke(mojo, report);
+
+        assertEquals(1, result.toolFailures.size());
+        assertEquals("pmd", result.toolFailures.get(0).goal);
+        assertTrue(result.toolFailures.get(0).message.contains("unsupported class"));
+    }
+
+    @Test
     void recordStaticFailure_withReportPolicy_recordsToolFailure() throws Exception {
         // given
         CheckMojo mojo = new CheckMojo();

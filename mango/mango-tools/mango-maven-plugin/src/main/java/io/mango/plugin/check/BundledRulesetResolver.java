@@ -18,7 +18,7 @@ final class BundledRulesetResolver {
 
     static final String CHECKSTYLE_RESOURCE = "rulesets/java/checkstyle.xml";
     static final String SPOTBUGS_RESOURCE = "rulesets/java/spotbugs-security.xml";
-    static final String PMD_RESOURCE = "rulesets/java/pmd-p3c.xml";
+    static final String PMD_RESOURCE = "rulesets/java/pmd-mango.xml";
     static final String OUTPUT_DIRECTORY = "target/mango-check";
 
     private final ClassLoader classLoader;
