@@ -1,3 +1,14 @@
+## 1.4.1 - 2026-11-10
+
+### Changed
+
+- Lock the CLI Maven matrix to Maven `1.4.0` and the generated 201-coordinate Maven/docs release closure.
+- Keep workflow return guidance aligned with the new optional `targetAssigneeUserId` parameter and its `TASK_INVALID` failure boundaries.
+
+### Upgrade Notes
+
+- Upgrade `@mango/cli@1.4.1` together with the complete Maven/docs `1.4.0` tuple; do not mix release batches.
+
 ## 1.4.0 - 2026-11-10
 
 ### Added

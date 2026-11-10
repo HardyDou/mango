@@ -1,3 +1,87 @@
+## v2026.11.10-maven-1.4.0-workflow-return-assignee-release - Mango Maven/docs 1.4.0 workflow return assignee release - 2026-11-10
+
+Status: `PENDING`. Release plan digest `fcb01cbea0315c0fd27d275e618b4eebfc1d38284010a536130e8c0f6a1964fe`; Maven/npm publication, consume verification, Tag and GitHub Release remain pending.
+
+### Pull Requests
+
+- Added: [PR #1194](https://github.com/HardyDou/mango/pull/1194) Added an optional `targetAssigneeUserId` to `POST /workflow/tasks/return`, so a return can name the handler of the task created on the target node instead of inheriting the node configuration or auto-dispatch result. Packages: the complete Maven/docs `1.4.0` tuple and the generated `@mango/cli@1.4.1` closure. Business Adaptation: upgrade the tuple; approval pages that need a specific handler can pass the user ID and should surface `TASK_INVALID` when the target user is invalid or the return would create more than one task.
+
+### Fixed
+
+- Returning a workflow task no longer silently ignores which handler should own the returned task: the requested handler is validated and applied before the target task is created.
+- A return that would create zero or multiple tasks on the target node now fails with `TASK_INVALID` and rolls back, instead of leaving a partially assigned task.
+
+### Added
+
+- `ReturnWorkflowTaskCommand.targetAssigneeUserId` accepts an `identity_user.id` (recommended) or username and overrides the target node configuration and automatic dispatch for the returned task.
+- `WorkflowReturnTaskAssigner` centralizes target handler resolution so the return path validates tenant membership, enabled state and single-task creation in one place.
+- The workflow module README, business approval guide, capability map and a standard delivery record document the new parameter and its failure boundaries.
+
+### Changed
+
+- The non-application Maven/docs tuple advances from `1.3.0` to `1.4.0` with 201 coordinates.
+- `@mango/cli` advances from `1.4.0` to `1.4.1` as the generated Maven compatibility closure; no other npm package is republished.
+- Returning with an explicit handler only requires permission to complete the current task; it does not require the caller to be a candidate of the target node or to hold the target node `transfer` action.
+
+### Versions
+
+- Maven/docs: `1.3.0` → `1.4.0`; 201 sealed Maven coordinates, including `io.mango:mango-docs-bundle:1.4.0` and `io.mango.platform.workflow:mango-workflow-{api,core,starter,starter-remote}:1.4.0`.
+- npm: `@mango/cli@1.4.0` → `@mango/cli@1.4.1`; no other npm package is republished.
+- Exact topology, dependency order and checksums are generated in `mango-ui/.changeset/release-plan.json`.
+
+### Published Packages
+
+- Publish all 201 non-application Maven coordinates in release-plan order.
+- Publish `@mango/cli@1.4.1` as the generated compatibility closure.
+- Application fat jars and coordinates outside the sealed plan are excluded; `@mango/pmo` is unchanged because no PMO rule, contract, Agent or Skill file changed in this batch.
+
+### Business Impact
+
+- Approval pages can now decide who receives a returned task, which removes the manual reassignment step that previously followed a return to a shared or auto-dispatched node.
+- Callers keep their existing permission boundary: completing the current task is enough, and the target node candidate or `transfer` action is not required.
+- Invalid requests fail closed: a handler who is not an enabled member of the current tenant, or a return that would create more than one task, fails with `TASK_INVALID` and rolls back.
+- Requests that omit `targetAssigneeUserId` keep the previous behavior, including target node configuration and automatic dispatch.
+- No database migration, menu, permission or tenant boundary change is introduced; notification behavior and the `1.3.0` PMD ruleset are unchanged.
+
+### Upgrade Estimate
+
+- Audience: Mango backend consumers that embed workflow approval pages or call `POST /workflow/tasks/return` directly.
+- Engineering Effort: 0.25-0.5 engineer-day per consumer to upgrade the tuple, pass the new parameter where a specific handler is required and add the failure handling.
+- Execution Window: 1 hour per consumer including restart and a return-with-handler regression.
+- Service Downtime: one controlled backend restart window; no database migration is introduced.
+- Rollback Effort: 0.5 engineer-day per consumer to restore the complete Maven `1.3.0` tuple and the previously verified CLI tuple.
+- Assumptions: consumers have a test workflow instance with at least two user tasks, at least two enabled tenant members, and access to workflow task logs.
+
+### Upgrade Notes
+
+1. Upgrade the complete Mango Maven/docs tuple from `1.3.0` to `1.4.0`; do not update only one starter or module.
+2. Upgrade CLI consumers to `@mango/cli@1.4.1` when the CLI is used.
+3. Pass `targetAssigneeUserId` (prefer `identity_user.id`) on `POST /workflow/tasks/return` when the returned task must go to a specific handler.
+4. Handle `TASK_INVALID`: it is returned when the target user is not an enabled member of the current tenant, when the target node produces no task, when the return creates more than one task, or when the process would stay on the original node.
+5. Keep the previous request shape for returns that should follow node configuration or automatic dispatch; the parameter is optional and defaults to the existing behavior.
+6. Verify one return with an explicit handler and one return without it in a test environment before production rollout.
+
+### Verification
+
+- `mvn verify` passed for the workflow modules before merge, including the return-assignee integration tests that cover explicit handler assignment, invalid tenant membership, multiple target tasks and rollback on `TASK_INVALID`.
+- The workflow README, business integration guide and capability map were updated together with the API contract.
+- `catalog:check` reports a consistent Catalog projection on the source commit and the release plan re-computes 201 coordinates with matching topology.
+- The Maven reactor and docs bundle are built once from the sealed candidate; all 201 coordinates are checked in publish and consume registries with matching checksums.
+- A clean consumer resolves Maven `1.4.0` and `@mango/cli@1.4.1` from the consume registries and completes the pure consume-registry verification.
+
+### Rollback
+
+- Restore consumers to the complete Maven/docs `1.3.0` tuple and the previously verified `@mango/cli@1.4.0` tuple; immutable coordinates are never overwritten.
+- Rolling back the return-assignee feature restores the previous behavior where the returned task follows node configuration or automatic dispatch; approval pages must stop sending `targetAssigneeUserId`.
+- Tasks already created with an explicit handler stay assigned; reassign them through the existing workflow task operations instead of editing workflow tables.
+- No data written by this batch needs repair; preserve workflow task history and return logs as evidence.
+- If registry visibility is ambiguous, stop and resume read-only status/repair using the same prepared candidate; never create a second candidate for the same coordinates.
+
+### Audit History
+
+- [PR #1191](https://github.com/HardyDou/mango/pull/1191) was delivered through PR #1194; it is referenced here for traceability and is not a separate entry in this batch.
+
+
 ## v2026.11.10-maven-1.3.0-pmd7-workflow-notice-release - Mango Maven/docs 1.3.0 PMD 7 and workflow notification release - 2026-11-10
 
 Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `7e5709e63dade4bdf0cdbd4a574fd3e5fc5c350a15d45dc547d3f7c030700fe6`; prepared candidate `1843fd07cc8e4d38611121910d83a1850cb560c0ded388938a721351f3f2a5b4` completed publication and consume verification for 4 npm packages and 201 Maven coordinates. Tag and GitHub Release were created and verified.
