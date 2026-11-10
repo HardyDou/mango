@@ -4,7 +4,7 @@
     "schemaVersion": 1,
     "workspaceCount": 43
   },
-  "catalogDigest": "57baaaf1f469450beb55bb7ad9a7b1009bda2de9dbcaa99be3a9002b8841ca87",
+  "catalogDigest": "9f851ebd94248c81411021f42290544ca81c04fc2387d29aeebe025d83040dfc",
   "maven": {
     "dependencyManagementSets": [
       {
@@ -11964,7 +11964,7 @@
       "path": "mango-ui/packages/mango-cli",
       "publicEntries": [],
       "publicResources": [],
-      "version": "1.4.0"
+      "version": "1.4.1"
     },
     {
       "name": "@mango/cms",
