@@ -913,7 +913,7 @@ public class CheckMojo extends AbstractMojo {
                     .resolve(rootPath, pmdRulesets, rulesetDir, BundledRulesetResolver.PMD_RESOURCE,
                             "pmd-p3c.xml",
                             "config/quality/pmd-p3c.xml", "config/quality/pmd.xml");
-            command.add("-Dpmd.rulesets=" + ruleset);
+            command.add("-Dmango.check.pmdRulesetsPath=" + ruleset);
             reportDelegatedRuleset("PMD rulesets", ruleset);
         } else if (SPOTBUGS_GOAL.equals(goal)) {
             String includeFilter = new BundledRulesetResolver(CheckMojo.class.getClassLoader())

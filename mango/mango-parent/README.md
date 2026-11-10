@@ -54,7 +54,7 @@
 |------|--------|------|
 | `mango.check.rulesetDir` | 空 | 统一规则目录，读取 `checkstyle.xml`、`pmd-p3c.xml`、`spotbugs-security.xml` |
 | `mango.check.checkstyleConfigLocation` | 空 | 自定义 Checkstyle 规则文件 |
-| `mango.check.pmdRulesets` | 空 | 自定义 PMD 规则文件 |
+| `mango.check.pmdRulesets` | 空 | 自定义 PMD 规则文件；插件会写入 `mango.check.pmdRulesetsPath`，由 parent 的 PMD 插件配置读取 |
 | `mango.check.spotbugsIncludeFilterFile` | 空 | 自定义 SpotBugs include filter |
 | `mango.check.pmdEnabled` | `true` | 是否执行 PMD |
 | `mango.check.checkstyleEnabled` | `true` | 是否执行 Checkstyle |

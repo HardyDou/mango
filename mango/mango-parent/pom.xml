@@ -33,6 +33,8 @@
         <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <!-- mango-maven-plugin 在 check 委派时覆盖为实际解析到的规则文件。 -->
+        <mango.check.pmdRulesetsPath>${maven.multiModuleProjectDirectory}/target/mango-check/pmd-p3c.xml</mango.check.pmdRulesetsPath>
 
         <!-- Build plugin baseline -->
         <spring-boot.version>3.5.14</spring-boot.version>
@@ -137,6 +139,9 @@
                         </dependency>
                     </dependencies>
                     <configuration>
+                        <rulesets>
+                            <ruleset>${mango.check.pmdRulesetsPath}</ruleset>
+                        </rulesets>
                         <targetJdk>17</targetJdk>
                         <sourceEncoding>${project.build.sourceEncoding}</sourceEncoding>
                         <failOnViolation>false</failOnViolation>
