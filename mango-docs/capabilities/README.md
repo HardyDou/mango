@@ -52,7 +52,7 @@
 | 模块 | 能做什么 | 说明入口 |
 |---|---|---|
 | System | 管理系统字典、系统参数、国际化消息和系统基础数据。 | [System README](../../mango/mango-platform/mango-system/README.md) |
-| Resource Registry | 收集资源声明，按 Handler 同步菜单、字典、流程定义、文件配置等初始化资源。 | [Resource README](../../mango/mango-platform/mango-resource/README.md) |
+| Resource Registry | 收集资源声明，按 Handler 同步菜单、字典、流程定义、文件配置等初始化资源；消息模板等运营可改数据使用 `SYNC_ONCE`。 | [Resource README](../../mango/mango-platform/mango-resource/README.md) |
 | Domain | 管理业务域及其基础配置。 | [Domain README](../../mango/mango-platform/mango-domain/README.md) |
 | Calendar | 管理日历、工作日和时间规则。 | [Calendar README](../../mango/mango-platform/mango-calendar/README.md) |
 | Template | 管理打印模板、模板渲染和模板资源。 | [Template README](../../mango/mango-platform/mango-template/README.md) |
@@ -63,7 +63,7 @@
 |---|---|---|
 | File | 管理文件记录、存储配置、上传、下载、访问和归档。 | [File README](../../mango/mango-platform/mango-file/README.md) |
 | File Preview | 管理文档预览入口、转换状态和预览产物。 | [File Preview README](../../mango/mango-platform/mango-file-preview/README.md) |
-| Workflow | 管理流程定义、业务申请、审批任务、办理人和审批进度。 | [Workflow README](../../mango/mango-platform/mango-workflow/README.md) |
+| Workflow | 管理流程定义、业务申请、审批任务、办理人和审批进度；默认通知可用 `mango.workflow.notice.enabled` 关闭，查看目标支持在申请快照 `customConfig` 中声明 `viewPath`、`viewQuery`、`viewActionLabel`。 | [Workflow README](../../mango/mango-platform/mango-workflow/README.md) |
 | Job | 管理定时任务、任务执行、调度状态和执行记录。 | [Job README](../../mango/mango-platform/mango-job/README.md) |
 | Notice | 管理站内消息、公告、通知渠道、消息模板和投递记录。 | [Notice README](../../mango/mango-platform/mango-notice/README.md) |
 | Numgen | 管理编号规则和业务编号生成。 | [Numgen README](../../mango/mango-platform/mango-numgen/README.md) |

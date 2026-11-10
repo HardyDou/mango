@@ -223,6 +223,65 @@ class WorkflowNoticeDomainEventSubscriberTest {
     }
 
     @Test
+    void terminalProcessShouldUseDeclaredViewQueryAndActionLabel() {
+        DomainEvent event = DomainEvent.builder()
+                .eventId("event-view-query")
+                .eventType(WorkflowEventTypes.PROCESS_REJECTED)
+                .businessType("guarantee")
+                .businessKey("GUARANTEE-VIEW-3")
+                .payload("processInstanceId", "PI-VIEW-3")
+                .payload("applicantId", 8001L)
+                .payload("tenantId", "1")
+                .payload("applyTitle", "保函申请")
+                .payload("viewPath", "/guarantee/finance/payment-vouchers")
+                .payload("viewQuery", Map.of("receiptId", "R-1", "orderNo", "O-1"))
+                .payload("viewActionLabel", "去确认")
+                .build();
+
+        subscriber.onEvent(event);
+
+        assertThat(events).singleElement().satisfies(published -> {
+            NoticeSendEventCommand notice = (NoticeSendEventCommand) published;
+            assertThat(notice.getMessageTarget().getTargetKey())
+                    .isEqualTo("/guarantee/finance/payment-vouchers");
+            assertThat(notice.getMessageTarget().getParams().toMap())
+                    .containsExactlyInAnyOrderEntriesOf(Map.of(
+                            "receiptId", "R-1",
+                            "orderNo", "O-1",
+                            "fallbackTargetKey", "workflow:task:initiated"));
+            assertThat(notice.getMessageActions()).singleElement()
+                    .satisfies(action -> assertThat(action.getActionLabel()).isEqualTo("去确认"));
+        });
+    }
+
+    @Test
+    void taskAdvancedShouldKeepWorkflowTargetAndDefaultActionLabel() {
+        DomainEvent event = DomainEvent.builder()
+                .eventId("event-view-query-task")
+                .eventType(WorkflowEventTypes.TASK_ADVANCED)
+                .businessType("guarantee")
+                .businessKey("GUARANTEE-VIEW-4")
+                .payload("processInstanceId", "PI-VIEW-4")
+                .payload("taskId", "TASK-VIEW-4")
+                .payload("assigneeId", 9001L)
+                .payload("viewPath", "/guarantee/finance/payment-vouchers")
+                .payload("viewQuery", Map.of("receiptId", "R-1"))
+                .payload("viewActionLabel", "去确认")
+                .build();
+
+        subscriber.onEvent(event);
+
+        assertThat(events).singleElement().satisfies(published -> {
+            NoticeSendEventCommand notice = (NoticeSendEventCommand) published;
+            assertThat(notice.getMessageTarget().getTargetKey()).isEqualTo("workflow:task:detail");
+            assertThat(notice.getMessageTarget().getParams().toMap())
+                    .containsEntry("taskId", "TASK-VIEW-4");
+            assertThat(notice.getMessageActions()).singleElement()
+                    .satisfies(action -> assertThat(action.getActionLabel()).isEqualTo("去审批"));
+        });
+    }
+
+    @Test
     void taskAdvancedWithoutNextTaskShouldNotPublishAssignedNotice() {
         DomainEvent event = DomainEvent.builder()
                 .eventId("event-1005")

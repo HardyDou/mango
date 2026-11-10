@@ -16,7 +16,6 @@ import io.mango.workflow.api.WorkflowEventTypes;
 import io.mango.workflow.core.engine.WorkflowAssigneeResolver;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.util.Collection;
@@ -28,9 +27,12 @@ import java.util.Set;
 
 /**
  * Converts workflow domain events into decoupled notice send events.
+ *
+ * <p>This class is intentionally not a component: {@link WorkflowNoticeAutoConfiguration} owns the
+ * bean definition so that {@code mango.workflow.notice.enabled=false} can disable the default
+ * notification path without patching the Spring bean factory.
  */
 @Slf4j
-@Component
 public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscriber {
 
     private static final String RECIPIENT_RULE_CODE = "workflow.operator";
@@ -38,6 +40,7 @@ public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscribe
     private static final String NOTICE_MESSAGE_CENTER_TARGET_KEY = "notice:site-message";
     private static final int C0_CONTROL_LIMIT = 0x20;
     private static final int DELETE_CONTROL_CODE_POINT = 0x7f;
+    private static final int ACTION_LABEL_MAX_LENGTH = 32;
     private static final Set<String> SUPPORTED_EVENTS = Set.of(
             WorkflowEventTypes.TASK_ADVANCED,
             WorkflowEventTypes.PROCESS_COMPLETED,
@@ -121,7 +124,7 @@ public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscribe
         notice.setMessageSubject(subject(event, params));
         notice.setMessageTarget(target);
         notice.setMessageData(NoticeJsonRequest.of(params));
-        notice.setMessageActions(List.of(routeAction(actionLabel(event.getEventType()), target)));
+        notice.setMessageActions(List.of(routeAction(actionLabel(event, params, target), target)));
         if (recipients.userIds().size() == 1) {
             notice.setUserId(recipients.userIds().getFirst());
         } else if (!recipients.userIds().isEmpty()) {
@@ -197,8 +200,10 @@ public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscribe
         NoticeSiteMessageTargetCommand target = new NoticeSiteMessageTargetCommand();
         target.setTargetType(NoticeSiteMessageTargetType.ROUTE);
         String defaultTargetKey = defaultWorkflowTargetKey(event.getEventType(), params);
-        String targetKey = workflowTargetKey(event.getEventType(), params);
-        Map<String, Object> targetParams = new LinkedHashMap<>(params);
+        String viewPath = processTerminalEvent(event.getEventType())
+                ? safeInternalPath(stringValue(params.get("viewPath"))) : null;
+        String targetKey = StringUtils.hasText(viewPath) ? viewPath : defaultTargetKey;
+        Map<String, Object> targetParams = targetParams(viewPath, targetKey, params);
         String fallbackTargetKey = targetKey.equals(defaultTargetKey)
                 ? NOTICE_MESSAGE_CENTER_TARGET_KEY : defaultTargetKey;
         if (!targetKey.equals(fallbackTargetKey)) {
@@ -209,14 +214,47 @@ public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscribe
         return target;
     }
 
-    private String workflowTargetKey(String eventType, Map<String, Object> params) {
-        if (processTerminalEvent(eventType)) {
-            String viewPath = safeInternalPath(stringValue(params.get("viewPath")));
-            if (StringUtils.hasText(viewPath)) {
-                return viewPath;
-            }
+    /**
+     * 业务声明了自定义查看路径的查询参数时，目标查询只取这些参数，避免把整份通知参数拼进前端路由；
+     * 未声明时保持原有行为，由消息中心前端按自身白名单过滤。
+     */
+    private Map<String, Object> targetParams(String viewPath, String targetKey, Map<String, Object> params) {
+        Map<String, Object> viewQuery = viewQuery(params.get("viewQuery"));
+        if (viewQuery.isEmpty() || !StringUtils.hasText(viewPath) || !viewPath.equals(targetKey)) {
+            return new LinkedHashMap<>(params);
         }
-        return defaultWorkflowTargetKey(eventType, params);
+        return new LinkedHashMap<>(viewQuery);
+    }
+
+    private Map<String, Object> viewQuery(Object value) {
+        if (!(value instanceof Map<?, ?> rawQuery)) {
+            return Map.of();
+        }
+        Map<String, Object> query = new LinkedHashMap<>();
+        rawQuery.forEach((key, entryValue) -> {
+            String queryKey = safeTargetQueryText(key);
+            String queryValue = safeTargetQueryText(entryValue);
+            if (queryKey != null && queryValue != null) {
+                query.put(queryKey, queryValue);
+            }
+        });
+        return query;
+    }
+
+    private String safeTargetQueryText(Object value) {
+        if (value == null || value instanceof Map<?, ?> || value instanceof Collection<?>) {
+            return null;
+        }
+        return safeText(String.valueOf(value));
+    }
+
+    private String safeText(String value) {
+        if (!StringUtils.hasText(value)) {
+            return null;
+        }
+        String text = value.trim();
+        return text.chars().anyMatch(character -> character < C0_CONTROL_LIMIT
+                || character == DELETE_CONTROL_CODE_POINT) ? null : text;
     }
 
     private String defaultWorkflowTargetKey(String eventType, Map<String, Object> params) {
@@ -246,8 +284,15 @@ public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscribe
                 || character == DELETE_CONTROL_CODE_POINT) ? null : path;
     }
 
-    private String actionLabel(String eventType) {
-        if (processTerminalEvent(eventType)) {
+    private String actionLabel(DomainEvent event, Map<String, Object> params, NoticeSiteMessageTargetCommand target) {
+        String declared = safeText(stringValue(params.get("viewActionLabel")));
+        String viewPath = processTerminalEvent(event.getEventType())
+                ? safeInternalPath(stringValue(params.get("viewPath"))) : null;
+        if (declared != null && declared.length() <= ACTION_LABEL_MAX_LENGTH
+                && StringUtils.hasText(viewPath) && viewPath.equals(target.getTargetKey())) {
+            return declared;
+        }
+        if (processTerminalEvent(event.getEventType())) {
             return "查看申请";
         }
         return "去审批";
