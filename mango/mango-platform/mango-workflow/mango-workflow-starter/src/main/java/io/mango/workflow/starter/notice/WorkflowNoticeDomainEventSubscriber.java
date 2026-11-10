@@ -34,6 +34,8 @@ import java.util.Set;
 public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscriber {
 
     private static final String RECIPIENT_RULE_CODE = "workflow.operator";
+    /** 消息中心的固定目标键；工作流目标不可解析时由前端退到该页面。 */
+    private static final String NOTICE_MESSAGE_CENTER_TARGET_KEY = "notice:site-message";
     private static final int C0_CONTROL_LIMIT = 0x20;
     private static final int DELETE_CONTROL_CODE_POINT = 0x7f;
     private static final Set<String> SUPPORTED_EVENTS = Set.of(
@@ -194,9 +196,11 @@ public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscribe
     private NoticeSiteMessageTargetCommand target(DomainEvent event, Map<String, Object> params) {
         NoticeSiteMessageTargetCommand target = new NoticeSiteMessageTargetCommand();
         target.setTargetType(NoticeSiteMessageTargetType.ROUTE);
-        String fallbackTargetKey = defaultWorkflowTargetKey(event.getEventType(), params);
+        String defaultTargetKey = defaultWorkflowTargetKey(event.getEventType(), params);
         String targetKey = workflowTargetKey(event.getEventType(), params);
         Map<String, Object> targetParams = new LinkedHashMap<>(params);
+        String fallbackTargetKey = targetKey.equals(defaultTargetKey)
+                ? NOTICE_MESSAGE_CENTER_TARGET_KEY : defaultTargetKey;
         if (!targetKey.equals(fallbackTargetKey)) {
             targetParams.put("fallbackTargetKey", fallbackTargetKey);
         }

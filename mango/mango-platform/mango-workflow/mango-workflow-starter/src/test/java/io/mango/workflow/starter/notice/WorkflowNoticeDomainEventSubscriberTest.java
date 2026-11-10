@@ -169,6 +169,9 @@ class WorkflowNoticeDomainEventSubscriberTest {
             assertThat(notice.getUserIds()).isNull();
             assertThat(notice.getRecipientTargets()).isNull();
             assertThat(notice.getBizType()).isEqualTo("workflow.process.completed");
+            assertThat(notice.getMessageTarget().getTargetKey()).isEqualTo("workflow:task:done");
+            assertThat(notice.getMessageTarget().getParams().toMap())
+                    .containsEntry("fallbackTargetKey", "notice:site-message");
         });
     }
 
@@ -214,7 +217,8 @@ class WorkflowNoticeDomainEventSubscriberTest {
         assertThat(events).singleElement().satisfies(published -> {
             NoticeSendEventCommand notice = (NoticeSendEventCommand) published;
             assertThat(notice.getMessageTarget().getTargetKey()).isEqualTo("workflow:task:initiated");
-            assertThat(notice.getMessageTarget().getParams().toMap()).doesNotContainKey("fallbackTargetKey");
+            assertThat(notice.getMessageTarget().getParams().toMap())
+                    .containsEntry("fallbackTargetKey", "notice:site-message");
         });
     }
 

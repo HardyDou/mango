@@ -101,3 +101,5 @@ pnpm -F @mango/admin-shell build
 > Issue #1158 影响说明：Maven `1.1.5` 起，`resource_registry` 中 `tenant_id` 为空的历史行在同步与 `FINALIZE` 清理时只输出 `Mango resource missing disable skipped: tenant scope is unavailable` 告警并跳过，不猜测租户、不调用 Resource Handler、不修改该行，`fail-open=false` 下应用仍可完成启动。看到该告警不需要清库、补写 `tenant_id` 或改 Bootstrap 审计表；真实租户行的清理失败仍保持 fail-closed。本 FAQ 的租户、字典与基础数据排障步骤不变。
 
 > Issue #971 影响说明：新增系统字典 `integration_connector_category`（支付/消息/身份/文件/其他），随 `system-common-dict.yml` 声明同步；`integration_connector` 与 `authorization_*` 表一致列入租户自动过滤排除表，`integration_credential`、`integration_instance` 等业务表仍带 `tenant_id` 并受租户隔离。字典为空或租户上下文缺失时仍按本页步骤排查。
+
+> Issue #1182 影响说明：`@mango/admin-shell` 顶部铃铛与站内信详情改为按「目标 → `fallbackTargetKey` → 消息中心」解析消息按钮跳转，解析不到时退到消息中心。本场景涉及的菜单、页面 key、按钮权限码、接口鉴权、租户隔离和权限判定结果不变。
