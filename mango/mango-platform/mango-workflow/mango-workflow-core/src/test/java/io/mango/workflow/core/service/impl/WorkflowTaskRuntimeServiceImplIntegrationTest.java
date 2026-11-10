@@ -12,6 +12,7 @@ import io.mango.infra.event.api.IDomainEventPublisher;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
 import io.mango.identity.api.AuthUserProvider;
 import io.mango.identity.api.TenantMemberProvider;
+import io.mango.identity.api.vo.TenantMemberVO;
 import io.mango.workflow.api.command.AddSignWorkflowTaskCommand;
 import io.mango.workflow.api.command.ClaimWorkflowTaskCommand;
 import io.mango.workflow.api.command.CompleteWorkflowTaskCommand;
@@ -106,6 +107,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
@@ -155,6 +157,8 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
     @Autowired
     private WorkflowAssigneeResolver assigneeResolver;
     @Autowired
+    private TenantMemberProvider tenantMemberProvider;
+    @Autowired
     private IWorkflowParticipationService workflowParticipationService;
     @Autowired
     private CapturingBusinessApplyService workflowBusinessApplyService;
@@ -169,7 +173,7 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
         MangoContextHolder.set(MangoContextSnapshot.empty()
                 .withSecurity(1001L, "1", "anonymous", "default", "USER", "ORG", 100L, "anonymous"));
         reset(taskService, runtimeService, historyService, repositoryService, candidateGroupProvider,
-                workflowParticipationService);
+                workflowParticipationService, tenantMemberProvider);
         workflowBusinessApplyService.clear();
         workflowEventPublisher.clear();
         operationLog.clear();
@@ -436,6 +440,129 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
         assertThat(operationLog.entries()).containsSubsequence(
                 "refreshCurrentTasksAndReturn:proc-1",
                 "publishTaskAdvanced:proc-1");
+    }
+
+    @Test
+    void returnTaskAssignsSpecifiedTargetAssigneeInSameMutation() {
+        insertFormInstance("proc-1", "{\"existing\":true}", WorkflowInstanceStatus.RUNNING.name());
+        when(tenantMemberProvider.getEnabledMember(2002L, 1L)).thenReturn(member(2002L));
+        Task currentTask = task("task-2", "supervisor_approve", "proc-1", "pd-1", "anonymous");
+        Task returnedTask = task("task-3", "risk_specialist_review", "proc-1", "pd-1", null);
+        TaskQuery query = taskQuery(currentTask, 1L, List.of(returnedTask));
+        when(taskService.createTaskQuery()).thenReturn(query);
+        TaskQuery targetQuery = mock(TaskQuery.class, Answers.RETURNS_SELF);
+        when(query.taskDefinitionKey(any())).thenReturn(targetQuery);
+        when(targetQuery.count()).thenReturn(1L);
+        when(targetQuery.list()).thenReturn(List.of(), List.of(returnedTask));
+        HistoricTaskInstance historicTask = mock(HistoricTaskInstance.class);
+        when(historicTask.getTaskDefinitionKey()).thenReturn("risk_specialist_review");
+        HistoricTaskInstanceQuery historicTaskQuery = mock(HistoricTaskInstanceQuery.class, Answers.RETURNS_SELF);
+        when(historyService.createHistoricTaskInstanceQuery()).thenReturn(historicTaskQuery);
+        when(historicTaskQuery.list()).thenReturn(List.of(historicTask));
+        ChangeActivityStateBuilder stateBuilder = mock(ChangeActivityStateBuilder.class, Answers.RETURNS_SELF);
+        when(runtimeService.createChangeActivityStateBuilder()).thenReturn(stateBuilder);
+        workflowBusinessApplyService.nextCurrentTask("task-3", "risk_specialist_review", "风控专员初审", "risk-specialist");
+        ReturnWorkflowTaskCommand command = new ReturnWorkflowTaskCommand();
+        command.setTaskId("task-2");
+        command.setTargetAssigneeUserId("2002");
+        command.setComment("退回原初审专员");
+        command.setVariables(WorkflowJsonRequest.of(Map.of("returnReason", "缺少附件")));
+
+        WorkflowTaskCompleteResultVO result = service.returnTask(command);
+
+        verify(stateBuilder).changeState();
+        verify(taskService).setAssignee("task-3", "2002");
+        verify(workflowParticipationService, atLeastOnce()).recordParticipant(any());
+        assertThat(result.getActionResult()).isEqualTo(WorkflowTaskAction.RETURN);
+        assertThat(result.getCurrentTasks()).singleElement()
+                .returns("task-3", WorkflowBusinessApplyCurrentTaskVO::getTaskId);
+        assertThat(records()).singleElement()
+                .returns("RETURN", WorkflowTaskRecordEntity::getAction)
+                .satisfies(record -> assertThat(record.getVariablesJson())
+                        .contains("\"targetTaskDefinitionKey\":\"risk_specialist_review\"")
+                        .contains("\"targetAssigneeUserId\":\"2002\""));
+    }
+
+    @Test
+    void returnTaskRejectsUnknownTargetAssigneeBeforeChangingActivityState() {
+        insertFormInstance("proc-1", "{\"existing\":true}", WorkflowInstanceStatus.RUNNING.name());
+        Task currentTask = task("task-2", "supervisor_approve", "proc-1", "pd-1", "anonymous");
+        TaskQuery query = taskQuery(currentTask, 1L, List.of());
+        when(taskService.createTaskQuery()).thenReturn(query);
+        HistoricTaskInstance historicTask = mock(HistoricTaskInstance.class);
+        when(historicTask.getTaskDefinitionKey()).thenReturn("risk_specialist_review");
+        HistoricTaskInstanceQuery historicTaskQuery = mock(HistoricTaskInstanceQuery.class, Answers.RETURNS_SELF);
+        when(historyService.createHistoricTaskInstanceQuery()).thenReturn(historicTaskQuery);
+        when(historicTaskQuery.list()).thenReturn(List.of(historicTask));
+        ChangeActivityStateBuilder stateBuilder = mock(ChangeActivityStateBuilder.class, Answers.RETURNS_SELF);
+        when(runtimeService.createChangeActivityStateBuilder()).thenReturn(stateBuilder);
+        ReturnWorkflowTaskCommand command = new ReturnWorkflowTaskCommand();
+        command.setTaskId("task-2");
+        command.setTargetAssigneeUserId("ghost");
+        command.setComment("退回");
+
+        assertThatThrownBy(() -> service.returnTask(command))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("退回目标办理人不存在或已停用");
+        verify(stateBuilder, never()).changeState();
+        assertThat(records()).isEmpty();
+    }
+
+    @Test
+    void returnTaskRejectsTargetAssigneeOutsideCurrentTenant() {
+        insertFormInstance("proc-1", "{\"existing\":true}", WorkflowInstanceStatus.RUNNING.name());
+        Task currentTask = task("task-2", "supervisor_approve", "proc-1", "pd-1", "anonymous");
+        TaskQuery query = taskQuery(currentTask, 1L, List.of());
+        when(taskService.createTaskQuery()).thenReturn(query);
+        HistoricTaskInstance historicTask = mock(HistoricTaskInstance.class);
+        when(historicTask.getTaskDefinitionKey()).thenReturn("risk_specialist_review");
+        HistoricTaskInstanceQuery historicTaskQuery = mock(HistoricTaskInstanceQuery.class, Answers.RETURNS_SELF);
+        when(historyService.createHistoricTaskInstanceQuery()).thenReturn(historicTaskQuery);
+        when(historicTaskQuery.list()).thenReturn(List.of(historicTask));
+        ChangeActivityStateBuilder stateBuilder = mock(ChangeActivityStateBuilder.class, Answers.RETURNS_SELF);
+        when(runtimeService.createChangeActivityStateBuilder()).thenReturn(stateBuilder);
+        ReturnWorkflowTaskCommand command = new ReturnWorkflowTaskCommand();
+        command.setTaskId("task-2");
+        command.setTargetAssigneeUserId("3003");
+        command.setComment("退回");
+
+        assertThatThrownBy(() -> service.returnTask(command))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("退回目标办理人不是当前租户的启用成员");
+        verify(stateBuilder, never()).changeState();
+        assertThat(records()).isEmpty();
+    }
+
+    @Test
+    void returnTaskRejectsSpecifiedAssigneeWhenTargetNodeHasMultipleTasks() {
+        insertFormInstance("proc-1", "{\"existing\":true}", WorkflowInstanceStatus.RUNNING.name());
+        when(tenantMemberProvider.getEnabledMember(2002L, 1L)).thenReturn(member(2002L));
+        Task currentTask = task("task-2", "supervisor_approve", "proc-1", "pd-1", "anonymous");
+        Task returnedTask = task("task-3", "risk_specialist_review", "proc-1", "pd-1", "anonymous");
+        Task otherTask = task("task-4", "risk_specialist_review", "proc-1", "pd-1", "anonymous");
+        TaskQuery query = taskQuery(currentTask, 2L, List.of(returnedTask, otherTask));
+        when(taskService.createTaskQuery()).thenReturn(query);
+        TaskQuery targetQuery = mock(TaskQuery.class, Answers.RETURNS_SELF);
+        when(query.taskDefinitionKey(any())).thenReturn(targetQuery);
+        when(targetQuery.count()).thenReturn(2L);
+        when(targetQuery.list()).thenReturn(List.of(), List.of(returnedTask, otherTask));
+        HistoricTaskInstance historicTask = mock(HistoricTaskInstance.class);
+        when(historicTask.getTaskDefinitionKey()).thenReturn("risk_specialist_review");
+        HistoricTaskInstanceQuery historicTaskQuery = mock(HistoricTaskInstanceQuery.class, Answers.RETURNS_SELF);
+        when(historyService.createHistoricTaskInstanceQuery()).thenReturn(historicTaskQuery);
+        when(historicTaskQuery.list()).thenReturn(List.of(historicTask));
+        ChangeActivityStateBuilder stateBuilder = mock(ChangeActivityStateBuilder.class, Answers.RETURNS_SELF);
+        when(runtimeService.createChangeActivityStateBuilder()).thenReturn(stateBuilder);
+        ReturnWorkflowTaskCommand command = new ReturnWorkflowTaskCommand();
+        command.setTaskId("task-2");
+        command.setTargetAssigneeUserId("2002");
+        command.setComment("退回");
+
+        assertThatThrownBy(() -> service.returnTask(command))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("退回目标节点产生了多条办理任务，不能指定目标办理人");
+        verify(stateBuilder).changeState();
+        verify(taskService, never()).setAssignee(any(), any());
     }
 
     @Test
@@ -830,6 +957,15 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
         when(runtimeService.createProcessInstanceQuery()).thenReturn(processQuery);
         when(processQuery.processInstanceId(processInstanceId)).thenReturn(processQuery);
         when(processQuery.singleResult()).thenReturn(mock(ProcessInstance.class));
+    }
+
+    private TenantMemberVO member(Long memberId) {
+        TenantMemberVO member = new TenantMemberVO();
+        member.setMemberId(memberId);
+        member.setTenantId(1L);
+        member.setUserId(memberId);
+        member.setStatus(1);
+        return member;
     }
 
     private Task task(String id, String definitionKey, String processInstanceId, String processDefinitionId, String assignee) {

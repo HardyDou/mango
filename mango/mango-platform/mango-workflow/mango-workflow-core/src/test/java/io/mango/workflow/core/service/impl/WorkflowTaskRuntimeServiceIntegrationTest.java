@@ -10,6 +10,7 @@ import io.mango.infra.event.api.IDomainEventPublisher;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
 import io.mango.identity.api.AuthUserProvider;
 import io.mango.identity.api.TenantMemberProvider;
+import io.mango.identity.api.vo.TenantMemberVO;
 import io.mango.workflow.api.WorkflowEventTypes;
 import io.mango.workflow.api.command.CompleteWorkflowTaskCommand;
 import io.mango.workflow.api.command.CreateWorkflowBusinessApplyCommand;
@@ -60,7 +61,9 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest(
         classes = WorkflowTaskRuntimeServiceIntegrationTest.TestApplication.class,
@@ -94,6 +97,8 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
     private WorkflowAssigneeResolver assigneeResolver;
     @Autowired
     private CollectingDomainEventPublisher eventPublisher;
+    @Autowired
+    private TenantMemberProvider tenantMemberProvider;
 
     private JdbcTemplate jdbcTemplate;
 
@@ -207,6 +212,85 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
                 .containsEntry("applyId", started.applyId())
                 .containsEntry("currentTaskDefinitionKeys", "manager_approve")
                 .containsEntry("currentAssigneeNames", "admin");
+    }
+
+    @Test
+    void returnTaskAssignsSpecifiedTargetAssigneeToNewRuntimeTask() {
+        StartedWorkflow started = startIssue233Workflow("BIZ-1191-ASSIGN");
+        Task managerTask = taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("manager_approve")
+                .singleResult();
+        CompleteWorkflowTaskCommand completeCommand = new CompleteWorkflowTaskCommand();
+        completeCommand.setTaskId(managerTask.getId());
+        completeCommand.setComment("提交财务");
+        taskRuntimeService.completeWithResult(completeCommand);
+
+        Task financeTask = taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("finance_approve")
+                .singleResult();
+        switchUser(1002L, "finance");
+        when(tenantMemberProvider.getEnabledMember(2001L, 1L)).thenReturn(member(2001L));
+        ReturnWorkflowTaskCommand returnCommand = new ReturnWorkflowTaskCommand();
+        returnCommand.setTaskId(financeTask.getId());
+        returnCommand.setTargetAssigneeUserId("2001");
+        returnCommand.setComment("退回原经理");
+
+        var result = taskRuntimeService.returnTask(returnCommand);
+
+        Task returnedTask = taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("manager_approve")
+                .singleResult();
+        assertThat(returnedTask).isNotNull();
+        assertThat(returnedTask.getAssignee()).isEqualTo("2001");
+        assertThat(result.getCurrentTasks()).singleElement()
+                .returns("manager_approve", task -> task.getTaskDefinitionKey())
+                .returns("2001", task -> task.getAssigneeName());
+        assertThat(currentTaskDefinitionKeys(started.applyId())).containsExactly("manager_approve");
+    }
+
+    @Test
+    void returnTaskRejectsInvalidTargetAssigneeWithoutMovingRuntimeTask() {
+        StartedWorkflow started = startIssue233Workflow("BIZ-1191-INVALID");
+        Task managerTask = taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("manager_approve")
+                .singleResult();
+        CompleteWorkflowTaskCommand completeCommand = new CompleteWorkflowTaskCommand();
+        completeCommand.setTaskId(managerTask.getId());
+        completeCommand.setComment("提交财务");
+        taskRuntimeService.completeWithResult(completeCommand);
+
+        Task financeTask = taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("finance_approve")
+                .singleResult();
+        switchUser(1002L, "finance");
+        ReturnWorkflowTaskCommand returnCommand = new ReturnWorkflowTaskCommand();
+        returnCommand.setTaskId(financeTask.getId());
+        returnCommand.setTargetAssigneeUserId("9999");
+        returnCommand.setComment("退回原经理");
+
+        assertThatThrownBy(() -> taskRuntimeService.returnTask(returnCommand))
+                .isInstanceOf(io.mango.common.exception.BizException.class)
+                .hasMessageContaining("退回目标办理人不是当前租户的启用成员");
+        assertThat(taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("finance_approve").count()).isEqualTo(1);
+        assertThat(taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("manager_approve").count()).isZero();
+    }
+
+    private TenantMemberVO member(Long userId) {
+        TenantMemberVO member = new TenantMemberVO();
+        member.setMemberId(userId);
+        member.setTenantId(1L);
+        member.setUserId(userId);
+        member.setStatus(1);
+        return member;
     }
 
     @Test

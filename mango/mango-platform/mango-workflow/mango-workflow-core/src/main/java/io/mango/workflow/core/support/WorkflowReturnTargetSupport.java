@@ -36,6 +36,9 @@ public final class WorkflowReturnTargetSupport {
     /** 退回记录中保存目标节点的变量名。 */
     public static final String TARGET_VARIABLE = "targetTaskDefinitionKey";
 
+    /** 退回记录中保存目标办理人的变量名。 */
+    public static final String TARGET_ASSIGNEE_VARIABLE = "targetAssigneeUserId";
+
     private WorkflowReturnTargetSupport() {
     }
 
@@ -197,10 +200,47 @@ public final class WorkflowReturnTargetSupport {
                         + sourceTask.getTaskDefinitionKey() + "」");
     }
 
+    /** 退回前目标节点已有的任务 ID，用于识别本次退回新建的任务。 */
+    public static Set<String> targetTaskIds(TaskService taskService, String processInstanceId,
+                                            String targetTaskDefinitionKey) {
+        Set<String> taskIds = new LinkedHashSet<>();
+        for (Task targetTask : targetTasks(taskService, processInstanceId, targetTaskDefinitionKey)) {
+            taskIds.add(targetTask.getId());
+        }
+        return taskIds;
+    }
+
+    /** 退回并指定办理人时，本次退回必须在目标节点只新建一条可办理任务。 */
+    public static Task requireNewTargetTask(TaskService taskService, String processInstanceId,
+                                            String targetTaskDefinitionKey, Set<String> existingTaskIds) {
+        Set<String> existing = Require.nonNull(existingTaskIds, WorkflowCode.TASK_INVALID,
+                "退回前目标节点任务快照不能为空");
+        List<Task> createdTasks = targetTasks(taskService, processInstanceId, targetTaskDefinitionKey).stream()
+                .filter(targetTask -> !existing.contains(targetTask.getId()))
+                .toList();
+        Require.isTrue(!createdTasks.isEmpty(), WorkflowCode.TASK_INVALID,
+                "退回目标节点没有产生可办理任务，不能指定目标办理人");
+        Require.isTrue(createdTasks.size() == 1, WorkflowCode.TASK_INVALID,
+                "退回目标节点产生了多条办理任务，不能指定目标办理人");
+        return createdTasks.getFirst();
+    }
+
+    private static List<Task> targetTasks(TaskService taskService, String processInstanceId,
+                                          String targetTaskDefinitionKey) {
+        return taskService.createTaskQuery()
+                .processInstanceId(processInstanceId)
+                .taskDefinitionKey(targetTaskDefinitionKey)
+                .list();
+    }
+
     /** 退回办理记录使用的变量快照。 */
-    public static Map<String, Object> returnVariables(Map<String, Object> variables, String targetTaskDefinitionKey) {
+    public static Map<String, Object> returnVariables(Map<String, Object> variables, String targetTaskDefinitionKey,
+                                                      String targetAssigneeUserId) {
         Map<String, Object> result = new LinkedHashMap<>(variables == null ? Map.of() : variables);
         result.put(TARGET_VARIABLE, targetTaskDefinitionKey);
+        if (StringUtils.hasText(targetAssigneeUserId)) {
+            result.put(TARGET_ASSIGNEE_VARIABLE, targetAssigneeUserId.trim());
+        }
         return result;
     }
 }

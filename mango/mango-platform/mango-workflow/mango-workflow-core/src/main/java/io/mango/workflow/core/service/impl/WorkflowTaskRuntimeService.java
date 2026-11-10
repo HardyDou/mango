@@ -484,6 +484,9 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         ensureCurrentUserCanOperate(task);
 
         String targetTaskDefinitionKey = resolveReturnTarget(task, command.getTargetTaskDefinitionKey());
+        String targetAssigneeUserId = resolveReturnTargetAssignee(command);
+        Set<String> existingTargetTaskIds = targetAssigneeUserId == null ? Set.of()
+                : WorkflowReturnTargetSupport.targetTaskIds(taskService, task.getProcessInstanceId(), targetTaskDefinitionKey);
         Map<String, Object> variables = mergeVariables(task.getProcessInstanceId(), json(command.getVariables()));
         if (StringUtils.hasText(command.getComment())) {
             taskService.addComment(task.getId(), task.getProcessInstanceId(), command.getComment().trim());
@@ -496,10 +499,15 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
                 .changeState();
         WorkflowReturnTargetSupport.ensureTargetTaskCreated(taskService, task, targetTaskDefinitionKey);
         saveRecord(task, WorkflowTaskAction.RETURN, command.getComment(),
-                WorkflowReturnTargetSupport.returnVariables(json(command.getVariables()), targetTaskDefinitionKey));
+                WorkflowReturnTargetSupport.returnVariables(
+                        json(command.getVariables()), targetTaskDefinitionKey, targetAssigneeUserId));
         updateFormInstance(task.getProcessInstanceId(), variables, WorkflowInstanceStatus.RUNNING);
         triggerEventNotify(task, variables);
         WorkflowTaskAdvanceResult advanceResult = advanceRuntimeTasks(task.getProcessInstanceId());
+        if (targetAssigneeUserId != null) {
+            advanceResult = assignReturnedTask(task.getProcessInstanceId(), targetTaskDefinitionKey,
+                    existingTargetTaskIds, targetAssigneeUserId);
+        }
         WorkflowReturnTargetSupport.ensureLeftSourceNode(taskService, task, targetTaskDefinitionKey,
                 advanceResult.ended());
         WorkflowFormInstanceEntity formInstance = findFormInstance(task.getProcessInstanceId());
@@ -821,6 +829,28 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
 
     private String resolveReturnTarget(Task task, String configuredTarget) {
         return WorkflowReturnTargetSupport.resolveTarget(historyService, repositoryService, task, configuredTarget);
+    }
+
+    /** 校验并规范化退回目标办理人；未指定时返回 null，指定后必须指向当前租户启用成员。 */
+    private String resolveReturnTargetAssignee(ReturnWorkflowTaskCommand command) {
+        String input = trim(command.getTargetAssigneeUserId());
+        if (input == null) {
+            return null;
+        }
+        Long userId = Require.nonNull(resolveUserId(input), WorkflowCode.TASK_INVALID, "退回目标办理人不存在或已停用");
+        Require.isTrue(memberId(userId) != null, WorkflowCode.TASK_INVALID,
+                "退回目标办理人不是当前租户的启用成员");
+        return String.valueOf(userId);
+    }
+
+    /** 在本次退回新建的目标任务上写入指定办理人，并用最新快照重算业务当前任务。 */
+    private WorkflowTaskAdvanceResult assignReturnedTask(String processInstanceId, String targetTaskDefinitionKey,
+                                                         Set<String> existingTargetTaskIds, String targetAssigneeUserId) {
+        Task targetTask = WorkflowReturnTargetSupport.requireNewTargetTask(taskService, processInstanceId, targetTaskDefinitionKey, existingTargetTaskIds);
+        taskService.setAssignee(targetTask.getId(), targetAssigneeUserId);
+        targetTask.setAssignee(targetAssigneeUserId);
+        syncCurrentAssignees(processInstanceId);
+        return new WorkflowTaskAdvanceResult(processInstanceId, false, workflowBusinessApplyService.refreshCurrentTasksAndReturn(processInstanceId));
     }
 
     @Override

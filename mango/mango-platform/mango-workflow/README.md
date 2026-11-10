@@ -684,6 +684,17 @@ Workflow 参数校验约束统一由 `mango-workflow-api` 的 `XxxApi` 契约声
 
 退回不要求回退连线或目标节点动作配置。目标为已完成历史用户任务时直接退回；目标为网关或汇聚时按流程定义向上游解析到最近的已完成用户任务，多个候选或没有候选时报错，因为把执行移动到汇聚网关会被网关直接带回原节点。退回是失败可见的操作：引擎变更活动状态后，若目标节点没有待办任务，或流程推进后仍停原节点，调用以 `TASK_INVALID` 失败并回滚；成功响应的 `actionResult` 为 `RETURN`。
 
+需要退回后直接回到指定处理人时，传可选 `targetAssigneeUserId`。它接受 `identity_user.id`（推荐）或 `username`，要求目标用户是当前租户启用成员；只要求调用人能办理当前任务，不要求调用人是目标节点候选人或具备目标节点 `transfer` 动作。该参数仅在本次退回在目标节点新建唯一任务时生效；目标用户无效、未生成任务或新建多条任务时以 `TASK_INVALID` 失败并整体回滚。指定后平台在同一事务内写入 assignee（覆盖节点原办理人或自动派单结果）、刷新当前任务投影和参与关系，并随 `workflow.task.advanced` 通知新办理人。
+
+```java
+ReturnWorkflowTaskCommand command = new ReturnWorkflowTaskCommand();
+command.setTaskId(currentTaskId);
+command.setTargetTaskDefinitionKey("first_review");
+command.setTargetAssigneeUserId(String.valueOf(previousHandlerUserId));
+command.setComment("退回原初审专员");
+taskRuntimeApi.returnTask(command);
+```
+
 工作流领域事件：
 
 | 事件类型 | 发布时机 | 主要用途 |
