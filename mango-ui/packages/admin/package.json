@@ -1,6 +1,6 @@
 {
   "name": "@mango/admin",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -38,7 +38,7 @@
   "dependencies": {
     "@element-plus/icons-vue": "2.3.2",
     "@mango/admin-pages": "workspace:1.3.0",
-    "@mango/admin-shell": "workspace:1.1.2",
+    "@mango/admin-shell": "workspace:1.1.3",
     "@mango/app-runtime": "workspace:1.0.7",
     "@mango/auth": "workspace:1.0.42",
     "@mango/cms": "workspace:1.1.2",
@@ -57,7 +57,7 @@
     "@mango/ai": "workspace:1.2.5",
     "@mango/calendar": "workspace:1.0.57",
     "@mango/file": "workspace:1.2.5",
-    "@mango/notice": "workspace:1.0.62",
+    "@mango/notice": "workspace:1.0.63",
     "@mango/numgen": "workspace:1.0.58",
     "@mango/payment": "workspace:1.0.49",
     "@mango/template": "workspace:1.0.58",

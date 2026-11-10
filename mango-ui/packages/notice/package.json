@@ -1,6 +1,6 @@
 {
   "name": "@mango/notice",
-  "version": "1.0.62",
+  "version": "1.0.63",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",

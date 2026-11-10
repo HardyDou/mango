@@ -1,3 +1,98 @@
+## v2026.11.10-maven-1.3.0-pmd7-workflow-notice-release - Mango Maven/docs 1.3.0 PMD 7 and workflow notification release - 2026-11-10
+
+Status: `PENDING`. Release plan digest `7e5709e63dade4bdf0cdbd4a574fd3e5fc5c350a15d45dc547d3f7c030700fe6`; Maven/npm publication, consume verification, Tag and GitHub Release remain pending.
+
+### Pull Requests
+
+- Changed: [PR #1188](https://github.com/HardyDou/mango/pull/1188) Upgraded the Java quality gate to PMD 7 (`maven-pmd-plugin` 3.28.0) with type resolution restored for Java 8-21, replaced the P3C 2.1.1 ruleset with the built-in Mango Java ruleset v2 (`pmd-mango.xml`), and made PMD processing errors block the build instead of being reported as a pass. Packages: the complete Maven/docs `1.3.0` tuple including `io.mango.tools.maven.plugin:mango-maven-plugin:1.3.0`, and the generated `@mango/cli@1.4.0` closure. Business Adaptation: upgrade the tuple, then regenerate or update the project PMD configuration because generated projects now ship `config/quality/pmd-mango.xml` instead of the P3C rulesets.
+- Added: [PR #1189](https://github.com/HardyDou/mango/pull/1189) Made default workflow notifications switchable and configurable: `mango.workflow.notice.enabled=false` disables the default subscriber, message templates declare `SYNC_ONCE` so operations edits are no longer overwritten, and `customConfig.viewQuery` plus `viewActionLabel` let declarations produce query-scoped in-app targets and button labels for terminal notifications. Packages: the Maven tuple containing `io.mango.platform.workflow:mango-workflow-*:1.3.0` and `io.mango.platform.notice:mango-notice-*:1.3.0`, plus `@mango/notice@1.0.63`. Business Adaptation: upgrade the tuple; consumers that previously removed the notification bean through reflection can switch to the documented property, and approval declarations can add `viewQuery`/`viewActionLabel`.
+- Fixed: [PR #1184](https://github.com/HardyDou/mango/pull/1184) Notification targets now fall back to the message center when the declared target cannot be resolved, so a bell notification button never becomes a dead end. Packages: `@mango/notice@1.0.63`, `@mango/admin-shell@1.1.3` and `@mango/admin@2.0.5`. Business Adaptation: upgrade the npm closure; existing target keys, parameters and callback semantics are unchanged.
+- Fixed: [PR #1187](https://github.com/HardyDou/mango/pull/1187) Mango Java rulesets now reach business builds through a parent-level property instead of a path resolved per project, so custom ruleset overrides work in generated projects. Packages: the Maven tuple containing `io.mango.tools.maven.plugin:mango-maven-plugin:1.3.0` and `io.mango:mango-parent:1.3.0`. Business Adaptation: upgrade the tuple; overrides that previously hard-coded a ruleset file path can move to the documented property.
+- Fixed: [PR #1186](https://github.com/HardyDou/mango/pull/1186) Bundled the Java rulesets inside the Maven plugin so business repositories no longer need external ruleset files, while still allowing per-project adjustment. Packages: the Maven tuple containing `io.mango.tools.maven.plugin:mango-maven-plugin:1.3.0`. Business Adaptation: upgrade the tuple and delete project-local ruleset copies that only existed to satisfy the plugin.
+- Changed: [PR #1190](https://github.com/HardyDou/mango/pull/1190) Merged the PMD 7 follow-up fixes and refreshed the Mango PMD 7 baseline for the whole Reactor. Packages: none beyond the `1.3.0` tuple above. Business Adaptation: no separate action; the refreshed baseline is the reference for the upgraded ruleset.
+
+### Fixed
+
+- Notification target resolution failures fall back to the message center instead of showing a warning and leaving the user on the current page; the bell interaction still reports completion to the caller.
+- PMD processing errors now fail the build. Previously an empty or failed analysis could be reported as `PASS`, hiding rules that never ran.
+- Custom PMD rulesets declared in a business project now take effect through a parent-level property, fixing overrides that were silently ignored in generated projects.
+
+### Added
+
+- Built-in Mango Java ruleset v2 (`config/quality/pmd-mango.xml`) shipped inside the Maven plugin, replacing the P3C 2.1.1 rule files and their plugin dependency.
+- `mango.workflow.notice.enabled` property to disable the default workflow notification subscriber without removing beans through reflection.
+- `customConfig.viewQuery` and `customConfig.viewActionLabel` for workflow business approval declarations, propagated to `WorkflowBusinessApplyVO` and `WorkflowEventPayloadVO` and used to build terminal notification targets and button labels.
+- Mango PMD 7 inventory baseline for the complete Reactor.
+
+### Changed
+
+- The non-application Maven/docs tuple advances from `1.2.0` to `1.3.0` with 201 coordinates, because the Java quality gate tooling and the workflow notification contract both change.
+- npm: `@mango/notice` `1.0.62` → `1.0.63`, `@mango/admin-shell` `1.1.2` → `1.1.3`, `@mango/admin` `2.0.4` → `2.0.5`, `@mango/cli` `1.3.11` → `1.4.0` for the new generated-project ruleset.
+- Notice message template declarations are now `SYNC_ONCE`, so declaration upgrades no longer overwrite operator-maintained titles, bodies or enabled state.
+- Generated full backend projects use `maven-pmd-plugin` 3.28.0 with the Mango ruleset instead of P3C, and `check-cli` guards the ruleset file and plugin configuration.
+
+### Versions
+
+- Maven/docs: `1.2.0` → `1.3.0`; 201 sealed Maven coordinates, including `io.mango:mango-docs-bundle:1.3.0`, `io.mango.tools.maven.plugin:mango-maven-plugin:1.3.0` and `io.mango:mango-parent:1.3.0`.
+- npm: `@mango/notice@1.0.63`, `@mango/admin-shell@1.1.3`, `@mango/admin@2.0.5`, `@mango/cli@1.4.0`; no other npm package is republished.
+- Exact topology, dependency order and checksums are generated in `mango-ui/.changeset/release-plan.json`.
+
+### Published Packages
+
+- Publish all 201 non-application Maven coordinates in release-plan order, including the tools, parent and docs bundle coordinates that carry the PMD 7 ruleset.
+- Publish `@mango/notice@1.0.63`, `@mango/admin-shell@1.1.3`, `@mango/admin@2.0.5` and `@mango/cli@1.4.0` in plan order.
+- Application fat jars and coordinates outside the sealed plan are excluded; `@mango/pmo` is unchanged because no PMO rule, contract, Agent or Skill file changed in this batch.
+
+### Business Impact
+
+- Business projects build with PMD 7 and the Mango ruleset v2; generated projects ship the new ruleset file and plugin configuration, and consumers that kept local ruleset copies can delete them.
+- PMD analysis failures now block the build, so a previously green project can fail until the reported processing error or new rule violation is fixed.
+- Workflow default notifications can be disabled with one property; teams that patched the Spring context by reflection should replace that workaround.
+- Operators keep their edits to notification templates because declarations no longer overwrite title, body or enabled state on upgrade.
+- Terminal workflow notifications can now open a query-scoped page with a declared button label, and the bell no longer leaves users on a dead-end page.
+- No database migration, menu, permission or tenant boundary change is introduced by this batch; `mango-integration`, file preview and cold baseline behavior are unchanged.
+
+### Upgrade Estimate
+
+- Audience: Mango backend consumers using the Maven quality gate, custom PMD rulesets or workflow notifications, and frontend consumers of the notice and admin npm closure.
+- Engineering Effort: 0.5-1 engineer-day per backend consumer to upgrade the tuple, remove project-local rulesets and fix any new PMD finding; 0.5 engineer-day for consumers that only upgrade dependencies; 0.25 engineer-day for the npm closure upgrade.
+- Execution Window: 1-2 hours per consumer including build verification and a notification smoke test.
+- Service Downtime: none for the quality gate change; one controlled backend restart for consumers adopting the new workflow notification properties or templates.
+- Rollback Effort: 0.5 engineer-day per consumer to restore the complete Maven `1.2.0` tuple and the previously verified npm closure.
+- Assumptions: consumers run the documented Maven build entry, have CI logs available for PMD findings, and can verify notifications with a test workflow instance.
+
+### Upgrade Notes
+
+1. Upgrade the complete Mango Maven/docs tuple from `1.2.0` to `1.3.0`; do not update only one starter or module.
+2. Run the project build once and review PMD output: processing errors now fail the build, and ruleset v2 may report findings that P3C did not.
+3. Delete project-local copies of the P3C rulesets and point custom overrides at the parent-level ruleset property; the plugin now bundles the Mango ruleset.
+4. Upgrade the npm closure to `@mango/notice@1.0.63`, `@mango/admin-shell@1.1.3`, `@mango/admin@2.0.5` and `@mango/cli@1.4.0`; run `pnpm install` and rebuild the admin bundle.
+5. Replace reflection-based removal of the default workflow notification bean with `mango.workflow.notice.enabled=false` when notifications must be off.
+6. Review workflow business approval declarations and add `viewQuery`/`viewActionLabel` where the terminal notification should open a query-scoped page or show a specific button label.
+7. Regenerate or upgrade generated projects with `@mango/cli@1.4.0` so `config/quality/pmd-mango.xml` and the PMD plugin configuration match the published ruleset.
+8. Smoke test the notification bell for a target whose page is not registered: it must navigate to the message center instead of stopping on the current page.
+
+### Verification
+
+- `mvn verify` passed for the affected modules before merge: maven plugin ruleset resolution and PMD 7 execution, workflow notification configuration, notice declaration handling and the Reactor-wide PMD 7 baseline refresh.
+- The PMD 7 baseline workflow regenerated the complete inventory and the committed baseline matches the upgraded ruleset.
+- Notice target fallback is covered by the frontend target specs added with the fix; workflow notification changes are covered by the workflow module integration tests and the documented verification entry.
+- `catalog:check` reports a consistent Catalog projection on the source commit and the release plan re-computes 201 coordinates with matching topology.
+- The Maven reactor and docs bundle are built once from the sealed candidate; all 201 coordinates are checked in publish and consume registries with matching checksums, and a clean consumer resolves Maven `1.3.0` plus the four sealed npm tarballs from the consume registries.
+
+### Rollback
+
+- Restore consumers to the complete Maven/docs `1.2.0` tuple and the previously verified npm closure; immutable coordinates are never overwritten.
+- Rolling back the quality gate restores P3C rules and the non-blocking processing behavior; revert any ruleset v2 fixes only together with that rollback.
+- Rolling back the workflow notification change re-enables the unconditional subscriber and the `SYNC_ALWAYS` template declarations, which will override operator edits again.
+- No data written by this batch needs repair; preserve CI logs and notification records as evidence.
+- If registry visibility is ambiguous, stop and resume read-only status/repair using the same prepared candidate; never create a second candidate for the same coordinates.
+
+### Audit History
+
+- [PR #1170](https://github.com/HardyDou/mango/pull/1170), [PR #1182](https://github.com/HardyDou/mango/pull/1182) and [PR #1188](https://github.com/HardyDou/mango/pull/1188) issues were delivered through the release-bearing PRs listed above; they are referenced here for traceability and are not separate entries in this batch.
+
+
 ## v2026.11.09-maven-1.2.0-integration-release - Mango Maven/docs 1.2.0 integration application management release - 2026-11-09
 
 Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `3825fcbedd22ad74d0759af67ce7684de4bdc3a30924ad2d0fee5d9cb183f7c0`; prepared candidate `b0b472c217519588c648046171a6861de1536470e864fe2f1ab07568aea5268d` completed publication and consume verification for 27 npm packages and 201 Maven coordinates. Tag and GitHub Release were created and verified.

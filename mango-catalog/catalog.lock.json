@@ -4,7 +4,7 @@
     "schemaVersion": 1,
     "workspaceCount": 43
   },
-  "catalogDigest": "380a69757a601d030e75a63afa7ae372abfd1e79477033a8a8fecdbc826211c5",
+  "catalogDigest": "57baaaf1f469450beb55bb7ad9a7b1009bda2de9dbcaa99be3a9002b8841ca87",
   "maven": {
     "dependencyManagementSets": [
       {
@@ -11396,7 +11396,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "2.0.4"
+      "version": "2.0.5"
     },
     {
       "name": "@mango/admin-extension",
@@ -11705,7 +11705,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.1.2"
+      "version": "1.1.3"
     },
     {
       "name": "@mango/ai",
@@ -11964,7 +11964,7 @@
       "path": "mango-ui/packages/mango-cli",
       "publicEntries": [],
       "publicResources": [],
-      "version": "1.3.11"
+      "version": "1.4.0"
     },
     {
       "name": "@mango/cms",
@@ -12822,7 +12822,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.62"
+      "version": "1.0.63"
     },
     {
       "name": "@mango/numgen",

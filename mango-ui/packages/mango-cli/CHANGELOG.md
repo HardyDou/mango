@@ -1,3 +1,20 @@
+## 1.4.0 - 2026-11-10
+
+### Added
+
+- Generate full backend projects with Mango Java ruleset v2: `config/quality/pmd-mango.xml` replaces the P3C rulesets and is bundled with the Maven plugin.
+- Guard the generated PMD ruleset file, plugin version and parent ruleset property in `check-cli`.
+
+### Changed
+
+- Lock the CLI Maven matrix to Maven `1.3.0` and the generated 201-coordinate Maven/docs release closure.
+- Generated projects build with `maven-pmd-plugin 3.28.0` (PMD 7); PMD processing errors now fail the build instead of reporting a pass.
+
+### Upgrade Notes
+
+- Upgrade `@mango/cli@1.4.0` together with the complete Maven/docs `1.3.0` tuple; do not mix release batches.
+- Regenerate or upgrade generated projects so `config/quality/pmd-mango.xml`, the PMD plugin configuration and the parent ruleset property match `1.3.0`, then delete project-local P3C ruleset copies.
+
 ## 1.3.11 - 2026-11-09
 
 ### Added
