@@ -2,6 +2,7 @@ package io.mango.notice.support.resource;
 
 import io.mango.notice.api.enums.NoticeChannelType;
 import io.mango.notice.api.enums.NoticePriority;
+import io.mango.resource.api.enums.ResourceSyncMode;
 import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.support.builder.ResourceDeclarationBuilder;
 import io.mango.resource.support.model.ResourceDeclaration;
@@ -11,6 +12,10 @@ import java.util.List;
 
 /**
  * Utility for declaring mango-notice message template resources.
+ *
+ * <p>Message templates are editable in the notice admin console, so every declaration is
+ * {@link ResourceSyncMode#SYNC_ONCE}: the first sync creates the business type and channel
+ * templates, later syncs never overwrite operator edits.
  */
 public final class NoticeMessageTemplateResourceDeclarations {
 
@@ -46,6 +51,7 @@ public final class NoticeMessageTemplateResourceDeclarations {
         return ResourceDeclarationBuilder.create(ResourceTypes.MESSAGE_TEMPLATE)
                 .id(String.valueOf(resourceId))
                 .version(spec.version())
+                .syncMode(ResourceSyncMode.SYNC_ONCE)
                 .module(spec.moduleCode(), spec.moduleName())
                 .bizKey(spec.moduleCode() + ".message." + spec.bizType().replace('.', '-') + "-"
                         + channelType.name().toLowerCase())

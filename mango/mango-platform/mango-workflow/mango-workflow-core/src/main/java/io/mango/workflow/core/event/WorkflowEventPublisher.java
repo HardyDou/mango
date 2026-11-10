@@ -219,6 +219,8 @@ public class WorkflowEventPublisher {
         payload.setApplyTitle(businessApply.getApplyTitle());
         payload.setApplySummary(businessApply.getApplySummary());
         payload.setViewPath(businessApply.getViewPath());
+        payload.setViewQuery(businessApply.getViewQuery());
+        payload.setViewActionLabel(businessApply.getViewActionLabel());
         payload.setBusinessType(businessApply.getBusinessType());
         payload.setBusinessKey(businessApply.getBusinessKey());
         payload.setProcessDefinitionId(businessApply.getEngineProcessDefinitionId());
@@ -330,6 +332,8 @@ public class WorkflowEventPublisher {
         map.put("applyTitle", payload.getApplyTitle());
         map.put("applySummary", payload.getApplySummary());
         map.put("viewPath", payload.getViewPath());
+        map.put("viewQuery", payload.getViewQuery() == null ? Map.of() : payload.getViewQuery().toMap());
+        map.put("viewActionLabel", payload.getViewActionLabel());
         map.put("variables", payload.getVariables() == null ? Map.of() : payload.getVariables().toMap());
         map.put("processDefinitionId", payload.getProcessDefinitionId());
         map.put("definitionId", payload.getDefinitionId());

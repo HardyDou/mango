@@ -622,7 +622,7 @@ mango-notice-starter/src/main/resources/META-INF/mango/resources/notice-common-m
 mango-notice-starter/src/main/resources/META-INF/mango/resources/notice-common-domain.yml
 ```
 
-业务模块声明通知模板时，推荐在业务模块自己的 starter 中实现 `ResourceProvider`，并通过 `NoticeMessageTemplateResourceDeclarations.fourChannels(...)` 生成系统消息、邮件、企业微信、短信四类模板声明。该辅助方法默认启用系统消息和企业微信，默认关闭邮件和短信；业务代码只依赖 `mango-notice-api` 和 `mango-resource-api`，不依赖 `mango-resource` 的 core/starter。
+业务模块声明通知模板时，推荐在业务模块自己的 starter 中实现 `ResourceProvider`，并通过 `NoticeMessageTemplateResourceDeclarations.fourChannels(...)` 生成系统消息、邮件、企业微信、短信四类模板声明。该辅助方法默认启用系统消息和企业微信，默认关闭邮件和短信，并把每个声明固定为 `sync-mode=SYNC_ONCE`；业务代码只依赖 `mango-notice-api` 和 `mango-resource-api`，不依赖 `mango-resource` 的 core/starter。
 
 ### 8.1 MESSAGE_CHANNEL
 
@@ -693,6 +693,8 @@ mango-notice-starter/src/main/resources/META-INF/mango/resources/notice-common-d
 | `mango-workflow` | `WorkflowMessageTemplateResourceProvider` | `workflow.task.assigned`、`workflow.process.completed`、`workflow.process.rejected` |
 | `mango-payment` | `PaymentMessageTemplateResourceProvider` | `payment.order.success`、`payment.order.failed`、`payment.refund.success`、`payment.refund.failed`、`payment.refund.approval.created`、`payment.exception.order.created`、`payment.reconciliation.difference`、`payment.settlement.unresolved` |
 | `mango-job` | `JobMessageTemplateResourceProvider` | `job.instance.failed`、`job.worker.offline` |
+
+消息模板是运营在“消息配置”里持续维护的数据，所以通过 `NoticeMessageTemplateResourceDeclarations.fourChannels(...)` 生成的声明固定使用 `sync-mode=SYNC_ONCE`：首次同步创建业务类型、配置版本和渠道模板，之后同步器只更新 registry 元数据，不覆盖运营改过的标题、正文和启用状态，也不因为声明从清单消失而停用目标。业务需要代码侧强制回写模板时，改用普通 `ResourceDeclaration` 并显式声明 `syncMode(SYNC_ALWAYS)`，不得依赖 old `AUTO` 默认值。
 
 ### 8.3 BUSINESS_DOMAIN
 

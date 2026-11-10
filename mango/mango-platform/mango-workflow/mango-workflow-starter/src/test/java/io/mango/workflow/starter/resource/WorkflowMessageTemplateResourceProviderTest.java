@@ -1,5 +1,6 @@
 package io.mango.workflow.starter.resource;
 
+import io.mango.resource.api.enums.ResourceSyncMode;
 import io.mango.resource.support.model.ResourceDeclaration;
 import org.junit.jupiter.api.Test;
 
@@ -48,6 +49,13 @@ class WorkflowMessageTemplateResourceProviderTest {
                 "WECOM", true,
                 "EMAIL", false,
                 "SMS", false));
+    }
+
+    @Test
+    void keepsTemplatesEditableInNoticeConsole() {
+        assertThat(provider.provide())
+                .allSatisfy(declaration -> assertThat(declaration.getSyncMode())
+                        .isEqualTo(ResourceSyncMode.SYNC_ONCE));
     }
 
     private Object field(ResourceDeclaration declaration, String name) {

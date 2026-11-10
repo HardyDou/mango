@@ -82,6 +82,12 @@ public class WorkflowBusinessApplyVO {
     @Schema(description = "自定义业务查看路径")
     private String viewPath;
 
+    @Schema(description = "自定义业务查看路径的查询参数")
+    private WorkflowJsonVO viewQuery;
+
+    @Schema(description = "自定义业务查看路径的按钮文案；为空时使用平台默认文案")
+    private String viewActionLabel;
+
     @Schema(description = "表单Key")
     private String formKey;
 

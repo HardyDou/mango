@@ -577,7 +577,7 @@ mango:
 
 | 返回对象 | 主要字段 | 什么时候用 |
 |----------|----------|------------|
-| `WorkflowBusinessApplyVO` | 申请 ID、业务类型、业务主键、申请标题、流程定义、渲染模式、只读 `viewPath`、状态、当前任务、快照引用、变量、扩展信息。 | 申请分页、详情、历史申请和创建申请后回显。 |
+| `WorkflowBusinessApplyVO` | 申请 ID、业务类型、业务主键、申请标题、流程定义、渲染模式、只读 `viewPath`/`viewQuery`/`viewActionLabel`、状态、当前任务、快照引用、变量、扩展信息。 | 申请分页、详情、历史申请和创建申请后回显。 |
 | `WorkflowBusinessApplyProgressVO` | 业务类型、业务主键、申请 ID、流程实例 ID、流程状态、当前任务、当前处理人、认领状态、候选用户/组、发起和结束时间。 | 业务列表展示审批状态和当前处理节点，支持批量查询。 |
 | `WorkflowBusinessProcessVO` | 业务类型、业务主键、申请 ID、流程实例 ID、流程状态和当前任务摘要。 | 业务侧批量查询最新流程状态。 |
 | `WorkflowProcessInstanceVO` | 流程实例 ID、流程定义信息、业务主键、发起人、状态、开始时间。 | 发起流程后的结果回显。 |
@@ -716,6 +716,8 @@ Workflow 参数校验约束统一由 `mango-workflow-api` 的 `XxxApi` 契约声
 | `applicantId` / `applicantName` | 原申请人；流程最终通过或驳回通知使用 `applicantId` 作为接收人。 |
 | `applyTitle` / `applySummary` | 业务申请的可读标题和摘要快照；默认通知使用 `applyTitle` 展示业务标题。 |
 | `viewPath` | 从业务申请 `formJsonSnapshot.customConfig.viewPath` 派生的只读站内路径；仅安全的应用内绝对路径用于通知目标。 |
+| `viewQuery` | 从 `customConfig.viewQuery` 派生的只读查询参数；声明后站内信目标只携带这些参数。 |
+| `viewActionLabel` | 从 `customConfig.viewActionLabel` 派生的只读按钮文案；缺省时使用平台默认文案。 |
 | `processDefinitionId` | Flowable 流程定义 ID。 |
 | `definitionId` / `definitionKey` / `definitionName` | Mango 流程定义 ID、编码和可读名称；默认通知只使用 `definitionName` 展示流程名称。 |
 | `completedTaskId` | 刚完成或发起退回的源任务 ID。 |
@@ -745,6 +747,33 @@ Workflow 参数校验约束统一由 `mango-workflow-api` 的 `XxxApi` 契约声
 `workflow.process.completed` 和 `workflow.process.rejected` 使用业务申请中的 `applicantId`，分别向原申请人发送一次最终结果通知。草稿、认领、取消认领、撤回、任务驳回和通用 `workflow.process.ended` 事件不产生默认通知。事件异步转为 Notice 时会连同 `tenantId`、`appCode`、`realm` 恢复应用上下文，确保角色候选目标按原应用和登录域解析。
 
 Maven `1.0.29` 会把业务申请快照中的 `customConfig.viewPath` 派生到 `WorkflowBusinessApplyVO` 和 `WorkflowEventPayloadVO`。完成、拒绝和结束类 Notice 优先使用安全的应用内 `viewPath` 作为查看目标，并在目标参数中携带对应的通用 Workflow `fallbackTargetKey`；没有配置、配置为外部地址或目标不可访问时，前端回退到已办、我发起等通用页面。终态消息的目标是办理人视角的菜单页（`workflow:task:done` 等），收件人没有对应菜单授权时，平台统一给出 `fallbackTargetKey=notice:site-message`，前端退到消息中心，不再出现“目标未注册或当前无权访问”的死路。业务需要按钮直达自己的详情页时，必须在申请快照的 `customConfig.viewPath` 配置站内路径。该字段只读派生，不新增数据库列，不把任意外部 URL 交给 Shell 路由。
+
+### 默认通知开关
+
+默认通知由 `WorkflowNoticeAutoConfiguration` 装配，配置 `mango.workflow.notice.enabled=false` 后不再注册 `WorkflowNoticeDomainEventSubscriber`：`workflow.task.assigned`、`workflow.process.completed`、`workflow.process.rejected` 三类默认消息不再产生，工作流领域事件、待办同步和业务回写不受影响。业务需要自己的通知文案、渠道或收件人时，关闭默认通知并订阅公开事件自行发送通知，不要再通过删除 Spring Bean 定义的方式停用默认链路。
+
+### 默认通知的查看目标
+
+终端用户可以点击的查看目标来自业务申请快照的 `customConfig`，三个字段都只读派生，都不新增数据库列：
+
+| 字段 | 必填 | 含义 |
+|------|------|------|
+| `viewPath` | 否 | 应用内绝对路径，例如 `/guarantee/finance/payment-vouchers`；必须以 `/` 开头，不含 `?`、`#`、反斜杠和控制字符，外部 URL 会被丢弃并回退通用页面。 |
+| `viewQuery` | 否 | 目标路径的查询参数对象。只接受单层标量值，嵌套对象和集合被丢弃；声明后站内信目标只携带这些参数，不再把整份通知参数拼进路由。 |
+| `viewActionLabel` | 否 | 站内信按钮文案，最长 32 个字符。仅在 `viewPath` 生效且目标命中自定义路径时使用；缺省或非法时回退“去审批/查看申请”。 |
+
+`viewQuery` 和 `viewActionLabel` 只对完成、驳回这类终态通知生效；待办到达通知始终指向 `workflow:task:detail`，使用默认按钮文案。业务想要“点击后定位到列表某一行”，把行标识放进 `viewQuery`，前端按查询参数定位，不需要在通知参数里加保留键。
+
+申请创建示例：
+
+```java
+Map<String, Object> customConfig = Map.of(
+        "viewPath", "/guarantee/finance/payment-vouchers",
+        "viewQuery", Map.of("receiptId", receiptId, "orderNo", orderNo, "focus", "payment-confirm"),
+        "viewActionLabel", "去确认");
+apply.setFormJsonSnapshot(objectMapper.writeValueAsString(
+        Map.of("customConfig", customConfig)));
+```
 
 事件消费选择：
 
@@ -979,6 +1008,10 @@ workflow:template:push
 **HTTP_URL 或 REMOTE_SERVICE 节点执行失败**
 
 这两个执行器当前不是可用远程调用能力。需要节点回调时使用 `EVENT_PUBLISH` 或 `SPRING_BEAN`。
+
+**节点“启用通知”后没有收到回调**
+
+审批节点配置里的 `eventNotify`（启用通知、回调地址、请求方法、载荷模板）目前只写一条 `EVENT_NOTIFY` 任务记录，不发 HTTP 请求也不发布事件；它只用于留痕。需要真实回调时用 `SPRING_BEAN` 节点执行扩展实现，不要依赖这个开关。
 
 **菜单看不到流程管理**
 

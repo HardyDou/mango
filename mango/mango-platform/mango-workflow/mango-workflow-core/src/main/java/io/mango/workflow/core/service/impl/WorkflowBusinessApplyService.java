@@ -70,6 +70,9 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {
     };
     private static final DateTimeFormatter APPLY_CODE_TIME = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+    private static final int VIEW_ACTION_LABEL_MAX_LENGTH = 32;
+    private static final int C0_CONTROL_LIMIT = 0x20;
+    private static final int DELETE_CONTROL_CODE_POINT = 0x7f;
 
     private final WorkflowBusinessApplyMapper applyMapper;
     private final WorkflowBusinessApplyCurrentTaskMapper currentTaskMapper;
@@ -621,7 +624,10 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
         vo.setRenderMode(WorkflowApplyRenderMode.fromCode(apply.getRenderMode()));
         vo.setApplyPageKey(apply.getApplyPageKey());
         vo.setApprovePageKey(apply.getApprovePageKey());
-        vo.setViewPath(customFormViewPath(apply.getFormJsonSnapshot()));
+        CustomFormViewTarget viewTarget = customFormViewTarget(apply.getFormJsonSnapshot());
+        vo.setViewPath(viewTarget.viewPath());
+        vo.setViewQuery(viewTarget.viewQuery());
+        vo.setViewActionLabel(viewTarget.viewActionLabel());
         vo.setFormKey(apply.getFormKey());
         vo.setFormVersion(apply.getFormVersion());
         vo.setSnapshotRef(apply.getSnapshotRef());
@@ -640,13 +646,54 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
         return apply;
     }
 
-    private String customFormViewPath(String formJson) {
+    private CustomFormViewTarget customFormViewTarget(String formJson) {
         Object customConfig = parseMap(formJson).get("customConfig");
         if (!(customConfig instanceof Map<?, ?> config)) {
+            return CustomFormViewTarget.EMPTY;
+        }
+        return new CustomFormViewTarget(
+                trim(scalarText(config.get("viewPath"))),
+                viewQuery(config.get("viewQuery")),
+                viewActionLabel(config.get("viewActionLabel")));
+    }
+
+    private WorkflowJsonVO viewQuery(Object value) {
+        if (!(value instanceof Map<?, ?> rawQuery)) {
             return null;
         }
-        Object viewPath = config.get("viewPath");
-        return viewPath == null ? null : trim(String.valueOf(viewPath));
+        Map<String, Object> query = new LinkedHashMap<>();
+        rawQuery.forEach((key, entryValue) -> {
+            String queryKey = trim(scalarText(key));
+            String queryValue = trim(scalarText(entryValue));
+            if (queryKey != null && queryValue != null) {
+                query.put(queryKey, queryValue);
+            }
+        });
+        return query.isEmpty() ? null : WorkflowJsonVO.of(query);
+    }
+
+    private String viewActionLabel(Object value) {
+        String label = trim(scalarText(value));
+        if (label == null || label.length() > VIEW_ACTION_LABEL_MAX_LENGTH) {
+            return null;
+        }
+        return label.chars().anyMatch(character -> character < C0_CONTROL_LIMIT
+                || character == DELETE_CONTROL_CODE_POINT) ? null : label;
+    }
+
+    private record CustomFormViewTarget(String viewPath, WorkflowJsonVO viewQuery, String viewActionLabel) {
+
+        private static final CustomFormViewTarget EMPTY = new CustomFormViewTarget(null, null, null);
+    }
+
+    private String scalarText(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Map<?, ?> || value instanceof Collection<?>) {
+            return null;
+        }
+        return String.valueOf(value);
     }
 
     private WorkflowBusinessApplyProgressVO toProgressVo(WorkflowBusinessApplyEntity apply, List<WorkflowBusinessApplyCurrentTaskEntity> tasks) {

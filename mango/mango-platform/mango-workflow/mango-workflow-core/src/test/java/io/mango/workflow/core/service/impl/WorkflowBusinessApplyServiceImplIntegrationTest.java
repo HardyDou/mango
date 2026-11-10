@@ -33,6 +33,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import javax.sql.DataSource;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -124,6 +125,47 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
         var detail = service.detail(10L);
 
         assertThat(detail.getViewPath()).isEqualTo("/expense/apply/detail");
+    }
+
+    @Test
+    void detailDerivesCustomViewQueryAndActionLabelFromFormSnapshot() {
+        MangoContextHolder.set(MangoContextSnapshot.empty()
+                .withSecurity(1001L, "1", "applicant", "default", "USER", "USER", 1L, "internal-admin"));
+        insertApply(12L, 1001L, "APPROVED");
+        jdbcTemplate.update("""
+                update workflow_business_apply
+                set form_json_snapshot = ?
+                where id = ?
+                """, """
+                {"mode":"CUSTOM","customConfig":{
+                  "viewPath":" /guarantee/finance/payment-vouchers ",
+                  "viewQuery":{"receiptId":"R-1","orderNo":" O-1 ","blank":"  ","nested":{"a":1}},
+                  "viewActionLabel":" 去确认 "}}
+                """, 12L);
+
+        var detail = service.detail(12L);
+
+        assertThat(detail.getViewPath()).isEqualTo("/guarantee/finance/payment-vouchers");
+        assertThat(detail.getViewQuery().toMap())
+                .containsExactly(Map.entry("receiptId", "R-1"), Map.entry("orderNo", "O-1"));
+        assertThat(detail.getViewActionLabel()).isEqualTo("去确认");
+    }
+
+    @Test
+    void detailIgnoresUnusableViewActionLabel() {
+        MangoContextHolder.set(MangoContextSnapshot.empty()
+                .withSecurity(1001L, "1", "applicant", "default", "USER", "USER", 1L, "internal-admin"));
+        insertApply(13L, 1001L, "APPROVED");
+        jdbcTemplate.update("""
+                update workflow_business_apply
+                set form_json_snapshot = ?
+                where id = ?
+                """, """
+                {"mode":"CUSTOM","customConfig":{"viewActionLabel":"
+                超长按钮文案超长按钮文案超长按钮文案超长按钮文案超长按钮文案"}}
+                """, 13L);
+
+        assertThat(service.detail(13L).getViewActionLabel()).isNull();
     }
 
     @Test

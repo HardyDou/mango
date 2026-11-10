@@ -104,7 +104,15 @@ Mango 的默认审批通知只消费 `workflow.task.advanced`、`workflow.proces
 对应发送记录收敛为取消且不重试；渠道配置解析失败、Identity 查询异常等真实运行故障仍按发送失败处理。业务状态回写仍按
 本节事件接入方式独立处理，默认通知不替代业务状态机，也不改变流程 API、权限或租户边界。
 
-终态消息（通过、驳回、结束）的「查看申请」按钮目标在业务没有提供 `customConfig.viewPath` 时是工作流的办理人视角页面（`workflow:task:done`、`workflow:task:initiated`）。收件人没有审批中心菜单授权时，平台会下发 `fallbackTargetKey=notice:site-message`，前端退到消息中心，因此按钮始终可用。要让按钮直达业务申请详情，业务侧在申请快照的 `customConfig.viewPath` 配置站内绝对路径（例如 `/guarantee/apply/detail`），前端会带着消息参数跳转。
+终态消息（通过、驳回、结束）的「查看申请」按钮目标在业务没有提供 `customConfig.viewPath` 时是工作流的办理人视角页面（`workflow:task:done`、`workflow:task:initiated`）。收件人没有审批中心菜单授权时，平台会下发 `fallbackTargetKey=notice:site-message`，前端退到消息中心，因此按钮始终可用。要让按钮直达业务申请详情，业务侧在申请快照的 `customConfig` 中配置三个可选字段：
+
+| 字段 | 作用 | 约束 |
+|------|------|------|
+| `viewPath` | 站内绝对路径，例如 `/guarantee/apply/detail` | 必须以 `/` 开头，不含 `?`、`#`、反斜杠和控制字符；外部 URL 被丢弃。 |
+| `viewQuery` | 点开页面时要带上的查询参数 | 只保留单层标量值；声明后站内信目标只携带这些参数。用于“点开列表并定位到目标行”这类场景。 |
+| `viewActionLabel` | 按钮文案，例如「去确认」 | 最长 32 个字符；缺省时使用默认文案。 |
+
+只有终态通知读取这三个字段；待办到达通知始终指向 `workflow:task:detail`。业务如果不需要 Mango 默认通知，把它关掉再自己发：设置 `mango.workflow.notice.enabled=false`，然后订阅 `workflow.task.advanced`、`workflow.process.completed`、`workflow.process.rejected` 公开事件，用业务自己的 `bizType` 和模板调用 `NoticeApi`。不要通过删除 Spring Bean 定义停用默认通知，那是升级就会失效的做法。
 
 `POST /workflow/tasks/return` 会把当前任务退回到最近一个已完成的不同用户任务节点，或退回到 `targetTaskDefinitionKey` 指定的历史节点。串行流程可以不传目标节点；并行、多实例、重复审批节点或业务语义固定的流程，应在流程节点动作配置或业务审批页中显式传入 `targetTaskDefinitionKey`。接口返回结构与 `complete-result` 一致，业务侧应使用返回的 `currentTasks` 或订阅 `workflow.task.advanced` 刷新业务单据当前节点和当前办理人；退回不会发布 `workflow.task.completed`，也不会把流程状态改为驳回。
 
