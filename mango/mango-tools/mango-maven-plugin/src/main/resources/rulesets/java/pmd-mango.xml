@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ruleset name="Mango Java Rules"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.net/ruleset_2_0_0.xsd">
+
+    <description>
+        Mango Java 规则集 v2，基于 PMD 7 内置规则。
+        覆盖命名、注释、设计、异常、并发、性能和基础安全；用于 Java 8-21 项目。
+    </description>
+
+    <!-- 命名 -->
+    <rule ref="category/java/codestyle.xml/ClassNamingConventions"/>
+    <rule ref="category/java/codestyle.xml/MethodNamingConventions"/>
+    <rule ref="category/java/codestyle.xml/FieldNamingConventions"/>
+    <rule ref="category/java/codestyle.xml/FormalParameterNamingConventions"/>
+    <rule ref="category/java/codestyle.xml/LocalVariableNamingConventions"/>
+    <rule ref="category/java/codestyle.xml/AvoidDollarSigns"/>
+    <rule ref="category/java/codestyle.xml/UnnecessaryImport"/>
+    <rule ref="category/java/codestyle.xml/UnnecessaryModifier"/>
+
+    <!-- 注释 -->
+    <rule ref="category/java/documentation.xml/CommentSize"/>
+    <rule ref="category/java/documentation.xml/CommentContent"/>
+    <rule ref="category/java/documentation.xml/DanglingJavadoc"/>
+
+    <!-- 设计 -->
+    <rule ref="category/java/design.xml/AvoidCatchingGenericException"/>
+    <rule ref="category/java/design.xml/AvoidThrowingNullPointerException"/>
+    <rule ref="category/java/design.xml/AvoidThrowingRawExceptionTypes"/>
+    <rule ref="category/java/design.xml/ExceptionAsFlowControl"/>
+    <rule ref="category/java/design.xml/CollapsibleIfStatements"/>
+    <rule ref="category/java/design.xml/CyclomaticComplexity">
+        <properties>
+            <property name="methodReportLevel" value="15"/>
+            <property name="classReportLevel" value="80"/>
+        </properties>
+    </rule>
+    <rule ref="category/java/design.xml/NPathComplexity"/>
+
+    <!-- 异常与易错写法 -->
+    <rule ref="category/java/errorprone.xml/AvoidCatchingThrowable"/>
+    <rule ref="category/java/errorprone.xml/AvoidLiteralsInIfCondition"/>
+    <rule ref="category/java/errorprone.xml/AvoidDuplicateLiterals"/>
+    <rule ref="category/java/errorprone.xml/CompareObjectsWithEquals"/>
+    <rule ref="category/java/errorprone.xml/CloseResource"/>
+    <rule ref="category/java/errorprone.xml/AssignmentInOperand"/>
+    <rule ref="category/java/errorprone.xml/BrokenNullCheck"/>
+    <rule ref="category/java/errorprone.xml/AvoidLosingExceptionInformation"/>
+    <rule ref="category/java/errorprone.xml/DoNotThrowExceptionInFinally"/>
+    <rule ref="category/java/errorprone.xml/AvoidBranchingStatementAsLastInLoop"/>
+
+    <!-- 最佳实践 -->
+    <rule ref="category/java/bestpractices.xml/AvoidPrintStackTrace"/>
+    <rule ref="category/java/bestpractices.xml/ArrayIsStoredDirectly"/>
+    <rule ref="category/java/bestpractices.xml/AvoidReassigningParameters"/>
+    <rule ref="category/java/bestpractices.xml/AvoidReassigningLoopVariables"/>
+    <rule ref="category/java/bestpractices.xml/AvoidReassigningCatchVariables"/>
+    <rule ref="category/java/bestpractices.xml/UnusedLocalVariable"/>
+    <rule ref="category/java/bestpractices.xml/UnusedPrivateField"/>
+    <rule ref="category/java/bestpractices.xml/UnusedPrivateMethod"/>
+    <rule ref="category/java/bestpractices.xml/AvoidUsingHardCodedIP"/>
+    <rule ref="category/java/bestpractices.xml/PreserveStackTrace"/>
+
+    <!-- 并发 -->
+    <rule ref="category/java/multithreading.xml/AvoidSynchronizedAtMethodLevel"/>
+    <rule ref="category/java/multithreading.xml/AvoidThreadGroup"/>
+    <rule ref="category/java/multithreading.xml/DoubleCheckedLocking"/>
+    <rule ref="category/java/multithreading.xml/DontCallThreadRun"/>
+    <rule ref="category/java/multithreading.xml/UseConcurrentHashMap"/>
+    <rule ref="category/java/multithreading.xml/UseNotifyAllInsteadOfNotify"/>
+    <rule ref="category/java/multithreading.xml/UnsynchronizedStaticFormatter"/>
+
+    <!-- 性能 -->
+    <rule ref="category/java/performance.xml/AddEmptyString"/>
+    <rule ref="category/java/performance.xml/ConsecutiveLiteralAppends"/>
+    <rule ref="category/java/performance.xml/StringInstantiation"/>
+    <rule ref="category/java/performance.xml/UseIndexOfChar"/>
+    <rule ref="category/java/performance.xml/UseStringBufferForStringAppends"/>
+    <rule ref="category/java/performance.xml/BigIntegerInstantiation"/>
+    <rule ref="category/java/performance.xml/InefficientEmptyStringCheck"/>
+    <rule ref="category/java/performance.xml/UselessStringValueOf"/>
+
+    <!-- 基础安全 -->
+    <rule ref="category/java/security.xml/HardCodedCryptoKey"/>
+    <rule ref="category/java/security.xml/InsecureCryptoIv"/>
+</ruleset>

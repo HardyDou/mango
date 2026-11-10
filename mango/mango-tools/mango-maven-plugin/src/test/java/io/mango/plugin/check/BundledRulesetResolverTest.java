@@ -20,12 +20,12 @@ class BundledRulesetResolverTest {
     void extract_bundledSpotbugsAndPmdRulesetsExistOutsideMangoRepository() throws Exception {
         String spotbugs = resolver.extract(tempDir,
                 BundledRulesetResolver.SPOTBUGS_RESOURCE, "spotbugs-security.xml");
-        String pmd = resolver.extract(tempDir, BundledRulesetResolver.PMD_RESOURCE, "pmd-p3c.xml");
+        String pmd = resolver.extract(tempDir, BundledRulesetResolver.PMD_RESOURCE, "pmd-mango.xml");
 
         assertTrue(Files.isRegularFile(Path.of(spotbugs)));
         assertTrue(Files.isRegularFile(Path.of(pmd)));
         assertTrue(Files.readString(Path.of(spotbugs)).contains("Bug"));
-        assertTrue(Files.readString(Path.of(pmd)).contains("ali-naming.xml"));
+        assertTrue(Files.readString(Path.of(pmd)).contains("category/java/bestpractices.xml"));
         assertEquals(tempDir.resolve("target/mango-check").toAbsolutePath().toString(),
                 Path.of(pmd).getParent().toString());
     }
@@ -46,16 +46,16 @@ class BundledRulesetResolverTest {
     void resolve_rulesetDirectoryPrecedesProjectAndBundledRules() throws Exception {
         Path directory = tempDir.resolve("quality");
         Files.createDirectories(directory);
-        Files.writeString(directory.resolve("pmd-p3c.xml"), "<ruleset name=\"dir\"/>\n");
-        Path projectConfig = tempDir.resolve("config/quality/pmd-p3c.xml");
+        Files.writeString(directory.resolve("pmd-mango.xml"), "<ruleset name=\"dir\"/>\n");
+        Path projectConfig = tempDir.resolve("config/quality/pmd-mango.xml");
         Files.createDirectories(projectConfig.getParent());
         Files.writeString(projectConfig, "<ruleset name=\"project\"/>\n");
 
         String location = resolver.resolve(tempDir, null, "quality",
-                BundledRulesetResolver.PMD_RESOURCE, "pmd-p3c.xml",
-                "config/quality/pmd-p3c.xml", "config/quality/pmd.xml");
+                BundledRulesetResolver.PMD_RESOURCE, "pmd-mango.xml",
+                "config/quality/pmd-mango.xml", "config/quality/pmd.xml");
 
-        assertEquals(directory.resolve("pmd-p3c.xml").toAbsolutePath().toString(), location);
+        assertEquals(directory.resolve("pmd-mango.xml").toAbsolutePath().toString(), location);
     }
 
     @Test
@@ -74,9 +74,9 @@ class BundledRulesetResolverTest {
     @Test
     void resolve_withoutExplicitFile_extractsBundledRuleset() throws Exception {
         String location = resolver.resolve(tempDir, null, null,
-                BundledRulesetResolver.PMD_RESOURCE, "pmd-p3c.xml");
+                BundledRulesetResolver.PMD_RESOURCE, "pmd-mango.xml");
 
         assertTrue(Files.isRegularFile(Path.of(location)));
-        assertTrue(location.endsWith("target/mango-check/pmd-p3c.xml"));
+        assertTrue(location.endsWith("target/mango-check/pmd-mango.xml"));
     }
 }

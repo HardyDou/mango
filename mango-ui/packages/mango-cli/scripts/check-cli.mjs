@@ -107,7 +107,7 @@ try {
     'backend/app/pom.xml',
     'backend/architecture-verification/pom.xml',
     'backend/config/quality/checkstyle.xml',
-    'backend/config/quality/pmd-p3c.xml',
+    'backend/config/quality/pmd-mango.xml',
     'backend/app/src/main/java/com/example/acceptance/MangoFullAcceptanceApplication.java',
     'backend/app/src/main/resources/application.yml',
     '.github/CODEOWNERS',
@@ -455,9 +455,8 @@ try {
   }
   for (const expected of [
     '<artifactId>maven-pmd-plugin</artifactId>',
-    '<version>3.16.0</version>',
-    '<ruleset>${maven.multiModuleProjectDirectory}/config/quality/pmd-p3c.xml</ruleset>',
-    '<artifactId>p3c-pmd</artifactId>',
+    '<version>3.28.0</version>',
+    '<ruleset>${maven.multiModuleProjectDirectory}/config/quality/pmd-mango.xml</ruleset>',
     '<artifactId>maven-checkstyle-plugin</artifactId>',
     '<configLocation>${maven.multiModuleProjectDirectory}/config/quality/checkstyle.xml</configLocation>',
     '<violationSeverity>warning</violationSeverity>',
@@ -5148,7 +5147,7 @@ function assertQualityConfigsMatchPluginSources() {
   const repoRoot = resolve(packageRoot, '../../..');
   const pairs = [
     ['checkstyle.xml', 'checkstyle.xml'],
-    ['pmd-p3c.xml', 'pmd-p3c.xml'],
+    ['pmd-mango.xml', 'pmd-mango.xml'],
   ];
   for (const [templateName, sourceName] of pairs) {
     const template = readFileSync(join(packageRoot, 'templates/full/backend/config/quality', templateName));

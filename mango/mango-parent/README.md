@@ -52,15 +52,18 @@
 
 | 参数 | 默认值 | 说明 |
 |------|--------|------|
-| `mango.check.rulesetDir` | 空 | 统一规则目录，读取 `checkstyle.xml`、`pmd-p3c.xml`、`spotbugs-security.xml` |
+| `mango.check.rulesetDir` | 空 | 统一规则目录，读取 `checkstyle.xml`、`pmd-mango.xml`、`spotbugs-security.xml` |
 | `mango.check.checkstyleConfigLocation` | 空 | 自定义 Checkstyle 规则文件 |
 | `mango.check.pmdRulesets` | 空 | 自定义 PMD 规则文件；插件会写入 `mango.check.pmdRulesetsPath`，由 parent 的 PMD 插件配置读取 |
 | `mango.check.spotbugsIncludeFilterFile` | 空 | 自定义 SpotBugs include filter |
 | `mango.check.pmdEnabled` | `true` | 是否执行 PMD |
+| `mango.check.pmdTypeResolution` | `true` | PMD 类型解析；PMD 7 支持 Java 8-21 class 文件 |
 | `mango.check.checkstyleEnabled` | `true` | 是否执行 Checkstyle |
 | `mango.check.spotbugsEnabled` | `true` | 是否执行 SpotBugs |
 
-规则文件解析顺序：显式 `mango.check.*` 参数 → `rulesetDir/<规范文件名>` → `config/quality/` 下的项目文件（`checkstyle.xml`、`pmd-p3c.xml` 或 `pmd.xml`、`spotbugs-security.xml` 或 `spotbugs.xml`）→ 插件内置规则。
+PMD 7（maven-pmd-plugin 3.28+）支持 Java 8-21，规则集为 `pmd-mango.xml`。PMD 报告出现处理错误时质量门禁按工具失败阻断。
+
+规则文件解析顺序：显式 `mango.check.*` 参数 → `rulesetDir/<规范文件名>` → `config/quality/` 下的项目文件（`checkstyle.xml`、`pmd-mango.xml` 或 `pmd.xml`、`spotbugs-security.xml` 或 `spotbugs.xml`）→ 插件内置规则。
 
 ## 6. 配置说明
 无运行时配置。可被构建命令覆盖的 Maven 属性包括：

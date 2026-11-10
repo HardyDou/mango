@@ -11,10 +11,12 @@ import org.junit.jupiter.api.Test;
 class JavaQualityRulesetContractTest {
 
     @Test
-    void pmdNamingRulesFollowMangoServiceNamingContract() throws IOException {
-        String ruleset = resource("/rulesets/java/pmd-p3c.xml");
+    void pmdRulesetUsesPmd7BuiltInRulesWithoutLegacyP3cClasses() throws IOException {
+        String ruleset = resource("/rulesets/java/pmd-mango.xml");
 
-        assertTrue(ruleset.contains("<exclude name=\"ServiceOrDaoClassShouldEndWithImplRule\"/>"));
+        assertTrue(ruleset.contains("category/java/codestyle.xml/ClassNamingConventions"));
+        assertTrue(ruleset.contains("category/java/errorprone.xml/AvoidCatchingThrowable"));
+        assertTrue(!ruleset.contains("com.alibaba.p3c"));
     }
 
     @Test
