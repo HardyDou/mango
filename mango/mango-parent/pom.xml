@@ -99,7 +99,7 @@
                     <artifactId>maven-checkstyle-plugin</artifactId>
                     <version>${checkstyle-plugin.version}</version>
                     <configuration>
-                        <configLocation>${maven.multiModuleProjectDirectory}/mango-tools/mango-maven-plugin/src/main/resources/rulesets/java/checkstyle.xml</configLocation>
+                        <!-- 规则集由 mango-maven-plugin 从自身 jar 提供，不能指向 Mango 主仓目录。 -->
                         <inputEncoding>${project.build.sourceEncoding}</inputEncoding>
                         <consoleOutput>true</consoleOutput>
                         <failsOnError>false</failsOnError>
@@ -116,7 +116,6 @@
                         <effort>Max</effort>
                         <threshold>Medium</threshold>
                         <failOnError>false</failOnError>
-                        <includeFilterFile>${maven.multiModuleProjectDirectory}/mango-tools/mango-maven-plugin/src/main/resources/rulesets/java/spotbugs-security.xml</includeFilterFile>
                     </configuration>
                 </plugin>
 
@@ -138,9 +137,6 @@
                         </dependency>
                     </dependencies>
                     <configuration>
-                        <rulesets>
-                            <ruleset>${maven.multiModuleProjectDirectory}/mango-tools/mango-maven-plugin/src/main/resources/rulesets/java/pmd-p3c.xml</ruleset>
-                        </rulesets>
                         <targetJdk>17</targetJdk>
                         <sourceEncoding>${project.build.sourceEncoding}</sourceEncoding>
                         <failOnViolation>false</failOnViolation>

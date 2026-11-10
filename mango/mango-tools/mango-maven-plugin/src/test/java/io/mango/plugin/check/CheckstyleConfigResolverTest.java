@@ -19,7 +19,7 @@ class CheckstyleConfigResolverTest {
 
     @Test
     void resolve_withoutProjectConfig_extractsBundledMangoRules() throws Exception {
-        CheckstyleConfigResolver.ResolvedConfig config = resolver.resolve(tempDir, null, null);
+        CheckstyleConfigResolver.ResolvedConfig config = resolver.resolve(tempDir, null, null, null);
 
         Path configFile = Path.of(config.location());
         String content = Files.readString(configFile);
@@ -38,7 +38,7 @@ class CheckstyleConfigResolverTest {
         Files.createDirectories(projectConfig.getParent());
         Files.writeString(projectConfig, "<module name=\"Checker\"/>\n");
 
-        CheckstyleConfigResolver.ResolvedConfig config = resolver.resolve(tempDir, null, null);
+        CheckstyleConfigResolver.ResolvedConfig config = resolver.resolve(tempDir, null, null, null);
 
         assertEquals(projectConfig.toAbsolutePath().toString(), config.location());
         assertEquals("project:config/quality/checkstyle.xml", config.source());
@@ -56,7 +56,8 @@ class CheckstyleConfigResolverTest {
                 resolver.resolve(
                         tempDir,
                         tempDir.relativize(mangoConfig).toString(),
-                        tempDir.relativize(standardConfig).toString());
+                        tempDir.relativize(standardConfig).toString(),
+                        null);
 
         assertEquals(mangoConfig.toAbsolutePath().toString(), config.location());
         assertEquals("custom:mango.check.checkstyleConfigLocation", config.source());
@@ -69,10 +70,24 @@ class CheckstyleConfigResolverTest {
         Files.writeString(customConfig, "<module name=\"Checker\"/>\n");
 
         CheckstyleConfigResolver.ResolvedConfig config =
-                resolver.resolve(tempDir, null, customConfig.toString());
+                resolver.resolve(tempDir, null, customConfig.toString(), null);
 
         assertEquals(customConfig.toAbsolutePath().toString(), config.location());
         assertEquals("custom:checkstyle.config.location", config.source());
+    }
+
+    @Test
+    void resolve_withRulesetDirectory_usesDirectoryRules() throws Exception {
+        Path directory = tempDir.resolve("quality");
+        Files.createDirectories(directory);
+        Path rules = directory.resolve("checkstyle.xml");
+        Files.writeString(rules, "<module name=\"Checker\"/>\n");
+
+        CheckstyleConfigResolver.ResolvedConfig config =
+                resolver.resolve(tempDir, null, null, "quality");
+
+        assertEquals(rules.toAbsolutePath().toString(), config.location());
+        assertEquals("rulesetDir:checkstyle.xml", config.source());
     }
 
     @Test
@@ -80,7 +95,7 @@ class CheckstyleConfigResolverTest {
         String missingConfig = "quality/missing-checkstyle.xml";
 
         CheckstyleConfigResolver.ResolvedConfig config =
-                resolver.resolve(tempDir, missingConfig, null);
+                resolver.resolve(tempDir, missingConfig, null, null);
 
         assertEquals(missingConfig, config.location());
         assertEquals("custom:mango.check.checkstyleConfigLocation", config.source());

@@ -170,6 +170,8 @@ public class CheckMojo extends AbstractMojo {
     private static final String SOURCE_CHECKSTYLE = "checkstyle";
     private static final String SOURCE_SPOTBUGS = "spotbugs";
     private static final String CHECKSTYLE_GOAL = "checkstyle:checkstyle";
+    private static final String PMD_GOAL = "pmd:pmd";
+    private static final String SPOTBUGS_GOAL = "spotbugs:spotbugs";
     private static final Set<String> CODE_LEVEL_SOURCES =
             Set.of(SOURCE_PMD, SOURCE_CHECKSTYLE, SOURCE_SPOTBUGS);
     private static final String DOC_AUTO_CHECK_MAPPING = "auto-check-mapping.md";
@@ -432,6 +434,30 @@ public class CheckMojo extends AbstractMojo {
     /** Standard Maven Checkstyle configuration property, retained for consumer compatibility. */
     @Parameter(property = "checkstyle.config.location")
     private String standardCheckstyleConfigLocation;
+
+    /** Optional PMD ruleset file. Defaults to the bundled Mango P3C ruleset. */
+    @Parameter(property = "mango.check.pmdRulesets")
+    private String pmdRulesets;
+
+    /** Optional SpotBugs include filter file. Defaults to the bundled Mango security filter. */
+    @Parameter(property = "mango.check.spotbugsIncludeFilterFile")
+    private String spotbugsIncludeFilterFile;
+
+    /** Optional directory containing checkstyle.xml, pmd-p3c.xml and spotbugs-security.xml. */
+    @Parameter(property = "mango.check.rulesetDir")
+    private String rulesetDir;
+
+    /** Whether PMD runs inside aggregated static analysis. */
+    @Parameter(property = "mango.check.pmdEnabled", defaultValue = "true")
+    private boolean pmdEnabled = true;
+
+    /** Whether Checkstyle runs inside aggregated static analysis. */
+    @Parameter(property = "mango.check.checkstyleEnabled", defaultValue = "true")
+    private boolean checkstyleEnabled = true;
+
+    /** Whether SpotBugs runs inside aggregated static analysis. */
+    @Parameter(property = "mango.check.spotbugsEnabled", defaultValue = "true")
+    private boolean spotbugsEnabled = true;
 
     /** Gate mode: all, no-new-violations. */
     @Parameter(property = "mango.check.gate", defaultValue = "all")
@@ -755,9 +781,15 @@ public class CheckMojo extends AbstractMojo {
         List<String> reactorProjects = resolveStaticAnalysisProjects(rootPath);
         cleanStaticReports(rootPath);
         invokeMavenGoals(rootPath, staticAnalysisReportGoals(), reactorProjects);
-        collectPmdIssues(rootPath);
-        collectCheckstyleIssues(rootPath);
-        collectSpotbugsIssues(rootPath);
+        if (pmdEnabled) {
+            collectPmdIssues(rootPath);
+        }
+        if (checkstyleEnabled) {
+            collectCheckstyleIssues(rootPath);
+        }
+        if (spotbugsEnabled) {
+            collectSpotbugsIssues(rootPath);
+        }
     }
 
     /**
@@ -769,7 +801,17 @@ public class CheckMojo extends AbstractMojo {
      * while allowing Mango to apply the configured gate consistently.
      */
     List<String> staticAnalysisReportGoals() {
-        return List.of("pmd:pmd", "checkstyle:checkstyle", "spotbugs:spotbugs");
+        List<String> goals = new ArrayList<>();
+        if (pmdEnabled) {
+            goals.add("pmd:pmd");
+        }
+        if (checkstyleEnabled) {
+            goals.add("checkstyle:checkstyle");
+        }
+        if (spotbugsEnabled) {
+            goals.add("spotbugs:spotbugs");
+        }
+        return goals;
     }
 
     private void cleanStaticReports(Path rootPath) throws MojoExecutionException {
@@ -819,6 +861,13 @@ public class CheckMojo extends AbstractMojo {
         }
     }
 
+    private void reportDelegatedRuleset(String label, String location) {
+        getLog().info("Delegated " + label + ": " + location);
+        if (result != null) {
+            result.addGateMessage(label + ": " + location);
+        }
+    }
+
     private boolean recordStaticFailure(String goal, MojoExecutionException exception) {
         if (!gateFinalizer(null).shouldReportStaticFailure(result)) {
             return false;
@@ -848,7 +897,8 @@ public class CheckMojo extends AbstractMojo {
                             .resolve(
                                     rootPath,
                                     checkstyleConfigLocation,
-                                    standardCheckstyleConfigLocation);
+                                    standardCheckstyleConfigLocation,
+                                    rulesetDir);
             command.add("-Dcheckstyle.config.location=" + checkstyleConfig.location());
             getLog().info(
                     "Delegated Checkstyle configuration: "
@@ -858,6 +908,20 @@ public class CheckMojo extends AbstractMojo {
             if (result != null) {
                 result.addGateMessage("Checkstyle rules: " + checkstyleConfig.source());
             }
+        } else if (PMD_GOAL.equals(goal)) {
+            String ruleset = new BundledRulesetResolver(CheckMojo.class.getClassLoader())
+                    .resolve(rootPath, pmdRulesets, rulesetDir, BundledRulesetResolver.PMD_RESOURCE,
+                            "pmd-p3c.xml",
+                            "config/quality/pmd-p3c.xml", "config/quality/pmd.xml");
+            command.add("-Dpmd.rulesets=" + ruleset);
+            reportDelegatedRuleset("PMD rulesets", ruleset);
+        } else if (SPOTBUGS_GOAL.equals(goal)) {
+            String includeFilter = new BundledRulesetResolver(CheckMojo.class.getClassLoader())
+                    .resolve(rootPath, spotbugsIncludeFilterFile, rulesetDir,
+                            BundledRulesetResolver.SPOTBUGS_RESOURCE, "spotbugs-security.xml",
+                            "config/quality/spotbugs-security.xml", "config/quality/spotbugs.xml");
+            command.add("-Dspotbugs.includeFilterFile=" + includeFilter);
+            reportDelegatedRuleset("SpotBugs include filter", includeFilter);
         }
         command.add("compile");
         command.add(goal);

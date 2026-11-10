@@ -42,6 +42,26 @@
 
 只需要依赖版本管理、需要保留自有 parent 的业务项目，应直接导入 [`mango-bom`](../mango-bom/README.md)。两种方式均不应为 BOM 已管理的依赖重复声明版本。
 
+业务仓直接继承 `mango-parent` 时，仓库里不需要也没有 Mango 主仓的 `mango-tools/` 目录：
+
+- Checkstyle、PMD、SpotBugs 的规则集由 `mango-maven-plugin` 从自身 jar 提取到业务仓 `target/mango-check/`，`mango-parent` 不再指向文件系统路径。
+- 需要启用后端质量门禁时，复制 CLI 模板的 `backend/architecture-verification` 模块，声明 `mango.check.*` 和 `mango.architecture.*` 属性后执行 `mvn verify`。
+- 需要自定义规则时使用 `mango.check.checkstyleConfigLocation`、`mango.check.pmdRulesets`、`mango.check.spotbugsIncludeFilterFile` 指向业务仓自己的文件，不要伪造 `mango-tools/...` 目录。
+
+质量门禁可调整项：
+
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| `mango.check.rulesetDir` | 空 | 统一规则目录，读取 `checkstyle.xml`、`pmd-p3c.xml`、`spotbugs-security.xml` |
+| `mango.check.checkstyleConfigLocation` | 空 | 自定义 Checkstyle 规则文件 |
+| `mango.check.pmdRulesets` | 空 | 自定义 PMD 规则文件 |
+| `mango.check.spotbugsIncludeFilterFile` | 空 | 自定义 SpotBugs include filter |
+| `mango.check.pmdEnabled` | `true` | 是否执行 PMD |
+| `mango.check.checkstyleEnabled` | `true` | 是否执行 Checkstyle |
+| `mango.check.spotbugsEnabled` | `true` | 是否执行 SpotBugs |
+
+规则文件解析顺序：显式 `mango.check.*` 参数 → `rulesetDir/<规范文件名>` → `config/quality/` 下的项目文件（`checkstyle.xml`、`pmd-p3c.xml` 或 `pmd.xml`、`spotbugs-security.xml` 或 `spotbugs.xml`）→ 插件内置规则。
+
 ## 6. 配置说明
 无运行时配置。可被构建命令覆盖的 Maven 属性包括：
 

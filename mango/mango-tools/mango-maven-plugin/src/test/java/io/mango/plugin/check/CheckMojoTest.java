@@ -1740,6 +1740,22 @@ class CheckMojoTest {
     }
 
     @Test
+    void staticAnalysisReportGoals_skipDisabledTools() throws Exception {
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "pmdEnabled", false);
+        setField(mojo, "spotbugsEnabled", false);
+
+        assertEquals(List.of("checkstyle:checkstyle"), mojo.staticAnalysisReportGoals());
+
+        CheckMojo allDisabled = new CheckMojo();
+        setField(allDisabled, "pmdEnabled", false);
+        setField(allDisabled, "checkstyleEnabled", false);
+        setField(allDisabled, "spotbugsEnabled", false);
+
+        assertEquals(List.of(), allDisabled.staticAnalysisReportGoals());
+    }
+
+    @Test
     void staticReportScanIncludesTargetAndMissingReportFailsClosed() throws Exception {
         Path report = tempDir.resolve("demo/target/pmd.xml");
         Files.createDirectories(report.getParent());
