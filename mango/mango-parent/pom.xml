@@ -33,6 +33,8 @@
         <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <!-- mango-maven-plugin 在 check 委派时覆盖为实际解析到的规则文件。 -->
+        <mango.check.pmdRulesetsPath>${maven.multiModuleProjectDirectory}/target/mango-check/pmd-p3c.xml</mango.check.pmdRulesetsPath>
 
         <!-- Build plugin baseline -->
         <spring-boot.version>3.5.14</spring-boot.version>
@@ -99,7 +101,7 @@
                     <artifactId>maven-checkstyle-plugin</artifactId>
                     <version>${checkstyle-plugin.version}</version>
                     <configuration>
-                        <configLocation>${maven.multiModuleProjectDirectory}/mango-tools/mango-maven-plugin/src/main/resources/rulesets/java/checkstyle.xml</configLocation>
+                        <!-- 规则集由 mango-maven-plugin 从自身 jar 提供，不能指向 Mango 主仓目录。 -->
                         <inputEncoding>${project.build.sourceEncoding}</inputEncoding>
                         <consoleOutput>true</consoleOutput>
                         <failsOnError>false</failsOnError>
@@ -116,7 +118,6 @@
                         <effort>Max</effort>
                         <threshold>Medium</threshold>
                         <failOnError>false</failOnError>
-                        <includeFilterFile>${maven.multiModuleProjectDirectory}/mango-tools/mango-maven-plugin/src/main/resources/rulesets/java/spotbugs-security.xml</includeFilterFile>
                     </configuration>
                 </plugin>
 
@@ -139,7 +140,7 @@
                     </dependencies>
                     <configuration>
                         <rulesets>
-                            <ruleset>${maven.multiModuleProjectDirectory}/mango-tools/mango-maven-plugin/src/main/resources/rulesets/java/pmd-p3c.xml</ruleset>
+                            <ruleset>${mango.check.pmdRulesetsPath}</ruleset>
                         </rulesets>
                         <targetJdk>17</targetJdk>
                         <sourceEncoding>${project.build.sourceEncoding}</sourceEncoding>

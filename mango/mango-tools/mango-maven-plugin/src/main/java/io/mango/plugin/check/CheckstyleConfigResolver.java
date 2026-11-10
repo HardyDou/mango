@@ -2,15 +2,12 @@ package io.mango.plugin.check;
 
 import org.apache.maven.plugin.MojoExecutionException;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 
 final class CheckstyleConfigResolver {
 
-    static final String BUNDLED_CONFIG_RESOURCE = "rulesets/java/checkstyle.xml";
+    static final String BUNDLED_CONFIG_RESOURCE = BundledRulesetResolver.CHECKSTYLE_RESOURCE;
     static final String PROJECT_CONFIG_PATH = "config/quality/checkstyle.xml";
 
     private final ClassLoader classLoader;
@@ -20,7 +17,7 @@ final class CheckstyleConfigResolver {
     }
 
     ResolvedConfig resolve(
-            Path rootPath, String mangoConfigLocation, String standardConfigLocation)
+            Path rootPath, String mangoConfigLocation, String standardConfigLocation, String rulesetDir)
             throws MojoExecutionException {
         String explicitMangoConfig = normalized(mangoConfigLocation);
         if (explicitMangoConfig != null) {
@@ -34,6 +31,12 @@ final class CheckstyleConfigResolver {
             return new ResolvedConfig(
                     resolveExistingFile(rootPath, explicitStandardConfig),
                     "custom:checkstyle.config.location");
+        }
+
+        String fromRulesetDir = new BundledRulesetResolver(classLoader)
+                .resolveFromDirectory(rootPath, rulesetDir, "checkstyle.xml");
+        if (fromRulesetDir != null) {
+            return new ResolvedConfig(fromRulesetDir, "rulesetDir:checkstyle.xml");
         }
 
         Path projectConfig = rootPath.resolve(PROJECT_CONFIG_PATH).normalize();
@@ -58,21 +61,9 @@ final class CheckstyleConfigResolver {
     }
 
     private ResolvedConfig extractBundledConfig(Path rootPath) throws MojoExecutionException {
-        Path output = rootPath.resolve("target/mango-check/checkstyle.xml").normalize();
-        try (InputStream input = classLoader.getResourceAsStream(BUNDLED_CONFIG_RESOURCE)) {
-            if (input == null) {
-                throw new MojoExecutionException(
-                        "Bundled Mango Checkstyle configuration is missing: "
-                                + BUNDLED_CONFIG_RESOURCE);
-            }
-            Files.createDirectories(output.getParent());
-            Files.copy(input, output, StandardCopyOption.REPLACE_EXISTING);
-            return new ResolvedConfig(
-                    output.toAbsolutePath().toString(), "default:mango-bundled");
-        } catch (IOException exception) {
-            throw new MojoExecutionException(
-                    "Failed to prepare bundled Mango Checkstyle configuration", exception);
-        }
+        String location = new BundledRulesetResolver(classLoader)
+                .extract(rootPath, BUNDLED_CONFIG_RESOURCE, "checkstyle.xml");
+        return new ResolvedConfig(location, "default:mango-bundled");
     }
 
     private String normalized(String value) {
