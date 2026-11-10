@@ -1,6 +1,6 @@
 ## v2026.11.10-maven-1.4.0-workflow-return-assignee-release - Mango Maven/docs 1.4.0 workflow return assignee release - 2026-11-10
 
-Status: `PENDING`. Release plan digest `fcb01cbea0315c0fd27d275e618b4eebfc1d38284010a536130e8c0f6a1964fe`; Maven/npm publication, consume verification, Tag and GitHub Release remain pending.
+Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `fcb01cbea0315c0fd27d275e618b4eebfc1d38284010a536130e8c0f6a1964fe`; prepared candidate `71ab4961579d995af8c35b918fdc05794c991c8567e5bd53359a1dca4f0ca145` completed publication and consume verification for `@mango/cli@1.4.1` and 201 Maven coordinates. Tag and GitHub Release were created and verified.
 
 ### Pull Requests
 
@@ -66,8 +66,8 @@ Status: `PENDING`. Release plan digest `fcb01cbea0315c0fd27d275e618b4eebfc1d3828
 - `mvn verify` passed for the workflow modules before merge, including the return-assignee integration tests that cover explicit handler assignment, invalid tenant membership, multiple target tasks and rollback on `TASK_INVALID`.
 - The workflow README, business integration guide and capability map were updated together with the API contract.
 - `catalog:check` reports a consistent Catalog projection on the source commit and the release plan re-computes 201 coordinates with matching topology.
-- The Maven reactor and docs bundle are built once from the sealed candidate; all 201 coordinates are checked in publish and consume registries with matching checksums.
-- A clean consumer resolves Maven `1.4.0` and `@mango/cli@1.4.1` from the consume registries and completes the pure consume-registry verification.
+- The Maven reactor and docs bundle were built once from the sealed candidate; all 201 coordinates were checked in publish and consume registries with matching checksums.
+- A clean consumer resolved Maven `1.4.0` and `@mango/cli@1.4.1` from the consume registries and completed the pure consume-registry verification.
 
 ### Rollback
 
