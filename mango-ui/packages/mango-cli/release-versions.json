@@ -1,14 +1,14 @@
 {
   "maven": {
-    "mangoBackend": "1.2.0"
+    "mangoBackend": "1.3.0"
   },
   "npm": {
     "@mango/ai": "1.2.5",
     "@mango/ai-api": "1.1.1",
-    "@mango/admin": "2.0.4",
+    "@mango/admin": "2.0.5",
     "@mango/admin-extension": "1.1.5",
     "@mango/admin-pages": "1.3.0",
-    "@mango/admin-shell": "1.1.2",
+    "@mango/admin-shell": "1.1.3",
     "@mango/app-runtime": "1.0.7",
     "@mango/auth": "1.0.42",
     "@mango/calendar": "1.0.57",
@@ -23,7 +23,7 @@
     "@mango/link": "1.0.43",
     "@mango/link-openapi": "1.0.4",
     "@mango/link-page": "1.0.9",
-    "@mango/notice": "1.0.62",
+    "@mango/notice": "1.0.63",
     "@mango/numgen": "1.0.58",
     "@mango/payment": "1.0.49",
     "@mango/pmo": "1.4.9",
@@ -33,7 +33,7 @@
     "@mango/template": "1.0.58",
     "@mango/workflow": "1.0.66",
     "@mango/workflow-business-example": "1.0.65",
-    "@mango/cli": "1.3.11",
+    "@mango/cli": "1.4.0",
     "@mango/home": "1.0.30",
     "@mango/http-client": "1.0.2",
     "@mango/api-schema": "1.0.4"
