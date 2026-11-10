@@ -85,6 +85,7 @@ mvn -o -Drevision=1.0.0-SNAPSHOT-mango-031 \
 | 静态规则 | `mvn -o -Drevision=1.0.0-SNAPSHOT-mango-031 -pl <四个模块> checkstyle:check` | 0 Checkstyle violations |
 | 文档 | `node mango-pmo/tools/check-business-guides.mjs` | 5 guides inspected，通过 |
 | 文档 | `node mango-pmo/tools/audit-module-readmes.mjs`、`node mango-pmo/tools/audit-readme-source-facts.mjs` | 受影响的 `mango-workflow`、`mango-notice` README 均为 OK |
+| Runner 等价本地入口 | `PR_BODY_FILE=<pr-body> node mango-pmo/tools/risk-verification.mjs`、`node mango-pmo/tools/check-capability-docs.mjs --base <base> --head HEAD` | 分别输出 `Risk verification contract passed: L2` 与 `Capability docs checks passed: 17 changed files inspected` |
 | 交付记录 | `node mango-pmo/tools/check-standard-delivery-record.mjs mango-docs/evidence/2026-11-10-workflow-notice-framework-gaps/standard-delivery-record.md` | PASS |
 | 运行态（默认开关） | `mango dev start backend`（workspace slot 31，后端 18031，数据库 `mango_dev_mango_notice_framework_gaps_031`） | `ready http://127.0.0.1:18031/actuator/health`，`/actuator/health` 返回 200，`db` 组件 `UP`；日志无 `Application run failed`、无 Bean 重复定义错误。说明将订阅器从 `@Component` 改为自动配置声明后，真实 Spring Boot 上下文仍只注册一份。 |
 | 运行态（关闭开关） | `JAVA_TOOL_OPTIONS="-Dmango.workflow.notice.enabled=false" mango dev start backend` | 进程环境确认含该属性；`/actuator/health` 返回 200，`Application run failed` 计数为 0。证明关闭默认通知不阻断启动。 |
@@ -101,4 +102,4 @@ mvn -o -Drevision=1.0.0-SNAPSHOT-mango-031 \
   - F-6：已改为只补文档。`WorkflowTaskRuntimeService.triggerEventNotify` 只写 `EVENT_NOTIFY` 审计记录、不发 HTTP 请求；实现回调涉及 SSRF、超时、重试和幂等，属于新需求；删除 UI 需要跨前后端和存量 `designerJson` 迁移。
 - `mango:check` 单独运行会因空基线报 618 条存量问题；按 CI 的部分 Reactor 入口（带 `baseRef` + `no-new-violations`）运行得到 `gateStatus=PASS`，以该入口为准。
 - 存量应用升级后，已声明的 `workflow.*` 消息模板资源会以 `SYNC_ONCE` 生效：这是修正语义，不是破坏性变更，但运营此前被覆盖的文案无法自动恢复，需要重新编辑一次。
-- 未提交、未 Push、未创建 PR，按用户未授权处理。
+- PR #1189（https://github.com/HardyDou/mango/pull/1189）已创建，head SHA 与本地 HEAD 一致（`abc5347f1`），17 个文件变更；`Preflight and scope`、`Java gates`、`Documentation gates`、`pr-contract-check`、`pmo-doc-check`、`frontend-pr-quality` 全部通过，其余门禁按 scope 跳过。本记录不宣称评审、合并或发布。
