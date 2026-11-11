@@ -1,6 +1,6 @@
 ## v2026.11.11-maven-1.4.2-complexity-rules-release - Mango Maven/docs 1.4.2 complexity rule tuning release - 2026-11-11
 
-Status: `PENDING`. Release plan digest `c63236cf9e83320b0e5ce127997f4a7bf6059ae6ef4289bbe77dc79717f11b6f`; Maven/npm publication, consume verification, Tag and GitHub Release remain pending.
+Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `c63236cf9e83320b0e5ce127997f4a7bf6059ae6ef4289bbe77dc79717f11b6f`; prepared candidate `ba85e3edf85246b3c265c3a556ef71f40d782b67b398b9f502f80314e225479d` completed publication and consume verification for `@mango/cli@1.4.3` and 201 Maven coordinates. Tag and GitHub Release were created and verified.
 
 ### Pull Requests
 
@@ -64,8 +64,8 @@ Status: `PENDING`. Release plan digest `c63236cf9e83320b0e5ce127997f4a7bf6059ae6
 - `mvn verify` passed on the affected tools modules; the workflow and notification behavior from earlier batches is untouched.
 - A build with `gate=all` confirmed that a class with many simple methods and a method of complexity 16-20 now passes while a method above 20 still fails.
 - `catalog:check` reports a consistent Catalog projection on the source commit and the release plan re-computes 201 coordinates with matching topology.
-- The Maven reactor and docs bundle are built once from the sealed candidate; all 201 coordinates are checked in publish and consume registries with matching checksums.
-- A clean consumer resolves Maven `1.4.2` and `@mango/cli@1.4.3` from the consume registries and completes the pure consume-registry verification.
+- The Maven reactor and docs bundle were built once from the sealed candidate; all 201 coordinates were checked in publish and consume registries with matching checksums.
+- A clean consumer resolved Maven `1.4.2` and `@mango/cli@1.4.3` from the consume registries and completed the pure consume-registry verification.
 
 ### Rollback
 
