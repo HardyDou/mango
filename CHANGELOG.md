@@ -1,3 +1,85 @@
+## v2026.11.11-maven-1.4.1-pmd-ruleset-v3-release - Mango Maven/docs 1.4.1 PMD ruleset v3 release - 2026-11-11
+
+Status: `PENDING`. Release plan digest `947dbc5e9df4f3cbf2e90f597412d15294402bc63af3458ac0d4e8e878da4adf`; Maven/npm publication, consume verification, Tag and GitHub Release remain pending.
+
+### Pull Requests
+
+- Fixed: [PR #1199](https://github.com/HardyDou/mango/pull/1199) Narrowed the Mango Java ruleset to high-value checks: `pmd-mango.xml` drops from 55 to 24 rules and keeps only rules that locate real defects, resource leaks, concurrency correctness problems, dead code and basic security issues. Packages: the complete Maven/docs `1.4.1` tuple including `io.mango.tools.maven.plugin:mango-maven-plugin:1.4.1`, and `@mango/cli@1.4.2` for the generated template ruleset. Business Adaptation: upgrade the tuple; projects that were blocked by `gate=all` on naming, Javadoc, NPath complexity, literal extraction, micro-performance or generic exception capture no longer fail those checks, and the PMD baseline stays as-is.
+
+### Fixed
+
+- `gate=all` no longer blocks business repositories on rules that do not change code correctness: parameter and local-variable naming, Javadoc form, NPath complexity, duplicate-literal extraction, micro-performance and generic exception capture were removed from the enforced ruleset.
+- The generated full backend template ships the same narrowed ruleset as the Maven plugin, so a generated project and a plugin-driven build no longer disagree about which PMD rules apply.
+
+### Added
+
+- `JavaQualityRulesetContractTest` locks the ruleset contract: the reviewed rule set, the excluded high-noise rules and the template copy must stay in sync.
+- Maven tools, parent POM and CLI README document the narrowed ruleset, the `-Dmango.check.pmdRulesets 指向自定义规则集文件` override and the `no-new-violations` baseline boundary.
+
+### Changed
+
+- The non-application Maven/docs tuple advances from `1.4.0` to `1.4.1` with 201 coordinates.
+- `@mango/cli` advances from `1.4.1` to `1.4.2` because the generated project ruleset changed; no other npm package is republished.
+- The ruleset description now states that excluded checks are deliberately not part of `gate=all` because they are high-noise, low-payoff or conflicting with Mango architecture rules.
+
+### Versions
+
+- Maven/docs: `1.4.0` → `1.4.1`; 201 sealed Maven coordinates, including `io.mango:mango-docs-bundle:1.4.1` and `io.mango.tools.maven.plugin:mango-maven-plugin:1.4.1`.
+- npm: `@mango/cli@1.4.1` → `@mango/cli@1.4.2`; no other npm package is republished.
+- Exact topology, dependency order and checksums are generated in `mango-ui/.changeset/release-plan.json`.
+
+### Published Packages
+
+- Publish all 201 non-application Maven coordinates in release-plan order.
+- Publish `@mango/cli@1.4.2` as the generated compatibility closure.
+- Application fat jars and coordinates outside the sealed plan are excluded; `@mango/pmo` is unchanged because no PMO rule, contract, Agent or Skill file changed in this batch.
+
+### Business Impact
+
+- Business builds see a smaller, higher-signal quality gate: defect, resource-leak, concurrency, dead-code and security rules stay enabled, while style and micro-optimization rules stop blocking merges.
+- Existing repositories keep their current baseline behavior; teams that want stricter rules can still override the ruleset path, and teams with legacy code keep using `no-new-violations`.
+- Generated projects receive the same ruleset as the plugin, so upgrading the CLI and the Maven tuple together keeps local and CI results identical.
+- No API, database, menu, permission, tenant or runtime behavior change is introduced; workflow return and notification behavior from `1.4.0` is unchanged.
+
+### Upgrade Estimate
+
+- Audience: Mango backend consumers that run the Maven quality gate and generated projects that ship the bundled PMD ruleset.
+- Engineering Effort: 0.25-0.5 engineer-day per consumer to upgrade the tuple, remove stale rule suppressions and confirm the build result.
+- Execution Window: 1 hour per consumer including one CI build and a rule-report review.
+- Service Downtime: none; this batch changes build-time checks only.
+- Rollback Effort: 0.5 engineer-day per consumer to restore the complete Maven `1.4.0` tuple and `@mango/cli@1.4.1`.
+- Assumptions: consumers build through the documented Maven entry, keep CI logs for PMD findings, and can regenerate generated projects with the CLI.
+
+### Upgrade Notes
+
+1. Upgrade the complete Mango Maven/docs tuple from `1.4.0` to `1.4.1`; do not update only one starter or module.
+2. Upgrade CLI consumers to `@mango/cli@1.4.2` when the CLI is used.
+3. Regenerate or update generated projects so `config/quality/pmd-mango.xml` matches the published plugin ruleset; do not keep the old 55-rule file locally.
+4. Remove suppressions that only existed for the excluded checks (naming, Javadoc, NPath, literal extraction, micro-performance, generic exception capture).
+5. Keep `-Dmango.check.gate=no-new-violations` and the PMD baseline for legacy code; do not disable the gate to work around a remaining finding.
+6. If a project needs stricter checks, override with `-Dmango.check.pmdRulesets 指向自定义规则集文件` instead of editing the bundled ruleset in place.
+
+### Verification
+
+- The ruleset contract test passed before merge and asserts that the plugin ruleset, the CLI template copy and the documented exclusions stay in sync.
+- `mvn verify` passed on the affected tools modules, and the workflow/notification behavior from `1.4.0` is untouched.
+- A repository build with `gate=all` was used to confirm the previously blocking style findings no longer fail while defect-class rules still run.
+- `catalog:check` reports a consistent Catalog projection on the source commit and the release plan re-computes 201 coordinates with matching topology.
+- The Maven reactor and docs bundle are built once from the sealed candidate; all 201 coordinates are checked in publish and consume registries with matching checksums.
+- A clean consumer resolves Maven `1.4.1` and `@mango/cli@1.4.2` from the consume registries and completes the pure consume-registry verification.
+
+### Rollback
+
+- Restore consumers to the complete Maven/docs `1.4.0` tuple and `@mango/cli@1.4.1`; immutable coordinates are never overwritten.
+- Rolling back restores the 55-rule set, so the previously excluded style findings will block `gate=all` again; restore any suppressions removed during the upgrade.
+- No data written by this batch needs repair; preserve CI reports as evidence of which rules applied.
+- If registry visibility is ambiguous, stop and resume read-only status/repair using the same prepared candidate; never create a second candidate for the same coordinates.
+
+### Audit History
+
+- [PR #1197](https://github.com/HardyDou/mango/pull/1197) and [PR #1198](https://github.com/HardyDou/mango/pull/1198) were delivered through PR #1199; they are referenced here for traceability and are not separate entries in this batch.
+
+
 ## v2026.11.10-maven-1.4.0-workflow-return-assignee-release - Mango Maven/docs 1.4.0 workflow return assignee release - 2026-11-10
 
 Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `fcb01cbea0315c0fd27d275e618b4eebfc1d38284010a536130e8c0f6a1964fe`; prepared candidate `71ab4961579d995af8c35b918fdc05794c991c8567e5bd53359a1dca4f0ca145` completed publication and consume verification for `@mango/cli@1.4.1` and 201 Maven coordinates. Tag and GitHub Release were created and verified.
