@@ -1,3 +1,15 @@
+## 1.4.3 - 2026-11-11
+
+### Changed
+
+- Lock the CLI Maven matrix to Maven `1.4.2` and the generated 201-coordinate Maven/docs release closure.
+- Ship the tuned complexity gate in the full backend template: PMD no longer reports class-level total complexity and the built-in Checkstyle method limit is `20`.
+
+### Upgrade Notes
+
+- Upgrade `@mango/cli@1.4.3` together with the complete Maven/docs `1.4.2` tuple; do not mix release batches.
+- Regenerate or update generated projects so the PMD and Checkstyle files match the published rulesets, then drop suppressions that only existed for the previous `15` limit.
+
 ## 1.4.2 - 2026-11-11
 
 ### Changed
