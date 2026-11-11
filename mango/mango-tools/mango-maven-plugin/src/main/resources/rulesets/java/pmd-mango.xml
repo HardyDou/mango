@@ -7,7 +7,7 @@
     <description>
         Mango Java 规则集 v3，基于 PMD 7 内置规则。
         只保留能定位真实缺陷、资源泄漏、并发正确性问题和基础安全问题的规则。
-        不包含参数和局部变量命名、Javadoc 形式、NPath 复杂度、字面量抽取、微性能、
+        不包含参数和局部变量命名、Javadoc 形式、NPath 复杂度和类级总复杂度、字面量抽取、微性能、
         笼统异常捕获等高误报、低修复收益或与 Mango 架构规则冲突的检查；这些检查
         在 gate=all 下会阻断存量业务仓，但不改变代码正确性。
     </description>
@@ -20,14 +20,8 @@
     <!-- 代码卫生：只保留可安全自动修复的无效 import -->
     <rule ref="category/java/codestyle.xml/UnnecessaryImport"/>
 
-    <!-- 设计缺陷：只保留会直接导致错误行为的写法 -->
+    <!-- 设计缺陷：只保留会直接导致错误行为的写法；方法复杂度由 Checkstyle max=15 约束 -->
     <rule ref="category/java/design.xml/AvoidThrowingNullPointerException"/>
-    <rule ref="category/java/design.xml/CyclomaticComplexity">
-        <properties>
-            <property name="methodReportLevel" value="15"/>
-            <property name="classReportLevel" value="80"/>
-        </properties>
-    </rule>
 
     <!-- 易错写法：空值、异常栈、资源关闭和 finally 语义 -->
     <rule ref="category/java/errorprone.xml/AvoidCatchingThrowable"/>
