@@ -1,3 +1,15 @@
+## 1.4.2 - 2026-11-11
+
+### Changed
+
+- Lock the CLI Maven matrix to Maven `1.4.1` and the generated 201-coordinate Maven/docs release closure.
+- Ship Mango Java ruleset v3 in the full backend template: 24 high-value rules instead of 55, with naming, Javadoc, NPath complexity, literal extraction, micro-performance and generic exception capture removed from `gate=all`.
+
+### Upgrade Notes
+
+- Upgrade `@mango/cli@1.4.2` together with the complete Maven/docs `1.4.1` tuple; do not mix release batches.
+- Regenerate or update generated projects so `config/quality/pmd-mango.xml` matches the published plugin ruleset, then remove suppressions that only covered the excluded checks.
+
 ## 1.4.1 - 2026-11-10
 
 ### Changed
