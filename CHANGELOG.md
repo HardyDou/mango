@@ -1,3 +1,84 @@
+## v2026.11.11-maven-1.4.2-complexity-rules-release - Mango Maven/docs 1.4.2 complexity rule tuning release - 2026-11-11
+
+Status: `PENDING`. Release plan digest `c63236cf9e83320b0e5ce127997f4a7bf6059ae6ef4289bbe77dc79717f11b6f`; Maven/npm publication, consume verification, Tag and GitHub Release remain pending.
+
+### Pull Requests
+
+- Changed: [PR #1203](https://github.com/HardyDou/mango/pull/1203) Raised the built-in Checkstyle `CyclomaticComplexity` limit from 15 to 20 and kept PMD free of method-level complexity reporting, so a single method with moderate branching is no longer blocked twice. Packages: the complete Maven/docs `1.4.2` tuple including `io.mango.tools.maven.plugin:mango-maven-plugin:1.4.2`, and `@mango/cli@1.4.3` for the generated template. Business Adaptation: upgrade the tuple and regenerate the project quality configuration; findings between 16 and 20 are now allowed.
+- Fixed: [PR #1202](https://github.com/HardyDou/mango/pull/1202) Removed the PMD class-level total cyclomatic complexity rule, which summed every method in a class and blocked parsers and aggregate services whose methods were all individually compliant. Packages: the complete Maven/docs `1.4.2` tuple and `@mango/cli@1.4.3`. Business Adaptation: upgrade the tuple; projects that need a class-level constraint can supply their own ruleset through the documented override.
+
+### Fixed
+
+- Aggregate services and parsers with many individually simple methods no longer fail the quality gate because of the PMD class-level complexity sum.
+- One method no longer gets two different complexity verdicts: PMD no longer reports method complexity, and the remaining method-level limit lives in Checkstyle with a single documented threshold.
+- The generated full backend template ships the same PMD and Checkstyle files as the Maven plugin, so generated projects and plugin-driven builds stay aligned.
+
+### Changed
+
+- Method-level cyclomatic complexity limit is now `20` in the built-in Checkstyle ruleset, replacing the previous `15`.
+- PMD class-level total complexity, NPath complexity and boolean-expression complexity remain disabled.
+- The non-application Maven/docs tuple advances from `1.4.1` to `1.4.2` with 201 coordinates.
+- `@mango/cli` advances from `1.4.2` to `1.4.3` because the generated quality configuration changed; no other npm package is republished.
+
+### Versions
+
+- Maven/docs: `1.4.1` → `1.4.2`; 201 sealed Maven coordinates, including `io.mango:mango-docs-bundle:1.4.2` and `io.mango.tools.maven.plugin:mango-maven-plugin:1.4.2`.
+- npm: `@mango/cli@1.4.2` → `@mango/cli@1.4.3`; no other npm package is republished.
+- Exact topology, dependency order and checksums are generated in `mango-ui/.changeset/release-plan.json`.
+
+### Published Packages
+
+- Publish all 201 non-application Maven coordinates in release-plan order.
+- Publish `@mango/cli@1.4.3` as the generated compatibility closure.
+- Application fat jars and coordinates outside the sealed plan are excluded; `@mango/pmo` is unchanged because no PMO rule, contract, Agent or Skill file changed in this batch.
+
+### Business Impact
+
+- Business builds keep defect, resource-leak, concurrency, dead-code and security rules, while complexity checks match real maintenance cost instead of class size.
+- Methods with a complexity between 16 and 20 now pass; methods above 20 still fail with a Checkstyle finding.
+- Classes with many small methods no longer fail because their complexities were summed.
+- Projects that intentionally need a class-level constraint keep the documented `-Dmango.check.pmdRulesets` override and the `no-new-violations` baseline for legacy code.
+- No API, database, menu, permission, tenant or runtime behavior change is introduced.
+
+### Upgrade Estimate
+
+- Audience: Mango backend consumers that run the Maven quality gate and generated projects that ship the bundled PMD and Checkstyle files.
+- Engineering Effort: 0.25 engineer-day per consumer to upgrade the tuple, regenerate the quality configuration and confirm the build.
+- Execution Window: 30 minutes per consumer including one CI build.
+- Service Downtime: none; this batch changes build-time checks only.
+- Rollback Effort: 0.5 engineer-day per consumer to restore the complete Maven `1.4.1` tuple and `@mango/cli@1.4.2`.
+- Assumptions: consumers build through the documented Maven entry and can regenerate generated projects with the CLI.
+
+### Upgrade Notes
+
+1. Upgrade the complete Mango Maven/docs tuple from `1.4.1` to `1.4.2`; do not update only one starter or module.
+2. Upgrade CLI consumers to `@mango/cli@1.4.3` when the CLI is used.
+3. Regenerate or update generated projects so `config/quality/pmd-mango.xml` and `config/quality/checkstyle.xml` match the published rulesets; do not keep the old complexity configuration locally.
+4. Remove suppressions that only existed because of the previous `15` limit or the class-level sum.
+5. Keep `-Dmango.check.gate=no-new-violations` and the baseline for legacy code; do not disable the gate to work around a remaining finding.
+6. Use `-Dmango.check.pmdRulesets` only when a project deliberately needs stricter class-level constraints.
+
+### Verification
+
+- The ruleset contract test and the Checkstyle configuration resolver test passed before merge and assert the plugin rulesets, the CLI template copies and the documented thresholds stay in sync.
+- `mvn verify` passed on the affected tools modules; the workflow and notification behavior from earlier batches is untouched.
+- A build with `gate=all` confirmed that a class with many simple methods and a method of complexity 16-20 now passes while a method above 20 still fails.
+- `catalog:check` reports a consistent Catalog projection on the source commit and the release plan re-computes 201 coordinates with matching topology.
+- The Maven reactor and docs bundle are built once from the sealed candidate; all 201 coordinates are checked in publish and consume registries with matching checksums.
+- A clean consumer resolves Maven `1.4.2` and `@mango/cli@1.4.3` from the consume registries and completes the pure consume-registry verification.
+
+### Rollback
+
+- Restore consumers to the complete Maven/docs `1.4.1` tuple and `@mango/cli@1.4.2`; immutable coordinates are never overwritten.
+- Rolling back restores the `15` method-level limit and the PMD class-level sum, so previously excluded findings will block `gate=all` again; restore any suppressions removed during the upgrade.
+- No data written by this batch needs repair; preserve CI reports as evidence of which rules applied.
+- If registry visibility is ambiguous, stop and resume read-only status/repair using the same prepared candidate; never create a second candidate for the same coordinates.
+
+### Audit History
+
+- [PR #1197](https://github.com/HardyDou/mango/pull/1197) was delivered through PRs #1202 and #1203; it is referenced here for traceability and is not a separate entry in this batch.
+
+
 ## v2026.11.11-maven-1.4.1-pmd-ruleset-v3-release - Mango Maven/docs 1.4.1 PMD ruleset v3 release - 2026-11-11
 
 Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `947dbc5e9df4f3cbf2e90f597412d15294402bc63af3458ac0d4e8e878da4adf`; prepared candidate `01471e22e5710fbee2eeca0bfe71030e98b1bf0cb50243c989b68da60d8026c8` completed publication and consume verification for `@mango/cli@1.4.2` and 201 Maven coordinates. Tag and GitHub Release were created and verified.
