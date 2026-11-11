@@ -1,5 +1,6 @@
 package io.mango.plugin.check;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -16,7 +17,19 @@ class JavaQualityRulesetContractTest {
 
         assertTrue(ruleset.contains("category/java/codestyle.xml/ClassNamingConventions"));
         assertTrue(ruleset.contains("category/java/errorprone.xml/AvoidCatchingThrowable"));
+        assertTrue(ruleset.contains("category/java/errorprone.xml/CloseResource"));
         assertTrue(!ruleset.contains("com.alibaba.p3c"));
+    }
+
+    @Test
+    void pmdRulesetKeepsOnlyHighValueChecks() throws IOException {
+        String ruleset = resource("/rulesets/java/pmd-mango.xml");
+
+        assertFalse(ruleset.contains("category/java/multithreading.xml/UseConcurrentHashMap"));
+        assertFalse(ruleset.contains("category/java/design.xml/AvoidCatchingGenericException"));
+        assertFalse(ruleset.contains("category/java/design.xml/NPathComplexity"));
+        assertFalse(ruleset.contains("category/java/errorprone.xml/AvoidDuplicateLiterals"));
+        assertFalse(ruleset.contains("category/java/errorprone.xml/AvoidLiteralsInIfCondition"));
     }
 
     @Test
