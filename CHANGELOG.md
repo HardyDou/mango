@@ -1,6 +1,6 @@
 ## v2026.11.11-maven-1.4.1-pmd-ruleset-v3-release - Mango Maven/docs 1.4.1 PMD ruleset v3 release - 2026-11-11
 
-Status: `PENDING`. Release plan digest `947dbc5e9df4f3cbf2e90f597412d15294402bc63af3458ac0d4e8e878da4adf`; Maven/npm publication, consume verification, Tag and GitHub Release remain pending.
+Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `947dbc5e9df4f3cbf2e90f597412d15294402bc63af3458ac0d4e8e878da4adf`; prepared candidate `01471e22e5710fbee2eeca0bfe71030e98b1bf0cb50243c989b68da60d8026c8` completed publication and consume verification for `@mango/cli@1.4.2` and 201 Maven coordinates. Tag and GitHub Release were created and verified.
 
 ### Pull Requests
 
@@ -65,8 +65,8 @@ Status: `PENDING`. Release plan digest `947dbc5e9df4f3cbf2e90f597412d15294402bc6
 - `mvn verify` passed on the affected tools modules, and the workflow/notification behavior from `1.4.0` is untouched.
 - A repository build with `gate=all` was used to confirm the previously blocking style findings no longer fail while defect-class rules still run.
 - `catalog:check` reports a consistent Catalog projection on the source commit and the release plan re-computes 201 coordinates with matching topology.
-- The Maven reactor and docs bundle are built once from the sealed candidate; all 201 coordinates are checked in publish and consume registries with matching checksums.
-- A clean consumer resolves Maven `1.4.1` and `@mango/cli@1.4.2` from the consume registries and completes the pure consume-registry verification.
+- The Maven reactor and docs bundle were built once from the sealed candidate; all 201 coordinates were checked in publish and consume registries with matching checksums.
+- A clean consumer resolved Maven `1.4.1` and `@mango/cli@1.4.2` from the consume registries and completed the pure consume-registry verification.
 
 ### Rollback
 
