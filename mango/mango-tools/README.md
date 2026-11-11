@@ -114,7 +114,7 @@ Mango Maven `1.0.31` 起，静态分析的嵌套 Maven 会继承外层已解析�
 
 Mango 内置规则及 CLI 业务模板允许使用三元表达式，也不对单行字符数设置硬限制；复杂度默认只检查圈复杂度，最大值为 15，不启用 NPath 和布尔表达式复杂度检查。业务项目如需更严格规则，可以通过上述自定义规则入口覆盖。
 
-PMD 7 使用内置 `pmd-mango.xml`，只保留能定位真实缺陷、资源泄漏、并发正确性问题和基础安全问题的检查。命名风格、Javadoc 形式、NPath 复杂度、重复字面量、微性能和笼统异常捕获不进入门禁，因为这些检查误报高、修复收益低，或与 Mango 架构规则冲突。业务项目需要不同规则时使用 `-Dmango.check.pmdRulesets=<path>` 覆盖；存量代码通过 `-Dmango.check.gate=no-new-violations` 和 baseline 控制，不关闭门禁。
+PMD 7 使用内置 `pmd-mango.xml`，只保留能定位真实缺陷、资源泄漏、并发正确性问题和基础安全问题的检查。命名风格、Javadoc 形式、NPath 复杂度、类级总复杂度、重复字面量、微性能和笼统异常捕获不进入门禁，因为这些检查误报高、修复收益低，或与 Mango 架构规则冲突。方法级圈复杂度仍由 Checkstyle `max=15` 约束。业务项目需要不同规则时使用 `-Dmango.check.pmdRulesets=<path>` 覆盖；存量代码通过 `-Dmango.check.gate=no-new-violations` 和 baseline 控制，不关闭门禁。
 
 例如使用企业自定义规则：
 

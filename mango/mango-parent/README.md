@@ -63,7 +63,7 @@
 
 PMD 7（maven-pmd-plugin 3.28+）支持 Java 8-21，规则集为 `pmd-mango.xml`。PMD 报告出现处理错误时质量门禁按工具失败阻断。
 
-`pmd-mango.xml` 只保留能定位真实缺陷、资源泄漏、并发正确性问题和基础安全问题的检查。命名风格、Javadoc 形式、NPath 复杂度、重复字面量、微性能和笼统异常捕获不进入门禁，因为这些检查误报高、修复收益低，或与 Mango 架构规则冲突。方法圈复杂度保留 `15`/`80` 的高阈值。存量代码继续通过门禁应使用 `-Dmango.check.gate=no-new-violations` 和 baseline，不得关闭门禁。
+`pmd-mango.xml` 只保留能定位真实缺陷、资源泄漏、并发正确性问题和基础安全问题的检查。命名风格、Javadoc 形式、NPath 复杂度、类级总复杂度、重复字面量、微性能和笼统异常捕获不进入门禁，因为这些检查误报高、修复收益低，或与 Mango 架构规则冲突。方法圈复杂度由 Checkstyle `max=15` 约束。存量代码继续通过门禁应使用 `-Dmango.check.gate=no-new-violations` 和 baseline，不得关闭门禁。
 
 规则文件解析顺序：显式 `mango.check.*` 参数 → `rulesetDir/<规范文件名>` → `config/quality/` 下的项目文件（`checkstyle.xml`、`pmd-mango.xml` 或 `pmd.xml`、`spotbugs-security.xml` 或 `spotbugs.xml`）→ 插件内置规则。
 

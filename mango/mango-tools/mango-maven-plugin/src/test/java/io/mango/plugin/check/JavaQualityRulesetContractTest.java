@@ -28,8 +28,13 @@ class JavaQualityRulesetContractTest {
         assertFalse(ruleset.contains("category/java/multithreading.xml/UseConcurrentHashMap"));
         assertFalse(ruleset.contains("category/java/design.xml/AvoidCatchingGenericException"));
         assertFalse(ruleset.contains("category/java/design.xml/NPathComplexity"));
+        assertFalse(ruleset.contains("category/java/design.xml/CyclomaticComplexity"));
         assertFalse(ruleset.contains("category/java/errorprone.xml/AvoidDuplicateLiterals"));
         assertFalse(ruleset.contains("category/java/errorprone.xml/AvoidLiteralsInIfCondition"));
+
+        String checkstyle = resource("/rulesets/java/checkstyle.xml");
+        assertTrue(checkstyle.contains("<module name=\"CyclomaticComplexity\">"));
+        assertTrue(checkstyle.contains("<property name=\"max\" value=\"15\"/>"));
     }
 
     @Test
