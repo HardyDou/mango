@@ -1,5 +1,6 @@
 package io.mango.plugin.check;
 
+import org.apache.maven.plugin.MojoExecutionException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -8,6 +9,7 @@ import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CheckstyleConfigResolverTest {
@@ -88,6 +90,39 @@ class CheckstyleConfigResolverTest {
 
         assertEquals(rules.toAbsolutePath().toString(), config.location());
         assertEquals("rulesetDir:checkstyle.xml", config.source());
+    }
+
+    @Test
+    void resolve_withThresholdOverrides_rewritesSelectedRules() throws Exception {
+        CheckstyleConfigResolver.ResolvedConfig config =
+                resolver.resolve(tempDir, null, null, null, "25", "3000");
+
+        String content = Files.readString(Path.of(config.location()));
+
+        assertTrue(content.contains("<property name=\"max\" value=\"25\"/>"));
+        assertTrue(content.contains("<property name=\"max\" value=\"3000\"/>"));
+        assertTrue(config.source().endsWith(":override"));
+        assertEquals(
+                "target/mango-check/checkstyle-resolved.xml",
+                tempDir.relativize(Path.of(config.location())).toString());
+    }
+
+    @Test
+    void resolve_withNonPositiveThresholdOverride_fails() {
+        assertThrows(
+                MojoExecutionException.class,
+                () -> resolver.resolve(tempDir, null, null, null, "0", null));
+    }
+
+    @Test
+    void resolve_withOverrideOnRulesetWithoutModule_fails() throws Exception {
+        Path projectConfig = tempDir.resolve(CheckstyleConfigResolver.PROJECT_CONFIG_PATH);
+        Files.createDirectories(projectConfig.getParent());
+        Files.writeString(projectConfig, "<module name=\"Checker\"/>\n");
+
+        assertThrows(
+                MojoExecutionException.class,
+                () -> resolver.resolve(tempDir, null, null, null, "25", null));
     }
 
     @Test

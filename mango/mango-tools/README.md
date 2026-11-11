@@ -74,7 +74,12 @@ mvn -f mango/pom.xml mango:gen-permission
 | `mango.check.baselineFile` | `target/baseline.json` | 存量问题基线报告。 |
 | `mango.check.codeLevelExcludedModules` | `mango-platform/mango-file-preview` | 仅从 PMD、Checkstyle、SpotBugs 等代码级静态分析门禁中排除指定模块；Mango 自有规则仍会执行。 |
 | `mango.check.staticFailurePolicy` | `block` 或 `report` | 静态分析委托失败时阻断或只报告。 |
+| `mango.check.reportOnlyRules` | `CyclomaticComplexity,FileLength` | 逗号分隔的规则名；这些规则的发现只报告、不阻断。 |
+| `mango.check.checkstyle.cyclomaticComplexityMax` | `25` | 覆盖选中 Checkstyle 规则文件中的方法级复杂度阈值。 |
+| `mango.check.checkstyle.fileLengthMax` | `3000` | 覆盖选中 Checkstyle 规则文件中的文件长度阈值。 |
 | `mango.check.resourceStarterDependencyExceptions` | `artifactId=reason` | Resource Registry runtime 依赖例外。必须人工明确确认并写明理由，多个例外用英文逗号分隔。 |
+
+`reportOnlyRules` 按规则名匹配，大小写不敏感；命中问题写入 JSON 的 `reportOnlyIssues` 和 `reportOnlyIssueCount`，不进入 `newIssues`/`baselineIssues`，不参与 gate 阻断。`mango.check.checkstyle.*Max` 会生成 `target/mango-check/checkstyle-resolved.xml`，不修改项目规则文件；未传时沿用选中规则文件的阈值。
 
 依赖边界检查按 `api` / `support` / `core` / `starter-*` 模型执行：
 

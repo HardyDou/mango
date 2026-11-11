@@ -56,6 +56,9 @@
 | `mango.check.checkstyleConfigLocation` | 空 | 自定义 Checkstyle 规则文件 |
 | `mango.check.pmdRulesets` | 空 | 自定义 PMD 规则文件；插件会写入 `mango.check.pmdRulesetsPath`，由 parent 的 PMD 插件配置读取 |
 | `mango.check.spotbugsIncludeFilterFile` | 空 | 自定义 SpotBugs include filter |
+| `mango.check.reportOnlyRules` | 空 | 逗号分隔的规则名；这些规则只报告、不阻断 |
+| `mango.check.checkstyle.cyclomaticComplexityMax` | 空 | 覆盖 Checkstyle 方法级复杂度阈值；未传时沿用规则文件 |
+| `mango.check.checkstyle.fileLengthMax` | 空 | 覆盖 Checkstyle 文件长度阈值；未传时沿用规则文件 |
 | `mango.check.pmdEnabled` | `true` | 是否执行 PMD |
 | `mango.check.pmdTypeResolution` | `true` | PMD 类型解析；PMD 7 支持 Java 8-21 class 文件 |
 | `mango.check.checkstyleEnabled` | `true` | 是否执行 Checkstyle |

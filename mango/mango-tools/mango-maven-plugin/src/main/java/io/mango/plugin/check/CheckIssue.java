@@ -12,6 +12,7 @@ public class CheckIssue {
     public String fingerprint;
     public boolean inChangedFiles;
     public boolean baseline;
+    public boolean reportOnly;
 
     public CheckIssue() {
     }

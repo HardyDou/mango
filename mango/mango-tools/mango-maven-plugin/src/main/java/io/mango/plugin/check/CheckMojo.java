@@ -447,6 +447,18 @@ public class CheckMojo extends AbstractMojo {
     @Parameter(property = "mango.check.rulesetDir")
     private String rulesetDir;
 
+    /** Comma-separated rule names whose findings are reported but not blocked. */
+    @Parameter(property = "mango.check.reportOnlyRules")
+    private String reportOnlyRules;
+
+    /** Optional method-level cyclomatic complexity threshold for Checkstyle. */
+    @Parameter(property = "mango.check.checkstyle.cyclomaticComplexityMax")
+    private String checkstyleCyclomaticComplexityMax;
+
+    /** Optional file length threshold for Checkstyle. */
+    @Parameter(property = "mango.check.checkstyle.fileLengthMax")
+    private String checkstyleFileLengthMax;
+
     /** Whether PMD runs inside aggregated static analysis. */
     @Parameter(property = "mango.check.pmdEnabled", defaultValue = "true")
     private boolean pmdEnabled = true;
@@ -898,7 +910,9 @@ public class CheckMojo extends AbstractMojo {
                                     rootPath,
                                     checkstyleConfigLocation,
                                     standardCheckstyleConfigLocation,
-                                    rulesetDir);
+                                    rulesetDir,
+                                    checkstyleCyclomaticComplexityMax,
+                                    checkstyleFileLengthMax);
             command.add("-Dcheckstyle.config.location=" + checkstyleConfig.location());
             getLog().info(
                     "Delegated Checkstyle configuration: "
@@ -6241,7 +6255,8 @@ public class CheckMojo extends AbstractMojo {
                         baselineFile,
                         gate,
                         staticFailurePolicy,
-                        changedOnly),
+                        changedOnly,
+                        reportOnlyRules),
                 getLog()::warn);
     }
 
@@ -6253,6 +6268,7 @@ public class CheckMojo extends AbstractMojo {
         getLog().info("New issues: " + result.newIssues.size());
         getLog().info("Baseline issues: " + result.baselineIssues.size());
         getLog().info("Excluded issues: " + result.excludedIssues.size());
+        getLog().info("Report-only issues: " + result.reportOnlyIssueCount);
         getLog().info("Tool failures: " + result.toolFailures.size());
         for (String message : result.gateMessages) {
             getLog().warn("  [GATE] " + message);
@@ -6262,7 +6278,9 @@ public class CheckMojo extends AbstractMojo {
         }
 
         for (CheckIssue issue : result.issues) {
-            getLog().warn("  [" + issue.severity + "][" + issue.source + "] " + issue.description);
+            String reportOnlyMarker = issue.reportOnly ? "[REPORT-ONLY]" : "";
+            getLog().warn("  " + reportOnlyMarker + "[" + issue.severity + "][" + issue.source + "] "
+                    + issue.description);
             if (issue.file != null) {
                 getLog().warn("    at: " + issue.file + ":" + issue.line);
             }

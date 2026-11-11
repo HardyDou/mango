@@ -80,6 +80,7 @@ class CheckGateFinalizer {
         result.excludedIssuesByRule = countIssuesByField(result.excludedIssues, FIELD_RULE);
         assignStableFingerprints(result.issues);
         assignStableFingerprints(result.excludedIssues);
+        classifyReportOnlyIssues(result);
 
         if (isNoNewViolationsGate(result)) {
             finalizeNoNewViolations(result);
@@ -104,6 +105,9 @@ class CheckGateFinalizer {
         Map<String, Integer> baselineFingerprints = loadBaselineFingerprints(result);
         boolean hasBaseline = hasConfiguredBaseline();
         for (CheckIssue issue : result.issues) {
+            if (issue.reportOnly) {
+                continue;
+            }
             issue.inChangedFiles = isChangedIssue(issue, changedFileSet);
             issue.baseline = consumeBaselineMatch(baselineFingerprints, issue);
             if (isNewIssue(issue, changedFileSet, hasBaseline)) {
@@ -184,12 +188,48 @@ class CheckGateFinalizer {
     }
 
     private void finalizeAllIssuesGate(CheckResult result) {
-        result.newIssues.addAll(result.issues);
+        for (CheckIssue issue : result.issues) {
+            if (!issue.reportOnly) {
+                result.newIssues.add(issue);
+            }
+        }
         result.newIssueCount = result.newIssues.size();
         result.baselineIssueCount = 0;
-        result.passed = result.issues.isEmpty() && !hasBlockingToolFailure(result);
+        result.passed = result.newIssues.isEmpty() && !hasBlockingToolFailure(result);
         result.gateStatus = statusFor(result.passed);
         applyToolFailureMessages(result);
+    }
+
+    private void classifyReportOnlyIssues(CheckResult result) {
+        Set<String> reportOnlyRules = resolveReportOnlyRules();
+        if (reportOnlyRules.isEmpty()) {
+            return;
+        }
+        for (CheckIssue issue : result.issues) {
+            if (issue.rule != null
+                    && reportOnlyRules.contains(issue.rule.trim().toLowerCase(Locale.ROOT))) {
+                issue.reportOnly = true;
+                result.reportOnlyIssues.add(issue);
+            }
+        }
+        result.reportOnlyIssueCount = result.reportOnlyIssues.size();
+        result.reportOnlyIssuesByRule = countIssuesByField(result.reportOnlyIssues, FIELD_RULE);
+        result.addGateMessage("Report-only rules: " + String.join(",", new TreeSet<>(reportOnlyRules)));
+    }
+
+    private Set<String> resolveReportOnlyRules() {
+        String configured = options.reportOnlyRules();
+        if (configured == null || configured.isBlank()) {
+            return Set.of();
+        }
+        LinkedHashSet<String> rules = new LinkedHashSet<>();
+        for (String candidate : configured.split(CHANGED_FILE_SEPARATOR)) {
+            String rule = candidate.trim();
+            if (!rule.isEmpty()) {
+                rules.add(rule.toLowerCase(Locale.ROOT));
+            }
+        }
+        return rules;
     }
 
     private String statusFor(boolean passed) {
