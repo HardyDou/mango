@@ -34,7 +34,7 @@ class JavaQualityRulesetContractTest {
 
         String checkstyle = resource("/rulesets/java/checkstyle.xml");
         assertTrue(checkstyle.contains("<module name=\"CyclomaticComplexity\">"));
-        assertTrue(checkstyle.contains("<property name=\"max\" value=\"15\"/>"));
+        assertTrue(checkstyle.contains("<property name=\"max\" value=\"20\"/>"));
     }
 
     @Test
