@@ -26,7 +26,7 @@ class CheckstyleConfigResolverTest {
         assertEquals("default:mango-bundled", config.source());
         assertTrue(Files.isRegularFile(configFile));
         assertTrue(content.contains("CyclomaticComplexity"));
-        assertTrue(content.contains("<property name=\"max\" value=\"15\"/>"));
+        assertTrue(content.contains("<property name=\"max\" value=\"20\"/>"));
         assertFalse(content.contains("NPathComplexity"));
         assertFalse(content.contains("BooleanExpressionComplexity"));
         assertFalse(content.contains("DesignForExtension"));
