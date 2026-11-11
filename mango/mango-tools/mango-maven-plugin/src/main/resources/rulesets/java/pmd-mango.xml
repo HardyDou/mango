@@ -5,81 +5,51 @@
          xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.net/ruleset_2_0_0.xsd">
 
     <description>
-        Mango Java 规则集 v2，基于 PMD 7 内置规则。
-        覆盖命名、注释、设计、异常、并发、性能和基础安全；用于 Java 8-21 项目。
+        Mango Java 规则集 v3，基于 PMD 7 内置规则。
+        只保留能定位真实缺陷、资源泄漏、并发正确性问题和基础安全问题的规则。
+        不包含参数和局部变量命名、Javadoc 形式、NPath 复杂度、字面量抽取、微性能、
+        笼统异常捕获等高误报、低修复收益或与 Mango 架构规则冲突的检查；这些检查
+        在 gate=all 下会阻断存量业务仓，但不改变代码正确性。
     </description>
 
-    <!-- 命名 -->
+    <!-- 命名：只保留类、方法、字段三类稳定标识，参数和局部变量命名不作为门禁 -->
     <rule ref="category/java/codestyle.xml/ClassNamingConventions"/>
     <rule ref="category/java/codestyle.xml/MethodNamingConventions"/>
     <rule ref="category/java/codestyle.xml/FieldNamingConventions"/>
-    <rule ref="category/java/codestyle.xml/FormalParameterNamingConventions"/>
-    <rule ref="category/java/codestyle.xml/LocalVariableNamingConventions"/>
-    <rule ref="category/java/codestyle.xml/AvoidDollarSigns"/>
+
+    <!-- 代码卫生：只保留可安全自动修复的无效 import -->
     <rule ref="category/java/codestyle.xml/UnnecessaryImport"/>
-    <rule ref="category/java/codestyle.xml/UnnecessaryModifier"/>
 
-    <!-- 注释 -->
-    <rule ref="category/java/documentation.xml/CommentSize"/>
-    <rule ref="category/java/documentation.xml/CommentContent"/>
-    <rule ref="category/java/documentation.xml/DanglingJavadoc"/>
-
-    <!-- 设计 -->
-    <rule ref="category/java/design.xml/AvoidCatchingGenericException"/>
+    <!-- 设计缺陷：只保留会直接导致错误行为的写法 -->
     <rule ref="category/java/design.xml/AvoidThrowingNullPointerException"/>
-    <rule ref="category/java/design.xml/AvoidThrowingRawExceptionTypes"/>
-    <rule ref="category/java/design.xml/ExceptionAsFlowControl"/>
-    <rule ref="category/java/design.xml/CollapsibleIfStatements"/>
     <rule ref="category/java/design.xml/CyclomaticComplexity">
         <properties>
             <property name="methodReportLevel" value="15"/>
             <property name="classReportLevel" value="80"/>
         </properties>
     </rule>
-    <rule ref="category/java/design.xml/NPathComplexity"/>
 
-    <!-- 异常与易错写法 -->
+    <!-- 易错写法：空值、异常栈、资源关闭和 finally 语义 -->
     <rule ref="category/java/errorprone.xml/AvoidCatchingThrowable"/>
-    <rule ref="category/java/errorprone.xml/AvoidLiteralsInIfCondition"/>
-    <rule ref="category/java/errorprone.xml/AvoidDuplicateLiterals"/>
     <rule ref="category/java/errorprone.xml/CompareObjectsWithEquals"/>
     <rule ref="category/java/errorprone.xml/CloseResource"/>
-    <rule ref="category/java/errorprone.xml/AssignmentInOperand"/>
     <rule ref="category/java/errorprone.xml/BrokenNullCheck"/>
-    <rule ref="category/java/errorprone.xml/AvoidLosingExceptionInformation"/>
     <rule ref="category/java/errorprone.xml/DoNotThrowExceptionInFinally"/>
-    <rule ref="category/java/errorprone.xml/AvoidBranchingStatementAsLastInLoop"/>
 
-    <!-- 最佳实践 -->
+    <!-- 最佳实践：死代码、防御性复制、栈保留和部署硬编码 -->
     <rule ref="category/java/bestpractices.xml/AvoidPrintStackTrace"/>
     <rule ref="category/java/bestpractices.xml/ArrayIsStoredDirectly"/>
-    <rule ref="category/java/bestpractices.xml/AvoidReassigningParameters"/>
-    <rule ref="category/java/bestpractices.xml/AvoidReassigningLoopVariables"/>
-    <rule ref="category/java/bestpractices.xml/AvoidReassigningCatchVariables"/>
     <rule ref="category/java/bestpractices.xml/UnusedLocalVariable"/>
     <rule ref="category/java/bestpractices.xml/UnusedPrivateField"/>
     <rule ref="category/java/bestpractices.xml/UnusedPrivateMethod"/>
     <rule ref="category/java/bestpractices.xml/AvoidUsingHardCodedIP"/>
     <rule ref="category/java/bestpractices.xml/PreserveStackTrace"/>
 
-    <!-- 并发 -->
-    <rule ref="category/java/multithreading.xml/AvoidSynchronizedAtMethodLevel"/>
-    <rule ref="category/java/multithreading.xml/AvoidThreadGroup"/>
+    <!-- 并发：只保留可证实的线程安全缺陷，不对局部集合和同步写法做风格建议 -->
     <rule ref="category/java/multithreading.xml/DoubleCheckedLocking"/>
     <rule ref="category/java/multithreading.xml/DontCallThreadRun"/>
-    <rule ref="category/java/multithreading.xml/UseConcurrentHashMap"/>
     <rule ref="category/java/multithreading.xml/UseNotifyAllInsteadOfNotify"/>
     <rule ref="category/java/multithreading.xml/UnsynchronizedStaticFormatter"/>
-
-    <!-- 性能 -->
-    <rule ref="category/java/performance.xml/AddEmptyString"/>
-    <rule ref="category/java/performance.xml/ConsecutiveLiteralAppends"/>
-    <rule ref="category/java/performance.xml/StringInstantiation"/>
-    <rule ref="category/java/performance.xml/UseIndexOfChar"/>
-    <rule ref="category/java/performance.xml/UseStringBufferForStringAppends"/>
-    <rule ref="category/java/performance.xml/BigIntegerInstantiation"/>
-    <rule ref="category/java/performance.xml/InefficientEmptyStringCheck"/>
-    <rule ref="category/java/performance.xml/UselessStringValueOf"/>
 
     <!-- 基础安全 -->
     <rule ref="category/java/security.xml/HardCodedCryptoKey"/>
