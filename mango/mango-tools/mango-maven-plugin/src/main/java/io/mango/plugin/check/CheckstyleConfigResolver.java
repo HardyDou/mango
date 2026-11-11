@@ -13,6 +13,8 @@ final class CheckstyleConfigResolver {
 
     static final String BUNDLED_CONFIG_RESOURCE = BundledRulesetResolver.CHECKSTYLE_RESOURCE;
     static final String PROJECT_CONFIG_PATH = "config/quality/checkstyle.xml";
+    private static final int PROPERTY_SUFFIX_GROUP = 3;
+    private static final int MODULE_CLOSING_GROUP = 3;
 
     private final ClassLoader classLoader;
 
@@ -157,12 +159,12 @@ final class CheckstyleConfigResolver {
         String updatedBody = moduleBody.substring(0, maxMatcher.start())
                 + maxMatcher.group(1)
                 + max
-                + maxMatcher.group(3)
+                + maxMatcher.group(PROPERTY_SUFFIX_GROUP)
                 + moduleBody.substring(maxMatcher.end());
         return content.substring(0, moduleMatcher.start())
                 + moduleMatcher.group(1)
                 + updatedBody
-                + moduleMatcher.group(3)
+                + moduleMatcher.group(MODULE_CLOSING_GROUP)
                 + content.substring(moduleMatcher.end());
     }
 
