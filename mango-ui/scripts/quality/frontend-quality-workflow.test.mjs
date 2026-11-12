@@ -16,7 +16,7 @@ function job(id) {
 
 test('pull requests do not run a blocking frontend quality job', () => {
   assert.doesNotMatch(workflow, /frontend-pr-quality/u);
-  assert.doesNotMatch(workflow, /^  pull_request:/mu);
+  assert.doesNotMatch(workflow, /^ {2}pull_request:/mu);
 });
 
 test('deep frontend quality and P0 browser acceptance do not run for pull requests', () => {
