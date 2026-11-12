@@ -1,3 +1,15 @@
+## 1.6.0 - 2026-11-13
+
+### Changed
+
+- The persistence rule pins Flowable engine tables: `act_*` and `flw_*` are platform-integrated, skipped by tenant interception and schema validation, must not be added to `excluded-tables`, and cannot be widened by business configuration.
+- The Business Starter baseline and rule index are re-projected for the new persistence boundary.
+
+### Upgrade Notes
+
+- Upgrade `@mango/pmo@1.6.0` together with `@mango/cli@1.4.5` and Maven/docs `1.6.0`; synchronize the Business Starter baseline and rerun locked PMO checks.
+- Remove any business tenant exclusion previously added for `act_*` or `flw_*` tables.
+
 ## 1.5.0 - 2026-11-12
 
 ### Changed

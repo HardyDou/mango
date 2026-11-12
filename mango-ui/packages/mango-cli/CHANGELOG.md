@@ -1,3 +1,15 @@
+## 1.4.5 - 2026-11-13
+
+### Changed
+
+- Lock the CLI Maven matrix to Maven `1.6.0` and the generated 201-coordinate Maven/docs release closure.
+- Align the CLI PMO baseline with `@mango/pmo@1.6.0`, whose persistence rule pins Flowable `act_*` / `flw_*` engine tables outside tenant and schema exceptions.
+- Keep the generated quality configuration aligned with the cleaned Prettier and stylelint baseline.
+
+### Upgrade Notes
+
+- Upgrade `@mango/cli@1.4.5` together with the complete Maven/docs `1.6.0` tuple and `@mango/pmo@1.6.0`; do not mix release batches.
+
 ## 1.4.4 - 2026-11-12
 
 ### Added

@@ -9,9 +9,9 @@
   },
   "dependencies": {
     "@{{projectKebab}}/{{moduleKebab}}": "{{projectVersion}}",
-    "@mango/admin": "2.0.6",
-    "@mango/app-runtime": "1.0.7",
-    "@mango/common": "2.3.2",
+    "@mango/admin": "2.0.7",
+    "@mango/app-runtime": "1.0.8",
+    "@mango/common": "2.3.3",
     "@mango/http-client": "1.0.2",
     "element-plus": "2.14.1",
     "pinia": "2.0.32",
