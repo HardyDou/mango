@@ -237,7 +237,11 @@ export function resolveMavenScope(files, repositoryRoot = root) {
     new RegExp(`^${escapedMavenPrefix}\\/pom\\.xml$`),
     ...(sourceLayout ? [
       /^mango\/mango-parent(?:\/|$)/,
-      /^mango\/mango-tools\/mango-(?:architecture-rules|maven-plugin|architecture-verification)(?:\/|$)/,
+      /^mango\/mango-tools\/mango-architecture-rules(?:\/|$)/,
+      /^mango\/mango-tools\/mango-architecture-verification(?:\/|$)/,
+      /^mango\/mango-tools\/mango-maven-plugin\/pom\.xml$/,
+      /^mango\/mango-tools\/mango-maven-plugin\/src\/main\/resources\/rulesets(?:\/|$)/,
+      /^mango\/mango-tools\/mango-maven-plugin\/src\/main\/java\/io\/mango\/plugin\/(?:architecture|baseline)(?:\/|$)/,
     ] : [
       architecturePattern,
       qualityPattern,
