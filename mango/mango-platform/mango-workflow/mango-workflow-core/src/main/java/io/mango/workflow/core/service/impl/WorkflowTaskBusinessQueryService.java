@@ -4,7 +4,12 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
 import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.workflow.api.enums.WorkflowApplyStatus;
 import io.mango.workflow.api.enums.WorkflowCode;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mango.workflow.api.enums.WorkflowTaskCancelCause;
 import io.mango.workflow.api.enums.WorkflowTaskClaimStatus;
 import io.mango.workflow.api.enums.WorkflowTaskQueryScope;
 import io.mango.workflow.api.enums.WorkflowTaskRuntimeStatus;
@@ -21,6 +26,7 @@ import io.mango.workflow.core.model.WorkflowTaskHistoryRow;
 import io.mango.workflow.core.model.WorkflowTaskIdentityLinkRow;
 import io.mango.workflow.core.service.IWorkflowTaskBusinessQueryService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -40,11 +46,15 @@ import java.util.stream.Collectors;
  * <p>查询直接读取 Flowable 历史任务表并关联业务申请单，因此可以跨处理人返回同一业务主键下的全部任务，
  * 同时把租户、申请单可见性和数据范围收敛在 SQL 层完成，不做内存过滤。
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQueryService {
 
     private static final int PAGE_SIZE_UPPER_BOUND = 500;
+    private static final String RETURN_TARGET_VARIABLE = "targetTaskDefinitionKey";
+    private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {
+    };
 
     private final WorkflowTaskHistoryMapper taskHistoryMapper;
     private final WorkflowBusinessApplyMapper businessApplyMapper;
@@ -53,6 +63,7 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
     private final WorkflowAssigneeIdentityService assigneeIdentityService;
     private final WorkflowCandidateGroupProvider candidateGroupProvider;
     private final WorkflowTaskQueryProperties properties;
+    private final ObjectMapper objectMapper;
 
     @Override
     public PageResult<WorkflowTaskVO> pageByBusinessKey(WorkflowTaskBusinessPageQuery request) {
@@ -242,6 +253,9 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
         vo.setEndTime(row.getEndTime());
         vo.setDeleteReason(row.getDeleteReason());
         vo.setStatus(resolveStatus(row).name());
+        vo.setCancelCause(resolveCancelCause(row));
+        vo.setLastReturnAt(row.getLastReturnAt());
+        vo.setLastReturnTarget(resolveLastReturnTarget(row));
         vo.setClaimStatus(StringUtils.hasText(row.getAssigneeKey())
                 ? WorkflowTaskClaimStatus.ASSIGNED
                 : WorkflowTaskClaimStatus.UNCLAIMED);
@@ -258,6 +272,37 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
         vo.setClaimable(Boolean.FALSE);
         vo.setUnclaimable(Boolean.FALSE);
         return vo;
+    }
+
+    private String resolveCancelCause(WorkflowTaskHistoryRow row) {
+        if (resolveStatus(row) != WorkflowTaskRuntimeStatus.CANCELED) {
+            return null;
+        }
+        if (Boolean.TRUE.equals(row.getTaskReturned())) {
+            return WorkflowTaskCancelCause.RETURNED.name();
+        }
+        if (WorkflowApplyStatus.WITHDRAWN.name().equals(row.getApplyStatus())) {
+            return WorkflowTaskCancelCause.WITHDRAWN.name();
+        }
+        if (WorkflowApplyStatus.TERMINATED.name().equals(row.getApplyStatus())
+                || WorkflowApplyStatus.CANCELED.name().equals(row.getApplyStatus())) {
+            return WorkflowTaskCancelCause.TERMINATED.name();
+        }
+        return WorkflowTaskCancelCause.OTHER.name();
+    }
+
+    private String resolveLastReturnTarget(WorkflowTaskHistoryRow row) {
+        if (!StringUtils.hasText(row.getLastReturnVariables())) {
+            return null;
+        }
+        try {
+            Map<String, Object> variables = objectMapper.readValue(row.getLastReturnVariables(), MAP_TYPE);
+            Object target = variables.get(RETURN_TARGET_VARIABLE);
+            return target == null ? null : String.valueOf(target);
+        } catch (JsonProcessingException ex) {
+            log.warn("Failed to parse workflow return variables for apply {}", row.getApplyId(), ex);
+            return null;
+        }
     }
 
     private WorkflowTaskRuntimeStatus resolveStatus(WorkflowTaskHistoryRow row) {

@@ -28,7 +28,8 @@
 | AC-6 | 同上 | `sortBy=endTime`，含未办理任务 | `endTime` 为空的任务在 `asc` 和 `desc` 下都排最后 | 白名单外字段报错 | 翻页不重复、不漏行 |
 | AC-7 | 同上 | 跨租户数据 | 只返回当前租户数据 | 缺租户上下文报错 | 其他租户任务不可见 |
 | AC-8 | 同上 | 申请单 `orgId` 为空 + `scope=SELF` | 正常返回本人任务 | 不因组织为空拒绝 | 与 `done()` 口径一致 |
-| AC-9 | 同上 | 撤回/驳回/退回后的申请 | 任务 `status=CANCELED` 带 `deleteReason`；整单状态由 `applyStatus` 表达；`returned` 标识是否退回 | — | 能区分撤销、驳回与"退回待修改" |
+| AC-9 | 同上 | 撤回/驳回/退回后的申请 | 任务 `status=CANCELED` 带 `cancelCause`（RETURNED/WITHDRAWN/TERMINATED/OTHER）；`applyStatus` 表达整单状态；`returned`+`lastReturnAt`+`lastReturnTarget` 表达退回 | — | 能区分撤销、驳回与"退回待修改"，且不依赖引擎文案 |
+| AC-10 | 同上 | 真实 MySQL（`mango_dev_baohan_risk`） | 在 Flowable 7.0.0 实际表结构上返回正确结果 | 列名不匹配时报 `Unknown column` | 同单多节点、分页、排序、SELF 候选组、assigneeIds、returned 全部符合预期 |
 
 ## 4. 技术决定
 
@@ -42,6 +43,8 @@
 | D-6 | AC-9 | 不新增平台状态枚举；`status` 复用 `TODO`/`DONE` 并新增 `CANCELED`；`returned` 依据 `workflow_task_record.action='RETURN'`；新增返回 `applyId`、`applyStatus`、`claimTime`、`orgId`、`deleteReason` | `WorkflowTaskVO`、`WorkflowTaskRuntimeStatus`、Mapper XML | 回退字段与枚举 |
 | D-7 | AC-1 | POST 请求体使用 `WorkflowTaskBusinessPageRequest`；自定义查询 Mapper 继承 `BaseMapper<WorkflowTaskHistoryEntity>`（Flowable 历史任务只读投影实体），满足架构契约 | `WorkflowTaskBusinessPageRequest`、`WorkflowTaskHistoryEntity`、`WorkflowTaskHistoryMapper` | 回退类型与实体 |
 | D-8 | AC-3 | 业务申请可见性仅在业务模块注册 `WorkflowBusinessApplyDataPermissionProvider` 时参与收窄；未注册不做"申请人本人"兜底 | `WorkflowBusinessApplyAccessChecker.hasProvider`、`WorkflowTaskBusinessQueryService` | 回退 `hasProvider` 与收窄逻辑 |
+| D-9 | AC-9 | 新增 `cancelCause` 枚举，依据"该任务是否有 RETURN 动作"与 `apply_status` 推导，不匹配 `deleteReason` 文本；新增 `lastReturnAt`/`lastReturnTarget`，取自最新 RETURN 记录的 `variables_json` | `WorkflowTaskCancelCause`、`WorkflowTaskVO`、Mapper XML、`WorkflowTaskBusinessQueryService` | 回退字段与推导逻辑 |
+| D-10 | AC-10 | 历史任务创建时间使用 `ACT_HI_TASKINST.START_TIME_`；`CREATE_TIME_` 仅存在于 `ACT_RU_TASK`；H2 集成测试建表按真实列名固定 | Mapper XML、`WorkflowTaskHistoryEntity`、集成测试 | 回退列名 |
 
 ## 5. 实施清单
 
@@ -62,11 +65,13 @@
 | AC-2/AC-3/AC-4/AC-5 | 单元测试 | `mvn -o -pl mango-platform/mango-workflow/mango-workflow-core -Dtest=WorkflowTaskBusinessQueryServiceTest test` | PASS（10 用例） | 空集合与分页成对校验、`SELF` 三段条件、`ALL` 无权限失败、截断上限、状态映射 |
 | AC-1~AC-9 | 模块验证 | `mvn -o -pl mango-platform/mango-workflow/mango-workflow-api,mango-platform/mango-workflow/mango-workflow-core,mango-platform/mango-workflow/mango-workflow-starter verify` | PASS | workflow-core 128 tests、workflow-starter 45 tests、`BUILD SUCCESS` |
 | AC-1~AC-9 | 架构与质量门禁 | `mvn -o -f mango/pom.xml -pl ":mango-architecture-verification,..." -Dmango.architecture.mode=changed -Dmango.check.gate=no-new-violations verify` | PASS | `newIssues=[]`，`BUILD SUCCESS` |
+| AC-10 | 真实 MySQL 联调 | 在 `mango_dev_baohan_risk` 执行等价 SQL（含预编译 `limit ? offset ?`） | PASS | 单键 3 行多节点、分页 2+1、`endTime` 双向 NULL 归尾、SELF 候选组 `ROLE:`/`ORG:` 命中、ALL 94 行、assigneeIds 81 行、`RETURN` 8 条；`DONE` 51 行与 `COMPLETE` 动作 51 条一致 |
 | AC-1~AC-9 | 能力文档门禁 | `node mango-pmo/tools/audit-module-readmes.mjs`、`audit-readme-source-facts.mjs`、`check-business-guides.mjs`、`check-capability-docs.mjs`、`risk-verification.mjs` | PASS | 脚本输出 `checks passed` |
 
 ## 7. 例外与剩余风险
 
-- 未在真实 MySQL 联调：集成测试使用 H2 `MODE=MySQL` 与按 Flowable 7.0.0 裁剪的表结构；上线前需在目标库验证一次。
+- 已在真实 MySQL（`mango_dev_baohan_risk`，Flowable 7.0.0）完成只读联调，并因此发现并修复 `CREATE_TIME_` → `START_TIME_` 的列名缺陷（原 H2 夹具列名错误，单测无法暴露）。测试库以外环境仍需在上线前验证一次。
+- 真实库中 54 条申请的 `org_id` 与 `applicant_dept_id` 全部为空，`orgId` 恒为 `null`；业务已确认不使用该字段显示部门，`ORG` 范围本期未实现。
 - 引擎 schema 耦合：只读 SQL 依赖 `ACT_HI_TASKINST`、`ACT_HI_IDENTITYLINK`、`ACT_RU_IDENTITYLINK` 列名；Flowable 升级必须回归 `WorkflowTaskHistoryMapperIntegrationTest`。
 - 契约偏差：冻结版约定的 `truncated` 字段改为 `list.size() < total` 判断（平台分页返回不允许扩字段）；参数错误码由 `3641` 改为 `3659`，越权为 `3660`（`3641` 已被 `APPLY_NOT_FOUND` 占用）。
 - 未实现：`ORG` / `deptIds` 组织范围直接报错；未接入角色数据范围配置，业务侧需按 `scope` 显式声明范围。

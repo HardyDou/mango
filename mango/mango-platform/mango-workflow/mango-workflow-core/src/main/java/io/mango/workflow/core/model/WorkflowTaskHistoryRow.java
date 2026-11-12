@@ -27,4 +27,7 @@ public class WorkflowTaskHistoryRow {
     private String processDefinitionId;
     private Long orgId;
     private Boolean returned;
+    private Boolean taskReturned;
+    private LocalDateTime lastReturnAt;
+    private String lastReturnVariables;
 }

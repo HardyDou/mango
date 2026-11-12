@@ -157,7 +157,23 @@
                         where r.tenant_id = a.tenant_id
                           and r.process_instance_id = a.process_instance_id
                           and r.action = 'RETURN'
-                    ) then 1 else 0 end as returned
+                    ) then 1 else 0 end as returned,
+               case when exists (
+                        select 1 from workflow_task_record rt
+                        where rt.tenant_id = a.tenant_id
+                          and rt.task_id = t.ID_
+                          and rt.action = 'RETURN'
+                    ) then 1 else 0 end as taskReturned,
+               (select max(rl.created_time) from workflow_task_record rl
+                where rl.tenant_id = a.tenant_id
+                  and rl.process_instance_id = a.process_instance_id
+                  and rl.action = 'RETURN') as lastReturnAt,
+               (select rv.variables_json from workflow_task_record rv
+                where rv.tenant_id = a.tenant_id
+                  and rv.process_instance_id = a.process_instance_id
+                  and rv.action = 'RETURN'
+                order by rv.created_time desc, rv.id desc
+                limit 1) as lastReturnVariables
         <include refid="taskFrom"/>
         <include refid="taskWhere"/>
         order by

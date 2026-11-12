@@ -10,6 +10,8 @@ import io.mango.workflow.api.enums.WorkflowTaskQueryScope;
 import io.mango.workflow.api.enums.WorkflowTaskRuntimeStatus;
 import io.mango.workflow.api.query.WorkflowTaskBusinessPageQuery;
 import io.mango.workflow.api.vo.WorkflowTaskVO;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mango.workflow.api.enums.WorkflowTaskCancelCause;
 import io.mango.workflow.core.config.WorkflowTaskQueryProperties;
 import io.mango.workflow.core.engine.WorkflowCandidateGroupProvider;
 import io.mango.workflow.core.identity.WorkflowAssigneeIdentityService;
@@ -48,6 +50,7 @@ class WorkflowTaskBusinessQueryServiceTest {
     private WorkflowAssigneeIdentityService assigneeIdentityService;
     private WorkflowCandidateGroupProvider candidateGroupProvider;
     private WorkflowTaskQueryProperties properties;
+    private final ObjectMapper objectMapper = new ObjectMapper();
     private WorkflowTaskBusinessQueryService service;
 
     @BeforeEach
@@ -64,7 +67,7 @@ class WorkflowTaskBusinessQueryServiceTest {
         when(checkerProvider.getIfAvailable()).thenReturn(null);
         when(candidateGroupProvider.currentCandidateGroups()).thenReturn(List.of("ROLE_REVIEWER"));
         service = new WorkflowTaskBusinessQueryService(taskHistoryMapper, businessApplyMapper, checkerProvider,
-                authorizer, assigneeIdentityService, candidateGroupProvider, properties);
+                authorizer, assigneeIdentityService, candidateGroupProvider, properties, objectMapper);
         MangoContextHolder.clear();
         MangoContextHolder.set(MangoContextSnapshot.empty()
                 .withSecurity(1001L, "1", "alice", "default", "USER", "ORG", 1001L, "token"));
@@ -230,6 +233,49 @@ class WorkflowTaskBusinessQueryServiceTest {
         assertThat(vo.getDeleteReason()).isEqualTo("审批驳回");
         assertThat(vo.getEndTime()).isNull();
         assertThat(vo.getReturned()).isTrue();
+    }
+
+    @Test
+    void resolvesCancelCauseAndReturnTargetForCanceledTask() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        WorkflowTaskHistoryRow returned = row();
+        returned.setEndTime(null);
+        returned.setDeleteReason("Change activity to risk_specialist_review");
+        returned.setApplyStatus("IN_APPROVAL");
+        returned.setTaskReturned(Boolean.TRUE);
+        returned.setLastReturnAt(LocalDateTime.of(2026, 1, 2, 9, 0));
+        returned.setLastReturnVariables("{\"targetTaskDefinitionKey\":\"risk_specialist_review\"}");
+        WorkflowTaskHistoryRow withdrawn = row();
+        withdrawn.setEndTime(null);
+        withdrawn.setDeleteReason("申请人撤回");
+        withdrawn.setApplyStatus("WITHDRAWN");
+        withdrawn.setTaskReturned(Boolean.FALSE);
+        when(taskHistoryMapper.countTasks(any())).thenReturn(2L);
+        when(taskHistoryMapper.selectTasks(any(), anyInt(), anyLong()))
+                .thenReturn(List.of(returned, withdrawn));
+
+        PageResult<WorkflowTaskVO> result = service.pageByBusinessKey(query);
+
+        WorkflowTaskVO returnedVo = result.getList().get(0);
+        assertThat(returnedVo.getStatus()).isEqualTo(WorkflowTaskRuntimeStatus.CANCELED.name());
+        assertThat(returnedVo.getCancelCause()).isEqualTo(WorkflowTaskCancelCause.RETURNED.name());
+        assertThat(returnedVo.getLastReturnAt()).isEqualTo(LocalDateTime.of(2026, 1, 2, 9, 0));
+        assertThat(returnedVo.getLastReturnTarget()).isEqualTo("risk_specialist_review");
+        WorkflowTaskVO withdrawnVo = result.getList().get(1);
+        assertThat(withdrawnVo.getCancelCause()).isEqualTo(WorkflowTaskCancelCause.WITHDRAWN.name());
+        assertThat(withdrawnVo.getLastReturnTarget()).isNull();
+    }
+
+    @Test
+    void keepsCancelCauseNullForCompletedTask() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        when(taskHistoryMapper.countTasks(any())).thenReturn(1L);
+        when(taskHistoryMapper.selectTasks(any(), anyInt(), anyLong())).thenReturn(List.of(row()));
+
+        PageResult<WorkflowTaskVO> result = service.pageByBusinessKey(query);
+
+        assertThat(result.getList().get(0).getCancelCause()).isNull();
+        assertThat(result.getList().get(0).getStatus()).isEqualTo(WorkflowTaskRuntimeStatus.DONE.name());
     }
 
     private WorkflowTaskBusinessPageQuery query(WorkflowTaskQueryScope scope) {

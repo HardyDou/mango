@@ -87,11 +87,20 @@ public class WorkflowTaskVO {
     @Schema(description = "任务完成时间")
     private LocalDateTime endTime;
 
-    @Schema(description = "任务终止原因；仅已终止任务有值")
+    @Schema(description = "任务终止原因；仅已终止任务有值，为引擎原始文案，不建议直接展示")
     private String deleteReason;
+
+    @Schema(description = "任务终止的机器可读原因：RETURNED / WITHDRAWN / TERMINATED / OTHER；仅已终止任务有值")
+    private String cancelCause;
 
     @Schema(description = "任务所属申请是否发生过退回")
     private Boolean returned;
+
+    @Schema(description = "任务所属申请最近一次退回时间")
+    private LocalDateTime lastReturnAt;
+
+    @Schema(description = "任务所属申请最近一次退回的目标节点定义 Key")
+    private String lastReturnTarget;
 
     public List<String> getCandidateUsers() {
         return candidateUsers == null ? null : new ArrayList<>(candidateUsers);

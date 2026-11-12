@@ -269,7 +269,23 @@ class WorkflowTaskHistoryMapperIntegrationTest {
                 .containsExactly("T3");
         assertThat(taskHistoryMapper.selectTasks(returned, 10, 0L))
                 .extracting(WorkflowTaskHistoryRow::getTaskId)
-                .containsExactly("T2", "T1");
+                .containsExactlyInAnyOrder("T1", "T2", "T3");
+    }
+
+    @Test
+    void exposesTaskLevelReturnFactAndLatestReturnTarget() {
+        WorkflowTaskHistoryCriteria criteria = criteria(List.of("RC2"));
+
+        List<WorkflowTaskHistoryRow> rows = taskHistoryMapper.selectTasks(criteria, 10, 0L);
+
+        assertThat(rows).hasSize(1);
+        WorkflowTaskHistoryRow canceled = rows.get(0);
+        assertThat(canceled.getTaskId()).isEqualTo("T3");
+        assertThat(canceled.getDeleteReason()).isEqualTo("审批驳回");
+        assertThat(canceled.getReturned()).isTrue();
+        assertThat(canceled.getTaskReturned()).isTrue();
+        assertThat(canceled.getLastReturnAt()).isEqualTo(LocalDateTime.of(2026, 1, 3, 12, 0));
+        assertThat(canceled.getLastReturnVariables()).contains("risk_specialist_review");
     }
 
     @Test
@@ -310,8 +326,16 @@ class WorkflowTaskHistoryMapperIntegrationTest {
                 LocalDateTime.of(2026, 1, 4, 10, 0), null, null, null);
         jdbcTemplate.update("insert into act_hi_identitylink (ID_, TASK_ID_, TYPE_, USER_ID_, GROUP_ID_) "
                 + "values (?, ?, ?, ?, ?)", "IL1", "T2", "candidate", "alice", "ROLE_REVIEWER");
-        jdbcTemplate.update("insert into workflow_task_record (id, tenant_id, process_instance_id, action) "
-                + "values (?, ?, ?, ?)", 100L, TENANT_ID, "P1", "RETURN");
+        jdbcTemplate.update("insert into workflow_task_record "
+                        + "(id, tenant_id, process_instance_id, task_id, task_definition_key, action, "
+                        + "variables_json, created_time) values (?, ?, ?, ?, ?, ?, ?, ?)",
+                100L, TENANT_ID, "P1", "T1", "FIRST_REVIEW", "RETURN",
+                "{\"targetTaskDefinitionKey\":\"FIRST_REVIEW\"}", LocalDateTime.of(2026, 1, 2, 9, 0));
+        jdbcTemplate.update("insert into workflow_task_record "
+                        + "(id, tenant_id, process_instance_id, task_id, task_definition_key, action, "
+                        + "variables_json, created_time) values (?, ?, ?, ?, ?, ?, ?, ?)",
+                101L, TENANT_ID, "P2", "T3", "FIRST_REVIEW", "RETURN",
+                "{\"targetTaskDefinitionKey\":\"risk_specialist_review\"}", LocalDateTime.of(2026, 1, 3, 12, 0));
         jdbcTemplate.update("insert into identity_user (id, username) values (?, ?)", 1001L, "alice");
     }
 
@@ -398,7 +422,11 @@ class WorkflowTaskHistoryMapperIntegrationTest {
                     id bigint not null,
                     tenant_id bigint,
                     process_instance_id varchar(128),
+                    task_id varchar(128),
+                    task_definition_key varchar(128),
                     action varchar(64),
+                    variables_json text,
+                    created_time timestamp,
                     primary key (id)
                 )
                 """);
