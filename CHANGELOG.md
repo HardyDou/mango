@@ -1,6 +1,6 @@
 ## v2026.11.13-maven-1.6.0-workflow-business-type-query-release - Mango Maven/docs 1.6.0 workflow business type query release - 2026-11-13
 
-Status: `PENDING`. Release plan digest `5a3d9ccf5e3fdc947a1c262fdd64ed94422458402323cffcc1bdb81b1c650683`; Maven/npm publication, consume verification, Tag and GitHub Release remain pending.
+Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `5a3d9ccf5e3fdc947a1c262fdd64ed94422458402323cffcc1bdb81b1c650683`; prepared candidate `ceac0838f5a064cc689cd4d69edbd036d2dbee4bef3341398a8bd7148919eb09` completed publication and consume verification for 31 npm packages and 201 Maven coordinates. Tag and GitHub Release were created and verified.
 
 ### Pull Requests
 
@@ -83,7 +83,7 @@ Status: `PENDING`. Release plan digest `5a3d9ccf5e3fdc947a1c262fdd64ed9442245840
 - PMO tool tests and the business baseline projection check passed for the reduced required-check set.
 - Frontend quality and component contract checks passed on `main` after the formatting fixes; the npm packages build with unchanged public contracts.
 - `catalog:check` reports a consistent Catalog projection on the source commit and the release plan re-computes 201 coordinates with matching topology.
-- The Maven reactor and docs bundle are built once from the sealed candidate; all 201 coordinates are checked in publish and consume registries with matching checksums.
+- The Maven reactor and docs bundle were built once from the sealed candidate; all 201 coordinates were checked in publish and consume registries with matching checksums.
 - A clean consumer resolves Maven `1.5.0`, `@mango/pmo@1.5.0` and `@mango/cli@1.4.4` from the consume registries and completes the pure consume-registry verification.
 
 ### Rollback
