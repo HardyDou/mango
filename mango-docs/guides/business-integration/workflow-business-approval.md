@@ -170,7 +170,7 @@ mango:
 - `lastReturnAt` / `lastReturnTarget`：最近一次退回的时间和目标节点，用于判断"当前是否处于退回待修改"。
 - `cancelCause`：已终止任务的机器可读原因，`RETURNED` / `WITHDRAWN` / `TERMINATED` / `OTHER`。业务侧按枚举出中文文案，不要匹配 `deleteReason` 文本——它是引擎内部文案（例如 `Change activity to risk_specialist_review`、`申请人撤回`），不稳定。
 - `statuses=[DONE]` 只返回真正办结的任务，被退回或撤回终止的任务不会混入"已办理"。
-- `assigneeIds` 直接传业务 `user_id` 即可，平台按 `identity_user.username` 映射到引擎办理人。
+- `assigneeIds` 直接传业务 `user_id` 即可，平台按 `identity_user.username` 映射到引擎办理人，并用 `tenant_member` 限定该用户属于任务所在租户，跨租户同名用户不会串号。
 - 退回后同一 `taskDefinitionKey` 会再次出现（初审 → 复审 → 退回 → 初审），这是正常返回，按 `endTime` / `claimTime` 取最新。
 - 排序：`createTime`、`endTime`、`claimTime`；`endTime` 与 `claimTime` 为空的任务在升序和降序下都排在最后。
 

@@ -45,6 +45,7 @@
 | D-8 | AC-3 | 业务申请可见性仅在业务模块注册 `WorkflowBusinessApplyDataPermissionProvider` 时参与收窄；未注册不做"申请人本人"兜底 | `WorkflowBusinessApplyAccessChecker.hasProvider`、`WorkflowTaskBusinessQueryService` | 回退 `hasProvider` 与收窄逻辑 |
 | D-9 | AC-9 | 新增 `cancelCause` 枚举，依据"该任务是否有 RETURN 动作"与 `apply_status` 推导，不匹配 `deleteReason` 文本；新增 `lastReturnAt`/`lastReturnTarget`，取自最新 RETURN 记录的 `variables_json` | `WorkflowTaskCancelCause`、`WorkflowTaskVO`、Mapper XML、`WorkflowTaskBusinessQueryService` | 回退字段与推导逻辑 |
 | D-10 | AC-10 | 历史任务创建时间使用 `ACT_HI_TASKINST.START_TIME_`；`CREATE_TIME_` 仅存在于 `ACT_RU_TASK`；H2 集成测试建表按真实列名固定 | Mapper XML、`WorkflowTaskHistoryEntity`、集成测试 | 回退列名 |
+| D-11 | AC-3 | `assigneeIds` 的用户 ID 到用户名映射强制经 `tenant_member` 校验租户归属，避免跨租户同名用户串号 | Mapper XML、集成测试夹具 | 回退映射子查询 |
 
 ## 5. 实施清单
 
@@ -76,3 +77,5 @@
 - 契约偏差：冻结版约定的 `truncated` 字段改为 `list.size() < total` 判断（平台分页返回不允许扩字段）；参数错误码由 `3641` 改为 `3659`，越权为 `3660`（`3641` 已被 `APPLY_NOT_FOUND` 占用）。
 - 未实现：`ORG` / `deptIds` 组织范围直接报错；未接入角色数据范围配置，业务侧需按 `scope` 显式声明范围。
 - 未提交授权项：PR 合并、Review、发布均未执行，需单独授权。
+- `cancelCause=OTHER`（驳回）与 `TERMINATED` 在真实库零样本（该库仅有 APPROVED/IN_APPROVAL/WITHDRAWN），仅由单元测试覆盖；建议业务在联调环境用驳回场景实测一次。
+- 性能只在 54 申请 / 94 任务上验证：`workflow_business_apply` 在该规模走全表扫描（强制索引验证 `idx_workflow_business_apply_biz_latest` 为覆盖索引可用），`ACT_HI_TASKINST` 走 `ACT_IDX_HI_TASK_INST_PROCINST`，`workflow_task_record` 相关子查询走 `idx_workflow_task_record_proc`；`lastReturnVariables` 仍有 filesort，但排序集合被单个流程实例的动作数限制（实测 4 行），与表规模无关。上线前需在生产规模数据上复核执行计划。

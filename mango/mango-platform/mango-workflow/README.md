@@ -557,7 +557,7 @@ mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-comm
 - `lastReturnAt` / `lastReturnTarget` 表示该申请最近一次退回的时间和目标节点，取自最新一条 `RETURN` 动作记录的 `variables_json.targetTaskDefinitionKey`。
 - `cancelCause` 是已终止任务的机器可读原因：`RETURNED`（该任务上存在退回动作）、`WITHDRAWN`（申请已撤回）、`TERMINATED`（流程已终止/取消）、`OTHER`（例如驳回导致流程实例删除）。`deleteReason` 保留引擎原始文案，只能用于排查，不能用于状态判断。
 - `statuses=[DONE]` 只返回 `END_TIME_` 非空且 `DELETE_REASON_` 为空的任务，被退回或撤回终止的任务不会混进"已办理"。
-- `assigneeIds` 接受业务 `user_id`：引擎 `ASSIGNEE_` 存的是用户名时，平台通过 `identity_user.username` 映射匹配；传 `user_id` 即可命中。
+- `assigneeIds` 接受业务 `user_id`：引擎 `ASSIGNEE_` 存的是用户名时，平台通过 `identity_user.username` 映射，并强制经 `tenant_member` 校验该用户属于任务所在租户，跨租户同名用户不会串号。
 - `sortBy=claimTime` 在本接口的 SQL 层可排序（与引擎 API 不同），仍保持空值归尾。
 
 引擎列名事实：历史任务表的创建时间是 `ACT_HI_TASKINST.START_TIME_`，不是 `CREATE_TIME_`；`CREATE_TIME_` 只存在于运行态 `ACT_RU_TASK`。修改该查询时要按历史表真实列名书写，H2 集成测试的建表语句已按真实列名固定。

@@ -337,6 +337,8 @@ class WorkflowTaskHistoryMapperIntegrationTest {
                 101L, TENANT_ID, "P2", "T3", "FIRST_REVIEW", "RETURN",
                 "{\"targetTaskDefinitionKey\":\"risk_specialist_review\"}", LocalDateTime.of(2026, 1, 3, 12, 0));
         jdbcTemplate.update("insert into identity_user (id, username) values (?, ?)", 1001L, "alice");
+        jdbcTemplate.update("insert into tenant_member (id, tenant_id, user_id) values (?, ?, ?)",
+                5001L, TENANT_ID, 1001L);
     }
 
     private void insertApply(Long id, Long tenantId, String businessKey, String status,
@@ -434,6 +436,15 @@ class WorkflowTaskHistoryMapperIntegrationTest {
                 create table identity_user (
                     id bigint not null,
                     username varchar(128),
+                    primary key (id)
+                )
+                """);
+        jdbcTemplate.execute("drop table if exists tenant_member");
+        jdbcTemplate.execute("""
+                create table tenant_member (
+                    id bigint not null,
+                    tenant_id bigint,
+                    user_id bigint,
                     primary key (id)
                 )
                 """);

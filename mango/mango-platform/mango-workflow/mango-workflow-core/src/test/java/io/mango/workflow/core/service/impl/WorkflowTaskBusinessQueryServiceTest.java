@@ -267,6 +267,31 @@ class WorkflowTaskBusinessQueryServiceTest {
     }
 
     @Test
+    void resolvesTerminatedAndOtherCancelCause() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        WorkflowTaskHistoryRow terminated = row();
+        terminated.setEndTime(null);
+        terminated.setDeleteReason("审批人为空，系统自动结束");
+        terminated.setApplyStatus("TERMINATED");
+        terminated.setTaskReturned(Boolean.FALSE);
+        WorkflowTaskHistoryRow rejected = row();
+        rejected.setEndTime(null);
+        rejected.setDeleteReason("审批驳回");
+        rejected.setApplyStatus("REJECTED");
+        rejected.setTaskReturned(Boolean.FALSE);
+        when(taskHistoryMapper.countTasks(any())).thenReturn(2L);
+        when(taskHistoryMapper.selectTasks(any(), anyInt(), anyLong()))
+                .thenReturn(List.of(terminated, rejected));
+
+        PageResult<WorkflowTaskVO> result = service.pageByBusinessKey(query);
+
+        assertThat(result.getList().get(0).getCancelCause())
+                .isEqualTo(WorkflowTaskCancelCause.TERMINATED.name());
+        assertThat(result.getList().get(1).getCancelCause())
+                .isEqualTo(WorkflowTaskCancelCause.OTHER.name());
+    }
+
+    @Test
     void keepsCancelCauseNullForCompletedTask() {
         WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
         when(taskHistoryMapper.countTasks(any())).thenReturn(1L);
