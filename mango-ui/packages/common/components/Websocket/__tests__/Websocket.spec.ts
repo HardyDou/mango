@@ -233,14 +233,4 @@ describe('WebSocket Component', () => {
       expect(statusClass['is-error']).toBe(true);
     });
   });
-
-  describe('WebSocket Ready State Constants', () => {
-    it('should have correct ready state values', () => {
-      // Mock WebSocket constants since happy-dom doesn't have WebSocket
-      expect(0).toBe(0); // WebSocket.CONNECTING
-      expect(1).toBe(1); // WebSocket.OPEN
-      expect(2).toBe(2); // WebSocket.CLOSING
-      expect(3).toBe(3); // WebSocket.CLOSED
-    });
-  });
 });
