@@ -10,6 +10,7 @@ class CheckGateOptions {
     private final String gate;
     private final String staticFailurePolicy;
     private final boolean changedOnly;
+    private final String reportOnlyRules;
 
     CheckGateOptions(
             Path basePath,
@@ -18,7 +19,7 @@ class CheckGateOptions {
             String baselineFile,
             String gate,
             String staticFailurePolicy) {
-        this(basePath, changedFiles, baseRef, baselineFile, gate, staticFailurePolicy, false);
+        this(basePath, changedFiles, baseRef, baselineFile, gate, staticFailurePolicy, false, null);
     }
 
     CheckGateOptions(
@@ -29,6 +30,18 @@ class CheckGateOptions {
             String gate,
             String staticFailurePolicy,
             boolean changedOnly) {
+        this(basePath, changedFiles, baseRef, baselineFile, gate, staticFailurePolicy, changedOnly, null);
+    }
+
+    CheckGateOptions(
+            Path basePath,
+            String changedFiles,
+            String baseRef,
+            String baselineFile,
+            String gate,
+            String staticFailurePolicy,
+            boolean changedOnly,
+            String reportOnlyRules) {
         this.basePath = basePath;
         this.changedFiles = changedFiles;
         this.baseRef = baseRef;
@@ -36,6 +49,7 @@ class CheckGateOptions {
         this.gate = gate;
         this.staticFailurePolicy = staticFailurePolicy;
         this.changedOnly = changedOnly;
+        this.reportOnlyRules = reportOnlyRules;
     }
 
     Path basePath() {
@@ -64,5 +78,9 @@ class CheckGateOptions {
 
     boolean changedOnly() {
         return changedOnly;
+    }
+
+    String reportOnlyRules() {
+        return reportOnlyRules;
     }
 }

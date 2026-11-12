@@ -14,6 +14,7 @@ public class CheckResult {
     public int newIssueCount;
     public int baselineIssueCount;
     public int excludedIssueCount;
+    public int reportOnlyIssueCount;
     public int toolFailureCount;
     public List<String> changedFiles = new ArrayList<>();
     public List<String> gateMessages = new ArrayList<>();
@@ -21,11 +22,13 @@ public class CheckResult {
     public List<CheckIssue> newIssues = new ArrayList<>();
     public List<CheckIssue> baselineIssues = new ArrayList<>();
     public List<CheckIssue> excludedIssues = new ArrayList<>();
+    public List<CheckIssue> reportOnlyIssues = new ArrayList<>();
     public List<ToolFailure> toolFailures = new ArrayList<>();
     public Map<String, Integer> issuesBySource = new LinkedHashMap<>();
     public Map<String, Integer> issuesByRule = new LinkedHashMap<>();
     public Map<String, Integer> excludedIssuesBySource = new LinkedHashMap<>();
     public Map<String, Integer> excludedIssuesByRule = new LinkedHashMap<>();
+    public Map<String, Integer> reportOnlyIssuesByRule = new LinkedHashMap<>();
 
     void addIssue(String type, String severity, String file, int line, String description,
                   String rule, String reference, String source) {

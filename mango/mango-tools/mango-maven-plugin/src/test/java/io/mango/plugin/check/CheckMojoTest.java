@@ -646,6 +646,64 @@ class CheckMojoTest {
     }
 
     @Test
+    void finalizeResult_allGateAllowsConfiguredReportOnlyRules() throws Exception {
+        CheckIssue issue = new CheckIssue();
+        issue.type = "CyclomaticComplexityCheck";
+        issue.severity = "MINOR";
+        issue.file = tempDir.resolve("app/src/main/java/com/example/Demo.java").toString();
+        issue.line = 12;
+        issue.description = "Cyclomatic Complexity is 21 (max allowed is 20).";
+        issue.rule = "CyclomaticComplexity";
+        issue.source = "checkstyle";
+        CheckResult result = new CheckResult();
+        result.issues.add(issue);
+        CheckGateFinalizer finalizer = new CheckGateFinalizer(
+                objectMapper(),
+                new CheckGateOptions(
+                        tempDir, null, null, null, "all", "block", false,
+                        "CyclomaticComplexity"));
+
+        finalizer.finalizeResult(result);
+
+        assertTrue(result.passed);
+        assertEquals(1, result.reportOnlyIssueCount);
+        assertEquals(0, result.newIssueCount);
+        assertTrue(issue.reportOnly);
+    }
+
+    @Test
+    void finalizeResult_noNewViolationsIgnoresConfiguredReportOnlyRules() throws Exception {
+        CheckIssue issue = new CheckIssue();
+        issue.type = "CyclomaticComplexityCheck";
+        issue.severity = "MINOR";
+        issue.file = tempDir.resolve("app/src/main/java/com/example/Demo.java").toString();
+        issue.line = 12;
+        issue.description = "Cyclomatic Complexity is 21 (max allowed is 20).";
+        issue.rule = "CyclomaticComplexity";
+        issue.source = "checkstyle";
+        CheckResult result = new CheckResult();
+        result.issues.add(issue);
+        CheckGateFinalizer finalizer = new CheckGateFinalizer(
+                objectMapper(),
+                new CheckGateOptions(
+                        tempDir,
+                        "app/src/main/java/com/example/Demo.java",
+                        null,
+                        null,
+                        "no-new-violations",
+                        "block",
+                        false,
+                        "cyclomaticcomplexity"));
+
+        finalizer.finalizeResult(result);
+
+        assertTrue(result.passed);
+        assertEquals(1, result.reportOnlyIssueCount);
+        assertEquals(0, result.newIssueCount);
+        assertTrue(issue.reportOnly);
+    }
+
+    @Test
     void finalizeResult_noNewViolationsUsesPersistedFingerprintAcrossBusinessWorktrees()
             throws Exception {
         Path baselineRoot = tempDir.resolve("baohan-system/baohan-backend");
