@@ -1,6 +1,7 @@
 package io.mango.workflow.starter.controller;
 
 import io.mango.workflow.api.command.SaveWorkflowDefinitionCommand;
+import io.mango.workflow.api.request.WorkflowTaskBusinessPageRequest;
 import jakarta.validation.Validation;
 import jakarta.validation.ValidatorFactory;
 import org.junit.jupiter.api.Test;
@@ -8,6 +9,7 @@ import org.springframework.context.annotation.ClassPathScanningCandidateComponen
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -32,6 +34,28 @@ class WorkflowControllerValidationInheritanceTest {
                     .getConstraintsForMethod("create", SaveWorkflowDefinitionCommand.class);
             assertThat(definitionMetadata).isNotNull();
             assertThat(definitionMetadata.getParameterDescriptors().getFirst().isCascaded()).isTrue();
+        }
+    }
+
+    @Test
+    void businessTaskPageRequest_allowsMissingBusinessKeys() {
+        try (ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory()) {
+            var validator = validatorFactory.getValidator();
+            WorkflowTaskBusinessPageRequest request = new WorkflowTaskBusinessPageRequest();
+            request.setBusinessType("BAOHAN_RC_PROJECT_REVIEW");
+
+            assertThat(validator.validate(request)).isEmpty();
+
+            request.setBusinessKeys(List.of());
+            assertThat(validator.validate(request)).isEmpty();
+
+            request.setBusinessKeys(List.of("RC1"));
+            assertThat(validator.validate(request)).isEmpty();
+
+            request.setBusinessType(null);
+            assertThat(validator.validate(request))
+                    .extracting(violation -> violation.getMessage())
+                    .contains("业务类型不能为空");
         }
     }
 

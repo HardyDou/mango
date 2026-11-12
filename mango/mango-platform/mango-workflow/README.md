@@ -536,9 +536,9 @@ mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-comm
 - 管理端流程定义、版本、发布、启停、任务流转和业务上下文发起不受隐藏入口影响。
 - 启动入口可见性不是权限控制；业务模块仍需校验业务发起权限、业务状态、快照和幂等。
 
-### 6.1 按业务主键查询任务的范围规则
+### 6.1 按业务类型查询任务的范围规则（业务主键可选）
 
-`POST /workflow/tasks/page-by-business-key` 用于业务列表按业务主键批量读取全部任务，返回在途、已办理和已终止任务，一行对应一个任务。数据范围分三层：
+`POST /workflow/tasks/page-by-business-key` 用于业务列表按业务类型读取全部任务；`businessKeys` 可选，传入时只返回这些业务主键的数据。返回在途、已办理和已终止任务，一行对应一个任务。数据范围分三层：
 
 | 层 | 规则 |
 |----|------|
@@ -548,10 +548,10 @@ mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-comm
 
 约束：
 
-- `businessKeys` 必填，数量不设上限；平台以一条只读 SQL 完成过滤、排序和分页。
+- `businessType` 必填；`businessKeys` 可选，不传或为空表示不限业务主键，数量不设上限。平台以一条只读 SQL 完成过滤、排序和分页。
 - 不传 `page` / `size` 时按 `mango.workflow.task-query.unpaged-max-rows` 一次性返回，`total` 始终是过滤后的真实总数，用 `list.size() < total` 判断是否需要改用分页。
 - `deptIds` 仅在 `scope=ORG` 时合法；`scope=SELF` / `ALL` 传入 `deptIds` 会被拒绝，避免调用方误以为已按组织过滤。
-- 业务申请可见性只在业务模块注册了 `WorkflowBusinessApplyDataPermissionProvider` 时参与收窄；未注册时本接口不做"申请人本人"兜底，因为该兜底属于按 ID 读详情的语义，与批量管理视图不兼容。
+- 业务申请可见性只在传入 `businessKeys` 且业务模块注册了 `WorkflowBusinessApplyDataPermissionProvider` 时参与收窄；不传 `businessKeys` 时不做逐申请 Provider 过滤，范围由租户、`scope` 和权限码决定。未注册 Provider 时本接口不做"申请人本人"兜底，因为该兜底属于按 ID 读详情的语义，与批量管理视图不兼容。
 - 排序 `NULL` 归尾：`endTime`、`claimTime` 为空的任务在 `asc` 和 `desc` 下都排在最后。
 - `returned` 表示该申请是否发生过退回（依据 `workflow_task_record.action = 'RETURN'`）。退回不改变 `apply_status`，因此"退回待修改"用 `applyStatus=IN_APPROVAL + returned=true` 表达，不新增平台状态值。
 - `lastReturnAt` / `lastReturnTarget` 表示该申请最近一次退回的时间和目标节点，取自最新一条 `RETURN` 动作记录的 `variables_json.targetTaskDefinitionKey`。
@@ -600,7 +600,7 @@ mango:
 |------|--------|------|
 | `mango.workflow.enabled` | `true` | 是否启用 workflow 自动配置。为 `false` 时不注册 mapper、service、controller 和初始化器。 |
 | `mango.resource.registry.demo-enabled` | `false` | 是否额外扫描 `META-INF/mango/demo/`。只在空白开发或演示环境开启。 |
-| `mango.workflow.task-query.unpaged-max-rows` | `2000` | 按业务主键查询任务时不传分页参数的单次返回上限；超出部分调用方改用 `page` / `size` 拉取。 |
+| `mango.workflow.task-query.unpaged-max-rows` | `2000` | 按业务类型查询任务时不传分页参数的单次返回上限；超出部分调用方改用 `page` / `size` 拉取。 |
 
 ## 9. 返回字段
 
@@ -682,7 +682,7 @@ Workflow 参数校验约束统一由 `mango-workflow-api` 的 `XxxApi` 契约声
 | 待办统计 | `GET /workflow/tasks/todo/summary` | `workflow:task:list` |
 | 我的任务统计 | `GET /workflow/tasks/my/summary` | `workflow:task:list` |
 | 抄送列表 | `GET /workflow/tasks/copied` | `workflow:task:list` |
-| 按业务主键批量查询任务 | `POST /workflow/tasks/page-by-business-key` | `workflow:task:list`；`scope=ALL` 还需要 `workflow:task:all` |
+| 按业务类型查询任务（业务主键可选） | `POST /workflow/tasks/page-by-business-key` | `workflow:task:list`；`scope=ALL` 还需要 `workflow:task:all` |
 | 抄送已阅 | `POST /workflow/tasks/copied/read` | `workflow:task:read-copied` |
 
 `POST /workflow/tasks/complete`、`reject`、`save`、`claim`、`unclaim` 保持兼容，只返回布尔成功结果。业务审批页在办理后需要立即刷新业务申请状态、当前任务、当前办理人、认领状态或判断流程是否结束时，优先使用对应的 `*-result` 接口；返回体包含已处理任务、流程实例、是否结束、业务申请状态和刷新后的当前任务快照。

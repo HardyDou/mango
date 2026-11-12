@@ -11,10 +11,12 @@
     <sql id="taskWhere">
         where a.tenant_id = #{c.tenantId}
           and a.business_type = #{c.businessType}
-          and a.business_key in
-          <foreach collection="c.businessKeys" item="businessKey" open="(" separator="," close=")">
-              #{businessKey}
-          </foreach>
+        <if test="c.businessKeys != null and c.businessKeys.size() > 0">
+            and a.business_key in
+            <foreach collection="c.businessKeys" item="businessKey" open="(" separator="," close=")">
+                #{businessKey}
+            </foreach>
+        </if>
         <if test="c.deniedApplyIds != null and c.deniedApplyIds.size() > 0">
             and a.id not in
             <foreach collection="c.deniedApplyIds" item="deniedApplyId" open="(" separator="," close=")">
