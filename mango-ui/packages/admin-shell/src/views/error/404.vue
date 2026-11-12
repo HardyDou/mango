@@ -1,18 +1,9 @@
 <template>
   <div class="error-container">
     <div class="error-content">
-      <div class="error-code">
-        404
-      </div>
-      <div class="error-message">
-        页面不存在
-      </div>
-      <el-button
-        type="primary"
-        @click="goHome"
-      >
-        返回首页
-      </el-button>
+      <div class="error-code">404</div>
+      <div class="error-message">页面不存在</div>
+      <el-button type="primary" @click="goHome"> 返回首页 </el-button>
     </div>
   </div>
 </template>
@@ -33,7 +24,9 @@ const goHome = () => {
   align-items: center;
   justify-content: center;
   width: 100%;
-  min-height: calc(100vh - var(--mango-header-height) - var(--mango-tags-view-height) - var(--mango-layout-footer-height) - 32px);
+  min-height: calc(
+    100vh - var(--mango-header-height) - var(--mango-tags-view-height) - var(--mango-layout-footer-height) - 32px
+  );
   background: var(--mango-bg-color);
 }
 

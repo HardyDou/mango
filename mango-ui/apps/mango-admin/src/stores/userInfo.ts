@@ -1,4 +1,1 @@
-export {
-  useUserInfo,
-  type UserInfosState,
-} from '@mango/admin-shell';
+export { useUserInfo, type UserInfosState } from '@mango/admin-shell';

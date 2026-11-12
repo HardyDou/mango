@@ -1,32 +1,18 @@
 <template>
   <router-view v-if="route.path === '/login'" />
-  <div
-    v-else-if="debugShell"
-    class="template-standalone"
-  >
+  <div v-else-if="debugShell" class="template-standalone">
     <aside class="template-standalone__aside">
       <div class="template-standalone__brand">
         <strong>Template</strong>
         <span>模板中心</span>
       </div>
       <el-scrollbar>
-        <el-menu
-          :default-active="activePath"
-          class="template-standalone__menu"
-          @select="handleMenuSelect"
-        >
-          <TemplateMenuNode
-            v-for="menu in menus"
-            :key="menu.path || menu.menuCode"
-            :menu="menu"
-          />
+        <el-menu :default-active="activePath" class="template-standalone__menu" @select="handleMenuSelect">
+          <TemplateMenuNode v-for="menu in menus" :key="menu.path || menu.menuCode" :menu="menu" />
         </el-menu>
       </el-scrollbar>
     </aside>
-    <main
-      v-loading="loading"
-      class="template-standalone__main"
-    >
+    <main v-loading="loading" class="template-standalone__main">
       <header class="template-standalone__header">
         <div>
           <h1>{{ activeMenu?.menuName || '模板中心' }}</h1>
@@ -34,22 +20,12 @@
         </div>
       </header>
       <section class="template-standalone__content">
-        <TemplateRuntimeRoot
-          :menu="activeMenu"
-          :empty-description="emptyDescription"
-        />
+        <TemplateRuntimeRoot :menu="activeMenu" :empty-description="emptyDescription" />
       </section>
     </main>
   </div>
-  <main
-    v-else
-    v-loading="loading"
-    class="template-page-only"
-  >
-    <TemplateRuntimeRoot
-      :menu="activeMenu"
-      :empty-description="emptyDescription"
-    />
+  <main v-else v-loading="loading" class="template-page-only">
+    <TemplateRuntimeRoot :menu="activeMenu" :empty-description="emptyDescription" />
   </main>
 </template>
 
@@ -72,7 +48,9 @@ const DEBUG_SHELL_KEY = 'MANGO_TEMPLATE_DEBUG_SHELL';
 
 const activePath = computed(() => route.path);
 const debugShell = computed(() => route.query.debugShell === '1' || sessionStorage.getItem(DEBUG_SHELL_KEY) === '1');
-const activeMenu = computed(() => findMenuByPath(menus.value, route.path) || (route.path === '/' ? firstPageMenu(menus.value[0]) : undefined));
+const activeMenu = computed(
+  () => findMenuByPath(menus.value, route.path) || (route.path === '/' ? firstPageMenu(menus.value[0]) : undefined),
+);
 const emptyDescription = computed(() => {
   if (loading.value) {
     return '正在加载模板中心页面';
@@ -104,7 +82,7 @@ watch(
     if (path !== '/login' && menus.value.length === 0 && Session.getToken()) {
       void loadMenus();
     }
-  }
+  },
 );
 
 watch(
@@ -116,7 +94,7 @@ watch(
       sessionStorage.removeItem(DEBUG_SHELL_KEY);
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 async function loadMenus() {
@@ -132,7 +110,8 @@ async function loadMenus() {
       params: { fmt: 'tree', appCode: 'internal-admin' },
     });
     menus.value = normalizeTemplateMenus(response || []);
-    const selected = findMenuByPath(menus.value, route.path) || (route.path === '/' ? firstPageMenu(menus.value[0]) : undefined);
+    const selected =
+      findMenuByPath(menus.value, route.path) || (route.path === '/' ? firstPageMenu(menus.value[0]) : undefined);
     if (selected?.path && route.path === '/') {
       await router.replace({
         path: selected.path,
@@ -147,24 +126,20 @@ async function loadMenus() {
 }
 
 function normalizeTemplateMenus(source: TemplateMenu[]) {
-  return filterVisible(source)
-    .map(pickTemplateBranch)
-    .filter(Boolean) as TemplateMenu[];
+  return filterVisible(source).map(pickTemplateBranch).filter(Boolean) as TemplateMenu[];
 }
 
 function filterVisible(source: TemplateMenu[]): TemplateMenu[] {
   return source
-    .filter(menu => menu.menuType !== MenuTypeEnum.BUTTON && menu.visible !== 0)
-    .map(menu => ({
+    .filter((menu) => menu.menuType !== MenuTypeEnum.BUTTON && menu.visible !== 0)
+    .map((menu) => ({
       ...menu,
       children: menu.children ? filterVisible(menu.children) : [],
     }));
 }
 
 function pickTemplateBranch(menu: TemplateMenu): TemplateMenu | undefined {
-  const children = (menu.children || [])
-    .map(pickTemplateBranch)
-    .filter(Boolean) as TemplateMenu[];
+  const children = (menu.children || []).map(pickTemplateBranch).filter(Boolean) as TemplateMenu[];
   const isTemplatePage = Boolean(resolveTemplateComponent(menu.component));
   if (!isTemplatePage && children.length === 0) {
     return undefined;
@@ -178,10 +153,7 @@ function pickTemplateBranch(menu: TemplateMenu): TemplateMenu | undefined {
 function renderMenuNode(menu: TemplateMenu): any {
   const children = menu.children || [];
   const icon = menu.icon ? (Icons as any)[menu.icon] : undefined;
-  const title = [
-    icon ? h(ElIcon, null, () => h(icon)) : null,
-    h('span', null, menu.menuName),
-  ];
+  const title = [icon ? h(ElIcon, null, () => h(icon)) : null, h('span', null, menu.menuName)];
   if (children.length > 0) {
     return h(
       ElSubMenu,
@@ -189,14 +161,10 @@ function renderMenuNode(menu: TemplateMenu): any {
       {
         title: () => title,
         default: () => children.map(renderMenuNode),
-      }
+      },
     );
   }
-  return h(
-    ElMenuItem as any,
-    { index: menu.path || '/' },
-    () => title
-  );
+  return h(ElMenuItem as any, { index: menu.path || '/' }, () => title);
 }
 
 function handleMenuSelect(path: string) {

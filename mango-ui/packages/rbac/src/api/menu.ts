@@ -175,24 +175,20 @@ export const menuApi = {
   /**
    * 查询菜单详情
    */
-  getMenuDetail: (menuId: ApiId) =>
-    get<SysMenuVO>('/authorization/menus/detail', { params: { menuId } }),
+  getMenuDetail: (menuId: ApiId) => get<SysMenuVO>('/authorization/menus/detail', { params: { menuId } }),
 
   /**
    * 新增菜单
    */
-  createMenu: (data: Partial<SysMenuVO>) =>
-    post('/authorization/menus', toBackendPayload(data)),
+  createMenu: (data: Partial<SysMenuVO>) => post('/authorization/menus', toBackendPayload(data)),
 
   /**
    * 修改菜单
    */
-  updateMenu: (data: Partial<SysMenuVO>) =>
-    put('/authorization/menus', toBackendPayload(data)),
+  updateMenu: (data: Partial<SysMenuVO>) => put('/authorization/menus', toBackendPayload(data)),
 
   /**
    * 删除菜单
    */
-  deleteMenu: (menuId: ApiId) =>
-    del('/authorization/menus', { params: { menuId } }),
+  deleteMenu: (menuId: ApiId) => del('/authorization/menus', { params: { menuId } }),
 };

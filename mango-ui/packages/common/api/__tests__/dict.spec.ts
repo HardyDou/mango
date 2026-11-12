@@ -6,12 +6,7 @@ vi.mock('../../utils/request', () => ({
   get: (...args: unknown[]) => get(...args),
 }));
 
-import {
-  clearDictOptionCache,
-  clearDictTreeCache,
-  listDictOptions,
-  listDictTree,
-} from '../dict';
+import { clearDictOptionCache, clearDictTreeCache, listDictOptions, listDictTree } from '../dict';
 
 describe('dict api cache', () => {
   beforeEach(() => {
@@ -66,11 +61,7 @@ describe('dict api cache', () => {
 
     const options = await listDictOptions('grouped_dict');
 
-    expect(options.map((item) => item.groups)).toEqual([
-      ['ORDER', 'AFTER_SALE'],
-      ['ORDER', 'AFTER_SALE'],
-      [],
-    ]);
+    expect(options.map((item) => item.groups)).toEqual([['ORDER', 'AFTER_SALE'], ['ORDER', 'AFTER_SALE'], []]);
   });
 
   it('并发请求同一字典只发起一次', async () => {

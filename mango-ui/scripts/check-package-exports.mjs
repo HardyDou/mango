@@ -7,9 +7,7 @@ const scriptDir = dirname(fileURLToPath(import.meta.url));
 const uiRoot = resolve(scriptDir, '..');
 const packagesRoot = join(uiRoot, 'packages');
 const failures = [];
-const selectedPackage = process.argv
-  .find((arg) => arg.startsWith('--package='))
-  ?.slice('--package='.length) || '';
+const selectedPackage = process.argv.find((arg) => arg.startsWith('--package='))?.slice('--package='.length) || '';
 let checkedPackages = 0;
 
 function readJson(path) {
@@ -25,10 +23,10 @@ function assertPath(packageName, packageRoot, field, value) {
     return;
   }
   if (
-    value.includes('/src/')
-    || value.startsWith('./src')
-    || (value.endsWith('.ts') && !value.endsWith('.d.ts'))
-    || value.endsWith('.vue')
+    value.includes('/src/') ||
+    value.startsWith('./src') ||
+    (value.endsWith('.ts') && !value.endsWith('.d.ts')) ||
+    value.endsWith('.vue')
   ) {
     addFailure(packageName, `${field} must point to published dist output, got ${value}`);
     return;
@@ -109,7 +107,10 @@ function assertPmoPackageExports(packageName, packageRoot, packageJson) {
 
   const pluginExport = packageJson.exports?.['./plugin.json'];
   if (pluginExport !== './.codex-plugin/plugin.json') {
-    addFailure(packageName, `exports../plugin.json must be ./.codex-plugin/plugin.json, got ${pluginExport || '<missing>'}`);
+    addFailure(
+      packageName,
+      `exports../plugin.json must be ./.codex-plugin/plugin.json, got ${pluginExport || '<missing>'}`,
+    );
   } else {
     assertPath(packageName, packageRoot, 'exports../plugin.json', pluginExport);
   }
@@ -153,10 +154,7 @@ function findSkillFiles(dir) {
 
 function resolveDeclarationImport(fromFile, modulePath) {
   const base = resolve(dirname(fromFile), modulePath);
-  const candidates = [
-    `${base}.d.ts`,
-    join(base, 'index.d.ts'),
-  ];
+  const candidates = [`${base}.d.ts`, join(base, 'index.d.ts')];
   return candidates.find((candidate) => existsSync(candidate));
 }
 
@@ -178,7 +176,10 @@ function assertDeclaration(packageName, packageRoot, declarationPath) {
       addFailure(packageName, `${declarationPath} references missing declaration ${modulePath}`);
       continue;
     }
-    const relativeToPackage = resolved.slice(packageRoot.length + 1).split('\\').join('/');
+    const relativeToPackage = resolved
+      .slice(packageRoot.length + 1)
+      .split('\\')
+      .join('/');
     if (!relativeToPackage.startsWith('dist/')) {
       addFailure(packageName, `${declarationPath} references declaration outside dist: ${modulePath}`);
     }
@@ -223,12 +224,7 @@ for (const packageDir of readdirSync(packagesRoot)) {
     if (exportPath.endsWith('.css') || exportPath.endsWith('.scss')) {
       const stylesheetExport =
         typeof exportConfig === 'string' ? exportConfig : exportConfig.default || exportConfig.import;
-      assertPath(
-        packageJson.name,
-        packageRoot,
-        `exports.${exportPath}`,
-        stylesheetExport,
-      );
+      assertPath(packageJson.name, packageRoot, `exports.${exportPath}`, stylesheetExport);
       if (stylesheetExport) {
         assertStylesheetImports(
           packageJson.name,

@@ -10,16 +10,16 @@ import { MangoListPage } from '@mango/common';
 
 ## Props
 
-| 名称 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `dataPage` | `string \| undefined` | `undefined` | 页面标识，用于埋点/定位 |
-| `dense` | `boolean` | `false` | 紧凑模式，间距从 12px 缩小为 8px |
+| 名称       | 类型                  | 默认值      | 说明                             |
+| ---------- | --------------------- | ----------- | -------------------------------- |
+| `dataPage` | `string \| undefined` | `undefined` | 页面标识，用于埋点/定位          |
+| `dense`    | `boolean`             | `false`     | 紧凑模式，间距从 12px 缩小为 8px |
 
 ## Slots
 
-| 名称 | 说明 |
-|------|------|
-| `search` | 搜索栏区域，通常放置 `MangoSearchPanel` |
+| 名称      | 说明                                                        |
+| --------- | ----------------------------------------------------------- |
+| `search`  | 搜索栏区域，通常放置 `MangoSearchPanel`                     |
 | `default` | 列表内容区域，通常放置 `MangoListPanel` 或 `MangoDataTable` |
 
 ## 使用示例

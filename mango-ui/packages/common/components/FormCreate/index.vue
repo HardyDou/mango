@@ -10,16 +10,9 @@
     :disabled="disabled"
     :class="['form-create', { 'form-create-inline': config.inline }]"
   >
-    <template
-      v-for="field in visibleFields"
-      :key="field.key"
-    >
+    <template v-for="field in visibleFields" :key="field.key">
       <!-- 分隔线 -->
-      <el-form-item
-        v-if="field.type === 'divider'"
-        :label="field.title"
-        class="form-create-divider"
-      >
+      <el-form-item v-if="field.type === 'divider'" :label="field.title" class="form-create-divider">
         <el-divider />
       </el-form-item>
 
@@ -37,16 +30,10 @@
           :readonly="field.readonly"
           v-bind="field.props"
         >
-          <template
-            v-if="field.prefix"
-            #prefix
-          >
+          <template v-if="field.prefix" #prefix>
             {{ field.prefix }}
           </template>
-          <template
-            v-if="field.suffix"
-            #suffix
-          >
+          <template v-if="field.suffix" #suffix>
             {{ field.suffix }}
           </template>
         </el-input>
@@ -137,17 +124,8 @@
         :prop="field.key"
         :rules="getFieldRules(field)"
       >
-        <el-radio-group
-          v-model="formData[field.key]"
-          :disabled="field.disabled || disabled"
-          v-bind="field.props"
-        >
-          <el-radio
-            v-for="opt in field.options"
-            :key="opt.value"
-            :value="opt.value"
-            :disabled="opt.disabled"
-          >
+        <el-radio-group v-model="formData[field.key]" :disabled="field.disabled || disabled" v-bind="field.props">
+          <el-radio v-for="opt in field.options" :key="opt.value" :value="opt.value" :disabled="opt.disabled">
             {{ opt.label }}
           </el-radio>
         </el-radio-group>
@@ -160,17 +138,8 @@
         :prop="field.key"
         :rules="getFieldRules(field)"
       >
-        <el-checkbox-group
-          v-model="formData[field.key]"
-          :disabled="field.disabled || disabled"
-          v-bind="field.props"
-        >
-          <el-checkbox
-            v-for="opt in field.options"
-            :key="opt.value"
-            :value="opt.value"
-            :disabled="opt.disabled"
-          >
+        <el-checkbox-group v-model="formData[field.key]" :disabled="field.disabled || disabled" v-bind="field.props">
+          <el-checkbox v-for="opt in field.options" :key="opt.value" :value="opt.value" :disabled="opt.disabled">
             {{ opt.label }}
           </el-checkbox>
         </el-checkbox-group>
@@ -183,11 +152,7 @@
         :prop="field.key"
         :rules="getFieldRules(field)"
       >
-        <el-switch
-          v-model="formData[field.key]"
-          :disabled="field.disabled || disabled"
-          v-bind="field.props"
-        />
+        <el-switch v-model="formData[field.key]" :disabled="field.disabled || disabled" v-bind="field.props" />
       </el-form-item>
 
       <!-- 日期选择 -->
@@ -286,14 +251,8 @@
     </template>
 
     <!-- 操作按钮 -->
-    <el-form-item
-      v-if="showActions"
-      class="form-create-actions"
-    >
-      <el-button
-        type="primary"
-        @click="handleSubmit"
-      >
+    <el-form-item v-if="showActions" class="form-create-actions">
+      <el-button type="primary" @click="handleSubmit">
         {{ submitText }}
       </el-button>
       <el-button @click="handleReset">
@@ -323,13 +282,7 @@
 
 import { ref, computed, watch, reactive } from 'vue';
 import type { FormInstance, FormRules } from 'element-plus';
-import type {
-  FormConfig,
-  FormField,
-  FormCreateProps,
-  FormCreateEmits,
-  FormCreateExpose,
-} from './types';
+import type { FormConfig, FormField, FormCreateProps, FormCreateEmits, FormCreateExpose } from './types';
 
 const props = withDefaults(defineProps<FormCreateProps>(), {
   disabled: false,
@@ -441,7 +394,7 @@ watch(
       formData.value = nextValue;
     }
   },
-  { deep: true, immediate: true }
+  { deep: true, immediate: true },
 );
 
 // 表单配置变化时重建默认数据和验证规则，支撑动态表单设计器实时预览。
@@ -451,7 +404,7 @@ watch(
     initFormData();
     initFormRules();
   },
-  { deep: true }
+  { deep: true },
 );
 
 // 监听表单数据变化，同步到外部
@@ -462,7 +415,7 @@ watch(
       emit('update:modelValue', { ...newVal });
     }
   },
-  { deep: true }
+  { deep: true },
 );
 
 // 提交表单

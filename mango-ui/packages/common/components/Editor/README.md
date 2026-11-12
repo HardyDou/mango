@@ -13,43 +13,43 @@ import type { EditorAssetError, EditorImageError } from '@mango/common';
 
 ## Props
 
-| 名称 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `modelValue` | `string` | `''` | HTML 内容，支持 `v-model`；`token` 模式下输出的是令牌化后的规范化 HTML |
-| `placeholder` | `string` | `'请输入内容...'` | 空内容占位提示 |
-| `height` | `number \| string` | `300` | 编辑区高度，数字按像素处理，字符串原样使用（通过 CSS 变量 `--editor-height` 生效） |
-| `disabled` | `boolean` | `false` | 是否禁用；禁用后工具栏整行（含 `toolbar-actions` 插槽）不渲染 |
-| `mode` | `'default' \| 'simple'` | `'default'` | 工具栏模式；`simple` 且未自定义 `toolbarKeys` 时使用 wangEditor 精简工具栏，切换模式会销毁并重建编辑器实例 |
-| `toolbarKeys` | `EditorToolbarKey[]` | `[]` | 自定义工具栏；为空数组使用内置工具栏。元素可为字符串，或 `{ key, title?, iconSvg?, menuKeys? }` 对象 |
-| `imageValueType` | `'url' \| 'id' \| 'token'` | `'token'` | 图片保存策略：`token` 保存 `mango-file:<文件ID>` 令牌；`id` 保存文件 ID；`url` 保存直链 |
-| `pasteImageMode` | `'default' \| 'upload'` | `'upload'` | 粘贴图片策略；仅在 `token` 模式且为 `upload` 时拦截粘贴并上传图片/文件 |
-| `attachmentAccept` | `string` | `''` | 工具栏「上传附件」选择框的 `accept` 限制，为空不限制类型 |
+| 名称               | 类型                       | 默认值            | 说明                                                                                                       |
+| ------------------ | -------------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------- |
+| `modelValue`       | `string`                   | `''`              | HTML 内容，支持 `v-model`；`token` 模式下输出的是令牌化后的规范化 HTML                                     |
+| `placeholder`      | `string`                   | `'请输入内容...'` | 空内容占位提示                                                                                             |
+| `height`           | `number \| string`         | `300`             | 编辑区高度，数字按像素处理，字符串原样使用（通过 CSS 变量 `--editor-height` 生效）                         |
+| `disabled`         | `boolean`                  | `false`           | 是否禁用；禁用后工具栏整行（含 `toolbar-actions` 插槽）不渲染                                              |
+| `mode`             | `'default' \| 'simple'`    | `'default'`       | 工具栏模式；`simple` 且未自定义 `toolbarKeys` 时使用 wangEditor 精简工具栏，切换模式会销毁并重建编辑器实例 |
+| `toolbarKeys`      | `EditorToolbarKey[]`       | `[]`              | 自定义工具栏；为空数组使用内置工具栏。元素可为字符串，或 `{ key, title?, iconSvg?, menuKeys? }` 对象       |
+| `imageValueType`   | `'url' \| 'id' \| 'token'` | `'token'`         | 图片保存策略：`token` 保存 `mango-file:<文件ID>` 令牌；`id` 保存文件 ID；`url` 保存直链                    |
+| `pasteImageMode`   | `'default' \| 'upload'`    | `'upload'`        | 粘贴图片策略；仅在 `token` 模式且为 `upload` 时拦截粘贴并上传图片/文件                                     |
+| `attachmentAccept` | `string`                   | `''`              | 工具栏「上传附件」选择框的 `accept` 限制，为空不限制类型                                                   |
 
 ## Events
 
-| 名称 | 参数 | 说明 |
-|------|------|------|
-| `update:modelValue` | `value: string` | 内容变化时触发（令牌模式下为序列化后的规范化 HTML） |
-| `change` | `value: string` | 与 `update:modelValue` 同步触发 |
-| `image-error` | `error: EditorImageError` | 图片相关失败（上传、预览、序列化）时触发，是 `asset-error` 的子集 |
-| `asset-error` | `error: EditorAssetError` | 任意资源失败时触发，含图片与附件 |
-| `uploading-change` | `uploading: boolean` | 是否存在进行中的上传任务（并发任务合并计数，全部结束才回到 `false`） |
+| 名称                | 参数                      | 说明                                                                 |
+| ------------------- | ------------------------- | -------------------------------------------------------------------- |
+| `update:modelValue` | `value: string`           | 内容变化时触发（令牌模式下为序列化后的规范化 HTML）                  |
+| `change`            | `value: string`           | 与 `update:modelValue` 同步触发                                      |
+| `image-error`       | `error: EditorImageError` | 图片相关失败（上传、预览、序列化）时触发，是 `asset-error` 的子集    |
+| `asset-error`       | `error: EditorAssetError` | 任意资源失败时触发，含图片与附件                                     |
+| `uploading-change`  | `uploading: boolean`      | 是否存在进行中的上传任务（并发任务合并计数，全部结束才回到 `false`） |
 
 ## Expose
 
-| 名称 | 参数 | 说明 |
-|------|------|------|
-| `getEditor()` | - | 获取底层 wangEditor `IDomEditor` 实例，可能为 `null` |
-| `getText()` | - | 获取纯文本内容 |
-| `getHtml()` | - | 获取规范 HTML；`token` 模式返回实时序列化后的令牌 HTML |
+| 名称                  | 参数              | 说明                                                     |
+| --------------------- | ----------------- | -------------------------------------------------------- |
+| `getEditor()`         | -                 | 获取底层 wangEditor `IDomEditor` 实例，可能为 `null`     |
+| `getText()`           | -                 | 获取纯文本内容                                           |
+| `getHtml()`           | -                 | 获取规范 HTML；`token` 模式返回实时序列化后的令牌 HTML   |
 | `setContent(content)` | `content: string` | 设置内容：令牌模式会先规范化并补预览，随后同步 emit 新值 |
-| `clear()` | - | 等价于 `setContent('')` |
-| `blur()` | - | 让编辑器失焦并清除浏览器选区 |
+| `clear()`             | -                 | 等价于 `setContent('')`                                  |
+| `blur()`              | -                 | 让编辑器失焦并清除浏览器选区                             |
 
 ## Slots
 
-| 名称 | 说明 |
-|------|------|
+| 名称              | 说明                                                                   |
+| ----------------- | ---------------------------------------------------------------------- |
 | `toolbar-actions` | 工具栏右侧的自定义操作区（如保存按钮）；非禁用且编辑器实例创建后才渲染 |
 
 ## 类型定义
@@ -77,14 +77,14 @@ export type EditorImageError = EditorAssetError;
 
 可能出现的错误码（`code`）：
 
-| code | 触发场景 |
-|------|----------|
-| `EDITOR_IMAGE_UPLOAD_FAILED` | 工具栏图片上传失败 |
-| `EDITOR_ASSET_ID_MISSING` | 上传结果未返回文件 ID（令牌模式必需） |
-| `EDITOR_INVALID_MANAGED_ASSET` | 保存内容中存在无法解析的托管资源，已被移除 |
-| `EDITOR_ASSET_PREVIEW_UNAVAILABLE` / `EDITOR_IMAGE_PREVIEW_UNAVAILABLE` | 回显时资源详情或预览地址不可用 |
-| `EDITOR_ASSET_UPLOAD_FAILED` | 粘贴、拖拽或附件上传存在失败文件 |
-| `EDITOR_PASTE_ASSET_LIMIT_EXCEEDED` | 单次粘贴/拖拽超过 10 个文件 |
+| code                                                                    | 触发场景                                   |
+| ----------------------------------------------------------------------- | ------------------------------------------ |
+| `EDITOR_IMAGE_UPLOAD_FAILED`                                            | 工具栏图片上传失败                         |
+| `EDITOR_ASSET_ID_MISSING`                                               | 上传结果未返回文件 ID（令牌模式必需）      |
+| `EDITOR_INVALID_MANAGED_ASSET`                                          | 保存内容中存在无法解析的托管资源，已被移除 |
+| `EDITOR_ASSET_PREVIEW_UNAVAILABLE` / `EDITOR_IMAGE_PREVIEW_UNAVAILABLE` | 回显时资源详情或预览地址不可用             |
+| `EDITOR_ASSET_UPLOAD_FAILED`                                            | 粘贴、拖拽或附件上传存在失败文件           |
+| `EDITOR_PASTE_ASSET_LIMIT_EXCEEDED`                                     | 单次粘贴/拖拽超过 10 个文件                |
 
 ## 使用示例
 
@@ -126,15 +126,9 @@ function handleSave() {
 </script>
 
 <template>
-  <Editor
-    v-model="content"
-    @uploading-change="uploading = $event"
-    @asset-error="handleAssetError"
-  >
+  <Editor v-model="content" @uploading-change="uploading = $event" @asset-error="handleAssetError">
     <template #toolbar-actions>
-      <el-button type="primary" :loading="uploading" @click="handleSave">
-        保存
-      </el-button>
+      <el-button type="primary" :loading="uploading" @click="handleSave"> 保存 </el-button>
     </template>
   </Editor>
 </template>

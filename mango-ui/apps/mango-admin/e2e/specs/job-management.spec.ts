@@ -204,7 +204,12 @@ const baseExampleJobs: SaveJobDefinitionPayload[] = [
 const evidenceDir = resolve(__dirname, '../../../../../mango-docs/evidence/2026-06-07-mango-native-job-e2e');
 
 function projectRunKey(projectName: string) {
-  return projectName.replace(/[^a-z0-9]+/gi, '_').replace(/^_+|_+$/g, '').toLowerCase() || 'default';
+  return (
+    projectName
+      .replace(/[^a-z0-9]+/gi, '_')
+      .replace(/^_+|_+$/g, '')
+      .toLowerCase() || 'default'
+  );
 }
 
 function exampleJobKeyword(runKey: string) {
@@ -233,8 +238,8 @@ async function login(page: Page) {
   await expect(page.locator('.tenant-select')).toContainText('芒果集团', { timeout: 10000 });
   await page.locator('.tenant-select').click();
   await page.getByRole('option', { name: /芒果集团/ }).click();
-  const loginResponsePromise = page.waitForResponse((response) =>
-    response.url().endsWith('/auth/login') && response.request().method() === 'POST'
+  const loginResponsePromise = page.waitForResponse(
+    (response) => response.url().endsWith('/auth/login') && response.request().method() === 'POST',
   );
   await page.locator('.login-btn').click();
   const loginResponse = await loginResponsePromise;
@@ -257,7 +262,7 @@ async function apiHeaders(page: Page): Promise<LoginHeaders> {
 
 async function expectBusinessOk<T>(response: APIResponse): Promise<T> {
   expect(response.status()).toBe(200);
-  const body = await response.json() as BusinessResponse<T>;
+  const body = (await response.json()) as BusinessResponse<T>;
   expect(body.success || body.code === 200, body.msg || body.message || '接口应返回业务成功').toBeTruthy();
   return body.data as T;
 }
@@ -307,15 +312,17 @@ async function listAlarmRules(page: Page, headers: LoginHeaders, keyword: string
 }
 
 async function deleteAlarmRule(page: Page, headers: LoginHeaders, id: ApiId) {
-  await expectBusinessOk<boolean>(await page.request.delete('/api/job/alarm-rules', {
-    headers,
-    params: { id: String(id) },
-  }));
+  await expectBusinessOk<boolean>(
+    await page.request.delete('/api/job/alarm-rules', {
+      headers,
+      params: { id: String(id) },
+    }),
+  );
 }
 
 async function deleteAlarmRulesByKeyword(page: Page, headers: LoginHeaders, keyword: string) {
   const alarmRules = await listAlarmRules(page, headers, keyword);
-  for (const alarmRule of alarmRules.filter(item => item.ruleName.includes(keyword))) {
+  for (const alarmRule of alarmRules.filter((item) => item.ruleName.includes(keyword))) {
     await deleteAlarmRule(page, headers, alarmRule.id);
   }
 }
@@ -326,7 +333,7 @@ async function updateWorkerStatus(page: Page, headers: LoginHeaders, payload: Up
 
 async function resetWorkersByKeyword(page: Page, headers: LoginHeaders, keyword: string) {
   const workers = await listWorkers(page, headers, keyword);
-  for (const worker of workers.filter(item => item.workerAddress?.includes(keyword))) {
+  for (const worker of workers.filter((item) => item.workerAddress?.includes(keyword))) {
     await updateWorkerStatus(page, headers, { id: worker.id, status: 'DISABLED' });
   }
 }
@@ -344,17 +351,21 @@ async function detailDefinition(page: Page, headers: LoginHeaders, id: ApiId): P
 }
 
 async function updateDefinitionStatus(page: Page, headers: LoginHeaders, id: ApiId, status: JobDefinitionStatus) {
-  await expectBusinessOk<boolean>(await page.request.put('/api/job/definitions/status', {
-    headers,
-    data: { id, status },
-  }));
+  await expectBusinessOk<boolean>(
+    await page.request.put('/api/job/definitions/status', {
+      headers,
+      data: { id, status },
+    }),
+  );
 }
 
 async function deleteDefinition(page: Page, headers: LoginHeaders, id: ApiId) {
-  await expectBusinessOk<boolean>(await page.request.delete('/api/job/definitions', {
-    headers,
-    params: { id: String(id) },
-  }));
+  await expectBusinessOk<boolean>(
+    await page.request.delete('/api/job/definitions', {
+      headers,
+      params: { id: String(id) },
+    }),
+  );
 }
 
 async function moveDefinitionToDraft(page: Page, headers: LoginHeaders, definition: JobDefinition) {
@@ -369,7 +380,7 @@ async function moveDefinitionToDraft(page: Page, headers: LoginHeaders, definiti
 
 async function deleteDefinitionsByKeyword(page: Page, headers: LoginHeaders, keyword: string) {
   const definitions = await listDefinitions(page, headers, keyword);
-  for (const definition of definitions.filter(item => item.jobCode.includes(keyword))) {
+  for (const definition of definitions.filter((item) => item.jobCode.includes(keyword))) {
     await moveDefinitionToDraft(page, headers, definition);
     await deleteDefinition(page, headers, definition.id);
   }
@@ -395,14 +406,19 @@ async function prepareExampleJobs(
 
 async function waitForSyncedDefinition(page: Page, headers: LoginHeaders, id: ApiId): Promise<JobDefinition> {
   let latest: JobDefinition | undefined;
-  await expect.poll(async () => {
-    latest = await detailDefinition(page, headers, id);
-    return latest.syncStatus === 'SYNCED' && Boolean(latest.engineJobId);
-  }, {
-    timeout: 30_000,
-    intervals: [500, 1000, 2000],
-    message: '任务定义必须获得真实 Mango Native engineJobId',
-  }).toBeTruthy();
+  await expect
+    .poll(
+      async () => {
+        latest = await detailDefinition(page, headers, id);
+        return latest.syncStatus === 'SYNCED' && Boolean(latest.engineJobId);
+      },
+      {
+        timeout: 30_000,
+        intervals: [500, 1000, 2000],
+        message: '任务定义必须获得真实 Mango Native engineJobId',
+      },
+    )
+    .toBeTruthy();
   return expectDefined(latest, '任务定义同步后必须可读取详情');
 }
 
@@ -413,78 +429,85 @@ async function waitForTriggeredInstance(
   triggerBatchNo: string,
 ): Promise<JobInstance> {
   let latest: JobInstance | undefined;
-  await expect.poll(async () => {
-    const instances = await listInstances(page, headers, jobId);
-    latest = instances.find(item => item.triggerBatchNo === triggerBatchNo && item.triggerType === 'MANUAL');
-    return Boolean(latest?.id) && latest?.status !== 'WAITING' && latest?.status !== 'RUNNING';
-  }, {
-    timeout: 60_000,
-    intervals: [1000, 2000, 3000],
-    message: '手动触发必须生成真实 Mango Native 执行实例并完成执行',
-  }).toBeTruthy();
+  await expect
+    .poll(
+      async () => {
+        const instances = await listInstances(page, headers, jobId);
+        latest = instances.find((item) => item.triggerBatchNo === triggerBatchNo && item.triggerType === 'MANUAL');
+        return Boolean(latest?.id) && latest?.status !== 'WAITING' && latest?.status !== 'RUNNING';
+      },
+      {
+        timeout: 60_000,
+        intervals: [1000, 2000, 3000],
+        message: '手动触发必须生成真实 Mango Native 执行实例并完成执行',
+      },
+    )
+    .toBeTruthy();
   const completed = expectDefined(latest, '手动触发执行实例必须存在');
   expect(completed.engineType).toBe('MANGO_NATIVE');
   expect(completed.status, completed.errorSummary || '示例任务应执行成功').toBe('SUCCESS');
   return completed;
 }
 
-async function waitForScheduledInstance(
-  page: Page,
-  headers: LoginHeaders,
-  jobId: ApiId,
-): Promise<JobInstance[]> {
+async function waitForScheduledInstance(page: Page, headers: LoginHeaders, jobId: ApiId): Promise<JobInstance[]> {
   let latest: JobInstance[] = [];
-  await expect.poll(async () => {
-    const instances = await listInstances(page, headers, jobId);
-    latest = instances.filter(item =>
-      item.triggerType === 'SCHEDULED'
-      && Boolean(item.id)
-      && item.status !== 'WAITING'
-      && item.status !== 'RUNNING'
-    );
-    return new Set(latest.map(item => item.id)).size >= 2;
-  }, {
-    timeout: 180_000,
-    intervals: [5000, 10_000, 15_000],
-    message: '每分钟示例任务必须产生至少两次可见的 Mango Native 调度执行实例',
-  }).toBeTruthy();
+  await expect
+    .poll(
+      async () => {
+        const instances = await listInstances(page, headers, jobId);
+        latest = instances.filter(
+          (item) =>
+            item.triggerType === 'SCHEDULED' &&
+            Boolean(item.id) &&
+            item.status !== 'WAITING' &&
+            item.status !== 'RUNNING',
+        );
+        return new Set(latest.map((item) => item.id)).size >= 2;
+      },
+      {
+        timeout: 180_000,
+        intervals: [5000, 10_000, 15_000],
+        message: '每分钟示例任务必须产生至少两次可见的 Mango Native 调度执行实例',
+      },
+    )
+    .toBeTruthy();
   expect(latest[0].engineType).toBe('MANGO_NATIVE');
   expect(latest[0].status, latest[0].errorSummary || '每分钟示例任务应执行成功').toBe('SUCCESS');
   return latest;
 }
 
-async function waitForExecutionLogDetail(
-  page: Page,
-  headers: LoginHeaders,
-  instanceId: ApiId,
-): Promise<JobLogDetail> {
+async function waitForExecutionLogDetail(page: Page, headers: LoginHeaders, instanceId: ApiId): Promise<JobLogDetail> {
   let latest: JobLogDetail | undefined;
   const startedAt = Date.now();
   const timeoutMs = 120_000;
   while (Date.now() - startedAt < timeoutMs) {
     latest = await detailInstanceLog(page, headers, instanceId);
     const content = latest.nativeLogContent || '';
-    if (latest.logSource === 'MANGO_NATIVE'
-      && latest.nativeLogAvailable === true
-      && content.includes('Mango Job runtime probe System.out')
-      && content.includes('Mango Job runtime probe logger')
-      && content.includes('handlerResult=Mango Job runtime probe executed')) {
+    if (
+      latest.logSource === 'MANGO_NATIVE' &&
+      latest.nativeLogAvailable === true &&
+      content.includes('Mango Job runtime probe System.out') &&
+      content.includes('Mango Job runtime probe logger') &&
+      content.includes('handlerResult=Mango Job runtime probe executed')
+    ) {
       return latest;
     }
     await page.waitForTimeout(3_000);
   }
 
-  throw new Error([
-    '执行日志必须归档并可通过 Mango 详情接口读取',
-    `instanceId=${instanceId}`,
-    `logSource=${latest?.logSource || ''}`,
-    `nativeLogAvailable=${String(latest?.nativeLogAvailable)}`,
-    `logFetchStatus=${latest?.logFetchStatus || ''}`,
-    `engineInstanceId=${String(latest?.engineInstanceId || '')}`,
-    `engineResult=${(latest?.engineResult || '').slice(0, 240)}`,
-    `nativeLogContent=${(latest?.nativeLogContent || '').slice(0, 240)}`,
-    `content=${(latest?.content || '').slice(0, 240)}`,
-  ].join('\n'));
+  throw new Error(
+    [
+      '执行日志必须归档并可通过 Mango 详情接口读取',
+      `instanceId=${instanceId}`,
+      `logSource=${latest?.logSource || ''}`,
+      `nativeLogAvailable=${String(latest?.nativeLogAvailable)}`,
+      `logFetchStatus=${latest?.logFetchStatus || ''}`,
+      `engineInstanceId=${String(latest?.engineInstanceId || '')}`,
+      `engineResult=${(latest?.engineResult || '').slice(0, 240)}`,
+      `nativeLogContent=${(latest?.nativeLogContent || '').slice(0, 240)}`,
+      `content=${(latest?.content || '').slice(0, 240)}`,
+    ].join('\n'),
+  );
 }
 
 async function expectVisibleExecutionLog(drawer: Locator, snippets: string[]) {
@@ -497,15 +520,12 @@ async function expectVisibleExecutionLog(drawer: Locator, snippets: string[]) {
 }
 
 async function clickMenu(page: Page, name: string) {
-  const menu = page.locator(
-    [
-      '.layout-top-system-item',
-      '.layout-columns-aside li',
-      '.el-sub-menu__title',
-      '.el-menu-item',
-    ].join(', '),
-    { hasText: name },
-  ).first();
+  const menu = page
+    .locator(
+      ['.layout-top-system-item', '.layout-columns-aside li', '.el-sub-menu__title', '.el-menu-item'].join(', '),
+      { hasText: name },
+    )
+    .first();
 
   await expect(menu, `${name} 菜单必须可见`).toBeVisible({ timeout: 10000 });
   await menu.click();
@@ -514,8 +534,8 @@ async function clickMenu(page: Page, name: string) {
 async function openJobDefinitionPage(page: Page) {
   await clickMenu(page, '平台能力');
   await clickMenu(page, '任务管理');
-  const responsePromise = page.waitForResponse((response) =>
-    response.url().includes('/api/job/definitions/page') && response.status() === 200
+  const responsePromise = page.waitForResponse(
+    (response) => response.url().includes('/api/job/definitions/page') && response.status() === 200,
   );
   await clickMenu(page, '任务定义');
   await responsePromise;
@@ -563,15 +583,21 @@ async function createDraftByUi(page: Page, jobCode: string) {
   await dialog.getByLabel('超时秒数').fill('180');
   await dialog.getByLabel('并发策略').fill('SERIAL');
   await dialog.getByLabel('错过策略').fill('IGNORE');
-  await dialog.getByLabel('参数 Schema').fill(JSON.stringify({
-    type: 'object',
-    properties: {
-      source: { type: 'string', title: '来源', description: '任务来源标记' },
-      batchSize: { type: 'integer', title: '批处理数量', default: 100, minimum: 1, maximum: 500 },
-      dryRun: { type: 'boolean', title: '试运行', default: false },
-    },
-    required: ['source'],
-  }, null, 2));
+  await dialog.getByLabel('参数 Schema').fill(
+    JSON.stringify(
+      {
+        type: 'object',
+        properties: {
+          source: { type: 'string', title: '来源', description: '任务来源标记' },
+          batchSize: { type: 'integer', title: '批处理数量', default: 100, minimum: 1, maximum: 500 },
+          dryRun: { type: 'boolean', title: '试运行', default: false },
+        },
+        required: ['source'],
+      },
+      null,
+      2,
+    ),
+  );
   const editor = paramEditor(dialog);
   await expect(editor.getByText('按参数 Schema 生成表单')).toBeVisible();
   await fillParamTextField(editor, '来源', 'e2e');
@@ -580,10 +606,11 @@ async function createDraftByUi(page: Page, jobCode: string) {
   await dialog.getByLabel('重试策略').fill('{ "maxRetryTimes": 1 }');
   await saveEvidenceScreenshot(page, '00-definition-create-manual-schedule.png', dialog);
 
-  const responsePromise = page.waitForResponse((response) =>
-    response.url().includes('/api/job/definitions') &&
-    response.request().method() === 'POST' &&
-    response.status() === 200
+  const responsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes('/api/job/definitions') &&
+      response.request().method() === 'POST' &&
+      response.status() === 200,
   );
   await dialog.getByRole('button', { name: '保存' }).click();
   await responsePromise;
@@ -592,8 +619,8 @@ async function createDraftByUi(page: Page, jobCode: string) {
 
 async function searchDefinition(page: Page, keyword: string) {
   await page.getByPlaceholder('编码/名称/处理器').fill(keyword);
-  const responsePromise = page.waitForResponse((response) =>
-    response.url().includes('/api/job/definitions/page') && response.status() === 200
+  const responsePromise = page.waitForResponse(
+    (response) => response.url().includes('/api/job/definitions/page') && response.status() === 200,
   );
   await page.getByRole('button', { name: '查询' }).click();
   await responsePromise;
@@ -603,8 +630,8 @@ async function selectInstanceTaskFilter(page: Page, keyword: string) {
   const taskField = page.locator('.job-search .el-form-item', { hasText: '任务' }).first();
   const taskCombobox = taskField.getByRole('combobox', { name: '任务' });
   await taskField.locator('.el-select').click();
-  const responsePromise = page.waitForResponse((response) =>
-    response.url().includes('/api/job/definitions/page') && response.status() === 200
+  const responsePromise = page.waitForResponse(
+    (response) => response.url().includes('/api/job/definitions/page') && response.status() === 200,
   );
   await taskCombobox.fill(keyword);
   await responsePromise;
@@ -632,7 +659,7 @@ async function expectCompactJobToolbar(page: Page) {
   await expect(page.locator('.job-search')).toHaveCSS('flex-wrap', 'wrap');
   const headBox = await toolbarHead.boundingBox();
   const buttonBox = await addButton.boundingBox();
-  expect(buttonBox?.x || 0).toBeGreaterThan((headBox?.x || 0) + ((headBox?.width || 0) / 2));
+  expect(buttonBox?.x || 0).toBeGreaterThan((headBox?.x || 0) + (headBox?.width || 0) / 2);
 }
 
 async function expectCompactSearchPage(page: Page, toolbar: Locator) {
@@ -643,8 +670,8 @@ async function expectCompactSearchPage(page: Page, toolbar: Locator) {
 }
 
 async function openWorkerPage(page: Page) {
-  const responsePromise = page.waitForResponse((response) =>
-    response.url().includes('/api/job/workers/page') && response.status() === 200
+  const responsePromise = page.waitForResponse(
+    (response) => response.url().includes('/api/job/workers/page') && response.status() === 200,
   );
   await clickMenu(page, 'Worker 节点');
   await responsePromise;
@@ -654,8 +681,8 @@ async function openWorkerPage(page: Page) {
 
 async function searchWorker(page: Page, keyword: string) {
   await page.getByPlaceholder('Worker 地址/实例标识').fill(keyword);
-  const responsePromise = page.waitForResponse((response) =>
-    response.url().includes('/api/job/workers/page') && response.status() === 200
+  const responsePromise = page.waitForResponse(
+    (response) => response.url().includes('/api/job/workers/page') && response.status() === 200,
   );
   await page.getByRole('button', { name: '查询' }).click();
   await responsePromise;
@@ -666,8 +693,8 @@ function workerRow(page: Page, keyword: string) {
 }
 
 async function openAlarmPage(page: Page) {
-  const responsePromise = page.waitForResponse((response) =>
-    response.url().includes('/api/job/alarm-rules/page') && response.status() === 200
+  const responsePromise = page.waitForResponse(
+    (response) => response.url().includes('/api/job/alarm-rules/page') && response.status() === 200,
   );
   await clickMenu(page, '告警规则');
   await responsePromise;
@@ -677,8 +704,8 @@ async function openAlarmPage(page: Page) {
 
 async function searchAlarmRule(page: Page, keyword: string) {
   await page.getByPlaceholder('规则/场景/模板').fill(keyword);
-  const responsePromise = page.waitForResponse((response) =>
-    response.url().includes('/api/job/alarm-rules/page') && response.status() === 200
+  const responsePromise = page.waitForResponse(
+    (response) => response.url().includes('/api/job/alarm-rules/page') && response.status() === 200,
   );
   await page.getByRole('button', { name: '查询' }).click();
   await responsePromise;
@@ -751,14 +778,17 @@ test.describe('Job 管理 E2E', () => {
     const editDialog = page.getByRole('dialog', { name: '编辑任务' });
     await expect(editDialog).toBeVisible();
     await editDialog.getByLabel('任务名称').fill('E2E 验收草稿任务已编辑');
-    const updateResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/job/definitions') &&
-      response.request().method() === 'PUT' &&
-      response.status() === 200
+    const updateResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/job/definitions') &&
+        response.request().method() === 'PUT' &&
+        response.status() === 200,
     );
     await editDialog.getByRole('button', { name: '保存' }).click();
     await updateResponsePromise;
-    await expect(page.locator('.el-message__content', { hasText: '任务已更新' }).last()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.el-message__content', { hasText: '任务已更新' }).last()).toBeVisible({
+      timeout: 10000,
+    });
     await expect(definitionRow(page, draftCode)).toContainText('E2E 验收草稿任务已编辑');
 
     const manualCode = exampleJobs[0].jobCode;
@@ -766,25 +796,38 @@ test.describe('Job 管理 E2E', () => {
     const manualRow = definitionRow(page, manualCode);
     await expect(manualRow).toContainText('已启用');
     await manualRow.getByRole('button', { name: '暂停' }).click();
-    await page.locator('.el-message-box', { hasText: '调整状态' }).getByRole('button', { name: /^(OK|确认|确定)$/ }).click();
-    await expect(page.locator('.el-message__content', { hasText: '状态已更新' }).last()).toBeVisible({ timeout: 10000 });
+    await page
+      .locator('.el-message-box', { hasText: '调整状态' })
+      .getByRole('button', { name: /^(OK|确认|确定)$/ })
+      .click();
+    await expect(page.locator('.el-message__content', { hasText: '状态已更新' }).last()).toBeVisible({
+      timeout: 10000,
+    });
     await expect(definitionRow(page, manualCode)).toContainText('已暂停');
 
     await definitionRow(page, manualCode).getByRole('button', { name: '启用' }).click();
-    await page.locator('.el-message-box', { hasText: '调整状态' }).getByRole('button', { name: /^(OK|确认|确定)$/ }).click();
-    await expect(page.locator('.el-message__content', { hasText: '状态已更新' }).last()).toBeVisible({ timeout: 10000 });
+    await page
+      .locator('.el-message-box', { hasText: '调整状态' })
+      .getByRole('button', { name: /^(OK|确认|确定)$/ })
+      .click();
+    await expect(page.locator('.el-message__content', { hasText: '状态已更新' }).last()).toBeVisible({
+      timeout: 10000,
+    });
     await expect(definitionRow(page, manualCode)).toContainText('已启用');
     await saveEvidenceScreenshot(page, '05-definition-status-enabled.png');
 
-    const manualDefinition = (await listDefinitions(page, headers, manualCode)).find(item => item.jobCode === manualCode);
+    const manualDefinition = (await listDefinitions(page, headers, manualCode)).find(
+      (item) => item.jobCode === manualCode,
+    );
     const syncedManualDefinition = expectDefined(manualDefinition, '手动示例任务必须存在');
     expect(syncedManualDefinition.syncStatus).toBe('SYNCED');
     expect(syncedManualDefinition.engineJobId).toBeTruthy();
     const triggerBatchNo = `e2e-job-batch-${Date.now()}`;
-    const triggerResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/job/definitions/trigger') &&
-      response.request().method() === 'POST' &&
-      response.status() === 200
+    const triggerResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/job/definitions/trigger') &&
+        response.request().method() === 'POST' &&
+        response.status() === 200,
     );
     await definitionRow(page, manualCode).getByRole('button', { name: '触发' }).click();
     const triggerDialog = page.getByRole('dialog', { name: '手动触发' });
@@ -810,23 +853,24 @@ test.describe('Job 管理 E2E', () => {
     expect(apiLogDetail.engineResult || '').toContain('Mango Job runtime probe executed');
 
     const everyMinuteCode = exampleJobs[3].jobCode;
-    const everyMinuteDefinition = (await listDefinitions(page, headers, everyMinuteCode))
-      .find(item => item.jobCode === everyMinuteCode);
+    const everyMinuteDefinition = (await listDefinitions(page, headers, everyMinuteCode)).find(
+      (item) => item.jobCode === everyMinuteCode,
+    );
     const syncedEveryMinuteDefinition = expectDefined(everyMinuteDefinition, '每分钟示例任务必须存在');
     expect(syncedEveryMinuteDefinition.scheduleType).toBe('CRON');
     expect(syncedEveryMinuteDefinition.scheduleExpression).toBe('0 */1 * * * ?');
     const scheduledInstances = await waitForScheduledInstance(page, headers, syncedEveryMinuteDefinition.id);
     const scheduledInstance = scheduledInstances[0];
 
-    const instanceResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/job/instances/page') && response.status() === 200
+    const instanceResponsePromise = page.waitForResponse(
+      (response) => response.url().includes('/api/job/instances/page') && response.status() === 200,
     );
     await clickMenu(page, '执行实例');
     await instanceResponsePromise;
     await selectInstanceTaskFilter(page, manualCode);
     await page.getByPlaceholder('triggerBatchNo').fill(triggerBatchNo);
-    const filteredInstanceResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/job/instances/page') && response.status() === 200
+    const filteredInstanceResponsePromise = page.waitForResponse(
+      (response) => response.url().includes('/api/job/instances/page') && response.status() === 200,
     );
     await page.getByRole('button', { name: '查询' }).click();
     await filteredInstanceResponsePromise;
@@ -839,8 +883,8 @@ test.describe('Job 管理 E2E', () => {
     await saveEvidenceScreenshot(page, '07-instance-filtered-trigger-batch.png');
     await saveEvidenceScreenshot(page, '08-execution-instance-log-entry.png', instanceRow);
 
-    const detailResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/job/instances/logs/detail') && response.status() === 200
+    const detailResponsePromise = page.waitForResponse(
+      (response) => response.url().includes('/api/job/instances/logs/detail') && response.status() === 200,
     );
     await instanceRow.getByRole('button', { name: '日志' }).click();
     const detailResponse = await detailResponsePromise;
@@ -868,8 +912,8 @@ test.describe('Job 管理 E2E', () => {
 
     await selectInstanceTaskFilter(page, everyMinuteCode);
     await page.getByPlaceholder('triggerBatchNo').clear();
-    const scheduledResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/job/instances/page') && response.status() === 200
+    const scheduledResponsePromise = page.waitForResponse(
+      (response) => response.url().includes('/api/job/instances/page') && response.status() === 200,
     );
     await page.getByRole('button', { name: '查询' }).click();
     await scheduledResponsePromise;
@@ -881,8 +925,8 @@ test.describe('Job 管理 E2E', () => {
     await expect(scheduledRow).toContainText('成功');
     await saveEvidenceScreenshot(page, '08c-scheduled-every-minute-instance.png');
 
-    const scheduledDetailResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/job/instances/logs/detail') && response.status() === 200
+    const scheduledDetailResponsePromise = page.waitForResponse(
+      (response) => response.url().includes('/api/job/instances/logs/detail') && response.status() === 200,
     );
     await scheduledRow.getByRole('button', { name: '日志' }).click();
     const scheduledDetailResponse = await scheduledDetailResponsePromise;
@@ -906,11 +950,12 @@ test.describe('Job 管理 E2E', () => {
 
     const workers = await listWorkers(page, headers);
     expect(
-      workers.some(item =>
-        item.appCode === 'mango-job'
-        && item.engineType === 'MANGO_NATIVE'
-        && item.status === 'ONLINE'
-        && Boolean(item.workerAddress?.includes('embedded://'))
+      workers.some(
+        (item) =>
+          item.appCode === 'mango-job' &&
+          item.engineType === 'MANGO_NATIVE' &&
+          item.status === 'ONLINE' &&
+          Boolean(item.workerAddress?.includes('embedded://')),
       ),
       'Worker 快照必须来自真实 Mango Native Worker 注册',
     ).toBeTruthy();
@@ -920,9 +965,18 @@ test.describe('Job 管理 E2E', () => {
     await searchDefinition(page, draftCode);
     await definitionRow(page, draftCode).getByRole('button', { name: '删除' }).click();
     await expect(page.locator('.el-message-box', { hasText: '删除任务' })).toBeVisible();
-    await saveEvidenceScreenshot(page, '09-definition-delete-confirm.png', page.locator('.el-message-box', { hasText: '删除任务' }));
-    await page.locator('.el-message-box', { hasText: '删除任务' }).getByRole('button', { name: /^(OK|确认|确定)$/ }).click();
-    await expect(page.locator('.el-message__content', { hasText: '任务已删除' }).last()).toBeVisible({ timeout: 10000 });
+    await saveEvidenceScreenshot(
+      page,
+      '09-definition-delete-confirm.png',
+      page.locator('.el-message-box', { hasText: '删除任务' }),
+    );
+    await page
+      .locator('.el-message-box', { hasText: '删除任务' })
+      .getByRole('button', { name: /^(OK|确认|确定)$/ })
+      .click();
+    await expect(page.locator('.el-message__content', { hasText: '任务已删除' }).last()).toBeVisible({
+      timeout: 10000,
+    });
     await expect(definitionRow(page, draftCode)).toHaveCount(0);
 
     await searchDefinition(page, exampleKeyword);
@@ -957,10 +1011,11 @@ test.describe('Job 管理 E2E', () => {
     await login(page);
     const headers = await apiHeaders(page);
     await openJobDefinitionPage(page);
-    await expect(page.locator(
-      '.layout-columns-aside .el-menu-item, .layout-columns-aside .el-sub-menu__title',
-      { hasText: /^\s*执行日志\s*$/ },
-    )).toHaveCount(0);
+    await expect(
+      page.locator('.layout-columns-aside .el-menu-item, .layout-columns-aside .el-sub-menu__title', {
+        hasText: /^\s*执行日志\s*$/,
+      }),
+    ).toHaveCount(0);
 
     const pages = [
       { menu: '执行实例', path: '/job/instance', api: '/api/job/instances/page', heading: '执行实例', search: true },
@@ -969,8 +1024,8 @@ test.describe('Job 管理 E2E', () => {
     ];
 
     for (const item of pages) {
-      const responsePromise = page.waitForResponse((response) =>
-        response.url().includes(item.api) && response.status() === 200
+      const responsePromise = page.waitForResponse(
+        (response) => response.url().includes(item.api) && response.status() === 200,
       );
       await clickMenu(page, item.menu);
       await responsePromise;
@@ -983,7 +1038,7 @@ test.describe('Job 管理 E2E', () => {
       }
       if (item.path === '/job/worker') {
         const workers = await listWorkers(page, headers);
-        expect(workers.some(worker => Boolean(worker.workerAddress?.includes('embedded://')))).toBeTruthy();
+        expect(workers.some((worker) => Boolean(worker.workerAddress?.includes('embedded://')))).toBeTruthy();
         await expect(page.locator('.el-table')).toContainText('embedded://');
         await expect(page.locator('.el-table')).toContainText('在线');
       }
@@ -997,7 +1052,7 @@ test.describe('Job 管理 E2E', () => {
     await deleteAlarmRulesByKeyword(page, headers, alarmKeyword);
     const alarmRuleName = `${alarmKeyword} ${Date.now()}`;
     const definitions = await listDefinitions(page, headers, exampleJobKeyword(projectRunKey(testInfo.project.name)));
-    const alarmTarget = definitions.find(item => item.jobCode.includes('manual_builtin'));
+    const alarmTarget = definitions.find((item) => item.jobCode.includes('manual_builtin'));
     const resolvedAlarmTarget = expectDefined(alarmTarget, '告警规则必须能选择手动示例任务');
 
     await openAlarmPage(page);
@@ -1010,7 +1065,10 @@ test.describe('Job 管理 E2E', () => {
     const alarmTaskField = alarmDialog.locator('.el-form-item', { hasText: '作用任务' }).first();
     await alarmTaskField.locator('.el-select').click();
     await alarmTaskField.getByRole('combobox', { name: '作用任务' }).fill(resolvedAlarmTarget.jobCode);
-    await page.locator('.el-select-dropdown:visible .el-select-dropdown__item', { hasText: resolvedAlarmTarget.jobCode }).first().click();
+    await page
+      .locator('.el-select-dropdown:visible .el-select-dropdown__item', { hasText: resolvedAlarmTarget.jobCode })
+      .first()
+      .click();
     await alarmDialog.getByLabel('规则名称').fill(alarmRuleName);
     await expect(alarmDialog.getByLabel('通知场景')).toHaveValue('job.instance.failed');
     await alarmDialog.getByLabel('消息模板').fill('MANGO_JOB_FAILED_TEMPLATE_E2E');
@@ -1018,14 +1076,17 @@ test.describe('Job 管理 E2E', () => {
     await alarmDialog.getByLabel('单个用户').fill('1');
     await alarmDialog.getByLabel('多个用户').fill('1\n2');
     await saveEvidenceScreenshot(page, '15-alarm-rule-create-dialog.png', alarmDialog);
-    const createAlarmResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/job/alarm-rules') &&
-      response.request().method() === 'POST' &&
-      response.status() === 200
+    const createAlarmResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/job/alarm-rules') &&
+        response.request().method() === 'POST' &&
+        response.status() === 200,
     );
     await alarmDialog.getByRole('button', { name: '保存' }).click();
     await createAlarmResponsePromise;
-    await expect(page.locator('.el-message__content', { hasText: '告警规则已创建' }).last()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.el-message__content', { hasText: '告警规则已创建' }).last()).toBeVisible({
+      timeout: 10000,
+    });
 
     await searchAlarmRule(page, alarmRuleName);
     const createdAlarmRow = alarmRuleRow(page, alarmRuleName);
@@ -1036,14 +1097,14 @@ test.describe('Job 管理 E2E', () => {
     await expect(createdAlarmRow).toContainText('启用');
     await saveEvidenceScreenshot(page, '16-alarm-rule-created.png');
     let alarmRules = await listAlarmRules(page, headers, alarmRuleName);
-    let createdAlarmRule = alarmRules.find(item => item.ruleName === alarmRuleName);
+    let createdAlarmRule = alarmRules.find((item) => item.ruleName === alarmRuleName);
     const resolvedCreatedAlarmRule = expectDefined(createdAlarmRule, '新建告警规则必须可通过 API 查询');
     expect(resolvedCreatedAlarmRule.jobId).toBe(resolvedAlarmTarget.id);
     expect(resolvedCreatedAlarmRule.enabled).toBe(true);
     expect(resolvedCreatedAlarmRule.noticeParams || '').toContain('jobDutyE2E');
 
-    const editAlarmResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/job/alarm-rules/detail') && response.status() === 200
+    const editAlarmResponsePromise = page.waitForResponse(
+      (response) => response.url().includes('/api/job/alarm-rules/detail') && response.status() === 200,
     );
     await createdAlarmRow.getByRole('button', { name: '编辑' }).click();
     await editAlarmResponsePromise;
@@ -1052,57 +1113,78 @@ test.describe('Job 管理 E2E', () => {
     await editAlarmDialog.getByLabel('消息模板').fill('MANGO_JOB_FAILED_TEMPLATE_E2E_V2');
     await editAlarmDialog.getByLabel('收件规则').fill('jobDutyE2EUpdated');
     await saveEvidenceScreenshot(page, '17-alarm-rule-edit-dialog.png', editAlarmDialog);
-    const updateAlarmResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/job/alarm-rules') &&
-      response.request().method() === 'PUT' &&
-      response.status() === 200
+    const updateAlarmResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/job/alarm-rules') &&
+        response.request().method() === 'PUT' &&
+        response.status() === 200,
     );
     await editAlarmDialog.getByRole('button', { name: '保存' }).click();
     await updateAlarmResponsePromise;
-    await expect(page.locator('.el-message__content', { hasText: '告警规则已更新' }).last()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.el-message__content', { hasText: '告警规则已更新' }).last()).toBeVisible({
+      timeout: 10000,
+    });
     await searchAlarmRule(page, alarmRuleName);
     await expect(alarmRuleRow(page, alarmRuleName)).toContainText('MANGO_JOB_FAILED_TEMPLATE_E2E_V2');
     alarmRules = await listAlarmRules(page, headers, alarmRuleName);
-    createdAlarmRule = alarmRules.find(item => item.ruleName === alarmRuleName);
+    createdAlarmRule = alarmRules.find((item) => item.ruleName === alarmRuleName);
     expect(createdAlarmRule?.noticeParams || '').toContain('jobDutyE2EUpdated');
 
-    const disableAlarmResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/job/alarm-rules/status') &&
-      response.request().method() === 'PUT' &&
-      response.status() === 200
+    const disableAlarmResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/job/alarm-rules/status') &&
+        response.request().method() === 'PUT' &&
+        response.status() === 200,
     );
     await alarmRuleRow(page, alarmRuleName).getByRole('button', { name: '停用' }).click();
-    await page.locator('.el-message-box', { hasText: '更新告警规则状态' }).getByRole('button', { name: /^(OK|确认|确定)$/ }).click();
+    await page
+      .locator('.el-message-box', { hasText: '更新告警规则状态' })
+      .getByRole('button', { name: /^(OK|确认|确定)$/ })
+      .click();
     await disableAlarmResponsePromise;
-    await expect(page.locator('.el-message__content', { hasText: '告警规则已停用' }).last()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.el-message__content', { hasText: '告警规则已停用' }).last()).toBeVisible({
+      timeout: 10000,
+    });
     await searchAlarmRule(page, alarmRuleName);
     await expect(alarmRuleRow(page, alarmRuleName)).toContainText('停用');
     await saveEvidenceScreenshot(page, '18-alarm-rule-disabled.png');
     alarmRules = await listAlarmRules(page, headers, alarmRuleName);
-    expect(alarmRules.find(item => item.ruleName === alarmRuleName)?.enabled).toBe(false);
+    expect(alarmRules.find((item) => item.ruleName === alarmRuleName)?.enabled).toBe(false);
 
-    const enableAlarmResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/job/alarm-rules/status') &&
-      response.request().method() === 'PUT' &&
-      response.status() === 200
+    const enableAlarmResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/job/alarm-rules/status') &&
+        response.request().method() === 'PUT' &&
+        response.status() === 200,
     );
     await alarmRuleRow(page, alarmRuleName).getByRole('button', { name: '启用' }).click();
-    await page.locator('.el-message-box', { hasText: '更新告警规则状态' }).getByRole('button', { name: /^(OK|确认|确定)$/ }).click();
+    await page
+      .locator('.el-message-box', { hasText: '更新告警规则状态' })
+      .getByRole('button', { name: /^(OK|确认|确定)$/ })
+      .click();
     await enableAlarmResponsePromise;
-    await expect(page.locator('.el-message__content', { hasText: '告警规则已启用' }).last()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.el-message__content', { hasText: '告警规则已启用' }).last()).toBeVisible({
+      timeout: 10000,
+    });
     await searchAlarmRule(page, alarmRuleName);
     await expect(alarmRuleRow(page, alarmRuleName)).toContainText('启用');
     await saveEvidenceScreenshot(page, '19-alarm-rule-enabled.png');
 
-    const deleteAlarmResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/job/alarm-rules') &&
-      response.request().method() === 'DELETE' &&
-      response.status() === 200
+    const deleteAlarmResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/job/alarm-rules') &&
+        response.request().method() === 'DELETE' &&
+        response.status() === 200,
     );
     await alarmRuleRow(page, alarmRuleName).getByRole('button', { name: '删除' }).click();
-    await page.locator('.el-message-box', { hasText: '删除告警规则' }).getByRole('button', { name: /^(OK|确认|确定)$/ }).click();
+    await page
+      .locator('.el-message-box', { hasText: '删除告警规则' })
+      .getByRole('button', { name: /^(OK|确认|确定)$/ })
+      .click();
     await deleteAlarmResponsePromise;
-    await expect(page.locator('.el-message__content', { hasText: '告警规则已删除' }).last()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.el-message__content', { hasText: '告警规则已删除' }).last()).toBeVisible({
+      timeout: 10000,
+    });
     await searchAlarmRule(page, alarmRuleName);
     await expect(alarmRuleRow(page, alarmRuleName)).toHaveCount(0);
     await saveEvidenceScreenshot(page, '20-alarm-rule-deleted.png');
@@ -1152,13 +1234,14 @@ test.describe('Job 管理 E2E', () => {
     await dialog.getByLabel('参数 Schema').fill('{ "type": "object" }');
     await saveEvidenceScreenshot(page, '11-worker-create-dialog.png', dialog);
 
-    const createResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/job/workers') &&
-      response.request().method() === 'POST'
+    const createResponsePromise = page.waitForResponse(
+      (response) => response.url().includes('/api/job/workers') && response.request().method() === 'POST',
     );
     await dialog.getByRole('button', { name: '保存' }).click();
     await expectBusinessOk<ApiId>(await createResponsePromise);
-    await expect(page.locator('.el-message__content', { hasText: 'Worker 已登记' }).last()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.el-message__content', { hasText: 'Worker 已登记' }).last()).toBeVisible({
+      timeout: 10000,
+    });
 
     await searchWorker(page, workerKey);
     const createdRow = workerRow(page, workerKey);
@@ -1169,41 +1252,53 @@ test.describe('Job 管理 E2E', () => {
     await saveEvidenceScreenshot(page, '12-worker-created-online.png');
 
     let workers = await listWorkers(page, headers, workerKey);
-    const createdWorker = workers.find(item => item.workerAddress === workerAddress);
+    const createdWorker = workers.find((item) => item.workerAddress === workerAddress);
     const resolvedCreatedWorker = expectDefined(createdWorker, '手动登记 Worker 必须可通过 API 查询');
     expect(resolvedCreatedWorker.status).toBe('ONLINE');
 
-    const disableResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/job/workers/status') &&
-      response.request().method() === 'PUT' &&
-      response.status() === 200
+    const disableResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/job/workers/status') &&
+        response.request().method() === 'PUT' &&
+        response.status() === 200,
     );
     await createdRow.getByRole('button', { name: '禁用' }).click();
-    await page.locator('.el-message-box', { hasText: '调整 Worker 状态' }).getByRole('button', { name: /^(OK|确认|确定)$/ }).click();
+    await page
+      .locator('.el-message-box', { hasText: '调整 Worker 状态' })
+      .getByRole('button', { name: /^(OK|确认|确定)$/ })
+      .click();
     await disableResponsePromise;
-    await expect(page.locator('.el-message__content', { hasText: 'Worker 状态已更新' }).last()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.el-message__content', { hasText: 'Worker 状态已更新' }).last()).toBeVisible({
+      timeout: 10000,
+    });
     await searchWorker(page, workerKey);
     await expect(workerRow(page, workerKey)).toContainText('已禁用');
     await saveEvidenceScreenshot(page, '13-worker-disabled.png');
 
     workers = await listWorkers(page, headers, workerKey);
-    expect(workers.find(item => item.workerAddress === workerAddress)?.status).toBe('DISABLED');
+    expect(workers.find((item) => item.workerAddress === workerAddress)?.status).toBe('DISABLED');
 
-    const restoreResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/job/workers/status') &&
-      response.request().method() === 'PUT' &&
-      response.status() === 200
+    const restoreResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/job/workers/status') &&
+        response.request().method() === 'PUT' &&
+        response.status() === 200,
     );
     await workerRow(page, workerKey).getByRole('button', { name: '恢复' }).click();
-    await page.locator('.el-message-box', { hasText: '调整 Worker 状态' }).getByRole('button', { name: /^(OK|确认|确定)$/ }).click();
+    await page
+      .locator('.el-message-box', { hasText: '调整 Worker 状态' })
+      .getByRole('button', { name: /^(OK|确认|确定)$/ })
+      .click();
     await restoreResponsePromise;
-    await expect(page.locator('.el-message__content', { hasText: 'Worker 状态已更新' }).last()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.el-message__content', { hasText: 'Worker 状态已更新' }).last()).toBeVisible({
+      timeout: 10000,
+    });
     await searchWorker(page, workerKey);
     await expect(workerRow(page, workerKey)).toContainText('在线');
     await saveEvidenceScreenshot(page, '14-worker-restored-online.png');
 
     workers = await listWorkers(page, headers, workerKey);
-    expect(workers.find(item => item.workerAddress === workerAddress)?.status).toBe('ONLINE');
+    expect(workers.find((item) => item.workerAddress === workerAddress)?.status).toBe('ONLINE');
 
     await testInfo.attach('job-worker-governance', {
       body: await page.screenshot({ fullPage: true }),

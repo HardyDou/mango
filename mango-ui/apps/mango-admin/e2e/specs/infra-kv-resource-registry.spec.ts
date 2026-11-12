@@ -52,7 +52,7 @@ async function login(request: APIRequestContext): Promise<LoginData> {
     },
   });
   expect(response.status()).toBe(200);
-  const body = await response.json() as ApiResponse<LoginData>;
+  const body = (await response.json()) as ApiResponse<LoginData>;
   expect(body.success || body.code === 200).toBeTruthy();
   expect(body.data?.accessToken).toBeTruthy();
   return body.data as LoginData;
@@ -87,17 +87,15 @@ function captureRuntimeErrors(page: Page): RuntimeErrors {
       errors.vueWarnings.push(message.text());
     }
   });
-  page.on('pageerror', error => errors.pageErrors.push(error.message));
+  page.on('pageerror', (error) => errors.pageErrors.push(error.message));
   page.on('response', (response) => {
     if (response.status() >= 400) {
-      errors.badResponses.push(
-        `${response.status()} ${response.request().method()} ${response.url()}`,
-      );
+      errors.badResponses.push(`${response.status()} ${response.request().method()} ${response.url()}`);
     }
   });
-  page.on('requestfailed', request => errors.failedRequests.push(
-    `${request.method()} ${request.url()} ${request.failure()?.errorText || ''}`,
-  ));
+  page.on('requestfailed', (request) =>
+    errors.failedRequests.push(`${request.method()} ${request.url()} ${request.failure()?.errorText || ''}`),
+  );
   return errors;
 }
 
@@ -108,10 +106,11 @@ test('@p0 @infra-kv JDBC KV 支撑资源注册同步，并通过真实管理接�
   const headers = { Authorization: `Bearer ${loginData.accessToken}` };
   await loginPage(page);
 
-  const menuResponsePromise = page.waitForResponse(response =>
-    response.url().includes('/api/authorization/menus')
-      && response.url().includes('fmt=list')
-      && response.request().method() === 'GET',
+  const menuResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes('/api/authorization/menus') &&
+      response.url().includes('fmt=list') &&
+      response.request().method() === 'GET',
   );
   await page.goto('/#/system/menu');
   const menuResponse = await menuResponsePromise;
@@ -122,39 +121,33 @@ test('@p0 @infra-kv JDBC KV 支撑资源注册同步，并通过真实管理接�
     e2eApi('/resource/registries/page?pageNum=1&pageSize=20&resourceType=API_RESOURCE'),
     { headers },
   );
-  const registryBody = await registryResponse.json() as ApiResponse<PageResult<RegistryRecord>>;
+  const registryBody = (await registryResponse.json()) as ApiResponse<PageResult<RegistryRecord>>;
   expect(registryResponse.status()).toBe(200);
   expect(registryBody.success || registryBody.code === 200).toBeTruthy();
   const registryRecords = recordsOf(registryBody);
   expect(registryRecords.length).toBeGreaterThan(0);
-  expect(registryRecords.every(record => record.resourceType === 'API_RESOURCE')).toBeTruthy();
+  expect(registryRecords.every((record) => record.resourceType === 'API_RESOURCE')).toBeTruthy();
 
-  const syncResponse = await request.get(
-    e2eApi('/resource/sync-logs/page?pageNum=1&pageSize=20'),
-    { headers },
-  );
-  const syncBody = await syncResponse.json() as ApiResponse<PageResult<SyncRecord>>;
+  const syncResponse = await request.get(e2eApi('/resource/sync-logs/page?pageNum=1&pageSize=20'), { headers });
+  const syncBody = (await syncResponse.json()) as ApiResponse<PageResult<SyncRecord>>;
   expect(syncResponse.status()).toBe(200);
   expect(syncBody.success || syncBody.code === 200).toBeTruthy();
-  expect(recordsOf(syncBody).some(record => record.result === 'SUCCESS')).toBeTruthy();
+  expect(recordsOf(syncBody).some((record) => record.result === 'SUCCESS')).toBeTruthy();
 
   const handlerResponse = await request.get(e2eApi('/resource/handler-specs'), { headers });
-  const handlerBody = await handlerResponse.json() as ApiResponse<unknown[]>;
+  const handlerBody = (await handlerResponse.json()) as ApiResponse<unknown[]>;
   expect(handlerResponse.status()).toBe(200);
   expect(handlerBody.success || handlerBody.code === 200).toBeTruthy();
   expect(handlerBody.data?.length).toBeGreaterThan(0);
 
-  const invalidDeleteResponse = await request.delete(
-    e2eApi('/resource/registries?physical=false'),
-    { headers },
-  );
-  const invalidDeleteBody = await invalidDeleteResponse.json() as ApiResponse<unknown>;
+  const invalidDeleteResponse = await request.delete(e2eApi('/resource/registries?physical=false'), { headers });
+  const invalidDeleteBody = (await invalidDeleteResponse.json()) as ApiResponse<unknown>;
   expect(invalidDeleteResponse.status()).toBe(400);
   expect(invalidDeleteBody.success).toBeFalsy();
   expect(invalidDeleteBody.code).toBe(400);
 
   const forceSyncResponse = await request.post(e2eApi('/resource/sync/force'), { headers });
-  const forceSyncBody = await forceSyncResponse.json() as ApiResponse<boolean>;
+  const forceSyncBody = (await forceSyncResponse.json()) as ApiResponse<boolean>;
   expect(forceSyncResponse.status()).toBe(200);
   expect(forceSyncBody.success || forceSyncBody.code === 200).toBeTruthy();
   expect(forceSyncBody.data).toBe(true);

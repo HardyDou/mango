@@ -27,21 +27,18 @@ import { getAreaTree } from '../../api/area';
 import type { AreaNode, ChinaAreaProps, ChinaAreaEmits, ChinaAreaExpose } from './types';
 import type { ApiId } from '@mango/api-schema';
 
-const props = withDefaults(
-  defineProps<ChinaAreaProps>(),
-  {
-    modelValue: () => [],
-    placeholder: 'chinaArea.placeholder',
-    level: 3,
-    showAllLevels: true,
-    showHot: true,
-    disabled: false,
-    clearable: true,
-    filterable: true,
-    collapseTags: false,
-    separator: '/',
-  }
-);
+const props = withDefaults(defineProps<ChinaAreaProps>(), {
+  modelValue: () => [],
+  placeholder: 'chinaArea.placeholder',
+  level: 3,
+  showAllLevels: true,
+  showHot: true,
+  disabled: false,
+  clearable: true,
+  filterable: true,
+  collapseTags: false,
+  separator: '/',
+});
 
 const emit = defineEmits<ChinaAreaEmits>();
 
@@ -59,9 +56,7 @@ const REQUEST_TIMEOUT = 10000; // 10秒超时
 const MAX_RETRIES = 2;
 
 const placeholderText = computed(() => {
-  return props.placeholder?.startsWith('chinaArea.')
-    ? t(props.placeholder)
-    : props.placeholder;
+  return props.placeholder?.startsWith('chinaArea.') ? t(props.placeholder) : props.placeholder;
 });
 
 function markLeaf(nodes: AreaNode[], fallbackLevel: number): AreaNode[] {
@@ -78,19 +73,14 @@ function markLeaf(nodes: AreaNode[], fallbackLevel: number): AreaNode[] {
 /**
  * 带超时和重试的请求
  */
-async function fetchWithRetry<T>(
-  fetchFn: () => Promise<T>,
-  retries = MAX_RETRIES
-): Promise<T> {
+async function fetchWithRetry<T>(fetchFn: () => Promise<T>, retries = MAX_RETRIES): Promise<T> {
   let lastError: Error;
 
   for (let i = 0; i <= retries; i++) {
     try {
       return await Promise.race([
         fetchFn(),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('请求超时，请重试')), REQUEST_TIMEOUT)
-        ),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('请求超时，请重试')), REQUEST_TIMEOUT)),
       ]);
     } catch (err) {
       lastError = err as Error;
@@ -110,7 +100,7 @@ async function fetchWithRetry<T>(
 async function lazyLoad(
   node: { value: ApiId; data: AreaNode; children: AreaNode[]; loading: boolean; loaded: boolean; level: number },
   resolve: (data: AreaNode[]) => void,
-  reject: (err: Error) => void
+  reject: (err: Error) => void,
 ) {
   const parentId = node.level === 0 ? '0' : node.value;
 
@@ -129,9 +119,7 @@ async function lazyLoad(
   node.loading = true;
 
   try {
-    const data = await fetchWithRetry(() =>
-      getAreaTree({ type: node.level + 1, parentId })
-    );
+    const data = await fetchWithRetry(() => getAreaTree({ type: node.level + 1, parentId }));
 
     const result = markLeaf(data || [], node.level + 1);
 
@@ -188,7 +176,7 @@ watch(
   () => props.modelValue,
   (newVal) => {
     selectedValue.value = Array.isArray(newVal) ? [...newVal] : [];
-  }
+  },
 );
 
 // Expose methods

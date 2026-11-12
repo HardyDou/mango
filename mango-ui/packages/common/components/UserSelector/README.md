@@ -11,31 +11,31 @@ import type { UserSelectorExpose, UserSelectorOption } from '@mango/common';
 
 ## Props
 
-| 名称 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `modelValue` | `string \| string[]` | `[]` | 选中人员的值，支持 `v-model`；单选为字符串，多选为字符串数组 |
-| `mode` | `'select' \| 'dialog'` | `'select'` | 选择模式：下拉选择或弹框选择 |
-| `multiple` | `boolean` | `false` | 是否多选 |
-| `placeholder` | `string` | `'请选择人员'` | 占位文本 |
-| `title` | `string` | `'选择人员'` | 弹框模式的对话框标题 |
-| `disabled` | `boolean` | `false` | 是否禁用 |
-| `width` | `string \| number` | `'920px'` | 弹框宽度 |
-| `max` | `number` | `0` | 最多可选人数，`0` 表示不限制 |
+| 名称          | 类型                   | 默认值         | 说明                                                         |
+| ------------- | ---------------------- | -------------- | ------------------------------------------------------------ |
+| `modelValue`  | `string \| string[]`   | `[]`           | 选中人员的值，支持 `v-model`；单选为字符串，多选为字符串数组 |
+| `mode`        | `'select' \| 'dialog'` | `'select'`     | 选择模式：下拉选择或弹框选择                                 |
+| `multiple`    | `boolean`              | `false`        | 是否多选                                                     |
+| `placeholder` | `string`               | `'请选择人员'` | 占位文本                                                     |
+| `title`       | `string`               | `'选择人员'`   | 弹框模式的对话框标题                                         |
+| `disabled`    | `boolean`              | `false`        | 是否禁用                                                     |
+| `width`       | `string \| number`     | `'920px'`      | 弹框宽度                                                     |
+| `max`         | `number`               | `0`            | 最多可选人数，`0` 表示不限制                                 |
 
 ## Events
 
-| 名称 | 参数 | 说明 |
-|------|------|------|
+| 名称                | 参数                              | 说明                                                               |
+| ------------------- | --------------------------------- | ------------------------------------------------------------------ |
 | `update:modelValue` | `string \| string[] \| undefined` | 选中值变化；单选为字符串（清空时为 `undefined`），多选为字符串数组 |
-| `change` | `string \| string[] \| undefined` | 与 `update:modelValue` 同时触发，参数相同 |
+| `change`            | `string \| string[] \| undefined` | 与 `update:modelValue` 同时触发，参数相同                          |
 
 ## Expose
 
-| 名称 | 参数 | 说明 |
-|------|------|------|
-| `open()` | - | 打开选择弹框（仅 `dialog` 模式有可见界面）并加载人员与组织数据；`disabled` 时无效 |
-| `close()` | - | 关闭选择弹框 |
-| `clear()` | - | 清空选择并触发更新事件 |
+| 名称      | 参数 | 说明                                                                              |
+| --------- | ---- | --------------------------------------------------------------------------------- |
+| `open()`  | -    | 打开选择弹框（仅 `dialog` 模式有可见界面）并加载人员与组织数据；`disabled` 时无效 |
+| `close()` | -    | 关闭选择弹框                                                                      |
+| `clear()` | -    | 清空选择并触发更新事件                                                            |
 
 ## 类型定义
 
@@ -114,13 +114,7 @@ const userIds = ref<string[]>([]);
 </script>
 
 <template>
-  <UserSelector
-    v-model="userIds"
-    mode="dialog"
-    multiple
-    title="选择审批人"
-    width="960px"
-  />
+  <UserSelector v-model="userIds" mode="dialog" multiple title="选择审批人" width="960px" />
 </template>
 ```
 
@@ -140,11 +134,7 @@ function handleChange(value: string | string[] | undefined) {
 </script>
 
 <template>
-  <UserSelector
-    ref="selectorRef"
-    v-model="assignee"
-    @change="handleChange"
-  />
+  <UserSelector ref="selectorRef" v-model="assignee" @change="handleChange" />
   <el-button @click="selectorRef?.clear()">重置</el-button>
 </template>
 ```

@@ -2,44 +2,24 @@
   <section class="mango-grid-widget-my-task">
     <header class="mango-grid-widget-my-task__header">
       <span>我的任务</span>
-      <button
-        v-if="!inlineState"
-        class="mango-grid-widget-my-task__all"
-        type="button"
-        @click="navigateToAll"
-      >
+      <button v-if="!inlineState" class="mango-grid-widget-my-task__all" type="button" @click="navigateToAll">
         查看全部
       </button>
     </header>
 
-    <div
-      v-if="inlineState"
-      class="mango-grid-widget-my-task__state"
-      :data-state="inlineState"
-    >
+    <div v-if="inlineState" class="mango-grid-widget-my-task__state" :data-state="inlineState">
       <strong>{{ inlineStateTitle }}</strong>
       <span>{{ inlineStateMessage }}</span>
     </div>
 
-    <div
-      v-else
-      class="mango-grid-widget-my-task__body"
-      :class="{ 'is-loading': loading }"
-    >
-      <button
-        class="mango-grid-widget-my-task__summary"
-        type="button"
-        @click="navigateToAll"
-      >
+    <div v-else class="mango-grid-widget-my-task__body" :class="{ 'is-loading': loading }">
+      <button class="mango-grid-widget-my-task__summary" type="button" @click="navigateToAll">
         <span class="mango-grid-widget-my-task__summary-count">
           <strong>{{ summary.total }}</strong>
           <span>任务总数</span>
         </span>
 
-        <span
-          class="mango-grid-widget-my-task__bar"
-          aria-hidden="true"
-        >
+        <span class="mango-grid-widget-my-task__bar" aria-hidden="true">
           <span
             v-for="item in taskItems"
             :key="item.key"
@@ -59,10 +39,7 @@
           @click="navigateToItem(item)"
         >
           <span class="mango-grid-widget-my-task__label">{{ item.label }}</span>
-          <span
-            class="mango-grid-widget-my-task__dot"
-            aria-hidden="true"
-          />
+          <span class="mango-grid-widget-my-task__dot" aria-hidden="true" />
           <span class="mango-grid-widget-my-task__value">{{ item.value }}</span>
         </button>
       </div>
@@ -117,15 +94,15 @@ const taskItems = computed(() => {
       value: summary.value.overdue,
       raw: { query: { todoType: 'ALL', overdue: 'true' } },
     },
-  ].map(item => ({
+  ].map((item) => ({
     ...item,
     percent: hasTotal ? Math.max(item.value, 0) / total : 1,
   }));
 });
-const inlineStateTitle = computed(() => inlineState.value === 'missing-permission' ? '缺少权限' : '加载失败');
-const inlineStateMessage = computed(() => inlineState.value === 'missing-permission'
-  ? '当前账号无权查看我的任务'
-  : '任务统计加载失败，请稍后重试');
+const inlineStateTitle = computed(() => (inlineState.value === 'missing-permission' ? '缺少权限' : '加载失败'));
+const inlineStateMessage = computed(() =>
+  inlineState.value === 'missing-permission' ? '当前账号无权查看我的任务' : '任务统计加载失败，请稍后重试',
+);
 
 onMounted(() => {
   loadSummary();

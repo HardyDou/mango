@@ -16,19 +16,19 @@
 
 ## 2. 功能清单
 
-| 能力 | 入口 |
-|------|------|
-| 注册本地应用 | `registerLocalApp()` |
-| 读取本地应用 | `getLocalApp()` |
-| 创建运行时事件总线 | `createRuntimeEventBus()` |
-| 设置运行时日志输出 | `setMangoRuntimeLogger()` |
-| 发送运行时日志 | `emitMangoRuntimeLog()` |
-| 加载运行时配置 | `loadRuntimeConfig()`、`loadRuntimeConfigWithOptions()` |
-| 合并运行时配置 | `mergeRuntimeConfig()` |
-| 解析应用适配器 | `resolveAdapter()` |
-| 预加载微前端 | `preloadMicroApp()` |
-| 创建 wujie Vue 子应用 | `createMangoWujieVueApp()` |
-| 应用运行时主题 | `applyMangoRuntimeTheme()`、`bindMangoRuntimeTheme()` |
+| 能力                  | 入口                                                    |
+| --------------------- | ------------------------------------------------------- |
+| 注册本地应用          | `registerLocalApp()`                                    |
+| 读取本地应用          | `getLocalApp()`                                         |
+| 创建运行时事件总线    | `createRuntimeEventBus()`                               |
+| 设置运行时日志输出    | `setMangoRuntimeLogger()`                               |
+| 发送运行时日志        | `emitMangoRuntimeLog()`                                 |
+| 加载运行时配置        | `loadRuntimeConfig()`、`loadRuntimeConfigWithOptions()` |
+| 合并运行时配置        | `mergeRuntimeConfig()`                                  |
+| 解析应用适配器        | `resolveAdapter()`                                      |
+| 预加载微前端          | `preloadMicroApp()`                                     |
+| 创建 wujie Vue 子应用 | `createMangoWujieVueApp()`                              |
+| 应用运行时主题        | `applyMangoRuntimeTheme()`、`bindMangoRuntimeTheme()`   |
 
 ## 3. 接入方式
 
@@ -91,82 +91,82 @@ createMangoWujieVueApp({
 
 `MangoRuntimeConfigLoadOptions`：
 
-| 字段 | 默认值 | 含义 |
-|------|--------|------|
-| `configUrl` | `/runtime-config.json` | 运行时配置地址。 |
-| `failClosed` | `false` | 配置读取或校验失败时是否直接抛错。 |
-| `allowedEntryOrigins` | 空 | 允许的微前端入口 origin。 |
-| `allowedEntryHosts` | 空 | 允许的微前端入口 host。 |
-| `requireEntryAllowlist` | `false` | 是否强制要求 entry 命中白名单。 |
-| `allowRelativeEntries` | `false` | 是否允许相对路径 entry。 |
-| `allowHttpEntries` | `false` | 是否允许 http entry。 |
+| 字段                    | 默认值                 | 含义                               |
+| ----------------------- | ---------------------- | ---------------------------------- |
+| `configUrl`             | `/runtime-config.json` | 运行时配置地址。                   |
+| `failClosed`            | `false`                | 配置读取或校验失败时是否直接抛错。 |
+| `allowedEntryOrigins`   | 空                     | 允许的微前端入口 origin。          |
+| `allowedEntryHosts`     | 空                     | 允许的微前端入口 host。            |
+| `requireEntryAllowlist` | `false`                | 是否强制要求 entry 命中白名单。    |
+| `allowRelativeEntries`  | `false`                | 是否允许相对路径 entry。           |
+| `allowHttpEntries`      | `false`                | 是否允许 http entry。              |
 
 `MangoRuntimeConfig`：
 
-| 字段 | 含义 |
-|------|------|
-| `profile` | 运行模式，支持 `monolith`、`hybrid`、`micro`。 |
-| `modules` | 模块运行方式映射。 |
-| `diagnostics` | 配置诊断结果，由加载器补充。 |
+| 字段          | 含义                                           |
+| ------------- | ---------------------------------------------- |
+| `profile`     | 运行模式，支持 `monolith`、`hybrid`、`micro`。 |
+| `modules`     | 模块运行方式映射。                             |
+| `diagnostics` | 配置诊断结果，由加载器补充。                   |
 
 `MangoModuleRuntimeConfig`：
 
-| 字段 | 含义 |
-|------|------|
-| `mode` | 模块模式，支持 `local`、`micro`。 |
-| `instanceId` | 路由槽位的稳定实例标识；同一 `runtimeCode` 被多个模块使用时默认按 `runtimeCode:moduleCode` 生成，显式重复会校验失败。 |
-| `entry` | 微前端入口地址。 |
-| `style` | 样式地址。 |
-| `runtimeCode` | 对应运行时应用编码。 |
-| `appType` | 应用类型，支持 `LOCAL`、`MICRO_APP`、`IFRAME`、`EXTERNAL_LINK`。 |
-| `framework` | 子应用框架标识。 |
-| `timeoutMs` | 加载超时时间。 |
-| `preload` | 是否预加载。 |
-| `alive` | wujie 是否保活。 |
+| 字段          | 含义                                                                                                                  |
+| ------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `mode`        | 模块模式，支持 `local`、`micro`。                                                                                     |
+| `instanceId`  | 路由槽位的稳定实例标识；同一 `runtimeCode` 被多个模块使用时默认按 `runtimeCode:moduleCode` 生成，显式重复会校验失败。 |
+| `entry`       | 微前端入口地址。                                                                                                      |
+| `style`       | 样式地址。                                                                                                            |
+| `runtimeCode` | 对应运行时应用编码。                                                                                                  |
+| `appType`     | 应用类型，支持 `LOCAL`、`MICRO_APP`、`IFRAME`、`EXTERNAL_LINK`。                                                      |
+| `framework`   | 子应用框架标识。                                                                                                      |
+| `timeoutMs`   | 加载超时时间。                                                                                                        |
+| `preload`     | 是否预加载。                                                                                                          |
+| `alive`       | wujie 是否保活。                                                                                                      |
 
 ## 5. API 与扩展
 
 核心类型：
 
-| 类型 | 用途 |
-|------|------|
-| `MangoMenu` | Shell 菜单节点。 |
-| `MangoAppRuntime` | 传给子应用的运行时上下文。 |
-| `MangoRuntimeTheme` | 主题变量。 |
-| `MangoRuntimeRequest` | 子应用可用请求函数。 |
-| `MangoRuntimeEventBus` | 子应用事件总线。 |
-| `MangoFrontendApp` | 本地应用注册结构。 |
-| `MangoRuntimeAppConfig` | 运行时应用配置。 |
-| `MangoRuntimeConfig` | Shell 运行时配置。 |
-| `MangoRuntimeConfigDiagnostic` | 配置诊断项。 |
-| `MangoRuntimeError` | 微前端运行错误。 |
-| `MangoRuntimeConfigError` | 运行时配置错误。 |
+| 类型                           | 用途                       |
+| ------------------------------ | -------------------------- |
+| `MangoMenu`                    | Shell 菜单节点。           |
+| `MangoAppRuntime`              | 传给子应用的运行时上下文。 |
+| `MangoRuntimeTheme`            | 主题变量。                 |
+| `MangoRuntimeRequest`          | 子应用可用请求函数。       |
+| `MangoRuntimeEventBus`         | 子应用事件总线。           |
+| `MangoFrontendApp`             | 本地应用注册结构。         |
+| `MangoRuntimeAppConfig`        | 运行时应用配置。           |
+| `MangoRuntimeConfig`           | Shell 运行时配置。         |
+| `MangoRuntimeConfigDiagnostic` | 配置诊断项。               |
+| `MangoRuntimeError`            | 微前端运行错误。           |
+| `MangoRuntimeConfigError`      | 运行时配置错误。           |
 
 `MangoAppRuntime` 字段：
 
-| 字段 | 含义 |
-|------|------|
-| `token` | 当前登录 token。 |
-| `instanceId` | 当前挂载实例标识，用于 Wujie、请求和销毁隔离。 |
-| `tenantId` | 当前租户 ID。 |
-| `appCode` | 当前应用编码。 |
-| `apiBaseUrl` | API 基础地址。 |
-| `menu` | 当前菜单。 |
-| `userInfo` | 当前用户信息。 |
-| `permissions` | 当前权限码。 |
-| `theme` | 当前主题。 |
-| `request` | `get`、`post`、`put`、`delete` 请求能力。 |
-| `httpClient` | 当前实例的中立 `HttpClient`；业务 API 工厂应使用此字段，不读取全局 Axios。 |
-| `eventBus` | `unauthorized`、`theme-change`、`runtime-error` 事件总线。 |
+| 字段          | 含义                                                                       |
+| ------------- | -------------------------------------------------------------------------- |
+| `token`       | 当前登录 token。                                                           |
+| `instanceId`  | 当前挂载实例标识，用于 Wujie、请求和销毁隔离。                             |
+| `tenantId`    | 当前租户 ID。                                                              |
+| `appCode`     | 当前应用编码。                                                             |
+| `apiBaseUrl`  | API 基础地址。                                                             |
+| `menu`        | 当前菜单。                                                                 |
+| `userInfo`    | 当前用户信息。                                                             |
+| `permissions` | 当前权限码。                                                               |
+| `theme`       | 当前主题。                                                                 |
+| `request`     | `get`、`post`、`put`、`delete` 请求能力。                                  |
+| `httpClient`  | 当前实例的中立 `HttpClient`；业务 API 工厂应使用此字段，不读取全局 Axios。 |
+| `eventBus`    | `unauthorized`、`theme-change`、`runtime-error` 事件总线。                 |
 
 适配器：
 
-| 适配器 | 作用 |
-|--------|------|
-| `localAdapter` | 挂载已注册的本地应用。 |
-| `microAppAdapter` | 通过 wujie 挂载微前端应用。 |
-| `iframeAdapter` | 挂载 iframe 页面。 |
-| `externalLinkAdapter` | 打开外链。 |
+| 适配器                | 作用                        |
+| --------------------- | --------------------------- |
+| `localAdapter`        | 挂载已注册的本地应用。      |
+| `microAppAdapter`     | 通过 wujie 挂载微前端应用。 |
+| `iframeAdapter`       | 挂载 iframe 页面。          |
+| `externalLinkAdapter` | 打开外链。                  |
 
 ## 6. 数据与初始化
 
@@ -174,12 +174,12 @@ createMangoWujieVueApp({
 
 运行期数据来源：
 
-| 数据 | 来源 |
-|------|------|
-| runtime config | `/runtime-config.json` 或调用方传入的默认配置。 |
-| 登录态、租户、用户、权限 | Admin Shell 组装后传入子应用。 |
-| 菜单 | Admin Shell 从后端授权菜单接口取得。 |
-| 主题 | Admin Shell 主题 store 传入，子应用可通过事件同步。 |
+| 数据                     | 来源                                                |
+| ------------------------ | --------------------------------------------------- |
+| runtime config           | `/runtime-config.json` 或调用方传入的默认配置。     |
+| 登录态、租户、用户、权限 | Admin Shell 组装后传入子应用。                      |
+| 菜单                     | Admin Shell 从后端授权菜单接口取得。                |
+| 主题                     | Admin Shell 主题 store 传入，子应用可通过事件同步。 |
 
 ## 7. 管理入口
 

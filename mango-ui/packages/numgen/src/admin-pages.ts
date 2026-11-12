@@ -10,8 +10,8 @@ export function registerMangoNumgenAdminPages() {
   registerModulePages({
     moduleCode: 'mango-numgen',
     pages: {
-      'platform/numgen/index': () => import('./index').then(m => m.NumgenView),
-      'numgen/index': () => import('./index').then(m => m.NumgenView),
+      'platform/numgen/index': () => import('./index').then((m) => m.NumgenView),
+      'numgen/index': () => import('./index').then((m) => m.NumgenView),
     },
   });
 }

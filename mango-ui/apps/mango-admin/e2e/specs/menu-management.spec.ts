@@ -55,7 +55,7 @@ async function loginPage(page: Page, tenant: LoginTenant) {
 async function listMenus(request: APIRequestContext, token: string, menuName: string) {
   const response = await request.get(
     api(`/authorization/menus?appCode=internal-admin&fmt=list&menuName=${encodeURIComponent(menuName)}`),
-    { headers: { Authorization: `Bearer ${token}` } }
+    { headers: { Authorization: `Bearer ${token}` } },
   );
   expect(response.status()).toBe(200);
   const body = await response.json();
@@ -98,10 +98,11 @@ test.describe('T9 菜单管理页面真实接口闭环', () => {
       await cleanupMenus(request, platformToken, editedMenuName);
       await loginPage(page, platformTenant);
 
-      const listResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/authorization/menus') &&
-        response.url().includes('fmt=list') &&
-        response.status() === 200
+      const listResponsePromise = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/authorization/menus') &&
+          response.url().includes('fmt=list') &&
+          response.status() === 200,
       );
       await page.goto('/#/system/menu');
       await listResponsePromise;
@@ -118,9 +119,8 @@ test.describe('T9 菜单管理页面真实接口闭环', () => {
       await createDialog.getByLabel('组件路径').fill('views/error/404');
       await createDialog.getByLabel('图标').fill('Menu');
 
-      const createResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/authorization/menus') &&
-        response.request().method() === 'POST'
+      const createResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/authorization/menus') && response.request().method() === 'POST',
       );
       await createDialog.getByRole('button', { name: '确定' }).click();
       const createResponse = await createResponsePromise;
@@ -130,10 +130,11 @@ test.describe('T9 菜单管理页面真实接口闭环', () => {
       await expect(page.getByText('新增成功')).toBeVisible({ timeout: 10000 });
 
       await page.getByLabel('关键词').fill(menuName);
-      const searchResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/authorization/menus') &&
-        response.url().includes('fmt=list') &&
-        response.status() === 200
+      const searchResponsePromise = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/authorization/menus') &&
+          response.url().includes('fmt=list') &&
+          response.status() === 200,
       );
       await page.getByRole('button', { name: '查询' }).click();
       await searchResponsePromise;
@@ -146,9 +147,8 @@ test.describe('T9 菜单管理页面真实接口闭环', () => {
       await expect(editDialog).toBeVisible();
       await editDialog.getByLabel('菜单名称').fill(editedMenuName);
 
-      const updateResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/authorization/menus') &&
-        response.request().method() === 'PUT'
+      const updateResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/authorization/menus') && response.request().method() === 'PUT',
       );
       await editDialog.getByRole('button', { name: '确定' }).click();
       const updateResponse = await updateResponsePromise;
@@ -161,9 +161,8 @@ test.describe('T9 菜单管理页面真实接口闭环', () => {
       const editedRow = page.locator('.el-table__row', { hasText: editedMenuName }).first();
       await editedRow.getByRole('button', { name: '删除' }).click();
       await expect(page.getByText('确认删除该菜单?')).toBeVisible();
-      const deleteResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/authorization/menus') &&
-        response.request().method() === 'DELETE'
+      const deleteResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/authorization/menus') && response.request().method() === 'DELETE',
       );
       await page.getByRole('button', { name: '确定' }).click();
       const deleteResponse = await deleteResponsePromise;

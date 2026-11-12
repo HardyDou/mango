@@ -697,52 +697,65 @@ onMounted(() => {
   display: flex;
   align-items: center;
   margin-bottom: 16px;
+
   .tabs-wrapper {
     flex: 1;
     overflow: hidden;
+
     :deep(.el-tabs__header) {
       margin-bottom: 0;
     }
   }
+
   .add-group-btn {
     flex-shrink: 0;
     margin-left: 8px;
   }
 }
+
 .search-form {
   margin-bottom: 16px;
+
   :deep(.el-form-item) {
     margin-bottom: 0;
   }
 }
+
 .menu-type-filter,
 .menu-status-filter {
   width: 120px;
 }
+
 .menu-module-filter {
   width: 160px;
 }
+
 .permissions-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
+
   .el-tag {
     max-width: 150px;
   }
+
   .permission-input {
     width: 140px;
   }
+
   .add-permission-btn {
     height: 24px;
     padding: 0 8px;
     font-size: 12px;
   }
 }
+
 .permission-tag {
   margin-right: 4px;
   margin-bottom: 2px;
 }
+
 .form-hint {
   margin-left: 8px;
   font-size: 12px;

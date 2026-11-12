@@ -35,8 +35,8 @@ async function login(page: Page) {
   await expect(page.locator('.tenant-select')).toContainText('芒果集团', { timeout: 10000 });
   await page.locator('.tenant-select').click();
   await page.getByRole('option', { name: /芒果集团/ }).click();
-  const loginResponsePromise = page.waitForResponse((response) =>
-    response.url().endsWith('/auth/login') && response.request().method() === 'POST'
+  const loginResponsePromise = page.waitForResponse(
+    (response) => response.url().endsWith('/auth/login') && response.request().method() === 'POST',
   );
   await page.locator('.login-btn').click();
   const loginResponse = await loginResponsePromise;
@@ -57,7 +57,9 @@ async function openTemplatePage(page: Page, path: string, marker: string) {
 
 async function cleanupTemplateData(request: APIRequestContext, token: string, keyword: string) {
   const headers = authHeaders(token);
-  const templatesResponse = await request.get(api(`/template/templates/page?page=1&size=50&keyword=${keyword}`), { headers });
+  const templatesResponse = await request.get(api(`/template/templates/page?page=1&size=50&keyword=${keyword}`), {
+    headers,
+  });
   if (templatesResponse.ok()) {
     const body = await templatesResponse.json();
     for (const item of body.data?.list || []) {
@@ -65,7 +67,9 @@ async function cleanupTemplateData(request: APIRequestContext, token: string, ke
     }
   }
 
-  const categoriesResponse = await request.get(api(`/template/categories/page?page=1&size=50&keyword=${keyword}`), { headers });
+  const categoriesResponse = await request.get(api(`/template/categories/page?page=1&size=50&keyword=${keyword}`), {
+    headers,
+  });
   if (categoriesResponse.ok()) {
     const body = await categoriesResponse.json();
     for (const item of body.data?.list || []) {
@@ -124,7 +128,10 @@ test.describe('模板管理 E2E', () => {
     await expect(page.getByRole('row', { name: new RegExp(templateCode) })).toContainText('未同步');
     await expect(page.getByText('业务KEY')).toHaveCount(0);
 
-    await page.getByRole('row', { name: new RegExp(templateCode) }).getByRole('button', { name: '编辑' }).click();
+    await page
+      .getByRole('row', { name: new RegExp(templateCode) })
+      .getByRole('button', { name: '编辑' })
+      .click();
     await expect(templatePage).toBeVisible({ timeout: 10000 });
     await expect(templatePage.getByPlaceholder('如 合同到期提醒')).toHaveValue(templateName, { timeout: 10000 });
     await setCodeMirrorValue(page, templatePage, v1Content);
@@ -136,13 +143,19 @@ test.describe('模板管理 E2E', () => {
     await expect(page.getByRole('row', { name: new RegExp(templateCode) })).toContainText('V1', { timeout: 10000 });
     await expect(page.getByRole('row', { name: new RegExp(templateCode) })).toContainText('已同步', { timeout: 10000 });
 
-    await page.getByRole('row', { name: new RegExp(templateCode) }).getByRole('button', { name: '编辑' }).click();
+    await page
+      .getByRole('row', { name: new RegExp(templateCode) })
+      .getByRole('button', { name: '编辑' })
+      .click();
     await expect(templatePage.getByText('历史版本')).toHaveCount(0);
     await setCodeMirrorValue(page, templatePage, v2Content);
     await templatePage.getByRole('button', { name: '保存', exact: true }).click();
     await expect(page.getByText('保存成功，修改未同步')).toBeVisible({ timeout: 10000 });
     await expect(page.getByRole('row', { name: new RegExp(templateCode) })).toContainText('未同步', { timeout: 10000 });
-    await page.getByRole('row', { name: new RegExp(templateCode) }).getByRole('button', { name: '编辑' }).click();
+    await page
+      .getByRole('row', { name: new RegExp(templateCode) })
+      .getByRole('button', { name: '编辑' })
+      .click();
     await templatePage.getByRole('button', { name: '发布', exact: true }).click();
     await expect(page.getByText('发布成功')).toBeVisible({ timeout: 10000 });
     await expect(page.getByRole('row', { name: new RegExp(templateCode) })).toContainText('V2', { timeout: 10000 });
@@ -155,25 +168,34 @@ test.describe('模板管理 E2E', () => {
     await expect(versionsPage.getByRole('cell', { name: 'V1', exact: true })).toBeVisible({ timeout: 10000 });
     await expect(versionsPage.getByRole('cell', { name: 'V2', exact: true })).toBeVisible({ timeout: 10000 });
     await versionsPage.locator('button:has-text("设为生效"):not(.is-disabled)').click();
-    await page.locator('.el-message-box').getByRole('button', { name: /确定|OK/ }).click();
+    await page
+      .locator('.el-message-box')
+      .getByRole('button', { name: /确定|OK/ })
+      .click();
     await expect(page.getByText('V1 已设为生效版本')).toBeVisible({ timeout: 10000 });
     await versionsPage.getByRole('button', { name: '预览' }).first().click();
 
     const previewPage = page.locator('.page-card').filter({ hasText: '模板预览' });
     await expect(previewPage).toBeVisible({ timeout: 10000 });
     await expect(previewPage.getByText('参数输入')).toBeVisible();
-    await previewPage.locator('.render-variable-item').filter({ hasText: 'customer.name' }).getByRole('textbox').fill('李四');
+    await previewPage
+      .locator('.render-variable-item')
+      .filter({ hasText: 'customer.name' })
+      .getByRole('textbox')
+      .fill('李四');
     await previewPage.locator('.render-variable-item').filter({ hasText: 'amount' }).getByRole('textbox').fill('1000');
     await previewPage.getByRole('tab', { name: 'JSON 输入' }).click();
     await expect(previewPage.locator('textarea')).toHaveValue(/"customer"/);
     await previewPage.getByRole('tab', { name: '表单填写' }).click();
     const renderResponsePromise = page.waitForResponse((response) => {
       const postData = response.request().postData() || '';
-      return response.url().includes('/api/template/templates/render')
-        && response.request().method() === 'POST'
-        && postData.includes('"templateCode"')
-        && postData.includes(templateCode)
-        && !postData.includes('"businessKey"');
+      return (
+        response.url().includes('/api/template/templates/render') &&
+        response.request().method() === 'POST' &&
+        postData.includes('"templateCode"') &&
+        postData.includes(templateCode) &&
+        !postData.includes('"businessKey"')
+      );
     });
     await previewPage.getByRole('button', { name: '生成预览' }).click();
     await renderResponsePromise;
@@ -184,7 +206,10 @@ test.describe('模板管理 E2E', () => {
     await page.getByPlaceholder('输入模板编码').fill(templateCode);
     await page.getByRole('button', { name: '查询' }).click();
     await expect(page.getByRole('row', { name: new RegExp(templateCode) })).toContainText('成功', { timeout: 10000 });
-    await page.getByRole('row', { name: new RegExp(templateCode) }).getByRole('button', { name: '详情' }).click();
+    await page
+      .getByRole('row', { name: new RegExp(templateCode) })
+      .getByRole('button', { name: '详情' })
+      .click();
     const recordDrawer = page.locator('.el-drawer').filter({ hasText: '渲染详情' });
     await expect(recordDrawer.getByText('V2 客户：李四，金额：1000')).toBeVisible({ timeout: 10000 });
 

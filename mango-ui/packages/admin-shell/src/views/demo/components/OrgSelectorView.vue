@@ -146,9 +146,19 @@ const disabledCode = `<OrgSelector
 />`;
 
 const propsTable = [
-  { name: 'v-model', description: '选中组织 ID；multiple=false 返回单个 ID，multiple=true 返回 ID 数组', type: 'number | number[]', defaultValue: '[]' },
+  {
+    name: 'v-model',
+    description: '选中组织 ID；multiple=false 返回单个 ID，multiple=true 返回 ID 数组',
+    type: 'number | number[]',
+    defaultValue: '[]',
+  },
   { name: 'multiple', description: '是否多选', type: 'boolean', defaultValue: 'false' },
-  { name: 'placeholder', description: '选择框占位文本，支持普通文本或 i18n key', type: 'string', defaultValue: 'orgSelector.placeholder' },
+  {
+    name: 'placeholder',
+    description: '选择框占位文本，支持普通文本或 i18n key',
+    type: 'string',
+    defaultValue: 'orgSelector.placeholder',
+  },
   { name: 'title', description: '组织选择弹窗标题', type: 'string', defaultValue: 'orgSelector.title' },
   { name: 'showTagNames', description: '是否在选择框下方展示已选组织名称标签', type: 'boolean', defaultValue: 'true' },
   { name: 'max', description: '最多可选数量；0 表示不限制', type: 'number', defaultValue: '0' },
@@ -176,7 +186,7 @@ function toggleCode(key: string) {
 </script>
 
 <style scoped lang="scss">
-@use './demo-page.scss';
+@use './demo-page';
 
 .result-tags {
   display: flex;

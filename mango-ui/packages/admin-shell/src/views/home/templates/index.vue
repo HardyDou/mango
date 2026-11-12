@@ -1054,7 +1054,7 @@ function resolveWidgetQuery(raw: unknown): LocationQueryRaw | undefined {
   background: var(--el-fill-color-extra-light);
 }
 
-@media (max-width: 900px) {
+@media (width <= 900px) {
   .home-template-edit-page__footer {
     margin-right: -12px;
     margin-left: -12px;

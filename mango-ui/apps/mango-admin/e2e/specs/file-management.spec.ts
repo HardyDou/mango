@@ -5,12 +5,30 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
 const realisticAllowedExtensions = [
-  'txt', 'csv', 'json', 'xml',
-  'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg',
-  'pdf', 'ofd',
-  'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
-  'odt', 'ods', 'odp',
-  'zip', 'rar', '7z',
+  'txt',
+  'csv',
+  'json',
+  'xml',
+  'png',
+  'jpg',
+  'jpeg',
+  'gif',
+  'webp',
+  'svg',
+  'pdf',
+  'ofd',
+  'doc',
+  'docx',
+  'xls',
+  'xlsx',
+  'ppt',
+  'pptx',
+  'odt',
+  'ods',
+  'odp',
+  'zip',
+  'rar',
+  '7z',
 ].join(', ');
 
 async function login(page: import('@playwright/test').Page) {
@@ -21,9 +39,8 @@ async function login(page: import('@playwright/test').Page) {
   await expect(page.locator('.tenant-select')).toContainText('芒果集团');
   await page.locator('.tenant-select').click();
   await page.getByRole('option', { name: /芒果集团/ }).click();
-  const loginResponsePromise = page.waitForResponse((response) =>
-    new URL(response.url()).pathname === '/api/auth/login'
-    && response.request().method() === 'POST'
+  const loginResponsePromise = page.waitForResponse(
+    (response) => new URL(response.url()).pathname === '/api/auth/login' && response.request().method() === 'POST',
   );
   await page.locator('.login-btn').click();
   const loginResponse = await loginResponsePromise;
@@ -34,14 +51,16 @@ async function login(page: import('@playwright/test').Page) {
 }
 
 async function openFileManagementFromCurrentMenu(page: import('@playwright/test').Page) {
-  await page.getByRole('button', { name: '平台能力' })
-    .evaluate((button: HTMLButtonElement) => button.click());
+  await page.getByRole('button', { name: '平台能力' }).evaluate((button: HTMLButtonElement) => button.click());
   const fileGroup = page.locator('.el-sub-menu__title', { hasText: '文件管理' }).first();
   await expect(fileGroup).toBeVisible({ timeout: 10000 });
-  if (await fileGroup.getAttribute('aria-expanded') !== 'true') {
+  if ((await fileGroup.getAttribute('aria-expanded')) !== 'true') {
     await fileGroup.click();
   }
-  await page.locator('.el-menu-item:visible').filter({ hasText: /^文件管理$/ }).click();
+  await page
+    .locator('.el-menu-item:visible')
+    .filter({ hasText: /^文件管理$/ })
+    .click();
   await page.waitForURL('**/#/file/files', { timeout: 10000 });
 }
 
@@ -76,10 +95,15 @@ async function apiHeaders(page: import('@playwright/test').Page) {
 }
 
 function cleanupE2EFiles() {
-  execFileSync('mysql', ['-uroot', process.env.MANGO_DB_NAME || 'mango', '-e', [
-    "DELETE FROM file_record WHERE file_name LIKE 'mango-file-e2e%' OR biz_id LIKE 'mango-file-e2e%' OR biz_type LIKE 'mango-file-e2e%'",
-    "DELETE FROM file_directory WHERE directory_name LIKE 'mango-file-e2e%'",
-  ].join('; ')]);
+  execFileSync('mysql', [
+    '-uroot',
+    process.env.MANGO_DB_NAME || 'mango',
+    '-e',
+    [
+      "DELETE FROM file_record WHERE file_name LIKE 'mango-file-e2e%' OR biz_id LIKE 'mango-file-e2e%' OR biz_type LIKE 'mango-file-e2e%'",
+      "DELETE FROM file_directory WHERE directory_name LIKE 'mango-file-e2e%'",
+    ].join('; '),
+  ]);
 }
 
 test.describe('文件管理联调', () => {
@@ -106,10 +130,11 @@ test.describe('文件管理联调', () => {
       await page.goto('/#/file/settings');
       await expect(page.getByText('文件配置').first()).toBeVisible({ timeout: 10000 });
 
-      const settingsResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/file/settings')
-        && response.request().method() === 'GET'
-        && response.status() === 200
+      const settingsResponsePromise = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/file/settings') &&
+          response.request().method() === 'GET' &&
+          response.status() === 200,
       );
       await page.reload();
       await settingsResponsePromise;
@@ -133,9 +158,8 @@ test.describe('文件管理联调', () => {
       await page.getByLabel('外部预览类型').fill('');
       await page.getByLabel('外部预览类型').pressSequentially(realisticAllowedExtensions);
       await expect(page.getByLabel('外部预览类型')).toHaveValue(realisticAllowedExtensions);
-      const saveResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/file/settings')
-        && response.request().method() === 'PUT'
+      const saveResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/file/settings') && response.request().method() === 'PUT',
       );
       await page.getByRole('button', { name: '保存配置' }).click();
       const saveResponse = await saveResponsePromise;
@@ -173,10 +197,11 @@ test.describe('文件管理联调', () => {
     await expect(page.getByText('文件管理').first()).toBeVisible({ timeout: 10000 });
 
     const directoryName = `mango-file-e2e-dir-${Date.now()}`;
-    const directoryResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/file/directories')
-      && response.request().method() === 'POST'
-      && response.status() === 200
+    const directoryResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/file/directories') &&
+        response.request().method() === 'POST' &&
+        response.status() === 200,
     );
     await page.getByRole('button', { name: '新建' }).click();
     await page.getByLabel('目录名称').fill(directoryName);
@@ -191,10 +216,11 @@ test.describe('文件管理联调', () => {
     const filePath = join(tmpdir(), `mango-file-e2e-${Date.now()}.txt`);
     writeFileSync(filePath, `mango file e2e ${Date.now()}`);
 
-    const uploadResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/file/files')
-      && response.request().method() === 'POST'
-      && response.status() === 200
+    const uploadResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/file/files') &&
+        response.request().method() === 'POST' &&
+        response.status() === 200,
     );
     await page.setInputFiles('input[type="file"]', filePath);
     const uploadResponse = await uploadResponsePromise;
@@ -207,10 +233,11 @@ test.describe('文件管理联调', () => {
     await expect(page.getByText(fileName).first()).toBeVisible({ timeout: 10000 });
 
     const row = page.locator('.el-table__body-wrapper tr', { hasText: fileName }).first();
-    const previewResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/file/files/preview')
-      && response.url().includes('/preview')
-      && response.status() === 200
+    const previewResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/file/files/preview') &&
+        response.url().includes('/preview') &&
+        response.status() === 200,
     );
     await row.getByRole('button', { name: '预览' }).click();
     const previewResponse = await previewResponsePromise;
@@ -238,10 +265,11 @@ test.describe('文件管理联调', () => {
     await row.getByRole('button', { name: '下载' }).click();
     await expect(page.locator('.el-message--error')).toHaveCount(0);
 
-    const archiveResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/file/files')
-      && response.request().method() === 'DELETE'
-      && response.status() === 200
+    const archiveResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/file/files') &&
+        response.request().method() === 'DELETE' &&
+        response.status() === 200,
     );
     await row.getByRole('button', { name: '归档' }).click();
     await page.getByRole('button', { name: '确定' }).last().click();
@@ -251,10 +279,11 @@ test.describe('文件管理联调', () => {
     await expect(page.getByText('归档成功')).toBeVisible({ timeout: 10000 });
 
     await page.getByRole('button', { name: '更多' }).click();
-    const deleteDirectoryResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/file/directories')
-      && response.request().method() === 'DELETE'
-      && response.status() === 200
+    const deleteDirectoryResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/file/directories') &&
+        response.request().method() === 'DELETE' &&
+        response.status() === 200,
     );
     await page.getByRole('menuitem', { name: '删除' }).click();
     await page.getByRole('button', { name: '确定' }).last().click();
@@ -280,16 +309,19 @@ test.describe('文件管理联调', () => {
     writeFileSync(thirdPath, `mango delete e2e c ${Date.now()}`);
 
     async function uploadOne(filePath: string) {
-      const uploadResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/file/files')
-        && response.request().method() === 'POST'
-        && response.status() === 200
+      const uploadResponsePromise = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/file/files') &&
+          response.request().method() === 'POST' &&
+          response.status() === 200,
       );
       await page.setInputFiles('input[type="file"]', filePath);
       const uploadResponse = await uploadResponsePromise;
       const uploadBody = await uploadResponse.json();
       expect(uploadBody.success || uploadBody.code === 200).toBeTruthy();
-      await expect(page.locator('.el-message__content', { hasText: '上传成功' }).last()).toBeVisible({ timeout: 10000 });
+      await expect(page.locator('.el-message__content', { hasText: '上传成功' }).last()).toBeVisible({
+        timeout: 10000,
+      });
       return uploadBody.data.fileName as string;
     }
 
@@ -301,10 +333,11 @@ test.describe('文件管理联调', () => {
     await expect(page.getByText(thirdName).first()).toBeVisible({ timeout: 10000 });
 
     const firstRow = page.locator('.el-table__body-wrapper tr', { hasText: firstName }).first();
-    const singleDeleteResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/file/files/delete')
-      && response.request().method() === 'POST'
-      && response.status() === 200
+    const singleDeleteResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/file/files/delete') &&
+        response.request().method() === 'POST' &&
+        response.status() === 200,
     );
     await firstRow.getByRole('button', { name: '删除' }).click();
     await page.getByRole('button', { name: '确定' }).last().click();
@@ -318,10 +351,11 @@ test.describe('文件管理联调', () => {
       const row = page.locator('.el-table__body-wrapper tr', { hasText: name }).first();
       await row.locator('.el-checkbox__input').click();
     }
-    const batchDeleteResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/file/files/delete')
-      && response.request().method() === 'POST'
-      && response.status() === 200
+    const batchDeleteResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/file/files/delete') &&
+        response.request().method() === 'POST' &&
+        response.status() === 200,
     );
     await page.getByRole('button', { name: '批量删除' }).click();
     await page.getByRole('button', { name: '确定' }).last().click();
@@ -346,15 +380,19 @@ test.describe('文件管理联调', () => {
     await expect(page.getByText('文件管理').first()).toBeVisible({ timeout: 10000 });
 
     const filePath = join(tmpdir(), `mango-file-e2e-${Date.now()}.png`);
-    writeFileSync(filePath, Buffer.from(
-      'iVBORw0KGgoAAAANSUhEUgAAAAwAAAAKCAIAAAAPTiitAAAAFElEQVR4nGP8z4AEMGJpGNGjBgD2cQITX3Z5mQAAAABJRU5ErkJggg==',
-      'base64',
-    ));
+    writeFileSync(
+      filePath,
+      Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAwAAAAKCAIAAAAPTiitAAAAFElEQVR4nGP8z4AEMGJpGNGjBgD2cQITX3Z5mQAAAABJRU5ErkJggg==',
+        'base64',
+      ),
+    );
 
-    const uploadResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/file/files')
-      && response.request().method() === 'POST'
-      && response.status() === 200
+    const uploadResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/file/files') &&
+        response.request().method() === 'POST' &&
+        response.status() === 200,
     );
     await page.setInputFiles('input[type="file"]', filePath);
     const uploadResponse = await uploadResponsePromise;
@@ -365,9 +403,8 @@ test.describe('文件管理联调', () => {
     await expect(page.getByText(fileName).first()).toBeVisible({ timeout: 10000 });
     const row = page.locator('.el-table__body-wrapper tr', { hasText: fileName }).first();
 
-    const previewResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/file/files/preview')
-      && response.status() === 200
+    const previewResponsePromise = page.waitForResponse(
+      (response) => response.url().includes('/api/file/files/preview') && response.status() === 200,
     );
     await row.getByRole('button', { name: '预览' }).click();
     const previewResponse = await previewResponsePromise;
@@ -393,10 +430,11 @@ test.describe('文件管理联调', () => {
     await expect(previewImage).toHaveJSProperty('naturalHeight', 10);
 
     await page.keyboard.press('Escape');
-    const archiveResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/file/files')
-      && response.request().method() === 'DELETE'
-      && response.status() === 200
+    const archiveResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/file/files') &&
+        response.request().method() === 'DELETE' &&
+        response.status() === 200,
     );
     await row.getByRole('button', { name: '归档' }).click();
     await page.getByRole('button', { name: '确定' }).last().click();

@@ -93,10 +93,7 @@ export interface QuickEntryMenuItem {
   raw?: unknown;
 }
 
-export type QuickEntryMenuResolver = (
-  menus: unknown[],
-  runtime?: MangoWidgetRuntimeContext,
-) => QuickEntryMenuItem[];
+export type QuickEntryMenuResolver = (menus: unknown[], runtime?: MangoWidgetRuntimeContext) => QuickEntryMenuItem[];
 
 export interface QuickEntryWidgetProps {
   runtime?: MangoWidgetRuntimeContext;

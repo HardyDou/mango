@@ -20,8 +20,21 @@
                   <stop offset="1" stop-color="#7B61FF" />
                 </linearGradient>
               </defs>
-              <path d="M32 6 L54 16 V32 C54 44 45 54 32 58 C19 54 10 44 10 32 V16 Z" fill="none" stroke="url(#logoGrad)" stroke-width="3" stroke-linejoin="round" />
-              <path d="M22 32 L29 39 L43 25" fill="none" stroke="url(#logoGrad)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
+              <path
+                d="M32 6 L54 16 V32 C54 44 45 54 32 58 C19 54 10 44 10 32 V16 Z"
+                fill="none"
+                stroke="url(#logoGrad)"
+                stroke-width="3"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M22 32 L29 39 L43 25"
+                fill="none"
+                stroke="url(#logoGrad)"
+                stroke-width="3.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
             </svg>
           </span>
           <span class="logo-text">{{ siteBrandName }}</span>
@@ -34,7 +47,8 @@
             :target="navigationTarget(item)"
             :class="{ active: isNavigationActive(item) }"
             @click="handleNavigationClick(item, $event)"
-          >{{ item.navName }}</a>
+            >{{ item.navName }}</a
+          >
         </nav>
         <a class="nav-cta" href="#/about" @click.prevent="go('about')">免费咨询</a>
       </div>
@@ -74,22 +88,43 @@
               <div class="orb orb-ring orb-ring-2"></div>
               <div class="orb orb-ring orb-ring-3"></div>
               <div class="hero-card hero-card-1">
-                <div class="hc-icon" style="--c:#00D4FF">
-                  <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M12 2 L4 5 V11 C4 16 7.5 20 12 21 C16.5 20 20 16 20 11 V5 Z" /></svg>
+                <!-- prettier-ignore -->
+                <div class="hc-icon" style="--c: #00d4ff">
+                  <svg viewBox="0 0 24 24" width="22" height="22">
+                    <path fill="currentColor" d="M12 2 L4 5 V11 C4 16 7.5 20 12 21 C16.5 20 20 16 20 11 V5 Z" />
+                  </svg>
                 </div>
-                <div><div class="hc-title">内容发布</div><div class="hc-desc">秒级生效</div></div>
+                <div>
+                  <div class="hc-title">内容发布</div>
+                  <div class="hc-desc">秒级生效</div>
+                </div>
               </div>
               <div class="hero-card hero-card-2">
-                <div class="hc-icon" style="--c:#7B61FF">
-                  <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M12 2 L13.5 8.5 L20 10 L13.5 11.5 L12 18 L10.5 11.5 L4 10 L10.5 8.5 Z" /></svg>
+                <!-- prettier-ignore -->
+                <div class="hc-icon" style="--c: #7b61ff">
+                  <svg viewBox="0 0 24 24" width="22" height="22">
+                    <path
+                      fill="currentColor"
+                      d="M12 2 L13.5 8.5 L20 10 L13.5 11.5 L12 18 L10.5 11.5 L4 10 L10.5 8.5 Z"
+                    />
+                  </svg>
                 </div>
-                <div><div class="hc-title">智能审核</div><div class="hc-desc">实时拦截</div></div>
+                <div>
+                  <div class="hc-title">智能审核</div>
+                  <div class="hc-desc">实时拦截</div>
+                </div>
               </div>
               <div class="hero-card hero-card-3">
-                <div class="hc-icon" style="--c:#FF4D9D">
-                  <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M3 12 L9 6 V9 H21 V15 H9 V18 Z" /></svg>
+                <!-- prettier-ignore -->
+                <div class="hc-icon" style="--c: #ff4d9d">
+                  <svg viewBox="0 0 24 24" width="22" height="22">
+                    <path fill="currentColor" d="M3 12 L9 6 V9 H21 V15 H9 V18 Z" />
+                  </svg>
                 </div>
-                <div><div class="hc-title">数据穿透</div><div class="hc-desc">全链路可溯</div></div>
+                <div>
+                  <div class="hc-title">数据穿透</div>
+                  <div class="hc-desc">全链路可溯</div>
+                </div>
               </div>
             </div>
           </div>
@@ -105,7 +140,12 @@
               <p class="section-desc">从内容发布到审核、数据、多站点，构建内容管理平台全栈能力</p>
             </div>
             <div class="cap-grid">
-              <article v-for="(cap, i) in capabilities" :key="cap.code" class="cap-card reveal" :style="{ '--delay': i * 0.08 + 's' }">
+              <article
+                v-for="(cap, i) in capabilities"
+                :key="cap.code"
+                class="cap-card reveal"
+                :style="{ '--delay': i * 0.08 + 's' }"
+              >
                 <div class="cap-icon">
                   <component :is="iconFor(cap.icon)" />
                 </div>
@@ -129,7 +169,12 @@
               <p class="section-desc">面向企业官网、帮助中心、行业门户、政务公开四大场景的差异化能力</p>
             </div>
             <div class="sol-grid">
-              <article v-for="(sol, i) in solutions" :key="sol.code" class="sol-card reveal" :style="{ '--delay': i * 0.08 + 's' }">
+              <article
+                v-for="(sol, i) in solutions"
+                :key="sol.code"
+                class="sol-card reveal"
+                :style="{ '--delay': i * 0.08 + 's' }"
+              >
                 <div class="sol-industry">{{ sol.industry }}</div>
                 <h3 class="sol-title">{{ sol.title }}</h3>
                 <p class="sol-desc">{{ sol.description }}</p>
@@ -145,7 +190,12 @@
         <section class="section" id="highlights">
           <div class="section-shell">
             <div class="hl-grid">
-              <div v-for="(h, i) in highlights" :key="h.label" class="hl-item reveal" :style="{ '--delay': i * 0.1 + 's' }">
+              <div
+                v-for="(h, i) in highlights"
+                :key="h.label"
+                class="hl-item reveal"
+                :style="{ '--delay': i * 0.1 + 's' }"
+              >
                 <div class="hl-value">
                   <span class="hl-num" :data-target="h.value">0</span><span class="hl-suffix">{{ h.suffix }}</span>
                 </div>
@@ -164,7 +214,9 @@
               <p class="section-desc">服务 200+ 企业官网、帮助中心与行业门户</p>
             </div>
             <div class="client-grid">
-              <div v-for="(c, i) in clients" :key="c" class="client-item reveal" :style="{ '--delay': i * 0.04 + 's' }">{{ c }}</div>
+              <div v-for="(c, i) in clients" :key="c" class="client-item reveal" :style="{ '--delay': i * 0.04 + 's' }">
+                {{ c }}
+              </div>
             </div>
           </div>
         </section>
@@ -178,7 +230,13 @@
               <p class="section-desc">了解演示站点的最新进展</p>
             </div>
             <div class="news-grid">
-              <article v-for="(item, i) in topNews" :key="item.id" class="news-card reveal" :style="{ '--delay': i * 0.08 + 's' }" @click="openNews(item.id)">
+              <article
+                v-for="(item, i) in topNews"
+                :key="item.id"
+                class="news-card reveal"
+                :style="{ '--delay': i * 0.08 + 's' }"
+                @click="openNews(item.id)"
+              >
                 <div class="news-cover" :style="{ background: newsCoverGradient(i) }">
                   <span class="news-cover-tag">{{ item.categoryName }}</span>
                 </div>
@@ -267,7 +325,13 @@
         <div class="section-shell">
           <div v-if="newsLoading && !newsList.length" class="news-empty">内容加载中...</div>
           <div v-else-if="newsList.length" class="news-list">
-            <article v-for="(item, i) in newsList" :key="item.id" class="news-row reveal" :style="{ '--delay': i * 0.05 + 's' }" @click="openNews(item.id)">
+            <article
+              v-for="(item, i) in newsList"
+              :key="item.id"
+              class="news-row reveal"
+              :style="{ '--delay': i * 0.05 + 's' }"
+              @click="openNews(item.id)"
+            >
               <div class="news-row-cover" :style="newsCoverStyle(item, i)"></div>
               <div class="news-row-body">
                 <div class="news-date">{{ formatDate(item.publishTime) }} · {{ item.source }}</div>
@@ -279,7 +343,14 @@
           </div>
           <div v-else class="news-empty">暂无已发布内容</div>
           <nav v-if="newsTotalPages > 1" class="news-pagination" aria-label="新闻分页">
-            <button type="button" class="news-page-btn" :disabled="newsPage.pageNum <= 1 || newsLoading" @click="changeNewsPage(newsPage.pageNum - 1)">上一页</button>
+            <button
+              type="button"
+              class="news-page-btn"
+              :disabled="newsPage.pageNum <= 1 || newsLoading"
+              @click="changeNewsPage(newsPage.pageNum - 1)"
+            >
+              上一页
+            </button>
             <button
               v-for="pageNo in newsPageNumbers"
               :key="pageNo"
@@ -289,8 +360,17 @@
               :aria-current="pageNo === newsPage.pageNum ? 'page' : undefined"
               :disabled="newsLoading"
               @click="changeNewsPage(pageNo)"
-            >{{ pageNo }}</button>
-            <button type="button" class="news-page-btn" :disabled="newsPage.pageNum >= newsTotalPages || newsLoading" @click="changeNewsPage(newsPage.pageNum + 1)">下一页</button>
+            >
+              {{ pageNo }}
+            </button>
+            <button
+              type="button"
+              class="news-page-btn"
+              :disabled="newsPage.pageNum >= newsTotalPages || newsLoading"
+              @click="changeNewsPage(newsPage.pageNum + 1)"
+            >
+              下一页
+            </button>
             <span class="news-page-total">共 {{ newsPage.total }} 条</span>
           </nav>
         </div>
@@ -305,7 +385,9 @@
               <span class="news-cover-tag">{{ currentNews.categoryName || '新闻动态' }}</span>
             </div>
             <div class="detail-content-card">
-              <div class="detail-meta">{{ formatDate(currentNews.publishTime) }} · {{ currentNews.source }} · {{ currentNews.author }}</div>
+              <div class="detail-meta">
+                {{ formatDate(currentNews.publishTime) }} · {{ currentNews.source }} · {{ currentNews.author }}
+              </div>
               <h1 class="detail-title">{{ currentNews.title }}</h1>
               <div v-if="currentNews.summary" class="detail-summary">{{ currentNews.summary }}</div>
               <div class="detail-body" v-html="currentNews.body"></div>
@@ -319,7 +401,9 @@
       <section v-else-if="view === 'about'" class="page">
         <div class="news-hero" :style="aboutHeroStyle()">
           <p class="kicker"><span class="kicker-dot"></span>ABOUT</p>
-          <h1 class="page-title">关于<span class="grad-text">{{ siteBrandName }}</span></h1>
+          <h1 class="page-title">
+            关于<span class="grad-text">{{ siteBrandName }}</span>
+          </h1>
           <p class="page-desc">{{ aboutHeroAd?.title || site?.seoDescription || '让每一次发布可信可溯' }}</p>
         </div>
         <div class="section-shell">
@@ -348,8 +432,21 @@
           <div class="nav-logo">
             <span class="logo-mark">
               <svg viewBox="0 0 64 64" width="32" height="32" aria-hidden="true">
-                <path d="M32 6 L54 16 V32 C54 44 45 54 32 58 C19 54 10 44 10 32 V16 Z" fill="none" stroke="url(#logoGrad)" stroke-width="3" stroke-linejoin="round" />
-                <path d="M22 32 L29 39 L43 25" fill="none" stroke="url(#logoGrad)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
+                <path
+                  d="M32 6 L54 16 V32 C54 44 45 54 32 58 C19 54 10 44 10 32 V16 Z"
+                  fill="none"
+                  stroke="url(#logoGrad)"
+                  stroke-width="3"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M22 32 L29 39 L43 25"
+                  fill="none"
+                  stroke="url(#logoGrad)"
+                  stroke-width="3.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
               </svg>
             </span>
             <span class="logo-text">{{ siteBrandName }}</span>
@@ -364,7 +461,8 @@
             :href="navigationHref(item)"
             :target="navigationTarget(item)"
             @click="handleNavigationClick(item, $event)"
-          >{{ item.navName }}</a>
+            >{{ item.navName }}</a
+          >
         </div>
       </div>
       <div class="section-shell footer-bottom">
@@ -377,7 +475,15 @@
 
 <script setup lang="ts">
 import { computed, h, onMounted, onUnmounted, ref, nextTick, type Component } from 'vue';
-import { cmsSiteApi, createSiteResolveQuery, applySiteSeo, type SiteResolve, type SiteNavigation, type SiteContent, type SiteAdvertisement } from '@mango/site-shell';
+import {
+  cmsSiteApi,
+  createSiteResolveQuery,
+  applySiteSeo,
+  type SiteResolve,
+  type SiteNavigation,
+  type SiteContent,
+  type SiteAdvertisement,
+} from '@mango/site-shell';
 import { CAPABILITIES, SOLUTIONS, HIGHLIGHTS, CLIENTS } from './mock';
 
 type View = 'home' | 'products' | 'solutions' | 'news' | 'news-detail' | 'about';
@@ -423,7 +529,12 @@ const newsPageNumbers = computed(() => {
   const end = Math.min(total, start + 4);
   return Array.from({ length: end - start + 1 }, (_, index) => start + index);
 });
-const currentNewsIndex = computed(() => Math.max(0, newsList.value.findIndex(n => n.id === currentNewsId.value)));
+const currentNewsIndex = computed(() =>
+  Math.max(
+    0,
+    newsList.value.findIndex((n) => n.id === currentNewsId.value),
+  ),
+);
 
 function parseHash(): { view: View; id?: string } {
   const raw = window.location.hash.replace(/^#\/?/, '');
@@ -478,7 +589,10 @@ async function loadNewsList(pageNum: number) {
     newsPage.value = { pageNum: 1, pageSize: newsPage.value.pageSize, total: 0 };
   } finally {
     newsLoading.value = false;
-    nextTick(() => { initReveal(); updateReveal(); });
+    nextTick(() => {
+      initReveal();
+      updateReveal();
+    });
   }
 }
 
@@ -547,7 +661,9 @@ function viewForNavigation(item: SiteNavigation): View | '' {
   return '';
 }
 
-function onHashChange() { applyHash(); }
+function onHashChange() {
+  applyHash();
+}
 function onScroll() {
   scrolled.value = window.scrollY > 40;
   updateReveal();
@@ -610,32 +726,60 @@ function aboutHeroStyle(): Record<string, string> {
 }
 
 // ===== 图标（内联 SVG，避免外部依赖） =====
-const IconShield = () => h('svg', { viewBox: '0 0 24 24', width: '28', height: '28' }, [h('path', { fill: 'currentColor', d: 'M12 2 L4 5 V11 C4 16 7.5 20 12 21 C16.5 20 20 16 20 11 V5 Z' })]);
-const IconRadar = () => h('svg', { viewBox: '0 0 24 24', width: '28', height: '28' }, [
-  h('circle', { cx: '12', cy: '12', r: '9', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.6' }),
-  h('circle', { cx: '12', cy: '12', r: '5', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.6' }),
-  h('circle', { cx: '12', cy: '12', r: '1.6', fill: 'currentColor' }),
-  h('path', { d: 'M12 12 L20 6', stroke: 'currentColor', 'stroke-width': '1.6', 'stroke-linecap': 'round' }),
-]);
-const IconLink = () => h('svg', { viewBox: '0 0 24 24', width: '28', height: '28' }, [
-  h('path', { d: 'M9 15 L15 9', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linecap': 'round' }),
-  h('path', { d: 'M7 14 a4 4 0 0 1 0-6 l2-2 a4 4 0 0 1 6 0', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linecap': 'round' }),
-  h('path', { d: 'M17 10 a4 4 0 0 1 0 6 l-2 2 a4 4 0 0 1-6 0', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linecap': 'round' }),
-]);
-const IconNetwork = () => h('svg', { viewBox: '0 0 24 24', width: '28', height: '28' }, [
-  h('circle', { cx: '12', cy: '5', r: '2.4', fill: 'currentColor' }),
-  h('circle', { cx: '5', cy: '18', r: '2.4', fill: 'currentColor' }),
-  h('circle', { cx: '19', cy: '18', r: '2.4', fill: 'currentColor' }),
-  h('path', { d: 'M12 7 V12 M12 12 L6 16 M12 12 L18 16', stroke: 'currentColor', 'stroke-width': '1.6', 'stroke-linecap': 'round' }),
-]);
+const IconShield = () =>
+  h('svg', { viewBox: '0 0 24 24', width: '28', height: '28' }, [
+    h('path', { fill: 'currentColor', d: 'M12 2 L4 5 V11 C4 16 7.5 20 12 21 C16.5 20 20 16 20 11 V5 Z' }),
+  ]);
+const IconRadar = () =>
+  h('svg', { viewBox: '0 0 24 24', width: '28', height: '28' }, [
+    h('circle', { cx: '12', cy: '12', r: '9', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.6' }),
+    h('circle', { cx: '12', cy: '12', r: '5', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.6' }),
+    h('circle', { cx: '12', cy: '12', r: '1.6', fill: 'currentColor' }),
+    h('path', { d: 'M12 12 L20 6', stroke: 'currentColor', 'stroke-width': '1.6', 'stroke-linecap': 'round' }),
+  ]);
+const IconLink = () =>
+  h('svg', { viewBox: '0 0 24 24', width: '28', height: '28' }, [
+    h('path', { d: 'M9 15 L15 9', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linecap': 'round' }),
+    h('path', {
+      d: 'M7 14 a4 4 0 0 1 0-6 l2-2 a4 4 0 0 1 6 0',
+      fill: 'none',
+      stroke: 'currentColor',
+      'stroke-width': '1.8',
+      'stroke-linecap': 'round',
+    }),
+    h('path', {
+      d: 'M17 10 a4 4 0 0 1 0 6 l-2 2 a4 4 0 0 1-6 0',
+      fill: 'none',
+      stroke: 'currentColor',
+      'stroke-width': '1.8',
+      'stroke-linecap': 'round',
+    }),
+  ]);
+const IconNetwork = () =>
+  h('svg', { viewBox: '0 0 24 24', width: '28', height: '28' }, [
+    h('circle', { cx: '12', cy: '5', r: '2.4', fill: 'currentColor' }),
+    h('circle', { cx: '5', cy: '18', r: '2.4', fill: 'currentColor' }),
+    h('circle', { cx: '19', cy: '18', r: '2.4', fill: 'currentColor' }),
+    h('path', {
+      d: 'M12 7 V12 M12 12 L6 16 M12 12 L18 16',
+      stroke: 'currentColor',
+      'stroke-width': '1.6',
+      'stroke-linecap': 'round',
+    }),
+  ]);
 
 function iconFor(name: string): Component {
   switch (name) {
-    case 'shield': return IconShield;
-    case 'radar': return IconRadar;
-    case 'link': return IconLink;
-    case 'network': return IconNetwork;
-    default: return IconShield;
+    case 'shield':
+      return IconShield;
+    case 'radar':
+      return IconRadar;
+    case 'link':
+      return IconLink;
+    case 'network':
+      return IconNetwork;
+    default:
+      return IconShield;
   }
 }
 
@@ -647,7 +791,7 @@ function initReveal() {
 }
 function updateReveal() {
   const vh = window.innerHeight;
-  revealEls.forEach(el => {
+  revealEls.forEach((el) => {
     const rect = (el as HTMLElement).getBoundingClientRect();
     if (rect.top < vh - 80) el.classList.add('is-visible');
   });
@@ -656,15 +800,18 @@ function updateReveal() {
 // ===== 数字滚动 =====
 function initCounters() {
   const nums = document.querySelectorAll<HTMLElement>('.hl-num');
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        animateCount(entry.target as HTMLElement);
-        observer.unobserve(entry.target);
-      }
-    });
-  }, { threshold: 0.4 });
-  nums.forEach(n => observer.observe(n));
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          animateCount(entry.target as HTMLElement);
+          observer.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.4 },
+  );
+  nums.forEach((n) => observer.observe(n));
 }
 function animateCount(el: HTMLElement) {
   const target = Number(el.dataset.target || '0');
@@ -727,7 +874,10 @@ onMounted(async () => {
   window.addEventListener('hashchange', onHashChange);
   window.addEventListener('scroll', onScroll, { passive: true });
   await loadData();
-  nextTick(() => { initReveal(); if (view.value === 'home') initCounters(); });
+  nextTick(() => {
+    initReveal();
+    if (view.value === 'home') initCounters();
+  });
 });
 
 onUnmounted(() => {

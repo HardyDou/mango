@@ -15,22 +15,22 @@
 
 ## 2. 功能清单
 
-| 能力                          | 使用入口                            | 后端依赖                                             |
-| ----------------------------- | ----------------------------------- | ---------------------------------------------------- |
-| 逻辑应用                      | `AppView`、`appApi`                 | `mango-authorization`                                |
-| 微应用                        | `MicroApplicationView`              | `mango-authorization`                                |
-| 应用定义                      | `IntegrationConnectorView`          | `mango-authorization`                                |
+| 能力                          | 使用入口                                         | 后端依赖                                             |
+| ----------------------------- | ------------------------------------------------ | ---------------------------------------------------- |
+| 逻辑应用                      | `AppView`、`appApi`                              | `mango-authorization`                                |
+| 微应用                        | `MicroApplicationView`                           | `mango-authorization`                                |
+| 应用定义                      | `IntegrationConnectorView`                       | `mango-authorization`                                |
 | 集成应用                      | `IntegrationApplicationView`、`integrationModel` | `mango-authorization`                                |
-| 应用模块绑定和运行策略        | `appModuleApi`                      | `mango-authorization`、`@mango/app-runtime`          |
-| 菜单和按钮资源                | `MenuView`、`menuApi`               | `mango-authorization`                                |
-| 菜单包                        | `MenuPackageView`、`menuPackageApi` | `mango-authorization`                                |
-| 角色、菜单/按钮授权和数据权限 | `RoleView`、`roleApi`               | `mango-authorization`                                |
-| 用户管理                      | `UserView`、`userApi`               | `mango-identity`、`mango-org`、`mango-authorization` |
-| 成员批量角色管理              | `UserView`、`roleApi`               | `mango-authorization`、`mango-identity`              |
-| 组织和成员                    | `OrgView`、`orgApi`                 | `mango-org`                                          |
-| 岗位管理                      | `PostView`、`postApi`               | `mango-org`                                          |
-| 权限资源查看                  | `PermissionView`                    | `mango-authorization`                                |
-| 权限标识查看                  | `ApiResourceView`                   | `mango-authorization`                                |
+| 应用模块绑定和运行策略        | `appModuleApi`                                   | `mango-authorization`、`@mango/app-runtime`          |
+| 菜单和按钮资源                | `MenuView`、`menuApi`                            | `mango-authorization`                                |
+| 菜单包                        | `MenuPackageView`、`menuPackageApi`              | `mango-authorization`                                |
+| 角色、菜单/按钮授权和数据权限 | `RoleView`、`roleApi`                            | `mango-authorization`                                |
+| 用户管理                      | `UserView`、`userApi`                            | `mango-identity`、`mango-org`、`mango-authorization` |
+| 成员批量角色管理              | `UserView`、`roleApi`                            | `mango-authorization`、`mango-identity`              |
+| 组织和成员                    | `OrgView`、`orgApi`                              | `mango-org`                                          |
+| 岗位管理                      | `PostView`、`postApi`                            | `mango-org`                                          |
+| 权限资源查看                  | `PermissionView`                                 | `mango-authorization`                                |
+| 权限标识查看                  | `ApiResourceView`                                | `mango-authorization`                                |
 
 ## 3. 接入方式
 
@@ -91,36 +91,36 @@ const users = await userApi.page({ pageNum: 1, pageSize: 20 });
 
 页面导出：
 
-| 导出              | 默认页面 key                | 管理能力                                                                                                                                                         |
-| ----------------- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `AppView`         | `system/app/index`          | 逻辑应用：应用入口、登录上下文、前端运行配置和模块绑定。                                                                                                          |
-| `MicroApplicationView` | `system/micro-application/index` | 微应用总览：只读展示运行单元入口、版本、健康检查和被引用模块数，登记由部署资源声明完成。 |
-| `IntegrationConnectorView` | `integration/definition/index` | 应用定义：连接器只读清单与规范查看，租户不可编辑。 |
-| `IntegrationApplicationView` | `integration/application/index` | 集成应用：选择连接器、按配置规范动态渲染、填写凭证、授权能力、启停；敏感字段只写不读。 |
+| 导出                         | 默认页面 key                     | 管理能力                                                                                 |
+| ---------------------------- | -------------------------------- | ---------------------------------------------------------------------------------------- |
+| `AppView`                    | `system/app/index`               | 逻辑应用：应用入口、登录上下文、前端运行配置和模块绑定。                                 |
+| `MicroApplicationView`       | `system/micro-application/index` | 微应用总览：只读展示运行单元入口、版本、健康检查和被引用模块数，登记由部署资源声明完成。 |
+| `IntegrationConnectorView`   | `integration/definition/index`   | 应用定义：连接器只读清单与规范查看，租户不可编辑。                                       |
+| `IntegrationApplicationView` | `integration/application/index`  | 集成应用：选择连接器、按配置规范动态渲染、填写凭证、授权能力、启停；敏感字段只写不读。   |
 
-| `MenuView`        | `system/menu/index`         | 菜单和按钮资源管理。                                                                                                                                             |
-| `MenuPackageView` | `system/menu-package/index` | 菜单包管理。                                                                                                                                                     |
-| `RoleView`        | `system/role/index`         | 角色和菜单/按钮授权。                                                                                                                                            |
-| `UserView`        | `system/user/index`         | 默认查看全部成员；区分移出当前部门与移出租户成员；新增时识别可恢复原账号，展示脱敏候选并支持恢复原成员或改用新登录账号；支持选择多个成员批量添加或删除一个角色。 |
-| `OrgView`         | `system/org/index`          | 组织树和组织成员。                                                                                                                                               |
-| `PostView`        | `system/post/index`         | 岗位管理。                                                                                                                                                       |
-| `PermissionView`  | `system/permission/index`   | 权限资源查看。                                                                                                                                                   |
-| `ApiResourceView` | `system/api-resource/index` | 权限标识查看：按模块、领域、登记来源、访问模式和状态查看固定声明与 Controller 扫描结果。                                                                          |
+| `MenuView` | `system/menu/index` | 菜单和按钮资源管理。 |
+| `MenuPackageView` | `system/menu-package/index` | 菜单包管理。 |
+| `RoleView` | `system/role/index` | 角色和菜单/按钮授权。 |
+| `UserView` | `system/user/index` | 默认查看全部成员；区分移出当前部门与移出租户成员；新增时识别可恢复原账号，展示脱敏候选并支持恢复原成员或改用新登录账号；支持选择多个成员批量添加或删除一个角色。 |
+| `OrgView` | `system/org/index` | 组织树和组织成员。 |
+| `PostView` | `system/post/index` | 岗位管理。 |
+| `PermissionView` | `system/permission/index` | 权限资源查看。 |
+| `ApiResourceView` | `system/api-resource/index` | 权限标识查看：按模块、领域、登记来源、访问模式和状态查看固定声明与 Controller 扫描结果。 |
 
 主要 API：
 
-| API              | 主要接口                                                                           | 能力                                                                                                                |
-| ---------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `appApi`         | `/authorization/apps`                                                              | 逻辑应用列表、详情、创建、更新、删除、运行时应用。                                                                  |
-| `integrationApplicationApi` | `/integration/instances`                                 | 集成应用分页、详情、创建、更新、启停、入站密钥轮换、出站凭证更新和连接测试；入站密钥只在创建/轮换成功响应中返回一次。 |
-| `appModuleApi`   | `/authorization/app-modules`                                                       | 应用模块绑定、同步菜单、运行策略。                                                                                  |
-| `menuApi`        | `/authorization/menus`                                                             | 用户菜单、菜单树、详情、创建、更新、删除。                                                                          |
-| `apiResourceApi` | `/authorization/api-resources`                                                     | 权限标识分页、模块与领域筛选维度，区分固定声明、Controller 扫描和人工登记。                                          |
-| `menuPackageApi` | `/authorization/menu-packages`                                                     | 菜单包 CRUD。                                                                                                       |
-| `roleApi`        | `/authorization/roles`、`/authorization/data-scopes`、`/authorization/roles/batch` | 角色 CRUD、角色菜单、可分配菜单、主体角色绑定、成员直接角色批量摘要、租户范围批量角色预览/添加/删除和角色数据权限。 |
-| `userApi`        | `/identity/users/page`、`/identity/users/account-availability`                     | 用户分页、账号三态查询、租户成员软移出、重置密码、企微同步和外部身份绑定。                                          |
-| `orgApi`         | `/org/tree`、`/org/members`、`/org/member-accounts`                                | 组织树、当前部门关系移除、组织内原子开户、原成员恢复和负责人查询。                                                  |
-| `postApi`        | `/post/page`                                                                       | 岗位分页、详情、创建、更新、删除。                                                                                  |
+| API                         | 主要接口                                                                           | 能力                                                                                                                  |
+| --------------------------- | ---------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `appApi`                    | `/authorization/apps`                                                              | 逻辑应用列表、详情、创建、更新、删除、运行时应用。                                                                    |
+| `integrationApplicationApi` | `/integration/instances`                                                           | 集成应用分页、详情、创建、更新、启停、入站密钥轮换、出站凭证更新和连接测试；入站密钥只在创建/轮换成功响应中返回一次。 |
+| `appModuleApi`              | `/authorization/app-modules`                                                       | 应用模块绑定、同步菜单、运行策略。                                                                                    |
+| `menuApi`                   | `/authorization/menus`                                                             | 用户菜单、菜单树、详情、创建、更新、删除。                                                                            |
+| `apiResourceApi`            | `/authorization/api-resources`                                                     | 权限标识分页、模块与领域筛选维度，区分固定声明、Controller 扫描和人工登记。                                           |
+| `menuPackageApi`            | `/authorization/menu-packages`                                                     | 菜单包 CRUD。                                                                                                         |
+| `roleApi`                   | `/authorization/roles`、`/authorization/data-scopes`、`/authorization/roles/batch` | 角色 CRUD、角色菜单、可分配菜单、主体角色绑定、成员直接角色批量摘要、租户范围批量角色预览/添加/删除和角色数据权限。   |
+| `userApi`                   | `/identity/users/page`、`/identity/users/account-availability`                     | 用户分页、账号三态查询、租户成员软移出、重置密码、企微同步和外部身份绑定。                                            |
+| `orgApi`                    | `/org/tree`、`/org/members`、`/org/member-accounts`                                | 组织树、当前部门关系移除、组织内原子开户、原成员恢复和负责人查询。                                                    |
+| `postApi`                   | `/post/page`                                                                       | 岗位分页、详情、创建、更新、删除。                                                                                    |
 
 常用返回字段：
 

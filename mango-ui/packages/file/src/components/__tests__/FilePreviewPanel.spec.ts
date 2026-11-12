@@ -172,9 +172,9 @@ describe('FilePreviewPanel', () => {
       }),
     );
     await vi.waitFor(() => {
-      expect(host.querySelector('.preview-image-viewer [data-image-viewer] .el-image-viewer__img')?.getAttribute('src')).toBe(
-        objectUrl,
-      );
+      expect(
+        host.querySelector('.preview-image-viewer [data-image-viewer] .el-image-viewer__img')?.getAttribute('src'),
+      ).toBe(objectUrl);
     });
     expect(previewContent).toHaveBeenCalledWith('file-1');
     expect(host.querySelector('.preview-error-state')).toBeNull();
@@ -197,9 +197,9 @@ describe('FilePreviewPanel', () => {
       }),
     );
     await vi.waitFor(() => {
-      expect(host.querySelector('.preview-image-viewer [data-image-viewer] .el-image-viewer__img')?.getAttribute('src')).toBe(
-        objectUrl,
-      );
+      expect(
+        host.querySelector('.preview-image-viewer [data-image-viewer] .el-image-viewer__img')?.getAttribute('src'),
+      ).toBe(objectUrl);
     });
 
     mountedApps.pop()?.unmount();
@@ -395,9 +395,9 @@ describe('FilePreviewPanel', () => {
     );
 
     await vi.waitFor(() => {
-      expect(host.querySelector('.preview-image-viewer [data-image-viewer] .el-image-viewer__img')?.getAttribute('src')).toBe(
-        objectUrl,
-      );
+      expect(
+        host.querySelector('.preview-image-viewer [data-image-viewer] .el-image-viewer__img')?.getAttribute('src'),
+      ).toBe(objectUrl);
     });
     expect(previewContent).toHaveBeenCalledWith('file-1');
   });

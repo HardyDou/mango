@@ -45,26 +45,31 @@ import type { WorkflowInstanceHistoryQuery } from './types';
 
 defineOptions({ name: 'WorkflowInstanceHistory' });
 
-const props = withDefaults(defineProps<WorkflowInstanceHistoryQuery & {
-  title?: string;
-  subtitle?: string;
-  emptyText?: string;
-  records?: WorkflowBusinessApply[];
-  loading?: boolean;
-  total?: number | null;
-  showTitle?: boolean;
-}>(), {
-  businessType: '',
-  businessKey: '',
-  pageSize: 10,
-  title: '历史申请',
-  subtitle: '同一业务单据的多次申请记录',
-  emptyText: '暂无申请记录',
-  records: undefined,
-  loading: undefined,
-  total: null,
-  showTitle: true,
-});
+const props = withDefaults(
+  defineProps<
+    WorkflowInstanceHistoryQuery & {
+      title?: string;
+      subtitle?: string;
+      emptyText?: string;
+      records?: WorkflowBusinessApply[];
+      loading?: boolean;
+      total?: number | null;
+      showTitle?: boolean;
+    }
+  >(),
+  {
+    businessType: '',
+    businessKey: '',
+    pageSize: 10,
+    title: '历史申请',
+    subtitle: '同一业务单据的多次申请记录',
+    emptyText: '暂无申请记录',
+    records: undefined,
+    loading: undefined,
+    total: null,
+    showTitle: true,
+  },
+);
 
 const loading = ref(false);
 const internalRecords = ref<WorkflowBusinessApply[]>([]);
@@ -82,7 +87,10 @@ watch(
     }
     loading.value = true;
     try {
-      const page = await workflowApi.businessApplyHistory(props.businessType, props.businessKey, { pageNum: 1, pageSize: props.pageSize });
+      const page = await workflowApi.businessApplyHistory(props.businessType, props.businessKey, {
+        pageNum: 1,
+        pageSize: props.pageSize,
+      });
       internalRecords.value = page.list;
       internalTotal.value = page.total;
     } catch {

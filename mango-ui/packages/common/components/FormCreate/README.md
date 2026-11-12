@@ -13,41 +13,41 @@ import type { FormConfig, FormData, FormCreateExpose } from '@mango/common';
 
 ## Props
 
-| 名称 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `config` | `FormConfig` | - | **必传**。表单配置，包含字段列表与布局参数 |
-| `modelValue` | `FormData` | - | 表单数据，支持 `v-model`；初始化时与字段 `defaultValue` 合并 |
-| `disabled` | `boolean` | `false` | 全表单禁用开关，透传给 `el-form` 并与字段级 `disabled` 取或 |
-| `readonly` | `boolean` | `false` | 只读开关（已声明；当前模板仅读取字段自身的 `readonly`，详见重要约束） |
-| `showActions` | `boolean` | `true` | 是否渲染底部提交/重置按钮 |
-| `submitText` | `string` | `'提交'` | 提交按钮文案 |
-| `resetText` | `string` | `'重置'` | 重置按钮文案 |
+| 名称          | 类型         | 默认值   | 说明                                                                  |
+| ------------- | ------------ | -------- | --------------------------------------------------------------------- |
+| `config`      | `FormConfig` | -        | **必传**。表单配置，包含字段列表与布局参数                            |
+| `modelValue`  | `FormData`   | -        | 表单数据，支持 `v-model`；初始化时与字段 `defaultValue` 合并          |
+| `disabled`    | `boolean`    | `false`  | 全表单禁用开关，透传给 `el-form` 并与字段级 `disabled` 取或           |
+| `readonly`    | `boolean`    | `false`  | 只读开关（已声明；当前模板仅读取字段自身的 `readonly`，详见重要约束） |
+| `showActions` | `boolean`    | `true`   | 是否渲染底部提交/重置按钮                                             |
+| `submitText`  | `string`     | `'提交'` | 提交按钮文案                                                          |
+| `resetText`   | `string`     | `'重置'` | 重置按钮文案                                                          |
 
 `FormData` 类型为 `Record<string, any>`。
 
 ## Events
 
-| 名称 | 参数 | 说明 |
-|------|------|------|
-| `update:modelValue` | `value: FormData` | 任意字段变化时同步最新表单数据 |
-| `submit` | `value: FormData` | 点击提交且整体校验通过时触发 |
-| `reset` | - | 点击重置按钮并执行 `resetFields()` 后触发 |
-| `validate` | `valid: boolean` | 提交校验失败触发 `false`；点击重置后触发 `true` |
+| 名称                | 参数              | 说明                                            |
+| ------------------- | ----------------- | ----------------------------------------------- |
+| `update:modelValue` | `value: FormData` | 任意字段变化时同步最新表单数据                  |
+| `submit`            | `value: FormData` | 点击提交且整体校验通过时触发                    |
+| `reset`             | -                 | 点击重置按钮并执行 `resetFields()` 后触发       |
+| `validate`          | `valid: boolean`  | 提交校验失败触发 `false`；点击重置后触发 `true` |
 
 ## Expose
 
-| 名称 | 参数 | 说明 |
-|------|------|------|
-| `getValue()` | - | 返回表单数据的浅拷贝 |
-| `setValue(value)` | `value: FormData` | 批量赋值，仅写入配置中已存在的 key |
-| `reset()` | - | 执行 Element Plus `resetFields()`，不触发事件 |
-| `validate()` | - | 手动校验，返回 `Promise<boolean>` |
-| `getFieldValue(key)` | `key: string` | 读取指定字段值 |
-| `setFieldValue(key, value)` | `key: string, value: any` | 设置指定字段值，key 不存在时忽略 |
-| `showField(key)` | `key: string` | 将字段配置的 `show` 置为 `true` |
-| `hideField(key)` | `key: string` | 将字段配置的 `show` 置为 `false` |
-| `enableField(key)` | `key: string` | 将字段配置的 `disabled` 置为 `false` |
-| `disableField(key)` | `key: string` | 将字段配置的 `disabled` 置为 `true` |
+| 名称                        | 参数                      | 说明                                          |
+| --------------------------- | ------------------------- | --------------------------------------------- |
+| `getValue()`                | -                         | 返回表单数据的浅拷贝                          |
+| `setValue(value)`           | `value: FormData`         | 批量赋值，仅写入配置中已存在的 key            |
+| `reset()`                   | -                         | 执行 Element Plus `resetFields()`，不触发事件 |
+| `validate()`                | -                         | 手动校验，返回 `Promise<boolean>`             |
+| `getFieldValue(key)`        | `key: string`             | 读取指定字段值                                |
+| `setFieldValue(key, value)` | `key: string, value: any` | 设置指定字段值，key 不存在时忽略              |
+| `showField(key)`            | `key: string`             | 将字段配置的 `show` 置为 `true`               |
+| `hideField(key)`            | `key: string`             | 将字段配置的 `show` 置为 `false`              |
+| `enableField(key)`          | `key: string`             | 将字段配置的 `disabled` 置为 `false`          |
+| `disableField(key)`         | `key: string`             | 将字段配置的 `disabled` 置为 `true`           |
 
 ## 类型定义
 
@@ -260,11 +260,7 @@ function fillDefaults() {
 </script>
 
 <template>
-  <FormCreate
-    ref="formRef"
-    :config="config"
-    :show-actions="false"
-  />
+  <FormCreate ref="formRef" :config="config" :show-actions="false" />
   <el-button @click="fillDefaults">填入默认值</el-button>
   <el-button type="primary" @click="handleSearch">查询</el-button>
 </template>

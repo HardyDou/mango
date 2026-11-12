@@ -6,21 +6,17 @@
 
 ```ts
 import { MangoDetailSummary } from '@mango/common';
-import type {
-  MangoDetailSummaryTag,
-  MangoDetailSummaryField,
-  MangoDetailSummaryProps,
-} from '@mango/common';
+import type { MangoDetailSummaryTag, MangoDetailSummaryField, MangoDetailSummaryProps } from '@mango/common';
 ```
 
 ## Props
 
-| 名称 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `dataSurface` | `string` | `undefined` | 透传到根节点的 `data-surface` 标识，用于埋点/定位 |
-| `title` | `unknown` | `undefined` | 主标题内容；空值或纯空白显示为 `-` |
-| `tags` | `MangoDetailSummaryTag[]` | `[]` | 标题下方标签列表，空数组不渲染标签区 |
-| `fields` | `MangoDetailSummaryField[]` | `[]` | 右侧摘要字段列表，空数组不渲染字段区 |
+| 名称          | 类型                        | 默认值      | 说明                                              |
+| ------------- | --------------------------- | ----------- | ------------------------------------------------- |
+| `dataSurface` | `string`                    | `undefined` | 透传到根节点的 `data-surface` 标识，用于埋点/定位 |
+| `title`       | `unknown`                   | `undefined` | 主标题内容；空值或纯空白显示为 `-`                |
+| `tags`        | `MangoDetailSummaryTag[]`   | `[]`        | 标题下方标签列表，空数组不渲染标签区              |
+| `fields`      | `MangoDetailSummaryField[]` | `[]`        | 右侧摘要字段列表，空数组不渲染字段区              |
 
 ## 类型定义
 
@@ -56,11 +52,7 @@ export interface MangoDetailSummaryProps {
 
 ```vue
 <script setup lang="ts">
-import {
-  MangoDetailSummary,
-  type MangoDetailSummaryTag,
-  type MangoDetailSummaryField,
-} from '@mango/common';
+import { MangoDetailSummary, type MangoDetailSummaryTag, type MangoDetailSummaryField } from '@mango/common';
 
 const tags: MangoDetailSummaryTag[] = [
   { key: 'status', label: '运行中', type: 'success' },
@@ -74,12 +66,7 @@ const fields: MangoDetailSummaryField[] = [
 </script>
 
 <template>
-  <MangoDetailSummary
-    title="节点详情"
-    :tags="tags"
-    :fields="fields"
-    data-surface="detail.node.summary"
-  />
+  <MangoDetailSummary title="节点详情" :tags="tags" :fields="fields" data-surface="detail.node.summary" />
 </template>
 ```
 

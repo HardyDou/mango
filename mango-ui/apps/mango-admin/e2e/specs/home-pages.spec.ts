@@ -10,10 +10,7 @@ type HomePage = {
   builtIn?: boolean;
 };
 
-const EVIDENCE_DIR = resolve(
-  __dirname,
-  '../../../../../mango-docs/evidence/baselines/home/latest/e2e',
-);
+const EVIDENCE_DIR = resolve(__dirname, '../../../../../mango-docs/evidence/baselines/home/latest/e2e');
 
 async function login(page: Page): Promise<string> {
   await page.goto('/#/login');
@@ -109,14 +106,18 @@ async function createHomePage(page: Page, name: string) {
   await expect(dialog).toBeVisible();
   await page.locator('.el-dialog input.el-input__inner').fill(name);
   await Promise.all([
-    page.waitForResponse(response => response.url().includes('/api/home/pages') && response.request().method() === 'POST'),
+    page.waitForResponse(
+      (response) => response.url().includes('/api/home/pages') && response.request().method() === 'POST',
+    ),
     page.locator('[data-action="home.name.submit"]').click(),
   ]);
   await expectActiveHomeTab(page, name);
 }
 
 async function expectActiveHomeTab(page: Page, name: string) {
-  await expect(page.locator('[data-field="home.current-page"] [data-state="active"]')).toContainText(name, { timeout: 10000 });
+  await expect(page.locator('[data-field="home.current-page"] [data-state="active"]')).toContainText(name, {
+    timeout: 10000,
+  });
 }
 
 test.describe('用户多首页工作台', () => {
@@ -150,8 +151,8 @@ test.describe('用户多首页工作台', () => {
     if (!(await defaultIndicator.isVisible())) {
       await expect(firstSetDefault).toBeEnabled();
       await Promise.all([
-        page.waitForResponse(response =>
-          response.url().includes('/api/home/pages/default') && response.request().method() === 'PUT'
+        page.waitForResponse(
+          (response) => response.url().includes('/api/home/pages/default') && response.request().method() === 'PUT',
         ),
         firstSetDefault.click(),
       ]);
@@ -176,26 +177,30 @@ test.describe('用户多首页工作台', () => {
     await expect(dialog).toBeVisible();
     await page.locator('.el-dialog input.el-input__inner').fill(renamedHome);
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/home/pages/name') && response.request().method() === 'PUT'),
+      page.waitForResponse(
+        (response) => response.url().includes('/api/home/pages/name') && response.request().method() === 'PUT',
+      ),
       page.locator('[data-action="home.name.submit"]').click(),
     ]);
     await expectActiveHomeTab(page, renamedHome);
 
-    const projectPage = (await listHomePages(page, token)).find(item => item.name === renamedHome);
+    const projectPage = (await listHomePages(page, token)).find((item) => item.name === renamedHome);
     expect(projectPage?.id).toBeTruthy();
 
     await page.locator('[data-action="home.duplicate"]').click();
     await expectActiveHomeTab(page, `${renamedHome} 副本`);
-    const duplicatePage = (await listHomePages(page, token)).find(item => item.name === `${renamedHome} 副本`);
+    const duplicatePage = (await listHomePages(page, token)).find((item) => item.name === `${renamedHome} 副本`);
     expect(duplicatePage?.id).toBeTruthy();
 
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/home/pages/sort') && response.request().method() === 'PUT'),
+      page.waitForResponse(
+        (response) => response.url().includes('/api/home/pages/sort') && response.request().method() === 'PUT',
+      ),
       page.locator('[data-action="home.sort-up"]').click(),
     ]);
     const sortedPages = await listHomePages(page, token);
-    const duplicateIndex = sortedPages.findIndex(item => String(item.id) === String(duplicatePage?.id));
-    const projectIndex = sortedPages.findIndex(item => String(item.id) === String(projectPage?.id));
+    const duplicateIndex = sortedPages.findIndex((item) => String(item.id) === String(duplicatePage?.id));
+    const projectIndex = sortedPages.findIndex((item) => String(item.id) === String(projectPage?.id));
     expect(duplicateIndex).toBeLessThan(projectIndex);
     await capture(page, testInfo, '04-home-duplicate-sorted.png');
 
@@ -207,7 +212,9 @@ test.describe('用户多首页工作台', () => {
     await expect(page.locator('[data-surface="grid-designer.widget-library"]')).toBeVisible();
     await capture(page, testInfo, '05-home-layout-editing.png');
     await Promise.all([
-      page.waitForResponse(response => response.url().includes('/api/home/pages/layout') && response.request().method() === 'PUT'),
+      page.waitForResponse(
+        (response) => response.url().includes('/api/home/pages/layout') && response.request().method() === 'PUT',
+      ),
       page.locator('[data-action="home.layout.save"]').click(),
     ]);
     await expect(page.locator('[data-action="home.layout.edit"]')).toBeVisible({ timeout: 10000 });

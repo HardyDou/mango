@@ -135,7 +135,7 @@ defineExpose({ refresh, verify });
   }
 }
 
-@media (max-width: 520px) {
+@media (width <= 520px) {
   .captcha-card {
     .captcha-body {
       flex-direction: column;

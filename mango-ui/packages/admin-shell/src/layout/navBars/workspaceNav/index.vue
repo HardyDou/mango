@@ -1,8 +1,5 @@
 <template>
-  <div
-    v-if="showTagsView"
-    class="layout-workspace-nav"
-  >
+  <div v-if="showTagsView" class="layout-workspace-nav">
     <div class="layout-workspace-tags">
       <TagsView />
     </div>
@@ -12,11 +9,14 @@
 <script setup lang="ts" name="workspaceNav">
 import { computed, defineAsyncComponent } from 'vue';
 
-const props = withDefaults(defineProps<{
-  tagsView?: boolean;
-}>(), {
-  tagsView: undefined,
-});
+const props = withDefaults(
+  defineProps<{
+    tagsView?: boolean;
+  }>(),
+  {
+    tagsView: undefined,
+  },
+);
 
 const TagsView = defineAsyncComponent(() => import('../tagsView/tagsView.vue'));
 
@@ -44,7 +44,7 @@ const showTagsView = computed(() => props.tagsView ?? true);
   overflow: hidden;
 }
 
-@media screen and (max-width: 1000px) {
+@media screen and (width <= 1000px) {
   .layout-workspace-nav {
     height: 40px;
     min-height: 40px;

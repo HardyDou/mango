@@ -360,12 +360,18 @@ function adPrimaryImage(ad: CmsAdvertisement | null) {
   if (!ad) return '';
   if (ad.imageUrl) return ad.imageUrl;
   if (ad.coverUrl) return ad.coverUrl;
-  if (ad.imageUrls) return ad.imageUrls.split(',').map(item => item.trim()).filter(Boolean)[0] || '';
+  if (ad.imageUrls)
+    return (
+      ad.imageUrls
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean)[0] || ''
+    );
   return '';
 }
 
 function flattenCategories(items: CmsSiteCategory[], level = 0): CmsSiteCategory[] {
-  return items.flatMap(item => [
+  return items.flatMap((item) => [
     { ...item, categoryName: level > 0 ? `${'　'.repeat(level)}${item.categoryName || ''}` : item.categoryName },
     ...flattenCategories(item.children || [], level + 1),
   ]);
@@ -373,7 +379,7 @@ function flattenCategories(items: CmsSiteCategory[], level = 0): CmsSiteCategory
 
 function uniqueCategories(items: CmsSiteCategory[]) {
   const used = new Set<string>();
-  return items.filter(item => {
+  return items.filter((item) => {
     const key = (item.categoryName || item.categoryCode || item.accessPath || '').trim();
     if (!key || used.has(key)) {
       return false;

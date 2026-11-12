@@ -11,7 +11,7 @@ export interface DictTreeIndexEntry {
 export function indexDictTree(
   nodes: DictTreeOption[],
   parents: DictTreeOption[] = [],
-  index: Map<string, DictTreeIndexEntry> = new Map()
+  index: Map<string, DictTreeIndexEntry> = new Map(),
 ): Map<string, DictTreeIndexEntry> {
   for (const node of nodes) {
     const path = [...parents, node];
@@ -54,10 +54,9 @@ function toValueSet(values?: Array<string | number>): Set<string> | undefined {
  * - 配置 group 后只保留命中该分组的项，未分组项不命中。
  * - include 与 exclude 同层生效：include 限定范围，exclude 继续剔除。
  */
-export function createDictValueFilter(options: DictValueScopeOptions): (item: {
-  value: unknown;
-  groups?: string[];
-}) => boolean {
+export function createDictValueFilter(
+  options: DictValueScopeOptions,
+): (item: { value: unknown; groups?: string[] }) => boolean {
   const groups = toGroupSet(options.group);
   const include = toValueSet(options.includeValues);
   const exclude = toValueSet(options.excludeValues);
@@ -87,7 +86,7 @@ export interface FilteredDictTree {
  */
 export function filterDictTree(
   nodes: DictTreeOption[],
-  allow: (item: { value: unknown; groups?: string[] }) => boolean
+  allow: (item: { value: unknown; groups?: string[] }) => boolean,
 ): FilteredDictTree {
   const matched = new Set<string>();
   const walk = (list: DictTreeOption[]): DictTreeOption[] => {

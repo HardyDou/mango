@@ -10,29 +10,29 @@ import { TreeSelect } from '@mango/common';
 
 ## Props
 
-| 名称 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `modelValue` | `string \| number \| null` | `null` | 选中节点的值，支持 `v-model` |
-| `data` | `any[]` | `[]` | 树形数据，必填，由业务侧提供 |
-| `placeholder` | `string` | `'请选择'` | 占位文本 |
-| `clearable` | `boolean` | `true` | 是否可清空 |
-| `checkStrictly` | `boolean` | `false` | 父子节点是否不互相关联 |
-| `showCheckbox` | `boolean` | `false` | 是否显示复选框 |
-| `expandOnClickNode` | `boolean` | `true` | 点击节点展开/收起时是否触发选中逻辑 |
-| `renderAfterExpand` | `boolean` | `true` | 是否在节点展开后才渲染其内容 |
-| `defaultExpandAll` | `boolean` | `false` | 是否默认展开全部节点 |
-| `nodeKey` | `string` | `'id'` | 节点唯一标识字段 |
-| `filterNodeMethod` | `(value: string, data: any) => boolean` | - | 节点过滤函数，透传给 `el-tree-select` |
-| `props` | `TreeNodeProps`（Element Plus） | - | 树字段映射，会与默认映射 `{ label: 'name', children: 'children' }` 合并，传入字段优先 |
+| 名称                | 类型                                    | 默认值     | 说明                                                                                  |
+| ------------------- | --------------------------------------- | ---------- | ------------------------------------------------------------------------------------- |
+| `modelValue`        | `string \| number \| null`              | `null`     | 选中节点的值，支持 `v-model`                                                          |
+| `data`              | `any[]`                                 | `[]`       | 树形数据，必填，由业务侧提供                                                          |
+| `placeholder`       | `string`                                | `'请选择'` | 占位文本                                                                              |
+| `clearable`         | `boolean`                               | `true`     | 是否可清空                                                                            |
+| `checkStrictly`     | `boolean`                               | `false`    | 父子节点是否不互相关联                                                                |
+| `showCheckbox`      | `boolean`                               | `false`    | 是否显示复选框                                                                        |
+| `expandOnClickNode` | `boolean`                               | `true`     | 点击节点展开/收起时是否触发选中逻辑                                                   |
+| `renderAfterExpand` | `boolean`                               | `true`     | 是否在节点展开后才渲染其内容                                                          |
+| `defaultExpandAll`  | `boolean`                               | `false`    | 是否默认展开全部节点                                                                  |
+| `nodeKey`           | `string`                                | `'id'`     | 节点唯一标识字段                                                                      |
+| `filterNodeMethod`  | `(value: string, data: any) => boolean` | -          | 节点过滤函数，透传给 `el-tree-select`                                                 |
+| `props`             | `TreeNodeProps`（Element Plus）         | -          | 树字段映射，会与默认映射 `{ label: 'name', children: 'children' }` 合并，传入字段优先 |
 
 ## Events
 
-| 名称 | 参数 | 说明 |
-|------|------|------|
-| `update:modelValue` | `string \| number \| null` | 选中值变化，支持 `v-model` |
-| `change` | `string \| number \| null` | 选中值变化 |
-| `node-click` | `data: any` | 节点被点击，参数为节点数据 |
-| `check-change` | `data: any, checked: boolean` | 节点勾选状态变化 |
+| 名称                | 参数                          | 说明                       |
+| ------------------- | ----------------------------- | -------------------------- |
+| `update:modelValue` | `string \| number \| null`    | 选中值变化，支持 `v-model` |
+| `change`            | `string \| number \| null`    | 选中值变化                 |
+| `node-click`        | `data: any`                   | 节点被点击，参数为节点数据 |
+| `check-change`      | `data: any, checked: boolean` | 节点勾选状态变化           |
 
 ## 使用示例
 
@@ -58,11 +58,7 @@ const treeData = [
 </script>
 
 <template>
-  <TreeSelect
-    v-model="deptId"
-    :data="treeData"
-    default-expand-all
-  />
+  <TreeSelect v-model="deptId" :data="treeData" default-expand-all />
 </template>
 ```
 
@@ -80,12 +76,7 @@ const menuData = [
 </script>
 
 <template>
-  <TreeSelect
-    v-model="menuId"
-    :data="menuData"
-    node-key="key"
-    :props="{ label: 'title', children: 'items' }"
-  />
+  <TreeSelect v-model="menuId" :data="menuData" node-key="key" :props="{ label: 'title', children: 'items' }" />
 </template>
 ```
 
@@ -104,13 +95,7 @@ function handleCheckChange(data: any, checked: boolean) {
 </script>
 
 <template>
-  <TreeSelect
-    v-model="checkedIds"
-    :data="treeData"
-    show-checkbox
-    check-strictly
-    @check-change="handleCheckChange"
-  />
+  <TreeSelect v-model="checkedIds" :data="treeData" show-checkbox check-strictly @check-change="handleCheckChange" />
 </template>
 ```
 

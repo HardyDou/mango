@@ -30,7 +30,7 @@ async function loginToken(request: APIRequestContext) {
     },
   });
   expect(response.status()).toBe(200);
-  const body = await response.json() as ApiResponse<{ accessToken: string }>;
+  const body = (await response.json()) as ApiResponse<{ accessToken: string }>;
   expect(body.success || body.code === 200).toBeTruthy();
   return body.data.accessToken;
 }
@@ -46,16 +46,28 @@ function authHeaders(token: string) {
   };
 }
 
-function expectRuntimeUrls(record: Pick<FileRecord, 'url' | 'previewUrl' | 'downloadUrl' | 'directPreviewUrl' | 'directDownloadUrl'>) {
-  for (const value of [record.url, record.previewUrl, record.downloadUrl, record.directPreviewUrl, record.directDownloadUrl]) {
+function expectRuntimeUrls(
+  record: Pick<FileRecord, 'url' | 'previewUrl' | 'downloadUrl' | 'directPreviewUrl' | 'directDownloadUrl'>,
+) {
+  for (const value of [
+    record.url,
+    record.previewUrl,
+    record.downloadUrl,
+    record.directPreviewUrl,
+    record.directDownloadUrl,
+  ]) {
     if (!value) {
       continue;
     }
-    expect(value).toMatch(/^https:\/\/files\.example\.com\/api\/(file\/(files\/(download|preview-content)|local-objects)\b|file-preview\/files\/preview\b)/);
+    expect(value).toMatch(
+      /^https:\/\/files\.example\.com\/api\/(file\/(files\/(download|preview-content)|local-objects)\b|file-preview\/files\/preview\b)/,
+    );
   }
 }
 
-test('@p0 @file file upload/detail/preview responses return current proxy or storage runtime urls', async ({ request }) => {
+test('@p0 @file file upload/detail/preview responses return current proxy or storage runtime urls', async ({
+  request,
+}) => {
   const token = await loginToken(request);
   const suffix = `${Date.now()}-${test.info().workerIndex}`;
   const formData = {
@@ -73,7 +85,7 @@ test('@p0 @file file upload/detail/preview responses return current proxy or sto
     multipart: formData,
   });
   expect(uploadResponse.status()).toBe(200);
-  const uploadBody = await uploadResponse.json() as ApiResponse<FileRecord>;
+  const uploadBody = (await uploadResponse.json()) as ApiResponse<FileRecord>;
   expect(uploadBody.success || uploadBody.code === 200).toBeTruthy();
   expectRuntimeUrls(uploadBody.data);
 
@@ -81,14 +93,14 @@ test('@p0 @file file upload/detail/preview responses return current proxy or sto
     headers: authHeaders(token),
   });
   expect(detailResponse.status()).toBe(200);
-  const detailBody = await detailResponse.json() as ApiResponse<FileRecord>;
+  const detailBody = (await detailResponse.json()) as ApiResponse<FileRecord>;
   expectRuntimeUrls(detailBody.data);
 
   const previewResponse = await request.get(e2eApi(`/file/files/preview?id=${uploadBody.data.id}`), {
     headers: authHeaders(token),
   });
   expect(previewResponse.status()).toBe(200);
-  const previewBody = await previewResponse.json() as ApiResponse<FileRecord>;
+  const previewBody = (await previewResponse.json()) as ApiResponse<FileRecord>;
   expect(previewBody.success || previewBody.code === 200).toBeTruthy();
   expectRuntimeUrls(previewBody.data);
   expect(previewBody.data.downloadUrl).toBe(uploadBody.data.downloadUrl);
@@ -106,7 +118,7 @@ test('@p0 @file file upload/detail/preview responses return current proxy or sto
     },
   });
   expect(batchResponse.status()).toBe(200);
-  const batchBody = await batchResponse.json() as ApiResponse<FileRecord[]>;
+  const batchBody = (await batchResponse.json()) as ApiResponse<FileRecord[]>;
   expect(batchBody.success || batchBody.code === 200).toBeTruthy();
   expect(batchBody.data).toHaveLength(1);
   expectRuntimeUrls(batchBody.data[0]);

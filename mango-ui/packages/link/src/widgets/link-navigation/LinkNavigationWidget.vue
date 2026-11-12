@@ -1,8 +1,5 @@
 <template>
-  <section
-    class="mango-grid-widget-link-navigation"
-    data-surface="home.link-navigation"
-  >
+  <section class="mango-grid-widget-link-navigation" data-surface="home.link-navigation">
     <div class="mango-grid-widget-link-navigation__content">
       <div
         v-if="linkFeatureUnavailable"
@@ -15,218 +12,193 @@
       </div>
 
       <template v-else>
-      <div class="mango-grid-widget-link-navigation__hero">
-        <header class="mango-grid-widget-link-navigation__header">
-          <div class="mango-grid-widget-link-navigation__heading">
-            <input
-              v-if="brandEditing"
-              ref="brandInputRef"
-              v-model="brandDraft"
-              class="mango-grid-widget-link-navigation__brand-input"
-              maxlength="24"
-              data-field="link-navigation.brand"
-              @blur="commitBrandTitle"
-              @keydown.enter.prevent="commitBrandTitle"
-              @keydown.esc.prevent="cancelBrandTitle"
-            >
-            <strong v-else>{{ brandTitle }}</strong>
+        <div class="mango-grid-widget-link-navigation__hero">
+          <header class="mango-grid-widget-link-navigation__header">
+            <div class="mango-grid-widget-link-navigation__heading">
+              <input
+                v-if="brandEditing"
+                ref="brandInputRef"
+                v-model="brandDraft"
+                class="mango-grid-widget-link-navigation__brand-input"
+                maxlength="24"
+                data-field="link-navigation.brand"
+                @blur="commitBrandTitle"
+                @keydown.enter.prevent="commitBrandTitle"
+                @keydown.esc.prevent="cancelBrandTitle"
+              />
+              <strong v-else>{{ brandTitle }}</strong>
+              <button
+                v-if="!brandEditing"
+                class="mango-grid-widget-link-navigation__brand-edit"
+                type="button"
+                title="编辑标题"
+                aria-label="编辑标题"
+                data-action="link-navigation.brand.edit"
+                @click="beginBrandEdit"
+              >
+                <el-icon><Edit /></el-icon>
+              </button>
+            </div>
+          </header>
+
+          <form
+            class="mango-grid-widget-link-navigation__search"
+            data-action="link-navigation.search"
+            @submit.prevent="handleSearchEnter"
+          >
+            <label class="mango-grid-widget-link-navigation__input">
+              <el-icon><Search /></el-icon>
+              <input
+                v-model="keyword"
+                :placeholder="placeholder"
+                autocomplete="off"
+                data-field="link-navigation.keyword"
+              />
+            </label>
+            <div class="mango-grid-widget-link-navigation__engines" role="group" aria-label="搜索引擎">
+              <button
+                v-for="engine in searchEngines"
+                :key="engine.code"
+                :class="{ 'is-active': activeEngine === engine.code }"
+                type="button"
+                :data-action="`link-navigation.search.${engine.code}`"
+                @click="searchWith(engine.code)"
+              >
+                {{ engine.label }}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <nav v-if="effectiveGroups.length > 0" class="mango-grid-widget-link-navigation__tabs" aria-label="收藏分组">
+          <div class="mango-grid-widget-link-navigation__tabs-fixed">
             <button
-              v-if="!brandEditing"
-              class="mango-grid-widget-link-navigation__brand-edit"
+              v-for="group in fixedGroups"
+              :key="group.key"
+              :class="{ 'is-active': activeGroupKey === group.key }"
               type="button"
-              title="编辑标题"
-              aria-label="编辑标题"
-              data-action="link-navigation.brand.edit"
-              @click="beginBrandEdit"
+              :data-state="activeGroupKey === group.key ? 'active' : undefined"
+              :data-record-key="group.key"
+              @click="activeGroupKey = group.key"
+            >
+              {{ group.title }}
+            </button>
+          </div>
+          <div class="mango-grid-widget-link-navigation__tabs-scroll">
+            <button
+              v-for="group in movableGroups"
+              :key="group.key"
+              :class="{
+                'is-active': activeGroupKey === group.key,
+                'is-dragging': draggedGroupKey === group.key,
+              }"
+              type="button"
+              :draggable="isDraggableGroup(group)"
+              :data-state="activeGroupKey === group.key ? 'active' : undefined"
+              :data-record-key="group.key"
+              @click="activeGroupKey = group.key"
+              @dragstart="handleGroupDragStart(group)"
+              @dragover.prevent
+              @drop="handleGroupDrop(group)"
+              @dragend="handleGroupDragEnd"
+            >
+              {{ group.title }}
+            </button>
+          </div>
+          <div v-if="canManageActiveGroup" class="mango-grid-widget-link-navigation__tab-actions">
+            <button
+              type="button"
+              data-action="link-navigation.category.edit"
+              title="编辑分组名称"
+              aria-label="编辑分组名称"
+              @click="openCategoryDialog('edit')"
             >
               <el-icon><Edit /></el-icon>
             </button>
-          </div>
-        </header>
-
-        <form
-          class="mango-grid-widget-link-navigation__search"
-          data-action="link-navigation.search"
-          @submit.prevent="handleSearchEnter"
-        >
-          <label class="mango-grid-widget-link-navigation__input">
-            <el-icon><Search /></el-icon>
-            <input
-              v-model="keyword"
-              :placeholder="placeholder"
-              autocomplete="off"
-              data-field="link-navigation.keyword"
-            >
-          </label>
-          <div
-            class="mango-grid-widget-link-navigation__engines"
-            role="group"
-            aria-label="搜索引擎"
-          >
             <button
-              v-for="engine in searchEngines"
-              :key="engine.code"
-              :class="{ 'is-active': activeEngine === engine.code }"
               type="button"
-              :data-action="`link-navigation.search.${engine.code}`"
-              @click="searchWith(engine.code)"
+              data-action="link-navigation.category.delete"
+              title="删除分组"
+              aria-label="删除分组"
+              @click="deleteActiveCategory"
             >
-              {{ engine.label }}
+              <el-icon><Delete /></el-icon>
             </button>
           </div>
-        </form>
-      </div>
-
-      <nav
-        v-if="effectiveGroups.length > 0"
-        class="mango-grid-widget-link-navigation__tabs"
-        aria-label="收藏分组"
-      >
-      <div class="mango-grid-widget-link-navigation__tabs-fixed">
-        <button
-          v-for="group in fixedGroups"
-          :key="group.key"
-          :class="{ 'is-active': activeGroupKey === group.key }"
-          type="button"
-          :data-state="activeGroupKey === group.key ? 'active' : undefined"
-          :data-record-key="group.key"
-          @click="activeGroupKey = group.key"
-        >
-          {{ group.title }}
-        </button>
-      </div>
-      <div class="mango-grid-widget-link-navigation__tabs-scroll">
-        <button
-          v-for="group in movableGroups"
-          :key="group.key"
-          :class="{
-            'is-active': activeGroupKey === group.key,
-            'is-dragging': draggedGroupKey === group.key,
-          }"
-          type="button"
-          :draggable="isDraggableGroup(group)"
-          :data-state="activeGroupKey === group.key ? 'active' : undefined"
-          :data-record-key="group.key"
-          @click="activeGroupKey = group.key"
-          @dragstart="handleGroupDragStart(group)"
-          @dragover.prevent
-          @drop="handleGroupDrop(group)"
-          @dragend="handleGroupDragEnd"
-        >
-          {{ group.title }}
-        </button>
-      </div>
-      <div
-        v-if="canManageActiveGroup"
-        class="mango-grid-widget-link-navigation__tab-actions"
-      >
-        <button
-          type="button"
-          data-action="link-navigation.category.edit"
-          title="编辑分组名称"
-          aria-label="编辑分组名称"
-          @click="openCategoryDialog('edit')"
-        >
-          <el-icon><Edit /></el-icon>
-        </button>
-        <button
-          type="button"
-          data-action="link-navigation.category.delete"
-          title="删除分组"
-          aria-label="删除分组"
-          @click="deleteActiveCategory"
-        >
-          <el-icon><Delete /></el-icon>
-        </button>
-      </div>
-      <button
-        class="mango-grid-widget-link-navigation__tab-add"
-        type="button"
-        data-action="link-navigation.category.create"
-        title="新增分组"
-        @click="openCategoryDialog('create')"
-      >
-        +
-      </button>
-      </nav>
-
-      <div
-        v-if="loading"
-        class="mango-grid-widget-link-navigation__loading"
-        data-state="loading"
-      >
-        加载收藏网址...
-      </div>
-
-      <div
-        v-else
-        class="mango-grid-widget-link-navigation__items"
-        :data-state="visibleItems.length > 0 ? 'ready' : 'empty'"
-      >
-      <div
-        v-for="item in visibleItems"
-        :key="item.id"
-        class="mango-grid-widget-link-navigation__item"
-        :class="{ 'is-favorited': isItemFavorited(item) }"
-        role="button"
-        tabindex="0"
-        :title="item.title"
-        :data-record-key="item.id"
-        @click="openItem(item)"
-        @keydown.enter.prevent="openItem(item)"
-        @keydown.space.prevent="openItem(item)"
-      >
-        <span class="mango-grid-widget-link-navigation__item-icon">
-          <img
-            v-if="resolveIconUrl(item)"
-            :src="resolveIconUrl(item)"
-            alt=""
+          <button
+            class="mango-grid-widget-link-navigation__tab-add"
+            type="button"
+            data-action="link-navigation.category.create"
+            title="新增分组"
+            @click="openCategoryDialog('create')"
           >
-          <span v-else>{{ itemInitial(item) }}</span>
-        </span>
-        <span class="mango-grid-widget-link-navigation__item-text">
-          <strong>{{ item.title }}</strong>
-        </span>
-        <button
-          class="mango-grid-widget-link-navigation__favorite"
-          :class="{
-            'is-favorited': isItemFavorited(item),
-          }"
-          :title="itemActionLabel(item)"
-          :aria-label="itemActionLabel(item)"
-          type="button"
-          :disabled="favoritePendingIds[item.id]"
-          data-action="link-navigation.favorite"
-          @click.stop="handleItemAction(item)"
+            +
+          </button>
+        </nav>
+
+        <div v-if="loading" class="mango-grid-widget-link-navigation__loading" data-state="loading">
+          加载收藏网址...
+        </div>
+
+        <div
+          v-else
+          class="mango-grid-widget-link-navigation__items"
+          :data-state="visibleItems.length > 0 ? 'ready' : 'empty'"
         >
-          <el-icon>
-            <StarFilled v-if="isItemFavorited(item)" />
-            <Star v-else />
-          </el-icon>
-        </button>
-      </div>
-      <button
-        v-if="canCreateLinkInActiveGroup"
-        class="mango-grid-widget-link-navigation__item mango-grid-widget-link-navigation__item-add"
-        type="button"
-        data-action="link-navigation.link.create"
-        title="添加网址"
-        aria-label="添加网址"
-        @click="openLinkDialog"
-      >
-        <span class="mango-grid-widget-link-navigation__item-icon">+</span>
-      </button>
-      </div>
+          <div
+            v-for="item in visibleItems"
+            :key="item.id"
+            class="mango-grid-widget-link-navigation__item"
+            :class="{ 'is-favorited': isItemFavorited(item) }"
+            role="button"
+            tabindex="0"
+            :title="item.title"
+            :data-record-key="item.id"
+            @click="openItem(item)"
+            @keydown.enter.prevent="openItem(item)"
+            @keydown.space.prevent="openItem(item)"
+          >
+            <span class="mango-grid-widget-link-navigation__item-icon">
+              <img v-if="resolveIconUrl(item)" :src="resolveIconUrl(item)" alt="" />
+              <span v-else>{{ itemInitial(item) }}</span>
+            </span>
+            <span class="mango-grid-widget-link-navigation__item-text">
+              <strong>{{ item.title }}</strong>
+            </span>
+            <button
+              class="mango-grid-widget-link-navigation__favorite"
+              :class="{
+                'is-favorited': isItemFavorited(item),
+              }"
+              :title="itemActionLabel(item)"
+              :aria-label="itemActionLabel(item)"
+              type="button"
+              :disabled="favoritePendingIds[item.id]"
+              data-action="link-navigation.favorite"
+              @click.stop="handleItemAction(item)"
+            >
+              <el-icon>
+                <StarFilled v-if="isItemFavorited(item)" />
+                <Star v-else />
+              </el-icon>
+            </button>
+          </div>
+          <button
+            v-if="canCreateLinkInActiveGroup"
+            class="mango-grid-widget-link-navigation__item mango-grid-widget-link-navigation__item-add"
+            type="button"
+            data-action="link-navigation.link.create"
+            title="添加网址"
+            aria-label="添加网址"
+            @click="openLinkDialog"
+          >
+            <span class="mango-grid-widget-link-navigation__item-icon">+</span>
+          </button>
+        </div>
       </template>
     </div>
 
-    <el-dialog
-      v-model="linkDialogVisible"
-      title="新增网址"
-      width="520px"
-      destroy-on-close
-      append-to-body
-    >
+    <el-dialog v-model="linkDialogVisible" title="新增网址" width="520px" destroy-on-close append-to-body>
       <el-form label-width="80px">
         <el-form-item label="标题" required>
           <el-input
@@ -248,12 +220,7 @@
       </el-form>
       <template #footer>
         <el-button @click="linkDialogVisible = false">取消</el-button>
-        <el-button
-          type="primary"
-          :loading="savingLink"
-          data-action="link-navigation.link.submit"
-          @click="submitLink"
-        >
+        <el-button type="primary" :loading="savingLink" data-action="link-navigation.link.submit" @click="submitLink">
           保存
         </el-button>
       </template>
@@ -282,7 +249,9 @@
         <el-button
           type="primary"
           :loading="savingCategory"
-          :data-action="categoryDialogMode === 'create' ? 'link-navigation.category.submit' : 'link-navigation.category.update'"
+          :data-action="
+            categoryDialogMode === 'create' ? 'link-navigation.category.submit' : 'link-navigation.category.update'
+          "
           @click="submitCategory"
         >
           保存
@@ -382,14 +351,14 @@ const categoryForm = reactive({
   name: '',
 });
 
-const sourceFavoriteItems = computed(() => props.items.length ? props.items : remoteFavoriteItems.value);
+const sourceFavoriteItems = computed(() => (props.items.length ? props.items : remoteFavoriteItems.value));
 const sourceNavigationItems = computed(() => {
   if (props.items.length) {
     return props.items;
   }
   return remoteNavigationItems.value.length ? remoteNavigationItems.value : remoteFavoriteItems.value;
 });
-const sourceGroups = computed(() => props.groups.length ? props.groups : remoteGroups.value);
+const sourceGroups = computed(() => (props.groups.length ? props.groups : remoteGroups.value));
 const effectiveGroups = computed(() => {
   const groups = resolveGroups(
     sourceGroups.value,
@@ -401,19 +370,19 @@ const effectiveGroups = computed(() => {
   return reorderGroups(groups, groupOrder.value);
 });
 const activeGroup = computed(() => {
-  return effectiveGroups.value.find(group => group.key === activeGroupKey.value);
+  return effectiveGroups.value.find((group) => group.key === activeGroupKey.value);
 });
-const fixedGroups = computed(() => effectiveGroups.value.filter(group => group.aggregate || group.fixed));
-const movableGroups = computed(() => effectiveGroups.value.filter(group => !group.aggregate && !group.fixed));
+const fixedGroups = computed(() => effectiveGroups.value.filter((group) => group.aggregate || group.fixed));
+const movableGroups = computed(() => effectiveGroups.value.filter((group) => !group.aggregate && !group.fixed));
 const visibleItems = computed(() => activeGroup.value?.items || []);
 const activeIsFavoritesGroup = computed(() => activeGroup.value?.aggregate === true);
 const canCreateLinkInActiveGroup = computed(() => activeGroup.value?.owned === true);
 const canManageActiveGroup = computed(() => {
-  return activeGroup.value?.owned === true
-    && activeGroup.value.system !== true
-    && Boolean(activeGroup.value.categoryId);
+  return (
+    activeGroup.value?.owned === true && activeGroup.value.system !== true && Boolean(activeGroup.value.categoryId)
+  );
 });
-const categoryDialogTitle = computed(() => categoryDialogMode.value === 'create' ? '新增分组' : '编辑分组');
+const categoryDialogTitle = computed(() => (categoryDialogMode.value === 'create' ? '新增分组' : '编辑分组'));
 
 watch(
   () => props.defaultSearchEngine,
@@ -427,7 +396,7 @@ watch(
 watch(
   effectiveGroups,
   (groups) => {
-    if (!groups.some(group => group.key === activeGroupKey.value)) {
+    if (!groups.some((group) => group.key === activeGroupKey.value)) {
       activeGroupKey.value = groups[0]?.key || '';
     }
   },
@@ -527,7 +496,7 @@ async function openItem(item: LinkNavigationItem): Promise<void> {
 }
 
 function resolveSearchUrl(engineCode: LinkNavigationSearchEngineCode, value: string): string {
-  const engine = searchEngines.find(item => item.code === engineCode) || searchEngines[0];
+  const engine = searchEngines.find((item) => item.code === engineCode) || searchEngines[0];
   return engine.urlTemplate.replace('{query}', encodeURIComponent(value));
 }
 
@@ -558,14 +527,17 @@ async function loadFavorites(): Promise<void> {
   try {
     if (props.loadItems || props.groups.length) {
       const favoriteItems = props.loadItems ? await props.loadItems(undefined, props.runtime) : [];
-      remoteFavoriteItems.value = dedupeItems(favoriteItems.map(item => ({ ...item, favorited: true })));
+      remoteFavoriteItems.value = dedupeItems(favoriteItems.map((item) => ({ ...item, favorited: true })));
       remoteNavigationItems.value = mergeNavigationItems([], remoteFavoriteItems.value);
       remoteGroups.value = props.groups;
       return;
     }
     const data = await loadDefaultWidgetData();
-    remoteFavoriteItems.value = dedupeItems(data.favoriteItems.map(item => ({ ...item, favorited: true })));
-    remoteNavigationItems.value = mergeNavigationItems([...data.companyItems, ...data.personalItems], remoteFavoriteItems.value);
+    remoteFavoriteItems.value = dedupeItems(data.favoriteItems.map((item) => ({ ...item, favorited: true })));
+    remoteNavigationItems.value = mergeNavigationItems(
+      [...data.companyItems, ...data.personalItems],
+      remoteFavoriteItems.value,
+    );
     remoteGroups.value = data.categories;
   } catch (error) {
     if (isLinkFeatureUnavailableError(error)) {
@@ -716,7 +688,9 @@ async function loadDefaultWidgetData(): Promise<LinkNavigationWidgetData> {
   }
   const [companyItems, personalPage, favoriteItems, categories] = await Promise.all([
     requestJson<LinkCompanyApiItem[]>('/api/link/company-links/list', { method: 'GET' }),
-    requestJson<LinkPageResult<LinkPersonalApiItem>>('/api/link/personal-links/page?page=1&size=500', { method: 'GET' }),
+    requestJson<LinkPageResult<LinkPersonalApiItem>>('/api/link/personal-links/page?page=1&size=500', {
+      method: 'GET',
+    }),
     requestJson<LinkFavoriteApiItem[]>('/api/link/favorites/list', { method: 'GET' }),
     requestJson<LinkCategoryApiItem[]>('/api/link/personal-categories/list', { method: 'GET' }),
   ]);
@@ -724,15 +698,17 @@ async function loadDefaultWidgetData(): Promise<LinkNavigationWidgetData> {
     companyItems: companyItems.map(toCompanyNavigationItem),
     personalItems: pageItemsOf(personalPage).map(toPersonalNavigationItem),
     favoriteItems: favoriteItems.map(toFavoriteNavigationItem),
-    categories: categories.map(toCategoryGroup).filter(group => group.key),
+    categories: categories.map(toCategoryGroup).filter((group) => group.key),
   };
 }
 
 async function createPersonalCategory(name: string): Promise<string> {
-  return toString(await requestJson<string | number>('/api/link/personal-categories/create', {
-    method: 'POST',
-    body: JSON.stringify({ name }),
-  }));
+  return toString(
+    await requestJson<string | number>('/api/link/personal-categories/create', {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    }),
+  );
 }
 
 async function updatePersonalCategory(id: string, name: string): Promise<void> {
@@ -756,10 +732,12 @@ async function createPersonalLink(input: { name: string; url: string; categoryId
   if (input.categoryId) {
     payload.categoryId = input.categoryId;
   }
-  return toString(await requestJson<string | number>('/api/link/personal-links/create', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  }));
+  return toString(
+    await requestJson<string | number>('/api/link/personal-links/create', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  );
 }
 
 async function createFavorite(linkId: string): Promise<void> {
@@ -830,14 +808,16 @@ async function removeFavoriteItem(item: LinkNavigationItem): Promise<void> {
 }
 
 function updateItemFavoriteState(id: string, favorited: boolean): void {
-  remoteNavigationItems.value = remoteNavigationItems.value.map(item => item.id === id ? { ...item, favorited } : item);
+  remoteNavigationItems.value = remoteNavigationItems.value.map((item) =>
+    item.id === id ? { ...item, favorited } : item,
+  );
   if (favorited) {
-    const item = remoteNavigationItems.value.find(candidate => candidate.id === id);
-    if (item && !remoteFavoriteItems.value.some(candidate => candidate.id === id)) {
+    const item = remoteNavigationItems.value.find((candidate) => candidate.id === id);
+    if (item && !remoteFavoriteItems.value.some((candidate) => candidate.id === id)) {
       remoteFavoriteItems.value = [{ ...item, favorited: true, source: 'FAVORITE' }, ...remoteFavoriteItems.value];
     }
   } else {
-    remoteFavoriteItems.value = remoteFavoriteItems.value.filter(item => item.id !== id);
+    remoteFavoriteItems.value = remoteFavoriteItems.value.filter((item) => item.id !== id);
   }
 }
 
@@ -853,15 +833,31 @@ async function requestJson<T>(url: string, init: RequestInit): Promise<T> {
   if (!response.ok) {
     throw new LinkNavigationRequestError(`请求失败：${response.status}`, response.status);
   }
-  const result = await response.json() as { success?: boolean; code?: number | string; msg?: string; message?: string; data?: T };
-  if (!(result.success === true || result.code === 0 || result.code === 200 || result.code === '0' || result.code === '200')) {
+  const result = (await response.json()) as {
+    success?: boolean;
+    code?: number | string;
+    msg?: string;
+    message?: string;
+    data?: T;
+  };
+  if (!(
+    result.success === true ||
+    result.code === 0 ||
+    result.code === 200 ||
+    result.code === '0' ||
+    result.code === '200'
+  )) {
     throw new LinkNavigationRequestError(result.message || result.msg || '请求失败', undefined, result.code);
   }
   return (result.data ?? ([] as T)) as T;
 }
 
 class LinkNavigationRequestError extends Error {
-  constructor(message: string, readonly status?: number, readonly code?: number | string) {
+  constructor(
+    message: string,
+    readonly status?: number,
+    readonly code?: number | string,
+  ) {
     super(message);
     this.name = 'LinkNavigationRequestError';
   }
@@ -907,7 +903,7 @@ function resolveGroups(
   configuredGroups.forEach((group) => {
     const groupItems = group.items?.length
       ? group.items
-      : groupItemsSource.filter(item => item.groupKey === group.key);
+      : groupItemsSource.filter((item) => item.groupKey === group.key);
     groupMap.set(group.key, {
       key: group.key,
       title: group.title,
@@ -918,7 +914,8 @@ function resolveGroups(
     });
   });
   groupItemsSource.forEach((item) => {
-    const title = item.groupTitle || item.categoryName || (item.source === 'PERSONAL' ? UNGROUPED_GROUP_TITLE : '我的收藏');
+    const title =
+      item.groupTitle || item.categoryName || (item.source === 'PERSONAL' ? UNGROUPED_GROUP_TITLE : '我的收藏');
     const key = item.groupKey || (item.source === 'PERSONAL' ? UNGROUPED_GROUP_KEY : title);
     const group = groupMap.get(key) || {
       key,
@@ -929,27 +926,31 @@ function resolveGroups(
       system: key === UNGROUPED_GROUP_KEY,
     };
     group.fixed = group.fixed || isEnterpriseGroupTitle(title);
-    const exists = group.items.some(groupItem => groupItem.id === item.id);
+    const exists = group.items.some((groupItem) => groupItem.id === item.id);
     if (!exists && group.items.length < maxItemsPerGroup) {
       group.items.push(item);
     }
     groupMap.set(key, group);
   });
 
-  const groups = Array.from(groupMap.values()).filter(group => group.key !== favoritesGroup.key);
-  const enterpriseGroups = groups.filter(group => group.fixed);
+  const groups = Array.from(groupMap.values()).filter((group) => group.key !== favoritesGroup.key);
+  const enterpriseGroups = groups.filter((group) => group.fixed);
   const mergedEnterpriseGroup = mergeEnterpriseGroups(enterpriseGroup, enterpriseGroups, maxItemsPerGroup);
-  const otherGroups = groups.filter(group => !group.fixed);
+  const otherGroups = groups.filter((group) => !group.fixed);
   const personalUngroupedGroup = {
     ...ungroupedGroup,
     items: dedupeItems([
       ...ungroupedGroup.items,
-      ...groupItemsSource.filter(item => item.source === 'PERSONAL' && item.groupKey === UNGROUPED_GROUP_KEY),
+      ...groupItemsSource.filter((item) => item.source === 'PERSONAL' && item.groupKey === UNGROUPED_GROUP_KEY),
       ...(groupMap.get(UNGROUPED_GROUP_KEY)?.items || []),
     ]).slice(0, maxItemsPerGroup),
   };
-  return [favoritesGroup, mergedEnterpriseGroup, personalUngroupedGroup, ...otherGroups.filter(group => group.key !== UNGROUPED_GROUP_KEY)]
-    .slice(0, maxGroups);
+  return [
+    favoritesGroup,
+    mergedEnterpriseGroup,
+    personalUngroupedGroup,
+    ...otherGroups.filter((group) => group.key !== UNGROUPED_GROUP_KEY),
+  ].slice(0, maxGroups);
 }
 
 interface LinkFavoriteApiItem {
@@ -1098,7 +1099,12 @@ function pageItemsOf<T>(page: LinkPageResult<T>): T[] {
 }
 
 function openSourceOf(item: LinkNavigationItem): string {
-  if (item.source === 'PUBLIC' || item.source === 'COMPANY' || item.source === 'PERSONAL' || item.source === 'FAVORITE') {
+  if (
+    item.source === 'PUBLIC' ||
+    item.source === 'COMPANY' ||
+    item.source === 'PERSONAL' ||
+    item.source === 'FAVORITE'
+  ) {
     return item.source;
   }
   return item.source || 'COMPANY';
@@ -1130,7 +1136,7 @@ function dedupeItems(items: LinkNavigationItem[]): LinkNavigationItem[] {
 }
 
 function mergeNavigationItems(items: LinkNavigationItem[], favoriteItems: LinkNavigationItem[]): LinkNavigationItem[] {
-  const favoriteIds = new Set(favoriteItems.map(item => item.id));
+  const favoriteIds = new Set(favoriteItems.map((item) => item.id));
   const itemMap = new Map<string, LinkNavigationItem>();
   items.forEach((item) => {
     itemMap.set(item.id, {
@@ -1166,17 +1172,21 @@ function itemActionLabel(item: LinkNavigationItem): string {
 }
 
 function reorderGroups(groups: ResolvedGroup[], order: string[]): ResolvedGroup[] {
-  const fixedGroups = groups.filter(group => group.aggregate || group.fixed);
-  const movable = groups.filter(group => !group.aggregate && !group.fixed);
+  const fixedGroups = groups.filter((group) => group.aggregate || group.fixed);
+  const movable = groups.filter((group) => !group.aggregate && !group.fixed);
   const orderIndex = new Map(order.map((key, index) => [key, index]));
   const sorted = movable
     .map((group, index) => ({ group, index }))
     .sort((left, right) => {
-      const leftOrder = orderIndex.has(left.group.key) ? orderIndex.get(left.group.key) as number : Number.MAX_SAFE_INTEGER;
-      const rightOrder = orderIndex.has(right.group.key) ? orderIndex.get(right.group.key) as number : Number.MAX_SAFE_INTEGER;
+      const leftOrder = orderIndex.has(left.group.key)
+        ? (orderIndex.get(left.group.key) as number)
+        : Number.MAX_SAFE_INTEGER;
+      const rightOrder = orderIndex.has(right.group.key)
+        ? (orderIndex.get(right.group.key) as number)
+        : Number.MAX_SAFE_INTEGER;
       return leftOrder === rightOrder ? left.index - right.index : leftOrder - rightOrder;
     })
-    .map(item => item.group);
+    .map((item) => item.group);
   return [...fixedGroups, ...sorted];
 }
 
@@ -1191,7 +1201,7 @@ function handleGroupDrop(target: ResolvedGroup): void {
   if (!draggedGroupKey.value || !isDraggableGroup(target) || draggedGroupKey.value === target.key) {
     return;
   }
-  const keys = effectiveGroups.value.filter(isDraggableGroup).map(group => group.key);
+  const keys = effectiveGroups.value.filter(isDraggableGroup).map((group) => group.key);
   const fromIndex = keys.indexOf(draggedGroupKey.value);
   const toIndex = keys.indexOf(target.key);
   if (fromIndex < 0 || toIndex < 0) {
@@ -1239,7 +1249,7 @@ function mergeEnterpriseGroups(
     categoryId: first.categoryId,
     fixed: true,
     owned: false,
-    items: dedupeItems(groups.flatMap(group => group.items)).slice(0, maxItemsPerGroup),
+    items: dedupeItems(groups.flatMap((group) => group.items)).slice(0, maxItemsPerGroup),
   };
 }
 

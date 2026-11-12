@@ -4,19 +4,11 @@
       <span class="strength-label">密码强度</span>
       <span :class="['strength-value', `is-${strength}`]">{{ strengthLabel }}</span>
       <span class="strength-bars" aria-hidden="true">
-        <span
-          v-for="index in 3"
-          :key="index"
-          :class="{ active: index <= strengthLevel }"
-        />
+        <span v-for="index in 3" :key="index" :class="{ active: index <= strengthLevel }" />
       </span>
     </div>
     <div class="password-rules">
-      <span
-        v-for="rule in rules"
-        :key="rule.key"
-        :class="['password-rule', { passed: rule.passed }]"
-      >
+      <span v-for="rule in rules" :key="rule.key" :class="['password-rule', { passed: rule.passed }]">
         {{ rule.passed ? '✓' : '•' }} {{ rule.label }}
       </span>
     </div>
@@ -32,12 +24,15 @@ import {
   type PasswordPolicy,
 } from '../../utils/passwordPolicy';
 
-const props = withDefaults(defineProps<{
-  password?: string;
-  policy?: PasswordPolicy;
-}>(), {
-  password: '',
-});
+const props = withDefaults(
+  defineProps<{
+    password?: string;
+    policy?: PasswordPolicy;
+  }>(),
+  {
+    password: '',
+  },
+);
 
 const policy = computed(() => props.policy || defaultPasswordPolicy);
 const rules = computed(() => evaluatePasswordRules(props.password || '', policy.value));

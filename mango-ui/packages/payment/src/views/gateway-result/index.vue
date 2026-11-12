@@ -1,11 +1,7 @@
 <template>
   <div class="payment-gateway-result">
     <section class="payment-gateway-result__panel">
-      <el-result
-        icon="info"
-        title="已返回收银台"
-        :sub-title="description"
-      >
+      <el-result icon="info" title="已返回收银台" :sub-title="description">
         <template #extra>
           <div class="payment-gateway-result__actions">
             <el-button type="primary" @click="notifyAndClose">返回收银台</el-button>
@@ -71,10 +67,7 @@ function resolvePayOrderNo() {
   if (hashQueryIndex >= 0) {
     collectParams(params, window.location.hash.slice(hashQueryIndex));
   }
-  return params.get('order_id')
-    || params.get('payOrderNo')
-    || params.get('mchnt_order_no')
-    || '';
+  return params.get('order_id') || params.get('payOrderNo') || params.get('mchnt_order_no') || '';
 }
 
 function collectParams(target: URLSearchParams, query: string) {

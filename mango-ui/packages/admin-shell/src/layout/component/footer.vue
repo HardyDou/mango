@@ -1,10 +1,6 @@
 <template>
   <footer class="layout-footer">
-    <span
-      v-for="item in footerItems"
-      :key="item"
-      class="layout-footer-text"
-    >{{ item }}</span>
+    <span v-for="item in footerItems" :key="item" class="layout-footer-text">{{ item }}</span>
   </footer>
 </template>
 
@@ -14,13 +10,7 @@ import { storeToRefs } from 'pinia';
 import { usePreferencesStore } from '../../stores/preferences';
 
 const preferencesStore = usePreferencesStore();
-const {
-  footerAuthor,
-  footerContact,
-  footerCopyright,
-  footerIcp,
-  globalTitle,
-} = storeToRefs(preferencesStore);
+const { footerAuthor, footerContact, footerCopyright, footerIcp, globalTitle } = storeToRefs(preferencesStore);
 
 const footerItems = computed(() => {
   const copyright = footerCopyright.value?.trim();

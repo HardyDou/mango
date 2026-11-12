@@ -170,11 +170,14 @@ async function setCodeMirrorValue(page: Page, root: Locator, value: string) {
 
 async function uploadTemplateFile(form: Locator, format: RegExp | string, filePath: string) {
   await selectTemplateType(form, format);
-  const uploadResponsePromise = form.page().waitForResponse((response) =>
-    response.url().includes('/api/file/files')
-    && response.request().method() === 'POST'
-    && response.status() === 200
-  );
+  const uploadResponsePromise = form
+    .page()
+    .waitForResponse(
+      (response) =>
+        response.url().includes('/api/file/files') &&
+        response.request().method() === 'POST' &&
+        response.status() === 200,
+    );
   await form.locator('.document-upload-area input[type="file"]').setInputFiles(filePath);
   const uploadResponse = await uploadResponsePromise;
   const body = await uploadResponse.json();
@@ -183,10 +186,11 @@ async function uploadTemplateFile(form: Locator, format: RegExp | string, filePa
 }
 
 async function publishFromMaintain(page: Page, form: Locator, code: string) {
-  const publishResponsePromise = page.waitForResponse((response) =>
-    response.url().includes('/api/template/templates/versions')
-    && response.request().method() === 'POST'
-    && response.status() === 200
+  const publishResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes('/api/template/templates/versions') &&
+      response.request().method() === 'POST' &&
+      response.status() === 200,
   );
   await form.getByRole('button', { name: '发布', exact: true }).click();
   const publishResponse = await publishResponsePromise;
@@ -209,15 +213,26 @@ async function openPreview(page: Page, code: string) {
   return preview;
 }
 
-async function renderWithJson(page: Page, preview: Locator, code: string, outputFormat: RegExp | string, variables: unknown) {
+async function renderWithJson(
+  page: Page,
+  preview: Locator,
+  code: string,
+  outputFormat: RegExp | string,
+  variables: unknown,
+) {
   await selectDictOption(preview, '输出格式', outputFormat);
   await preview.getByRole('tab', { name: 'JSON 输入' }).click();
-  await preview.locator('.render-tabs textarea').last().fill(JSON.stringify(variables, null, 2));
+  await preview
+    .locator('.render-tabs textarea')
+    .last()
+    .fill(JSON.stringify(variables, null, 2));
   const renderResponsePromise = page.waitForResponse((response) => {
     const postData = response.request().postData() || '';
-    return response.url().includes('/api/template/templates/render')
-      && response.request().method() === 'POST'
-      && postData.includes(code);
+    return (
+      response.url().includes('/api/template/templates/render') &&
+      response.request().method() === 'POST' &&
+      postData.includes(code)
+    );
   });
   await preview.getByRole('button', { name: '生成预览' }).click();
   const renderResponse = await renderResponsePromise;
@@ -231,7 +246,10 @@ async function cleanupTemplateViaUi(page: Page, code: string) {
   const row = page.getByRole('row', { name: new RegExp(code) }).first();
   if (!(await row.isVisible().catch(() => false))) return;
   await row.getByRole('button', { name: '删除' }).click();
-  await page.locator('.el-message-box').getByRole('button', { name: /确定|OK/ }).click();
+  await page
+    .locator('.el-message-box')
+    .getByRole('button', { name: /确定|OK/ })
+    .click();
   await expect(page.getByText('模板已删除')).toBeVisible({ timeout: 10000 });
 }
 
@@ -282,12 +300,11 @@ const nestedVariables = {
     { name: '身份证', qty: 1 },
     { name: '营业执照', qty: 2 },
   ],
-  groups: [
-    { title: 'A组', children: [{ name: '甲' }, { name: '乙' }] },
-  ],
+  groups: [{ title: 'A组', children: [{ name: '甲' }, { name: '乙' }] }],
 };
 
-const DOCX_TEMPLATE_BASE64 = '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';
+const DOCX_TEMPLATE_BASE64 =
+  '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';
 
 test.describe.serial('模板中心嵌套参数浏览器 E2E', () => {
   test('通过页面操作验证 TEXT、Word、Excel 与 PDF 输出边界', async ({ page }) => {
@@ -303,12 +320,16 @@ test.describe.serial('模板中心嵌套参数浏览器 E2E', () => {
 
     try {
       const textForm = await createTemplateShell(page, textCode, `E2E 文本嵌套 ${unique}`);
-      await setCodeMirrorValue(page, textForm, [
-        '客户：${customer.name}',
-        '城市：${customer.address.city}',
-        '清单：<#list items as item>${item.name}:${item.qty};</#list>',
-        '分组：<#list groups as group>${group.title}-<#list group.children as child>${child.name},</#list></#list>',
-      ].join('\n'));
+      await setCodeMirrorValue(
+        page,
+        textForm,
+        [
+          '客户：${customer.name}',
+          '城市：${customer.address.city}',
+          '清单：<#list items as item>${item.name}:${item.qty};</#list>',
+          '分组：<#list groups as group>${group.title}-<#list group.children as child>${child.name},</#list></#list>',
+        ].join('\n'),
+      );
       await setNestedVariables(textForm);
       await publishFromMaintain(page, textForm, textCode);
 
@@ -370,10 +391,12 @@ test.describe.serial('模板中心嵌套参数浏览器 E2E', () => {
       const renderedXlsxPath = await saveDownload(xlsxDownload, 'xlsx');
       const renderedWorkbook = XLSX.readFile(renderedXlsxPath);
       const renderedRows = XLSX.utils.sheet_to_json<string[]>(renderedWorkbook.Sheets.Sheet1, { header: 1 });
-      expect(renderedRows).toEqual(expect.arrayContaining([
-        ['客户', '张三'],
-        ['城市', '上海'],
-      ]));
+      expect(renderedRows).toEqual(
+        expect.arrayContaining([
+          ['客户', '张三'],
+          ['城市', '上海'],
+        ]),
+      );
       expect(String(renderedRows[2]?.[1] || '')).toContain('身份证');
       expect(String(renderedRows[2]?.[1] || '')).toContain('营业执照');
     } finally {

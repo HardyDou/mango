@@ -116,7 +116,11 @@ async function grantRoleResource(request: APIRequestContext, token: string, role
   expect(assignBody.success || assignBody.code === 200).toBeTruthy();
 }
 
-function findMenuPathByPermission(menus: SysMenuVO[], resourceCode: string, ancestors: string[] = []): string[] | undefined {
+function findMenuPathByPermission(
+  menus: SysMenuVO[],
+  resourceCode: string,
+  ancestors: string[] = [],
+): string[] | undefined {
   for (const menu of menus) {
     const currentPath = [...ancestors, String(menu.menuId)];
     const permissions = (menu.apiCodes || menu.permissions || '')
@@ -179,10 +183,11 @@ test.describe('角色数据权限管理', () => {
     try {
       await loginAsCompanyA(page);
 
-      const roleListResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/authorization/roles') &&
-        response.request().method() === 'GET' &&
-        response.status() === 200
+      const roleListResponsePromise = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/authorization/roles') &&
+          response.request().method() === 'GET' &&
+          response.status() === 200,
       );
       await page.goto('/#/system/role');
       await roleListResponsePromise;
@@ -190,15 +195,17 @@ test.describe('角色数据权限管理', () => {
       await expect(page.locator('.el-table__row', { hasText: roleCode })).toBeVisible({ timeout: 10000 });
 
       const row = page.locator('.el-table__row', { hasText: roleCode }).first();
-      const initialScopesResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/authorization/data-scopes/roles') &&
-        response.request().method() === 'GET' &&
-        response.status() === 200
+      const initialScopesResponsePromise = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/authorization/data-scopes/roles') &&
+          response.request().method() === 'GET' &&
+          response.status() === 200,
       );
-      const assignableMenusResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/authorization/roles/assignable-menus') &&
-        response.request().method() === 'GET' &&
-        response.status() === 200
+      const assignableMenusResponsePromise = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/authorization/roles/assignable-menus') &&
+          response.request().method() === 'GET' &&
+          response.status() === 200,
       );
       await row.getByRole('button', { name: '数据权限' }).click();
       await initialScopesResponsePromise;
@@ -222,20 +229,20 @@ test.describe('角色数据权限管理', () => {
       await page.keyboard.press('Escape');
       await dialog.locator('[data-test="data-scope-mode-select"]').click();
       await page.getByRole('option', { name: '本人部门', exact: true }).click();
-      const editingSaveButton = dialog
-        .locator('[data-test="data-scope-row-save"]:visible')
-        .first();
+      const editingSaveButton = dialog.locator('[data-test="data-scope-row-save"]:visible').first();
       await expect(editingSaveButton).toBeVisible();
 
-      const saveResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/authorization/data-scopes/roles') &&
-        response.request().method() === 'POST' &&
-        response.status() === 200
+      const saveResponsePromise = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/authorization/data-scopes/roles') &&
+          response.request().method() === 'POST' &&
+          response.status() === 200,
       );
-      const reloadAfterSavePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/authorization/data-scopes/roles') &&
-        response.request().method() === 'GET' &&
-        response.status() === 200
+      const reloadAfterSavePromise = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/authorization/data-scopes/roles') &&
+          response.request().method() === 'GET' &&
+          response.status() === 200,
       );
       await editingSaveButton.click();
       const saveResponse = await saveResponsePromise;
@@ -244,10 +251,18 @@ test.describe('角色数据权限管理', () => {
       expect(saveBody.success || saveBody.code === 200).toBeTruthy();
       await expect(page.getByText('保存成功')).toBeVisible({ timeout: 10000 });
 
-      await expect(dialog.locator('.el-table__row', { hasText: DATA_SCOPE_RESOURCE_CODE })).toBeVisible({ timeout: 10000 });
-      await expect(dialog.locator('.el-table__row', { hasText: DATA_SCOPE_RESOURCE_CODE }).getByText(DATA_SCOPE_RESOURCE_NAME)).toBeVisible();
-      await expect(dialog.locator('.el-table__row', { hasText: DATA_SCOPE_RESOURCE_CODE }).getByText('本人部门')).toBeVisible();
-      await expect(dialog.locator('.el-table__row', { hasText: DATA_SCOPE_RESOURCE_CODE }).getByText('成员主部门')).toBeVisible();
+      await expect(dialog.locator('.el-table__row', { hasText: DATA_SCOPE_RESOURCE_CODE })).toBeVisible({
+        timeout: 10000,
+      });
+      await expect(
+        dialog.locator('.el-table__row', { hasText: DATA_SCOPE_RESOURCE_CODE }).getByText(DATA_SCOPE_RESOURCE_NAME),
+      ).toBeVisible();
+      await expect(
+        dialog.locator('.el-table__row', { hasText: DATA_SCOPE_RESOURCE_CODE }).getByText('本人部门'),
+      ).toBeVisible();
+      await expect(
+        dialog.locator('.el-table__row', { hasText: DATA_SCOPE_RESOURCE_CODE }).getByText('成员主部门'),
+      ).toBeVisible();
       await expect(page.getByText('保存成功')).toHaveCount(0, { timeout: 10000 });
 
       const dataScopeRow = dialog.locator('.el-table__row', { hasText: DATA_SCOPE_RESOURCE_CODE }).first();
@@ -255,15 +270,17 @@ test.describe('角色数据权限管理', () => {
       await expect(dataScopeRow.getByRole('button', { name: '保存' })).toBeVisible();
       await expect(dataScopeRow.locator('[data-test="data-scope-mode-select"]')).toContainText('本人部门');
 
-      const editSaveResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/authorization/data-scopes/roles') &&
-        response.request().method() === 'POST' &&
-        response.status() === 200
+      const editSaveResponsePromise = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/authorization/data-scopes/roles') &&
+          response.request().method() === 'POST' &&
+          response.status() === 200,
       );
-      const reloadAfterEditPromise = page.waitForResponse((response) =>
-        response.url().includes('/api/authorization/data-scopes/roles') &&
-        response.request().method() === 'GET' &&
-        response.status() === 200
+      const reloadAfterEditPromise = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/authorization/data-scopes/roles') &&
+          response.request().method() === 'GET' &&
+          response.status() === 200,
       );
       await dataScopeRow.locator('[data-test="data-scope-row-save"]:visible').click();
       const editSaveResponse = await editSaveResponsePromise;
@@ -295,18 +312,23 @@ test.describe('角色数据权限管理', () => {
         contentType: 'image/png',
       });
 
-      await dialog.locator('.el-table__row', { hasText: DATA_SCOPE_RESOURCE_CODE }).getByRole('button', { name: '删除' }).click();
+      await dialog
+        .locator('.el-table__row', { hasText: DATA_SCOPE_RESOURCE_CODE })
+        .getByRole('button', { name: '删除' })
+        .click();
       await expect(page.getByText(`确认删除资源「${DATA_SCOPE_RESOURCE_CODE}」的数据权限配置?`)).toBeVisible();
 
-      const deleteResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/authorization/data-scopes/roles') &&
-        response.request().method() === 'DELETE' &&
-        response.status() === 200
+      const deleteResponsePromise = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/authorization/data-scopes/roles') &&
+          response.request().method() === 'DELETE' &&
+          response.status() === 200,
       );
-      const reloadAfterDeletePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/authorization/data-scopes/roles') &&
-        response.request().method() === 'GET' &&
-        response.status() === 200
+      const reloadAfterDeletePromise = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/authorization/data-scopes/roles') &&
+          response.request().method() === 'GET' &&
+          response.status() === 200,
       );
       await page.getByRole('button', { name: '确定' }).click();
       const deleteResponse = await deleteResponsePromise;

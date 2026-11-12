@@ -351,7 +351,7 @@ function emptyTextOf(state: NodeState) {
   text-align: right;
 }
 
-@media (max-width: 520px) {
+@media (width <= 520px) {
   .node-head {
     align-items: flex-start;
     flex-direction: column;

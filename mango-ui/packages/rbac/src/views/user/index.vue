@@ -1891,13 +1891,13 @@ onMounted(async () => {
   font-size: 13px;
 }
 
-@media (max-width: 1200px) {
+@media (width <= 1200px) {
   .user-page-layout {
     grid-template-columns: 280px minmax(0, 1fr);
   }
 }
 
-@media (max-width: 900px) {
+@media (width <= 900px) {
   .user-page-layout {
     grid-template-columns: 1fr;
   }

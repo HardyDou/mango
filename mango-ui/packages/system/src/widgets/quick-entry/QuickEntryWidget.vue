@@ -2,12 +2,7 @@
   <section class="mango-grid-widget-quick-entry">
     <header class="mango-grid-widget-quick-entry__title">
       <span>快捷入口</span>
-      <button
-        class="mango-grid-widget-quick-entry__setting"
-        type="button"
-        title="设置快捷入口"
-        @click="openSetting"
-      >
+      <button class="mango-grid-widget-quick-entry__setting" type="button" title="设置快捷入口" @click="openSetting">
         <el-icon><Setting /></el-icon>
       </button>
     </header>
@@ -21,25 +16,13 @@
         @click="handleNavigate(item)"
       >
         <el-icon size="18">
-          <component
-            :is="item.icon || LinkIcon"
-          />
+          <component :is="item.icon || LinkIcon" />
         </el-icon>
         <span>{{ item.title }}</span>
       </button>
 
-      <el-empty
-        v-if="selectedMenus.length === 0"
-        description="暂无快捷入口"
-        :image-size="64"
-      >
-        <el-button
-          text
-          type="primary"
-          @click="openSetting"
-        >
-          去设置
-        </el-button>
+      <el-empty v-if="selectedMenus.length === 0" description="暂无快捷入口" :image-size="64">
+        <el-button text type="primary" @click="openSetting"> 去设置 </el-button>
       </el-empty>
     </div>
 
@@ -56,11 +39,7 @@
       <div class="mango-grid-widget-quick-entry-config">
         <section class="mango-grid-widget-quick-entry-config__panel">
           <div class="mango-grid-widget-quick-entry-config__panel-title">可选菜单</div>
-          <el-input
-            v-model="keyword"
-            clearable
-            placeholder="搜索菜单名称或路径"
-          >
+          <el-input v-model="keyword" clearable placeholder="搜索菜单名称或路径">
             <template #prefix>
               <el-icon><Search /></el-icon>
             </template>
@@ -89,11 +68,7 @@
               </span>
             </label>
 
-            <el-empty
-              v-if="filteredMenus.length === 0"
-              description="暂无可选菜单"
-              :image-size="72"
-            />
+            <el-empty v-if="filteredMenus.length === 0" description="暂无可选菜单" :image-size="72" />
           </div>
         </section>
 
@@ -117,20 +92,12 @@
                 <span>{{ item.title }}</span>
                 <small>{{ formatMenuLocation(item) }}</small>
               </span>
-              <button
-                type="button"
-                title="移除"
-                @click="removeDraftSelection(item.id)"
-              >
+              <button type="button" title="移除" @click="removeDraftSelection(item.id)">
                 <el-icon><Close /></el-icon>
               </button>
             </div>
 
-            <el-empty
-              v-if="draftSelectedMenus.length === 0"
-              description="还没有选择快捷入口"
-              :image-size="72"
-            />
+            <el-empty v-if="draftSelectedMenus.length === 0" description="还没有选择快捷入口" :image-size="72" />
           </div>
         </section>
       </div>
@@ -138,12 +105,7 @@
       <template #footer>
         <el-button @click="clearSelection">清空</el-button>
         <el-button @click="settingVisible = false">取消</el-button>
-        <el-button
-          type="primary"
-          @click="saveSelection"
-        >
-          保存
-        </el-button>
+        <el-button type="primary" @click="saveSelection"> 保存 </el-button>
       </template>
     </MangoDialog>
   </section>
@@ -171,7 +133,7 @@ const keyword = ref('');
 const selectedIds = ref<string[]>([]);
 const draftSelectedIds = ref<string[]>([]);
 
-const rawMenus = computed(() => props.menus.length ? props.menus : props.runtime?.menus || []);
+const rawMenus = computed(() => (props.menus.length ? props.menus : props.runtime?.menus || []));
 const availableMenus = computed(() => {
   return props.resolveMenus
     ? props.resolveMenus(rawMenus.value, props.runtime)
@@ -187,17 +149,15 @@ const menuMap = computed(() => {
 });
 
 const effectiveSelectedIds = computed(() => {
-  const storedIds = selectedIds.value.filter(id => menuMap.value[id]);
+  const storedIds = selectedIds.value.filter((id) => menuMap.value[id]);
   if (storedIds.length > 0 || hasStoredSelection()) {
     return storedIds;
   }
-  return availableMenus.value.slice(0, props.maxDefaultItems).map(item => item.id);
+  return availableMenus.value.slice(0, props.maxDefaultItems).map((item) => item.id);
 });
 
 const selectedMenus = computed(() => {
-  return effectiveSelectedIds.value
-    .map(id => menuMap.value[id])
-    .filter(Boolean);
+  return effectiveSelectedIds.value.map((id) => menuMap.value[id]).filter(Boolean);
 });
 
 const filteredMenus = computed(() => {
@@ -206,15 +166,16 @@ const filteredMenus = computed(() => {
     return availableMenus.value;
   }
   return availableMenus.value.filter((item) => {
-    return [item.title, item.path, item.moduleCode, item.appCode]
-      .some(field => String(field || '').toLowerCase().includes(value));
+    return [item.title, item.path, item.moduleCode, item.appCode].some((field) =>
+      String(field || '')
+        .toLowerCase()
+        .includes(value),
+    );
   });
 });
 
 const draftSelectedMenus = computed(() => {
-  return draftSelectedIds.value
-    .map(id => menuMap.value[id])
-    .filter(Boolean);
+  return draftSelectedIds.value.map((id) => menuMap.value[id]).filter(Boolean);
 });
 
 watch(
@@ -243,7 +204,7 @@ function toggleDraftSelection(id: string): void {
 }
 
 function removeDraftSelection(id: string): void {
-  draftSelectedIds.value = draftSelectedIds.value.filter(item => item !== id);
+  draftSelectedIds.value = draftSelectedIds.value.filter((item) => item !== id);
 }
 
 function clearSelection(): void {
@@ -251,7 +212,7 @@ function clearSelection(): void {
 }
 
 function saveSelection(): void {
-  selectedIds.value = draftSelectedIds.value.filter(id => menuMap.value[id]);
+  selectedIds.value = draftSelectedIds.value.filter((id) => menuMap.value[id]);
   saveStoredSelection(selectedIds.value);
   settingVisible.value = false;
 }
@@ -286,7 +247,7 @@ function loadSelection(): string[] {
   }
   try {
     const value = JSON.parse(raw);
-    return Array.isArray(value) ? value.filter(item => typeof item === 'string') : [];
+    return Array.isArray(value) ? value.filter((item) => typeof item === 'string') : [];
   } catch {
     return [];
   }
@@ -388,7 +349,9 @@ function dedupeMenus(menus: QuickEntryMenuItem[]): QuickEntryMenuItem[] {
 
 function isQuickEntryMenuItem(value: unknown): value is QuickEntryMenuItem {
   const item = toRecord(value);
-  return Boolean(item && typeof item.id === 'string' && typeof item.title === 'string' && typeof item.path === 'string');
+  return Boolean(
+    item && typeof item.id === 'string' && typeof item.title === 'string' && typeof item.path === 'string',
+  );
 }
 
 function resolveMenuIcon(icon?: string): Component | undefined {
@@ -396,7 +359,7 @@ function resolveMenuIcon(icon?: string): Component | undefined {
 }
 
 function toRecord(value: unknown): Record<string, unknown> | undefined {
-  return value && typeof value === 'object' ? value as Record<string, unknown> : undefined;
+  return value && typeof value === 'object' ? (value as Record<string, unknown>) : undefined;
 }
 
 function toString(value: unknown): string {

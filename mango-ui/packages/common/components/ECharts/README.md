@@ -16,34 +16,34 @@ import type { EChartsOption, ECharts, LoadingOptions, ECElementEvent } from 'ech
 
 ## Props
 
-| 名称 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `options` | `EChartsOption` | `{}` | ECharts 配置项，深度监听变化并以合并方式 `setOption` |
-| `height` | `string` | `'300px'` | 容器高度 |
-| `width` | `string` | `'100%'` | 容器宽度 |
-| `autoresize` | `boolean` | `true` | 是否在浏览器窗口 `resize` 时自动调用图表 `resize()` |
-| `loading` | `boolean` | `false` | 是否显示 ECharts 加载动画 |
-| `loadingOptions` | `LoadingOptions` | `undefined` | 加载动画配置，透传给 `showLoading()` |
-| `theme` | `'light' \| 'dark'` | `undefined` | 图表主题；不传时按系统 `prefers-color-scheme` 自动选择 |
+| 名称             | 类型                | 默认值      | 说明                                                   |
+| ---------------- | ------------------- | ----------- | ------------------------------------------------------ |
+| `options`        | `EChartsOption`     | `{}`        | ECharts 配置项，深度监听变化并以合并方式 `setOption`   |
+| `height`         | `string`            | `'300px'`   | 容器高度                                               |
+| `width`          | `string`            | `'100%'`    | 容器宽度                                               |
+| `autoresize`     | `boolean`           | `true`      | 是否在浏览器窗口 `resize` 时自动调用图表 `resize()`    |
+| `loading`        | `boolean`           | `false`     | 是否显示 ECharts 加载动画                              |
+| `loadingOptions` | `LoadingOptions`    | `undefined` | 加载动画配置，透传给 `showLoading()`                   |
+| `theme`          | `'light' \| 'dark'` | `undefined` | 图表主题；不传时按系统 `prefers-color-scheme` 自动选择 |
 
 ## Events
 
-| 名称 | 参数 | 说明 |
-|------|------|------|
+| 名称    | 参数                     | 说明                                                |
+| ------- | ------------------------ | --------------------------------------------------- |
 | `click` | `params: ECElementEvent` | 点击图表元素时触发，参数为 ECharts 原生点击事件参数 |
-| `ready` | `chart: ECharts` | 图表初始化完成时触发，回传底层 ECharts 实例 |
+| `ready` | `chart: ECharts`         | 图表初始化完成时触发，回传底层 ECharts 实例         |
 
 ## Expose
 
-| 名称 | 参数 | 返回值 | 说明 |
-|------|------|--------|------|
-| `setOption(options)` | `options: EChartsOption` | - | 合并设置图表配置 |
-| `resize()` | - | - | 手动重绘尺寸 |
-| `clear()` | - | - | 清空当前配置（保留实例） |
-| `dispose()` | - | - | 销毁实例并释放资源 |
-| `showLoading(options?)` | `options?: LoadingOptions` | - | 显示加载动画 |
-| `hideLoading()` | - | - | 隐藏加载动画 |
-| `getInstance()` | - | `ECharts \| null` | 获取底层 ECharts 实例 |
+| 名称                    | 参数                       | 返回值            | 说明                     |
+| ----------------------- | -------------------------- | ----------------- | ------------------------ |
+| `setOption(options)`    | `options: EChartsOption`   | -                 | 合并设置图表配置         |
+| `resize()`              | -                          | -                 | 手动重绘尺寸             |
+| `clear()`               | -                          | -                 | 清空当前配置（保留实例） |
+| `dispose()`             | -                          | -                 | 销毁实例并释放资源       |
+| `showLoading(options?)` | `options?: LoadingOptions` | -                 | 显示加载动画             |
+| `hideLoading()`         | -                          | -                 | 隐藏加载动画             |
+| `getInstance()`         | -                          | `ECharts \| null` | 获取底层 ECharts 实例    |
 
 ## 使用示例
 
@@ -106,14 +106,7 @@ setTimeout(() => {
 </script>
 
 <template>
-  <ECharts
-    :options="options"
-    :loading="loading"
-    theme="dark"
-    height="360px"
-    @click="onChartClick"
-    @ready="onReady"
-  />
+  <ECharts :options="options" :loading="loading" theme="dark" height="360px" @click="onChartClick" @ready="onReady" />
 </template>
 ```
 

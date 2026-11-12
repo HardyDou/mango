@@ -331,9 +331,11 @@ export const jobApi = {
     get<BackendPageResult<JobInstance>>('/job/instances/page', { params: toBackendPageParams(params) }).then((data) =>
       fromBackendPageResult<JobInstance>(data, params),
     ),
-  syncInstances: (params?: SyncJobInstancePayload) => post<boolean>('/job/instances/sync', normalizeParams(
-    toBackendDateRangeParams(params, { startKey: 'triggerTimeStart', endKey: 'triggerTimeEnd' }),
-  )),
+  syncInstances: (params?: SyncJobInstancePayload) =>
+    post<boolean>(
+      '/job/instances/sync',
+      normalizeParams(toBackendDateRangeParams(params, { startKey: 'triggerTimeStart', endKey: 'triggerTimeEnd' })),
+    ),
   detailInstanceLog: (instanceId: ApiId) =>
     get<JobLogDetail>('/job/instances/logs/detail', {
       params: { instanceId },

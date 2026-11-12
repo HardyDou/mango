@@ -999,7 +999,7 @@ onMounted(async () => {
   min-width: 0;
 
   .code-text {
-    font-family: 'SFMono-Regular', Consolas, monospace;
+    font-family: SFMono-Regular, Consolas, monospace;
     font-size: 12px;
     color: var(--el-text-color-regular);
   }
@@ -1024,7 +1024,7 @@ onMounted(async () => {
     margin: 0;
     max-height: 240px;
     overflow: auto;
-    font-family: 'SFMono-Regular', Consolas, monospace;
+    font-family: SFMono-Regular, Consolas, monospace;
     font-size: 12px;
     line-height: 1.5;
   }

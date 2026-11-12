@@ -181,8 +181,10 @@ export interface PageResult<T> {
 }
 
 export const templateApi = {
-  page: (params?: TemplateQuery) => get<BackendPageResult<TemplateItem>>('/template/templates/page', { params: toBackendPageParams(params) })
-    .then((data) => fromBackendPageResult(data, normalizeTemplate, params)),
+  page: (params?: TemplateQuery) =>
+    get<BackendPageResult<TemplateItem>>('/template/templates/page', { params: toBackendPageParams(params) }).then(
+      (data) => fromBackendPageResult(data, normalizeTemplate, params),
+    ),
   detail: (id: number) => get<TemplateDetail>('/template/templates/detail', { params: { id } }),
   create: (data: SaveTemplatePayload) => post<number>('/template/templates', data),
   update: (data: SaveTemplatePayload) => put<boolean>('/template/templates', data),
@@ -194,19 +196,25 @@ export const templateApi = {
     post<string[]>('/template/templates/variables/extract', data),
   render: (data: TemplateRenderPayload) => post<TemplateRenderResult>('/template/templates/render', data),
   renderAsync: (data: TemplateRenderPayload) => post<TemplateRenderResult>('/template/templates/render/async', data),
-  renderRecord: (id: number) => get<TemplateRenderRecord>('/template/templates/render-records/detail', { params: { id } }),
-  renderRecordPage: (params?: TemplateRenderRecordQuery) => get<BackendPageResult<TemplateRenderRecord>>('/template/templates/render-records/page', { params: toBackendPageParams(params) })
-    .then((data) => fromBackendPageResult(data, (item) => item, params)),
+  renderRecord: (id: number) =>
+    get<TemplateRenderRecord>('/template/templates/render-records/detail', { params: { id } }),
+  renderRecordPage: (params?: TemplateRenderRecordQuery) =>
+    get<BackendPageResult<TemplateRenderRecord>>('/template/templates/render-records/page', {
+      params: toBackendPageParams(params),
+    }).then((data) => fromBackendPageResult(data, (item) => item, params)),
 };
 
 export const templateCategoryApi = {
   page: (params?: TemplateCategoryQuery) =>
-    get<BackendPageResult<TemplateCategory>>('/template/categories/page', { params: toBackendPageParams(params) })
-      .then((data) => fromBackendPageResult(data, normalizeCategory, params)),
+    get<BackendPageResult<TemplateCategory>>('/template/categories/page', { params: toBackendPageParams(params) }).then(
+      (data) => fromBackendPageResult(data, normalizeCategory, params),
+    ),
   list: (params?: TemplateCategoryQuery) =>
-    get<TemplateCategory[]>('/template/categories/list', { params: toBackendPageParams(params) })
-      .then((list) => (Array.isArray(list) ? list.map(normalizeCategory) : [])),
-  detail: (id: number) => get<TemplateCategory>('/template/categories/detail', { params: { id } }).then(normalizeCategory),
+    get<TemplateCategory[]>('/template/categories/list', { params: toBackendPageParams(params) }).then((list) =>
+      Array.isArray(list) ? list.map(normalizeCategory) : [],
+    ),
+  detail: (id: number) =>
+    get<TemplateCategory>('/template/categories/detail', { params: { id } }).then(normalizeCategory),
   create: (data: SaveTemplateCategoryPayload) => post<number>('/template/categories', data),
   update: (data: SaveTemplateCategoryPayload) => put<boolean>('/template/categories', data),
   updateStatus: (id: number, status: number) => put<boolean>('/template/categories/status', { id, status }),

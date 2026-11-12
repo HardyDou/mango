@@ -17,7 +17,11 @@
           path="/components/upload"
         />
         <ComponentEntry title="验证码组件" desc="算术、滑块、短信、邮件和综合选择器。" path="/components/captcha" />
-        <ComponentEntry title="组织架构选择器" desc="单选、多选、禁用和组织 ID 回显。" path="/components/org-selector" />
+        <ComponentEntry
+          title="组织架构选择器"
+          desc="单选、多选、禁用和组织 ID 回显。"
+          path="/components/org-selector"
+        />
         <ComponentEntry title="省市区选择器" desc="三级、四级和仅显示末级模式。" path="/components/china-area" />
       </div>
     </section>
@@ -36,7 +40,11 @@
       <p>图表和权限指令用于数据展示、操作按钮可见性控制和常见后台管理页面。</p>
       <div class="component-grid">
         <ComponentEntry title="数据图表" desc="折线图、柱状图、饼图、loading 和主题。" path="/components/charts" />
-        <ComponentEntry title="功能指令" desc="v-auth、v-auths、v-auth-all 权限显示控制。" path="/components/directive" />
+        <ComponentEntry
+          title="功能指令"
+          desc="v-auth、v-auths、v-auth-all 权限显示控制。"
+          path="/components/directive"
+        />
       </div>
     </section>
 
@@ -45,7 +53,11 @@
       <p>AI 对话和实时通信用于在线交互、消息推送和服务端通知。</p>
       <div class="component-grid">
         <ComponentEntry title="AI 对话组件" desc="浮动对话、推荐问题、会话 ID 和流式返回。" path="/components/chat" />
-        <ComponentEntry title="实时通信" desc="Auto 协商、WebSocket、SSE、Ajax、心跳、重连和消息发送。" path="/components/realtime" />
+        <ComponentEntry
+          title="实时通信"
+          desc="Auto 协商、WebSocket、SSE、Ajax、心跳、重连和消息发送。"
+          path="/components/realtime"
+        />
       </div>
     </section>
   </DemoDocLayout>
@@ -76,24 +88,22 @@ const ComponentEntry = defineComponent({
     path: { type: String, required: true },
   },
   setup(props) {
-    return () => h(
-      'button',
-      {
-        class: 'component-entry',
-        type: 'button',
-        onClick: () => router.push(props.path),
-      },
-      [
-        h('span', { class: 'entry-title' }, props.title),
-        h('span', { class: 'entry-desc' }, props.desc),
-      ],
-    );
+    return () =>
+      h(
+        'button',
+        {
+          class: 'component-entry',
+          type: 'button',
+          onClick: () => router.push(props.path),
+        },
+        [h('span', { class: 'entry-title' }, props.title), h('span', { class: 'entry-desc' }, props.desc)],
+      );
   },
 });
 </script>
 
 <style scoped lang="scss">
-@use './demo-page.scss';
+@use './demo-page';
 
 .component-grid {
   display: grid;

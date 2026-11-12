@@ -685,7 +685,7 @@ async function submitPush() {
   margin-top: 12px;
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .template-layout {
     grid-template-columns: 1fr;
   }

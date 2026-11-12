@@ -16,18 +16,18 @@
 
 ## 2. 功能清单
 
-| 能力               | 使用入口                                                                  | 后端依赖                              |
-| ------------------ | ------------------------------------------------------------------------- | ------------------------------------- |
+| 能力               | 使用入口                                                                     | 后端依赖                              |
+| ------------------ | ---------------------------------------------------------------------------- | ------------------------------------- |
 | 字典类型和字典数据 | `DictView`、`dictTypeApi`、`dictDataApi`；支持 FLAT 列表和 TREE 树形表格维护 | `mango-system`                        |
-| 系统配置           | `ConfigView`、`SystemConfigPanel`、`configApi`、`paramApi`                | `mango-system`                        |
-| 网站配置           | `AdminBrandingView`、`adminBrandingApi`                                   | `mango-system`、`@mango/file`         |
-| 租户               | `TenantView`、`tenantApi`                                                 | `mango-system`、`mango-authorization` |
-| 公共路径           | `PublicPathView`、public path API                                         | BFF permission / authorization        |
-| 地区               | `AreaView`、`areaApi`                                                     | `mango-system`                        |
-| 业务域             | `DomainView`、`domainApi`、`DomainSelector`、`DomainSideTree`             | `mango-domain`                        |
-| 登录日志和操作日志 | `LoginLogView`、个人中心“登录日志”、log API；日期-only 范围会补齐整日边界 | `mango-system`                        |
-| 系统事件 outbox    | `SystemEventView`、`systemEventApi`                                       | `mango-infra-event`                   |
-| 参与人选择         | `ParticipantSelector`                                                     | identity、org、authorization          |
+| 系统配置           | `ConfigView`、`SystemConfigPanel`、`configApi`、`paramApi`                   | `mango-system`                        |
+| 网站配置           | `AdminBrandingView`、`adminBrandingApi`                                      | `mango-system`、`@mango/file`         |
+| 租户               | `TenantView`、`tenantApi`                                                    | `mango-system`、`mango-authorization` |
+| 公共路径           | `PublicPathView`、public path API                                            | BFF permission / authorization        |
+| 地区               | `AreaView`、`areaApi`                                                        | `mango-system`                        |
+| 业务域             | `DomainView`、`domainApi`、`DomainSelector`、`DomainSideTree`                | `mango-domain`                        |
+| 登录日志和操作日志 | `LoginLogView`、个人中心“登录日志”、log API；日期-only 范围会补齐整日边界    | `mango-system`                        |
+| 系统事件 outbox    | `SystemEventView`、`systemEventApi`                                          | `mango-infra-event`                   |
+| 参与人选择         | `ParticipantSelector`                                                        | identity、org、authorization          |
 
 ## 3. 接入方式
 
@@ -153,28 +153,28 @@ import '@mango/system/style.css';
 
 主要 API：
 
-| API                | 主要接口                                                             | 能力                                               |
-| ------------------ | -------------------------------------------------------------------- | -------------------------------------------------- |
-| `dictTypeApi`      | `/system/dict/type/list`                                             | 字典类型列表、详情、创建、更新、删除。             |
+| API                | 主要接口                                                                        | 能力                                                 |
+| ------------------ | ------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `dictTypeApi`      | `/system/dict/type/list`                                                        | 字典类型列表、详情、创建、更新、删除。               |
 | `dictDataApi`      | `/system/dict/data/list`、`/system/dict/data/options`、`/system/dict/data/tree` | 字典数据维护、向后兼容的平铺选项和显式树形选项读取。 |
-| `configApi`        | `/system/config/list`、`/system/config/type`、`/system/config/value` | 系统配置 CRUD、按组读取、分组列表和值更新。        |
-| `adminBrandingApi` | `/system/admin-branding`、`/system/admin-branding/public`            | 网站配置读取、保存和未登录公共读取。               |
-| `paramApi`         | `/system/config/list`、`/system/config/value`                        | 参数维护和值更新。                                 |
-| `tenantApi`        | `/system/tenant/list`                                                | 租户 CRUD 和状态切换。                             |
-| `areaApi`          | `/system/area/tree`、`/system/area/children`                         | 地区树、子节点、详情、维护。                       |
-| public path API    | `/bff/permission/public-path`                                        | 公共路径增删改查。                                 |
-| `domainApi`        | `/domain/domains/page`、`/domain/domains/enabled-tree`               | 业务域分页、树、启用树、详情、编码查询、状态切换。 |
-| `loginLogApi`      | `/system/log/login/list`、`/system/log/login/my/list`                | 管理端日志查询，以及当前账号自己的登录日志分页。   |
-| `operationLogApi`  | `/system/log/operation/list`                                         | 操作日志查询、详情、清理。                         |
-| `systemEventApi`   | `/system/events`                                                     | 事件分页、详情和重新消费。                         |
+| `configApi`        | `/system/config/list`、`/system/config/type`、`/system/config/value`            | 系统配置 CRUD、按组读取、分组列表和值更新。          |
+| `adminBrandingApi` | `/system/admin-branding`、`/system/admin-branding/public`                       | 网站配置读取、保存和未登录公共读取。                 |
+| `paramApi`         | `/system/config/list`、`/system/config/value`                                   | 参数维护和值更新。                                   |
+| `tenantApi`        | `/system/tenant/list`                                                           | 租户 CRUD 和状态切换。                               |
+| `areaApi`          | `/system/area/tree`、`/system/area/children`                                    | 地区树、子节点、详情、维护。                         |
+| public path API    | `/bff/permission/public-path`                                                   | 公共路径增删改查。                                   |
+| `domainApi`        | `/domain/domains/page`、`/domain/domains/enabled-tree`                          | 业务域分页、树、启用树、详情、编码查询、状态切换。   |
+| `loginLogApi`      | `/system/log/login/list`、`/system/log/login/my/list`                           | 管理端日志查询，以及当前账号自己的登录日志分页。     |
+| `operationLogApi`  | `/system/log/operation/list`                                                    | 操作日志查询、详情、清理。                           |
+| `systemEventApi`   | `/system/events`                                                                | 事件分页、详情和重新消费。                           |
 
 常用返回字段：
 
 | 数据     | 字段                                                                                                                                                               |
 | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 字典类型 | `name`、`code`、`shape`（`FLAT`/`TREE`）                                                                                                                          |
-| 字典数据 | `label`、`value`、`parentValue`、`groups`、`children`、`sort`、`status`                                                                                           |
-| 字典选项 | `label`、`value`、`groups`、`sort`、`status`                                                                                                                        |
+| 字典类型 | `name`、`code`、`shape`（`FLAT`/`TREE`）                                                                                                                           |
+| 字典数据 | `label`、`value`、`parentValue`、`groups`、`children`、`sort`、`status`                                                                                            |
+| 字典选项 | `label`、`value`、`groups`、`sort`、`status`                                                                                                                       |
 | 系统配置 | `id`、`configKey`、`configValue`、`configName`、`domainCode`、`valueType`、`options`、`editable`、`status`                                                         |
 | 网站配置 | `title`、`shortTitle`、`subtitle`、`loginTitle`、`loginSubtitle`、`logoFile`、`logoIconFile`、`faviconFile`、`loginImageFile`、`footerCopyright`、`icp`、`contact` |
 | 租户     | `id`、`tenantCode`、`tenantName`、`status`                                                                                                                         |

@@ -35,12 +35,14 @@ describe('common realtime notice dispatch', () => {
     globalThis.fetch = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url.includes('/polling')) {
-        return jsonResponse([{
-          id: 'notice-1',
-          version: '1.0',
-          event: { domain: 'default', name: 'notice' },
-          payload: { type: 'text', text: '{"messageId":"1001","title":"系统消息"}' },
-        }]);
+        return jsonResponse([
+          {
+            id: 'notice-1',
+            version: '1.0',
+            event: { domain: 'default', name: 'notice' },
+            payload: { type: 'text', text: '{"messageId":"1001","title":"系统消息"}' },
+          },
+        ]);
       }
       return jsonResponse(undefined);
     }) as typeof fetch;
@@ -50,7 +52,7 @@ describe('common realtime notice dispatch', () => {
       heartbeat: { suppressEvents: true },
       polling: { timeoutMillis: 0, interval: 1000 },
     });
-    client.subscribe('notice', message => received.push(message));
+    client.subscribe('notice', (message) => received.push(message));
 
     await client.connect();
     await vi.runOnlyPendingTimersAsync();

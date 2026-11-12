@@ -56,7 +56,8 @@ function normalizeHomeWidget(
   const injectedDomainCode = options.businessDomainCode || options.moduleCode;
   const injectedDomainName = options.businessDomainName || options.moduleName;
   const businessDomainCode = widget.businessDomainCode || widget.domainCode || injectedDomainCode || widget.moduleCode;
-  const businessDomainName = widget.businessDomainName || widget.domainName || injectedDomainName || widget.category || businessDomainCode;
+  const businessDomainName =
+    widget.businessDomainName || widget.domainName || injectedDomainName || widget.category || businessDomainCode;
   const groupName = widget.groupName || options.groupName || widget.category;
   return {
     ...widget,

@@ -11,7 +11,7 @@ const devComponentPages: MangoDevComponentPageRegistration[] = [];
 
 export function registerMangoDevComponentPages(pages: MangoDevComponentPageRegistration[]) {
   for (const page of pages) {
-    if (!devComponentPages.some(registered => registered.component === page.component)) {
+    if (!devComponentPages.some((registered) => registered.component === page.component)) {
       devComponentPages.push(page);
     }
   }

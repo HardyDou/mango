@@ -170,7 +170,7 @@ onUnmounted(() => {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgb(0 0 0 / 50%);
   z-index: 1999;
   opacity: 0;
   transition: opacity var(--mango-transition-duration);
@@ -246,7 +246,7 @@ onUnmounted(() => {
 
 <style lang="scss">
 // Non-scoped for mobile responsive sidebar positioning (1000px breakpoint to match JS)
-@media screen and (max-width: 1000px) {
+@media screen and (width <= 1000px) {
   .layout-aside {
     position: fixed !important;
     left: -220px !important;

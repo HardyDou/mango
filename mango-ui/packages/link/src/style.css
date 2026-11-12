@@ -180,7 +180,7 @@
   gap: 8px;
 }
 
-@media (max-width: 720px) {
+@media (width <= 720px) {
   .link-toolbar-head {
     align-items: stretch;
     flex-direction: column;
@@ -490,8 +490,7 @@
   min-width: 0;
   max-width: calc(100% - (var(--mango-link-nav-tab-min-width) * 2) - 58px);
   height: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
+  overflow: auto hidden;
 }
 
 .mango-grid-widget-link-navigation__tabs-fixed {
@@ -621,8 +620,7 @@
   flex: 1 1 var(--mango-link-nav-items-stable-height);
   display: flex;
   align-items: flex-start;
-  align-content: flex-start;
-  justify-content: center;
+  place-content: flex-start center;
   gap: clamp(8px, calc(6px + 0.8cqw), 12px) clamp(8px, calc(6px + 0.8cqw), 14px);
   min-height: var(--mango-link-nav-items-stable-height);
   padding: clamp(4px, calc(2px + 0.6cqw), 8px) clamp(0px, 0.6cqw, 10px) 0;

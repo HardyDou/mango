@@ -10,11 +10,7 @@ export default defineConfig({
       formats: ['es'],
     },
     rollupOptions: {
-      external: [
-        'vue',
-        'vue-router',
-        'wujie',
-      ],
+      external: ['vue', 'vue-router', 'wujie'],
       output: {
         entryFileNames: '[name].js',
       },

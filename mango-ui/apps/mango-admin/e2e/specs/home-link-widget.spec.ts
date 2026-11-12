@@ -55,14 +55,19 @@ async function login(page: Page) {
 }
 
 async function expectPersonalLinkFavorited(page: Page, linkId: string, keyword: string, expected: boolean) {
-  const body = await page.evaluate(async ({ linkId, keyword }) => {
-    const response = await fetch(`/api/link/personal-links/page?page=1&size=20&keyword=${encodeURIComponent(keyword)}`);
-    const result = await response.json();
-    if (!response.ok || !(result.success || result.code === 200)) {
-      throw new Error(`查询个人网址失败：${response.status} ${JSON.stringify(result)}`);
-    }
-    return result;
-  }, { linkId, keyword });
+  const body = await page.evaluate(
+    async ({ linkId, keyword }) => {
+      const response = await fetch(
+        `/api/link/personal-links/page?page=1&size=20&keyword=${encodeURIComponent(keyword)}`,
+      );
+      const result = await response.json();
+      if (!response.ok || !(result.success || result.code === 200)) {
+        throw new Error(`查询个人网址失败：${response.status} ${JSON.stringify(result)}`);
+      }
+      return result;
+    },
+    { linkId, keyword },
+  );
   const records = body.data?.list || body.data?.records || [];
   const item = records.find((record: { id?: string | number }) => String(record.id) === linkId);
   expect(item).toBeTruthy();
@@ -151,7 +156,10 @@ test.describe('首页小组件-网址导航', () => {
     await page.reload();
     const linkWidget = page.locator('[data-surface="home.link-navigation"]');
     await expect(linkWidget).toBeVisible({ timeout: 15000 });
-    await expect(linkWidget.locator('.mango-grid-widget-link-navigation__items')).toHaveAttribute('data-state', /ready|empty/);
+    await expect(linkWidget.locator('.mango-grid-widget-link-navigation__items')).toHaveAttribute(
+      'data-state',
+      /ready|empty/,
+    );
     const linkWidgetStyle = await linkWidget.evaluate((element) => {
       const rootStyle = window.getComputedStyle(element);
       const heroElement = element.querySelector('.mango-grid-widget-link-navigation__hero');
@@ -192,23 +200,27 @@ test.describe('首页小组件-网址导航', () => {
     expect(Math.abs(linkWidgetStyle.searchLeft - linkWidgetStyle.searchRight)).toBeLessThanOrEqual(2);
     expect(linkWidgetStyle.tabsDisplay).toBe('flex');
 
-    expect([...requestedPaths].some(path => path.startsWith('/api/link/company-links/list'))).toBeTruthy();
-    expect([...requestedPaths].some(path => path.startsWith('/api/link/personal-links/page'))).toBeTruthy();
-    expect([...requestedPaths].some(path => path.startsWith('/api/link/favorites/list'))).toBeTruthy();
-    expect([...requestedPaths].some(path => path.startsWith('/api/link/personal-categories/list'))).toBeTruthy();
-    expect([...requestedPaths].some(path => path.startsWith('/api/link/navigation-widget/data'))).toBeFalsy();
+    expect([...requestedPaths].some((path) => path.startsWith('/api/link/company-links/list'))).toBeTruthy();
+    expect([...requestedPaths].some((path) => path.startsWith('/api/link/personal-links/page'))).toBeTruthy();
+    expect([...requestedPaths].some((path) => path.startsWith('/api/link/favorites/list'))).toBeTruthy();
+    expect([...requestedPaths].some((path) => path.startsWith('/api/link/personal-categories/list'))).toBeTruthy();
+    expect([...requestedPaths].some((path) => path.startsWith('/api/link/navigation-widget/data'))).toBeFalsy();
 
     const data = await fetchWidgetSourceData(page);
 
     await linkWidget.locator('[data-record-key="favorites"]').click();
     for (const item of data.favoriteItems.slice(0, 3)) {
-      await expect(linkWidget.locator(`[data-record-key="${item.id}"]`)).toContainText(item.name || '', { timeout: 10000 });
+      await expect(linkWidget.locator(`[data-record-key="${item.id}"]`)).toContainText(item.name || '', {
+        timeout: 10000,
+      });
     }
 
     for (const item of data.companyItems.slice(0, 3)) {
       const groupKey = String(item.categoryId || 'enterprise');
       await linkWidget.locator(`[data-record-key="${groupKey}"]`).click();
-      await expect(linkWidget.locator(`[data-record-key="${item.id}"]`)).toContainText(item.name || '', { timeout: 10000 });
+      await expect(linkWidget.locator(`[data-record-key="${item.id}"]`)).toContainText(item.name || '', {
+        timeout: 10000,
+      });
     }
 
     // 个人网址由独立用例创建并验证；这里不消费其它并行用例的临时数据。
@@ -282,8 +294,10 @@ test.describe('首页小组件-网址导航', () => {
     await expect(linkWidget.locator('[data-record-key="enterprise"]')).toHaveText('企业导航');
     await expect(linkWidget.locator('[data-record-key="personal-ungrouped"]')).toHaveText('未分组');
 
-    const createCategoryResponse = page.waitForResponse(response => response.url().includes('/api/link/personal-categories/create')
-      && response.request().method() === 'POST');
+    const createCategoryResponse = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/link/personal-categories/create') && response.request().method() === 'POST',
+    );
     await linkWidget.locator('[data-action="link-navigation.category.create"]').click();
     const categoryDialog = page.getByRole('dialog', { name: '新增分组' });
     await expect(categoryDialog).toBeVisible();
@@ -296,8 +310,10 @@ test.describe('首页小组件-网址导航', () => {
     await expect(linkWidget.getByRole('button', { name: categoryName })).toBeVisible({ timeout: 10000 });
     await expect(addLinkButton).toBeVisible();
 
-    const updateCategoryResponse = page.waitForResponse(response => response.url().includes('/api/link/personal-categories/update')
-      && response.request().method() === 'PUT');
+    const updateCategoryResponse = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/link/personal-categories/update') && response.request().method() === 'PUT',
+    );
     await linkWidget.locator('[data-action="link-navigation.category.edit"]').click();
     const editCategoryDialog = page.getByRole('dialog', { name: '编辑分组' });
     await expect(editCategoryDialog).toBeVisible();
@@ -308,8 +324,10 @@ test.describe('首页小组件-网址导航', () => {
     await expect(editCategoryDialog).toBeHidden({ timeout: 10000 });
     await expect(linkWidget.getByRole('button', { name: renamedCategoryName })).toBeVisible({ timeout: 10000 });
 
-    const createLinkResponse = page.waitForResponse(response => response.url().includes('/api/link/personal-links/create')
-      && response.request().method() === 'POST');
+    const createLinkResponse = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/link/personal-links/create') && response.request().method() === 'POST',
+    );
     await linkWidget.locator('[data-action="link-navigation.link.create"]').click();
     const createLinkDialog = page.getByRole('dialog', { name: '新增网址' });
     await expect(createLinkDialog).toBeVisible();
@@ -332,8 +350,9 @@ test.describe('首页小组件-网址导航', () => {
     await expect(favoriteItem).toBeHidden({ timeout: 10000 });
 
     await linkWidget.getByRole('button', { name: renamedCategoryName }).click();
-    const createFavoriteResponse = page.waitForResponse(response => response.url().includes('/api/link/favorites/create')
-      && response.request().method() === 'POST');
+    const createFavoriteResponse = page.waitForResponse(
+      (response) => response.url().includes('/api/link/favorites/create') && response.request().method() === 'POST',
+    );
     await categoryItem.hover();
     await categoryItem.locator('[data-action="link-navigation.favorite"]').click();
     const favoriteBody = await (await createFavoriteResponse).json();
@@ -342,8 +361,9 @@ test.describe('首页小组件-网址导航', () => {
 
     await linkWidget.locator('[data-record-key="favorites"]').click();
     await expect(favoriteItem).toContainText(linkTitle, { timeout: 10000 });
-    const deleteFavoriteResponse = page.waitForResponse(response => response.url().includes('/api/link/favorites/delete')
-      && response.request().method() === 'DELETE');
+    const deleteFavoriteResponse = page.waitForResponse(
+      (response) => response.url().includes('/api/link/favorites/delete') && response.request().method() === 'DELETE',
+    );
     await favoriteItem.hover();
     await favoriteItem.locator('[data-action="link-navigation.favorite"]').click();
     const deleteFavoriteBody = await (await deleteFavoriteResponse).json();
@@ -364,8 +384,10 @@ test.describe('首页小组件-网址导航', () => {
     }, linkId);
     await categoryItem.hover();
 
-    const deleteCategoryResponse = page.waitForResponse(response => response.url().includes('/api/link/personal-categories/delete')
-      && response.request().method() === 'DELETE');
+    const deleteCategoryResponse = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/link/personal-categories/delete') && response.request().method() === 'DELETE',
+    );
     await linkWidget.locator('[data-action="link-navigation.category.delete"]').click();
     await page.getByRole('dialog', { name: '删除分组' }).getByRole('button', { name: '删除' }).click();
     const deleteCategoryBody = await (await deleteCategoryResponse).json();
@@ -374,8 +396,10 @@ test.describe('首页小组件-网址导航', () => {
 
     await linkWidget.locator('[data-record-key="personal-ungrouped"]').click();
     await expect(addLinkButton).toBeVisible();
-    const createUngroupedResponse = page.waitForResponse(response => response.url().includes('/api/link/personal-links/create')
-      && response.request().method() === 'POST');
+    const createUngroupedResponse = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/link/personal-links/create') && response.request().method() === 'POST',
+    );
     await linkWidget.locator('[data-action="link-navigation.link.create"]').click();
     await expect(createLinkDialog).toBeVisible();
     await createLinkDialog.locator('[data-field="link-navigation.link.name"]').fill(ungroupedLinkTitle);

@@ -16,14 +16,17 @@
 <script setup lang="ts" name="MangoFormPage">
 import { Back } from '@element-plus/icons-vue';
 
-withDefaults(defineProps<{
-  title: string;
-  backText?: string;
-  dataPage?: string;
-}>(), {
-  backText: '返回',
-  dataPage: undefined,
-});
+withDefaults(
+  defineProps<{
+    title: string;
+    backText?: string;
+    dataPage?: string;
+  }>(),
+  {
+    backText: '返回',
+    dataPage: undefined,
+  },
+);
 
 const emit = defineEmits<{
   back: [];

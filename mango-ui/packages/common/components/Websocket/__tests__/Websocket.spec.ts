@@ -105,9 +105,7 @@ describe('WebSocket Component', () => {
       const status = 'retrying';
       const retryCount = 3;
       const maxRetries = 6;
-      const statusText = status === 'retrying'
-        ? `Connection lost, retrying ${retryCount}/${maxRetries}`
-        : '';
+      const statusText = status === 'retrying' ? `Connection lost, retrying ${retryCount}/${maxRetries}` : '';
 
       expect(statusText).toBe('Connection lost, retrying 3/6');
     });

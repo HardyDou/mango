@@ -1,18 +1,8 @@
 <template>
-  <div
-    v-loading="loading"
-    class="home-container"
-    data-page="home.workbench"
-    :data-state="pageState"
-  >
+  <div v-loading="loading" class="home-container" data-page="home.workbench" :data-state="pageState">
     <section class="home-page-bar" data-surface="home.page-switcher">
       <div class="home-page-bar__main">
-        <div
-          class="home-page-tabs"
-          data-field="home.current-page"
-          role="tablist"
-          aria-label="首页切换"
-        >
+        <div class="home-page-tabs" data-field="home.current-page" role="tablist" aria-label="首页切换">
           <button
             v-for="pageTab in pageTabs"
             :key="pageTab.id"
@@ -30,11 +20,15 @@
             </el-tooltip>
             <span class="home-page-tabs__name">{{ pageTab.name }}</span>
             <el-tag v-if="pageTab.builtIn" class="home-page-tabs__tag" type="info" effect="light" round>内置</el-tag>
-            <el-tag v-else-if="pageTab.readOnly" class="home-page-tabs__tag" type="success" effect="light" round>授权</el-tag>
+            <el-tag v-else-if="pageTab.readOnly" class="home-page-tabs__tag" type="success" effect="light" round
+              >授权</el-tag
+            >
           </button>
         </div>
         <el-tag v-if="currentPage?.builtIn" type="info" effect="light">内置</el-tag>
-        <el-tag v-else-if="currentPage?.readOnly" type="success" effect="light">{{ currentPage.sourceLabel || '授权首页' }}</el-tag>
+        <el-tag v-else-if="currentPage?.readOnly" type="success" effect="light">{{
+          currentPage.sourceLabel || '授权首页'
+        }}</el-tag>
       </div>
 
       <div class="home-page-bar__actions">
@@ -44,27 +38,52 @@
           </el-button>
         </el-tooltip>
         <el-tooltip content="重命名" placement="bottom">
-          <el-button circle data-action="home.rename" :disabled="editing || !canManageCurrentPage" @click="openRenameDialog">
+          <el-button
+            circle
+            data-action="home.rename"
+            :disabled="editing || !canManageCurrentPage"
+            @click="openRenameDialog"
+          >
             <el-icon><Edit /></el-icon>
           </el-button>
         </el-tooltip>
         <el-tooltip content="复制" placement="bottom">
-          <el-button circle data-action="home.duplicate" :disabled="editing || !canCopyCurrentPage" @click="duplicateCurrentPage">
+          <el-button
+            circle
+            data-action="home.duplicate"
+            :disabled="editing || !canCopyCurrentPage"
+            @click="duplicateCurrentPage"
+          >
             <el-icon><CopyDocument /></el-icon>
           </el-button>
         </el-tooltip>
         <el-tooltip content="前移" placement="bottom">
-          <el-button circle data-action="home.sort-up" :disabled="editing || !canMoveCurrentPageUp" @click="moveCurrentPage(-1)">
+          <el-button
+            circle
+            data-action="home.sort-up"
+            :disabled="editing || !canMoveCurrentPageUp"
+            @click="moveCurrentPage(-1)"
+          >
             <el-icon><ArrowLeft /></el-icon>
           </el-button>
         </el-tooltip>
         <el-tooltip content="后移" placement="bottom">
-          <el-button circle data-action="home.sort-down" :disabled="editing || !canMoveCurrentPageDown" @click="moveCurrentPage(1)">
+          <el-button
+            circle
+            data-action="home.sort-down"
+            :disabled="editing || !canMoveCurrentPageDown"
+            @click="moveCurrentPage(1)"
+          >
             <el-icon><ArrowRight /></el-icon>
           </el-button>
         </el-tooltip>
         <el-tooltip content="设为默认首页" placement="bottom">
-          <el-button circle data-action="home.set-default" :disabled="editing || !canSetDefault" @click="setCurrentPageDefault">
+          <el-button
+            circle
+            data-action="home.set-default"
+            :disabled="editing || !canSetDefault"
+            @click="setCurrentPageDefault"
+          >
             <el-icon><Star /></el-icon>
           </el-button>
         </el-tooltip>
@@ -116,12 +135,7 @@
           @confirm="resetLayout"
         >
           <template #reference>
-            <el-button
-              class="home-toolbar__button"
-              circle
-              aria-label="恢复默认"
-              data-action="home.layout.reset"
-            >
+            <el-button class="home-toolbar__button" circle aria-label="恢复默认" data-action="home.layout.reset">
               <el-icon><RefreshLeft /></el-icon>
             </el-button>
           </template>
@@ -142,14 +156,7 @@
       </el-tooltip>
     </div>
 
-    <el-alert
-      v-if="errorMessage"
-      class="home-alert"
-      :title="errorMessage"
-      type="error"
-      show-icon
-      :closable="false"
-    />
+    <el-alert v-if="errorMessage" class="home-alert" :title="errorMessage" type="error" show-icon :closable="false" />
 
     <MangoGridDesigner
       v-if="editing"
@@ -160,13 +167,7 @@
       :row-height="15"
       :gap="15"
     />
-    <MangoGridLayout
-      v-else
-      :items="layoutItems"
-      :widgets="workbenchWidgets"
-      :row-height="15"
-      :gap="15"
-    />
+    <MangoGridLayout v-else :items="layoutItems" :widgets="workbenchWidgets" :row-height="15" :gap="15" />
 
     <el-dialog
       v-model="nameDialog.visible"
@@ -182,18 +183,14 @@
         data-surface="home.name-form"
       >
         <el-form-item label="首页名称" prop="name">
-          <el-input
-            v-model="nameDialog.form.name"
-            data-field="home.name"
-            maxlength="64"
-            show-word-limit
-            clearable
-          />
+          <el-input v-model="nameDialog.form.name" data-field="home.name" maxlength="64" show-word-limit clearable />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="nameDialog.visible = false">取消</el-button>
-        <el-button type="primary" :loading="saving" data-action="home.name.submit" @click="submitNameDialog">保存</el-button>
+        <el-button type="primary" :loading="saving" data-action="home.name.submit" @click="submitNameDialog"
+          >保存</el-button
+        >
       </template>
     </el-dialog>
   </div>
@@ -224,16 +221,9 @@ import { useRoutesList } from '../../stores/routesList';
 import { ensureFeatureRegistrars } from '../../runtime/featureRegistrars';
 import { useMangoAdminHomeWidgets } from '../../runtime/homeWidgets';
 import { moveSortableHomePage, sortableHomePages } from './pageOrder';
-import {
-  MangoGridDesigner,
-  MangoGridLayout,
-  parseGridLayoutValue,
-} from '@mango/grid-layout';
+import { MangoGridDesigner, MangoGridLayout, parseGridLayoutValue } from '@mango/grid-layout';
 import type { GridLayoutItem } from '@mango/grid-layout';
-import {
-  mergeGridWidgets,
-  systemGridWidgets,
-} from '@mango/grid-widgets';
+import { mergeGridWidgets, systemGridWidgets } from '@mango/grid-widgets';
 import type { MangoWidgetNavigateTarget, MangoWidgetRuntimeContext } from '@mango/grid-widgets';
 
 const BUILT_IN_HOME_ID = '__built_in__';
@@ -277,27 +267,38 @@ const pageState = computed(() => {
   return 'ready';
 });
 const currentRouteKey = computed(() => pageRouteKey(currentPage.value));
-const canManageCurrentPage = computed(() => Boolean(currentPage.value?.id && !currentPage.value.builtIn && !currentPage.value.readOnly));
-const canCopyCurrentPage = computed(() => Boolean(currentPage.value && !currentPage.value.builtIn && currentPage.value.canCopy !== false));
-const canSetDefault = computed(() => Boolean(currentRouteKey.value && currentRouteKey.value !== BUILT_IN_HOME_ID && !currentPage.value?.defaultPage));
+const canManageCurrentPage = computed(() =>
+  Boolean(currentPage.value?.id && !currentPage.value.builtIn && !currentPage.value.readOnly),
+);
+const canCopyCurrentPage = computed(() =>
+  Boolean(currentPage.value && !currentPage.value.builtIn && currentPage.value.canCopy !== false),
+);
+const canSetDefault = computed(() =>
+  Boolean(currentRouteKey.value && currentRouteKey.value !== BUILT_IN_HOME_ID && !currentPage.value?.defaultPage),
+);
 const canEditCurrentLayout = computed(() => Boolean(!currentPage.value?.readOnly || currentPage.value?.builtIn));
 const personalPages = computed(() => sortableHomePages(pages.value));
 const currentPageIndex = computed(() => {
   const id = currentPage.value?.id;
-  return id ? personalPages.value.findIndex(pageItem => String(pageItem.id) === String(id)) : -1;
+  return id ? personalPages.value.findIndex((pageItem) => String(pageItem.id) === String(id)) : -1;
 });
 const canMoveCurrentPageUp = computed(() => currentPageIndex.value > 0);
-const canMoveCurrentPageDown = computed(() => currentPageIndex.value >= 0 && currentPageIndex.value < personalPages.value.length - 1);
+const canMoveCurrentPageDown = computed(
+  () => currentPageIndex.value >= 0 && currentPageIndex.value < personalPages.value.length - 1,
+);
 const pageTabs = computed(() => {
-  const tabMap = new Map<string, {
-    id: string;
-    name: string;
-    defaultPage?: boolean;
-    builtIn: boolean;
-    readOnly?: boolean;
-    active: boolean;
-  }>();
-  pages.value.forEach(pageItem => {
+  const tabMap = new Map<
+    string,
+    {
+      id: string;
+      name: string;
+      defaultPage?: boolean;
+      builtIn: boolean;
+      readOnly?: boolean;
+      active: boolean;
+    }
+  >();
+  pages.value.forEach((pageItem) => {
     const id = pageRouteKey(pageItem);
     if (tabMap.has(id)) {
       return;
@@ -332,10 +333,9 @@ const widgetRuntime = computed<MangoWidgetRuntimeContext>(() => ({
     nickname: userInfo.userInfos.nickname,
     avatar: userInfo.userInfos.photo,
     roles: userInfo.userInfos.roles,
-    permissions: Array.from(new Set([
-      ...(userInfo.userInfos.permissions || []),
-      ...(userInfo.userInfos.authBtnList || []),
-    ])),
+    permissions: Array.from(
+      new Set([...(userInfo.userInfos.permissions || []), ...(userInfo.userInfos.authBtnList || [])]),
+    ),
     appCode: userInfo.userInfos.appCode,
   },
   tenant: {
@@ -346,11 +346,13 @@ const widgetRuntime = computed<MangoWidgetRuntimeContext>(() => ({
   menus: routesList.value,
   navigate: navigateWidget,
 }));
-const workbenchWidgets = computed(() => mergeGridWidgets({
-  runtime: widgetRuntime.value,
-  systemWidgets: systemGridWidgets,
-  businessWidgets: businessHomeWidgets.value,
-}));
+const workbenchWidgets = computed(() =>
+  mergeGridWidgets({
+    runtime: widgetRuntime.value,
+    systemWidgets: systemGridWidgets,
+    businessWidgets: businessHomeWidgets.value,
+  }),
+);
 
 onMounted(() => {
   initializeHome();
@@ -414,9 +416,11 @@ function isOptionalHomeWorkbenchUnavailable(error: unknown): boolean {
       };
     };
   };
-  return Number(record.code) === 404
-    || Number(record.response?.status) === 404
-    || Number(record.response?.data?.code) === 404;
+  return (
+    Number(record.code) === 404 ||
+    Number(record.response?.status) === 404 ||
+    Number(record.response?.data?.code) === 404
+  );
 }
 
 async function handleHomeSelect(value: string): Promise<void> {
@@ -521,13 +525,14 @@ async function duplicateCurrentPage(): Promise<void> {
   saving.value = true;
   errorMessage.value = '';
   try {
-    const page = currentPage.value.id && !currentPage.value.readOnly
-      ? await homePageApi.duplicate(String(currentPage.value.id))
-      : await homePageApi.create({
-        name: `${currentPage.value.name} 副本`,
-        layoutJson: stringifyHomeLayout(layoutItems.value),
-        setDefault: false,
-      });
+    const page =
+      currentPage.value.id && !currentPage.value.readOnly
+        ? await homePageApi.duplicate(String(currentPage.value.id))
+        : await homePageApi.create({
+            name: `${currentPage.value.name} 副本`,
+            layoutJson: stringifyHomeLayout(layoutItems.value),
+            setDefault: false,
+          });
     await refreshPagesAndNavigate(page);
   } catch (error) {
     errorMessage.value = '复制首页失败，请稍后重试。';
@@ -549,7 +554,7 @@ async function moveCurrentPage(offset: -1 | 1): Promise<void> {
   saving.value = true;
   errorMessage.value = '';
   try {
-    pages.value = await homePageApi.sort({ ids: sortedPages.map(pageItem => String(pageItem.id)) });
+    pages.value = await homePageApi.sort({ ids: sortedPages.map((pageItem) => String(pageItem.id)) });
   } catch (error) {
     errorMessage.value = '首页排序保存失败，请稍后重试。';
   } finally {
@@ -681,29 +686,20 @@ function gridItem(
     padding?: boolean;
   } = {},
 ): GridLayoutItem {
-  const {
-    minW = 3,
-    minH = 10,
-    maxW = 12,
-    maxH = 1000,
-    showTitle,
-    padding,
-  } = options;
+  const { minW = 3, minH = 10, maxW = 12, maxH = 1000, showTitle, padding } = options;
   return {
     id,
     widgetType,
     title,
     layout: { x, y, w, h, minW, minH, maxW, maxH },
-    props: widgetType === 'link.link-navigation'
-      ? { maxGroups: 24, maxItemsPerGroup: 200 }
-      : undefined,
+    props: widgetType === 'link.link-navigation' ? { maxGroups: 24, maxItemsPerGroup: 200 } : undefined,
     showTitle,
     padding,
   };
 }
 
 function cloneItems(items: GridLayoutItem[]): GridLayoutItem[] {
-  return items.map(item => ({
+  return items.map((item) => ({
     ...item,
     layout: { ...item.layout },
     props: item.props ? { ...item.props } : undefined,
@@ -791,7 +787,10 @@ function resolveWidgetQuery(raw: unknown): LocationQueryRaw | undefined {
   background: transparent;
   border: 0;
   border-radius: 6px;
-  transition: color 0.16s ease, background-color 0.16s ease, box-shadow 0.16s ease;
+  transition:
+    color 0.16s ease,
+    background-color 0.16s ease,
+    box-shadow 0.16s ease;
 }
 
 .home-page-tabs__item:hover:not(:disabled) {
@@ -862,7 +861,7 @@ function resolveWidgetQuery(raw: unknown): LocationQueryRaw | undefined {
   margin-bottom: 0;
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .home-page-bar {
     align-items: stretch;
     flex-direction: column;

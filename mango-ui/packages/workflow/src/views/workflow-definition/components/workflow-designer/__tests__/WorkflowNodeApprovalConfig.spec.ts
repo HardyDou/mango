@@ -70,10 +70,16 @@ async function mountConfig(config: any) {
 
 function registerElementStubs(app: ReturnType<typeof createApp>) {
   app.component('ElCollapse', { template: '<div><slot /></div>' });
-  app.component('ElCollapseItem', { props: ['title', 'name'], template: '<section><h3>{{ title }}</h3><slot /></section>' });
+  app.component('ElCollapseItem', {
+    props: ['title', 'name'],
+    template: '<section><h3>{{ title }}</h3><slot /></section>',
+  });
   app.component('ElRadioGroup', { props: ['modelValue'], template: '<div><slot /></div>' });
   app.component('ElRadio', { props: ['label'], template: '<label><slot /></label>' });
-  app.component('ElInputNumber', { props: ['modelValue'], template: '<span class="input-number">{{ modelValue }}</span>' });
+  app.component('ElInputNumber', {
+    props: ['modelValue'],
+    template: '<span class="input-number">{{ modelValue }}</span>',
+  });
   app.component('ElSelect', { template: '<div />' });
   app.component('ElOption', { template: '<div />' });
   app.component('ElTreeSelect', { template: '<div />' });

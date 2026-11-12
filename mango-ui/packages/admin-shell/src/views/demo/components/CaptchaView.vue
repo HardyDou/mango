@@ -713,7 +713,7 @@ function toggleCode(key: DemoKey) {
 </script>
 
 <style scoped lang="scss">
-@use './demo-page.scss';
+@use './demo-page';
 
 .mock-form-card {
   width: min(460px, 100%);
@@ -928,7 +928,7 @@ function toggleCode(key: DemoKey) {
   }
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .mock-form-card {
     padding: 16px;
   }

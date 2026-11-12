@@ -148,6 +148,7 @@
 ### Fixed
 
 - Generated projects keep the bootstrap deploy sequence `plan -> apply --strategy=rolling -> finalize -> verify` after the finalize idempotency fix.
+
 ## 1.3.4 - 2026-10-21
 
 ### Changed

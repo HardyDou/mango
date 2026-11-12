@@ -58,8 +58,8 @@ import '@mango/link-page/style.css';
 | `tenantId`          | `string \| number`                                         | -                        | 匿名公开导航查询使用的租户 ID；登录查询仍以认证上下文为准。                                                         |
 | `headers`           | `HeadersInit \| () => HeadersInit \| Promise<HeadersInit>` | -                        | 请求头，宿主可传租户、认证等上下文。                                                                                |
 | `credentials`       | `RequestCredentials`                                       | `same-origin`            | fetch credentials。                                                                                                 |
-| `title`             | `string`                                                   | `业务导航`           | 页面标题兜底值。                                                                                                    |
-| `headline`          | `string`                                                   | `业务快捷入口`       | 搜索框上方主文案，可由宿主配置。                                                                                    |
+| `title`             | `string`                                                   | `业务导航`               | 页面标题兜底值。                                                                                                    |
+| `headline`          | `string`                                                   | `业务快捷入口`           | 搜索框上方主文案，可由宿主配置。                                                                                    |
 | `subtitle`          | `string`                                                   | -                        | 主文案下方辅助说明。                                                                                                |
 | `searchPlaceholder` | `string`                                                   | `搜索网站、工具或关键词` | 搜索框占位文案。                                                                                                    |
 | `jumpEnabled`       | `boolean`                                                  | -                        | 组件侧跳转开关。未传时尊重后端 `redirectUrl`；`false` 强制直连原始 `url`；`true` 按 `source` 补公开或登录跳转地址。 |

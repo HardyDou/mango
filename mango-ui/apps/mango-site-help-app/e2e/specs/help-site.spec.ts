@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 test.beforeEach(async ({ page }) => {
-  await page.route('**/api/cms-api/**', async route => {
+  await page.route('**/api/cms-api/**', async (route) => {
     const url = new URL(route.request().url());
     const path = url.pathname;
     expect(url.searchParams.get('domain')).toBe('127.0.0.1:5192');
@@ -60,8 +60,22 @@ test.beforeEach(async ({ page }) => {
           code: 200,
           success: true,
           data: [
-            { id: '31', parentId: '0', categoryName: '快速入门', categoryCode: 'start', seoDescription: '创建站点与发布内容。', sort: 1 },
-            { id: '32', parentId: '0', categoryName: '后台管理', categoryCode: 'admin', seoDescription: '菜单、权限与配置。', sort: 2 },
+            {
+              id: '31',
+              parentId: '0',
+              categoryName: '快速入门',
+              categoryCode: 'start',
+              seoDescription: '创建站点与发布内容。',
+              sort: 1,
+            },
+            {
+              id: '32',
+              parentId: '0',
+              categoryName: '后台管理',
+              categoryCode: 'admin',
+              seoDescription: '菜单、权限与配置。',
+              sort: 2,
+            },
           ],
         },
       });
@@ -75,22 +89,34 @@ test.beforeEach(async ({ page }) => {
         json: {
           code: 200,
           success: true,
-          data: position === 'HELP_HERO'
-            ? [
-                {
-                  id: 'hero-1',
-                  adCode: 'help-hero',
-                  adName: '帮助中心首页 Banner',
-                  position: 'HELP_HERO',
-                  materialType: 'SINGLE_IMAGE',
-                  title: '芒果科技帮助中心',
-                  textContent: '从站点创建到内容发布，按真实后台能力组织操作指南。',
-                  imageUrl: '/api/cms-api/files/public-preview?id=9301&domain=127.0.0.1%3A5192',
-                  jumpUrl: '#contents',
-                  sort: 1,
-                },
-              ]
-            : [{ id: '1', adCode: 'help-top', adName: '服务公告', title: '服务公告', textContent: '帮助中心公告内容。', position: 'HELP_TOP', adType: 'TEXT', sort: 1 }],
+          data:
+            position === 'HELP_HERO'
+              ? [
+                  {
+                    id: 'hero-1',
+                    adCode: 'help-hero',
+                    adName: '帮助中心首页 Banner',
+                    position: 'HELP_HERO',
+                    materialType: 'SINGLE_IMAGE',
+                    title: '芒果科技帮助中心',
+                    textContent: '从站点创建到内容发布，按真实后台能力组织操作指南。',
+                    imageUrl: '/api/cms-api/files/public-preview?id=9301&domain=127.0.0.1%3A5192',
+                    jumpUrl: '#contents',
+                    sort: 1,
+                  },
+                ]
+              : [
+                  {
+                    id: '1',
+                    adCode: 'help-top',
+                    adName: '服务公告',
+                    title: '服务公告',
+                    textContent: '帮助中心公告内容。',
+                    position: 'HELP_TOP',
+                    adType: 'TEXT',
+                    sort: 1,
+                  },
+                ],
         },
       });
       return;
@@ -154,13 +180,13 @@ test('loads help site CMS data and filters content', async ({ page }) => {
   const errors: string[] = [];
   const failedResponses: string[] = [];
   const cmsApiRequests: string[] = [];
-  page.on('pageerror', error => errors.push(error.message));
-  page.on('console', message => {
+  page.on('pageerror', (error) => errors.push(error.message));
+  page.on('console', (message) => {
     if (message.type() === 'error') {
       errors.push(message.text());
     }
   });
-  page.on('response', response => {
+  page.on('response', (response) => {
     if (response.url().includes('/cms-api/')) {
       cmsApiRequests.push(response.url());
       if (!response.ok()) {
@@ -188,9 +214,13 @@ test('loads help site CMS data and filters content', async ({ page }) => {
   await expect(page).toHaveTitle('芒果科技帮助中心');
 
   expect(cmsApiRequests.length).toBeGreaterThanOrEqual(7);
-  expect(cmsApiRequests.some(request => request.includes('/banners/list'))).toBeFalsy();
-  expect(cmsApiRequests.some(request => request.includes('/advertisements/list') && request.includes('HELP_HERO'))).toBeTruthy();
-  expect(cmsApiRequests.some(request => request.includes('/advertisements/list') && request.includes('HELP_TOP'))).toBeTruthy();
+  expect(cmsApiRequests.some((request) => request.includes('/banners/list'))).toBeFalsy();
+  expect(
+    cmsApiRequests.some((request) => request.includes('/advertisements/list') && request.includes('HELP_HERO')),
+  ).toBeTruthy();
+  expect(
+    cmsApiRequests.some((request) => request.includes('/advertisements/list') && request.includes('HELP_TOP')),
+  ).toBeTruthy();
   expect(failedResponses, `Failed CMS API responses:\n${failedResponses.join('\n')}`).toEqual([]);
   expect(errors, `Browser errors:\n${errors.join('\n')}`).toEqual([]);
 });

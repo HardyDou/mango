@@ -78,11 +78,15 @@ describe('request utilities', () => {
 
     const config = await requestInterceptor().fulfilled({ url: '/workflow/tasks/todo', headers: {} });
 
-    expect(mocks.service.post).toHaveBeenCalledWith('/auth/refresh', { refreshToken: 'refresh-token' }, expect.objectContaining({
-      ignoreToken: true,
-      skipRefreshToken: true,
-      silentError: true,
-    }));
+    expect(mocks.service.post).toHaveBeenCalledWith(
+      '/auth/refresh',
+      { refreshToken: 'refresh-token' },
+      expect.objectContaining({
+        ignoreToken: true,
+        skipRefreshToken: true,
+        silentError: true,
+      }),
+    );
     expect(Session.getToken()).toBe('new-token');
     expect(Session.getRefreshToken()).toBe('new-refresh-token');
     expect(config.headers.Authorization).toBe('Bearer new-token');
@@ -106,16 +110,22 @@ describe('request utilities', () => {
     } as any;
 
     await expect(responseInterceptor().fulfilled(response)).resolves.toEqual({ ok: true });
-    expect(mocks.service.post).toHaveBeenCalledWith('/auth/refresh', { refreshToken: 'refresh-token' }, expect.objectContaining({
-      ignoreToken: true,
-      skipRefreshToken: true,
-      silentError: true,
-    }));
-    expect(mocks.service).toHaveBeenCalledWith(expect.objectContaining({
-      url: '/auth/userinfo',
-      _retry: true,
-      headers: expect.objectContaining({ Authorization: 'Bearer new-token' }),
-    }));
+    expect(mocks.service.post).toHaveBeenCalledWith(
+      '/auth/refresh',
+      { refreshToken: 'refresh-token' },
+      expect.objectContaining({
+        ignoreToken: true,
+        skipRefreshToken: true,
+        silentError: true,
+      }),
+    );
+    expect(mocks.service).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: '/auth/userinfo',
+        _retry: true,
+        headers: expect.objectContaining({ Authorization: 'Bearer new-token' }),
+      }),
+    );
   });
 
   it('resolves HTTP errors from backend message before fallback status text', () => {
@@ -125,9 +135,9 @@ describe('request utilities', () => {
 });
 
 function requestInterceptor() {
-  return mocks.handlers.find(item => item.type === 'request');
+  return mocks.handlers.find((item) => item.type === 'request');
 }
 
 function responseInterceptor() {
-  return mocks.handlers.find(item => item.type === 'response');
+  return mocks.handlers.find((item) => item.type === 'response');
 }

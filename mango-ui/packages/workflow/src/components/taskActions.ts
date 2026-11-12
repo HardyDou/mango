@@ -1,12 +1,17 @@
 import type { WorkflowNodeActionConfig, WorkflowTaskActionKey } from '../api/workflow';
 
-export type WorkflowActionOverrides = Partial<Record<WorkflowTaskActionKey, {
-  visible?: boolean;
-  disabled?: boolean;
-  label?: string;
-  tooltip?: string;
-  targetTaskDefinitionKey?: string;
-}>>;
+export type WorkflowActionOverrides = Partial<
+  Record<
+    WorkflowTaskActionKey,
+    {
+      visible?: boolean;
+      disabled?: boolean;
+      label?: string;
+      tooltip?: string;
+      targetTaskDefinitionKey?: string;
+    }
+  >
+>;
 
 export interface WorkflowResolvedAction extends WorkflowNodeActionConfig {
   key: WorkflowTaskActionKey;
@@ -60,13 +65,17 @@ export function resolveVisibleWorkflowActions(
         disabled: Boolean(action.disabled || override.disabled),
         tooltip: override.tooltip || action.tooltip || '',
         visible: override.visible ?? action.enabled !== false,
-        buttonType: actionKey === 'complete' ? 'primary' : action.danger || actionKey === 'reject' ? 'danger' : 'default',
+        buttonType:
+          actionKey === 'complete' ? 'primary' : action.danger || actionKey === 'reject' ? 'danger' : 'default',
       };
     })
-    .filter(action => action.visible)
+    .filter((action) => action.visible)
     .sort((a, b) => Number(a.order || 0) - Number(b.order || 0));
 }
 
-export function isWorkflowCommentRequired(actionConfig: Pick<WorkflowNodeActionConfig, 'requireComment'>, comment?: string) {
+export function isWorkflowCommentRequired(
+  actionConfig: Pick<WorkflowNodeActionConfig, 'requireComment'>,
+  comment?: string,
+) {
   return Boolean(actionConfig.requireComment && !String(comment || '').trim());
 }

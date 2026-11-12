@@ -15,7 +15,9 @@
             <el-button type="success" @click="openSealApplyDialog()">申请合同用印</el-button>
           </div>
           <div v-else class="header-actions">
-            <el-tag type="primary" effect="plain">{{ activeApplyDefinition?.definitionName || activeApplyLauncher?.label || '流程申请' }}</el-tag>
+            <el-tag type="primary" effect="plain">{{
+              activeApplyDefinition?.definitionName || activeApplyLauncher?.label || '流程申请'
+            }}</el-tag>
             <el-button @click="exitApplyEntryMode">返回业务示例</el-button>
           </div>
         </div>
@@ -25,105 +27,101 @@
         <div class="focus-copy">
           <div class="intro-eyebrow">自定义申请页</div>
           <h3>{{ activeApplyDefinition?.definitionName || activeApplyLauncher?.label || '流程申请' }}</h3>
-          <p>
-            请确认申请信息，提交后进入审批流程。
-          </p>
+          <p>请确认申请信息，提交后进入审批流程。</p>
         </div>
         <el-button @click="exitApplyEntryMode">返回业务示例</el-button>
       </div>
 
       <template v-else>
-      <div class="example-overview">
-        <section class="example-intro">
-          <div class="intro-eyebrow">业务接入方式</div>
-          <h3>业务保存当前态，工作流保存流程态和关键变量</h3>
-          <p>
-            列表来自工作流申请中心；详情按业务类型和业务单号查询申请历史。当前节点读取申请中心同步的运行中任务。
-          </p>
-        </section>
-        <section class="example-flow">
-          <div v-for="step in integrationSteps" :key="step.title" class="flow-step">
-            <span class="step-index">{{ step.index }}</span>
-            <div>
-              <strong>{{ step.title }}</strong>
-              <small>{{ step.desc }}</small>
+        <div class="example-overview">
+          <section class="example-intro">
+            <div class="intro-eyebrow">业务接入方式</div>
+            <h3>业务保存当前态，工作流保存流程态和关键变量</h3>
+            <p>列表来自工作流申请中心；详情按业务类型和业务单号查询申请历史。当前节点读取申请中心同步的运行中任务。</p>
+          </section>
+          <section class="example-flow">
+            <div v-for="step in integrationSteps" :key="step.title" class="flow-step">
+              <span class="step-index">{{ step.index }}</span>
+              <div>
+                <strong>{{ step.title }}</strong>
+                <small>{{ step.desc }}</small>
+              </div>
             </div>
-          </div>
-        </section>
-      </div>
-
-      <el-table v-loading="loading" :data="expenseRows" stripe class="example-table">
-        <el-table-column prop="code" label="业务单号" min-width="160" />
-        <el-table-column prop="applicant" label="申请人" width="110" />
-        <el-table-column prop="category" label="费用类型" width="110">
-          <template #default="{ row }">
-            <el-tag effect="plain">{{ row.category || '-' }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="amount" label="申请金额" width="120">
-          <template #default="{ row }">{{ formatAmount(row.amount) }}</template>
-        </el-table-column>
-        <el-table-column prop="reason" label="报销事由" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="businessStatus" label="业务状态" width="110">
-          <template #default="{ row }">
-            <el-tag :type="businessStatusTag(row.businessStatus)">{{ row.businessStatus }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="currentNodeName" label="当前节点" width="150">
-          <template #default="{ row }">
-            <span class="current-node">{{ row.currentNodeName }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="submitCount" label="申请次数" width="100" />
-        <el-table-column prop="workflowName" label="关联流程" min-width="160" show-overflow-tooltip />
-        <el-table-column label="操作" width="150" fixed="right">
-          <template #default="{ row }">
-            <el-button link type="primary" @click="openDetailDialog(row)">详情</el-button>
-            <el-button v-if="canSubmit(row)" link type="primary" @click="openApplyDialog(row)">再申请</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-
-      <el-empty
-        v-if="!loading && !expenseRows.length && !sealRows.length"
-        description="暂无业务流程实例，点击申请报销或申请合同用印发起真实流程"
-      />
-
-      <div class="business-table-divider">
-        <div>
-          <h3>合同用印审批</h3>
-          <p>自定义业务页面，申请和审批均使用 Word 表格式审批单</p>
+          </section>
         </div>
-        <el-button type="success" plain @click="openSealApplyDialog()">申请合同用印</el-button>
-      </div>
 
-      <el-table v-loading="loading" :data="sealRows" stripe class="example-table">
-        <el-table-column prop="code" label="业务单号" min-width="170" />
-        <el-table-column prop="contractName" label="合同名称" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="counterparty" label="对方单位" min-width="160" show-overflow-tooltip />
-        <el-table-column prop="contractAmount" label="合同金额" width="130">
-          <template #default="{ row }">{{ formatAmount(row.contractAmount) }}</template>
-        </el-table-column>
-        <el-table-column prop="sealType" label="用印类型" width="130" />
-        <el-table-column prop="businessStatus" label="业务状态" width="110">
-          <template #default="{ row }">
-            <el-tag :type="businessStatusTag(row.businessStatus)">{{ row.businessStatus }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="currentNodeName" label="当前节点" width="160">
-          <template #default="{ row }">
-            <span class="current-node">{{ row.currentNodeName }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="submitCount" label="申请次数" width="100" />
-        <el-table-column prop="workflowName" label="关联流程" min-width="170" show-overflow-tooltip />
-        <el-table-column label="操作" width="150" fixed="right">
-          <template #default="{ row }">
-            <el-button link type="primary" @click="openSealDetailDialog(row)">详情</el-button>
-            <el-button v-if="canSubmit(row)" link type="primary" @click="openSealApplyDialog(row)">再申请</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+        <el-table v-loading="loading" :data="expenseRows" stripe class="example-table">
+          <el-table-column prop="code" label="业务单号" min-width="160" />
+          <el-table-column prop="applicant" label="申请人" width="110" />
+          <el-table-column prop="category" label="费用类型" width="110">
+            <template #default="{ row }">
+              <el-tag effect="plain">{{ row.category || '-' }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="amount" label="申请金额" width="120">
+            <template #default="{ row }">{{ formatAmount(row.amount) }}</template>
+          </el-table-column>
+          <el-table-column prop="reason" label="报销事由" min-width="180" show-overflow-tooltip />
+          <el-table-column prop="businessStatus" label="业务状态" width="110">
+            <template #default="{ row }">
+              <el-tag :type="businessStatusTag(row.businessStatus)">{{ row.businessStatus }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="currentNodeName" label="当前节点" width="150">
+            <template #default="{ row }">
+              <span class="current-node">{{ row.currentNodeName }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="submitCount" label="申请次数" width="100" />
+          <el-table-column prop="workflowName" label="关联流程" min-width="160" show-overflow-tooltip />
+          <el-table-column label="操作" width="150" fixed="right">
+            <template #default="{ row }">
+              <el-button link type="primary" @click="openDetailDialog(row)">详情</el-button>
+              <el-button v-if="canSubmit(row)" link type="primary" @click="openApplyDialog(row)">再申请</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <el-empty
+          v-if="!loading && !expenseRows.length && !sealRows.length"
+          description="暂无业务流程实例，点击申请报销或申请合同用印发起真实流程"
+        />
+
+        <div class="business-table-divider">
+          <div>
+            <h3>合同用印审批</h3>
+            <p>自定义业务页面，申请和审批均使用 Word 表格式审批单</p>
+          </div>
+          <el-button type="success" plain @click="openSealApplyDialog()">申请合同用印</el-button>
+        </div>
+
+        <el-table v-loading="loading" :data="sealRows" stripe class="example-table">
+          <el-table-column prop="code" label="业务单号" min-width="170" />
+          <el-table-column prop="contractName" label="合同名称" min-width="180" show-overflow-tooltip />
+          <el-table-column prop="counterparty" label="对方单位" min-width="160" show-overflow-tooltip />
+          <el-table-column prop="contractAmount" label="合同金额" width="130">
+            <template #default="{ row }">{{ formatAmount(row.contractAmount) }}</template>
+          </el-table-column>
+          <el-table-column prop="sealType" label="用印类型" width="130" />
+          <el-table-column prop="businessStatus" label="业务状态" width="110">
+            <template #default="{ row }">
+              <el-tag :type="businessStatusTag(row.businessStatus)">{{ row.businessStatus }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="currentNodeName" label="当前节点" width="160">
+            <template #default="{ row }">
+              <span class="current-node">{{ row.currentNodeName }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="submitCount" label="申请次数" width="100" />
+          <el-table-column prop="workflowName" label="关联流程" min-width="170" show-overflow-tooltip />
+          <el-table-column label="操作" width="150" fixed="right">
+            <template #default="{ row }">
+              <el-button link type="primary" @click="openSealDetailDialog(row)">详情</el-button>
+              <el-button v-if="canSubmit(row)" link type="primary" @click="openSealApplyDialog(row)">再申请</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
       </template>
     </el-card>
 
@@ -136,7 +134,13 @@
       @closed="handleApplyDialogClosed(expenseBusiness.applyPageKey)"
     >
       <div class="expense-apply-layout">
-        <el-form ref="expenseFormRef" :model="expenseForm" :rules="expenseRules" label-width="92px" class="expense-form">
+        <el-form
+          ref="expenseFormRef"
+          :model="expenseForm"
+          :rules="expenseRules"
+          label-width="92px"
+          class="expense-form"
+        >
           <el-form-item label="业务单号">
             <el-input v-model="expenseForm.code" disabled />
           </el-form-item>
@@ -155,7 +159,12 @@
             <el-input-number v-model="expenseForm.amount" :min="0" :precision="2" controls-position="right" />
           </el-form-item>
           <el-form-item label="发生日期" prop="expenseDate">
-            <el-date-picker v-model="expenseForm.expenseDate" type="date" value-format="YYYY-MM-DD" placeholder="请选择日期" />
+            <el-date-picker
+              v-model="expenseForm.expenseDate"
+              type="date"
+              value-format="YYYY-MM-DD"
+              placeholder="请选择日期"
+            />
           </el-form-item>
           <el-form-item label="票据张数">
             <el-input-number v-model="expenseForm.invoiceCount" :min="0" controls-position="right" />
@@ -247,7 +256,12 @@
                   <th>合同金额</th>
                   <td>
                     <el-form-item prop="contractAmount">
-                      <el-input-number v-model="sealForm.contractAmount" :min="0" :precision="2" controls-position="right" />
+                      <el-input-number
+                        v-model="sealForm.contractAmount"
+                        :min="0"
+                        :precision="2"
+                        controls-position="right"
+                      />
                     </el-form-item>
                   </td>
                 </tr>
@@ -273,7 +287,12 @@
                   <th>期望用印日期</th>
                   <td>
                     <el-form-item prop="expectedSealDate">
-                      <el-date-picker v-model="sealForm.expectedSealDate" type="date" value-format="YYYY-MM-DD" placeholder="请选择日期" />
+                      <el-date-picker
+                        v-model="sealForm.expectedSealDate"
+                        type="date"
+                        value-format="YYYY-MM-DD"
+                        placeholder="请选择日期"
+                      />
                     </el-form-item>
                   </td>
                   <th>紧急程度</th>
@@ -308,7 +327,12 @@
                   <th>用印事由</th>
                   <td colspan="3">
                     <el-form-item prop="purpose">
-                      <el-input v-model="sealForm.purpose" type="textarea" :rows="4" placeholder="请输入用印事由和背景说明" />
+                      <el-input
+                        v-model="sealForm.purpose"
+                        type="textarea"
+                        :rows="4"
+                        placeholder="请输入用印事由和背景说明"
+                      />
                     </el-form-item>
                   </td>
                 </tr>
@@ -361,8 +385,12 @@
                     <el-descriptions-item label="发生日期">{{ expenseForm.expenseDate || '-' }}</el-descriptions-item>
                     <el-descriptions-item label="票据张数">{{ expenseForm.invoiceCount || 0 }}</el-descriptions-item>
                     <el-descriptions-item label="预算科目">{{ expenseForm.budgetSubject || '-' }}</el-descriptions-item>
-                    <el-descriptions-item label="收款账户" :span="2">{{ expenseForm.bankAccount || '-' }}</el-descriptions-item>
-                    <el-descriptions-item label="报销事由" :span="2">{{ expenseForm.reason || '-' }}</el-descriptions-item>
+                    <el-descriptions-item label="收款账户" :span="2">{{
+                      expenseForm.bankAccount || '-'
+                    }}</el-descriptions-item>
+                    <el-descriptions-item label="报销事由" :span="2">{{
+                      expenseForm.reason || '-'
+                    }}</el-descriptions-item>
                   </el-descriptions>
                 </el-tab-pane>
                 <el-tab-pane label="审批流程" name="flow">
@@ -402,7 +430,8 @@
                           <el-tag :type="businessStatusTag(record.status)" size="small">{{ record.status }}</el-tag>
                         </div>
                         <div class="apply-record-meta">
-                          {{ formatAmount(record.snapshot.amount) }} · {{ record.snapshot.category || '-' }} · {{ record.currentNodeName }}
+                          {{ formatAmount(record.snapshot.amount) }} · {{ record.snapshot.category || '-' }} ·
+                          {{ record.currentNodeName }}
                         </div>
                         <div v-if="record.comment" class="apply-record-comment">{{ record.comment }}</div>
                       </div>
@@ -505,7 +534,8 @@
                           <el-tag :type="businessStatusTag(record.status)" size="small">{{ record.status }}</el-tag>
                         </div>
                         <div class="apply-record-meta">
-                          {{ record.snapshot.contractName }} · {{ formatAmount(record.snapshot.contractAmount) }} · {{ record.currentNodeName }}
+                          {{ record.snapshot.contractName }} · {{ formatAmount(record.snapshot.contractAmount) }} ·
+                          {{ record.currentNodeName }}
                         </div>
                         <div v-if="record.comment" class="apply-record-comment">{{ record.comment }}</div>
                       </div>
@@ -538,7 +568,6 @@
         </div>
       </div>
     </el-drawer>
-
   </div>
 </template>
 
@@ -728,16 +757,22 @@ const sealRules: FormRules = {
   purpose: [{ required: true, message: '请输入用印事由', trigger: 'blur' }],
 };
 
-const reimbursementFlow = computed(() => workflowDefinitions.value.find(item =>
-  item.status === 'PUBLISHED'
-  && item.id
-  && parseWorkflowFormConfig(item.formJson).customConfig.applyPageKey === expenseBusiness.applyPageKey,
-));
-const sealFlow = computed(() => workflowDefinitions.value.find(item =>
-  item.status === 'PUBLISHED'
-  && item.id
-  && parseWorkflowFormConfig(item.formJson).customConfig.applyPageKey === sealBusiness.applyPageKey,
-));
+const reimbursementFlow = computed(() =>
+  workflowDefinitions.value.find(
+    (item) =>
+      item.status === 'PUBLISHED' &&
+      item.id &&
+      parseWorkflowFormConfig(item.formJson).customConfig.applyPageKey === expenseBusiness.applyPageKey,
+  ),
+);
+const sealFlow = computed(() =>
+  workflowDefinitions.value.find(
+    (item) =>
+      item.status === 'PUBLISHED' &&
+      item.id &&
+      parseWorkflowFormConfig(item.formJson).customConfig.applyPageKey === sealBusiness.applyPageKey,
+  ),
+);
 
 const expenseRows = computed(() => expenseList.value);
 const sealRows = computed(() => sealList.value);
@@ -755,17 +790,25 @@ const businessApplyLaunchers = computed(() => [
 ]);
 const activeApplyLauncher = computed(() => resolveBusinessApplyLauncher(activeApplyPageKey.value));
 const activeApplyDefinition = computed(() => resolveApplyDefinition(activeApplyPageKey.value));
-const pageTitle = computed(() => applyEntryMode.value
-  ? (activeApplyDefinition.value?.definitionName || activeApplyLauncher.value?.label || '流程申请')
-  : '业务示例');
-const pageSubtitle = computed(() => applyEntryMode.value
-  ? '按流程定义渲染自定义申请页面'
-  : '从真实工作流实例读取申请快照、当前节点和审批历史');
+const pageTitle = computed(() =>
+  applyEntryMode.value
+    ? activeApplyDefinition.value?.definitionName || activeApplyLauncher.value?.label || '流程申请'
+    : '业务示例',
+);
+const pageSubtitle = computed(() =>
+  applyEntryMode.value ? '按流程定义渲染自定义申请页面' : '从真实工作流实例读取申请快照、当前节点和审批历史',
+);
 
-const currentApplyRecord = computed(() => expenseForm.applyRecords.find(record => record.applyId === expenseForm.currentApplyId)
-  || expenseForm.applyRecords[expenseForm.applyRecords.length - 1]);
-const currentSealApplyRecord = computed(() => sealForm.applyRecords.find(record => record.applyId === sealForm.currentApplyId)
-  || sealForm.applyRecords[sealForm.applyRecords.length - 1]);
+const currentApplyRecord = computed(
+  () =>
+    expenseForm.applyRecords.find((record) => record.applyId === expenseForm.currentApplyId) ||
+    expenseForm.applyRecords[expenseForm.applyRecords.length - 1],
+);
+const currentSealApplyRecord = computed(
+  () =>
+    sealForm.applyRecords.find((record) => record.applyId === sealForm.currentApplyId) ||
+    sealForm.applyRecords[sealForm.applyRecords.length - 1],
+);
 const sealReadonlyContext = computed<BusinessApprovalContext>(() => ({
   businessType: 'CONTRACT_SEAL_APPROVAL',
   businessKey: sealForm.code,
@@ -790,8 +833,18 @@ async function loadData() {
   try {
     const [definitionsResult, expenseApplyResult, sealApplyResult] = await Promise.all([
       workflowApi.definitionsPage({ pageNum: 1, pageSize: 100, status: 'PUBLISHED', publishedOnly: true }),
-      workflowApi.businessAppliesPage({ pageNum: 1, pageSize: 100, businessType: expenseBusiness.businessType, latestOnly: true }),
-      workflowApi.businessAppliesPage({ pageNum: 1, pageSize: 100, businessType: sealBusiness.businessType, latestOnly: true }),
+      workflowApi.businessAppliesPage({
+        pageNum: 1,
+        pageSize: 100,
+        businessType: expenseBusiness.businessType,
+        latestOnly: true,
+      }),
+      workflowApi.businessAppliesPage({
+        pageNum: 1,
+        pageSize: 100,
+        businessType: sealBusiness.businessType,
+        latestOnly: true,
+      }),
     ]);
     workflowDefinitions.value = definitionsResult.list;
     expenseList.value = buildExpenseRows(expenseApplyResult.list);
@@ -826,12 +879,14 @@ async function openApplyDialogFromRoute() {
   }
   router.replace({
     path: route.path,
-    query: Object.fromEntries(Object.entries(route.query).filter(([key]) => !['applyPageKey', 'definitionId', 'definitionKey'].includes(key))),
+    query: Object.fromEntries(
+      Object.entries(route.query).filter(([key]) => !['applyPageKey', 'definitionId', 'definitionKey'].includes(key)),
+    ),
   });
 }
 
 function resolveBusinessApplyLauncher(applyPageKey: string) {
-  return businessApplyLaunchers.value.find(item => item.applyPageKey === applyPageKey);
+  return businessApplyLaunchers.value.find((item) => item.applyPageKey === applyPageKey);
 }
 
 function exitApplyEntryMode() {
@@ -924,9 +979,13 @@ function createEmptySeal(): SealExampleRow {
   });
 }
 
-function createExpenseRow(row: Partial<ExpenseExampleRow> & Pick<ExpenseExampleRow,
-  'id' | 'code' | 'applicant' | 'category' | 'amount' | 'expenseDate' | 'reason' | 'businessStatus'
->): ExpenseExampleRow {
+function createExpenseRow(
+  row: Partial<ExpenseExampleRow> &
+    Pick<
+      ExpenseExampleRow,
+      'id' | 'code' | 'applicant' | 'category' | 'amount' | 'expenseDate' | 'reason' | 'businessStatus'
+    >,
+): ExpenseExampleRow {
   return {
     invoiceCount: Number(row.invoiceCount || 0),
     bankAccount: row.bankAccount || '',
@@ -974,11 +1033,29 @@ function createApplyRecord(
   };
 }
 
-function createSealRow(row: Partial<SealExampleRow> & Pick<SealExampleRow,
-  'id' | 'code' | 'applicant' | 'department' | 'contractName' | 'contractCode' | 'counterparty' | 'contractType'
-  | 'contractAmount' | 'sealType' | 'sealCount' | 'expectedSealDate' | 'urgency' | 'riskLevel' | 'attachmentList'
-  | 'purpose' | 'businessStatus'
->): SealExampleRow {
+function createSealRow(
+  row: Partial<SealExampleRow> &
+    Pick<
+      SealExampleRow,
+      | 'id'
+      | 'code'
+      | 'applicant'
+      | 'department'
+      | 'contractName'
+      | 'contractCode'
+      | 'counterparty'
+      | 'contractType'
+      | 'contractAmount'
+      | 'sealType'
+      | 'sealCount'
+      | 'expectedSealDate'
+      | 'urgency'
+      | 'riskLevel'
+      | 'attachmentList'
+      | 'purpose'
+      | 'businessStatus'
+    >,
+): SealExampleRow {
   return {
     workflowName: row.workflowName || '合同用印审批',
     currentProcessInstanceId: row.currentProcessInstanceId,
@@ -1229,14 +1306,14 @@ async function submitSeal(row: SealExampleRow) {
 
 function buildExpenseRows(applies: WorkflowBusinessApply[]) {
   return applies
-    .filter(apply => apply.businessType === expenseBusiness.businessType)
+    .filter((apply) => apply.businessType === expenseBusiness.businessType)
     .map(buildExpenseRowFromApply)
     .sort((a, b) => String(b.startTime || '').localeCompare(String(a.startTime || '')));
 }
 
 function buildSealRows(applies: WorkflowBusinessApply[]) {
   return applies
-    .filter(apply => apply.businessType === sealBusiness.businessType)
+    .filter((apply) => apply.businessType === sealBusiness.businessType)
     .map(buildSealRowFromApply)
     .sort((a, b) => String(b.startTime || '').localeCompare(String(a.startTime || '')));
 }
@@ -1324,7 +1401,10 @@ async function loadDetailWorkflowTree(row: ExpenseExampleRow | SealExampleRow) {
   }
 }
 
-async function resolveWorkflowDefinitionVersion(row: ExpenseExampleRow | SealExampleRow, applyRecord?: ExpenseApplyRecord | SealApplyRecord) {
+async function resolveWorkflowDefinitionVersion(
+  row: ExpenseExampleRow | SealExampleRow,
+  applyRecord?: ExpenseApplyRecord | SealApplyRecord,
+) {
   const definitionId = applyRecord?.processDefinitionId;
   if (!definitionId) {
     return null;
@@ -1332,22 +1412,20 @@ async function resolveWorkflowDefinitionVersion(row: ExpenseExampleRow | SealExa
   try {
     const versions = await workflowApi.definitionVersions(definitionId);
     if (applyRecord.engineProcessDefinitionId) {
-      const matchedByEngine = versions.find(version =>
-        version.processDefinitionId === applyRecord.engineProcessDefinitionId,
+      const matchedByEngine = versions.find(
+        (version) => version.processDefinitionId === applyRecord.engineProcessDefinitionId,
       );
       if (matchedByEngine) {
         return matchedByEngine;
       }
     }
     if (applyRecord.formVersion) {
-      const matchedByVersion = versions.find(version => version.versionNo === applyRecord.formVersion);
+      const matchedByVersion = versions.find((version) => version.versionNo === applyRecord.formVersion);
       if (matchedByVersion) {
         return matchedByVersion;
       }
     }
-    return versions.find(version =>
-      version.processDefinitionId === applyRecord.processDefinitionId,
-    ) || null;
+    return versions.find((version) => version.processDefinitionId === applyRecord.processDefinitionId) || null;
   } catch {
     return null;
   }
@@ -1358,13 +1436,12 @@ function definitionNameByRow(row: ExpenseExampleRow | SealExampleRow) {
 }
 
 async function resolveWorkflowDefinition(row: ExpenseExampleRow | SealExampleRow) {
-  const matched = workflowDefinitions.value.find(item =>
-    item.id
-    && (
-      item.definitionName === row.workflowName
-      || item.definitionKey === row.workflowName
-      || matchesExampleFlow(row, item)
-    ),
+  const matched = workflowDefinitions.value.find(
+    (item) =>
+      item.id &&
+      (item.definitionName === row.workflowName ||
+        item.definitionKey === row.workflowName ||
+        matchesExampleFlow(row, item)),
   );
   if (!matched?.id) {
     return isSealExampleRow(row) ? sealFlow.value : reimbursementFlow.value;
@@ -1379,7 +1456,10 @@ async function resolveWorkflowDefinition(row: ExpenseExampleRow | SealExampleRow
 async function loadExpenseHistory(businessKey: string) {
   historyLoading.value = true;
   try {
-    const history = await workflowApi.businessApplyHistory(expenseBusiness.businessType, businessKey, { pageNum: 1, pageSize: 50 });
+    const history = await workflowApi.businessApplyHistory(expenseBusiness.businessType, businessKey, {
+      pageNum: 1,
+      pageSize: 50,
+    });
     const ordered = sortAppliesAsc(history.list);
     const records = ordered.map((apply, index) => buildApplyRecordFromApply(apply, index + 1));
     expenseForm.applyRecords = records;
@@ -1394,7 +1474,7 @@ async function loadExpenseHistory(businessKey: string) {
     }
     detailVisitedNodeKeys.value = uniqueKeys([
       ...currentTaskKeysFromHistory(ordered),
-      ...await loadDetailProcessRecords(expenseForm.currentProcessInstanceId),
+      ...(await loadDetailProcessRecords(expenseForm.currentProcessInstanceId)),
     ]);
     await loadDetailWorkflowTree(expenseForm);
   } finally {
@@ -1405,7 +1485,10 @@ async function loadExpenseHistory(businessKey: string) {
 async function loadSealHistory(businessKey: string) {
   historyLoading.value = true;
   try {
-    const history = await workflowApi.businessApplyHistory(sealBusiness.businessType, businessKey, { pageNum: 1, pageSize: 50 });
+    const history = await workflowApi.businessApplyHistory(sealBusiness.businessType, businessKey, {
+      pageNum: 1,
+      pageSize: 50,
+    });
     const ordered = sortAppliesAsc(history.list);
     const records = ordered.map((apply, index) => buildSealApplyRecordFromApply(apply, index + 1));
     sealForm.applyRecords = records;
@@ -1420,7 +1503,7 @@ async function loadSealHistory(businessKey: string) {
     }
     detailVisitedNodeKeys.value = uniqueKeys([
       ...currentTaskKeysFromHistory(ordered),
-      ...await loadDetailProcessRecords(sealForm.currentProcessInstanceId),
+      ...(await loadDetailProcessRecords(sealForm.currentProcessInstanceId)),
     ]);
     await loadDetailWorkflowTree(sealForm);
   } finally {
@@ -1435,9 +1518,11 @@ async function loadDetailProcessRecords(processInstanceId?: string) {
   }
   const detail = await workflowApi.processDetail(processInstanceId);
   detailTaskRecords.value = detail.records || [];
-  return Array.from(new Set((detail.records || [])
-    .map(record => record.taskDefinitionKey)
-    .filter((key): key is string => Boolean(key))));
+  return Array.from(
+    new Set(
+      (detail.records || []).map((record) => record.taskDefinitionKey).filter((key): key is string => Boolean(key)),
+    ),
+  );
 }
 
 function buildApplyRecordFromApply(apply: WorkflowBusinessApply, index: number) {
@@ -1519,7 +1604,14 @@ function sortAppliesAsc(applies: WorkflowBusinessApply[]) {
 
 function currentNodeNameOfApply(apply: WorkflowBusinessApply, status: ExpenseStatus) {
   if (status === '审批中') {
-    return apply.currentTaskNames || apply.currentTasks?.map(task => task.taskName).filter(Boolean).join(',') || '审批中';
+    return (
+      apply.currentTaskNames ||
+      apply.currentTasks
+        ?.map((task) => task.taskName)
+        .filter(Boolean)
+        .join(',') ||
+      '审批中'
+    );
   }
   if (status === '已驳回') return '已驳回';
   if (status === '已通过' || status === '已结束') return '已结束';
@@ -1527,20 +1619,29 @@ function currentNodeNameOfApply(apply: WorkflowBusinessApply, status: ExpenseSta
 }
 
 function firstCurrentTaskKey(apply: WorkflowBusinessApply) {
-  return apply.currentTaskDefinitionKeys
-    || apply.currentTasks?.map(task => task.taskDefinitionKey).filter(Boolean).join(',')
-    || '';
+  return (
+    apply.currentTaskDefinitionKeys ||
+    apply.currentTasks
+      ?.map((task) => task.taskDefinitionKey)
+      .filter(Boolean)
+      .join(',') ||
+    ''
+  );
 }
 
 function currentTaskKeysFromHistory(applies: WorkflowBusinessApply[]) {
-  return applies.map(apply => firstCurrentTaskKey(apply)).filter(Boolean);
+  return applies.map((apply) => firstCurrentTaskKey(apply)).filter(Boolean);
 }
 
 function uniqueKeys(keys: string[]) {
-  return Array.from(new Set(keys
-    .flatMap(key => String(key).split(','))
-    .map(key => key.trim())
-    .filter(Boolean)));
+  return Array.from(
+    new Set(
+      keys
+        .flatMap((key) => String(key).split(','))
+        .map((key) => key.trim())
+        .filter(Boolean),
+    ),
+  );
 }
 
 function isTerminalStatus(status: ExpenseStatus) {
@@ -1567,7 +1668,7 @@ function matchesExampleFlow(row: ExpenseExampleRow | SealExampleRow, definition:
 function resolveApplyDefinition(applyPageKey: string, fallback?: WorkflowDefinition) {
   const routedDefinitionId = routedDefinitionIds.value[applyPageKey];
   if (routedDefinitionId) {
-    const matched = workflowDefinitions.value.find(item => String(item.id || '') === routedDefinitionId);
+    const matched = workflowDefinitions.value.find((item) => String(item.id || '') === routedDefinitionId);
     if (matched) {
       return matched;
     }
@@ -1788,7 +1889,7 @@ onMounted(async () => {
   padding: 22px 26px;
   border: 1px solid #d8dce5;
   background: #fffdf8;
-  box-shadow: 0 8px 28px rgba(31, 41, 55, 0.08);
+  box-shadow: 0 8px 28px rgb(31 41 55 / 8%);
 }
 
 .seal-document-meta {
@@ -1803,7 +1904,7 @@ onMounted(async () => {
   margin: 8px 0 18px;
   text-align: center;
   color: #111827;
-  font-family: SimSun, "Songti SC", serif;
+  font-family: SimSun, 'Songti SC', serif;
   font-size: 24px;
   font-weight: 700;
   letter-spacing: 0;
@@ -1814,7 +1915,7 @@ onMounted(async () => {
   border-collapse: collapse;
   table-layout: fixed;
   border: 2px solid #1f2937;
-  font-family: SimSun, "Songti SC", serif;
+  font-family: SimSun, 'Songti SC', serif;
 }
 
 .seal-word-table th,
@@ -1849,7 +1950,7 @@ onMounted(async () => {
   box-shadow: none;
   border-radius: 0;
   background: #fffefa;
-  font-family: SimSun, "Songti SC", serif;
+  font-family: SimSun, 'Songti SC', serif;
 }
 
 .seal-word-table :deep(.el-select),
@@ -2025,7 +2126,7 @@ onMounted(async () => {
   font-size: 13px;
 }
 
-@media (max-width: 980px) {
+@media (width <= 980px) {
   .example-overview {
     grid-template-columns: 1fr;
   }
@@ -2048,7 +2149,7 @@ onMounted(async () => {
   }
 }
 
-@media (max-width: 560px) {
+@media (width <= 560px) {
   .card-header {
     align-items: flex-start;
     flex-direction: column;

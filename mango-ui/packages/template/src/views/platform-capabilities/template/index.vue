@@ -19,7 +19,9 @@
     <section class="guide-section">
       <div class="section-heading">
         <h2>能力边界</h2>
-        <p>模板服务只负责模板生命周期、变量约束和渲染编排；文件存储、文档转换、签章、压缩合并等能力保持在各自模块内。</p>
+        <p>
+          模板服务只负责模板生命周期、变量约束和渲染编排；文件存储、文档转换、签章、压缩合并等能力保持在各自模块内。
+        </p>
       </div>
       <el-row :gutter="16">
         <el-col v-for="item in boundaries" :key="item.title" :xs="24" :md="8">
@@ -88,12 +90,7 @@
         <p>优先在既有边界内扩展，不把文件处理、格式转换或第三方授权逻辑塞进模板 core。</p>
       </div>
       <el-steps direction="vertical" :active="extensionSteps.length">
-        <el-step
-          v-for="item in extensionSteps"
-          :key="item.title"
-          :title="item.title"
-          :description="item.description"
-        />
+        <el-step v-for="item in extensionSteps" :key="item.title" :title="item.title" :description="item.description" />
       </el-steps>
     </section>
   </div>
@@ -376,21 +373,21 @@ pre {
 }
 
 code {
-  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-family: SFMono-Regular, Consolas, 'Liberation Mono', monospace;
 }
 
 :deep(.el-step__description) {
   max-width: 760px;
 }
 
-@media (max-width: 1200px) {
+@media (width <= 1200px) {
   .guide-hero,
   .syntax-grid {
     grid-template-columns: 1fr;
   }
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .template-guide {
     padding: 12px;
   }

@@ -1,38 +1,19 @@
 <template>
-  <div
-    class="mango-grid-layout"
-    :style="gridStyle"
-  >
-    <div
-      v-for="item in normalizedItems"
-      :key="item.id"
-      class="mango-grid-layout__item"
-      :style="itemStyle(item)"
-    >
+  <div class="mango-grid-layout" :style="gridStyle">
+    <div v-for="item in normalizedItems" :key="item.id" class="mango-grid-layout__item" :style="itemStyle(item)">
       <div :class="cardClass(item)">
-        <div
-          v-if="shouldShowTitle(item)"
-          class="mango-grid-layout__card-title"
-        >
+        <div v-if="shouldShowTitle(item)" class="mango-grid-layout__card-title">
           <span>{{ item.title || widgetMap[item.widgetType]?.title || item.widgetType }}</span>
         </div>
         <div class="mango-grid-layout__card-body">
-          <slot
-            name="widget"
-            :item="item"
-            :widget="widgetMap[item.widgetType]"
-          >
+          <slot name="widget" :item="item" :widget="widgetMap[item.widgetType]">
             <component
               :is="widgetMap[item.widgetType]?.component"
               v-if="widgetMap[item.widgetType]?.component"
               v-bind="widgetProps(item)"
               :item="item"
             />
-            <el-empty
-              v-else
-              description="组件不存在"
-              :image-size="72"
-            />
+            <el-empty v-else description="组件不存在" :image-size="72" />
           </slot>
         </div>
       </div>
@@ -46,31 +27,36 @@ import type { CSSProperties } from 'vue';
 import { normalizeLayoutItems } from '../composables/useGridEngine';
 import type { GridLayoutItem, GridWidgetDefinition } from '../types';
 
-const props = withDefaults(defineProps<{
-  items: GridLayoutItem[];
-  widgets: GridWidgetDefinition[];
-  columns?: number;
-  rowHeight?: number;
-  gap?: number;
-  minRows?: number;
-}>(), {
-  columns: 12,
-  rowHeight: 15,
-  gap: 15,
-  minRows: 30,
-});
+const props = withDefaults(
+  defineProps<{
+    items: GridLayoutItem[];
+    widgets: GridWidgetDefinition[];
+    columns?: number;
+    rowHeight?: number;
+    gap?: number;
+    minRows?: number;
+  }>(),
+  {
+    columns: 12,
+    rowHeight: 15,
+    gap: 15,
+    minRows: 30,
+  },
+);
 
 const verticalGapRows = computed(() => Math.max(0, Math.round(props.gap / props.rowHeight)));
 
-const normalizedItems = computed(() => normalizeLayoutItems(props.items, {
-  columns: props.columns,
-  rowHeight: props.rowHeight,
-  gap: props.gap,
-  defaultWidth: 3,
-  defaultHeight: 10,
-  compact: false,
-  verticalGapRows: verticalGapRows.value,
-}).filter(item => Boolean(widgetMap.value[item.widgetType]?.component)));
+const normalizedItems = computed(() =>
+  normalizeLayoutItems(props.items, {
+    columns: props.columns,
+    rowHeight: props.rowHeight,
+    gap: props.gap,
+    defaultWidth: 3,
+    defaultHeight: 10,
+    compact: false,
+    verticalGapRows: verticalGapRows.value,
+  }).filter((item) => Boolean(widgetMap.value[item.widgetType]?.component)),
+);
 
 const widgetMap = computed<Record<string, GridWidgetDefinition>>(() => {
   return props.widgets.reduce<Record<string, GridWidgetDefinition>>((result, widget) => {
@@ -80,7 +66,10 @@ const widgetMap = computed<Record<string, GridWidgetDefinition>>(() => {
 });
 
 const totalRows = computed(() => {
-  const maxRows = normalizedItems.value.reduce((rows, item) => Math.max(rows, item.layout.y + item.layout.h), props.minRows);
+  const maxRows = normalizedItems.value.reduce(
+    (rows, item) => Math.max(rows, item.layout.y + item.layout.h),
+    props.minRows,
+  );
   return Math.max(maxRows, props.minRows);
 });
 

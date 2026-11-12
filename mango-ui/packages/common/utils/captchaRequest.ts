@@ -48,10 +48,7 @@ export interface CaptchaRequestOptions extends RequestInit {
  */
 export function findCaptchaConfig(menuItems: any[], path: string): CaptchaConfig | null {
   // 递归查找匹配路径的菜单项
-  function findMenuConfig(
-    menus: any[],
-    targetPath: string
-  ): any | null {
+  function findMenuConfig(menus: any[], targetPath: string): any | null {
     for (const menu of menus) {
       if (menu.path === targetPath && menu.meta?.captcha) {
         return menu.meta.captcha;
@@ -77,10 +74,7 @@ export function findCaptchaConfig(menuItems: any[], path: string): CaptchaConfig
  * @param type 验证码类型
  * @returns 用户输入的验证码或null
  */
-async function showCaptchaModal(
-  captchaData: CaptchaResponse,
-  type: string
-): Promise<string | null> {
+async function showCaptchaModal(captchaData: CaptchaResponse, type: string): Promise<string | null> {
   return new Promise((resolve) => {
     // 简化实现：实际项目中应该弹出验证码组件
     // 这里暂时返回null，让用户手动处理
@@ -96,11 +90,7 @@ async function showCaptchaModal(
  * @param retries 当前重试次数
  * @returns 响应数据
  */
-export async function captchaRequest<T>(
-  url: string,
-  options: CaptchaRequestOptions = {},
-  retries = 0
-): Promise<T> {
+export async function captchaRequest<T>(url: string, options: CaptchaRequestOptions = {}, retries = 0): Promise<T> {
   // 1. 检查菜单配置是否需要验证码
   const captchaConfig = options.getCaptchaConfig?.(url) || null;
 

@@ -137,13 +137,7 @@
         <el-table-column prop="id" label="资源 ID" width="180" show-overflow-tooltip />
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
-            <el-button
-              link
-              type="primary"
-              size="small"
-              data-action="api-resource.edit"
-              @click="handleEdit(row)"
-            >
+            <el-button link type="primary" size="small" data-action="api-resource.edit" @click="handleEdit(row)">
               编辑
             </el-button>
             <el-button
@@ -196,11 +190,7 @@
             </el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item
-          v-if="form.accessMode === 'PERMISSION'"
-          label="权限标识"
-          prop="permissionCode"
-        >
+        <el-form-item v-if="form.accessMode === 'PERMISSION'" label="权限标识" prop="permissionCode">
           <el-input
             v-model="form.permissionCode"
             data-field="api-resource.permission-code"

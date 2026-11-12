@@ -5,7 +5,8 @@
 import { del, get, post, put } from '@mango/common/utils/request';
 import type { ApiId } from '@mango/api-schema';
 
-export type ConfigValueType = 'BOOLEAN' | 'STRING' | 'NUMBER' | 'RADIO' | 'SELECT' | 'MULTI_SELECT' | 'DATE' | 'DATE_RANGE';
+export type ConfigValueType =
+  'BOOLEAN' | 'STRING' | 'NUMBER' | 'RADIO' | 'SELECT' | 'MULTI_SELECT' | 'DATE' | 'DATE_RANGE';
 export type ConfigOptionSource = 'CUSTOM' | 'DICT';
 
 export interface SysConfig {
@@ -49,8 +50,9 @@ export interface PageResult<T> {
 
 export const configApi = {
   list: (params?: SysConfigQuery) => {
-    return get<any[]>('/system/config/list', { params: toBackendQuery(params) })
-      .then((list) => toPageResult(list.map(fromBackend), params));
+    return get<any[]>('/system/config/list', { params: toBackendQuery(params) }).then((list) =>
+      toPageResult(list.map(fromBackend), params),
+    );
   },
   detail: (id: ApiId) => {
     return get<any>('/system/config/detail', { params: { id } }).then(fromBackend);
@@ -68,8 +70,9 @@ export const configApi = {
     return put<boolean>('/system/config/value', undefined, { params: { id, value } });
   },
   group: (group: string) => {
-    return get<any[]>('/system/config/type', { params: { type: toBackendType(group) } })
-      .then((list) => list.map(fromBackend));
+    return get<any[]>('/system/config/type', { params: { type: toBackendType(group) } }).then((list) =>
+      list.map(fromBackend),
+    );
   },
   groups: () => {
     return get<string[]>('/system/config/groups');
@@ -139,14 +142,14 @@ function toBackend(item: SysConfig) {
 function normalizeValueType(value?: string): ConfigValueType {
   const normalized = (value || 'STRING').toUpperCase();
   if (
-    normalized === 'BOOLEAN'
-    || normalized === 'STRING'
-    || normalized === 'NUMBER'
-    || normalized === 'RADIO'
-    || normalized === 'SELECT'
-    || normalized === 'MULTI_SELECT'
-    || normalized === 'DATE'
-    || normalized === 'DATE_RANGE'
+    normalized === 'BOOLEAN' ||
+    normalized === 'STRING' ||
+    normalized === 'NUMBER' ||
+    normalized === 'RADIO' ||
+    normalized === 'SELECT' ||
+    normalized === 'MULTI_SELECT' ||
+    normalized === 'DATE' ||
+    normalized === 'DATE_RANGE'
   ) {
     return normalized;
   }

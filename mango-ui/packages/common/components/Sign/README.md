@@ -11,44 +11,44 @@ import type { SignProps, SignEmits, SignExpose, SignInstance } from '@mango/comm
 
 ## Props
 
-| 名称 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `modelValue` | `string` | `''` | 签名图片 dataURL，支持 `v-model`；传入已有图片时会在挂载后绘制到画布 |
-| `width` | `number` | `400` | Canvas 画布宽度（像素） |
-| `height` | `number` | `200` | Canvas 画布高度（像素） |
-| `strokeColor` | `string` | `'#000000'` | 初始笔触颜色，工具栏可切换 |
-| `lineWidth` | `number` | `2` | 笔迹线条宽度（像素） |
-| `disabled` | `boolean` | `false` | 是否禁用绘制；禁用后画布灰底、不响应书写，清除按钮也不可用 |
-| `placeholder` | `string` | `'sign.placeholder'` | 画布为空时居中显示的提示文本，组件按传入字符串原样渲染 |
+| 名称          | 类型      | 默认值               | 说明                                                                 |
+| ------------- | --------- | -------------------- | -------------------------------------------------------------------- |
+| `modelValue`  | `string`  | `''`                 | 签名图片 dataURL，支持 `v-model`；传入已有图片时会在挂载后绘制到画布 |
+| `width`       | `number`  | `400`                | Canvas 画布宽度（像素）                                              |
+| `height`      | `number`  | `200`                | Canvas 画布高度（像素）                                              |
+| `strokeColor` | `string`  | `'#000000'`          | 初始笔触颜色，工具栏可切换                                           |
+| `lineWidth`   | `number`  | `2`                  | 笔迹线条宽度（像素）                                                 |
+| `disabled`    | `boolean` | `false`              | 是否禁用绘制；禁用后画布灰底、不响应书写，清除按钮也不可用           |
+| `placeholder` | `string`  | `'sign.placeholder'` | 画布为空时居中显示的提示文本，组件按传入字符串原样渲染               |
 
 工具栏内置四种可选颜色：黑 `#000000`、红 `#FF0000`、蓝 `#0000FF`、绿 `#00FF00`。
 
 ## Events
 
-| 名称 | 参数 | 说明 |
-|------|------|------|
+| 名称                | 参数            | 说明                                                                 |
+| ------------------- | --------------- | -------------------------------------------------------------------- |
 | `update:modelValue` | `value: string` | 每次抬笔完成一段笔画后输出整张画布的 PNG dataURL；清除时输出空字符串 |
-| `change` | `value: string` | 与 `update:modelValue` 同时、同载荷触发，供非 `v-model` 场景监听 |
+| `change`            | `value: string` | 与 `update:modelValue` 同时、同载荷触发，供非 `v-model` 场景监听     |
 
 ## Expose
 
-| 名称 | 参数 | 返回值 | 说明 |
-|------|------|--------|------|
-| `clear()` | - | - | 清空画布、复位错误提示，并抛出空字符串的 `update:modelValue` / `change` |
-| `getSignature()` | - | `string` | 实时读取画布的 PNG dataURL（空画布返回透明底图 dataURL） |
-| `isEmpty()` | - | `boolean` | 当前画布是否没有任何笔迹 |
+| 名称             | 参数 | 返回值    | 说明                                                                    |
+| ---------------- | ---- | --------- | ----------------------------------------------------------------------- |
+| `clear()`        | -    | -         | 清空画布、复位错误提示，并抛出空字符串的 `update:modelValue` / `change` |
+| `getSignature()` | -    | `string`  | 实时读取画布的 PNG dataURL（空画布返回透明底图 dataURL）                |
+| `isEmpty()`      | -    | `boolean` | 当前画布是否没有任何笔迹                                                |
 
 ## 类型定义
 
 ```ts
 interface SignProps {
-  modelValue?: string;   // v-model 绑定的 base64 签名图片
-  width?: number;        // 画布宽度 px
-  height?: number;       // 画布高度 px
-  strokeColor?: string;  // 笔触颜色
-  lineWidth?: number;    // 线条宽度
-  disabled?: boolean;    // 禁用状态
-  placeholder?: string;  // 空画布提示文本
+  modelValue?: string; // v-model 绑定的 base64 签名图片
+  width?: number; // 画布宽度 px
+  height?: number; // 画布高度 px
+  strokeColor?: string; // 笔触颜色
+  lineWidth?: number; // 线条宽度
+  disabled?: boolean; // 禁用状态
+  placeholder?: string; // 空画布提示文本
 }
 
 interface SignEmits {
@@ -71,12 +71,12 @@ type SignInstance = {
 
 组件内置 i18n 文案位于 `Sign/i18n`：
 
-| key | 中文 | English |
-|-----|------|---------|
-| `sign.placeholder` | 请在此处签名 | Please sign here |
-| `sign.clear` | 清除 | Clear |
-| `sign.color` | 颜色 | Color |
-| `sign.error` | 签名生成失败，请重试 | Failed to generate signature, please retry |
+| key                | 中文                 | English                                    |
+| ------------------ | -------------------- | ------------------------------------------ |
+| `sign.placeholder` | 请在此处签名         | Please sign here                           |
+| `sign.clear`       | 清除                 | Clear                                      |
+| `sign.color`       | 颜色                 | Color                                      |
+| `sign.error`       | 签名生成失败，请重试 | Failed to generate signature, please retry |
 
 ## 使用示例
 

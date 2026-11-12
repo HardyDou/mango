@@ -11,26 +11,26 @@ import type { PaginationProps, PaginationChange } from '@mango/common';
 
 ## Props
 
-| 名称 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `total` | `number` | `0` | 总条数 |
-| `page` | `number` | `1` | 当前页码 |
-| `limit` | `number` | `20` | 每页条数 |
-| `pageSizes` | `number[]` | `[10, 20, 30, 50]` | 每页显示个数选择器选项 |
-| `layout` | `string` | `'total, sizes, prev, pager, next, jumper'` | 组件布局，子组件名用逗号分隔 |
-| `background` | `boolean` | `true` | 是否为分页按钮添加背景色 |
-| `pagerCount` | `number` | `5` | 页码按钮数量，当总页数超过该值时会折叠 |
-| `small` | `boolean` | `false` | 是否使用小型分页样式 |
-| `disabled` | `boolean` | `false` | 是否禁用分页 |
-| `align` | `'left' \| 'center' \| 'right'` | `'right'` | 对齐方式 |
+| 名称         | 类型                            | 默认值                                      | 说明                                   |
+| ------------ | ------------------------------- | ------------------------------------------- | -------------------------------------- |
+| `total`      | `number`                        | `0`                                         | 总条数                                 |
+| `page`       | `number`                        | `1`                                         | 当前页码                               |
+| `limit`      | `number`                        | `20`                                        | 每页条数                               |
+| `pageSizes`  | `number[]`                      | `[10, 20, 30, 50]`                          | 每页显示个数选择器选项                 |
+| `layout`     | `string`                        | `'total, sizes, prev, pager, next, jumper'` | 组件布局，子组件名用逗号分隔           |
+| `background` | `boolean`                       | `true`                                      | 是否为分页按钮添加背景色               |
+| `pagerCount` | `number`                        | `5`                                         | 页码按钮数量，当总页数超过该值时会折叠 |
+| `small`      | `boolean`                       | `false`                                     | 是否使用小型分页样式                   |
+| `disabled`   | `boolean`                       | `false`                                     | 是否禁用分页                           |
+| `align`      | `'left' \| 'center' \| 'right'` | `'right'`                                   | 对齐方式                               |
 
 ## Events
 
-| 名称 | 参数 | 说明 |
-|------|------|------|
-| `update:page` | `number` | 当前页码变化 |
-| `update:limit` | `number` | 每页条数变化 |
-| `pagination` | `PaginationChange` | 同轮变更合并事件 |
+| 名称           | 参数               | 说明             |
+| -------------- | ------------------ | ---------------- |
+| `update:page`  | `number`           | 当前页码变化     |
+| `update:limit` | `number`           | 每页条数变化     |
+| `pagination`   | `PaginationChange` | 同轮变更合并事件 |
 
 ## PaginationChange
 

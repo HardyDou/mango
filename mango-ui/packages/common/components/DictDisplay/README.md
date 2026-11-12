@@ -8,21 +8,21 @@
 
 ## 功能清单
 
-| 能力 | 入口 |
-|------|------|
-| FLAT/TREE 字典回显 | `shape="FLAT"` 或 `shape="TREE"` |
-| 单值/多值展示 | `value`、`separator` |
-| 文本/标签模式 | `mode="text"` 或 `mode="tag"` |
-| 树路径回显 | `display-format="path"` |
-| 加载与刷新 | `loaded`、`error`、`reload(true)` |
+| 能力               | 入口                              |
+| ------------------ | --------------------------------- |
+| FLAT/TREE 字典回显 | `shape="FLAT"` 或 `shape="TREE"`  |
+| 单值/多值展示      | `value`、`separator`              |
+| 文本/标签模式      | `mode="text"` 或 `mode="tag"`     |
+| 树路径回显         | `display-format="path"`           |
+| 加载与刷新         | `loaded`、`error`、`reload(true)` |
 
 ## 与其它组件的关系
 
-| 组件 | 场景 | 说明 |
-|------|------|------|
-| `DictSelect` | 录入 | 下拉/树形选择，可编辑、可校验 |
-| `DictDisplay` | 回显 | 只读展示 value → label，支持多值、路径和标签样式 |
-| `DictTag` | 回显（旧） | 仅 FLAT、单值、标签样式；新的回显优先用 `DictDisplay` |
+| 组件          | 场景       | 说明                                                  |
+| ------------- | ---------- | ----------------------------------------------------- |
+| `DictSelect`  | 录入       | 下拉/树形选择，可编辑、可校验                         |
+| `DictDisplay` | 回显       | 只读展示 value → label，支持多值、路径和标签样式      |
+| `DictTag`     | 回显（旧） | 仅 FLAT、单值、标签样式；新的回显优先用 `DictDisplay` |
 
 ## 接入方式
 
@@ -41,20 +41,20 @@ import { DictDisplay } from '@mango/common';
 
 ## 配置说明
 
-| 属性 | 默认值 | 说明 |
-|------|--------|------|
-| `dictType` | 必填 | 字典编码。 |
-| `shape` | `'FLAT'` | FLAT 使用 options 接口，TREE 使用 tree 接口。 |
-| `value` | `undefined` | 单值或多值。 |
-| `mode` | `'text'` | `text` 显示文本，`tag` 渲染标签。 |
-| `separator` | `'、'` | 文本模式下的多值分隔符。 |
-| `displayFormat` | `'label'` | TREE 显示末级 label 或完整 path。 |
-| `displaySeparator` | `' / '` | 路径分隔符。 |
-| `emptyText` | `'-'` | 空值文案。 |
-| `tagType` / `tagEffect` / `tagSize` | `''` / `'light'` / `'default'` | 标签模式配置。 |
-| `group` | `undefined` | 分组过滤；不传显示全量，传入后只显示该组内的值（多组按 OR）。 |
-| `includeValues` | `undefined` | 白名单，在分组结果上继续限定显示值。 |
-| `excludeValues` | `undefined` | 黑名单，在分组结果上继续剔除值。 |
+| 属性                                | 默认值                         | 说明                                                          |
+| ----------------------------------- | ------------------------------ | ------------------------------------------------------------- |
+| `dictType`                          | 必填                           | 字典编码。                                                    |
+| `shape`                             | `'FLAT'`                       | FLAT 使用 options 接口，TREE 使用 tree 接口。                 |
+| `value`                             | `undefined`                    | 单值或多值。                                                  |
+| `mode`                              | `'text'`                       | `text` 显示文本，`tag` 渲染标签。                             |
+| `separator`                         | `'、'`                         | 文本模式下的多值分隔符。                                      |
+| `displayFormat`                     | `'label'`                      | TREE 显示末级 label 或完整 path。                             |
+| `displaySeparator`                  | `' / '`                        | 路径分隔符。                                                  |
+| `emptyText`                         | `'-'`                          | 空值文案。                                                    |
+| `tagType` / `tagEffect` / `tagSize` | `''` / `'light'` / `'default'` | 标签模式配置。                                                |
+| `group`                             | `undefined`                    | 分组过滤；不传显示全量，传入后只显示该组内的值（多组按 OR）。 |
+| `includeValues`                     | `undefined`                    | 白名单，在分组结果上继续限定显示值。                          |
+| `excludeValues`                     | `undefined`                    | 黑名单，在分组结果上继续剔除值。                              |
 
 ## API 与扩展
 

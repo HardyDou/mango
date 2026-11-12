@@ -424,7 +424,7 @@ function resolveWidgetQuery(raw: unknown): LocationQueryRaw | undefined {
   flex: 0 0 auto;
 }
 
-@media (max-width: 560px) {
+@media (width <= 560px) {
   .home-page-bar {
     align-items: stretch;
     flex-direction: column;

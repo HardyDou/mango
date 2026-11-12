@@ -96,8 +96,8 @@ test.describe('T15 组织架构管理闭环', () => {
 
     await loginAsCompanyA(page);
 
-    const treeResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/org/tree') && response.status() === 200
+    const treeResponsePromise = page.waitForResponse(
+      (response) => response.url().includes('/api/org/tree') && response.status() === 200,
     );
     await page.goto('/#/system/org');
     await treeResponsePromise;
@@ -114,10 +114,9 @@ test.describe('T15 组织架构管理闭环', () => {
     await createDialog.getByLabel('组织编码').fill(orgCode);
     await expect(createDialog.getByText('A公司')).toBeVisible();
 
-    const createResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/org') &&
-      response.request().method() === 'POST' &&
-      response.status() === 200
+    const createResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/org') && response.request().method() === 'POST' && response.status() === 200,
     );
     await createDialog.getByRole('button', { name: '确定' }).click();
     await createResponsePromise;
@@ -131,10 +130,9 @@ test.describe('T15 组织架构管理闭环', () => {
     await expect(editDialog).toBeVisible();
     await editDialog.getByLabel('组织名称').fill(editedOrgName);
 
-    const updateResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/org') &&
-      response.request().method() === 'PUT' &&
-      response.status() === 200
+    const updateResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/org') && response.request().method() === 'PUT' && response.status() === 200,
     );
     await editDialog.getByRole('button', { name: '确定' }).click();
     await updateResponsePromise;
@@ -145,10 +143,9 @@ test.describe('T15 组织架构管理闭环', () => {
     await editedRow.getByRole('button', { name: '删除' }).click();
     await expect(page.getByText(`确认删除组织「${editedOrgName}」?`)).toBeVisible();
 
-    const deleteResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/org') &&
-      response.request().method() === 'DELETE' &&
-      response.status() === 200
+    const deleteResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/org') && response.request().method() === 'DELETE' && response.status() === 200,
     );
     await page.getByRole('button', { name: '确定' }).click();
     await deleteResponsePromise;

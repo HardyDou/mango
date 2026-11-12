@@ -1,14 +1,7 @@
 <template>
-  <div
-    v-if="layoutStore.isBreadcrumb"
-    class="layout-breadcrumb"
-  >
+  <div v-if="layoutStore.isBreadcrumb" class="layout-breadcrumb">
     <el-breadcrumb separator="/">
-      <el-breadcrumb-item
-        v-for="item in breadcrumbs"
-        :key="item.path"
-        :to="item.path"
-      >
+      <el-breadcrumb-item v-for="item in breadcrumbs" :key="item.path" :to="item.path">
         {{ item.meta?.title || item.name }}
       </el-breadcrumb-item>
     </el-breadcrumb>
@@ -49,10 +42,12 @@ const breadcrumbs = computed(() => {
 
     .el-breadcrumb__inner {
       color: var(--el-text-color-regular);
+
       &.is-link:hover {
         color: var(--mango-color-primary);
       }
     }
+
     .el-breadcrumb__separator {
       color: var(--el-text-color-placeholder);
     }

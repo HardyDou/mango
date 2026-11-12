@@ -1,12 +1,6 @@
 <template>
-  <component
-    :is="activeComponent"
-    v-if="activeComponent"
-  />
-  <el-empty
-    v-else
-    :description="emptyText"
-  />
+  <component :is="activeComponent" v-if="activeComponent" />
+  <el-empty v-else :description="emptyText" />
 </template>
 
 <script setup lang="ts">
@@ -23,16 +17,18 @@ const props = defineProps<{
 
 const runtime = inject<MangoAppRuntime | undefined>('mangoRuntime', undefined);
 
-const activeMenu = computed(() => props.menu || runtime?.menu as CmsMenu | undefined);
+const activeMenu = computed(() => props.menu || (runtime?.menu as CmsMenu | undefined));
 const activeComponent = computed(() => {
   if (isDeprecatedCmsMenu(activeMenu.value)) {
     return undefined;
   }
   const loader = resolveCmsComponent(activeMenu.value?.component);
-  return loader ? defineAsyncComponent(async () => {
-    const module = await loader();
-    return (module as any).default || module;
-  }) : undefined;
+  return loader
+    ? defineAsyncComponent(async () => {
+        const module = await loader();
+        return (module as any).default || module;
+      })
+    : undefined;
 });
 const emptyText = computed(() => {
   const menu = activeMenu.value;

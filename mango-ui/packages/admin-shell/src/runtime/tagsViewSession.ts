@@ -27,6 +27,6 @@ export function resetPersistedTagsView() {
       ...persisted,
       tagsViewRoutes: normalizeTagsViewRoutes([]),
       isTagsViewCurrenFull: false,
-    })
+    }),
   );
 }

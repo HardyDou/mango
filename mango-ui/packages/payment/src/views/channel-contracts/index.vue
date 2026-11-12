@@ -29,7 +29,7 @@
           description-field="adapterType"
           placeholder="请选择支付通道"
           @loaded="channelLabels.setOptions"
-          @update:model-value="value => onChannelChange(form, value)"
+          @update:model-value="(value) => onChannelChange(form, value)"
         />
       </el-form-item>
       <el-form-item label="商户号" prop="merchantNo">
@@ -48,12 +48,7 @@
       </el-form-item>
       <el-form-item label="开通能力">
         <div class="contract-capability-editor">
-          <el-alert
-            v-if="!form.channelId"
-            type="info"
-            :closable="false"
-            title="请选择支付通道后维护签约能力"
-          />
+          <el-alert v-if="!form.channelId" type="info" :closable="false" title="请选择支付通道后维护签约能力" />
           <template v-else>
             <el-table
               :data="contractCapabilities(form)"
@@ -66,7 +61,7 @@
                 <template #default="{ row }">
                   <el-checkbox
                     :model-value="isCapabilityEnabled(form, row.id)"
-                    @update:model-value="checked => toggleCapability(form, row, Boolean(checked))"
+                    @update:model-value="(checked) => toggleCapability(form, row, Boolean(checked))"
                   />
                 </template>
               </el-table-column>
@@ -88,7 +83,7 @@
                     :step="0.0001"
                     :precision="6"
                     controls-position="right"
-                    @update:model-value="value => updateCapabilityField(form, row.id, 'feeRate', value ?? undefined)"
+                    @update:model-value="(value) => updateCapabilityField(form, row.id, 'feeRate', value ?? undefined)"
                   />
                 </template>
               </el-table-column>
@@ -101,7 +96,15 @@
                     :precision="2"
                     :step="1"
                     controls-position="right"
-                    @update:model-value="value => updateCapabilityField(form, row.id, 'minAmount', value === undefined || value === null ? undefined : yuanToCents(value))"
+                    @update:model-value="
+                      (value) =>
+                        updateCapabilityField(
+                          form,
+                          row.id,
+                          'minAmount',
+                          value === undefined || value === null ? undefined : yuanToCents(value),
+                        )
+                    "
                   />
                 </template>
               </el-table-column>
@@ -114,7 +117,15 @@
                     :precision="2"
                     :step="1"
                     controls-position="right"
-                    @update:model-value="value => updateCapabilityField(form, row.id, 'maxAmount', value === undefined || value === null ? undefined : yuanToCents(value))"
+                    @update:model-value="
+                      (value) =>
+                        updateCapabilityField(
+                          form,
+                          row.id,
+                          'maxAmount',
+                          value === undefined || value === null ? undefined : yuanToCents(value),
+                        )
+                    "
                   />
                 </template>
               </el-table-column>
@@ -126,7 +137,7 @@
                     :min="1"
                     :precision="0"
                     controls-position="right"
-                    @update:model-value="value => updateCapabilityField(form, row.id, 'priority', value ?? undefined)"
+                    @update:model-value="(value) => updateCapabilityField(form, row.id, 'priority', value ?? undefined)"
                   />
                 </template>
               </el-table-column>
@@ -138,7 +149,9 @@
                     type="datetime"
                     value-format="YYYY-MM-DDTHH:mm:ss"
                     format="YYYY-MM-DD HH:mm:ss"
-                    @update:model-value="value => updateCapabilityField(form, row.id, 'certificateExpireTime', value || undefined)"
+                    @update:model-value="
+                      (value) => updateCapabilityField(form, row.id, 'certificateExpireTime', value || undefined)
+                    "
                   />
                 </template>
               </el-table-column>
@@ -150,7 +163,7 @@
                     active-text="启用"
                     inactive-text="停用"
                     inline-prompt
-                    @update:model-value="value => updateCapabilityField(form, row.id, 'status', value ? 1 : 0)"
+                    @update:model-value="(value) => updateCapabilityField(form, row.id, 'status', value ? 1 : 0)"
                   />
                 </template>
               </el-table-column>
@@ -167,13 +180,7 @@
     </template>
   </PaymentResourcePage>
 
-  <el-dialog
-    v-model="billSourceDialogVisible"
-    title="账单获取配置"
-    width="880px"
-    destroy-on-close
-    append-to-body
-  >
+  <el-dialog v-model="billSourceDialogVisible" title="账单获取配置" width="880px" destroy-on-close append-to-body>
     <section class="bill-source-config">
       <div class="bill-source-config__summary">
         <span>{{ currentContract?.subjectName || subjectLabels.labelOf(currentContract?.subjectId) }}</span>
@@ -187,7 +194,13 @@
         show-icon
         title="当前支付通道尚未声明账单获取方式，请先在支付通道中配置。"
       />
-      <el-form ref="billSourceFormRef" :model="billSourceForm" :rules="billSourceRules" label-width="112px" class="payment-dialog-form">
+      <el-form
+        ref="billSourceFormRef"
+        :model="billSourceForm"
+        :rules="billSourceRules"
+        label-width="112px"
+        class="payment-dialog-form"
+      >
         <el-row :gutter="16">
           <el-col :xs="24" :sm="12">
             <el-form-item label="获取方式" prop="fetchMode">
@@ -203,12 +216,7 @@
           </el-col>
           <el-col :xs="24" :sm="12">
             <el-form-item label="启用状态" prop="enabled">
-              <el-switch
-                v-model="billSourceEnabled"
-                active-text="启用"
-                inactive-text="停用"
-                inline-prompt
-              />
+              <el-switch v-model="billSourceEnabled" active-text="启用" inactive-text="停用" inline-prompt />
             </el-form-item>
           </el-col>
           <el-col :xs="24" :sm="12">
@@ -320,14 +328,32 @@ const billSourceForm = reactive<BillSourceForm>({
 
 const billSourceEnabled = computed({
   get: () => billSourceForm.enabled === 1,
-  set: value => { billSourceForm.enabled = value ? 1 : 0; },
+  set: (value) => {
+    billSourceForm.enabled = value ? 1 : 0;
+  },
 });
 
 const columns: PaymentTableColumn[] = [
-  { prop: 'subjectName', label: '企业主体', minWidth: 190, formatter: (row, value) => String(value || subjectLabels.labelOf(row.subjectId)) },
-  { prop: 'channelName', label: '支付通道', minWidth: 180, formatter: (row, value) => String(value || channelLabels.labelOf(row.channelId)) },
+  {
+    prop: 'subjectName',
+    label: '企业主体',
+    minWidth: 190,
+    formatter: (row, value) => String(value || subjectLabels.labelOf(row.subjectId)),
+  },
+  {
+    prop: 'channelName',
+    label: '支付通道',
+    minWidth: 180,
+    formatter: (row, value) => String(value || channelLabels.labelOf(row.channelId)),
+  },
   { prop: 'merchantNo', label: '商户号', minWidth: 180 },
-  { prop: 'capabilities', label: '开通能力', minWidth: 260, variant: 'tags', formatter: row => formatCapabilities(row.capabilities) },
+  {
+    prop: 'capabilities',
+    label: '开通能力',
+    minWidth: 260,
+    variant: 'tags',
+    formatter: (row) => formatCapabilities(row.capabilities),
+  },
 ];
 
 const rules: FormRules = {
@@ -363,7 +389,7 @@ async function openBillSourceDialog(row: PaymentChannelContract) {
 async function loadFetchModes() {
   const options = await paymentReconciliationApi.billFetchModes();
   const supportedModes = currentChannel.value?.billFetchModes || [];
-  fetchModeOptions.value = options.filter(item => supportedModes.includes(item.fetchMode));
+  fetchModeOptions.value = options.filter((item) => supportedModes.includes(item.fetchMode));
 }
 
 async function loadBillSources(contractId?: ApiId) {
@@ -452,16 +478,22 @@ function contractCapabilities(form: PaymentRecord) {
   return [
     ...channelCapabilities.value,
     ...toCapabilityForms(form)
-      .filter(item => !channelCapabilities.value.some(capability => String(capability.id) === String(item.channelCapabilityId)))
-      .map(item => ({
-        id: item.channelCapabilityId,
-        channelId: form.channelId,
-        methodCode: item.methodCode || String(item.channelCapabilityId),
-        methodName: item.methodName,
-        terminalType: item.terminalType || '-',
-        status: item.status,
-      } as PaymentChannelCapabilityOption)),
-  ].filter(item => item.id);
+      .filter(
+        (item) =>
+          !channelCapabilities.value.some((capability) => String(capability.id) === String(item.channelCapabilityId)),
+      )
+      .map(
+        (item) =>
+          ({
+            id: item.channelCapabilityId,
+            channelId: form.channelId,
+            methodCode: item.methodCode || String(item.channelCapabilityId),
+            methodName: item.methodName,
+            terminalType: item.terminalType || '-',
+            status: item.status,
+          }) as PaymentChannelCapabilityOption,
+      ),
+  ].filter((item) => item.id);
 }
 
 function toCapabilityForms(form: PaymentRecord): PaymentChannelContractCapability[] {
@@ -469,15 +501,17 @@ function toCapabilityForms(form: PaymentRecord): PaymentChannelContractCapabilit
 }
 
 function isCapabilityEnabled(form: PaymentRecord, capabilityId?: ApiId) {
-  return Boolean(capabilityId && toCapabilityForms(form).some(item => String(item.channelCapabilityId) === String(capabilityId)));
+  return Boolean(
+    capabilityId && toCapabilityForms(form).some((item) => String(item.channelCapabilityId) === String(capabilityId)),
+  );
 }
 
 function capabilityForm(form: PaymentRecord, capabilityId?: ApiId) {
-  return toCapabilityForms(form).find(item => String(item.channelCapabilityId) === String(capabilityId));
+  return toCapabilityForms(form).find((item) => String(item.channelCapabilityId) === String(capabilityId));
 }
 
 function toggleCapability(form: PaymentRecord, capability: PaymentChannelCapabilityOption, checked: boolean) {
-  const rows = toCapabilityForms(form).filter(item => String(item.channelCapabilityId) !== String(capability.id));
+  const rows = toCapabilityForms(form).filter((item) => String(item.channelCapabilityId) !== String(capability.id));
   if (checked && capability.id) {
     rows.push({
       channelCapabilityId: capability.id,
@@ -493,16 +527,25 @@ function toggleCapability(form: PaymentRecord, capability: PaymentChannelCapabil
   form.capabilities = rows;
 }
 
-function updateCapabilityField(form: PaymentRecord, capabilityId: ApiId | undefined, field: keyof PaymentChannelContractCapability, value: unknown) {
+function updateCapabilityField(
+  form: PaymentRecord,
+  capabilityId: ApiId | undefined,
+  field: keyof PaymentChannelContractCapability,
+  value: unknown,
+) {
   const row = capabilityForm(form, capabilityId);
   if (!row) return;
   (row as Record<string, unknown>)[field] = value;
 }
 
 function formatCapabilities(value: unknown) {
-  const rows = Array.isArray(value) ? value as PaymentChannelContractCapability[] : [];
+  const rows = Array.isArray(value) ? (value as PaymentChannelContractCapability[]) : [];
   if (!rows.length) return '-';
-  return rows.map(item => `${item.methodName || item.methodCode || item.channelCapabilityId}/${terminalText(item.terminalType)}`).join(',');
+  return rows
+    .map(
+      (item) => `${item.methodName || item.methodCode || item.channelCapabilityId}/${terminalText(item.terminalType)}`,
+    )
+    .join(',');
 }
 
 function terminalText(value: unknown) {
@@ -527,7 +570,7 @@ function toSavePayload(form: PaymentRecord): PaymentChannelContractSavePayload {
     appId: optionalString(form.appId),
     configValuesJson: optionalString(form.configValuesJson),
     enabledMethodCodes: enabledMethodCodes(form),
-    capabilities: toCapabilityForms(form).map(item => ({
+    capabilities: toCapabilityForms(form).map((item) => ({
       id: item.id,
       channelCapabilityId: item.channelCapabilityId,
       feeRate: item.feeRate,
@@ -554,7 +597,7 @@ function optionalString(value: unknown) {
 
 function enabledMethodCodes(form: PaymentRecord) {
   const methodCodes = toCapabilityForms(form)
-    .map(item => item.methodCode)
+    .map((item) => item.methodCode)
     .filter((value): value is string => Boolean(value));
   return methodCodes.length ? Array.from(new Set(methodCodes)).join(',') : undefined;
 }

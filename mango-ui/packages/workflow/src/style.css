@@ -57,7 +57,7 @@
   justify-content: center;
   color: var(--mango-text-color-secondary, #909399);
   font-size: 12px;
-  content: "加载中...";
+  content: '加载中...';
   background: rgb(255 255 255 / 72%);
 }
 
@@ -75,7 +75,10 @@
   background: var(--mango-bg-color-page, #f5f7fa);
   border: 1px solid var(--mango-border-color-lighter, #ebeef5);
   border-radius: 8px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
 }
 
 .mango-grid-widget-my-todo__item:hover {
@@ -164,7 +167,7 @@
   justify-content: center;
   color: var(--mango-text-color-secondary, #909399);
   font-size: 12px;
-  content: "加载中...";
+  content: '加载中...';
   background: rgb(255 255 255 / 72%);
 }
 
@@ -182,7 +185,10 @@
   background: var(--mango-bg-color-page, #f5f7fa);
   border: 1px solid var(--mango-border-color-lighter, #ebeef5);
   border-radius: 8px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
 }
 
 .mango-grid-widget-my-process__item:hover {
@@ -312,7 +318,7 @@
   justify-content: center;
   color: var(--mango-text-color-secondary, #909399);
   font-size: 12px;
-  content: "加载中...";
+  content: '加载中...';
   background: rgb(255 255 255 / 72%);
 }
 
@@ -432,7 +438,10 @@
   cursor: pointer;
   border: 1px solid transparent;
   border-radius: 10px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
 }
 
 .mango-grid-widget-my-task__item:hover {

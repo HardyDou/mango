@@ -159,9 +159,8 @@ test.describe('T10 字典管理页面真实接口闭环', () => {
       await cleanupDict(request, platformToken, dictCode);
       await loginPage(page, platformTenant);
 
-      const typeListResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/system/dict/type/list') &&
-        response.status() === 200
+      const typeListResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/system/dict/type/list') && response.status() === 200,
       );
       await page.goto('/#/system/dict');
       await typeListResponsePromise;
@@ -173,9 +172,8 @@ test.describe('T10 字典管理页面真实接口闭环', () => {
       await createTypeDialog.getByLabel('类型名称').fill(dictName);
       await createTypeDialog.getByLabel('类型编码').fill(dictCode);
 
-      const createTypeResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/system/dict/type') &&
-        response.request().method() === 'POST'
+      const createTypeResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/system/dict/type') && response.request().method() === 'POST',
       );
       await createTypeDialog.getByRole('button', { name: '确定' }).click();
       const createTypeResponse = await createTypeResponsePromise;
@@ -192,9 +190,8 @@ test.describe('T10 字典管理页面真实接口闭环', () => {
       await createDataDialog.getByLabel('标签').fill(optionLabel);
       await createDataDialog.getByRole('textbox', { name: '值' }).fill(optionValue);
 
-      const createDataResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/system/dict/data') &&
-        response.request().method() === 'POST'
+      const createDataResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/system/dict/data') && response.request().method() === 'POST',
       );
       await createDataDialog.getByRole('button', { name: '确定' }).click();
       const createDataResponse = await createDataResponsePromise;
@@ -216,9 +213,8 @@ test.describe('T10 字典管理页面真实接口闭环', () => {
       const editTypeDialog = page.getByRole('dialog', { name: '编辑类型' });
       await expect(editTypeDialog).toBeVisible();
       await editTypeDialog.getByLabel('类型名称').fill(editedDictName);
-      const updateTypeResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/system/dict/type') &&
-        response.request().method() === 'PUT'
+      const updateTypeResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/system/dict/type') && response.request().method() === 'PUT',
       );
       await editTypeDialog.getByRole('button', { name: '确定' }).click();
       const updateTypeResponse = await updateTypeResponsePromise;
@@ -233,9 +229,8 @@ test.describe('T10 字典管理页面真实接口闭环', () => {
       const editDataDialog = page.getByRole('dialog', { name: '编辑数据' });
       await expect(editDataDialog).toBeVisible();
       await editDataDialog.getByLabel('标签').fill(editedOptionLabel);
-      const updateDataResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/system/dict/data') &&
-        response.request().method() === 'PUT'
+      const updateDataResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/system/dict/data') && response.request().method() === 'PUT',
       );
       await editDataDialog.getByRole('button', { name: '确定' }).click();
       const updateDataResponse = await updateDataResponsePromise;
@@ -248,9 +243,8 @@ test.describe('T10 字典管理页面真实接口闭环', () => {
       const editedDataRow = page.locator('.el-table__row', { hasText: optionValue }).first();
       await editedDataRow.getByRole('button', { name: '删除' }).click();
       await expect(page.getByText('确认删除该字典数据?')).toBeVisible();
-      const deleteDataResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/system/dict/data') &&
-        response.request().method() === 'DELETE'
+      const deleteDataResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/system/dict/data') && response.request().method() === 'DELETE',
       );
       await page.getByRole('button', { name: '确定' }).last().click();
       const deleteDataResponse = await deleteDataResponsePromise;
@@ -262,9 +256,8 @@ test.describe('T10 字典管理页面真实接口闭环', () => {
       const editedTypeItem = page.locator('.type-item', { hasText: dictCode }).first();
       await editedTypeItem.getByRole('button', { name: '删除' }).click();
       await expect(page.getByText(`确认删除字典类型「${editedDictName}」?`)).toBeVisible();
-      const deleteTypeResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/system/dict/type') &&
-        response.request().method() === 'DELETE'
+      const deleteTypeResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/system/dict/type') && response.request().method() === 'DELETE',
       );
       await page.getByRole('button', { name: '确定' }).last().click();
       const deleteTypeResponse = await deleteTypeResponsePromise;
@@ -306,10 +299,9 @@ test.describe('T10 字典管理页面真实接口闭环', () => {
       });
       expect(createResponse.status()).toBe(403);
 
-      const optionsResponse = await request.get(
-        e2eApi('/system/dict/data/options?typeCode=sys_normal_disable'),
-        { headers: { Authorization: `Bearer ${companyToken}` } },
-      );
+      const optionsResponse = await request.get(e2eApi('/system/dict/data/options?typeCode=sys_normal_disable'), {
+        headers: { Authorization: `Bearer ${companyToken}` },
+      });
       expect(optionsResponse.status()).toBe(200);
       const optionsBody = await optionsResponse.json();
       expect(optionsBody.data).toEqual([

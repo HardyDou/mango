@@ -47,7 +47,11 @@ describe('start process workflow icons', () => {
         workflowDefinition({ id: '3', definitionName: '历史图标名流程', icon: 'CollectionTag' }),
         workflowDefinition({ id: '4', definitionName: '文件Logo流程', icon: '123' }),
         workflowDefinition({ id: '5', definitionName: '历史受保护URL流程', icon: '/api/file/files/download?id=file' }),
-        workflowDefinition({ id: '6', definitionName: '直连图片流程', icon: 'https://cdn.example.com/direct-icon.png' }),
+        workflowDefinition({
+          id: '6',
+          definitionName: '直连图片流程',
+          icon: 'https://cdn.example.com/direct-icon.png',
+        }),
       ],
       total: 6,
       pageNum: 1,
@@ -68,11 +72,13 @@ describe('start process workflow icons', () => {
     const { el, unmount } = await mountStartProcess();
     await flushPromises();
 
-    expect(workflowApi.definitionsPage).toHaveBeenCalledWith(expect.objectContaining({
-      publishedOnly: true,
-      startEntryVisible: true,
-      status: 'PUBLISHED',
-    }));
+    expect(workflowApi.definitionsPage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        publishedOnly: true,
+        startEntryVisible: true,
+        status: 'PUBLISHED',
+      }),
+    );
     expect(fileApi.preview).toHaveBeenCalledTimes(1);
     expect(fileApi.preview).toHaveBeenCalledWith('123');
     expect(el.textContent).toContain('未配置Logo流程');
@@ -81,9 +87,9 @@ describe('start process workflow icons', () => {
     expect(el.textContent).toContain('文件Logo流程');
     expect(el.textContent).toContain('历史受保护URL流程');
     expect(el.textContent).toContain('直连图片流程');
-    const imageUrls = Array.from(el.querySelectorAll('img')).map(item => item.getAttribute('src') || '');
+    const imageUrls = Array.from(el.querySelectorAll('img')).map((item) => item.getAttribute('src') || '');
     expect(imageUrls).toContain('https://cdn.example.com/direct-icon.png');
-    expect(imageUrls.some(item => item.includes('/api/file/files'))).toBe(false);
+    expect(imageUrls.some((item) => item.includes('/api/file/files'))).toBe(false);
     unmount();
   });
 });
@@ -127,11 +133,22 @@ function registerElementStubs(app: ReturnType<typeof createApp>) {
   app.component('ElTag', { template: '<span><slot /></span>' });
   app.component('ElForm', { template: '<form><slot /></form>' });
   app.component('ElFormItem', { props: ['label'], template: '<label><span>{{ label }}</span><slot /></label>' });
-  app.component('ElInput', { props: ['modelValue'], emits: ['update:modelValue'], template: '<input :value="modelValue" />' });
-  app.component('ElButton', { props: ['disabled'], emits: ['click'], template: '<button :disabled="disabled" @click="$emit(\'click\')"><slot /></button>' });
+  app.component('ElInput', {
+    props: ['modelValue'],
+    emits: ['update:modelValue'],
+    template: '<input :value="modelValue" />',
+  });
+  app.component('ElButton', {
+    props: ['disabled'],
+    emits: ['click'],
+    template: '<button :disabled="disabled" @click="$emit(\'click\')"><slot /></button>',
+  });
   app.component('ElEmpty', { props: ['description'], template: '<div>{{ description }}</div>' });
   app.component('ElIcon', { template: '<i><slot /></i>' });
-  app.component('ElDialog', { props: ['modelValue', 'title'], template: '<div v-if="modelValue"><h2>{{ title }}</h2><slot /><slot name="footer" /></div>' });
+  app.component('ElDialog', {
+    props: ['modelValue', 'title'],
+    template: '<div v-if="modelValue"><h2>{{ title }}</h2><slot /><slot name="footer" /></div>',
+  });
   app.component('ElDivider', { template: '<hr />' });
   app.component('ElAlert', { props: ['title'], template: '<div>{{ title }}</div>' });
   app.component('ElSelect', { template: '<select><slot /></select>' });

@@ -11,10 +11,7 @@ export default defineConfig({
       formats: ['es'],
     },
     rollupOptions: {
-      external: [
-        '@mango/grid-layout',
-        'vue',
-      ],
+      external: ['@mango/grid-layout', 'vue'],
       output: {
         entryFileNames: '[name].js',
       },

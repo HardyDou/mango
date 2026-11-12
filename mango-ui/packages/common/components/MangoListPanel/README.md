@@ -10,12 +10,12 @@ import { MangoListPanel } from '@mango/common';
 
 ## Slots
 
-| 名称 | 说明 |
-|------|------|
-| `actions` | 顶部操作区，通常放置新增、导入、导出等按钮 |
-| `view-actions` | 顶部视图操作区，通常放置模式切换、密度切换等 |
-| `default` | 表格内容区域，通常放置 `MangoDataTable` 或 `el-table` |
-| `pagination` | 分页区域，通常放置 `Pagination` 组件 |
+| 名称           | 说明                                                  |
+| -------------- | ----------------------------------------------------- |
+| `actions`      | 顶部操作区，通常放置新增、导入、导出等按钮            |
+| `view-actions` | 顶部视图操作区，通常放置模式切换、密度切换等          |
+| `default`      | 表格内容区域，通常放置 `MangoDataTable` 或 `el-table` |
+| `pagination`   | 分页区域，通常放置 `Pagination` 组件                  |
 
 ## 使用示例
 
@@ -42,13 +42,7 @@ function loadData() {
       <el-button link>刷新</el-button>
     </template>
 
-    <MangoDataTable
-      :rows="rows"
-      :columns="columns"
-      row-key="id"
-      :pagination="paging"
-      @page-change="loadData"
-    />
+    <MangoDataTable :rows="rows" :columns="columns" row-key="id" :pagination="paging" @page-change="loadData" />
 
     <template #pagination>
       <Pagination

@@ -6,7 +6,16 @@ import { del, get, post, put } from '@mango/common/utils/request';
 import { toBackendDateRangeParams } from '@mango/common/utils/date-range';
 
 export type WorkflowStatus = 'DRAFT' | 'PUBLISHED' | 'DISABLED';
-export type WorkflowAssigneeType = 'SPECIFIED_USER' | 'SPECIFIED_ROLE' | 'SPECIFIED_POST' | 'SPECIFIED_ORG' | 'ORG_LEADER' | 'INITIATOR' | 'INITIATOR_SELECT' | 'FORM_USER' | 'EXPRESSION';
+export type WorkflowAssigneeType =
+  | 'SPECIFIED_USER'
+  | 'SPECIFIED_ROLE'
+  | 'SPECIFIED_POST'
+  | 'SPECIFIED_ORG'
+  | 'ORG_LEADER'
+  | 'INITIATOR'
+  | 'INITIATOR_SELECT'
+  | 'FORM_USER'
+  | 'EXPRESSION';
 export type WorkflowApprovalMode = 'COUNTERSIGN' | 'OR_SIGN' | 'SEQUENTIAL';
 export type WorkflowAssignmentMode = 'CLAIM' | 'AUTO';
 export type WorkflowAutoAssignmentStrategy = 'ROUND_ROBIN' | 'LEAST_TASKS' | 'AFFINITY';
@@ -14,7 +23,8 @@ export type WorkflowEmptyAssigneeStrategy = 'AUTO_PASS' | 'AUTO_REJECT' | 'AUTO_
 export type WorkflowRejectStrategy = 'END_PROCESS' | 'BACK_TO_START';
 export type WorkflowFormPermission = 'HIDDEN' | 'READONLY' | 'EDITABLE';
 export type WorkflowId = string;
-export type WorkflowTaskActionKey = 'complete' | 'reject' | 'returnTask' | 'save' | 'transfer' | 'addSign' | 'claim' | 'unclaim' | 'read';
+export type WorkflowTaskActionKey =
+  'complete' | 'reject' | 'returnTask' | 'save' | 'transfer' | 'addSign' | 'claim' | 'unclaim' | 'read';
 
 export interface WorkflowEventNotifyConfig {
   enabled?: boolean;
@@ -127,8 +137,22 @@ export interface WorkflowDefinition {
   updatedTime?: string;
 }
 
-type WorkflowDefinitionCommand = Pick<WorkflowDefinition,
-  'id' | 'categoryId' | 'domainCode' | 'orgId' | 'adminUsers' | 'startEntryVisible' | 'icon' | 'definitionName' | 'definitionKey' | 'designerJson' | 'formCode' | 'formJson' | 'status' | 'remark'
+type WorkflowDefinitionCommand = Pick<
+  WorkflowDefinition,
+  | 'id'
+  | 'categoryId'
+  | 'domainCode'
+  | 'orgId'
+  | 'adminUsers'
+  | 'startEntryVisible'
+  | 'icon'
+  | 'definitionName'
+  | 'definitionKey'
+  | 'designerJson'
+  | 'formCode'
+  | 'formJson'
+  | 'status'
+  | 'remark'
 >;
 
 export interface WorkflowPageQuery {
@@ -425,10 +449,25 @@ export interface WorkflowBusinessParticipants {
   participantUserIds: WorkflowId[];
 }
 
-export type WorkflowApplyStatus = 'DRAFT' | 'SUBMITTED' | 'IN_APPROVAL' | 'APPROVED' | 'REJECTED' | 'WITHDRAWN' | 'CANCELED' | 'TERMINATED';
+export type WorkflowApplyStatus =
+  'DRAFT' | 'SUBMITTED' | 'IN_APPROVAL' | 'APPROVED' | 'REJECTED' | 'WITHDRAWN' | 'CANCELED' | 'TERMINATED';
 export type WorkflowApplyRenderMode = 'DYNAMIC_FORM' | 'CUSTOM_PAGE';
 export type WorkflowTaskClaimStatus = 'NONE' | 'UNCLAIMED' | 'ASSIGNED';
-export type WorkflowTaskActionResultType = 'START' | 'SAVE' | 'COMPLETE' | 'REJECT' | 'RETURN' | 'TRANSFER' | 'ADD_SIGN' | 'CLAIM' | 'UNCLAIM' | 'READ' | 'AUTO_COMPLETE' | 'AUTO_REJECT' | 'AUTO_END' | 'EVENT_NOTIFY';
+export type WorkflowTaskActionResultType =
+  | 'START'
+  | 'SAVE'
+  | 'COMPLETE'
+  | 'REJECT'
+  | 'RETURN'
+  | 'TRANSFER'
+  | 'ADD_SIGN'
+  | 'CLAIM'
+  | 'UNCLAIM'
+  | 'READ'
+  | 'AUTO_COMPLETE'
+  | 'AUTO_REJECT'
+  | 'AUTO_END'
+  | 'EVENT_NOTIFY';
 
 export interface WorkflowBusinessApplyCurrentTask {
   taskId?: string;
@@ -476,10 +515,21 @@ export interface WorkflowBusinessApply {
   updatedAt?: string;
 }
 
-export type WorkflowBusinessApplyProgress = Pick<WorkflowBusinessApply,
-  'businessType' | 'businessKey' | 'applyTitle' | 'processInstanceId' | 'processName' | 'applyStatus'
-  | 'applyStatusName' | 'currentTaskNames' | 'currentTaskDefinitionKeys' | 'currentAssigneeNames' | 'currentTasks'
-  | 'createdAt' | 'updatedAt'
+export type WorkflowBusinessApplyProgress = Pick<
+  WorkflowBusinessApply,
+  | 'businessType'
+  | 'businessKey'
+  | 'applyTitle'
+  | 'processInstanceId'
+  | 'processName'
+  | 'applyStatus'
+  | 'applyStatusName'
+  | 'currentTaskNames'
+  | 'currentTaskDefinitionKeys'
+  | 'currentAssigneeNames'
+  | 'currentTasks'
+  | 'createdAt'
+  | 'updatedAt'
 > & {
   applyId?: WorkflowId;
   applyCode?: string;
@@ -654,11 +704,13 @@ export interface WorkflowStartResult {
   currentTasks?: WorkflowBusinessApplyCurrentTask[];
 }
 
-export function workflowAssigneeDisplay(value?: {
-  assigneeDisplayName?: string;
-  assigneeName?: string;
-  claimStatus?: WorkflowTaskClaimStatus;
-} | null): string {
+export function workflowAssigneeDisplay(
+  value?: {
+    assigneeDisplayName?: string;
+    assigneeName?: string;
+    claimStatus?: WorkflowTaskClaimStatus;
+  } | null,
+): string {
   const displayName = value?.assigneeDisplayName?.trim();
   if (displayName) return displayName;
   const assigneeName = value?.assigneeName?.trim();
@@ -687,167 +739,234 @@ export interface WorkflowCopiedReadCommand {
 }
 
 export const workflowApi = {
-  categoriesPage: (params?: WorkflowPageQuery) => get<any>('/workflow/categories/page', { params: toBackendPageParams(params) })
-    .then(data => fromBackendPageResult(data, normalizeCategory, params)),
-  categoriesList: (status?: number, domainCode?: string) => get<WorkflowCategory[]>('/workflow/categories/list', { params: { status, domainCode: domainCode || undefined } })
-    .then(list => (Array.isArray(list) ? list.map(normalizeCategory) : [])),
-  categoryDetail: (id: WorkflowId) => get<WorkflowCategory>('/workflow/categories/detail', { params: { id } }).then(normalizeCategory),
+  categoriesPage: (params?: WorkflowPageQuery) =>
+    get<any>('/workflow/categories/page', { params: toBackendPageParams(params) }).then((data) =>
+      fromBackendPageResult(data, normalizeCategory, params),
+    ),
+  categoriesList: (status?: number, domainCode?: string) =>
+    get<WorkflowCategory[]>('/workflow/categories/list', {
+      params: { status, domainCode: domainCode || undefined },
+    }).then((list) => (Array.isArray(list) ? list.map(normalizeCategory) : [])),
+  categoryDetail: (id: WorkflowId) =>
+    get<WorkflowCategory>('/workflow/categories/detail', { params: { id } }).then(normalizeCategory),
   createCategory: (data: WorkflowCategory) => post<WorkflowId>('/workflow/categories', data),
   updateCategory: (data: WorkflowCategory) => put<boolean>('/workflow/categories', data),
   deleteCategory: (id: WorkflowId) => del<boolean>('/workflow/categories', { params: { id } }),
-  enabledDomains: () => get<any[]>('/domain/domains/enabled-tree')
-    .then(list => (Array.isArray(list) ? list.map(normalizeDomainOption) : [])),
+  enabledDomains: () =>
+    get<any[]>('/domain/domains/enabled-tree').then((list) =>
+      Array.isArray(list) ? list.map(normalizeDomainOption) : [],
+    ),
 
-  definitionsPage: (params?: WorkflowPageQuery) => get<any>('/workflow/definitions/page', { params: toBackendPageParams(params) })
-    .then(data => fromBackendPageResult(data, normalizeDefinition, params)),
-  definitionDetail: (id: WorkflowId) => get<WorkflowDefinition>('/workflow/definitions/detail', { params: { id } }).then(normalizeDefinition),
-  createDefinition: (data: WorkflowDefinition) => post<WorkflowId>('/workflow/definitions', toDefinitionCommand(data, false)),
-  updateDefinition: (data: WorkflowDefinition) => put<boolean>('/workflow/definitions', toDefinitionCommand(data, true)),
+  definitionsPage: (params?: WorkflowPageQuery) =>
+    get<any>('/workflow/definitions/page', { params: toBackendPageParams(params) }).then((data) =>
+      fromBackendPageResult(data, normalizeDefinition, params),
+    ),
+  definitionDetail: (id: WorkflowId) =>
+    get<WorkflowDefinition>('/workflow/definitions/detail', { params: { id } }).then(normalizeDefinition),
+  createDefinition: (data: WorkflowDefinition) =>
+    post<WorkflowId>('/workflow/definitions', toDefinitionCommand(data, false)),
+  updateDefinition: (data: WorkflowDefinition) =>
+    put<boolean>('/workflow/definitions', toDefinitionCommand(data, true)),
   deleteDefinition: (id: WorkflowId) => del<boolean>('/workflow/definitions', { params: { id } }),
-  updateDefinitionStatus: (id: WorkflowId, status: WorkflowStatus) => put<boolean>('/workflow/definitions/status', { id, status }),
-  discardDefinitionDraft: (id: WorkflowId) => post<boolean>('/workflow/definitions/discard-draft', undefined, { params: { id } }),
+  updateDefinitionStatus: (id: WorkflowId, status: WorkflowStatus) =>
+    put<boolean>('/workflow/definitions/status', { id, status }),
+  discardDefinitionDraft: (id: WorkflowId) =>
+    post<boolean>('/workflow/definitions/discard-draft', undefined, { params: { id } }),
   deployDefinition: (id: WorkflowId) => post<any>('/workflow/definitions/deploy', undefined, { params: { id } }),
-  definitionVersions: (definitionId: WorkflowId) => get<WorkflowDefinitionVersion[]>('/workflow/definitions/versions', { params: { definitionId } })
-    .then(list => Array.isArray(list) ? list.map(normalizeVersion) : []),
-  definitionVersionDetail: (id: WorkflowId) => get<WorkflowDefinitionVersion>('/workflow/definitions/version-detail', { params: { id } }).then(normalizeVersion),
-  nodeCatalog: () => get<WorkflowNodeCatalog[]>('/workflow/definitions/node-catalog')
-    .then(list => Array.isArray(list) ? list.map(normalizeNodeCatalog) : []),
-  designerOptions: () => get<WorkflowDesignerOptions>('/workflow/definitions/designer-options')
-    .then(normalizeDesignerOptions),
+  definitionVersions: (definitionId: WorkflowId) =>
+    get<WorkflowDefinitionVersion[]>('/workflow/definitions/versions', { params: { definitionId } }).then((list) =>
+      Array.isArray(list) ? list.map(normalizeVersion) : [],
+    ),
+  definitionVersionDetail: (id: WorkflowId) =>
+    get<WorkflowDefinitionVersion>('/workflow/definitions/version-detail', { params: { id } }).then(normalizeVersion),
+  nodeCatalog: () =>
+    get<WorkflowNodeCatalog[]>('/workflow/definitions/node-catalog').then((list) =>
+      Array.isArray(list) ? list.map(normalizeNodeCatalog) : [],
+    ),
+  designerOptions: () =>
+    get<WorkflowDesignerOptions>('/workflow/definitions/designer-options').then(normalizeDesignerOptions),
 
-  templatesPage: (params?: WorkflowPageQuery & { templateCategoryId?: WorkflowId | '' }) => get<any>('/workflow/templates/page', { params: toBackendPageParams(params) })
-    .then(data => fromBackendPageResult(data, normalizeTemplate, params)),
-  templateDetail: (id: WorkflowId) => get<WorkflowTemplate>('/workflow/templates/detail', { params: { id } }).then(normalizeTemplate),
+  templatesPage: (params?: WorkflowPageQuery & { templateCategoryId?: WorkflowId | '' }) =>
+    get<any>('/workflow/templates/page', { params: toBackendPageParams(params) }).then((data) =>
+      fromBackendPageResult(data, normalizeTemplate, params),
+    ),
+  templateDetail: (id: WorkflowId) =>
+    get<WorkflowTemplate>('/workflow/templates/detail', { params: { id } }).then(normalizeTemplate),
   createTemplate: (data: WorkflowTemplate) => post<WorkflowId>('/workflow/templates', toTemplateCommand(data)),
   deleteTemplate: (id: WorkflowId) => del<boolean>('/workflow/templates', { params: { id } }),
-  createTemplateFromDefinition: (data: Record<string, any>) => post<WorkflowId>('/workflow/templates/from-definition', data),
-  createDefinitionFromTemplate: (data: Record<string, any>) => post<WorkflowId>('/workflow/templates/create-definition', data),
-  importTemplates: (data: ImportWorkflowTemplatesCommand) => post<WorkflowTemplateImportResult>('/workflow/templates/import', data)
-    .then(normalizeTemplateImportResult),
-  pushTemplates: (data: PushWorkflowTemplatesCommand) => post<WorkflowTemplateImportResult>('/workflow/templates/push', data)
-    .then(normalizeTemplateImportResult),
-  templateCategoriesPage: (params?: WorkflowPageQuery) => get<any>('/workflow/template-categories/page', { params: toBackendPageParams(params) })
-    .then(data => fromBackendPageResult(data, normalizeTemplateCategory, params)),
-  templateCategoriesList: (status?: number) => get<WorkflowTemplateCategory[]>('/workflow/template-categories/list', { params: { status } })
-    .then(list => (Array.isArray(list) ? list.map(normalizeTemplateCategory) : [])),
+  createTemplateFromDefinition: (data: Record<string, any>) =>
+    post<WorkflowId>('/workflow/templates/from-definition', data),
+  createDefinitionFromTemplate: (data: Record<string, any>) =>
+    post<WorkflowId>('/workflow/templates/create-definition', data),
+  importTemplates: (data: ImportWorkflowTemplatesCommand) =>
+    post<WorkflowTemplateImportResult>('/workflow/templates/import', data).then(normalizeTemplateImportResult),
+  pushTemplates: (data: PushWorkflowTemplatesCommand) =>
+    post<WorkflowTemplateImportResult>('/workflow/templates/push', data).then(normalizeTemplateImportResult),
+  templateCategoriesPage: (params?: WorkflowPageQuery) =>
+    get<any>('/workflow/template-categories/page', { params: toBackendPageParams(params) }).then((data) =>
+      fromBackendPageResult(data, normalizeTemplateCategory, params),
+    ),
+  templateCategoriesList: (status?: number) =>
+    get<WorkflowTemplateCategory[]>('/workflow/template-categories/list', { params: { status } }).then((list) =>
+      Array.isArray(list) ? list.map(normalizeTemplateCategory) : [],
+    ),
   createTemplateCategory: (data: WorkflowTemplateCategory) => post<WorkflowId>('/workflow/template-categories', data),
   updateTemplateCategory: (data: WorkflowTemplateCategory) => put<boolean>('/workflow/template-categories', data),
   deleteTemplateCategory: (id: WorkflowId) => del<boolean>('/workflow/template-categories', { params: { id } }),
 
-  todoTasks: (params?: WorkflowPageQuery) => get<any>('/workflow/tasks/todo', { params: toBackendPageParams(params) })
-    .then(data => fromBackendPageResult(data, normalizeTask, params)),
-  todoSummary: () => get<WorkflowTaskSummary>('/workflow/tasks/todo/summary', { silentError: true })
-    .then(normalizeTaskSummary),
-  myTaskSummary: () => get<WorkflowMyTaskSummary>('/workflow/tasks/my/summary', { silentError: true })
-    .then(normalizeMyTaskSummary),
-  initiatedTasks: (params?: WorkflowPageQuery) => get<any>('/workflow/tasks/initiated', { params: toBackendPageParams(params) })
-    .then(data => fromBackendPageResult(data, normalizeTask, params)),
-  doneTasks: (params?: WorkflowPageQuery) => get<any>('/workflow/tasks/done', { params: toBackendPageParams(params) })
-    .then(data => fromBackendPageResult(data, normalizeTask, params)),
-  copiedTasks: (params?: WorkflowPageQuery) => get<any>('/workflow/tasks/copied', { params: toBackendPageParams(params) })
-    .then(data => fromBackendPageResult(data, normalizeTask, params)),
-  taskDetail: (taskId: string) => get<WorkflowTaskDetail>('/workflow/tasks/detail', { params: { taskId } })
-    .then(normalizeTaskDetail),
+  todoTasks: (params?: WorkflowPageQuery) =>
+    get<any>('/workflow/tasks/todo', { params: toBackendPageParams(params) }).then((data) =>
+      fromBackendPageResult(data, normalizeTask, params),
+    ),
+  todoSummary: () =>
+    get<WorkflowTaskSummary>('/workflow/tasks/todo/summary', { silentError: true }).then(normalizeTaskSummary),
+  myTaskSummary: () =>
+    get<WorkflowMyTaskSummary>('/workflow/tasks/my/summary', { silentError: true }).then(normalizeMyTaskSummary),
+  initiatedTasks: (params?: WorkflowPageQuery) =>
+    get<any>('/workflow/tasks/initiated', { params: toBackendPageParams(params) }).then((data) =>
+      fromBackendPageResult(data, normalizeTask, params),
+    ),
+  doneTasks: (params?: WorkflowPageQuery) =>
+    get<any>('/workflow/tasks/done', { params: toBackendPageParams(params) }).then((data) =>
+      fromBackendPageResult(data, normalizeTask, params),
+    ),
+  copiedTasks: (params?: WorkflowPageQuery) =>
+    get<any>('/workflow/tasks/copied', { params: toBackendPageParams(params) }).then((data) =>
+      fromBackendPageResult(data, normalizeTask, params),
+    ),
+  taskDetail: (taskId: string) =>
+    get<WorkflowTaskDetail>('/workflow/tasks/detail', { params: { taskId } }).then(normalizeTaskDetail),
   completeTask: (data: WorkflowTaskActionCommand) => post<boolean>('/workflow/tasks/complete', data),
-  completeTaskWithResult: (data: WorkflowTaskActionCommand) => post<WorkflowTaskCompleteResult>('/workflow/tasks/complete-result', data)
-    .then(normalizeTaskCompleteResult),
+  completeTaskWithResult: (data: WorkflowTaskActionCommand) =>
+    post<WorkflowTaskCompleteResult>('/workflow/tasks/complete-result', data).then(normalizeTaskCompleteResult),
   rejectTask: (data: WorkflowTaskActionCommand) => post<boolean>('/workflow/tasks/reject', data),
-  rejectTaskWithResult: (data: WorkflowTaskActionCommand) => post<WorkflowTaskActionResult>('/workflow/tasks/reject-result', data)
-    .then(normalizeTaskActionResult),
-  returnTask: (data: WorkflowTaskReturnCommand) => post<WorkflowTaskCompleteResult>('/workflow/tasks/return', data)
-    .then(normalizeTaskCompleteResult),
+  rejectTaskWithResult: (data: WorkflowTaskActionCommand) =>
+    post<WorkflowTaskActionResult>('/workflow/tasks/reject-result', data).then(normalizeTaskActionResult),
+  returnTask: (data: WorkflowTaskReturnCommand) =>
+    post<WorkflowTaskCompleteResult>('/workflow/tasks/return', data).then(normalizeTaskCompleteResult),
   saveTask: (data: WorkflowTaskActionCommand) => post<boolean>('/workflow/tasks/save', data),
-  saveTaskWithResult: (data: WorkflowTaskActionCommand) => post<WorkflowTaskActionResult>('/workflow/tasks/save-result', data)
-    .then(normalizeTaskActionResult),
+  saveTaskWithResult: (data: WorkflowTaskActionCommand) =>
+    post<WorkflowTaskActionResult>('/workflow/tasks/save-result', data).then(normalizeTaskActionResult),
   transferTask: (data: WorkflowTaskTransferCommand) => post<boolean>('/workflow/tasks/transfer', data),
   addSignTask: (data: WorkflowTaskAddSignCommand) => post<boolean>('/workflow/tasks/add-sign', data),
   claimTask: (taskId: string) => post<boolean>('/workflow/tasks/claim', { taskId }),
-  claimTaskWithResult: (taskId: string) => post<WorkflowTaskActionResult>('/workflow/tasks/claim-result', { taskId })
-    .then(normalizeTaskActionResult),
+  claimTaskWithResult: (taskId: string) =>
+    post<WorkflowTaskActionResult>('/workflow/tasks/claim-result', { taskId }).then(normalizeTaskActionResult),
   unclaimTask: (taskId: string) => post<boolean>('/workflow/tasks/unclaim', { taskId }),
-  unclaimTaskWithResult: (taskId: string) => post<WorkflowTaskActionResult>('/workflow/tasks/unclaim-result', { taskId })
-    .then(normalizeTaskActionResult),
+  unclaimTaskWithResult: (taskId: string) =>
+    post<WorkflowTaskActionResult>('/workflow/tasks/unclaim-result', { taskId }).then(normalizeTaskActionResult),
   readCopiedTask: (copiedTaskId: WorkflowId) => post<boolean>('/workflow/tasks/copied/read', { copiedTaskId }),
 
-  startProcess: (data: StartWorkflowProcessCommand) => post<WorkflowProcessInstance>('/workflow/processes/start', data)
-    .then(normalizeProcessInstance),
-  startBusinessWorkflow: (data: StartBusinessWorkflowCommand) => post<WorkflowStartResult>('/workflow/processes/start-business', data)
-    .then(normalizeWorkflowStartResult),
-  participationAccess: (processKey: string, businessKey: string) => get<WorkflowParticipationAccess>('/workflow/participations/access', {
-    params: { processKey, businessKey },
-  }),
-  participationMy: (params?: WorkflowParticipationPageQuery) => get<any>('/workflow/participations/my', {
-    params: toBackendPageParams(params),
-  }).then(data => fromBackendPageResult(data, item => item as WorkflowParticipationBusiness, params)),
-  replaceBusinessParticipants: (data: ReplaceWorkflowBusinessParticipantsCommand) => post<WorkflowBusinessParticipants>('/workflow/participations/business', data),
-  businessAppliesPage: (params?: WorkflowBusinessApplyPageQuery) => post<any>('/workflow/business-applies/page', toBackendBusinessApplyPageParams(params))
-    .then(data => fromBackendPageResult(data, normalizeBusinessApply, params)),
-  businessApplyMySummary: () => get<WorkflowBusinessApplySummary>('/workflow/business-applies/my/summary', { silentError: true })
-    .then(normalizeBusinessApplySummary),
-  businessApplyHistory: (businessType: string, businessKey: string, params?: WorkflowBusinessApplyPageQuery) => get<any>('/workflow/business-applies/history', {
-    params: {
-      ...toBackendBusinessApplyPageParams(params),
+  startProcess: (data: StartWorkflowProcessCommand) =>
+    post<WorkflowProcessInstance>('/workflow/processes/start', data).then(normalizeProcessInstance),
+  startBusinessWorkflow: (data: StartBusinessWorkflowCommand) =>
+    post<WorkflowStartResult>('/workflow/processes/start-business', data).then(normalizeWorkflowStartResult),
+  participationAccess: (processKey: string, businessKey: string) =>
+    get<WorkflowParticipationAccess>('/workflow/participations/access', {
+      params: { processKey, businessKey },
+    }),
+  participationMy: (params?: WorkflowParticipationPageQuery) =>
+    get<any>('/workflow/participations/my', {
+      params: toBackendPageParams(params),
+    }).then((data) => fromBackendPageResult(data, (item) => item as WorkflowParticipationBusiness, params)),
+  replaceBusinessParticipants: (data: ReplaceWorkflowBusinessParticipantsCommand) =>
+    post<WorkflowBusinessParticipants>('/workflow/participations/business', data),
+  businessAppliesPage: (params?: WorkflowBusinessApplyPageQuery) =>
+    post<any>('/workflow/business-applies/page', toBackendBusinessApplyPageParams(params)).then((data) =>
+      fromBackendPageResult(data, normalizeBusinessApply, params),
+    ),
+  businessApplyMySummary: () =>
+    get<WorkflowBusinessApplySummary>('/workflow/business-applies/my/summary', { silentError: true }).then(
+      normalizeBusinessApplySummary,
+    ),
+  businessApplyHistory: (businessType: string, businessKey: string, params?: WorkflowBusinessApplyPageQuery) =>
+    get<any>('/workflow/business-applies/history', {
+      params: {
+        ...toBackendBusinessApplyPageParams(params),
+        businessType,
+        businessKey,
+      },
+    }).then((data) => fromBackendPageResult(data, normalizeBusinessApply, params)),
+  businessApplyLatestProgress: (businessType: string, businessKey: string) =>
+    get<WorkflowBusinessApplyProgress | null>('/workflow/business-applies/progress/latest', {
+      params: { businessType, businessKey },
+    }).then((data) => (data ? normalizeBusinessApplyProgress(data) : null)),
+  businessApplyByProcessInstance: (processInstanceId: string) =>
+    get<WorkflowBusinessApply>('/workflow/business-applies/progress/by-process-instance', {
+      params: { processInstanceId },
+    }).then(normalizeBusinessApply),
+  businessApplyLatestProgressBatch: (businessType: string, businessKeys: string[]) =>
+    post<Record<string, WorkflowBusinessApplyProgress>>('/workflow/business-applies/progress/latest-batch', {
       businessType,
-      businessKey,
-    },
-  }).then(data => fromBackendPageResult(data, normalizeBusinessApply, params)),
-  businessApplyLatestProgress: (businessType: string, businessKey: string) => get<WorkflowBusinessApplyProgress | null>('/workflow/business-applies/progress/latest', {
-    params: { businessType, businessKey },
-  }).then(data => data ? normalizeBusinessApplyProgress(data) : null),
-  businessApplyByProcessInstance: (processInstanceId: string) => get<WorkflowBusinessApply>('/workflow/business-applies/progress/by-process-instance', {
-    params: { processInstanceId },
-  }).then(normalizeBusinessApply),
-  businessApplyLatestProgressBatch: (businessType: string, businessKeys: string[]) => post<Record<string, WorkflowBusinessApplyProgress>>('/workflow/business-applies/progress/latest-batch', {
-    businessType,
-    businessKeys,
-  }).then(data => Object.fromEntries(Object.entries(data || {}).map(([key, value]) => [key, normalizeBusinessApplyProgress(value)]))),
-  initiatedProcesses: (params?: WorkflowPageQuery) => get<any>('/workflow/processes/initiated', { params: toBackendPageParams(params) })
-    .then(data => fromBackendPageResult(data, normalizeProcessInstance, params)),
-  processHistoryByBusinessKey: (businessKey: string, params?: WorkflowPageQuery) => get<any>('/workflow/processes/history', {
-    params: {
-      ...toBackendPageParams(params),
-      businessKey,
-    },
-  }).then(data => fromBackendPageResult(data, normalizeProcessInstance, params)),
-  processDetail: (processInstanceId: string) => get<WorkflowProcessDetail>('/workflow/processes/detail', { params: { processInstanceId } })
-    .then(normalizeProcessDetail),
+      businessKeys,
+    }).then((data) =>
+      Object.fromEntries(
+        Object.entries(data || {}).map(([key, value]) => [key, normalizeBusinessApplyProgress(value)]),
+      ),
+    ),
+  initiatedProcesses: (params?: WorkflowPageQuery) =>
+    get<any>('/workflow/processes/initiated', { params: toBackendPageParams(params) }).then((data) =>
+      fromBackendPageResult(data, normalizeProcessInstance, params),
+    ),
+  processHistoryByBusinessKey: (businessKey: string, params?: WorkflowPageQuery) =>
+    get<any>('/workflow/processes/history', {
+      params: {
+        ...toBackendPageParams(params),
+        businessKey,
+      },
+    }).then((data) => fromBackendPageResult(data, normalizeProcessInstance, params)),
+  processDetail: (processInstanceId: string) =>
+    get<WorkflowProcessDetail>('/workflow/processes/detail', { params: { processInstanceId } }).then(
+      normalizeProcessDetail,
+    ),
   // Workflow assignee candidates come from the platform Provider contract.
   // Do not call the identity page endpoint here: it is intentionally scoped
   // and may return 403 for workflow users without user-management permission.
-  users: (keyword = '') => get<WorkflowDesignerOptions>('/workflow/definitions/designer-options')
-    .then(data => normalizeDesignerOptions(data).users)
-    .then(users => {
-      const normalizedKeyword = keyword.trim().toLowerCase();
-      if (!normalizedKeyword) return users;
-      return users.filter(user => user.label.toLowerCase().includes(normalizedKeyword));
-    }),
-  tenants: (keyword = '') => get<any[]>('/workflow/templates/tenant-options', {
-    params: { keyword: keyword || undefined },
-  }).then(data => (data || [])
-    .map(item => {
-      const id = item.id ?? item.tenantId;
-      return id === undefined ? undefined : {
-        id: String(id),
-        tenantName: item.tenantName || item.name || String(id),
-        tenantCode: item.tenantCode,
-        status: item.status,
-      };
-    })
-    .filter(Boolean) as WorkflowTenantOption[]),
+  users: (keyword = '') =>
+    get<WorkflowDesignerOptions>('/workflow/definitions/designer-options')
+      .then((data) => normalizeDesignerOptions(data).users)
+      .then((users) => {
+        const normalizedKeyword = keyword.trim().toLowerCase();
+        if (!normalizedKeyword) return users;
+        return users.filter((user) => user.label.toLowerCase().includes(normalizedKeyword));
+      }),
+  tenants: (keyword = '') =>
+    get<any[]>('/workflow/templates/tenant-options', {
+      params: { keyword: keyword || undefined },
+    }).then(
+      (data) =>
+        (data || [])
+          .map((item) => {
+            const id = item.id ?? item.tenantId;
+            return id === undefined
+              ? undefined
+              : {
+                  id: String(id),
+                  tenantName: item.tenantName || item.name || String(id),
+                  tenantCode: item.tenantCode,
+                  status: item.status,
+                };
+          })
+          .filter(Boolean) as WorkflowTenantOption[],
+    ),
 };
 
-export const workflowStatusOptions: Array<{ label: string; value: WorkflowStatus; type: 'info' | 'success' | 'warning' }> = [
+export const workflowStatusOptions: Array<{
+  label: string;
+  value: WorkflowStatus;
+  type: 'info' | 'success' | 'warning';
+}> = [
   { label: '草稿', value: 'DRAFT', type: 'info' },
   { label: '已发布', value: 'PUBLISHED', type: 'success' },
   { label: '停用', value: 'DISABLED', type: 'warning' },
 ];
 
 export function workflowStatusLabel(value?: string) {
-  return workflowStatusOptions.find(item => item.value === value)?.label || value || '-';
+  return workflowStatusOptions.find((item) => item.value === value)?.label || value || '-';
 }
 
 export function workflowStatusType(value?: string) {
-  return workflowStatusOptions.find(item => item.value === value)?.type || 'info';
+  return workflowStatusOptions.find((item) => item.value === value)?.type || 'info';
 }
 
 export function workflowPublishStatusLabel(value?: string) {
@@ -885,26 +1004,30 @@ export function defaultBpmnXml(processKey = 'sample_process', processName = '示
 }
 
 export function defaultDesignerJson(): string {
-  return JSON.stringify({
-    id: 'startEvent',
-    nodeName: '发起人',
-    nodeType: 'ROOT',
-    childNode: {
-      id: createNodeId('approve'),
-      nodeDefinitionCode: 'APPROVAL',
-      nodeName: '人工审批',
-      nodeType: 'APPROVAL',
-      bpmnType: 'userTask',
-      executionType: 'USER_TASK',
-      childNode: null,
-      conditionNodes: [],
-      properties: {
-        approvalConfig: defaultApprovalConfig(),
+  return JSON.stringify(
+    {
+      id: 'startEvent',
+      nodeName: '发起人',
+      nodeType: 'ROOT',
+      childNode: {
+        id: createNodeId('approve'),
+        nodeDefinitionCode: 'APPROVAL',
+        nodeName: '人工审批',
+        nodeType: 'APPROVAL',
+        bpmnType: 'userTask',
+        executionType: 'USER_TASK',
+        childNode: null,
+        conditionNodes: [],
+        properties: {
+          approvalConfig: defaultApprovalConfig(),
+        },
       },
+      conditionNodes: [],
+      properties: {},
     },
-    conditionNodes: [],
-    properties: {},
-  }, null, 2);
+    null,
+    2,
+  );
 }
 
 export function defaultApprovalConfig(): WorkflowApprovalNodeConfig {
@@ -1063,11 +1186,13 @@ function normalizeDesignerOptions(data: Partial<WorkflowDesignerOptions> | undef
 
 function normalizeDesignerOptionList(items: WorkflowDesignerOption[] | undefined): WorkflowDesignerOption[] {
   if (!Array.isArray(items)) return [];
-  return items.map(item => ({
-    value: String(item?.value ?? ''),
-    label: String(item?.label ?? item?.value ?? ''),
-    children: Array.isArray(item?.children) ? normalizeDesignerOptionList(item.children) : undefined,
-  })).filter(item => item.value && item.label);
+  return items
+    .map((item) => ({
+      value: String(item?.value ?? ''),
+      label: String(item?.label ?? item?.value ?? ''),
+      children: Array.isArray(item?.children) ? normalizeDesignerOptionList(item.children) : undefined,
+    }))
+    .filter((item) => item.value && item.label);
 }
 
 function normalizeTemplate(item: any): WorkflowTemplate {
@@ -1146,7 +1271,7 @@ function normalizeTemplateImportResult(item: any): WorkflowTemplateImportResult 
 
 function normalizeStringList(value: unknown): string[] {
   if (Array.isArray(value)) {
-    return value.map(item => String(item).trim()).filter(Boolean);
+    return value.map((item) => String(item).trim()).filter(Boolean);
   }
   if (typeof value === 'string') {
     const text = value.trim();
@@ -1154,12 +1279,15 @@ function normalizeStringList(value: unknown): string[] {
     try {
       const parsed = JSON.parse(text);
       if (Array.isArray(parsed)) {
-        return parsed.map(item => String(item).trim()).filter(Boolean);
+        return parsed.map((item) => String(item).trim()).filter(Boolean);
       }
     } catch {
       // Fallback to comma separated values.
     }
-    return text.split(',').map(item => item.trim()).filter(Boolean);
+    return text
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
   }
   return [];
 }

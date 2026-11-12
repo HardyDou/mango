@@ -9,7 +9,7 @@ export function registerMangoAdminShellDevPages() {
   registerModulePages({
     moduleCode: 'mango-shell',
     pages: getMangoDevComponentPages()
-      .filter(page => !page.feature || enabledFeatures.has(page.feature))
+      .filter((page) => !page.feature || enabledFeatures.has(page.feature))
       .reduce<Record<string, MangoPageLoader>>((pages, page) => {
         pages[page.component] = page.loader;
         return pages;

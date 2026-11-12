@@ -286,8 +286,7 @@ defineExpose({ refresh, verify });
 
   :deep(.el-tabs__nav-wrap) {
     max-width: 100%;
-    overflow-x: auto;
-    overflow-y: hidden;
+    overflow: auto hidden;
     scrollbar-width: thin;
 
     &::after {

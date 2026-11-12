@@ -651,7 +651,7 @@ const handleMobileResize = (res: { isMobile: boolean; windowWidth: number; layou
       }
 
       .el-aside {
-        background-color: #ffffff;
+        background-color: #fff;
       }
 
       .el-header {
@@ -739,7 +739,7 @@ const handleMobileResize = (res: { isMobile: boolean; windowWidth: number; layou
   margin: 16px 0;
 }
 
-@media (max-width: 520px) {
+@media (width <= 520px) {
   .layout-theme-page {
     max-width: 100%;
   }

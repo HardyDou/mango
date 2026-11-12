@@ -41,12 +41,14 @@ describe('createRealtimeClient', () => {
         });
       }
       if (url.includes('/polling')) {
-        return jsonResponse([{
-          id: 'm1',
-          version: '1.0',
-          event: { domain: 'chat', name: 'message' },
-          payload: { type: 'text', text: 'hello' },
-        }]);
+        return jsonResponse([
+          {
+            id: 'm1',
+            version: '1.0',
+            event: { domain: 'chat', name: 'message' },
+            payload: { type: 'text', text: 'hello' },
+          },
+        ]);
       }
       return jsonResponse(undefined);
     });
@@ -57,7 +59,7 @@ describe('createRealtimeClient', () => {
       heartbeat: false,
       polling: { timeoutMillis: 0, interval: 1000 },
     });
-    client.subscribe('chat.message', message => received.push(message));
+    client.subscribe('chat.message', (message) => received.push(message));
 
     await client.connect();
     await vi.runOnlyPendingTimersAsync();
@@ -114,7 +116,10 @@ describe('createRealtimeClient', () => {
 
   it('心跳间隔按性能模式钳制，普通模式最小 1000ms，aggressive 可到 500ms', async () => {
     const intervals: number[] = [];
-    const setIntervalSpy = vi.spyOn(window, 'setInterval').mockImplementation(((handler: TimerHandler, timeout?: number) => {
+    const setIntervalSpy = vi.spyOn(window, 'setInterval').mockImplementation(((
+      handler: TimerHandler,
+      timeout?: number,
+    ) => {
       intervals.push(Number(timeout));
       return globalThis.setInterval(handler, timeout) as unknown as number;
     }) as typeof window.setInterval);
@@ -127,7 +132,12 @@ describe('createRealtimeClient', () => {
     await normal.connect();
     normal.disconnect();
 
-    const aggressive = createRealtimeClient({ mode: 'polling', performanceMode: 'aggressive', heartbeat: { interval: 1 }, polling: { timeoutMillis: 0 } });
+    const aggressive = createRealtimeClient({
+      mode: 'polling',
+      performanceMode: 'aggressive',
+      heartbeat: { interval: 1 },
+      polling: { timeoutMillis: 0 },
+    });
     await aggressive.connect();
     aggressive.disconnect();
 
@@ -173,7 +183,7 @@ describe('createRealtimeClient', () => {
       heartbeat: { interval: 1000, timeout: 1000, suppressEvents: true },
       polling: { timeoutMillis: 0, interval: 1000 },
     });
-    client.subscribe('*', message => received.push(message));
+    client.subscribe('*', (message) => received.push(message));
 
     await client.connect();
     await vi.runOnlyPendingTimersAsync();
@@ -186,5 +196,4 @@ describe('createRealtimeClient', () => {
     ]);
     client.disconnect();
   });
-
 });

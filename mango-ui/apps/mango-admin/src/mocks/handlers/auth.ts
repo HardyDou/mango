@@ -11,8 +11,8 @@ import type { SysMenuVO } from '@/api/admin/menu';
  */
 function filterMenuForNav(menus: SysMenuVO[]): SysMenuVO[] {
   return menus
-    .filter(menu => menu.menuType !== 2) // 移除按钮类型
-    .map(menu => ({
+    .filter((menu) => menu.menuType !== 2) // 移除按钮类型
+    .map((menu) => ({
       ...menu,
       children: menu.children ? filterMenuForNav(menu.children) : [],
     }));
@@ -41,7 +41,7 @@ function flattenMenus(menus: SysMenuVO[]): SysMenuVO[] {
 export const authHandlers = [
   // 登录
   http.post('/api/auth/login', async ({ request }) => {
-    const body = await request.json() as { username: string; password: string };
+    const body = (await request.json()) as { username: string; password: string };
     const { username, password } = body;
 
     // 模拟登录验证

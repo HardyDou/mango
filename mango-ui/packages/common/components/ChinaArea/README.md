@@ -11,32 +11,32 @@ import type { ChinaAreaExpose, AreaNode } from '@mango/common';
 
 ## Props
 
-| 名称 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `modelValue` | `ApiId[]` | `[]` | 选中的区域 ID 路径数组（如 `['110000', '110100', '110101']`），支持 `v-model` |
-| `placeholder` | `string` | `'chinaArea.placeholder'` | 占位文本；以 `chinaArea.` 开头时按 i18n key 翻译，否则按原文展示 |
-| `level` | `number` | `3` | 联动层级，`3` 为省/市/区，`4` 为省/市/区/街道 |
-| `showAllLevels` | `boolean` | `true` | 是否展示完整选中路径 |
-| `showHot` | `boolean` | `true` | 类型定义中表示“是否热门城市优先”；当前组件实现未读取该字段，不影响请求与渲染顺序 |
-| `disabled` | `boolean` | `false` | 是否禁用 |
-| `clearable` | `boolean` | `true` | 是否可清空 |
-| `filterable` | `boolean` | `true` | 是否可搜索 |
-| `collapseTags` | `boolean` | `false` | 多选时是否折叠标签 |
-| `separator` | `string` | `'/'` | 路径文本分隔符 |
+| 名称            | 类型      | 默认值                    | 说明                                                                             |
+| --------------- | --------- | ------------------------- | -------------------------------------------------------------------------------- |
+| `modelValue`    | `ApiId[]` | `[]`                      | 选中的区域 ID 路径数组（如 `['110000', '110100', '110101']`），支持 `v-model`    |
+| `placeholder`   | `string`  | `'chinaArea.placeholder'` | 占位文本；以 `chinaArea.` 开头时按 i18n key 翻译，否则按原文展示                 |
+| `level`         | `number`  | `3`                       | 联动层级，`3` 为省/市/区，`4` 为省/市/区/街道                                    |
+| `showAllLevels` | `boolean` | `true`                    | 是否展示完整选中路径                                                             |
+| `showHot`       | `boolean` | `true`                    | 类型定义中表示“是否热门城市优先”；当前组件实现未读取该字段，不影响请求与渲染顺序 |
+| `disabled`      | `boolean` | `false`                   | 是否禁用                                                                         |
+| `clearable`     | `boolean` | `true`                    | 是否可清空                                                                       |
+| `filterable`    | `boolean` | `true`                    | 是否可搜索                                                                       |
+| `collapseTags`  | `boolean` | `false`                   | 多选时是否折叠标签                                                               |
+| `separator`     | `string`  | `'/'`                     | 路径文本分隔符                                                                   |
 
 ## Events
 
-| 名称 | 参数 | 说明 |
-|------|------|------|
-| `update:modelValue` | `ApiId[]` | 选中路径变化时触发，清空时为空数组 |
-| `change` | `ApiId[]` | 与 `update:modelValue` 同时触发，参数相同 |
+| 名称                | 参数      | 说明                                      |
+| ------------------- | --------- | ----------------------------------------- |
+| `update:modelValue` | `ApiId[]` | 选中路径变化时触发，清空时为空数组        |
+| `change`            | `ApiId[]` | 与 `update:modelValue` 同时触发，参数相同 |
 
 ## Expose
 
-| 名称 | 参数 | 说明 |
-|------|------|------|
-| `getValue()` | 返回 `ApiId[]` | 获取当前选中的区域 ID 路径数组 |
-| `clear()` | - | 清空选择并清空已加载节点缓存 |
+| 名称                       | 参数              | 说明                                         |
+| -------------------------- | ----------------- | -------------------------------------------- |
+| `getValue()`               | 返回 `ApiId[]`    | 获取当前选中的区域 ID 路径数组               |
+| `clear()`                  | -                 | 清空选择并清空已加载节点缓存                 |
 | `clearNodeCache(parentId)` | `parentId: ApiId` | 清除指定父节点的缓存，下次展开时强制重新请求 |
 
 ## 类型定义
@@ -119,13 +119,7 @@ function handleAreaChange(value: string[]) {
 </script>
 
 <template>
-  <ChinaArea
-    v-model="areaPath"
-    :level="4"
-    separator="-"
-    placeholder="请选择省/市/区/街道"
-    @change="handleAreaChange"
-  />
+  <ChinaArea v-model="areaPath" :level="4" separator="-" placeholder="请选择省/市/区/街道" @change="handleAreaChange" />
 </template>
 ```
 

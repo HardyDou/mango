@@ -1677,7 +1677,7 @@ function segmentTypeLabel(type: SegmentEditorType) {
   background: var(--el-color-success-light-9);
 }
 
-@media (max-width: 960px) {
+@media (width <= 960px) {
   .numgen-list-layout {
     grid-template-columns: 1fr;
   }

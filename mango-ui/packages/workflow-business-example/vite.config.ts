@@ -13,13 +13,7 @@ export default defineConfig({
       cssFileName: 'style',
     },
     rollupOptions: {
-      external: [
-        '@mango/admin-pages/core',
-        '@mango/workflow',
-        'element-plus',
-        'vue',
-        'vue-router',
-      ],
+      external: ['@mango/admin-pages/core', '@mango/workflow', 'element-plus', 'vue', 'vue-router'],
       output: {
         entryFileNames: '[name].js',
       },

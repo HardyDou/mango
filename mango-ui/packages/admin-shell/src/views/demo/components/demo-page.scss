@@ -207,7 +207,9 @@
   transition: box-shadow 0.2s ease;
 
   &:hover {
-    box-shadow: 0 0 8px 0 rgb(232 237 250 / 60%), 0 2px 4px 0 rgb(232 237 250 / 50%);
+    box-shadow:
+      0 0 8px 0 rgb(232 237 250 / 60%),
+      0 2px 4px 0 rgb(232 237 250 / 50%);
   }
 }
 
@@ -264,7 +266,7 @@
   border-top: 1px solid var(--el-border-color-lighter);
   background: var(--el-fill-color-light);
   color: var(--el-text-color-primary);
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-family: Monaco, Menlo, 'Ubuntu Mono', monospace;
   font-size: 13px;
   line-height: 1.8;
   white-space: pre;
@@ -333,7 +335,7 @@
   }
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .component-doc-page {
     padding: 0;
   }

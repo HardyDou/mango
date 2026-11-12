@@ -1,16 +1,11 @@
 <template>
   <div class="error-container">
     <div class="error-content">
-      <div class="error-code">
-        401
-      </div>
+      <div class="error-code">401</div>
       <div class="error-message">
         {{ $t('noPermission.message') }}
       </div>
-      <el-button
-        type="primary"
-        @click="goHome"
-      >
+      <el-button type="primary" @click="goHome">
         {{ $t('noPermission.btn') }}
       </el-button>
     </div>

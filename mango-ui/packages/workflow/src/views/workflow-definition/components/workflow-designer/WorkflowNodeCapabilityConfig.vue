@@ -13,12 +13,17 @@
         <span>按钮名称</span>
         <span>意见</span>
       </div>
-      <div v-for="action in actionOptions" :key="action.key" class="action-config-row" :class="{ 'is-disabled': actionConfig(action.key).enabled === false }">
+      <div
+        v-for="action in actionOptions"
+        :key="action.key"
+        class="action-config-row"
+        :class="{ 'is-disabled': actionConfig(action.key).enabled === false }"
+      >
         <div class="action-enable-cell">
           <el-switch
             :model-value="actionConfig(action.key).enabled !== false"
             size="small"
-            @change="value => updateAction(action.key, { enabled: Boolean(value) })"
+            @change="(value) => updateAction(action.key, { enabled: Boolean(value) })"
           />
           <span>{{ action.defaultLabel }}</span>
         </div>
@@ -26,11 +31,11 @@
           :model-value="actionConfig(action.key).label || action.defaultLabel"
           size="small"
           placeholder="按钮名称"
-          @input="value => updateAction(action.key, { label: String(value || '') })"
+          @input="(value) => updateAction(action.key, { label: String(value || '') })"
         />
         <el-checkbox
           :model-value="Boolean(actionConfig(action.key).requireComment)"
-          @change="value => updateAction(action.key, { requireComment: Boolean(value) })"
+          @change="(value) => updateAction(action.key, { requireComment: Boolean(value) })"
         >
           必填
         </el-checkbox>
@@ -44,7 +49,7 @@
             :model-value="actionConfig('returnTask').targetTaskDefinitionKey || ''"
             clearable
             placeholder="不填则退回最近已完成的不同用户任务节点"
-            @input="value => updateAction('returnTask', { targetTaskDefinitionKey: normalizeOptionalText(value) })"
+            @input="(value) => updateAction('returnTask', { targetTaskDefinitionKey: normalizeOptionalText(value) })"
           />
         </el-form-item>
       </el-collapse-item>
@@ -56,7 +61,7 @@
               :model-value="actionConfig(action.key).confirmText || ''"
               size="small"
               placeholder="可不填"
-              @input="value => updateAction(action.key, { confirmText: String(value || '') })"
+              @input="(value) => updateAction(action.key, { confirmText: String(value || '') })"
             />
           </div>
         </div>
@@ -66,7 +71,11 @@
 </template>
 
 <script setup lang="ts">
-import type { WorkflowApprovalNodeConfig, WorkflowNodeActionConfig, WorkflowTaskActionKey } from '../../../../api/workflow';
+import type {
+  WorkflowApprovalNodeConfig,
+  WorkflowNodeActionConfig,
+  WorkflowTaskActionKey,
+} from '../../../../api/workflow';
 
 const props = defineProps<{
   config: WorkflowApprovalNodeConfig;
@@ -112,14 +121,20 @@ function updateAction(key: WorkflowTaskActionKey, patch: WorkflowNodeActionConfi
 }
 
 function defaultActions(): Record<WorkflowTaskActionKey, WorkflowNodeActionConfig> {
-  return actionOptions.reduce((result, action, index) => {
-    result[action.key] = defaultActionConfig(action.key, index);
-    return result;
-  }, {} as Record<WorkflowTaskActionKey, WorkflowNodeActionConfig>);
+  return actionOptions.reduce(
+    (result, action, index) => {
+      result[action.key] = defaultActionConfig(action.key, index);
+      return result;
+    },
+    {} as Record<WorkflowTaskActionKey, WorkflowNodeActionConfig>,
+  );
 }
 
-function defaultActionConfig(key: WorkflowTaskActionKey, index = actionOptions.findIndex(item => item.key === key)): WorkflowNodeActionConfig {
-  const label = actionOptions.find(item => item.key === key)?.defaultLabel || key;
+function defaultActionConfig(
+  key: WorkflowTaskActionKey,
+  index = actionOptions.findIndex((item) => item.key === key),
+): WorkflowNodeActionConfig {
+  const label = actionOptions.find((item) => item.key === key)?.defaultLabel || key;
   return {
     enabled: key === 'complete' || key === 'reject',
     label,

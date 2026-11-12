@@ -21,17 +21,29 @@
           <tr v-if="sectionVisible('contractInfo')">
             <th>合同名称</th>
             <td>
-              <EditableCell field="contractName" :editable="fieldEditable('contractInfo')" placeholder="请输入合同名称" />
+              <EditableCell
+                field="contractName"
+                :editable="fieldEditable('contractInfo')"
+                placeholder="请输入合同名称"
+              />
             </td>
             <th>合同编号</th>
             <td>
-              <EditableCell field="contractCode" :editable="fieldEditable('contractInfo')" placeholder="请输入合同编号" />
+              <EditableCell
+                field="contractCode"
+                :editable="fieldEditable('contractInfo')"
+                placeholder="请输入合同编号"
+              />
             </td>
           </tr>
           <tr v-if="sectionVisible('contractInfo')">
             <th>对方单位</th>
             <td colspan="3">
-              <EditableCell field="counterparty" :editable="fieldEditable('contractInfo')" placeholder="请输入对方单位" />
+              <EditableCell
+                field="counterparty"
+                :editable="fieldEditable('contractInfo')"
+                placeholder="请输入对方单位"
+              />
             </td>
           </tr>
           <tr v-if="sectionVisible('contractInfo')">
@@ -91,31 +103,51 @@
             </td>
             <th>附件清单</th>
             <td>
-              <EditableCell field="attachmentList" :editable="fieldEditable('riskInfo')" placeholder="合同正文、审批依据等" />
+              <EditableCell
+                field="attachmentList"
+                :editable="fieldEditable('riskInfo')"
+                placeholder="合同正文、审批依据等"
+              />
             </td>
           </tr>
           <tr v-if="sectionVisible('purpose')">
             <th>用印事由</th>
             <td colspan="3">
-              <EditableTextarea field="purpose" :editable="fieldEditable('purpose')" placeholder="请输入用印事由和背景说明" />
+              <EditableTextarea
+                field="purpose"
+                :editable="fieldEditable('purpose')"
+                placeholder="请输入用印事由和背景说明"
+              />
             </td>
           </tr>
           <tr v-if="sectionVisible('managerOpinion')">
             <th>部门负责人意见</th>
             <td colspan="3">
-              <EditableTextarea field="managerOpinion" :editable="fieldEditable('managerOpinion')" placeholder="请输入部门负责人审批意见" />
+              <EditableTextarea
+                field="managerOpinion"
+                :editable="fieldEditable('managerOpinion')"
+                placeholder="请输入部门负责人审批意见"
+              />
             </td>
           </tr>
           <tr v-if="sectionVisible('legalOpinion')">
             <th>法务意见</th>
             <td colspan="3">
-              <EditableTextarea field="legalOpinion" :editable="fieldEditable('legalOpinion')" placeholder="请输入法务审核意见" />
+              <EditableTextarea
+                field="legalOpinion"
+                :editable="fieldEditable('legalOpinion')"
+                placeholder="请输入法务审核意见"
+              />
             </td>
           </tr>
           <tr v-if="sectionVisible('financeOpinion')">
             <th>财务意见</th>
             <td colspan="3">
-              <EditableTextarea field="financeOpinion" :editable="fieldEditable('financeOpinion')" placeholder="请输入财务复核意见" />
+              <EditableTextarea
+                field="financeOpinion"
+                :editable="fieldEditable('financeOpinion')"
+                placeholder="请输入财务复核意见"
+              />
             </td>
           </tr>
           <tr v-if="sectionVisible('sealKeeperOpinion')">
@@ -131,7 +163,11 @@
             </td>
             <th>印章管理员意见</th>
             <td>
-              <EditableCell field="sealKeeperOpinion" :editable="fieldEditable('sealKeeperOpinion')" placeholder="请输入用印登记意见" />
+              <EditableCell
+                field="sealKeeperOpinion"
+                :editable="fieldEditable('sealKeeperOpinion')"
+                placeholder="请输入用印登记意见"
+              />
             </td>
           </tr>
         </tbody>
@@ -178,28 +214,28 @@ const approvalOpinionsFromRecords = computed(() => {
 
 const contractAmount = computed({
   get: () => Number(props.context.variables.contractAmount || 0),
-  set: value => {
+  set: (value) => {
     props.context.variables.contractAmount = Number(value || 0);
   },
 });
 
 const sealCount = computed({
   get: () => Number(props.context.variables.sealCount || 1),
-  set: value => {
+  set: (value) => {
     props.context.variables.sealCount = Number(value || 0);
   },
 });
 
 const expectedSealDate = computed({
   get: () => String(props.context.variables.expectedSealDate || ''),
-  set: value => {
+  set: (value) => {
     props.context.variables.expectedSealDate = value;
   },
 });
 
 const approvedSealCount = computed({
   get: () => Number(props.context.variables.approvedSealCount ?? props.context.variables.sealCount ?? 0),
-  set: value => {
+  set: (value) => {
     props.context.variables.approvedSealCount = Number(value || 0);
   },
 });
@@ -212,15 +248,16 @@ const EditableCell = defineComponent({
     placeholder: { type: String, default: '' },
   },
   setup(cellProps) {
-    return () => cellProps.editable
-      ? h(ElInput, {
-        modelValue: props.context.variables[cellProps.field],
-        placeholder: cellProps.placeholder,
-        'onUpdate:modelValue': (value: string) => {
-          props.context.variables[cellProps.field] = value;
-        },
-      })
-      : h('span', String(snapshot.value[cellProps.field] || '-'));
+    return () =>
+      cellProps.editable
+        ? h(ElInput, {
+            modelValue: props.context.variables[cellProps.field],
+            placeholder: cellProps.placeholder,
+            'onUpdate:modelValue': (value: string) => {
+              props.context.variables[cellProps.field] = value;
+            },
+          })
+        : h('span', String(snapshot.value[cellProps.field] || '-'));
   },
 });
 
@@ -232,17 +269,18 @@ const EditableTextarea = defineComponent({
     placeholder: { type: String, default: '' },
   },
   setup(cellProps) {
-    return () => cellProps.editable
-      ? h(ElInput, {
-        modelValue: props.context.variables[cellProps.field],
-        type: 'textarea',
-        rows: 3,
-        placeholder: cellProps.placeholder,
-        'onUpdate:modelValue': (value: string) => {
-          props.context.variables[cellProps.field] = value;
-        },
-      })
-      : h('span', { class: 'multiline-text' }, String(snapshot.value[cellProps.field] || '-'));
+    return () =>
+      cellProps.editable
+        ? h(ElInput, {
+            modelValue: props.context.variables[cellProps.field],
+            type: 'textarea',
+            rows: 3,
+            placeholder: cellProps.placeholder,
+            'onUpdate:modelValue': (value: string) => {
+              props.context.variables[cellProps.field] = value;
+            },
+          })
+        : h('span', { class: 'multiline-text' }, String(snapshot.value[cellProps.field] || '-'));
   },
 });
 
@@ -272,7 +310,7 @@ function formatAmount(value: unknown) {
   border: 1px solid #d8dce5;
   background: #fffdf8;
   color: #1f2937;
-  box-shadow: 0 8px 28px rgba(31, 41, 55, 0.08);
+  box-shadow: 0 8px 28px rgb(31 41 55 / 8%);
 }
 
 .document-meta,
@@ -288,7 +326,7 @@ function formatAmount(value: unknown) {
   margin: 8px 0 18px;
   text-align: center;
   color: #111827;
-  font-family: SimSun, "Songti SC", serif;
+  font-family: SimSun, 'Songti SC', serif;
   font-size: 24px;
   font-weight: 700;
   letter-spacing: 0;
@@ -299,7 +337,7 @@ function formatAmount(value: unknown) {
   border-collapse: collapse;
   table-layout: fixed;
   border: 2px solid #1f2937;
-  font-family: SimSun, "Songti SC", serif;
+  font-family: SimSun, 'Songti SC', serif;
 }
 
 .word-table th,
@@ -329,7 +367,7 @@ function formatAmount(value: unknown) {
   box-shadow: none;
   border-radius: 0;
   background: #fffefa;
-  font-family: SimSun, "Songti SC", serif;
+  font-family: SimSun, 'Songti SC', serif;
 }
 
 .word-table :deep(.el-input-number),
@@ -347,7 +385,7 @@ function formatAmount(value: unknown) {
   margin-top: 12px;
 }
 
-@media (max-width: 720px) {
+@media (width <= 720px) {
   .document-sheet {
     padding: 16px 12px;
   }

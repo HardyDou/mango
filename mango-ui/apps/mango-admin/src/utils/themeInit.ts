@@ -27,9 +27,9 @@ const themeColorVars: Array<[string, string]> = [
 function isValidColor(value: unknown): value is string {
   if (typeof value !== 'string') return false;
   // 支持 hex, rgb, rgba, hsl, hsla 格式
-  return /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$/.test(value)
-    || /^rgba?\(/.test(value)
-    || /^hsla?\(/.test(value);
+  return (
+    /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$/.test(value) || /^rgba?\(/.test(value) || /^hsla?\(/.test(value)
+  );
 }
 
 /**
@@ -110,9 +110,18 @@ export function initThemeBeforeRender(): void {
 
     // 恢复 themeStore - 只应用白名单键且值安全
     const themeKeys = [
-      'primary', 'isDark', 'topBar', 'topBarColor', 'isTopBarColorGradual',
-      'menuBar', 'menuBarColor', 'menuBarActiveColor', 'isMenuBarColorGradual',
-      'columnsMenuBar', 'columnsMenuBarColor', 'isColumnsMenuBarColorGradual',
+      'primary',
+      'isDark',
+      'topBar',
+      'topBarColor',
+      'isTopBarColorGradual',
+      'menuBar',
+      'menuBarColor',
+      'menuBarActiveColor',
+      'isMenuBarColorGradual',
+      'columnsMenuBar',
+      'columnsMenuBarColor',
+      'isColumnsMenuBarColorGradual',
     ] as const;
     themeKeys.forEach((key) => {
       if (data[key] !== undefined && isSafeValue(data[key])) {
@@ -122,11 +131,26 @@ export function initThemeBeforeRender(): void {
 
     // 恢复 layoutStore
     const layoutKeys = [
-      'layout', 'isCollapse', 'isColumnsAsideOpen', 'isFixedHeader', 'isFixedHeaderChange',
-      'isClassicSplitMenu', 'isMobileMenuOpen', 'isUniqueOpened',
-      'isShowLogo', 'isShowLogoChange', 'isBreadcrumb', 'isBreadcrumbIcon',
-      'isTagsview', 'isTagsviewIcon', 'isCacheTagsView', 'isSortableTagsView',
-      'isShareTagsView', 'isFooter', 'columnsAsideStyle', 'columnsAsideLayout',
+      'layout',
+      'isCollapse',
+      'isColumnsAsideOpen',
+      'isFixedHeader',
+      'isFixedHeaderChange',
+      'isClassicSplitMenu',
+      'isMobileMenuOpen',
+      'isUniqueOpened',
+      'isShowLogo',
+      'isShowLogoChange',
+      'isBreadcrumb',
+      'isBreadcrumbIcon',
+      'isTagsview',
+      'isTagsviewIcon',
+      'isCacheTagsView',
+      'isSortableTagsView',
+      'isShareTagsView',
+      'isFooter',
+      'columnsAsideStyle',
+      'columnsAsideLayout',
       'isColumnsMenuHoverPreload',
     ] as const;
     layoutKeys.forEach((key) => {
@@ -137,10 +161,21 @@ export function initThemeBeforeRender(): void {
 
     // 恢复 preferencesStore
     const prefKeys = [
-      'isLockScreen', 'lockScreenTime', 'isGrayscale', 'isInvert',
-      'isWartermark', 'wartermarkText', 'tagsStyle', 'animation',
-      'isRequestRoutes', 'language', 'size', 'globalI18n', 'globalComponentSize',
-      'globalTitle', 'footerAuthor',
+      'isLockScreen',
+      'lockScreenTime',
+      'isGrayscale',
+      'isInvert',
+      'isWartermark',
+      'wartermarkText',
+      'tagsStyle',
+      'animation',
+      'isRequestRoutes',
+      'language',
+      'size',
+      'globalI18n',
+      'globalComponentSize',
+      'globalTitle',
+      'footerAuthor',
     ] as const;
     prefKeys.forEach((key) => {
       if (data[key] !== undefined && isSafeValue(data[key])) {

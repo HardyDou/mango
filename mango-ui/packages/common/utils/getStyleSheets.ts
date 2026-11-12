@@ -20,9 +20,7 @@ export function getStyleSheets(): CSSStyleSheet[] {
  * 遍历样式表中的规则
  * @param callback 回调函数
  */
-export function forEachStyleSheet(
-  callback: (cssRule: CSSStyleRule, styleSheet: CSSStyleSheet) => void
-): void {
+export function forEachStyleSheet(callback: (cssRule: CSSStyleRule, styleSheet: CSSStyleSheet) => void): void {
   const styleSheets = getStyleSheets();
 
   styleSheets.forEach((styleSheet) => {

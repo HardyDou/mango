@@ -41,13 +41,18 @@ describe('workflow designer options', () => {
 
   it('does not couple definition designer components to platform-domain endpoints', () => {
     const definitionView = readFileSync(resolve(process.cwd(), 'src/views/workflow-definition/index.vue'), 'utf8');
-    const participantSelector = readFileSync(resolve(
-      process.cwd(),
-      'src/views/workflow-definition/components/workflow-designer/WorkflowParticipantSelector.vue',
-    ), 'utf8');
+    const participantSelector = readFileSync(
+      resolve(
+        process.cwd(),
+        'src/views/workflow-definition/components/workflow-designer/WorkflowParticipantSelector.vue',
+      ),
+      'utf8',
+    );
     const source = `${definitionView}\n${participantSelector}`;
 
-    expect(source).not.toMatch(/\/(identity\/users\/page|authorization\/roles|post\/page|org\/tree|system\/dict\/type\/list)/);
+    expect(source).not.toMatch(
+      /\/(identity\/users\/page|authorization\/roles|post\/page|org\/tree|system\/dict\/type\/list)/,
+    );
   });
 
   it('loads template push tenants through the workflow-owned endpoint', async () => {
@@ -58,12 +63,14 @@ describe('workflow designer options', () => {
     expect(request.get).toHaveBeenCalledWith('/workflow/templates/tenant-options', {
       params: { keyword: '默认' },
     });
-    expect(tenants).toEqual([{
-      id: '1',
-      tenantName: '默认机构',
-      tenantCode: 'default',
-      status: undefined,
-    }]);
+    expect(tenants).toEqual([
+      {
+        id: '1',
+        tenantName: '默认机构',
+        tenantCode: 'default',
+        status: undefined,
+      },
+    ]);
   });
 
   it('does not load tenant options while mounting the template page', () => {

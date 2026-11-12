@@ -1,4 +1,10 @@
-import axios, { AxiosHeaders, AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import axios, {
+  AxiosHeaders,
+  AxiosInstance,
+  AxiosRequestConfig,
+  AxiosResponse,
+  InternalAxiosRequestConfig,
+} from 'axios';
 import type { ApiId } from '@mango/api-schema';
 import { Session } from './storage';
 import { mangoMessage } from './message';
@@ -141,11 +147,12 @@ function refreshAccessToken(): Promise<string | null> {
   if (!refreshToken) {
     return Promise.resolve(null);
   }
-  refreshPromise = service.post('/auth/refresh', { refreshToken }, {
-    ignoreToken: true,
-    skipRefreshToken: true,
-    silentError: true,
-  } as RequestConfig)
+  refreshPromise = service
+    .post('/auth/refresh', { refreshToken }, {
+      ignoreToken: true,
+      skipRefreshToken: true,
+      silentError: true,
+    } as RequestConfig)
     .then((data: any) => persistLoginSession(data))
     .catch(() => null)
     .finally(() => {
@@ -207,7 +214,6 @@ function handleTenantId(config: InternalAxiosRequestConfig): InternalAxiosReques
   return config;
 }
 
-
 /**
  * 请求拦截器
  */
@@ -236,7 +242,7 @@ service.interceptors.request.use(
   (error) => {
     hideLoading();
     return Promise.reject(error);
-  }
+  },
 );
 
 /**
@@ -310,7 +316,7 @@ service.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 /**
@@ -357,17 +363,13 @@ function isAuthExpiredCode(code?: number): boolean {
 export function resolveHttpErrorMessage(
   status?: number,
   responseData?: Record<string, any>,
-  fallbackMessage?: string
+  fallbackMessage?: string,
 ): string {
-  const responseMessage = responseData?.message
-    || responseData?.msg
-    || responseData?.error;
+  const responseMessage = responseData?.message || responseData?.msg || responseData?.error;
   if (responseMessage) {
     return String(responseMessage);
   }
-  return (status ? errorCodeMessage[status] : undefined)
-    || fallbackMessage
-    || '网络错误';
+  return (status ? errorCodeMessage[status] : undefined) || fallbackMessage || '网络错误';
 }
 
 function createRequestError(message: string, code?: number, response?: AxiosResponse): RequestError & Error {
@@ -387,7 +389,7 @@ export function normalizeApiPayload<T>(payload: T): T {
 
 function normalizeValue(value: unknown, key: string): unknown {
   if (Array.isArray(value)) {
-    return value.map(item => normalizeValue(item, singularKey(key)));
+    return value.map((item) => normalizeValue(item, singularKey(key)));
   }
   if (value && typeof value === 'object') {
     const record = value as JsonRecord;

@@ -6,45 +6,41 @@
 
 ```ts
 import { MangoDescriptionList } from '@mango/common';
-import type {
-  MangoDescriptionItem,
-  MangoDescriptionGroup,
-  MangoDescriptionListProps,
-} from '@mango/common';
+import type { MangoDescriptionItem, MangoDescriptionGroup, MangoDescriptionListProps } from '@mango/common';
 ```
 
 ## Props
 
-| 名称 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `items` | `MangoDescriptionItem[]` | - | 扁平描述项列表，与 `groups` 二选一且必传其一 |
-| `groups` | `MangoDescriptionGroup[]` | - | 分组描述数据，与 `items` 二选一；`items` 为空的分组会被过滤 |
-| `display` | `'key-value' \| 'table'` | `'key-value'` | 展示形态：`key-value` 无边框、标签后自动补全角冒号；`table` 渲染带边框表格 |
-| `column` | `number` | `2` | 每行描述项列数，非正整数回退为 `2` |
-| `labelWidth` | `string \| number` | `150` | 标签列宽度，数字按像素处理 |
-| `emptyText` | `string` | `'-'` | 描述项值为空（`null`、`undefined`、`''`）时的占位文本 |
-| `emptyDescription` | `string` | `'暂无信息'` | 没有任何可渲染内容时 `el-empty` 的描述文本 |
-| `richTextPreviewComponent` | `Component` | `RichTextViewer` | `componentType` 为 `rich-text-preview` 时使用的渲染组件 |
+| 名称                       | 类型                      | 默认值           | 说明                                                                       |
+| -------------------------- | ------------------------- | ---------------- | -------------------------------------------------------------------------- |
+| `items`                    | `MangoDescriptionItem[]`  | -                | 扁平描述项列表，与 `groups` 二选一且必传其一                               |
+| `groups`                   | `MangoDescriptionGroup[]` | -                | 分组描述数据，与 `items` 二选一；`items` 为空的分组会被过滤                |
+| `display`                  | `'key-value' \| 'table'`  | `'key-value'`    | 展示形态：`key-value` 无边框、标签后自动补全角冒号；`table` 渲染带边框表格 |
+| `column`                   | `number`                  | `2`              | 每行描述项列数，非正整数回退为 `2`                                         |
+| `labelWidth`               | `string \| number`        | `150`            | 标签列宽度，数字按像素处理                                                 |
+| `emptyText`                | `string`                  | `'-'`            | 描述项值为空（`null`、`undefined`、`''`）时的占位文本                      |
+| `emptyDescription`         | `string`                  | `'暂无信息'`     | 没有任何可渲染内容时 `el-empty` 的描述文本                                 |
+| `richTextPreviewComponent` | `Component`               | `RichTextViewer` | `componentType` 为 `rich-text-preview` 时使用的渲染组件                    |
 
 ## Slots
 
 组件没有固定具名插槽，插槽名由数据项中的 `slot` / `extraSlot` 字段动态指定。
 
-| 名称 | 说明 |
-|------|------|
-| 由 `item.slot` 指定 | 自定义单个描述项内容，插槽参数为 `MangoDescriptionItemSlotProps`；未提供插槽时回退显示文本 |
-| `group-extra-${group.header.extraSlot}` | 自定义分组头部附加内容，插槽参数为 `MangoDescriptionGroupExtraSlotProps` |
+| 名称                                    | 说明                                                                                       |
+| --------------------------------------- | ------------------------------------------------------------------------------------------ |
+| 由 `item.slot` 指定                     | 自定义单个描述项内容，插槽参数为 `MangoDescriptionItemSlotProps`；未提供插槽时回退显示文本 |
+| `group-extra-${group.header.extraSlot}` | 自定义分组头部附加内容，插槽参数为 `MangoDescriptionGroupExtraSlotProps`                   |
 
 描述项插槽参数：
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `item` | `MangoDescriptionItem` | 当前描述项配置 |
-| `index` | `number` | 项在分组内的下标 |
-| `group` | `MangoDescriptionGroup` | 所属分组 |
-| `groupIndex` | `number` | 分组下标 |
-| `value` | `MangoDescriptionValue` | 原始值 |
-| `displayValue` | `string` | 组件计算出的展示文本（含空值占位） |
+| 字段           | 类型                    | 说明                               |
+| -------------- | ----------------------- | ---------------------------------- |
+| `item`         | `MangoDescriptionItem`  | 当前描述项配置                     |
+| `index`        | `number`                | 项在分组内的下标                   |
+| `group`        | `MangoDescriptionGroup` | 所属分组                           |
+| `groupIndex`   | `number`                | 分组下标                           |
+| `value`        | `MangoDescriptionValue` | 原始值                             |
+| `displayValue` | `string`                | 组件计算出的展示文本（含空值占位） |
 
 分组附加插槽参数：`group`、`groupIndex`、`header`、`value`、`displayValue`。
 

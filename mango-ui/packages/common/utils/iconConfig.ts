@@ -55,15 +55,15 @@ const elementPlusIconNames = [
 
 const elementPlusIcons = ElementPlusIcons as Record<string, Component | undefined>;
 
-export const iconNames = Array.from(new Set([
-  ...elementPlusIconNames,
-  ...Object.keys(ElementPlusIcons),
-]));
+export const iconNames = Array.from(new Set([...elementPlusIconNames, ...Object.keys(ElementPlusIcons)]));
 
-const explicitIconMap = elementPlusIconNames.reduce((acc, name) => {
-  acc[name] = elementPlusIcons[name] as Component;
-  return acc;
-}, {} as Record<string, Component>);
+const explicitIconMap = elementPlusIconNames.reduce(
+  (acc, name) => {
+    acc[name] = elementPlusIcons[name] as Component;
+    return acc;
+  },
+  {} as Record<string, Component>,
+);
 
 export const iconMap: Record<string, Component | undefined> = new Proxy(explicitIconMap, {
   get(target, key: string) {

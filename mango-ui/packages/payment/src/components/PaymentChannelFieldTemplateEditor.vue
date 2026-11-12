@@ -1,19 +1,10 @@
 <template>
   <div class="channel-field-template">
-    <div
-      v-for="(field, index) in fields"
-      :key="index"
-      class="channel-field-template__row"
-    >
+    <div v-for="(field, index) in fields" :key="index" class="channel-field-template__row">
       <el-input v-model="field.name" placeholder="字段名，如 merchantNo" />
       <el-input v-model="field.label" placeholder="显示名，如 商户号" />
       <el-select v-model="field.component" placeholder="控件">
-        <el-option
-          v-for="item in CHANNEL_FIELD_COMPONENTS"
-          :key="item.value"
-          :label="item.label"
-          :value="item.value"
-        />
+        <el-option v-for="item in CHANNEL_FIELD_COMPONENTS" :key="item.value" :label="item.label" :value="item.value" />
       </el-select>
       <el-select v-model="field.dataType" placeholder="数据类型">
         <el-option label="字符串" value="string" />
@@ -39,12 +30,9 @@
         type="textarea"
         :rows="2"
         placeholder="枚举选项，每行 label=value；非枚举字段可留空"
-        @update:model-value="value => updateOptions(field, value)"
+        @update:model-value="(value) => updateOptions(field, value)"
       />
-      <el-input
-        v-model="field.defaultValue"
-        placeholder="默认值"
-      />
+      <el-input v-model="field.defaultValue" placeholder="默认值" />
     </div>
     <el-empty v-if="fields.length === 0" description="尚未配置签约字段" :image-size="72" />
     <el-button :icon="Plus" @click="addField">新增字段</el-button>
@@ -76,7 +64,7 @@ let lastEmittedValue: string | undefined;
 
 watch(
   () => props.modelValue,
-  value => {
+  (value) => {
     if (initialized && value === lastEmittedValue) {
       return;
     }
@@ -88,7 +76,7 @@ watch(
 
 watch(
   fields,
-  value => {
+  (value) => {
     lastEmittedValue = stringifyChannelFieldTemplate(value);
     emit('update:modelValue', lastEmittedValue);
   },
@@ -114,9 +102,7 @@ function removeField(index: number) {
 }
 
 function optionText(field: ChannelFieldDefinition) {
-  return (field.options || [])
-    .map(option => `${option.label}=${option.value}`)
-    .join('\n');
+  return (field.options || []).map((option) => `${option.label}=${option.value}`).join('\n');
 }
 
 function updateOptions(field: ChannelFieldDefinition, value: string) {
@@ -168,7 +154,7 @@ function toOption(value: string): ChannelFieldOption | undefined {
   margin-right: 0;
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .channel-field-template__row {
     grid-template-columns: 1fr;
   }

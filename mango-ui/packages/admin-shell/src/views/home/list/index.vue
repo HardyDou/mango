@@ -701,7 +701,7 @@ function resolveWidgetQuery(raw: unknown): LocationQueryRaw | undefined {
   min-height: 560px;
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .home-list-user-filter,
   .home-list-user-filter :deep(.el-select) {
     width: 100%;

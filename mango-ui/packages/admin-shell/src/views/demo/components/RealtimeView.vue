@@ -4,323 +4,384 @@
       <div class="doc-content is-boxed">
         <header class="page-header">
           <h1>RealtimeClient 实时通信组件</h1>
-          <p>以 createRealtimeClient / useRealtime 建立稳定实时链路，业务页面只订阅消息和发送消息，不直接处理底层传输差异。</p>
+          <p>
+            以 createRealtimeClient / useRealtime
+            建立稳定实时链路，业务页面只订阅消息和发送消息，不直接处理底层传输差异。
+          </p>
         </header>
 
         <main class="examples">
           <section id="chat" class="doc-section">
-      <h2>聊天室业务用法</h2>
-      <p>登记当前用户后连接；Auto 会先协商协议，失败时按 WebSocket、SSE、Ajax Polling 自动降级。右侧只显示业务消息，点击消息查看原始 JSON。</p>
-      <div class="demo-block" data-testid="realtime-chat-panel">
-        <div class="demo-source">
-          <div class="realtime-shell">
-            <aside class="realtime-sidebar">
-              <div class="sidebar-title">
-                <strong>配置信息</strong>
-                <span>连接前可修改用户上下文</span>
-              </div>
+            <h2>聊天室业务用法</h2>
+            <p>
+              登记当前用户后连接；Auto 会先协商协议，失败时按 WebSocket、SSE、Ajax Polling
+              自动降级。右侧只显示业务消息，点击消息查看原始 JSON。
+            </p>
+            <div class="demo-block" data-testid="realtime-chat-panel">
+              <div class="demo-source">
+                <div class="realtime-shell">
+                  <aside class="realtime-sidebar">
+                    <div class="sidebar-title">
+                      <strong>配置信息</strong>
+                      <span>连接前可修改用户上下文</span>
+                    </div>
 
-              <el-tabs v-model="activeConfigTab" class="config-tabs" stretch>
-                <el-tab-pane label="链接配置" name="connection">
-                  <el-form label-position="top" class="runtime-form">
-                    <el-form-item label="链接模式">
-                      <el-radio-group v-model="connectionMode" size="small" :disabled="connected">
-                        <el-radio-button label="auto">Auto</el-radio-button>
-                        <el-radio-button label="websocket">WS</el-radio-button>
-                        <el-radio-button label="sse">SSE</el-radio-button>
-                        <el-radio-button label="polling">Ajax</el-radio-button>
-                      </el-radio-group>
-                    </el-form-item>
+                    <el-tabs v-model="activeConfigTab" class="config-tabs" stretch>
+                      <el-tab-pane label="链接配置" name="connection">
+                        <el-form label-position="top" class="runtime-form">
+                          <el-form-item label="链接模式">
+                            <el-radio-group v-model="connectionMode" size="small" :disabled="connected">
+                              <el-radio-button label="auto">Auto</el-radio-button>
+                              <el-radio-button label="websocket">WS</el-radio-button>
+                              <el-radio-button label="sse">SSE</el-radio-button>
+                              <el-radio-button label="polling">Ajax</el-radio-button>
+                            </el-radio-group>
+                          </el-form-item>
 
-                    <div class="runtime-grid">
-                      <el-form-item label="心跳(ms)">
-                        <el-input-number v-model="runtimeConfig.heartbeatInterval" :min="500" :step="500" controls-position="right" :disabled="connected" />
-                      </el-form-item>
-                      <el-form-item label="超时(ms)">
-                        <el-input-number v-model="runtimeConfig.heartbeatTimeout" :min="1000" :step="1000" controls-position="right" :disabled="connected" />
-                      </el-form-item>
-                      <el-form-item label="最大重连">
-                        <el-input-number v-model="runtimeConfig.maxRetries" :min="0" :max="99" controls-position="right" :disabled="connected" />
-                      </el-form-item>
-                      <el-form-item label="Polling 超时">
-                        <el-input-number v-model="runtimeConfig.pollingTimeoutMillis" :min="0" :step="1000" controls-position="right" :disabled="connected" />
-                      </el-form-item>
-                    </div>
-                  </el-form>
-                </el-tab-pane>
+                          <div class="runtime-grid">
+                            <el-form-item label="心跳(ms)">
+                              <el-input-number
+                                v-model="runtimeConfig.heartbeatInterval"
+                                :min="500"
+                                :step="500"
+                                controls-position="right"
+                                :disabled="connected"
+                              />
+                            </el-form-item>
+                            <el-form-item label="超时(ms)">
+                              <el-input-number
+                                v-model="runtimeConfig.heartbeatTimeout"
+                                :min="1000"
+                                :step="1000"
+                                controls-position="right"
+                                :disabled="connected"
+                              />
+                            </el-form-item>
+                            <el-form-item label="最大重连">
+                              <el-input-number
+                                v-model="runtimeConfig.maxRetries"
+                                :min="0"
+                                :max="99"
+                                controls-position="right"
+                                :disabled="connected"
+                              />
+                            </el-form-item>
+                            <el-form-item label="Polling 超时">
+                              <el-input-number
+                                v-model="runtimeConfig.pollingTimeoutMillis"
+                                :min="0"
+                                :step="1000"
+                                controls-position="right"
+                                :disabled="connected"
+                              />
+                            </el-form-item>
+                          </div>
+                        </el-form>
+                      </el-tab-pane>
 
-                <el-tab-pane label="用户信息" name="user">
-                  <el-form label-position="top" class="profile-form">
-                    <el-form-item label="投递目标">
-                      <el-radio-group v-model="profile.deliveryMode" size="small" class="delivery-mode-group">
-                        <el-radio-button label="GROUP">群组</el-radio-button>
-                        <el-radio-button label="USER">点对点</el-radio-button>
-                        <el-radio-button label="CLIENT">指定端</el-radio-button>
-                      </el-radio-group>
-                    </el-form-item>
-                    <div class="profile-grid">
-                      <el-form-item label="用户姓名">
-                        <el-input v-model="profile.name" placeholder="用户姓名" :disabled="connected" />
-                      </el-form-item>
-                      <el-form-item label="用户 ID">
-                        <el-input v-model="profile.userId" placeholder="用户 ID" :disabled="connected" />
-                      </el-form-item>
-                    </div>
-                    <div v-if="profile.deliveryMode === 'GROUP'" class="profile-grid">
-                      <el-form-item label="群组 ID">
-                        <el-input v-model="profile.groupId" placeholder="groupId" :disabled="connected" />
-                      </el-form-item>
-                      <el-form-item label="群组名称">
-                        <el-input v-model="profile.groupName" placeholder="群组名称" :disabled="connected" />
-                      </el-form-item>
-                    </div>
-                    <div v-else-if="profile.deliveryMode === 'USER'" class="profile-grid">
-                      <el-form-item label="目标用户 ID">
-                        <el-input v-model="profile.targetUserId" placeholder="目标用户 ID" :disabled="connected" />
-                      </el-form-item>
-                      <el-form-item label="目标用户">
-                        <el-input v-model="profile.targetUserName" placeholder="目标用户姓名" :disabled="connected" />
-                      </el-form-item>
-                    </div>
-                    <el-form-item v-else label="目标端 clientId">
-                      <el-input v-model="profile.targetClientId" placeholder="对方浏览器 Tab / 设备的 clientId" :disabled="connected" />
-                    </el-form-item>
-                    <div class="profile-context">
-                      <div>
-                        <span>租户</span>
-                        <code>{{ profile.tenantId }}</code>
-                      </div>
-                      <div>
-                        <span>部门</span>
-                        <code>{{ profile.department }}</code>
-                      </div>
-                      <div>
-                        <span>客户端标识</span>
-                        <code>{{ profile.clientId }}</code>
-                      </div>
-                    </div>
-                  </el-form>
-                </el-tab-pane>
+                      <el-tab-pane label="用户信息" name="user">
+                        <el-form label-position="top" class="profile-form">
+                          <el-form-item label="投递目标">
+                            <el-radio-group v-model="profile.deliveryMode" size="small" class="delivery-mode-group">
+                              <el-radio-button label="GROUP">群组</el-radio-button>
+                              <el-radio-button label="USER">点对点</el-radio-button>
+                              <el-radio-button label="CLIENT">指定端</el-radio-button>
+                            </el-radio-group>
+                          </el-form-item>
+                          <div class="profile-grid">
+                            <el-form-item label="用户姓名">
+                              <el-input v-model="profile.name" placeholder="用户姓名" :disabled="connected" />
+                            </el-form-item>
+                            <el-form-item label="用户 ID">
+                              <el-input v-model="profile.userId" placeholder="用户 ID" :disabled="connected" />
+                            </el-form-item>
+                          </div>
+                          <div v-if="profile.deliveryMode === 'GROUP'" class="profile-grid">
+                            <el-form-item label="群组 ID">
+                              <el-input v-model="profile.groupId" placeholder="groupId" :disabled="connected" />
+                            </el-form-item>
+                            <el-form-item label="群组名称">
+                              <el-input v-model="profile.groupName" placeholder="群组名称" :disabled="connected" />
+                            </el-form-item>
+                          </div>
+                          <div v-else-if="profile.deliveryMode === 'USER'" class="profile-grid">
+                            <el-form-item label="目标用户 ID">
+                              <el-input
+                                v-model="profile.targetUserId"
+                                placeholder="目标用户 ID"
+                                :disabled="connected"
+                              />
+                            </el-form-item>
+                            <el-form-item label="目标用户">
+                              <el-input
+                                v-model="profile.targetUserName"
+                                placeholder="目标用户姓名"
+                                :disabled="connected"
+                              />
+                            </el-form-item>
+                          </div>
+                          <el-form-item v-else label="目标端 clientId">
+                            <el-input
+                              v-model="profile.targetClientId"
+                              placeholder="对方浏览器 Tab / 设备的 clientId"
+                              :disabled="connected"
+                            />
+                          </el-form-item>
+                          <div class="profile-context">
+                            <div>
+                              <span>租户</span>
+                              <code>{{ profile.tenantId }}</code>
+                            </div>
+                            <div>
+                              <span>部门</span>
+                              <code>{{ profile.department }}</code>
+                            </div>
+                            <div>
+                              <span>客户端标识</span>
+                              <code>{{ profile.clientId }}</code>
+                            </div>
+                          </div>
+                        </el-form>
+                      </el-tab-pane>
 
-                <el-tab-pane label="链接状态" name="status">
-                  <div class="connection-card">
-                    <div class="connection-head">
-                      <span class="status-dot" :class="`is-${status}`" />
-                      <strong>{{ statusText }}</strong>
-                      <el-tag size="small" effect="plain">{{ protocol || '未连接' }}</el-tag>
-                    </div>
-                    <dl>
-                      <div v-for="item in statusRows" :key="item.label">
-                        <dt>{{ item.label }}</dt>
-                        <dd>{{ item.value }}</dd>
-                      </div>
-                    </dl>
-                  </div>
+                      <el-tab-pane label="链接状态" name="status">
+                        <div class="connection-card">
+                          <div class="connection-head">
+                            <span class="status-dot" :class="`is-${status}`" />
+                            <strong>{{ statusText }}</strong>
+                            <el-tag size="small" effect="plain">{{ protocol || '未连接' }}</el-tag>
+                          </div>
+                          <dl>
+                            <div v-for="item in statusRows" :key="item.label">
+                              <dt>{{ item.label }}</dt>
+                              <dd>{{ item.value }}</dd>
+                            </div>
+                          </dl>
+                        </div>
 
-                  <div class="heartbeat-box" data-testid="heartbeat-panel">
-                    <div class="heartbeat-title">
-                      <span>心跳记录</span>
-                      <small>不进入业务消息</small>
-                    </div>
-                    <div v-if="heartbeatLogs.length" class="heartbeat-timeline">
-                      <div
-                        v-for="item in heartbeatLogs"
-                        :key="item.id"
-                        class="heartbeat-row"
-                        :class="[`is-${item.direction}`, item.ok ? 'is-ok' : 'is-error']"
+                        <div class="heartbeat-box" data-testid="heartbeat-panel">
+                          <div class="heartbeat-title">
+                            <span>心跳记录</span>
+                            <small>不进入业务消息</small>
+                          </div>
+                          <div v-if="heartbeatLogs.length" class="heartbeat-timeline">
+                            <div
+                              v-for="item in heartbeatLogs"
+                              :key="item.id"
+                              class="heartbeat-row"
+                              :class="[`is-${item.direction}`, item.ok ? 'is-ok' : 'is-error']"
+                            >
+                              <span class="heartbeat-side">{{
+                                item.direction === 'client' ? '客户端' : '服务端'
+                              }}</span>
+                              <span class="heartbeat-arrow">{{ item.direction === 'client' ? '→' : '←' }}</span>
+                              <span class="heartbeat-frame">{{ item.frame.toUpperCase() }}</span>
+                              <span class="heartbeat-time">{{ item.time }}</span>
+                            </div>
+                          </div>
+                          <el-empty v-else description="暂无心跳" :image-size="48" />
+                        </div>
+                      </el-tab-pane>
+                    </el-tabs>
+
+                    <div class="action-row">
+                      <button
+                        type="button"
+                        class="el-button el-button--primary action-button"
+                        :class="{
+                          'is-loading': status === 'connecting' || status === 'reconnecting',
+                          'is-disabled': connected,
+                        }"
+                        :disabled="connected"
+                        @click="connectRoom"
                       >
-                        <span class="heartbeat-side">{{ item.direction === 'client' ? '客户端' : '服务端' }}</span>
-                        <span class="heartbeat-arrow">{{ item.direction === 'client' ? '→' : '←' }}</span>
-                        <span class="heartbeat-frame">{{ item.frame.toUpperCase() }}</span>
-                        <span class="heartbeat-time">{{ item.time }}</span>
-                      </div>
+                        <span>{{ status === 'connecting' || status === 'reconnecting' ? '连接中' : '连接' }}</span>
+                      </button>
+                      <button
+                        type="button"
+                        class="el-button action-button"
+                        :class="{ 'is-disabled': !connected }"
+                        :disabled="!connected"
+                        @click="disconnectRoom"
+                      >
+                        <span>断开</span>
+                      </button>
                     </div>
-                    <el-empty v-else description="暂无心跳" :image-size="48" />
-                  </div>
-                </el-tab-pane>
-              </el-tabs>
+                  </aside>
 
-              <div class="action-row">
-                <button
-                  type="button"
-                  class="el-button el-button--primary action-button"
-                  :class="{ 'is-loading': status === 'connecting' || status === 'reconnecting', 'is-disabled': connected }"
-                  :disabled="connected"
-                  @click="connectRoom"
-                >
-                  <span>{{ status === 'connecting' || status === 'reconnecting' ? '连接中' : '连接' }}</span>
-                </button>
-                <button
-                  type="button"
-                  class="el-button action-button"
-                  :class="{ 'is-disabled': !connected }"
-                  :disabled="!connected"
-                  @click="disconnectRoom"
-                >
-                  <span>断开</span>
-                </button>
+                  <div class="room-workspace">
+                    <aside class="room-members" data-testid="realtime-room-members">
+                      <header class="members-header">
+                        <div>
+                          <strong>房间成员</strong>
+                          <span>{{ onlineMemberCount }} 在线 / {{ roomMembers.length }} 进入过</span>
+                        </div>
+                      </header>
+                      <div class="member-list">
+                        <div
+                          v-for="member in roomMembers"
+                          :key="member.clientId"
+                          class="member-row"
+                          :class="{ 'is-offline': !member.online }"
+                        >
+                          <div class="member-avatar" :class="member.avatarTone">{{ member.avatar }}</div>
+                          <div class="member-info">
+                            <div class="member-name">
+                              <strong>{{ member.name }}</strong>
+                              <span class="member-status" :class="{ 'is-online': member.online }">{{
+                                member.online ? '在线' : '离线'
+                              }}</span>
+                            </div>
+                            <span>{{ member.department || '未填写部门' }}</span>
+                          </div>
+                        </div>
+                        <el-empty v-if="!roomMembers.length" description="连接后显示成员" :image-size="54" />
+                      </div>
+                    </aside>
+
+                    <main class="chat-panel">
+                      <header class="chat-header">
+                        <div>
+                          <strong>业务消息</strong>
+                          <span>{{ profile.groupName }} · {{ profile.deliveryMode }}</span>
+                        </div>
+                        <el-button text size="small" @click="clearMessages">清空</el-button>
+                      </header>
+
+                      <div ref="messageListRef" class="message-list" data-testid="realtime-message-list">
+                        <div
+                          v-for="message in chatMessages"
+                          :key="message.localId"
+                          class="message-row"
+                          :class="message.direction === 'out' ? 'is-out' : 'is-in'"
+                        >
+                          <div class="message-avatar" :class="message.avatarTone">{{ message.avatar }}</div>
+                          <button class="message-bubble" type="button" @click="openRawMessage(message.raw)">
+                            <span class="message-meta">{{ message.sender }} · {{ message.time }}</span>
+                            <span class="message-content">{{ message.content }}</span>
+                          </button>
+                        </div>
+                        <el-empty v-if="!chatMessages.length" description="连接后发送一条消息" :image-size="72" />
+                      </div>
+
+                      <footer class="composer">
+                        <el-input
+                          v-model="draft"
+                          type="textarea"
+                          :rows="3"
+                          resize="none"
+                          placeholder="输入业务消息内容"
+                          @keydown.enter.exact.prevent="sendRoomMessage"
+                        />
+                        <div class="composer-actions">
+                          <span>{{ sendHint }}</span>
+                          <button
+                            type="button"
+                            class="el-button el-button--primary action-button"
+                            :class="{ 'is-disabled': !connected || !draft.trim() }"
+                            :disabled="!connected || !draft.trim()"
+                            @click="sendRoomMessage"
+                          >
+                            <span>发送</span>
+                          </button>
+                          <button
+                            type="button"
+                            class="el-button action-button"
+                            :class="{ 'is-disabled': !connected }"
+                            :disabled="!connected"
+                            @click="publishServerMessage"
+                          >
+                            <span>模拟服务端消息</span>
+                          </button>
+                        </div>
+                      </footer>
+                    </main>
+                  </div>
+                </div>
               </div>
-            </aside>
-
-            <div class="room-workspace">
-              <aside class="room-members" data-testid="realtime-room-members">
-                <header class="members-header">
-                  <div>
-                    <strong>房间成员</strong>
-                    <span>{{ onlineMemberCount }} 在线 / {{ roomMembers.length }} 进入过</span>
-                  </div>
-                </header>
-                <div class="member-list">
-                  <div
-                    v-for="member in roomMembers"
-                    :key="member.clientId"
-                    class="member-row"
-                    :class="{ 'is-offline': !member.online }"
-                  >
-                    <div class="member-avatar" :class="member.avatarTone">{{ member.avatar }}</div>
-                    <div class="member-info">
-                      <div class="member-name">
-                        <strong>{{ member.name }}</strong>
-                        <span class="member-status" :class="{ 'is-online': member.online }">{{ member.online ? '在线' : '离线' }}</span>
-                      </div>
-                      <span>{{ member.department || '未填写部门' }}</span>
-                    </div>
-                  </div>
-                  <el-empty v-if="!roomMembers.length" description="连接后显示成员" :image-size="54" />
-                </div>
-              </aside>
-
-              <main class="chat-panel">
-                <header class="chat-header">
-                  <div>
-                    <strong>业务消息</strong>
-                    <span>{{ profile.groupName }} · {{ profile.deliveryMode }}</span>
-                  </div>
-                  <el-button text size="small" @click="clearMessages">清空</el-button>
-                </header>
-
-                <div ref="messageListRef" class="message-list" data-testid="realtime-message-list">
-                  <div
-                    v-for="message in chatMessages"
-                    :key="message.localId"
-                    class="message-row"
-                    :class="message.direction === 'out' ? 'is-out' : 'is-in'"
-                  >
-                    <div class="message-avatar" :class="message.avatarTone">{{ message.avatar }}</div>
-                    <button class="message-bubble" type="button" @click="openRawMessage(message.raw)">
-                      <span class="message-meta">{{ message.sender }} · {{ message.time }}</span>
-                      <span class="message-content">{{ message.content }}</span>
-                    </button>
-                  </div>
-                  <el-empty v-if="!chatMessages.length" description="连接后发送一条消息" :image-size="72" />
-                </div>
-
-                <footer class="composer">
-                  <el-input
-                    v-model="draft"
-                    type="textarea"
-                    :rows="3"
-                    resize="none"
-                    placeholder="输入业务消息内容"
-                    @keydown.enter.exact.prevent="sendRoomMessage"
-                  />
-                  <div class="composer-actions">
-                    <span>{{ sendHint }}</span>
-                    <button
-                      type="button"
-                      class="el-button el-button--primary action-button"
-                      :class="{ 'is-disabled': !connected || !draft.trim() }"
-                      :disabled="!connected || !draft.trim()"
-                      @click="sendRoomMessage"
-                    >
-                      <span>发送</span>
-                    </button>
-                    <button
-                      type="button"
-                      class="el-button action-button"
-                      :class="{ 'is-disabled': !connected }"
-                      :disabled="!connected"
-                      @click="publishServerMessage"
-                    >
-                      <span>模拟服务端消息</span>
-                    </button>
-                  </div>
-                </footer>
-              </main>
+              <div class="op-btns" @click="toggleCode('chat')">
+                <el-icon><component :is="codeVisible.chat ? ArrowUp : ArrowDown" /></el-icon>
+                <span>{{ codeVisible.chat ? '隐藏代码' : '显示代码' }}</span>
+              </div>
+              <CodeBlock v-show="codeVisible.chat" :code="chatCode" />
             </div>
-          </div>
-        </div>
-        <div class="op-btns" @click="toggleCode('chat')">
-          <el-icon><component :is="codeVisible.chat ? ArrowUp : ArrowDown" /></el-icon>
-          <span>{{ codeVisible.chat ? '隐藏代码' : '显示代码' }}</span>
-        </div>
-        <CodeBlock v-show="codeVisible.chat" :code="chatCode" />
-      </div>
           </section>
 
           <section id="modes" class="doc-section api-section">
-      <h2>支持模式</h2>
-      <p>RealtimeClient 支持自动协商和固定协议两种接入方式。业务侧通常使用 Auto；只有在调试、灰度或网络策略明确时才固定为某一种协议。</p>
-      <el-table :data="modeTable" size="small" border>
-        <el-table-column prop="mode" label="模式" width="140" />
-        <el-table-column prop="endpoint" label="相关地址" min-width="300" />
-        <el-table-column prop="feature" label="特性" min-width="300" />
-      </el-table>
+            <h2>支持模式</h2>
+            <p>
+              RealtimeClient 支持自动协商和固定协议两种接入方式。业务侧通常使用
+              Auto；只有在调试、灰度或网络策略明确时才固定为某一种协议。
+            </p>
+            <el-table :data="modeTable" size="small" border>
+              <el-table-column prop="mode" label="模式" width="140" />
+              <el-table-column prop="endpoint" label="相关地址" min-width="300" />
+              <el-table-column prop="feature" label="特性" min-width="300" />
+            </el-table>
           </section>
 
           <section id="utility" class="doc-section">
-      <h2>提供方法</h2>
-      <p>RealtimeClient 是正式业务通信客户端，负责协议协商、连接维护、心跳、重连、降级和统一消息收发；页面 UI 由业务模块自行组织。</p>
-      <div class="demo-block" data-testid="realtime-utility-panel">
-        <div class="demo-source compact-source">
-          <el-table :data="methodTable" size="small" border>
-            <el-table-column prop="name" label="方法" width="150" />
-            <el-table-column prop="description" label="说明" min-width="260" />
-            <el-table-column prop="usage" label="典型用法" min-width="220" />
-          </el-table>
-        </div>
-        <div class="op-btns" @click="toggleCode('utility')">
-          <el-icon><component :is="codeVisible.utility ? ArrowUp : ArrowDown" /></el-icon>
-          <span>{{ codeVisible.utility ? '隐藏代码' : '显示代码' }}</span>
-        </div>
-        <CodeBlock v-show="codeVisible.utility" :code="utilityCode" />
-      </div>
+            <h2>提供方法</h2>
+            <p>
+              RealtimeClient 是正式业务通信客户端，负责协议协商、连接维护、心跳、重连、降级和统一消息收发；页面 UI
+              由业务模块自行组织。
+            </p>
+            <div class="demo-block" data-testid="realtime-utility-panel">
+              <div class="demo-source compact-source">
+                <el-table :data="methodTable" size="small" border>
+                  <el-table-column prop="name" label="方法" width="150" />
+                  <el-table-column prop="description" label="说明" min-width="260" />
+                  <el-table-column prop="usage" label="典型用法" min-width="220" />
+                </el-table>
+              </div>
+              <div class="op-btns" @click="toggleCode('utility')">
+                <el-icon><component :is="codeVisible.utility ? ArrowUp : ArrowDown" /></el-icon>
+                <span>{{ codeVisible.utility ? '隐藏代码' : '显示代码' }}</span>
+              </div>
+              <CodeBlock v-show="codeVisible.utility" :code="utilityCode" />
+            </div>
           </section>
 
           <section id="options" class="doc-section api-section">
-      <h2>配置项</h2>
-      <el-table :data="optionsTable" size="small" border>
-        <el-table-column prop="name" label="参数" width="180" />
-        <el-table-column prop="description" label="说明" min-width="280" />
-        <el-table-column prop="defaultValue" label="默认值" width="180" />
-      </el-table>
+            <h2>配置项</h2>
+            <el-table :data="optionsTable" size="small" border>
+              <el-table-column prop="name" label="参数" width="180" />
+              <el-table-column prop="description" label="说明" min-width="280" />
+              <el-table-column prop="defaultValue" label="默认值" width="180" />
+            </el-table>
 
-      <h3 class="subsection-title">服务端可靠投递</h3>
-      <p>业务侧调用发布接口后，服务端先写入 infra-kv Outbox，再由 dispatcher 投递到在线连接。Presence 负责找用户、端、群组在哪个节点；Outbox 负责失败重试。</p>
-      <el-table :data="serverDeliveryTable" size="small" border>
-        <el-table-column prop="stage" label="阶段" width="160" />
-        <el-table-column prop="owner" label="组件" width="180" />
-        <el-table-column prop="description" label="说明" min-width="360" />
-      </el-table>
+            <h3 class="subsection-title">服务端可靠投递</h3>
+            <p>
+              业务侧调用发布接口后，服务端先写入 infra-kv Outbox，再由 dispatcher 投递到在线连接。Presence
+              负责找用户、端、群组在哪个节点；Outbox 负责失败重试。
+            </p>
+            <el-table :data="serverDeliveryTable" size="small" border>
+              <el-table-column prop="stage" label="阶段" width="160" />
+              <el-table-column prop="owner" label="组件" width="180" />
+              <el-table-column prop="description" label="说明" min-width="360" />
+            </el-table>
 
-      <h3 class="subsection-title">默认接入点</h3>
-      <p>业务通常不需要在页面里填写地址；如网关路径不同，可在创建 client 时通过 endpoints 覆盖。</p>
-      <el-table :data="endpointTable" size="small" border>
-        <el-table-column prop="name" label="用途" width="150" />
-        <el-table-column prop="path" label="默认地址" min-width="280" />
-        <el-table-column prop="description" label="说明" min-width="220" />
-      </el-table>
+            <h3 class="subsection-title">默认接入点</h3>
+            <p>业务通常不需要在页面里填写地址；如网关路径不同，可在创建 client 时通过 endpoints 覆盖。</p>
+            <el-table :data="endpointTable" size="small" border>
+              <el-table-column prop="name" label="用途" width="150" />
+              <el-table-column prop="path" label="默认地址" min-width="280" />
+              <el-table-column prop="description" label="说明" min-width="220" />
+            </el-table>
           </section>
 
           <section id="message-format" class="doc-section api-section">
-      <h2>消息协议</h2>
-      <p>业务消息使用统一 envelope。ping/pong 是轻量控制帧，只用于链路保活，不套完整业务消息体，也不会交给业务 subscribe 处理。</p>
-      <el-table :data="messageKindTable" size="small" border>
-        <el-table-column prop="kind" label="类型" width="140" />
-        <el-table-column prop="owner" label="处理方" width="150" />
-        <el-table-column prop="description" label="说明" min-width="360" />
-      </el-table>
-      <CodeBlock :code="messageCode" language="json" />
+            <h2>消息协议</h2>
+            <p>
+              业务消息使用统一 envelope。ping/pong 是轻量控制帧，只用于链路保活，不套完整业务消息体，也不会交给业务
+              subscribe 处理。
+            </p>
+            <el-table :data="messageKindTable" size="small" border>
+              <el-table-column prop="kind" label="类型" width="140" />
+              <el-table-column prop="owner" label="处理方" width="150" />
+              <el-table-column prop="description" label="说明" min-width="360" />
+            </el-table>
+            <CodeBlock :code="messageCode" language="json" />
           </section>
         </main>
       </div>
@@ -349,7 +410,16 @@
 import { computed, defineComponent, h, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { ElMessage } from 'element-plus';
 import { ArrowDown, ArrowUp } from '@element-plus/icons-vue';
-import { createRealtimeClient, getPayloadText, Session, type RealtimeClient, type RealtimeMessage, type RealtimeMetrics, type RealtimeProtocol, type RealtimeStatus } from '@mango/common';
+import {
+  createRealtimeClient,
+  getPayloadText,
+  Session,
+  type RealtimeClient,
+  type RealtimeMessage,
+  type RealtimeMetrics,
+  type RealtimeProtocol,
+  type RealtimeStatus,
+} from '@mango/common';
 
 type ChatDirection = 'in' | 'out';
 type DeliveryMode = 'GROUP' | 'USER' | 'CLIENT';
@@ -414,14 +484,16 @@ const metrics = ref<RealtimeMetrics>(emptyMetrics());
 const clientRef = ref<RealtimeClient | null>(null);
 const chatMessages = ref<ChatMessage[]>([]);
 const roomMembers = ref<RoomMember[]>([]);
-const heartbeatLogs = ref<Array<{
-  id: string;
-  time: string;
-  protocol: RealtimeProtocol;
-  direction: 'client' | 'server';
-  frame: 'ping' | 'pong';
-  ok: boolean;
-}>>([]);
+const heartbeatLogs = ref<
+  Array<{
+    id: string;
+    time: string;
+    protocol: RealtimeProtocol;
+    direction: 'client' | 'server';
+    frame: 'ping' | 'pong';
+    ok: boolean;
+  }>
+>([]);
 const draft = ref('订单 A-1024 已完成资料补充');
 const rawDialogVisible = ref(false);
 const selectedRawJson = ref('');
@@ -456,11 +528,12 @@ const statusText = computed(() => {
 });
 const sendHint = computed(() => {
   if (!connected.value) return '连接后可发送';
-  const targetName = profile.deliveryMode === 'GROUP'
-    ? `群组 ${profile.groupId}`
-    : profile.deliveryMode === 'USER'
-      ? `用户 ${profile.targetUserId}`
-      : `端 ${profile.targetClientId || '未填写'}`;
+  const targetName =
+    profile.deliveryMode === 'GROUP'
+      ? `群组 ${profile.groupId}`
+      : profile.deliveryMode === 'USER'
+        ? `用户 ${profile.targetUserId}`
+        : `端 ${profile.targetClientId || '未填写'}`;
   if (protocol.value === 'websocket') return `WebSocket 双向发送 · ${targetName}`;
   if (protocol.value === 'sse') return `SSE 下行，HTTP inbound 上行 · ${targetName}`;
   return `Polling 下行，HTTP inbound 上行 · ${targetName}`;
@@ -474,7 +547,7 @@ const statusRows = computed(() => [
   { label: '重连次数', value: String(metrics.value.reconnectCount) },
   { label: '收 / 发', value: `${metrics.value.receivedCount} / ${metrics.value.sentCount}` },
 ]);
-const onlineMemberCount = computed(() => roomMembers.value.filter(member => member.online).length);
+const onlineMemberCount = computed(() => roomMembers.value.filter((member) => member.online).length);
 
 async function connectRoom() {
   disposeClient();
@@ -535,16 +608,16 @@ async function connectRoom() {
 
 function bindClient(client: RealtimeClient) {
   unsubscribers.push(
-    client.on('status', value => {
+    client.on('status', (value) => {
       status.value = value;
       protocol.value = client.getProtocol();
       refreshMetrics();
     }),
-    client.on('transport-change', value => {
+    client.on('transport-change', (value) => {
       protocol.value = value.to;
       refreshMetrics();
     }),
-    client.on('heartbeat', value => {
+    client.on('heartbeat', (value) => {
       heartbeatLogs.value = [
         {
           id: `${value.at}-${value.protocol}-${value.direction}-${value.frame}`,
@@ -558,7 +631,7 @@ function bindClient(client: RealtimeClient) {
       ].slice(0, 8);
       refreshMetrics();
     }),
-    client.on('message', message => {
+    client.on('message', (message) => {
       if (isRoomMemberAck(message)) {
         refreshMetrics();
         return;
@@ -573,8 +646,9 @@ function bindClient(client: RealtimeClient) {
       scrollMessagesToBottom();
       refreshMetrics();
     }),
-    client.on('sent', message => {
-      if (message.event?.name === 'subscription.subscribe' || message.event?.name === 'subscription.unsubscribe') return;
+    client.on('sent', (message) => {
+      if (message.event?.name === 'subscription.subscribe' || message.event?.name === 'subscription.unsubscribe')
+        return;
       if (isRoomMemberEvent(message)) {
         handleRoomMemberMessage(message);
         refreshMetrics();
@@ -585,13 +659,15 @@ function bindClient(client: RealtimeClient) {
       scrollMessagesToBottom();
       refreshMetrics();
     }),
-    client.on('system-message', message => {
+    client.on('system-message', (message) => {
       if (message.event?.name === 'connection.connected') {
-        void subscribeCurrentGroup().catch(error => ElMessage.error(error instanceof Error ? error.message : String(error)));
+        void subscribeCurrentGroup().catch((error) =>
+          ElMessage.error(error instanceof Error ? error.message : String(error)),
+        );
       }
       refreshMetrics();
     }),
-    client.on('error', error => {
+    client.on('error', (error) => {
       ElMessage.error(error.message);
       refreshMetrics();
     }),
@@ -689,7 +765,9 @@ async function publishServerMessage() {
 function toChatMessage(message: RealtimeMessage, direction: ChatDirection): ChatMessage {
   const metadata = message.metadata || {};
   const sender = String(metadata.senderName || (direction === 'out' ? profile.name : '服务器'));
-  const avatarSeed = String(metadata.senderClientId || message.source?.clientId || metadata.senderUserId || message.context?.userId || sender);
+  const avatarSeed = String(
+    metadata.senderClientId || message.source?.clientId || metadata.senderUserId || message.context?.userId || sender,
+  );
   return {
     localId: message.id || `${Date.now()}-${Math.random().toString(16).slice(2)}`,
     direction,
@@ -749,7 +827,9 @@ function handleRoomMemberMessage(message: RealtimeMessage) {
     lastSeenAt: Date.now(),
   });
   if (message.event?.name === 'member.joined' && member.clientId !== profile.clientId) {
-    void announceRoomMember('member.present').catch(error => ElMessage.error(error instanceof Error ? error.message : String(error)));
+    void announceRoomMember('member.present').catch((error) =>
+      ElMessage.error(error instanceof Error ? error.message : String(error)),
+    );
   }
 }
 
@@ -770,8 +850,10 @@ function rememberMemberFromMessage(message: RealtimeMessage, online: boolean) {
 }
 
 function isRoomMemberEvent(message: RealtimeMessage) {
-  return message.event?.domain === 'chat'
-    && ['member.joined', 'member.present', 'member.left'].includes(message.event?.name || '');
+  return (
+    message.event?.domain === 'chat' &&
+    ['member.joined', 'member.present', 'member.left'].includes(message.event?.name || '')
+  );
 }
 
 function isRoomMemberAck(message: RealtimeMessage) {
@@ -825,17 +907,19 @@ function avatarToneClass(seed: unknown) {
 }
 
 function upsertRoomMember(member: RoomMember) {
-  const index = roomMembers.value.findIndex(item => item.clientId === member.clientId);
+  const index = roomMembers.value.findIndex((item) => item.clientId === member.clientId);
   if (index >= 0) {
     roomMembers.value[index] = { ...roomMembers.value[index], ...member };
   } else {
     roomMembers.value.push(member);
   }
-  roomMembers.value = [...roomMembers.value].sort((a, b) => Number(b.online) - Number(a.online) || b.lastSeenAt - a.lastSeenAt);
+  roomMembers.value = [...roomMembers.value].sort(
+    (a, b) => Number(b.online) - Number(a.online) || b.lastSeenAt - a.lastSeenAt,
+  );
 }
 
 function markCurrentMemberOffline() {
-  const current = roomMembers.value.find(member => member.clientId === profile.clientId);
+  const current = roomMembers.value.find((member) => member.clientId === profile.clientId);
   if (current) {
     upsertRoomMember({ ...current, online: false, lastSeenAt: Date.now() });
   }
@@ -1027,21 +1111,69 @@ const messageCode = `{
 }`;
 
 const messageKindTable = [
-  { kind: 'heartbeat.ping', owner: 'RealtimeClient', description: '内部心跳语义。WebSocket 实际发送轻量帧 {"type":"ping"}，不发送完整业务 envelope；SSE/Polling 依赖流或轮询请求判断活性。' },
-  { kind: 'heartbeat.pong', owner: 'RealtimeClient', description: '内部心跳响应语义。WebSocket 收到 {"type":"pong"} 后清除心跳超时；不会进入业务消息列表和 subscribe 回调。' },
-  { kind: 'connection.connected', owner: 'RealtimeClient / 系统 UI', description: '连接建立通知，默认作为系统事件处理，不进入业务 subscribe。' },
-  { kind: 'message.accepted', owner: '业务模块', description: '服务端接收确认，payload.message 可用于展示“我收到你发送的消息”。' },
-  { kind: 'message.error', owner: 'RealtimeClient / 系统 UI', description: '协议层错误消息，如鉴权失败、消息格式错误、会话失效；默认走系统事件和错误处理。' },
-  { kind: 'message.send', owner: '业务模块', description: '业务上行消息，使用 event.domain + event.name 表达业务语义，例如 chat/message.send、workflow/order.updated。' },
+  {
+    kind: 'heartbeat.ping',
+    owner: 'RealtimeClient',
+    description:
+      '内部心跳语义。WebSocket 实际发送轻量帧 {"type":"ping"}，不发送完整业务 envelope；SSE/Polling 依赖流或轮询请求判断活性。',
+  },
+  {
+    kind: 'heartbeat.pong',
+    owner: 'RealtimeClient',
+    description:
+      '内部心跳响应语义。WebSocket 收到 {"type":"pong"} 后清除心跳超时；不会进入业务消息列表和 subscribe 回调。',
+  },
+  {
+    kind: 'connection.connected',
+    owner: 'RealtimeClient / 系统 UI',
+    description: '连接建立通知，默认作为系统事件处理，不进入业务 subscribe。',
+  },
+  {
+    kind: 'message.accepted',
+    owner: '业务模块',
+    description: '服务端接收确认，payload.message 可用于展示“我收到你发送的消息”。',
+  },
+  {
+    kind: 'message.error',
+    owner: 'RealtimeClient / 系统 UI',
+    description: '协议层错误消息，如鉴权失败、消息格式错误、会话失效；默认走系统事件和错误处理。',
+  },
+  {
+    kind: 'message.send',
+    owner: '业务模块',
+    description:
+      '业务上行消息，使用 event.domain + event.name 表达业务语义，例如 chat/message.send、workflow/order.updated。',
+  },
 ];
 
 const methodTable = [
-  { name: 'connect()', description: '协商协议并建立连接；mode=auto 时先请求 negotiate', usage: '页面进入或用户点击连接' },
+  {
+    name: 'connect()',
+    description: '协商协议并建立连接；mode=auto 时先请求 negotiate',
+    usage: '页面进入或用户点击连接',
+  },
   { name: 'disconnect()', description: '主动断开连接并停止心跳、轮询、升级探测', usage: '页面卸载或退出业务房间' },
-  { name: 'send(envelope)', description: '发送 v1 envelope；WebSocket 直发，SSE/Polling 自动走 inbound HTTP', usage: '发送聊天、审批、协作事件' },
-  { name: 'target', description: '消息 envelope 的投递目标，支持 USER、CLIENT、CONNECTION、GROUP、TENANT、BROADCAST；CLIENT 表示某个具体浏览器 Tab / 设备端', usage: '{ type: "GROUP", id: roomId }' },
-  { name: 'subscribe(eventName)', description: '按 event.name 订阅业务消息；心跳、连接通知、错误由客户端内部处理', usage: 'subscribe("order.updated", handler)' },
-  { name: 'on(event)', description: '监听状态、错误、重连、协议切换、心跳等生命周期事件', usage: 'on("reconnecting", handler)' },
+  {
+    name: 'send(envelope)',
+    description: '发送 v1 envelope；WebSocket 直发，SSE/Polling 自动走 inbound HTTP',
+    usage: '发送聊天、审批、协作事件',
+  },
+  {
+    name: 'target',
+    description:
+      '消息 envelope 的投递目标，支持 USER、CLIENT、CONNECTION、GROUP、TENANT、BROADCAST；CLIENT 表示某个具体浏览器 Tab / 设备端',
+    usage: '{ type: "GROUP", id: roomId }',
+  },
+  {
+    name: 'subscribe(eventName)',
+    description: '按 event.name 订阅业务消息；心跳、连接通知、错误由客户端内部处理',
+    usage: 'subscribe("order.updated", handler)',
+  },
+  {
+    name: 'on(event)',
+    description: '监听状态、错误、重连、协议切换、心跳等生命周期事件',
+    usage: 'on("reconnecting", handler)',
+  },
   { name: 'getMetrics()', description: '读取连接、收发、心跳、协议切换计数', usage: '状态栏或埋点' },
 ];
 
@@ -1070,32 +1202,88 @@ const modeTable = [
 
 const optionsTable = [
   { name: 'mode', description: 'auto 自动协商，或固定 websocket / sse / polling', defaultValue: 'auto' },
-  { name: 'identity', description: 'tenantId、userId、clientId、sessionId；连接和上行消息都会携带', defaultValue: '当前会话 + browser id' },
-  { name: 'target', description: '投递目标：点对点 USER、指定端 CLIENT、连接 CONNECTION、群组 GROUP、租户 TENANT、广播 BROADCAST', defaultValue: '由业务指定' },
-  { name: 'endpoints', description: '覆盖 negotiate、websocket、sse、polling、inboundSse、inboundPolling 地址', defaultValue: '/api/realtime/...' },
-  { name: 'heartbeat', description: '心跳开关、间隔、超时和最小间隔；普通模式最小 1000ms，aggressive 可到 500ms', defaultValue: '30s' },
+  {
+    name: 'identity',
+    description: 'tenantId、userId、clientId、sessionId；连接和上行消息都会携带',
+    defaultValue: '当前会话 + browser id',
+  },
+  {
+    name: 'target',
+    description: '投递目标：点对点 USER、指定端 CLIENT、连接 CONNECTION、群组 GROUP、租户 TENANT、广播 BROADCAST',
+    defaultValue: '由业务指定',
+  },
+  {
+    name: 'endpoints',
+    description: '覆盖 negotiate、websocket、sse、polling、inboundSse、inboundPolling 地址',
+    defaultValue: '/api/realtime/...',
+  },
+  {
+    name: 'heartbeat',
+    description: '心跳开关、间隔、超时和最小间隔；普通模式最小 1000ms，aggressive 可到 500ms',
+    defaultValue: '30s',
+  },
   { name: 'reconnect', description: '断线后指数退避重连，支持最大次数、最小/最大延迟和 jitter', defaultValue: '启用' },
-  { name: 'transportPolicy', description: '开启动态降级；可选开启升级探测。默认降级开、升级关', defaultValue: 'adaptive=true' },
+  {
+    name: 'transportPolicy',
+    description: '开启动态降级；可选开启升级探测。默认降级开、升级关',
+    defaultValue: 'adaptive=true',
+  },
   { name: 'polling', description: '长轮询单次最大条数、超时和短轮询间隔', defaultValue: '20 / 25000ms' },
-  { name: 'performanceMode', description: 'normal 或 aggressive；aggressive 允许 500ms 心跳下限', defaultValue: 'normal' },
-  { name: 'serverDelivery', description: '服务端发布默认走 infra-kv Outbox：入箱、claim、投递、ack/nack、失败重试', defaultValue: 'enabled' },
+  {
+    name: 'performanceMode',
+    description: 'normal 或 aggressive；aggressive 允许 500ms 心跳下限',
+    defaultValue: 'normal',
+  },
+  {
+    name: 'serverDelivery',
+    description: '服务端发布默认走 infra-kv Outbox：入箱、claim、投递、ack/nack、失败重试',
+    defaultValue: 'enabled',
+  },
 ];
 
 const serverDeliveryTable = [
-  { stage: '在线路由', owner: 'Presence', description: '连接建立后写入 infra-kv，按 tenant/user/client/group 建立 SortedSet 索引，支持集群查找目标连接。' },
-  { stage: '可靠入箱', owner: 'IOutboxPublisher', description: '/realtime/messages/publish 先写 Outbox，不直接依赖当前请求完成最终投递。' },
-  { stage: '投递执行', owner: 'RealtimeOutboxDispatcher', description: '后台 worker claim 待投递消息，调用 RealtimePublishService 下发到本节点和远端节点。' },
-  { stage: '失败处理', owner: 'IOutboxStore', description: '成功 ack；异常 nack 并设置 nextAttemptAt。语义为 at-least-once，业务可用 message id 做幂等。' },
+  {
+    stage: '在线路由',
+    owner: 'Presence',
+    description: '连接建立后写入 infra-kv，按 tenant/user/client/group 建立 SortedSet 索引，支持集群查找目标连接。',
+  },
+  {
+    stage: '可靠入箱',
+    owner: 'IOutboxPublisher',
+    description: '/realtime/messages/publish 先写 Outbox，不直接依赖当前请求完成最终投递。',
+  },
+  {
+    stage: '投递执行',
+    owner: 'RealtimeOutboxDispatcher',
+    description: '后台 worker claim 待投递消息，调用 RealtimePublishService 下发到本节点和远端节点。',
+  },
+  {
+    stage: '失败处理',
+    owner: 'IOutboxStore',
+    description: '成功 ack；异常 nack 并设置 nextAttemptAt。语义为 at-least-once，业务可用 message id 做幂等。',
+  },
 ];
 
 const endpointTable = [
-  { name: '协议协商', path: '/api/realtime/transports/negotiate', description: 'Auto 模式使用，返回推荐协议和可用传输能力' },
+  {
+    name: '协议协商',
+    path: '/api/realtime/transports/negotiate',
+    description: 'Auto 模式使用，返回推荐协议和可用传输能力',
+  },
   { name: 'WebSocket', path: '/api/realtime/transports/websocket', description: '双向连接，消息可直接通过连接上行' },
   { name: 'SSE', path: '/api/realtime/transports/sse', description: '服务端下行通道，上行走 inbound HTTP' },
-  { name: 'Ajax Polling', path: '/api/realtime/transports/polling', description: '长轮询下行通道，上行走 inbound HTTP' },
+  {
+    name: 'Ajax Polling',
+    path: '/api/realtime/transports/polling',
+    description: '长轮询下行通道，上行走 inbound HTTP',
+  },
   { name: 'SSE 上行', path: '/api/realtime/messages/inbound/sse', description: 'SSE 模式发送业务消息' },
   { name: 'Polling 上行', path: '/api/realtime/messages/inbound/polling', description: 'Polling 模式发送业务消息' },
-  { name: '服务端发布', path: '/api/realtime/messages/publish', description: '服务端业务发布入口；默认先入 infra-kv Outbox，再由 dispatcher 投递' },
+  {
+    name: '服务端发布',
+    path: '/api/realtime/messages/publish',
+    description: '服务端业务发布入口；默认先入 infra-kv Outbox，再由 dispatcher 投递',
+  },
 ];
 
 const CodeBlock = defineComponent({
@@ -1117,7 +1305,7 @@ const CodeBlock = defineComponent({
 </script>
 
 <style scoped lang="scss">
-@use './demo-page.scss';
+@use './demo-page';
 
 .demo-block {
   width: 100%;
@@ -1128,7 +1316,9 @@ const CodeBlock = defineComponent({
   transition: box-shadow 0.2s ease;
 
   &:hover {
-    box-shadow: 0 0 8px 0 rgb(232 237 250 / 60%), 0 2px 4px 0 rgb(232 237 250 / 50%);
+    box-shadow:
+      0 0 8px 0 rgb(232 237 250 / 60%),
+      0 2px 4px 0 rgb(232 237 250 / 50%);
   }
 }
 
@@ -1263,7 +1453,7 @@ const CodeBlock = defineComponent({
   code {
     min-width: 0;
     color: var(--el-text-color-primary);
-    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-family: Monaco, Menlo, 'Ubuntu Mono', monospace;
     font-size: 12px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1312,7 +1502,7 @@ const CodeBlock = defineComponent({
   code {
     min-width: 0;
     color: var(--el-text-color-primary);
-    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-family: Monaco, Menlo, 'Ubuntu Mono', monospace;
     font-size: 12px;
     line-height: 1.5;
     overflow-wrap: anywhere;
@@ -1498,7 +1688,7 @@ const CodeBlock = defineComponent({
 
 .heartbeat-frame {
   color: var(--el-text-color-primary);
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-family: Monaco, Menlo, 'Ubuntu Mono', monospace;
   font-size: 12px;
   font-weight: 700;
 }
@@ -1803,7 +1993,9 @@ const CodeBlock = defineComponent({
   font-weight: 500;
   background: var(--el-bg-color);
   cursor: pointer;
-  transition: color 0.2s ease, background-color 0.2s ease;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease;
 
   &:hover {
     color: var(--el-color-primary);
@@ -1818,7 +2010,7 @@ const CodeBlock = defineComponent({
   overflow: auto;
   background: var(--el-fill-color-light);
   color: var(--el-text-color-primary);
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-family: Monaco, Menlo, 'Ubuntu Mono', monospace;
   font-size: 13px;
   line-height: 1.8;
   white-space: pre;
@@ -1841,7 +2033,7 @@ const CodeBlock = defineComponent({
   font-weight: 600;
 }
 
-@media (max-width: 900px) {
+@media (width <= 900px) {
   .realtime-shell {
     grid-template-columns: 1fr;
   }
@@ -1872,8 +2064,7 @@ const CodeBlock = defineComponent({
 
   .member-list {
     flex-direction: row;
-    overflow-x: auto;
-    overflow-y: hidden;
+    overflow: auto hidden;
   }
 
   .member-row {
@@ -1886,7 +2077,7 @@ const CodeBlock = defineComponent({
   }
 }
 
-@media (max-width: 760px) {
+@media (width <= 760px) {
   .demo-source,
   .compact-source,
   .demo-code {

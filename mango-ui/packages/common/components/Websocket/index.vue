@@ -1,22 +1,13 @@
 <template>
   <div class="websocket-component">
     <!-- Connection Status Indicator -->
-    <div
-      v-if="showStatus"
-      class="websocket-status"
-      :class="statusClass"
-    >
+    <div v-if="showStatus" class="websocket-status" :class="statusClass">
       <span class="websocket-status-dot" />
       <span class="websocket-status-text">{{ statusText }}</span>
     </div>
 
     <!-- Reconnect Button (shown when exhausted) -->
-    <el-button
-      v-if="retryCount >= maxRetries"
-      type="danger"
-      size="small"
-      @click="manualReconnect"
-    >
+    <el-button v-if="retryCount >= maxRetries" type="danger" size="small" @click="manualReconnect">
       {{ t('websocket.reconnect') }}
     </el-button>
   </div>
@@ -85,17 +76,14 @@ export interface WSMessage {
 
 type WSStatus = 'disconnected' | 'connecting' | 'connected' | 'retrying' | 'error';
 
-const props = withDefaults(
-  defineProps<WebsocketProps>(),
-  {
-    url: '/mango-message/ws/chat',
-    showStatus: true,
-    showNotifications: true,
-    maxRetries: 6,
-    heartbeatInterval: 30000,
-    enabled: true,
-  }
-);
+const props = withDefaults(defineProps<WebsocketProps>(), {
+  url: '/mango-message/ws/chat',
+  showStatus: true,
+  showNotifications: true,
+  maxRetries: 6,
+  heartbeatInterval: 30000,
+  enabled: true,
+});
 
 const emit = defineEmits<WebsocketEmits>();
 
@@ -410,9 +398,11 @@ defineExpose<WebsocketExpose>({
   0% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.4;
   }
+
   100% {
     opacity: 1;
   }

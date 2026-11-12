@@ -64,7 +64,7 @@ function updateParticipants(value: WorkflowParticipantValue) {
     roleIds: normalizeList(value.roleIds),
     postIds: normalizeList(value.postIds),
   };
-  const hasRestriction = Object.values(next).some(list => list.length > 0);
+  const hasRestriction = Object.values(next).some((list) => list.length > 0);
   emit('update', {
     scopeType: hasRestriction ? 'COMPOSITE' : 'ALL',
     ...next,
@@ -73,7 +73,7 @@ function updateParticipants(value: WorkflowParticipantValue) {
 
 function normalizeList(value: unknown) {
   if (Array.isArray(value)) {
-    return value.map(item => String(item).trim()).filter(Boolean);
+    return value.map((item) => String(item).trim()).filter(Boolean);
   }
   if (value === undefined || value === null || value === '') {
     return [];

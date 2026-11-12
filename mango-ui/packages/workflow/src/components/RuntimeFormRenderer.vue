@@ -2,7 +2,9 @@
   <el-form :model="model" :label-width="labelWidth" class="runtime-form-renderer">
     <template v-for="field in visibleFields" :key="field.key">
       <div v-if="field.type === 'container'" class="runtime-container" :class="containerClass(field)">
-        <div v-if="field.label && field.props?.originalType !== 'space'" class="runtime-container-title">{{ field.label }}</div>
+        <div v-if="field.label && field.props?.originalType !== 'space'" class="runtime-container-title">
+          {{ field.label }}
+        </div>
         <RuntimeFormRenderer
           v-if="field.children?.length"
           :fields="field.children"
@@ -27,8 +29,15 @@
           {{ field.content || field.label }}
         </el-divider>
         <el-tag v-else-if="field.type === 'tag'" :type="field.props?.type">{{ field.content || field.label }}</el-tag>
-        <el-image v-else-if="field.type === 'image'" class="display-image" :src="field.props?.src || field.props?.url" fit="cover" />
-        <el-button v-else-if="field.type === 'button'" :type="field.props?.type || 'primary'" disabled>{{ field.content || field.label }}</el-button>
+        <el-image
+          v-else-if="field.type === 'image'"
+          class="display-image"
+          :src="field.props?.src || field.props?.url"
+          fit="cover"
+        />
+        <el-button v-else-if="field.type === 'button'" :type="field.props?.type || 'primary'" disabled>{{
+          field.content || field.label
+        }}</el-button>
         <MUpload
           v-else-if="field.type === 'imageUpload'"
           v-model="model[field.key]"
@@ -106,7 +115,12 @@
             collapse-tags
             collapse-tags-tooltip
           >
-            <el-option v-for="option in field.options" :key="String(option.value)" :label="option.label" :value="option.value" />
+            <el-option
+              v-for="option in field.options"
+              :key="String(option.value)"
+              :label="option.label"
+              :value="option.value"
+            />
           </el-select>
           <el-radio-group v-else-if="field.type === 'radio'" v-model="model[field.key]">
             <el-radio v-for="option in field.options" :key="String(option.value)" :label="option.value">
@@ -119,7 +133,13 @@
             </el-checkbox>
           </el-checkbox-group>
           <el-switch v-else-if="field.type === 'switch'" v-model="model[field.key]" />
-          <el-date-picker v-else-if="field.type === 'date'" v-model="model[field.key]" type="date" :placeholder="field.placeholder" value-format="YYYY-MM-DD" />
+          <el-date-picker
+            v-else-if="field.type === 'date'"
+            v-model="model[field.key]"
+            type="date"
+            :placeholder="field.placeholder"
+            value-format="YYYY-MM-DD"
+          />
           <el-date-picker
             v-else-if="field.type === 'datetime'"
             v-model="model[field.key]"
@@ -143,7 +163,12 @@
             end-placeholder="结束时间"
             value-format="YYYY-MM-DD HH:mm:ss"
           />
-          <el-time-picker v-else-if="field.type === 'time'" v-model="model[field.key]" :placeholder="field.placeholder" value-format="HH:mm:ss" />
+          <el-time-picker
+            v-else-if="field.type === 'time'"
+            v-model="model[field.key]"
+            :placeholder="field.placeholder"
+            value-format="HH:mm:ss"
+          />
           <el-time-picker
             v-else-if="field.type === 'timerange'"
             v-model="model[field.key]"
@@ -153,7 +178,13 @@
             value-format="HH:mm:ss"
           />
           <el-rate v-else-if="field.type === 'rate'" v-model="model[field.key]" />
-          <el-slider v-else-if="field.type === 'slider'" v-model="model[field.key]" :min="field.min" :max="field.max" :step="field.step || 1" />
+          <el-slider
+            v-else-if="field.type === 'slider'"
+            v-model="model[field.key]"
+            :min="field.min"
+            :max="field.max"
+            :step="field.step || 1"
+          />
           <el-color-picker v-else-if="field.type === 'color'" v-model="model[field.key]" />
           <el-cascader
             v-else-if="field.type === 'cascader'"
@@ -182,7 +213,13 @@
             :data="transferOptions(field)"
             :filterable="field.props?.filterable !== false"
           />
-          <el-input v-else-if="field.type === 'editor'" v-model="model[field.key]" type="textarea" :rows="6" :placeholder="field.placeholder" />
+          <el-input
+            v-else-if="field.type === 'editor'"
+            v-model="model[field.key]"
+            type="textarea"
+            :rows="6"
+            :placeholder="field.placeholder"
+          />
           <Sign
             v-else-if="field.type === 'signature'"
             v-model="model[field.key]"
@@ -191,7 +228,12 @@
             :height="signatureHeight(field)"
             :placeholder="field.placeholder || '请在此处签名'"
           />
-          <el-input v-else-if="field.type === 'serialNo'" v-model="model[field.key]" :placeholder="field.placeholder" readonly />
+          <el-input
+            v-else-if="field.type === 'serialNo'"
+            v-model="model[field.key]"
+            :placeholder="field.placeholder"
+            readonly
+          />
           <el-alert v-else :title="`暂不支持组件：${field.type}`" type="warning" :closable="false" />
         </template>
       </el-form-item>
@@ -207,19 +249,22 @@ import type { RuntimeFormField } from './runtimeForm';
 
 type RuntimeFormPermission = 'HIDDEN' | 'READONLY' | 'EDITABLE';
 
-const props = withDefaults(defineProps<{
-  fields: RuntimeFormField[];
-  model: Record<string, any>;
-  readonly?: boolean;
-  labelWidth?: string;
-  permissions?: Record<string, RuntimeFormPermission | string>;
-}>(), {
-  readonly: false,
-  labelWidth: '96px',
-  permissions: () => ({}),
-});
+const props = withDefaults(
+  defineProps<{
+    fields: RuntimeFormField[];
+    model: Record<string, any>;
+    readonly?: boolean;
+    labelWidth?: string;
+    permissions?: Record<string, RuntimeFormPermission | string>;
+  }>(),
+  {
+    readonly: false,
+    labelWidth: '96px',
+    permissions: () => ({}),
+  },
+);
 
-const visibleFields = computed(() => props.fields.filter(field => fieldPermission(field) !== 'HIDDEN'));
+const visibleFields = computed(() => props.fields.filter((field) => fieldPermission(field) !== 'HIDDEN'));
 
 const RuntimeDictSelect = defineComponent({
   name: 'RuntimeDictSelect',
@@ -279,7 +324,10 @@ const RuntimeDictReadonlyValue = defineComponent({
         return h('span', { class: 'readonly-value' }, '-');
       }
       const text = Array.isArray(value)
-        ? value.map(item => getLabel(item)).filter(Boolean).join('，')
+        ? value
+            .map((item) => getLabel(item))
+            .filter(Boolean)
+            .join('，')
         : getLabel(value);
       return h('span', { class: 'readonly-value' }, text || '-');
     };
@@ -287,7 +335,10 @@ const RuntimeDictReadonlyValue = defineComponent({
 });
 
 function fieldPermission(field: RuntimeFormField): RuntimeFormPermission {
-  return (props.permissions?.[field.key] as RuntimeFormPermission) || (props.readonly || field.readonly ? 'READONLY' : 'EDITABLE');
+  return (
+    (props.permissions?.[field.key] as RuntimeFormPermission) ||
+    (props.readonly || field.readonly ? 'READONLY' : 'EDITABLE')
+  );
 }
 
 function fieldReadonly(field: RuntimeFormField) {
@@ -308,7 +359,7 @@ function displayValue(field: RuntimeFormField) {
     return '-';
   }
   if (Array.isArray(value)) {
-    return value.map(item => displaySingleValue(field, item)).join('，');
+    return value.map((item) => displaySingleValue(field, item)).join('，');
   }
   if (field.type === 'switch') {
     return value ? '是' : '否';
@@ -320,7 +371,7 @@ function displaySingleValue(field: RuntimeFormField, value: any) {
   if (value && typeof value === 'object') {
     return value.fileName || value.name || value.label || value.value || JSON.stringify(value);
   }
-  const matchedOption = field.options?.find(option => option.value === value);
+  const matchedOption = field.options?.find((option) => option.value === value);
   if (matchedOption) {
     return matchedOption.label;
   }
@@ -353,7 +404,7 @@ function uploadFmt(field: RuntimeFormField) {
   }
   return accept
     .split(',')
-    .map(item => acceptItemToFmt(item))
+    .map((item) => acceptItemToFmt(item))
     .filter(Boolean)
     .join(',');
 }
@@ -421,7 +472,7 @@ function cascaderProps(field: RuntimeFormField) {
 }
 
 function transferOptions(field: RuntimeFormField) {
-  return (field.options || []).map(option => ({
+  return (field.options || []).map((option) => ({
     key: option.value,
     label: option.label,
   }));
@@ -524,7 +575,7 @@ function findTreeNode(nodes: any[], value: any): any | null {
   gap: 0 16px;
 }
 
-@media (max-width: 760px) {
+@media (width <= 760px) {
   .runtime-container.is-row :deep(.runtime-form-renderer),
   .runtime-container.is-space :deep(.runtime-form-renderer) {
     grid-template-columns: 1fr;

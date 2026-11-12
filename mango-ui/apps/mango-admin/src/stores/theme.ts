@@ -1,4 +1,1 @@
-export {
-  useThemeStore,
-  type ThemeState,
-} from '@mango/admin-shell';
+export { useThemeStore, type ThemeState } from '@mango/admin-shell';

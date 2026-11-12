@@ -1112,7 +1112,10 @@ export interface PaymentReadonlyResourceApi<T extends object> {
 
 export function createPaymentResourceApi<T extends object>(baseUrl: string): PaymentResourceApi<T> {
   return {
-    page: (params?: PaymentPageQuery) => get<unknown>(`${baseUrl}/page`, { params: toBackendPageParams(params) }).then(data => fromBackendPageResult<T>(data, params)),
+    page: (params?: PaymentPageQuery) =>
+      get<unknown>(`${baseUrl}/page`, { params: toBackendPageParams(params) }).then((data) =>
+        fromBackendPageResult<T>(data, params),
+      ),
     detail: (id: ApiId) => get<T>(`${baseUrl}/detail`, { params: { id } }),
     create: (data: T) => post<ApiId>(baseUrl, data),
     update: (data: T) => put<boolean>(baseUrl, data),
@@ -1122,7 +1125,10 @@ export function createPaymentResourceApi<T extends object>(baseUrl: string): Pay
 
 export function createPaymentReadonlyResourceApi<T extends object>(baseUrl: string): PaymentReadonlyResourceApi<T> {
   return {
-    page: (params?: PaymentPageQuery) => get<unknown>(`${baseUrl}/page`, { params: toBackendPageParams(params) }).then(data => fromBackendPageResult<T>(data, params)),
+    page: (params?: PaymentPageQuery) =>
+      get<unknown>(`${baseUrl}/page`, { params: toBackendPageParams(params) }).then((data) =>
+        fromBackendPageResult<T>(data, params),
+      ),
     detail: (id: ApiId) => get<T>(`${baseUrl}/detail`, { params: { id } }),
   };
 }
@@ -1134,23 +1140,29 @@ export const paymentApplicationApi: PaymentResourceApi<PaymentApplication> & {
   create(data: PaymentApplication): Promise<PaymentApplicationSaveResult>;
   update(data: PaymentApplication): Promise<PaymentApplicationSaveResult>;
 };
-export const paymentEnterpriseSubjectApi = createPaymentResourceApi<PaymentEnterpriseSubject>('/payment/enterprise-subjects');
+export const paymentEnterpriseSubjectApi =
+  createPaymentResourceApi<PaymentEnterpriseSubject>('/payment/enterprise-subjects');
 export const paymentChannelApi = createPaymentResourceApi<PaymentChannel>('/payment/channels');
 export const paymentChannelContractApi = {
   ...createPaymentResourceApi<PaymentChannelContract>('/payment/channel-contracts'),
   billSources: (params?: PaymentPageQuery) =>
-    get<unknown>('/payment/channel-contracts/bill-sources/page', { params: toBackendPageParams(params) })
-      .then(data => fromBackendPageResult<PaymentChannelBillSource>(data, params)),
-  saveBillSource: (data: SavePaymentChannelBillSourceCommand) => post<PaymentChannelBillSource>('/payment/channel-contracts/bill-sources', data),
+    get<unknown>('/payment/channel-contracts/bill-sources/page', { params: toBackendPageParams(params) }).then((data) =>
+      fromBackendPageResult<PaymentChannelBillSource>(data, params),
+    ),
+  saveBillSource: (data: SavePaymentChannelBillSourceCommand) =>
+    post<PaymentChannelBillSource>('/payment/channel-contracts/bill-sources', data),
 };
-export const paymentChannelCapabilityApi = createPaymentReadonlyResourceApi<PaymentChannelCapability>('/payment/channels/capabilities');
+export const paymentChannelCapabilityApi = createPaymentReadonlyResourceApi<PaymentChannelCapability>(
+  '/payment/channels/capabilities',
+);
 export const paymentMethodApi = {
   ...createPaymentResourceApi<PaymentMethod>('/payment/methods'),
   categories: () => get<PaymentMethodCategory[]>('/payment/methods/categories'),
 };
 export const paymentMethodRouteApi = {
   ...createPaymentResourceApi<PaymentMethodRouteRule>('/payment/method-routes'),
-  trial: (data: PaymentMethodRouteTrialCommand) => post<PaymentMethodRouteTrialResult>('/payment/method-routes/trial', data),
+  trial: (data: PaymentMethodRouteTrialCommand) =>
+    post<PaymentMethodRouteTrialResult>('/payment/method-routes/trial', data),
 };
 export const paymentCashierConfigApi = createPaymentResourceApi<PaymentCashierConfig>('/payment/cashier-configs');
 
@@ -1162,33 +1174,35 @@ export const paymentBusinessOrderApi = {
 export const paymentOrderApi = {
   ...createPaymentResourceApi<PaymentOrder>('/payment/payment-orders'),
   statuses: () => get<PaymentOrderStatus[]>('/payment/payment-orders/statuses'),
-  syncStatus: (payOrderNo: string) => post<PaymentOrderSyncStatusResult>('/payment/payment-orders/sync-status', null, {
-    params: { payOrderNo },
-  }),
+  syncStatus: (payOrderNo: string) =>
+    post<PaymentOrderSyncStatusResult>('/payment/payment-orders/sync-status', null, {
+      params: { payOrderNo },
+    }),
 };
 export const paymentOfflineCollectionApi = {
   ...createPaymentReadonlyResourceApi<PaymentOfflineCollection>('/payment/offline-collections'),
   statuses: () => get<PaymentOfflineCollectionStatus[]>('/payment/offline-collections/statuses'),
-  confirm: (data: ConfirmOfflineCollectionCommand) => post<PaymentOfflineCollection>('/payment/offline-collections/confirm', data),
+  confirm: (data: ConfirmOfflineCollectionCommand) =>
+    post<PaymentOfflineCollection>('/payment/offline-collections/confirm', data),
   refund: (data: CreateOfflineRefundCommand) => post<PaymentOfflineRefund>('/payment/offline-collections/refund', data),
-  bankStatements: (params?: PaymentPageQuery) => get<PageResult<PaymentOfflineBankStatementBatch>>('/payment/offline-collections/bank-statements/page', {
-    params: toBackendPageParams(params),
-  }),
-  bankStatementDetail: (id: ApiId) => get<PaymentOfflineBankStatementBatch>('/payment/offline-collections/bank-statements/detail', { params: { id } }),
-  bankStatementStatuses: () => get<PaymentOfflineBankStatementStatus[]>('/payment/offline-collections/bank-statements/statuses'),
-  bankStatementMatchStatuses: () => get<PaymentOfflineBankStatementStatus[]>('/payment/offline-collections/bank-statements/match-statuses'),
-  importBankStatement: async (file: File, statementFileId?: ApiId) => post<PaymentOfflineBankStatementBatch>(
-    '/payment/offline-collections/bank-statements/import',
-    {
+  bankStatements: (params?: PaymentPageQuery) =>
+    get<PageResult<PaymentOfflineBankStatementBatch>>('/payment/offline-collections/bank-statements/page', {
+      params: toBackendPageParams(params),
+    }),
+  bankStatementDetail: (id: ApiId) =>
+    get<PaymentOfflineBankStatementBatch>('/payment/offline-collections/bank-statements/detail', { params: { id } }),
+  bankStatementStatuses: () =>
+    get<PaymentOfflineBankStatementStatus[]>('/payment/offline-collections/bank-statements/statuses'),
+  bankStatementMatchStatuses: () =>
+    get<PaymentOfflineBankStatementStatus[]>('/payment/offline-collections/bank-statements/match-statuses'),
+  importBankStatement: async (file: File, statementFileId?: ApiId) =>
+    post<PaymentOfflineBankStatementBatch>('/payment/offline-collections/bank-statements/import', {
       fileContent: await fileToBase64(file),
       originalFilename: file.name,
       statementFileId,
-    },
-  ),
-  confirmBankStatement: (data: ConfirmOfflineBankStatementMatchCommand) => post<PaymentOfflineBankStatementBatch>(
-    '/payment/offline-collections/bank-statements/confirm',
-    data,
-  ),
+    }),
+  confirmBankStatement: (data: ConfirmOfflineBankStatementMatchCommand) =>
+    post<PaymentOfflineBankStatementBatch>('/payment/offline-collections/bank-statements/confirm', data),
 };
 export const paymentOfflineRefundApi = {
   ...createPaymentReadonlyResourceApi<PaymentOfflineRefund>('/payment/offline-refunds'),
@@ -1197,24 +1211,28 @@ export const paymentOfflineRefundApi = {
 export const paymentRefundOrderApi = {
   ...createPaymentResourceApi<PaymentRefundOrder>('/payment/refund-orders'),
   statuses: () => get<PaymentRefundOrderStatus[]>('/payment/refund-orders/statuses'),
-  queryChannel: (data: QueryPaymentRefundOrderCommand) => post<PaymentRefundOrder>('/payment/refund-orders/query-channel', data),
+  queryChannel: (data: QueryPaymentRefundOrderCommand) =>
+    post<PaymentRefundOrder>('/payment/refund-orders/query-channel', data),
 };
 export const paymentRefundApprovalApi = {
   ...createPaymentReadonlyResourceApi<PaymentRefundApproval>('/payment/refund-approvals'),
   statuses: () => get<PaymentRefundApprovalStatus[]>('/payment/refund-approvals/statuses'),
   create: (data: CreatePaymentRefundApprovalCommand) => post<PaymentRefundApproval>('/payment/refund-approvals', data),
 };
-export const paymentTransactionFlowApi = createPaymentReadonlyResourceApi<PaymentTransactionFlow>('/payment/transaction-flows');
+export const paymentTransactionFlowApi =
+  createPaymentReadonlyResourceApi<PaymentTransactionFlow>('/payment/transaction-flows');
 export const paymentExceptionOrderApi = {
   ...createPaymentResourceApi<PaymentExceptionOrder>('/payment/exception-orders'),
   statuses: () => get<PaymentExceptionOrderStatus[]>('/payment/exception-orders/statuses'),
   actions: () => get<PaymentExceptionOrderAction[]>('/payment/exception-orders/actions'),
-  handle: (data: HandlePaymentExceptionOrderCommand) => post<PaymentExceptionOrder>('/payment/exception-orders/handle', data),
+  handle: (data: HandlePaymentExceptionOrderCommand) =>
+    post<PaymentExceptionOrder>('/payment/exception-orders/handle', data),
 };
 export const paymentNotificationRecordApi = {
   ...createPaymentResourceApi<PaymentNotificationRecord>('/payment/notification-records'),
   statuses: () => get<PaymentNotificationStatus[]>('/payment/notification-records/statuses'),
-  retry: (data: RetryPaymentNotificationRecordCommand) => post<PaymentNotificationRecord>('/payment/notification-records/retry', data),
+  retry: (data: RetryPaymentNotificationRecordCommand) =>
+    post<PaymentNotificationRecord>('/payment/notification-records/retry', data),
   deliverDue: (data: DeliverDuePaymentNotificationRecordCommand) =>
     post<number>('/payment/notification-records/deliver-due', undefined, { params: { limit: data.limit } }),
 };
@@ -1222,15 +1240,20 @@ export const paymentReconciliationApi = {
   ...createPaymentResourceApi<PaymentReconciliation>('/payment/reconciliations'),
   statuses: () => get<PaymentReconciliationStatus[]>('/payment/reconciliations/statuses'),
   billFetchModes: () => get<PaymentChannelBillFetchMode[]>('/payment/reconciliations/bill-fetch-modes'),
-  importBill: (data: ImportPaymentReconciliationCommand) => post<PaymentReconciliation>('/payment/reconciliations/import', data),
-  generateMangoPayVirtualBill: (data: GenerateMangoPayVirtualBillCommand) => post<PaymentReconciliation>('/payment/reconciliations/mango-pay/virtual/generate', data),
+  importBill: (data: ImportPaymentReconciliationCommand) =>
+    post<PaymentReconciliation>('/payment/reconciliations/import', data),
+  generateMangoPayVirtualBill: (data: GenerateMangoPayVirtualBillCommand) =>
+    post<PaymentReconciliation>('/payment/reconciliations/mango-pay/virtual/generate', data),
   billSources: (params?: PaymentPageQuery) =>
-    get<unknown>('/payment/reconciliations/bill-sources/page', { params: toBackendPageParams(params) })
-      .then(data => fromBackendPageResult<PaymentChannelBillSource>(data, params)),
+    get<unknown>('/payment/reconciliations/bill-sources/page', { params: toBackendPageParams(params) }).then((data) =>
+      fromBackendPageResult<PaymentChannelBillSource>(data, params),
+    ),
   billFetchBatches: (params?: PaymentPageQuery) =>
-    get<unknown>('/payment/reconciliations/bill-fetch-batches/page', { params: toBackendPageParams(params) })
-      .then(data => fromBackendPageResult<PaymentChannelBillFetchBatch>(data, params)),
-  fetchBill: (data: FetchPaymentChannelBillCommand) => post<PaymentReconciliation>('/payment/reconciliations/bill-fetch', data),
+    get<unknown>('/payment/reconciliations/bill-fetch-batches/page', { params: toBackendPageParams(params) }).then(
+      (data) => fromBackendPageResult<PaymentChannelBillFetchBatch>(data, params),
+    ),
+  fetchBill: (data: FetchPaymentChannelBillCommand) =>
+    post<PaymentReconciliation>('/payment/reconciliations/bill-fetch', data),
 };
 export const paymentDifferenceApi = {
   ...createPaymentResourceApi<PaymentDifference>('/payment/differences'),
@@ -1241,29 +1264,37 @@ export const paymentDifferenceApi = {
 export const paymentSettlementSummaryApi = {
   ...createPaymentResourceApi<PaymentSettlementSummary>('/payment/settlement-summaries'),
   statuses: () => get<PaymentSettlementSummaryStatus[]>('/payment/settlement-summaries/statuses'),
-  generate: (data: GeneratePaymentSettlementSummaryCommand) => post<PaymentSettlementSummary>('/payment/settlement-summaries/generate', data),
-  confirm: (data: ConfirmPaymentSettlementSummaryCommand) => post<PaymentSettlementSummary>('/payment/settlement-summaries/confirm', data),
-  void: (data: VoidPaymentSettlementSummaryCommand) => post<PaymentSettlementSummary>('/payment/settlement-summaries/void', data),
+  generate: (data: GeneratePaymentSettlementSummaryCommand) =>
+    post<PaymentSettlementSummary>('/payment/settlement-summaries/generate', data),
+  confirm: (data: ConfirmPaymentSettlementSummaryCommand) =>
+    post<PaymentSettlementSummary>('/payment/settlement-summaries/confirm', data),
+  void: (data: VoidPaymentSettlementSummaryCommand) =>
+    post<PaymentSettlementSummary>('/payment/settlement-summaries/void', data),
 };
 export const paymentOperationAuditApi = {
   page: (params?: PaymentPageQuery) =>
-    get<unknown>('/payment/operation-audits/page', { params: toBackendPageParams(params) })
-      .then(data => fromBackendPageResult<PaymentOperationAudit>(data, params)),
+    get<unknown>('/payment/operation-audits/page', { params: toBackendPageParams(params) }).then((data) =>
+      fromBackendPageResult<PaymentOperationAudit>(data, params),
+    ),
 };
 
 export const paymentCashierApi = {
-  session: (cashierConfigId: ApiId, businessOrderId?: ApiId | '') => get<PaymentCashierSession>('/payment/cashier/session', {
-    params: {
-      cashierConfigId,
-      businessOrderId: businessOrderId || undefined,
-    },
-  }),
+  session: (cashierConfigId: ApiId, businessOrderId?: ApiId | '') =>
+    get<PaymentCashierSession>('/payment/cashier/session', {
+      params: {
+        cashierConfigId,
+        businessOrderId: businessOrderId || undefined,
+      },
+    }),
   pay: (data: PaymentCashierPayCommand) => post<PaymentCashierPayResult>('/payment/cashier/pay', data),
-  payResult: (payOrderNo: string) => get<PaymentCashierPayResult>('/payment/cashier/pay-result', { params: { payOrderNo } }),
-  syncPayResult: (payOrderNo: string) => post<PaymentCashierPayResult>('/payment/cashier/pay-result/sync', null, { params: { payOrderNo } }),
+  payResult: (payOrderNo: string) =>
+    get<PaymentCashierPayResult>('/payment/cashier/pay-result', { params: { payOrderNo } }),
+  syncPayResult: (payOrderNo: string) =>
+    post<PaymentCashierPayResult>('/payment/cashier/pay-result/sync', null, { params: { payOrderNo } }),
   submitOfflineTransferVoucher: (data: SubmitOfflineTransferVoucherCommand) =>
     post<PaymentOfflineCollection>('/payment/cashier/offline-collections/transfer-voucher', data),
-  mangoPayVirtualPay: (data: MangoPayVirtualPaymentCommand) => post<MangoPayVirtualPaymentResult>('/payment/mango-pay/virtual/pay', data),
+  mangoPayVirtualPay: (data: MangoPayVirtualPaymentCommand) =>
+    post<MangoPayVirtualPaymentResult>('/payment/mango-pay/virtual/pay', data),
 };
 
 function toBackendPageParams(params?: PaymentPageQuery) {

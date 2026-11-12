@@ -12,13 +12,14 @@ const context = await browser.newContext({
 const diagnostics = [];
 
 function collectDiagnostics(page, name) {
-  page.on('console', message => {
+  page.on('console', (message) => {
     if (message.type() === 'error') diagnostics.push(`[${name}] console: ${message.text()}`);
   });
-  page.on('pageerror', error => diagnostics.push(`[${name}] pageerror: ${error.message}`));
-  page.on('requestfailed', request => {
+  page.on('pageerror', (error) => diagnostics.push(`[${name}] pageerror: ${error.message}`));
+  page.on('requestfailed', (request) => {
     const url = request.url();
-    if (url.includes('/realtime/')) diagnostics.push(`[${name}] request failed: ${url} ${request.failure()?.errorText || ''}`);
+    if (url.includes('/realtime/'))
+      diagnostics.push(`[${name}] request failed: ${url} ${request.failure()?.errorText || ''}`);
   });
 }
 
@@ -38,7 +39,9 @@ async function login(page) {
 
 async function openRealtimePage(page, profile) {
   await page.goto('/#/components/realtime');
-  await expect(page.getByRole('heading', { name: 'RealtimeClient 实时通信组件', exact: true })).toBeVisible({ timeout: 10000 });
+  await expect(page.getByRole('heading', { name: 'RealtimeClient 实时通信组件', exact: true })).toBeVisible({
+    timeout: 10000,
+  });
 
   const panel = page.getByTestId('realtime-chat-panel');
   await panel.getByRole('tab', { name: '用户信息' }).click();
@@ -71,7 +74,9 @@ try {
   await expect(pageA.getByTestId('realtime-room-members').getByText('李四')).toBeVisible({ timeout: 10000 });
   await expect(pageB.getByTestId('realtime-room-members').getByText('张三')).toBeVisible({ timeout: 10000 });
   await expect(pageB.getByTestId('realtime-room-members').getByText('李四')).toBeVisible({ timeout: 10000 });
-  await expect(pageB.getByTestId('realtime-room-members').getByText('2 在线 / 2 进入过')).toBeVisible({ timeout: 10000 });
+  await expect(pageB.getByTestId('realtime-room-members').getByText('2 在线 / 2 进入过')).toBeVisible({
+    timeout: 10000,
+  });
 
   await expect(pageA.getByTestId('realtime-chat-panel').getByText('连接成功')).toBeVisible({ timeout: 5000 });
   await pageA.getByPlaceholder('输入业务消息内容').fill(messageText);
@@ -80,13 +85,29 @@ try {
   await sendButton.click();
 
   try {
-    await expect(pageA.getByTestId('realtime-message-list').locator('.message-content', { hasText: messageText })).toBeVisible({ timeout: 10000 });
-    await expect(pageA.getByTestId('realtime-message-list').locator('.message-content', { hasText: `我收到你发送的消息“${messageText}”` })).toBeVisible({ timeout: 10000 });
-    await expect(pageB.getByTestId('realtime-message-list').locator('.message-content', { hasText: messageText })).toBeVisible({ timeout: 10000 });
+    await expect(
+      pageA.getByTestId('realtime-message-list').locator('.message-content', { hasText: messageText }),
+    ).toBeVisible({ timeout: 10000 });
+    await expect(
+      pageA
+        .getByTestId('realtime-message-list')
+        .locator('.message-content', { hasText: `我收到你发送的消息“${messageText}”` }),
+    ).toBeVisible({ timeout: 10000 });
+    await expect(
+      pageB.getByTestId('realtime-message-list').locator('.message-content', { hasText: messageText }),
+    ).toBeVisible({ timeout: 10000 });
   } catch (error) {
-    const aText = await pageA.getByTestId('realtime-message-list').innerText().catch(innerError => String(innerError));
-    const bText = await pageB.getByTestId('realtime-message-list').innerText().catch(innerError => String(innerError));
-    throw new Error(`${error.message}\nA messages:\n${aText}\nB messages:\n${bText}\nDiagnostics:\n${diagnostics.join('\n')}`);
+    const aText = await pageA
+      .getByTestId('realtime-message-list')
+      .innerText()
+      .catch((innerError) => String(innerError));
+    const bText = await pageB
+      .getByTestId('realtime-message-list')
+      .innerText()
+      .catch((innerError) => String(innerError));
+    throw new Error(
+      `${error.message}\nA messages:\n${aText}\nB messages:\n${bText}\nDiagnostics:\n${diagnostics.join('\n')}`,
+    );
   }
 
   const sender = await pageB.getByTestId('realtime-message-list').locator('.message-meta', { hasText: '张三' }).count();

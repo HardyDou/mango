@@ -48,7 +48,7 @@ const props = withDefaults(
     renderAfterExpand: true,
     defaultExpandAll: false,
     nodeKey: 'id',
-  }
+  },
 );
 
 const emit = defineEmits(['update:modelValue', 'change', 'node-click', 'check-change']);

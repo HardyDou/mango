@@ -8,16 +8,16 @@
 
 ## 2. 功能清单
 
-| 能力 | 用途 | 常用入口 |
-|------|------|----------|
-| 查看态布局 | 按保存后的布局渲染页面卡片 | `MangoGridLayout` |
-| 编辑态布局 | 拖拽、排序、调整宽高和删除卡片 | `MangoGridDesigner` |
-| 小组件库 | 搜索、分组、点击添加和拖拽添加小组件 | `MangoGridDesigner.widgets` |
-| 栅格算法 | 12 栅格碰撞整理、占位、移动和缩放计算 | `useGridEngine` |
-| 布局接口 | 查询、保存、恢复当前登录人的页面布局 | `gridLayoutPersonalApi` |
-| 数据转换 | 后端 JSON 与前端布局对象互转 | `parseGridLayoutValue`、`stringifyGridLayoutValue` |
-| 类型导出 | 业务页面定义小组件和布局数据 | `GridLayoutItem`、`GridWidgetDefinition`、`GridLayoutValue` |
-| 样式入口 | 独立消费组件样式 | `@mango/grid-layout/style.css` |
+| 能力       | 用途                                  | 常用入口                                                    |
+| ---------- | ------------------------------------- | ----------------------------------------------------------- |
+| 查看态布局 | 按保存后的布局渲染页面卡片            | `MangoGridLayout`                                           |
+| 编辑态布局 | 拖拽、排序、调整宽高和删除卡片        | `MangoGridDesigner`                                         |
+| 小组件库   | 搜索、分组、点击添加和拖拽添加小组件  | `MangoGridDesigner.widgets`                                 |
+| 栅格算法   | 12 栅格碰撞整理、占位、移动和缩放计算 | `useGridEngine`                                             |
+| 布局接口   | 查询、保存、恢复当前登录人的页面布局  | `gridLayoutPersonalApi`                                     |
+| 数据转换   | 后端 JSON 与前端布局对象互转          | `parseGridLayoutValue`、`stringifyGridLayoutValue`          |
+| 类型导出   | 业务页面定义小组件和布局数据          | `GridLayoutItem`、`GridWidgetDefinition`、`GridLayoutValue` |
+| 样式入口   | 独立消费组件样式                      | `@mango/grid-layout/style.css`                              |
 
 ## 3. 接入方式
 
@@ -40,16 +40,16 @@ import type { GridLayoutItem, GridWidgetDefinition } from '@mango/grid-layout';
 
 组件配置通过 props 传入，不读取宿主全局配置。
 
-| 配置入口 | 字段 / Key | 默认值 | 含义 | 影响行为 | 源码入口 |
-|----------|------------|--------|------|----------|----------|
-| `MangoGridLayout` | `items` | `[]` | 当前布局项 | 决定查看态渲染哪些卡片 | `src/components/MangoGridLayout.vue` |
-| `MangoGridLayout` | `widgets` | `[]` | 可用小组件定义 | 按 `widgetType` 匹配卡片内容 | `src/components/MangoGridLayout.vue` |
-| `MangoGridLayout` / `MangoGridDesigner` | `columns` | `12` | 栅格列数 | 决定横向布局边界 | `src/types.ts` |
-| `MangoGridLayout` / `MangoGridDesigner` | `rowHeight` | `15` | 单行高度，单位 px | 决定卡片高度换算 | `src/types.ts` |
-| `MangoGridLayout` / `MangoGridDesigner` | `gap` | `15` | 横向间距，单位 px | 决定卡片间距和编辑网格间距 | `src/types.ts` |
-| `MangoGridLayout` / `MangoGridDesigner` | `minRows` | `30` | 最少展示行数 | 保证空白区域可拖入卡片 | `src/types.ts` |
-| `MangoGridDesigner` | `defaultWidth` | `3` | 新增卡片默认宽度 | 从组件库添加时生成默认宽度 | `src/components/MangoGridDesigner.vue` |
-| `MangoGridDesigner` | `defaultHeight` | `10` | 新增卡片默认高度行数 | 从组件库添加时生成默认高度 | `src/components/MangoGridDesigner.vue` |
+| 配置入口                                | 字段 / Key      | 默认值 | 含义                 | 影响行为                     | 源码入口                               |
+| --------------------------------------- | --------------- | ------ | -------------------- | ---------------------------- | -------------------------------------- |
+| `MangoGridLayout`                       | `items`         | `[]`   | 当前布局项           | 决定查看态渲染哪些卡片       | `src/components/MangoGridLayout.vue`   |
+| `MangoGridLayout`                       | `widgets`       | `[]`   | 可用小组件定义       | 按 `widgetType` 匹配卡片内容 | `src/components/MangoGridLayout.vue`   |
+| `MangoGridLayout` / `MangoGridDesigner` | `columns`       | `12`   | 栅格列数             | 决定横向布局边界             | `src/types.ts`                         |
+| `MangoGridLayout` / `MangoGridDesigner` | `rowHeight`     | `15`   | 单行高度，单位 px    | 决定卡片高度换算             | `src/types.ts`                         |
+| `MangoGridLayout` / `MangoGridDesigner` | `gap`           | `15`   | 横向间距，单位 px    | 决定卡片间距和编辑网格间距   | `src/types.ts`                         |
+| `MangoGridLayout` / `MangoGridDesigner` | `minRows`       | `30`   | 最少展示行数         | 保证空白区域可拖入卡片       | `src/types.ts`                         |
+| `MangoGridDesigner`                     | `defaultWidth`  | `3`    | 新增卡片默认宽度     | 从组件库添加时生成默认宽度   | `src/components/MangoGridDesigner.vue` |
+| `MangoGridDesigner`                     | `defaultHeight` | `10`   | 新增卡片默认高度行数 | 从组件库添加时生成默认高度   | `src/components/MangoGridDesigner.vue` |
 
 卡片是否展示标题和是否有默认内边距由布局项字段覆盖，也可以由小组件定义提供默认值。具体业务数据、权限和按钮行为由宿主页面负责。查看态遇到已保存但当前 `widgets` 中不存在的组件时不渲染该布局项；编辑态保留失效组件占位并提示用户删除后保存布局。
 
@@ -59,50 +59,50 @@ import type { GridLayoutItem, GridWidgetDefinition } from '@mango/grid-layout';
 
 `MangoGridLayout` 用于查看态渲染，主要 props：
 
-| 属性 | 说明 | 默认值 |
-|------|------|--------|
-| `items` | 当前布局项 | `[]` |
-| `widgets` | 可用小组件定义 | `[]` |
-| `columns` | 栅格列数 | `12` |
-| `rowHeight` | 行高，单位 px | `15` |
-| `gap` | 卡片横向间距，单位 px | `15` |
-| `minRows` | 最少展示行数 | `30` |
+| 属性        | 说明                  | 默认值 |
+| ----------- | --------------------- | ------ |
+| `items`     | 当前布局项            | `[]`   |
+| `widgets`   | 可用小组件定义        | `[]`   |
+| `columns`   | 栅格列数              | `12`   |
+| `rowHeight` | 行高，单位 px         | `15`   |
+| `gap`       | 卡片横向间距，单位 px | `15`   |
+| `minRows`   | 最少展示行数          | `30`   |
 
 `MangoGridDesigner` 用于编辑态渲染，主要 props：
 
-| 属性 | 说明 | 默认值 |
-|------|------|--------|
-| `modelValue` | 当前编辑布局项，支持 `v-model` | `[]` |
-| `widgets` | 可用小组件定义 | `[]` |
-| `columns` | 栅格列数 | `12` |
-| `rowHeight` | 行高，单位 px | `15` |
-| `gap` | 卡片横向间距，单位 px | `15` |
-| `defaultWidth` | 新增卡片默认宽度 | `3` |
-| `defaultHeight` | 新增卡片默认高度行数 | `10` |
-| `minRows` | 编辑区域最少行数 | `30` |
+| 属性            | 说明                           | 默认值 |
+| --------------- | ------------------------------ | ------ |
+| `modelValue`    | 当前编辑布局项，支持 `v-model` | `[]`   |
+| `widgets`       | 可用小组件定义                 | `[]`   |
+| `columns`       | 栅格列数                       | `12`   |
+| `rowHeight`     | 行高，单位 px                  | `15`   |
+| `gap`           | 卡片横向间距，单位 px          | `15`   |
+| `defaultWidth`  | 新增卡片默认宽度               | `3`    |
+| `defaultHeight` | 新增卡片默认高度行数           | `10`   |
+| `minRows`       | 编辑区域最少行数               | `30`   |
 
 事件：
 
-| 事件 | 说明 |
-|------|------|
+| 事件                | 说明         |
+| ------------------- | ------------ |
 | `update:modelValue` | 布局草稿变化 |
-| `change` | 布局草稿变化 |
+| `change`            | 布局草稿变化 |
 
 插槽：
 
-| 插槽 | 说明 |
-|------|------|
+| 插槽     | 说明                                        |
+| -------- | ------------------------------------------- |
 | `widget` | 自定义小组件渲染，参数为 `{ item, widget }` |
 
 ### 布局接口
 
 本包封装当前登录人的布局接口：
 
-| 方法 | 说明 |
-|------|------|
-| `gridLayoutPersonalApi.getPersonal(pageCode)` | 查询当前登录人在指定页面的个人布局 |
+| 方法                                                           | 说明                               |
+| -------------------------------------------------------------- | ---------------------------------- |
+| `gridLayoutPersonalApi.getPersonal(pageCode)`                  | 查询当前登录人在指定页面的个人布局 |
 | `gridLayoutPersonalApi.savePersonal({ pageCode, layoutJson })` | 保存当前登录人在指定页面的个人布局 |
-| `gridLayoutPersonalApi.resetPersonal(pageCode)` | 删除个人布局，业务页面回到默认布局 |
+| `gridLayoutPersonalApi.resetPersonal(pageCode)`                | 删除个人布局，业务页面回到默认布局 |
 
 `pageCode` 由业务页面定义，例如后台首页使用 `admin-home-workbench`。
 
@@ -144,18 +144,8 @@ interface GridLayoutItem {
 
 ```vue
 <template>
-  <MangoGridDesigner
-    v-if="editing"
-    v-model="items"
-    :widgets="widgets"
-    :default-width="3"
-    :default-height="10"
-  />
-  <MangoGridLayout
-    v-else
-    :items="items"
-    :widgets="widgets"
-  />
+  <MangoGridDesigner v-if="editing" v-model="items" :widgets="widgets" :default-width="3" :default-height="10" />
+  <MangoGridLayout v-else :items="items" :widgets="widgets" />
 </template>
 
 <script setup lang="ts">
@@ -187,28 +177,28 @@ pnpm.cmd -F @mango/admin build
 
 `gridLayoutPersonalApi.getPersonal(pageCode)` 返回后端个人布局对象，常用字段如下：
 
-| 字段 | 说明 | 是否建议业务入库 |
-|------|------|------------------|
-| `id` | 个人布局记录 ID | 后端维护 |
-| `tenantId` | 当前租户 ID | 后端维护 |
-| `userId` | 当前用户 ID | 后端维护 |
-| `pageCode` | 页面编码 | 业务页面传入 |
-| `layoutJson` | 布局 JSON 字符串 | 后端保存 |
-| `createdAt` | 创建时间 | 后端维护 |
-| `updatedAt` | 更新时间 | 后端维护 |
+| 字段         | 说明             | 是否建议业务入库 |
+| ------------ | ---------------- | ---------------- |
+| `id`         | 个人布局记录 ID  | 后端维护         |
+| `tenantId`   | 当前租户 ID      | 后端维护         |
+| `userId`     | 当前用户 ID      | 后端维护         |
+| `pageCode`   | 页面编码         | 业务页面传入     |
+| `layoutJson` | 布局 JSON 字符串 | 后端保存         |
+| `createdAt`  | 创建时间         | 后端维护         |
+| `updatedAt`  | 更新时间         | 后端维护         |
 
 前端业务页面通常只需要读取 `layoutJson`，再通过 `parseGridLayoutValue` 转为 `GridLayoutValue`。
 
 ## 10. 问题排查
 
-| 问题 | 排查方向 |
-|------|----------|
-| 卡片内容不显示 | 检查 `items[].widgetType` 是否能在 `widgets` 中匹配到定义；查看态会隐藏失效组件 |
-| 编辑布局看到组件已失效 | 当前业务 UI 包未集成或已移除该组件，删除失效组件后保存布局 |
-| 编辑器组件库为空 | 检查业务页面是否传入 `widgets`，以及权限过滤后是否还有可用小组件 |
-| 保存后刷新仍是默认布局 | 检查 `pageCode` 是否稳定，保存接口是否成功，返回的 `layoutJson` 是否可解析 |
-| 样式缺失 | 检查业务入口是否引入 `@mango/grid-layout/style.css` |
-| 恢复默认后仍显示旧布局 | 检查 `resetPersonal` 成功后，业务页面是否清空个人布局并回到默认布局 |
+| 问题                   | 排查方向                                                                        |
+| ---------------------- | ------------------------------------------------------------------------------- |
+| 卡片内容不显示         | 检查 `items[].widgetType` 是否能在 `widgets` 中匹配到定义；查看态会隐藏失效组件 |
+| 编辑布局看到组件已失效 | 当前业务 UI 包未集成或已移除该组件，删除失效组件后保存布局                      |
+| 编辑器组件库为空       | 检查业务页面是否传入 `widgets`，以及权限过滤后是否还有可用小组件                |
+| 保存后刷新仍是默认布局 | 检查 `pageCode` 是否稳定，保存接口是否成功，返回的 `layoutJson` 是否可解析      |
+| 样式缺失               | 检查业务入口是否引入 `@mango/grid-layout/style.css`                             |
+| 恢复默认后仍显示旧布局 | 检查 `resetPersonal` 成功后，业务页面是否清空个人布局并回到默认布局             |
 
 ## 11. 相关文档
 

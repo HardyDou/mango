@@ -132,7 +132,7 @@ const testPng = Buffer.from(
 const runtimeImageUrl = (fileId: string) => `/runtime-cms-assets/ads/${fileId}.png`;
 
 test.beforeEach(async ({ page }) => {
-  await page.route('**/runtime-cms-assets/ads/*.png', async route => {
+  await page.route('**/runtime-cms-assets/ads/*.png', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'image/png',
@@ -140,11 +140,11 @@ test.beforeEach(async ({ page }) => {
     });
   });
 
-  await page.route('**/api/file/files/download**', async route => {
+  await page.route('**/api/file/files/download**', async (route) => {
     await route.fulfill({ status: 401, json: { code: 401, success: false, msg: '官网不得直接访问受保护下载接口' } });
   });
 
-  await page.route('**/api/cms-api/**', async route => {
+  await page.route('**/api/cms-api/**', async (route) => {
     const url = new URL(route.request().url());
     const path = url.pathname;
     expect(url.searchParams.get('domain')).toBe('127.0.0.1:5191');
@@ -177,20 +177,77 @@ test.beforeEach(async ({ page }) => {
         json: {
           code: 200,
           success: true,
-          data: navType === 'FOOTER'
-            ? [
-                { id: 'footer-github', navType: 'FOOTER', navName: 'GitHub', externalUrl: 'https://github.com/HardyDou/mango', openTarget: 'BLANK', sort: 1 },
-                { id: 'footer-issue', navType: 'FOOTER', navName: 'Issue 214', externalUrl: 'https://github.com/HardyDou/mango/issues/214', openTarget: 'BLANK', sort: 2 },
-                { id: 'footer-ui', navType: 'FOOTER', navName: 'Mango UI', externalUrl: 'https://github.com/HardyDou/mango/tree/main/mango-ui', openTarget: 'BLANK', sort: 3 },
-              ]
-            : [
-                { id: 'nav-home', navType: 'TOP', navName: '首页', jumpType: 'URL', externalUrl: '/', sort: 1 },
-                { id: 'nav-products', navType: 'TOP', navName: '产品能力', jumpType: 'URL', externalUrl: '#products', sort: 2 },
-                { id: 'nav-solutions', navType: 'TOP', navName: '解决方案', jumpType: 'CONTENT', contentId: 'content-solution-1', sort: 3 },
-                { id: 'nav-news', navType: 'TOP', navName: '新闻动态', jumpType: 'CATEGORY', categoryId: 'cat-news', sort: 4 },
-                { id: 'nav-company', navType: 'TOP', navName: '公司动态', jumpType: 'CATEGORY', categoryId: 'cat-company', sort: 5 },
-                { id: 'nav-about', navType: 'TOP', navName: '关于我们', jumpType: 'CONTENT', contentId: 'content-about-1', sort: 6 },
-              ],
+          data:
+            navType === 'FOOTER'
+              ? [
+                  {
+                    id: 'footer-github',
+                    navType: 'FOOTER',
+                    navName: 'GitHub',
+                    externalUrl: 'https://github.com/HardyDou/mango',
+                    openTarget: 'BLANK',
+                    sort: 1,
+                  },
+                  {
+                    id: 'footer-issue',
+                    navType: 'FOOTER',
+                    navName: 'Issue 214',
+                    externalUrl: 'https://github.com/HardyDou/mango/issues/214',
+                    openTarget: 'BLANK',
+                    sort: 2,
+                  },
+                  {
+                    id: 'footer-ui',
+                    navType: 'FOOTER',
+                    navName: 'Mango UI',
+                    externalUrl: 'https://github.com/HardyDou/mango/tree/main/mango-ui',
+                    openTarget: 'BLANK',
+                    sort: 3,
+                  },
+                ]
+              : [
+                  { id: 'nav-home', navType: 'TOP', navName: '首页', jumpType: 'URL', externalUrl: '/', sort: 1 },
+                  {
+                    id: 'nav-products',
+                    navType: 'TOP',
+                    navName: '产品能力',
+                    jumpType: 'URL',
+                    externalUrl: '#products',
+                    sort: 2,
+                  },
+                  {
+                    id: 'nav-solutions',
+                    navType: 'TOP',
+                    navName: '解决方案',
+                    jumpType: 'CONTENT',
+                    contentId: 'content-solution-1',
+                    sort: 3,
+                  },
+                  {
+                    id: 'nav-news',
+                    navType: 'TOP',
+                    navName: '新闻动态',
+                    jumpType: 'CATEGORY',
+                    categoryId: 'cat-news',
+                    sort: 4,
+                  },
+                  {
+                    id: 'nav-company',
+                    navType: 'TOP',
+                    navName: '公司动态',
+                    jumpType: 'CATEGORY',
+                    categoryId: 'cat-company',
+                    sort: 5,
+                  },
+                  {
+                    id: 'nav-about',
+                    navType: 'TOP',
+                    navName: '关于我们',
+                    jumpType: 'CONTENT',
+                    contentId: 'content-about-1',
+                    sort: 6,
+                  },
+                ],
         },
       });
       return;
@@ -229,28 +286,120 @@ test.beforeEach(async ({ page }) => {
           },
         ],
         SOLUTIONS_BANNER: [
-          { id: 'ad-solutions-banner', adCode: 'mango-tech-solutions-banner', adName: '解决方案页 Banner', position: 'SOLUTIONS_BANNER', materialType: 'SINGLE_IMAGE', imageFileId: '9602', imageUrl: runtimeImageUrl('9602'), title: '集团门户统一建设方案', textContent: '统一管理集团官网、子品牌站、专题站和帮助中心。', jumpUrl: 'https://github.com/HardyDou/mango/tree/main/mango-docs', openTarget: 'BLANK', sort: 1 },
+          {
+            id: 'ad-solutions-banner',
+            adCode: 'mango-tech-solutions-banner',
+            adName: '解决方案页 Banner',
+            position: 'SOLUTIONS_BANNER',
+            materialType: 'SINGLE_IMAGE',
+            imageFileId: '9602',
+            imageUrl: runtimeImageUrl('9602'),
+            title: '集团门户统一建设方案',
+            textContent: '统一管理集团官网、子品牌站、专题站和帮助中心。',
+            jumpUrl: 'https://github.com/HardyDou/mango/tree/main/mango-docs',
+            openTarget: 'BLANK',
+            sort: 1,
+          },
         ],
         SOLUTIONS_TEXT: [
-          { id: 'ad-solutions', adCode: 'mango-tech-solutions-text', adName: '解决方案页文本推荐', position: 'SOLUTIONS_TEXT', materialType: 'TEXT', title: '预约方案顾问', textContent: '围绕集团官网、专题站、帮助中心和内容运营建立可落地方案。', jumpUrl: '/solutions', sort: 1 },
+          {
+            id: 'ad-solutions',
+            adCode: 'mango-tech-solutions-text',
+            adName: '解决方案页文本推荐',
+            position: 'SOLUTIONS_TEXT',
+            materialType: 'TEXT',
+            title: '预约方案顾问',
+            textContent: '围绕集团官网、专题站、帮助中心和内容运营建立可落地方案。',
+            jumpUrl: '/solutions',
+            sort: 1,
+          },
         ],
         NEWS_BANNER: [
-          { id: 'ad-news-banner', adCode: 'mango-tech-news-banner', adName: '新闻动态页 Banner', position: 'NEWS_BANNER', materialType: 'SINGLE_IMAGE', imageFileId: '9603', imageUrl: runtimeImageUrl('9603'), title: '新闻动态', textContent: '持续发布芒果科技产品进展、项目实践和平台能力更新。', jumpUrl: 'https://github.com/HardyDou/mango/issues/214', openTarget: 'BLANK', sort: 1 },
+          {
+            id: 'ad-news-banner',
+            adCode: 'mango-tech-news-banner',
+            adName: '新闻动态页 Banner',
+            position: 'NEWS_BANNER',
+            materialType: 'SINGLE_IMAGE',
+            imageFileId: '9603',
+            imageUrl: runtimeImageUrl('9603'),
+            title: '新闻动态',
+            textContent: '持续发布芒果科技产品进展、项目实践和平台能力更新。',
+            jumpUrl: 'https://github.com/HardyDou/mango/issues/214',
+            openTarget: 'BLANK',
+            sort: 1,
+          },
         ],
         NEWS_TEXT: [
-          { id: 'ad-news', adCode: 'mango-tech-news-text', adName: '新闻动态页文本推荐', position: 'NEWS_TEXT', materialType: 'TEXT', title: '订阅产品动态', textContent: '第一时间了解 Mango CMS 与微前端后台的功能升级。', jumpUrl: '/news', sort: 1 },
+          {
+            id: 'ad-news',
+            adCode: 'mango-tech-news-text',
+            adName: '新闻动态页文本推荐',
+            position: 'NEWS_TEXT',
+            materialType: 'TEXT',
+            title: '订阅产品动态',
+            textContent: '第一时间了解 Mango CMS 与微前端后台的功能升级。',
+            jumpUrl: '/news',
+            sort: 1,
+          },
         ],
         COMPANY_NEWS_BANNER: [
-          { id: 'ad-company-banner', adCode: 'mango-tech-company-news-banner', adName: '公司动态页 Banner', position: 'COMPANY_NEWS_BANNER', materialType: 'SINGLE_IMAGE', imageFileId: '9604', imageUrl: runtimeImageUrl('9604'), title: '公司动态', textContent: '记录芒果科技组织发展、客户共创和品牌活动。', jumpUrl: 'https://github.com/HardyDou/mango/tree/main/mango-ui', openTarget: 'BLANK', sort: 1 },
+          {
+            id: 'ad-company-banner',
+            adCode: 'mango-tech-company-news-banner',
+            adName: '公司动态页 Banner',
+            position: 'COMPANY_NEWS_BANNER',
+            materialType: 'SINGLE_IMAGE',
+            imageFileId: '9604',
+            imageUrl: runtimeImageUrl('9604'),
+            title: '公司动态',
+            textContent: '记录芒果科技组织发展、客户共创和品牌活动。',
+            jumpUrl: 'https://github.com/HardyDou/mango/tree/main/mango-ui',
+            openTarget: 'BLANK',
+            sort: 1,
+          },
         ],
         COMPANY_NEWS_TEXT: [
-          { id: 'ad-company', adCode: 'mango-tech-company-news-text', adName: '公司动态页文本推荐', position: 'COMPANY_NEWS_TEXT', materialType: 'TEXT', title: '加入客户共创计划', textContent: '和芒果科技一起打磨更适合企业长期运营的官网与后台方案。', jumpUrl: '/company-news', sort: 1 },
+          {
+            id: 'ad-company',
+            adCode: 'mango-tech-company-news-text',
+            adName: '公司动态页文本推荐',
+            position: 'COMPANY_NEWS_TEXT',
+            materialType: 'TEXT',
+            title: '加入客户共创计划',
+            textContent: '和芒果科技一起打磨更适合企业长期运营的官网与后台方案。',
+            jumpUrl: '/company-news',
+            sort: 1,
+          },
         ],
         ABOUT_BANNER: [
-          { id: 'ad-about-banner', adCode: 'mango-tech-about-banner', adName: '关于我们页 Banner', position: 'ABOUT_BANNER', materialType: 'SINGLE_IMAGE', imageFileId: '9605', imageUrl: runtimeImageUrl('9605'), title: '关于芒果科技', textContent: '专注企业数字化平台与可运营官网建设。', jumpUrl: 'https://github.com/HardyDou/mango/tree/main/mango', openTarget: 'BLANK', sort: 1 },
+          {
+            id: 'ad-about-banner',
+            adCode: 'mango-tech-about-banner',
+            adName: '关于我们页 Banner',
+            position: 'ABOUT_BANNER',
+            materialType: 'SINGLE_IMAGE',
+            imageFileId: '9605',
+            imageUrl: runtimeImageUrl('9605'),
+            title: '关于芒果科技',
+            textContent: '专注企业数字化平台与可运营官网建设。',
+            jumpUrl: 'https://github.com/HardyDou/mango/tree/main/mango',
+            openTarget: 'BLANK',
+            sort: 1,
+          },
         ],
         ABOUT_TEXT: [
-          { id: 'ad-about', adCode: 'mango-tech-about-text', adName: '关于我们页文本推荐', position: 'ABOUT_TEXT', materialType: 'TEXT', title: '联系芒果科技', textContent: '工作日 09:00-18:00 提供产品演示、方案咨询和交付评估。', jumpUrl: '/about', sort: 1 },
+          {
+            id: 'ad-about',
+            adCode: 'mango-tech-about-text',
+            adName: '关于我们页文本推荐',
+            position: 'ABOUT_TEXT',
+            materialType: 'TEXT',
+            title: '联系芒果科技',
+            textContent: '工作日 09:00-18:00 提供产品演示、方案咨询和交付评估。',
+            jumpUrl: '/about',
+            sort: 1,
+          },
         ],
       };
       await route.fulfill({
@@ -340,7 +489,7 @@ test.beforeEach(async ({ page }) => {
       expect(url.searchParams.get('pageNum')).toBe('1');
       expect(url.searchParams.get('pageSize')).toBe('8');
       const categoryId = url.searchParams.get('categoryId');
-      const list = categoryId ? contents.filter(item => item.categoryId === categoryId) : contents.slice(0, 3);
+      const list = categoryId ? contents.filter((item) => item.categoryId === categoryId) : contents.slice(0, 3);
       await route.fulfill({
         json: {
           code: 200,
@@ -360,7 +509,7 @@ test.beforeEach(async ({ page }) => {
     if (path.endsWith('/contents/detail')) {
       const contentId = url.searchParams.get('contentId');
       expect(contentId).toBeTruthy();
-      const content = contents.find(item => item.id === contentId);
+      const content = contents.find((item) => item.id === contentId);
       await route.fulfill({
         status: content ? 200 : 404,
         json: content
@@ -396,7 +545,10 @@ test('loads all enterprise site sections from cms public APIs', async ({ page })
   await expect(page.getByText('广州市天河区软件园 18 号 / 400-800-2140')).toBeVisible();
   await expect(page.getByText('粤ICP备202600001号')).toBeVisible();
   await expect(page.getByRole('link', { name: 'GitHub' })).toHaveAttribute('target', '_blank');
-  await expect(page.getByRole('link', { name: 'Issue 214' })).toHaveAttribute('href', 'https://github.com/HardyDou/mango/issues/214');
+  await expect(page.getByRole('link', { name: 'Issue 214' })).toHaveAttribute(
+    'href',
+    'https://github.com/HardyDou/mango/issues/214',
+  );
 
   expectRequested(monitor.cmsApiRequests, [
     '/sites/resolve',
@@ -420,7 +572,10 @@ test('supports url category and content navigation types from cms navigation dat
 
   await page.getByLabel('主导航').getByRole('link', { name: '产品能力' }).click();
   await expect(page).toHaveURL('/#products');
-  await expect(page.getByLabel('主导航').getByRole('link', { name: '产品能力' })).toHaveAttribute('aria-current', 'page');
+  await expect(page.getByLabel('主导航').getByRole('link', { name: '产品能力' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
   await expect(page.locator('#products')).toBeVisible();
 
   await page.getByLabel('主导航').getByRole('link', { name: '解决方案' }).click();
@@ -457,13 +612,18 @@ test('supports url category and content navigation types from cms navigation dat
   expect(monitor.errors, `Browser errors:\n${monitor.errors.join('\n')}`).toEqual([]);
 });
 
-test('renders news list with article image text and video content types then opens independent detail page', async ({ page }) => {
+test('renders news list with article image text and video content types then opens independent detail page', async ({
+  page,
+}) => {
   const monitor = monitorBrowser(page);
 
   await page.goto('/news');
 
   await expect(page).toHaveURL('/news');
-  await expect(page.getByLabel('主导航').getByRole('link', { name: '新闻动态' })).toHaveAttribute('aria-current', 'page');
+  await expect(page.getByLabel('主导航').getByRole('link', { name: '新闻动态' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
   await expect(page.getByRole('heading', { name: '新闻动态' })).toBeVisible();
   await expect(page.locator('.page-banner-media img')).toHaveAttribute('src', runtimeImageUrl('9603'));
   await expect(page.locator('.detail-section')).toHaveCount(0);
@@ -504,7 +664,10 @@ test('renders company news list with page and attachment types and detail metada
   await page.goto('/company-news');
 
   await expect(page).toHaveURL('/company-news');
-  await expect(page.getByLabel('主导航').getByRole('link', { name: '公司动态' })).toHaveAttribute('aria-current', 'page');
+  await expect(page.getByLabel('主导航').getByRole('link', { name: '公司动态' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
   await expect(page.getByRole('heading', { name: '公司动态' })).toBeVisible();
   await expect(page.locator('.page-banner-media img')).toHaveAttribute('src', runtimeImageUrl('9604'));
   await expect(page.locator('.news-list .news-item')).toHaveCount(2);
@@ -519,7 +682,10 @@ test('renders company news list with page and attachment types and detail metada
   await expect(page.getByTestId('content-detail')).toContainText('公司动态');
   await expect(page.getByTestId('content-detail')).toContainText('品牌中心');
   await expect(page.getByTestId('content-detail')).toContainText('芒果科技');
-  await expect(page.getByTestId('content-detail').locator('.rich-text a', { hasText: '下载报告附件' })).toHaveAttribute('href', 'https://example.com/cms/esg-report.pdf');
+  await expect(page.getByTestId('content-detail').locator('.rich-text a', { hasText: '下载报告附件' })).toHaveAttribute(
+    'href',
+    'https://example.com/cms/esg-report.pdf',
+  );
 
   expectDetailRequest(monitor.cmsApiRequests, 'content-company-attachment-1');
   expectPositionRequest(monitor.cmsApiRequests, '/advertisements/list', 'COMPANY_NEWS_BANNER');
@@ -536,7 +702,10 @@ test('keeps rich text detail stable and sanitizes unsafe html', async ({ page })
   await page.goto('/news/content-article-1');
 
   await expect(page).toHaveURL('/news/content-article-1');
-  await expect(page.getByLabel('主导航').getByRole('link', { name: '新闻动态' })).toHaveAttribute('aria-current', 'page');
+  await expect(page.getByLabel('主导航').getByRole('link', { name: '新闻动态' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
   await expect(page.locator('.news-list')).toHaveCount(0);
 
   const detail = page.getByTestId('content-detail');
@@ -553,7 +722,7 @@ test('keeps rich text detail stable and sanitizes unsafe html', async ({ page })
   expect(await page.evaluate(() => window.__cms_xss)).toBeUndefined();
   await captureEvidence(page, 'enterprise-news-rich-text-detail.png');
 
-  const minHeight = await detail.evaluate(element => Number.parseFloat(window.getComputedStyle(element).minHeight));
+  const minHeight = await detail.evaluate((element) => Number.parseFloat(window.getComputedStyle(element).minHeight));
   expect(minHeight).toBeGreaterThanOrEqual(420);
   expectDetailRequest(monitor.cmsApiRequests, 'content-article-1');
   expectPositionRequest(monitor.cmsApiRequests, '/advertisements/list', 'NEWS_BANNER');
@@ -594,9 +763,15 @@ test('renders real cms news pagination covers and rich media detail', async ({ p
   await page.goto('/news');
 
   await expect(page.getByTestId('site-error')).toBeHidden();
-  await expect(page.getByLabel('主导航').getByRole('link', { name: '新闻动态' })).toHaveAttribute('aria-current', 'page');
+  await expect(page.getByLabel('主导航').getByRole('link', { name: '新闻动态' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
   await expect(page.getByRole('heading', { name: '新闻动态' })).toBeVisible();
-  await expect(page.locator('.page-banner-media img')).toHaveAttribute('src', /\/api\/cms-api\/files\/public-preview\?id=/);
+  await expect(page.locator('.page-banner-media img')).toHaveAttribute(
+    'src',
+    /\/api\/cms-api\/files\/public-preview\?id=/,
+  );
 
   const newsItems = page.locator('.news-list .news-item');
   await expect(newsItems).toHaveCount(8);
@@ -623,7 +798,10 @@ test('renders real cms news pagination covers and rich media detail', async ({ p
   await expect(detail.getByRole('heading', { name: firstNewsTitle })).toBeVisible();
   await expect(detail.locator('.article-cover')).toHaveAttribute('src', /\/api\/cms-api\/files\/public-preview\?id=/);
   await expect(detail.locator('.rich-text img')).toHaveAttribute('src', /\/api\/cms-api\/files\/public-preview\?id=/);
-  await expect(detail.locator('.rich-text video source')).toHaveAttribute('src', /\/api\/cms-api\/files\/public-preview\?id=/);
+  await expect(detail.locator('.rich-text video source')).toHaveAttribute(
+    'src',
+    /\/api\/cms-api\/files\/public-preview\?id=/,
+  );
   await expect(detail.locator('.rich-text a[href*="/api/cms-api/files/public-preview"]')).toBeVisible();
   await expect(detail.locator('.rich-text table')).toBeVisible();
   await expect(detail.locator('.rich-text li')).toHaveCount(3);
@@ -651,18 +829,18 @@ function monitorBrowser(page: Page) {
   const cmsApiRequests: string[] = [];
   const protectedFileRequests: string[] = [];
 
-  page.on('pageerror', error => errors.push(error.message));
-  page.on('console', message => {
+  page.on('pageerror', (error) => errors.push(error.message));
+  page.on('console', (message) => {
     if (message.type() === 'error') {
       errors.push(message.text());
     }
   });
-  page.on('request', request => {
+  page.on('request', (request) => {
     if (request.url().includes('/api/file/files/download')) {
       protectedFileRequests.push(request.url());
     }
   });
-  page.on('response', response => {
+  page.on('response', (response) => {
     if (response.url().includes('/cms-api/')) {
       cmsApiRequests.push(response.url());
       if (!response.ok()) {
@@ -675,28 +853,40 @@ function monitorBrowser(page: Page) {
 }
 
 function expectRequested(requests: string[], pathSuffixes: string[]) {
-  const requestedPaths = requests.map(item => new URL(item).pathname);
+  const requestedPaths = requests.map((item) => new URL(item).pathname);
   for (const suffix of pathSuffixes) {
-    expect(requestedPaths.some(path => path.endsWith(suffix)), `missing request ${suffix}`).toBeTruthy();
+    expect(
+      requestedPaths.some((path) => path.endsWith(suffix)),
+      `missing request ${suffix}`,
+    ).toBeTruthy();
   }
 }
 
 function expectDetailRequest(requests: string[], contentId: string) {
-  expect(requests.some(item => {
-    const url = new URL(item);
-    return url.pathname.endsWith('/contents/detail') && url.searchParams.get('contentId') === contentId;
-  }), `missing detail request for ${contentId}`).toBeTruthy();
+  expect(
+    requests.some((item) => {
+      const url = new URL(item);
+      return url.pathname.endsWith('/contents/detail') && url.searchParams.get('contentId') === contentId;
+    }),
+    `missing detail request for ${contentId}`,
+  ).toBeTruthy();
 }
 
 function expectPositionRequest(requests: string[], pathSuffix: string, position: string) {
-  expect(requests.some(item => {
-    const url = new URL(item);
-    return url.pathname.endsWith(pathSuffix) && url.searchParams.get('position') === position;
-  }), `missing ${pathSuffix} request for ${position}`).toBeTruthy();
+  expect(
+    requests.some((item) => {
+      const url = new URL(item);
+      return url.pathname.endsWith(pathSuffix) && url.searchParams.get('position') === position;
+    }),
+    `missing ${pathSuffix} request for ${position}`,
+  ).toBeTruthy();
 }
 
 function expectNoRequest(requests: string[], pathSuffix: string) {
-  expect(requests.some(item => new URL(item).pathname.endsWith(pathSuffix)), `unexpected request ${pathSuffix}`).toBeFalsy();
+  expect(
+    requests.some((item) => new URL(item).pathname.endsWith(pathSuffix)),
+    `unexpected request ${pathSuffix}`,
+  ).toBeFalsy();
 }
 
 function expectNoProtectedFileDownload(requests: string[]) {

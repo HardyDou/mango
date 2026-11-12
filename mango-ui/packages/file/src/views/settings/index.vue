@@ -449,7 +449,7 @@ onMounted(loadSettings);
 }
 
 .section-title {
-  margin: 0 0 18px 0;
+  margin: 0 0 18px;
   font-size: 15px;
   font-weight: 600;
   color: var(--el-text-color-primary);

@@ -10,24 +10,24 @@ import { DictTag } from '@mango/common';
 
 ## Props
 
-| 名称 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `dictType` | `'success' \| 'warning' \| 'info' \| 'danger' \| ''` | `''` | 指定标签颜色类型；为空时按字典值自动推断 |
-| `label` | `string` | `''` | 显式指定标签文本；传入后优先于字典翻译 |
-| `value` | `string \| number \| boolean \| null` | `undefined` | 字典值，用于查询字典文本和自动推断颜色 |
-| `dictCode` | `string` | `''` | 字典类型编码（`typeCode`），传入后自动加载该字典 |
-| `effect` | `'light' \| 'dark' \| 'plain'` | `'light'` | 标签主题，透传给 `el-tag` |
-| `size` | `'large' \| 'default' \| 'small'` | `'default'` | 标签尺寸 |
-| `hit` | `boolean` | `false` | 是否显示描边 |
-| `closable` | `boolean` | `false` | 是否显示关闭按钮 |
-| `disableTransitions` | `boolean` | `false` | 是否禁用动画 |
-| `type` | `string` | `''` | 标签颜色类型，优先级高于 `dictType` |
+| 名称                 | 类型                                                 | 默认值      | 说明                                             |
+| -------------------- | ---------------------------------------------------- | ----------- | ------------------------------------------------ |
+| `dictType`           | `'success' \| 'warning' \| 'info' \| 'danger' \| ''` | `''`        | 指定标签颜色类型；为空时按字典值自动推断         |
+| `label`              | `string`                                             | `''`        | 显式指定标签文本；传入后优先于字典翻译           |
+| `value`              | `string \| number \| boolean \| null`                | `undefined` | 字典值，用于查询字典文本和自动推断颜色           |
+| `dictCode`           | `string`                                             | `''`        | 字典类型编码（`typeCode`），传入后自动加载该字典 |
+| `effect`             | `'light' \| 'dark' \| 'plain'`                       | `'light'`   | 标签主题，透传给 `el-tag`                        |
+| `size`               | `'large' \| 'default' \| 'small'`                    | `'default'` | 标签尺寸                                         |
+| `hit`                | `boolean`                                            | `false`     | 是否显示描边                                     |
+| `closable`           | `boolean`                                            | `false`     | 是否显示关闭按钮                                 |
+| `disableTransitions` | `boolean`                                            | `false`     | 是否禁用动画                                     |
+| `type`               | `string`                                             | `''`        | 标签颜色类型，优先级高于 `dictType`              |
 
 ## Events
 
-| 名称 | 参数 | 说明 |
-|------|------|------|
-| `close` | - | 点击关闭按钮时触发（需配合 `closable` 使用） |
+| 名称    | 参数 | 说明                                         |
+| ------- | ---- | -------------------------------------------- |
+| `close` | -    | 点击关闭按钮时触发（需配合 `closable` 使用） |
 
 ## 使用示例
 
@@ -67,12 +67,7 @@ function handleClose() {
 </script>
 
 <template>
-  <DictTag
-    dict-code="sys_normal_disable"
-    :value="0"
-    closable
-    @close="handleClose"
-  />
+  <DictTag dict-code="sys_normal_disable" :value="0" closable @close="handleClose" />
 </template>
 ```
 

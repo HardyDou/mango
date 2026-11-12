@@ -133,7 +133,12 @@ describe('权限函数', () => {
         query: { keyword: 'demo' },
         selectedRows: [{ id: 1 }],
       };
-      expect(evaluateButtonDisplayRule('!pageState.locked && (query.keyword === "demo" || selectedRows.length > 0)', context)).toBe(true);
+      expect(
+        evaluateButtonDisplayRule(
+          '!pageState.locked && (query.keyword === "demo" || selectedRows.length > 0)',
+          context,
+        ),
+      ).toBe(true);
     });
 
     it('returns false when rule throws', () => {
@@ -166,11 +171,13 @@ describe('权限函数', () => {
 
     it('supports inline displayRule', () => {
       vi.mocked(Session.get).mockReturnValue({ permissions: ['test:edit'] });
-      expect(canShowButton({
-        code: 'test:edit',
-        displayRule: 'row.status == 1 && row.age == 18',
-        row: { status: 1, age: 18 },
-      })).toBe(true);
+      expect(
+        canShowButton({
+          code: 'test:edit',
+          displayRule: 'row.status == 1 && row.age == 18',
+          row: { status: 1, age: 18 },
+        }),
+      ).toBe(true);
     });
 
     it('matches displayRule from buttonRules by code', () => {
@@ -178,14 +185,18 @@ describe('权限函数', () => {
         permissions: ['test:submit'],
         buttonRules: [{ code: 'test:submit', displayRule: 'pageState.status === "draft"' }],
       });
-      expect(canShowButton({
-        code: 'test:submit',
-        pageState: { status: 'draft' },
-      })).toBe(true);
-      expect(canShowButton({
-        code: 'test:submit',
-        pageState: { status: 'done' },
-      })).toBe(false);
+      expect(
+        canShowButton({
+          code: 'test:submit',
+          pageState: { status: 'draft' },
+        }),
+      ).toBe(true);
+      expect(
+        canShowButton({
+          code: 'test:submit',
+          pageState: { status: 'done' },
+        }),
+      ).toBe(false);
     });
   });
 

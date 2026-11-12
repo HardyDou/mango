@@ -10,17 +10,17 @@ Use this package when a frontend needs to consume published CMS data without joi
 
 ## 2. 功能清单
 
-| Capability | Entry |
-|------------|-------|
-| Resolve a site by `siteCode` or domain | `cmsSiteApi.resolveSite()`, `createSiteResolveQuery()` |
-| Read site detail | `cmsSiteApi.detailSite()` |
-| Read public category tree | `cmsSiteApi.treeCategories()` |
-| Read public navigation | `cmsSiteApi.listNavigations()` |
-| Read public advertisements | `cmsSiteApi.listAdvertisements()` |
-| Read published content list | `cmsSiteApi.pageContents()` |
-| Read published content detail | `cmsSiteApi.detailContent()` |
-| Share site state in Vue | `createSiteShellState()`, `provideSiteShell()`, `useSiteShell()` |
-| Apply SEO metadata | `applySiteSeo()` |
+| Capability                             | Entry                                                            |
+| -------------------------------------- | ---------------------------------------------------------------- |
+| Resolve a site by `siteCode` or domain | `cmsSiteApi.resolveSite()`, `createSiteResolveQuery()`           |
+| Read site detail                       | `cmsSiteApi.detailSite()`                                        |
+| Read public category tree              | `cmsSiteApi.treeCategories()`                                    |
+| Read public navigation                 | `cmsSiteApi.listNavigations()`                                   |
+| Read public advertisements             | `cmsSiteApi.listAdvertisements()`                                |
+| Read published content list            | `cmsSiteApi.pageContents()`                                      |
+| Read published content detail          | `cmsSiteApi.detailContent()`                                     |
+| Share site state in Vue                | `createSiteShellState()`, `provideSiteShell()`, `useSiteShell()` |
+| Apply SEO metadata                     | `applySiteSeo()`                                                 |
 
 ## 3. 接入方式
 
@@ -59,13 +59,13 @@ const { site, loading, error } = useSiteShell();
 
 This package has no package-level configuration file.
 
-| Configuration | Default | Meaning |
-|---------------|---------|---------|
-| `createSiteShellState(defaultQuery)` | `{}` | Default query used by `resolve()` when no query is supplied. |
-| `createSiteResolveQuery(siteCode, domain)` | Browser host fallback | Builds a query using `siteCode` first, then `domain`, then `window.location.host`. |
-| Host request base URL | Host-defined | Determines where `/cms/open/**` API requests are sent. |
-| `ignoreToken` request option | `true` in package API helpers | Public site requests do not require an admin login token. |
-| `silentError` request option | `true` in package API helpers | Host pages decide how to present public site loading errors. |
+| Configuration                              | Default                       | Meaning                                                                            |
+| ------------------------------------------ | ----------------------------- | ---------------------------------------------------------------------------------- |
+| `createSiteShellState(defaultQuery)`       | `{}`                          | Default query used by `resolve()` when no query is supplied.                       |
+| `createSiteResolveQuery(siteCode, domain)` | Browser host fallback         | Builds a query using `siteCode` first, then `domain`, then `window.location.host`. |
+| Host request base URL                      | Host-defined                  | Determines where `/cms/open/**` API requests are sent.                             |
+| `ignoreToken` request option               | `true` in package API helpers | Public site requests do not require an admin login token.                          |
+| `silentError` request option               | `true` in package API helpers | Host pages decide how to present public site loading errors.                       |
 
 SEO values come from CMS site data. `applySiteSeo()` updates `document.title`, `meta[name="keywords"]`, and `meta[name="description"]` when running in a browser.
 
@@ -73,28 +73,28 @@ SEO values come from CMS site data. `applySiteSeo()` updates `document.title`, `
 
 Main API helper:
 
-| Method | Backend API | Purpose |
-|--------|-------------|---------|
-| `cmsSiteApi.resolveSite(params)` | `GET /cms/open/sites/resolve` | Resolve current site metadata. |
-| `cmsSiteApi.detailSite(params)` | `GET /cms/open/sites/detail` | Read detailed site configuration. |
-| `cmsSiteApi.treeCategories(params)` | `GET /cms/open/site-categories/tree` | Read visible category tree. |
-| `cmsSiteApi.listNavigations(params)` | `GET /cms/open/navigations/list` | Read navigation by `navType`. |
-| `cmsSiteApi.listAdvertisements(params)` | `GET /cms/open/advertisements/list` | Read advertisement deliveries by position. |
-| `cmsSiteApi.pageContents(params)` | `GET /cms/open/contents/page` | Read published content pages. Sends `page`/`size` and normalizes the response to both `page`/`size` and `pageNum`/`pageSize`. |
-| `cmsSiteApi.detailContent(params)` | `GET /cms/open/contents/detail` | Read one published content detail by `contentId`. |
+| Method                                  | Backend API                          | Purpose                                                                                                                       |
+| --------------------------------------- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| `cmsSiteApi.resolveSite(params)`        | `GET /cms/open/sites/resolve`        | Resolve current site metadata.                                                                                                |
+| `cmsSiteApi.detailSite(params)`         | `GET /cms/open/sites/detail`         | Read detailed site configuration.                                                                                             |
+| `cmsSiteApi.treeCategories(params)`     | `GET /cms/open/site-categories/tree` | Read visible category tree.                                                                                                   |
+| `cmsSiteApi.listNavigations(params)`    | `GET /cms/open/navigations/list`     | Read navigation by `navType`.                                                                                                 |
+| `cmsSiteApi.listAdvertisements(params)` | `GET /cms/open/advertisements/list`  | Read advertisement deliveries by position.                                                                                    |
+| `cmsSiteApi.pageContents(params)`       | `GET /cms/open/contents/page`        | Read published content pages. Sends `page`/`size` and normalizes the response to both `page`/`size` and `pageNum`/`pageSize`. |
+| `cmsSiteApi.detailContent(params)`      | `GET /cms/open/contents/detail`      | Read one published content detail by `contentId`.                                                                             |
 
 `pageContents()` also accepts legacy `pageNum`/`pageSize` callers and converts them to backend-standard `page`/`size` parameters. The backend `PageQuery` accepts both names, so direct HTTP callers no longer fall back to the default page size silently.
 
 State helpers:
 
-| Export | Purpose |
-|--------|---------|
-| `createSiteShellState(defaultQuery)` | Creates reactive site, loading, error, and resolve state. |
-| `provideSiteShell(state)` | Provides a `SiteShellState` to Vue descendants. |
-| `useSiteShell()` | Injects the provided site shell state. |
-| `normalizeSiteQuery(query)` | Adds browser host domain when neither `siteCode` nor `domain` is provided. |
-| `createSiteResolveQuery(siteCode, domain)` | Creates a normalized site resolve query. |
-| `applySiteSeo(site)` | Applies title, keywords, and description to the current document. |
+| Export                                     | Purpose                                                                    |
+| ------------------------------------------ | -------------------------------------------------------------------------- |
+| `createSiteShellState(defaultQuery)`       | Creates reactive site, loading, error, and resolve state.                  |
+| `provideSiteShell(state)`                  | Provides a `SiteShellState` to Vue descendants.                            |
+| `useSiteShell()`                           | Injects the provided site shell state.                                     |
+| `normalizeSiteQuery(query)`                | Adds browser host domain when neither `siteCode` nor `domain` is provided. |
+| `createSiteResolveQuery(siteCode, domain)` | Creates a normalized site resolve query.                                   |
+| `applySiteSeo(site)`                       | Applies title, keywords, and description to the current document.          |
 
 Shared TypeScript types include `ApiId`, `SiteResolveQuery`, `SiteResolve`, `CmsSite`, `SiteCategory`, `SiteNavigation`, `SiteAdvertisement`, `SiteContent`, `PageResult`, and `SiteShellState`.
 
@@ -102,12 +102,12 @@ Shared TypeScript types include `ApiId`, `SiteResolveQuery`, `SiteResolve`, `Cms
 
 This frontend package does not initialize database records, menus, permissions, or static site content.
 
-| Data | Source |
-|------|--------|
-| Site metadata, SEO, categories, navigation, advertisements, and content | Backend `mango-cms` public APIs under `/cms/open/**`. |
-| Public image and media preview URLs | Backend CMS and file capabilities derive them at runtime from file IDs and return them as `coverUrl`, `mediaUrl`, or equivalent URL fields. |
-| Initial site query | Host app route, domain, or explicit `siteCode`. |
-| Page layout and navigation rendering | Host site app. |
+| Data                                                                    | Source                                                                                                                                      |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Site metadata, SEO, categories, navigation, advertisements, and content | Backend `mango-cms` public APIs under `/cms/open/**`.                                                                                       |
+| Public image and media preview URLs                                     | Backend CMS and file capabilities derive them at runtime from file IDs and return them as `coverUrl`, `mediaUrl`, or equivalent URL fields. |
+| Initial site query                                                      | Host app route, domain, or explicit `siteCode`.                                                                                             |
+| Page layout and navigation rendering                                    | Host site app.                                                                                                                              |
 
 Public CMS APIs only return enabled, visible, published, and valid-time data according to backend `mango-cms` filtering. `SiteContent` includes `top` and `sort`; `SiteAdvertisement` returns directly usable `imageUrl`/`coverUrl` for hero and banner rendering.
 

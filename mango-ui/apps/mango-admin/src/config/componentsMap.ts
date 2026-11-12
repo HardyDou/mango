@@ -1,12 +1,5 @@
-import {
-  getPageLoader,
-  normalizeComponentPath,
-  registerDefaultAdminPages,
-} from '@mango/admin-pages';
-import {
-  configureMangoAdminShell,
-  ensureFeatureRegistrars,
-} from '@mango/admin-shell';
+import { getPageLoader, normalizeComponentPath, registerDefaultAdminPages } from '@mango/admin-pages';
+import { configureMangoAdminShell, ensureFeatureRegistrars } from '@mango/admin-shell';
 import { registerMangoAdminShellBaseDevPages } from '@mango/admin-shell/dev-base-pages';
 import { registerMangoAdminShellDevPages } from '@mango/admin-shell/dev-pages';
 import { mangoFullAdminFeatureRegistrars } from '@mango/admin/full';
@@ -29,19 +22,14 @@ const shellPageRegistry = {
   'home/templates/index': () => import('@mango/admin-shell/home-templates'),
   'home/list/index': () => import('@mango/admin-shell/home-list'),
   'home/user/index': () => import('@mango/admin-shell/home-user'),
-  ...(import.meta.env.DEV
-    ? { 'demo/components/DictView': () => import('@/views/components/dict/index.vue') }
-    : {}),
+  ...(import.meta.env.DEV ? { 'demo/components/DictView': () => import('@/views/components/dict/index.vue') } : {}),
 };
 
 configureMangoAdminShell({
   features: 'full',
   featureRegistrars: mangoFullAdminFeatureRegistrars,
   devCenter: import.meta.env.DEV ? { pages: () => devCenterPages } : undefined,
-  widgets: [
-    ...systemUserProfileWidgets,
-    ...systemQuickEntryWidgets,
-  ],
+  widgets: [...systemUserProfileWidgets, ...systemQuickEntryWidgets],
 });
 
 void ensureFeatureRegistrars().catch((error) => {
@@ -54,23 +42,28 @@ registerDefaultAdminPages({
     home: () => import('@/views/home/index.vue'),
     notFound: () => import('@/views/error/404.vue'),
   },
-  registries: [{
-    moduleCode: 'mango-shell',
-    pages: shellPageRegistry,
-  }],
+  registries: [
+    {
+      moduleCode: 'mango-shell',
+      pages: shellPageRegistry,
+    },
+  ],
 });
 if (import.meta.env.DEV) {
   registerMangoAdminShellBaseDevPages();
   registerMangoAdminShellDevPages();
 }
 
-export const componentsMap: Record<string, any> = new Proxy({}, {
-  get(_target, key: string) {
-    return getPageLoader(undefined, key);
+export const componentsMap: Record<string, any> = new Proxy(
+  {},
+  {
+    get(_target, key: string) {
+      return getPageLoader(undefined, key);
+    },
+    has(_target, key: string) {
+      return Boolean(getPageLoader(undefined, key));
+    },
   },
-  has(_target, key: string) {
-    return Boolean(getPageLoader(undefined, key));
-  },
-});
+);
 
 export { normalizeComponentPath };

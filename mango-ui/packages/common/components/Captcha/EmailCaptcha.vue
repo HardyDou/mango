@@ -1,21 +1,9 @@
 <template>
   <div class="captcha-form">
-    <el-input
-      v-model="email"
-      placeholder="请输入邮箱地址"
-      @blur="validateEmail"
-    />
+    <el-input v-model="email" placeholder="请输入邮箱地址" @blur="validateEmail" />
     <div class="row">
-      <el-input
-        v-model="code"
-        placeholder="请输入邮件验证码"
-        @keyup.enter="handleVerify"
-      />
-      <el-button
-        type="primary"
-        :disabled="countdown > 0 || !emailValid"
-        @click="handleSend"
-      >
+      <el-input v-model="code" placeholder="请输入邮件验证码" @keyup.enter="handleVerify" />
+      <el-button type="primary" :disabled="countdown > 0 || !emailValid" @click="handleSend">
         {{ countdown > 0 ? `${countdown}s` : '发送验证码' }}
       </el-button>
     </div>

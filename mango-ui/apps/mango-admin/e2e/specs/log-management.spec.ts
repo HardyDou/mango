@@ -140,13 +140,11 @@ test.describe('T14 审计日志真实写入与查询闭环', () => {
     expect(Number(statBody.data.successCount)).toBeGreaterThan(0);
 
     await loginPage(page, platformTenant);
-    const listResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/system/log/login/list') &&
-      response.status() === 200
+    const listResponsePromise = page.waitForResponse(
+      (response) => response.url().includes('/api/system/log/login/list') && response.status() === 200,
     );
-    const statResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/system/log/login/statistics') &&
-      response.status() === 200
+    const statResponsePromise = page.waitForResponse(
+      (response) => response.url().includes('/api/system/log/login/statistics') && response.status() === 200,
     );
     await page.goto('/#/system/login-log');
     const pageListResponse = await listResponsePromise;
@@ -190,19 +188,19 @@ test.describe('T14 审计日志真实写入与查询闭环', () => {
       expect(deleteLog.location).toBeTruthy();
 
       await loginPage(page, platformTenant);
-      const listResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/system/log/operation/list') &&
-        response.status() === 200
+      const listResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/system/log/operation/list') && response.status() === 200,
       );
       await page.goto('/#/system/operation-log');
       await listResponsePromise;
       await expect(page.getByText('操作日志').first()).toBeVisible({ timeout: 10000 });
 
       await page.getByLabel('关键词').fill('系统配置');
-      const searchResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/system/log/operation/list') &&
-        response.url().includes('%E7%B3%BB%E7%BB%9F%E9%85%8D%E7%BD%AE') &&
-        response.status() === 200
+      const searchResponsePromise = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/system/log/operation/list') &&
+          response.url().includes('%E7%B3%BB%E7%BB%9F%E9%85%8D%E7%BD%AE') &&
+          response.status() === 200,
       );
       await page.getByRole('button', { name: '查询' }).click();
       const searchResponse = await searchResponsePromise;
@@ -222,11 +220,7 @@ test.describe('T14 审计日志真实写入与查询闭环', () => {
     const platformToken = await loginToken(request, platformTenant);
     const companyToken = await loginToken(request, companyATenant);
 
-    const { body: platformLoginBody } = await getJson(
-      request,
-      platformToken,
-      '/system/log/login/list?page=1&size=20',
-    );
+    const { body: platformLoginBody } = await getJson(request, platformToken, '/system/log/login/list?page=1&size=20');
     expect(platformLoginBody.data.list.some((item: any) => item.tenantId === '1')).toBeTruthy();
 
     const { response: companyLoginResponse, body: companyLoginBody } = await getJson(

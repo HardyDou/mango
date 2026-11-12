@@ -9,15 +9,19 @@ interface ColumnChildren {
 }
 
 type Events = {
-  'updataDate': void;
-  'collapses': boolean;
-  'mobile': boolean;
-  'layoutMobile': boolean;
-  'layoutMobileResize': { isMobile: boolean; windowWidth: number; layout?: 'defaults' | 'classic' | 'transverse' | 'columns' };
-  'setIsThreeMenu': boolean;
-  'openGlobalCollapse': boolean;
-  'setSendColumnsChildren': ColumnChildren;
-  'restoreDefault': void;
+  updataDate: void;
+  collapses: boolean;
+  mobile: boolean;
+  layoutMobile: boolean;
+  layoutMobileResize: {
+    isMobile: boolean;
+    windowWidth: number;
+    layout?: 'defaults' | 'classic' | 'transverse' | 'columns';
+  };
+  setIsThreeMenu: boolean;
+  openGlobalCollapse: boolean;
+  setSendColumnsChildren: ColumnChildren;
+  restoreDefault: void;
 };
 
 export const mittBus: Emitter<Events> = mitt<Events>();

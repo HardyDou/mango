@@ -71,31 +71,34 @@ import type { WorkflowTaskRecord } from '../../api/workflow';
 
 defineOptions({ name: 'WorkflowSidebar' });
 
-withDefaults(defineProps<{
-  summary?: WorkflowInstanceSummaryData;
-  node?: WorkflowDefinitionGraphProps['node'];
-  currentNodeKey?: string;
-  visitedNodeKeys?: string[];
-  status?: string;
-  records?: WorkflowTaskRecord[];
-  businessType?: string;
-  businessKey?: string;
-  mode?: WorkflowSidebarRecordMode;
-  showGraphButton?: boolean;
-  showHistoryButton?: boolean;
-}>(), {
-  summary: () => ({}),
-  node: null,
-  currentNodeKey: '',
-  visitedNodeKeys: () => [],
-  status: '',
-  records: () => [],
-  businessType: '',
-  businessKey: '',
-  mode: 'PROGRESS',
-  showGraphButton: true,
-  showHistoryButton: true,
-});
+withDefaults(
+  defineProps<{
+    summary?: WorkflowInstanceSummaryData;
+    node?: WorkflowDefinitionGraphProps['node'];
+    currentNodeKey?: string;
+    visitedNodeKeys?: string[];
+    status?: string;
+    records?: WorkflowTaskRecord[];
+    businessType?: string;
+    businessKey?: string;
+    mode?: WorkflowSidebarRecordMode;
+    showGraphButton?: boolean;
+    showHistoryButton?: boolean;
+  }>(),
+  {
+    summary: () => ({}),
+    node: null,
+    currentNodeKey: '',
+    visitedNodeKeys: () => [],
+    status: '',
+    records: () => [],
+    businessType: '',
+    businessKey: '',
+    mode: 'PROGRESS',
+    showGraphButton: true,
+    showHistoryButton: true,
+  },
+);
 
 const graphVisible = ref(false);
 const historyVisible = ref(false);

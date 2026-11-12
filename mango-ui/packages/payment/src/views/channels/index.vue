@@ -4,7 +4,14 @@
     description="维护芒果支付、通联支付、华夏银行等通道产品定义、适配器、签约字段模板和通道能力摘要。"
     :columns="columns"
     :api="paymentChannelApi"
-    :defaults="{ status: 1, channelCode: 'MANGO_PAY', channelName: '芒果支付', channelType: 'BUILTIN_VIRTUAL', adapterType: 'MANGO_PAY', billFetchModes: ['MANUAL'] }"
+    :defaults="{
+      status: 1,
+      channelCode: 'MANGO_PAY',
+      channelName: '芒果支付',
+      channelType: 'BUILTIN_VIRTUAL',
+      adapterType: 'MANGO_PAY',
+      billFetchModes: ['MANUAL'],
+    }"
     :rules="rules"
     editor-width="1180px"
     :to-save-payload="toSavePayload"
@@ -36,11 +43,7 @@
         </el-select>
       </el-form-item>
       <el-form-item label="适配器类型" prop="adapterType">
-        <el-input
-          v-model="form.adapterType"
-          clearable
-          placeholder="例如 MANGO_PAY、OFFLINE_COLLECTION、ALLINPAY"
-        />
+        <el-input v-model="form.adapterType" clearable placeholder="例如 MANGO_PAY、OFFLINE_COLLECTION、ALLINPAY" />
       </el-form-item>
       <el-form-item label="基础网关">
         <el-input v-model="form.gatewayBaseUrl" />
@@ -49,7 +52,12 @@
         <PaymentChannelFieldTemplateEditor v-model="form.fieldTemplateJson" />
       </el-form-item>
       <el-form-item label="能力摘要">
-        <el-input v-model="form.capabilitySummary" type="textarea" :rows="3" placeholder="例如：微信扫码、支付宝 H5、退款、查单、账单、对账" />
+        <el-input
+          v-model="form.capabilitySummary"
+          type="textarea"
+          :rows="3"
+          placeholder="例如：微信扫码、支付宝 H5、退款、查单、账单、对账"
+        />
       </el-form-item>
       <el-form-item label="账单获取">
         <el-checkbox-group v-model="form.billFetchModes">
@@ -77,15 +85,41 @@ import type { FormRules } from 'element-plus';
 import PaymentResourcePage from '../../components/PaymentResourcePage.vue';
 import PaymentChannelFieldTemplateEditor from '../../components/PaymentChannelFieldTemplateEditor.vue';
 import PaymentChannelCapabilityEditor from '../../components/PaymentChannelCapabilityEditor.vue';
-import { paymentChannelApi, type PaymentChannel, type PaymentChannelCapability, type PaymentRecord, type PaymentTableColumn } from '../../api/payment';
+import {
+  paymentChannelApi,
+  type PaymentChannel,
+  type PaymentChannelCapability,
+  type PaymentRecord,
+  type PaymentTableColumn,
+} from '../../api/payment';
 
 const columns: PaymentTableColumn[] = [
   { prop: 'channelCode', label: '通道编码', minWidth: 140 },
   { prop: 'channelName', label: '通道名称', minWidth: 170 },
-  { prop: 'channelType', label: '通道类型', width: 140, formatter: (_row, value) => channelTypeText(String(value || '')) },
-  { prop: 'adapterType', label: '适配器', minWidth: 160, formatter: (_row, value) => adapterTypeText(String(value || '')) },
-  { prop: 'billFetchModes', label: '账单获取', minWidth: 180, formatter: row => formatBillFetchModes(row.billFetchModes) },
-  { prop: 'capabilities', label: '通道能力', minWidth: 260, formatter: row => formatCapabilities(row.capabilities, row.capabilitySummary) },
+  {
+    prop: 'channelType',
+    label: '通道类型',
+    width: 140,
+    formatter: (_row, value) => channelTypeText(String(value || '')),
+  },
+  {
+    prop: 'adapterType',
+    label: '适配器',
+    minWidth: 160,
+    formatter: (_row, value) => adapterTypeText(String(value || '')),
+  },
+  {
+    prop: 'billFetchModes',
+    label: '账单获取',
+    minWidth: 180,
+    formatter: (row) => formatBillFetchModes(row.billFetchModes),
+  },
+  {
+    prop: 'capabilities',
+    label: '通道能力',
+    minWidth: 260,
+    formatter: (row) => formatCapabilities(row.capabilities, row.capabilitySummary),
+  },
 ];
 
 const rules: FormRules = {
@@ -129,7 +163,7 @@ function toBillFetchModes(value: unknown): string[] {
 
 function toCapabilities(value: unknown): PaymentChannelCapability[] {
   if (!Array.isArray(value)) return [];
-  return value.map(item => ({
+  return value.map((item) => ({
     id: item.id,
     methodCode: item.methodCode,
     terminalType: item.terminalType,
@@ -163,11 +197,9 @@ function fetchModeText(value: string) {
 }
 
 function formatCapabilities(value: unknown, fallback?: unknown) {
-  const rows = Array.isArray(value) ? value as PaymentChannelCapability[] : [];
+  const rows = Array.isArray(value) ? (value as PaymentChannelCapability[]) : [];
   if (!rows.length) return String(fallback || '-');
-  return rows
-    .map(item => `${item.methodName || item.methodCode}/${terminalText(item.terminalType)}`)
-    .join('、');
+  return rows.map((item) => `${item.methodName || item.methodCode}/${terminalText(item.terminalType)}`).join('、');
 }
 
 function terminalText(value?: string) {

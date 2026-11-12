@@ -31,9 +31,8 @@ export function getAreaTree(params?: AreaTreeParams): Promise<AreaNode[]> {
     return Promise.resolve(getMockAreaTree(params));
   }
   const url = params?.parentId && params.parentId > 0 ? '/system/area/children' : '/system/area/tree';
-  const requestParams = params?.parentId && params.parentId > 0
-    ? { parentId: params.parentId }
-    : { type: params?.type };
+  const requestParams =
+    params?.parentId && params.parentId > 0 ? { parentId: params.parentId } : { type: params?.type };
   return get(url, { params: requestParams }).then((res: any) => {
     // 转换API响应格式
     if (res && Array.isArray(res)) {
@@ -52,7 +51,7 @@ function transformAreaTree(data: any[]): AreaNode[] {
   return data.map((item) => ({
     id: item.id,
     name: item.name,
-    parentId: item.pid !== undefined ? item.pid : (item.parentId || 0),
+    parentId: item.pid !== undefined ? item.pid : item.parentId || 0,
     level: item.level !== undefined ? Number(item.level) : Number(item.areaType),
     hot: item.hot,
     children: item.children && item.children.length > 0 ? transformAreaTree(item.children) : undefined,

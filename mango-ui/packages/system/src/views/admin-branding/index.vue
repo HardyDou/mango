@@ -265,7 +265,7 @@ async function handleSave() {
   padding-top: 22px;
 }
 
-@media (max-width: 960px) {
+@media (width <= 960px) {
   .admin-branding-page :deep(.el-col) {
     max-width: 100%;
     flex: 0 0 100%;

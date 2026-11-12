@@ -43,8 +43,9 @@ export async function listDictOptions(typeCode: string, force = false): Promise<
   if (!force && optionLoadingCache.has(typeCode)) {
     return optionLoadingCache.get(typeCode)!;
   }
-  const request = get<any[]>('/system/dict/data/options', { params: { typeCode } })
-    .then((list) => (list || []).map(fromBackendOption));
+  const request = get<any[]>('/system/dict/data/options', { params: { typeCode } }).then((list) =>
+    (list || []).map(fromBackendOption),
+  );
   optionLoadingCache.set(typeCode, request);
   try {
     const data = await request;
@@ -77,8 +78,9 @@ export async function listDictTree(typeCode: string, force = false): Promise<Dic
   if (!force && treeLoadingCache.has(typeCode)) {
     return treeLoadingCache.get(typeCode)!;
   }
-  const request = get<BackendDictTreeOption[]>('/system/dict/data/tree', { params: { typeCode } })
-    .then((list) => (list || []).map(fromBackendTreeOption));
+  const request = get<BackendDictTreeOption[]>('/system/dict/data/tree', { params: { typeCode } }).then((list) =>
+    (list || []).map(fromBackendTreeOption),
+  );
   treeLoadingCache.set(typeCode, request);
   try {
     const data = await request;

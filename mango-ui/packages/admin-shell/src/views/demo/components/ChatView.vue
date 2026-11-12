@@ -238,7 +238,7 @@ function handleChatError(err: Error) {
 </script>
 
 <style scoped lang="scss">
-@use './demo-page.scss';
+@use './demo-page';
 
 .chat-preview {
   display: flex;

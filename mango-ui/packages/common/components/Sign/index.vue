@@ -1,9 +1,6 @@
 <template>
   <div class="sign-container">
-    <div
-      class="sign-canvas-wrapper"
-      :class="{ 'is-disabled': disabled, 'is-empty': isEmpty }"
-    >
+    <div class="sign-canvas-wrapper" :class="{ 'is-disabled': disabled, 'is-empty': isEmpty }">
       <canvas
         ref="canvasRef"
         :width="width"
@@ -16,16 +13,10 @@
         @touchmove.prevent="handleTouchMove"
         @touchend="handleEnd"
       />
-      <div
-        v-if="isEmpty && !disabled"
-        class="sign-placeholder"
-      >
+      <div v-if="isEmpty && !disabled" class="sign-placeholder">
         {{ placeholder }}
       </div>
-      <div
-        v-if="isEmpty && disabled"
-        class="sign-placeholder"
-      >
+      <div v-if="isEmpty && disabled" class="sign-placeholder">
         {{ placeholder }}
       </div>
     </div>
@@ -43,20 +34,13 @@
         />
       </div>
       <div class="sign-actions">
-        <el-button
-          size="small"
-          :disabled="isEmpty || disabled"
-          @click="handleClear"
-        >
+        <el-button size="small" :disabled="isEmpty || disabled" @click="handleClear">
           {{ t('sign.clear') }}
         </el-button>
       </div>
     </div>
 
-    <div
-      v-if="hasError"
-      class="sign-error"
-    >
+    <div v-if="hasError" class="sign-error">
       <el-icon class="el-icon--left">
         <WarnTriangleFilled />
       </el-icon>
@@ -71,18 +55,15 @@ import { useI18n } from 'vue-i18n';
 import { WarnTriangleFilled } from '@element-plus/icons-vue';
 import type { SignProps, SignEmits, SignExpose } from './types';
 
-const props = withDefaults(
-  defineProps<SignProps>(),
-  {
-    modelValue: '',
-    width: 400,
-    height: 200,
-    strokeColor: '#000000',
-    lineWidth: 2,
-    disabled: false,
-    placeholder: 'sign.placeholder',
-  }
-);
+const props = withDefaults(defineProps<SignProps>(), {
+  modelValue: '',
+  width: 400,
+  height: 200,
+  strokeColor: '#000000',
+  lineWidth: 2,
+  disabled: false,
+  placeholder: 'sign.placeholder',
+});
 
 const emit = defineEmits<SignEmits>();
 
@@ -262,7 +243,7 @@ watch(
       };
       img.src = newValue;
     }
-  }
+  },
 );
 
 // Watch for disabled state changes
@@ -272,7 +253,7 @@ watch(
     if (disabled && ctx) {
       isDrawing = false;
     }
-  }
+  },
 );
 
 onMounted(() => {
@@ -363,7 +344,7 @@ defineExpose<SignExpose>({
 
   &.is-active {
     border-color: #409eff;
-    box-shadow: 0 0 4px rgba(64, 158, 255, 0.5);
+    box-shadow: 0 0 4px rgb(64 158 255 / 50%);
   }
 }
 

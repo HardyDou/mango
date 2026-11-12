@@ -4,8 +4,8 @@ async function login(page: Page) {
   await page.goto('/#/login');
   await page.fill('input[placeholder="用户名"]', 'admin');
   await page.fill('input[placeholder="密码"]', 'admin123');
-  const accountTenantsResponsePromise = page.waitForResponse((response) =>
-    response.url().includes('/api/auth/login-institutions') && response.status() === 200
+  const accountTenantsResponsePromise = page.waitForResponse(
+    (response) => response.url().includes('/api/auth/login-institutions') && response.status() === 200,
   );
   await page.locator('input[placeholder="密码"]').blur();
   await accountTenantsResponsePromise;
@@ -18,12 +18,7 @@ async function login(page: Page) {
 async function clickMenu(page: Page, name: string) {
   const menu = page
     .locator(
-      [
-        '.layout-top-system-item',
-        '.layout-columns-aside li',
-        '.el-sub-menu__title',
-        '.el-menu-item',
-      ].join(', '),
+      ['.layout-top-system-item', '.layout-columns-aside li', '.el-sub-menu__title', '.el-menu-item'].join(', '),
       { hasText: name },
     )
     .first();

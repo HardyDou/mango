@@ -107,7 +107,8 @@ export const captchaHandlers = [
       data: {
         key: `arith-${Date.now()}`,
         type: 'ARITHMETIC',
-        image: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iNDAiPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudD0iYmFzZWxpbmUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyNCIgZmlsbD0iIzY2NiI+MTwv dGV4dD48L3N2Zz4=',
+        image:
+          'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iNDAiPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudD0iYmFzZWxpbmUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyNCIgZmlsbD0iIzY2NiI+MTwv dGV4dD48L3N2Zz4=',
         expireTime: 120,
         extra: '10', // 算术题答案
       },
@@ -166,7 +167,7 @@ export const captchaHandlers = [
 
   // 校验无感行为验证
   http.post('/api/captcha/behavior/verify', async ({ request }) => {
-    const body = await request.json() as { key: string; pointJson?: string };
+    const body = (await request.json()) as { key: string; pointJson?: string };
     const payload = body.pointJson ? JSON.parse(body.pointJson) : {};
     const trackSize = payload.behavior?.mouseTrack?.length ?? 0;
     const score = trackSize > 8 ? 0.86 : 0.38;
@@ -208,7 +209,7 @@ export const captchaHandlers = [
 
   // 校验验证码
   http.post('/api/captcha/verify', async ({ request }) => {
-    const body = await request.json() as { key: string; type: string; code?: string; pointJson?: string };
+    const body = (await request.json()) as { key: string; type: string; code?: string; pointJson?: string };
     // Mock: 算术验证码答案 "10" 正确
     if (body.type === 'ARITHMETIC' && body.code === '10') {
       return HttpResponse.json({
@@ -219,10 +220,12 @@ export const captchaHandlers = [
       });
     }
     if (body.type === 'CLICK_WORD') {
-      const points = body.pointJson ? JSON.parse(body.pointJson).points as Array<{ x: number; y: number }> : [];
-      const passed = points.length === clickWordPoints.length && points.every((point, index) => (
-        Math.hypot(point.x - clickWordPoints[index].x, point.y - clickWordPoints[index].y) <= 28
-      ));
+      const points = body.pointJson ? (JSON.parse(body.pointJson).points as Array<{ x: number; y: number }>) : [];
+      const passed =
+        points.length === clickWordPoints.length &&
+        points.every(
+          (point, index) => Math.hypot(point.x - clickWordPoints[index].x, point.y - clickWordPoints[index].y) <= 28,
+        );
       return HttpResponse.json({
         code: passed ? 200 : 400,
         success: passed,

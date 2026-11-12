@@ -11,7 +11,7 @@ export const CHANNEL_FIELD_COMPONENTS = [
   { label: 'JSON 配置', value: 'json' },
 ] as const;
 
-export type ChannelFieldComponent = typeof CHANNEL_FIELD_COMPONENTS[number]['value'];
+export type ChannelFieldComponent = (typeof CHANNEL_FIELD_COMPONENTS)[number]['value'];
 export type ChannelFieldDataType = 'string' | 'number' | 'boolean' | 'url' | 'datetime' | 'json' | 'fileId';
 
 export interface ChannelFieldOption {
@@ -48,9 +48,7 @@ export function parseChannelFieldTemplate(value?: string): ChannelFieldDefinitio
     if (!Array.isArray(parsed)) {
       return [];
     }
-    return parsed
-      .map(toFieldDefinition)
-      .filter((item): item is ChannelFieldDefinition => Boolean(item));
+    return parsed.map(toFieldDefinition).filter((item): item is ChannelFieldDefinition => Boolean(item));
   } catch {
     return [];
   }
@@ -58,7 +56,7 @@ export function parseChannelFieldTemplate(value?: string): ChannelFieldDefinitio
 
 export function stringifyChannelFieldTemplate(fields: ChannelFieldDefinition[]): string | undefined {
   const normalized = fields
-    .map(field => ({
+    .map((field) => ({
       name: trimToUndefined(field.name),
       label: trimToUndefined(field.label),
       component: normalizeComponent(field.component),
@@ -75,7 +73,7 @@ export function stringifyChannelFieldTemplate(fields: ChannelFieldDefinition[]):
       placeholder: trimToUndefined(field.placeholder),
       description: trimToUndefined(field.description),
     }))
-    .filter(field => field.name && field.label);
+    .filter((field) => field.name && field.label);
   return normalized.length > 0 ? JSON.stringify(normalized) : undefined;
 }
 
@@ -138,7 +136,7 @@ function toFieldDefinition(value: unknown): ChannelFieldDefinition | undefined {
 
 function normalizeComponent(value: unknown): ChannelFieldComponent {
   const text = String(value || '').trim();
-  return CHANNEL_FIELD_COMPONENTS.some(item => item.value === text) ? text as ChannelFieldComponent : 'input';
+  return CHANNEL_FIELD_COMPONENTS.some((item) => item.value === text) ? (text as ChannelFieldComponent) : 'input';
 }
 
 function normalizeDataType(value: unknown, component?: unknown): ChannelFieldDataType {

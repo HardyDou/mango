@@ -53,12 +53,12 @@ export interface SystemEventQuery {
 
 export const systemEventApi = {
   page: (params?: SystemEventQuery) =>
-    get<BackendPageResult<SystemEvent>>('/system/events', { params: normalizeParams(params) })
-      .then(data => fromBackendPageResult(data, params)),
+    get<BackendPageResult<SystemEvent>>('/system/events', { params: normalizeParams(params) }).then((data) =>
+      fromBackendPageResult(data, params),
+    ),
   detail: (messageId: string) =>
     get<SystemEvent>('/system/events/detail', { params: { messageId } }).then(normalizeEvent),
-  reconsume: (messageId: string) =>
-    post<boolean>('/system/events/reconsume', { messageId }),
+  reconsume: (messageId: string) => post<boolean>('/system/events/reconsume', { messageId }),
 };
 
 export const systemEventStatusOptions = [
@@ -69,11 +69,14 @@ export const systemEventStatusOptions = [
 ] as const;
 
 export function systemEventStatusLabel(value?: SystemEventStatus | string) {
-  return systemEventStatusOptions.find(item => item.value === value)?.label || value || '-';
+  return systemEventStatusOptions.find((item) => item.value === value)?.label || value || '-';
 }
 
-export function systemEventStatusTagType(value?: SystemEventStatus | string): '' | 'success' | 'info' | 'warning' | 'danger' {
-  return (systemEventStatusOptions.find(item => item.value === value)?.type || 'info') as '' | 'success' | 'info' | 'warning' | 'danger';
+export function systemEventStatusTagType(
+  value?: SystemEventStatus | string,
+): '' | 'success' | 'info' | 'warning' | 'danger' {
+  return (systemEventStatusOptions.find((item) => item.value === value)?.type || 'info') as
+    '' | 'success' | 'info' | 'warning' | 'danger';
 }
 
 export function requestErrorMessage(error: unknown, fallback: string) {
@@ -103,7 +106,7 @@ function fromBackendPageResult(
   data: BackendPageResult<SystemEvent> | unknown,
   params?: { pageNum?: number; pageSize?: number },
 ): PageResult<SystemEvent> {
-  const page = isRecord(data) ? data as BackendPageResult<SystemEvent> : {};
+  const page = isRecord(data) ? (data as BackendPageResult<SystemEvent>) : {};
   const records = page.list ?? page.records ?? page.rows ?? page.data ?? [];
   const list = Array.isArray(records) ? records.map(normalizeEvent) : [];
   return {

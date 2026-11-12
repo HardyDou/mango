@@ -10,25 +10,25 @@ import { MangoAvatar } from '@mango/common';
 
 ## Props
 
-| 名称 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `source` | `string` | `''` | 头像来源：可直接访问的图片地址（`http(s):`、`data:`、`blob:` 或以 `/` 开头的站内路径），或 `mango-file:<文件ID>` 形式的文件令牌 |
-| `size` | `number \| string` | `undefined` | 头像尺寸，语义与 `el-avatar` 的 `size` 一致 |
-| `shape` | `'circle' \| 'square'` | `'circle'` | 头像形状 |
-| `fit` | `'fill' \| 'contain' \| 'cover' \| 'none' \| 'scale-down'` | `'cover'` | 图片填充方式 |
+| 名称     | 类型                                                       | 默认值      | 说明                                                                                                                            |
+| -------- | ---------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `source` | `string`                                                   | `''`        | 头像来源：可直接访问的图片地址（`http(s):`、`data:`、`blob:` 或以 `/` 开头的站内路径），或 `mango-file:<文件ID>` 形式的文件令牌 |
+| `size`   | `number \| string`                                         | `undefined` | 头像尺寸，语义与 `el-avatar` 的 `size` 一致                                                                                     |
+| `shape`  | `'circle' \| 'square'`                                     | `'circle'`  | 头像形状                                                                                                                        |
+| `fit`    | `'fill' \| 'contain' \| 'cover' \| 'none' \| 'scale-down'` | `'cover'`   | 图片填充方式                                                                                                                    |
 
 除上述 props 外，组件设置了 `inheritAttrs: false` 并通过 `v-bind="$attrs"` 将其余属性透传给内部 `el-avatar`。
 
 ## Events
 
-| 名称 | 参数 | 说明 |
-|------|------|------|
+| 名称    | 参数             | 说明                                                        |
+| ------- | ---------------- | ----------------------------------------------------------- |
 | `error` | `error: unknown` | 文件令牌下载失败，或内部 `el-avatar` 触发图片加载错误时触发 |
 
 ## Slots
 
-| 名称 | 说明 |
-|------|------|
+| 名称      | 说明                                                                        |
+| --------- | --------------------------------------------------------------------------- |
 | `default` | 图片无法展示时的兜底内容（如用户名首字、图标），透传给 `el-avatar` 默认插槽 |
 
 ## 使用示例
@@ -41,10 +41,7 @@ import { MangoAvatar } from '@mango/common';
 </script>
 
 <template>
-  <MangoAvatar
-    :size="40"
-    source="https://example.com/avatar.png"
-  />
+  <MangoAvatar :size="40" source="https://example.com/avatar.png" />
 </template>
 ```
 
@@ -76,13 +73,7 @@ function handleAvatarError(error: unknown) {
 </script>
 
 <template>
-  <MangoAvatar
-    :size="48"
-    shape="square"
-    fit="contain"
-    source="mango-file:1025"
-    @error="handleAvatarError"
-  >
+  <MangoAvatar :size="48" shape="square" fit="contain" source="mango-file:1025" @error="handleAvatarError">
     张
   </MangoAvatar>
 </template>

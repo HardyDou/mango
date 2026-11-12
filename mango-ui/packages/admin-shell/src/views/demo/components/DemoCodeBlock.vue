@@ -20,12 +20,15 @@ import { computed, ref } from 'vue';
 import { ElMessage } from 'element-plus';
 import { CodeEditor } from '@mango/common';
 
-const props = withDefaults(defineProps<{
-  code: string;
-  language?: string;
-}>(), {
-  language: 'html',
-});
+const props = withDefaults(
+  defineProps<{
+    code: string;
+    language?: string;
+  }>(),
+  {
+    language: 'html',
+  },
+);
 
 const editorHeight = computed(() => {
   const lineCount = Math.max(4, props.code.split('\n').length);
@@ -62,7 +65,7 @@ async function copyCode() {
     height: 24px;
     padding: 0 8px;
     color: #606266;
-    background: rgba(248, 250, 252, 0.92);
+    background: rgb(248 250 252 / 92%);
   }
 
   :deep(.code-editor-container) {

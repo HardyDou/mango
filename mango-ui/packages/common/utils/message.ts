@@ -44,7 +44,7 @@ function buildKey(type: MessageType, message: string): string {
 export function showMessage(
   type: MessageType,
   message: string | MessageParams,
-  options: ShowMessageOptions = {}
+  options: ShowMessageOptions = {},
 ): void {
   const normalizedMessage = normalizeMessage(message);
   const key = buildKey(type, normalizedMessage);

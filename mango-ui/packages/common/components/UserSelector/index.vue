@@ -17,15 +17,10 @@
         :remote-method="handleRemoteSearch"
         @clear="clear"
         @focus="ensureLoaded"
-        @visible-change="visible => visible && ensureLoaded()"
+        @visible-change="(visible) => visible && ensureLoaded()"
         @change="handleSelectChange"
       >
-        <el-option
-          v-for="item in filteredOptions"
-          :key="item.value"
-          :label="item.label"
-          :value="item.value"
-        >
+        <el-option v-for="item in filteredOptions" :key="item.value" :label="item.label" :value="item.value">
           <div class="select-option">
             <span>{{ item.label }}</span>
             <small>{{ item.meta || item.username || '用户' }}</small>
@@ -35,13 +30,7 @@
     </template>
 
     <template v-else>
-      <el-input
-        :model-value="summaryText"
-        :placeholder="placeholder"
-        :disabled="disabled"
-        readonly
-        @click="open"
-      >
+      <el-input :model-value="summaryText" :placeholder="placeholder" :disabled="disabled" readonly @click="open">
         <template #suffix>
           <el-icon class="selector-arrow"><ArrowDown /></el-icon>
         </template>
@@ -59,13 +48,7 @@
         </el-tag>
       </div>
 
-      <el-dialog
-        v-model="dialogVisible"
-        :title="title"
-        :width="width"
-        append-to-body
-        destroy-on-close
-      >
+      <el-dialog v-model="dialogVisible" :title="title" :width="width" append-to-body destroy-on-close>
         <div class="selector-dialog">
           <aside class="selector-org">
             <div class="selector-column-title">组织架构</div>
@@ -106,7 +89,11 @@
                 :class="{ active: tempSelectedSet.has(item.value) }"
                 @click="toggleTemp(item.value)"
               >
-                <el-checkbox :model-value="tempSelectedSet.has(item.value)" @click.stop @change="() => toggleTemp(item.value)" />
+                <el-checkbox
+                  :model-value="tempSelectedSet.has(item.value)"
+                  @click.stop
+                  @change="() => toggleTemp(item.value)"
+                />
                 <el-avatar :size="32" :src="item.avatar">{{ item.label.slice(0, 1) }}</el-avatar>
                 <span class="selector-item-meta">
                   <strong>{{ item.label }}</strong>
@@ -212,10 +199,15 @@ const summaryText = computed(() => {
 
 const filteredOptions = computed(() => {
   const normalized = keyword.value.trim().toLowerCase();
-  return options.value.filter(item => {
+  return options.value.filter((item) => {
     const matchOrg = mode.value === 'select' || selectedOrgId.value === undefined || item.orgId === selectedOrgId.value;
-    const matchKeyword = !normalized
-      || [item.label, item.username, item.meta].some(value => String(value || '').toLowerCase().includes(normalized));
+    const matchKeyword =
+      !normalized ||
+      [item.label, item.username, item.meta].some((value) =>
+        String(value || '')
+          .toLowerCase()
+          .includes(normalized),
+      );
     return matchOrg && matchKeyword;
   });
 });
@@ -229,9 +221,7 @@ async function ensureLoaded() {
     const data = await get<BackendPageResult<any>>('/identity/users/page', {
       params: { page: 1, size: 200 },
     });
-    options.value = (data?.records || data?.list || [])
-      .map(toUserOption)
-      .filter(Boolean) as UserOption[];
+    options.value = (data?.records || data?.list || []).map(toUserOption).filter(Boolean) as UserOption[];
   } finally {
     loading.value = false;
   }
@@ -320,16 +310,16 @@ function toggleTemp(value: string) {
     return;
   }
   tempSelectedValues.value = exists
-    ? tempSelectedValues.value.filter(item => item !== value)
+    ? tempSelectedValues.value.filter((item) => item !== value)
     : [...tempSelectedValues.value, value];
 }
 
 function removeTemp(value: string) {
-  tempSelectedValues.value = tempSelectedValues.value.filter(item => item !== value);
+  tempSelectedValues.value = tempSelectedValues.value.filter((item) => item !== value);
 }
 
 function removeSelected(value: string) {
-  emitValue(modelValues.value.filter(item => item !== value));
+  emitValue(modelValues.value.filter((item) => item !== value));
 }
 
 function confirmSelection() {
@@ -344,10 +334,10 @@ function emitValue(values: string[]) {
 }
 
 function optionsByValues(values: string[]) {
-  const matched = options.value.filter(item => values.includes(item.value));
+  const matched = options.value.filter((item) => values.includes(item.value));
   const missing = values
-    .filter(value => !matched.some(item => item.value === value))
-    .map(value => ({ value, label: value, meta: '用户' } satisfies UserOption));
+    .filter((value) => !matched.some((item) => item.value === value))
+    .map((value) => ({ value, label: value, meta: '用户' }) satisfies UserOption);
   return [...matched, ...missing];
 }
 

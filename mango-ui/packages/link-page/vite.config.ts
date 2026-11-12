@@ -12,12 +12,7 @@ export default defineConfig({
       cssFileName: 'style',
     },
     rollupOptions: {
-      external: [
-        '@element-plus/icons-vue',
-        '@mango/link-openapi',
-        'element-plus',
-        'vue',
-      ],
+      external: ['@element-plus/icons-vue', '@mango/link-openapi', 'element-plus', 'vue'],
       output: {
         entryFileNames: '[name].js',
       },

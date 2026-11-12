@@ -3610,8 +3610,11 @@ function collectApprovalConfigErrors(node: WorkflowDesignerNode, errors: string[
   if (config.assigneeType === 'SPECIFIED_USER' && !(config.assigneeIds || []).length) {
     errors.push(`${nodeName} 未选择指定成员`);
   }
-  if ((config.assignmentMode || 'CLAIM') === 'AUTO' && config.assigneeType === 'SPECIFIED_USER'
-    && !(config.assigneeIds || []).length) {
+  if (
+    (config.assignmentMode || 'CLAIM') === 'AUTO' &&
+    config.assigneeType === 'SPECIFIED_USER' &&
+    !(config.assigneeIds || []).length
+  ) {
     errors.push(`${nodeName} 自动派单没有静态候选成员`);
   }
   if (config.assigneeType === 'SPECIFIED_ROLE' && !(config.roleIds || []).length) {
@@ -3928,7 +3931,7 @@ function collectCcConfigErrors(node: WorkflowDesignerNode, errors: string[]) {
   justify-content: center;
   width: 28px;
   height: 28px;
-  border: 1px solid currentColor;
+  border: 1px solid currentcolor;
   border-radius: 50%;
   font-weight: 700;
 }
@@ -4003,7 +4006,7 @@ function collectCcConfigErrors(node: WorkflowDesignerNode, errors: string[]) {
   gap: 10px;
   padding: 12px 20px;
   border-top: 0;
-  background: rgba(255, 255, 255, 0.94);
+  background: rgb(255 255 255 / 94%);
 }
 
 .search-form {
@@ -4227,13 +4230,13 @@ function collectCcConfigErrors(node: WorkflowDesignerNode, errors: string[]) {
   border: 1px solid var(--el-border-color-light);
   border-radius: 10px;
   background: linear-gradient(180deg, #fafcff 0%, var(--el-bg-color) 72px);
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 10px 28px rgb(15 23 42 / 4%);
 }
 
 .form-config-bar {
   padding: 16px 18px;
   border-bottom: 1px solid var(--el-border-color-lighter);
-  background: rgba(255, 255, 255, 0.82);
+  background: rgb(255 255 255 / 82%);
 }
 
 .form-config-form {
@@ -4704,7 +4707,7 @@ function collectCcConfigErrors(node: WorkflowDesignerNode, errors: string[]) {
   min-width: 160px;
 }
 
-@media (max-width: 1024px) {
+@media (width <= 1024px) {
   .workflow-manage-layout {
     grid-template-columns: 1fr;
   }
@@ -4736,7 +4739,7 @@ function collectCcConfigErrors(node: WorkflowDesignerNode, errors: string[]) {
   }
 }
 
-@media (max-width: 1180px) {
+@media (width <= 1180px) {
   .builder-header {
     grid-template-columns: 1fr;
   }

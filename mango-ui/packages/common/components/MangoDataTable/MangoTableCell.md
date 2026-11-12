@@ -25,17 +25,17 @@ const columns: MangoTableColumn<OrderRow>[] = [
 
 ## 类型说明
 
-| 类型 | 说明 | 是否可编辑 |
-|------|------|-----------|
-| `text` | 纯文本展示 | 否 |
-| `status` | 状态文本，通过 `options` 映射 tone 和文案 | 否 |
-| `tag` | 标签展示，通过 `options` 映射 tone 和文案 | 否 |
-| `button` | 按钮，通过 `options` 配置 | 否 |
-| `input` | 输入框，直接修改行字段 | 是 |
-| `select` | 下拉选择，直接修改行字段 | 是 |
-| `radio` | 单选，直接修改行字段 | 是 |
-| `switch` | 开关，直接修改行字段，支持 boolean 或 0/1 | 是 |
-| `custom` | 完全自定义，通过 `slot` 或 `formatter` | 否 |
+| 类型     | 说明                                      | 是否可编辑 |
+| -------- | ----------------------------------------- | ---------- |
+| `text`   | 纯文本展示                                | 否         |
+| `status` | 状态文本，通过 `options` 映射 tone 和文案 | 否         |
+| `tag`    | 标签展示，通过 `options` 映射 tone 和文案 | 否         |
+| `button` | 按钮，通过 `options` 配置                 | 否         |
+| `input`  | 输入框，直接修改行字段                    | 是         |
+| `select` | 下拉选择，直接修改行字段                  | 是         |
+| `radio`  | 单选，直接修改行字段                      | 是         |
+| `switch` | 开关，直接修改行字段，支持 boolean 或 0/1 | 是         |
+| `custom` | 完全自定义，通过 `slot` 或 `formatter`    | 否         |
 
 ## 编辑行为
 

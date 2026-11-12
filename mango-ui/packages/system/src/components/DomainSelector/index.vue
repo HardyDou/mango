@@ -24,22 +24,25 @@ import { domainApi, type DomainItem } from '../../api/domain';
 
 type DomainSelectorValue = ApiId | ApiId[] | undefined;
 
-const props = withDefaults(defineProps<{
-  modelValue?: DomainSelectorValue;
-  multiple?: boolean;
-  clearable?: boolean;
-  disabled?: boolean;
-  checkStrictly?: boolean;
-  placeholder?: string;
-  valueKey?: 'id' | 'domainCode';
-}>(), {
-  multiple: false,
-  clearable: true,
-  disabled: false,
-  checkStrictly: true,
-  placeholder: '请选择业务域',
-  valueKey: 'id',
-});
+const props = withDefaults(
+  defineProps<{
+    modelValue?: DomainSelectorValue;
+    multiple?: boolean;
+    clearable?: boolean;
+    disabled?: boolean;
+    checkStrictly?: boolean;
+    placeholder?: string;
+    valueKey?: 'id' | 'domainCode';
+  }>(),
+  {
+    multiple: false,
+    clearable: true,
+    disabled: false,
+    checkStrictly: true,
+    placeholder: '请选择业务域',
+    valueKey: 'id',
+  },
+);
 
 const emit = defineEmits<{
   (event: 'update:modelValue', value: DomainSelectorValue): void;
@@ -58,7 +61,7 @@ const treeProps = computed(() => ({
 
 watch(
   () => props.modelValue,
-  value => {
+  (value) => {
     innerValue.value = value;
   },
 );

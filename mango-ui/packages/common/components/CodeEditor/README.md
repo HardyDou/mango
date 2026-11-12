@@ -10,49 +10,49 @@ import { CodeEditor } from '@mango/common';
 
 ## Props
 
-| 名称 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `modelValue` | `string` | `''` | 编辑器文本内容，支持 `v-model` |
-| `language` | `string` | `'javascript'` | 语言模式，见下方语言映射表；未命中时回退为 `javascript` |
-| `theme` | `'default' \| 'material-darker' \| 'material-ocean'` | `'default'` | 编辑器主题，对应 CodeMirror 同名主题 |
-| `readonly` | `boolean` | `false` | 是否只读 |
-| `lineNumbers` | `boolean` | `true` | 是否显示行号 |
-| `matchBrackets` | `boolean` | `true` | 是否高亮匹配括号 |
-| `autoCloseBrackets` | `boolean` | `true` | 是否自动闭合括号 |
-| `height` | `string \| number` | `'300px'` | 容器/编辑器高度；数字按像素处理 |
-| `width` | `string` | `'100%'` | 容器宽度 |
+| 名称                | 类型                                                 | 默认值         | 说明                                                    |
+| ------------------- | ---------------------------------------------------- | -------------- | ------------------------------------------------------- |
+| `modelValue`        | `string`                                             | `''`           | 编辑器文本内容，支持 `v-model`                          |
+| `language`          | `string`                                             | `'javascript'` | 语言模式，见下方语言映射表；未命中时回退为 `javascript` |
+| `theme`             | `'default' \| 'material-darker' \| 'material-ocean'` | `'default'`    | 编辑器主题，对应 CodeMirror 同名主题                    |
+| `readonly`          | `boolean`                                            | `false`        | 是否只读                                                |
+| `lineNumbers`       | `boolean`                                            | `true`         | 是否显示行号                                            |
+| `matchBrackets`     | `boolean`                                            | `true`         | 是否高亮匹配括号                                        |
+| `autoCloseBrackets` | `boolean`                                            | `true`         | 是否自动闭合括号                                        |
+| `height`            | `string \| number`                                   | `'300px'`      | 容器/编辑器高度；数字按像素处理                         |
+| `width`             | `string`                                             | `'100%'`       | 容器宽度                                                |
 
 语言映射（`language` 取值 → CodeMirror mode）：
 
-| 传入值 | mode | 传入值 | mode |
-|--------|------|--------|------|
-| `js` / `javascript` | `javascript` | `json` | `javascript`（`json: true`） |
-| `xml` | `xml` | `html` | `htmlmixed` |
-| `css` | `css` | `python` | `python` |
-| `java` | `text/x-java` | `sql` | `sql` |
-| `markdown` | `markdown` | `c` | `text/x-csrc` |
-| `cpp` | `text/x-c++src` | `csharp` | `text/x-csharp` |
-| `go` | `text/x-go` | `rust` | `text/x-rust` |
+| 传入值              | mode            | 传入值   | mode                         |
+| ------------------- | --------------- | -------- | ---------------------------- |
+| `js` / `javascript` | `javascript`    | `json`   | `javascript`（`json: true`） |
+| `xml`               | `xml`           | `html`   | `htmlmixed`                  |
+| `css`               | `css`           | `python` | `python`                     |
+| `java`              | `text/x-java`   | `sql`    | `sql`                        |
+| `markdown`          | `markdown`      | `c`      | `text/x-csrc`                |
+| `cpp`               | `text/x-c++src` | `csharp` | `text/x-csharp`              |
+| `go`                | `text/x-go`     | `rust`   | `text/x-rust`                |
 
 组件初始化时固定开启：当前行高亮（`styleActiveLine`）、自动换行（`lineWrapping`）、`Ctrl-/` 与 `Cmd-/` 切换注释。
 
 ## Events
 
-| 名称 | 参数 | 说明 |
-|------|------|------|
-| `update:modelValue` | `value: string` | 编辑器内容变化时触发 |
-| `change` | `value: string` | 与 `update:modelValue` 同载荷触发，供非 `v-model` 场景监听 |
+| 名称                | 参数            | 说明                                                       |
+| ------------------- | --------------- | ---------------------------------------------------------- |
+| `update:modelValue` | `value: string` | 编辑器内容变化时触发                                       |
+| `change`            | `value: string` | 与 `update:modelValue` 同载荷触发，供非 `v-model` 场景监听 |
 
 ## Expose
 
-| 名称 | 参数 | 返回值 | 说明 |
-|------|------|--------|------|
-| `getEditor()` | - | `CodeMirror.Editor \| null` | 获取底层 CodeMirror 编辑器实例 |
-| `getValue()` | - | `string` | 获取当前内容，编辑器未初始化时返回 `''` |
-| `setValue(value)` | `value: string` | - | 设置编辑器内容 |
-| `clear()` | - | - | 清空内容 |
-| `refresh()` | - | - | 刷新编辑器布局（尺寸变化后重新测量） |
-| `focus()` | - | - | 聚焦编辑器 |
+| 名称              | 参数            | 返回值                      | 说明                                    |
+| ----------------- | --------------- | --------------------------- | --------------------------------------- |
+| `getEditor()`     | -               | `CodeMirror.Editor \| null` | 获取底层 CodeMirror 编辑器实例          |
+| `getValue()`      | -               | `string`                    | 获取当前内容，编辑器未初始化时返回 `''` |
+| `setValue(value)` | `value: string` | -                           | 设置编辑器内容                          |
+| `clear()`         | -               | -                           | 清空内容                                |
+| `refresh()`       | -               | -                           | 刷新编辑器布局（尺寸变化后重新测量）    |
+| `focus()`         | -               | -                           | 聚焦编辑器                              |
 
 ## 使用示例
 
@@ -94,13 +94,7 @@ const readonly = ref(false);
     </el-form-item>
   </el-form>
 
-  <CodeEditor
-    v-model="jsonText"
-    language="json"
-    :theme="theme"
-    :readonly="readonly"
-    height="400px"
-  />
+  <CodeEditor v-model="jsonText" language="json" :theme="theme" :readonly="readonly" height="400px" />
 </template>
 ```
 

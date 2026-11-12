@@ -37,8 +37,8 @@
   --mango-bg-menuBar-light-1: #243038;
   --mango-color-menu-bar: #e6e6e6;
   --mango-color-columns-menu-bar: #e6e6e6;
-  --mango-color-menu-active-bg: rgba(59, 110, 246, 0.15);
-  --mango-color-menu-hover: rgba(255, 255, 255, 0.06);
+  --mango-color-menu-active-bg: rgb(59 110 246 / 15%);
+  --mango-color-menu-hover: rgb(255 255 255 / 6%);
 
   /* Top Bar */
   --mango-bg-top-bar: #1e2732;
@@ -48,6 +48,6 @@
   --mango-layout-bg: #17202a;
 
   /* Shadow */
-  --mango-shadow-light: 0 2px 12px 0 rgba(0, 0, 0, 0.4);
-  --mango-shadow-dark: 0 2px 12px 0 rgba(0, 0, 0, 0.6);
+  --mango-shadow-light: 0 2px 12px 0 rgb(0 0 0 / 40%);
+  --mango-shadow-dark: 0 2px 12px 0 rgb(0 0 0 / 60%);
 }

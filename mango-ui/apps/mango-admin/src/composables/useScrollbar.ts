@@ -6,7 +6,7 @@ import { nextTick, type Ref } from 'vue';
  */
 export function useScrollbar(
   layoutMainRef: Ref<Record<string, any> | undefined>,
-  layoutScrollbarRef?: Ref<Record<string, any> | undefined>
+  layoutScrollbarRef?: Ref<Record<string, any> | undefined>,
 ) {
   const updateScrollbar = () => {
     if (layoutScrollbarRef?.value) {

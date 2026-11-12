@@ -59,15 +59,20 @@
 import { computed } from 'vue';
 import type { PaymentRowAction } from './PaymentRowActions';
 
-const props = withDefaults(defineProps<{
-  actions: PaymentRowAction[];
-  maxDirect?: number;
-}>(), {
-  maxDirect: 3,
-});
+const props = withDefaults(
+  defineProps<{
+    actions: PaymentRowAction[];
+    maxDirect?: number;
+  }>(),
+  {
+    maxDirect: 3,
+  },
+);
 
-const visibleActions = computed(() => props.actions.filter(action => action.visible !== false));
-const directLimit = computed(() => (visibleActions.value.length > props.maxDirect ? Math.max(props.maxDirect - 1, 1) : props.maxDirect));
+const visibleActions = computed(() => props.actions.filter((action) => action.visible !== false));
+const directLimit = computed(() =>
+  visibleActions.value.length > props.maxDirect ? Math.max(props.maxDirect - 1, 1) : props.maxDirect,
+);
 const directActions = computed(() => visibleActions.value.slice(0, directLimit.value));
 const moreActions = computed(() => visibleActions.value.slice(directLimit.value));
 
@@ -79,7 +84,7 @@ function runAction(action: PaymentRowAction) {
 }
 
 function runMoreAction(key: string | number | object) {
-  const action = moreActions.value.find(item => item.key === String(key));
+  const action = moreActions.value.find((item) => item.key === String(key));
   if (action) {
     runAction(action);
   }

@@ -13,7 +13,7 @@ export function mergeGridWidgets(options: MergeGridWidgetsOptions): MangoGridWid
     ...(options.widgets || []),
     ...(options.systemWidgets || []),
     ...(options.businessWidgets || []),
-  ].map(widget => withRuntime(widget, runtime));
+  ].map((widget) => withRuntime(widget, runtime));
   const widgetMap = new Map<string, MangoGridWidgetDefinition>();
 
   sources.forEach((widget) => {
@@ -32,7 +32,10 @@ export function mergeGridWidgets(options: MergeGridWidgetsOptions): MangoGridWid
   return Array.from(widgetMap.values()).sort(compareWidget);
 }
 
-function withRuntime(widget: MangoGridWidgetDefinition, runtime?: MangoWidgetRuntimeContext): MangoGridWidgetDefinition {
+function withRuntime(
+  widget: MangoGridWidgetDefinition,
+  runtime?: MangoWidgetRuntimeContext,
+): MangoGridWidgetDefinition {
   if (!runtime || !widget?.component) {
     return widget;
   }
@@ -80,14 +83,19 @@ const MangoWidgetPermissionFallback = defineComponent({
     },
   },
   setup(props) {
-    return () => h('div', {
-      class: 'mango-grid-widget-permission-fallback',
-      'data-state': 'missing-permission',
-    }, [
-      h('div', { class: 'mango-grid-widget-permission-fallback__badge' }, '缺少权限'),
-      h('strong', props.widgetTitle),
-      h('span', formatAccessMessage(props.accessState)),
-    ]);
+    return () =>
+      h(
+        'div',
+        {
+          class: 'mango-grid-widget-permission-fallback',
+          'data-state': 'missing-permission',
+        },
+        [
+          h('div', { class: 'mango-grid-widget-permission-fallback__badge' }, '缺少权限'),
+          h('strong', props.widgetTitle),
+          h('span', formatAccessMessage(props.accessState)),
+        ],
+      );
   },
 });
 
@@ -99,19 +107,15 @@ export function resolveWidgetAccess(
     ...(widget.access?.permissionCodes || []),
     ...(widget.visibility?.widgetPermissionCodes || []),
   ]);
-  const routePaths = uniqueStrings([
-    ...(widget.access?.routePaths || []),
-    ...(widget.visibility?.routePaths || []),
-  ]);
+  const routePaths = uniqueStrings([...(widget.access?.routePaths || []), ...(widget.visibility?.routePaths || [])]);
   const permissions = new Set(runtime.user?.permissions || []);
   const mode = widget.access?.mode || widget.visibility?.mode || 'all';
-  const missingPermissionCodes = permissionCodes.filter(code => !permissions.has(code));
-  const allowedByPermission = !permissionCodes.length
-    || (mode === 'all'
-      ? missingPermissionCodes.length === 0
-      : missingPermissionCodes.length < permissionCodes.length);
+  const missingPermissionCodes = permissionCodes.filter((code) => !permissions.has(code));
+  const allowedByPermission =
+    !permissionCodes.length ||
+    (mode === 'all' ? missingPermissionCodes.length === 0 : missingPermissionCodes.length < permissionCodes.length);
   const runtimeRoutePaths = collectRuntimeRoutePaths(runtime.menus || []);
-  const missingRoutePaths = routePaths.filter(path => !runtimeRoutePaths.has(normalizePath(path)));
+  const missingRoutePaths = routePaths.filter((path) => !runtimeRoutePaths.has(normalizePath(path)));
   const allowedByRoute = missingRoutePaths.length === 0;
 
   return {
@@ -129,9 +133,7 @@ function formatAccessMessage(accessState: GridWidgetAccessState): string {
     return `当前账号缺少页面入口：${accessState.missingRoutePaths.join(' / ')}`;
   }
   if (accessState.requiredPermissionCodes.length) {
-    const codes = accessState.mode === 'all'
-      ? accessState.missingPermissionCodes
-      : accessState.requiredPermissionCodes;
+    const codes = accessState.mode === 'all' ? accessState.missingPermissionCodes : accessState.requiredPermissionCodes;
     return `需要权限：${codes.join(' / ')}`;
   }
   return '当前账号无权使用该小组件';
@@ -152,7 +154,7 @@ function collectRuntimeRoutePaths(menus: unknown[], parentPath = ''): Set<string
       routePaths.add(normalizePath(rawPath));
     }
     if (Array.isArray(item.children)) {
-      collectRuntimeRoutePaths(item.children, currentPath).forEach(path => routePaths.add(path));
+      collectRuntimeRoutePaths(item.children, currentPath).forEach((path) => routePaths.add(path));
     }
   });
   return routePaths;
@@ -179,7 +181,7 @@ function normalizePath(path: string): string {
 }
 
 function uniqueStrings(values: string[]): string[] {
-  return Array.from(new Set(values.map(value => value.trim()).filter(Boolean)));
+  return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)));
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -203,5 +205,13 @@ function compareWidget(left: MangoGridWidgetDefinition, right: MangoGridWidgetDe
 }
 
 function widgetDomainLabel(widget: MangoGridWidgetDefinition): string {
-  return widget.businessDomainName || widget.domainName || widget.category || widget.businessDomainCode || widget.domainCode || widget.moduleCode || '';
+  return (
+    widget.businessDomainName ||
+    widget.domainName ||
+    widget.category ||
+    widget.businessDomainCode ||
+    widget.domainCode ||
+    widget.moduleCode ||
+    ''
+  );
 }

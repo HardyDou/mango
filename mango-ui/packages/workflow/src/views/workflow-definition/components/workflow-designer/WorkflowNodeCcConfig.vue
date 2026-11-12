@@ -19,7 +19,11 @@
     </el-form-item>
 
     <el-form-item label="通知事件">
-      <el-input :model-value="config.eventName || 'workflow.cc'" placeholder="workflow.cc" @input="value => update({ eventName: String(value || '') })" />
+      <el-input
+        :model-value="config.eventName || 'workflow.cc'"
+        placeholder="workflow.cc"
+        @input="(value) => update({ eventName: String(value || '') })"
+      />
     </el-form-item>
 
     <el-form-item label="通知内容">
@@ -28,7 +32,7 @@
         :rows="3"
         placeholder="如：${initiator} 发起的流程已流转到抄送节点"
         type="textarea"
-        @input="value => update({ messageTemplate: String(value || '') })"
+        @input="(value) => update({ messageTemplate: String(value || '') })"
       />
     </el-form-item>
   </div>
@@ -104,7 +108,7 @@ function targetTypesOf(value: Required<Pick<WorkflowCcNodeConfig, 'userIds' | 'o
 
 function normalizeList(value: unknown) {
   if (Array.isArray(value)) {
-    return value.map(item => String(item).trim()).filter(Boolean);
+    return value.map((item) => String(item).trim()).filter(Boolean);
   }
   if (value === undefined || value === null || value === '') {
     return [];

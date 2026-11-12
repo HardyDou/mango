@@ -27,7 +27,10 @@ export function usePaymentEntityLabels() {
     if (!value) {
       return '-';
     }
-    return value.split(',').map(item => labelOf(item.trim())).join('，');
+    return value
+      .split(',')
+      .map((item) => labelOf(item.trim()))
+      .join('，');
   }
 
   return {

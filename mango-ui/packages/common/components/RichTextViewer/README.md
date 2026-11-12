@@ -16,18 +16,18 @@ import type {
 
 ## Props
 
-| 名称 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `content` | `string` | `''` | 富文本 HTML 字符串，渲染前会经过安全过滤 |
-| `resolveFile` | `RichTextAssetResolver` | `undefined` | 按托管文件 ID 查询附件元数据，未传时使用内置 `getUploadedFileDetail` |
-| `resolveFileContent` | `RichTextAssetContentResolver` | `undefined` | 按文件 ID 拉取图片二进制内容，未传时使用内置 `downloadUploadedFile` |
-| `emptyText` | `string` | `'-'` | 无有效内容（空文本或仅空白标签）时的占位文本 |
+| 名称                 | 类型                           | 默认值      | 说明                                                                 |
+| -------------------- | ------------------------------ | ----------- | -------------------------------------------------------------------- |
+| `content`            | `string`                       | `''`        | 富文本 HTML 字符串，渲染前会经过安全过滤                             |
+| `resolveFile`        | `RichTextAssetResolver`        | `undefined` | 按托管文件 ID 查询附件元数据，未传时使用内置 `getUploadedFileDetail` |
+| `resolveFileContent` | `RichTextAssetContentResolver` | `undefined` | 按文件 ID 拉取图片二进制内容，未传时使用内置 `downloadUploadedFile`  |
+| `emptyText`          | `string`                       | `'-'`       | 无有效内容（空文本或仅空白标签）时的占位文本                         |
 
 ## Events
 
-| 名称 | 参数 | 说明 |
-|------|------|------|
-| `resolve-error` | `(payload: RichTextViewerResolveError)` | 某个托管文件元数据或内容解析失败，载荷含 `fileId` 与原始 `error` |
+| 名称              | 参数                                      | 说明                                                              |
+| ----------------- | ----------------------------------------- | ----------------------------------------------------------------- |
+| `resolve-error`   | `(payload: RichTextViewerResolveError)`   | 某个托管文件元数据或内容解析失败，载荷含 `fileId` 与原始 `error`  |
 | `preview-request` | `(payload: RichTextViewerPreviewRequest)` | 点击或用 Enter/空格激活文中托管文件节点时触发，由宿主决定如何预览 |
 
 ## 类型定义
@@ -88,11 +88,7 @@ function handleResolveError(payload: RichTextViewerResolveError) {
 </script>
 
 <template>
-  <RichTextViewer
-    :content="html"
-    @preview-request="handlePreview"
-    @resolve-error="handleResolveError"
-  />
+  <RichTextViewer :content="html" @preview-request="handlePreview" @resolve-error="handleResolveError" />
 </template>
 ```
 

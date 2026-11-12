@@ -10,13 +10,7 @@
       <span v-if="loading" class="verify-ripple" aria-hidden="true" />
       <span class="verify-icon" aria-hidden="true">
         <el-icon v-if="verifyResult?.passed"><Check /></el-icon>
-        <svg
-          v-else
-          class="shield-icon"
-          viewBox="0 0 24 24"
-          fill="none"
-          focusable="false"
-        >
+        <svg v-else class="shield-icon" viewBox="0 0 24 24" fill="none" focusable="false">
           <path
             d="M12 3.2 5.6 5.4v5.2c0 4.1 2.6 7.7 6.4 9.1 3.8-1.4 6.4-5 6.4-9.1V5.4L12 3.2Z"
             stroke="currentColor"
@@ -69,11 +63,14 @@ const emit = defineEmits<{
   refresh: [];
 }>();
 
-const props = withDefaults(defineProps<{
-  showScore?: boolean;
-}>(), {
-  showScore: false,
-});
+const props = withDefaults(
+  defineProps<{
+    showScore?: boolean;
+  }>(),
+  {
+    showScore: false,
+  },
+);
 
 const captchaData = ref<CaptchaResponse | null>(null);
 const verifyResult = ref<BehaviorCaptchaVerifyResult | null>(null);

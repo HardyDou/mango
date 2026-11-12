@@ -86,5 +86,5 @@ onBeforeUnmount(() => {
 </script>
 
 <style lang="scss">
-@use './demo-page.scss';
+@use './demo-page';
 </style>

@@ -11,26 +11,26 @@ import type { MangoPageBackBarProps } from '@mango/common';
 
 ## Props
 
-| 名称 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `title` | `string` | - | 标题文本（必填） |
-| `backLabel` | `string` | `'返回'` | 返回按钮的 `aria-label`，用于无障碍读屏 |
-| `backTo` | `RouteLocationRaw` | `undefined` | `navigateOnBack` 开启时传给 `router.push` 的目标地址 |
-| `navigateOnBack` | `boolean` | `false` | 点击返回按钮时是否自动执行路由跳转 |
-| `showRefresh` | `boolean` | `true` | 是否展示内置「刷新」按钮 |
-| `refreshLoading` | `boolean` | `false` | 刷新按钮的加载状态，为 `true` 时按钮同时处于 loading 与 disabled |
+| 名称             | 类型               | 默认值      | 说明                                                             |
+| ---------------- | ------------------ | ----------- | ---------------------------------------------------------------- |
+| `title`          | `string`           | -           | 标题文本（必填）                                                 |
+| `backLabel`      | `string`           | `'返回'`    | 返回按钮的 `aria-label`，用于无障碍读屏                          |
+| `backTo`         | `RouteLocationRaw` | `undefined` | `navigateOnBack` 开启时传给 `router.push` 的目标地址             |
+| `navigateOnBack` | `boolean`          | `false`     | 点击返回按钮时是否自动执行路由跳转                               |
+| `showRefresh`    | `boolean`          | `true`      | 是否展示内置「刷新」按钮                                         |
+| `refreshLoading` | `boolean`          | `false`     | 刷新按钮的加载状态，为 `true` 时按钮同时处于 loading 与 disabled |
 
 ## Events
 
-| 名称 | 参数 | 说明 |
-|------|------|------|
-| `back` | - | 点击返回按钮时触发，先于路由跳转 |
-| `refresh` | - | 点击内置刷新按钮时触发 |
+| 名称      | 参数 | 说明                             |
+| --------- | ---- | -------------------------------- |
+| `back`    | -    | 点击返回按钮时触发，先于路由跳转 |
+| `refresh` | -    | 点击内置刷新按钮时触发           |
 
 ## Slots
 
-| 名称 | 说明 |
-|------|------|
+| 名称    | 说明                                                                                       |
+| ------- | ------------------------------------------------------------------------------------------ |
 | `extra` | 标题右侧操作区，渲染在刷新按钮之前；无插槽且 `showRefresh` 为 `false` 时整个右侧区域不渲染 |
 
 ## 类型定义
@@ -76,12 +76,7 @@ async function loadDetail() {
 </script>
 
 <template>
-  <MangoPageBackBar
-    title="订单详情"
-    :refresh-loading="loading"
-    @back="handleBack"
-    @refresh="loadDetail"
-  />
+  <MangoPageBackBar title="订单详情" :refresh-loading="loading" @back="handleBack" @refresh="loadDetail" />
 </template>
 ```
 

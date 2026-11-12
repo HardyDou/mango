@@ -11,7 +11,7 @@ export function registerMangoCalendarAdminPages() {
   registerModulePages({
     moduleCode: 'mango-calendar',
     pages: {
-      'data/calendar/index': () => import('./index').then(m => m.CalendarView),
+      'data/calendar/index': () => import('./index').then((m) => m.CalendarView),
     },
   });
 

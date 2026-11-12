@@ -1814,8 +1814,7 @@ function isJsonObject(value: unknown): value is JsonObject {
 .render-variable-item {
   display: grid;
   grid-template-columns: 190px minmax(0, 1fr);
-  column-gap: 12px;
-  row-gap: 4px;
+  gap: 4px 12px;
   align-items: start;
 }
 
@@ -1876,7 +1875,7 @@ function isJsonObject(value: unknown): value is JsonObject {
   background: var(--el-bg-color);
 }
 
-@media (max-width: 980px) {
+@media (width <= 980px) {
   .template-list-layout {
     grid-template-columns: 1fr;
   }
@@ -1896,6 +1895,6 @@ function isJsonObject(value: unknown): value is JsonObject {
   }
 }
 
-@media (max-width: 760px) {
+@media (width <= 760px) {
 }
 </style>

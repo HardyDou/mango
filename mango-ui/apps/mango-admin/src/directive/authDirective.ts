@@ -39,10 +39,12 @@ interface AuthDirectiveBinding extends DirectiveBinding {
  * Check if element should be visible based on auth directive
  */
 function isAuthRuleBindingValue(value: unknown): value is AuthRuleBindingValue {
-  return Boolean(value)
-    && typeof value === 'object'
-    && !Array.isArray(value)
-    && typeof (value as AuthRuleBindingValue).code === 'string';
+  return (
+    Boolean(value) &&
+    typeof value === 'object' &&
+    !Array.isArray(value) &&
+    typeof (value as AuthRuleBindingValue).code === 'string'
+  );
 }
 
 function checkAuth(binding: AuthDirectiveBinding, authBtnList: string[]): boolean {
@@ -127,7 +129,7 @@ function createAuthDirective(): Directive {
             });
           }
         },
-        { immediate: false }
+        { immediate: false },
       );
 
       // Initial check
@@ -174,9 +176,7 @@ const vAuths: Directive = {
         const authBtnList = userInfoStore.userInfos.authBtnList || [];
         if (authBtnList.length === 0) return; // Waiting for data
 
-        const permissions = Array.isArray(binding.value)
-          ? binding.value
-          : [binding.value as string];
+        const permissions = Array.isArray(binding.value) ? binding.value : [binding.value as string];
 
         applyVisible(el, auths(permissions));
       } catch {
@@ -196,7 +196,7 @@ const vAuths: Directive = {
           });
         }
       },
-      { immediate: true }
+      { immediate: true },
     );
   },
 
@@ -206,9 +206,7 @@ const vAuths: Directive = {
       const authBtnList = userInfoStore.userInfos.authBtnList || [];
       if (authBtnList.length === 0) return;
 
-      const permissions = Array.isArray(binding.value)
-        ? binding.value
-        : [binding.value as string];
+      const permissions = Array.isArray(binding.value) ? binding.value : [binding.value as string];
 
       applyVisible(el, auths(permissions));
     });
@@ -227,9 +225,7 @@ const vAuthAll: Directive = {
         const authBtnList = userInfoStore.userInfos.authBtnList || [];
         if (authBtnList.length === 0) return; // Waiting for data
 
-        const permissions = Array.isArray(binding.value)
-          ? binding.value
-          : [binding.value as string];
+        const permissions = Array.isArray(binding.value) ? binding.value : [binding.value as string];
 
         applyVisible(el, authAll(permissions));
       } catch {
@@ -249,7 +245,7 @@ const vAuthAll: Directive = {
           });
         }
       },
-      { immediate: true }
+      { immediate: true },
     );
   },
 
@@ -259,9 +255,7 @@ const vAuthAll: Directive = {
       const authBtnList = userInfoStore.userInfos.authBtnList || [];
       if (authBtnList.length === 0) return;
 
-      const permissions = Array.isArray(binding.value)
-        ? binding.value
-        : [binding.value as string];
+      const permissions = Array.isArray(binding.value) ? binding.value : [binding.value as string];
 
       applyVisible(el, authAll(permissions));
     });

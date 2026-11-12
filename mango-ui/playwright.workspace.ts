@@ -65,9 +65,9 @@ export function resolveE2EBaseURL({ uiRoot, defaultURL }: ResolveOptions): strin
 
 export function resolveE2EApiBaseURL({ uiRoot, defaultURL }: ResolveOptions): string {
   return normalizeUrl(
-    process.env.PLAYWRIGHT_API_BASE_URL
-      || process.env.VITE_ADMIN_PROXY_PATH
-      || workspaceApiBaseUrl(uiRoot)
-      || defaultURL,
+    process.env.PLAYWRIGHT_API_BASE_URL ||
+      process.env.VITE_ADMIN_PROXY_PATH ||
+      workspaceApiBaseUrl(uiRoot) ||
+      defaultURL,
   );
 }

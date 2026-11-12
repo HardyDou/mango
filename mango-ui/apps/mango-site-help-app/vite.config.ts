@@ -33,9 +33,9 @@ function readWorkspaceEnv() {
     return Object.fromEntries(
       readFileSync(resolve(__dirname, '../../../.mango/dev-workspace.env'), 'utf8')
         .split(/\r?\n/)
-        .map(line => line.trim())
-        .filter(line => line && !line.startsWith('#') && line.includes('='))
-        .map(line => {
+        .map((line) => line.trim())
+        .filter((line) => line && !line.startsWith('#') && line.includes('='))
+        .map((line) => {
           const index = line.indexOf('=');
           return [line.slice(0, index), line.slice(index + 1).replace(/^['"]|['"]$/g, '')];
         }),

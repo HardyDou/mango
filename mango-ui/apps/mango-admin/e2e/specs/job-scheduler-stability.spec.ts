@@ -95,7 +95,12 @@ function stabilityMinutes() {
 }
 
 function runKey(projectName: string) {
-  return projectName.replace(/[^a-z0-9]+/gi, '_').replace(/^_+|_+$/g, '').toLowerCase() || 'chromium';
+  return (
+    projectName
+      .replace(/[^a-z0-9]+/gi, '_')
+      .replace(/^_+|_+$/g, '')
+      .toLowerCase() || 'chromium'
+  );
 }
 
 function headers(token: string) {
@@ -109,8 +114,11 @@ function headers(token: string) {
 
 async function expectBusinessOk<T>(response: APIResponse, context: string): Promise<T> {
   expect(response.status(), context).toBe(200);
-  const body = await response.json() as BusinessResponse<T>;
-  expect(body.success || body.code === 200, `${context}: ${body.msg || body.message || JSON.stringify(body)}`).toBeTruthy();
+  const body = (await response.json()) as BusinessResponse<T>;
+  expect(
+    body.success || body.code === 200,
+    `${context}: ${body.msg || body.message || JSON.stringify(body)}`,
+  ).toBeTruthy();
   return body.data as T;
 }
 
@@ -137,11 +145,18 @@ async function listDefinitions(request: APIRequestContext, token: string, keywor
   return data.list || data.records || data.rows || data.data || [];
 }
 
-async function createDefinition(request: APIRequestContext, token: string, payload: SaveJobDefinitionPayload): Promise<ApiId> {
-  return expectBusinessOk<ApiId>(await request.post(api('/job/definitions'), {
-    headers: headers(token),
-    data: payload,
-  }), '创建每分钟稳定性任务');
+async function createDefinition(
+  request: APIRequestContext,
+  token: string,
+  payload: SaveJobDefinitionPayload,
+): Promise<ApiId> {
+  return expectBusinessOk<ApiId>(
+    await request.post(api('/job/definitions'), {
+      headers: headers(token),
+      data: payload,
+    }),
+    '创建每分钟稳定性任务',
+  );
 }
 
 async function detailDefinition(request: APIRequestContext, token: string, id: ApiId): Promise<JobDefinition> {
@@ -158,17 +173,23 @@ async function updateDefinitionStatus(
   id: ApiId,
   status: JobDefinitionStatus,
 ) {
-  await expectBusinessOk<boolean>(await request.put(api('/job/definitions/status'), {
-    headers: headers(token),
-    data: { id, status },
-  }), `更新 Job 定义状态为 ${status}`);
+  await expectBusinessOk<boolean>(
+    await request.put(api('/job/definitions/status'), {
+      headers: headers(token),
+      data: { id, status },
+    }),
+    `更新 Job 定义状态为 ${status}`,
+  );
 }
 
 async function deleteDefinition(request: APIRequestContext, token: string, id: ApiId) {
-  await expectBusinessOk<boolean>(await request.delete(api('/job/definitions'), {
-    headers: headers(token),
-    params: { id: String(id) },
-  }), '删除历史稳定性任务');
+  await expectBusinessOk<boolean>(
+    await request.delete(api('/job/definitions'), {
+      headers: headers(token),
+      params: { id: String(id) },
+    }),
+    '删除历史稳定性任务',
+  );
 }
 
 async function listInstances(request: APIRequestContext, token: string, jobId: ApiId): Promise<JobInstance[]> {
@@ -186,10 +207,13 @@ async function listInstances(request: APIRequestContext, token: string, jobId: A
 }
 
 async function detailInstanceLog(request: APIRequestContext, token: string, instanceId: ApiId): Promise<JobLogDetail> {
-  return expectBusinessOk<JobLogDetail>(await request.get(api('/job/instances/logs/detail'), {
-    headers: headers(token),
-    params: { instanceId: String(instanceId) },
-  }), '查询每分钟任务执行日志');
+  return expectBusinessOk<JobLogDetail>(
+    await request.get(api('/job/instances/logs/detail'), {
+      headers: headers(token),
+      params: { instanceId: String(instanceId) },
+    }),
+    '查询每分钟任务执行日志',
+  );
 }
 
 async function moveDefinitionToDraft(request: APIRequestContext, token: string, definition: JobDefinition) {
@@ -203,7 +227,7 @@ async function moveDefinitionToDraft(request: APIRequestContext, token: string, 
 
 async function cleanupDefinitions(request: APIRequestContext, token: string, keyword: string) {
   const definitions = await listDefinitions(request, token, keyword);
-  for (const definition of definitions.filter(item => item.jobCode.includes(keyword))) {
+  for (const definition of definitions.filter((item) => item.jobCode.includes(keyword))) {
     await moveDefinitionToDraft(request, token, definition);
     await deleteDefinition(request, token, definition.id);
   }
@@ -211,23 +235,31 @@ async function cleanupDefinitions(request: APIRequestContext, token: string, key
 
 async function waitForSyncedDefinition(request: APIRequestContext, token: string, id: ApiId): Promise<JobDefinition> {
   let latest: JobDefinition | undefined;
-  await expect.poll(async () => {
-    latest = await detailDefinition(request, token, id);
-    return latest.syncStatus === 'SYNCED' && latest.engineType === 'MANGO_NATIVE' && Boolean(latest.engineJobId);
-  }, {
-    timeout: 30_000,
-    intervals: [500, 1000, 2000],
-    message: '每分钟稳定性任务必须同步到 Mango 原生引擎',
-  }).toBeTruthy();
+  await expect
+    .poll(
+      async () => {
+        latest = await detailDefinition(request, token, id);
+        return latest.syncStatus === 'SYNCED' && latest.engineType === 'MANGO_NATIVE' && Boolean(latest.engineJobId);
+      },
+      {
+        timeout: 30_000,
+        intervals: [500, 1000, 2000],
+        message: '每分钟稳定性任务必须同步到 Mango 原生引擎',
+      },
+    )
+    .toBeTruthy();
   expect(latest, '每分钟稳定性任务同步后必须能查询到定义详情').toBeDefined();
   return latest as JobDefinition;
 }
 
 function completedScheduledInstances(instances: JobInstance[]) {
   return instances
-    .filter(item => item.triggerType === 'SCHEDULED' && terminalStatuses.has(item.status || ''))
-    .sort((left, right) => String(left.scheduledFireTime || left.triggerTime || '')
-      .localeCompare(String(right.scheduledFireTime || right.triggerTime || '')));
+    .filter((item) => item.triggerType === 'SCHEDULED' && terminalStatuses.has(item.status || ''))
+    .sort((left, right) =>
+      String(left.scheduledFireTime || left.triggerTime || '').localeCompare(
+        String(right.scheduledFireTime || right.triggerTime || ''),
+      ),
+    );
 }
 
 async function writeStabilityReport(report: string) {
@@ -277,29 +309,40 @@ test('每分钟 Cron 任务在连续观察窗口内稳定调度、无重复窗�
       completed: completedScheduledInstances(latestInstances).length,
       total: latestInstances.length,
     });
-    await new Promise(resolveWait => setTimeout(resolveWait, 15_000));
+    await new Promise((resolveWait) => setTimeout(resolveWait, 15_000));
   }
 
-  await expect.poll(async () => {
-    latestInstances = await listInstances(request, token, jobId);
-    return latestInstances.every(item => item.status !== 'WAITING' && item.status !== 'RUNNING');
-  }, {
-    timeout: 45_000,
-    intervals: [3000, 5000],
-    message: '观察窗口结束后不应存在长时间 WAITING/RUNNING 实例',
-  }).toBeTruthy();
+  await expect
+    .poll(
+      async () => {
+        latestInstances = await listInstances(request, token, jobId);
+        return latestInstances.every((item) => item.status !== 'WAITING' && item.status !== 'RUNNING');
+      },
+      {
+        timeout: 45_000,
+        intervals: [3000, 5000],
+        message: '观察窗口结束后不应存在长时间 WAITING/RUNNING 实例',
+      },
+    )
+    .toBeTruthy();
 
   await updateDefinitionStatus(request, token, jobId, 'DISABLED');
 
   const completed = completedScheduledInstances(latestInstances);
-  const fireTimes = completed.map(item => item.scheduledFireTime || item.triggerTime || '');
+  const fireTimes = completed.map((item) => item.scheduledFireTime || item.triggerTime || '');
   const duplicateFireTimes = fireTimes.filter((time, index) => time && fireTimes.indexOf(time) !== index);
-  const failures = latestInstances.filter(item => item.status && item.status !== 'SUCCESS');
+  const failures = latestInstances.filter((item) => item.status && item.status !== 'SUCCESS');
   const sampleInstance = completed[completed.length - 1];
 
-  expect(completed.length, `连续 ${minutes} 分钟观察应至少产生 ${expectedMinimum} 个完成调度实例`).toBeGreaterThanOrEqual(expectedMinimum);
+  expect(
+    completed.length,
+    `连续 ${minutes} 分钟观察应至少产生 ${expectedMinimum} 个完成调度实例`,
+  ).toBeGreaterThanOrEqual(expectedMinimum);
   expect(duplicateFireTimes, '同一计划触发窗口不能重复生成实例').toEqual([]);
-  expect(failures.map(item => `${item.id}:${item.status}:${item.errorSummary || ''}`), '观察窗口内调度实例必须全部成功').toEqual([]);
+  expect(
+    failures.map((item) => `${item.id}:${item.status}:${item.errorSummary || ''}`),
+    '观察窗口内调度实例必须全部成功',
+  ).toEqual([]);
   expect(sampleInstance?.workerAddress || '', '稳定性任务必须由真实 Worker 执行').toContain('embedded://');
 
   const logDetail = await detailInstanceLog(request, token, sampleInstance.id);
@@ -310,37 +353,42 @@ test('每分钟 Cron 任务在连续观察窗口内稳定调度、无重复窗�
   expect(logDetail.nativeLogContent || '').toContain(jobCode);
 
   const endedAt = new Date();
-  await writeStabilityReport([
-    '# Mango Job 本地调度稳定性证据',
-    '',
-    `- jobCode: ${jobCode}`,
-    `- jobName: ${jobName}`,
-    `- jobId: ${jobId}`,
-    `- schedule: 0 */1 * * * ?`,
-    `- observeStartedAt: ${startedAt.toISOString()}`,
-    `- observeEndedAt: ${endedAt.toISOString()}`,
-    `- observeMinutes: ${minutes}`,
-    `- expectedMinimumCompletedInstances: ${expectedMinimum}`,
-    `- actualCompletedInstances: ${completed.length}`,
-    `- totalInstances: ${latestInstances.length}`,
-    `- duplicateScheduledFireTimes: ${duplicateFireTimes.length}`,
-    `- nonSuccessInstances: ${failures.length}`,
-    `- sampleInstanceId: ${sampleInstance.id}`,
-    `- sampleWorkerAddress: ${sampleInstance.workerAddress || ''}`,
-    `- sampleLogContainsSystemOut: ${String((logDetail.nativeLogContent || '').includes('Mango Job runtime probe System.out'))}`,
-    `- sampleLogContainsLogger: ${String((logDetail.nativeLogContent || '').includes('Mango Job runtime probe logger'))}`,
-    '',
-    '## 观察快照',
-    '',
-    '| time | completed | total |',
-    '|---|---:|---:|',
-    ...observedSnapshots.map(item => `| ${item.at} | ${item.completed} | ${item.total} |`),
-    '',
-    '## 完成实例窗口',
-    '',
-    '| instanceId | scheduledFireTime | triggerTime | status | workerAddress |',
-    '|---|---|---|---|---|',
-    ...completed.map(item => `| ${item.id} | ${item.scheduledFireTime || ''} | ${item.triggerTime || ''} | ${item.status || ''} | ${item.workerAddress || ''} |`),
-    '',
-  ].join('\n'));
+  await writeStabilityReport(
+    [
+      '# Mango Job 本地调度稳定性证据',
+      '',
+      `- jobCode: ${jobCode}`,
+      `- jobName: ${jobName}`,
+      `- jobId: ${jobId}`,
+      `- schedule: 0 */1 * * * ?`,
+      `- observeStartedAt: ${startedAt.toISOString()}`,
+      `- observeEndedAt: ${endedAt.toISOString()}`,
+      `- observeMinutes: ${minutes}`,
+      `- expectedMinimumCompletedInstances: ${expectedMinimum}`,
+      `- actualCompletedInstances: ${completed.length}`,
+      `- totalInstances: ${latestInstances.length}`,
+      `- duplicateScheduledFireTimes: ${duplicateFireTimes.length}`,
+      `- nonSuccessInstances: ${failures.length}`,
+      `- sampleInstanceId: ${sampleInstance.id}`,
+      `- sampleWorkerAddress: ${sampleInstance.workerAddress || ''}`,
+      `- sampleLogContainsSystemOut: ${String((logDetail.nativeLogContent || '').includes('Mango Job runtime probe System.out'))}`,
+      `- sampleLogContainsLogger: ${String((logDetail.nativeLogContent || '').includes('Mango Job runtime probe logger'))}`,
+      '',
+      '## 观察快照',
+      '',
+      '| time | completed | total |',
+      '|---|---:|---:|',
+      ...observedSnapshots.map((item) => `| ${item.at} | ${item.completed} | ${item.total} |`),
+      '',
+      '## 完成实例窗口',
+      '',
+      '| instanceId | scheduledFireTime | triggerTime | status | workerAddress |',
+      '|---|---|---|---|---|',
+      ...completed.map(
+        (item) =>
+          `| ${item.id} | ${item.scheduledFireTime || ''} | ${item.triggerTime || ''} | ${item.status || ''} | ${item.workerAddress || ''} |`,
+      ),
+      '',
+    ].join('\n'),
+  );
 });

@@ -19,7 +19,13 @@
         <section v-for="group in groupedCatalog" :key="group.name" class="node-picker-group">
           <div class="node-picker-title">{{ group.name }}</div>
           <div class="node-picker-grid">
-            <button v-for="item in group.items" :key="item.nodeDefinitionCode" class="node-picker-item" type="button" @click="selectNode(item)">
+            <button
+              v-for="item in group.items"
+              :key="item.nodeDefinitionCode"
+              class="node-picker-item"
+              type="button"
+              @click="selectNode(item)"
+            >
               <span class="node-picker-icon" :style="{ '--node-color': item.color || '#2563eb' }">
                 <el-icon><component :is="resolveNodeIcon(item)" /></el-icon>
               </span>
@@ -128,13 +134,15 @@ function resolveNodeIcon(item: Partial<WorkflowNodeCatalog>) {
   height: 32px;
   margin: 18px 0 28px;
   padding: 0;
-  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.18);
-  transition: transform 0.16s ease, box-shadow 0.16s ease;
+  box-shadow: 0 8px 18px rgb(37 99 235 / 18%);
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease;
 }
 
 .workflow-add-node-button:hover {
   transform: scale(1.12);
-  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.24);
+  box-shadow: 0 10px 24px rgb(37 99 235 / 24%);
 }
 
 .node-picker {
