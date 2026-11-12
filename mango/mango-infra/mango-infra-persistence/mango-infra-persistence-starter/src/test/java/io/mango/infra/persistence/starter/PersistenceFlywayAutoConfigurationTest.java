@@ -42,15 +42,6 @@ class PersistenceFlywayAutoConfigurationTest {
 
     private static final String TEST_SKIP_REASON = "test fixture is not part of this scenario";
 
-    private static final List<String> TEST_CLASSPATH_MIGRATION_MODULES = List.of(
-            "another-test",
-            "business-upgrade",
-            "comparison-data",
-            "link",
-            "payment",
-            "persistence-test"
-    );
-
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
             .withPropertyValues(
                     "mango.bootstrap.mode=runtime",
@@ -151,7 +142,7 @@ class PersistenceFlywayAutoConfigurationTest {
                     assertThat(ctx).hasNotFailed();
                     assertThatThrownBy(() -> migrate(ctx))
                             .hasMessageContaining("Mango Flyway classpath migration modules are not fully declared")
-                            .hasMessageContaining("missingModules=[another-test, business-upgrade, comparison-data, link, payment]")
+                            .hasMessageContaining("missingModules=[another-test, business-upgrade, cold-missing-snapshot, comparison-data, link, payment]")
                             .hasMessageContaining("classpath:db/migration/another-test")
                             .hasMessageContaining("mango.persistence.flyway.modules.<module>.enabled=true")
                             .hasMessageContaining("enabled=false with skip-reason");
@@ -689,7 +680,7 @@ class PersistenceFlywayAutoConfigurationTest {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
         List<String> result = new ArrayList<>(Arrays.asList(properties));
-        for (String module : TEST_CLASSPATH_MIGRATION_MODULES) {
+        for (String module : FlywayTestClasspathModules.ALL) {
             if (configuredModules.contains(module)) {
                 continue;
             }

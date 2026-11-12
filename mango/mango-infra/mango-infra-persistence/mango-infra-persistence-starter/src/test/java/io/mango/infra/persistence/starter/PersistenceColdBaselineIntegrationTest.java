@@ -20,16 +20,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class PersistenceColdBaselineIntegrationTest {
 
-    private static final List<String> EXISTING_TEST_MODULES = List.of(
-            "another-test",
-            "business-upgrade",
-            "cold-missing-snapshot",
-            "comparison-data",
-            "link",
-            "payment",
-            "persistence-test"
-    );
-
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
             .withConfiguration(AutoConfigurations.of(PersistenceFlywayAutoConfiguration.class))
             .withPropertyValues(
@@ -425,7 +415,7 @@ class PersistenceColdBaselineIntegrationTest {
 
     private static String[] coldBaselineProperties(String... properties) {
         List<String> values = new ArrayList<>();
-        for (String module : EXISTING_TEST_MODULES) {
+        for (String module : FlywayTestClasspathModules.ALL) {
             values.add("mango.persistence.flyway.modules." + module + ".enabled=false");
             values.add("mango.persistence.flyway.modules." + module
                     + ".skip-reason=not part of cold baseline scenario");

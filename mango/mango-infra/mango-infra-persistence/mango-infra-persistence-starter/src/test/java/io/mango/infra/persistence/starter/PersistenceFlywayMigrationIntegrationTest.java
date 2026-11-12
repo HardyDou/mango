@@ -33,15 +33,6 @@ class PersistenceFlywayMigrationIntegrationTest {
 
     private static final String TEST_SKIP_REASON = "test fixture is not part of this scenario";
 
-    private static final List<String> TEST_CLASSPATH_MIGRATION_MODULES = List.of(
-            "another-test",
-            "business-upgrade",
-            "comparison-data",
-            "link",
-            "payment",
-            "persistence-test"
-    );
-
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
             .withPropertyValues(
                     "mango.bootstrap.mode=bootstrap",
@@ -124,7 +115,7 @@ class PersistenceFlywayMigrationIntegrationTest {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
         List<String> result = new ArrayList<>(Arrays.asList(properties));
-        for (String module : TEST_CLASSPATH_MIGRATION_MODULES) {
+        for (String module : FlywayTestClasspathModules.ALL) {
             if (configuredModules.contains(module)) {
                 continue;
             }
