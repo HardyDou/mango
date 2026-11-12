@@ -148,12 +148,36 @@ mango:
 ```
 
 
+
+## 7.1 审批列表读取全部任务（Issue #1208）
+
+业务列表需要"一行一个任务"（初审/复审/终审各占一行）时，用 `POST /workflow/tasks/page-by-business-key` 一次取回该批业务主键下所有申请的全部任务，不需要业务侧建任务副本表。
+
+请求要点：
+
+- `businessType`：按 `workflow_business_apply.business_type` 精确匹配。取业务适配器实际投放的值，例如 `BAOHAN_RC_PROJECT_REVIEW`；平台不校验命名风格，也不做别名映射。
+- `businessKeys`：必填、数量不设上限。业务表先分页，再把当前页的业务主键批量传入即可。
+- `scope`：`SELF`（默认，办理人是当前用户或候选用户/候选组命中）、`ALL`（服务端校验 `workflow:task:all` 权限码，未安装授权中心时拒绝）、`ORG`（本版直接报错）。数据范围由调用方显式声明，平台不读取角色数据范围配置。
+- 不传 `page` / `size` 时按 `mango.workflow.task-query.unpaged-max-rows`（默认 2000）一次性返回；`total` 始终是过滤后的真实总数，用 `list.size() < total` 判断是否需要改用分页拉取。
+
+字段口径：
+
+- `status`：`TODO` 在途、`DONE` 已办理、`CANCELED` 已终止（`deleteReason` 有值）。
+- `claimStatus`：`UNCLAIMED` 待领取、`ASSIGNED` 待处理；转办后返回 `ASSIGNED`，与"待处理"一致。
+- `returned`：该申请是否发生过退回。退回不改变 `apply_status`，因此"退回待修改"用 `applyStatus=IN_APPROVAL` 加 `returned=true` 表达，不要期望出现 `RETURNED` 状态值。
+- 排序：`createTime`、`endTime`、`claimTime`；`endTime` 与 `claimTime` 为空的任务在升序和降序下都排在最后。
+
+权限分工：`workflow:task:list` 控制能否调用接口；`workflow:task:all` 控制能否使用 `ALL` 范围。业务侧按自己的角色矩阵把后一个权限码只授予主管/经理等需要全量视图的角色。
+
 ## 8. 验证命令
 
 后端验证使用 Java 21。legacy migration fixture 和 API surface fingerprint 是测试资产；本次校准仅跟随既有 V1/V2/V3 迁移与 API 声明版本，未修改生产历史 SQL、公开 API、配置、菜单、权限、租户、页面、启动或审批运行时行为。业务审批接入步骤保持不变。
 
 ```bash
 mvn -f mango/pom.xml -pl mango-platform/mango-workflow -am test
+# 按业务主键查询任务的 H2 集成测试与范围规则单测
+mvn -f mango/pom.xml -pl mango-platform/mango-workflow/mango-workflow-core \
+  -Dtest='WorkflowTaskHistoryMapperIntegrationTest,WorkflowTaskBusinessQueryServiceTest' test
 pnpm -F @mango/workflow build
 pnpm -F @mango/workflow-business-example build
 ```
@@ -173,5 +197,7 @@ pnpm -F @mango/workflow-business-example build
 ## 10. 历史变更
 
 详细版本影响见[业务审批历史变更索引](../../changelog/business-integration/workflow-business-approval.md)。
+
+> Issue #1208 影响说明：新增 `POST /workflow/tasks/page-by-business-key`，业务列表可读取业务主键下的全部任务（在途、已办理、已终止）。不修改数据库结构，不改变 `todo` / `done` / `copied` 语义；新增配置项 `mango.workflow.task-query.unpaged-max-rows`。
 
 > Issue #1098 影响说明：资源声明的 `sync-mode` 收敛为 `SYNC_ALWAYS` / `SYNC_ONCE`（旧值 `AUTO`、`INIT_ONLY`、`MANUAL`、`LOCKED` 仍可读取并映射）。本场景涉及的数据初始化、租户边界、权限判定与页面行为不变。
