@@ -48,7 +48,7 @@ export function useDict(typeCode: DictTypeRef) {
     () => {
       load();
     },
-    { immediate: true }
+    { immediate: true },
   );
 
   onMounted(() => {

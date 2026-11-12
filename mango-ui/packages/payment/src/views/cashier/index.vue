@@ -1,8 +1,5 @@
 <template>
-  <PaymentCashier
-    :cashier-config-id="cashierConfigId"
-    :business-order-id="businessOrderId"
-  />
+  <PaymentCashier :cashier-config-id="cashierConfigId" :business-order-id="businessOrderId" />
 </template>
 
 <script setup lang="ts">
@@ -12,7 +9,9 @@ import PaymentCashier from '../../components/PaymentCashier.vue';
 
 const route = useRoute();
 
-const cashierConfigId = computed(() => routeParamValue(route.params.cashierId) || routeParamValue(route.query.cashierConfigId));
+const cashierConfigId = computed(
+  () => routeParamValue(route.params.cashierId) || routeParamValue(route.query.cashierConfigId),
+);
 const businessOrderId = computed(() => routeParamValue(route.query.businessOrderId));
 
 function routeParamValue(value: unknown) {

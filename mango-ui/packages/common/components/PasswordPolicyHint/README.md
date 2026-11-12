@@ -13,10 +13,10 @@ import type { PasswordPolicy } from '@mango/common';
 
 ## Props
 
-| 名称 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `password` | `string` | `''` | 当前密码值，组件为受控展示，自身不包含输入框 |
-| `policy` | `PasswordPolicy` | `undefined` | 密码策略；未传时使用内置 `defaultPasswordPolicy` |
+| 名称       | 类型             | 默认值      | 说明                                             |
+| ---------- | ---------------- | ----------- | ------------------------------------------------ |
+| `password` | `string`         | `''`        | 当前密码值，组件为受控展示，自身不包含输入框     |
+| `policy`   | `PasswordPolicy` | `undefined` | 密码策略；未传时使用内置 `defaultPasswordPolicy` |
 
 ## 密码策略
 
@@ -110,9 +110,7 @@ const passed = computed(() => isPasswordPolicyPassed(password.value));
 <template>
   <el-input v-model="password" type="password" show-password placeholder="请输入密码" />
   <PasswordPolicyHint :password="password" />
-  <el-button type="primary" :disabled="!passed" style="margin-top: 12px">
-    提交
-  </el-button>
+  <el-button type="primary" :disabled="!passed" style="margin-top: 12px"> 提交 </el-button>
 </template>
 ```
 

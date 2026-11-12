@@ -25,7 +25,7 @@ async function loginPage(page: Page, tenant: LoginTenant) {
 test.describe('业务域左侧树后台页面冒烟', () => {
   test('流程定义、流程模板和消息配置使用业务域侧栏', async ({ page }) => {
     const consoleErrors: string[] = [];
-    page.on('console', message => {
+    page.on('console', (message) => {
       if (message.type() === 'error') {
         consoleErrors.push(message.text());
       }

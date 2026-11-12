@@ -94,10 +94,9 @@ test.describe('T6 新机构初始化闭环', () => {
     expect(loginData.roles).toContain('ROLE_ADMIN');
     expect(loginData.permissions.length).toBeGreaterThan(0);
 
-    const menusResponse = await request.get(
-      e2eApi('/authorization/menus/user?appCode=internal-admin&fmt=tree'),
-      { headers: { Authorization: `Bearer ${loginData.accessToken}` } }
-    );
+    const menusResponse = await request.get(e2eApi('/authorization/menus/user?appCode=internal-admin&fmt=tree'), {
+      headers: { Authorization: `Bearer ${loginData.accessToken}` },
+    });
     expect(menusResponse.ok()).toBeTruthy();
     const menusBody = await menusResponse.json();
     expect(menusBody.success || menusBody.code === 200).toBeTruthy();

@@ -8,10 +8,10 @@
 
 `@mango/workflow` 提供管理页面、业务组件和 Workflow API，接入后端 `mango-workflow`。
 
-| 标识                 | 内容                                                                   | 适合谁使用                               |
-| -------------------- | ---------------------------------------------------------------------- | ---------------------------------------- |
-| `admin-pages`        | 流程定义、流程模板、任务列表、任务详情、发起流程、自定义申请页面。     | Mango Admin 或业务后台。                 |
-| `business-component` | 运行时表单、审批进度、审批时间线、业务申请组件注册、业务审批组件注册。 | 需要在业务页面中嵌入审批能力的前端模块。 |
+| 标识                 | 内容                                                                            | 适合谁使用                               |
+| -------------------- | ------------------------------------------------------------------------------- | ---------------------------------------- |
+| `admin-pages`        | 流程定义、流程模板、任务列表、任务详情、发起流程、自定义申请页面。              | Mango Admin 或业务后台。                 |
+| `business-component` | 运行时表单、审批进度、审批时间线、业务申请组件注册、业务审批组件注册。          | 需要在业务页面中嵌入审批能力的前端模块。 |
 | `api-client`         | workflow 后端接口封装和 TypeScript 类型；业务申请日期-only 范围会补齐整日边界。 | 需要直接调用 workflow 接口的前端代码。   |
 
 `admin-pages` 适配 Mango 管理后台，不适合作为官网、门户站点的通用页面组件。官网类项目如果只需要展示审批进度，应优先使用 `business-component` 中的轨迹组件或自行封装展示层。
@@ -147,30 +147,30 @@ import { WorkflowLayout, WorkflowSidebar } from '@mango/workflow';
 
 本包没有独立环境变量。可配置内容来自页面注册、流程定义表单 JSON 和业务组件注册。
 
-| 配置位置                                                               | 字段或参数                                                             | 含义                                                                      |
-| ---------------------------------------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| `registerMangoWorkflowAdminPages()`                                    | 无入参                                                                 | 幂等注册 `mango-workflow` 页面 key 和动态路由。                           |
-| 流程定义 `startEntryVisible`                                           | `true` / `false`                                                       | 是否展示在审批管理发起流程入口；默认 `true`，业务内嵌流程可设为 `false`。 |
-| 流程定义 `formJson.mode`                                               | `DYNAMIC_FORM`                                                         | 使用动态表单渲染。                                                        |
-| 流程定义 `formJson.mode`                                               | `CUSTOM_PAGE`                                                          | 使用业务自定义申请页或审批页。                                            |
-| 流程定义 `formJson.customConfig.submitPath`                            | 路由 path                                                              | 自定义申请页路由。                                                        |
-| 流程定义 `formJson.customConfig.viewPath`                              | 路由 path                                                              | 自定义查看页路由。                                                        |
-| 流程定义 `formJson.customConfig.applyPageKey`                          | 注册 key                                                               | 匹配 `registerBusinessApplyComponent()`。                                 |
-| 流程定义 `formJson.customConfig.approvePageKey`                        | 注册 key                                                               | 匹配 `registerBusinessApprovalComponent()`。                              |
-| 任务变量 `businessType` 或 `bizType`                                   | 字符串                                                                 | 任务详情解析业务类型。                                                    |
-| 任务变量 `applyId`、`workflowApplyId`、`businessApplyId`、`snapshotId` | 字符串                                                                 | 任务详情解析业务申请记录 ID。                                             |
-| 任务变量 `businessPermissions`                                         | 字段权限对象                                                           | 字段级权限，支持 `HIDDEN`、`READONLY`、`EDITABLE`。                       |
-| 待办列表查询                                                           | `todoType`                                                             | `ASSIGNED` 查询待审批，`CLAIMABLE` 查询待处理，`ALL` 查询全部待办。       |
-| 待办列表查询                                                           | `overdue`                                                              | 为 `true` 时只查询已超时待办。                                            |
-| 抄送列表查询                                                           | `unread`                                                               | 为 `true` 时只查询未读抄送。                                              |
-| 首页我的待办小组件                                                     | `workflow:task:list` + `/workflow/task/todo` + `/workflow/task/copied` | 权限或页面入口缺失时，首页卡片显示“缺少权限”，编辑器中不可新增。          |
-| 首页我的任务小组件                                                     | `workflow:task:list` + `/workflow/task/todo` + `/workflow/task/done`   | 权限或页面入口缺失时，首页卡片显示“缺少权限”，编辑器中不可新增。          |
-| 首页我的申请小组件                                                     | `workflow:task:list` + `/workflow/task/initiated`                      | 与后端摘要接口权限保持一致，缺失时不请求摘要接口、不允许点击跳转。        |
-| 业务申请进度                                                           | `assigneeName`、`assigneeId`、`assigneeDisplayName`                    | `assigneeName` 是原始 Flowable key；ID 和显示名由当前租户批量解析，缺失时不影响任务展示。 |
-| 业务申请进度                                                           | `claimStatus`                                                          | 当前任务认领状态，取值来自后端 `WorkflowTaskClaimStatus`。                |
-| 业务申请进度                                                           | `candidateUsers`、`candidateGroups`                                    | 当前任务候选用户和候选用户组，用于业务页判断待处理、可认领和按钮状态。    |
-| 流程节点分配                                                           | `assignmentMode` (`CLAIM` / `AUTO`)                                   | 缺失时按 `CLAIM`；`AUTO` 按 `autoAssignmentStrategy` 选择候选人，缺失时兼容 `ROUND_ROBIN`。 |
-| 自动派单策略                                                           | `autoAssignmentStrategy` (`ROUND_ROBIN` / `LEAST_TASKS` / `AFFINITY`) | `ROUND_ROBIN` 按稳定用户 ID 轮询；`LEAST_TASKS` 选择当前租户活动任务最少者；`AFFINITY` 优先选择同一流程实例最近完成任务且仍在候选集中的用户，否则回退到 `LEAST_TASKS`。 |
+| 配置位置                                                               | 字段或参数                                                             | 含义                                                                                                                                                                    |
+| ---------------------------------------------------------------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `registerMangoWorkflowAdminPages()`                                    | 无入参                                                                 | 幂等注册 `mango-workflow` 页面 key 和动态路由。                                                                                                                         |
+| 流程定义 `startEntryVisible`                                           | `true` / `false`                                                       | 是否展示在审批管理发起流程入口；默认 `true`，业务内嵌流程可设为 `false`。                                                                                               |
+| 流程定义 `formJson.mode`                                               | `DYNAMIC_FORM`                                                         | 使用动态表单渲染。                                                                                                                                                      |
+| 流程定义 `formJson.mode`                                               | `CUSTOM_PAGE`                                                          | 使用业务自定义申请页或审批页。                                                                                                                                          |
+| 流程定义 `formJson.customConfig.submitPath`                            | 路由 path                                                              | 自定义申请页路由。                                                                                                                                                      |
+| 流程定义 `formJson.customConfig.viewPath`                              | 路由 path                                                              | 自定义查看页路由。                                                                                                                                                      |
+| 流程定义 `formJson.customConfig.applyPageKey`                          | 注册 key                                                               | 匹配 `registerBusinessApplyComponent()`。                                                                                                                               |
+| 流程定义 `formJson.customConfig.approvePageKey`                        | 注册 key                                                               | 匹配 `registerBusinessApprovalComponent()`。                                                                                                                            |
+| 任务变量 `businessType` 或 `bizType`                                   | 字符串                                                                 | 任务详情解析业务类型。                                                                                                                                                  |
+| 任务变量 `applyId`、`workflowApplyId`、`businessApplyId`、`snapshotId` | 字符串                                                                 | 任务详情解析业务申请记录 ID。                                                                                                                                           |
+| 任务变量 `businessPermissions`                                         | 字段权限对象                                                           | 字段级权限，支持 `HIDDEN`、`READONLY`、`EDITABLE`。                                                                                                                     |
+| 待办列表查询                                                           | `todoType`                                                             | `ASSIGNED` 查询待审批，`CLAIMABLE` 查询待处理，`ALL` 查询全部待办。                                                                                                     |
+| 待办列表查询                                                           | `overdue`                                                              | 为 `true` 时只查询已超时待办。                                                                                                                                          |
+| 抄送列表查询                                                           | `unread`                                                               | 为 `true` 时只查询未读抄送。                                                                                                                                            |
+| 首页我的待办小组件                                                     | `workflow:task:list` + `/workflow/task/todo` + `/workflow/task/copied` | 权限或页面入口缺失时，首页卡片显示“缺少权限”，编辑器中不可新增。                                                                                                        |
+| 首页我的任务小组件                                                     | `workflow:task:list` + `/workflow/task/todo` + `/workflow/task/done`   | 权限或页面入口缺失时，首页卡片显示“缺少权限”，编辑器中不可新增。                                                                                                        |
+| 首页我的申请小组件                                                     | `workflow:task:list` + `/workflow/task/initiated`                      | 与后端摘要接口权限保持一致，缺失时不请求摘要接口、不允许点击跳转。                                                                                                      |
+| 业务申请进度                                                           | `assigneeName`、`assigneeId`、`assigneeDisplayName`                    | `assigneeName` 是原始 Flowable key；ID 和显示名由当前租户批量解析，缺失时不影响任务展示。                                                                               |
+| 业务申请进度                                                           | `claimStatus`                                                          | 当前任务认领状态，取值来自后端 `WorkflowTaskClaimStatus`。                                                                                                              |
+| 业务申请进度                                                           | `candidateUsers`、`candidateGroups`                                    | 当前任务候选用户和候选用户组，用于业务页判断待处理、可认领和按钮状态。                                                                                                  |
+| 流程节点分配                                                           | `assignmentMode` (`CLAIM` / `AUTO`)                                    | 缺失时按 `CLAIM`；`AUTO` 按 `autoAssignmentStrategy` 选择候选人，缺失时兼容 `ROUND_ROBIN`。                                                                             |
+| 自动派单策略                                                           | `autoAssignmentStrategy` (`ROUND_ROBIN` / `LEAST_TASKS` / `AFFINITY`)  | `ROUND_ROBIN` 按稳定用户 ID 轮询；`LEAST_TASKS` 选择当前租户活动任务最少者；`AFFINITY` 优先选择同一流程实例最近完成任务且仍在候选集中的用户，否则回退到 `LEAST_TASKS`。 |
 
 `parseWorkflowFormConfig()` 支持数组式表单 JSON，也支持包含 `mode`、`rules`、`fields`、`customConfig` 的对象结构。非法 JSON 会按空动态表单处理。
 
@@ -245,9 +245,9 @@ import { WorkflowLayout, WorkflowSidebar } from '@mango/workflow';
 | 任务       | `todoTasks()`、`todoSummary()`、`myTaskSummary()`、`initiatedTasks()`、`doneTasks()`、`copiedTasks()`、`taskDetail()`                                                                                                                                                     |
 | 动作       | `completeTask()`、`completeTaskWithResult()`、`rejectTask()`、`rejectTaskWithResult()`、`saveTask()`、`saveTaskWithResult()`、`transferTask()`、`addSignTask()`、`claimTask()`、`claimTaskWithResult()`、`unclaimTask()`、`unclaimTaskWithResult()`、`readCopiedTask()`   |
 | 流程实例   | `startProcess()`、`startBusinessWorkflow()`、`initiatedProcesses()`、`processHistoryByBusinessKey()`、`processDetail()`                                                                                                                                                   |
-| 参与关系   | `participationAccess()`、`participationMy()`、`replaceBusinessParticipants()`                                                                                                                                        |
+| 参与关系   | `participationAccess()`、`participationMy()`、`replaceBusinessParticipants()`                                                                                                                                                                                             |
 | 业务申请   | `createBusinessApply()`、`businessAppliesPage()`、`businessApplyMySummary()`、`businessApplyDetail()`、`businessApplyHistory()`、`businessApplyLatestProgress()`、`businessApplyLatestProgressBatch()`、`businessApplyLatestByKeys()`、`businessApplyByProcessInstance()` |
-| 候选项     | `designerOptions()`（定义设计器的用户、角色、岗位、组织、字典）、`users()`（发起流程兼容入口）、`tenants()`（模板推送目标机构）、`enabledDomains()`                                                                                                                        |
+| 候选项     | `designerOptions()`（定义设计器的用户、角色、岗位、组织、字典）、`users()`（发起流程兼容入口）、`tenants()`（模板推送目标机构）、`enabledDomains()`                                                                                                                       |
 
 `taskDetail()` 和 `processDetail()` 是业务详情渲染入口，对应后端接口只要求登录，不要求 `workflow:definition:*`、`workflow:task:detail` 或 `workflow:process:detail` 资源权限。响应中的可选 `designerJson` 来自流程实例实际运行的不可变发布版本，`WorkflowProgressTree`、`WorkflowSidebar` 和流程图弹窗可直接消费；字段缺失时继续降级展示审批记录，不应调用流程定义管理 API 补取最新定义。
 
@@ -255,14 +255,14 @@ import { WorkflowLayout, WorkflowSidebar } from '@mango/workflow';
 
 这个前端包不包含数据库 migration，也不初始化菜单。
 
-| 数据                                           | 来源                                       |
-| ---------------------------------------------- | ------------------------------------------ |
-| 流程分类、定义、版本、模板、任务、业务申请记录 | 后端 `mango-workflow`。                    |
-| workflow 菜单和权限                            | 后端 migration 写入 `authorization_menu`。 |
+| 数据                                           | 来源                                                                                                        |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| 流程分类、定义、版本、模板、任务、业务申请记录 | 后端 `mango-workflow`。                                                                                     |
+| workflow 菜单和权限                            | 后端 migration 写入 `authorization_menu`。                                                                  |
 | 流程定义设计器候选项                           | 后端 `/workflow/definitions/designer-options`；只使用 Workflow 权限，一次返回用户、角色、岗位、组织和字典。 |
-| 发起流程用户候选项                             | 后端 `/identity/users/page` 兼容入口。      |
-| 业务域候选项                                   | 后端 `/domain/domains/enabled-tree`。      |
-| 文件上传、图片上传、附件预览                   | `@mango/file` 和后端 `mango-file`。        |
+| 发起流程用户候选项                             | 后端 `/identity/users/page` 兼容入口。                                                                      |
+| 业务域候选项                                   | 后端 `/domain/domains/enabled-tree`。                                                                       |
+| 文件上传、图片上传、附件预览                   | `@mango/file` 和后端 `mango-file`。                                                                         |
 
 ## 9. 管理入口
 
@@ -335,9 +335,9 @@ import { WorkflowLayout, WorkflowSidebar } from '@mango/workflow';
 
 ## 12. 变更影响记录
 
-| 版本 / 事项 | 影响 |
-|---|---|
-| 2026-08-28 | 办理人展示优先 `assigneeDisplayName`；见[升级指南](../../../mango-docs/guides/operations/workflow-assignee-identity-upgrade.md)。 |
-| Issue #732 | 新增 `assignmentMode` 和三种自动派单策略；候选项改为单次 Provider 查询，权限由后端校验。 |
-| Issue #890 | `tenants()` 改用 `/workflow/templates/tenant-options`，仅打开推送弹窗时请求。 |
-| `@mango/workflow@1.0.27` / `1.0.37` | 对齐依赖版本；页面 key、API、组件、权限和租户语义保持不变。 |
+| 版本 / 事项                         | 影响                                                                                                                              |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-28                          | 办理人展示优先 `assigneeDisplayName`；见[升级指南](../../../mango-docs/guides/operations/workflow-assignee-identity-upgrade.md)。 |
+| Issue #732                          | 新增 `assignmentMode` 和三种自动派单策略；候选项改为单次 Provider 查询，权限由后端校验。                                          |
+| Issue #890                          | `tenants()` 改用 `/workflow/templates/tenant-options`，仅打开推送弹窗时请求。                                                     |
+| `@mango/workflow@1.0.27` / `1.0.37` | 对齐依赖版本；页面 key、API、组件、权限和租户语义保持不变。                                                                       |

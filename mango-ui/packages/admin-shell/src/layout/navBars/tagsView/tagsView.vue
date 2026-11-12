@@ -270,7 +270,7 @@ watch(
       flex-shrink: 0;
 
       &:hover {
-        background: rgba(0, 0, 0, 0.08);
+        background: rgb(0 0 0 / 8%);
       }
     }
   }
@@ -300,7 +300,7 @@ watch(
     }
 
     .close-icon:hover {
-      background: rgba(255, 255, 255, 0.18);
+      background: rgb(255 255 255 / 18%);
     }
   }
 
@@ -337,6 +337,7 @@ watch(
   from {
     transform: translateX(0);
   }
+
   to {
     transform: translateX(var(--tag-title-shift));
   }

@@ -103,10 +103,11 @@ test.describe('套餐管理页面真实接口闭环', () => {
       await cleanupPackages(request, token, packageCode);
       await loginPage(page, platformTenant);
 
-      const listResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/authorization/menu-packages') &&
-        response.request().method() === 'GET' &&
-        response.status() === 200
+      const listResponsePromise = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/authorization/menu-packages') &&
+          response.request().method() === 'GET' &&
+          response.status() === 200,
       );
       await page.goto('/#/system/menu-package');
       await listResponsePromise;
@@ -120,10 +121,11 @@ test.describe('套餐管理页面真实接口闭环', () => {
       await checkPackageMenuNode(createDialog, '角色管理');
       await checkPackageMenuNode(createDialog, '日志管理');
 
-      const createResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/authorization/menu-packages') &&
-        response.request().method() === 'POST' &&
-        response.status() === 200
+      const createResponsePromise = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/authorization/menu-packages') &&
+          response.request().method() === 'POST' &&
+          response.status() === 200,
       );
       await createDialog.getByRole('button', { name: '确定' }).click();
       await createResponsePromise;
@@ -139,7 +141,9 @@ test.describe('套餐管理页面真实接口闭环', () => {
       await expect(page.locator('.el-drawer').getByText('角色管理').first()).toBeVisible();
       await page.keyboard.press('Escape');
 
-      const createdPackage = (await listPackages(request, token, packageCode)).find((item: any) => item.packageCode === packageCode);
+      const createdPackage = (await listPackages(request, token, packageCode)).find(
+        (item: any) => item.packageCode === packageCode,
+      );
       expect(createdPackage?.packageId).toBeTruthy();
       const packageDetail = await getPackageDetail(request, token, createdPackage.packageId);
       const updateResponse = await request.put(e2eApi('/authorization/menu-packages'), {
@@ -159,27 +163,32 @@ test.describe('套餐管理页面真实接口闭环', () => {
       const updateBody = await updateResponse.json();
       expect(updateBody.success || updateBody.code === 200).toBeTruthy();
 
-      const refreshAfterUpdatePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/authorization/menu-packages') &&
-        response.request().method() === 'GET' &&
-        response.status() === 200
+      const refreshAfterUpdatePromise = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/authorization/menu-packages') &&
+          response.request().method() === 'GET' &&
+          response.status() === 200,
       );
       await page.getByRole('button', { name: '查询' }).click();
       await refreshAfterUpdatePromise;
       await expect(page.locator('.el-table__row', { hasText: editedPackageName })).toBeVisible({ timeout: 10000 });
 
       const editedRow = page.locator('.el-table__row', { hasText: packageCode }).first();
-      const deleteResponse = await request.delete(e2eApi(`/authorization/menu-packages?packageId=${createdPackage.packageId}`), {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const deleteResponse = await request.delete(
+        e2eApi(`/authorization/menu-packages?packageId=${createdPackage.packageId}`),
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
       expect(deleteResponse.status()).toBe(200);
       const deleteBody = await deleteResponse.json();
       expect(deleteBody.success || deleteBody.code === 200).toBeTruthy();
 
-      const refreshAfterDeletePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/authorization/menu-packages') &&
-        response.request().method() === 'GET' &&
-        response.status() === 200
+      const refreshAfterDeletePromise = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/authorization/menu-packages') &&
+          response.request().method() === 'GET' &&
+          response.status() === 200,
       );
       await page.getByRole('button', { name: '查询' }).click();
       await refreshAfterDeletePromise;

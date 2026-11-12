@@ -62,7 +62,11 @@ function stablePackageJsonShape(text) {
   for (const field of DEPENDENCY_FIELDS) {
     const value = normalized[field];
     if (value && typeof value === 'object' && !Array.isArray(value)) {
-      normalized[field] = Object.fromEntries(Object.keys(value).sort().map((name) => [name, '<version>']));
+      normalized[field] = Object.fromEntries(
+        Object.keys(value)
+          .sort()
+          .map((name) => [name, '<version>']),
+      );
     }
   }
   return stableStringify(normalized);
@@ -237,7 +241,11 @@ export function assertCleanWorktree(repoRoot, { ignoredPaths = [] } = {}) {
     .split(/\r?\n/u)
     .filter(Boolean)
     .filter((line) => {
-      const path = line.replace(/^\s*[A-Z?!]{1,2}\s+/u, '').trim().replace(/^"/u, '').replace(/"$/u, '');
+      const path = line
+        .replace(/^\s*[A-Z?!]{1,2}\s+/u, '')
+        .trim()
+        .replace(/^"/u, '')
+        .replace(/"$/u, '');
       return ![...ignored].some((candidate) => path === candidate || path.endsWith(`/${candidate}`));
     });
   if (dirty.length > 0) throw new Error(`release preparation requires a clean worktree:\n${dirty.join('\n')}`);

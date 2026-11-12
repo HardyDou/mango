@@ -1,16 +1,16 @@
 :root {
   color: #151d2b;
-  background: #ffffff;
+  background: #fff;
   font-family:
-    "PingFang SC",
-    "Microsoft YaHei",
-    "Noto Sans CJK SC",
+    'PingFang SC',
+    'Microsoft YaHei',
+    'Noto Sans CJK SC',
     -apple-system,
     BlinkMacSystemFont,
-    "Segoe UI",
+    'Segoe UI',
     sans-serif;
   font-synthesis: none;
-  text-rendering: optimizeLegibility;
+  text-rendering: optimizelegibility;
 }
 
 * {
@@ -24,7 +24,7 @@ html {
 body {
   min-width: 320px;
   margin: 0;
-  background: #ffffff;
+  background: #fff;
 }
 
 a {
@@ -39,7 +39,7 @@ button {
 .enterprise-site {
   min-height: 100vh;
   overflow-x: hidden;
-  background: #ffffff;
+  background: #fff;
 }
 
 .section-shell {
@@ -55,10 +55,10 @@ button {
   transform: translateX(-50%);
   border: 1px solid #c8def7;
   padding: 10px 18px;
-  background: rgba(255, 255, 255, 0.96);
+  background: rgb(255 255 255 / 96%);
   color: #075bbd;
   font-size: 14px;
-  box-shadow: 0 10px 30px rgba(13, 43, 82, 0.14);
+  box-shadow: 0 10px 30px rgb(13 43 82 / 14%);
 }
 
 .site-hero {
@@ -66,15 +66,14 @@ button {
   min-height: 720px;
   padding-top: 78px;
   background:
-    linear-gradient(90deg, rgba(246, 250, 255, 0.98) 0%, rgba(237, 246, 255, 0.94) 46%, rgba(215, 235, 255, 0.86) 100%),
-    #f6faff;
+    linear-gradient(90deg, rgb(246 250 255 / 98%) 0%, rgb(237 246 255 / 94%) 46%, rgb(215 235 255 / 86%) 100%), #f6faff;
   color: #111827;
 }
 
 .site-hero.is-inner {
   min-height: 78px;
   padding-top: 78px;
-  background: #ffffff;
+  background: #fff;
 }
 
 .site-hero.is-inner::before,
@@ -86,9 +85,9 @@ button {
   position: absolute;
   inset: 78px 0 0;
   background:
-    linear-gradient(118deg, rgba(255, 255, 255, 0) 0 49%, rgba(18, 105, 210, 0.08) 49% 67%, rgba(255, 255, 255, 0) 67% 100%),
-    linear-gradient(180deg, rgba(0, 91, 216, 0.08), rgba(255, 255, 255, 0));
-  content: "";
+    linear-gradient(118deg, rgb(255 255 255 / 0%) 0 49%, rgb(18 105 210 / 8%) 49% 67%, rgb(255 255 255 / 0%) 67% 100%),
+    linear-gradient(180deg, rgb(0 91 216 / 8%), rgb(255 255 255 / 0%));
+  content: '';
 }
 
 .site-hero::after {
@@ -98,10 +97,10 @@ button {
   width: min(46vw, 650px);
   height: 74%;
   background:
-    linear-gradient(135deg, rgba(0, 91, 216, 0.18), rgba(255, 255, 255, 0)),
-    repeating-linear-gradient(135deg, rgba(10, 102, 216, 0.13) 0 1px, transparent 1px 28px);
+    linear-gradient(135deg, rgb(0 91 216 / 18%), rgb(255 255 255 / 0%)),
+    repeating-linear-gradient(135deg, rgb(10 102 216 / 13%) 0 1px, transparent 1px 28px);
   clip-path: polygon(20% 0, 100% 0, 100% 100%, 0 100%);
-  content: "";
+  content: '';
 }
 
 .site-header {
@@ -117,8 +116,8 @@ button {
   min-height: 78px;
   border-bottom: 1px solid #e7edf5;
   padding: 0 max(24px, calc((100vw - 1280px) / 2));
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 4px 24px rgba(13, 43, 82, 0.06);
+  background: rgb(255 255 255 / 96%);
+  box-shadow: 0 4px 24px rgb(13 43 82 / 6%);
 }
 
 .brand {
@@ -134,7 +133,7 @@ button {
   height: 42px;
   place-items: center;
   background: #005bd8;
-  color: #ffffff;
+  color: #fff;
   font-size: 21px;
   font-weight: 800;
 }
@@ -193,10 +192,12 @@ button {
   left: 18px;
   height: 3px;
   background: #005bd8;
-  content: "";
+  content: '';
   opacity: 0;
   transform: scaleX(0.3);
-  transition: opacity 160ms ease, transform 160ms ease;
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
 }
 
 .top-nav a:hover,
@@ -225,16 +226,16 @@ button {
   margin: 96px auto 0;
   border-left: 4px solid #005bd8;
   padding: 18px 22px;
-  background: #ffffff;
+  background: #fff;
   color: #151d2b;
-  box-shadow: 0 18px 50px rgba(13, 43, 82, 0.12);
+  box-shadow: 0 18px 50px rgb(13 43 82 / 12%);
 }
 
 .site-error button {
   border: 0;
   padding: 9px 18px;
   background: #005bd8;
-  color: #ffffff;
+  color: #fff;
   cursor: pointer;
 }
 
@@ -297,8 +298,8 @@ button {
 
 .primary-link {
   background: #005bd8;
-  color: #ffffff;
-  box-shadow: 0 14px 34px rgba(0, 91, 216, 0.24);
+  color: #fff;
+  box-shadow: 0 14px 34px rgb(0 91 216 / 24%);
 }
 
 .primary-link:hover {
@@ -307,7 +308,7 @@ button {
 
 .ghost-link {
   border: 1px solid #b6c9e2;
-  background: #ffffff;
+  background: #fff;
   color: #19304d;
 }
 
@@ -324,7 +325,7 @@ button {
   position: relative;
   padding: 18px;
   background: #0c2a55;
-  box-shadow: 0 26px 70px rgba(13, 43, 82, 0.24);
+  box-shadow: 0 26px 70px rgb(13 43 82 / 24%);
 }
 
 .hero-panel::before {
@@ -335,7 +336,7 @@ button {
   height: 180px;
   border-top: 4px solid #2b91ff;
   border-right: 4px solid #2b91ff;
-  content: "";
+  content: '';
 }
 
 .hero-banner-link {
@@ -361,7 +362,7 @@ button {
 .platform-window {
   position: relative;
   overflow: hidden;
-  background: #ffffff;
+  background: #fff;
 }
 
 .window-bar {
@@ -383,9 +384,7 @@ button {
   position: relative;
   min-height: 330px;
   padding: 30px;
-  background:
-    linear-gradient(180deg, rgba(0, 91, 216, 0.06), rgba(255, 255, 255, 0)),
-    #ffffff;
+  background: linear-gradient(180deg, rgb(0 91 216 / 6%), rgb(255 255 255 / 0%)), #fff;
 }
 
 .platform-copy strong {
@@ -479,7 +478,7 @@ button {
 }
 
 .site-info-section {
-  background: #ffffff;
+  background: #fff;
 }
 
 .site-info-grid {
@@ -517,7 +516,7 @@ button {
 .ad-panel {
   padding: 30px;
   background: #005bd8;
-  color: #ffffff;
+  color: #fff;
 }
 
 .ad-panel .section-kicker {
@@ -526,23 +525,23 @@ button {
 
 .ad-panel h3 {
   margin: 0;
-  color: #ffffff;
+  color: #fff;
   font-size: 24px;
   line-height: 1.4;
 }
 
 .ad-panel p {
   margin: 18px 0 0;
-  color: rgba(255, 255, 255, 0.82);
+  color: rgb(255 255 255 / 82%);
   line-height: 1.7;
 }
 
 .ad-panel a {
   display: inline-flex;
   margin-top: 28px;
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: 1px solid rgb(255 255 255 / 50%);
   padding: 11px 18px;
-  color: #ffffff;
+  color: #fff;
   font-weight: 800;
 }
 
@@ -562,7 +561,7 @@ button {
 }
 
 .ad-panel .ad-content strong {
-  color: #ffffff;
+  color: #fff;
   font-size: 24px;
   line-height: 1.4;
 }
@@ -578,7 +577,7 @@ button {
 
 .ad-panel .ad-content em,
 .ad-panel .ad-rich-text {
-  color: rgba(255, 255, 255, 0.82);
+  color: rgb(255 255 255 / 82%);
 }
 
 .ad-rich-text :where(p, ul, ol, blockquote) {
@@ -634,7 +633,7 @@ button {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   border-top: 1px solid #d9e4f2;
   border-left: 1px solid #d9e4f2;
-  background: #ffffff;
+  background: #fff;
 }
 
 .category-card {
@@ -642,8 +641,10 @@ button {
   border-right: 1px solid #d9e4f2;
   border-bottom: 1px solid #d9e4f2;
   padding: 30px 28px;
-  background: #ffffff;
-  transition: background 160ms ease, transform 160ms ease;
+  background: #fff;
+  transition:
+    background 160ms ease,
+    transform 160ms ease;
 }
 
 .category-card:hover {
@@ -677,18 +678,16 @@ button {
 .category-card:hover span,
 .category-card:hover h3,
 .category-card:hover p {
-  color: #ffffff;
+  color: #fff;
 }
 
 .content-section {
-  background: #ffffff;
+  background: #fff;
 }
 
 .page-title-section {
   padding: clamp(30px, 4.5vw, 48px) 0;
-  background:
-    linear-gradient(105deg, rgba(0, 91, 216, 0.12), rgba(255, 255, 255, 0) 58%),
-    #f3f7fc;
+  background: linear-gradient(105deg, rgb(0 91 216 / 12%), rgb(255 255 255 / 0%) 58%), #f3f7fc;
 }
 
 .page-title-layout {
@@ -753,7 +752,7 @@ button {
 .section-actions a:hover,
 .home-news-card a:hover {
   background: #005bd8;
-  color: #ffffff;
+  color: #fff;
 }
 
 .content-layout {
@@ -777,7 +776,7 @@ button {
 
 .list-ad:hover {
   border-color: #005bd8;
-  background: #ffffff;
+  background: #fff;
 }
 
 .list-ad .ad-content strong {
@@ -860,9 +859,7 @@ button {
 
 .news-cover.empty {
   border: 1px solid #d8e4f3;
-  background:
-    linear-gradient(135deg, transparent 49%, rgba(0, 91, 216, 0.14) 50%, transparent 51%),
-    #f5f9ff;
+  background: linear-gradient(135deg, transparent 49%, rgb(0 91 216 / 14%) 50%, transparent 51%), #f5f9ff;
 }
 
 .news-body strong,
@@ -922,7 +919,7 @@ button {
   height: 36px;
   border: 1px solid #d7e4f4;
   padding: 0 12px;
-  background: #ffffff;
+  background: #fff;
   color: #26364f;
   cursor: pointer;
 }
@@ -931,7 +928,7 @@ button {
 .content-pagination button.active {
   border-color: #005bd8;
   background: #005bd8;
-  color: #ffffff;
+  color: #fff;
 }
 
 .content-pagination button:disabled {
@@ -1005,7 +1002,7 @@ button {
 .article-detail {
   min-height: 420px;
   padding: 42px 48px;
-  background: #ffffff;
+  background: #fff;
 }
 
 .article-meta {
@@ -1020,7 +1017,7 @@ button {
 .article-meta span:not(:last-child)::after {
   padding-left: 12px;
   color: #c3cedb;
-  content: "/";
+  content: '/';
 }
 
 .article-cover,
@@ -1052,7 +1049,7 @@ button {
 
 .article-attachment:hover {
   background: #005bd8;
-  color: #ffffff;
+  color: #fff;
 }
 
 .rich-text {
@@ -1125,7 +1122,7 @@ button {
   background: #071526;
 }
 
-.rich-text a[href*="/api/cms/open/files/public-preview"] {
+.rich-text a[href*='/api/cms/open/files/public-preview'] {
   display: inline-flex;
   align-items: center;
   margin: 8px 0 18px;
@@ -1144,14 +1141,14 @@ button {
   display: block;
   border-left: 4px solid #005bd8;
   padding: 20px 22px;
-  background: #ffffff;
+  background: #fff;
 }
 
 .empty-section,
 .empty-block {
   border: 1px dashed #b9c9dd;
   padding: 26px;
-  background: rgba(255, 255, 255, 0.78);
+  background: rgb(255 255 255 / 78%);
   color: #637086;
   font-size: 15px;
   line-height: 1.7;
@@ -1176,7 +1173,7 @@ button {
 
 .site-footer {
   background: #071526;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgb(255 255 255 / 80%);
 }
 
 .footer-grid {
@@ -1188,14 +1185,14 @@ button {
 
 .footer-grid strong {
   display: block;
-  color: #ffffff;
+  color: #fff;
   font-size: 22px;
   line-height: 1.4;
 }
 
 .footer-grid span {
   display: block;
-  color: #ffffff;
+  color: #fff;
   font-size: 16px;
   font-weight: 800;
 }
@@ -1205,24 +1202,24 @@ button {
 .footer-grid em {
   display: block;
   margin: 12px 0 0;
-  color: rgba(255, 255, 255, 0.66);
+  color: rgb(255 255 255 / 66%);
   font-size: 14px;
   font-style: normal;
   line-height: 1.75;
 }
 
 .footer-grid a:hover {
-  color: #ffffff;
+  color: #fff;
 }
 
 .footer-bottom {
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  border-top: 1px solid rgb(255 255 255 / 12%);
   padding: 18px 0 24px;
-  color: rgba(255, 255, 255, 0.56);
+  color: rgb(255 255 255 / 56%);
   font-size: 13px;
 }
 
-@media (max-width: 980px) {
+@media (width <= 980px) {
   .section-shell,
   .hero-layout {
     width: min(100% - 32px, 720px);
@@ -1298,7 +1295,7 @@ button {
   }
 }
 
-@media (max-width: 620px) {
+@media (width <= 620px) {
   .section-shell,
   .hero-layout {
     width: calc(100% - 28px);

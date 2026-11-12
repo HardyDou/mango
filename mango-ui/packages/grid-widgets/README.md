@@ -8,13 +8,13 @@
 
 ## 2. 功能清单
 
-| 能力 | 用途 | 入口 |
-|------|------|------|
-| 小组件定义类型 | 约束业务包注册的小组件元数据 | `MangoGridWidgetDefinition` |
-| 运行时上下文 | 向小组件注入用户、租户、菜单、跳转函数 | `MangoWidgetRuntimeContext` |
-| 聚合去重 | 合并系统、业务、临时传入的小组件 | `mergeGridWidgets` |
-| 访问控制 | 按权限码和菜单页面入口决定能否渲染、能否新增 | `access` / `visibility` |
-| 基础类型 | 快捷入口、消息中心、日历、工作流小组件 props 类型 | 包根入口 |
+| 能力           | 用途                                              | 入口                        |
+| -------------- | ------------------------------------------------- | --------------------------- |
+| 小组件定义类型 | 约束业务包注册的小组件元数据                      | `MangoGridWidgetDefinition` |
+| 运行时上下文   | 向小组件注入用户、租户、菜单、跳转函数            | `MangoWidgetRuntimeContext` |
+| 聚合去重       | 合并系统、业务、临时传入的小组件                  | `mergeGridWidgets`          |
+| 访问控制       | 按权限码和菜单页面入口决定能否渲染、能否新增      | `access` / `visibility`     |
+| 基础类型       | 快捷入口、消息中心、日历、工作流小组件 props 类型 | 包根入口                    |
 
 ## 3. 快速开始
 
@@ -31,25 +31,25 @@ const widgets = mergeGridWidgets({
 
 独立集成时至少准备：
 
-| 输入 | 来源 | 说明 |
-|------|------|------|
-| `runtime.user` | 宿主登录态 | 小组件展示当前用户、租户或权限相关内容时使用 |
-| `runtime.menus` | 宿主菜单与权限结果 | 快捷入口、网址导航等需要判断可访问菜单 |
-| `runtime.navigate` | 宿主路由跳转函数 | 小组件点击后交给宿主完成跳转 |
-| `businessWidgets` | 已执行的业务包 registrar | 只聚合当前应用实际集成的业务小组件 |
+| 输入               | 来源                     | 说明                                         |
+| ------------------ | ------------------------ | -------------------------------------------- |
+| `runtime.user`     | 宿主登录态               | 小组件展示当前用户、租户或权限相关内容时使用 |
+| `runtime.menus`    | 宿主菜单与权限结果       | 快捷入口、网址导航等需要判断可访问菜单       |
+| `runtime.navigate` | 宿主路由跳转函数         | 小组件点击后交给宿主完成跳转                 |
+| `businessWidgets`  | 已执行的业务包 registrar | 只聚合当前应用实际集成的业务小组件           |
 
 ## 4. 组件归属
 
-| 小组件 | 类型 | 所属业务包 |
-|--------|------|------------|
-| 用户信息 | `system.user-profile` | `@mango/system` |
-| 快捷入口 | `system.quick-entry` | `@mango/system` |
-| 网址导航 | `system.link-navigation` | `@mango/link` |
-| 日历 | `calendar.calendar` | `@mango/calendar` |
-| 消息中心 | `notice.message-center` | `@mango/notice` |
-| 我的待办 | `workflow.my-todo` | `@mango/workflow` |
-| 我的申请 | `workflow.my-process` | `@mango/workflow` |
-| 我的任务 | `workflow.my-task` | `@mango/workflow` |
+| 小组件   | 类型                     | 所属业务包        |
+| -------- | ------------------------ | ----------------- |
+| 用户信息 | `system.user-profile`    | `@mango/system`   |
+| 快捷入口 | `system.quick-entry`     | `@mango/system`   |
+| 网址导航 | `system.link-navigation` | `@mango/link`     |
+| 日历     | `calendar.calendar`      | `@mango/calendar` |
+| 消息中心 | `notice.message-center`  | `@mango/notice`   |
+| 我的待办 | `workflow.my-todo`       | `@mango/workflow` |
+| 我的申请 | `workflow.my-process`    | `@mango/workflow` |
+| 我的任务 | `workflow.my-task`       | `@mango/workflow` |
 
 ## 5. 接入方式
 
@@ -70,14 +70,14 @@ const widgets = mergeGridWidgets({
 
 `@mango/grid-widgets` 自身没有远程配置、环境变量或持久化配置项。它只消费调用方传入的运行时上下文和小组件定义。
 
-| 配置项 | 设置位置 | 默认值 | 行为影响 |
-|--------|----------|--------|----------|
-| `runtime` | 调用 `mergeGridWidgets` 时传入 | 无 | 决定小组件能读取的用户、菜单、租户和跳转能力 |
-| `businessWidgets` | 业务包 admin registrar 返回 | `[]` | 决定组件库出现哪些业务小组件 |
-| `extraWidgets` | 调用方额外传入 | `[]` | 允许宿主追加临时或应用私有小组件 |
-| `access.permissionCodes` | 小组件定义 | `[]` | 声明渲染和新增小组件所需的按钮或页面权限码 |
-| `access.routePaths` | 小组件定义 | `[]` | 声明小组件可点击目标必须存在的菜单页面入口 |
-| `access.mode` / `visibility.mode` | 小组件定义 | `all` | 权限码匹配模式；默认要求全部权限满足 |
+| 配置项                            | 设置位置                       | 默认值 | 行为影响                                     |
+| --------------------------------- | ------------------------------ | ------ | -------------------------------------------- |
+| `runtime`                         | 调用 `mergeGridWidgets` 时传入 | 无     | 决定小组件能读取的用户、菜单、租户和跳转能力 |
+| `businessWidgets`                 | 业务包 admin registrar 返回    | `[]`   | 决定组件库出现哪些业务小组件                 |
+| `extraWidgets`                    | 调用方额外传入                 | `[]`   | 允许宿主追加临时或应用私有小组件             |
+| `access.permissionCodes`          | 小组件定义                     | `[]`   | 声明渲染和新增小组件所需的按钮或页面权限码   |
+| `access.routePaths`               | 小组件定义                     | `[]`   | 声明小组件可点击目标必须存在的菜单页面入口   |
+| `access.mode` / `visibility.mode` | 小组件定义                     | `all`  | 权限码匹配模式；默认要求全部权限满足         |
 
 具体业务小组件的数据接口、权限码和样式入口由所属业务包 README 说明，例如 `@mango/link`、`@mango/system`、`@mango/calendar`、`@mango/notice` 和 `@mango/workflow`。
 
@@ -154,14 +154,14 @@ export function registerMangoBusinessAdminPages() {
 
 `@mango/grid-widgets` 不初始化数据库、不写入菜单、不创建权限、不保存个人布局，也不直接请求业务数据。
 
-| 数据 | 所属模块 | 初始化或读取方式 |
-|------|----------|------------------|
-| 首页布局 | `@mango/admin-shell` + `@mango/grid-layout` | Shell 读取并保存当前用户布局 |
-| 网址导航数据 | `mango-link` / `@mango/link` | Link 后端接口与前端小组件读取 |
-| 用户和快捷入口 | `mango-system` / `@mango/system` | 宿主登录态、菜单和系统前端能力提供 |
-| 日历数据 | `mango-calendar` / `@mango/calendar` | Calendar 业务包小组件读取 |
-| 消息中心 | `mango-notice` / `@mango/notice` | Notice 业务包小组件读取 |
-| 工作流待办 | `mango-workflow` / `@mango/workflow` | Workflow 业务包小组件读取 |
+| 数据           | 所属模块                                    | 初始化或读取方式                   |
+| -------------- | ------------------------------------------- | ---------------------------------- |
+| 首页布局       | `@mango/admin-shell` + `@mango/grid-layout` | Shell 读取并保存当前用户布局       |
+| 网址导航数据   | `mango-link` / `@mango/link`                | Link 后端接口与前端小组件读取      |
+| 用户和快捷入口 | `mango-system` / `@mango/system`            | 宿主登录态、菜单和系统前端能力提供 |
+| 日历数据       | `mango-calendar` / `@mango/calendar`        | Calendar 业务包小组件读取          |
+| 消息中心       | `mango-notice` / `@mango/notice`            | Notice 业务包小组件读取            |
+| 工作流待办     | `mango-workflow` / `@mango/workflow`        | Workflow 业务包小组件读取          |
 
 如果业务项目缺少对应后端 starter、前端包或菜单权限，对应小组件不应通过 `@mango/grid-widgets` 兜底造数据。
 
@@ -169,23 +169,23 @@ export function registerMangoBusinessAdminPages() {
 
 首页小组件的用户入口在管理后台首页。组件库由 `@mango/admin-shell` 渲染，布局拖拽和卡片尺寸由 `@mango/grid-layout` 承担。
 
-| 入口 | 负责模块 | 说明 |
-|------|----------|------|
-| 首页组件库 | `@mango/admin-shell` | 展示已集成业务包注册的小组件 |
-| 首页布局编辑 | `@mango/grid-layout` | 拖拽、调整尺寸、保存个人布局 |
-| 业务小组件内容 | 各业务 UI 包 | 自己读取接口、处理空态和权限不足 |
+| 入口           | 负责模块             | 说明                             |
+| -------------- | -------------------- | -------------------------------- |
+| 首页组件库     | `@mango/admin-shell` | 展示已集成业务包注册的小组件     |
+| 首页布局编辑   | `@mango/grid-layout` | 拖拽、调整尺寸、保存个人布局     |
+| 业务小组件内容 | 各业务 UI 包         | 自己读取接口、处理空态和权限不足 |
 
 菜单是否可见、按钮权限和业务数据权限由所属业务模块负责。`@mango/grid-widgets` 只维护聚合契约，不提供后台管理页面。
 
 ## 10. 问题排查
 
-| 现象 | 排查方向 |
-|------|----------|
+| 现象                     | 排查方向                                                                                      |
+| ------------------------ | --------------------------------------------------------------------------------------------- |
 | 组件库没有某个业务小组件 | 确认业务 UI 包是否已安装、是否在 admin/full 或 CLI 模块清单中声明、admin registrar 是否被执行 |
-| 小组件样式缺失 | 确认所属业务包是否导出 `./style.css`，admin 样式聚合是否包含该业务包 |
-| 历史布局出现失效组件 | 确认保存的 widget `type` 是否来自已移除或未集成业务包，进入布局编辑清理 |
-| 小组件显示空态 | 查看所属业务包 README，确认后端 starter、菜单权限、租户数据和接口返回 |
-| 点击跳转无反应 | 确认宿主传入 `runtime.navigate`，且目标菜单或路由已注册 |
+| 小组件样式缺失           | 确认所属业务包是否导出 `./style.css`，admin 样式聚合是否包含该业务包                          |
+| 历史布局出现失效组件     | 确认保存的 widget `type` 是否来自已移除或未集成业务包，进入布局编辑清理                       |
+| 小组件显示空态           | 查看所属业务包 README，确认后端 starter、菜单权限、租户数据和接口返回                         |
+| 点击跳转无反应           | 确认宿主传入 `runtime.navigate`，且目标菜单或路由已注册                                       |
 
 ## 11. 相关文档
 

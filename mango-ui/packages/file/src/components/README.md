@@ -156,62 +156,62 @@ const fileIds = ref<string[]>([]);
 
 #### Props
 
-| Prop | 类型 | 默认值 | 说明 |
-| --- | --- | --- | --- |
-| `modelValue` | `MangoAttachmentUploadFile[]` | `[]` | 当前分类附件值，支持 `v-model`。 |
-| `categories` | `MangoAttachmentUploadCategory[]` | `[]` | 资料分类及每类上传规则。空数组显示空态。 |
-| `purpose` | `string` | 未设置 | 文件用途，透传给文件中心。 |
-| `accessLevel` | `string` | `PRIVATE` | 文件访问级别。 |
-| `bizType` | `string` | 未设置 | 文件归属业务类型。 |
-| `bizId` | `string \| number` | 未设置 | 文件归属业务 ID。 |
-| `bizMeta` | `Record<string, unknown> \| string` | 未设置 | 文件归属扩展元数据。 |
-| `directoryId` | `string \| number` | 未设置 | 文件中心逻辑目录 ID。 |
-| `showPreviewActions` | `boolean` | `true` | 是否显示预览弹框的下载/新窗口操作。 |
-| `disabled` | `boolean` | `false` | 不执行上传、替换和删除操作，但仍展示已有文件。 |
-| `layout` | `'grid' \| 'stacked'` | `'grid'` | 卡片排列方式。 |
+| Prop                 | 类型                                | 默认值    | 说明                                           |
+| -------------------- | ----------------------------------- | --------- | ---------------------------------------------- |
+| `modelValue`         | `MangoAttachmentUploadFile[]`       | `[]`      | 当前分类附件值，支持 `v-model`。               |
+| `categories`         | `MangoAttachmentUploadCategory[]`   | `[]`      | 资料分类及每类上传规则。空数组显示空态。       |
+| `purpose`            | `string`                            | 未设置    | 文件用途，透传给文件中心。                     |
+| `accessLevel`        | `string`                            | `PRIVATE` | 文件访问级别。                                 |
+| `bizType`            | `string`                            | 未设置    | 文件归属业务类型。                             |
+| `bizId`              | `string \| number`                  | 未设置    | 文件归属业务 ID。                              |
+| `bizMeta`            | `Record<string, unknown> \| string` | 未设置    | 文件归属扩展元数据。                           |
+| `directoryId`        | `string \| number`                  | 未设置    | 文件中心逻辑目录 ID。                          |
+| `showPreviewActions` | `boolean`                           | `true`    | 是否显示预览弹框的下载/新窗口操作。            |
+| `disabled`           | `boolean`                           | `false`   | 不执行上传、替换和删除操作，但仍展示已有文件。 |
+| `layout`             | `'grid' \| 'stacked'`               | `'grid'`  | 卡片排列方式。                                 |
 
 #### `MangoAttachmentUploadCategory`
 
-| 字段 | 类型 | 默认值 | 说明 |
-| --- | --- | --- | --- |
-| `key` | `string` | 必填 | 分类稳定标识，不能与其它分类重复。 |
-| `name` | `string` | 必填 | 分类展示名称。 |
-| `required` | `boolean` | `false` | 是否参与 `validate()` 必填校验。 |
-| `minFileCount` | `number` | `1` | 最少文件数；仅在 `required` 时参与必填校验。 |
-| `maxFileCount` | `number` | `1` | 最大文件数；超出时拒绝继续添加。 |
-| `formats` | `string[]` | `[]` | 扩展名白名单，例如 `['pdf', 'docx']`。 |
-| `accept` | `string` | 未设置 | 原生文件选择器的 MIME/扩展名限制。 |
-| `maxFileSizeMb` | `number` | 未设置 | 单文件大小上限，单位 MiB。 |
-| `allowSingleFileReplacement` | `boolean` | `true` | 单文件分类再次上传时是否允许替换。 |
-| `requirementLabel` | `string` | 未设置 | 分类规则提示文案。 |
-| `description` | `string` | 未设置 | 分类说明文案。 |
-| `selectionHint` | `string` | 已废弃 | 兼容字段；卡片不再渲染，改用 `description`。 |
+| 字段                         | 类型       | 默认值  | 说明                                         |
+| ---------------------------- | ---------- | ------- | -------------------------------------------- |
+| `key`                        | `string`   | 必填    | 分类稳定标识，不能与其它分类重复。           |
+| `name`                       | `string`   | 必填    | 分类展示名称。                               |
+| `required`                   | `boolean`  | `false` | 是否参与 `validate()` 必填校验。             |
+| `minFileCount`               | `number`   | `1`     | 最少文件数；仅在 `required` 时参与必填校验。 |
+| `maxFileCount`               | `number`   | `1`     | 最大文件数；超出时拒绝继续添加。             |
+| `formats`                    | `string[]` | `[]`    | 扩展名白名单，例如 `['pdf', 'docx']`。       |
+| `accept`                     | `string`   | 未设置  | 原生文件选择器的 MIME/扩展名限制。           |
+| `maxFileSizeMb`              | `number`   | 未设置  | 单文件大小上限，单位 MiB。                   |
+| `allowSingleFileReplacement` | `boolean`  | `true`  | 单文件分类再次上传时是否允许替换。           |
+| `requirementLabel`           | `string`   | 未设置  | 分类规则提示文案。                           |
+| `description`                | `string`   | 未设置  | 分类说明文案。                               |
+| `selectionHint`              | `string`   | 已废弃  | 兼容字段；卡片不再渲染，改用 `description`。 |
 
 #### `MangoAttachmentUploadFile`
 
-| 字段 | 类型 | 说明 |
-| --- | --- | --- |
-| `categoryKey` | `string` | 所属分类 `key`。 |
-| `fileId` | `string` | 文件中心记录 ID；业务持久化应使用该字段或附件关系。 |
-| `fileName` | `string` | 原始文件名。 |
-| `fileExt` | `string` | 文件扩展名，可选。 |
-| `fileSize` | `number` | 文件大小，单位字节，可选。 |
-| `previewUrl` | `string` | 当前页面临时预览地址，可选；业务持久化使用文件字段或附件关系。 |
+| 字段          | 类型     | 说明                                                           |
+| ------------- | -------- | -------------------------------------------------------------- |
+| `categoryKey` | `string` | 所属分类 `key`。                                               |
+| `fileId`      | `string` | 文件中心记录 ID；业务持久化应使用该字段或附件关系。            |
+| `fileName`    | `string` | 原始文件名。                                                   |
+| `fileExt`     | `string` | 文件扩展名，可选。                                             |
+| `fileSize`    | `number` | 文件大小，单位字节，可选。                                     |
+| `previewUrl`  | `string` | 当前页面临时预览地址，可选；业务持久化使用文件字段或附件关系。 |
 | `downloadUrl` | `string` | 当前页面临时下载地址，可选；业务持久化使用文件字段或附件关系。 |
 
 #### Events、slots 和 expose
 
-| 类型 | 名称 | 参数 | 说明 |
-| --- | --- | --- | --- |
-| v-model | `update:modelValue` | `MangoAttachmentUploadFile[]` | 附件值变化。 |
-| event | `change` | `MangoAttachmentUploadFile[]` | 上传成功或删除后返回完整附件值。 |
-| event | `uploading-change` | `boolean` | 是否存在上传中的分类。 |
-| event | `success` | `(file, category)` | 单个文件上传成功。 |
-| event | `error` | `(error, category)` | 单个文件上传失败；组件保留其它已成功文件。 |
-| event | `remove` | `file` | 从当前附件值移除文件；不删除物理文件。 |
-| slot | `file-status` | `{ file, category }` | 覆盖分类卡片或文件行的状态区域。 |
-| slot | `file-note` | `{ file, category }` | 覆盖分类卡片或文件行的说明区域。 |
-| expose | `validate()` | `boolean` | 所有必填分类满足最小数量返回 `true`，否则返回 `false` 并提示缺失分类。 |
+| 类型    | 名称                | 参数                          | 说明                                                                   |
+| ------- | ------------------- | ----------------------------- | ---------------------------------------------------------------------- |
+| v-model | `update:modelValue` | `MangoAttachmentUploadFile[]` | 附件值变化。                                                           |
+| event   | `change`            | `MangoAttachmentUploadFile[]` | 上传成功或删除后返回完整附件值。                                       |
+| event   | `uploading-change`  | `boolean`                     | 是否存在上传中的分类。                                                 |
+| event   | `success`           | `(file, category)`            | 单个文件上传成功。                                                     |
+| event   | `error`             | `(error, category)`           | 单个文件上传失败；组件保留其它已成功文件。                             |
+| event   | `remove`            | `file`                        | 从当前附件值移除文件；不删除物理文件。                                 |
+| slot    | `file-status`       | `{ file, category }`          | 覆盖分类卡片或文件行的状态区域。                                       |
+| slot    | `file-note`         | `{ file, category }`          | 覆盖分类卡片或文件行的说明区域。                                       |
+| expose  | `validate()`        | `boolean`                     | 所有必填分类满足最小数量返回 `true`，否则返回 `false` 并提示缺失分类。 |
 
 格式、大小、数量校验失败时不会调用上传接口；后端 `GET /file/settings` 的限制仍是最终限制。`previewUrl`、`downloadUrl` 只用于当前页面展示或操作，不能作为业务数据长期保存。
 

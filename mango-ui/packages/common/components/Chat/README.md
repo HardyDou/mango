@@ -11,33 +11,33 @@ import type { ChatStreamProvider, ChatExpose, AIEvent } from '@mango/common';
 
 ## Props
 
-| 名称 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `stream` | `ChatStreamProvider` | - | **必传**。AI 事件流提供者，负责真实传输与鉴权，组件不内置任何请求逻辑 |
-| `sessionId` | `string` | `''` | 初始会话 ID；首次 `done` 事件后会更新为服务端返回的会话 ID |
-| `welcomeMessage` | `string` | `'chat.welcome'` | 空状态欢迎语配置（当前模板固定读取 i18n 的 `chat.welcome`，详见重要约束） |
-| `recommendedQuestions` | `string[]` | `[]` | 空状态展示的推荐问题，点击后直接发送 |
-| `enableThinking` | `boolean` | `true` | 是否创建并展示可折叠的思维链消息 |
-| `maxLength` | `number` | `2000` | 输入框最大字数，超长会被截断 |
-| `placeholder` | `string` | `'chat.placeholder'` | 输入框占位配置（当前模板固定读取 i18n 的 `chat.placeholder`，详见重要约束） |
+| 名称                   | 类型                 | 默认值               | 说明                                                                        |
+| ---------------------- | -------------------- | -------------------- | --------------------------------------------------------------------------- |
+| `stream`               | `ChatStreamProvider` | -                    | **必传**。AI 事件流提供者，负责真实传输与鉴权，组件不内置任何请求逻辑       |
+| `sessionId`            | `string`             | `''`                 | 初始会话 ID；首次 `done` 事件后会更新为服务端返回的会话 ID                  |
+| `welcomeMessage`       | `string`             | `'chat.welcome'`     | 空状态欢迎语配置（当前模板固定读取 i18n 的 `chat.welcome`，详见重要约束）   |
+| `recommendedQuestions` | `string[]`           | `[]`                 | 空状态展示的推荐问题，点击后直接发送                                        |
+| `enableThinking`       | `boolean`            | `true`               | 是否创建并展示可折叠的思维链消息                                            |
+| `maxLength`            | `number`             | `2000`               | 输入框最大字数，超长会被截断                                                |
+| `placeholder`          | `string`             | `'chat.placeholder'` | 输入框占位配置（当前模板固定读取 i18n 的 `chat.placeholder`，详见重要约束） |
 
 ## Events
 
-| 名称 | 参数 | 说明 |
-|------|------|------|
-| `message-send` | `content: string` | 用户发送消息时触发 |
-| `session-change` | `sessionId: string` | 收到 `done` 事件、会话 ID 更新时触发 |
-| `error` | `error: Error` | `stream` provider 抛错时触发；组件内同时展示错误条和重试入口 |
+| 名称             | 参数                | 说明                                                         |
+| ---------------- | ------------------- | ------------------------------------------------------------ |
+| `message-send`   | `content: string`   | 用户发送消息时触发                                           |
+| `session-change` | `sessionId: string` | 收到 `done` 事件、会话 ID 更新时触发                         |
+| `error`          | `error: Error`      | `stream` provider 抛错时触发；组件内同时展示错误条和重试入口 |
 
 ## Expose
 
-| 名称 | 参数 | 说明 |
-|------|------|------|
-| `open()` | - | 打开聊天窗口 |
-| `close()` | - | 关闭聊天窗口 |
-| `toggle()` | - | 切换窗口显隐 |
-| `clearSession()` | - | 中止当前流、清空消息并将会话 ID 置空 |
-| `getSessionId()` | - | 获取当前会话 ID，返回 `string \| null` |
+| 名称             | 参数 | 说明                                   |
+| ---------------- | ---- | -------------------------------------- |
+| `open()`         | -    | 打开聊天窗口                           |
+| `close()`        | -    | 关闭聊天窗口                           |
+| `toggle()`       | -    | 切换窗口显隐                           |
+| `clearSession()` | -    | 中止当前流、清空消息并将会话 ID 置空   |
+| `getSessionId()` | -    | 获取当前会话 ID，返回 `string \| null` |
 
 ## 类型定义
 
@@ -140,10 +140,7 @@ const stream: ChatStreamProvider = async (command, onEvent, signal) => {
 </script>
 
 <template>
-  <Chat
-    :stream="stream"
-    :recommended-questions="['如何重置密码？', '如何创建应用？']"
-  />
+  <Chat :stream="stream" :recommended-questions="['如何重置密码？', '如何创建应用？']" />
 </template>
 ```
 

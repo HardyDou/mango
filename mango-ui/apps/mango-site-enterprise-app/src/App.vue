@@ -42,8 +42,15 @@
             <h1>{{ adTitle(activeBanner) || siteTitle }}</h1>
             <p v-if="adPlainText(activeBanner)" class="hero-lead">{{ adPlainText(activeBanner) }}</p>
             <div class="hero-actions">
-              <a :href="adHref(activeBanner, '#products')" class="primary-link" @click="handleInternalLink(adHref(activeBanner, '#products'), $event)">了解产品能力</a>
-              <a v-if="newsRoute" :href="newsRoute" class="ghost-link" @click="handleInternalLink(newsRoute, $event)">查看新闻动态</a>
+              <a
+                :href="adHref(activeBanner, '#products')"
+                class="primary-link"
+                @click="handleInternalLink(adHref(activeBanner, '#products'), $event)"
+                >了解产品能力</a
+              >
+              <a v-if="newsRoute" :href="newsRoute" class="ghost-link" @click="handleInternalLink(newsRoute, $event)"
+                >查看新闻动态</a
+              >
             </div>
           </template>
           <div v-else class="empty-block">
@@ -114,230 +121,247 @@
 
     <main v-if="!error">
       <template v-if="currentRoute.view === 'home'">
-      <section class="site-info-section" aria-label="站点信息">
-        <div class="section-shell site-info-grid">
-          <article class="site-summary">
-            <p class="section-kicker">企业官网</p>
-            <h2>{{ siteTitle }}</h2>
-            <p>{{ siteDescription }}</p>
-          </article>
+        <section class="site-info-section" aria-label="站点信息">
+          <div class="section-shell site-info-grid">
+            <article class="site-summary">
+              <p class="section-kicker">企业官网</p>
+              <h2>{{ siteTitle }}</h2>
+              <p>{{ siteDescription }}</p>
+            </article>
 
-          <aside class="ad-panel" data-testid="advertisement-panel">
-            <template v-if="primaryAdvertisement">
-              <p class="section-kicker">运营公告</p>
-              <AdContent :ad="primaryAdvertisement" variant="panel" />
-              <a v-if="primaryAdvertisement.jumpUrl" :href="primaryAdvertisement.jumpUrl">立即咨询</a>
-            </template>
-            <div v-else class="empty-block compact">
-              <strong>广告位未配置</strong>
-              <span>请在 CMS 广告管理中配置 HOME_FLOAT 展示位。</span>
+            <aside class="ad-panel" data-testid="advertisement-panel">
+              <template v-if="primaryAdvertisement">
+                <p class="section-kicker">运营公告</p>
+                <AdContent :ad="primaryAdvertisement" variant="panel" />
+                <a v-if="primaryAdvertisement.jumpUrl" :href="primaryAdvertisement.jumpUrl">立即咨询</a>
+              </template>
+              <div v-else class="empty-block compact">
+                <strong>广告位未配置</strong>
+                <span>请在 CMS 广告管理中配置 HOME_FLOAT 展示位。</span>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section id="products" class="category-section">
+          <div class="section-shell">
+            <div class="section-heading">
+              <p class="section-kicker">业务布局</p>
+              <h2>围绕企业数字化的完整能力</h2>
+              <p>栏目由后台站点管理维护，用于组织官网导航、内容分发和专题入口。</p>
             </div>
-          </aside>
-        </div>
-      </section>
 
-      <section id="products" class="category-section">
-        <div class="section-shell">
-          <div class="section-heading">
-            <p class="section-kicker">业务布局</p>
-            <h2>围绕企业数字化的完整能力</h2>
-            <p>栏目由后台站点管理维护，用于组织官网导航、内容分发和专题入口。</p>
+            <div v-if="displayCategories.length" class="category-grid">
+              <article
+                v-for="(category, index) in displayCategories"
+                :id="`category-${category.id}`"
+                :key="category.id || category.categoryCode || category.categoryName"
+                class="category-card"
+              >
+                <span>{{ formatIndex(index + 1) }}</span>
+                <h3>{{ category.categoryName }}</h3>
+                <p>{{ productCategorySummary(category) }}</p>
+              </article>
+            </div>
+            <div v-else class="empty-section">站点栏目未配置</div>
           </div>
+        </section>
 
-          <div v-if="displayCategories.length" class="category-grid">
-            <article
-              v-for="(category, index) in displayCategories"
-              :id="`category-${category.id}`"
-              :key="category.id || category.categoryCode || category.categoryName"
-              class="category-card"
-            >
-              <span>{{ formatIndex(index + 1) }}</span>
-              <h3>{{ category.categoryName }}</h3>
-              <p>{{ productCategorySummary(category) }}</p>
-            </article>
+        <section id="contents" class="content-section">
+          <div class="section-shell">
+            <div class="section-heading">
+              <p class="section-kicker">新闻动态</p>
+              <h2>聚焦产品进展与企业动态</h2>
+              <p>首页仅展示内容摘要，完整列表和富文本详情请进入独立栏目页面查看。</p>
+            </div>
+            <div v-if="contentsLoading" class="empty-section">内容加载中...</div>
+            <div v-else-if="homeNews.length" class="home-news-grid">
+              <article v-for="item in homeNews" :key="item.id || item.title" class="home-news-card">
+                <span>{{ formatDate(item.publishTime) }}</span>
+                <h3>{{ item.title }}</h3>
+                <p>{{ item.summary || item.subtitle || '该内容暂无摘要。' }}</p>
+                <a :href="contentHref(item, '/news')" @click="handleInternalLink(contentHref(item, '/news'), $event)"
+                  >查看详情</a
+                >
+              </article>
+            </div>
+            <div v-else class="empty-section">当前暂无已发布内容</div>
+            <div class="section-actions">
+              <a v-if="newsNavigation" :href="newsRoute" @click="handleInternalLink(newsRoute, $event)"
+                >进入{{ newsNavigation.navName }}</a
+              >
+              <a
+                v-if="companyNewsNavigation"
+                :href="companyNewsRoute"
+                @click="handleInternalLink(companyNewsRoute, $event)"
+                >进入{{ companyNewsNavigation.navName }}</a
+              >
+            </div>
           </div>
-          <div v-else class="empty-section">站点栏目未配置</div>
-        </div>
-      </section>
-
-      <section id="contents" class="content-section">
-        <div class="section-shell">
-          <div class="section-heading">
-            <p class="section-kicker">新闻动态</p>
-            <h2>聚焦产品进展与企业动态</h2>
-            <p>首页仅展示内容摘要，完整列表和富文本详情请进入独立栏目页面查看。</p>
-          </div>
-          <div v-if="contentsLoading" class="empty-section">内容加载中...</div>
-          <div v-else-if="homeNews.length" class="home-news-grid">
-            <article v-for="item in homeNews" :key="item.id || item.title" class="home-news-card">
-              <span>{{ formatDate(item.publishTime) }}</span>
-              <h3>{{ item.title }}</h3>
-              <p>{{ item.summary || item.subtitle || '该内容暂无摘要。' }}</p>
-              <a :href="contentHref(item, '/news')" @click="handleInternalLink(contentHref(item, '/news'), $event)">查看详情</a>
-            </article>
-          </div>
-          <div v-else class="empty-section">当前暂无已发布内容</div>
-          <div class="section-actions">
-            <a v-if="newsNavigation" :href="newsRoute" @click="handleInternalLink(newsRoute, $event)">进入{{ newsNavigation.navName }}</a>
-            <a v-if="companyNewsNavigation" :href="companyNewsRoute" @click="handleInternalLink(companyNewsRoute, $event)">进入{{ companyNewsNavigation.navName }}</a>
-          </div>
-        </div>
-      </section>
+        </section>
       </template>
 
       <template v-else>
-      <section class="page-title-section">
-        <div class="section-shell page-title-layout">
-          <div>
-            <p class="section-kicker">Mango Technology</p>
-            <h1>{{ activeBanner ? adTitle(activeBanner) : routeTitle }}</h1>
-            <p>{{ activeBanner ? adPlainText(activeBanner) : routeDescription }}</p>
+        <section class="page-title-section">
+          <div class="section-shell page-title-layout">
+            <div>
+              <p class="section-kicker">Mango Technology</p>
+              <h1>{{ activeBanner ? adTitle(activeBanner) : routeTitle }}</h1>
+              <p>{{ activeBanner ? adPlainText(activeBanner) : routeDescription }}</p>
+            </div>
+            <a
+              v-if="activeBanner && adPrimaryImage(activeBanner)"
+              class="page-banner-media"
+              :href="adHref(activeBanner, currentRoute.basePath)"
+              :target="adTarget(activeBanner)"
+              :rel="adTarget(activeBanner) === '_blank' ? 'noopener noreferrer' : undefined"
+              @click="handleAdClick(activeBanner, currentRoute.basePath, $event)"
+            >
+              <img :src="adPrimaryImage(activeBanner)" :alt="adTitle(activeBanner)" />
+            </a>
+            <a href="/" class="back-home-link" @click="handleInternalLink('/', $event)">返回首页</a>
           </div>
-          <a
-            v-if="activeBanner && adPrimaryImage(activeBanner)"
-            class="page-banner-media"
-            :href="adHref(activeBanner, currentRoute.basePath)"
-            :target="adTarget(activeBanner)"
-            :rel="adTarget(activeBanner) === '_blank' ? 'noopener noreferrer' : undefined"
-            @click="handleAdClick(activeBanner, currentRoute.basePath, $event)"
-          >
-            <img :src="adPrimaryImage(activeBanner)" :alt="adTitle(activeBanner)" />
-          </a>
-          <a href="/" class="back-home-link" @click="handleInternalLink('/', $event)">返回首页</a>
-        </div>
-      </section>
+        </section>
 
-      <section v-if="currentRoute.view === 'list'" class="content-section">
-        <div class="section-shell content-layout">
-          <div class="content-main">
-            <div v-if="advertisements.length" class="list-ad-strip">
+        <section v-if="currentRoute.view === 'list'" class="content-section">
+          <div class="section-shell content-layout">
+            <div class="content-main">
+              <div v-if="advertisements.length" class="list-ad-strip">
+                <a
+                  v-for="ad in advertisements"
+                  :key="ad.id || ad.adCode || ad.adName"
+                  :href="adHref(ad, currentRoute.basePath)"
+                  class="list-ad"
+                  @click="handleInternalLink(adHref(ad, currentRoute.basePath), $event)"
+                >
+                  <AdContent :ad="ad" variant="strip" />
+                </a>
+              </div>
+
+              <div v-if="contentsLoading" class="empty-section">内容加载中...</div>
+              <div v-else-if="contents.length" class="news-list">
+                <a
+                  v-for="item in contents"
+                  :key="item.id || item.title"
+                  :href="contentHref(item, currentRoute.path)"
+                  class="news-item"
+                  @click="handleInternalLink(contentHref(item, currentRoute.path), $event)"
+                >
+                  <span class="news-date">{{ formatDate(item.publishTime) }}</span>
+                  <span class="news-cover" :class="{ empty: !item.coverUrl }">
+                    <img v-if="item.coverUrl" :src="item.coverUrl" :alt="item.title" />
+                    <span v-else>无图</span>
+                  </span>
+                  <span class="news-body">
+                    <span class="news-tags">
+                      <small class="content-type-tag">{{ contentTypeLabel(item.contentType) }}</small>
+                      <small>{{ item.categoryName || item.source || item.author || 'CMS 内容' }}</small>
+                    </span>
+                    <strong>{{ item.title }}</strong>
+                    <em>{{ item.summary || item.subtitle || '该内容暂无摘要。' }}</em>
+                  </span>
+                </a>
+              </div>
+              <div v-else class="empty-section">当前栏目暂无已发布内容</div>
+
+              <nav v-if="contentPage.total > contentPage.pageSize" class="content-pagination" aria-label="内容分页">
+                <button
+                  type="button"
+                  :disabled="contentPage.pageNum <= 1 || contentsLoading"
+                  @click="changeContentPage(contentPage.pageNum - 1)"
+                >
+                  上一页
+                </button>
+                <button
+                  v-for="pageNo in contentPageNumbers"
+                  :key="pageNo"
+                  type="button"
+                  :class="{ active: pageNo === contentPage.pageNum }"
+                  :aria-current="pageNo === contentPage.pageNum ? 'page' : undefined"
+                  :disabled="contentsLoading"
+                  @click="changeContentPage(pageNo)"
+                >
+                  {{ pageNo }}
+                </button>
+                <button
+                  type="button"
+                  :disabled="contentPage.pageNum >= contentPageTotalPages || contentsLoading"
+                  @click="changeContentPage(contentPage.pageNum + 1)"
+                >
+                  下一页
+                </button>
+                <span>共 {{ contentPage.total }} 条</span>
+              </nav>
+            </div>
+          </div>
+        </section>
+
+        <section v-else class="detail-section">
+          <div class="section-shell detail-layout">
+            <article class="article-detail" data-testid="content-detail">
+              <p class="section-kicker">{{ routeTitle }}</p>
+              <template v-if="detailLoading">
+                <div class="empty-section">详情加载中...</div>
+              </template>
+              <template v-else-if="selectedContent">
+                <h2>{{ selectedContent.title }}</h2>
+                <div class="article-meta">
+                  <span>{{ contentTypeLabel(selectedContent.contentType) }}</span>
+                  <span>{{ selectedContent.categoryName || 'CMS 内容' }}</span>
+                  <span>{{ formatDate(selectedContent.publishTime) }}</span>
+                  <span v-if="selectedContent.author">{{ selectedContent.author }}</span>
+                  <span v-if="selectedContent.source">{{ selectedContent.source }}</span>
+                </div>
+                <img
+                  v-if="selectedContent.coverUrl"
+                  class="article-cover"
+                  :src="selectedContent.coverUrl"
+                  :alt="selectedContent.title"
+                />
+                <video
+                  v-if="selectedContent.videoUrl"
+                  class="article-video"
+                  :src="selectedContent.videoUrl"
+                  :poster="selectedContent.coverUrl || undefined"
+                  controls
+                  playsinline
+                />
+                <div v-if="selectedContent.body" class="rich-text" v-html="renderRichText(selectedContent.body)" />
+                <div v-else class="empty-block compact">
+                  <strong>正文未配置</strong>
+                  <span>请在内容管理中维护富文本正文。</span>
+                </div>
+                <a
+                  v-if="selectedContent.attachmentUrl"
+                  class="article-attachment"
+                  :href="selectedContent.attachmentUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  查看附件
+                </a>
+              </template>
+              <div v-else class="empty-section">内容不存在或尚未发布</div>
+            </article>
+
+            <aside class="side-ad-list">
+              <p class="section-kicker">推荐关注</p>
               <a
                 v-for="ad in advertisements"
                 :key="ad.id || ad.adCode || ad.adName"
                 :href="adHref(ad, currentRoute.basePath)"
-                class="list-ad"
+                class="side-ad"
                 @click="handleInternalLink(adHref(ad, currentRoute.basePath), $event)"
               >
-                <AdContent :ad="ad" variant="strip" />
+                <AdContent :ad="ad" variant="side" />
               </a>
-            </div>
-
-            <div v-if="contentsLoading" class="empty-section">内容加载中...</div>
-            <div v-else-if="contents.length" class="news-list">
-              <a
-                v-for="item in contents"
-                :key="item.id || item.title"
-                :href="contentHref(item, currentRoute.path)"
-                class="news-item"
-                @click="handleInternalLink(contentHref(item, currentRoute.path), $event)"
-              >
-                <span class="news-date">{{ formatDate(item.publishTime) }}</span>
-                <span class="news-cover" :class="{ empty: !item.coverUrl }">
-                  <img v-if="item.coverUrl" :src="item.coverUrl" :alt="item.title" />
-                  <span v-else>无图</span>
-                </span>
-                <span class="news-body">
-                  <span class="news-tags">
-                    <small class="content-type-tag">{{ contentTypeLabel(item.contentType) }}</small>
-                    <small>{{ item.categoryName || item.source || item.author || 'CMS 内容' }}</small>
-                  </span>
-                  <strong>{{ item.title }}</strong>
-                  <em>{{ item.summary || item.subtitle || '该内容暂无摘要。' }}</em>
-                </span>
-              </a>
-            </div>
-            <div v-else class="empty-section">当前栏目暂无已发布内容</div>
-
-            <nav v-if="contentPage.total > contentPage.pageSize" class="content-pagination" aria-label="内容分页">
-              <button type="button" :disabled="contentPage.pageNum <= 1 || contentsLoading" @click="changeContentPage(contentPage.pageNum - 1)">
-                上一页
-              </button>
-              <button
-                v-for="pageNo in contentPageNumbers"
-                :key="pageNo"
-                type="button"
-                :class="{ active: pageNo === contentPage.pageNum }"
-                :aria-current="pageNo === contentPage.pageNum ? 'page' : undefined"
-                :disabled="contentsLoading"
-                @click="changeContentPage(pageNo)"
-              >
-                {{ pageNo }}
-              </button>
-              <button type="button" :disabled="contentPage.pageNum >= contentPageTotalPages || contentsLoading" @click="changeContentPage(contentPage.pageNum + 1)">
-                下一页
-              </button>
-              <span>共 {{ contentPage.total }} 条</span>
-            </nav>
+              <div v-if="!advertisements.length" class="empty-block compact">
+                <strong>广告列表为空</strong>
+                <span>请配置公开广告位。</span>
+              </div>
+            </aside>
           </div>
-        </div>
-      </section>
-
-      <section v-else class="detail-section">
-        <div class="section-shell detail-layout">
-          <article class="article-detail" data-testid="content-detail">
-            <p class="section-kicker">{{ routeTitle }}</p>
-            <template v-if="detailLoading">
-              <div class="empty-section">详情加载中...</div>
-            </template>
-            <template v-else-if="selectedContent">
-              <h2>{{ selectedContent.title }}</h2>
-              <div class="article-meta">
-                <span>{{ contentTypeLabel(selectedContent.contentType) }}</span>
-                <span>{{ selectedContent.categoryName || 'CMS 内容' }}</span>
-                <span>{{ formatDate(selectedContent.publishTime) }}</span>
-                <span v-if="selectedContent.author">{{ selectedContent.author }}</span>
-                <span v-if="selectedContent.source">{{ selectedContent.source }}</span>
-              </div>
-              <img
-                v-if="selectedContent.coverUrl"
-                class="article-cover"
-                :src="selectedContent.coverUrl"
-                :alt="selectedContent.title"
-              />
-              <video
-                v-if="selectedContent.videoUrl"
-                class="article-video"
-                :src="selectedContent.videoUrl"
-                :poster="selectedContent.coverUrl || undefined"
-                controls
-                playsinline
-              />
-              <div v-if="selectedContent.body" class="rich-text" v-html="renderRichText(selectedContent.body)" />
-              <div v-else class="empty-block compact">
-                <strong>正文未配置</strong>
-                <span>请在内容管理中维护富文本正文。</span>
-              </div>
-              <a
-                v-if="selectedContent.attachmentUrl"
-                class="article-attachment"
-                :href="selectedContent.attachmentUrl"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                查看附件
-              </a>
-            </template>
-            <div v-else class="empty-section">内容不存在或尚未发布</div>
-          </article>
-
-          <aside class="side-ad-list">
-            <p class="section-kicker">推荐关注</p>
-            <a
-              v-for="ad in advertisements"
-              :key="ad.id || ad.adCode || ad.adName"
-              :href="adHref(ad, currentRoute.basePath)"
-              class="side-ad"
-              @click="handleInternalLink(adHref(ad, currentRoute.basePath), $event)"
-            >
-              <AdContent :ad="ad" variant="side" />
-            </a>
-            <div v-if="!advertisements.length" class="empty-block compact">
-              <strong>广告列表为空</strong>
-              <span>请配置公开广告位。</span>
-            </div>
-          </aside>
-        </div>
-      </section>
+        </section>
       </template>
     </main>
 
@@ -446,14 +470,18 @@ const currentHash = ref(window.location.hash);
 const siteQuery = computed<SiteResolveQuery>(() => createSiteResolveQuery(undefined, window.location.host));
 const siteTitle = computed(() => site.value?.siteName || 'CMS 站点未解析');
 const siteTagline = computed(() => site.value?.seoTitle || site.value?.siteCode || 'CMS SITE');
-const siteDescription = computed(() => site.value?.seoDescription || '站点描述未配置，请在 CMS 站点配置中维护 SEO 描述。');
+const siteDescription = computed(
+  () => site.value?.seoDescription || '站点描述未配置，请在 CMS 站点配置中维护 SEO 描述。',
+);
 const brandInitial = computed(() => (siteTitle.value.trim().charAt(0) || 'M').toUpperCase());
 const activeBanner = computed(() => heroBanners.value[activeBannerIndex.value] || null);
 const primaryAdvertisement = computed(() => advertisements.value[0] || null);
 const routePromotions = computed(() => [...heroBanners.value, ...advertisements.value]);
 const flatCategories = computed(() => flattenCategories(categories.value).slice(0, 8));
 const displayCategories = computed(() => flatCategories.value.slice(0, 6));
-const contentPageTotalPages = computed(() => Math.max(1, Math.ceil(contentPage.value.total / contentPage.value.pageSize)));
+const contentPageTotalPages = computed(() =>
+  Math.max(1, Math.ceil(contentPage.value.total / contentPage.value.pageSize)),
+);
 const contentPageNumbers = computed(() => {
   const total = contentPageTotalPages.value;
   const current = contentPage.value.pageNum;
@@ -465,8 +493,10 @@ const currentCategory = computed(() => findCategoryByPath(currentRoute.value.bas
 const currentNavigation = computed(() => findNavigationByPath(currentRoute.value.basePath));
 const newsNavigation = computed(() => findNavigationByName(/新闻|资讯|动态/));
 const companyNewsNavigation = computed(() => findNavigationByName(/公司动态|企业动态|公司新闻/));
-const newsRoute = computed(() => newsNavigation.value ? navigationHref(newsNavigation.value) : '');
-const companyNewsRoute = computed(() => companyNewsNavigation.value ? navigationHref(companyNewsNavigation.value) : '');
+const newsRoute = computed(() => (newsNavigation.value ? navigationHref(newsNavigation.value) : ''));
+const companyNewsRoute = computed(() =>
+  companyNewsNavigation.value ? navigationHref(companyNewsNavigation.value) : '',
+);
 const routeTitle = computed(() => {
   return currentNavigation.value?.navName || currentCategory.value?.categoryName || '内容列表';
 });
@@ -478,7 +508,7 @@ const routeCategoryId = computed(() => {
   return currentCategory.value?.id || currentNavigation.value?.categoryId || '';
 });
 const homeNews = computed(() => {
-  const newsItems = contents.value.filter(item => /新闻|动态/.test(item.categoryName || ''));
+  const newsItems = contents.value.filter((item) => /新闻|动态/.test(item.categoryName || ''));
   return (newsItems.length ? newsItems : contents.value).slice(0, 3);
 });
 onMounted(() => {
@@ -492,23 +522,26 @@ onBeforeUnmount(() => {
   window.removeEventListener('hashchange', handleHashChange);
 });
 
-watch(() => currentRoute.value.path, () => {
-  selectedContent.value = null;
-  selectedCategoryId.value = routeCategoryId.value;
-  contentPage.value = { ...contentPage.value, pageNum: 1 };
-  void loadContents();
-});
+watch(
+  () => currentRoute.value.path,
+  () => {
+    selectedContent.value = null;
+    selectedCategoryId.value = routeCategoryId.value;
+    contentPage.value = { ...contentPage.value, pageNum: 1 };
+    void loadContents();
+  },
+);
 
 function findNavigationByName(pattern: RegExp) {
-  return topNavigations.value.find(item => pattern.test(item.navName || '')) || null;
+  return topNavigations.value.find((item) => pattern.test(item.navName || '')) || null;
 }
 
 function findNavigationByPath(path: string) {
-  return topNavigations.value.find(item => navigationHref(item) === path) || null;
+  return topNavigations.value.find((item) => navigationHref(item) === path) || null;
 }
 
 function findCategoryByPath(path: string) {
-  return flatCategories.value.find(item => normalizeCategoryPath(item) === path) || null;
+  return flatCategories.value.find((item) => normalizeCategoryPath(item) === path) || null;
 }
 
 function parseRoute(pathname: string): SiteRouteState {
@@ -576,7 +609,7 @@ function contentHref(content: CmsContent, fallbackBasePath = currentRoute.value.
 
 function categoryPathById(categoryId?: string) {
   if (!categoryId) return '';
-  const category = flatCategories.value.find(item => item.id === categoryId);
+  const category = flatCategories.value.find((item) => item.id === categoryId);
   const path = category ? normalizeCategoryPath(category) : '';
   return path.startsWith('/') && !path.includes('#') ? path : '';
 }
@@ -678,7 +711,7 @@ function navigationHref(item: CmsNavigation) {
   if (item.externalUrl) return item.externalUrl.startsWith('#') ? `/${item.externalUrl}` : item.externalUrl;
   if (item.contentId) return contentNavigationHref(item);
   if (item.categoryId) {
-    const category = flatCategories.value.find(entry => entry.id === item.categoryId);
+    const category = flatCategories.value.find((entry) => entry.id === item.categoryId);
     const categoryPath = category ? normalizeCategoryPath(category) : '';
     return categoryPath || `/#category-${item.categoryId}`;
   }
@@ -686,7 +719,7 @@ function navigationHref(item: CmsNavigation) {
 }
 
 function contentNavigationHref(item: CmsNavigation) {
-  const matchedContent = contents.value.find(content => content.id === item.contentId);
+  const matchedContent = contents.value.find((content) => content.id === item.contentId);
   const matchedCategoryPath = matchedContent ? categoryPathById(matchedContent.categoryId) : '';
   if (matchedCategoryPath) return `${matchedCategoryPath}/${item.contentId}`;
   const normalizedName = item.navName || '';
@@ -795,7 +828,10 @@ function adTarget(ad: CmsAdvertisement) {
 }
 
 function stripHtml(value?: string) {
-  return String(value || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+  return String(value || '')
+    .replace(/<[^>]*>/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function adImageUrls(ad: CmsAdvertisement) {
@@ -805,7 +841,7 @@ function adImageUrls(ad: CmsAdvertisement) {
   if (ad.imageUrls) {
     return String(ad.imageUrls)
       .split(',')
-      .map(item => item.trim())
+      .map((item) => item.trim())
       .filter(Boolean);
   }
   return [];
@@ -822,7 +858,9 @@ function productCategorySummary(category: CmsSiteCategory) {
 function sanitizeRichText(html: string) {
   const template = document.createElement('template');
   template.innerHTML = html;
-  template.content.querySelectorAll('script, style, iframe, object, embed, link, meta').forEach(element => element.remove());
+  template.content
+    .querySelectorAll('script, style, iframe, object, embed, link, meta')
+    .forEach((element) => element.remove());
   template.content.querySelectorAll('*').forEach((element) => {
     Array.from(element.attributes).forEach((attribute) => {
       const name = attribute.name.toLowerCase();
@@ -863,32 +901,46 @@ const AdContent = defineComponent({
       const title = adTitle(props.ad);
       const text = adPlainText(props.ad);
       const images = adImageUrls(props.ad);
-      const children = [
-        h('strong', title),
-      ];
+      const children = [h('strong', title)];
 
       if (materialType === 'RICH_TEXT' && props.ad.richContent) {
-        children.push(h('div', {
-          class: 'ad-rich-text',
-          innerHTML: sanitizeRichText(props.ad.richContent),
-        }));
+        children.push(
+          h('div', {
+            class: 'ad-rich-text',
+            innerHTML: sanitizeRichText(props.ad.richContent),
+          }),
+        );
       } else if (materialType === 'HTML' && props.ad.htmlContent) {
-        children.push(h('div', {
-          class: 'ad-rich-text',
-          innerHTML: sanitizeRichText(props.ad.htmlContent),
-        }));
+        children.push(
+          h('div', {
+            class: 'ad-rich-text',
+            innerHTML: sanitizeRichText(props.ad.htmlContent),
+          }),
+        );
       } else if (materialType === 'VIDEO') {
         const videoUrl = props.ad.videoUrl || '';
         const coverUrl = props.ad.coverUrl || '';
-        children.push(videoUrl
-          ? h('video', { class: 'ad-video', src: videoUrl, poster: coverUrl || undefined, controls: true, playsinline: true })
-          : h('em', '视频素材已投放，请检查文件访问权限。'));
+        children.push(
+          videoUrl
+            ? h('video', {
+                class: 'ad-video',
+                src: videoUrl,
+                poster: coverUrl || undefined,
+                controls: true,
+                playsinline: true,
+              })
+            : h('em', '视频素材已投放，请检查文件访问权限。'),
+        );
         if (text) children.push(h('em', text));
       } else if (['IMAGE', 'SINGLE_IMAGE', 'MULTI_IMAGE'].includes(materialType)) {
         if (images.length) {
-          children.push(h('div', { class: 'ad-image-grid' }, images.map((url, index) =>
-            h('img', { src: url, alt: `${title} ${index + 1}` }),
-          )));
+          children.push(
+            h(
+              'div',
+              { class: 'ad-image-grid' },
+              images.map((url, index) => h('img', { src: url, alt: `${title} ${index + 1}` })),
+            ),
+          );
         } else {
           children.push(h('em', '图片素材已投放，请检查文件访问权限。'));
         }

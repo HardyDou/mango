@@ -11,32 +11,32 @@ import type { OrgSelectorExpose, OrgNode } from '@mango/common';
 
 ## Props
 
-| 名称 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `modelValue` | `ApiId \| ApiId[]` | `[]` | 选中的组织 ID，支持 `v-model`；单选时为单个 ID，多选时为数组 |
-| `multiple` | `boolean` | `false` | 是否多选 |
-| `placeholder` | `string` | `'orgSelector.placeholder'` | 输入框占位文本；包含 `.` 时按 i18n key 翻译，否则按原文展示 |
-| `title` | `string` | `'orgSelector.title'` | 弹框标题；包含 `.` 时按 i18n key 翻译 |
-| `showTagNames` | `boolean` | `true` | 是否在输入框下方以可关闭标签展示已选组织名称 |
-| `max` | `number` | `0` | 最多可选数量，`0` 表示不限制 |
-| `disabled` | `boolean` | `false` | 是否禁用 |
-| `width` | `string \| number` | `'500px'` | 选择弹框宽度 |
+| 名称           | 类型               | 默认值                      | 说明                                                         |
+| -------------- | ------------------ | --------------------------- | ------------------------------------------------------------ |
+| `modelValue`   | `ApiId \| ApiId[]` | `[]`                        | 选中的组织 ID，支持 `v-model`；单选时为单个 ID，多选时为数组 |
+| `multiple`     | `boolean`          | `false`                     | 是否多选                                                     |
+| `placeholder`  | `string`           | `'orgSelector.placeholder'` | 输入框占位文本；包含 `.` 时按 i18n key 翻译，否则按原文展示  |
+| `title`        | `string`           | `'orgSelector.title'`       | 弹框标题；包含 `.` 时按 i18n key 翻译                        |
+| `showTagNames` | `boolean`          | `true`                      | 是否在输入框下方以可关闭标签展示已选组织名称                 |
+| `max`          | `number`           | `0`                         | 最多可选数量，`0` 表示不限制                                 |
+| `disabled`     | `boolean`          | `false`                     | 是否禁用                                                     |
+| `width`        | `string \| number` | `'500px'`                   | 选择弹框宽度                                                 |
 
 ## Events
 
-| 名称 | 参数 | 说明 |
-|------|------|------|
+| 名称                | 参数                            | 说明                                                          |
+| ------------------- | ------------------------------- | ------------------------------------------------------------- |
 | `update:modelValue` | `ApiId \| ApiId[] \| undefined` | 确认选择或清空时触发；单选未选为 `undefined`，多选未选为 `[]` |
-| `change` | `ApiId \| ApiId[] \| undefined` | 与 `update:modelValue` 同时触发，参数相同 |
+| `change`            | `ApiId \| ApiId[] \| undefined` | 与 `update:modelValue` 同时触发，参数相同                     |
 
 ## Expose
 
-| 名称 | 参数 | 说明 |
-|------|------|------|
-| `open()` | - | 打开选择弹框并加载组织树（`disabled` 时无效） |
-| `close()` | - | 关闭选择弹框 |
+| 名称         | 参数           | 说明                                             |
+| ------------ | -------------- | ------------------------------------------------ |
+| `open()`     | -              | 打开选择弹框并加载组织树（`disabled` 时无效）    |
+| `close()`    | -              | 关闭选择弹框                                     |
 | `getValue()` | 返回 `ApiId[]` | 获取当前选中的组织 ID 数组（单选也返回数组形式） |
-| `clear()` | - | 清空选择并触发 `update:modelValue` / `change` |
+| `clear()`    | -              | 清空选择并触发 `update:modelValue` / `change`    |
 
 ## 类型定义
 
@@ -103,13 +103,7 @@ const orgIds = ref<string[]>([]);
 </script>
 
 <template>
-  <OrgSelector
-    v-model="orgIds"
-    multiple
-    :max="5"
-    title="选择归属部门"
-    placeholder="请选择归属部门"
-  />
+  <OrgSelector v-model="orgIds" multiple :max="5" title="选择归属部门" placeholder="请选择归属部门" />
 </template>
 ```
 

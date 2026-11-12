@@ -270,7 +270,9 @@ export function getSendRecords(params?: Record<string, unknown>) {
 }
 
 export function getInboundMessages(params?: Record<string, unknown>) {
-  return get<PageResult<NoticeInboundMessage>>('/notice/inbound-messages', { params: toBackendDateRangeParams(params) });
+  return get<PageResult<NoticeInboundMessage>>('/notice/inbound-messages', {
+    params: toBackendDateRangeParams(params),
+  });
 }
 
 export function getInboundMessage(id: string) {

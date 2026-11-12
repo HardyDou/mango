@@ -229,8 +229,18 @@ function clear() {
 
 const propsTable = [
   { name: 'v-model', description: '编辑器文本内容', type: 'string', defaultValue: "''" },
-  { name: 'language', description: '语法高亮语言，支持常见脚本、标记语言和配置格式', type: 'string', defaultValue: 'javascript' },
-  { name: 'theme', description: '编辑器主题', type: "'default' | 'material-darker' | 'material-ocean'", defaultValue: 'default' },
+  {
+    name: 'language',
+    description: '语法高亮语言，支持常见脚本、标记语言和配置格式',
+    type: 'string',
+    defaultValue: 'javascript',
+  },
+  {
+    name: 'theme',
+    description: '编辑器主题',
+    type: "'default' | 'material-darker' | 'material-ocean'",
+    defaultValue: 'default',
+  },
   { name: 'readonly', description: '是否只读', type: 'boolean', defaultValue: 'false' },
   { name: 'lineNumbers', description: '是否显示行号', type: 'boolean', defaultValue: 'true' },
   { name: 'matchBrackets', description: '是否启用括号匹配', type: 'boolean', defaultValue: 'true' },
@@ -239,9 +249,7 @@ const propsTable = [
   { name: 'width', description: '编辑器宽度，默认自适应父容器', type: 'string', defaultValue: '100%' },
 ];
 
-const slotsTable = [
-  { name: '-', description: '当前组件不提供业务插槽，内容通过 v-model 传入和回写', scope: '-' },
-];
+const slotsTable = [{ name: '-', description: '当前组件不提供业务插槽，内容通过 v-model 传入和回写', scope: '-' }];
 
 const eventsTable = [
   { name: 'update:modelValue', description: '代码内容变化时触发，用于 v-model 双向绑定', payload: 'string' },
@@ -255,7 +263,11 @@ const eventsTable = [
 ];
 
 const valueTable = [
-  { field: 'v-model', type: 'string', description: '返回当前编辑器完整文本内容，可直接作为脚本、SQL、JSON 或配置字段提交' },
+  {
+    field: 'v-model',
+    type: 'string',
+    description: '返回当前编辑器完整文本内容，可直接作为脚本、SQL、JSON 或配置字段提交',
+  },
   { field: 'getValue()', type: 'string', description: '返回当前编辑器完整文本内容，适合按钮触发保存或校验时读取' },
   { field: 'change', type: 'string', description: '每次内容变化回传最新文本，适合实时校验、预览或状态标记' },
 ];
@@ -286,7 +298,7 @@ function clearValue() {
 </script>
 
 <style scoped lang="scss">
-@use './demo-page.scss';
+@use './demo-page';
 
 .demo-controls,
 .demo-actions {

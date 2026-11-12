@@ -11,38 +11,38 @@ import type { MangoSideDrawerShellExpose } from '@mango/common';
 
 ## Props
 
-| 名称 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `modelValue` | `boolean` | `false` | 抽屉显示状态，支持 `v-model` |
-| `title` | `string` | `'节点过程'` | 抽屉标题，同时作为悬浮按钮的 `aria-label` 与 `title` |
-| `showTrigger` | `boolean` | `true` | 是否展示右下角固定悬浮触发按钮 |
-| `drawerSize` | `string \| number` | `'min(420px, 100vw)'` | 抽屉宽度，透传给 `el-drawer` 的 `size` |
-| `destroyOnClose` | `boolean` | `false` | 关闭时是否销毁抽屉内容 |
-| `dataSurface` | `string` | `'detail.side-drawer'` | 抽屉的 `data-surface` 标识，用于埋点/定位 |
-| `dataAction` | `string` | `'detail.side-drawer.open'` | 悬浮按钮的 `data-action` 标识 |
+| 名称             | 类型               | 默认值                      | 说明                                                 |
+| ---------------- | ------------------ | --------------------------- | ---------------------------------------------------- |
+| `modelValue`     | `boolean`          | `false`                     | 抽屉显示状态，支持 `v-model`                         |
+| `title`          | `string`           | `'节点过程'`                | 抽屉标题，同时作为悬浮按钮的 `aria-label` 与 `title` |
+| `showTrigger`    | `boolean`          | `true`                      | 是否展示右下角固定悬浮触发按钮                       |
+| `drawerSize`     | `string \| number` | `'min(420px, 100vw)'`       | 抽屉宽度，透传给 `el-drawer` 的 `size`               |
+| `destroyOnClose` | `boolean`          | `false`                     | 关闭时是否销毁抽屉内容                               |
+| `dataSurface`    | `string`           | `'detail.side-drawer'`      | 抽屉的 `data-surface` 标识，用于埋点/定位            |
+| `dataAction`     | `string`           | `'detail.side-drawer.open'` | 悬浮按钮的 `data-action` 标识                        |
 
 ## Events
 
-| 名称 | 参数 | 说明 |
-|------|------|------|
-| `update:modelValue` | `boolean` | 抽屉显示状态变化 |
-| `open` | - | 抽屉打开（透传 `el-drawer` 的 `open`） |
-| `close` | - | 抽屉关闭（透传 `el-drawer` 的 `close`） |
+| 名称                | 参数      | 说明                                    |
+| ------------------- | --------- | --------------------------------------- |
+| `update:modelValue` | `boolean` | 抽屉显示状态变化                        |
+| `open`              | -         | 抽屉打开（透传 `el-drawer` 的 `open`）  |
+| `close`             | -         | 抽屉关闭（透传 `el-drawer` 的 `close`） |
 
 ## Expose
 
-| 名称 | 参数 | 说明 |
-|------|------|------|
-| `open()` | - | 打开抽屉 |
-| `close()` | - | 关闭抽屉 |
-| `toggle()` | - | 切换抽屉显示状态 |
+| 名称       | 参数 | 说明             |
+| ---------- | ---- | ---------------- |
+| `open()`   | -    | 打开抽屉         |
+| `close()`  | -    | 关闭抽屉         |
+| `toggle()` | -    | 切换抽屉显示状态 |
 
 ## Slots
 
-| 名称 | 说明 |
-|------|------|
-| `main` | 页面主内容区，始终渲染在组件根节点内 |
-| `default` | 抽屉主体内容 |
+| 名称      | 说明                                 |
+| --------- | ------------------------------------ |
+| `main`    | 页面主内容区，始终渲染在组件根节点内 |
+| `default` | 抽屉主体内容                         |
 
 ## 类型定义
 

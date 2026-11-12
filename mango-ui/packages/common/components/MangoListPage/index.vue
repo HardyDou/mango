@@ -6,13 +6,16 @@
 </template>
 
 <script setup lang="ts" name="MangoListPage">
-withDefaults(defineProps<{
-  dataPage?: string;
-  dense?: boolean;
-}>(), {
-  dataPage: undefined,
-  dense: false,
-});
+withDefaults(
+  defineProps<{
+    dataPage?: string;
+    dense?: boolean;
+  }>(),
+  {
+    dataPage: undefined,
+    dense: false,
+  },
+);
 </script>
 
 <style scoped>

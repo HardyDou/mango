@@ -72,10 +72,7 @@ type AuthorizationItem = {
   sort?: number;
 };
 
-const EVIDENCE_DIR = resolve(
-  __dirname,
-  '../../../../../mango-docs/evidence/baselines/home/latest/e2e',
-);
+const EVIDENCE_DIR = resolve(__dirname, '../../../../../mango-docs/evidence/baselines/home/latest/e2e');
 
 function layoutJson(title: string): string {
   return JSON.stringify({
@@ -169,7 +166,12 @@ async function api<T>(page: Page, token: string, path: string, options: RequestI
   );
 }
 
-async function apiFailure(page: Page, token: string, path: string, options: RequestInit = {}): Promise<ApiBody<unknown>> {
+async function apiFailure(
+  page: Page,
+  token: string,
+  path: string,
+  options: RequestInit = {},
+): Promise<ApiBody<unknown>> {
   return page.evaluate(
     async ({ path, options, token }) => {
       const response = await fetch(`/api${path}`, {
@@ -221,8 +223,11 @@ async function listHomePages(page: Page, token: string): Promise<HomePage[]> {
 }
 
 async function cleanupHomePages(page: Page, token: string, prefix: string) {
-  const result = await api<PageResult<HomePage>>(page, token, `/home/pages/user-pages?page=1&size=200&keyword=${encodeURIComponent(prefix)}`)
-    .catch(async () => ({ list: await listHomePages(page, token), total: 0, page: 1, size: 200 }));
+  const result = await api<PageResult<HomePage>>(
+    page,
+    token,
+    `/home/pages/user-pages?page=1&size=200&keyword=${encodeURIComponent(prefix)}`,
+  ).catch(async () => ({ list: await listHomePages(page, token), total: 0, page: 1, size: 200 }));
   const pages = result.list || [];
   for (const item of pages) {
     if (item.id && item.name?.startsWith(prefix)) {
@@ -275,7 +280,7 @@ function routeOf(template: HomeTemplate): string {
 }
 
 function defaultPageOf(pages: HomePage[]): HomePage | undefined {
-  return pages.find(item => item.defaultPage);
+  return pages.find((item) => item.defaultPage);
 }
 
 test.describe('首页管理 E2E', () => {
@@ -389,7 +394,7 @@ test.describe('首页管理 E2E', () => {
       token,
       `/home/templates/user-pages?userId=${userId}&memberId=${memberId}&orgId=${orgId}`,
     );
-    const authorized = userPages.find(item => item.routeKey === `template:${copied.id}`);
+    const authorized = userPages.find((item) => item.routeKey === `template:${copied.id}`);
     expect(authorized).toBeTruthy();
     expect(authorized?.readOnly).toBe(true);
     expect(authorized?.canCopy).toBe(true);
@@ -432,9 +437,13 @@ test.describe('首页管理 E2E', () => {
     await page.locator('[data-field="home.user.member-id"]').fill(memberId);
     await page.locator('[data-field="home.user.org-id"]').fill(orgId);
     await page.locator('[data-action="home.user.view"]').click();
-    await expect(page.locator(`[data-record-key="home-user-page:template:${copied.id}"]`)).toBeVisible({ timeout: 15000 });
+    await expect(page.locator(`[data-record-key="home-user-page:template:${copied.id}"]`)).toBeVisible({
+      timeout: 15000,
+    });
     await expect(page.getByText(copyName).first()).toBeVisible();
-    await expect(page.locator('[data-surface="home.user.tabs"]').getByText(personalCopy.name).first()).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('[data-surface="home.user.tabs"]').getByText(personalCopy.name).first()).toBeVisible({
+      timeout: 15000,
+    });
     await page.locator('[data-surface="home.user.tabs"]').getByText(personalCopy.name).first().click();
     await expect(page.locator('[data-surface="home.user.layout"]')).toBeVisible({ timeout: 15000 });
     await capture(page, testInfo, '02-home-user-view.png');
@@ -469,7 +478,7 @@ test.describe('首页管理 E2E', () => {
       memberId,
       orgId: rootOrgId,
     });
-    expect(roleOnlyPages.find(item => item.routeKey === routeOf(roleTemplate))).toBeTruthy();
+    expect(roleOnlyPages.find((item) => item.routeKey === routeOf(roleTemplate))).toBeTruthy();
     expect(defaultPageOf(roleOnlyPages)?.routeKey).toBe(routeOf(roleTemplate));
 
     const orgTemplate = await createPublishedTemplate(page, token, `${prefix}-部门默认`, 'org-default');
@@ -499,19 +508,19 @@ test.describe('首页管理 E2E', () => {
       memberId,
       orgId: rootOrgId,
     });
-    expect(pages.map(item => item.routeKey)).toEqual(
+    expect(pages.map((item) => item.routeKey)).toEqual(
       expect.arrayContaining([routeOf(userTemplate), routeOf(orgTemplate), routeOf(roleTemplate)]),
     );
     expect(defaultPageOf(pages)?.routeKey).toBe(routeOf(userTemplate));
-    expect(pages.find(item => item.routeKey === routeOf(userTemplate))?.sourceType).toBe('PERSONAL_AUTH');
-    expect(pages.find(item => item.routeKey === routeOf(orgTemplate))?.sourceType).toBe('ORG_AUTH');
-    expect(pages.find(item => item.routeKey === routeOf(roleTemplate))?.sourceType).toBe('ROLE_AUTH');
+    expect(pages.find((item) => item.routeKey === routeOf(userTemplate))?.sourceType).toBe('PERSONAL_AUTH');
+    expect(pages.find((item) => item.routeKey === routeOf(orgTemplate))?.sourceType).toBe('ORG_AUTH');
+    expect(pages.find((item) => item.routeKey === routeOf(roleTemplate))?.sourceType).toBe('ROLE_AUTH');
 
     const inheritedPages = await resolveUserPages(page, token, {
       userId: String(BigInt(syntheticUserId) + 1n),
       orgId: childOrgId,
     });
-    const inheritedOrg = inheritedPages.find(item => item.routeKey === routeOf(orgTemplate));
+    const inheritedOrg = inheritedPages.find((item) => item.routeKey === routeOf(orgTemplate));
     expect(inheritedOrg).toBeTruthy();
     expect(inheritedOrg?.sourceLabel || inheritedOrg?.sourceLabels?.join(',') || '').toMatch(/部门授权|芒果集团/);
     expect(defaultPageOf(inheritedPages)?.routeKey).toBe(routeOf(orgTemplate));
@@ -553,7 +562,7 @@ test.describe('首页管理 E2E', () => {
     ]);
 
     let pages = await resolveUserPages(page, token, { userId });
-    expect(pages.find(item => item.routeKey === routeOf(template))).toBeTruthy();
+    expect(pages.find((item) => item.routeKey === routeOf(template))).toBeTruthy();
 
     const disabled = await api<HomeTemplate>(page, token, '/home/templates/status', {
       method: 'PUT',
@@ -561,7 +570,7 @@ test.describe('首页管理 E2E', () => {
     });
     expect(disabled.enabled).toBe(false);
     pages = await resolveUserPages(page, token, { userId });
-    expect(pages.find(item => item.routeKey === routeOf(template))).toBeFalsy();
+    expect(pages.find((item) => item.routeKey === routeOf(template))).toBeFalsy();
 
     const enabled = await api<HomeTemplate>(page, token, '/home/templates/status', {
       method: 'PUT',
@@ -569,7 +578,7 @@ test.describe('首页管理 E2E', () => {
     });
     expect(enabled.enabled).toBe(true);
     pages = await resolveUserPages(page, token, { userId });
-    expect(pages.find(item => item.routeKey === routeOf(template))).toBeTruthy();
+    expect(pages.find((item) => item.routeKey === routeOf(template))).toBeTruthy();
 
     const deleteWhileAuthorized = await apiFailure(page, token, '/home/templates', {
       method: 'DELETE',
@@ -583,7 +592,7 @@ test.describe('首页管理 E2E', () => {
       body: JSON.stringify({ id: template.id }),
     });
     const list = await api<HomeTemplate[]>(page, token, `/home/templates?keyword=${encodeURIComponent(prefix)}`);
-    expect(list.find(item => item.id === template.id)).toBeFalsy();
+    expect(list.find((item) => item.id === template.id)).toBeFalsy();
   });
 
   test('@p1 @home 后台页面支持新建模板、复制、授权和独立用户首页查询', async ({ page }, testInfo) => {
@@ -605,10 +614,11 @@ test.describe('首页管理 E2E', () => {
     await expect(designer).toBeVisible();
     await expect(designer.locator('[data-surface="grid-designer.widget-library"]')).toBeVisible();
     await expect(designer.locator('[data-action="grid-designer.widget.add"]').first()).toBeVisible({ timeout: 15000 });
-    const createResponsePromise = page.waitForResponse(response =>
-      response.url().includes('/api/home/templates')
-      && response.request().method() === 'POST'
-      && response.status() === 200,
+    const createResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/home/templates') &&
+        response.request().method() === 'POST' &&
+        response.status() === 200,
     );
     await page.locator('[data-action="home.template.save"]').click();
     await createResponsePromise;
@@ -617,23 +627,29 @@ test.describe('首页管理 E2E', () => {
     await page.locator('[data-action="home.template.search"]').click();
     await expect(page.getByText(uiTemplateName).first()).toBeVisible({ timeout: 15000 });
 
-    const templatesAfterCreate = await api<HomeTemplate[]>(page, token, `/home/templates?keyword=${encodeURIComponent(uiTemplateName)}`);
-    const created = templatesAfterCreate.find(item => item.name === uiTemplateName);
+    const templatesAfterCreate = await api<HomeTemplate[]>(
+      page,
+      token,
+      `/home/templates?keyword=${encodeURIComponent(uiTemplateName)}`,
+    );
+    const created = templatesAfterCreate.find((item) => item.name === uiTemplateName);
     expect(created?.draftLayoutJson).toContain('system.quick-entry');
     expect(created?.id).toBeTruthy();
 
     await page.locator(`[data-action="home.template.copy"][data-record-key="home-template:${created?.id}"]`).click();
     await expect(page.getByText(copiedTemplateName).first()).toBeVisible({ timeout: 15000 });
 
-    const copied = (await api<HomeTemplate[]>(page, token, `/home/templates?keyword=${encodeURIComponent(copiedTemplateName)}`))
-      .find(item => item.name === copiedTemplateName);
+    const copied = (
+      await api<HomeTemplate[]>(page, token, `/home/templates?keyword=${encodeURIComponent(copiedTemplateName)}`)
+    ).find((item) => item.name === copiedTemplateName);
     expect(copied?.id).toBeTruthy();
 
     await page.locator(`[data-action="home.template.more"][data-record-key="home-template:${copied?.id}"]`).click();
-    const publishResponsePromise = page.waitForResponse(response =>
-      response.url().includes('/api/home/templates/publish')
-      && response.request().method() === 'PUT'
-      && response.status() === 200,
+    const publishResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/home/templates/publish') &&
+        response.request().method() === 'PUT' &&
+        response.status() === 200,
     );
     await page.locator('[data-action="home.template.publish"]').last().click();
     await page.getByRole('button', { name: '确定' }).click();
@@ -650,27 +666,32 @@ test.describe('首页管理 E2E', () => {
       token,
       '/identity/users/page?page=1&size=20&status=1',
     );
-    const selectedUser = (usersPage.records || usersPage.list || []).find(item => item.userId);
+    const selectedUser = (usersPage.records || usersPage.list || []).find((item) => item.userId);
     expect(selectedUser?.userId).toBeTruthy();
     await authDialog.locator('[data-field="home.template.auth.subject-user"]').last().click();
     await page
-      .locator('.el-select-dropdown:visible .el-select-dropdown__item', { hasText: formatIdentityUserOption(selectedUser!) })
+      .locator('.el-select-dropdown:visible .el-select-dropdown__item', {
+        hasText: formatIdentityUserOption(selectedUser!),
+      })
       .first()
       .click();
-    await expect(authDialog.locator('[data-field="home.template.auth.subject-name"]').last())
-      .toContainText(formatIdentityUserName(selectedUser!));
+    await expect(authDialog.locator('[data-field="home.template.auth.subject-name"]').last()).toContainText(
+      formatIdentityUserName(selectedUser!),
+    );
     await authDialog.locator('[data-action="home.template.auth.save"]').click();
     await expect(authDialog).toBeHidden({ timeout: 15000 });
 
     await page.goto('/#/home-management/user');
     await expect(page.locator('[data-page="home.user"]')).toBeVisible({ timeout: 15000 });
     await page.locator('[data-field="home.user.user-id"]').fill(String(selectedUser!.userId));
-    const userPagesResponsePromise = page.waitForResponse(response =>
-      response.url().includes('/api/home/templates/user-pages') && response.status() === 200
+    const userPagesResponsePromise = page.waitForResponse(
+      (response) => response.url().includes('/api/home/templates/user-pages') && response.status() === 200,
     );
     await page.locator('[data-action="home.user.view"]').click();
     await userPagesResponsePromise;
-    await expect(page.locator(`[data-record-key="home-user-page:template:${copied?.id}"]`)).toBeVisible({ timeout: 15000 });
+    await expect(page.locator(`[data-record-key="home-user-page:template:${copied?.id}"]`)).toBeVisible({
+      timeout: 15000,
+    });
     await expect(page.getByText(copiedTemplateName).first()).toBeVisible({ timeout: 15000 });
     await capture(page, testInfo, '03-home-management-ui-flow.png');
 
@@ -712,17 +733,17 @@ test.describe('首页管理 E2E', () => {
     expect(batchTwo.id).toBeTruthy();
 
     const pageResult = await api<PageResult<HomePage>>(page, token, '/home/pages/user-pages?page=1&size=20');
-    expect(pageResult.list.some(item => item.id === created.id && item.sourceType === 'USER')).toBe(true);
-    expect(pageResult.list.every(item => item.sourceType === 'USER')).toBe(true);
+    expect(pageResult.list.some((item) => item.id === created.id && item.sourceType === 'USER')).toBe(true);
+    expect(pageResult.list.every((item) => item.sourceType === 'USER')).toBe(true);
     const usersPage = await api<PageResult<IdentityUser> & { records?: IdentityUser[] }>(
       page,
       token,
       '/identity/users/page?page=1&size=200&status=1',
     );
     const currentUserId = created.userId || loginData.userId;
-    const selectedUser = (usersPage.records || usersPage.list || [])
-      .find(item => String(item.userId) === String(currentUserId))
-      || (usersPage.records || usersPage.list || []).find(item => item.userId);
+    const selectedUser =
+      (usersPage.records || usersPage.list || []).find((item) => String(item.userId) === String(currentUserId)) ||
+      (usersPage.records || usersPage.list || []).find((item) => item.userId);
     expect(selectedUser?.userId).toBeTruthy();
 
     await page.goto('/#/home-management/list');
@@ -739,7 +760,9 @@ test.describe('首页管理 E2E', () => {
 
     await page.locator('[data-field="home.list.user-selector"]').click();
     await page
-      .locator('.el-select-dropdown:visible .el-select-dropdown__item', { hasText: formatIdentityUserOption(selectedUser!) })
+      .locator('.el-select-dropdown:visible .el-select-dropdown__item', {
+        hasText: formatIdentityUserOption(selectedUser!),
+      })
       .first()
       .click();
     await expect(page.getByText(`${prefix}-批量删除A`).first()).toBeVisible({ timeout: 15000 });

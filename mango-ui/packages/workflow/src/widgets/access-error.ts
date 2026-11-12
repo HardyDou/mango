@@ -5,13 +5,15 @@ export function isAccessDeniedError(error: unknown): boolean {
   const status = toStatus(response.status) ?? toStatus(record.status);
   const code = String(record.code ?? data.code ?? data.errorCode ?? '').toUpperCase();
 
-  return status === 401
-    || status === 403
-    || code === '401'
-    || code === '403'
-    || code === 'FORBIDDEN'
-    || code === 'UNAUTHORIZED'
-    || code.includes('NO_PERMISSION');
+  return (
+    status === 401 ||
+    status === 403 ||
+    code === '401' ||
+    code === '403' ||
+    code === 'FORBIDDEN' ||
+    code === 'UNAUTHORIZED' ||
+    code.includes('NO_PERMISSION')
+  );
 }
 
 function toStatus(value: unknown): number | undefined {

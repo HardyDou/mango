@@ -22,11 +22,15 @@ test('@p1 @system 字典组件直接使用统一 DictSelect 展示 FLAT 和 TREE
   await expect(page.locator('[data-action="flat-radio-button"]').getByRole('radio', { name: '禁用' })).toBeChecked();
   await expect(page.locator('[data-action="flat-checkbox-button"]')).toBeVisible();
   await page.locator('[data-action="flat-checkbox-button"]').getByText('禁用', { exact: true }).click();
-  await expect(page.locator('[data-action="flat-checkbox-button"]').getByRole('checkbox', { name: '禁用' })).toBeChecked();
+  await expect(
+    page.locator('[data-action="flat-checkbox-button"]').getByRole('checkbox', { name: '禁用' }),
+  ).toBeChecked();
   await expect(page.locator('[data-action="tree-single-select"]')).toBeVisible();
   await expect(page.locator('[data-action="tree-multiple-select"]')).toBeVisible();
   await expect(page.locator('[data-action="tree-single-select"]')).toContainText('纸张', { timeout: 15000 });
-  await expect(page.locator('[data-action="tree-display-select"]')).toContainText('办公用品 / 纸张', { timeout: 15000 });
+  await expect(page.locator('[data-action="tree-display-select"]')).toContainText('办公用品 / 纸张', {
+    timeout: 15000,
+  });
   await expect(page.locator('[data-action="display-flat-single"]')).toHaveText('启用', { timeout: 15000 });
   await expect(page.locator('[data-action="display-flat-multi"]')).toContainText('禁用');
   await expect(page.locator('[data-action="display-flat-tag"] .el-tag')).toHaveCount(2);

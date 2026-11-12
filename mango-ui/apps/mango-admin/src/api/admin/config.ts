@@ -34,8 +34,9 @@ export interface PageResult<T> {
 
 export const configApi = {
   list: (params?: SysConfigQuery) => {
-    return get<any[]>('/system/config/list', { params: toBackendQuery(params) })
-      .then((list) => toPageResult(list.map(fromBackend), params));
+    return get<any[]>('/system/config/list', { params: toBackendQuery(params) }).then((list) =>
+      toPageResult(list.map(fromBackend), params),
+    );
   },
   detail: (id: number) => {
     return get<any>('/system/config/detail', { params: { id } }).then(fromBackend);
@@ -50,8 +51,9 @@ export const configApi = {
     return del<boolean>('/system/config', { params: { id } });
   },
   group: (group: string) => {
-    return get<any[]>('/system/config/type', { params: { type: toBackendType(group) } })
-      .then((list) => list.map(fromBackend));
+    return get<any[]>('/system/config/type', { params: { type: toBackendType(group) } }).then((list) =>
+      list.map(fromBackend),
+    );
   },
   groups: () => {
     return get<string[]>('/system/config/groups');

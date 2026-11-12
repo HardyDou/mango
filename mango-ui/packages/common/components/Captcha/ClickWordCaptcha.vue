@@ -5,11 +5,7 @@
       <el-button link type="primary" @click="refresh">刷新</el-button>
     </div>
     <div ref="imageWrapRef" class="click-word-image" @click="handleImageClick">
-      <img
-        v-if="captchaData?.image"
-        :src="captchaData.image"
-        alt="点选文字验证码"
-      >
+      <img v-if="captchaData?.image" :src="captchaData.image" alt="点选文字验证码" />
       <div v-else class="captcha-placeholder">加载中...</div>
       <span
         v-for="(point, index) in clickPoints"
@@ -91,8 +87,8 @@ function handleImageClick(event: MouseEvent) {
   const rect = imageWrapRef.value.getBoundingClientRect();
   const displayX = event.clientX - rect.left;
   const displayY = event.clientY - rect.top;
-  const x = Math.round(displayX / rect.width * baseWidth.value);
-  const y = Math.round(displayY / rect.height * baseHeight.value);
+  const x = Math.round((displayX / rect.width) * baseWidth.value);
+  const y = Math.round((displayY / rect.height) * baseHeight.value);
   clickPoints.value.push({ x, y, displayX, displayY });
   errorMessage.value = '';
   if (clickPoints.value.length === pointCount.value) {

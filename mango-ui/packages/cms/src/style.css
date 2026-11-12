@@ -322,6 +322,7 @@
 
 .m-ad {
   --m-ad-radius: 6px;
+
   display: grid;
   gap: 12px;
   min-width: 0;

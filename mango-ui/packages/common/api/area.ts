@@ -19,9 +19,7 @@ export function getAreaTree(params?: AreaTreeParams): Promise<AreaNode[]> {
   }
   const hasParentId = params?.parentId !== undefined && params.parentId !== '0';
   const url = hasParentId ? '/system/area/children' : '/system/area/tree';
-  const requestParams = hasParentId
-    ? { parentId: params.parentId }
-    : { type: params?.type };
+  const requestParams = hasParentId ? { parentId: params.parentId } : { type: params?.type };
   return get(url, { params: requestParams }).then((res: any) => {
     if (res && Array.isArray(res)) {
       return transformAreaTree(res);
@@ -34,7 +32,7 @@ function transformAreaTree(data: any[]): AreaNode[] {
   return data.map((item) => ({
     id: String(item.id),
     name: item.name,
-    parentId: String(item.pid !== undefined ? item.pid : (item.parentId || 0)),
+    parentId: String(item.pid !== undefined ? item.pid : item.parentId || 0),
     level: item.level !== undefined ? Number(item.level) : Number(item.areaType),
     hot: item.hot,
     children: item.children?.length ? transformAreaTree(item.children) : undefined,

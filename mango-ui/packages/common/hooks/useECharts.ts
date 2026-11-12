@@ -14,10 +14,7 @@ export interface EChartsOption {
   isDark?: boolean;
 }
 
-export function useECharts(
-  elRef: HTMLElement | null,
-  options: EChartsOption = {}
-) {
+export function useECharts(elRef: HTMLElement | null, options: EChartsOption = {}) {
   const { theme, autoresize = true, isDark } = options;
 
   const chartInstance = ref<echarts.ECharts | null>(null);
@@ -98,7 +95,7 @@ export function useECharts(
           initChart();
         }
       });
-    }
+    },
   );
 
   onMounted(() => {
@@ -136,7 +133,10 @@ export const CHART_COLORS = {
 };
 
 // Default chart options factory
-export function createLineChartOptions(data: { xAxis: string[]; series: { name: string; data: number[] }[] }): echarts.EChartsOption {
+export function createLineChartOptions(data: {
+  xAxis: string[];
+  series: { name: string; data: number[] }[];
+}): echarts.EChartsOption {
   return {
     tooltip: { trigger: 'axis' },
     legend: { data: data.series.map((s) => s.name) },
@@ -150,7 +150,10 @@ export function createLineChartOptions(data: { xAxis: string[]; series: { name: 
   };
 }
 
-export function createBarChartOptions(data: { xAxis: string[]; series: { name: string; data: number[] }[] }): echarts.EChartsOption {
+export function createBarChartOptions(data: {
+  xAxis: string[];
+  series: { name: string; data: number[] }[];
+}): echarts.EChartsOption {
   return {
     tooltip: { trigger: 'axis' },
     legend: { data: data.series.map((s) => s.name) },

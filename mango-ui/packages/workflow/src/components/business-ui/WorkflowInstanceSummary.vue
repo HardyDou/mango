@@ -71,7 +71,7 @@ withDefaults(
   white-space: nowrap;
 }
 
-@media (max-width: 760px) {
+@media (width <= 760px) {
   .workflow-instance-summary {
     grid-template-columns: 1fr;
   }

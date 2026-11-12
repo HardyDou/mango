@@ -304,25 +304,25 @@ const rows = [
 
 `fileApi`：
 
-| 方法                                                       | 接口                                              | 用途                   |
-| ---------------------------------------------------------- | ------------------------------------------------- | ---------------------- |
-| `page(params)`                                             | `GET /file/files/page`                            | 文件分页。             |
-| `detail(id)`                                               | `GET /file/files/detail`                          | 文件详情。             |
-| `preview(id)`                                              | `GET /file/files/preview`                         | 文件预览元数据。       |
-| `previewLink(id)`                                          | `GET /file-preview/files/preview-link`            | 文档预览链接。         |
-| `upload(file, params, options)`                            | `POST /file/files` 或上传会话链路                 | 上传单文件。           |
-| `uploadPolicy()`                                           | `GET /file/settings`                              | 读取当前租户分片策略。 |
-| `uploadBatch(files, params, options)`                      | `POST /file/files/batch`                          | 批量上传小文件。       |
-| `archive(id, reason)`                                      | `DELETE /file/files`                              | 归档。                 |
-| `delete(ids)`                                              | `POST /file/files/delete`                         | 删除记录。             |
-| `createUploadSession(command)`                             | `POST /file/files/uploads`                        | 初始化分片上传和秒传。 |
-| `createUploadPartSign(sessionId, partNumber, partSize)`    | `POST /file/files/uploads/{sessionId}/parts/sign` | 获取直传签名。         |
-| `uploadServerPart(sessionId, partNumber, chunk, fileName)` | `POST /file/files/uploads/{sessionId}/parts`      | 服务端接收分片。       |
-| `completeUploadPart(sessionId, command)`                   | `PUT /file/files/uploads/{sessionId}/parts`       | 确认直传分片。         |
-| `completeUploadSession(sessionId)`                         | `POST /file/files/uploads/{sessionId}/complete`   | 完成上传。             |
-| `abortUploadSession(sessionId)`                            | `DELETE /file/files/uploads/{sessionId}`          | 取消上传。             |
+| 方法                                                       | 接口                                              | 用途                                                                                                                         |
+| ---------------------------------------------------------- | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `page(params)`                                             | `GET /file/files/page`                            | 文件分页。                                                                                                                   |
+| `detail(id)`                                               | `GET /file/files/detail`                          | 文件详情。                                                                                                                   |
+| `preview(id)`                                              | `GET /file/files/preview`                         | 文件预览元数据。                                                                                                             |
+| `previewLink(id)`                                          | `GET /file-preview/files/preview-link`            | 文档预览链接。                                                                                                               |
+| `upload(file, params, options)`                            | `POST /file/files` 或上传会话链路                 | 上传单文件。                                                                                                                 |
+| `uploadPolicy()`                                           | `GET /file/settings`                              | 读取当前租户分片策略。                                                                                                       |
+| `uploadBatch(files, params, options)`                      | `POST /file/files/batch`                          | 批量上传小文件。                                                                                                             |
+| `archive(id, reason)`                                      | `DELETE /file/files`                              | 归档。                                                                                                                       |
+| `delete(ids)`                                              | `POST /file/files/delete`                         | 删除记录。                                                                                                                   |
+| `createUploadSession(command)`                             | `POST /file/files/uploads`                        | 初始化分片上传和秒传。                                                                                                       |
+| `createUploadPartSign(sessionId, partNumber, partSize)`    | `POST /file/files/uploads/{sessionId}/parts/sign` | 获取直传签名。                                                                                                               |
+| `uploadServerPart(sessionId, partNumber, chunk, fileName)` | `POST /file/files/uploads/{sessionId}/parts`      | 服务端接收分片。                                                                                                             |
+| `completeUploadPart(sessionId, command)`                   | `PUT /file/files/uploads/{sessionId}/parts`       | 确认直传分片。                                                                                                               |
+| `completeUploadSession(sessionId)`                         | `POST /file/files/uploads/{sessionId}/complete`   | 完成上传。                                                                                                                   |
+| `abortUploadSession(sessionId)`                            | `DELETE /file/files/uploads/{sessionId}`          | 取消上传。                                                                                                                   |
 | `downloadUrl(id, options?)`                                | `/api/file/files/download?id=...`                 | 拼接下载地址；`options` 支持 `compression`（`none`/`low`/`standard`/`medium`/`high`/`extreme`）与 `perFileTargetSizeBytes`。 |
-| `download(id, options?)`                                   | `GET /file/files/download`                        | 下载二进制；`options` 同上，由文件服务直接返回压缩后的内容。 |
+| `download(id, options?)`                                   | `GET /file/files/download`                        | 下载二进制；`options` 同上，由文件服务直接返回压缩后的内容。                                                                 |
 
 `fileStorageApi`：
 

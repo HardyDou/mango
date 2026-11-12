@@ -208,7 +208,7 @@
   margin-top: 10px;
 }
 
-@media (max-width: 700px) {
+@media (width <= 700px) {
   .job-toolbar-head,
   .job-panel-head {
     flex-direction: column;
@@ -219,7 +219,7 @@
   }
 }
 
-@media (max-width: 560px) {
+@media (width <= 560px) {
   .job-toolbar {
     padding: 14px;
   }

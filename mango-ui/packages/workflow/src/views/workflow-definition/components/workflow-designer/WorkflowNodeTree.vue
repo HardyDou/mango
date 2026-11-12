@@ -48,7 +48,9 @@
               >
                 <div class="node-card-title">
                   <el-icon><component :is="nodeIconOf(branch)" /></el-icon>
-                  <span class="node-title-display" :title="branch.nodeName || '分支名称'">{{ branch.nodeName || '分支名称' }}</span>
+                  <span class="node-title-display" :title="branch.nodeName || '分支名称'">{{
+                    branch.nodeName || '分支名称'
+                  }}</span>
                   <el-button
                     class="node-card-delete"
                     :icon="Close"
@@ -59,7 +61,7 @@
                 </div>
                 <div class="node-card-type">{{ workflowNodeCardSummary(branch) }}</div>
               </div>
-              <WorkflowAddNode :catalog="catalog" @add="item => addNodeToBranch(branch, item)" />
+              <WorkflowAddNode :catalog="catalog" @add="(item) => addNodeToBranch(branch, item)" />
             </div>
           </div>
           <WorkflowNodeTree
@@ -68,9 +70,9 @@
             :catalog="catalog"
             :variable-groups="variableGroups"
             removable
-            @select="item => $emit('select', item)"
+            @select="(item) => $emit('select', item)"
             @changed="$emit('changed')"
-            @remove-self="replacement => removeBranchChild(branch, replacement)"
+            @remove-self="(replacement) => removeBranchChild(branch, replacement)"
           />
           <div v-if="index === 0" class="top-left-cover-line" />
           <div v-if="index === 0" class="bottom-left-cover-line" />
@@ -88,7 +90,7 @@
     :catalog="catalog"
     :variable-groups="variableGroups"
     removable
-    @select="item => $emit('select', item)"
+    @select="(item) => $emit('select', item)"
     @changed="$emit('changed')"
     @remove-self="removeCurrentChild"
   />
@@ -104,17 +106,20 @@ import type { WorkflowVariableGroup } from './types';
 
 defineOptions({ name: 'WorkflowNodeTree' });
 
-const props = withDefaults(defineProps<{
-  node: WorkflowDesignerNode;
-  catalog: WorkflowNodeCatalog[];
-  variableGroups?: WorkflowVariableGroup[];
-  root?: boolean;
-  removable?: boolean;
-}>(), {
-  variableGroups: () => [],
-  root: false,
-  removable: false,
-});
+const props = withDefaults(
+  defineProps<{
+    node: WorkflowDesignerNode;
+    catalog: WorkflowNodeCatalog[];
+    variableGroups?: WorkflowVariableGroup[];
+    root?: boolean;
+    removable?: boolean;
+  }>(),
+  {
+    variableGroups: () => [],
+    root: false,
+    removable: false,
+  },
+);
 
 const emit = defineEmits<{
   select: [node: WorkflowDesignerNode];
@@ -136,10 +141,16 @@ const nodeIconMap: Record<string, any> = {
   EXCLUSIVE_BRANCH: Share,
 };
 
-const isGatewayNode = computed(() => props.node.nodeType === 'EXCLUSIVE_GATEWAY' || props.node.nodeType === 'PARALLEL_GATEWAY');
+const isGatewayNode = computed(
+  () => props.node.nodeType === 'EXCLUSIVE_GATEWAY' || props.node.nodeType === 'PARALLEL_GATEWAY',
+);
 const branchNodes = computed(() => props.node.conditionNodes || []);
 
-const catalogItem = computed(() => props.catalog.find(item => item.nodeDefinitionCode === props.node.nodeDefinitionCode || item.nodeType === props.node.nodeType));
+const catalogItem = computed(() =>
+  props.catalog.find(
+    (item) => item.nodeDefinitionCode === props.node.nodeDefinitionCode || item.nodeType === props.node.nodeType,
+  ),
+);
 const nodeSummary = computed(() => workflowNodeCardSummary(props.node));
 
 function addNode(item: WorkflowNodeCatalog) {
@@ -267,11 +278,16 @@ function resolveNodeIcon(item: Partial<WorkflowNodeCatalog | WorkflowDesignerNod
 }
 
 function catalogOf(node: WorkflowDesignerNode) {
-  return props.catalog.find(item => item.nodeDefinitionCode === node.nodeDefinitionCode || item.nodeType === node.nodeType);
+  return props.catalog.find(
+    (item) => item.nodeDefinitionCode === node.nodeDefinitionCode || item.nodeType === node.nodeType,
+  );
 }
 
 function nodeColorOf(node: WorkflowDesignerNode) {
-  return catalogOf(node)?.color || (props.root && node.id === props.node.id ? '#64748b' : node.nodeType === 'EXCLUSIVE_BRANCH' ? '#15bc83' : '#2563eb');
+  return (
+    catalogOf(node)?.color ||
+    (props.root && node.id === props.node.id ? '#64748b' : node.nodeType === 'EXCLUSIVE_BRANCH' ? '#15bc83' : '#2563eb')
+  );
 }
 
 function nodeIconOf(node: WorkflowDesignerNode) {
@@ -283,11 +299,13 @@ function workflowNodeCardSummary(node: WorkflowDesignerNode) {
     return node.conditionExpression ? `条件：${formatConditionSummary(node.conditionExpression)}` : '请设置条件';
   }
   if (node.nodeType === 'ROOT') return '发起人发起流程';
-  if (node.nodeType === 'APPROVAL' || node.executionType === 'USER_TASK' || node.bpmnType === 'userTask') return '人工处理节点';
+  if (node.nodeType === 'APPROVAL' || node.executionType === 'USER_TASK' || node.bpmnType === 'userTask')
+    return '人工处理节点';
   if (node.nodeType === 'CC') return '流程流转后通知相关人员';
   if (node.nodeType === 'EXCLUSIVE_GATEWAY') return '按条件选择一个分支继续流转';
   if (node.nodeType === 'PARALLEL_GATEWAY') return '多个分支同时流转并在结束后合并';
-  if (node.nodeType === 'SERVICE' || node.bpmnType === 'serviceTask' || node.executionType === 'SPRING_BEAN') return '调用白名单 Spring Bean 执行业务动作';
+  if (node.nodeType === 'SERVICE' || node.bpmnType === 'serviceTask' || node.executionType === 'SPRING_BEAN')
+    return '调用白名单 Spring Bean 执行业务动作';
   if (node.executionType === 'HTTP_URL') return '调用受控 HTTP URL 执行业务动作';
   if (node.executionType === 'REMOTE_SERVICE') return '调用受控远程服务执行业务动作';
   if (node.executionType === 'EVENT_PUBLISH') return '发布流程事件';
@@ -298,9 +316,19 @@ function formatConditionSummary(expression: string) {
   const inner = expression.match(/^\$\{\s*(.+?)\s*}$/)?.[1] || expression;
   const normalized = inner
     .replace(/\(([^()]+)\)/g, '$1')
-    .replace(/!\s*([A-Za-z_][\w.]*)\.contains\(([^)]+)\)/g, (_, field, value) => `${variableLabel(field)} 不属于/不包含 ${formatConditionSummaryValue(value)}`)
-    .replace(/([A-Za-z_][\w.]*)\.contains\(([^)]+)\)/g, (_, field, value) => `${variableLabel(field)} 属于/包含 ${formatConditionSummaryValue(value)}`)
-    .replace(/([A-Za-z_][\w.]*)\s*(==|!=|>=|<=|>|<)\s*('(?:\\'|[^'])*'|true|false|null|-?\d+(?:\.\d+)?|[^\s&|]+)/g, (_, field, operator, value) => `${variableLabel(field)} ${operatorLabel(operator)} ${formatConditionSummaryValue(value)}`)
+    .replace(
+      /!\s*([A-Za-z_][\w.]*)\.contains\(([^)]+)\)/g,
+      (_, field, value) => `${variableLabel(field)} 不属于/不包含 ${formatConditionSummaryValue(value)}`,
+    )
+    .replace(
+      /([A-Za-z_][\w.]*)\.contains\(([^)]+)\)/g,
+      (_, field, value) => `${variableLabel(field)} 属于/包含 ${formatConditionSummaryValue(value)}`,
+    )
+    .replace(
+      /([A-Za-z_][\w.]*)\s*(==|!=|>=|<=|>|<)\s*('(?:\\'|[^'])*'|true|false|null|-?\d+(?:\.\d+)?|[^\s&|]+)/g,
+      (_, field, operator, value) =>
+        `${variableLabel(field)} ${operatorLabel(operator)} ${formatConditionSummaryValue(value)}`,
+    )
     .replace(/\s*&&\s*/g, ' 且 ')
     .replace(/\s*\|\|\s*/g, ' 或 ')
     .trim();
@@ -309,7 +337,7 @@ function formatConditionSummary(expression: string) {
 
 function variableLabel(field: string) {
   for (const group of props.variableGroups) {
-    const matched = group.options.find(item => item.value === field);
+    const matched = group.options.find((item) => item.value === field);
     if (matched) {
       return matched.label || field;
     }
@@ -354,7 +382,7 @@ function formatConditionSummaryValue(value: string) {
   border: 1px solid color-mix(in srgb, var(--node-color) 36%, var(--el-border-color));
   border-radius: 8px;
   background: var(--el-bg-color);
-  box-shadow: 0 4px 14px rgba(31, 41, 55, 0.08);
+  box-shadow: 0 4px 14px rgb(31 41 55 / 8%);
   cursor: pointer;
   overflow: hidden;
 }
@@ -392,12 +420,12 @@ function formatConditionSummaryValue(value: string) {
   height: 24px;
   flex: 0 0 24px;
   border-radius: 6px;
-  color: rgba(255, 255, 255, 0.88);
+  color: rgb(255 255 255 / 88%);
 }
 
 .node-card-delete:hover {
   color: #fff;
-  background: rgba(255, 255, 255, 0.18);
+  background: rgb(255 255 255 / 18%);
 }
 
 .node-card-type {
@@ -450,7 +478,7 @@ function formatConditionSummaryValue(value: string) {
   border: 0;
   color: var(--el-color-primary);
   background: var(--el-bg-color);
-  box-shadow: 0 6px 16px rgba(31, 41, 55, 0.12);
+  box-shadow: 0 6px 16px rgb(31 41 55 / 12%);
   transform: translateX(-50%);
 }
 

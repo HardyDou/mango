@@ -1,9 +1,5 @@
 <template>
-  <div
-    ref="chartRef"
-    class="echarts-container"
-    :style="{ height: height, width: width }"
-  />
+  <div ref="chartRef" class="echarts-container" :style="{ height: height, width: width }" />
 </template>
 
 <script setup lang="ts">
@@ -27,7 +23,7 @@ const props = withDefaults(
     autoresize: true,
     loading: false,
     theme: undefined,
-  }
+  },
 );
 
 const emit = defineEmits<{
@@ -127,7 +123,7 @@ watch(
       chartInstance.setOption(newOptions);
     }
   },
-  { deep: true }
+  { deep: true },
 );
 
 // Watch for loading state
@@ -139,18 +135,21 @@ watch(
     } else {
       hideLoading();
     }
-  }
+  },
 );
 
 // Watch for theme changes
-watch(() => props.theme, () => {
-  nextTick(() => {
-    if (chartInstance) {
-      dispose();
-      initChart();
-    }
-  });
-});
+watch(
+  () => props.theme,
+  () => {
+    nextTick(() => {
+      if (chartInstance) {
+        dispose();
+        initChart();
+      }
+    });
+  },
+);
 
 onMounted(() => {
   nextTick(() => {

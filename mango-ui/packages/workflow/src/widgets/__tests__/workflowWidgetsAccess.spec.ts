@@ -1,14 +1,21 @@
 import { h, render } from 'vue';
 import { describe, expect, it } from 'vitest';
-import { mergeGridWidgets, resolveWidgetAccess, type MangoGridWidgetDefinition, type MangoWidgetRuntimeContext } from '@mango/grid-widgets';
+import {
+  mergeGridWidgets,
+  resolveWidgetAccess,
+  type MangoGridWidgetDefinition,
+  type MangoWidgetRuntimeContext,
+} from '@mango/grid-widgets';
 import { workflowMyProcessWidgets } from '../my-process';
 import { workflowMyTaskWidgets } from '../my-task';
 import { workflowMyTodoWidgets } from '../my-todo';
 
-function createRuntime(options: {
-  permissions?: string[];
-  menus?: unknown[];
-} = {}): MangoWidgetRuntimeContext {
+function createRuntime(
+  options: {
+    permissions?: string[];
+    menus?: unknown[];
+  } = {},
+): MangoWidgetRuntimeContext {
   return {
     pageCode: 'home',
     user: {
@@ -25,7 +32,7 @@ function createWorkflowMenu(paths: string[]): unknown[] {
       children: [
         {
           path: 'task',
-          children: paths.map(path => ({ path })),
+          children: paths.map((path) => ({ path })),
         },
       ],
     },
@@ -112,10 +119,15 @@ describe('workflow home widgets access', () => {
       },
     };
 
-    expect(resolveWidgetAccess(widget, createRuntime({
-      permissions: ['risk:review:list'],
-      menus: [{ path: '/risk/review' }],
-    }))).toMatchObject({
+    expect(
+      resolveWidgetAccess(
+        widget,
+        createRuntime({
+          permissions: ['risk:review:list'],
+          menus: [{ path: '/risk/review' }],
+        }),
+      ),
+    ).toMatchObject({
       allowed: false,
       missingPermissionCodes: ['risk:review:approve'],
       missingRoutePaths: [],
@@ -144,10 +156,15 @@ describe('workflow home widgets access', () => {
       },
     };
 
-    expect(resolveWidgetAccess(widget, createRuntime({
-      permissions: ['operation:review:list'],
-      menus: [{ path: '/operation/review' }],
-    }))).toMatchObject({
+    expect(
+      resolveWidgetAccess(
+        widget,
+        createRuntime({
+          permissions: ['operation:review:list'],
+          menus: [{ path: '/operation/review' }],
+        }),
+      ),
+    ).toMatchObject({
       allowed: false,
       mode: 'all',
       missingPermissionCodes: ['operation:review:handle'],

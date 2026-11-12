@@ -17,20 +17,21 @@
 }
 
 :where(
-  .payment-page,
-  .payment-business-orders,
-  .payment-orders,
-  .payment-refund-orders,
-  .payment-transaction-flows,
-  .payment-exception-orders,
-  .payment-notification-records,
-  .payment-reconciliations,
-  .payment-differences,
-  .payment-settlement-summaries,
-  .payment-operation-audits,
-  .payment-offline-collections,
-  .payment-offline-refunds
-) :where(.payment-page__header, [class^='payment-'][class$='__header']) {
+    .payment-page,
+    .payment-business-orders,
+    .payment-orders,
+    .payment-refund-orders,
+    .payment-transaction-flows,
+    .payment-exception-orders,
+    .payment-notification-records,
+    .payment-reconciliations,
+    .payment-differences,
+    .payment-settlement-summaries,
+    .payment-operation-audits,
+    .payment-offline-collections,
+    .payment-offline-refunds
+  )
+  :where(.payment-page__header, [class^='payment-'][class$='__header']) {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -43,20 +44,22 @@
 }
 
 :where(
-  .payment-page,
-  .payment-business-orders,
-  .payment-orders,
-  .payment-refund-orders,
-  .payment-transaction-flows,
-  .payment-exception-orders,
-  .payment-notification-records,
-  .payment-reconciliations,
-  .payment-differences,
-  .payment-settlement-summaries,
-  .payment-operation-audits,
-  .payment-offline-collections,
-  .payment-offline-refunds
-) :where(.payment-page__header, [class^='payment-'][class$='__header']) :where(h2, h3) {
+    .payment-page,
+    .payment-business-orders,
+    .payment-orders,
+    .payment-refund-orders,
+    .payment-transaction-flows,
+    .payment-exception-orders,
+    .payment-notification-records,
+    .payment-reconciliations,
+    .payment-differences,
+    .payment-settlement-summaries,
+    .payment-operation-audits,
+    .payment-offline-collections,
+    .payment-offline-refunds
+  )
+  :where(.payment-page__header, [class^='payment-'][class$='__header'])
+  :where(h2, h3) {
   margin: 0;
   color: var(--el-text-color-primary);
   font-size: 18px;
@@ -66,20 +69,22 @@
 }
 
 :where(
-  .payment-page,
-  .payment-business-orders,
-  .payment-orders,
-  .payment-refund-orders,
-  .payment-transaction-flows,
-  .payment-exception-orders,
-  .payment-notification-records,
-  .payment-reconciliations,
-  .payment-differences,
-  .payment-settlement-summaries,
-  .payment-operation-audits,
-  .payment-offline-collections,
-  .payment-offline-refunds
-) :where(.payment-page__header, [class^='payment-'][class$='__header']) p {
+    .payment-page,
+    .payment-business-orders,
+    .payment-orders,
+    .payment-refund-orders,
+    .payment-transaction-flows,
+    .payment-exception-orders,
+    .payment-notification-records,
+    .payment-reconciliations,
+    .payment-differences,
+    .payment-settlement-summaries,
+    .payment-operation-audits,
+    .payment-offline-collections,
+    .payment-offline-refunds
+  )
+  :where(.payment-page__header, [class^='payment-'][class$='__header'])
+  p {
   margin: 4px 0 0;
   color: var(--el-text-color-secondary);
   font-size: 13px;
@@ -87,20 +92,21 @@
 }
 
 :where(
-  .payment-page,
-  .payment-business-orders,
-  .payment-orders,
-  .payment-refund-orders,
-  .payment-transaction-flows,
-  .payment-exception-orders,
-  .payment-notification-records,
-  .payment-reconciliations,
-  .payment-differences,
-  .payment-settlement-summaries,
-  .payment-operation-audits,
-  .payment-offline-collections,
-  .payment-offline-refunds
-) :where(.payment-page__toolbar, [class^='payment-'][class$='__toolbar'], .payment-reconciliations__search) {
+    .payment-page,
+    .payment-business-orders,
+    .payment-orders,
+    .payment-refund-orders,
+    .payment-transaction-flows,
+    .payment-exception-orders,
+    .payment-notification-records,
+    .payment-reconciliations,
+    .payment-differences,
+    .payment-settlement-summaries,
+    .payment-operation-audits,
+    .payment-offline-collections,
+    .payment-offline-refunds
+  )
+  :where(.payment-page__toolbar, [class^='payment-'][class$='__toolbar'], .payment-reconciliations__search) {
   padding: 14px 18px 2px;
   background: var(--el-bg-color);
   border: 0;
@@ -109,20 +115,22 @@
 }
 
 :where(
-  .payment-page,
-  .payment-business-orders,
-  .payment-orders,
-  .payment-refund-orders,
-  .payment-transaction-flows,
-  .payment-exception-orders,
-  .payment-notification-records,
-  .payment-reconciliations,
-  .payment-differences,
-  .payment-settlement-summaries,
-  .payment-operation-audits,
-  .payment-offline-collections,
-  .payment-offline-refunds
-) :where(.payment-page__toolbar, [class^='payment-'][class$='__toolbar']) .el-form,
+    .payment-page,
+    .payment-business-orders,
+    .payment-orders,
+    .payment-refund-orders,
+    .payment-transaction-flows,
+    .payment-exception-orders,
+    .payment-notification-records,
+    .payment-reconciliations,
+    .payment-differences,
+    .payment-settlement-summaries,
+    .payment-operation-audits,
+    .payment-offline-collections,
+    .payment-offline-refunds
+  )
+  :where(.payment-page__toolbar, [class^='payment-'][class$='__toolbar'])
+  .el-form,
 .payment-reconciliations .payment-reconciliations__search {
   display: flex;
   flex-wrap: wrap;
@@ -131,94 +139,106 @@
 }
 
 :where(
-  .payment-page,
-  .payment-business-orders,
-  .payment-orders,
-  .payment-refund-orders,
-  .payment-transaction-flows,
-  .payment-exception-orders,
-  .payment-notification-records,
-  .payment-reconciliations,
-  .payment-differences,
-  .payment-settlement-summaries,
-  .payment-operation-audits,
-  .payment-offline-collections,
-  .payment-offline-refunds
-) :where(.payment-page__toolbar, [class^='payment-'][class$='__toolbar'], .payment-reconciliations__search) .el-form-item {
+    .payment-page,
+    .payment-business-orders,
+    .payment-orders,
+    .payment-refund-orders,
+    .payment-transaction-flows,
+    .payment-exception-orders,
+    .payment-notification-records,
+    .payment-reconciliations,
+    .payment-differences,
+    .payment-settlement-summaries,
+    .payment-operation-audits,
+    .payment-offline-collections,
+    .payment-offline-refunds
+  )
+  :where(.payment-page__toolbar, [class^='payment-'][class$='__toolbar'], .payment-reconciliations__search)
+  .el-form-item {
   margin-right: 0;
   margin-bottom: 12px;
 }
 
 :where(
-  .payment-page,
-  .payment-business-orders,
-  .payment-orders,
-  .payment-refund-orders,
-  .payment-transaction-flows,
-  .payment-exception-orders,
-  .payment-notification-records,
-  .payment-reconciliations,
-  .payment-differences,
-  .payment-settlement-summaries,
-  .payment-operation-audits,
-  .payment-offline-collections,
-  .payment-offline-refunds
-) :where(.payment-page__toolbar, [class^='payment-'][class$='__toolbar'], .payment-reconciliations__search) .el-form-item .el-input {
+    .payment-page,
+    .payment-business-orders,
+    .payment-orders,
+    .payment-refund-orders,
+    .payment-transaction-flows,
+    .payment-exception-orders,
+    .payment-notification-records,
+    .payment-reconciliations,
+    .payment-differences,
+    .payment-settlement-summaries,
+    .payment-operation-audits,
+    .payment-offline-collections,
+    .payment-offline-refunds
+  )
+  :where(.payment-page__toolbar, [class^='payment-'][class$='__toolbar'], .payment-reconciliations__search)
+  .el-form-item
+  .el-input {
   width: 300px;
 }
 
 :where(
-  .payment-page,
-  .payment-business-orders,
-  .payment-orders,
-  .payment-refund-orders,
-  .payment-transaction-flows,
-  .payment-exception-orders,
-  .payment-notification-records,
-  .payment-reconciliations,
-  .payment-differences,
-  .payment-settlement-summaries,
-  .payment-operation-audits,
-  .payment-offline-collections,
-  .payment-offline-refunds
-) :where(.payment-page__toolbar, [class^='payment-'][class$='__toolbar'], .payment-reconciliations__search) .el-form-item .el-select {
+    .payment-page,
+    .payment-business-orders,
+    .payment-orders,
+    .payment-refund-orders,
+    .payment-transaction-flows,
+    .payment-exception-orders,
+    .payment-notification-records,
+    .payment-reconciliations,
+    .payment-differences,
+    .payment-settlement-summaries,
+    .payment-operation-audits,
+    .payment-offline-collections,
+    .payment-offline-refunds
+  )
+  :where(.payment-page__toolbar, [class^='payment-'][class$='__toolbar'], .payment-reconciliations__search)
+  .el-form-item
+  .el-select {
   min-width: 190px;
   width: auto;
 }
 
 :where(
-  .payment-page,
-  .payment-business-orders,
-  .payment-orders,
-  .payment-refund-orders,
-  .payment-transaction-flows,
-  .payment-exception-orders,
-  .payment-notification-records,
-  .payment-reconciliations,
-  .payment-differences,
-  .payment-settlement-summaries,
-  .payment-operation-audits,
-  .payment-offline-collections,
-  .payment-offline-refunds
-) :where(.payment-page__toolbar, [class^='payment-'][class$='__toolbar'], .payment-reconciliations__search) .el-form-item .el-date-editor {
+    .payment-page,
+    .payment-business-orders,
+    .payment-orders,
+    .payment-refund-orders,
+    .payment-transaction-flows,
+    .payment-exception-orders,
+    .payment-notification-records,
+    .payment-reconciliations,
+    .payment-differences,
+    .payment-settlement-summaries,
+    .payment-operation-audits,
+    .payment-offline-collections,
+    .payment-offline-refunds
+  )
+  :where(.payment-page__toolbar, [class^='payment-'][class$='__toolbar'], .payment-reconciliations__search)
+  .el-form-item
+  .el-date-editor {
   width: 220px;
 }
 
 :where(
-  .payment-page,
-  .payment-business-orders,
-  .payment-orders,
-  .payment-refund-orders,
-  .payment-transaction-flows,
-  .payment-exception-orders,
-  .payment-notification-records,
-  .payment-reconciliations,
-  .payment-differences,
-  .payment-settlement-summaries,
-  .payment-operation-audits,
-  .payment-offline-collections,
-  .payment-offline-refunds
-) :where(.payment-page__actions, [class^='payment-'][class$='__header-actions']) {
+    .payment-page,
+    .payment-business-orders,
+    .payment-orders,
+    .payment-refund-orders,
+    .payment-transaction-flows,
+    .payment-exception-orders,
+    .payment-notification-records,
+    .payment-reconciliations,
+    .payment-differences,
+    .payment-settlement-summaries,
+    .payment-operation-audits,
+    .payment-offline-collections,
+    .payment-offline-refunds
+  )
+  :where(.payment-page__actions, [class^='payment-'][class$='__header-actions']) {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -227,98 +247,107 @@
 }
 
 :where(
-  .payment-page,
-  .payment-business-orders,
-  .payment-orders,
-  .payment-refund-orders,
-  .payment-transaction-flows,
-  .payment-exception-orders,
-  .payment-notification-records,
-  .payment-reconciliations,
-  .payment-differences,
-  .payment-settlement-summaries,
-  .payment-operation-audits,
-  .payment-offline-collections,
-  .payment-offline-refunds
-) :where(.payment-page__filter-actions, [class^='payment-'][class$='__filter-actions']) {
+    .payment-page,
+    .payment-business-orders,
+    .payment-orders,
+    .payment-refund-orders,
+    .payment-transaction-flows,
+    .payment-exception-orders,
+    .payment-notification-records,
+    .payment-reconciliations,
+    .payment-differences,
+    .payment-settlement-summaries,
+    .payment-operation-audits,
+    .payment-offline-collections,
+    .payment-offline-refunds
+  )
+  :where(.payment-page__filter-actions, [class^='payment-'][class$='__filter-actions']) {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
 :where(
-  .payment-page,
-  .payment-business-orders,
-  .payment-orders,
-  .payment-refund-orders,
-  .payment-transaction-flows,
-  .payment-exception-orders,
-  .payment-notification-records,
-  .payment-reconciliations,
-  .payment-differences,
-  .payment-settlement-summaries,
-  .payment-operation-audits,
-  .payment-offline-collections,
-  .payment-offline-refunds
-) :where(.payment-table, [class^='payment-'][class$='__table']) {
+    .payment-page,
+    .payment-business-orders,
+    .payment-orders,
+    .payment-refund-orders,
+    .payment-transaction-flows,
+    .payment-exception-orders,
+    .payment-notification-records,
+    .payment-reconciliations,
+    .payment-differences,
+    .payment-settlement-summaries,
+    .payment-operation-audits,
+    .payment-offline-collections,
+    .payment-offline-refunds
+  )
+  :where(.payment-table, [class^='payment-'][class$='__table']) {
   width: 100%;
+
   --el-table-header-bg-color: var(--el-fill-color-lighter);
   --el-table-row-hover-bg-color: var(--el-fill-color-light);
 }
 
 :where(
-  .payment-page,
-  .payment-business-orders,
-  .payment-orders,
-  .payment-refund-orders,
-  .payment-transaction-flows,
-  .payment-exception-orders,
-  .payment-notification-records,
-  .payment-reconciliations,
-  .payment-differences,
-  .payment-settlement-summaries,
-  .payment-operation-audits,
-  .payment-offline-collections,
-  .payment-offline-refunds
-) :where(.payment-table, [class^='payment-'][class$='__table']) .el-table__header th {
+    .payment-page,
+    .payment-business-orders,
+    .payment-orders,
+    .payment-refund-orders,
+    .payment-transaction-flows,
+    .payment-exception-orders,
+    .payment-notification-records,
+    .payment-reconciliations,
+    .payment-differences,
+    .payment-settlement-summaries,
+    .payment-operation-audits,
+    .payment-offline-collections,
+    .payment-offline-refunds
+  )
+  :where(.payment-table, [class^='payment-'][class$='__table'])
+  .el-table__header
+  th {
   height: 40px;
   color: var(--el-text-color-regular);
   font-weight: 600;
 }
 
 :where(
-  .payment-page,
-  .payment-business-orders,
-  .payment-orders,
-  .payment-refund-orders,
-  .payment-transaction-flows,
-  .payment-exception-orders,
-  .payment-notification-records,
-  .payment-reconciliations,
-  .payment-differences,
-  .payment-settlement-summaries,
-  .payment-operation-audits,
-  .payment-offline-collections,
-  .payment-offline-refunds
-) :where(.payment-table, [class^='payment-'][class$='__table']) .el-table__cell {
+    .payment-page,
+    .payment-business-orders,
+    .payment-orders,
+    .payment-refund-orders,
+    .payment-transaction-flows,
+    .payment-exception-orders,
+    .payment-notification-records,
+    .payment-reconciliations,
+    .payment-differences,
+    .payment-settlement-summaries,
+    .payment-operation-audits,
+    .payment-offline-collections,
+    .payment-offline-refunds
+  )
+  :where(.payment-table, [class^='payment-'][class$='__table'])
+  .el-table__cell {
   padding: 8px 0;
 }
 
 :where(
-  .payment-page,
-  .payment-business-orders,
-  .payment-orders,
-  .payment-refund-orders,
-  .payment-transaction-flows,
-  .payment-exception-orders,
-  .payment-notification-records,
-  .payment-reconciliations,
-  .payment-differences,
-  .payment-settlement-summaries,
-  .payment-operation-audits,
-  .payment-offline-collections,
-  .payment-offline-refunds
-) :where(.payment-table__actions, [class^='payment-'][class$='__row-actions']) {
+    .payment-page,
+    .payment-business-orders,
+    .payment-orders,
+    .payment-refund-orders,
+    .payment-transaction-flows,
+    .payment-exception-orders,
+    .payment-notification-records,
+    .payment-reconciliations,
+    .payment-differences,
+    .payment-settlement-summaries,
+    .payment-operation-audits,
+    .payment-offline-collections,
+    .payment-offline-refunds
+  )
+  :where(.payment-table__actions, [class^='payment-'][class$='__row-actions']) {
   display: flex;
   align-items: center;
   flex-wrap: nowrap;
@@ -328,20 +357,22 @@
 }
 
 :where(
-  .payment-page,
-  .payment-business-orders,
-  .payment-orders,
-  .payment-refund-orders,
-  .payment-transaction-flows,
-  .payment-exception-orders,
-  .payment-notification-records,
-  .payment-reconciliations,
-  .payment-differences,
-  .payment-settlement-summaries,
-  .payment-operation-audits,
-  .payment-offline-collections,
-  .payment-offline-refunds
-) .payment-table__operation-cell .cell {
+    .payment-page,
+    .payment-business-orders,
+    .payment-orders,
+    .payment-refund-orders,
+    .payment-transaction-flows,
+    .payment-exception-orders,
+    .payment-notification-records,
+    .payment-reconciliations,
+    .payment-differences,
+    .payment-settlement-summaries,
+    .payment-operation-audits,
+    .payment-offline-collections,
+    .payment-offline-refunds
+  )
+  .payment-table__operation-cell
+  .cell {
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -350,39 +381,42 @@
 }
 
 :where(
-  .payment-page,
-  .payment-business-orders,
-  .payment-orders,
-  .payment-refund-orders,
-  .payment-transaction-flows,
-  .payment-exception-orders,
-  .payment-notification-records,
-  .payment-reconciliations,
-  .payment-differences,
-  .payment-settlement-summaries,
-  .payment-operation-audits,
-  .payment-offline-collections,
-  .payment-offline-refunds
-) :where(.payment-table__actions, [class^='payment-'][class$='__row-actions']) > span {
+    .payment-page,
+    .payment-business-orders,
+    .payment-orders,
+    .payment-refund-orders,
+    .payment-transaction-flows,
+    .payment-exception-orders,
+    .payment-notification-records,
+    .payment-reconciliations,
+    .payment-differences,
+    .payment-settlement-summaries,
+    .payment-operation-audits,
+    .payment-offline-collections,
+    .payment-offline-refunds
+  )
+  :where(.payment-table__actions, [class^='payment-'][class$='__row-actions'])
+  > span {
   display: inline-flex;
   align-items: center;
 }
 
 :where(
-  .payment-page,
-  .payment-business-orders,
-  .payment-orders,
-  .payment-refund-orders,
-  .payment-transaction-flows,
-  .payment-exception-orders,
-  .payment-notification-records,
-  .payment-reconciliations,
-  .payment-differences,
-  .payment-settlement-summaries,
-  .payment-operation-audits,
-  .payment-offline-collections,
-  .payment-offline-refunds
-) :where(.payment-page__pagination, [class^='payment-'][class$='__pagination']) {
+    .payment-page,
+    .payment-business-orders,
+    .payment-orders,
+    .payment-refund-orders,
+    .payment-transaction-flows,
+    .payment-exception-orders,
+    .payment-notification-records,
+    .payment-reconciliations,
+    .payment-differences,
+    .payment-settlement-summaries,
+    .payment-operation-audits,
+    .payment-offline-collections,
+    .payment-offline-refunds
+  )
+  :where(.payment-page__pagination, [class^='payment-'][class$='__pagination']) {
   display: flex;
   justify-content: flex-end;
   padding: 10px 16px;
@@ -499,42 +533,45 @@
   width: 100%;
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   :where(
-    .payment-page,
-    .payment-business-orders,
-    .payment-orders,
-    .payment-refund-orders,
-    .payment-transaction-flows,
-    .payment-exception-orders,
-    .payment-notification-records,
-    .payment-reconciliations,
-    .payment-differences,
-    .payment-settlement-summaries,
-    .payment-operation-audits,
-    .payment-offline-collections,
-    .payment-offline-refunds
-  ) :where(.payment-page__header, [class^='payment-'][class$='__header']) {
+      .payment-page,
+      .payment-business-orders,
+      .payment-orders,
+      .payment-refund-orders,
+      .payment-transaction-flows,
+      .payment-exception-orders,
+      .payment-notification-records,
+      .payment-reconciliations,
+      .payment-differences,
+      .payment-settlement-summaries,
+      .payment-operation-audits,
+      .payment-offline-collections,
+      .payment-offline-refunds
+    )
+    :where(.payment-page__header, [class^='payment-'][class$='__header']) {
     align-items: flex-start;
     flex-direction: column;
     gap: 10px;
   }
 
   :where(
-    .payment-page,
-    .payment-business-orders,
-    .payment-orders,
-    .payment-refund-orders,
-    .payment-transaction-flows,
-    .payment-exception-orders,
-    .payment-notification-records,
-    .payment-reconciliations,
-    .payment-differences,
-    .payment-settlement-summaries,
-    .payment-operation-audits,
-    .payment-offline-collections,
-    .payment-offline-refunds
-  ) :where(.payment-page__toolbar, [class^='payment-'][class$='__toolbar']) .el-form,
+      .payment-page,
+      .payment-business-orders,
+      .payment-orders,
+      .payment-refund-orders,
+      .payment-transaction-flows,
+      .payment-exception-orders,
+      .payment-notification-records,
+      .payment-reconciliations,
+      .payment-differences,
+      .payment-settlement-summaries,
+      .payment-operation-audits,
+      .payment-offline-collections,
+      .payment-offline-refunds
+    )
+    :where(.payment-page__toolbar, [class^='payment-'][class$='__toolbar'])
+    .el-form,
   .payment-reconciliations .payment-reconciliations__search {
     display: block;
   }
@@ -549,20 +586,23 @@
   }
 
   :where(
-    .payment-page,
-    .payment-business-orders,
-    .payment-orders,
-    .payment-refund-orders,
-    .payment-transaction-flows,
-    .payment-exception-orders,
-    .payment-notification-records,
-    .payment-reconciliations,
-    .payment-differences,
-    .payment-settlement-summaries,
-    .payment-operation-audits,
-    .payment-offline-collections,
-    .payment-offline-refunds
-  ) :where(.payment-page__toolbar, [class^='payment-'][class$='__toolbar'], .payment-reconciliations__search) .el-form-item :where(.el-input, .el-select, .el-date-editor) {
+      .payment-page,
+      .payment-business-orders,
+      .payment-orders,
+      .payment-refund-orders,
+      .payment-transaction-flows,
+      .payment-exception-orders,
+      .payment-notification-records,
+      .payment-reconciliations,
+      .payment-differences,
+      .payment-settlement-summaries,
+      .payment-operation-audits,
+      .payment-offline-collections,
+      .payment-offline-refunds
+    )
+    :where(.payment-page__toolbar, [class^='payment-'][class$='__toolbar'], .payment-reconciliations__search)
+    .el-form-item
+    :where(.el-input, .el-select, .el-date-editor) {
     min-width: 0;
     width: 100%;
   }

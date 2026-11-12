@@ -1,8 +1,8 @@
 .mango-theme-admin-standard,
 [data-mango-theme='admin-standard'] {
   --mango-bg-main: #f3f5f8;
-  --mango-bg-color: #ffffff;
-  --mango-bg-overlay: #ffffff;
+  --mango-bg-color: #fff;
+  --mango-bg-overlay: #fff;
   --mango-border-color: #e6ebf5;
   --mango-border-light: #e5ebf3;
   --mango-text-color: #243044;
@@ -22,7 +22,7 @@
   --mango-table-header-bg: #eef1f5;
   --mango-table-header-text: #000;
   --mango-table-expand-bg: var(--el-fill-color-light);
-  --mango-shadow-light: 0 6px 18px rgba(30, 62, 120, 0.08);
+  --mango-shadow-light: 0 6px 18px rgb(30 62 120 / 8%);
   --el-color-primary: #2e5cf6;
   --el-color-primary-dark-2: #2644d4;
   --el-color-primary-light-9: #eef4ff;

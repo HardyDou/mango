@@ -31,15 +31,18 @@ const props = defineProps<{
   status?: string;
 }>();
 
-const completed = computed(() => props.status === '已通过' || props.status === '已结束' || props.status === 'APPROVED' || props.status === 'COMPLETED');
+const completed = computed(
+  () =>
+    props.status === '已通过' ||
+    props.status === '已结束' ||
+    props.status === 'APPROVED' ||
+    props.status === 'COMPLETED',
+);
 const rejected = computed(() => props.status === '已驳回' || props.status === '已拒绝' || props.status === 'REJECTED');
-const hasWorkflowStarted = computed(() => Boolean(
-  props.currentNodeKey
-  || completed.value
-  || rejected.value
-  || props.visitedNodeKeys?.length,
-));
-const terminalStartState = computed(() => hasWorkflowStarted.value ? 'done' : 'pending');
+const hasWorkflowStarted = computed(() =>
+  Boolean(props.currentNodeKey || completed.value || rejected.value || props.visitedNodeKeys?.length),
+);
+const terminalStartState = computed(() => (hasWorkflowStarted.value ? 'done' : 'pending'));
 const terminalEndState = computed(() => {
   if (rejected.value) return 'rejected';
   if (completed.value) return 'done';
@@ -76,10 +79,13 @@ const WorkflowTreeNode = defineComponent({
   },
   setup(nodeProps) {
     const visitedSet = () => new Set(nodeProps.visitedNodeKeys || []);
-    const currentKeySet = () => new Set(String(nodeProps.currentNodeKey || '')
-      .split(',')
-      .map(item => item.trim())
-      .filter(Boolean));
+    const currentKeySet = () =>
+      new Set(
+        String(nodeProps.currentNodeKey || '')
+          .split(',')
+          .map((item) => item.trim())
+          .filter(Boolean),
+      );
     const rejectedNodeKey = () => {
       const currentKeys = currentKeySet();
       if (currentKeys.size) {
@@ -88,30 +94,22 @@ const WorkflowTreeNode = defineComponent({
       const visitedKeys = nodeProps.visitedNodeKeys || [];
       return visitedKeys[visitedKeys.length - 1] || '';
     };
-    const isCurrent = (node: WorkflowDesignerNode) => Boolean(
-      !nodeProps.completed
-      && !nodeProps.rejected
-      && currentKeySet().has(node.id),
-    );
-    const isRejectedNode = (node: WorkflowDesignerNode) => Boolean(
-      nodeProps.rejected
-      && (currentKeySet().has(node.id) || rejectedNodeKey() === node.id),
-    );
-    const hasWorkflowStarted = () => Boolean(
-      nodeProps.currentNodeKey
-      || nodeProps.completed
-      || nodeProps.rejected
-      || visitedSet().size,
-    );
+    const isCurrent = (node: WorkflowDesignerNode) =>
+      Boolean(!nodeProps.completed && !nodeProps.rejected && currentKeySet().has(node.id));
+    const isRejectedNode = (node: WorkflowDesignerNode) =>
+      Boolean(nodeProps.rejected && (currentKeySet().has(node.id) || rejectedNodeKey() === node.id));
+    const hasWorkflowStarted = () =>
+      Boolean(nodeProps.currentNodeKey || nodeProps.completed || nodeProps.rejected || visitedSet().size);
     const hasVisitedDescendant = (node: WorkflowDesignerNode): boolean => {
       const keys = visitedSet();
-      if (node.childNode && (keys.has(node.childNode.id) || isCurrent(node.childNode) || hasVisitedDescendant(node.childNode))) {
+      if (
+        node.childNode &&
+        (keys.has(node.childNode.id) || isCurrent(node.childNode) || hasVisitedDescendant(node.childNode))
+      ) {
         return true;
       }
-      return (node.conditionNodes || []).some(branch =>
-        keys.has(branch.id)
-        || isCurrent(branch)
-        || hasVisitedDescendant(branch),
+      return (node.conditionNodes || []).some(
+        (branch) => keys.has(branch.id) || isCurrent(branch) || hasVisitedDescendant(branch),
       );
     };
     const nodeState = (node: WorkflowDesignerNode) => {
@@ -127,7 +125,8 @@ const WorkflowTreeNode = defineComponent({
     const nodeTitle = (node: WorkflowDesignerNode) => node.nodeName || nodeTypeLabel(node);
     const nodeTypeLabel = (node: WorkflowDesignerNode) => {
       if (node.nodeType === 'ROOT') return '发起人';
-      if (node.nodeType === 'APPROVAL' || node.executionType === 'USER_TASK' || node.bpmnType === 'userTask') return '人工审批';
+      if (node.nodeType === 'APPROVAL' || node.executionType === 'USER_TASK' || node.bpmnType === 'userTask')
+        return '人工审批';
       if (node.nodeType === 'CC') return '抄送';
       if (node.nodeType === 'EXCLUSIVE_GATEWAY') return '条件分支';
       if (node.nodeType === 'PARALLEL_GATEWAY') return '并行分支';
@@ -137,14 +136,23 @@ const WorkflowTreeNode = defineComponent({
       return node.description || '流程节点';
     };
 
-    const renderCard = (node: WorkflowDesignerNode) => h('div', {
-      class: ['workflow-node-card', nodeState(node), { root: nodeProps.root, branch: node.nodeType === 'EXCLUSIVE_BRANCH' }],
-    }, [
-      h('div', { class: 'workflow-node-title' }, [
-        h('span', { class: 'workflow-node-dot' }),
-        h('span', { class: 'workflow-node-name', title: nodeTitle(node) }, nodeTitle(node)),
-      ]),
-    ]);
+    const renderCard = (node: WorkflowDesignerNode) =>
+      h(
+        'div',
+        {
+          class: [
+            'workflow-node-card',
+            nodeState(node),
+            { root: nodeProps.root, branch: node.nodeType === 'EXCLUSIVE_BRANCH' },
+          ],
+        },
+        [
+          h('div', { class: 'workflow-node-title' }, [
+            h('span', { class: 'workflow-node-dot' }),
+            h('span', { class: 'workflow-node-name', title: nodeTitle(node) }, nodeTitle(node)),
+          ]),
+        ],
+      );
 
     const renderNode = (node: WorkflowDesignerNode, root = false): any => {
       const child = node.childNode ? renderNode(node.childNode) : null;
@@ -160,18 +168,22 @@ const WorkflowTreeNode = defineComponent({
         h('div', { class: ['workflow-node-wrap', { root }] }, [renderCard(node)]),
         h('div', { class: 'workflow-branch-box-wrap' }, [
           h('div', { class: 'workflow-branch-label' }, node.nodeType === 'PARALLEL_GATEWAY' ? '并行' : '分支'),
-          h('div', { class: 'workflow-branch-box' }, branches.map((branch, index) =>
-            h('div', { class: 'workflow-branch-col', key: branch.id || `${branch.nodeName}-${index}` }, [
-              h('div', { class: 'workflow-condition-node' }, [renderCard(branch)]),
-              branch.childNode
-                ? renderNode(branch.childNode)
-                : h('div', { class: 'workflow-empty-branch' }, '无后续节点'),
-              index === 0 ? h('div', { class: 'top-left-cover-line' }) : null,
-              index === 0 ? h('div', { class: 'bottom-left-cover-line' }) : null,
-              index === branches.length - 1 ? h('div', { class: 'top-right-cover-line' }) : null,
-              index === branches.length - 1 ? h('div', { class: 'bottom-right-cover-line' }) : null,
-            ]),
-          )),
+          h(
+            'div',
+            { class: 'workflow-branch-box' },
+            branches.map((branch, index) =>
+              h('div', { class: 'workflow-branch-col', key: branch.id || `${branch.nodeName}-${index}` }, [
+                h('div', { class: 'workflow-condition-node' }, [renderCard(branch)]),
+                branch.childNode
+                  ? renderNode(branch.childNode)
+                  : h('div', { class: 'workflow-empty-branch' }, '无后续节点'),
+                index === 0 ? h('div', { class: 'top-left-cover-line' }) : null,
+                index === 0 ? h('div', { class: 'bottom-left-cover-line' }) : null,
+                index === branches.length - 1 ? h('div', { class: 'top-right-cover-line' }) : null,
+                index === branches.length - 1 ? h('div', { class: 'bottom-right-cover-line' }) : null,
+              ]),
+            ),
+          ),
         ]),
         child,
       ]);
@@ -190,6 +202,7 @@ function isGatewayNode(node: WorkflowDesignerNode) {
 .workflow-progress-tree {
   --workflow-line-color: var(--el-border-color);
   --workflow-line-width: 2px;
+
   min-width: max-content;
   padding: 12px 24px 24px;
   background: var(--el-bg-color);
@@ -224,7 +237,7 @@ function isGatewayNode(node: WorkflowDesignerNode) {
   font-size: 14px;
   font-weight: 600;
   background: var(--el-bg-color);
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 6px 18px rgb(15 23 42 / 6%);
 }
 
 .workflow-terminal-node.end {
@@ -288,7 +301,7 @@ function isGatewayNode(node: WorkflowDesignerNode) {
   border: 1px solid var(--el-border-color);
   border-radius: 999px;
   background: var(--el-bg-color);
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 6px 18px rgb(15 23 42 / 6%);
 }
 
 .workflow-node-card.done {

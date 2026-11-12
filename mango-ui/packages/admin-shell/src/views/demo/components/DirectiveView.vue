@@ -86,7 +86,10 @@
       <div class="demo-block">
         <div class="demo-source">
           <div class="auth-demo">
-            <el-button v-if="hasAllPermissions(['admin:user:add', 'admin:user:edit', 'admin:user:delete'])" type="danger">
+            <el-button
+              v-if="hasAllPermissions(['admin:user:add', 'admin:user:edit', 'admin:user:delete'])"
+              type="danger"
+            >
               <el-icon><Setting /></el-icon>
               超级管理
             </el-button>
@@ -161,7 +164,13 @@ const tocItems = [
   { id: 'value', label: '返回字段' },
 ];
 
-const permissionOptions = ['admin:user:add', 'admin:user:edit', 'admin:user:delete', 'admin:user:query', 'admin:user:export'];
+const permissionOptions = [
+  'admin:user:add',
+  'admin:user:edit',
+  'admin:user:delete',
+  'admin:user:query',
+  'admin:user:export',
+];
 const currentPermissions = ref<string[]>(['admin:user:add', 'admin:user:edit', 'admin:user:query']);
 const codeVisible = ref<Record<string, boolean>>({
   simulator: false,
@@ -194,18 +203,33 @@ const allCode = `<el-button
 const propsTable = [
   { name: 'v-auth', description: '单权限判断，拥有指定权限时显示元素', type: 'string | string[]', defaultValue: '-' },
   { name: 'v-auths', description: '任一权限判断，拥有数组中任一权限时显示元素', type: 'string[]', defaultValue: '-' },
-  { name: 'v-auth-all', description: '全部权限判断，必须拥有数组中所有权限才显示元素', type: 'string[]', defaultValue: '-' },
+  {
+    name: 'v-auth-all',
+    description: '全部权限判断，必须拥有数组中所有权限才显示元素',
+    type: 'string[]',
+    defaultValue: '-',
+  },
 ];
 
-const slotsTable = [
-  { name: '-', description: '指令作用于宿主元素，不提供插槽', scope: '-' },
-];
+const slotsTable = [{ name: '-', description: '指令作用于宿主元素，不提供插槽', scope: '-' }];
 
 const eventsTable = [
   { name: 'registerAuthDirectives', description: '全局注册权限指令，应用启动时执行', payload: '(app: App) => void' },
-  { name: 'auth', description: '权限判断工具函数，供 v-auth 使用', payload: '(permission: string | string[]) => boolean' },
-  { name: 'auths', description: '任一权限判断工具函数，供 v-auths 使用', payload: '(permissions: string[]) => boolean' },
-  { name: 'authAll', description: '全部权限判断工具函数，供 v-auth-all 使用', payload: '(permissions: string[]) => boolean' },
+  {
+    name: 'auth',
+    description: '权限判断工具函数，供 v-auth 使用',
+    payload: '(permission: string | string[]) => boolean',
+  },
+  {
+    name: 'auths',
+    description: '任一权限判断工具函数，供 v-auths 使用',
+    payload: '(permissions: string[]) => boolean',
+  },
+  {
+    name: 'authAll',
+    description: '全部权限判断工具函数，供 v-auth-all 使用',
+    payload: '(permissions: string[]) => boolean',
+  },
 ];
 
 const valueTable = [
@@ -237,7 +261,7 @@ function resetPermissions() {
 </script>
 
 <style scoped lang="scss">
-@use './demo-page.scss';
+@use './demo-page';
 
 .permission-options {
   display: grid;

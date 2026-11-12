@@ -436,51 +436,51 @@ API 加密环境变量：
 
 公共 API：
 
-| 函数                        | HTTP 接口                                              | 说明                                 |
-| --------------------------- | ------------------------------------------------------ | ------------------------------------ |
-| `uploadFile(file)`          | `POST /file/files`                                     | 上传普通附件，`purpose=attachment`。 |
-| `uploadImage(file)`         | `POST /file/files`                                     | 上传图片，`purpose=image`。          |
-| `uploadExcel(file)`         | `POST /file/files`                                     | 上传 Excel，`purpose=excel`。        |
-| `uploadMultiple(files)`     | `POST /file/files/batch`                               | 批量上传。                           |
-| `getUploadedFileDetail(id)` | `GET /file/files/detail`                               | 查询文件详情。                       |
-| `downloadUploadedFile(id)`  | `GET /file/files/download`                             | 下载文件，返回原始 blob response。   |
-| `getCaptchaTypes()`         | `GET /captcha/types`                                   | 查询验证码类型和存储。               |
+| 函数                           | HTTP 接口                                              | 说明                                       |
+| ------------------------------ | ------------------------------------------------------ | ------------------------------------------ |
+| `uploadFile(file)`             | `POST /file/files`                                     | 上传普通附件，`purpose=attachment`。       |
+| `uploadImage(file)`            | `POST /file/files`                                     | 上传图片，`purpose=image`。                |
+| `uploadExcel(file)`            | `POST /file/files`                                     | 上传 Excel，`purpose=excel`。              |
+| `uploadMultiple(files)`        | `POST /file/files/batch`                               | 批量上传。                                 |
+| `getUploadedFileDetail(id)`    | `GET /file/files/detail`                               | 查询文件详情。                             |
+| `downloadUploadedFile(id)`     | `GET /file/files/download`                             | 下载文件，返回原始 blob response。         |
+| `getCaptchaTypes()`            | `GET /captcha/types`                                   | 查询验证码类型和存储。                     |
 | `generateArithmetic()`         | `GET /captcha/arithmetic`                              | 按统一默认策略生成图形验证码，推荐使用。   |
 | `generateGraphic(type, level)` | `GET /captcha/graphic`                                 | 已接入消费者的兼容入口，新接入不建议使用。 |
-| `generateBlockPuzzle()`     | `GET /captcha/block-puzzle`                            | 生成拼图验证码。                     |
-| `generateClickWord()`       | `GET /captcha/click-word`                              | 生成点选验证码。                     |
-| `generateBehavior()`        | `GET /captcha/behavior`                                | 生成行为验证码。                     |
-| `verifyCaptcha(request)`    | `POST /captcha/verify`                                 | 校验验证码。                         |
-| `sendSms(mobile)`           | `POST /auth/captcha/send`                              | 发送登录短信验证码。                 |
-| `sendEmail(email)`          | `POST /auth/captcha/send`                              | 发送登录邮箱验证码。                 |
-| `getOrgTree(params)`        | `GET /org/tree`                                        | 组织树。                             |
-| `getAreaTree(params)`       | `GET /system/area/tree` 或 `GET /system/area/children` | 地区树或子节点。                     |
-| `listDictOptions(typeCode)` | `GET /system/dict/data/options`                        | FLAT 字典选项。                     |
-| `listDictTree(typeCode)`    | `GET /system/dict/data/tree`                           | TREE 字典树。                       |
+| `generateBlockPuzzle()`        | `GET /captcha/block-puzzle`                            | 生成拼图验证码。                           |
+| `generateClickWord()`          | `GET /captcha/click-word`                              | 生成点选验证码。                           |
+| `generateBehavior()`           | `GET /captcha/behavior`                                | 生成行为验证码。                           |
+| `verifyCaptcha(request)`       | `POST /captcha/verify`                                 | 校验验证码。                               |
+| `sendSms(mobile)`              | `POST /auth/captcha/send`                              | 发送登录短信验证码。                       |
+| `sendEmail(email)`             | `POST /auth/captcha/send`                              | 发送登录邮箱验证码。                       |
+| `getOrgTree(params)`           | `GET /org/tree`                                        | 组织树。                                   |
+| `getAreaTree(params)`          | `GET /system/area/tree` 或 `GET /system/area/children` | 地区树或子节点。                           |
+| `listDictOptions(typeCode)`    | `GET /system/dict/data/options`                        | FLAT 字典选项。                            |
+| `listDictTree(typeCode)`       | `GET /system/dict/data/tree`                           | TREE 字典树。                              |
 
 组件导出：
 
-| 组件                                                                      | 能力                                                                                           |
-| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `MangoListPage`                                                           | 管理后台列表页外壳，按搜索区和列表区组织页面，不渲染额外页面标题。                             |
-| `MangoSearchPanel`                                                        | 列表页搜索面板，统一字段栅格、按钮位置、展开收起和查询/重置事件。                              |
-| `MangoListPanel`                                                          | 列表卡片，统一功能区、表格区和分页区位置。                                                     |
-| `MangoDataTable`                                                          | 统一数据表格，提供卡片切换、列配置、展开、选择、序号、操作、状态和分页事件。                   |
-| `MangoTableCell`                                                          | 通用单元格，提供 text/status/tag/button/input/select/radio/custom 类型。                       |
-| `MangoStatusText`                                                         | 主题化状态文本；文案和 tone 由消费方传入，不内置业务状态映射。                                 |
-| `MangoDetailPage`                                                         | 详情页外壳，提供返回栏、内容区和底部操作栏。                                                   |
-| `MangoFormPage`                                                           | 表单页外壳，提供返回栏、内容区和底部操作栏。                                                   |
-| `MangoPageSection`                                                        | 详情页和表单页的业务分组容器。                                                                 |
-| `Pagination`                                                              | 分页器，支持对齐、`page/limit` 双向绑定和同轮变更事件合并。                                    |
-| `MangoDialog`                                                             | 管理端通用弹框外壳，统一标题区、关闭按钮、内容滚动区和底部按钮区。                             |
-| `MangoAvatar`                                                             | 统一显示普通图片地址或 `mango-file:{id}` 文件标识，并负责受保护头像的下载回显和对象 URL 回收。 |
+| 组件                                                                      | 能力                                                                                                                                                                                        |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MangoListPage`                                                           | 管理后台列表页外壳，按搜索区和列表区组织页面，不渲染额外页面标题。                                                                                                                          |
+| `MangoSearchPanel`                                                        | 列表页搜索面板，统一字段栅格、按钮位置、展开收起和查询/重置事件。                                                                                                                           |
+| `MangoListPanel`                                                          | 列表卡片，统一功能区、表格区和分页区位置。                                                                                                                                                  |
+| `MangoDataTable`                                                          | 统一数据表格，提供卡片切换、列配置、展开、选择、序号、操作、状态和分页事件。                                                                                                                |
+| `MangoTableCell`                                                          | 通用单元格，提供 text/status/tag/button/input/select/radio/custom 类型。                                                                                                                    |
+| `MangoStatusText`                                                         | 主题化状态文本；文案和 tone 由消费方传入，不内置业务状态映射。                                                                                                                              |
+| `MangoDetailPage`                                                         | 详情页外壳，提供返回栏、内容区和底部操作栏。                                                                                                                                                |
+| `MangoFormPage`                                                           | 表单页外壳，提供返回栏、内容区和底部操作栏。                                                                                                                                                |
+| `MangoPageSection`                                                        | 详情页和表单页的业务分组容器。                                                                                                                                                              |
+| `Pagination`                                                              | 分页器，支持对齐、`page/limit` 双向绑定和同轮变更事件合并。                                                                                                                                 |
+| `MangoDialog`                                                             | 管理端通用弹框外壳，统一标题区、关闭按钮、内容滚动区和底部按钮区。                                                                                                                          |
+| `MangoAvatar`                                                             | 统一显示普通图片地址或 `mango-file:{id}` 文件标识，并负责受保护头像的下载回显和对象 URL 回收。                                                                                              |
 | `DictSelect`、`DictDisplay`、`DictTag`                                    | 统一的 FLAT/TREE 字典选择与只读回显；`DictSelect` 负责录入，FLAT 支持下拉、单选按钮和多选按钮样式及按钮组自定义，`DictDisplay` 负责列表/详情把 value 转 label，`DictTag` 保留旧的标签展示。 |
-| `OrgSelector`、`UserSelector`                                             | 组织和用户选择。                                                                               |
-| `CaptchaSelector`、各验证码组件                                           | 验证码展示和交互。                                                                             |
-| `ChinaArea`                                                               | 行政区域选择。                                                                                 |
-| `IconSelector`、`TreeSelect`、`RightToolbar`                              | 管理端通用选择和工具栏。                                                                       |
-| `FormCreate`、`Sign`、`CodeEditor`、`Editor`、`RichTextViewer`、`ECharts` | 表单、签名、代码、富文本编辑/预览和图表。                                                      |
-| `SSE`、`Websocket`、`Chat`                                                | 实时通信和聊天 UI。                                                                            |
+| `OrgSelector`、`UserSelector`                                             | 组织和用户选择。                                                                                                                                                                            |
+| `CaptchaSelector`、各验证码组件                                           | 验证码展示和交互。                                                                                                                                                                          |
+| `ChinaArea`                                                               | 行政区域选择。                                                                                                                                                                              |
+| `IconSelector`、`TreeSelect`、`RightToolbar`                              | 管理端通用选择和工具栏。                                                                                                                                                                    |
+| `FormCreate`、`Sign`、`CodeEditor`、`Editor`、`RichTextViewer`、`ECharts` | 表单、签名、代码、富文本编辑/预览和图表。                                                                                                                                                   |
+| `SSE`、`Websocket`、`Chat`                                                | 实时通信和聊天 UI。                                                                                                                                                                         |
 
 `MangoDataTable` 核心契约：
 
@@ -501,14 +501,14 @@ API 加密环境变量：
 
 `MangoDataTable` 的列和扩展类型：
 
-| 类型 | 字段 / 默认语义 |
-| --- | --- |
-| `MangoTableColumn` | `field`、`label` 必填；`type` 为 `text | status | tag | button | input | select | radio | custom`（默认 `text`）；支持 `width`、`minWidth`、`fixed`、`align`、`sortable`、`resizable`、`expandable`、`hidden`、`showOverflowTooltip`、`emptyText`、`options`、`loading`、`slot`、`props`、`formatter`、`disabled`。 |
-| `MangoTableOption` | `label`、`value` 必填；`disabled?`、`tone?` 用于选择项状态。 |
-| `MangoTableAction` | `key`、`text` 必填；`tone`、`visible`、`disabled`、`loading` 可为静态值或按行上下文计算，`props` 透传按钮属性。 |
-| `MangoTableOperation` | 操作列配置：`visible`、`label`、`width`、`minWidth`、`fixed`、`align`、`resizable`、`moreCount`、`actions`。`actions` 必填；事件只返回意图，不自动调用接口。 |
-| `MangoTablePagination` | `page`、`limit`、`total` 必填；`visible`、`pageSizes`、`align`、`layout`、`props` 可选。 |
-| `MangoTableExpand` | `type`（当前为 `list`）、`labelWidth`、`emptyText`。 |
+| 类型                   | 字段 / 默认语义                                                                                                                                              |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `MangoTableColumn`     | `field`、`label` 必填；`type` 为 `text                                                                                                                       | status | tag | button | input | select | radio | custom`（默认 `text`）；支持 `width`、`minWidth`、`fixed`、`align`、`sortable`、`resizable`、`expandable`、`hidden`、`showOverflowTooltip`、`emptyText`、`options`、`loading`、`slot`、`props`、`formatter`、`disabled`。 |
+| `MangoTableOption`     | `label`、`value` 必填；`disabled?`、`tone?` 用于选择项状态。                                                                                                 |
+| `MangoTableAction`     | `key`、`text` 必填；`tone`、`visible`、`disabled`、`loading` 可为静态值或按行上下文计算，`props` 透传按钮属性。                                              |
+| `MangoTableOperation`  | 操作列配置：`visible`、`label`、`width`、`minWidth`、`fixed`、`align`、`resizable`、`moreCount`、`actions`。`actions` 必填；事件只返回意图，不自动调用接口。 |
+| `MangoTablePagination` | `page`、`limit`、`total` 必填；`visible`、`pageSizes`、`align`、`layout`、`props` 可选。                                                                     |
+| `MangoTableExpand`     | `type`（当前为 `list`）、`labelWidth`、`emptyText`。                                                                                                         |
 
 单元格上下文包含 `{ row, rowIndex, column, field, value }`；编辑事件额外包含 `previousValue`。`MangoTableCell` 的 `input/select/radio` 会改写行字段并触发 `cell-change`，`formatter` 只改变展示值。`MangoDataTable` 的分页、选择、操作和重试均由宿主监听后请求数据。
 
@@ -635,15 +635,15 @@ const toolbarKeys = ['bold', 'color', '|', 'numberedList', 'bulletedList', '|', 
 
 `@mango/common` 不创建后端数据。组件和 API 能否返回数据，取决于后端模块是否已初始化：
 
-| 数据              | 后端来源                | 前端消费                                                  |
-| ----------------- | ----------------------- | --------------------------------------------------------- |
-| token、用户、租户 | auth、identity、system  | request 请求头、Session、权限函数。                       |
+| 数据              | 后端来源                | 前端消费                                                                 |
+| ----------------- | ----------------------- | ------------------------------------------------------------------------ |
+| token、用户、租户 | auth、identity、system  | request 请求头、Session、权限函数。                                      |
 | 字典              | system 字典             | `DictSelect`、`DictDisplay`、`DictTag`、`useDict`、`listDictOptions()`。 |
-| 组织              | org                     | `OrgSelector`、`getOrgTree()`。                           |
-| 地区              | system area             | `ChinaArea`、`getAreaTree()`。                            |
-| 文件              | file                    | 上传、下载、文件详情 API。                                |
-| 验证码            | captcha、auth           | 登录验证码和二次校验。                                    |
-| 实时连接          | realtime 后端或业务服务 | `useRealtime`、`SSE`、`Websocket`。                       |
+| 组织              | org                     | `OrgSelector`、`getOrgTree()`。                                          |
+| 地区              | system area             | `ChinaArea`、`getAreaTree()`。                                           |
+| 文件              | file                    | 上传、下载、文件详情 API。                                               |
+| 验证码            | captcha、auth           | 登录验证码和二次校验。                                                   |
+| 实时连接          | realtime 后端或业务服务 | `useRealtime`、`SSE`、`Websocket`。                                      |
 
 ## 7. 管理入口
 

@@ -30,7 +30,7 @@
   justify-content: center;
   color: var(--mango-text-color-secondary, #909399);
   font-size: 12px;
-  content: "加载中...";
+  content: '加载中...';
   background: rgb(255 255 255 / 58%);
   border-radius: 8px;
 }
@@ -115,7 +115,7 @@
   line-height: 1.55;
 }
 
-@media (max-width: 900px) {
+@media (width <= 900px) {
   .mango-grid-widget-calendar {
     padding: 20px 18px;
   }
@@ -154,5 +154,4 @@
   .mango-grid-widget-calendar__summary {
     font-size: 16px;
   }
-
 }

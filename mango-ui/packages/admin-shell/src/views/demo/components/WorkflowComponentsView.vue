@@ -8,7 +8,9 @@
   >
     <section id="runtime-form" class="doc-section">
       <h2>运行时表单渲染</h2>
-      <p>RuntimeFormRenderer 接收解析后的字段配置、变量对象和字段权限，用于发起流程、审批详情和历史详情里的动态表单展示。</p>
+      <p>
+        RuntimeFormRenderer 接收解析后的字段配置、变量对象和字段权限，用于发起流程、审批详情和历史详情里的动态表单展示。
+      </p>
       <div class="demo-block">
         <div class="demo-source">
           <div class="workflow-demo-toolbar">
@@ -66,7 +68,9 @@
 
     <section id="business-approval" class="doc-section">
       <h2>业务审批组件注册</h2>
-      <p>自定义审批详情通过 businessType 注册，可接管审批意见字段、右侧记录面板和动作前校验，适合合同、费用等业务模板。</p>
+      <p>
+        自定义审批详情通过 businessType 注册，可接管审批意见字段、右侧记录面板和动作前校验，适合合同、费用等业务模板。
+      </p>
       <div class="demo-block">
         <div class="demo-source">
           <el-table :data="approvalModeTable" border>
@@ -290,28 +294,98 @@ const approvalRecords: WorkflowTaskRecord[] = [
 ];
 
 const approvalModeTable = [
-  { name: 'commentMode', description: '审批意见来源。ACTION_BAR 使用右侧动作栏意见；BUSINESS_FORM 由业务表单自己收集；NONE 不提交意见。', scene: '合同用印表单内维护意见字段' },
-  { name: 'recordPanelMode', description: '审批记录面板模式。DEFAULT 使用通用右侧记录；HIDDEN 隐藏；CUSTOM 使用业务自定义记录面板。', scene: '特殊业务在表单中渲染审批历史' },
-  { name: 'collectVariables', description: '动作提交前从业务组件收集流程变量，随通过、驳回、暂存等动作一起提交。', scene: '提交合同编号、用印次数、业务审批字段' },
-  { name: 'validateBeforeAction', description: '动作提交前执行业务校验，失败时阻断动作。', scene: 'BUSINESS_FORM 模式下校验审批意见必填' },
-  { name: 'getActionOverrides', description: '按业务上下文覆盖按钮可见性、禁用状态、文案和提示。', scene: '部分节点隐藏暂存或限制转办' },
+  {
+    name: 'commentMode',
+    description: '审批意见来源。ACTION_BAR 使用右侧动作栏意见；BUSINESS_FORM 由业务表单自己收集；NONE 不提交意见。',
+    scene: '合同用印表单内维护意见字段',
+  },
+  {
+    name: 'recordPanelMode',
+    description: '审批记录面板模式。DEFAULT 使用通用右侧记录；HIDDEN 隐藏；CUSTOM 使用业务自定义记录面板。',
+    scene: '特殊业务在表单中渲染审批历史',
+  },
+  {
+    name: 'collectVariables',
+    description: '动作提交前从业务组件收集流程变量，随通过、驳回、暂存等动作一起提交。',
+    scene: '提交合同编号、用印次数、业务审批字段',
+  },
+  {
+    name: 'validateBeforeAction',
+    description: '动作提交前执行业务校验，失败时阻断动作。',
+    scene: 'BUSINESS_FORM 模式下校验审批意见必填',
+  },
+  {
+    name: 'getActionOverrides',
+    description: '按业务上下文覆盖按钮可见性、禁用状态、文案和提示。',
+    scene: '部分节点隐藏暂存或限制转办',
+  },
 ];
 
 const componentTable = [
-  { component: 'RuntimeFormRenderer', importPath: '@mango/workflow', scene: '动态表单、自定义表单兜底渲染、审批详情只读/可编辑字段', notes: '字段权限支持 HIDDEN、READONLY、EDITABLE' },
-  { component: 'registerBusinessApplyComponents', importPath: '@mango/workflow', scene: '注册业务申请页', notes: 'key 需要与流程 renderConfig.applyPageKey 保持一致' },
-  { component: 'registerBusinessApprovalComponents', importPath: '@mango/workflow', scene: '注册业务审批详情页', notes: '支持业务意见、业务变量、动作校验和记录面板模式' },
-  { component: 'WorkflowProgressTree', importPath: '@mango/workflow', scene: '流程图形轨迹', notes: '传入设计节点、当前节点、已访问节点和流程状态' },
-  { component: 'WorkflowNodeTimeline', importPath: '@mango/workflow', scene: '节点维度流转时间线', notes: '会按 taskDefinitionKey 聚合审批记录' },
-  { component: 'WorkflowApprovalTimeline', importPath: '@mango/workflow', scene: '审批记录列表', notes: '支持 record-extra 插槽扩展业务记录内容' },
+  {
+    component: 'RuntimeFormRenderer',
+    importPath: '@mango/workflow',
+    scene: '动态表单、自定义表单兜底渲染、审批详情只读/可编辑字段',
+    notes: '字段权限支持 HIDDEN、READONLY、EDITABLE',
+  },
+  {
+    component: 'registerBusinessApplyComponents',
+    importPath: '@mango/workflow',
+    scene: '注册业务申请页',
+    notes: 'key 需要与流程 renderConfig.applyPageKey 保持一致',
+  },
+  {
+    component: 'registerBusinessApprovalComponents',
+    importPath: '@mango/workflow',
+    scene: '注册业务审批详情页',
+    notes: '支持业务意见、业务变量、动作校验和记录面板模式',
+  },
+  {
+    component: 'WorkflowProgressTree',
+    importPath: '@mango/workflow',
+    scene: '流程图形轨迹',
+    notes: '传入设计节点、当前节点、已访问节点和流程状态',
+  },
+  {
+    component: 'WorkflowNodeTimeline',
+    importPath: '@mango/workflow',
+    scene: '节点维度流转时间线',
+    notes: '会按 taskDefinitionKey 聚合审批记录',
+  },
+  {
+    component: 'WorkflowApprovalTimeline',
+    importPath: '@mango/workflow',
+    scene: '审批记录列表',
+    notes: '支持 record-extra 插槽扩展业务记录内容',
+  },
 ];
 
 const fieldSupportTable = [
-  { category: '基础录入', fields: 'input、textarea、password、number、switch、date、datetime、time、slider、rate、color', notes: '用于普通流程变量采集，支持只读和必填规则。' },
-  { category: '选项数据', fields: 'select、radio、checkbox、cascader、treeSelect、transfer、systemDict、businessType', notes: '字典字段通过 dictType / dictCode 关联系统字典。' },
-  { category: '系统数据', fields: 'systemUser、systemOrg、systemDept、systemPost、systemRole', notes: '可通过 options 或 treeOptions 渲染；涉及系统主数据的业务场景应优先接入对应选择器。' },
-  { category: '附件签名', fields: 'upload、imageUpload、signature、serialNo', notes: '上传组件提交文件 ID；签名字段只读时展示签名图片。' },
-  { category: '展示容器', fields: 'alert、text、html、divider、tag、image、button、container', notes: '用于详情页展示和布局容器，不作为业务变量提交。' },
+  {
+    category: '基础录入',
+    fields: 'input、textarea、password、number、switch、date、datetime、time、slider、rate、color',
+    notes: '用于普通流程变量采集，支持只读和必填规则。',
+  },
+  {
+    category: '选项数据',
+    fields: 'select、radio、checkbox、cascader、treeSelect、transfer、systemDict、businessType',
+    notes: '字典字段通过 dictType / dictCode 关联系统字典。',
+  },
+  {
+    category: '系统数据',
+    fields: 'systemUser、systemOrg、systemDept、systemPost、systemRole',
+    notes: '可通过 options 或 treeOptions 渲染；涉及系统主数据的业务场景应优先接入对应选择器。',
+  },
+  {
+    category: '附件签名',
+    fields: 'upload、imageUpload、signature、serialNo',
+    notes: '上传组件提交文件 ID；签名字段只读时展示签名图片。',
+  },
+  {
+    category: '展示容器',
+    fields: 'alert、text、html、divider、tag、image、button、container',
+    notes: '用于详情页展示和布局容器，不作为业务变量提交。',
+  },
 ];
 
 const runtimeCode = [
@@ -395,7 +469,7 @@ function toggleCode(key: string) {
 </script>
 
 <style scoped lang="scss">
-@use './demo-page.scss';
+@use './demo-page';
 
 .workflow-demo-toolbar {
   display: flex;
@@ -441,7 +515,7 @@ function toggleCode(key: string) {
   background: var(--el-fill-color-extra-light);
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .workflow-register-flow {
     grid-template-columns: 1fr;
   }

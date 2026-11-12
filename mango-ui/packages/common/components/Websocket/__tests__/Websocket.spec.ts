@@ -105,9 +105,7 @@ describe('WebSocket Component', () => {
       const status = 'retrying';
       const retryCount = 3;
       const maxRetries = 6;
-      const statusText = status === 'retrying'
-        ? `Connection lost, retrying ${retryCount}/${maxRetries}`
-        : '';
+      const statusText = status === 'retrying' ? `Connection lost, retrying ${retryCount}/${maxRetries}` : '';
 
       expect(statusText).toBe('Connection lost, retrying 3/6');
     });
@@ -233,16 +231,6 @@ describe('WebSocket Component', () => {
       };
 
       expect(statusClass['is-error']).toBe(true);
-    });
-  });
-
-  describe('WebSocket Ready State Constants', () => {
-    it('should have correct ready state values', () => {
-      // Mock WebSocket constants since happy-dom doesn't have WebSocket
-      expect(0).toBe(0); // WebSocket.CONNECTING
-      expect(1).toBe(1); // WebSocket.OPEN
-      expect(2).toBe(2); // WebSocket.CLOSING
-      expect(3).toBe(3); // WebSocket.CLOSED
     });
   });
 });

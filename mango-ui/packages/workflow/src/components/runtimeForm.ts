@@ -63,7 +63,10 @@ export interface RuntimeFormField {
   children?: RuntimeFormField[];
 }
 
-export function parseRuntimeForm(formJson?: string): { fields: RuntimeFormField[]; unsupported: Array<{ label: string; type: string }> } {
+export function parseRuntimeForm(formJson?: string): {
+  fields: RuntimeFormField[];
+  unsupported: Array<{ label: string; type: string }>;
+} {
   if (!formJson) {
     return { fields: [], unsupported: [] };
   }
@@ -88,13 +91,13 @@ export function parseRuntimeForm(formJson?: string): { fields: RuntimeFormField[
 
 export function createDefaultVariables(fields: RuntimeFormField[]) {
   const values: Record<string, any> = {};
-  fields.forEach(field => fillDefaultVariable(values, field));
+  fields.forEach((field) => fillDefaultVariable(values, field));
   return values;
 }
 
 function fillDefaultVariable(values: Record<string, any>, field: RuntimeFormField) {
   if (field.children?.length) {
-    field.children.forEach(child => fillDefaultVariable(values, child));
+    field.children.forEach((child) => fillDefaultVariable(values, child));
   }
   if (!isValueField(field)) {
     return;
@@ -147,12 +150,8 @@ function customFieldsToRules(fields: any[]) {
         placeholder: isSelectLikeType(type) ? `请选择${label}` : `请输入${label}`,
         workflowDataType: systemType || field.workflowDataType || field.props?.workflowDataType,
       },
-      options: Array.isArray(field.options)
-        ? field.options
-        : optionsTextToOptions(field.optionsText),
-      validate: field.required
-        ? [{ required: true, message: `${label || field.key}不能为空`, trigger: 'change' }]
-        : [],
+      options: Array.isArray(field.options) ? field.options : optionsTextToOptions(field.optionsText),
+      validate: field.required ? [{ required: true, message: `${label || field.key}不能为空`, trigger: 'change' }] : [],
     };
   });
 }
@@ -170,9 +169,9 @@ function ruleToRuntimeField(rule: any, index: number, path = `${index}`): Runtim
   const workflowDataType = String(props.workflowDataType || rule.workflowDataType || '');
   const isImageUpload = mappedType === 'imageUpload';
   const children = Array.isArray(rule.children)
-    ? rule.children
-      .map((child: any, childIndex: number) => ruleToRuntimeField(child, childIndex, `${path}_${childIndex}`))
-      .filter(Boolean) as RuntimeFormField[]
+    ? (rule.children
+        .map((child: any, childIndex: number) => ruleToRuntimeField(child, childIndex, `${path}_${childIndex}`))
+        .filter(Boolean) as RuntimeFormField[])
     : [];
   return {
     key: String(rule.field || `__runtime_${mappedType}_${path}`),
@@ -210,11 +209,14 @@ function mapFieldType(type?: string): RuntimeFormFieldType | null {
   if (['textarea'].includes(normalized)) return 'textarea';
   if (['select', 'elSelect', 'ElSelect'].includes(normalized)) return 'select';
   if (['radio', 'elRadio', 'elRadioGroup', 'ElRadio', 'ElRadioGroup'].includes(normalized)) return 'radio';
-  if (['checkbox', 'elCheckbox', 'elCheckboxGroup', 'ElCheckbox', 'ElCheckboxGroup'].includes(normalized)) return 'checkbox';
+  if (['checkbox', 'elCheckbox', 'elCheckboxGroup', 'ElCheckbox', 'ElCheckboxGroup'].includes(normalized))
+    return 'checkbox';
   if (['switch', 'elSwitch', 'ElSwitch'].includes(normalized)) return 'switch';
   if (['rate', 'elRate', 'ElRate'].includes(normalized)) return 'rate';
   if (['slider', 'elSlider', 'ElSlider'].includes(normalized)) return 'slider';
-  if (['input', 'password', 'textarea', 'select', 'radio', 'checkbox', 'switch', 'rate', 'slider'].includes(normalized)) {
+  if (
+    ['input', 'password', 'textarea', 'select', 'radio', 'checkbox', 'switch', 'rate', 'slider'].includes(normalized)
+  ) {
     return normalized as RuntimeFormFieldType;
   }
   if (['inputNumber', 'elInputNumber', 'ElInputNumber', 'number'].includes(normalized)) return 'number';
@@ -226,7 +228,8 @@ function mapFieldType(type?: string): RuntimeFormFieldType | null {
   if (['timeRange', 'timerange'].includes(normalized)) return 'timerange';
   if (['colorPicker', 'elColorPicker', 'ElColorPicker', 'color'].includes(normalized)) return 'color';
   if (['cascader', 'elCascader', 'ElCascader'].includes(normalized)) return 'cascader';
-  if (['elTreeSelect', 'ElTreeSelect', 'treeSelect', 'tree', 'elTree', 'ElTree'].includes(normalized)) return 'treeSelect';
+  if (['elTreeSelect', 'ElTreeSelect', 'treeSelect', 'tree', 'elTree', 'ElTree'].includes(normalized))
+    return 'treeSelect';
   if (['elTransfer', 'ElTransfer', 'transfer'].includes(normalized)) return 'transfer';
   if (['fcEditor', 'editor'].includes(normalized)) return 'editor';
   if (['upload', 'elUpload', 'ElUpload', 'fcUpload'].includes(normalized)) return 'upload';
@@ -273,7 +276,7 @@ function normalizeOptions(options: any): RuntimeFormOption[] {
 function optionsTextToOptions(optionsText?: string) {
   return String(optionsText || '')
     .split('\n')
-    .map(item => item.trim())
+    .map((item) => item.trim())
     .filter(Boolean)
     .map((line) => {
       const [label, value] = line.split(':');
@@ -295,15 +298,17 @@ function normalizeRules(rules: any[] | undefined, label: string, type: RuntimeFo
 function normalizeContent(rule: any, props: Record<string, any>) {
   const children = rule?.children;
   if (typeof children === 'string') return children;
-  if (Array.isArray(children) && children.every(item => typeof item === 'string')) {
+  if (Array.isArray(children) && children.every((item) => typeof item === 'string')) {
     return children.join('');
   }
   return String(props.content ?? props.html ?? props.title ?? props.text ?? rule?.title ?? '');
 }
 
 function isArrayValueField(field: RuntimeFormField) {
-  return ['checkbox', 'daterange', 'timerange', 'datetimerange', 'upload', 'imageUpload'].includes(field.type)
-    || Boolean(field.props?.multiple);
+  return (
+    ['checkbox', 'daterange', 'timerange', 'datetimerange', 'upload', 'imageUpload'].includes(field.type) ||
+    Boolean(field.props?.multiple)
+  );
 }
 
 function isValueField(field: RuntimeFormField) {
@@ -311,21 +316,101 @@ function isValueField(field: RuntimeFormField) {
 }
 
 function isSelectLikeField(type: RuntimeFormFieldType) {
-  return ['select', 'radio', 'checkbox', 'cascader', 'treeSelect', 'systemUser', 'systemOrg', 'systemDept', 'systemPost', 'systemRole', 'systemDict', 'businessType', 'upload', 'imageUpload'].includes(type);
+  return [
+    'select',
+    'radio',
+    'checkbox',
+    'cascader',
+    'treeSelect',
+    'systemUser',
+    'systemOrg',
+    'systemDept',
+    'systemPost',
+    'systemRole',
+    'systemDict',
+    'businessType',
+    'upload',
+    'imageUpload',
+  ].includes(type);
 }
 
 function isSelectLikeType(type: string) {
-  return ['select', 'radio', 'checkbox', 'cascader', 'elTreeSelect', 'treeSelect', 'systemUser', 'systemOrg', 'systemDept', 'systemPost', 'systemRole', 'systemDict', 'businessType', 'upload'].includes(type);
+  return [
+    'select',
+    'radio',
+    'checkbox',
+    'cascader',
+    'elTreeSelect',
+    'treeSelect',
+    'systemUser',
+    'systemOrg',
+    'systemDept',
+    'systemPost',
+    'systemRole',
+    'systemDict',
+    'businessType',
+    'upload',
+  ].includes(type);
 }
 
 function isSystemDataType(type: string) {
-  return ['systemUser', 'systemOrg', 'systemDept', 'systemPost', 'systemRole', 'systemDict', 'businessType', 'signature'].includes(type);
+  return [
+    'systemUser',
+    'systemOrg',
+    'systemDept',
+    'systemPost',
+    'systemRole',
+    'systemDict',
+    'businessType',
+    'signature',
+  ].includes(type);
 }
 
 function isDisplayType(type?: string) {
-  return ['elAlert', 'ElAlert', 'alert', 'text', 'html', 'elDivider', 'ElDivider', 'divider', 'elTag', 'ElTag', 'tag', 'elImage', 'ElImage', 'image', 'elButton', 'ElButton', 'button', 'div'].includes(String(type || ''));
+  return [
+    'elAlert',
+    'ElAlert',
+    'alert',
+    'text',
+    'html',
+    'elDivider',
+    'ElDivider',
+    'divider',
+    'elTag',
+    'ElTag',
+    'tag',
+    'elImage',
+    'ElImage',
+    'image',
+    'elButton',
+    'ElButton',
+    'button',
+    'div',
+  ].includes(String(type || ''));
 }
 
 function isContainerType(type?: string) {
-  return ['group', 'subForm', 'tableForm', 'tableFormColumn', 'fcRow', 'FcRow', 'col', 'elCol', 'ElCol', 'elCard', 'ElCard', 'elTabs', 'ElTabs', 'elTabPane', 'ElTabPane', 'elCollapse', 'ElCollapse', 'elCollapseItem', 'ElCollapseItem', 'fcTable', 'space'].includes(String(type || ''));
+  return [
+    'group',
+    'subForm',
+    'tableForm',
+    'tableFormColumn',
+    'fcRow',
+    'FcRow',
+    'col',
+    'elCol',
+    'ElCol',
+    'elCard',
+    'ElCard',
+    'elTabs',
+    'ElTabs',
+    'elTabPane',
+    'ElTabPane',
+    'elCollapse',
+    'ElCollapse',
+    'elCollapseItem',
+    'ElCollapseItem',
+    'fcTable',
+    'space',
+  ].includes(String(type || ''));
 }

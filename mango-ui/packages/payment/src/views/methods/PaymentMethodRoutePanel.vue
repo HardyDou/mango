@@ -38,7 +38,13 @@
     </section>
 
     <el-dialog v-model="editorVisible" :title="editorTitle" width="980px" destroy-on-close append-to-body>
-      <el-form ref="editorFormRef" :model="editorForm" :rules="editorRules" label-width="118px" class="method-route-form">
+      <el-form
+        ref="editorFormRef"
+        :model="editorForm"
+        :rules="editorRules"
+        label-width="118px"
+        class="method-route-form"
+      >
         <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item label="规则编码" prop="ruleCode">
@@ -120,7 +126,7 @@
                     label-field="contractName"
                     description-field="channelName"
                     placeholder="选择签约能力"
-                    @update:model-value="value => hydrateItem(row, value)"
+                    @update:model-value="(value) => hydrateItem(row, value)"
                   />
                 </template>
               </el-table-column>
@@ -136,12 +142,24 @@
               </el-table-column>
               <el-table-column label="最小金额（元）" width="150">
                 <template #default="{ row }">
-                  <el-input-number v-model="row.minAmountYuan" :min="0" :precision="2" :step="1" controls-position="right" />
+                  <el-input-number
+                    v-model="row.minAmountYuan"
+                    :min="0"
+                    :precision="2"
+                    :step="1"
+                    controls-position="right"
+                  />
                 </template>
               </el-table-column>
               <el-table-column label="最大金额（元）" width="150">
                 <template #default="{ row }">
-                  <el-input-number v-model="row.maxAmountYuan" :min="0" :precision="2" :step="1" controls-position="right" />
+                  <el-input-number
+                    v-model="row.maxAmountYuan"
+                    :min="0"
+                    :precision="2"
+                    :step="1"
+                    controls-position="right"
+                  />
                 </template>
               </el-table-column>
               <el-table-column label="状态" width="110">
@@ -169,12 +187,22 @@
         <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item label="应用" prop="applicationId">
-              <PaymentEntitySelect v-model="trialForm.applicationId" :api="paymentApplicationApi" label-field="appName" description-field="appId" />
+              <PaymentEntitySelect
+                v-model="trialForm.applicationId"
+                :api="paymentApplicationApi"
+                label-field="appName"
+                description-field="appId"
+              />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="企业主体" prop="subjectId">
-              <PaymentEntitySelect v-model="trialForm.subjectId" :api="paymentEnterpriseSubjectApi" label-field="subjectName" description-field="creditCodeMask" />
+              <PaymentEntitySelect
+                v-model="trialForm.subjectId"
+                :api="paymentEnterpriseSubjectApi"
+                label-field="subjectName"
+                description-field="creditCodeMask"
+              />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -187,7 +215,13 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="金额（元）" prop="amountYuan">
-              <el-input-number v-model="trialForm.amountYuan" :min="0.01" :precision="2" :step="1" controls-position="right" />
+              <el-input-number
+                v-model="trialForm.amountYuan"
+                :min="0.01"
+                :precision="2"
+                :step="1"
+                controls-position="right"
+              />
             </el-form-item>
           </el-col>
         </el-row>
@@ -199,7 +233,8 @@
         >
           <template #sub-title>
             <div v-if="trialResult.matched && trialResult.matchedRule && trialResult.matchedItem">
-              {{ trialResult.matchedRule.ruleName }} / {{ trialResult.matchedItem.channelName }} / {{ trialResult.matchedItem.contractName }}
+              {{ trialResult.matchedRule.ruleName }} / {{ trialResult.matchedItem.channelName }} /
+              {{ trialResult.matchedItem.contractName }}
             </div>
             <div v-else>{{ trialResult.filterReasons?.join('；') || '无可用路由' }}</div>
           </template>
@@ -270,7 +305,9 @@ const trialForm = reactive<TrialForm>({
   amountYuan: 0.01,
 });
 
-const panelTitle = computed(() => `${currentMethod.value?.methodName || currentMethod.value?.methodCode || ''} 路由策略`);
+const panelTitle = computed(
+  () => `${currentMethod.value?.methodName || currentMethod.value?.methodCode || ''} 路由策略`,
+);
 const editorTitle = computed(() => `${editorForm.id ? '编辑' : '新增'}路由策略`);
 
 const editorRules: FormRules = {
@@ -288,9 +325,9 @@ const trialRules: FormRules = {
 };
 
 const contractCapabilitySelectApi: PaymentResourceApi<PaymentRecord> = {
-  page: async params => {
+  page: async (params) => {
     const result = await paymentChannelContractApi.page(params);
-    const list = result.list.flatMap(contract => toContractCapabilityOptions(contract));
+    const list = result.list.flatMap((contract) => toContractCapabilityOptions(contract));
     return {
       list,
       total: list.length,
@@ -298,9 +335,11 @@ const contractCapabilitySelectApi: PaymentResourceApi<PaymentRecord> = {
       pageSize: params?.pageSize || 50,
     } as PageResult<PaymentRecord>;
   },
-  detail: async id => {
+  detail: async (id) => {
     const contracts = await paymentChannelContractApi.page({ pageNum: 1, pageSize: 200, status: 1 });
-    const option = contracts.list.flatMap(contract => toContractCapabilityOptions(contract)).find(item => String(item.id) === String(id));
+    const option = contracts.list
+      .flatMap((contract) => toContractCapabilityOptions(contract))
+      .find((item) => String(item.id) === String(id));
     return option || {};
   },
   create: async () => undefined,
@@ -355,7 +394,7 @@ async function openEditor(row?: PaymentMethodRouteRule) {
 }
 
 function resetEditor() {
-  Object.keys(editorForm).forEach(key => delete (editorForm as Record<string, unknown>)[key]);
+  Object.keys(editorForm).forEach((key) => delete (editorForm as Record<string, unknown>)[key]);
   Object.assign(editorForm, { items: [] });
 }
 
@@ -457,13 +496,15 @@ function toRoutePayload(): PaymentMethodRouteRule {
     routeMode: String(editorForm.routeMode || 'PRIORITY'),
     fallbackEnabled: Number(editorForm.fallbackEnabled ?? 1),
     status: Number(editorForm.status ?? 1),
-    items: editorForm.items.map(item => ({
+    items: editorForm.items.map((item) => ({
       id: item.id,
       contractCapabilityId: item.contractCapabilityId,
       priority: item.priority ?? 100,
       weight: item.weight ?? 100,
-      minAmount: item.minAmountYuan === undefined || item.minAmountYuan === null ? undefined : yuanToCents(item.minAmountYuan),
-      maxAmount: item.maxAmountYuan === undefined || item.maxAmountYuan === null ? undefined : yuanToCents(item.maxAmountYuan),
+      minAmount:
+        item.minAmountYuan === undefined || item.minAmountYuan === null ? undefined : yuanToCents(item.minAmountYuan),
+      maxAmount:
+        item.maxAmountYuan === undefined || item.maxAmountYuan === null ? undefined : yuanToCents(item.maxAmountYuan),
       status: item.status ?? 1,
     })),
   };
@@ -471,8 +512,8 @@ function toRoutePayload(): PaymentMethodRouteRule {
 
 function toContractCapabilityOptions(contract: PaymentChannelContract): PaymentRecord[] {
   return (contract.capabilities || [])
-    .filter(item => item.id && item.status !== 0 && item.methodCode === currentMethod.value?.methodCode)
-    .map(item => ({
+    .filter((item) => item.id && item.status !== 0 && item.methodCode === currentMethod.value?.methodCode)
+    .map((item) => ({
       id: item.id,
       contractCapabilityId: item.id,
       contractId: contract.id,
@@ -496,7 +537,9 @@ function toItemForm(item: PaymentMethodRouteRuleItem): RouteItemForm {
 }
 
 function defaultTerminal() {
-  const terminals = String(currentMethod.value?.terminalScope || 'WEB').split(',').map(item => item.trim());
+  const terminals = String(currentMethod.value?.terminalScope || 'WEB')
+    .split(',')
+    .map((item) => item.trim());
   return terminals.includes('WEB') ? 'WEB' : terminals[0] || 'WEB';
 }
 
@@ -516,7 +559,7 @@ function valueText(value: unknown) {
 }
 
 function emptyToUndefined(value: unknown) {
-  return value === undefined || value === null || value === '' ? undefined : value as ApiId;
+  return value === undefined || value === null || value === '' ? undefined : (value as ApiId);
 }
 
 function centsToYuan(value?: number | null) {

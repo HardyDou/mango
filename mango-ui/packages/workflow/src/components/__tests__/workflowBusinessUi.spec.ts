@@ -27,8 +27,9 @@ describe('workflow business ui exports', () => {
     app.mount(host);
     await nextTick();
 
-    const assignee = Array.from(host.querySelectorAll('.workflow-instance-summary__item'))
-      .find(item => item.querySelector('span')?.textContent === '办理人');
+    const assignee = Array.from(host.querySelectorAll('.workflow-instance-summary__item')).find(
+      (item) => item.querySelector('span')?.textContent === '办理人',
+    );
     expect(assignee?.querySelector('strong')?.textContent).toBe(expected);
     app.unmount();
     host.remove();

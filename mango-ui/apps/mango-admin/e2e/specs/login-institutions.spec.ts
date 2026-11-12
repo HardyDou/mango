@@ -32,8 +32,8 @@ test.describe('登录机构选择 E2E', () => {
     await page.goto('/#/login');
     await page.fill('input[placeholder="用户名"]', 'admin');
     await page.fill('input[placeholder="密码"]', 'admin123');
-    const accountTenantsResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/auth/login-institutions') && response.status() === 200
+    const accountTenantsResponsePromise = page.waitForResponse(
+      (response) => response.url().includes('/api/auth/login-institutions') && response.status() === 200,
     );
     await page.locator('input[placeholder="密码"]').blur();
     await accountTenantsResponsePromise;

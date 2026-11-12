@@ -5,8 +5,7 @@
 export function isFileDownloadEndpointUrl(value?: string): boolean {
   if (!value) return false;
   const normalizedPath = urlPathname(value).replace(/\/+$/, '');
-  return normalizedPath === '/api/file/files/download'
-    || normalizedPath === '/file/files/download';
+  return normalizedPath === '/api/file/files/download' || normalizedPath === '/file/files/download';
 }
 
 export function isPreviewDisplayUrl(value?: string): boolean {
@@ -17,10 +16,12 @@ export function isPreviewDisplayUrl(value?: string): boolean {
 export function isBackendFileContentUrl(value?: string): boolean {
   if (!value) return false;
   const normalizedPath = urlPathname(value).replace(/\/+$/, '');
-  return normalizedPath === '/api/file/files/preview-content'
-    || normalizedPath === '/file/files/preview-content'
-    || normalizedPath.startsWith('/api/file/local-objects/')
-    || normalizedPath.startsWith('/file/local-objects/');
+  return (
+    normalizedPath === '/api/file/files/preview-content' ||
+    normalizedPath === '/file/files/preview-content' ||
+    normalizedPath.startsWith('/api/file/local-objects/') ||
+    normalizedPath.startsWith('/file/local-objects/')
+  );
 }
 
 function urlPathname(value: string): string {

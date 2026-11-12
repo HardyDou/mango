@@ -254,7 +254,7 @@ onMounted(loadData);
   }
 
   .code-text {
-    font-family: 'SFMono-Regular', Consolas, monospace;
+    font-family: SFMono-Regular, Consolas, monospace;
     font-size: 12px;
     color: var(--el-text-color-regular);
   }

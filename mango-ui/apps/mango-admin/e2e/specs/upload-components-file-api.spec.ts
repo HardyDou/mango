@@ -29,7 +29,10 @@ async function apiHeaders(page: import('@playwright/test').Page) {
 }
 
 function cleanupUploadComponentFiles() {
-  execFileSync('mysql', ['-uroot', process.env.MANGO_DB_NAME || 'mango', '-e',
+  execFileSync('mysql', [
+    '-uroot',
+    process.env.MANGO_DB_NAME || 'mango',
+    '-e',
     "DELETE FROM file_record WHERE file_name LIKE 'mango-upload-%' OR biz_id = 'DEMO-20260517'",
   ]);
 }
@@ -37,7 +40,7 @@ function cleanupUploadComponentFiles() {
 test.describe.serial('上传组件文件接口联调', () => {
   test.beforeEach(async ({ page }) => {
     await page.route('**/api/file/files/batch', async (route) => {
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise((resolve) => setTimeout(resolve, 300));
       await route.continue();
     });
   });
@@ -67,23 +70,23 @@ test.describe.serial('上传组件文件接口联调', () => {
     const filePath = join(tmpdir(), `mango-upload-component-${Date.now()}.txt`);
     writeFileSync(filePath, 'mango upload component e2e', 'utf-8');
 
-    const uploadResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/file/files')
-      && response.request().method() === 'POST'
-      && response.status() === 200
+    const uploadResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/file/files') &&
+        response.request().method() === 'POST' &&
+        response.status() === 200,
     );
 
-    await page.getByTestId('mixed-upload-panel')
-      .locator('input[type="file"]')
-      .setInputFiles(filePath);
+    await page.getByTestId('mixed-upload-panel').locator('input[type="file"]').setInputFiles(filePath);
 
     const uploadResponse = await uploadResponsePromise;
     const body = await uploadResponse.json();
     expect(body.success || body.code === 200).toBeTruthy();
     if (body.data?.id) uploadedFileIds.push(String(body.data.id));
     expect(body.data?.fileName).toContain('mango-upload-component');
-    await expect(page.getByTestId('mixed-upload-panel').getByText(/mango-upload-component/))
-      .toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId('mixed-upload-panel').getByText(/mango-upload-component/)).toBeVisible({
+      timeout: 10000,
+    });
     await expect(page.locator('.el-message--error')).toHaveCount(0);
   });
 
@@ -122,20 +125,22 @@ test.describe.serial('上传组件文件接口联调', () => {
 
   test('统一 Upload 图片场景使用 /file/files 真实接口并返回文件标识', async ({ page }) => {
     const imagePath = join(tmpdir(), `mango-upload-image-${Date.now()}.png`);
-    writeFileSync(imagePath, Buffer.from(
-      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=',
-      'base64',
-    ));
-
-    const uploadResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/file/files')
-      && response.request().method() === 'POST'
-      && response.status() === 200
+    writeFileSync(
+      imagePath,
+      Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=',
+        'base64',
+      ),
     );
 
-    await page.getByTestId('image-upload-panel')
-      .locator('input[type="file"]')
-      .setInputFiles(imagePath);
+    const uploadResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/file/files') &&
+        response.request().method() === 'POST' &&
+        response.status() === 200,
+    );
+
+    await page.getByTestId('image-upload-panel').locator('input[type="file"]').setInputFiles(imagePath);
 
     const uploadResponse = await uploadResponsePromise;
     const body = await uploadResponse.json();
@@ -144,15 +149,13 @@ test.describe.serial('上传组件文件接口联调', () => {
     expect(body.data?.fileName).toContain('mango-upload-image');
     expect(body.data?.directPreviewUrl || body.data?.url || body.data?.previewUrl).toBeTruthy();
     await expect(page.getByTestId('image-upload-panel').locator('.el-upload-list__item')).toHaveCount(1);
-    await expect(page.getByTestId('image-upload-panel').locator('.el-upload-list__item-thumbnail').first())
-      .toHaveAttribute('src', /.+/, { timeout: 10000 });
+    await expect(
+      page.getByTestId('image-upload-panel').locator('.el-upload-list__item-thumbnail').first(),
+    ).toHaveAttribute('src', /.+/, { timeout: 10000 });
 
     await page.getByTestId('image-upload-panel').locator('.el-upload-list__item').first().hover();
     const opened = page.waitForEvent('popup');
-    await page.getByTestId('image-upload-panel')
-      .locator('.el-upload-list__item-preview')
-      .first()
-      .click();
+    await page.getByTestId('image-upload-panel').locator('.el-upload-list__item-preview').first().click();
     const popup = await opened;
     await expect(popup).not.toHaveURL('about:blank');
     await popup.close();
@@ -164,20 +167,20 @@ test.describe.serial('上传组件文件接口联调', () => {
     const filePath = join(tmpdir(), `mango-upload-manual-${Date.now()}.txt`);
     writeFileSync(filePath, 'mango upload manual e2e', 'utf-8');
 
-    await page.getByTestId('manual-upload-panel')
-      .locator('input[type="file"]')
-      .setInputFiles(filePath);
+    await page.getByTestId('manual-upload-panel').locator('input[type="file"]').setInputFiles(filePath);
     await expect(page.getByTestId('manual-upload-panel').locator('button', { hasText: '选取文件' })).toBeVisible();
     await expect(page.getByTestId('manual-upload-panel').getByRole('button', { name: '上传到服务器' })).toBeVisible();
-    await expect(page.getByTestId('manual-upload-panel')
-      .locator('.upload-control.is-inline-manual')).toBeVisible();
-    await expect(page.getByTestId('manual-upload-panel').getByText(/mango-upload-manual/)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId('manual-upload-panel').locator('.upload-control.is-inline-manual')).toBeVisible();
+    await expect(page.getByTestId('manual-upload-panel').getByText(/mango-upload-manual/)).toBeVisible({
+      timeout: 10000,
+    });
     await expect(page.getByTestId('manual-upload-panel').locator('.el-upload-list__item.is-success')).toHaveCount(0);
 
-    const uploadResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/file/files')
-      && response.request().method() === 'POST'
-      && response.status() === 200
+    const uploadResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/file/files') &&
+        response.request().method() === 'POST' &&
+        response.status() === 200,
     );
     await page.getByTestId('manual-upload-panel').getByRole('button', { name: '上传到服务器' }).click();
     const uploadResponse = await uploadResponsePromise;
@@ -185,8 +188,9 @@ test.describe.serial('上传组件文件接口联调', () => {
     expect(body.success || body.code === 200).toBeTruthy();
     if (body.data?.id) uploadedFileIds.push(String(body.data.id));
     expect(body.data?.fileName).toContain('mango-upload-manual');
-    await expect(page.getByTestId('manual-upload-panel').locator('.el-upload-list__item.is-success'))
-      .toHaveCount(1, { timeout: 10000 });
+    await expect(page.getByTestId('manual-upload-panel').locator('.el-upload-list__item.is-success')).toHaveCount(1, {
+      timeout: 10000,
+    });
     await expect(page.locator('.el-message--error')).toHaveCount(0);
   });
 
@@ -196,20 +200,25 @@ test.describe.serial('上传组件文件接口联调', () => {
     writeFileSync(firstPath, 'mango upload batch a', 'utf-8');
     writeFileSync(secondPath, 'mango upload batch b', 'utf-8');
 
-    await page.getByTestId('manual-upload-panel')
-      .locator('input[type="file"]')
-      .setInputFiles([firstPath, secondPath]);
-    await expect(page.getByTestId('manual-upload-panel').getByText(/mango-upload-batch-a/)).toBeVisible({ timeout: 10000 });
-    await expect(page.getByTestId('manual-upload-panel').getByText(/mango-upload-batch-b/)).toBeVisible({ timeout: 10000 });
+    await page.getByTestId('manual-upload-panel').locator('input[type="file"]').setInputFiles([firstPath, secondPath]);
+    await expect(page.getByTestId('manual-upload-panel').getByText(/mango-upload-batch-a/)).toBeVisible({
+      timeout: 10000,
+    });
+    await expect(page.getByTestId('manual-upload-panel').getByText(/mango-upload-batch-b/)).toBeVisible({
+      timeout: 10000,
+    });
     await expect(page.getByTestId('manual-upload-panel').locator('.el-upload-list__item.is-success')).toHaveCount(0);
 
-    const batchResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/file/files/batch')
-      && response.request().method() === 'POST'
-      && response.status() === 200
+    const batchResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/file/files/batch') &&
+        response.request().method() === 'POST' &&
+        response.status() === 200,
     );
     await page.getByTestId('manual-upload-panel').getByRole('button', { name: '上传到服务器' }).click();
-    await expect(page.getByTestId('manual-upload-panel').locator('.el-progress').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId('manual-upload-panel').locator('.el-progress').first()).toBeVisible({
+      timeout: 10000,
+    });
     const batchResponse = await batchResponsePromise;
     const body = await batchResponse.json();
     expect(body.success || body.code === 200).toBeTruthy();
@@ -219,8 +228,9 @@ test.describe.serial('上传组件文件接口联调', () => {
     }
     expect(body.data.map((item: { fileName: string }) => item.fileName).join(',')).toContain('mango-upload-batch-a');
     expect(body.data.map((item: { fileName: string }) => item.fileName).join(',')).toContain('mango-upload-batch-b');
-    await expect(page.getByTestId('manual-upload-panel').locator('.el-upload-list__item.is-success'))
-      .toHaveCount(2, { timeout: 10000 });
+    await expect(page.getByTestId('manual-upload-panel').locator('.el-upload-list__item.is-success')).toHaveCount(2, {
+      timeout: 10000,
+    });
     await expect(page.locator('.el-message--error')).toHaveCount(0);
   });
 
@@ -228,9 +238,7 @@ test.describe.serial('上传组件文件接口联调', () => {
     const textPath = join(tmpdir(), `mango-upload-not-image-${Date.now()}.txt`);
     writeFileSync(textPath, 'not image', 'utf-8');
 
-    await page.getByTestId('image-upload-panel')
-      .locator('input[type="file"]')
-      .setInputFiles(textPath);
+    await page.getByTestId('image-upload-panel').locator('input[type="file"]').setInputFiles(textPath);
 
     await expect(page.getByText('该文件类型不允许上传')).toBeVisible({ timeout: 10000 });
     await expect(page.getByTestId('image-upload-panel').locator('.el-upload-list__item')).toHaveCount(0);
@@ -246,15 +254,14 @@ test.describe.serial('上传组件文件接口联调', () => {
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
     XLSX.writeFile(workbook, excelPath);
 
-    const uploadResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/file/files')
-      && response.request().method() === 'POST'
-      && response.status() === 200
+    const uploadResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/file/files') &&
+        response.request().method() === 'POST' &&
+        response.status() === 200,
     );
 
-    await page.getByTestId('office-upload-panel')
-      .locator('input[type="file"]')
-      .setInputFiles(excelPath);
+    await page.getByTestId('office-upload-panel').locator('input[type="file"]').setInputFiles(excelPath);
 
     const uploadResponse = await uploadResponsePromise;
     const body = await uploadResponse.json();

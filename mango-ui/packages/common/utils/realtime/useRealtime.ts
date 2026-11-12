@@ -17,18 +17,18 @@ export function useRealtime(options: RealtimeOptions = {}) {
   const messages = ref<RealtimeMessage[]>([]);
   const error = ref<Error | null>(null);
 
-  const offStatus = client.value.on('status', value => {
+  const offStatus = client.value.on('status', (value) => {
     status.value = value;
     protocol.value = client.value.getProtocol();
   });
-  const offMessage = client.value.on('message', message => {
+  const offMessage = client.value.on('message', (message) => {
     lastMessage.value = message;
     messages.value = [...messages.value, message];
   });
-  const offError = client.value.on('error', value => {
+  const offError = client.value.on('error', (value) => {
     error.value = value;
   });
-  const offTransport = client.value.on('transport-change', value => {
+  const offTransport = client.value.on('transport-change', (value) => {
     protocol.value = value.to;
   });
 

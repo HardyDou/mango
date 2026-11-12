@@ -110,9 +110,8 @@ test.describe('T11 行政区划管理页面真实接口闭环', () => {
       await createArea(request, platformToken, areaName, adcode);
       await loginPage(page, platformTenant);
 
-      const listResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/system/area/children?parentId=0') &&
-        response.status() === 200
+      const listResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/system/area/children?parentId=0') && response.status() === 200,
       );
       await page.goto('/#/system/area');
       await listResponsePromise;
@@ -128,9 +127,8 @@ test.describe('T11 行政区划管理页面真实接口闭环', () => {
       await expect(editDialog).toBeVisible();
       await editDialog.getByLabel('区划名称').fill(editedAreaName);
 
-      const updateResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/system/area') &&
-        response.request().method() === 'PUT'
+      const updateResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/system/area') && response.request().method() === 'PUT',
       );
       await editDialog.getByRole('button', { name: '确定' }).click();
       const updateResponse = await updateResponsePromise;
@@ -143,9 +141,8 @@ test.describe('T11 行政区划管理页面真实接口闭环', () => {
       const editedRow = page.locator('.el-table__row', { hasText: editedAreaName }).first();
       await editedRow.getByRole('button', { name: '删除' }).click();
       await expect(page.getByText(`确认删除区划「${editedAreaName}」?`)).toBeVisible();
-      const deleteResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/system/area') &&
-        response.request().method() === 'DELETE'
+      const deleteResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/system/area') && response.request().method() === 'DELETE',
       );
       await page.getByRole('button', { name: '确定' }).last().click();
       const deleteResponse = await deleteResponsePromise;

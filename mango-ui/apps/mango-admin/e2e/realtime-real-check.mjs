@@ -39,14 +39,18 @@ async function login() {
 try {
   await login();
   await page.goto('/#/components/realtime');
-  await expect(page.getByRole('heading', { name: 'RealtimeClient 实时通信组件', exact: true })).toBeVisible({ timeout: 10000 });
+  await expect(page.getByRole('heading', { name: 'RealtimeClient 实时通信组件', exact: true })).toBeVisible({
+    timeout: 10000,
+  });
   await page.getByTestId('realtime-chat-panel').getByRole('tab', { name: '用户信息' }).click();
   await page.getByPlaceholder('用户姓名').fill(profileName);
   await page.getByPlaceholder('groupId').fill(roomId);
   await page.getByPlaceholder('群组名称').fill(roomName);
   await page.getByTestId('realtime-chat-panel').getByRole('tab', { name: '链接配置' }).click();
   if (mode !== 'auto') {
-    await page.locator('.el-radio-button__inner', { hasText: mode === 'websocket' ? 'WS' : mode === 'sse' ? 'SSE' : 'Ajax' }).click();
+    await page
+      .locator('.el-radio-button__inner', { hasText: mode === 'websocket' ? 'WS' : mode === 'sse' ? 'SSE' : 'Ajax' })
+      .click();
   }
 
   await page.getByRole('button', { name: '连接' }).click();
@@ -55,25 +59,39 @@ try {
 
   await page.getByPlaceholder('输入业务消息内容').fill(inboundText);
   await page.getByRole('button', { name: '发送', exact: true }).click();
-  await expect(page.getByTestId('realtime-message-list').locator('.message-content', { hasText: new RegExp(`^${escapeRegExp(inboundText)}$`) })).toBeVisible({ timeout: 10000 });
-  await expect(page.getByTestId('realtime-message-list').locator('.message-content', { hasText: new RegExp(`^我收到你发送的消息“${escapeRegExp(inboundText)}”$`) })).toBeVisible({ timeout: 10000 });
+  await expect(
+    page
+      .getByTestId('realtime-message-list')
+      .locator('.message-content', { hasText: new RegExp(`^${escapeRegExp(inboundText)}$`) }),
+  ).toBeVisible({ timeout: 10000 });
+  await expect(
+    page
+      .getByTestId('realtime-message-list')
+      .locator('.message-content', { hasText: new RegExp(`^我收到你发送的消息“${escapeRegExp(inboundText)}”$`) }),
+  ).toBeVisible({ timeout: 10000 });
   await expect(page.getByTestId('heartbeat-panel').getByText('客户端')).toBeVisible({ timeout: 35000 });
   await expect(page.getByTestId('heartbeat-panel').getByText('服务端')).toBeVisible({ timeout: 10000 });
 
   await page.getByRole('button', { name: '模拟服务端消息' }).click();
-  await expect(page.getByTestId('realtime-message-list').locator('.message-content', { hasText: serverMessageText })).toHaveCount(1, { timeout: 10000 });
+  await expect(
+    page.getByTestId('realtime-message-list').locator('.message-content', { hasText: serverMessageText }),
+  ).toHaveCount(1, { timeout: 10000 });
 
   await page.getByTestId('realtime-chat-panel').getByRole('tab', { name: '用户信息' }).click();
   await page.locator('.el-radio-button__inner', { hasText: '点对点' }).click();
   await page.getByTestId('realtime-chat-panel').getByRole('tab', { name: '链接状态' }).click();
   await page.getByRole('button', { name: '模拟服务端消息' }).click();
-  await expect(page.getByTestId('realtime-message-list').locator('.message-content', { hasText: serverMessageText })).toHaveCount(2, { timeout: 10000 });
+  await expect(
+    page.getByTestId('realtime-message-list').locator('.message-content', { hasText: serverMessageText }),
+  ).toHaveCount(2, { timeout: 10000 });
 
   await page.getByTestId('realtime-chat-panel').getByRole('tab', { name: '用户信息' }).click();
   await page.locator('.el-radio-button__inner', { hasText: '指定端' }).click();
   await page.getByTestId('realtime-chat-panel').getByRole('tab', { name: '链接状态' }).click();
   await page.getByRole('button', { name: '模拟服务端消息' }).click();
-  await expect(page.getByTestId('realtime-message-list').locator('.message-content', { hasText: serverMessageText })).toHaveCount(3, { timeout: 10000 });
+  await expect(
+    page.getByTestId('realtime-message-list').locator('.message-content', { hasText: serverMessageText }),
+  ).toHaveCount(3, { timeout: 10000 });
 
   await page.getByTestId('realtime-message-list').locator('.message-bubble').last().click();
   await expect(page.getByRole('dialog', { name: '原始消息 JSON' })).toBeVisible({ timeout: 5000 });

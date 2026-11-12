@@ -1,61 +1,25 @@
 <template>
   <div class="right-toolbar">
-    <el-tooltip
-      v-if="props.showRefresh"
-      content="刷新"
-      placement="top"
-    >
-      <el-icon
-        class="toolbar-icon"
-        @click="handleRefresh"
-      >
+    <el-tooltip v-if="props.showRefresh" content="刷新" placement="top">
+      <el-icon class="toolbar-icon" @click="handleRefresh">
         <Refresh />
       </el-icon>
     </el-tooltip>
-    <el-tooltip
-      v-if="props.showColumnSetting"
-      content="列设置"
-      placement="top"
-    >
-      <el-icon
-        class="toolbar-icon"
-        @click="handleColumnSetting"
-      >
+    <el-tooltip v-if="props.showColumnSetting" content="列设置" placement="top">
+      <el-icon class="toolbar-icon" @click="handleColumnSetting">
         <Setting />
       </el-icon>
     </el-tooltip>
-    <el-tooltip
-      v-if="props.showDensity"
-      content="密度"
-      placement="top"
-    >
-      <el-dropdown
-        trigger="click"
-        @command="handleCommand"
-      >
+    <el-tooltip v-if="props.showDensity" content="密度" placement="top">
+      <el-dropdown trigger="click" @command="handleCommand">
         <el-icon class="toolbar-icon">
           <ScaleToOriginal />
         </el-icon>
         <template #dropdown>
           <el-dropdown-menu>
-            <el-dropdown-item
-              command="large"
-              :class="{ active: props.size === 'large' }"
-            >
-              大
-            </el-dropdown-item>
-            <el-dropdown-item
-              command="default"
-              :class="{ active: props.size === 'default' }"
-            >
-              中
-            </el-dropdown-item>
-            <el-dropdown-item
-              command="small"
-              :class="{ active: props.size === 'small' }"
-            >
-              小
-            </el-dropdown-item>
+            <el-dropdown-item command="large" :class="{ active: props.size === 'large' }"> 大 </el-dropdown-item>
+            <el-dropdown-item command="default" :class="{ active: props.size === 'default' }"> 中 </el-dropdown-item>
+            <el-dropdown-item command="small" :class="{ active: props.size === 'small' }"> 小 </el-dropdown-item>
           </el-dropdown-menu>
         </template>
       </el-dropdown>
@@ -79,7 +43,7 @@ const props = withDefaults(
     showRefresh: true,
     showColumnSetting: true,
     showDensity: true,
-  }
+  },
 );
 
 const emit = defineEmits<{

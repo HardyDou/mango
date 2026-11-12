@@ -71,30 +71,33 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { Refresh, Search } from '@element-plus/icons-vue';
 import { domainApi, type DomainItem } from '../../api/domain';
 
-const props = withDefaults(defineProps<{
-  modelValue?: string;
-  title?: string;
-  subtitle?: string;
-  allLabel?: string;
-  allCode?: string;
-  allCount?: number;
-  counts?: Record<string, number>;
-  options?: DomainItem[];
-  searchable?: boolean;
-  searchPlaceholder?: string;
-  showAll?: boolean;
-}>(), {
-  modelValue: '',
-  title: '业务域',
-  subtitle: '',
-  allLabel: '全部',
-  allCode: 'ALL',
-  counts: () => ({}),
-  options: undefined,
-  searchable: true,
-  searchPlaceholder: '请输入业务域名称',
-  showAll: true,
-});
+const props = withDefaults(
+  defineProps<{
+    modelValue?: string;
+    title?: string;
+    subtitle?: string;
+    allLabel?: string;
+    allCode?: string;
+    allCount?: number;
+    counts?: Record<string, number>;
+    options?: DomainItem[];
+    searchable?: boolean;
+    searchPlaceholder?: string;
+    showAll?: boolean;
+  }>(),
+  {
+    modelValue: '',
+    title: '业务域',
+    subtitle: '',
+    allLabel: '全部',
+    allCode: 'ALL',
+    counts: () => ({}),
+    options: undefined,
+    searchable: true,
+    searchPlaceholder: '请输入业务域名称',
+    showAll: true,
+  },
+);
 
 const emit = defineEmits<{
   (event: 'update:modelValue', value: string): void;
@@ -125,14 +128,14 @@ const filteredOptions = computed(() => {
 
 watch(
   () => props.modelValue,
-  value => {
+  (value) => {
     innerValue.value = value || '';
   },
 );
 
 watch(
   () => props.options,
-  value => {
+  (value) => {
     if (value) {
       emit('loaded', value);
     }
@@ -174,11 +177,12 @@ function selectDomain(domain: DomainItem) {
 
 function filterDomains(options: DomainItem[], normalizedKeyword: string): DomainItem[] {
   return options
-    .map(item => {
+    .map((item) => {
       const children = filterDomains(item.children || [], normalizedKeyword);
-      const matched = item.domainName.toLowerCase().includes(normalizedKeyword)
-        || item.domainCode.toLowerCase().includes(normalizedKeyword)
-        || item.domainShortCode.toLowerCase().includes(normalizedKeyword);
+      const matched =
+        item.domainName.toLowerCase().includes(normalizedKeyword) ||
+        item.domainCode.toLowerCase().includes(normalizedKeyword) ||
+        item.domainShortCode.toLowerCase().includes(normalizedKeyword);
       return matched || children.length > 0 ? { ...item, children } : undefined;
     })
     .filter((item): item is DomainItem => Boolean(item));
@@ -251,7 +255,9 @@ defineExpose({
   color: inherit;
   text-align: left;
   cursor: pointer;
-  transition: background-color 0.16s ease, border-color 0.16s ease;
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease;
 }
 
 .domain-side-tree__all {

@@ -18,8 +18,7 @@ export function domainRow(page: Page, text: string): Locator {
 }
 
 export async function expectLatestMessage(page: Page, message: string) {
-  await expect(page.locator('.el-message__content', { hasText: message }).last())
-    .toBeVisible({ timeout: 10000 });
+  await expect(page.locator('.el-message__content', { hasText: message }).last()).toBeVisible({ timeout: 10000 });
 }
 
 export async function confirmLatestMessageBox(page: Page) {

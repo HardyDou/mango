@@ -228,7 +228,7 @@ async function handleDelete(row: TemplateCategory) {
   width: 100%;
 }
 
-@media (max-width: 760px) {
+@media (width <= 760px) {
   .page-head {
     flex-direction: column;
   }

@@ -1,18 +1,8 @@
 <template>
-  <div
-    class="layout-breadcrumb-close-full"
-    @click="toggleFullscreen"
-  >
+  <div class="layout-breadcrumb-close-full" @click="toggleFullscreen">
     <el-icon :size="20">
-      <span
-        v-if="isFullscreen"
-        class="fullscreen-exit-icon"
-        :style="fullscreenExitIconStyle"
-      />
-      <component
-        :is="FullScreenIcon"
-        v-else
-      />
+      <span v-if="isFullscreen" class="fullscreen-exit-icon" :style="fullscreenExitIconStyle" />
+      <component :is="FullScreenIcon" v-else />
     </el-icon>
   </div>
 </template>
@@ -75,8 +65,7 @@ onUnmounted(() => {
   display: inline-block;
   width: 1.1em;
   height: 1.1em;
-  background-color: currentColor;
-  -webkit-mask: var(--fullscreen-exit-icon) center / contain no-repeat;
+  background-color: currentcolor;
   mask: var(--fullscreen-exit-icon) center / contain no-repeat;
 }
 </style>

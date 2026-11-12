@@ -1,6 +1,7 @@
 export type RealtimeProtocol = 'websocket' | 'sse' | 'polling';
 export type RealtimeMode = 'auto' | RealtimeProtocol;
-export type RealtimeStatus = 'idle' | 'connecting' | 'connected' | 'reconnecting' | 'degraded' | 'disconnected' | 'error';
+export type RealtimeStatus =
+  'idle' | 'connecting' | 'connected' | 'reconnecting' | 'degraded' | 'disconnected' | 'error';
 export type RealtimePerformanceMode = 'normal' | 'aggressive';
 export type RealtimeMessageKind = 'HEART' | 'PONG' | 'NOTICE' | 'CUSTOM' | 'ACK' | 'ERROR';
 
@@ -265,13 +266,21 @@ export type RealtimeEventPayloadMap = {
   sent: RealtimeMessage;
   error: Error;
   'transport-change': { from: RealtimeProtocol | null; to: RealtimeProtocol; reason: string };
-  heartbeat: { protocol: RealtimeProtocol; at: number; direction: 'client' | 'server'; frame: 'ping' | 'pong'; ok: boolean };
+  heartbeat: {
+    protocol: RealtimeProtocol;
+    at: number;
+    direction: 'client' | 'server';
+    frame: 'ping' | 'pong';
+    ok: boolean;
+  };
   'system-message': RealtimeMessage;
   degraded: { from: RealtimeProtocol | null; to: RealtimeProtocol; reason: string };
   negotiated: RealtimeNegotiationResponse;
 };
 
-export type RealtimeEventHandler<T extends RealtimeEvent = RealtimeEvent> = (payload: RealtimeEventPayloadMap[T]) => void;
+export type RealtimeEventHandler<T extends RealtimeEvent = RealtimeEvent> = (
+  payload: RealtimeEventPayloadMap[T],
+) => void;
 export type RealtimeMessageHandler = (message: RealtimeMessage) => void;
 export type RealtimeUnsubscribe = () => void;
 

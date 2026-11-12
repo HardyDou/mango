@@ -373,7 +373,9 @@ try {
   }
   for (const capability of ['cache', 'rate-limiter', 'token-store']) {
     if (!new RegExp(`capability:\\s*[\\s\\S]*?${capability}:\\s*true`, 'u').test(generatedApplicationYml)) {
-      throw new Error(`generated full backend must enable the KV ${capability} capability required by platform starters`);
+      throw new Error(
+        `generated full backend must enable the KV ${capability} capability required by platform starters`,
+      );
     }
   }
   if (!/security:\s*[\s\S]*?default-chain-enabled:\s*false/u.test(generatedApplicationYml)) {
@@ -1622,7 +1624,8 @@ try {
   if (
     businessUiPackageJson.style !== './style.css' ||
     businessUiPackageJson.exports?.['./style.css'] !== './style.css' ||
-    businessUiPackageJson.peerDependencies?.['@mango/admin-extension'] !== releaseVersions.npm['@mango/admin-extension'] ||
+    businessUiPackageJson.peerDependencies?.['@mango/admin-extension'] !==
+      releaseVersions.npm['@mango/admin-extension'] ||
     businessUiPackageJson.dependencies?.['@mango/admin-pages'] !== undefined ||
     businessUiPackageJson.dependencies?.['@mango/app-runtime'] !== releaseVersions.npm['@mango/app-runtime'] ||
     businessUiPackageJson.mangoAdmin?.businessDomainCode !== 'CONTRACT' ||

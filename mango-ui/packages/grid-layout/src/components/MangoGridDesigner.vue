@@ -24,11 +24,7 @@
         </nav>
 
         <div class="mango-grid-designer__library-main">
-          <el-input
-            v-model="keyword"
-            clearable
-            placeholder="搜索组件"
-          >
+          <el-input v-model="keyword" clearable placeholder="搜索组件">
             <template #prefix>
               <el-icon><Search /></el-icon>
             </template>
@@ -89,10 +85,7 @@
         >
           <div :class="cardClass(item)">
             <div class="mango-grid-designer__drag-mask" />
-            <div
-              v-if="shouldShowTitle(item)"
-              class="mango-grid-designer__card-title"
-            >
+            <div v-if="shouldShowTitle(item)" class="mango-grid-designer__card-title">
               <span class="mango-grid-designer__drag-dots" />
               <span>{{ item.title || widgetMap[item.widgetType]?.title || item.widgetType }}</span>
               <button
@@ -116,22 +109,14 @@
               <el-icon><Close /></el-icon>
             </button>
             <div class="mango-grid-designer__card-body">
-              <slot
-                name="widget"
-                :item="item"
-                :widget="widgetMap[item.widgetType]"
-              >
+              <slot name="widget" :item="item" :widget="widgetMap[item.widgetType]">
                 <component
                   :is="widgetMap[item.widgetType]?.component"
                   v-if="widgetMap[item.widgetType]?.component"
                   v-bind="widgetProps(item)"
                   :item="item"
                 />
-                <el-empty
-                  v-else
-                  description="组件已失效，可删除后保存布局"
-                  :image-size="72"
-                />
+                <el-empty v-else description="组件已失效，可删除后保存布局" :image-size="72" />
               </slot>
             </div>
             <button
@@ -162,11 +147,7 @@
           </div>
         </div>
 
-        <div
-          v-if="placeholder"
-          class="mango-grid-designer__placeholder"
-          :style="placeholderStyle"
-        />
+        <div v-if="placeholder" class="mango-grid-designer__placeholder" :style="placeholderStyle" />
       </div>
     </section>
   </div>
@@ -201,23 +182,26 @@ interface MoveState {
   target: GridLayoutRect;
 }
 
-const props = withDefaults(defineProps<{
-  modelValue: GridLayoutItem[];
-  widgets: GridWidgetDefinition[];
-  columns?: number;
-  rowHeight?: number;
-  gap?: number;
-  defaultWidth?: number;
-  defaultHeight?: number;
-  minRows?: number;
-}>(), {
-  columns: 12,
-  rowHeight: 15,
-  gap: 15,
-  defaultWidth: 3,
-  defaultHeight: 10,
-  minRows: 30,
-});
+const props = withDefaults(
+  defineProps<{
+    modelValue: GridLayoutItem[];
+    widgets: GridWidgetDefinition[];
+    columns?: number;
+    rowHeight?: number;
+    gap?: number;
+    defaultWidth?: number;
+    defaultHeight?: number;
+    minRows?: number;
+  }>(),
+  {
+    columns: 12,
+    rowHeight: 15,
+    gap: 15,
+    defaultWidth: 3,
+    defaultHeight: 10,
+    minRows: 30,
+  },
+);
 
 const emit = defineEmits<{
   (event: 'update:modelValue', value: GridLayoutItem[]): void;
@@ -277,10 +261,7 @@ const domainTabs = computed(() => {
   props.widgets.forEach((widget) => {
     tabs.set(widgetDomainKey(widget), widgetDomainLabel(widget));
   });
-  return [
-    { value: '全部', label: '全部' },
-    ...Array.from(tabs.entries()).map(([value, label]) => ({ value, label })),
-  ];
+  return [{ value: '全部', label: '全部' }, ...Array.from(tabs.entries()).map(([value, label]) => ({ value, label }))];
 });
 
 const filteredWidgets = computed(() => {
@@ -305,16 +286,36 @@ const filteredWidgets = computed(() => {
       widget.type,
       ...(widget.tags || []),
     ];
-    return fields.some(field => String(field || '').toLowerCase().includes(value));
+    return fields.some((field) =>
+      String(field || '')
+        .toLowerCase()
+        .includes(value),
+    );
   });
 });
 
 function widgetDomainKey(widget: GridWidgetDefinition): string {
-  return widget.businessDomainCode || widget.domainCode || widget.businessDomainName || widget.domainName || widget.category || widget.moduleCode || '业务';
+  return (
+    widget.businessDomainCode ||
+    widget.domainCode ||
+    widget.businessDomainName ||
+    widget.domainName ||
+    widget.category ||
+    widget.moduleCode ||
+    '业务'
+  );
 }
 
 function widgetDomainLabel(widget: GridWidgetDefinition): string {
-  return widget.businessDomainName || widget.domainName || widget.category || widget.businessDomainCode || widget.domainCode || widget.moduleCode || '业务';
+  return (
+    widget.businessDomainName ||
+    widget.domainName ||
+    widget.category ||
+    widget.businessDomainCode ||
+    widget.domainCode ||
+    widget.moduleCode ||
+    '业务'
+  );
 }
 
 function widgetLibraryPath(widget: GridWidgetDefinition): string {
@@ -335,7 +336,7 @@ const gridStyle = computed<CSSProperties>(() => ({
   gridTemplateRows: `repeat(${totalRows.value}, var(--mango-grid-row-height))`,
 }));
 
-const placeholderStyle = computed<CSSProperties>(() => placeholder.value ? rectStyle(placeholder.value) : {});
+const placeholderStyle = computed<CSSProperties>(() => (placeholder.value ? rectStyle(placeholder.value) : {}));
 
 function addWidget(widget: GridWidgetDefinition, rect?: Partial<GridLayoutRect>): void {
   if (widget.disabled) {
@@ -395,7 +396,8 @@ function startMove(event: MouseEvent, item: GridLayoutItem): void {
     return;
   }
   activeId.value = item.id;
-  canvasRect.value = (event.currentTarget as HTMLElement).closest('.mango-grid-designer__grid')?.getBoundingClientRect() || null;
+  canvasRect.value =
+    (event.currentTarget as HTMLElement).closest('.mango-grid-designer__grid')?.getBoundingClientRect() || null;
   moveState.value = {
     id: item.id,
     startX: event.clientX,
@@ -436,11 +438,14 @@ function applyMovePreview(): void {
     return;
   }
   // 鼠标移动过程中只更新占位和当前卡片 transform，避免频繁重排导致闪烁。
-  const desiredRect = normalizeRect({
-    ...state.origin,
-    x: state.origin.x + Math.round(deltaX / getUnitWidth()),
-    y: state.origin.y + Math.round(deltaY / rowUnitHeight()),
-  }, props.columns);
+  const desiredRect = normalizeRect(
+    {
+      ...state.origin,
+      x: state.origin.x + Math.round(deltaX / getUnitWidth()),
+      y: state.origin.y + Math.round(deltaY / rowUnitHeight()),
+    },
+    props.columns,
+  );
   draggingItemId.value = state.id;
   moveState.value = {
     ...state,
@@ -479,7 +484,8 @@ function stopMove(): void {
 
 function startResize(event: MouseEvent, item: GridLayoutItem, mode: ResizeMode): void {
   activeId.value = item.id;
-  canvasRect.value = (event.currentTarget as HTMLElement).closest('.mango-grid-designer__grid')?.getBoundingClientRect() || null;
+  canvasRect.value =
+    (event.currentTarget as HTMLElement).closest('.mango-grid-designer__grid')?.getBoundingClientRect() || null;
   resizeState = {
     id: item.id,
     mode,
@@ -572,7 +578,12 @@ function rowUnitHeight(): number {
   return props.rowHeight;
 }
 
-function getResizeRect(origin: GridLayoutRect, mode: ResizeMode, deltaX: number, deltaY: number): Partial<GridLayoutRect> {
+function getResizeRect(
+  origin: GridLayoutRect,
+  mode: ResizeMode,
+  deltaX: number,
+  deltaY: number,
+): Partial<GridLayoutRect> {
   if (mode === 'height') {
     return {
       h: origin.h + Math.round(deltaY / rowUnitHeight()),
@@ -634,7 +645,9 @@ function placeholderItem(): GridLayoutItem {
 }
 
 function isInteractiveTarget(target: EventTarget | null): boolean {
-  return target instanceof HTMLElement && Boolean(target.closest('button,a,input,textarea,select,.el-button,.el-input'));
+  return (
+    target instanceof HTMLElement && Boolean(target.closest('button,a,input,textarea,select,.el-button,.el-input'))
+  );
 }
 
 function createDragPreview(title: string): HTMLElement {

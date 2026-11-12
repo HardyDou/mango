@@ -4,21 +4,21 @@
 
 /** 表单字段类型 */
 export type FormFieldType =
-  | 'input'      // 文本输入
-  | 'textarea'   // 多行文本
-  | 'number'     // 数字输入
-  | 'password'   // 密码输入
-  | 'select'     // 下拉选择
-  | 'radio'      // 单选按钮
-  | 'checkbox'   // 多选框
-  | 'switch'     // 开关
-  | 'date'       // 日期选择
-  | 'datetime'   // 日期时间选择
-  | 'daterange'  // 日期范围
-  | 'upload'     // 文件上传
-  | 'cascader'   // 级联选择
+  | 'input' // 文本输入
+  | 'textarea' // 多行文本
+  | 'number' // 数字输入
+  | 'password' // 密码输入
+  | 'select' // 下拉选择
+  | 'radio' // 单选按钮
+  | 'checkbox' // 多选框
+  | 'switch' // 开关
+  | 'date' // 日期选择
+  | 'datetime' // 日期时间选择
+  | 'daterange' // 日期范围
+  | 'upload' // 文件上传
+  | 'cascader' // 级联选择
   | 'tree-select' // 树形选择
-  | 'divider';    // 分隔线
+  | 'divider'; // 分隔线
 
 /** 表单字段验证规则 */
 export interface FormValidateRule {

@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  isBackendFileContentUrl,
-  isFileDownloadEndpointUrl,
-  isPreviewDisplayUrl,
-} from '../previewUrl';
+import { isBackendFileContentUrl, isFileDownloadEndpointUrl, isPreviewDisplayUrl } from '../previewUrl';
 
 describe('file preview url', () => {
   it('rejects file download endpoints as preview display urls', () => {
@@ -33,7 +29,8 @@ describe('file preview url', () => {
   });
 
   it('keeps external presigned storage urls available for direct access', () => {
-    const presignedUrl = 'https://storage.example.com/files/report.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Signature=signed';
+    const presignedUrl =
+      'https://storage.example.com/files/report.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Signature=signed';
 
     expect(isBackendFileContentUrl(presignedUrl)).toBe(false);
     expect(isPreviewDisplayUrl(presignedUrl)).toBe(true);

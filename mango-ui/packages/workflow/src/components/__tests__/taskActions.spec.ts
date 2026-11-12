@@ -1,8 +1,4 @@
-import {
-  isWorkflowCommentRequired,
-  normalizeWorkflowNodeActions,
-  resolveVisibleWorkflowActions,
-} from '../taskActions';
+import { isWorkflowCommentRequired, normalizeWorkflowNodeActions, resolveVisibleWorkflowActions } from '../taskActions';
 
 describe('workflow task actions', () => {
   it('normalizes compatible default actions', () => {
@@ -18,29 +14,32 @@ describe('workflow task actions', () => {
   });
 
   it('uses backend labels and business overrides without adding unauthorized actions', () => {
-    const actions = resolveVisibleWorkflowActions({
-      complete: { enabled: true, label: '同意', order: 20 },
-      reject: { enabled: false, label: '退回修改', order: 10 },
-      transfer: { enabled: true, label: '转办给他人', disabled: true, tooltip: '暂未支持', order: 5 },
-    }, {
-      complete: { label: '确认同意' },
-      reject: { visible: true, disabled: true, tooltip: '业务状态不允许驳回' },
-      addSign: { visible: false },
-    });
+    const actions = resolveVisibleWorkflowActions(
+      {
+        complete: { enabled: true, label: '同意', order: 20 },
+        reject: { enabled: false, label: '退回修改', order: 10 },
+        transfer: { enabled: true, label: '转办给他人', disabled: true, tooltip: '暂未支持', order: 5 },
+      },
+      {
+        complete: { label: '确认同意' },
+        reject: { visible: true, disabled: true, tooltip: '业务状态不允许驳回' },
+        addSign: { visible: false },
+      },
+    );
 
-    expect(actions.map(action => action.key)).toEqual(['transfer', 'reject', 'complete']);
-    expect(actions.find(action => action.key === 'complete')).toMatchObject({
+    expect(actions.map((action) => action.key)).toEqual(['transfer', 'reject', 'complete']);
+    expect(actions.find((action) => action.key === 'complete')).toMatchObject({
       label: '确认同意',
       buttonType: 'primary',
       disabled: false,
     });
-    expect(actions.find(action => action.key === 'reject')).toMatchObject({
+    expect(actions.find((action) => action.key === 'reject')).toMatchObject({
       label: '退回修改',
       disabled: true,
       tooltip: '业务状态不允许驳回',
       buttonType: 'danger',
     });
-    expect(actions.find(action => action.key === 'transfer')).toMatchObject({
+    expect(actions.find((action) => action.key === 'transfer')).toMatchObject({
       disabled: true,
       tooltip: '暂未支持',
     });

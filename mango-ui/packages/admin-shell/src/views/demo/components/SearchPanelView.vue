@@ -148,10 +148,20 @@
               </el-select>
             </el-form-item>
             <el-form-item label="申请日期">
-              <el-date-picker v-model="fixedQuery.applyDate" type="date" placeholder="请选择申请日期" value-format="YYYY-MM-DD" />
+              <el-date-picker
+                v-model="fixedQuery.applyDate"
+                type="date"
+                placeholder="请选择申请日期"
+                value-format="YYYY-MM-DD"
+              />
             </el-form-item>
             <el-form-item label="到期日期">
-              <el-date-picker v-model="fixedQuery.expireDate" type="date" placeholder="请选择到期日期" value-format="YYYY-MM-DD" />
+              <el-date-picker
+                v-model="fixedQuery.expireDate"
+                type="date"
+                placeholder="请选择到期日期"
+                value-format="YYYY-MM-DD"
+              />
             </el-form-item>
             <el-form-item label="经办人">
               <el-input v-model="fixedQuery.operatorName" placeholder="请输入经办人" clearable />
@@ -261,7 +271,12 @@
           </el-select>
         </el-form-item>
         <el-form-item label="创建时间">
-          <el-date-picker v-model="simpleQuery.createdAt" type="date" placeholder="请选择日期" value-format="YYYY-MM-DD" />
+          <el-date-picker
+            v-model="simpleQuery.createdAt"
+            type="date"
+            placeholder="请选择日期"
+            value-format="YYYY-MM-DD"
+          />
         </el-form-item>
       </MangoSearchPanel>
     </section>
@@ -451,19 +466,54 @@ const listPageCode = `<MangoListPage>
 </MangoListPage>`;
 
 const propsTable = [
-  { name: 'model', description: '绑定查询对象，传给内部 ElForm 的 model', type: 'Record<string, unknown>', defaultValue: '-' },
+  {
+    name: 'model',
+    description: '绑定查询对象，传给内部 ElForm 的 model',
+    type: 'Record<string, unknown>',
+    defaultValue: '-',
+  },
   { name: 'labelWidth', description: '表单 label 宽度', type: 'string | number', defaultValue: '96px' },
-  { name: 'labelSuffix', description: '表单 label 后缀，传给内部 ElForm；设置为空字符串可去掉冒号', type: 'string', defaultValue: '：' },
-  { name: 'labelPosition', description: '表单 label 对齐方式，传给内部 ElForm', type: 'left | right | top', defaultValue: 'right' },
-  { name: 'size', description: '表单组件尺寸，传给内部 ElForm', type: 'large | default | small', defaultValue: 'default' },
+  {
+    name: 'labelSuffix',
+    description: '表单 label 后缀，传给内部 ElForm；设置为空字符串可去掉冒号',
+    type: 'string',
+    defaultValue: '：',
+  },
+  {
+    name: 'labelPosition',
+    description: '表单 label 对齐方式，传给内部 ElForm',
+    type: 'left | right | top',
+    defaultValue: 'right',
+  },
+  {
+    name: 'size',
+    description: '表单组件尺寸，传给内部 ElForm',
+    type: 'large | default | small',
+    defaultValue: 'default',
+  },
   { name: 'searchText', description: '查询按钮文案', type: 'string', defaultValue: '查询' },
   { name: 'resetText', description: '重置按钮文案', type: 'string', defaultValue: '重置' },
   { name: 'showReset', description: '是否展示重置按钮', type: 'boolean', defaultValue: 'true' },
   { name: 'collapsible', description: '是否启用展开收起', type: 'boolean', defaultValue: 'false' },
-  { name: 'collapsedRows', description: '收起态展示行数，未设置 collapsedCount 时生效', type: 'number', defaultValue: '2' },
+  {
+    name: 'collapsedRows',
+    description: '收起态展示行数，未设置 collapsedCount 时生效',
+    type: 'number',
+    defaultValue: '2',
+  },
   { name: 'collapsedCount', description: '收起态固定展示字段数量', type: 'number', defaultValue: '-' },
-  { name: 'columns', description: '字段区列数；默认四列，设置为 auto 时按字段宽度自适应排版', type: 'number | auto', defaultValue: '4' },
-  { name: 'morePlacement', description: '展开收起按钮位置，可放在操作区或搜索区底部居中', type: 'actions | bottom', defaultValue: 'bottom' },
+  {
+    name: 'columns',
+    description: '字段区列数；默认四列，设置为 auto 时按字段宽度自适应排版',
+    type: 'number | auto',
+    defaultValue: '4',
+  },
+  {
+    name: 'morePlacement',
+    description: '展开收起按钮位置，可放在操作区或搜索区底部居中',
+    type: 'actions | bottom',
+    defaultValue: 'bottom',
+  },
   { name: 'fieldMinWidth', description: '自适应列模式下字段最小宽度', type: 'string', defaultValue: '280px' },
   { name: 'fieldMaxWidth', description: '自适应列模式下字段最大宽度', type: 'string', defaultValue: '320px' },
   { name: 'expandText', description: '展开按钮文案', type: 'string', defaultValue: '展开' },
@@ -538,7 +588,7 @@ function toggleCode(key: CodeBlockKey) {
 </script>
 
 <style scoped lang="scss">
-@use './demo-page.scss';
+@use './demo-page';
 
 .search-panel-view-container {
   :deep(.demo-source) {

@@ -6,7 +6,7 @@ export function createMangoApiProxy(target: string): ProxyOptions {
     ws: true,
     changeOrigin: true,
     xfwd: true,
-    rewrite: path => path.replace(/^\/api/, ''),
+    rewrite: (path) => path.replace(/^\/api/, ''),
     configure(proxy) {
       proxy.on('proxyReq', (proxyRequest, request) => {
         if (request.headers.host) {

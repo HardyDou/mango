@@ -4,12 +4,7 @@
       <el-button :icon="Plus" @click="addRow">新增能力</el-button>
     </div>
 
-    <el-table
-      :data="rows"
-      size="small"
-      empty-text="尚未声明通道能力"
-      class="channel-capability-editor__table"
-    >
+    <el-table :data="rows" size="small" empty-text="尚未声明通道能力" class="channel-capability-editor__table">
       <el-table-column label="支付方式" min-width="180">
         <template #default="{ row }">
           <PaymentEntityValueSelect
@@ -37,7 +32,7 @@
         <template #default="{ row }">
           <el-switch
             :model-value="row.supportsRefund !== 0"
-            @update:model-value="value => row.supportsRefund = value ? 1 : 0"
+            @update:model-value="(value) => (row.supportsRefund = value ? 1 : 0)"
           />
         </template>
       </el-table-column>
@@ -45,7 +40,7 @@
         <template #default="{ row }">
           <el-switch
             :model-value="row.supportsQuery !== 0"
-            @update:model-value="value => row.supportsQuery = value ? 1 : 0"
+            @update:model-value="(value) => (row.supportsQuery = value ? 1 : 0)"
           />
         </template>
       </el-table-column>
@@ -53,7 +48,7 @@
         <template #default="{ row }">
           <el-switch
             :model-value="row.supportsClose !== 0"
-            @update:model-value="value => row.supportsClose = value ? 1 : 0"
+            @update:model-value="(value) => (row.supportsClose = value ? 1 : 0)"
           />
         </template>
       </el-table-column>
@@ -61,7 +56,7 @@
         <template #default="{ row }">
           <el-switch
             :model-value="row.supportsBill !== 0"
-            @update:model-value="value => row.supportsBill = value ? 1 : 0"
+            @update:model-value="(value) => (row.supportsBill = value ? 1 : 0)"
           />
         </template>
       </el-table-column>
@@ -69,7 +64,7 @@
         <template #default="{ row }">
           <el-switch
             :model-value="row.supportsReconcile !== 0"
-            @update:model-value="value => row.supportsReconcile = value ? 1 : 0"
+            @update:model-value="(value) => (row.supportsReconcile = value ? 1 : 0)"
           />
         </template>
       </el-table-column>
@@ -81,7 +76,9 @@
             :precision="2"
             :step="1"
             controls-position="right"
-            @update:model-value="value => row.minAmount = value === undefined || value === null ? undefined : yuanToCents(value)"
+            @update:model-value="
+              (value) => (row.minAmount = value === undefined || value === null ? undefined : yuanToCents(value))
+            "
           />
         </template>
       </el-table-column>
@@ -93,7 +90,9 @@
             :precision="2"
             :step="1"
             controls-position="right"
-            @update:model-value="value => row.maxAmount = value === undefined || value === null ? undefined : yuanToCents(value)"
+            @update:model-value="
+              (value) => (row.maxAmount = value === undefined || value === null ? undefined : yuanToCents(value))
+            "
           />
         </template>
       </el-table-column>
@@ -104,7 +103,7 @@
             active-text="启用"
             inactive-text="停用"
             inline-prompt
-            @update:model-value="value => row.status = value ? 1 : 0"
+            @update:model-value="(value) => (row.status = value ? 1 : 0)"
           />
         </template>
       </el-table-column>
@@ -133,7 +132,7 @@ const emit = defineEmits<{
 
 const rows = computed({
   get: () => props.modelValue || [],
-  set: value => emit('update:modelValue', value),
+  set: (value) => emit('update:modelValue', value),
 });
 
 function addRow() {

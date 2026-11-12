@@ -18,48 +18,24 @@
     </el-select>
 
     <!-- Selected Tags -->
-    <div
-      v-if="selectedNames.length > 0"
-      class="org-selected-tags"
-    >
-      <el-tag
-        v-for="name in selectedNames"
-        :key="name"
-        closable
-        size="small"
-        @close="handleRemoveTag(name)"
-      >
+    <div v-if="selectedNames.length > 0" class="org-selected-tags">
+      <el-tag v-for="name in selectedNames" :key="name" closable size="small" @close="handleRemoveTag(name)">
         {{ name }}
       </el-tag>
     </div>
 
     <!-- Selection Dialog -->
-    <el-dialog
-      v-model="dialogVisible"
-      :title="dialogTitle"
-      :width="width"
-      append-to-body
-      destroy-on-close
-    >
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" :width="width" append-to-body destroy-on-close>
       <div class="org-tree-container">
-        <div
-          v-if="loading"
-          class="org-loading"
-        >
+        <div v-if="loading" class="org-loading">
           {{ t('orgSelector.loading') }}
         </div>
 
-        <div
-          v-else-if="error"
-          class="org-error"
-        >
+        <div v-else-if="error" class="org-error">
           {{ error }}
         </div>
 
-        <div
-          v-else-if="orgOptions.length === 0"
-          class="org-empty"
-        >
+        <div v-else-if="orgOptions.length === 0" class="org-empty">
           {{ t('orgSelector.noData') }}
         </div>
 
@@ -83,10 +59,7 @@
           <el-button @click="closeDialog">
             {{ t('orgSelector.cancel') }}
           </el-button>
-          <el-button
-            type="primary"
-            @click="confirmSelection"
-          >
+          <el-button type="primary" @click="confirmSelection">
             {{ t('orgSelector.confirm') }}
           </el-button>
         </span>
@@ -103,19 +76,16 @@ import type { OrgNode, OrgSelectorProps, OrgSelectorEmits, OrgSelectorExpose } f
 import type { ApiId } from '@mango/api-schema';
 import type { ElTree } from 'element-plus';
 
-const props = withDefaults(
-  defineProps<OrgSelectorProps>(),
-  {
-    modelValue: () => [],
-    multiple: false,
-    placeholder: 'orgSelector.placeholder',
-    title: 'orgSelector.title',
-    showTagNames: true,
-    max: 0,
-    disabled: false,
-    width: '500px',
-  }
-);
+const props = withDefaults(defineProps<OrgSelectorProps>(), {
+  modelValue: () => [],
+  multiple: false,
+  placeholder: 'orgSelector.placeholder',
+  title: 'orgSelector.title',
+  showTagNames: true,
+  max: 0,
+  disabled: false,
+  width: '500px',
+});
 
 const emit = defineEmits<OrgSelectorEmits>();
 
@@ -154,9 +124,7 @@ const displayValue = computed(() => {
 
 const selectedNames = computed(() => {
   if (!props.showTagNames || currentSelectedIds.value.length === 0) return [];
-  return currentSelectedIds.value
-    .map((id) => allNodes.value.get(id)?.name)
-    .filter(Boolean) as string[];
+  return currentSelectedIds.value.map((id) => allNodes.value.get(id)?.name).filter(Boolean) as string[];
 });
 
 const treeProps = {
@@ -223,7 +191,10 @@ function confirmSelection() {
   closeDialog();
 }
 
-function handleTreeCheck(_node: OrgNode, checked: { checkedKeys: Array<string | number>; halfCheckedKeys: Array<string | number> }) {
+function handleTreeCheck(
+  _node: OrgNode,
+  checked: { checkedKeys: Array<string | number>; halfCheckedKeys: Array<string | number> },
+) {
   let checkedKeys = checked.checkedKeys.map(String);
 
   if (!props.multiple && checkedKeys.length > 1) {
@@ -247,8 +218,7 @@ function handleClear() {
 }
 
 function handleRemoveTag(name: string) {
-  const id = [...allNodes.value.entries()]
-    .find(([, node]) => node.name === name)?.[0];
+  const id = [...allNodes.value.entries()].find(([, node]) => node.name === name)?.[0];
   if (id !== undefined) {
     const newValue = currentSelectedIds.value.filter((v) => v !== id);
     const emittedValue = props.multiple ? newValue : undefined;
@@ -269,10 +239,8 @@ function clear() {
 watch(
   () => props.modelValue,
   (newVal) => {
-    tempSelectedIds.value = Array.isArray(newVal)
-      ? [...newVal]
-      : newVal === undefined ? [] : [newVal];
-  }
+    tempSelectedIds.value = Array.isArray(newVal) ? [...newVal] : newVal === undefined ? [] : [newVal];
+  },
 );
 
 // Expose methods

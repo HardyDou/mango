@@ -22,33 +22,33 @@ import { SSE } from '@mango/common';
 
 ## Props
 
-| 名称 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `url` | `string` | `'/mango-message/sse/connect'` | SSE 端点，相对路径基于 `window.location.origin` 解析 |
-| `showStatus` | `boolean` | `true` | 是否展示连接状态圆点与文案 |
-| `showNotifications` | `boolean` | `true` | 是否对收到的消息弹出 Element Plus 通知；同时控制 `message` 事件是否抛出 |
-| `maxRetries` | `number` | `6` | 最大重试次数 |
-| `heartbeatInterval` | `number` | `30000` | 心跳间隔（毫秒） |
-| `enabled` | `boolean` | `true` | 是否在挂载后自动连接 |
+| 名称                | 类型      | 默认值                         | 说明                                                                    |
+| ------------------- | --------- | ------------------------------ | ----------------------------------------------------------------------- |
+| `url`               | `string`  | `'/mango-message/sse/connect'` | SSE 端点，相对路径基于 `window.location.origin` 解析                    |
+| `showStatus`        | `boolean` | `true`                         | 是否展示连接状态圆点与文案                                              |
+| `showNotifications` | `boolean` | `true`                         | 是否对收到的消息弹出 Element Plus 通知；同时控制 `message` 事件是否抛出 |
+| `maxRetries`        | `number`  | `6`                            | 最大重试次数                                                            |
+| `heartbeatInterval` | `number`  | `30000`                        | 心跳间隔（毫秒）                                                        |
+| `enabled`           | `boolean` | `true`                         | 是否在挂载后自动连接                                                    |
 
 ## Events
 
-| 名称 | 参数 | 说明 |
-|------|------|------|
-| `connected` | - | 连接建立（`onopen`） |
-| `disconnected` | - | 主动断开或连接关闭 |
-| `message` | `data: SSEMessage` | 收到业务消息；仅当 `showNotifications` 为 `true` 时才会抛出 |
-| `error` | `error: Error` | 重试次数耗尽时抛出，固定为 `new Error('Max retries exceeded')` |
-| `retry` | `count: number` | 每次进入重试时抛出当前次数（从 1 开始） |
+| 名称           | 参数               | 说明                                                           |
+| -------------- | ------------------ | -------------------------------------------------------------- |
+| `connected`    | -                  | 连接建立（`onopen`）                                           |
+| `disconnected` | -                  | 主动断开或连接关闭                                             |
+| `message`      | `data: SSEMessage` | 收到业务消息；仅当 `showNotifications` 为 `true` 时才会抛出    |
+| `error`        | `error: Error`     | 重试次数耗尽时抛出，固定为 `new Error('Max retries exceeded')` |
+| `retry`        | `count: number`    | 每次进入重试时抛出当前次数（从 1 开始）                        |
 
 ## Expose
 
-| 名称 | 参数 | 返回值 | 说明 |
-|------|------|--------|------|
-| `connect()` | - | - | 建立连接；`connecting`/`connected` 状态下调用会被忽略 |
-| `disconnect()` | - | - | 关闭 EventSource、停止心跳定时器并置为已断开 |
-| `sendPing()` | - | - | 空实现。原生 EventSource 只能单向接收，无法向服务端发送心跳 |
-| `getStatus()` | - | `SSEStatus` | 获取当前连接状态 |
+| 名称           | 参数 | 返回值      | 说明                                                        |
+| -------------- | ---- | ----------- | ----------------------------------------------------------- |
+| `connect()`    | -    | -           | 建立连接；`connecting`/`connected` 状态下调用会被忽略       |
+| `disconnect()` | -    | -           | 关闭 EventSource、停止心跳定时器并置为已断开                |
+| `sendPing()`   | -    | -           | 空实现。原生 EventSource 只能单向接收，无法向服务端发送心跳 |
+| `getStatus()`  | -    | `SSEStatus` | 获取当前连接状态                                            |
 
 ## 类型定义
 
@@ -74,16 +74,16 @@ interface SSEProps {
 
 内置中文 i18n 文案（`SSE/i18n/zh-cn.ts`，命名空间 `sse`）：
 
-| key | 文案 |
-|-----|------|
-| `sse.connected` | 已连接 |
-| `sse.connecting` | 正在连接... |
-| `sse.disconnected` | 已断开 |
-| `sse.retrying` | 连接断开，正在重连 {count}/{max} |
-| `sse.error` | 连接失败 |
-| `sse.reconnect` | 重新连接 |
-| `sse.notification` | 通知 |
-| `sse.alert` | 警告 |
+| key                | 文案                             |
+| ------------------ | -------------------------------- |
+| `sse.connected`    | 已连接                           |
+| `sse.connecting`   | 正在连接...                      |
+| `sse.disconnected` | 已断开                           |
+| `sse.retrying`     | 连接断开，正在重连 {count}/{max} |
+| `sse.error`        | 连接失败                         |
+| `sse.reconnect`    | 重新连接                         |
+| `sse.notification` | 通知                             |
+| `sse.alert`        | 警告                             |
 
 消息通知规则：`alert` 弹出 warning 样式、标题“警告”；`notification` 弹出 info 样式、标题“通知”；弹窗时长均为 5000ms。
 

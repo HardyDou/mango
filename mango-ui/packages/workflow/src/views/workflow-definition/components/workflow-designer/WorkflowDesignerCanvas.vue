@@ -31,7 +31,7 @@
           :catalog="catalog"
           :variable-groups="variableGroups"
           root
-          @select="node => $emit('select', node)"
+          @select="(node) => $emit('select', node)"
           @changed="$emit('changed')"
         />
         <div class="end-node">结束</div>
@@ -82,17 +82,17 @@ onBeforeUnmount(() => {
 
 function isCanvasInteractiveTarget(target: HTMLElement) {
   return Boolean(
-    target.closest('.workflow-node-card')
-    || target.closest('.workflow-add-node')
-    || target.closest('.branch-add-plus')
-    || target.closest('.node-picker')
-    || target.closest('.el-popover')
-    || target.closest('.el-select-dropdown')
-    || target.closest('.el-popper')
-    || target.closest('.el-button')
-    || target.closest('button')
-    || target.closest('input')
-    || target.closest('textarea')
+    target.closest('.workflow-node-card') ||
+    target.closest('.workflow-add-node') ||
+    target.closest('.branch-add-plus') ||
+    target.closest('.node-picker') ||
+    target.closest('.el-popover') ||
+    target.closest('.el-select-dropdown') ||
+    target.closest('.el-popper') ||
+    target.closest('.el-button') ||
+    target.closest('button') ||
+    target.closest('input') ||
+    target.closest('textarea'),
   );
 }
 
@@ -202,8 +202,8 @@ function zoomOut() {
   border-radius: 12px;
   background-color: #fbfcfe;
   background-image:
-    linear-gradient(rgba(148, 163, 184, 0.16) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148, 163, 184, 0.16) 1px, transparent 1px);
+    linear-gradient(rgb(148 163 184 / 16%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(148 163 184 / 16%) 1px, transparent 1px);
   background-size: var(--canvas-grid-size, 24px) var(--canvas-grid-size, 24px);
   cursor: grab;
   text-align: center;
@@ -218,9 +218,11 @@ function zoomOut() {
   min-width: 960px;
   min-height: calc(100vh - 360px);
   padding: 0 160px 120px;
+
   --workflow-line-color: #a8b3c7;
   --workflow-line-width: 2px;
   --workflow-branch-bg: #f6f8f9;
+
   transform-origin: top center;
   transition: transform 0.16s ease-out;
 }
@@ -236,8 +238,8 @@ function zoomOut() {
   padding: 8px 10px;
   border: 1px solid var(--el-border-color-light);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 8px 24px rgba(31, 41, 55, 0.12);
+  background: rgb(255 255 255 / 96%);
+  box-shadow: 0 8px 24px rgb(31 41 55 / 12%);
   color: var(--el-text-color-secondary);
   font-weight: 700;
 }

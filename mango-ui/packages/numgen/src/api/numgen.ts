@@ -147,16 +147,23 @@ export interface NumgenPreviewRequest {
 }
 
 export const numgenApi = {
-  pageGenerators: (params?: NumgenGeneratorQuery) => get<any>('/numgen/generators/page', { params: toBackendPageParams(params) })
-    .then(data => fromBackendPageResult(data, fromBackendGenerator, params)),
-  detailGenerator: (id: ApiId) => get<NumgenGenerator>('/numgen/generators/detail', { params: { id } }).then(fromBackendGenerator),
-  createGenerator: (data: NumgenGeneratorSavePayload) => post<ApiId>('/numgen/generators', toBackendGeneratorPayload(data)),
-  updateGenerator: (data: NumgenGeneratorSavePayload) => put<boolean>('/numgen/generators', toBackendGeneratorPayload(data)),
+  pageGenerators: (params?: NumgenGeneratorQuery) =>
+    get<any>('/numgen/generators/page', { params: toBackendPageParams(params) }).then((data) =>
+      fromBackendPageResult(data, fromBackendGenerator, params),
+    ),
+  detailGenerator: (id: ApiId) =>
+    get<NumgenGenerator>('/numgen/generators/detail', { params: { id } }).then(fromBackendGenerator),
+  createGenerator: (data: NumgenGeneratorSavePayload) =>
+    post<ApiId>('/numgen/generators', toBackendGeneratorPayload(data)),
+  updateGenerator: (data: NumgenGeneratorSavePayload) =>
+    put<boolean>('/numgen/generators', toBackendGeneratorPayload(data)),
   updateGeneratorStatus: (id: ApiId, status: number) => put<boolean>('/numgen/generators/status', { id, status }),
   deleteGenerator: (id: ApiId) => del<boolean>('/numgen/generators', { params: { id } }),
 
-  pageRules: (params?: NumgenRuleQuery) => get<any>('/numgen/rules/page', { params: toBackendPageParams(params) })
-    .then(data => fromBackendPageResult(data, fromBackendRule, params)),
+  pageRules: (params?: NumgenRuleQuery) =>
+    get<any>('/numgen/rules/page', { params: toBackendPageParams(params) }).then((data) =>
+      fromBackendPageResult(data, fromBackendRule, params),
+    ),
   detailRule: (id: ApiId) => get<NumgenRule>('/numgen/rules/detail', { params: { id } }).then(fromBackendRule),
   createRule: (data: NumgenRule) => post<ApiId>('/numgen/rules', toBackendRulePayload(data)),
   updateRule: (data: NumgenRule) => put<boolean>('/numgen/rules', toBackendRulePayload(data)),
@@ -174,14 +181,18 @@ export const numgenApi = {
   publishVersion: (request: NumgenVersionPublishRequest) => numgenApi.publishRule({ ruleId: request.versionId }),
   previewVersion: (request: NumgenPreviewRequest) => numgenApi.previewRule(request),
 
-  pageSegments: (params?: NumgenSegmentQuery) => get<any>('/numgen/segments/page', { params: toBackendPageParams(params) })
-    .then(data => fromBackendPageResult(data, fromBackendSegment, params)),
+  pageSegments: (params?: NumgenSegmentQuery) =>
+    get<any>('/numgen/segments/page', { params: toBackendPageParams(params) }).then((data) =>
+      fromBackendPageResult(data, fromBackendSegment, params),
+    ),
   createSegment: (data: NumgenRuleSegment) => post<ApiId>('/numgen/segments', toBackendSegmentPayload(data)),
   updateSegment: (data: NumgenRuleSegment) => put<boolean>('/numgen/segments', toBackendSegmentPayload(data)),
   deleteSegment: (id: ApiId) => del<boolean>('/numgen/segments', { params: { id } }),
 
-  pageHistories: (params?: NumgenHistoryQuery) => get<any>('/numgen/histories/page', { params: toBackendPageParams(params) })
-    .then(data => fromBackendPageResult(data, fromBackendHistory, params)),
+  pageHistories: (params?: NumgenHistoryQuery) =>
+    get<any>('/numgen/histories/page', { params: toBackendPageParams(params) }).then((data) =>
+      fromBackendPageResult(data, fromBackendHistory, params),
+    ),
 
   nextValue: (request: NumgenNextRequest) => post<string>('/numgen/next', request),
   batchValue: (request: NumgenBatchRequest) => post<string[]>('/numgen/batch', request),
@@ -269,7 +280,11 @@ function toBackendPageParams(params?: any) {
   };
 }
 
-function fromBackendPageResult<T>(data: any, mapper: (item: any) => T, params?: { pageNum?: number; pageSize?: number }): PageResult<T> {
+function fromBackendPageResult<T>(
+  data: any,
+  mapper: (item: any) => T,
+  params?: { pageNum?: number; pageSize?: number },
+): PageResult<T> {
   const list = Array.isArray(data?.list) ? data.list.map(mapper) : [];
   return {
     list,

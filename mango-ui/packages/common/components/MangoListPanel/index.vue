@@ -92,7 +92,7 @@ const hasPagination = computed(() => Boolean(slots.pagination));
   padding: 0;
 }
 
-@media (max-width: 720px) {
+@media (width <= 720px) {
   .mango-list-panel {
     padding: 12px;
   }

@@ -11,48 +11,48 @@ import type { MangoDialogExpose } from '@mango/common';
 
 ## Props
 
-| 名称 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `modelValue` | `boolean` | - | 弹框显示状态，支持 `v-model` |
-| `title` | `string` | `undefined` | 标题文本，也可通过 `title` slot 覆盖 |
-| `width` | `string \| number` | `'50%'` | 弹框宽度，语义与 Element Plus Dialog 一致 |
-| `showHeader` | `boolean` | `true` | 是否展示完整顶部标题区 |
-| `showClose` | `boolean` | `true` | 是否展示关闭按钮 |
-| `footerAlign` | `'left' \| 'center' \| 'right'` | `'right'` | 底部插槽对齐方式 |
-| `destroyOnClose` | `boolean` | `false` | 关闭后是否销毁内容 |
-| `modal` | `boolean` | `undefined` | 是否保留遮罩；未指定时普通弹框为 `true`，拖拽弹框为 `false` |
-| `closeOnClickModal` | `boolean` | `false` | 点击遮罩是否关闭 |
-| `lockScroll` | `boolean` | `undefined` | 是否锁定页面滚动；未指定时跟随 `modal` |
-| `zIndex` | `number` | `undefined` | 弹框动态置顶使用的最低层级 |
-| `draggable` | `boolean` | `false` | 是否允许通过标题区或内容区空白内边距拖动整个弹框 |
-| `resizable` | `boolean` | `false` | 是否允许通过四个角自由调整宽高 |
-| `minWidth` | `number` | `320` | 交互调整时的最小宽度（像素） |
-| `minHeight` | `number` | `240` | 交互调整时的最小高度（像素） |
+| 名称                | 类型                            | 默认值      | 说明                                                        |
+| ------------------- | ------------------------------- | ----------- | ----------------------------------------------------------- |
+| `modelValue`        | `boolean`                       | -           | 弹框显示状态，支持 `v-model`                                |
+| `title`             | `string`                        | `undefined` | 标题文本，也可通过 `title` slot 覆盖                        |
+| `width`             | `string \| number`              | `'50%'`     | 弹框宽度，语义与 Element Plus Dialog 一致                   |
+| `showHeader`        | `boolean`                       | `true`      | 是否展示完整顶部标题区                                      |
+| `showClose`         | `boolean`                       | `true`      | 是否展示关闭按钮                                            |
+| `footerAlign`       | `'left' \| 'center' \| 'right'` | `'right'`   | 底部插槽对齐方式                                            |
+| `destroyOnClose`    | `boolean`                       | `false`     | 关闭后是否销毁内容                                          |
+| `modal`             | `boolean`                       | `undefined` | 是否保留遮罩；未指定时普通弹框为 `true`，拖拽弹框为 `false` |
+| `closeOnClickModal` | `boolean`                       | `false`     | 点击遮罩是否关闭                                            |
+| `lockScroll`        | `boolean`                       | `undefined` | 是否锁定页面滚动；未指定时跟随 `modal`                      |
+| `zIndex`            | `number`                        | `undefined` | 弹框动态置顶使用的最低层级                                  |
+| `draggable`         | `boolean`                       | `false`     | 是否允许通过标题区或内容区空白内边距拖动整个弹框            |
+| `resizable`         | `boolean`                       | `false`     | 是否允许通过四个角自由调整宽高                              |
+| `minWidth`          | `number`                        | `320`       | 交互调整时的最小宽度（像素）                                |
+| `minHeight`         | `number`                        | `240`       | 交互调整时的最小高度（像素）                                |
 
 ## Events
 
-| 名称 | 参数 | 说明 |
-|------|------|------|
+| 名称                | 参数      | 说明             |
+| ------------------- | --------- | ---------------- |
 | `update:modelValue` | `boolean` | 弹框显示状态变化 |
-| `open` | - | 弹框打开 |
-| `opened` | - | 弹框打开动画完成 |
-| `close` | - | 弹框关闭 |
-| `closed` | - | 弹框关闭动画完成 |
+| `open`              | -         | 弹框打开         |
+| `opened`            | -         | 弹框打开动画完成 |
+| `close`             | -         | 弹框关闭         |
+| `closed`            | -         | 弹框关闭动画完成 |
 
 ## Expose
 
-| 名称 | 参数 | 说明 |
-|------|------|------|
-| `bringToFront()` | - | 将已打开的当前实例提升到其它 `MangoDialog` 之上 |
+| 名称             | 参数 | 说明                                            |
+| ---------------- | ---- | ----------------------------------------------- |
+| `bringToFront()` | -    | 将已打开的当前实例提升到其它 `MangoDialog` 之上 |
 
 ## Slots
 
-| 名称 | 说明 |
-|------|------|
-| `default` | 内容区域。内容区独立滚动，弹框最大高度为视口高度的 90% |
-| `title` | 自定义标题内容 |
-| `headerExtra` | 标题右侧扩展区域 |
-| `footer` | 底部按钮区域。未传入时不渲染底部 |
+| 名称          | 说明                                                   |
+| ------------- | ------------------------------------------------------ |
+| `default`     | 内容区域。内容区独立滚动，弹框最大高度为视口高度的 90% |
+| `title`       | 自定义标题内容                                         |
+| `headerExtra` | 标题右侧扩展区域                                       |
+| `footer`      | 底部按钮区域。未传入时不渲染底部                       |
 
 ## 使用示例
 
@@ -70,9 +70,7 @@ const visible = ref(false);
   <el-button @click="visible = true">打开弹框</el-button>
 
   <MangoDialog v-model="visible" title="新增应用" width="720px">
-    <template #default>
-      弹框内容
-    </template>
+    <template #default> 弹框内容 </template>
 
     <template #footer>
       <el-button @click="visible = false">取消</el-button>

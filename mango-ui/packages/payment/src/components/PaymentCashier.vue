@@ -1949,6 +1949,7 @@ function formatExpire(value: string, now: number) {
 .qr-material {
   --qr-provider-color: var(--el-color-primary);
   --qr-provider-color-soft: var(--el-color-primary-light-9);
+
   display: grid;
   width: min(100%, 286px);
   margin: 0 auto;
@@ -2128,13 +2129,13 @@ function formatExpire(value: string, now: number) {
   line-height: 1.5;
 }
 
-@media (max-width: 1180px) {
+@media (width <= 1180px) {
   .qr-code-box {
     width: 168px;
   }
 }
 
-@media (max-width: 760px) {
+@media (width <= 760px) {
   .cashier-order {
     grid-template-columns: 1fr;
   }
@@ -2157,7 +2158,7 @@ function formatExpire(value: string, now: number) {
   }
 }
 
-@media (max-width: 640px) {
+@media (width <= 640px) {
   .cashier-page {
     padding: 12px;
   }

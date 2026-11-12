@@ -46,7 +46,10 @@ export function decodeRealtimeEnvelope(raw: unknown): RealtimeMessage {
     try {
       return normalizeRealtimeEnvelope(JSON.parse(raw) as RealtimeMessage);
     } catch {
-      return normalizeRealtimeEnvelope({ event: { domain: 'default', name: 'message' }, payload: { type: 'text', text: raw } });
+      return normalizeRealtimeEnvelope({
+        event: { domain: 'default', name: 'message' },
+        payload: { type: 'text', text: raw },
+      });
     }
   }
   return normalizeRealtimeEnvelope(raw as RealtimeMessage);
@@ -101,11 +104,35 @@ export function normalizeMessageKind(message: RealtimeMessage): RealtimeMessageK
   if (message.kind) return message.kind;
   const eventName = messageEventName(message);
   const bareEventName = message.event?.name || message.type || '';
-  if (eventName === 'system.heartbeat.ping' || bareEventName === 'heartbeat.ping' || eventName === 'ping' || message.type === 'HEART') return REALTIME_MESSAGE_KIND.HEART;
-  if (eventName === 'system.heartbeat.pong' || bareEventName === 'heartbeat.pong' || eventName === 'pong' || message.type === 'PONG') return REALTIME_MESSAGE_KIND.PONG;
-  if (eventName === 'system.connection.connected' || bareEventName === 'connection.connected' || message.type === 'NOTICE') return REALTIME_MESSAGE_KIND.NOTICE;
-  if (eventName.endsWith('.accepted') || eventName === 'ack' || message.type === 'ACK') return REALTIME_MESSAGE_KIND.ACK;
-  if (eventName === 'error' || eventName.endsWith('.error') || message.type === 'ERROR' || message.status?.state === 'ERROR') return REALTIME_MESSAGE_KIND.ERROR;
+  if (
+    eventName === 'system.heartbeat.ping' ||
+    bareEventName === 'heartbeat.ping' ||
+    eventName === 'ping' ||
+    message.type === 'HEART'
+  )
+    return REALTIME_MESSAGE_KIND.HEART;
+  if (
+    eventName === 'system.heartbeat.pong' ||
+    bareEventName === 'heartbeat.pong' ||
+    eventName === 'pong' ||
+    message.type === 'PONG'
+  )
+    return REALTIME_MESSAGE_KIND.PONG;
+  if (
+    eventName === 'system.connection.connected' ||
+    bareEventName === 'connection.connected' ||
+    message.type === 'NOTICE'
+  )
+    return REALTIME_MESSAGE_KIND.NOTICE;
+  if (eventName.endsWith('.accepted') || eventName === 'ack' || message.type === 'ACK')
+    return REALTIME_MESSAGE_KIND.ACK;
+  if (
+    eventName === 'error' ||
+    eventName.endsWith('.error') ||
+    message.type === 'ERROR' ||
+    message.status?.state === 'ERROR'
+  )
+    return REALTIME_MESSAGE_KIND.ERROR;
   return undefined;
 }
 
@@ -116,12 +143,14 @@ export function isSystemEnvelope(message: RealtimeMessage): boolean {
 
 export function isHeartbeatEnvelope(message: RealtimeMessage): boolean {
   const kind = normalizeMessageKind(message);
-  return kind === REALTIME_MESSAGE_KIND.HEART
-    || kind === REALTIME_MESSAGE_KIND.PONG
-    || message.type === 'ping'
-    || message.type === 'pong'
-    || Boolean(message.headers?.heartbeat)
-    || Boolean(message.metadata?.heartbeat);
+  return (
+    kind === REALTIME_MESSAGE_KIND.HEART ||
+    kind === REALTIME_MESSAGE_KIND.PONG ||
+    message.type === 'ping' ||
+    message.type === 'pong' ||
+    Boolean(message.headers?.heartbeat) ||
+    Boolean(message.metadata?.heartbeat)
+  );
 }
 
 export function getPayloadText(message: RealtimeMessage): string {

@@ -43,7 +43,8 @@ export async function initBackEndControlRoutes(): Promise<void> {
 
     // 存储路由列表
     storesRoutesList.setRoutesList(accessRoutes);
-    const activeTopRoute = accessRoutes.find(route => containsMenuPath(route, router.currentRoute.value.path)) || accessRoutes[0];
+    const activeTopRoute =
+      accessRoutes.find((route) => containsMenuPath(route, router.currentRoute.value.path)) || accessRoutes[0];
     if (activeTopRoute?.path) {
       storesRoutesList.setActiveTopRoutePath(activeTopRoute.path);
     }
@@ -62,14 +63,18 @@ export async function initBackEndControlRoutes(): Promise<void> {
     }
 
     // 清空 Layout 的现有子路由（避免与 staticRoutes 重复）
-    const layoutRoute = router.getRoutes().find(r => r.name === 'Layout');
+    const layoutRoute = router.getRoutes().find((r) => r.name === 'Layout');
     if (layoutRoute && layoutRoute.children) {
       // 保留布局相关的路由，只清空业务子路由
       layoutRoute.children = [];
       if (import.meta.env.DEV) console.log('[backEnd] Cleared Layout children');
     }
 
-    if (import.meta.env.DEV) console.log('[backEnd] tabBarRoutes:', tabBarRoutes.map(r => ({ path: r.path, name: r.name })));
+    if (import.meta.env.DEV)
+      console.log(
+        '[backEnd] tabBarRoutes:',
+        tabBarRoutes.map((r) => ({ path: r.path, name: r.name })),
+      );
 
     tabBarRoutes.forEach((route) => {
       if (import.meta.env.DEV) console.log('[backEnd] Adding route to Layout:', route.path, route.name);
@@ -105,7 +110,11 @@ export async function initBackEndControlRoutes(): Promise<void> {
       meta: { title: '404', isHide: true },
     });
 
-    if (import.meta.env.DEV) console.log('[backEnd] Final routes:', router.getRoutes().map(r => ({ path: r.path, name: r.name, children: r.children?.map(c => c.path) })));
+    if (import.meta.env.DEV)
+      console.log(
+        '[backEnd] Final routes:',
+        router.getRoutes().map((r) => ({ path: r.path, name: r.name, children: r.children?.map((c) => c.path) })),
+      );
 
     // 更新主题配置中的路由权限模式
     preferencesStore.isRequestRoutes = true;

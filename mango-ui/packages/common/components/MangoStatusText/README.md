@@ -11,8 +11,8 @@ import type { MangoStatusTone } from '@mango/common';
 
 ## Props
 
-| 名称 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
+| 名称   | 类型              | 默认值      | 说明     |
+| ------ | ----------------- | ----------- | -------- |
 | `tone` | `MangoStatusTone` | `'neutral'` | 状态色调 |
 
 ## MangoStatusTone
@@ -21,19 +21,19 @@ import type { MangoStatusTone } from '@mango/common';
 type MangoStatusTone = 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'neutral';
 ```
 
-| 值 | 说明 | CSS 变量 |
-|---|------|---------|
-| `primary` | 主色调 | `--mango-color-status-primary` |
-| `success` | 成功/完成 | `--mango-color-status-success` |
+| 值        | 说明        | CSS 变量                       |
+| --------- | ----------- | ------------------------------ |
+| `primary` | 主色调      | `--mango-color-status-primary` |
+| `success` | 成功/完成   | `--mango-color-status-success` |
 | `warning` | 警告/处理中 | `--mango-color-status-warning` |
-| `danger` | 危险/失败 | `--mango-color-status-danger` |
-| `info` | 信息/提示 | `--mango-color-status-info` |
-| `neutral` | 中性/默认 | `--mango-color-status-neutral` |
+| `danger`  | 危险/失败   | `--mango-color-status-danger`  |
+| `info`    | 信息/提示   | `--mango-color-status-info`    |
+| `neutral` | 中性/默认   | `--mango-color-status-neutral` |
 
 ## Slots
 
-| 名称 | 说明 |
-|------|------|
+| 名称      | 说明         |
+| --------- | ------------ |
 | `default` | 状态文案内容 |
 
 ## 使用示例

@@ -49,7 +49,7 @@ async function loginToken(request: APIRequestContext, tenant: LoginTenant): Prom
     },
   });
   expect(response.status()).toBe(200);
-  const body = await response.json() as ApiResult<{ accessToken: string }>;
+  const body = (await response.json()) as ApiResult<{ accessToken: string }>;
   expect(body.code).toBe(200);
   expect(body.data.accessToken).toBeTruthy();
   return body.data.accessToken;
@@ -65,7 +65,7 @@ async function readPersonal(request: APIRequestContext, token: string, pageCode:
     params: { pageCode },
   });
   expect(response.status()).toBe(200);
-  return await response.json() as ApiResult<PersonalLayout | null>;
+  return (await response.json()) as ApiResult<PersonalLayout | null>;
 }
 
 async function deletePersonal(request: APIRequestContext, token: string, pageCode: string) {
@@ -74,7 +74,7 @@ async function deletePersonal(request: APIRequestContext, token: string, pageCod
     params: { pageCode },
   });
   expect(response.status()).toBe(200);
-  return await response.json() as ApiResult<boolean>;
+  return (await response.json()) as ApiResult<boolean>;
 }
 
 async function installBrowserSession(page: Page) {
@@ -101,10 +101,7 @@ async function installBrowserSession(page: Page) {
     const userInfo = body.data;
     sessionStorage.setItem('MANGO_TOKEN', userInfo.accessToken);
     sessionStorage.setItem('MANGO_REFRESH_TOKEN', userInfo.refreshToken || '');
-    sessionStorage.setItem(
-      'MANGO_TOKEN_EXPIRES_AT',
-      String(Date.now() + Number(userInfo.expiresIn || 7200) * 1000),
-    );
+    sessionStorage.setItem('MANGO_TOKEN_EXPIRES_AT', String(Date.now() + Number(userInfo.expiresIn || 7200) * 1000));
     sessionStorage.setItem('userInfo', JSON.stringify(userInfo));
     sessionStorage.setItem('tenantId', String(userInfo.tenantId || '1'));
     document.cookie = `MANGO_TOKEN=${encodeURIComponent(userInfo.accessToken)}; path=/; SameSite=Lax`;
@@ -124,12 +121,14 @@ test.describe('个人栅格布局真实服务入口 @p0 @grid-layout @api', () =
     const layoutTwo = JSON.stringify({
       schemaVersion: 1,
       pageCode,
-      items: [{
-        id: 'welcome',
-        widgetType: 'system.welcome',
-        layout: { x: 1, y: 0, w: 5, h: 2 },
-        props: { title: 'updated' },
-      }],
+      items: [
+        {
+          id: 'welcome',
+          widgetType: 'system.welcome',
+          layout: { x: 1, y: 0, w: 5, h: 2 },
+          props: { title: 'updated' },
+        },
+      ],
     });
 
     await deletePersonal(request, platformToken, pageCode);
@@ -141,7 +140,7 @@ test.describe('个人栅格布局真实服务入口 @p0 @grid-layout @api', () =
         data: { pageCode, layoutJson: layoutOne },
       });
       expect(savedResponse.status()).toBe(200);
-      const saved = await savedResponse.json() as ApiResult<PersonalLayout>;
+      const saved = (await savedResponse.json()) as ApiResult<PersonalLayout>;
       expect(saved.data).toMatchObject({
         tenantId: '1',
         pageCode,
@@ -155,7 +154,7 @@ test.describe('个人栅格布局真实服务入口 @p0 @grid-layout @api', () =
         data: { pageCode, layoutJson: layoutTwo },
       });
       expect(updatedResponse.status()).toBe(200);
-      const updated = await updatedResponse.json() as ApiResult<PersonalLayout>;
+      const updated = (await updatedResponse.json()) as ApiResult<PersonalLayout>;
       expect(updated.data.id).toBe(saved.data.id);
       expect(updated.data.layoutJson).toBe(layoutTwo);
 
@@ -166,7 +165,7 @@ test.describe('个人栅格布局真实服务入口 @p0 @grid-layout @api', () =
         params: { pageCode: '' },
       });
       expect(validationResponse.status()).toBe(400);
-      const validationBody = await validationResponse.json() as ApiResult<null>;
+      const validationBody = (await validationResponse.json()) as ApiResult<null>;
       expect(validationBody.msg).toContain('pageCode不能为空');
       expect(JSON.stringify(validationBody)).not.toContain('ConstraintDeclarationException');
     } finally {
@@ -198,10 +197,12 @@ test.describe('栅格设计器真实消费链 @p0 @grid-layout @ui', () => {
     page.on('console', (message) => {
       if (message.type() === 'error') consoleErrors.push(message.text());
     });
-    page.on('pageerror', error => pageErrors.push(error.message));
-    page.on('requestfailed', requestFailure => requestFailures.push(
-      `${requestFailure.method()} ${requestFailure.url()} ${requestFailure.failure()?.errorText || ''}`,
-    ));
+    page.on('pageerror', (error) => pageErrors.push(error.message));
+    page.on('requestfailed', (requestFailure) =>
+      requestFailures.push(
+        `${requestFailure.method()} ${requestFailure.url()} ${requestFailure.failure()?.errorText || ''}`,
+      ),
+    );
     page.on('response', (response) => {
       if (response.status() >= 500) serverErrors.push(`${response.status()} ${response.url()}`);
     });
@@ -212,13 +213,15 @@ test.describe('栅格设计器真实消费链 @p0 @grid-layout @ui', () => {
         data: { name: homeName, layoutJson, setDefault: false },
       });
       expect(createHomeResponse.status()).toBe(200);
-      const createdHome = await createHomeResponse.json() as ApiResult<HomePage>;
+      const createdHome = (await createHomeResponse.json()) as ApiResult<HomePage>;
       homeId = String(createdHome.data.id);
       expect(homeId).toBeTruthy();
 
       await installBrowserSession(page);
       await page.goto(`/#/home/${homeId}`);
-      await expect(page.locator('[data-page="home.workbench"]')).toHaveAttribute('data-state', 'ready', { timeout: 15_000 });
+      await expect(page.locator('[data-page="home.workbench"]')).toHaveAttribute('data-state', 'ready', {
+        timeout: 15_000,
+      });
       await expect(page.getByRole('button', { name: '编辑布局' })).toBeEnabled();
       await page.getByRole('button', { name: '编辑布局' }).click();
       await expect(page.locator('[data-surface="grid-designer"]')).toBeVisible();
@@ -231,10 +234,9 @@ test.describe('栅格设计器真实消费链 @p0 @grid-layout @ui', () => {
       await expect(resetConfirmation).toBeVisible();
       await resetConfirmation.getByRole('button', { name: '恢复默认', exact: true }).click();
 
-      const saveResponse = page.waitForResponse(response => (
-        response.url().includes('/api/home/pages/layout')
-          && response.request().method() === 'PUT'
-      ));
+      const saveResponse = page.waitForResponse(
+        (response) => response.url().includes('/api/home/pages/layout') && response.request().method() === 'PUT',
+      );
       await page.getByRole('button', { name: '保存布局' }).click();
       expect((await saveResponse).status()).toBe(200);
       await expect(page.getByRole('button', { name: '编辑布局' })).toBeVisible();

@@ -12,7 +12,7 @@ export function registerMangoWorkflowBusinessExampleAdminPages() {
   registerModulePages({
     moduleCode: 'mango-workflow',
     pages: {
-      'workflow/business-form/index': () => import('./index').then(m => m.WorkflowBusinessFormView),
+      'workflow/business-form/index': () => import('./index').then((m) => m.WorkflowBusinessFormView),
     },
   });
 }

@@ -461,7 +461,7 @@ onMounted(loadData);
 
 .workflow-launch-card:hover {
   border-color: var(--el-color-primary-light-5);
-  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 8px 22px rgb(15 23 42 / 8%);
   transform: translateY(-1px);
 }
 

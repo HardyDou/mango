@@ -1,9 +1,6 @@
 <template>
   <section class="mango-grid-widget-calendar">
-    <div
-      class="mango-grid-widget-calendar__body"
-      :class="{ 'is-loading': loading }"
-    >
+    <div class="mango-grid-widget-calendar__body" :class="{ 'is-loading': loading }">
       <header class="mango-grid-widget-calendar__header">
         <div class="mango-grid-widget-calendar__date-row">
           <strong>{{ displayDate }}</strong>
@@ -14,29 +11,18 @@
       </header>
 
       <div class="mango-grid-widget-calendar__tags">
-        <span
-          class="mango-grid-widget-calendar__tag is-workday"
-        >
+        <span class="mango-grid-widget-calendar__tag is-workday">
           {{ statusTag }}
         </span>
-        <span
-          v-if="lunarText"
-          class="mango-grid-widget-calendar__tag is-lunar"
-        >
+        <span v-if="lunarText" class="mango-grid-widget-calendar__tag is-lunar">
           {{ lunarText }}
         </span>
-        <span
-          v-if="specialText"
-          class="mango-grid-widget-calendar__tag is-special"
-        >
+        <span v-if="specialText" class="mango-grid-widget-calendar__tag is-special">
           {{ specialText }}
         </span>
       </div>
 
-      <p
-        v-if="summaryText"
-        class="mango-grid-widget-calendar__summary"
-      >
+      <p v-if="summaryText" class="mango-grid-widget-calendar__summary">
         {{ summaryText }}
       </p>
     </div>
@@ -89,7 +75,7 @@ const yearText = computed(() => {
 
 const lunarText = computed(() => today.value?.lunarText || lunarDay.value?.lunarText || '');
 
-const statusTag = computed(() => today.value?.workday ? '工作日' : '休息日');
+const statusTag = computed(() => (today.value?.workday ? '工作日' : '休息日'));
 
 const specialText = computed(() => {
   if (!today.value) {

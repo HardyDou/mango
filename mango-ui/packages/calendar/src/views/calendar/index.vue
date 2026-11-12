@@ -1364,7 +1364,7 @@ function parseYearPickerValue(value?: string | number) {
   margin-top: 16px;
 }
 
-@media (max-width: 1180px) {
+@media (width <= 1180px) {
   .calendar-layout {
     grid-template-columns: 1fr;
   }
@@ -1378,7 +1378,7 @@ function parseYearPickerValue(value?: string | number) {
   }
 }
 
-@media (max-width: 760px) {
+@media (width <= 760px) {
   .side-filter {
     grid-template-columns: 1fr;
   }

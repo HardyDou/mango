@@ -10,11 +10,11 @@ export function registerMangoTemplateAdminPages() {
   registerModulePages({
     moduleCode: 'mango-template',
     pages: {
-      'system/template/index': () => import('./index').then(m => m.TemplateListView),
-      'template/templates/index': () => import('./index').then(m => m.TemplateListView),
-      'template/categories/index': () => import('./index').then(m => m.TemplateCategoryView),
-      'template/render-records/index': () => import('./index').then(m => m.TemplateRenderRecordsView),
-      'debug/capabilities/template': () => import('./index').then(m => m.TemplateServiceGuideView),
+      'system/template/index': () => import('./index').then((m) => m.TemplateListView),
+      'template/templates/index': () => import('./index').then((m) => m.TemplateListView),
+      'template/categories/index': () => import('./index').then((m) => m.TemplateCategoryView),
+      'template/render-records/index': () => import('./index').then((m) => m.TemplateRenderRecordsView),
+      'debug/capabilities/template': () => import('./index').then((m) => m.TemplateServiceGuideView),
     },
   });
 }

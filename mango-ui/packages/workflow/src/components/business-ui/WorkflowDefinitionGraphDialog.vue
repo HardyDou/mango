@@ -25,17 +25,22 @@ import type { WorkflowDefinitionGraphProps } from './types';
 
 defineOptions({ name: 'WorkflowDefinitionGraphDialog' });
 
-const props = withDefaults(defineProps<WorkflowDefinitionGraphProps & {
-  modelValue: boolean;
-  title?: string;
-}>(), {
-  modelValue: false,
-  title: '流程图',
-  node: null,
-  currentNodeKey: '',
-  visitedNodeKeys: () => [],
-  status: '',
-});
+const props = withDefaults(
+  defineProps<
+    WorkflowDefinitionGraphProps & {
+      modelValue: boolean;
+      title?: string;
+    }
+  >(),
+  {
+    modelValue: false,
+    title: '流程图',
+    node: null,
+    currentNodeKey: '',
+    visitedNodeKeys: () => [],
+    status: '',
+  },
+);
 
 const emit = defineEmits<{
   'update:modelValue': [value: boolean];
@@ -43,7 +48,7 @@ const emit = defineEmits<{
 
 const visible = computed({
   get: () => props.modelValue,
-  set: value => emit('update:modelValue', value),
+  set: (value) => emit('update:modelValue', value),
 });
 </script>
 

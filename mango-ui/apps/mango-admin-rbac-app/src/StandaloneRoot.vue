@@ -1,32 +1,18 @@
 <template>
   <router-view v-if="route.path === '/login'" />
-  <div
-    v-else-if="debugShell"
-    class="rbac-standalone"
-  >
+  <div v-else-if="debugShell" class="rbac-standalone">
     <aside class="rbac-standalone__aside">
       <div class="rbac-standalone__brand">
         <strong>RBAC</strong>
         <span>权限模块</span>
       </div>
       <el-scrollbar>
-        <el-menu
-          :default-active="activePath"
-          class="rbac-standalone__menu"
-          @select="handleMenuSelect"
-        >
-          <RbacMenuNode
-            v-for="menu in menus"
-            :key="menu.path || menu.menuCode"
-            :menu="menu"
-          />
+        <el-menu :default-active="activePath" class="rbac-standalone__menu" @select="handleMenuSelect">
+          <RbacMenuNode v-for="menu in menus" :key="menu.path || menu.menuCode" :menu="menu" />
         </el-menu>
       </el-scrollbar>
     </aside>
-    <main
-      v-loading="loading"
-      class="rbac-standalone__main"
-    >
+    <main v-loading="loading" class="rbac-standalone__main">
       <header class="rbac-standalone__header">
         <div>
           <h1>{{ activeMenu?.menuName || 'RBAC 权限模块' }}</h1>
@@ -34,22 +20,12 @@
         </div>
       </header>
       <section class="rbac-standalone__content">
-        <RbacRuntimeRoot
-          :menu="activeMenu"
-          :empty-description="emptyDescription"
-        />
+        <RbacRuntimeRoot :menu="activeMenu" :empty-description="emptyDescription" />
       </section>
     </main>
   </div>
-  <main
-    v-else
-    v-loading="loading"
-    class="rbac-page-only"
-  >
-    <RbacRuntimeRoot
-      :menu="activeMenu"
-      :empty-description="emptyDescription"
-    />
+  <main v-else v-loading="loading" class="rbac-page-only">
+    <RbacRuntimeRoot :menu="activeMenu" :empty-description="emptyDescription" />
   </main>
 </template>
 
@@ -72,7 +48,9 @@ const DEBUG_SHELL_KEY = 'MANGO_RBAC_DEBUG_SHELL';
 
 const activePath = computed(() => route.path);
 const debugShell = computed(() => route.query.debugShell === '1' || sessionStorage.getItem(DEBUG_SHELL_KEY) === '1');
-const activeMenu = computed(() => findMenuByPath(menus.value, route.path) || (route.path === '/' ? firstPageMenu(menus.value[0]) : undefined));
+const activeMenu = computed(
+  () => findMenuByPath(menus.value, route.path) || (route.path === '/' ? firstPageMenu(menus.value[0]) : undefined),
+);
 const emptyDescription = computed(() => {
   if (loading.value) {
     return '正在加载 RBAC 页面';
@@ -104,7 +82,7 @@ watch(
     if (path !== '/login' && menus.value.length === 0 && Session.getToken()) {
       void loadMenus();
     }
-  }
+  },
 );
 
 watch(
@@ -116,7 +94,7 @@ watch(
       sessionStorage.removeItem(DEBUG_SHELL_KEY);
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 async function loadMenus() {
@@ -132,7 +110,8 @@ async function loadMenus() {
       params: { fmt: 'tree', appCode: 'internal-admin' },
     });
     menus.value = normalizeRbacMenus(response || []);
-    const selected = findMenuByPath(menus.value, route.path) || (route.path === '/' ? firstPageMenu(menus.value[0]) : undefined);
+    const selected =
+      findMenuByPath(menus.value, route.path) || (route.path === '/' ? firstPageMenu(menus.value[0]) : undefined);
     if (selected?.path && route.path === '/') {
       await router.replace({
         path: selected.path,
@@ -147,24 +126,20 @@ async function loadMenus() {
 }
 
 function normalizeRbacMenus(source: RbacMenu[]) {
-  return filterVisible(source)
-    .map(pickRbacBranch)
-    .filter(Boolean) as RbacMenu[];
+  return filterVisible(source).map(pickRbacBranch).filter(Boolean) as RbacMenu[];
 }
 
 function filterVisible(source: RbacMenu[]): RbacMenu[] {
   return source
-    .filter(menu => menu.menuType !== MenuTypeEnum.BUTTON && menu.visible !== 0)
-    .map(menu => ({
+    .filter((menu) => menu.menuType !== MenuTypeEnum.BUTTON && menu.visible !== 0)
+    .map((menu) => ({
       ...menu,
       children: menu.children ? filterVisible(menu.children) : [],
     }));
 }
 
 function pickRbacBranch(menu: RbacMenu): RbacMenu | undefined {
-  const children = (menu.children || [])
-    .map(pickRbacBranch)
-    .filter(Boolean) as RbacMenu[];
+  const children = (menu.children || []).map(pickRbacBranch).filter(Boolean) as RbacMenu[];
   const isRbacPage = Boolean(resolveRbacComponent(menu.component));
   if (!isRbacPage && children.length === 0) {
     return undefined;
@@ -178,10 +153,7 @@ function pickRbacBranch(menu: RbacMenu): RbacMenu | undefined {
 function renderMenuNode(menu: RbacMenu): any {
   const children = menu.children || [];
   const icon = menu.icon ? (Icons as any)[menu.icon] : undefined;
-  const title = [
-    icon ? h(ElIcon, null, () => h(icon)) : null,
-    h('span', null, menu.menuName),
-  ];
+  const title = [icon ? h(ElIcon, null, () => h(icon)) : null, h('span', null, menu.menuName)];
   if (children.length > 0) {
     return h(
       ElSubMenu,
@@ -189,14 +161,10 @@ function renderMenuNode(menu: RbacMenu): any {
       {
         title: () => title,
         default: () => children.map(renderMenuNode),
-      }
+      },
     );
   }
-  return h(
-    ElMenuItem as any,
-    { index: menu.path || '/' },
-    () => title
-  );
+  return h(ElMenuItem as any, { index: menu.path || '/' }, () => title);
 }
 
 function handleMenuSelect(path: string) {

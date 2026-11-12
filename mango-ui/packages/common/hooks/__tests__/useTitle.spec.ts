@@ -60,12 +60,14 @@ describe('useTitle Hook', () => {
 
     it('should return updateTitle and appName', () => {
       let result: ReturnType<typeof useTitle> | undefined;
-      const wrapper = mount(defineComponent({
-        setup() {
-          result = useTitle();
-          return () => h('div');
-        },
-      }));
+      const wrapper = mount(
+        defineComponent({
+          setup() {
+            result = useTitle();
+            return () => h('div');
+          },
+        }),
+      );
 
       expect(result).toHaveProperty('updateTitle');
       expect(result).toHaveProperty('appName');

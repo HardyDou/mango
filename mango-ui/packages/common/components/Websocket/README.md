@@ -22,34 +22,34 @@ import { Websocket } from '@mango/common';
 
 ## Props
 
-| 名称 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `url` | `string` | `'/mango-message/ws/chat'` | WebSocket 端点（相对路径） |
-| `showStatus` | `boolean` | `true` | 是否展示连接状态圆点与文案 |
-| `showNotifications` | `boolean` | `true` | 是否对收到的消息弹出 Element Plus 通知；同时控制 `message` 事件是否抛出 |
-| `maxRetries` | `number` | `6` | 最大重试次数 |
-| `heartbeatInterval` | `number` | `30000` | 心跳发送间隔（毫秒） |
-| `enabled` | `boolean` | `true` | 是否在挂载后自动连接 |
+| 名称                | 类型      | 默认值                     | 说明                                                                    |
+| ------------------- | --------- | -------------------------- | ----------------------------------------------------------------------- |
+| `url`               | `string`  | `'/mango-message/ws/chat'` | WebSocket 端点（相对路径）                                              |
+| `showStatus`        | `boolean` | `true`                     | 是否展示连接状态圆点与文案                                              |
+| `showNotifications` | `boolean` | `true`                     | 是否对收到的消息弹出 Element Plus 通知；同时控制 `message` 事件是否抛出 |
+| `maxRetries`        | `number`  | `6`                        | 最大重试次数                                                            |
+| `heartbeatInterval` | `number`  | `30000`                    | 心跳发送间隔（毫秒）                                                    |
+| `enabled`           | `boolean` | `true`                     | 是否在挂载后自动连接                                                    |
 
 ## Events
 
-| 名称 | 参数 | 说明 |
-|------|------|------|
-| `connected` | - | 连接打开（`onopen`），同时清零重试计数并启动心跳 |
-| `disconnected` | - | 连接关闭（`onclose`）或主动断开 |
-| `message` | `data: WSMessage` | 收到业务消息；仅当 `showNotifications` 为 `true` 且消息 `content` 非空时抛出 |
-| `error` | `error: Event` | WebSocket `onerror` 原生事件对象 |
-| `retry` | `count: number` | 进入重试调度时抛出当前次数（从 1 开始） |
+| 名称           | 参数              | 说明                                                                         |
+| -------------- | ----------------- | ---------------------------------------------------------------------------- |
+| `connected`    | -                 | 连接打开（`onopen`），同时清零重试计数并启动心跳                             |
+| `disconnected` | -                 | 连接关闭（`onclose`）或主动断开                                              |
+| `message`      | `data: WSMessage` | 收到业务消息；仅当 `showNotifications` 为 `true` 且消息 `content` 非空时抛出 |
+| `error`        | `error: Event`    | WebSocket `onerror` 原生事件对象                                             |
+| `retry`        | `count: number`   | 进入重试调度时抛出当前次数（从 1 开始）                                      |
 
 ## Expose
 
-| 名称 | 参数 | 返回值 | 说明 |
-|------|------|--------|------|
-| `connect()` | - | - | 建立连接；`connecting`/`connected` 状态下调用会被忽略 |
-| `disconnect()` | - | - | 关闭连接、清理心跳与重连定时器并置为已断开 |
-| `send(data)` | `data: WSMessage` | - | 以 JSON 文本发送消息；连接非 `OPEN` 状态时静默丢弃 |
-| `sendPing()` | - | - | 连接打开时发送 `{ type: 'ping' }`，未打开则不执行 |
-| `getStatus()` | - | `WSStatus` | 获取当前连接状态 |
+| 名称           | 参数              | 返回值     | 说明                                                  |
+| -------------- | ----------------- | ---------- | ----------------------------------------------------- |
+| `connect()`    | -                 | -          | 建立连接；`connecting`/`connected` 状态下调用会被忽略 |
+| `disconnect()` | -                 | -          | 关闭连接、清理心跳与重连定时器并置为已断开            |
+| `send(data)`   | `data: WSMessage` | -          | 以 JSON 文本发送消息；连接非 `OPEN` 状态时静默丢弃    |
+| `sendPing()`   | -                 | -          | 连接打开时发送 `{ type: 'ping' }`，未打开则不执行     |
+| `getStatus()`  | -                 | `WSStatus` | 获取当前连接状态                                      |
 
 ## 类型定义
 
@@ -75,15 +75,15 @@ interface WebsocketProps {
 
 内置中文 i18n 文案（`Websocket/i18n/zh-cn.ts`，命名空间 `websocket`）：
 
-| key | 文案 |
-|-----|------|
-| `websocket.connected` | 已连接 |
-| `websocket.connecting` | 正在连接... |
-| `websocket.disconnected` | 已断开 |
-| `websocket.retrying` | 连接断开，正在重连 {count}/{max} |
-| `websocket.error` | 连接失败 |
-| `websocket.reconnect` | 重新连接 |
-| `websocket.message` | 消息 |
+| key                      | 文案                             |
+| ------------------------ | -------------------------------- |
+| `websocket.connected`    | 已连接                           |
+| `websocket.connecting`   | 正在连接...                      |
+| `websocket.disconnected` | 已断开                           |
+| `websocket.retrying`     | 连接断开，正在重连 {count}/{max} |
+| `websocket.error`        | 连接失败                         |
+| `websocket.reconnect`    | 重新连接                         |
+| `websocket.message`      | 消息                             |
 
 业务消息统一弹出 info 样式通知，标题为“消息”，内容为 `content`，弹窗时长 5000ms。
 
@@ -153,11 +153,7 @@ function reconnect() {
 </script>
 
 <template>
-  <Websocket
-    ref="wsRef"
-    :show-notifications="false"
-    @disconnected="onDisconnected"
-  />
+  <Websocket ref="wsRef" :show-notifications="false" @disconnected="onDisconnected" />
   <el-button size="small" @click="reconnect">重新连接</el-button>
 </template>
 ```

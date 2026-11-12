@@ -78,7 +78,7 @@ async function login(request: APIRequestContext): Promise<LoginData> {
     },
   });
   expect(response.status()).toBe(200);
-  const body = await response.json() as ApiResponse<LoginData>;
+  const body = (await response.json()) as ApiResponse<LoginData>;
   expect(body.success || body.code === 200).toBeTruthy();
   expect(body.data?.accessToken).toBeTruthy();
   return body.data as LoginData;
@@ -89,27 +89,27 @@ async function installSession(page: Page, loginData: LoginData) {
   await page.evaluate((data) => {
     sessionStorage.setItem('MANGO_TOKEN', data.accessToken);
     sessionStorage.setItem('MANGO_REFRESH_TOKEN', data.refreshToken || '');
-    sessionStorage.setItem(
-      'MANGO_TOKEN_EXPIRES_AT',
-      String(Date.now() + Number(data.expiresIn || 7200) * 1000),
-    );
+    sessionStorage.setItem('MANGO_TOKEN_EXPIRES_AT', String(Date.now() + Number(data.expiresIn || 7200) * 1000));
     sessionStorage.setItem('tenantId', String(data.tenantId || 1));
-    sessionStorage.setItem('userInfo', JSON.stringify({
-      userId: data.userId,
-      memberId: data.memberId,
-      username: data.username,
-      nickname: data.nickname,
-      tenantId: data.tenantId,
-      tenantCode: data.tenantCode,
-      tenantName: data.tenantName,
-      appCode: data.appCode,
-      realm: data.realm,
-      actorType: data.actorType,
-      partyType: data.partyType,
-      partyId: data.partyId,
-      roles: data.roles || [],
-      permissions: data.permissions || [],
-    }));
+    sessionStorage.setItem(
+      'userInfo',
+      JSON.stringify({
+        userId: data.userId,
+        memberId: data.memberId,
+        username: data.username,
+        nickname: data.nickname,
+        tenantId: data.tenantId,
+        tenantCode: data.tenantCode,
+        tenantName: data.tenantName,
+        appCode: data.appCode,
+        realm: data.realm,
+        actorType: data.actorType,
+        partyType: data.partyType,
+        partyId: data.partyId,
+        roles: data.roles || [],
+        permissions: data.permissions || [],
+      }),
+    );
     document.cookie = `MANGO_TOKEN=${encodeURIComponent(data.accessToken)}; path=/; SameSite=Lax`;
   }, loginData);
 }
@@ -142,18 +142,7 @@ function readWorkspaceDbConfig(): WorkspaceDbConfig {
 
 function runMysql(sql: string) {
   const db = readWorkspaceDbConfig();
-  const args = [
-    '--protocol=TCP',
-    '-h',
-    db.host,
-    '-P',
-    db.port,
-    '-u',
-    db.username,
-    db.database,
-    '-e',
-    sql,
-  ];
+  const args = ['--protocol=TCP', '-h', db.host, '-P', db.port, '-u', db.username, db.database, '-e', sql];
   execFileSync('mysql', args, {
     env: {
       ...process.env,
@@ -164,15 +153,19 @@ function runMysql(sql: string) {
 }
 
 function cleanupSystemEventFixture() {
-  runMysql([
-    'DELETE FROM infra_kv_entry',
-    `WHERE kv_key IN (${[
-      `${outboxPrefix}:message:${fixtureMessageId}`,
-      `${outboxPrefix}:all:member:${fixtureMessageId}`,
-      `${outboxPrefix}:pending:member:${fixtureMessageId}`,
-      `${outboxPrefix}:pending:domain-event:member:${fixtureMessageId}`,
-    ].map((key) => `'${key}'`).join(',')})`,
-  ].join(' '));
+  runMysql(
+    [
+      'DELETE FROM infra_kv_entry',
+      `WHERE kv_key IN (${[
+        `${outboxPrefix}:message:${fixtureMessageId}`,
+        `${outboxPrefix}:all:member:${fixtureMessageId}`,
+        `${outboxPrefix}:pending:member:${fixtureMessageId}`,
+        `${outboxPrefix}:pending:domain-event:member:${fixtureMessageId}`,
+      ]
+        .map((key) => `'${key}'`)
+        .join(',')})`,
+    ].join(' '),
+  );
 }
 
 function prepareSystemEventFixture() {
@@ -202,11 +195,13 @@ function prepareSystemEventFixture() {
     },
   }).replace(/'/g, "''");
   const score = Date.parse(occurredAt);
-  runMysql([
-    'INSERT INTO infra_kv_entry (id, kv_key, kv_value, expire_time) VALUES',
-    `(UNIX_TIMESTAMP(NOW(6)) * 1000000 + 1, '${outboxPrefix}:message:${fixtureMessageId}', '${message}', ${expireTimeSql}),`,
-    `(UNIX_TIMESTAMP(NOW(6)) * 1000000 + 2, '${outboxPrefix}:all:member:${fixtureMessageId}', '${score}', ${expireTimeSql})`,
-  ].join(' '));
+  runMysql(
+    [
+      'INSERT INTO infra_kv_entry (id, kv_key, kv_value, expire_time) VALUES',
+      `(UNIX_TIMESTAMP(NOW(6)) * 1000000 + 1, '${outboxPrefix}:message:${fixtureMessageId}', '${message}', ${expireTimeSql}),`,
+      `(UNIX_TIMESTAMP(NOW(6)) * 1000000 + 2, '${outboxPrefix}:all:member:${fixtureMessageId}', '${score}', ${expireTimeSql})`,
+    ].join(' '),
+  );
 }
 
 test.beforeAll(() => {
@@ -222,16 +217,16 @@ test('系统维护/系统事件页面使用真实后端查询 Outbox 并保留�
   const browserErrors: string[] = [];
   const failedRequests: string[] = [];
   const failedApiResponses: string[] = [];
-  page.on('pageerror', error => browserErrors.push(error.message));
-  page.on('console', message => {
+  page.on('pageerror', (error) => browserErrors.push(error.message));
+  page.on('console', (message) => {
     if (message.type() === 'error') {
       browserErrors.push(message.text());
     }
   });
-  page.on('requestfailed', request => {
+  page.on('requestfailed', (request) => {
     failedRequests.push(`${request.method()} ${request.url()} ${request.failure()?.errorText || ''}`.trim());
   });
-  page.on('response', response => {
+  page.on('response', (response) => {
     if (response.url().includes('/api/') && response.status() >= 400) {
       failedApiResponses.push(`${response.status()} ${response.url()}`);
     }
@@ -242,22 +237,21 @@ test('系统维护/系统事件页面使用真实后端查询 Outbox 并保留�
     headers: { Authorization: `Bearer ${loginData.accessToken}` },
   });
   expect(apiResponse.status()).toBe(200);
-  const apiBody = await apiResponse.json() as ApiResponse<PageResult<SystemEventRecord>>;
+  const apiBody = (await apiResponse.json()) as ApiResponse<PageResult<SystemEventRecord>>;
   expect(apiBody.success || apiBody.code === 200).toBeTruthy();
   const apiRecords = recordsOf(apiBody.data);
-  expect(apiRecords.some((record) =>
-    record.messageId === fixtureMessageId
-    && record.status === 'FAILED'
-    && record.eventType === fixtureEventType,
-  )).toBeTruthy();
+  expect(
+    apiRecords.some(
+      (record) =>
+        record.messageId === fixtureMessageId && record.status === 'FAILED' && record.eventType === fixtureEventType,
+    ),
+  ).toBeTruthy();
 
   await installSession(page, loginData);
 
   const menuResponsePromise = page.waitForResponse((response) => {
     const url = response.url();
-    return response.status() === 200
-      && url.includes('/api/authorization/menus/user')
-      && url.includes('fmt=tree');
+    return response.status() === 200 && url.includes('/api/authorization/menus/user') && url.includes('fmt=tree');
   });
   await page.goto('/#/home');
   const menuResponse = await menuResponsePromise;
@@ -267,14 +261,15 @@ test('系统维护/系统事件页面使用真实后端查询 Outbox 并保留�
   expect(menuText).toContain('系统事件');
   expect(menuText).toContain('/system/events');
 
-  const eventsResponsePromise = page.waitForResponse((response) =>
-    response.url().includes('/api/system/events')
-      && response.request().method() === 'GET'
-      && response.status() === 200,
+  const eventsResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes('/api/system/events') &&
+      response.request().method() === 'GET' &&
+      response.status() === 200,
   );
   await page.goto('/#/system/events');
   const eventsResponse = await eventsResponsePromise;
-  const eventsBody = await eventsResponse.json() as ApiResponse<PageResult<SystemEventRecord>>;
+  const eventsBody = (await eventsResponse.json()) as ApiResponse<PageResult<SystemEventRecord>>;
   expect(eventsBody.success || eventsBody.code === 200).toBeTruthy();
 
   await expect(page.locator('[data-page="system.event"]')).toBeVisible();
@@ -297,13 +292,11 @@ test('系统维护/系统事件页面使用真实后端查询 Outbox 并保留�
     headers: { Authorization: `Bearer ${loginData.accessToken}` },
   });
   expect(detailResponse.status()).toBe(200);
-  const detailBody = await detailResponse.json() as ApiResponse<SystemEventRecord>;
+  const detailBody = (await detailResponse.json()) as ApiResponse<SystemEventRecord>;
   expect(detailBody.success || detailBody.code === 200).toBeTruthy();
   expect(detailBody.data?.messageId).toBe(fixtureMessageId);
 
-  await page.locator(
-    `[data-action="system.event.detail"][data-record-key="system-event:${fixtureMessageId}"]`,
-  ).click();
+  await page.locator(`[data-action="system.event.detail"][data-record-key="system-event:${fixtureMessageId}"]`).click();
   await expect(page.getByRole('dialog', { name: '系统事件详情' })).toBeVisible();
   const detailDialog = page.getByRole('dialog', { name: '系统事件详情' });
   await expect(detailDialog.getByText('事件头')).toBeVisible();
@@ -314,17 +307,16 @@ test('系统维护/系统事件页面使用真实后端查询 Outbox 并保留�
     fullPage: true,
   });
 
-  const reconsumeResponsePromise = page.waitForResponse((response) =>
-    response.url().includes('/api/system/events/reconsume')
-    && response.request().method() === 'POST'
-    && response.status() === 200,
+  const reconsumeResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes('/api/system/events/reconsume') &&
+      response.request().method() === 'POST' &&
+      response.status() === 200,
   );
-  await detailDialog
-    .getByRole('button', { name: '重新投递' })
-    .click();
+  await detailDialog.getByRole('button', { name: '重新投递' }).click();
   await page.getByRole('button', { name: '确认重投' }).click();
   const reconsumeResponse = await reconsumeResponsePromise;
-  const reconsumeBody = await reconsumeResponse.json() as ApiResponse<boolean>;
+  const reconsumeBody = (await reconsumeResponse.json()) as ApiResponse<boolean>;
   expect(reconsumeBody.success || reconsumeBody.code === 200).toBeTruthy();
   await expect(page.getByText('已放回待投递队列')).toBeVisible();
   await expectNoPageError(page);

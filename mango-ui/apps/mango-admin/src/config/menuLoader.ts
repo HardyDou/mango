@@ -46,8 +46,8 @@ export interface MenuConfigItem {
  */
 function filterMenuForRoute(menus: SysMenuVO[]): SysMenuVO[] {
   return menus
-    .filter(menu => menu.menuType !== 3)
-    .map(menu => ({
+    .filter((menu) => menu.menuType !== 3)
+    .map((menu) => ({
       ...menu,
       children: menu.children ? filterMenuForRoute(menu.children) : [],
     })) as SysMenuVO[];
@@ -55,8 +55,8 @@ function filterMenuForRoute(menus: SysMenuVO[]): SysMenuVO[] {
 
 function filterDevOnlyMenus(menus: MenuConfigItem[]): MenuConfigItem[] {
   return menus
-    .filter(menu => import.meta.env.DEV || !menu.meta?.devOnly)
-    .map(menu => ({
+    .filter((menu) => import.meta.env.DEV || !menu.meta?.devOnly)
+    .map((menu) => ({
       ...menu,
       children: menu.children ? filterDevOnlyMenus(menu.children) : undefined,
     }));
@@ -77,7 +77,7 @@ function createHomeMenuItem(): MenuItem {
 }
 
 function createFrontendMenuConfig(): MenuConfigItem[] {
-  const baseMenus = filterDevOnlyMenus(menuJson as MenuConfigItem[]).filter(menu => menu.path !== '/develop');
+  const baseMenus = filterDevOnlyMenus(menuJson as MenuConfigItem[]).filter((menu) => menu.path !== '/develop');
   if (!import.meta.env.DEV) {
     return baseMenus;
   }
@@ -113,7 +113,7 @@ function createFrontendMenuConfig(): MenuConfigItem[] {
               icon: 'Collection',
               sort: 13,
             },
-          ].map(page => ({
+          ].map((page) => ({
             path: page.path,
             name: page.menuCode,
             meta: {
@@ -180,7 +180,7 @@ const appViewMap = new Map(
   Object.entries(appViewModules).map(([key, loader]) => [
     key.replace('../views/', 'views/').replace(/\.vue$/, ''),
     loader,
-  ])
+  ]),
 );
 
 export class MenuLoader {
@@ -315,13 +315,22 @@ export class MenuLoader {
 
     // 合并：固定首页在前，后端业务菜单居中，本地开发菜单在最后。
     // 去重：后端或本地追加菜单以后配置 /home 时，以固定首页为准。
-    const localPaths = new Set([this.homeMenuItem.path, ...this.frontendMenuItems.map(m => m.path)]);
-    const uniqueBackendItems = this.backendMenuItems.filter(m => !localPaths.has(m.path));
-    const uniqueFrontendItems = this.frontendMenuItems.filter(m => m.path !== this.homeMenuItem.path);
+    const localPaths = new Set([this.homeMenuItem.path, ...this.frontendMenuItems.map((m) => m.path)]);
+    const uniqueBackendItems = this.backendMenuItems.filter((m) => !localPaths.has(m.path));
+    const uniqueFrontendItems = this.frontendMenuItems.filter((m) => m.path !== this.homeMenuItem.path);
     this.mergedMenuItems = [this.homeMenuItem, ...uniqueBackendItems, ...uniqueFrontendItems];
 
     this.backendMode = true;
-    if (import.meta.env.DEV) console.log('[MenuLoader] 从后端加载菜单成功，共', this.mergedMenuItems.length, '个菜单（前端:', this.frontendMenuItems.length, '后端:', this.backendMenuItems.length, '）');
+    if (import.meta.env.DEV)
+      console.log(
+        '[MenuLoader] 从后端加载菜单成功，共',
+        this.mergedMenuItems.length,
+        '个菜单（前端:',
+        this.frontendMenuItems.length,
+        '后端:',
+        this.backendMenuItems.length,
+        '）',
+      );
     return this.mergedMenuItems;
   }
 
@@ -339,7 +348,7 @@ export class MenuLoader {
    * 获取前端菜单配置（不含后端）
    */
   getFrontendMenuItems(): MenuItem[] {
-    return [this.homeMenuItem, ...this.frontendMenuItems.filter(m => m.path !== this.homeMenuItem.path)];
+    return [this.homeMenuItem, ...this.frontendMenuItems.filter((m) => m.path !== this.homeMenuItem.path)];
   }
 
   /**
@@ -359,7 +368,7 @@ export class MenuLoader {
       {
         path: '/login',
         name: 'Login',
-        component: () => import('@mango/auth').then(m => m.LoginView),
+        component: () => import('@mango/auth').then((m) => m.LoginView),
         meta: { title: '登录', isAffix: true },
       },
       {
@@ -451,37 +460,31 @@ export class MenuLoader {
         path: '/',
         name: 'Layout',
         meta: { title: '主布局', permissions: ['admin'] },
-        children: [
-          ...menuItems.map(menuToRouteWithPermissions),
-          this.homeDetailRoute(),
-          this.paymentCashierRoute(),
-        ],
+        children: [...menuItems.map(menuToRouteWithPermissions), this.homeDetailRoute(), this.paymentCashierRoute()],
       },
     ] as RouteRecordRaw[];
   }
 
   getHiddenRuntimeRoutes(): RouteRecordRaw[] {
-    const builtInRoutes: RouteRecordRaw[] = [
-      this.homeDetailRoute(),
-      this.paymentCashierRoute(),
-    ];
+    const builtInRoutes: RouteRecordRaw[] = [this.homeDetailRoute(), this.paymentCashierRoute()];
     const registeredRoutes = getRegisteredPageRoutes()
-      .filter(route => route.visible === 0)
-      .map(route => ({
-        path: route.path,
-        name: route.menuCode || `registered-hidden:${route.moduleCode}:${route.path}`,
-        component: componentsMap[route.component],
-        meta: {
-          title: route.menuName || route.path,
-          icon: route.icon,
-          isHide: true,
-          keepAlive: route.keepAlive === 1,
-        },
-      } satisfies RouteRecordRaw))
-      .filter(route => Boolean(route.component));
-    return Array.from(new Map(
-      [...builtInRoutes, ...registeredRoutes].map(route => [route.path, route]),
-    ).values());
+      .filter((route) => route.visible === 0)
+      .map(
+        (route) =>
+          ({
+            path: route.path,
+            name: route.menuCode || `registered-hidden:${route.moduleCode}:${route.path}`,
+            component: componentsMap[route.component],
+            meta: {
+              title: route.menuName || route.path,
+              icon: route.icon,
+              isHide: true,
+              keepAlive: route.keepAlive === 1,
+            },
+          }) satisfies RouteRecordRaw,
+      )
+      .filter((route) => Boolean(route.component));
+    return Array.from(new Map([...builtInRoutes, ...registeredRoutes].map((route) => [route.path, route])).values());
   }
 
   private homeDetailRoute(): RouteRecordRaw {

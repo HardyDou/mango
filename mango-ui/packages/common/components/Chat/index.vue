@@ -462,14 +462,14 @@ defineExpose<ChatExpose>({
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.4);
+  box-shadow: 0 4px 12px rgb(64 158 255 / 40%);
   transition:
     transform 0.2s,
     box-shadow 0.2s;
 
   &:hover {
     transform: scale(1.05);
-    box-shadow: 0 6px 16px rgba(64, 158, 255, 0.5);
+    box-shadow: 0 6px 16px rgb(64 158 255 / 50%);
   }
 }
 
@@ -478,7 +478,7 @@ defineExpose<ChatExpose>({
   height: 520px;
   background: #fff;
   border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 32px rgb(0 0 0 / 12%);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -565,7 +565,7 @@ defineExpose<ChatExpose>({
     .message-text {
       background: #409eff;
       color: white;
-      border-radius: 16px 16px 4px 16px;
+      border-radius: 16px 16px 4px;
     }
   }
 
@@ -639,6 +639,7 @@ defineExpose<ChatExpose>({
     opacity: 0.3;
     transform: translateY(0);
   }
+
   30% {
     opacity: 1;
     transform: translateY(-4px);

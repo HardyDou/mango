@@ -8,7 +8,12 @@ export function mangoMicroManualChunks(id: string) {
   if (id.includes('element-plus')) {
     return 'vendor-element-plus';
   }
-  if (id.includes('/node_modules/vue') || id.includes('/node_modules/@vue') || id.includes('/node_modules/vue-router') || id.includes('/node_modules/pinia')) {
+  if (
+    id.includes('/node_modules/vue') ||
+    id.includes('/node_modules/@vue') ||
+    id.includes('/node_modules/vue-router') ||
+    id.includes('/node_modules/pinia')
+  ) {
     return 'vendor-vue';
   }
   if (id.includes('/node_modules/wujie')) {
@@ -50,7 +55,11 @@ export function mangoMicroManualChunks(id: string) {
   if (id.includes('/packages/common/index.ts')) {
     return 'mango-common-barrel';
   }
-  if (id.includes('/packages/common/utils/') || id.includes('/packages/common/api/') || id.includes('/packages/common/hooks/')) {
+  if (
+    id.includes('/packages/common/utils/') ||
+    id.includes('/packages/common/api/') ||
+    id.includes('/packages/common/hooks/')
+  ) {
     return 'mango-common-core';
   }
   if (id.includes('/packages/common/components/CodeEditor/')) {

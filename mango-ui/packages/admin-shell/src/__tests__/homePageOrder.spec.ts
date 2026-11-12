@@ -24,15 +24,13 @@ describe('首页排序', () => {
       homePage('personal-b'),
     ];
 
-    expect(sortableHomePages(pages).map(page => page.id)).toEqual(['personal-a', 'personal-b']);
-    expect(moveSortableHomePage(pages, 'personal-b', -1).map(page => page.id))
-      .toEqual(['personal-b', 'personal-a']);
+    expect(sortableHomePages(pages).map((page) => page.id)).toEqual(['personal-a', 'personal-b']);
+    expect(moveSortableHomePage(pages, 'personal-b', -1).map((page) => page.id)).toEqual(['personal-b', 'personal-a']);
   });
 
   it('授权页不能触发个人首页排序', () => {
     const pages = [homePage('personal-a'), homePage('template-a', { readOnly: true })];
 
-    expect(moveSortableHomePage(pages, 'template-a', -1).map(page => page.id))
-      .toEqual(['personal-a']);
+    expect(moveSortableHomePage(pages, 'template-a', -1).map((page) => page.id)).toEqual(['personal-a']);
   });
 });

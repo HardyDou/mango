@@ -10,56 +10,56 @@ import { MangoSearchPanel } from '@mango/common';
 
 ## Props
 
-| 名称 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `model` | `Record<string, unknown>` | `undefined` | 搜索表单数据对象 |
-| `labelWidth` | `string \| number` | `'96px'` | 表单 label 宽度 |
-| `labelSuffix` | `string` | `'：'` | 表单 label 后缀 |
-| `labelPosition` | `'left' \| 'right' \| 'top'` | `'right'` | 表单 label 位置 |
-| `size` | `'large' \| 'default' \| 'small'` | `'default'` | 表单尺寸 |
-| `searchText` | `string` | `'查询'` | 查询按钮文案 |
-| `resetText` | `string` | `'重置'` | 重置按钮文案 |
-| `showReset` | `boolean` | `true` | 是否显示重置按钮 |
-| `collapsible` | `boolean` | `false` | 是否启用搜索项展开/收起 |
-| `defaultExpanded` | `boolean` | `false` | 初始是否展开全部搜索项 |
-| `collapsedRows` | `number` | `2` | 未指定 `collapsedCount` 时，收起态显示几行 |
-| `collapsedCount` | `number` | `undefined` | 收起态显示前几个搜索项 |
-| `expandText` | `string` | `'展开'` | 展开按钮文案 |
-| `collapseText` | `string` | `'收起'` | 收起按钮文案 |
-| `columns` | `number \| 'auto'` | `4` | 搜索字段区列数。传入 `auto` 时按字段宽度自适应 |
-| `morePlacement` | `'actions' \| 'bottom'` | `'bottom'` | 展开/收起按钮位置 |
-| `fieldMinWidth` | `string` | `'280px'` | 自适应列模式下字段最小宽度 |
-| `fieldMaxWidth` | `string` | `'320px'` | 自适应列模式下字段最大宽度 |
+| 名称              | 类型                              | 默认值      | 说明                                           |
+| ----------------- | --------------------------------- | ----------- | ---------------------------------------------- |
+| `model`           | `Record<string, unknown>`         | `undefined` | 搜索表单数据对象                               |
+| `labelWidth`      | `string \| number`                | `'96px'`    | 表单 label 宽度                                |
+| `labelSuffix`     | `string`                          | `'：'`      | 表单 label 后缀                                |
+| `labelPosition`   | `'left' \| 'right' \| 'top'`      | `'right'`   | 表单 label 位置                                |
+| `size`            | `'large' \| 'default' \| 'small'` | `'default'` | 表单尺寸                                       |
+| `searchText`      | `string`                          | `'查询'`    | 查询按钮文案                                   |
+| `resetText`       | `string`                          | `'重置'`    | 重置按钮文案                                   |
+| `showReset`       | `boolean`                         | `true`      | 是否显示重置按钮                               |
+| `collapsible`     | `boolean`                         | `false`     | 是否启用搜索项展开/收起                        |
+| `defaultExpanded` | `boolean`                         | `false`     | 初始是否展开全部搜索项                         |
+| `collapsedRows`   | `number`                          | `2`         | 未指定 `collapsedCount` 时，收起态显示几行     |
+| `collapsedCount`  | `number`                          | `undefined` | 收起态显示前几个搜索项                         |
+| `expandText`      | `string`                          | `'展开'`    | 展开按钮文案                                   |
+| `collapseText`    | `string`                          | `'收起'`    | 收起按钮文案                                   |
+| `columns`         | `number \| 'auto'`                | `4`         | 搜索字段区列数。传入 `auto` 时按字段宽度自适应 |
+| `morePlacement`   | `'actions' \| 'bottom'`           | `'bottom'`  | 展开/收起按钮位置                              |
+| `fieldMinWidth`   | `string`                          | `'280px'`   | 自适应列模式下字段最小宽度                     |
+| `fieldMaxWidth`   | `string`                          | `'320px'`   | 自适应列模式下字段最大宽度                     |
 
 ## Events
 
-| 名称 | 参数 | 说明 |
-|------|------|------|
-| `search` | - | 点击查询按钮触发 |
-| `reset` | - | 点击重置按钮触发 |
-| `expandChange` | `expanded: boolean` | 展开状态变化 |
+| 名称           | 参数                | 说明             |
+| -------------- | ------------------- | ---------------- |
+| `search`       | -                   | 点击查询按钮触发 |
+| `reset`        | -                   | 点击重置按钮触发 |
+| `expandChange` | `expanded: boolean` | 展开状态变化     |
 
 ## Slots
 
-| 名称 | 说明 |
-|------|------|
-| `default` | 搜索字段区域，通常放置 `el-form-item` |
+| 名称      | 说明                                           |
+| --------- | ---------------------------------------------- |
+| `default` | 搜索字段区域，通常放置 `el-form-item`          |
 | `actions` | 自定义按钮区域，默认显示查询/重置/展开收起按钮 |
 
 ## 折叠规则
 
-| 属性 | 默认值 | 说明 |
-|------|--------|------|
-| `collapsible` | `false` | 是否启用搜索项展开/收起 |
-| `collapsedCount` | 自动按列数和 `collapsedRows` 计算 | 收起态显示前几个搜索项。业务把常用搜索项放在前面 |
-| `collapsedRows` | `2` | 未指定 `collapsedCount` 时，收起态显示几行 |
-| `columns` | `4` | 搜索字段区列数。传入 `auto` 时按字段宽度自适应；固定列数在窄屏下自动降列 |
-| `morePlacement` | `bottom` | 展开/收起按钮位置。`actions` 表示跟随查询、重置按钮；`bottom` 表示放在搜索区底部居中 |
-| `fieldMinWidth` | `280px` | 自适应列模式下字段最小宽度 |
-| `fieldMaxWidth` | `320px` | 自适应列模式下字段最大宽度 |
-| `defaultExpanded` | `false` | 初始是否展开全部搜索项 |
-| `expandText` / `collapseText` | `展开` / `收起` | 展开按钮文案 |
-| `expandChange` | - | 展开状态变化事件 |
+| 属性                          | 默认值                            | 说明                                                                                 |
+| ----------------------------- | --------------------------------- | ------------------------------------------------------------------------------------ |
+| `collapsible`                 | `false`                           | 是否启用搜索项展开/收起                                                              |
+| `collapsedCount`              | 自动按列数和 `collapsedRows` 计算 | 收起态显示前几个搜索项。业务把常用搜索项放在前面                                     |
+| `collapsedRows`               | `2`                               | 未指定 `collapsedCount` 时，收起态显示几行                                           |
+| `columns`                     | `4`                               | 搜索字段区列数。传入 `auto` 时按字段宽度自适应；固定列数在窄屏下自动降列             |
+| `morePlacement`               | `bottom`                          | 展开/收起按钮位置。`actions` 表示跟随查询、重置按钮；`bottom` 表示放在搜索区底部居中 |
+| `fieldMinWidth`               | `280px`                           | 自适应列模式下字段最小宽度                                                           |
+| `fieldMaxWidth`               | `320px`                           | 自适应列模式下字段最大宽度                                                           |
+| `defaultExpanded`             | `false`                           | 初始是否展开全部搜索项                                                               |
+| `expandText` / `collapseText` | `展开` / `收起`                   | 展开按钮文案                                                                         |
+| `expandChange`                | -                                 | 展开状态变化事件                                                                     |
 
 默认操作区顺序为查询、重置、展开或收起，位置固定在搜索面板右下角；传入 `actions` slot 时由业务自行接管按钮区域。
 
@@ -100,13 +100,7 @@ function reset() {
 
 ```vue
 <template>
-  <MangoSearchPanel
-    :model="query"
-    collapsible
-    :collapsed-count="3"
-    @search="search"
-    @reset="reset"
-  >
+  <MangoSearchPanel :model="query" collapsible :collapsed-count="3" @search="search" @reset="reset">
     <el-form-item label="关键字">
       <el-input v-model="query.keyword" clearable />
     </el-form-item>
@@ -145,14 +139,7 @@ function reset() {
 
 ```vue
 <template>
-  <MangoSearchPanel
-    :model="query"
-    label-suffix=""
-    label-position="left"
-    size="small"
-    @search="search"
-    @reset="reset"
-  >
+  <MangoSearchPanel :model="query" label-suffix="" label-position="left" size="small" @search="search" @reset="reset">
     <el-form-item label="客户名称">
       <el-input v-model="query.customerName" clearable />
     </el-form-item>

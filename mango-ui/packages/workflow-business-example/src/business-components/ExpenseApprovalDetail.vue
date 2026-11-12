@@ -57,7 +57,7 @@
       <div class="business-section-title">财务复核</div>
       <el-form label-width="96px" class="finance-form">
         <el-form-item label="核定金额">
-        <el-input-number
+          <el-input-number
             v-model="approvedAmount"
             :disabled="!sectionEditable('financeReview') || context.readonly"
             :min="0"
@@ -103,7 +103,7 @@ const approvedAmount = computed({
   },
 });
 
-const amountRiskType = computed(() => snapshot.value.amount >= 5000 ? 'warning' : 'success');
+const amountRiskType = computed(() => (snapshot.value.amount >= 5000 ? 'warning' : 'success'));
 const nodePreset = computed(() => String(props.context.nodeExtension?.sectionPreset || '').trim());
 const maskedAccount = computed(() => {
   const account = String(snapshot.value.bankAccount || '');
@@ -222,14 +222,14 @@ function formatAmount(value: number) {
   max-width: 360px;
 }
 
-@media (max-width: 860px) {
+@media (width <= 860px) {
   .snapshot-grid,
   .compact-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 560px) {
+@media (width <= 560px) {
   .snapshot-grid,
   .compact-grid {
     grid-template-columns: 1fr;

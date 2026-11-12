@@ -49,10 +49,11 @@ test.describe('文件预览下载地址分离 @p1 @file', () => {
     let uploadedFileId = '';
 
     try {
-      const uploadResponsePromise = page.waitForResponse(response =>
-        response.url().includes('/api/file/files')
-        && response.request().method() === 'POST'
-        && response.status() === 200
+      const uploadResponsePromise = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/file/files') &&
+          response.request().method() === 'POST' &&
+          response.status() === 200,
       );
       await page.locator('input[type="file"]').setInputFiles({
         name: fileName,
@@ -70,12 +71,14 @@ test.describe('文件预览下载地址分离 @p1 @file', () => {
       await routePreviewAsDownloadEndpoint(page, uploadedFileId);
 
       const row = page.locator('.el-table__body-wrapper tr', { hasText: fileName }).first();
-      const previewResponsePromise = page.waitForResponse(response =>
-        response.url().includes('/api/file/files/preview')
-        && response.url().includes(`id=${uploadedFileId}`)
-        && response.status() === 200
+      const previewResponsePromise = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/file/files/preview') &&
+          response.url().includes(`id=${uploadedFileId}`) &&
+          response.status() === 200,
       );
-      const unexpectedDownloadPromise = page.waitForEvent('download', { timeout: 1500 })
+      const unexpectedDownloadPromise = page
+        .waitForEvent('download', { timeout: 1500 })
         .then(() => true)
         .catch(() => false);
 
@@ -161,7 +164,7 @@ async function routePreviewAsDownloadEndpoint(page: Page, fileId: string) {
     }
 
     const originResponse = await route.fetch();
-    const originBody = await originResponse.json() as ApiBody<FilePreviewResponse>;
+    const originBody = (await originResponse.json()) as ApiBody<FilePreviewResponse>;
     const downloadEndpoint = `/api/file/files/download?id=${encodeURIComponent(fileId)}`;
     await route.fulfill({
       status: originResponse.status(),

@@ -7,7 +7,7 @@ const MAX_SCAN_ROWS = 1000;
 
 export function normalizeLayoutItems(items: GridLayoutItem[], options?: Partial<GridLayoutOptions>): GridLayoutItem[] {
   const columns = options?.columns || DEFAULT_COLUMNS;
-  const normalized = items.map(item => ({
+  const normalized = items.map((item) => ({
     ...item,
     layout: normalizeRect(item.layout, columns),
   }));
@@ -44,9 +44,11 @@ export function moveGridItem(
   columns = DEFAULT_COLUMNS,
   verticalGapRows = 0,
 ): GridLayoutItem[] {
-  const moved = items.map(item => item.id === itemId
-    ? { ...item, layout: normalizeRect({ ...item.layout, ...nextRect }, columns) }
-    : cloneGridItem(item));
+  const moved = items.map((item) =>
+    item.id === itemId
+      ? { ...item, layout: normalizeRect({ ...item.layout, ...nextRect }, columns) }
+      : cloneGridItem(item),
+  );
   return resolveCollisions(moved, columns, itemId, verticalGapRows);
 }
 
@@ -57,9 +59,11 @@ export function resizeGridItem(
   columns = DEFAULT_COLUMNS,
   verticalGapRows = 0,
 ): GridLayoutItem[] {
-  const resized = items.map(item => item.id === itemId
-    ? { ...item, layout: normalizeRect({ ...item.layout, ...nextRect }, columns) }
-    : cloneGridItem(item));
+  const resized = items.map((item) =>
+    item.id === itemId
+      ? { ...item, layout: normalizeRect({ ...item.layout, ...nextRect }, columns) }
+      : cloneGridItem(item),
+  );
   return resolveCollisions(resized, columns, itemId, verticalGapRows);
 }
 
@@ -69,7 +73,12 @@ export function removeGridItem(
   columns = DEFAULT_COLUMNS,
   verticalGapRows = 0,
 ): GridLayoutItem[] {
-  return resolveCollisions(items.filter(item => item.id !== itemId).map(cloneGridItem), columns, undefined, verticalGapRows);
+  return resolveCollisions(
+    items.filter((item) => item.id !== itemId).map(cloneGridItem),
+    columns,
+    undefined,
+    verticalGapRows,
+  );
 }
 
 export function createGridItemFromWidget(
@@ -79,14 +88,17 @@ export function createGridItemFromWidget(
   options?: Partial<GridLayoutOptions>,
 ): GridLayoutItem {
   const columns = options?.columns || DEFAULT_COLUMNS;
-  const baseRect = normalizeRect({
-    x: 0,
-    y: 0,
-    w: options?.defaultWidth || DEFAULT_CARD_WIDTH,
-    h: options?.defaultHeight || DEFAULT_CARD_HEIGHT,
-    ...widget.defaultLayout,
-    ...rect,
-  }, columns);
+  const baseRect = normalizeRect(
+    {
+      x: 0,
+      y: 0,
+      w: options?.defaultWidth || DEFAULT_CARD_WIDTH,
+      h: options?.defaultHeight || DEFAULT_CARD_HEIGHT,
+      ...widget.defaultLayout,
+      ...rect,
+    },
+    columns,
+  );
   const layout = findAvailableRect(items, baseRect, columns, options?.verticalGapRows);
   return {
     id: `${widget.type}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -100,17 +112,24 @@ export function createGridItemFromWidget(
 }
 
 export function getGridRows(items: GridLayoutItem[], minRows = 4): number {
-  return Math.max(minRows, ...items.map(item => item.layout.y + item.layout.h));
+  return Math.max(minRows, ...items.map((item) => item.layout.y + item.layout.h));
 }
 
 export function rectsOverlap(first: GridLayoutRect, second: GridLayoutRect): boolean {
-  return first.x < second.x + second.w
-    && first.x + first.w > second.x
-    && first.y < second.y + second.h
-    && first.y + first.h > second.y;
+  return (
+    first.x < second.x + second.w &&
+    first.x + first.w > second.x &&
+    first.y < second.y + second.h &&
+    first.y + first.h > second.y
+  );
 }
 
-function resolveCollisions(items: GridLayoutItem[], columns: number, priorityId?: string, verticalGapRows = 0): GridLayoutItem[] {
+function resolveCollisions(
+  items: GridLayoutItem[],
+  columns: number,
+  priorityId?: string,
+  verticalGapRows = 0,
+): GridLayoutItem[] {
   if (priorityId) {
     // 用户正在操作的卡片优先保持目标位置，其它卡片只在真实碰撞时才让位。
     return resolveByStableInsert(items, columns, priorityId, verticalGapRows);
@@ -133,14 +152,14 @@ function resolveByStableInsert(
   priorityId: string,
   verticalGapRows: number,
 ): GridLayoutItem[] {
-  const priorityItem = items.find(item => item.id === priorityId);
+  const priorityItem = items.find((item) => item.id === priorityId);
   if (!priorityItem) {
     return resolveCollisions(items, columns, undefined, verticalGapRows);
   }
   const priority = cloneGridItem(priorityItem);
   priority.layout = normalizeRect(priority.layout, columns);
   const orderedRest = items
-    .filter(item => item.id !== priorityId)
+    .filter((item) => item.id !== priorityId)
     .map(cloneGridItem)
     .sort(compareItemsByPosition);
 
@@ -150,7 +169,11 @@ function resolveByStableInsert(
   orderedRest.forEach((item) => {
     const candidate = cloneGridItem(item);
     candidate.layout = normalizeRect(candidate.layout, columns);
-    if (placed.some(placedItem => rectsOverlap(expandRect(candidate.layout, verticalGapRows), expandRect(placedItem.layout, verticalGapRows)))) {
+    if (
+      placed.some((placedItem) =>
+        rectsOverlap(expandRect(candidate.layout, verticalGapRows), expandRect(placedItem.layout, verticalGapRows)),
+      )
+    ) {
       candidate.layout = findAvailableRect(placed, candidate.layout, columns, verticalGapRows);
     }
     placed.push(candidate);
@@ -171,20 +194,27 @@ function snapOutOfTopGap(
   // 只处理“落在卡片底部间距里但没有压住卡片内容”的场景。
   const blocker = items.find((item) => {
     const itemBottom = item.layout.y + item.layout.h;
-    return normalized.x < item.layout.x + item.layout.w
-      && normalized.x + normalized.w > item.layout.x
-      && normalized.y >= itemBottom
-      && normalized.y < itemBottom + verticalGapRows
-      && !rectsOverlap(normalized, item.layout);
+    return (
+      normalized.x < item.layout.x + item.layout.w &&
+      normalized.x + normalized.w > item.layout.x &&
+      normalized.y >= itemBottom &&
+      normalized.y < itemBottom + verticalGapRows &&
+      !rectsOverlap(normalized, item.layout)
+    );
   });
   if (!blocker) {
     return normalized;
   }
   // 吸附到该卡片的间距之后，再找一个不重叠的位置。
-  return findAvailableRect(items, {
-    ...normalized,
-    y: blocker.layout.y + blocker.layout.h + verticalGapRows,
-  }, columns, verticalGapRows);
+  return findAvailableRect(
+    items,
+    {
+      ...normalized,
+      y: blocker.layout.y + blocker.layout.h + verticalGapRows,
+    },
+    columns,
+    verticalGapRows,
+  );
 }
 
 function compareItemsByPosition(first: GridLayoutItem, second: GridLayoutItem): number {
@@ -195,13 +225,22 @@ function compareRectsByPosition(first: GridLayoutRect, second: GridLayoutRect): 
   return first.y - second.y || first.x - second.x;
 }
 
-export function findAvailableRect(items: GridLayoutItem[], rect: GridLayoutRect, columns: number, verticalGapRows = 0): GridLayoutRect {
+export function findAvailableRect(
+  items: GridLayoutItem[],
+  rect: GridLayoutRect,
+  columns: number,
+  verticalGapRows = 0,
+): GridLayoutRect {
   const normalized = normalizeRect(rect, columns);
   for (let y = normalized.y; y < normalized.y + MAX_SCAN_ROWS; y += 1) {
     const startX = y === normalized.y ? normalized.x : 0;
     for (let x = startX; x <= columns - normalized.w; x += 1) {
       const candidate = { ...normalized, x, y };
-      if (!items.some(item => rectsOverlap(expandRect(candidate, verticalGapRows), expandRect(item.layout, verticalGapRows)))) {
+      if (
+        !items.some((item) =>
+          rectsOverlap(expandRect(candidate, verticalGapRows), expandRect(item.layout, verticalGapRows)),
+        )
+      ) {
         return candidate;
       }
     }

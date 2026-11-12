@@ -84,7 +84,12 @@
         <el-switch v-model="form.requiresQrRefresh" :active-value="1" :inactive-value="0" />
       </el-form-item>
       <el-form-item label="产品说明">
-        <el-input v-model="form.description" type="textarea" :rows="2" placeholder="用于收银台展示该支付方式的产品说明" />
+        <el-input
+          v-model="form.description"
+          type="textarea"
+          :rows="2"
+          placeholder="用于收银台展示该支付方式的产品说明"
+        />
       </el-form-item>
       <el-form-item label="排序">
         <el-input-number v-model="form.sort" :min="0" :precision="0" />
@@ -162,7 +167,12 @@ const columns: PaymentTableColumn[] = [
   { prop: 'methodName', label: '方式名称', minWidth: 150 },
   { prop: 'accountNature', label: '一级', width: 100, formatter: (_row, value) => categoryLabel(String(value || '')) },
   { prop: 'instrumentType', label: '二级', width: 130, formatter: (_row, value) => categoryLabel(String(value || '')) },
-  { prop: 'interactionType', label: '三级', width: 140, formatter: (_row, value) => categoryLabel(String(value || '')) },
+  {
+    prop: 'interactionType',
+    label: '三级',
+    width: 140,
+    formatter: (_row, value) => categoryLabel(String(value || '')),
+  },
   { prop: 'cashierGroupName', label: '收银台分组', width: 130 },
   { prop: 'terminalScope', label: '终端范围', width: 120 },
   { prop: 'paymentMaterialType', label: '支付物料', width: 130 },
@@ -199,7 +209,8 @@ async function handleEditorOpened(form: MethodForm) {
   form.categoryPath = [accountNature, instrumentType, interactionType].filter(Boolean) as string[];
   form.terminalScopes = splitCsv(form.terminalScope || defaults.terminalScope);
   form.cashierGroupCode = form.cashierGroupCode || defaults.cashierGroupCode;
-  form.cashierGroupName = form.cashierGroupName || cashierGroupNames[stringValue(form.cashierGroupCode)] || defaults.cashierGroupName;
+  form.cashierGroupName =
+    form.cashierGroupName || cashierGroupNames[stringValue(form.cashierGroupCode)] || defaults.cashierGroupName;
   form.cashierGroupSort = form.cashierGroupSort ?? defaults.cashierGroupSort;
   form.requiresBankSelection = form.requiresBankSelection ?? 0;
   form.requiresQrRefresh = form.requiresQrRefresh ?? 0;
@@ -267,7 +278,7 @@ function categoryLabel(value: string) {
 function splitCsv(value?: string) {
   return String(value || '')
     .split(',')
-    .map(item => item.trim())
+    .map((item) => item.trim())
     .filter(Boolean);
 }
 
@@ -293,11 +304,13 @@ function openRoutePanel(row: PaymentMethod) {
 }
 
 function buildRowActions(row: PaymentMethod): PaymentRowAction[] {
-  return [{
-    key: 'routes',
-    label: '路由策略',
-    type: 'primary',
-    onClick: () => openRoutePanel(row),
-  }];
+  return [
+    {
+      key: 'routes',
+      label: '路由策略',
+      type: 'primary',
+      onClick: () => openRoutePanel(row),
+    },
+  ];
 }
 </script>

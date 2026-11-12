@@ -23,19 +23,22 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const props = withDefaults(defineProps<{
-  modelValue?: string;
-  placeholder?: string;
-  clearable?: boolean;
-  filterable?: boolean;
-  allowCreate?: boolean;
-}>(), {
-  modelValue: '',
-  placeholder: '请选择业务域',
-  clearable: true,
-  filterable: true,
-  allowCreate: false,
-});
+const props = withDefaults(
+  defineProps<{
+    modelValue?: string;
+    placeholder?: string;
+    clearable?: boolean;
+    filterable?: boolean;
+    allowCreate?: boolean;
+  }>(),
+  {
+    modelValue: '',
+    placeholder: '请选择业务域',
+    clearable: true,
+    filterable: true,
+    allowCreate: false,
+  },
+);
 
 const emit = defineEmits<{
   (event: 'update:modelValue', value: string): void;
@@ -45,7 +48,7 @@ const emit = defineEmits<{
 const { domainLoading: loading, domainOptions, loadDomains } = useNoticeDomains();
 
 const options = computed(() => {
-  const values = new Map(domainOptions.value.map(item => [item.value, item.label]));
+  const values = new Map(domainOptions.value.map((item) => [item.value, item.label]));
   if (props.modelValue) {
     values.set(props.modelValue, values.get(props.modelValue) || props.modelValue);
   }

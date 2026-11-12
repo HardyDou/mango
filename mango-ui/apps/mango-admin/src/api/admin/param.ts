@@ -31,8 +31,9 @@ export interface PageResult<T> {
 
 export const paramApi = {
   list: (params?: SysParamQuery) => {
-    return get<any[]>('/system/config/list', { params: { type: 'BUSINESS' } })
-      .then((list) => toPageResult(list.map(fromConfig), params));
+    return get<any[]>('/system/config/list', { params: { type: 'BUSINESS' } }).then((list) =>
+      toPageResult(list.map(fromConfig), params),
+    );
   },
   detail: (id: number) => {
     return get<any>('/system/config/detail', { params: { id } }).then(fromConfig);

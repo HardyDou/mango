@@ -1,21 +1,9 @@
 <template>
   <div class="captcha-form">
-    <el-input
-      v-model="mobile"
-      placeholder="请输入手机号"
-      @blur="validateMobile"
-    />
+    <el-input v-model="mobile" placeholder="请输入手机号" @blur="validateMobile" />
     <div class="row">
-      <el-input
-        v-model="code"
-        placeholder="请输入短信验证码"
-        @keyup.enter="handleVerify"
-      />
-      <el-button
-        type="primary"
-        :disabled="countdown > 0 || !mobileValid"
-        @click="handleSend"
-      >
+      <el-input v-model="code" placeholder="请输入短信验证码" @keyup.enter="handleVerify" />
+      <el-button type="primary" :disabled="countdown > 0 || !mobileValid" @click="handleSend">
         {{ countdown > 0 ? `${countdown}s` : '发送验证码' }}
       </el-button>
     </div>

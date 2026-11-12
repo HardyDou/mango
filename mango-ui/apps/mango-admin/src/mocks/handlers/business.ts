@@ -18,12 +18,52 @@ function paginate<T>(list: T[], pageNum: number, pageSize: number) {
 
 // ==================== 租户 Mock ====================
 let mockTenants: SysTenant[] = [
-  { id: 1, tenantName: '芒果集团', tenantCode: 'default', contactName: '平台管理员', contactPhone: '13800000000', contactEmail: 'admin@mango.com', expireTime: '2026-12-31', status: 1, createTime: '2026-01-01 10:00:00' },
-  { id: 2, tenantName: 'A公司', tenantCode: 'company_a', contactName: 'A公司管理员', contactPhone: '13800000001', contactEmail: 'admin@company-a.com', expireTime: '2026-12-31', status: 1, createTime: '2026-01-02 10:00:00' },
-  { id: 3, tenantName: 'B公司', tenantCode: 'company_b', contactName: 'B公司管理员', contactPhone: '13800000002', contactEmail: 'admin@company-b.com', expireTime: '2026-12-31', status: 1, createTime: '2026-01-03 10:00:00' },
-  { id: 4, tenantName: 'C公司', tenantCode: 'company_c', contactName: 'C公司管理员', contactPhone: '13800000003', contactEmail: 'admin@company-c.com', expireTime: '2026-12-31', status: 1, createTime: '2026-01-04 10:00:00' },
+  {
+    id: 1,
+    tenantName: '芒果集团',
+    tenantCode: 'default',
+    contactName: '平台管理员',
+    contactPhone: '13800000000',
+    contactEmail: 'admin@mango.com',
+    expireTime: '2026-12-31',
+    status: 1,
+    createTime: '2026-01-01 10:00:00',
+  },
+  {
+    id: 2,
+    tenantName: 'A公司',
+    tenantCode: 'company_a',
+    contactName: 'A公司管理员',
+    contactPhone: '13800000001',
+    contactEmail: 'admin@company-a.com',
+    expireTime: '2026-12-31',
+    status: 1,
+    createTime: '2026-01-02 10:00:00',
+  },
+  {
+    id: 3,
+    tenantName: 'B公司',
+    tenantCode: 'company_b',
+    contactName: 'B公司管理员',
+    contactPhone: '13800000002',
+    contactEmail: 'admin@company-b.com',
+    expireTime: '2026-12-31',
+    status: 1,
+    createTime: '2026-01-03 10:00:00',
+  },
+  {
+    id: 4,
+    tenantName: 'C公司',
+    tenantCode: 'company_c',
+    contactName: 'C公司管理员',
+    contactPhone: '13800000003',
+    contactEmail: 'admin@company-c.com',
+    expireTime: '2026-12-31',
+    status: 1,
+    createTime: '2026-01-04 10:00:00',
+  },
 ];
-let tenantIdCounter = Math.max(...mockTenants.map(t => t.id || 0)) + 1;
+let tenantIdCounter = Math.max(...mockTenants.map((t) => t.id || 0)) + 1;
 
 export const businessHandlers = [
   // ==================== 租户管理 ====================
@@ -38,10 +78,12 @@ export const businessHandlers = [
 
     let filtered = mockTenants;
     if (keyword) {
-      filtered = filtered.filter(t => t.tenantName.includes(keyword) || t.tenantCode.includes(keyword) || t.contactName?.includes(keyword));
+      filtered = filtered.filter(
+        (t) => t.tenantName.includes(keyword) || t.tenantCode.includes(keyword) || t.contactName?.includes(keyword),
+      );
     }
     if (status) {
-      filtered = filtered.filter(t => t.status === parseInt(status));
+      filtered = filtered.filter((t) => t.status === parseInt(status));
     }
 
     return HttpResponse.json({
@@ -54,7 +96,7 @@ export const businessHandlers = [
 
   // 详情
   http.get('/api/tenant/:id', ({ params }) => {
-    const tenant = mockTenants.find(t => t.id === parseInt(params.id as string));
+    const tenant = mockTenants.find((t) => t.id === parseInt(params.id as string));
     if (!tenant) {
       return HttpResponse.json({ code: 404, success: false, message: '租户不存在', data: null });
     }
@@ -63,7 +105,7 @@ export const businessHandlers = [
 
   // 新增
   http.post('/api/tenant', async ({ request }) => {
-    const body = await request.json() as Partial<SysTenant>;
+    const body = (await request.json()) as Partial<SysTenant>;
     const newTenant: SysTenant = {
       id: tenantIdCounter++,
       tenantName: body.tenantName || '',
@@ -81,8 +123,8 @@ export const businessHandlers = [
 
   // 修改
   http.put('/api/tenant', async ({ request }) => {
-    const body = await request.json() as Partial<SysTenant>;
-    const index = mockTenants.findIndex(t => t.id === body.id);
+    const body = (await request.json()) as Partial<SysTenant>;
+    const index = mockTenants.findIndex((t) => t.id === body.id);
     if (index === -1) {
       return HttpResponse.json({ code: 404, success: false, message: '租户不存在', data: null });
     }
@@ -92,7 +134,7 @@ export const businessHandlers = [
 
   // 删除
   http.delete('/api/tenant/:id', ({ params }) => {
-    const index = mockTenants.findIndex(t => t.id === parseInt(params.id as string));
+    const index = mockTenants.findIndex((t) => t.id === parseInt(params.id as string));
     if (index === -1) {
       return HttpResponse.json({ code: 404, success: false, message: '租户不存在', data: null });
     }
@@ -102,8 +144,8 @@ export const businessHandlers = [
 
   // 修改状态
   http.put('/api/tenant/status/:id', async ({ params, request }) => {
-    const body = await request.json() as { status: number };
-    const tenant = mockTenants.find(t => t.id === parseInt(params.id as string));
+    const body = (await request.json()) as { status: number };
+    const tenant = mockTenants.find((t) => t.id === parseInt(params.id as string));
     if (!tenant) {
       return HttpResponse.json({ code: 404, success: false, message: '租户不存在', data: null });
     }

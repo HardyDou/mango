@@ -820,7 +820,7 @@ function displayOptions(config?: SysConfig) {
   font-weight: 600;
 }
 
-@media (max-width: 960px) {
+@media (width <= 960px) {
   .config-layout {
     grid-template-columns: 1fr;
   }

@@ -16,7 +16,8 @@ const ElButtonStub = defineComponent({
   },
   emits: ['click'],
   setup(_props, { emit, slots }) {
-    return () => h('button', { class: 'el-button', type: 'button', onClick: event => emit('click', event) }, slots.default?.());
+    return () =>
+      h('button', { class: 'el-button', type: 'button', onClick: (event) => emit('click', event) }, slots.default?.());
   },
 });
 
@@ -30,13 +31,18 @@ const ElFormStub = defineComponent({
     size: String,
   },
   setup(props, { slots }) {
-    return () => h('form', {
-      class: 'el-form',
-      'data-label-width': props.labelWidth,
-      'data-label-suffix': props.labelSuffix,
-      'data-label-position': props.labelPosition,
-      'data-size': props.size,
-    }, slots.default?.());
+    return () =>
+      h(
+        'form',
+        {
+          class: 'el-form',
+          'data-label-width': props.labelWidth,
+          'data-label-suffix': props.labelSuffix,
+          'data-label-position': props.labelPosition,
+          'data-size': props.size,
+        },
+        slots.default?.(),
+      );
   },
 });
 
@@ -46,10 +52,11 @@ const ElFormItemStub = defineComponent({
     label: String,
   },
   setup(props, { slots }) {
-    return () => h('label', { class: 'el-form-item' }, [
-      props.label ? h('span', { class: 'el-form-item__label' }, props.label) : null,
-      h('span', { class: 'el-form-item__content' }, slots.default?.()),
-    ]);
+    return () =>
+      h('label', { class: 'el-form-item' }, [
+        props.label ? h('span', { class: 'el-form-item__label' }, props.label) : null,
+        h('span', { class: 'el-form-item__content' }, slots.default?.()),
+      ]);
   },
 });
 
@@ -154,7 +161,7 @@ describe('Mango admin page layout components', () => {
     const buttons = wrapper.findAll('button');
     const buttonComponents = wrapper.findAllComponents(ElButtonStub);
     expect(wrapper.find('.mango-search-panel__fields').text()).toContain('关键字');
-    expect(buttons.map(button => button.text())).toEqual(['查询', '重置']);
+    expect(buttons.map((button) => button.text())).toEqual(['查询', '重置']);
 
     buttonComponents[0].vm.$emit('click');
     buttonComponents[1].vm.$emit('click');
@@ -224,7 +231,7 @@ describe('Mango admin page layout components', () => {
     expect(items[1].attributes('data-mango-search-hidden')).toBeUndefined();
     expect(items[2].attributes('data-mango-search-hidden')).toBe('true');
     expect(items[3].attributes('data-mango-search-hidden')).toBe('true');
-    expect(wrapper.findAll('button').map(button => button.text())).toEqual(['查询', '重置', '']);
+    expect(wrapper.findAll('button').map((button) => button.text())).toEqual(['查询', '重置', '']);
     expect(wrapper.find('.mango-search-panel__actions').text()).not.toContain('展开');
     expect(wrapper.find('.mango-search-panel__more-button').attributes('aria-label')).toBe('展开');
 
@@ -236,7 +243,7 @@ describe('Mango admin page layout components', () => {
     wrapper.findAll('.mango-search-panel__fields > .el-form-item').forEach((item) => {
       expect(item.attributes('data-mango-search-hidden')).toBeUndefined();
     });
-    expect(wrapper.findAll('button').map(button => button.text())).toEqual(['查询', '重置', '']);
+    expect(wrapper.findAll('button').map((button) => button.text())).toEqual(['查询', '重置', '']);
     expect(wrapper.find('.mango-search-panel__more-button').attributes('aria-label')).toBe('收起');
   });
 
@@ -254,7 +261,10 @@ describe('Mango admin page layout components', () => {
         collapseText: 'Less',
       },
       slots: {
-        default: Array.from({ length: 9 }, (_, index) => `<el-form-item label="Field ${index + 1}"><input /></el-form-item>`).join(''),
+        default: Array.from(
+          { length: 9 },
+          (_, index) => `<el-form-item label="Field ${index + 1}"><input /></el-form-item>`,
+        ).join(''),
       },
       global,
     });
@@ -309,7 +319,7 @@ describe('Mango admin page layout components', () => {
     expect(items).toHaveLength(2);
     expect(wrapper.find('.mango-search-panel__more').exists()).toBe(true);
     expect(wrapper.find('.mango-search-panel__more-button').exists()).toBe(false);
-    expect(wrapper.findAll('button').map(button => button.text())).toEqual(['Search', 'Reset']);
+    expect(wrapper.findAll('button').map((button) => button.text())).toEqual(['Search', 'Reset']);
     items.forEach((item) => {
       expect(item.attributes('data-mango-search-hidden')).toBeUndefined();
     });

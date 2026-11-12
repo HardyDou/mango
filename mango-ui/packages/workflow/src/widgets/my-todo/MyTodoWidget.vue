@@ -2,30 +2,17 @@
   <section class="mango-grid-widget-my-todo">
     <header class="mango-grid-widget-my-todo__header">
       <span>我的待办</span>
-      <button
-        v-if="!inlineState"
-        class="mango-grid-widget-my-todo__all"
-        type="button"
-        @click="navigateToAll"
-      >
+      <button v-if="!inlineState" class="mango-grid-widget-my-todo__all" type="button" @click="navigateToAll">
         查看全部
       </button>
     </header>
 
-    <div
-      v-if="inlineState"
-      class="mango-grid-widget-my-todo__state"
-      :data-state="inlineState"
-    >
+    <div v-if="inlineState" class="mango-grid-widget-my-todo__state" :data-state="inlineState">
       <strong>{{ inlineStateTitle }}</strong>
       <span>{{ inlineStateMessage }}</span>
     </div>
 
-    <div
-      v-else
-      class="mango-grid-widget-my-todo__grid"
-      :class="{ 'is-loading': loading }"
-    >
+    <div v-else class="mango-grid-widget-my-todo__grid" :class="{ 'is-loading': loading }">
       <button
         v-for="item in todoItems"
         :key="item.key"
@@ -85,10 +72,10 @@ const todoItems = computed(() => [
     raw: { query: { overdue: 'true' } },
   },
 ]);
-const inlineStateTitle = computed(() => inlineState.value === 'missing-permission' ? '缺少权限' : '加载失败');
-const inlineStateMessage = computed(() => inlineState.value === 'missing-permission'
-  ? '当前账号无权查看我的待办'
-  : '待办统计加载失败，请稍后重试');
+const inlineStateTitle = computed(() => (inlineState.value === 'missing-permission' ? '缺少权限' : '加载失败'));
+const inlineStateMessage = computed(() =>
+  inlineState.value === 'missing-permission' ? '当前账号无权查看我的待办' : '待办统计加载失败，请稍后重试',
+);
 
 onMounted(() => {
   loadSummary();

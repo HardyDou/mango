@@ -38,7 +38,7 @@ export function useTitle(titleKey?: string, customAppName?: string) {
     () => {
       updateTitle();
     },
-    { immediate: true }
+    { immediate: true },
   );
 
   // Cleanup on unmount

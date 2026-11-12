@@ -42,9 +42,7 @@ test.describe('无障碍访问 (A11y) E2E 测试', () => {
     await page.waitForLoadState('domcontentloaded');
 
     // Tab 键应该能聚焦到可交互元素
-    const focusableElements = page.locator(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    );
+    const focusableElements = page.locator('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
 
     const count = await focusableElements.count();
     expect(count).toBeGreaterThan(0);

@@ -13,7 +13,7 @@
               class="captcha-image"
               :src="captchaData.backgroundImage"
               alt="滑块验证码背景"
-            >
+            />
             <div v-else class="captcha-placeholder">加载中...</div>
             <div class="slider" :style="sliderStyle">
               <img
@@ -21,20 +21,13 @@
                 class="slider-image"
                 :src="captchaData.sliderImage"
                 alt="滑块拼图片"
-              >
-              <span
-                v-else-if="captchaData?.backgroundImage"
-                class="slider-fallback"
-                :style="sliderFallbackStyle"
               />
+              <span v-else-if="captchaData?.backgroundImage" class="slider-fallback" :style="sliderFallbackStyle" />
               <span v-else class="slider-empty" />
             </div>
           </div>
         </div>
-        <div
-          class="control-track"
-          :class="{ 'is-success': verified, 'is-failed': failed, 'is-dragging': dragging }"
-        >
+        <div class="control-track" :class="{ 'is-success': verified, 'is-failed': failed, 'is-dragging': dragging }">
           <div class="control-fill" :style="controlFillStyle" />
           <button
             class="control-handle"
@@ -53,11 +46,7 @@
     </template>
 
     <template v-else-if="mode === 'trigger'">
-      <div
-        class="trigger-shell"
-        @mouseenter="showTriggerPanel"
-        @mouseleave="hideTriggerPanel"
-      >
+      <div class="trigger-shell" @mouseenter="showTriggerPanel" @mouseleave="hideTriggerPanel">
         <div v-show="panelVisible || dragging" class="trigger-panel">
           <div :ref="setTrackRef" class="track">
             <div class="track-ratio" :style="{ aspectRatio: trackAspectRatio }">
@@ -66,7 +55,7 @@
                 class="captcha-image"
                 :src="captchaData.backgroundImage"
                 alt="滑块验证码背景"
-              >
+              />
               <div v-else class="captcha-placeholder">加载中...</div>
               <div class="slider" :style="sliderStyle">
                 <img
@@ -74,12 +63,8 @@
                   class="slider-image"
                   :src="captchaData.sliderImage"
                   alt="滑块拼图片"
-                >
-                <span
-                  v-else-if="captchaData?.backgroundImage"
-                  class="slider-fallback"
-                  :style="sliderFallbackStyle"
                 />
+                <span v-else-if="captchaData?.backgroundImage" class="slider-fallback" :style="sliderFallbackStyle" />
                 <span v-else class="slider-empty" />
               </div>
             </div>
@@ -109,7 +94,6 @@
         </div>
       </div>
     </template>
-
   </div>
 </template>
 
@@ -120,11 +104,14 @@ import { CaptchaType, generateBlockPuzzle, verifyCaptcha, type CaptchaResponse }
 
 type CaptchaDisplayMode = 'embedded' | 'trigger' | 'popup';
 
-const props = withDefaults(defineProps<{
-  mode?: CaptchaDisplayMode;
-}>(), {
-  mode: 'embedded',
-});
+const props = withDefaults(
+  defineProps<{
+    mode?: CaptchaDisplayMode;
+  }>(),
+  {
+    mode: 'embedded',
+  },
+);
 
 const emit = defineEmits<{
   success: [key: string];
@@ -315,9 +302,7 @@ function handleTouchDrag(event: TouchEvent) {
 }
 
 function updateSlider(clientX: number) {
-  const maxLeft = mode.value === 'trigger'
-    ? triggerMaxHandleLeft.value
-    : controlMaxHandleLeft.value;
+  const maxLeft = mode.value === 'trigger' ? triggerMaxHandleLeft.value : controlMaxHandleLeft.value;
   sliderLeft.value = Math.min(Math.max(clientX - dragStartX, 0), maxLeft);
 }
 
@@ -386,10 +371,13 @@ onBeforeUnmount(() => {
   resolveVerify(false);
 });
 
-watch(() => props.mode, () => {
-  panelVisible.value = false;
-  void nextTick(handlePanelShow);
-});
+watch(
+  () => props.mode,
+  () => {
+    panelVisible.value = false;
+    void nextTick(handlePanelShow);
+  },
+);
 
 defineExpose({ refresh, verify });
 </script>
@@ -789,5 +777,4 @@ defineExpose({ refresh, verify });
   width: 100%;
   max-width: 318px;
 }
-
 </style>

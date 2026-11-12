@@ -157,11 +157,21 @@ const propsTable = [
   { name: 'level', description: '联动级别；3=省市区，4=省市区街道', type: 'number', defaultValue: '3' },
   { name: 'showAllLevels', description: '是否在输入框展示完整路径', type: 'boolean', defaultValue: 'true' },
   { name: 'showHot', description: '是否优先展示热门城市配置', type: 'boolean', defaultValue: 'true' },
-  { name: 'placeholder', description: '占位文本，支持普通文本或 i18n key', type: 'string', defaultValue: 'chinaArea.placeholder' },
+  {
+    name: 'placeholder',
+    description: '占位文本，支持普通文本或 i18n key',
+    type: 'string',
+    defaultValue: 'chinaArea.placeholder',
+  },
   { name: 'disabled', description: '是否禁用', type: 'boolean', defaultValue: 'false' },
   { name: 'clearable', description: '是否可清空', type: 'boolean', defaultValue: 'true' },
   { name: 'filterable', description: '是否支持搜索过滤', type: 'boolean', defaultValue: 'true' },
-  { name: 'collapseTags', description: '多选标签是否折叠；当前组件按级联单路径使用', type: 'boolean', defaultValue: 'false' },
+  {
+    name: 'collapseTags',
+    description: '多选标签是否折叠；当前组件按级联单路径使用',
+    type: 'boolean',
+    defaultValue: 'false',
+  },
   { name: 'separator', description: '路径展示分隔符', type: 'string', defaultValue: '/' },
 ];
 
@@ -170,11 +180,19 @@ const eventsTable = [
   { name: 'change', description: '选择结果变化时触发', payload: 'number[]' },
   { name: 'getValue', description: '组件暴露方法，获取当前选中路径 ID', payload: '() => number[]' },
   { name: 'clear', description: '组件暴露方法，清空当前选择并清理缓存', payload: '() => void' },
-  { name: 'clearNodeCache', description: '组件暴露方法，清理指定父节点缓存，强制重新加载', payload: '(parentId: number) => void' },
+  {
+    name: 'clearNodeCache',
+    description: '组件暴露方法，清理指定父节点缓存，强制重新加载',
+    payload: '(parentId: number) => void',
+  },
 ];
 
 const valueTable = [
-  { name: 'modelValue', description: '行政区划 ID 路径数组，按省、市、区县、街道顺序返回', example: '[440000, 440100, 440106]' },
+  {
+    name: 'modelValue',
+    description: '行政区划 ID 路径数组，按省、市、区县、街道顺序返回',
+    example: '[440000, 440100, 440106]',
+  },
   { name: 'level=4', description: '四级联动会在路径末尾追加街道 ID', example: '[440000, 440100, 440106, 440106001]' },
 ];
 
@@ -184,7 +202,7 @@ function toggleCode(key: string) {
 </script>
 
 <style scoped lang="scss">
-@use './demo-page.scss';
+@use './demo-page';
 
 .result-tags {
   display: flex;

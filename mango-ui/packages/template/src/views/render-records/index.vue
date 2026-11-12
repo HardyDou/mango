@@ -234,7 +234,7 @@ function recordStatusText(value: TemplateRenderStatus) {
   color: var(--el-color-danger);
 }
 
-@media (max-width: 760px) {
+@media (width <= 760px) {
   .page-head {
     flex-direction: column;
   }

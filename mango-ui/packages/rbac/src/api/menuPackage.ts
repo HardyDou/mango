@@ -21,18 +21,13 @@ export interface MenuPackageQuery {
 }
 
 export const menuPackageApi = {
-  list: (params: MenuPackageQuery = {}) =>
-    get<MenuPackageVO[]>('/authorization/menu-packages', { params }),
+  list: (params: MenuPackageQuery = {}) => get<MenuPackageVO[]>('/authorization/menu-packages', { params }),
 
-  detail: (packageId: ApiId) =>
-    get<MenuPackageVO>('/authorization/menu-packages/detail', { params: { packageId } }),
+  detail: (packageId: ApiId) => get<MenuPackageVO>('/authorization/menu-packages/detail', { params: { packageId } }),
 
-  create: (data: MenuPackageVO) =>
-    post<ApiId>('/authorization/menu-packages', data),
+  create: (data: MenuPackageVO) => post<ApiId>('/authorization/menu-packages', data),
 
-  update: (data: MenuPackageVO) =>
-    put<boolean>('/authorization/menu-packages', data),
+  update: (data: MenuPackageVO) => put<boolean>('/authorization/menu-packages', data),
 
-  delete: (packageId: ApiId) =>
-    del<boolean>('/authorization/menu-packages', { params: { packageId } }),
+  delete: (packageId: ApiId) => del<boolean>('/authorization/menu-packages', { params: { packageId } }),
 };

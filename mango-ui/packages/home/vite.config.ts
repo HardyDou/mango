@@ -9,10 +9,7 @@ export default defineConfig({
       formats: ['es'],
     },
     rollupOptions: {
-      external: [
-        '@mango/common',
-        '@mango/common/utils/request',
-      ],
+      external: ['@mango/common', '@mango/common/utils/request'],
       output: {
         entryFileNames: '[name].js',
       },

@@ -94,7 +94,7 @@ const emit = defineEmits<{
   overflow: auto;
 }
 
-@media (max-width: 1180px) {
+@media (width <= 1180px) {
   .workflow-business-layout__body {
     grid-template-columns: 1fr;
   }
@@ -105,7 +105,7 @@ const emit = defineEmits<{
   }
 }
 
-@media (max-width: 640px) {
+@media (width <= 640px) {
   .workflow-business-layout__header {
     align-items: flex-start;
   }

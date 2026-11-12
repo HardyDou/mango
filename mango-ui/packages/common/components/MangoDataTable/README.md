@@ -32,14 +32,14 @@ import type { MangoTableColumn, MangoTablePageChangeContext } from '@mango/commo
 
 ## 列和扩展类型
 
-| 类型 | 字段 / 默认语义 |
-| --- | --- |
-| `MangoTableColumn` | `field`、`label` 必填；`type` 为 `text | status | tag | button | input | select | radio | switch | custom`（默认 `text`）；支持 `width`、`minWidth`、`fixed`、`align`、`sortable`、`resizable`、`expandable`、`hidden`、`showOverflowTooltip`、`emptyText`、`options`、`loading`、`slot`、`props`、`formatter`、`disabled`。 |
-| `MangoTableOption` | `label`、`value` 必填；`disabled?`、`tone?` 用于选择项状态。 |
-| `MangoTableAction` | `key`、`text` 必填；`tone`、`visible`、`disabled`、`loading` 可为静态值或按行上下文计算，`props` 透传按钮属性。 |
-| `MangoTableOperation` | 操作列配置：`visible`、`label`、`width`、`minWidth`、`fixed`、`align`、`resizable`、`moreCount`、`actions`。`actions` 必填；事件只返回意图，不自动调用接口。 |
-| `MangoTablePagination` | `page`、`limit`、`total` 必填；`visible`、`pageSizes`、`align`、`layout`、`props` 可选。 |
-| `MangoTableExpand` | `type`（当前为 `list`）、`labelWidth`、`emptyText`。 |
+| 类型                   | 字段 / 默认语义                                                                                                                                              |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `MangoTableColumn`     | `field`、`label` 必填；`type` 为 `text                                                                                                                       | status | tag | button | input | select | radio | switch | custom`（默认 `text`）；支持 `width`、`minWidth`、`fixed`、`align`、`sortable`、`resizable`、`expandable`、`hidden`、`showOverflowTooltip`、`emptyText`、`options`、`loading`、`slot`、`props`、`formatter`、`disabled`。 |
+| `MangoTableOption`     | `label`、`value` 必填；`disabled?`、`tone?` 用于选择项状态。                                                                                                 |
+| `MangoTableAction`     | `key`、`text` 必填；`tone`、`visible`、`disabled`、`loading` 可为静态值或按行上下文计算，`props` 透传按钮属性。                                              |
+| `MangoTableOperation`  | 操作列配置：`visible`、`label`、`width`、`minWidth`、`fixed`、`align`、`resizable`、`moreCount`、`actions`。`actions` 必填；事件只返回意图，不自动调用接口。 |
+| `MangoTablePagination` | `page`、`limit`、`total` 必填；`visible`、`pageSizes`、`align`、`layout`、`props` 可选。                                                                     |
+| `MangoTableExpand`     | `type`（当前为 `list`）、`labelWidth`、`emptyText`。                                                                                                         |
 
 单元格上下文包含 `{ row, rowIndex, column, field, value }`；编辑事件额外包含 `previousValue`。`MangoTableCell` 的 `input/select/radio` 会改写行字段并触发 `cell-change`，`formatter` 只改变展示值。`MangoDataTable` 的分页、选择、操作和重试均由宿主监听后请求数据。
 

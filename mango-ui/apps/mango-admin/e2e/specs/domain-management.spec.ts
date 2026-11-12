@@ -49,7 +49,7 @@ async function loginToken(request: APIRequestContext, tenant: LoginTenant) {
     },
   });
   expect(response.ok()).toBeTruthy();
-  const body = await response.json() as ApiResponse<{ accessToken: string }>;
+  const body = (await response.json()) as ApiResponse<{ accessToken: string }>;
   expect(body.success || body.code === 200).toBeTruthy();
   return body.data.accessToken;
 }
@@ -59,14 +59,13 @@ async function loginPage(page: Page, tenant: LoginTenant, diagnostics: string[])
   await selectLoginTenant(page, new RegExp(tenant.tenantName));
   await page.fill('input[placeholder="用户名"]', 'admin');
   await page.fill('input[placeholder="密码"]', 'admin123');
-  const loginResponsePromise = page.waitForResponse((response) =>
-    new URL(response.url()).pathname === '/api/auth/login' &&
-    response.request().method() === 'POST'
+  const loginResponsePromise = page.waitForResponse(
+    (response) => new URL(response.url()).pathname === '/api/auth/login' && response.request().method() === 'POST',
   );
   await page.click('button:has-text("登 录")');
   const loginResponse = await loginResponsePromise;
   expect(loginResponse.status()).toBe(200);
-  const loginBody = await loginResponse.json() as ApiResponse<{ accessToken?: string }>;
+  const loginBody = (await loginResponse.json()) as ApiResponse<{ accessToken?: string }>;
   expect(loginBody.success || loginBody.code === 200).toBeTruthy();
   expect(loginBody.data?.accessToken).toBeTruthy();
   try {
@@ -76,7 +75,9 @@ async function loginPage(page: Page, tenant: LoginTenant, diagnostics: string[])
       hasToken: Boolean(sessionStorage.getItem('MANGO_TOKEN')),
       hasUserInfo: Boolean(sessionStorage.getItem('userInfo')),
     }));
-    throw new Error(`登录后的浏览器异常：\n${diagnostics.join('\n')}\n存储状态：${JSON.stringify(storageState)}\n${String(error)}`);
+    throw new Error(
+      `登录后的浏览器异常：\n${diagnostics.join('\n')}\n存储状态：${JSON.stringify(storageState)}\n${String(error)}`,
+    );
   }
 }
 
@@ -85,7 +86,7 @@ async function authJson<T>(request: APIRequestContext, token: string, path: stri
     headers: { Authorization: `Bearer ${token}` },
   });
   expect(response.status()).toBe(200);
-  const body = await response.json() as ApiResponse<T>;
+  const body = (await response.json()) as ApiResponse<T>;
   expect(body.success || body.code === 200).toBeTruthy();
   return body.data;
 }
@@ -97,7 +98,7 @@ async function findDomain(request: APIRequestContext, token: string, domainCode:
   if (response.status() !== 200) {
     return undefined;
   }
-  const body = await response.json() as ApiResponse<DomainItem>;
+  const body = (await response.json()) as ApiResponse<DomainItem>;
   if (!(body.success || body.code === 200)) {
     return undefined;
   }
@@ -150,9 +151,8 @@ test.describe('业务域管理页面真实接口闭环 @p0 @domain', () => {
       await cleanupDomain(request, token, parentCode, childCode);
       await loginPage(page, platformTenant, consoleErrors);
 
-      const treeResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/domain/domains/tree') &&
-        response.status() === 200
+      const treeResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/domain/domains/tree') && response.status() === 200,
       );
       await page.goto('/#/system/domain');
       await treeResponsePromise;
@@ -171,9 +171,8 @@ test.describe('业务域管理页面真实接口闭环 @p0 @domain', () => {
       await createDialog.getByLabel('业务域名称').fill(parentName);
       await createDialog.getByLabel('备注').fill('E2E创建顶级业务域');
 
-      const createResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/domain/domains') &&
-        response.request().method() === 'POST'
+      const createResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/domain/domains') && response.request().method() === 'POST',
       );
       await createDialog.getByRole('button', { name: '保存' }).click();
       const createResponse = await createResponsePromise;
@@ -198,9 +197,8 @@ test.describe('业务域管理页面真实接口闭环 @p0 @domain', () => {
       await expect(editDialog).toBeVisible();
       await expect(editDialog.getByLabel('本层编码')).toBeDisabled();
       await editDialog.getByLabel('业务域名称').fill(editedParentName);
-      const updateResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/domain/domains') &&
-        response.request().method() === 'PUT'
+      const updateResponsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/domain/domains') && response.request().method() === 'PUT',
       );
       await editDialog.getByRole('button', { name: '保存' }).click();
       const updateResponse = await updateResponsePromise;
@@ -230,7 +228,9 @@ test.describe('业务域管理页面真实接口闭环 @p0 @domain', () => {
       await expectLatestMessage(page, '删除成功');
       await expect(page.getByText(parentCode)).toHaveCount(0);
 
-      await expect(page.locator('text=/401|403|404|500|未授权|没有权限|拒绝访问|加载失败|登录已过期|请重新登录/')).toHaveCount(0);
+      await expect(
+        page.locator('text=/401|403|404|500|未授权|没有权限|拒绝访问|加载失败|登录已过期|请重新登录/'),
+      ).toHaveCount(0);
       expect(consoleErrors).toEqual([]);
       await page.screenshot({
         path: testInfo.outputPath('domain-management-final.png'),

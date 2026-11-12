@@ -2,8 +2,8 @@
 
 :root {
   /* Base colors */
-  --mango-color-white: #ffffff;
-  --mango-color-black: #000000;
+  --mango-color-white: #fff;
+  --mango-color-black: #000;
   --mango-color-primary: #2e5cf6;
   --mango-color-primary-light: #5b8af6;
   --mango-color-primary-lighter: #ecf5ff;
@@ -20,29 +20,29 @@
 
   /* Background */
   --mango-bg-main: #f3f5f8;
-  --mango-bg-color: #ffffff;
-  --mango-bg-overlay: #ffffff;
+  --mango-bg-color: #fff;
+  --mango-bg-overlay: #fff;
   --mango-bg-top-bar: #2e5cf6;
-  --mango-bg-menu-bar: #ffffff;
+  --mango-bg-menu-bar: #fff;
   --mango-bg-columns-menu-bar: #545c64;
-  --mango-bg-menuBar-light-1: #ffffff;
+  --mango-bg-menuBar-light-1: #fff;
 
   /* Border */
   --mango-border-color: #e6ebf5;
   --mango-border-light: #eef2f8;
 
   /* Text */
-  --mango-text-color: #333333;
+  --mango-text-color: #333;
   --mango-text-color-regular: #606266;
   --mango-text-color-placeholder: #a8abb2;
   --mango-text-color-disabled: #c0c4cc;
-  --mango-color-top-bar: #ffffff;
+  --mango-color-top-bar: #fff;
   --mango-color-menu-bar: #505968;
   --mango-color-columns-menu-bar: #e6e6e6;
 
   /* Menu */
-  --mango-color-menu-active-bg: rgba(46, 92, 246, 0.1);
-  --mango-color-menu-hover: rgba(0, 0, 0, 0.06);
+  --mango-color-menu-active-bg: rgb(46 92 246 / 10%);
+  --mango-color-menu-hover: rgb(0 0 0 / 6%);
 
   /* Layout */
   --mango-layout-bg: #f5f5f5;
@@ -56,8 +56,8 @@
   --mango-mobile-aside-width: 0px;
 
   /* Shadow */
-  --mango-shadow-light: 0 6px 18px 0 rgba(30, 62, 120, 0.08);
-  --mango-shadow-dark: 0 2px 12px 0 rgba(0, 0, 0, 0.2);
+  --mango-shadow-light: 0 6px 18px 0 rgb(30 62 120 / 8%);
+  --mango-shadow-dark: 0 2px 12px 0 rgb(0 0 0 / 20%);
 
   /* Transition */
   --mango-transition-duration: 0.3s;
@@ -91,7 +91,7 @@ body,
   padding: 0;
   width: 100%;
   height: 100%;
-  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'SimSun', sans-serif;
+  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', SimSun, sans-serif;
   font-weight: 400;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
@@ -122,7 +122,7 @@ body,
 }
 
 /* Hard breakpoint - preserved from pigx-ui */
-@media (max-width: 1000px) {
+@media (width <= 1000px) {
   html {
     font-size: 13px;
   }

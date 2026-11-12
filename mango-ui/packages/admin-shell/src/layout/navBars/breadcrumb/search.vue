@@ -1,8 +1,5 @@
 <template>
-  <div
-    class="layout-breadcrumb-search"
-    @click="openSearch"
-  >
+  <div class="layout-breadcrumb-search" @click="openSearch">
     <el-icon :size="20">
       <Search />
     </el-icon>
@@ -26,9 +23,10 @@ const openSearch = () => {
   padding: 0 12px;
   height: 40px;
   cursor: pointer;
-  color: #ffffff;
+  color: #fff;
   transition: opacity 0.2s;
 }
+
 .layout-breadcrumb-search:hover {
   opacity: 0.8;
 }

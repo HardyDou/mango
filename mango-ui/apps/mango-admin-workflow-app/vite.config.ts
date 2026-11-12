@@ -4,10 +4,7 @@ import { defineConfig, loadEnv, type ConfigEnv } from 'vite';
 import { resolve } from 'path';
 import { createAllowedOrigins, createPreviewCorsHeaders } from './vite.cors';
 import { mangoMicroManualChunks } from '../../build-config/microChunks';
-import {
-  assertMangoPackageModeDist,
-  createMangoWorkspaceAliases,
-} from '../../build-config/mangoAliases';
+import { assertMangoPackageModeDist, createMangoWorkspaceAliases } from '../../build-config/mangoAliases';
 import { createMangoApiProxy } from '../../build-config/apiProxy';
 
 const adminExtensionVersion = JSON.parse(

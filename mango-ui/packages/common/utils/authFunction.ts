@@ -135,7 +135,10 @@ class ButtonRuleParser {
   private readonly tokens: RuleToken[];
   private index = 0;
 
-  constructor(expression: string, private readonly context: ButtonRuleContext) {
+  constructor(
+    expression: string,
+    private readonly context: ButtonRuleContext,
+  ) {
     this.tokens = tokenizeButtonRule(expression);
   }
 
@@ -404,10 +407,12 @@ function compareValues(left: unknown, right: unknown): number {
 }
 
 function isRuleBindingValue(value: unknown): value is AuthRuleBindingValue {
-  return Boolean(value)
-    && typeof value === 'object'
-    && !Array.isArray(value)
-    && typeof (value as AuthRuleBindingValue).code === 'string';
+  return (
+    Boolean(value) &&
+    typeof value === 'object' &&
+    !Array.isArray(value) &&
+    typeof (value as AuthRuleBindingValue).code === 'string'
+  );
 }
 
 function resolveButtonRule(value: AuthRuleBindingValue): string {
@@ -416,7 +421,7 @@ function resolveButtonRule(value: AuthRuleBindingValue): string {
   }
 
   const rules = Array.isArray(value.buttonRules) ? value.buttonRules : getButtonRules();
-  return rules.find(item => item.code === value.code)?.displayRule || '';
+  return rules.find((item) => item.code === value.code)?.displayRule || '';
 }
 
 /**

@@ -54,8 +54,7 @@ export const Session = {
     if (options?.refreshToken) {
       sessionStorage.setItem('MANGO_REFRESH_TOKEN', options.refreshToken);
     }
-    const expiresAt = options?.expiresAt
-      || (options?.expiresIn ? Date.now() + options.expiresIn * 1000 : undefined);
+    const expiresAt = options?.expiresAt || (options?.expiresIn ? Date.now() + options.expiresIn * 1000 : undefined);
     if (expiresAt) {
       sessionStorage.setItem('MANGO_TOKEN_EXPIRES_AT', String(expiresAt));
     }

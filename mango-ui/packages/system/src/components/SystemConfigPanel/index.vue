@@ -1,17 +1,8 @@
 <template>
   <div class="mango-system-config-panel">
     <div class="mango-system-config-panel__bar">
-      <el-tabs
-        v-model="activeDomain"
-        class="mango-system-config-panel__tabs"
-        @tab-change="handleDomainChange"
-      >
-        <el-tab-pane
-          v-for="domain in normalizedDomains"
-          :key="domain"
-          :label="domainLabel(domain)"
-          :name="domain"
-        />
+      <el-tabs v-model="activeDomain" class="mango-system-config-panel__tabs" @tab-change="handleDomainChange">
+        <el-tab-pane v-for="domain in normalizedDomains" :key="domain" :label="domainLabel(domain)" :name="domain" />
       </el-tabs>
       <el-button
         v-if="showRefresh"
@@ -32,11 +23,7 @@
       :closable="false"
     />
 
-    <el-skeleton
-      v-else-if="currentState.loading"
-      :rows="5"
-      animated
-    />
+    <el-skeleton v-else-if="currentState.loading" :rows="5" animated />
 
     <el-result
       v-else-if="currentState.error"
@@ -45,28 +32,15 @@
       :sub-title="currentState.error"
     >
       <template #extra>
-        <el-button
-          type="primary"
-          @click="loadDomain(activeDomain, true)"
-        >
-          重试
-        </el-button>
+        <el-button type="primary" @click="loadDomain(activeDomain, true)"> 重试 </el-button>
       </template>
     </el-result>
 
-    <el-empty
-      v-else-if="!visibleConfigs.length"
-      description="当前业务域暂无系统配置"
-    >
-      <el-button @click="loadDomain(activeDomain, true)">
-        刷新
-      </el-button>
+    <el-empty v-else-if="!visibleConfigs.length" description="当前业务域暂无系统配置">
+      <el-button @click="loadDomain(activeDomain, true)"> 刷新 </el-button>
     </el-empty>
 
-    <div
-      v-else
-      class="mango-system-config-panel__grid"
-    >
+    <div v-else class="mango-system-config-panel__grid">
       <el-card
         v-for="config in visibleConfigs"
         :key="config.id || config.configKey"
@@ -78,20 +52,10 @@
             <div class="mango-system-config-panel__heading">
               <div class="mango-system-config-panel__title">
                 <span>{{ config.configName || config.configKey }}</span>
-                <el-tag
-                  v-if="!isEditable(config)"
-                  :type="statusTagType(config)"
-                  effect="plain"
-                  size="small"
-                >
+                <el-tag v-if="!isEditable(config)" :type="statusTagType(config)" effect="plain" size="small">
                   {{ statusText(config) }}
                 </el-tag>
-                <el-tag
-                  v-else-if="savingKeys[configKey(config)]"
-                  type="primary"
-                  effect="plain"
-                  size="small"
-                >
+                <el-tag v-else-if="savingKeys[configKey(config)]" type="primary" effect="plain" size="small">
                   保存中
                 </el-tag>
               </div>
@@ -100,14 +64,7 @@
                 <span>{{ valueTypeLabel(config.valueType) }}</span>
               </div>
             </div>
-            <el-button
-              :icon="View"
-              link
-              type="primary"
-              @click="openDetail(config)"
-            >
-              详情
-            </el-button>
+            <el-button :icon="View" link type="primary" @click="openDetail(config)"> 详情 </el-button>
           </div>
         </template>
 
@@ -123,11 +80,7 @@
             :disabled="!isEditable(config) || savingKeys[configKey(config)]"
             @change="handleInlineChange(config)"
           >
-            <el-radio-button
-              v-for="option in optionList(config)"
-              :key="option.value"
-              :value="option.value"
-            >
+            <el-radio-button v-for="option in optionList(config)" :key="option.value" :value="option.value">
               {{ option.label }}
             </el-radio-button>
           </el-radio-group>
@@ -167,10 +120,7 @@
               {{ detailConfig.description || detailConfig.remark || '未填写配置介绍' }}
             </div>
           </div>
-          <el-tag
-            :type="statusTagType(detailConfig)"
-            effect="plain"
-          >
+          <el-tag :type="statusTagType(detailConfig)" effect="plain">
             {{ statusText(detailConfig) }}
           </el-tag>
         </div>
@@ -194,10 +144,7 @@
           </div>
         </div>
 
-        <el-form
-          class="mango-system-config-panel__detail-form"
-          label-width="88px"
-        >
+        <el-form class="mango-system-config-panel__detail-form" label-width="88px">
           <el-form-item label="当前值">
             <el-radio-group
               v-if="resolveValueType(detailConfig) === 'RADIO'"
@@ -205,11 +152,7 @@
               class="mango-system-config-panel__radio"
               :disabled="!isEditable(detailConfig) || detailSaving"
             >
-              <el-radio-button
-                v-for="option in optionList(detailConfig)"
-                :key="option.value"
-                :value="option.value"
-              >
+              <el-radio-button v-for="option in optionList(detailConfig)" :key="option.value" :value="option.value">
                 {{ option.label }}
               </el-radio-button>
             </el-radio-group>
@@ -229,27 +172,16 @@
             </component>
           </el-form-item>
 
-          <el-form-item
-            v-if="optionList(detailConfig).length > 0"
-            label="可选值"
-          >
+          <el-form-item v-if="optionList(detailConfig).length > 0" label="可选值">
             <div class="mango-system-config-panel__options">
-              <el-tag
-                v-for="option in optionList(detailConfig)"
-                :key="option.value"
-                effect="plain"
-                size="small"
-              >
+              <el-tag v-for="option in optionList(detailConfig)" :key="option.value" effect="plain" size="small">
                 {{ option.label }}
               </el-tag>
             </div>
           </el-form-item>
 
           <el-form-item label="配置键">
-            <el-text
-              class="mango-system-config-panel__code"
-              truncated
-            >
+            <el-text class="mango-system-config-panel__code" truncated>
               {{ detailConfig.configKey }}
             </el-text>
           </el-form-item>
@@ -257,9 +189,7 @@
       </template>
 
       <template #footer>
-        <el-button @click="detailVisible = false">
-          关闭
-        </el-button>
+        <el-button @click="detailVisible = false"> 关闭 </el-button>
         <el-button
           type="primary"
           :disabled="!detailConfig || !isEditable(detailConfig)"
@@ -292,20 +222,23 @@ interface DomainState {
   configs: SysConfig[];
 }
 
-const props = withDefaults(defineProps<{
-  domainCodes: string[];
-  domainLabels?: Record<string, string>;
-  keyword?: string;
-  readonly?: boolean;
-  showRefresh?: boolean;
-  typeFilter?: ConfigValueType[];
-}>(), {
-  domainLabels: () => ({}),
-  keyword: '',
-  readonly: true,
-  showRefresh: true,
-  typeFilter: () => [],
-});
+const props = withDefaults(
+  defineProps<{
+    domainCodes: string[];
+    domainLabels?: Record<string, string>;
+    keyword?: string;
+    readonly?: boolean;
+    showRefresh?: boolean;
+    typeFilter?: ConfigValueType[];
+  }>(),
+  {
+    domainLabels: () => ({}),
+    keyword: '',
+    readonly: true,
+    showRefresh: true,
+    typeFilter: () => [],
+  },
+);
 
 const emit = defineEmits<{
   loaded: [domainCode: string, configs: SysConfig[]];
@@ -333,13 +266,13 @@ const visibleConfigs = computed(() => {
   const text = props.keyword.trim().toLowerCase();
   return currentState.value.configs.filter((config) => {
     const typeMatched = !props.typeFilter.length || props.typeFilter.includes(resolveValueType(config));
-    const keywordMatched = !text
-      || [
-        config.configKey,
-        config.configName,
-        config.description,
-        config.remark,
-      ].some((value) => String(value || '').toLowerCase().includes(text));
+    const keywordMatched =
+      !text ||
+      [config.configKey, config.configName, config.description, config.remark].some((value) =>
+        String(value || '')
+          .toLowerCase()
+          .includes(text),
+      );
     return typeMatched && keywordMatched;
   });
 });
@@ -519,9 +452,13 @@ function optionList(config: SysConfig): ConfigOption[] {
 }
 
 async function preloadDictOptions(configs: SysConfig[]) {
-  const dictTypes = Array.from(new Set(configs
-    .filter((config) => config.optionSource === 'DICT' && config.dictType)
-    .map((config) => String(config.dictType))));
+  const dictTypes = Array.from(
+    new Set(
+      configs
+        .filter((config) => config.optionSource === 'DICT' && config.dictType)
+        .map((config) => String(config.dictType)),
+    ),
+  );
   await Promise.all(dictTypes.map(loadDictOptions));
 }
 
@@ -578,7 +515,7 @@ function statusText(config: SysConfig) {
     return '禁用';
   }
   if (!isEditable(config)) {
-    return props.readonly ? '只读' : (config.editableReason || '不可编辑');
+    return props.readonly ? '只读' : config.editableReason || '不可编辑';
   }
   return '可改';
 }
@@ -622,9 +559,7 @@ function displayConfigValue(config: SysConfig, rawValue?: string) {
         return parsed.map(String).join(' 至 ');
       }
       const options = optionList(config);
-      return parsed
-        .map((value) => labelByValue(options, String(value)))
-        .join('、');
+      return parsed.map((value) => labelByValue(options, String(value))).join('、');
     } catch {
       return String(rawValue);
     }
@@ -919,7 +854,7 @@ function valueTypeLabel(type?: ConfigValueType) {
   max-width: 520px;
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .mango-system-config-panel__bar {
     align-items: stretch;
     flex-direction: column;

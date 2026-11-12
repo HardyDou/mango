@@ -8,24 +8,24 @@
 
 ## 2. 功能清单
 
-| 能力 | 导出 |
-|------|------|
-| 动态表单渲染 | `RuntimeFormRenderer` |
-| 解析动态表单 JSON | `parseRuntimeForm()` |
-| 生成表单默认变量 | `createDefaultVariables()` |
-| 解析流程表单配置 | `parseWorkflowFormConfig()` |
-| 解析自定义申请路由 | `customApplyRouteOf()` |
-| 注册业务申请组件 | `registerBusinessApplyComponent()`、`registerBusinessApplyComponents()` |
-| 解析业务申请组件 | `resolveBusinessApplyRegistration()` |
-| 注册业务审批组件 | `registerBusinessApprovalComponent()`、`registerBusinessApprovalComponents()` |
-| 解析业务审批组件 | `resolveBusinessApprovalRegistration()`、`resolveBusinessApprovalComponent()` |
-| 采集审批变量和意见 | `collectBusinessApprovalVariables()`、`collectBusinessApprovalComment()` |
-| 解析任务变量 | `businessTypeOf()`、`applyIdOf()`、`businessPermissionsOf()` |
-| 展示审批进度 | `WorkflowProgressTree`、`WorkflowDefinitionGraph` |
-| 展示审批时间线 | `WorkflowApprovalTimeline`、`WorkflowNodeTimeline`、`WorkflowInstanceProgress` |
-| 组合工作流详情布局 | `WorkflowLayout`、`WorkflowSidebar`、`WorkflowInstanceSummary` |
-| 展示历史申请记录 | `WorkflowInstanceHistory`、`WorkflowInstanceHistoryDialog` |
-| 弹出流程图 | `WorkflowDefinitionGraphDialog` |
+| 能力               | 导出                                                                           |
+| ------------------ | ------------------------------------------------------------------------------ |
+| 动态表单渲染       | `RuntimeFormRenderer`                                                          |
+| 解析动态表单 JSON  | `parseRuntimeForm()`                                                           |
+| 生成表单默认变量   | `createDefaultVariables()`                                                     |
+| 解析流程表单配置   | `parseWorkflowFormConfig()`                                                    |
+| 解析自定义申请路由 | `customApplyRouteOf()`                                                         |
+| 注册业务申请组件   | `registerBusinessApplyComponent()`、`registerBusinessApplyComponents()`        |
+| 解析业务申请组件   | `resolveBusinessApplyRegistration()`                                           |
+| 注册业务审批组件   | `registerBusinessApprovalComponent()`、`registerBusinessApprovalComponents()`  |
+| 解析业务审批组件   | `resolveBusinessApprovalRegistration()`、`resolveBusinessApprovalComponent()`  |
+| 采集审批变量和意见 | `collectBusinessApprovalVariables()`、`collectBusinessApprovalComment()`       |
+| 解析任务变量       | `businessTypeOf()`、`applyIdOf()`、`businessPermissionsOf()`                   |
+| 展示审批进度       | `WorkflowProgressTree`、`WorkflowDefinitionGraph`                              |
+| 展示审批时间线     | `WorkflowApprovalTimeline`、`WorkflowNodeTimeline`、`WorkflowInstanceProgress` |
+| 组合工作流详情布局 | `WorkflowLayout`、`WorkflowSidebar`、`WorkflowInstanceSummary`                 |
+| 展示历史申请记录   | `WorkflowInstanceHistory`、`WorkflowInstanceHistoryDialog`                     |
+| 弹出流程图         | `WorkflowDefinitionGraphDialog`                                                |
 
 ## 3. 接入方式
 
@@ -41,11 +41,7 @@ const model = reactive(createDefaultVariables(fields));
 </script>
 
 <template>
-  <RuntimeFormRenderer
-    :fields="fields"
-    :model="model"
-    :permissions="fieldPermissions"
-  />
+  <RuntimeFormRenderer :fields="fields" :model="model" :permissions="fieldPermissions" />
 </template>
 ```
 
@@ -70,10 +66,10 @@ import ExpenseApprovalView from './ExpenseApprovalView.vue';
 registerBusinessApprovalComponent('workflow.expense.approve.finance', {
   component: ExpenseApprovalView,
   commentMode: 'BUSINESS_FORM',
-  collectVariables: context => ({
+  collectVariables: (context) => ({
     approvedAmount: context.variables.approvedAmount,
   }),
-  collectComment: context => context.variables.financeOpinion,
+  collectComment: (context) => context.variables.financeOpinion,
   validateBeforeAction: async (context, action) => {
     if (action === 'complete' && !context.variables.financeOpinion) {
       throw new Error('请填写财务意见');
@@ -189,67 +185,67 @@ const status: WorkflowInstanceStatus = 'running';
 
 `WorkflowSidebar` 常用 props：
 
-| prop | 含义 |
-|------|------|
-| `summary` | 顶部流程基础信息，包含当前节点、状态、发起人、办理人、开始时间。 |
-| `node` | 流程定义节点树，用于流程图弹窗和节点图渲染。 |
-| `currentNodeKey` | 当前节点 key，用于高亮当前节点。 |
-| `visitedNodeKeys` | 已流转节点 key 列表，用于标记已完成路径。 |
-| `status` | 流程状态，支持 `running`、`completed`、`rejected`、`cancelled`、`pending`。 |
-| `records` | 当前流程实例审批记录。 |
-| `businessType` | 业务类型，用于查询历史申请。 |
-| `businessKey` | 业务主键，用于查询历史申请。 |
-| `mode` | 侧栏内容模式：`PROGRESS` 展示节点进度，`APPROVAL_RECORDS` 展示审批记录，`CUSTOM` 使用插槽，`HIDDEN` 隐藏下方内容。 |
+| prop              | 含义                                                                                                               |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `summary`         | 顶部流程基础信息，包含当前节点、状态、发起人、办理人、开始时间。                                                   |
+| `node`            | 流程定义节点树，用于流程图弹窗和节点图渲染。                                                                       |
+| `currentNodeKey`  | 当前节点 key，用于高亮当前节点。                                                                                   |
+| `visitedNodeKeys` | 已流转节点 key 列表，用于标记已完成路径。                                                                          |
+| `status`          | 流程状态，支持 `running`、`completed`、`rejected`、`cancelled`、`pending`。                                        |
+| `records`         | 当前流程实例审批记录。                                                                                             |
+| `businessType`    | 业务类型，用于查询历史申请。                                                                                       |
+| `businessKey`     | 业务主键，用于查询历史申请。                                                                                       |
+| `mode`            | 侧栏内容模式：`PROGRESS` 展示节点进度，`APPROVAL_RECORDS` 展示审批记录，`CUSTOM` 使用插槽，`HIDDEN` 隐藏下方内容。 |
 
 扩展插槽：
 
-| 插槽 | 用途 |
-|------|------|
-| `summary-extra` | 在流程基础信息后追加业务信息。 |
-| `default` | `mode="CUSTOM"` 时渲染自定义审批区内容。 |
-| `history-summary` | 历史申请弹窗顶部摘要区。 |
-| `history-record-extra` | 历史申请单条记录扩展内容。 |
+| 插槽                   | 用途                                     |
+| ---------------------- | ---------------------------------------- |
+| `summary-extra`        | 在流程基础信息后追加业务信息。           |
+| `default`              | `mode="CUSTOM"` 时渲染自定义审批区内容。 |
+| `history-summary`      | 历史申请弹窗顶部摘要区。                 |
+| `history-record-extra` | 历史申请单条记录扩展内容。               |
 
 `WorkflowInstanceHistory` 常用 props：
 
-| prop | 含义 |
-|------|------|
-| `businessType` | 业务类型，用于内部查询历史申请。 |
-| `businessKey` | 业务主键，用于内部查询历史申请。 |
-| `records` | 外部传入的历史申请记录；传入后组件不再内部请求。 |
-| `total` | 历史申请总数，传入后在头部右侧展示。 |
-| `title` | 组件头部标题，默认“历史申请”。 |
-| `subtitle` | 组件头部说明，默认“同一业务单据的多次申请记录”。 |
-| `showTitle` | 是否展示组件内部标题，默认 `true`；嵌入 `WorkflowInstanceHistoryDialog` 时由弹窗关闭内部标题，避免和弹窗标题重复。 |
-| `emptyText` | 空状态文案，默认“暂无申请记录”。 |
+| prop           | 含义                                                                                                               |
+| -------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `businessType` | 业务类型，用于内部查询历史申请。                                                                                   |
+| `businessKey`  | 业务主键，用于内部查询历史申请。                                                                                   |
+| `records`      | 外部传入的历史申请记录；传入后组件不再内部请求。                                                                   |
+| `total`        | 历史申请总数，传入后在头部右侧展示。                                                                               |
+| `title`        | 组件头部标题，默认“历史申请”。                                                                                     |
+| `subtitle`     | 组件头部说明，默认“同一业务单据的多次申请记录”。                                                                   |
+| `showTitle`    | 是否展示组件内部标题，默认 `true`；嵌入 `WorkflowInstanceHistoryDialog` 时由弹窗关闭内部标题，避免和弹窗标题重复。 |
+| `emptyText`    | 空状态文案，默认“暂无申请记录”。                                                                                   |
 
 ## 5. 参数与事件
 
 `RuntimeFormRenderer` props：
 
-| prop | 类型 | 含义 |
-|------|------|------|
-| `fields` | `RuntimeFormField[]` | 表单字段，通常来自 `parseRuntimeForm()`。 |
-| `model` | `Record<string, any>` | 表单变量对象。 |
-| `readonly` | `boolean` | 是否整体只读。 |
-| `labelWidth` | `string` | 表单标签宽度，默认 `96px`。 |
-| `permissions` | `Record<string, 'HIDDEN' \| 'READONLY' \| 'EDITABLE'>` | 字段级权限。 |
+| prop          | 类型                                                   | 含义                                      |
+| ------------- | ------------------------------------------------------ | ----------------------------------------- |
+| `fields`      | `RuntimeFormField[]`                                   | 表单字段，通常来自 `parseRuntimeForm()`。 |
+| `model`       | `Record<string, any>`                                  | 表单变量对象。                            |
+| `readonly`    | `boolean`                                              | 是否整体只读。                            |
+| `labelWidth`  | `string`                                               | 表单标签宽度，默认 `96px`。               |
+| `permissions` | `Record<string, 'HIDDEN' \| 'READONLY' \| 'EDITABLE'>` | 字段级权限。                              |
 
 `RuntimeFormField` 常用字段：
 
-| 字段 | 含义 |
-|------|------|
-| `key` | 字段 key，对应 `model` 中的变量名。 |
-| `label` | 字段标题。 |
-| `type` | 字段类型。 |
-| `placeholder` | 占位提示。 |
-| `readonly` | 字段只读。 |
-| `options` | select、radio、checkbox 等选项。 |
-| `treeOptions` | treeSelect、cascader 等树形选项。 |
-| `props` | 透传配置。 |
-| `rules` | 表单校验规则。 |
-| `defaultValue` | 默认值。 |
-| `children` | 容器字段子字段。 |
+| 字段           | 含义                                |
+| -------------- | ----------------------------------- |
+| `key`          | 字段 key，对应 `model` 中的变量名。 |
+| `label`        | 字段标题。                          |
+| `type`         | 字段类型。                          |
+| `placeholder`  | 占位提示。                          |
+| `readonly`     | 字段只读。                          |
+| `options`      | select、radio、checkbox 等选项。    |
+| `treeOptions`  | treeSelect、cascader 等树形选项。   |
+| `props`        | 透传配置。                          |
+| `rules`        | 表单校验规则。                      |
+| `defaultValue` | 默认值。                            |
+| `children`     | 容器字段子字段。                    |
 
 支持的字段类型：
 
@@ -298,62 +294,62 @@ container
 
 `BusinessApplyRegistration`：
 
-| 字段 | 含义 |
-|------|------|
-| `component` | 业务申请页组件。 |
-| `title` | 自定义申请容器展示标题。 |
+| 字段        | 含义                     |
+| ----------- | ------------------------ |
+| `component` | 业务申请页组件。         |
+| `title`     | 自定义申请容器展示标题。 |
 
 `BusinessApplyContext`：
 
-| 字段 | 含义 |
-|------|------|
-| `definitionId` | 流程定义 ID。 |
-| `definitionKey` | 流程定义 key。 |
-| `applyPageKey` | 当前申请组件 key。 |
-| `definition` | 流程定义详情。 |
-| `query` | 当前路由查询参数。 |
+| 字段            | 含义               |
+| --------------- | ------------------ |
+| `definitionId`  | 流程定义 ID。      |
+| `definitionKey` | 流程定义 key。     |
+| `applyPageKey`  | 当前申请组件 key。 |
+| `definition`    | 流程定义详情。     |
+| `query`         | 当前路由查询参数。 |
 
 `BusinessApprovalRegistration`：
 
-| 字段 | 含义 |
-|------|------|
-| `component` | 业务审批详情组件。 |
-| `recordPanelMode` | 审批记录面板模式：`DEFAULT`、`HIDDEN`、`CUSTOM`。 |
-| `recordPanelComponent` | 自定义审批记录组件。 |
-| `commentMode` | 意见输入模式：`ACTION_BAR`、`BUSINESS_FORM`、`NONE`。 |
-| `collectVariables` | 动作提交前采集流程变量。 |
-| `collectComment` | 动作提交前采集审批意见。 |
-| `validateBeforeAction` | 动作前校验，抛错会阻止提交。 |
-| `beforeAction` | 动作调用前钩子。 |
-| `afterAction` | 动作成功后钩子。 |
-| `getActionOverrides` | 按上下文调整动作显隐、禁用、文案和提示。 |
+| 字段                   | 含义                                                  |
+| ---------------------- | ----------------------------------------------------- |
+| `component`            | 业务审批详情组件。                                    |
+| `recordPanelMode`      | 审批记录面板模式：`DEFAULT`、`HIDDEN`、`CUSTOM`。     |
+| `recordPanelComponent` | 自定义审批记录组件。                                  |
+| `commentMode`          | 意见输入模式：`ACTION_BAR`、`BUSINESS_FORM`、`NONE`。 |
+| `collectVariables`     | 动作提交前采集流程变量。                              |
+| `collectComment`       | 动作提交前采集审批意见。                              |
+| `validateBeforeAction` | 动作前校验，抛错会阻止提交。                          |
+| `beforeAction`         | 动作调用前钩子。                                      |
+| `afterAction`          | 动作成功后钩子。                                      |
+| `getActionOverrides`   | 按上下文调整动作显隐、禁用、文案和提示。              |
 
 `BusinessApprovalContext`：
 
-| 字段 | 含义 |
-|------|------|
-| `businessType` | 业务类型。 |
-| `businessKey` | 业务主键。 |
-| `applyId` | 业务申请记录 ID。 |
-| `processInstanceId` | 流程实例 ID。 |
-| `taskId` | 当前任务 ID。 |
-| `taskDefinitionKey` | 当前节点 key。 |
-| `nodeName` | 当前节点名称。 |
-| `nodeExtension` | 节点扩展配置。 |
-| `readonly` | 是否只读。 |
-| `variables` | 当前流程变量。 |
-| `permissions` | 字段权限。 |
-| `records` | 审批记录。 |
+| 字段                | 含义              |
+| ------------------- | ----------------- |
+| `businessType`      | 业务类型。        |
+| `businessKey`       | 业务主键。        |
+| `applyId`           | 业务申请记录 ID。 |
+| `processInstanceId` | 流程实例 ID。     |
+| `taskId`            | 当前任务 ID。     |
+| `taskDefinitionKey` | 当前节点 key。    |
+| `nodeName`          | 当前节点名称。    |
+| `nodeExtension`     | 节点扩展配置。    |
+| `readonly`          | 是否只读。        |
+| `variables`         | 当前流程变量。    |
+| `permissions`       | 字段权限。        |
+| `records`           | 审批记录。        |
 
 ## 6. 后端依赖
 
-| 能力 | 后端依赖 |
-|------|----------|
-| 流程定义、流程实例、任务、业务申请 | `mango-workflow`。 |
-| 用户候选项 | `/identity/users/page`。 |
-| 业务域候选项 | `/domain/domains/enabled-tree`。 |
-| 流程接口 | `/workflow/categories`、`/workflow/definitions`、`/workflow/templates`、`/workflow/tasks`、`/workflow/processes`、`/workflow/business-applies`。 |
-| 文件字段 | `@mango/file` 和后端 `mango-file`。 |
+| 能力                               | 后端依赖                                                                                                                                         |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 流程定义、流程实例、任务、业务申请 | `mango-workflow`。                                                                                                                               |
+| 用户候选项                         | `/identity/users/page`。                                                                                                                         |
+| 业务域候选项                       | `/domain/domains/enabled-tree`。                                                                                                                 |
+| 流程接口                           | `/workflow/categories`、`/workflow/definitions`、`/workflow/templates`、`/workflow/tasks`、`/workflow/processes`、`/workflow/business-applies`。 |
+| 文件字段                           | `@mango/file` 和后端 `mango-file`。                                                                                                              |
 
 ## 7. 权限与数据边界
 

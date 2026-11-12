@@ -79,13 +79,7 @@
           </template>
 
           <!-- FLAT 字典使用列表；TREE 字典使用树形表格维护父子关系。 -->
-          <el-table
-            v-loading="dataLoading"
-            :data="dataList"
-            row-key="id"
-            :tree-props="{ children: 'children' }"
-            stripe
-          >
+          <el-table v-loading="dataLoading" :data="dataList" row-key="id" :tree-props="{ children: 'children' }" stripe>
             <el-table-column prop="label" label="标签" min-width="180" />
             <el-table-column prop="value" label="值" min-width="160" />
             <el-table-column prop="parentValue" label="父节点" min-width="140" />
@@ -108,7 +102,13 @@
             </el-table-column>
             <el-table-column label="操作" width="220" fixed="right">
               <template #default="{ row }">
-                <el-button v-if="currentType?.shape === 'TREE'" link type="primary" size="small" @click="handleAddData(row)">
+                <el-button
+                  v-if="currentType?.shape === 'TREE'"
+                  link
+                  type="primary"
+                  size="small"
+                  @click="handleAddData(row)"
+                >
                   新增子节点
                 </el-button>
                 <el-button link type="primary" size="small" @click="handleEditData(row)"> 编辑 </el-button>
@@ -230,7 +230,16 @@
 import { ref, reactive, computed, onMounted } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import { Search } from '@element-plus/icons-vue';
-import { DictTag, MangoListPanel, MangoSearchPanel, Pagination, clearDictOptionCache, clearDictTreeCache, formatDate, useDict } from '@mango/common';
+import {
+  DictTag,
+  MangoListPanel,
+  MangoSearchPanel,
+  Pagination,
+  clearDictOptionCache,
+  clearDictTreeCache,
+  formatDate,
+  useDict,
+} from '@mango/common';
 import { dictTypeApi, dictDataApi, type DictType, type DictData } from '../../api/dict';
 import { domainApi } from '../../api/domain';
 
@@ -779,7 +788,7 @@ onMounted(() => {
   font-size: 13px;
 }
 
-@media (max-width: 1180px) {
+@media (width <= 1180px) {
   .dict-layout {
     grid-template-columns: 1fr;
   }

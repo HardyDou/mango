@@ -1,22 +1,13 @@
 <template>
   <div class="channel-config-values">
     <template v-if="fieldGroups.length > 0">
-      <section
-        v-for="group in fieldGroups"
-        :key="group.name"
-        class="channel-config-values__group"
-      >
+      <section v-for="group in fieldGroups" :key="group.name" class="channel-config-values__group">
         <h4 v-if="group.name !== DEFAULT_GROUP_NAME">{{ group.name }}</h4>
-        <el-form-item
-          v-for="field in group.fields"
-          :key="field.name"
-          :label="field.label"
-          :required="field.required"
-        >
+        <el-form-item v-for="field in group.fields" :key="field.name" :label="field.label" :required="field.required">
           <el-switch
             v-if="field.component === 'switch'"
             :model-value="Boolean(values[field.name])"
-            @update:model-value="value => updateValue(field.name, value)"
+            @update:model-value="(value) => updateValue(field.name, value)"
           />
           <el-input
             v-else-if="field.component === 'textarea'"
@@ -24,14 +15,14 @@
             type="textarea"
             :rows="3"
             :placeholder="field.placeholder || field.description"
-            @update:model-value="value => updateValue(field.name, value)"
+            @update:model-value="(value) => updateValue(field.name, value)"
           />
           <el-input
             v-else-if="field.component === 'password'"
             :model-value="String(values[field.name] || '')"
             show-password
             :placeholder="field.placeholder || field.description"
-            @update:model-value="value => updateValue(field.name, value)"
+            @update:model-value="(value) => updateValue(field.name, value)"
           />
           <MUpload
             v-else-if="field.component === 'fileId'"
@@ -42,14 +33,14 @@
             access-level="PRIVATE"
             biz-type="payment-channel-contract"
             button-text="上传文件"
-            @update:model-value="value => updateFileValue(field.name, value)"
+            @update:model-value="(value) => updateFileValue(field.name, value)"
           />
           <el-select
             v-else-if="field.component === 'select'"
             :model-value="String(values[field.name] || '')"
             clearable
             :placeholder="field.placeholder || field.description"
-            @update:model-value="value => updateValue(field.name, value)"
+            @update:model-value="(value) => updateValue(field.name, value)"
           >
             <el-option
               v-for="option in field.options || []"
@@ -63,13 +54,13 @@
             :model-value="numberValue(field.name)"
             :placeholder="field.placeholder || field.description"
             :controls-position="'right'"
-            @update:model-value="value => updateValue(field.name, value ?? undefined)"
+            @update:model-value="(value) => updateValue(field.name, value ?? undefined)"
           />
           <el-input
             v-else-if="field.component === 'url'"
             :model-value="String(values[field.name] || '')"
             :placeholder="field.placeholder || 'https://'"
-            @update:model-value="value => updateValue(field.name, value)"
+            @update:model-value="(value) => updateValue(field.name, value)"
           />
           <el-date-picker
             v-else-if="field.component === 'datetime'"
@@ -78,7 +69,7 @@
             value-format="YYYY-MM-DDTHH:mm:ss"
             format="YYYY-MM-DD HH:mm:ss"
             :placeholder="field.placeholder || field.description"
-            @update:model-value="value => updateValue(field.name, value || undefined)"
+            @update:model-value="(value) => updateValue(field.name, value || undefined)"
           />
           <el-input
             v-else-if="field.component === 'json'"
@@ -86,13 +77,13 @@
             type="textarea"
             :rows="5"
             :placeholder="field.placeholder || '{ }'"
-            @update:model-value="value => updateValue(field.name, value)"
+            @update:model-value="(value) => updateValue(field.name, value)"
           />
           <el-input
             v-else
             :model-value="String(values[field.name] || '')"
             :placeholder="field.placeholder || field.description"
-            @update:model-value="value => updateValue(field.name, value)"
+            @update:model-value="(value) => updateValue(field.name, value)"
           />
           <div v-if="field.description || field.sensitive || field.encrypted" class="channel-config-values__tip">
             <span v-if="field.description">{{ field.description }}</span>
@@ -101,12 +92,7 @@
         </el-form-item>
       </section>
     </template>
-    <el-alert
-      v-else
-      type="info"
-      :closable="false"
-      title="当前支付通道未配置签约字段模板"
-    />
+    <el-alert v-else type="info" :closable="false" title="当前支付通道未配置签约字段模板" />
   </div>
 </template>
 
@@ -136,14 +122,16 @@ const emit = defineEmits<{
 
 const DEFAULT_GROUP_NAME = '基础配置';
 const loadedTemplate = ref<string>();
-const fields = computed(() => parseChannelFieldTemplate(props.fieldTemplateJson || loadedTemplate.value)
-  .slice()
-  .sort((left, right) => (left.sort ?? 1000) - (right.sort ?? 1000)));
+const fields = computed(() =>
+  parseChannelFieldTemplate(props.fieldTemplateJson || loadedTemplate.value)
+    .slice()
+    .sort((left, right) => (left.sort ?? 1000) - (right.sort ?? 1000)),
+);
 const fieldGroups = computed(() => {
   const groups: Array<{ name: string; fields: ChannelFieldDefinition[] }> = [];
   fields.value.forEach((field) => {
     const groupName = field.group || DEFAULT_GROUP_NAME;
-    let group = groups.find(item => item.name === groupName);
+    let group = groups.find((item) => item.name === groupName);
     if (!group) {
       group = { name: groupName, fields: [] };
       groups.push(group);
@@ -179,7 +167,10 @@ function fileValue(name: string) {
   return value ? String(value) : undefined;
 }
 
-function updateFileValue(name: string, value: string | string[] | Record<string, unknown> | Record<string, unknown>[] | null | undefined) {
+function updateFileValue(
+  name: string,
+  value: string | string[] | Record<string, unknown> | Record<string, unknown>[] | null | undefined,
+) {
   if (Array.isArray(value)) {
     updateValue(name, normalizeFileValue(value[0]));
     return;

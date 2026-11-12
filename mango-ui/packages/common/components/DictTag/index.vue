@@ -40,7 +40,7 @@ const props = withDefaults(
     closable: false,
     disableTransitions: false,
     type: '',
-  }
+  },
 );
 
 const emit = defineEmits(['close']);

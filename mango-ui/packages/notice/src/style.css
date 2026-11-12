@@ -85,7 +85,7 @@
   right: -28px;
   width: 74px;
   height: 74px;
-  content: "";
+  content: '';
   background: rgb(47 128 255 / 12%);
   border-radius: 50%;
 }
@@ -101,7 +101,7 @@
   align-items: baseline;
   gap: 6px;
   margin-top: 8px;
-  color: #2277ff;
+  color: #27f;
   font-size: 40px;
   font-weight: 800;
   line-height: 44px;
@@ -213,4 +213,3 @@
   font-weight: 800;
   line-height: 28px;
 }
-

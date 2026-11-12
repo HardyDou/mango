@@ -24,8 +24,8 @@ test.describe('认证会话 E2E @p0 @mango-auth', () => {
     await page.getByPlaceholder('用户名').fill(process.env.MANGO_E2E_ADMIN_USERNAME || 'admin');
     await page.getByPlaceholder('密码').fill(process.env.MANGO_E2E_ADMIN_PASSWORD || 'admin123');
 
-    const loginResponsePromise = page.waitForResponse((response) =>
-      new URL(response.url()).pathname === '/api/auth/login' && response.request().method() === 'POST'
+    const loginResponsePromise = page.waitForResponse(
+      (response) => new URL(response.url()).pathname === '/api/auth/login' && response.request().method() === 'POST',
     );
     await page.getByRole('button', { name: '登 录' }).click();
     const loginResponse = await loginResponsePromise;
@@ -33,15 +33,17 @@ test.describe('认证会话 E2E @p0 @mango-auth', () => {
     expect(loginResponse.status()).toBe(200);
     await expect(page).toHaveURL(/#\/home$/);
     await expect(page.getByRole('button', { name: '系统管理', exact: true })).toBeVisible();
-    await expect.poll(async () => {
-      return page.evaluate(() => JSON.parse(sessionStorage.getItem('userInfo') || 'null')?.username);
-    }).toBe('admin');
+    await expect
+      .poll(async () => {
+        return page.evaluate(() => JSON.parse(sessionStorage.getItem('userInfo') || 'null')?.username);
+      })
+      .toBe('admin');
 
     const accessCookie = (await context.cookies()).find((cookie) => cookie.name === 'MANGO_TOKEN');
     expect(accessCookie).toMatchObject({ httpOnly: true, sameSite: 'Lax', path: '/' });
 
-    const menuResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/authorization/menus/user') && response.status() === 200
+    const menuResponsePromise = page.waitForResponse(
+      (response) => response.url().includes('/api/authorization/menus/user') && response.status() === 200,
     );
     await page.reload();
     await menuResponsePromise;
@@ -53,8 +55,8 @@ test.describe('认证会话 E2E @p0 @mango-auth', () => {
     await page.locator('[data-action="auth.logout"]').click();
     await expect(page.getByRole('dialog', { name: '提示' })).toBeVisible();
 
-    const logoutResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/auth/logout') && response.request().method() === 'POST'
+    const logoutResponsePromise = page.waitForResponse(
+      (response) => response.url().includes('/api/auth/logout') && response.request().method() === 'POST',
     );
     await page.getByRole('button', { name: '确定', exact: true }).click();
     const logoutResponse = await logoutResponsePromise;

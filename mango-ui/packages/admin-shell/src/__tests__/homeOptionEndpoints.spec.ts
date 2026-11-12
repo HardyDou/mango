@@ -36,7 +36,7 @@ describe('Home 用户候选窄接口', () => {
 
   it('does not couple Home pages to the Identity management endpoint', () => {
     const source = ['list/index.vue', 'user/index.vue']
-      .map(file => readFileSync(join(packageRoot, 'src/views/home', file), 'utf8'))
+      .map((file) => readFileSync(join(packageRoot, 'src/views/home', file), 'utf8'))
       .join('\n');
 
     expect(source).not.toContain('/identity/users/page');

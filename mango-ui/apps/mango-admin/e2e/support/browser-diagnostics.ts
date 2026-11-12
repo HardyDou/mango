@@ -7,11 +7,9 @@ export function collectBrowserDiagnostics(page: Page): string[] {
       diagnostics.push(`console: ${message.text()}`);
     }
   });
-  page.on('pageerror', error => diagnostics.push(`pageerror: ${error.message}`));
+  page.on('pageerror', (error) => diagnostics.push(`pageerror: ${error.message}`));
   page.on('requestfailed', (request) => {
-    diagnostics.push(
-      `requestfailed: ${request.method()} ${request.url()} ${request.failure()?.errorText || ''}`,
-    );
+    diagnostics.push(`requestfailed: ${request.method()} ${request.url()} ${request.failure()?.errorText || ''}`);
   });
   page.on('response', (response) => {
     if (response.status() >= 500) {

@@ -173,10 +173,10 @@ describe('ChinaArea Component', () => {
   describe('Area Level', () => {
     it('should have correct level values', () => {
       const levels = {
-        province: 1,  // 省/直辖市
-        city: 2,      // 市
-        district: 3,   // 区/县
-        street: 4,     // 街道
+        province: 1, // 省/直辖市
+        city: 2, // 市
+        district: 3, // 区/县
+        street: 4, // 街道
       };
 
       expect(levels.province).toBe(1);

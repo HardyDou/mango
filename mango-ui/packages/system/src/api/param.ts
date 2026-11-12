@@ -34,8 +34,9 @@ export interface PageResult<T> {
 
 export const paramApi = {
   list: (params?: SysParamQuery) => {
-    return get<any[]>('/system/config/list', { params: toBackendQuery(params) })
-      .then((list) => toPageResult(list.map(fromConfig), params));
+    return get<any[]>('/system/config/list', { params: toBackendQuery(params) }).then((list) =>
+      toPageResult(list.map(fromConfig), params),
+    );
   },
   detail: (id: ApiId) => {
     return get<any>('/system/config/detail', { params: { id } }).then(fromConfig);
@@ -55,7 +56,7 @@ export const paramApi = {
 };
 
 function toBackendQuery(params?: SysParamQuery) {
-    return {
+  return {
     type: params?.paramType ? toBackendType(params.paramType) : undefined,
     domainCode: params?.domainCode || undefined,
   };

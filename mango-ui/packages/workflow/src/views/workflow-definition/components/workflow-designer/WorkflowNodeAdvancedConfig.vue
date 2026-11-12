@@ -77,13 +77,16 @@ interface AdvancedRow {
   booleanValue?: boolean;
 }
 
-const props = withDefaults(defineProps<{
-  modelValue?: Record<string, any>;
-  reservedKeys?: string[];
-}>(), {
-  modelValue: () => ({}),
-  reservedKeys: () => [],
-});
+const props = withDefaults(
+  defineProps<{
+    modelValue?: Record<string, any>;
+    reservedKeys?: string[];
+  }>(),
+  {
+    modelValue: () => ({}),
+    reservedKeys: () => [],
+  },
+);
 
 const emit = defineEmits<{
   'update:modelValue': [value: Record<string, any>];
@@ -95,7 +98,7 @@ const reservedSet = computed(() => new Set(props.reservedKeys));
 
 watch(
   () => props.modelValue,
-  value => {
+  (value) => {
     rows.value = Object.entries(value || {})
       .filter(([key]) => !reservedSet.value.has(key))
       .map(([key, item]) => toRow(key, item));
@@ -113,7 +116,12 @@ function toRow(key: string, value: any): AdvancedRow {
   if (value && typeof value === 'object') {
     return { id: createNodeId('property'), key, type: 'json', value: JSON.stringify(value, null, 2) };
   }
-  return { id: createNodeId('property'), key, type: 'string', value: value === undefined || value === null ? '' : String(value) };
+  return {
+    id: createNodeId('property'),
+    key,
+    type: 'string',
+    value: value === undefined || value === null ? '' : String(value),
+  };
 }
 
 function addRow() {

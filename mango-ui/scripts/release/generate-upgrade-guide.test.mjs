@@ -47,10 +47,7 @@ const notes = `## v2026.10.21-maven-1.1.0-test-release
 `;
 
 test('upgrade guide path follows the Maven source and target versions', () => {
-  assert.equal(
-    upgradeGuideRelativePath(plan()),
-    'mango-docs/guides/operations/mango-1.0.63-to-1.1.0-upgrade.md',
-  );
+  assert.equal(upgradeGuideRelativePath(plan()), 'mango-docs/guides/operations/mango-1.0.63-to-1.1.0-upgrade.md');
 });
 
 test('generateUpgradeGuide creates, updates and preserves files deterministically', () => {
@@ -91,10 +88,16 @@ test('assertUpgradeGuide accepts the sealed file and rejects drift', () => {
     assert.equal(assertUpgradeGuide({ repoRoot: root, plan: plan(), notes }), upgradeGuideRelativePath(plan()));
 
     writeFileSync(join(root, upgradeGuideRelativePath(plan())), 'drifted\n');
-    assert.throws(() => assertUpgradeGuide({ repoRoot: root, plan: plan(), notes }), /add the manual marker or regenerate/u);
+    assert.throws(
+      () => assertUpgradeGuide({ repoRoot: root, plan: plan(), notes }),
+      /add the manual marker or regenerate/u,
+    );
 
     rmSync(join(root, upgradeGuideRelativePath(plan())));
-    assert.throws(() => assertUpgradeGuide({ repoRoot: root, plan: plan(), notes }), /requires the generated upgrade guide/u);
+    assert.throws(
+      () => assertUpgradeGuide({ repoRoot: root, plan: plan(), notes }),
+      /requires the generated upgrade guide/u,
+    );
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

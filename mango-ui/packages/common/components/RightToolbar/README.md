@@ -10,21 +10,21 @@ import { RightToolbar } from '@mango/common';
 
 ## Props
 
-| 名称 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `size` | `'large' \| 'default' \| 'small'` | `'default'` | 当前密度，对应下拉中的“大 / 中 / 小”，支持 `v-model:size` |
-| `showRefresh` | `boolean` | `true` | 是否显示刷新按钮 |
-| `showColumnSetting` | `boolean` | `true` | 是否显示列设置按钮 |
-| `showDensity` | `boolean` | `true` | 是否显示密度下拉 |
+| 名称                | 类型                              | 默认值      | 说明                                                      |
+| ------------------- | --------------------------------- | ----------- | --------------------------------------------------------- |
+| `size`              | `'large' \| 'default' \| 'small'` | `'default'` | 当前密度，对应下拉中的“大 / 中 / 小”，支持 `v-model:size` |
+| `showRefresh`       | `boolean`                         | `true`      | 是否显示刷新按钮                                          |
+| `showColumnSetting` | `boolean`                         | `true`      | 是否显示列设置按钮                                        |
+| `showDensity`       | `boolean`                         | `true`      | 是否显示密度下拉                                          |
 
 ## Events
 
-| 名称 | 参数 | 说明 |
-|------|------|------|
-| `refresh` | - | 点击刷新图标时触发 |
-| `columnSetting` | - | 点击列设置图标时触发，列设置面板由业务侧实现 |
-| `sizeChange` | `'large' \| 'default' \| 'small'` | 在密度下拉中选择“大/中/小”时触发 |
-| `update:size` | `'large' \| 'default' \| 'small'` | 密度变化时同步触发，用于 `v-model:size` |
+| 名称            | 参数                              | 说明                                         |
+| --------------- | --------------------------------- | -------------------------------------------- |
+| `refresh`       | -                                 | 点击刷新图标时触发                           |
+| `columnSetting` | -                                 | 点击列设置图标时触发，列设置面板由业务侧实现 |
+| `sizeChange`    | `'large' \| 'default' \| 'small'` | 在密度下拉中选择“大/中/小”时触发             |
+| `update:size`   | `'large' \| 'default' \| 'small'` | 密度变化时同步触发，用于 `v-model:size`      |
 
 ## 使用示例
 
@@ -81,11 +81,7 @@ const size = ref<'large' | 'default' | 'small'>('default');
 
 ```vue
 <template>
-  <RightToolbar
-    :show-column-setting="false"
-    :show-density="false"
-    @refresh="reloadList"
-  />
+  <RightToolbar :show-column-setting="false" :show-density="false" @refresh="reloadList" />
 </template>
 ```
 

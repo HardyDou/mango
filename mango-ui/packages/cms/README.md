@@ -25,11 +25,11 @@ The package does not implement the public site frontend. Public site application
 
 发布入口由内容中心发起，发布记录页面只做查看和维护：
 
-| 操作 | 入口 | 行为 |
-| --- | --- | --- |
-| 发布 | 内容中心已审核内容行内「发布」 | 一次选择一个站点和多个栏目，可重复发布到其他站点 |
-| 下线内容 | 内容中心「下线」 | 内容与该内容全部生效发布记录一并下线 |
-| 下线单条记录 | 发布记录行内「下线」 | 只下线该条发布记录 |
+| 操作         | 入口                                  | 行为                                                           |
+| ------------ | ------------------------------------- | -------------------------------------------------------------- |
+| 发布         | 内容中心已审核内容行内「发布」        | 一次选择一个站点和多个栏目，可重复发布到其他站点               |
+| 下线内容     | 内容中心「下线」                      | 内容与该内容全部生效发布记录一并下线                           |
+| 下线单条记录 | 发布记录行内「下线」                  | 只下线该条发布记录                                             |
 | 保存发布历史 | 后端 `/cms/content-publishes/publish` | 同一内容、站点、栏目重复发布时把旧生效记录置为已下线并新增记录 |
 
 内容详情使用 `RichTextViewer` 渲染正文，正文图片按文件 ID 解析后显示。
@@ -133,7 +133,6 @@ Shared TypeScript types include `ApiId`, `PageResult`, `CmsSite`, `CmsContent`, 
 
 Page queries accept `pageNum`/`pageSize` and map them to the backend `page`/`size` parameters. The backend `PageQuery` also accepts `pageNum`/`pageSize`, so direct HTTP callers no longer fall back to the default page size silently.
 
-
 `createCmsApi(httpClient)` is the preferred API entry. `cmsApi` delegates to the historical global request client only for source compatibility and should not be used by new pages.
 
 ## 6. 数据与初始化
@@ -142,7 +141,7 @@ This frontend package does not create database tables, menus, or default records
 
 | Data                                                                          | Source                                                                             |
 | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| Sites, categories, content, navigation, advertisements, and publish relations | Backend `mango-cms` module.                                          |
+| Sites, categories, content, navigation, advertisements, and publish relations | Backend `mango-cms` module.                                                        |
 | Menus and button permissions                                                  | Backend `mango-cms` resource file `META-INF/mango/resources/cms-common-menu.json`. |
 | File picker, image preview, and upload records                                | `@mango/file` and backend `mango-file`.                                            |
 | Admin page registration                                                       | `registerMangoCmsAdminPages()` writes page loaders into `@mango/admin-pages`.      |

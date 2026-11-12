@@ -5,17 +5,18 @@
         <li
           v-for="(v, k) in columnsAsideList"
           :key="k"
-          :ref="(el) => { if (el) columnsAsideOffsetTopRefs[k] = el as HTMLElement }"
+          :ref="
+            (el) => {
+              if (el) columnsAsideOffsetTopRefs[k] = el as HTMLElement;
+            }
+          "
           :class="{ 'layout-columns-active': liIndex === k }"
           :title="v.meta?.title || v.name"
           @click="onColumnsAsideMenuClick(v, k)"
           @mouseenter="onColumnsAsideMenuMouseenter(v, k)"
         >
           <div :class="layoutStore.columnsAsideLayout">
-            <el-icon
-              v-if="v.meta?.icon && iconMap[v.meta.icon]"
-              class="menu-icon"
-            >
+            <el-icon v-if="v.meta?.icon && iconMap[v.meta.icon]" class="menu-icon">
               <component :is="iconMap[v.meta.icon]" />
             </el-icon>
             <div class="columns-vertical-title font12">
@@ -23,10 +24,7 @@
             </div>
           </div>
         </li>
-        <div
-          ref="columnsAsideActiveRef"
-          :class="layoutStore.columnsAsideStyle"
-        />
+        <div ref="columnsAsideActiveRef" :class="layoutStore.columnsAsideStyle" />
       </ul>
     </el-scrollbar>
   </div>
@@ -171,7 +169,7 @@ watch(
   () => {
     setColumnsMenuHighlight(route.path);
     mittBus.emit('setSendColumnsChildren', setSendChildren(route.path));
-  }
+  },
 );
 
 watch(
@@ -179,7 +177,7 @@ watch(
   (value) => {
     if (!value) return;
     mittBus.emit('setSendColumnsChildren', setSendChildren(value));
-  }
+  },
 );
 
 watch(
@@ -188,7 +186,7 @@ watch(
     if (layoutStore.columnsAsideStyle === 'columns-round') {
       difference.value;
     }
-  }
+  },
 );
 </script>
 
@@ -208,6 +206,7 @@ watch(
       color: var(--mango-color-columns-menu-bar);
       transition: 0.3s ease-in-out;
     }
+
     li {
       color: var(--mango-color-columns-menu-bar);
       width: 100%;
@@ -282,6 +281,7 @@ watch(
 
     .columns-card {
       @extend .columns-round;
+
       top: 0;
       height: 50px;
       width: 100%;

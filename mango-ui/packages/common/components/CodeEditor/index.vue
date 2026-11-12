@@ -1,9 +1,5 @@
 <template>
-  <div
-    ref="containerRef"
-    class="code-editor-container"
-    :style="{ height: normalizedHeight, width }"
-  >
+  <div ref="containerRef" class="code-editor-container" :style="{ height: normalizedHeight, width }">
     <textarea ref="textareaRef" />
   </div>
 </template>
@@ -37,7 +33,7 @@ const props = withDefaults(
     autoCloseBrackets: true,
     height: '300px',
     width: '100%',
-  }
+  },
 );
 
 const emit = defineEmits<{
@@ -132,7 +128,7 @@ watch(
     if (editor && newValue !== editor.getValue()) {
       editor.setValue(newValue || '');
     }
-  }
+  },
 );
 
 // Watch for language changes
@@ -142,7 +138,7 @@ watch(
     if (editor) {
       editor.setOption('mode', getMode(newLang));
     }
-  }
+  },
 );
 
 // Watch for theme changes
@@ -152,7 +148,7 @@ watch(
     if (editor) {
       editor.setOption('theme', newTheme === 'default' ? 'default' : newTheme);
     }
-  }
+  },
 );
 
 // Watch for readonly state
@@ -162,7 +158,7 @@ watch(
     if (editor) {
       editor.setOption('readOnly', readonly);
     }
-  }
+  },
 );
 
 // Watch for height changes
@@ -173,14 +169,14 @@ watch(
       editor.setSize('100%', normalizeCssSize(newHeight));
       nextTick(() => editor?.refresh());
     }
-  }
+  },
 );
 
 watch(
   () => props.width,
   () => {
     nextTick(() => editor?.refresh());
-  }
+  },
 );
 
 onMounted(() => {
@@ -258,7 +254,7 @@ async function loadCodeMirror() {
     width: 100%;
     height: 100%;
     box-sizing: border-box;
-    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+    font-family: Monaco, Menlo, 'Ubuntu Mono', Consolas, monospace;
     font-size: 14px;
     line-height: 1.5;
   }

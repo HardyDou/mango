@@ -8,10 +8,4 @@ import { captchaHandlers } from './captcha';
 import { systemHandlers } from './system';
 import { businessHandlers } from './business';
 
-export const handlers = [
-  ...authHandlers,
-  ...dictHandlers,
-  ...captchaHandlers,
-  ...systemHandlers,
-  ...businessHandlers,
-];
+export const handlers = [...authHandlers, ...dictHandlers, ...captchaHandlers, ...systemHandlers, ...businessHandlers];

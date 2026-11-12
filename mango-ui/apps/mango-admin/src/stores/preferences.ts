@@ -1,4 +1,1 @@
-export {
-  usePreferencesStore,
-  type PreferencesState,
-} from '@mango/admin-shell';
+export { usePreferencesStore, type PreferencesState } from '@mango/admin-shell';

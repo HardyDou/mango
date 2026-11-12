@@ -182,17 +182,19 @@ const barOptions = ref({
 const pieOptions = ref({
   tooltip: { trigger: 'item' },
   legend: { bottom: 0 },
-  series: [{
-    name: '来源',
-    type: 'pie',
-    radius: ['42%', '68%'],
-    data: [
-      { value: 1048, name: '搜索' },
-      { value: 735, name: '直接访问' },
-      { value: 580, name: '邮件' },
-      { value: 484, name: '广告' },
-    ],
-  }],
+  series: [
+    {
+      name: '来源',
+      type: 'pie',
+      radius: ['42%', '68%'],
+      data: [
+        { value: 1048, name: '搜索' },
+        { value: 735, name: '直接访问' },
+        { value: 580, name: '邮件' },
+        { value: 484, name: '广告' },
+      ],
+    },
+  ],
 });
 
 const methodOptions = ref({ ...barOptions.value });
@@ -241,9 +243,7 @@ const propsTable = [
   { name: 'theme', description: '指定图表主题；未传时跟随系统明暗偏好', type: "'light' | 'dark'", defaultValue: '-' },
 ];
 
-const slotsTable = [
-  { name: '-', description: '当前组件不提供业务插槽，图表内容通过 options 配置', scope: '-' },
-];
+const slotsTable = [{ name: '-', description: '当前组件不提供业务插槽，图表内容通过 options 配置', scope: '-' }];
 
 const eventsTable = [
   { name: 'click', description: '点击图表元素时触发', payload: 'ECElementEvent' },
@@ -299,7 +299,7 @@ function clearChart() {
 </script>
 
 <style scoped lang="scss">
-@use './demo-page.scss';
+@use './demo-page';
 
 .demo-actions {
   display: flex;

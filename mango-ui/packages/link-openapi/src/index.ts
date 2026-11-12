@@ -85,7 +85,9 @@ function appendQuery(url: URL, query: LinkPublicItemQuery) {
 }
 
 function isSuccessResult(result: MangoResult<unknown>) {
-  return result.success === true || result.code === 0 || result.code === 200 || result.code === '0' || result.code === '200';
+  return (
+    result.success === true || result.code === 0 || result.code === 200 || result.code === '0' || result.code === '200'
+  );
 }
 
 async function resolveHeaders(options: LinkOpenApiClientOptions) {
@@ -119,7 +121,7 @@ async function requestJson<T>(path: string, init: RequestInit = {}, options: Lin
       status: response.status,
     });
   }
-  const result = await response.json() as MangoResult<T>;
+  const result = (await response.json()) as MangoResult<T>;
   if (!isSuccessResult(result)) {
     throw createLinkOpenApiError(result.message || result.msg || '网址接口返回失败', {
       code: result.code,
@@ -147,50 +149,74 @@ export function isLinkOpenApiNotFoundError(error: unknown): boolean {
 export async function listPublicLinks(query: LinkPublicItemQuery = {}, options: LinkOpenApiClientOptions = {}) {
   const url = new URL(publicLinksPath, 'http://mango.local');
   appendQuery(url, query);
-  return requestJson<LinkPublicItem[]>(`${url.pathname}${url.search}`, { method: 'GET' }, options).then((data) => data || []);
+  return requestJson<LinkPublicItem[]>(`${url.pathname}${url.search}`, { method: 'GET' }, options).then(
+    (data) => data || [],
+  );
 }
 
 export async function listVisibleLinks(query: LinkPublicItemQuery = {}, options: LinkOpenApiClientOptions = {}) {
   const url = new URL(visibleLinksPath, 'http://mango.local');
   appendQuery(url, query);
-  return requestJson<LinkPublicItem[]>(`${url.pathname}${url.search}`, { method: 'GET' }, options)
-    .then((data) => data || []);
+  return requestJson<LinkPublicItem[]>(`${url.pathname}${url.search}`, { method: 'GET' }, options).then(
+    (data) => data || [],
+  );
 }
 
 export async function listPersonalCategories(options: LinkOpenApiClientOptions = {}) {
-  return requestJson<LinkCategory[]>(`${personalCategoriesPath}/list`, { method: 'GET' }, options).then((data) => data || []);
+  return requestJson<LinkCategory[]>(`${personalCategoriesPath}/list`, { method: 'GET' }, options).then(
+    (data) => data || [],
+  );
 }
 
-export async function createPersonalCategory(input: CreateLinkPersonalCategoryInput, options: LinkOpenApiClientOptions = {}) {
-  return requestJson<string>(`${personalCategoriesPath}/create`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input),
-  }, options);
+export async function createPersonalCategory(
+  input: CreateLinkPersonalCategoryInput,
+  options: LinkOpenApiClientOptions = {},
+) {
+  return requestJson<string>(
+    `${personalCategoriesPath}/create`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    },
+    options,
+  );
 }
 
 export async function createPersonalLink(input: CreateLinkPersonalItemInput, options: LinkOpenApiClientOptions = {}) {
-  return requestJson<string>(`${personalLinksPath}/create`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input),
-  }, options);
+  return requestJson<string>(
+    `${personalLinksPath}/create`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    },
+    options,
+  );
 }
 
 export async function createFavorite(linkId: string, options: LinkOpenApiClientOptions = {}) {
-  return requestJson<boolean>(`${favoritesPath}/create`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ linkId }),
-  }, options);
+  return requestJson<boolean>(
+    `${favoritesPath}/create`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ linkId }),
+    },
+    options,
+  );
 }
 
 export async function deleteFavorite(linkId: string, options: LinkOpenApiClientOptions = {}) {
-  return requestJson<boolean>(`${favoritesPath}/delete`, {
-    method: 'DELETE',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ linkId }),
-  }, options);
+  return requestJson<boolean>(
+    `${favoritesPath}/delete`,
+    {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ linkId }),
+    },
+    options,
+  );
 }
 
 export function createLinkOpenApiClient(options: LinkOpenApiClientOptions = {}) {

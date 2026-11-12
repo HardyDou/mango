@@ -784,7 +784,7 @@ watch(() => [route.query.taskId, route.query.processInstanceId, route.query.mode
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 8px;
   background: color-mix(in srgb, var(--el-bg-color) 92%, transparent);
-  box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 -8px 24px rgb(15 23 42 / 6%);
   backdrop-filter: blur(8px);
 }
 
@@ -822,7 +822,7 @@ watch(() => [route.query.taskId, route.query.processInstanceId, route.query.mode
   line-height: 1.5;
 }
 
-@media (max-width: 760px) {
+@media (width <= 760px) {
   .section-header {
     flex-direction: column;
   }

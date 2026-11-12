@@ -9,10 +9,7 @@ const isProduction = import.meta.env.PROD;
 const deployEnv = (import.meta.env.VITE_MANGO_DEPLOY_ENV || import.meta.env.MODE || '').toLowerCase();
 const explicitDeployEnv = (import.meta.env.VITE_MANGO_DEPLOY_ENV || '').toLowerCase();
 const isPrdLike =
-  deployEnv === 'prod'
-  || deployEnv === 'prd'
-  || deployEnv === 'production'
-  || (isProduction && !explicitDeployEnv);
+  deployEnv === 'prod' || deployEnv === 'prd' || deployEnv === 'production' || (isProduction && !explicitDeployEnv);
 const isE2E = import.meta.env.VITE_MANGO_E2E === 'true';
 
 export const defaultRuntimeConfig: MangoRuntimeConfig = {
@@ -90,7 +87,7 @@ export function createShellRuntimeConfigOptions(): MangoRuntimeConfigLoadOptions
             'http://localhost:5184',
             'http://127.0.0.1:5184',
             'http://e.mango.io:5184',
-      ],
+          ],
       allowedEntryHosts: allowedHosts,
       ...options.runtimeConfigLoadOptions,
     };

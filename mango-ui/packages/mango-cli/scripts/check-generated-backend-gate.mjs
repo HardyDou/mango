@@ -444,11 +444,7 @@ function assertExecutableBootArtifact() {
   if (launched.status === 0 || launched.error?.code === 'ETIMEDOUT') {
     throw new Error('generated Boot JAR must reach MangoApplication and reject missing local workspace configuration');
   }
-  assertIncludes(
-    combinedOutput(launched),
-    'MANGO_LOCAL_DATABASE_REJECTED',
-    'generated Boot JAR Start-Class',
-  );
+  assertIncludes(combinedOutput(launched), 'MANGO_LOCAL_DATABASE_REJECTED', 'generated Boot JAR Start-Class');
 }
 
 function runExternalConsumer() {

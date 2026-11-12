@@ -1,8 +1,5 @@
 <template>
-  <el-header
-    v-show="!isTagsViewCurrenFull"
-    class="layout-header"
-  >
+  <el-header v-show="!isTagsViewCurrenFull" class="layout-header">
     <NavBarsIndex />
   </el-header>
 </template>
@@ -28,7 +25,7 @@ const { isTagsViewCurrenFull } = storeToRefs(storesTagsViewRoutes);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  padding: 0;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 10%);
 }
 </style>

@@ -1,22 +1,13 @@
 <template>
   <div class="sse-component">
     <!-- Connection Status Indicator -->
-    <div
-      v-if="showStatus"
-      class="sse-status"
-      :class="statusClass"
-    >
+    <div v-if="showStatus" class="sse-status" :class="statusClass">
       <span class="sse-status-dot" />
       <span class="sse-status-text">{{ statusText }}</span>
     </div>
 
     <!-- Reconnect Button (shown when exhausted) -->
-    <el-button
-      v-if="retryCount >= maxRetries"
-      type="danger"
-      size="small"
-      @click="manualReconnect"
-    >
+    <el-button v-if="retryCount >= maxRetries" type="danger" size="small" @click="manualReconnect">
       {{ t('sse.reconnect') }}
     </el-button>
   </div>
@@ -85,17 +76,14 @@ export interface SSEMessage {
 
 type SSEStatus = 'disconnected' | 'connecting' | 'connected' | 'retrying' | 'error';
 
-const props = withDefaults(
-  defineProps<SSEProps>(),
-  {
-    url: '/mango-message/sse/connect',
-    showStatus: true,
-    showNotifications: true,
-    maxRetries: 6,
-    heartbeatInterval: 30000,
-    enabled: true,
-  }
-);
+const props = withDefaults(defineProps<SSEProps>(), {
+  url: '/mango-message/sse/connect',
+  showStatus: true,
+  showNotifications: true,
+  maxRetries: 6,
+  heartbeatInterval: 30000,
+  enabled: true,
+});
 
 const emit = defineEmits<SSEEmits>();
 
@@ -406,9 +394,11 @@ defineExpose<SSEExpose>({
   0% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.4;
   }
+
   100% {
     opacity: 1;
   }

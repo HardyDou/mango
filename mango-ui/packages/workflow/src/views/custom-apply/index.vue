@@ -36,10 +36,7 @@ import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { workflowApi, type WorkflowDefinition } from '../../api/workflow';
-import {
-  resolveBusinessApplyRegistration,
-  type BusinessApplyContext,
-} from '../../components/businessApply';
+import { resolveBusinessApplyRegistration, type BusinessApplyContext } from '../../components/businessApply';
 
 const route = useRoute();
 const router = useRouter();

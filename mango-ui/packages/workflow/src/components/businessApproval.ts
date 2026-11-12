@@ -30,13 +30,18 @@ export interface BusinessApprovalRegistration {
   validateBeforeAction?: (context: BusinessApprovalContext, action: WorkflowTaskActionKey) => Promise<void>;
   beforeAction?: (context: BusinessApprovalContext, action: WorkflowTaskActionKey) => Promise<void>;
   afterAction?: (context: BusinessApprovalContext, action: WorkflowTaskActionKey, result: unknown) => Promise<void>;
-  getActionOverrides?: (context: BusinessApprovalContext) => Partial<Record<WorkflowTaskActionKey, {
-    visible?: boolean;
-    disabled?: boolean;
-    label?: string;
-    tooltip?: string;
-    targetTaskDefinitionKey?: string;
-  }>>;
+  getActionOverrides?: (context: BusinessApprovalContext) => Partial<
+    Record<
+      WorkflowTaskActionKey,
+      {
+        visible?: boolean;
+        disabled?: boolean;
+        label?: string;
+        tooltip?: string;
+        targetTaskDefinitionKey?: string;
+      }
+    >
+  >;
 }
 
 const businessApprovalRegistrations = new Map<string, BusinessApprovalRegistration>();
@@ -68,7 +73,9 @@ export function businessTypeOf(variables?: Record<string, any>): string {
 }
 
 export function applyIdOf(variables?: Record<string, any>): string {
-  return String(variables?.applyId || variables?.workflowApplyId || variables?.businessApplyId || variables?.snapshotId || '').trim();
+  return String(
+    variables?.applyId || variables?.workflowApplyId || variables?.businessApplyId || variables?.snapshotId || '',
+  ).trim();
 }
 
 export function businessPermissionsOf(

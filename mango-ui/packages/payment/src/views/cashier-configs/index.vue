@@ -92,13 +92,7 @@
     />
   </el-dialog>
 
-  <el-dialog
-    v-model="decorationVisible"
-    title="收银台装修"
-    width="640px"
-    destroy-on-close
-    append-to-body
-  >
+  <el-dialog v-model="decorationVisible" title="收银台装修" width="640px" destroy-on-close append-to-body>
     <el-form :model="decorationForm" label-width="112px" class="payment-dialog-form cashier-decoration-form">
       <section class="cashier-config-form__section">
         <h4>展示主体</h4>
@@ -118,10 +112,21 @@
           />
         </el-form-item>
         <el-form-item label="辅助说明">
-          <el-input v-model="decorationForm.displaySubtitle" maxlength="100" placeholder="例如 请确认订单金额后选择支付方式" />
+          <el-input
+            v-model="decorationForm.displaySubtitle"
+            maxlength="100"
+            placeholder="例如 请确认订单金额后选择支付方式"
+          />
         </el-form-item>
         <el-form-item label="帮助文案">
-          <el-input v-model="decorationForm.helpText" type="textarea" :rows="3" maxlength="200" show-word-limit placeholder="例如 支付遇到问题请联系业务客服" />
+          <el-input
+            v-model="decorationForm.helpText"
+            type="textarea"
+            :rows="3"
+            maxlength="200"
+            show-word-limit
+            placeholder="例如 支付遇到问题请联系业务客服"
+          />
         </el-form-item>
       </section>
     </el-form>
@@ -191,17 +196,35 @@ const cashierConfigPageApi = {
     return { ...result, list: result.list.map(toForm) };
   },
   detail: async (id: ApiId): Promise<Record<string, unknown>> => toForm(await paymentCashierConfigApi.detail(id)),
-  create: (data: Record<string, unknown>): Promise<ApiId> => paymentCashierConfigApi.create(toPayload(data as CashierConfigForm)),
-  update: (data: Record<string, unknown>): Promise<boolean> => paymentCashierConfigApi.update(toPayload(data as CashierConfigForm)),
+  create: (data: Record<string, unknown>): Promise<ApiId> =>
+    paymentCashierConfigApi.create(toPayload(data as CashierConfigForm)),
+  update: (data: Record<string, unknown>): Promise<boolean> =>
+    paymentCashierConfigApi.update(toPayload(data as CashierConfigForm)),
   remove: (id: ApiId): Promise<boolean> => paymentCashierConfigApi.remove(id),
 };
 
 const columns: PaymentTableColumn[] = [
   { prop: 'cashierName', label: '收银台名称', minWidth: 180 },
-  { prop: 'applicationName', label: '应用', minWidth: 180, formatter: (row, value) => String(value || applicationLabels.labelOf(row.applicationId)) },
-  { prop: 'defaultCashier', label: '默认', width: 90, formatter: (_row, value) => Number(value) === 1 ? '是' : '否' },
-  { prop: 'enterpriseSubjectNames', label: '企业主体', minWidth: 220, formatter: (row, value) => String(value || labelsOfCsv(row.enterpriseSubjectIds)) },
-  { prop: 'methodNames', label: '支付方式', minWidth: 260, variant: 'tags', formatter: row => String(row.methodNames || row.methodCodes || '') },
+  {
+    prop: 'applicationName',
+    label: '应用',
+    minWidth: 180,
+    formatter: (row, value) => String(value || applicationLabels.labelOf(row.applicationId)),
+  },
+  { prop: 'defaultCashier', label: '默认', width: 90, formatter: (_row, value) => (Number(value) === 1 ? '是' : '否') },
+  {
+    prop: 'enterpriseSubjectNames',
+    label: '企业主体',
+    minWidth: 220,
+    formatter: (row, value) => String(value || labelsOfCsv(row.enterpriseSubjectIds)),
+  },
+  {
+    prop: 'methodNames',
+    label: '支付方式',
+    minWidth: 260,
+    variant: 'tags',
+    formatter: (row) => String(row.methodNames || row.methodCodes || ''),
+  },
 ];
 
 const rules: FormRules = {
@@ -257,10 +280,12 @@ async function saveDecoration() {
   }
   decorationSaving.value = true;
   try {
-    await paymentCashierConfigApi.update(toPayload({
-      ...decorationSource.value,
-      ...decorationForm.value,
-    }));
+    await paymentCashierConfigApi.update(
+      toPayload({
+        ...decorationSource.value,
+        ...decorationForm.value,
+      }),
+    );
     ElMessage.success('收银台装修已保存');
     decorationVisible.value = false;
   } finally {
@@ -311,7 +336,9 @@ function parseConfig<T extends Record<string, unknown>>(value: string | undefine
 }
 
 function stringifyConfig<T extends Record<string, unknown>>(value: T): string | undefined {
-  const normalized = Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined && entry !== ''));
+  const normalized = Object.fromEntries(
+    Object.entries(value).filter(([, entry]) => entry !== undefined && entry !== ''),
+  );
   return Object.keys(normalized).length > 0 ? JSON.stringify(normalized) : undefined;
 }
 
@@ -321,11 +348,13 @@ function trimToUndefined(value: unknown): string | undefined {
 }
 
 function labelsOfCsv(value: unknown) {
-  return String(value || '')
-    .split(',')
-    .map(item => subjectLabels.labelOf(item.trim()))
-    .filter(label => label !== '-')
-    .join(',') || '-';
+  return (
+    String(value || '')
+      .split(',')
+      .map((item) => subjectLabels.labelOf(item.trim()))
+      .filter((label) => label !== '-')
+      .join(',') || '-'
+  );
 }
 </script>
 
@@ -347,5 +376,4 @@ function labelsOfCsv(value: unknown) {
   letter-spacing: 0;
   margin: 0 0 12px;
 }
-
 </style>

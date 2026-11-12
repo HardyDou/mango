@@ -8,24 +8,24 @@
 
 ## 2. 功能清单
 
-| 能力 | 用途 | 对应方法 |
-|------|------|----------|
-| 查询我的首页 | 获取当前用户首页列表 | `homePageApi.listMyPages` |
-| 解析首页 | 获取默认首页或指定首页 | `homePageApi.resolve` |
-| 创建首页 | 新建个人首页并可设为默认 | `homePageApi.create` |
-| 重命名首页 | 修改首页标题 | `homePageApi.rename` |
-| 复制首页 | 复制当前首页布局 | `homePageApi.duplicate` |
-| 保存布局 | 持久化布局 JSON | `homePageApi.saveLayout` |
-| 首页排序 | 保存首页页签顺序 | `homePageApi.sort` |
-| 设置默认首页 | 设置登录后默认首页 | `homePageApi.setDefault` |
-| 删除首页 | 删除当前用户首页 | `homePageApi.delete` |
+| 能力             | 用途                                           | 对应方法                                                                                                               |
+| ---------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| 查询我的首页     | 获取当前用户首页列表                           | `homePageApi.listMyPages`                                                                                              |
+| 解析首页         | 获取默认首页或指定首页                         | `homePageApi.resolve`                                                                                                  |
+| 创建首页         | 新建个人首页并可设为默认                       | `homePageApi.create`                                                                                                   |
+| 重命名首页       | 修改首页标题                                   | `homePageApi.rename`                                                                                                   |
+| 复制首页         | 复制当前首页布局                               | `homePageApi.duplicate`                                                                                                |
+| 保存布局         | 持久化布局 JSON                                | `homePageApi.saveLayout`                                                                                               |
+| 首页排序         | 保存首页页签顺序                               | `homePageApi.sort`                                                                                                     |
+| 设置默认首页     | 设置登录后默认首页                             | `homePageApi.setDefault`                                                                                               |
+| 删除首页         | 删除当前用户首页                               | `homePageApi.delete`                                                                                                   |
 | 后台维护用户首页 | 重命名、保存布局、单条或批量删除租户内用户首页 | `homePageApi.adminRename` / `homePageApi.adminSaveLayout` / `homePageApi.adminDelete` / `homePageApi.adminBatchDelete` |
-| 查询模板 | 获取后台首页模板列表 | `homeTemplateApi.list` |
-| 编辑模板草稿 | 新建或保存模板草稿布局 | `homeTemplateApi.create` / `homeTemplateApi.updateDraft` |
-| 发布模板 | 发布草稿，授权用户生效 | `homeTemplateApi.publish` |
-| 模板授权 | 保存个人、部门、角色授权 | `homeTemplateApi.saveAuthorizations` |
-| 用户最终视图 | 查询指定用户可见首页集合 | `homeTemplateApi.resolveUserPages` |
-| Home 用户候选项 | 按首页列表或用户首页权限查询当前租户启用成员 | `homeOptionApi.listPageUsers` / `homeOptionApi.listVisibleUsers` |
+| 查询模板         | 获取后台首页模板列表                           | `homeTemplateApi.list`                                                                                                 |
+| 编辑模板草稿     | 新建或保存模板草稿布局                         | `homeTemplateApi.create` / `homeTemplateApi.updateDraft`                                                               |
+| 发布模板         | 发布草稿，授权用户生效                         | `homeTemplateApi.publish`                                                                                              |
+| 模板授权         | 保存个人、部门、角色授权                       | `homeTemplateApi.saveAuthorizations`                                                                                   |
+| 用户最终视图     | 查询指定用户可见首页集合                       | `homeTemplateApi.resolveUserPages`                                                                                     |
+| Home 用户候选项  | 按首页列表或用户首页权限查询当前租户启用成员   | `homeOptionApi.listPageUsers` / `homeOptionApi.listVisibleUsers`                                                       |
 
 ## 3. 接入方式
 
@@ -60,20 +60,20 @@ await homeOptionApi.listVisibleUsers({ keyword: 'admin', size: 50 });
 
 主要类型：
 
-| 类型 | 说明 |
-|------|------|
-| `HomePageVO` | 首页列表和解析结果 |
-| `CreateHomePageCommand` | 创建首页入参 |
-| `RenameHomePageCommand` | 重命名首页入参 |
-| `SaveHomePageLayoutCommand` | 保存布局入参 |
-| `SortHomePagesCommand` | 首页排序入参 |
-| `SetDefaultHomePageCommand` | 默认首页入参，`homeId` 支持个人首页 ID 或 `template:{id}` |
-| `ResolveHomePageQuery` | 解析首页入参 |
-| `HomeTemplateVO` | 首页模板视图 |
-| `HomeTemplateAuthorizationVO` | 首页模板授权视图 |
-| `UserHomeViewQuery` | 后台用户最终首页查询入参 |
-| `HomeUserOptionQuery` | Home 用户候选关键字和有界返回数量 |
-| `HomeUserOptionVO` | 用户 ID、当前租户成员 ID、显示名和用户名 |
+| 类型                          | 说明                                                      |
+| ----------------------------- | --------------------------------------------------------- |
+| `HomePageVO`                  | 首页列表和解析结果                                        |
+| `CreateHomePageCommand`       | 创建首页入参                                              |
+| `RenameHomePageCommand`       | 重命名首页入参                                            |
+| `SaveHomePageLayoutCommand`   | 保存布局入参                                              |
+| `SortHomePagesCommand`        | 首页排序入参                                              |
+| `SetDefaultHomePageCommand`   | 默认首页入参，`homeId` 支持个人首页 ID 或 `template:{id}` |
+| `ResolveHomePageQuery`        | 解析首页入参                                              |
+| `HomeTemplateVO`              | 首页模板视图                                              |
+| `HomeTemplateAuthorizationVO` | 首页模板授权视图                                          |
+| `UserHomeViewQuery`           | 后台用户最终首页查询入参                                  |
+| `HomeUserOptionQuery`         | Home 用户候选关键字和有界返回数量                         |
+| `HomeUserOptionVO`            | 用户 ID、当前租户成员 ID、显示名和用户名                  |
 
 ## 6. 数据与初始化
 
@@ -83,11 +83,11 @@ await homeOptionApi.listVisibleUsers({ keyword: 'admin', size: 50 });
 
 本包不注册菜单和路由。后台首页入口由 `@mango/admin-shell` 提供，默认首页路由用于解析当前用户默认首页，带 `homeId` 参数的首页路由用于打开当前用户拥有的指定首页。模板管理、首页列表和用户首页菜单由后端资源注册到 `平台能力 / 首页管理`：
 
-| 菜单 | 组件 key | 用途 |
-|------|----------|------|
-| 首页模板 | `home/templates/index` | 管理模板草稿、复制、发布、启停和授权 |
-| 首页列表 | `home/list/index` | 按用户查询、预览、编辑、单条或批量删除用户自定义首页 |
-| 用户首页 | `home/user/index` | 输入或选择用户后查看该用户最终可见首页 |
+| 菜单     | 组件 key               | 用途                                                 |
+| -------- | ---------------------- | ---------------------------------------------------- |
+| 首页模板 | `home/templates/index` | 管理模板草稿、复制、发布、启停和授权                 |
+| 首页列表 | `home/list/index`      | 按用户查询、预览、编辑、单条或批量删除用户自定义首页 |
+| 用户首页 | `home/user/index`      | 输入或选择用户后查看该用户最终可见首页               |
 
 ## 8. 快速开始
 
@@ -104,12 +104,12 @@ pnpm -F @mango/home build
 
 ## 9. 问题排查
 
-| 现象 | 排查项 |
-|------|--------|
-| 首页列表为空 | 确认当前用户是否已创建个人首页；未创建时首页宿主可使用内置默认布局 |
-| 首页接口 404 | 确认后端是否启用 `mango-home-starter`；可选首页场景应使用 `silentError` 并回退到内置默认布局 |
-| 保存布局失败 | 确认后端是否引入 `mango-home-starter`，并检查 `layoutJson` 是否满足后端校验 |
-| 指定首页打不开 | 确认 `homeId` 属于当前登录用户且首页未被删除 |
+| 现象                   | 排查项                                                                                                                                  |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| 首页列表为空           | 确认当前用户是否已创建个人首页；未创建时首页宿主可使用内置默认布局                                                                      |
+| 首页接口 404           | 确认后端是否启用 `mango-home-starter`；可选首页场景应使用 `silentError` 并回退到内置默认布局                                            |
+| 保存布局失败           | 确认后端是否引入 `mango-home-starter`，并检查 `layoutJson` 是否满足后端校验                                                             |
+| 指定首页打不开         | 确认 `homeId` 属于当前登录用户且首页未被删除                                                                                            |
 | 首页管理用户选择器 403 | 确认页面拥有 `home:list:view` 或 `home:user:view`，并调用 `homeOptionApi`；不要追加 `system:user:list` 或调用 Identity 成员管理分页接口 |
 
 ## 10. 相关文档

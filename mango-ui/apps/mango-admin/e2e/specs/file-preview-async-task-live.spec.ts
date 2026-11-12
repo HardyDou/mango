@@ -20,7 +20,9 @@ test('file preview task is reusable and renders a direct PDF page', async ({ req
       file: {
         name: `async-preview-${Date.now()}.pdf`,
         mimeType: 'application/pdf',
-        buffer: Buffer.from('%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF\n'),
+        buffer: Buffer.from(
+          '%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF\n',
+        ),
       },
       purpose: 'preview-e2e',
       bizType: 'FILE_PREVIEW_ASYNC_E2E',
@@ -31,10 +33,17 @@ test('file preview task is reusable and renders a direct PDF page', async ({ req
   const first = await request.get(`${apiBaseURL}/file-preview/files/preview-status?fileId=${fileId}`, { headers });
   expect(first.ok()).toBeTruthy();
   expect(['QUEUED', 'PROCESSING', 'SUCCEEDED']).toContain((await first.json()).data.status);
-  await expect.poll(async () => {
-    const response = await request.get(`${apiBaseURL}/file-preview/files/preview-status?fileId=${fileId}`, { headers });
-    return (await response.json()).data.status;
-  }, { timeout: 30000 }).toBe('SUCCEEDED');
+  await expect
+    .poll(
+      async () => {
+        const response = await request.get(`${apiBaseURL}/file-preview/files/preview-status?fileId=${fileId}`, {
+          headers,
+        });
+        return (await response.json()).data.status;
+      },
+      { timeout: 30000 },
+    )
+    .toBe('SUCCEEDED');
   const second = await request.get(`${apiBaseURL}/file-preview/files/preview-status?fileId=${fileId}`, { headers });
   const secondData = (await second.json()).data;
   expect(secondData.previewFileId).toBeNull();

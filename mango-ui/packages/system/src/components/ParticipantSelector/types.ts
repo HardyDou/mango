@@ -22,4 +22,3 @@ export interface ParticipantSelectorLoading {
   posts?: boolean;
   orgs?: boolean;
 }
-

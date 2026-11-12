@@ -85,10 +85,11 @@ const cases: PreviewCase[] = [
     extension: 'png',
     mimeType: 'image/png',
     expected: 'preview',
-    create: () => Buffer.from(
-      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=',
-      'base64',
-    ),
+    create: () =>
+      Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=',
+        'base64',
+      ),
   },
   {
     key: 'pdf',
@@ -179,29 +180,30 @@ function createZipFixture() {
 }
 
 function createPdfFixture() {
-  return Buffer.from([
-    '%PDF-1.4',
-    '1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj',
-    '2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj',
-    '3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Contents 4 0 R >> endobj',
-    '4 0 obj << /Length 44 >> stream',
-    'BT /F1 12 Tf 30 120 Td (Mango PDF Preview) Tj ET',
-    'endstream endobj',
-    'xref',
-    '0 5',
-    '0000000000 65535 f ',
-    'trailer << /Root 1 0 R /Size 5 >>',
-    'startxref',
-    '310',
-    '%%EOF',
-  ].join('\n'), 'utf-8');
+  return Buffer.from(
+    [
+      '%PDF-1.4',
+      '1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj',
+      '2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj',
+      '3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Contents 4 0 R >> endobj',
+      '4 0 obj << /Length 44 >> stream',
+      'BT /F1 12 Tf 30 120 Td (Mango PDF Preview) Tj ET',
+      'endstream endobj',
+      'xref',
+      '0 5',
+      '0000000000 65535 f ',
+      'trailer << /Root 1 0 R /Size 5 >>',
+      'startxref',
+      '310',
+      '%%EOF',
+    ].join('\n'),
+    'utf-8',
+  );
 }
 
 function createXlsxFixture() {
   const workbook = XLSX.utils.book_new();
-  const worksheet = XLSX.utils.json_to_sheet([
-    { name: 'Mango', value: 'file-preview-e2e' },
-  ]);
+  const worksheet = XLSX.utils.json_to_sheet([{ name: 'Mango', value: 'file-preview-e2e' }]);
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
   return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
 }
@@ -212,23 +214,35 @@ function createDocxFixture() {
   const wordDir = join(dir, 'word');
   mkdirSync(relsDir, { recursive: true });
   mkdirSync(wordDir, { recursive: true });
-  writeFileSync(join(dir, '[Content_Types].xml'), `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+  writeFileSync(
+    join(dir, '[Content_Types].xml'),
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
   <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
   <Default Extension="xml" ContentType="application/xml"/>
   <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
-</Types>`, 'utf-8');
-  writeFileSync(join(relsDir, '.rels'), `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+</Types>`,
+    'utf-8',
+  );
+  writeFileSync(
+    join(relsDir, '.rels'),
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
-</Relationships>`, 'utf-8');
-  writeFileSync(join(wordDir, 'document.xml'), `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+</Relationships>`,
+    'utf-8',
+  );
+  writeFileSync(
+    join(wordDir, 'document.xml'),
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
   <w:body>
     <w:p><w:r><w:t>Mango Issue 563 mixed encoded filename preview</w:t></w:r></w:p>
     <w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/></w:sectPr>
   </w:body>
-</w:document>`, 'utf-8');
+</w:document>`,
+    'utf-8',
+  );
   const docxPath = join(dir, 'fixture.docx');
   execFileSync('zip', ['-q', '-r', docxPath, '[Content_Types].xml', '_rels', 'word'], { cwd: dir });
   const content = Buffer.from(readFileSync(docxPath));
@@ -237,17 +251,19 @@ function createDocxFixture() {
 }
 
 function previewEntryUrl(previewUrl: string) {
-  const url = previewUrl.startsWith('http')
-    ? new URL(previewUrl)
-    : new URL(previewUrl, frontendBaseURL);
+  const url = previewUrl.startsWith('http') ? new URL(previewUrl) : new URL(previewUrl, frontendBaseURL);
   const path = url.pathname.startsWith('/api/') ? url.pathname : `/api${url.pathname}`;
   return `${frontendBaseURL}${path}${url.search}`;
 }
 
 function pageLooksLikePreview(text: string, title: string) {
   const combined = `${title}\n${text}`;
-  return !/Whitelabel Error Page|HTTP Status 500|系统异常|登录|404 Not Found/i.test(combined)
-    && /Mango|文件|图片预览|普通文本预览|压缩包预览|preview|pdf|image|txt|zip|xlsx|在线预览|暂不支持|无法在线预览/i.test(combined);
+  return (
+    !/Whitelabel Error Page|HTTP Status 500|系统异常|登录|404 Not Found/i.test(combined) &&
+    /Mango|文件|图片预览|普通文本预览|压缩包预览|preview|pdf|image|txt|zip|xlsx|在线预览|暂不支持|无法在线预览/i.test(
+      combined,
+    )
+  );
 }
 
 function classifyResult(item: PreviewCase, pageText: string, pageOk: boolean, downloadOk: boolean) {
@@ -270,7 +286,10 @@ async function inspectPreviewPage(page: Page, url: string) {
   const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => undefined);
   const title = await page.title().catch(() => '');
-  const text = await page.locator('body').innerText({ timeout: 5000 }).catch(() => '');
+  const text = await page
+    .locator('body')
+    .innerText({ timeout: 5000 })
+    .catch(() => '');
   return {
     status: response?.status() || 0,
     title,
@@ -279,41 +298,39 @@ async function inspectPreviewPage(page: Page, url: string) {
   };
 }
 
-async function inspectOfficePdf(
-  page: Page,
-  fileId: string,
-  requestUrls: string[],
-  responses: BrowserResponse[],
-) {
+async function inspectOfficePdf(page: Page, fileId: string, requestUrls: string[], responses: BrowserResponse[]) {
   const frame = page.frameLocator('#pdfFrame');
   const iframeSrc = await page.locator('#pdfFrame').getAttribute('src');
   expect(iframeSrc, 'PDF.js iframe 缺少资源地址').toBeTruthy();
   const pdfResourceUrl = new URL(iframeSrc || '', frontendBaseURL).searchParams.get('file') || '';
   const decodedPdfResourceUrl = decodeURIComponent(pdfResourceUrl);
   const pdfBackingUrl = unwrapCorsResourceUrl(decodedPdfResourceUrl);
-  const findPdfResponse = () => responses.find(
-    response => unwrapCorsResourceUrl(response.url) === pdfBackingUrl,
-  );
-  await expect.poll(
-    findPdfResponse,
-    {
+  const findPdfResponse = () => responses.find((response) => unwrapCorsResourceUrl(response.url) === pdfBackingUrl);
+  await expect
+    .poll(findPdfResponse, {
       message: `未捕获 PDF 资源响应: ${decodedPdfResourceUrl}`,
       timeout: 30000,
-    },
-  ).toBeTruthy();
+    })
+    .toBeTruthy();
   const pdfResponse = findPdfResponse();
-  await expect(frame.locator('#viewer .page').first(), JSON.stringify({
-    decodedPdfResourceUrl,
-    pdfBackingUrl,
-    pdfResponse,
-  })).toBeVisible({ timeout: 30000 });
+  await expect(
+    frame.locator('#viewer .page').first(),
+    JSON.stringify({
+      decodedPdfResourceUrl,
+      pdfBackingUrl,
+      pdfResponse,
+    }),
+  ).toBeVisible({ timeout: 30000 });
   const pageCount = await frame.locator('#viewer .page').count();
-  const canvasSize = await frame.locator('#viewer .page canvas').first().evaluate((canvas) => ({
-    width: (canvas as HTMLCanvasElement).width,
-    height: (canvas as HTMLCanvasElement).height,
-  }));
-  const inspectedUrls = requestUrls.flatMap(url => [url, unwrapCorsResourceUrl(url)]);
-  const doubleEncodedRequests = inspectedUrls.filter(url => /%25(?:e4|e5|e6|e7|e8|e9)/i.test(url));
+  const canvasSize = await frame
+    .locator('#viewer .page canvas')
+    .first()
+    .evaluate((canvas) => ({
+      width: (canvas as HTMLCanvasElement).width,
+      height: (canvas as HTMLCanvasElement).height,
+    }));
+  const inspectedUrls = requestUrls.flatMap((url) => [url, unwrapCorsResourceUrl(url)]);
+  const doubleEncodedRequests = inspectedUrls.filter((url) => /%25(?:e4|e5|e6|e7|e8|e9)/i.test(url));
 
   expect(pageCount, 'PDF.js 未渲染任何页').toBeGreaterThan(0);
   expect(canvasSize.width, 'PDF.js 首页 canvas 宽度为 0').toBeGreaterThan(0);
@@ -350,18 +367,23 @@ function unwrapCorsResourceUrl(resourceUrl: string) {
 async function inspectZipInnerPdfPreview(page: Page) {
   const entry = page.locator('#treeDemo a', { hasText: 'sample.pdf' });
   await expect(entry).toBeVisible({ timeout: 15000 });
-  const responsePromise = page.waitForResponse(response => {
-    const responseUrl = response.url();
-    if (responseUrl.includes('/compressed-file') && responseUrl.includes('sample.pdf')) {
-      return true;
-    }
-    if (!responseUrl.includes('/getCorsFile')) {
-      return false;
-    }
-    const parsedUrl = new URL(responseUrl);
-    const urlPath = parsedUrl.searchParams.get('urlPath');
-    return Boolean(urlPath && Buffer.from(urlPath, 'base64').toString('utf-8').includes('/compressed-file'));
-  }, { timeout: 20000 }).catch(() => null);
+  const responsePromise = page
+    .waitForResponse(
+      (response) => {
+        const responseUrl = response.url();
+        if (responseUrl.includes('/compressed-file') && responseUrl.includes('sample.pdf')) {
+          return true;
+        }
+        if (!responseUrl.includes('/getCorsFile')) {
+          return false;
+        }
+        const parsedUrl = new URL(responseUrl);
+        const urlPath = parsedUrl.searchParams.get('urlPath');
+        return Boolean(urlPath && Buffer.from(urlPath, 'base64').toString('utf-8').includes('/compressed-file'));
+      },
+      { timeout: 20000 },
+    )
+    .catch(() => null);
 
   await entry.click();
 
@@ -398,11 +420,12 @@ async function inspectZipPreviewLayout(page: Page) {
     const treeRect = treePanel.getBoundingClientRect();
     const previewRect = previewPanel.getBoundingClientRect();
     return {
-      ok: Math.abs(treeRect.top - previewRect.top) < 8
-        && previewRect.left >= treeRect.right - 2
-        && previewRect.width > 320
-        && treeTitle.textContent?.trim() === '目录'
-        && title.textContent?.trim() === 'FileView',
+      ok:
+        Math.abs(treeRect.top - previewRect.top) < 8 &&
+        previewRect.left >= treeRect.right - 2 &&
+        previewRect.width > 320 &&
+        treeTitle.textContent?.trim() === '目录' &&
+        title.textContent?.trim() === 'FileView',
       reason: `treeTitle=${treeTitle.textContent?.trim()}, title=${title.textContent?.trim()}, tree=${Math.round(treeRect.width)}x${Math.round(treeRect.height)}@${Math.round(treeRect.left)},${Math.round(treeRect.top)}, preview=${Math.round(previewRect.width)}x${Math.round(previewRect.height)}@${Math.round(previewRect.left)},${Math.round(previewRect.top)}`,
     };
   });
@@ -431,7 +454,12 @@ async function uploadFixture(request: APIRequestContext, token: string, item: Pr
   return { fileName, fileId: String(data.id), body };
 }
 
-async function runPreviewCase(page: Page, request: APIRequestContext, token: string, item: PreviewCase): Promise<CaseResult> {
+async function runPreviewCase(
+  page: Page,
+  request: APIRequestContext,
+  token: string,
+  item: PreviewCase,
+): Promise<CaseResult> {
   const result: CaseResult = {
     key: item.key,
     fileName: '',
@@ -445,11 +473,12 @@ async function runPreviewCase(page: Page, request: APIRequestContext, token: str
   const requestUrls: string[] = [];
   const responses: BrowserResponse[] = [];
   const requestListener = (browserRequest: { url: () => string }) => requestUrls.push(browserRequest.url());
-  const responseListener = (response: Response) => responses.push({
-    url: response.url(),
-    status: response.status(),
-    contentType: response.headers()['content-type'] || '',
-  });
+  const responseListener = (response: Response) =>
+    responses.push({
+      url: response.url(),
+      status: response.status(),
+      contentType: response.headers()['content-type'] || '',
+    });
   page.on('request', requestListener);
   page.on('response', responseListener);
   try {
@@ -458,9 +487,12 @@ async function runPreviewCase(page: Page, request: APIRequestContext, token: str
     result.fileId = uploaded.fileId;
     result.uploadOk = true;
 
-    const previewResponse = await request.get(api(`/file-preview/files/preview-link?fileId=${encodeURIComponent(uploaded.fileId)}`), {
-      headers: authHeaders(token),
-    });
+    const previewResponse = await request.get(
+      api(`/file-preview/files/preview-link?fileId=${encodeURIComponent(uploaded.fileId)}`),
+      {
+        headers: authHeaders(token),
+      },
+    );
     const previewBody = await previewResponse.json();
     expect(previewResponse.status()).toBe(200);
     const previewResponseBody = expectApiSuccess(previewBody, `${item.key} 获取预览链接失败`);
@@ -508,9 +540,10 @@ async function runPreviewCase(page: Page, request: APIRequestContext, token: str
     const downloadResponse = await request.get(api(`/file/files/download?id=${encodeURIComponent(uploaded.fileId)}`), {
       headers: authHeaders(token),
     });
-    result.downloadOk = downloadResponse.status() === 200
-      && !String(downloadResponse.headers()['content-type'] || '').includes('application/json')
-      && (await downloadResponse.body()).length > 0;
+    result.downloadOk =
+      downloadResponse.status() === 200 &&
+      !String(downloadResponse.headers()['content-type'] || '').includes('application/json') &&
+      (await downloadResponse.body()).length > 0;
     result.downloadContentType = downloadResponse.headers()['content-type'];
 
     const classified = classifyResult(item, result.pageText || '', result.previewPageOk, result.downloadOk);
@@ -523,9 +556,11 @@ async function runPreviewCase(page: Page, request: APIRequestContext, token: str
     page.off('request', requestListener);
     page.off('response', responseListener);
     if (result.fileId) {
-      await request.delete(api(`/file/files?id=${encodeURIComponent(result.fileId)}&reason=e2e-cleanup`), {
-        headers: authHeaders(token),
-      }).catch(() => undefined);
+      await request
+        .delete(api(`/file/files?id=${encodeURIComponent(result.fileId)}&reason=e2e-cleanup`), {
+          headers: authHeaders(token),
+        })
+        .catch(() => undefined);
     }
   }
   return result;
@@ -538,23 +573,31 @@ test.describe.serial('文件预览多类型真实联调', () => {
     const token = await loginToken(request);
     const results: CaseResult[] = [];
     const selectedCase = process.env.MANGO_E2E_PREVIEW_CASE;
-    const selectedCases = selectedCase ? cases.filter(item => item.key === selectedCase) : cases;
+    const selectedCases = selectedCase ? cases.filter((item) => item.key === selectedCase) : cases;
     expect(selectedCases, `未知预览用例: ${selectedCase}`).not.toHaveLength(0);
     for (const item of selectedCases) {
       results.push(await runPreviewCase(page, request, token, item));
     }
 
     mkdirSync(join(process.cwd(), 'e2e', '.tmp'), { recursive: true });
-    writeFileSync(resultFile, `${JSON.stringify({
-      apiBaseURL,
-      frontendBaseURL,
-      generatedAt: new Date().toISOString(),
-      officePluginEnabled: process.env.MANGO_E2E_OFFICE_ENABLED === 'true',
-      selectedCase: selectedCase || 'all',
-      results,
-    }, null, 2)}\n`, 'utf-8');
+    writeFileSync(
+      resultFile,
+      `${JSON.stringify(
+        {
+          apiBaseURL,
+          frontendBaseURL,
+          generatedAt: new Date().toISOString(),
+          officePluginEnabled: process.env.MANGO_E2E_OFFICE_ENABLED === 'true',
+          selectedCase: selectedCase || 'all',
+          results,
+        },
+        null,
+        2,
+      )}\n`,
+      'utf-8',
+    );
 
-    const blockingFailures = results.filter(item => item.status === 'FAIL');
+    const blockingFailures = results.filter((item) => item.status === 'FAIL');
     expect(blockingFailures, JSON.stringify(results, null, 2)).toEqual([]);
   });
 });

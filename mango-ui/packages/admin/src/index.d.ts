@@ -1,10 +1,6 @@
 import type { App as VueApp } from 'vue';
 import type { Router } from 'vue-router';
-import type {
-  MangoFrontendApp,
-  MangoRuntimeConfig,
-  MangoRuntimeConfigLoadOptions,
-} from '@mango/app-runtime';
+import type { MangoFrontendApp, MangoRuntimeConfig, MangoRuntimeConfigLoadOptions } from '@mango/app-runtime';
 import type { MangoAdminFeatureCode, MangoAdminFeatures } from '@mango/admin-pages/features';
 import type { MangoAuthConfig } from '@mango/auth';
 import type { MangoGridWidgetDefinition } from '@mango/grid-widgets';

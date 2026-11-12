@@ -883,8 +883,7 @@ onBeforeUnmount(revokeAllObjectUrls);
 
 .upload-control.is-inline-manual {
   display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
+  flex-flow: row wrap;
   align-items: flex-start;
   gap: 12px;
 }

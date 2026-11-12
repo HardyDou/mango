@@ -34,7 +34,6 @@
         <SliderContent />
       </el-popover>
     </template>
-
   </div>
 </template>
 
@@ -44,11 +43,14 @@ import { computed, defineComponent, h, onBeforeUnmount, onMounted, ref } from 'v
 
 type CaptchaDisplayMode = 'embedded' | 'trigger' | 'popup';
 
-const props = withDefaults(defineProps<{
-  mode?: CaptchaDisplayMode;
-}>(), {
-  mode: 'embedded',
-});
+const props = withDefaults(
+  defineProps<{
+    mode?: CaptchaDisplayMode;
+  }>(),
+  {
+    mode: 'embedded',
+  },
+);
 
 const emit = defineEmits<{
   success: [key: string];
@@ -171,17 +173,19 @@ const SliderContent = defineComponent({
     return () => [
       h('div', { class: 'track' }, [
         h('div', { class: 'target', style: { left: `${targetLeft.value}px` } }),
-        h('div', {
-          class: 'slider',
-          style: { left: `${sliderLeft.value}px` },
-          onMousedown: startDrag,
-          onTouchstart: (event: TouchEvent) => {
-            event.preventDefault();
-            startTouchDrag(event);
+        h(
+          'div',
+          {
+            class: 'slider',
+            style: { left: `${sliderLeft.value}px` },
+            onMousedown: startDrag,
+            onTouchstart: (event: TouchEvent) => {
+              event.preventDefault();
+              startTouchDrag(event);
+            },
           },
-        }, [
-          h(DArrowRight),
-        ]),
+          [h(DArrowRight)],
+        ),
       ]),
       errorMessage.value ? h('div', { class: 'error-msg' }, errorMessage.value) : null,
     ];
@@ -214,7 +218,7 @@ defineExpose({ refresh, verify });
     width: 30px;
     height: 30px;
     border-radius: 15px;
-    background: rgba(103, 194, 58, 0.15);
+    background: rgb(103 194 58 / 15%);
     border: 1px dashed #67c23a;
   }
 

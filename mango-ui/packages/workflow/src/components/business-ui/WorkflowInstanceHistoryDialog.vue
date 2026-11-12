@@ -37,26 +37,31 @@ import type { WorkflowBusinessApply } from '../../api/workflow';
 
 defineOptions({ name: 'WorkflowInstanceHistoryDialog' });
 
-const props = withDefaults(defineProps<WorkflowInstanceHistoryQuery & {
-  modelValue: boolean;
-  title?: string;
-  subtitle?: string;
-  emptyText?: string;
-  records?: WorkflowBusinessApply[];
-  loading?: boolean;
-  total?: number | null;
-}>(), {
-  modelValue: false,
-  businessType: '',
-  businessKey: '',
-  pageSize: 10,
-  title: '历史申请',
-  subtitle: '同一业务单据的多次申请记录',
-  emptyText: '暂无申请记录',
-  records: undefined,
-  loading: undefined,
-  total: null,
-});
+const props = withDefaults(
+  defineProps<
+    WorkflowInstanceHistoryQuery & {
+      modelValue: boolean;
+      title?: string;
+      subtitle?: string;
+      emptyText?: string;
+      records?: WorkflowBusinessApply[];
+      loading?: boolean;
+      total?: number | null;
+    }
+  >(),
+  {
+    modelValue: false,
+    businessType: '',
+    businessKey: '',
+    pageSize: 10,
+    title: '历史申请',
+    subtitle: '同一业务单据的多次申请记录',
+    emptyText: '暂无申请记录',
+    records: undefined,
+    loading: undefined,
+    total: null,
+  },
+);
 
 const emit = defineEmits<{
   'update:modelValue': [value: boolean];
@@ -64,6 +69,6 @@ const emit = defineEmits<{
 
 const visible = computed({
   get: () => props.modelValue,
-  set: value => emit('update:modelValue', value),
+  set: (value) => emit('update:modelValue', value),
 });
 </script>

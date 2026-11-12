@@ -6,5 +6,6 @@
 packages/admin/generated-package-styles.css
 packages/admin/style-full.css
 packages/mango-cli/templates
+packages/mango-pmo
 packages/mango-cli/module-projections.json
 pnpm-lock.yaml

@@ -375,7 +375,7 @@ onBeforeUnmount(() => {
   font-size: 16px;
 }
 
-@media (max-width: 960px) {
+@media (width <= 960px) {
   .mango-search-panel__form {
     grid-template-columns: 1fr;
   }
@@ -390,13 +390,13 @@ onBeforeUnmount(() => {
   }
 }
 
-@media (max-width: 720px) {
+@media (width <= 720px) {
   .mango-search-panel {
     padding: 12px;
   }
 }
 
-@media (max-width: 640px) {
+@media (width <= 640px) {
   .mango-search-panel__fields {
     grid-template-columns: 1fr;
   }

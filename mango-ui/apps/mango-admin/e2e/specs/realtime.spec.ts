@@ -54,18 +54,21 @@ async function mockRealtimeApi(page: Page) {
     while (!(pendingServerMessage && isDemoClient) && Date.now() < deadline) {
       await sleep(100);
     }
-    const messages = pendingServerMessage && isDemoClient ? [
-      {
-        id: `server-${pollingCount}`,
-        version: '1.0',
-        event: { domain: 'chat', name: 'message.delivered' },
-        source: { platform: 'server' },
-        context: { tenantId: 'default', userId: 1001 },
-        metadata: { senderName: '服务端', roomName: '订单协作群' },
-        payload: { type: 'text', text: serverMessageText },
-        timestamp: '2026-05-20T00:00:00Z',
-      },
-    ] : [];
+    const messages =
+      pendingServerMessage && isDemoClient
+        ? [
+            {
+              id: `server-${pollingCount}`,
+              version: '1.0',
+              event: { domain: 'chat', name: 'message.delivered' },
+              source: { platform: 'server' },
+              context: { tenantId: 'default', userId: 1001 },
+              metadata: { senderName: '服务端', roomName: '订单协作群' },
+              payload: { type: 'text', text: serverMessageText },
+              timestamp: '2026-05-20T00:00:00Z',
+            },
+          ]
+        : [];
     if (messages.length) pendingServerMessage = false;
     await route.fulfill({
       status: 200,
@@ -127,12 +130,18 @@ test.describe('Realtime 实时消息 E2E', () => {
     await expect(page.getByRole('heading', { name: '提供方法' })).toBeVisible();
     await expect(page.getByRole('heading', { name: '配置项' })).toBeVisible();
     await expect(page.getByRole('heading', { name: '消息协议' })).toBeVisible();
-    await expect(page.locator('#message-format').getByRole('cell', { name: 'heartbeat.ping', exact: true })).toBeVisible();
-    await expect(page.locator('#message-format').getByRole('cell', { name: 'heartbeat.pong', exact: true })).toBeVisible();
-    await expect(page.locator('#message-format').getByRole('cell', { name: 'message.send', exact: true })).toBeVisible();
+    await expect(
+      page.locator('#message-format').getByRole('cell', { name: 'heartbeat.ping', exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.locator('#message-format').getByRole('cell', { name: 'heartbeat.pong', exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.locator('#message-format').getByRole('cell', { name: 'message.send', exact: true }),
+    ).toBeVisible();
 
-    const negotiationResponse = page.waitForResponse((response) =>
-      response.status() === 200 && response.url().includes('/api/realtime/transports/negotiate')
+    const negotiationResponse = page.waitForResponse(
+      (response) => response.status() === 200 && response.url().includes('/api/realtime/transports/negotiate'),
     );
     await page.getByRole('button', { name: '连接' }).click();
     await negotiationResponse;
@@ -142,12 +151,14 @@ test.describe('Realtime 实时消息 E2E', () => {
     await expect(chatPanel.getByText('连接成功')).toBeVisible({ timeout: 10000 });
     await expect(chatPanel.locator('.el-tag__content', { hasText: 'polling' })).toBeVisible({ timeout: 10000 });
 
-    const publishResponse = page.waitForResponse((response) =>
-      response.status() === 200 && response.url().includes('/api/realtime/messages/publish')
+    const publishResponse = page.waitForResponse(
+      (response) => response.status() === 200 && response.url().includes('/api/realtime/messages/publish'),
     );
     await page.getByRole('button', { name: '模拟服务端消息' }).click();
     await publishResponse;
-    await expect(page.getByTestId('realtime-message-list').getByText(serverMessageText)).toBeVisible({ timeout: 30000 });
+    await expect(page.getByTestId('realtime-message-list').getByText(serverMessageText)).toBeVisible({
+      timeout: 30000,
+    });
 
     await page.getByTestId('realtime-message-list').getByText(serverMessageText).click();
     await expect(page.getByRole('dialog', { name: '原始消息 JSON' })).toBeVisible();
@@ -156,8 +167,8 @@ test.describe('Realtime 实时消息 E2E', () => {
     await expect(page.locator('.record-json')).toContainText('"name": "message.delivered"');
     await page.keyboard.press('Escape');
 
-    const inboundResponse = page.waitForResponse((response) =>
-      response.status() === 200 && response.url().includes('/api/realtime/messages/inbound/polling')
+    const inboundResponse = page.waitForResponse(
+      (response) => response.status() === 200 && response.url().includes('/api/realtime/messages/inbound/polling'),
     );
     await page.getByPlaceholder('输入业务消息内容').fill('hello inbound polling');
     await page.getByRole('button', { name: '发送', exact: true }).click();
@@ -166,7 +177,7 @@ test.describe('Realtime 实时消息 E2E', () => {
     await expect(page.getByTestId('realtime-message-list').getByText('hello inbound polling')).toBeVisible();
     await expect(page.getByTestId('realtime-message-list').getByText('inbound accepted')).toBeVisible();
     const sessionUserId = await page.evaluate(() =>
-      String(JSON.parse(sessionStorage.getItem('userInfo') || '{}').userId)
+      String(JSON.parse(sessionStorage.getItem('userInfo') || '{}').userId),
     );
     expect(realtimeMock.getLastInboundPayload()).toMatchObject({
       event: { domain: 'chat', name: 'message.send' },

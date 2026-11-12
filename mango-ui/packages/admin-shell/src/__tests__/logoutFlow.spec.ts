@@ -33,15 +33,17 @@ describe('completeLogout', () => {
     const clearUserInfo = vi.fn();
     const redirectToLogin = vi.fn(async () => undefined);
 
-    await expect(completeLogout({
-      revokeSession: vi.fn(async () => {
-        throw error;
+    await expect(
+      completeLogout({
+        revokeSession: vi.fn(async () => {
+          throw error;
+        }),
+        clearSession,
+        clearNavigation,
+        clearUserInfo,
+        redirectToLogin,
       }),
-      clearSession,
-      clearNavigation,
-      clearUserInfo,
-      redirectToLogin,
-    })).rejects.toBe(error);
+    ).rejects.toBe(error);
 
     expect(clearSession).not.toHaveBeenCalled();
     expect(clearNavigation).not.toHaveBeenCalled();

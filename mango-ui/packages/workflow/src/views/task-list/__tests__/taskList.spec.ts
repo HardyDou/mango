@@ -58,18 +58,16 @@ describe('workflow task list', () => {
 
   it('splits assigned todo tasks and claimable tasks by tabs', async () => {
     vi.mocked(workflowApi.todoTasks)
-      .mockResolvedValueOnce(pageResult([
-        { id: 'assigned-task', taskName: '经理审批', claimable: false },
-      ]) as any)
-      .mockResolvedValueOnce(pageResult([
-        { id: 'claimable-task', taskName: '候选审批', claimable: true },
-      ]) as any);
+      .mockResolvedValueOnce(pageResult([{ id: 'assigned-task', taskName: '经理审批', claimable: false }]) as any)
+      .mockResolvedValueOnce(pageResult([{ id: 'claimable-task', taskName: '候选审批', claimable: true }]) as any);
 
     const { el, unmount } = await mountTaskList();
 
-    expect(workflowApi.todoTasks).toHaveBeenLastCalledWith(expect.objectContaining({
-      todoType: 'ASSIGNED',
-    }));
+    expect(workflowApi.todoTasks).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        todoType: 'ASSIGNED',
+      }),
+    );
     expect(el.textContent).toContain('经理审批');
     expect(buttonTexts(el)).toContain('处理');
     expect(buttonTexts(el)).not.toContain('领取');
@@ -77,10 +75,12 @@ describe('workflow task list', () => {
     clickTab(el, '待领取');
     await flushPromises();
 
-    expect(workflowApi.todoTasks).toHaveBeenLastCalledWith(expect.objectContaining({
-      todoType: 'CLAIMABLE',
-      pageNum: 1,
-    }));
+    expect(workflowApi.todoTasks).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        todoType: 'CLAIMABLE',
+        pageNum: 1,
+      }),
+    );
     expect(el.textContent).toContain('候选审批');
     expect(buttonTexts(el)).toContain('详情');
     expect(buttonTexts(el)).toContain('领取');
@@ -90,9 +90,7 @@ describe('workflow task list', () => {
   it('opens claimable detail and allows claiming from list', async () => {
     vi.mocked(workflowApi.todoTasks)
       .mockResolvedValueOnce(pageResult([]) as any)
-      .mockResolvedValueOnce(pageResult([
-        { id: 'claimable-task', taskName: '候选审批', claimable: true },
-      ]) as any)
+      .mockResolvedValueOnce(pageResult([{ id: 'claimable-task', taskName: '候选审批', claimable: true }]) as any)
       .mockResolvedValueOnce(pageResult([]) as any);
 
     const { el, unmount } = await mountTaskList();
@@ -111,19 +109,23 @@ describe('workflow task list', () => {
     expect(mocks.confirm).toHaveBeenCalledWith('确认领取当前任务？', '领取任务', { type: 'warning' });
     expect(workflowApi.claimTask).toHaveBeenCalledWith('claimable-task');
     expect(mocks.messageSuccess).toHaveBeenCalledWith('领取成功');
-    expect(workflowApi.todoTasks).toHaveBeenLastCalledWith(expect.objectContaining({
-      todoType: 'CLAIMABLE',
-    }));
+    expect(workflowApi.todoTasks).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        todoType: 'CLAIMABLE',
+      }),
+    );
     unmount();
   });
 
   it('renders assignee display name, raw key and claim state in fallback order', async () => {
-    vi.mocked(workflowApi.todoTasks).mockResolvedValueOnce(pageResult([
-      { id: 'display', taskName: '显示名', assigneeName: 'admin', assigneeDisplayName: '管理员' },
-      { id: 'raw', taskName: '原始键', assigneeName: 'reviewer' },
-      { id: 'claimable', taskName: '候选任务', claimStatus: 'UNCLAIMED', candidateGroups: ['ROLE:1'] },
-      { id: 'empty', taskName: '空任务' },
-    ]));
+    vi.mocked(workflowApi.todoTasks).mockResolvedValueOnce(
+      pageResult([
+        { id: 'display', taskName: '显示名', assigneeName: 'admin', assigneeDisplayName: '管理员' },
+        { id: 'raw', taskName: '原始键', assigneeName: 'reviewer' },
+        { id: 'claimable', taskName: '候选任务', claimStatus: 'UNCLAIMED', candidateGroups: ['ROLE:1'] },
+        { id: 'empty', taskName: '空任务' },
+      ]),
+    );
 
     const { el, unmount } = await mountTaskList();
 
@@ -138,23 +140,27 @@ describe('workflow task list', () => {
     route.path = '/workflow/task/initiated';
     route.fullPath = '/workflow/task/initiated?statuses=APPROVED';
     route.query = { statuses: 'APPROVED' };
-    vi.mocked(workflowApi.businessAppliesPage).mockResolvedValueOnce(pageResult([
-      {
-        id: 'apply-1',
-        applyTitle: '合同审批',
-        businessKey: 'HT-001',
-        processName: '合同流程',
-        processDefinitionKey: 'contract_process',
-        applyStatusName: '已完成',
-        createdAt: '2026-06-24 10:00:00',
-      },
-    ]) as any);
+    vi.mocked(workflowApi.businessAppliesPage).mockResolvedValueOnce(
+      pageResult([
+        {
+          id: 'apply-1',
+          applyTitle: '合同审批',
+          businessKey: 'HT-001',
+          processName: '合同流程',
+          processDefinitionKey: 'contract_process',
+          applyStatusName: '已完成',
+          createdAt: '2026-06-24 10:00:00',
+        },
+      ]) as any,
+    );
 
     const { el, unmount } = await mountTaskList();
 
-    expect(workflowApi.businessAppliesPage).toHaveBeenCalledWith(expect.objectContaining({
-      statuses: ['APPROVED'],
-    }));
+    expect(workflowApi.businessAppliesPage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        statuses: ['APPROVED'],
+      }),
+    );
     expect(el.textContent).toContain('合同审批');
     expect(el.textContent).toContain('已完成');
     unmount();
@@ -164,28 +170,34 @@ describe('workflow task list', () => {
     route.path = '/workflow/task/initiated';
     route.fullPath = '/workflow/task/initiated';
     vi.mocked(workflowApi.businessAppliesPage).mockResolvedValueOnce(pageResult([]) as any);
-    vi.mocked(workflowApi.initiatedProcesses).mockResolvedValueOnce(pageResult([
-      {
-        processInstanceId: 'process-1',
-        businessKey: 'leave-reject-1',
-        processName: '请假流程',
-        processKey: 'leave_process',
-        initiatorName: 'admin',
-        status: '已驳回',
-        startTime: '2026-06-26 10:00:00',
-        endTime: '2026-06-26 10:10:00',
-      },
-    ]) as any);
+    vi.mocked(workflowApi.initiatedProcesses).mockResolvedValueOnce(
+      pageResult([
+        {
+          processInstanceId: 'process-1',
+          businessKey: 'leave-reject-1',
+          processName: '请假流程',
+          processKey: 'leave_process',
+          initiatorName: 'admin',
+          status: '已驳回',
+          startTime: '2026-06-26 10:00:00',
+          endTime: '2026-06-26 10:10:00',
+        },
+      ]) as any,
+    );
 
     const { el, unmount } = await mountTaskList();
 
-    expect(workflowApi.businessAppliesPage).toHaveBeenCalledWith(expect.objectContaining({
-      statuses: undefined,
-    }));
-    expect(workflowApi.initiatedProcesses).toHaveBeenCalledWith(expect.objectContaining({
-      pageNum: 1,
-      pageSize: 10,
-    }));
+    expect(workflowApi.businessAppliesPage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        statuses: undefined,
+      }),
+    );
+    expect(workflowApi.initiatedProcesses).toHaveBeenCalledWith(
+      expect.objectContaining({
+        pageNum: 1,
+        pageSize: 10,
+      }),
+    );
     expect(el.textContent).toContain('leave-reject-1');
     expect(el.textContent).toContain('已驳回');
     unmount();
@@ -194,34 +206,38 @@ describe('workflow task list', () => {
   it('deduplicates business applies and direct process instances by process instance id', async () => {
     route.path = '/workflow/task/initiated';
     route.fullPath = '/workflow/task/initiated';
-    vi.mocked(workflowApi.businessAppliesPage).mockResolvedValueOnce(pageResult([
-      {
-        id: 'apply-1',
-        applyTitle: '费用报销',
-        businessKey: 'EXP-001',
-        processName: '费用流程',
-        processDefinitionKey: 'expense_process',
-        processInstanceId: 'process-1',
-        applyStatusName: '审批中',
-        createdAt: '2026-06-26 10:00:00',
-      },
-    ]) as any);
-    vi.mocked(workflowApi.initiatedProcesses).mockResolvedValueOnce(pageResult([
-      {
-        processInstanceId: 'process-1',
-        businessKey: 'EXP-001',
-        processName: '费用流程',
-        processKey: 'expense_process',
-        status: '运行中',
-      },
-      {
-        processInstanceId: 'process-2',
-        businessKey: 'DIRECT-001',
-        processName: '直接流程',
-        processKey: 'direct_process',
-        status: '已完成',
-      },
-    ]) as any);
+    vi.mocked(workflowApi.businessAppliesPage).mockResolvedValueOnce(
+      pageResult([
+        {
+          id: 'apply-1',
+          applyTitle: '费用报销',
+          businessKey: 'EXP-001',
+          processName: '费用流程',
+          processDefinitionKey: 'expense_process',
+          processInstanceId: 'process-1',
+          applyStatusName: '审批中',
+          createdAt: '2026-06-26 10:00:00',
+        },
+      ]) as any,
+    );
+    vi.mocked(workflowApi.initiatedProcesses).mockResolvedValueOnce(
+      pageResult([
+        {
+          processInstanceId: 'process-1',
+          businessKey: 'EXP-001',
+          processName: '费用流程',
+          processKey: 'expense_process',
+          status: '运行中',
+        },
+        {
+          processInstanceId: 'process-2',
+          businessKey: 'DIRECT-001',
+          processName: '直接流程',
+          processKey: 'direct_process',
+          status: '已完成',
+        },
+      ]) as any,
+    );
 
     const { el, unmount } = await mountTaskList();
 
@@ -255,8 +271,16 @@ function registerElementStubs(app: ReturnType<typeof createApp>) {
   app.component('ElTag', { template: '<span><slot /></span>' });
   app.component('ElForm', { template: '<form><slot /></form>' });
   app.component('ElFormItem', { props: ['label'], template: '<label>{{ label }}<slot /></label>' });
-  app.component('ElInput', { props: ['modelValue'], emits: ['update:modelValue'], template: '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />' });
-  app.component('ElButton', { props: ['disabled'], emits: ['click'], template: '<button :disabled="disabled" @click="$emit(\'click\')"><slot /></button>' });
+  app.component('ElInput', {
+    props: ['modelValue'],
+    emits: ['update:modelValue'],
+    template: '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+  });
+  app.component('ElButton', {
+    props: ['disabled'],
+    emits: ['click'],
+    template: '<button :disabled="disabled" @click="$emit(\'click\')"><slot /></button>',
+  });
   app.component('ElTabs', {
     props: ['modelValue'],
     emits: ['update:modelValue', 'tabChange'],
@@ -264,22 +288,33 @@ function registerElementStubs(app: ReturnType<typeof createApp>) {
   });
   app.component('ElTabPane', {
     props: ['label', 'name'],
-    template: '<button class="tab-pane" @click="$parent?.$emit(\'update:modelValue\', name); $parent?.$emit(\'tabChange\', name)">{{ label }}</button>',
+    template:
+      '<button class="tab-pane" @click="$parent?.$emit(\'update:modelValue\', name); $parent?.$emit(\'tabChange\', name)">{{ label }}</button>',
   });
   app.component('ElTable', {
     props: ['data'],
     setup(props, { slots }) {
-      provide(tableRowsKey, computed(() => props.data || []));
+      provide(
+        tableRowsKey,
+        computed(() => props.data || []),
+      );
       return () => h('table', slots.default?.());
     },
   });
   app.component('ElTableColumn', {
     props: ['prop', 'label'],
     setup(props, { slots }) {
-      const rows = inject<ReturnType<typeof computed<any[]>>>(tableRowsKey, computed(() => []));
-      return () => h('tbody', rows.value.map(row => h('tr', [
-        h('td', slots.default ? slots.default({ row }) : String(row?.[props.prop] ?? '')),
-      ])));
+      const rows = inject<ReturnType<typeof computed<any[]>>>(
+        tableRowsKey,
+        computed(() => []),
+      );
+      return () =>
+        h(
+          'tbody',
+          rows.value.map((row) =>
+            h('tr', [h('td', slots.default ? slots.default({ row }) : String(row?.[props.prop] ?? ''))]),
+          ),
+        );
     },
   });
   app.component('ElPagination', { template: '<div />' });
@@ -304,17 +339,19 @@ async function flushPromises() {
 }
 
 function clickTab(el: HTMLElement, text: string) {
-  const tab = [...el.querySelectorAll('.tab-pane')].find(item => item.textContent?.trim() === text) as HTMLElement | undefined;
+  const tab = [...el.querySelectorAll('.tab-pane')].find((item) => item.textContent?.trim() === text) as
+    HTMLElement | undefined;
   expect(tab).toBeTruthy();
   tab?.click();
 }
 
 function buttonTexts(el: HTMLElement) {
-  return [...el.querySelectorAll('button')].map(item => item.textContent?.trim() || '');
+  return [...el.querySelectorAll('button')].map((item) => item.textContent?.trim() || '');
 }
 
 function clickButton(el: HTMLElement, text: string) {
-  const button = [...el.querySelectorAll('button')].find(item => item.textContent?.trim() === text) as HTMLElement | undefined;
+  const button = [...el.querySelectorAll('button')].find((item) => item.textContent?.trim() === text) as
+    HTMLElement | undefined;
   expect(button).toBeTruthy();
   button?.click();
 }

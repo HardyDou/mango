@@ -7,15 +7,15 @@ test.describe('工作台快捷入口小组件', () => {
     await page.goto('/#/login');
     await page.evaluate((mark) => {
       Object.keys(window.localStorage)
-        .filter(key => key.includes(mark))
-        .forEach(key => window.localStorage.removeItem(key));
+        .filter((key) => key.includes(mark))
+        .forEach((key) => window.localStorage.removeItem(key));
     }, QUICK_ENTRY_STORAGE_MARK);
 
     await page.fill('input[placeholder="用户名"]', 'admin');
     await page.fill('input[placeholder="密码"]', 'admin123');
 
-    const accountTenantsResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/auth/login-institutions') && response.status() === 200
+    const accountTenantsResponsePromise = page.waitForResponse(
+      (response) => response.url().includes('/api/auth/login-institutions') && response.status() === 200,
     );
     await page.locator('input[placeholder="密码"]').blur();
     await accountTenantsResponsePromise;
@@ -60,7 +60,9 @@ test.describe('工作台快捷入口小组件', () => {
     await expect(dialog.getByText('已选快捷入口')).toBeVisible();
 
     await dialog.getByPlaceholder('搜索菜单名称或路径').fill('菜单管理');
-    await expect(dialog.locator('.mango-grid-widget-quick-entry-config__option', { hasText: '菜单管理' })).toBeVisible();
+    await expect(
+      dialog.locator('.mango-grid-widget-quick-entry-config__option', { hasText: '菜单管理' }),
+    ).toBeVisible();
 
     await dialog.getByRole('button', { name: '清空' }).click();
     await expect(dialog.getByText('还没有选择快捷入口')).toBeVisible();
@@ -97,7 +99,7 @@ test.describe('工作台快捷入口小组件', () => {
 async function readQuickEntryStorage(page: import('@playwright/test').Page): Promise<string[]> {
   return page.evaluate((mark) => {
     return Object.keys(window.localStorage)
-      .filter(key => key.includes(mark))
-      .map(key => window.localStorage.getItem(key) || '');
+      .filter((key) => key.includes(mark))
+      .map((key) => window.localStorage.getItem(key) || '');
   }, QUICK_ENTRY_STORAGE_MARK);
 }

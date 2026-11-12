@@ -1,6 +1,10 @@
 <template>
   <transition name="node-panel-slide">
-    <aside v-if="visible && node" class="workflow-node-property-panel node-panel node-panel-floating" :aria-label="title">
+    <aside
+      v-if="visible && node"
+      class="workflow-node-property-panel node-panel node-panel-floating"
+      :aria-label="title"
+    >
       <div class="node-panel-header">
         <div class="node-panel-heading">
           <span class="node-panel-icon">
@@ -49,7 +53,7 @@ defineEmits<{
   border: 1px solid var(--el-border-color-light);
   border-radius: 12px;
   background: var(--el-bg-color);
-  box-shadow: 0 10px 32px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 10px 32px rgb(15 23 42 / 8%);
 }
 
 .node-panel-header {
@@ -105,7 +109,9 @@ defineEmits<{
 
 .node-panel-slide-enter-active,
 .node-panel-slide-leave-active {
-  transition: opacity 0.16s ease, transform 0.16s ease;
+  transition:
+    opacity 0.16s ease,
+    transform 0.16s ease;
 }
 
 .node-panel-slide-enter-from,

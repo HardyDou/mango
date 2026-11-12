@@ -2,30 +2,17 @@
   <section class="mango-grid-widget-my-process">
     <header class="mango-grid-widget-my-process__header">
       <span>我的申请</span>
-      <button
-        v-if="!inlineState"
-        class="mango-grid-widget-my-process__all"
-        type="button"
-        @click="navigateToAll"
-      >
+      <button v-if="!inlineState" class="mango-grid-widget-my-process__all" type="button" @click="navigateToAll">
         查看全部
       </button>
     </header>
 
-    <div
-      v-if="inlineState"
-      class="mango-grid-widget-my-process__state"
-      :data-state="inlineState"
-    >
+    <div v-if="inlineState" class="mango-grid-widget-my-process__state" :data-state="inlineState">
       <strong>{{ inlineStateTitle }}</strong>
       <span>{{ inlineStateMessage }}</span>
     </div>
 
-    <div
-      v-else
-      class="mango-grid-widget-my-process__grid"
-      :class="{ 'is-loading': loading }"
-    >
+    <div v-else class="mango-grid-widget-my-process__grid" :class="{ 'is-loading': loading }">
       <button
         v-for="item in processItems"
         :key="item.key"
@@ -84,10 +71,10 @@ const processItems = computed(() => [
     raw: { query: { statuses: ['WITHDRAWN'] } },
   },
 ]);
-const inlineStateTitle = computed(() => inlineState.value === 'missing-permission' ? '缺少权限' : '加载失败');
-const inlineStateMessage = computed(() => inlineState.value === 'missing-permission'
-  ? '当前账号无权查看我的申请'
-  : '申请统计加载失败，请稍后重试');
+const inlineStateTitle = computed(() => (inlineState.value === 'missing-permission' ? '缺少权限' : '加载失败'));
+const inlineStateMessage = computed(() =>
+  inlineState.value === 'missing-permission' ? '当前账号无权查看我的申请' : '申请统计加载失败，请稍后重试',
+);
 
 onMounted(() => {
   loadSummary();

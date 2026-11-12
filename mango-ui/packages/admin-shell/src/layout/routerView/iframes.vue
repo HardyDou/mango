@@ -1,12 +1,6 @@
 <template>
   <div class="router-view-iframe">
-    <iframe
-      :src="url"
-      frameborder="0"
-      class="iframe"
-      :style="iframeStyle"
-      sandbox="allow-scripts allow-same-origin"
-    />
+    <iframe :src="url" frameborder="0" class="iframe" :style="iframeStyle" sandbox="allow-scripts allow-same-origin" />
   </div>
 </template>
 

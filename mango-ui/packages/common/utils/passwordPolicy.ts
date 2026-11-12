@@ -24,7 +24,10 @@ export const defaultPasswordPolicy: PasswordPolicy = {
   pattern: '',
 };
 
-export function evaluatePasswordRules(password: string, policy: PasswordPolicy = defaultPasswordPolicy): PasswordRuleResult[] {
+export function evaluatePasswordRules(
+  password: string,
+  policy: PasswordPolicy = defaultPasswordPolicy,
+): PasswordRuleResult[] {
   const value = password || '';
   const rules: PasswordRuleResult[] = [
     {
@@ -56,10 +59,15 @@ export function isPasswordPolicyPassed(password: string, policy: PasswordPolicy 
 }
 
 export function getPasswordPolicyMessage(policy: PasswordPolicy = defaultPasswordPolicy) {
-  return evaluatePasswordRules('', policy).map((rule) => rule.label).join('，');
+  return evaluatePasswordRules('', policy)
+    .map((rule) => rule.label)
+    .join('，');
 }
 
-export function getPasswordStrength(password: string, policy: PasswordPolicy = defaultPasswordPolicy): PasswordStrength {
+export function getPasswordStrength(
+  password: string,
+  policy: PasswordPolicy = defaultPasswordPolicy,
+): PasswordStrength {
   if (!password) return 'empty';
   const passedCount = evaluatePasswordRules(password, policy).filter((rule) => rule.passed).length;
   const variety = [/[a-z]/, /[A-Z]/, /\d/, /[^A-Za-z0-9\s]/].filter((rule) => rule.test(password)).length;

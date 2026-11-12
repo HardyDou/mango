@@ -78,17 +78,20 @@ test.describe('文件访问基线权限矩阵 @p0 @file @permission', () => {
       ordinaryToken = await loginToken(request, username, ordinaryPassword, changedPassword);
 
       const anonymousRequest = await playwright.request.newContext();
-      await expectDenied(anonymousRequest.post(api('/file/files'), {
-        multipart: {
-          file: {
-            name: `anonymous-${unique}.txt`,
-            mimeType: 'text/plain',
-            buffer: Buffer.from(`anonymous-${unique}`),
+      await expectDenied(
+        anonymousRequest.post(api('/file/files'), {
+          multipart: {
+            file: {
+              name: `anonymous-${unique}.txt`,
+              mimeType: 'text/plain',
+              buffer: Buffer.from(`anonymous-${unique}`),
+            },
+            purpose: 'attachment',
+            accessLevel: 'PRIVATE',
           },
-          purpose: 'attachment',
-          accessLevel: 'PRIVATE',
-        },
-      }), '匿名用户不能上传文件');
+        }),
+        '匿名用户不能上传文件',
+      );
       await anonymousRequest.dispose();
 
       const settingsResponse = await request.get(api('/file/settings'), {
@@ -164,22 +167,25 @@ test.describe('文件访问基线权限矩阵 @p0 @file @permission', () => {
       expect(previewLink.previewToken).toBeTruthy();
       expect(Number(previewLink.expireSeconds)).toBeGreaterThan(0);
 
-      const previewPageResponse = await request.get(
-        new URL(previewLink.previewUrl, baseURL!).toString(),
-      );
+      const previewPageResponse = await request.get(new URL(previewLink.previewUrl, baseURL!).toString());
       expect(previewPageResponse.status()).toBe(200);
       expect(previewPageResponse.headers()['content-type']).toContain('text/html');
 
       const anonymousPreviewRequest = await playwright.request.newContext();
       await expectDenied(
-        anonymousPreviewRequest.get(api(`/file-preview/files/preview-link?fileId=${encodeURIComponent(String(uploaded.id))}`)),
+        anonymousPreviewRequest.get(
+          api(`/file-preview/files/preview-link?fileId=${encodeURIComponent(String(uploaded.id))}`),
+        ),
         '匿名用户不能创建统一文件预览链接',
       );
       await anonymousPreviewRequest.dispose();
 
-      const downloadResponse = await request.get(api(`/file/files/download?id=${encodeURIComponent(String(uploaded.id))}`), {
-        headers: authHeaders(ordinaryToken),
-      });
+      const downloadResponse = await request.get(
+        api(`/file/files/download?id=${encodeURIComponent(String(uploaded.id))}`),
+        {
+          headers: authHeaders(ordinaryToken),
+        },
+      );
       expect(downloadResponse.status()).toBe(200);
       expect((await downloadResponse.body()).byteLength).toBeGreaterThan(0);
 
@@ -205,26 +211,40 @@ test.describe('文件访问基线权限矩阵 @p0 @file @permission', () => {
       expectRuntimeUrl(packaged.previewUrl, '打包响应 previewUrl');
       expectRuntimeUrl(packaged.downloadUrl, '打包响应 downloadUrl');
 
-      await expectDenied(request.get(api('/file/files/page?page=1&size=10'), {
-        headers: authHeaders(ordinaryToken),
-      }), '普通登录用户不能访问文件管理列表');
-      await expectDenied(request.delete(api(`/file/files?id=${encodeURIComponent(String(uploaded.id))}&reason=e2e-denied`), {
-        headers: authHeaders(ordinaryToken),
-      }), '普通登录用户不能归档文件');
-      await expectDenied(request.post(api('/file/files/delete'), {
-        headers: authHeaders(ordinaryToken),
-        data: { ids: [String(uploaded.id)] },
-      }), '普通登录用户不能删除文件');
-      await expectDenied(request.put(api('/file/settings'), {
-        headers: authHeaders(ordinaryToken),
-        data: settingsSavePayload(settings),
-      }), '普通登录用户不能保存文件设置');
+      await expectDenied(
+        request.get(api('/file/files/page?page=1&size=10'), {
+          headers: authHeaders(ordinaryToken),
+        }),
+        '普通登录用户不能访问文件管理列表',
+      );
+      await expectDenied(
+        request.delete(api(`/file/files?id=${encodeURIComponent(String(uploaded.id))}&reason=e2e-denied`), {
+          headers: authHeaders(ordinaryToken),
+        }),
+        '普通登录用户不能归档文件',
+      );
+      await expectDenied(
+        request.post(api('/file/files/delete'), {
+          headers: authHeaders(ordinaryToken),
+          data: { ids: [String(uploaded.id)] },
+        }),
+        '普通登录用户不能删除文件',
+      );
+      await expectDenied(
+        request.put(api('/file/settings'), {
+          headers: authHeaders(ordinaryToken),
+          data: settingsSavePayload(settings),
+        }),
+        '普通登录用户不能保存文件设置',
+      );
     } finally {
       for (const id of uploadedFileIds) {
-        await request.post(api('/file/files/delete'), {
-          headers: authHeaders(adminToken),
-          data: { ids: [String(id)] },
-        }).catch(() => undefined);
+        await request
+          .post(api('/file/files/delete'), {
+            headers: authHeaders(adminToken),
+            data: { ids: [String(id)] },
+          })
+          .catch(() => undefined);
       }
       await cleanupUser(request, adminToken, username);
     }
@@ -292,16 +312,18 @@ async function cleanupUser(request: APIRequestContext, adminToken: string, usern
   if (!response.ok()) {
     return;
   }
-  const body = await response.json() as ApiBody<{ records?: IdentityUser[]; list?: IdentityUser[] }>;
+  const body = (await response.json()) as ApiBody<{ records?: IdentityUser[]; list?: IdentityUser[] }>;
   const records = body.data?.records || body.data?.list || [];
   for (const user of records.filter((item) => item.username === username)) {
     const userId = user.userId || user.memberId;
     if (!userId) {
       continue;
     }
-    await request.delete(api(`/identity/users?userId=${encodeURIComponent(String(userId))}`), {
-      headers: authHeaders(adminToken),
-    }).catch(() => undefined);
+    await request
+      .delete(api(`/identity/users?userId=${encodeURIComponent(String(userId))}`), {
+        headers: authHeaders(adminToken),
+      })
+      .catch(() => undefined);
   }
 }
 
@@ -315,7 +337,7 @@ function authHeaders(token: string) {
 }
 
 async function expectBusinessOk<T>(response: APIResponse, message: string) {
-  const body = await response.json() as ApiBody<T>;
+  const body = (await response.json()) as ApiBody<T>;
   expect(response.status(), `${message}: ${JSON.stringify(body)}`).toBe(200);
   expect(body.success || body.code === 200, `${message}: ${body.msg || JSON.stringify(body)}`).toBeTruthy();
   return body.data as T;
@@ -328,7 +350,7 @@ async function expectDenied(responsePromise: Promise<APIResponse>, message: stri
   }
   let body: ApiBody<unknown> | undefined;
   try {
-    body = await response.json() as ApiBody<unknown>;
+    body = (await response.json()) as ApiBody<unknown>;
   } catch {
     body = undefined;
   }
