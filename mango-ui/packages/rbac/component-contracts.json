@@ -9,30 +9,16 @@
       "level": "C4",
       "hostProfile": "mango-runtime",
       "environmentProfile": "browser-only",
-      "distribution": [
-        "npm"
-      ],
-      "deploymentModes": [
-        "monolith",
-        "microfrontend"
-      ],
+      "distribution": ["npm"],
+      "deploymentModes": ["monolith", "microfrontend"],
       "stability": "stable",
       "ownerRole": "Frontend Standards Owner",
-      "styleExportKeys": [
-        "./style.css"
-      ],
+      "styleExportKeys": ["./style.css"],
       "docs": {
         "path": "README.md",
-        "requiredSections": [
-          "概览",
-          "接入方式",
-          "API 与扩展",
-          "问题排查"
-        ]
+        "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
       },
-      "testEvidence": [
-        "src/api/__tests__/apiResource.spec.ts"
-      ]
+      "testEvidence": ["src/api/__tests__/apiResource.spec.ts"]
     },
     {
       "name": "IntegrationApplicationView",
@@ -41,30 +27,16 @@
       "level": "C4",
       "hostProfile": "mango-runtime",
       "environmentProfile": "browser-only",
-      "distribution": [
-        "npm"
-      ],
-      "deploymentModes": [
-        "monolith",
-        "microfrontend"
-      ],
+      "distribution": ["npm"],
+      "deploymentModes": ["monolith", "microfrontend"],
       "stability": "stable",
       "ownerRole": "Frontend Standards Owner",
-      "styleExportKeys": [
-        "./style.css"
-      ],
+      "styleExportKeys": ["./style.css"],
       "docs": {
         "path": "README.md",
-        "requiredSections": [
-          "概览",
-          "接入方式",
-          "API 与扩展",
-          "问题排查"
-        ]
+        "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
       },
-      "testEvidence": [
-        "../../apps/mango-admin/e2e/specs/integration-application-management.spec.ts"
-      ]
+      "testEvidence": ["../../apps/mango-admin/e2e/specs/integration-application-management.spec.ts"]
     },
     {
       "name": "IntegrationConnectorView",
@@ -73,30 +45,16 @@
       "level": "C4",
       "hostProfile": "mango-runtime",
       "environmentProfile": "browser-only",
-      "distribution": [
-        "npm"
-      ],
-      "deploymentModes": [
-        "monolith",
-        "microfrontend"
-      ],
+      "distribution": ["npm"],
+      "deploymentModes": ["monolith", "microfrontend"],
       "stability": "stable",
       "ownerRole": "Frontend Standards Owner",
-      "styleExportKeys": [
-        "./style.css"
-      ],
+      "styleExportKeys": ["./style.css"],
       "docs": {
         "path": "README.md",
-        "requiredSections": [
-          "概览",
-          "接入方式",
-          "API 与扩展",
-          "问题排查"
-        ]
+        "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
       },
-      "testEvidence": [
-        "../../apps/mango-admin/e2e/specs/integration-application-management.spec.ts"
-      ]
+      "testEvidence": ["../../apps/mango-admin/e2e/specs/integration-application-management.spec.ts"]
     },
     {
       "name": "MicroApplicationView",
@@ -105,30 +63,16 @@
       "level": "C4",
       "hostProfile": "mango-runtime",
       "environmentProfile": "browser-only",
-      "distribution": [
-        "npm"
-      ],
-      "deploymentModes": [
-        "monolith",
-        "microfrontend"
-      ],
+      "distribution": ["npm"],
+      "deploymentModes": ["monolith", "microfrontend"],
       "stability": "stable",
       "ownerRole": "Frontend Standards Owner",
-      "styleExportKeys": [
-        "./style.css"
-      ],
+      "styleExportKeys": ["./style.css"],
       "docs": {
         "path": "README.md",
-        "requiredSections": [
-          "概览",
-          "接入方式",
-          "API 与扩展",
-          "问题排查"
-        ]
+        "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
       },
-      "testEvidence": [
-        "../../apps/mango-admin/e2e/specs/micro-application.spec.ts"
-      ]
+      "testEvidence": ["../../apps/mango-admin/e2e/specs/micro-application.spec.ts"]
     }
   ],
   "legacyComponentExports": [
