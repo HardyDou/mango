@@ -426,10 +426,29 @@ test('global backend inputs use governance acceptance instead of a full PR react
     '.github/workflows/architecture-debt-inventory.yml',
     'mango/pom.xml',
     'mango/mango-parent/pom.xml',
-    'mango/mango-tools/mango-maven-plugin/src/main/java/example/Gate.java',
     'mango-pmo/baselines/architecture/debt-budget.json',
     'mango-pmo/tools/check-architecture-debt-budget.mjs',
     'business-pmo/architecture-debt-budget.json',
+  ]) {
+    assert.deepEqual(resolveMavenScope([file]), { mode: 'governance', projects: [] }, file);
+  }
+});
+
+test('maven-plugin check code uses partial scope while gate definitions stay governance', () => {
+  assert.deepEqual(
+    resolveMavenScope([
+      'mango/mango-tools/mango-maven-plugin/src/main/java/io/mango/plugin/check/CheckMojo.java',
+    ]),
+    {
+      mode: 'partial',
+      projects: [':mango-architecture-verification', 'mango-tools/mango-maven-plugin'],
+    },
+  );
+  for (const file of [
+    'mango/mango-tools/mango-maven-plugin/pom.xml',
+    'mango/mango-tools/mango-maven-plugin/src/main/resources/rulesets/java/pmd-mango.xml',
+    'mango/mango-tools/mango-maven-plugin/src/main/java/io/mango/plugin/architecture/ArchitectureMojo.java',
+    'mango/mango-tools/mango-architecture-rules/src/main/java/io/mango/architecture/pmd/MangoJavaArchitectureRule.java',
   ]) {
     assert.deepEqual(resolveMavenScope([file]), { mode: 'governance', projects: [] }, file);
   }

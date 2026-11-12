@@ -125,7 +125,7 @@ Mango 的默认审批通知只消费 `workflow.task.advanced`、`workflow.proces
 - 目标节点、失败语义和返回结构的完整定义见[Workflow 后端 README](../../../mango/mango-platform/mango-workflow/README.md#3-后端接入)。
 - 退回是失败可见的操作：引擎变更活动状态后，若目标节点没有产生待办任务，或当前任务仍停在原节点，接口以 `TASK_INVALID`（`流程任务参数非法`）失败并回滚整笔事务，不会返回成功。业务侧按错误提示处理，不要先写“已退回”。
 - 成功响应中的 `actionResult` 是 `RETURN`，不是 `COMPLETE`；业务侧可用于区分通过和退回，但不要用 `applyStatus` 单独判断退回，退回不会改申请状态。
-- 需要退回后直接回到指定处理人时，传 `targetAssigneeUserId`（`identity_user.id` 或 `username`）。退回人不需要是目标节点候选人，也不需要目标节点启用 `transfer`；目标用户必须是当前租户启用成员，且本次退回必须在目标节点只新建一条任务，否则退回整体失败并回滚。
+- 需要退回后直接回到指定处理人时，传 `targetAssigneeUserId`（`identity_user.id` 或 `username`）。退回人不需要是目标节点候选人，也不需要目标节点启用 `transfer`；目标用户需为当前租户启用成员，且本次退回只能在目标节点新建一条任务，否则退回整体失败并回滚。
 
 `POST /workflow/processes/withdraw` 与 `WorkflowProcessApi.withdraw()` 支持使用 `applyId` 或 `processInstanceId` 定位申请，`reason` 必填。后端同时校验 `workflow:process:withdraw` 权限、租户上下文和原申请人身份；仅运行中的 `IN_APPROVAL` 可首次撤回，已撤回请求按幂等成功返回，其它终态不会被改写。成功响应包含撤回前后状态、`withdrawn`、`idempotent`、`ended` 和原因，并发布 `workflow.process.withdrawn` 后再发布 `workflow.process.ended`。业务模块仍需先判断业务单据是否允许撤回，并用事件 ID 或业务主键幂等维护自身状态机、快照和通知；Workflow 不替代业务状态机。当前改动不提供新的前端撤回按钮，业务页面应按自身权限和状态决定是否展示操作入口。
 
