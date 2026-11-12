@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * 按业务主键查询任务的持久化条件。
+ * 按业务类型查询任务的持久化条件，业务主键可选。
  *
  * <p>由服务层把 API 查询对象转换成该内部条件后再交给 Mapper，避免 API 协议模型进入持久化层。
  */

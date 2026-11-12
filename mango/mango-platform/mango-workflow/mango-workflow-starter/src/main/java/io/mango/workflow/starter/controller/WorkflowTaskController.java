@@ -216,9 +216,9 @@ public class WorkflowTaskController implements WorkflowTaskRuntimeApi {
 
     @PostMapping("/page-by-business-key")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:list")
-    @Operation(summary = "按业务主键批量查询任务",
-            description = "按业务类型与业务主键集合返回全部任务，含在途、已办理和已终止；默认只返回当前用户相关任务，"
-                    + "scope=ALL 需要 workflow:task:all 权限码，scope=ORG 当前版本不支持")
+    @Operation(summary = "按业务类型查询任务（业务主键可选）",
+            description = "按业务类型返回全部任务，含在途、已办理和已终止；businessKeys 不传或为空表示不限业务主键，"
+                    + "默认只返回当前用户相关任务，scope=ALL 需要 workflow:task:all 权限码，scope=ORG 当前版本不支持")
     @Override
     public R<PageResult<WorkflowTaskVO>> pageByBusinessKey(@RequestBody WorkflowTaskBusinessPageRequest request) {
         return R.ok(workflowTaskBusinessQueryService.pageByBusinessKey(request));

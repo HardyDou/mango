@@ -75,6 +75,35 @@ class WorkflowTaskHistoryMapperIntegrationTest {
     }
 
     @Test
+    void returnsAllTasksOfBusinessTypeWhenBusinessKeysAbsent() {
+        WorkflowTaskHistoryCriteria absent = WorkflowTaskHistoryCriteria.builder()
+                .tenantId(TENANT_ID)
+                .businessType(BUSINESS_TYPE)
+                .includeTodo(true)
+                .includeDone(true)
+                .includeCanceled(true)
+                .sortColumn("createTime")
+                .sortDirection("desc")
+                .build();
+        WorkflowTaskHistoryCriteria empty = WorkflowTaskHistoryCriteria.builder()
+                .tenantId(TENANT_ID)
+                .businessType(BUSINESS_TYPE)
+                .businessKeys(List.of())
+                .includeTodo(true)
+                .includeDone(true)
+                .includeCanceled(true)
+                .sortColumn("createTime")
+                .sortDirection("desc")
+                .build();
+
+        assertThat(taskHistoryMapper.countTasks(absent)).isEqualTo(3L);
+        assertThat(taskHistoryMapper.selectTasks(absent, 2, 0L))
+                .extracting(WorkflowTaskHistoryRow::getTaskId)
+                .containsExactly("T3", "T2");
+        assertThat(taskHistoryMapper.countTasks(empty)).isEqualTo(3L);
+    }
+
+    @Test
     void filtersByBusinessKeysBatch() {
         WorkflowTaskHistoryCriteria criteria = criteria(List.of("RC1", "RC2"));
 

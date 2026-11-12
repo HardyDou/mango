@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.workflow.api.enums.WorkflowTaskCancelCause;
 import io.mango.workflow.core.config.WorkflowTaskQueryProperties;
 import io.mango.workflow.core.engine.WorkflowCandidateGroupProvider;
+import io.mango.workflow.core.entity.WorkflowBusinessApplyEntity;
 import io.mango.workflow.core.identity.WorkflowAssigneeIdentityService;
 import io.mango.workflow.core.mapper.WorkflowBusinessApplyMapper;
 import io.mango.workflow.core.mapper.WorkflowTaskHistoryMapper;
@@ -37,6 +38,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -49,6 +51,7 @@ class WorkflowTaskBusinessQueryServiceTest {
     private WorkflowTaskQueryAuthorizer authorizer;
     private WorkflowAssigneeIdentityService assigneeIdentityService;
     private WorkflowCandidateGroupProvider candidateGroupProvider;
+    private ObjectProvider<WorkflowBusinessApplyAccessChecker> checkerProvider;
     private WorkflowTaskQueryProperties properties;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private WorkflowTaskBusinessQueryService service;
@@ -63,7 +66,8 @@ class WorkflowTaskBusinessQueryServiceTest {
         properties = new WorkflowTaskQueryProperties();
         properties.setUnpagedMaxRows(2000);
         @SuppressWarnings("unchecked")
-        ObjectProvider<WorkflowBusinessApplyAccessChecker> checkerProvider = mock(ObjectProvider.class);
+        ObjectProvider<WorkflowBusinessApplyAccessChecker> provider = mock(ObjectProvider.class);
+        checkerProvider = provider;
         when(checkerProvider.getIfAvailable()).thenReturn(null);
         when(candidateGroupProvider.currentCandidateGroups()).thenReturn(List.of("ROLE_REVIEWER"));
         service = new WorkflowTaskBusinessQueryService(taskHistoryMapper, businessApplyMapper, checkerProvider,
@@ -148,6 +152,65 @@ class WorkflowTaskBusinessQueryServiceTest {
         assertThat(result.getList().get(0).getBusinessKey()).isEqualTo("RC1");
         assertThat(result.getList().get(0).getStatus()).isEqualTo(WorkflowTaskRuntimeStatus.DONE.name());
         assertThat(result.getList().get(0).getClaimStatus()).isEqualTo(WorkflowTaskClaimStatus.ASSIGNED);
+    }
+
+    @Test
+    void queriesByBusinessTypeWithoutBusinessKeys() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        query.setBusinessKeys(null);
+        WorkflowBusinessApplyAccessChecker checker = mock(WorkflowBusinessApplyAccessChecker.class);
+        when(checker.hasProvider("BAOHAN_RC_PROJECT_REVIEW")).thenReturn(true);
+        when(checkerProvider.getIfAvailable()).thenReturn(checker);
+        when(taskHistoryMapper.countTasks(any())).thenReturn(3L);
+        when(taskHistoryMapper.selectTasks(any(), anyInt(), anyLong())).thenReturn(List.of(row()));
+
+        PageResult<WorkflowTaskVO> result = service.pageByBusinessKey(query);
+
+        ArgumentCaptor<WorkflowTaskHistoryCriteria> captor =
+                ArgumentCaptor.forClass(WorkflowTaskHistoryCriteria.class);
+        verify(taskHistoryMapper).countTasks(captor.capture());
+        assertThat(captor.getValue().getBusinessKeys()).isEmpty();
+        assertThat(captor.getValue().getBusinessType()).isEqualTo("BAOHAN_RC_PROJECT_REVIEW");
+        assertThat(result.getTotal()).isEqualTo(3L);
+        assertThat(result.getList()).hasSize(1);
+        verifyNoInteractions(businessApplyMapper);
+    }
+
+    @Test
+    void filtersDeniedAppliesWhenBusinessKeysPresent() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        WorkflowBusinessApplyAccessChecker checker = mock(WorkflowBusinessApplyAccessChecker.class);
+        when(checker.hasProvider("BAOHAN_RC_PROJECT_REVIEW")).thenReturn(true);
+        when(checker.isAllowed(any())).thenReturn(false);
+        when(checkerProvider.getIfAvailable()).thenReturn(checker);
+        WorkflowBusinessApplyEntity denied = new WorkflowBusinessApplyEntity();
+        denied.setId(10L);
+        when(businessApplyMapper.selectList(any())).thenReturn(List.of(denied));
+        when(taskHistoryMapper.countTasks(any())).thenReturn(0L);
+
+        service.pageByBusinessKey(query);
+
+        ArgumentCaptor<WorkflowTaskHistoryCriteria> captor =
+                ArgumentCaptor.forClass(WorkflowTaskHistoryCriteria.class);
+        verify(taskHistoryMapper).countTasks(captor.capture());
+        assertThat(captor.getValue().getDeniedApplyIds()).containsExactly(10L);
+        verify(businessApplyMapper).selectList(any());
+    }
+
+    @Test
+    void treatsEmptyBusinessKeysAsUnrestricted() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        query.setBusinessKeys(List.of());
+        when(taskHistoryMapper.countTasks(any())).thenReturn(0L);
+
+        PageResult<WorkflowTaskVO> result = service.pageByBusinessKey(query);
+
+        ArgumentCaptor<WorkflowTaskHistoryCriteria> captor =
+                ArgumentCaptor.forClass(WorkflowTaskHistoryCriteria.class);
+        verify(taskHistoryMapper).countTasks(captor.capture());
+        assertThat(captor.getValue().getBusinessKeys()).isEmpty();
+        assertThat(result.getTotal()).isZero();
+        verifyNoInteractions(businessApplyMapper);
     }
 
     @Test
