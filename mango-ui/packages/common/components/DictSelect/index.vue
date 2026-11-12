@@ -92,12 +92,7 @@
       @check-change="handleCheckChange"
     >
       <template #label="{ label, value }">
-        <slot
-          name="selected"
-          :value="value"
-          :label="label"
-          :text="formatTreeLabel(value, label)"
-        >
+        <slot name="selected" :value="value" :label="label" :text="formatTreeLabel(value, label)">
           {{ formatTreeLabel(value, label) }}
         </slot>
       </template>
@@ -113,7 +108,8 @@
   </div>
 </template>
 
-<script setup lang="ts" name="DictSelect">
+<script setup lang="ts">
+defineOptions({ name: 'DictSelect' });
 import { computed, ref, watch, type StyleValue } from 'vue';
 import { listDictOptions, listDictTree, type DictOption, type DictTreeOption } from '../../api/dict';
 import { createDictValueFilter, filterDictTree, indexDictTree } from '../../utils/dictTree';
@@ -134,62 +130,67 @@ interface TreeSelectInstance extends SelectInstance {
   getHalfCheckedNodes?: () => DictTreeOption[];
 }
 
-const props = withDefaults(defineProps<{
-  modelValue?: DictSelectValue;
-  dictType: string;
-  shape?: DictShape;
-  variant?: DictSelectVariant;
-  buttonClass?: string;
-  buttonStyle?: StyleValue;
-  placeholder?: string;
-  clearable?: boolean;
-  disabled?: boolean;
-  multiple?: boolean;
-  filterable?: boolean;
-  numberValue?: boolean;
-  showAnyOption?: boolean;
-  anyOptionLabel?: string;
-  anyOptionValue?: string | number;
-  collapseTags?: boolean;
-  collapseTagsTooltip?: boolean;
-  multipleLimit?: number;
-  reserveKeyword?: boolean;
-  leafOnly?: boolean;
-  checkStrictly?: boolean;
-  defaultExpandAll?: boolean;
-  displayFormat?: DictSelectDisplayFormat;
-  displaySeparator?: string;
-  noDataText?: string;
-  group?: string | string[];
-  includeValues?: Array<string | number>;
-  excludeValues?: Array<string | number>;
-}>(), {
-  modelValue: undefined,
-  shape: 'FLAT',
-  variant: 'select',
-  placeholder: '请选择',
-  clearable: true,
-  disabled: false,
-  multiple: false,
-  filterable: false,
-  numberValue: false,
-  showAnyOption: false,
-  anyOptionLabel: '不限',
-  anyOptionValue: '__ALL__',
-  collapseTags: true,
-  collapseTagsTooltip: true,
-  multipleLimit: 0,
-  reserveKeyword: false,
-  leafOnly: true,
-  checkStrictly: false,
-  defaultExpandAll: true,
-  displayFormat: 'label',
-  displaySeparator: ' / ',
-  noDataText: '暂无数据',
-  group: undefined,
-  includeValues: undefined,
-  excludeValues: undefined,
-});
+const props = withDefaults(
+  defineProps<{
+    modelValue?: DictSelectValue;
+    dictType: string;
+    shape?: DictShape;
+    variant?: DictSelectVariant;
+    buttonClass?: string;
+    buttonStyle?: StyleValue;
+    placeholder?: string;
+    clearable?: boolean;
+    disabled?: boolean;
+    multiple?: boolean;
+    filterable?: boolean;
+    numberValue?: boolean;
+    showAnyOption?: boolean;
+    anyOptionLabel?: string;
+    anyOptionValue?: string | number;
+    collapseTags?: boolean;
+    collapseTagsTooltip?: boolean;
+    multipleLimit?: number;
+    reserveKeyword?: boolean;
+    leafOnly?: boolean;
+    checkStrictly?: boolean;
+    defaultExpandAll?: boolean;
+    displayFormat?: DictSelectDisplayFormat;
+    displaySeparator?: string;
+    noDataText?: string;
+    group?: string | string[];
+    includeValues?: Array<string | number>;
+    excludeValues?: Array<string | number>;
+  }>(),
+  {
+    modelValue: undefined,
+    shape: 'FLAT',
+    variant: 'select',
+    buttonClass: '',
+    buttonStyle: undefined,
+    placeholder: '请选择',
+    clearable: true,
+    disabled: false,
+    multiple: false,
+    filterable: false,
+    numberValue: false,
+    showAnyOption: false,
+    anyOptionLabel: '不限',
+    anyOptionValue: '__ALL__',
+    collapseTags: true,
+    collapseTagsTooltip: true,
+    multipleLimit: 0,
+    reserveKeyword: false,
+    leafOnly: true,
+    checkStrictly: false,
+    defaultExpandAll: true,
+    displayFormat: 'label',
+    displaySeparator: ' / ',
+    noDataText: '暂无数据',
+    group: undefined,
+    includeValues: undefined,
+    excludeValues: undefined,
+  },
+);
 
 const emit = defineEmits<{
   (event: 'update:modelValue', value: DictSelectValue): void;
@@ -222,21 +223,21 @@ const valueFilter = computed(() =>
     group: props.group,
     includeValues: props.includeValues,
     excludeValues: props.excludeValues,
-  })
+  }),
 );
 
 const flatOptions = computed(() =>
-  rawFlatOptions.value.filter((item) => valueFilter.value({ value: item.value, groups: item.groups }))
+  rawFlatOptions.value.filter((item) => valueFilter.value({ value: item.value, groups: item.groups })),
 );
 
 const filteredTree = computed(() =>
   filterDictTree(rawTreeOptions.value, (item) =>
-    valueFilter.value({ value: item.value, groups: (item as DictTreeOption).groups })
-  )
+    valueFilter.value({ value: item.value, groups: (item as DictTreeOption).groups }),
+  ),
 );
 
 const treeOptions = computed<DictSelectTreeOption[]>(() =>
-  mapTreeOptions(filteredTree.value.nodes, props.leafOnly, filteredTree.value.matched)
+  mapTreeOptions(filteredTree.value.nodes, props.leafOnly, filteredTree.value.matched),
 );
 
 const treeProps = computed(() => ({
@@ -288,11 +289,7 @@ async function reload(force = false) {
   }
 }
 
-function mapTreeOptions(
-  nodes: DictTreeOption[],
-  leafOnly: boolean,
-  matched: Set<string>
-): DictSelectTreeOption[] {
+function mapTreeOptions(nodes: DictTreeOption[], leafOnly: boolean, matched: Set<string>): DictSelectTreeOption[] {
   return nodes.map((node) => ({
     ...node,
     disabled: (leafOnly && Boolean(node.children?.length)) || !matched.has(String(node.value)),
@@ -407,9 +404,13 @@ function blur() {
   else flatSelectRef.value?.blur();
 }
 
-watch(() => [props.dictType, props.shape], () => {
-  void reload();
-}, { immediate: true });
+watch(
+  () => [props.dictType, props.shape],
+  () => {
+    void reload();
+  },
+  { immediate: true },
+);
 
 defineExpose({ reload, getSelectedNodes, getSelectedPaths, getHalfCheckedNodes, clear, focus, blur });
 </script>

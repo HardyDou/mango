@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- backend payloads are normalized by fromBackend* helpers. */
 /**
  * Dictionary Management API - 字典管理
  *
@@ -75,8 +76,9 @@ export const dictTypeApi = {
    * 分页查询字典类型
    */
   list: (params?: DictTypeQuery) => {
-    return get<any[]>('/system/dict/type/list', { params })
-      .then((list) => toPageResult(filterByKeyword(list.map(fromBackendType), params?.keyword), params));
+    return get<any[]>('/system/dict/type/list', { params }).then((list) =>
+      toPageResult(filterByKeyword(list.map(fromBackendType), params?.keyword), params),
+    );
   },
 
   /**
@@ -115,8 +117,15 @@ export const dictDataApi = {
    * 分页查询字典数据
    */
   list: (params?: DictDataQuery) => {
-    return get<any[]>('/system/dict/data/list', { params: { typeId: params?.typeId } })
-      .then((list) => toPageResult(filterByKeyword(list.map((item) => fromBackendData(item, params?.typeId)), params?.keyword), params));
+    return get<any[]>('/system/dict/data/list', { params: { typeId: params?.typeId } }).then((list) =>
+      toPageResult(
+        filterByKeyword(
+          list.map((item) => fromBackendData(item, params?.typeId)),
+          params?.keyword,
+        ),
+        params,
+      ),
+    );
   },
 
   /**
@@ -149,8 +158,9 @@ export const dictDataApi = {
 
   /** 获取指定 TREE 字典的嵌套选项。 */
   tree: (typeCode: string) => {
-    return get<any[]>('/system/dict/data/tree', { params: { typeCode } })
-      .then((list) => list.map((item) => fromBackendData(item)));
+    return get<any[]>('/system/dict/data/tree', { params: { typeCode } }).then((list) =>
+      list.map((item) => fromBackendData(item)),
+    );
   },
 
   /**
@@ -158,13 +168,14 @@ export const dictDataApi = {
    * @param typeCode 字典类型编码
    */
   options: (typeCode: string) => {
-    return get<any[]>('/system/dict/data/options', { params: { typeCode } })
-      .then((list) => list.map(fromBackendOption));
+    return get<any[]>('/system/dict/data/options', { params: { typeCode } }).then((list) =>
+      list.map(fromBackendOption),
+    );
   },
 };
 
 function fromBackendType(item: any): DictType {
-    return {
+  return {
     id: item.id,
     name: item.dictName ?? item.name,
     code: item.dictType ?? item.code,
@@ -199,7 +210,9 @@ function fromBackendData(item: any, typeId?: ApiId): DictData {
     value: item.dictValue ?? item.value,
     parentValue: item.parentValue,
     groups: normalizeGroups(item.groups),
-    children: Array.isArray(item.children) ? item.children.map((child: any) => fromBackendData(child, typeId)) : undefined,
+    children: Array.isArray(item.children)
+      ? item.children.map((child: any) => fromBackendData(child, typeId))
+      : undefined,
     sort: item.sort ?? 0,
     status: item.status ?? 1,
     extra: item.extra,
@@ -243,7 +256,10 @@ function normalizeGroups(groups?: string[] | string): string[] {
     .filter((group, index, all) => group.length > 0 && all.indexOf(group) === index);
 }
 
-function filterByKeyword<T extends { name?: string; code?: string; label?: string; value?: string }>(list: T[], keyword?: string): T[] {
+function filterByKeyword<T extends { name?: string; code?: string; label?: string; value?: string }>(
+  list: T[],
+  keyword?: string,
+): T[] {
   const normalized = keyword?.trim().toLowerCase();
   if (!normalized) {
     return list;
@@ -251,7 +267,7 @@ function filterByKeyword<T extends { name?: string; code?: string; label?: strin
   return list.filter((item) =>
     [item.name, item.code, item.label, item.value]
       .filter(Boolean)
-      .some((value) => String(value).toLowerCase().includes(normalized))
+      .some((value) => String(value).toLowerCase().includes(normalized)),
   );
 }
 

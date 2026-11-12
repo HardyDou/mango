@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, vue/one-component-per-file, vue/require-prop-types */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { defineComponent, h, nextTick } from 'vue';
@@ -60,7 +61,8 @@ const ElCheckboxGroupStub = defineComponent({
   },
   emits: ['update:modelValue', 'change'],
   setup(props, { slots }) {
-    return () => h('div', { class: 'el-checkbox-group', 'data-value': JSON.stringify(props.modelValue) }, slots.default?.());
+    return () =>
+      h('div', { class: 'el-checkbox-group', 'data-value': JSON.stringify(props.modelValue) }, slots.default?.());
   },
 });
 
@@ -102,9 +104,10 @@ const ElTreeSelectStub = defineComponent({
         .map((value) => {
           const matched = flatten(props.data as any[]).find((item) => item.node.value === value);
           const label = matched ? matched.node.label : String(value);
-          const text = matched && props.displayFormat === 'path'
-            ? matched.path.map((node: any) => node.label).join(props.displaySeparator)
-            : label;
+          const text =
+            matched && props.displayFormat === 'path'
+              ? matched.path.map((node: any) => node.label).join(props.displaySeparator)
+              : label;
           return { value, label, text };
         });
 
@@ -255,10 +258,7 @@ describe('DictSelect', () => {
     await flush();
 
     expect(wrapper.find('.el-tree-select').attributes('data-multiple')).toBe('true');
-    expect(wrapper.findAll('.selected-label').map((item) => item.text())).toEqual([
-      '办公用品-纸张',
-      '办公用品-笔',
-    ]);
+    expect(wrapper.findAll('.selected-label').map((item) => item.text())).toEqual(['办公用品-纸张', '办公用品-笔']);
   });
 
   it('leafOnly 默认禁用父节点，关闭后父节点可选', async () => {
@@ -351,7 +351,7 @@ describe('DictSelect', () => {
 
     const options = wrapper.findAll('.el-option');
     expect(options.map((item) => item.attributes('data-value'))).toEqual(['1', '0']);
-    expect((wrapper.findComponent(ElOptionStub).props('value') as number)).toBe(1);
+    expect(wrapper.findComponent(ElOptionStub).props('value') as number).toBe(1);
   });
 
   it('check-change 只在半选状态真实变化时触发父节点事件', async () => {

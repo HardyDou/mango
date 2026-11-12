@@ -7,7 +7,7 @@ interface MangoPersistOptions {
 }
 
 declare module 'pinia' {
-  interface DefineStoreOptionsBase<S extends StateTree, Store> {
+  interface DefineStoreOptionsBase<_S extends StateTree, _Store> {
     persist?: boolean | MangoPersistOptions | MangoPersistOptions[];
   }
 }
