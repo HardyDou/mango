@@ -1,3 +1,15 @@
+## 1.5.0 - 2026-11-12
+
+### Changed
+
+- Required branch-protection contexts are now `pr-contract-check` and `pmo-doc-check`; `frontend-pr-quality` is no longer required and runs only on `main` push and manual trigger.
+- `branch-protection-policy.mjs` and `classify-pmo-check-scope.mjs` narrow the Maven plugin full-Reactor trigger to POM, rulesets, architecture/baseline code and architecture rules, and the Business Starter baseline is re-projected.
+
+### Upgrade Notes
+
+- Upgrade `@mango/pmo@1.5.0` together with `@mango/cli@1.4.4` and Maven/docs `1.5.0`; synchronize the Business Starter baseline and rerun locked PMO checks.
+- Update the repository branch protection to the new required-context set; keep `frontend-pr-quality` as a non-required workflow result.
+
 # Mango PMO Changelog
 
 ## 1.4.9 - 2026-10-29
