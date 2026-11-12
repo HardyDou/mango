@@ -88,6 +88,9 @@ public class PersistenceMybatisPlusAutoConfiguration {
                 if (!StringUtils.hasText(tableName)) {
                     return true;
                 }
+                if (ThirdPartyTables.isThirdParty(tableName)) {
+                    return true;
+                }
                 String normalized = tableName.trim().toLowerCase(Locale.ROOT);
                 return tenant.getExcludedTables().stream()
                         .filter(StringUtils::hasText)

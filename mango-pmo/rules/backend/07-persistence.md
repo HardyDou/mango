@@ -45,6 +45,7 @@
 - 业务 VO 可以返回 `tenantId` 用于审计、诊断或跨租户管理页面展示，但不得把客户端传入的 `tenantId` 当作普通 CRUD 隔离条件。
 - `mango.persistence.mybatis-plus.tenant.excluded-tables` 只配置全局元数据表、无租户字段表、跨租户授权关系表、迁移历史表和基础设施内部表；新增例外表必须说明所有权、访问权限和测试口径。
 - 当前默认例外表包括 Flyway/Liquibase 历史表、KV 基础设施表、租户/字典/区域/平台配置表、授权资源/菜单/应用元数据表、前端运行时元数据表、身份用户和租户成员关系表。
+- `act_*`、`flw_*` 是 Mango 直接集成的 Flowable 引擎表：列名和租户语义由引擎数据模型定义，平台按前缀硬编码跳过租户拦截和 Schema 校验，不写入 `excluded-tables`，也不接受业务配置扩大该前缀范围。
 - `mango.persistence.schema-validation.excluded-tables` 只用于结构校验例外，不等同于租户过滤例外；两份配置不得混用语义。
 - 任务、异步、开放接口、远程 Worker、跨租户授权、租户初始化和平台运营场景必须在进入 Mapper 前显式建立租户上下文；缺少上下文时不得依赖默认平台租户静默执行。
 - 非 Web 任务如果配置 `mango.persistence.mybatis-plus.tenant.default-tenant-id`，只能用于明确单租户任务或本地验证，不得作为多租户业务链路的隐式兜底。

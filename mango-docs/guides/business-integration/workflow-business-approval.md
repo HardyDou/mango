@@ -173,6 +173,7 @@ mango:
 - `assigneeIds` 直接传业务 `user_id` 即可，平台按 `identity_user.username` 映射到引擎办理人，并用 `tenant_member` 限定该用户属于任务所在租户，跨租户同名用户不会串号。
 - 退回后同一 `taskDefinitionKey` 会再次出现（初审 → 复审 → 退回 → 初审），这是正常返回，按 `endTime` / `claimTime` 取最新。
 - 排序：`createTime`、`endTime`、`claimTime`；`endTime` 与 `claimTime` 为空的任务在升序和降序下都排在最后。
+- 该查询直接读取 Flowable 引擎表，租户由 `workflow_business_apply.tenant_id` 收敛；平台租户插件按 `act_*` 前缀跳过引擎表，业务项目不需要再往 `mango.persistence.mybatis-plus.tenant.excluded-tables` 复制引擎表。
 
 权限分工：`workflow:task:list` 控制能否调用接口；`workflow:task:all` 控制能否使用 `ALL` 范围。业务侧按自己的角色矩阵把后一个权限码只授予主管/经理等需要全量视图的角色。
 
@@ -206,6 +207,8 @@ pnpm -F @mango/workflow-business-example build
 详细版本影响见[业务审批历史变更索引](../../changelog/business-integration/workflow-business-approval.md)。
 
 > Issue #1223 影响说明：`POST /workflow/tasks/page-by-business-key` 的 `businessKeys` 改为可选；不传或为空表示不限业务主键，`total` 按任务数统计。业务列表不再需要先查业务表取候选业务键，也不会因为业务键数量上限丢数据。传入 `businessKeys` 时行为与 #1208 兼容；不传时业务申请可见性不做逐申请 Provider 收窄，由租户、`scope` 和权限码决定。
+
+> Issue #1220 影响说明：修复 `page-by-business-key` 在启用默认租户插件时 500（`Unknown column 't.tenant_id'`）。平台租户插件改按 `act_*`、`flw_*` 前缀跳过 Flowable 引擎表，业务项目可以删除 `mango.persistence.mybatis-plus.tenant.excluded-tables` 中自行追加的 `ACT_*` 例外，并恢复使用平台默认清单。查询字段、权限码、申请状态、数据库表结构和页面行为不变。
 
 > Issue #1208 影响说明：新增 `POST /workflow/tasks/page-by-business-key`，业务列表可读取业务主键下的全部任务（在途、已办理、已终止）。不修改数据库结构，不改变 `todo` / `done` / `copied` 语义；新增配置项 `mango.workflow.task-query.unpaged-max-rows`。
 

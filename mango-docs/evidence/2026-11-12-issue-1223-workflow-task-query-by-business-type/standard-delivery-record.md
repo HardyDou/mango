@@ -53,7 +53,7 @@
 | AC-1/AC-2/AC-3/AC-4 | 单元测试 | `mvn -o -pl mango-platform/mango-workflow/mango-workflow-core -Dtest=WorkflowTaskBusinessQueryServiceTest test` | PASS（16 用例） | `WorkflowTaskBusinessQueryServiceTest`：无业务键与空集合不限、有业务键时 Provider 收窄、`SELF`/`ALL` 范围、分页参数校验 |
 | AC-1/AC-2 | API 参数校验 | `mvn -o -pl mango-platform/mango-workflow/mango-workflow-starter -am -Dtest=WorkflowControllerValidationInheritanceTest -Dsurefire.failIfNoSpecifiedTests=false test` | PASS（2 用例） | `WorkflowControllerValidationInheritanceTest.businessTaskPageRequest_allowsMissingBusinessKeys`：只传 `businessType` 无校验错误，空 `businessType` 仍报错 |
 | AC-1/AC-2/AC-3/AC-5 | H2 集成测试 | `mvn -o -pl mango-platform/mango-workflow/mango-workflow-core -Dtest=WorkflowTaskHistoryMapperIntegrationTest test` | PASS（12 用例） | 无业务键返回当前租户 3 条任务，分页 2 条，空集合同样生效，租户隔离保持 |
-| AC-1~AC-5 | 模块验证 | `mvn -o -pl mango-platform/mango-workflow/mango-workflow-api,mango-platform/mango-workflow/mango-workflow-core,mango-platform/mango-workflow/mango-workflow-starter verify` | PASS | workflow-api、workflow-core 136 tests（4 skipped）、workflow-starter 46 tests，`BUILD SUCCESS` |
+| AC-1~AC-5 | 模块验证 | `mvn -o -pl mango-platform/mango-workflow/mango-workflow-api,mango-platform/mango-workflow/mango-workflow-core,mango-platform/mango-workflow/mango-workflow-starter verify` | PASS | workflow-api、workflow-core 140 tests（4 skipped）、workflow-starter 46 tests，`BUILD SUCCESS` |
 | AC-6 | 文档检查 | 文档审查 + PMO 文档 checker | PASS | Workflow README、业务接入指南、能力地图和业务变更索引已改为业务键可选 |
 
 ## 7. 例外与剩余风险
