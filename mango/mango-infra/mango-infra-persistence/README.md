@@ -219,7 +219,9 @@ authorization_frontend_module_runtime_strategy
 
 `act_*` 和 `flw_*` 是 Mango 直接集成的 Flowable 引擎表，由 Flowable 数据模型定义，不适用 Mango 业务表的 `id`、审计、租户和组织字段约束。Mango 自有的 `workflow_*` 表仍参与完整 Schema 校验。
 
-如果某张平台字典表、全局配置表或历史表不应该有 `tenant_id`，必须显式加入两个排除列表中对应的那个列表。只加到租户排除不会跳过 Schema 校验；只加到 Schema 排除也不会跳过租户 SQL 追加。
+Flowable 引擎表只有 `TENANT_ID_`（带下划线后缀），没有 Mango 租户列 `tenant_id`。平台按 `act_*`、`flw_*` 前缀硬编码跳过这两类表：既不参与 Schema 校验，也不追加租户 `tenant_id` 条件。该前缀边界属于第三方组件约定，不读取 `excluded-tables`，业务项目不需要把引擎表复制进配置，也不得通过配置扩大该前缀范围。自研表即使名字带 `act_`、`flw_` 前缀，也会被当成引擎表跳过租户拦截。
+
+如果某张平台字典表、全局配置表或历史表不应该有 `tenant_id`，必须显式加入两个排除列表中对应的那个列表。只加到租户排除不会跳过 Schema 校验；只加到 Schema 排除也不会跳过租户 SQL 追加。上述 `act_*`、`flw_*` 前缀例外是唯一不通过配置声明的第三方表边界。
 
 ### 6.3 多数据源配置
 

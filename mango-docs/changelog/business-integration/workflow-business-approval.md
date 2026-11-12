@@ -4,6 +4,8 @@
 
 ## 7. 变更影响记录
 
+- Issue #1220 修复 `POST /workflow/tasks/page-by-business-key` 在启用默认租户插件时 500：平台租户插件按 `act_*`、`flw_*` 前缀跳过 Flowable 引擎表，不再向 `ACT_HI_TASKINST`、`ACT_HI_IDENTITYLINK`、`ACT_RU_IDENTITYLINK` 追加不存在的 `tenant_id` 条件。租户隔离仍由 `workflow_business_apply.tenant_id` 收敛；业务项目可删除自己追加的 `ACT_*` 排除表配置。接口字段、权限码、事件、状态流转和页面 key 不变。
+
 - Issue #1191 为 `POST /workflow/tasks/return` 增加可选 `targetAssigneeUserId`：退回后在同一事务内把本次退回新建的唯一任务指派给指定用户（`identity_user.id` 或 `username`），目标用户必须是当前租户启用成员；不要求退回人具备目标节点候选资格或 `transfer` 动作。目标用户无效、未生成任务或新建多条任务时以 `TASK_INVALID` 失败并整体回滚。业务审批发起、通过、驳回、撤回、事件类型、权限、租户隔离和页面 key 不变。
 
 - Issue #1182 修复消息自定义按钮打开失败：工作流终态消息缺少可达兜底时，平台下发 `fallbackTargetKey=notice:site-message`，前端按「主目标 → fallbackTargetKey → 消息中心」解析，解析不到才提示原因，不再把用户停在“目标未注册或当前无权访问”。通知目标、事件类型、权限码、申请状态流转和审批接口不变；业务需要按钮直达自己的详情页时，在申请快照 `customConfig.viewPath` 配置站内路径。

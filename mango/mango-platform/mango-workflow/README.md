@@ -564,6 +564,8 @@ mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-comm
 
 该查询直接读取 Flowable 历史任务表 `ACT_HI_TASKINST`，并关联 `workflow_business_apply`、`workflow_task_record`、`ACT_HI_IDENTITYLINK`、`ACT_RU_IDENTITYLINK`。它是只读查询，不改引擎表结构；Flowable 升级后必须回归 `WorkflowTaskHistoryMapperIntegrationTest` 与引擎 API 结果的一致性。
 
+引擎表只有 `TENANT_ID_`，没有 Mango 租户列 `tenant_id`，平台租户插件按 `act_*` 前缀跳过它们。租户收敛只依赖 `workflow_business_apply.tenant_id` 与 `a.process_instance_id = t.PROC_INST_ID_` 的关联，不要在 XML 里手写 `t.TENANT_ID_` 作为租户条件。租户插件启用时的回归入口是 `WorkflowTaskHistoryTenantIntegrationTest`。
+
 ## 7. 配置说明
 
 配置写在应用的 `application.yml` 或对应环境配置文件中。
