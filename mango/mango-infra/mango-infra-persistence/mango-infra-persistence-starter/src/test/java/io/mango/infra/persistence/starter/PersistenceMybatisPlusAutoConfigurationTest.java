@@ -105,6 +105,18 @@ class PersistenceMybatisPlusAutoConfigurationTest {
     }
 
     @Test
+    void tenantInterceptor_shouldIgnoreFlowableEngineTables() {
+        contextRunner.run(ctx -> {
+            TenantLineHandler handler = tenantLineHandler(ctx.getBean(MybatisPlusInterceptor.class));
+            assertThat(handler.ignoreTable("ACT_HI_TASKINST")).isTrue();
+            assertThat(handler.ignoreTable("act_hi_identitylink")).isTrue();
+            assertThat(handler.ignoreTable("ACT_RU_IDENTITYLINK")).isTrue();
+            assertThat(handler.ignoreTable("FLW_RU_BATCH")).isTrue();
+            assertThat(handler.ignoreTable("workflow_business_apply")).isFalse();
+        });
+    }
+
+    @Test
     void customInterceptor_shouldNotBeOverridden() {
         contextRunner
                 .withUserConfiguration(CustomInterceptorConfig.class)
