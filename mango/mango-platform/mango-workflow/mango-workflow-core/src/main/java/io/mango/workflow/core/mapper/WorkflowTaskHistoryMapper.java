@@ -1,5 +1,7 @@
 package io.mango.workflow.core.mapper;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import io.mango.workflow.core.entity.WorkflowTaskHistoryEntity;
 import io.mango.workflow.core.model.WorkflowTaskHistoryCriteria;
 import io.mango.workflow.core.model.WorkflowTaskHistoryRow;
 import io.mango.workflow.core.model.WorkflowTaskIdentityLinkRow;
@@ -15,7 +17,7 @@ import java.util.List;
  * 只读、不改引擎表结构；Flowable 升级时必须回归该查询与引擎 API 的结果一致性。
  */
 @Mapper
-public interface WorkflowTaskHistoryMapper {
+public interface WorkflowTaskHistoryMapper extends BaseMapper<WorkflowTaskHistoryEntity> {
 
     /**
      * 统计符合条件的任务数量。

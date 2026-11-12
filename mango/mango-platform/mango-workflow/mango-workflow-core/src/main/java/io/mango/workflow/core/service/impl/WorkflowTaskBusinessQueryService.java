@@ -55,9 +55,9 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
     private final WorkflowTaskQueryProperties properties;
 
     @Override
-    public PageResult<WorkflowTaskVO> pageByBusinessKey(WorkflowTaskBusinessPageQuery query) {
+    public PageResult<WorkflowTaskVO> pageByBusinessKey(WorkflowTaskBusinessPageQuery request) {
         WorkflowTaskBusinessPageQuery resolved =
-                Require.nonNull(query, WorkflowCode.TASK_QUERY_INVALID, "任务查询条件不能为空");
+                Require.nonNull(request, WorkflowCode.TASK_QUERY_INVALID, "任务查询条件不能为空");
         WorkflowTaskQueryScope scope = resolved.getScope() == null
                 ? WorkflowTaskQueryScope.SELF
                 : resolved.getScope();
@@ -315,11 +315,10 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
     private Long currentTenantId() {
         String tenantId = MangoContextHolder.tenantId();
         Require.isTrue(StringUtils.hasText(tenantId), WorkflowCode.TASK_QUERY_INVALID, "缺少租户上下文");
-        try {
-            return Long.valueOf(Objects.requireNonNull(tenantId).trim());
-        } catch (NumberFormatException ex) {
-            throw new IllegalStateException("Invalid tenant context for task query.", ex);
-        }
+        String normalized = Objects.requireNonNull(tenantId).trim();
+        Require.isTrue(normalized.chars().allMatch(Character::isDigit),
+                WorkflowCode.TASK_QUERY_INVALID, "租户上下文非法");
+        return Long.valueOf(normalized);
     }
 
     private List<String> currentUserIdentifiers() {

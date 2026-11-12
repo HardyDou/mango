@@ -13,7 +13,12 @@ import org.springframework.stereotype.Component;
 public class WorkflowTaskQueryProperties {
 
     /**
+     * 不传分页参数时的默认单次返回上限。
+     */
+    private static final int DEFAULT_UNPAGED_MAX_ROWS = 2000;
+
+    /**
      * 不传分页参数时单次返回的最大任务行数；超出部分调用方应改用分页参数拉取。
      */
-    private int unpagedMaxRows = 2000;
+    private int unpagedMaxRows = DEFAULT_UNPAGED_MAX_ROWS;
 }

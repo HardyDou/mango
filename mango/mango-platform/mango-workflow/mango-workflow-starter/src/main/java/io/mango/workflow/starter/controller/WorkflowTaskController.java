@@ -13,8 +13,9 @@ import io.mango.workflow.api.command.RejectWorkflowTaskCommand;
 import io.mango.workflow.api.command.ReturnWorkflowTaskCommand;
 import io.mango.workflow.api.command.SaveWorkflowTaskDraftCommand;
 import io.mango.workflow.api.command.TransferWorkflowTaskCommand;
-import io.mango.workflow.api.query.WorkflowTaskBusinessPageQuery;
+
 import io.mango.workflow.api.query.WorkflowTaskPageQuery;
+import io.mango.workflow.api.request.WorkflowTaskBusinessPageRequest;
 import io.mango.workflow.api.vo.WorkflowMyTaskSummaryVO;
 import io.mango.workflow.api.vo.WorkflowProcessDetailVO;
 import io.mango.workflow.api.vo.WorkflowTaskActionResultVO;
@@ -219,8 +220,8 @@ public class WorkflowTaskController implements WorkflowTaskRuntimeApi {
             description = "按业务类型与业务主键集合返回全部任务，含在途、已办理和已终止；默认只返回当前用户相关任务，"
                     + "scope=ALL 需要 workflow:task:all 权限码，scope=ORG 当前版本不支持")
     @Override
-    public R<PageResult<WorkflowTaskVO>> pageByBusinessKey(@RequestBody WorkflowTaskBusinessPageQuery query) {
-        return R.ok(workflowTaskBusinessQueryService.pageByBusinessKey(query));
+    public R<PageResult<WorkflowTaskVO>> pageByBusinessKey(@RequestBody WorkflowTaskBusinessPageRequest request) {
+        return R.ok(workflowTaskBusinessQueryService.pageByBusinessKey(request));
     }
 
     @PostMapping("/copied/read")
