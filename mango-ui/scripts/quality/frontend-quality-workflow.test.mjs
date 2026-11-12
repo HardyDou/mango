@@ -14,15 +14,9 @@ function job(id) {
   return match[0];
 }
 
-test('pull requests run the phase-one advisory quality gate with a stable required context', () => {
-  const pullRequestJob = job('frontend-pr-quality');
-  assert.match(pullRequestJob, /name: frontend-pr-quality/u);
-  assert.match(pullRequestJob, /if: github\.event_name == 'pull_request'/u);
-  assert.match(pullRequestJob, /actions\/checkout@v4/u);
-  assert.match(pullRequestJob, /pnpm install --frozen-lockfile/u);
-  assert.match(pullRequestJob, /pnpm check:pr -- --base=/u);
-  assert.match(pullRequestJob, /Upload frontend quality evidence/u);
-  assert.doesNotMatch(pullRequestJob, /playwright|Start real Mango backend/u);
+test('pull requests do not run a blocking frontend quality job', () => {
+  assert.doesNotMatch(workflow, /frontend-pr-quality/u);
+  assert.doesNotMatch(workflow, /^  pull_request:/mu);
 });
 
 test('deep frontend quality and P0 browser acceptance do not run for pull requests', () => {

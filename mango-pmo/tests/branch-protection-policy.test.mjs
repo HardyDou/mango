@@ -14,7 +14,7 @@ test('current single-owner policy preserves fast contract, heavy PMO, and histor
   assert.deepEqual(validateBranchProtectionPolicy(currentPolicy), []);
 });
 
-for (const context of ['frontend-pr-quality', 'pr-contract-check', 'pmo-doc-check']) {
+for (const context of ['pr-contract-check', 'pmo-doc-check']) {
   test(`single-owner policy cannot disable the required ${context} check`, () => {
     const policy = structuredClone(currentPolicy);
     policy.requiredStatusChecks.contexts = policy.requiredStatusChecks.contexts.filter(
