@@ -122,10 +122,8 @@ jobs:
             -DskipTests \
             install
 
-      - name: Install MySQL client
-        run: |
-          sudo apt-get update
-          sudo apt-get install --yes --no-install-recommends mysql-client-core
+      - name: Verify MySQL client
+        run: mysql --version
 
       - name: Install locked frontend dependencies
         working-directory: mango-ui
