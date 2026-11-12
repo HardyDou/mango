@@ -82,6 +82,12 @@ public enum WorkflowCode implements BizCode {
 
     TEMPLATE_TENANT_OPTION_LOAD_FAILED(3658, "流程模板目标机构加载失败"),
 
+    /** 任务查询参数非法。 */
+    TASK_QUERY_INVALID(3659, "任务查询参数非法"),
+
+    /** 当前用户无权查询全量任务。 */
+    TASK_QUERY_FORBIDDEN(3660, "无权查询全量任务"),
+
     /** 流程发布失败。 */
     DEPLOY_FAILED(3620, "流程发布失败");
 

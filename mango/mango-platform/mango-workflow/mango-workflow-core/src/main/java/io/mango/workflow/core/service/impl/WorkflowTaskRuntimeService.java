@@ -337,6 +337,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         assigneeIdentityService.enrichTasks(records);
         return PageResult.of(records, total, resolved.getPage(), resolved.getSize());
     }
+
     @Override
     public WorkflowTaskDetailVO detail(String taskId) {
         Require.notBlank(taskId, WorkflowCode.TASK_INVALID, "任务ID不能为空");

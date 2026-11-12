@@ -11,7 +11,8 @@ import lombok.Getter;
 public enum WorkflowTaskRuntimeStatus {
 
     TODO("待办"),
-    DONE("已办");
+    DONE("已办"),
+    CANCELED("已终止");
 
     private final String label;
 }

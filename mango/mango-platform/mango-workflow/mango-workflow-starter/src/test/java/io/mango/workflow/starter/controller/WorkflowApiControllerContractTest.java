@@ -27,6 +27,7 @@ import io.mango.workflow.api.vo.WorkflowDesignerOptionsVO;
 import io.mango.workflow.core.service.IWorkflowBusinessApplyService;
 import io.mango.workflow.core.service.IWorkflowDefinitionService;
 import io.mango.workflow.core.service.IWorkflowProcessService;
+import io.mango.workflow.core.service.IWorkflowTaskBusinessQueryService;
 import io.mango.workflow.core.service.IWorkflowTaskRuntimeService;
 import io.mango.workflow.core.service.IWorkflowTemplateService;
 import org.junit.jupiter.api.Test;
@@ -45,6 +46,8 @@ class WorkflowApiControllerContractTest {
     private final IWorkflowBusinessApplyService businessApplyService = mock(IWorkflowBusinessApplyService.class);
     private final IWorkflowProcessService processService = mock(IWorkflowProcessService.class);
     private final IWorkflowTaskRuntimeService runtimeService = mock(IWorkflowTaskRuntimeService.class);
+    private final IWorkflowTaskBusinessQueryService businessQueryService =
+            mock(IWorkflowTaskBusinessQueryService.class);
     private final IWorkflowDefinitionService definitionService = mock(IWorkflowDefinitionService.class);
     private final IWorkflowTemplateService templateService = mock(IWorkflowTemplateService.class);
     private final WorkflowBusinessApplyController businessApplyController =
@@ -52,7 +55,7 @@ class WorkflowApiControllerContractTest {
     private final WorkflowProcessController processController = new WorkflowProcessController(processService);
     private final WorkflowBusinessProcessController businessProcessController =
             new WorkflowBusinessProcessController(processService);
-    private final WorkflowTaskController taskController = new WorkflowTaskController(runtimeService);
+    private final WorkflowTaskController taskController = new WorkflowTaskController(runtimeService, businessQueryService);
     private final WorkflowDefinitionController definitionController =
             new WorkflowDefinitionController(definitionService);
     private final WorkflowTemplateController templateController =
