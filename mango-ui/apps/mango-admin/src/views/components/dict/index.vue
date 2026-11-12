@@ -176,7 +176,8 @@
     <section id="tree-multiple" class="doc-section">
       <h2>树形字典-选择策略</h2>
       <p>
-        多选使用树形复选框。leaf-only=false 时父节点可选；默认父子联动，只勾选部分子节点时父节点显示半选中状态，change 返回已选节点，check-change 返回 indeterminate；设置 check-strictly 后父子不联动，可直接提交父节点本身。
+        多选使用树形复选框。leaf-only=false 时父节点可选；默认父子联动，只勾选部分子节点时父节点显示半选中状态，change
+        返回已选节点，check-change 返回 indeterminate；设置 check-strictly 后父子不联动，可直接提交父节点本身。
       </p>
       <div class="demo-block">
         <div class="demo-source">
@@ -216,7 +217,8 @@
     <section id="display" class="doc-section">
       <h2>回显模式：DictDisplay</h2>
       <p>
-        列表、详情等只读场景使用 DictDisplay 把 value 转成 label。它与 DictSelect 共用字典编码和缓存，单值/多值自动识别，默认纯文本、多值用「、」连接，树形字典可切换为完整路径。
+        列表、详情等只读场景使用 DictDisplay 把 value 转成 label。它与 DictSelect
+        共用字典编码和缓存，单值/多值自动识别，默认纯文本、多值用「、」连接，树形字典可切换为完整路径。
       </p>
       <div class="demo-block">
         <div class="demo-source">
@@ -240,7 +242,12 @@
               <DictDisplay dict-type="sys_normal_disable" :value="undefined" data-action="display-flat-empty" />
             </el-descriptions-item>
             <el-descriptions-item label="树形字典 · 末级 label">
-              <DictDisplay dict-type="system_demo_tree" shape="TREE" :value="'paper'" data-action="display-tree-label" />
+              <DictDisplay
+                dict-type="system_demo_tree"
+                shape="TREE"
+                :value="'paper'"
+                data-action="display-tree-label"
+              />
             </el-descriptions-item>
             <el-descriptions-item label="树形字典 · 多值路径">
               <DictDisplay
@@ -264,7 +271,9 @@
     <section id="group" class="doc-section">
       <h2>分组过滤：group / include / exclude</h2>
       <p>
-        同一个字典可以给每个值打一个或多个分组标记（如 ORDER、AFTER_SALE）。组件不传 group 时保持全量；传 group 时只取该组内的值；再叠加 include 白名单与 exclude 黑名单做点对点微调。内置示例字典 system_demo_group：值1 属于 ORDER，值2、3 同属两组，值4 属于 AFTER_SALE。
+        同一个字典可以给每个值打一个或多个分组标记（如 ORDER、AFTER_SALE）。组件不传 group 时保持全量；传 group
+        时只取该组内的值；再叠加 include 白名单与 exclude 黑名单做点对点微调。内置示例字典 system_demo_group：值1 属于
+        ORDER，值2、3 同属两组，值4 属于 AFTER_SALE。
       </p>
       <div class="demo-block">
         <div class="demo-source">
@@ -371,12 +380,11 @@
         <code>display-format</code> 和 <code>display-separator</code> 自动输出 label 或完整路径。
       </p>
       <p>
-        插槽参数为 <code>value</code>（选中值）、<code>label</code>（节点名称）和 <code>text</code>（组件已格式化好的显示文本）。
+        插槽参数为 <code>value</code>（选中值）、<code>label</code>（节点名称）和
+        <code>text</code>（组件已格式化好的显示文本）。
         多选时每个选中项分别渲染一次，适合在标签前补充前缀、图标或业务标识。
       </p>
-      <p>
-        插槽只影响展示，不改变提交值和回显值；数据仍以 <code>v-model</code> 绑定的 value 为准。
-      </p>
+      <p>插槽只影响展示，不改变提交值和回显值；数据仍以 <code>v-model</code> 绑定的 value 为准。</p>
       <div class="demo-block">
         <div class="demo-source">
           <DictSelect
@@ -432,7 +440,8 @@
   </DemoDocLayout>
 </template>
 
-<script setup lang="ts" name="DictComponentDemo">
+<script setup lang="ts">
+defineOptions({ name: 'DictComponentDemo' });
 import { ref } from 'vue';
 import { ArrowDown, ArrowUp } from '@element-plus/icons-vue';
 import { DictDisplay, DictSelect } from '@mango/common';
@@ -643,40 +652,156 @@ const treeMultipleCode = `<DictSelect
 />`;
 
 const propsTable = [
-  { component: 'DictSelect', name: 'shape', description: '选择字典形态；FLAT 使用平铺字典，TREE 使用树形选择。', type: "'FLAT' | 'TREE'", defaultValue: 'FLAT' },
-  { component: 'DictSelect', name: 'variant', description: 'FLAT 的选择样式；select 为下拉，radio-button 为单选按钮，checkbox-button 为多选按钮。', type: "'select' | 'radio-button' | 'checkbox-button'", defaultValue: 'select' },
-  { component: 'DictSelect', name: 'buttonClass / buttonStyle', description: '按钮组外层 class 和内联样式；可通过 class 的后代选择器自定义 Element Plus 按钮内部样式。', type: 'string / StyleValue', defaultValue: 'undefined' },
-  { component: 'DictSelect', name: 'dictType', description: '字典编码；shape=FLAT 调用 options，shape=TREE 调用 tree。', type: 'string', defaultValue: '必填' },
-  { component: 'DictSelect', name: 'modelValue', description: '单选 value 或多选 value[]；已有值会自动回显。', type: 'string | string[]', defaultValue: 'undefined' },
-  { component: 'DictSelect', name: 'multiple', description: '是否启用多选；TREE 多选显示复选框和半选中状态。', type: 'boolean', defaultValue: 'false' },
-  { component: 'DictSelect', name: 'leafOnly', description: 'TREE 专用；true 禁用父节点，只能选择叶子；false 允许父节点并保留半选中状态。', type: 'boolean', defaultValue: 'true' },
-  { component: 'DictSelect', name: 'checkStrictly', description: 'TREE 专用；false 为父子联动，true 为父子不联动（单选选父节点需开启）。', type: 'boolean', defaultValue: 'false' },
-  { component: 'DictSelect', name: 'displayFormat / displaySeparator', description: 'TREE 回显使用 label 或完整路径，并配置路径分隔符。', type: "'label' | 'path' / string", defaultValue: 'label /  / ' },
+  {
+    component: 'DictSelect',
+    name: 'shape',
+    description: '选择字典形态；FLAT 使用平铺字典，TREE 使用树形选择。',
+    type: "'FLAT' | 'TREE'",
+    defaultValue: 'FLAT',
+  },
+  {
+    component: 'DictSelect',
+    name: 'variant',
+    description: 'FLAT 的选择样式；select 为下拉，radio-button 为单选按钮，checkbox-button 为多选按钮。',
+    type: "'select' | 'radio-button' | 'checkbox-button'",
+    defaultValue: 'select',
+  },
+  {
+    component: 'DictSelect',
+    name: 'buttonClass / buttonStyle',
+    description: '按钮组外层 class 和内联样式；可通过 class 的后代选择器自定义 Element Plus 按钮内部样式。',
+    type: 'string / StyleValue',
+    defaultValue: 'undefined',
+  },
+  {
+    component: 'DictSelect',
+    name: 'dictType',
+    description: '字典编码；shape=FLAT 调用 options，shape=TREE 调用 tree。',
+    type: 'string',
+    defaultValue: '必填',
+  },
+  {
+    component: 'DictSelect',
+    name: 'modelValue',
+    description: '单选 value 或多选 value[]；已有值会自动回显。',
+    type: 'string | string[]',
+    defaultValue: 'undefined',
+  },
+  {
+    component: 'DictSelect',
+    name: 'multiple',
+    description: '是否启用多选；TREE 多选显示复选框和半选中状态。',
+    type: 'boolean',
+    defaultValue: 'false',
+  },
+  {
+    component: 'DictSelect',
+    name: 'leafOnly',
+    description: 'TREE 专用；true 禁用父节点，只能选择叶子；false 允许父节点并保留半选中状态。',
+    type: 'boolean',
+    defaultValue: 'true',
+  },
+  {
+    component: 'DictSelect',
+    name: 'checkStrictly',
+    description: 'TREE 专用；false 为父子联动，true 为父子不联动（单选选父节点需开启）。',
+    type: 'boolean',
+    defaultValue: 'false',
+  },
+  {
+    component: 'DictSelect',
+    name: 'displayFormat / displaySeparator',
+    description: 'TREE 回显使用 label 或完整路径，并配置路径分隔符。',
+    type: "'label' | 'path' / string",
+    defaultValue: 'label /  / ',
+  },
 ];
 
 const eventsTable = [
-  { component: 'DictSelect', name: 'update:modelValue', description: 'FLAT/TREE 选择值变化。', payload: 'string | string[] | undefined' },
-  { component: 'DictSelect', name: 'change', description: '返回 value、已选节点 nodes 和完整路径 paths。', payload: '(value, nodes, paths) => void' },
-  { component: 'DictSelect', name: 'check-change', description: 'TREE 复选框变化；indeterminate=true 表示父节点半选中。', payload: '(node, checked, indeterminate) => void' },
-  { component: 'DictSelect', name: 'reload', description: '暴露方法，重新加载当前字典。', payload: '() => Promise<DictOption[] | DictTreeOption[]>' },
-  { component: 'DictSelect', name: 'getSelectedNodes / getSelectedPaths', description: '暴露方法，读取选中节点和完整路径。', payload: '() => DictTreeOption[] / DictTreeOption[][]' },
-  { component: 'DictSelect', name: 'getHalfCheckedNodes', description: '暴露方法，读取半选中的父节点，便于提交父级 ID。', payload: '() => DictTreeOption[]' },
-  { component: 'DictSelect', name: 'clear / focus / blur', description: '暴露方法，清空、聚焦和失焦。', payload: '() => void' },
+  {
+    component: 'DictSelect',
+    name: 'update:modelValue',
+    description: 'FLAT/TREE 选择值变化。',
+    payload: 'string | string[] | undefined',
+  },
+  {
+    component: 'DictSelect',
+    name: 'change',
+    description: '返回 value、已选节点 nodes 和完整路径 paths。',
+    payload: '(value, nodes, paths) => void',
+  },
+  {
+    component: 'DictSelect',
+    name: 'check-change',
+    description: 'TREE 复选框变化；indeterminate=true 表示父节点半选中。',
+    payload: '(node, checked, indeterminate) => void',
+  },
+  {
+    component: 'DictSelect',
+    name: 'reload',
+    description: '暴露方法，重新加载当前字典。',
+    payload: '() => Promise<DictOption[] | DictTreeOption[]>',
+  },
+  {
+    component: 'DictSelect',
+    name: 'getSelectedNodes / getSelectedPaths',
+    description: '暴露方法，读取选中节点和完整路径。',
+    payload: '() => DictTreeOption[] / DictTreeOption[][]',
+  },
+  {
+    component: 'DictSelect',
+    name: 'getHalfCheckedNodes',
+    description: '暴露方法，读取半选中的父节点，便于提交父级 ID。',
+    payload: '() => DictTreeOption[]',
+  },
+  {
+    component: 'DictSelect',
+    name: 'clear / focus / blur',
+    description: '暴露方法，清空、聚焦和失焦。',
+    payload: '() => void',
+  },
 ];
 
 const eventFieldsTable = [
-  { scene: '单选', field: 'value', type: 'string | number | undefined', description: '当前选中的节点 value；未选择时为 undefined。' },
-  { scene: '单选', field: 'nodes', type: 'DictTreeOption[]', description: '当前选中的节点对象，单选通常包含 0 或 1 个节点。' },
+  {
+    scene: '单选',
+    field: 'value',
+    type: 'string | number | undefined',
+    description: '当前选中的节点 value；未选择时为 undefined。',
+  },
+  {
+    scene: '单选',
+    field: 'nodes',
+    type: 'DictTreeOption[]',
+    description: '当前选中的节点对象，单选通常包含 0 或 1 个节点。',
+  },
   { scene: '单选', field: 'paths', type: 'DictTreeOption[][]', description: '当前节点从根节点到自身的完整路径。' },
   { scene: '多选', field: 'value', type: 'Array<string | number>', description: '当前选中的多个节点 value。' },
   { scene: '多选', field: 'nodes', type: 'DictTreeOption[]', description: '当前选中的多个节点对象。' },
-  { scene: '多选', field: 'paths', type: 'DictTreeOption[][]', description: '每个选中节点对应一条从根节点到自身的完整路径。' },
+  {
+    scene: '多选',
+    field: 'paths',
+    type: 'DictTreeOption[][]',
+    description: '每个选中节点对应一条从根节点到自身的完整路径。',
+  },
 ];
 
 const apiTable = [
-  { name: 'system_demo_tree', description: '系统内置 TREE 示例字典，不需要用户创建。', example: '办公用品→纸张、笔；数码设备→电脑、显示器' },
-  { name: 'DictSelect 内部 API', description: '调用 /system/dict/data/options。业务页面通常直接使用 DictSelect。', example: 'FLAT label/value' },
-  { name: 'DictSelect shape="TREE" 内部 API', description: '调用 /system/dict/data/tree。业务页面通常直接使用 DictSelect。', example: 'TREE children/value' },
+  {
+    name: 'system_demo_tree',
+    description: '系统内置 TREE 示例字典，不需要用户创建。',
+    example: '办公用品→纸张、笔；数码设备→电脑、显示器',
+  },
+  {
+    name: 'DictSelect 内部 API',
+    description: '调用 /system/dict/data/options。业务页面通常直接使用 DictSelect。',
+    example: 'FLAT label/value',
+  },
+  {
+    name: 'DictSelect shape="TREE" 内部 API',
+    description: '调用 /system/dict/data/tree。业务页面通常直接使用 DictSelect。',
+    example: 'TREE children/value',
+  },
 ];
 
 function clearTreeMultiple() {

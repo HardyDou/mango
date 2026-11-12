@@ -23,48 +23,46 @@
   </span>
 </template>
 
-<script setup lang="ts" name="DictDisplay">
+<script setup lang="ts">
+defineOptions({ name: 'DictDisplay' });
 import { computed, ref, watch } from 'vue';
 import { listDictOptions, listDictTree, type DictTreeOption } from '../../api/dict';
 import { createDictValueFilter, indexDictTree } from '../../utils/dictTree';
-import type {
-  DictDisplayFormat,
-  DictDisplayItem,
-  DictDisplayMode,
-  DictDisplayShape,
-  DictDisplayValue,
-} from './types';
+import type { DictDisplayFormat, DictDisplayItem, DictDisplayMode, DictDisplayShape, DictDisplayValue } from './types';
 
-const props = withDefaults(defineProps<{
-  dictType: string;
-  shape?: DictDisplayShape;
-  value?: DictDisplayValue;
-  mode?: DictDisplayMode;
-  separator?: string;
-  displayFormat?: DictDisplayFormat;
-  displaySeparator?: string;
-  emptyText?: string;
-  tagType?: '' | 'primary' | 'success' | 'info' | 'warning' | 'danger';
-  tagEffect?: 'light' | 'dark' | 'plain';
-  tagSize?: 'large' | 'default' | 'small';
-  group?: string | string[];
-  includeValues?: Array<string | number>;
-  excludeValues?: Array<string | number>;
-}>(), {
-  shape: 'FLAT',
-  value: undefined,
-  mode: 'text',
-  separator: '、',
-  displayFormat: 'label',
-  displaySeparator: ' / ',
-  emptyText: '-',
-  tagType: '',
-  tagEffect: 'light',
-  tagSize: 'default',
-  group: undefined,
-  includeValues: undefined,
-  excludeValues: undefined,
-});
+const props = withDefaults(
+  defineProps<{
+    dictType: string;
+    shape?: DictDisplayShape;
+    value?: DictDisplayValue;
+    mode?: DictDisplayMode;
+    separator?: string;
+    displayFormat?: DictDisplayFormat;
+    displaySeparator?: string;
+    emptyText?: string;
+    tagType?: '' | 'primary' | 'success' | 'info' | 'warning' | 'danger';
+    tagEffect?: 'light' | 'dark' | 'plain';
+    tagSize?: 'large' | 'default' | 'small';
+    group?: string | string[];
+    includeValues?: Array<string | number>;
+    excludeValues?: Array<string | number>;
+  }>(),
+  {
+    shape: 'FLAT',
+    value: undefined,
+    mode: 'text',
+    separator: '、',
+    displayFormat: 'label',
+    displaySeparator: ' / ',
+    emptyText: '-',
+    tagType: '',
+    tagEffect: 'light',
+    tagSize: 'default',
+    group: undefined,
+    includeValues: undefined,
+    excludeValues: undefined,
+  },
+);
 
 const emit = defineEmits<{
   (event: 'error', error: unknown): void;
@@ -79,16 +77,14 @@ const valueFilter = computed(() =>
     group: props.group,
     includeValues: props.includeValues,
     excludeValues: props.excludeValues,
-  })
+  }),
 );
 
 const normalizedValues = computed(() => {
   const { value } = props;
   if (value === undefined || value === null || value === '') return [];
   const list = Array.isArray(value) ? value : [value];
-  return list
-    .filter((item) => item !== undefined && item !== null && item !== '')
-    .map((item) => String(item));
+  return list.filter((item) => item !== undefined && item !== null && item !== '').map((item) => String(item));
 });
 
 const items = computed<DictDisplayItem[]>(() =>
@@ -107,9 +103,7 @@ const items = computed<DictDisplayItem[]>(() =>
         const entry = treeIndex.value.get(value);
         const path = entry ? entry.path.map((node) => node.label) : [];
         const label = entry?.node.label ?? value;
-        const text = props.displayFormat === 'path' && path.length > 0
-          ? path.join(props.displaySeparator)
-          : label;
+        const text = props.displayFormat === 'path' && path.length > 0 ? path.join(props.displaySeparator) : label;
         return { value, label, path, text, known: Boolean(entry) };
       }
       const option = flatOptions.value.get(value);
@@ -120,7 +114,7 @@ const items = computed<DictDisplayItem[]>(() =>
         text: option?.label ?? value,
         known: option !== undefined,
       };
-    })
+    }),
 );
 
 async function reload(force = false): Promise<void> {
@@ -137,7 +131,7 @@ async function reload(force = false): Promise<void> {
     } else {
       const data = await listDictOptions(props.dictType, force);
       flatOptions.value = new Map(
-        data.map((item) => [String(item.value), { label: item.label, groups: item.groups ?? [] }])
+        data.map((item) => [String(item.value), { label: item.label, groups: item.groups ?? [] }]),
       );
     }
     emit('loaded', items.value);
@@ -157,7 +151,7 @@ watch(
   () => {
     void reload();
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 defineExpose({ reload, getItems });

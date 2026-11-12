@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, vue/one-component-per-file */
 // @vitest-environment happy-dom
 import { defineComponent, h, nextTick, onActivated, onDeactivated, onMounted, onUnmounted, ref, watch } from 'vue';
 import { createMemoryHistory, createRouter, useRoute } from 'vue-router';

@@ -51,7 +51,11 @@
               :default-checked-keys="tempValue.orgIds || []"
               @check="handleOrgCheck"
             />
-            <el-empty v-if="!currentLoading && !filteredOrgTreeOptions.length" :image-size="64" description="暂无匹配数据" />
+            <el-empty
+              v-if="!currentLoading && !filteredOrgTreeOptions.length"
+              :image-size="64"
+              description="暂无匹配数据"
+            />
           </div>
 
           <div v-else v-loading="currentLoading" class="participant-list">
@@ -63,7 +67,11 @@
               :class="{ active: selectedSet.has(itemKey(activeType, item.value)) }"
               @click="toggleItem(activeType, item)"
             >
-              <el-checkbox :model-value="selectedSet.has(itemKey(activeType, item.value))" @click.stop @change="() => toggleItem(activeType, item)" />
+              <el-checkbox
+                :model-value="selectedSet.has(itemKey(activeType, item.value))"
+                @click.stop
+                @change="() => toggleItem(activeType, item)"
+              />
               <span class="participant-icon">
                 <el-icon><component :is="typeIcon(activeType)" /></el-icon>
               </span>
@@ -82,7 +90,15 @@
               <span>已选对象</span>
               <small>共 {{ pickedItems.length }} 项</small>
             </div>
-            <el-button v-if="pickedItems.length" class="picked-clear" text type="danger" :icon="Delete" @click="clearPicked">清空</el-button>
+            <el-button
+              v-if="pickedItems.length"
+              class="picked-clear"
+              text
+              type="danger"
+              :icon="Delete"
+              @click="clearPicked"
+              >清空</el-button
+            >
           </div>
           <div class="picked-list">
             <div v-for="item in pickedItems" :key="item.key" class="picked-item">
@@ -111,7 +127,16 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import type { ElTree } from 'element-plus';
-import { ArrowDown, Briefcase, CircleClose, Delete, OfficeBuilding, Search, Share, User } from '@element-plus/icons-vue';
+import {
+  ArrowDown,
+  Briefcase,
+  CircleClose,
+  Delete,
+  OfficeBuilding,
+  Search,
+  Share,
+  User,
+} from '@element-plus/icons-vue';
 import type { ApprovalOrgTreeOption, ApprovalTargetOption } from './types';
 
 export interface WorkflowParticipantValue {
@@ -122,27 +147,29 @@ export interface WorkflowParticipantValue {
 }
 
 type ParticipantType = 'USER' | 'ORG' | 'ROLE' | 'POST';
-type ParticipantOption = ApprovalTargetOption & { type?: ParticipantType };
 type PickedItem = { key: string; type: ParticipantType; value: string; label: string };
 
-const props = withDefaults(defineProps<{
-  modelValue: WorkflowParticipantValue;
-  userOptions?: ApprovalTargetOption[];
-  roleOptions?: ApprovalTargetOption[];
-  postOptions?: ApprovalTargetOption[];
-  orgTreeOptions?: ApprovalOrgTreeOption[];
-  targetLoading?: { users?: boolean; roles?: boolean; posts?: boolean; orgs?: boolean };
-  placeholder?: string;
-  searchPlaceholder?: string;
-}>(), {
-  userOptions: () => [],
-  roleOptions: () => [],
-  postOptions: () => [],
-  orgTreeOptions: () => [],
-  targetLoading: () => ({}),
-  placeholder: '请选择用户、部门、角色或岗位',
-  searchPlaceholder: '搜索名称/编码',
-});
+const props = withDefaults(
+  defineProps<{
+    modelValue: WorkflowParticipantValue;
+    userOptions?: ApprovalTargetOption[];
+    roleOptions?: ApprovalTargetOption[];
+    postOptions?: ApprovalTargetOption[];
+    orgTreeOptions?: ApprovalOrgTreeOption[];
+    targetLoading?: { users?: boolean; roles?: boolean; posts?: boolean; orgs?: boolean };
+    placeholder?: string;
+    searchPlaceholder?: string;
+  }>(),
+  {
+    userOptions: () => [],
+    roleOptions: () => [],
+    postOptions: () => [],
+    orgTreeOptions: () => [],
+    targetLoading: () => ({}),
+    placeholder: '请选择用户、部门、角色或岗位',
+    searchPlaceholder: '搜索名称/编码',
+  },
+);
 
 const emit = defineEmits<{
   'update:modelValue': [value: WorkflowParticipantValue];
@@ -158,19 +185,23 @@ const keyword = ref('');
 const tempValue = ref<WorkflowParticipantValue>(emptyValue());
 const orgTreeRef = ref<InstanceType<typeof ElTree>>();
 
-const selectedSummary = computed(() => [
-  { type: 'USER' as const, label: '用户', count: props.modelValue.userIds?.length || 0 },
-  { type: 'ORG' as const, label: '部门', count: props.modelValue.orgIds?.length || 0 },
-  { type: 'ROLE' as const, label: '角色', count: props.modelValue.roleIds?.length || 0 },
-  { type: 'POST' as const, label: '岗位', count: props.modelValue.postIds?.length || 0 },
-].filter(item => item.count > 0));
+const selectedSummary = computed(() =>
+  [
+    { type: 'USER' as const, label: '用户', count: props.modelValue.userIds?.length || 0 },
+    { type: 'ORG' as const, label: '部门', count: props.modelValue.orgIds?.length || 0 },
+    { type: 'ROLE' as const, label: '角色', count: props.modelValue.roleIds?.length || 0 },
+    { type: 'POST' as const, label: '岗位', count: props.modelValue.postIds?.length || 0 },
+  ].filter((item) => item.count > 0),
+);
 
-const selectedGroups = computed(() => [
-  selectedGroupOf('USER', props.modelValue.userIds || [], mergedUserOptions.value),
-  selectedGroupOf('ORG', props.modelValue.orgIds || [], flattenOrgOptions(props.orgTreeOptions)),
-  selectedGroupOf('POST', props.modelValue.postIds || [], props.postOptions),
-  selectedGroupOf('ROLE', props.modelValue.roleIds || [], props.roleOptions),
-].filter(group => group.items.length > 0));
+const selectedGroups = computed(() =>
+  [
+    selectedGroupOf('USER', props.modelValue.userIds || [], mergedUserOptions.value),
+    selectedGroupOf('ORG', props.modelValue.orgIds || [], flattenOrgOptions(props.orgTreeOptions)),
+    selectedGroupOf('POST', props.modelValue.postIds || [], props.postOptions),
+    selectedGroupOf('ROLE', props.modelValue.roleIds || [], props.roleOptions),
+  ].filter((group) => group.items.length > 0),
+);
 
 const summaryText = computed(() => {
   const total = selectedSummary.value.reduce((sum, item) => sum + item.count, 0);
@@ -178,7 +209,7 @@ const summaryText = computed(() => {
   return `已选择 ${total} 项`;
 });
 
-const selectedSet = computed(() => new Set(pickedItems.value.map(item => item.key)));
+const selectedSet = computed(() => new Set(pickedItems.value.map((item) => item.key)));
 
 const pickedItems = computed<PickedItem[]>(() => [
   ...pickedOf('USER', tempValue.value.userIds || [], mergedUserOptions.value),
@@ -197,16 +228,23 @@ const currentLoading = computed(() => {
 });
 
 const currentOptions = computed(() => {
-  const source = activeType.value === 'USER'
-    ? mergedUserOptions.value
-    : activeType.value === 'ORG'
-      ? flattenOrgOptions(props.orgTreeOptions)
-      : activeType.value === 'ROLE'
-        ? props.roleOptions
-        : props.postOptions;
+  const source =
+    activeType.value === 'USER'
+      ? mergedUserOptions.value
+      : activeType.value === 'ORG'
+        ? flattenOrgOptions(props.orgTreeOptions)
+        : activeType.value === 'ROLE'
+          ? props.roleOptions
+          : props.postOptions;
   const normalized = keyword.value.trim().toLowerCase();
   if (!normalized) return source;
-  return source.filter(item => [item.label, item.value].some(value => String(value || '').toLowerCase().includes(normalized)));
+  return source.filter((item) =>
+    [item.label, item.value].some((value) =>
+      String(value || '')
+        .toLowerCase()
+        .includes(normalized),
+    ),
+  );
 });
 
 const filteredOrgTreeOptions = computed(() => {
@@ -270,7 +308,7 @@ function removePicked(item: PickedItem) {
   const key = valueKey(item.type);
   tempValue.value = {
     ...tempValue.value,
-    [key]: (tempValue.value[key] || []).filter(value => value !== item.value),
+    [key]: (tempValue.value[key] || []).filter((value) => value !== item.value),
   };
   if (item.type === 'ORG') {
     orgTreeRef.value?.setCheckedKeys(tempValue.value.orgIds || []);
@@ -288,8 +326,8 @@ function confirm() {
 }
 
 function pickedOf(type: ParticipantType, values: string[], options: ApprovalTargetOption[]) {
-  return values.map(value => {
-    const option = options.find(item => item.value === value);
+  return values.map((value) => {
+    const option = options.find((item) => item.value === value);
     return {
       key: itemKey(type, value),
       type,
@@ -314,7 +352,11 @@ function flattenOrgOptions(items: ApprovalOrgTreeOption[]): ApprovalTargetOption
 function filterOrgTree(items: ApprovalOrgTreeOption[], normalized: string): ApprovalOrgTreeOption[] {
   return (items || []).reduce<ApprovalOrgTreeOption[]>((result, item) => {
     const children = item.children?.length ? filterOrgTree(item.children, normalized) : [];
-    const matched = [item.label, item.value].some(value => String(value || '').toLowerCase().includes(normalized));
+    const matched = [item.label, item.value].some((value) =>
+      String(value || '')
+        .toLowerCase()
+        .includes(normalized),
+    );
     if (matched || children.length) {
       result.push({
         ...item,
@@ -328,7 +370,7 @@ function filterOrgTree(items: ApprovalOrgTreeOption[], normalized: string): Appr
 function handleOrgCheck(_node: ApprovalOrgTreeOption, checked: { checkedKeys: Array<string | number> }) {
   tempValue.value = {
     ...tempValue.value,
-    orgIds: checked.checkedKeys.map(value => String(value)),
+    orgIds: checked.checkedKeys.map((value) => String(value)),
   };
 }
 
@@ -342,7 +384,7 @@ function normalizeValue(value: WorkflowParticipantValue): WorkflowParticipantVal
 }
 
 function normalizeList(value: unknown) {
-  if (Array.isArray(value)) return value.map(item => String(item).trim()).filter(Boolean);
+  if (Array.isArray(value)) return value.map((item) => String(item).trim()).filter(Boolean);
   if (value === undefined || value === null || value === '') return [];
   return [String(value).trim()].filter(Boolean);
 }
@@ -397,7 +439,9 @@ function typeIcon(type: ParticipantType) {
   color: var(--el-text-color-primary);
   text-align: left;
   cursor: pointer;
-  transition: border-color .16s ease, box-shadow .16s ease;
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
 }
 
 .participant-trigger:hover {
@@ -536,7 +580,9 @@ function typeIcon(type: ParticipantType) {
   color: var(--el-text-color-primary);
   text-align: left;
   cursor: pointer;
-  transition: border-color .16s ease, background-color .16s ease;
+  transition:
+    border-color 0.16s ease,
+    background-color 0.16s ease;
 }
 
 .participant-item:hover {

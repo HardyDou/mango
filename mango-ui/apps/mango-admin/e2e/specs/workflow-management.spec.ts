@@ -2191,7 +2191,7 @@ test.describe('工作流配置真实接口闭环', () => {
     const userManagementBindingAdded = ensureAdminUserManagementMenuBinding();
     const participationDeclarePermission = ensureAdminParticipationDeclarePermission();
     const token = await loginToken(request, platformTenant);
-    let assignedUsers: Array<{ token: string; userId: string; username: string }> = [];
+    let assignedUsers: Array<{ token: string; userId: string; username: string }>;
 
     try {
       const users = [];
@@ -3954,7 +3954,7 @@ test.describe('工作流配置真实接口闭环', () => {
       const workflow = await prepareActionCapabilityWorkflow(request, token, unique, keyword, roleId);
       await startLeaveProcess(request, token, workflow.definitionId, businessKey, 2, 'E2E 动作初始原因');
 
-      let tasks = await listTodoTasks(request, token, businessKey);
+      const tasks = await listTodoTasks(request, token, businessKey);
       let actionTask = tasks.find(
         (item: any) => String(item.businessKey) === businessKey && String(item.taskName).includes('动作审批'),
       );

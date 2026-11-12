@@ -1,3 +1,4 @@
+/* eslint-disable vue/one-component-per-file -- runtime host composes multiple internal Vue components. */
 import {
   createApp,
   defineComponent,
