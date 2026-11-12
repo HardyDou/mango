@@ -425,6 +425,8 @@ mango:
 5. 校验业务关键数据。
 ```
 
+测试夹具约定：在 `mango-infra-persistence-starter` 的测试 classpath 中新增 `src/test/resources/db/migration/<module>` 后，必须同步 `FlywayTestClasspathModules.ALL`。测试类用该清单为不参与当前场景的模块补 `enabled=false` 和 `skip-reason`；漏同步时，Flyway 的“模块必须完整声明”校验会让相关测试失败（Issue #1226）。
+
 ### 6.5 Cold Baseline
 
 模块历史 migration 很多时，主分支 API 制品构建将 `mango:baseline-generate` 绑定到最终 API 应用的 `prepare-package`，从模块最终 V 生成当前完整基线。Mango CLI full 后端模板已经预置该 execution；业务构建通过 `-Dmango.baseline.enabled=true` 决定是否生成 BSQL，默认 plain 构建会清理旧的 generated baseline 资源：
