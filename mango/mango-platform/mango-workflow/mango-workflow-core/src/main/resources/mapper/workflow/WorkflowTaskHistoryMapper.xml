@@ -87,10 +87,10 @@
             </choose>
         </if>
         <if test="c.createTimeBegin != null">
-            and t.CREATE_TIME_ &gt;= #{c.createTimeBegin}
+            and t.START_TIME_ &gt;= #{c.createTimeBegin}
         </if>
         <if test="c.createTimeEnd != null">
-            and t.CREATE_TIME_ &lt;= #{c.createTimeEnd}
+            and t.START_TIME_ &lt;= #{c.createTimeEnd}
         </if>
         <if test="c.endTimeBegin != null">
             and t.END_TIME_ &gt;= #{c.endTimeBegin}
@@ -141,7 +141,7 @@
                t.TASK_DEF_KEY_ as taskDefinitionKey,
                t.PROC_INST_ID_ as processInstanceId,
                t.ASSIGNEE_ as assigneeKey,
-               t.CREATE_TIME_ as createTime,
+               t.START_TIME_ as createTime,
                t.CLAIM_TIME_ as claimTime,
                t.END_TIME_ as endTime,
                t.DELETE_REASON_ as deleteReason,
@@ -171,7 +171,7 @@
                 t.END_TIME_
             </when>
             <otherwise>
-                t.CREATE_TIME_
+                t.START_TIME_
             </otherwise>
         </choose>
         <choose>

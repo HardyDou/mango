@@ -330,7 +330,7 @@ class WorkflowTaskHistoryMapperIntegrationTest {
                             LocalDateTime endTime, String deleteReason) {
         jdbcTemplate.update("insert into act_hi_taskinst "
                         + "(ID_, NAME_, TASK_DEF_KEY_, PROC_INST_ID_, PROC_DEF_ID_, ASSIGNEE_, "
-                        + "CREATE_TIME_, CLAIM_TIME_, END_TIME_, DELETE_REASON_) "
+                        + "START_TIME_, CLAIM_TIME_, END_TIME_, DELETE_REASON_) "
                         + "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 taskId, name, taskDefinitionKey, processInstanceId, "PD1", assignee,
                 createTime, claimTime, endTime, deleteReason);
@@ -351,7 +351,7 @@ class WorkflowTaskHistoryMapperIntegrationTest {
                     PROC_INST_ID_ varchar(64),
                     PROC_DEF_ID_ varchar(128),
                     ASSIGNEE_ varchar(128),
-                    CREATE_TIME_ timestamp,
+                    START_TIME_ timestamp,
                     CLAIM_TIME_ timestamp,
                     END_TIME_ timestamp,
                     DELETE_REASON_ varchar(255),

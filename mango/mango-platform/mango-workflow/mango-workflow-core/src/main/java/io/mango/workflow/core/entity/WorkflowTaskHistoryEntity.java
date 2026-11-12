@@ -37,7 +37,7 @@ public class WorkflowTaskHistoryEntity extends WorkflowBaseEntity {
     @TableField("ASSIGNEE_")
     private String assigneeKey;
 
-    @TableField("CREATE_TIME_")
+    @TableField("START_TIME_")
     private LocalDateTime createTime;
 
     @TableField("CLAIM_TIME_")
