@@ -8,7 +8,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
@@ -17,13 +16,14 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * 按业务主键批量查询任务。
+ * 按业务类型查询任务，业务主键为可选过滤条件。
  *
  * <p>查询范围由 {@link WorkflowTaskQueryScope} 决定：默认仅返回当前用户相关任务；管理员范围需要
- * {@code workflow:task:all} 权限码。业务主键同时决定租户和业务申请可见性的收敛边界。
+ * {@code workflow:task:all} 权限码。{@code businessKeys} 不传或为空表示不限业务主键，
+ * 传入时按业务主键集合进一步收窄。
  */
 @Data
-@Schema(description = "按业务主键批量查询任务")
+@Schema(description = "按业务类型查询任务，业务主键可选")
 public class WorkflowTaskBusinessPageQuery {
 
     @Schema(description = "业务类型，按业务申请表 business_type 精确匹配", example = "BAOHAN_RC_PROJECT_REVIEW")
@@ -31,8 +31,10 @@ public class WorkflowTaskBusinessPageQuery {
     @Size(max = 128, message = "业务类型长度不能超过128")
     private String businessType;
 
-    @Schema(description = "业务主键集合，数量不设上限，单个长度不超过128")
-    @NotEmpty(message = "业务主键不能为空")
+    // 字段级 @Size 满足协议模型校验契约；Integer.MAX_VALUE 表示不设置实际数量上限，
+    // 元素级注解负责逐项校验业务主键。
+    @Size(max = Integer.MAX_VALUE, message = "业务主键数量超出支持范围")
+    @Schema(description = "业务主键集合，可选；不传或为空表示不限业务主键，单个长度不超过128")
     private List<@NotBlank(message = "业务主键不能为空")
                  @Size(max = 128, message = "业务主键长度不能超过128") String> businessKeys;
 

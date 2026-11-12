@@ -41,10 +41,10 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * 按业务主键批量查询任务实现。
+ * 按业务类型查询任务实现，业务主键可选。
  *
- * <p>查询直接读取 Flowable 历史任务表并关联业务申请单，因此可以跨处理人返回同一业务主键下的全部任务，
- * 同时把租户、申请单可见性和数据范围收敛在 SQL 层完成，不做内存过滤。
+ * <p>查询直接读取 Flowable 历史任务表并关联业务申请单，因此可以跨处理人返回同一业务类型下的全部任务，
+ * 同时把租户、业务主键和数据范围收敛在 SQL 层完成，不做内存过滤。
  */
 @Slf4j
 @Service
@@ -148,7 +148,7 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
 
     private List<Long> deniedApplyIds(Long tenantId, String businessType, List<String> businessKeys) {
         WorkflowBusinessApplyAccessChecker checker = accessCheckerProvider.getIfAvailable();
-        if (checker == null || !checker.hasProvider(businessType)) {
+        if (businessKeys.isEmpty() || checker == null || !checker.hasProvider(businessType)) {
             return List.of();
         }
         List<WorkflowBusinessApplyEntity> applies = businessApplyMapper.selectList(

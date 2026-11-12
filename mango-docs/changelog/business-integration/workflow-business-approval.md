@@ -4,6 +4,8 @@
 
 ## 7. 变更影响记录
 
+- Issue #1223 将 `POST /workflow/tasks/page-by-business-key` 的 `businessKeys` 改为可选：不传或为空表示只按 `businessType`、`scope`、阶段、任务状态、处理人、时间和分页查询，`total` 按任务数统计；传入 `businessKeys` 时仍按业务主键收窄。业务列表不再需要先查业务表取候选业务键，也不会因为业务键数量上限丢数据；不传业务键时不做逐申请 `WorkflowBusinessApplyDataPermissionProvider` 收窄，范围由租户、`scope` 和权限码决定。请求与响应字段、权限码、租户隔离和数据库结构不变。
+
 - Issue #1191 为 `POST /workflow/tasks/return` 增加可选 `targetAssigneeUserId`：退回后在同一事务内把本次退回新建的唯一任务指派给指定用户（`identity_user.id` 或 `username`），目标用户必须是当前租户启用成员；不要求退回人具备目标节点候选资格或 `transfer` 动作。目标用户无效、未生成任务或新建多条任务时以 `TASK_INVALID` 失败并整体回滚。业务审批发起、通过、驳回、撤回、事件类型、权限、租户隔离和页面 key 不变。
 
 - Issue #1182 修复消息自定义按钮打开失败：工作流终态消息缺少可达兜底时，平台下发 `fallbackTargetKey=notice:site-message`，前端按「主目标 → fallbackTargetKey → 消息中心」解析，解析不到才提示原因，不再把用户停在“目标未注册或当前无权访问”。通知目标、事件类型、权限码、申请状态流转和审批接口不变；业务需要按钮直达自己的详情页时，在申请快照 `customConfig.viewPath` 配置站内路径。

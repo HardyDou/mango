@@ -149,16 +149,16 @@ mango:
 
 
 
-## 7.1 审批列表读取全部任务（Issue #1208）
+## 7.1 审批列表读取全部任务（Issue #1208 / #1223）
 
-业务列表需要"一行一个任务"（初审/复审/终审各占一行）时，用 `POST /workflow/tasks/page-by-business-key` 一次取回该批业务主键下所有申请的全部任务，不需要业务侧建任务副本表。
+业务列表需要"一行一个任务"（初审/复审/终审各占一行）时，用 `POST /workflow/tasks/page-by-business-key` 直接按业务类型读取全部任务，不需要业务侧先枚举业务主键，也不需要建任务副本表。
 
 请求要点：
 
 - `businessType`：按 `workflow_business_apply.business_type` 精确匹配。取业务适配器实际投放的值，例如 `BAOHAN_RC_PROJECT_REVIEW`；平台不校验命名风格，也不做别名映射。
-- `businessKeys`：必填、数量不设上限。业务表先分页，再把当前页的业务主键批量传入即可。
+- `businessKeys`：可选，不传或为空表示不限业务主键。只有调用方已经明确业务对象范围时才传入，不需要为了列表请求先查业务表取候选业务键。
 - `scope`：`SELF`（默认，办理人是当前用户或候选用户/候选组命中）、`ALL`（服务端校验 `workflow:task:all` 权限码，未安装授权中心时拒绝）、`ORG`（本版直接报错）。数据范围由调用方显式声明，平台不读取角色数据范围配置。
-- 不传 `page` / `size` 时按 `mango.workflow.task-query.unpaged-max-rows`（默认 2000）一次性返回；`total` 始终是过滤后的真实总数，用 `list.size() < total` 判断是否需要改用分页拉取。
+- 不传 `page` / `size` 时按 `mango.workflow.task-query.unpaged-max-rows`（默认 2000）一次性返回；`total` 始终是过滤后的真实总数，用 `list.size() < total` 判断是否需要改用分页拉取。业务列表应显式传 `page` / `size`，`total` 按任务数计算，`list` 一行一个任务。
 
 引擎列名事实：历史任务表的创建时间是 `ACT_HI_TASKINST.START_TIME_`，`CREATE_TIME_` 只存在于运行态 `ACT_RU_TASK`。
 
@@ -182,7 +182,7 @@ mango:
 
 ```bash
 mvn -f mango/pom.xml -pl mango-platform/mango-workflow -am test
-# 按业务主键查询任务的 H2 集成测试与范围规则单测
+# 按业务类型查询任务的 H2 集成测试与范围规则单测
 mvn -f mango/pom.xml -pl mango-platform/mango-workflow/mango-workflow-core \
   -Dtest='WorkflowTaskHistoryMapperIntegrationTest,WorkflowTaskBusinessQueryServiceTest' test
 pnpm -F @mango/workflow build
@@ -204,6 +204,8 @@ pnpm -F @mango/workflow-business-example build
 ## 10. 历史变更
 
 详细版本影响见[业务审批历史变更索引](../../changelog/business-integration/workflow-business-approval.md)。
+
+> Issue #1223 影响说明：`POST /workflow/tasks/page-by-business-key` 的 `businessKeys` 改为可选；不传或为空表示不限业务主键，`total` 按任务数统计。业务列表不再需要先查业务表取候选业务键，也不会因为业务键数量上限丢数据。传入 `businessKeys` 时行为与 #1208 兼容；不传时业务申请可见性不做逐申请 Provider 收窄，由租户、`scope` 和权限码决定。
 
 > Issue #1208 影响说明：新增 `POST /workflow/tasks/page-by-business-key`，业务列表可读取业务主键下的全部任务（在途、已办理、已终止）。不修改数据库结构，不改变 `todo` / `done` / `copied` 语义；新增配置项 `mango.workflow.task-query.unpaged-max-rows`。
 
