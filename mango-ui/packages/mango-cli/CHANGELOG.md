@@ -1,3 +1,18 @@
+## 1.4.4 - 2026-11-12
+
+### Added
+
+- Document the business quality-gate overrides: `mango.check.reportOnlyRules` demotes specific rules to report-only, and `mango.check.checkstyle.cyclomaticComplexityMax` / `mango.check.checkstyle.fileLengthMax` change thresholds without copying rule files.
+
+### Changed
+
+- Lock the CLI Maven matrix to Maven `1.5.0` and the generated 201-coordinate Maven/docs release closure.
+- Align the CLI PMO baseline with `@mango/pmo@1.5.0`, whose required branch-protection contexts are `pr-contract-check` and `pmo-doc-check`.
+
+### Upgrade Notes
+
+- Upgrade `@mango/cli@1.4.4` together with the complete Maven/docs `1.5.0` tuple and `@mango/pmo@1.5.0`; do not mix release batches.
+
 ## 1.4.3 - 2026-11-11
 
 ### Changed
