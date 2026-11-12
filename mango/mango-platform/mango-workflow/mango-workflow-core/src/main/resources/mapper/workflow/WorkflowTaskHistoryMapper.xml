@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.workflow.core.mapper.WorkflowTaskHistoryMapper">
+
+    <sql id="taskFrom">
+        from ACT_HI_TASKINST t
+        join workflow_business_apply a on a.process_instance_id = t.PROC_INST_ID_
+    </sql>
+
+    <sql id="taskWhere">
+        where a.tenant_id = #{c.tenantId}
+          and a.business_type = #{c.businessType}
+          and a.business_key in
+          <foreach collection="c.businessKeys" item="businessKey" open="(" separator="," close=")">
+              #{businessKey}
+          </foreach>
+        <if test="c.deniedApplyIds != null and c.deniedApplyIds.size() > 0">
+            and a.id not in
+            <foreach collection="c.deniedApplyIds" item="deniedApplyId" open="(" separator="," close=")">
+                #{deniedApplyId}
+            </foreach>
+        </if>
+        <if test="c.taskDefinitionKeys != null and c.taskDefinitionKeys.size() > 0">
+            and t.TASK_DEF_KEY_ in
+            <foreach collection="c.taskDefinitionKeys" item="taskDefinitionKey" open="(" separator="," close=")">
+                #{taskDefinitionKey}
+            </foreach>
+        </if>
+        <if test="c.assigneeIdentifiers != null and c.assigneeIdentifiers.size() > 0">
+            and (
+                t.ASSIGNEE_ in
+                <foreach collection="c.assigneeIdentifiers" item="assigneeIdentifier" open="(" separator="," close=")">
+                    #{assigneeIdentifier}
+                </foreach>
+                <if test="c.assigneeIds != null and c.assigneeIds.size() > 0">
+                    or exists (
+                        select 1 from identity_user iu
+                        where iu.id in
+                        <foreach collection="c.assigneeIds" item="assigneeId" open="(" separator="," close=")">
+                            #{assigneeId}
+                        </foreach>
+                        and iu.username = t.ASSIGNEE_
+                    )
+                </if>
+            )
+        </if>
+        <if test="c.includeTodo == false or c.includeDone == false or c.includeCanceled == false">
+            and (
+            <trim prefixOverrides="or">
+                <if test="c.includeTodo">or (t.END_TIME_ is null and t.DELETE_REASON_ is null)</if>
+                <if test="c.includeDone">or (t.END_TIME_ is not null and t.DELETE_REASON_ is null)</if>
+                <if test="c.includeCanceled">or t.DELETE_REASON_ is not null</if>
+            </trim>
+            )
+        </if>
+        <if test="c.assigneeRequired != null">
+            <choose>
+                <when test="c.assigneeRequired">and t.ASSIGNEE_ is not null</when>
+                <otherwise>and t.ASSIGNEE_ is null</otherwise>
+            </choose>
+        </if>
+        <if test="c.applyStatuses != null and c.applyStatuses.size() > 0">
+            and a.apply_status in
+            <foreach collection="c.applyStatuses" item="applyStatus" open="(" separator="," close=")">
+                #{applyStatus}
+            </foreach>
+        </if>
+        <if test="c.returned != null">
+            <choose>
+                <when test="c.returned">
+                    and exists (
+                        select 1 from workflow_task_record r
+                        where r.tenant_id = a.tenant_id
+                          and r.process_instance_id = a.process_instance_id
+                          and r.action = 'RETURN'
+                    )
+                </when>
+                <otherwise>
+                    and not exists (
+                        select 1 from workflow_task_record r
+                        where r.tenant_id = a.tenant_id
+                          and r.process_instance_id = a.process_instance_id
+                          and r.action = 'RETURN'
+                    )
+                </otherwise>
+            </choose>
+        </if>
+        <if test="c.createTimeBegin != null">
+            and t.CREATE_TIME_ &gt;= #{c.createTimeBegin}
+        </if>
+        <if test="c.createTimeEnd != null">
+            and t.CREATE_TIME_ &lt;= #{c.createTimeEnd}
+        </if>
+        <if test="c.endTimeBegin != null">
+            and t.END_TIME_ &gt;= #{c.endTimeBegin}
+        </if>
+        <if test="c.endTimeEnd != null">
+            and t.END_TIME_ &lt;= #{c.endTimeEnd}
+        </if>
+        <if test="c.keyword != null and c.keyword != ''">
+            and (t.NAME_ like #{c.keyword} or t.TASK_DEF_KEY_ like #{c.keyword})
+        </if>
+        <if test="c.selfScope">
+            and (
+                t.ASSIGNEE_ in
+                <foreach collection="c.selfIdentifiers" item="selfIdentifier" open="(" separator="," close=")">
+                    #{selfIdentifier}
+                </foreach>
+                or exists (
+                    select 1 from ACT_HI_IDENTITYLINK il
+                    where il.TASK_ID_ = t.ID_
+                      and il.TYPE_ = 'candidate'
+                      and (
+                          il.USER_ID_ in
+                          <foreach collection="c.selfIdentifiers" item="selfIdentifier" open="(" separator="," close=")">
+                              #{selfIdentifier}
+                          </foreach>
+                          <if test="c.selfCandidateGroups != null and c.selfCandidateGroups.size() > 0">
+                              or il.GROUP_ID_ in
+                              <foreach collection="c.selfCandidateGroups" item="selfGroup"
+                                       open="(" separator="," close=")">
+                                  #{selfGroup}
+                              </foreach>
+                          </if>
+                      )
+                )
+            )
+        </if>
+    </sql>
+
+    <select id="countTasks" resultType="long">
+        select count(1)
+        <include refid="taskFrom"/>
+        <include refid="taskWhere"/>
+    </select>
+
+    <select id="selectTasks" resultType="io.mango.workflow.core.model.WorkflowTaskHistoryRow">
+        select t.ID_ as taskId,
+               t.NAME_ as taskName,
+               t.TASK_DEF_KEY_ as taskDefinitionKey,
+               t.PROC_INST_ID_ as processInstanceId,
+               t.ASSIGNEE_ as assigneeKey,
+               t.CREATE_TIME_ as createTime,
+               t.CLAIM_TIME_ as claimTime,
+               t.END_TIME_ as endTime,
+               t.DELETE_REASON_ as deleteReason,
+               a.id as applyId,
+               a.business_key as businessKey,
+               a.apply_status as applyStatus,
+               a.process_name as processName,
+               a.process_definition_key as processKey,
+               t.PROC_DEF_ID_ as processDefinitionId,
+               coalesce(a.applicant_dept_id, a.org_id) as orgId,
+               case when exists (
+                        select 1 from workflow_task_record r
+                        where r.tenant_id = a.tenant_id
+                          and r.process_instance_id = a.process_instance_id
+                          and r.action = 'RETURN'
+                    ) then 1 else 0 end as returned
+        <include refid="taskFrom"/>
+        <include refid="taskWhere"/>
+        order by
+        <choose>
+            <when test="c.sortColumn == 'claimTime'">
+                case when t.CLAIM_TIME_ is null then 1 else 0 end asc,
+                t.CLAIM_TIME_
+            </when>
+            <when test="c.sortColumn == 'endTime'">
+                case when t.END_TIME_ is null then 1 else 0 end asc,
+                t.END_TIME_
+            </when>
+            <otherwise>
+                t.CREATE_TIME_
+            </otherwise>
+        </choose>
+        <choose>
+            <when test="c.sortDirection == 'asc'">asc</when>
+            <otherwise>desc</otherwise>
+        </choose>
+        , t.ID_ asc
+        limit #{limit} offset #{offset}
+    </select>
+
+    <select id="selectCandidateLinks" resultType="io.mango.workflow.core.model.WorkflowTaskIdentityLinkRow">
+        select links.TASK_ID_ as taskId,
+               links.USER_ID_ as userId,
+               links.GROUP_ID_ as groupId
+        from (
+            select TASK_ID_, USER_ID_, GROUP_ID_
+            from ACT_HI_IDENTITYLINK
+            where TYPE_ = 'candidate'
+              and TASK_ID_ in
+            <foreach collection="taskIds" item="taskId" open="(" separator="," close=")">
+                #{taskId}
+            </foreach>
+            union
+            select TASK_ID_, USER_ID_, GROUP_ID_
+            from ACT_RU_IDENTITYLINK
+            where TYPE_ = 'candidate'
+              and TASK_ID_ in
+            <foreach collection="taskIds" item="taskId" open="(" separator="," close=")">
+                #{taskId}
+            </foreach>
+        ) links
+    </select>
+</mapper>

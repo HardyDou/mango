@@ -13,6 +13,7 @@ import io.mango.workflow.api.command.RejectWorkflowTaskCommand;
 import io.mango.workflow.api.command.ReturnWorkflowTaskCommand;
 import io.mango.workflow.api.command.SaveWorkflowTaskDraftCommand;
 import io.mango.workflow.api.command.TransferWorkflowTaskCommand;
+import io.mango.workflow.api.query.WorkflowTaskBusinessPageQuery;
 import io.mango.workflow.api.query.WorkflowTaskPageQuery;
 import io.mango.workflow.api.vo.WorkflowMyTaskSummaryVO;
 import io.mango.workflow.api.vo.WorkflowProcessDetailVO;
@@ -21,6 +22,7 @@ import io.mango.workflow.api.vo.WorkflowTaskCompleteResultVO;
 import io.mango.workflow.api.vo.WorkflowTaskDetailVO;
 import io.mango.workflow.api.vo.WorkflowTaskSummaryVO;
 import io.mango.workflow.api.vo.WorkflowTaskVO;
+import io.mango.workflow.core.service.IWorkflowTaskBusinessQueryService;
 import io.mango.workflow.core.service.IWorkflowTaskRuntimeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -47,6 +49,7 @@ import org.springframework.validation.annotation.Validated;
 public class WorkflowTaskController implements WorkflowTaskRuntimeApi {
 
     private final IWorkflowTaskRuntimeService workflowTaskRuntimeService;
+    private final IWorkflowTaskBusinessQueryService workflowTaskBusinessQueryService;
 
     @GetMapping("/todo")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:list")
@@ -208,6 +211,16 @@ public class WorkflowTaskController implements WorkflowTaskRuntimeApi {
     @Override
     public R<PageResult<WorkflowTaskVO>> copied(@ParameterObject WorkflowTaskPageQuery query) {
         return R.ok(workflowTaskRuntimeService.copied(query));
+    }
+
+    @PostMapping("/page-by-business-key")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:list")
+    @Operation(summary = "按业务主键批量查询任务",
+            description = "按业务类型与业务主键集合返回全部任务，含在途、已办理和已终止；默认只返回当前用户相关任务，"
+                    + "scope=ALL 需要 workflow:task:all 权限码，scope=ORG 当前版本不支持")
+    @Override
+    public R<PageResult<WorkflowTaskVO>> pageByBusinessKey(@RequestBody WorkflowTaskBusinessPageQuery query) {
+        return R.ok(workflowTaskBusinessQueryService.pageByBusinessKey(query));
     }
 
     @PostMapping("/copied/read")

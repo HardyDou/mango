@@ -45,6 +45,10 @@
             <artifactId>mango-identity-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.mango.platform.authorization</groupId>
+            <artifactId>mango-authorization-api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.mango.infra.event</groupId>
             <artifactId>mango-infra-event-api</artifactId>
             <version>${project.version}</version>

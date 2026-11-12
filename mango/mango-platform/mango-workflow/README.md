@@ -536,6 +536,27 @@ mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-comm
 - 管理端流程定义、版本、发布、启停、任务流转和业务上下文发起不受隐藏入口影响。
 - 启动入口可见性不是权限控制；业务模块仍需校验业务发起权限、业务状态、快照和幂等。
 
+### 6.1 按业务主键查询任务的范围规则
+
+`POST /workflow/tasks/page-by-business-key` 用于业务列表按业务主键批量读取全部任务，返回在途、已办理和已终止任务，一行对应一个任务。数据范围分三层：
+
+| 层 | 规则 |
+|----|------|
+| 租户 | 取 `workflow_business_apply.tenant_id`，SQL 层强制；缺少租户上下文直接报错 |
+| 接口权限码 | `workflow:task:list`，保证只有本人范围权限的用户也能使用 |
+| 数据范围 | `SELF`（默认）= 办理人是当前用户或当前用户是候选人或候选组匹配；`ALL` = 不做行级过滤，但服务端校验 `workflow:task:all` 权限码；`ORG` 当前版本拒绝 |
+
+约束：
+
+- `businessKeys` 必填，数量不设上限；平台以一条只读 SQL 完成过滤、排序和分页。
+- 不传 `page` / `size` 时按 `mango.workflow.task-query.unpaged-max-rows` 一次性返回，`total` 始终是过滤后的真实总数，用 `list.size() < total` 判断是否需要改用分页。
+- `deptIds` 仅在 `scope=ORG` 时合法；`scope=SELF` / `ALL` 传入 `deptIds` 会被拒绝，避免调用方误以为已按组织过滤。
+- 业务申请可见性只在业务模块注册了 `WorkflowBusinessApplyDataPermissionProvider` 时参与收窄；未注册时本接口不做"申请人本人"兜底，因为该兜底属于按 ID 读详情的语义，与批量管理视图不兼容。
+- 排序 `NULL` 归尾：`endTime`、`claimTime` 为空的任务在 `asc` 和 `desc` 下都排在最后。
+- `returned` 表示该申请是否发生过退回（依据 `workflow_task_record.action = 'RETURN'`）。退回不改变 `apply_status`，因此"退回待修改"用 `applyStatus=IN_APPROVAL + returned=true` 表达，不新增平台状态值。
+
+该查询直接读取 Flowable 历史任务表 `ACT_HI_TASKINST`，并关联 `workflow_business_apply`、`workflow_task_record`、`ACT_HI_IDENTITYLINK`、`ACT_RU_IDENTITYLINK`。它是只读查询，不改引擎表结构；Flowable 升级后必须回归 `WorkflowTaskHistoryMapperIntegrationTest` 与引擎 API 结果的一致性。
+
 ## 7. 配置说明
 
 配置写在应用的 `application.yml` 或对应环境配置文件中。
@@ -570,6 +591,7 @@ mango:
 |------|--------|------|
 | `mango.workflow.enabled` | `true` | 是否启用 workflow 自动配置。为 `false` 时不注册 mapper、service、controller 和初始化器。 |
 | `mango.resource.registry.demo-enabled` | `false` | 是否额外扫描 `META-INF/mango/demo/`。只在空白开发或演示环境开启。 |
+| `mango.workflow.task-query.unpaged-max-rows` | `2000` | 按业务主键查询任务时不传分页参数的单次返回上限；超出部分调用方改用 `page` / `size` 拉取。 |
 
 ## 9. 返回字段
 
@@ -651,6 +673,7 @@ Workflow 参数校验约束统一由 `mango-workflow-api` 的 `XxxApi` 契约声
 | 待办统计 | `GET /workflow/tasks/todo/summary` | `workflow:task:list` |
 | 我的任务统计 | `GET /workflow/tasks/my/summary` | `workflow:task:list` |
 | 抄送列表 | `GET /workflow/tasks/copied` | `workflow:task:list` |
+| 按业务主键批量查询任务 | `POST /workflow/tasks/page-by-business-key` | `workflow:task:list`；`scope=ALL` 还需要 `workflow:task:all` |
 | 抄送已阅 | `POST /workflow/tasks/copied/read` | `workflow:task:read-copied` |
 
 `POST /workflow/tasks/complete`、`reject`、`save`、`claim`、`unclaim` 保持兼容，只返回布尔成功结果。业务审批页在办理后需要立即刷新业务申请状态、当前任务、当前办理人、认领状态或判断流程是否结束时，优先使用对应的 `*-result` 接口；返回体包含已处理任务、流程实例、是否结束、业务申请状态和刷新后的当前任务快照。

@@ -10,6 +10,7 @@ import io.mango.workflow.api.command.RejectWorkflowTaskCommand;
 import io.mango.workflow.api.command.ReturnWorkflowTaskCommand;
 import io.mango.workflow.api.command.SaveWorkflowTaskDraftCommand;
 import io.mango.workflow.api.command.TransferWorkflowTaskCommand;
+import io.mango.workflow.api.query.WorkflowTaskBusinessPageQuery;
 import io.mango.workflow.api.query.WorkflowTaskPageQuery;
 import io.mango.workflow.api.vo.WorkflowMyTaskSummaryVO;
 import io.mango.workflow.api.vo.WorkflowProcessDetailVO;
@@ -33,6 +34,18 @@ public interface WorkflowTaskRuntimeApi {
     R<PageResult<WorkflowTaskVO>> done(@Valid WorkflowTaskPageQuery query);
 
     R<PageResult<WorkflowTaskVO>> copied(@Valid WorkflowTaskPageQuery query);
+
+    /**
+     * 按业务主键批量查询全部任务。
+     *
+     * <p>返回该批业务主键下所有申请的全部任务，包含在途、已办理和已终止。数据范围由查询对象决定：
+     * 默认 {@code SELF} 仅返回当前用户相关任务；{@code ALL} 需要 {@code workflow:task:all} 权限码；
+     * {@code ORG} 当前版本不支持。租户隔离与业务申请可见性始终生效。
+     *
+     * @param query 业务主键批量查询条件
+     * @return 任务分页结果；不传分页参数时返回全部结果，{@code total} 为过滤后总数
+     */
+    R<PageResult<WorkflowTaskVO>> pageByBusinessKey(@Valid WorkflowTaskBusinessPageQuery query);
 
     R<WorkflowTaskSummaryVO> summary();
 

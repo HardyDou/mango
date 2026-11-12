@@ -67,6 +67,15 @@ public class WorkflowBusinessApplyAccessChecker {
                 apply.getApplicantId());
     }
 
+    /** 判断该业务类型是否已注册数据权限 Provider，供管理视图区分「Provider 缺失」与「Provider 拒绝」两类情况。 */
+    public boolean hasProvider(String businessType) {
+        String normalizedBusinessType = normalize(businessType);
+        if (!StringUtils.hasText(normalizedBusinessType)) {
+            return false;
+        }
+        return providers.orderedStream().anyMatch(provider -> supports(provider, normalizedBusinessType));
+    }
+
     private boolean supports(WorkflowBusinessApplyDataPermissionProvider provider, String businessType) {
         return provider != null && provider.supports(businessType);
     }

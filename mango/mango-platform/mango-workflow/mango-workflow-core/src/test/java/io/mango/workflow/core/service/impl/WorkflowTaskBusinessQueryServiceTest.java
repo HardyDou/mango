@@ -1,0 +1,263 @@
+package io.mango.workflow.core.service.impl;
+
+import io.mango.common.exception.BizException;
+import io.mango.common.vo.PageResult;
+import io.mango.infra.context.api.MangoContextHolder;
+import io.mango.infra.context.api.MangoContextSnapshot;
+import io.mango.workflow.api.enums.WorkflowApplyStatus;
+import io.mango.workflow.api.enums.WorkflowTaskClaimStatus;
+import io.mango.workflow.api.enums.WorkflowTaskQueryScope;
+import io.mango.workflow.api.enums.WorkflowTaskRuntimeStatus;
+import io.mango.workflow.api.query.WorkflowTaskBusinessPageQuery;
+import io.mango.workflow.api.vo.WorkflowTaskVO;
+import io.mango.workflow.core.config.WorkflowTaskQueryProperties;
+import io.mango.workflow.core.engine.WorkflowCandidateGroupProvider;
+import io.mango.workflow.core.identity.WorkflowAssigneeIdentityService;
+import io.mango.workflow.core.mapper.WorkflowBusinessApplyMapper;
+import io.mango.workflow.core.mapper.WorkflowTaskHistoryMapper;
+import io.mango.workflow.core.model.WorkflowTaskHistoryCriteria;
+import io.mango.workflow.core.model.WorkflowTaskHistoryRow;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.springframework.beans.factory.ObjectProvider;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+/**
+ * 按业务主键查询任务的参数与范围规则测试。
+ */
+class WorkflowTaskBusinessQueryServiceTest {
+
+    private WorkflowTaskHistoryMapper taskHistoryMapper;
+    private WorkflowBusinessApplyMapper businessApplyMapper;
+    private WorkflowTaskQueryAuthorizer authorizer;
+    private WorkflowAssigneeIdentityService assigneeIdentityService;
+    private WorkflowCandidateGroupProvider candidateGroupProvider;
+    private WorkflowTaskQueryProperties properties;
+    private WorkflowTaskBusinessQueryService service;
+
+    @BeforeEach
+    void setUp() {
+        taskHistoryMapper = mock(WorkflowTaskHistoryMapper.class);
+        businessApplyMapper = mock(WorkflowBusinessApplyMapper.class);
+        authorizer = mock(WorkflowTaskQueryAuthorizer.class);
+        assigneeIdentityService = mock(WorkflowAssigneeIdentityService.class);
+        candidateGroupProvider = mock(WorkflowCandidateGroupProvider.class);
+        properties = new WorkflowTaskQueryProperties();
+        properties.setUnpagedMaxRows(2000);
+        @SuppressWarnings("unchecked")
+        ObjectProvider<WorkflowBusinessApplyAccessChecker> checkerProvider = mock(ObjectProvider.class);
+        when(checkerProvider.getIfAvailable()).thenReturn(null);
+        when(candidateGroupProvider.currentCandidateGroups()).thenReturn(List.of("ROLE_REVIEWER"));
+        service = new WorkflowTaskBusinessQueryService(taskHistoryMapper, businessApplyMapper, checkerProvider,
+                authorizer, assigneeIdentityService, candidateGroupProvider, properties);
+        MangoContextHolder.clear();
+        MangoContextHolder.set(MangoContextSnapshot.empty()
+                .withSecurity(1001L, "1", "alice", "default", "USER", "ORG", 1001L, "token"));
+    }
+
+    @AfterEach
+    void tearDown() {
+        MangoContextHolder.clear();
+    }
+
+    @Test
+    void rejectsOrgScope() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.ORG);
+
+        assertThatThrownBy(() -> service.pageByBusinessKey(query))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("指定组织范围暂不支持");
+    }
+
+    @Test
+    void rejectsDeptIdsOutsideOrgScope() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        query.setDeptIds(List.of(200L));
+
+        assertThatThrownBy(() -> service.pageByBusinessKey(query))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("deptIds");
+    }
+
+    @Test
+    void rejectsPageWithoutSize() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        query.setPage(1);
+
+        assertThatThrownBy(() -> service.pageByBusinessKey(query))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("分页参数必须成对出现");
+    }
+
+    @Test
+    void rejectsInvalidTimeRange() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        query.setCreateTimeBegin(LocalDateTime.of(2026, 2, 1, 0, 0));
+        query.setCreateTimeEnd(LocalDateTime.of(2026, 1, 1, 0, 0));
+
+        assertThatThrownBy(() -> service.pageByBusinessKey(query))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("时间区间非法");
+    }
+
+    @Test
+    void rejectsAllScopeWithoutPermission() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.ALL);
+        when(authorizer.canQueryAll()).thenReturn(false);
+
+        assertThatThrownBy(() -> service.pageByBusinessKey(query))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("无权查询全量任务");
+        verify(taskHistoryMapper, never()).selectTasks(any(), anyInt(), anyLong());
+    }
+
+    @Test
+    void queriesAllScopeWithoutSelfFilterWhenPermissionGranted() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.ALL);
+        when(authorizer.canQueryAll()).thenReturn(true);
+        when(taskHistoryMapper.countTasks(any())).thenReturn(1L);
+        when(taskHistoryMapper.selectTasks(any(), anyInt(), anyLong())).thenReturn(List.of(row()));
+
+        PageResult<WorkflowTaskVO> result = service.pageByBusinessKey(query);
+
+        ArgumentCaptor<WorkflowTaskHistoryCriteria> captor =
+                ArgumentCaptor.forClass(WorkflowTaskHistoryCriteria.class);
+        verify(taskHistoryMapper).selectTasks(captor.capture(), eq(2000), eq(0L));
+        assertThat(captor.getValue().isSelfScope()).isFalse();
+        assertThat(captor.getValue().getSelfIdentifiers()).isEmpty();
+        assertThat(result.getTotal()).isEqualTo(1L);
+        assertThat(result.getList()).hasSize(1);
+        assertThat(result.getList().get(0).getBusinessKey()).isEqualTo("RC1");
+        assertThat(result.getList().get(0).getStatus()).isEqualTo(WorkflowTaskRuntimeStatus.DONE.name());
+        assertThat(result.getList().get(0).getClaimStatus()).isEqualTo(WorkflowTaskClaimStatus.ASSIGNED);
+    }
+
+    @Test
+    void appliesSelfScopeWithUserAndCandidateGroups() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        when(taskHistoryMapper.countTasks(any())).thenReturn(0L);
+
+        PageResult<WorkflowTaskVO> result = service.pageByBusinessKey(query);
+
+        ArgumentCaptor<WorkflowTaskHistoryCriteria> captor =
+                ArgumentCaptor.forClass(WorkflowTaskHistoryCriteria.class);
+        verify(taskHistoryMapper).countTasks(captor.capture());
+        assertThat(captor.getValue().isSelfScope()).isTrue();
+        assertThat(captor.getValue().getSelfIdentifiers()).containsExactly("alice", "1001");
+        assertThat(captor.getValue().getSelfCandidateGroups()).containsExactly("ROLE_REVIEWER");
+        assertThat(result.getList()).isEmpty();
+        assertThat(result.getTotal()).isZero();
+        verify(taskHistoryMapper, never()).selectTasks(any(), anyInt(), anyLong());
+    }
+
+    @Test
+    void mapsStatusesAndClaimStatusesToSqlFlags() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        query.setStatuses(List.of(WorkflowTaskRuntimeStatus.TODO));
+        query.setClaimStatuses(List.of(WorkflowTaskClaimStatus.UNCLAIMED));
+        query.setApplyStatuses(List.of(WorkflowApplyStatus.WITHDRAWN));
+        query.setReturned(Boolean.TRUE);
+        when(taskHistoryMapper.countTasks(any())).thenReturn(0L);
+
+        service.pageByBusinessKey(query);
+
+        ArgumentCaptor<WorkflowTaskHistoryCriteria> captor =
+                ArgumentCaptor.forClass(WorkflowTaskHistoryCriteria.class);
+        verify(taskHistoryMapper).countTasks(captor.capture());
+        WorkflowTaskHistoryCriteria criteria = captor.getValue();
+        assertThat(criteria.isIncludeTodo()).isTrue();
+        assertThat(criteria.isIncludeDone()).isFalse();
+        assertThat(criteria.isIncludeCanceled()).isFalse();
+        assertThat(criteria.getAssigneeRequired()).isFalse();
+        assertThat(criteria.getApplyStatuses()).containsExactly("WITHDRAWN");
+        assertThat(criteria.getReturned()).isTrue();
+        assertThat(criteria.getKeyword()).isNull();
+    }
+
+    @Test
+    void honoursUnpagedLimitAndPagedOffset() {
+        WorkflowTaskBusinessPageQuery unpaged = query(WorkflowTaskQueryScope.SELF);
+        when(taskHistoryMapper.countTasks(any())).thenReturn(3000L);
+        when(taskHistoryMapper.selectTasks(any(), anyInt(), anyLong())).thenReturn(List.of());
+
+        PageResult<WorkflowTaskVO> unpagedResult = service.pageByBusinessKey(unpaged);
+
+        verify(taskHistoryMapper).selectTasks(any(), eq(2000), eq(0L));
+        assertThat(unpagedResult.getTotal()).isEqualTo(3000L);
+        assertThat(unpagedResult.getSize()).isZero();
+
+        WorkflowTaskBusinessPageQuery paged = query(WorkflowTaskQueryScope.SELF);
+        paged.setPage(3);
+        paged.setSize(20);
+        when(taskHistoryMapper.countTasks(any())).thenReturn(50L);
+
+        PageResult<WorkflowTaskVO> pagedResult = service.pageByBusinessKey(paged);
+
+        verify(taskHistoryMapper).selectTasks(any(), eq(20), eq(40L));
+        assertThat(pagedResult.getPage()).isEqualTo(3);
+        assertThat(pagedResult.getSize()).isEqualTo(20);
+        assertThat(pagedResult.getTotal()).isEqualTo(50L);
+    }
+
+    @Test
+    void keepsNullEndTimeAndCanceledReasonInResponse() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        WorkflowTaskHistoryRow canceled = row();
+        canceled.setEndTime(null);
+        canceled.setDeleteReason("审批驳回");
+        when(taskHistoryMapper.countTasks(any())).thenReturn(1L);
+        when(taskHistoryMapper.selectTasks(any(), anyInt(), anyLong())).thenReturn(List.of(canceled));
+
+        PageResult<WorkflowTaskVO> result = service.pageByBusinessKey(query);
+
+        WorkflowTaskVO vo = result.getList().get(0);
+        assertThat(vo.getStatus()).isEqualTo(WorkflowTaskRuntimeStatus.CANCELED.name());
+        assertThat(vo.getDeleteReason()).isEqualTo("审批驳回");
+        assertThat(vo.getEndTime()).isNull();
+        assertThat(vo.getReturned()).isTrue();
+    }
+
+    private WorkflowTaskBusinessPageQuery query(WorkflowTaskQueryScope scope) {
+        WorkflowTaskBusinessPageQuery query = new WorkflowTaskBusinessPageQuery();
+        query.setBusinessType("BAOHAN_RC_PROJECT_REVIEW");
+        query.setBusinessKeys(List.of("RC1"));
+        query.setScope(scope);
+        return query;
+    }
+
+    private WorkflowTaskHistoryRow row() {
+        WorkflowTaskHistoryRow row = new WorkflowTaskHistoryRow();
+        row.setTaskId("T1");
+        row.setTaskName("初审");
+        row.setTaskDefinitionKey("FIRST_REVIEW");
+        row.setProcessInstanceId("P1");
+        row.setAssigneeKey("alice");
+        row.setCreateTime(LocalDateTime.of(2026, 1, 1, 10, 0));
+        row.setClaimTime(LocalDateTime.of(2026, 1, 1, 10, 0, 30));
+        row.setEndTime(LocalDateTime.of(2026, 1, 1, 11, 0));
+        row.setApplyId(10L);
+        row.setBusinessKey("RC1");
+        row.setApplyStatus("IN_APPROVAL");
+        row.setProcessName("项目审批");
+        row.setProcessKey("rc_project_review");
+        row.setProcessDefinitionId("PD1");
+        row.setOrgId(200L);
+        row.setReturned(Boolean.TRUE);
+        return row;
+    }
+}
