@@ -27,7 +27,7 @@
     ],
     "fixed": {
       "documentType": "technical-design",
-      "pmoVersion": "1.5.0",
+      "pmoVersion": "1.6.0",
       "schemaRevision": "1"
     },
     "historicalPmoVersions": [
@@ -51,7 +51,8 @@
       "1.4.6",
       "1.4.7",
       "1.4.8",
-      "1.4.9"
+      "1.4.9",
+      "1.5.0"
     ]
   },
   "localPrefixes": [
