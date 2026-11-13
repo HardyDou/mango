@@ -1,6 +1,6 @@
 ## v2026.11.14-maven-1.8.0-workflow-affinity-scope-release - Mango Maven/docs 1.8.0 node affinity scope release - 2026-11-14
 
-Status: `PENDING`. Release plan digest `e96fbbc2029eba855bf0a5fbdb47bf1d2278bc324ec58dd66e1d5ca4472ee8e0`; Maven/npm publication, consume verification, Tag and GitHub Release remain pending.
+Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `e96fbbc2029eba855bf0a5fbdb47bf1d2278bc324ec58dd66e1d5ca4472ee8e0`; prepared candidate `e9fc4422986cd27c04ea55617ee99e40e78e0dbc2d15682e456d99b87dbb587e` completed publication and consume verification for 5 npm packages and 201 Maven coordinates. Tag and GitHub Release were created and verified.
 
 ### Pull Requests
 
@@ -71,8 +71,8 @@ Status: `PENDING`. Release plan digest `e96fbbc2029eba855bf0a5fbdb47bf1d2278bc32
 - Integration tests cover the business application service persisting and trimming `affinityKey`, the process service forwarding it, and runtime selection across instance, business-key and affinity-key layers with candidate filtering.
 - The frontend designer test asserts the reuse-scope control renders with the expected options, and the workflow package builds with an additive public API.
 - `catalog:check` reports a consistent Catalog projection on the source commit and the release plan re-computes 201 coordinates with matching topology.
-- The Maven reactor and docs bundle are built once from the sealed candidate; all 201 coordinates are checked in publish and consume registries with matching checksums.
-- A clean consumer resolves Maven `1.8.0`, `@mango/workflow@1.2.0` and `@mango/cli@1.4.7` from the consume registries and completes the pure consume-registry verification.
+- The Maven reactor and docs bundle were built once from the sealed candidate; all 201 coordinates were checked in publish and consume registries with matching checksums.
+- A clean consumer resolved Maven `1.8.0`, `@mango/workflow@1.2.0` and `@mango/cli@1.4.7` from the consume registries and completed the pure consume-registry verification.
 
 ### Rollback
 
