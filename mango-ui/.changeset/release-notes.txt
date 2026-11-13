@@ -1,87 +1,83 @@
 ## Pull Requests
 
-- Added: [PR #1238](https://github.com/HardyDou/mango/pull/1238) Added `POST /workflow/tasks/trace-by-business-key`, which returns every task-level flow record of the instances behind a business key with optional operator, department, action and time filters. Packages: the complete Maven/docs `1.7.0` tuple including `io.mango.platform.workflow:mango-workflow-{api,core,starter,starter-remote}:1.7.0`, and `@mango/workflow@1.1.0`. Business Adaptation: upgrade the tuple, grant `workflow:task:list`, and resolve the business key on the server before calling the trace endpoint because the endpoint performs no row-level permission check.
-- Added: [PR #1240](https://github.com/HardyDou/mango/pull/1240) Merged withdrawals into the same flow timeline: `WITHDRAW` rows from `workflow_business_apply_status_log` are mapped into `WorkflowTaskRecordVO` records, so applications withdrawn before this release also show a withdrawal entry. Packages: the complete Maven/docs `1.7.0` tuple and `@mango/workflow@1.1.0`. Business Adaptation: upgrade the tuple; approval detail panels that render the trace gain withdrawal rows without additional work.
-- Added: [PR #1232](https://github.com/HardyDou/mango/pull/1232) Added node-affinity auto assignment: `autoAssignmentStrategy=NODE_AFFINITY` picks the earliest handler of the same `taskDefinitionKey` in the same process instance, with `nodeAffinityFallback` (`CLAIM` default, `ROUND_ROBIN`, `RANDOM`, `LEAST_TASKS`) when no eligible history exists. Packages: the complete Maven/docs `1.7.0` tuple and `@mango/workflow@1.1.0`. Business Adaptation: upgrade the tuple and regenerate the designer so new nodes can configure the strategy and fallback.
-- Added: [PR #1237](https://github.com/HardyDou/mango/pull/1237) Added `applyKeyword` to the business task query, matching application code, title or summary with literal `%`, `_` and `\` handling. Packages: the complete Maven/docs `1.7.0` tuple. Business Adaptation: upgrade the tuple; write searchable business text into `applySummary` at application creation when a business-specific search is required.
+- Added: [PR #1244](https://github.com/HardyDou/mango/pull/1244) Added a reuse scope to node-affinity auto assignment: `nodeAffinityScope` selects `PROCESS_INSTANCE` (default, 1.7.0 behavior), `BUSINESS_KEY` or `AFFINITY_KEY`, and the runtime resolves handlers from the nearest scope outwards while requiring the handler to remain in the current candidate set. Packages: the complete Maven/docs `1.8.0` tuple including `io.mango.platform.workflow:mango-workflow-{api,core,starter,starter-remote}:1.8.0`, `io.mango:mango-docs-bundle:1.8.0`, and `@mango/workflow@1.2.0`. Business Adaptation: apply migration `V4`, upgrade the tuple and regenerate the designer; only nodes that opt into `BUSINESS_KEY` or `AFFINITY_KEY` change behavior.
 
 ## Added
 
-- `POST /workflow/tasks/trace-by-business-key` returns `START`, `CLAIM`, `UNCLAIM`, `COMPLETE`, `REJECT`, `RETURN`, `TRANSFER`, `ADD_SIGN`, `READ`, `WITHDRAW` and `AUTO_*` records with `processInstanceId` as the grouping key, sorted by creation time and `id`.
-- Withdrawal entries are read from the application status log, so historical withdrawals appear without backfilling `workflow_task_record`.
-- `NODE_AFFINITY` auto assignment with `nodeAffinityFallback` options, plus designer support for both fields.
-- `applyKeyword` on the business task query for application code, title and summary search.
+- `WorkflowNodeAffinityScope` with `PROCESS_INSTANCE`, `BUSINESS_KEY` and `AFFINITY_KEY`, plus `WorkflowApprovalNodeConfig.nodeAffinityScope` and the matching designer control shown only for `AUTO + NODE_AFFINITY`.
+- Optional `affinityKey` on `CreateWorkflowBusinessApplyCommand` and `StartBusinessWorkflowCommand`, returned on `WorkflowBusinessApplyVO`, trimmed on create and not updatable afterwards.
+- `AUTO_ASSIGN` audit fields `nodeAffinityScope` and `nodeAffinityHit` so the resolved layer (`PROCESS_INSTANCE`, `BUSINESS_KEY`, `AFFINITY_KEY` or `FALLBACK`) is traceable.
+- Flyway `V4` adds `workflow_business_apply.affinity_key` and the `(tenant_id, business_type, affinity_key, process_instance_id)` index conditionally, so databases that already patched the column stay upgradable.
 
 ## Fixed
 
-- Auto assignment never silently degrades to an unclaimed task: an empty candidate set returns `AUTO_ASSIGN_NO_CANDIDATE` and rolls back the node transaction together with the state update.
-- `applyKeyword` treats `%`, `_` and `\` literally, so a search term cannot become a wildcard.
-- Trace queries fail with `TASK_QUERY_INVALID` instead of silently truncating when the result exceeds `mango.workflow.task-query.unpaged-max-rows` (default `2000`).
+- Re-submitting a changed project no longer loses the previous handler: the new process instance can reuse a handler recorded under the same business key or affinity key instead of returning the task to the claim pool.
+- Cross-instance reuse never assigns an ineligible user: a historical handler that is no longer in the current candidate set is skipped and lookup continues to the next layer.
+- Each lookup layer is bounded to the 200 most recent records and falls back according to `nodeAffinityFallback` when nothing matches.
 
 ## Changed
 
-- The non-application Maven/docs tuple advances from `1.6.0` to `1.7.0` with 201 coordinates.
-- npm: `@mango/workflow` `1.0.68` → `1.1.0`, `@mango/admin-shell` `1.1.5` → `1.1.6`, `@mango/workflow-business-example` `1.0.67` → `1.0.68`, `@mango/admin` `2.0.7` → `2.0.8`, `@mango/cli` `1.4.5` → `1.4.6`.
-- Approval node configuration keeps `CLAIM` and `ROUND_ROBIN` as defaults for configurations that omit the new fields, so existing process definitions load unchanged.
+- The non-application Maven/docs tuple advances from `1.7.0` to `1.8.0` with 201 coordinates because the workflow module gains a consumer-visible configuration and API field plus a migration.
+- npm: `@mango/workflow` `1.1.0` → `1.2.0`, `@mango/admin-shell` `1.1.6` → `1.1.7`, `@mango/workflow-business-example` `1.0.68` → `1.0.69`, `@mango/admin` `2.0.8` → `2.0.9`, `@mango/cli` `1.4.6` → `1.4.7`.
+- Process definitions that omit `nodeAffinityScope` keep the instance-only behavior, so existing deployments are unaffected until a node opts in.
 
 ## Versions
 
-- Maven/docs: `1.6.0` → `1.7.0`; 201 sealed Maven coordinates, including `io.mango:mango-docs-bundle:1.7.0` and `io.mango.platform.workflow:mango-workflow-api:1.7.0`.
-- npm: `@mango/workflow@1.1.0`, `@mango/admin-shell@1.1.6`, `@mango/workflow-business-example@1.0.68`, `@mango/admin@2.0.8`, `@mango/cli@1.4.6`.
+- Maven/docs: `1.7.0` → `1.8.0`; 201 sealed Maven coordinates, including `io.mango:mango-docs-bundle:1.8.0` and `io.mango.platform.workflow:mango-workflow-api:1.8.0`.
+- npm: `@mango/workflow@1.2.0`, `@mango/admin-shell@1.1.7`, `@mango/workflow-business-example@1.0.69`, `@mango/admin@2.0.9`, `@mango/cli@1.4.7`.
 - Exact topology, dependency order and checksums are generated in `mango-ui/.changeset/release-plan.json`.
 
 ## Published Packages
 
 - Publish all 201 non-application Maven coordinates in release-plan order.
-- Publish the five sealed npm tarballs in plan order: `@mango/workflow@1.1.0`, `@mango/admin-shell@1.1.6`, `@mango/workflow-business-example@1.0.68`, `@mango/admin@2.0.8`, `@mango/cli@1.4.6`.
+- Publish the five sealed npm tarballs in plan order: `@mango/workflow@1.2.0`, `@mango/admin-shell@1.1.7`, `@mango/workflow-business-example@1.0.69`, `@mango/admin@2.0.9`, `@mango/cli@1.4.7`.
 - Application fat jars and coordinates outside the sealed plan are excluded; `@mango/pmo` is unchanged because no PMO rule, contract, Agent or Skill file changed in this batch.
 
 ## Business Impact
 
-- Approval detail panels can render one complete flow timeline per business key, including multiple process instances and historical withdrawals, instead of reconstructing it from several endpoints.
-- The trace endpoint performs no row-level permission check: any account holding `workflow:task:list` that knows a business key can read its approvals, so business services must authorize first and resolve the key themselves.
-- Node-affinity dispatch keeps repeated approvals at a node on the same handler when history exists, and falls back according to explicit configuration rather than an implicit claim.
-- Auto assignment fails closed: an empty candidate set aborts the node transition instead of leaving an unclaimed task.
-- Application keyword search covers code, title and summary; changing business values must be written into `applySummary` at creation because the summary is not updated afterwards.
-- No database migration is introduced by this batch; the trace reads existing tables.
+- Businesses that re-submit the same project or contract can keep the previous approver for a node instead of forcing the applicant or an administrator to reassign manually.
+- The reuse boundary is explicit per node: instance-only remains the default, business-key reuse follows the same business order number, and affinity-key reuse follows the stable aggregation key the business passes at application creation.
+- Cross-tenant leakage is not possible: every lookup and join is filtered by the current tenant, and the new index keeps the lookup off a full table scan.
+- Approval trails gain `nodeAffinityScope` and `nodeAffinityHit`, so an auto-assigned handler can be explained during review.
+- A migration is introduced: `workflow_business_apply` gains `affinity_key` and one index; historical rows are not backfilled, so pre-existing applications keep no affinity key.
 
 ## Upgrade Estimate
 
-- Audience: Mango backend consumers that embed approval detail panels or configure auto assignment, and frontend consumers of the workflow npm closure.
-- Engineering Effort: 1-2 engineer-days per consumer to upgrade the tuple, add the server-side business authorization for the trace endpoint and wire the detail panel; 0.5 engineer-day for consumers that only use the keyword search; 0.5 engineer-day for the npm closure upgrade and designer regeneration.
-- Execution Window: 2-4 hours per consumer including restart, permission verification and approval-timeline regression.
-- Service Downtime: one controlled backend restart window and one frontend deployment window; no database migration is required.
-- Rollback Effort: 0.5-1 engineer-day per consumer to restore the complete Maven `1.6.0` tuple and the previously verified npm closure.
-- Assumptions: consumers can grant `workflow:task:list`, have workflow data with multiple instances and withdrawn applications, and can regenerate the designer with the published CLI.
+- Audience: Mango backend consumers using workflow auto assignment, and frontend consumers of the workflow and admin npm closure.
+- Engineering Effort: 1-2 engineer-days per consumer to upgrade the tuple, apply `V4`, decide which nodes need business-key or affinity-key reuse and pass `affinityKey` where required; 0.5 engineer-day for the npm closure upgrade and designer regeneration.
+- Execution Window: 2-4 hours per consumer including database backup, migration, restart, permission verification and a re-submission regression.
+- Service Downtime: one controlled backend restart window; the migration adds a nullable column and an index, so no table rewrite of business data is required.
+- Rollback Effort: 1 engineer-day per consumer to restore the complete Maven `1.7.0` tuple and the previously verified npm closure, including removing the added column and index if the schema must return to `V3`.
+- Assumptions: consumers have a recoverable database backup, at least one business flow with re-submission, at least two candidate handlers, and permission to change process definitions.
 
 ## Upgrade Notes
 
-1. Upgrade the complete Mango Maven/docs tuple from `1.6.0` to `1.7.0`; do not update only one starter or module.
-2. Grant `workflow:task:list` to roles that open approval detail panels; the trace endpoint requires no additional data-scope permission.
-3. Implement server-side business authorization and key resolution before calling `POST /workflow/tasks/trace-by-business-key`; never pass a client-supplied key straight through.
-4. Handle `TASK_QUERY_INVALID` when a business key exceeds the unpaged row limit, and narrow with the operator, department, action or time filters instead of retrying blindly.
-5. Regenerate or upgrade the designer so nodes can set `autoAssignmentStrategy=NODE_AFFINITY` and `nodeAffinityFallback`; existing definitions keep `CLAIM` and `ROUND_ROBIN` defaults.
-6. Fill `applySummary` with searchable business text at application creation when `applyKeyword` must find business-specific values.
-7. Upgrade the npm closure to `@mango/workflow@1.1.0`, `@mango/admin-shell@1.1.6`, `@mango/workflow-business-example@1.0.68`, `@mango/admin@2.0.8` and `@mango/cli@1.4.6`, then rebuild the admin bundle.
+1. Upgrade the complete Mango Maven/docs tuple from `1.7.0` to `1.8.0`; do not update only one starter or module.
+2. Apply Flyway `V4` (`affinity_key` column and index). It is conditional and idempotent, and does not backfill historical applications.
+3. Set `nodeAffinityScope` only on nodes that should reuse handlers across submissions; leave it unset to keep the instance-only behavior.
+4. Pass a stable `affinityKey` at application creation when `AFFINITY_KEY` reuse is required; the value must survive re-submission, and it cannot be changed afterwards.
+5. Use `BUSINESS_KEY` reuse when the business order number itself identifies the aggregate and no extra key is available.
+6. Check the `AUTO_ASSIGN` audit for `nodeAffinityHit` when a handler looks unexpected; `FALLBACK` means no eligible history was found.
+7. Regenerate the designer with `@mango/cli@1.4.7` so the reuse-scope control and defaults are available.
+8. Upgrade the npm closure to `@mango/workflow@1.2.0`, `@mango/admin-shell@1.1.7`, `@mango/workflow-business-example@1.0.69` and `@mango/admin@2.0.9`, then rebuild the admin bundle.
 
 ## Verification
 
-- `mvn verify` passed for the workflow modules before merge: node-affinity strategy tests, auto-assignment selection tests, task history mapper integration tests on H2 and the trace service tests.
-- The trace endpoint was verified against real MySQL, including single-instance, multi-instance and withdrawn applications, with recorded HTTP responses and SQL evidence.
-- `applyKeyword` literal-wildcard handling and the unpaged row limit are covered by service tests, and the designer config test covers the new strategy and fallback fields.
-- Frontend quality passed with the updated designer component and API types; the workflow package builds with an additive public API.
+- `mvn verify` passed for the workflow modules before merge, including `WorkflowAutoAssignmentStrategyTest` for the layered selection, `WorkflowMigrationContractTest`, `WorkflowMigrationUpgradeIntegrationTest` against a real MySQL database and `WorkflowAffinityKeyHttpContractTest` for the HTTP contract.
+- Integration tests cover the business application service persisting and trimming `affinityKey`, the process service forwarding it, and runtime selection across instance, business-key and affinity-key layers with candidate filtering.
+- The frontend designer test asserts the reuse-scope control renders with the expected options, and the workflow package builds with an additive public API.
 - `catalog:check` reports a consistent Catalog projection on the source commit and the release plan re-computes 201 coordinates with matching topology.
 - The Maven reactor and docs bundle are built once from the sealed candidate; all 201 coordinates are checked in publish and consume registries with matching checksums.
-- A clean consumer resolves Maven `1.7.0`, `@mango/workflow@1.1.0` and `@mango/cli@1.4.6` from the consume registries and completes the pure consume-registry verification.
+- A clean consumer resolves Maven `1.8.0`, `@mango/workflow@1.2.0` and `@mango/cli@1.4.7` from the consume registries and completes the pure consume-registry verification.
 
 ## Rollback
 
-- Restore consumers to the complete Maven/docs `1.6.0` tuple and the previously verified npm closure; immutable coordinates are never overwritten.
-- Rolling back the trace endpoint requires approval panels to return to their previous data source; no trace data is persisted, so nothing must be repaired.
-- Rolling back node-affinity dispatch makes nodes fall back to the previously configured strategy; process instances already assigned to a handler keep that assignment.
-- Rolling back `applyKeyword` removes the summary search; `businessKeys` filtering continues to work.
+- Restore consumers to the complete Maven/docs `1.7.0` tuple and the previously verified npm closure; immutable coordinates are never overwritten.
+- Rolling back the configuration restores instance-only affinity without touching data; nodes already assigned keep their handler.
+- Rolling back the schema requires removing the index and `affinity_key` column only after confirming no consumer reads them; historical rows were never backfilled, so no data repair is involved.
+- Tasks already assigned through cross-instance reuse stay assigned; reassign them with the standard transfer operation instead of editing workflow tables.
 - If registry visibility is ambiguous, stop and resume read-only status/repair using the same prepared candidate; never create a second candidate for the same coordinates.
 
 ## Audit History
 
-- [PR #1231](https://github.com/HardyDou/mango/pull/1231), [PR #1232](https://github.com/HardyDou/mango/pull/1232), [PR #1234](https://github.com/HardyDou/mango/pull/1234) and [PR #1236](https://github.com/HardyDou/mango/pull/1236) were delivered through the release-bearing PRs listed above; they are referenced here for traceability and are not separate entries in this batch.
+- [PR #1243](https://github.com/HardyDou/mango/pull/1243) was delivered through PR #1244; it is referenced here for traceability and is not a separate entry in this batch.
