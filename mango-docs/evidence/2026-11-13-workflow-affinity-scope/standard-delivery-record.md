@@ -13,7 +13,7 @@
 
 - 目标：同一业务实体（项目）修改后重新提交产生新流程实例时，同一审批节点自动派回上次办理人；不同实体之间零串人。
 - 成功条件：当前实例 → 同一业务键 → 同一亲和键三层按由近及远命中，命中者必须在当前候选集；三层无效时按 `nodeAffinityFallback` 回退；默认配置行为与 1.7.0 完全一致。
-- 处理范围：`mango-workflow-api` 新增作用域枚举和 `affinityKey` 入参，`mango-workflow-core` 节点配置、选择器、运行时派单和审计，Flyway `V4` 迁移，`mango-ui/packages/workflow` 设计器复用范围配置，Workflow README、业务接入指南、变更索引。
+- 处理范围：`mango-workflow-api` 新增作用域枚举和 `affinityKey` 入参，`mango-workflow-core` 节点配置、选择器、运行时派单和审计，Flyway `V4` 迁移，`mango-ui/packages/workflow` 设计器复用范围配置与包 README，Workflow README、业务接入指南、变更索引。
 - 不处理范围：不改 `AFFINITY` 语义（无节点维度，仍是实例级）；不合并申请中心按 `businessKey` 的“最新申请”分组；不新增权限码、不改驳回/撤回终止实例的语义；不回填历史 `affinity_key`；不按节点名称或节点类型跨版本匹配节点。
 
 ## 3. 可观察系统要求
@@ -49,7 +49,7 @@
 | T-3 | D-5 | 3 | `V4__workflow_node_affinity_scope.sql` | 迁移契约测试通过 |
 | T-4 | D-1/D-2/D-3 | 4 | `WorkflowAutoAssignmentStrategyTest`、`WorkflowTaskRuntimeServiceImplIntegrationTest`、`WorkflowTaskRuntimeServiceIntegrationTest` | 选择器、隔离、回溯、端到端用例通过 |
 | T-5 | D-7 | 5 | `WorkflowNodeApprovalConfig.vue`、`api/workflow.ts`、组件测试 | 组件测试通过 |
-| T-6 | D-1/D-4/D-5 | 6 | Workflow README、业务接入指南、变更索引 | 能力说明与实现一致 |
+| T-6 | D-1/D-4/D-5 | 6 | Workflow README、`@mango/workflow` README、业务接入指南、变更索引 | 能力说明与实现一致 |
 
 ## 6. 验收映射与结果
 
