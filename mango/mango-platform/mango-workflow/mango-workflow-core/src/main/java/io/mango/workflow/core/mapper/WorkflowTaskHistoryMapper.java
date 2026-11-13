@@ -46,4 +46,15 @@ public interface WorkflowTaskHistoryMapper extends BaseMapper<WorkflowTaskHistor
      * @return 候选身份关联行
      */
     List<WorkflowTaskIdentityLinkRow> selectCandidateLinks(@Param("taskIds") List<String> taskIds);
+
+    /**
+     * 批量解析用户 ID 对应的登录名，只返回当前租户的启用成员。
+     *
+     * <p>处理记录同时保存处理人 ID 与处理人名称，按处理人过滤时必须用登录名补齐只写入名称的历史记录。
+     *
+     * @param userIds  用户 ID 集合，调用方必须保证非空
+     * @param tenantId 租户标识，调用方必须保证非空
+     * @return 登录名集合
+     */
+    List<String> selectUserNamesByIds(@Param("userIds") List<String> userIds, @Param("tenantId") String tenantId);
 }

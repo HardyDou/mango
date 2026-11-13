@@ -54,6 +54,7 @@ import io.mango.workflow.api.vo.WorkflowTaskSummaryVO;
 import io.mango.workflow.api.vo.WorkflowTaskVO;
 import io.mango.workflow.core.engine.WorkflowAssigneeResolver;
 import io.mango.workflow.core.engine.WorkflowAssigneeCollection;
+import io.mango.workflow.core.convert.WorkflowTaskRecordConverter;
 import io.mango.workflow.core.engine.WorkflowCandidateGroupProvider;
 import io.mango.workflow.core.identity.WorkflowAssigneeIdentityService;
 import io.mango.workflow.core.engine.WorkflowNodeExecutionEvent;
@@ -1145,22 +1146,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
     }
 
     private WorkflowTaskRecordVO fromRecord(WorkflowTaskRecordEntity record) {
-        WorkflowTaskRecordVO vo = new WorkflowTaskRecordVO();
-        vo.setId(record.getId());
-        vo.setProcessInstanceId(record.getProcessInstanceId());
-        vo.setTaskId(record.getTaskId());
-        vo.setTaskName(record.getTaskName());
-        vo.setTaskDefinitionKey(record.getTaskDefinitionKey());
-        vo.setAction(record.getAction());
-        vo.setActionName(StringUtils.hasText(record.getActionName())
-                ? record.getActionName()
-                : WorkflowTaskAction.labelOf(record.getAction()));
-        vo.setOperatorId(record.getOperatorId());
-        vo.setOperatorName(record.getOperatorName());
-        vo.setComment(record.getComment());
-        vo.setVariables(WorkflowJsonVO.of(parseMap(record.getVariablesJson())));
-        vo.setCreatedTime(record.getCreatedTime());
-        return vo;
+        return WorkflowTaskRecordConverter.toVo(record, parseMap(record.getVariablesJson()));
     }
 
     private WorkflowFormInstanceEntity findFormInstance(String processInstanceId) {

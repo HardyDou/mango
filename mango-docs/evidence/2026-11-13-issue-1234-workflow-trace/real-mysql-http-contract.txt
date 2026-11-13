@@ -1,0 +1,22 @@
+# 接口契约真实验证（HTTP 层）
+
+环境：http://127.0.0.1:18047，MySQL 8.4.8，租户 1
+
+1) 有权限调用（admin，持有 workflow:task:list）
+   POST /workflow/tasks/trace-by-business-key
+   -> HTTP 200, code=200, data 9 条记录（见 real-mysql-trace-single-instance.json）
+
+2) 无权限调用（trace_nobody：租户 1 普通成员，无任何角色）
+   POST /workflow/tasks/trace-by-business-key
+   -> HTTP 403, {"code":403,"message":"Access denied"}
+
+3) 无效凭证
+   POST /workflow/tasks/trace-by-business-key  (Authorization: Bearer invalid.token.value)
+   -> HTTP 401, {"code":401,"message":"Unauthorized"}
+
+4) 资源注册（authorization_api_resource）
+   POST /workflow/tasks/trace-by-business-key  permission_code=workflow:task:list  access_mode=PERMISSION  handler_method=traceByBusinessKey
+
+5) 参数校验（HTTP 层）
+   POST 空 businessKey -> code=400 "业务主键不能为空"（Bean Validation）
+   POST actions=["RETRUN"] -> code=3659 "未知审批动作：RETRUN"
