@@ -20,7 +20,7 @@
 
 | ID | 参与者或入口 | 输入或前置条件 | 预期行为 | 失败语义 | 验收标准 |
 |---|---|---|---|---|---|
-| AC-1 | 业务详情页 / `POST /workflow/tasks/trace-by-business-key` | 已登记业务申请的 `businessType` + `businessKey`，未注册任何 Provider | 返回该业务键全部流程实例的流转记录，含 `START`/`CLAIM`/`COMPLETE`/`RETURN` | 不做申请级判定，不返回 `3645` | 非申请人调用能拿到发起与认领记录 |
+| AC-1 | 业务详情页 / `POST /workflow/tasks/trace-by-business-key` | 已登记业务申请的 `businessType` + `businessKey`，未注册任何 Provider | 返回该业务键全部流程实例的流转记录，含 `START`/`CLAIM`/`COMPLETE`/`RETURN`/`WITHDRAW` | 不做申请级判定，不返回 `3645` | 非申请人调用能拿到发起与认领记录；撤回后时间轴出现 `WITHDRAW` |
 | AC-2 | 同上 | 同一 `businessKey` 两个流程实例 | 两个实例的记录全部返回，可用 `processInstanceId` 分组 | 无命中返回空集合 | 两条 `START` 都在结果内 |
 | AC-3 | 同上 | 多轮退回（同一 `taskDefinitionKey` 重复出现） | 按 `createdTime` 升序、同一时间按 `id` 升序 | — | 顺序稳定、可复现 |
 | AC-4 | 同上 | `operatorIds`（业务 `user_id`） | 同时匹配 `operatorId` 与经 `identity_user.username` 解析出的 `operatorName` | 传空表示不过滤 | 只写入名称的记录也能命中 |
@@ -38,6 +38,7 @@
 | D-1 | AC-1 | 新增 `WorkflowTaskRuntimeApi#traceByBusinessKey(@Valid WorkflowTaskTraceRequest)`，同时提供 REST 端点；`WorkflowTaskTraceQuery` 位于 `io.mango.workflow.api.query`，`WorkflowTaskTraceRequest` 继承它承载 POST body（架构门禁 `MANGO-ARCH-ADAPTER-007` / `MANGO-ARCH-OPENAPI-004` 要求请求体为 Request 类型） | `WorkflowTaskRuntimeApi`、`WorkflowTaskTraceQuery`、`WorkflowTaskTraceRequest`、`WorkflowTaskController` | 移除方法与端点，不影响既有接口 |
 | D-2 | AC-1 | 不调用 `WorkflowBusinessApplyAccessChecker`，不校验 `workflow:task:all`；只保留 `workflow:task:list` 与租户隔离 | `WorkflowTaskBusinessQueryService` | 回退服务实现 |
 | D-3 | AC-2 | 两步查询：先用 `workflow_business_apply` 按租户+业务类型+业务键（可选部门）定位 `process_instance_id`，再查 `workflow_task_record`；不做 join | `WorkflowTaskBusinessQueryService` | 回退服务实现 |
+| D-11 | AC-1 | 撤回不写 `workflow_task_record`；读取端按实例合并 `workflow_business_apply_status_log` 的 `WITHDRAW` 行（`action=WITHDRAW`、`actionName=撤回`、`variables=null`、`id` 为状态流水主键），覆盖升级前已撤回的历史申请；同一实例多条脏数据只取最早一条；不改表结构、不改 `processDetail` | `WorkflowTaskBusinessQueryService`、`WorkflowTaskRecordConverter`、`WorkflowTaskAction` | 移除合并逻辑与枚举值 |
 | D-4 | AC-1/AC-9 | 记录查询使用字段投影，排除 `variables_json`；`WorkflowTaskRecordVO.variables` 恒为 null | `WorkflowTaskBusinessQueryService` | 回退投影字段 |
 | D-5 | AC-9 | 抽取 `WorkflowTaskRecordConverter`，`processDetail` 与流转记录共用同一映射；变量由调用方决定是否传入 | `WorkflowTaskRecordConverter`、`WorkflowTaskRuntimeService` | 回退转换器调用 |
 | D-6 | AC-4 | 新增 `WorkflowTaskHistoryMapper#selectUserNamesByIds`，按 `identity_user.username` + `tenant_member` 解析登录名 | `WorkflowTaskHistoryMapper` 与 XML | 回退 Mapper 方法与 SQL |
@@ -69,6 +70,7 @@
 | AC-2 | M12 真实 MySQL | `reapplyFromApplyId` 创建第二个实例后再次调用 | PASS（10 条、2 个 `processInstanceId`、2 条 `START`） | `real-mysql-trace-multi-instance.json` |
 | AC-4/AC-5/AC-6/AC-7 | M12 真实 MySQL | `operatorIds=[1]/[2]`、`deptIds=[1]/[999]`、`actions=[START]/[RETURN]/[RETRUN]`、未知业务键 | PASS（命中 9/10 条、未命中 0 条、未知动作 `3659`、空集合不报错） | `real-mysql-acceptance.md` |
 | AC-9/D-4/D-8 | M12 真实 SQL 回读 | 后端 SQL 日志 | PASS（投影排除 `variables_json`，`tenant_id = 1` 由插件注入，`LIMIT 2001` 探测） | `real-mysql-trace-sql.txt` |
+| AC-1 撤回 | M12 真实 MySQL | 新建申请 → 启动 → `POST /workflow/processes/withdraw` → 查流转记录 | PASS（`WITHDRAW` 行含处理人/意见/时间；`actions=[WITHDRAW]` 命中 1 条；历史已撤回实例也能返回） | `real-mysql-trace-withdraw.json`、`real-mysql-withdraw-row.txt` |
 | AC-1 权限 | M12 真实 HTTP | 无 `workflow:task:list` 的租户成员调用；无效 token 调用 | PASS（403 Access denied / 401 Unauthorized）；资源注册为 `POST /workflow/tasks/trace-by-business-key` + `workflow:task:list` + `PERMISSION` | `real-mysql-http-contract.txt` |
 | 兼容 | M12 真实 MySQL | `GET /workflow/tasks/process-detail` | PASS（9 条记录，`variables_json` 仍在查询字段内，审批页数据源未变） | `real-mysql-acceptance.md` 结果 5 |
 | 文档 | 结构检查 | 人工核对 `README` §6.2、接入指南 §7.2、能力地图 | PASS | 本记录所在提交 |

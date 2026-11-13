@@ -196,8 +196,8 @@ mango:
 
 - 扁平列表，`processInstanceId` 是分组键。重新申请会让同一业务键对应多个流程实例，平台全部返回，不提供 `latestOnly`；按实例分段展示由调用方 `groupBy` 完成。
 - 排序：`createdTime` 升序，同一时间按 `id` 升序，保证多轮退回顺序稳定。
-- 只返回任务级动作：`START` / `CLAIM` / `UNCLAIM` / `COMPLETE` / `REJECT` / `RETURN` / `TRANSFER` / `ADD_SIGN` / `READ` / `AUTO_*` / `EVENT_NOTIFY`。
-- 不返回网关/条件分支节点（数据在 `ACT_HI_ACTINST`）和撤回 `WITHDRAW`（数据在 `workflow_business_apply_status_log`）；这两项由业务侧临时补齐或另立项。
+- 返回动作：`START` / `CLAIM` / `UNCLAIM` / `COMPLETE` / `REJECT` / `RETURN` / `TRANSFER` / `ADD_SIGN` / `READ` / `WITHDRAW` / `AUTO_*` / `EVENT_NOTIFY`。撤回不写 `workflow_task_record`：平台把 `workflow_business_apply_status_log` 中该实例的 `WITHDRAW` 行并入返回列表，升级前已撤回的历史申请同样可见；同一实例多条 `WITHDRAW` 只返回最早一条，`id` 为状态流水主键（稳定）；`processDetail` 不含撤回行，行为不变。
+- 不返回网关/条件分支节点：它们不在 `workflow_task_record`，需要 `ACT_HI_ACTINST`，见 #1235。
 - 不返回 `variables`（字段恒为 null）、审计列、租户列和业务字段。`START` 行的 `taskId` / `taskName` / `taskDefinitionKey` / `comment` 为 null，节点标题用 `actionName`；`CLAIM` 的 `comment` 是系统文案"认领任务"，不是审批意见。
 - 记录数超过 `mango.workflow.task-query.unpaged-max-rows`（默认 2000）时以 `TASK_QUERY_INVALID` 失败，不静默截断；调用方需要缩小时间区间。
 

@@ -13,6 +13,7 @@ import io.mango.workflow.core.engine.WorkflowCandidateGroupProvider;
 import io.mango.workflow.core.identity.WorkflowAssigneeIdentityService;
 import io.mango.workflow.core.mapper.WorkflowBusinessApplyMapper;
 import io.mango.workflow.core.mapper.WorkflowTaskHistoryMapper;
+import io.mango.workflow.core.mapper.WorkflowBusinessApplyStatusLogMapper;
 import io.mango.workflow.core.mapper.WorkflowTaskRecordMapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -77,6 +78,9 @@ class WorkflowTaskTraceIntegrationTest {
     @Autowired
     private WorkflowTaskRecordMapper taskRecordMapper;
 
+    @Autowired
+    private WorkflowBusinessApplyStatusLogMapper statusLogMapper;
+
     private WorkflowTaskQueryProperties properties;
     private WorkflowTaskBusinessQueryService service;
 
@@ -91,7 +95,7 @@ class WorkflowTaskTraceIntegrationTest {
         ObjectProvider<WorkflowBusinessApplyAccessChecker> checkerProvider = mock(ObjectProvider.class);
         when(checkerProvider.getIfAvailable()).thenReturn(null);
         service = new WorkflowTaskBusinessQueryService(taskHistoryMapper, businessApplyMapper, taskRecordMapper,
-                checkerProvider, mock(WorkflowTaskQueryAuthorizer.class),
+                statusLogMapper, checkerProvider, mock(WorkflowTaskQueryAuthorizer.class),
                 mock(WorkflowAssigneeIdentityService.class), mock(WorkflowCandidateGroupProvider.class),
                 properties, new ObjectMapper());
     }
@@ -149,6 +153,27 @@ class WorkflowTaskTraceIntegrationTest {
 
         assertThat(service.traceByBusinessKey(query)).extracting(WorkflowTaskRecordVO::getId)
                 .containsExactly(102L, 105L, 103L);
+    }
+
+    @Test
+    void mergesWithdrawFromStatusLogIntoTimeLine() {
+        jdbcTemplate.update("insert into workflow_business_apply_status_log "
+                        + "(id, tenant_id, apply_id, action, action_name, operator_id, operator_name, comment, "
+                        + "process_instance_id, created_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                200L, 1L, 10L, "WITHDRAW", "撤回", 1001L, "alice", "客户取消申请", "P1",
+                java.sql.Timestamp.valueOf(LocalDateTime.of(2026, 1, 1, 10, 30)));
+
+        List<WorkflowTaskRecordVO> records = service.traceByBusinessKey(query());
+
+        assertThat(records).extracting(WorkflowTaskRecordVO::getAction)
+                .contains("WITHDRAW");
+        assertThat(records).filteredOn(record -> "WITHDRAW".equals(record.getAction()))
+                .singleElement()
+                .satisfies(record -> {
+                    assertThat(record.getActionName()).isEqualTo("撤回");
+                    assertThat(record.getComment()).isEqualTo("客户取消申请");
+                    assertThat(record.getVariables()).isNull();
+                });
     }
 
     @Test
@@ -222,6 +247,24 @@ class WorkflowTaskTraceIntegrationTest {
     private void rebuildTables() {
         jdbcTemplate.execute("drop table if exists workflow_business_apply");
         jdbcTemplate.execute("drop table if exists workflow_task_record");
+        jdbcTemplate.execute("drop table if exists workflow_business_apply_status_log");
+        jdbcTemplate.execute("""
+                create table workflow_business_apply_status_log (
+                    id bigint not null,
+                    tenant_id bigint,
+                    apply_id bigint,
+                    action varchar(32) not null,
+                    action_name varchar(64) not null,
+                    operator_id bigint,
+                    operator_name varchar(128),
+                    comment varchar(1000),
+                    task_id varchar(128),
+                    task_definition_key varchar(128),
+                    process_instance_id varchar(128),
+                    created_at timestamp,
+                    primary key (id)
+                )
+                """);
         jdbcTemplate.execute("drop table if exists identity_user");
         jdbcTemplate.execute("drop table if exists tenant_member");
         jdbcTemplate.execute("""

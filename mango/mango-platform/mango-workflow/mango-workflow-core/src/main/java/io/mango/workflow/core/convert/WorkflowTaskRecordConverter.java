@@ -3,6 +3,7 @@ package io.mango.workflow.core.convert;
 import io.mango.workflow.api.enums.WorkflowTaskAction;
 import io.mango.workflow.api.vo.WorkflowJsonVO;
 import io.mango.workflow.api.vo.WorkflowTaskRecordVO;
+import io.mango.workflow.core.entity.WorkflowBusinessApplyStatusLogEntity;
 import io.mango.workflow.core.entity.WorkflowTaskRecordEntity;
 import org.springframework.util.StringUtils;
 
@@ -42,6 +43,34 @@ public final class WorkflowTaskRecordConverter {
         vo.setComment(record.getComment());
         vo.setVariables(variables == null ? null : WorkflowJsonVO.of(variables));
         vo.setCreatedTime(record.getCreatedTime());
+        return vo;
+    }
+
+
+    /**
+     * 把申请状态流水中的撤回记录转换成流转记录。
+     *
+     * <p>撤回不写 {@code workflow_task_record}，只在 {@code workflow_business_apply_status_log} 留痕；
+     * 为让时间轴完整（含升级前已撤回的历史申请），读取时并入同一 VO，动作固定为
+     * {@link WorkflowTaskAction#WITHDRAW}。
+     *
+     * @param log 状态流水，调用方必须保证动作为撤回
+     * @return 处理记录视图；处理变量恒为 null
+     */
+    public static WorkflowTaskRecordVO toVo(WorkflowBusinessApplyStatusLogEntity log) {
+        WorkflowTaskRecordVO vo = new WorkflowTaskRecordVO();
+        vo.setId(log.getId());
+        vo.setProcessInstanceId(log.getProcessInstanceId());
+        vo.setTaskId(log.getTaskId());
+        vo.setTaskDefinitionKey(log.getTaskDefinitionKey());
+        vo.setAction(WorkflowTaskAction.WITHDRAW.name());
+        vo.setActionName(StringUtils.hasText(log.getActionName())
+                ? log.getActionName()
+                : WorkflowTaskAction.WITHDRAW.getLabel());
+        vo.setOperatorId(log.getOperatorId());
+        vo.setOperatorName(log.getOperatorName());
+        vo.setComment(log.getComment());
+        vo.setCreatedTime(log.getCreatedAt());
         return vo;
     }
 }

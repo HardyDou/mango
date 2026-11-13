@@ -15,6 +15,7 @@ public enum WorkflowTaskAction {
     COMPLETE("通过"),
     REJECT("驳回"),
     RETURN("退回"),
+    WITHDRAW("撤回"),
     TRANSFER("转办"),
     ADD_SIGN("加签"),
     CLAIM("认领"),

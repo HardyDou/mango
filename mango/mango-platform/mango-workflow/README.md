@@ -583,7 +583,10 @@ mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-comm
 | 字段 | `id`、`processInstanceId`、`taskId`、`taskName`、`taskDefinitionKey`、`action`、`actionName`、`operatorId`、`operatorName`、`comment`、`createdTime`；`variables` 恒为 null |
 | 空值 | 无记录、跨租户、流程未登记业务申请时返回空集合 |
 | 上限 | 超过 `mango.workflow.task-query.unpaged-max-rows`（默认 2000）时以 `TASK_QUERY_INVALID` 失败，不静默截断 |
-| 不返回 | 网关/条件分支节点（`ACT_HI_ACTINST`）、撤回 `WITHDRAW`（`workflow_business_apply_status_log`）、处理变量、审计列、业务字段 |
+| 返回动作 | `START` / `CLAIM` / `UNCLAIM` / `COMPLETE` / `REJECT` / `RETURN` / `TRANSFER` / `ADD_SIGN` / `READ` / `WITHDRAW` / `AUTO_*` / `EVENT_NOTIFY`；撤回在读取端并入 `workflow_business_apply_status_log` 的 `WITHDRAW` 行 |
+| 不返回 | 网关/条件分支节点（不在本表）、处理变量、审计列、业务字段 |
+
+撤回（`WITHDRAW`）不写 `workflow_task_record`：读取时把 `workflow_business_apply_status_log` 中该实例的 `WITHDRAW` 行映射成同一 VO 并入时间轴，因此升级前已撤回的历史申请也能看到；`processDetail` 仍只读任务记录，行为不变。撤回是实例级动作，同一实例若存在多条 `WITHDRAW` 脏数据，只返回最早一条（`id` 为状态流水主键，稳定不变）。
 
 `operatorIds` 同时匹配 `operator_id` 与经 `identity_user.username` 解析出的 `operator_name`，覆盖只写入名称的历史记录；`deptIds` 按 `workflow_business_apply.applicant_dept_id` 过滤整条流程实例，因此会整体排除不匹配的实例。三个集合参数传 null 或空集合表示不过滤。
 

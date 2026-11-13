@@ -20,7 +20,9 @@ import io.mango.workflow.core.engine.WorkflowCandidateGroupProvider;
 import io.mango.workflow.core.entity.WorkflowBusinessApplyEntity;
 import io.mango.workflow.core.identity.WorkflowAssigneeIdentityService;
 import io.mango.workflow.core.mapper.WorkflowBusinessApplyMapper;
+import io.mango.workflow.core.mapper.WorkflowBusinessApplyStatusLogMapper;
 import io.mango.workflow.core.mapper.WorkflowTaskRecordMapper;
+import io.mango.workflow.core.entity.WorkflowBusinessApplyStatusLogEntity;
 import io.mango.workflow.core.mapper.WorkflowTaskHistoryMapper;
 import io.mango.workflow.core.model.WorkflowTaskHistoryCriteria;
 import io.mango.workflow.core.model.WorkflowTaskHistoryRow;
@@ -58,6 +60,7 @@ class WorkflowTaskBusinessQueryServiceTest {
     private WorkflowTaskHistoryMapper taskHistoryMapper;
     private WorkflowBusinessApplyMapper businessApplyMapper;
     private WorkflowTaskRecordMapper taskRecordMapper;
+    private WorkflowBusinessApplyStatusLogMapper statusLogMapper;
     private WorkflowTaskQueryAuthorizer authorizer;
     private WorkflowAssigneeIdentityService assigneeIdentityService;
     private WorkflowCandidateGroupProvider candidateGroupProvider;
@@ -78,6 +81,8 @@ class WorkflowTaskBusinessQueryServiceTest {
         taskHistoryMapper = mock(WorkflowTaskHistoryMapper.class);
         businessApplyMapper = mock(WorkflowBusinessApplyMapper.class);
         taskRecordMapper = mock(WorkflowTaskRecordMapper.class);
+        statusLogMapper = mock(WorkflowBusinessApplyStatusLogMapper.class);
+        when(statusLogMapper.selectList(any())).thenReturn(List.of());
         authorizer = mock(WorkflowTaskQueryAuthorizer.class);
         assigneeIdentityService = mock(WorkflowAssigneeIdentityService.class);
         candidateGroupProvider = mock(WorkflowCandidateGroupProvider.class);
@@ -89,7 +94,8 @@ class WorkflowTaskBusinessQueryServiceTest {
         when(checkerProvider.getIfAvailable()).thenReturn(null);
         when(candidateGroupProvider.currentCandidateGroups()).thenReturn(List.of("ROLE_REVIEWER"));
         service = new WorkflowTaskBusinessQueryService(taskHistoryMapper, businessApplyMapper, taskRecordMapper,
-                checkerProvider, authorizer, assigneeIdentityService, candidateGroupProvider, properties, objectMapper);
+                statusLogMapper, checkerProvider, authorizer, assigneeIdentityService, candidateGroupProvider,
+                properties, objectMapper);
         MangoContextHolder.clear();
         MangoContextHolder.set(MangoContextSnapshot.empty()
                 .withSecurity(1001L, "1", "alice", "default", "USER", "ORG", 1001L, "token"));
@@ -490,6 +496,80 @@ class WorkflowTaskBusinessQueryServiceTest {
 
         assertThat(service.traceByBusinessKey(query)).hasSize(1);
         verify(taskHistoryMapper).selectUserNamesByIds(List.of("1001"), "1");
+    }
+
+    @Test
+    void traceMergesWithdrawRecordFromStatusLogInTimeOrder() {
+        when(businessApplyMapper.selectList(any())).thenReturn(List.of(apply("P1")));
+        when(taskRecordMapper.selectList(any())).thenReturn(List.of(record(1L, "P1")));
+        WorkflowBusinessApplyStatusLogEntity withdraw = new WorkflowBusinessApplyStatusLogEntity();
+        withdraw.setId(9L);
+        withdraw.setProcessInstanceId("P1");
+        withdraw.setAction("WITHDRAW");
+        withdraw.setActionName("撤回");
+        withdraw.setOperatorId(1001L);
+        withdraw.setOperatorName("alice");
+        withdraw.setComment("客户取消申请");
+        withdraw.setCreatedAt(LocalDateTime.of(2026, 1, 1, 10, 30));
+        when(statusLogMapper.selectList(any())).thenReturn(List.of(withdraw));
+
+        List<WorkflowTaskRecordVO> records = service.traceByBusinessKey(traceQuery());
+
+        assertThat(records).extracting(WorkflowTaskRecordVO::getAction).containsExactly("START", "WITHDRAW");
+        assertThat(records.get(1).getActionName()).isEqualTo("撤回");
+        assertThat(records.get(1).getComment()).isEqualTo("客户取消申请");
+        assertThat(records.get(1).getVariables()).isNull();
+    }
+
+    @Test
+    void traceKeepsOnlyEarliestWithdrawPerInstance() {
+        when(businessApplyMapper.selectList(any())).thenReturn(List.of(apply("P1")));
+        when(taskRecordMapper.selectList(any())).thenReturn(List.of(record(1L, "P1")));
+        WorkflowBusinessApplyStatusLogEntity first = withdrawLog(9L, "P1", LocalDateTime.of(2026, 1, 1, 10, 30));
+        WorkflowBusinessApplyStatusLogEntity duplicate = withdrawLog(11L, "P1", LocalDateTime.of(2026, 1, 1, 10, 31));
+        when(statusLogMapper.selectList(any())).thenReturn(List.of(duplicate, first));
+
+        List<WorkflowTaskRecordVO> records = service.traceByBusinessKey(traceQuery());
+
+        assertThat(records).filteredOn(record -> "WITHDRAW".equals(record.getAction()))
+                .singleElement()
+                .satisfies(record -> assertThat(record.getId()).isEqualTo(9L));
+    }
+
+    private WorkflowBusinessApplyStatusLogEntity withdrawLog(Long id, String processInstanceId,
+                                                             LocalDateTime createdAt) {
+        WorkflowBusinessApplyStatusLogEntity log = new WorkflowBusinessApplyStatusLogEntity();
+        log.setId(id);
+        log.setProcessInstanceId(processInstanceId);
+        log.setAction("WITHDRAW");
+        log.setActionName("撤回");
+        log.setOperatorId(1001L);
+        log.setOperatorName("alice");
+        log.setComment("客户取消申请");
+        log.setCreatedAt(createdAt);
+        return log;
+    }
+
+    @Test
+    void traceSkipsWithdrawQueryWhenActionsExcludeWithdraw() {
+        when(businessApplyMapper.selectList(any())).thenReturn(List.of(apply("P1")));
+        when(taskRecordMapper.selectList(any())).thenReturn(List.of(record(1L, "P1")));
+        WorkflowTaskTraceQuery query = traceQuery();
+        query.setActions(List.of("START"));
+
+        service.traceByBusinessKey(query);
+
+        verify(statusLogMapper, never()).selectList(any());
+    }
+
+    @Test
+    void traceAcceptsWithdrawActionFilter() {
+        when(businessApplyMapper.selectList(any())).thenReturn(List.of(apply("P1")));
+        when(taskRecordMapper.selectList(any())).thenReturn(List.of(record(1L, "P1")));
+        WorkflowTaskTraceQuery query = traceQuery();
+        query.setActions(List.of("WITHDRAW"));
+
+        assertThat(service.traceByBusinessKey(query)).hasSize(1);
     }
 
     private WorkflowTaskTraceQuery traceQuery() {
