@@ -20,7 +20,8 @@ import java.util.List;
  *
  * <p>查询范围由 {@link WorkflowTaskQueryScope} 决定：默认仅返回当前用户相关任务；管理员范围需要
  * {@code workflow:task:all} 权限码。{@code businessKeys} 不传或为空表示不限业务主键，
- * 传入时按业务主键集合进一步收窄。
+ * 传入时按业务主键集合进一步收窄。{@code applyKeyword} 匹配申请单的编号、标题和摘要，
+ * {@code keyword} 匹配任务名称和任务节点定义 Key，两者互不替代。
  */
 @Data
 @Schema(description = "按业务类型查询任务，业务主键可选")
@@ -84,6 +85,10 @@ public class WorkflowTaskBusinessPageQuery {
     @Schema(description = "关键字，匹配任务名称或节点定义 Key")
     @Size(max = 128, message = "关键字长度不能超过128")
     private String keyword;
+
+    @Schema(description = "申请关键字，模糊匹配申请编号、申请标题或申请摘要；% 和 _ 按字面匹配")
+    @Size(max = 128, message = "申请关键字长度不能超过128")
+    private String applyKeyword;
 
     @Schema(description = "排序字段：createTime=任务创建时间，endTime=处理时间，claimTime=领取时间",
             defaultValue = "createTime")

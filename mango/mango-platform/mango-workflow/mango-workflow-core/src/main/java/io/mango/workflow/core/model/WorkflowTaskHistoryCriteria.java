@@ -32,6 +32,7 @@ public class WorkflowTaskHistoryCriteria {
     private final LocalDateTime endTimeBegin;
     private final LocalDateTime endTimeEnd;
     private final String keyword;
+    private final String applyKeyword;
     private final boolean selfScope;
     private final List<String> selfIdentifiers;
     private final List<String> selfCandidateGroups;
