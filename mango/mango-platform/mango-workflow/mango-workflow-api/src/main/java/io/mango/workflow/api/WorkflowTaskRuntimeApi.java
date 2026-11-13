@@ -12,8 +12,8 @@ import io.mango.workflow.api.command.SaveWorkflowTaskDraftCommand;
 import io.mango.workflow.api.command.TransferWorkflowTaskCommand;
 
 import io.mango.workflow.api.query.WorkflowTaskPageQuery;
-import io.mango.workflow.api.query.WorkflowTaskTraceQuery;
 import io.mango.workflow.api.request.WorkflowTaskBusinessPageRequest;
+import io.mango.workflow.api.request.WorkflowTaskTraceRequest;
 import io.mango.workflow.api.vo.WorkflowMyTaskSummaryVO;
 import io.mango.workflow.api.vo.WorkflowProcessDetailVO;
 import io.mango.workflow.api.vo.WorkflowTaskRecordVO;
@@ -63,10 +63,10 @@ public interface WorkflowTaskRuntimeApi {
      * <p>不返回处理变量（{@code variables} 恒为 null）；记录数超过 {@code mango.workflow.task-query.unpaged-max-rows}
      * 时以 {@code TASK_QUERY_INVALID} 失败，不做静默截断。
      *
-     * @param query 业务类型、业务主键与可选过滤条件；业务类型和业务主键必填
+     * @param request 业务类型、业务主键与可选过滤条件；业务类型和业务主键必填
      * @return 流转记录列表；无命中、跨租户或流程未登记业务申请时返回空集合
      */
-    R<List<WorkflowTaskRecordVO>> traceByBusinessKey(@Valid WorkflowTaskTraceQuery query);
+    R<List<WorkflowTaskRecordVO>> traceByBusinessKey(@Valid WorkflowTaskTraceRequest request);
 
     R<WorkflowTaskSummaryVO> summary();
 

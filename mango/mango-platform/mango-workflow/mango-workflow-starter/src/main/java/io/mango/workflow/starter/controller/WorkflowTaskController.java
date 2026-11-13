@@ -15,8 +15,8 @@ import io.mango.workflow.api.command.SaveWorkflowTaskDraftCommand;
 import io.mango.workflow.api.command.TransferWorkflowTaskCommand;
 
 import io.mango.workflow.api.query.WorkflowTaskPageQuery;
-import io.mango.workflow.api.query.WorkflowTaskTraceQuery;
 import io.mango.workflow.api.request.WorkflowTaskBusinessPageRequest;
+import io.mango.workflow.api.request.WorkflowTaskTraceRequest;
 import io.mango.workflow.api.vo.WorkflowMyTaskSummaryVO;
 import io.mango.workflow.api.vo.WorkflowProcessDetailVO;
 import io.mango.workflow.api.vo.WorkflowTaskActionResultVO;
@@ -235,8 +235,8 @@ public class WorkflowTaskController implements WorkflowTaskRuntimeApi {
                     + "按处理时间与记录 ID 升序，重新申请的多个实例一并返回；"
                     + "不做数据范围与申请级权限校验，不返回处理变量，记录数超过单次返回上限时直接失败")
     @Override
-    public R<List<WorkflowTaskRecordVO>> traceByBusinessKey(@RequestBody WorkflowTaskTraceQuery query) {
-        return R.ok(workflowTaskBusinessQueryService.traceByBusinessKey(query));
+    public R<List<WorkflowTaskRecordVO>> traceByBusinessKey(@RequestBody WorkflowTaskTraceRequest request) {
+        return R.ok(workflowTaskBusinessQueryService.traceByBusinessKey(request));
     }
 
     @PostMapping("/copied/read")

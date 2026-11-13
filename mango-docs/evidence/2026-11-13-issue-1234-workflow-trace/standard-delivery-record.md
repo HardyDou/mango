@@ -35,7 +35,7 @@
 
 | ID | 对应要求 | 接口/数据/权限/兼容性决定 | 影响路径 | 回滚方式 |
 |---|---|---|---|---|
-| D-1 | AC-1 | 新增 `WorkflowTaskRuntimeApi#traceByBusinessKey(@Valid WorkflowTaskTraceQuery)`，同时提供 REST 端点；`WorkflowTaskTraceQuery` 位于 `io.mango.workflow.api.query`，不新增 Request 子类 | `WorkflowTaskRuntimeApi`、`WorkflowTaskTraceQuery`、`WorkflowTaskController` | 移除方法与端点，不影响既有接口 |
+| D-1 | AC-1 | 新增 `WorkflowTaskRuntimeApi#traceByBusinessKey(@Valid WorkflowTaskTraceRequest)`，同时提供 REST 端点；`WorkflowTaskTraceQuery` 位于 `io.mango.workflow.api.query`，`WorkflowTaskTraceRequest` 继承它承载 POST body（架构门禁 `MANGO-ARCH-ADAPTER-007` / `MANGO-ARCH-OPENAPI-004` 要求请求体为 Request 类型） | `WorkflowTaskRuntimeApi`、`WorkflowTaskTraceQuery`、`WorkflowTaskTraceRequest`、`WorkflowTaskController` | 移除方法与端点，不影响既有接口 |
 | D-2 | AC-1 | 不调用 `WorkflowBusinessApplyAccessChecker`，不校验 `workflow:task:all`；只保留 `workflow:task:list` 与租户隔离 | `WorkflowTaskBusinessQueryService` | 回退服务实现 |
 | D-3 | AC-2 | 两步查询：先用 `workflow_business_apply` 按租户+业务类型+业务键（可选部门）定位 `process_instance_id`，再查 `workflow_task_record`；不做 join | `WorkflowTaskBusinessQueryService` | 回退服务实现 |
 | D-4 | AC-1/AC-9 | 记录查询使用字段投影，排除 `variables_json`；`WorkflowTaskRecordVO.variables` 恒为 null | `WorkflowTaskBusinessQueryService` | 回退投影字段 |

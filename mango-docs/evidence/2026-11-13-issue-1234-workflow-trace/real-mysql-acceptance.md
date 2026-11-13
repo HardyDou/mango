@@ -104,3 +104,19 @@
 4. **退回记录不进入报告表头**：`RETURN` 只用于判断"是否发生过退回"，报告只消费 `COMPLETE`；`CLAIM` 的 `comment` 是系统文案「认领任务」，不能当审批意见。
 
 结论：报告需要的审批人与审批时间可由本接口提供；三个风控结论字段属于业务数据，平台记录表从未保存，与「不返回 `variables`」的决定一致，不构成缺口。
+
+## 补充：请求体类型调整为 `WorkflowTaskTraceRequest` 后的复核
+
+架构门禁要求 POST 请求体为 Request 类型（`MANGO-ARCH-ADAPTER-007`、`MANGO-ARCH-OPENAPI-004`），因此接口签名改为 `traceByBusinessKey(@Valid WorkflowTaskTraceRequest)`，`WorkflowTaskTraceQuery` 仍保留在 `api/query` 并由 Request 继承，字段与约束不变。
+
+改后重新在真实环境验证（同一库、同一流程数据）：
+
+| 场景 | 结果 |
+|---|---|
+| 完整查询 | HTTP 200，10 条（含重新申请的第二个实例） |
+| `actions=["RETURN"]` | 1 条，`comment=复审退回修改` |
+| 空 `businessKey` | HTTP 400 `业务主键不能为空` |
+| `actions=["RETRUN"]` | `3659 未知审批动作：RETRUN` |
+| `deptIds=[999]` | 0 条 |
+
+请求体字段由父类继承，JSON 结构与调整前完全一致，业务侧调用方式不变。
