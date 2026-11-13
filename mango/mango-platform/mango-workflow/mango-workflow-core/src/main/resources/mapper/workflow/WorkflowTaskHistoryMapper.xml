@@ -228,4 +228,14 @@
             </foreach>
         ) links
     </select>
+
+    <select id="selectUserNamesByIds" resultType="java.lang.String">
+        select iu.username
+        from identity_user iu
+        join tenant_member tm on tm.user_id = iu.id and tm.tenant_id = #{tenantId}
+        where iu.id in
+        <foreach collection="userIds" item="userId" open="(" separator="," close=")">
+            #{userId}
+        </foreach>
+    </select>
 </mapper>

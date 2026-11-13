@@ -14,7 +14,13 @@ import io.mango.workflow.api.enums.WorkflowTaskClaimStatus;
 import io.mango.workflow.api.enums.WorkflowTaskQueryScope;
 import io.mango.workflow.api.enums.WorkflowTaskRuntimeStatus;
 import io.mango.workflow.api.query.WorkflowTaskBusinessPageQuery;
+import io.mango.workflow.api.query.WorkflowTaskTraceQuery;
+import io.mango.workflow.api.enums.WorkflowTaskAction;
+import io.mango.workflow.api.vo.WorkflowTaskRecordVO;
 import io.mango.workflow.api.vo.WorkflowTaskVO;
+import io.mango.workflow.core.convert.WorkflowTaskRecordConverter;
+import io.mango.workflow.core.entity.WorkflowTaskRecordEntity;
+import io.mango.workflow.core.mapper.WorkflowTaskRecordMapper;
 import io.mango.workflow.core.config.WorkflowTaskQueryProperties;
 import io.mango.workflow.core.engine.WorkflowCandidateGroupProvider;
 import io.mango.workflow.core.entity.WorkflowBusinessApplyEntity;
@@ -45,6 +51,7 @@ import java.util.stream.Collectors;
  *
  * <p>查询直接读取 Flowable 历史任务表并关联业务申请单，因此可以跨处理人返回同一业务类型下的全部任务，
  * 同时把租户、业务主键和数据范围收敛在 SQL 层完成，不做内存过滤。
+ * <p>流转记录读取（{@code traceByBusinessKey}）只做精确查询，不参与数据范围与申请级权限判定。
  */
 @Slf4j
 @Service
@@ -58,6 +65,7 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
 
     private final WorkflowTaskHistoryMapper taskHistoryMapper;
     private final WorkflowBusinessApplyMapper businessApplyMapper;
+    private final WorkflowTaskRecordMapper taskRecordMapper;
     private final ObjectProvider<WorkflowBusinessApplyAccessChecker> accessCheckerProvider;
     private final WorkflowTaskQueryAuthorizer authorizer;
     private final WorkflowAssigneeIdentityService assigneeIdentityService;
@@ -121,6 +129,104 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
             assigneeIdentityService.enrichTasks(records);
         }
         return PageResult.of(records, total, resolvePage(resolved), resolveSize(resolved, records));
+    }
+
+    @Override
+    public List<WorkflowTaskRecordVO> traceByBusinessKey(WorkflowTaskTraceQuery request) {
+        WorkflowTaskTraceQuery resolved = Require.nonNull(request, WorkflowCode.TASK_QUERY_INVALID,
+                "流转记录查询条件不能为空");
+        String businessType = normalizeRequired(resolved.getBusinessType(), "业务类型不能为空");
+        String businessKey = normalizeRequired(resolved.getBusinessKey(), "业务主键不能为空");
+        validateTimeRange(resolved.getBeginTime(), resolved.getEndTime());
+        List<String> actions = normalizeActions(resolved.getActions());
+        List<Long> operatorIds = normalizeIds(resolved.getOperatorIds());
+        Long tenantId = currentTenantId();
+        List<String> processInstanceIds = processInstanceIds(tenantId, businessType, businessKey,
+                normalizeIds(resolved.getDeptIds()));
+        if (processInstanceIds.isEmpty()) {
+            return List.of();
+        }
+        int limit = Math.max(properties.getUnpagedMaxRows(), 1);
+        List<WorkflowTaskRecordEntity> records = taskRecordMapper.selectList(traceWrapper(processInstanceIds,
+                operatorIds, tenantId, actions, resolved.getBeginTime(), resolved.getEndTime(), limit));
+        Require.isTrue(records.size() <= limit, WorkflowCode.TASK_QUERY_INVALID,
+                "流转记录超过单次返回上限（" + limit + "），请缩小时间区间后重试");
+        return records.stream()
+                .map(record -> WorkflowTaskRecordConverter.toVo(record, null))
+                .toList();
+    }
+
+    private List<String> processInstanceIds(Long tenantId, String businessType, String businessKey,
+                                            List<Long> deptIds) {
+        return businessApplyMapper.selectList(new LambdaQueryWrapper<WorkflowBusinessApplyEntity>()
+                        .select(WorkflowBusinessApplyEntity::getProcessInstanceId)
+                        .eq(WorkflowBusinessApplyEntity::getTenantId, String.valueOf(tenantId))
+                        .eq(WorkflowBusinessApplyEntity::getBusinessType, businessType)
+                        .eq(WorkflowBusinessApplyEntity::getBusinessKey, businessKey)
+                        .in(!deptIds.isEmpty(), WorkflowBusinessApplyEntity::getApplicantDeptId, deptIds)
+                        .isNotNull(WorkflowBusinessApplyEntity::getProcessInstanceId))
+                .stream()
+                .map(WorkflowBusinessApplyEntity::getProcessInstanceId)
+                .filter(StringUtils::hasText)
+                .distinct()
+                .toList();
+    }
+
+    private LambdaQueryWrapper<WorkflowTaskRecordEntity> traceWrapper(List<String> processInstanceIds,
+                                                                     List<Long> operatorIds, Long tenantId,
+                                                                     List<String> actions, LocalDateTime beginTime,
+                                                                     LocalDateTime endTime, int limit) {
+        LambdaQueryWrapper<WorkflowTaskRecordEntity> wrapper = new LambdaQueryWrapper<WorkflowTaskRecordEntity>()
+                .select(WorkflowTaskRecordEntity::getId,
+                        WorkflowTaskRecordEntity::getProcessInstanceId,
+                        WorkflowTaskRecordEntity::getTaskId,
+                        WorkflowTaskRecordEntity::getTaskName,
+                        WorkflowTaskRecordEntity::getTaskDefinitionKey,
+                        WorkflowTaskRecordEntity::getAction,
+                        WorkflowTaskRecordEntity::getActionName,
+                        WorkflowTaskRecordEntity::getOperatorId,
+                        WorkflowTaskRecordEntity::getOperatorName,
+                        WorkflowTaskRecordEntity::getComment,
+                        WorkflowTaskRecordEntity::getCreatedTime)
+                .in(WorkflowTaskRecordEntity::getProcessInstanceId, processInstanceIds)
+                .ge(beginTime != null, WorkflowTaskRecordEntity::getCreatedTime, beginTime)
+                .le(endTime != null, WorkflowTaskRecordEntity::getCreatedTime, endTime)
+                .in(!actions.isEmpty(), WorkflowTaskRecordEntity::getAction, actions)
+                .orderByAsc(WorkflowTaskRecordEntity::getCreatedTime)
+                .orderByAsc(WorkflowTaskRecordEntity::getId)
+                .last("limit " + (limit + 1));
+        if (!operatorIds.isEmpty()) {
+            List<String> operatorNames = operatorNames(operatorIds, tenantId);
+            wrapper.and(nested -> nested.in(WorkflowTaskRecordEntity::getOperatorId, operatorIds)
+                    .or()
+                    .in(WorkflowTaskRecordEntity::getOperatorName, operatorNames));
+        }
+        return wrapper;
+    }
+
+    /** 处理人名称可能是登录名，也可能是字符串化用户 ID；两者都参与匹配。 */
+    private List<String> operatorNames(List<Long> operatorIds, Long tenantId) {
+        LinkedHashSet<String> names = new LinkedHashSet<>();
+        operatorIds.forEach(userId -> names.add(String.valueOf(userId)));
+        names.addAll(taskHistoryMapper.selectUserNamesByIds(
+                operatorIds.stream().map(String::valueOf).toList(), String.valueOf(tenantId)));
+        return List.copyOf(names);
+    }
+
+    private List<String> normalizeActions(List<String> actions) {
+        if (actions == null || actions.isEmpty()) {
+            return List.of();
+        }
+        return actions.stream()
+                .filter(StringUtils::hasText)
+                .map(String::trim)
+                .map(value -> {
+                    WorkflowTaskAction action = WorkflowTaskAction.fromCode(value);
+                    Require.notNull(action, WorkflowCode.TASK_QUERY_INVALID, "未知审批动作：" + value);
+                    return action.name();
+                })
+                .distinct()
+                .toList();
     }
 
     private void validateScope(WorkflowTaskBusinessPageQuery query, WorkflowTaskQueryScope scope) {

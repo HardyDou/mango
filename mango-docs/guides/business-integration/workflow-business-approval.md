@@ -179,6 +179,33 @@ mango:
 
 权限分工：`workflow:task:list` 控制能否调用接口；`workflow:task:all` 控制能否使用 `ALL` 范围。业务侧按自己的角色矩阵把后一个权限码只授予主管/经理等需要全量视图的角色。
 
+## 7.2 审批流转记录读取（Issue #1234）
+
+审批详情面板需要展示"发起 / 认领 / 通过 / 退回 / 驳回"及多轮退回历史时，用 `POST /workflow/tasks/trace-by-business-key` 或本地注入 `WorkflowTaskRuntimeApi#traceByBusinessKey` 读取，不要直接查 `workflow_task_record` 表，也不需要注册 `WorkflowBusinessApplyDataPermissionProvider`。
+
+请求要点：
+
+- `businessType` / `businessKey`：必填，按 `workflow_business_apply` 精确匹配。只登记了 `workflow_form_instance`、未走申请中心的流程没有 `business_type`，调用返回空集合。
+- `operatorIds`：可选，业务 `user_id`。平台按 `operator_id` 与 `operator_name` 同时匹配，并用 `identity_user.username` 补齐只写入名称的记录。
+- `deptIds`：可选，按 `workflow_business_apply.applicant_dept_id` 过滤**整条流程实例**；同一业务键下不同部门的实例会被整体排除。这是与 `operatorIds` 的关键差别。
+- `actions`：可选，取值见审批动作枚举；未知动作直接报错，不静默返回空集合。
+- `beginTime` / `endTime`：可选，按 `createdTime` 闭区间过滤。
+- 三个集合参数传 null 或空集合表示**不过滤**。
+
+返回口径：
+
+- 扁平列表，`processInstanceId` 是分组键。重新申请会让同一业务键对应多个流程实例，平台全部返回，不提供 `latestOnly`；按实例分段展示由调用方 `groupBy` 完成。
+- 排序：`createdTime` 升序，同一时间按 `id` 升序，保证多轮退回顺序稳定。
+- 只返回任务级动作：`START` / `CLAIM` / `UNCLAIM` / `COMPLETE` / `REJECT` / `RETURN` / `TRANSFER` / `ADD_SIGN` / `READ` / `AUTO_*` / `EVENT_NOTIFY`。
+- 不返回网关/条件分支节点（数据在 `ACT_HI_ACTINST`）和撤回 `WITHDRAW`（数据在 `workflow_business_apply_status_log`）；这两项由业务侧临时补齐或另立项。
+- 不返回 `variables`（字段恒为 null）、审计列、租户列和业务字段。`START` 行的 `taskId` / `taskName` / `taskDefinitionKey` / `comment` 为 null，节点标题用 `actionName`；`CLAIM` 的 `comment` 是系统文案"认领任务"，不是审批意见。
+- 记录数超过 `mango.workflow.task-query.unpaged-max-rows`（默认 2000）时以 `TASK_QUERY_INVALID` 失败，不静默截断；调用方需要缩小时间区间。
+
+权限边界：
+
+- 接口权限只有 `workflow:task:list`，不再校验 `workflow:task:all`，也不做申请级权限判定，因此**不返回 3645**。
+- 任何持有该权限码、且知道 `businessType + businessKey` 的账号都能读到该业务键的全部流转记录与审批意见原文。本地注入 `WorkflowTaskRuntimeApi` 直接调用不经过 HTTP 过滤器，平台侧没有行级防线；业务详情页必须先完成自己的业务鉴权，并由服务端解析 `businessKey`，不接受前端传入。
+
 ## 8. 验证命令
 
 后端验证使用 Java 21。legacy migration fixture 和 API surface fingerprint 是测试资产；本次校准仅跟随既有 V1/V2/V3 迁移与 API 声明版本，未修改生产历史 SQL、公开 API、配置、菜单、权限、租户、页面、启动或审批运行时行为。业务审批接入步骤保持不变。

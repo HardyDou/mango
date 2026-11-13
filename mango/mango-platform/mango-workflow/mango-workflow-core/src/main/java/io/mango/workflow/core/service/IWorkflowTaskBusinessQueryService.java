@@ -2,7 +2,11 @@ package io.mango.workflow.core.service;
 
 import io.mango.common.vo.PageResult;
 import io.mango.workflow.api.query.WorkflowTaskBusinessPageQuery;
+import io.mango.workflow.api.query.WorkflowTaskTraceQuery;
+import io.mango.workflow.api.vo.WorkflowTaskRecordVO;
 import io.mango.workflow.api.vo.WorkflowTaskVO;
+
+import java.util.List;
 
 /**
  * 按业务类型查询任务，业务主键可选。
@@ -20,4 +24,15 @@ public interface IWorkflowTaskBusinessQueryService {
      * @return 任务分页结果
      */
     PageResult<WorkflowTaskVO> pageByBusinessKey(WorkflowTaskBusinessPageQuery request);
+
+    /**
+     * 按业务键读取审批流转记录。
+     *
+     * <p>返回该业务键下全部流程实例的任务级流转记录，按处理时间升序、同一时间按记录 ID 升序排列。
+     * 不做数据范围与申请级权限校验；租户隔离始终生效；不返回处理变量；超过配置上限直接失败。
+     *
+     * @param request 业务类型、业务主键与可选过滤条件
+     * @return 流转记录列表；无命中时返回空集合
+     */
+    List<WorkflowTaskRecordVO> traceByBusinessKey(WorkflowTaskTraceQuery request);
 }

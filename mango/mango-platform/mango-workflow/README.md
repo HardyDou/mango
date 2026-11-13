@@ -568,6 +568,27 @@ mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-comm
 
 引擎表只有 `TENANT_ID_`，没有 Mango 租户列 `tenant_id`，平台租户插件按 `act_*` 前缀跳过它们。租户收敛只依赖 `workflow_business_apply.tenant_id` 与 `a.process_instance_id = t.PROC_INST_ID_` 的关联，不要在 XML 里手写 `t.TENANT_ID_` 作为租户条件。租户插件启用时的回归入口是 `WorkflowTaskHistoryTenantIntegrationTest`。
 
+### 6.2 按业务键读取审批流转记录
+
+`POST /workflow/tasks/trace-by-business-key`（Java：`WorkflowTaskRuntimeApi#traceByBusinessKey`）返回某个业务键下全部流程实例的任务级流转记录，用于审批详情面板展示发起、认领、通过、退回、驳回和多轮退回历史。
+
+| 项 | 规则 |
+|----|------|
+| 入参 | `businessType`、`businessKey` 必填；`operatorIds`、`deptIds`、`actions`、`beginTime`、`endTime` 可选，传空表示不过滤 |
+| 接口权限 | `workflow:task:list`；不校验 `workflow:task:all` |
+| 数据范围 | 无。不调用 `WorkflowBusinessApplyAccessChecker`，不回落"仅申请人"，不返回 `3645` |
+| 租户 | 由租户插件注入 `tenant_id`；`workflow_business_apply` 侧显式按租户过滤 |
+| 返回 | 扁平 `List<WorkflowTaskRecordVO>`，`processInstanceId` 为分组键；多实例全部返回，无 `latestOnly` |
+| 排序 | `createdTime` 升序，同一时间按 `id` 升序 |
+| 字段 | `id`、`processInstanceId`、`taskId`、`taskName`、`taskDefinitionKey`、`action`、`actionName`、`operatorId`、`operatorName`、`comment`、`createdTime`；`variables` 恒为 null |
+| 空值 | 无记录、跨租户、流程未登记业务申请时返回空集合 |
+| 上限 | 超过 `mango.workflow.task-query.unpaged-max-rows`（默认 2000）时以 `TASK_QUERY_INVALID` 失败，不静默截断 |
+| 不返回 | 网关/条件分支节点（`ACT_HI_ACTINST`）、撤回 `WITHDRAW`（`workflow_business_apply_status_log`）、处理变量、审计列、业务字段 |
+
+`operatorIds` 同时匹配 `operator_id` 与经 `identity_user.username` 解析出的 `operator_name`，覆盖只写入名称的历史记录；`deptIds` 按 `workflow_business_apply.applicant_dept_id` 过滤整条流程实例，因此会整体排除不匹配的实例。三个集合参数传 null 或空集合表示不过滤。
+
+安全边界：本接口不做行级权限判定。持有 `workflow:task:list` 且知道业务键的账号可以读取该业务键全部流转记录与审批意见原文；本地注入 API 调用不经过 HTTP 过滤器。业务侧必须先完成自己的业务鉴权，并由服务端解析业务键。
+
 ## 7. 配置说明
 
 配置写在应用的 `application.yml` 或对应环境配置文件中。
@@ -685,6 +706,7 @@ Workflow 参数校验约束统一由 `mango-workflow-api` 的 `XxxApi` 契约声
 | 我的任务统计 | `GET /workflow/tasks/my/summary` | `workflow:task:list` |
 | 抄送列表 | `GET /workflow/tasks/copied` | `workflow:task:list` |
 | 按业务类型查询任务（业务主键可选） | `POST /workflow/tasks/page-by-business-key` | `workflow:task:list`；`scope=ALL` 还需要 `workflow:task:all` |
+| 按业务键读取审批流转记录 | `POST /workflow/tasks/trace-by-business-key` | `workflow:task:list`；无数据范围与申请级校验 |
 | 抄送已阅 | `POST /workflow/tasks/copied/read` | `workflow:task:read-copied` |
 
 `POST /workflow/tasks/complete`、`reject`、`save`、`claim`、`unclaim` 保持兼容，只返回布尔成功结果。业务审批页在办理后需要立即刷新业务申请状态、当前任务、当前办理人、认领状态或判断流程是否结束时，优先使用对应的 `*-result` 接口；返回体包含已处理任务、流程实例、是否结束、业务申请状态和刷新后的当前任务快照。

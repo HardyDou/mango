@@ -13,8 +13,10 @@ import io.mango.workflow.api.command.TransferWorkflowTaskCommand;
 
 import io.mango.workflow.api.query.WorkflowTaskPageQuery;
 import io.mango.workflow.api.request.WorkflowTaskBusinessPageRequest;
+import io.mango.workflow.api.request.WorkflowTaskTraceRequest;
 import io.mango.workflow.api.vo.WorkflowMyTaskSummaryVO;
 import io.mango.workflow.api.vo.WorkflowProcessDetailVO;
+import io.mango.workflow.api.vo.WorkflowTaskRecordVO;
 import io.mango.workflow.api.vo.WorkflowTaskCompleteResultVO;
 import io.mango.workflow.api.vo.WorkflowTaskDetailVO;
 import io.mango.workflow.api.vo.WorkflowTaskActionResultVO;
@@ -22,6 +24,8 @@ import io.mango.workflow.api.vo.WorkflowTaskSummaryVO;
 import io.mango.workflow.api.vo.WorkflowTaskVO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+
+import java.util.List;
 
 /**
  * 工作流任务运行时 API。
@@ -47,6 +51,22 @@ public interface WorkflowTaskRuntimeApi {
      * @return 任务分页结果；不传分页参数时返回全部结果，{@code total} 为过滤后总数
      */
     R<PageResult<WorkflowTaskVO>> pageByBusinessKey(@Valid WorkflowTaskBusinessPageRequest request);
+
+    /**
+     * 按业务键读取审批流转记录。
+     *
+     * <p>返回该业务键下全部流程实例的任务级流转记录，包含发起（{@code START}）、认领（{@code CLAIM}）、
+     * 通过（{@code COMPLETE}）、退回（{@code RETURN}）、驳回（{@code REJECT}）等动作，按处理时间升序、
+     * 同一时间按记录 ID 升序排列。重新申请产生的多个流程实例全部返回，调用方按 {@code processInstanceId} 分组。
+     * <p>本方法不做数据范围与申请级权限校验：不读取 {@code workflow_business_apply} 的访问权限，也不回落到
+     * “仅申请人可读”。租户隔离始终生效。网关节点与撤回动作不在本方法返回范围内。
+     * <p>不返回处理变量（{@code variables} 恒为 null）；记录数超过 {@code mango.workflow.task-query.unpaged-max-rows}
+     * 时以 {@code TASK_QUERY_INVALID} 失败，不做静默截断。
+     *
+     * @param request 业务类型、业务主键与可选过滤条件；业务类型和业务主键必填
+     * @return 流转记录列表；无命中、跨租户或流程未登记业务申请时返回空集合
+     */
+    R<List<WorkflowTaskRecordVO>> traceByBusinessKey(@Valid WorkflowTaskTraceRequest request);
 
     R<WorkflowTaskSummaryVO> summary();
 

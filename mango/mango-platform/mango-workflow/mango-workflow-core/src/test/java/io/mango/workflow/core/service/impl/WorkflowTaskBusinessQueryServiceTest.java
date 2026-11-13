@@ -9,6 +9,9 @@ import io.mango.workflow.api.enums.WorkflowTaskClaimStatus;
 import io.mango.workflow.api.enums.WorkflowTaskQueryScope;
 import io.mango.workflow.api.enums.WorkflowTaskRuntimeStatus;
 import io.mango.workflow.api.query.WorkflowTaskBusinessPageQuery;
+import io.mango.workflow.api.query.WorkflowTaskTraceQuery;
+import io.mango.workflow.api.vo.WorkflowTaskRecordVO;
+import io.mango.workflow.core.entity.WorkflowTaskRecordEntity;
 import io.mango.workflow.api.vo.WorkflowTaskVO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.workflow.api.enums.WorkflowTaskCancelCause;
@@ -17,10 +20,15 @@ import io.mango.workflow.core.engine.WorkflowCandidateGroupProvider;
 import io.mango.workflow.core.entity.WorkflowBusinessApplyEntity;
 import io.mango.workflow.core.identity.WorkflowAssigneeIdentityService;
 import io.mango.workflow.core.mapper.WorkflowBusinessApplyMapper;
+import io.mango.workflow.core.mapper.WorkflowTaskRecordMapper;
 import io.mango.workflow.core.mapper.WorkflowTaskHistoryMapper;
 import io.mango.workflow.core.model.WorkflowTaskHistoryCriteria;
 import io.mango.workflow.core.model.WorkflowTaskHistoryRow;
+import com.baomidou.mybatisplus.core.MybatisConfiguration;
+import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
+import org.apache.ibatis.builder.MapperBuilderAssistant;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -34,6 +42,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -48,6 +57,7 @@ class WorkflowTaskBusinessQueryServiceTest {
 
     private WorkflowTaskHistoryMapper taskHistoryMapper;
     private WorkflowBusinessApplyMapper businessApplyMapper;
+    private WorkflowTaskRecordMapper taskRecordMapper;
     private WorkflowTaskQueryAuthorizer authorizer;
     private WorkflowAssigneeIdentityService assigneeIdentityService;
     private WorkflowCandidateGroupProvider candidateGroupProvider;
@@ -56,10 +66,18 @@ class WorkflowTaskBusinessQueryServiceTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private WorkflowTaskBusinessQueryService service;
 
+    @BeforeAll
+    static void initLambdaCache() {
+        MapperBuilderAssistant assistant = new MapperBuilderAssistant(new MybatisConfiguration(), "");
+        TableInfoHelper.initTableInfo(assistant, WorkflowBusinessApplyEntity.class);
+        TableInfoHelper.initTableInfo(assistant, WorkflowTaskRecordEntity.class);
+    }
+
     @BeforeEach
     void setUp() {
         taskHistoryMapper = mock(WorkflowTaskHistoryMapper.class);
         businessApplyMapper = mock(WorkflowBusinessApplyMapper.class);
+        taskRecordMapper = mock(WorkflowTaskRecordMapper.class);
         authorizer = mock(WorkflowTaskQueryAuthorizer.class);
         assigneeIdentityService = mock(WorkflowAssigneeIdentityService.class);
         candidateGroupProvider = mock(WorkflowCandidateGroupProvider.class);
@@ -70,8 +88,8 @@ class WorkflowTaskBusinessQueryServiceTest {
         checkerProvider = provider;
         when(checkerProvider.getIfAvailable()).thenReturn(null);
         when(candidateGroupProvider.currentCandidateGroups()).thenReturn(List.of("ROLE_REVIEWER"));
-        service = new WorkflowTaskBusinessQueryService(taskHistoryMapper, businessApplyMapper, checkerProvider,
-                authorizer, assigneeIdentityService, candidateGroupProvider, properties, objectMapper);
+        service = new WorkflowTaskBusinessQueryService(taskHistoryMapper, businessApplyMapper, taskRecordMapper,
+                checkerProvider, authorizer, assigneeIdentityService, candidateGroupProvider, properties, objectMapper);
         MangoContextHolder.clear();
         MangoContextHolder.set(MangoContextSnapshot.empty()
                 .withSecurity(1001L, "1", "alice", "default", "USER", "ORG", 1001L, "token"));
@@ -394,6 +412,108 @@ class WorkflowTaskBusinessQueryServiceTest {
 
         assertThat(result.getList().get(0).getCancelCause()).isNull();
         assertThat(result.getList().get(0).getStatus()).isEqualTo(WorkflowTaskRuntimeStatus.DONE.name());
+    }
+
+
+    @Test
+    void traceRejectsBlankBusinessKey() {
+        WorkflowTaskTraceQuery query = traceQuery();
+        query.setBusinessKey("  ");
+
+        assertThatThrownBy(() -> service.traceByBusinessKey(query))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("业务主键不能为空");
+        verify(taskRecordMapper, never()).selectList(any());
+    }
+
+    @Test
+    void traceRejectsUnknownAction() {
+        WorkflowTaskTraceQuery query = traceQuery();
+        query.setActions(List.of("COMPLETE", "RETRUN"));
+
+        assertThatThrownBy(() -> service.traceByBusinessKey(query))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("未知审批动作：RETRUN");
+        verify(taskRecordMapper, never()).selectList(any());
+    }
+
+    @Test
+    void traceRejectsInvalidTimeRange() {
+        WorkflowTaskTraceQuery query = traceQuery();
+        query.setBeginTime(LocalDateTime.of(2026, 2, 1, 0, 0));
+        query.setEndTime(LocalDateTime.of(2026, 1, 1, 0, 0));
+
+        assertThatThrownBy(() -> service.traceByBusinessKey(query))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("时间区间非法");
+    }
+
+    @Test
+    void traceReturnsEmptyWhenBusinessKeyHasNoProcessInstance() {
+        when(businessApplyMapper.selectList(any())).thenReturn(List.of());
+
+        assertThat(service.traceByBusinessKey(traceQuery())).isEmpty();
+        verify(taskRecordMapper, never()).selectList(any());
+    }
+
+    @Test
+    void traceFailsInsteadOfTruncatingWhenRecordCountExceedsLimit() {
+        properties.setUnpagedMaxRows(2);
+        when(businessApplyMapper.selectList(any())).thenReturn(List.of(apply("P1")));
+        when(taskRecordMapper.selectList(any())).thenReturn(List.of(record(1L, "P1"), record(2L, "P1"),
+                record(3L, "P1")));
+
+        assertThatThrownBy(() -> service.traceByBusinessKey(traceQuery()))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("单次返回上限");
+    }
+
+    @Test
+    void traceReturnsRecordsWithoutVariables() {
+        when(businessApplyMapper.selectList(any())).thenReturn(List.of(apply("P1")));
+        when(taskRecordMapper.selectList(any())).thenReturn(List.of(record(1L, "P1"), record(2L, "P1")));
+
+        List<WorkflowTaskRecordVO> records = service.traceByBusinessKey(traceQuery());
+
+        assertThat(records).extracting(WorkflowTaskRecordVO::getId).containsExactly(1L, 2L);
+        assertThat(records).allSatisfy(record -> assertThat(record.getVariables()).isNull());
+        assertThat(records.get(0).getActionName()).isEqualTo("发起");
+    }
+
+    @Test
+    void traceResolvesOperatorNamesBeforeFiltering() {
+        when(businessApplyMapper.selectList(any())).thenReturn(List.of(apply("P1")));
+        when(taskHistoryMapper.selectUserNamesByIds(anyList(), eq("1"))).thenReturn(List.of("alice"));
+        when(taskRecordMapper.selectList(any())).thenReturn(List.of(record(1L, "P1")));
+        WorkflowTaskTraceQuery query = traceQuery();
+        query.setOperatorIds(List.of(1001L));
+
+        assertThat(service.traceByBusinessKey(query)).hasSize(1);
+        verify(taskHistoryMapper).selectUserNamesByIds(List.of("1001"), "1");
+    }
+
+    private WorkflowTaskTraceQuery traceQuery() {
+        WorkflowTaskTraceQuery query = new WorkflowTaskTraceQuery();
+        query.setBusinessType("BAOHAN_RC_PROJECT_REVIEW");
+        query.setBusinessKey("RC1");
+        return query;
+    }
+
+    private WorkflowBusinessApplyEntity apply(String processInstanceId) {
+        WorkflowBusinessApplyEntity apply = new WorkflowBusinessApplyEntity();
+        apply.setProcessInstanceId(processInstanceId);
+        return apply;
+    }
+
+    private WorkflowTaskRecordEntity record(Long id, String processInstanceId) {
+        WorkflowTaskRecordEntity record = new WorkflowTaskRecordEntity();
+        record.setId(id);
+        record.setProcessInstanceId(processInstanceId);
+        record.setAction("START");
+        record.setOperatorId(1001L);
+        record.setOperatorName("alice");
+        record.setCreatedTime(LocalDateTime.of(2026, 1, 1, 10, 0).plusMinutes(id));
+        return record;
     }
 
     private WorkflowTaskBusinessPageQuery query(WorkflowTaskQueryScope scope) {

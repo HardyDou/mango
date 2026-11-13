@@ -16,12 +16,14 @@ import io.mango.workflow.api.command.TransferWorkflowTaskCommand;
 
 import io.mango.workflow.api.query.WorkflowTaskPageQuery;
 import io.mango.workflow.api.request.WorkflowTaskBusinessPageRequest;
+import io.mango.workflow.api.request.WorkflowTaskTraceRequest;
 import io.mango.workflow.api.vo.WorkflowMyTaskSummaryVO;
 import io.mango.workflow.api.vo.WorkflowProcessDetailVO;
 import io.mango.workflow.api.vo.WorkflowTaskActionResultVO;
 import io.mango.workflow.api.vo.WorkflowTaskCompleteResultVO;
 import io.mango.workflow.api.vo.WorkflowTaskDetailVO;
 import io.mango.workflow.api.vo.WorkflowTaskSummaryVO;
+import io.mango.workflow.api.vo.WorkflowTaskRecordVO;
 import io.mango.workflow.api.vo.WorkflowTaskVO;
 import io.mango.workflow.core.service.IWorkflowTaskBusinessQueryService;
 import io.mango.workflow.core.service.IWorkflowTaskRuntimeService;
@@ -37,6 +39,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.validation.annotation.Validated;
+
+import java.util.List;
 
 
 /**
@@ -222,6 +226,17 @@ public class WorkflowTaskController implements WorkflowTaskRuntimeApi {
     @Override
     public R<PageResult<WorkflowTaskVO>> pageByBusinessKey(@RequestBody WorkflowTaskBusinessPageRequest request) {
         return R.ok(workflowTaskBusinessQueryService.pageByBusinessKey(request));
+    }
+
+    @PostMapping("/trace-by-business-key")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:list")
+    @Operation(summary = "按业务键读取审批流转记录",
+            description = "返回该业务键下全部流程实例的任务级流转记录，含发起、认领、通过、退回、驳回；"
+                    + "按处理时间与记录 ID 升序，重新申请的多个实例一并返回；"
+                    + "不做数据范围与申请级权限校验，不返回处理变量，记录数超过单次返回上限时直接失败")
+    @Override
+    public R<List<WorkflowTaskRecordVO>> traceByBusinessKey(@RequestBody WorkflowTaskTraceRequest request) {
+        return R.ok(workflowTaskBusinessQueryService.traceByBusinessKey(request));
     }
 
     @PostMapping("/copied/read")
