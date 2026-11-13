@@ -24,7 +24,9 @@ import io.mango.workflow.api.command.SaveWorkflowTaskDraftCommand;
 import io.mango.workflow.api.command.TransferWorkflowTaskCommand;
 import io.mango.workflow.api.command.WorkflowJsonRequest;
 import io.mango.workflow.api.enums.WorkflowApplyStatus;
+import io.mango.workflow.api.enums.WorkflowAutoAssignmentStrategy;
 import io.mango.workflow.api.enums.WorkflowInstanceStatus;
+import io.mango.workflow.api.enums.WorkflowNodeAffinityFallback;
 import io.mango.workflow.api.enums.WorkflowTaskAction;
 import io.mango.workflow.api.query.WorkflowBusinessApplyPageQuery;
 import io.mango.workflow.api.request.WorkflowBusinessApplyProgressBatchRequest;
@@ -299,6 +301,46 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
         assertThat(autoAssignmentSelector.activeTaskCount(10L)).isEqualTo(1L);
         Task task = task("task-1", "manager_approve", "proc-1", "pd-1", null);
         assertThat(autoAssignmentSelector.affinityCandidate(task, List.of(10L, 20L))).isEqualTo(20L);
+    }
+
+    @Test
+    void nodeAffinityUsesEarliestSameNodeHandlerAndAppliesConfiguredFallback() {
+        insertFormInstance("proc-1", "{}", WorkflowInstanceStatus.RUNNING.name());
+        jdbcTemplate.update("""
+                insert into workflow_task_record
+                    (id, tenant_id, process_instance_id, task_id, task_name, task_definition_key,
+                     action, action_name, operator_id, operator_name, created_time, created_at)
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, 1L, 1L, "proc-1", "task-1", "经理审批", "manager_approve",
+                "CLAIM", "认领", 20L, "lisi", LocalDateTime.parse("2026-01-01T09:00:00"),
+                LocalDateTime.parse("2026-01-01T09:00:00"));
+        jdbcTemplate.update("""
+                insert into workflow_task_record
+                    (id, tenant_id, process_instance_id, task_id, task_name, task_definition_key,
+                     action, action_name, operator_id, operator_name, created_time, created_at)
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, 2L, 1L, "proc-1", "task-2", "经理审批", "manager_approve",
+                "COMPLETE", "通过", 10L, "zhangsan", LocalDateTime.parse("2026-01-01T10:00:00"),
+                LocalDateTime.parse("2026-01-01T10:00:00"));
+
+        WorkflowAutoAssignmentSelector selector = new WorkflowAutoAssignmentSelector(jdbcTemplate);
+        Task historical = task("task-3", "manager_approve", "proc-1", "pd-1", null);
+        Task firstTime = task("task-3", "first_review", "proc-1", "pd-1", null);
+
+        assertThat(selector.nodeAffinityCandidate(historical, List.of(10L, 20L))).isEqualTo(20L);
+        assertThat(selector.nodeAffinityCandidate(historical, List.of(30L))).isNull();
+        assertThat(selector.select(historical, List.of(10L, 20L), null,
+                WorkflowAutoAssignmentStrategy.NODE_AFFINITY, WorkflowNodeAffinityFallback.ROUND_ROBIN))
+                .isEqualTo(20L);
+        assertThat(selector.select(firstTime, List.of(10L, 20L), null,
+                WorkflowAutoAssignmentStrategy.NODE_AFFINITY, WorkflowNodeAffinityFallback.CLAIM))
+                .isNull();
+        assertThat(selector.select(firstTime, List.of(10L, 20L), 10L,
+                WorkflowAutoAssignmentStrategy.NODE_AFFINITY, WorkflowNodeAffinityFallback.ROUND_ROBIN))
+                .isEqualTo(20L);
+        assertThat(selector.select(firstTime, List.of(10L), null,
+                WorkflowAutoAssignmentStrategy.NODE_AFFINITY, WorkflowNodeAffinityFallback.RANDOM))
+                .isEqualTo(10L);
     }
 
     @Test
@@ -1026,7 +1068,7 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
     }
 
     @Configuration
-    @Import({WorkflowTaskRuntimeService.class, WorkflowAssigneeIdentityService.class})
+    @Import({WorkflowTaskRuntimeService.class, WorkflowRuntimeCandidateLinker.class, WorkflowAssigneeIdentityService.class})
     @MapperScan("io.mango.workflow.core.mapper")
     static class TestConfig {
 

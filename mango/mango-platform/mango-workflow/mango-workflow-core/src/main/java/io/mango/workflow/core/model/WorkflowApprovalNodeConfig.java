@@ -6,6 +6,7 @@ import io.mango.workflow.api.enums.WorkflowAutoAssignmentStrategy;
 import io.mango.workflow.api.enums.WorkflowAssigneeType;
 import io.mango.workflow.api.enums.WorkflowEmptyAssigneeStrategy;
 import io.mango.workflow.api.enums.WorkflowFormPermission;
+import io.mango.workflow.api.enums.WorkflowNodeAffinityFallback;
 import io.mango.workflow.api.enums.WorkflowRejectStrategy;
 import lombok.Data;
 
@@ -24,6 +25,8 @@ public class WorkflowApprovalNodeConfig {
     private WorkflowAssignmentMode assignmentMode = WorkflowAssignmentMode.CLAIM;
     /** 自动派单策略，缺失时兼容为 ROUND_ROBIN。 */
     private WorkflowAutoAssignmentStrategy autoAssignmentStrategy = WorkflowAutoAssignmentStrategy.ROUND_ROBIN;
+    /** 节点亲和无历史办理人时的回退策略，缺失时保持待领取。 */
+    private WorkflowNodeAffinityFallback nodeAffinityFallback = WorkflowNodeAffinityFallback.CLAIM;
 
     private WorkflowAssigneeType assigneeType = WorkflowAssigneeType.SPECIFIED_USER;
     private List<String> assigneeIds = new ArrayList<>();

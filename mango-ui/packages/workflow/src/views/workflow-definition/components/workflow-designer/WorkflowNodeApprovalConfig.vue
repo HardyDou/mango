@@ -23,6 +23,27 @@
           <el-radio label="ROUND_ROBIN">轮询</el-radio>
           <el-radio label="LEAST_TASKS">任务量最少</el-radio>
           <el-radio label="AFFINITY">流程亲和</el-radio>
+          <el-radio label="NODE_AFFINITY">节点亲和</el-radio>
+        </el-radio-group>
+      </div>
+      <div
+        v-if="
+          (config.assignmentMode || 'CLAIM') === 'AUTO' &&
+          (config.autoAssignmentStrategy || 'ROUND_ROBIN') === 'NODE_AFFINITY'
+        "
+        class="assignment-mode-row"
+      >
+        <span class="assignment-mode-label">无历史办理人</span>
+        <el-radio-group
+          :model-value="config.nodeAffinityFallback || 'CLAIM'"
+          class="approval-radio-row assignment-strategy-row"
+          data-field="workflow.node-affinity-fallback"
+          @change="(value: WorkflowNodeAffinityFallback) => $emit('update-config', { nodeAffinityFallback: value })"
+        >
+          <el-radio label="CLAIM">待领取</el-radio>
+          <el-radio label="ROUND_ROBIN">轮询</el-radio>
+          <el-radio label="RANDOM">随机</el-radio>
+          <el-radio label="LEAST_TASKS">任务量最少</el-radio>
         </el-radio-group>
       </div>
       <el-radio-group
@@ -271,6 +292,7 @@ import type {
   WorkflowApprovalNodeConfig,
   WorkflowAssignmentMode,
   WorkflowAutoAssignmentStrategy,
+  WorkflowNodeAffinityFallback,
 } from '../../../../api/workflow';
 import type { ApprovalOrgTreeOption, ApprovalTargetOption, WorkflowVariableOption } from './types';
 

@@ -4,6 +4,8 @@
 
 ## 7. 变更影响记录
 
+- 新增 Workflow 节点亲和自动派单：审批节点 `assignmentMode=AUTO` 时可选 `autoAssignmentStrategy=NODE_AFFINITY`，优先派回同一流程实例、同一节点最早处理过任务且仍在候选集中的用户；无历史办理人或历史办理人已不在候选范围时，按 `nodeAffinityFallback` 回退到待领取、轮询、随机或任务量最少，默认待领取。该能力复用现有自动派单事务、候选解析和审计记录，不改变数据库结构、权限码和页面入口。
+
 - Issue #1223 将 `POST /workflow/tasks/page-by-business-key` 的 `businessKeys` 改为可选：不传或为空表示只按 `businessType`、`scope`、阶段、任务状态、处理人、时间和分页查询，`total` 按任务数统计；传入 `businessKeys` 时仍按业务主键收窄。业务列表不再需要先查业务表取候选业务键，也不会因为业务键数量上限丢数据；不传业务键时不做逐申请 `WorkflowBusinessApplyDataPermissionProvider` 收窄，范围由租户、`scope` 和权限码决定。请求与响应字段、权限码、租户隔离和数据库结构不变。
 
 - Issue #1220 修复 `POST /workflow/tasks/page-by-business-key` 在启用默认租户插件时 500：平台租户插件按 `act_*`、`flw_*` 前缀跳过 Flowable 引擎表，不再向 `ACT_HI_TASKINST`、`ACT_HI_IDENTITYLINK`、`ACT_RU_IDENTITYLINK` 追加不存在的 `tenant_id` 条件。租户隔离仍由 `workflow_business_apply.tenant_id` 收敛；业务项目可删除自己追加的 `ACT_*` 排除表配置。接口字段、权限码、事件、状态流转和页面 key 不变。

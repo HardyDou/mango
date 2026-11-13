@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.workflow.core.model.WorkflowApprovalNodeConfig;
 import io.mango.workflow.api.enums.WorkflowAssignmentMode;
 import io.mango.workflow.api.enums.WorkflowAutoAssignmentStrategy;
+import io.mango.workflow.api.enums.WorkflowNodeAffinityFallback;
 import org.flowable.bpmn.model.BpmnModel;
 import org.flowable.bpmn.model.ExtensionElement;
 import org.flowable.bpmn.model.MultiInstanceLoopCharacteristics;
@@ -112,6 +113,7 @@ class WorkflowDesignerBpmnConverterTest {
                 {
                   "assignmentMode": "AUTO",
                   "autoAssignmentStrategy": "AFFINITY",
+                  "nodeAffinityFallback": "ROUND_ROBIN",
                   "assigneeIds": ["1001", "1002"]
                 }
                 """);
@@ -122,6 +124,7 @@ class WorkflowDesignerBpmnConverterTest {
                 task.getExtensionElements().get("mangoApprovalConfig").get(0).getElementText(),
                 WorkflowApprovalNodeConfig.class);
         assertThat(config.getAutoAssignmentStrategy()).isEqualTo(WorkflowAutoAssignmentStrategy.AFFINITY);
+        assertThat(config.getNodeAffinityFallback()).isEqualTo(WorkflowNodeAffinityFallback.ROUND_ROBIN);
     }
 
     private UserTask approvalTask(String approvalConfigJson) {

@@ -38,6 +38,12 @@ describe('WorkflowNodeApprovalConfig', () => {
     await nextTick();
     expect(el.textContent).toContain('任务量最少');
     expect(el.textContent).toContain('流程亲和');
+    expect(el.textContent).toContain('节点亲和');
+
+    config.autoAssignmentStrategy = 'NODE_AFFINITY';
+    await nextTick();
+    expect(el.textContent).toContain('无历史办理人');
+    expect(el.textContent).toContain('随机');
     unmount();
   });
 });

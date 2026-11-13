@@ -36,6 +36,7 @@ import io.mango.workflow.api.enums.WorkflowTaskRuntimeStatus;
 import io.mango.workflow.api.enums.WorkflowParticipantType;
 import io.mango.workflow.api.enums.WorkflowAssignmentMode;
 import io.mango.workflow.api.enums.WorkflowAutoAssignmentStrategy;
+import io.mango.workflow.api.enums.WorkflowNodeAffinityFallback;
 import io.mango.workflow.api.query.WorkflowTaskPageQuery;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyCurrentTaskVO;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyVO;
@@ -149,6 +150,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
     private final TenantMemberProvider tenantMemberProvider;
     private final WorkflowAutoAssignmentStateMapper autoAssignmentStateMapper;
     private final JdbcTemplate jdbcTemplate;
+    private final WorkflowRuntimeCandidateLinker candidateLinker;
     @Override
     public PageResult<WorkflowTaskVO> todo(WorkflowTaskPageQuery query) {
         WorkflowTaskPageQuery resolved = resolve(query);
@@ -1413,7 +1415,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
             return applyAutoEmptyStrategy(task, resolved.emptyStrategy(), variables);
         }
         boolean usersChanged = applyResolvedRuntimeUsers(task, variables, resolved.users());
-        boolean groupsChanged = applyResolvedRuntimeGroups(task, resolved.groups());
+        boolean groupsChanged = candidateLinker.applyGroups(task, resolved.groups());
         return usersChanged || groupsChanged;
     }
     /** 严格 ROUND_ROBIN 自动派单；候选、游标和 Flowable 办理人位于同一事务。 */
@@ -1427,21 +1429,39 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
                 initiator(task.getProcessInstanceId()), task.getTaskDefinitionKey());
         List<Long> candidates = resolveCandidates(resolved);
         requireCandidates(candidates, task, config);
-        WorkflowAutoAssignmentStateEntity state = loadAssignmentState(task);
         WorkflowAutoAssignmentStrategy strategy = config.getAutoAssignmentStrategy() == null
                 ? WorkflowAutoAssignmentStrategy.ROUND_ROBIN : config.getAutoAssignmentStrategy();
+        WorkflowNodeAffinityFallback nodeAffinityFallback = config.getNodeAffinityFallback() == null
+                ? WorkflowNodeAffinityFallback.CLAIM : config.getNodeAffinityFallback();
+        WorkflowAutoAssignmentStateEntity state =
+                strategy == WorkflowAutoAssignmentStrategy.NODE_AFFINITY
+                        && nodeAffinityFallback != WorkflowNodeAffinityFallback.ROUND_ROBIN
+                        ? null : loadAssignmentState(task);
         Long selected = new WorkflowAutoAssignmentSelector(jdbcTemplate)
-                .select(task, candidates, state.getLastAssignedUserId(), strategy);
-        state.setLastAssignedUserId(selected);
-        state.setUpdatedBy(MangoContextHolder.userId());
-        state.setUpdatedAt(LocalDateTime.now());
-        autoAssignmentStateMapper.updateById(state);
+                .select(task, candidates, state == null ? null : state.getLastAssignedUserId(), strategy,
+                        nodeAffinityFallback);
+        if (selected == null) {
+            candidateLinker.applyGroups(task, resolved.groups());
+            candidateLinker.applyUsers(task, resolved.users());
+            return false;
+        }
+        if (state != null) {
+            state.setLastAssignedUserId(selected);
+            state.setUpdatedBy(MangoContextHolder.userId());
+            state.setUpdatedAt(LocalDateTime.now());
+            autoAssignmentStateMapper.updateById(state);
+        }
         taskService.setAssignee(task.getId(), String.valueOf(selected));
         task.setAssignee(String.valueOf(selected));
         recordCurrentAssignee(task);
-        saveRecord(task, WorkflowTaskAction.AUTO_ASSIGN, "自动派单",
-                Map.of("assignmentMode", WorkflowAssignmentMode.AUTO.name(),
-                        "strategy", strategy.name(), "assigneeUserId", selected));
+        Map<String, Object> audit = new LinkedHashMap<>();
+        audit.put("assignmentMode", WorkflowAssignmentMode.AUTO.name());
+        audit.put("strategy", strategy.name());
+        audit.put("assigneeUserId", selected);
+        if (strategy == WorkflowAutoAssignmentStrategy.NODE_AFFINITY) {
+            audit.put("nodeAffinityFallback", nodeAffinityFallback.name());
+        }
+        saveRecord(task, WorkflowTaskAction.AUTO_ASSIGN, "自动派单", audit);
         return true;
     }
     private List<Long> resolveCandidates(WorkflowAssigneeResolver.ResolvedAssignees resolved) {
@@ -1621,16 +1641,6 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         return changed;
     }
 
-    private boolean applyResolvedRuntimeGroups(Task task, List<String> groups) {
-        if (groups == null || groups.isEmpty() || !taskIdentityGroups(task.getId()).isEmpty()) {
-            return false;
-        }
-        for (String group : groups) {
-            taskService.addCandidateGroup(task.getId(), group);
-        }
-        return true;
-    }
-
     private boolean applyAutoEmptyStrategy(Task task, WorkflowEmptyAssigneeStrategy strategy, Map<String, Object> variables) {
         if (strategy == WorkflowEmptyAssigneeStrategy.AUTO_PASS) {
             taskService.complete(task.getId(), variables);
@@ -1677,16 +1687,6 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         return Arrays.stream(String.valueOf(value).split("\\s*,\\s*"))
                 .filter(StringUtils::hasText)
                 .toList();
-    }
-
-    private Set<String> taskIdentityGroups(String taskId) {
-        Set<String> groups = new LinkedHashSet<>();
-        for (IdentityLink link : taskService.getIdentityLinksForTask(taskId)) {
-            if (StringUtils.hasText(link.getGroupId())) {
-                groups.add(link.getGroupId());
-            }
-        }
-        return groups;
     }
 
     private Map<String, String> taskFormPermissions(Task task, String formJson) {
