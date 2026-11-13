@@ -1,95 +1,87 @@
 ## Pull Requests
 
-- Added: [PR #1208](https://github.com/HardyDou/mango/pull/1208) Added `POST /workflow/tasks/page-by-business-key`, which returns every task of the given business keys — running, completed and terminated — with `scope=SELF|ALL`, `cancelCause`, `returned`, `lastReturnAt` and `lastReturnTarget`. Packages: the complete Maven/docs `1.5.0` tuple including `io.mango.platform.workflow:mango-workflow-{api,core,starter,starter-remote}:1.5.0`, and the generated `@mango/cli@1.4.4` closure. Business Adaptation: upgrade the tuple, grant `workflow:task:list` (plus `workflow:task:all` when `scope=ALL`), and switch business list pages from per-application queries to this endpoint.
-- Added: [PR #1206](https://github.com/HardyDou/mango/pull/1206) Added business-level quality gate parameters to the Maven plugin: `mango.check.reportOnlyRules` demotes selected rules to report-only, and `mango.check.checkstyle.cyclomaticComplexityMax` / `mango.check.checkstyle.fileLengthMax` override thresholds without copying the bundled rule files. Packages: the complete Maven/docs `1.5.0` tuple including `io.mango.tools.maven.plugin:mango-maven-plugin:1.5.0`. Business Adaptation: upgrade the tuple and replace copied rule files with the new properties.
-- Changed: [PR #1209](https://github.com/HardyDou/mango/pull/1209) Retired `frontend-pr-quality` as a required branch-protection check and narrowed the Maven plugin full-Reactor gate to POM, rulesets, architecture/baseline code and architecture rules. Packages: `@mango/pmo@1.5.0` and the complete Maven/docs `1.5.0` tuple. Business Adaptation: update the PMO baseline so required contexts are `pr-contract-check` and `pmo-doc-check`; frontend quality still runs on `main` and by manual trigger.
-- Fixed: [PR #1212](https://github.com/HardyDou/mango/pull/1212) Completed the missing component contracts and fixed the frontend quality gate: `DictDisplay` and `DictSelect` declare their component name through `defineOptions`, and contract metadata is added for the affected packages. Packages: `@mango/common@2.3.2`, `@mango/rbac@1.3.1`, `@mango/system@1.1.3`, `@mango/admin-shell@1.1.4`, `@mango/workflow@1.0.67` and the generated npm closure. Business Adaptation: upgrade the npm closure; component props, events and exports are unchanged.
-- Changed: [PR #1213](https://github.com/HardyDou/mango/pull/1213) Formatted the component contracts and switched the frontend workflow to the pre-installed MySQL client. Packages: the same npm closure as #1212. Business Adaptation: no consumer action beyond the closure upgrade.
-- Fixed: [PR #1211](https://github.com/HardyDou/mango/pull/1211) Fixed the ESLint warning in the frontend workflow test regex. Packages: none published; CI configuration only. Business Adaptation: no consumer action.
-- Changed: [PR #1210](https://github.com/HardyDou/mango/pull/1210) Merged the workflow business query branch with `main`. Packages: none beyond the `1.5.0` tuple above. Business Adaptation: no separate action.
-
-## Fixed
-
-- Business list pages no longer need one workflow query per application: a single request returns all tasks for the requested business keys, including returned, withdrawn and terminated ones, with a machine-readable `cancelCause`.
-- `assigneeIds` mapping now resolves engine user names through `identity_user.username` and validates tenant membership, so same-named users in other tenants cannot leak tasks into the result.
-- The task history `START_TIME_` column is used for creation time instead of the non-existent `CREATE_TIME_`, and empty `endTime` / `claimTime` sort last in both directions.
-- `scope=SELF` and `scope=ALL` reject `deptIds` instead of silently ignoring it, and `scope=ORG` is rejected in the current version so callers cannot assume organization filtering happened.
-- Frontend quality gate findings that blocked `main` are resolved without changing component behavior: contracts are complete, formatting is stable and the workflow test regex no longer emits an ESLint warning.
+- Added: [PR #1238](https://github.com/HardyDou/mango/pull/1238) Added `POST /workflow/tasks/trace-by-business-key`, which returns every task-level flow record of the instances behind a business key with optional operator, department, action and time filters. Packages: the complete Maven/docs `1.7.0` tuple including `io.mango.platform.workflow:mango-workflow-{api,core,starter,starter-remote}:1.7.0`, and `@mango/workflow@1.1.0`. Business Adaptation: upgrade the tuple, grant `workflow:task:list`, and resolve the business key on the server before calling the trace endpoint because the endpoint performs no row-level permission check.
+- Added: [PR #1240](https://github.com/HardyDou/mango/pull/1240) Merged withdrawals into the same flow timeline: `WITHDRAW` rows from `workflow_business_apply_status_log` are mapped into `WorkflowTaskRecordVO` records, so applications withdrawn before this release also show a withdrawal entry. Packages: the complete Maven/docs `1.7.0` tuple and `@mango/workflow@1.1.0`. Business Adaptation: upgrade the tuple; approval detail panels that render the trace gain withdrawal rows without additional work.
+- Added: [PR #1232](https://github.com/HardyDou/mango/pull/1232) Added node-affinity auto assignment: `autoAssignmentStrategy=NODE_AFFINITY` picks the earliest handler of the same `taskDefinitionKey` in the same process instance, with `nodeAffinityFallback` (`CLAIM` default, `ROUND_ROBIN`, `RANDOM`, `LEAST_TASKS`) when no eligible history exists. Packages: the complete Maven/docs `1.7.0` tuple and `@mango/workflow@1.1.0`. Business Adaptation: upgrade the tuple and regenerate the designer so new nodes can configure the strategy and fallback.
+- Added: [PR #1237](https://github.com/HardyDou/mango/pull/1237) Added `applyKeyword` to the business task query, matching application code, title or summary with literal `%`, `_` and `\` handling. Packages: the complete Maven/docs `1.7.0` tuple. Business Adaptation: upgrade the tuple; write searchable business text into `applySummary` at application creation when a business-specific search is required.
 
 ## Added
 
-- `POST /workflow/tasks/page-by-business-key` with `scope=SELF` (default) and `scope=ALL`, `statuses`, `assigneeIds`, `applyStatus`, `returned`, `deptIds`, pagination and sorting by `startTime`, `endTime`, `claimTime` and `createTime`.
-- `mango.workflow.task-query.unpaged-max-rows` (default `2000`) bounds unpaged responses while `total` always reports the true filtered count.
-- `cancelCause` on terminated tasks with `RETURNED`, `WITHDRAWN`, `TERMINATED` and `OTHER`, plus `lastReturnAt` and `lastReturnTarget` derived from the latest `RETURN` action.
-- Maven plugin properties `mango.check.reportOnlyRules`, `mango.check.checkstyle.cyclomaticComplexityMax` and `mango.check.checkstyle.fileLengthMax`.
-- Business PMO baseline projection with the reduced required-check set.
+- `POST /workflow/tasks/trace-by-business-key` returns `START`, `CLAIM`, `UNCLAIM`, `COMPLETE`, `REJECT`, `RETURN`, `TRANSFER`, `ADD_SIGN`, `READ`, `WITHDRAW` and `AUTO_*` records with `processInstanceId` as the grouping key, sorted by creation time and `id`.
+- Withdrawal entries are read from the application status log, so historical withdrawals appear without backfilling `workflow_task_record`.
+- `NODE_AFFINITY` auto assignment with `nodeAffinityFallback` options, plus designer support for both fields.
+- `applyKeyword` on the business task query for application code, title and summary search.
+
+## Fixed
+
+- Auto assignment never silently degrades to an unclaimed task: an empty candidate set returns `AUTO_ASSIGN_NO_CANDIDATE` and rolls back the node transaction together with the state update.
+- `applyKeyword` treats `%`, `_` and `\` literally, so a search term cannot become a wildcard.
+- Trace queries fail with `TASK_QUERY_INVALID` instead of silently truncating when the result exceeds `mango.workflow.task-query.unpaged-max-rows` (default `2000`).
 
 ## Changed
 
-- Branch protection requires only `pr-contract-check` and `pmo-doc-check`; `frontend-pr-quality` still runs on `main` push and by manual trigger but no longer blocks merges.
-- The Maven plugin's ordinary check gate now runs a partial Reactor and only falls back to the full Reactor for POM, rulesets, architecture/baseline code and architecture rules.
-- The non-application Maven/docs tuple advances from `1.4.2` to `1.5.0` with 201 coordinates.
-- npm: `@mango/pmo` `1.4.9` → `1.5.0`, `@mango/common` `2.3.1` → `2.3.2`, `@mango/rbac` `1.3.0` → `1.3.1`, `@mango/system` `1.1.2` → `1.1.3`, `@mango/admin-shell` `1.1.3` → `1.1.4`, `@mango/workflow` `1.0.66` → `1.0.67`, `@mango/cli` `1.4.3` → `1.4.4`, plus the generated patch closure.
+- The non-application Maven/docs tuple advances from `1.6.0` to `1.7.0` with 201 coordinates.
+- npm: `@mango/workflow` `1.0.68` → `1.1.0`, `@mango/admin-shell` `1.1.5` → `1.1.6`, `@mango/workflow-business-example` `1.0.67` → `1.0.68`, `@mango/admin` `2.0.7` → `2.0.8`, `@mango/cli` `1.4.5` → `1.4.6`.
+- Approval node configuration keeps `CLAIM` and `ROUND_ROBIN` as defaults for configurations that omit the new fields, so existing process definitions load unchanged.
 
 ## Versions
 
-- Maven/docs: `1.4.2` → `1.5.0`; 201 sealed Maven coordinates, including `io.mango:mango-docs-bundle:1.5.0`, `io.mango.tools.maven.plugin:mango-maven-plugin:1.5.0` and `io.mango.platform.workflow:mango-workflow-api:1.5.0`.
-- npm: `@mango/app-runtime@1.0.8`、`@mango/common@2.3.3`、`@mango/admin-extension@1.1.7`、`@mango/ai@1.2.7`、`@mango/auth@1.0.44`、`@mango/file@1.2.7`、`@mango/detail@1.1.12`、`@mango/grid-layout@1.0.33`、`@mango/grid-widgets@1.0.39`、`@mango/home@1.0.32`、`@mango/information@1.1.7`、`@mango/link-openapi@1.0.5`、`@mango/link-page@1.0.10`、`@mango/pmo@1.6.0`、`@mango/rbac@1.3.2`、`@mango/site-shell@2.0.5`、`@mango/system@1.1.4`、`@mango/admin-pages@1.3.2`、`@mango/calendar@1.0.59`、`@mango/cms@1.1.4`、`@mango/job@1.0.52`、`@mango/link@1.0.45`、`@mango/notice@1.0.65`、`@mango/numgen@1.0.60`、`@mango/payment@1.0.51`、`@mango/template@1.0.60`、`@mango/workflow@1.0.68`、`@mango/admin-shell@1.1.5`、`@mango/workflow-business-example@1.0.67`、`@mango/admin@2.0.7`、`@mango/cli@1.4.5`.
+- Maven/docs: `1.6.0` → `1.7.0`; 201 sealed Maven coordinates, including `io.mango:mango-docs-bundle:1.7.0` and `io.mango.platform.workflow:mango-workflow-api:1.7.0`.
+- npm: `@mango/workflow@1.1.0`, `@mango/admin-shell@1.1.6`, `@mango/workflow-business-example@1.0.68`, `@mango/admin@2.0.8`, `@mango/cli@1.4.6`.
 - Exact topology, dependency order and checksums are generated in `mango-ui/.changeset/release-plan.json`.
 
 ## Published Packages
 
 - Publish all 201 non-application Maven coordinates in release-plan order.
-- Publish the 27 sealed npm tarballs in plan order: `@mango/common@2.3.2`、`@mango/admin-extension@1.1.6`、`@mango/ai@1.2.6`、`@mango/auth@1.0.43`、`@mango/file@1.2.6`、`@mango/detail@1.1.11`、`@mango/grid-layout@1.0.32`、`@mango/grid-widgets@1.0.38`、`@mango/home@1.0.31`、`@mango/information@1.1.6`、`@mango/pmo@1.5.0`、`@mango/rbac@1.3.1`、`@mango/site-shell@2.0.4`、`@mango/system@1.1.3`、`@mango/admin-pages@1.3.1`、`@mango/calendar@1.0.58`、`@mango/cms@1.1.3`、`@mango/job@1.0.51`、`@mango/link@1.0.44`、`@mango/notice@1.0.64`、`@mango/numgen@1.0.59`、`@mango/payment@1.0.50`、`@mango/template@1.0.59`、`@mango/workflow@1.0.67`、`@mango/admin-shell@1.1.4`、`@mango/workflow-business-example@1.0.66`、`@mango/admin@2.0.6`、`@mango/cli@1.4.4`.
-- Application fat jars and coordinates outside the sealed plan are excluded.
+- Publish the five sealed npm tarballs in plan order: `@mango/workflow@1.1.0`, `@mango/admin-shell@1.1.6`, `@mango/workflow-business-example@1.0.68`, `@mango/admin@2.0.8`, `@mango/cli@1.4.6`.
+- Application fat jars and coordinates outside the sealed plan are excluded; `@mango/pmo` is unchanged because no PMO rule, contract, Agent or Skill file changed in this batch.
 
 ## Business Impact
 
-- Business approval lists gain a single batch query that returns every task state with sorting, paging, tenant-safe assignee mapping and a machine-readable termination cause; existing per-application endpoints keep working.
-- `scope=ALL` requires `workflow:task:all` in addition to `workflow:task:list`, so the wider data range is an explicit permission decision rather than a default.
-- Maven quality gate configuration becomes property-driven: teams can demote rules or adjust complexity and file-length thresholds without maintaining rule-file copies, and the plugin no longer forces a full Reactor on ordinary code changes.
-- Required branch-protection checks shrink to `pr-contract-check` and `pmo-doc-check`; frontend quality results still exist on `main` and manual runs but no longer gate merges, so business repositories must align their PMO baseline.
-- Frontend consumers receive formatting and contract fixes only; no props, events, exports or page keys changed.
-- No database migration is introduced by this batch; the new workflow query is read-only against Flowable history tables.
+- Approval detail panels can render one complete flow timeline per business key, including multiple process instances and historical withdrawals, instead of reconstructing it from several endpoints.
+- The trace endpoint performs no row-level permission check: any account holding `workflow:task:list` that knows a business key can read its approvals, so business services must authorize first and resolve the key themselves.
+- Node-affinity dispatch keeps repeated approvals at a node on the same handler when history exists, and falls back according to explicit configuration rather than an implicit claim.
+- Auto assignment fails closed: an empty candidate set aborts the node transition instead of leaving an unclaimed task.
+- Application keyword search covers code, title and summary; changing business values must be written into `applySummary` at creation because the summary is not updated afterwards.
+- No database migration is introduced by this batch; the trace reads existing tables.
 
 ## Upgrade Estimate
 
-- Audience: Mango backend consumers using workflow task lists or the Maven quality gate, plus business repositories that mirror the PMO branch-protection baseline.
-- Engineering Effort: 1-2 engineer-days for a consumer adopting the batch business query (page rewrite, permission grant, regression); 0.5 engineer-day for quality-gate property adoption; 0.5 engineer-day for the PMO baseline and npm closure upgrade.
-- Execution Window: 2-4 hours per consumer including restart, permission verification and list-page regression.
-- Service Downtime: one controlled backend restart window; no database migration is required.
-- Rollback Effort: 1 engineer-day per consumer to restore the complete Maven `1.4.2` tuple, the previous PMO baseline and the previously verified npm closure.
-- Assumptions: consumers can grant menu and permission codes through Resource Registry, have test workflow instances with returned and terminated tasks, and can re-run the quality gate in CI.
+- Audience: Mango backend consumers that embed approval detail panels or configure auto assignment, and frontend consumers of the workflow npm closure.
+- Engineering Effort: 1-2 engineer-days per consumer to upgrade the tuple, add the server-side business authorization for the trace endpoint and wire the detail panel; 0.5 engineer-day for consumers that only use the keyword search; 0.5 engineer-day for the npm closure upgrade and designer regeneration.
+- Execution Window: 2-4 hours per consumer including restart, permission verification and approval-timeline regression.
+- Service Downtime: one controlled backend restart window and one frontend deployment window; no database migration is required.
+- Rollback Effort: 0.5-1 engineer-day per consumer to restore the complete Maven `1.6.0` tuple and the previously verified npm closure.
+- Assumptions: consumers can grant `workflow:task:list`, have workflow data with multiple instances and withdrawn applications, and can regenerate the designer with the published CLI.
 
 ## Upgrade Notes
 
-1. Upgrade the complete Mango Maven/docs tuple from `1.4.2` to `1.5.0`; do not update only one starter or module.
-2. Grant `workflow:task:list` to roles that read business task lists, and `workflow:task:all` only to roles that need the unrestricted range.
-3. Replace per-application workflow queries on business list pages with `POST /workflow/tasks/page-by-business-key`; send `businessKeys` and paginate when `list.size() < total` indicates more rows exist.
-4. Do not send `deptIds` with `scope=SELF` or `scope=ALL`; `scope=ORG` is rejected in this version.
-5. Update the project PMO baseline with `@mango/pmo@1.5.0` and confirm branch protection requires exactly `pr-contract-check` and `pmo-doc-check`.
-6. Replace copied Checkstyle or PMD files with `mango.check.reportOnlyRules`, `mango.check.checkstyle.cyclomaticComplexityMax` and `mango.check.checkstyle.fileLengthMax` where only a threshold or rule demotion is needed.
-7. Upgrade the npm closure to the versions in `Versions`, run `pnpm install` and rebuild the admin bundle.
-8. Upgrade CLI consumers to `@mango/cli@1.4.4` and regenerate generated projects so the documented quality-gate properties apply.
+1. Upgrade the complete Mango Maven/docs tuple from `1.6.0` to `1.7.0`; do not update only one starter or module.
+2. Grant `workflow:task:list` to roles that open approval detail panels; the trace endpoint requires no additional data-scope permission.
+3. Implement server-side business authorization and key resolution before calling `POST /workflow/tasks/trace-by-business-key`; never pass a client-supplied key straight through.
+4. Handle `TASK_QUERY_INVALID` when a business key exceeds the unpaged row limit, and narrow with the operator, department, action or time filters instead of retrying blindly.
+5. Regenerate or upgrade the designer so nodes can set `autoAssignmentStrategy=NODE_AFFINITY` and `nodeAffinityFallback`; existing definitions keep `CLAIM` and `ROUND_ROBIN` defaults.
+6. Fill `applySummary` with searchable business text at application creation when `applyKeyword` must find business-specific values.
+7. Upgrade the npm closure to `@mango/workflow@1.1.0`, `@mango/admin-shell@1.1.6`, `@mango/workflow-business-example@1.0.68`, `@mango/admin@2.0.8` and `@mango/cli@1.4.6`, then rebuild the admin bundle.
 
 ## Verification
 
-- `mvn verify` passed for the workflow modules before merge, covering `WorkflowTaskHistoryMapperIntegrationTest` against real Flowable history columns, scope and permission checks, tenant-safe `assigneeIds` mapping, `cancelCause` branches and null-last sorting.
-- The Maven plugin tests cover `reportOnlyRules` and the Checkstyle threshold overrides, and the partial-versus-full Reactor selection is asserted by the scope classifier tests.
-- PMO tool tests and the business baseline projection check passed for the reduced required-check set.
-- Frontend quality and component contract checks passed on `main` after the formatting fixes; the npm packages build with unchanged public contracts.
+- `mvn verify` passed for the workflow modules before merge: node-affinity strategy tests, auto-assignment selection tests, task history mapper integration tests on H2 and the trace service tests.
+- The trace endpoint was verified against real MySQL, including single-instance, multi-instance and withdrawn applications, with recorded HTTP responses and SQL evidence.
+- `applyKeyword` literal-wildcard handling and the unpaged row limit are covered by service tests, and the designer config test covers the new strategy and fallback fields.
+- Frontend quality passed with the updated designer component and API types; the workflow package builds with an additive public API.
 - `catalog:check` reports a consistent Catalog projection on the source commit and the release plan re-computes 201 coordinates with matching topology.
 - The Maven reactor and docs bundle are built once from the sealed candidate; all 201 coordinates are checked in publish and consume registries with matching checksums.
-- A clean consumer resolves Maven `1.5.0`, `@mango/pmo@1.5.0` and `@mango/cli@1.4.4` from the consume registries and completes the pure consume-registry verification.
+- A clean consumer resolves Maven `1.7.0`, `@mango/workflow@1.1.0` and `@mango/cli@1.4.6` from the consume registries and completes the pure consume-registry verification.
 
 ## Rollback
 
-- Restore consumers to the complete Maven/docs `1.4.2` tuple, the previous PMO baseline and the previously verified npm closure; immutable coordinates are never overwritten.
-- Rolling back the workflow query removes the batch endpoint; business list pages must return to per-application queries.
-- Rolling back the PMO baseline restores `frontend-pr-quality` as a required context, which will block merges until frontend quality is green again.
-- No data written by this batch needs repair; the new query is read-only and adds no migration.
+- Restore consumers to the complete Maven/docs `1.6.0` tuple and the previously verified npm closure; immutable coordinates are never overwritten.
+- Rolling back the trace endpoint requires approval panels to return to their previous data source; no trace data is persisted, so nothing must be repaired.
+- Rolling back node-affinity dispatch makes nodes fall back to the previously configured strategy; process instances already assigned to a handler keep that assignment.
+- Rolling back `applyKeyword` removes the summary search; `businessKeys` filtering continues to work.
 - If registry visibility is ambiguous, stop and resume read-only status/repair using the same prepared candidate; never create a second candidate for the same coordinates.
 
 ## Audit History
 
-- [PR #1197](https://github.com/HardyDou/mango/pull/1197) was delivered through PRs #1206 and #1209; it is referenced here for traceability and is not a separate entry in this batch.
+- [PR #1231](https://github.com/HardyDou/mango/pull/1231), [PR #1232](https://github.com/HardyDou/mango/pull/1232), [PR #1234](https://github.com/HardyDou/mango/pull/1234) and [PR #1236](https://github.com/HardyDou/mango/pull/1236) were delivered through the release-bearing PRs listed above; they are referenced here for traceability and are not separate entries in this batch.

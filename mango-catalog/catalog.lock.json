@@ -4,7 +4,7 @@
     "schemaVersion": 1,
     "workspaceCount": 43
   },
-  "catalogDigest": "5e5417a4b632191ee0225fbb23049eb7df2bf3b95d549d9093aba9f36bab1576",
+  "catalogDigest": "66944a925b4e904d618e006553d35209e26d82c92b562ae06421a4f20fce64af",
   "maven": {
     "dependencyManagementSets": [
       {
@@ -11405,7 +11405,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "2.0.7"
+      "version": "2.0.8"
     },
     {
       "name": "@mango/admin-extension",
@@ -11714,7 +11714,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.1.5"
+      "version": "1.1.6"
     },
     {
       "name": "@mango/ai",
@@ -11973,7 +11973,7 @@
       "path": "mango-ui/packages/mango-cli",
       "publicEntries": [],
       "publicResources": [],
-      "version": "1.4.5"
+      "version": "1.4.6"
     },
     {
       "name": "@mango/cms",
@@ -13221,7 +13221,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.68"
+      "version": "1.1.0"
     },
     {
       "name": "@mango/workflow-business-example",
@@ -13266,7 +13266,7 @@
           "subpath": "./style.css"
         }
       ],
-      "version": "1.0.67"
+      "version": "1.0.68"
     }
   ],
   "projections": {
