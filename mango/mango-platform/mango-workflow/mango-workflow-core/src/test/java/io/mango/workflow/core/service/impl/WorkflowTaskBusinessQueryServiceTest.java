@@ -232,6 +232,36 @@ class WorkflowTaskBusinessQueryServiceTest {
     }
 
     @Test
+    void keepsTaskKeywordSemanticsAndEscapesApplyKeyword() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        query.setKeyword("审核_节点");
+        query.setApplyKeyword("  中铁_三局%  ");
+        when(taskHistoryMapper.countTasks(any())).thenReturn(0L);
+
+        service.pageByBusinessKey(query);
+
+        ArgumentCaptor<WorkflowTaskHistoryCriteria> captor =
+                ArgumentCaptor.forClass(WorkflowTaskHistoryCriteria.class);
+        verify(taskHistoryMapper).countTasks(captor.capture());
+        assertThat(captor.getValue().getKeyword()).isEqualTo("%审核_节点%");
+        assertThat(captor.getValue().getApplyKeyword()).isEqualTo("%中铁\\_三局\\%%");
+    }
+
+    @Test
+    void ignoresBlankApplyKeyword() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        query.setApplyKeyword("   ");
+        when(taskHistoryMapper.countTasks(any())).thenReturn(0L);
+
+        service.pageByBusinessKey(query);
+
+        ArgumentCaptor<WorkflowTaskHistoryCriteria> captor =
+                ArgumentCaptor.forClass(WorkflowTaskHistoryCriteria.class);
+        verify(taskHistoryMapper).countTasks(captor.capture());
+        assertThat(captor.getValue().getApplyKeyword()).isNull();
+    }
+
+    @Test
     void mapsStatusesAndClaimStatusesToSqlFlags() {
         WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
         query.setStatuses(List.of(WorkflowTaskRuntimeStatus.TODO));

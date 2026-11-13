@@ -158,6 +158,7 @@ mango:
 - `businessType`：按 `workflow_business_apply.business_type` 精确匹配。取业务适配器实际投放的值，例如 `BAOHAN_RC_PROJECT_REVIEW`；平台不校验命名风格，也不做别名映射。
 - `businessKeys`：可选，不传或为空表示不限业务主键。只有调用方已经明确业务对象范围时才传入，不需要为了列表请求先查业务表取候选业务键。
 - `scope`：`SELF`（默认，办理人是当前用户或候选用户/候选组命中）、`ALL`（服务端校验 `workflow:task:all` 权限码，未安装授权中心时拒绝）、`ORG`（本版直接报错）。数据范围由调用方显式声明，平台不读取角色数据范围配置。
+- `applyKeyword`：可选，模糊匹配申请编号、申请标题、申请摘要三列中的任意一列，输入里的 `%`、`_`、`\` 按字面匹配。它和 `keyword` 互不替代：`keyword` 只匹配任务名称和节点定义 Key。
 - 不传 `page` / `size` 时按 `mango.workflow.task-query.unpaged-max-rows`（默认 2000）一次性返回；`total` 始终是过滤后的真实总数，用 `list.size() < total` 判断是否需要改用分页拉取。业务列表应显式传 `page` / `size`，`total` 按任务数计算，`list` 一行一个任务。
 
 引擎列名事实：历史任务表的创建时间是 `ACT_HI_TASKINST.START_TIME_`，`CREATE_TIME_` 只存在于运行态 `ACT_RU_TASK`。
@@ -171,6 +172,7 @@ mango:
 - `cancelCause`：已终止任务的机器可读原因，`RETURNED` / `WITHDRAWN` / `TERMINATED` / `OTHER`。业务侧按枚举出中文文案，不要匹配 `deleteReason` 文本——它是引擎内部文案（例如 `Change activity to risk_specialist_review`、`申请人撤回`），不稳定。
 - `statuses=[DONE]` 只返回真正办结的任务，被退回或撤回终止的任务不会混入"已办理"。
 - `assigneeIds` 直接传业务 `user_id` 即可，平台按 `identity_user.username` 映射到引擎办理人，并用 `tenant_member` 限定该用户属于任务所在租户，跨租户同名用户不会串号。
+- `applyKeyword` 只搜平台已存的申请编号、申请标题、申请摘要。业务希望搜自己的字段（保函种类、项目编号等）时，在创建申请单时把可检索文本写进 `applySummary`，推荐 `名称：值，名称：值` 结构，例如 `保函种类：履约保函，项目编号：BH2026001`。摘要创建后不再更新，提交后会变的业务值不能依赖摘要搜索；需要多选精确筛选时继续用 `businessKeys`。
 - 退回后同一 `taskDefinitionKey` 会再次出现（初审 → 复审 → 退回 → 初审），这是正常返回，按 `endTime` / `claimTime` 取最新。
 - 排序：`createTime`、`endTime`、`claimTime`；`endTime` 与 `claimTime` 为空的任务在升序和降序下都排在最后。
 - 该查询直接读取 Flowable 引擎表，租户由 `workflow_business_apply.tenant_id` 收敛；平台租户插件按 `act_*` 前缀跳过引擎表，业务项目不需要再往 `mango.persistence.mybatis-plus.tenant.excluded-tables` 复制引擎表。
@@ -205,6 +207,8 @@ pnpm -F @mango/workflow-business-example build
 ## 10. 历史变更
 
 详细版本影响见[业务审批历史变更索引](../../changelog/business-integration/workflow-business-approval.md)。
+
+> Issue #1231 影响说明：`POST /workflow/tasks/page-by-business-key` 新增可选参数 `applyKeyword`，模糊匹配申请编号、申请标题、申请摘要，输入中的 `%`、`_` 按字面匹配；`keyword` 语义不变，仍只匹配任务名称和节点定义 Key。业务需要搜自己的字段时，在创建申请单时把可检索文本写进 `applySummary`，推荐 `名称：值，名称：值` 结构；摘要创建后不再更新。变量白名单过滤和平台侧业务列本次不提供，业务字段的多选精确筛选继续使用 `businessKeys`。数据库结构、权限码、租户隔离和分页口径不变。
 
 > Issue #1223 影响说明：`POST /workflow/tasks/page-by-business-key` 的 `businessKeys` 改为可选；不传或为空表示不限业务主键，`total` 按任务数统计。业务列表不再需要先查业务表取候选业务键，也不会因为业务键数量上限丢数据。传入 `businessKeys` 时行为与 #1208 兼容；不传时业务申请可见性不做逐申请 Provider 收窄，由租户、`scope` 和权限码决定。
 
