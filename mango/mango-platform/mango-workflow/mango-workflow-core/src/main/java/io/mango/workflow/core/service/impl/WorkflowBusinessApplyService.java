@@ -7,7 +7,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import io.mango.common.result.R;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
 import io.mango.infra.context.api.MangoContextHolder;
@@ -96,6 +95,7 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
         apply.setApplyCode(resolveApplyCode(command, now));
         apply.setBusinessType(command.getBusinessType().trim());
         apply.setBusinessKey(command.getBusinessKey().trim());
+        apply.setAffinityKey(trim(command.getAffinityKey()));
         apply.setApplyTitle(command.getApplyTitle().trim());
         apply.setApplySummary(trim(command.getApplySummary()));
         apply.setApplicantId(MangoContextHolder.userId());
@@ -606,6 +606,7 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
         vo.setApplyCode(apply.getApplyCode());
         vo.setBusinessType(apply.getBusinessType());
         vo.setBusinessKey(apply.getBusinessKey());
+        vo.setAffinityKey(apply.getAffinityKey());
         vo.setApplyTitle(apply.getApplyTitle());
         vo.setApplySummary(apply.getApplySummary());
         vo.setApplicantId(apply.getApplicantId());

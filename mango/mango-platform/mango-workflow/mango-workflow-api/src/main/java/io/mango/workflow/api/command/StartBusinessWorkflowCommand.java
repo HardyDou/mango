@@ -10,7 +10,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
-import java.util.Map;
 import java.util.List;
 
 /**
@@ -37,6 +36,10 @@ public class StartBusinessWorkflowCommand {
     @NotBlank(message = "业务主键不能为空")
     @Size(max = 128, message = "业务主键最多128个字符")
     private String businessKey;
+
+    @Schema(description = "稳定业务聚合键，跨提交保持不变；用于节点亲和跨流程实例复用办理人")
+    @Size(max = 128, message = "亲和键最多128个字符")
+    private String affinityKey;
 
     @Schema(description = "申请编号")
     @Size(max = 128, message = "申请编号最多128个字符")

@@ -44,6 +44,9 @@ describe('WorkflowNodeApprovalConfig', () => {
     await nextTick();
     expect(el.textContent).toContain('无历史办理人');
     expect(el.textContent).toContain('随机');
+    expect(el.textContent).toContain('复用范围');
+    expect(el.textContent).toContain('仅当前流程');
+    expect(el.textContent).toContain('同亲和键');
     unmount();
   });
 });

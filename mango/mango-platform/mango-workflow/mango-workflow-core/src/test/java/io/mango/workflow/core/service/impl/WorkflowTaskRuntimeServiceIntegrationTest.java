@@ -123,27 +123,7 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
 
     @Test
     void nodeAffinityRestoresFirstNodeHandlerAfterReturnAndUsesClaimWhenNoHistory() {
-        AuthUserVO admin = authUser(1001L, "admin");
-        AuthUserVO finance = authUser(1002L, "finance");
-        when(authUserProvider.getByUsernameForAuth("admin")).thenReturn(admin);
-        when(authUserProvider.getByUsernameForAuth("finance")).thenReturn(finance);
-        when(authUserProvider.getByIdForAuth(1001L)).thenReturn(admin);
-        when(authUserProvider.getByIdForAuth(1002L)).thenReturn(finance);
-        when(tenantMemberProvider.getEnabledMember(1001L, 1L)).thenReturn(member(1001L));
-        when(tenantMemberProvider.getEnabledMember(1002L, 1L)).thenReturn(member(1002L));
-        jdbcTemplate.execute("""
-                create table tenant_member (
-                    id bigint not null,
-                    tenant_id bigint not null,
-                    status int not null,
-                    left_at timestamp,
-                    primary key (id)
-                )
-                """);
-        jdbcTemplate.update("insert into tenant_member (id, tenant_id, status, left_at) values (?, ?, ?, ?)",
-                1001L, 1L, 1, null);
-        jdbcTemplate.update("insert into tenant_member (id, tenant_id, status, left_at) values (?, ?, ?, ?)",
-                1002L, 1L, 1, null);
+        prepareActiveMembers();
 
         StartedWorkflow started = startNodeAffinityWorkflow("BIZ-NODE-AFFINITY");
         taskRuntimeService.advanceRuntimeTasks(started.processInstanceId());
@@ -357,6 +337,31 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
                 .taskDefinitionKey("manager_approve").count()).isZero();
     }
 
+    private void prepareActiveMembers() {
+        AuthUserVO admin = authUser(1001L, "admin");
+        AuthUserVO finance = authUser(1002L, "finance");
+        when(authUserProvider.getByUsernameForAuth("admin")).thenReturn(admin);
+        when(authUserProvider.getByUsernameForAuth("finance")).thenReturn(finance);
+        when(authUserProvider.getByIdForAuth(1001L)).thenReturn(admin);
+        when(authUserProvider.getByIdForAuth(1002L)).thenReturn(finance);
+        when(tenantMemberProvider.getEnabledMember(1001L, 1L)).thenReturn(member(1001L));
+        when(tenantMemberProvider.getEnabledMember(1002L, 1L)).thenReturn(member(1002L));
+        jdbcTemplate.execute("drop table if exists tenant_member");
+        jdbcTemplate.execute("""
+                create table tenant_member (
+                    id bigint not null,
+                    tenant_id bigint not null,
+                    status int not null,
+                    left_at timestamp,
+                    primary key (id)
+                )
+                """);
+        jdbcTemplate.update("insert into tenant_member (id, tenant_id, status, left_at) values (?, ?, ?, ?)",
+                1001L, 1L, 1, null);
+        jdbcTemplate.update("insert into tenant_member (id, tenant_id, status, left_at) values (?, ?, ?, ?)",
+                1002L, 1L, 1, null);
+    }
+
     private TenantMemberVO member(Long userId) {
         TenantMemberVO member = new TenantMemberVO();
         member.setMemberId(userId);
@@ -479,6 +484,43 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
         assertThat(currentTaskDefinitionKeys(applyId)).containsExactly("risk_specialist_review");
     }
 
+    @Test
+    void nodeAffinityReusesHandlerAcrossInstancesOfSameAffinityKeyAndKeepsProjectsIsolated() {
+        prepareActiveMembers();
+        StartedWorkflow first = startScopedAffinityWorkflow("BIZ-P1-V1", "PROJECT-P1");
+        taskRuntimeService.advanceRuntimeTasks(first.processInstanceId());
+        Task firstTask = taskService.createTaskQuery()
+                .processInstanceId(first.processInstanceId())
+                .taskDefinitionKey("scoped_review")
+                .singleResult();
+        assertThat(firstTask.getAssignee()).isNull();
+
+        switchUser(1001L, "admin");
+        ClaimWorkflowTaskCommand claim = new ClaimWorkflowTaskCommand();
+        claim.setTaskId(firstTask.getId());
+        taskRuntimeService.claim(claim);
+        CompleteWorkflowTaskCommand complete = new CompleteWorkflowTaskCommand();
+        complete.setTaskId(firstTask.getId());
+        complete.setComment("初审通过");
+        taskRuntimeService.complete(complete);
+
+        StartedWorkflow resubmitted = startScopedAffinityWorkflow("BIZ-P1-V2", "PROJECT-P1");
+        taskRuntimeService.advanceRuntimeTasks(resubmitted.processInstanceId());
+        Task resubmittedTask = taskService.createTaskQuery()
+                .processInstanceId(resubmitted.processInstanceId())
+                .taskDefinitionKey("scoped_review")
+                .singleResult();
+        assertThat(resubmittedTask.getAssignee()).isEqualTo("1001");
+
+        StartedWorkflow otherProject = startScopedAffinityWorkflow("BIZ-P2-V1", "PROJECT-P2");
+        taskRuntimeService.advanceRuntimeTasks(otherProject.processInstanceId());
+        Task otherProjectTask = taskService.createTaskQuery()
+                .processInstanceId(otherProject.processInstanceId())
+                .taskDefinitionKey("scoped_review")
+                .singleResult();
+        assertThat(otherProjectTask.getAssignee()).isNull();
+    }
+
     private void switchUser(Long userId, String principalName) {
         MangoContextHolder.set(MangoContextSnapshot.empty()
                 .withSecurity(userId, "1", principalName, "default", "USER", "ORG", userId, principalName));
@@ -511,6 +553,59 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
                 applyId, 1234L, "node_affinity_runtime", processDefinition.getId(), processDefinition.getName(),
                 instance.getProcessInstanceId()));
         return new StartedWorkflow(applyId, instance.getProcessInstanceId());
+    }
+
+    private StartedWorkflow startScopedAffinityWorkflow(String businessKey, String affinityKey) {
+        repositoryService.createDeployment()
+                .name("scoped-affinity-runtime")
+                .addString("scoped-affinity.bpmn20.xml", scopedAffinityBpmn())
+                .deploy();
+        ProcessDefinition processDefinition = repositoryService.createProcessDefinitionQuery()
+                .processDefinitionKey("scoped_affinity_runtime")
+                .latestVersion()
+                .singleResult();
+
+        CreateWorkflowBusinessApplyCommand applyCommand = new CreateWorkflowBusinessApplyCommand();
+        applyCommand.setBusinessType("SCOPED_AFFINITY");
+        applyCommand.setBusinessKey(businessKey);
+        applyCommand.setAffinityKey(affinityKey);
+        applyCommand.setApplyTitle("跨实例节点亲和集成测试");
+        applyCommand.setProcessDefinitionKey("scoped_affinity_runtime");
+        Long applyId = businessApplyService.create(applyCommand).getId();
+
+        ProcessInstance instance = runtimeService.startProcessInstanceByKey("scoped_affinity_runtime", businessKey, Map.of(
+                "businessType", "SCOPED_AFFINITY",
+                "businessKey", businessKey,
+                "applyId", String.valueOf(applyId),
+                "mangoInitiator", "admin"
+        ));
+        businessApplyService.markProcessStarted(new WorkflowProcessStartedContext(
+                applyId, 1234L, "scoped_affinity_runtime", processDefinition.getId(), processDefinition.getName(),
+                instance.getProcessInstanceId()));
+        return new StartedWorkflow(applyId, instance.getProcessInstanceId());
+    }
+
+    private String scopedAffinityBpmn() {
+        return """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                             xmlns:flowable="http://flowable.org/bpmn"
+                             xmlns:mango="http://mango.io/workflow"
+                             targetNamespace="http://mango.io/workflow/test">
+                  <process id="scoped_affinity_runtime" name="Scoped Affinity Runtime" isExecutable="true">
+                    <startEvent id="start"/>
+                    <sequenceFlow id="flow_start_scoped" sourceRef="start" targetRef="scoped_review"/>
+                    <userTask id="scoped_review" name="风控审批">
+                      <extensionElements>
+                        <mango:mangoApprovalConfig><![CDATA[{"assignmentMode":"AUTO","autoAssignmentStrategy":"NODE_AFFINITY","nodeAffinityFallback":"CLAIM","nodeAffinityScope":"AFFINITY_KEY","assigneeType":"SPECIFIED_USER","assigneeIds":["admin","finance"],"actions":{"complete":{"enabled":true}}}]]></mango:mangoApprovalConfig>
+                      </extensionElements>
+                    </userTask>
+                    <sequenceFlow id="flow_scoped_end" sourceRef="scoped_review" targetRef="end"/>
+                    <endEvent id="end"/>
+                  </process>
+                </definitions>
+                """;
     }
 
     private String nodeAffinityBpmn() {
@@ -607,6 +702,7 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
                     apply_code varchar(128),
                     business_type varchar(128),
                     business_key varchar(128),
+                    affinity_key varchar(128),
                     apply_title varchar(255),
                     apply_summary varchar(1000),
                     applicant_id bigint,

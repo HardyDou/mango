@@ -6,6 +6,7 @@ import io.mango.common.exception.BizException;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
+import io.mango.workflow.api.command.CreateWorkflowBusinessApplyCommand;
 import io.mango.workflow.api.enums.WorkflowCode;
 import io.mango.workflow.core.identity.WorkflowAssigneeIdentityService;
 import io.mango.workflow.core.mapper.WorkflowBusinessApplyMapper;
@@ -76,6 +77,33 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
     @AfterEach
     void tearDown() {
         MangoContextHolder.clear();
+    }
+
+    @Test
+    void createPersistsAffinityKeyAndKeepsAppliesWithoutItEmpty() {
+        MangoContextHolder.set(MangoContextSnapshot.empty()
+                .withSecurity(1001L, "1", "admin", "default", "USER", "USER", 1L, "internal-admin"));
+
+        CreateWorkflowBusinessApplyCommand scoped = new CreateWorkflowBusinessApplyCommand();
+        scoped.setBusinessType("BAOHAN_RC_PROJECT_REVIEW");
+        scoped.setBusinessKey("BIZ-P1-V1");
+        scoped.setAffinityKey("  PROJECT-P1  ");
+        scoped.setApplyTitle("项目风控审批");
+        var created = service.create(scoped);
+
+        assertThat(created.getAffinityKey()).isEqualTo("PROJECT-P1");
+        assertThat(jdbcTemplate.queryForObject(
+                "select affinity_key from workflow_business_apply where id = ?", String.class, created.getId()))
+                .isEqualTo("PROJECT-P1");
+
+        CreateWorkflowBusinessApplyCommand unscoped = new CreateWorkflowBusinessApplyCommand();
+        unscoped.setBusinessType("BAOHAN_RC_PROJECT_REVIEW");
+        unscoped.setBusinessKey("BIZ-P2-V1");
+        unscoped.setApplyTitle("另一个项目");
+        var unscopedApply = service.create(unscoped);
+
+        assertThat(unscopedApply.getAffinityKey()).isNull();
+        assertThat(unscopedApply.getBusinessKey()).isEqualTo("BIZ-P2-V1");
     }
 
     @Test
@@ -327,6 +355,7 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
                     apply_code varchar(128),
                     business_type varchar(128),
                     business_key varchar(128),
+                    affinity_key varchar(128),
                     apply_title varchar(255),
                     apply_summary varchar(1000),
                     applicant_id bigint,

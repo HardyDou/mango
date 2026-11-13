@@ -16,6 +16,7 @@ import io.mango.workflow.api.command.ReadWorkflowCopiedTaskCommand;
 import io.mango.workflow.api.command.RejectWorkflowTaskCommand;
 import io.mango.workflow.api.command.ReturnWorkflowTaskCommand;
 import io.mango.workflow.api.command.SaveWorkflowTaskDraftCommand;
+import io.mango.workflow.api.command.StartBusinessWorkflowCommand;
 import io.mango.workflow.api.command.StartWorkflowProcessCommand;
 import io.mango.workflow.api.command.TransferWorkflowTaskCommand;
 import io.mango.workflow.api.command.WorkflowJsonRequest;
@@ -197,6 +198,37 @@ class WorkflowProcessServiceImplIntegrationTest {
         assertThat(record.getOperatorId()).isEqualTo(9001L);
         assertThat(record.getOperatorName()).isEqualTo("admin");
         assertThat(record.getVariablesJson()).contains("\"businessKey\":\"BIZ-1\"");
+    }
+
+    @Test
+    void startBusinessWorkflowPassesAffinityKeyIntoApplyCreation() {
+        insertDefinition(publishedDefinition(1001L));
+        ProcessInstance instance = mock(ProcessInstance.class);
+        when(instance.getProcessInstanceId()).thenReturn("proc-1");
+        when(instance.getBusinessKey()).thenReturn("BIZ-P1-V1");
+        when(instance.getProcessDefinitionId()).thenReturn("contract_seal_approval:1:1001");
+        when(runtimeService.startProcessInstanceById(any(), any(), any(Map.class))).thenReturn(instance);
+        ProcessInstanceQuery processInstanceQuery = mock(ProcessInstanceQuery.class);
+        when(runtimeService.createProcessInstanceQuery()).thenReturn(processInstanceQuery);
+        when(processInstanceQuery.processInstanceId("proc-1")).thenReturn(processInstanceQuery);
+        when(processInstanceQuery.singleResult()).thenReturn(instance);
+        TaskQuery taskQuery = mock(TaskQuery.class);
+        when(taskService.createTaskQuery()).thenReturn(taskQuery);
+        when(taskQuery.processInstanceId("proc-1")).thenReturn(taskQuery);
+        when(taskQuery.orderByTaskCreateTime()).thenReturn(taskQuery);
+        when(taskQuery.desc()).thenReturn(taskQuery);
+        when(taskQuery.listPage(0, 1)).thenReturn(List.of());
+
+        StartBusinessWorkflowCommand command = new StartBusinessWorkflowCommand();
+        command.setDefinitionId(1001L);
+        command.setBusinessType("contract_seal");
+        command.setBusinessKey("BIZ-P1-V1");
+        command.setAffinityKey("PROJECT-P1");
+        command.setApplyTitle("项目风控审批");
+
+        service.startBusinessWorkflow(command);
+
+        assertThat(businessApplyService.lastCreateCommand().getAffinityKey()).isEqualTo("PROJECT-P1");
     }
 
     private void rebuildTables() {

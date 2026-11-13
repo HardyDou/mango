@@ -7,7 +7,6 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 /**
  * 业务工作流申请视图。
@@ -27,6 +26,9 @@ public class WorkflowBusinessApplyVO {
 
     @Schema(description = "业务主键")
     private String businessKey;
+
+    @Schema(description = "稳定业务聚合键，跨提交保持不变")
+    private String affinityKey;
 
     @Schema(description = "申请标题")
     private String applyTitle;

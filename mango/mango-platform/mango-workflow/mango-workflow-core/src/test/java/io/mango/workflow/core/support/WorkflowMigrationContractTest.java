@@ -17,6 +17,8 @@ class WorkflowMigrationContractTest {
             "db/migration/workflow/V2__add_workflow_audit_columns.sql";
     private static final String PARTICIPATION_MIGRATION =
             "db/migration/workflow/V3__workflow_participation_auto_assignment.sql";
+    private static final String AFFINITY_SCOPE_MIGRATION =
+            "db/migration/workflow/V4__workflow_node_affinity_scope.sql";
     private static final String CHECKSUM_CALLBACK =
             "db/migration/workflow/beforeValidate__workflow_v1_checksum_compatibility.sql";
     private static final Pattern DATA_MUTATION = Pattern.compile(
@@ -119,6 +121,23 @@ class WorkflowMigrationContractTest {
                 .contains("ON DUPLICATE KEY UPDATE `id` = `id`")
                 .doesNotContain("HAVING NOT EXISTS")
                 .doesNotContain("username_snapshot` varchar(128) NOT NULL");
+    }
+
+    @Test
+    void v4_addsNullableAffinityKeyAndLookupIndexConditionally() throws IOException {
+        String sql = resourceText(AFFINITY_SCOPE_MIGRATION);
+
+        assertThat(sql)
+                .contains("information_schema.columns")
+                .contains("information_schema.tables")
+                .contains("information_schema.statistics")
+                .contains("`affinity_key` varchar(128) DEFAULT NULL")
+                .contains("`idx_workflow_business_apply_affinity`")
+                .contains("(`tenant_id`, `business_type`, `affinity_key`, `process_instance_id`)")
+                .doesNotContain("DROP TABLE")
+                .doesNotContain("TRUNCATE")
+                .doesNotContain("DELETE FROM")
+                .doesNotContain("UPDATE `workflow_business_apply`");
     }
 
     private String tableDefinition(String sql, String tableName) {

@@ -4,6 +4,7 @@
 
 ## 7. 变更影响记录
 
+- 节点亲和新增跨实例复用范围：审批节点 `autoAssignmentStrategy=NODE_AFFINITY` 时可配 `nodeAffinityScope=PROCESS_INSTANCE|BUSINESS_KEY|AFFINITY_KEY`，默认 `PROCESS_INSTANCE` 与 1.7.0 完全一致。业务在 `CreateWorkflowBusinessApplyCommand` 或 `StartBusinessWorkflowCommand` 传 `affinityKey`（稳定聚合键，跨提交不变，不要带版本号），平台按“当前实例 → 同一业务键 → 同一亲和键”逐层取历史节点办理人，命中者仍须在当前候选集内，否则继续回溯（最多 200 条）或走 `nodeAffinityFallback`。新增 Flyway `V4__workflow_node_affinity_scope.sql`：`workflow_business_apply` 加可空 `affinity_key` 和 `(tenant_id, business_type, affinity_key, process_instance_id)` 索引，不回填历史数据；未传亲和键或未登记申请中心的流程退化为实例级。自动派单审计记录补充 `nodeAffinityScope`、`nodeAffinityHit`。权限码、租户隔离、驳回/撤回语义、`AFFINITY` 与 `ROUND_ROBIN` 行为不变。
 - Issue #1231 为 `POST /workflow/tasks/page-by-business-key` 增加可选参数 `applyKeyword`：模糊匹配申请编号（`apply_code`）、申请标题（`apply_title`）、申请摘要（`apply_summary`），输入中的 `%`、`_` 按字面匹配；`keyword` 语义不变，仍只匹配任务名称和节点定义 Key。业务需要平台侧按自己的字段（保函种类、项目编号等）搜索时，在创建申请单时把可检索文本写进 `applySummary`，推荐 `名称：值，名称：值` 结构；摘要创建后不再更新，提交后会变的业务值不能依赖它。变量白名单过滤和平台侧业务列本次不提供，业务字段的多选精确筛选继续使用 `businessKeys`。数据库结构、权限码、租户隔离、分页与排序口径不变。
 
 - 新增 Workflow 节点亲和自动派单：审批节点 `assignmentMode=AUTO` 时可选 `autoAssignmentStrategy=NODE_AFFINITY`，优先派回同一流程实例、同一节点最早处理过任务且仍在候选集中的用户；无历史办理人或历史办理人已不在候选范围时，按 `nodeAffinityFallback` 回退到待领取、轮询、随机或任务量最少，默认待领取。该能力复用现有自动派单事务、候选解析和审计记录，不改变数据库结构、权限码和页面入口。

@@ -27,6 +27,7 @@ import io.mango.workflow.api.enums.WorkflowApplyStatus;
 import io.mango.workflow.api.enums.WorkflowAutoAssignmentStrategy;
 import io.mango.workflow.api.enums.WorkflowInstanceStatus;
 import io.mango.workflow.api.enums.WorkflowNodeAffinityFallback;
+import io.mango.workflow.api.enums.WorkflowNodeAffinityScope;
 import io.mango.workflow.api.enums.WorkflowTaskAction;
 import io.mango.workflow.api.query.WorkflowBusinessApplyPageQuery;
 import io.mango.workflow.api.request.WorkflowBusinessApplyProgressBatchRequest;
@@ -341,6 +342,102 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
         assertThat(selector.select(firstTime, List.of(10L), null,
                 WorkflowAutoAssignmentStrategy.NODE_AFFINITY, WorkflowNodeAffinityFallback.RANDOM))
                 .isEqualTo(10L);
+    }
+
+    @Test
+    void nodeAffinityBusinessKeyScopeReusesHandlerFromPreviousInstanceOfSameBusinessKey() {
+        insertBusinessApply(1L, "proc-old", "BAOHAN_RC_PROJECT_REVIEW", "BIZ-P1-V1", "PROJECT-P1",
+                "2026-01-01T09:00:00");
+        insertBusinessApply(2L, "proc-new", "BAOHAN_RC_PROJECT_REVIEW", "BIZ-P1-V2", "PROJECT-P1",
+                "2026-02-01T09:00:00");
+        insertNodeRecord(1L, "proc-old", "manager_approve", "COMPLETE", 20L, "2026-01-01T10:00:00");
+        insertNodeRecord(2L, "proc-new", "manager_approve", "CLAIM", 10L, "2026-02-01T10:00:00");
+
+        WorkflowAutoAssignmentSelector selector = new WorkflowAutoAssignmentSelector(jdbcTemplate);
+        Task currentTask = task("task-9", "manager_approve", "proc-new", "pd-1", null);
+
+        WorkflowAutoAssignmentSelector.Decision instanceScope = selector.decide(currentTask, List.of(10L, 20L), null,
+                WorkflowAutoAssignmentStrategy.NODE_AFFINITY, WorkflowNodeAffinityFallback.CLAIM,
+                WorkflowNodeAffinityScope.PROCESS_INSTANCE);
+        assertThat(instanceScope.userId()).isEqualTo(10L);
+        assertThat(instanceScope.affinityScope()).isEqualTo(WorkflowNodeAffinityScope.PROCESS_INSTANCE);
+
+        Task otherNode = task("task-9", "director_approve", "proc-new", "pd-1", null);
+        WorkflowAutoAssignmentSelector.Decision businessKeyScope = selector.decide(otherNode, List.of(10L, 20L), null,
+                WorkflowAutoAssignmentStrategy.NODE_AFFINITY, WorkflowNodeAffinityFallback.CLAIM,
+                WorkflowNodeAffinityScope.BUSINESS_KEY);
+        assertThat(businessKeyScope.userId()).isNull();
+        assertThat(businessKeyScope.affinityScope()).isNull();
+    }
+
+    @Test
+    void nodeAffinityAffinityKeyScopeBacktracksLatestInstancesAndFallsBackWhenHandlersAreNotCandidates() {
+        insertBusinessApply(1L, "proc-v1", "BAOHAN_RC_PROJECT_REVIEW", "BIZ-P1-V1", "PROJECT-P1",
+                "2026-01-01T09:00:00");
+        insertBusinessApply(2L, "proc-v2", "BAOHAN_RC_PROJECT_REVIEW", "BIZ-P1-V2", "PROJECT-P1",
+                "2026-02-01T09:00:00");
+        insertBusinessApply(3L, "proc-v3", "BAOHAN_RC_PROJECT_REVIEW", "BIZ-P1-V3", "PROJECT-P1",
+                "2026-03-01T09:00:00");
+        insertNodeRecord(1L, "proc-v1", "manager_approve", "COMPLETE", 20L, "2026-01-01T10:00:00");
+        insertNodeRecord(2L, "proc-v2", "manager_approve", "COMPLETE", 30L, "2026-02-01T10:00:00");
+
+        WorkflowAutoAssignmentSelector selector = new WorkflowAutoAssignmentSelector(jdbcTemplate);
+        Task currentTask = task("task-9", "manager_approve", "proc-v3", "pd-1", null);
+
+        WorkflowAutoAssignmentSelector.Decision backtracked = selector.decide(currentTask, List.of(10L, 20L), null,
+                WorkflowAutoAssignmentStrategy.NODE_AFFINITY, WorkflowNodeAffinityFallback.CLAIM,
+                WorkflowNodeAffinityScope.AFFINITY_KEY);
+        assertThat(backtracked.userId()).isEqualTo(20L);
+        assertThat(backtracked.affinityScope()).isEqualTo(WorkflowNodeAffinityScope.AFFINITY_KEY);
+
+        WorkflowAutoAssignmentSelector.Decision fallback = selector.decide(currentTask, List.of(40L), 40L,
+                WorkflowAutoAssignmentStrategy.NODE_AFFINITY, WorkflowNodeAffinityFallback.ROUND_ROBIN,
+                WorkflowNodeAffinityScope.AFFINITY_KEY);
+        assertThat(fallback.userId()).isEqualTo(40L);
+        assertThat(fallback.affinityScope()).isNull();
+    }
+
+    @Test
+    void nodeAffinityAffinityKeyScopeDoesNotCrossBusinessTypeOrBusinessKeyOwners() {
+        insertBusinessApply(1L, "proc-other-type", "OTHER_REVIEW", "BIZ-P1-V1", "PROJECT-P1",
+                "2026-01-01T09:00:00");
+        insertBusinessApply(2L, "proc-other-project", "BAOHAN_RC_PROJECT_REVIEW", "BIZ-P2-V1", "PROJECT-P2",
+                "2026-02-01T09:00:00");
+        insertBusinessApply(3L, "proc-current", "BAOHAN_RC_PROJECT_REVIEW", "BIZ-P1-V2", "PROJECT-P1",
+                "2026-03-01T09:00:00");
+        insertNodeRecord(1L, "proc-other-type", "manager_approve", "COMPLETE", 20L, "2026-01-01T10:00:00");
+        insertNodeRecord(2L, "proc-other-project", "manager_approve", "COMPLETE", 30L, "2026-02-01T10:00:00");
+
+        WorkflowAutoAssignmentSelector selector = new WorkflowAutoAssignmentSelector(jdbcTemplate);
+        Task currentTask = task("task-9", "manager_approve", "proc-current", "pd-1", null);
+
+        WorkflowAutoAssignmentSelector.Decision decision = selector.decide(currentTask, List.of(20L, 30L), null,
+                WorkflowAutoAssignmentStrategy.NODE_AFFINITY, WorkflowNodeAffinityFallback.CLAIM,
+                WorkflowNodeAffinityScope.AFFINITY_KEY);
+        assertThat(decision.userId()).isNull();
+        assertThat(decision.affinityScope()).isNull();
+    }
+
+    private void insertBusinessApply(long id, String processInstanceId, String businessType, String businessKey,
+                                     String affinityKey, String createdTime) {
+        jdbcTemplate.update("""
+                insert into workflow_business_apply
+                    (id, tenant_id, process_instance_id, business_type, business_key, affinity_key, created_time)
+                values (?, ?, ?, ?, ?, ?, ?)
+                """, id, 1L, processInstanceId, businessType, businessKey, affinityKey,
+                LocalDateTime.parse(createdTime));
+    }
+
+    private void insertNodeRecord(long id, String processInstanceId, String taskDefinitionKey, String action,
+                                  long operatorId, String createdTime) {
+        jdbcTemplate.update("""
+                insert into workflow_task_record
+                    (id, tenant_id, process_instance_id, task_id, task_name, task_definition_key,
+                     action, action_name, operator_id, operator_name, created_time, created_at)
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, id, 1L, processInstanceId, "task-" + id, "经理审批", taskDefinitionKey,
+                action, action, operatorId, "handled", LocalDateTime.parse(createdTime),
+                LocalDateTime.parse(createdTime));
     }
 
     @Test
@@ -876,12 +973,16 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
         jdbcTemplate.execute("""
                 create table workflow_business_apply (
                     id bigint not null,
+                    tenant_id bigint,
                     process_instance_id varchar(128),
+                    business_type varchar(128),
                     business_key varchar(128),
+                    affinity_key varchar(128),
                     apply_title varchar(255),
                     process_name varchar(128),
                     process_definition_key varchar(128),
                     current_task_names varchar(255),
+                    created_time timestamp,
                     primary key (id)
                 )
                 """);

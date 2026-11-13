@@ -41,7 +41,7 @@
 | 业务进度查询 | `WorkflowBusinessProcessApi.latestByBusinessKeys()` 或 `/workflow/business-applies/progress/latest-batch`。 |
 | 历史参与关系只读查询 | `WorkflowParticipationApi` 或 `/workflow/participations/access`、`/workflow/participations/my`；只返回当前租户、当前登录 `userId` 的参与事实，不授予任务办理权。 |
 | 业务声明参与人 | `WorkflowParticipationApi.replaceBusinessParticipants()` 或 `POST /workflow/participations/business`；传入完整 `participantUserIds` 集合，后端按当前租户启用成员原子替换。 |
-| 自动派单 | 审批节点 `assignmentMode=AUTO`；通过 `autoAssignmentStrategy` 选择 `ROUND_ROBIN`、`LEAST_TASKS`、`AFFINITY` 或 `NODE_AFFINITY`，候选为空返回 `AUTO_ASSIGN_NO_CANDIDATE` 并回滚节点事务。 |
+| 自动派单 | 审批节点 `assignmentMode=AUTO`；通过 `autoAssignmentStrategy` 选择 `ROUND_ROBIN`、`LEAST_TASKS`、`AFFINITY` 或 `NODE_AFFINITY`，候选为空返回 `AUTO_ASSIGN_NO_CANDIDATE` 并回滚节点事务。`NODE_AFFINITY` 可用 `nodeAffinityScope` 把复用范围从当前实例扩到同业务键或同亲和键。 |
 
 ## 3. 后端接入
 
@@ -226,7 +226,7 @@ WorkflowProcessWithdrawResultVO result = workflowProcessApi.withdraw(withdraw).g
 
 业务启动命令可携带完整 `participantUserIds` 集合，也可调用 `POST /workflow/participations/business` 进行完整替换。Workflow 会先验证所有用户属于当前租户、账号和成员均启用且未离职，任何一个无效用户都会使整次声明零写入；不得用 username 代替授权身份。
 
-审批节点配置 `assignmentMode` 缺失时按 `CLAIM` 兼容。设置为 `AUTO` 后，运行时从指定用户、角色、岗位、组织或组织主管展开当前租户有效成员，直接在节点事务内设置 assignee。`autoAssignmentStrategy` 缺失时按 `ROUND_ROBIN` 兼容；`LEAST_TASKS` 选择当前租户活动任务最少者并以稳定 `userId` 处理并列；`AFFINITY` 优先选择同一流程实例最近完成任务且仍在候选集中的用户，未命中时回退 `LEAST_TASKS`。`NODE_AFFINITY` 优先选择同一流程实例、同一 `taskDefinitionKey` 最早处理过任务且仍在候选集中的用户；没有历史办理人或历史办理人不在候选范围时，按 `nodeAffinityFallback` 回退：`CLAIM`（默认，待领取）、`ROUND_ROBIN`、`RANDOM`、`LEAST_TASKS`。没有候选人时返回 `AUTO_ASSIGN_NO_CANDIDATE`，不转 admin、不退化为待领取，流程推进和状态更新一起回滚。
+审批节点配置 `assignmentMode` 缺失时按 `CLAIM` 兼容。设置为 `AUTO` 后，运行时从指定用户、角色、岗位、组织或组织主管展开当前租户有效成员，直接在节点事务内设置 assignee。`autoAssignmentStrategy` 缺失时按 `ROUND_ROBIN` 兼容；`LEAST_TASKS` 选择当前租户活动任务最少者并以稳定 `userId` 处理并列；`AFFINITY` 优先选择同一流程实例最近完成任务且仍在候选集中的用户，未命中时回退 `LEAST_TASKS`。`NODE_AFFINITY` 优先选择同一节点最早处理过任务且仍在候选集中的用户；复用范围由 `nodeAffinityScope` 控制，缺失时按 `PROCESS_INSTANCE` 兼容，只查当前流程实例。`BUSINESS_KEY` 先查当前实例，再查同一 `businessType + businessKey` 的其他实例；`AFFINITY_KEY` 再向前查同一 `affinityKey` 的全部历史实例。`affinityKey` 由业务在创建申请或发起流程时传入，表示跨提交保持不变的稳定聚合键（例如项目 ID，不要带版本号），按 `tenant + businessType` 隔离，创建后不可修改。跨实例查询先取最近实例、再取该实例内最早办理人，最多回溯最近 200 条记录；历史办理人不在当前候选集时继续向前回溯。三层都无有效候选、或流程未登记申请中心时，按 `nodeAffinityFallback` 回退：`CLAIM`（默认，待领取）、`ROUND_ROBIN`、`RANDOM`、`LEAST_TASKS`。自动派单审计记录 `nodeAffinityScope`、`nodeAffinityHit`（`PROCESS_INSTANCE`/`BUSINESS_KEY`/`AFFINITY_KEY`/`FALLBACK`）和 `nodeAffinityFallback`，便于回查命中层级。没有候选人时返回 `AUTO_ASSIGN_NO_CANDIDATE`，不转 admin、不退化为待领取，流程推进和状态更新一起回滚。
 
 ### 3.3 设计器候选数据 Provider
 
