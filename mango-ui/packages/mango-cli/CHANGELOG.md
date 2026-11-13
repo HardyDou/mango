@@ -1,3 +1,14 @@
+## 1.4.6 - 2026-11-13
+
+### Changed
+
+- Lock the CLI Maven matrix to Maven `1.7.0` and the generated 201-coordinate Maven/docs release closure.
+- Keep generated workflow designer guidance aligned with `NODE_AFFINITY` auto assignment, `nodeAffinityFallback` and the approval trace endpoint.
+
+### Upgrade Notes
+
+- Upgrade `@mango/cli@1.4.6` together with the complete Maven/docs `1.7.0` tuple and `@mango/workflow@1.1.0`; do not mix release batches.
+
 ## 1.4.5 - 2026-11-13
 
 ### Changed
