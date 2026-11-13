@@ -1,6 +1,6 @@
 ## v2026.11.13-maven-1.7.0-workflow-trace-affinity-release - Mango Maven/docs 1.7.0 workflow trace and node affinity release - 2026-11-13
 
-Status: `PENDING`. Release plan digest `77654bf6ee6523a82cba879063783833c43d32b739b104f56d43e5322cdff73d`; Maven/npm publication, consume verification, Tag and GitHub Release remain pending.
+Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `77654bf6ee6523a82cba879063783833c43d32b739b104f56d43e5322cdff73d`; prepared candidate `871e8eef11f9f7b482e3c7e0ccd0e78a1df0542127248cd8b9025a52e7e9bbe1` completed publication and consume verification for 5 npm packages and 201 Maven coordinates. Tag and GitHub Release were created and verified.
 
 ### Pull Requests
 
@@ -75,8 +75,8 @@ Status: `PENDING`. Release plan digest `77654bf6ee6523a82cba879063783833c43d32b7
 - `applyKeyword` literal-wildcard handling and the unpaged row limit are covered by service tests, and the designer config test covers the new strategy and fallback fields.
 - Frontend quality passed with the updated designer component and API types; the workflow package builds with an additive public API.
 - `catalog:check` reports a consistent Catalog projection on the source commit and the release plan re-computes 201 coordinates with matching topology.
-- The Maven reactor and docs bundle are built once from the sealed candidate; all 201 coordinates are checked in publish and consume registries with matching checksums.
-- A clean consumer resolves Maven `1.7.0`, `@mango/workflow@1.1.0` and `@mango/cli@1.4.6` from the consume registries and completes the pure consume-registry verification.
+- The Maven reactor and docs bundle were built once from the sealed candidate; all 201 coordinates were checked in publish and consume registries with matching checksums.
+- A clean consumer resolved Maven `1.7.0`, `@mango/workflow@1.1.0` and `@mango/cli@1.4.6` from the consume registries and completed the pure consume-registry verification.
 
 ### Rollback
 
