@@ -18,7 +18,8 @@ export type WorkflowAssigneeType =
   | 'EXPRESSION';
 export type WorkflowApprovalMode = 'COUNTERSIGN' | 'OR_SIGN' | 'SEQUENTIAL';
 export type WorkflowAssignmentMode = 'CLAIM' | 'AUTO';
-export type WorkflowAutoAssignmentStrategy = 'ROUND_ROBIN' | 'LEAST_TASKS' | 'AFFINITY';
+export type WorkflowAutoAssignmentStrategy = 'ROUND_ROBIN' | 'LEAST_TASKS' | 'AFFINITY' | 'NODE_AFFINITY';
+export type WorkflowNodeAffinityFallback = 'CLAIM' | 'ROUND_ROBIN' | 'RANDOM' | 'LEAST_TASKS';
 export type WorkflowEmptyAssigneeStrategy = 'AUTO_PASS' | 'AUTO_REJECT' | 'AUTO_END' | 'TO_ADMIN' | 'TO_USER';
 export type WorkflowRejectStrategy = 'END_PROCESS' | 'BACK_TO_START';
 export type WorkflowFormPermission = 'HIDDEN' | 'READONLY' | 'EDITABLE';
@@ -51,6 +52,7 @@ export interface WorkflowNodeActionConfig {
 export interface WorkflowApprovalNodeConfig {
   assignmentMode?: WorkflowAssignmentMode;
   autoAssignmentStrategy?: WorkflowAutoAssignmentStrategy;
+  nodeAffinityFallback?: WorkflowNodeAffinityFallback;
   assigneeType: WorkflowAssigneeType;
   assigneeIds?: string[];
   roleIds?: string[];
@@ -1034,6 +1036,7 @@ export function defaultApprovalConfig(): WorkflowApprovalNodeConfig {
   return {
     assignmentMode: 'CLAIM',
     autoAssignmentStrategy: 'ROUND_ROBIN',
+    nodeAffinityFallback: 'CLAIM',
     assigneeType: 'INITIATOR',
     assigneeIds: [],
     roleIds: [],

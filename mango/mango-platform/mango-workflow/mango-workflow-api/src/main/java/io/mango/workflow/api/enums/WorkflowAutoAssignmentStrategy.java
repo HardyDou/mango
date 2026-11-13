@@ -7,5 +7,7 @@ public enum WorkflowAutoAssignmentStrategy {
     /** 选择当前活动任务数量最少的候选人。 */
     LEAST_TASKS,
     /** 优先选择同一流程实例最近处理过任务的候选人。 */
-    AFFINITY
+    AFFINITY,
+    /** 优先选择同一流程实例同一节点最早处理过任务的候选人；无历史时按回退策略处理。 */
+    NODE_AFFINITY
 }

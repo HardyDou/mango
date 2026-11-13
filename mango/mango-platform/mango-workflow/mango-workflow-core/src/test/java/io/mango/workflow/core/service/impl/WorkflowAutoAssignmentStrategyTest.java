@@ -29,4 +29,23 @@ class WorkflowAutoAssignmentStrategyTest {
                 List.of(10L, 20L), List.of(30L, 40L)))
                 .isNull();
     }
+
+    @Test
+    void nodeAffinityChoosesEarliestHandlerThatRemainsCandidate() {
+        assertThat(WorkflowAutoAssignmentSelector.selectNodeAffinityCandidate(
+                List.of(10L, 20L), List.of(30L, 20L, 10L)))
+                .isEqualTo(20L);
+    }
+
+    @Test
+    void nodeAffinityReturnsNullWhenHistoryHasNoCandidate() {
+        assertThat(WorkflowAutoAssignmentSelector.selectNodeAffinityCandidate(
+                List.of(10L, 20L), List.of(30L, 40L)))
+                .isNull();
+    }
+
+    @Test
+    void randomCandidateReturnsOnlyCandidate() {
+        assertThat(WorkflowAutoAssignmentSelector.randomCandidate(List.of(20L))).isEqualTo(20L);
+    }
 }

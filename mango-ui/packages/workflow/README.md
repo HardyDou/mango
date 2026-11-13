@@ -170,7 +170,8 @@ import { WorkflowLayout, WorkflowSidebar } from '@mango/workflow';
 | 业务申请进度                                                           | `claimStatus`                                                          | 当前任务认领状态，取值来自后端 `WorkflowTaskClaimStatus`。                                                                                                              |
 | 业务申请进度                                                           | `candidateUsers`、`candidateGroups`                                    | 当前任务候选用户和候选用户组，用于业务页判断待处理、可认领和按钮状态。                                                                                                  |
 | 流程节点分配                                                           | `assignmentMode` (`CLAIM` / `AUTO`)                                    | 缺失时按 `CLAIM`；`AUTO` 按 `autoAssignmentStrategy` 选择候选人，缺失时兼容 `ROUND_ROBIN`。                                                                             |
-| 自动派单策略                                                           | `autoAssignmentStrategy` (`ROUND_ROBIN` / `LEAST_TASKS` / `AFFINITY`)  | `ROUND_ROBIN` 按稳定用户 ID 轮询；`LEAST_TASKS` 选择当前租户活动任务最少者；`AFFINITY` 优先选择同一流程实例最近完成任务且仍在候选集中的用户，否则回退到 `LEAST_TASKS`。 |
+| 自动派单策略                                                           | `autoAssignmentStrategy` (`ROUND_ROBIN` / `LEAST_TASKS` / `AFFINITY` / `NODE_AFFINITY`) | `ROUND_ROBIN` 按稳定用户 ID 轮询；`LEAST_TASKS` 选择当前租户活动任务最少者；`AFFINITY` 优先选择同一流程实例最近完成任务且仍在候选集中的用户，否则回退到 `LEAST_TASKS`；`NODE_AFFINITY` 优先派回同一流程实例、同一节点的最早办理人。 |
+| 节点亲和回退                                                           | `nodeAffinityFallback` (`CLAIM` / `ROUND_ROBIN` / `RANDOM` / `LEAST_TASKS`) | 仅 `NODE_AFFINITY` 使用；无历史办理人或历史办理人不在候选范围时，默认 `CLAIM` 待领取，也可配置轮询、随机或任务量最少。 |
 
 `parseWorkflowFormConfig()` 支持数组式表单 JSON，也支持包含 `mode`、`rules`、`fields`、`customConfig` 的对象结构。非法 JSON 会按空动态表单处理。
 
