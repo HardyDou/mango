@@ -522,6 +522,35 @@ class WorkflowTaskBusinessQueryServiceTest {
     }
 
     @Test
+    void traceKeepsOnlyEarliestWithdrawPerInstance() {
+        when(businessApplyMapper.selectList(any())).thenReturn(List.of(apply("P1")));
+        when(taskRecordMapper.selectList(any())).thenReturn(List.of(record(1L, "P1")));
+        WorkflowBusinessApplyStatusLogEntity first = withdrawLog(9L, "P1", LocalDateTime.of(2026, 1, 1, 10, 30));
+        WorkflowBusinessApplyStatusLogEntity duplicate = withdrawLog(11L, "P1", LocalDateTime.of(2026, 1, 1, 10, 31));
+        when(statusLogMapper.selectList(any())).thenReturn(List.of(duplicate, first));
+
+        List<WorkflowTaskRecordVO> records = service.traceByBusinessKey(traceQuery());
+
+        assertThat(records).filteredOn(record -> "WITHDRAW".equals(record.getAction()))
+                .singleElement()
+                .satisfies(record -> assertThat(record.getId()).isEqualTo(9L));
+    }
+
+    private WorkflowBusinessApplyStatusLogEntity withdrawLog(Long id, String processInstanceId,
+                                                             LocalDateTime createdAt) {
+        WorkflowBusinessApplyStatusLogEntity log = new WorkflowBusinessApplyStatusLogEntity();
+        log.setId(id);
+        log.setProcessInstanceId(processInstanceId);
+        log.setAction("WITHDRAW");
+        log.setActionName("撤回");
+        log.setOperatorId(1001L);
+        log.setOperatorName("alice");
+        log.setComment("客户取消申请");
+        log.setCreatedAt(createdAt);
+        return log;
+    }
+
+    @Test
     void traceSkipsWithdrawQueryWhenActionsExcludeWithdraw() {
         when(businessApplyMapper.selectList(any())).thenReturn(List.of(apply("P1")));
         when(taskRecordMapper.selectList(any())).thenReturn(List.of(record(1L, "P1")));

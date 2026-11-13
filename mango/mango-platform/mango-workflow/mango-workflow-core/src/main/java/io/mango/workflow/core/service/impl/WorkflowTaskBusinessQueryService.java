@@ -197,9 +197,30 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
                     .or()
                     .in(WorkflowBusinessApplyStatusLogEntity::getOperatorName, operatorNames));
         }
-        return statusLogMapper.selectList(wrapper).stream()
+        // 撤回是实例级动作：同一实例出现多条 WITHDRAW 属于脏数据，按时间与主键取最早一条，保证返回稳定。
+        Map<String, WorkflowBusinessApplyStatusLogEntity> earliestByInstance = new LinkedHashMap<>();
+        for (WorkflowBusinessApplyStatusLogEntity log : statusLogMapper.selectList(wrapper)) {
+            earliestByInstance.merge(log.getProcessInstanceId(), log,
+                    (current, candidate) -> earlier(current, candidate) ? current : candidate);
+        }
+        return earliestByInstance.values().stream()
                 .map(WorkflowTaskRecordConverter::toVo)
                 .toList();
+    }
+
+    private boolean earlier(WorkflowBusinessApplyStatusLogEntity current,
+                            WorkflowBusinessApplyStatusLogEntity candidate) {
+        if (current.getCreatedAt() == null) {
+            return false;
+        }
+        if (candidate.getCreatedAt() == null) {
+            return true;
+        }
+        int compared = current.getCreatedAt().compareTo(candidate.getCreatedAt());
+        if (compared != 0) {
+            return compared < 0;
+        }
+        return current.getId() != null && candidate.getId() != null && current.getId() <= candidate.getId();
     }
 
     private List<String> processInstanceIds(Long tenantId, String businessType, String businessKey,
