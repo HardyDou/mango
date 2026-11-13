@@ -1,3 +1,14 @@
+## 1.4.7 - 2026-11-14
+
+### Changed
+
+- Lock the CLI Maven matrix to Maven `1.8.0` and the generated 201-coordinate Maven/docs release closure.
+- Keep the generated workflow designer aligned with `nodeAffinityScope`, the `affinityKey` business input and the `AUTO_ASSIGN` affinity audit fields.
+
+### Upgrade Notes
+
+- Upgrade `@mango/cli@1.4.7` together with the complete Maven/docs `1.8.0` tuple and `@mango/workflow@1.2.0`; apply Flyway `V4` before switching nodes to business-key or affinity-key reuse.
+
 ## 1.4.6 - 2026-11-13
 
 ### Changed
