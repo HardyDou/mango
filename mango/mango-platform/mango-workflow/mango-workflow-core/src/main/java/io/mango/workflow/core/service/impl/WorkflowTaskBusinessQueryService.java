@@ -111,6 +111,7 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
                 .endTimeBegin(resolved.getEndTimeBegin())
                 .endTimeEnd(resolved.getEndTimeEnd())
                 .keyword(keywordPattern(resolved.getKeyword()))
+                .applyKeyword(applyKeywordPattern(resolved.getApplyKeyword()))
                 .selfScope(selfScope)
                 .selfIdentifiers(selfIdentifiers)
                 .selfCandidateGroups(selfGroups)
@@ -323,6 +324,20 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
             return null;
         }
         return "%" + keyword.trim() + "%";
+    }
+
+    /**
+     * 申请关键字转为 LIKE 模式，% 和 _ 按字面匹配，避免调用方输入被当成通配符扩大命中范围。
+     */
+    private String applyKeywordPattern(String applyKeyword) {
+        if (!StringUtils.hasText(applyKeyword)) {
+            return null;
+        }
+        String escaped = applyKeyword.trim()
+                .replace("\\", "\\\\")
+                .replace("%", "\\%")
+                .replace("_", "\\_");
+        return "%" + escaped + "%";
     }
 
     private List<WorkflowTaskVO> toRecords(List<WorkflowTaskHistoryRow> rows) {

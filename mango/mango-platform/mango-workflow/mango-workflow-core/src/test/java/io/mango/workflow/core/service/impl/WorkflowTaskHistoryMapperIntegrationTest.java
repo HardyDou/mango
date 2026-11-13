@@ -114,6 +114,31 @@ class WorkflowTaskHistoryMapperIntegrationTest {
     }
 
     @Test
+    void filtersByApplyCodeTitleAndSummaryKeyword() {
+        assertThat(taskIdsOf(criteriaWithApplyKeyword("%GR20260102000002%"))).containsExactly("T3");
+        assertThat(taskIdsOf(criteriaWithApplyKeyword("%中铁%"))).containsExactly("T3", "T2", "T1");
+        assertThat(taskIdsOf(criteriaWithApplyKeyword("%履约保函%"))).containsExactly("T2", "T1");
+    }
+
+    @Test
+    void treatsEscapedWildcardsInApplyKeywordAsLiterals() {
+        WorkflowTaskHistoryCriteria criteria = criteriaWithApplyKeyword("%审核\\_中铁%");
+
+        assertThat(taskHistoryMapper.countTasks(criteria)).isEqualTo(2L);
+        assertThat(taskIdsOf(criteria)).containsExactly("T2", "T1");
+    }
+
+    @Test
+    void keepsApplyKeywordPageTotalConsistentWithRows() {
+        WorkflowTaskHistoryCriteria criteria = criteriaWithApplyKeyword("%保函风控审核%");
+
+        assertThat(taskHistoryMapper.countTasks(criteria)).isEqualTo(3L);
+        assertThat(taskIdsOf(criteria, 2, 0L)).containsExactly("T3", "T2");
+        assertThat(taskIdsOf(criteria, 2, 2L)).containsExactly("T1");
+        assertThat(taskIdsOf(criteria, 3, 0L)).containsExactly("T3", "T2", "T1");
+    }
+
+    @Test
     void isolatesTenant() {
         WorkflowTaskHistoryCriteria otherTenant = WorkflowTaskHistoryCriteria.builder()
                 .tenantId(2L)
@@ -339,10 +364,36 @@ class WorkflowTaskHistoryMapperIntegrationTest {
                 .build();
     }
 
+    private WorkflowTaskHistoryCriteria criteriaWithApplyKeyword(String applyKeyword) {
+        return WorkflowTaskHistoryCriteria.builder()
+                .tenantId(TENANT_ID)
+                .businessType(BUSINESS_TYPE)
+                .includeTodo(true)
+                .includeDone(true)
+                .includeCanceled(true)
+                .applyKeyword(applyKeyword)
+                .sortColumn("createTime")
+                .sortDirection("desc")
+                .build();
+    }
+
+    private List<String> taskIdsOf(WorkflowTaskHistoryCriteria criteria) {
+        return taskIdsOf(criteria, 10, 0L);
+    }
+
+    private List<String> taskIdsOf(WorkflowTaskHistoryCriteria criteria, int limit, long offset) {
+        return taskHistoryMapper.selectTasks(criteria, limit, offset).stream()
+                .map(WorkflowTaskHistoryRow::getTaskId)
+                .toList();
+    }
+
     private void insertData() {
-        insertApply(10L, TENANT_ID, "RC1", "IN_APPROVAL", 200L, "P1");
-        insertApply(20L, TENANT_ID, "RC2", "REJECTED", 300L, "P2");
-        insertApply(30L, 2L, "RC3", "IN_APPROVAL", 400L, "P3");
+        insertApply(10L, TENANT_ID, "RC1", "IN_APPROVAL", 200L, "P1",
+                "GR20260101000001", "保函风控审核_中铁三局", "廊坊硕坚 / 履约保函");
+        insertApply(20L, TENANT_ID, "RC2", "REJECTED", 300L, "P2",
+                "GR20260102000002", "保函风控审核X中铁四局", "福建金鼎 / 预付款保函");
+        insertApply(30L, 2L, "RC3", "IN_APPROVAL", 400L, "P3",
+                "GR20260103000003", "保函风控审核-荣昌区管网", "安徽金旗 / 履约保函");
         insertTask("T1", "初审", "FIRST_REVIEW", "P1", "alice",
                 LocalDateTime.of(2026, 1, 1, 10, 0), LocalDateTime.of(2026, 1, 1, 10, 0, 30),
                 LocalDateTime.of(2026, 1, 1, 11, 0), null);
@@ -371,13 +422,15 @@ class WorkflowTaskHistoryMapperIntegrationTest {
     }
 
     private void insertApply(Long id, Long tenantId, String businessKey, String status,
-                             Long deptId, String processInstanceId) {
+                             Long deptId, String processInstanceId,
+                             String applyCode, String applyTitle, String applySummary) {
         jdbcTemplate.update("insert into workflow_business_apply "
                         + "(id, tenant_id, org_id, business_type, business_key, apply_status, "
-                        + "applicant_dept_id, process_instance_id, process_name, process_definition_key) "
-                        + "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                        + "applicant_dept_id, process_instance_id, process_name, process_definition_key, "
+                        + "apply_code, apply_title, apply_summary) "
+                        + "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 id, tenantId, deptId, BUSINESS_TYPE, businessKey, status, deptId, processInstanceId,
-                "项目审批", "rc_project_review");
+                "项目审批", "rc_project_review", applyCode, applyTitle, applySummary);
     }
 
     private void insertTask(String taskId, String name, String taskDefinitionKey, String processInstanceId,
@@ -445,6 +498,9 @@ class WorkflowTaskHistoryMapperIntegrationTest {
                     process_instance_id varchar(128),
                     process_name varchar(255),
                     process_definition_key varchar(128),
+                    apply_code varchar(128),
+                    apply_title varchar(255),
+                    apply_summary varchar(1000),
                     primary key (id)
                 )
                 """);

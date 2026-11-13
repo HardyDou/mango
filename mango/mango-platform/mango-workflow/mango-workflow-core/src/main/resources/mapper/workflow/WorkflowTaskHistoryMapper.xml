@@ -104,6 +104,11 @@
         <if test="c.keyword != null and c.keyword != ''">
             and (t.NAME_ like #{c.keyword} or t.TASK_DEF_KEY_ like #{c.keyword})
         </if>
+        <if test="c.applyKeyword != null and c.applyKeyword != ''">
+            and (a.apply_code like #{c.applyKeyword}
+                 or a.apply_title like #{c.applyKeyword}
+                 or a.apply_summary like #{c.applyKeyword})
+        </if>
         <if test="c.selfScope">
             and (
                 t.ASSIGNEE_ in

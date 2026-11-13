@@ -63,7 +63,7 @@
 |---|---|---|
 | File | 管理文件记录、存储配置、上传、下载、访问和归档。 | [File README](../../mango/mango-platform/mango-file/README.md) |
 | File Preview | 管理文档预览入口、转换状态和预览产物。 | [File Preview README](../../mango/mango-platform/mango-file-preview/README.md) |
-| Workflow | 管理流程定义、业务申请、审批任务、办理人和审批进度；退回可指定目标办理人；自动派单支持轮询、任务量最少、流程亲和和节点亲和；按业务类型查询全部任务（业务主键可选，含在途、已办理、已终止，范围 `SELF`/`ALL`）；按业务键读取审批流转记录（发起/认领/通过/退回/驳回，多实例扁平返回，无行级数据权限）；默认通知可用 `mango.workflow.notice.enabled` 关闭，查看目标支持在申请快照 `customConfig` 中声明 `viewPath`、`viewQuery`、`viewActionLabel`。 | [Workflow README](../../mango/mango-platform/mango-workflow/README.md) |
+| Workflow | 管理流程定义、业务申请、审批任务、办理人和审批进度；退回可指定目标办理人；自动派单支持轮询、任务量最少、流程亲和和节点亲和；按业务类型查询全部任务（业务主键可选，含在途、已办理、已终止，范围 `SELF`/`ALL`）；申请关键字 `applyKeyword` 模糊匹配申请编号、申请标题和申请摘要（摘要推荐 `名称：值，名称：值` 结构承载可检索业务字段）；按业务键读取审批流转记录（发起/认领/通过/退回/驳回，多实例扁平返回，无行级数据权限）；默认通知可用 `mango.workflow.notice.enabled` 关闭，查看目标支持在申请快照 `customConfig` 中声明 `viewPath`、`viewQuery`、`viewActionLabel`。 | [Workflow README](../../mango/mango-platform/mango-workflow/README.md) |
 | Job | 管理定时任务、任务执行、调度状态和执行记录。 | [Job README](../../mango/mango-platform/mango-job/README.md) |
 | Notice | 管理站内消息、公告、通知渠道、消息模板和投递记录。 | [Notice README](../../mango/mango-platform/mango-notice/README.md) |
 | Numgen | 管理编号规则和业务编号生成。 | [Numgen README](../../mango/mango-platform/mango-numgen/README.md) |
