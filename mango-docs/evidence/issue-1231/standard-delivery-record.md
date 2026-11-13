@@ -52,6 +52,7 @@
 |---|---|---|---|---|
 | AC-1/AC-2/AC-3/AC-5/AC-6 | 单元测试 + H2 集成测试 | `mvn -o -pl mango-platform/mango-workflow/mango-workflow-api,mango-platform/mango-workflow/mango-workflow-core -Dtest='WorkflowTaskBusinessQueryServiceTest,WorkflowTaskHistoryMapperIntegrationTest,WorkflowTaskHistoryTenantIntegrationTest' -Dsurefire.failIfNoSpecifiedTests=false test` | PASS：37 用例（18 + 15 + 4），0 失败 | 构建输出 |
 | AC-1/AC-2/AC-3 | 真实 MySQL 只读验证 | `baohan_prod` 执行等价 SQL：`applyKeyword=%中铁%`、`%履约保函%`，以及旧 `keyword` 口径对照 | PASS：新条件命中 92 / 4035 条任务；旧 `keyword` 同词命中 0 条 | 见下方 SQL 输出 |
+| AC-1~AC-5 | HTTP 端到端（完整应用 + 本地 MySQL） | `mango dev start backend`（工作区 slot 46，库 `mango_dev_mango_issue_1231_046`），`POST /auth/login` 取 token 后调 `POST /workflow/tasks/page-by-business-key` | PASS：13 个场景全部符合预期（见下方 HTTP 输出） | 下方 HTTP 结果与请求体 |
 | AC-2 | 执行计划 | `EXPLAIN` 等价 SQL | PASS：驱动表 `a` 走 `idx_workflow_business_apply_biz_latest`，`ref=const,const`，rows≈1060；任务表走 `ACT_IDX_HI_TASK_INST_PROCINST` | 见下方 EXPLAIN 输出 |
 | AC-1~AC-6 | 模块验证 | `mvn -o -pl mango-platform/mango-workflow/mango-workflow-api,mango-platform/mango-workflow/mango-workflow-core,mango-platform/mango-workflow/mango-workflow-starter verify` | PASS（见第 7 节未验证项说明） | 构建输出 |
 | 文档 | 能力文档门禁 | `node mango-pmo/tools/audit-module-readmes.mjs`、`audit-readme-source-facts.mjs`、`check-business-guides.mjs`、`check-capability-docs.mjs` | PASS | 脚本输出 |
@@ -72,12 +73,31 @@ table t: type=ref key=ACT_IDX_HI_TASK_INST_PROCINST ref=baohan_prod.a.process_in
 Extra: Using where; Using temporary; Using filesort
 ```
 
+HTTP 端到端（完整应用 + 本地 MySQL，种子数据 4 条申请 / 4 条任务，验证后已清理）：
+
+```text
+不传 applyKeyword                         total=2  [T2, T1]      向后兼容
+applyKeyword=中铁                         total=2  [T2, T1]      标题命中
+applyKeyword=审核_中铁                    total=1  [T1]          下划线字面匹配
+applyKeyword=履约保函                     total=1  [T1]          摘要命中
+applyKeyword=GR20260101                   total=1  [T1]          编号命中
+keyword=复审                              total=1  [T2]          keyword 语义不变
+keyword=复审 + applyKeyword=中铁           total=1  [T2]          AND 语义
+applyKeyword=中铁 + businessKeys=[K2]      total=1  [T2]          与业务键共存
+page=1 size=1 / page=2 size=1             total=2  [T2] / [T1]    分页不重不漏
+applyKeyword=其他项目（任务归 bob）       total=0                SELF 范围生效
+applyKeyword=中铁五局（tenant_id=2）      total=0                租户隔离生效
+applyKeyword 129 字符                     code=400              参数校验生效
+scope=ALL（未授予 workflow:task:all）     code=3660             权限语义不变
+```
+
 ## 7. 例外与剩余风险
 
 - 不传 `businessKeys` 时仍不做逐申请 `WorkflowBusinessApplyDataPermissionProvider` 收窄，沿用 Issue #1223 已发布契约；本变更未改变该边界。
 - 变量白名单过滤（Issue #1231 的 B 部分）不做：`variables_json` 是提交时快照，且 H2 2.3.232（`MODE=MySQL`）不支持 `JSON_EXTRACT`/`JSON_UNQUOTE`/`->>`，函数索引方案无法进入现有测试通道。业务字段的多选精确筛选继续使用 `businessKeys`。
 - `apply_summary` 只在创建申请单时写入，平台没有更新接口；摘要承载的检索文本不会随业务字段变更更新。
 - 既有 `keyword` 未做通配符转义，本次不改变其行为；`applyKeyword` 单独转义。
+- HTTP 端到端已在本地完整应用（工作区 slot 46 空库 + 种子数据）验证，但未在业务仓 `mango-baohan-risk` 联调新参数。
 - workflow README 未新增「升级与兼容」版本行：目标发布版本号在发布批次确定，按能力说明规范在发布时补充。
 - 未提交 Commit、未 Push、未创建 PR：等待用户单独授权。
 
