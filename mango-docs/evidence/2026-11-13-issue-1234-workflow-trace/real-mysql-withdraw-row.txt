@@ -1,0 +1,27 @@
+*************************** 1. row ***************************
+                 id: 2121102831085486082
+             action: WITHDRAW
+        action_name: 撤回
+        operator_id: 1
+      operator_name: admin
+            comment: 客户取消申请
+process_instance_id: 715aaeb4-df1d-11f1-937c-f2b683221c42
+         created_at: 2026-11-13 12:48:18
+*************************** 2. row ***************************
+                 id: 2121103770450227201
+             action: WITHDRAW
+        action_name: 撤回
+        operator_id: 1
+      operator_name: admin
+            comment: 客户取消申请
+process_instance_id: f6c5ce6d-df1d-11f1-88ba-f2b683221c42
+         created_at: 2026-11-13 12:52:02
+*************************** 3. row ***************************
+                 id: 2121105769363210242
+             action: WITHDRAW
+        action_name: 撤回
+        operator_id: 1
+      operator_name: admin
+            comment: 客户取消申请
+process_instance_id: 12e1965a-df1f-11f1-8e33-f2b683221c42
+         created_at: 2026-11-13 12:59:58

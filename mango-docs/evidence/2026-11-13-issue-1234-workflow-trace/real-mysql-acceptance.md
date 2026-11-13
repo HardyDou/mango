@@ -120,3 +120,20 @@
 | `deptIds=[999]` | 0 条 |
 
 请求体字段由父类继承，JSON 结构与调整前完全一致，业务侧调用方式不变。
+
+## 结果 7：撤回 `WITHDRAW` 已并入流转记录（真实链路）
+
+实现方式：撤回不写 `workflow_task_record`；读取端把 `workflow_business_apply_status_log` 中该实例的 `WITHDRAW` 行映射成同一 VO 并入时间轴（`action=WITHDRAW`、`actionName=撤回`、`comment=撤回原因`、`variables=null`）。不改表结构，`processDetail` 行为不变，升级前已撤回的历史申请同样可见。
+
+真实链路：`POST /workflow/processes/withdraw`（原因「客户取消申请」）后查询流转记录。
+
+| 验证点 | 结果 |
+|---|---|
+| 撤回状态 | `applyStatus=WITHDRAWN` |
+| 撤回行字段 | `actionName=撤回`、`operatorName=admin`、`comment=客户取消申请`、`createdTime` 为撤回时间、`variables=null` |
+| 历史撤回 | 改动前已撤回的两个实例（`715aaeb4…`、`f6c5ce6d…`）同样返回 `WITHDRAW`，说明覆盖历史数据 |
+| 本次撤回 | 实例 `12e1965a…` 返回 1 条 `WITHDRAW` |
+| 重复检查 | 三个实例各 1 条，无重复（`group_by(processInstanceId)` 全为 1） |
+| `actions=["WITHDRAW"]` | 只返回撤回行 |
+| `process-detail` | 该实例 `records` 仅 `START`，未新增撤回行，行为与改动前一致 |
+| 状态流水 | `real-mysql-withdraw-row.txt`（三行 `WITHDRAW`，含处理人与原因） |

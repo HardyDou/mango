@@ -15,12 +15,15 @@ import io.mango.workflow.api.enums.WorkflowTaskQueryScope;
 import io.mango.workflow.api.enums.WorkflowTaskRuntimeStatus;
 import io.mango.workflow.api.query.WorkflowTaskBusinessPageQuery;
 import io.mango.workflow.api.query.WorkflowTaskTraceQuery;
+import io.mango.workflow.api.enums.WorkflowApplyAction;
 import io.mango.workflow.api.enums.WorkflowTaskAction;
 import io.mango.workflow.api.vo.WorkflowTaskRecordVO;
 import io.mango.workflow.api.vo.WorkflowTaskVO;
 import io.mango.workflow.core.convert.WorkflowTaskRecordConverter;
 import io.mango.workflow.core.entity.WorkflowTaskRecordEntity;
+import io.mango.workflow.core.mapper.WorkflowBusinessApplyStatusLogMapper;
 import io.mango.workflow.core.mapper.WorkflowTaskRecordMapper;
+import io.mango.workflow.core.entity.WorkflowBusinessApplyStatusLogEntity;
 import io.mango.workflow.core.config.WorkflowTaskQueryProperties;
 import io.mango.workflow.core.engine.WorkflowCandidateGroupProvider;
 import io.mango.workflow.core.entity.WorkflowBusinessApplyEntity;
@@ -39,6 +42,7 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -66,6 +70,7 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
     private final WorkflowTaskHistoryMapper taskHistoryMapper;
     private final WorkflowBusinessApplyMapper businessApplyMapper;
     private final WorkflowTaskRecordMapper taskRecordMapper;
+    private final WorkflowBusinessApplyStatusLogMapper statusLogMapper;
     private final ObjectProvider<WorkflowBusinessApplyAccessChecker> accessCheckerProvider;
     private final WorkflowTaskQueryAuthorizer authorizer;
     private final WorkflowAssigneeIdentityService assigneeIdentityService;
@@ -146,13 +151,54 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
         if (processInstanceIds.isEmpty()) {
             return List.of();
         }
+        List<String> operatorNames = operatorIds.isEmpty() ? List.of() : operatorNames(operatorIds, tenantId);
         int limit = Math.max(properties.getUnpagedMaxRows(), 1);
-        List<WorkflowTaskRecordEntity> records = taskRecordMapper.selectList(traceWrapper(processInstanceIds,
-                operatorIds, tenantId, actions, resolved.getBeginTime(), resolved.getEndTime(), limit));
+        List<WorkflowTaskRecordVO> records = new ArrayList<>(taskRecordMapper.selectList(traceWrapper(
+                        processInstanceIds, operatorIds, operatorNames, actions, resolved.getBeginTime(),
+                        resolved.getEndTime(), limit))
+                .stream()
+                .map(record -> WorkflowTaskRecordConverter.toVo(record, null))
+                .toList());
+        records.addAll(withdrawRecords(processInstanceIds, operatorIds, operatorNames, actions,
+                resolved.getBeginTime(), resolved.getEndTime()));
         Require.isTrue(records.size() <= limit, WorkflowCode.TASK_QUERY_INVALID,
                 "流转记录超过单次返回上限（" + limit + "），请缩小时间区间后重试");
-        return records.stream()
-                .map(record -> WorkflowTaskRecordConverter.toVo(record, null))
+        records.sort(Comparator.comparing(WorkflowTaskRecordVO::getCreatedTime)
+                .thenComparing(WorkflowTaskRecordVO::getId));
+        return List.copyOf(records);
+    }
+
+    /** 撤回只写申请状态流水；读取时并入同一时间轴，覆盖升级前已撤回的历史申请。 */
+    private List<WorkflowTaskRecordVO> withdrawRecords(List<String> processInstanceIds, List<Long> operatorIds,
+                                                       List<String> operatorNames, List<String> actions,
+                                                       LocalDateTime beginTime, LocalDateTime endTime) {
+        if (!actions.isEmpty() && !actions.contains(WorkflowTaskAction.WITHDRAW.name())) {
+            return List.of();
+        }
+        LambdaQueryWrapper<WorkflowBusinessApplyStatusLogEntity> wrapper =
+                new LambdaQueryWrapper<WorkflowBusinessApplyStatusLogEntity>()
+                        .select(WorkflowBusinessApplyStatusLogEntity::getId,
+                                WorkflowBusinessApplyStatusLogEntity::getProcessInstanceId,
+                                WorkflowBusinessApplyStatusLogEntity::getTaskId,
+                                WorkflowBusinessApplyStatusLogEntity::getTaskDefinitionKey,
+                                WorkflowBusinessApplyStatusLogEntity::getAction,
+                                WorkflowBusinessApplyStatusLogEntity::getActionName,
+                                WorkflowBusinessApplyStatusLogEntity::getOperatorId,
+                                WorkflowBusinessApplyStatusLogEntity::getOperatorName,
+                                WorkflowBusinessApplyStatusLogEntity::getComment,
+                                WorkflowBusinessApplyStatusLogEntity::getCreatedAt)
+                        .in(WorkflowBusinessApplyStatusLogEntity::getProcessInstanceId, processInstanceIds)
+                        .eq(WorkflowBusinessApplyStatusLogEntity::getAction, WorkflowApplyAction.WITHDRAW.name())
+                        .ge(beginTime != null, WorkflowBusinessApplyStatusLogEntity::getCreatedAt, beginTime)
+                        .le(endTime != null, WorkflowBusinessApplyStatusLogEntity::getCreatedAt, endTime);
+        if (!operatorIds.isEmpty()) {
+            wrapper.and(nested -> nested
+                    .in(WorkflowBusinessApplyStatusLogEntity::getOperatorId, operatorIds)
+                    .or()
+                    .in(WorkflowBusinessApplyStatusLogEntity::getOperatorName, operatorNames));
+        }
+        return statusLogMapper.selectList(wrapper).stream()
+                .map(WorkflowTaskRecordConverter::toVo)
                 .toList();
     }
 
@@ -173,7 +219,8 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
     }
 
     private LambdaQueryWrapper<WorkflowTaskRecordEntity> traceWrapper(List<String> processInstanceIds,
-                                                                     List<Long> operatorIds, Long tenantId,
+                                                                     List<Long> operatorIds,
+                                                                     List<String> operatorNames,
                                                                      List<String> actions, LocalDateTime beginTime,
                                                                      LocalDateTime endTime, int limit) {
         LambdaQueryWrapper<WorkflowTaskRecordEntity> wrapper = new LambdaQueryWrapper<WorkflowTaskRecordEntity>()
@@ -196,7 +243,6 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
                 .orderByAsc(WorkflowTaskRecordEntity::getId)
                 .last("limit " + (limit + 1));
         if (!operatorIds.isEmpty()) {
-            List<String> operatorNames = operatorNames(operatorIds, tenantId);
             wrapper.and(nested -> nested.in(WorkflowTaskRecordEntity::getOperatorId, operatorIds)
                     .or()
                     .in(WorkflowTaskRecordEntity::getOperatorName, operatorNames));
