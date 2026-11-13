@@ -99,7 +99,7 @@ scope=ALL（未授予 workflow:task:all）     code=3660             权限语�
 - 既有 `keyword` 未做通配符转义，本次不改变其行为；`applyKeyword` 单独转义。
 - HTTP 端到端已在本地完整应用（工作区 slot 46 空库 + 种子数据）验证，但未在业务仓 `mango-baohan-risk` 联调新参数。
 - workflow README 未新增「升级与兼容」版本行：目标发布版本号在发布批次确定，按能力说明规范在发布时补充。
-- 未提交 Commit、未 Push、未创建 PR：等待用户单独授权。
+- 已提交 Commit、Push 并创建 PR #1237；合并按用户授权和 review 结论执行。
 
 ## 8. 决定复核
 
@@ -111,4 +111,4 @@ scope=ALL（未授予 workflow:task:all）     code=3660             权限语�
 
 - 被拒方案：扩展 `keyword` 语义（改变已发布字段命中集合）、`apply_title` 前缀索引（`%词%` 用不上）、变量函数索引（每业务字段一次平台 DDL，且无法进入现有测试通道）、业务字段投影表（当前 2 千级数据量下收益不足，`versionStatus` 仍需业务表）。
 - 评审选择：`AGENT_ONLY`。本次由用户直接要求实现，未指定外部同行评审；Agent 分析结论不称为人工评审或审批。
-- 需要人工确认：摘要 `名称：值，名称：值` 写法由业务侧遵守，报告协助确认；Commit / Push / PR 待授权。
+- 需要人工确认：摘要 `名称：值，名称：值` 写法由业务侧遵守，报告协助确认；Commit / Push / PR 已按用户要求完成。
