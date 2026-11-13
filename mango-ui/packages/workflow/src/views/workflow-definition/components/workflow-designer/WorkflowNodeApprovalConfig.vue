@@ -46,6 +46,25 @@
           <el-radio label="LEAST_TASKS">任务量最少</el-radio>
         </el-radio-group>
       </div>
+      <div
+        v-if="
+          (config.assignmentMode || 'CLAIM') === 'AUTO' &&
+          (config.autoAssignmentStrategy || 'ROUND_ROBIN') === 'NODE_AFFINITY'
+        "
+        class="assignment-mode-row"
+      >
+        <span class="assignment-mode-label">复用范围</span>
+        <el-radio-group
+          :model-value="config.nodeAffinityScope || 'PROCESS_INSTANCE'"
+          class="approval-radio-row assignment-strategy-row"
+          data-field="workflow.node-affinity-scope"
+          @change="(value: WorkflowNodeAffinityScope) => $emit('update-config', { nodeAffinityScope: value })"
+        >
+          <el-radio label="PROCESS_INSTANCE">仅当前流程</el-radio>
+          <el-radio label="BUSINESS_KEY">同业务单号</el-radio>
+          <el-radio label="AFFINITY_KEY">同亲和键</el-radio>
+        </el-radio-group>
+      </div>
       <el-radio-group
         :model-value="config.assigneeType"
         class="approval-radio-grid assignee-grid"
@@ -293,6 +312,7 @@ import type {
   WorkflowAssignmentMode,
   WorkflowAutoAssignmentStrategy,
   WorkflowNodeAffinityFallback,
+  WorkflowNodeAffinityScope,
 } from '../../../../api/workflow';
 import type { ApprovalOrgTreeOption, ApprovalTargetOption, WorkflowVariableOption } from './types';
 

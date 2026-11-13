@@ -7,7 +7,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import io.mango.common.result.R;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
 import io.mango.infra.context.api.MangoContextHolder;
@@ -37,6 +36,7 @@ import io.mango.workflow.api.enums.WorkflowParticipantType;
 import io.mango.workflow.api.enums.WorkflowAssignmentMode;
 import io.mango.workflow.api.enums.WorkflowAutoAssignmentStrategy;
 import io.mango.workflow.api.enums.WorkflowNodeAffinityFallback;
+import io.mango.workflow.api.enums.WorkflowNodeAffinityScope;
 import io.mango.workflow.api.query.WorkflowTaskPageQuery;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyCurrentTaskVO;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyVO;
@@ -1419,13 +1419,16 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
                 ? WorkflowAutoAssignmentStrategy.ROUND_ROBIN : config.getAutoAssignmentStrategy();
         WorkflowNodeAffinityFallback nodeAffinityFallback = config.getNodeAffinityFallback() == null
                 ? WorkflowNodeAffinityFallback.CLAIM : config.getNodeAffinityFallback();
+        WorkflowNodeAffinityScope nodeAffinityScope = config.getNodeAffinityScope() == null
+                ? WorkflowNodeAffinityScope.PROCESS_INSTANCE : config.getNodeAffinityScope();
         WorkflowAutoAssignmentStateEntity state =
                 strategy == WorkflowAutoAssignmentStrategy.NODE_AFFINITY
                         && nodeAffinityFallback != WorkflowNodeAffinityFallback.ROUND_ROBIN
                         ? null : loadAssignmentState(task);
-        Long selected = new WorkflowAutoAssignmentSelector(jdbcTemplate)
-                .select(task, candidates, state == null ? null : state.getLastAssignedUserId(), strategy,
-                        nodeAffinityFallback);
+        WorkflowAutoAssignmentSelector.Decision decision = new WorkflowAutoAssignmentSelector(jdbcTemplate)
+                .decide(task, candidates, state == null ? null : state.getLastAssignedUserId(), strategy,
+                        nodeAffinityFallback, nodeAffinityScope);
+        Long selected = decision.userId();
         if (selected == null) {
             candidateLinker.applyGroups(task, resolved.groups());
             candidateLinker.applyUsers(task, resolved.users());
@@ -1446,6 +1449,9 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         audit.put("assigneeUserId", selected);
         if (strategy == WorkflowAutoAssignmentStrategy.NODE_AFFINITY) {
             audit.put("nodeAffinityFallback", nodeAffinityFallback.name());
+            audit.put("nodeAffinityScope", nodeAffinityScope.name());
+            audit.put("nodeAffinityHit", decision.affinityScope() == null
+                    ? "FALLBACK" : decision.affinityScope().name());
         }
         saveRecord(task, WorkflowTaskAction.AUTO_ASSIGN, "自动派单", audit);
         return true;

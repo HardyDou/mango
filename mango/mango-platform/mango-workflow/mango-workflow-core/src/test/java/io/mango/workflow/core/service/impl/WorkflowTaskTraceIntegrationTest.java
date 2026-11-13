@@ -273,6 +273,7 @@ class WorkflowTaskTraceIntegrationTest {
                     tenant_id bigint,
                     business_type varchar(128),
                     business_key varchar(128),
+                    affinity_key varchar(128),
                     apply_status varchar(64),
                     applicant_dept_id bigint,
                     process_instance_id varchar(128),

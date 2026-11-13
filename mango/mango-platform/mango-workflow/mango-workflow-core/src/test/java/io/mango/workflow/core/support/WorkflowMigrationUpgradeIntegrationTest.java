@@ -56,10 +56,12 @@ class WorkflowMigrationUpgradeIntegrationTest {
 
         var migrationResult = currentFlyway().migrate();
 
-        assertThat(migrationResult.migrationsExecuted).isEqualTo(2);
+        assertThat(migrationResult.migrationsExecuted).isEqualTo(3);
         assertThat(historyChecksum("1")).isEqualTo(CURRENT_V1_CHECKSUM);
         assertThat(historyChecksum("2")).isNotNull();
         assertCanonicalAuditColumns();
+        // 夹具只保留 5 张受影响表，工作流申请中心表不在其中；V4 必须跳过而不是中断升级。
+        assertThat(columnDefinition(new AuditColumn("workflow_business_apply", "affinity_key"))).isNull();
         assertThat(currentFlyway().migrate().migrationsExecuted).isZero();
     }
 
@@ -70,7 +72,7 @@ class WorkflowMigrationUpgradeIntegrationTest {
 
         var migrationResult = currentFlyway().migrate();
 
-        assertThat(migrationResult.migrationsExecuted).isEqualTo(2);
+        assertThat(migrationResult.migrationsExecuted).isEqualTo(3);
         assertThat(historyChecksum("1")).isEqualTo(CURRENT_V1_CHECKSUM);
         assertThat(historyChecksum("2")).isNotNull();
         assertCanonicalAuditColumns();
@@ -81,11 +83,12 @@ class WorkflowMigrationUpgradeIntegrationTest {
         var firstMigration = currentFlyway().migrate();
         var secondMigration = currentFlyway().migrate();
 
-        assertThat(firstMigration.migrationsExecuted).isEqualTo(3);
+        assertThat(firstMigration.migrationsExecuted).isEqualTo(4);
         assertThat(secondMigration.migrationsExecuted).isZero();
         assertThat(historyChecksum("1")).isEqualTo(CURRENT_V1_CHECKSUM);
         assertThat(historyChecksum("2")).isNotNull();
         assertCanonicalAuditColumns();
+        assertAffinityKeyColumn();
     }
 
     @Test
@@ -114,6 +117,12 @@ class WorkflowMigrationUpgradeIntegrationTest {
                 assertThat(definition.extra()).isEqualTo("DEFAULT_GENERATED on update CURRENT_TIMESTAMP");
             }
         }
+    }
+
+    private void assertAffinityKeyColumn() throws SQLException {
+        assertThat(columnDefinition(new AuditColumn("workflow_business_apply", "affinity_key")))
+                .as("workflow_business_apply.affinity_key added by V4")
+                .isNotNull();
     }
 
     private boolean columnExists(AuditColumn column) throws SQLException {

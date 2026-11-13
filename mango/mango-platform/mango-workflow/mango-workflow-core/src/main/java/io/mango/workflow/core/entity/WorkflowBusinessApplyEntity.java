@@ -17,6 +17,7 @@ public class WorkflowBusinessApplyEntity extends WorkflowBaseEntity {
     private String applyCode;
     private String businessType;
     private String businessKey;
+    private String affinityKey;
     private String applyTitle;
     private String applySummary;
     private Long applicantId;
