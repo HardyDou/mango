@@ -1,0 +1,17 @@
+== applies
+2121514838304182274|BIZ-E2E-1248-1|IN_APPROVAL|2026-11-14 16:05:27
+2121514843186352130|BIZ-E2E-1248-2|IN_APPROVAL|2026-11-14 16:05:29
+2121514848005607425|BIZ-E2E-1248-3|IN_APPROVAL|2026-11-14 16:05:30
+
+== attribute rows
+2121514838304182274|beneficiary|中铁三局
+2121514838304182274|beneficiary|中铁四局
+2121514838304182274|guaranteeTypeCode|PERF
+2121514838304182274|versionStatus|PENDING
+2121514848005607425|beneficiary|中建八局
+2121514848005607425|guaranteeTypeCode|PERF
+2121514848005607425|versionStatus|PENDING
+
+== notice site message (attribute template)
+待审核：保函风控审核（1248 真实场景验收）（PERF）|业务：履约保函风控审批-3；保函种类：PERF；受益人：中建八局；版本状态：REVIEWED
+待审核：保函风控审核（1248 真实场景验收）（PERF）|业务：履约保函风控审批-1；保函种类：PERF；受益人：中铁三局,中铁四局；版本状态：PENDING
