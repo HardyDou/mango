@@ -101,6 +101,27 @@
         <if test="c.endTimeEnd != null">
             and t.END_TIME_ &lt;= #{c.endTimeEnd}
         </if>
+        <if test="c.applyAttributeConditions != null and c.applyAttributeConditions.size() > 0">
+            <foreach collection="c.applyAttributeConditions" item="condition">
+                and a.id in (
+                select fa.apply_id
+                from workflow_business_apply_attribute fa
+                where fa.tenant_id = #{c.tenantId}
+                  and fa.business_type = #{c.businessType}
+                  and fa.attr_key = #{condition.key}
+                  and fa.attr_value in
+                <foreach collection="condition.values" item="value" open="(" separator="," close=")">
+                    #{value}
+                </foreach>
+                )
+            </foreach>
+        </if>
+        <if test="c.applyTimeBegin != null">
+            and a.created_time &gt;= #{c.applyTimeBegin}
+        </if>
+        <if test="c.applyTimeEnd != null">
+            and a.created_time &lt;= #{c.applyTimeEnd}
+        </if>
         <if test="c.keyword != null and c.keyword != ''">
             and (t.NAME_ like #{c.keyword} or t.TASK_DEF_KEY_ like #{c.keyword})
         </if>
@@ -189,6 +210,9 @@
             <when test="c.sortColumn == 'claimTime'">
                 case when t.CLAIM_TIME_ is null then 1 else 0 end asc,
                 t.CLAIM_TIME_
+            </when>
+            <when test="c.sortColumn == 'applyTime'">
+                a.created_time
             </when>
             <when test="c.sortColumn == 'endTime'">
                 case when t.END_TIME_ is null then 1 else 0 end asc,

@@ -24,6 +24,61 @@ class WorkflowNoticeDomainEventSubscriberTest {
             new WorkflowNoticeDomainEventSubscriber(new RecordingPublisher(events));
 
     @Test
+    void taskAdvancedShouldRouteToBusinessViewPathAndLabel() {
+        DomainEvent event = DomainEvent.builder()
+                .eventId("event-1004")
+                .eventType(WorkflowEventTypes.TASK_ADVANCED)
+                .businessType("guarantee")
+                .businessKey("GUARANTEE-1004")
+                .aggregateId("PI-1004")
+                .payload("processInstanceId", "PI-1004")
+                .payload("taskId", "TASK-1004")
+                .payload("assignee", "1001")
+                .payload("tenantId", "1")
+                .payload("viewPath", "/baohan/riskcontrol/project/audit")
+                .payload("viewQuery", Map.of("projectId", "P-1", "taskId", "TASK-1004"))
+                .payload("viewActionLabel", "去处理")
+                .build();
+
+        subscriber.onEvent(event);
+
+        assertThat(events).singleElement().satisfies(published -> {
+            NoticeSendEventCommand notice = (NoticeSendEventCommand) published;
+            assertThat(notice.getMessageTarget().getTargetKey())
+                    .isEqualTo("/baohan/riskcontrol/project/audit");
+            assertThat(notice.getMessageTarget().getParams().toMap())
+                    .containsEntry("projectId", "P-1")
+                    .containsEntry("fallbackTargetKey", "workflow:task:detail");
+            assertThat(notice.getMessageActions()).singleElement().satisfies(action ->
+                    assertThat(action.getActionLabel()).isEqualTo("去处理"));
+        });
+    }
+
+    @Test
+    void taskAdvancedShouldSkipInjectedActionWhenBusinessDisablesIt() {
+        DomainEvent event = DomainEvent.builder()
+                .eventId("event-1007")
+                .eventType(WorkflowEventTypes.TASK_ADVANCED)
+                .businessType("guarantee")
+                .businessKey("GUARANTEE-1007")
+                .aggregateId("PI-1007")
+                .payload("processInstanceId", "PI-1007")
+                .payload("taskId", "TASK-1007")
+                .payload("assignee", "1001")
+                .payload("tenantId", "1")
+                .payload("viewActionEnabled", Boolean.FALSE)
+                .build();
+
+        subscriber.onEvent(event);
+
+        assertThat(events).singleElement().satisfies(published -> {
+            NoticeSendEventCommand notice = (NoticeSendEventCommand) published;
+            assertThat(notice.getMessageActions()).isEmpty();
+            assertThat(notice.getMessageTarget().getTargetKey()).isEqualTo("workflow:task:detail");
+        });
+    }
+
+    @Test
     void taskAdvancedShouldPublishStructuredWorkflowNotice() {
         DomainEvent event = DomainEvent.builder()
                 .eventId("event-1001")
@@ -65,6 +120,34 @@ class WorkflowNoticeDomainEventSubscriberTest {
                 assertThat(action.getActionLabel()).isEqualTo("去审批");
                 assertThat(action.getInteractionType()).isEqualTo(NoticeSiteMessageActionInteractionType.ROUTE);
             });
+        });
+    }
+
+    @Test
+    void taskAdvancedShouldExposeApplyAttributesAsMessagePlaceholders() {
+        DomainEvent event = DomainEvent.builder()
+                .eventId("event-1003")
+                .eventType(WorkflowEventTypes.TASK_ADVANCED)
+                .businessType("guarantee")
+                .businessKey("GUARANTEE-1003")
+                .aggregateId("PI-1003")
+                .payload("processInstanceId", "PI-1003")
+                .payload("taskId", "TASK-1003")
+                .payload("assignee", "1001")
+                .payload("tenantId", "1")
+                .payload("proofForgeMarker", "ignored")
+                .payload("applyAttributes", Map.of(
+                        "guaranteeTypeCode", List.of("PERF"),
+                        "beneficiary", List.of("中铁三局", "中铁四局")))
+                .build();
+
+        subscriber.onEvent(event);
+
+        assertThat(events).singleElement().satisfies(published -> {
+            NoticeSendEventCommand notice = (NoticeSendEventCommand) published;
+            assertThat(notice.getMessageData().toMap())
+                    .containsEntry("applyAttribute_guaranteeTypeCode", "PERF")
+                    .containsEntry("applyAttribute_beneficiary", "中铁三局,中铁四局");
         });
     }
 
@@ -255,7 +338,7 @@ class WorkflowNoticeDomainEventSubscriberTest {
     }
 
     @Test
-    void taskAdvancedShouldKeepWorkflowTargetAndDefaultActionLabel() {
+    void taskAdvancedShouldUseBusinessViewTargetAndLabel() {
         DomainEvent event = DomainEvent.builder()
                 .eventId("event-view-query-task")
                 .eventType(WorkflowEventTypes.TASK_ADVANCED)
@@ -273,11 +356,14 @@ class WorkflowNoticeDomainEventSubscriberTest {
 
         assertThat(events).singleElement().satisfies(published -> {
             NoticeSendEventCommand notice = (NoticeSendEventCommand) published;
-            assertThat(notice.getMessageTarget().getTargetKey()).isEqualTo("workflow:task:detail");
+            assertThat(notice.getMessageTarget().getTargetKey())
+                    .isEqualTo("/guarantee/finance/payment-vouchers");
             assertThat(notice.getMessageTarget().getParams().toMap())
-                    .containsEntry("taskId", "TASK-VIEW-4");
+                    .containsExactlyInAnyOrderEntriesOf(Map.of(
+                            "receiptId", "R-1",
+                            "fallbackTargetKey", "workflow:task:detail"));
             assertThat(notice.getMessageActions()).singleElement()
-                    .satisfies(action -> assertThat(action.getActionLabel()).isEqualTo("去审批"));
+                    .satisfies(action -> assertThat(action.getActionLabel()).isEqualTo("去确认"));
         });
     }
 

@@ -1,13 +1,17 @@
 package io.mango.workflow.api.command;
 
+import io.mango.workflow.api.query.WorkflowApplyAttributeQuery;
 import io.mango.workflow.api.validation.WorkflowOptionalValidation;
 import io.mango.workflow.api.enums.WorkflowApplyRenderMode;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+
+import java.util.List;
 
 /**
  * 创建业务工作流申请命令。
@@ -104,4 +108,11 @@ public class CreateWorkflowBusinessApplyCommand {
     @NotNull(groups = WorkflowOptionalValidation.class)
     @jakarta.validation.Valid
     private WorkflowJsonRequest extension;
+
+    @Schema(description = "可筛属性：业务自定义键值，供任务列表精确过滤和消息内容使用；最多20个属性，"
+            + "属性名以字母开头且只允许字母、数字、下划线、点和短横线，"
+            + "属性值不超过255字符，单属性最多50个值")
+    @Size(max = 20, message = "可筛属性数量不能超过20")
+    @Valid
+    private List<WorkflowApplyAttributeQuery> filterAttributes;
 }

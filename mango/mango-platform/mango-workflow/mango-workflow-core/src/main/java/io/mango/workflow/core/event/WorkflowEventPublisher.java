@@ -6,17 +6,20 @@ import io.mango.infra.event.api.DomainEvent;
 import io.mango.infra.event.api.IDomainEventPublisher;
 import io.mango.workflow.api.vo.WorkflowEventPayloadVO;
 import io.mango.workflow.api.vo.WorkflowJsonVO;
+import io.mango.workflow.core.entity.WorkflowBusinessApplyAttributeEntity;
 import io.mango.workflow.core.entity.WorkflowDefinitionEntity;
 import io.mango.workflow.core.entity.WorkflowFormInstanceEntity;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyCurrentTaskVO;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyVO;
 import io.mango.workflow.core.identity.WorkflowAssigneeIdentity;
 import io.mango.workflow.core.identity.WorkflowAssigneeIdentityService;
+import io.mango.workflow.core.mapper.WorkflowBusinessApplyAttributeMapper;
 import org.flowable.engine.runtime.ProcessInstance;
 import org.flowable.task.api.Task;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,13 +36,16 @@ public class WorkflowEventPublisher {
 
     private final ObjectProvider<IDomainEventPublisher> publisherProvider;
     private final WorkflowAssigneeIdentityService assigneeIdentityService;
+    private final WorkflowBusinessApplyAttributeMapper applyAttributeMapper;
 
     public WorkflowEventPublisher(ObjectProvider<IDomainEventPublisher> publisherProvider,
-                                  WorkflowAssigneeIdentityService assigneeIdentityService) {
+                                  WorkflowAssigneeIdentityService assigneeIdentityService,
+                                  WorkflowBusinessApplyAttributeMapper applyAttributeMapper) {
         Require.notNull(publisherProvider, "领域事件发布器提供者不能为空");
         this.publisherProvider = publisherProvider;
         Require.notNull(assigneeIdentityService, "办理人身份服务不能为空");
         this.assigneeIdentityService = assigneeIdentityService;
+        this.applyAttributeMapper = applyAttributeMapper;
     }
 
     public void publishProcessStarted(
@@ -221,12 +227,14 @@ public class WorkflowEventPublisher {
         payload.setViewPath(businessApply.getViewPath());
         payload.setViewQuery(businessApply.getViewQuery());
         payload.setViewActionLabel(businessApply.getViewActionLabel());
+        payload.setViewActionEnabled(businessApply.getViewActionEnabled());
         payload.setBusinessType(businessApply.getBusinessType());
         payload.setBusinessKey(businessApply.getBusinessKey());
         payload.setProcessDefinitionId(businessApply.getEngineProcessDefinitionId());
         payload.setDefinitionId(businessApply.getProcessDefinitionId());
         payload.setDefinitionKey(businessApply.getProcessDefinitionKey());
         payload.setDefinitionName(businessApply.getProcessName());
+        payload.setApplyAttributes(WorkflowJsonVO.of(applyAttributes(businessApply.getId())));
         payload.setApplyStatus(businessApply.getApplyStatus() == null ? null : businessApply.getApplyStatus().name());
         payload.setApplyStatusName(businessApply.getApplyStatusName());
         payload.setCurrentTaskNames(businessApply.getCurrentTaskNames());
@@ -334,7 +342,11 @@ public class WorkflowEventPublisher {
         map.put("viewPath", payload.getViewPath());
         map.put("viewQuery", payload.getViewQuery() == null ? Map.of() : payload.getViewQuery().toMap());
         map.put("viewActionLabel", payload.getViewActionLabel());
+        map.put("viewActionEnabled",
+                payload.getViewActionEnabled() == null ? Boolean.TRUE : payload.getViewActionEnabled());
         map.put("variables", payload.getVariables() == null ? Map.of() : payload.getVariables().toMap());
+        map.put("applyAttributes",
+                payload.getApplyAttributes() == null ? Map.of() : payload.getApplyAttributes().toMap());
         map.put("processDefinitionId", payload.getProcessDefinitionId());
         map.put("definitionId", payload.getDefinitionId());
         map.put("definitionKey", payload.getDefinitionKey());
@@ -369,6 +381,26 @@ public class WorkflowEventPublisher {
                 .map(this::currentTaskPayload)
                 .toList());
         return map;
+    }
+
+    /**
+     * 读取申请的可筛属性，供事件消费方和消息模板使用。
+     *
+     * <p>属性由业务写入，平台只做只读投影；没有登记属性的申请返回空集合，不影响事件发布。
+     */
+    private Map<String, List<String>> applyAttributes(Long applyId) {
+        if (applyId == null) {
+            return Map.of();
+        }
+        List<WorkflowBusinessApplyAttributeEntity> rows = applyAttributeMapper.selectList(
+                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<WorkflowBusinessApplyAttributeEntity>()
+                        .eq(WorkflowBusinessApplyAttributeEntity::getApplyId, applyId)
+                        .orderByAsc(WorkflowBusinessApplyAttributeEntity::getAttrKey));
+        Map<String, List<String>> attributes = new LinkedHashMap<>();
+        for (WorkflowBusinessApplyAttributeEntity row : rows) {
+            attributes.computeIfAbsent(row.getAttrKey(), key -> new ArrayList<>()).add(row.getAttrValue());
+        }
+        return attributes;
     }
 
     private void putAssignee(WorkflowEventPayloadVO payload, String assigneeName) {

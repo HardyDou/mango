@@ -386,8 +386,9 @@ class WorkflowProcessServiceImplIntegrationTest {
         @Bean
         WorkflowEventPublisher workflowEventPublisher(
                 ObjectProvider<io.mango.infra.event.api.IDomainEventPublisher> provider,
-                WorkflowAssigneeIdentityService assigneeIdentityService) {
-            return new WorkflowEventPublisher(provider, assigneeIdentityService);
+                WorkflowAssigneeIdentityService assigneeIdentityService,
+                io.mango.workflow.core.mapper.WorkflowBusinessApplyAttributeMapper applyAttributeMapper) {
+            return new WorkflowEventPublisher(provider, assigneeIdentityService, applyAttributeMapper);
         }
 
         @Bean
@@ -432,6 +433,11 @@ class WorkflowProcessServiceImplIntegrationTest {
             apply.setBusinessType(command.getBusinessType());
             apply.setBusinessKey(command.getBusinessKey());
             return apply;
+        }
+
+        @Override
+        public void updateFilterAttributes(
+                io.mango.workflow.api.command.UpdateWorkflowBusinessApplyFilterAttributesCommand command) {
         }
 
         @Override

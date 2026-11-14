@@ -4,6 +4,7 @@ import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.workflow.api.WorkflowBusinessApplyApi;
 import io.mango.workflow.api.command.CreateWorkflowBusinessApplyCommand;
+import io.mango.workflow.api.command.UpdateWorkflowBusinessApplyFilterAttributesCommand;
 import io.mango.workflow.api.query.WorkflowBusinessApplyPageQuery;
 import io.mango.workflow.api.request.WorkflowBusinessApplyPageRequest;
 import io.mango.workflow.api.request.WorkflowBusinessApplyProgressBatchRequest;
@@ -15,6 +16,7 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.cloud.openfeign.SpringQueryMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -30,6 +32,10 @@ public interface WorkflowBusinessApplyFeignClient extends WorkflowBusinessApplyA
     @Override
     @PostMapping
     R<WorkflowBusinessApplyVO> create(@RequestBody CreateWorkflowBusinessApplyCommand command);
+
+    @Override
+    @PutMapping("/filter-attributes")
+    R<Void> updateFilterAttributes(@RequestBody UpdateWorkflowBusinessApplyFilterAttributesCommand command);
 
     @Override
     @PostMapping("/page")
