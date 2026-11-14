@@ -1,6 +1,6 @@
 ## v2026.11.14-maven-1.9.1-auto-assign-attribution-release - Mango Maven/docs 1.9.1 auto assign attribution fix release - 2026-11-14
 
-Status: `PENDING`. Release plan digest `7a4eb94ef74b3b2882774a5fa130cf6ca3ce592f5f32bf39b156e42b451a6075`; Maven/npm publication, consume verification, Tag and GitHub Release remain pending.
+Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `7a4eb94ef74b3b2882774a5fa130cf6ca3ce592f5f32bf39b156e42b451a6075`; prepared candidate `7c35475adb03c1d6752697eaf2594ec87be758c31c6b2108c46e7a683760f889` completed publication and consume verification for `@mango/cli@1.4.10` and 201 Maven coordinates. Tag and GitHub Release were created and verified.
 
 ### Pull Requests
 
