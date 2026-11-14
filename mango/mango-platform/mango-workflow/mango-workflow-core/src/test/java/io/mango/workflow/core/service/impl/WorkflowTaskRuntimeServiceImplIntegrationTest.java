@@ -1392,7 +1392,8 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
         }
 
         @Override
-        public void updateFilterAttributes(Long applyId, Map<String, List<String>> filterAttributes) {
+        public void updateFilterAttributes(
+                io.mango.workflow.api.command.UpdateWorkflowBusinessApplyFilterAttributesCommand command) {
         }
 
         @Override

@@ -31,7 +31,7 @@
 | AC-9 | 同上 | 多个属性和分页 | `total` 与逐页结果一致 | — | 翻页不重不漏，`total` 等于全量命中任务数 |
 | AC-10 | 同上 | 跨租户数据 | 只返回当前租户申请的任务 | 缺租户上下文报错 | 其他租户同属性任务不可见 |
 | AC-11 | `POST /workflow/business-applies` | 传 `filterAttributes`（单值/多值） | 与申请同事务写入，按「一行一个值」保存 | 键非法、值超长、属性超 20 个返回 `APPLY_INVALID` | 属性能被查询命中，重复值被去重 |
-| AC-12 | `PUT /workflow/business-applies/{applyId}/filter-attributes` | 新属性集合 / 空集合 | 整体覆盖；空集合清空 | 申请不存在或跨租户返回 `APPLY_NOT_FOUND`；非法键值返回 `APPLY_INVALID` | 更新后查询结果随之变化，重复调用结果一致 |
+| AC-12 | `PUT /workflow/business-applies/filter-attributes`（请求体含 `applyId`） | 新属性数组 / 空数组 | 整体覆盖；空集合清空 | 申请不存在或跨租户返回 `APPLY_NOT_FOUND`；非法键值返回 `APPLY_INVALID` | 更新后查询结果随之变化，重复调用结果一致 |
 | AC-13 | `workflow.task.advanced` 事件消费方 | 申请登记了属性 | 事件载荷携带 `applyAttributes` | 无属性时为空集合 | 订阅方按业务键读取到结构化属性 |
 | AC-14 | 默认工作流通知 | 申请登记了属性 | 通知变量包含 `applyAttribute_<key>`，多值逗号拼接 | 无属性时不注入变量 | 消息模板可引用属性并正确渲染 |
 | AC-15 | 默认工作流通知（待办到达） | 申请快照声明 `customConfig.viewPath` / `viewQuery` / `viewActionLabel` | 通知目标改为业务路径，按钮文案用业务声明值 | 路径非法时回退平台 `workflow:task:detail` | 消息目标与按钮文案可在业务列表页正确落地 |
@@ -43,8 +43,8 @@
 |---|---|---|---|---|
 | D-1 | AC-1~AC-5 | 属性按申请存子表，一行一个值：`workflow_business_apply_attribute`，索引 `(apply_id, attr_key)` 与 `(tenant_id, business_type, attr_key, attr_value(48), apply_id)`；不建唯一键，写入路径去重 | `db/migration/workflow/V5__workflow_business_apply_attribute.sql` | 表无读取路径后可保留或删除 |
 | D-2 | AC-1~AC-6 | 查询用「每条件一个 `a.id in (select …)` 子查询」，条件间 AND；实测比「派生表 OR + GROUP BY」快 30 倍，比逐条件 `EXISTS` 快 60 倍（见第 6 节压测） | `WorkflowTaskHistoryMapper.xml` | 删除 XML 片段与 `WorkflowApplyAttributeCondition` |
-| D-3 | AC-11/AC-12 | 写入走 `filterAttributes`（`Map<String, List<String>>`）：创建时同事务写，更新按申请整体覆盖（先删后插）；键值规则在 `WorkflowApplyAttributeRules` 单点校验，查询侧与写入侧共用 | `CreateWorkflowBusinessApplyCommand`、`UpdateWorkflowBusinessApplyFilterAttributesCommand`、`WorkflowBusinessApplyService`、`WorkflowApplyAttributeRules` | 删除新字段与接口 |
-| D-4 | AC-12 | 更新接口复用 `workflow:business-apply:create` 权限码，不新增权限码和初始化数据；只做租户隔离与申请存在性校验，业务数据权限由业务模块自行判定 | `WorkflowBusinessApplyController`、`WorkflowBusinessApplyApi`、`WorkflowBusinessApplyFeignClient` | 删除映射方法 |
+| D-3 | AC-11/AC-12 | 写入走 `filterAttributes`（`List<WorkflowApplyAttributeQuery>`，元素为 `{key, values}`）：创建时同事务写，更新按申请整体覆盖（先删后插）；键值规则在 `WorkflowApplyAttributeRules` 单点校验，查询侧与写入侧共用 | `CreateWorkflowBusinessApplyCommand`、`UpdateWorkflowBusinessApplyFilterAttributesCommand`、`WorkflowBusinessApplyService`、`WorkflowApplyAttributeRules` | 删除新字段与接口 |
+| D-4 | AC-12 | 更新接口为 `PUT /workflow/business-applies/filter-attributes`，申请 ID 放在请求体（平台禁止新接口使用路径变量）；复用 `workflow:business-apply:create` 权限码，不新增权限码和初始化数据；只做租户隔离与申请存在性校验，业务数据权限由业务模块自行判定 | `WorkflowBusinessApplyController`、`WorkflowBusinessApplyApi`、`WorkflowBusinessApplyFeignClient` | 删除映射方法 |
 | D-5 | AC-7/AC-8 | 新增 `applyTimeBegin`/`applyTimeEnd` 与 `sortBy=applyTime`；排序追加任务 ID 次序键，保证翻页稳定；平台不设默认时间窗，默认时间范围由业务决定 | `WorkflowTaskBusinessPageQuery`、`WorkflowTaskHistoryCriteria`、Mapper XML | 删除字段与排序分支 |
 | D-6 | AC-13 | 事件载荷新增 `applyAttributes`，发布时按申请读取一次属性；不把属性塞进 `variables`（流程变量属于引擎语义） | `WorkflowEventPayloadVO`、`WorkflowEventPublisher` | 删除字段与读取逻辑 |
 | D-7 | AC-14 | 通知模板是平铺占位符替换，不支持嵌套取值，因此默认通知把属性展开为 `applyAttribute_<key>`，多值英文逗号拼接 | `WorkflowNoticeDomainEventSubscriber` | 删除展开方法 |
@@ -72,7 +72,8 @@
 | AC-1~AC-10 | H2 集成测试（真实列名夹具） | `mvn -pl mango-platform/mango-workflow/mango-workflow-core -Dtest=WorkflowTaskAttributeFilterIntegrationTest test`（本机用 surefire 3.2.5 显式执行） | PASS：10 用例，覆盖单条件、多值、多条件、缺属性、多值字段、申请时间、分页一致性、申请时间排序、无筛选、租户隔离 | `WorkflowTaskAttributeFilterIntegrationTest` |
 | AC-1~AC-9 | 单元测试（校验与条件映射） | `-Dtest=WorkflowTaskBusinessQueryServiceTest` | PASS：37 用例（新增 8 个：条件映射、缺省不过滤、重复键、超限条件、超限值、非法键、空值、申请时间区间） | `WorkflowTaskBusinessQueryServiceTest` |
 | AC-11/AC-12 | H2 服务集成测试（真实 Mapper） | `-Dtest=WorkflowBusinessApplyServiceImplIntegrationTest` | PASS：15 用例（新增 5 个：创建写属性、无属性不写、更新覆盖与清空、非法键值、缺失申请） | `WorkflowBusinessApplyServiceImplIntegrationTest` |
-| AC-1~AC-12 | HTTP 层契约（MockMvc 真实入口） | `-Dtest=WorkflowApplyAttributeHttpContractTest` | PASS：4 用例（嵌套条件绑定、非法键与超限条件 400、PUT 绑定与清空、缺少请求体 400） | `WorkflowApplyAttributeHttpContractTest` |
+| AC-1~AC-12 | HTTP 层契约（MockMvc 真实入口） | `-Dtest=WorkflowApplyAttributeHttpContractTest` | PASS：4 用例（嵌套条件绑定、非法键与超限条件 400、PUT 命令绑定与清空、缺少申请 ID 400） | `WorkflowApplyAttributeHttpContractTest` |
+| 架构门禁 | `mango:architecture`（changed 模式，base `origin/main`） | `mvn -pl :mango-architecture-verification,<四模块> -DskipTests -Denforcer.skip=true -Dmango.architecture.mode=changed ... verify` | PASS：`dependency=0, archunit=0, pmd=0, blocking=0`（首次运行 11 条违规已按规则整改：去掉路径变量、输入模型改为 `{key,values}` 数组、输出改为 `WorkflowJsonVO`、字段级 `@Valid`） | `target/mango-architecture-report.json` |
 | AC-13 | 单元测试 | `-Dtest=WorkflowEventPublisherTest` | PASS：6 用例，含 `applyAttributes` 进入事件载荷 | `WorkflowEventPublisherTest` |
 | AC-14 | 单元测试 | `-Dtest=WorkflowNoticeDomainEventSubscriberTest` | PASS：15 用例，含 `applyAttribute_<key>` 展开、多值拼接、业务目标与文案、按钮关闭 | `WorkflowNoticeDomainEventSubscriberTest` |
 | AC-15/AC-16 | 服务集成测试（H2 真实 Mapper） | `-Dtest=WorkflowBusinessApplyServiceImplIntegrationTest` | PASS：16 用例，含 `viewActionEnabled` 派生 | `WorkflowBusinessApplyServiceImplIntegrationTest` |
@@ -107,7 +108,7 @@
 - 低选择性条件 + 全量 + 深翻页为秒级（本机实测 3~4 s），平台不设默认时间窗；交互时延由业务页面自行收敛范围。
 - 性能证据来自本机 MariaDB 11.8 合成数据，未在生产 MySQL 8 和真实 `baohan_prod` 上复核；真实库 `EXPLAIN` 与业务仓联调待执行。
 - 未做「启动完整应用 + 真实 MySQL 8 + Flyway V1~V5 + HTTP 全链路」的真实场景验收：本机只有 MariaDB 11.8，无法执行使用 `utf8mb4_0900_ai_ci` 的存量迁移；该验收必须在 MySQL 8 环境执行，步骤见第 7 节待办。
-- SpotBugs 与 Reactor 架构门禁未能在本机执行：SpotBugs 插件依赖在当前网络不可达；`mango-architecture-verification` 的 Enforcer 规则在本机实例化失败（`MangoArchitectureEnforcerRule.<init>`），两者均与本次改动无关，需由 CI 复核。
+- SpotBugs 与 `mango:check` 静态分析委派未能在本机完成：SpotBugs 插件依赖、`maven-pmd-plugin` 的 doxia 依赖在当前网络不可达；`mango-architecture-verification` 的 Enforcer 规则在本机实例化失败（`MangoArchitectureEnforcerRule.<init>`），因此架构门禁以跳过 Enforcer、单独执行 `mango:architecture` 的方式验证，结果 0 违规。以上均交给 CI 复核。
 - `IWorkflowBusinessApplyService` 中的 `io.mango.common.result.R` 未使用导入是存量告警，未在本次清理。
 - 行为变更：待办到达通知（`workflow.task.assigned`）此前固定在 `viewPath` 声明时仍跳 `workflow:task:detail`，现在声明 `customConfig.viewPath` 后跳业务路径。未声明 `viewPath` 的存量申请行为不变；不接受该变更的业务可去掉 `customConfig.viewPath` 或设置 `viewActionEnabled=false`。
 - 默认通知只支持一个路由按钮；业务需要多按钮或 `EVENT` 类型动作时，必须关闭默认通知并自行发消息，本次不提供该扩展。

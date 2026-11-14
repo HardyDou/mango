@@ -71,7 +71,7 @@ public class WorkflowEventPayloadVO {
     private WorkflowJsonVO variables;
 
     @Schema(description = "业务申请可筛属性；键由业务自定义，值为该属性的全部取值")
-    private Map<String, List<String>> applyAttributes;
+    private WorkflowJsonVO applyAttributes;
 
     @Schema(description = "Flowable 流程定义ID")
     private String processDefinitionId;

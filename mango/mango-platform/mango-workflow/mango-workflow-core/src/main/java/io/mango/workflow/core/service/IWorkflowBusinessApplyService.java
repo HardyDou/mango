@@ -3,6 +3,7 @@ package io.mango.workflow.core.service;
 import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.workflow.api.command.CreateWorkflowBusinessApplyCommand;
+import io.mango.workflow.api.command.UpdateWorkflowBusinessApplyFilterAttributesCommand;
 import io.mango.workflow.api.query.WorkflowBusinessApplyPageQuery;
 import io.mango.workflow.api.request.WorkflowBusinessApplyProgressBatchRequest;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyProgressBatchVO;
@@ -26,10 +27,9 @@ public interface IWorkflowBusinessApplyService {
     /**
      * 更新业务申请的可筛属性，整体覆盖。
      *
-     * @param applyId          业务申请 ID
-     * @param filterAttributes 新的可筛属性集合，空集合表示清空
+     * @param command 申请 ID 与新的可筛属性集合，空集合表示清空
      */
-    void updateFilterAttributes(Long applyId, Map<String, List<String>> filterAttributes);
+    void updateFilterAttributes(UpdateWorkflowBusinessApplyFilterAttributesCommand command);
 
     PageResult<WorkflowBusinessApplyVO> page(WorkflowBusinessApplyPageQuery query);
 

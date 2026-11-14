@@ -141,7 +141,7 @@ Workflow 只根据 `workflow_business_apply` 的持久化事实构造 `WorkflowB
 | `reapplyFromApplyId` | 否 | 重新申请来源申请 ID。 |
 | `variables` | 否 | 流程变量。 |
 | `extension` | 否 | 扩展配置。 |
-| `filterAttributes` | 否 | 可筛属性，业务自定义键值（`Map<String, List<String>>`），供任务列表精确过滤和消息内容使用；最多 20 个属性、单属性最多 50 个值，属性名以字母开头且只允许字母、数字、下划线、点和短横线，属性值不超过 255 字符。 |
+| `filterAttributes` | 否 | 可筛属性数组（`[{key, values}]`），业务自定义键值，供任务列表精确过滤和消息内容使用；最多 20 个属性、单属性最多 50 个值，属性名以字母开头且只允许字母、数字、下划线、点和短横线，属性值不超过 255 字符。 |
 
 发起流程字段：
 
@@ -565,7 +565,7 @@ mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-comm
 - `assigneeIds` 接受业务 `user_id`：引擎 `ASSIGNEE_` 存的是用户名时，平台通过 `identity_user.username` 映射，并强制经 `tenant_member` 校验该用户属于任务所在租户，跨租户同名用户不会串号。
 - `sortBy=claimTime` 在本接口的 SQL 层可排序（与引擎 API 不同），仍保持空值归尾。
 - `applyKeyword` 可选：模糊匹配申请编号（`apply_code`）、申请标题（`apply_title`）、申请摘要（`apply_summary`）三列中的任意一列；输入里的 `%`、`_`、`\` 按字面匹配。它和 `keyword` 互不替代，可以同时传：`keyword` 只匹配任务名称和节点定义 Key。
-- 业务需要按自己的业务字段（保函种类、受益人、版本状态等）精确多选筛选时，创建申请时通过 `filterAttributes` 登记键值，列表查询用 `applyAttributeFilters`；版本状态这类提交后会变化的值用 `PUT /workflow/business-applies/{applyId}/filter-attributes` 整体覆盖刷新。属性按申请保存，同一业务键多轮申请各自保留自己的值，查 V2 的属性只返回 V2 的任务。属性由业务写入，平台不做业务表回读，业务漏更新会被筛选结果直接体现。
+- 业务需要按自己的业务字段（保函种类、受益人、版本状态等）精确多选筛选时，创建申请时通过 `filterAttributes` 登记键值，列表查询用 `applyAttributeFilters`；版本状态这类提交后会变化的值用 `PUT /workflow/business-applies/filter-attributes`（请求体传 `applyId` 与新的属性数组）整体覆盖刷新。属性按申请保存，同一业务键多轮申请各自保留自己的值，查 V2 的属性只返回 V2 的任务。属性由业务写入，平台不做业务表回读，业务漏更新会被筛选结果直接体现。
 - 业务需要平台侧按自己的业务字段（保函种类、项目编号等）搜索时，在创建申请单时把可检索文本写进 `applySummary`，推荐 `名称：值，名称：值` 结构，例如 `保函种类：履约保函，项目编号：BH2026001`。摘要只在创建时写入、之后不再更新，提交后会变化的业务值不能依赖摘要搜索；需要多选精确筛选时继续使用 `businessKeys`。
 
 引擎列名事实：历史任务表的创建时间是 `ACT_HI_TASKINST.START_TIME_`，不是 `CREATE_TIME_`；`CREATE_TIME_` 只存在于运行态 `ACT_RU_TASK`。修改该查询时要按历史表真实列名书写，H2 集成测试的建表语句已按真实列名固定。
@@ -662,7 +662,7 @@ Workflow 参数校验约束统一由 `mango-workflow-api` 的 `XxxApi` 契约声
 | 能力 | 接口 | 权限码 |
 |------|------|--------|
 | 创建业务申请 | `POST /workflow/business-applies` | `workflow:business-apply:create` |
-| 更新申请可筛属性 | `PUT /workflow/business-applies/{applyId}/filter-attributes` | `workflow:business-apply:create` |
+| 更新申请可筛属性 | `PUT /workflow/business-applies/filter-attributes`（申请 ID 放在请求体） | `workflow:business-apply:create` |
 | 申请分页 | `POST /workflow/business-applies/page` | `workflow:business-apply:list` |
 | 申请详情 | `GET /workflow/business-applies/{applyId}` | `workflow:business-apply:detail` |
 | 历史申请 | `GET /workflow/business-applies/history` | `workflow:business-apply:detail` |
@@ -792,7 +792,7 @@ taskRuntimeApi.returnTask(command);
 | `applyId` | 业务申请 ID。 |
 | `applicantId` / `applicantName` | 原申请人；流程最终通过或驳回通知使用 `applicantId` 作为接收人。 |
 | `applyTitle` / `applySummary` | 业务申请的可读标题和摘要快照；默认通知使用 `applyTitle` 展示业务标题。 |
-| `applyAttributes` | 业务申请登记的可筛属性，键由业务自定义、值为该属性的全部取值；事件订阅方可直接读取结构化值。 |
+| `applyAttributes` | 业务申请登记的可筛属性 JSON 对象：键由业务自定义，值为该属性的全部取值；事件订阅方可直接读取结构化值。 |
 | `viewPath` | 从业务申请 `formJsonSnapshot.customConfig.viewPath` 派生的只读站内路径；仅安全的应用内绝对路径用于通知目标。 |
 | `viewQuery` | 从 `customConfig.viewQuery` 派生的只读查询参数；声明后站内信目标只携带这些参数。 |
 | `viewActionLabel` | 从 `customConfig.viewActionLabel` 派生的只读按钮文案；缺省时使用平台默认文案。 |
@@ -1108,7 +1108,7 @@ workflow:template:push
 
 | 适用版本 | 变更 | 影响 | 需要做的事 | 验证 | 回滚 |
 |----------|------|------|------------|------|------|
-| Maven 1.9.0 起（Issue #1248） | 新增 `workflow_business_apply_attribute` 表（Flyway `V5`）、`filterAttributes` 创建字段、`PUT /workflow/business-applies/{applyId}/filter-attributes`、任务查询的 `applyAttributeFilters` / `applyTimeBegin` / `applyTimeEnd` / `sortBy=applyTime` | 全部为新增可选能力，不传新参数时行为与 1.8.0 完全一致；`WorkflowBusinessApplyApi` 新增一个方法，自定义实现该接口的代码需要实现 `updateFilterAttributes` | 业务按需上报可筛属性；切换到属性筛选前先回填存量申请，否则属性过滤会排除未登记的历史申请 | `WorkflowTaskAttributeFilterIntegrationTest`、`WorkflowApiSurfaceContractTest`、模块 `mvn verify` | 删除新参数与接口调用即可回退；新表无读取路径时可保留 |
+| Maven 1.9.0 起（Issue #1248） | 新增 `workflow_business_apply_attribute` 表（Flyway `V5`）、`filterAttributes` 创建字段、`PUT /workflow/business-applies/filter-attributes`、任务查询的 `applyAttributeFilters` / `applyTimeBegin` / `applyTimeEnd` / `sortBy=applyTime` | 全部为新增可选能力，不传新参数时行为与 1.8.0 完全一致；`WorkflowBusinessApplyApi` 新增一个方法，自定义实现该接口的代码需要实现 `updateFilterAttributes` | 业务按需上报可筛属性；切换到属性筛选前先回填存量申请，否则属性过滤会排除未登记的历史申请 | `WorkflowTaskAttributeFilterIntegrationTest`、`WorkflowApiSurfaceContractTest`、模块 `mvn verify` | 删除新参数与接口调用即可回退；新表无读取路径时可保留 |
 
 ## 14. 相关文档
 

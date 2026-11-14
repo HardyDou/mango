@@ -15,7 +15,6 @@ import io.mango.workflow.api.vo.WorkflowBusinessApplyVO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.cloud.openfeign.SpringQueryMap;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -35,9 +34,8 @@ public interface WorkflowBusinessApplyFeignClient extends WorkflowBusinessApplyA
     R<WorkflowBusinessApplyVO> create(@RequestBody CreateWorkflowBusinessApplyCommand command);
 
     @Override
-    @PutMapping("/{applyId}/filter-attributes")
-    R<Void> updateFilterAttributes(@PathVariable("applyId") Long applyId,
-                                   @RequestBody UpdateWorkflowBusinessApplyFilterAttributesCommand command);
+    @PutMapping("/filter-attributes")
+    R<Void> updateFilterAttributes(@RequestBody UpdateWorkflowBusinessApplyFilterAttributesCommand command);
 
     @Override
     @PostMapping("/page")

@@ -10,14 +10,15 @@ import lombok.Data;
 import java.util.List;
 
 /**
- * 按业务申请可筛属性过滤的一个条件。
+ * 业务申请可筛属性的一组键值。
  *
- * <p>属性名和属性值都由业务模块自定义，平台只把它当作键值对存储和匹配。多个条件之间是「且」，
- * 同一条件的多个值之间是「或」。属性名必须由字母开头，只允许字母、数字、下划线、点和短横线。
+ * <p>属性名和属性值都由业务模块自定义，平台只把它当作键值对存储和匹配。写入时表示一条申请要登记的属性，
+ * 筛选时表示一个条件：多个条件之间是「且」，同一条件的多个值之间是「或」。属性名必须由字母开头，
+ * 只允许字母、数字、下划线、点和短横线。
  */
 @Data
-@Schema(description = "业务申请可筛属性过滤条件，属性名和值由业务自定义")
-public class WorkflowApplyAttributeFilter {
+@Schema(description = "业务申请可筛属性键值，属性名和值由业务自定义")
+public class WorkflowApplyAttributeQuery {
 
     @Schema(description = "属性名，字母开头，只允许字母、数字、下划线、点和短横线，最长64", example = "guaranteeTypeCode")
     @NotBlank(message = "可筛属性名不能为空")

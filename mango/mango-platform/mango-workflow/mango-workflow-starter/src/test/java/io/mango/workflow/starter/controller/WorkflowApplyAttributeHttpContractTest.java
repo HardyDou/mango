@@ -1,5 +1,6 @@
 package io.mango.workflow.starter.controller;
 
+import io.mango.workflow.api.command.UpdateWorkflowBusinessApplyFilterAttributesCommand;
 import io.mango.workflow.api.query.WorkflowTaskBusinessPageQuery;
 import io.mango.workflow.core.service.IWorkflowBusinessApplyService;
 import io.mango.workflow.core.service.IWorkflowTaskBusinessQueryService;
@@ -11,12 +12,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -93,36 +92,40 @@ class WorkflowApplyAttributeHttpContractTest {
     }
 
     @Test
-    void updateFilterAttributesBindsMapAndAllowsClearing() throws Exception {
-        mockMvc.perform(put("/workflow/business-applies/{applyId}/filter-attributes", 9001L)
+    void updateFilterAttributesBindsCommandAndAllowsClearing() throws Exception {
+        mockMvc.perform(put("/workflow/business-applies/filter-attributes")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"filterAttributes":{"versionStatus":["REVIEWED"],
-                                 "beneficiary":["中铁三局","中铁四局"]}}
+                                {"applyId":9001,
+                                 "filterAttributes":[
+                                   {"key":"versionStatus","values":["REVIEWED"]},
+                                   {"key":"beneficiary","values":["中铁三局","中铁四局"]}]}
                                 """))
                 .andExpect(status().isOk());
 
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<Map<String, List<String>>> captor = ArgumentCaptor.forClass(Map.class);
-        verify(businessApplyService).updateFilterAttributes(eq(9001L), captor.capture());
-        assertThat(captor.getValue())
-                .containsEntry("versionStatus", List.of("REVIEWED"))
-                .containsEntry("beneficiary", List.of("中铁三局", "中铁四局"));
+        ArgumentCaptor<UpdateWorkflowBusinessApplyFilterAttributesCommand> captor =
+                ArgumentCaptor.forClass(UpdateWorkflowBusinessApplyFilterAttributesCommand.class);
+        verify(businessApplyService).updateFilterAttributes(captor.capture());
+        assertThat(captor.getValue().getApplyId()).isEqualTo(9001L);
+        assertThat(captor.getValue().getFilterAttributes()).hasSize(2);
+        assertThat(captor.getValue().getFilterAttributes().getFirst().getKey()).isEqualTo("versionStatus");
+        assertThat(captor.getValue().getFilterAttributes().get(1).getValues())
+                .containsExactly("中铁三局", "中铁四局");
 
-        mockMvc.perform(put("/workflow/business-applies/{applyId}/filter-attributes", 9002L)
+        mockMvc.perform(put("/workflow/business-applies/filter-attributes")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"filterAttributes\":{}}"))
+                        .content("{\"applyId\":9002,\"filterAttributes\":[]}"))
                 .andExpect(status().isOk());
-        verify(businessApplyService).updateFilterAttributes(9002L, Map.of());
+        verify(businessApplyService, times(2)).updateFilterAttributes(any());
     }
 
     @Test
-    void updateFilterAttributesRejectsMissingPayload() throws Exception {
-        mockMvc.perform(put("/workflow/business-applies/{applyId}/filter-attributes", 9003L)
+    void updateFilterAttributesRejectsMissingApplyId() throws Exception {
+        mockMvc.perform(put("/workflow/business-applies/filter-attributes")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{}"))
+                        .content("{\"filterAttributes\":[]}"))
                 .andExpect(status().isBadRequest());
 
-        verify(businessApplyService, never()).updateFilterAttributes(eq(9003L), any());
+        verify(businessApplyService, never()).updateFilterAttributes(any());
     }
 }

@@ -29,15 +29,14 @@ public interface WorkflowBusinessApplyApi {
      * 更新业务申请的可筛属性，用于版本状态这类提交后会变化的值。
      *
      * <p>整体覆盖：传入的键值替换该申请已登记的全部可筛属性，传空集合表示清空；重复调用结果一致。
+     * 申请 ID 放在命令对象里，不使用路径参数，与平台 HTTP 适配规范一致。
      * 调用方必须是当前租户内的业务模块；平台只做租户隔离和申请存在性校验，具体数据权限由业务模块
      * 在调用前自行判定。
      *
-     * @param applyId          业务申请 ID
-     * @param command          新的可筛属性集合
+     * @param command 申请 ID 与新的可筛属性集合
      * @return 更新结果；申请不存在或跨租户时返回 {@code APPLY_NOT_FOUND}
      */
-    R<Void> updateFilterAttributes(@NotNull Long applyId,
-                                   @Valid UpdateWorkflowBusinessApplyFilterAttributesCommand command);
+    R<Void> updateFilterAttributes(@Valid UpdateWorkflowBusinessApplyFilterAttributesCommand command);
 
     R<PageResult<WorkflowBusinessApplyVO>> page(@Valid WorkflowBusinessApplyPageRequest request);
 

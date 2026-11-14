@@ -234,7 +234,7 @@ public class WorkflowEventPublisher {
         payload.setDefinitionId(businessApply.getProcessDefinitionId());
         payload.setDefinitionKey(businessApply.getProcessDefinitionKey());
         payload.setDefinitionName(businessApply.getProcessName());
-        payload.setApplyAttributes(applyAttributes(businessApply.getId()));
+        payload.setApplyAttributes(WorkflowJsonVO.of(applyAttributes(businessApply.getId())));
         payload.setApplyStatus(businessApply.getApplyStatus() == null ? null : businessApply.getApplyStatus().name());
         payload.setApplyStatusName(businessApply.getApplyStatusName());
         payload.setCurrentTaskNames(businessApply.getCurrentTaskNames());
@@ -346,7 +346,7 @@ public class WorkflowEventPublisher {
                 payload.getViewActionEnabled() == null ? Boolean.TRUE : payload.getViewActionEnabled());
         map.put("variables", payload.getVariables() == null ? Map.of() : payload.getVariables().toMap());
         map.put("applyAttributes",
-                payload.getApplyAttributes() == null ? Map.of() : payload.getApplyAttributes());
+                payload.getApplyAttributes() == null ? Map.of() : payload.getApplyAttributes().toMap());
         map.put("processDefinitionId", payload.getProcessDefinitionId());
         map.put("definitionId", payload.getDefinitionId());
         map.put("definitionKey", payload.getDefinitionKey());

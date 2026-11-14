@@ -95,7 +95,8 @@ public class WorkflowTaskBusinessPageQuery {
 
     @Schema(description = "申请可筛属性过滤条件：条件之间为且，同一条件的多个值为或；最多10个条件")
     @Size(max = 10, message = "可筛属性条件数量不能超过10")
-    private List<@Valid WorkflowApplyAttributeFilter> applyAttributeFilters;
+    @Valid
+    private List<WorkflowApplyAttributeQuery> applyAttributeFilters;
 
     @Schema(description = "申请创建时间起，闭区间")
     private LocalDateTime applyTimeBegin;

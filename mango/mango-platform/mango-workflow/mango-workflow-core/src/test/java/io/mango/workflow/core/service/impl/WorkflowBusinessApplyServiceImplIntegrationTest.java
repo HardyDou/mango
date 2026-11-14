@@ -7,6 +7,7 @@ import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
 import io.mango.workflow.api.command.CreateWorkflowBusinessApplyCommand;
+import io.mango.workflow.api.command.UpdateWorkflowBusinessApplyFilterAttributesCommand;
 import io.mango.workflow.api.enums.WorkflowCode;
 import io.mango.workflow.core.identity.WorkflowAssigneeIdentityService;
 import io.mango.workflow.core.mapper.WorkflowBusinessApplyMapper;
@@ -114,9 +115,9 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
         command.setBusinessType("BAOHAN_RC_PROJECT_REVIEW");
         command.setBusinessKey("BIZ-A1");
         command.setApplyTitle("项目风控审批");
-        command.setFilterAttributes(Map.of(
-                "guaranteeTypeCode", List.of(" PERF "),
-                "beneficiary", List.of("中铁三局", " 中铁四局 ", "中铁三局")));
+        command.setFilterAttributes(List.of(
+                attribute("guaranteeTypeCode", " PERF "),
+                attribute("beneficiary", "中铁三局", " 中铁四局 ", "中铁三局")));
 
         var created = service.create(command);
 
@@ -156,11 +157,12 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
         command.setBusinessType("BAOHAN_RC_PROJECT_REVIEW");
         command.setBusinessKey("BIZ-A3");
         command.setApplyTitle("项目风控审批");
-        command.setFilterAttributes(Map.of("versionStatus", List.of("PENDING"),
-                "guaranteeTypeCode", List.of("PERF")));
+        command.setFilterAttributes(List.of(
+                attribute("versionStatus", "PENDING"),
+                attribute("guaranteeTypeCode", "PERF")));
         var created = service.create(command);
 
-        service.updateFilterAttributes(created.getId(), Map.of("versionStatus", List.of("REVIEWED")));
+        service.updateFilterAttributes(updateCommand(created.getId(), attribute("versionStatus", "REVIEWED")));
 
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(
                 "select attr_key, attr_value from workflow_business_apply_attribute where apply_id = ?",
@@ -169,7 +171,7 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
         assertThat(rows.get(0)).containsEntry("attr_key", "versionStatus")
                 .containsEntry("attr_value", "REVIEWED");
 
-        service.updateFilterAttributes(created.getId(), Map.of());
+        service.updateFilterAttributes(updateCommand(created.getId()));
 
         assertThat(jdbcTemplate.queryForObject(
                 "select count(1) from workflow_business_apply_attribute where apply_id = ?",
@@ -181,17 +183,20 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
         MangoContextHolder.set(MangoContextSnapshot.empty()
                 .withSecurity(1001L, "1", "admin", "default", "USER", "USER", 1L, "internal-admin"));
 
-        assertThatThrownBy(() -> service.updateFilterAttributes(999L, Map.of("guaranteeTypeCode", List.of("PERF"))))
+        assertThatThrownBy(() -> service.updateFilterAttributes(
+                updateCommand(999L, attribute("guaranteeTypeCode", "PERF"))))
                 .isInstanceOf(BizException.class)
                 .hasMessageContaining("业务申请不存在");
 
         insertApply(1L, 1001L, "IN_APPROVAL");
 
-        assertThatThrownBy(() -> service.updateFilterAttributes(1L, Map.of("1invalid", List.of("PERF"))))
+        assertThatThrownBy(() -> service.updateFilterAttributes(
+                updateCommand(1L, attribute("1invalid", "PERF"))))
                 .isInstanceOf(BizException.class)
                 .hasMessageContaining("可筛属性名只支持字母开头");
 
-        assertThatThrownBy(() -> service.updateFilterAttributes(1L, Map.of("beneficiary", List.of(" "))))
+        assertThatThrownBy(() -> service.updateFilterAttributes(
+                updateCommand(1L, attribute("beneficiary", " "))))
                 .isInstanceOf(BizException.class)
                 .hasMessageContaining("可筛属性值不能为空");
     }
@@ -201,11 +206,9 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
         MangoContextHolder.set(MangoContextSnapshot.empty()
                 .withSecurity(1001L, "1", "admin", "default", "USER", "USER", 1L, "internal-admin"));
         insertApply(2L, 1001L, "IN_APPROVAL");
-        java.util.Map<String, List<String>> duplicated = new java.util.LinkedHashMap<>();
-        duplicated.put("beneficiary", List.of("中铁三局"));
-        duplicated.put(" beneficiary ", List.of("中铁四局"));
-
-        assertThatThrownBy(() -> service.updateFilterAttributes(2L, duplicated))
+        assertThatThrownBy(() -> service.updateFilterAttributes(updateCommand(2L,
+                attribute("beneficiary", "中铁三局"),
+                attribute(" beneficiary ", "中铁四局"))))
                 .isInstanceOf(BizException.class)
                 .hasMessageContaining("可筛属性名重复");
     }
@@ -579,6 +582,23 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
                     primary key (id)
                 )
                 """);
+    }
+
+    private io.mango.workflow.api.query.WorkflowApplyAttributeQuery attribute(String key, String... values) {
+        io.mango.workflow.api.query.WorkflowApplyAttributeQuery attribute =
+                new io.mango.workflow.api.query.WorkflowApplyAttributeQuery();
+        attribute.setKey(key);
+        attribute.setValues(List.of(values));
+        return attribute;
+    }
+
+    private UpdateWorkflowBusinessApplyFilterAttributesCommand updateCommand(
+            Long applyId, io.mango.workflow.api.query.WorkflowApplyAttributeQuery... attributes) {
+        UpdateWorkflowBusinessApplyFilterAttributesCommand command =
+                new UpdateWorkflowBusinessApplyFilterAttributesCommand();
+        command.setApplyId(applyId);
+        command.setFilterAttributes(List.of(attributes));
+        return command;
     }
 
     private void insertApply(Long id, Long applicantId, String status) {

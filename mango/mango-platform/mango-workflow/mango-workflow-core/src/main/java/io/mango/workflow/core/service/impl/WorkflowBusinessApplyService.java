@@ -12,6 +12,7 @@ import io.mango.common.vo.PageResult;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.workflow.api.enums.WorkflowCode;
 import io.mango.workflow.api.command.CreateWorkflowBusinessApplyCommand;
+import io.mango.workflow.api.command.UpdateWorkflowBusinessApplyFilterAttributesCommand;
 import io.mango.workflow.api.command.WorkflowJsonRequest;
 import io.mango.workflow.api.enums.WorkflowApplyAction;
 import io.mango.workflow.api.enums.WorkflowApplyRenderMode;
@@ -142,10 +143,12 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void updateFilterAttributes(Long applyId, Map<String, List<String>> filterAttributes) {
-        Require.notNull(applyId, WorkflowCode.APPLY_INVALID, "申请ID不能为空");
-        Map<String, List<String>> normalized = WorkflowApplyAttributeRules.requireAttributes(filterAttributes);
-        WorkflowBusinessApplyEntity apply = Require.nonNull(applyMapper.selectById(applyId),
+    public void updateFilterAttributes(UpdateWorkflowBusinessApplyFilterAttributesCommand command) {
+        Require.notNull(command, WorkflowCode.APPLY_INVALID, "更新可筛属性命令不能为空");
+        Require.notNull(command.getApplyId(), WorkflowCode.APPLY_INVALID, "申请ID不能为空");
+        Map<String, List<String>> normalized =
+                WorkflowApplyAttributeRules.requireAttributes(command.getFilterAttributes());
+        WorkflowBusinessApplyEntity apply = Require.nonNull(applyMapper.selectById(command.getApplyId()),
                 WorkflowCode.APPLY_NOT_FOUND);
         replaceFilterAttributes(apply, normalized);
     }

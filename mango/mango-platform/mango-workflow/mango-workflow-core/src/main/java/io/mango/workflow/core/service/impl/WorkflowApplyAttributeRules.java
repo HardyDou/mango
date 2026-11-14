@@ -2,8 +2,10 @@ package io.mango.workflow.core.service.impl;
 
 import io.mango.common.result.Require;
 import io.mango.workflow.api.enums.WorkflowCode;
+import io.mango.workflow.api.query.WorkflowApplyAttributeQuery;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -48,26 +50,30 @@ final class WorkflowApplyAttributeRules {
     }
 
     /** 校验并归一化一次写入的完整属性集合；同一属性名只允许出现一次，值按去重后的顺序保存。 */
-    static Map<String, List<String>> requireAttributes(Map<String, List<String>> attributes) {
-        Require.notNull(attributes, WorkflowCode.APPLY_INVALID, "可筛属性不能为空集合，清空请传空 Map");
+    static Map<String, List<String>> requireAttributes(List<WorkflowApplyAttributeQuery> attributes) {
+        Require.notNull(attributes, WorkflowCode.APPLY_INVALID, "可筛属性不能为空集合，清空请传空数组");
         Require.isTrue(attributes.size() <= MAX_ATTRIBUTES_PER_APPLY, WorkflowCode.APPLY_INVALID,
                 "可筛属性数量不能超过" + MAX_ATTRIBUTES_PER_APPLY);
         Map<String, List<String>> normalized = new LinkedHashMap<>();
-        for (Map.Entry<String, List<String>> entry : attributes.entrySet()) {
-            String key = requireKey(entry.getKey(), WorkflowCode.APPLY_INVALID);
+        for (WorkflowApplyAttributeQuery attribute : attributes) {
+            Require.notNull(attribute, WorkflowCode.APPLY_INVALID, "可筛属性不能为空");
+            String key = requireKey(attribute.getKey(), WorkflowCode.APPLY_INVALID);
             Require.isTrue(!normalized.containsKey(key), WorkflowCode.APPLY_INVALID, "可筛属性名重复：" + key);
-            List<String> values = entry.getValue();
-            Require.isTrue(values != null && !values.isEmpty(), WorkflowCode.APPLY_INVALID,
-                    "可筛属性值不能为空：" + key);
-            Require.isTrue(values.size() <= MAX_VALUES_PER_CONDITION, WorkflowCode.APPLY_INVALID,
-                    "单个可筛属性的值数量不能超过" + MAX_VALUES_PER_CONDITION + "：" + key);
-            LinkedHashSet<String> distinct = new LinkedHashSet<>();
-            for (String value : values) {
-                distinct.add(requireValue(key, value, WorkflowCode.APPLY_INVALID));
-            }
-            normalized.put(key, new ArrayList<>(distinct));
+            normalized.put(key, requireValues(key, attribute.getValues(), WorkflowCode.APPLY_INVALID));
         }
         return normalized;
+    }
+
+    /** 校验一组属性值：非空、数量受限、逐项长度受限，并按出现顺序去重。 */
+    static List<String> requireValues(String key, List<String> values, WorkflowCode code) {
+        Require.isTrue(values != null && !values.isEmpty(), code, "可筛属性值不能为空：" + key);
+        Require.isTrue(values.size() <= MAX_VALUES_PER_CONDITION, code,
+                "单个可筛属性的值数量不能超过" + MAX_VALUES_PER_CONDITION + "：" + key);
+        LinkedHashSet<String> distinct = new LinkedHashSet<>();
+        for (String value : values) {
+            distinct.add(requireValue(key, value, code));
+        }
+        return new ArrayList<>(distinct);
     }
 
     /** 校验查询侧的条件属性名，同一属性名只允许出现一次，避免「且」条件永远不成立。 */

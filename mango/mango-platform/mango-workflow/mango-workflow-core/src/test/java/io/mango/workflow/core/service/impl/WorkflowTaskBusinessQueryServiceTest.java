@@ -8,7 +8,7 @@ import io.mango.workflow.api.enums.WorkflowApplyStatus;
 import io.mango.workflow.api.enums.WorkflowTaskClaimStatus;
 import io.mango.workflow.api.enums.WorkflowTaskQueryScope;
 import io.mango.workflow.api.enums.WorkflowTaskRuntimeStatus;
-import io.mango.workflow.api.query.WorkflowApplyAttributeFilter;
+import io.mango.workflow.api.query.WorkflowApplyAttributeQuery;
 import io.mango.workflow.api.query.WorkflowTaskBusinessPageQuery;
 import io.mango.workflow.api.query.WorkflowTaskTraceQuery;
 import io.mango.workflow.api.vo.WorkflowTaskRecordVO;
@@ -655,7 +655,7 @@ class WorkflowTaskBusinessQueryServiceTest {
     @Test
     void rejectsTooManyApplyAttributeFilters() {
         WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
-        List<WorkflowApplyAttributeFilter> filters = new java.util.ArrayList<>();
+        List<WorkflowApplyAttributeQuery> filters = new java.util.ArrayList<>();
         for (int index = 0; index < 11; index++) {
             filters.add(filter("attr" + index, "v"));
         }
@@ -673,7 +673,7 @@ class WorkflowTaskBusinessQueryServiceTest {
         for (int index = 0; index < 51; index++) {
             values.add("v" + index);
         }
-        WorkflowApplyAttributeFilter filter = filter("guaranteeTypeCode");
+        WorkflowApplyAttributeQuery filter = filter("guaranteeTypeCode");
         filter.setValues(values);
         query.setApplyAttributeFilters(List.of(filter));
 
@@ -695,7 +695,7 @@ class WorkflowTaskBusinessQueryServiceTest {
     @Test
     void rejectsBlankApplyAttributeValue() {
         WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
-        WorkflowApplyAttributeFilter filter = filter("guaranteeTypeCode");
+        WorkflowApplyAttributeQuery filter = filter("guaranteeTypeCode");
         filter.setValues(List.of(" "));
         query.setApplyAttributeFilters(List.of(filter));
 
@@ -715,8 +715,8 @@ class WorkflowTaskBusinessQueryServiceTest {
                 .hasMessageContaining("时间区间非法");
     }
 
-    private WorkflowApplyAttributeFilter filter(String key, String... values) {
-        WorkflowApplyAttributeFilter filter = new WorkflowApplyAttributeFilter();
+    private WorkflowApplyAttributeQuery filter(String key, String... values) {
+        WorkflowApplyAttributeQuery filter = new WorkflowApplyAttributeQuery();
         filter.setKey(key);
         filter.setValues(List.of(values));
         return filter;

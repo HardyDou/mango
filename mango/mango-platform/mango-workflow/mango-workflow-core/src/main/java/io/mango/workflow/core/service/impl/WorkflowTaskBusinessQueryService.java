@@ -13,7 +13,7 @@ import io.mango.workflow.api.enums.WorkflowTaskCancelCause;
 import io.mango.workflow.api.enums.WorkflowTaskClaimStatus;
 import io.mango.workflow.api.enums.WorkflowTaskQueryScope;
 import io.mango.workflow.api.enums.WorkflowTaskRuntimeStatus;
-import io.mango.workflow.api.query.WorkflowApplyAttributeFilter;
+import io.mango.workflow.api.query.WorkflowApplyAttributeQuery;
 import io.mango.workflow.api.query.WorkflowTaskBusinessPageQuery;
 import io.mango.workflow.api.query.WorkflowTaskTraceQuery;
 import io.mango.workflow.api.enums.WorkflowApplyAction;
@@ -393,7 +393,7 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
      * 重复条件属性名会被拒绝，否则「且」交集永远不成立。
      */
     private List<WorkflowApplyAttributeCondition> applyAttributeConditions(WorkflowTaskBusinessPageQuery query) {
-        List<WorkflowApplyAttributeFilter> filters = query.getApplyAttributeFilters();
+        List<WorkflowApplyAttributeQuery> filters = query.getApplyAttributeFilters();
         if (filters == null || filters.isEmpty()) {
             return List.of();
         }
@@ -401,17 +401,11 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
                 WorkflowCode.TASK_QUERY_INVALID,
                 "可筛属性条件数量不能超过" + WorkflowApplyAttributeRules.MAX_FILTER_CONDITIONS);
         List<WorkflowApplyAttributeCondition> conditions = new ArrayList<>(filters.size());
-        for (WorkflowApplyAttributeFilter filter : filters) {
+        for (WorkflowApplyAttributeQuery filter : filters) {
             Require.notNull(filter, WorkflowCode.TASK_QUERY_INVALID, "可筛属性条件不能为空");
             String key = WorkflowApplyAttributeRules.requireKey(filter.getKey(), WorkflowCode.TASK_QUERY_INVALID);
-            List<String> values = normalizeStrings(filter.getValues());
-            Require.isTrue(!values.isEmpty(), WorkflowCode.TASK_QUERY_INVALID, "可筛属性值不能为空：" + key);
-            Require.isTrue(values.size() <= WorkflowApplyAttributeRules.MAX_VALUES_PER_CONDITION,
-                    WorkflowCode.TASK_QUERY_INVALID,
-                    "单个可筛属性的值数量不能超过" + WorkflowApplyAttributeRules.MAX_VALUES_PER_CONDITION + "：" + key);
-            for (String value : values) {
-                WorkflowApplyAttributeRules.requireValue(key, value, WorkflowCode.TASK_QUERY_INVALID);
-            }
+            List<String> values = WorkflowApplyAttributeRules.requireValues(key, filter.getValues(),
+                    WorkflowCode.TASK_QUERY_INVALID);
             conditions.add(WorkflowApplyAttributeCondition.builder().key(key).values(values).build());
         }
         WorkflowApplyAttributeRules.requireDistinctKeys(conditions.stream()

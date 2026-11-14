@@ -22,7 +22,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -53,14 +52,12 @@ public class WorkflowBusinessApplyController implements WorkflowBusinessApplyApi
         return R.ok(workflowBusinessApplyService.create(command));
     }
 
-    @PutMapping("/{applyId}/filter-attributes")
+    @PutMapping("/filter-attributes")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:business-apply:create")
     @Operation(summary = "更新业务申请可筛属性", description = "整体覆盖申请的可筛属性，用于版本状态等提交后会变化的值")
     @Override
-    public R<Void> updateFilterAttributes(
-            @Parameter(description = "业务申请ID") @PathVariable Long applyId,
-            @RequestBody UpdateWorkflowBusinessApplyFilterAttributesCommand command) {
-        workflowBusinessApplyService.updateFilterAttributes(applyId, command.getFilterAttributes());
+    public R<Void> updateFilterAttributes(@RequestBody UpdateWorkflowBusinessApplyFilterAttributesCommand command) {
+        workflowBusinessApplyService.updateFilterAttributes(command);
         return R.ok();
     }
 
