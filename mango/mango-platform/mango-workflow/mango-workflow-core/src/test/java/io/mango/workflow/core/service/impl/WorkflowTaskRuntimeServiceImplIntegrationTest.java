@@ -25,6 +25,7 @@ import io.mango.workflow.api.command.TransferWorkflowTaskCommand;
 import io.mango.workflow.api.command.WorkflowJsonRequest;
 import io.mango.workflow.api.enums.WorkflowApplyStatus;
 import io.mango.workflow.api.enums.WorkflowAutoAssignmentStrategy;
+import io.mango.workflow.api.enums.WorkflowCode;
 import io.mango.workflow.api.enums.WorkflowInstanceStatus;
 import io.mango.workflow.api.enums.WorkflowNodeAffinityFallback;
 import io.mango.workflow.api.enums.WorkflowNodeAffinityScope;
@@ -66,6 +67,7 @@ import org.flowable.bpmn.model.ExtensionElement;
 import org.flowable.bpmn.model.Process;
 import org.flowable.bpmn.model.UserTask;
 import org.flowable.common.engine.api.FlowableObjectNotFoundException;
+import org.flowable.common.engine.api.FlowableOptimisticLockingException;
 import org.flowable.engine.HistoryService;
 import org.flowable.engine.RepositoryService;
 import org.flowable.engine.RuntimeService;
@@ -111,6 +113,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
@@ -539,6 +542,51 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
 
         assertThat(result.getEnded()).isTrue();
         verify(workflowParticipationService).deactivateCurrentAssignees("proc-1");
+    }
+
+    @Test
+    void completeWithResultReturnsAlreadyCompletedWhenRuntimeTaskGoneAndCompletionRecordExists() {
+        TaskQuery missingTaskQuery = taskQuery(null, 0L, List.of());
+        when(taskService.createTaskQuery()).thenReturn(missingTaskQuery);
+        insertTaskRecord(1L, "task-1", WorkflowTaskAction.COMPLETE.name());
+        CompleteWorkflowTaskCommand command = new CompleteWorkflowTaskCommand();
+        command.setTaskId("task-1");
+
+        assertThatThrownBy(() -> service.completeWithResult(command))
+                .isInstanceOfSatisfying(BizException.class,
+                        e -> assertThat(e.getCode()).isEqualTo(WorkflowCode.TASK_ALREADY_COMPLETED.getCode()));
+        verify(taskService, never()).complete(eq("task-1"), any());
+    }
+
+    @Test
+    void completeWithResultTranslatesEngineConflictWhenCompletionRecordExists() {
+        Task task = task("task-1", "manager_approve", "proc-1", "pd-1", "anonymous");
+        TaskQuery query = taskQuery(task, 1L, List.of());
+        when(taskService.createTaskQuery()).thenReturn(query);
+        doThrow(new FlowableOptimisticLockingException("stale task"))
+                .when(taskService).complete(eq("task-1"), any());
+        insertTaskRecord(1L, "task-1", WorkflowTaskAction.COMPLETE.name());
+        CompleteWorkflowTaskCommand command = new CompleteWorkflowTaskCommand();
+        command.setTaskId("task-1");
+        command.setComment("同意");
+
+        assertThatThrownBy(() -> service.completeWithResult(command))
+                .isInstanceOfSatisfying(BizException.class,
+                        e -> assertThat(e.getCode()).isEqualTo(WorkflowCode.TASK_ALREADY_COMPLETED.getCode()));
+    }
+
+    @Test
+    void completeWithResultRethrowsEngineConflictWhenCompletionRecordAbsent() {
+        Task task = task("task-1", "manager_approve", "proc-1", "pd-1", "anonymous");
+        TaskQuery query = taskQuery(task, 1L, List.of());
+        when(taskService.createTaskQuery()).thenReturn(query);
+        FlowableOptimisticLockingException conflict = new FlowableOptimisticLockingException("stale task");
+        doThrow(conflict).when(taskService).complete(eq("task-1"), any());
+        CompleteWorkflowTaskCommand command = new CompleteWorkflowTaskCommand();
+        command.setTaskId("task-1");
+        command.setComment("同意");
+
+        assertThatThrownBy(() -> service.completeWithResult(command)).isSameAs(conflict);
     }
 
     @Test
@@ -997,8 +1045,16 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
                 """);
     }
 
-    private void insertFormInstance(String processInstanceId, String variablesJson, String status) {
-        WorkflowFormInstanceEntity formInstance = new WorkflowFormInstanceEntity();
+    private void insertTaskRecord(Long id, String taskId, String action) {
+        LocalDateTime now = LocalDateTime.parse("2026-06-27T10:00:00");
+        jdbcTemplate.update("""
+                insert into workflow_task_record
+                    (id, tenant_id, process_instance_id, task_id, action, created_time, created_at)
+                values (?, ?, ?, ?, ?, ?, ?)
+                """, id, 1L, "proc-1", taskId, action, now, now);
+    }
+
+    private void insertFormInstance(String processInstanceId, String variablesJson, String status) {        WorkflowFormInstanceEntity formInstance = new WorkflowFormInstanceEntity();
         formInstance.setId(2001L);
         formInstance.setTenantId(1L);
         formInstance.setProcessInstanceId(processInstanceId);

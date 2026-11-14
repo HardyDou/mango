@@ -249,6 +249,8 @@ WorkflowProcessWithdrawResultVO result = workflowProcessApi.withdraw(withdraw).g
 | 兼容模式 | `POST /workflow/tasks/complete` | 只关心任务完成成功，随后由列表或详情重新查询状态。 |
 | 结果模式 | `POST /workflow/tasks/complete-result` | 完成任务后立即拿到刷新后的申请状态、当前节点、认领状态和候选人。 |
 
+同一任务被并发或重复办理时，平台先按运行态任务和完成记录判定：任务已由其他审批人完成返回 `TASK_ALREADY_COMPLETED`；运行态任务不存在且没有完成记录时返回 `TASK_NOT_FOUND`。引擎在提交阶段出现并发冲突时，平台仅在该任务完成记录已落库的情况下转换为 `TASK_ALREADY_COMPLETED`；其它引擎异常继续抛出。业务侧按“任务已被其他审批人办理，请刷新后重试”提示，不再依赖捕获引擎外键异常。
+
 业务模块订阅事件时，实现 `DomainEventSubscriber` 并按 `businessType` 过滤：
 
 ```java

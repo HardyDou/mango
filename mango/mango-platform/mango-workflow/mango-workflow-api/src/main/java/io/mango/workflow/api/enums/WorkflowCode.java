@@ -68,6 +68,9 @@ public enum WorkflowCode implements BizCode {
     /** 流程任务参数非法。 */
     TASK_INVALID(3651, "流程任务参数非法"),
 
+    /** 流程任务已被其他审批人办理。 */
+    TASK_ALREADY_COMPLETED(3661, "任务已被其他审批人办理"),
+
     PARTICIPATION_CONTEXT_INVALID(3652, "工作流参与查询上下文非法"),
 
     PARTICIPANT_INVALID(3653, "工作流参与用户无效"),
