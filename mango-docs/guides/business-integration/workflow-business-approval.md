@@ -30,7 +30,7 @@
 | 返回入口 | 业务跳转审批任务详情时传 `returnPath`，审批完成或点返回能回到业务列表，不回退到 Mango 默认待办 |
 | 权限 | 发起、审批、撤回、查看记录按业务角色和流程任务共同判断 |
 | 历史只读 | 业务详情需要历史参与可见性时，消费 `WorkflowParticipationApi.access()`；该事实只表示可读，不代表可办理当前任务 |
-| 自动派单 | 需要节点到达即明确办理人时显式配置 `assignmentMode=AUTO`；可选 `autoAssignmentStrategy=ROUND_ROBIN`、`LEAST_TASKS`、`AFFINITY` 或 `NODE_AFFINITY`，缺失时兼容轮询，候选为空会使流程事务失败。`NODE_AFFINITY` 无历史办理人时按 `nodeAffinityFallback` 回退，默认 `CLAIM` 待领取，也可配置轮询、随机或任务量最少 |
+| 自动派单 | 需要节点到达即明确办理人时显式配置 `assignmentMode=AUTO`；可选 `autoAssignmentStrategy=ROUND_ROBIN`、`LEAST_TASKS`、`AFFINITY` 或 `NODE_AFFINITY`，缺失时兼容轮询。候选为空时默认使流程事务失败；`NODE_AFFINITY` + `nodeAffinityFallback=CLAIM` 例外，候选为空仍保留角色候选组并进入待领取。`NODE_AFFINITY` 无历史办理人时按 `nodeAffinityFallback` 回退，默认 `CLAIM` 待领取，也可配置轮询、随机或任务量最少 |
 | 跨提交复用办理人 | 同一项目修改后重新提交时，需要把“同一个业务实体”告诉平台：在 `CreateWorkflowBusinessApplyCommand` 或 `StartBusinessWorkflowCommand` 传 `affinityKey`（稳定聚合键，例如项目 ID，不要带版本号），并在节点配置 `nodeAffinityScope=...`。`PROCESS_INSTANCE`（默认）只复用当前实例；`BUSINESS_KEY` 再加同一 `businessKey`；`AFFINITY_KEY` 再加同一 `affinityKey`。每层命中有效候选即停，参考当前实例 → 同一业务键 → 同一亲和键的顺序；全部无有效候选才走 `nodeAffinityFallback` |
 | 设计器候选项 | 流程定义页面只调用 Workflow 的 `designer-options` 接口；业务承载应用需要自定义目录时注册 `WorkflowDesignerOptionProvider`，不要给菜单追加跨域平台权限 |
 | 模板推送机构 | 流程模板页面只在打开推送弹窗后调用 Workflow 的 `tenant-options`；自定义机构目录注册 `WorkflowTemplateTenantOptionProvider`，不要追加 `system:tenant:list` |

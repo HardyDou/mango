@@ -1,6 +1,7 @@
 package io.mango.workflow.core.service.impl;
 
 import io.mango.workflow.core.model.WorkflowProcessStartedContext;
+import io.mango.common.exception.BizException;
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.infra.context.api.MangoContextHolder;
@@ -19,6 +20,7 @@ import io.mango.workflow.api.command.CreateWorkflowBusinessApplyCommand;
 import io.mango.workflow.api.command.ReturnWorkflowTaskCommand;
 import io.mango.workflow.api.command.WorkflowJsonRequest;
 import io.mango.workflow.api.enums.WorkflowTaskAction;
+import io.mango.workflow.api.enums.WorkflowCode;
 import io.mango.workflow.api.enums.WorkflowApplyStatus;
 import io.mango.workflow.core.engine.WorkflowAssigneeResolver;
 import io.mango.workflow.core.engine.WorkflowDesignerBpmnConverter;
@@ -168,6 +170,60 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
         assertThat(returnedFirstNodeTask).isNotNull();
         assertThat(returnedFirstNodeTask.getAssignee()).isEqualTo("1001");
         assertThat(currentTaskDefinitionKeys(started.applyId())).containsExactly("first_review");
+    }
+
+    @Test
+    void nodeAffinityClaimKeepsTaskPendingWhenConfiguredRoleHasNoMembers() {
+        prepareActiveMembers();
+        jdbcTemplate.execute("alter table tenant_member add column user_id bigint");
+        jdbcTemplate.update("update tenant_member set user_id = id");
+        jdbcTemplate.execute("drop table if exists authorization_subject_role");
+        jdbcTemplate.execute("""
+                create table authorization_subject_role (
+                    tenant_id bigint not null,
+                    subject_type varchar(32),
+                    subject_id bigint not null,
+                    role_id bigint not null
+                )
+                """);
+
+        StartedWorkflow started = startEmptyRoleNodeAffinityWorkflow("BIZ-EMPTY-ROLE", "CLAIM");
+        taskRuntimeService.advanceRuntimeTasks(started.processInstanceId());
+
+        Task roleTask = taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("role_review")
+                .singleResult();
+        assertThat(roleTask).isNotNull();
+        assertThat(roleTask.getAssignee()).isNull();
+        assertThat(taskService.getIdentityLinksForTask(roleTask.getId()))
+                .extracting(link -> link.getGroupId())
+                .contains("ROLE:999");
+        assertThat(runtimeService.createProcessInstanceQuery()
+                .processInstanceId(started.processInstanceId())
+                .count()).isEqualTo(1L);
+    }
+
+    @Test
+    void nodeAffinityNonClaimFallbackStillFailsWhenCandidatesEmpty() {
+        prepareActiveMembers();
+        jdbcTemplate.execute("alter table tenant_member add column user_id bigint");
+        jdbcTemplate.update("update tenant_member set user_id = id");
+        jdbcTemplate.execute("drop table if exists authorization_subject_role");
+        jdbcTemplate.execute("""
+                create table authorization_subject_role (
+                    tenant_id bigint not null,
+                    subject_type varchar(32),
+                    subject_id bigint not null,
+                    role_id bigint not null
+                )
+                """);
+
+        StartedWorkflow started = startEmptyRoleNodeAffinityWorkflow("BIZ-EMPTY-ROLE-FAIL", "ROUND_ROBIN");
+
+        assertThatThrownBy(() -> taskRuntimeService.advanceRuntimeTasks(started.processInstanceId()))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining(WorkflowCode.AUTO_ASSIGN_NO_CANDIDATE.getMessage());
     }
 
     @Test
@@ -524,6 +580,59 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
     private void switchUser(Long userId, String principalName) {
         MangoContextHolder.set(MangoContextSnapshot.empty()
                 .withSecurity(userId, "1", principalName, "default", "USER", "ORG", userId, principalName));
+    }
+
+    private StartedWorkflow startEmptyRoleNodeAffinityWorkflow(String businessKey, String fallback) {
+        repositoryService.createDeployment()
+                .name("empty-role-affinity-runtime")
+                .addString("empty-role-affinity.bpmn20.xml", emptyRoleNodeAffinityBpmn(fallback))
+                .deploy();
+        ProcessDefinition processDefinition = repositoryService.createProcessDefinitionQuery()
+                .processDefinitionKey("empty_role_affinity_runtime")
+                .latestVersion()
+                .singleResult();
+
+        CreateWorkflowBusinessApplyCommand applyCommand = new CreateWorkflowBusinessApplyCommand();
+        applyCommand.setBusinessType("NODE_AFFINITY_EMPTY_ROLE");
+        applyCommand.setBusinessKey(businessKey);
+        applyCommand.setApplyTitle("空候选角色节点亲和集成测试");
+        applyCommand.setProcessDefinitionKey("empty_role_affinity_runtime");
+        Long applyId = businessApplyService.create(applyCommand).getId();
+
+        ProcessInstance instance = runtimeService.startProcessInstanceByKey(
+                "empty_role_affinity_runtime", businessKey, Map.of(
+                        "businessType", "NODE_AFFINITY_EMPTY_ROLE",
+                        "businessKey", businessKey,
+                        "applyId", String.valueOf(applyId),
+                        "mangoInitiator", "admin"
+                ));
+        businessApplyService.markProcessStarted(new WorkflowProcessStartedContext(
+                applyId, 1234L, "empty_role_affinity_runtime", processDefinition.getId(),
+                processDefinition.getName(), instance.getProcessInstanceId()));
+        return new StartedWorkflow(applyId, instance.getProcessInstanceId());
+    }
+
+    private String emptyRoleNodeAffinityBpmn(String fallback) {
+        return """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                             xmlns:flowable="http://flowable.org/bpmn"
+                             xmlns:mango="http://mango.io/workflow"
+                             targetNamespace="http://mango.io/workflow/test">
+                  <process id="empty_role_affinity_runtime" name="Empty Role Affinity Runtime" isExecutable="true">
+                    <startEvent id="start"/>
+                    <sequenceFlow id="flow_start_role" sourceRef="start" targetRef="role_review"/>
+                    <userTask id="role_review" name="角色审批">
+                      <extensionElements>
+                        <mango:mangoApprovalConfig><![CDATA[{"assignmentMode":"AUTO","autoAssignmentStrategy":"NODE_AFFINITY","nodeAffinityFallback":"%s","assigneeType":"SPECIFIED_ROLE","roleIds":["999"],"actions":{"complete":{"enabled":true}}}]]></mango:mangoApprovalConfig>
+                      </extensionElements>
+                    </userTask>
+                    <sequenceFlow id="flow_role_end" sourceRef="role_review" targetRef="end"/>
+                    <endEvent id="end"/>
+                  </process>
+                </definitions>
+                """.formatted(fallback);
     }
 
     private StartedWorkflow startNodeAffinityWorkflow(String businessKey) {
