@@ -7,7 +7,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import io.mango.common.exception.BizException;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
 import io.mango.infra.context.api.MangoContextHolder;
@@ -83,6 +82,7 @@ import io.mango.workflow.core.service.IWorkflowParticipationService;
 import io.mango.workflow.core.service.WorkflowTaskAdvanceResult;
 import io.mango.workflow.core.support.WorkflowNodeActionConfigResolver;
 import io.mango.workflow.core.support.WorkflowReturnTargetSupport;
+import io.mango.workflow.core.support.WorkflowTaskCompletionSupport;
 import lombok.RequiredArgsConstructor;
 import org.flowable.engine.HistoryService;
 import org.flowable.engine.RepositoryService;
@@ -93,7 +93,6 @@ import org.flowable.bpmn.model.BpmnModel;
 import org.flowable.bpmn.model.ExtensionElement;
 import org.flowable.bpmn.model.FlowElement;
 import org.flowable.bpmn.model.UserTask;
-import org.flowable.common.engine.api.FlowableException;
 import org.flowable.common.engine.api.FlowableObjectNotFoundException;
 import org.flowable.identitylink.api.IdentityLink;
 import org.flowable.task.api.Task;
@@ -102,7 +101,6 @@ import org.flowable.task.api.history.HistoricTaskInstance;
 import org.flowable.variable.api.history.HistoricVariableInstance;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.context.event.EventListener;
@@ -406,13 +404,14 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
     public WorkflowTaskCompleteResultVO completeWithResult(CompleteWorkflowTaskCommand command) {
         Require.notNull(command, WorkflowCode.TASK_INVALID);
         Require.notBlank(command.getTaskId(), WorkflowCode.TASK_INVALID, "任务ID不能为空");
-        Task task = completableTask(command.getTaskId());
+        Task task = WorkflowTaskCompletionSupport.requireCompletable(taskService, jdbcTemplate, currentTenantId(), command.getTaskId());
         WorkflowNodeActionConfigVO action = ensureActionEnabled(task, "complete");
         ensureCommentIfRequired(action, command.getComment());
         ensureCurrentUserCanOperate(task);
 
         Map<String, Object> variables = mergeVariables(task.getProcessInstanceId(), json(command.getVariables()));
-        completeTask(task, variables, command.getComment());
+        WorkflowTaskCompletionSupport.complete(taskService, jdbcTemplate, currentTenantId(), task, variables,
+                command.getComment(), () -> claimIfUnassigned(task));
         saveRecord(task, WorkflowTaskAction.COMPLETE, command.getComment(), json(command.getVariables()));
         boolean ended = isProcessEnded(task.getProcessInstanceId());
         updateFormInstance(task.getProcessInstanceId(), variables,
@@ -434,60 +433,6 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
                 advanceResult.ended(),
                 advanceResult.businessApply());
         return toCompleteResult(WorkflowTaskAction.COMPLETE, task, advanceResult);
-    }
-
-    /**
-     * 返回仍可办理的任务；运行态任务已消失时区分“已被办理”和“不存在”。
-     */
-    private Task completableTask(String taskId) {
-        Task task = taskService.createTaskQuery().taskId(taskId).singleResult();
-        if (task != null) {
-            return task;
-        }
-        if (hasCompletedRecord(taskId)) {
-            return Require.fail(WorkflowCode.TASK_ALREADY_COMPLETED);
-        }
-        return Require.fail(WorkflowCode.TASK_NOT_FOUND);
-    }
-
-    /**
-     * 认领并完成引擎任务；并发失败且完成记录已落库时转换为明确的已办理业务错误。
-     */
-    private void completeTask(Task task, Map<String, Object> variables, String comment) {
-        try {
-            if (StringUtils.hasText(comment)) {
-                taskService.addComment(task.getId(), task.getProcessInstanceId(), comment.trim());
-            }
-            claimIfUnassigned(task);
-            taskService.complete(task.getId(), variables);
-        } catch (FlowableException | DataIntegrityViolationException e) {
-            if (hasCompletedRecordForUpdate(task.getId())) {
-                throw new BizException(WorkflowCode.TASK_ALREADY_COMPLETED.getCode(),
-                        WorkflowCode.TASK_ALREADY_COMPLETED.getMessage(), e);
-            }
-            throw e;
-        }
-    }
-
-    private boolean hasCompletedRecord(String taskId) {
-        Long count = jdbcTemplate.queryForObject("""
-                select count(*)
-                from workflow_task_record
-                where tenant_id = ? and task_id = ? and action = ?
-                """, Long.class, currentTenantId(), taskId, WorkflowTaskAction.COMPLETE.name());
-        return count != null && count > 0;
-    }
-
-    /**
-     * 使用当前读确认完成记录，避免 REPEATABLE READ 快照看不到并发事务刚提交的记录。
-     */
-    private boolean hasCompletedRecordForUpdate(String taskId) {
-        return !jdbcTemplate.queryForList("""
-                select id
-                from workflow_task_record
-                where tenant_id = ? and task_id = ? and action = ?
-                for update
-                """, Long.class, currentTenantId(), taskId, WorkflowTaskAction.COMPLETE.name()).isEmpty();
     }
     @Override
     @Transactional(rollbackFor = Exception.class)

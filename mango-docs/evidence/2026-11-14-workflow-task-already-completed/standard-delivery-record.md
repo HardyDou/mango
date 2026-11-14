@@ -31,9 +31,9 @@
 
 | ID | 对应要求 | 接口/数据/权限/兼容性决定 | 影响路径 | 回滚方式 |
 |---|---|---|---|---|
-| D-1 | SR-1、SR-4 | `WorkflowCode` 新增 `TASK_ALREADY_COMPLETED(3661)`；运行态任务为空时用 `workflow_task_record` 的 COMPLETE 记录区分已办理与不存在 | `WorkflowCode`、`WorkflowTaskRuntimeService#completableTask` | 删除业务码和分支 |
-| D-2 | SR-2、SR-3 | 捕获 Flowable 并发异常和 `DataIntegrityViolationException`，仅在当前读确认 COMPLETE 记录存在时转换业务错误，否则原样抛出 | `WorkflowTaskRuntimeService#completeTask`、`hasCompletedRecordForUpdate` | 恢复直接调用 `taskService.complete` |
-| D-3 | SR-2 | 使用 `select ... for update` 当前读确认完成记录，避免 MySQL REPEATABLE READ 快照看不到并发事务刚提交的记录 | `WorkflowTaskRuntimeService#hasCompletedRecordForUpdate` | 恢复普通查询 |
+| D-1 | SR-1、SR-4 | `WorkflowCode` 新增 `TASK_ALREADY_COMPLETED(3661)`；运行态任务为空时用 `workflow_task_record` 的 COMPLETE 记录区分已办理与不存在 | `WorkflowCode`、`WorkflowTaskCompletionSupport#requireCompletable` | 删除业务码和分支 |
+| D-2 | SR-2、SR-3 | 捕获 Flowable 并发异常和 `DataIntegrityViolationException`，仅在当前读确认 COMPLETE 记录存在时转换业务错误，否则原样抛出 | `WorkflowTaskCompletionSupport#complete`、`WorkflowTaskRuntimeService#completeWithResult` | 恢复直接调用 `taskService.complete` |
+| D-3 | SR-2 | 使用 `select ... for update` 当前读确认完成记录，避免 MySQL REPEATABLE READ 快照看不到并发事务刚提交的记录 | `WorkflowTaskCompletionSupport#hasCompletedRecordForUpdate` | 恢复普通查询 |
 | D-4 | 兼容性 | 认领动作移入同一异常转换范围，覆盖未指派任务在 claim/complete 阶段的竞态；事务仍由 `@Transactional(rollbackFor = Exception.class)` 统一回滚 | `completeWithResult`、`completeTask` | 恢复独立 claim 调用 |
 
 ## 5. 实施清单
@@ -41,7 +41,7 @@
 | ID | 对应决定 | 顺序 | 改动路径 | 完成条件 |
 |---|---|---|---|---|
 | IMPL-1 | D-1 | 1 | `mango/mango-platform/mango-workflow/mango-workflow-api/src/main/java/io/mango/workflow/api/enums/WorkflowCode.java` | 新增 3661 业务码 |
-| IMPL-2 | D-1、D-2、D-3、D-4 | 2 | `mango/mango-platform/mango-workflow/mango-workflow-core/src/main/java/io/mango/workflow/core/service/impl/WorkflowTaskRuntimeService.java` | 完成入口返回明确业务错误 |
+| IMPL-2 | D-1、D-2、D-3、D-4 | 2 | `mango/mango-platform/mango-workflow/mango-workflow-core/src/main/java/io/mango/workflow/core/service/impl/WorkflowTaskRuntimeService.java`、`mango/mango-platform/mango-workflow/mango-workflow-core/src/main/java/io/mango/workflow/core/support/WorkflowTaskCompletionSupport.java` | 完成入口返回明确业务错误 |
 | IMPL-3 | SR-1、SR-2、SR-3 | 3 | `mango/mango-platform/mango-workflow/mango-workflow-core/src/test/java/io/mango/workflow/core/service/impl/WorkflowTaskRuntimeServiceImplIntegrationTest.java` | 3 个异常/并发场景测试通过 |
 | IMPL-4 | SR-1 | 4 | `mango/mango-platform/mango-workflow/mango-workflow-core/src/test/java/io/mango/workflow/core/service/impl/WorkflowTaskRuntimeServiceIntegrationTest.java` | 真实 Flowable 重复完成测试通过 |
 | IMPL-5 | D-1、D-2 | 5 | `mango/mango-platform/mango-workflow/README.md`、`mango-docs/guides/business-integration/workflow-business-approval.md` | 文档说明业务码和失败语义 |
@@ -55,6 +55,7 @@
 | SR-3 | M11 集成测试 | 同上，`completeWithResultRethrowsEngineConflictWhenCompletionRecordAbsent` | PASS：原异常抛出 | Surefire 报告 |
 | SR-1 | M11 真实 Flowable 测试 | `... -Dtest=WorkflowTaskRuntimeServiceIntegrationTest#completeWithResultReturnsAlreadyCompletedForStaleTask test` | PASS：重复完成返回 3661 | Surefire 报告 |
 | 全部 | 模块质量门禁 | `mvn -pl mango-platform/mango-workflow/mango-workflow-api,mango-platform/mango-workflow/mango-workflow-core verify` | PASS：182 tests，0 failures，0 errors，4 skipped | Maven `BUILD SUCCESS` |
+| 全部 | 架构与 Java 质量门禁 | `mvn -f mango/pom.xml -pl :mango-architecture-verification,mango-platform/mango-workflow/mango-workflow-api,mango-platform/mango-workflow/mango-workflow-core ... verify` | PASS：blocking=0，newIssues=0 | `mango-architecture-report.json`、`mango-static-report.json` |
 | 测试资产 | 测试质量与 Mock 审计 | `node mango-pmo/tools/test-quality-check.mjs --base origin/main`、`node mango-pmo/tools/audit-backend-test-mocks.mjs --report-only --changed-only --base origin/main` | PASS：1 file；block=0，warn=0 | 命令输出 |
 
 ## 7. 例外与剩余风险
