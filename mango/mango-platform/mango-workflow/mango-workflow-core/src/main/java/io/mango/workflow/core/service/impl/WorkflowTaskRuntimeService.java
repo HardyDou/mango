@@ -82,6 +82,7 @@ import io.mango.workflow.core.service.IWorkflowParticipationService;
 import io.mango.workflow.core.service.WorkflowTaskAdvanceResult;
 import io.mango.workflow.core.support.WorkflowNodeActionConfigResolver;
 import io.mango.workflow.core.support.WorkflowReturnTargetSupport;
+import io.mango.workflow.core.support.WorkflowTaskCompletionSupport;
 import lombok.RequiredArgsConstructor;
 import org.flowable.engine.HistoryService;
 import org.flowable.engine.RepositoryService;
@@ -403,18 +404,14 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
     public WorkflowTaskCompleteResultVO completeWithResult(CompleteWorkflowTaskCommand command) {
         Require.notNull(command, WorkflowCode.TASK_INVALID);
         Require.notBlank(command.getTaskId(), WorkflowCode.TASK_INVALID, "任务ID不能为空");
-        Task task = taskService.createTaskQuery().taskId(command.getTaskId()).singleResult();
-        Require.notNull(task, WorkflowCode.TASK_NOT_FOUND);
+        Task task = WorkflowTaskCompletionSupport.requireCompletable(taskService, jdbcTemplate, currentTenantId(), command.getTaskId());
         WorkflowNodeActionConfigVO action = ensureActionEnabled(task, "complete");
         ensureCommentIfRequired(action, command.getComment());
         ensureCurrentUserCanOperate(task);
 
         Map<String, Object> variables = mergeVariables(task.getProcessInstanceId(), json(command.getVariables()));
-        if (StringUtils.hasText(command.getComment())) {
-            taskService.addComment(task.getId(), task.getProcessInstanceId(), command.getComment().trim());
-        }
-        claimIfUnassigned(task);
-        taskService.complete(task.getId(), variables);
+        WorkflowTaskCompletionSupport.complete(taskService, jdbcTemplate, currentTenantId(), task, variables,
+                command.getComment(), () -> claimIfUnassigned(task));
         saveRecord(task, WorkflowTaskAction.COMPLETE, command.getComment(), json(command.getVariables()));
         boolean ended = isProcessEnded(task.getProcessInstanceId());
         updateFormInstance(task.getProcessInstanceId(), variables,

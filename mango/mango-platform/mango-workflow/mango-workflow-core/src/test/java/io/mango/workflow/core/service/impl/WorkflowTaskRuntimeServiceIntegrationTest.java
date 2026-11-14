@@ -273,6 +273,23 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
     }
 
     @Test
+    void completeWithResultReturnsAlreadyCompletedForStaleTask() {
+        StartedWorkflow started = startIssue233Workflow("BIZ-STALE-TASK");
+        Task managerTask = taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("manager_approve")
+                .singleResult();
+        CompleteWorkflowTaskCommand command = new CompleteWorkflowTaskCommand();
+        command.setTaskId(managerTask.getId());
+        command.setComment("同意");
+        taskRuntimeService.completeWithResult(command);
+
+        assertThatThrownBy(() -> taskRuntimeService.completeWithResult(command))
+                .isInstanceOfSatisfying(BizException.class,
+                        e -> assertThat(e.getCode()).isEqualTo(WorkflowCode.TASK_ALREADY_COMPLETED.getCode()));
+    }
+
+    @Test
     void returnTaskMovesRuntimeExecutionBackToFinishedUserTaskAndRefreshesCurrentTasks() {
         StartedWorkflow started = startIssue233Workflow("BIZ-296");
         Task managerTask = taskService.createTaskQuery()
