@@ -8,7 +8,7 @@ afterEach(() => {
 
 describe('file preview content', () => {
   it('does not mutate the legacy singleton when configuring an injected client', async () => {
-    const legacyPage = vi.spyOn(fileApi, 'page').mockResolvedValue({ items: [], total: 0, page: 1, pageSize: 10 });
+    const legacyPage = vi.spyOn(fileApi, 'page').mockResolvedValue({ list: [], total: 0, pageNum: 1, pageSize: 10 });
     const request = vi.fn();
 
     const configured = configureFileApi({ request } as unknown as HttpClient);

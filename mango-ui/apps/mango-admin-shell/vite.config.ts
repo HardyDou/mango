@@ -1,7 +1,6 @@
 import vue from '@vitejs/plugin-vue';
 import { readFileSync } from 'node:fs';
 import { defineConfig, loadEnv, type ConfigEnv, type Plugin } from 'vite';
-import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { mangoMicroManualChunks } from '../../build-config/microChunks';
 import { assertMangoPackageModeDist, createMangoWorkspaceAliases } from '../../build-config/mangoAliases';

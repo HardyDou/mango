@@ -60,7 +60,7 @@ const liIndex = ref(0);
 const difference = computed(() => (layoutStore.columnsAsideStyle === 'columns-round' ? 3 : 0));
 
 const columnsAsideList = computed(() => {
-  return filterRoutes(routesList.value);
+  return filterRoutes(routesList.value as unknown as MenuItem[]);
 });
 
 const getTitle = (v: MenuItem) => {
@@ -107,7 +107,7 @@ const onColumnsAsideMenuMouseenter = (_v: MenuItem, _k: number) => {};
 const onColumnsAsideMenuMouseleave = async () => {};
 
 const setSendChildren = (path: string) => {
-  const parentRoute = searchParent(routesList.value, path);
+  const parentRoute = searchParent(routesList.value as unknown as MenuItem[], path);
   let currentData: { children: MenuItem[]; item?: MenuItem } = { children: [] };
   columnsAsideList.value.map((v: MenuItem, k: number) => {
     if (v.path === parentRoute?.path) {
@@ -136,7 +136,7 @@ const searchParent = (routesList: MenuItem[], path: string): MenuItem | undefine
 };
 
 const setColumnsMenuHighlight = (path: string) => {
-  const parentRoute = searchParent(routesList.value, path);
+  const parentRoute = searchParent(routesList.value as unknown as MenuItem[], path);
   const currentSplitRoute = columnsAsideList.value.find((v: MenuItem) => v.path === parentRoute?.path);
   if (!currentSplitRoute) return false;
   setTimeout(() => {

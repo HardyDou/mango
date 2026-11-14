@@ -471,6 +471,7 @@ import {
   integrationInstanceApi,
   integrationMaintenanceApi,
   type IntegrationConnector,
+  type IntegrationInstance,
 } from '../../api/integrationModel';
 
 interface ConfigRow {
@@ -546,7 +547,7 @@ const cleanupLoading = ref(false);
 const cleanupResource = ref<'CALL_LOG' | 'ACCESS_LOG' | 'ROTATION'>('CALL_LOG');
 const cleanupDays = ref(90);
 const referenceLoading = ref(false);
-const referenceInstances = ref<Array<Record<string, unknown>>>([]);
+const referenceInstances = ref<IntegrationInstance[]>([]);
 
 const query = reactive({
   page: 1,

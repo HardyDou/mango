@@ -7,7 +7,8 @@ interface MangoPersistOptions {
 }
 
 declare module 'pinia' {
-  interface DefineStoreOptionsBase<_S extends StateTree, _Store> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  interface DefineStoreOptionsBase<S extends StateTree, Store> {
     persist?: boolean | MangoPersistOptions | MangoPersistOptions[];
   }
 }

@@ -328,11 +328,6 @@ export function createCmsResourceConfigs(cmsApi: CmsApi) {
         topScope: 'NONE',
         recommendationType: 'NONE',
       },
-      normalizeRow: (row) => ({
-        ...row,
-        contentId: row.contentId ? String(row.contentId) : '',
-        categoryId: row.categoryId ? String(row.categoryId) : '',
-      }),
       fields: [
         { prop: 'siteId', label: '所属站点', type: 'select', optionKey: 'sites', required: true },
         { prop: 'contentId', label: '发布内容', type: 'select', optionKey: 'contents', required: true, span: 24 },

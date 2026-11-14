@@ -21,6 +21,8 @@ export interface ApiResourceVO {
   pathPattern: string;
   resourceCode?: string;
   permissionCode?: string;
+  /** 历史后端字段，仅用于兼容旧数据的权限标识回退。 */
+  originPermissionCode?: string;
   accessMode: ApiResourceAccessMode;
   handlerClass?: string;
   handlerMethod?: string;
