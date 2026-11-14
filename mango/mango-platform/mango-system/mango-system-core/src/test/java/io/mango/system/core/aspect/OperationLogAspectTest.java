@@ -20,6 +20,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import java.lang.reflect.Method;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -67,6 +68,25 @@ class OperationLogAspectTest {
                 .contains("[ServletRequest]")
                 .contains("[ServletResponse]")
                 .contains("siteName");
+    }
+
+    @Test
+    void truncatesFailedOperationErrorMsgToColumnWidth() throws Throwable {
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/workflow/tasks/complete");
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+        MangoContextHolder.set(MangoContextSnapshot.empty().withSecurity(1001L, "1", "admin", null, null, null, null, null));
+        ProceedingJoinPoint point = joinPoint("loggedApi", request, new MockHttpServletResponse(), new DemoCommand("approve"));
+        String message = "ACT_FK_IDL_PROCINST".repeat(100);
+        when(point.proceed()).thenThrow(new IllegalStateException(message));
+
+        assertThatThrownBy(() -> aspect.around(point))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage(message);
+
+        ArgumentCaptor<RecordOperationLogCommand> captor = ArgumentCaptor.forClass(RecordOperationLogCommand.class);
+        verify(logService).recordOperationLog(captor.capture());
+        assertThat(captor.getValue().getStatus()).isZero();
+        assertThat(captor.getValue().getErrorMsg()).hasSize(500);
     }
 
     private ProceedingJoinPoint joinPoint(String methodName, Object... args) throws Throwable {
