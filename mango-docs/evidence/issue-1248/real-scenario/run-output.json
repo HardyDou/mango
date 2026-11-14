@@ -1,0 +1,199 @@
+{
+  "generatedAt": "2026-11-14T08:05:32.353Z",
+  "base": "http://127.0.0.1:18003",
+  "database": "mango_dev_mango_issue_1248_verify_003",
+  "definition": {
+    "definitionId": "2121514837687619585",
+    "processDefinitionId": "BAOHAN_RC_REVIEW_E2E_1248:1:27489328-e002-11f1-863c-5ebbf69eeefa"
+  },
+  "applyIds": {
+    "p1": "2121514838304182274",
+    "p2": "2121514843186352130",
+    "p3": "2121514848005607425"
+  },
+  "noticeContent": "业务：履约保函风控审批-1；保函种类：PERF；受益人：中铁三局,中铁四局；版本状态：PENDING",
+  "passed": 18,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "基线：不传属性过滤返回 3 条任务",
+      "ok": true,
+      "actual": 3,
+      "expected": 3
+    },
+    {
+      "name": "AC-1 单条件单值只返回履约保函任务",
+      "ok": true,
+      "actual": [
+        2,
+        [
+          "BIZ-E2E-1248-1",
+          "BIZ-E2E-1248-3"
+        ]
+      ],
+      "expected": [
+        2,
+        [
+          "BIZ-E2E-1248-1",
+          "BIZ-E2E-1248-3"
+        ]
+      ]
+    },
+    {
+      "name": "AC-3 同一条件多值之间为或",
+      "ok": true,
+      "actual": [
+        3,
+        [
+          "BIZ-E2E-1248-1",
+          "BIZ-E2E-1248-2",
+          "BIZ-E2E-1248-3"
+        ]
+      ],
+      "expected": [
+        3,
+        [
+          "BIZ-E2E-1248-1",
+          "BIZ-E2E-1248-2",
+          "BIZ-E2E-1248-3"
+        ]
+      ]
+    },
+    {
+      "name": "AC-2 条件之间为且",
+      "ok": true,
+      "actual": [
+        1,
+        [
+          "BIZ-E2E-1248-1"
+        ]
+      ],
+      "expected": [
+        1,
+        [
+          "BIZ-E2E-1248-1"
+        ]
+      ]
+    },
+    {
+      "name": "AC-5 多值字段任一值命中",
+      "ok": true,
+      "actual": [
+        1,
+        [
+          "BIZ-E2E-1248-1"
+        ]
+      ],
+      "expected": [
+        1,
+        [
+          "BIZ-E2E-1248-1"
+        ]
+      ]
+    },
+    {
+      "name": "AC-4 未登记的属性值不匹配",
+      "ok": true,
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "AC-9 翻页 total 与逐页结果同源一致",
+      "ok": true,
+      "actual": [
+        2,
+        [
+          "BIZ-E2E-1248-3"
+        ]
+      ],
+      "expected": [
+        2,
+        [
+          "BIZ-E2E-1248-3"
+        ]
+      ]
+    },
+    {
+      "name": "AC-8 sortBy=applyTime 按申请创建时间排序",
+      "ok": true,
+      "actual": [
+        "BIZ-E2E-1248-3",
+        "BIZ-E2E-1248-1"
+      ],
+      "expected": [
+        "BIZ-E2E-1248-3",
+        "BIZ-E2E-1248-1"
+      ]
+    },
+    {
+      "name": "AC-7 applyTimeBegin/End 闭区间过滤",
+      "ok": true,
+      "actual": [
+        "BIZ-E2E-1248-2"
+      ],
+      "expected": [
+        "BIZ-E2E-1248-2"
+      ]
+    },
+    {
+      "name": "AC-1 非法属性名被拒绝",
+      "ok": true,
+      "actual": [
+        false,
+        true
+      ],
+      "expected": [
+        false,
+        true
+      ]
+    },
+    {
+      "name": "AC-12 提交后覆盖版本状态",
+      "ok": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "AC-12 覆盖后筛选结果随之变化",
+      "ok": true,
+      "actual": 3,
+      "expected": 3
+    },
+    {
+      "name": "AC-12 空数组清空属性",
+      "ok": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "AC-4 清空属性后不再命中",
+      "ok": true,
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "AC-11 多值字段一行一个值且重复值去重",
+      "ok": true,
+      "actual": 2,
+      "expected": 2
+    },
+    {
+      "name": "AC-13/14 事件载荷与通知变量展开（保函种类）",
+      "ok": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "AC-13/14 事件载荷与通知变量展开（多值逗号拼接）",
+      "ok": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "AC-13/14 事件载荷与通知变量展开（版本状态）",
+      "ok": true,
+      "actual": true,
+      "expected": true
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+== Flyway workflow history (MariaDB 11.8)
+0|<< Flyway Baseline >>|1
+1|init workflow|1
+2|add workflow audit columns|1
+3|workflow participation auto assignment|1
+4|workflow node affinity scope|1
+5|workflow business apply attribute|1
+
+== workflow_business_apply_attribute columns
+id|bigint(20)|NO|NULL
+tenant_id|varchar(64)|NO|'1'
+org_id|bigint(20)|YES|NULL
+apply_id|bigint(20)|NO|NULL
+business_type|varchar(128)|NO|NULL
+attr_key|varchar(64)|NO|NULL
+attr_value|varchar(255)|NO|NULL
+created_by|bigint(20)|YES|NULL
+created_at|datetime|NO|current_timestamp()
+updated_by|bigint(20)|YES|NULL
+updated_at|datetime|NO|current_timestamp()
+
+== indexes
+idx_workflow_apply_attr_apply|1|apply_id
+idx_workflow_apply_attr_apply|2|attr_key
+idx_workflow_apply_attr_lookup|1|tenant_id
+idx_workflow_apply_attr_lookup|2|business_type
+idx_workflow_apply_attr_lookup|3|attr_key
+idx_workflow_apply_attr_lookup|4|attr_value
+idx_workflow_apply_attr_lookup|5|apply_id
+PRIMARY|1|id
