@@ -14,6 +14,7 @@ import io.mango.identity.api.TenantMemberProvider;
 import io.mango.identity.api.vo.AuthUserVO;
 import io.mango.identity.api.vo.TenantMemberVO;
 import io.mango.workflow.api.WorkflowEventTypes;
+import io.mango.workflow.api.command.AddSignWorkflowTaskCommand;
 import io.mango.workflow.api.command.ClaimWorkflowTaskCommand;
 import io.mango.workflow.api.command.CompleteWorkflowTaskCommand;
 import io.mango.workflow.api.command.CreateWorkflowBusinessApplyCommand;
@@ -22,6 +23,7 @@ import io.mango.workflow.api.command.WorkflowJsonRequest;
 import io.mango.workflow.api.enums.WorkflowTaskAction;
 import io.mango.workflow.api.enums.WorkflowCode;
 import io.mango.workflow.api.enums.WorkflowApplyStatus;
+import io.mango.workflow.core.engine.WorkflowAssigneeCollection;
 import io.mango.workflow.core.engine.WorkflowAssigneeResolver;
 import io.mango.workflow.core.engine.WorkflowDesignerBpmnConverter;
 import io.mango.workflow.core.engine.WorkflowCandidateGroupProvider;
@@ -38,12 +40,15 @@ import io.mango.workflow.core.mapper.WorkflowTaskRecordMapper;
 import io.mango.workflow.core.service.IWorkflowBusinessApplyService;
 import io.mango.workflow.core.service.IWorkflowParticipationService;
 import io.mango.workflow.core.service.IWorkflowTaskRuntimeService;
+import org.flowable.engine.HistoryService;
 import org.flowable.engine.RepositoryService;
 import org.flowable.engine.RuntimeService;
 import org.flowable.engine.TaskService;
 import org.flowable.engine.repository.ProcessDefinition;
 import org.flowable.engine.runtime.ProcessInstance;
+import org.flowable.identitylink.api.IdentityLink;
 import org.flowable.task.api.Task;
+import org.flowable.task.api.history.HistoricTaskInstance;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -93,6 +98,8 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
     private RuntimeService runtimeService;
     @Autowired
     private TaskService taskService;
+    @Autowired
+    private HistoryService historyService;
     @Autowired
     private IWorkflowBusinessApplyService businessApplyService;
     @Autowired
@@ -1035,6 +1042,196 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
                 """;
     }
 
+    @Test
+    void orSignRoleNodeExpandsEachRoleMemberToOwnTask() {
+        prepareRoleMembers();
+        StartedWorkflow started = startRoleOrSignWorkflow("BIZ-ROLE-OR-SIGN", "817");
+
+        taskRuntimeService.advanceRuntimeTasks(started.processInstanceId());
+
+        List<Task> tasks = taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("risk_manager_review")
+                .list();
+        assertThat(tasks).hasSize(3);
+        assertThat(tasks).extracting(Task::getAssignee).containsExactlyInAnyOrder("finance", "safety", "legal");
+        assertThat(taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("risk_manager_review")
+                .taskUnassigned().count()).isZero();
+        assertThat(taskService.getIdentityLinksForTask(tasks.get(0).getId()))
+                .extracting(IdentityLink::getGroupId)
+                .containsOnlyNulls();
+
+        switchUser(1002L, "finance");
+        assertThat(taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("risk_manager_review")
+                .taskAssignee("finance").count()).isEqualTo(1);
+        switchUser(1004L, "legal");
+        assertThat(taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("risk_manager_review")
+                .taskAssignee("legal").count()).isEqualTo(1);
+
+        String financeTaskId = tasks.stream()
+                .filter(task -> "finance".equals(task.getAssignee()))
+                .findFirst()
+                .orElseThrow()
+                .getId();
+        switchUser(1002L, "finance");
+        CompleteWorkflowTaskCommand complete = new CompleteWorkflowTaskCommand();
+        complete.setTaskId(financeTaskId);
+        complete.setComment("风控经理同意");
+        var result = taskRuntimeService.completeWithResult(complete);
+
+        assertThat(result.getEnded()).isTrue();
+        assertThat(taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("risk_manager_review").count()).isZero();
+        List<HistoricTaskInstance> historic = historyService.createHistoricTaskInstanceQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("risk_manager_review")
+                .list();
+        assertThat(historic).hasSize(3);
+        assertThat(historic.stream().filter(task -> !"finance".equals(task.getAssignee())))
+                .allMatch(task -> "MI_END".equals(task.getDeleteReason()));
+    }
+
+    @Test
+    void orSignRoleNodeWithNoMemberFallsBackToEmptyAssigneeStrategy() {
+        prepareRoleMembers();
+        StartedWorkflow started = startRoleOrSignWorkflow("BIZ-ROLE-OR-SIGN-EMPTY", "999");
+
+        taskRuntimeService.advanceRuntimeTasks(started.processInstanceId());
+
+        List<Task> tasks = taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("risk_manager_review")
+                .list();
+        assertThat(tasks).singleElement()
+                .returns("admin", Task::getAssignee);
+    }
+
+    @Test
+    void orSignRoleNodeSupportsAddSignOnExpandedTask() {
+        prepareRoleMembers();
+        StartedWorkflow started = startRoleOrSignWorkflow("BIZ-ROLE-OR-SIGN-ADD", "817");
+        taskRuntimeService.advanceRuntimeTasks(started.processInstanceId());
+        String financeTaskId = taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("risk_manager_review")
+                .taskAssignee("finance")
+                .singleResult()
+                .getId();
+
+        switchUser(1002L, "finance");
+        AddSignWorkflowTaskCommand addSign = new AddSignWorkflowTaskCommand();
+        addSign.setTaskId(financeTaskId);
+        addSign.setTargetUserIds(List.of("audit"));
+        addSign.setComment("补签合规");
+        taskRuntimeService.addSign(addSign);
+
+        List<Task> tasks = taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("risk_manager_review")
+                .list();
+        assertThat(tasks).hasSize(4);
+        assertThat(tasks).extracting(Task::getAssignee)
+                .containsExactlyInAnyOrder("finance", "safety", "legal", "audit");
+    }
+
+    private void prepareRoleMembers() {
+        AuthUserVO finance = authUser(1002L, "finance");
+        AuthUserVO safety = authUser(1003L, "safety");
+        AuthUserVO legal = authUser(1004L, "legal");
+        when(authUserProvider.getByIdForAuth(1002L)).thenReturn(finance);
+        when(authUserProvider.getByIdForAuth(1003L)).thenReturn(safety);
+        when(authUserProvider.getByIdForAuth(1004L)).thenReturn(legal);
+        when(authUserProvider.getByUsernameForAuth("finance")).thenReturn(finance);
+        when(authUserProvider.getByUsernameForAuth("safety")).thenReturn(safety);
+        when(authUserProvider.getByUsernameForAuth("legal")).thenReturn(legal);
+        jdbcTemplate.execute("drop table if exists tenant_member");
+        jdbcTemplate.execute("""
+                create table tenant_member (
+                    id bigint not null,
+                    tenant_id bigint not null,
+                    user_id bigint,
+                    status int not null,
+                    left_at timestamp,
+                    primary key (id)
+                )
+                """);
+        for (long memberId = 1002L; memberId <= 1004L; memberId++) {
+            jdbcTemplate.update("insert into tenant_member (id, tenant_id, user_id, status, left_at) values (?, ?, ?, ?, ?)",
+                    memberId, 1L, memberId, 1, null);
+        }
+        jdbcTemplate.execute("drop table if exists authorization_subject_role");
+        jdbcTemplate.execute("""
+                create table authorization_subject_role (
+                    tenant_id bigint not null,
+                    subject_type varchar(32),
+                    subject_id bigint not null,
+                    role_id bigint not null
+                )
+                """);
+        for (long memberId = 1002L; memberId <= 1004L; memberId++) {
+            jdbcTemplate.update("insert into authorization_subject_role (tenant_id, subject_type, subject_id, role_id) values (?, ?, ?, ?)",
+                    1L, "TENANT_MEMBER", memberId, 817L);
+        }
+    }
+
+    private StartedWorkflow startRoleOrSignWorkflow(String businessKey, String roleId) {
+        ObjectMapper objectMapper = new ObjectMapper()
+                .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        WorkflowDesignerBpmnConverter converter = new WorkflowDesignerBpmnConverter(objectMapper, assigneeResolver);
+        String designerJson = """
+                {
+                  "id": "root",
+                  "nodeType": "ROOT",
+                  "nodeName": "发起",
+                  "childNode": {
+                    "id": "risk_manager_review",
+                    "nodeType": "APPROVAL",
+                    "nodeName": "风控经理复核",
+                    "properties": {
+                      "approvalConfig": {
+                        "assigneeType": "SPECIFIED_ROLE",
+                        "roleIds": ["%s"],
+                        "approvalMode": "OR_SIGN",
+                        "actions": {"complete": {"enabled": true}, "addSign": {"enabled": true}}
+                      }
+                    }
+                  }
+                }
+                """.formatted(roleId);
+        String processKey = "role_or_sign_runtime";
+        repositoryService.createDeployment()
+                .name("role-or-sign-runtime")
+                .addBpmnModel(processKey + ".bpmn20.xml", converter.toModel(designerJson, processKey, "角色或签审批"))
+                .deploy();
+        ProcessDefinition processDefinition = repositoryService.createProcessDefinitionQuery()
+                .processDefinitionKey(processKey).latestVersion().singleResult();
+
+        CreateWorkflowBusinessApplyCommand applyCommand = new CreateWorkflowBusinessApplyCommand();
+        applyCommand.setBusinessType("ROLE_OR_SIGN");
+        applyCommand.setBusinessKey(businessKey);
+        applyCommand.setApplyTitle("角色或签集成测试");
+        applyCommand.setProcessDefinitionKey(processKey);
+        Long applyId = businessApplyService.create(applyCommand).getId();
+
+        ProcessInstance instance = runtimeService.startProcessInstanceByKey(processKey, businessKey, Map.of(
+                "businessType", "ROLE_OR_SIGN",
+                "businessKey", businessKey,
+                "applyId", String.valueOf(applyId),
+                "mangoInitiator", "admin"
+        ));
+        businessApplyService.markProcessStarted(new WorkflowProcessStartedContext(
+                applyId, 1263L, processKey, processDefinition.getId(), processDefinition.getName(),
+                instance.getProcessInstanceId()));
+        return new StartedWorkflow(applyId, instance.getProcessInstanceId());
+    }
+
     private record StartedWorkflow(Long applyId, String processInstanceId) {
     }
 
@@ -1047,6 +1244,7 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
             MybatisPlusAutoConfiguration.class,
             PersistenceMybatisPlusAutoConfiguration.class,
             WorkflowAssigneeResolver.class,
+            WorkflowAssigneeCollection.class,
             WorkflowCandidateGroupProvider.class,
             WorkflowAssigneeIdentityService.class,
             WorkflowEventPublisher.class,

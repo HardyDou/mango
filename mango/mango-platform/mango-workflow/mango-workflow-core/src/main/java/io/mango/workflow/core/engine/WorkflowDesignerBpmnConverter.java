@@ -149,7 +149,8 @@ public class WorkflowDesignerBpmnConverter {
         } else if (resolved.users() != null && resolved.users().size() > 1) {
             applyMultiInstance(task, config, resolved.users());
         } else if (resolved.groups() != null && !resolved.groups().isEmpty()) {
-            task.setCandidateGroups(resolved.groups());
+            // 候选组在节点进入时展开为成员，让会签、或签、依次审批的多人语义对角色、岗位、组织同样生效。
+            applyCandidateGroupMultiInstance(task, config, resolved.groups());
         } else {
             applyLegacyUserTaskProperties(task, properties);
         }
@@ -202,6 +203,11 @@ public class WorkflowDesignerBpmnConverter {
 
     private void applyMultiInstance(UserTask task, WorkflowApprovalNodeConfig config, List<String> users) {
         applyMultiInstance(task, config, "${mangoWorkflowAssigneeCollection.list('" + String.join(",", users) + "')}");
+    }
+
+    private void applyCandidateGroupMultiInstance(UserTask task, WorkflowApprovalNodeConfig config, List<String> groups) {
+        applyMultiInstance(task, config, "${mangoWorkflowAssigneeCollection.groupMembers('"
+                + safeExpressionText(String.join(",", groups)) + "')}");
     }
 
     private void applyMultiInstance(UserTask task, WorkflowApprovalNodeConfig config, String collectionExpression) {
