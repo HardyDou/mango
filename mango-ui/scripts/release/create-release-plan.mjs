@@ -511,6 +511,7 @@ function buildPlan(catalogDigest) {
     catalogDigest,
     mavenInventory: catalog.maven.publishableCoordinates,
     releaseArtifacts: catalog.releaseArtifacts,
+    repoRoot,
   });
 }
 

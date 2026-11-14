@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
-import { dirname, resolve } from 'node:path';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
@@ -58,12 +60,46 @@ test('direct package impact maps package and PMO source paths', () => {
     [
       'mango-ui/packages/base/src/index.ts',
       'mango-ui/packages/base/src/index.test.ts',
-      'mango-pmo/skills/mango-release/SKILL.md',
+      'mango-pmo/skills/mango-requirements-business/SKILL.md',
     ],
     packageIndex(),
   );
   assert.deepEqual([...impact.direct].sort(), ['@mango/base', '@mango/pmo']);
 });
+
+test('direct package impact skips repository-only PMO Skills but keeps project Skills', () => {
+  const repoRoot = mkdtempSync(join(tmpdir(), 'mango-pmo-skill-'));
+  try {
+    writeSkill(repoRoot, 'mango-release', 'repository-only');
+    writeSkill(repoRoot, 'mango-requirements-business', 'project');
+    writeSkill(repoRoot, 'mango-undeclared');
+    const impact = directPackageImpact(
+      [
+        'mango-ui/packages/base/src/index.ts',
+        'mango-pmo/skills/mango-release/SKILL.md',
+        'mango-pmo/skills/mango-release/references/runbook.md',
+        'mango-pmo/skills/mango-requirements-business/SKILL.md',
+        'mango-pmo/skills/mango-undeclared/SKILL.md',
+      ],
+      packageIndex(),
+      { repoRoot },
+    );
+    assert.deepEqual([...impact.direct].sort(), ['@mango/base', '@mango/pmo']);
+    assert.deepEqual(
+      impact.classifiedFiles.filter((entry) => entry.packageName === '@mango/pmo').map((entry) => entry.file),
+      ['mango-pmo/skills/mango-requirements-business/SKILL.md', 'mango-pmo/skills/mango-undeclared/SKILL.md'],
+    );
+  } finally {
+    rmSync(repoRoot, { recursive: true, force: true });
+  }
+});
+
+function writeSkill(repoRoot, skillName, distribution) {
+  const skillRoot = join(repoRoot, 'mango-pmo', 'skills', skillName);
+  mkdirSync(skillRoot, { recursive: true });
+  const frontmatter = distribution ? `---\nname: ${skillName}\ndistribution: ${distribution}\n---\n` : '';
+  writeFileSync(join(skillRoot, 'SKILL.md'), `${frontmatter}# ${skillName}\n`);
+}
 
 test('closure includes exact runtime dependents and managed CLI but not floating or dev dependents', () => {
   const packages = packageIndex();

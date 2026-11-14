@@ -11,6 +11,7 @@ import {
   relativePath,
   run,
 } from './release-guard-utils.mjs';
+import { isPublishedPmoSourceFile as isPublishedPmoSourceFileInRepo } from './release/release-scope-lib.mjs';
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = resolve(scriptDir, '..');
@@ -206,10 +207,7 @@ function isReleaseImpactFile(packageFile) {
 }
 
 function isPublishedPmoSourceFile(file) {
-  return (
-    /^mango-pmo\/(agents|rules|templates|contracts|tools|skills|plugin-src)\//.test(file) ||
-    file === 'mango-pmo/README.md'
-  );
+  return isPublishedPmoSourceFileInRepo(file, { repoRoot });
 }
 
 function runSelfTest() {
@@ -226,7 +224,12 @@ function runSelfTest() {
     'mango-pmo/plugin-src/.codex-plugin/plugin.json',
     'mango-pmo/README.md',
   ];
-  const ignored = ['mango-pmo/baselines/mango-check/no-new-violations-baseline.json', 'mango-docs/plans/example.md'];
+  const ignored = [
+    'mango-pmo/baselines/mango-check/no-new-violations-baseline.json',
+    'mango-docs/plans/example.md',
+    'mango-pmo/skills/mango-release/SKILL.md',
+    'mango-pmo/skills/mango-release/references/runbook.md',
+  ];
   for (const file of published) {
     if (!isPublishedPmoSourceFile(file)) {
       throw new Error(`expected published PMO source impact: ${file}`);
