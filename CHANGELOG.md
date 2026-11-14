@@ -1,6 +1,6 @@
 ## v2026.11.14-maven-1.8.1-workflow-fixes-release - Mango Maven/docs 1.8.1 workflow and operation log fixes release - 2026-11-14
 
-Status: `PENDING`. Release plan digest `a1649b606c6cbb4f98e2bea2ef2982cbbe182f87e9033b908631aa7abbfb3842`; Maven/npm publication, consume verification, Tag and GitHub Release remain pending.
+Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `a1649b606c6cbb4f98e2bea2ef2982cbbe182f87e9033b908631aa7abbfb3842`; prepared candidate `91a11f01b9ef808473b2c90eec8e6cfebcf57430955c3dd9e78e48f3e697f496` completed publication and consume verification for `@mango/cli@1.4.8` and 201 Maven coordinates. Tag and GitHub Release were created and verified.
 
 ### Pull Requests
 
@@ -62,8 +62,8 @@ Status: `PENDING`. Release plan digest `a1649b606c6cbb4f98e2bea2ef2982cbbe182f87
 - `mvn verify` passed for the workflow and system modules before merge, including the completion-support unit tests, the concurrent-completion integration test and the operation log truncation test.
 - The workflow README and changelog entry were updated together with the behavior change.
 - `catalog:check` reports a consistent Catalog projection on the source commit and the release plan re-computes 201 coordinates with matching topology.
-- The Maven reactor and docs bundle are built once from the sealed candidate; all 201 coordinates are checked in publish and consume registries with matching checksums.
-- A clean consumer resolves Maven `1.8.1` and `@mango/cli@1.4.8` from the consume registries and completes the pure consume-registry verification.
+- The Maven reactor and docs bundle were built once from the sealed candidate; all 201 coordinates were checked in publish and consume registries with matching checksums.
+- A clean consumer resolved Maven `1.8.1` and `@mango/cli@1.4.8` from the consume registries and completed the pure consume-registry verification.
 
 ### Rollback
 
