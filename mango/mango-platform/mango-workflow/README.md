@@ -248,7 +248,7 @@ WorkflowProcessWithdrawResultVO result = workflowProcessApi.withdraw(withdraw).g
 
 业务启动命令可携带完整 `participantUserIds` 集合，也可调用 `POST /workflow/participations/business` 进行完整替换。Workflow 会先验证所有用户属于当前租户、账号和成员均启用且未离职，任何一个无效用户都会使整次声明零写入；不得用 username 代替授权身份。
 
-审批节点配置 `assignmentMode` 缺失时按 `CLAIM` 兼容。设置为 `AUTO` 后，运行时从指定用户、角色、岗位、组织或组织主管展开当前租户有效成员，直接在节点事务内设置 assignee。`autoAssignmentStrategy` 缺失时按 `ROUND_ROBIN` 兼容；`LEAST_TASKS` 选择当前租户活动任务最少者并以稳定 `userId` 处理并列；`AFFINITY` 优先选择同一流程实例最近完成任务且仍在候选集中的用户，未命中时回退 `LEAST_TASKS`。`NODE_AFFINITY` 优先选择同一节点最早处理过任务且仍在候选集中的用户；复用范围由 `nodeAffinityScope` 控制，缺失时按 `PROCESS_INSTANCE` 兼容，只查当前流程实例。`BUSINESS_KEY` 先查当前实例，再查同一 `businessType + businessKey` 的其他实例；`AFFINITY_KEY` 再向前查同一 `affinityKey` 的全部历史实例。`affinityKey` 由业务在创建申请或发起流程时传入，表示跨提交保持不变的稳定聚合键（例如项目 ID，不要带版本号），按 `tenant + businessType` 隔离，创建后不可修改。跨实例查询先取最近实例、再取该实例内最早办理人，最多回溯最近 200 条记录；历史办理人不在当前候选集时继续向前回溯。三层都无有效候选、或流程未登记申请中心时，按 `nodeAffinityFallback` 回退：`CLAIM`（默认，待领取）、`ROUND_ROBIN`、`RANDOM`、`LEAST_TASKS`。自动派单审计记录 `nodeAffinityScope`、`nodeAffinityHit`（`PROCESS_INSTANCE`/`BUSINESS_KEY`/`AFFINITY_KEY`/`FALLBACK`）和 `nodeAffinityFallback`，便于回查命中层级。`NODE_AFFINITY` 且 `nodeAffinityFallback=CLAIM` 时，候选集为空仍保留角色候选组并进入待领取，流程继续推进；其它策略或回退值在候选为空时返回 `AUTO_ASSIGN_NO_CANDIDATE`，不转 admin，流程推进和状态更新一起回滚。
+审批节点配置 `assignmentMode` 缺失时按 `CLAIM` 兼容。设置为 `AUTO` 后，运行时从指定用户、角色、岗位、组织或组织主管展开当前租户有效成员，直接在节点事务内设置 assignee。`autoAssignmentStrategy` 缺失时按 `ROUND_ROBIN` 兼容；`LEAST_TASKS` 选择当前租户活动任务最少者并以稳定 `userId` 处理并列；`AFFINITY` 优先选择同一流程实例最近完成任务且仍在候选集中的用户，未命中时回退 `LEAST_TASKS`。`NODE_AFFINITY` 优先选择同一节点最早处理过任务且仍在候选集中的用户；复用范围由 `nodeAffinityScope` 控制，缺失时按 `PROCESS_INSTANCE` 兼容，只查当前流程实例。`BUSINESS_KEY` 先查当前实例，再查同一 `businessType + businessKey` 的其他实例；`AFFINITY_KEY` 再向前查同一 `affinityKey` 的全部历史实例。`affinityKey` 由业务在创建申请或发起流程时传入，表示跨提交保持不变的稳定聚合键（例如项目 ID，不要带版本号），按 `tenant + businessType` 隔离，创建后不可修改。跨实例查询先取最近实例、再取该实例内最早办理人，最多回溯最近 200 条记录；历史办理人不在当前候选集时继续向前回溯。三层都无有效候选、或流程未登记申请中心时，按 `nodeAffinityFallback` 回退：`CLAIM`（默认，待领取）、`ROUND_ROBIN`、`RANDOM`、`LEAST_TASKS`。自动派单审计记录 `nodeAffinityScope`、`nodeAffinityHit`（`PROCESS_INSTANCE`/`BUSINESS_KEY`/`AFFINITY_KEY`/`FALLBACK`）和 `nodeAffinityFallback`，便于回查命中层级。自动派单写 `AUTO_ASSIGN` 记录时，`operator_id`/`operator_name` 记录本次派单的真实承办人（`variables_json.assigneeUserId` 同值），不是触发节点进入的发起人或上一步办理人；流转记录接口按该字段返回 `operatorName`，业务页面显示“自动派单 · 承办人”。`NODE_AFFINITY` 且 `nodeAffinityFallback=CLAIM` 时，候选集为空仍保留角色候选组并进入待领取，流程继续推进；其它策略或回退值在候选为空时返回 `AUTO_ASSIGN_NO_CANDIDATE`，不转 admin，流程推进和状态更新一起回滚。
 
 ### 3.4 设计器候选数据 Provider
 
@@ -616,6 +616,8 @@ mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-comm
 撤回（`WITHDRAW`）不写 `workflow_task_record`：读取时把 `workflow_business_apply_status_log` 中该实例的 `WITHDRAW` 行映射成同一 VO 并入时间轴，因此升级前已撤回的历史申请也能看到；`processDetail` 仍只读任务记录，行为不变。撤回是实例级动作，同一实例若存在多条 `WITHDRAW` 脏数据，只返回最早一条（`id` 为状态流水主键，稳定不变）。
 
 `operatorIds` 同时匹配 `operator_id` 与经 `identity_user.username` 解析出的 `operator_name`，覆盖只写入名称的历史记录；`deptIds` 按 `workflow_business_apply.applicant_dept_id` 过滤整条流程实例，因此会整体排除不匹配的实例。三个集合参数传 null 或空集合表示不过滤。
+
+`AUTO_ASSIGN` 记录的 `operatorId`/`operatorName` 是本次自动派单的真实承办人，因此按办理人过滤流转记录同时命中“自动派单”记录。
 
 安全边界：本接口不做行级权限判定。持有 `workflow:task:list` 且知道业务键的账号可以读取该业务键全部流转记录与审批意见原文；本地注入 API 调用不经过 HTTP 过滤器。业务侧必须先完成自己的业务鉴权，并由服务端解析业务键。
 

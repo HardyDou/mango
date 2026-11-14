@@ -3,6 +3,7 @@ package io.mango.workflow.core.service.impl;
 import io.mango.workflow.core.model.WorkflowProcessStartedContext;
 import io.mango.common.exception.BizException;
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
@@ -29,6 +30,9 @@ import io.mango.workflow.core.engine.WorkflowDesignerBpmnConverter;
 import io.mango.workflow.core.engine.WorkflowCandidateGroupProvider;
 import io.mango.workflow.core.event.WorkflowEventPublisher;
 import io.mango.workflow.core.identity.WorkflowAssigneeIdentityService;
+import io.mango.workflow.api.vo.WorkflowTaskRecordVO;
+import io.mango.workflow.core.convert.WorkflowTaskRecordConverter;
+import io.mango.workflow.core.entity.WorkflowTaskRecordEntity;
 import io.mango.workflow.core.mapper.WorkflowBusinessApplyCurrentTaskMapper;
 import io.mango.workflow.core.mapper.WorkflowBusinessApplyMapper;
 import io.mango.workflow.core.mapper.WorkflowBusinessApplyStatusLogMapper;
@@ -112,6 +116,8 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
     private TenantMemberProvider tenantMemberProvider;
     @Autowired
     private AuthUserProvider authUserProvider;
+    @Autowired
+    private WorkflowTaskRecordMapper taskRecordMapper;
 
     private JdbcTemplate jdbcTemplate;
 
@@ -599,6 +605,53 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
                 .taskDefinitionKey("scoped_review")
                 .singleResult();
         assertThat(otherProjectTask.getAssignee()).isNull();
+    }
+
+    @Test
+    void autoAssignRecordAttributesRealAssigneeInsteadOfTriggeringUser() {
+        prepareActiveMembers();
+        StartedWorkflow first = startScopedAffinityWorkflow("BIZ-1269-V1", "PROJECT-1269");
+        taskRuntimeService.advanceRuntimeTasks(first.processInstanceId());
+        Task firstTask = taskService.createTaskQuery()
+                .processInstanceId(first.processInstanceId())
+                .taskDefinitionKey("scoped_review")
+                .singleResult();
+
+        switchUser(1002L, "finance");
+        ClaimWorkflowTaskCommand claim = new ClaimWorkflowTaskCommand();
+        claim.setTaskId(firstTask.getId());
+        taskRuntimeService.claim(claim);
+        CompleteWorkflowTaskCommand complete = new CompleteWorkflowTaskCommand();
+        complete.setTaskId(firstTask.getId());
+        complete.setComment("初审通过");
+        taskRuntimeService.complete(complete);
+
+        switchUser(1001L, "admin");
+        StartedWorkflow resubmitted = startScopedAffinityWorkflow("BIZ-1269-V2", "PROJECT-1269");
+        taskRuntimeService.advanceRuntimeTasks(resubmitted.processInstanceId());
+
+        Task resubmittedTask = taskService.createTaskQuery()
+                .processInstanceId(resubmitted.processInstanceId())
+                .taskDefinitionKey("scoped_review")
+                .singleResult();
+        assertThat(resubmittedTask.getAssignee()).isEqualTo("1002");
+
+        Map<String, Object> autoAssignRecord = jdbcTemplate.queryForMap("""
+                select operator_id, operator_name, variables_json
+                from workflow_task_record
+                where process_instance_id = ? and action = 'AUTO_ASSIGN'
+                """, resubmitted.processInstanceId());
+        assertThat(((Number) autoAssignRecord.get("OPERATOR_ID")).longValue()).isEqualTo(1002L);
+        assertThat(autoAssignRecord.get("OPERATOR_NAME")).isEqualTo("finance");
+        assertThat((String) autoAssignRecord.get("VARIABLES_JSON")).contains("\"assigneeUserId\":1002");
+
+        WorkflowTaskRecordEntity record = taskRecordMapper.selectOne(new LambdaQueryWrapper<WorkflowTaskRecordEntity>()
+                .eq(WorkflowTaskRecordEntity::getProcessInstanceId, resubmitted.processInstanceId())
+                .eq(WorkflowTaskRecordEntity::getAction, WorkflowTaskAction.AUTO_ASSIGN.name()));
+        assertThat(WorkflowTaskRecordConverter.toVo(record, null))
+                .returns(1002L, WorkflowTaskRecordVO::getOperatorId)
+                .returns("finance", WorkflowTaskRecordVO::getOperatorName)
+                .returns("自动派单", WorkflowTaskRecordVO::getActionName);
     }
 
     private void switchUser(Long userId, String principalName) {
