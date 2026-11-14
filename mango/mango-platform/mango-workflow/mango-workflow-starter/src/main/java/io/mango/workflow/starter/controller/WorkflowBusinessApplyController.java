@@ -7,6 +7,7 @@ import io.mango.common.vo.PageResult;
 import io.mango.infra.web.api.Inner;
 import io.mango.workflow.api.WorkflowBusinessApplyApi;
 import io.mango.workflow.api.command.CreateWorkflowBusinessApplyCommand;
+import io.mango.workflow.api.command.UpdateWorkflowBusinessApplyFilterAttributesCommand;
 import io.mango.workflow.api.query.WorkflowBusinessApplyPageQuery;
 import io.mango.workflow.api.request.WorkflowBusinessApplyPageRequest;
 import io.mango.workflow.api.request.WorkflowBusinessApplyProgressBatchRequest;
@@ -22,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -48,6 +50,15 @@ public class WorkflowBusinessApplyController implements WorkflowBusinessApplyApi
     @Override
     public R<WorkflowBusinessApplyVO> create(@RequestBody CreateWorkflowBusinessApplyCommand command) {
         return R.ok(workflowBusinessApplyService.create(command));
+    }
+
+    @PutMapping("/filter-attributes")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:business-apply:create")
+    @Operation(summary = "更新业务申请可筛属性", description = "整体覆盖申请的可筛属性，用于版本状态等提交后会变化的值")
+    @Override
+    public R<Void> updateFilterAttributes(@RequestBody UpdateWorkflowBusinessApplyFilterAttributesCommand command) {
+        workflowBusinessApplyService.updateFilterAttributes(command);
+        return R.ok();
     }
 
     @PostMapping("/page")

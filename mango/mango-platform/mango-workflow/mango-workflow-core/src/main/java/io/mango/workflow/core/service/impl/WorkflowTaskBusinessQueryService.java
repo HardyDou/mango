@@ -13,6 +13,7 @@ import io.mango.workflow.api.enums.WorkflowTaskCancelCause;
 import io.mango.workflow.api.enums.WorkflowTaskClaimStatus;
 import io.mango.workflow.api.enums.WorkflowTaskQueryScope;
 import io.mango.workflow.api.enums.WorkflowTaskRuntimeStatus;
+import io.mango.workflow.api.query.WorkflowApplyAttributeQuery;
 import io.mango.workflow.api.query.WorkflowTaskBusinessPageQuery;
 import io.mango.workflow.api.query.WorkflowTaskTraceQuery;
 import io.mango.workflow.api.enums.WorkflowApplyAction;
@@ -30,6 +31,7 @@ import io.mango.workflow.core.entity.WorkflowBusinessApplyEntity;
 import io.mango.workflow.core.identity.WorkflowAssigneeIdentityService;
 import io.mango.workflow.core.mapper.WorkflowBusinessApplyMapper;
 import io.mango.workflow.core.mapper.WorkflowTaskHistoryMapper;
+import io.mango.workflow.core.model.WorkflowApplyAttributeCondition;
 import io.mango.workflow.core.model.WorkflowTaskHistoryCriteria;
 import io.mango.workflow.core.model.WorkflowTaskHistoryRow;
 import io.mango.workflow.core.model.WorkflowTaskIdentityLinkRow;
@@ -88,6 +90,8 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
         validateScope(resolved, scope);
         validateTimeRange(resolved.getCreateTimeBegin(), resolved.getCreateTimeEnd());
         validateTimeRange(resolved.getEndTimeBegin(), resolved.getEndTimeEnd());
+        validateTimeRange(resolved.getApplyTimeBegin(), resolved.getApplyTimeEnd());
+        List<WorkflowApplyAttributeCondition> attributeConditions = applyAttributeConditions(resolved);
         validatePaging(resolved);
         String businessType = normalizeRequired(resolved.getBusinessType(), "业务类型不能为空");
         List<String> businessKeys = normalizeBusinessKeys(resolved.getBusinessKeys());
@@ -117,6 +121,9 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
                 .endTimeEnd(resolved.getEndTimeEnd())
                 .keyword(keywordPattern(resolved.getKeyword()))
                 .applyKeyword(applyKeywordPattern(resolved.getApplyKeyword()))
+                .applyAttributeConditions(attributeConditions)
+                .applyTimeBegin(resolved.getApplyTimeBegin())
+                .applyTimeEnd(resolved.getApplyTimeEnd())
                 .selfScope(selfScope)
                 .selfIdentifiers(selfIdentifiers)
                 .selfCandidateGroups(selfGroups)
@@ -377,6 +384,33 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
             return null;
         }
         return assigned;
+    }
+
+    /**
+     * 把 API 的申请可筛属性条件转换成持久化条件。
+     *
+     * <p>属性名和值由业务自定义，平台只保证键值边界和「条件间且、条件内或」语义；
+     * 重复条件属性名会被拒绝，否则「且」交集永远不成立。
+     */
+    private List<WorkflowApplyAttributeCondition> applyAttributeConditions(WorkflowTaskBusinessPageQuery query) {
+        List<WorkflowApplyAttributeQuery> filters = query.getApplyAttributeFilters();
+        if (filters == null || filters.isEmpty()) {
+            return List.of();
+        }
+        Require.isTrue(filters.size() <= WorkflowApplyAttributeRules.MAX_FILTER_CONDITIONS,
+                WorkflowCode.TASK_QUERY_INVALID,
+                "可筛属性条件数量不能超过" + WorkflowApplyAttributeRules.MAX_FILTER_CONDITIONS);
+        List<WorkflowApplyAttributeCondition> conditions = new ArrayList<>(filters.size());
+        for (WorkflowApplyAttributeQuery filter : filters) {
+            Require.notNull(filter, WorkflowCode.TASK_QUERY_INVALID, "可筛属性条件不能为空");
+            String key = WorkflowApplyAttributeRules.requireKey(filter.getKey(), WorkflowCode.TASK_QUERY_INVALID);
+            List<String> values = WorkflowApplyAttributeRules.requireValues(key, filter.getValues(),
+                    WorkflowCode.TASK_QUERY_INVALID);
+            conditions.add(WorkflowApplyAttributeCondition.builder().key(key).values(values).build());
+        }
+        WorkflowApplyAttributeRules.requireDistinctKeys(conditions.stream()
+                .map(WorkflowApplyAttributeCondition::getKey).toList());
+        return List.copyOf(conditions);
     }
 
     private List<String> applyStatuses(WorkflowTaskBusinessPageQuery query) {

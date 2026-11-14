@@ -23,7 +23,9 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Converts workflow domain events into decoupled notice send events.
@@ -124,7 +126,7 @@ public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscribe
         notice.setMessageSubject(subject(event, params));
         notice.setMessageTarget(target);
         notice.setMessageData(NoticeJsonRequest.of(params));
-        notice.setMessageActions(List.of(routeAction(actionLabel(event, params, target), target)));
+        notice.setMessageActions(actions(event, params, target));
         if (recipients.userIds().size() == 1) {
             notice.setUserId(recipients.userIds().getFirst());
         } else if (!recipients.userIds().isEmpty()) {
@@ -185,7 +187,35 @@ public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscribe
         if (WorkflowEventTypes.PROCESS_REJECTED.equals(event.getEventType())) {
             params.put("reason", firstText(stringValue(params.get("reason")), "未填写"));
         }
+        putApplyAttributeParams(params);
         return params;
+    }
+
+    /**
+     * 把业务申请的可筛属性展开成消息模板可直接引用的占位符。
+     *
+     * <p>通知模板是平铺占位符替换，不支持嵌套取值，因此属性统一展开为 {@code applyAttribute_<key>}；
+     * 多值属性按英文逗号拼接，无属性时不会注入任何占位符，模板保持原有行为。
+     */
+    private void putApplyAttributeParams(Map<String, Object> params) {
+        Object value = params.get("applyAttributes");
+        if (!(value instanceof Map<?, ?> attributes)) {
+            return;
+        }
+        for (Map.Entry<?, ?> entry : attributes.entrySet()) {
+            String key = entry.getKey() == null ? null : String.valueOf(entry.getKey());
+            if (!StringUtils.hasText(key) || !(entry.getValue() instanceof Collection<?> values)) {
+                continue;
+            }
+            String joined = values.stream()
+                    .filter(Objects::nonNull)
+                    .map(String::valueOf)
+                    .filter(StringUtils::hasText)
+                    .collect(Collectors.joining(","));
+            if (StringUtils.hasText(joined)) {
+                params.put("applyAttribute_" + key, joined);
+            }
+        }
     }
 
     private NoticeSiteMessageSubjectCommand subject(DomainEvent event, Map<String, Object> params) {
@@ -200,8 +230,7 @@ public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscribe
         NoticeSiteMessageTargetCommand target = new NoticeSiteMessageTargetCommand();
         target.setTargetType(NoticeSiteMessageTargetType.ROUTE);
         String defaultTargetKey = defaultWorkflowTargetKey(event.getEventType(), params);
-        String viewPath = processTerminalEvent(event.getEventType())
-                ? safeInternalPath(stringValue(params.get("viewPath"))) : null;
+        String viewPath = safeInternalPath(stringValue(params.get("viewPath")));
         String targetKey = StringUtils.hasText(viewPath) ? viewPath : defaultTargetKey;
         Map<String, Object> targetParams = targetParams(viewPath, targetKey, params);
         String fallbackTargetKey = targetKey.equals(defaultTargetKey)
@@ -286,8 +315,7 @@ public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscribe
 
     private String actionLabel(DomainEvent event, Map<String, Object> params, NoticeSiteMessageTargetCommand target) {
         String declared = safeText(stringValue(params.get("viewActionLabel")));
-        String viewPath = processTerminalEvent(event.getEventType())
-                ? safeInternalPath(stringValue(params.get("viewPath"))) : null;
+        String viewPath = safeInternalPath(stringValue(params.get("viewPath")));
         if (declared != null && declared.length() <= ACTION_LABEL_MAX_LENGTH
                 && StringUtils.hasText(viewPath) && viewPath.equals(target.getTargetKey())) {
             return declared;
@@ -296,6 +324,19 @@ public class WorkflowNoticeDomainEventSubscriber implements DomainEventSubscribe
             return "查看申请";
         }
         return "去审批";
+    }
+
+    /**
+     * 默认通知只注入一个路由按钮；业务在申请快照把 {@code customConfig.viewActionEnabled} 设为 false 时不注入，
+     * 由消息中心或业务自己的入口承接点击，避免按钮跳到与业务页面不一致的默认页。
+     */
+    private List<NoticeSiteMessageActionCommand> actions(DomainEvent event,
+                                                         Map<String, Object> params,
+                                                         NoticeSiteMessageTargetCommand target) {
+        if (Boolean.FALSE.equals(params.get("viewActionEnabled"))) {
+            return List.of();
+        }
+        return List.of(routeAction(actionLabel(event, params, target), target));
     }
 
     private NoticeSiteMessageActionCommand routeAction(String actionLabel, NoticeSiteMessageTargetCommand target) {

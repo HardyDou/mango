@@ -12,6 +12,8 @@ import io.mango.workflow.core.entity.WorkflowDefinitionEntity;
 import io.mango.workflow.core.entity.WorkflowFormInstanceEntity;
 import io.mango.workflow.core.identity.IWorkflowAssigneeIdentityProvider;
 import io.mango.workflow.core.identity.WorkflowAssigneeIdentityService;
+import io.mango.workflow.core.entity.WorkflowBusinessApplyAttributeEntity;
+import io.mango.workflow.core.mapper.WorkflowBusinessApplyAttributeMapper;
 import org.flowable.engine.impl.persistence.entity.ExecutionEntityImpl;
 import org.flowable.task.service.impl.persistence.entity.TaskEntityImpl;
 import org.junit.jupiter.api.AfterEach;
@@ -30,8 +32,21 @@ import static org.mockito.Mockito.when;
 class WorkflowEventPublisherTest {
 
     private final List<DomainEvent> events = new ArrayList<>();
+    private final WorkflowBusinessApplyAttributeMapper applyAttributeMapper = attributeMapper();
     private final WorkflowEventPublisher publisher = new WorkflowEventPublisher(
-            new SingleObjectProvider(event -> events.add(event)), identityService());
+            new SingleObjectProvider(event -> events.add(event)), identityService(), applyAttributeMapper);
+
+    private static WorkflowBusinessApplyAttributeMapper attributeMapper() {
+        WorkflowBusinessApplyAttributeMapper mapper = mock(WorkflowBusinessApplyAttributeMapper.class);
+        WorkflowBusinessApplyAttributeEntity guaranteeType = new WorkflowBusinessApplyAttributeEntity();
+        guaranteeType.setAttrKey("guaranteeTypeCode");
+        guaranteeType.setAttrValue("PERF");
+        WorkflowBusinessApplyAttributeEntity beneficiary = new WorkflowBusinessApplyAttributeEntity();
+        beneficiary.setAttrKey("beneficiary");
+        beneficiary.setAttrValue("中铁三局");
+        when(mapper.selectList(org.mockito.ArgumentMatchers.any())).thenReturn(List.of(guaranteeType, beneficiary));
+        return mapper;
+    }
 
     private static WorkflowAssigneeIdentityService identityService() {
         @SuppressWarnings("unchecked")
@@ -82,6 +97,8 @@ class WorkflowEventPublisherTest {
                 .containsEntry("definitionName", "费用报销")
                 .containsEntry("applyTitle", "5月费用报销")
                 .containsEntry("applySummary", "差旅及办公费用");
+        assertThat(event.getPayload().get("applyAttributes"))
+                .isEqualTo(Map.of("guaranteeTypeCode", List.of("PERF"), "beneficiary", List.of("中铁三局")));
     }
 
     @Test

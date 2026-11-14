@@ -7,6 +7,7 @@ import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
 import io.mango.workflow.api.command.CreateWorkflowBusinessApplyCommand;
+import io.mango.workflow.api.command.UpdateWorkflowBusinessApplyFilterAttributesCommand;
 import io.mango.workflow.api.enums.WorkflowCode;
 import io.mango.workflow.core.identity.WorkflowAssigneeIdentityService;
 import io.mango.workflow.core.mapper.WorkflowBusinessApplyMapper;
@@ -107,6 +108,112 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
     }
 
     @Test
+    void createPersistsFilterAttributesAsOneRowPerKey() {
+        MangoContextHolder.set(MangoContextSnapshot.empty()
+                .withSecurity(1001L, "1", "admin", "default", "USER", "USER", 1L, "internal-admin"));
+        CreateWorkflowBusinessApplyCommand command = new CreateWorkflowBusinessApplyCommand();
+        command.setBusinessType("BAOHAN_RC_PROJECT_REVIEW");
+        command.setBusinessKey("BIZ-A1");
+        command.setApplyTitle("项目风控审批");
+        command.setFilterAttributes(List.of(
+                attribute("guaranteeTypeCode", " PERF "),
+                attribute("beneficiary", "中铁三局", " 中铁四局 ", "中铁三局")));
+
+        var created = service.create(command);
+
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList(
+                "select attr_key, attr_value from workflow_business_apply_attribute where apply_id = ? "
+                        + "order by attr_key, attr_value", created.getId());
+        assertThat(rows).hasSize(3);
+        assertThat(rows.get(0)).containsEntry("attr_key", "beneficiary")
+                .containsEntry("attr_value", "中铁三局");
+        assertThat(rows.get(1)).containsEntry("attr_key", "beneficiary")
+                .containsEntry("attr_value", "中铁四局");
+        assertThat(rows.get(2)).containsEntry("attr_key", "guaranteeTypeCode")
+                .containsEntry("attr_value", "PERF");
+    }
+
+    @Test
+    void createWithoutFilterAttributesWritesNoAttributeRow() {
+        MangoContextHolder.set(MangoContextSnapshot.empty()
+                .withSecurity(1001L, "1", "admin", "default", "USER", "USER", 1L, "internal-admin"));
+        CreateWorkflowBusinessApplyCommand command = new CreateWorkflowBusinessApplyCommand();
+        command.setBusinessType("BAOHAN_RC_PROJECT_REVIEW");
+        command.setBusinessKey("BIZ-A2");
+        command.setApplyTitle("项目风控审批");
+
+        var created = service.create(command);
+
+        assertThat(jdbcTemplate.queryForObject(
+                "select count(1) from workflow_business_apply_attribute where apply_id = ?",
+                Long.class, created.getId())).isZero();
+    }
+
+    @Test
+    void updateFilterAttributesReplacesAllValuesAndClearsOnEmptyMap() {
+        MangoContextHolder.set(MangoContextSnapshot.empty()
+                .withSecurity(1001L, "1", "admin", "default", "USER", "USER", 1L, "internal-admin"));
+        CreateWorkflowBusinessApplyCommand command = new CreateWorkflowBusinessApplyCommand();
+        command.setBusinessType("BAOHAN_RC_PROJECT_REVIEW");
+        command.setBusinessKey("BIZ-A3");
+        command.setApplyTitle("项目风控审批");
+        command.setFilterAttributes(List.of(
+                attribute("versionStatus", "PENDING"),
+                attribute("guaranteeTypeCode", "PERF")));
+        var created = service.create(command);
+
+        service.updateFilterAttributes(updateCommand(created.getId(), attribute("versionStatus", "REVIEWED")));
+
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList(
+                "select attr_key, attr_value from workflow_business_apply_attribute where apply_id = ?",
+                created.getId());
+        assertThat(rows).hasSize(1);
+        assertThat(rows.get(0)).containsEntry("attr_key", "versionStatus")
+                .containsEntry("attr_value", "REVIEWED");
+
+        service.updateFilterAttributes(updateCommand(created.getId()));
+
+        assertThat(jdbcTemplate.queryForObject(
+                "select count(1) from workflow_business_apply_attribute where apply_id = ?",
+                Long.class, created.getId())).isZero();
+    }
+
+    @Test
+    void updateFilterAttributesRejectsInvalidKeyAndMissingApply() {
+        MangoContextHolder.set(MangoContextSnapshot.empty()
+                .withSecurity(1001L, "1", "admin", "default", "USER", "USER", 1L, "internal-admin"));
+
+        assertThatThrownBy(() -> service.updateFilterAttributes(
+                updateCommand(999L, attribute("guaranteeTypeCode", "PERF"))))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("业务申请不存在");
+
+        insertApply(1L, 1001L, "IN_APPROVAL");
+
+        assertThatThrownBy(() -> service.updateFilterAttributes(
+                updateCommand(1L, attribute("1invalid", "PERF"))))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("可筛属性名只支持字母开头");
+
+        assertThatThrownBy(() -> service.updateFilterAttributes(
+                updateCommand(1L, attribute("beneficiary", " "))))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("可筛属性值不能为空");
+    }
+
+    @Test
+    void updateFilterAttributesRejectsDuplicateKeysAfterTrimming() {
+        MangoContextHolder.set(MangoContextSnapshot.empty()
+                .withSecurity(1001L, "1", "admin", "default", "USER", "USER", 1L, "internal-admin"));
+        insertApply(2L, 1001L, "IN_APPROVAL");
+        assertThatThrownBy(() -> service.updateFilterAttributes(updateCommand(2L,
+                attribute("beneficiary", "中铁三局"),
+                attribute(" beneficiary ", "中铁四局"))))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("可筛属性名重复");
+    }
+
+    @Test
     void mySummaryCountsCurrentUserBusinessApplyStatusesThroughRealMapper() {
         MangoContextHolder.set(MangoContextSnapshot.empty()
                 .withSecurity(1001L, "1", "admin", "default", "USER", "USER", 1L, "internal-admin"));
@@ -177,6 +284,21 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
         assertThat(detail.getViewQuery().toMap())
                 .containsExactly(Map.entry("receiptId", "R-1"), Map.entry("orderNo", "O-1"));
         assertThat(detail.getViewActionLabel()).isEqualTo("去确认");
+    }
+
+    @Test
+    void detailDerivesViewActionSwitchFromFormSnapshot() {
+        MangoContextHolder.set(MangoContextSnapshot.empty()
+                .withSecurity(1001L, "1", "applicant", "default", "USER", "USER", 1L, "internal-admin"));
+        insertApply(14L, 1001L, "IN_APPROVAL");
+        insertApply(15L, 1001L, "IN_APPROVAL");
+        jdbcTemplate.update("update workflow_business_apply set form_json_snapshot = ? where id = ?",
+                "{\"customConfig\":{\"viewActionEnabled\":false}}", 14L);
+        jdbcTemplate.update("update workflow_business_apply set form_json_snapshot = ? where id = ?",
+                "{\"customConfig\":{\"viewPath\":\"/baohan/audit\"}}", 15L);
+
+        assertThat(service.detail(14L).getViewActionEnabled()).isFalse();
+        assertThat(service.detail(15L).getViewActionEnabled()).isTrue();
     }
 
     @Test
@@ -344,6 +466,7 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
     }
 
     private void rebuildTables() {
+        jdbcTemplate.execute("drop table if exists workflow_business_apply_attribute");
         jdbcTemplate.execute("drop table if exists workflow_business_apply_current_task");
         jdbcTemplate.execute("drop table if exists workflow_business_apply_status_log");
         jdbcTemplate.execute("drop table if exists workflow_business_apply");
@@ -389,6 +512,22 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
                     created_at timestamp,
                     updated_by bigint,
                     updated_time timestamp,
+                    updated_at timestamp,
+                    primary key (id)
+                )
+                """);
+        jdbcTemplate.execute("""
+                create table workflow_business_apply_attribute (
+                    id bigint not null,
+                    tenant_id bigint,
+                    org_id bigint,
+                    apply_id bigint,
+                    business_type varchar(128),
+                    attr_key varchar(64),
+                    attr_value varchar(255),
+                    created_by bigint,
+                    created_at timestamp,
+                    updated_by bigint,
                     updated_at timestamp,
                     primary key (id)
                 )
@@ -443,6 +582,23 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
                     primary key (id)
                 )
                 """);
+    }
+
+    private io.mango.workflow.api.query.WorkflowApplyAttributeQuery attribute(String key, String... values) {
+        io.mango.workflow.api.query.WorkflowApplyAttributeQuery attribute =
+                new io.mango.workflow.api.query.WorkflowApplyAttributeQuery();
+        attribute.setKey(key);
+        attribute.setValues(List.of(values));
+        return attribute;
+    }
+
+    private UpdateWorkflowBusinessApplyFilterAttributesCommand updateCommand(
+            Long applyId, io.mango.workflow.api.query.WorkflowApplyAttributeQuery... attributes) {
+        UpdateWorkflowBusinessApplyFilterAttributesCommand command =
+                new UpdateWorkflowBusinessApplyFilterAttributesCommand();
+        command.setApplyId(applyId);
+        command.setFilterAttributes(List.of(attributes));
+        return command;
     }
 
     private void insertApply(Long id, Long applicantId, String status) {
