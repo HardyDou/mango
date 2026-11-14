@@ -1176,6 +1176,17 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
     }
 
     private void saveRecord(Task task, WorkflowTaskAction action, String comment, Map<String, Object> variables) {
+        saveRecord(task, action, comment, variables, MangoContextHolder.userId(), currentUser());
+    }
+
+    /**
+     * 写入任务处理记录，并把操作人归因给实际办理人。
+     *
+     * <p>自动派单由系统完成，但业务读流转记录时需要看到任务真实派给了谁，而不是触发节点进入的发起人或上一步办理人，
+     * 因此自动派单记录显式传入承办人作为操作人；其它动作传当前登录用户。
+     */
+    private void saveRecord(Task task, WorkflowTaskAction action, String comment, Map<String, Object> variables,
+                            Long operatorId, String operatorName) {
         WorkflowTaskRecordEntity record = new WorkflowTaskRecordEntity();
         record.setTenantId(currentTenantId());
         record.setProcessInstanceId(task.getProcessInstanceId());
@@ -1184,8 +1195,8 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         record.setTaskDefinitionKey(task.getTaskDefinitionKey());
         record.setAction(action.name());
         record.setActionName(action.getLabel());
-        record.setOperatorId(MangoContextHolder.userId());
-        record.setOperatorName(currentUser());
+        record.setOperatorId(operatorId);
+        record.setOperatorName(operatorName);
         record.setComment(StringUtils.hasText(comment) ? comment.trim() : null);
         record.setVariablesJson(toJson(variables == null ? Map.of() : variables));
         LocalDateTime now = LocalDateTime.now();
@@ -1194,12 +1205,12 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         taskRecordMapper.insert(record);
         if (action == WorkflowTaskAction.COMPLETE || action == WorkflowTaskAction.REJECT
                 || action == WorkflowTaskAction.RETURN) {
-            Long userId = MangoContextHolder.userId();
+            Long userId = operatorId;
             if (userId != null) {
                 workflowParticipationService.recordParticipant(new WorkflowParticipantRecord(
                         task.getProcessInstanceId() == null ? null : processKey(task.getProcessInstanceId()),
                         businessKey(task.getProcessInstanceId()), task.getProcessInstanceId(), userId,
-                        MangoContextHolder.memberId(), currentUser(), currentUser(), WorkflowParticipantType.COMPLETED_HANDLER));
+                        MangoContextHolder.memberId(), operatorName, operatorName, WorkflowParticipantType.COMPLETED_HANDLER));
             }
         }
     }
@@ -1462,9 +1473,17 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
             audit.put("nodeAffinityHit", decision.affinityScope() == null
                     ? "FALLBACK" : decision.affinityScope().name());
         }
-        saveRecord(task, WorkflowTaskAction.AUTO_ASSIGN, "自动派单", audit);
+        saveRecord(task, WorkflowTaskAction.AUTO_ASSIGN, "自动派单", audit, selected, assigneeIdentifier(selected));
         return true;
     }
+
+    /** 自动派单记录的办理人标识：优先使用登录用户名，与其它动作的 operator_name 保持一致。 */
+    private String assigneeIdentifier(Long userId) {
+        AuthUserVO user = authUserProvider.getByIdForAuth(userId);
+        return user != null && StringUtils.hasText(user.getUsername())
+                ? user.getUsername() : String.valueOf(userId);
+    }
+
     private List<Long> resolveCandidates(WorkflowAssigneeResolver.ResolvedAssignees resolved) {
         List<Long> candidates = new java.util.ArrayList<>();
         addUserCandidates(candidates, resolved.users());
