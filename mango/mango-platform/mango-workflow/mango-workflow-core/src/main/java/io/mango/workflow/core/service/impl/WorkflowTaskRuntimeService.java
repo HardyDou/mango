@@ -1414,13 +1414,17 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         WorkflowAssigneeResolver.ResolvedAssignees resolved = assigneeResolver.resolve(config, variables,
                 initiator(task.getProcessInstanceId()), task.getTaskDefinitionKey());
         List<Long> candidates = resolveCandidates(resolved);
-        requireCandidates(candidates, task, config);
         WorkflowAutoAssignmentStrategy strategy = config.getAutoAssignmentStrategy() == null
                 ? WorkflowAutoAssignmentStrategy.ROUND_ROBIN : config.getAutoAssignmentStrategy();
         WorkflowNodeAffinityFallback nodeAffinityFallback = config.getNodeAffinityFallback() == null
                 ? WorkflowNodeAffinityFallback.CLAIM : config.getNodeAffinityFallback();
         WorkflowNodeAffinityScope nodeAffinityScope = config.getNodeAffinityScope() == null
                 ? WorkflowNodeAffinityScope.PROCESS_INSTANCE : config.getNodeAffinityScope();
+        // NODE_AFFINITY 显式声明 CLAIM 时，空候选按待领取处理，不能阻断业务提交。
+        if (strategy != WorkflowAutoAssignmentStrategy.NODE_AFFINITY
+                || nodeAffinityFallback != WorkflowNodeAffinityFallback.CLAIM) {
+            requireCandidates(candidates, task, config);
+        }
         WorkflowAutoAssignmentStateEntity state =
                 strategy == WorkflowAutoAssignmentStrategy.NODE_AFFINITY
                         && nodeAffinityFallback != WorkflowNodeAffinityFallback.ROUND_ROBIN
