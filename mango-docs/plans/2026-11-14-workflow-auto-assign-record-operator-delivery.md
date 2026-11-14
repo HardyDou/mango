@@ -69,6 +69,7 @@
 - 历史数据：无需处理。自动派单与本次归因修正均未投产，只需从本版本开始生效。
 - 名称解析成本：自动派单每次写记录增加一次 `AuthUserProvider.getByIdForAuth` 调用，与既有 `recordCurrentAssignee`/`resolveUserId` 的解析方式一致。
 - 归因语义边界：`AUTO_ASSIGN` 不再记录「谁触发了节点进入」。该事实由同一实例中相邻的 `START`/`COMPLETE`/`RETURN` 记录表达，本次未新增字段承载。
+- 权限边界：本次不修改任务办理权限判定、权限码、租户隔离与数据范围；PR 仍声明 `AUTHORIZATION` 不可降级事实，因为改动位于审批流转记录和按办理人过滤口径，回退与审阅必须保留该上下文。
 - 消费方影响：按办理人过滤流转记录的调用方会同时命中该办理人的「自动派单」记录，属于本次预期变化；已在模块 README 流转记录小节写明。
 - 构建观察（非本次引入）：`mango-workflow-core` 走 Maven 默认生命周期绑定 `maven-surefire-plugin:2.17`，直接执行 `mvn test` 会显示 `Tests run: 0`；本次用显式插件目标 `maven-surefire-plugin:3.2.5:test` 执行测试，未修改构建配置。
 
