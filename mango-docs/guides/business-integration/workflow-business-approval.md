@@ -213,6 +213,24 @@ mango:
 - 接口权限只有 `workflow:task:list`，不再校验 `workflow:task:all`，也不做申请级权限判定，因此**不返回 3645**。
 - 任何持有该权限码、且知道 `businessType + businessKey` 的账号都能读到该业务键的全部流转记录与审批意见原文。本地注入 `WorkflowTaskRuntimeApi` 直接调用不经过 HTTP 过滤器，平台侧没有行级防线；业务详情页在调用前先完成自身的业务鉴权，由服务端解析 `businessKey`，不接受前端传入的键。权限与鉴权边界见 [后端 API 规范](../../../mango-pmo/rules/backend/03-api.md)。
 
+## 7.3 审批人来源与多人审批方式（Issue #1263）
+
+审批节点的 `assigneeType=SPECIFIED_ROLE|SPECIFIED_POST|SPECIFIED_ORG|ORG_LEADER` 不再生成一条共享待领取任务，改为流程进入节点时把候选组展开为当前租户启用成员，再按 `approvalMode` 生成每人一条任务：
+
+- `OR_SIGN`：每人一条待办，任一人办结后其余任务以 `MI_END` 取消。
+- `COUNTERSIGN`：按 `passRatio` 计算所需通过人数，默认 100% 即全部成员通过。这是节点默认值，角色节点重新发布后会从“一人处理”变为“全员通过”。
+- `SEQUENTIAL`：按 `userId` 升序依次到达。
+
+成员解析在运行时完成，角色、岗位、组织成员变化对下一次进入节点立即生效，不需要重新发布流程定义。展开结果为空时走节点 `emptyAssigneeStrategy`，不会静默通过。
+
+业务接入影响：
+
+- 这类节点的任务不再进入“待领取”，成员在“待办”直接看到自己的任务；按 `claimStatus` 或 `currentAssigneeName=="待领取"` 判断待领取的业务代码需要改为按任务是否已派单判断。
+- 之前用“领取 + 自动领取”实现“复用上一轮办理人”的业务，改为两种方式之一：节点 `approvalMode=OR_SIGN` 并把自动领取换成 `transfer` 转办；或节点改用 `assignmentMode=AUTO` + `autoAssignmentStrategy=AFFINITY/NODE_AFFINITY`，由平台直接把任务派给上一轮办理人。
+- 节点启用 `claim` 动作后不再有可领取任务，领取入口应同步移除。
+- 通知改为每个成员收到指向自己 `taskId` 的 `workflow.task.assigned`。
+- 已发布流程定义不受影响：BPMN 在定义发布时生成，`ensurePublished` 按 `designerJson` 判等，升级或重启不会自动重发布；只有重新发布后才按新规则生成任务。
+
 ## 8. 验证命令
 
 后端验证使用 Java 21。legacy migration fixture 和 API surface fingerprint 是测试资产；本次校准仅跟随既有 V1/V2/V3 迁移与 API 声明版本，未修改生产历史 SQL、公开 API、配置、菜单、权限、租户、页面、启动或审批运行时行为。业务审批接入步骤保持不变。
@@ -241,6 +259,8 @@ pnpm -F @mango/workflow-business-example build
 ## 10. 历史变更
 
 详细版本影响见[业务审批历史变更索引](../../changelog/business-integration/workflow-business-approval.md)。
+
+> Issue #1263 影响说明：角色、岗位、组织、组织负责人审批人按节点 `approvalMode` 展开为每人一条任务，不再生成待领取共享任务。会签默认值下角色节点重新发布后要求全体成员通过；依赖“待领取”或自动领取的业务代码需要迁移到按办理人或自动派单判断。接口、配置项、数据库结构和权限码不变，已发布定义在重新发布前行为不变。
 
 > Issue #1231 影响说明：`POST /workflow/tasks/page-by-business-key` 新增可选参数 `applyKeyword`，模糊匹配申请编号、申请标题、申请摘要，输入中的 `%`、`_` 按字面匹配；`keyword` 语义不变，仍只匹配任务名称和节点定义 Key。业务需要搜自己的字段时，在创建申请单时把可检索文本写进 `applySummary`，推荐 `名称：值，名称：值` 结构；摘要创建后不再更新。变量白名单过滤和平台侧业务列本次不提供，业务字段的多选精确筛选继续使用 `businessKeys`。数据库结构、权限码、租户隔离和分页口径不变。
 
