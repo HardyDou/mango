@@ -58,7 +58,7 @@
 | IMPL-5 | D-5、D-6 | 5 | `mango/mango-platform/mango-workflow/mango-workflow-starter/**/WorkflowTaskController.java` | 两个新接口与权限码生效 |
 | IMPL-6 | SR-1~SR-10 | 6 | `mango-workflow-core/src/test/**`（`WorkflowTaskRuntimeServiceIntegrationTest`、`WorkflowTaskRuntimeServiceImplIntegrationTest`、`WorkflowNodeActionConfigResolverTest`、引用变更的转换器/退回引擎测试） | 单元、集成与真实 Flowable 用例通过 |
 | IMPL-7 | D-5、D-6、SR-9 | 7 | `mango-ui/packages/workflow/src/api/workflow.ts`、`WorkflowNodeCapabilityConfig.vue` | 类型、接口封装与设计器动作开关可用 |
-| IMPL-8 | SR-1~SR-10 | 8 | `mango/mango-platform/mango-workflow/README.md`、`mango-docs/guides/operations/workflow-task-release-upgrade.md` | 能力、失败语义与升级口径与实现一致 |
+| IMPL-8 | SR-1~SR-10 | 8 | `mango/mango-platform/mango-workflow/README.md`、`mango-docs/guides/operations/workflow-task-release-upgrade.md`、`mango-docs/guides/business-integration/workflow-business-approval.md` | 能力、失败语义、升级口径与业务接入建议与实现一致 |
 
 ## 6. 验收映射与结果
 
