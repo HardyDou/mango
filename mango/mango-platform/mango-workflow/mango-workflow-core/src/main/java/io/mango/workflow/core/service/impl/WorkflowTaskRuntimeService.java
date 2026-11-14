@@ -1284,10 +1284,6 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
                 .count() > 0;
     }
 
-    private boolean isClaimedFromCandidate(String taskId) {
-        return Boolean.TRUE.equals(taskService.getVariableLocal(taskId, CLAIMED_FROM_CANDIDATE_VARIABLE));
-    }
-
 
     /** 运行时按配置解析出的单人办理人不属于本人认领或平台派单，不能由承办人释放。 */
     private WorkflowTaskAssigneeSource runtimeAssigneeSource(WorkflowApprovalNodeConfig config) {
@@ -1654,7 +1650,8 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         String assigneeKey = assigneeIdentifier(selected);
         taskService.setAssignee(task.getId(), assigneeKey);
         task.setAssignee(assigneeKey);
-        assignSourceResolver.mark(task, WorkflowTaskAssigneeSource.AUTO_ASSIGN);        recordCurrentAssignee(task);
+        assignSourceResolver.mark(task, WorkflowTaskAssigneeSource.AUTO_ASSIGN);
+        recordCurrentAssignee(task);
         Map<String, Object> audit = new LinkedHashMap<>();
         audit.put("assignmentMode", WorkflowAssignmentMode.AUTO.name());
         audit.put("strategy", strategy.name());
