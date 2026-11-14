@@ -334,6 +334,11 @@ class FilePreviewServiceImplTest {
         }
 
         @Override
+        public R<FileRecordVO> updateMetadata(io.mango.file.api.command.UpdateFileRecordCommand command) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public R<io.mango.file.api.vo.FilePreviewVO> preview(Long id) {
             throw new UnsupportedOperationException();
         }

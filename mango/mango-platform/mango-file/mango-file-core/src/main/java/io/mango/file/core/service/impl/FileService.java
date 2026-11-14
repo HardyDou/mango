@@ -422,12 +422,15 @@ public class FileService implements IFileService, IFileContentProvider {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public FileRecordVO updateMetadata(UpdateFileRecordCommand command) {
+        Require.notNull(command, FileCode.FILE_NOT_FOUND);
         return editOperations().updateMetadata(command);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public FileRecordVO replaceContent(MultipartFile file, ReplaceFileContentCommand command) {
+        Require.notNull(command, FileCode.FILE_NOT_FOUND);
+        Require.notNull(file, FileCode.FILE_EMPTY);
         return editOperations().replaceContent(file, command);
     }
 

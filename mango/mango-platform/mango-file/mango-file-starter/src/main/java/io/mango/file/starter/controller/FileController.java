@@ -94,6 +94,7 @@ public class FileController implements FileApi {
         return R.ok(fileService.mergeToPdf(command));
     }
 
+    @Override
     @PutMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:edit")
     @Operation(summary = "更新文件信息", description = "按文件ID更新文件名、用途、访问级别、业务标记和逻辑目录，不改变文件内容")
