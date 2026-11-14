@@ -1,3 +1,14 @@
+## 1.4.9 - 2026-11-14
+
+### Changed
+
+- Lock the CLI Maven matrix to Maven `1.9.0` and the generated 201-coordinate Maven/docs release closure.
+- Ship the file edit and content replacement guidance, the task filterable-attribute guidance and the candidate-group approver expansion guidance in the generated templates.
+
+### Upgrade Notes
+
+- Upgrade `@mango/cli@1.4.9` together with the complete Maven/docs `1.9.0` tuple; do not mix release batches.
+
 ## 1.4.8 - 2026-11-14
 
 ### Changed
