@@ -45,6 +45,8 @@ Return `ASK` until release scope, exact versions, dependency order, registry tar
 
 ## Execute
 
+Follow [references/runbook.md](./references/runbook.md) for the per-batch checklist, the version and Changeset decision table, the material-writing rules and the verified failure-to-fix matrix. The runbook is execution help; this Skill, the PMO rules and the release tools remain the authority.
+
 Use the repository-local sequence below as the only batch owner:
 
 ```text

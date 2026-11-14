@@ -1,89 +1,89 @@
 {
   "schemaVersion": 1,
   "suite": "issue-1002-ac-1002-06-blank-context",
-  "evaluatedAt": "2026-10-12T09:26:52.212Z",
-  "evaluatedModel": "claude-fable-5-1",
+  "evaluatedAt": "2026-11-14T08:37:37.804Z",
+  "evaluatedModel": "deepseek-v4.1-flash",
   "harness": "pi --no-session (fresh context per case)",
   "grader": "deterministic pattern grader over requiredAssertions and forbid",
   "graderLimitations": "Pattern grading confirms rule citations, disposition and forbidden behaviors. It does not judge general answer quality; human review remains required before replacing the baseline.",
   "caseCount": 6,
-  "passed": 6,
-  "failed": 0,
-  "result": "PASS",
+  "passed": 0,
+  "failed": 6,
+  "result": "FAIL",
   "cases": [
     {
       "id": "issue-1002-design-reuse-first",
       "skill": "mango-design-technical",
       "expectedAction": "STOP",
-      "actionMatched": true,
+      "actionMatched": false,
       "assertionResults": [
         {
           "assertion": "cites REDLINE-REUSE-010",
-          "passed": true
+          "passed": false
         },
         {
           "assertion": "rejects the consumerless addition",
-          "passed": true
+          "passed": false
         },
         {
           "assertion": "rejects future-only extension",
-          "passed": true
+          "passed": false
         }
       ],
       "forbiddenHits": [],
-      "verdict": "PASS",
-      "durationMs": 0,
-      "attempts": 0,
+      "verdict": "FAIL",
+      "durationMs": 12932,
+      "attempts": 1,
       "sandboxModified": false,
-      "error": null
+      "error": "Command failed: pi -p --no-session --no-builtin-tools -t read,bash --model deepseek-v4.1-flash --append-system-prompt This is a read-only evaluation. Do not edit, create or delete any file; answer with your decision and reasoning only. 已批准的系统需求可由现有 Mango 能力满足，但设计时为了未来扩展新增一套抽象、配置和依赖。\n\n上下文事实（评测器注入）：{\"approvedSystemRequirements\":true,\"existingMangoCapability\":true,\"futureConsumerOnly\":true}\nWarning: No models match pattern \"opencode-go/deepseek-v4.1-flash\"\nError: Model \"deepseek-v4.1-flash\" is ambiguous across providers: agent-plan/deepseek-v4.1-flash, coding-plan/deepseek-v4.1-flash, opencode-go/deepseek-v4.1-flash, opencode/deepseek-v4.1-flash, qwen-token-plan-cn/deepseek-v4.1-flash, qwen-token-plan/deepseek-v4.1-flash, radius/deepseek-v4.1-flash. More than one matching provider is authenticated. Use --provider or provider/model.\n"
     },
     {
       "id": "issue-1002-engineering-no-fixed-questionnaire",
       "skill": "mango-engineering",
       "expectedAction": "SELECT_MINIMUM_SUFFICIENT",
-      "actionMatched": true,
+      "actionMatched": false,
       "assertionResults": [
         {
           "assertion": "cites REDLINE-QUEST-050",
-          "passed": true
+          "passed": false
         },
         {
           "assertion": "cites REDLINE-MINIMAL-020",
-          "passed": true
+          "passed": false
         },
         {
           "assertion": "keeps the mode unchanged for a small change",
-          "passed": true
+          "passed": false
         }
       ],
       "forbiddenHits": [],
-      "verdict": "PASS",
-      "durationMs": 0,
-      "attempts": 0,
+      "verdict": "FAIL",
+      "durationMs": 12131,
+      "attempts": 1,
       "sandboxModified": false,
-      "error": null
+      "error": "Command failed: pi -p --no-session --no-builtin-tools -t read,bash --model deepseek-v4.1-flash --append-system-prompt This is a read-only evaluation. Do not edit, create or delete any file; answer with your decision and reasoning only. 实现一个只改变单个内部文案的简单任务；不要生成固定问卷，也不要新增组件、依赖或无观察目标的测试。\n\n上下文事实（评测器注入）：{\"objectiveKnown\":true,\"scopeKnown\":true,\"localChange\":true,\"noContractChange\":true}\nWarning: No models match pattern \"opencode-go/deepseek-v4.1-flash\"\nError: Model \"deepseek-v4.1-flash\" is ambiguous across providers: agent-plan/deepseek-v4.1-flash, coding-plan/deepseek-v4.1-flash, opencode-go/deepseek-v4.1-flash, opencode/deepseek-v4.1-flash, qwen-token-plan-cn/deepseek-v4.1-flash, qwen-token-plan/deepseek-v4.1-flash, radius/deepseek-v4.1-flash. More than one matching provider is authenticated. Use --provider or provider/model.\n"
     },
     {
       "id": "issue-1002-engineering-ambiguous-term-ask",
       "skill": "mango-engineering",
       "expectedAction": "ASK",
-      "actionMatched": true,
+      "actionMatched": false,
       "assertionResults": [
         {
           "assertion": "asks instead of renaming",
-          "passed": true
+          "passed": false
         },
         {
           "assertion": "protects the canonical term",
-          "passed": true
+          "passed": false
         }
       ],
       "forbiddenHits": [],
-      "verdict": "PASS",
-      "durationMs": 0,
-      "attempts": 0,
+      "verdict": "FAIL",
+      "durationMs": 11721,
+      "attempts": 1,
       "sandboxModified": false,
-      "error": null
+      "error": "Command failed: pi -p --no-session --no-builtin-tools -t read,bash --model deepseek-v4.1-flash --append-system-prompt This is a read-only evaluation. Do not edit, create or delete any file; answer with your decision and reasoning only. 新增一个公共 Resource 类型，但不知道应该复用 resource、targetId 还是另一个新名称。\n\n上下文事实（评测器注入）：{\"publicTypeChange\":true,\"canonicalTermUnknown\":true}\nWarning: No models match pattern \"opencode-go/deepseek-v4.1-flash\"\nError: Model \"deepseek-v4.1-flash\" is ambiguous across providers: agent-plan/deepseek-v4.1-flash, coding-plan/deepseek-v4.1-flash, opencode-go/deepseek-v4.1-flash, opencode/deepseek-v4.1-flash, qwen-token-plan-cn/deepseek-v4.1-flash, qwen-token-plan/deepseek-v4.1-flash, radius/deepseek-v4.1-flash. More than one matching provider is authenticated. Use --provider or provider/model.\n"
     },
     {
       "id": "issue-1002-defect-root-cause-minimal-fix",
@@ -93,49 +93,49 @@
       "assertionResults": [
         {
           "assertion": "cites REDLINE-REUSE-010",
-          "passed": true
+          "passed": false
         },
         {
           "assertion": "fixes the shared root cause",
-          "passed": true
+          "passed": false
         },
         {
           "assertion": "refuses scope expansion",
-          "passed": true
+          "passed": false
         }
       ],
       "forbiddenHits": [],
-      "verdict": "PASS",
-      "durationMs": 0,
-      "attempts": 0,
+      "verdict": "FAIL",
+      "durationMs": 12861,
+      "attempts": 1,
       "sandboxModified": false,
-      "error": null
+      "error": "Command failed: pi -p --no-session --no-builtin-tools -t read,bash --model deepseek-v4.1-flash --append-system-prompt This is a read-only evaluation. Do not edit, create or delete any file; answer with your decision and reasoning only. 修复一个已确认缺陷：已有共享能力可以修根因，但调用方新增局部 workaround 看起来更快；不要顺手重构相邻模块。\n\n上下文事实（评测器注入）：{\"symptomPresent\":true,\"reproduced\":true,\"rootCauseKnown\":true,\"sharedRootCauseCapability\":true}\nWarning: No models match pattern \"opencode-go/deepseek-v4.1-flash\"\nError: Model \"deepseek-v4.1-flash\" is ambiguous across providers: agent-plan/deepseek-v4.1-flash, coding-plan/deepseek-v4.1-flash, opencode-go/deepseek-v4.1-flash, opencode/deepseek-v4.1-flash, qwen-token-plan-cn/deepseek-v4.1-flash, qwen-token-plan/deepseek-v4.1-flash, radius/deepseek-v4.1-flash. More than one matching provider is authenticated. Use --provider or provider/model.\n"
     },
     {
       "id": "issue-1002-pr-review-backstop",
       "skill": "mango-review-pr",
       "expectedAction": "STOP",
-      "actionMatched": true,
+      "actionMatched": false,
       "assertionResults": [
         {
           "assertion": "cites REDLINE-OVERDESIGN-060",
-          "passed": true
+          "passed": false
         },
         {
           "assertion": "requires file and line evidence",
-          "passed": true
+          "passed": false
         },
         {
           "assertion": "does not modify code",
-          "passed": true
+          "passed": false
         }
       ],
       "forbiddenHits": [],
-      "verdict": "PASS",
-      "durationMs": 0,
-      "attempts": 0,
+      "verdict": "FAIL",
+      "durationMs": 12662,
+      "attempts": 1,
       "sandboxModified": false,
-      "error": null
+      "error": "Command failed: pi -p --no-session --no-builtin-tools -t read,bash --model deepseek-v4.1-flash --append-system-prompt This is a read-only evaluation. Do not edit, create or delete any file; answer with your decision and reasoning only. Review 一个已存在的 PR：diff 新增了没有消费者的抽象、重复能力和未定义领域术语。\n\n上下文事实（评测器注入）：{\"prNumber\":1002,\"unconsumedAbstraction\":true,\"duplicateCapability\":true,\"newUnmappedTerm\":true}\nWarning: No models match pattern \"opencode-go/deepseek-v4.1-flash\"\nError: Model \"deepseek-v4.1-flash\" is ambiguous across providers: agent-plan/deepseek-v4.1-flash, coding-plan/deepseek-v4.1-flash, opencode-go/deepseek-v4.1-flash, opencode/deepseek-v4.1-flash, qwen-token-plan-cn/deepseek-v4.1-flash, qwen-token-plan/deepseek-v4.1-flash, radius/deepseek-v4.1-flash. More than one matching provider is authenticated. Use --provider or provider/model.\n"
     },
     {
       "id": "issue-1002-plan-no-silent-design",
@@ -145,23 +145,23 @@
       "assertionResults": [
         {
           "assertion": "keeps the approved design",
-          "passed": true
+          "passed": false
         },
         {
           "assertion": "refuses to add the unapproved design",
-          "passed": true
+          "passed": false
         },
         {
           "assertion": "cites REDLINE-MINIMAL-020",
-          "passed": true
+          "passed": false
         }
       ],
       "forbiddenHits": [],
-      "verdict": "PASS",
-      "durationMs": 0,
-      "attempts": 0,
+      "verdict": "FAIL",
+      "durationMs": 12918,
+      "attempts": 1,
       "sandboxModified": false,
-      "error": null
+      "error": "Command failed: pi -p --no-session --no-builtin-tools -t read,bash --model deepseek-v4.1-flash --append-system-prompt This is a read-only evaluation. Do not edit, create or delete any file; answer with your decision and reasoning only. 根据已批准设计拆实施计划；计划中额外加入未批准的公共 API 和未来扩展抽象。\n\n上下文事实（评测器注入）：{\"approvedTechnicalDesign\":true,\"approvedImplementationPlan\":false,\"silentNewDesign\":true}\nWarning: No models match pattern \"opencode-go/deepseek-v4.1-flash\"\nError: Model \"deepseek-v4.1-flash\" is ambiguous across providers: agent-plan/deepseek-v4.1-flash, coding-plan/deepseek-v4.1-flash, opencode-go/deepseek-v4.1-flash, opencode/deepseek-v4.1-flash, qwen-token-plan-cn/deepseek-v4.1-flash, qwen-token-plan/deepseek-v4.1-flash, radius/deepseek-v4.1-flash. More than one matching provider is authenticated. Use --provider or provider/model.\n"
     }
   ]
 }

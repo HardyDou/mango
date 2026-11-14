@@ -211,7 +211,7 @@ mango:
 权限边界：
 
 - 接口权限只有 `workflow:task:list`，不再校验 `workflow:task:all`，也不做申请级权限判定，因此**不返回 3645**。
-- 任何持有该权限码、且知道 `businessType + businessKey` 的账号都能读到该业务键的全部流转记录与审批意见原文。本地注入 `WorkflowTaskRuntimeApi` 直接调用不经过 HTTP 过滤器，平台侧没有行级防线；业务详情页必须先完成自己的业务鉴权，并由服务端解析 `businessKey`，不接受前端传入。
+- 任何持有该权限码、且知道 `businessType + businessKey` 的账号都能读到该业务键的全部流转记录与审批意见原文。本地注入 `WorkflowTaskRuntimeApi` 直接调用不经过 HTTP 过滤器，平台侧没有行级防线；业务详情页在调用前先完成自身的业务鉴权，由服务端解析 `businessKey`，不接受前端传入的键。权限与鉴权边界见 [后端 API 规范](../../../mango-pmo/rules/backend/03-api.md)。
 
 ## 8. 验证命令
 
