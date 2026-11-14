@@ -106,6 +106,12 @@ mvn -f mango/pom.xml verify \
 Maven/Plexus 支持的 `java.io.File` 接收并在插件内部转换为 `Path`，兼容 Maven 3；业务
 POM 的现有 XML 配置和 `-Dmango.architecture.debtBaselineFile=<path>` 命令无需改写。
 
+`mango:check` 的 `globalEntityManifest` 走同一条绑定规则：参数声明为 `java.io.File`，插件内部
+再转换为 `Path`。Issue #1270 修复前该参数声明为 `java.nio.file.Path`，Maven 3 没有对应 Plexus
+转换器，配置里写了这个元素的业务仓会在 `mvn verify` 的 `mango-project-quality-gate` 阶段报
+`Cannot create instance of interface java.nio.file.Path`；升级到包含该修复的 Maven 插件版本即可，
+业务 POM 的现有 `<globalEntityManifest>` 配置和命令行参数不需要改写。
+
 标准 partial PR 门禁把依赖准备和质量扫描分成两个阶段。干净 Runner 先对直接受影响模块执行带 `-am` 的跳过测试安装，把尚未发布的上游 SNAPSHOT 放入本地 Maven 仓库；随后质量阶段仍只选择直接受影响模块和外层架构验证模块，不带 `-am` 或 `-amd`。`mango:check` 委托 PMD、Checkstyle、SpotBugs 时只传入包含代码的 Reactor 模块，不把 `architecture-verification` 或 `mango-architecture-verification` 再次带入嵌套 Maven。PMD 和 Checkstyle 使用报告 goal 收集完整发现，再由 Mango 按 `all` 或 `no-new-violations` 统一判定；工具执行错误仍按 `mango.check.staticFailurePolicy` 处理，历史发现不会在新增问题分类前直接终止嵌套 Maven。外层 `mvn verify` 的架构检查不受影响。
 
 Mango Maven `1.0.31` 起，静态分析的嵌套 Maven 会继承外层已解析的本地仓库、存在的 user/global settings、offline/update 模式、active profiles，以及 `revision`、`sha1`、`changelist` 三个 CI-friendly 版本属性。任意其它用户属性都不会透传，避免把密码或 token 写入子进程参数和门禁日志。使用 `-Dmaven.repo.local=<isolated-repository>`、`-s <settings.xml>` 或私有镜像的业务构建因此与外层依赖解析保持一致。

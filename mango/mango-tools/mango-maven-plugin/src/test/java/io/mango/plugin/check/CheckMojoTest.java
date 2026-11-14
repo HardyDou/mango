@@ -4838,7 +4838,7 @@ class CheckMojoTest {
         CheckMojo mojo = new CheckMojo();
         setField(mojo, "rule", "persistence-schema");
         setField(mojo, "baseDir", tempDir.toString());
-        setField(mojo, "globalEntityManifest", manifest);
+        setField(mojo, "globalEntityManifest", manifest.toFile());
         setField(mojo, "session", null);
 
         assertThrows(MojoExecutionException.class, mojo::execute);
