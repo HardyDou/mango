@@ -221,7 +221,28 @@ WorkflowProcessWithdrawResultVO result = workflowProcessApi.withdraw(withdraw).g
 
 `POST /workflow/processes/start-business` 一次完成申请创建和流程发起，返回 `applyId`、`processInstanceId`、`processStatus`、第一个当前任务、`claimStatus`、`candidateUsers`、`candidateGroups` 和 `currentTasks`。业务侧已有申请记录创建逻辑时，仍可保留 `WorkflowBusinessApplyApi.create()` + `WorkflowProcessApi.start()` 兼容模式。
 
-### 3.2 参与关系与自动派单
+### 3.2 审批人来源与多人审批方式
+
+审批节点把审批人来源解析成“用户集合”，再按 `approvalMode` 生成运行时任务：
+
+| 来源 | 任务生成方式 |
+|------|--------------|
+| `SPECIFIED_USER` 多个用户 | 每个用户一条任务（多实例） |
+| `SPECIFIED_ROLE`、`SPECIFIED_POST`、`SPECIFIED_ORG`、`ORG_LEADER`（指定组织） | 节点进入时把候选组展开为当前租户启用成员，每个成员一条任务（多实例） |
+| `INITIATOR_SELECT` 多选、`FORM_USER` 多值 | 每个所选用户一条任务（多实例） |
+| `assignmentMode=AUTO` | 不展开，按 `autoAssignmentStrategy` 从候选集派出一个办理人 |
+
+`approvalMode` 对展开后的任务集生效：
+
+- `OR_SIGN`：任一人完成后节点通过，其余任务以 `MI_END` 自动取消。
+- `COUNTERSIGN`：按 `passRatio` 计算所需通过人数，默认 100% 即全部通过。
+- `SEQUENTIAL`：按 `userId` 升序依次生成任务，前一人完成后才到达下一人。
+
+展开发生在流程进入节点时，不在定义发布时固化：角色、岗位、组织成员变化对下一次进入该节点立即生效，不需要重新发布流程定义。展开结果为空时走节点 `emptyAssigneeStrategy`（默认转管理员），不会返回空集合让多实例节点静默通过。
+
+多人审批方式只影响新进入该节点的流程实例。已发布流程定义里的 BPMN 不会重算，升级后重新发布定义才会按本规则生成任务。
+
+### 3.3 参与关系与自动派单
 
 参与关系 API 从 `MangoContextHolder` 取得 `tenantId`、`userId` 和 `memberId`，客户端不能覆盖租户。`access` 判断当前登录用户对 `processKey + businessKey` 是否有只读参与事实；`my` 提供有界分页，按最近参与时间和业务坐标稳定排序。参与类型包括 `INITIATOR`、`CURRENT_ASSIGNEE`、`COMPLETED_HANDLER` 和 `BUSINESS_PARTICIPANT`。历史参与人只能读取业务参与事实，不能因此获得认领、审批、驳回、退回或转办权限，任务操作仍由当前 assignee/candidate 校验。
 
@@ -229,7 +250,7 @@ WorkflowProcessWithdrawResultVO result = workflowProcessApi.withdraw(withdraw).g
 
 审批节点配置 `assignmentMode` 缺失时按 `CLAIM` 兼容。设置为 `AUTO` 后，运行时从指定用户、角色、岗位、组织或组织主管展开当前租户有效成员，直接在节点事务内设置 assignee。`autoAssignmentStrategy` 缺失时按 `ROUND_ROBIN` 兼容；`LEAST_TASKS` 选择当前租户活动任务最少者并以稳定 `userId` 处理并列；`AFFINITY` 优先选择同一流程实例最近完成任务且仍在候选集中的用户，未命中时回退 `LEAST_TASKS`。`NODE_AFFINITY` 优先选择同一节点最早处理过任务且仍在候选集中的用户；复用范围由 `nodeAffinityScope` 控制，缺失时按 `PROCESS_INSTANCE` 兼容，只查当前流程实例。`BUSINESS_KEY` 先查当前实例，再查同一 `businessType + businessKey` 的其他实例；`AFFINITY_KEY` 再向前查同一 `affinityKey` 的全部历史实例。`affinityKey` 由业务在创建申请或发起流程时传入，表示跨提交保持不变的稳定聚合键（例如项目 ID，不要带版本号），按 `tenant + businessType` 隔离，创建后不可修改。跨实例查询先取最近实例、再取该实例内最早办理人，最多回溯最近 200 条记录；历史办理人不在当前候选集时继续向前回溯。三层都无有效候选、或流程未登记申请中心时，按 `nodeAffinityFallback` 回退：`CLAIM`（默认，待领取）、`ROUND_ROBIN`、`RANDOM`、`LEAST_TASKS`。自动派单审计记录 `nodeAffinityScope`、`nodeAffinityHit`（`PROCESS_INSTANCE`/`BUSINESS_KEY`/`AFFINITY_KEY`/`FALLBACK`）和 `nodeAffinityFallback`，便于回查命中层级。`NODE_AFFINITY` 且 `nodeAffinityFallback=CLAIM` 时，候选集为空仍保留角色候选组并进入待领取，流程继续推进；其它策略或回退值在候选为空时返回 `AUTO_ASSIGN_NO_CANDIDATE`，不转 admin，流程推进和状态更新一起回滚。
 
-### 3.3 设计器候选数据 Provider
+### 3.4 设计器候选数据 Provider
 
 流程定义设计器通过 `GET /workflow/definitions/designer-options` 一次加载用户、角色、岗位、组织树和字典类型。接口只要求 `workflow:definition:query`，客户端不传 `tenantId`，也不需要给 Workflow 菜单追加 `system:*`、`authorization:*`、Identity 或 Org 权限。默认 `WorkflowPlatformApiDesignerOptionProvider` 使用当前可信上下文调用各平台模块的公共 Java API。
 
@@ -237,7 +258,7 @@ WorkflowProcessWithdrawResultVO result = workflowProcessApi.withdraw(withdraw).g
 
 该 Provider 的 VO 只用于设计器展示，不能作为运行时任务授权事实。AUTO 派单仍由运行时候选目录重新验证稳定 `userId`、租户成员状态和候选范围。
 
-### 3.4 模板推送目标机构 Provider
+### 3.5 模板推送目标机构 Provider
 
 流程模板页面只在打开“推送流程”弹窗后调用 `GET /workflow/templates/tenant-options`，接口使用 `workflow:template:push`，不在页面挂载时查询机构。默认 `WorkflowPlatformApiTemplateTenantOptionProvider` 通过 System 公共 Java API 读取启用机构，并只返回机构 ID、名称和编码；前端不调用 `/system/tenant/list`，也不需要 `system:tenant:list`。
 
@@ -823,7 +844,7 @@ taskRuntimeApi.returnTask(command);
 
 默认工作流通知只包含三类：`workflow.task.assigned`、`workflow.process.completed`、`workflow.process.rejected`。标题和正文只展示可读流程名称、业务标题以及“待审核、审核通过、审核未通过”结果；不会把 `businessType`、`definitionKey`、`taskDefinitionKey` 或 `businessKey` 当作用户文案。流程名称或业务标题缺失时分别使用“流程”和“业务申请”，驳回原因缺失时使用“未填写”。
 
-`workflow.task.assigned` 按运行时任务发送：首次提交和后续节点到达都会通知实际办理人。任务已有 `assigneeId` 时只通知该办理人；任务尚未到人时，将候选用户以及 `ROLE:<id>`、`POST:<id>`、`ORG:<id>` 转成同一个任务的 Notice 接收目标，目标中的全部有效成员收到指向同一 `taskId` 的通知。并行或多实例产生多个运行时任务时，每个任务分别发送并使用 `eventId + taskId` 幂等，不能把接收人聚合到第一条任务。流程已经结束或没有可解析接收人时跳过通知；`ORG_LEADER:<id>` 不会降级为全组织通知。
+`workflow.task.assigned` 按运行时任务发送：首次提交和后续节点到达都会通知实际办理人。任务已有 `assigneeId` 时只通知该办理人；候选组节点在 `CLAIM` 模式下已展开为每人一条任务，因此每个成员收到指向自己 `taskId` 的通知。只有仍保留候选组的任务（例如 `assignmentMode=AUTO` 且回退到待领取）才把候选用户以及 `ROLE:<id>`、`POST:<id>`、`ORG:<id>` 转成同一个任务的 Notice 接收目标，目标中的全部有效成员收到指向同一 `taskId` 的通知。并行或多实例产生多个运行时任务时，每个任务分别发送并使用 `eventId + taskId` 幂等，不能把接收人聚合到第一条任务。流程已经结束或没有可解析接收人时跳过通知；`ORG_LEADER:<id>` 不会降级为全组织通知。
 
 `workflow.process.completed` 和 `workflow.process.rejected` 使用业务申请中的 `applicantId`，分别向原申请人发送一次最终结果通知。草稿、认领、取消认领、撤回、任务驳回和通用 `workflow.process.ended` 事件不产生默认通知。事件异步转为 Notice 时会连同 `tenantId`、`appCode`、`realm` 恢复应用上下文，确保角色候选目标按原应用和登录域解析。
 
@@ -1108,6 +1129,7 @@ workflow:template:push
 
 | 适用版本 | 变更 | 影响 | 需要做的事 | 验证 | 回滚 |
 |----------|------|------|------------|------|------|
+| Maven 1.9.0 起（Issue #1263） | 角色、岗位、组织、组织负责人审批人按节点 `approvalMode` 展开为每人一条任务 | 行为变化：这类节点不再生成一条待领取共享任务，改为每个成员一条待办；`COUNTERSIGN` 默认值下角色节点从“一人处理”变为“全体成员通过”；已发布定义不受影响，重新发布后按新规则生成 | 升级前确认这类节点的多人审批方式符合预期；不需要“全体通过”的节点改选 `OR_SIGN`，或改用 `assignmentMode=AUTO` 派单 | `WorkflowTaskRuntimeServiceIntegrationTest`、`WorkflowDesignerBpmnConverterTest`、模块 `mvn verify` | 回退节点 `approvalMode` 配置并重新发布定义；引擎侧回退需回到升级前版本 |
 | Maven 1.9.0 起（Issue #1248） | 新增 `workflow_business_apply_attribute` 表（Flyway `V5`）、`filterAttributes` 创建字段、`PUT /workflow/business-applies/filter-attributes`、任务查询的 `applyAttributeFilters` / `applyTimeBegin` / `applyTimeEnd` / `sortBy=applyTime` | 全部为新增可选能力，不传新参数时行为与 1.8.0 完全一致；`WorkflowBusinessApplyApi` 新增一个方法，自定义实现该接口的代码需要实现 `updateFilterAttributes` | 业务按需上报可筛属性；切换到属性筛选前先回填存量申请，否则属性过滤会排除未登记的历史申请 | `WorkflowTaskAttributeFilterIntegrationTest`、`WorkflowApiSurfaceContractTest`、模块 `mvn verify` | 删除新参数与接口调用即可回退；新表无读取路径时可保留 |
 
 ## 14. 相关文档

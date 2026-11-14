@@ -4,13 +4,17 @@ import io.mango.infra.context.api.MangoContextHolder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
 /**
- * 将 Mango 当前用户上下文转换为 Flowable 候选组。
+ * 维护候选组与租户成员的双向映射。
+ *
+ * <p>正向把当前用户上下文转换为 Flowable 候选组；反向把 {@code ROLE:}、{@code POST:}、
+ * {@code ORG:}、{@code ORG_LEADER:} 候选组展开为当前租户启用成员的 user id。
  */
 @Component
 @RequiredArgsConstructor
@@ -41,6 +45,60 @@ public class WorkflowCandidateGroupProvider {
             groups.add(WorkflowAssigneeResolver.GROUP_ORG_LEADER_PREFIX + memberId);
         }
         return List.copyOf(groups);
+    }
+
+    /**
+     * 把单个候选组展开为当前租户启用成员的 user id。
+     *
+     * <p>未知前缀、非法 id 或查询失败返回空列表。
+     */
+    public List<Long> memberUserIds(String group) {
+        if (!StringUtils.hasText(group)) {
+            return List.of();
+        }
+        String tenant = String.valueOf(currentTenantId());
+        int separator = group.indexOf(':');
+        if (separator < 0) {
+            return List.of();
+        }
+        String value = group.substring(separator + 1).trim();
+        try {
+            Long id = Long.valueOf(value);
+            if (group.startsWith(WorkflowAssigneeResolver.GROUP_ROLE_PREFIX)) {
+                return queryIds("""
+                        select distinct tm.user_id
+                        from authorization_subject_role sr
+                        join tenant_member tm on tm.id = sr.subject_id and tm.tenant_id = sr.tenant_id
+                        where sr.tenant_id = ? and sr.subject_type = 'TENANT_MEMBER'
+                          and sr.role_id = ? and tm.status = 1 and tm.left_at is null
+                        """, tenant, id);
+            }
+            if (group.startsWith(WorkflowAssigneeResolver.GROUP_POST_PREFIX)) {
+                return queryIds("""
+                        select distinct tm.user_id from tenant_member_org tmo
+                        join tenant_member tm on tm.id = tmo.member_id and tm.tenant_id = tmo.tenant_id
+                        where tmo.tenant_id = ? and tmo.post_id = ? and tm.status = 1 and tm.left_at is null
+                        """, tenant, id);
+            }
+            if (group.startsWith(WorkflowAssigneeResolver.GROUP_ORG_LEADER_PREFIX)) {
+                return queryIds("""
+                        select distinct tm.user_id from tenant_member_org tmo
+                        join tenant_member tm on tm.id = tmo.member_id and tm.tenant_id = tmo.tenant_id
+                        where tmo.tenant_id = ? and tmo.org_id = ? and tmo.leader_flag = 1
+                          and tm.status = 1 and tm.left_at is null
+                        """, tenant, id);
+            }
+            if (group.startsWith(WorkflowAssigneeResolver.GROUP_ORG_PREFIX)) {
+                return queryIds("""
+                        select distinct tm.user_id from tenant_member_org tmo
+                        join tenant_member tm on tm.id = tmo.member_id and tm.tenant_id = tmo.tenant_id
+                        where tmo.tenant_id = ? and tmo.org_id = ? and tm.status = 1 and tm.left_at is null
+                        """, tenant, id);
+            }
+        } catch (NumberFormatException ignored) {
+            return List.of();
+        }
+        return List.of();
     }
 
     private List<Long> roles(Long tenantId, Long memberId) {

@@ -127,6 +127,92 @@ class WorkflowDesignerBpmnConverterTest {
         assertThat(config.getNodeAffinityFallback()).isEqualTo(WorkflowNodeAffinityFallback.ROUND_ROBIN);
     }
 
+    @Test
+    void toModel_shouldExpandRoleCandidatesToMultiInstanceForOrSign() {
+        UserTask task = approvalTask("""
+                {
+                  "assigneeType": "SPECIFIED_ROLE",
+                  "roleIds": ["8173435341741372828"],
+                  "approvalMode": "OR_SIGN"
+                }
+                """);
+
+        MultiInstanceLoopCharacteristics loop = task.getLoopCharacteristics();
+        assertThat(loop).isNotNull();
+        assertThat(loop.isSequential()).isFalse();
+        assertThat(loop.getInputDataItem())
+                .isEqualTo("${mangoWorkflowAssigneeCollection.groupMembers('ROLE:8173435341741372828')}");
+        assertThat(loop.getCompletionCondition()).isEqualTo("${nrOfCompletedInstances >= 1}");
+        assertThat(task.getAssignee()).isEqualTo("${mangoAssignee_manager_approve}");
+        assertThat(task.getCandidateGroups()).isEmpty();
+    }
+
+    @Test
+    void toModel_shouldExpandPostCandidatesWithCountersignPassRatio() {
+        UserTask task = approvalTask("""
+                {
+                  "assigneeType": "SPECIFIED_POST",
+                  "postIds": ["100", "200"],
+                  "approvalMode": "COUNTERSIGN",
+                  "passRatio": 60
+                }
+                """);
+
+        MultiInstanceLoopCharacteristics loop = task.getLoopCharacteristics();
+        assertThat(loop.getInputDataItem())
+                .isEqualTo("${mangoWorkflowAssigneeCollection.groupMembers('POST:100,POST:200')}");
+        assertThat(loop.isSequential()).isFalse();
+        assertThat(loop.getCompletionCondition()).isEqualTo(
+                "${nrOfCompletedInstances >= mangoWorkflowApprovalThreshold.requiredApprovals(nrOfInstances, 60)}");
+    }
+
+    @Test
+    void toModel_shouldExpandOrgCandidatesToSequentialMultiInstance() {
+        UserTask task = approvalTask("""
+                {
+                  "assigneeType": "SPECIFIED_ORG",
+                  "orgIds": ["5"],
+                  "approvalMode": "SEQUENTIAL"
+                }
+                """);
+
+        MultiInstanceLoopCharacteristics loop = task.getLoopCharacteristics();
+        assertThat(loop.getInputDataItem())
+                .isEqualTo("${mangoWorkflowAssigneeCollection.groupMembers('ORG:5')}");
+        assertThat(loop.isSequential()).isTrue();
+        assertThat(loop.getCompletionCondition()).isNull();
+    }
+
+    @Test
+    void toModel_shouldExpandOrgLeaderCandidatesWithLeaderGroupPrefix() {
+        UserTask task = approvalTask("""
+                {
+                  "assigneeType": "ORG_LEADER",
+                  "orgIds": ["9"],
+                  "orgLeaderUseInitiatorOrg": false,
+                  "approvalMode": "OR_SIGN"
+                }
+                """);
+
+        assertThat(task.getLoopCharacteristics().getInputDataItem())
+                .isEqualTo("${mangoWorkflowAssigneeCollection.groupMembers('ORG_LEADER:9')}");
+    }
+
+    @Test
+    void toModel_shouldKeepCandidateGroupForAutoAssignedRoleNode() {
+        UserTask task = approvalTask("""
+                {
+                  "assigneeType": "SPECIFIED_ROLE",
+                  "roleIds": ["817"],
+                  "assignmentMode": "AUTO",
+                  "autoAssignmentStrategy": "ROUND_ROBIN"
+                }
+                """);
+
+        assertThat(task.getLoopCharacteristics()).isNull();
+        assertThat(task.getAssignee()).isNull();
+    }
+
     private UserTask approvalTask(String approvalConfigJson) {
         String designerJson = """
                 {

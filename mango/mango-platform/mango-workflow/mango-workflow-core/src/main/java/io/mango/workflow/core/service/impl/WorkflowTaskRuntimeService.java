@@ -1398,8 +1398,16 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
             return applyAutoEmptyStrategy(task, resolved.emptyStrategy(), variables);
         }
         boolean usersChanged = applyResolvedRuntimeUsers(task, variables, resolved.users());
-        boolean groupsChanged = candidateLinker.applyGroups(task, resolved.groups());
+        // 多实例展开后的子任务已有具体办理人，不能再挂候选组，否则其他成员能认领并办理别人的任务。
+        boolean groupsChanged = !hasConcreteAssignee(task) && candidateLinker.applyGroups(task, resolved.groups());
         return usersChanged || groupsChanged;
+    }
+
+    private boolean hasConcreteAssignee(Task task) {
+        String assignee = task.getAssignee();
+        return StringUtils.hasText(assignee)
+                && !assignee.startsWith("${mangoRuntimeAssignee_")
+                && !WorkflowAssigneeCollection.EMPTY_ASSIGNEE.equals(assignee);
     }
     /** 严格 ROUND_ROBIN 自动派单；候选、游标和 Flowable 办理人位于同一事务。 */
     private boolean autoAssign(Task task, WorkflowApprovalNodeConfig config) {
@@ -1483,7 +1491,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
             return;
         }
         for (String group : groups) {
-            for (Long userId : groupCandidateUserIds(group)) {
+            for (Long userId : candidateGroupProvider.memberUserIds(group)) {
                 AuthUserVO user = authUserProvider.getByIdForAuth(userId);
                 if (isEligibleCandidate(userId, user) && !candidates.contains(userId)) {
                     candidates.add(userId);
@@ -1552,51 +1560,6 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         }
         return sortedCandidates.get(0);
     }
-    private List<Long> groupCandidateUserIds(String group) {
-        if (!StringUtils.hasText(group)) {
-            return List.of();
-        }
-        String tenant = MangoContextHolder.tenantId();
-        String value = group.substring(group.indexOf(':') + 1).trim();
-        try {
-            Long id = Long.valueOf(value);
-            if (group.startsWith(WorkflowAssigneeResolver.GROUP_ROLE_PREFIX)) {
-                return jdbcTemplate.queryForList("""
-                        select distinct tm.user_id
-                        from authorization_subject_role sr
-                        join tenant_member tm on tm.id = sr.subject_id and tm.tenant_id = sr.tenant_id
-                        where sr.tenant_id = ? and sr.subject_type = 'TENANT_MEMBER'
-                          and sr.role_id = ? and tm.status = 1 and tm.left_at is null
-                        """, Long.class, tenant, id);
-            }
-            if (group.startsWith(WorkflowAssigneeResolver.GROUP_POST_PREFIX)) {
-                return jdbcTemplate.queryForList("""
-                        select distinct tm.user_id from tenant_member_org tmo
-                        join tenant_member tm on tm.id = tmo.member_id and tm.tenant_id = tmo.tenant_id
-                        where tmo.tenant_id = ? and tmo.post_id = ? and tm.status = 1 and tm.left_at is null
-                        """, Long.class, tenant, id);
-            }
-            if (group.startsWith(WorkflowAssigneeResolver.GROUP_ORG_LEADER_PREFIX)) {
-                return jdbcTemplate.queryForList("""
-                        select distinct tm.user_id from tenant_member_org tmo
-                        join tenant_member tm on tm.id = tmo.member_id and tm.tenant_id = tmo.tenant_id
-                        where tmo.tenant_id = ? and tmo.org_id = ? and tmo.leader_flag = 1
-                          and tm.status = 1 and tm.left_at is null
-                        """, Long.class, tenant, id);
-            }
-            if (group.startsWith(WorkflowAssigneeResolver.GROUP_ORG_PREFIX)) {
-                return jdbcTemplate.queryForList("""
-                        select distinct tm.user_id from tenant_member_org tmo
-                        join tenant_member tm on tm.id = tmo.member_id and tm.tenant_id = tmo.tenant_id
-                        where tmo.tenant_id = ? and tmo.org_id = ? and tm.status = 1 and tm.left_at is null
-                        """, Long.class, tenant, id);
-            }
-        } catch (NumberFormatException ignored) {
-            return List.of();
-        }
-        return List.of();
-    }
-
     private boolean resolveEmptyRuntimeAssignee(Task task, WorkflowApprovalNodeConfig config) {
         WorkflowEmptyAssigneeStrategy strategy = config.getEmptyAssigneeStrategy() == null
                 ? WorkflowEmptyAssigneeStrategy.TO_ADMIN

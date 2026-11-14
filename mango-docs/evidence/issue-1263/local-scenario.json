@@ -1,0 +1,53 @@
+{
+  "issue": "#1263",
+  "environment": {
+    "backend": "http://127.0.0.1:18002",
+    "database": "mango_dev_mango_002",
+    "engine": "Flowable",
+    "scenario": "角色3人 + OR_SIGN"
+  },
+  "definitionId": "2121549770829316098",
+  "processInstanceId": "38df8145-e016-11f1-9c7e-5ebbf69eeefa",
+  "assertions": {
+    "roleMembersExpandedToOwnTasks": true,
+    "taskAssignees": [
+      "it_orsign_a",
+      "it_orsign_b",
+      "it_orsign_c"
+    ],
+    "candidateGroupLinks": 0,
+    "memberTodoAssigned": {
+      "total": "1",
+      "taskIds": [
+        "38e2196e-e016-11f1-9c7e-5ebbf69eeefa"
+      ],
+      "claimStatus": [
+        "ASSIGNED"
+      ]
+    },
+    "otherMemberTodoAssigned": {
+      "total": "1",
+      "taskIds": [
+        "38e21973-e016-11f1-9c7e-5ebbf69eeefa"
+      ]
+    },
+    "memberClaimable": {
+      "total": "0"
+    },
+    "todoSummary": {
+      "pendingApproval": "1",
+      "pendingHandle": "0",
+      "pendingConfirm": "0",
+      "overdue": "0"
+    },
+    "completeResult": {
+      "code": 200,
+      "action": "COMPLETE",
+      "ended": true,
+      "applyStatus": "APPROVED"
+    },
+    "openTasksAfterComplete": 0,
+    "historicTasks": "it_orsign_a:DONE\nit_orsign_b:MI_END\nit_orsign_c:MI_END",
+    "processEnded": true
+  }
+}
