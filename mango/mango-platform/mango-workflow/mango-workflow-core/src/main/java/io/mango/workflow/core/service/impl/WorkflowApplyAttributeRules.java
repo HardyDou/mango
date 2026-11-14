@@ -6,7 +6,6 @@ import io.mango.workflow.api.query.WorkflowApplyAttributeQuery;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;

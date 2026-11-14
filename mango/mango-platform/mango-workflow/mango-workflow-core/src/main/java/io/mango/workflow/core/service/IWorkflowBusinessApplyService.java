@@ -1,6 +1,5 @@
 package io.mango.workflow.core.service;
 
-import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.workflow.api.command.CreateWorkflowBusinessApplyCommand;
 import io.mango.workflow.api.command.UpdateWorkflowBusinessApplyFilterAttributesCommand;

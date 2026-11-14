@@ -7,7 +7,7 @@
 - 需求影响：L2 - 给已发布的 `POST /workflow/tasks/page-by-business-key` 增加可选过滤参数和排序字段，并新增一个写入接口，改变业务列表可观察的筛选能力和领域事件载荷；影响面限定在 Workflow 任务查询与申请写入
 - 方案风险：L2 - 新增表、迁移、查询 SQL 形态、事件载荷字段和多处写入路径；失败会返回错误或不完整的分页结果，回退需同时撤掉接口与 SQL 片段
 - 最终风险：L2
-- 工作区决策：CREATE（`/data/Mango/mango-issue-1248`，分支 `feat/issue-1248-apply-attribute-filter`）
+- 工作区决策：CREATE（`/data/Mango/mango-issue-1248`，分支 `feat/issue-1248-apply-attribute-filter`）；收尾轮次为 REUSE 同一 worktree，不创建第二个任务工作区
 
 ## 2. 目标与范围
 
@@ -57,7 +57,7 @@
 | ID | 对应决定 | 顺序 | 改动路径 | 完成条件 |
 |---|---|---|---|---|
 | I-1 | D-1 | 1 | `mango-workflow-core/src/main/resources/db/migration/workflow/V5__workflow_business_apply_attribute.sql` | 迁移可重复执行，索引与读取路径匹配 |
-| I-2 | D-3/D-4 | 2 | `mango-workflow-api/.../query/WorkflowApplyAttributeFilter.java`、`.../command/CreateWorkflowBusinessApplyCommand.java`、`.../command/UpdateWorkflowBusinessApplyFilterAttributesCommand.java`、`.../WorkflowBusinessApplyApi.java` | 契约含校验注解与语义说明，模块编译通过 |
+| I-2 | D-3/D-4 | 2 | `mango-workflow-api/.../query/WorkflowApplyAttributeQuery.java`、`.../command/CreateWorkflowBusinessApplyCommand.java`、`.../command/UpdateWorkflowBusinessApplyFilterAttributesCommand.java`、`.../WorkflowBusinessApplyApi.java` | 契约含校验注解与语义说明，模块编译通过 |
 | I-3 | D-1/D-2/D-5 | 3 | `mango-workflow-core/.../entity/WorkflowBusinessApplyAttributeEntity.java`、`.../mapper/WorkflowBusinessApplyAttributeMapper.java`、`.../model/WorkflowApplyAttributeCondition.java`、`.../model/WorkflowTaskHistoryCriteria.java`、`.../service/impl/WorkflowApplyAttributeRules.java`、`.../service/impl/WorkflowBusinessApplyService.java`、`.../service/impl/WorkflowTaskBusinessQueryService.java`、`.../service/IWorkflowBusinessApplyService.java` | 创建/更新/查询链路贯通，计数与列表共用同一条件 |
 | I-4 | D-2/D-8 | 4 | `mango-workflow-core/src/main/resources/mapper/workflow/WorkflowTaskHistoryMapper.xml` | 生成 SQL 与压测形态一致，无参数拼接 |
 | I-5 | D-4 | 5 | `mango-workflow-starter/.../controller/WorkflowBusinessApplyController.java`、`mango-workflow-starter-remote/.../WorkflowBusinessApplyFeignClient.java` | HTTP 与 Feign 契约一致，权限码复用 |
@@ -71,7 +71,7 @@
 |---|---|---|---|---|
 | AC-1~AC-10 | H2 集成测试（真实列名夹具） | `mvn -pl mango-platform/mango-workflow/mango-workflow-core -Dtest=WorkflowTaskAttributeFilterIntegrationTest test`（本机用 surefire 3.2.5 显式执行） | PASS：10 用例，覆盖单条件、多值、多条件、缺属性、多值字段、申请时间、分页一致性、申请时间排序、无筛选、租户隔离 | `WorkflowTaskAttributeFilterIntegrationTest` |
 | AC-1~AC-9 | 单元测试（校验与条件映射） | `-Dtest=WorkflowTaskBusinessQueryServiceTest` | PASS：37 用例（新增 8 个：条件映射、缺省不过滤、重复键、超限条件、超限值、非法键、空值、申请时间区间） | `WorkflowTaskBusinessQueryServiceTest` |
-| AC-11/AC-12 | H2 服务集成测试（真实 Mapper） | `-Dtest=WorkflowBusinessApplyServiceImplIntegrationTest` | PASS：15 用例（新增 5 个：创建写属性、无属性不写、更新覆盖与清空、非法键值、缺失申请） | `WorkflowBusinessApplyServiceImplIntegrationTest` |
+| AC-11/AC-12 | H2 服务集成测试（真实 Mapper） | `-Dtest=WorkflowBusinessApplyServiceImplIntegrationTest` | PASS：16 用例（新增 5 个：创建写属性、无属性不写、更新覆盖与清空、非法键值、缺失申请） | `WorkflowBusinessApplyServiceImplIntegrationTest` |
 | AC-1~AC-12 | HTTP 层契约（MockMvc 真实入口） | `-Dtest=WorkflowApplyAttributeHttpContractTest` | PASS：4 用例（嵌套条件绑定、非法键与超限条件 400、PUT 命令绑定与清空、缺少申请 ID 400） | `WorkflowApplyAttributeHttpContractTest` |
 | 架构门禁 | `mango:architecture`（changed 模式，base `origin/main`） | `mvn -pl :mango-architecture-verification,<四模块> -DskipTests -Denforcer.skip=true -Dmango.architecture.mode=changed ... verify` | PASS：`dependency=0, archunit=0, pmd=0, blocking=0`（首次运行 11 条违规已按规则整改：去掉路径变量、输入模型改为 `{key,values}` 数组、输出改为 `WorkflowJsonVO`、字段级 `@Valid`） | `target/mango-architecture-report.json` |
 | AC-13 | 单元测试 | `-Dtest=WorkflowEventPublisherTest` | PASS：6 用例，含 `applyAttributes` 进入事件载荷 | `WorkflowEventPublisherTest` |
@@ -79,7 +79,7 @@
 | AC-15/AC-16 | 服务集成测试（H2 真实 Mapper） | `-Dtest=WorkflowBusinessApplyServiceImplIntegrationTest` | PASS：16 用例，含 `viewActionEnabled` 派生 | `WorkflowBusinessApplyServiceImplIntegrationTest` |
 | AC-15/AC-16 | 事件载荷 | `-Dtest=WorkflowEventPublisherTest` | PASS：6 用例，`viewActionEnabled` 缺省按 `true` 下发 | `WorkflowEventPublisherTest` |
 | 契约 | 模块全量测试 | `mvn -pl mango-platform/mango-workflow/mango-workflow-api,mango-platform/mango-workflow/mango-workflow-core,mango-platform/mango-workflow/mango-workflow-starter,mango-platform/mango-workflow/mango-workflow-starter-remote test-compile org.apache.maven.plugins:maven-surefire-plugin:3.2.5:test` | PASS：core 206（4 skipped）、starter 56、starter-remote 4，0 失败 | 构建输出 |
-| 静态 | Checkstyle / PMD | `mvn -pl <4 modules> checkstyle:check pmd:check` | PASS：4 个模块 Checkstyle 0 违规；PMD 仅存量告警（`UnnecessaryImport` 等），本次新增文件无告警 | 构建输出 |
+| 静态 | Checkstyle / PMD | `mvn -pl <4 modules> checkstyle:check pmd:check` | PASS：4 个模块 Checkstyle 0 违规；PMD 在本次 changed 文件中 0 违规（已按门禁口径清理触及文件的存量未使用导入） | 构建输出 |
 | 文档 | 能力文档门禁 | `node mango-pmo/tools/audit-module-readmes.mjs`、`audit-readme-source-facts.mjs`、`check-business-guides.mjs`、`check-capability-docs.mjs` | PASS（exit 0） | 脚本输出 |
 | 性能 | 本机 MariaDB 11.8 合成数据：30 万申请 / 60 万任务 / 180 万属性行 | 见 `benchmark-seed-mariadb.sql`、`benchmark-sql-shapes-mariadb.sql`、`benchmark-final-shape-mariadb.sql` | 见下方压测结论 | 同目录脚本 |
 
@@ -102,6 +102,7 @@
 ## 7. 例外与剩余风险
 
 - `WorkflowBusinessApplyApi` 新增一个方法：自定义实现该接口的代码需要补 `updateFilterAttributes`；`WorkflowApiSurfaceContractTest` 指纹已按新增接口同步更新。
+- 写入接口形态在合并前按平台 API 机器门禁收口：新增接口禁止路径变量（`MANGO-ARCH-PATH-001`），`applyId` 从路径移入请求体；`filterAttributes` 由 `Map` 改为 `[{key, values}]` 协议对象数组，事件载荷 `applyAttributes` 由 `Map` 改为 `WorkflowJsonVO`，均对齐 `MANGO-ARCH-MODEL-00x`/`HTTP-005` 的类型白名单。该接口尚未发布（PR 未合入 `main`），因此不存在已发布契约的兼容负担。
 - 平台不回读业务表：业务漏调用 `PUT` 会看到过期属性，筛选结果直接体现；平台不做自动同步，也不做定时对账。
 - 未登记属性的申请（含存量数据）在属性筛选下不匹配；切换到属性筛选前必须回填。
 - 属性按申请保存，同一业务键多轮申请各自保留本轮取值；需要「按项目当前值筛全部轮次」时必须由业务对该项目全部轮次逐条刷新，本次不提供跨轮次回刷。
@@ -109,7 +110,7 @@
 - 性能证据来自本机 MariaDB 11.8 合成数据，未在生产 MySQL 8 和真实 `baohan_prod` 上复核；真实库 `EXPLAIN` 与业务仓联调待执行。
 - 未做「启动完整应用 + 真实 MySQL 8 + Flyway V1~V5 + HTTP 全链路」的真实场景验收：本机只有 MariaDB 11.8，无法执行使用 `utf8mb4_0900_ai_ci` 的存量迁移；该验收必须在 MySQL 8 环境执行，步骤见第 7 节待办。
 - SpotBugs 与 `mango:check` 静态分析委派未能在本机完成：SpotBugs 插件依赖、`maven-pmd-plugin` 的 doxia 依赖在当前网络不可达；`mango-architecture-verification` 的 Enforcer 规则在本机实例化失败（`MangoArchitectureEnforcerRule.<init>`），因此架构门禁以跳过 Enforcer、单独执行 `mango:architecture` 的方式验证，结果 0 违规。以上均交给 CI 复核。
-- `IWorkflowBusinessApplyService` 中的 `io.mango.common.result.R` 未使用导入是存量告警，未在本次清理。
+- `IWorkflowBusinessApplyService` 中的 `io.mango.common.result.R` 未使用导入属于存量告警，但该文件本次被修改，质量门禁按「changed 文件」口径会算作新增违规，已在本提交删除。
 - 行为变更：待办到达通知（`workflow.task.assigned`）此前固定在 `viewPath` 声明时仍跳 `workflow:task:detail`，现在声明 `customConfig.viewPath` 后跳业务路径。未声明 `viewPath` 的存量申请行为不变；不接受该变更的业务可去掉 `customConfig.viewPath` 或设置 `viewActionEnabled=false`。
 - 默认通知只支持一个路由按钮；业务需要多按钮或 `EVENT` 类型动作时，必须关闭默认通知并自行发消息，本次不提供该扩展。
 
@@ -119,7 +120,7 @@
 |---|---|---|
 | 事实与用户视角 | 业务要的是「按版本（申请）筛选任务」且字段会持续增加，因此属性必须按申请存储、按业务自定义键写入 | Issue #1248 实测（`limit=2000 → total=158`，`limit=2 → total=6`）、#1231 真实库量级（2316 申请 / 最大类型 2010）；不确定项：真实生产数据量与属性键数量 |
 | 技术与风险视角 | 属性子表 + 每条件 `IN` 子查询是唯一同时满足「字段可增」「多值」「可索引」「H2 可测」「不改引擎表」的形态；派生表与 `EXISTS` 形态经压测否决 | 30 万合成数据压测、H2 夹具；不确定项：生产 MySQL 8 优化器行为需 `EXPLAIN` 复核 |
-| 验证与交付视角 | H2 集成测试 + 单元测试 + 文档 checker 覆盖语义与契约；性能只对高选择性组合承诺 | 205/50/4 用例通过；低选择性组合为秒级，必须靠业务收敛范围 |
+| 验证与交付视角 | H2 集成测试 + 单元测试 + 文档 checker 覆盖语义与契约；性能只对高选择性组合承诺 | core 206（4 skipped）/starter 56/starter-remote 4 用例通过；低选择性组合为秒级，必须靠业务收敛范围 |
 
 - 被拒方案：`extension_json` + 生成列/函数索引（每加字段一次平台 DDL，且 H2 测试通道不支持 JSON 函数）、申请表加固定宽列（字段会变）、Flowable 变量过滤（实例结束无法更新、变量表无名字/值索引）、派生表 `OR` + `GROUP BY`（压测慢 30 倍）、逐条件 `EXISTS`（慢 60 倍）、业务传子查询/派生表（破坏模块边界）、搜索引擎（当前量级过度设计）。
 - 评审选择：`AGENT_ONLY`。用户未指定外部同行评审；本记录中的分析是 Agent 角色隔离分析，不称为人工同行评审或审批。
