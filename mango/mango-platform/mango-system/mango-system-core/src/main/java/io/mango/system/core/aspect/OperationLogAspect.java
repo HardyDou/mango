@@ -40,6 +40,7 @@ import java.util.Optional;
 public class OperationLogAspect {
 
     private static final int MAX_TEXT_LENGTH = 4000;
+    private static final int MAX_ERROR_MSG_LENGTH = 500;
 
     private final ISysLogService logService;
     private final IpLocationResolver ipLocationResolver;
@@ -94,7 +95,7 @@ public class OperationLogAspect {
             } else {
                 opLog.setResult(null);
                 opLog.setStatus(0);
-                opLog.setErrorMsg(truncate(error.getMessage()));
+                opLog.setErrorMsg(truncate(error.getMessage(), MAX_ERROR_MSG_LENGTH));
             }
             opLog.setDuration(duration);
             String clientIp = getClientIp(request);
@@ -215,10 +216,14 @@ public class OperationLogAspect {
     }
 
     private String truncate(String value) {
-        if (value == null || value.length() <= MAX_TEXT_LENGTH) {
+        return truncate(value, MAX_TEXT_LENGTH);
+    }
+
+    private String truncate(String value, int maxLength) {
+        if (value == null || value.length() <= maxLength) {
             return value;
         }
-        return value.substring(0, MAX_TEXT_LENGTH);
+        return value.substring(0, maxLength);
     }
 
     private String firstText(String first, String second) {
