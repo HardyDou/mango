@@ -32,6 +32,15 @@ class FileControllerAccessModeTest {
         assertThat(settings.getAnnotation(ApiAccess.class).mode()).isEqualTo(ApiResourceAccessMode.LOGIN);
     }
 
+    @Test
+    void managementEndpointsUseGranularPermission() throws NoSuchMethodException {
+        assertPermission("updateMetadata", "file:files:edit",
+                io.mango.file.api.command.UpdateFileRecordCommand.class);
+        assertPermission(FileBinaryController.class, "replaceContent", "file:files:replace",
+                org.springframework.web.multipart.MultipartFile.class,
+                io.mango.file.api.command.ReplaceFileContentCommand.class);
+    }
+
     private void assertLogin(String methodName, Class<?>... parameterTypes) throws NoSuchMethodException {
         assertLogin(FileController.class, methodName, parameterTypes);
     }

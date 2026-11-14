@@ -2282,6 +2282,11 @@ class NoticeServiceIntegrationTest {
         }
 
         @Override
+        public R<FileRecordVO> updateMetadata(io.mango.file.api.command.UpdateFileRecordCommand command) {
+            return R.ok(null);
+        }
+
+        @Override
         public R<FilePreviewVO> preview(Long id) {
             return R.ok(null);
         }

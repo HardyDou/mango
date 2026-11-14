@@ -20,15 +20,15 @@
 
 ## 2. 功能清单
 
-| 能力                                                 | 使用入口                                                             |
-| ---------------------------------------------------- | -------------------------------------------------------------------- |
-| 文件记录分页、详情、上传、下载、归档、删除           | `FileView`、`useFileApi` / `createFileApi`。                         |
-| 存储配置分页、详情、新增、编辑、删除、测试、设为默认 | `FileStorageView`、`useFileStorageApi` / `createFileStorageApi`。    |
-| 上传限制、秒传、直传、访问、预览、归档策略           | `FileSettingsView`、`useFileSettingsApi` / `createFileSettingsApi`。 |
-| 业务表单上传附件或图片                               | `MUpload`。                                                          |
-| 详情页预览图片、PDF、音视频或文档                    | `FilePreviewPanel`。                                                 |
-| 工作流运行时表单上传字段                             | `MUpload`。                                                          |
-| 按资料分类进行卡片式上传                             | `MangoAttachmentUploadGrid`。                                        |
+| 能力                                                           | 使用入口                                                             |
+| -------------------------------------------------------------- | -------------------------------------------------------------------- |
+| 文件记录分页、详情、上传、下载、编辑信息、替换内容、归档、删除 | `FileView`、`useFileApi` / `createFileApi`。                         |
+| 存储配置分页、详情、新增、编辑、删除、测试、设为默认           | `FileStorageView`、`useFileStorageApi` / `createFileStorageApi`。    |
+| 上传限制、秒传、直传、访问、预览、归档策略                     | `FileSettingsView`、`useFileSettingsApi` / `createFileSettingsApi`。 |
+| 业务表单上传附件或图片                                         | `MUpload`。                                                          |
+| 详情页预览图片、PDF、音视频或文档                              | `FilePreviewPanel`。                                                 |
+| 工作流运行时表单上传字段                                       | `MUpload`。                                                          |
+| 按资料分类进行卡片式上传                                       | `MangoAttachmentUploadGrid`。                                        |
 
 ## 3. 集成形态
 
@@ -315,6 +315,8 @@ const rows = [
 | `uploadBatch(files, params, options)`                      | `POST /file/files/batch`                          | 批量上传小文件。                                                                                                             |
 | `archive(id, reason)`                                      | `DELETE /file/files`                              | 归档。                                                                                                                       |
 | `delete(ids)`                                              | `POST /file/files/delete`                         | 删除记录。                                                                                                                   |
+| `updateRecord(command)`                                    | `PUT /file/files`                                 | 更新文件名、用途、访问级别、业务标记和目录，不改变内容。                                                                     |
+| `replaceContent(file, params, options)`                    | `POST /file/files/replace` 或分片替换链路         | 保留文件 ID 替换内容；大文件自动走 `replaceFileId` 分片会话。                                                                |
 | `createUploadSession(command)`                             | `POST /file/files/uploads`                        | 初始化分片上传和秒传。                                                                                                       |
 | `createUploadPartSign(sessionId, partNumber, partSize)`    | `POST /file/files/uploads/{sessionId}/parts/sign` | 获取直传签名。                                                                                                               |
 | `uploadServerPart(sessionId, partNumber, chunk, fileName)` | `POST /file/files/uploads/{sessionId}/parts`      | 服务端接收分片。                                                                                                             |
@@ -371,7 +373,7 @@ const rows = [
 | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 详情、上传、批量、秒传、分片、预览、下载、打包、合并、运行时设置读取 | 登录即可，不要求角色权限码                                                                                                                                                                                    |
 | 跨域预览、下载                                                       | 直接使用查询返回的存储安全签名 URL，默认有效期 24 小时                                                                                                                                                        |
-| 文件管理                                                             | `file:files:list`、`file:files:archive`、`file:files:delete`                                                                                                                                                  |
+| 文件管理                                                             | `file:files:list`、`file:files:archive`、`file:files:delete`、`file:files:edit`、`file:files:replace`                                                                                                         |
 | 目录                                                                 | `file:directories:list`、`file:directories:add`、`file:directories:edit`、`file:directories:delete`                                                                                                           |
 | 存储配置                                                             | `file:storage-configs:list`、`file:storage-configs:query`、`file:storage-configs:add`、`file:storage-configs:edit`、`file:storage-configs:delete`、`file:storage-configs:active`、`file:storage-configs:test` |
 | 设置管理                                                             | `file:settings:edit`                                                                                                                                                                                          |
@@ -396,6 +398,10 @@ const rows = [
 
 确认当前用户已登录，并检查文件状态、访问级别、租户和业务归属。基础文件接口不再依赖 `file:files:upload`、`file:files:query` 或 `file:files:download` 角色权限；跨域预览和下载直接使用查询返回的安全签名 URL，过期后重新查询文件记录。
 
+**编辑弹窗保存失败**
+
+先确认文件名扩展名未变化，业务参数是合法 JSON。选择新文件时，替换接口要求扩展名与原记录一致，并受 `maxSize` 限制；大文件会走分片替换，失败时检查上传会话是否携带 `replaceFileId`。
+
 **文档预览打不开**
 
 检查 `mango-file-preview`、`previewProviderUrl` 和 `/file-preview/files/preview-link`。
@@ -413,9 +419,10 @@ const rows = [
 
 ## 12. 变更影响记录
 
-| 版本 / 事项                     | 保持不变或新增                                                                                      |
-| ------------------------------- | --------------------------------------------------------------------------------------------------- |
-| Issue #805                      | registrar 改用 FE1 `@mango/admin-extension/core`；页面 key、API、权限和组件用法不变。               |
-| `@mango/file@1.0.31`            | 新增 `FilePreviewPanel.fitContainer`；图片预览改为内嵌 Viewer；文件 ID、权限、下载和转换 API 不变。 |
-| `@mango/file@1.0.21` / `1.0.26` | 预览弹框支持自有滚动和新窗口预览；移除 `downloadPermission`，访问仍由后端校验。                     |
-| npm lock-sync release           | 上传、预览、下载采用登录级访问基线；管理、归档、删除、目录和配置继续使用细粒度权限。                |
+| 版本 / 事项                     | 保持不变或新增                                                                                                                                           |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Issue #805                      | registrar 改用 FE1 `@mango/admin-extension/core`；页面 key、API、权限和组件用法不变。                                                                    |
+| `@mango/file@1.0.31`            | 新增 `FilePreviewPanel.fitContainer`；图片预览改为内嵌 Viewer；文件 ID、权限、下载和转换 API 不变。                                                      |
+| `@mango/file@1.0.21` / `1.0.26` | 预览弹框支持自有滚动和新窗口预览；移除 `downloadPermission`，访问仍由后端校验。                                                                          |
+| npm lock-sync release           | 上传、预览、下载采用登录级访问基线；管理、归档、删除、目录和配置继续使用细粒度权限。                                                                     |
+| Issue #1207                     | 文件列表新增“编辑”：可修改文件信息并通过上传替换同一 `fileId` 的内容；新增 `file:files:edit`、`file:files:replace`，上传、预览、下载和既有管理权限不变。 |

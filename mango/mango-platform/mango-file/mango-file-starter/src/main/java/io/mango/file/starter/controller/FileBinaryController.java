@@ -6,6 +6,7 @@ import io.mango.common.result.R;
 import io.mango.file.api.command.CompleteFileUploadPartCommand;
 import io.mango.file.api.command.CreateFileUploadPartSignCommand;
 import io.mango.file.api.command.CreateFileUploadSessionCommand;
+import io.mango.file.api.command.ReplaceFileContentCommand;
 import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.file.api.vo.FileRecordVO;
@@ -15,6 +16,7 @@ import io.mango.file.core.service.IFileService;
 import io.mango.file.core.service.model.FileDownloadOptions;
 import io.mango.file.core.service.model.ServerFilePart;
 import io.mango.common.contract.BinaryHttpAdapter;
+import jakarta.validation.Valid;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -27,6 +29,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -94,6 +97,15 @@ public class FileBinaryController {
             @Parameter(description = "业务自定义参数") @RequestParam(value = "bizMeta", required = false) String bizMeta,
             @Parameter(description = "逻辑目录ID") @RequestParam(value = "directoryId", required = false) Long directoryId) {
         return R.ok(fileService.uploadBatch(files, uploadCommand(purpose, accessLevel, bizType, bizId, bizMeta, directoryId)));
+    }
+
+    @PostMapping("/replace")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:replace")
+    @Operation(summary = "替换文件内容", description = "上传新内容替换指定文件ID的物理文件，并同步更新文件大小、哈希、类型和文件信息；文件ID保持不变")
+    public R<FileRecordVO> replaceContent(
+            @Parameter(description = "新文件内容", required = true) @RequestPart("file") MultipartFile file,
+            @Valid @ModelAttribute ReplaceFileContentCommand command) {
+        return R.ok(fileService.replaceContent(file, command));
     }
 
     @GetMapping("/download")

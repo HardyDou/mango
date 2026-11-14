@@ -37,6 +37,9 @@ public enum FileCode implements BizCode {
     /** 文件分片非法。 */
     FILE_UPLOAD_PART_INVALID(3413, "文件分片非法"),
 
+    /** 替换文件扩展名与原文件不一致。 */
+    FILE_REPLACE_EXTENSION_MISMATCH(3414, "替换文件扩展名必须与原文件一致"),
+
     /** 远程图片地址格式非法。 */
     FILE_REMOTE_URL_INVALID(3420, "图片地址不可访问或不允许导入"),
 

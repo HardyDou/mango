@@ -156,7 +156,19 @@ Mango 各层默认单文件上限已统一为 10GB：Spring `spring.servlet.mult
 3. 临界值和 `maxSize` 修改后，新上传请求读取当前租户最新配置。
 4. Spring/Tomcat、网关和反向代理的请求大小及超时足以承载普通上传或单个分片；默认值已按 10GB 单文件、20MiB 分片阈值对齐。
 
+### 5.2 编辑文件信息与替换内容
+
+文件管理列表新增“编辑”入口，对业务接入的影响如下：
+
+- 业务表继续只保存 `fileId`；替换内容不改变 `fileId` 和业务引用，业务侧不需要新增字段或迁移。
+- 只修改文件信息时调用 `PUT /file/files`，权限码 `file:files:edit`；替换内容时调用 `POST /file/files/replace`，权限码 `file:files:replace`，大文件自动走 `replaceFileId` 分片会话。
+- 替换要求新文件扩展名与原记录一致；替换后文件大小、哈希、内容类型和更新时间同步变化，预览按内容版本自动重新生成。
+- 旧物理对象默认只递减引用计数，是否删除由文件配置的 `physicalDeleteEnabled` 决定；开启后旧内容不再可恢复。
+
+本场景的业务表单、详情页回显、菜单和租户边界不变，业务方仍按 `fileId` 读取文件。
+
 ## 6. 最小闭环
+
 
 1. 打开业务新增页。
 2. 上传一个文件并保存业务单据。
@@ -260,5 +272,7 @@ pnpm -F @mango/file test
 ## 12. 历史变更
 
 详细版本影响见[文件上传表单历史变更索引](../../changelog/business-integration/file-upload-form.md)。
+
+> Issue #1207 影响说明：文件中心新增按 `fileId` 编辑文件信息和替换内容能力，业务方仍只保存 `fileId`，既有上传、回显、预览、下载契约不变；替换需要 `file:files:replace` 权限。
 
 > Issue #1098 影响说明：资源声明的 `sync-mode` 收敛为 `SYNC_ALWAYS` / `SYNC_ONCE`（旧值 `AUTO`、`INIT_ONLY`、`MANUAL`、`LOCKED` 仍可读取并映射）。本场景涉及的数据初始化、租户边界、权限判定与页面行为不变。

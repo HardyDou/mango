@@ -31,6 +31,8 @@
 | 单文件上传 | 上传附件、图片、合同、凭证等文件 | `POST /file/files` |
 | 批量上传 | 一次上传多个小文件 | `POST /file/files/batch` |
 | 文件记录 | 查询文件列表、详情、业务标记和状态 | `GET /file/files/page`、`GET /file/files/detail` |
+| 编辑文件信息 | 修改文件名、用途、访问级别、业务标记和逻辑目录，不改变文件内容 | `PUT /file/files` |
+| 替换文件内容 | 保留 `fileId` 和业务引用，用新上传内容替换当前物理文件并同步文件信息 | `POST /file/files/replace` |
 | 下载 | 按 `fileId` 下载当前账号有权访问的文件 | `GET /file/files/download`、`FileApi.download()` |
 | 预览元数据 | 获取原始内容预览地址、下载地址和存储公开访问元数据 | `GET /file/files/preview` |
 | 后端保存文件 | 后端生成 PDF、Excel、归档包后写入文件中心 | `FileApi.save(SaveFileCommand)` |
@@ -57,9 +59,12 @@
 | 查询返回的预览/下载链接 | 存储安全签名 | `previewUrl`、`downloadUrl` 可直接使用并支持跨域，默认有效期 24 小时。 |
 | 文件运行时配置读取 | `LOGIN` | 不需要。上传/预览组件可读取当前租户限制和策略。 |
 | 文件列表、归档、删除 | `PERMISSION` | 需要。按菜单、按钮、套餐和角色授权。 |
+| 编辑文件信息、替换文件内容 | `PERMISSION` | 需要。分别使用 `file:files:edit` 和 `file:files:replace`。 |
 | 存储配置、文件配置保存、目录维护 | `PERMISSION` | 需要。只给文件管理员或平台管理员。 |
 
 `LOGIN` 只表示登录用户可以进入文件基础接口，不表示可以读取任意文件。`mango-file` 在 `FileApi.get()`、`preview()`、`download()` 和预览链路中继续按当前 `tenantId` 查询可见文件，归档、删除或跨租户文件不会返回。
+
+`file:files:edit` 和 `file:files:replace` 随文件管理菜单的 `apiCodes` 声明，平台管理员套餐默认获得；已有环境升级后需要通过资源声明同步（菜单版本 3）刷新权限码，未授予该菜单的角色仍不会看到编辑入口。
 
 业务使用时不需要给每个角色、每个用户配置 `file:files:query`、`file:files:upload`、`file:files:download` 或 `file:settings:query`。文件分页、详情、上传结果和预览查询都会直接返回可使用的 `previewUrl`、`downloadUrl`；DIRECT 模式沿用存储适配器的跨域安全签名策略，默认有效期 86400 秒，过期后重新查询即可获得新链接。归档、删除文件以及管理配置仍需要对应权限码。
 
@@ -380,6 +385,15 @@ import { FilePreviewPanel } from '@mango/file';
 | `preview` | 已加载的预览对象；传入后不再请求 `fileApi.preview()`。 |
 | `previewProviderUrl` | 文档预览服务地址。 |
 | `showActions` | 是否显示下载和新窗口预览操作。 |
+
+### 4.4 编辑文件信息与替换内容
+
+文件管理列表的操作列提供“编辑”入口，权限码为 `file:files:edit`；替换文件内容区域额外使用 `file:files:replace`。
+
+- 只修改文件信息时调用 `PUT /file/files`，文件名扩展名必须与原文件一致，业务参数必须为合法 JSON。
+- 选择新文件时调用 `POST /file/files/replace`；前端按文件大小自动选择单请求或分片会话，分片会话通过 `replaceFileId` 指定替换目标。
+- 替换语义：`fileId`、业务引用不变；新内容写入新物理对象，旧对象按 `physicalDeleteEnabled` 和引用计数清理；新内容哈希和大小与当前一致时幂等，不产生新对象。
+- 替换成功后文件大小、哈希、内容类型、存储定位和修改时间同步更新，`mango-file-preview` 按内容版本自动重新生成预览。
 
 ## 5. 快速开始
 
@@ -881,7 +895,7 @@ README 只列业务常用字段，完整接口字段以 OpenAPI 为准。
 
 | 能力 | 权限码 |
 |------|--------|
-| 文件 | `file:files:list`、`file:files:query`、`file:files:upload`、`file:files:download`、`file:files:archive`、`file:files:delete` |
+| 文件 | `file:files:list`、`file:files:query`、`file:files:upload`、`file:files:download`、`file:files:archive`、`file:files:delete`、`file:files:edit`、`file:files:replace` |
 | 目录 | `file:directories:list`、`file:directories:add`、`file:directories:edit`、`file:directories:delete` |
 | 存储配置 | `file:storage-configs:list`、`file:storage-configs:query`、`file:storage-configs:add`、`file:storage-configs:edit`、`file:storage-configs:delete`、`file:storage-configs:active`、`file:storage-configs:test` |
 | 文件配置 | `file:settings:query`、`file:settings:edit` |
@@ -907,6 +921,9 @@ Flyway 路径：`mango-file-core/src/main/resources/db/migration/file`。
 - 大文件分片失败：先检查 `multipartEnabled`、`multipartThreshold`，再检查 `POST /file/files/uploads` 返回的 `uploadMode`。`S3_MULTIPART` 需要存储配置支持直传签名；HTTP IP 等无 Web Crypto 环境应返回 `SERVER_CHUNK`，Java 服务必须能接收分片。
 - 预览只能下载不能打开：检查 `previewProviderUrl`、`previewExternalExtensions`，Office 类文件还需要 `mango-file-preview` 和 `mango-infra-fileproc`。
 - 页面空白或按钮不可见：检查 authorization 菜单 component 是否是 `file/files/index`、`file/storage-configs/index`、`file/settings/index`，并确认账号拥有对应 `file:*` 权限码。
+- 替换文件内容失败：确认新文件扩展名与原记录一致（不一致返回 `FILE_REPLACE_EXTENSION_MISMATCH`）、记录未归档且状态为完成、新文件不超过 `maxSize`；大文件替换失败时检查 `multipartEnabled` 和 `replaceFileId` 是否传给上传会话。
+- 替换后磁盘仍保留旧文件：`physicalDeleteEnabled=false` 时只递减引用计数，不删除物理对象；需要回收时先开启该开关。
+- 替换后预览仍是旧内容：确认替换真正更新了 `fileHash`、`fileSize` 和 `updatedTime`；预览任务按 `id|hash|size|updatedTime` 判定版本。
 - 业务表里出现对象存储地址：应改为保存 `fileId` 或业务附件关系；`previewUrl`、`downloadUrl` 只用于当前页面即时展示。
 - 预置文件只有数据库记录没有物理对象：检查 `FILE_ASSET` 的 `storageConfigId`、`classpath:` / `asset:` 路径和 SHA-256；使用 `asset:` 时同时检查 `mango.file.asset-root` 是否映射到当前环境的可读目录。修正声明或部署配置后用相同 generation/fingerprint 重入 Bootstrap，不要手工伪造 `file_record`。
 
@@ -921,3 +938,7 @@ Flyway 路径：`mango-file-core/src/main/resources/db/migration/file`。
 ## 资源声明同步模式（#1098）
 
 资源声明的 `sync-mode` 已收敛为 `SYNC_ALWAYS` 和 `SYNC_ONCE`：`AUTO` 映射为 `SYNC_ALWAYS`，`INIT_ONLY`、`MANUAL`、`LOCKED` 映射为 `SYNC_ONCE`。旧值仍可读取并会在启动时输出弃用告警，新声明只写新值。语义与迁移规则见 `mango-resource` README 的 `sync-mode` 章节。
+
+## 15. 升级与兼容
+
+- 下一批次（Issue #1207）：新增 `PUT /file/files` 文件信息编辑、`POST /file/files/replace` 内容替换、分片会话 `replaceFileId`、菜单权限码 `file:files:edit` 和 `file:files:replace`，以及 `file_upload_session.replace_file_id` 迁移。文件 ID、业务引用和既有上传、预览、下载接口保持兼容；平台管理员套餐默认获得新权限码，其它角色需要升级后授权。升级后执行资源声明同步刷新菜单版本 3 和 Flyway `V7`，验证小文件替换、大文件分片替换和预览重新生成；回滚时恢复上一版本应用，`V7` 新增列可由旧版本忽略。

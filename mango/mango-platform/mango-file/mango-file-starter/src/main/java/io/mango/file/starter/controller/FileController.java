@@ -11,6 +11,7 @@ import io.mango.file.api.command.FileDeleteCommand;
 import io.mango.file.api.command.FileMergePdfCommand;
 import io.mango.file.api.command.FilePackageCommand;
 import io.mango.file.api.command.FilePackageSizeControlCommand;
+import io.mango.file.api.command.UpdateFileRecordCommand;
 import io.mango.file.api.query.FileRecordPageQuery;
 import io.mango.file.api.vo.FilePreviewVO;
 import io.mango.file.api.vo.FilePackageResultVO;
@@ -25,6 +26,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -90,6 +92,14 @@ public class FileController implements FileApi {
     @Operation(summary = "合并生成PDF", description = "按当前租户可见文件清单生成并保存PDF文件")
     public R<FileRecordVO> mergeToPdf(@RequestBody FileMergePdfCommand command) {
         return R.ok(fileService.mergeToPdf(command));
+    }
+
+    @Override
+    @PutMapping
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:edit")
+    @Operation(summary = "更新文件信息", description = "按文件ID更新文件名、用途、访问级别、业务标记和逻辑目录，不改变文件内容")
+    public R<FileRecordVO> updateMetadata(@RequestBody UpdateFileRecordCommand command) {
+        return R.ok(fileService.updateMetadata(command));
     }
 
     @Override

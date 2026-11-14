@@ -111,10 +111,20 @@
             </template>
           </el-table-column>
           <el-table-column prop="createdTime" label="创建时间" width="180" />
-          <el-table-column label="操作" width="230" fixed="right">
+          <el-table-column label="操作" width="280" fixed="right">
             <template #default="{ row }">
               <el-button link type="primary" size="small" @click="handlePreview(row)"> 预览 </el-button>
               <el-button link type="primary" size="small" @click="handleDownload(row)"> 下载 </el-button>
+              <el-button
+                v-if="row.archived !== 1"
+                v-auth="'file:files:edit'"
+                link
+                type="primary"
+                size="small"
+                @click="handleEdit(row)"
+              >
+                编辑
+              </el-button>
               <el-button
                 v-if="row.archived !== 1"
                 v-auth="'file:files:archive'"
@@ -210,6 +220,14 @@
         <el-button type="primary" :loading="directorySaving" @click="handleSaveDirectory">保存</el-button>
       </template>
     </MangoDialog>
+
+    <FileEditDialog
+      v-model="editVisible"
+      :record="editingRecord"
+      :directory-options="directoryOptions"
+      :max-size="settings.maxSize"
+      @saved="handleEditSaved"
+    />
   </MangoListPage>
 </template>
 
@@ -232,6 +250,7 @@ import { defaultFileSettings, type FileSettings } from '../../api/fileSettings';
 import { useFileApi, useFileDirectoryApi, useFileSettingsApi } from '../../composables/useFileApi';
 import FilePreviewPanel from '../../components/FilePreviewPanel.vue';
 import MUpload from '../../components/MUpload.vue';
+import FileEditDialog from './FileEditDialog.vue';
 
 const fileApi = useFileApi();
 const fileDirectoryApi = useFileDirectoryApi();
@@ -244,6 +263,8 @@ const tableData = ref<FileRecord[]>([]);
 const total = ref(0);
 const selectedRows = ref<FileRecord[]>([]);
 const previewVisible = ref(false);
+const editVisible = ref(false);
+const editingRecord = ref<FileRecord | null>(null);
 const directoryDialogVisible = ref(false);
 const preview = ref<FilePreview | null>(null);
 const previewFileId = ref<FileRecord['id'] | null>(null);
@@ -278,6 +299,7 @@ const currentDirectoryName = computed(() => {
 });
 const uploadSize = computed(() => `${Math.floor(settings.maxSize / 1024 / 1024)}MB`);
 const uploadFormats = computed(() => (settings.allowedExtensions.length ? settings.allowedExtensions : undefined));
+const directoryOptions = computed(() => flattenDirectories(directoryTree.value));
 const previewDialogTitle = computed(() => preview.value?.fileName || previewFileName.value || '文件预览');
 
 async function loadData() {
@@ -460,6 +482,19 @@ function handleArchive(row: FileRecord) {
     .catch(() => {});
 }
 
+function handleEdit(row: FileRecord) {
+  editingRecord.value = row;
+  editVisible.value = true;
+}
+
+function handleEditSaved() {
+  if (previewVisible.value && editingRecord.value && previewFileId.value === editingRecord.value.id) {
+    previewVisible.value = false;
+    preview.value = null;
+  }
+  loadData();
+}
+
 async function handleDelete(row: FileRecord) {
   await ElMessageBox.confirm(`确认删除文件“${row.fileName}”？删除后将不再出现在文件列表中。`, '提示', {
     confirmButtonText: '确认删除',
@@ -499,6 +534,14 @@ function findDirectory(nodes: FileDirectory[], id: string): FileDirectory | unde
     if (found) return found;
   }
   return undefined;
+}
+
+function flattenDirectories(nodes: FileDirectory[], depth = 0): Array<{ id: string; label: string }> {
+  return nodes.flatMap((node) => {
+    const isRoot = String(node.id) === '0';
+    const label = isRoot ? '根目录' : `${'　'.repeat(depth)}${node.directoryName}`;
+    return [{ id: String(node.id), label }, ...flattenDirectories(node.children || [], isRoot ? depth : depth + 1)];
+  });
 }
 
 function formatSize(size?: number) {

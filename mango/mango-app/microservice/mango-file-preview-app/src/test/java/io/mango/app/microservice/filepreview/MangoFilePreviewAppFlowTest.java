@@ -9,6 +9,7 @@ import io.mango.file.api.IFileContentProvider;
 import io.mango.file.api.command.FileDeleteCommand;
 import io.mango.file.api.command.FileMergePdfCommand;
 import io.mango.file.api.command.FilePackageCommand;
+import io.mango.file.api.command.UpdateFileRecordCommand;
 import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.query.FileRecordPageQuery;
 import io.mango.file.api.vo.FileDownloadVO;
@@ -288,6 +289,11 @@ class MangoFilePreviewAppFlowTest {
         @Override
         public R<PageResult<FileRecordVO>> page(FileRecordPageQuery query) {
             return R.ok(PageResult.of(List.of(), 0, 1, 10));
+        }
+
+        @Override
+        public R<FileRecordVO> updateMetadata(UpdateFileRecordCommand command) {
+            return R.fail("文件不存在");
         }
 
         @Override

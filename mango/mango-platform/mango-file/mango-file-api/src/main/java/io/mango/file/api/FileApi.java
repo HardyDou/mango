@@ -6,6 +6,7 @@ import io.mango.file.api.command.FileDeleteCommand;
 import io.mango.file.api.command.FileMergePdfCommand;
 import io.mango.file.api.command.FilePackageCommand;
 import io.mango.file.api.command.FilePackageSizeControlCommand;
+import io.mango.file.api.command.UpdateFileRecordCommand;
 import io.mango.file.api.query.FileRecordPageQuery;
 import io.mango.file.api.vo.FilePackageResultVO;
 import io.mango.file.api.vo.FilePreviewVO;
@@ -23,6 +24,8 @@ public interface FileApi {
     R<PageResult<FileRecordVO>> page(@Valid FileRecordPageQuery query);
 
     R<FileRecordVO> get(@NotNull @Positive Long id);
+
+    R<FileRecordVO> updateMetadata(@Valid UpdateFileRecordCommand command);
 
     R<FilePreviewVO> preview(@NotNull @Positive Long id);
 

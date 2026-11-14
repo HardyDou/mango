@@ -38,4 +38,5 @@ public class FileUploadSessionEntity extends FileTenantEntity {
     private Long directoryId;
     private Long objectId;
     private Long fileRecordId;
+    private Long replaceFileId;
 }

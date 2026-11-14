@@ -15,8 +15,10 @@ class FilePermissionResourceTest {
                 "/META-INF/mango/resources/file-common-menu.json")) {
             assertThat(input).isNotNull();
             String resource = new String(input.readAllBytes(), StandardCharsets.UTF_8);
-            assertThat(resource).contains("\"version\": 2");
+            assertThat(resource).contains("\"version\": 3");
             assertThat(resource).contains("\"file:files:download\"");
+            assertThat(resource).contains("\"file:files:edit\"");
+            assertThat(resource).contains("\"file:files:replace\"");
         }
     }
 }
