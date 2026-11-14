@@ -498,7 +498,12 @@ public class CheckMojo extends AbstractMojo {
     @Parameter(property = "mango.check.staticFailurePolicy", defaultValue = "block")
     private String staticFailurePolicy;
 
-    @Parameter private Path globalEntityManifest;
+    /**
+     * Global non-tenant Entity exception manifest. Declared as {@link File} because Maven 3 has no
+     * Plexus converter for {@link Path}: a {@code java.nio.file.Path} parameter fails configuration
+     * parsing before the goal runs.
+     */
+    @Parameter private File globalEntityManifest;
 
     @Parameter(defaultValue = "false")
     private boolean requireExecutionRoot;
@@ -1362,6 +1367,10 @@ public class CheckMojo extends AbstractMojo {
             path = reactorProject.getBasedir().toPath().resolve(path);
         }
         return path.toAbsolutePath().normalize();
+    }
+
+    private Path toPath(File file) {
+        return file == null ? null : file.toPath();
     }
 
     private List<Path> findReports(Path rootPath, String fileName) throws MojoExecutionException {
@@ -4169,7 +4178,8 @@ public class CheckMojo extends AbstractMojo {
 
         Set<String> globalTables =
                 Set.copyOf(
-                        GlobalEntityManifestLoader.load(rootPath, globalEntityManifest).values());
+                        GlobalEntityManifestLoader.load(rootPath, toPath(globalEntityManifest))
+                                .values());
         Set<String> discoveredTables = new LinkedHashSet<>();
         List<PersistenceSchemaIssue> issues =
                 analyzePersistenceSchemaMigrations(
