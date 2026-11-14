@@ -644,7 +644,8 @@ function normalizeRuntimeStrategies(rows: AppModuleRuntimeStrategy[]) {
 }
 
 function handleStrategyTypeChange(row: AppModuleRuntimeStrategy) {
-  row.runtimeCode = row.pageType === 'MICRO_ROUTE' ? defaultMicroRuntime(row.moduleCode) : 'mango-admin-local';
+  row.runtimeCode =
+    row.pageType === 'MICRO_ROUTE' && row.moduleCode ? defaultMicroRuntime(row.moduleCode) : 'mango-admin-local';
 }
 
 function defaultMicroRuntime(moduleCode: string) {

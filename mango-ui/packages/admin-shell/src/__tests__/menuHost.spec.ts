@@ -104,7 +104,7 @@ describe('admin-shell menu contract', () => {
       path: '/link',
       redirect: '/link/favorites',
       children: [{ path: '/link/favorites' }, { path: '/link/my-links' }],
-    } as ShellRouteMenu;
+    } as unknown as ShellRouteMenu;
 
     expect(resolveAccessibleMenuPath(menu)).toBe('/link/favorites');
   });
@@ -205,7 +205,7 @@ describe('admin-shell menu contract', () => {
       path: '/message-center/site-message',
       name: 'notice:site-message',
       meta: { title: '我的消息' },
-    } as ShellRouteMenu;
+    } as unknown as ShellRouteMenu;
 
     expect(resolveMenuPathByCode([menu], 'notice:site-message')).toBe('/message-center/site-message');
   });
@@ -523,7 +523,19 @@ describe('admin-shell menu contract', () => {
   });
 });
 
-function createRouteMenu(overrides: Partial<ShellRouteMenu> & { menuCode?: string; visible?: number }): ShellRouteMenu {
+type RouteMenuOverrides = {
+  menuType?: MenuTypeEnum;
+  path?: string;
+  name?: string;
+  redirect?: string;
+  component?: string;
+  meta?: Record<string, unknown>;
+  menuCode?: string;
+  visible?: number;
+  children?: ShellRouteMenu[];
+};
+
+function createRouteMenu(overrides: RouteMenuOverrides): ShellRouteMenu {
   const path = overrides.path || '/test';
   return {
     path,
@@ -546,7 +558,6 @@ function createRouteMenu(overrides: Partial<ShellRouteMenu> & { menuCode?: strin
       visible: overrides.visible ?? 1,
       children: [],
     },
-    component: overrides.component,
     children: overrides.children,
   } as ShellRouteMenu;
 }

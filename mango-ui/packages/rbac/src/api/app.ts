@@ -1,11 +1,5 @@
 import { del, get, post, put } from '@mango/common/utils/request';
-import type {
-  MangoDeployMode,
-  MangoFrontendAppType,
-  MangoMenuPageType,
-  MangoModuleRuntimeStrategy,
-  MangoStyleIsolation,
-} from '@mango/app-runtime';
+import type { MangoDeployMode, MangoFrontendAppType, MangoMenuPageType, MangoStyleIsolation } from '@mango/app-runtime';
 import type { ApiId } from '@mango/api-schema';
 
 export interface AppLoginContext {
@@ -55,8 +49,15 @@ export interface AppModuleBinding {
   updateTime?: string;
 }
 
-export interface AppModuleRuntimeStrategy extends MangoModuleRuntimeStrategy {
+export interface AppModuleRuntimeStrategy {
   strategyId?: ApiId;
+  appCode?: string;
+  moduleCode?: string;
+  deployProfile?: string;
+  pageType?: MangoMenuPageType;
+  runtimeCode?: string;
+  status?: number;
+  sort?: number;
 }
 
 interface AppLoginContextPayload {

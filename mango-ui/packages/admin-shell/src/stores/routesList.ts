@@ -1,16 +1,16 @@
 import { defineStore } from 'pinia';
-import type { RouteRecordRaw } from 'vue-router';
+import type { ShellRouteMenu } from '../runtime/menuHost';
 
 export const useRoutesList = defineStore('routesList', {
   state: (): {
-    routesList: RouteRecordRaw[];
+    routesList: ShellRouteMenu[];
     activeTopRoutePath: string;
   } => ({
     routesList: [],
     activeTopRoutePath: '',
   }),
   actions: {
-    setRoutesList(data: RouteRecordRaw[]) {
+    setRoutesList(data: ShellRouteMenu[]) {
       this.routesList = data;
     },
     setActiveTopRoutePath(path: string) {

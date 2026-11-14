@@ -1066,7 +1066,9 @@ function normalizeAdMaterialType() {
 }
 
 async function saveRow() {
-  if (!props.config.editor || !props.config.update || (!form.id && !props.config.create)) {
+  const create = props.config.create;
+  const update = props.config.update;
+  if (!props.config.editor || !update || (!form.id && !create)) {
     return;
   }
   await formRef.value?.validate();
@@ -1074,9 +1076,12 @@ async function saveRow() {
   try {
     const payload = editorPayload();
     if (form.id) {
-      await props.config.update(payload);
+      await update(payload);
     } else {
-      await props.config.create(payload);
+      if (!create) {
+        return;
+      }
+      await create(payload);
     }
     ElMessage.success('保存成功');
     editorVisible.value = false;

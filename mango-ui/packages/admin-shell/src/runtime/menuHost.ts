@@ -8,7 +8,7 @@ import {
   type MangoAdminFeatureCode,
 } from '@mango/admin-pages/features';
 import type { MangoMenuPageType } from '@mango/app-runtime';
-import type { RouteRecordRaw } from 'vue-router';
+import type { RouteRecordSingleView } from 'vue-router';
 import { getMangoAdminShellOptions, type MangoAdminShellDevCenterOptions } from '../config';
 import { ensureFeatureRegistrars } from './featureRegistrars';
 import {
@@ -57,7 +57,12 @@ export interface ShellMenuMeta {
   [key: string]: any;
 }
 
-export interface ShellRouteMenu extends RouteRecordRaw {
+export interface ShellRouteMenu {
+  path: string;
+  name?: string;
+  meta?: ShellMenuMeta;
+  redirect?: string;
+  component?: RouteRecordSingleView['component'];
   sourceMenu: ShellMenu;
   children?: ShellRouteMenu[];
 }
@@ -92,7 +97,7 @@ export function useMenuHost() {
         params: { fmt: 'tree', appCode: 'internal-admin' },
       });
       menus.value = [
-        withMenuSource(createHomeRouteMenu(), 'shell'),
+        createHomeRouteMenu(),
         ...filterMenuForRoute(response || []).map((menu) => toShellRouteMenu(withMenuSource(menu, 'backend'))),
         ...createRegisteredHiddenRouteMenus(),
         ...createDevRouteMenus(),

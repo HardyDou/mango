@@ -477,7 +477,7 @@ const groupNarrowValue = ref<string>('2');
 const groupAllValue = ref<string>('1');
 
 const treeMultipleLeafOnly = ref(false);
-const treeMultipleRef = ref<InstanceType<typeof DictSelect>>();
+const treeMultipleRef = ref<{ clear: () => void }>();
 const codeVisible = ref<Record<string, boolean>>({
   flat: false,
   button: false,
