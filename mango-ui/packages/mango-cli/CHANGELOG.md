@@ -1,3 +1,14 @@
+## 1.4.8 - 2026-11-14
+
+### Changed
+
+- Lock the CLI Maven matrix to Maven `1.8.1` and the generated 201-coordinate Maven/docs release closure.
+- Keep generated approval guidance aligned with the empty-candidate `NODE_AFFINITY` fallback and the explicit concurrent-completion error.
+
+### Upgrade Notes
+
+- Upgrade `@mango/cli@1.4.8` together with the complete Maven/docs `1.8.1` tuple; do not mix release batches.
+
 ## 1.4.7 - 2026-11-14
 
 ### Changed

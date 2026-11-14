@@ -1,3 +1,83 @@
+## v2026.11.14-maven-1.8.1-workflow-fixes-release - Mango Maven/docs 1.8.1 workflow and operation log fixes release - 2026-11-14
+
+Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `a1649b606c6cbb4f98e2bea2ef2982cbbe182f87e9033b908631aa7abbfb3842`; prepared candidate `91a11f01b9ef808473b2c90eec8e6cfebcf57430955c3dd9e78e48f3e697f496` completed publication and consume verification for `@mango/cli@1.4.8` and 201 Maven coordinates. Tag and GitHub Release were created and verified.
+
+### Pull Requests
+
+- Fixed: [PR #1251](https://github.com/HardyDou/mango/pull/1251) Node-affinity auto assignment with an empty candidate role now enters the claim pool as `CLAIM` instead of blocking the node, so a misconfigured role hands the task to candidates rather than failing the transition. Packages: the complete Maven/docs `1.8.1` tuple including `io.mango.platform.workflow:mango-workflow-{api,core,starter,starter-remote}:1.8.1`, and the generated `@mango/cli@1.4.8` closure. Business Adaptation: upgrade the tuple; nodes with `NODE_AFFINITY` and `nodeAffinityFallback=CLAIM` no longer stall when the candidate role resolves to nobody.
+- Fixed: [PR #1252](https://github.com/HardyDou/mango/pull/1252) Completing the same task twice now returns an explicit business error instead of a generic failure or a silent success after the first request won the race. Packages: the complete Maven/docs `1.8.1` tuple and the generated `@mango/cli@1.4.8` closure. Business Adaptation: upgrade the tuple and surface the returned workflow code in the approval page so a double click or a retried request shows a clear message.
+- Fixed: [PR #1250](https://github.com/HardyDou/mango/pull/1250) The operation log now truncates `error_msg` to the column width, so a long exception message no longer fails the audit insert and loses the log entry. Packages: the complete Maven/docs `1.8.1` tuple including `io.mango.platform.system:mango-system-{api,core,starter}:1.8.1`. Business Adaptation: upgrade the tuple; no configuration or schema change is required.
+
+### Fixed
+
+- `NODE_AFFINITY` with an empty candidate role no longer blocks the node: the task is created in the claim pool according to the configured `CLAIM` fallback.
+- Concurrent completion of one task returns a specific workflow error, so the losing request reports why it failed instead of a generic system error.
+- Long `error_msg` values are truncated before insert, so operation logs keep the record and the audit trail no longer drops entries because of column overflow.
+
+### Changed
+
+- `WorkflowTaskCompletionSupport` centralizes the completion precondition and the concurrent-completion error so the plain, result-returning and return flows report the same failure.
+- The workflow README and the changelog entry document the empty-candidate fallback and the concurrent completion behavior.
+- The non-application Maven/docs tuple advances from `1.8.0` to `1.8.1` with 201 coordinates.
+- npm: `@mango/cli` advances from `1.4.7` to `1.4.8` as the generated compatibility closure; no other npm package is republished.
+
+### Versions
+
+- Maven/docs: `1.8.0` → `1.8.1`; 201 sealed Maven coordinates, including `io.mango:mango-docs-bundle:1.8.1`, `io.mango.platform.workflow:mango-workflow-api:1.8.1` and `io.mango.platform.system:mango-system-core:1.8.1`.
+- npm: `@mango/cli@1.4.7` → `@mango/cli@1.4.8`; no other npm package is republished.
+- Exact topology, dependency order and checksums are generated in `mango-ui/.changeset/release-plan.json`.
+
+### Published Packages
+
+- Publish all 201 non-application Maven coordinates in release-plan order.
+- Publish `@mango/cli@1.4.8` as the generated compatibility closure.
+- Application fat jars and coordinates outside the sealed plan are excluded; `@mango/pmo` is unchanged because no PMO rule, contract, Agent or Skill file changed in this batch.
+
+### Business Impact
+
+- Approval pages no longer dead-end when a node's candidate role resolves to no members; the task becomes claimable instead of blocking the process.
+- A double click or a retried request on an already completed task now returns a clear workflow error, so operators see the real reason instead of a generic failure.
+- Operation logs keep entries whose exception message exceeds the column width, which preserves audit evidence for failed operations.
+- No database migration, menu, permission, tenant boundary or public API change is introduced; `nodeAffinityScope` and `affinityKey` from `1.8.0` behave unchanged.
+
+### Upgrade Estimate
+
+- Audience: Mango backend consumers using workflow auto assignment or approval pages, and consumers that rely on operation log audit entries.
+- Engineering Effort: 0.25-0.5 engineer-day per consumer to upgrade the tuple and, where the approval page shows raw errors, map the workflow code to a user-facing message.
+- Execution Window: 1 hour per consumer including restart and a duplicate-submit smoke test.
+- Service Downtime: one controlled backend restart window; no database migration is required.
+- Rollback Effort: 0.5 engineer-day per consumer to restore the complete Maven `1.8.0` tuple and the previously verified CLI tuple.
+- Assumptions: consumers have a test process definition with a `NODE_AFFINITY` node, can trigger two concurrent completions, and can inspect operation log rows.
+
+### Upgrade Notes
+
+1. Upgrade the complete Mango Maven/docs tuple from `1.8.0` to `1.8.1`; do not update only one starter or module.
+2. Upgrade CLI consumers to `@mango/cli@1.4.8` when the CLI is used.
+3. Map the workflow error code returned for an already completed task to a readable message in approval pages instead of showing a generic failure.
+4. Review nodes configured with `NODE_AFFINITY`: an empty candidate role now creates a claimable task, so assign the role or keep `CLAIM` as the intended behavior.
+5. Verify one duplicate submit and one empty-role node in a test environment before production rollout.
+
+### Verification
+
+- `mvn verify` passed for the workflow and system modules before merge, including the completion-support unit tests, the concurrent-completion integration test and the operation log truncation test.
+- The workflow README and changelog entry were updated together with the behavior change.
+- `catalog:check` reports a consistent Catalog projection on the source commit and the release plan re-computes 201 coordinates with matching topology.
+- The Maven reactor and docs bundle were built once from the sealed candidate; all 201 coordinates were checked in publish and consume registries with matching checksums.
+- A clean consumer resolved Maven `1.8.1` and `@mango/cli@1.4.8` from the consume registries and completed the pure consume-registry verification.
+
+### Rollback
+
+- Restore consumers to the complete Maven/docs `1.8.0` tuple and the previously verified `@mango/cli@1.4.7` tuple; immutable coordinates are never overwritten.
+- Rolling back restores the previous behavior where an empty candidate role blocks the node and a duplicate completion reports a generic error; inform operators before rolling back.
+- Rolling back the operation log truncation can drop audit entries again for very long messages; export existing rows first if they matter.
+- No data written by this batch needs repair; the batch introduces no migration.
+- If registry visibility is ambiguous, stop and resume read-only status/repair using the same prepared candidate; never create a second candidate for the same coordinates.
+
+### Audit History
+
+- [PR #1247](https://github.com/HardyDou/mango/pull/1247) and [PR #1249](https://github.com/HardyDou/mango/pull/1249) were delivered through the release-bearing PRs listed above; they are referenced here for traceability and are not separate entries in this batch.
+
+
 ## v2026.11.14-maven-1.8.0-workflow-affinity-scope-release - Mango Maven/docs 1.8.0 node affinity scope release - 2026-11-14
 
 Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `e96fbbc2029eba855bf0a5fbdb47bf1d2278bc324ec58dd66e1d5ca4472ee8e0`; prepared candidate `e9fc4422986cd27c04ea55617ee99e40e78e0dbc2d15682e456d99b87dbb587e` completed publication and consume verification for 5 npm packages and 201 Maven coordinates. Tag and GitHub Release were created and verified.
