@@ -174,9 +174,14 @@ mango:
 - `cancelCause`：已终止任务的机器可读原因，`RETURNED` / `WITHDRAWN` / `TERMINATED` / `OTHER`。业务侧按枚举出中文文案，不要匹配 `deleteReason` 文本——它是引擎内部文案（例如 `Change activity to risk_specialist_review`、`申请人撤回`），不稳定。
 - `statuses=[DONE]` 只返回真正办结的任务，被退回或撤回终止的任务不会混入"已办理"。
 - `assigneeIds` 直接传业务 `user_id` 即可，平台按 `identity_user.username` 映射到引擎办理人，并用 `tenant_member` 限定该用户属于任务所在租户，跨租户同名用户不会串号。
-- `applyKeyword` 只搜平台已存的申请编号、申请标题、申请摘要。业务希望搜自己的字段（保函种类、项目编号等）时，在创建申请单时把可检索文本写进 `applySummary`，推荐 `名称：值，名称：值` 结构，例如 `保函种类：履约保函，项目编号：BH2026001`。摘要创建后不再更新，提交后会变的业务值不能依赖摘要搜索；需要多选精确筛选时继续用 `businessKeys`。
+- 业务字段的多选精确筛选用 `filterAttributes` + `applyAttributeFilters`（Issue #1248）：创建申请时把可筛字段作为键值上报（如 `guaranteeTypeCode=PERF`、`beneficiary=中铁三局`），列表用同名键筛选；版本状态这类提交后会变化的值，在状态变化处调用 `PUT /workflow/business-applies/{applyId}/filter-attributes` 整体覆盖刷新。字段由业务命名，新增或下线筛选字段都不需要平台改表或升级；多值字段按值数组上报（如 `beneficiary=[中铁三局, 中铁四局]`），筛其中任一值即可命中。默认通知的按钮目标也可以由业务决定：在申请快照 `customConfig` 里声明 `viewPath`、`viewQuery`、`viewActionLabel`，该目标对完成/驳回通知和**待办到达通知**都生效，按钮可直接跳到业务自己的待办/领取列表；不需要按钮时把 `viewActionEnabled` 设为 `false`，默认通知只发标题和正文，不注入按钮动作。
+
+同一批属性也会进入工作流领域事件的 `applyAttributes`，默认通知把它们展开成 `applyAttribute_<key>` 消息变量（多值按英文逗号拼接），消息模板可以直接写 `{{applyAttribute_guaranteeTypeCode}}`；没有登记属性时不会注入变量，通知文案保持原样。平台不回读业务表，属性由业务写入，漏更新会直接体现在筛选结果。
+- `applyKeyword` 只搜平台已存的申请编号、申请标题、申请摘要，用于模糊搜索。业务希望搜自己的字段（保函种类、项目编号等）文本时，在创建申请单时把可检索文本写进 `applySummary`，推荐 `名称：值，名称：值` 结构，例如 `保函种类：履约保函，项目编号：BH2026001`。摘要创建后不再更新，提交后会变的业务值不能依赖摘要搜索；需要多选精确筛选时用上一行的 `filterAttributes`，不再需要 `businessKeys`。
 - 退回后同一 `taskDefinitionKey` 会再次出现（初审 → 复审 → 退回 → 初审），这是正常返回，按 `endTime` / `claimTime` 取最新。
-- 排序：`createTime`、`endTime`、`claimTime`；`endTime` 与 `claimTime` 为空的任务在升序和降序下都排在最后。
+- `applyAttributeFilters`：可选，按业务登记在申请上的可筛属性精确筛选，条件之间为「且」、同一条件的多个值为「或」，最多 10 个条件、单条件最多 50 个值。它替代「先查业务表 → 拼 `businessKeys`」的绕法：没有再枚举上限，`total` 就是过滤后的真实任务数。没有该属性的申请不匹配，存量申请需要先回填。
+- `applyTimeBegin` / `applyTimeEnd`：可选，按申请创建时间闭区间过滤，与任务创建/处理时间互不影响。
+- 排序：`createTime`、`endTime`、`claimTime`、`applyTime`；`endTime` 与 `claimTime` 为空的任务在升序和降序下都排在最后；时间相同的任务按任务 ID 升序，翻页不重不漏。平台不设默认时间窗，默认时间范围由业务自己决定。
 - 该查询直接读取 Flowable 引擎表，租户由 `workflow_business_apply.tenant_id` 收敛；平台租户插件按 `act_*` 前缀跳过引擎表，业务项目不需要再往 `mango.persistence.mybatis-plus.tenant.excluded-tables` 复制引擎表。
 
 权限分工：`workflow:task:list` 控制能否调用接口；`workflow:task:all` 控制能否使用 `ALL` 范围。业务侧按自己的角色矩阵把后一个权限码只授予主管/经理等需要全量视图的角色。

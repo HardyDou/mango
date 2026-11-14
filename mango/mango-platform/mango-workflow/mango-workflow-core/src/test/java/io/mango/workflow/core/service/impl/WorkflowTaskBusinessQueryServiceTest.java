@@ -8,6 +8,7 @@ import io.mango.workflow.api.enums.WorkflowApplyStatus;
 import io.mango.workflow.api.enums.WorkflowTaskClaimStatus;
 import io.mango.workflow.api.enums.WorkflowTaskQueryScope;
 import io.mango.workflow.api.enums.WorkflowTaskRuntimeStatus;
+import io.mango.workflow.api.query.WorkflowApplyAttributeFilter;
 import io.mango.workflow.api.query.WorkflowTaskBusinessPageQuery;
 import io.mango.workflow.api.query.WorkflowTaskTraceQuery;
 import io.mango.workflow.api.vo.WorkflowTaskRecordVO;
@@ -594,6 +595,131 @@ class WorkflowTaskBusinessQueryServiceTest {
         record.setOperatorName("alice");
         record.setCreatedTime(LocalDateTime.of(2026, 1, 1, 10, 0).plusMinutes(id));
         return record;
+    }
+
+    @Test
+    void mapsApplyAttributeFiltersAndApplyTimeIntoCriteria() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.ALL);
+        when(authorizer.canQueryAll()).thenReturn(true);
+        query.setBusinessKeys(null);
+        query.setApplyAttributeFilters(List.of(
+                filter(" guaranteeTypeCode ", " PERF ", " BID "),
+                filter("beneficiary", "中铁三局")));
+        query.setApplyTimeBegin(LocalDateTime.of(2026, 1, 1, 0, 0));
+        query.setApplyTimeEnd(LocalDateTime.of(2026, 3, 1, 0, 0));
+        query.setSortBy("applyTime");
+        when(taskHistoryMapper.countTasks(any())).thenReturn(0L);
+
+        service.pageByBusinessKey(query);
+
+        ArgumentCaptor<WorkflowTaskHistoryCriteria> captor =
+                ArgumentCaptor.forClass(WorkflowTaskHistoryCriteria.class);
+        verify(taskHistoryMapper).countTasks(captor.capture());
+        WorkflowTaskHistoryCriteria criteria = captor.getValue();
+        assertThat(criteria.getApplyAttributeConditions()).hasSize(2);
+        assertThat(criteria.getApplyAttributeConditions().get(0).getKey()).isEqualTo("guaranteeTypeCode");
+        assertThat(criteria.getApplyAttributeConditions().get(0).getValues()).containsExactly("PERF", "BID");
+        assertThat(criteria.getApplyAttributeConditions().get(1).getKey()).isEqualTo("beneficiary");
+        assertThat(criteria.getApplyTimeBegin()).isEqualTo(LocalDateTime.of(2026, 1, 1, 0, 0));
+        assertThat(criteria.getApplyTimeEnd()).isEqualTo(LocalDateTime.of(2026, 3, 1, 0, 0));
+        assertThat(criteria.getSortColumn()).isEqualTo("applyTime");
+    }
+
+    @Test
+    void treatsAbsentApplyAttributeFiltersAsUnrestricted() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        query.setApplyAttributeFilters(null);
+        when(taskHistoryMapper.countTasks(any())).thenReturn(0L);
+
+        service.pageByBusinessKey(query);
+
+        ArgumentCaptor<WorkflowTaskHistoryCriteria> captor =
+                ArgumentCaptor.forClass(WorkflowTaskHistoryCriteria.class);
+        verify(taskHistoryMapper).countTasks(captor.capture());
+        assertThat(captor.getValue().getApplyAttributeConditions()).isEmpty();
+    }
+
+    @Test
+    void rejectsDuplicateApplyAttributeFilterKeys() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        query.setApplyAttributeFilters(List.of(
+                filter("guaranteeTypeCode", "PERF"),
+                filter(" guaranteeTypeCode ", "BID")));
+
+        assertThatThrownBy(() -> service.pageByBusinessKey(query))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("可筛属性名重复");
+        verify(taskHistoryMapper, never()).countTasks(any());
+    }
+
+    @Test
+    void rejectsTooManyApplyAttributeFilters() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        List<WorkflowApplyAttributeFilter> filters = new java.util.ArrayList<>();
+        for (int index = 0; index < 11; index++) {
+            filters.add(filter("attr" + index, "v"));
+        }
+        query.setApplyAttributeFilters(filters);
+
+        assertThatThrownBy(() -> service.pageByBusinessKey(query))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("可筛属性条件数量不能超过10");
+    }
+
+    @Test
+    void rejectsTooManyValuesOfOneApplyAttribute() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        List<String> values = new java.util.ArrayList<>();
+        for (int index = 0; index < 51; index++) {
+            values.add("v" + index);
+        }
+        WorkflowApplyAttributeFilter filter = filter("guaranteeTypeCode");
+        filter.setValues(values);
+        query.setApplyAttributeFilters(List.of(filter));
+
+        assertThatThrownBy(() -> service.pageByBusinessKey(query))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("值数量不能超过50");
+    }
+
+    @Test
+    void rejectsInvalidApplyAttributeKey() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        query.setApplyAttributeFilters(List.of(filter("1guarantee", "PERF")));
+
+        assertThatThrownBy(() -> service.pageByBusinessKey(query))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("可筛属性名只支持字母开头");
+    }
+
+    @Test
+    void rejectsBlankApplyAttributeValue() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        WorkflowApplyAttributeFilter filter = filter("guaranteeTypeCode");
+        filter.setValues(List.of(" "));
+        query.setApplyAttributeFilters(List.of(filter));
+
+        assertThatThrownBy(() -> service.pageByBusinessKey(query))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("可筛属性值不能为空");
+    }
+
+    @Test
+    void rejectsUnorderedApplyTimeRange() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        query.setApplyTimeBegin(LocalDateTime.of(2026, 2, 1, 0, 0));
+        query.setApplyTimeEnd(LocalDateTime.of(2026, 1, 1, 0, 0));
+
+        assertThatThrownBy(() -> service.pageByBusinessKey(query))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("时间区间非法");
+    }
+
+    private WorkflowApplyAttributeFilter filter(String key, String... values) {
+        WorkflowApplyAttributeFilter filter = new WorkflowApplyAttributeFilter();
+        filter.setKey(key);
+        filter.setValues(List.of(values));
+        return filter;
     }
 
     private WorkflowTaskBusinessPageQuery query(WorkflowTaskQueryScope scope) {

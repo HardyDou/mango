@@ -23,6 +23,14 @@ public interface IWorkflowBusinessApplyService {
 
     WorkflowBusinessApplyVO create(CreateWorkflowBusinessApplyCommand command);
 
+    /**
+     * 更新业务申请的可筛属性，整体覆盖。
+     *
+     * @param applyId          业务申请 ID
+     * @param filterAttributes 新的可筛属性集合，空集合表示清空
+     */
+    void updateFilterAttributes(Long applyId, Map<String, List<String>> filterAttributes);
+
     PageResult<WorkflowBusinessApplyVO> page(WorkflowBusinessApplyPageQuery query);
 
     WorkflowBusinessApplySummaryVO mySummary();

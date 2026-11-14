@@ -141,6 +141,7 @@ Workflow 只根据 `workflow_business_apply` 的持久化事实构造 `WorkflowB
 | `reapplyFromApplyId` | 否 | 重新申请来源申请 ID。 |
 | `variables` | 否 | 流程变量。 |
 | `extension` | 否 | 扩展配置。 |
+| `filterAttributes` | 否 | 可筛属性，业务自定义键值（`Map<String, List<String>>`），供任务列表精确过滤和消息内容使用；最多 20 个属性、单属性最多 50 个值，属性名以字母开头且只允许字母、数字、下划线、点和短横线，属性值不超过 255 字符。 |
 
 发起流程字段：
 
@@ -538,7 +539,7 @@ mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-comm
 - 管理端流程定义、版本、发布、启停、任务流转和业务上下文发起不受隐藏入口影响。
 - 启动入口可见性不是权限控制；业务模块仍需校验业务发起权限、业务状态、快照和幂等。
 
-### 6.1 按业务类型查询任务的范围规则（业务主键与申请关键字可选）
+### 6.1 按业务类型查询任务的范围规则（业务主键、申请关键字与可筛属性可选）
 
 `POST /workflow/tasks/page-by-business-key` 用于业务列表按业务类型读取全部任务；`businessKeys` 可选，传入时只返回这些业务主键的数据。返回在途、已办理和已终止任务，一行对应一个任务。数据范围分三层：
 
@@ -551,6 +552,8 @@ mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-comm
 约束：
 
 - `businessType` 必填；`businessKeys` 可选，不传或为空表示不限业务主键，数量不设上限。平台以一条只读 SQL 完成过滤、排序和分页。
+- `applyAttributeFilters` 可选：按业务在申请上登记的 `filterAttributes` 精确收窄，条件之间为「且」、同一条件的多个值为「或」，最多 10 个条件、单条件最多 50 个值；没有该属性的申请不匹配。属性过滤与 `businessKeys`、`applyKeyword`、状态、时间和分页在同一条 SQL 内完成，`total` 仍是过滤后的真实任务数，不需要调用方先枚举业务主键。
+- `applyTimeBegin` / `applyTimeEnd`：按申请创建时间（`workflow_business_apply.created_time`）闭区间过滤，与任务创建/处理时间互不影响。
 - 不传 `page` / `size` 时按 `mango.workflow.task-query.unpaged-max-rows` 一次性返回，`total` 始终是过滤后的真实总数，用 `list.size() < total` 判断是否需要改用分页。
 - `deptIds` 仅在 `scope=ORG` 时合法；`scope=SELF` / `ALL` 传入 `deptIds` 会被拒绝，避免调用方误以为已按组织过滤。
 - 业务申请可见性只在传入 `businessKeys` 且业务模块注册了 `WorkflowBusinessApplyDataPermissionProvider` 时参与收窄；不传 `businessKeys` 时不做逐申请 Provider 过滤，范围由租户、`scope` 和权限码决定。未注册 Provider 时本接口不做"申请人本人"兜底，因为该兜底属于按 ID 读详情的语义，与批量管理视图不兼容。
@@ -562,6 +565,7 @@ mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-comm
 - `assigneeIds` 接受业务 `user_id`：引擎 `ASSIGNEE_` 存的是用户名时，平台通过 `identity_user.username` 映射，并强制经 `tenant_member` 校验该用户属于任务所在租户，跨租户同名用户不会串号。
 - `sortBy=claimTime` 在本接口的 SQL 层可排序（与引擎 API 不同），仍保持空值归尾。
 - `applyKeyword` 可选：模糊匹配申请编号（`apply_code`）、申请标题（`apply_title`）、申请摘要（`apply_summary`）三列中的任意一列；输入里的 `%`、`_`、`\` 按字面匹配。它和 `keyword` 互不替代，可以同时传：`keyword` 只匹配任务名称和节点定义 Key。
+- 业务需要按自己的业务字段（保函种类、受益人、版本状态等）精确多选筛选时，创建申请时通过 `filterAttributes` 登记键值，列表查询用 `applyAttributeFilters`；版本状态这类提交后会变化的值用 `PUT /workflow/business-applies/{applyId}/filter-attributes` 整体覆盖刷新。属性按申请保存，同一业务键多轮申请各自保留自己的值，查 V2 的属性只返回 V2 的任务。属性由业务写入，平台不做业务表回读，业务漏更新会被筛选结果直接体现。
 - 业务需要平台侧按自己的业务字段（保函种类、项目编号等）搜索时，在创建申请单时把可检索文本写进 `applySummary`，推荐 `名称：值，名称：值` 结构，例如 `保函种类：履约保函，项目编号：BH2026001`。摘要只在创建时写入、之后不再更新，提交后会变化的业务值不能依赖摘要搜索；需要多选精确筛选时继续使用 `businessKeys`。
 
 引擎列名事实：历史任务表的创建时间是 `ACT_HI_TASKINST.START_TIME_`，不是 `CREATE_TIME_`；`CREATE_TIME_` 只存在于运行态 `ACT_RU_TASK`。修改该查询时要按历史表真实列名书写，H2 集成测试的建表语句已按真实列名固定。
@@ -658,6 +662,7 @@ Workflow 参数校验约束统一由 `mango-workflow-api` 的 `XxxApi` 契约声
 | 能力 | 接口 | 权限码 |
 |------|------|--------|
 | 创建业务申请 | `POST /workflow/business-applies` | `workflow:business-apply:create` |
+| 更新申请可筛属性 | `PUT /workflow/business-applies/{applyId}/filter-attributes` | `workflow:business-apply:create` |
 | 申请分页 | `POST /workflow/business-applies/page` | `workflow:business-apply:list` |
 | 申请详情 | `GET /workflow/business-applies/{applyId}` | `workflow:business-apply:detail` |
 | 历史申请 | `GET /workflow/business-applies/history` | `workflow:business-apply:detail` |
@@ -787,9 +792,11 @@ taskRuntimeApi.returnTask(command);
 | `applyId` | 业务申请 ID。 |
 | `applicantId` / `applicantName` | 原申请人；流程最终通过或驳回通知使用 `applicantId` 作为接收人。 |
 | `applyTitle` / `applySummary` | 业务申请的可读标题和摘要快照；默认通知使用 `applyTitle` 展示业务标题。 |
+| `applyAttributes` | 业务申请登记的可筛属性，键由业务自定义、值为该属性的全部取值；事件订阅方可直接读取结构化值。 |
 | `viewPath` | 从业务申请 `formJsonSnapshot.customConfig.viewPath` 派生的只读站内路径；仅安全的应用内绝对路径用于通知目标。 |
 | `viewQuery` | 从 `customConfig.viewQuery` 派生的只读查询参数；声明后站内信目标只携带这些参数。 |
 | `viewActionLabel` | 从 `customConfig.viewActionLabel` 派生的只读按钮文案；缺省时使用平台默认文案。 |
+| `viewActionEnabled` | 从 `customConfig.viewActionEnabled` 派生的只读开关；`false` 时默认通知不注入按钮动作。 |
 | `processDefinitionId` | Flowable 流程定义 ID。 |
 | `definitionId` / `definitionKey` / `definitionName` | Mango 流程定义 ID、编码和可读名称；默认通知只使用 `definitionName` 展示流程名称。 |
 | `completedTaskId` | 刚完成或发起退回的源任务 ID。 |
@@ -812,6 +819,8 @@ taskRuntimeApi.returnTask(command);
 | `currentTasks` | 刷新后的当前任务明细，包含原始 `assigneeName`、增强 `assigneeId`/`assigneeDisplayName`、`claimStatus`、`candidateUsers`、`candidateGroups` 和 `arrivedAt`。 |
 | `variables` | 流程变量快照。 |
 
+默认通知会把 `applyAttributes` 展开成 `applyAttribute_<key>` 消息变量（多值按英文逗号拼接），消息模板可直接写 `{{applyAttribute_guaranteeTypeCode}}`；没有登记属性时不注入任何变量，模板保持原有行为。
+
 默认工作流通知只包含三类：`workflow.task.assigned`、`workflow.process.completed`、`workflow.process.rejected`。标题和正文只展示可读流程名称、业务标题以及“待审核、审核通过、审核未通过”结果；不会把 `businessType`、`definitionKey`、`taskDefinitionKey` 或 `businessKey` 当作用户文案。流程名称或业务标题缺失时分别使用“流程”和“业务申请”，驳回原因缺失时使用“未填写”。
 
 `workflow.task.assigned` 按运行时任务发送：首次提交和后续节点到达都会通知实际办理人。任务已有 `assigneeId` 时只通知该办理人；任务尚未到人时，将候选用户以及 `ROLE:<id>`、`POST:<id>`、`ORG:<id>` 转成同一个任务的 Notice 接收目标，目标中的全部有效成员收到指向同一 `taskId` 的通知。并行或多实例产生多个运行时任务时，每个任务分别发送并使用 `eventId + taskId` 幂等，不能把接收人聚合到第一条任务。流程已经结束或没有可解析接收人时跳过通知；`ORG_LEADER:<id>` 不会降级为全组织通知。
@@ -833,8 +842,9 @@ Maven `1.0.29` 会把业务申请快照中的 `customConfig.viewPath` 派生到 
 | `viewPath` | 否 | 应用内绝对路径，例如 `/guarantee/finance/payment-vouchers`；必须以 `/` 开头，不含 `?`、`#`、反斜杠和控制字符，外部 URL 会被丢弃并回退通用页面。 |
 | `viewQuery` | 否 | 目标路径的查询参数对象。只接受单层标量值，嵌套对象和集合被丢弃；声明后站内信目标只携带这些参数，不再把整份通知参数拼进路由。 |
 | `viewActionLabel` | 否 | 站内信按钮文案，最长 32 个字符。仅在 `viewPath` 生效且目标命中自定义路径时使用；缺省或非法时回退“去审批/查看申请”。 |
+| `viewActionEnabled` | 否 | 是否注入默认通知按钮，默认 `true`。设为 `false` 时默认通知不注入任何按钮动作，消息只保留标题、正文和查看目标，点击入口由业务自己的页面或消息中心承接。 |
 
-`viewQuery` 和 `viewActionLabel` 只对完成、驳回这类终态通知生效；待办到达通知始终指向 `workflow:task:detail`，使用默认按钮文案。业务想要“点击后定位到列表某一行”，把行标识放进 `viewQuery`，前端按查询参数定位，不需要在通知参数里加保留键。
+`viewPath`、`viewQuery`、`viewActionLabel` 对 `workflow.task.assigned`、`workflow.process.completed`、`workflow.process.rejected` 三类默认通知都生效：声明后待办到达通知也跳到业务自己的待办/领取列表，不再强制指向平台 `workflow:task:detail`；未声明时保持平台默认目标。业务想要“点击后定位到列表某一行”，把行标识放进 `viewQuery`，前端按查询参数定位，不需要在通知参数里加保留键。按钮动作的类型仍是 `ROUTE`，平台不支持业务在默认通知里注入 `EVENT` 类型动作（会改变业务状态的动作必须由业务页面或自己的通知发送）。
 
 申请创建示例：
 
@@ -842,7 +852,8 @@ Maven `1.0.29` 会把业务申请快照中的 `customConfig.viewPath` 派生到 
 Map<String, Object> customConfig = Map.of(
         "viewPath", "/guarantee/finance/payment-vouchers",
         "viewQuery", Map.of("receiptId", receiptId, "orderNo", orderNo, "focus", "payment-confirm"),
-        "viewActionLabel", "去确认");
+        "viewActionLabel", "去确认",
+        "viewActionEnabled", false);
 apply.setFormJsonSnapshot(objectMapper.writeValueAsString(
         Map.of("customConfig", customConfig)));
 ```
@@ -1092,6 +1103,12 @@ workflow:template:push
 **前端打开菜单提示页面不存在**
 
 确认管理后台已经注册 `@mango/workflow` 的 `admin-pages` 子入口，并且菜单里的组件路径能映射到 `workflow/template/index` 或 `workflow/definition/index` 页面 key。
+
+## 升级与兼容
+
+| 适用版本 | 变更 | 影响 | 需要做的事 | 验证 | 回滚 |
+|----------|------|------|------------|------|------|
+| Maven 1.9.0 起（Issue #1248） | 新增 `workflow_business_apply_attribute` 表（Flyway `V5`）、`filterAttributes` 创建字段、`PUT /workflow/business-applies/{applyId}/filter-attributes`、任务查询的 `applyAttributeFilters` / `applyTimeBegin` / `applyTimeEnd` / `sortBy=applyTime` | 全部为新增可选能力，不传新参数时行为与 1.8.0 完全一致；`WorkflowBusinessApplyApi` 新增一个方法，自定义实现该接口的代码需要实现 `updateFilterAttributes` | 业务按需上报可筛属性；切换到属性筛选前先回填存量申请，否则属性过滤会排除未登记的历史申请 | `WorkflowTaskAttributeFilterIntegrationTest`、`WorkflowApiSurfaceContractTest`、模块 `mvn verify` | 删除新参数与接口调用即可回退；新表无读取路径时可保留 |
 
 ## 14. 相关文档
 

@@ -26,8 +26,10 @@ import io.mango.workflow.api.vo.WorkflowBusinessApplySummaryVO;
 import io.mango.workflow.api.vo.WorkflowBusinessApplyVO;
 import io.mango.workflow.api.vo.WorkflowJsonVO;
 import io.mango.workflow.core.entity.WorkflowBusinessApplyEntity;
+import io.mango.workflow.core.entity.WorkflowBusinessApplyAttributeEntity;
 import io.mango.workflow.core.entity.WorkflowBusinessApplyCurrentTaskEntity;
 import io.mango.workflow.core.entity.WorkflowBusinessApplyStatusLogEntity;
+import io.mango.workflow.core.mapper.WorkflowBusinessApplyAttributeMapper;
 import io.mango.workflow.core.mapper.WorkflowBusinessApplyCurrentTaskMapper;
 import io.mango.workflow.core.mapper.WorkflowBusinessApplyMapper;
 import io.mango.workflow.core.mapper.WorkflowBusinessApplyStatusLogMapper;
@@ -74,6 +76,7 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
     private static final int DELETE_CONTROL_CODE_POINT = 0x7f;
 
     private final WorkflowBusinessApplyMapper applyMapper;
+    private final WorkflowBusinessApplyAttributeMapper applyAttributeMapper;
     private final WorkflowBusinessApplyCurrentTaskMapper currentTaskMapper;
     private final WorkflowBusinessApplyStatusLogMapper statusLogMapper;
     private final TaskService taskService;
@@ -130,8 +133,43 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
         clearLatestFlag(apply.getBusinessType(), apply.getBusinessKey());
         applyMapper.insert(apply);
         enrichApplyId(command, apply);
+        if (command.getFilterAttributes() != null) {
+            replaceFilterAttributes(apply, WorkflowApplyAttributeRules.requireAttributes(command.getFilterAttributes()));
+        }
         saveStatusLog(apply, null, WorkflowApplyStatus.DRAFT.name(), WorkflowApplyAction.CREATE, null, null, null);
         return enrich(toVo(apply, List.of()));
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateFilterAttributes(Long applyId, Map<String, List<String>> filterAttributes) {
+        Require.notNull(applyId, WorkflowCode.APPLY_INVALID, "申请ID不能为空");
+        Map<String, List<String>> normalized = WorkflowApplyAttributeRules.requireAttributes(filterAttributes);
+        WorkflowBusinessApplyEntity apply = Require.nonNull(applyMapper.selectById(applyId),
+                WorkflowCode.APPLY_NOT_FOUND);
+        replaceFilterAttributes(apply, normalized);
+    }
+
+    /**
+     * 整体覆盖申请的可筛属性。
+     *
+     * <p>先删后插保证同一个申请同一属性只有一份值，多值字段按多条记录保存；调用方必须在事务内执行，
+     * 否则读侧可能看到中间状态。
+     */
+    private void replaceFilterAttributes(WorkflowBusinessApplyEntity apply,
+                                         Map<String, List<String>> filterAttributes) {
+        applyAttributeMapper.delete(new LambdaQueryWrapper<WorkflowBusinessApplyAttributeEntity>()
+                .eq(WorkflowBusinessApplyAttributeEntity::getApplyId, apply.getId()));
+        for (Map.Entry<String, List<String>> entry : filterAttributes.entrySet()) {
+            for (String value : entry.getValue()) {
+                WorkflowBusinessApplyAttributeEntity attribute = new WorkflowBusinessApplyAttributeEntity();
+                attribute.setApplyId(apply.getId());
+                attribute.setBusinessType(apply.getBusinessType());
+                attribute.setAttrKey(entry.getKey());
+                attribute.setAttrValue(value);
+                applyAttributeMapper.insert(attribute);
+            }
+        }
     }
 
     private void enrichApplyId(CreateWorkflowBusinessApplyCommand command, WorkflowBusinessApplyEntity apply) {
@@ -629,6 +667,7 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
         vo.setViewPath(viewTarget.viewPath());
         vo.setViewQuery(viewTarget.viewQuery());
         vo.setViewActionLabel(viewTarget.viewActionLabel());
+        vo.setViewActionEnabled(viewTarget.viewActionEnabled());
         vo.setFormKey(apply.getFormKey());
         vo.setFormVersion(apply.getFormVersion());
         vo.setSnapshotRef(apply.getSnapshotRef());
@@ -655,7 +694,8 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
         return new CustomFormViewTarget(
                 trim(scalarText(config.get("viewPath"))),
                 viewQuery(config.get("viewQuery")),
-                viewActionLabel(config.get("viewActionLabel")));
+                viewActionLabel(config.get("viewActionLabel")),
+                viewActionEnabled(config.get("viewActionEnabled")));
     }
 
     private WorkflowJsonVO viewQuery(Object value) {
@@ -682,9 +722,24 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
                 || character == DELETE_CONTROL_CODE_POINT) ? null : label;
     }
 
-    private record CustomFormViewTarget(String viewPath, WorkflowJsonVO viewQuery, String viewActionLabel) {
+    /**
+     * 业务在申请快照里显式关闭通知按钮时返回 false；缺省或非法值保持平台默认注入行为。
+     */
+    private Boolean viewActionEnabled(Object value) {
+        if (value instanceof Boolean enabled) {
+            return enabled;
+        }
+        String text = trim(scalarText(value));
+        if ("false".equalsIgnoreCase(text)) {
+            return Boolean.FALSE;
+        }
+        return Boolean.TRUE;
+    }
 
-        private static final CustomFormViewTarget EMPTY = new CustomFormViewTarget(null, null, null);
+    private record CustomFormViewTarget(String viewPath, WorkflowJsonVO viewQuery, String viewActionLabel,
+                                        Boolean viewActionEnabled) {
+
+        private static final CustomFormViewTarget EMPTY = new CustomFormViewTarget(null, null, null, Boolean.TRUE);
     }
 
     private String scalarText(Object value) {

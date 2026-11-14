@@ -9,6 +9,9 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * 创建业务工作流申请命令。
  */
@@ -104,4 +107,10 @@ public class CreateWorkflowBusinessApplyCommand {
     @NotNull(groups = WorkflowOptionalValidation.class)
     @jakarta.validation.Valid
     private WorkflowJsonRequest extension;
+
+    @Schema(description = "可筛属性：业务自定义键值，供任务列表精确过滤；最多20个属性，"
+            + "属性名以字母开头且只允许字母、数字、下划线、点和短横线，"
+            + "属性值不超过255字符，单属性最多50个值")
+    @Size(max = 20, message = "可筛属性数量不能超过20")
+    private Map<String, List<String>> filterAttributes;
 }

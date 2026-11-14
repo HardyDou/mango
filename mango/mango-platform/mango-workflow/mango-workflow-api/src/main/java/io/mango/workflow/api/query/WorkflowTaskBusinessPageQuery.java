@@ -5,6 +5,7 @@ import io.mango.workflow.api.enums.WorkflowTaskClaimStatus;
 import io.mango.workflow.api.enums.WorkflowTaskQueryScope;
 import io.mango.workflow.api.enums.WorkflowTaskRuntimeStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -22,6 +23,8 @@ import java.util.List;
  * {@code workflow:task:all} 权限码。{@code businessKeys} 不传或为空表示不限业务主键，
  * 传入时按业务主键集合进一步收窄。{@code applyKeyword} 匹配申请单的编号、标题和摘要，
  * {@code keyword} 匹配任务名称和任务节点定义 Key，两者互不替代。
+ * {@code applyAttributeFilters} 按业务登记在申请上的可筛属性精确收窄，多个条件为且、
+ * 同一条件的多个值为或；业务不需要先枚举 {@code businessKeys}。
  */
 @Data
 @Schema(description = "按业务类型查询任务，业务主键可选")
@@ -90,9 +93,20 @@ public class WorkflowTaskBusinessPageQuery {
     @Size(max = 128, message = "申请关键字长度不能超过128")
     private String applyKeyword;
 
-    @Schema(description = "排序字段：createTime=任务创建时间，endTime=处理时间，claimTime=领取时间",
+    @Schema(description = "申请可筛属性过滤条件：条件之间为且，同一条件的多个值为或；最多10个条件")
+    @Size(max = 10, message = "可筛属性条件数量不能超过10")
+    private List<@Valid WorkflowApplyAttributeFilter> applyAttributeFilters;
+
+    @Schema(description = "申请创建时间起，闭区间")
+    private LocalDateTime applyTimeBegin;
+
+    @Schema(description = "申请创建时间止，闭区间")
+    private LocalDateTime applyTimeEnd;
+
+    @Schema(description = "排序字段：createTime=任务创建时间，endTime=处理时间，claimTime=领取时间，applyTime=申请创建时间",
             defaultValue = "createTime")
-    @Pattern(regexp = "createTime|endTime|claimTime", message = "排序字段只支持 createTime、endTime、claimTime")
+    @Pattern(regexp = "createTime|endTime|claimTime|applyTime",
+            message = "排序字段只支持 createTime、endTime、claimTime、applyTime")
     private String sortBy = "createTime";
 
     @Schema(description = "排序方向：asc=升序，desc=降序", defaultValue = "desc")

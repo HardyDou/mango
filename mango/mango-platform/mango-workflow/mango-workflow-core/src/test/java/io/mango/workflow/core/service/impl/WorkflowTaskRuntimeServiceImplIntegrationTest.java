@@ -52,6 +52,7 @@ import io.mango.workflow.core.entity.WorkflowFormInstanceEntity;
 import io.mango.workflow.core.entity.WorkflowTaskRecordEntity;
 import io.mango.workflow.core.event.WorkflowEventPublisher;
 import io.mango.workflow.core.identity.WorkflowAssigneeIdentityService;
+import io.mango.workflow.core.mapper.WorkflowBusinessApplyAttributeMapper;
 import io.mango.workflow.core.mapper.WorkflowDefinitionMapper;
 import io.mango.workflow.core.mapper.WorkflowDefinitionVersionMapper;
 import io.mango.workflow.core.mapper.WorkflowFormInstanceMapper;
@@ -896,6 +897,7 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
 
     private void rebuildTables() {
         jdbcTemplate.execute("drop table if exists workflow_copied_task");
+        jdbcTemplate.execute("drop table if exists workflow_business_apply_attribute");
         jdbcTemplate.execute("drop table if exists workflow_business_apply");
         jdbcTemplate.execute("drop table if exists workflow_task_record");
         jdbcTemplate.execute("drop table if exists workflow_form_instance");
@@ -1011,6 +1013,22 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
                     comment text,
                     variables_json text,
                     created_time timestamp,
+                    created_by bigint,
+                    created_at timestamp,
+                    updated_by bigint,
+                    updated_at timestamp,
+                    primary key (id)
+                )
+                """);
+        jdbcTemplate.execute("""
+                create table workflow_business_apply_attribute (
+                    id bigint not null,
+                    tenant_id bigint,
+                    org_id bigint,
+                    apply_id bigint,
+                    business_type varchar(128),
+                    attr_key varchar(64),
+                    attr_value varchar(255),
                     created_by bigint,
                     created_at timestamp,
                     updated_by bigint,
@@ -1292,8 +1310,10 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
         @Bean
         RecordingWorkflowEventPublisher workflowEventPublisher(ObjectProvider<IDomainEventPublisher> provider,
                                                                WorkflowAssigneeIdentityService assigneeIdentityService,
+                                                               WorkflowBusinessApplyAttributeMapper applyAttributeMapper,
                                                                OperationLog operationLog) {
-            return new RecordingWorkflowEventPublisher(provider, assigneeIdentityService, operationLog);
+            return new RecordingWorkflowEventPublisher(provider, assigneeIdentityService,
+                    applyAttributeMapper, operationLog);
         }
 
         @Bean
@@ -1323,8 +1343,9 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
 
         RecordingWorkflowEventPublisher(ObjectProvider<IDomainEventPublisher> provider,
                                         WorkflowAssigneeIdentityService assigneeIdentityService,
+                                        WorkflowBusinessApplyAttributeMapper applyAttributeMapper,
                                         OperationLog operationLog) {
-            super(provider, assigneeIdentityService);
+            super(provider, assigneeIdentityService, applyAttributeMapper);
             this.operationLog = operationLog;
         }
 
@@ -1368,6 +1389,10 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
         @Override
         public WorkflowBusinessApplyVO create(CreateWorkflowBusinessApplyCommand command) {
             return null;
+        }
+
+        @Override
+        public void updateFilterAttributes(Long applyId, Map<String, List<String>> filterAttributes) {
         }
 
         @Override

@@ -90,6 +90,9 @@ public class WorkflowBusinessApplyVO {
     @Schema(description = "自定义业务查看路径的按钮文案；为空时使用平台默认文案")
     private String viewActionLabel;
 
+    @Schema(description = "是否在默认通知中注入操作按钮；业务在申请快照 customConfig.viewActionEnabled=false 时关闭")
+    private Boolean viewActionEnabled;
+
     @Schema(description = "表单Key")
     private String formKey;
 

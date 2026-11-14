@@ -814,12 +814,29 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
     }
 
     private void rebuildWorkflowTables() {
+        jdbcTemplate.execute("drop table if exists workflow_business_apply_attribute");
         jdbcTemplate.execute("drop table if exists workflow_business_apply_current_task");
         jdbcTemplate.execute("drop table if exists workflow_business_apply_status_log");
         jdbcTemplate.execute("drop table if exists workflow_task_record");
         jdbcTemplate.execute("drop table if exists workflow_copied_task");
         jdbcTemplate.execute("drop table if exists workflow_form_instance");
         jdbcTemplate.execute("drop table if exists workflow_business_apply");
+        jdbcTemplate.execute("""
+                create table workflow_business_apply_attribute (
+                    id bigint not null,
+                    tenant_id bigint,
+                    org_id bigint,
+                    apply_id bigint,
+                    business_type varchar(128),
+                    attr_key varchar(64),
+                    attr_value varchar(255),
+                    created_by bigint,
+                    created_at timestamp,
+                    updated_by bigint,
+                    updated_at timestamp,
+                    primary key (id)
+                )
+                """);
         jdbcTemplate.execute("""
                 create table workflow_business_apply (
                     id bigint not null,

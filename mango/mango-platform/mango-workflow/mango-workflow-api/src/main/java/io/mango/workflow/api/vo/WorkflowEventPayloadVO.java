@@ -64,8 +64,14 @@ public class WorkflowEventPayloadVO {
     @Schema(description = "自定义业务查看路径的按钮文案；为空时使用平台默认文案")
     private String viewActionLabel;
 
+    @Schema(description = "是否在默认通知中注入操作按钮；false 时不注入按钮，消费方可自行决定入口")
+    private Boolean viewActionEnabled;
+
     @Schema(description = "流程变量快照")
     private WorkflowJsonVO variables;
+
+    @Schema(description = "业务申请可筛属性；键由业务自定义，值为该属性的全部取值")
+    private Map<String, List<String>> applyAttributes;
 
     @Schema(description = "Flowable 流程定义ID")
     private String processDefinitionId;
