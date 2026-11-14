@@ -1,3 +1,14 @@
+## 1.4.10 - 2026-11-14
+
+### Changed
+
+- Lock the CLI Maven matrix to Maven `1.9.1` and the generated 201-coordinate Maven/docs release closure.
+- Ship the auto-assign record attribution guidance and the bindable `globalEntityManifest` check parameter in the generated templates and documentation.
+
+### Upgrade Notes
+
+- Upgrade `@mango/cli@1.4.10` together with the complete Maven/docs `1.9.1` tuple; do not mix release batches.
+
 ## 1.4.9 - 2026-11-14
 
 ### Changed

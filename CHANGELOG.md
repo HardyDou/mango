@@ -1,3 +1,75 @@
+## v2026.11.14-maven-1.9.1-auto-assign-attribution-release - Mango Maven/docs 1.9.1 auto assign attribution fix release - 2026-11-14
+
+Status: `PENDING`. Release plan digest `7a4eb94ef74b3b2882774a5fa130cf6ca3ce592f5f32bf39b156e42b451a6075`; Maven/npm publication, consume verification, Tag and GitHub Release remain pending.
+
+### Pull Requests
+
+- Fixed: [PR #1271](https://github.com/HardyDou/mango/pull/1271) `AUTO_ASSIGN` task records now attribute the operator to the real assignee instead of the user who triggered the node entry or the previous handler, so a business approval timeline no longer shows "initiator" for an auto-assigned step. Packages: the complete Maven/docs `1.9.1` tuple including `io.mango.platform.workflow:mango-workflow-{api,core,starter,starter-remote}:1.9.1` and `io.mango:mango-docs-bundle:1.9.1`, plus the generated `@mango/cli@1.4.10` closure. Business Adaptation: upgrade the tuple; no schema, API or configuration change is required, and business pages that filter or display the record operator start showing the assignee without code changes.
+- Fixed: [PR #1272](https://github.com/HardyDou/mango/pull/1272) The `mango:check` goal no longer fails when the `globalEntityManifest` parameter is supplied as a file path, because the plugin now exposes a bindable `File` parameter instead of an unreadable string value. Packages: the complete Maven/docs `1.9.1` tuple including `io.mango.platform.tools:mango-maven-plugin:1.9.1` and `io.mango:mango-docs-bundle:1.9.1`, plus the generated `@mango/cli@1.4.10` closure. Business Adaptation: upgrade the tuple; consumers that pass the global entity manifest as a file path no longer need a workaround, and no configuration change is required.
+- Changed: [PR #1268](https://github.com/HardyDou/mango/pull/1268) closed out the previous `1.9.0` batch by recording the published coordinates in `CHANGELOG.md` and `mango-ui/.changeset/release-baseline.json` and removing the consumed Changesets. Packages: repository release bookkeeping only; no published coordinate changes for this PR. Business Adaptation: none.
+
+### Fixed
+
+- An auto-assigned task record now stores the selected assignee as `operator_id` and the resolved login name as `operator_name`, so the timeline, the record query and any report grouped by operator attribute the step to the person who actually has to handle it.
+- A missing login name no longer loses the attribution: the record falls back to the user id, so a deleted or renamed account still identifies the assignee by id.
+- Filtering task records by handler now returns the auto-assigned step for the assignee instead of for the user who triggered the transition.
+- `mango:check` accepts the global entity manifest as a bindable file parameter, so a build that sets the manifest path binds the value instead of failing on a missing string conversion.
+
+### Changed
+
+- `WorkflowTaskRuntimeService.saveRecord` gains an operator-aware overload; the previous signature delegates with the current login user, so `COMPLETE`, `REJECT`, `RETURN`, `CLAIM` and other actions keep their existing attribution.
+- The workflow module README documents the `AUTO_ASSIGN` operator semantics and the effect on record filtering by handler.
+- The non-application Maven/docs tuple advances from `1.9.0` to `1.9.1` with 201 coordinates because the workflow core module changes the record attribution; `@mango/cli` advances from `1.4.9` to `1.4.10` as the generated compatibility closure, and no other npm package is republished.
+- `@mango/pmo` is unchanged because no PMO rule, contract, Agent, template or shipped Skill changed in this batch.
+
+### Versions
+
+- Maven/docs: `1.9.0` to `1.9.1`; 201 sealed Maven coordinates, including `io.mango:mango-docs-bundle:1.9.1` and `io.mango.platform.workflow:mango-workflow-core:1.9.1`.
+- npm: `@mango/cli@1.4.9` to `@mango/cli@1.4.10`; no other npm package is republished.
+- Exact topology, dependency order and checksums are generated in `mango-ui/.changeset/release-plan.json`.
+
+### Published Packages
+
+- Publish all 201 non-application Maven coordinates in release-plan order.
+- Publish `@mango/cli@1.4.10` as the generated compatibility closure.
+- Application fat jars and coordinates outside the sealed plan are excluded; the eighteen `@mango/*` frontend packages keep their `1.9.0` batch versions because no frontend source changed.
+
+### Business Impact
+
+- Approval timelines and record lists now show the real handler for auto-assigned steps, so an approver, an auditor or a business report sees who must act instead of seeing the initiator.
+- Task record filtering by handler returns the auto-assigned steps that belong to the current user, which fixes workbench counts that previously attributed those steps to someone else.
+- No database migration, menu, permission, tenant boundary or public API shape changes; only the stored operator identity of `AUTO_ASSIGN` records changes, and existing rows keep their previous values.
+
+### Upgrade Estimate
+
+- Audience: Mango backend consumers that use workflow auto assignment and read task records, approval timelines or handler-based record filters.
+- Engineering Effort: 0.25 engineer-day per consumer to upgrade the tuple and verify one auto-assigned approval in a test process.
+- Execution Window: 1 hour per consumer including backend restart and one auto-assign run.
+- Service Downtime: one controlled backend restart window; no database migration is required.
+- Rollback Effort: 0.25 engineer-day per consumer to restore the complete Maven `1.9.0` tuple and the previously verified CLI version.
+- Assumptions: consumers have a process definition with at least one `AUTO_ASSIGN` node, can trigger it with a test apply, and can open the approval timeline or a task record list.
+
+### Upgrade Notes
+
+1. Upgrade the complete Mango Maven/docs tuple from `1.9.0` to `1.9.1`; do not update only one starter or module.
+2. Upgrade CLI consumers to `@mango/cli@1.4.10` when the CLI is used; the frontend packages stay on the `1.9.0` batch versions.
+3. Run one auto-assigned approval in a test environment and confirm the timeline row shows the assignee, then confirm a record list filtered by that assignee contains the step.
+4. Expect historical `AUTO_ASSIGN` rows to keep their old operator values; this batch does not rewrite existing records.
+5. No Flyway migration runs in this batch, so an upgrade that already applied `V5` and `V7` from `1.9.0` needs no database action.
+
+### Verification
+
+- The workflow module integration test covers the attribution: assignee `1002` triggered by user `1001` produces a `AUTO_ASSIGN` record row and a record VO attributed to `1002`.
+- The workflow README documents the operator semantics together with the record query behavior.
+- `catalog:check` reports a consistent Catalog projection on the source commit, and the release plan re-computes 201 Maven coordinates plus the single-package npm closure with matching topology.
+- `mango release prepare` builds once, seals every JAR, docs bundle, tarball and source archive under one prepared candidate id, and runs a mixed consumer against the sealed files and the consume registry.
+
+### Rollback
+
+- Restore the complete Maven `1.9.0` tuple and `@mango/cli@1.4.9`; do not patch a single module.
+- No migration and no data rewrite are involved, so a code rollback alone restores the previous behavior; rows written by `1.9.1` keep the assignee attribution while older rows keep the previous values.
+- If a business page compensates the attribution itself, remove that compensation together with the rollback, otherwise the operator is attributed twice.
+
 ## v2026.11.14-maven-1.9.0-file-edit-apply-attribute-release - Mango Maven/docs 1.9.0 file edit and workflow apply attribute release - 2026-11-14
 
 Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `bd2de5c3ca790229cfc4e5fc7c5e9c84ae7c857144c0a9e4b22accd647aebab1`; prepared candidate `6b82ef6ef2f20864c3b661c2d44c0898cada062eba74c3dc665ec25ec52243ff` completed publication and consume verification for 18 npm packages (`@mango/file@1.3.0` through `@mango/cli@1.4.9`) and 201 Maven coordinates. Tag and GitHub Release were created and verified.
