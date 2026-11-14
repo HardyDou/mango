@@ -33,6 +33,7 @@ vi.mock('@mango/file', async () => {
       ...actual.fileApi,
       preview: mocks.preview,
     },
+    useFileApi: () => ({ preview: mocks.preview }),
     fileRuntimeUrl: mocks.fileRuntimeUrl,
   };
 });
