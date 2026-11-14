@@ -132,6 +132,22 @@ export interface CreateFileUploadSessionCommand extends FileUploadParams {
   contentType?: string;
   chunkSize?: number;
   totalParts?: number;
+  /** 替换目标文件ID；传入后会话完成时会替换该文件内容而不是创建新记录。 */
+  replaceFileId?: FileId;
+}
+
+export type FileRecordMetadata = Partial<
+  Pick<FileRecord, 'fileName' | 'purpose' | 'accessLevel' | 'bizType' | 'bizId' | 'bizMeta' | 'directoryId'>
+>;
+
+/** 更新文件信息命令；未传字段保持原值，空字符串表示清空可空字段。 */
+export interface UpdateFileRecordCommand extends FileRecordMetadata {
+  id: FileId;
+}
+
+/** 替换文件内容参数；fileName 为空时服务端保留原文件名。 */
+export interface ReplaceFileContentParams extends FileRecordMetadata {
+  id: FileId;
 }
 
 export interface FileUploadInit {
@@ -182,6 +198,8 @@ export interface FileApi {
   uploadBatch(files: File[], params?: FileUploadParams, options?: FileUploadOptions): Promise<FileRecord[]>;
   archive(id: FileId, reason?: string): Promise<boolean>;
   delete(ids: FileId[]): Promise<boolean>;
+  updateRecord(command: UpdateFileRecordCommand): Promise<FileRecord>;
+  replaceContent(file: File, params: ReplaceFileContentParams, options?: FileUploadOptions): Promise<FileRecord>;
   createUploadSession(command: CreateFileUploadSessionCommand, options?: FileUploadOptions): Promise<FileUploadInit>;
   createUploadPartSign(
     sessionId: FileId,
@@ -311,6 +329,15 @@ export function createFileApi(httpClient?: HttpClient): FileApi {
       transport.request<boolean>({ method: 'DELETE', url: '/file/files', query: { id, reason } }),
     delete: (ids) =>
       transport.request<boolean, { ids: FileId[] }>({ method: 'POST', url: '/file/files/delete', body: { ids } }),
+    updateRecord: (command) =>
+      transport
+        .request<unknown, Record<string, unknown>>({
+          method: 'PUT',
+          url: '/file/files',
+          body: normalizeRecordCommand(command),
+        })
+        .then(fromBackendFileRecord),
+    replaceContent: (file, params, options) => replaceFileContent(api, settingsApi, transport, file, params, options),
     createUploadSession: (command, options) =>
       transport
         .request<unknown, ReturnType<typeof normalizeUploadSessionCommand>>({
@@ -486,6 +513,46 @@ async function uploadSmart(
   return uploadMultipart(api, file, params, options);
 }
 
+async function replaceFileContent(
+  api: FileApi,
+  settingsApi: FileSettingsApi,
+  httpClient: HttpClient,
+  file: File,
+  params: ReplaceFileContentParams,
+  options?: FileUploadOptions,
+): Promise<FileRecord> {
+  const policy = await resolveUploadPolicy(settingsApi, options);
+  if (!shouldUseMultipart(file.size, policy)) return replaceSimple(httpClient, file, params, options);
+  const metadata: FileUploadParams = {
+    purpose: params.purpose,
+    accessLevel: params.accessLevel,
+    bizType: params.bizType,
+    bizId: params.bizId,
+    bizMeta: params.bizMeta,
+    directoryId: params.directoryId,
+  };
+  return uploadMultipart(api, file, { ...metadata, replaceFileId: params.id }, options, params.fileName);
+}
+
+async function replaceSimple(
+  httpClient: HttpClient,
+  file: File,
+  params: ReplaceFileContentParams,
+  options?: FileUploadOptions,
+): Promise<FileRecord> {
+  const formData = new FormData();
+  formData.append('file', file);
+  appendCommandFields(formData, normalizeRecordCommand(params));
+  const item = await httpClient.request<unknown>({
+    method: 'POST',
+    url: '/file/files/replace',
+    body: formData,
+    headers: MULTIPART_HEADERS,
+    ...uploadRequestOptions(options),
+  });
+  return fromBackendFileRecord(item);
+}
+
 async function resolveUploadPolicy(
   settingsApi: FileSettingsApi,
   options?: FileUploadOptions,
@@ -538,8 +605,9 @@ async function uploadSimple(
 async function uploadMultipart(
   api: FileApi,
   file: File,
-  params?: FileUploadParams,
+  params?: FileUploadParams & { replaceFileId?: FileId },
   options?: FileUploadOptions,
+  fileName?: string,
 ): Promise<FileRecord> {
   const chunkSize = options?.chunkSize ?? DEFAULT_CHUNK_SIZE;
   const totalParts = Math.ceil(file.size / chunkSize);
@@ -548,7 +616,7 @@ async function uploadMultipart(
   const init = await api.createUploadSession(
     {
       ...params,
-      fileName: file.name,
+      fileName: fileName || file.name,
       fileSize: file.size,
       fileHash,
       contentType: file.type || undefined,
@@ -740,8 +808,31 @@ function normalizeUploadSessionCommand(command: CreateFileUploadSessionCommand) 
     ...command,
     bizId: command.bizId ? String(command.bizId) : undefined,
     directoryId: command.directoryId ? String(command.directoryId) : undefined,
+    replaceFileId: command.replaceFileId ? String(command.replaceFileId) : undefined,
     bizMeta: normalizeBizMetaForRequest(command.bizMeta),
   };
+}
+
+function normalizeRecordCommand(command: UpdateFileRecordCommand | ReplaceFileContentParams) {
+  return {
+    id: command.id ? String(command.id) : undefined,
+    fileName: command.fileName,
+    purpose: command.purpose,
+    accessLevel: command.accessLevel,
+    bizType: command.bizType,
+    bizId: command.bizId === undefined || command.bizId === null ? undefined : String(command.bizId),
+    bizMeta: command.bizMeta === undefined ? undefined : (normalizeBizMetaForRequest(command.bizMeta) ?? ''),
+    directoryId:
+      command.directoryId === undefined || command.directoryId === null ? undefined : String(command.directoryId),
+  };
+}
+
+/** 表单提交保留空字符串，让服务端按“空值清空字段”语义处理。 */
+function appendCommandFields(formData: FormData, fields: Record<string, unknown>) {
+  Object.entries(fields).forEach(([key, value]) => {
+    if (value === undefined || value === null) return;
+    formData.append(key, String(value));
+  });
 }
 
 function normalizeBizMetaForRequest(value?: FileBizMeta) {

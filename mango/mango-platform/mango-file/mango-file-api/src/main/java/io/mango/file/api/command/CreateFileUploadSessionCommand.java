@@ -69,4 +69,8 @@ public class CreateFileUploadSessionCommand implements Serializable {
     @Schema(description = "逻辑目录ID。根目录为0")
     @Min(value = 0, message = "逻辑目录ID不能小于0")
     private Long directoryId;
+
+    @Schema(description = "替换目标文件ID；传入表示分片上传完成后替换该文件内容而不是创建新记录")
+    @Min(value = 1, message = "替换目标文件ID必须大于0")
+    private Long replaceFileId;
 }

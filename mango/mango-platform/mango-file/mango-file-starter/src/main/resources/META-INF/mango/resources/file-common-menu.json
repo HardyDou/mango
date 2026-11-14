@@ -9,7 +9,7 @@
         "AUTH_MENU": [
           {
             "id": "2951300000000008501",
-            "version": 2,
+            "version": 3,
             "bizKey": "file.menu.internal-admin",
             "name": "文件管理菜单",
             "targetModule": "authorization",
@@ -61,7 +61,7 @@
                         "icon": "Files",
                         "component": "file/files/index",
                         "sort": 1,
-                        "remark": "文件记录、上传下载、预览和归档管理",
+                        "remark": "文件记录、上传下载、预览、信息编辑、内容替换和归档管理",
                         "apiCodes": [
                           "file:files:list",
                           "file:files:download",
@@ -70,7 +70,9 @@
                           "file:directories:add",
                           "file:directories:edit",
                           "file:directories:delete",
-                          "file:files:delete"
+                          "file:files:delete",
+                          "file:files:edit",
+                          "file:files:replace"
                         ]
                       },
                       {

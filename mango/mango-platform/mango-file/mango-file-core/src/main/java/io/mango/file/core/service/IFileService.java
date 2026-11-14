@@ -10,6 +10,8 @@ import io.mango.file.api.command.FileMergePdfCommand;
 import io.mango.file.api.command.FilePackageCommand;
 import io.mango.file.api.command.FilePackageSizeControlCommand;
 import io.mango.file.api.command.SaveFileCommand;
+import io.mango.file.api.command.ReplaceFileContentCommand;
+import io.mango.file.api.command.UpdateFileRecordCommand;
 import io.mango.file.core.service.model.FileDownloadOptions;
 import io.mango.file.core.service.model.ServerFilePart;
 import io.mango.file.api.query.FileRecordPageQuery;
@@ -33,6 +35,10 @@ public interface IFileService {
     List<FileRecordVO> uploadBatch(MultipartFile[] files, SaveFileCommand command);
 
     FileRecordVO save(SaveFileCommand command);
+
+    FileRecordVO updateMetadata(UpdateFileRecordCommand command);
+
+    FileRecordVO replaceContent(MultipartFile file, ReplaceFileContentCommand command);
 
     FileRecordVO savePreviewArtifact(SaveFileCommand command);
 

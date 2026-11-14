@@ -19,7 +19,9 @@ import io.mango.file.api.command.FileMergePdfEntryCommand;
 import io.mango.file.api.command.FilePackageCommand;
 import io.mango.file.api.command.FilePackageEntryCommand;
 import io.mango.file.api.command.FilePackageSizeControlCommand;
+import io.mango.file.api.command.ReplaceFileContentCommand;
 import io.mango.file.api.command.SaveFileCommand;
+import io.mango.file.api.command.UpdateFileRecordCommand;
 import io.mango.file.api.enums.FileAccessLevel;
 import io.mango.file.api.enums.FileAccessMode;
 import io.mango.file.api.enums.FileCode;
@@ -107,7 +109,6 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -140,11 +141,11 @@ public class FileService implements IFileService, IFileContentProvider {
             ConvertFormat.TIFF,
             ConvertFormat.DOC,
             ConvertFormat.DOCX);
-    private final FileStorageRouter fileStorageRouter;
-    private final IFileStorageConfigService storageConfigService;
-    private final IFileSettingsService settingsService;
-    private final IFileDirectoryService directoryService;
-    private final FileRecordMapper fileRecordMapper;
+    final FileStorageRouter fileStorageRouter;
+    final IFileStorageConfigService storageConfigService;
+    final IFileSettingsService settingsService;
+    final IFileDirectoryService directoryService;
+    final FileRecordMapper fileRecordMapper;
     private final FileObjectMapper fileObjectMapper;
     private final FileHashMappingMapper fileHashMappingMapper;
     private final FileUploadSessionMapper fileUploadSessionMapper;
@@ -420,6 +421,22 @@ public class FileService implements IFileService, IFileContentProvider {
     }
     @Override
     @Transactional(rollbackFor = Exception.class)
+    public FileRecordVO updateMetadata(UpdateFileRecordCommand command) {
+        return editOperations().updateMetadata(command);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public FileRecordVO replaceContent(MultipartFile file, ReplaceFileContentCommand command) {
+        return editOperations().replaceContent(file, command);
+    }
+
+    private FileEditOperations editOperations() {
+        return new FileEditOperations(this);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
     public List<FileRecordVO> uploadBatch(MultipartFile[] files, SaveFileCommand command) {
         Require.notNull(command, FileCode.FILE_EMPTY);
         Require.notEmpty(files == null ? List.of() : List.of(files), FileCode.FILE_EMPTY);
@@ -634,66 +651,43 @@ public class FileService implements IFileService, IFileContentProvider {
         Require.notNull(command, FileCode.FILE_EMPTY);
         Long tenantId = requireTenantId();
         Long userId = MangoContextHolder.userId();
-        Long resolvedDirectoryId = normalizeDirectoryId(command.getDirectoryId());
-        directoryService.selectVisible(resolvedDirectoryId);
         FileSettingsVO settings = settingsService.current();
         Require.isTrue(!Boolean.FALSE.equals(settings.getMultipartEnabled()), FileCode.FILE_UPLOAD_SESSION_INVALID);
         Require.isTrue(command.getFileSize() <= settings.getMaxSize(), FileCode.FILE_SIZE_EXCEEDED);
-        String fileName = resolveFileName(tenantId, resolvedDirectoryId, normalizeFileName(command.getFileName()), settings);
-        String fileExt = fileExt(fileName);
-        validateExtension(fileExt, settings);
+        UploadSessionTarget target = resolveUploadSessionTarget(command, settings, tenantId);
+        validateExtension(target.fileExt(), settings);
         validateContentType(command.getContentType(), settings);
         String fileHash = trimToNull(command.getFileHash());
-        String normalizedBizMeta = normalizeBizMeta(command.getBizMeta());
-        FileStorageConfigEntity storageConfig = activeStorageConfig();
-        FileObjectEntity instantObject = findInstantUploadObject(tenantId, storageConfig, fileHash, command.getFileSize(), settings);
+        FileObjectEntity instantObject = findInstantUploadObject(
+                tenantId, target.storageConfig(), fileHash, command.getFileSize(), settings);
         if (instantObject != null) {
-            FileRecordEntity record = createFileRecord(tenantId,
-                    userId,
-                    instantObject,
-                    fileName,
-                    fileExt,
-                    command.getFileSize(),
-                    command.getContentType(),
-                    fileHash,
-                    command.getPurpose(),
-                    command.getAccessLevel(),
-                    command.getBizType(),
-                    command.getBizId(),
-                    normalizedBizMeta,
-                    resolvedDirectoryId,
-                    settings);
-            fileRecordMapper.insert(record);
-            incrementObjectRefCount(instantObject.getId());
-            FileUploadInitVO vo = new FileUploadInitVO();
-            vo.setInstant(true);
-            vo.setFileRecord(toVO(record));
-            return vo;
+            return instantSessionResult(command, target, fileHash, instantObject, settings);
         }
-
         long chunkSize = resolveChunkSize(command.getChunkSize());
         int totalParts = resolveTotalParts(command.getTotalParts(), command.getFileSize(), chunkSize);
-        String objectName = generateObjectName(storageConfig, tenantId, resolvedDirectoryId, fileName, fileExt, fileHash, settings);
+        String objectName = generateObjectName(target.storageConfig(), tenantId, target.directoryId(),
+                target.fileName(), target.fileExt(), fileHash, settings);
         // A browser without Web Crypto cannot provide a hash. Keep that path on server chunks so
         // the server can calculate the final hash while merging instead of requiring S3 metadata.
         FileUploadMode uploadMode = StringUtils.hasText(fileHash)
-                && fileStorageRouter.supportsMultipartUpload(storageConfig)
+                && fileStorageRouter.supportsMultipartUpload(target.storageConfig())
                 ? FileUploadMode.S3_MULTIPART : FileUploadMode.SERVER_CHUNK;
         String storageUploadId = null;
         if (uploadMode == FileUploadMode.S3_MULTIPART) {
-            MultipartUpload upload = fileStorageRouter.initiateMultipartUpload(storageConfig, objectName, command.getContentType());
+            MultipartUpload upload = fileStorageRouter.initiateMultipartUpload(
+                    target.storageConfig(), objectName, command.getContentType());
             storageUploadId = upload.uploadId();
         }
         FileUploadSessionEntity session = new FileUploadSessionEntity();
         session.setTenantId(tenantId);
-        session.setStorageConfigId(normalizedStorageConfigId(storageConfig));
-        session.setStorageType(storageConfig.getStorageType());
-        session.setBucketName(storageConfig.getBucketName());
+        session.setStorageConfigId(normalizedStorageConfigId(target.storageConfig()));
+        session.setStorageType(target.storageConfig().getStorageType());
+        session.setBucketName(target.storageConfig().getBucketName());
         session.setObjectName(objectName);
         session.setUploadMode(uploadMode.name());
         session.setStorageUploadId(storageUploadId);
-        session.setFileName(fileName);
-        session.setFileExt(fileExt);
+        session.setFileName(target.fileName());
+        session.setFileExt(target.fileExt());
         session.setFileHash(fileHash);
         session.setFileSize(command.getFileSize());
         session.setContentType(trimToNull(command.getContentType()));
@@ -702,12 +696,23 @@ public class FileService implements IFileService, IFileContentProvider {
         session.setUploadedParts(0);
         session.setStatus(FileUploadSessionStatus.INIT.name());
         session.setExpiresAt(LocalDateTime.now().plusHours(UPLOAD_SESSION_EXPIRE_HOURS));
-        session.setPurpose(trimToNull(command.getPurpose()));
-        session.setAccessLevel(resolveAccessLevel(command.getAccessLevel(), settings).name());
-        session.setBizType(trimToNull(command.getBizType()));
-        session.setBizId(trimToNull(command.getBizId()));
-        session.setBizMeta(normalizedBizMeta);
-        session.setDirectoryId(resolvedDirectoryId);
+        session.setPurpose(target.replaceTarget() == null
+                ? trimToNull(command.getPurpose())
+                : editOperations().metadataValue(command.getPurpose(), target.replaceTarget().getPurpose()));
+        session.setAccessLevel(target.replaceTarget() == null
+                ? resolveAccessLevel(command.getAccessLevel(), settings).name()
+                : (command.getAccessLevel() == null
+                    ? target.replaceTarget().getAccessLevel()
+                    : resolveAccessLevel(command.getAccessLevel(), settings).name()));
+        session.setBizType(target.replaceTarget() == null
+                ? trimToNull(command.getBizType())
+                : editOperations().metadataValue(command.getBizType(), target.replaceTarget().getBizType()));
+        session.setBizId(target.replaceTarget() == null
+                ? trimToNull(command.getBizId())
+                : editOperations().metadataValue(command.getBizId(), target.replaceTarget().getBizId()));
+        session.setBizMeta(target.bizMeta());
+        session.setDirectoryId(target.directoryId());
+        session.setReplaceFileId(target.replaceTarget() == null ? null : target.replaceTarget().getId());
         session.setCreatedBy(userId);
         session.setUpdatedBy(userId);
         LocalDateTime now = LocalDateTime.now();
@@ -723,6 +728,90 @@ public class FileService implements IFileService, IFileContentProvider {
         vo.setChunkSize(session.getChunkSize());
         vo.setTotalParts(session.getTotalParts());
         vo.setExpiresAt(session.getExpiresAt());
+        return vo;
+    }
+
+    private record UploadSessionTarget(FileRecordEntity replaceTarget,
+                                       Long directoryId,
+                                       String fileName,
+                                       String fileExt,
+                                       FileStorageConfigEntity storageConfig,
+                                       String bizMeta) {
+    }
+
+    private UploadSessionTarget resolveUploadSessionTarget(CreateFileUploadSessionCommand command,
+                                                           FileSettingsVO settings,
+                                                           Long tenantId) {
+        FileRecordEntity replaceTarget = command.getReplaceFileId() == null
+                ? null : editOperations().selectVisibleForUpdate(command.getReplaceFileId());
+        if (replaceTarget != null) {
+            Require.isTrue(Integer.valueOf(FileRecordStatus.COMPLETED.value()).equals(replaceTarget.getStatus()),
+                    FileCode.FILE_STATUS_INVALID);
+        }
+        Long directoryId = replaceTarget != null && command.getDirectoryId() == null
+                ? replaceTarget.getDirectoryId() : normalizeDirectoryId(command.getDirectoryId());
+        directoryService.selectVisible(directoryId);
+        String fileName = replaceTarget == null
+                ? resolveFileName(tenantId, directoryId, normalizeFileName(command.getFileName()), settings)
+                : StringUtils.hasText(command.getFileName())
+                    ? normalizeFileName(command.getFileName()) : replaceTarget.getFileName();
+        String fileExt = fileExt(fileName);
+        if (replaceTarget != null) {
+            String targetExt = replaceTarget.getFileExt() == null
+                    ? "" : replaceTarget.getFileExt().toLowerCase(Locale.ROOT);
+            Require.isTrue(fileExt.equals(targetExt), FileCode.FILE_REPLACE_EXTENSION_MISMATCH);
+        }
+        String bizMeta = command.getBizMeta() == null
+                ? (replaceTarget == null ? null : replaceTarget.getBizMeta())
+                : normalizeBizMeta(command.getBizMeta());
+        FileStorageConfigEntity storageConfig = replaceTarget == null
+                ? activeStorageConfig()
+                : storageConfigService.getEnabledConfig(new EnabledFileStorageKey(
+                        replaceTarget.getStorageConfigId(),
+                        replaceTarget.getStorageType(),
+                        replaceTarget.getBucketName()));
+        return new UploadSessionTarget(replaceTarget, directoryId, fileName, fileExt, storageConfig, bizMeta);
+    }
+
+    private FileUploadInitVO instantSessionResult(CreateFileUploadSessionCommand command,
+                                                  UploadSessionTarget target,
+                                                  String fileHash,
+                                                  FileObjectEntity instantObject,
+                                                  FileSettingsVO settings) {
+        FileUploadInitVO vo = new FileUploadInitVO();
+        vo.setInstant(true);
+        FileRecordEntity replaceTarget = target.replaceTarget();
+        if (replaceTarget == null) {
+            FileRecordEntity record = createFileRecord(requireTenantId(),
+                    MangoContextHolder.userId(),
+                    instantObject,
+                    target.fileName(),
+                    target.fileExt(),
+                    command.getFileSize(),
+                    command.getContentType(),
+                    fileHash,
+                    command.getPurpose(),
+                    command.getAccessLevel(),
+                    command.getBizType(),
+                    command.getBizId(),
+                    target.bizMeta(),
+                    target.directoryId(),
+                    settings);
+            fileRecordMapper.insert(record);
+            incrementObjectRefCount(instantObject.getId());
+            vo.setFileRecord(toVO(record));
+            return vo;
+        }
+        editOperations().applySessionMetadata(replaceTarget, command, target.fileName(),
+                target.directoryId(), target.bizMeta(), settings);
+        if (fileHash.equals(replaceTarget.getFileHash())
+                && command.getFileSize().equals(replaceTarget.getFileSize())) {
+            fileRecordMapper.updateById(replaceTarget);
+        } else {
+            editOperations().applyReplacement(replaceTarget, instantObject, fileHash,
+                    command.getFileSize(), command.getContentType(), settings);
+        }
+        vo.setFileRecord(toVO(replaceTarget));
         return vo;
     }
 
@@ -810,23 +899,9 @@ public class FileService implements IFileService, IFileContentProvider {
                 session.getContentType(),
                 0L);
         createHashMapping(session.getTenantIdAsLong(), storageConfig, resolvedFileHash, session.getFileSize(), fileObject, settingsService.current());
-        FileRecordEntity record = createFileRecord(session.getTenantIdAsLong(),
-                MangoContextHolder.userId(),
-                fileObject,
-                session.getFileName(),
-                session.getFileExt(),
-                session.getFileSize(),
-                session.getContentType(),
-                resolvedFileHash,
-                session.getPurpose(),
-                session.getAccessLevel(),
-                session.getBizType(),
-                session.getBizId(),
-                session.getBizMeta(),
-                session.getDirectoryId(),
-                settingsService.current());
-        fileRecordMapper.insert(record);
-        incrementObjectRefCount(fileObject.getId());
+        FileRecordEntity record = session.getReplaceFileId() == null
+                ? editOperations().createSessionRecord(session, fileObject, resolvedFileHash)
+                : editOperations().replaceSessionRecord(session, fileObject, resolvedFileHash);
         session.setObjectId(fileObject.getId());
         session.setFileRecordId(record.getId());
         session.setStatus(FileUploadSessionStatus.COMPLETED.name());
@@ -875,7 +950,7 @@ public class FileService implements IFileService, IFileContentProvider {
         return wrapper;
     }
 
-    private LambdaQueryWrapper<FileRecordEntity> tenantVisibleWrapper() {
+    LambdaQueryWrapper<FileRecordEntity> tenantVisibleWrapper() {
         LambdaQueryWrapper<FileRecordEntity> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(FileRecordEntity::getTenantId, requireTenantId());
         return wrapper;
@@ -911,7 +986,7 @@ public class FileService implements IFileService, IFileContentProvider {
         }
     }
 
-    private void validateExtension(String fileExt, FileSettingsVO settings) {
+    void validateExtension(String fileExt, FileSettingsVO settings) {
         String ext = fileExt == null ? "" : fileExt.toLowerCase(Locale.ROOT);
         List<String> blocked = settings.getBlockedExtensions();
         Require.isFalse(blocked != null && blocked.stream().map(item -> item.toLowerCase(Locale.ROOT)).anyMatch(ext::equals),
@@ -922,7 +997,7 @@ public class FileService implements IFileService, IFileContentProvider {
                 FileCode.FILE_EXTENSION_NOT_ALLOWED);
     }
 
-    private void validateContentType(String contentType, FileSettingsVO settings) {
+    void validateContentType(String contentType, FileSettingsVO settings) {
         if (!Boolean.TRUE.equals(settings.getContentTypeCheckEnabled())) {
             return;
         }
@@ -937,7 +1012,7 @@ public class FileService implements IFileService, IFileContentProvider {
                 FileCode.FILE_EXTENSION_NOT_ALLOWED);
     }
 
-    private Long requireTenantId() {
+    Long requireTenantId() {
         Long tenantId = currentTenantId();
         Require.notNull(tenantId, FileCode.FILE_ACCESS_DENIED);
         return tenantId;
@@ -1148,25 +1223,25 @@ public class FileService implements IFileService, IFileContentProvider {
         return fileRecordMapper.selectCount(wrapper) > 0;
     }
 
-    private Long duplicateDirectoryId(Long directoryId, FileSettingsVO settings) {
+    Long duplicateDirectoryId(Long directoryId, FileSettingsVO settings) {
         return Boolean.FALSE.equals(settings.getDuplicateCheckDirectoryScoped()) ? null : directoryId;
     }
 
-    private FileAccessLevel resolveAccessLevel(String accessLevel, FileSettingsVO settings) {
+    FileAccessLevel resolveAccessLevel(String accessLevel, FileSettingsVO settings) {
         if (StringUtils.hasText(accessLevel)) {
             return FileAccessLevel.of(accessLevel);
         }
         return FileAccessLevel.of(settings.getDefaultAccessLevel());
     }
 
-    private Long normalizeDirectoryId(Long value) {
+    Long normalizeDirectoryId(Long value) {
         if (value == null || value.longValue() < 0) {
             return 0L;
         }
         return value;
     }
 
-    private String generateObjectName(FileStorageConfigEntity storageConfig,
+    String generateObjectName(FileStorageConfigEntity storageConfig,
                                       Long tenantId,
                                       Long directoryId,
                                       String fileName,
@@ -1190,7 +1265,7 @@ public class FileService implements IFileService, IFileContentProvider {
         return StringUtils.hasText(storagePath) ? storagePath + "/" + relative : relative;
     }
 
-    private String sha256(FileInput file) {
+    String sha256(FileInput file) {
         try (InputStream input = file.openStream()) {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             try (DigestInputStream digestInput = new DigestInputStream(input, digest)) {
@@ -1382,7 +1457,7 @@ public class FileService implements IFileService, IFileContentProvider {
         return storageConfigId;
     }
 
-    private FileObjectEntity findInstantUploadObject(Long tenantId,
+    FileObjectEntity findInstantUploadObject(Long tenantId,
                                                      FileStorageConfigEntity storageConfig,
                                                      String hash,
                                                      Long fileSize,
@@ -1515,7 +1590,7 @@ public class FileService implements IFileService, IFileContentProvider {
         cleanupRedundantStoredObject(storageConfig, previousObjectName, fileObject,
                 fileObject.getFileHash(), fileObject.getFileSize());
     }
-    private FileObjectEntity createOrReuseFileObject(Long tenantId,
+    FileObjectEntity createOrReuseFileObject(Long tenantId,
                                                      FileStorageConfigEntity storageConfig,
                                                      String objectName,
                                                      String hash,
@@ -1554,7 +1629,7 @@ public class FileService implements IFileService, IFileContentProvider {
             return concurrentObject;
         }
     }
-    private void createHashMapping(Long tenantId,
+    void createHashMapping(Long tenantId,
                                    FileStorageConfigEntity storageConfig,
                                    String hash,
                                    Long fileSize,
@@ -1631,7 +1706,7 @@ public class FileService implements IFileService, IFileContentProvider {
         return tenantId;
     }
 
-    private FileRecordEntity createFileRecord(Long tenantId,
+    FileRecordEntity createFileRecord(Long tenantId,
                                         Long userId,
                                         FileObjectEntity fileObject,
                                         String fileName,
@@ -1674,7 +1749,7 @@ public class FileService implements IFileService, IFileContentProvider {
         return entity;
     }
 
-    private void incrementObjectRefCount(Long objectId) {
+    void incrementObjectRefCount(Long objectId) {
         Require.notNull(objectId, FileCode.FILE_NOT_FOUND);
         fileObjectMapper.update(null, new LambdaUpdateWrapper<FileObjectEntity>()
                 .eq(FileObjectEntity::getId, objectId)
@@ -1682,7 +1757,7 @@ public class FileService implements IFileService, IFileContentProvider {
                 .set(FileObjectEntity::getUpdatedTime, LocalDateTime.now()));
     }
 
-    private void decrementObjectRefCount(Long objectId) {
+    void decrementObjectRefCount(Long objectId) {
         Require.notNull(objectId, FileCode.FILE_NOT_FOUND);
         fileObjectMapper.update(null, new LambdaUpdateWrapper<FileObjectEntity>()
                 .eq(FileObjectEntity::getId, objectId)
@@ -1730,7 +1805,7 @@ public class FileService implements IFileService, IFileContentProvider {
                 session.getStorageConfigId(), session.getStorageType(), session.getBucketName());
     }
 
-    private void removePhysicalObjectIfUnreferenced(FileRecordEntity record) {
+    void removePhysicalObjectIfUnreferenced(FileRecordEntity record) {
         StoredObject storedObject = resolveStoredObject(record);
         if (record.getObjectId() != null) {
             Long activeRefs = fileRecordMapper.selectCount(new LambdaQueryWrapper<FileRecordEntity>()
@@ -1783,7 +1858,9 @@ public class FileService implements IFileService, IFileContentProvider {
         if (!StringUtils.hasText(fileName)) {
             return "unnamed";
         }
-        return PathSanitizer.fileName(fileName.trim());
+        String normalized = fileName.trim().replace('\\', '/');
+        int slash = normalized.lastIndexOf('/');
+        return slash >= 0 ? normalized.substring(slash + 1) : normalized;
     }
 
     private String normalizeZipFileName(String fileName) {
@@ -1826,7 +1903,7 @@ public class FileService implements IFileService, IFileContentProvider {
         return path.replace("${fileName}", normalizeFileName(fileName));
     }
 
-    private String fileExt(String fileName) {
+    String fileExt(String fileName) {
         int index = fileName.lastIndexOf('.');
         if (index < 0 || index == fileName.length() - 1) {
             return "";
@@ -1834,14 +1911,14 @@ public class FileService implements IFileService, IFileContentProvider {
         return fileName.substring(index + 1).toLowerCase(Locale.ROOT);
     }
 
-    private String trimToNull(String value) {
+    String trimToNull(String value) {
         if (!StringUtils.hasText(value)) {
             return null;
         }
         return value.trim();
     }
 
-    private String normalizeBizMeta(String value) {
+    String normalizeBizMeta(String value) {
         String bizMeta = trimToNull(value);
         if (bizMeta == null) {
             return null;
@@ -1855,7 +1932,7 @@ public class FileService implements IFileService, IFileContentProvider {
         }
     }
 
-    private FileRecordVO toVO(FileRecordEntity entity) {
+    FileRecordVO toVO(FileRecordEntity entity) {
         FileRecordVO vo = new FileRecordVO();
         vo.setId(entity.getId());
         vo.setTenantId(entity.getTenantIdAsLong());
@@ -1885,82 +1962,6 @@ public class FileService implements IFileService, IFileContentProvider {
         return vo;
     }
 
-    private static final class FileInput implements AutoCloseable {
-
-        private final Supplier<InputStream> streamSupplier;
-        private final Path tempPath;
-        private final String fileName;
-        private final long fileSize;
-        private final String contentType;
-        private final boolean empty;
-
-        private FileInput(Supplier<InputStream> streamSupplier,
-                          Path tempPath,
-                          String fileName,
-                          long fileSize,
-                          String contentType,
-                          boolean empty) {
-            this.streamSupplier = streamSupplier;
-            this.tempPath = tempPath;
-            this.fileName = fileName;
-            this.fileSize = fileSize;
-            this.contentType = contentType;
-            this.empty = empty;
-        }
-
-        private static FileInput fromMultipart(MultipartFile file) {
-            return new FileInput(() -> {
-                try {
-                    return file.getInputStream();
-                } catch (IOException e) {
-                    throw new IllegalStateException(e);
-                }
-            }, null, file.getOriginalFilename(), file.getSize(), file.getContentType(), file.isEmpty());
-        }
-
-        private static FileInput fromCommand(SaveFileCommand command) throws IOException {
-            Require.notNull(command.getInputStream(), FileCode.FILE_EMPTY);
-            Path temp = Files.createTempFile("mango-file-", ".upload");
-            long size;
-            try (InputStream input = command.getInputStream(); OutputStream output = Files.newOutputStream(temp)) {
-                size = input.transferTo(output);
-            }
-            long declaredSize = size;
-            if (command.getFileSize() != null && command.getFileSize() > 0) {
-                declaredSize = command.getFileSize();
-            }
-            return new FileInput(() -> {
-                try {
-                    return Files.newInputStream(temp);
-                } catch (IOException e) {
-                    throw new IllegalStateException(e);
-                }
-            }, temp, command.getFileName(), declaredSize, command.getContentType(), declaredSize <= 0);
-        }
-
-        private static FileInput fromPath(Path path, String fileName, String contentType) throws IOException {
-            long size = Files.size(path);
-            return new FileInput(() -> {
-                try {
-                    return Files.newInputStream(path);
-                } catch (IOException e) {
-                    throw new IllegalStateException(e);
-                }
-            }, null, fileName, size, contentType, size <= 0);
-        }
-
-        private InputStream openStream() {
-            return streamSupplier.get();
-        }
-
-        @Override
-        public void close() throws IOException {
-            if (tempPath != null) {
-                Files.deleteIfExists(tempPath);
-            }
-        }
-    }
-
     private record StoredObject(FileObjectEntity fileObject, FileStorageConfigEntity storageConfig, String objectName) {
     }
 
@@ -1973,23 +1974,5 @@ public class FileService implements IFileService, IFileContentProvider {
             return "";
         }
         return directory.getDirectoryName();
-    }
-
-    /**
-     * 文件名清理，避免客户端文件名携带路径。
-     */
-    private static final class PathSanitizer {
-
-        private PathSanitizer() {
-        }
-
-        private static String fileName(String value) {
-            String normalized = value.replace("\\", "/");
-            int slash = normalized.lastIndexOf('/');
-            if (slash >= 0) {
-                return normalized.substring(slash + 1);
-            }
-            return normalized;
-        }
     }
 }
