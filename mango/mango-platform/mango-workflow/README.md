@@ -1129,7 +1129,7 @@ workflow:template:push
 
 | 适用版本 | 变更 | 影响 | 需要做的事 | 验证 | 回滚 |
 |----------|------|------|------------|------|------|
-| Maven 1.9.0 起（Issue #1263） | 角色、岗位、组织、组织负责人审批人按节点 `approvalMode` 展开为每人一条任务 | 行为变化：这类节点不再生成一条待领取共享任务，改为每个成员一条待办；`COUNTERSIGN` 默认值下角色节点从“一人处理”变为“全体成员通过”；已发布定义不受影响，重新发布后按新规则生成 | 升级前确认这类节点的多人审批方式符合预期；不需要“全体通过”的节点改选 `OR_SIGN`，或改用 `assignmentMode=AUTO` 派单 | `WorkflowTaskRuntimeServiceIntegrationTest`、`WorkflowDesignerBpmnConverterTest`、模块 `mvn verify` | 回退节点 `approvalMode` 配置并重新发布定义；引擎侧回退需回到升级前版本 |
+| Maven 1.9.0 起（Issue #1263） | 角色、岗位、组织、组织负责人审批人按节点 `approvalMode` 展开为每人一条任务 | 行为变化：这类节点不再生成一条待领取共享任务，改为每个成员一条待办；`COUNTERSIGN` 默认值下角色节点从“一人处理”变为“全体成员通过”；已发布定义不受影响，重新发布后按新规则生成 | 升级前确认这类节点的多人审批方式符合预期；不需要“全体通过”的节点改选 `OR_SIGN`，或改用 `assignmentMode=AUTO` 派单。迁移步骤见 [审批人候选组展开升级指南](../../../mango-docs/guides/operations/workflow-approval-candidate-expand-upgrade.md) | `WorkflowTaskRuntimeServiceIntegrationTest`、`WorkflowDesignerBpmnConverterTest`、模块 `mvn verify` | 回退节点 `approvalMode` 配置并重新发布定义；引擎侧回退需回到升级前版本 |
 | Maven 1.9.0 起（Issue #1248） | 新增 `workflow_business_apply_attribute` 表（Flyway `V5`）、`filterAttributes` 创建字段、`PUT /workflow/business-applies/filter-attributes`、任务查询的 `applyAttributeFilters` / `applyTimeBegin` / `applyTimeEnd` / `sortBy=applyTime` | 全部为新增可选能力，不传新参数时行为与 1.8.0 完全一致；`WorkflowBusinessApplyApi` 新增一个方法，自定义实现该接口的代码需要实现 `updateFilterAttributes` | 业务按需上报可筛属性；切换到属性筛选前先回填存量申请，否则属性过滤会排除未登记的历史申请 | `WorkflowTaskAttributeFilterIntegrationTest`、`WorkflowApiSurfaceContractTest`、模块 `mvn verify` | 删除新参数与接口调用即可回退；新表无读取路径时可保留 |
 
 ## 14. 相关文档

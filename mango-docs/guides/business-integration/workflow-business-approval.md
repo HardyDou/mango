@@ -231,6 +231,8 @@ mango:
 - 通知改为每个成员收到指向自己 `taskId` 的 `workflow.task.assigned`。
 - 已发布流程定义不受影响：BPMN 在定义发布时生成，`ensurePublished` 按 `designerJson` 判等，升级或重启不会自动重发布；只有重新发布后才按新规则生成任务。
 
+迁移路径、需要同步调整的业务代码、发布验证和回滚步骤见 [Workflow 审批人候选组展开升级指南](../operations/workflow-approval-candidate-expand-upgrade.md)。
+
 ## 8. 验证命令
 
 后端验证使用 Java 21。legacy migration fixture 和 API surface fingerprint 是测试资产；本次校准仅跟随既有 V1/V2/V3 迁移与 API 声明版本，未修改生产历史 SQL、公开 API、配置、菜单、权限、租户、页面、启动或审批运行时行为。业务审批接入步骤保持不变。
