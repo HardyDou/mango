@@ -25,7 +25,7 @@ export function isReleaseImpactFile(packageFile) {
   return true;
 }
 
-export function directPackageImpact(changedFiles, packageIndex) {
+export function directPackageImpact(changedFiles, packageIndex, { repoRoot } = {}) {
   const packageByDir = new Map([...packageIndex.values()].map((entry) => [entry.dir, entry.packageJson.name]));
   const direct = new Set();
   const classifiedFiles = [];
@@ -40,7 +40,7 @@ export function directPackageImpact(changedFiles, packageIndex) {
       }
       continue;
     }
-    if (isPublishedPmoSourceFile(normalized)) {
+    if (isPublishedPmoSourceFile(normalized, { repoRoot })) {
       direct.add('@mango/pmo');
       classifiedFiles.push({ file: normalized, packageName: '@mango/pmo', reason: 'published-pmo-source' });
       continue;
@@ -156,11 +156,29 @@ export function normalizeRepositoryPath(file) {
   return normalized;
 }
 
-export function isPublishedPmoSourceFile(file) {
+export function isPublishedPmoSourceFile(file, { repoRoot } = {}) {
+  if (repoRoot && isRepositoryOnlyPmoSkillFile(file, repoRoot)) return false;
   return (
     /^mango-pmo\/(agents|rules|templates|contracts|tools|skills|plugin-src)\//u.test(file) ||
     file === 'mango-pmo/README.md'
   );
+}
+
+/**
+ * 判断 PMO Skill 文件是否属于只留在源仓、不进入 @mango/pmo 的能力。
+ *
+ * <p>唯一判据是 Skill 的 `SKILL.md` frontmatter `distribution: repository-only`，与
+ * `packages/mango-pmo/scripts/build-package.mjs` 的打包剔除规则保持一致；缺少 frontmatter
+ * 或未声明时按 `project` 处理，保证未知 Skill 仍然触发 @mango/pmo 版本要求。
+ */
+export function isRepositoryOnlyPmoSkillFile(file, repoRoot) {
+  const match = /^mango-pmo\/skills\/([^/]+)\//u.exec(file);
+  if (!match || !repoRoot) return false;
+  const skillPath = join(repoRoot, 'mango-pmo', 'skills', match[1], 'SKILL.md');
+  if (!existsSync(skillPath)) return false;
+  const frontmatter = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/u.exec(readFileSync(skillPath, 'utf8'));
+  const distribution = /^distribution:\s*([a-z-]+)\s*$/mu.exec(frontmatter?.[1] ?? '')?.[1] ?? 'project';
+  return distribution === 'repository-only';
 }
 
 export function isPublishedCliProjectionFile(file) {

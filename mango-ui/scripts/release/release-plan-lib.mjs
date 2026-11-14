@@ -94,10 +94,11 @@ export function buildReleasePlan({
   mavenInventory = [],
   releaseArtifacts = [],
   previousBaselineDigest = '',
+  repoRoot = '',
   versionPolicyDigest = digestRelease({ schemaVersion: 1, policy: 'changeset-runtime-closure-v1' }),
 }) {
   assertReleasePlanSourceShape({ source, sourceFiles });
-  const impact = directPackageImpact(sourceFiles, packageIndex);
+  const impact = directPackageImpact(sourceFiles, packageIndex, { repoRoot });
   const mavenImpact = hasMavenReleaseImpact(sourceFiles);
   for (const name of ignoredDirectPackages) impact.direct.delete(name);
   const releaseDeclarations = legacy
