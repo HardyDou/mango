@@ -16,7 +16,7 @@ class WorkflowNodeActionConfigResolverTest {
     void resolve_shouldReturnCompatibleDefaultsWhenNodeHasNoActions() {
         Map<String, WorkflowNodeActionConfigVO> actions = WorkflowNodeActionConfigResolver.resolve(null);
 
-        assertThat(actions.keySet()).containsExactly("save", "transfer", "addSign", "reject", "returnTask", "complete");
+        assertThat(actions.keySet()).containsExactly("save", "transfer", "unclaim", "addSign", "reject", "returnTask", "complete");
         assertThat(actions.get("complete"))
                 .returns(true, WorkflowNodeActionConfigVO::getEnabled)
                 .returns("通过", WorkflowNodeActionConfigVO::getLabel)

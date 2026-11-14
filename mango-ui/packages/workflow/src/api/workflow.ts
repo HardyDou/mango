@@ -25,6 +25,18 @@ export type WorkflowEmptyAssigneeStrategy = 'AUTO_PASS' | 'AUTO_REJECT' | 'AUTO_
 export type WorkflowRejectStrategy = 'END_PROCESS' | 'BACK_TO_START';
 export type WorkflowFormPermission = 'HIDDEN' | 'READONLY' | 'EDITABLE';
 export type WorkflowId = string;
+export type WorkflowTaskAssigneeSource =
+  | 'SELF_CLAIM'
+  | 'AUTO_ASSIGN'
+  | 'CANDIDATE_EXPAND'
+  | 'DEFINITION'
+  | 'INITIATOR_SELECT'
+  | 'FORM_USER'
+  | 'TRANSFER'
+  | 'REASSIGN'
+  | 'RETURN_ASSIGN'
+  | 'ADMIN_FALLBACK';
+
 export type WorkflowTaskActionKey =
   'complete' | 'reject' | 'returnTask' | 'save' | 'transfer' | 'addSign' | 'claim' | 'unclaim' | 'read';
 
@@ -336,6 +348,7 @@ export interface WorkflowTask {
   candidateGroups?: string[];
   claimable?: boolean;
   unclaimable?: boolean;
+  assignSource?: WorkflowTaskAssigneeSource;
   status: string;
   createTime?: string;
   startTime?: string;
@@ -859,6 +872,13 @@ export const workflowApi = {
   unclaimTask: (taskId: string) => post<boolean>('/workflow/tasks/unclaim', { taskId }),
   unclaimTaskWithResult: (taskId: string) =>
     post<WorkflowTaskActionResult>('/workflow/tasks/unclaim-result', { taskId }).then(normalizeTaskActionResult),
+  reassignTask: (payload: { taskId: string; targetUserId?: string; pool?: boolean; comment?: string }) =>
+    post<boolean>('/workflow/tasks/reassign', payload),
+  taskAssigneeOptions: (taskId: string) =>
+    get<Array<{ userId?: number; username?: string; displayName?: string; current?: boolean }>>(
+      '/workflow/tasks/assignee-options',
+      { params: { taskId } },
+    ),
   readCopiedTask: (copiedTaskId: WorkflowId) => post<boolean>('/workflow/tasks/copied/read', { copiedTaskId }),
 
   startProcess: (data: StartWorkflowProcessCommand) =>
@@ -1341,6 +1361,7 @@ function normalizeTask(item: any): WorkflowTask {
     candidateGroups: Array.isArray(item?.candidateGroups) ? item.candidateGroups.map(String) : [],
     claimable: Boolean(item?.claimable),
     unclaimable: Boolean(item?.unclaimable),
+    assignSource: item?.assignSource,
     status: item?.status || '-',
     createTime: normalizeDateTime(item?.createTime),
     endTime: normalizeDateTime(item?.endTime),

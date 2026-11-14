@@ -17,6 +17,7 @@ public enum WorkflowTaskAction {
     RETURN("退回"),
     WITHDRAW("撤回"),
     TRANSFER("转办"),
+    REASSIGN("改派"),
     ADD_SIGN("加签"),
     CLAIM("认领"),
     UNCLAIM("释放"),

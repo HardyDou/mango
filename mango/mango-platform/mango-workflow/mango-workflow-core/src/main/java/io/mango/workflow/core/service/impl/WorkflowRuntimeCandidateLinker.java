@@ -5,6 +5,7 @@ import io.mango.identity.api.vo.AuthUserVO;
 import lombok.RequiredArgsConstructor;
 import org.flowable.engine.TaskService;
 import org.flowable.identitylink.api.IdentityLink;
+import org.flowable.identitylink.api.IdentityLinkType;
 import org.flowable.task.api.Task;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -71,6 +72,11 @@ public class WorkflowRuntimeCandidateLinker {
         }
     }
 
+    private boolean isCandidate(IdentityLink link) {
+        String type = link.getType();
+        return type == null || IdentityLinkType.CANDIDATE.equals(type);
+    }
+
     private Set<String> taskIdentityUsers(String taskId) {
         Set<String> users = new LinkedHashSet<>();
         List<IdentityLink> links = taskService.getIdentityLinksForTask(taskId);
@@ -78,7 +84,8 @@ public class WorkflowRuntimeCandidateLinker {
             return users;
         }
         for (IdentityLink link : links) {
-            if (StringUtils.hasText(link.getUserId())) {
+            // 只比较候选身份：assignee 身份的办理人链接不算候选，否则承办人释放后拿不到候选身份。
+            if (StringUtils.hasText(link.getUserId()) && isCandidate(link)) {
                 users.add(link.getUserId());
             }
         }
@@ -92,7 +99,7 @@ public class WorkflowRuntimeCandidateLinker {
             return groups;
         }
         for (IdentityLink link : links) {
-            if (StringUtils.hasText(link.getGroupId())) {
+            if (StringUtils.hasText(link.getGroupId()) && isCandidate(link)) {
                 groups.add(link.getGroupId());
             }
         }

@@ -20,6 +20,7 @@ import io.mango.workflow.api.command.ClaimWorkflowTaskCommand;
 import io.mango.workflow.api.command.CompleteWorkflowTaskCommand;
 import io.mango.workflow.api.command.CreateWorkflowBusinessApplyCommand;
 import io.mango.workflow.api.command.ReturnWorkflowTaskCommand;
+import io.mango.workflow.api.command.TransferWorkflowTaskCommand;
 import io.mango.workflow.api.command.WorkflowJsonRequest;
 import io.mango.workflow.api.enums.WorkflowTaskAction;
 import io.mango.workflow.api.enums.WorkflowCode;
@@ -30,6 +31,7 @@ import io.mango.workflow.core.engine.WorkflowDesignerBpmnConverter;
 import io.mango.workflow.core.engine.WorkflowCandidateGroupProvider;
 import io.mango.workflow.core.event.WorkflowEventPublisher;
 import io.mango.workflow.core.identity.WorkflowAssigneeIdentityService;
+import io.mango.workflow.api.vo.WorkflowTaskActionResultVO;
 import io.mango.workflow.api.vo.WorkflowTaskRecordVO;
 import io.mango.workflow.core.convert.WorkflowTaskRecordConverter;
 import io.mango.workflow.core.entity.WorkflowTaskRecordEntity;
@@ -118,6 +120,8 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
     private AuthUserProvider authUserProvider;
     @Autowired
     private WorkflowTaskRecordMapper taskRecordMapper;
+    @Autowired
+    private WorkflowCandidateGroupProvider candidateGroupProvider;
 
     private JdbcTemplate jdbcTemplate;
 
@@ -181,8 +185,161 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
                 .taskDefinitionKey("first_review")
                 .singleResult();
         assertThat(returnedFirstNodeTask).isNotNull();
-        assertThat(returnedFirstNodeTask.getAssignee()).isEqualTo("1001");
+        // 平台派单统一写登录用户名作为 Flowable 办理人 key，用户 ID 只出现在台账和审计字段。
+        assertThat(returnedFirstNodeTask.getAssignee()).isEqualTo("admin");
         assertThat(currentTaskDefinitionKeys(started.applyId())).containsExactly("first_review");
+    }
+
+    @Test
+    void autoAssignedTaskCanBeReleasedToPoolAndIsNotDispatchedAgain() {
+        // Issue #1275：平台派单任务必须能交回候选池，且交回后同一个任务不会被重新派回。
+        prepareActiveMembers();
+        StartedWorkflow started = startAutoAssignWorkflow("BIZ-RELEASE-1275");
+
+        Task dispatched = taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("auto_review")
+                .singleResult();
+        assertThat(dispatched).isNotNull();
+        assertThat(dispatched.getAssignee()).isEqualTo("admin");
+
+        switchUser(1001L, "admin");
+        WorkflowTaskActionResultVO released = taskRuntimeService
+                .unclaimWithResult(claimOf(dispatched.getId()));
+        assertThat(released.getActionResult()).isEqualTo(WorkflowTaskAction.UNCLAIM);
+
+        Task releasedTask = taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("auto_review")
+                .singleResult();
+        assertThat(releasedTask.getAssignee()).isNull();
+        assertThat(taskService.getIdentityLinksForTask(releasedTask.getId()))
+                .extracting(link -> link.getUserId() == null ? link.getGroupId() : link.getUserId())
+                .contains("admin", "finance");
+
+        // 再次推进流程时，已释放的任务不能再被自动派回原承办人。
+        switchUser(1001L, "admin");
+        taskRuntimeService.advanceRuntimeTasks(started.processInstanceId());
+        assertThat(taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("auto_review")
+                .singleResult()
+                .getAssignee()).isNull();
+
+        // 池中的任务可以被节点候选人重新领取。
+        switchUser(1002L, "finance");
+        taskRuntimeService.claim(claimOf(releasedTask.getId()));
+        assertThat(taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("auto_review")
+                .singleResult()
+                .getAssignee()).isEqualTo("finance");
+    }
+
+    @Test
+    void issue1275RoleNodeAffinityDispatchCanBeReleasedBackToPool() {
+        // 复刻 Issue #1275：角色候选池 + 节点亲和（PROCESS_INSTANCE）+ 回退 CLAIM。
+        // 第一轮本人认领并办理，退回后平台按亲和派回同一人，承办人把任务释放回候选池。
+        prepareRoleMembers();
+        StartedWorkflow started = startRoleNodeAffinityReturnWorkflow("BIZ-1275");
+
+        Task firstReview = taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("risk_specialist_review")
+                .singleResult();
+        assertThat(firstReview.getAssignee()).isNull();
+        assertThat(taskService.getIdentityLinksForTask(firstReview.getId()))
+                .extracting(link -> link.getGroupId() == null ? link.getUserId() : link.getGroupId())
+                .contains(WorkflowAssigneeResolver.GROUP_ROLE_PREFIX + "817");
+
+        switchMember(1002L, "finance", 1002L);
+        taskRuntimeService.claim(claimOf(firstReview.getId()));
+        CompleteWorkflowTaskCommand complete = new CompleteWorkflowTaskCommand();
+        complete.setTaskId(firstReview.getId());
+        complete.setComment("初审通过");
+        taskRuntimeService.complete(complete);
+
+        Task supervisorReview = taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("risk_manager_review")
+                .singleResult();
+        assertThat(supervisorReview.getAssignee()).isEqualTo("finance");
+
+        ReturnWorkflowTaskCommand returnCommand = new ReturnWorkflowTaskCommand();
+        returnCommand.setTaskId(supervisorReview.getId());
+        returnCommand.setTargetTaskDefinitionKey("risk_specialist_review");
+        returnCommand.setComment("退回专员补充材料");
+        taskRuntimeService.returnTask(returnCommand);
+
+        // 平台按节点亲和把初审派回上一轮办理人 finance：assignee 有值，但没有领取时间。
+        Task redispatched = taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("risk_specialist_review")
+                .singleResult();
+        assertThat(redispatched.getAssignee()).isEqualTo("finance");
+        assertThat(historyService.createHistoricTaskInstanceQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("risk_specialist_review")
+                .finished()
+                .singleResult().getClaimTime()).isNotNull();
+
+        // 升级前这里会被「任务已被认领」和「只能释放通过认领获得的任务」同时拒绝；升级后必须能交回候选池。
+        switchMember(1002L, "finance", 1002L);
+        WorkflowTaskActionResultVO released = taskRuntimeService.unclaimWithResult(claimOf(redispatched.getId()));
+        assertThat(released.getActionResult()).isEqualTo(WorkflowTaskAction.UNCLAIM);
+
+        Task poolTask = taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("risk_specialist_review")
+                .singleResult();
+        assertThat(poolTask.getAssignee()).isNull();
+        assertThat(poolTask.getId()).isEqualTo(redispatched.getId());
+        assertThat(taskService.getIdentityLinksForTask(poolTask.getId()))
+                .extracting(link -> link.getGroupId() == null ? link.getUserId() : link.getGroupId())
+                .contains(WorkflowAssigneeResolver.GROUP_ROLE_PREFIX + "817");
+
+        // 释放后流程推进不能把任务重新派回 finance。
+        switchUser(1001L, "admin");
+        taskRuntimeService.advanceRuntimeTasks(started.processInstanceId());
+        assertThat(taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("risk_specialist_review")
+                .singleResult()
+                .getAssignee()).isNull();
+
+        // 另一名候选专员可以接手。
+        switchMember(1004L, "legal", 1004L);
+        taskRuntimeService.claim(claimOf(poolTask.getId()));
+        assertThat(taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("risk_specialist_review")
+                .singleResult()
+                .getAssignee()).isEqualTo("legal");
+    }
+
+    @Test
+    void transferredTaskCannotBeReleasedByItsNewOwner() {
+        prepareActiveMembers();
+        StartedWorkflow started = startAutoAssignWorkflow("BIZ-TRANSFER-RELEASE");
+        Task task = taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("auto_review")
+                .singleResult();
+        assertThat(task.getAssignee()).isEqualTo("admin");
+
+        TransferWorkflowTaskCommand transfer = new TransferWorkflowTaskCommand();
+        transfer.setTaskId(task.getId());
+        transfer.setTargetUserId("finance");
+        transfer.setComment("转给财务");
+        taskRuntimeService.transfer(transfer);
+
+        switchUser(1002L, "finance");
+        assertThatThrownBy(() -> taskRuntimeService.unclaim(claimOf(task.getId())))
+                .hasMessageContaining("当前任务不支持释放")
+                .hasMessageContaining("任务由他人转办给你")
+                .hasMessageContaining("如需移交请使用转办");
+        assertThat(taskService.createTaskQuery().taskId(task.getId()).singleResult().getAssignee())
+                .isEqualTo("finance");
     }
 
     @Test
@@ -596,7 +753,7 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
                 .processInstanceId(resubmitted.processInstanceId())
                 .taskDefinitionKey("scoped_review")
                 .singleResult();
-        assertThat(resubmittedTask.getAssignee()).isEqualTo("1001");
+        assertThat(resubmittedTask.getAssignee()).isEqualTo("admin");
 
         StartedWorkflow otherProject = startScopedAffinityWorkflow("BIZ-P2-V1", "PROJECT-P2");
         taskRuntimeService.advanceRuntimeTasks(otherProject.processInstanceId());
@@ -634,7 +791,7 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
                 .processInstanceId(resubmitted.processInstanceId())
                 .taskDefinitionKey("scoped_review")
                 .singleResult();
-        assertThat(resubmittedTask.getAssignee()).isEqualTo("1002");
+        assertThat(resubmittedTask.getAssignee()).isEqualTo("finance");
 
         Map<String, Object> autoAssignRecord = jdbcTemplate.queryForMap("""
                 select operator_id, operator_name, variables_json
@@ -652,6 +809,12 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
                 .returns(1002L, WorkflowTaskRecordVO::getOperatorId)
                 .returns("finance", WorkflowTaskRecordVO::getOperatorName)
                 .returns("自动派单", WorkflowTaskRecordVO::getActionName);
+    }
+
+    /** 切换登录用户并显式设置租户成员，角色候选组按成员 ID 展开。 */
+    private void switchMember(Long userId, String principalName, Long memberId) {
+        MangoContextHolder.set(MangoContextSnapshot.empty()
+                .withSecurity(userId, memberId, "1", principalName, "default", "USER", "ORG", userId, principalName));
     }
 
     private void switchUser(Long userId, String principalName) {
@@ -823,6 +986,82 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
                 """;
     }
 
+    private StartedWorkflow startAutoAssignWorkflow(String businessKey) {
+        repositoryService.createDeployment()
+                .name("auto-assign-release-runtime")
+                .addString("auto-assign-release.bpmn20.xml", autoAssignReleaseBpmn())
+                .deploy();
+        ProcessDefinition processDefinition = repositoryService.createProcessDefinitionQuery()
+                .processDefinitionKey("auto_assign_release_runtime")
+                .latestVersion()
+                .singleResult();
+        CreateWorkflowBusinessApplyCommand applyCommand = new CreateWorkflowBusinessApplyCommand();
+        applyCommand.setBusinessType("AUTO_ASSIGN_RELEASE");
+        applyCommand.setBusinessKey(businessKey);
+        applyCommand.setApplyTitle("派单释放集成测试");
+        applyCommand.setProcessDefinitionKey(processDefinition.getKey());
+        Long applyId = businessApplyService.create(applyCommand).getId();
+        ProcessInstance instance = runtimeService.startProcessInstanceByKey(processDefinition.getKey(),
+                businessKey, Map.of(
+                        "businessType", "AUTO_ASSIGN_RELEASE",
+                        "businessKey", businessKey,
+                        "applyId", String.valueOf(applyId)));
+        taskRuntimeService.advanceRuntimeTasks(instance.getProcessInstanceId());
+        return new StartedWorkflow(applyId, instance.getProcessInstanceId());
+    }
+
+    private String autoAssignReleaseBpmn() {
+        return """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                             xmlns:flowable="http://flowable.org/bpmn"
+                             xmlns:mango="http://mango.io/workflow"
+                             targetNamespace="http://mango.io/workflow/test">
+                  <process id="auto_assign_release_runtime" name="Auto Assign Release Runtime" isExecutable="true">
+                    <startEvent id="start"/>
+                    <sequenceFlow id="flow_start_review" sourceRef="start" targetRef="auto_review"/>
+                    <userTask id="auto_review" name="初审">
+                      <extensionElements>
+                        <mango:mangoApprovalConfig><![CDATA[{"assignmentMode":"AUTO","autoAssignmentStrategy":"ROUND_ROBIN","assigneeType":"SPECIFIED_USER","assigneeIds":["admin","finance"],"actions":{"complete":{"enabled":true},"transfer":{"enabled":true}}}]]></mango:mangoApprovalConfig>
+                      </extensionElements>
+                    </userTask>
+                    <sequenceFlow id="flow_review_end" sourceRef="auto_review" targetRef="end"/>
+                    <endEvent id="end"/>
+                  </process>
+                </definitions>
+                """;
+    }
+
+    private ClaimWorkflowTaskCommand claimOf(String taskId) {
+        ClaimWorkflowTaskCommand command = new ClaimWorkflowTaskCommand();
+        command.setTaskId(taskId);
+        return command;
+    }
+
+    private String transferReleaseBpmn() {
+        return """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                             xmlns:flowable="http://flowable.org/bpmn"
+                             xmlns:mango="http://mango.io/workflow"
+                             targetNamespace="http://mango.io/workflow/test">
+                  <process id="transfer_release_runtime" name="Transfer Release Runtime" isExecutable="true">
+                    <startEvent id="start"/>
+                    <sequenceFlow id="flow_start_review" sourceRef="start" targetRef="first_review"/>
+                    <userTask id="first_review" name="初审">
+                      <extensionElements>
+                        <mango:mangoApprovalConfig><![CDATA[{"assigneeType":"SPECIFIED_USER","assigneeIds":["admin"],"actions":{"complete":{"enabled":true},"transfer":{"enabled":true}}}]]></mango:mangoApprovalConfig>
+                      </extensionElements>
+                    </userTask>
+                    <sequenceFlow id="flow_review_end" sourceRef="first_review" targetRef="end"/>
+                    <endEvent id="end"/>
+                  </process>
+                </definitions>
+                """;
+    }
+
     private AuthUserVO authUser(Long userId, String username) {
         AuthUserVO user = new AuthUserVO();
         user.setUserId(userId);
@@ -874,6 +1113,7 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
     }
 
     private void rebuildWorkflowTables() {
+        jdbcTemplate.execute("drop table if exists workflow_auto_assignment_state");
         jdbcTemplate.execute("drop table if exists workflow_business_apply_attribute");
         jdbcTemplate.execute("drop table if exists workflow_business_apply_current_task");
         jdbcTemplate.execute("drop table if exists workflow_business_apply_status_log");
@@ -881,6 +1121,21 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
         jdbcTemplate.execute("drop table if exists workflow_copied_task");
         jdbcTemplate.execute("drop table if exists workflow_form_instance");
         jdbcTemplate.execute("drop table if exists workflow_business_apply");
+        jdbcTemplate.execute("""
+                create table workflow_auto_assignment_state (
+                    id bigint not null,
+                    process_definition_id varchar(128),
+                    task_definition_key varchar(128),
+                    last_assigned_user_id bigint,
+                    tenant_id bigint,
+                    org_id bigint,
+                    created_by bigint,
+                    created_at timestamp,
+                    updated_by bigint,
+                    updated_at timestamp,
+                    primary key (id)
+                )
+                """);
         jdbcTemplate.execute("""
                 create table workflow_business_apply_attribute (
                     id bigint not null,
@@ -1204,6 +1459,9 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
         when(authUserProvider.getByUsernameForAuth("finance")).thenReturn(finance);
         when(authUserProvider.getByUsernameForAuth("safety")).thenReturn(safety);
         when(authUserProvider.getByUsernameForAuth("legal")).thenReturn(legal);
+        for (long memberId = 1002L; memberId <= 1004L; memberId++) {
+            when(tenantMemberProvider.getEnabledMember(memberId, 1L)).thenReturn(member(memberId));
+        }
         jdbcTemplate.execute("drop table if exists tenant_member");
         jdbcTemplate.execute("""
                 create table tenant_member (
@@ -1232,6 +1490,65 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
             jdbcTemplate.update("insert into authorization_subject_role (tenant_id, subject_type, subject_id, role_id) values (?, ?, ?, ?)",
                     1L, "TENANT_MEMBER", memberId, 817L);
         }
+    }
+
+    private StartedWorkflow startRoleNodeAffinityReturnWorkflow(String businessKey) {
+        repositoryService.createDeployment()
+                .name("role-node-affinity-return-runtime")
+                .addString("role-node-affinity-return.bpmn20.xml", roleNodeAffinityReturnBpmn())
+                .deploy();
+        ProcessDefinition processDefinition = repositoryService.createProcessDefinitionQuery()
+                .processDefinitionKey("role_node_affinity_return_runtime")
+                .latestVersion()
+                .singleResult();
+
+        CreateWorkflowBusinessApplyCommand applyCommand = new CreateWorkflowBusinessApplyCommand();
+        applyCommand.setBusinessType("ROLE_NODE_AFFINITY_RETURN");
+        applyCommand.setBusinessKey(businessKey);
+        applyCommand.setApplyTitle("角色节点亲和退回释放集成测试");
+        applyCommand.setProcessDefinitionKey("role_node_affinity_return_runtime");
+        Long applyId = businessApplyService.create(applyCommand).getId();
+
+        ProcessInstance instance = runtimeService.startProcessInstanceByKey("role_node_affinity_return_runtime",
+                businessKey, Map.of(
+                        "businessType", "ROLE_NODE_AFFINITY_RETURN",
+                        "businessKey", businessKey,
+                        "applyId", String.valueOf(applyId),
+                        "mangoInitiator", "admin"));
+        businessApplyService.markProcessStarted(new WorkflowProcessStartedContext(
+                applyId, 1275L, "role_node_affinity_return_runtime", processDefinition.getId(),
+                processDefinition.getName(), instance.getProcessInstanceId()));
+        taskRuntimeService.advanceRuntimeTasks(instance.getProcessInstanceId());
+        return new StartedWorkflow(applyId, instance.getProcessInstanceId());
+    }
+
+    private String roleNodeAffinityReturnBpmn() {
+        return """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                             xmlns:flowable="http://flowable.org/bpmn"
+                             xmlns:mango="http://mango.io/workflow"
+                             targetNamespace="http://mango.io/workflow/test">
+                  <process id="role_node_affinity_return_runtime" name="Role Node Affinity Return" isExecutable="true">
+                    <startEvent id="start"/>
+                    <sequenceFlow id="flow_start_specialist" sourceRef="start" targetRef="risk_specialist_review"/>
+                    <userTask id="risk_specialist_review" name="风控专员初审">
+                      <extensionElements>
+                        <mango:mangoApprovalConfig><![CDATA[{"assigneeType":"SPECIFIED_ROLE","roleIds":["817"],"assignmentMode":"AUTO","autoAssignmentStrategy":"NODE_AFFINITY","nodeAffinityScope":"PROCESS_INSTANCE","nodeAffinityFallback":"CLAIM","actions":{"complete":{"enabled":true},"returnTask":{"enabled":true}}}]]></mango:mangoApprovalConfig>
+                      </extensionElements>
+                    </userTask>
+                    <sequenceFlow id="flow_specialist_manager" sourceRef="risk_specialist_review" targetRef="risk_manager_review"/>
+                    <userTask id="risk_manager_review" name="风控经理复核" flowable:assignee="finance">
+                      <extensionElements>
+                        <mango:mangoApprovalConfig><![CDATA[{"actions":{"complete":{"enabled":true},"returnTask":{"enabled":true}}}]]></mango:mangoApprovalConfig>
+                      </extensionElements>
+                    </userTask>
+                    <sequenceFlow id="flow_manager_end" sourceRef="risk_manager_review" targetRef="end"/>
+                    <endEvent id="end"/>
+                  </process>
+                </definitions>
+                """;
     }
 
     private StartedWorkflow startRoleOrSignWorkflow(String businessKey, String roleId) {
@@ -1303,6 +1620,7 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
             WorkflowEventPublisher.class,
             WorkflowBusinessApplyService.class,
             WorkflowRuntimeCandidateLinker.class,
+            io.mango.workflow.core.support.WorkflowTaskAssigneeSourceResolver.class,
             WorkflowTaskRuntimeService.class
     })
     @MapperScan(basePackageClasses = {

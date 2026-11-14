@@ -1,5 +1,6 @@
 package io.mango.workflow.api.vo;
 
+import io.mango.workflow.api.enums.WorkflowTaskAssigneeSource;
 import io.mango.workflow.api.enums.WorkflowTaskClaimStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -74,6 +75,9 @@ public class WorkflowTaskVO {
 
     @Schema(description = "当前用户是否可释放")
     private Boolean unclaimable;
+
+    @Schema(description = "承办人来源；未指派时为空")
+    private WorkflowTaskAssigneeSource assignSource;
 
     @Schema(description = "状态：TODO=在途，DONE=已办理，CANCELED=已终止")
     private String status;

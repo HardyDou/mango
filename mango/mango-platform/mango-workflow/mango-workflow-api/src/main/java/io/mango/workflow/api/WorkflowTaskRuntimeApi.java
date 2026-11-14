@@ -6,6 +6,7 @@ import io.mango.workflow.api.command.AddSignWorkflowTaskCommand;
 import io.mango.workflow.api.command.ClaimWorkflowTaskCommand;
 import io.mango.workflow.api.command.CompleteWorkflowTaskCommand;
 import io.mango.workflow.api.command.ReadWorkflowCopiedTaskCommand;
+import io.mango.workflow.api.command.ReassignWorkflowTaskCommand;
 import io.mango.workflow.api.command.RejectWorkflowTaskCommand;
 import io.mango.workflow.api.command.ReturnWorkflowTaskCommand;
 import io.mango.workflow.api.command.SaveWorkflowTaskDraftCommand;
@@ -20,6 +21,7 @@ import io.mango.workflow.api.vo.WorkflowTaskRecordVO;
 import io.mango.workflow.api.vo.WorkflowTaskCompleteResultVO;
 import io.mango.workflow.api.vo.WorkflowTaskDetailVO;
 import io.mango.workflow.api.vo.WorkflowTaskActionResultVO;
+import io.mango.workflow.api.vo.WorkflowTaskAssigneeVO;
 import io.mango.workflow.api.vo.WorkflowTaskSummaryVO;
 import io.mango.workflow.api.vo.WorkflowTaskVO;
 import jakarta.validation.Valid;
@@ -104,6 +106,30 @@ public interface WorkflowTaskRuntimeApi {
     R<WorkflowTaskActionResultVO> saveDraftWithResult(@Valid SaveWorkflowTaskDraftCommand command);
 
     R<Boolean> transfer(@Valid TransferWorkflowTaskCommand command);
+
+    /**
+     * 管理员改派任务。
+     *
+     * <p>与转办的区别是调用人不要求是当前承办人或候选人，而是要求具备改派权限，用于承办人请假、调岗、
+     * 离职或派错人时由管理人员处置。{@code targetUserId} 指定新的承办人；{@code pool=true} 把任务回收进
+     * 节点候选池。回收进池只对「本人认领」与「平台派单」来源开放：候选按人展开、流程定义指定、转办接手、
+     * 退回指定等来源只能改派给具体人，否则会破坏会签按人计票的口径。
+     *
+     * @param command 任务 ID、目标办理人或回收标记、改派说明
+     * @return 改派成功返回 {@code true}
+     */
+    R<Boolean> reassign(@Valid ReassignWorkflowTaskCommand command);
+
+    /**
+     * 查询任务可选办理人。
+     *
+     * <p>按节点配置解析当前时点的候选成员，供转办和改派选择目标办理人。返回结果只包含当前租户启用成员，
+     * 调用人必须是当前承办人、节点候选人或具备改派权限；无候选时返回空集合，不伪造用户。
+     *
+     * @param taskId 任务 ID
+     * @return 可选办理人列表
+     */
+    R<List<WorkflowTaskAssigneeVO>> assigneeOptions(@NotBlank String taskId);
 
     R<Boolean> addSign(@Valid AddSignWorkflowTaskCommand command);
 

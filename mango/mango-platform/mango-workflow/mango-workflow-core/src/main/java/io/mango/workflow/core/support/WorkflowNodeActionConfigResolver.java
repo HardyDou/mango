@@ -23,6 +23,7 @@ public final class WorkflowNodeActionConfigResolver {
         Map<String, WorkflowNodeActionConfigVO> result = new LinkedHashMap<>();
         result.put("save", nodeAction("暂存", false, false, false, 10, configured.get("save")));
         result.put("transfer", nodeAction("转办", false, false, false, 20, configured.get("transfer")));
+        result.put("unclaim", nodeAction("释放", true, false, false, 25, configured.get("unclaim")));
         result.put("addSign", nodeAction("加签", false, false, false, 30, configured.get("addSign")));
         result.put("reject", nodeAction("驳回", true, true, true, 40, configured.get("reject")));
         result.put("returnTask", nodeAction("退回", false, true, false, 45, configured.get("returnTask")));

@@ -19,6 +19,7 @@ import io.mango.workflow.api.command.AddSignWorkflowTaskCommand;
 import io.mango.workflow.api.command.ClaimWorkflowTaskCommand;
 import io.mango.workflow.api.command.CompleteWorkflowTaskCommand;
 import io.mango.workflow.api.command.ReadWorkflowCopiedTaskCommand;
+import io.mango.workflow.api.command.ReassignWorkflowTaskCommand;
 import io.mango.workflow.api.command.RejectWorkflowTaskCommand;
 import io.mango.workflow.api.command.ReturnWorkflowTaskCommand;
 import io.mango.workflow.api.command.SaveWorkflowTaskDraftCommand;
@@ -30,6 +31,7 @@ import io.mango.workflow.api.enums.WorkflowApplyRenderMode;
 import io.mango.workflow.api.enums.WorkflowFormPermission;
 import io.mango.workflow.api.enums.WorkflowInstanceStatus;
 import io.mango.workflow.api.enums.WorkflowTaskAction;
+import io.mango.workflow.api.enums.WorkflowTaskAssigneeSource;
 import io.mango.workflow.api.enums.WorkflowTaskClaimStatus;
 import io.mango.workflow.api.enums.WorkflowTaskRuntimeStatus;
 import io.mango.workflow.api.enums.WorkflowParticipantType;
@@ -47,6 +49,7 @@ import io.mango.workflow.api.vo.WorkflowProcessDetailVO;
 import io.mango.workflow.api.vo.WorkflowProcessInstanceVO;
 import io.mango.workflow.api.vo.WorkflowRenderConfigVO;
 import io.mango.workflow.api.vo.WorkflowTaskActionResultVO;
+import io.mango.workflow.api.vo.WorkflowTaskAssigneeVO;
 import io.mango.workflow.api.vo.WorkflowTaskCompleteResultVO;
 import io.mango.workflow.api.vo.WorkflowTaskDetailVO;
 import io.mango.workflow.api.vo.WorkflowTaskRecordVO;
@@ -82,6 +85,7 @@ import io.mango.workflow.core.service.IWorkflowParticipationService;
 import io.mango.workflow.core.service.WorkflowTaskAdvanceResult;
 import io.mango.workflow.core.support.WorkflowNodeActionConfigResolver;
 import io.mango.workflow.core.support.WorkflowReturnTargetSupport;
+import io.mango.workflow.core.support.WorkflowTaskAssigneeSourceResolver;
 import io.mango.workflow.core.support.WorkflowTaskCompletionSupport;
 import lombok.RequiredArgsConstructor;
 import org.flowable.engine.HistoryService;
@@ -126,6 +130,8 @@ import java.util.Set;
 public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
 
     private static final String CLAIMED_FROM_CANDIDATE_VARIABLE = "mangoClaimedFromCandidate";
+    private static final String RELEASE_TRANSFER_HINT = "如需移交请使用转办。";
+    private static final String RELEASE_BLOCKED_UNKNOWN_SOURCE = "当前任务不支持释放：无法确认承办人来源。";
     private static final String DEFAULT_REJECT_REASON = "审批驳回";
     private static final String LIMIT_ONE = "limit 1";
     private static final String EMPTY_ASSIGNEE_AUTO_END_REASON = "审批人为空，系统自动结束";
@@ -153,6 +159,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
     private final WorkflowAutoAssignmentStateMapper autoAssignmentStateMapper;
     private final JdbcTemplate jdbcTemplate;
     private final WorkflowRuntimeCandidateLinker candidateLinker;
+    private final WorkflowTaskAssigneeSourceResolver assignSourceResolver;
     @Override
     public PageResult<WorkflowTaskVO> todo(WorkflowTaskPageQuery query) {
         WorkflowTaskPageQuery resolved = resolve(query);
@@ -486,7 +493,8 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
 
         String targetTaskDefinitionKey = resolveReturnTarget(task, command.getTargetTaskDefinitionKey());
         String targetAssigneeUserId = WorkflowReturnTaskAssigner.resolveTargetAssignee(
-                trim(command.getTargetAssigneeUserId()), this::resolveUserId, this::memberId);
+                trim(command.getTargetAssigneeUserId()), this::resolveUserId, this::memberId,
+                this::assigneeIdentifier);
         Set<String> existingTargetTaskIds = WorkflowReturnTaskAssigner.existingTargetTaskIds(
                 taskService, task.getProcessInstanceId(), targetTaskDefinitionKey, targetAssigneeUserId);
         Map<String, Object> variables = mergeVariables(task.getProcessInstanceId(), json(command.getVariables()));
@@ -509,6 +517,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
                 advanceRuntimeTasks(task.getProcessInstanceId()), taskService, task.getProcessInstanceId(),
                 targetTaskDefinitionKey, existingTargetTaskIds, targetAssigneeUserId,
                 () -> syncCurrentAssignees(task.getProcessInstanceId()),
+                targetTask -> assignSourceResolver.mark(targetTask, WorkflowTaskAssigneeSource.RETURN_ASSIGN),
                 () -> workflowBusinessApplyService.refreshCurrentTasksAndReturn(task.getProcessInstanceId()));
         WorkflowReturnTargetSupport.ensureLeftSourceNode(taskService, task, targetTaskDefinitionKey,
                 advanceResult.ended());
@@ -536,10 +545,17 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         ensureCurrentUserCanOperate(task);
         String target = command.getTargetUserId().trim();
         ensureNotCurrentUser(target, "不能转办给自己");
-        taskService.setAssignee(task.getId(), target);
-        task.setAssignee(target);
+        Long targetUserId = Require.nonNull(resolveUserId(target), WorkflowCode.TASK_ASSIGNEE_INVALID,
+                "目标办理人不存在或已停用");
+        Require.isTrue(memberId(targetUserId) != null, WorkflowCode.TASK_ASSIGNEE_INVALID,
+                "目标办理人不是当前租户的启用成员");
+        String assigneeKey = assigneeIdentifier(targetUserId);
+        taskService.setAssignee(task.getId(), assigneeKey);
+        task.setAssignee(assigneeKey);
+        taskService.removeVariableLocal(task.getId(), CLAIMED_FROM_CANDIDATE_VARIABLE);
+        assignSourceResolver.mark(task, WorkflowTaskAssigneeSource.TRANSFER);
         syncCurrentAssignees(task.getProcessInstanceId());
-        saveRecord(task, WorkflowTaskAction.TRANSFER, command.getComment(), Map.of("targetUserId", target));
+        saveRecord(task, WorkflowTaskAction.TRANSFER, command.getComment(), Map.of("targetUserId", String.valueOf(targetUserId)));
         workflowBusinessApplyService.refreshCurrentTasks(task.getProcessInstanceId());
         return Boolean.TRUE;
     }
@@ -587,11 +603,13 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         Require.notBlank(command.getTaskId(), WorkflowCode.TASK_INVALID, "任务ID不能为空");
         Task task = taskService.createTaskQuery().taskId(command.getTaskId()).singleResult();
         Require.notNull(task, WorkflowCode.TASK_NOT_FOUND);
-        Require.isTrue(!StringUtils.hasText(task.getAssignee()), WorkflowCode.TASK_INVALID, "任务已被认领");
+        Require.isTrue(!StringUtils.hasText(task.getAssignee()), WorkflowCode.TASK_INVALID,
+                "任务已被指派，不能重复认领");
         ensureCurrentUserCanOperate(task);
         taskService.claim(task.getId(), currentUser());
         taskService.setVariableLocal(task.getId(), CLAIMED_FROM_CANDIDATE_VARIABLE, Boolean.TRUE);
         task.setAssignee(currentUser());
+        assignSourceResolver.mark(task, WorkflowTaskAssigneeSource.SELF_CLAIM);
         syncCurrentAssignees(task.getProcessInstanceId());
         saveRecord(task, WorkflowTaskAction.CLAIM, "认领任务", Map.of());
         WorkflowBusinessApplyVO apply = workflowBusinessApplyService.refreshCurrentTasksAndReturn(task.getProcessInstanceId());
@@ -615,17 +633,170 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         Require.notBlank(command.getTaskId(), WorkflowCode.TASK_INVALID, "任务ID不能为空");
         Task task = taskService.createTaskQuery().taskId(command.getTaskId()).singleResult();
         Require.notNull(task, WorkflowCode.TASK_NOT_FOUND);
-        Require.isTrue(isCurrentUserIdentifier(task.getAssignee()), WorkflowCode.TASK_INVALID, "只能释放自己认领的任务");
-        Require.isTrue(isClaimedFromCandidate(task.getId()), WorkflowCode.TASK_INVALID, "只能释放通过认领获得的任务");
+        ensureActionEnabled(task, "unclaim");
+        WorkflowTaskAssigneeSource source = requireReleasable(task);
+        WorkflowBusinessApplyVO apply = releaseToPool(task, source, WorkflowTaskAction.UNCLAIM, "释放任务");
+        return toActionResult(WorkflowTaskAction.UNCLAIM, task, false, apply);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Boolean reassign(ReassignWorkflowTaskCommand command) {
+        Require.notNull(command, WorkflowCode.TASK_INVALID);
+        Require.notBlank(command.getTaskId(), WorkflowCode.TASK_INVALID, "任务ID不能为空");
+        boolean pool = Boolean.TRUE.equals(command.getPool());
+        Require.isTrue(pool != StringUtils.hasText(command.getTargetUserId()), WorkflowCode.TASK_INVALID,
+                pool ? "回收进候选池时不能同时指定目标办理人" : "改派必须指定目标办理人或选择回收进候选池");
+        Require.isTrue(isAdminUser(), WorkflowCode.TASK_REASSIGN_FORBIDDEN, "只有流程管理员可以改派任务");
+        Task task = taskService.createTaskQuery().taskId(command.getTaskId()).singleResult();
+        Require.notNull(task, WorkflowCode.TASK_NOT_FOUND);
+        String originalAssignee = task.getAssignee();
+        if (pool) {
+            WorkflowTaskAssigneeSource source = requireReleasable(task);
+            releaseToPool(task, source, WorkflowTaskAction.REASSIGN,
+                    StringUtils.hasText(command.getComment()) ? command.getComment() : "回收进候选池");
+            return Boolean.TRUE;
+        }
+        Long targetUserId = Require.nonNull(resolveUserId(command.getTargetUserId()),
+                WorkflowCode.TASK_ASSIGNEE_INVALID, "目标办理人不存在或已停用");
+        Require.isTrue(memberId(targetUserId) != null, WorkflowCode.TASK_ASSIGNEE_INVALID,
+                "目标办理人不是当前租户的启用成员");
+        Long currentAssigneeId = resolveUserId(originalAssignee);
+        Require.isTrue(currentAssigneeId == null || !currentAssigneeId.equals(targetUserId),
+                WorkflowCode.TASK_ASSIGNEE_INVALID, "目标办理人已是当前承办人");
+        String target = String.valueOf(targetUserId);
+        String assigneeKey = assigneeIdentifier(targetUserId);
+        taskService.setAssignee(task.getId(), assigneeKey);
+        task.setAssignee(assigneeKey);
+        taskService.removeVariableLocal(task.getId(), CLAIMED_FROM_CANDIDATE_VARIABLE);
+        assignSourceResolver.mark(task, WorkflowTaskAssigneeSource.REASSIGN);
+        syncCurrentAssignees(task.getProcessInstanceId());
+        Map<String, Object> audit = new LinkedHashMap<>();
+        audit.put("targetUserId", target);
+        audit.put("targetAssignee", assigneeKey);
+        if (StringUtils.hasText(originalAssignee)) {
+            audit.put("originalAssignee", originalAssignee);
+        }
+        saveRecord(task, WorkflowTaskAction.REASSIGN, command.getComment(), audit);
+        workflowBusinessApplyService.refreshCurrentTasks(task.getProcessInstanceId());
+        return Boolean.TRUE;
+    }
+
+    @Override
+    public List<WorkflowTaskAssigneeVO> assigneeOptions(String taskId) {
+        Require.notBlank(taskId, WorkflowCode.TASK_INVALID, "任务ID不能为空");
+        Task task = taskService.createTaskQuery().taskId(taskId).singleResult();
+        Require.notNull(task, WorkflowCode.TASK_NOT_FOUND);
+        Require.isTrue(isCurrentUserIdentifier(task.getAssignee()) || currentUserCanClaim(task) || isAdminUser(),
+                WorkflowCode.TASK_REASSIGN_FORBIDDEN, "无权查看该任务的可选办理人");
+        WorkflowApprovalNodeConfig config = taskApprovalConfig(task);
+        if (config == null) {
+            return List.of();
+        }
+        Map<String, Object> variables = readStoredVariables(task.getProcessInstanceId());
+        WorkflowAssigneeResolver.ResolvedAssignees resolved = assigneeResolver.resolve(config, variables,
+                initiator(task.getProcessInstanceId()), task.getTaskDefinitionKey());
+        String currentAssignee = task.getAssignee();
+        return resolveCandidates(resolved).stream().map(userId -> {
+            AuthUserVO user = authUserProvider.getByIdForAuth(userId);
+            WorkflowTaskAssigneeVO option = new WorkflowTaskAssigneeVO();
+            option.setUserId(userId);
+            option.setUsername(user == null ? null : user.getUsername());
+            option.setDisplayName(user == null || !StringUtils.hasText(user.getNickname())
+                    ? String.valueOf(userId) : user.getNickname());
+            option.setCurrent(StringUtils.hasText(currentAssignee)
+                    && (currentAssignee.equals(String.valueOf(userId))
+                    || (user != null && currentAssignee.equals(user.getUsername()))));
+            return option;
+        }).toList();
+    }
+
+    /**
+     * 校验当前承办人能否释放：任务必须有承办人、必须是本人、来源必须是本人认领或平台派单。
+     *
+     * <p>不可释放时返回明确的来源原因；只有节点确实启用了转办才追加转入转办的提示，
+     * 避免在未开启转办的节点上给出用户做不到的动作。
+     */
+    private WorkflowTaskAssigneeSource requireReleasable(Task task) {
+        Require.isTrue(StringUtils.hasText(task.getAssignee()), WorkflowCode.TASK_NOT_ASSIGNED,
+                "任务当前没有承办人，无需释放。");
+        Require.isTrue(isCurrentUserIdentifier(task.getAssignee()), WorkflowCode.TASK_RELEASE_FORBIDDEN,
+                "只能释放本人承办的任务，当前承办人为「" + task.getAssignee() + "」。");
+        WorkflowTaskAssigneeSource source = assignSourceResolver.resolve(task);
+        Require.isTrue(source != null && source.isReleasable(), WorkflowCode.TASK_RELEASE_FORBIDDEN,
+                source == null ? RELEASE_BLOCKED_UNKNOWN_SOURCE : releaseBlockedMessage(task, source));
+        return source;
+    }
+
+    private String releaseBlockedMessage(Task task, WorkflowTaskAssigneeSource source) {
+        String message = source.releaseBlockedMessage();
+        return transferEnabled(task) ? message + RELEASE_TRANSFER_HINT : message;
+    }
+
+    private boolean transferEnabled(Task task) {
+        WorkflowNodeActionConfigVO transfer = WorkflowNodeActionConfigResolver
+                .resolve(taskApprovalConfig(task)).get("transfer");
+        return transfer != null && Boolean.TRUE.equals(transfer.getEnabled());
+    }
+
+    /**
+     * 把任务释放回节点候选池：补齐当前候选人、清空承办人、标记「已释放」并记录台账。
+     *
+     * <p>不删除多实例子任务、不调整审批人集合，会签和依次审批的计票口径保持不变。
+     */
+    private WorkflowBusinessApplyVO releaseToPool(Task task, WorkflowTaskAssigneeSource source,
+                                                  WorkflowTaskAction action, String comment) {
+        ensureReleaseCandidates(task);
+        String originalAssignee = task.getAssignee();
+        assignSourceResolver.mark(task, source);
         taskService.unclaim(task.getId());
         taskService.removeVariableLocal(task.getId(), CLAIMED_FROM_CANDIDATE_VARIABLE);
+        taskService.setVariableLocal(task.getId(), WorkflowTaskAssigneeSourceResolver.RELEASED_TO_POOL_VARIABLE,
+                Boolean.TRUE);
         task.setAssignee(null);
         syncCurrentAssignees(task.getProcessInstanceId());
-        saveRecord(task, WorkflowTaskAction.UNCLAIM, "释放任务", Map.of());
-        WorkflowBusinessApplyVO apply = workflowBusinessApplyService.refreshCurrentTasksAndReturn(task.getProcessInstanceId());
+        Map<String, Object> audit = new LinkedHashMap<>();
+        audit.put("assignSource", source.name());
+        audit.put(WorkflowTaskAssigneeSourceResolver.RELEASED_TO_POOL_VARIABLE, Boolean.TRUE);
+        if (StringUtils.hasText(originalAssignee)) {
+            audit.put("originalAssignee", originalAssignee);
+        }
+        saveRecord(task, action, comment, audit);
+        WorkflowBusinessApplyVO apply = workflowBusinessApplyService
+                .refreshCurrentTasksAndReturn(task.getProcessInstanceId());
         WorkflowFormInstanceEntity formInstance = findFormInstance(task.getProcessInstanceId());
-        workflowEventPublisher.publishTaskUnclaimed(task, formInstance, readStoredVariables(task.getProcessInstanceId()), apply);
-        return toActionResult(WorkflowTaskAction.UNCLAIM, task, false, apply);
+        workflowEventPublisher.publishTaskUnclaimed(task, formInstance,
+                readStoredVariables(task.getProcessInstanceId()), apply);
+        return apply;
+    }
+
+    /** 释放前补齐节点候选；补不出候选时释放会让任务无人可领，直接失败并保留原承办人。 */
+    private void ensureReleaseCandidates(Task task) {
+        boolean linked = linkNodeCandidates(task);
+        Require.isTrue(linked || hasCandidateLink(task), WorkflowCode.TASK_RELEASE_FORBIDDEN,
+                "当前任务不支持释放：该节点没有可用候选人，释放后无人可以领取。");
+    }
+
+    /** 按节点配置解析当前时候选人并补齐候选人/候选组身份链。 */
+    private boolean linkNodeCandidates(Task task) {
+        WorkflowApprovalNodeConfig config = taskApprovalConfig(task);
+        if (config == null) {
+            return false;
+        }
+        Map<String, Object> variables = readStoredVariables(task.getProcessInstanceId());
+        WorkflowAssigneeResolver.ResolvedAssignees resolved = assigneeResolver.resolve(config, variables,
+                initiator(task.getProcessInstanceId()), task.getTaskDefinitionKey());
+        if (resolved == null || resolved.empty()) {
+            return false;
+        }
+        boolean usersChanged = candidateLinker.applyUsers(task, resolved.users());
+        boolean groupsChanged = candidateLinker.applyGroups(task, resolved.groups());
+        return usersChanged || groupsChanged;
+    }
+
+    private boolean hasCandidateLink(Task task) {
+        return taskService.getIdentityLinksForTask(task.getId()).stream()
+                .anyMatch(link -> StringUtils.hasText(link.getUserId()) || StringUtils.hasText(link.getGroupId()));
     }
 
     @Override
@@ -1069,11 +1240,14 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
                 .distinct()
                 .toList();
         boolean candidate = !assigned && currentUserCanClaim(task);
-        boolean claimedByCurrentUser = assigned
+        WorkflowTaskAssigneeSource assignSource = assigned ? assignSourceResolver.resolve(task) : null;
+        boolean releasableByCurrentUser = assigned
                 && isCurrentUserIdentifier(task.getAssignee())
-                && isClaimedFromCandidate(task.getId());
+                && assignSource != null
+                && assignSource.isReleasable();
         vo.setClaimable(candidate);
-        vo.setUnclaimable(claimedByCurrentUser);
+        vo.setUnclaimable(releasableByCurrentUser);
+        vo.setAssignSource(assignSource);
         vo.setClaimStatus(assigned ? WorkflowTaskClaimStatus.ASSIGNED
                 : candidateUsers.isEmpty() && candidateGroups.isEmpty()
                 ? WorkflowTaskClaimStatus.NONE
@@ -1114,6 +1288,18 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         return Boolean.TRUE.equals(taskService.getVariableLocal(taskId, CLAIMED_FROM_CANDIDATE_VARIABLE));
     }
 
+
+    /** 运行时按配置解析出的单人办理人不属于本人认领或平台派单，不能由承办人释放。 */
+    private WorkflowTaskAssigneeSource runtimeAssigneeSource(WorkflowApprovalNodeConfig config) {
+        if (config == null || config.getAssigneeType() == null) {
+            return WorkflowTaskAssigneeSource.DEFINITION;
+        }
+        return switch (config.getAssigneeType()) {
+            case INITIATOR_SELECT -> WorkflowTaskAssigneeSource.INITIATOR_SELECT;
+            case FORM_USER -> WorkflowTaskAssigneeSource.FORM_USER;
+            default -> WorkflowTaskAssigneeSource.DEFINITION;
+        };
+    }
     private void fillProcessFallback(WorkflowTaskVO vo, String processInstanceId, String processDefinitionId) {
         HistoricProcessInstance instance = historyService.createHistoricProcessInstanceQuery()
                 .processInstanceId(processInstanceId)
@@ -1318,6 +1504,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         if (!StringUtils.hasText(task.getAssignee())) {
             taskService.setAssignee(task.getId(), currentUser());
             task.setAssignee(currentUser());
+            assignSourceResolver.mark(task, WorkflowTaskAssigneeSource.SELF_CLAIM);
             recordCurrentAssignee(task);
         }
     }
@@ -1391,6 +1578,10 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
     }
 
     private boolean resolveRuntimeTask(Task task) {
+        // 承办人已把任务释放回候选池：只补候选，不再自动派单；节点重新进入会产生新任务继续正常派单。
+        if (assignSourceResolver.isReleasedToPool(task)) {
+            return !StringUtils.hasText(task.getAssignee()) && linkNodeCandidates(task);
+        }
         WorkflowApprovalNodeConfig config = taskApprovalConfig(task);
         if (config == null) {
             return false;
@@ -1408,7 +1599,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         if (resolved.empty()) {
             return applyAutoEmptyStrategy(task, resolved.emptyStrategy(), variables);
         }
-        boolean usersChanged = applyResolvedRuntimeUsers(task, variables, resolved.users());
+        boolean usersChanged = applyResolvedRuntimeUsers(task, variables, resolved.users(), config);
         // 多实例展开后的子任务已有具体办理人，不能再挂候选组，否则其他成员能认领并办理别人的任务。
         boolean groupsChanged = !hasConcreteAssignee(task) && candidateLinker.applyGroups(task, resolved.groups());
         return usersChanged || groupsChanged;
@@ -1460,9 +1651,10 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
             state.setUpdatedAt(LocalDateTime.now());
             autoAssignmentStateMapper.updateById(state);
         }
-        taskService.setAssignee(task.getId(), String.valueOf(selected));
-        task.setAssignee(String.valueOf(selected));
-        recordCurrentAssignee(task);
+        String assigneeKey = assigneeIdentifier(selected);
+        taskService.setAssignee(task.getId(), assigneeKey);
+        task.setAssignee(assigneeKey);
+        assignSourceResolver.mark(task, WorkflowTaskAssigneeSource.AUTO_ASSIGN);        recordCurrentAssignee(task);
         Map<String, Object> audit = new LinkedHashMap<>();
         audit.put("assignmentMode", WorkflowAssignmentMode.AUTO.name());
         audit.put("strategy", strategy.name());
@@ -1584,27 +1776,44 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
                 ? WorkflowEmptyAssigneeStrategy.TO_ADMIN
                 : config.getEmptyAssigneeStrategy();
         if (strategy == WorkflowEmptyAssigneeStrategy.TO_ADMIN) {
-            taskService.setAssignee(task.getId(), definitionAdminUsers(task.getProcessInstanceId()).stream()
+            String configuredAdmin = definitionAdminUsers(task.getProcessInstanceId()).stream()
                     .findFirst()
-                    .orElse(WorkflowAssigneeResolver.ADMIN_USER));
+                    .orElse(null);
+            Long adminUserId = resolveUserId(configuredAdmin);
+            String assigneeKey = adminUserId == null
+                    ? (StringUtils.hasText(configuredAdmin) ? configuredAdmin : WorkflowAssigneeResolver.ADMIN_USER)
+                    : assigneeIdentifier(adminUserId);
+            taskService.setAssignee(task.getId(), assigneeKey);
+            task.setAssignee(assigneeKey);
+            assignSourceResolver.mark(task, WorkflowTaskAssigneeSource.ADMIN_FALLBACK);
             return true;
         }
         if (strategy == WorkflowEmptyAssigneeStrategy.TO_USER
                 && config.getEmptyAssigneeUserIds() != null
                 && !config.getEmptyAssigneeUserIds().isEmpty()) {
-            taskService.setAssignee(task.getId(), config.getEmptyAssigneeUserIds().get(0));
+            String configured = config.getEmptyAssigneeUserIds().get(0);
+            Long configuredUserId = resolveUserId(configured);
+            String assigneeKey = configuredUserId == null ? configured : assigneeIdentifier(configuredUserId);
+            taskService.setAssignee(task.getId(), assigneeKey);
+            task.setAssignee(assigneeKey);
+            assignSourceResolver.mark(task, WorkflowTaskAssigneeSource.ADMIN_FALLBACK);
             return true;
         }
         return applyAutoEmptyStrategy(task, strategy, readStoredVariables(task.getProcessInstanceId()));
     }
 
-    private boolean applyResolvedRuntimeUsers(Task task, Map<String, Object> variables, List<String> users) {
+    private boolean applyResolvedRuntimeUsers(Task task, Map<String, Object> variables, List<String> users,
+                                              WorkflowApprovalNodeConfig config) {
         if (users == null || users.isEmpty()) {
             return false;
         }
         boolean changed = false;
         if (task.getAssignee() != null && task.getAssignee().startsWith("${mangoRuntimeAssignee_")) {
-            taskService.setAssignee(task.getId(), users.get(0));
+            Long resolvedUserId = resolveUserId(users.get(0));
+            String assigneeKey = resolvedUserId == null ? users.get(0) : assigneeIdentifier(resolvedUserId);
+            taskService.setAssignee(task.getId(), assigneeKey);
+            task.setAssignee(assigneeKey);
+            assignSourceResolver.mark(task, runtimeAssigneeSource(config));
             changed = true;
         }
         String multiVariable = "mangoAssignees_" + task.getTaskDefinitionKey();

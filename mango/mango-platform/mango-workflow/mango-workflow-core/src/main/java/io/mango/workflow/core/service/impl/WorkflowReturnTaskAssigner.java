@@ -9,6 +9,7 @@ import org.flowable.engine.TaskService;
 import org.flowable.task.api.Task;
 
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -21,7 +22,8 @@ final class WorkflowReturnTaskAssigner {
     /** 解析并校验目标办理人；未指定时返回 null，指定后必须指向当前租户启用成员。 */
     static String resolveTargetAssignee(String input,
                                        Function<String, Long> userIdResolver,
-                                       Function<Long, Long> memberIdResolver) {
+                                       Function<Long, Long> memberIdResolver,
+                                       Function<Long, String> assigneeKeyResolver) {
         if (input == null) {
             return null;
         }
@@ -29,7 +31,7 @@ final class WorkflowReturnTaskAssigner {
                 "退回目标办理人不存在或已停用");
         Require.isTrue(memberIdResolver.apply(userId) != null, WorkflowCode.TASK_INVALID,
                 "退回目标办理人不是当前租户的启用成员");
-        return String.valueOf(userId);
+        return assigneeKeyResolver.apply(userId);
     }
 
     /** 记录退回前目标节点已有任务 ID；未指定办理人时返回空集合。 */
@@ -47,6 +49,7 @@ final class WorkflowReturnTaskAssigner {
                                                        Set<String> existingTaskIds,
                                                        String targetAssigneeUserId,
                                                        Runnable syncAssignees,
+                                                       Consumer<Task> assignSourceMarker,
                                                        Supplier<WorkflowBusinessApplyVO> refreshCurrentTasks) {
         if (targetAssigneeUserId == null) {
             return current;
@@ -55,6 +58,7 @@ final class WorkflowReturnTaskAssigner {
                 taskService, processInstanceId, targetTaskDefinitionKey, existingTaskIds);
         taskService.setAssignee(targetTask.getId(), targetAssigneeUserId);
         targetTask.setAssignee(targetAssigneeUserId);
+        assignSourceMarker.accept(targetTask);
         syncAssignees.run();
         return new WorkflowTaskAdvanceResult(processInstanceId, false, refreshCurrentTasks.get());
     }

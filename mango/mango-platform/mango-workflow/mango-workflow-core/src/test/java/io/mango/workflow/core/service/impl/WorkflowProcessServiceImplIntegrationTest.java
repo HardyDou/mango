@@ -18,6 +18,7 @@ import io.mango.workflow.api.command.ReturnWorkflowTaskCommand;
 import io.mango.workflow.api.command.SaveWorkflowTaskDraftCommand;
 import io.mango.workflow.api.command.StartBusinessWorkflowCommand;
 import io.mango.workflow.api.command.StartWorkflowProcessCommand;
+import io.mango.workflow.api.command.ReassignWorkflowTaskCommand;
 import io.mango.workflow.api.command.TransferWorkflowTaskCommand;
 import io.mango.workflow.api.command.WorkflowJsonRequest;
 import io.mango.workflow.api.enums.WorkflowApplyRenderMode;
@@ -35,6 +36,7 @@ import io.mango.workflow.api.vo.WorkflowTaskActionResultVO;
 import io.mango.workflow.api.vo.WorkflowTaskCompleteResultVO;
 import io.mango.workflow.api.vo.WorkflowTaskDetailVO;
 import io.mango.workflow.api.vo.WorkflowTaskSummaryVO;
+import io.mango.workflow.api.vo.WorkflowTaskAssigneeVO;
 import io.mango.workflow.api.vo.WorkflowTaskVO;
 import io.mango.workflow.core.entity.WorkflowDefinitionEntity;
 import io.mango.workflow.core.entity.WorkflowFormInstanceEntity;
@@ -623,6 +625,16 @@ class WorkflowProcessServiceImplIntegrationTest {
         @Override
         public Boolean transfer(TransferWorkflowTaskCommand command) {
             return true;
+        }
+
+        @Override
+        public Boolean reassign(ReassignWorkflowTaskCommand command) {
+            return true;
+        }
+
+        @Override
+        public List<WorkflowTaskAssigneeVO> assigneeOptions(String taskId) {
+            return List.of();
         }
 
         @Override
