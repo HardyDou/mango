@@ -1,6 +1,6 @@
 ## v2026.11.14-maven-1.9.0-file-edit-apply-attribute-release - Mango Maven/docs 1.9.0 file edit and workflow apply attribute release - 2026-11-14
 
-Status: `PENDING`. Release plan digest `bd2de5c3ca790229cfc4e5fc7c5e9c84ae7c857144c0a9e4b22accd647aebab1`; Maven/npm publication, consume verification, Tag and GitHub Release remain pending.
+Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `bd2de5c3ca790229cfc4e5fc7c5e9c84ae7c857144c0a9e4b22accd647aebab1`; prepared candidate `6b82ef6ef2f20864c3b661c2d44c0898cada062eba74c3dc665ec25ec52243ff` completed publication and consume verification for 18 npm packages (`@mango/file@1.3.0` through `@mango/cli@1.4.9`) and 201 Maven coordinates. Tag and GitHub Release were created and verified.
 
 ### Pull Requests
 
