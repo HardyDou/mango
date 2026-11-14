@@ -49,10 +49,10 @@ function deepPlan(records, selection) {
   const commands = [
     ['pnpm', ['quality:inventory']],
     ['pnpm', ['admin:styles:check']],
-    ['pnpm', ['check:static']],
-    ['pnpm', ['quality:gate:test']],
   ];
-  appendWorkspaceCommands(commands, records, selection);
+  appendPullRequestBuild(commands, records, selection);
+  commands.push(['pnpm', ['check:static']], ['pnpm', ['quality:gate:test']]);
+  appendSelectedTests(commands, records, selection);
   if (selection.publishableChanged.length > 0) {
     commands.push(['pnpm', ['package-exports:check']]);
     commands.push(['pnpm', ['package-consumer:typecheck']]);
