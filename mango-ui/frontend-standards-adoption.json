@@ -76,6 +76,10 @@
       "version": "1.0.26",
       "action": "pin"
     },
+    "@mango/detail": {
+      "version": "1.1.12",
+      "action": "pin"
+    },
     "@mango/file": {
       "version": "1.0.34",
       "action": "pin"
@@ -94,6 +98,10 @@
     },
     "@mango/http-client": {
       "version": "1.0.0",
+      "action": "pin"
+    },
+    "@mango/information": {
+      "version": "1.1.7",
       "action": "pin"
     },
     "@mango/job": {

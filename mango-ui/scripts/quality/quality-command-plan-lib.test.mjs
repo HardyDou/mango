@@ -58,6 +58,24 @@ test('PR affected profile builds package prerequisites plus selected apps before
   assert.ok(plan.indexOf('pnpm typecheck') > plan.findIndex((command) => command.endsWith('-r build')));
 });
 
+test('deep affected profile builds package prerequisites before the global static gate', () => {
+  const plan = rendered(
+    createQualityCommandPlan(
+      records,
+      {
+        mode: 'affected',
+        selected: ['@mango/contracts', 'admin-app'],
+        publishableChanged: ['@mango/contracts'],
+      },
+      'deep',
+    ),
+  );
+  assert.ok(plan.includes('pnpm --filter @mango/contracts --filter @mango/domain --filter admin-app -r build'));
+  assert.ok(plan.includes('pnpm --filter @mango/contracts --filter admin-app -r test'));
+  assert.ok(plan.indexOf('pnpm check:static') > plan.findIndex((command) => command.endsWith('-r build')));
+  assert.ok(!plan.includes('pnpm run check:full'));
+});
+
 test('PR non-frontend profile still produces a deterministic toolchain result', () => {
   assert.deepEqual(rendered(createQualityCommandPlan(records, { mode: 'none' }, 'pr')), ['pnpm quality:versions']);
 });
