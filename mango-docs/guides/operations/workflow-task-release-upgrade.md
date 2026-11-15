@@ -25,6 +25,7 @@
 3. 需要「承办人不在（请假、离职、调岗）」的场景改用管理员改派 `POST /workflow/tasks/reassign`，权限码 `workflow:task:reassign`；改派目标从 `GET /workflow/tasks/assignee-options` 取。`targetUserId` 改派给具体人；`pool=true` 把任务回收进候选池——回收不要求调用者是承办人，但来源白名单与承办人自助释放一致（仅本人认领与平台派单可回收），按人展开和指定类任务仍只能改派给具体人。
 4. 需要区分「本人认领」和「平台派单」时读 `WorkflowTaskVO.assignSource`，不要再解析 `claimTime`：Flowable 的 `CLAIM_TIME_` 只在认领时写入，平台派单不会写。
 5. 按 `ASSIGNEE_` 精确匹配的自研 SQL 或报表要同时兼容用户 ID 和用户名：升级后新数据统一为用户名，存量数据仍是两种形态混合。
+6. 业务列表逐行判定释放按钮不需要再调任务详情（Issue #1282）：当前任务快照 `WorkflowBusinessApplyCurrentTaskVO` 已带同源的 `unclaimable`、`assignSource`、`claimTime`，与 `WorkflowTaskVO` 同名同语义，直接按行渲染即可，避免每页 20~50 次详情 RPC。
 
 ## 4. 不支持释放的来源与处理方式
 
@@ -45,6 +46,7 @@
 - 会签节点释放后可能出现「任务停在池中、无人领取」：原成员各自已有待办，只能等新增候选人，或由管理员改派。平台不做超时回收。
 - 需要人工兜底时，工作流管理员用 `todoType=ALL` 查看未指派任务并直接办理；管理员对已有承办人的任务没有代办权限，只能走改派。
 - 存量任务在升级后第一次释放/查询时按 `workflow_task_record` 中该任务最近一条 `CLAIM` 或 `AUTO_ASSIGN` 记录推导来源；推导不出按 `DEFINITION` 处理，承办人无法自助释放。
+- 当前任务快照的 `assign_source`、`claim_time` 由 Flyway `V6__workflow_business_apply_current_task_claim_state.sql` 新增，不回填历史行：升级前已存在的当前任务行 `unclaimable=false`（来源未知按不可释放）、`claimTime` 为空，任务再次刷新或流转后自动补齐。
 
 ## 6. 回滚方式
 

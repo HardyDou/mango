@@ -27,4 +27,10 @@ public class WorkflowBusinessApplyCurrentTaskEntity extends WorkflowBaseEntity {
     private String candidateUsers;
     private String candidateGroups;
     private LocalDateTime arrivedAt;
+
+    /** 承办人来源；未指派时为空。 */
+    private String assignSource;
+
+    /** 办理人获得任务的时间；本人认领为领取时间，平台派单为派单到达时间。 */
+    private LocalDateTime claimTime;
 }

@@ -56,10 +56,11 @@ class WorkflowMigrationUpgradeIntegrationTest {
 
         var migrationResult = currentFlyway().migrate();
 
-        assertThat(migrationResult.migrationsExecuted).isEqualTo(3);
+        assertThat(migrationResult.migrationsExecuted).isEqualTo(5);
         assertThat(historyChecksum("1")).isEqualTo(CURRENT_V1_CHECKSUM);
         assertThat(historyChecksum("2")).isNotNull();
         assertCanonicalAuditColumns();
+        assertCurrentTaskReleaseColumns();
         // 夹具只保留 5 张受影响表，工作流申请中心表不在其中；V4 必须跳过而不是中断升级。
         assertThat(columnDefinition(new AuditColumn("workflow_business_apply", "affinity_key"))).isNull();
         assertThat(currentFlyway().migrate().migrationsExecuted).isZero();
@@ -72,10 +73,11 @@ class WorkflowMigrationUpgradeIntegrationTest {
 
         var migrationResult = currentFlyway().migrate();
 
-        assertThat(migrationResult.migrationsExecuted).isEqualTo(3);
+        assertThat(migrationResult.migrationsExecuted).isEqualTo(5);
         assertThat(historyChecksum("1")).isEqualTo(CURRENT_V1_CHECKSUM);
         assertThat(historyChecksum("2")).isNotNull();
         assertCanonicalAuditColumns();
+        assertCurrentTaskReleaseColumns();
     }
 
     @Test
@@ -83,12 +85,13 @@ class WorkflowMigrationUpgradeIntegrationTest {
         var firstMigration = currentFlyway().migrate();
         var secondMigration = currentFlyway().migrate();
 
-        assertThat(firstMigration.migrationsExecuted).isEqualTo(4);
+        assertThat(firstMigration.migrationsExecuted).isEqualTo(6);
         assertThat(secondMigration.migrationsExecuted).isZero();
         assertThat(historyChecksum("1")).isEqualTo(CURRENT_V1_CHECKSUM);
         assertThat(historyChecksum("2")).isNotNull();
         assertCanonicalAuditColumns();
         assertAffinityKeyColumn();
+        assertCurrentTaskReleaseColumns();
     }
 
     @Test
@@ -123,6 +126,17 @@ class WorkflowMigrationUpgradeIntegrationTest {
         assertThat(columnDefinition(new AuditColumn("workflow_business_apply", "affinity_key")))
                 .as("workflow_business_apply.affinity_key added by V4")
                 .isNotNull();
+    }
+
+    private void assertCurrentTaskReleaseColumns() throws SQLException {
+        assertThat(columnDefinition(new AuditColumn("workflow_business_apply_current_task", "assign_source")))
+                .as("workflow_business_apply_current_task.assign_source added by V6")
+                .extracting("dataType", "nullable")
+                .containsExactly("varchar", "YES");
+        assertThat(columnDefinition(new AuditColumn("workflow_business_apply_current_task", "claim_time")))
+                .as("workflow_business_apply_current_task.claim_time added by V6")
+                .extracting("dataType", "nullable")
+                .containsExactly("datetime", "YES");
     }
 
     private boolean columnExists(AuditColumn column) throws SQLException {

@@ -24,6 +24,8 @@ import io.mango.workflow.api.command.ReturnWorkflowTaskCommand;
 import io.mango.workflow.api.command.TransferWorkflowTaskCommand;
 import io.mango.workflow.api.command.WorkflowJsonRequest;
 import io.mango.workflow.api.enums.WorkflowTaskAction;
+import io.mango.workflow.api.enums.WorkflowTaskAssigneeSource;
+import io.mango.workflow.api.enums.WorkflowTaskClaimStatus;
 import io.mango.workflow.api.enums.WorkflowCode;
 import io.mango.workflow.api.enums.WorkflowApplyStatus;
 import io.mango.workflow.core.engine.WorkflowAssigneeCollection;
@@ -32,6 +34,7 @@ import io.mango.workflow.core.engine.WorkflowDesignerBpmnConverter;
 import io.mango.workflow.core.engine.WorkflowCandidateGroupProvider;
 import io.mango.workflow.core.event.WorkflowEventPublisher;
 import io.mango.workflow.core.identity.WorkflowAssigneeIdentityService;
+import io.mango.workflow.api.vo.WorkflowBusinessApplyCurrentTaskVO;
 import io.mango.workflow.api.vo.WorkflowTaskActionResultVO;
 import io.mango.workflow.api.vo.WorkflowTaskRecordVO;
 import io.mango.workflow.core.convert.WorkflowTaskRecordConverter;
@@ -78,6 +81,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -235,6 +239,82 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
                 .taskDefinitionKey("auto_review")
                 .singleResult()
                 .getAssignee()).isEqualTo("finance");
+    }
+
+    @Test
+    void issue1282CurrentTaskSnapshotExposesReleaseEligibilityOfRealEngineTasks() {
+        // Issue #1282：业务列表只读当前任务快照即可判定释放资格，不需要逐行调用任务详情接口。
+        prepareActiveMembers();
+
+        // 平台派单：AUTO_ASSIGN，承办人本人可释放，派单到达时间作为领取时间。
+        StartedWorkflow auto = startAutoAssignWorkflow("BIZ-1282-AUTO");
+        Task autoTask = taskService.createTaskQuery()
+                .processInstanceId(auto.processInstanceId())
+                .taskDefinitionKey("auto_review")
+                .singleResult();
+        assertThat(autoTask).isNotNull();
+        switchUser(1001L, "admin");
+        WorkflowBusinessApplyCurrentTaskVO dispatched = singleCurrentTask(auto.applyId());
+        assertThat(dispatched.getAssigneeName()).isEqualTo("admin");
+        assertThat(dispatched.getClaimStatus()).isEqualTo(WorkflowTaskClaimStatus.ASSIGNED);
+        assertThat(dispatched.getAssignSource()).isEqualTo(WorkflowTaskAssigneeSource.AUTO_ASSIGN);
+        assertThat(dispatched.getUnclaimable()).isTrue();
+        assertThat(dispatched.getClaimTime()).isNotNull();
+
+        // 真实释放回候选池后，快照的释放资格与实际状态一起回落，不再残留可释放标记。
+        taskRuntimeService.unclaimWithResult(claimOf(autoTask.getId()));
+        WorkflowBusinessApplyCurrentTaskVO released = singleCurrentTask(auto.applyId());
+        assertThat(released.getAssigneeName()).isNull();
+        assertThat(released.getClaimStatus()).isEqualTo(WorkflowTaskClaimStatus.UNCLAIMED);
+        assertThat(released.getAssignSource()).isNull();
+        assertThat(released.getClaimTime()).isNull();
+        assertThat(released.getUnclaimable()).isFalse();
+
+        // 本人认领：SELF_CLAIM，承办人本人可释放，其他人看到同一个 ASSIGNED 任务却不可释放。
+        switchUser(1002L, "finance");
+        taskRuntimeService.claim(claimOf(autoTask.getId()));
+        WorkflowBusinessApplyCurrentTaskVO claimedByFinance = singleCurrentTask(auto.applyId());
+        assertThat(claimedByFinance.getClaimStatus()).isEqualTo(WorkflowTaskClaimStatus.ASSIGNED);
+        assertThat(claimedByFinance.getAssignSource()).isEqualTo(WorkflowTaskAssigneeSource.SELF_CLAIM);
+        assertThat(claimedByFinance.getUnclaimable()).isTrue();
+        assertThat(claimedByFinance.getClaimTime()).isNotNull();
+
+        switchUser(1001L, "admin");
+        WorkflowBusinessApplyCurrentTaskVO observedByOthers = singleCurrentTask(auto.applyId());
+        assertThat(observedByOthers.getClaimStatus()).isEqualTo(WorkflowTaskClaimStatus.ASSIGNED);
+        assertThat(observedByOthers.getAssignSource()).isEqualTo(WorkflowTaskAssigneeSource.SELF_CLAIM);
+        assertThat(observedByOthers.getUnclaimable()).isFalse();
+
+        // 流程定义直接指定办理人：claimStatus 同样是 ASSIGNED，但不可释放，真实释放按平台码 3663 拒绝。
+        StartedWorkflow definitionAssigned = startNodeAffinityWorkflow("BIZ-1282-DEFINITION");
+        taskRuntimeService.advanceRuntimeTasks(definitionAssigned.processInstanceId());
+        Task firstReview = taskService.createTaskQuery()
+                .processInstanceId(definitionAssigned.processInstanceId())
+                .taskDefinitionKey("first_review")
+                .singleResult();
+        switchUser(1002L, "finance");
+        taskRuntimeService.claim(claimOf(firstReview.getId()));
+        CompleteWorkflowTaskCommand completeFirst = new CompleteWorkflowTaskCommand();
+        completeFirst.setTaskId(firstReview.getId());
+        completeFirst.setComment("初审通过");
+        taskRuntimeService.complete(completeFirst);
+
+        Task secondReview = taskService.createTaskQuery()
+                .processInstanceId(definitionAssigned.processInstanceId())
+                .taskDefinitionKey("second_review")
+                .singleResult();
+        assertThat(secondReview.getAssignee()).isEqualTo("finance");
+        WorkflowBusinessApplyCurrentTaskVO definitionTask = singleCurrentTask(definitionAssigned.applyId());
+        assertThat(definitionTask.getClaimStatus()).isEqualTo(WorkflowTaskClaimStatus.ASSIGNED);
+        assertThat(definitionTask.getAssignSource()).isEqualTo(WorkflowTaskAssigneeSource.DEFINITION);
+        assertThat(definitionTask.getUnclaimable()).isFalse();
+        assertThat(definitionTask.getClaimTime()).isNotNull();
+
+        BizException denied = catchThrowableOfType(
+                () -> taskRuntimeService.unclaimWithResult(claimOf(secondReview.getId())), BizException.class);
+        assertThat(denied).isNotNull();
+        assertThat(denied.getCode()).isEqualTo(WorkflowCode.TASK_RELEASE_FORBIDDEN.getCode());
+        assertThat(denied.getMessage()).contains(WorkflowTaskAssigneeSource.DEFINITION.releaseBlockedMessage());
     }
 
     @Test
@@ -1065,6 +1145,9 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
                         "businessType", "AUTO_ASSIGN_RELEASE",
                         "businessKey", businessKey,
                         "applyId", String.valueOf(applyId)));
+        businessApplyService.markProcessStarted(new WorkflowProcessStartedContext(
+                applyId, 1234L, processDefinition.getKey(), processDefinition.getId(), processDefinition.getName(),
+                instance.getProcessInstanceId()));
         taskRuntimeService.advanceRuntimeTasks(instance.getProcessInstanceId());
         return new StartedWorkflow(applyId, instance.getProcessInstanceId());
     }
@@ -1189,6 +1272,12 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
         return new StartedWorkflow(applyId, instance.getProcessInstanceId());
     }
 
+    private WorkflowBusinessApplyCurrentTaskVO singleCurrentTask(Long applyId) {
+        List<WorkflowBusinessApplyCurrentTaskVO> currentTasks = businessApplyService.detail(applyId).getCurrentTasks();
+        assertThat(currentTasks).hasSize(1);
+        return currentTasks.getFirst();
+    }
+
     private List<String> currentTaskDefinitionKeys(Long applyId) {
         return jdbcTemplate.queryForList("""
                 select task_definition_key
@@ -1299,6 +1388,8 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
                     assignee_id bigint,
                     assignee_name varchar(128),
                     claim_status varchar(32) not null default 'ASSIGNED',
+                    assign_source varchar(64),
+                    claim_time timestamp,
                     candidate_users varchar(1000),
                     candidate_groups varchar(1000),
                     arrived_at timestamp,

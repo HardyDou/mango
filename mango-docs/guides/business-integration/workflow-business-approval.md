@@ -83,7 +83,7 @@ V3 升级只回填具有稳定 `operator_id` 或 `assignee_id` 的历史记录�
 | 审批中同步下一节点办理人、业务列表当前节点、待办摘要 | 订阅 `workflow.task.advanced` |
 | 保存草稿、认领、取消认领后异步刷新业务侧状态 | 订阅 `workflow.task.saved`、`workflow.task.claimed`、`workflow.task.unclaimed` |
 | 承办人释放平台派单任务、管理员改派或回收任务 | 调用 `POST /workflow/tasks/unclaim-result`、`POST /workflow/tasks/reassign`；释放后任务回到节点候选池，同时发出 `workflow.task.unclaimed` |
-| 转办或改派时选择目标办理人 | 调用 `GET /workflow/tasks/assignee-options?taskId=` 取当前时候选成员，不要自行拼人；释放/转办可用性以 `WorkflowTaskVO.unclaimable` 为准，不要用 `claimStatus` 推断 |
+| 转办或改派时选择目标办理人 | 调用 `GET /workflow/tasks/assignee-options?taskId=` 取当前时候选成员，不要自行拼人；释放/转办可用性以 `WorkflowTaskVO.unclaimable` 为准，不要用 `claimStatus` 推断；业务列表逐行判定时直接用当前任务快照的 `unclaimable`（见 7.4） |
 | 审计刚完成的任务和办理意见 | 订阅 `workflow.task.completed` |
 | 流程通过后回写业务通过状态 | 订阅 `workflow.process.completed` |
 | 流程驳回后回写业务驳回状态 | 订阅 `workflow.process.rejected` |
@@ -235,6 +235,27 @@ mango:
 
 迁移路径、需要同步调整的业务代码、发布验证和回滚步骤见 [Workflow 审批人候选组展开升级指南](../operations/workflow-approval-candidate-expand-upgrade.md)。
 
+## 7.4 业务列表判定释放资格（Issue #1282）
+
+业务列表从 `WorkflowBusinessApplyVO.currentTasks`、`WorkflowBusinessApplyProgressVO.currentTasks`、`WorkflowTaskActionResultVO.currentTask/nextTasks`、`WorkflowStartResultVO.currentTask`、`WorkflowEventPayloadVO.currentTask` 拿到的 `WorkflowBusinessApplyCurrentTaskVO` 已带释放资格字段，逐行控制「释放」按钮不再需要为每行调用 `taskRuntimeApi.detail(taskId)`：
+
+| 字段 | 类型 | 语义 |
+|------|------|------|
+| `unclaimable` | `Boolean` | 当前登录用户能否释放该任务，口径与 `WorkflowTaskVO.unclaimable` 同源：任务有承办人、承办人是本人、来源为 `SELF_CLAIM` 或 `AUTO_ASSIGN`。 |
+| `assignSource` | `WorkflowTaskAssigneeSource` | 承办人来源，用于按钮分组和文案；未指派时为 `null`。 |
+| `claimTime` | `LocalDateTime` | 办理人获得任务的时间：本人认领为领取时间，平台派单为派单到达时间；未指派时为 `null`。 |
+
+判定口径：
+
+- `assignmentMode=AUTO` 派出的任务来源为 `AUTO_ASSIGN`，`unclaimable=true`。
+- 审批节点按办理人指定（`DEFINITION`）或退回后按目标人新建（`RETURN_ASSIGN`）的任务为 `unclaimable=false`，业务侧不显示释放按钮，不再依赖「点错后收到 417013」。
+- 本人认领（`SELF_CLAIM`）任务为 `unclaimable=true`，`claimTime` 为领取时间且非空。
+- `claimStatus` 不能替代 `unclaimable`：`SELF_CLAIM`、`AUTO_ASSIGN`、`DEFINITION`、`RETURN_ASSIGN` 都是 `ASSIGNED`。
+- 字段随当前任务表一并读取，不产生额外 RPC；释放、改派、流转后按 `workflow.task.unclaimed`、`workflow.task.advanced` 事件或重新查询刷新。
+- 按钮渲染后任务可能已被改派，服务端仍会拒绝：按 `TASK_RELEASE_FORBIDDEN`（业务码 `417013`、平台码 `3663`）提示刷新，不要按成功处理。
+
+升级影响：Flyway `V6__workflow_business_apply_current_task_claim_state.sql` 为 `workflow_business_apply_current_task` 新增 `assign_source`、`claim_time` 两列，不需要回填。升级前已存在的当前任务行两列为 `NULL`，`unclaimable` 对它们返回 `false`（来源未知按不可释放处理）；任务再次刷新或流转后自动补齐。不新增接口、权限码、配置项和页面入口。
+
 ## 8. 验证命令
 
 后端验证使用 Java 21。legacy migration fixture 和 API surface fingerprint 是测试资产；本次校准仅跟随既有 V1/V2/V3 迁移与 API 声明版本，未修改生产历史 SQL、公开 API、配置、菜单、权限、租户、页面、启动或审批运行时行为。业务审批接入步骤保持不变。
@@ -263,6 +284,8 @@ pnpm -F @mango/workflow-business-example build
 ## 10. 历史变更
 
 详细版本影响见[业务审批历史变更索引](../../changelog/business-integration/workflow-business-approval.md)。
+
+> Issue #1282 影响说明：业务列表取回的当前任务快照 `WorkflowBusinessApplyCurrentTaskVO` 增加 `unclaimable`、`assignSource`、`claimTime`，与 `WorkflowTaskVO` 同名同语义，业务侧不需要再逐行调用任务详情接口即可判断是否展示「释放」按钮。新增 Flyway `V6` 为 `workflow_business_apply_current_task` 加 `assign_source`、`claim_time` 两列，不回填历史行（旧行 `unclaimable=false`，任务刷新后补齐）；不新增接口、权限码和配置项，释放被拒错误码 `417013`/`3663` 不变。
 
 > Issue #1269 影响说明：自动派单的 `AUTO_ASSIGN` 流转记录改为把 `operator_id`/`operator_name` 写成真实承办人，不再写成触发节点进入的发起人或上一步办理人。审批详情时间线对自动派单节点显示“自动派单 · 承办人”；按办理人过滤流转记录的调用方会同时命中该办理人的自动派单记录。接口入参与返回结构、配置项、数据库表结构、权限码、租户隔离和任务派单结果不变；未投产、无需回填历史记录。
 
