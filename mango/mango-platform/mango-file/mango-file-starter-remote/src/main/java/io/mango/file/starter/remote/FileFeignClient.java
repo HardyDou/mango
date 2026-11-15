@@ -7,6 +7,7 @@ import io.mango.file.api.command.FileDeleteCommand;
 import io.mango.file.api.command.FileMergePdfCommand;
 import io.mango.file.api.command.FilePackageCommand;
 import io.mango.file.api.command.FilePackageSizeControlCommand;
+import io.mango.file.api.command.UpdateFileRecordCommand;
 import io.mango.file.api.query.FileRecordPageQuery;
 import io.mango.file.api.vo.FilePreviewVO;
 import io.mango.file.api.vo.FilePackageResultVO;
@@ -16,6 +17,7 @@ import org.springframework.cloud.openfeign.SpringQueryMap;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -30,6 +32,10 @@ public interface FileFeignClient extends FileApi {
     @Override
     @GetMapping("/detail")
     R<FileRecordVO> get(@RequestParam("id") Long id);
+
+    @Override
+    @PutMapping
+    R<FileRecordVO> updateMetadata(@RequestBody UpdateFileRecordCommand command);
 
     @Override
     @GetMapping("/preview")
