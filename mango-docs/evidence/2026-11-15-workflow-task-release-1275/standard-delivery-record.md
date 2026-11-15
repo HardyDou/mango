@@ -71,12 +71,15 @@
 | SR-1、SR-9 | M11 单元/集成测试 | 同上，`#claimMarksSelfClaimAndUnclaimReleasesPlatformAssignedTask` | PASS：认领写 `SELF_CLAIM`，释放写 `mangoReleasedToPool` | Surefire 报告 |
 | SR-10 | M11 真实 Flowable 集成测试 | 同上，`#nodeAffinityRestoresFirstNodeHandlerAfterReturnAndUsesClaimWhenNoHistory`、`#autoAssignRecordAttributesRealAssigneeInsteadOfTriggeringUser` | PASS：`ASSIGNEE_` 为 `admin`/`finance`，台账仍记录用户 ID 1002 | Surefire 报告 |
 | 全部 | 模块测试基线 | `mvn -o -pl mango-platform/mango-workflow/mango-workflow-api,mango-platform/mango-workflow/mango-workflow-core -am test` 后执行 `maven-surefire-plugin:3.2.5:test` | PASS：228 tests，0 failures，0 errors，4 skipped（均为存量跳过） | `BUILD SUCCESS` |
-| 前端 | 组件构建与类型检查 | `pnpm --filter @mango/workflow build` | 待执行：当前环境 Node 26.13.1 与仓库要求 22.23.1 不符，pnpm 拒绝安装依赖，worktree 无 `node_modules` | 需在 Node 22.23.1 环境补跑 |
+| 前端 | 组件构建与类型检查 | `pnpm --filter @mango/workflow build`（Node 22.23.1） | PASS：112 modules，dist 产物生成 | 构建输出 |
+| 前端 | 组件与页面测试 | `pnpm --filter @mango/workflow exec vitest run`（先构建 `@mango/workflow^...` 依赖） | PASS：10 files / 52 tests | Vitest 输出 |
+| 管理员回收 | M11 真实 Flowable 集成测试 | `... -Dtest=WorkflowTaskRuntimeServiceIntegrationTest#administratorRecyclesPlatformDispatchedTaskIntoPool` | PASS：管理员把派给 finance 的任务回收进池，台账记录原承办人；转办接手任务仍拒绝回收 | Surefire 报告 |
 
 ## 7. 例外与剩余风险
 
-- 前端验证未执行：当前环境 Node 版本被 pnpm 拦截，worktree 未安装依赖；`assignSource` 类型、`reassign`/`assignee-options` 封装和设计器动作开关只做了源码改动，需在 Node 22.23.1 环境跑 `pnpm --filter @mango/workflow build` 与组件测试。
+- 前端验证已在 Node 22.23.1 环境补跑：`pnpm --filter @mango/workflow build` 与 `vitest run` 均通过；默认 Node 版本不符时需显式切换。
 - `mvn test` 在 `mango-workflow-core` 上因模块继承的 Surefire 2.17 不会发现 JUnit 5 用例（存量问题），本次用 `maven-surefire-plugin:3.2.5:test` 显式执行并记录结果；未改动仓库构建配置。
 - 会签、依次审批节点释放后可能停在池中等待新候选人，平台不做超时回收，运维按升级指南由管理员代办或改派。
-- `reassign` 的管理员判定沿用 `isAdminUser()`（`username == admin`），按节点主管或流程管理员角色授权登记为后续独立任务。
+- `reassign` 的管理员判定沿用 `isAdminUser()`（`username == admin`），按节点主管或流程管理员角色授权登记为后续独立任务；回收进池（`pool=true`）不要求调用者是承办人，但来源白名单与自助释放一致。
+- `@mango/workflow` 的可视能力变化由 `.changeset/workflow-task-release-actions.md` 声明 patch，Maven 侧运行时代码随下一批次发布。
 - 存量任务的来源按台账推导，无法推导时按不可释放处理；升级前已卡住的派单任务在升级后可直接释放。

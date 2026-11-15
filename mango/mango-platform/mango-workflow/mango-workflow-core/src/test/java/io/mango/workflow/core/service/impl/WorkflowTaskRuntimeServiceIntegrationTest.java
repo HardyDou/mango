@@ -19,6 +19,7 @@ import io.mango.workflow.api.command.AddSignWorkflowTaskCommand;
 import io.mango.workflow.api.command.ClaimWorkflowTaskCommand;
 import io.mango.workflow.api.command.CompleteWorkflowTaskCommand;
 import io.mango.workflow.api.command.CreateWorkflowBusinessApplyCommand;
+import io.mango.workflow.api.command.ReassignWorkflowTaskCommand;
 import io.mango.workflow.api.command.ReturnWorkflowTaskCommand;
 import io.mango.workflow.api.command.TransferWorkflowTaskCommand;
 import io.mango.workflow.api.command.WorkflowJsonRequest;
@@ -315,6 +316,64 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
                 .taskDefinitionKey("risk_specialist_review")
                 .singleResult()
                 .getAssignee()).isEqualTo("legal");
+    }
+
+    @Test
+    void administratorRecyclesPlatformDispatchedTaskIntoPool() {
+        // 管理员把「已派给他人」的平台派单任务回收进候选池：承办人请假或离职时不能只靠本人释放。
+        prepareActiveMembers();
+        StartedWorkflow started = startFinanceAutoAssignWorkflow("BIZ-ADMIN-POOL");
+
+        Task dispatched = taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("finance_review")
+                .singleResult();
+        assertThat(dispatched.getAssignee()).isEqualTo("finance");
+
+        switchUser(1001L, "admin");
+        ReassignWorkflowTaskCommand poolCommand = new ReassignWorkflowTaskCommand();
+        poolCommand.setTaskId(dispatched.getId());
+        poolCommand.setPool(Boolean.TRUE);
+        poolCommand.setComment("承办人请假，回收进候选池");
+        taskRuntimeService.reassign(poolCommand);
+
+        Task recycled = taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("finance_review")
+                .singleResult();
+        assertThat(recycled.getAssignee()).isNull();
+        assertThat(recycled.getId()).isEqualTo(dispatched.getId());
+        assertThat(taskService.getIdentityLinksForTask(recycled.getId()))
+                .extracting(link -> link.getUserId() == null ? link.getGroupId() : link.getUserId())
+                .contains("finance");
+
+        Map<String, Object> record = jdbcTemplate.queryForMap("""
+                select action, comment, variables_json
+                from workflow_task_record
+                where task_id = ? and action = 'REASSIGN'
+                """, dispatched.getId());
+        assertThat(record.get("COMMENT")).isEqualTo("承办人请假，回收进候选池");
+        assertThat(String.valueOf(record.get("VARIABLES_JSON")))
+                .contains("originalAssignee")
+                .contains("mangoReleasedToPool");
+
+        // 来源不可释放的任务，管理员只能改派给具体人，不能回收进池。
+        switchUser(1002L, "finance");
+        taskRuntimeService.claim(claimOf(recycled.getId()));
+        TransferWorkflowTaskCommand transfer = new TransferWorkflowTaskCommand();
+        transfer.setTaskId(recycled.getId());
+        transfer.setTargetUserId("admin");
+        taskRuntimeService.transfer(transfer);
+
+        switchUser(1001L, "admin");
+        ReassignWorkflowTaskCommand rejectPool = new ReassignWorkflowTaskCommand();
+        rejectPool.setTaskId(recycled.getId());
+        rejectPool.setPool(Boolean.TRUE);
+        assertThatThrownBy(() -> taskRuntimeService.reassign(rejectPool))
+                .hasMessageContaining("当前任务不支持释放")
+                .hasMessageContaining("任务由他人转办给你");
+        assertThat(taskService.createTaskQuery().taskId(recycled.getId()).singleResult().getAssignee())
+                .isEqualTo("admin");
     }
 
     @Test
@@ -1008,6 +1067,56 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
                         "applyId", String.valueOf(applyId)));
         taskRuntimeService.advanceRuntimeTasks(instance.getProcessInstanceId());
         return new StartedWorkflow(applyId, instance.getProcessInstanceId());
+    }
+
+    private StartedWorkflow startFinanceAutoAssignWorkflow(String businessKey) {
+        repositoryService.createDeployment()
+                .name("finance-auto-assign-runtime")
+                .addString("finance-auto-assign.bpmn20.xml", financeAutoAssignBpmn())
+                .deploy();
+        ProcessDefinition processDefinition = repositoryService.createProcessDefinitionQuery()
+                .processDefinitionKey("finance_auto_assign_runtime")
+                .latestVersion()
+                .singleResult();
+        CreateWorkflowBusinessApplyCommand applyCommand = new CreateWorkflowBusinessApplyCommand();
+        applyCommand.setBusinessType("FINANCE_AUTO_ASSIGN");
+        applyCommand.setBusinessKey(businessKey);
+        applyCommand.setApplyTitle("管理员回收派单任务集成测试");
+        applyCommand.setProcessDefinitionKey(processDefinition.getKey());
+        Long applyId = businessApplyService.create(applyCommand).getId();
+        ProcessInstance instance = runtimeService.startProcessInstanceByKey(processDefinition.getKey(),
+                businessKey, Map.of(
+                        "businessType", "FINANCE_AUTO_ASSIGN",
+                        "businessKey", businessKey,
+                        "applyId", String.valueOf(applyId)));
+        businessApplyService.markProcessStarted(new WorkflowProcessStartedContext(
+                applyId, 1275L, processDefinition.getKey(), processDefinition.getId(),
+                processDefinition.getName(), instance.getProcessInstanceId()));
+        taskRuntimeService.advanceRuntimeTasks(instance.getProcessInstanceId());
+        return new StartedWorkflow(applyId, instance.getProcessInstanceId());
+    }
+
+    private String financeAutoAssignBpmn() {
+        return """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                             xmlns:flowable="http://flowable.org/bpmn"
+                             xmlns:mango="http://mango.io/workflow"
+                             targetNamespace="http://mango.io/workflow/test">
+                  <process id="finance_auto_assign_runtime" name="Finance Auto Assign Runtime" isExecutable="true">
+                    <startEvent id="start"/>
+                    <sequenceFlow id="flow_start_review" sourceRef="start" targetRef="finance_review"/>
+                    <userTask id="finance_review" name="财务复核">
+                      <extensionElements>
+                        <mango:mangoApprovalConfig><![CDATA[{"assignmentMode":"AUTO","autoAssignmentStrategy":"ROUND_ROBIN","assigneeType":"SPECIFIED_USER","assigneeIds":["finance"],"actions":{"complete":{"enabled":true},"transfer":{"enabled":true}}}]]></mango:mangoApprovalConfig>
+                      </extensionElements>
+                    </userTask>
+                    <sequenceFlow id="flow_review_end" sourceRef="finance_review" targetRef="end"/>
+                    <endEvent id="end"/>
+                  </process>
+                </definitions>
+                """;
     }
 
     private String autoAssignReleaseBpmn() {

@@ -22,7 +22,7 @@
 
 1. 释放按钮继续按 `WorkflowTaskVO.unclaimable` 显示，不要再用 `claimStatus` 推断。升级后 `unclaimable` 与 `unclaim` 共用同一判据，不会再出现「页面显示可释放、接口拒绝」。
 2. 原来拦截的错误码 `417013`（「仅可释放本人领取的任务」）应改为按 `unclaimable` 判断；`mango-baohan-risk` 恢复「释放」动作即可，无需平台额外配置。
-3. 需要「承办人不在（请假、离职、调岗）」的场景改用管理员改派 `POST /workflow/tasks/reassign`，权限码 `workflow:task:reassign`；改派目标从 `GET /workflow/tasks/assignee-options` 取。
+3. 需要「承办人不在（请假、离职、调岗）」的场景改用管理员改派 `POST /workflow/tasks/reassign`，权限码 `workflow:task:reassign`；改派目标从 `GET /workflow/tasks/assignee-options` 取。`targetUserId` 改派给具体人；`pool=true` 把任务回收进候选池——回收不要求调用者是承办人，但来源白名单与承办人自助释放一致（仅本人认领与平台派单可回收），按人展开和指定类任务仍只能改派给具体人。
 4. 需要区分「本人认领」和「平台派单」时读 `WorkflowTaskVO.assignSource`，不要再解析 `claimTime`：Flowable 的 `CLAIM_TIME_` 只在认领时写入，平台派单不会写。
 5. 按 `ASSIGNEE_` 精确匹配的自研 SQL 或报表要同时兼容用户 ID 和用户名：升级后新数据统一为用户名，存量数据仍是两种形态混合。
 

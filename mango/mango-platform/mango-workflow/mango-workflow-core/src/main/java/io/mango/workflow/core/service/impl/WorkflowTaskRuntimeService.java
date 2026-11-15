@@ -646,7 +646,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         Require.notNull(task, WorkflowCode.TASK_NOT_FOUND);
         String originalAssignee = task.getAssignee();
         if (pool) {
-            WorkflowTaskAssigneeSource source = requireReleasable(task);
+            WorkflowTaskAssigneeSource source = requireRecyclableSource(task);
             releaseToPool(task, source, WorkflowTaskAction.REASSIGN,
                     StringUtils.hasText(command.getComment()) ? command.getComment() : "回收进候选池");
             return Boolean.TRUE;
@@ -716,6 +716,18 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
                 "任务当前没有承办人，无需释放。");
         Require.isTrue(isCurrentUserIdentifier(task.getAssignee()), WorkflowCode.TASK_RELEASE_FORBIDDEN,
                 "只能释放本人承办的任务，当前承办人为「" + task.getAssignee() + "」。");
+        return requireRecyclableSource(task);
+    }
+
+    /**
+     * 校验任务能否回收进候选池，不限制承办人是否为调用者。
+     *
+     * <p>管理员改派走这里：承办人请假、离职或已无法自助操作时，仍需把任务交回候选池。
+     * 来源白名单与承办人自助释放一致，按人展开、流程定义指定等来源只能改派给具体人。
+     */
+    private WorkflowTaskAssigneeSource requireRecyclableSource(Task task) {
+        Require.isTrue(StringUtils.hasText(task.getAssignee()), WorkflowCode.TASK_NOT_ASSIGNED,
+                "任务当前没有承办人，无需回收。");
         WorkflowTaskAssigneeSource source = assignSourceResolver.resolve(task);
         Require.isTrue(source != null && source.isReleasable(), WorkflowCode.TASK_RELEASE_FORBIDDEN,
                 source == null ? RELEASE_BLOCKED_UNKNOWN_SOURCE : releaseBlockedMessage(task, source));
