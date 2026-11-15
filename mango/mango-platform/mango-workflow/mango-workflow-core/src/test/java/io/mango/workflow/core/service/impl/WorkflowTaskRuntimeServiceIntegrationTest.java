@@ -1039,29 +1039,6 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
         return command;
     }
 
-    private String transferReleaseBpmn() {
-        return """
-                <?xml version="1.0" encoding="UTF-8"?>
-                <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
-                             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                             xmlns:flowable="http://flowable.org/bpmn"
-                             xmlns:mango="http://mango.io/workflow"
-                             targetNamespace="http://mango.io/workflow/test">
-                  <process id="transfer_release_runtime" name="Transfer Release Runtime" isExecutable="true">
-                    <startEvent id="start"/>
-                    <sequenceFlow id="flow_start_review" sourceRef="start" targetRef="first_review"/>
-                    <userTask id="first_review" name="初审">
-                      <extensionElements>
-                        <mango:mangoApprovalConfig><![CDATA[{"assigneeType":"SPECIFIED_USER","assigneeIds":["admin"],"actions":{"complete":{"enabled":true},"transfer":{"enabled":true}}}]]></mango:mangoApprovalConfig>
-                      </extensionElements>
-                    </userTask>
-                    <sequenceFlow id="flow_review_end" sourceRef="first_review" targetRef="end"/>
-                    <endEvent id="end"/>
-                  </process>
-                </definitions>
-                """;
-    }
-
     private AuthUserVO authUser(Long userId, String username) {
         AuthUserVO user = new AuthUserVO();
         user.setUserId(userId);
