@@ -1,82 +1,73 @@
 ## Pull Requests
 
-- Added: [PR #1276](https://github.com/HardyDou/mango/pull/1276) Platform-dispatched tasks can now be released back to the candidate pool by their own handler, and flow administrators can reassign a task or recycle it into the pool. The assignee source becomes an explicit task fact, so release authorization no longer relies on Flowable `claim_time_`. Packages: the complete Maven/docs `1.10.0` tuple including `io.mango.platform.workflow:mango-workflow-{api,core,starter,starter-remote}:1.10.0` and `io.mango:mango-docs-bundle:1.10.0`, plus `@mango/workflow@1.3.0`, `@mango/admin-shell@1.1.9`, `@mango/workflow-business-example@1.0.71`, `@mango/admin@2.0.11` and the generated `@mango/cli@1.4.11`. Business Adaptation: upgrade the tuple, then verify one claim, one release and one administrative reassign on a test process; no database migration is required.
-- Added: [PR #1277](https://github.com/HardyDou/mango/pull/1277) Administrators can now recycle another handler's platform-dispatched task into the candidate pool, which covers a handler who is on leave or has left the project, while self-service release stays limited to the task owner and the source whitelist is unchanged. Packages: the complete Maven/docs `1.10.0` tuple plus the npm closure listed in the previous entry. Business Adaptation: upgrade the tuple; business pages that surface task actions should show the administrator reassign entry only through the `workflow:task:reassign` permission.
-- Fixed: [PR #1279](https://github.com/HardyDou/mango/pull/1279) The remote file adapter now declares the `updateMetadata` endpoint that `FileApi` and `FileController` already exposed, so the Feign client and the controller return the same endpoint set. Packages: the complete Maven/docs `1.10.0` tuple including `io.mango.platform.file:mango-file-starter-remote:1.10.0`, plus the generated `@mango/cli@1.4.11` closure. Business Adaptation: upgrade the tuple; consumers that update file metadata over the remote starter get a working endpoint instead of a missing mapping.
-- Changed: [PR #1278](https://github.com/HardyDou/mango/pull/1278) Frontend package source changes now run a real JavaScript gate in CI, and the workflow skill release declaration moves to `minor` because the batch adds public fields, request wrappers and a designer action switch. Packages: the npm closure above, driven by `@mango/workflow@1.3.0`. Business Adaptation: none beyond upgrading the closure; the CI change affects the Mango repository only.
-- Changed: [PR #1274](https://github.com/HardyDou/mango/pull/1274) closed out the previous `1.9.1` batch by recording published coordinates in `CHANGELOG.md` and `mango-ui/.changeset/release-baseline.json`. Packages: repository release bookkeeping only. Business Adaptation: none.
+- Added: [PR #1283](https://github.com/HardyDou/mango/pull/1283) The business apply list can now decide whether the current task is releasable from the task snapshot itself: `WorkflowBusinessApplyCurrentTaskVO` gains `unclaimable`, `assignSource` and `claimTime` with the same meaning as on `WorkflowTaskVO`, so a page of twenty to fifty rows no longer needs one `taskRuntimeApi.detail` call per row. Packages: the complete Maven/docs `1.11.0` tuple including `io.mango.platform.workflow:mango-workflow-{api,core,starter,starter-remote}:1.11.0` and `io.mango:mango-docs-bundle:1.11.0`, plus the generated `@mango/cli@1.4.12` closure. Business Adaptation: apply Flyway `V6`, upgrade the tuple, and switch business pages from per-row detail calls to the snapshot fields; no HTTP path, permission code or `claimStatus` meaning changes.
+- Changed: [PR #1281](https://github.com/HardyDou/mango/pull/1281) closed out the previous `1.10.0` batch by recording the published coordinates in `CHANGELOG.md` and `mango-ui/.changeset/release-baseline.json` and removing the consumed Changeset. Packages: repository release bookkeeping only. Business Adaptation: none.
 
 ## Added
 
-- Task release: a handler can return a self-claimed or platform-dispatched task to the node candidate pool. The release clears the assignee, rebuilds the current candidates from the node configuration, writes the `mangoReleasedToPool` marker and leaves multi-instance sub-tasks and approval counting untouched.
-- Task reassign: `POST /workflow/tasks/reassign` moves a task to a chosen handler or recycles it into the candidate pool; flow administrators use it when the current handler cannot act, and the permission code is `workflow:task:reassign`.
-- Assignee options: `GET /workflow/tasks/assignee-options` returns the node's current candidate members so transfer and reassign pick a valid target instead of free text.
-- `WorkflowTaskVO.assignSource` exposes how the current assignee was produced, and the designer gains a per-node release switch that is on by default.
-- New workflow codes: `3662` task not assigned, `3663` release not supported for this source, `3664` invalid reassign or transfer target, `3665` no permission to reassign.
+- `WorkflowBusinessApplyCurrentTaskVO.unclaimable`, `.assignSource` and `.claimTime`, assembled by the single `toTaskVo` path so apply paging, progress, handling result, start result and event payloads all expose the same values as `WorkflowTaskVO`.
+- `assign_source` and `claim_time` columns on the current-task snapshot, with `claim_time` preferring the Flowable claim time and falling back to the task arrival time.
+- `unclaimable` is computed per request for the current user and is never persisted, so a stored snapshot cannot grant another user a release permission.
+- Flyway `V6` adds the two columns idempotently through `information_schema` detection with `PREPARE`/`EXECUTE`, so a database that already patched the columns stays upgradable.
 
 ## Fixed
 
-- A platform-dispatched task no longer reports "already claimed" on release and then "not claimed from the candidate pool" on unclaim; the release path is authorized by the recorded assignee source instead of the engine claim time.
-- A released task is not dispatched again by runtime advancement, while a task created when the node is entered again still follows the node's auto-assignment strategy.
-- The platform `ASSIGNEE_` value is written as the login name with a user-id fallback, so one field no longer mixes user ids and login names; existing rows stay readable because the read side accepts both forms.
-- Transfers and reassigns reject a target that is missing, disabled or outside the current tenant, instead of writing an unresolvable assignee.
-- The remote file adapter declares the `updateMetadata` mapping, so `FileApi`, `FileController` and the Feign client expose the same endpoints.
+- A business list can distinguish "claimed by me", "dispatched by the platform" and "specified by the process definition" without extra calls, because the snapshot now carries the assignee source instead of only `claimStatus`.
+- A row whose assignee source is unknown is reported as not releasable instead of being treated as releasable by default.
 
 ## Changed
 
-- The non-application Maven/docs tuple advances from `1.9.1` to `1.10.0` with 201 coordinates because the workflow module gains two public endpoints, a public enum, a task view field and new business codes, and the file remote starter gains a Feign mapping.
-- npm advances `@mango/workflow` `1.2.1` to `1.3.0` for the new task actions and view field; `@mango/admin-shell`, `@mango/workflow-business-example` and `@mango/admin` advance by a patch through the exact-version closure, and `@mango/cli` advances from `1.4.10` to `1.4.11`.
+- The non-application Maven/docs tuple advances from `1.10.0` to `1.11.0` with 201 coordinates because the workflow module gains three public response fields plus a migration; `@mango/cli` advances from `1.4.11` to `1.4.12` as the generated compatibility closure, and no npm package is republished.
 - `@mango/pmo` is unchanged because no PMO rule, contract, Agent, template or shipped Skill changed in this batch.
-- Candidate-group nodes keep their `1.9.0` behavior for task counting; this batch only changes who may release or reassign an assigned task.
+- Release rejection keeps returning `417013` from the HTTP adapter and `3663` from the service, and `claimStatus` keeps its previous values, so existing business conditions stay valid.
 
 ## Versions
 
-- Maven/docs: `1.9.1` to `1.10.0`; 201 sealed Maven coordinates, including `io.mango:mango-docs-bundle:1.10.0` and `io.mango.platform.workflow:mango-workflow-core:1.10.0`.
-- npm: `@mango/workflow@1.3.0`, `@mango/admin-shell@1.1.9`, `@mango/workflow-business-example@1.0.71`, `@mango/admin@2.0.11`, `@mango/cli@1.4.11`.
+- Maven/docs: `1.10.0` to `1.11.0`; 201 sealed Maven coordinates, including `io.mango:mango-docs-bundle:1.11.0` and `io.mango.platform.workflow:mango-workflow-core:1.11.0`.
+- npm: `@mango/cli@1.4.12`; no other npm package is republished because no frontend source changed.
 - Exact topology, dependency order and checksums are generated in `mango-ui/.changeset/release-plan.json`.
 
 ## Published Packages
 
 - Publish all 201 non-application Maven coordinates in release-plan order.
-- Publish the five sealed npm tarballs in plan order: `@mango/workflow@1.3.0`, `@mango/admin-shell@1.1.9`, `@mango/workflow-business-example@1.0.71`, `@mango/admin@2.0.11`, `@mango/cli@1.4.11`.
-- Application fat jars and coordinates outside the sealed plan are excluded; the remaining `@mango/*` frontend packages keep their `1.9.0` batch versions.
+- Publish `@mango/cli@1.4.12` as the generated compatibility closure.
+- Application fat jars and coordinates outside the sealed plan are excluded; the `@mango/*` frontend packages keep their `1.10.0` batch versions.
 
 ## Business Impact
 
-- A task that the platform dispatched to a specific handler can be returned to the pool by that handler when the work does not belong to them, without asking an administrator to delete or recreate the task.
-- When the handler is on leave, transferred or has left, an administrator can move the task to a replacement or recycle it into the pool, so an approval no longer stalls on an absent person.
-- The approval timeline and record lists attribute platform dispatch to the real handler, so filtering by handler returns the steps that person actually owns.
-- Two permission boundaries stay explicit: self-service release requires the caller to be the current handler and the assignee source to be self-claim or platform dispatch, while administrative reassign requires the `workflow:task:reassign` permission.
-- No database migration, menu or configuration change is required; released tasks keep their record rows and the pool state is stored as a task variable.
+- A business list page renders the release action from data it already loaded, so a page of fifty rows no longer issues fifty extra task detail requests.
+- The release action appears only for the handler who may release, because `unclaimable` is calculated per request for the current user rather than stored.
+- A row whose assignee source cannot be resolved shows no release action, which prevents a failed click that ends in `3663`.
+- No HTTP interface, permission code, menu or `claimStatus` value changes; only the response payload grows.
 
 ## Upgrade Estimate
 
-- Audience: Mango backend consumers using workflow auto assignment, claim, release, transfer or reassign, and consumers of the five npm packages in the sealed closure.
-- Engineering Effort: 0.5 engineer-day per consumer to upgrade the tuple, wire the new task actions into the business pages and verify one release plus one reassign.
-- Execution Window: 2 hours per consumer including backend restart, one claim, one release, one reassign and one timeline check.
-- Service Downtime: one controlled backend restart window; no database migration is required.
-- Rollback Effort: 0.5 engineer-day per consumer to restore the complete Maven `1.9.1` tuple and the previous npm closure; tasks released under `1.10.0` stay in the pool and are handled by the old runtime as ordinary unassigned tasks.
-- Assumptions: consumers have a process definition with at least one auto-assign or candidate-pool node, a workflow administrator account, and a page that lists task records.
+- Audience: Mango backend consumers that render the current task on a business apply list, progress page or event consumer.
+- Engineering Effort: 0.25 engineer-day per consumer to upgrade the tuple, apply the migration and replace per-row detail calls with the snapshot fields.
+- Execution Window: 1 hour per consumer including backend restart and a list page check with mixed claimed and dispatched tasks.
+- Service Downtime: one controlled backend restart window; the migration only adds two nullable columns and does not backfill.
+- Rollback Effort: 0.25 engineer-day per consumer to restore the complete Maven `1.10.0` tuple and `@mango/cli@1.4.11`; the two columns can stay because `1.10.0` ignores them.
+- Assumptions: consumers run MySQL 8 or a compatible engine with the Mango Flyway history, and have a business list that shows the current task of an apply.
 
 ## Upgrade Notes
 
-1. Upgrade the complete Mango Maven/docs tuple from `1.9.1` to `1.10.0`; do not update only one starter or module.
-2. Upgrade the five npm packages as one closure with `@mango/cli@1.4.11`; mixing `@mango/workflow@1.3.0` with an older `@mango/admin-shell` is not supported.
-3. Grant `workflow:task:reassign` only to workflow administrators; the reassign endpoint rejects callers without the permission.
-4. Show the release action according to the task view `unclaimable` flag and the node's release switch; do not derive it from the claim time any more.
-5. Verify one self-claim release, one administrative recycle into the pool and one reassign to a specific handler in a test environment before production.
-6. Expect historical task records to keep their previous assignee source; this batch infers the source from the latest claim or dispatch record only for rows written before the upgrade.
+1. Upgrade the complete Mango Maven/docs tuple from `1.10.0` to `1.11.0`; do not update only one starter or module.
+2. Let Flyway `V6` run during startup; it detects existing columns through `information_schema` and does not backfill historical rows.
+3. Upgrade CLI consumers to `@mango/cli@1.4.12` when the CLI is used; the frontend packages stay on the `1.10.0` batch versions.
+4. Replace `taskRuntimeApi.detail` calls that only decided release visibility with the snapshot fields `unclaimable`, `assignSource` and `claimTime`.
+5. Treat a missing or unknown `assignSource` as not releasable, and keep the existing `3663` handling for a rejected release.
+6. Verify one list page that mixes a self-claimed task, a platform-dispatched task and a process-definition task before production rollout.
 
 ## Verification
 
-- The workflow module integration suite covers the issue scenario end to end: role candidate pool with node affinity, dispatch to the same handler after a return, self-service release back to the pool, no second dispatch after release, and a failure when a transferred task is released by its new owner.
-- The file remote starter gains a contract test that fails when a `FileApi` method lacks a mapping on the Feign client, with the endpoint parity checked on every module test run.
-- `catalog:check` reports a consistent Catalog projection on the source commit, and the release plan re-computes 201 Maven coordinates plus the five-package npm closure with matching topology.
+- The workflow module test suite covers the snapshot assembly for all five return points, the per-request `unclaimable` calculation and the fallback of `claim_time` to the task arrival time.
+- The `V6` migration is idempotent: a database that already has the columns skips the `ALTER` statements through the `information_schema` check.
+- `catalog:check` reports a consistent Catalog projection on the source commit, and the release plan re-computes 201 Maven coordinates plus the single-package npm closure with matching topology.
 - `mango release prepare` builds once, seals every JAR, docs bundle, tarball and source archive under one prepared candidate id, and runs a mixed consumer against the sealed files and the consume registry.
 
 ## Rollback
 
-- Restore the complete Maven `1.9.1` tuple and the previous npm closure recorded in `mango-ui/.changeset/release-baseline.json`; do not patch a single module.
-- No migration is involved; a code rollback is enough. Tasks released under `1.10.0` remain unassigned in the pool and can be claimed by any candidate under the old runtime.
-- Stop calling `POST /workflow/tasks/reassign` and `GET /workflow/tasks/assignee-options` in business pages before rolling back the backend, otherwise those requests return an unknown-endpoint error.
-- Business pages that read `WorkflowTaskVO.assignSource` should fall back to the previous `unclaimable` flag when the field is absent.
+- Restore the complete Maven `1.10.0` tuple and `@mango/cli@1.4.11`; do not patch a single module.
+- Keep the `V6` columns: `1.10.0` ignores them, so a code rollback does not require dropping them.
+- Restore the per-row `taskRuntimeApi.detail` call in business pages if they were changed in the same release, otherwise the release action disappears from the list.
+- Historical snapshot rows keep their values; only newly written rows populate `assign_source` and `claim_time`.

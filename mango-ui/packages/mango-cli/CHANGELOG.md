@@ -1,3 +1,14 @@
+## 1.4.12 - 2026-11-15
+
+### Changed
+
+- Lock the CLI Maven matrix to Maven `1.11.0` and the generated 201-coordinate Maven/docs release closure.
+- Ship the business apply release eligibility guidance for the generated workflow templates and documentation.
+
+### Upgrade Notes
+
+- Upgrade `@mango/cli@1.4.12` together with the complete Maven/docs `1.11.0` tuple; do not mix release batches.
+
 ## 1.4.11 - 2026-11-15
 
 ### Changed

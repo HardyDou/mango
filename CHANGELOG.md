@@ -1,3 +1,81 @@
+## v2026.11.15-maven-1.11.0-business-apply-release-eligibility-release - Mango Maven/docs 1.11.0 business apply release eligibility release - 2026-11-15
+
+Status: `PENDING`. Release plan digest `1058552ec1a8f541c48f441bae5180c6c2227e48070ddf40f0307c45bab9c774`; Maven/npm publication, consume verification, Tag and GitHub Release remain pending.
+
+### Pull Requests
+
+- Added: [PR #1283](https://github.com/HardyDou/mango/pull/1283) The business apply list can now decide whether the current task is releasable from the task snapshot itself: `WorkflowBusinessApplyCurrentTaskVO` gains `unclaimable`, `assignSource` and `claimTime` with the same meaning as on `WorkflowTaskVO`, so a page of twenty to fifty rows no longer needs one `taskRuntimeApi.detail` call per row. Packages: the complete Maven/docs `1.11.0` tuple including `io.mango.platform.workflow:mango-workflow-{api,core,starter,starter-remote}:1.11.0` and `io.mango:mango-docs-bundle:1.11.0`, plus the generated `@mango/cli@1.4.12` closure. Business Adaptation: apply Flyway `V6`, upgrade the tuple, and switch business pages from per-row detail calls to the snapshot fields; no HTTP path, permission code or `claimStatus` meaning changes.
+- Changed: [PR #1281](https://github.com/HardyDou/mango/pull/1281) closed out the previous `1.10.0` batch by recording the published coordinates in `CHANGELOG.md` and `mango-ui/.changeset/release-baseline.json` and removing the consumed Changeset. Packages: repository release bookkeeping only. Business Adaptation: none.
+
+### Added
+
+- `WorkflowBusinessApplyCurrentTaskVO.unclaimable`, `.assignSource` and `.claimTime`, assembled by the single `toTaskVo` path so apply paging, progress, handling result, start result and event payloads all expose the same values as `WorkflowTaskVO`.
+- `assign_source` and `claim_time` columns on the current-task snapshot, with `claim_time` preferring the Flowable claim time and falling back to the task arrival time.
+- `unclaimable` is computed per request for the current user and is never persisted, so a stored snapshot cannot grant another user a release permission.
+- Flyway `V6` adds the two columns idempotently through `information_schema` detection with `PREPARE`/`EXECUTE`, so a database that already patched the columns stays upgradable.
+
+### Fixed
+
+- A business list can distinguish "claimed by me", "dispatched by the platform" and "specified by the process definition" without extra calls, because the snapshot now carries the assignee source instead of only `claimStatus`.
+- A row whose assignee source is unknown is reported as not releasable instead of being treated as releasable by default.
+
+### Changed
+
+- The non-application Maven/docs tuple advances from `1.10.0` to `1.11.0` with 201 coordinates because the workflow module gains three public response fields plus a migration; `@mango/cli` advances from `1.4.11` to `1.4.12` as the generated compatibility closure, and no npm package is republished.
+- `@mango/pmo` is unchanged because no PMO rule, contract, Agent, template or shipped Skill changed in this batch.
+- Release rejection keeps returning `417013` from the HTTP adapter and `3663` from the service, and `claimStatus` keeps its previous values, so existing business conditions stay valid.
+
+### Versions
+
+- Maven/docs: `1.10.0` to `1.11.0`; 201 sealed Maven coordinates, including `io.mango:mango-docs-bundle:1.11.0` and `io.mango.platform.workflow:mango-workflow-core:1.11.0`.
+- npm: `@mango/cli@1.4.12`; no other npm package is republished because no frontend source changed.
+- Exact topology, dependency order and checksums are generated in `mango-ui/.changeset/release-plan.json`.
+
+### Published Packages
+
+- Publish all 201 non-application Maven coordinates in release-plan order.
+- Publish `@mango/cli@1.4.12` as the generated compatibility closure.
+- Application fat jars and coordinates outside the sealed plan are excluded; the `@mango/*` frontend packages keep their `1.10.0` batch versions.
+
+### Business Impact
+
+- A business list page renders the release action from data it already loaded, so a page of fifty rows no longer issues fifty extra task detail requests.
+- The release action appears only for the handler who may release, because `unclaimable` is calculated per request for the current user rather than stored.
+- A row whose assignee source cannot be resolved shows no release action, which prevents a failed click that ends in `3663`.
+- No HTTP interface, permission code, menu or `claimStatus` value changes; only the response payload grows.
+
+### Upgrade Estimate
+
+- Audience: Mango backend consumers that render the current task on a business apply list, progress page or event consumer.
+- Engineering Effort: 0.25 engineer-day per consumer to upgrade the tuple, apply the migration and replace per-row detail calls with the snapshot fields.
+- Execution Window: 1 hour per consumer including backend restart and a list page check with mixed claimed and dispatched tasks.
+- Service Downtime: one controlled backend restart window; the migration only adds two nullable columns and does not backfill.
+- Rollback Effort: 0.25 engineer-day per consumer to restore the complete Maven `1.10.0` tuple and `@mango/cli@1.4.11`; the two columns can stay because `1.10.0` ignores them.
+- Assumptions: consumers run MySQL 8 or a compatible engine with the Mango Flyway history, and have a business list that shows the current task of an apply.
+
+### Upgrade Notes
+
+1. Upgrade the complete Mango Maven/docs tuple from `1.10.0` to `1.11.0`; do not update only one starter or module.
+2. Let Flyway `V6` run during startup; it detects existing columns through `information_schema` and does not backfill historical rows.
+3. Upgrade CLI consumers to `@mango/cli@1.4.12` when the CLI is used; the frontend packages stay on the `1.10.0` batch versions.
+4. Replace `taskRuntimeApi.detail` calls that only decided release visibility with the snapshot fields `unclaimable`, `assignSource` and `claimTime`.
+5. Treat a missing or unknown `assignSource` as not releasable, and keep the existing `3663` handling for a rejected release.
+6. Verify one list page that mixes a self-claimed task, a platform-dispatched task and a process-definition task before production rollout.
+
+### Verification
+
+- The workflow module test suite covers the snapshot assembly for all five return points, the per-request `unclaimable` calculation and the fallback of `claim_time` to the task arrival time.
+- The `V6` migration is idempotent: a database that already has the columns skips the `ALTER` statements through the `information_schema` check.
+- `catalog:check` reports a consistent Catalog projection on the source commit, and the release plan re-computes 201 Maven coordinates plus the single-package npm closure with matching topology.
+- `mango release prepare` builds once, seals every JAR, docs bundle, tarball and source archive under one prepared candidate id, and runs a mixed consumer against the sealed files and the consume registry.
+
+### Rollback
+
+- Restore the complete Maven `1.10.0` tuple and `@mango/cli@1.4.11`; do not patch a single module.
+- Keep the `V6` columns: `1.10.0` ignores them, so a code rollback does not require dropping them.
+- Restore the per-row `taskRuntimeApi.detail` call in business pages if they were changed in the same release, otherwise the release action disappears from the list.
+- Historical snapshot rows keep their values; only newly written rows populate `assign_source` and `claim_time`.
+
 ## v2026.11.15-maven-1.10.0-task-release-actions-release - Mango Maven/docs 1.10.0 task release and reassign release - 2026-11-15
 
 Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `8175b76a8e2510dccbfd9a08b91fcc5007edbe2fdcd397caa7110b5a5b008775`; prepared candidate `fa3b26cef4505a1f9a4d6bf827f3e8d6625783ab298e1fae15e1f9db214241e7` completed publication and consume verification for 5 npm packages (`@mango/workflow@1.3.0` through `@mango/cli@1.4.11`) and 201 Maven coordinates. Tag and GitHub Release were created and verified.
