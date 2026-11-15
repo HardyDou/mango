@@ -1,6 +1,6 @@
 ## v2026.11.15-maven-1.11.0-business-apply-release-eligibility-release - Mango Maven/docs 1.11.0 business apply release eligibility release - 2026-11-15
 
-Status: `PENDING`. Release plan digest `1058552ec1a8f541c48f441bae5180c6c2227e48070ddf40f0307c45bab9c774`; Maven/npm publication, consume verification, Tag and GitHub Release remain pending.
+Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `1058552ec1a8f541c48f441bae5180c6c2227e48070ddf40f0307c45bab9c774`; prepared candidate `d49e276db5bf80164603e60594f1f9fa373bd6f1a3321f88c98be3336bd058d1` completed publication and consume verification for `@mango/cli@1.4.12` and 201 Maven coordinates. Tag and GitHub Release were created and verified.
 
 ### Pull Requests
 
