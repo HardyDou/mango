@@ -88,6 +88,7 @@ const emit = defineEmits<{
 const actionOptions: Array<{ key: WorkflowTaskActionKey; defaultLabel: string }> = [
   { key: 'complete', defaultLabel: '通过' },
   { key: 'reject', defaultLabel: '驳回' },
+  { key: 'unclaim', defaultLabel: '释放' },
   { key: 'returnTask', defaultLabel: '退回' },
   { key: 'save', defaultLabel: '暂存' },
   { key: 'transfer', defaultLabel: '转办' },
@@ -97,6 +98,7 @@ const actionOptions: Array<{ key: WorkflowTaskActionKey; defaultLabel: string }>
 const defaultActionOrders: Partial<Record<WorkflowTaskActionKey, number>> = {
   save: 10,
   transfer: 20,
+  unclaim: 25,
   addSign: 30,
   reject: 40,
   returnTask: 45,
@@ -136,7 +138,7 @@ function defaultActionConfig(
 ): WorkflowNodeActionConfig {
   const label = actionOptions.find((item) => item.key === key)?.defaultLabel || key;
   return {
-    enabled: key === 'complete' || key === 'reject',
+    enabled: key === 'complete' || key === 'reject' || key === 'unclaim',
     label,
     requireComment: key === 'reject' || key === 'returnTask',
     danger: key === 'reject',

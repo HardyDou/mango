@@ -71,6 +71,18 @@ public enum WorkflowCode implements BizCode {
     /** 流程任务已被其他审批人办理。 */
     TASK_ALREADY_COMPLETED(3661, "任务已被其他审批人办理"),
 
+    /** 任务当前没有承办人，无需释放。 */
+    TASK_NOT_ASSIGNED(3662, "任务未被指派"),
+
+    /** 当前任务来源不支持承办人自助释放。 */
+    TASK_RELEASE_FORBIDDEN(3663, "当前任务不支持释放"),
+
+    /** 改派或转办目标办理人无效。 */
+    TASK_ASSIGNEE_INVALID(3664, "目标办理人无效"),
+
+    /** 当前用户无权改派任务。 */
+    TASK_REASSIGN_FORBIDDEN(3665, "无权改派任务"),
+
     PARTICIPATION_CONTEXT_INVALID(3652, "工作流参与查询上下文非法"),
 
     PARTICIPANT_INVALID(3653, "工作流参与用户无效"),

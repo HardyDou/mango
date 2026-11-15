@@ -1,5 +1,7 @@
 package io.mango.workflow.core.engine;
 
+import io.mango.identity.api.AuthUserProvider;
+import io.mango.identity.api.vo.AuthUserVO;
 import io.mango.workflow.api.enums.WorkflowAssigneeType;
 import io.mango.workflow.api.enums.WorkflowEmptyAssigneeStrategy;
 import io.mango.workflow.core.model.WorkflowApprovalNodeConfig;
@@ -30,6 +32,7 @@ public class WorkflowAssigneeResolver {
     public static final String DEFINITION_ADMIN_USERS_VAR = "mangoDefinitionAdminUsers";
 
     private final JdbcTemplate jdbcTemplate;
+    private final AuthUserProvider authUserProvider;
 
     public ResolvedAssignees resolve(WorkflowApprovalNodeConfig config,
                                      Map<String, Object> variables,
@@ -124,7 +127,43 @@ public class WorkflowAssigneeResolver {
     }
 
     private ResolvedAssignees users(Collection<String> values) {
-        return new ResolvedAssignees(clean(values), List.of(), null, null);
+        return new ResolvedAssignees(assigneeKeys(values), List.of(), null, null);
+    }
+
+    /**
+     * 把办理人标识规范成 Flowable 办理人 key：登录用户名。
+     *
+     * <p>平台同一字段原先同时写入用户 ID 和用户名，导致按 {@code assignee_} 精确匹配的动作失配。
+     * 写入侧统一走用户名，运行时表达式（{@code ${...}}）原样保留；存量数据由读取侧的双形态解析兼容。
+     */
+    private List<String> assigneeKeys(Collection<String> values) {
+        if (values == null || values.isEmpty()) {
+            return List.of();
+        }
+        List<String> keys = new ArrayList<>(values.size());
+        for (String value : clean(values)) {
+            String key = assigneeKey(value);
+            if (!keys.contains(key)) {
+                keys.add(key);
+            }
+        }
+        return keys;
+    }
+
+    private String assigneeKey(String identifier) {
+        if (!StringUtils.hasText(identifier)) {
+            return identifier;
+        }
+        String trimmed = identifier.trim();
+        if (trimmed.startsWith("${")) {
+            return trimmed;
+        }
+        try {
+            AuthUserVO user = authUserProvider.getByIdForAuth(Long.valueOf(trimmed));
+            return user != null && StringUtils.hasText(user.getUsername()) ? user.getUsername() : trimmed;
+        } catch (NumberFormatException ignored) {
+            return trimmed;
+        }
     }
 
     private ResolvedAssignees groups(Collection<String> values) {

@@ -82,6 +82,8 @@ V3 升级只回填具有稳定 `operator_id` 或 `assignee_id` 的历史记录�
 | 保存审批草稿、认领、取消认领后立即刷新按钮状态 | 调用 `save-result`、`claim-result`、`unclaim-result` 或对应 `WorkflowTaskRuntimeApi` result 方法 |
 | 审批中同步下一节点办理人、业务列表当前节点、待办摘要 | 订阅 `workflow.task.advanced` |
 | 保存草稿、认领、取消认领后异步刷新业务侧状态 | 订阅 `workflow.task.saved`、`workflow.task.claimed`、`workflow.task.unclaimed` |
+| 承办人释放平台派单任务、管理员改派或回收任务 | 调用 `POST /workflow/tasks/unclaim-result`、`POST /workflow/tasks/reassign`；释放后任务回到节点候选池，同时发出 `workflow.task.unclaimed` |
+| 转办或改派时选择目标办理人 | 调用 `GET /workflow/tasks/assignee-options?taskId=` 取当前时候选成员，不要自行拼人；释放/转办可用性以 `WorkflowTaskVO.unclaimable` 为准，不要用 `claimStatus` 推断 |
 | 审计刚完成的任务和办理意见 | 订阅 `workflow.task.completed` |
 | 流程通过后回写业务通过状态 | 订阅 `workflow.process.completed` |
 | 流程驳回后回写业务驳回状态 | 订阅 `workflow.process.rejected` |

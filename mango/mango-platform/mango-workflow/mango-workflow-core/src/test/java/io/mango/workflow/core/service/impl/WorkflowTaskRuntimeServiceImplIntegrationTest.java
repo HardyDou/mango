@@ -12,6 +12,7 @@ import io.mango.infra.event.api.IDomainEventPublisher;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
 import io.mango.identity.api.AuthUserProvider;
 import io.mango.identity.api.TenantMemberProvider;
+import io.mango.identity.api.vo.AuthUserVO;
 import io.mango.identity.api.vo.TenantMemberVO;
 import io.mango.workflow.api.command.AddSignWorkflowTaskCommand;
 import io.mango.workflow.api.command.ClaimWorkflowTaskCommand;
@@ -111,6 +112,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
@@ -166,6 +168,8 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
     @Autowired
     private TenantMemberProvider tenantMemberProvider;
     @Autowired
+    private AuthUserProvider authUserProvider;
+    @Autowired
     private IWorkflowParticipationService workflowParticipationService;
     @Autowired
     private CapturingBusinessApplyService workflowBusinessApplyService;
@@ -180,7 +184,7 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
         MangoContextHolder.set(MangoContextSnapshot.empty()
                 .withSecurity(1001L, "1", "anonymous", "default", "USER", "ORG", 100L, "anonymous"));
         reset(taskService, runtimeService, historyService, repositoryService, candidateGroupProvider,
-                workflowParticipationService, tenantMemberProvider);
+                workflowParticipationService, tenantMemberProvider, authUserProvider);
         workflowBusinessApplyService.clear();
         workflowEventPublisher.clear();
         operationLog.clear();
@@ -224,18 +228,30 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
     }
 
     @Test
-    void transferClaimAndUnclaimPersistRealTaskRecords() {
+    void transferWritesCanonicalAssigneeKeyAndPersistsRecord() {
         insertFormInstance("proc-1", "{}", WorkflowInstanceStatus.RUNNING.name());
+        when(authUserProvider.getByUsernameForAuth("lisi")).thenReturn(user(2002L, "lisi"));
+        when(authUserProvider.getByIdForAuth(2002L)).thenReturn(user(2002L, "lisi"));
+        when(tenantMemberProvider.getEnabledMember(2002L, 1L)).thenReturn(member(2002L));
         Task assignedTask = task("task-1", "manager_approve", "proc-1", "pd-1", "anonymous");
         TaskQuery assignedQuery = taskQuery(assignedTask, 1L, List.of());
         when(taskService.createTaskQuery()).thenReturn(assignedQuery);
         TransferWorkflowTaskCommand transfer = new TransferWorkflowTaskCommand();
         transfer.setTaskId("task-1");
-        transfer.setTargetUserId("lisi");
+        transfer.setTargetUserId("2002");
         transfer.setComment("请李四处理");
 
         service.transfer(transfer);
 
+        assertThat(records())
+                .extracting(WorkflowTaskRecordEntity::getAction, WorkflowTaskRecordEntity::getComment)
+                .containsExactly(tuple("TRANSFER", "请李四处理"));
+        verify(taskService).setAssignee("task-1", "lisi");
+    }
+
+    @Test
+    void claimMarksSelfClaimAndUnclaimReleasesPlatformAssignedTask() {
+        insertFormInstance("proc-1", "{}", WorkflowInstanceStatus.RUNNING.name());
         Task unassignedTask = task("task-1", "manager_approve", "proc-1", "pd-1", null);
         TaskQuery unassignedQuery = taskQuery(unassignedTask, 1L, List.of());
         when(taskService.createTaskQuery()).thenReturn(unassignedQuery);
@@ -244,22 +260,41 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
 
         service.claim(claim);
 
+        verify(taskService).claim("task-1", "anonymous");
+        verify(taskService).setVariableLocal("task-1", "mangoAssignSource", "SELF_CLAIM");
+
         Task claimedTask = task("task-1", "manager_approve", "proc-1", "pd-1", "anonymous");
         TaskQuery claimedQuery = taskQuery(claimedTask, 1L, List.of());
         when(taskService.createTaskQuery()).thenReturn(claimedQuery);
-        when(taskService.getVariableLocal("task-1", "mangoClaimedFromCandidate")).thenReturn(Boolean.TRUE);
+        when(taskService.getVariableLocal("task-1", "mangoAssignSource")).thenReturn("AUTO_ASSIGN");
+        org.flowable.identitylink.api.IdentityLink candidateLink = candidateUserLink("lisi");
+        when(taskService.getIdentityLinksForTask("task-1")).thenReturn(List.of(candidateLink));
+        HistoricVariableInstanceQuery initiatorQuery = mock(HistoricVariableInstanceQuery.class, Answers.RETURNS_SELF);
+        when(historyService.createHistoricVariableInstanceQuery()).thenReturn(initiatorQuery);
+        when(initiatorQuery.singleResult()).thenReturn(null);
 
         service.unclaim(claim);
 
         assertThat(records())
                 .extracting(WorkflowTaskRecordEntity::getAction)
-                .containsExactly("TRANSFER", "CLAIM", "UNCLAIM");
-        assertThat(records())
-                .extracting(WorkflowTaskRecordEntity::getComment)
-                .containsExactly("请李四处理", "认领任务", "释放任务");
-        verify(taskService).setAssignee("task-1", "lisi");
-        verify(taskService).claim("task-1", "anonymous");
+                .containsExactly("CLAIM", "UNCLAIM");
         verify(taskService).unclaim("task-1");
+        verify(taskService).setVariableLocal("task-1", "mangoReleasedToPool", Boolean.TRUE);
+    }
+
+    @Test
+    void unclaimRejectsNonReleasableSourceWithExplicitReason() {
+        insertFormInstance("proc-1", "{}", WorkflowInstanceStatus.RUNNING.name());
+        Task transferredTask = task("task-1", "manager_approve", "proc-1", "pd-1", "anonymous");
+        TaskQuery query = taskQuery(transferredTask, 1L, List.of());
+        when(taskService.createTaskQuery()).thenReturn(query);
+        when(taskService.getVariableLocal("task-1", "mangoAssignSource")).thenReturn("TRANSFER");
+        ClaimWorkflowTaskCommand claim = new ClaimWorkflowTaskCommand();
+        claim.setTaskId("task-1");
+
+        assertThatThrownBy(() -> service.unclaim(claim))
+                .hasMessageContaining("当前任务不支持释放：任务由他人转办给你")
+                .hasMessageContaining("如需移交请使用转办");
     }
 
     @Test
@@ -1176,6 +1211,20 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
         when(processQuery.singleResult()).thenReturn(mock(ProcessInstance.class));
     }
 
+    private AuthUserVO user(Long userId, String username) {
+        AuthUserVO user = new AuthUserVO();
+        user.setUserId(userId);
+        user.setUsername(username);
+        user.setNickname(username);
+        return user;
+    }
+
+    private org.flowable.identitylink.api.IdentityLink candidateUserLink(String username) {
+        org.flowable.identitylink.api.IdentityLink link = mock(org.flowable.identitylink.api.IdentityLink.class);
+        when(link.getUserId()).thenReturn(username);
+        return link;
+    }
+
     private TenantMemberVO member(Long memberId) {
         TenantMemberVO member = new TenantMemberVO();
         member.setMemberId(memberId);
@@ -1243,7 +1292,8 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
     }
 
     @Configuration
-    @Import({WorkflowTaskRuntimeService.class, WorkflowRuntimeCandidateLinker.class, WorkflowAssigneeIdentityService.class})
+    @Import({WorkflowTaskRuntimeService.class, WorkflowRuntimeCandidateLinker.class, WorkflowAssigneeIdentityService.class,
+            io.mango.workflow.core.support.WorkflowTaskAssigneeSourceResolver.class, WorkflowTaskViewAssembler.class})
     @MapperScan("io.mango.workflow.core.mapper")
     static class TestConfig {
 

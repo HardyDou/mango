@@ -258,6 +258,16 @@ WorkflowProcessWithdrawResultVO result = workflowProcessApi.withdraw(withdraw).g
 
 该 Provider 的 VO 只用于设计器展示，不能作为运行时任务授权事实。AUTO 派单仍由运行时候选目录重新验证稳定 `userId`、租户成员状态和候选范围。
 
+#### 任务释放与改派
+
+`POST /workflow/tasks/unclaim` 允许当前承办人把任务交回本节点候选池，判据是承办人来源而不是 Flowable 的 `CLAIM_TIME_`：只有 `SELF_CLAIM`（本人认领）和 `AUTO_ASSIGN`（平台按轮询、最少任务、亲和或节点亲和派单）可以释放。角色、岗位、组织等审批人按人展开（`CANDIDATE_EXPAND`）、流程定义指定、发起人选择、表单指定、转办接手、管理员改派、退回指定和空办理人兜底都属于「平台已指定到具体人」，不支持承办人自助释放，失败提示会说明来源原因，并在节点启用转办时追加"如需移交请使用转办"。
+
+释放只清空承办人并补齐当前候选人，不删除多实例子任务、不改审批人集合，所以会签和依次审批的计票口径不变。释放后的任务写入任务级标记 `mangoReleasedToPool`，运行时推进不再对它自动派单；节点再次进入会生成新任务，自动派单照常生效。释放前会按节点配置重新解析候选人，解析不出候选人时直接失败并保留原承办人，避免产生无人可领的任务。
+
+管理员用 `POST /workflow/tasks/reassign` 处置承办人请假、调岗、离职或派错人：传 `targetUserId` 改派给具体人，传 `pool=true` 回收进候选池（只对上面两类可释放来源开放）。改派要求当前租户启用成员，台账记录实际办理人和原承办人。转办、改派和退回指定都写入 `assignSource`，接手人不能再把这些任务放回池子。
+
+平台写入 Flowable `ASSIGNEE_` 的值统一为登录用户名，无法解析用户名时回落用户 ID；历史数据里同时存在用户 ID 和用户名，读取侧仍按双形态解析。`GET /workflow/tasks/assignee-options` 按节点配置返回当前时候选成员，供转办和改派选择目标办理人，自动派单任务没有候选身份链也能拿到清单。
+
 ### 3.5 模板推送目标机构 Provider
 
 流程模板页面只在打开“推送流程”弹窗后调用 `GET /workflow/templates/tenant-options`，接口使用 `workflow:template:push`，不在页面挂载时查询机构。默认 `WorkflowPlatformApiTemplateTenantOptionProvider` 通过 System 公共 Java API 读取启用机构，并只返回机构 ID、名称和编码；前端不调用 `/system/tenant/list`，也不需要 `system:tenant:list`。
@@ -735,6 +745,8 @@ Workflow 参数校验约束统一由 `mango-workflow-api` 的 `XxxApi` 契约声
 | 认领并返回结果 | `POST /workflow/tasks/claim-result` | `workflow:task:claim` |
 | 释放 | `POST /workflow/tasks/unclaim` | `workflow:task:unclaim` |
 | 释放并返回结果 | `POST /workflow/tasks/unclaim-result` | `workflow:task:unclaim` |
+| 改派或回收进候选池 | `POST /workflow/tasks/reassign` | `workflow:task:reassign` |
+| 查询任务可选办理人 | `GET /workflow/tasks/assignee-options?taskId=` | `workflow:task:list` |
 | 待办统计 | `GET /workflow/tasks/todo/summary` | `workflow:task:list` |
 | 我的任务统计 | `GET /workflow/tasks/my/summary` | `workflow:task:list` |
 | 抄送列表 | `GET /workflow/tasks/copied` | `workflow:task:list` |

@@ -1,11 +1,11 @@
 package io.mango.workflow.core.service;
 
-import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.workflow.api.command.AddSignWorkflowTaskCommand;
 import io.mango.workflow.api.command.ClaimWorkflowTaskCommand;
 import io.mango.workflow.api.command.CompleteWorkflowTaskCommand;
 import io.mango.workflow.api.command.ReadWorkflowCopiedTaskCommand;
+import io.mango.workflow.api.command.ReassignWorkflowTaskCommand;
 import io.mango.workflow.api.command.RejectWorkflowTaskCommand;
 import io.mango.workflow.api.command.ReturnWorkflowTaskCommand;
 import io.mango.workflow.api.command.SaveWorkflowTaskDraftCommand;
@@ -15,9 +15,12 @@ import io.mango.workflow.api.vo.WorkflowProcessDetailVO;
 import io.mango.workflow.api.vo.WorkflowMyTaskSummaryVO;
 import io.mango.workflow.api.vo.WorkflowTaskDetailVO;
 import io.mango.workflow.api.vo.WorkflowTaskActionResultVO;
+import io.mango.workflow.api.vo.WorkflowTaskAssigneeVO;
 import io.mango.workflow.api.vo.WorkflowTaskCompleteResultVO;
 import io.mango.workflow.api.vo.WorkflowTaskSummaryVO;
 import io.mango.workflow.api.vo.WorkflowTaskVO;
+
+import java.util.List;
 
 /**
  * 工作流任务运行时服务。
@@ -53,6 +56,10 @@ public interface IWorkflowTaskRuntimeService {
     WorkflowTaskActionResultVO saveDraftWithResult(SaveWorkflowTaskDraftCommand command);
 
     Boolean transfer(TransferWorkflowTaskCommand command);
+
+    Boolean reassign(ReassignWorkflowTaskCommand command);
+
+    List<WorkflowTaskAssigneeVO> assigneeOptions(String taskId);
 
     Boolean addSign(AddSignWorkflowTaskCommand command);
 

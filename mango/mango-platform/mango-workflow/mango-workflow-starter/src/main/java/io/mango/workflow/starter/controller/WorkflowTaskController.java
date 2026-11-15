@@ -9,6 +9,7 @@ import io.mango.workflow.api.command.AddSignWorkflowTaskCommand;
 import io.mango.workflow.api.command.ClaimWorkflowTaskCommand;
 import io.mango.workflow.api.command.CompleteWorkflowTaskCommand;
 import io.mango.workflow.api.command.ReadWorkflowCopiedTaskCommand;
+import io.mango.workflow.api.command.ReassignWorkflowTaskCommand;
 import io.mango.workflow.api.command.RejectWorkflowTaskCommand;
 import io.mango.workflow.api.command.ReturnWorkflowTaskCommand;
 import io.mango.workflow.api.command.SaveWorkflowTaskDraftCommand;
@@ -20,6 +21,7 @@ import io.mango.workflow.api.request.WorkflowTaskTraceRequest;
 import io.mango.workflow.api.vo.WorkflowMyTaskSummaryVO;
 import io.mango.workflow.api.vo.WorkflowProcessDetailVO;
 import io.mango.workflow.api.vo.WorkflowTaskActionResultVO;
+import io.mango.workflow.api.vo.WorkflowTaskAssigneeVO;
 import io.mango.workflow.api.vo.WorkflowTaskCompleteResultVO;
 import io.mango.workflow.api.vo.WorkflowTaskDetailVO;
 import io.mango.workflow.api.vo.WorkflowTaskSummaryVO;
@@ -168,6 +170,23 @@ public class WorkflowTaskController implements WorkflowTaskRuntimeApi {
     @Override
     public R<Boolean> transfer(@RequestBody TransferWorkflowTaskCommand command) {
         return R.ok(workflowTaskRuntimeService.transfer(command));
+    }
+
+    @PostMapping("/reassign")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:reassign")
+    @Operation(summary = "改派审批任务", description = "管理员把任务改派给指定办理人，或把任务回收进节点候选池")
+    @Override
+    public R<Boolean> reassign(@RequestBody ReassignWorkflowTaskCommand command) {
+        return R.ok(workflowTaskRuntimeService.reassign(command));
+    }
+
+    @GetMapping("/assignee-options")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:list")
+    @Operation(summary = "查询任务可选办理人", description = "按节点配置返回当前时候选成员，供转办和改派选择目标办理人")
+    @Override
+    public R<List<WorkflowTaskAssigneeVO>> assigneeOptions(
+            @Parameter(description = "任务ID") @RequestParam("taskId") String taskId) {
+        return R.ok(workflowTaskRuntimeService.assigneeOptions(taskId));
     }
 
     @PostMapping("/add-sign")

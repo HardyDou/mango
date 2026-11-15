@@ -1,6 +1,7 @@
 package io.mango.workflow.core.engine;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mango.identity.api.AuthUserProvider;
 import io.mango.workflow.core.support.WorkflowReturnTargetSupport;
 import org.flowable.engine.ProcessEngine;
 import org.flowable.engine.ProcessEngineConfiguration;
@@ -31,7 +32,7 @@ class WorkflowReturnTaskEngineTest {
 
     private final WorkflowDesignerBpmnConverter converter = new WorkflowDesignerBpmnConverter(
             new ObjectMapper(),
-            new WorkflowAssigneeResolver(mock(JdbcTemplate.class)));
+            new WorkflowAssigneeResolver(mock(JdbcTemplate.class), mock(AuthUserProvider.class)));
 
     private ProcessEngine processEngine;
     private RepositoryService repositoryService;
