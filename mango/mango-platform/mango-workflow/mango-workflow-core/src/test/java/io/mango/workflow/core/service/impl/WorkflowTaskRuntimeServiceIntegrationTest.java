@@ -1621,6 +1621,7 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
             WorkflowBusinessApplyService.class,
             WorkflowRuntimeCandidateLinker.class,
             io.mango.workflow.core.support.WorkflowTaskAssigneeSourceResolver.class,
+            WorkflowTaskViewAssembler.class,
             WorkflowTaskRuntimeService.class
     })
     @MapperScan(basePackageClasses = {

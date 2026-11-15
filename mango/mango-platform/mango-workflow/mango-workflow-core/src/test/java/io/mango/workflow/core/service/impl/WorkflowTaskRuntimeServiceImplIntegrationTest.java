@@ -1293,7 +1293,7 @@ class WorkflowTaskRuntimeServiceImplIntegrationTest {
 
     @Configuration
     @Import({WorkflowTaskRuntimeService.class, WorkflowRuntimeCandidateLinker.class, WorkflowAssigneeIdentityService.class,
-            io.mango.workflow.core.support.WorkflowTaskAssigneeSourceResolver.class})
+            io.mango.workflow.core.support.WorkflowTaskAssigneeSourceResolver.class, WorkflowTaskViewAssembler.class})
     @MapperScan("io.mango.workflow.core.mapper")
     static class TestConfig {
 

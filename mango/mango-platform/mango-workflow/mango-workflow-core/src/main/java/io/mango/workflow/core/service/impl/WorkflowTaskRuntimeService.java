@@ -160,13 +160,14 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
     private final JdbcTemplate jdbcTemplate;
     private final WorkflowRuntimeCandidateLinker candidateLinker;
     private final WorkflowTaskAssigneeSourceResolver assignSourceResolver;
+    private final WorkflowTaskViewAssembler taskViewAssembler;
     @Override
     public PageResult<WorkflowTaskVO> todo(WorkflowTaskPageQuery query) {
-        WorkflowTaskPageQuery resolved = resolve(query);
+        WorkflowTaskPageQuery resolved = taskViewAssembler.resolve(query);
         long offset = (resolved.getPage() - 1) * resolved.getSize();
         var taskQuery = taskService.createTaskQuery();
         String keyword = trim(resolved.getKeyword());
-        List<String> businessProcessInstanceIds = businessProcessInstanceIds(keyword);
+        List<String> businessProcessInstanceIds = taskViewAssembler.businessProcessInstanceIds(keyword);
         List<String> candidateGroups = candidateGroupProvider.currentCandidateGroups();
         applyTodoTypeFilter(taskQuery, resolved.getTodoType(), candidateGroups);
         if (Boolean.TRUE.equals(resolved.getOverdue())) {
@@ -195,7 +196,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
     }
     @Override
     public PageResult<WorkflowTaskVO> initiated(WorkflowTaskPageQuery query) {
-        WorkflowTaskPageQuery resolved = resolve(query);
+        WorkflowTaskPageQuery resolved = taskViewAssembler.resolve(query);
         return PageResult.of(List.of(), 0, resolved.getPage(), resolved.getSize());
     }
     private void applyTodoTypeFilter(TaskQuery taskQuery, String todoType, List<String> candidateGroups) {
@@ -289,10 +290,10 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
     }
     @Override
     public PageResult<WorkflowTaskVO> done(WorkflowTaskPageQuery query) {
-        WorkflowTaskPageQuery resolved = resolve(query);
+        WorkflowTaskPageQuery resolved = taskViewAssembler.resolve(query);
         long offset = (resolved.getPage() - 1) * resolved.getSize();
         String keyword = trim(resolved.getKeyword());
-        List<String> businessProcessInstanceIds = businessProcessInstanceIds(keyword);
+        List<String> businessProcessInstanceIds = taskViewAssembler.businessProcessInstanceIds(keyword);
         var taskQuery = historyService.createHistoricTaskInstanceQuery()
                 .taskAssigneeIds(currentUserIdentifiers())
                 .finished()
@@ -320,7 +321,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
     }
     @Override
     public PageResult<WorkflowTaskVO> copied(WorkflowTaskPageQuery query) {
-        WorkflowTaskPageQuery resolved = resolve(query);
+        WorkflowTaskPageQuery resolved = taskViewAssembler.resolve(query);
         long offset = (resolved.getPage() - 1) * resolved.getSize();
         String keyword = trim(resolved.getKeyword());
         LambdaQueryWrapper<WorkflowCopiedTaskEntity> wrapper = new LambdaQueryWrapper<WorkflowCopiedTaskEntity>()
@@ -362,10 +363,10 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         WorkflowFormInstanceEntity formInstance = findFormInstance(task.getProcessInstanceId());
         Map<String, Object> runtimeVariables = readRuntimeVariables(task.getProcessInstanceId());
         WorkflowDefinitionEntity definition = formInstance == null
-                ? findDefinition(task.getProcessDefinitionId(), runtimeVariables)
+                ? taskViewAssembler.findDefinition(task.getProcessDefinitionId(), runtimeVariables)
                 : null;
-        fillForm(vo, formInstance, definition, runtimeVariables);
-        vo.setDesignerJson(findDesignerJson(task.getProcessDefinitionId(), definition));
+        taskViewAssembler.fillForm(vo, formInstance, definition, runtimeVariables);
+        vo.setDesignerJson(taskViewAssembler.findDesignerJson(task.getProcessDefinitionId(), definition));
         Map<String, String> formPermissions = taskFormPermissions(task, vo.getFormJson());
         vo.setFormPermissions(WorkflowJsonVO.of(formPermissions));
         vo.setRenderConfig(renderConfig(task, formInstance, formPermissions));
@@ -397,7 +398,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         WorkflowBusinessApplyVO apply = workflowBusinessApplyService.refreshCurrentTasksAndReturn(task.getProcessInstanceId());
         WorkflowFormInstanceEntity formInstance = findFormInstance(task.getProcessInstanceId());
         workflowEventPublisher.publishTaskSaved(task, formInstance, variables, command.getComment(), apply);
-        return toActionResult(WorkflowTaskAction.SAVE, task, false, apply);
+        return taskViewAssembler.toActionResult(WorkflowTaskAction.SAVE, task, false, apply);
     }
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -439,7 +440,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
                 command.getComment(),
                 advanceResult.ended(),
                 advanceResult.businessApply());
-        return toCompleteResult(WorkflowTaskAction.COMPLETE, task, advanceResult);
+        return taskViewAssembler.toCompleteResult(WorkflowTaskAction.COMPLETE, task, advanceResult);
     }
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -477,7 +478,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         WorkflowBusinessApplyVO apply = workflowBusinessApplyService.findByProcessInstance(task.getProcessInstanceId());
         workflowEventPublisher.publishProcessRejected(task.getProcessInstanceId(), formInstance, variables, reason, apply);
         workflowEventPublisher.publishProcessEnded(task.getProcessInstanceId(), formInstance, variables, reason, apply);
-        return toActionResult(WorkflowTaskAction.REJECT, task, true, apply);
+        return taskViewAssembler.toActionResult(WorkflowTaskAction.REJECT, task, true, apply);
     }
 
     @Override
@@ -529,7 +530,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
                 command.getComment(),
                 advanceResult.ended(),
                 advanceResult.businessApply());
-        return toCompleteResult(WorkflowTaskAction.RETURN, task, advanceResult);
+        return taskViewAssembler.toCompleteResult(WorkflowTaskAction.RETURN, task, advanceResult);
     }
 
     @Override
@@ -615,7 +616,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         WorkflowBusinessApplyVO apply = workflowBusinessApplyService.refreshCurrentTasksAndReturn(task.getProcessInstanceId());
         WorkflowFormInstanceEntity formInstance = findFormInstance(task.getProcessInstanceId());
         workflowEventPublisher.publishTaskClaimed(task, formInstance, readStoredVariables(task.getProcessInstanceId()), apply);
-        return toActionResult(WorkflowTaskAction.CLAIM, task, false, apply);
+        return taskViewAssembler.toActionResult(WorkflowTaskAction.CLAIM, task, false, apply);
     }
 
     @Override
@@ -636,7 +637,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         ensureActionEnabled(task, "unclaim");
         WorkflowTaskAssigneeSource source = requireReleasable(task);
         WorkflowBusinessApplyVO apply = releaseToPool(task, source, WorkflowTaskAction.UNCLAIM, "释放任务");
-        return toActionResult(WorkflowTaskAction.UNCLAIM, task, false, apply);
+        return taskViewAssembler.toActionResult(WorkflowTaskAction.UNCLAIM, task, false, apply);
     }
 
     @Override
@@ -897,109 +898,6 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
                 workflowBusinessApplyService.findByProcessInstance(processInstanceId));
     }
 
-    private WorkflowTaskCompleteResultVO toCompleteResult(WorkflowTaskAction action, Task previousTask,
-                                                          WorkflowTaskAdvanceResult advanceResult) {
-        WorkflowTaskCompleteResultVO vo = new WorkflowTaskCompleteResultVO();
-        vo.setActionResult(action);
-        vo.setCompletedTaskId(previousTask.getId());
-        vo.setCompletedTaskName(previousTask.getName());
-        vo.setCompletedTaskDefinitionKey(previousTask.getTaskDefinitionKey());
-        vo.setProcessInstanceId(advanceResult.processInstanceId());
-        vo.setEnded(advanceResult.ended());
-        WorkflowBusinessApplyVO apply = advanceResult.businessApply();
-        if (apply == null) {
-            vo.setCurrentTasks(List.of());
-            return vo;
-        }
-        vo.setApplyId(apply.getId());
-        vo.setBusinessType(apply.getBusinessType());
-        vo.setBusinessKey(apply.getBusinessKey());
-        vo.setApplyStatus(apply.getApplyStatus());
-        vo.setApplyStatusName(apply.getApplyStatusName());
-        vo.setCurrentTaskNames(apply.getCurrentTaskNames());
-        vo.setCurrentTaskDefinitionKeys(apply.getCurrentTaskDefinitionKeys());
-        vo.setCurrentAssigneeNames(apply.getCurrentAssigneeNames());
-        List<WorkflowBusinessApplyCurrentTaskVO> currentTasks = apply.getCurrentTasks() == null
-                ? List.<WorkflowBusinessApplyCurrentTaskVO>of()
-                : apply.getCurrentTasks();
-        vo.setCurrentTasks(currentTasks);
-        vo.setCancelled(WorkflowApplyStatus.CANCELED == apply.getApplyStatus());
-        vo.setRejected(WorkflowApplyStatus.REJECTED == apply.getApplyStatus());
-        fillCurrentTask(vo, currentTasks);
-        return vo;
-    }
-
-    private WorkflowTaskActionResultVO toActionResult(WorkflowTaskAction action, Task previousTask,
-                                                      boolean ended, WorkflowBusinessApplyVO apply) {
-        WorkflowTaskActionResultVO vo = new WorkflowTaskActionResultVO();
-        vo.setActionResult(action);
-        vo.setPreviousTaskId(previousTask.getId());
-        vo.setPreviousTaskDefinitionKey(previousTask.getTaskDefinitionKey());
-        vo.setPreviousTaskName(previousTask.getName());
-        vo.setProcessInstanceId(previousTask.getProcessInstanceId());
-        vo.setEnded(ended);
-        if (apply == null) {
-            vo.setNextTasks(List.of());
-            vo.setCandidateUsers(List.of());
-            vo.setCandidateGroups(List.of());
-            vo.setClaimStatus(WorkflowTaskClaimStatus.NONE);
-            return vo;
-        }
-        vo.setApplyId(apply.getId());
-        vo.setBusinessType(apply.getBusinessType());
-        vo.setBusinessKey(apply.getBusinessKey());
-        vo.setProcessStatus(apply.getApplyStatus());
-        vo.setProcessStatusName(apply.getApplyStatusName());
-        vo.setCancelled(WorkflowApplyStatus.CANCELED == apply.getApplyStatus());
-        vo.setRejected(WorkflowApplyStatus.REJECTED == apply.getApplyStatus());
-        List<WorkflowBusinessApplyCurrentTaskVO> nextTasks = apply.getCurrentTasks() == null
-                ? List.<WorkflowBusinessApplyCurrentTaskVO>of()
-                : apply.getCurrentTasks();
-        vo.setNextTasks(nextTasks);
-        fillCurrentTask(vo, nextTasks);
-        return vo;
-    }
-
-    private void fillCurrentTask(WorkflowTaskCompleteResultVO vo, List<WorkflowBusinessApplyCurrentTaskVO> currentTasks) {
-        if (currentTasks.isEmpty()) {
-            vo.setClaimStatus(WorkflowTaskClaimStatus.NONE);
-            vo.setCandidateUsers(List.of());
-            vo.setCandidateGroups(List.of());
-            return;
-        }
-        WorkflowBusinessApplyCurrentTaskVO first = currentTasks.getFirst();
-        vo.setCurrentTaskId(first.getTaskId());
-        vo.setCurrentTaskName(first.getTaskName());
-        vo.setTaskDefinitionKey(first.getTaskDefinitionKey());
-        vo.setAssigneeId(first.getAssigneeId());
-        vo.setAssigneeName(first.getAssigneeName());
-        vo.setAssigneeDisplayName(first.getAssigneeDisplayName());
-        vo.setClaimStatus(first.getClaimStatus());
-        vo.setCandidateUsers(first.getCandidateUsers() == null ? List.of() : first.getCandidateUsers());
-        vo.setCandidateGroups(first.getCandidateGroups() == null ? List.of() : first.getCandidateGroups());
-        vo.setCurrentTask(first);
-    }
-
-    private void fillCurrentTask(WorkflowTaskActionResultVO vo, List<WorkflowBusinessApplyCurrentTaskVO> currentTasks) {
-        if (currentTasks.isEmpty()) {
-            vo.setClaimStatus(WorkflowTaskClaimStatus.NONE);
-            vo.setCandidateUsers(List.of());
-            vo.setCandidateGroups(List.of());
-            return;
-        }
-        WorkflowBusinessApplyCurrentTaskVO first = currentTasks.getFirst();
-        vo.setCurrentTaskId(first.getTaskId());
-        vo.setCurrentTaskName(first.getTaskName());
-        vo.setTaskDefinitionKey(first.getTaskDefinitionKey());
-        vo.setAssigneeId(first.getAssigneeId());
-        vo.setAssigneeName(first.getAssigneeName());
-        vo.setAssigneeDisplayName(first.getAssigneeDisplayName());
-        vo.setClaimStatus(first.getClaimStatus());
-        vo.setCandidateUsers(first.getCandidateUsers() == null ? List.of() : first.getCandidateUsers());
-        vo.setCandidateGroups(first.getCandidateGroups() == null ? List.of() : first.getCandidateGroups());
-        vo.setCurrentTask(first);
-    }
-
     private String resolveReturnTarget(Task task, String configuredTarget) {
         return WorkflowReturnTargetSupport.resolveTarget(historyService, repositoryService, task, configuredTarget);
     }
@@ -1016,84 +914,15 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         WorkflowFormInstanceEntity formInstance = findFormInstance(processInstanceId);
         Map<String, Object> runtimeVariables = formInstance == null ? readRuntimeVariables(processInstanceId) : Map.of();
         WorkflowDefinitionEntity definition = formInstance == null
-                ? findDefinition(vo.getProcess().getProcessDefinitionId(), runtimeVariables)
+                ? taskViewAssembler.findDefinition(vo.getProcess().getProcessDefinitionId(), runtimeVariables)
                 : null;
         vo.setFormCode(formInstance == null ? (definition == null ? null : definition.getFormCode()) : formInstance.getFormCode());
         vo.setFormJson(formInstance == null ? (definition == null ? null : definition.getFormJson()) : formInstance.getFormJson());
-        vo.setDesignerJson(findDesignerJson(vo.getProcess().getProcessDefinitionId(), definition));
+        vo.setDesignerJson(taskViewAssembler.findDesignerJson(vo.getProcess().getProcessDefinitionId(), definition));
         vo.setVariables(WorkflowJsonVO.of(formInstance == null ? runtimeVariables : parseMap(formInstance.getVariablesJson())));
         vo.setRenderConfig(renderConfig(processInstanceId, null, formInstance, Map.of()));
         vo.setRecords(records(processInstanceId));
         return vo;
-    }
-
-    private WorkflowTaskPageQuery resolve(WorkflowTaskPageQuery query) {
-        return query == null ? new WorkflowTaskPageQuery() : query;
-    }
-
-    private List<String> businessProcessInstanceIds(String keyword) {
-        if (!StringUtils.hasText(keyword)) {
-            return List.of();
-        }
-        return businessApplyMapper.selectList(new LambdaQueryWrapper<WorkflowBusinessApplyEntity>()
-                        .select(WorkflowBusinessApplyEntity::getProcessInstanceId)
-                        .isNotNull(WorkflowBusinessApplyEntity::getProcessInstanceId)
-                        .and(wrapper -> wrapper
-                                .like(WorkflowBusinessApplyEntity::getBusinessKey, keyword)
-                                .or()
-                                .like(WorkflowBusinessApplyEntity::getApplyTitle, keyword)
-                                .or()
-                                .like(WorkflowBusinessApplyEntity::getProcessName, keyword)
-                                .or()
-                                .like(WorkflowBusinessApplyEntity::getCurrentTaskNames, keyword)))
-                .stream()
-                .map(WorkflowBusinessApplyEntity::getProcessInstanceId)
-                .filter(StringUtils::hasText)
-                .distinct()
-                .toList();
-    }
-
-    private void fillForm(WorkflowTaskDetailVO vo, WorkflowFormInstanceEntity formInstance, WorkflowDefinitionEntity definition,
-                          Map<String, Object> runtimeVariables) {
-        vo.setFormCode(formInstance == null ? (definition == null ? null : definition.getFormCode()) : formInstance.getFormCode());
-        vo.setFormJson(formInstance == null ? (definition == null ? null : definition.getFormJson()) : formInstance.getFormJson());
-        vo.setVariables(WorkflowJsonVO.of(formInstance == null ? runtimeVariables : parseMap(formInstance.getVariablesJson())));
-    }
-
-    private WorkflowDefinitionEntity findDefinition(String processDefinitionId, Map<String, Object> variables) {
-        if (StringUtils.hasText(processDefinitionId)) {
-            WorkflowDefinitionEntity definition = definitionMapper.selectOne(new LambdaQueryWrapper<WorkflowDefinitionEntity>()
-                    .eq(WorkflowDefinitionEntity::getProcessDefinitionId, processDefinitionId)
-                    .last(LIMIT_ONE));
-            if (definition != null) {
-                return definition;
-            }
-        }
-        Long definitionId = variableLong(variables, "mangoDefinitionId");
-        return definitionId == null ? null : definitionMapper.selectById(definitionId);
-    }
-
-    private String findDesignerJson(String processDefinitionId, WorkflowDefinitionEntity resolvedDefinition) {
-        if (!StringUtils.hasText(processDefinitionId)) {
-            return null;
-        }
-        WorkflowDefinitionVersionEntity version = definitionVersionMapper.selectOne(
-                new LambdaQueryWrapper<WorkflowDefinitionVersionEntity>()
-                        .eq(WorkflowDefinitionVersionEntity::getProcessDefinitionId, processDefinitionId)
-                        .orderByDesc(WorkflowDefinitionVersionEntity::getId)
-                        .last(LIMIT_ONE));
-        if (version != null && StringUtils.hasText(version.getDesignerJson())) {
-            return version.getDesignerJson();
-        }
-        WorkflowDefinitionEntity definition = resolvedDefinition;
-        if (definition == null || !processDefinitionId.equals(definition.getProcessDefinitionId())) {
-            definition = definitionMapper.selectOne(new LambdaQueryWrapper<WorkflowDefinitionEntity>()
-                    .eq(WorkflowDefinitionEntity::getProcessDefinitionId, processDefinitionId)
-                    .last(LIMIT_ONE));
-        }
-        return definition == null || !processDefinitionId.equals(definition.getProcessDefinitionId())
-                ? null
-                : definition.getDesignerJson();
     }
 
     private WorkflowProcessInstanceVO processInfo(String processInstanceId) {
