@@ -344,6 +344,16 @@ jobs:
             -Dmango.check.baseRef="$BASE_SHA" \
             verify
 
+      - name: Report architecture violations on failure
+        if: failure()
+        run: |
+          report=mango/target/mango-architecture-report.json
+          if [ -f "$report" ]; then
+            jq '{gateStatus, newIssueCount, newIssues: [.newIssues[] | {type, rule, file, line, description}]}' "$report"
+          else
+            echo "architecture report not found: $report"
+          fi
+
       - name: Generate trusted full-Reactor architecture inventory for governance
         if: needs.preflight_scope.outputs.m09 == 'true' && needs.preflight_scope.outputs.backend_mode == 'governance'
         env:
