@@ -9,8 +9,10 @@ import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguratio
 import io.mango.workflow.api.command.CreateWorkflowBusinessApplyCommand;
 import io.mango.workflow.api.command.UpdateWorkflowBusinessApplyFilterAttributesCommand;
 import io.mango.workflow.api.enums.WorkflowCode;
+import io.mango.workflow.api.enums.WorkflowTaskAssigneeSource;
 import io.mango.workflow.core.identity.WorkflowAssigneeIdentityService;
 import io.mango.workflow.core.mapper.WorkflowBusinessApplyMapper;
+import io.mango.workflow.core.support.WorkflowTaskAssigneeSourceResolver;
 import org.flowable.engine.TaskService;
 import org.flowable.identitylink.api.IdentityLink;
 import org.flowable.task.api.Task;
@@ -68,6 +70,9 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
 
     @Autowired
     private TaskService taskService;
+
+    @Autowired
+    private WorkflowTaskAssigneeSourceResolver assignSourceResolver;
 
     @BeforeEach
     void setUp() {
@@ -408,13 +413,114 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
             assertThat(currentTask.getCandidateGroups()).containsExactly("risk-reviewers");
         });
         assertThat(jdbcTemplate.queryForMap("""
-                select assignee_id, assignee_name, claim_status, candidate_groups
+                select assignee_id, assignee_name, claim_status, assign_source, claim_time, candidate_groups
                 from workflow_business_apply_current_task
                 where apply_id = 16
                 """)).containsEntry("assignee_id", null)
                 .containsEntry("assignee_name", null)
                 .containsEntry("claim_status", "UNCLAIMED")
+                .containsEntry("assign_source", null)
+                .containsEntry("claim_time", null)
                 .containsEntry("candidate_groups", "risk-reviewers");
+    }
+
+    @Test
+    void refreshCurrentTasksPersistsReleaseEligibilityForSelfClaimedTask() {
+        MangoContextHolder.set(MangoContextSnapshot.empty()
+                .withSecurity(1001L, "1", "admin", "default", "USER", "USER", 1L, "internal-admin"));
+        insertApply(17L, 1002L, "IN_APPROVAL");
+        jdbcTemplate.update("""
+                update workflow_business_apply
+                set process_instance_id = 'PROC-17'
+                where id = 17
+                """);
+        LocalDateTime arrivedAt = LocalDateTime.of(2026, 11, 15, 9, 30);
+        LocalDateTime claimTime = LocalDateTime.of(2026, 11, 15, 10, 15);
+        Task task = mock(Task.class);
+        when(task.getId()).thenReturn("TASK-17");
+        when(task.getProcessInstanceId()).thenReturn("PROC-17");
+        when(task.getTaskDefinitionKey()).thenReturn("review");
+        when(task.getName()).thenReturn("复核");
+        when(task.getAssignee()).thenReturn("1001");
+        when(task.getCreateTime()).thenReturn(toDate(arrivedAt));
+        when(task.getClaimTime()).thenReturn(toDate(claimTime));
+        when(assignSourceResolver.resolve(task)).thenReturn(WorkflowTaskAssigneeSource.SELF_CLAIM);
+        TaskQuery taskQuery = mock(TaskQuery.class);
+        when(taskService.createTaskQuery()).thenReturn(taskQuery);
+        when(taskQuery.processInstanceId("PROC-17")).thenReturn(taskQuery);
+        when(taskQuery.orderByTaskCreateTime()).thenReturn(taskQuery);
+        when(taskQuery.asc()).thenReturn(taskQuery);
+        when(taskQuery.list()).thenReturn(List.of(task));
+        when(taskService.getIdentityLinksForTask("TASK-17")).thenReturn(List.of());
+
+        var refreshed = service.refreshCurrentTasksAndReturn("PROC-17");
+
+        assertThat(refreshed.getCurrentTasks()).singleElement().satisfies(currentTask -> {
+            assertThat(currentTask.getAssignSource()).isEqualTo(WorkflowTaskAssigneeSource.SELF_CLAIM);
+            assertThat(currentTask.getClaimTime()).isEqualTo(claimTime);
+            assertThat(currentTask.getUnclaimable()).isTrue();
+        });
+        assertThat(jdbcTemplate.queryForMap("""
+                select assign_source, claim_time
+                from workflow_business_apply_current_task
+                where apply_id = 17
+                """))
+                .containsEntry("assign_source", "SELF_CLAIM")
+                .hasEntrySatisfying("claim_time", value -> assertThat(value).isNotNull());
+    }
+
+    @Test
+    void refreshCurrentTasksKeepsCurrentTaskUnreleasableWhenSourceOrAssigneeDoesNotAllowRelease() {
+        MangoContextHolder.set(MangoContextSnapshot.empty()
+                .withSecurity(1001L, "1", "admin", "default", "USER", "USER", 1L, "internal-admin"));
+        insertApply(18L, 1002L, "IN_APPROVAL");
+        jdbcTemplate.update("""
+                update workflow_business_apply
+                set process_instance_id = 'PROC-18'
+                where id = 18
+                """);
+        LocalDateTime arrivedAt = LocalDateTime.of(2026, 11, 15, 9, 30);
+        Task definitionTask = mock(Task.class);
+        when(definitionTask.getId()).thenReturn("TASK-18-DEFINITION");
+        when(definitionTask.getProcessInstanceId()).thenReturn("PROC-18");
+        when(definitionTask.getTaskDefinitionKey()).thenReturn("review");
+        when(definitionTask.getName()).thenReturn("复核");
+        when(definitionTask.getAssignee()).thenReturn("1001");
+        when(definitionTask.getCreateTime()).thenReturn(toDate(arrivedAt));
+        when(assignSourceResolver.resolve(definitionTask)).thenReturn(WorkflowTaskAssigneeSource.DEFINITION);
+        Task otherAssigneeTask = mock(Task.class);
+        when(otherAssigneeTask.getId()).thenReturn("TASK-18-AUTO");
+        when(otherAssigneeTask.getProcessInstanceId()).thenReturn("PROC-18");
+        when(otherAssigneeTask.getTaskDefinitionKey()).thenReturn("approve");
+        when(otherAssigneeTask.getName()).thenReturn("审批");
+        when(otherAssigneeTask.getAssignee()).thenReturn("2002");
+        when(otherAssigneeTask.getCreateTime()).thenReturn(toDate(arrivedAt));
+        when(assignSourceResolver.resolve(otherAssigneeTask)).thenReturn(WorkflowTaskAssigneeSource.AUTO_ASSIGN);
+        TaskQuery taskQuery = mock(TaskQuery.class);
+        when(taskService.createTaskQuery()).thenReturn(taskQuery);
+        when(taskQuery.processInstanceId("PROC-18")).thenReturn(taskQuery);
+        when(taskQuery.orderByTaskCreateTime()).thenReturn(taskQuery);
+        when(taskQuery.asc()).thenReturn(taskQuery);
+        when(taskQuery.list()).thenReturn(List.of(definitionTask, otherAssigneeTask));
+        when(taskService.getIdentityLinksForTask("TASK-18-DEFINITION")).thenReturn(List.of());
+        when(taskService.getIdentityLinksForTask("TASK-18-AUTO")).thenReturn(List.of());
+
+        var refreshed = service.refreshCurrentTasksAndReturn("PROC-18");
+
+        assertThat(refreshed.getCurrentTasks()).hasSize(2).allSatisfy(
+                currentTask -> assertThat(currentTask.getUnclaimable()).isFalse());
+        assertThat(refreshed.getCurrentTasks())
+                .filteredOn(currentTask -> "TASK-18-DEFINITION".equals(currentTask.getTaskId()))
+                .singleElement()
+                .satisfies(currentTask -> {
+                    assertThat(currentTask.getAssignSource()).isEqualTo(WorkflowTaskAssigneeSource.DEFINITION);
+                    assertThat(currentTask.getClaimTime()).isEqualTo(arrivedAt);
+                });
+        assertThat(refreshed.getCurrentTasks())
+                .filteredOn(currentTask -> "TASK-18-AUTO".equals(currentTask.getTaskId()))
+                .singleElement()
+                .extracting("assignSource", "assigneeName")
+                .containsExactly(WorkflowTaskAssigneeSource.AUTO_ASSIGN, "2002");
     }
 
     @Test
@@ -547,6 +653,8 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
                     assignee_id bigint,
                     assignee_name varchar(128),
                     claim_status varchar(64),
+                    assign_source varchar(64),
+                    claim_time timestamp,
                     candidate_users text,
                     candidate_groups text,
                     arrived_at timestamp,
@@ -601,6 +709,10 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
         return command;
     }
 
+    private java.util.Date toDate(LocalDateTime time) {
+        return java.util.Date.from(time.atZone(java.time.ZoneId.systemDefault()).toInstant());
+    }
+
     private void insertApply(Long id, Long applicantId, String status) {
         jdbcTemplate.update("""
                 insert into workflow_business_apply (
@@ -641,6 +753,11 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
         @Bean
         TaskService taskService() {
             return mock(TaskService.class);
+        }
+
+        @Bean
+        WorkflowTaskAssigneeSourceResolver assignSourceResolver() {
+            return mock(WorkflowTaskAssigneeSourceResolver.class);
         }
     }
 }

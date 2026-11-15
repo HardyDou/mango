@@ -355,6 +355,22 @@ public class ExpenseWorkflowEventSubscriber implements DomainEventSubscriber {
 
 事件订阅方应把 `eventId`、`processInstanceId + completedTaskId` 或 `businessType + businessKey + eventType` 作为幂等键，避免跨实例或跨服务投递时重复回写业务状态。
 
+### 3.6 业务列表判定释放资格
+
+业务列表一次取回的当前任务快照 `WorkflowBusinessApplyCurrentTaskVO` 已带释放资格字段，逐行控制「释放」按钮不再需要为每行调用 `taskRuntimeApi.detail(taskId)`：
+
+| 字段 | 语义 |
+|------|------|
+| `unclaimable` | 当前登录用户能否释放该任务，口径与 `WorkflowTaskVO.unclaimable` 相同：任务有承办人、承办人是本人、来源为 `SELF_CLAIM` 或 `AUTO_ASSIGN`。 |
+| `assignSource` | 承办人来源。`SELF_CLAIM`（本人认领）、`AUTO_ASSIGN`（平台派单）可释放；`DEFINITION`、`RETURN_ASSIGN`、`REASSIGN`、`TRANSFER`、`INITIATOR_SELECT`、`FORM_USER`、`CANDIDATE_EXPAND`、`ADMIN_FALLBACK` 不可释放；未指派时为 `null`。 |
+| `claimTime` | 办理人获得任务的时间：本人认领为领取时间，平台派单为派单到达时间；未指派时为 `null`。 |
+
+- 不要用 `claimStatus` 推断释放资格：`SELF_CLAIM`、`AUTO_ASSIGN`、`DEFINITION`、`RETURN_ASSIGN` 都是 `ASSIGNED`。
+- 字段随当前任务表一起读取，不产生额外查询；释放、改派后按 `workflow.task.unclaimed`、`workflow.task.advanced` 事件刷新列表。
+- 按钮渲染后任务可能已被改派，服务端仍会拒绝：按 `TASK_RELEASE_FORBIDDEN`（业务码 `417013`、平台码 `3663`）提示刷新，不要按成功处理。
+
+`assign_source`、`claim_time` 由 Flyway `V6__workflow_business_apply_current_task_claim_state.sql` 加在 `workflow_business_apply_current_task` 上。升级前已存在的当前任务行这两列为 `NULL`，`unclaimable` 返回 `false`（来源未知按不可释放处理）；任务再次刷新或流转后补齐。
+
 ## 4. 前端接入
 
 安装前端包：
@@ -679,7 +695,8 @@ mango:
 | `WorkflowProcessInstanceVO` | 流程实例 ID、流程定义信息、业务主键、发起人、状态、开始时间。 | 发起流程后的结果回显。 |
 | `WorkflowStartResultVO` | 申请 ID、流程实例 ID、流程状态、当前任务、认领状态、候选用户/组。 | 业务侧一体化创建申请并发起流程后的结果回显。 |
 | `WorkflowProcessWithdrawResultVO` | 申请/实例 ID、撤回前后状态、是否撤回、是否幂等、是否结束和原因。 | 业务侧确认撤回结果并同步刷新。 |
-| `WorkflowTaskVO` | 任务 ID、流程实例、任务名称、办理人、候选信息、申请信息、创建时间。 | 待办、已办、抄送列表。 |
+| `WorkflowTaskVO` | 任务 ID、流程实例、任务名称、办理人、候选信息、申请信息、创建时间，以及释放/转办判定字段 `claimable`、`unclaimable`、`assignSource`、`claimTime`。 | 待办、已办、抄送列表。 |
+| `WorkflowBusinessApplyCurrentTaskVO` | 当前任务 ID、节点定义 key、名称、办理人 ID/原始 key/显示名、认领状态、候选用户/组、到达时间，以及释放资格 `unclaimable`、`assignSource`、`claimTime`。 | 业务列表逐行展示当前节点、办理人和释放按钮，不需要再逐行查任务详情。 |
 | `WorkflowTaskActionResultVO` | 已处理任务、业务申请、流程状态、当前任务、认领状态、候选用户/组、是否结束。 | 驳回、暂存、认领和释放后立即刷新业务状态。 |
 | `WorkflowProcessDetailVO` | 流程实例、表单渲染配置、变量、审批记录，以及实例实际运行发布版本的 `designerJson`。 | 业务只读详情和流程轨迹渲染。 |
 | `WorkflowTaskDetailVO` | 任务详情、表单渲染配置、变量、审批记录、节点动作配置，以及所属实例实际运行发布版本的 `designerJson`。 | 审批详情页渲染、按钮控制和流程轨迹渲染。 |
@@ -851,7 +868,7 @@ taskRuntimeApi.returnTask(command);
 | `assigneeName` | 第一个当前任务的 Flowable 原始办理人 key。 |
 | `claimStatus` | 第一个当前任务认领状态：`NONE`、`UNCLAIMED`、`ASSIGNED`。 |
 | `candidateUsers` / `candidateGroups` | 第一个当前任务候选用户和候选组。 |
-| `currentTasks` | 刷新后的当前任务明细，包含原始 `assigneeName`、增强 `assigneeId`/`assigneeDisplayName`、`claimStatus`、`candidateUsers`、`candidateGroups` 和 `arrivedAt`。 |
+| `currentTasks` | 刷新后的当前任务明细，包含原始 `assigneeName`、增强 `assigneeId`/`assigneeDisplayName`、`claimStatus`、`candidateUsers`、`candidateGroups`、`arrivedAt`，以及释放资格 `unclaimable`、`assignSource`、`claimTime`。 |
 | `variables` | 流程变量快照。 |
 
 默认通知会把 `applyAttributes` 展开成 `applyAttribute_<key>` 消息变量（多值按英文逗号拼接），消息模板可直接写 `{{applyAttribute_guaranteeTypeCode}}`；没有登记属性时不注入任何变量，模板保持原有行为。

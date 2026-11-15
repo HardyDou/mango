@@ -1,5 +1,6 @@
 package io.mango.workflow.api.vo;
 
+import io.mango.workflow.api.enums.WorkflowTaskAssigneeSource;
 import io.mango.workflow.api.enums.WorkflowTaskClaimStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -43,4 +44,13 @@ public class WorkflowBusinessApplyCurrentTaskVO {
 
     @Schema(description = "到达时间")
     private LocalDateTime arrivedAt;
+
+    @Schema(description = "当前用户是否可释放；与任务视图 unclaimable 同源，业务列表可直接据此控制释放按钮")
+    private Boolean unclaimable;
+
+    @Schema(description = "承办人来源；未指派时为空")
+    private WorkflowTaskAssigneeSource assignSource;
+
+    @Schema(description = "办理人获得任务的时间；本人认领为领取时间，平台派单为派单到达时间，未指派为空")
+    private LocalDateTime claimTime;
 }

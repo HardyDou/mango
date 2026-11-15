@@ -17,6 +17,7 @@ import io.mango.workflow.api.command.WorkflowJsonRequest;
 import io.mango.workflow.api.enums.WorkflowApplyAction;
 import io.mango.workflow.api.enums.WorkflowApplyRenderMode;
 import io.mango.workflow.api.enums.WorkflowApplyStatus;
+import io.mango.workflow.api.enums.WorkflowTaskAssigneeSource;
 import io.mango.workflow.api.enums.WorkflowTaskClaimStatus;
 import io.mango.workflow.api.query.WorkflowBusinessApplyPageQuery;
 import io.mango.workflow.api.request.WorkflowBusinessApplyProgressBatchRequest;
@@ -39,6 +40,7 @@ import io.mango.workflow.core.identity.WorkflowAssigneeIdentity;
 import io.mango.workflow.core.model.WorkflowProcessStartedContext;
 import io.mango.workflow.core.model.WorkflowTaskStatusContext;
 import io.mango.workflow.core.service.IWorkflowBusinessApplyService;
+import io.mango.workflow.core.support.WorkflowTaskAssigneeSourceResolver;
 import lombok.RequiredArgsConstructor;
 import org.flowable.engine.TaskService;
 import org.flowable.identitylink.api.IdentityLink;
@@ -84,6 +86,7 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
     private final ObjectMapper objectMapper;
     private final ObjectProvider<WorkflowBusinessApplyAccessChecker> accessCheckerProvider;
     private final WorkflowAssigneeIdentityService assigneeIdentityService;
+    private final WorkflowTaskAssigneeSourceResolver assignSourceResolver;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -411,11 +414,17 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
             TaskCandidates candidates = candidates(task);
             WorkflowTaskClaimStatus claimStatus = currentClaimStatus(task, candidates);
             currentTask.setClaimStatus(claimStatus.name());
+            WorkflowTaskAssigneeSource assignSource = StringUtils.hasText(assigneeName)
+                    ? assignSourceResolver.resolve(task)
+                    : null;
+            currentTask.setAssignSource(assignSource == null ? null : assignSource.name());
+            LocalDateTime arrivedAt = task.getCreateTime() == null
+                    ? now
+                    : task.getCreateTime().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime();
             currentTask.setCandidateUsers(join(candidates.users()));
             currentTask.setCandidateGroups(join(candidates.groups()));
-            currentTask.setArrivedAt(task.getCreateTime() == null
-                    ? now
-                    : task.getCreateTime().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime());
+            currentTask.setArrivedAt(arrivedAt);
+            currentTask.setClaimTime(claimTime(task, arrivedAt));
             currentTask.setCreatedAt(now);
             currentTask.setUpdatedAt(now);
             currentTaskMapper.insert(currentTask);
@@ -814,7 +823,48 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
         vo.setCandidateUsers(split(task.getCandidateUsers()));
         vo.setCandidateGroups(split(task.getCandidateGroups()));
         vo.setArrivedAt(task.getArrivedAt());
+        vo.setAssignSource(WorkflowTaskAssigneeSource.fromCode(task.getAssignSource()));
+        vo.setClaimTime(task.getClaimTime());
+        vo.setUnclaimable(unclaimable(task));
         return vo;
+    }
+
+    /**
+     * 当前用户能否释放该当前任务：有承办人、承办人是本人、来源属于可释放白名单。
+     *
+     * <p>口径与 {@code WorkflowTaskVO.unclaimable} 一致：业务列表直接据此决定是否展示释放按钮，
+     * 不依赖 {@code claimStatus}（本人认领和平台派单都是 {@code ASSIGNED}，释放资格却取决于来源）。
+     */
+    private Boolean unclaimable(WorkflowBusinessApplyCurrentTaskEntity task) {
+        if (!StringUtils.hasText(task.getAssigneeName())) {
+            return Boolean.FALSE;
+        }
+        WorkflowTaskAssigneeSource assignSource = WorkflowTaskAssigneeSource.fromCode(task.getAssignSource());
+        return isCurrentUserIdentifier(task.getAssigneeName()) && assignSource != null && assignSource.isReleasable();
+    }
+
+    /**
+     * 办理人获得任务的时间：本人认领取引擎领取时间，平台派单等指派场景取任务到达时间；未指派为空。
+     */
+    private LocalDateTime claimTime(Task task, LocalDateTime arrivedAt) {
+        if (!StringUtils.hasText(task.getAssignee())) {
+            return null;
+        }
+        return task.getClaimTime() == null
+                ? arrivedAt
+                : task.getClaimTime().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime();
+    }
+
+    private boolean isCurrentUserIdentifier(String targetUser) {
+        if (!StringUtils.hasText(targetUser)) {
+            return false;
+        }
+        String target = targetUser.trim();
+        if (target.equals(currentUser())) {
+            return true;
+        }
+        Long currentUserId = MangoContextHolder.userId();
+        return currentUserId != null && target.equals(String.valueOf(currentUserId));
     }
 
     private void fillFirstTask(WorkflowBusinessApplyProgressVO vo, List<WorkflowBusinessApplyCurrentTaskVO> currentTasks) {
