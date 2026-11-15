@@ -1,6 +1,6 @@
 ## v2026.11.15-maven-1.10.0-task-release-actions-release - Mango Maven/docs 1.10.0 task release and reassign release - 2026-11-15
 
-Status: `PENDING`. Release plan digest `8175b76a8e2510dccbfd9a08b91fcc5007edbe2fdcd397caa7110b5a5b008775`; Maven/npm publication, consume verification, Tag and GitHub Release remain pending.
+Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `8175b76a8e2510dccbfd9a08b91fcc5007edbe2fdcd397caa7110b5a5b008775`; prepared candidate `fa3b26cef4505a1f9a4d6bf827f3e8d6625783ab298e1fae15e1f9db214241e7` completed publication and consume verification for 5 npm packages (`@mango/workflow@1.3.0` through `@mango/cli@1.4.11`) and 201 Maven coordinates. Tag and GitHub Release were created and verified.
 
 ### Pull Requests
 
