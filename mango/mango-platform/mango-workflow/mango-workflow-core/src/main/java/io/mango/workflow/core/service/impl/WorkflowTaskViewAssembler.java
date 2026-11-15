@@ -35,7 +35,8 @@ import java.util.Map;
  * 任务动作结果与详情视图装配。
  *
  * <p>把「已处理任务 + 业务申请快照」映射成动作结果视图、把表单与流程定义快照映射成任务详情视图，
- * 与任务运行时状态机解耦，避免运行时服务同时承担编排和视图装配。
+ * 与任务运行时状态机解耦，避免运行时服务同时承担编排和视图装配。装配方法只服务同包的
+ * {@link WorkflowTaskRuntimeService}，按包内可见暴露，避免成为对外服务方法。
  */
 @Service
 @RequiredArgsConstructor
@@ -50,7 +51,7 @@ public class WorkflowTaskViewAssembler {
     private final WorkflowDefinitionVersionMapper definitionVersionMapper;
 
     /** 完成类动作结果：已完成任务 + 刷新后的业务申请与当前任务。 */
-    public WorkflowTaskCompleteResultVO toCompleteResult(WorkflowTaskAction action, Task previousTask,
+    WorkflowTaskCompleteResultVO toCompleteResult(WorkflowTaskAction action, Task previousTask,
                                                          WorkflowTaskAdvanceResult advanceResult) {
         WorkflowTaskCompleteResultVO vo = new WorkflowTaskCompleteResultVO();
         vo.setActionResult(action);
@@ -83,7 +84,7 @@ public class WorkflowTaskViewAssembler {
     }
 
     /** 非完成类动作结果：认领、释放、暂存、驳回等动作的前一任务与当前任务快照。 */
-    public WorkflowTaskActionResultVO toActionResult(WorkflowTaskAction action, Task previousTask,
+    WorkflowTaskActionResultVO toActionResult(WorkflowTaskAction action, Task previousTask,
                                                      boolean ended, WorkflowBusinessApplyVO apply) {
         WorkflowTaskActionResultVO vo = new WorkflowTaskActionResultVO();
         vo.setActionResult(action);
@@ -115,7 +116,7 @@ public class WorkflowTaskViewAssembler {
     }
 
     /** 业务申请表单快照：表单实例优先，缺失时回落流程定义表单。 */
-    public void fillForm(WorkflowTaskDetailVO vo, WorkflowFormInstanceEntity formInstance,
+    void fillForm(WorkflowTaskDetailVO vo, WorkflowFormInstanceEntity formInstance,
                          WorkflowDefinitionEntity definition, Map<String, Object> runtimeVariables) {
         vo.setFormCode(formInstance == null
                 ? (definition == null ? null : definition.getFormCode()) : formInstance.getFormCode());
@@ -126,7 +127,7 @@ public class WorkflowTaskViewAssembler {
     }
 
     /** 按流程定义 ID 或变量里的定义主键解析当前定义。 */
-    public WorkflowDefinitionEntity findDefinition(String processDefinitionId, Map<String, Object> variables) {
+    WorkflowDefinitionEntity findDefinition(String processDefinitionId, Map<String, Object> variables) {
         if (StringUtils.hasText(processDefinitionId)) {
             WorkflowDefinitionEntity definition = definitionMapper.selectOne(new LambdaQueryWrapper<WorkflowDefinitionEntity>()
                     .eq(WorkflowDefinitionEntity::getProcessDefinitionId, processDefinitionId)
@@ -140,7 +141,7 @@ public class WorkflowTaskViewAssembler {
     }
 
     /** 读取实例运行版本的设计器快照：发布版本优先，缺失时回落定义快照。 */
-    public String findDesignerJson(String processDefinitionId, WorkflowDefinitionEntity resolvedDefinition) {
+    String findDesignerJson(String processDefinitionId, WorkflowDefinitionEntity resolvedDefinition) {
         if (!StringUtils.hasText(processDefinitionId)) {
             return null;
         }
@@ -164,7 +165,7 @@ public class WorkflowTaskViewAssembler {
     }
 
     /** 关键字命中的业务申请流程实例；用于待办搜索按业务主键、标题或当前节点匹配。 */
-    public List<String> businessProcessInstanceIds(String keyword) {
+    List<String> businessProcessInstanceIds(String keyword) {
         if (!StringUtils.hasText(keyword)) {
             return List.of();
         }
@@ -187,7 +188,7 @@ public class WorkflowTaskViewAssembler {
     }
 
     /** 分页查询对象兜底，缺省返回首页默认查询。 */
-    public WorkflowTaskPageQuery resolve(WorkflowTaskPageQuery query) {
+    WorkflowTaskPageQuery resolve(WorkflowTaskPageQuery query) {
         return query == null ? new WorkflowTaskPageQuery() : query;
     }
 
