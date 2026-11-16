@@ -1,3 +1,14 @@
+## 1.4.13 - 2026-11-16
+
+### Changed
+
+- Lock the CLI Maven matrix to Maven `1.12.0` and the generated 201-coordinate Maven/docs release closure.
+- Track the task-side release facts (`releasable`, `releaseBlockedReason`) and the `unclaim` / `reassign` permission-point contract in the generated workflow guidance.
+
+### Upgrade Notes
+
+- Upgrade `@mango/cli@1.4.13` together with the complete Maven/docs `1.12.0` tuple; do not mix release batches.
+
 ## 1.4.12 - 2026-11-15
 
 ### Changed

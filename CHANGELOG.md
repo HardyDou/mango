@@ -1,3 +1,13 @@
+## v2026.11.16-maven-1.12.0-task-release-facts-release - Mango Maven/docs 1.12.0 task release facts - 2026-11-16
+
+Status: `PENDING`. Maven `1.11.0` → `1.12.0` (201 sealed non-application coordinates) and `@mango/cli@1.4.12` → `@mango/cli@1.4.13`: Maven/npm publication, consume verification, Tag and GitHub Release are pending. Release plan digest `d0a8a4472889df08b49ac4fa84b0f09fefb57a3a6ce51349eafddfa67a583d87`.
+
+### Published Packages
+
+- 201 sealed Maven coordinates at `1.12.0`, including `io.mango:mango-docs-bundle:1.12.0`, `io.mango.platform.workflow:mango-workflow-{api,core,starter,starter-remote}:1.12.0`.
+- `@mango/cli@1.4.13` as the generated npm closure. `@mango/workflow`, `@mango/admin`, `@mango/admin-shell` and `@mango/pmo` keep their previous versions because no frontend or PMO source changed in this batch.
+- Every published artifact carries the `releasable` / `releaseBlockedReason` response fields and the loosened `unclaim` / `reassign` request contract described below.
+
 ## Unreleased - workflow task release facts (Issue #1286)
 
 Status: `IN_DEVELOPMENT`. The platform now reports task-side release facts and leaves "who may release" to the caller's permission point.
