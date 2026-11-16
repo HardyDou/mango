@@ -75,6 +75,23 @@ class WorkflowTaskHistoryMapperIntegrationTest {
     }
 
     @Test
+    void readsAssignSourceAndSnapshotClaimTimeWithoutDuplicatingRows() {
+        WorkflowTaskHistoryCriteria criteria = criteria(List.of("RC1"));
+
+        assertThat(taskHistoryMapper.countTasks(criteria)).isEqualTo(2L);
+        List<WorkflowTaskHistoryRow> rows = taskHistoryMapper.selectTasks(criteria, 10, 0L);
+
+        WorkflowTaskHistoryRow dispatched = rows.get(1);
+        assertThat(dispatched.getTaskId()).isEqualTo("T1");
+        assertThat(dispatched.getAssignSource()).isEqualTo("AUTO_ASSIGN");
+        assertThat(dispatched.getSnapshotClaimTime()).isEqualTo(LocalDateTime.of(2026, 1, 1, 10, 0, 45));
+        WorkflowTaskHistoryRow unassigned = rows.get(0);
+        assertThat(unassigned.getTaskId()).isEqualTo("T2");
+        assertThat(unassigned.getAssignSource()).isNull();
+        assertThat(unassigned.getSnapshotClaimTime()).isNull();
+    }
+
+    @Test
     void returnsAllTasksOfBusinessTypeWhenBusinessKeysAbsent() {
         WorkflowTaskHistoryCriteria absent = WorkflowTaskHistoryCriteria.builder()
                 .tenantId(TENANT_ID)
@@ -416,6 +433,15 @@ class WorkflowTaskHistoryMapperIntegrationTest {
                         + "variables_json, created_time) values (?, ?, ?, ?, ?, ?, ?, ?)",
                 101L, TENANT_ID, "P2", "T3", "FIRST_REVIEW", "RETURN",
                 "{\"targetTaskDefinitionKey\":\"risk_specialist_review\"}", LocalDateTime.of(2026, 1, 3, 12, 0));
+        jdbcTemplate.update("insert into workflow_business_apply_current_task "
+                        + "(id, apply_id, process_instance_id, task_id, assign_source, claim_time, arrived_at) "
+                        + "values (?, ?, ?, ?, ?, ?, ?)",
+                9001L, 10L, "P1", "T1", "AUTO_ASSIGN",
+                LocalDateTime.of(2026, 1, 1, 10, 0, 45), LocalDateTime.of(2026, 1, 1, 10, 0));
+        jdbcTemplate.update("insert into workflow_business_apply_current_task "
+                        + "(id, apply_id, process_instance_id, task_id, assign_source, claim_time, arrived_at) "
+                        + "values (?, ?, ?, ?, ?, ?, ?)",
+                9002L, 10L, "P1", "T2", null, null, LocalDateTime.of(2026, 1, 2, 10, 0));
         jdbcTemplate.update("insert into identity_user (id, username) values (?, ?)", 1001L, "alice");
         jdbcTemplate.update("insert into tenant_member (id, tenant_id, user_id) values (?, ?, ?)",
                 5001L, TENANT_ID, 1001L);
@@ -450,6 +476,7 @@ class WorkflowTaskHistoryMapperIntegrationTest {
         jdbcTemplate.execute("drop table if exists act_ru_identitylink");
         jdbcTemplate.execute("drop table if exists workflow_business_apply");
         jdbcTemplate.execute("drop table if exists workflow_task_record");
+        jdbcTemplate.execute("drop table if exists workflow_business_apply_current_task");
         jdbcTemplate.execute("drop table if exists identity_user");
         jdbcTemplate.execute("""
                 create table act_hi_taskinst (
@@ -501,6 +528,18 @@ class WorkflowTaskHistoryMapperIntegrationTest {
                     apply_code varchar(128),
                     apply_title varchar(255),
                     apply_summary varchar(1000),
+                    primary key (id)
+                )
+                """);
+        jdbcTemplate.execute("""
+                create table workflow_business_apply_current_task (
+                    id bigint not null,
+                    apply_id bigint,
+                    process_instance_id varchar(128),
+                    task_id varchar(128),
+                    assign_source varchar(64),
+                    claim_time timestamp,
+                    arrived_at timestamp,
                     primary key (id)
                 )
                 """);

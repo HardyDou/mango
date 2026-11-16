@@ -251,6 +251,7 @@ class WorkflowTaskAttributeFilterIntegrationTest {
     }
 
     private void rebuildTables() {
+        jdbcTemplate.execute("drop table if exists workflow_business_apply_current_task");
         jdbcTemplate.execute("drop table if exists act_hi_taskinst");
         jdbcTemplate.execute("drop table if exists workflow_business_apply_attribute");
         jdbcTemplate.execute("drop table if exists workflow_task_record");
@@ -315,6 +316,19 @@ class WorkflowTaskAttributeFilterIntegrationTest {
                     created_at timestamp,
                     updated_by bigint,
                     updated_at timestamp,
+                    primary key (id)
+                )
+                """);
+        // 任务分页左连接业务快照取承办人来源与领取时间（Issue #1286），本用例只验证属性筛选，快照表建空表即可。
+        jdbcTemplate.execute("""
+                create table workflow_business_apply_current_task (
+                    id bigint not null,
+                    apply_id bigint,
+                    process_instance_id varchar(128),
+                    task_id varchar(128),
+                    assign_source varchar(64),
+                    claim_time timestamp,
+                    arrived_at timestamp,
                     primary key (id)
                 )
                 """);

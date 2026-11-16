@@ -5,6 +5,7 @@ import io.mango.common.vo.PageResult;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.workflow.api.enums.WorkflowApplyStatus;
+import io.mango.workflow.api.enums.WorkflowTaskAssigneeSource;
 import io.mango.workflow.api.enums.WorkflowTaskClaimStatus;
 import io.mango.workflow.api.enums.WorkflowTaskQueryScope;
 import io.mango.workflow.api.enums.WorkflowTaskRuntimeStatus;
@@ -27,6 +28,7 @@ import io.mango.workflow.core.entity.WorkflowBusinessApplyStatusLogEntity;
 import io.mango.workflow.core.mapper.WorkflowTaskHistoryMapper;
 import io.mango.workflow.core.model.WorkflowTaskHistoryCriteria;
 import io.mango.workflow.core.model.WorkflowTaskHistoryRow;
+import io.mango.workflow.core.model.WorkflowTaskIdentityLinkRow;
 import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
@@ -94,6 +96,7 @@ class WorkflowTaskBusinessQueryServiceTest {
         checkerProvider = provider;
         when(checkerProvider.getIfAvailable()).thenReturn(null);
         when(candidateGroupProvider.currentCandidateGroups()).thenReturn(List.of("ROLE_REVIEWER"));
+        when(taskHistoryMapper.selectCandidateLinks(anyList())).thenReturn(List.of());
         service = new WorkflowTaskBusinessQueryService(taskHistoryMapper, businessApplyMapper, taskRecordMapper,
                 statusLogMapper, checkerProvider, authorizer, assigneeIdentityService, candidateGroupProvider,
                 properties, objectMapper);
@@ -722,12 +725,137 @@ class WorkflowTaskBusinessQueryServiceTest {
         return filter;
     }
 
+    @Test
+    void pageByBusinessKey_装配平台派单任务时给出可释放与领取时间回退() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        WorkflowTaskHistoryRow row = pendingRow();
+        row.setClaimTime(null);
+        row.setAssignSource(WorkflowTaskAssigneeSource.AUTO_ASSIGN.name());
+        row.setSnapshotClaimTime(LocalDateTime.of(2026, 1, 1, 10, 0, 45));
+        stubSingleRow(row);
+
+        WorkflowTaskVO vo = service.pageByBusinessKey(query).getList().getFirst();
+
+        assertThat(vo.getAssignSource()).isEqualTo(WorkflowTaskAssigneeSource.AUTO_ASSIGN);
+        assertThat(vo.getReleasable()).isTrue();
+        assertThat(vo.getReleaseBlockedReason()).isNull();
+        assertThat(vo.getUnclaimable()).isTrue();
+        assertThat(vo.getClaimTime()).isEqualTo(LocalDateTime.of(2026, 1, 1, 10, 0, 45));
+    }
+
+    @Test
+    void pageByBusinessKey_释放资格只看任务事实不看调用者() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.ALL);
+        when(authorizer.canQueryAll()).thenReturn(false);
+        assertThatThrownBy(() -> service.pageByBusinessKey(query)).isInstanceOf(BizException.class);
+
+        when(authorizer.canQueryAll()).thenReturn(true);
+        WorkflowTaskHistoryRow row = pendingRow();
+        row.setAssigneeKey("bob");
+        row.setAssignSource(WorkflowTaskAssigneeSource.SELF_CLAIM.name());
+        stubSingleRow(row);
+
+        WorkflowTaskVO vo = service.pageByBusinessKey(query).getList().getFirst();
+
+        assertThat(vo.getReleasable()).isTrue();
+        assertThat(vo.getUnclaimable()).isFalse();
+    }
+
+    @Test
+    void pageByBusinessKey_不可释放来源给出阻断原因() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        WorkflowTaskHistoryRow row = pendingRow();
+        row.setAssignSource(WorkflowTaskAssigneeSource.RETURN_ASSIGN.name());
+        stubSingleRow(row);
+
+        WorkflowTaskVO vo = service.pageByBusinessKey(query).getList().getFirst();
+
+        assertThat(vo.getReleasable()).isFalse();
+        assertThat(vo.getReleaseBlockedReason())
+                .isEqualTo(WorkflowTaskAssigneeSource.RETURN_ASSIGN.getReleaseBlockedReason());
+        assertThat(vo.getUnclaimable()).isFalse();
+    }
+
+    @Test
+    void pageByBusinessKey_快照缺失来源时按不可释放处理() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        stubSingleRow(pendingRow());
+
+        WorkflowTaskVO vo = service.pageByBusinessKey(query).getList().getFirst();
+
+        assertThat(vo.getAssignSource()).isNull();
+        assertThat(vo.getReleasable()).isFalse();
+        assertThat(vo.getReleaseBlockedReason()).isEqualTo(WorkflowTaskAssigneeSource.UNKNOWN_SOURCE_REASON);
+    }
+
+    @Test
+    void pageByBusinessKey_已办任务不给出释放资格与阻断原因() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        WorkflowTaskHistoryRow row = row();
+        row.setAssignSource(WorkflowTaskAssigneeSource.TRANSFER.name());
+        row.setEndTime(LocalDateTime.of(2026, 1, 1, 12, 0));
+        stubSingleRow(row);
+
+        WorkflowTaskVO vo = service.pageByBusinessKey(query).getList().getFirst();
+
+        assertThat(vo.getStatus()).isEqualTo("DONE");
+        assertThat(vo.getReleasable()).isFalse();
+        assertThat(vo.getReleaseBlockedReason()).isNull();
+    }
+
+    @Test
+    void pageByBusinessKey_无候选人的未认领任务返回NONE() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        WorkflowTaskHistoryRow row = row();
+        row.setAssigneeKey(null);
+        row.setClaimTime(null);
+        row.setEndTime(null);
+        stubSingleRow(row);
+
+        WorkflowTaskVO vo = service.pageByBusinessKey(query).getList().getFirst();
+
+        assertThat(vo.getClaimStatus()).isEqualTo(WorkflowTaskClaimStatus.NONE);
+        assertThat(vo.getClaimable()).isFalse();
+        assertThat(vo.getClaimTime()).isNull();
+        assertThat(vo.getReleasable()).isFalse();
+    }
+
+    @Test
+    void pageByBusinessKey_当前用户在候选用户中时可认领() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        WorkflowTaskHistoryRow row = row();
+        row.setAssigneeKey(null);
+        row.setClaimTime(null);
+        stubSingleRow(row);
+        WorkflowTaskIdentityLinkRow link = new WorkflowTaskIdentityLinkRow();
+        link.setTaskId("T1");
+        link.setUserId("1001");
+        when(taskHistoryMapper.selectCandidateLinks(anyList())).thenReturn(List.of(link));
+
+        WorkflowTaskVO vo = service.pageByBusinessKey(query).getList().getFirst();
+
+        assertThat(vo.getClaimStatus()).isEqualTo(WorkflowTaskClaimStatus.UNCLAIMED);
+        assertThat(vo.getClaimable()).isTrue();
+    }
+
+    private void stubSingleRow(WorkflowTaskHistoryRow row) {
+        when(taskHistoryMapper.countTasks(any())).thenReturn(1L);
+        when(taskHistoryMapper.selectTasks(any(), anyInt(), anyLong())).thenReturn(List.of(row));
+    }
+
     private WorkflowTaskBusinessPageQuery query(WorkflowTaskQueryScope scope) {
         WorkflowTaskBusinessPageQuery query = new WorkflowTaskBusinessPageQuery();
         query.setBusinessType("BAOHAN_RC_PROJECT_REVIEW");
         query.setBusinessKeys(List.of("RC1"));
         query.setScope(scope);
         return query;
+    }
+
+    /** 待办任务：没有办理完成时间，释放资格才有意义。 */
+    private WorkflowTaskHistoryRow pendingRow() {
+        WorkflowTaskHistoryRow row = row();
+        row.setEndTime(null);
+        return row;
     }
 
     private WorkflowTaskHistoryRow row() {

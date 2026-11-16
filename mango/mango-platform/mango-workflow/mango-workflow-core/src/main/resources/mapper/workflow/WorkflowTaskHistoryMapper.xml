@@ -172,6 +172,9 @@
                t.ASSIGNEE_ as assigneeKey,
                t.START_TIME_ as createTime,
                t.CLAIM_TIME_ as claimTime,
+               <!-- 业务应用任务快照与任务一一对应（refreshCurrentTasks 每次重建），左连接不放大行数 -->
+               ct.assign_source as assignSource,
+               ct.claim_time as snapshotClaimTime,
                t.END_TIME_ as endTime,
                t.DELETE_REASON_ as deleteReason,
                a.id as applyId,
@@ -204,6 +207,7 @@
                 order by rv.id desc
                 limit 1) as lastReturnVariables
         <include refid="taskFrom"/>
+        left join workflow_business_apply_current_task ct on ct.task_id = t.ID_
         <include refid="taskWhere"/>
         order by
         <choose>

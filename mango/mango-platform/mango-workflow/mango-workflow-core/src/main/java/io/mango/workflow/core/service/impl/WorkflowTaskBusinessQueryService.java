@@ -9,6 +9,7 @@ import io.mango.workflow.api.enums.WorkflowCode;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mango.workflow.api.enums.WorkflowTaskAssigneeSource;
 import io.mango.workflow.api.enums.WorkflowTaskCancelCause;
 import io.mango.workflow.api.enums.WorkflowTaskClaimStatus;
 import io.mango.workflow.api.enums.WorkflowTaskQueryScope;
@@ -97,8 +98,8 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
         List<String> businessKeys = normalizeBusinessKeys(resolved.getBusinessKeys());
         Long tenantId = currentTenantId();
         boolean selfScope = scope == WorkflowTaskQueryScope.SELF;
-        List<String> selfIdentifiers = selfScope ? currentUserIdentifiers() : List.of();
-        List<String> selfGroups = selfScope ? candidateGroups() : List.of();
+        List<String> selfIdentifiers = currentUserIdentifiers();
+        List<String> selfGroups = candidateGroups();
         if (selfScope) {
             Require.isTrue(!selfIdentifiers.isEmpty(), WorkflowCode.TASK_QUERY_INVALID, "缺少当前用户上下文");
         }
@@ -125,8 +126,8 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
                 .applyTimeBegin(resolved.getApplyTimeBegin())
                 .applyTimeEnd(resolved.getApplyTimeEnd())
                 .selfScope(selfScope)
-                .selfIdentifiers(selfIdentifiers)
-                .selfCandidateGroups(selfGroups)
+                .selfIdentifiers(selfScope ? selfIdentifiers : List.of())
+                .selfCandidateGroups(selfScope ? selfGroups : List.of())
                 .deniedApplyIds(deniedApplyIds(tenantId, businessType, businessKeys))
                 .sortColumn(resolved.getSortBy())
                 .sortDirection(resolved.getSortOrder())
@@ -136,7 +137,7 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
         long offset = resolveOffset(resolved);
         List<WorkflowTaskVO> records = total == 0L
                 ? List.of()
-                : toRecords(taskHistoryMapper.selectTasks(criteria, limit, offset));
+                : toRecords(taskHistoryMapper.selectTasks(criteria, limit, offset), selfIdentifiers, selfGroups);
         if (!records.isEmpty()) {
             assigneeIdentityService.enrichTasks(records);
         }
@@ -441,7 +442,8 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
         return "%" + escaped + "%";
     }
 
-    private List<WorkflowTaskVO> toRecords(List<WorkflowTaskHistoryRow> rows) {
+    private List<WorkflowTaskVO> toRecords(List<WorkflowTaskHistoryRow> rows, List<String> selfIdentifiers,
+                                           List<String> selfGroups) {
         List<String> taskIds = rows.stream().map(WorkflowTaskHistoryRow::getTaskId).toList();
         Map<String, List<WorkflowTaskIdentityLinkRow>> linksByTask = taskIds.isEmpty()
                 ? Map.of()
@@ -450,12 +452,19 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
                                 LinkedHashMap::new, Collectors.toList()));
         List<WorkflowTaskVO> records = new ArrayList<>(rows.size());
         for (WorkflowTaskHistoryRow row : rows) {
-            records.add(toVo(row, linksByTask.getOrDefault(row.getTaskId(), List.of())));
+            records.add(toVo(row, linksByTask.getOrDefault(row.getTaskId(), List.of()), selfIdentifiers, selfGroups));
         }
         return records;
     }
 
-    private WorkflowTaskVO toVo(WorkflowTaskHistoryRow row, List<WorkflowTaskIdentityLinkRow> links) {
+    /**
+     * 装配任务视图，口径与运行时 {@code fillClaimState} 对齐。
+     *
+     * <p>承办人来源取自业务应用任务快照：历史表只有 Flowable 的 {@code CLAIM_TIME_}，
+     * 无法反推「本人认领/平台派单」，因此释放资格由快照补列提供，不在这里回查引擎。
+     */
+    private WorkflowTaskVO toVo(WorkflowTaskHistoryRow row, List<WorkflowTaskIdentityLinkRow> links,
+                                List<String> selfIdentifiers, List<String> selfGroups) {
         WorkflowTaskVO vo = new WorkflowTaskVO();
         vo.setId(row.getTaskId());
         vo.setTaskName(row.getTaskName());
@@ -471,29 +480,57 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
         vo.setReturned(Boolean.TRUE.equals(row.getReturned()));
         vo.setAssigneeName(row.getAssigneeKey());
         vo.setCreateTime(row.getCreateTime());
-        vo.setClaimTime(row.getClaimTime());
+        vo.setClaimTime(resolveClaimTime(row));
         vo.setEndTime(row.getEndTime());
         vo.setDeleteReason(row.getDeleteReason());
         vo.setStatus(resolveStatus(row).name());
         vo.setCancelCause(resolveCancelCause(row));
         vo.setLastReturnAt(row.getLastReturnAt());
         vo.setLastReturnTarget(resolveLastReturnTarget(row));
-        vo.setClaimStatus(StringUtils.hasText(row.getAssigneeKey())
-                ? WorkflowTaskClaimStatus.ASSIGNED
-                : WorkflowTaskClaimStatus.UNCLAIMED);
-        vo.setCandidateUsers(links.stream()
+        boolean assigned = StringUtils.hasText(row.getAssigneeKey());
+        boolean pending = resolveStatus(row) == WorkflowTaskRuntimeStatus.TODO;
+        List<String> candidateUsers = links.stream()
                 .map(WorkflowTaskIdentityLinkRow::getUserId)
                 .filter(StringUtils::hasText)
                 .distinct()
-                .toList());
-        vo.setCandidateGroups(links.stream()
+                .toList();
+        List<String> candidateGroups = links.stream()
                 .map(WorkflowTaskIdentityLinkRow::getGroupId)
                 .filter(StringUtils::hasText)
                 .distinct()
-                .toList());
-        vo.setClaimable(Boolean.FALSE);
-        vo.setUnclaimable(Boolean.FALSE);
+                .toList();
+        boolean candidate = !assigned
+                && (candidateUsers.stream().anyMatch(selfIdentifiers::contains)
+                || candidateGroups.stream().anyMatch(selfGroups::contains));
+        WorkflowTaskAssigneeSource assignSource = WorkflowTaskAssigneeSource.fromCode(row.getAssignSource());
+        // 只有待办任务存在「此刻能不能交回候选池」的问题；已办、已终止任务一律不可释放，也不给阻断原因。
+        boolean releasable = pending && assigned && assignSource != null && assignSource.isReleasable();
+        vo.setClaimStatus(assigned ? WorkflowTaskClaimStatus.ASSIGNED
+                : candidateUsers.isEmpty() && candidateGroups.isEmpty()
+                ? WorkflowTaskClaimStatus.NONE
+                : WorkflowTaskClaimStatus.UNCLAIMED);
+        vo.setCandidateUsers(candidateUsers);
+        vo.setCandidateGroups(candidateGroups);
+        vo.setClaimable(candidate);
+        vo.setAssignSource(assignSource);
+        vo.setReleasable(releasable);
+        vo.setReleaseBlockedReason(pending && assigned && !releasable ? releaseBlockedReason(assignSource) : null);
+        vo.setUnclaimable(releasable && selfIdentifiers.contains(row.getAssigneeKey()));
         return vo;
+    }
+
+    /** 引擎不写平台派单的领取时间，回退到业务应用任务快照里的时间；未认领任务不给出领取时间。 */
+    private LocalDateTime resolveClaimTime(WorkflowTaskHistoryRow row) {
+        if (!StringUtils.hasText(row.getAssigneeKey())) {
+            return null;
+        }
+        return row.getClaimTime() != null ? row.getClaimTime() : row.getSnapshotClaimTime();
+    }
+
+    private String releaseBlockedReason(WorkflowTaskAssigneeSource assignSource) {
+        return assignSource == null
+                ? WorkflowTaskAssigneeSource.UNKNOWN_SOURCE_REASON
+                : assignSource.getReleaseBlockedReason();
     }
 
     private String resolveCancelCause(WorkflowTaskHistoryRow row) {

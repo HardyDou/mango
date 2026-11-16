@@ -126,7 +126,8 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
 
     private static final String CLAIMED_FROM_CANDIDATE_VARIABLE = "mangoClaimedFromCandidate";
     private static final String RELEASE_TRANSFER_HINT = "如需移交请使用转办。";
-    private static final String RELEASE_BLOCKED_UNKNOWN_SOURCE = "当前任务不支持释放：无法确认承办人来源。";
+    private static final String RELEASE_BLOCKED_UNKNOWN_SOURCE =
+            "当前任务不支持释放：" + WorkflowTaskAssigneeSource.UNKNOWN_SOURCE_REASON + "。";
     private static final String DEFAULT_REJECT_REASON = "审批驳回";
     private static final String LIMIT_ONE = "limit 1";
     private static final String EMPTY_ASSIGNEE_AUTO_END_REASON = "审批人为空，系统自动结束";
@@ -628,7 +629,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         Task task = taskService.createTaskQuery().taskId(command.getTaskId()).singleResult();
         Require.notNull(task, WorkflowCode.TASK_NOT_FOUND);
         ensureActionEnabled(task, "unclaim");
-        WorkflowTaskAssigneeSource source = requireReleasable(task);
+        WorkflowTaskAssigneeSource source = requireRecyclableSource(task);
         WorkflowBusinessApplyVO apply = releaseToPool(task, source, WorkflowTaskAction.UNCLAIM, "释放任务");
         return taskViewAssembler.toActionResult(WorkflowTaskAction.UNCLAIM, task, false, apply);
     }
@@ -641,7 +642,6 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         boolean pool = Boolean.TRUE.equals(command.getPool());
         Require.isTrue(pool != StringUtils.hasText(command.getTargetUserId()), WorkflowCode.TASK_INVALID,
                 pool ? "回收进候选池时不能同时指定目标办理人" : "改派必须指定目标办理人或选择回收进候选池");
-        Require.isTrue(isAdminUser(), WorkflowCode.TASK_REASSIGN_FORBIDDEN, "只有流程管理员可以改派任务");
         Task task = taskService.createTaskQuery().taskId(command.getTaskId()).singleResult();
         Require.notNull(task, WorkflowCode.TASK_NOT_FOUND);
         String originalAssignee = task.getAssignee();
@@ -681,7 +681,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         Require.notBlank(taskId, WorkflowCode.TASK_INVALID, "任务ID不能为空");
         Task task = taskService.createTaskQuery().taskId(taskId).singleResult();
         Require.notNull(task, WorkflowCode.TASK_NOT_FOUND);
-        Require.isTrue(isCurrentUserIdentifier(task.getAssignee()) || currentUserCanClaim(task) || isAdminUser(),
+        Require.isTrue(isCurrentUserIdentifier(task.getAssignee()) || currentUserCanClaim(task),
                 WorkflowCode.TASK_REASSIGN_FORBIDDEN, "无权查看该任务的可选办理人");
         WorkflowApprovalNodeConfig config = taskApprovalConfig(task);
         if (config == null) {
@@ -706,28 +706,16 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
     }
 
     /**
-     * 校验当前承办人能否释放：任务必须有承办人、必须是本人、来源必须是本人认领或平台派单。
-     *
-     * <p>不可释放时返回明确的来源原因；只有节点确实启用了转办才追加转入转办的提示，
-     * 避免在未开启转办的节点上给出用户做不到的动作。
-     */
-    private WorkflowTaskAssigneeSource requireReleasable(Task task) {
-        Require.isTrue(StringUtils.hasText(task.getAssignee()), WorkflowCode.TASK_NOT_ASSIGNED,
-                "任务当前没有承办人，无需释放。");
-        Require.isTrue(isCurrentUserIdentifier(task.getAssignee()), WorkflowCode.TASK_RELEASE_FORBIDDEN,
-                "只能释放本人承办的任务，当前承办人为「" + task.getAssignee() + "」。");
-        return requireRecyclableSource(task);
-    }
-
-    /**
      * 校验任务能否回收进候选池，不限制承办人是否为调用者。
      *
-     * <p>管理员改派走这里：承办人请假、离职或已无法自助操作时，仍需把任务交回候选池。
-     * 来源白名单与承办人自助释放一致，按人展开、流程定义指定等来源只能改派给具体人。
+     * <p>释放与改派回收都走这里：平台只回答「这个任务此刻能不能交回候选池」，
+     * 「谁有资格发起」由调用方的功能权限控制。承办人请假、离职或已无法自助操作时，
+     * 仍需要有人把任务交回候选池，所以这里不校验调用者身份。
+     * 来源白名单按人展开、流程定义指定等来源只能改派给具体人。
      */
     private WorkflowTaskAssigneeSource requireRecyclableSource(Task task) {
         Require.isTrue(StringUtils.hasText(task.getAssignee()), WorkflowCode.TASK_NOT_ASSIGNED,
-                "任务当前没有承办人，无需回收。");
+                "任务当前没有承办人，无需释放。");
         WorkflowTaskAssigneeSource source = assignSourceResolver.resolve(task);
         Require.isTrue(source != null && source.isReleasable(), WorkflowCode.TASK_RELEASE_FORBIDDEN,
                 source == null ? RELEASE_BLOCKED_UNKNOWN_SOURCE : releaseBlockedMessage(task, source));
@@ -1015,6 +1003,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         vo.setCandidateGroups(List.of());
         vo.setClaimable(Boolean.FALSE);
         vo.setUnclaimable(Boolean.FALSE);
+        vo.setReleasable(Boolean.FALSE);
         vo.setStatus(WorkflowTaskRuntimeStatus.DONE.getLabel());
         if (task.getCreateTime() != null) {
             vo.setCreateTime(task.getCreateTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
@@ -1054,6 +1043,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         vo.setCandidateGroups(List.of());
         vo.setClaimable(Boolean.FALSE);
         vo.setUnclaimable(Boolean.FALSE);
+        vo.setReleasable(Boolean.FALSE);
         vo.setStatus(Boolean.TRUE.equals(copiedTask.getReadFlag()) ? "已阅" : "待阅");
         vo.setCreateTime(copiedTask.getCreatedTime());
         vo.setEndTime(copiedTask.getReadTime());
@@ -1075,13 +1065,17 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
                 .toList();
         boolean candidate = !assigned && currentUserCanClaim(task);
         WorkflowTaskAssigneeSource assignSource = assigned ? assignSourceResolver.resolve(task) : null;
-        boolean releasableByCurrentUser = assigned
-                && isCurrentUserIdentifier(task.getAssignee())
-                && assignSource != null
-                && assignSource.isReleasable();
+        boolean releasable = assigned && assignSource != null && assignSource.isReleasable();
+        boolean releasableByCurrentUser = releasable && isCurrentUserIdentifier(task.getAssignee());
         vo.setClaimable(candidate);
         vo.setUnclaimable(releasableByCurrentUser);
         vo.setAssignSource(assignSource);
+        vo.setReleasable(releasable);
+        vo.setReleaseBlockedReason(assigned && !releasable
+                ? assignSource == null
+                ? WorkflowTaskAssigneeSource.UNKNOWN_SOURCE_REASON
+                : assignSource.getReleaseBlockedReason()
+                : null);
         vo.setClaimStatus(assigned ? WorkflowTaskClaimStatus.ASSIGNED
                 : candidateUsers.isEmpty() && candidateGroups.isEmpty()
                 ? WorkflowTaskClaimStatus.NONE

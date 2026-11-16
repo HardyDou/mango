@@ -57,6 +57,9 @@ public enum WorkflowTaskAssigneeSource {
     /** 不可释放原因；可释放来源为空。 */
     private final String releaseBlockedReason;
 
+    /** 承办人来源无法解析时对外给出的阻断原因。 */
+    public static final String UNKNOWN_SOURCE_REASON = "无法确认承办人来源";
+
     public static WorkflowTaskAssigneeSource fromCode(String code) {
         if (code == null || code.isBlank()) {
             return null;

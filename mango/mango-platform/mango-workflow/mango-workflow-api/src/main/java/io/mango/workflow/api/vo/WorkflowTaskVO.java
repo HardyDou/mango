@@ -73,8 +73,21 @@ public class WorkflowTaskVO {
     @Schema(description = "当前用户是否可认领")
     private Boolean claimable;
 
-    @Schema(description = "当前用户是否可释放")
+    /**
+     * 当前用户是否可释放。
+     *
+     * @deprecated 改为读取 {@link #releasable} 并自行判定承办人是否为当前用户；本字段仍等价于
+     *             「{@code releasable} 且承办人是当前用户」，仅为 1.11.0 已有调用方保留一个版本，后续删除
+     */
+    @Deprecated
+    @Schema(description = "当前用户是否可释放；已废弃，改用 releasable", deprecated = true)
     private Boolean unclaimable;
+
+    @Schema(description = "任务当前是否可释放：承办人来源为本人认领或平台派单时为 true，与调用者无关")
+    private Boolean releasable;
+
+    @Schema(description = "任务不可释放的原因；仅任务有承办人且不可释放时有值")
+    private String releaseBlockedReason;
 
     @Schema(description = "承办人来源；未指派时为空")
     private WorkflowTaskAssigneeSource assignSource;

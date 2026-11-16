@@ -719,6 +719,84 @@ class WorkflowTaskRuntimeServiceIntegrationTest {
                 .taskDefinitionKey("manager_approve").count()).isZero();
     }
 
+    @Test
+    void nonAssigneeReleasesPlatformDispatchedTaskIntoPool() {
+        // Issue #1286：平台只回答「任务能不能释放」与「承办人是谁」，不再校验由谁发起释放。
+        prepareActiveMembers();
+        StartedWorkflow started = startAutoAssignWorkflow("BIZ-RELEASE-BY-OTHER");
+        Task dispatched = taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("auto_review")
+                .singleResult();
+        assertThat(dispatched.getAssignee()).isEqualTo("admin");
+
+        switchUser(1002L, "finance");
+        WorkflowBusinessApplyCurrentTaskVO before = singleCurrentTask(started.applyId());
+        assertThat(before.getAssigneeName()).isEqualTo("admin");
+        assertThat(before.getAssignSource()).isEqualTo(WorkflowTaskAssigneeSource.AUTO_ASSIGN);
+        assertThat(before.getUnclaimable()).isFalse();
+
+        WorkflowTaskActionResultVO released = taskRuntimeService
+                .unclaimWithResult(claimOf(dispatched.getId()));
+        assertThat(released.getActionResult()).isEqualTo(WorkflowTaskAction.UNCLAIM);
+        assertThat(taskService.createTaskQuery().taskId(dispatched.getId()).singleResult().getAssignee())
+                .isNull();
+
+        Map<String, Object> record = jdbcTemplate.queryForMap("""
+                select action, variables_json
+                from workflow_task_record
+                where task_id = ? and action = 'UNCLAIM'
+                """, dispatched.getId());
+        assertThat(String.valueOf(record.get("VARIABLES_JSON")))
+                .contains("originalAssignee")
+                .contains("admin");
+
+        WorkflowBusinessApplyCurrentTaskVO after = singleCurrentTask(started.applyId());
+        assertThat(after.getAssigneeName()).isNull();
+        assertThat(after.getAssignSource()).isNull();
+        assertThat(after.getClaimStatus()).isEqualTo(WorkflowTaskClaimStatus.UNCLAIMED);
+    }
+
+    @Test
+    void releaseReportsTaskSideReasonWhenSourceBlocksIt() {
+        // 释放被拒时给出的不是「你没权限」，而是任务侧事实：转办来源不允许交回候选池。
+        prepareActiveMembers();
+        StartedWorkflow started = startAutoAssignWorkflow("BIZ-RELEASE-BLOCKED");
+        Task task = taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("auto_review")
+                .singleResult();
+        TransferWorkflowTaskCommand transfer = new TransferWorkflowTaskCommand();
+        transfer.setTaskId(task.getId());
+        transfer.setTargetUserId("finance");
+        taskRuntimeService.transfer(transfer);
+
+        switchUser(1001L, "admin");
+        assertThatThrownBy(() -> taskRuntimeService.unclaimWithResult(claimOf(task.getId())))
+                .hasMessageContaining("当前任务不支持释放")
+                .hasMessageContaining("任务由他人转办给你");
+        WorkflowBusinessApplyCurrentTaskVO vo = singleCurrentTask(started.applyId());
+        assertThat(vo.getAssignSource()).isEqualTo(WorkflowTaskAssigneeSource.TRANSFER);
+        assertThat(vo.getUnclaimable()).isFalse();
+    }
+
+    @Test
+    void releaseOnUnassignedTaskReportsNothingToRelease() {
+        prepareActiveMembers();
+        StartedWorkflow started = startAutoAssignWorkflow("BIZ-RELEASE-TWICE");
+        Task dispatched = taskService.createTaskQuery()
+                .processInstanceId(started.processInstanceId())
+                .taskDefinitionKey("auto_review")
+                .singleResult();
+
+        switchUser(1001L, "admin");
+        taskRuntimeService.unclaimWithResult(claimOf(dispatched.getId()));
+
+        switchUser(1002L, "finance");
+        assertThatThrownBy(() -> taskRuntimeService.unclaimWithResult(claimOf(dispatched.getId())))
+                .hasMessageContaining("任务当前没有承办人，无需释放。");
+    }
+
     private void prepareActiveMembers() {
         AuthUserVO admin = authUser(1001L, "admin");
         AuthUserVO finance = authUser(1002L, "finance");
