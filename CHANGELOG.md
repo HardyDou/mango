@@ -1,6 +1,6 @@
 ## v2026.11.16-maven-1.12.0-task-release-facts-release - Mango Maven/docs 1.12.0 task release facts - 2026-11-16
 
-Status: `PENDING`. Maven `1.11.0` → `1.12.0` (201 sealed non-application coordinates) and `@mango/cli@1.4.12` → `@mango/cli@1.4.13`; Maven/npm publication, consume verification, Tag and GitHub Release are pending. Release plan digest `d0a8a4472889df08b49ac4fa84b0f09fefb57a3a6ce51349eafddfa67a583d87`.
+Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `d0a8a4472889df08b49ac4fa84b0f09fefb57a3a6ce51349eafddfa67a583d87`; prepared candidate `dc93111111e64181f9fe04c88efd89fbac53195d4d44ed1b02af2aad57d6a5f7` completed publication and consume verification for `@mango/cli@1.4.13` and 201 Maven coordinates. Tag and GitHub Release were created and verified.
 
 ### Pull Requests
 
