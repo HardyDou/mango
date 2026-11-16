@@ -51,3 +51,27 @@
 ## 6. 回滚方式
 
 回退 `mango-workflow-{api,core,starter}` 与 `@mango/workflow` 到升级前版本即可。已释放的任务在旧版本里因为缺少 `mangoClaimedFromCandidate` 标记无法释放（与升级前行为一致），任务本身仍在正常待办中；`mangoAssignSource`、`mangoReleasedToPool` 只是任务级变量，旧版本忽略它们，不需要清理数据。
+
+## 7. 1.11.x：释放资格收敛为「任务事实」，谁能释放交给功能权限（Issue #1286）
+
+1.11.0 之后业务侧反馈两件事：任务分页 `POST /workflow/tasks/page-by-business-key` 的 `unclaimable` 恒为 `false`、`assignSource` 恒为 `null`，业务只能逐行调详情接口补齐。根因是平台把「这个任务能不能交回候选池」（任务侧事实）和「谁有资格发起释放」（调用方权限）混在同一个字段里，业务分页又拿不到当前登录人视角。
+
+调整后的口径：
+
+| 项 | 1.11.0 | 本次之后 |
+|---|---|---|
+| 任务侧事实 | 只有 `unclaimable`（本人 + 来源） | 新增 `WorkflowTaskVO.releasable`（只看任务事实，与查看人无关）与 `releaseBlockedReason`（不可释放的任务侧原因） |
+| `unclaimable` | 唯一判据 | 标 `@Deprecated`，等价于「`releasable` 且承办人是当前登录用户」，保留一版后删除 |
+| `POST /workflow/tasks/unclaim` | 要求调用者是当前承办人 | 不再校验调用者，只校验任务侧：有承办人 + 来源在 `SELF_CLAIM`/`AUTO_ASSIGN` 白名单；谁有资格调用由 `workflow:task:unclaim` 权限点决定 |
+| `POST /workflow/tasks/reassign` | 要求 `admin` 用户名 | 去掉用户名硬编码，改派给具体人同样只受 `workflow:task:reassign` 权限点约束；`pool=true` 与释放共用同一来源白名单 |
+| 任务分页 `claimStatus` | 未认领且无候选人为 `UNCLAIMED` | 与详情接口一致：为 `NONE`（无人可领） |
+| 任务分页 `claimTime` | 直接取 `CLAIM_TIME_`，平台派单为空 | 为空时回退业务快照 `claim_time`（派单到达时间） |
+| 任务分页 `claimable` | 恒 `false` | 与详情接口同口径按候选身份链计算 |
+
+业务侧配合：
+
+1. 释放按钮改为「`releasable` 为真」+「当前用户持有 `workflow:task:unclaim` 权限点」共同决定；只有「我的任务」场景才继续叠加 `assigneeId == 当前登录人`。
+2. 不可释放时直接展示 `releaseBlockedReason`，不要自己按 `assignSource` 拼文案。
+3. 详情接口同样带 `releasable` 与 `releaseBlockedReason`，两处口径一致，业务可以择一使用。
+4. 风险提示：因为平台不再校验调用者，同一权限点持有者可以释放他人的任务；台账 `workflow_task_record` 的 `UNCLAIM` 记录里 `originalAssignee` 保留原承办人，需要区分代操作时按此字段审计。`workflow:task:unclaim` 默认挂在「我的待办」菜单上，等于所有审批人都能释放他人任务；需要收敛时按角色收回该权限点，或在业务侧叠加「仅本人任务」判定。
+5. 存量在途任务的快照没有 `assign_source` 回填（见第 3 节）：升级当刻 `assignSource=null`、`releasable=false`、`releaseBlockedReason` 为「无法确认承办人来源」，直到该任务下一次运行态动作（认领、派单、流转、释放）刷新快照才恢复；这不是本次回归，1.11.0 的 `unclaimable` 在同样场景也是 `false`，业务无需为存量行做特殊处理。

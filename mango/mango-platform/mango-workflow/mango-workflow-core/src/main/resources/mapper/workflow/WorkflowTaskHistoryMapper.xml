@@ -3,9 +3,12 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="io.mango.workflow.core.mapper.WorkflowTaskHistoryMapper">
 
+    <!-- 业务应用任务快照与任务一一对应（refreshCurrentTasks 每次重建），左连接不放大行数；
+         计数与取数共用同一 from，保证 total 与 rows 口径一致。 -->
     <sql id="taskFrom">
         from ACT_HI_TASKINST t
         join workflow_business_apply a on a.process_instance_id = t.PROC_INST_ID_
+        left join workflow_business_apply_current_task ct on ct.task_id = t.ID_
     </sql>
 
     <sql id="taskWhere">
@@ -172,6 +175,8 @@
                t.ASSIGNEE_ as assigneeKey,
                t.START_TIME_ as createTime,
                t.CLAIM_TIME_ as claimTime,
+               ct.assign_source as assignSource,
+               ct.claim_time as snapshotClaimTime,
                t.END_TIME_ as endTime,
                t.DELETE_REASON_ as deleteReason,
                a.id as applyId,

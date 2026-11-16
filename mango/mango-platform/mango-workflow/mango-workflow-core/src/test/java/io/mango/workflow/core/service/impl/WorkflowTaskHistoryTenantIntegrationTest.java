@@ -172,6 +172,7 @@ class WorkflowTaskHistoryTenantIntegrationTest {
     }
 
     private void rebuildTables() {
+        jdbcTemplate.execute("drop table if exists workflow_business_apply_current_task");
         jdbcTemplate.execute("drop table if exists act_hi_taskinst");
         jdbcTemplate.execute("drop table if exists act_hi_identitylink");
         jdbcTemplate.execute("drop table if exists act_ru_identitylink");
@@ -254,6 +255,20 @@ class WorkflowTaskHistoryTenantIntegrationTest {
                     id bigint not null,
                     tenant_id bigint,
                     user_id bigint,
+                    primary key (id)
+                )
+                """);
+        // 任务分页左连接业务快照取承办人来源与领取时间（Issue #1286）；快照表带 tenant_id，租户拦截器会追加租户条件。
+        jdbcTemplate.execute("""
+                create table workflow_business_apply_current_task (
+                    id bigint not null,
+                    tenant_id bigint,
+                    apply_id bigint,
+                    process_instance_id varchar(128),
+                    task_id varchar(128),
+                    assign_source varchar(64),
+                    claim_time timestamp,
+                    arrived_at timestamp,
                     primary key (id)
                 )
                 """);

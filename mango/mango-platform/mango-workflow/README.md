@@ -260,11 +260,13 @@ WorkflowProcessWithdrawResultVO result = workflowProcessApi.withdraw(withdraw).g
 
 #### 任务释放与改派
 
-`POST /workflow/tasks/unclaim` 允许当前承办人把任务交回本节点候选池，判据是承办人来源而不是 Flowable 的 `CLAIM_TIME_`：只有 `SELF_CLAIM`（本人认领）和 `AUTO_ASSIGN`（平台按轮询、最少任务、亲和或节点亲和派单）可以释放。角色、岗位、组织等审批人按人展开（`CANDIDATE_EXPAND`）、流程定义指定、发起人选择、表单指定、转办接手、管理员改派、退回指定和空办理人兜底都属于「平台已指定到具体人」，不支持承办人自助释放，失败提示会说明来源原因，并在节点启用转办时追加"如需移交请使用转办"。
+`POST /workflow/tasks/unclaim` 把任务交回本节点候选池，判据是承办人来源而不是 Flowable 的 `CLAIM_TIME_`：只有 `SELF_CLAIM`（本人认领）和 `AUTO_ASSIGN`（平台按轮询、最少任务、亲和或节点亲和派单）可以释放。角色、岗位、组织等审批人按人展开（`CANDIDATE_EXPAND`）、流程定义指定、发起人选择、表单指定、转办接手、管理员改派、退回指定和空办理人兜底都属于「平台已指定到具体人」，不支持自助释放，失败提示会说明来源原因，并在节点启用转办时追加"如需移交请使用转办"。
+
+平台只回答两个问题：这个任务此刻能不能交回候选池（来源白名单，见 `releasable`）以及这个任务现在是谁的（`assigneeName`、`assigneeId`）。平台不判断「谁有资格发起释放」：能否调用由功能权限点 `workflow:task:unclaim` 控制，业务按钮按该权限点与 `releasable` 共同决定显隐。所以调用者不必是当前承办人——持有该权限点的运维或管理员可以把他人认领、平台派单的任务放回候选池，台账会同时记录实际操作人与原承办人（`originalAssignee`）。
 
 释放只清空承办人并补齐当前候选人，不删除多实例子任务、不改审批人集合，所以会签和依次审批的计票口径不变。释放后的任务写入任务级标记 `mangoReleasedToPool`，运行时推进不再对它自动派单；节点再次进入会生成新任务，自动派单照常生效。释放前会按节点配置重新解析候选人，解析不出候选人时直接失败并保留原承办人，避免产生无人可领的任务。
 
-管理员用 `POST /workflow/tasks/reassign` 处置承办人请假、调岗、离职或派错人：传 `targetUserId` 改派给具体人，传 `pool=true` 回收进候选池。回收进池不要求调用者是当前承办人（承办人已无法操作时由管理员兜底），但来源白名单与承办人自助释放一致，只对本人认领和平台派单开放；按人展开和指定类任务只能改派给具体人。改派要求当前租户启用成员，台账记录实际办理人和原承办人。转办、改派和退回指定都写入 `assignSource`，接手人不能再把这些任务放回池子。
+管理员用 `POST /workflow/tasks/reassign` 处置承办人请假、调岗、离职或派错人：传 `targetUserId` 改派给具体人，传 `pool=true` 回收进候选池。回收进池和释放共用同一条来源白名单，也不要求调用者是当前承办人；改派给具体人同样只受 `workflow:task:reassign` 权限点约束，按人展开和指定类任务只能改派给具体人。改派要求当前租户启用成员，台账记录实际办理人和原承办人。转办、改派和退回指定都写入 `assignSource`，接手人不能再把这些任务放回池子。
 
 平台写入 Flowable `ASSIGNEE_` 的值统一为登录用户名，无法解析用户名时回落用户 ID；历史数据里同时存在用户 ID 和用户名，读取侧仍按双形态解析。`GET /workflow/tasks/assignee-options` 按节点配置返回当前时候选成员，供转办和改派选择目标办理人，自动派单任务没有候选身份链也能拿到清单。
 
@@ -355,21 +357,23 @@ public class ExpenseWorkflowEventSubscriber implements DomainEventSubscriber {
 
 事件订阅方应把 `eventId`、`processInstanceId + completedTaskId` 或 `businessType + businessKey + eventType` 作为幂等键，避免跨实例或跨服务投递时重复回写业务状态。
 
-### 3.6 业务列表判定释放资格
+### 3.6 判定释放资格（任务列表与业务列表）
 
-业务列表一次取回的当前任务快照 `WorkflowBusinessApplyCurrentTaskVO` 已带释放资格字段，逐行控制「释放」按钮不再需要为每行调用 `taskRuntimeApi.detail(taskId)`：
+平台只给任务侧事实，「谁有资格发起释放」由调用方的功能权限决定。任务列表 `WorkflowTaskVO`（`/workflow/tasks/page-by-business-key`、`/detail`、`/todo` 等）与业务列表 `WorkflowBusinessApplyCurrentTaskVO` 都带同一组事实字段：
 
-| 字段 | 语义 |
-|------|------|
-| `unclaimable` | 当前登录用户能否释放该任务，口径与 `WorkflowTaskVO.unclaimable` 相同：任务有承办人、承办人是本人、来源为 `SELF_CLAIM` 或 `AUTO_ASSIGN`。 |
-| `assignSource` | 承办人来源。`SELF_CLAIM`（本人认领）、`AUTO_ASSIGN`（平台派单）可释放；`DEFINITION`、`RETURN_ASSIGN`、`REASSIGN`、`TRANSFER`、`INITIATOR_SELECT`、`FORM_USER`、`CANDIDATE_EXPAND`、`ADMIN_FALLBACK` 不可释放；未指派时为 `null`。 |
-| `claimTime` | 办理人获得任务的时间：本人认领为领取时间，平台派单为派单到达时间；未指派时为 `null`。 |
+| 字段 | 出现在 | 语义 |
+|------|--------|------|
+| `releasable` | `WorkflowTaskVO` | 任务此刻能否交回候选池：有承办人且来源为 `SELF_CLAIM` 或 `AUTO_ASSIGN`。与调用者是谁无关，运维、管理员看到的同一个值。 |
+| `releaseBlockedReason` | `WorkflowTaskVO` | 有承办人但不可释放时的任务侧原因（如「任务由他人转办给你…」）；可释放或无承办人时为 `null`。 |
+| `unclaimable` | 两者 | 已废弃，等价于「`releasable` 且承办人是当前登录用户」，为 1.11.0 调用方保留一版，新代码读 `releasable` + `assigneeId`。 |
+| `assignSource` | 两者 | 承办人来源。`SELF_CLAIM`（本人认领）、`AUTO_ASSIGN`（平台派单）可释放；`DEFINITION`、`RETURN_ASSIGN`、`REASSIGN`、`TRANSFER`、`INITIATOR_SELECT`、`FORM_USER`、`CANDIDATE_EXPAND`、`ADMIN_FALLBACK` 不可释放；未指派时为 `null`。 |
+| `claimTime` | 两者 | 办理人获得任务的时间：本人认领为领取时间，平台派单为派单到达时间；未指派时为 `null`。 |
 
-- 不要用 `claimStatus` 推断释放资格：`SELF_CLAIM`、`AUTO_ASSIGN`、`DEFINITION`、`RETURN_ASSIGN` 都是 `ASSIGNED`。
-- 字段随当前任务表一起读取，不产生额外查询；释放、改派后按 `workflow.task.unclaimed`、`workflow.task.advanced` 事件刷新列表。
+- `unclaimable` 的口径是「本人 + 来源白名单」，继续用于渲染「我的」释放按钮；要判断「这个任务能不能被释放」读 `releasable`，不要再叠加承办人判断。
+- 字段随当前任务表一起读取，不产生额外查询；任务列表用 `left join workflow_business_apply_current_task`（`task_id` 唯一）取来源与领取时间，行数不变。释放、改派后按 `workflow.task.unclaimed`、`workflow.task.advanced` 事件刷新列表。
 - 按钮渲染后任务可能已被改派，服务端仍会拒绝：按 `TASK_RELEASE_FORBIDDEN`（业务码 `417013`、平台码 `3663`）提示刷新，不要按成功处理。
 
-`assign_source`、`claim_time` 由 Flyway `V6__workflow_business_apply_current_task_claim_state.sql` 加在 `workflow_business_apply_current_task` 上。升级前已存在的当前任务行这两列为 `NULL`，`unclaimable` 返回 `false`（来源未知按不可释放处理）；任务再次刷新或流转后补齐。
+`assign_source`、`claim_time` 由 Flyway `V6__workflow_business_apply_current_task_claim_state.sql` 加在 `workflow_business_apply_current_task` 上。升级前已存在的当前任务行这两列为 `NULL`，`releasable` 与 `unclaimable` 都返回 `false`（来源未知按不可释放处理）；任务再次刷新或流转后补齐。
 
 ## 4. 前端接入
 
@@ -611,6 +615,7 @@ mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-comm
 - `statuses=[DONE]` 只返回 `END_TIME_` 非空且 `DELETE_REASON_` 为空的任务，被退回或撤回终止的任务不会混进"已办理"。
 - `assigneeIds` 接受业务 `user_id`：引擎 `ASSIGNEE_` 存的是用户名时，平台通过 `identity_user.username` 映射，并强制经 `tenant_member` 校验该用户属于任务所在租户，跨租户同名用户不会串号。
 - `sortBy=claimTime` 在本接口的 SQL 层可排序（与引擎 API 不同），仍保持空值归尾。
+- 本接口按行同时填充用户态字段 `claimable`、`unclaimable`、`releasable`：`releasable` 只取决于任务事实，`claimable`、`unclaimable` 取决于调用者，与 `scope` 取值无关（`scope=ALL` 时他人任务也会给出自己的 `claimable`，`unclaimable` 恒为 `false`）。`claimStatus=NONE` 表示未认领且候选用户、候选组都为空，即「当前无人可领」，与运行态任务详情一致。
 - `applyKeyword` 可选：模糊匹配申请编号（`apply_code`）、申请标题（`apply_title`）、申请摘要（`apply_summary`）三列中的任意一列；输入里的 `%`、`_`、`\` 按字面匹配。它和 `keyword` 互不替代，可以同时传：`keyword` 只匹配任务名称和节点定义 Key。
 - 业务需要按自己的业务字段（保函种类、受益人、版本状态等）精确多选筛选时，创建申请时通过 `filterAttributes` 登记键值，列表查询用 `applyAttributeFilters`；版本状态这类提交后会变化的值用 `PUT /workflow/business-applies/filter-attributes`（请求体传 `applyId` 与新的属性数组）整体覆盖刷新。属性按申请保存，同一业务键多轮申请各自保留自己的值，查 V2 的属性只返回 V2 的任务。属性由业务写入，平台不做业务表回读，业务漏更新会被筛选结果直接体现。
 - 业务需要平台侧按自己的业务字段（保函种类、项目编号等）搜索时，在创建申请单时把可检索文本写进 `applySummary`，推荐 `名称：值，名称：值` 结构，例如 `保函种类：履约保函，项目编号：BH2026001`。摘要只在创建时写入、之后不再更新，提交后会变化的业务值不能依赖摘要搜索；需要多选精确筛选时继续使用 `businessKeys`。
@@ -695,7 +700,7 @@ mango:
 | `WorkflowProcessInstanceVO` | 流程实例 ID、流程定义信息、业务主键、发起人、状态、开始时间。 | 发起流程后的结果回显。 |
 | `WorkflowStartResultVO` | 申请 ID、流程实例 ID、流程状态、当前任务、认领状态、候选用户/组。 | 业务侧一体化创建申请并发起流程后的结果回显。 |
 | `WorkflowProcessWithdrawResultVO` | 申请/实例 ID、撤回前后状态、是否撤回、是否幂等、是否结束和原因。 | 业务侧确认撤回结果并同步刷新。 |
-| `WorkflowTaskVO` | 任务 ID、流程实例、任务名称、办理人、候选信息、申请信息、创建时间，以及释放/转办判定字段 `claimable`、`unclaimable`、`assignSource`、`claimTime`。 | 待办、已办、抄送列表。 |
+| `WorkflowTaskVO` | 任务 ID、流程实例、任务名称、办理人、候选信息、申请信息、创建时间，以及释放事实字段 `claimable`、`releasable`、`releaseBlockedReason`、`assignSource`、`claimTime`（`unclaimable` 已废弃，保留一版）。 | 待办、已办、抄送列表与业务任务分页。 |
 | `WorkflowBusinessApplyCurrentTaskVO` | 当前任务 ID、节点定义 key、名称、办理人 ID/原始 key/显示名、认领状态、候选用户/组、到达时间，以及释放资格 `unclaimable`、`assignSource`、`claimTime`。 | 业务列表逐行展示当前节点、办理人和释放按钮，不需要再逐行查任务详情。 |
 | `WorkflowTaskActionResultVO` | 已处理任务、业务申请、流程状态、当前任务、认领状态、候选用户/组、是否结束。 | 驳回、暂存、认领和释放后立即刷新业务状态。 |
 | `WorkflowProcessDetailVO` | 流程实例、表单渲染配置、变量、审批记录，以及实例实际运行发布版本的 `designerJson`。 | 业务只读详情和流程轨迹渲染。 |

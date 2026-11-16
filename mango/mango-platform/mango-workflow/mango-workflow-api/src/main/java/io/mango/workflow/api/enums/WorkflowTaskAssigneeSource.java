@@ -49,6 +49,9 @@ public enum WorkflowTaskAssigneeSource {
     /** 节点审批人为空，按兜底策略转管理员或指定用户。 */
     ADMIN_FALLBACK("空办理人兜底", false, "节点没有可用审批人，任务已按兜底策略转给管理员");
 
+    /** 承办人来源无法解析时对外给出的阻断原因。 */
+    public static final String UNKNOWN_SOURCE_REASON = "无法确认承办人来源";
+
     private final String label;
 
     /** 当前承办人是否可以把任务释放回候选池。 */

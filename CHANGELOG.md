@@ -1,3 +1,39 @@
+## Unreleased - workflow task release facts (Issue #1286)
+
+Status: `IN_DEVELOPMENT`. The platform now reports task-side release facts and leaves "who may release" to the caller's permission point.
+
+### Added
+
+- `WorkflowTaskVO.releasable`: whether the task can be put back into its candidate pool right now. It depends only on the task (`assignee` present and `assignSource` is `SELF_CLAIM` or `AUTO_ASSIGN`), so every caller sees the same value.
+- `WorkflowTaskVO.releaseBlockedReason`: the task-side reason when the task has an assignee but cannot be released; `null` when it is releasable or has no assignee. `WorkflowTaskAssigneeSource.UNKNOWN_SOURCE_REASON` covers snapshots whose source cannot be resolved.
+
+### Changed
+
+- `POST /workflow/tasks/page-by-business-key` now fills the user-state fields instead of leaving them at their defaults: `claimable` is computed from the candidate identity links against the caller, `assignSource` comes from the business task snapshot, `claimTime` falls back to the snapshot claim time when Flowable has none, and `claimStatus` reports `NONE` for an unclaimed task without candidates, matching the task detail endpoint.
+- The task query `left join`s `workflow_business_apply_current_task` on `task_id` (the snapshot holds exactly one row per task), so row counts and pagination are unchanged.
+- `POST /workflow/tasks/unclaim` no longer requires the caller to be the current assignee. The platform validates only the task side: an assignee exists and the assignee source is releasable. Who may call it is decided by the `workflow:task:unclaim` permission point.
+- `POST /workflow/tasks/reassign` drops the hardcoded `admin` username check. Giving the task to a person is limited by the `workflow:task:reassign` permission point, and `pool=true` shares the same source whitelist as release. `GET /workflow/tasks/assignee-options` likewise no longer depends on that username.
+
+### Deprecated
+
+- `WorkflowTaskVO.unclaimable` is deprecated in favour of `releasable` plus `assigneeId`; it keeps its previous meaning ("releasable and assigned to the caller") for one release. `WorkflowBusinessApplyCurrentTaskVO.unclaimable` is unchanged.
+
+### Business Adaptation
+
+- Render the release button from `releasable` and the permission point, not from `unclaimable`; show `releaseBlockedReason` as the disabled tooltip.
+- Replace per-row `taskRuntimeApi.detail` calls on business pages with the fields returned by `page-by-business-key`.
+- Because the platform no longer checks the caller, holders of `workflow:task:unclaim` can release tasks assigned to others; the `UNCLAIM` audit record keeps `originalAssignee` for that case.
+
+### Verification
+
+- `mango-workflow-core`: 243 tests, 0 failures, 4 skipped, including new mapper-join, runtime-release and business-page unit cases.
+- `mango-workflow-starter`: `WorkflowTaskReleaseFactsHttpContractTest` covers `releasable`, `releaseBlockedReason`, `claimStatus=NONE` and the detail endpoint over HTTP JSON.
+- Known pre-existing failure, unrelated to this change: `WorkflowApiSurfaceContractTest` golden fingerprints no longer match on this machine on a clean `main` as well (`649612f3...` vs `053297d7...`, `32e55a00...` vs `277ab3b8...`).
+
+### Out of Scope
+
+- Data-scope based release permission, `ORG` scope for the task page, `latestOnly` for the business page, and the `mango-ui` task detail view still reading `unclaimable`.
+
 ## v2026.11.15-maven-1.11.0-business-apply-release-eligibility-release - Mango Maven/docs 1.11.0 business apply release eligibility release - 2026-11-15
 
 Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `1058552ec1a8f541c48f441bae5180c6c2227e48070ddf40f0307c45bab9c774`; prepared candidate `d49e276db5bf80164603e60594f1f9fa373bd6f1a3321f88c98be3336bd058d1` completed publication and consume verification for `@mango/cli@1.4.12` and 201 Maven coordinates. Tag and GitHub Release were created and verified.

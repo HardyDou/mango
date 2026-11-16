@@ -17,6 +17,12 @@ public class WorkflowTaskHistoryRow {
     private String assigneeKey;
     private LocalDateTime createTime;
     private LocalDateTime claimTime;
+
+    /** 业务应用任务快照里的承办人来源；仅在该在途任务仍存在于快照中时有值。 */
+    private String assignSource;
+
+    /** 业务应用任务快照里的领取时间；引擎 CLAIM_TIME_ 为空时用它回退。 */
+    private LocalDateTime snapshotClaimTime;
     private LocalDateTime endTime;
     private String deleteReason;
     private Long applyId;
