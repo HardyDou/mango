@@ -796,11 +796,18 @@ class WorkflowTaskBusinessQueryServiceTest {
         row.setEndTime(LocalDateTime.of(2026, 1, 1, 12, 0));
         stubSingleRow(row);
 
+        WorkflowTaskIdentityLinkRow link = new WorkflowTaskIdentityLinkRow();
+        link.setTaskId("T1");
+        link.setGroupId("ROLE_REVIEWER");
+        when(taskHistoryMapper.selectCandidateLinks(anyList())).thenReturn(List.of(link));
+
         WorkflowTaskVO vo = service.pageByBusinessKey(query).getList().getFirst();
 
         assertThat(vo.getStatus()).isEqualTo("DONE");
         assertThat(vo.getReleasable()).isFalse();
         assertThat(vo.getReleaseBlockedReason()).isNull();
+        // 历史行残留的候选人身份链不能变成「现在可认领」
+        assertThat(vo.getClaimable()).isFalse();
     }
 
     @Test
@@ -823,7 +830,7 @@ class WorkflowTaskBusinessQueryServiceTest {
     @Test
     void pageByBusinessKey_当前用户在候选用户中时可认领() {
         WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
-        WorkflowTaskHistoryRow row = row();
+        WorkflowTaskHistoryRow row = pendingRow();
         row.setAssigneeKey(null);
         row.setClaimTime(null);
         stubSingleRow(row);

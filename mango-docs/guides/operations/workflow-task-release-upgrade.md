@@ -73,4 +73,5 @@
 1. 释放按钮改为「`releasable` 为真」+「当前用户持有 `workflow:task:unclaim` 权限点」共同决定；只有「我的任务」场景才继续叠加 `assigneeId == 当前登录人`。
 2. 不可释放时直接展示 `releaseBlockedReason`，不要自己按 `assignSource` 拼文案。
 3. 详情接口同样带 `releasable` 与 `releaseBlockedReason`，两处口径一致，业务可以择一使用。
-4. 风险提示：因为平台不再校验调用者，同一权限点持有者可以释放他人的任务；台账 `workflow_task_record` 的 `UNCLAIM` 记录里 `originalAssignee` 保留原承办人，需要区分代操作时按此字段审计。
+4. 风险提示：因为平台不再校验调用者，同一权限点持有者可以释放他人的任务；台账 `workflow_task_record` 的 `UNCLAIM` 记录里 `originalAssignee` 保留原承办人，需要区分代操作时按此字段审计。`workflow:task:unclaim` 默认挂在「我的待办」菜单上，等于所有审批人都能释放他人任务；需要收敛时按角色收回该权限点，或在业务侧叠加「仅本人任务」判定。
+5. 存量在途任务的快照没有 `assign_source` 回填（见第 3 节）：升级当刻 `assignSource=null`、`releasable=false`、`releaseBlockedReason` 为「无法确认承办人来源」，直到该任务下一次运行态动作（认领、派单、流转、释放）刷新快照才恢复；这不是本次回归，1.11.0 的 `unclaimable` 在同样场景也是 `false`，业务无需为存量行做特殊处理。

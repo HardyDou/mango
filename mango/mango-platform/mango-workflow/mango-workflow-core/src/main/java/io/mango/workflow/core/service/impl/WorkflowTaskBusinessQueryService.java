@@ -499,7 +499,8 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
                 .filter(StringUtils::hasText)
                 .distinct()
                 .toList();
-        boolean candidate = !assigned
+        // 已办结、已终止的历史行不提供认领入口：候选人身份链是历史 union，不能据此判定「现在可认领」。
+        boolean candidate = pending && !assigned
                 && (candidateUsers.stream().anyMatch(selfIdentifiers::contains)
                 || candidateGroups.stream().anyMatch(selfGroups::contains));
         WorkflowTaskAssigneeSource assignSource = WorkflowTaskAssigneeSource.fromCode(row.getAssignSource());

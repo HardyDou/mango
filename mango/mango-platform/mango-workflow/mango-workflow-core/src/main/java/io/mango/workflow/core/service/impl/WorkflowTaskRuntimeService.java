@@ -681,7 +681,7 @@ public class WorkflowTaskRuntimeService implements IWorkflowTaskRuntimeService {
         Require.notBlank(taskId, WorkflowCode.TASK_INVALID, "任务ID不能为空");
         Task task = taskService.createTaskQuery().taskId(taskId).singleResult();
         Require.notNull(task, WorkflowCode.TASK_NOT_FOUND);
-        Require.isTrue(isCurrentUserIdentifier(task.getAssignee()) || currentUserCanClaim(task),
+        Require.isTrue(isCurrentUserIdentifier(task.getAssignee()) || currentUserCanClaim(task) || isAdminUser(),
                 WorkflowCode.TASK_REASSIGN_FORBIDDEN, "无权查看该任务的可选办理人");
         WorkflowApprovalNodeConfig config = taskApprovalConfig(task);
         if (config == null) {
