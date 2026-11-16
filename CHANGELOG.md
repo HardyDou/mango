@@ -1,3 +1,90 @@
+## v2026.11.16-maven-1.12.0-task-release-facts-release - Mango Maven/docs 1.12.0 task release facts - 2026-11-16
+
+Status: `PENDING`. Maven `1.11.0` → `1.12.0` (201 sealed non-application coordinates) and `@mango/cli@1.4.12` → `@mango/cli@1.4.13`; Maven/npm publication, consume verification, Tag and GitHub Release are pending. Release plan digest `d0a8a4472889df08b49ac4fa84b0f09fefb57a3a6ce51349eafddfa67a583d87`.
+
+### Pull Requests
+
+- Added: [PR #1287](https://github.com/HardyDou/mango/pull/1287) separates "is this task releasable" (a task fact) from "may the caller release it" (a function permission): `WorkflowTaskVO` gains `releasable` and `releaseBlockedReason`, `unclaimable` becomes a derived deprecation, and the business task page `POST /workflow/tasks/page-by-business-key` finally returns real `assignSource`, `claimTime`, `claimStatus` and `claimable` values instead of constant placeholders. Packages: the complete Maven/docs `1.12.0` tuple including `io.mango.platform.workflow:mango-workflow-{api,core,starter,starter-remote}:1.12.0` and `io.mango:mango-docs-bundle:1.12.0`, plus the generated `@mango/cli@1.4.13` closure. Business Adaptation: switch business pages from `unclaimable` to `releasable` plus a permission check, render `releaseBlockedReason` directly, and re-check any page that relied on `unclaim` or `reassign` being assignee-only.
+- Changed: [PR #1285](https://github.com/HardyDou/mango/pull/1285) closed out the previous `1.11.0` batch by recording the published coordinates in `CHANGELOG.md` and `mango-ui/.changeset/release-baseline.json` and removing the consumed Changeset. Packages: repository release bookkeeping only. Business Adaptation: none.
+
+### Added
+
+- `WorkflowTaskVO.releasable`, the task-side answer to "can this task go back to the candidate pool", computed from the recorded assignee source only and therefore identical for every caller.
+- `WorkflowTaskVO.releaseBlockedReason`, the task-side reason a release is refused, so a business page no longer rebuilds the text from `assignSource`.
+- The task page response now carries `assignSource`, `claimTime`, `claimStatus` and `claimable` for every row, so a page of fifty rows needs zero extra `taskRuntimeApi.detail` calls.
+- `claimTime` falls back to the business snapshot claim time when Flowable has no `CLAIM_TIME_`, which is the case for platform dispatches.
+- HTTP contract coverage for the release facts on the task page and a tenant integration test for the task history mapper.
+
+### Fixed
+
+- A completed or cancelled task no longer reports `claimable: true` only because its historical candidate links still mention the caller; `claimable` is now gated on `pending` like `releasable`.
+- A business task list no longer shows `unclaimable: false` and `assignSource: null` for every row.
+- `claimStatus` now matches the detail endpoint: a pending task with no candidate links is `NONE` instead of `UNCLAIMED`.
+- `countTasks` and `selectTasks` share one `from` clause, so `total` and `rows` cannot diverge when the snapshot table holds more than one row for a task id.
+- An administrator holding `workflow:task:reassign` can load the assignee option list for a task they neither own nor could claim.
+
+### Changed
+
+- `POST /workflow/tasks/unclaim` and `POST /workflow/tasks/unclaim-result` no longer require the caller to be the current assignee; they validate the task side only (an assignee plus a releasable source) and leave "who may call" to the `workflow:task:unclaim` permission point. The `UNCLAIM` record keeps `originalAssignee` for audit.
+- `POST /workflow/tasks/reassign` drops the hard-coded `admin` user name and is bounded by the `workflow:task:reassign` permission point; `pool=true` shares the same releasable source whitelist as a release.
+- `WorkflowTaskVO.unclaimable` is marked `@Deprecated` and stays equivalent to `releasable && current user is the assignee` for one release.
+- The non-application Maven/docs tuple advances from `1.11.0` to `1.12.0` with 201 coordinates because the workflow module gains two public response fields and changes two response semantics; `@mango/cli` advances from `1.4.12` to `1.4.13` as the generated compatibility closure, and no other npm package is republished.
+- `@mango/pmo` is unchanged because no PMO rule, contract, Agent, template or shipped Skill changed in this batch.
+- Flyway `V6` from `1.11.0` still does not backfill historical rows: a task that was already in flight at upgrade time reports `assignSource: null` and `releasable: false` until its next runtime action rewrites the snapshot.
+
+### Versions
+
+- Maven/docs: `1.11.0` to `1.12.0`; 201 sealed Maven coordinates, including `io.mango:mango-docs-bundle:1.12.0` and `io.mango.platform.workflow:mango-workflow-core:1.12.0`.
+- npm: `@mango/cli@1.4.13`; no other npm package is republished because no frontend source changed in this batch.
+- Exactly sealed topology, dependency order and checksums come from `mango-ui/.changeset/release-plan.json`.
+
+### Published Packages
+
+- Publish all 201 non-application Maven coordinates in release-plan order.
+- Publish `@mango/cli@1.4.13` as the generated compatibility closure.
+- Application fat jars and coordinates outside the sealed plan are excluded; the `@mango/*` frontend packages keep their `1.11.0` batch versions.
+
+### Business Impact
+
+- A business page decides the release action from the row it already has: render the button when `releasable` is true and the caller holds `workflow:task:unclaim`, optionally tightening to `assigneeId == current user` on a "my tasks" page.
+- Release refusal reasons come from `releaseBlockedReason` instead of a locally rebuilt mapping, so a new assignee source cannot silently produce the wrong sentence.
+- Any approval user holding `workflow:task:unclaim` can release another user's task by design; the release dialog must warn the operator and the audit trail is `workflow_task_record.originalAssignee`.
+- Completed and cancelled rows can no longer show a claim action, which removes a class of "button present but always fails" reports.
+- No HTTP path, menu or permission code is added or removed; only the request contract of `unclaim` / `reassign` loosens and two response fields appear.
+
+### Upgrade Estimate
+
+- Audience: Mango backend consumers that render release or reassign actions on a workflow task, and business applications that page tasks by business key.
+- Engineering Effort: 0.5 engineer-day per consumer to upgrade the tuple, switch `unclaimable` to `releasable` plus a permission check and re-test the release and reassign dialogs.
+- Execution Window: 1 hour per consumer including backend restart and one pass over a list mixing self-claimed, platform-dispatched and process-defined tasks.
+- Service Downtime: one controlled backend restart window; no migration runs in this batch because the columns already ship with `1.11.0`.
+- Rollback Effort: 0.25 engineer-day per consumer to restore the complete Maven `1.11.0` tuple and `@mango/cli@1.4.12`; the snapshot columns stay because `1.11.0` owns them.
+- Assumptions: consumers already run the `1.11.0` tuple with Flyway `V6` applied, and grant `workflow:task:unclaim` / `workflow:task:reassign` only to roles that may act on other users' tasks.
+
+### Upgrade Notes
+
+1. Upgrade the complete Mango Maven/docs tuple from `1.11.0` to `1.12.0`; do not update only one starter or module.
+2. Replace `unclaimable` with `releasable` in business pages and add the permission check, unless the page is a personal "my tasks" page, where `unclaimable` stays correct for one release.
+3. Show `releaseBlockedReason` as-is when `releasable` is false; do not map `assignSource` to text locally.
+4. Review who holds `workflow:task:unclaim` and `workflow:task:reassign`: the platform no longer checks that the caller is the assignee, so a broadly granted permission means every approver can release someone else's task.
+5. Keep treating a null `assignSource` on an in-flight task as "not releasable yet"; the next claim, dispatch, transition or release action rewrites the snapshot.
+6. Upgrade CLI consumers to `@mango/cli@1.4.13` when the CLI is used; the frontend packages stay on the `1.11.0` batch versions.
+
+### Verification
+
+- The workflow core suite runs 244 tests (0 failures, 4 skipped) covering the release facts on both the detail and the business page paths, the `pending` gate on `claimable`, the mapper row-count parity and the admin assignee option list.
+- `WorkflowTaskReleaseFactsHttpContractTest` pins the request and response contract of the release endpoints; `WorkflowTaskHistoryTenantIntegrationTest` covers the snapshot join under a tenant filter.
+- `mango check` with the bundled Checkstyle and PMD rulesets reports zero new issues against the `1.11.0` baseline.
+- `catalog:check` reports a consistent Catalog projection on the source commit, and the release plan re-computes 201 Maven coordinates plus the single-package npm closure with matching topology.
+- `mango release prepare` builds once, seals every JAR, docs bundle, tarball and source archive under one prepared candidate id, and runs a mixed consumer against the sealed files and the consume registry.
+
+### Rollback
+
+- Restore the complete Maven `1.11.0` tuple and `@mango/cli@1.4.12`; do not patch a single module.
+- Keep the snapshot columns and their data: `1.11.0` owns `assign_source` and `claim_time` and ignores nothing.
+- Restore `unclaimable` as the only release predicate in business pages if they were changed in the same release, otherwise the release action disappears.
+- The loosened `unclaim` / `reassign` contract reverts with the code, so a permission that was narrowed during the upgrade has to be re-widened deliberately.
+
 ## Unreleased - workflow task release facts (Issue #1286)
 
 Status: `IN_DEVELOPMENT`. The platform now reports task-side release facts and leaves "who may release" to the caller's permission point.
