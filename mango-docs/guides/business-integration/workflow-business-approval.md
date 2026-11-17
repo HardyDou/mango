@@ -160,6 +160,8 @@ mango:
 请求要点：
 
 - `businessType`：按 `workflow_business_apply.business_type` 精确匹配。取业务适配器实际投放的值，例如 `BAOHAN_RC_PROJECT_REVIEW`；平台不校验命名风格，也不做别名映射。
+- `businessTypes`：可选（Issue #1294），业务类型集合，最多 20 个，用于一个列表同时展示多个业务类型的任务（项目准入审批 / 合规复核 / 签约审核混排）。集合非空时按集合匹配且 `businessType` 被忽略；两者都不传或都为空时查询以 `业务类型不能为空` 拒绝。空数组、`null`、只传 `businessType` 三种情况生成的 SQL 与 1.12.0 完全相同。
+- `processDefinitionKeys`：可选（Issue #1294），按 `workflow_business_apply.process_definition_key` 精确匹配，最多 100 个，传 `null` 或空集合表示不限流程定义。用于同一业务类型下有两条流程定义（例如普通审批与加签审批）时只取其中一条。
 - `businessKeys`：可选，不传或为空表示不限业务主键。只有调用方已经明确业务对象范围时才传入，不需要为了列表请求先查业务表取候选业务键。
 - `scope`：`SELF`（默认，办理人是当前用户或候选用户/候选组命中）、`ALL`（服务端校验 `workflow:task:all` 权限码，未安装授权中心时拒绝）、`ORG`（本版直接报错）。数据范围由调用方显式声明，平台不读取角色数据范围配置。
 - `applyKeyword`：可选，模糊匹配申请编号、申请标题、申请摘要三列中的任意一列，输入里的 `%`、`_`、`\` 按字面匹配。它和 `keyword` 互不替代：`keyword` 只匹配任务名称和节点定义 Key。
@@ -187,6 +189,19 @@ mango:
 - 该查询直接读取 Flowable 引擎表，租户由 `workflow_business_apply.tenant_id` 收敛；平台租户插件按 `act_*` 前缀跳过引擎表，业务项目不需要再往 `mango.persistence.mybatis-plus.tenant.excluded-tables` 复制引擎表。
 
 权限分工：`workflow:task:list` 控制能否调用接口；`workflow:task:all` 控制能否使用 `ALL` 范围。业务侧按自己的角色矩阵把后一个权限码只授予主管/经理等需要全量视图的角色。
+
+四个过滤维度的粒度不同，不要互相替代：
+
+| 维度 | 字段 | 落库位置 | 一个值代表什么 |
+|------|------|----------|----------------|
+| 业务类型 | `businessType` / `businessTypes` | `workflow_business_apply.business_type` | 业务域（一套业务数据、一套菜单权限、一套数据权限适配器） |
+| 流程定义 | `processDefinitionKeys` | `workflow_business_apply.process_definition_key` | 同一业务域下的一条流程（变体或不同审批链路） |
+| 节点定义 | `taskDefinitionKeys` | `ACT_HI_TASKINST.TASK_DEF_KEY_` | 一个审批节点（初审 / 复审 / 终审），一行任务只属于一个节点 |
+| 业务主键 | `businessKeys` | `workflow_business_apply.business_key` | 一个业务对象实例（某一份保函） |
+
+多个条件同时出现时按「且」叠加：`businessTypes` 与 `processDefinitionKeys` 都传时取交集。业务类型集合内部是「或」。
+
+展示提示：把多个业务类型归一成域级 `business_type` 会让任务列表失去区分度，只能靠业务键前缀反推，不推荐。混排列表直接用返回里的 `processKey`（取自申请表 `process_definition_key`）做列或标签，`processName` 是流程名称，比枚举值更适合作文案。
 
 ## 7.2 审批流转记录读取（Issue #1234）
 

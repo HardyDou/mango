@@ -25,15 +25,25 @@ import java.util.List;
  * {@code keyword} 匹配任务名称和任务节点定义 Key，两者互不替代。
  * {@code applyAttributeFilters} 按业务登记在申请上的可筛属性精确收窄，多个条件为且、
  * 同一条件的多个值为或；业务不需要先枚举 {@code businessKeys}。
+ *
+ * <p>业务类型有两种传法：{@code businessType} 单值（历史用法）与 {@code businessTypes} 集合，
+ * 集合非空时以集合为准、单值字段被忽略，两者都为空时查询被拒绝。
+ * {@code processDefinitionKeys} 按流程定义收窄，与业务类型、节点定义 Key、业务主键是四个不同粒度。
  */
 @Data
 @Schema(description = "按业务类型查询任务，业务主键可选")
 public class WorkflowTaskBusinessPageQuery {
 
-    @Schema(description = "业务类型，按业务申请表 business_type 精确匹配", example = "BAOHAN_RC_PROJECT_REVIEW")
-    @NotBlank(message = "业务类型不能为空")
+    @Schema(description = "业务类型，按业务申请表 business_type 精确匹配；与 businessTypes 至少传一个，"
+            + "两者都传时以 businessTypes 为准", example = "BAOHAN_RC_PROJECT_REVIEW")
     @Size(max = 128, message = "业务类型长度不能超过128")
     private String businessType;
+
+    @Schema(description = "业务类型集合，可选；非空时按集合匹配并忽略 businessType，"
+            + "用于一个列表同时展示多个业务类型的任务")
+    @Size(max = 20, message = "业务类型数量不能超过20")
+    private List<@NotBlank(message = "业务类型不能为空")
+                 @Size(max = 128, message = "业务类型长度不能超过128") String> businessTypes;
 
     // 字段级 @Size 满足协议模型校验契约；Integer.MAX_VALUE 表示不设置实际数量上限，
     // 元素级注解负责逐项校验业务主键。
@@ -53,6 +63,12 @@ public class WorkflowTaskBusinessPageQuery {
     @Schema(description = "任务节点定义 Key 集合")
     @Size(max = 100, message = "节点数量不能超过100")
     private List<@NotBlank(message = "节点定义 Key 不能为空") String> taskDefinitionKeys;
+
+    @Schema(description = "流程定义 Key 集合，可选；不传或为空表示不限流程定义，"
+            + "按申请表的 process_definition_key 精确匹配")
+    @Size(max = 100, message = "流程定义数量不能超过100")
+    private List<@NotBlank(message = "流程定义 Key 不能为空")
+                 @Size(max = 128, message = "流程定义 Key 长度不能超过128") String> processDefinitionKeys;
 
     @Schema(description = "办理人用户 ID 集合，按引擎办理人标识匹配")
     @Size(max = 200, message = "办理人数量不能超过200")

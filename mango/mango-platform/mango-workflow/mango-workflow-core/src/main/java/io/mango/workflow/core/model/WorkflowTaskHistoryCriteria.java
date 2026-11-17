@@ -10,6 +10,9 @@ import java.util.List;
  * 按业务类型查询任务的持久化条件，业务主键可选。
  *
  * <p>由服务层把 API 查询对象转换成该内部条件后再交给 Mapper，避免 API 协议模型进入持久化层。
+ *
+ * <p>业务类型有两层表达：{@code businessTypes} 非空时按集合匹配（{@code businessType} 被忽略），
+ * 否则按 {@code businessType} 单值等值匹配，保证历史调用方的 SQL 不变。
  */
 @Getter
 @Builder
@@ -17,8 +20,10 @@ public class WorkflowTaskHistoryCriteria {
 
     private final Long tenantId;
     private final String businessType;
+    private final List<String> businessTypes;
     private final List<String> businessKeys;
     private final List<String> taskDefinitionKeys;
+    private final List<String> processDefinitionKeys;
     private final List<Long> assigneeIds;
     private final List<String> assigneeIdentifiers;
     private final boolean includeTodo;

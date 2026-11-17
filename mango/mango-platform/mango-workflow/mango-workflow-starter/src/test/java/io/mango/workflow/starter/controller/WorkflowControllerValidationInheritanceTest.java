@@ -51,11 +51,27 @@ class WorkflowControllerValidationInheritanceTest {
 
             request.setBusinessKeys(List.of("RC1"));
             assertThat(validator.validate(request)).isEmpty();
+        }
+    }
 
-            request.setBusinessType(null);
+    @Test
+    void businessTaskPageRequest_allowsBusinessTypeListWithoutSingleBusinessType() {
+        try (ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory()) {
+            var validator = validatorFactory.getValidator();
+            WorkflowTaskBusinessPageRequest request = new WorkflowTaskBusinessPageRequest();
+            request.setBusinessTypes(List.of("BAOHAN_RC_PROJECT_REVIEW", "BAOHAN_COMPLIANCE_REVIEW"));
+
+            // 业务类型两种传法至少一个：只传集合时协议层放行，由服务层保证「至少一个」的语义。
+            assertThat(validator.validate(request)).isEmpty();
+
+            request.setBusinessTypes(List.of("BAOHAN_RC_PROJECT_REVIEW", " "));
             assertThat(validator.validate(request))
                     .extracting(violation -> violation.getMessage())
                     .contains("业务类型不能为空");
+
+            request.setBusinessTypes(null);
+            request.setProcessDefinitionKeys(List.of("rc_project_review"));
+            assertThat(validator.validate(request)).isEmpty();
         }
     }
 

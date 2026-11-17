@@ -11,9 +11,32 @@
         left join workflow_business_apply_current_task ct on ct.task_id = t.ID_
     </sql>
 
+    <!-- 业务类型过滤口径：businessTypes 非空时按集合 in 收窄（一个列表展示多个业务类型），
+         否则退回 businessType 单值等值，历史调用方生成的 SQL 不变。
+         申请属性子查询必须与主条件用同一口径，否则多业务类型下属性过滤会漏命中。 -->
+    <sql id="applyBusinessTypes">
+        <choose>
+            <when test="c.businessTypes != null and c.businessTypes.size() > 0">
+                in
+                <foreach collection="c.businessTypes" item="businessTypeValue" open="(" separator="," close=")">
+                    #{businessTypeValue}
+                </foreach>
+            </when>
+            <otherwise>
+                = #{c.businessType}
+            </otherwise>
+        </choose>
+    </sql>
+
     <sql id="taskWhere">
         where a.tenant_id = #{c.tenantId}
-          and a.business_type = #{c.businessType}
+          and a.business_type <include refid="applyBusinessTypes"/>
+        <if test="c.processDefinitionKeys != null and c.processDefinitionKeys.size() > 0">
+            and a.process_definition_key in
+            <foreach collection="c.processDefinitionKeys" item="processDefinitionKey" open="(" separator="," close=")">
+                #{processDefinitionKey}
+            </foreach>
+        </if>
         <if test="c.businessKeys != null and c.businessKeys.size() > 0">
             and a.business_key in
             <foreach collection="c.businessKeys" item="businessKey" open="(" separator="," close=")">
@@ -110,7 +133,7 @@
                 select fa.apply_id
                 from workflow_business_apply_attribute fa
                 where fa.tenant_id = #{c.tenantId}
-                  and fa.business_type = #{c.businessType}
+                  and fa.business_type <include refid="applyBusinessTypes"/>
                   and fa.attr_key = #{condition.key}
                   and fa.attr_value in
                 <foreach collection="condition.values" item="value" open="(" separator="," close=")">
