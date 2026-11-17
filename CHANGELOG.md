@@ -1,6 +1,6 @@
 ## v2026.11.17-maven-1.13.0-task-multi-filter-contract-gate-release - Mango Maven/docs 1.13.0 多业务类型过滤与契约哨兵门禁 - 2026-11-17
 
-Status: `PENDING`. Release plan digest `840294e93d0354e2943b85fc715a91cdd7f321893f12bb38af4be9a90681ab2a`; Maven/npm publication, dual-registry consume verification, Tag, GitHub Release and closeout are still pending for this batch.
+Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `840294e93d0354e2943b85fc715a91cdd7f321893f12bb38af4be9a90681ab2a`; prepared candidate `18f1ef7d4036bc611c859fc179ef2ef28e5e102be4d88d8b6148d2870c10e6c7` completed publication and consume verification for `@mango/pmo@1.6.1`, `@mango/cli@1.4.14` and 201 Maven coordinates. Tag and GitHub Release were created and verified.
 
 ### Pull Requests
 
