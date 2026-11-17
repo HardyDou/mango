@@ -590,7 +590,7 @@ mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-comm
 - 管理端流程定义、版本、发布、启停、任务流转和业务上下文发起不受隐藏入口影响。
 - 启动入口可见性不是权限控制；业务模块仍需校验业务发起权限、业务状态、快照和幂等。
 
-### 6.1 按业务类型查询任务的范围规则（业务主键、申请关键字与可筛属性可选）
+### 6.1 按业务类型查询任务的范围规则（业务主键、多业务类型、流程定义、申请关键字与可筛属性可选）
 
 `POST /workflow/tasks/page-by-business-key` 用于业务列表按业务类型读取全部任务；`businessKeys` 可选，传入时只返回这些业务主键的数据。返回在途、已办理和已终止任务，一行对应一个任务。数据范围分三层：
 
@@ -602,7 +602,9 @@ mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-comm
 
 约束：
 
-- `businessType` 必填；`businessKeys` 可选，不传或为空表示不限业务主键，数量不设上限。平台以一条只读 SQL 完成过滤、排序和分页。
+- `businessType` 必填（与 `businessTypes` 至少传一个）；`businessKeys` 可选，不传或为空表示不限业务主键，数量不设上限。平台以一条只读 SQL 完成过滤、排序和分页。
+- `businessTypes` 可选：业务类型集合（最多 20 个），用于一个列表同时展示多个业务类型。集合非空时按 `in` 匹配且 `businessType` 被忽略，两者都为空时以 `业务类型不能为空` 拒绝；只传 `businessType`、传空集合、不传新字段三种情况的 SQL 与 1.12.0 完全一致。申请属性子查询（`workflow_business_apply_attribute`）与主条件共用同一业务类型口径。
+- `processDefinitionKeys` 可选：按 `workflow_business_apply.process_definition_key` 精确匹配（最多 100 个），null 或空集合表示不限流程定义；与 `businessTypes` 同时传时取交集。业务类型（业务域）、流程定义（同一业务域下的流程变体）、`taskDefinitionKeys`（节点）、`businessKeys`（业务对象）是四个粒度，互不替代。
 - `applyAttributeFilters` 可选：按业务在申请上登记的 `filterAttributes` 精确收窄，条件之间为「且」、同一条件的多个值为「或」，最多 10 个条件、单条件最多 50 个值；没有该属性的申请不匹配。属性过滤与 `businessKeys`、`applyKeyword`、状态、时间和分页在同一条 SQL 内完成，`total` 仍是过滤后的真实任务数，不需要调用方先枚举业务主键。
 - `applyTimeBegin` / `applyTimeEnd`：按申请创建时间（`workflow_business_apply.created_time`）闭区间过滤，与任务创建/处理时间互不影响。
 - 不传 `page` / `size` 时按 `mango.workflow.task-query.unpaged-max-rows` 一次性返回，`total` 始终是过滤后的真实总数，用 `list.size() < total` 判断是否需要改用分页。

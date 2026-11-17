@@ -2,6 +2,7 @@ package io.mango.workflow.core.service.impl;
 
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
+import io.mango.workflow.core.model.WorkflowApplyAttributeCondition;
 import io.mango.workflow.core.mapper.WorkflowTaskHistoryMapper;
 import io.mango.workflow.core.model.WorkflowTaskHistoryCriteria;
 import io.mango.workflow.core.model.WorkflowTaskHistoryRow;
@@ -9,6 +10,7 @@ import io.mango.workflow.core.model.WorkflowTaskIdentityLinkRow;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.annotation.MapperScan;
+import org.apache.ibatis.session.SqlSessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration;
@@ -21,6 +23,7 @@ import org.springframework.test.context.TestPropertySource;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -47,6 +50,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 class WorkflowTaskHistoryMapperIntegrationTest {
 
     private static final String BUSINESS_TYPE = "BAOHAN_RC_PROJECT_REVIEW";
+    private static final String COMPLIANCE_BUSINESS_TYPE = "BAOHAN_COMPLIANCE_REVIEW";
+    private static final String CONTRACT_BUSINESS_TYPE = "BAOHAN_CONTRACT_REVIEW";
     private static final Long TENANT_ID = 1L;
 
     @Autowired
@@ -54,6 +59,9 @@ class WorkflowTaskHistoryMapperIntegrationTest {
 
     @Autowired
     private WorkflowTaskHistoryMapper taskHistoryMapper;
+
+    @Autowired
+    private SqlSessionFactory sqlSessionFactory;
 
     @BeforeEach
     void rebuild() {
@@ -128,6 +136,103 @@ class WorkflowTaskHistoryMapperIntegrationTest {
         assertThat(taskHistoryMapper.selectTasks(criteria, 10, 0L))
                 .extracting(WorkflowTaskHistoryRow::getTaskId)
                 .containsExactlyInAnyOrder("T1", "T2", "T3");
+    }
+
+    @Test
+    void keepsSingleBusinessTypeEqualityWhenBusinessTypesAbsent() {
+        WorkflowTaskHistoryCriteria single = criteria(List.of("RC1"));
+        WorkflowTaskHistoryCriteria emptyList = WorkflowTaskHistoryCriteria.builder()
+                .tenantId(TENANT_ID)
+                .businessType(BUSINESS_TYPE)
+                .businessTypes(List.of())
+                .businessKeys(List.of("RC1"))
+                .includeTodo(true)
+                .includeDone(true)
+                .includeCanceled(true)
+                .sortColumn("createTime")
+                .sortDirection("desc")
+                .build();
+
+        // 不传新字段时生成的 SQL 仍是单值等值，且空集合不会退化成 in ()。
+        String sql = boundSql("countTasks", single);
+        assertThat(sql).contains("a.business_type = ?");
+        assertThat(sql).doesNotContain("a.business_type in");
+        assertThat(boundSql("countTasks", emptyList)).isEqualTo(sql);
+        assertThat(taskHistoryMapper.countTasks(emptyList)).isEqualTo(2L);
+    }
+
+    @Test
+    void filtersByBusinessTypesList() {
+        WorkflowTaskHistoryCriteria criteria = WorkflowTaskHistoryCriteria.builder()
+                .tenantId(TENANT_ID)
+                .businessTypes(List.of(BUSINESS_TYPE, COMPLIANCE_BUSINESS_TYPE))
+                .includeTodo(true)
+                .includeDone(true)
+                .includeCanceled(true)
+                .sortColumn("createTime")
+                .sortDirection("desc")
+                .build();
+
+        assertThat(boundSql("countTasks", criteria)).contains("a.business_type in (", ")");
+        assertThat(taskHistoryMapper.countTasks(criteria)).isEqualTo(4L);
+        assertThat(taskIdsOf(criteria, 2, 0L)).containsExactly("T5", "T3");
+        assertThat(taskIdsOf(criteria, 10, 0L)).containsExactly("T5", "T3", "T2", "T1");
+    }
+
+    @Test
+    void filtersByProcessDefinitionKeys() {
+        WorkflowTaskHistoryCriteria criteria = WorkflowTaskHistoryCriteria.builder()
+                .tenantId(TENANT_ID)
+                .businessTypes(List.of(BUSINESS_TYPE, COMPLIANCE_BUSINESS_TYPE, CONTRACT_BUSINESS_TYPE))
+                .processDefinitionKeys(List.of("compliance_review"))
+                .includeTodo(true)
+                .includeDone(true)
+                .includeCanceled(true)
+                .sortColumn("createTime")
+                .sortDirection("desc")
+                .build();
+
+        assertThat(boundSql("countTasks", criteria)).contains("a.process_definition_key in (");
+        assertThat(taskHistoryMapper.countTasks(criteria)).isEqualTo(1L);
+        assertThat(taskIdsOf(criteria, 10, 0L)).containsExactly("T5");
+    }
+
+    @Test
+    void intersectsBusinessTypesWithProcessDefinitionKeys() {
+        WorkflowTaskHistoryCriteria criteria = WorkflowTaskHistoryCriteria.builder()
+                .tenantId(TENANT_ID)
+                .businessTypes(List.of(COMPLIANCE_BUSINESS_TYPE, CONTRACT_BUSINESS_TYPE))
+                .processDefinitionKeys(List.of("compliance_review", "rc_project_review"))
+                .includeTodo(true)
+                .includeDone(true)
+                .includeCanceled(true)
+                .sortColumn("createTime")
+                .sortDirection("desc")
+                .build();
+
+        assertThat(taskHistoryMapper.countTasks(criteria)).isEqualTo(1L);
+        assertThat(taskIdsOf(criteria, 10, 0L)).containsExactly("T5");
+    }
+
+    @Test
+    void appliesAttributeFiltersAcrossBusinessTypes() {
+        WorkflowTaskHistoryCriteria criteria = WorkflowTaskHistoryCriteria.builder()
+                .tenantId(TENANT_ID)
+                .businessTypes(List.of(BUSINESS_TYPE, COMPLIANCE_BUSINESS_TYPE))
+                .applyAttributeConditions(List.of(WorkflowApplyAttributeCondition.builder()
+                        .key("risk_level")
+                        .values(List.of("HIGH"))
+                        .build()))
+                .includeTodo(true)
+                .includeDone(true)
+                .includeCanceled(true)
+                .sortColumn("createTime")
+                .sortDirection("desc")
+                .build();
+
+        // 属性子查询必须按同一业务类型口径收窄，否则多业务类型下 conditioned 过滤会漏命中。
+        assertThat(taskHistoryMapper.countTasks(criteria)).isEqualTo(1L);
+        assertThat(taskIdsOf(criteria, 10, 0L)).containsExactly("T5");
     }
 
     @Test
@@ -398,6 +503,15 @@ class WorkflowTaskHistoryMapperIntegrationTest {
         return taskIdsOf(criteria, 10, 0L);
     }
 
+    private String boundSql(String statement, WorkflowTaskHistoryCriteria criteria) {
+        return sqlSessionFactory.getConfiguration()
+                .getMappedStatement(WorkflowTaskHistoryMapper.class.getName() + "." + statement)
+                .getBoundSql(Map.of("c", criteria))
+                .getSql()
+                .replaceAll("\\s+", " ")
+                .trim();
+    }
+
     private List<String> taskIdsOf(WorkflowTaskHistoryCriteria criteria, int limit, long offset) {
         return taskHistoryMapper.selectTasks(criteria, limit, offset).stream()
                 .map(WorkflowTaskHistoryRow::getTaskId)
@@ -411,6 +525,8 @@ class WorkflowTaskHistoryMapperIntegrationTest {
                 "GR20260102000002", "保函风控审核X中铁四局", "福建金鼎 / 预付款保函");
         insertApply(30L, 2L, "RC3", "IN_APPROVAL", 400L, "P3",
                 "GR20260103000003", "保函风控审核-荣昌区管网", "安徽金旗 / 履约保函");
+        insertApply(40L, TENANT_ID, "RC4", COMPLIANCE_BUSINESS_TYPE, "compliance_review", "IN_APPROVAL", 500L, "P4",
+                "GR20260104000004", "合规复核-中铁一局", "合规 / 反洗钱");
         insertTask("T1", "初审", "FIRST_REVIEW", "P1", "alice",
                 LocalDateTime.of(2026, 1, 1, 10, 0), LocalDateTime.of(2026, 1, 1, 10, 0, 30),
                 LocalDateTime.of(2026, 1, 1, 11, 0), null);
@@ -421,6 +537,14 @@ class WorkflowTaskHistoryMapperIntegrationTest {
                 LocalDateTime.of(2026, 1, 3, 11, 0), "审批驳回");
         insertTask("T4", "初审", "FIRST_REVIEW", "P3", "carol",
                 LocalDateTime.of(2026, 1, 4, 10, 0), null, null, null);
+        insertTask("T5", "初审", "FIRST_REVIEW", "P4", "dave",
+                LocalDateTime.of(2026, 1, 5, 10, 0), null, null, null);
+        jdbcTemplate.update("insert into workflow_business_apply_attribute "
+                        + "(id, tenant_id, business_type, apply_id, attr_key, attr_value) values (?, ?, ?, ?, ?, ?)",
+                1L, TENANT_ID, COMPLIANCE_BUSINESS_TYPE, 40L, "risk_level", "HIGH");
+        jdbcTemplate.update("insert into workflow_business_apply_attribute "
+                        + "(id, tenant_id, business_type, apply_id, attr_key, attr_value) values (?, ?, ?, ?, ?, ?)",
+                2L, TENANT_ID, BUSINESS_TYPE, 10L, "risk_level", "LOW");
         jdbcTemplate.update("insert into act_hi_identitylink (ID_, TASK_ID_, TYPE_, USER_ID_, GROUP_ID_) "
                 + "values (?, ?, ?, ?, ?)", "IL1", "T2", "candidate", "alice", "ROLE_REVIEWER");
         jdbcTemplate.update("insert into workflow_task_record "
@@ -450,13 +574,21 @@ class WorkflowTaskHistoryMapperIntegrationTest {
     private void insertApply(Long id, Long tenantId, String businessKey, String status,
                              Long deptId, String processInstanceId,
                              String applyCode, String applyTitle, String applySummary) {
+        insertApply(id, tenantId, businessKey, BUSINESS_TYPE, "rc_project_review", status, deptId,
+                processInstanceId, applyCode, applyTitle, applySummary);
+    }
+
+    private void insertApply(Long id, Long tenantId, String businessKey, String businessType,
+                             String processDefinitionKey, String status,
+                             Long deptId, String processInstanceId,
+                             String applyCode, String applyTitle, String applySummary) {
         jdbcTemplate.update("insert into workflow_business_apply "
                         + "(id, tenant_id, org_id, business_type, business_key, apply_status, "
                         + "applicant_dept_id, process_instance_id, process_name, process_definition_key, "
                         + "apply_code, apply_title, apply_summary) "
                         + "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                id, tenantId, deptId, BUSINESS_TYPE, businessKey, status, deptId, processInstanceId,
-                "项目审批", "rc_project_review", applyCode, applyTitle, applySummary);
+                id, tenantId, deptId, businessType, businessKey, status, deptId, processInstanceId,
+                "项目审批", processDefinitionKey, applyCode, applyTitle, applySummary);
     }
 
     private void insertTask(String taskId, String name, String taskDefinitionKey, String processInstanceId,
@@ -477,6 +609,7 @@ class WorkflowTaskHistoryMapperIntegrationTest {
         jdbcTemplate.execute("drop table if exists workflow_business_apply");
         jdbcTemplate.execute("drop table if exists workflow_task_record");
         jdbcTemplate.execute("drop table if exists workflow_business_apply_current_task");
+        jdbcTemplate.execute("drop table if exists workflow_business_apply_attribute");
         jdbcTemplate.execute("drop table if exists identity_user");
         jdbcTemplate.execute("""
                 create table act_hi_taskinst (
@@ -553,6 +686,17 @@ class WorkflowTaskHistoryMapperIntegrationTest {
                     action varchar(64),
                     variables_json text,
                     created_time timestamp,
+                    primary key (id)
+                )
+                """);
+        jdbcTemplate.execute("""
+                create table workflow_business_apply_attribute (
+                    id bigint not null,
+                    tenant_id bigint,
+                    business_type varchar(128),
+                    apply_id bigint,
+                    attr_key varchar(128),
+                    attr_value varchar(255),
                     primary key (id)
                 )
                 """);

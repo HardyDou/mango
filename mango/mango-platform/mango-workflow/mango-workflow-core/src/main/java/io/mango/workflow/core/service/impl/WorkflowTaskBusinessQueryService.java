@@ -94,7 +94,13 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
         validateTimeRange(resolved.getApplyTimeBegin(), resolved.getApplyTimeEnd());
         List<WorkflowApplyAttributeCondition> attributeConditions = applyAttributeConditions(resolved);
         validatePaging(resolved);
-        String businessType = normalizeRequired(resolved.getBusinessType(), "业务类型不能为空");
+        // 业务类型集合非空时以集合为准，单值字段不再进入 SQL；否则保持单值等值，历史调用方行为不变。
+        List<String> requestedBusinessTypes = normalizeStrings(resolved.getBusinessTypes());
+        boolean businessTypeListMode = !requestedBusinessTypes.isEmpty();
+        String businessType = businessTypeListMode
+                ? null
+                : normalizeRequired(resolved.getBusinessType(), "业务类型不能为空");
+        List<String> businessTypes = businessTypeListMode ? requestedBusinessTypes : List.of(businessType);
         List<String> businessKeys = normalizeBusinessKeys(resolved.getBusinessKeys());
         Long tenantId = currentTenantId();
         boolean selfScope = scope == WorkflowTaskQueryScope.SELF;
@@ -106,8 +112,10 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
         WorkflowTaskHistoryCriteria criteria = WorkflowTaskHistoryCriteria.builder()
                 .tenantId(tenantId)
                 .businessType(businessType)
+                .businessTypes(businessTypeListMode ? requestedBusinessTypes : List.of())
                 .businessKeys(businessKeys)
                 .taskDefinitionKeys(normalizeStrings(resolved.getTaskDefinitionKeys()))
+                .processDefinitionKeys(normalizeStrings(resolved.getProcessDefinitionKeys()))
                 .assigneeIds(normalizeIds(resolved.getAssigneeIds()))
                 .assigneeIdentifiers(assigneeIdentifiers(resolved.getAssigneeIds()))
                 .includeTodo(includeStatus(resolved, WorkflowTaskRuntimeStatus.TODO))
@@ -128,7 +136,7 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
                 .selfScope(selfScope)
                 .selfIdentifiers(selfScope ? selfIdentifiers : List.of())
                 .selfCandidateGroups(selfScope ? selfGroups : List.of())
-                .deniedApplyIds(deniedApplyIds(tenantId, businessType, businessKeys))
+                .deniedApplyIds(deniedApplyIds(tenantId, businessTypes, businessKeys))
                 .sortColumn(resolved.getSortBy())
                 .sortDirection(resolved.getSortOrder())
                 .build();
@@ -328,20 +336,31 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
                 WorkflowCode.TASK_QUERY_INVALID, "每页数量不能超过500");
     }
 
-    private List<Long> deniedApplyIds(Long tenantId, String businessType, List<String> businessKeys) {
+    /**
+     * 计算当前用户不可见的申请 ID。数据权限提供方按业务类型注册，多业务类型时只查询已注册的类型并求并集，
+     * 未注册业务类型的申请保持可见，与单业务类型时的口径一致。
+     */
+    private List<Long> deniedApplyIds(Long tenantId, List<String> businessTypes, List<String> businessKeys) {
         WorkflowBusinessApplyAccessChecker checker = accessCheckerProvider.getIfAvailable();
-        if (businessKeys.isEmpty() || checker == null || !checker.hasProvider(businessType)) {
+        if (businessKeys.isEmpty() || checker == null) {
+            return List.of();
+        }
+        List<String> providerTypes = businessTypes.stream()
+                .filter(checker::hasProvider)
+                .toList();
+        if (providerTypes.isEmpty()) {
             return List.of();
         }
         List<WorkflowBusinessApplyEntity> applies = businessApplyMapper.selectList(
                 new LambdaQueryWrapper<WorkflowBusinessApplyEntity>()
                         .eq(WorkflowBusinessApplyEntity::getTenantId, String.valueOf(tenantId))
-                        .eq(WorkflowBusinessApplyEntity::getBusinessType, businessType)
+                        .in(WorkflowBusinessApplyEntity::getBusinessType, providerTypes)
                         .in(WorkflowBusinessApplyEntity::getBusinessKey, businessKeys));
         return applies.stream()
                 .filter(apply -> !checker.isAllowed(apply))
                 .map(WorkflowBusinessApplyEntity::getId)
                 .filter(Objects::nonNull)
+                .distinct()
                 .toList();
     }
 

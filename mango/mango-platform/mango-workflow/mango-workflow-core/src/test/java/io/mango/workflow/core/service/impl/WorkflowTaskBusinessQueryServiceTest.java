@@ -199,9 +199,96 @@ class WorkflowTaskBusinessQueryServiceTest {
         verify(taskHistoryMapper).countTasks(captor.capture());
         assertThat(captor.getValue().getBusinessKeys()).isEmpty();
         assertThat(captor.getValue().getBusinessType()).isEqualTo("BAOHAN_RC_PROJECT_REVIEW");
+        assertThat(captor.getValue().getBusinessTypes()).isEmpty();
         assertThat(result.getTotal()).isEqualTo(3L);
         assertThat(result.getList()).hasSize(1);
         verifyNoInteractions(businessApplyMapper);
+    }
+
+    @Test
+    void acceptsBusinessTypeListWithoutSingleBusinessType() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        query.setBusinessType(null);
+        query.setBusinessTypes(List.of("BAOHAN_RC_PROJECT_REVIEW", "BAOHAN_COMPLIANCE_REVIEW"));
+        when(taskHistoryMapper.countTasks(any())).thenReturn(0L);
+
+        service.pageByBusinessKey(query);
+
+        ArgumentCaptor<WorkflowTaskHistoryCriteria> captor =
+                ArgumentCaptor.forClass(WorkflowTaskHistoryCriteria.class);
+        verify(taskHistoryMapper).countTasks(captor.capture());
+        assertThat(captor.getValue().getBusinessType()).isNull();
+        assertThat(captor.getValue().getBusinessTypes())
+                .containsExactly("BAOHAN_RC_PROJECT_REVIEW", "BAOHAN_COMPLIANCE_REVIEW");
+    }
+
+    @Test
+    void prefersBusinessTypesOverSingleBusinessType() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        query.setBusinessTypes(List.of("BAOHAN_COMPLIANCE_REVIEW", "BAOHAN_CONTRACT_REVIEW"));
+        when(taskHistoryMapper.countTasks(any())).thenReturn(0L);
+
+        service.pageByBusinessKey(query);
+
+        ArgumentCaptor<WorkflowTaskHistoryCriteria> captor =
+                ArgumentCaptor.forClass(WorkflowTaskHistoryCriteria.class);
+        verify(taskHistoryMapper).countTasks(captor.capture());
+        // 集合非空时单值字段不进入 SQL，避免两个条件叠加成有意外的交集。
+        assertThat(captor.getValue().getBusinessType()).isNull();
+        assertThat(captor.getValue().getBusinessTypes())
+                .containsExactly("BAOHAN_COMPLIANCE_REVIEW", "BAOHAN_CONTRACT_REVIEW");
+    }
+
+    @Test
+    void rejectsQueryWithoutAnyBusinessType() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        query.setBusinessType(null);
+        query.setBusinessTypes(List.of("  "));
+
+        assertThatThrownBy(() -> service.pageByBusinessKey(query))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("业务类型不能为空");
+        verify(taskHistoryMapper, never()).countTasks(any());
+    }
+
+    @Test
+    void passesProcessDefinitionKeysToCriteria() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        query.setProcessDefinitionKeys(List.of("rc_project_review", "compliance_review"));
+        when(taskHistoryMapper.countTasks(any())).thenReturn(0L);
+
+        service.pageByBusinessKey(query);
+
+        ArgumentCaptor<WorkflowTaskHistoryCriteria> captor =
+                ArgumentCaptor.forClass(WorkflowTaskHistoryCriteria.class);
+        verify(taskHistoryMapper).countTasks(captor.capture());
+        assertThat(captor.getValue().getProcessDefinitionKeys())
+                .containsExactly("rc_project_review", "compliance_review");
+        assertThat(captor.getValue().getBusinessType()).isEqualTo("BAOHAN_RC_PROJECT_REVIEW");
+    }
+
+    @Test
+    void unionsDeniedAppliesAcrossBusinessTypes() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        query.setBusinessType(null);
+        query.setBusinessTypes(List.of("BAOHAN_RC_PROJECT_REVIEW", "BAOHAN_COMPLIANCE_REVIEW"));
+        WorkflowBusinessApplyAccessChecker checker = mock(WorkflowBusinessApplyAccessChecker.class);
+        when(checker.hasProvider(any())).thenReturn(true);
+        when(checker.isAllowed(any())).thenReturn(false);
+        when(checkerProvider.getIfAvailable()).thenReturn(checker);
+        WorkflowBusinessApplyEntity denied = new WorkflowBusinessApplyEntity();
+        denied.setId(20L);
+        when(businessApplyMapper.selectList(any())).thenReturn(List.of(denied));
+        when(taskHistoryMapper.countTasks(any())).thenReturn(0L);
+
+        service.pageByBusinessKey(query);
+
+        ArgumentCaptor<WorkflowTaskHistoryCriteria> captor =
+                ArgumentCaptor.forClass(WorkflowTaskHistoryCriteria.class);
+        verify(taskHistoryMapper).countTasks(captor.capture());
+        assertThat(captor.getValue().getDeniedApplyIds()).containsExactly(20L);
+        // 已注册的类型合并成一次查询，不按业务类型逐个请求数据权限。
+        verify(businessApplyMapper).selectList(any());
     }
 
     @Test
