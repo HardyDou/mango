@@ -17,6 +17,10 @@ public class WorkflowTaskHistoryCriteria {
 
     private final Long tenantId;
     private final String businessType;
+    /** 多业务类型过滤；为空时沿用 {@link #businessType} 等值过滤，保证 1.12.0 的 SQL 不变。 */
+    private final List<String> businessTypes;
+    /** 流程定义 Key 过滤（业务申请表 process_definition_key），为空表示不限。 */
+    private final List<String> processDefinitionKeys;
     private final List<String> businessKeys;
     private final List<String> taskDefinitionKeys;
     private final List<Long> assigneeIds;

@@ -3,9 +3,11 @@ package io.mango.workflow.api.query;
 import io.mango.workflow.api.enums.WorkflowApplyStatus;
 import io.mango.workflow.api.enums.WorkflowTaskClaimStatus;
 import io.mango.workflow.api.enums.WorkflowTaskQueryScope;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mango.workflow.api.enums.WorkflowTaskRuntimeStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -25,15 +27,26 @@ import java.util.List;
  * {@code keyword} 匹配任务名称和任务节点定义 Key，两者互不替代。
  * {@code applyAttributeFilters} 按业务登记在申请上的可筛属性精确收窄，多个条件为且、
  * 同一条件的多个值为或；业务不需要先枚举 {@code businessKeys}。
+ *
+ * <p>{@code businessType} 与 {@code businessTypes} 至少传一个：只传 {@code businessType} 时按等值过滤，
+ * 行为与 1.12.0 完全一致；传 {@code businessTypes} 时按集合过滤（不传或为空不影响原行为）；
+ * 两者同时传时取并集。{@code processDefinitionKeys} 按业务申请表的流程定义 Key 集合过滤，为空表示不限；
+ * 它与 {@code taskDefinitionKeys}（流程内部节点 Key）是两个不同粒度，节点键会随流程增减而漏数据，
+ * 按「哪个流程」隔离列表时应使用 {@code processDefinitionKeys}。
  */
 @Data
 @Schema(description = "按业务类型查询任务，业务主键可选")
 public class WorkflowTaskBusinessPageQuery {
 
-    @Schema(description = "业务类型，按业务申请表 business_type 精确匹配", example = "BAOHAN_RC_PROJECT_REVIEW")
-    @NotBlank(message = "业务类型不能为空")
+    @Schema(description = "业务类型，按业务申请表 business_type 精确匹配；与 businessTypes 同时传入时取并集",
+            example = "BAOHAN_RC_PROJECT_REVIEW")
     @Size(max = 128, message = "业务类型长度不能超过128")
     private String businessType;
+
+    @Size(max = 50, message = "业务类型数量不能超过50")
+    @Schema(description = "业务类型集合，可选；不传或为空表示按 businessType 等值过滤，与 businessType 同时传入时取并集")
+    private List<@NotBlank(message = "业务类型不能为空")
+                 @Size(max = 128, message = "业务类型长度不能超过128") String> businessTypes;
 
     // 字段级 @Size 满足协议模型校验契约；Integer.MAX_VALUE 表示不设置实际数量上限，
     // 元素级注解负责逐项校验业务主键。
@@ -53,6 +66,11 @@ public class WorkflowTaskBusinessPageQuery {
     @Schema(description = "任务节点定义 Key 集合")
     @Size(max = 100, message = "节点数量不能超过100")
     private List<@NotBlank(message = "节点定义 Key 不能为空") String> taskDefinitionKeys;
+
+    @Size(max = 50, message = "流程定义 Key 数量不能超过50")
+    @Schema(description = "流程定义 Key 集合，按业务申请表 process_definition_key 过滤，可选；不传或为空表示不限")
+    private List<@NotBlank(message = "流程定义 Key 不能为空")
+                 @Size(max = 128, message = "流程定义 Key 长度不能超过128") String> processDefinitionKeys;
 
     @Schema(description = "办理人用户 ID 集合，按引擎办理人标识匹配")
     @Size(max = 200, message = "办理人数量不能超过200")
@@ -122,4 +140,19 @@ public class WorkflowTaskBusinessPageQuery {
     @Min(value = 1, message = "每页数量必须大于等于1")
     @Max(value = 500, message = "每页数量不能超过500")
     private Integer size;
+
+    /**
+     * 业务类型至少给一个：单值走等值过滤，多值走集合过滤。
+     *
+     * <p>用类级校验而不是字段级 {@code @NotBlank}，是为了让「只传 {@code businessTypes}」成为合法请求，
+     * 同时保持「两者都不传」仍然报「业务类型不能为空」。
+     *
+     * @return 是否至少给了一个业务类型
+     */
+    @JsonIgnore
+    @Schema(hidden = true)
+    @AssertTrue(message = "业务类型不能为空")
+    public boolean isBusinessTypePresent() {
+        return (businessType != null && !businessType.isBlank()) || (businessTypes != null && !businessTypes.isEmpty());
+    }
 }

@@ -13,7 +13,23 @@
 
     <sql id="taskWhere">
         where a.tenant_id = #{c.tenantId}
-          and a.business_type = #{c.businessType}
+        <choose>
+            <when test="c.businessTypes != null and c.businessTypes.size() > 0">
+                and a.business_type in
+                <foreach collection="c.businessTypes" item="businessTypeValue" open="(" separator="," close=")">
+                    #{businessTypeValue}
+                </foreach>
+            </when>
+            <otherwise>
+                and a.business_type = #{c.businessType}
+            </otherwise>
+        </choose>
+        <if test="c.processDefinitionKeys != null and c.processDefinitionKeys.size() > 0">
+            and a.process_definition_key in
+            <foreach collection="c.processDefinitionKeys" item="processDefinitionKey" open="(" separator="," close=")">
+                #{processDefinitionKey}
+            </foreach>
+        </if>
         <if test="c.businessKeys != null and c.businessKeys.size() > 0">
             and a.business_key in
             <foreach collection="c.businessKeys" item="businessKey" open="(" separator="," close=")">
@@ -110,7 +126,17 @@
                 select fa.apply_id
                 from workflow_business_apply_attribute fa
                 where fa.tenant_id = #{c.tenantId}
-                  and fa.business_type = #{c.businessType}
+                <choose>
+                    <when test="c.businessTypes != null and c.businessTypes.size() > 0">
+                      and fa.business_type in
+                      <foreach collection="c.businessTypes" item="businessTypeValue" open="(" separator="," close=")">
+                          #{businessTypeValue}
+                      </foreach>
+                    </when>
+                    <otherwise>
+                      and fa.business_type = #{c.businessType}
+                    </otherwise>
+                </choose>
                   and fa.attr_key = #{condition.key}
                   and fa.attr_value in
                 <foreach collection="condition.values" item="value" open="(" separator="," close=")">

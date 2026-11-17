@@ -94,7 +94,11 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
         validateTimeRange(resolved.getApplyTimeBegin(), resolved.getApplyTimeEnd());
         List<WorkflowApplyAttributeCondition> attributeConditions = applyAttributeConditions(resolved);
         validatePaging(resolved);
-        String businessType = normalizeRequired(resolved.getBusinessType(), "业务类型不能为空");
+        String businessType = normalizeOptional(resolved.getBusinessType());
+        List<String> businessTypes = normalizeStrings(resolved.getBusinessTypes());
+        Require.isTrue(businessType != null || !businessTypes.isEmpty(), WorkflowCode.TASK_QUERY_INVALID,
+                "业务类型不能为空");
+        List<String> effectiveBusinessTypes = effectiveBusinessTypes(businessType, businessTypes);
         List<String> businessKeys = normalizeBusinessKeys(resolved.getBusinessKeys());
         Long tenantId = currentTenantId();
         boolean selfScope = scope == WorkflowTaskQueryScope.SELF;
@@ -106,6 +110,8 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
         WorkflowTaskHistoryCriteria criteria = WorkflowTaskHistoryCriteria.builder()
                 .tenantId(tenantId)
                 .businessType(businessType)
+                .businessTypes(businessTypes.isEmpty() ? List.of() : effectiveBusinessTypes)
+                .processDefinitionKeys(normalizeStrings(resolved.getProcessDefinitionKeys()))
                 .businessKeys(businessKeys)
                 .taskDefinitionKeys(normalizeStrings(resolved.getTaskDefinitionKeys()))
                 .assigneeIds(normalizeIds(resolved.getAssigneeIds()))
@@ -128,7 +134,7 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
                 .selfScope(selfScope)
                 .selfIdentifiers(selfScope ? selfIdentifiers : List.of())
                 .selfCandidateGroups(selfScope ? selfGroups : List.of())
-                .deniedApplyIds(deniedApplyIds(tenantId, businessType, businessKeys))
+                .deniedApplyIds(deniedApplyIds(tenantId, effectiveBusinessTypes, businessKeys))
                 .sortColumn(resolved.getSortBy())
                 .sortDirection(resolved.getSortOrder())
                 .build();
@@ -328,15 +334,18 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
                 WorkflowCode.TASK_QUERY_INVALID, "每页数量不能超过500");
     }
 
-    private List<Long> deniedApplyIds(Long tenantId, String businessType, List<String> businessKeys) {
+    private List<Long> deniedApplyIds(Long tenantId, List<String> businessTypes, List<String> businessKeys) {
         WorkflowBusinessApplyAccessChecker checker = accessCheckerProvider.getIfAvailable();
-        if (businessKeys.isEmpty() || checker == null || !checker.hasProvider(businessType)) {
+        List<String> guardedBusinessTypes = businessTypes.stream()
+                .filter(businessType -> checker != null && checker.hasProvider(businessType))
+                .toList();
+        if (businessKeys.isEmpty() || guardedBusinessTypes.isEmpty()) {
             return List.of();
         }
         List<WorkflowBusinessApplyEntity> applies = businessApplyMapper.selectList(
                 new LambdaQueryWrapper<WorkflowBusinessApplyEntity>()
                         .eq(WorkflowBusinessApplyEntity::getTenantId, String.valueOf(tenantId))
-                        .eq(WorkflowBusinessApplyEntity::getBusinessType, businessType)
+                        .in(WorkflowBusinessApplyEntity::getBusinessType, guardedBusinessTypes)
                         .in(WorkflowBusinessApplyEntity::getBusinessKey, businessKeys));
         return applies.stream()
                 .filter(apply -> !checker.isAllowed(apply))
@@ -570,6 +579,25 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
             return WorkflowTaskRuntimeStatus.CANCELED;
         }
         return row.getEndTime() == null ? WorkflowTaskRuntimeStatus.TODO : WorkflowTaskRuntimeStatus.DONE;
+    }
+
+    /**
+     * 业务类型过滤值：多值条件优先，单值条件参与并集，两者都空时返回空集。
+     *
+     * <p>只传单值时 {@code criteria.businessTypes} 保持为空，SQL 仍是 {@code business_type = ?}，
+     * 与 1.12.0 完全一致。
+     */
+    private List<String> effectiveBusinessTypes(String businessType, List<String> businessTypes) {
+        LinkedHashSet<String> values = new LinkedHashSet<>();
+        if (businessType != null) {
+            values.add(businessType);
+        }
+        values.addAll(businessTypes);
+        return List.copyOf(values);
+    }
+
+    private String normalizeOptional(String value) {
+        return StringUtils.hasText(value) ? value.trim() : null;
     }
 
     private List<String> normalizeBusinessKeys(List<String> businessKeys) {

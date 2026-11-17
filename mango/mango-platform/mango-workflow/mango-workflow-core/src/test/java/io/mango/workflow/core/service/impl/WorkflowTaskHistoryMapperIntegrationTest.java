@@ -8,6 +8,7 @@ import io.mango.workflow.core.model.WorkflowTaskHistoryRow;
 import io.mango.workflow.core.model.WorkflowTaskIdentityLinkRow;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
@@ -47,6 +48,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 class WorkflowTaskHistoryMapperIntegrationTest {
 
     private static final String BUSINESS_TYPE = "BAOHAN_RC_PROJECT_REVIEW";
+    private static final String COMPLIANCE_BUSINESS_TYPE = "BAOHAN_RC_COMPLIANCE_REVIEW";
+    private static final String COMPLIANCE_PROCESS_KEY = "rc_compliance_review";
     private static final Long TENANT_ID = 1L;
 
     @Autowired
@@ -54,6 +57,9 @@ class WorkflowTaskHistoryMapperIntegrationTest {
 
     @Autowired
     private WorkflowTaskHistoryMapper taskHistoryMapper;
+
+    @Autowired
+    private SqlSessionFactory sqlSessionFactory;
 
     @BeforeEach
     void rebuild() {
@@ -368,6 +374,55 @@ class WorkflowTaskHistoryMapperIntegrationTest {
         assertThat(links.get(0).getGroupId()).isEqualTo("ROLE_REVIEWER");
     }
 
+    @Test
+    void keepsEqualitySqlWhenMultiValueFiltersAbsent() {
+        String sql = boundSql(criteria(List.of()));
+
+        assertThat(sql).contains("a.business_type = ?");
+        assertThat(sql).doesNotContain("a.business_type in");
+        assertThat(sql).doesNotContain("and a.process_definition_key");
+    }
+
+    @Test
+    void filtersByBusinessTypesWithInClause() {
+        WorkflowTaskHistoryCriteria criteria = criteriaBuilder()
+                .businessType(null)
+                .businessTypes(List.of(BUSINESS_TYPE, COMPLIANCE_BUSINESS_TYPE))
+                .build();
+
+        assertThat(taskHistoryMapper.countTasks(criteria)).isEqualTo(4L);
+        assertThat(taskIdsOf(criteria)).containsExactly("T5", "T3", "T2", "T1");
+    }
+
+    @Test
+    void filtersByProcessDefinitionKeys() {
+        WorkflowTaskHistoryCriteria criteria = criteriaBuilder()
+                .businessType(COMPLIANCE_BUSINESS_TYPE)
+                .processDefinitionKeys(List.of(COMPLIANCE_PROCESS_KEY))
+                .build();
+
+        assertThat(taskHistoryMapper.countTasks(criteria)).isEqualTo(1L);
+        assertThat(taskIdsOf(criteria)).containsExactly("T5");
+    }
+
+    private String boundSql(WorkflowTaskHistoryCriteria criteria) {
+        return sqlSessionFactory.getConfiguration()
+                .getMappedStatement("io.mango.workflow.core.mapper.WorkflowTaskHistoryMapper.selectTasks")
+                .getBoundSql(java.util.Map.of("c", criteria, "limit", 10, "offset", 0L))
+                .getSql();
+    }
+
+    private WorkflowTaskHistoryCriteria.WorkflowTaskHistoryCriteriaBuilder criteriaBuilder() {
+        return WorkflowTaskHistoryCriteria.builder()
+                .tenantId(TENANT_ID)
+                .businessType(BUSINESS_TYPE)
+                .includeTodo(true)
+                .includeDone(true)
+                .includeCanceled(true)
+                .sortColumn("createTime")
+                .sortDirection("desc");
+    }
+
     private WorkflowTaskHistoryCriteria criteria(List<String> businessKeys) {
         return WorkflowTaskHistoryCriteria.builder()
                 .tenantId(TENANT_ID)
@@ -411,6 +466,10 @@ class WorkflowTaskHistoryMapperIntegrationTest {
                 "GR20260102000002", "保函风控审核X中铁四局", "福建金鼎 / 预付款保函");
         insertApply(30L, 2L, "RC3", "IN_APPROVAL", 400L, "P3",
                 "GR20260103000003", "保函风控审核-荣昌区管网", "安徽金旗 / 履约保函");
+        insertApply(40L, TENANT_ID, COMPLIANCE_BUSINESS_TYPE, "RC4", "IN_APPROVAL", 200L, "P4",
+                COMPLIANCE_PROCESS_KEY, "GR20260104000004", "合规复核-中铁三局", "廊坊硕坚 / 合规复核");
+        insertTask("T5", "合规复核", "COMPLIANCE_REVIEW", "P4", "dave",
+                LocalDateTime.of(2026, 1, 5, 10, 0), null, null, null);
         insertTask("T1", "初审", "FIRST_REVIEW", "P1", "alice",
                 LocalDateTime.of(2026, 1, 1, 10, 0), LocalDateTime.of(2026, 1, 1, 10, 0, 30),
                 LocalDateTime.of(2026, 1, 1, 11, 0), null);
@@ -450,13 +509,20 @@ class WorkflowTaskHistoryMapperIntegrationTest {
     private void insertApply(Long id, Long tenantId, String businessKey, String status,
                              Long deptId, String processInstanceId,
                              String applyCode, String applyTitle, String applySummary) {
+        insertApply(id, tenantId, BUSINESS_TYPE, businessKey, status, deptId, processInstanceId,
+                "rc_project_review", applyCode, applyTitle, applySummary);
+    }
+
+    private void insertApply(Long id, Long tenantId, String businessType, String businessKey, String status,
+                             Long deptId, String processInstanceId, String processDefinitionKey,
+                             String applyCode, String applyTitle, String applySummary) {
         jdbcTemplate.update("insert into workflow_business_apply "
                         + "(id, tenant_id, org_id, business_type, business_key, apply_status, "
                         + "applicant_dept_id, process_instance_id, process_name, process_definition_key, "
                         + "apply_code, apply_title, apply_summary) "
                         + "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                id, tenantId, deptId, BUSINESS_TYPE, businessKey, status, deptId, processInstanceId,
-                "项目审批", "rc_project_review", applyCode, applyTitle, applySummary);
+                id, tenantId, deptId, businessType, businessKey, status, deptId, processInstanceId,
+                "项目审批", processDefinitionKey, applyCode, applyTitle, applySummary);
     }
 
     private void insertTask(String taskId, String name, String taskDefinitionKey, String processInstanceId,

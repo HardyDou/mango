@@ -183,6 +183,86 @@ class WorkflowTaskBusinessQueryServiceTest {
     }
 
     @Test
+    void queriesByBusinessTypesWithoutSingleBusinessType() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        query.setBusinessType(null);
+        query.setBusinessTypes(List.of(" BAOHAN_RC_PROJECT_REVIEW ", "BAOHAN_RC_COMPLIANCE_REVIEW",
+                "BAOHAN_RC_PROJECT_REVIEW"));
+        when(taskHistoryMapper.countTasks(any())).thenReturn(1L);
+        when(taskHistoryMapper.selectTasks(any(), anyInt(), anyLong())).thenReturn(List.of(row()));
+
+        service.pageByBusinessKey(query);
+
+        ArgumentCaptor<WorkflowTaskHistoryCriteria> captor =
+                ArgumentCaptor.forClass(WorkflowTaskHistoryCriteria.class);
+        verify(taskHistoryMapper).selectTasks(captor.capture(), anyInt(), anyLong());
+        assertThat(captor.getValue().getBusinessType()).isNull();
+        assertThat(captor.getValue().getBusinessTypes())
+                .containsExactly("BAOHAN_RC_PROJECT_REVIEW", "BAOHAN_RC_COMPLIANCE_REVIEW");
+    }
+
+    @Test
+    void mergesSingleBusinessTypeAndBusinessTypes() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        query.setBusinessTypes(List.of("BAOHAN_RC_COMPLIANCE_REVIEW"));
+        when(taskHistoryMapper.countTasks(any())).thenReturn(1L);
+        when(taskHistoryMapper.selectTasks(any(), anyInt(), anyLong())).thenReturn(List.of(row()));
+
+        service.pageByBusinessKey(query);
+
+        ArgumentCaptor<WorkflowTaskHistoryCriteria> captor =
+                ArgumentCaptor.forClass(WorkflowTaskHistoryCriteria.class);
+        verify(taskHistoryMapper).selectTasks(captor.capture(), anyInt(), anyLong());
+        assertThat(captor.getValue().getBusinessTypes())
+                .containsExactly("BAOHAN_RC_PROJECT_REVIEW", "BAOHAN_RC_COMPLIANCE_REVIEW");
+    }
+
+    @Test
+    void keepsEqualityFilterWhenBusinessTypesAbsent() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        when(taskHistoryMapper.countTasks(any())).thenReturn(1L);
+        when(taskHistoryMapper.selectTasks(any(), anyInt(), anyLong())).thenReturn(List.of(row()));
+
+        service.pageByBusinessKey(query);
+
+        ArgumentCaptor<WorkflowTaskHistoryCriteria> captor =
+                ArgumentCaptor.forClass(WorkflowTaskHistoryCriteria.class);
+        verify(taskHistoryMapper).selectTasks(captor.capture(), anyInt(), anyLong());
+        assertThat(captor.getValue().getBusinessType()).isEqualTo("BAOHAN_RC_PROJECT_REVIEW");
+        assertThat(captor.getValue().getBusinessTypes()).isEmpty();
+        assertThat(captor.getValue().getProcessDefinitionKeys()).isEmpty();
+    }
+
+    @Test
+    void passesProcessDefinitionKeysToCriteria() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        query.setProcessDefinitionKeys(List.of("rc_project_review", " rc_project_review ",
+                "rc_compliance_review"));
+        when(taskHistoryMapper.countTasks(any())).thenReturn(1L);
+        when(taskHistoryMapper.selectTasks(any(), anyInt(), anyLong())).thenReturn(List.of(row()));
+
+        service.pageByBusinessKey(query);
+
+        ArgumentCaptor<WorkflowTaskHistoryCriteria> captor =
+                ArgumentCaptor.forClass(WorkflowTaskHistoryCriteria.class);
+        verify(taskHistoryMapper).selectTasks(captor.capture(), anyInt(), anyLong());
+        assertThat(captor.getValue().getProcessDefinitionKeys())
+                .containsExactly("rc_project_review", "rc_compliance_review");
+    }
+
+    @Test
+    void rejectsQueryWithoutAnyBusinessType() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        query.setBusinessType(null);
+        query.setBusinessTypes(List.of());
+
+        assertThatThrownBy(() -> service.pageByBusinessKey(query))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("业务类型不能为空");
+        verify(taskHistoryMapper, never()).selectTasks(any(), anyInt(), anyLong());
+    }
+
+    @Test
     void queriesByBusinessTypeWithoutBusinessKeys() {
         WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
         query.setBusinessKeys(null);

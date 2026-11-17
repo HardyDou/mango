@@ -1,3 +1,16 @@
+## Unreleased - workflow task page multi-value filters (Issue #1294) - 待发布
+
+### Added
+
+- `WorkflowTaskBusinessPageQuery.businessTypes`：可选多值业务类型条件，映射为 `workflow_business_apply.business_type in (...)`；不传或为空时完全等价于 1.12.0 的单值等值过滤，SQL 文本不变。与单值 `businessType` 同时传入时取并集去重，单值语义未改变。
+- `WorkflowTaskBusinessPageQuery.processDefinitionKeys`：可选多值流程定义 Key 条件，映射为 `workflow_business_apply.process_definition_key in (...)`；`countTasks` 与 `selectTasks` 共用同一 `where` 片段，`total` 与 `rows` 口径一致。
+- `businessType` 不再是字段级必填，改由类级 `@AssertTrue` 校验「`businessType` 与 `businessTypes` 至少给一个」；两者都不传仍返回同一句「业务类型不能为空」。
+
+### Changed
+
+- 业务任务分页文档补充四个筛选维度的差异：业务类型（`businessType`/`businessTypes`）、流程定义 Key（`processDefinitionKeys`）、流程内部节点 Key（`taskDefinitionKeys`）、业务主键（`businessKeys`）；按「哪个流程」隔离列表时应使用 `processDefinitionKeys`，节点键会随流程增减而静默漏数据。
+- 本批只新增可选入参，不动既有响应与单值语义，按约定随下一个 Maven 批次发布 `mango-workflow-*` minor。
+
 ## v2026.11.16-maven-1.12.0-task-release-facts-release - Mango Maven/docs 1.12.0 task release facts - 2026-11-16
 
 Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `d0a8a4472889df08b49ac4fa84b0f09fefb57a3a6ce51349eafddfa67a583d87`; prepared candidate `dc93111111e64181f9fe04c88efd89fbac53195d4d44ed1b02af2aad57d6a5f7` completed publication and consume verification for `@mango/cli@1.4.13` and 201 Maven coordinates. Tag and GitHub Release were created and verified.

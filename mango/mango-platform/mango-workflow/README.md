@@ -602,7 +602,9 @@ mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-comm
 
 约束：
 
-- `businessType` 必填；`businessKeys` 可选，不传或为空表示不限业务主键，数量不设上限。平台以一条只读 SQL 完成过滤、排序和分页。
+- `businessType` 与 `businessTypes` 至少传一个：只传 `businessType` 时按等值过滤（与 1.12.0 行为完全一致）；只传 `businessTypes` 时按集合过滤；两者同时传入时取并集去重。`businessKeys` 可选，不传或为空表示不限业务主键，数量不设上限。平台以一条只读 SQL 完成过滤、排序和分页。
+- 四个维度不要混用：`businessType`/`businessTypes` 是业务类型（`workflow_business_apply.business_type`），`processDefinitionKeys` 是流程定义 Key（`workflow_business_apply.process_definition_key`，例如一个工作台同时展示“保函风控审核流程”和“合规复核流程”），`taskDefinitionKeys` 是流程内部节点 Key（用户审批/风控审批……），`businessKeys` 是业务主键。节点键会随流程增减而静默漏数据，按“哪个流程”隔离列表时用 `processDefinitionKeys`。
+- `processDefinitionKeys` 可选，为空表示不限；与 `businessTypes` 可以组合使用，`total` 仍是过滤后的真实任务数。
 - `applyAttributeFilters` 可选：按业务在申请上登记的 `filterAttributes` 精确收窄，条件之间为「且」、同一条件的多个值为「或」，最多 10 个条件、单条件最多 50 个值；没有该属性的申请不匹配。属性过滤与 `businessKeys`、`applyKeyword`、状态、时间和分页在同一条 SQL 内完成，`total` 仍是过滤后的真实任务数，不需要调用方先枚举业务主键。
 - `applyTimeBegin` / `applyTimeEnd`：按申请创建时间（`workflow_business_apply.created_time`）闭区间过滤，与任务创建/处理时间互不影响。
 - 不传 `page` / `size` 时按 `mango.workflow.task-query.unpaged-max-rows` 一次性返回，`total` 始终是过滤后的真实总数，用 `list.size() < total` 判断是否需要改用分页。
