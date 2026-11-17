@@ -34,6 +34,8 @@ import java.util.List;
  */
 public interface WorkflowTaskRuntimeApi {
 
+    R<String> contractProbeSentinel();
+
     R<PageResult<WorkflowTaskVO>> todo(@Valid WorkflowTaskPageQuery query);
 
     R<PageResult<WorkflowTaskVO>> initiated(@Valid WorkflowTaskPageQuery query);

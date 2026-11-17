@@ -229,6 +229,14 @@ public class WorkflowTaskController implements WorkflowTaskRuntimeApi {
         return R.ok(workflowTaskRuntimeService.unclaimWithResult(command));
     }
 
+    @GetMapping("/contract-probe")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:list")
+    @Operation(summary = "契约哨兵演练（临时）")
+    @Override
+    public R<String> contractProbeSentinel() {
+        return R.ok("probe");
+    }
+
     @GetMapping("/copied")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:list")
     @Operation(summary = "查询抄送给我", description = "分页查询抄送给当前用户的流程消息")
