@@ -1,3 +1,16 @@
+## 1.6.1 - 2026-11-17
+
+### Changed
+
+- The delivery quality rule records the workflow public-contract sentinel gate: `pmo-doc-check` runs a `workflow_contract` job that executes the `mango-workflow-starter` tests with Surefire 3.2.5 and counts the result in the aggregate check.
+- A public workflow surface change may only turn the gate green by updating the golden fingerprint on purpose and recording the change in the PR description; deleting, skipping or rewriting the assertions is not allowed.
+- `rules/index.json`, the contract fixtures and the Business Starter baseline are re-projected for the new rule revision.
+
+### Upgrade Notes
+
+- Upgrade `@mango/pmo@1.6.1` together with `@mango/cli@1.4.14` and the complete Maven/docs `1.13.0` tuple; do not mix release batches.
+- Rerun `mango pmo sync` and a locked PMO check after the upgrade; generated projects keep their business code unchanged.
+
 ## 1.6.0 - 2026-11-13
 
 ### Changed
