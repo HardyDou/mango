@@ -66,3 +66,4 @@ node mango-pmo/tools/check-surefire-execution.mjs --changed-since origin/main --
 ## 已知存量红测
 
 开启实际执行后暴露出的存量失败测试记录在 [Issue #1301](https://github.com/HardyDou/mango/issues/1301)。这些模块被改动时 `Changed module tests` 会失败，属于真实信号，不要用 `@Disabled`、`-DskipTests` 或删除测试的方式绕过；修复口径见该 issue。
+
