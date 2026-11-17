@@ -203,6 +203,8 @@ mango:
 
 展示提示：把多个业务类型归一成域级 `business_type` 会让任务列表失去区分度，只能靠业务键前缀反推，不推荐。混排列表直接用返回里的 `processKey`（取自申请表 `process_definition_key`）做列或标签，`processName` 是流程名称，比枚举值更适合作文案。
 
+Issue #1297 只更新平台侧的公开契约哨兵与 CI 门禁（`mango-workflow-starter` 的 `WorkflowApiSurfaceContractTest` 黄金指纹、`pmo-doc-check` 的 `workflow_contract` job），本节描述的请求字段、响应字段、权限码、错误码与分页语义均无变化，业务仓无需任何动作。
+
 ## 7.2 审批流转记录读取（Issue #1234）
 
 审批详情面板需要展示"发起 / 认领 / 通过 / 退回 / 驳回"及多轮退回历史时，用 `POST /workflow/tasks/trace-by-business-key` 或本地注入 `WorkflowTaskRuntimeApi#traceByBusinessKey` 读取，不要直接查 `workflow_task_record` 表，也不需要注册 `WorkflowBusinessApplyDataPermissionProvider`。
