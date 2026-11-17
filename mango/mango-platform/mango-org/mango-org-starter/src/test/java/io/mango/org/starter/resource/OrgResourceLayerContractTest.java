@@ -26,7 +26,7 @@ class OrgResourceLayerContractTest {
         assertThat(count(demo, "orgType: { type: INT, value: 1 }")).isZero();
         assertThat(count(demo, "orgType: { type: INT, value: 2 }")).isEqualTo(2);
         assertThat(count(demo, "orgType: { type: INT, value: 3 }")).isEqualTo(4);
-        assertThat(count(demo, "sync-mode: INIT_ONLY")).isEqualTo(6);
+        assertThat(count(demo, "sync-mode: SYNC_ONCE")).isEqualTo(6);
         assertThat(required).doesNotContain("GREEN_MANGO_ROOT", "MANGO_COMPANY_A");
     }
 

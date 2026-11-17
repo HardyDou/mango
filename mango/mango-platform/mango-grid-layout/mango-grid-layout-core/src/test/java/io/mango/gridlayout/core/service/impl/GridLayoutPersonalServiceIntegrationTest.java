@@ -84,7 +84,12 @@ class GridLayoutPersonalServiceIntegrationTest {
         GridLayoutPersonalVO created = gridLayoutPersonalService.savePersonal(command(3));
 
         assertThat(created.getId()).isNotNull();
-        assertThat(gridLayoutPersonalService.getPersonal(query())).isEqualTo(created);
+        // 数据库 DATETIME 只保留到微秒，实体回填的时间戳带纳秒，比较业务字段即可，
+        // 时间戳精度由下方 inserted 断言单独校验。
+        assertThat(gridLayoutPersonalService.getPersonal(query()))
+                .usingRecursiveComparison()
+                .ignoringFields("createdAt", "updatedAt")
+                .isEqualTo(created);
         Map<String, Object> inserted = jdbcTemplate.queryForMap("""
                 SELECT tenant_id, org_id, user_id, page_code, schema_version,
                        created_by, created_at, updated_by, updated_at

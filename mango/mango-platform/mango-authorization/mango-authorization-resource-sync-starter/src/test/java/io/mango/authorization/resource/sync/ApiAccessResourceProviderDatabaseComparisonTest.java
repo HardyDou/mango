@@ -53,6 +53,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @TestPropertySource(properties = {
         "spring.application.name=resource-sync-db-test",
+        "mango.crypto.sm4.secret-key=00112233445566778899aabbccddeeff",
         "spring.datasource.url=jdbc:h2:mem:api_resource_compare;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
         "spring.datasource.username=sa",
         "spring.datasource.password=",

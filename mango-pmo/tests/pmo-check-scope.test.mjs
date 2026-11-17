@@ -310,6 +310,10 @@ test('CI reruns when policy-resolved assurance selections change and keeps expli
     javaJob,
     /Install CLI runtime dependencies for generated backend acceptance[\s\S]*?pnpm --dir mango-ui install[\s\S]*?--frozen-lockfile[\s\S]*?--filter @mango\/cli\.\.\.[\s\S]*?--ignore-scripts/,
   );
+  assert.match(
+    javaJob,
+    /Enforce unified Surefire version baseline[\s\S]*?check-surefire-versions\.mjs/u,
+  );
   assert.ok(
     javaJob.indexOf('Install CLI runtime dependencies for generated backend acceptance')
       < javaJob.indexOf('Generate trusted full-Reactor architecture inventory for governance'),
@@ -354,7 +358,20 @@ test('CI reruns when policy-resolved assurance selections change and keeps expli
   const contractJob = workflow.match(/\n  workflow_contract:\n[\s\S]*?(?=\n  docs:\n)/)?.[0] ?? '';
   assert.match(contractJob, /name: Workflow API contract sentinel/u);
   assert.match(contractJob, /-pl :mango-workflow-starter/u);
-  assert.match(contractJob, /org\.apache\.maven\.plugins:maven-surefire-plugin:3\.2\.5:test/u);
+  assert.match(contractJob, /-DskipTests=false[\s\S]*?\n\s+test\n/u);
+  assert.doesNotMatch(contractJob, /maven-surefire-plugin:\d/u);
+  const modifiedModuleTests = workflow.match(
+    /      - name: Run tests for directly modified modules[\s\S]*?(?=\n      - name:)/,
+  )?.[0] ?? '';
+  assert.match(modifiedModuleTests, /needs\.preflight_scope\.outputs\.backend_mode == 'partial'/u);
+  assert.match(modifiedModuleTests, /-pl "\$MAVEN_PROJECTS"/u);
+  assert.match(modifiedModuleTests, /-DskipTests=false/u);
+  assert.doesNotMatch(modifiedModuleTests, /^\s+-am(?:d)?(?:\s|\\)/mu);
+  assert.ok(
+    javaJob.indexOf('Run tests for directly modified modules')
+      < javaJob.indexOf('Enforce affected-module architecture and Java quality contracts'),
+    'Java tests of directly modified modules must run before the architecture quality gate',
+  );
   assert.match(stableSummary, /WORKFLOW_CONTRACT_RESULT/);
   assert.match(stableSummary, /"\$WORKFLOW_CONTRACT_RESULT"/);
   assert.match(stableSummary, /if: \$\{\{ always\(\) \}\}/);

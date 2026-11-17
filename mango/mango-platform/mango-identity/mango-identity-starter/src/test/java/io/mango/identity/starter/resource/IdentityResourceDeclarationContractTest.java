@@ -31,7 +31,7 @@ class IdentityResourceDeclarationContractTest {
                 .contains("targetId: { type: LONG, value: 7421519422447286235 }")
                 .doesNotContain("password: { type: STRING")
                 .doesNotContain("value: admin123");
-        assertThat(count(formal, "sync-mode: INIT_ONLY")).isEqualTo(2);
+        assertThat(count(formal, "sync-mode: SYNC_ONCE")).isEqualTo(2);
     }
 
     @Test

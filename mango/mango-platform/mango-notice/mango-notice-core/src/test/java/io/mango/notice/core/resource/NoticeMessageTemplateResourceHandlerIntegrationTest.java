@@ -289,10 +289,9 @@ class NoticeMessageTemplateResourceHandlerIntegrationTest {
                 + "where id = 2060000000000014003");
         assertThat(registryService.registerDeclarations(registryCommand(2, List.of()))).isTrue();
 
-        assertThat(booleanValue("notice_business_channel_template", "enabled",
-                "id = 2060000000000014003")).isFalse();
-        assertThat(stringValue("notice_business_channel_template", "template_name",
-                "id = 2060000000000014003")).isEqualTo("运行时名称");
+        // Issue #1110：完整 FINALIZE 快照对缺失的托管资源执行物理回收，registry 保留 REMOVED 墓碑，
+        // 运行时改动的业务行不再保留为停用状态。
+        assertThat(count("notice_business_channel_template")).isZero();
         assertThat(stringValue("resource_registry", "status",
                 "resource_id = '2026061800700014001'")).isEqualTo("REMOVED");
         assertThat(io.mango.infra.context.api.MangoContextHolder.tenantId()).isEqualTo("1");

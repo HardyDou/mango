@@ -147,6 +147,7 @@ jobs:
             mango-pmo/tests/readme-audit-scope.test.mjs \
             mango-pmo/tests/risk-verification.test.mjs \
             mango-pmo/tests/standard-delivery-record.test.mjs \
+            mango-pmo/tests/surefire-version-check.test.mjs \
             mango-pmo/tests/test-quality-check.test.mjs \
             mango-pmo/tests/workspace-layout-check.test.mjs
           node mango-pmo/tests/skills/check-skill-evals.mjs
@@ -275,6 +276,11 @@ jobs:
             mango/pom.xml
             mango/**/pom.xml
 
+      # Surefire 2.x 发现不了 JUnit 5 用例，Tests run: 0 会让整模块测试静默空跑。
+      # 根 POM 统一声明 3.2.5 之后，用这个检查防止版本漂移把门禁又变回空跑。
+      - name: Enforce unified Surefire version baseline
+        run: node mango-pmo/tools/check-surefire-versions.mjs
+
       - name: Build the local PMO bundle for generated project acceptance
         if: >-
           needs.preflight_scope.outputs.m11 == 'true' &&
@@ -340,6 +346,22 @@ jobs:
             -Dpmd.skip=true \
             -Dspotbugs.skip=true \
             install
+
+      - name: Run tests for directly modified modules
+        if: >-
+          needs.preflight_scope.outputs.m09 == 'true' &&
+          needs.preflight_scope.outputs.backend_mode == 'partial' &&
+          needs.preflight_scope.outputs.maven_projects != ''
+        env:
+          MAVEN_PROJECTS: ${{ needs.preflight_scope.outputs.maven_projects }}
+        run: |
+          mvn -B -f mango/pom.xml \
+            -pl "$MAVEN_PROJECTS" \
+            -Denforcer.skip=true \
+            -DskipTests=false \
+            -Dmango.architecture.skip=true \
+            -Dsurefire.failIfNoSpecifiedTests=false \
+            test
 
       - name: Enforce affected-module architecture and Java quality contracts
         if: needs.preflight_scope.outputs.m09 == 'true' && needs.preflight_scope.outputs.backend_mode == 'partial'
@@ -450,8 +472,8 @@ jobs:
             -DskipTests \
             install
 
-      # workflow 模块不继承 mango-parent，默认解析到 surefire 2.17，该版本发现不了 JUnit 5 用例，
-      # 所以这里显式调用 3.2.5 执行，等于把 mango-workflow-starter 的整模块测试纳入门禁。
+      # workflow 模块不继承 mango-parent，Surefire 版本由根 POM pluginManagement 统一到 3.2.5，
+      # 因此普通 test 生命周期就能发现 JUnit 5 用例，这里等于把整模块测试纳入门禁。
       - name: Build workflow starter with reactor prerequisites
         run: |
           mvn -B -f mango/pom.xml \
@@ -473,8 +495,7 @@ jobs:
             -DskipTests=false \
             -Dmango.architecture.skip=true \
             -Dsurefire.failIfNoSpecifiedTests=false \
-            test-compile \
-            org.apache.maven.plugins:maven-surefire-plugin:3.2.5:test
+            test
 
   docs:
     name: Documentation gates
