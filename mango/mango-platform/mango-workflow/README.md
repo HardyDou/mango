@@ -1163,14 +1163,13 @@ workflow:template:push
 
 这个测试是公开契约哨兵：它对 `WorkflowTaskRuntimeApi` 等 8 个公开接口的「方法名 → 泛型返回类型」和 8 个 Controller 的「verb + path + 方法名 → 返回类型 + `@ApiAccess`」各算一个 SHA-256。给 VO、Query、Request 加字段不会改变指纹，只有增删公开方法、改返回契约、增删端点或改权限才会。确认是有意变更时，把失败信息里给出的实际指纹粘到 `API_FINGERPRINT` / `HTTP_FINGERPRINT` 常量，并在 PR 描述里写明契约变更；不是有意变更就回退改动，不要更新常量、也不要跳过测试。
 
-workflow 模块不继承 `mango-parent`，默认解析到的 Surefire 2.17 发现不了 JUnit 5 用例，普通 `mvn test` 会显示 `Tests run: 0`。本地和 CI 都要显式调用 3.2.5：
+根 POM `mango/pom.xml` 已在 `pluginManagement` 统一声明 Surefire 3.2.5（Issue #1300），workflow 模块即使不继承 `mango-parent` 也能跑真正的 JUnit 5 用例，普通 `mvn test` 即可：
 
 ```bash
-mvn -f mango/pom.xml -pl :mango-workflow-starter -Denforcer.skip=true -DskipTests=false \
-  test-compile org.apache.maven.plugins:maven-surefire-plugin:3.2.5:test
+mvn -f mango/pom.xml -pl :mango-workflow-starter -Denforcer.skip=true -DskipTests=false test
 ```
 
-CI 的 `pmo-doc-check` 里有独立 job `workflow_contract` 跑这一步，改了 `mango/mango-platform/mango-workflow/**` 就会触发，结论计入 `pmo-doc-check` 汇总门槛。
+如果看到 `Tests run: 0`，说明该模块解析回了 Surefire 2.x，用 `node mango-pmo/tools/check-surefire-versions.mjs` 定位。CI 的 `pmo-doc-check` 里有独立 job `workflow_contract` 跑这一步，改了 `mango/mango-platform/mango-workflow/**` 就会触发，结论计入 `pmo-doc-check` 汇总门槛。
 
 **前端打开菜单提示页面不存在**
 

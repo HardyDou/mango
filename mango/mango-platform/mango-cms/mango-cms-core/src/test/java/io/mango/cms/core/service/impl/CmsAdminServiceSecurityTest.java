@@ -1,7 +1,9 @@
 package io.mango.cms.core.service.impl;
 
+import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.mango.cms.api.command.BatchCmsContentPublishCommand;
 import io.mango.cms.api.command.CmsOfflineCommand;
@@ -34,6 +36,8 @@ import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.persistence.api.scope.DataScopeApplier;
 import io.mango.infra.persistence.api.scope.DataScopeMapping;
 import org.junit.jupiter.api.AfterEach;
+import org.apache.ibatis.builder.MapperBuilderAssistant;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
@@ -51,6 +55,15 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class CmsAdminServiceSecurityTest {
+
+    @BeforeAll
+    static void initTableInfo() {
+        MapperBuilderAssistant assistant = new MapperBuilderAssistant(new MybatisConfiguration(), "");
+        TableInfoHelper.initTableInfo(assistant, CmsContentEntity.class);
+        TableInfoHelper.initTableInfo(assistant, CmsContentPublishEntity.class);
+        TableInfoHelper.initTableInfo(assistant, CmsSiteEntity.class);
+        TableInfoHelper.initTableInfo(assistant, CmsSiteCategoryEntity.class);
+    }
 
     private final CmsContentCategoryMapper contentCategoryMapper = mock(CmsContentCategoryMapper.class);
     private final CmsContentTagMapper contentTagMapper = mock(CmsContentTagMapper.class);

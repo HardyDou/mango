@@ -27,6 +27,7 @@ import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguratio
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
@@ -75,6 +76,9 @@ import static org.mockito.Mockito.when;
         "spring.flyway.enabled=false",
         "mango.persistence.mybatis-plus.tenant.enabled=false"
 })
+// 该用例验证 MySQL 唯一约束下的并发去重语义，需要真实 MySQL 实例；未提供 *_concurrency 库时按跳过处理，
+// 与 WorkflowMigrationUpgradeIntegrationTest 的环境开关约定保持一致，不做注解级别的永久禁用。
+@EnabledIfEnvironmentVariable(named = "MANGO_DB_NAME", matches = ".*_concurrency")
 class FileServiceConcurrentSaveIntegrationTest {
 
     private static final int CONCURRENCY = 5;

@@ -43,17 +43,28 @@ class FilePreviewTaskServiceImplTest {
         ILeaseLocker leaseLocker = availableLeaseLocker();
         FileRecordVO record = record(42L, "sample.docx");
         when(fileApi.get(42L)).thenReturn(io.mango.common.result.R.ok(record));
-        when(convertApi.canConvert(any(), any())).thenReturn(false);
+        // 转换线程停在 canConvert 里，保证第二次 submit 落在任务仍在 PROCESSING 的时间窗内：
+        // 否则任务可能已经 FAILED，而失败任务允许重新提交，断言就变成时序竞争。
+        CountDownLatch conversionStarted = new CountDownLatch(1);
+        CountDownLatch releaseConversion = new CountDownLatch(1);
+        when(convertApi.canConvert(any(), any())).thenAnswer(invocation -> {
+            conversionStarted.countDown();
+            releaseConversion.await(3, TimeUnit.SECONDS);
+            return false;
+        });
         FilePreviewTaskServiceImpl service = new FilePreviewTaskServiceImpl(
                 new FilePreviewFileGateway(fileApi, contentProvider), contentProvider, convertApi,
                 taskStore, leaseLocker, new ObjectMapper().registerModule(new JavaTimeModule()),
                 new FilePreviewProperties(), testExecutor());
 
         FilePreviewTaskVO first = service.submit(42L, false);
+        assertThat(conversionStarted.await(3, TimeUnit.SECONDS)).isTrue();
         FilePreviewTaskVO second = service.submit(42L, false);
 
         assertThat(second.getFileId()).isEqualTo(first.getFileId());
         assertThat(second.getCreatedAt()).isEqualTo(first.getCreatedAt());
+        assertThat(second.getStatus()).isEqualTo(FilePreviewTaskStatus.PROCESSING);
+        releaseConversion.countDown();
         await(() -> service.status(42L, false).getStatus() == FilePreviewTaskStatus.FAILED);
         verify(leaseLocker, atLeastOnce()).tryAcquire(any(), any(), anyLong());
         verify(taskStore, atLeastOnce()).store(any(), contains("FAILED"), eq(30L * 24 * 60 * 60));

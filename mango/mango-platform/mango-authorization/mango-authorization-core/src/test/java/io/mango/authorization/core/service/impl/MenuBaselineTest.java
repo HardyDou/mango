@@ -10,9 +10,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -21,7 +24,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -117,19 +119,16 @@ class MenuBaselineTest {
     void resourceManifests_doNotDeclareLegacyPermissionFields() throws IOException {
         List<String> legacyFields = new ArrayList<>();
         Path platformDir = findPlatformDir();
-        try (Stream<Path> paths = Files.walk(platformDir)) {
-            List<Path> manifests = paths
-                    .filter(Files::isRegularFile)
-                    .filter(path -> path.toString().endsWith("common-menu.json"))
-                    .filter(path -> path.toString().contains("META-INF/mango/resources"))
-                    .filter(path -> !path.toString().contains("/target/"))
-                    .toList();
-            for (Path manifest : manifests) {
-                collectLegacyPermissionFields(
-                        OBJECT_MAPPER.readTree(manifest.toFile()),
-                        platformDir.relativize(manifest).toString(),
-                        legacyFields);
-            }
+        List<Path> manifests = walkRegularFiles(platformDir).stream()
+                .filter(path -> path.toString().endsWith("common-menu.json"))
+                .filter(path -> path.toString().contains("META-INF/mango/resources"))
+                .filter(path -> !path.toString().contains("/target/"))
+                .toList();
+        for (Path manifest : manifests) {
+            collectLegacyPermissionFields(
+                    OBJECT_MAPPER.readTree(manifest.toFile()),
+                    platformDir.relativize(manifest).toString(),
+                    legacyFields);
         }
 
         assertEquals(List.of(), legacyFields);
@@ -154,16 +153,13 @@ class MenuBaselineTest {
     private static Set<String> readDeclaredResourceMenuCodes() throws IOException {
         Set<String> declaredCodes = new HashSet<>();
         Path platformDir = findPlatformDir();
-        try (Stream<Path> paths = Files.walk(platformDir)) {
-            List<Path> manifests = paths
-                    .filter(Files::isRegularFile)
-                    .filter(path -> path.toString().endsWith("common-menu.json"))
-                    .filter(path -> path.toString().contains("META-INF/mango/resources"))
-                    .filter(path -> !path.toString().contains("/target/"))
-                    .toList();
-            for (Path manifest : manifests) {
-                collectDeclaredCodes(OBJECT_MAPPER.readTree(manifest.toFile()), declaredCodes);
-            }
+        List<Path> manifests = walkRegularFiles(platformDir).stream()
+                .filter(path -> path.toString().endsWith("common-menu.json"))
+                .filter(path -> path.toString().contains("META-INF/mango/resources"))
+                .filter(path -> !path.toString().contains("/target/"))
+                .toList();
+        for (Path manifest : manifests) {
+            collectDeclaredCodes(OBJECT_MAPPER.readTree(manifest.toFile()), declaredCodes);
         }
         return declaredCodes;
     }
@@ -171,26 +167,23 @@ class MenuBaselineTest {
     private static List<ResourceMenuEntry> readDeclaredResourceMenus() throws IOException {
         Path platformDir = findPlatformDir();
         List<ResourceMenuEntry> menus = new ArrayList<>();
-        try (Stream<Path> paths = Files.walk(platformDir)) {
-            List<Path> manifests = paths
-                    .filter(Files::isRegularFile)
-                    .filter(path -> path.toString().endsWith("common-menu.json"))
-                    .filter(path -> path.toString().contains("META-INF/mango/resources"))
-                    .filter(path -> !path.toString().contains("/target/"))
-                    .toList();
-            for (Path manifest : manifests) {
-                JsonNode resource = OBJECT_MAPPER.readTree(manifest.toFile()).path("mango").path("resource");
-                String moduleCode = resource.path("moduleCode").asText();
-                for (JsonNode declaration : resource.path("declarations").path("AUTH_MENU")) {
-                    String resourceBizKey = declaration.path("bizKey").asText();
-                    collectDeclaredMenus(
-                            declaration.path("fields").path("menus").path("value"),
-                            menus,
-                            moduleCode,
-                            resourceBizKey,
-                            platformDir.relativize(manifest).toString(),
-                            null);
-                }
+        List<Path> manifests = walkRegularFiles(platformDir).stream()
+                .filter(path -> path.toString().endsWith("common-menu.json"))
+                .filter(path -> path.toString().contains("META-INF/mango/resources"))
+                .filter(path -> !path.toString().contains("/target/"))
+                .toList();
+        for (Path manifest : manifests) {
+            JsonNode resource = OBJECT_MAPPER.readTree(manifest.toFile()).path("mango").path("resource");
+            String moduleCode = resource.path("moduleCode").asText();
+            for (JsonNode declaration : resource.path("declarations").path("AUTH_MENU")) {
+                String resourceBizKey = declaration.path("bizKey").asText();
+                collectDeclaredMenus(
+                        declaration.path("fields").path("menus").path("value"),
+                        menus,
+                        moduleCode,
+                        resourceBizKey,
+                        platformDir.relativize(manifest).toString(),
+                        null);
             }
         }
         return menus;
@@ -212,6 +205,29 @@ class MenuBaselineTest {
                 .distinct()
                 .toList();
         assertEquals(List.of("system:system.menu.internal-admin"), ownerNames, menuCode);
+    }
+
+    /**
+     * 收集工作树下的普通文件。并行构建时模块目录里会出现 JVM Attach 等瞬时文件，
+     * 遍历期间可能已被删除，读不到就直接跳过该条目，避免环境抖动让整条基线断言失败。
+     */
+    private static List<Path> walkRegularFiles(Path root) throws IOException {
+        List<Path> files = new ArrayList<>();
+        Files.walkFileTree(root, new SimpleFileVisitor<>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attributes) {
+                if (attributes.isRegularFile()) {
+                    files.add(file);
+                }
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult visitFileFailed(Path file, IOException exception) {
+                return FileVisitResult.CONTINUE;
+            }
+        });
+        return files;
     }
 
     private static Path findPlatformDir() {

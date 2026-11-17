@@ -36,6 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
         webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @TestPropertySource(properties = {
         "spring.application.name=resource-sync-test",
+        "mango.crypto.sm4.secret-key=00112233445566778899aabbccddeeff",
         "mango.persistence.flyway.enabled=false",
         "mango.authorization.resource-sync.module-name=mango-resource-sync-test",
         "mango.authorization.resource-sync.legacy-writer-enabled=true",
