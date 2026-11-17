@@ -1,3 +1,15 @@
+## 1.4.14 - 2026-11-17
+
+### Changed
+
+- Lock the CLI Maven matrix to Maven `1.13.0` and the generated 201-coordinate Maven/docs release closure.
+- Track the `businessTypes` and `processDefinitionKeys` task-page filters and the workflow contract sentinel gate in the generated guidance and PMO projection.
+- Depend on `@mango/pmo@1.6.1` so the generated project baseline carries the new rule revision.
+
+### Upgrade Notes
+
+- Upgrade `@mango/cli@1.4.14` together with `@mango/pmo@1.6.1` and the complete Maven/docs `1.13.0` tuple; do not mix release batches.
+
 ## 1.4.13 - 2026-11-16
 
 ### Changed

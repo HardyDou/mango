@@ -11,6 +11,92 @@
 ### Known failing tests
 
 Enabling execution surfaced six modules with pre-existing failing tests; they are tracked in [Issue #1301](https://github.com/HardyDou/mango/issues/1301) and intentionally left failing rather than disabled. `Changed module tests` will fail for pull requests that touch those modules until they are fixed.
+## v2026.11.17-maven-1.13.0-task-multi-filter-contract-gate-release - Mango Maven/docs 1.13.0 多业务类型过滤与契约哨兵门禁 - 2026-11-17
+
+Status: `PENDING`. Release plan digest `840294e93d0354e2943b85fc715a91cdd7f321893f12bb38af4be9a90681ab2a`; Maven/npm publication, dual-registry consume verification, Tag, GitHub Release and closeout are still pending for this batch.
+
+### Pull Requests
+
+- Added: [PR #1296](https://github.com/HardyDou/mango/pull/1296) lets one task page answer for several business types in a single request: `WorkflowTaskBusinessPageQuery` gains the optional `businessTypes` and `processDefinitionKeys` multi-value filters, both mapper statements share one business-type fragment so `total` and rows cannot disagree, and attribute filters now follow the same business-type choice instead of the single value. Packages: the complete Maven/docs `1.13.0` tuple including `io.mango.platform.workflow:mango-workflow-{api,core,starter,starter-remote}:1.13.0` and `io.mango:mango-docs-bundle:1.13.0`, plus `@mango/pmo@1.6.1` and the generated `@mango/cli@1.4.14` closure. Business Adaptation: optional; callers that pass a single `businessType` keep the exact `1.12.0` behaviour, and only a workbench that must list several business types at once needs the new lists.
+- Fixed: [PR #1299](https://github.com/HardyDou/mango/pull/1299) recomputed the workflow public-API and HTTP contract fingerprints that `1.12.0` left stale after the task release and reassign endpoints landed, printed the paste-ready fingerprint in the failure message, and added the `workflow_contract` job so `mango-workflow-starter` tests finally run in the required check instead of silently executing zero tests. Packages: the complete Maven/docs `1.13.0` tuple, `@mango/pmo@1.6.1` for the new gate rule, and the generated `@mango/cli@1.4.14` closure. Business Adaptation: none at runtime; a business project that runs the bundled PMO check gets the stricter gate wording and must keep its contract sentinel green the documented way.
+- Changed: [PR #1291](https://github.com/HardyDou/mango/pull/1291) closed out the previous `1.12.0` batch by recording the published coordinates in `CHANGELOG.md` and `mango-ui/.changeset/release-baseline.json` and removing the consumed Changeset. Packages: repository release bookkeeping only. Business Adaptation: none.
+
+### Added
+
+- `WorkflowTaskBusinessPageQuery.businessTypes`: an optional list of up to twenty business types; when it is not empty it becomes `and a.business_type in (...)`, so one request returns project admission, compliance review and contract review tasks in one page with one total.
+- `WorkflowTaskBusinessPageQuery.processDefinitionKeys`: an optional list of up to one hundred process definition keys, rendered as `and a.process_definition_key in (...)`, so a workbench can restrict a business type to specific processes.
+- One shared mapper fragment applies the business-type condition to the task filter and to the `workflow_business_apply_attribute` subquery, so `applyAttributeFilters` keeps working when a list of business types is queried.
+- A CI job `workflow_contract` that executes the whole `mango-workflow-starter` test module with Surefire 3.2.5 and feeds its result into the aggregate `pmo-doc-check` check.
+- A four-dimension filter table in the business integration guide that separates business type, process definition key, node definition key and business key, plus a note to display the returned `processKey` and `processName` instead of a domain-level business type.
+
+### Fixed
+
+- The task page attribute filter no longer silently returns nothing when several business types are queried, because the attribute subquery follows the same business-type choice as the task filter.
+- `countTasks` and `selectTasks` cannot diverge for a multi-business-type query, because both include the same business-type fragment.
+- The workflow contract sentinel no longer reports a stale expected fingerprint: it prints the actual public-API or HTTP fingerprint with the instruction to update the constant only for an intentional contract change.
+- A workflow starter test failure is now visible in the required check; before this batch the module's sixty-three tests ran zero times under the reactor's Surefire 2.17 binding while the build reported success.
+- An empty `businessTypes` or `processDefinitionKeys` list no longer risks an invalid `in ()` statement; the mapper falls back to the `1.12.0` equality clause or omits the condition.
+
+### Changed
+
+- `businessType` is no longer required at bean-validation level: the service rejects a query only when both `businessType` and `businessTypes` are absent, and it keeps the same `业务类型不能为空` message. Callers that already send `businessType` see no behavioural change.
+- When both `businessType` and `businessTypes` are present, the list wins and the single value is ignored; this precedence is documented in the API Javadoc, the module README and the business integration guide.
+- `@mango/pmo@1.6.1` records the workflow contract sentinel gate in `rules/05-ai-delivery-quality.md` and refreshes `rules/index.json`; the business PMO baseline projection is synchronised with the same content.
+- `mango-docs/guides/operations/mango-1.12.0-to-1.13.0-upgrade.md` is generated from this sealed plan and published with the docs bundle.
+
+### Versions
+
+- Maven/docs: `1.12.0` to `1.13.0`; 201 sealed Maven coordinates, including `io.mango:mango-docs-bundle:1.13.0` and `io.mango.platform.workflow:mango-workflow-api:1.13.0`.
+- npm: `@mango/pmo@1.6.1` and `@mango/cli@1.4.14`; no other npm package is republished because no `@mango/*` frontend source changed in this batch.
+- Exactly sealed topology, dependency order and checksums come from `mango-ui/.changeset/release-plan.json`.
+
+### Published Packages
+
+- Publish all 201 non-application Maven coordinates in release-plan order.
+- Publish `@mango/pmo@1.6.1` for the delivered rule and `@mango/cli@1.4.14` as the generated compatibility closure.
+- Application fat jars and coordinates outside the sealed plan are excluded; the `@mango/*` frontend packages keep their `1.12.0` batch versions.
+
+### Business Impact
+
+- A workbench that must show several business types at once can now issue one request, read one `total` and page once, instead of merging several responses in memory or normalising every business type into a domain-level value and backfilling history.
+- Callers that page a single business type need no code change: `businessType` alone produces the same SQL and the same response as `1.12.0`, which is asserted by a generated-SQL regression test.
+- A business application whose workbench only filters one business type, including the current `mango-baohan-risk` issue #189 scope, does not need `1.13.0`; the single-value contract in `1.12.0` already covers it and this batch only fixes the ability to aggregate and the CI gate.
+- No HTTP path, menu, permission code, database migration or configuration key is added or removed; the change is two optional request fields plus one relaxed validation rule.
+- A business repository that runs the bundled PMO check receives the stricter contract-sentinel wording from `@mango/pmo@1.6.1`; the check itself still only fails on an unintended public-surface drift.
+
+### Upgrade Estimate
+
+- Audience: business applications that aggregate several business types or several process definitions in one workbench, and PMO consumers that want the contract-sentinel gate wording; single-business-type consumers may stay on `1.12.0`.
+- Engineering Effort: 0.5 engineer-day per consumer that adopts the multi-value filters, including the request change, the display-column decision for `processKey` and `processName`, and one regression pass over the single-value path.
+- Execution Window: 1 hour per consumer including one backend restart and one pass over a workbench page that mixes at least two business types.
+- Service Downtime: one controlled backend restart window; no Flyway migration runs in this batch, and the previous `V6` snapshot columns stay as they are.
+- Rollback Effort: 0.25 engineer-day per consumer to restore the complete Maven `1.12.0` tuple, `@mango/pmo@1.6.0` and `@mango/cli@1.4.13`, and to switch any list-shaped request back to a single `businessType`.
+- Assumptions: consumers already run the `1.12.0` tuple, query the task page through `POST /workflow/tasks/page-by-business-key`, and hold `workflow:task:list` (plus `workflow:task:all` when they use the all scope).
+
+### Upgrade Notes
+
+1. Upgrade the complete Mango Maven/docs tuple from `1.12.0` to `1.13.0`; do not update only one workflow module or only one starter.
+2. Keep sending `businessType` for a single-type page. The generated SQL and the response are byte-compatible with `1.12.0`, so no business code change is required and no behavioural regression is expected.
+3. To aggregate several business types, send `businessTypes` and drop `businessType`, or keep both knowing that the list wins; send at most twenty business types and at most one hundred process definition keys per request.
+4. When both `businessTypes` and `processDefinitionKeys` are present the conditions intersect, so a task must match one business type and one process definition in the same request.
+5. Show the returned `processKey` or `processName` on the list column when a page mixes business types; a domain-level business type loses the distinction that the aggregate page is meant to show.
+6. Upgrade CLI and PMO consumers to `@mango/cli@1.4.14` and `@mango/pmo@1.6.1` when the CLI, the PMO check or a generated business project is used; the `@mango/*` frontend packages keep their `1.12.0` versions.
+
+### Verification
+
+- The workflow core suite runs 254 tests with zero failures and four skipped, including new mapper integration tests that assert the `1.12.0` equality SQL for a single business type, correct totals and paging for a `businessTypes` list, a `processDefinitionKeys`-only filter, the intersection of both filters, the attribute filter across business types, and an empty list that produces no invalid SQL.
+- The workflow starter suite runs 63 tests with zero failures, including the recomputed public-API and HTTP contract fingerprints and the validation-inheritance test for a list-only request.
+- The changed-module architecture and Java quality gate reports `PASS` with zero new issues against the `ed6cf66d7` baseline, and `mvn verify` on the three workflow modules builds successfully with Checkstyle, PMD and SpotBugs clean.
+- The docs gates pass: module README audit, README source facts, business integration guides, capability docs governance and governance intent.
+- `catalog:check` reports a consistent Catalog projection on the source commit, and the release plan re-computes 201 Maven coordinates plus the `@mango/pmo` and `@mango/cli` closure with matching topology.
+- `mango release prepare` builds once, seals every JAR, docs bundle, tarball and source archive under one prepared candidate id, and runs a mixed consumer against the sealed files and the consume registry.
+
+### Rollback
+
+- Restore the complete Maven `1.12.0` tuple together with `@mango/pmo@1.6.0` and `@mango/cli@1.4.13`; do not patch a single workflow module.
+- Remove any `businessTypes` or `processDefinitionKeys` argument from business requests before the downgrade, otherwise the `1.12.0` server ignores the unknown fields and silently returns only the single `businessType` slice.
+- No database rollback is required: the batch adds no migration and no column.
+- The relaxed `businessType` validation reverts with the code, so a caller that only sent `businessTypes` must restore the single-value field deliberately.
 
 ## v2026.11.16-maven-1.12.0-task-release-facts-release - Mango Maven/docs 1.12.0 task release facts - 2026-11-16
 
