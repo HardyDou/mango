@@ -28,6 +28,8 @@
         <resilience4j.version>2.2.0</resilience4j.version>
         <assertj.version>3.27.7</assertj.version>
         <spotbugs-plugin.version>4.9.3.0</spotbugs-plugin.version>
+        <!-- 与 mango-parent 对齐：Surefire 2.x 发现不了 JUnit 5 用例，默认绑定会让 `mvn test` 静默跑 0 个用例 -->
+        <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
         <netty.version>4.1.132.Final</netty.version>
         <tomcat.version>10.1.54</tomcat.version>
         <jackson-bom.version>2.21.2</jackson-bom.version>
@@ -1144,6 +1146,15 @@
                         <consoleOutput>true</consoleOutput>
                         <failsOnError>false</failsOnError>
                         <includeTestSourceDirectory>false</includeTestSourceDirectory>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${maven-surefire-plugin.version}</version>
+                    <configuration>
+                        <!-- real 组用例依赖本机 Redis/MySQL 等外部服务，默认执行集里排除，避免 CI 假红 -->
+                        <excludedGroups>real</excludedGroups>
                     </configuration>
                 </plugin>
                 <plugin>

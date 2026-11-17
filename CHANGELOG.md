@@ -1,3 +1,17 @@
+## Unreleased - backend test execution (Issue #1300)
+
+### Pull Requests
+
+- Added: [Issue #1300](https://github.com/HardyDou/mango/issues/1300) makes backend tests actually execute. The build root `mango/pom.xml` now pins `maven-surefire-plugin` to `3.2.5` in `pluginManagement` with `<excludedGroups>real</excludedGroups>`, replacing the Maven built-in binding of `2.17` that has no JUnit Platform provider and reported `Tests run: 0` with `BUILD SUCCESS` for every JUnit 5 module.
+- Added: the new `Changed module tests` CI job runs `mvn test` for exactly the modules preflight marked as changed (`maven_projects`, no `-DskipTests`), builds their dependencies first, and then asserts with `mango-pmo/tools/check-surefire-execution.mjs` that each changed module produced a Surefire report with a non-zero test count. The job is wired into the `pmo-doc-check` aggregate gate.
+- Added: `mango-pmo/tools/check-surefire-execution.mjs` plus `mango-pmo/tests/check-surefire-execution.test.mjs`, reporting `SUREFIRE_REPORT_MISSING` and `SUREFIRE_ZERO_TESTS` instead of letting an empty report count as success.
+- Added: `mango-docs/guides/operations/backend-test-execution.md` documents local and CI entry points, the `real` tag for tests that need Redis/MySQL, and how to diagnose a false green.
+- Changed: tests that need real external services now declare `@Tag("real")` (`RedisRealIntegrationTest`, `RedisKvRealtimePresenceIntegrationTest`, `RedisStreamDomainEventTransportIntegrationTest`, `RedisRateLimiterIntegrationTest`) or `@EnabledIfEnvironmentVariable` (`FileServiceConcurrentSaveIntegrationTest`), so the default execution stays hermetic.
+
+### Known failing tests
+
+Enabling execution surfaced six modules with pre-existing failing tests; they are tracked in [Issue #1301](https://github.com/HardyDou/mango/issues/1301) and intentionally left failing rather than disabled. `Changed module tests` will fail for pull requests that touch those modules until they are fixed.
+
 ## v2026.11.16-maven-1.12.0-task-release-facts-release - Mango Maven/docs 1.12.0 task release facts - 2026-11-16
 
 Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `d0a8a4472889df08b49ac4fa84b0f09fefb57a3a6ce51349eafddfa67a583d87`; prepared candidate `dc93111111e64181f9fe04c88efd89fbac53195d4d44ed1b02af2aad57d6a5f7` completed publication and consume verification for `@mango/cli@1.4.13` and 201 Maven coordinates. Tag and GitHub Release were created and verified.

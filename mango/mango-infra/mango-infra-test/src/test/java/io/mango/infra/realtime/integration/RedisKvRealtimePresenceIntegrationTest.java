@@ -15,6 +15,7 @@ import io.mango.infra.realtime.starter.presence.KvRealtimePresenceService;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
@@ -31,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Real Redis integration tests for realtime presence routing.
  * Requires Redis running on localhost:6379 with no password.
  */
+@Tag("real")
 class RedisKvRealtimePresenceIntegrationTest {
 
     private static final String KEY_PREFIX = "rt:presence:" + System.currentTimeMillis();

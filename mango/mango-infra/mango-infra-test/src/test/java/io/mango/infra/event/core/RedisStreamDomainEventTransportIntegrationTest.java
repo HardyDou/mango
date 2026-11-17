@@ -19,6 +19,7 @@ import io.mango.infra.kv.core.support.PrefixedKvStore;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.redisson.Redisson;
 import org.redisson.api.RStream;
@@ -45,6 +46,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * Real Redis Stream integration test for domain event transport.
  * Requires Redis running on localhost:6379 with no password.
  */
+@Tag("real")
 class RedisStreamDomainEventTransportIntegrationTest {
 
     private static final String KEY_PREFIX = "mango:test:domain-event:" + System.currentTimeMillis();

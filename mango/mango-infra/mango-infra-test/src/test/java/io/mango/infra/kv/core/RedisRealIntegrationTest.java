@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
@@ -28,6 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Real Redis integration tests.
  * Requires Redis running on localhost:6379 with no password.
  */
+@Tag("real")
 class RedisRealIntegrationTest {
 
     private static final String KEY_PREFIX = "rt:" + System.currentTimeMillis() + ":";

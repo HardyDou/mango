@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Redis 限流能力集成测试。 */
 @Tag("integration")
+@Tag("real")
 @Tag("ai")
 class RedisRateLimiterIntegrationTest {
 

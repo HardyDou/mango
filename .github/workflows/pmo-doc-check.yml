@@ -139,6 +139,7 @@ jobs:
         run: |
           node --test \
             mango-pmo/tests/architecture-debt-budget.test.mjs \
+            mango-pmo/tests/check-surefire-execution.test.mjs \
             mango-pmo/tests/branch-protection-policy.test.mjs \
             mango-pmo/tests/document-contract/document-contract.test.mjs \
             mango-pmo/tests/frontend-page-baseline.test.mjs \
@@ -476,6 +477,88 @@ jobs:
             test-compile \
             org.apache.maven.plugins:maven-surefire-plugin:3.2.5:test
 
+  changed_module_tests:
+    name: Changed module tests
+    needs: preflight_scope
+    if: needs.preflight_scope.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      # 直接改构建根 POM 时 preflight 的 maven_projects 为空，这里按改动路径回退定位模块。
+      - name: Resolve modules to verify
+        id: modules
+        env:
+          MAVEN_PROJECTS: ${{ needs.preflight_scope.outputs.maven_projects }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          modules="$MAVEN_PROJECTS"
+          if [ -z "$modules" ]; then
+            modules=$(node mango-pmo/tools/check-surefire-execution.mjs --changed-since "$BASE_SHA" --root mango --list-modules | paste -sd, -)
+          fi
+          echo "modules=$modules" >> "$GITHUB_OUTPUT"
+          echo "Modules under test: ${modules:-<none>}"
+
+      - name: Install reactor prerequisites
+        if: steps.modules.outputs.modules != ''
+        run: |
+          mvn -B -f mango/pom.xml \
+            -pl :mango-bom,:mango-parent,:mango-common,:mango-tools \
+            -DskipTests \
+            install
+
+      - name: Install architecture plugins
+        if: steps.modules.outputs.modules != ''
+        run: |
+          mvn -B -f mango/pom.xml \
+            -pl :mango-architecture-rules,:mango-maven-plugin \
+            -DskipTests \
+            install
+
+      - name: Install dependencies of verified modules
+        if: steps.modules.outputs.modules != ''
+        run: |
+          mvn -B -f mango/pom.xml \
+            -pl "${{ steps.modules.outputs.modules }}" \
+            -am \
+            -DskipTests \
+            -Denforcer.skip=true \
+            -Dcheckstyle.skip=true \
+            -Dpmd.skip=true \
+            -Dspotbugs.skip=true \
+            -Dmango.architecture.skip=true \
+            install
+
+      - name: Run tests of verified modules
+        if: steps.modules.outputs.modules != ''
+        run: |
+          mvn -B -f mango/pom.xml \
+            -pl "${{ steps.modules.outputs.modules }}" \
+            -DskipTests=false \
+            -Denforcer.skip=true \
+            -Dcheckstyle.skip=true \
+            -Dpmd.skip=true \
+            -Dspotbugs.skip=true \
+            -Dmango.architecture.skip=true \
+            test
+
+      - name: Assert verified modules actually executed their tests
+        if: always() && steps.modules.outputs.modules != ''
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node mango-pmo/tools/check-surefire-execution.mjs --changed-since "$BASE_SHA" --root mango
+
   docs:
     name: Documentation gates
     needs: preflight_scope
@@ -518,7 +601,7 @@ jobs:
 
   pmo-doc-check:
     name: pmo-doc-check
-    needs: [preflight_scope, release_plan, pmo, cli_js, java, workflow_contract, docs]
+    needs: [preflight_scope, release_plan, pmo, cli_js, java, workflow_contract, changed_module_tests, docs]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     timeout-minutes: 2
@@ -531,6 +614,7 @@ jobs:
           CLI_JS_RESULT: ${{ needs.cli_js.result }}
           JAVA_RESULT: ${{ needs.java.result }}
           WORKFLOW_CONTRACT_RESULT: ${{ needs.workflow_contract.result }}
+          CHANGED_MODULE_TESTS_RESULT: ${{ needs.changed_module_tests.result }}
           DOCS_RESULT: ${{ needs.docs.result }}
         run: |
           {
@@ -543,6 +627,7 @@ jobs:
             echo "| cli_js | $CLI_JS_RESULT |"
             echo "| java | $JAVA_RESULT |"
             echo "| workflow_contract | $WORKFLOW_CONTRACT_RESULT |"
+            echo "| changed_module_tests | $CHANGED_MODULE_TESTS_RESULT |"
             echo "| docs | $DOCS_RESULT |"
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -553,6 +638,7 @@ jobs:
             "$CLI_JS_RESULT" \
             "$JAVA_RESULT" \
             "$WORKFLOW_CONTRACT_RESULT" \
+            "$CHANGED_MODULE_TESTS_RESULT" \
             "$DOCS_RESULT"; do
             case "$result" in
               success|skipped) ;;

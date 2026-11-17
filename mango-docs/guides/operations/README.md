@@ -9,6 +9,7 @@
 | 任务 | 入口 | 输出 |
 |---|---|---|
 | 规划业务项目的镜像、测试、生产发布和回滚 | [CI/CD 发布实践](./ci-cd-release-practices.md) | Pipeline 阶段、制品、凭据、健康检查和回滚证据 |
+| 执行后端测试、识别「测试没跑」 | [后端测试执行](./backend-test-execution.md) | 本地与 CI 执行入口、`real` 标签、假绿排查 |
 | 为 API 制品生成 cold baseline | [构建期 cold baseline](./build-time-cold-baseline.md) | 每模块 B、Resource manifest、文件 manifest 和可复现 JAR |
 | 区分 Flyway、Resource、Demo 和运行期数据 | [Resource 重置与增量发布](./resource-reset-incremental-release.md) | reset/incremental 发布选择和验收矩阵 |
 
