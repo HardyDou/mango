@@ -49,6 +49,8 @@ Issue #805 的下一 full 模板候选会显式启用 `mango.event.outbox.enable
 
 当前发布候选还包含 AI 管理与统一工作台、Common Chat streaming provider、HTTP streaming、Admin/CLI AI 模块聚合以及 PMO Maven 范围识别的 Changeset 与升级说明；正式版本号和依赖闭包以合并后的 Mango release plan 为准，业务项目在该批次完成发布后再按锁定的 CLI/PMO tuple 升级。
 
+能力文档门禁修正了测试源码的误报：`check-capability-docs.mjs` 过去把 `src/test/**`、`src/it/**` 也算作能力变更，只改测试的 PR 会被要求更新模块 README 与业务指南，与 [能力说明维护规范](../mango-pmo/rules/08-capability-docs.md) §4「测试补充，不改变使用方式和验收口径」冲突。本次同步刷新 `business-pmo/mango-baseline` 投影（`baseline.json`、`tools/check-capability-docs.mjs`）；业务项目的 API、配置、菜单、权限、租户、页面与启动行为不变。
+
 Issue #1297 更新了 PMO 门禁中对 workflow 公开契约哨兵的约定，规则正文见 [AI 交付质量规范](../mango-pmo/rules/05-ai-delivery-quality.md) §2.4；本次同时同步刷新 `business-pmo/mango-baseline` 投影（`baseline.json`、`rules/05-ai-delivery-quality.md`、`rules/index.json`），只影响 PMO 门禁说明与投影一致性，业务项目的 API、配置、菜单、权限、租户、页面与启动行为不变。
 
 `business-pmo/mango-baseline` 是 canonical `mango-pmo` 的构建投影，维护边界遵循

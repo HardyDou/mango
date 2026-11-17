@@ -425,6 +425,26 @@ function runSelfTest() {
       valid: true
     },
     {
+      name: 'test-only backend changes do not require module README or business guide',
+      files: [
+        'mango/mango-platform/mango-file/mango-file-core/src/test/java/io/mango/file/core/service/impl/FileServiceConcurrentSaveIntegrationTest.java',
+        'mango/mango-platform/mango-file/mango-file-core/src/it/resources/fixture.xml'
+      ],
+      body: filledPrBody(),
+      valid: true
+    },
+    {
+      name: 'test-only change still needs the business guide when main sources change',
+      files: [
+        'mango/mango-platform/mango-file/mango-file-core/src/test/java/io/mango/file/core/service/impl/FileServiceTest.java',
+        'mango/mango-platform/mango-file/mango-file-api/src/main/java/io/mango/file/api/FileApi.java',
+        'mango/mango-platform/mango-file/README.md'
+      ],
+      body: filledPrBody(),
+      valid: false,
+      expectedFailure: 'file-upload-form.md'
+    },
+    {
       name: 'M08 disabled does not make CI add capability documents',
       files: ['mango/mango-platform/mango-job/mango-job-core/src/main/java/com/example/Job.java'],
       body: filledPrBody().replace('M08=ENABLE', 'M08=DISABLE'),
@@ -569,6 +589,11 @@ function checkAddedLinks(relativePath, failures) {
 
 function isCapabilityAffectingFile(file) {
   if (file.endsWith('/README.md') || file.startsWith('mango-docs/capabilities/')) {
+    return false;
+  }
+  // 规则 08 §4：测试补充不改变公开能力、配置或验收口径，用例、夹具与集成测试
+  // 资源既不代表模块契约也不代表业务接入方式，不要求更新模块 README 或业务指南。
+  if (/\/src\/test\//.test(file) || /\/src\/it\//.test(file)) {
     return false;
   }
   return (
