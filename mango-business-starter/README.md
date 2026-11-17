@@ -49,7 +49,7 @@ Issue #805 的下一 full 模板候选会显式启用 `mango.event.outbox.enable
 
 当前发布候选还包含 AI 管理与统一工作台、Common Chat streaming provider、HTTP streaming、Admin/CLI AI 模块聚合以及 PMO Maven 范围识别的 Changeset 与升级说明；正式版本号和依赖闭包以合并后的 Mango release plan 为准，业务项目在该批次完成发布后再按锁定的 CLI/PMO tuple 升级。
 
-Issue #1297 在 `mango-pmo/rules/05-ai-delivery-quality.md` §2.4 补充了 `pmo-doc-check` 中 `workflow_contract` job 的口径（必须用 Surefire 3.2.5 执行 `mango-workflow-starter` 测试并计入汇总；公开契约哨兵只允许通过有意更新黄金指纹并在 PR 描述记录契约变更来转绿），并同步刷新 `business-pmo/mango-baseline` 投影（`baseline.json`、`rules/05-ai-delivery-quality.md`、`rules/index.json`）。本次只影响 PMO 门禁说明与投影一致性，业务项目的 API、配置、菜单、权限、租户、页面与启动行为不变。
+Issue #1297 更新了 PMO 门禁中对 workflow 公开契约哨兵的约定，规则正文见 [AI 交付质量规范](../mango-pmo/rules/05-ai-delivery-quality.md) §2.4；本次同时同步刷新 `business-pmo/mango-baseline` 投影（`baseline.json`、`rules/05-ai-delivery-quality.md`、`rules/index.json`），只影响 PMO 门禁说明与投影一致性，业务项目的 API、配置、菜单、权限、租户、页面与启动行为不变。
 
 `business-pmo/mango-baseline` 是 canonical `mango-pmo` 的构建投影，维护边界遵循
 [文档资产规范](../mango-pmo/rules/06-document-assets.md)。更新 PMO 后执行：
