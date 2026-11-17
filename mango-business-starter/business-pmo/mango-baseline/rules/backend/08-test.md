@@ -37,7 +37,8 @@
 - 后端入口级流程测试不得称为 E2E；`UI/E2E` 只指从浏览器用户入口执行的端到端测试。
 - 入口级流程测试必须独立、完整、可组合执行；用例不能依赖隐式执行顺序、上一个用例残留状态或人工预置数据。
 - 入口级流程测试必须能按单个用例、按标签/能力组合、按全量套件执行，并保持相同断言口径。
-- 后端入口级流程测试使用 JUnit 5 `@Tag` 标识组合维度，至少包含 `flow` 和能力标签，例如 `auth`、`workflow`、`payment`；涉及慢测或外部依赖时额外标记 `slow` 或 `external`。
+- 后端入口级流程测试使用 JUnit 5 `@Tag` 标识组合维度，至少包含 `flow` 和能力标签，例如 `auth`、`workflow`、`payment`；涉及慢测或外部依赖时额外标记 `slow` 或 `real`。`real` 由构建根 `mango/pom.xml` 的 Surefire `excludedGroups` 默认排除，本地需要真实 Redis/MySQL 时显式 `-Dgroups=real -DexcludedGroups=`。
+- Surefire 版本只在构建根 `mango/pom.xml` 绑定（3.2.5）；禁止模块单独声明更低版本。`Tests run: 0` 不等于通过，模块有可执行测试就必须产出非零用例报告，CI 由 `mango-pmo/tools/check-surefire-execution.mjs` 判定 `SUREFIRE_REPORT_MISSING` 与 `SUREFIRE_ZERO_TESTS`。
 - 入口级流程用例必须自行创建依赖数据或调用明确 fixture，使用唯一测试数据标识，并在前置或后置步骤清理自身数据。
 - 禁止入口级流程测试使用 `@TestMethodOrder` 表达业务依赖，禁止跨用例共享可变静态业务状态，禁止用例 A 创建数据供用例 B 验收。
 - 后端入口级流程测试最小验证入口应覆盖单用例、能力标签和全量套件；无法执行任一组合时，交付记录必须说明阻塞原因和风险。
