@@ -31,6 +31,23 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class WorkflowApiSurfaceContractTest {
 
+    /**
+     * 公开 API 契约指纹：{@link #PUBLIC_APIS} 中「方法名 → 泛型返回类型」的 SHA-256。
+     *
+     * <p>指纹只覆盖公开接口的方法名、泛型返回类型与控制器端点的 verb/path/返回类型/权限，不覆盖 DTO 字段；
+     * 给 VO、Query、Request 加字段不会改变指纹。有意增删公开方法或改变返回契约时，把新指纹粘到此处，
+     * 并在 PR 描述里说明契约变更；确认不是有意变更时，回退改动而不是更新常量。
+     */
+    private static final String API_FINGERPRINT =
+            "053297d7a998ef45b6c40093a2d4e1fb25d04d0323159773424b5c1fe148a8a1";
+
+    /**
+     * 公开 HTTP 端点指纹：{@link #PUBLIC_CONTROLLERS} 中「verb + path + 方法名 → 返回类型 + {@code ApiAccess}」的
+     * SHA-256。
+     */
+    private static final String HTTP_FINGERPRINT =
+            "277ab3b80baff855b0e4fdedc094ec7e73f67415e5951ca15835c273449da417";
+
     private static final List<Class<?>> PUBLIC_APIS = List.of(
             WorkflowBusinessApplyApi.class,
             WorkflowBusinessProcessApi.class,
@@ -53,12 +70,20 @@ class WorkflowApiSurfaceContractTest {
 
     @Test
     void existingApisKeepMethodNamesAndReturnContracts() {
-        assertThat(apiFingerprint()).isEqualTo("649612f32fe8455489b39ac2610a5d1322f66c9559c7868b24b17d7de0bc1f16");
+        String actual = apiFingerprint();
+        assertThat(actual)
+                .as("公开 API 契约变了（%s）。确认是有意变更就把 API_FINGERPRINT 常量改成上面的实际指纹，"
+                        + "并在 PR 描述里写明新增/删除/改签名的公开方法；不是有意变更就回退改动。", actual)
+                .isEqualTo(API_FINGERPRINT);
     }
 
     @Test
     void existingHttpEndpointsKeepPathsVerbsReturnsAndPermissions() {
-        assertThat(httpFingerprint()).isEqualTo("32e55a001ad78d3b65ec64e55d63cd70bf6e202e33843438d84b7d2012bd9851");
+        String actual = httpFingerprint();
+        assertThat(actual)
+                .as("公开 HTTP 端点契约变了（%s）。确认是有意变更就把 HTTP_FINGERPRINT 常量改成上面的实际指纹，"
+                        + "并在 PR 描述里写明端点、权限的变化；不是有意变更就回退改动。", actual)
+                .isEqualTo(HTTP_FINGERPRINT);
     }
 
     private static String apiFingerprint() {
