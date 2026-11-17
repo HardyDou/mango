@@ -11,7 +11,7 @@ public class RTest {
     @Test
     void testOk() {
         R<String> r = R.ok("hello");
-        assertThat(r.getCode()).isEqualTo(200);
+        assertThat(r.getCode()).isEqualTo(999);
         assertThat(r.isSuccess()).isTrue();
         assertThat(r.getData()).isEqualTo("hello");
         assertThat(r.getMsg()).isEqualTo("操作成功");
