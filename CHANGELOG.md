@@ -1,3 +1,20 @@
+## Unreleased - workflow contract fingerprint for release notes (Issue #1312)
+
+### Added
+
+- `mango-pmo/tools/workflow-contract-fingerprint.mjs` reads the two SHA-256 constants of `WorkflowApiSurfaceContractTest`, compares them with the previous batch tag, extracts DTO fields and enum values added inside `mango-workflow-api`, and prints a paste-ready `workflow-contract-fingerprint` / `workflow-compatible-additions` block for release notes. It also warns when `*Api.java` or `*Controller.java` changed without the fingerprint constants following, which is the signal that `Workflow API contract sentinel` never ran on that commit.
+- `mango-pmo/tests/workflow-contract-fingerprint.test.mjs` covers constant and legacy inline-literal parsing, change classification, multi-line annotated field extraction, enum extraction, scope filtering and the empty-additions form.
+- `mango-docs/guides/operations/workflow-contract-fingerprint.md` explains the two fingerprints, the required release-notes fields, the generation commands and how business projects decide whether to diff method signatures.
+- `workflow-contract-fingerprint.mjs --verify-release-notes <file>` rejects a release section whose block is missing, whose hashes disagree with the code, whose `changed`/`since` disagree with the computed values, or whose contract sources changed without the constants following.
+
+### Changed
+
+- `mango-pmo/skills/mango-release/SKILL.md` requires the contract block in the release body for batches touching `mango-workflow`, forbids hand-copying the hashes, and defines the `# WARN` line as "contract sentinel did not run".
+
+### Business Adaptation
+
+- No code change. A business project reads `changed` and the compatible-additions list from the batch release notes instead of diffing `mango-workflow-api` by hand. Values published for `1.12.0` and earlier are unverified and must not be used as a baseline; the trustworthy chain starts at `1.13.0`.
+
 ## v2026.11.18-maven-1.14.0-captcha-sms-provider-release - Mango Maven/docs 1.14.0 验证码短信内置阿里云腾讯云通道 - 2026-11-18
 
 Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `a0612cc2572e4ce00420661a5b6b63043540d6c699b64363ce87ca014149c015`; prepared candidate `86f6eb2c4e36bd083daa8e9aa43537a1b24239740dea65f1b3a5ea93c464142c` completed publication and consume verification for the 28 npm packages from `@mango/common@2.3.4` to `@mango/cli@1.4.15` and 201 Maven coordinates. Tag `v2026.11.18-maven-1.14.0-captcha-sms-provider-release` and its GitHub Release were created and verified, and `mango-ui/.changeset/release-baseline.json` records this batch as the new successful baseline.

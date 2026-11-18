@@ -3,8 +3,8 @@
   "packageVersion": "1.6.2",
   "schemaVersion": 2,
   "source": "mango-pmo",
-  "sourceCommit": "abc1cf2582e0f3c3fef8b37eb5c279d42920c905",
-  "bundleSha256": "d45ab38682506705c81ae4f5f77ea91e11f7438375eec75e956f150d351f9ee6",
+  "sourceCommit": "249f66eb46177bf9fdb9beef55185584e352bbe6",
+  "bundleSha256": "a07d57878b1c8126ed2e951d74d47a108e126b30469caea3c53be739417e536c",
   "contracts": [
     {
       "contractId": "business-requirements",
@@ -1486,6 +1486,13 @@
       "path": "tools/test-quality-check.mjs",
       "sha256": "a7056171568eeb49ee98803d2c3b199f54a3a3df6c93462e67b33221c5d6b8e9",
       "size": 6762,
+      "kind": "tool",
+      "mode": "0644"
+    },
+    {
+      "path": "tools/workflow-contract-fingerprint.mjs",
+      "sha256": "638cd53364bb64d7d2554cf9a4ce5313cb0f875f0a5bb4b32d3d973974e81e5e",
+      "size": 17048,
       "kind": "tool",
       "mode": "0644"
     },
