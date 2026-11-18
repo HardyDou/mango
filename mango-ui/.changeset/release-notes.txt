@@ -1,82 +1,153 @@
+# Mango Maven 1.14.0 验证码短信通道批次发布说明
+
+批次标签 `v2026.11.18-maven-1.14.0-captcha-sms-provider-release`，基线为 `v2026.11.17-maven-1.13.0-task-multi-filter-contract-gate-release`（Maven 1.13.0）。
+
 ## Pull Requests
 
-- Added: [PR #1296](https://github.com/HardyDou/mango/pull/1296) lets one task page answer for several business types in a single request: `WorkflowTaskBusinessPageQuery` gains the optional `businessTypes` and `processDefinitionKeys` multi-value filters, both mapper statements share one business-type fragment so `total` and rows cannot disagree, and attribute filters now follow the same business-type choice instead of the single value. Packages: the complete Maven/docs `1.13.0` tuple including `io.mango.platform.workflow:mango-workflow-{api,core,starter,starter-remote}:1.13.0` and `io.mango:mango-docs-bundle:1.13.0`, plus `@mango/pmo@1.6.1` and the generated `@mango/cli@1.4.14` closure. Business Adaptation: optional; callers that pass a single `businessType` keep the exact `1.12.0` behaviour, and only a workbench that must list several business types at once needs the new lists.
-- Fixed: [PR #1299](https://github.com/HardyDou/mango/pull/1299) recomputed the workflow public-API and HTTP contract fingerprints that `1.12.0` left stale after the task release and reassign endpoints landed, printed the paste-ready fingerprint in the failure message, and added the `workflow_contract` job so `mango-workflow-starter` tests finally run in the required check instead of silently executing zero tests. Packages: the complete Maven/docs `1.13.0` tuple, `@mango/pmo@1.6.1` for the new gate rule, and the generated `@mango/cli@1.4.14` closure. Business Adaptation: none at runtime; a business project that runs the bundled PMO check gets the stricter gate wording and must keep its contract sentinel green the documented way.
-- Changed: [PR #1291](https://github.com/HardyDou/mango/pull/1291) closed out the previous `1.12.0` batch by recording the published coordinates in `CHANGELOG.md` and `mango-ui/.changeset/release-baseline.json` and removing the consumed Changeset. Packages: repository release bookkeeping only. Business Adaptation: none.
-
-## Added
-
-- `WorkflowTaskBusinessPageQuery.businessTypes`: an optional list of up to twenty business types; when it is not empty it becomes `and a.business_type in (...)`, so one request returns project admission, compliance review and contract review tasks in one page with one total.
-- `WorkflowTaskBusinessPageQuery.processDefinitionKeys`: an optional list of up to one hundred process definition keys, rendered as `and a.process_definition_key in (...)`, so a workbench can restrict a business type to specific processes.
-- One shared mapper fragment applies the business-type condition to the task filter and to the `workflow_business_apply_attribute` subquery, so `applyAttributeFilters` keeps working when a list of business types is queried.
-- A CI job `workflow_contract` that executes the whole `mango-workflow-starter` test module with Surefire 3.2.5 and feeds its result into the aggregate `pmo-doc-check` check.
-- A four-dimension filter table in the business integration guide that separates business type, process definition key, node definition key and business key, plus a note to display the returned `processKey` and `processName` instead of a domain-level business type.
+- PR #1309 Added 验证码短信内置阿里云、腾讯云通道：`mango-captcha-starter` 新增 `AliyunSmsProvider`、`TencentSmsProvider` 及对应 Sender 与消息支撑类，按 `mango.captcha.sms.provider=aliyun|tencent` 装配，凭证、签名、应用 ID 与模板全部来自 `mango.captcha.sms.aliyun.*`、`mango.captcha.sms.tencent.*` 与 `mango.captcha.sms.template-code` 配置项。Packages: `io.mango.platform.captcha:mango-captcha-api:1.14.0`、`mango-captcha-core:1.14.0`、`mango-captcha-starter:1.14.0`、`mango-captcha-starter-remote:1.14.0`、`@mango/common@2.3.4`。Business Adaptation: 启用通道只需部署配置，不需要编写 Java；未配置供应商时行为与旧版一致。
+- PR #1309 Changed 短信验证码发送失败改为显式错误：`POST /auth/captcha/send` 在供应商缺失、凭证或模板缺失、第三方返回非成功码时不再返回 `200` 加空 `data`，改为业务错误码 `2410`（`CaptchaCode.CAPTCHA_SEND_FAILED`），且不写入验证码缓存；日志对手机号打码。Packages: `io.mango.platform.captcha:mango-captcha-api:1.14.0`、`mango-captcha-core:1.14.0`、`mango-captcha-starter:1.14.0`、`mango-captcha-starter-remote:1.14.0`、`@mango/common@2.3.4`。Business Adaptation: 依赖“HTTP 200 即发送成功”的调用方改为读取 `success` 与错误码；前端只在返回非空 `captchaKey` 时提示已发送并启动倒计时。
+- PR #1306 Fixed 全仓 Maven Surefire 统一到 3.2.5：修正统一后暴露的 8 个历史用例失败，CI 对直接修改的 Maven 模块执行真实测试，新增 `check-surefire-versions.mjs` 回归门禁，避免模块回落到 2.x 时测试静默空跑。Packages: Maven 全量非应用坐标 `1.14.0`（根 POM 与受影响模块）、`@mango/pmo@1.6.2`。Business Adaptation: 业务项目不需要改代码；若业务项目自行钉过 Surefire 2.x 并依赖测试空跑，需要复核自身测试是否真的执行。
+- PR #1307 Fixed `mango-pmo` 能力文档门禁不再把测试源码当作能力变更：`check-capability-docs.mjs` 对 `src/test/**`、`src/it/**` 直接不判定为能力变更，只改测试的 PR 不再被要求更新模块 README 与业务指南。Packages: `@mango/pmo@1.6.2`。Business Adaptation: 业务项目升级 PMO 后只改测试的 PR 不再触发能力说明要求。
 
 ## Fixed
 
-- The task page attribute filter no longer silently returns nothing when several business types are queried, because the attribute subquery follows the same business-type choice as the task filter.
-- `countTasks` and `selectTasks` cannot diverge for a multi-business-type query, because both include the same business-type fragment.
-- The workflow contract sentinel no longer reports a stale expected fingerprint: it prints the actual public-API or HTTP fingerprint with the instruction to update the constant only for an intentional contract change.
-- A workflow starter test failure is now visible in the required check; before this batch the module's sixty-three tests ran zero times under the reactor's Surefire 2.17 binding while the build reported success.
-- An empty `businessTypes` or `processDefinitionKeys` list no longer risks an invalid `in ()` statement; the mapper falls back to the `1.12.0` equality clause or omits the condition.
+- 短信验证码发送失败不再静默返回 `200` 加空 `data`：调用方收到业务错误码 `2410`，验证码缓存不写入，日志记录 `provider`、`templateCode`、缺失配置项键名与第三方错误码，手机号打码。
+- 全仓 Maven 模块的 Surefire 绑定统一到 3.2.5 后暴露的 8 个历史用例失败已修正根因（依赖清单缺项、MyBatis-Plus lambda 缓存未初始化、H2 时间精度、资源声明历史枚举别名、SM4 测试密钥缺失、MySQL 并发用例环境门控、通知模板物理回收语义、文件预览线程时序与 JVM 临时文件竞态），没有用跳过或 `@Disabled` 掩盖。
+- `mango-pmo` 能力文档门禁不再把测试源码算作能力变更。
+
+## Added
+
+- `mango-captcha-starter` 内置阿里云短信通道：`AliyunSmsProvider`、`AliyunSmsSender`、`AliyunSmsMessage`，按 `mango.captcha.sms.provider=aliyun` 装配，读取 `access-key-id`、`access-key-secret`、`sign-name`，可选 `endpoint`（默认 `dysmsapi.aliyuncs.com`）与 `region`（默认 `cn-hangzhou`）。
+- `mango-captcha-starter` 内置腾讯云短信通道：`TencentSmsProvider`、`TencentSmsSender`、`TencentSmsMessage`，按 `mango.captcha.sms.provider=tencent` 装配，读取 `secret-id`、`secret-key`、`sign-name`、`sdk-app-id`，可选 `region`（默认 `ap-guangzhou`）、`endpoint`（默认 `sms.tencentcloudapi.com`）与 `country-code`（默认 `+86`）。
+- `mango.captcha.sms.template-code` 与 `mango.captcha.sms.aliyun.*`、`mango.captcha.sms.tencent.*` 配置项；`CaptchaCode` 新增 `CAPTCHA_SEND_FAILED`（`2410`）。
+- `mango-pmo` 新增 `tools/check-surefire-versions.mjs` 门禁与配套用例，拒绝模块把 Surefire 钉到 3.0.0 以下或在根 POM 与 `mango-parent` 之外自行声明版本。
 
 ## Changed
 
-- `businessType` is no longer required at bean-validation level: the service rejects a query only when both `businessType` and `businessTypes` are absent, and it keeps the same `业务类型不能为空` message. Callers that already send `businessType` see no behavioural change.
-- When both `businessType` and `businessTypes` are present, the list wins and the single value is ignored; this precedence is documented in the API Javadoc, the module README and the business integration guide.
-- `@mango/pmo@1.6.1` records the workflow contract sentinel gate in `rules/05-ai-delivery-quality.md` and refreshes `rules/index.json`; the business PMO baseline projection is synchronised with the same content.
-- `mango-docs/guides/operations/mango-1.12.0-to-1.13.0-upgrade.md` is generated from this sealed plan and published with the docs bundle.
+- 短信验证码失败语义：`POST /auth/captcha/send` 从 `200` 加空 `data` 变为业务错误码 `2410`，`CaptchaService` 不再 `return null`。
+- `mango-captcha-starter` 打包带入 `com.aliyun:dysmsapi20170525` 与 `com.tencentcloudapi:tencentcloud-sdk-java-sms`；两个依赖版本由 `mango-bom` 统一管理，本批次未改 BOM。
+- `SmsCaptcha.vue` 只在后端返回非空 key 时提示「验证码已发送」并启动倒计时，其余情况提示发送失败且不再抛出未处理拒绝。
+- Maven 全仓 Surefire 统一为 3.2.5，模块测试从“多数模块 `Tests run: 0`”变为真实执行；CI `java` 作业新增 `Enforce unified Surefire version baseline` 与 `Run tests for directly modified modules` 两步，`workflow_contract` 作业改用普通 `test` 生命周期。
+- `@mango/pmo` 升到 `1.6.2`，业务基线投影同步刷新；`@mango/cli` 由版本矩阵自动升到 `1.4.15`。
 
 ## Versions
 
-- Maven/docs: `1.12.0` to `1.13.0`; 201 sealed Maven coordinates, including `io.mango:mango-docs-bundle:1.13.0` and `io.mango.platform.workflow:mango-workflow-api:1.13.0`.
-- npm: `@mango/pmo@1.6.1` and `@mango/cli@1.4.14`; no other npm package is republished because no `@mango/*` frontend source changed in this batch.
-- Exactly sealed topology, dependency order and checksums come from `mango-ui/.changeset/release-plan.json`.
+- Maven backend: `1.13.0` -> `1.14.0`
+- Maven docs bundle: `io.mango:mango-docs-bundle` `1.13.0` -> `1.14.0`
+- 关键坐标: `io.mango.platform.captcha:mango-captcha-api:1.14.0`、`mango-captcha-core:1.14.0`、`mango-captcha-starter:1.14.0`、`mango-captcha-starter-remote:1.14.0`、`io.mango:mango-bom:1.14.0`、`io.mango:mango-parent:1.14.0`、`io.mango:mango-maven-plugin:1.14.0`
+- npm 包（全部为 patch 递增）：
+- `@mango/common`: 2.3.3 -> 2.3.4
+- `@mango/admin-extension`: 1.1.7 -> 1.1.8
+- `@mango/ai`: 1.2.7 -> 1.2.8
+- `@mango/auth`: 1.0.44 -> 1.0.45
+- `@mango/file`: 1.3.0 -> 1.3.1
+- `@mango/detail`: 1.1.13 -> 1.1.14
+- `@mango/grid-layout`: 1.0.33 -> 1.0.34
+- `@mango/grid-widgets`: 1.0.39 -> 1.0.40
+- `@mango/home`: 1.0.32 -> 1.0.33
+- `@mango/information`: 1.1.7 -> 1.1.8
+- `@mango/pmo`: 1.6.1 -> 1.6.2
+- `@mango/rbac`: 1.3.3 -> 1.3.4
+- `@mango/site-shell`: 2.0.5 -> 2.0.6
+- `@mango/system`: 1.1.5 -> 1.1.6
+- `@mango/admin-pages`: 1.3.3 -> 1.3.4
+- `@mango/calendar`: 1.0.60 -> 1.0.61
+- `@mango/cms`: 1.1.5 -> 1.1.6
+- `@mango/job`: 1.0.53 -> 1.0.54
+- `@mango/link`: 1.0.46 -> 1.0.47
+- `@mango/notice`: 1.0.66 -> 1.0.67
+- `@mango/numgen`: 1.0.61 -> 1.0.62
+- `@mango/payment`: 1.0.52 -> 1.0.53
+- `@mango/template`: 1.0.61 -> 1.0.62
+- `@mango/workflow`: 1.3.0 -> 1.3.1
+- `@mango/admin-shell`: 1.1.9 -> 1.1.10
+- `@mango/workflow-business-example`: 1.0.71 -> 1.0.72
+- `@mango/admin`: 2.0.11 -> 2.0.12
+- `@mango/cli`: 1.4.14 -> 1.4.15
+- 明确不变的坐标：`mango-ui/packages/mango-cli/release-versions.json` 记录的其余 npm 包版本随本批次闭包整体 patch 递增，没有 minor 或 major 变化；数据库结构、菜单、权限点、租户模型、Maven 插件契约版本号在本批次没有新增字段。
 
 ## Published Packages
 
-- Publish all 201 non-application Maven coordinates in release-plan order.
-- Publish `@mango/pmo@1.6.1` for the delivered rule and `@mango/cli@1.4.14` as the generated compatibility closure.
-- Application fat jars and coordinates outside the sealed plan are excluded; the `@mango/*` frontend packages keep their `1.12.0` batch versions.
+按机器计划拓扑顺序发布：
+
+1. `@mango/common@2.3.4`
+2. `@mango/admin-extension@1.1.8`
+3. `@mango/ai@1.2.8`
+4. `@mango/auth@1.0.45`
+5. `@mango/file@1.3.1`
+6. `@mango/detail@1.1.14`
+7. `@mango/grid-layout@1.0.34`
+8. `@mango/grid-widgets@1.0.40`
+9. `@mango/home@1.0.33`
+10. `@mango/information@1.1.8`
+11. `@mango/pmo@1.6.2`
+12. `@mango/rbac@1.3.4`
+13. `@mango/site-shell@2.0.6`
+14. `@mango/system@1.1.6`
+15. `@mango/admin-pages@1.3.4`
+16. `@mango/calendar@1.0.61`
+17. `@mango/cms@1.1.6`
+18. `@mango/job@1.0.54`
+19. `@mango/link@1.0.47`
+20. `@mango/notice@1.0.67`
+21. `@mango/numgen@1.0.62`
+22. `@mango/payment@1.0.53`
+23. `@mango/template@1.0.62`
+24. `@mango/workflow@1.3.1`
+25. `@mango/admin-shell@1.1.10`
+26. `@mango/workflow-business-example@1.0.72`
+27. `@mango/admin@2.0.12`
+28. `@mango/cli@1.4.15`
+
+- Maven：`1.14.0` 全量非应用 Reactor 坐标 200 个，加 `io.mango:mango-docs-bundle:1.14.0`，共 201 个坐标。
+- 不发布对象：应用部署制品（`mango-app/**`）不进入默认平台 Maven 批次。
 
 ## Business Impact
 
-- A workbench that must show several business types at once can now issue one request, read one `total` and page once, instead of merging several responses in memory or normalising every business type into a domain-level value and backfilling history.
-- Callers that page a single business type need no code change: `businessType` alone produces the same SQL and the same response as `1.12.0`, which is asserted by a generated-SQL regression test.
-- A business application whose workbench only filters one business type, including the current `mango-baohan-risk` issue #189 scope, does not need `1.13.0`; the single-value contract in `1.12.0` already covers it and this batch only fixes the ability to aggregate and the CI gate.
-- No HTTP path, menu, permission code, database migration or configuration key is added or removed; the change is two optional request fields plus one relaxed validation rule.
-- A business repository that runs the bundled PMO check receives the stricter contract-sentinel wording from `@mango/pmo@1.6.1`; the check itself still only fails on an unintended public-surface drift.
+- 受影响消费形态：
+  - 使用短信验证码登录、注册、找回密码或换绑手机号的业务前端：需要把“HTTP 200 即发送成功”改成判断返回码与 `captchaKey` 是否非空。
+  - 需要真实发送验证码短信的业务后端：升级后可以只通过配置接入阿里云或腾讯云，不再需要自建 `SmsProvider` Bean。
+  - 使用 `mango-pmo` 与业务基线的项目：升级后只改测试的 PR 不再被要求更新模块 README 与业务指南。
+- 不受影响：`businessType`、任务分页、工作流、通知、文件与权限等 1.13.0 已交付能力在本批次没有行为变化；未配置 `mango.captcha.sms.provider` 时仍装配 `DefaultSmsProvider`，其失败语义与旧版一致（发送失败）。
+- API 影响：`POST /auth/captcha/send` 失败时返回业务错误码 `2410` 而不是 `200` 加空 `data`；`SmsProvider` 契约的 `templateCode` 参数语义在 Javadoc 中写明，签名未变。
+- 数据与数据库影响：无 DDL 变化，无数据回填。
+- 运行时与运维影响：`mango-captcha-starter` 新增两个第三方 SDK 依赖；凭证通过部署环境变量注入，改配置需要重启才生效；一个部署只能选择一套短信账号。
 
 ## Upgrade Estimate
 
-- Audience: business applications that aggregate several business types or several process definitions in one workbench, and PMO consumers that want the contract-sentinel gate wording; single-business-type consumers may stay on `1.12.0`.
-- Engineering Effort: 0.5 engineer-day per consumer that adopts the multi-value filters, including the request change, the display-column decision for `processKey` and `processName`, and one regression pass over the single-value path.
-- Execution Window: 1 hour per consumer including one backend restart and one pass over a workbench page that mixes at least two business types.
-- Service Downtime: one controlled backend restart window; no Flyway migration runs in this batch, and the previous `V6` snapshot columns stay as they are.
-- Rollback Effort: 0.25 engineer-day per consumer to restore the complete Maven `1.12.0` tuple, `@mango/pmo@1.6.0` and `@mango/cli@1.4.13`, and to switch any list-shaped request back to a single `businessType`.
-- Assumptions: consumers already run the `1.12.0` tuple, query the task page through `POST /workflow/tasks/page-by-business-key`, and hold `workflow:task:list` (plus `workflow:task:all` when they use the all scope).
+- Audience: 升级到 Maven `1.14.0` 并使用短信验证码的业务应用，以及消费 `@mango/common@2.3.4`、`@mango/pmo@1.6.2`、`@mango/cli@1.4.15` 的平台与业务前端项目。
+- Engineering Effort: 后端接入真实短信通道约 0.5 人日（配置四项凭证与模板并做一次真实发送验证）；前端把发送成功判断改为读取 `captchaKey` 约 0.5 人日；仅升级版本不启用短信通道的业务无需改代码。
+- Execution Window: 一次发布窗口内完成，建议与验证码相关入口的低峰时段重叠。
+- Service Downtime: 无计划停机；启用新通道需重启应用使配置生效。
+- Rollback Effort: 回退到 Maven `1.13.0` 与 `@mango/common@2.3.3` 即可，约 0.5 人日；不需要数据回滚。
+- Assumptions: 估算以单个业务应用、单个短信账号、无自定义 `SmsProvider` 实现为前提；多租户多账号、需要短信模板报备与资质审核的场景不在此估算内。
 
 ## Upgrade Notes
 
-1. Upgrade the complete Mango Maven/docs tuple from `1.12.0` to `1.13.0`; do not update only one workflow module or only one starter.
-2. Keep sending `businessType` for a single-type page. The generated SQL and the response are byte-compatible with `1.12.0`, so no business code change is required and no behavioural regression is expected.
-3. To aggregate several business types, send `businessTypes` and drop `businessType`, or keep both knowing that the list wins; send at most twenty business types and at most one hundred process definition keys per request.
-4. When both `businessTypes` and `processDefinitionKeys` are present the conditions intersect, so a task must match one business type and one process definition in the same request.
-5. Show the returned `processKey` or `processName` on the list column when a page mixes business types; a domain-level business type loses the distinction that the aggregate page is meant to show.
-6. Upgrade CLI and PMO consumers to `@mango/cli@1.4.14` and `@mango/pmo@1.6.1` when the CLI, the PMO check or a generated business project is used; the `@mango/*` frontend packages keep their `1.12.0` versions.
+- 升级 Maven：把 `mango.version` 或依赖平台 BOM 的版本集中改到 `1.14.0`，重新解析 `mango-captcha-starter`，确认带入阿里云与腾讯云短信 SDK。
+- 启用短信通道（任选其一）：
+  - 阿里云：设置 `mango.captcha.sms.provider=aliyun`、`mango.captcha.sms.template-code`，以及 `mango.captcha.sms.aliyun.access-key-id`、`access-key-secret`、`sign-name`，凭证用环境变量占位符注入。
+  - 腾讯云：设置 `mango.captcha.sms.provider=tencent`、`mango.captcha.sms.template-code`，以及 `mango.captcha.sms.tencent.secret-id`、`secret-key`、`sign-name`、`sdk-app-id`。
+  - 保持 `provider=default` 时不发送短信，与旧版一致。
+- 前端：升级 `@mango/common` 到 `2.3.4`；调用 `/auth/captcha/send` 时只在 `captchaKey` 非空时提示已发送并倒计时，失败按错误码提示。
+- 平台与治理：`mango-pmo` 升到 `1.6.2` 后重新同步业务基线（`node mango-business-starter/scripts/sync-pmo-baseline.mjs --write`），`@mango/cli` 升到 `1.4.15` 后重新生成或升级项目模板。
+- 既有 `SmsProvider` 自定义实现仍然优先于内置通道，不需要迁移。
 
 ## Verification
 
-- The workflow core suite runs 254 tests with zero failures and four skipped, including new mapper integration tests that assert the `1.12.0` equality SQL for a single business type, correct totals and paging for a `businessTypes` list, a `processDefinitionKeys`-only filter, the intersection of both filters, the attribute filter across business types, and an empty list that produces no invalid SQL.
-- The workflow starter suite runs 63 tests with zero failures, including the recomputed public-API and HTTP contract fingerprints and the validation-inheritance test for a list-only request.
-- The changed-module architecture and Java quality gate reports `PASS` with zero new issues against the `ed6cf66d7` baseline, and `mvn verify` on the three workflow modules builds successfully with Checkstyle, PMD and SpotBugs clean.
-- The docs gates pass: module README audit, README source facts, business integration guides, capability docs governance and governance intent.
-- `catalog:check` reports a consistent Catalog projection on the source commit, and the release plan re-computes 201 Maven coordinates plus the `@mango/pmo` and `@mango/cli` closure with matching topology.
-- `mango release prepare` builds once, seals every JAR, docs bundle, tarball and source archive under one prepared candidate id, and runs a mixed consumer against the sealed files and the consume registry.
+- 候选验证：`mango release prepare` 封存 28 个 npm 包与 201 个 Maven 坐标，含一次混合消费者安装验证。
+- 后端用例：`mango-captcha-core`、`mango-captcha-starter`、`mango-captcha-api` 共 105 个用例通过，其中 `AliyunSmsProviderTest`、`AliyunSmsSenderTest`、`TencentSmsProviderTest`、`TencentSmsSenderTest`、`CaptchaAutoConfigurationTest` 覆盖凭证缺失、模板缺失、第三方返回失败码与装配条件分支。
+- CI 覆盖：`Java gates` 的 `Run tests for directly modified modules` 对 captcha 三个模块执行 61 个用例；`Workflow API contract sentinel` 与其余必过检查通过。
+- 前端用例：`SmsCaptcha.spec.ts` 3 个用例通过，覆盖返回空 key 与请求被拒绝两种失败路径。
+- 未验证项：真实阿里云、腾讯云网关的端到端发送未验证——本批次没有两家的测试账号，SDK 客户端在测试中全部 mock，真实 API 调用、真实失败码映射、签名与模板报备匹配均未经过真实请求验证。首次在目标环境使用前，请用真实凭证与已报备模板执行一次发送验证，并确认失败码映射与日志字段符合预期。
+- 本地静态分析：PMD 规则集 `pmd-mango.xml` 由 CI 生成，本地未执行 PMD，静态分析结论以 CI `Java gates` 为准。
 
 ## Rollback
 
-- Restore the complete Maven `1.12.0` tuple together with `@mango/pmo@1.6.0` and `@mango/cli@1.4.13`; do not patch a single workflow module.
-- Remove any `businessTypes` or `processDefinitionKeys` argument from business requests before the downgrade, otherwise the `1.12.0` server ignores the unknown fields and silently returns only the single `businessType` slice.
-- No database rollback is required: the batch adds no migration and no column.
-- The relaxed `businessType` validation reverts with the code, so a caller that only sent `businessTypes` must restore the single-value field deliberately.
+- 消费端回退：把 Maven 版本回退到 `1.13.0`、`@mango/common` 回退到 `2.3.3`、`@mango/pmo` 回退到 `1.6.1`、`@mango/cli` 回退到 `1.4.14`，重新构建部署；无数据库变更需要回滚。
+- 通道级回退：把 `mango.captcha.sms.provider` 改回 `default` 或删除凭证配置并重启，即可停用第三方短信通道，行为回到“发送失败并返回 `2410`”。
+- 已发布的 Maven 与 npm 坐标不可变，不得覆盖或重新上传同版本；需要修正时发布下一个版本。
+
+## Audit History
+
+- PR #1303、PR #1305 为 Maven 1.13.0 批次自身的发布与收尾 PR，已在该批次 Tag 之前登记，不属于本批次新增能力。
