@@ -25,6 +25,7 @@
 | 点选文字验证码 | 按提示点击图片文字 | `GET /captcha/click-word`、`POST /captcha/verify` |
 | 无感行为验证 | 前端采集行为数据，后端给出风险评分 | `GET /captcha/behavior`、`POST /captcha/behavior/verify` |
 | 短信验证码 | 登录、注册、找回密码、换绑手机号 | `CaptchaApi.send()`、`POST /auth/captcha/send` |
+| 内置短信通道 | 阿里云、腾讯云短信通道，凭证与账号配置全部来自配置项（`${ENV}` 注入） | `mango.captcha.sms.provider=aliyun\|tencent` |
 | 邮件验证码 | 邮箱登录、换绑邮箱、邮件确认 | `CaptchaApi.send()`、`POST /auth/captcha/send` |
 | 验证码拦截 | 认证模块按路径要求请求头验证码 | `X-Captcha-Key`、`X-Captcha-Code`、`X-Captcha-Type` |
 
@@ -98,6 +99,7 @@ String captchaKey = result.getData();
 - `CaptchaApi` 默认实现。
 - 算术、滑块、点选文字、无感行为验证码服务。
 - 默认 `SmsProvider`、`EmailProvider`。
+- 可选的内置短信通道 `AliyunSmsProvider`、`TencentSmsProvider`，仅在 `mango.captcha.sms.provider` 为 `aliyun` 或 `tencent` 时装配，凭证与账号信息来自 `mango.captcha.sms.aliyun.*` / `mango.captcha.sms.tencent.*` 配置项。
 
 验证码值存储依赖 `IKvStore`。实际存储由 `mango-infra-kv` 提供；有 Redis 时可走 Redis，没有 Redis 时按 KV 模块配置使用其他实现。
 
@@ -194,6 +196,63 @@ public SmsProvider smsProvider() {
 
 邮件同理提供 `EmailProvider`。业务模块调用 `CaptchaApi.send()` 后，把返回的 `captchaKey` 给前端保存，后续提交验证码时带回。
 
+### 5.4 内置阿里云/腾讯云短信通道
+
+`mango-captcha-starter` 内置阿里云、腾讯云短信通道。凭证、签名、地域全部由 Spring 配置项提供，**不依赖应用集成**（不需要 `mango-integration`），凭证也不入库。
+
+1. 在配置中选定通道并填写必填项（见下表）。
+2. 凭证只允许写成部署环境的 `${ENV}` 占位符，例如 `${ALIYUN_SMS_AK}`；禁止把明文 AccessKey/SecretKey 提交到代码仓库或配置中心模板。
+3. 配置在启动时绑定，修改配置后需要**重启**应用才生效。
+
+```yaml
+mango:
+  captcha:
+    sms:
+      provider: aliyun          # default | aliyun | tencent
+      template-code: SMS_100001 # 第三方短信模板编码，aliyun/tencent 必填
+      aliyun:
+        access-key-id: ${ALIYUN_SMS_AK}
+        access-key-secret: ${ALIYUN_SMS_SK}
+        sign-name: ${ALIYUN_SMS_SIGN_NAME}
+        endpoint: dysmsapi.aliyuncs.com   # 默认值
+        region: cn-hangzhou               # 默认值
+```
+
+腾讯云通道把 `provider` 改为 `tencent`，并填写 `tencent.*`：
+
+```yaml
+mango:
+  captcha:
+    sms:
+      provider: tencent
+      template-code: "100001"
+      tencent:
+        secret-id: ${TENCENT_SMS_SECRET_ID}
+        secret-key: ${TENCENT_SMS_SECRET_KEY}
+        sign-name: ${TENCENT_SMS_SIGN_NAME}
+        sdk-app-id: ${TENCENT_SMS_SDK_APP_ID}
+        region: ap-guangzhou              # 默认值
+        endpoint: sms.tencentcloudapi.com # 默认值
+        country-code: "+86"               # 默认值
+```
+
+| 通道 | 必填项 | 可选项（默认值） |
+|------|--------|------------------|
+| 公共 | `mango.captcha.sms.template-code` | — |
+| 阿里云 | `sms.aliyun.access-key-id`、`sms.aliyun.access-key-secret`、`sms.aliyun.sign-name` | `sms.aliyun.endpoint`（`dysmsapi.aliyuncs.com`）、`sms.aliyun.region`（`cn-hangzhou`） |
+| 腾讯云 | `sms.tencent.secret-id`、`sms.tencent.secret-key`、`sms.tencent.sign-name`、`sms.tencent.sdk-app-id` | `sms.tencent.region`（`ap-guangzhou`）、`sms.tencent.endpoint`（`sms.tencentcloudapi.com`）、`sms.tencent.country-code`（`+86`） |
+
+参数映射：阿里云模板参数以 `{"code":"<验证码>"}` 传入；腾讯云模板参数按模板顺序传入，第一个参数为验证码。手机号本身不做格式改写；腾讯云按 `countryCode + mobile` 拼接，`country-code` 缺少 `+` 时自动补齐，非法值按 `2410` 失败。
+
+已知限制：
+
+- **一个部署一套短信账号**：`provider` 只能二选一，不支持每个租户使用不同账号；多账号需求请自行提供 `SmsProvider` Bean（自定义 Bean 始终优先于内置 Bean）。
+- **凭证明文存在于部署配置**：靠环境变量注入与部署规范保护，没有加密入库环节。
+- **改配置需重启**：配置项在启动时绑定，不支持热更新。
+- `@ConditionalOnClass` 守卫两家 SDK：下游排除 SDK 依赖时对应供应商不装配，应用仍可启动，发送按 `2410` 失败。
+
+发送失败统一抛出 `CaptchaCode.CAPTCHA_SEND_FAILED`（`2410`），不保存验证码、不返回 `captchaKey`。常见原因包括：`provider` 取值不匹配任何内置供应商、缺少凭证/签名/`sdk-app-id` 等必填配置、`template-code` 为空、第三方返回非 `OK`。日志只记录 `provider`、`templateCode`、缺失的配置项键名（`property=`）和第三方错误码，不输出凭证值和完整手机号。固定验证码模式和 `provider=default` 行为不变；邮件通道失败仍按原有语义返回空值。
+
 ## 6. 配置说明
 
 ```yaml
@@ -238,7 +297,23 @@ mango:
       length: 6
       period: 60
       provider: default
+      template-code: ""
       fixed-code-enabled: false
+      fixed-code: ""
+      aliyun:
+        access-key-id: ""
+        access-key-secret: ""
+        sign-name: ""
+        endpoint: dysmsapi.aliyuncs.com
+        region: cn-hangzhou
+      tencent:
+        secret-id: ""
+        secret-key: ""
+        sign-name: ""
+        sdk-app-id: ""
+        region: ap-guangzhou
+        endpoint: sms.tencentcloudapi.com
+        country-code: "+86"
     email:
       enabled: true
       length: 6
@@ -278,7 +353,20 @@ mango:
 | `mango.captcha.sms.enabled` | `true` | 短信验证码启用标识。 |
 | `mango.captcha.sms.length` | `6` | 短信验证码数字长度。 |
 | `mango.captcha.sms.period` | `60` | 短信发送间隔配置字段，单位秒。 |
-| `mango.captcha.sms.provider` | `default` | 短信供应商配置字段。生产环境应提供 `SmsProvider` Bean。 |
+| `mango.captcha.sms.provider` | `default` | 短信供应商。`default` 使用空实现供应商（发送明确失败）；`aliyun`、`tencent` 装配内置通道，需要配合 `template-code` 与对应的 `aliyun.*` / `tencent.*` 凭证。取值不匹配任何内置供应商时不注册 `SmsProvider`，发送按 `2410` 失败。 |
+| `mango.captcha.sms.template-code` | 空 | 第三方短信模板编码。`provider=aliyun` 或 `provider=tencent` 时必填。该键由 `CaptchaService` 通过 `@Value` 读取后显式传给 `SmsProvider` 的第二个参数；`CaptchaProperties` 中同名字段只作为配置载体，供应商不再读取该键做回退。 |
+| `mango.captcha.sms.aliyun.access-key-id` | 空 | 阿里云 AccessKey ID，仅允许 `${ENV}` 占位符注入。`provider=aliyun` 时必填。 |
+| `mango.captcha.sms.aliyun.access-key-secret` | 空 | 阿里云 AccessKey Secret，仅允许 `${ENV}` 占位符注入。`provider=aliyun` 时必填。 |
+| `mango.captcha.sms.aliyun.sign-name` | 空 | 阿里云短信签名。`provider=aliyun` 时必填。 |
+| `mango.captcha.sms.aliyun.endpoint` | `dysmsapi.aliyuncs.com` | 阿里云短信接口地址。 |
+| `mango.captcha.sms.aliyun.region` | `cn-hangzhou` | 阿里云短信地域。 |
+| `mango.captcha.sms.tencent.secret-id` | 空 | 腾讯云 SecretId，仅允许 `${ENV}` 占位符注入。`provider=tencent` 时必填。 |
+| `mango.captcha.sms.tencent.secret-key` | 空 | 腾讯云 SecretKey，仅允许 `${ENV}` 占位符注入。`provider=tencent` 时必填。 |
+| `mango.captcha.sms.tencent.sign-name` | 空 | 腾讯云短信签名。`provider=tencent` 时必填。 |
+| `mango.captcha.sms.tencent.sdk-app-id` | 空 | 腾讯云短信应用 ID（SdkAppId）。`provider=tencent` 时必填。 |
+| `mango.captcha.sms.tencent.region` | `ap-guangzhou` | 腾讯云短信地域。 |
+| `mango.captcha.sms.tencent.endpoint` | `sms.tencentcloudapi.com` | 腾讯云短信接口地址。 |
+| `mango.captcha.sms.tencent.country-code` | `+86` | 腾讯云短信国家码，与手机号拼接后发送；缺少 `+` 时自动补齐，非法值按 `2410` 失败。 |
 | `mango.captcha.sms.fixed-code-enabled` | `false` | 是否启用固定短信验证码；开发/测试环境可设为 `true`，生产环境保持 `false`。 |
 | `mango.captcha.sms.fixed-code` | 空 | 固定短信验证码值；启用固定验证码时必须为纯数字。 |
 | `mango.captcha.email.enabled` | `true` | 邮件验证码启用标识。 |
@@ -376,7 +464,8 @@ captcha 模块没有 DDL、演示数据、菜单或权限初始化。验证码�
 | `/captcha/arithmetic` 404 | 应用没有引入 `mango-captcha-starter` | 在提供验证码的应用引入 starter。 |
 | 生成后校验总失败 | `key` 过期、传错 `type`、提交字段不匹配 | 检查 `ttl`、`key`、`code`、`pointJson`。 |
 | 登录接口返回 428 | 该路径要求验证码但没有请求头 | 先获取验证码，再带 `X-Captcha-Key`、`X-Captcha-Code`、`X-Captcha-Type`。 |
-| 短信或邮件发送返回空 | 没有可用 `SmsProvider` 或 `EmailProvider` | 在业务应用提供生产供应商 Bean。 |
+| 短信发送报错 `2410` | `provider` 取值不匹配任何内置供应商、缺少凭证/`signName`/`sdkAppId` 等必填配置、`template-code` 为空，或第三方返回非 `OK` | 查看日志中的 `provider`、`templateCode`、缺失的配置项键名（`property=`）与第三方错误码；补齐配置并重启应用。 |
+| 邮件验证码发送返回空 | 没有可用 `EmailProvider` | 在业务应用提供邮件供应商 Bean。 |
 | `/auth/captcha/send` 不存在 | 没有启用 auth 模块 | 引入并启用 `mango-auth-starter`，或业务模块自己提供发送入口调用 `CaptchaApi.send()`。 |
 | 滑块背景图加载失败 | 自定义 `image-locations` 路径不可读 | 检查 `classpath:`、`file:` 或 URL 路径；为空时使用内置图库。 |
 | 多实例校验失败 | 验证码存储不是共享存储 | 使用共享 KV 存储，例如 Redis。 |
@@ -388,5 +477,7 @@ captcha 模块没有 DDL、演示数据、菜单或权限初始化。验证码�
 - [能力文档维护规则](../../../mango-pmo/rules/08-capability-docs.md)
 
 ## 14. 升级与兼容
+
+- Unreleased（当前 `1.0.0-SNAPSHOT`）：新增内置阿里云/腾讯云短信通道（`mango.captcha.sms.provider=aliyun|tencent`，凭证与账号配置全部来自 `mango.captcha.sms.aliyun.*` / `mango.captcha.sms.tencent.*` 配置项，由部署环境 `${ENV}` 注入，不依赖 `mango-integration`），短信发送失败改为抛出 `CaptchaCode.CAPTCHA_SEND_FAILED`（`2410`）且不再返回空 `captchaKey`。`SmsProvider` SPI 签名不变，`provider=default`、固定验证码和邮件通道行为保持兼容；回滚时把 `provider` 改回 `default`（或移除内置通道配置）即可，配置项残留不影响其它模块。
 
 - `1.1.2`：新增统一图形验证码 API、题型/难度配置和 `GraphicCaptcha` 前端组件。旧算术、滑块、点选、行为、短信和邮件验证码保持兼容；使用新能力的消费者需要同时升级 Captcha Maven 依赖与 `@mango/common`，验证 `/captcha/graphic` 和 `/captcha/verify`，回滚时移除新入口并恢复上一版本依赖。

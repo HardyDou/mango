@@ -48,6 +48,9 @@ public class CaptchaService implements ICaptchaService {
     private static final int DEFAULT_CLICK_TOLERANCE = 24;
     private static final int DEFAULT_CLICK_WIDTH = 320;
     private static final int DEFAULT_CLICK_HEIGHT = 180;
+    private static final int MASK_MIN_LENGTH = 8;
+    private static final int MASK_PREFIX_LENGTH = 3;
+    private static final int MASK_SUFFIX_LENGTH = 4;
     private static final String MESSAGE_SUBJECT = "验证码";
     private static final String MESSAGE_PREFIX = "您的验证码是：";
 
@@ -76,6 +79,9 @@ public class CaptchaService implements ICaptchaService {
 
     @Value("${mango.captcha.sms.fixed-code:}")
     private String fixedSmsCode;
+
+    @Value("${mango.captcha.sms.template-code:}")
+    private String smsTemplateCode;
 
     private CaptchaResponse generate(CaptchaType type) {
         if (type == CaptchaType.ARITHMETIC) {
@@ -272,22 +278,31 @@ public class CaptchaService implements ICaptchaService {
         String code = generateCode(type, codeLength);
         String key = KEY_PREFIX + businessType + ":" + target;
 
-        log.info("验证码已生成: type={}, target={}, businessType={}", type, target, businessType);
-
         boolean sent = switch (type) {
             case SMS -> fixedSmsCodeEnabled
-                    || (!smsProviders.isEmpty() && smsProviders.get(0).send(target, null, code));
+                    || (!smsProviders.isEmpty() && smsProviders.get(0).send(target, smsTemplateCode, code));
             case EMAIL -> !emailProviders.isEmpty()
                     && emailProviders.get(0).send(target, MESSAGE_SUBJECT, MESSAGE_PREFIX + code);
             default -> false;
         };
         if (!sent) {
-            log.warn("验证码发送失败: type={}, target={}, businessType={}", type, target, businessType);
+            log.warn("验证码发送失败: type={}, target={}, businessType={}", type, maskTarget(target), businessType);
+            // 短信发送失败必须显式报错，避免调用方拿到成功响应；邮件通道保持原有返回空值语义。
+            Require.isTrue(type != CaptchaType.SMS, CaptchaCode.CAPTCHA_SEND_FAILED);
             return null;
         }
 
         kvStore.set(key, code, expire);
+        log.info("验证码已生成: type={}, target={}, businessType={}", type, maskTarget(target), businessType);
         return key;
+    }
+
+    private String maskTarget(String target) {
+        if (target == null || target.length() < MASK_MIN_LENGTH) {
+            return "****";
+        }
+        return target.substring(0, MASK_PREFIX_LENGTH) + "****"
+                + target.substring(target.length() - MASK_SUFFIX_LENGTH);
     }
 
     private String generateCode(CaptchaType type, int length) {

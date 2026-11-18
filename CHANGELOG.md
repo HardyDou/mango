@@ -1,3 +1,36 @@
+## Unreleased - 验证码短信内置阿里云/腾讯云通道 - 2026-11-17
+
+Status: `IN_PROGRESS`. 本次改动未发布，版本号与发布坐标由发布任务确定。
+
+### Pull Requests
+
+- 待创建：Issue [#1292](https://github.com/HardyDou/mango/issues/1292) 为 `mango-captcha-starter` 内置阿里云、腾讯云短信通道（凭证与账号配置全部来自 `mango.captcha.sms.*` 配置项，由部署环境注入，不依赖 `mango-integration`），并修复短信发送失败仍返回成功的问题。
+
+### Added
+
+- `mango.captcha.sms.provider=aliyun|tencent` 条件装配的 `AliyunSmsProvider`、`TencentSmsProvider`，以及可替换的发送协作者 `AliyunSmsSender`、`TencentSmsSender`。
+- 配置项 `mango.captcha.sms.template-code`（模板编码，通过 `CaptchaService` 的 `@Value` 读取后作为 SPI 第二参数传入）与 `mango.captcha.sms.aliyun.*`（`access-key-id`、`access-key-secret`、`sign-name`、`endpoint`、`region`）、`mango.captcha.sms.tencent.*`（`secret-id`、`secret-key`、`sign-name`、`sdk-app-id`、`region`、`endpoint`、`country-code`）；凭证值为 `${ENV}` 占位符，不入库。
+- `CaptchaCode.CAPTCHA_SEND_FAILED`（`2410`），短信发送失败统一抛出该业务码。
+
+### Fixed
+
+- `POST /auth/captcha/send` 在没有可用供应商、`provider` 取值不匹配、缺少凭证/签名/`sdk-app-id`、模板编码为空、第三方返回非 `OK` 时不再返回 `success=true` 的空 `data`（改为 `2410` 业务错误码，HTTP 状态仍为 `200`），也不会把验证码写入 `IKvStore`。
+- 前端 `SmsCaptcha` 仅在拿到非空 `captchaKey` 时提示“验证码已发送”并启动倒计时；空值提示“验证码发送失败”。
+- 验证码日志不再输出完整手机号（邮件通道日志本次未改），也不输出凭证值；失败日志只记 `type`、业务类型、`provider`、缺失的配置项键名与第三方错误码。
+
+### Changed
+
+- `SmsProvider.send` 调用从 `send(target, null, code)` 改为传入 `mango.captcha.sms.template-code`；SPI 签名不变，`provider=default`、固定验证码与邮件通道行为保持兼容。
+- `mango-captcha-starter` 新增 `dysmsapi20170525`、`tencentcloud-sdk-java-sms` 依赖（SDK 版本由 BOM 管理）；不引入 `mango-integration-api`，也不显式声明 `jackson-databind`（模板参数 JSON 手写拼装，无需 `ObjectMapper`）。
+- 内置供应商的 `@Bean` 在装配期只 `log.error` 列出缺失的配置项键名，不抛异常（应用必须能启动）；发送期统一 `2410`。
+
+### Verification
+
+- `mvn -o -B -ntp -pl mango-platform/mango-captcha/mango-captcha-api,mango-platform/mango-captcha/mango-captcha-core,mango-platform/mango-captcha/mango-captcha-starter verify`：`BUILD SUCCESS`，105 个测试通过（core 44，starter 61）。注意必须把 `mango-captcha-api` 放在同一个 reactor 里：单独构建 `mango-captcha-core` 会命中 `~/.m2` 里的旧 `mango-captcha-api` jar，报 `NoSuchFieldError: CAPTCHA_SEND_FAILED`。
+- core 用例分布：`CaptchaServiceTest` 26、`ArithmeticCaptchaServiceTest` 6、`BlockPuzzleCaptchaServiceTest` 5、`BehaviorCaptchaServiceTest` 3、`GraphicCaptchaGeneratorTest` 3、`ClickWordCaptchaServiceTest` 1。
+- starter 用例分布：`CaptchaControllerIntegrationTest` 15、`TencentSmsProviderTest` 14、`AliyunSmsProviderTest` 12、`CaptchaAutoConfigurationTest` 7、`AliyunSmsSenderTest` 5、`TencentSmsSenderTest` 5、`DefaultCaptchaProviderTest` 2、`CaptchaInitializationBoundaryTest` 1。
+- `grep -rn "mango-integration\|IntegrationDeclarationProvider\|instance-code\|AK_SK" mango/mango-platform/mango-captcha mango/mango-platform/mango-integration/mango-integration-starter/src/main/resources`：captcha 模块本身零命中；仅剩 `mango/mango-platform/mango-captcha/README.md:201,481` 两处"不依赖 `mango-integration`"的说明，以及集成模块自身的 `module.properties` / `integration-common-menu.json`（`module-name=mango-integration`，与短信通道无关）。
+- 真实短信发送未验证：环境没有阿里云/腾讯云账号，发送成功路径仅由 SDK 替身覆盖；`/auth/captcha/send` HTTP 层 `2410` 响应仍未经真实网关验证。
 ## v2026.11.17-maven-1.13.0-task-multi-filter-contract-gate-release - Mango Maven/docs 1.13.0 多业务类型过滤与契约哨兵门禁 - 2026-11-17
 
 Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `840294e93d0354e2943b85fc715a91cdd7f321893f12bb38af4be9a90681ab2a`; prepared candidate `18f1ef7d4036bc611c859fc179ef2ef28e5e102be4d88d8b6148d2870c10e6c7` completed publication and consume verification for `@mango/pmo@1.6.1`, `@mango/cli@1.4.14` and 201 Maven coordinates. Tag and GitHub Release were created and verified.

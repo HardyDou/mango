@@ -39,7 +39,21 @@ async function handleSend() {
     return;
   }
 
-  captchaKey.value = await sendSms(mobile.value);
+  let key: string | undefined;
+  try {
+    key = await sendSms(mobile.value);
+  } catch {
+    // request.ts 已统一 toast（含 2410 业务错误码），组件内只吞掉异常，避免 unhandled rejection。
+    return;
+  }
+
+  // 兼容“success=true + 空 data”的后端路径（旧后端或异常响应）：按发送失败处理，不保存空 key。
+  if (!key) {
+    ElMessage.error('验证码发送失败');
+    return;
+  }
+
+  captchaKey.value = key;
   ElMessage.success('验证码已发送');
   countdown.value = 60;
   timer = setInterval(() => {
