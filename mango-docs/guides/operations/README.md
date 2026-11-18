@@ -23,6 +23,7 @@
 | 升级 Workflow 办理人身份契约 | [办理人身份升级](./workflow-assignee-identity-upgrade.md) | 使用 `assigneeDisplayName`、参与关系或历史身份数据的项目 |
 | 升级 Workflow 审批人展开语义（Issue #1263） | [审批人候选组展开升级](./workflow-approval-candidate-expand-upgrade.md) | 流程节点使用 `SPECIFIED_ROLE`／`SPECIFIED_POST`／`SPECIFIED_ORG`／`ORG_LEADER` 审批人，或依赖“待领取”池的业务项目 |
 | 从 1.0.63 升到 1.1.0 | [Mango 1.0.63 → 1.1.0 升级](./mango-1.0.63-to-1.1.0-upgrade.md) | **所有**使用 `1.0.63` 及更早版本的项目：同步模式收敛、资源归属迁移、CMS Banner 删除与前端主版本升级 |
+| 核对 Workflow 契约是否变化 | [Workflow 契约指纹](./workflow-contract-fingerprint.md) | 升级前想机械判断 `mango-workflow-api` 与端点是否变更的项目 |
 | 升级到删除 CMS Banner 能力的版本 | [CMS Banner 能力删除升级](./cms-banner-removal-upgrade.md) | **所有**升级到该版本的项目：按项目情况执行注册行清理、数据归档与前端适配 |
 
 ### 治理与修复
