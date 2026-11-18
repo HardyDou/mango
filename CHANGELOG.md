@@ -1,36 +1,88 @@
-## Unreleased - 验证码短信内置阿里云/腾讯云通道 - 2026-11-17
+## v2026.11.18-maven-1.14.0-captcha-sms-provider-release - Mango Maven/docs 1.14.0 验证码短信内置阿里云腾讯云通道 - 2026-11-18
 
-Status: `IN_PROGRESS`. 本次改动未发布，版本号与发布坐标由发布任务确定。
+Status: `PENDING`. Release plan digest `a0612cc2572e4ce00420661a5b6b63043540d6c699b64363ce87ca014149c015`; Maven/npm publication, consume verification, Tag and GitHub Release are pending for `@mango/common@2.3.4` through `@mango/cli@1.4.15` and the 201 sealed Maven coordinates.
 
 ### Pull Requests
 
-- 待创建：Issue [#1292](https://github.com/HardyDou/mango/issues/1292) 为 `mango-captcha-starter` 内置阿里云、腾讯云短信通道（凭证与账号配置全部来自 `mango.captcha.sms.*` 配置项，由部署环境注入，不依赖 `mango-integration`），并修复短信发送失败仍返回成功的问题。
+- Added: [PR #1309](https://github.com/HardyDou/mango/pull/1309) builds Aliyun and Tencent short-message channels into `mango-captcha-starter`: `AliyunSmsProvider`, `AliyunSmsSender`, `AliyunSmsMessage`, `TencentSmsProvider`, `TencentSmsSender` and `TencentSmsMessage` are conditionally registered by `mango.captcha.sms.provider=aliyun|tencent`, with credentials, signature, SDK application id and template code supplied by `mango.captcha.sms.*`. Packages: `io.mango.platform.captcha:mango-captcha-{api,core,starter,starter-remote}:1.14.0` inside the complete Maven/docs `1.14.0` tuple, plus `@mango/common@2.3.4` and the generated `@mango/cli@1.4.15` closure. Business Adaptation: enable a channel through deployment configuration only; leaving `mango.captcha.sms.provider` unset keeps the previous behaviour.
+- Changed: [PR #1309](https://github.com/HardyDou/mango/pull/1309) makes a failed captcha short message explicit: `POST /auth/captcha/send` answers business code `2410` (`CaptchaCode.CAPTCHA_SEND_FAILED`) instead of `200` with empty `data`, writes no captcha cache entry, and masks the phone number in logs. Packages: `io.mango.platform.captcha:mango-captcha-{api,core,starter,starter-remote}:1.14.0`, `@mango/common@2.3.4`, generated `@mango/cli@1.4.15`. Business Adaptation: a caller that treats HTTP `200` as success must read `success` and the error code, and a frontend must start its countdown only when the returned `captchaKey` is not empty.
+- Fixed: [PR #1306](https://github.com/HardyDou/mango/pull/1306) unifies Surefire at `3.2.5` across the whole Maven reactor, fixes the eight historical tests that the unified binding exposed, runs real tests for directly modified modules in CI, and adds `check-surefire-versions.mjs` so a module can no longer silently fall back to Surefire `2.x` and report `Tests run: 0`. Packages: the complete Maven `1.14.0` tuple including the root POM and the affected modules, plus `@mango/pmo@1.6.2` and the generated `@mango/cli@1.4.15` closure. Business Adaptation: no code change; a business repository that pinned Surefire `2.x` itself should confirm its tests actually execute.
+- Fixed: [PR #1307](https://github.com/HardyDou/mango/pull/1307) stops the `mango-pmo` capability-documentation gate from treating `src/test/**` and `src/it/**` as capability changes, so a test-only pull request no longer demands module and business-guide updates. Packages: `@mango/pmo@1.6.2` and the generated `@mango/cli@1.4.15` closure. Business Adaptation: after the PMO upgrade, test-only pull requests skip the capability-documentation requirement.
 
 ### Added
 
-- `mango.captcha.sms.provider=aliyun|tencent` 条件装配的 `AliyunSmsProvider`、`TencentSmsProvider`，以及可替换的发送协作者 `AliyunSmsSender`、`TencentSmsSender`。
-- 配置项 `mango.captcha.sms.template-code`（模板编码，通过 `CaptchaService` 的 `@Value` 读取后作为 SPI 第二参数传入）与 `mango.captcha.sms.aliyun.*`（`access-key-id`、`access-key-secret`、`sign-name`、`endpoint`、`region`）、`mango.captcha.sms.tencent.*`（`secret-id`、`secret-key`、`sign-name`、`sdk-app-id`、`region`、`endpoint`、`country-code`）；凭证值为 `${ENV}` 占位符，不入库。
-- `CaptchaCode.CAPTCHA_SEND_FAILED`（`2410`），短信发送失败统一抛出该业务码。
+- Aliyun short-message channel in `mango-captcha-starter`, selected by `mango.captcha.sms.provider=aliyun`, reading `mango.captcha.sms.aliyun.access-key-id`, `access-key-secret`, `sign-name` and the optional `endpoint` (default `dysmsapi.aliyuncs.com`) and `region` (default `cn-hangzhou`).
+- Tencent short-message channel in `mango-captcha-starter`, selected by `mango.captcha.sms.provider=tencent`, reading `mango.captcha.sms.tencent.secret-id`, `secret-key`, `sign-name`, `sdk-app-id` and the optional `region` (default `ap-guangzhou`), `endpoint` (default `sms.tencentcloudapi.com`) and `country-code` (default `+86`).
+- `mango.captcha.sms.template-code` and the `mango.captcha.sms.aliyun.*` / `mango.captcha.sms.tencent.*` properties, plus `CaptchaCode.CAPTCHA_SEND_FAILED` (`2410`).
+- `mango-pmo` gate `tools/check-surefire-versions.mjs` with its regression tests, rejecting a module Surefire version below `3.0.0` and rejecting a version pinned outside the root POM and `mango-parent`.
 
 ### Fixed
 
-- `POST /auth/captcha/send` 在没有可用供应商、`provider` 取值不匹配、缺少凭证/签名/`sdk-app-id`、模板编码为空、第三方返回非 `OK` 时不再返回 `success=true` 的空 `data`（改为 `2410` 业务错误码，HTTP 状态仍为 `200`），也不会把验证码写入 `IKvStore`。
-- 前端 `SmsCaptcha` 仅在拿到非空 `captchaKey` 时提示“验证码已发送”并启动倒计时；空值提示“验证码发送失败”。
-- 验证码日志不再输出完整手机号（邮件通道日志本次未改），也不输出凭证值；失败日志只记 `type`、业务类型、`provider`、缺失的配置项键名与第三方错误码。
+- A failed captcha short message returns business code `2410` instead of `200` with empty `data`, no captcha cache entry is written, and the failure log records provider, template code, the missing configuration keys and the provider error code with the phone number masked.
+- The eight historical test failures exposed by the unified Surefire binding were fixed at the root cause — missing module declaration, MyBatis-Plus lambda cache initialisation, H2 timestamp precision, legacy resource-layer enum alias, missing SM4 test key, MySQL-only concurrency test environment gate, notice-template physical deletion semantics, and file-preview thread and JVM temp-file races — without skipping or disabling any test.
+- The `mango-pmo` capability-documentation gate no longer counts test sources as capability changes.
 
 ### Changed
 
-- `SmsProvider.send` 调用从 `send(target, null, code)` 改为传入 `mango.captcha.sms.template-code`；SPI 签名不变，`provider=default`、固定验证码与邮件通道行为保持兼容。
-- `mango-captcha-starter` 新增 `dysmsapi20170525`、`tencentcloud-sdk-java-sms` 依赖（SDK 版本由 BOM 管理）；不引入 `mango-integration-api`，也不显式声明 `jackson-databind`（模板参数 JSON 手写拼装，无需 `ObjectMapper`）。
-- 内置供应商的 `@Bean` 在装配期只 `log.error` 列出缺失的配置项键名，不抛异常（应用必须能启动）；发送期统一 `2410`。
+- `POST /auth/captcha/send` fails with business code `2410` instead of `200` plus empty `data`, and `CaptchaService` no longer returns `null` on a channel failure.
+- `mango-captcha-starter` ships `com.aliyun:dysmsapi20170525` and `com.tencentcloudapi:tencentcloud-sdk-java-sms`; both versions stay managed by `mango-bom`, which this batch does not change.
+- `SmsCaptcha.vue` shows the success hint and starts the countdown only for a non-empty `captchaKey`, and reports a failure otherwise without an unhandled rejection.
+- Surefire is uniformly `3.2.5`; module tests now actually execute instead of reporting `Tests run: 0`, and the CI `java` job gains the steps `Enforce unified Surefire version baseline` and `Run tests for directly modified modules` while `workflow_contract` uses the plain `test` lifecycle.
+- `@mango/pmo@1.6.2` refreshes the business PMO baseline projection, and `@mango/cli@1.4.15` is generated by the release closure.
+- `mango-docs/guides/operations/mango-1.13.0-to-1.14.0-upgrade.md` is generated from this sealed plan and published with the docs bundle.
+
+### Versions
+
+- Maven/docs: `1.13.0` to `1.14.0`; 201 sealed Maven coordinates, including `io.mango:mango-docs-bundle:1.14.0` and `io.mango.platform.captcha:mango-captcha-api:1.14.0`.
+- npm: `@mango/common@2.3.3` to `2.3.4`, `@mango/pmo@1.6.1` to `1.6.2`, `@mango/auth@1.0.44` to `1.0.45`, `@mango/file@1.3.0` to `1.3.1`, `@mango/workflow@1.3.0` to `1.3.1`, `@mango/admin@2.0.11` to `2.0.12`, `@mango/cli@1.4.14` to `1.4.15`, plus the remaining closure packages `@mango/admin-extension@1.1.8`, `@mango/ai@1.2.8`, `@mango/detail@1.1.14`, `@mango/grid-layout@1.0.34`, `@mango/grid-widgets@1.0.40`, `@mango/home@1.0.33`, `@mango/information@1.1.8`, `@mango/rbac@1.3.4`, `@mango/site-shell@2.0.6`, `@mango/system@1.1.6`, `@mango/admin-pages@1.3.4`, `@mango/calendar@1.0.61`, `@mango/cms@1.1.6`, `@mango/job@1.0.54`, `@mango/link@1.0.47`, `@mango/notice@1.0.67`, `@mango/numgen@1.0.62`, `@mango/payment@1.0.53`, `@mango/template@1.0.62`, `@mango/admin-shell@1.1.10`, `@mango/workflow-business-example@1.0.72`.
+- Every released npm package takes a patch increment; no minor or major change, and no database, menu, permission, tenant or Maven-plugin contract field is added.
+
+### Published Packages
+
+- Publish all 201 non-application Maven coordinates in release-plan order, including `io.mango.platform.captcha:mango-captcha-{api,core,starter,starter-remote}:1.14.0` and `io.mango:mango-docs-bundle:1.14.0`.
+- Publish the 28 npm coordinates in release-plan topology order: `@mango/common@2.3.4`, `@mango/admin-extension@1.1.8`, `@mango/ai@1.2.8`, `@mango/auth@1.0.45`, `@mango/file@1.3.1`, `@mango/detail@1.1.14`, `@mango/grid-layout@1.0.34`, `@mango/grid-widgets@1.0.40`, `@mango/home@1.0.33`, `@mango/information@1.1.8`, `@mango/pmo@1.6.2`, `@mango/rbac@1.3.4`, `@mango/site-shell@2.0.6`, `@mango/system@1.1.6`, `@mango/admin-pages@1.3.4`, `@mango/calendar@1.0.61`, `@mango/cms@1.1.6`, `@mango/job@1.0.54`, `@mango/link@1.0.47`, `@mango/notice@1.0.67`, `@mango/numgen@1.0.62`, `@mango/payment@1.0.53`, `@mango/template@1.0.62`, `@mango/workflow@1.3.1`, `@mango/admin-shell@1.1.10`, `@mango/workflow-business-example@1.0.72`, `@mango/admin@2.0.12`, `@mango/cli@1.4.15`.
+- Application fat jars and coordinates outside the sealed plan are excluded.
+
+### Business Impact
+
+- A business frontend that sends a captcha short message must stop treating HTTP `200` as success: read `success` and the business code, and start the countdown only when `captchaKey` is not empty.
+- A business backend that needs real short messages can enable Aliyun or Tencent through configuration alone after this batch, instead of writing its own `SmsProvider` bean.
+- With `mango.captcha.sms.provider` unset the assembly still uses `DefaultSmsProvider`, whose behaviour matches the previous release, so an unconfigured deployment changes only in that a failure now surfaces as `2410` instead of an empty success.
+- No HTTP path, menu, permission code, database migration or tenant model changes in this batch; the only request-level change is the failure response of `POST /auth/captcha/send`.
+- `mango-captcha-starter` gains two third-party SDK dependencies; credentials arrive from the deployment environment and a configuration change requires a restart, and one deployment uses one short-message account.
+
+### Upgrade Estimate
+
+- Audience: business applications that upgrade to Maven `1.14.0` and use captcha short messages, plus platform and business frontends consuming `@mango/common@2.3.4`, `@mango/pmo@1.6.2` and `@mango/cli@1.4.15`.
+- Engineering Effort: about 0.5 engineer-day to configure a real short-message channel and run one real send, plus about 0.5 engineer-day to switch the frontend success check to the returned `captchaKey`; an application that only upgrades and keeps the default provider needs no code change.
+- Execution Window: one release window, preferably overlapping an off-peak period for captcha entry points.
+- Service Downtime: one controlled restart to activate new configuration; no planned downtime otherwise.
+- Rollback Effort: about 0.5 engineer-day to restore Maven `1.13.0` and `@mango/common@2.3.3`; no data rollback.
+- Assumptions: one business application, one short-message account and no custom `SmsProvider` implementation; multi-account tenants and template or qualification review with the provider are outside this estimate.
+
+### Upgrade Notes
+
+- Upgrade Maven by moving the platform BOM or `mango.version` to `1.14.0` and resolving `mango-captcha-starter` again, confirming both short-message SDKs arrive with it.
+- Enable one channel: for Aliyun set `mango.captcha.sms.provider=aliyun`, `mango.captcha.sms.template-code` and `mango.captcha.sms.aliyun.access-key-id`, `access-key-secret`, `sign-name`; for Tencent set `mango.captcha.sms.provider=tencent`, `mango.captcha.sms.template-code` and `mango.captcha.sms.tencent.secret-id`, `secret-key`, `sign-name`, `sdk-app-id`. Inject credentials through environment placeholders and keep `provider=default` to disable short messages.
+- Frontend: upgrade `@mango/common` to `2.3.4`, and treat a non-empty `captchaKey` as success while mapping the failure code to its message.
+- Governance: after `mango-pmo@1.6.2`, re-synchronise the business baseline with `node mango-business-starter/scripts/sync-pmo-baseline.mjs --write`, and after `@mango/cli@1.4.15` regenerate or upgrade project templates.
+- An existing custom `SmsProvider` implementation still takes precedence over the built-in channels and needs no migration.
 
 ### Verification
 
-- `mvn -o -B -ntp -pl mango-platform/mango-captcha/mango-captcha-api,mango-platform/mango-captcha/mango-captcha-core,mango-platform/mango-captcha/mango-captcha-starter verify`：`BUILD SUCCESS`，105 个测试通过（core 44，starter 61）。注意必须把 `mango-captcha-api` 放在同一个 reactor 里：单独构建 `mango-captcha-core` 会命中 `~/.m2` 里的旧 `mango-captcha-api` jar，报 `NoSuchFieldError: CAPTCHA_SEND_FAILED`。
-- core 用例分布：`CaptchaServiceTest` 26、`ArithmeticCaptchaServiceTest` 6、`BlockPuzzleCaptchaServiceTest` 5、`BehaviorCaptchaServiceTest` 3、`GraphicCaptchaGeneratorTest` 3、`ClickWordCaptchaServiceTest` 1。
-- starter 用例分布：`CaptchaControllerIntegrationTest` 15、`TencentSmsProviderTest` 14、`AliyunSmsProviderTest` 12、`CaptchaAutoConfigurationTest` 7、`AliyunSmsSenderTest` 5、`TencentSmsSenderTest` 5、`DefaultCaptchaProviderTest` 2、`CaptchaInitializationBoundaryTest` 1。
-- `grep -rn "mango-integration\|IntegrationDeclarationProvider\|instance-code\|AK_SK" mango/mango-platform/mango-captcha mango/mango-platform/mango-integration/mango-integration-starter/src/main/resources`：captcha 模块本身零命中；仅剩 `mango/mango-platform/mango-captcha/README.md:201,481` 两处"不依赖 `mango-integration`"的说明，以及集成模块自身的 `module.properties` / `integration-common-menu.json`（`module-name=mango-integration`，与短信通道无关）。
-- 真实短信发送未验证：环境没有阿里云/腾讯云账号，发送成功路径仅由 SDK 替身覆盖；`/auth/captcha/send` HTTP 层 `2410` 响应仍未经真实网关验证。
+- `mango release prepare` seals 28 npm packages and 201 Maven coordinates under one prepared candidate and runs one mixed consumer against the sealed files.
+- The captcha modules run 105 tests with zero failures — `mango-captcha-core` 44 and `mango-captcha-starter` 61 — including provider and sender tests that cover missing credentials, missing template code, a provider failure response and the conditional assembly branches.
+- The CI `java` job runs 61 captcha tests through `Run tests for directly modified modules`, and the required workflow contract sentinel and the other required checks pass.
+- The frontend `SmsCaptcha.spec.ts` runs three tests covering an empty key and a rejected request.
+- Unverified: a real Aliyun or Tencent gateway send is NOT verified — this batch had no test account for either provider, the SDK clients are mocked in every test, and real API calls, real failure-code mapping and signature or template-reporting matching have not been exercised against the vendors. Before first use in a target environment, run one real send with production credentials and a reported template, and confirm the failure mapping and the log fields.
+- Local static analysis: the PMD rule set `pmd-mango.xml` is generated by CI, so PMD was not executed locally and the static-analysis verdict is taken from the CI `Java gates` run.
+
+### Rollback
+
+- Restore Maven `1.13.0`, `@mango/common@2.3.3`, `@mango/pmo@1.6.1` and `@mango/cli@1.4.14`, then rebuild and redeploy; no database change needs reverting.
+- To disable only the channel, set `mango.captcha.sms.provider=default` or remove the credentials and restart, returning to a failing send that reports `2410`.
+- Published Maven and npm coordinates are immutable: never overwrite or re-upload a version, and publish a following version instead.
+
 ## v2026.11.17-maven-1.13.0-task-multi-filter-contract-gate-release - Mango Maven/docs 1.13.0 多业务类型过滤与契约哨兵门禁 - 2026-11-17
 
 Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `840294e93d0354e2943b85fc715a91cdd7f321893f12bb38af4be9a90681ab2a`; prepared candidate `18f1ef7d4036bc611c859fc179ef2ef28e5e102be4d88d8b6148d2870c10e6c7` completed publication and consume verification for `@mango/pmo@1.6.1`, `@mango/cli@1.4.14` and 201 Maven coordinates. Tag and GitHub Release were created and verified.

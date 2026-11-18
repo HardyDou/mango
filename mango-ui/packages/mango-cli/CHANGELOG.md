@@ -1,4 +1,16 @@
-## 1.4.14 - 2026-11-17
+## 1.4.15 - 2026-11-18
+
+### Changed
+
+- 把 CLI 的 Maven 版本矩阵锁定到 Maven `1.14.0` 与同批次的 201 个 Maven/docs 发布坐标。
+- 依赖 `@mango/pmo@1.6.2`，生成的业务项目基线带有新的规则修订与 Surefire 版本门禁。
+- 生成的项目模板与 `@mango/common@2.3.4` 保持一致，验证码短信通道通过 `mango.captcha.sms.*` 配置启用。
+
+### Upgrade Notes
+
+- 与 `@mango/pmo@1.6.2` 及完整的 Maven/docs `1.14.0` 元组一起升级 `@mango/cli@1.4.15`，不要混用发布批次。
+
+
 
 ### Changed
 
