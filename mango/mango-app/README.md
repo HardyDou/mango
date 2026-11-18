@@ -90,6 +90,17 @@ mvn -f mango/pom.xml -pl :mango-business-app -am spring-boot:run
 
 本仓库提供 `scripts/docker/nacos-compose.yml` 作为本地 Nacos 验证物料，应用容器可使用 `scripts/docker/mango-app.Dockerfile` 构建。部署时仍以具体 app 的 `spring.application.name` 作为服务名，远程 Resource Registry 和 Feign 动态目标会按模块注册信息解析目标服务。
 
+### 6.2 应用镜像中文字体
+
+`scripts/docker/mango-app.Dockerfile` 在 root 阶段内置完整的中文字体覆盖，应用容器不再需要、也不允许在运行期安装字体：
+
+- 字体包：`fonts-noto-cjk`、`fonts-noto-cjk-extra`、`fonts-noto-color-emoji`、`fonts-liberation`、`fonts-crosextra-carlito`、`fonts-crosextra-caladea`、`fonts-arphic-ukai`（提供真实楷体 AR PL UKai CN，Noto 没有楷体等价字形），全部来自 Ubuntu jammy 官方仓库，安装后清理 `/var/lib/apt/lists/*`。
+- 族名映射：`scripts/docker/fonts/office-font-aliases.conf` 安装为 `/etc/fonts/conf.d/65-mango-office-font-aliases.conf`。宋体/仿宋/明体/思源宋体映射到 `Noto Serif CJK SC`；楷体映射到 `AR PL UKai CN`；黑体/微软雅黑/等线/苹方/思源黑体/文泉驿等族名映射到 `Noto Sans CJK SC`（不安装文泉驿本体：质量低于 Noto，永远排在 Noto 之后不会被选中）；小标宋系族名映射到 `Noto Serif CJK SC` 并强制 `weight=bold`；`Arial`/`Helvetica`/`Times New Roman`/`Courier New`/`Calibri`/`Cambria` 映射到 `Liberation`/`Carlito`/`Caladea`；无开源等价字体的华文艺术字显式降级到 `Noto Sans CJK SC`；未登记族名弱追加 Noto CJK 与 `Noto Color Emoji` 兜底。所有映射必须写成 `<match target="pattern">` + `mode="assign" binding="strong"`：`fc-match` 认 alias/prefer，LibreOffice 不认，alias 版会在导出 PDF 时静默回退到别的字体。
+- 构建期校验：`scripts/docker/fonts/verify-office-fonts.sh` 在 `USER mango` 之前执行，逐条断言登记族名的 `fc-match` 结果、字体文件可读性、族名 + `charset=9e64`（鹤）的汉字覆盖、小标宋字重大于常规字重、`AR PL UKai CN` 覆盖 U+6977（楷）。任一断言失败即镜像构建失败，避免交付 `fc-list :lang=zh` 为 0 的镜像。
+- 运行期验证：`docker run --rm --entrypoint sh <image> -c 'fc-match 宋体 && fc-list :lang=zh | wc -l'` 可直接复查字体覆盖。
+
+业务代码使用 `Font("宋体")`、`Font("微软雅黑")`、`Font("方正小标宋简体")` 等族名即可，无需在应用侧判断字体是否存在。
+
 ## 7. API 与扩展
 app 层对外暴露的是 Spring Boot 进程和路由，不暴露复用 Java API。
 
