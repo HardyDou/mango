@@ -29,6 +29,12 @@ public class CaptchaProperties {
     private static final int DEFAULT_CODE_LENGTH = 6;
     private static final int DEFAULT_SMS_PERIOD_SECONDS = 60;
     private static final boolean DEFAULT_SMS_FIXED_CODE_ENABLED = false;
+    private static final String DEFAULT_SMS_PROVIDER = "default";
+    private static final String DEFAULT_ALIYUN_ENDPOINT = "dysmsapi.aliyuncs.com";
+    private static final String DEFAULT_ALIYUN_REGION = "cn-hangzhou";
+    private static final String DEFAULT_TENCENT_ENDPOINT = "sms.tencentcloudapi.com";
+    private static final String DEFAULT_TENCENT_REGION = "ap-guangzhou";
+    private static final String DEFAULT_TENCENT_COUNTRY_CODE = "+86";
 
     /**
      * 兼容保留的存储策略配置；实际存储实现由应用注入的 IKvStore 决定。
@@ -100,7 +106,15 @@ public class CaptchaProperties {
         private boolean enabled = true;
         private int length = DEFAULT_CODE_LENGTH;
         private int period = DEFAULT_SMS_PERIOD_SECONDS;
-        private String provider = "default";
+        /**
+         * 短信供应商：{@code default}（空实现，发送明确失败）、{@code aliyun}、{@code tencent}。
+         * 取值不匹配任何内置供应商时不会注册 {@code SmsProvider}，发送同样明确失败。
+         */
+        private String provider = DEFAULT_SMS_PROVIDER;
+        /**
+         * 第三方短信模板编码；{@code provider=aliyun|tencent} 时必填，由 {@code CaptchaService} 传给供应商。
+         */
+        private String templateCode;
         /**
          * 是否启用固定短信验证码；仅适用于开发和测试环境。
          */
@@ -109,6 +123,34 @@ public class CaptchaProperties {
          * 固定短信验证码值。启用固定验证码时必须为纯数字。
          */
         private String fixedCode;
+        /**
+         * 阿里云短信账号配置；凭证只允许通过部署环境的 {@code ${ENV}} 占位符注入。
+         */
+        private Aliyun aliyun = new Aliyun();
+        /**
+         * 腾讯云短信账号配置；凭证只允许通过部署环境的 {@code ${ENV}} 占位符注入。
+         */
+        private Tencent tencent = new Tencent();
+    }
+
+    @Data
+    public static class Aliyun {
+        private String accessKeyId;
+        private String accessKeySecret;
+        private String signName;
+        private String endpoint = DEFAULT_ALIYUN_ENDPOINT;
+        private String region = DEFAULT_ALIYUN_REGION;
+    }
+
+    @Data
+    public static class Tencent {
+        private String secretId;
+        private String secretKey;
+        private String signName;
+        private String sdkAppId;
+        private String region = DEFAULT_TENCENT_REGION;
+        private String endpoint = DEFAULT_TENCENT_ENDPOINT;
+        private String countryCode = DEFAULT_TENCENT_COUNTRY_CODE;
     }
 
     @Data

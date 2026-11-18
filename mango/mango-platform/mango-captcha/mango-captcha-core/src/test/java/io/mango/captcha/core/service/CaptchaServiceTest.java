@@ -7,6 +7,7 @@ import io.mango.captcha.api.dto.BehaviorCaptchaVerifyResponse;
 import io.mango.captcha.api.dto.CaptchaResponse;
 import io.mango.captcha.api.dto.CaptchaVerifyRequest;
 import io.mango.captcha.api.dto.CaptchaSendRequest;
+import io.mango.captcha.api.enums.CaptchaCode;
 import io.mango.captcha.api.spi.EmailProvider;
 import io.mango.captcha.api.spi.SmsProvider;
 import io.mango.captcha.core.generator.ArithmeticCaptchaGenerator;
@@ -38,6 +39,8 @@ import static org.mockito.Mockito.*;
  */
 @ExtendWith(MockitoExtension.class)
 class CaptchaServiceTest {
+
+    private static final String SMS_TEMPLATE_CODE = "SMS_100001";
 
     private CaptchaService captchaService;
 
@@ -82,6 +85,15 @@ class CaptchaServiceTest {
                 Arrays.asList(emailProvider),
                 new ObjectMapper()
         );
+        ReflectionTestUtils.setField(captchaService, "smsTemplateCode", SMS_TEMPLATE_CODE);
+    }
+
+    private CaptchaSendRequest smsRequest(String target) {
+        CaptchaSendRequest request = new CaptchaSendRequest();
+        request.setType(CaptchaType.SMS);
+        request.setTarget(target);
+        request.setBusinessType("LOGIN");
+        return request;
     }
 
     @Test
@@ -333,7 +345,7 @@ class CaptchaServiceTest {
         assertNotNull(key);
         assertTrue(key.startsWith("captcha:LOGIN:"));
         verify(kvStore).set(eq("captcha:LOGIN:13800138000"), anyString(), eq(300L));
-        verify(smsProvider).send(eq("13800138000"), isNull(), anyString());
+        verify(smsProvider).send(eq("13800138000"), eq(SMS_TEMPLATE_CODE), anyString());
     }
 
     @Test
@@ -385,16 +397,34 @@ class CaptchaServiceTest {
     }
 
     @Test
-    void sendSms_providerReturnsFalse_returnsNullAndDoesNotSave() {
+    void sendSms_providerReturnsFalse_throwsSendFailedAndDoesNotSave() {
         when(smsProvider.send(anyString(), any(), any())).thenReturn(false);
 
-        CaptchaSendRequest request = new CaptchaSendRequest();
-        request.setType(CaptchaType.SMS);
-        request.setTarget("13800138000");
-        request.setBusinessType("LOGIN");
-        String key = captchaService.send(request);
+        BizException exception = assertThrows(BizException.class, () -> captchaService.send(smsRequest("13800138000")));
 
-        assertNull(key);
+        assertEquals(CaptchaCode.CAPTCHA_SEND_FAILED.getCode(), exception.getCode());
+        verify(kvStore, never()).set(anyString(), anyString(), anyLong());
+    }
+
+    @Test
+    void sendSms_withoutProvider_throwsSendFailedAndDoesNotSave() {
+        CaptchaService serviceWithoutSmsProvider = new CaptchaService(
+                kvStore,
+                arithmeticCaptchaService,
+                graphicCaptchaService,
+                graphicCaptchaProperties,
+                blockPuzzleCaptchaService,
+                clickWordCaptchaService,
+                behaviorCaptchaService,
+                List.of(),
+                Arrays.asList(emailProvider),
+                new ObjectMapper()
+        );
+
+        BizException exception = assertThrows(BizException.class,
+                () -> serviceWithoutSmsProvider.send(smsRequest("13800138000")));
+
+        assertEquals(CaptchaCode.CAPTCHA_SEND_FAILED.getCode(), exception.getCode());
         verify(kvStore, never()).set(anyString(), anyString(), anyLong());
     }
 
@@ -425,7 +455,7 @@ class CaptchaServiceTest {
         assertNotNull(key);
         assertTrue(key.startsWith("captcha:LOGIN:"));
         verify(kvStore).set(eq("captcha:LOGIN:13800138000"), anyString(), anyLong());
-        verify(smsProvider).send(eq("13800138000"), isNull(), anyString());
+        verify(smsProvider).send(eq("13800138000"), eq(SMS_TEMPLATE_CODE), anyString());
     }
 
     @Test

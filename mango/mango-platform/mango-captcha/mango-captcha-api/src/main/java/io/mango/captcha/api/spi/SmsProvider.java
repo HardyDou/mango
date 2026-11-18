@@ -11,9 +11,9 @@ public interface SmsProvider {
     /**
      * 发送短信
      *
-     * @param mobile      手机号
-     * @param templateCode 模板编码
-     * @param params      参数
+     * @param mobile       手机号
+     * @param templateCode 模板编码；由调用方传入 {@code mango.captcha.sms.template-code} 配置值
+     * @param params       参数
      * @return true-发送成功
      */
     boolean send(String mobile, String templateCode, String... params);
