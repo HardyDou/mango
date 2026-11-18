@@ -1,4 +1,21 @@
-## 1.6.1 - 2026-11-17
+## 1.6.2 - 2026-11-18
+
+### Added
+
+- `tools/check-surefire-versions.mjs` 与其回归用例：解析 reactor 与父链，要求每个模块的有效 Surefire 版本不低于 `3.0.0`，并禁止在根 POM 与 `mango-parent` 之外自行钉版本，避免模块回落到 `2.x` 后测试静默空跑。
+- 交付质量规则记录直接修改的 Maven 模块在 CI 中真实执行测试，以及 Surefire 版本基线在两个作业中的位置。
+
+### Changed
+
+- 能力文档门禁不再把 `src/test/**` 与 `src/it/**` 判定为能力变更，只改测试的 PR 不再要求更新模块 README 与业务指南。
+- `rules/index.json`、合同夹具与 Business Starter 基线按新的规则修订重新投影。
+
+### Upgrade Notes
+
+- 与 `@mango/cli@1.4.15` 及完整的 Maven/docs `1.14.0` 元组一起升级 `@mango/pmo@1.6.2`，不要混用发布批次。
+- 升级后重跑 `mango pmo sync` 与一次锁定模式的 PMO 检查，生成的业务代码不需要改动。
+
+
 
 ### Changed
 
