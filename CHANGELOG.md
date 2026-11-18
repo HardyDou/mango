@@ -1,6 +1,6 @@
 ## v2026.11.18-maven-1.14.0-captcha-sms-provider-release - Mango Maven/docs 1.14.0 验证码短信内置阿里云腾讯云通道 - 2026-11-18
 
-Status: `PENDING`. Release plan digest `a0612cc2572e4ce00420661a5b6b63043540d6c699b64363ce87ca014149c015`; Maven/npm publication, consume verification, Tag and GitHub Release are pending for `@mango/common@2.3.4` through `@mango/cli@1.4.15` and the 201 sealed Maven coordinates.
+Status: `PUBLISHED_AND_VERIFIED`. Release plan digest `a0612cc2572e4ce00420661a5b6b63043540d6c699b64363ce87ca014149c015`; prepared candidate `86f6eb2c4e36bd083daa8e9aa43537a1b24239740dea65f1b3a5ea93c464142c` completed publication and consume verification for the 28 npm packages from `@mango/common@2.3.4` to `@mango/cli@1.4.15` and 201 Maven coordinates. Tag `v2026.11.18-maven-1.14.0-captcha-sms-provider-release` and its GitHub Release were created and verified, and `mango-ui/.changeset/release-baseline.json` records this batch as the new successful baseline.
 
 ### Pull Requests
 
