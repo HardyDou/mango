@@ -19,8 +19,9 @@ import java.util.Set;
 /**
  * Aspose 启动自检：字体可见性与授权可用性。
  *
- * <p>默认转换引擎是 Aspose，缺字体或缺授权不会让转换失败，而是静默产出方块字或评估水印，
- * 所以放在启动期 fail-fast，并在错误里直接点名缺哪个字体、哪个产品授权有问题。</p>
+ * <p>默认转换引擎是 Aspose。缺字体不会让转换失败，只会静默产出方块字——那是渲染质量问题，
+ * 所以默认只打 ERROR（点名缺哪个字体）并继续启动，只有 {@code font-check-fatal=true} 才抛异常。
+ * 缺授权或授权无法加载则一定 fail-fast：那是配置错误，且评估模式会给每份产出打水印。</p>
  *
  * <p>只有当前应用启用了至少一个 Aspose 转换器时才校验；全部关闭时跳过，避免只装配
  * license bean 而没有用 Aspose 的应用被误杀。字体断言只使用拉丁名：中文族名（如「宋体」）
@@ -69,7 +70,7 @@ public class AsposeFontInitializer implements InitializingBean {
     /**
      * 执行自检。
      *
-     * @throws IllegalStateException 字体缺失或授权不可用时
+     * @throws IllegalStateException 授权不可用，或 {@code font-check-fatal=true} 且字体缺失时
      */
     public void check() {
         if (!convertProperties.isAsposeFontCheckEnabled()) {
@@ -149,7 +150,8 @@ public class AsposeFontInitializer implements InitializingBean {
                 licenseApplier.apply(product, content);
             } catch (RuntimeException ex) {
                 throw new IllegalStateException("Aspose 授权自检失败：" + product + " 的 License 无法加载（"
-                        + ex.getMessage() + "）。请检查授权文件是否与 " + product + " 20.3 匹配、是否已过期。", ex);
+                        + ex.getMessage() + "）。授权文件随 mango-infra-fileproc-core 发布，请确认文件完整且与 "
+                        + product + " 匹配；也可以关闭对应的 aspose-*-enabled 改用 LibreOffice 兜底。", ex);
             }
         }
         LOGGER.info("Aspose 授权自检通过：{}", enabledProducts);
