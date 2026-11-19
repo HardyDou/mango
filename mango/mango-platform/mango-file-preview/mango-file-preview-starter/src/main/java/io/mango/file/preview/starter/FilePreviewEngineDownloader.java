@@ -29,6 +29,9 @@ import java.io.InputStream;
 public class FilePreviewEngineDownloader implements FileDownloader, PreviewSourceAvailability,
         InitializingBean, DisposableBean {
 
+    /** 日志里保留的取源票据前缀长度。 */
+    private static final int SOURCE_ID_VISIBLE_PREFIX = 6;
+
     private static final Logger LOGGER = LoggerFactory.getLogger(FilePreviewEngineDownloader.class);
 
     private final IFilePreviewService filePreviewService;
@@ -87,7 +90,9 @@ public class FilePreviewEngineDownloader implements FileDownloader, PreviewSourc
         if (!StringUtils.hasText(sourceId)) {
             return "";
         }
-        String prefix = sourceId.length() <= 6 ? sourceId : sourceId.substring(0, 6);
+        String prefix = sourceId.length() <= SOURCE_ID_VISIBLE_PREFIX
+                ? sourceId
+                : sourceId.substring(0, SOURCE_ID_VISIBLE_PREFIX);
         return prefix + "***(len=" + sourceId.length() + ")";
     }
 }
