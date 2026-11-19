@@ -336,6 +336,7 @@ token claim 会写入 `username`、`realm`、`actorType`、`partyType`、`partyI
 | 登录被验证码拦截返回 428 | 按 `X-Captcha-Key`、`X-Captcha-Code`、`X-Captcha-Type` 补齐请求头，或检查 `mango.captcha.required-paths` |
 | 防重放返回 401/409 | 检查客户端时间、nonce 是否重复、幂等键是否复用、签名密钥和算法是否匹配 |
 | 页面退出后 Cookie 仍存在 | 确认使用 Admin Shell 当前退出入口并实际调用了 `POST /auth/logout`；JavaScript 无法删除 HttpOnly Cookie |
+| 探针路径返回 401 | `/actuator/**` 不参与 API 资源声明同步，未放行的探针按 LOGIN 判定；把 `/actuator/health/**` 加入 `mango.auth.security.permit-paths` 或 `mango.access.ip-whitelist`，CIDR 写完整四段（见 [Mango Access](../mango-access/README.md) §7.1） |
 | 模块诊断端点一直 401/403 | 只接受精确 GET 和 header `Authorization: Bearer`；token subject 必须含 member/tenant/app，且授权快照含 `diagnostic:read`。query token、`MANGO_TOKEN` cookie、internal call、IP 白名单和 broad permit path 都不能绕过。 |
 
 ## 13. 相关文档
