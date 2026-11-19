@@ -501,7 +501,7 @@ jobs:
   docs:
     name: Documentation gates
     needs: preflight_scope
-    if: needs.preflight_scope.outputs.m08 == 'true' || needs.preflight_scope.outputs.m09 == 'true'
+    if: needs.preflight_scope.outputs.readmes == 'true' || needs.preflight_scope.outputs.m08 == 'true' || needs.preflight_scope.outputs.m09 == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -519,16 +519,18 @@ jobs:
         if: needs.preflight_scope.outputs.pmo == 'true' && needs.preflight_scope.outputs.m09 == 'true'
         run: node mango-pmo/tools/check-governance-intent.mjs
 
+      # 下面三个仓库级 README 审计按改动范围（readmes scope）触发，与 PR body 里声明的 M08 无关：
+      # 它们校验的是仓库 README 结构不变量，改到 README 就必须跑，否则会在合入后才让 main 变红（issue #1344）。
       - name: Audit module README quality
-        if: needs.preflight_scope.outputs.readmes == 'true' && needs.preflight_scope.outputs.m08 == 'true'
+        if: needs.preflight_scope.outputs.readmes == 'true'
         run: node mango-pmo/tools/audit-module-readmes.mjs
 
       - name: Audit README source facts
-        if: needs.preflight_scope.outputs.readmes == 'true' && needs.preflight_scope.outputs.m08 == 'true'
+        if: needs.preflight_scope.outputs.readmes == 'true'
         run: node mango-pmo/tools/audit-readme-source-facts.mjs
 
       - name: Check business integration guides
-        if: needs.preflight_scope.outputs.readmes == 'true' && needs.preflight_scope.outputs.m08 == 'true'
+        if: needs.preflight_scope.outputs.readmes == 'true'
         run: node mango-pmo/tools/check-business-guides.mjs
 
       - name: Check capability docs governance
