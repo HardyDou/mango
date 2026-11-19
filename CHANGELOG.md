@@ -215,6 +215,22 @@ workflow-compatible-additions: []
 - PR #1309、#1306、#1307 属于 1.14.0 批次，已随该批次发布。
 - `WorkflowDefinitionService` 的三处声明主键问题（流程定义、版本、分类）已知但需 Flowable 感知设计，不在本批次范围内，后续单独处理。
 
+## Unreleased - file preview internal source (Issue #1316)
+
+### Added
+
+- `mango.file-preview.source-mode`：`auto`（默认）/`fileId`/`url`。内嵌引擎默认用 `fileid://` 进程内直取源文件，不再由引擎 HTTP 抓回对外域名。
+- 引擎新增 `cn.keking.spi.PreviewSourceProvider` 与 `PreviewSourceProviders` 注册表，`DownloadUtils` 支持 `fileid://` 协议；`TrustHostFilter` 把该类地址视为进程内地址，不做 host 白名单校验。
+
+### Changed
+
+- `FilePreviewTrustHostInitializer` 在直取模式下不再把 `source-base-url` 的 host 写入引擎信任列表；`source-mode=fileId` 但进程内无直取实现时启动失败。
+
+### Compatibility
+
+- `source-mode=auto` 在独立部署引擎（无直取实现）下行为与 1.14.x 完全一致；`url` 模式可显式回退。
+- 引擎 `DownloadUtils` 对 `fileid://` 之外地址的下载路径未改动。
+
 ## Unreleased - workflow current task unique key (Issue #1289)
 
 ### Added

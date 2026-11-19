@@ -8,6 +8,8 @@ import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.file.api.vo.FileRecordVO;
 import io.mango.file.preview.core.config.FilePreviewProperties;
+import io.mango.file.preview.core.config.FilePreviewSourceMode;
+import io.mango.file.preview.core.service.PreviewSourceAvailability;
 import io.mango.file.preview.core.gateway.FilePreviewFileGateway;
 import io.mango.file.preview.core.service.model.FilePreviewMode;
 import io.mango.file.preview.core.task.IFilePreviewTaskService;
@@ -16,6 +18,7 @@ import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.kv.api.ITokenStore;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -83,6 +86,55 @@ class FilePreviewServiceImplTest {
         String sourceUrl = sourceUrl(service.createEnginePreview(100L).getPreviewUrl());
 
         assertThat(sourceUrl).startsWith("http://mango-app:8080/internal/file-preview/sources?");
+    }
+
+    @Test
+    void createEnginePreview_fileId模式把令牌直接交给引擎() {
+        FilePreviewProperties properties = new FilePreviewProperties();
+        properties.setSourceMode(FilePreviewSourceMode.FILE_ID);
+        FilePreviewServiceImpl service = service(properties, new StubFileApi(), new StubTokenStore(),
+                Clock.systemUTC(), new StubFileContentProvider());
+
+        String sourceUrl = sourceUrl(service.createEnginePreview(100L).getPreviewUrl());
+
+        assertThat(sourceUrl).startsWith("fileid://");
+        assertThat(sourceUrl).doesNotContain("/file-preview/sources");
+        assertThat(queryParameter(sourceUrl, "fullfilename")).matches("file-100-[0-9a-f]{16}\\.pptx");
+    }
+
+    @Test
+    void createEnginePreview_auto模式有直取实现时不再使用对外域名() {
+        FilePreviewProperties properties = new FilePreviewProperties();
+        properties.setSourceBaseUrl("https://business.example.com");
+        FilePreviewServiceImpl service = service(properties, new StubFileApi(), new StubTokenStore(),
+                Clock.systemUTC(), new StubFileContentProvider(), () -> true);
+
+        String sourceUrl = sourceUrl(service.createEnginePreview(100L).getPreviewUrl());
+
+        assertThat(sourceUrl).startsWith("fileid://");
+        assertThat(sourceUrl).doesNotContain("business.example.com");
+    }
+
+    @Test
+    void createEnginePreview_auto模式无直取实现时保持HTTP抓取() {
+        FilePreviewServiceImpl service = service();
+
+        String sourceUrl = sourceUrl(service.createEnginePreview(100L).getPreviewUrl());
+
+        assertThat(sourceUrl).startsWith("http://127.0.0.1/file-preview/sources?");
+    }
+
+    @Test
+    void createEnginePreview_url模式即使有直取实现也使用对外域名() {
+        FilePreviewProperties properties = new FilePreviewProperties();
+        properties.setSourceBaseUrl("https://business.example.com");
+        properties.setSourceMode(FilePreviewSourceMode.URL);
+        FilePreviewServiceImpl service = service(properties, new StubFileApi(), new StubTokenStore(),
+                Clock.systemUTC(), new StubFileContentProvider(), () -> true);
+
+        String sourceUrl = sourceUrl(service.createEnginePreview(100L).getPreviewUrl());
+
+        assertThat(sourceUrl).startsWith("https://business.example.com/file-preview/sources?");
     }
 
     @Test
@@ -235,9 +287,22 @@ class FilePreviewServiceImplTest {
                                            StubTokenStore tokenStore,
                                            Clock clock,
                                            StubFileContentProvider contentProvider) {
+        return service(properties, fileApi, tokenStore, clock, contentProvider, null);
+    }
+
+    private FilePreviewServiceImpl service(FilePreviewProperties properties,
+                                           FileApi fileApi,
+                                           StubTokenStore tokenStore,
+                                           Clock clock,
+                                           StubFileContentProvider contentProvider,
+                                           PreviewSourceAvailability availability) {
         FilePreviewFileGateway gateway = new FilePreviewFileGateway(fileApi, contentProvider);
+        DefaultListableBeanFactory beanFactory = new DefaultListableBeanFactory();
+        if (availability != null) {
+            beanFactory.registerSingleton("previewSourceAvailability", availability);
+        }
         return new FilePreviewServiceImpl(gateway, properties, tokenStore, new ObjectMapper(), clock,
-                mock(IFilePreviewTaskService.class));
+                mock(IFilePreviewTaskService.class), beanFactory.getBeanProvider(PreviewSourceAvailability.class));
     }
 
     private String sourceUrl(String enginePreviewUrl) {

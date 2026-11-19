@@ -27,6 +27,9 @@ public class FilePreviewProperties {
     /** 预览引擎访问源文件时使用的内部服务地址；为空时使用当前请求地址。 */
     private String sourceBaseUrl;
 
+    /** 引擎获取源文件的方式：{@code url} 走 HTTP，{@code fileId} 走进程内直取，{@code auto} 按是否内嵌引擎自动选择。 */
+    private FilePreviewSourceMode sourceMode = FilePreviewSourceMode.AUTO;
+
     /** 源文件临时访问令牌有效期，单位秒。 */
     private long sourceTokenExpireSeconds = DEFAULT_SOURCE_TOKEN_EXPIRE_SECONDS;
 

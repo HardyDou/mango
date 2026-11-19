@@ -9,8 +9,10 @@ import io.mango.file.api.vo.FileRecordVO;
 import io.mango.file.preview.api.enums.FilePreviewCode;
 import io.mango.file.preview.api.vo.FilePreviewLinkVO;
 import io.mango.file.preview.core.config.FilePreviewProperties;
+import io.mango.file.preview.core.config.FilePreviewSourceMode;
 import io.mango.file.preview.core.gateway.FilePreviewFileGateway;
 import io.mango.file.preview.core.service.IFilePreviewService;
+import io.mango.file.preview.core.service.PreviewSourceAvailability;
 import io.mango.file.preview.core.task.IFilePreviewTaskService;
 import io.mango.file.preview.api.vo.FilePreviewTaskVO;
 import io.mango.file.preview.core.service.model.FilePreviewMode;
@@ -20,6 +22,7 @@ import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.kv.api.ITokenStore;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -47,6 +50,8 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
     private static final long HASH_FALLBACK_MASK = 0xffffffffL;
 
     private static final String FULL_FILENAME_PARAM = "fullfilename";
+    /** 内部直取协议；与引擎 {@code cn.keking.utils.PreviewSourceUrl} 保持一致，跨模块由 starter 的往返测试锁定。 */
+    private static final String FILE_ID_SOURCE_PREFIX = "fileid://";
     private static final String ENTRY_TOKEN_PREFIX = "file-preview:entry:";
     private static final String SOURCE_TOKEN_PREFIX = "file-preview:source:";
     private static final String ENGINE_FILE_PREFIX = "file-";
@@ -60,6 +65,7 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
     private final ObjectMapper objectMapper;
     private final Clock clock;
     private final IFilePreviewTaskService previewTaskService;
+    private final ObjectProvider<PreviewSourceAvailability> sourceAvailabilityProvider;
 
     @Override
     public FilePreviewLinkVO createPreview(Long fileId) {
@@ -212,6 +218,15 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
     }
 
     private String sourceUrl(String token, String fileName) {
+        if (useInternalSource()) {
+            // 引擎与文件服务同进程：直接把令牌交给引擎直取，不拼对外域名。
+            String query = UriComponentsBuilder.newInstance()
+                    .queryParam(FULL_FILENAME_PARAM, fileName)
+                    .build()
+                    .encode(StandardCharsets.UTF_8)
+                    .getQuery();
+            return FILE_ID_SOURCE_PREFIX + token + "?" + query;
+        }
         String url = sourceBaseUrl() + normalize(properties.getSourcePath());
         return UriComponentsBuilder.fromHttpUrl(url)
                 .queryParam("token", token)
@@ -219,6 +234,18 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
                 .build()
                 .encode(StandardCharsets.UTF_8)
                 .toUriString();
+    }
+
+    private boolean useInternalSource() {
+        FilePreviewSourceMode sourceMode = properties.getSourceMode();
+        if (sourceMode == FilePreviewSourceMode.FILE_ID) {
+            return true;
+        }
+        if (sourceMode == FilePreviewSourceMode.URL) {
+            return false;
+        }
+        PreviewSourceAvailability availability = sourceAvailabilityProvider.getIfAvailable();
+        return availability != null && availability.internalSourceAvailable();
     }
 
     private String sourceBaseUrl() {

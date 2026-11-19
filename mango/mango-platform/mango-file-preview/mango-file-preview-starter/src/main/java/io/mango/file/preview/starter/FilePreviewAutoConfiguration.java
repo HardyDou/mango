@@ -54,9 +54,16 @@ public class FilePreviewAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnBean(IFilePreviewService.class)
+    @ConditionalOnMissingBean
+    public FilePreviewEngineSourceProvider filePreviewEngineSourceProvider(IFilePreviewService filePreviewService) {
+        return new FilePreviewEngineSourceProvider(filePreviewService);
+    }
+
+    @Bean
     @ConditionalOnMissingBean
     public FilePreviewTrustHostInitializer filePreviewTrustHostInitializer(FilePreviewProperties properties) {
-        return new FilePreviewTrustHostInitializer(properties.getSourceBaseUrl());
+        return new FilePreviewTrustHostInitializer(properties);
     }
 
     @Bean
