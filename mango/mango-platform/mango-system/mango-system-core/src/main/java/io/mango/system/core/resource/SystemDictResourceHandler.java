@@ -2,6 +2,7 @@ package io.mango.system.core.resource;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import io.mango.resource.support.PortableResourceIds;
 import io.mango.resource.support.ResourceHandler;
 import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.support.model.ResourceDeclaration;
@@ -32,6 +33,7 @@ import java.util.Set;
 public class SystemDictResourceHandler implements ResourceHandler {
 
     private static final String TARGET_TABLE = "sys_dict_type";
+    private static final String ITEM_TARGET_TABLE = "system_dict_item";
     private static final String DEFAULT_TENANT_ID = "1";
     private static final int ENABLED = 1;
     private static final int DISABLED = 0;
@@ -84,7 +86,9 @@ public class SystemDictResourceHandler implements ResourceHandler {
             DictDataEntity data = findData(payload.dictType(), item);
             if (data == null) {
                 data = new DictDataEntity();
-                data.setId(item.id());
+                data.setId(item.id() != null
+                        ? item.id()
+                        : PortableResourceIds.stable(ITEM_TARGET_TABLE, payload.dictType(), item.value()));
                 data.setDictType(payload.dictType());
                 applyData(data, item);
                 dictDataMapper.insert(data);

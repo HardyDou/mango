@@ -88,7 +88,7 @@
 
 同一批 `ORG_UNIT` 声明会按 `parentOrgCode` 做父子排序后写入，业务模块不需要为了父组织先创建而拆分资源文件；如果父组织既不在本批声明中、也不在数据库中，handler 会明确报错。
 
-Resource Handler 按声明中的 `tenantId` 建立执行上下文，不能使用后台线程原有 tenant。`ORG_POST` 以 `(tenantId, postCode)`、`ORG_UNIT` 以 `(tenantId, orgCode)` 为稳定业务键；声明 `targetId` 只作为新建优选 ID。Provisioner、人工数据或并发同步已用另一 ID 创建同一业务键时复用数据库真实 ID；`targetId` 指向其它业务键时明确冲突且不修改数据。
+Resource Handler 按声明中的 `tenantId` 建立执行上下文，不能使用后台线程原有 tenant。`ORG_POST` 以 `(tenantId, postCode)`、`ORG_UNIT` 以 `(tenantId, orgCode)` 为稳定业务键；声明 `targetId` 只作为新建优选 ID，未声明时由 `PortableResourceIds.stable(...)` 从 `(tenantId, postCode)` / `(tenantId, orgCode)` 派生确定性主键，保证冷基线重放一致。Provisioner、人工数据或并发同步已用另一 ID 创建同一业务键时复用数据库真实 ID；`targetId` 指向其它业务键时明确冲突且不修改数据。
 
 ## 6. 配置说明
 

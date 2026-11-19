@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.mango.common.result.Require;
 import io.mango.org.core.entity.SysOrgEntity;
 import io.mango.org.core.mapper.SysOrgMapper;
+import io.mango.resource.support.PortableResourceIds;
 import io.mango.resource.support.ResourceHandler;
 import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.api.enums.ResourceSyncMode;
@@ -64,9 +65,14 @@ public class OrgUnitResourceHandler implements ResourceHandler {
         boolean creating = org == null;
         if (creating) {
             org = new SysOrgEntity();
-            org.setId(fields.longField(resource, "targetId"));
-            org.setTenantId(fields.requiredLong(resource, "tenantId"));
-            org.setOrgCode(fields.requiredString(resource, "orgCode"));
+            long tenantId = fields.requiredLong(resource, "tenantId");
+            String orgCode = fields.requiredString(resource, "orgCode");
+            Long declaredId = fields.longField(resource, "targetId");
+            org.setId(declaredId != null
+                    ? declaredId
+                    : PortableResourceIds.stable(TARGET_TABLE, tenantId, orgCode));
+            org.setTenantId(tenantId);
+            org.setOrgCode(orgCode);
         }
         applyFields(resource, org);
         if (creating) {

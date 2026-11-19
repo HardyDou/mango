@@ -7,9 +7,11 @@ import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
+import io.mango.infra.persistence.starter.PersistenceAuditAutoConfiguration;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
 import io.mango.notice.core.mapper.NoticeChannelConfigMapper;
 import io.mango.resource.api.enums.ResourceFieldType;
+import io.mango.resource.support.PortableResourceIds;
 import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.model.ResourceField;
@@ -40,6 +42,7 @@ import javax.sql.DataSource;
             TransactionAutoConfiguration.class,
             MybatisPlusAutoConfiguration.class,
             PersistenceMybatisPlusAutoConfiguration.class,
+            PersistenceAuditAutoConfiguration.class,
             NoticeChannelResourceHandlerIntegrationTest.TestConfig.class
         })
 @TestPropertySource(
@@ -178,6 +181,23 @@ class NoticeChannelResourceHandlerIntegrationTest {
                 .isEqualTo("COMPLETE");
         assertThat(stringValue("notice_channel_config", "config_status", "id = 270601"))
                 .isEqualTo("COMPLETE");
+    }
+
+    @Test
+    void routeTagRelationUsesPortableIdAcrossReplays() throws Exception {
+        execute(
+                "insert into notice_channel_route_tag (id, channel_type, tag_code, tag_name)"
+                        + " values (270701, 'SITE', 'PORTAL', '门户')");
+        ResourceDeclaration declaration = channelDeclaration(270501L, "default", "默认系统消息通道", 100);
+        field(declaration, "routeTagCodes", ResourceFieldType.JSON, "[\"PORTAL\"]");
+
+        handler.upsert(declaration);
+        handler.upsert(declaration);
+
+        long expectedId =
+                PortableResourceIds.stable("notice_channel_config_route_tag", 270501L, 270701L);
+        assertThat(count("notice_channel_config_route_tag")).isOne();
+        assertThat(count("notice_channel_config_route_tag where id = " + expectedId)).isOne();
     }
 
     private List<ResourceDeclaration> commonNoticeChannelDeclarations() {

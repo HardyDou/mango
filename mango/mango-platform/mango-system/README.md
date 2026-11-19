@@ -190,7 +190,7 @@ mango-system-starter/src/main/resources/META-INF/mango/resources/system-common-m
 
 ### 7.1 SYSTEM_DICT
 
-`SYSTEM_DICT` 落库到 `sys_dict_type` 和 `sys_dict_data`，按 `dictType` 合并更新。
+`SYSTEM_DICT` 落库到 `sys_dict_type` 和 `sys_dict_data`，按 `dictType` 合并更新。声明项未给 `id` 时由 `PortableResourceIds.stable(...)` 从 `(dictType, value)` 派生确定性主键，保证冷基线重放一致。
 
 | 字段 | 类型 | 必填 | 含义 |
 |------|------|------|------|
