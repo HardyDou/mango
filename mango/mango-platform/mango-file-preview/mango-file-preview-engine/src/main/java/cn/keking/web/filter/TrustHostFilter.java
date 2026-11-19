@@ -1,7 +1,6 @@
 package cn.keking.web.filter;
 
 import cn.keking.config.ConfigConstants;
-import cn.keking.utils.PreviewSourceUrl;
 import cn.keking.utils.WebUtils;
 
 import java.io.IOException;
@@ -57,9 +56,7 @@ public class TrustHostFilter implements Filter {
         String host = WebUtils.getHost(url);
         boolean validUrl = StringUtils.hasText(url) && WebUtils.isValidUrl(url);
         boolean internalCompressEntryUrl = validUrl && isInternalCompressEntryUrl(url);
-        // fileid:// 是进程内直取地址，不经过网络，也不需要 host 白名单。
-        boolean internalSourceUrl = validUrl && PreviewSourceUrl.isSourceUrl(url);
-        if (!validUrl || (!internalCompressEntryUrl && !internalSourceUrl && isNotTrustHost(host))) {
+        if (!validUrl || (!internalCompressEntryUrl && isNotTrustHost(host))) {
             String currentHost = host == null ? "UNKNOWN" : host;
             if (response instanceof HttpServletResponse httpServletResponse) {
                 httpServletResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);

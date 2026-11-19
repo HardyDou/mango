@@ -3,7 +3,7 @@ package cn.keking.utils;
 import cn.keking.config.ConfigConstants;
 import cn.keking.model.FileAttribute;
 import cn.keking.model.ReturnResponse;
-import cn.keking.spi.PreviewSourceProviders;
+import cn.keking.spi.FileDownloaders;
 import io.mola.galimatias.GalimatiasParseException;
 import org.apache.commons.io.FileUtils;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
@@ -14,7 +14,6 @@ import org.springframework.web.client.HttpClientErrorException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
@@ -35,11 +34,28 @@ public class DownloadUtils {
     private static final String URL_PARAM_FTP_PORT = "ftp.control.port";
 
     /**
+     * 下载源文件：先交给已注册的 {@link cn.keking.spi.FileDownloader}，没有匹配实现时走引擎内置下载。
+     *
      * @param fileAttribute fileAttribute
      * @param fileName      文件名
      * @return 本地文件绝对路径
      */
     public static ReturnResponse<String> downLoad(FileAttribute fileAttribute, String fileName) {
+        ReturnResponse<String> delegated = FileDownloaders.tryDownload(fileAttribute, fileName);
+        if (delegated != null) {
+            return delegated;
+        }
+        return downLoadDefault(fileAttribute, fileName);
+    }
+
+    /**
+     * 引擎内置下载：HTTP、file 协议、压缩包内文件等。
+     *
+     * @param fileAttribute fileAttribute
+     * @param fileName      文件名
+     * @return 本地文件绝对路径
+     */
+    private static ReturnResponse<String> downLoadDefault(FileAttribute fileAttribute, String fileName) {
 
         String urlStr = null;
         try {
@@ -75,9 +91,6 @@ public class DownloadUtils {
         }
 
         try {
-            if (PreviewSourceUrl.isSourceUrl(urlStr)) {
-                return copyInternalSource(urlStr, realPath, fileName, response);
-            }
             URL url = WebUtils.normalizedURL(urlStr);
             if (!fileAttribute.getSkipDownLoad()) {
                 if (isHttpUrl(url)) {
@@ -156,40 +169,6 @@ public class DownloadUtils {
         }
     }
 
-    /**
-     * 处理 {@code fileid://} 内部直取：源文件就在当前进程，直接落盘，不发起 HTTP 请求。
-     */
-    private static ReturnResponse<String> copyInternalSource(String urlStr, String realPath,
-                                                             String fileName, ReturnResponse<String> response) {
-        InputStream inputStream = null;
-        try {
-            inputStream = PreviewSourceProviders.open(PreviewSourceUrl.sourceId(urlStr));
-            FileUtils.copyInputStreamToFile(inputStream, new File(realPath));
-        } catch (IOException | IllegalArgumentException e) {
-            logger.error("内部直取源文件失败，url：{}", urlStr, e);
-            response.setCode(1);
-            response.setContent(null);
-            response.setMsg("下载失败: " + e.getMessage());
-            return response;
-        } finally {
-            closeQuietly(inputStream);
-        }
-        response.setContent(realPath);
-        response.setMsg(fileName);
-        return response;
-    }
-
-    private static void closeQuietly(InputStream inputStream) {
-        if (inputStream == null) {
-            return;
-        }
-        try {
-            inputStream.close();
-        } catch (IOException e) {
-            logger.warn("关闭内部直取源文件流失败", e);
-        }
-    }
-
     // 处理file协议的文件下载
     private static void handleFileProtocol(URL url, String targetPath) throws IOException {
         File sourceFile = new File(url.getPath());
@@ -254,7 +233,14 @@ public class DownloadUtils {
      * @param fileName 文件名
      * @return 文件路径
      */
-    private static String getRelFilePath(String fileName, FileAttribute fileAttribute) {
+    /**
+     * 解析引擎落盘路径：自下载器实现也需要按同一规则落盘。
+     *
+     * @param fileName      文件名，可为 null
+     * @param fileAttribute 文件属性
+     * @return 本地绝对路径
+     */
+    public static String getRelFilePath(String fileName, FileAttribute fileAttribute) {
         String type = fileAttribute.getSuffix();
         if (null == fileName) {
             UUID uuid = UUID.randomUUID();

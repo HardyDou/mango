@@ -63,7 +63,9 @@ public class OnlinePreviewController {
     }
 
     @GetMapping( "/onlinePreview")
-    public String onlinePreview(@RequestParam String url,
+    public String onlinePreview(@RequestParam(required = false) String url,
+                                @RequestParam(required = false) String fileId,
+                                @RequestParam(required = false) String fullfilename,
                                 @RequestParam(required = false) String key,
                                 @RequestParam(required = false) String encryption,
                                 @RequestParam(defaultValue = "false") String highlightall,
@@ -76,13 +78,20 @@ public class OnlinePreviewController {
             return otherFilePreview.notSupportedFile(model, ILLEGAL_ACCESS_MSG);
         }
         String fileUrl;
-        try {
-            fileUrl = WebUtils.decodeUrl(url, encryption);
-        } catch (Exception ex) {
-            String errorMsg = String.format(BASE64_DECODE_ERROR_MSG, "url");
-            return otherFilePreview.notSupportedFile(model, errorMsg);
+        FileAttribute fileAttribute;
+        if (StringUtils.hasText(fileId)) {
+            // 平台直接传源标识：由已注册的 FileDownloader 取流，不把标识当网络地址解析。
+            fileUrl = fileId;
+            fileAttribute = fileHandlerService.getFileAttributeBySourceId(fileId, fullfilename, req);
+        } else {
+            try {
+                fileUrl = WebUtils.decodeUrl(url, encryption);
+            } catch (Exception ex) {
+                String errorMsg = String.format(BASE64_DECODE_ERROR_MSG, "url");
+                return otherFilePreview.notSupportedFile(model, errorMsg);
+            }
+            fileAttribute = fileHandlerService.getFileAttribute(fileUrl, req);
         }
-        FileAttribute fileAttribute = fileHandlerService.getFileAttribute(fileUrl, req);
 
         highlightall= KkFileUtils.htmlEscape(highlightall);
         model.addAttribute("highlightall", highlightall);

@@ -9,7 +9,6 @@ import io.mango.file.api.vo.FileRecordVO;
 import io.mango.file.preview.api.enums.FilePreviewCode;
 import io.mango.file.preview.api.vo.FilePreviewLinkVO;
 import io.mango.file.preview.core.config.FilePreviewProperties;
-import io.mango.file.preview.core.config.FilePreviewSourceMode;
 import io.mango.file.preview.core.gateway.FilePreviewFileGateway;
 import io.mango.file.preview.core.service.IFilePreviewService;
 import io.mango.file.preview.core.service.PreviewSourceAvailability;
@@ -51,7 +50,7 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
 
     private static final String FULL_FILENAME_PARAM = "fullfilename";
     /** 内部直取协议；与引擎 {@code cn.keking.utils.PreviewSourceUrl} 保持一致，跨模块由 starter 的往返测试锁定。 */
-    private static final String FILE_ID_SOURCE_PREFIX = "fileid://";
+    private static final String SOURCE_ID_PARAM = "fileId";
     private static final String ENTRY_TOKEN_PREFIX = "file-preview:entry:";
     private static final String SOURCE_TOKEN_PREFIX = "file-preview:source:";
     private static final String ENGINE_FILE_PREFIX = "file-";
@@ -88,12 +87,10 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
         FileRecordVO fileRecord = fileRecord(fileId);
         String token = token();
         storeToken(SOURCE_TOKEN_PREFIX + token, new PreviewToken(fileId, MangoContextHolder.get(), expiresAt()));
-        String sourceUrl = sourceUrl(token, engineFileName(fileId, fileRecord));
-        String encodedSourceUrl = Base64.getEncoder().encodeToString(sourceUrl.getBytes(StandardCharsets.UTF_8));
         FilePreviewLinkVO vo = new FilePreviewLinkVO();
         vo.setFileId(fileId);
         vo.setFileName(fileRecord.getFileName());
-        vo.setPreviewUrl(engineUrl(encodedSourceUrl));
+        vo.setPreviewUrl(enginePreviewUrl(token, engineFileName(fileId, fileRecord)));
         vo.setExpireSeconds(properties.getSourceTokenExpireSeconds());
         return vo;
     }
@@ -217,16 +214,24 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
         return fileRecord;
     }
 
-    private String sourceUrl(String token, String fileName) {
-        if (useInternalSource()) {
-            // 引擎与文件服务同进程：直接把令牌交给引擎直取，不拼对外域名。
-            String query = UriComponentsBuilder.newInstance()
-                    .queryParam(FULL_FILENAME_PARAM, fileName)
-                    .build()
-                    .encode(StandardCharsets.UTF_8)
-                    .getQuery();
-            return FILE_ID_SOURCE_PREFIX + token + "?" + query;
+    /**
+     * 引擎预览地址：同进程内注册了取源实现时直接传 {@code fileId} 参数（值是短期取源票据，不可枚举，
+     * 不是数据库主键），由引擎按该标识向本进程取流；否则回退为对外域名的 {@code url} 参数。
+     */
+    private String enginePreviewUrl(String sourceTicket, String fileName) {
+        if (!useInternalSource()) {
+            String sourceUrl = sourceUrl(sourceTicket, fileName);
+            return engineUrl(Base64.getEncoder().encodeToString(sourceUrl.getBytes(StandardCharsets.UTF_8)));
         }
+        return UriComponentsBuilder.fromPath("/api" + normalize(properties.getEnginePath()))
+                .queryParam(SOURCE_ID_PARAM, sourceTicket)
+                .queryParam(FULL_FILENAME_PARAM, fileName)
+                .build()
+                .encode(StandardCharsets.UTF_8)
+                .toUriString();
+    }
+
+    private String sourceUrl(String token, String fileName) {
         String url = sourceBaseUrl() + normalize(properties.getSourcePath());
         return UriComponentsBuilder.fromHttpUrl(url)
                 .queryParam("token", token)
@@ -237,13 +242,6 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
     }
 
     private boolean useInternalSource() {
-        FilePreviewSourceMode sourceMode = properties.getSourceMode();
-        if (sourceMode == FilePreviewSourceMode.FILE_ID) {
-            return true;
-        }
-        if (sourceMode == FilePreviewSourceMode.URL) {
-            return false;
-        }
         PreviewSourceAvailability availability = sourceAvailabilityProvider.getIfAvailable();
         return availability != null && availability.internalSourceAvailable();
     }

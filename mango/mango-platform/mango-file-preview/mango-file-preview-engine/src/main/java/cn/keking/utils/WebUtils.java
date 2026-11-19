@@ -267,7 +267,7 @@ public class WebUtils {
      * 高 2022/12/17
      */
     public static boolean isValidUrl(String url) {
-        String regStr = "^((https|http|ftp|rtsp|mms|file|fileid)://)";//[.?*]表示匹配的就是本身
+        String regStr = "^((https|http|ftp|rtsp|mms|file)://)";//[.?*]表示匹配的就是本身
         Pattern pattern = Pattern.compile(regStr);
         Matcher matcher = pattern.matcher(url);
         return matcher.find();

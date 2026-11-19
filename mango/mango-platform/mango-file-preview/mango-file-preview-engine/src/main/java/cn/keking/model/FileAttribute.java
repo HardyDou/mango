@@ -12,6 +12,11 @@ public class FileAttribute {
     private String suffix;
     private String name;
     private String url;
+    /**
+     * 进程内直取的源标识：有值时引擎直接向已注册的 {@code PreviewSourceProvider} 取流，
+     * 不再把 {@link #url} 当作网络地址下载。
+     */
+    private String sourceId;
     private boolean isCompressFile = false;
     private String compressFileKey;
     private String filePassword;
@@ -34,6 +39,14 @@ public class FileAttribute {
     private String kkProxyAuthorization;
 
     public FileAttribute() {
+    }
+
+    public String getSourceId() {
+        return sourceId;
+    }
+
+    public void setSourceId(String sourceId) {
+        this.sourceId = sourceId;
     }
 
     public FileAttribute(FileType type, String suffix, String name, String url) {

@@ -8,7 +8,6 @@ import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.file.api.vo.FileRecordVO;
 import io.mango.file.preview.core.config.FilePreviewProperties;
-import io.mango.file.preview.core.config.FilePreviewSourceMode;
 import io.mango.file.preview.core.service.PreviewSourceAvailability;
 import io.mango.file.preview.core.gateway.FilePreviewFileGateway;
 import io.mango.file.preview.core.service.model.FilePreviewMode;
@@ -89,30 +88,18 @@ class FilePreviewServiceImplTest {
     }
 
     @Test
-    void createEnginePreview_fileId模式把令牌直接交给引擎() {
-        FilePreviewProperties properties = new FilePreviewProperties();
-        properties.setSourceMode(FilePreviewSourceMode.FILE_ID);
-        FilePreviewServiceImpl service = service(properties, new StubFileApi(), new StubTokenStore(),
-                Clock.systemUTC(), new StubFileContentProvider());
-
-        String sourceUrl = sourceUrl(service.createEnginePreview(100L).getPreviewUrl());
-
-        assertThat(sourceUrl).startsWith("fileid://");
-        assertThat(sourceUrl).doesNotContain("/file-preview/sources");
-        assertThat(queryParameter(sourceUrl, "fullfilename")).matches("file-100-[0-9a-f]{16}\\.pptx");
-    }
-
-    @Test
-    void createEnginePreview_auto模式有直取实现时不再使用对外域名() {
+    void createEnginePreview_有直取实现时引擎地址只带fileId参数() {
         FilePreviewProperties properties = new FilePreviewProperties();
         properties.setSourceBaseUrl("https://business.example.com");
         FilePreviewServiceImpl service = service(properties, new StubFileApi(), new StubTokenStore(),
                 Clock.systemUTC(), new StubFileContentProvider(), () -> true);
 
-        String sourceUrl = sourceUrl(service.createEnginePreview(100L).getPreviewUrl());
+        String previewUrl = service.createEnginePreview(100L).getPreviewUrl();
 
-        assertThat(sourceUrl).startsWith("fileid://");
-        assertThat(sourceUrl).doesNotContain("business.example.com");
+        assertThat(previewUrl).startsWith("/api/onlinePreview?fileId=");
+        assertThat(previewUrl).doesNotContain("business.example.com");
+        assertThat(previewUrl).doesNotContain("url=");
+        assertThat(queryParameter(previewUrl, "fullfilename")).matches("file-100-[0-9a-f]{16}\\.pptx");
     }
 
     @Test
@@ -122,19 +109,6 @@ class FilePreviewServiceImplTest {
         String sourceUrl = sourceUrl(service.createEnginePreview(100L).getPreviewUrl());
 
         assertThat(sourceUrl).startsWith("http://127.0.0.1/file-preview/sources?");
-    }
-
-    @Test
-    void createEnginePreview_url模式即使有直取实现也使用对外域名() {
-        FilePreviewProperties properties = new FilePreviewProperties();
-        properties.setSourceBaseUrl("https://business.example.com");
-        properties.setSourceMode(FilePreviewSourceMode.URL);
-        FilePreviewServiceImpl service = service(properties, new StubFileApi(), new StubTokenStore(),
-                Clock.systemUTC(), new StubFileContentProvider(), () -> true);
-
-        String sourceUrl = sourceUrl(service.createEnginePreview(100L).getPreviewUrl());
-
-        assertThat(sourceUrl).startsWith("https://business.example.com/file-preview/sources?");
     }
 
     @Test

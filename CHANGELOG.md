@@ -219,17 +219,17 @@ workflow-compatible-additions: []
 
 ### Added
 
-- `mango.file-preview.source-mode`：`auto`（默认）/`fileId`/`url`。内嵌引擎默认用 `fileid://` 进程内直取源文件，不再由引擎 HTTP 抓回对外域名。
-- 引擎新增 `cn.keking.spi.PreviewSourceProvider` 与 `PreviewSourceProviders` 注册表，`DownloadUtils` 支持 `fileid://` 协议；`TrustHostFilter` 把该类地址视为进程内地址，不做 host 白名单校验。
+- 引擎新增可扩展下载器 `cn.keking.spi.FileDownloader` 与注册表 `FileDownloaders`：`DownloadUtils#downLoad` 先交给已注册实现，无匹配时原样走内置下载（HTTP / file 协议 / 压缩包内文件）。
+- `mango-file-preview-starter` 装配 `FilePreviewEngineDownloader`：内嵌引擎预览地址改为 `/api/onlinePreview?fileId=<短期取源票据>&fullfilename=<文件名>`，进程内直接取流，不再绕对外域名做 HTTP 抓取。
 
 ### Changed
 
-- `FilePreviewTrustHostInitializer` 在直取模式下不再把 `source-base-url` 的 host 写入引擎信任列表；`source-mode=fileId` 但进程内无直取实现时启动失败。
+- 引擎 `OnlinePreviewController#onlinePreview` 新增可选参数 `fileId`、`fullfilename`；`FileHandlerService#getFileAttributeBySourceId` 按源标识构造文件属性（原 `url` 路径未改动）。
 
 ### Compatibility
 
-- `source-mode=auto` 在独立部署引擎（无直取实现）下行为与 1.14.x 完全一致；`url` 模式可显式回退。
-- 引擎 `DownloadUtils` 对 `fileid://` 之外地址的下载路径未改动。
+- 未装配内嵌下载器（独立部署引擎）时，预览地址仍是 `url=<base64 源地址>`，行为与 1.14.x 完全一致。
+- 引擎除 `DownloadUtils#downLoad` 的一处转调与上述新增参数外，`WebUtils`、`TrustHostFilter`、各 `FilePreview` 实现均未改动，便于跟随 kkFileView 升级。
 
 ## Unreleased - workflow current task unique key (Issue #1289)
 

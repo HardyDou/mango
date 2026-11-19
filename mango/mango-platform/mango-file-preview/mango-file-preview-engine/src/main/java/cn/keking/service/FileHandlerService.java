@@ -220,6 +220,24 @@ public class FileHandlerService {
      * @param url url
      * @return 文件属性
      */
+    /**
+     * 按进程内源标识构造文件属性：文件名、类型、缓存名仍沿用全文件名规则，只是不再解析网络地址。
+     *
+     * @param sourceId     平台签发的取源标识
+     * @param fullFileName 引擎侧文件名（决定后缀、预览类型、缓存名）
+     * @param req          请求，可为 null
+     * @return 带 sourceId 的文件属性
+     */
+    public FileAttribute getFileAttributeBySourceId(String sourceId, String fullFileName, HttpServletRequest req) {
+        String attributeUrl = sourceId;
+        if (StringUtils.hasText(fullFileName)) {
+            attributeUrl = sourceId + "?" + "fullfilename=" + URLEncoder.encode(fullFileName, StandardCharsets.UTF_8);
+        }
+        FileAttribute attribute = getFileAttribute(attributeUrl, req);
+        attribute.setSourceId(sourceId);
+        return attribute;
+    }
+
     public FileAttribute getFileAttribute(String url, HttpServletRequest req) {
         FileAttribute attribute = new FileAttribute();
         String suffix;
