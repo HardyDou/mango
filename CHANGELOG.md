@@ -1,3 +1,95 @@
+## v2026.11.19-maven-1.14.2-disabled-module-resources-release - Mango Maven/docs 1.14.2 disabled module resources and probe whitelist - 2026-11-19
+
+Status: PENDING
+
+- Maven and npm publication: PENDING (201 Maven coordinates, `@mango/cli@1.4.17`)
+- Consume verification: PENDING
+- Tag and GitHub Release: PENDING
+- Release plan digest: `35403793bbb40deac68d95f7a2e4acfb62b1e57c1a1740e601567ab93f3cdce9`
+
+批次标签 `v2026.11.19-maven-1.14.2-disabled-module-resources-release`，基线为 `v2026.11.19-maven-1.14.1-portable-id-contract-release`（Maven 1.14.1）。本批次不触碰 `mango-workflow`，因此不携带工作流契约指纹块。
+
+### Pull Requests
+
+- PR #1324 Fixed 关闭模块迁移时跳过该模块的全部资源声明。Packages: `io.mango.platform:infra-persistence-api`, `io.mango.platform:infra-persistence-starter`, `io.mango.platform.resource:resource-support`, `io.mango.platform.resource:resource-core`, `io.mango.platform.resource:resource-sync-starter`. Business Adaptation: 无需改动代码；把某模块 `mango.persistence.flyway.modules.<module>.enabled` 设为 `false` 后，该模块的便携资源声明不再加载，启动日志出现 `Skipping portable resource declarations of disabled module` 的 WARN。
+- PR #1325 Fixed 修正探针路径的白名单语义并自检 CIDR 写法。Packages: `io.mango.platform.access:access-core`, `io.mango.platform.access:access-web-starter`, `io.mango.platform.auth:auth-starter`, `io.mango.app:mango-monolith-app`. Business Adaptation: 单体默认白名单规则由精确路径 `/actuator/health` 改为 `/actuator/health/**`；自建白名单规则照旧生效，但缩写网段写法会在启动日志给出 WARN。
+- PR #1326 Changed 补齐冷基线 `moduleOrder` 的差集与模块分组口径。Packages: `io.mango:mango-docs-bundle`. Business Adaptation: 无代码改动，按操作指南核对自身构建配置即可。
+- PR #1327 Changed 补齐冷基线模块发现顺序与集合比较口径。Packages: `io.mango:mango-docs-bundle`. Business Adaptation: 无代码改动，按操作指南判断是否保留显式模块序列。
+- PR #1328 Changed 补齐冷基线隐式跨模块依赖判据与自查命令。Packages: `io.mango:mango-docs-bundle`. Business Adaptation: 无代码改动，业务模块向平台表写种子数据时按指南自查回放顺序。
+
+### Fixed
+
+- `mango-infra-persistence-starter` 与 `mango-resource-sync-starter` 新增模块启停契约 `PersistenceModuleEnablement`：某模块的 Flyway 迁移被关闭后，该模块在 `META-INF/mango/resources` 下的便携资源声明与该模块的打包清单条目一并跳过，不再出现 `Table ... doesn't exist` 的启动失败。
+- 跳过行为只影响声明装载，不改变迁移开关本身；`skip-reason` 仍是配置项，跳过日志同时打印模块名、声明数量、跳过原因与来源文件，便于定位是哪个模块被关闭。
+- `/actuator/health` 之后的探针分组路径（`readiness`、`liveness`）现在命中平台默认白名单规则，不再因为规则只写精确路径而落到登录校验上返回 401。
+- 白名单匹配把 IPv4 映射地址按 IPv4 比较、精确地址与网段比较使用同一套字节比较，缩写网段（如 `10/8`、`172.16/12`、`192.168/16`）不再静默匹配到错误网段。
+
+### Changed
+
+- 平台单体默认白名单规则从 `path-pattern: /actuator/health` 调整为 `/actuator/health/**`，因为 `/actuator/**` 不参与 API 资源声明同步，探针路径只能依赖该白名单。
+- `mango-access-web-starter` 在启动装配阶段对 IP 白名单规则做写法自检：网段未写满四段、掩码越界或地址无法解析时输出 WARN `IP 白名单 CIDR 不是完整网段写法`，不阻断启动。
+- 冷基线操作指南新增模块顺序、分组与隐式跨模块依赖三节：发现顺序为模块名字典序、`MANGO-BASELINE-023` 只比较集合成员、业务模块向平台表写种子数据时按依赖顺序显式列出完整模块序列。
+- 本批次不涉及 `sys_dict_type`、`sys_dict_data`、`authorization_role` 的列集或约束变更，业务模块向这些表写种子数据的声明无需调整。
+
+### Versions
+
+- Maven 平台：`1.14.1` → `1.14.2`（`mango-bom`、`mango-parent`、`mango-maven-plugin` 与全部平台模块跟随）
+- `io.mango:mango-docs-bundle`：`1.14.1` → `1.14.2`
+- `@mango/cli`：`1.4.16` → `1.4.17`（跟随 Maven 后端版本矩阵）
+- `@mango/pmo`：保持 `1.6.3`，本批次未改动 PMO 规则与 Skill 内容
+- 前端复用包（`@mango/common`、`@mango/admin`、`@mango/admin-shell` 等）：保持 `1.14.1` 批次版本，本批次未改动前端源码
+
+### Published Packages
+
+- Maven：`mango-bom`、`mango-parent`、`mango-maven-plugin`、`mango-docs-bundle` 与平台模块共 201 个坐标，按 plan 拓扑顺序发布到 `maven-releases`。
+- npm：`@mango/cli` 单包，发布到 `npm-hosted`。
+- 不发布：本批次未改动的 `@mango/pmo` 与前端复用包，仅沿用 consume 仓库既有版本做消费验证。
+
+### Business Impact
+
+- 受影响的消费方：把某个 Maven 模块的 Flyway 迁移关闭、同时该模块自带便携资源声明的业务应用；依赖 `/actuator/health/readiness`、`/actuator/health/liveness` 做容器探针的业务应用；使用缩写网段写法的 IP 白名单。
+- 不受影响的消费方：未关闭任何模块迁移的应用，以及只使用 `/actuator/health` 的应用——行为与 1.14.1 一致。
+- 数据库：本批次无 DDL、无迁移脚本变更，`sys_dict_*`、`authorization_role` 等平台表结构不变。
+- 配置：`PersistenceModuleEnablement` 由持久化 starter 自动装配，业务侧不需要新增配置项；`skip-reason` 语义不变。
+- 接口与权限：无接口签名变化、无权限点变化；探针路径仍走白名单放行，不新增匿名端点。
+- 运维：探针分组路径能否访问还取决于 `management.endpoint.health.probes.enabled=true` 与来源地址是否命中网段，白名单只解决路径匹配。
+
+### Upgrade Estimate
+
+- Audience: 使用 Mango 平台 1.14.x 的业务应用，尤其是关闭了模块迁移或配置了容器探针的部署
+- Engineering Effort: 低，通常只需升级依赖版本并重启；有自建白名单规则时顺带核对网段写法
+- Execution Window: 任意维护窗口，无数据库变更
+- Service Downtime: 无，滚动重启即可
+- Rollback Effort: 低，回退依赖版本并重启
+- Assumptions: 业务应用未在 1.14.2 上改动自身迁移脚本；探针路径未做同时变更
+
+### Upgrade Notes
+
+1. 升级依赖：`backend/pom.xml` 中 `mango.version` 改为 `1.14.2`，重新构建即可，无需新增配置项。
+2. 关闭了模块迁移的应用：启动日志会出现一条 `Skipping portable resource declarations of disabled module: module=..., declarations=..., reason=..., source=...`，确认模块名与预期一致；若该模块仍需声明，请恢复 `enabled: true`。
+3. 使用分组探针的应用：先确认 `management.endpoint.health.probes.enabled=true`，再核对白名单规则是否覆盖 `/actuator/health/**` 且来源地址命中网段。未开启 probes 时分组端点不映射，放行后表现为 404 而不是 401。
+4. 自建 IP 白名单规则：把缩写网段改写为完整四段（如 `10.0.0.0/8`），启动日志不再出现 CIDR WARN。
+5. 冷基线构建：若业务模块的迁移脚本向平台表写种子数据，按 `mango-docs/guides/operations/build-time-cold-baseline.md` §8.1 自查并保留显式 `moduleOrder`；未写平台表的应用可以留空交给字典序发现。
+6. 聚合消费方：通过 `mango-bom` 导入依赖的应用升级 BOM 版本即可；直接依赖单模块的应用按模块坐标升级。
+
+### Verification
+
+- 发布前：`mango release plan` 生成的 201 个 Maven 坐标与 `@mango/cli` 拓扑顺序通过 `release:plan:check`，准备阶段完成混合消费验证（四仓库可见性、POM 与 JAR SHA-256、前端包导出）。
+- 发布后：consume 仓库拉取 `mango-infra-persistence-starter`、`mango-resource-sync-starter`、`mango-access-core`、`mango-access-web-starter`、`mango-auth-starter` 的 1.14.2 坐标并与 sealed 清单 SHA-256 比对；`@mango/cli@1.4.17` 从 consume 仓库安装后执行 `mango --version` 与 `mango release registry doctor`。
+- 消费端行为：关闭模块迁移的应用启动后不再出现 `Table ... doesn't exist`，并输出跳过 WARN；带 `probes.enabled=true` 的应用访问 `/actuator/health/readiness` 不再返回 401；缩写网段配置在启动日志出现 CIDR WARN。
+- 未验证项：未在真实阿里云、腾讯云账号上做网关调用验证（本批次不涉及）；未针对具体业务仓重新触发 `MANGO-BASELINE-021`。
+
+### Rollback
+
+- 依赖回退：把 `mango.version` 改回 `1.14.1` 并重启，探针与白名单行为回到精确路径语义，关闭模块迁移的应用会恢复 `Table ... doesn't exist` 的旧失败。
+- 数据库：本批次无迁移变更，回退不需要数据订正；已跳过的资源声明在回退后会重新加载。
+- 制品：已发布的 Maven 坐标与 `@mango/cli@1.4.17` 不回撤、不复用版本号，回退只发生在消费方依赖声明。
+
+### Audit History
+
+- PR #1313、#1318、#1320、#1319、#1321 属于 1.14.1 批次，不在本批次发布内容内。
+- PR #1319（字典批量查询）已合并但未随本批次发布，另行安排。
+
 ## v2026.11.19-maven-1.14.1-portable-id-contract-release - Mango Maven/docs 1.14.1 declaration primary key determinism and contract fingerprint - 2026-11-19
 
 Status: PUBLISHED_AND_VERIFIED
