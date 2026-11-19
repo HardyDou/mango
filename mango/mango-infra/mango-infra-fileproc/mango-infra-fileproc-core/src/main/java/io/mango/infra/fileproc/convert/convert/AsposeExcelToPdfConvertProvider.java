@@ -22,8 +22,6 @@ import java.nio.file.Files;
  * 基于 Aspose.Cells 的 Excel 转 PDF 转换器。
  */
 public class AsposeExcelToPdfConvertProvider implements IConvertProvider {
-    private static final Logger LOGGER = LoggerFactory.getLogger(AsposeExcelToPdfConvertProvider.class);
-
 
     /**
      * Excel 转 PDF 时将每个工作表压缩到单页。
@@ -34,6 +32,8 @@ public class AsposeExcelToPdfConvertProvider implements IConvertProvider {
      * Excel 转 PDF 时将每个工作表所有列压缩到单页宽度。
      */
     public static final String OPTION_ALL_COLUMNS_IN_ONE_PAGE_PER_SHEET = "allColumnsInOnePagePerSheet";
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AsposeExcelToPdfConvertProvider.class);
 
     private final AsposeLicenseApi licenseApi;
 
