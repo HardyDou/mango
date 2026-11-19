@@ -7,6 +7,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  */
 @ConfigurationProperties(prefix = "mango.fileproc.convert")
 public class ConvertProperties {
+    private static final int DEFAULT_OFFICE_PORT_2001 = 2001;
+
+    private static final int DEFAULT_OFFICE_PORT_2002 = 2002;
+
+    private static final long DEFAULT_OFFICE_TASK_EXECUTION_TIMEOUT_MS = 300000L;
 
     /**
      * 是否启用格式转换自动配置。
@@ -56,12 +61,12 @@ public class ConvertProperties {
     /**
      * Office 服务端口。
      */
-    private int[] officePorts = new int[]{2001, 2002};
+    private int[] officePorts = new int[]{DEFAULT_OFFICE_PORT_2001, DEFAULT_OFFICE_PORT_2002};
 
     /**
      * Office 单任务超时时间，单位毫秒。
      */
-    private long officeTaskExecutionTimeout = 300000L;
+    private long officeTaskExecutionTimeout = DEFAULT_OFFICE_TASK_EXECUTION_TIMEOUT_MS;
 
     /**
      * 是否注册 PDF 转图片转换器。

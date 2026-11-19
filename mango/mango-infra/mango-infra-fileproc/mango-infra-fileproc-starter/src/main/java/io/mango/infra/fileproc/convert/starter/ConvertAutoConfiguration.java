@@ -39,6 +39,9 @@ import java.util.List;
  * 格式转换工具自动配置。
  */
 @AutoConfiguration
+// Aspose 字体/授权自检依赖 AsposeAutoConfiguration 提供的 AsposeLicenseApi、AsposeFontAvailability、
+// AsposeProperties；不加这条顺序声明就只是靠类名排序碰巧成立，顺序一变自检会静默消失。
+@AutoConfigureAfter(AsposeAutoConfiguration.class)
 @EnableConfigurationProperties(ConvertProperties.class)
 @ConditionalOnProperty(prefix = "mango.fileproc.convert", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class ConvertAutoConfiguration {
