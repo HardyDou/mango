@@ -1,6 +1,6 @@
 ## Pull Requests
 
-- PR #1324 Fixed 关闭模块迁移时跳过该模块的全部资源声明。Packages: `io.mango.platform:infra-persistence-api`, `io.mango.platform:infra-persistence-starter`, `io.mango.platform.resource:resource-support`, `io.mango.platform.resource:resource-core`, `io.mango.platform.resource:resource-sync-starter`. Business Adaptation: 无需改动代码；把某模块 `mango.persistence.flyway.modules.<module>.enabled` 设为 `false` 后，该模块的便携资源声明不再加载，启动日志出现 `Skipping portable resource declarations of disabled module` 的 WARN。
+- PR #1324 Fixed 关闭模块迁移时跳过该模块的全部资源声明。Packages: `io.mango.platform:infra-persistence-api`, `io.mango.platform:infra-persistence-starter`, `io.mango.platform.resource:resource-support`, `io.mango.platform.resource:resource-core`, `io.mango.platform.resource:resource-sync-starter`. Business Adaptation: 无需改动代码；把某模块 `mango.persistence.flyway.modules.{模块名}.enabled` 设为 `false` 后，该模块的便携资源声明不再加载，启动日志出现 `Skipping portable resource declarations of disabled module` 的 WARN。
 - PR #1325 Fixed 修正探针路径的白名单语义并自检 CIDR 写法。Packages: `io.mango.platform.access:access-core`, `io.mango.platform.access:access-web-starter`, `io.mango.platform.auth:auth-starter`, `io.mango.app:mango-monolith-app`. Business Adaptation: 单体默认白名单规则由精确路径 `/actuator/health` 改为 `/actuator/health/**`；自建白名单规则照旧生效，但缩写网段写法会在启动日志给出 WARN。
 - PR #1326 Changed 补齐冷基线 `moduleOrder` 的差集与模块分组口径。Packages: `io.mango:mango-docs-bundle`. Business Adaptation: 无代码改动，按操作指南核对自身构建配置即可。
 - PR #1327 Changed 补齐冷基线模块发现顺序与集合比较口径。Packages: `io.mango:mango-docs-bundle`. Business Adaptation: 无代码改动，按操作指南判断是否保留显式模块序列。
