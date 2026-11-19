@@ -79,7 +79,7 @@ mvn -f mango/pom.xml mango:gen-permission
 | `mango.check.checkstyle.fileLengthMax` | 空 | 覆盖 Checkstyle 文件长度阈值；未传时沿用规则文件。 |
 | `mango.check.resourceStarterDependencyExceptions` | `artifactId=reason` | Resource Registry runtime 依赖例外。必须人工明确确认并写明理由，多个例外用英文逗号分隔。 |
 
-`reportOnlyRules` 按规则名匹配，大小写不敏感；命中问题写入 JSON 的 `reportOnlyIssues` 和 `reportOnlyIssueCount`，不进入 `newIssues`/`baselineIssues`，不参与 gate 阻断。两个边界要留意：降级按**规则名全局**生效，不限改动文件——例如把 `MagicNumberCheck` 写进去，会把全仓该规则的所有发现一起降级；`mango.check.gate=all` 也不会因为 report-only 而变成阻断。`mango.check.checkstyle.*Max` 会生成 `target/mango-check/checkstyle-resolved.xml`，不修改项目规则文件；未传时沿用选中规则文件的阈值。
+`reportOnlyRules` 按规则名匹配，大小写不敏感；命中问题写入 JSON 的 `reportOnlyIssues` 和 `reportOnlyIssueCount`，不进入 `newIssues`/`baselineIssues`，不参与 gate 阻断。两个边界要留意：降级按**规则名全局**生效，不限改动文件——例如把 `MagicNumberCheck` 写进去，会把全仓该规则的所有发现一起降级；`mango.check.gate=all` 也不会因为 report-only 而变成阻断。`mango.check.checkstyle.*Max` 会生成 `target/mango-check/checkstyle-resolved.xml`，不修改项目规则文件；未传时沿用选中规则文件的阈值。调整 `*Max` 不会再让存量指纹失效——复杂度类指纹只记录实际值，不记录配置阈值。
 
 ### 推荐配置（可选，业务自愿开启）
 
