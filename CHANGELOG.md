@@ -1,3 +1,18 @@
+## Unreleased - workflow current task unique key (Issue #1289)
+
+### Added
+
+- `V7__workflow_business_apply_current_task_unique_key.sql` adds `UNIQUE KEY uk_workflow_business_apply_current_task (tenant_id, task_id)`, so `workflow_business_apply_current_task` holds at most one row per task even if `WorkflowBusinessApplyService#refreshCurrentTasks` runs concurrently.
+- The migration first collapses existing duplicates and keeps `updated_at` newest, falling back to the largest `id`; rows whose `task_id` is `NULL` (task not created yet or already cleared) do not count as duplicates and stay untouched.
+
+### Changed
+
+- The task page `left join workflow_business_apply_current_task ct on ct.task_id = t.ID_` can no longer fan out into duplicated task rows when the snapshot table carries stale duplicates.
+
+### Compatibility
+
+- Both statements are conditional: the migration is idempotent, and on an older `workflow_business_apply_current_task` without `task_id` (for example the 1.0.20 schema fixture) it skips instead of failing the upgrade.
+
 ## Unreleased - dict options batch read (Issue #1293)
 
 ### Added

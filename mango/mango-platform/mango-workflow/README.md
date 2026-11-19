@@ -375,6 +375,8 @@ public class ExpenseWorkflowEventSubscriber implements DomainEventSubscriber {
 
 `assign_source`、`claim_time` 由 Flyway `V6__workflow_business_apply_current_task_claim_state.sql` 加在 `workflow_business_apply_current_task` 上。升级前已存在的当前任务行这两列为 `NULL`，`releasable` 与 `unclaimable` 都返回 `false`（来源未知按不可释放处理）；任务再次刷新或流转后补齐。
 
+「一个任务一行」不再只靠应用逻辑保证：`V7__workflow_business_apply_current_task_unique_key.sql` 先清理重复行（同 `tenant_id` + `task_id` 保留 `updated_at` 最新的一行，`updated_at` 相同保留 `id` 最大的一行；`task_id` 为空的行不参与清理），再加唯一键 `uk_workflow_business_apply_current_task (tenant_id, task_id)`，因此上面的 `left join` 不会把同一任务翻倍。迁移对老版本当前任务表（没有 `task_id` 列）自动跳过，重复执行不会失败。
+
 ## 4. 前端接入
 
 安装前端包：
