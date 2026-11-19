@@ -1,3 +1,128 @@
+## v2026.11.19-maven-1.14.1-portable-id-contract-release - Mango Maven/docs 1.14.1 declaration primary key determinism and contract fingerprint - 2026-11-19
+
+Status: PENDING
+
+- Maven and npm publication: PENDING
+- Consume verification: PENDING
+- Tag and GitHub Release: PENDING
+- Release plan digest: `1e0ce78c7aaf9256a331de96beaa6f95955c0f76b141a4adabb64df2520ba935`
+
+
+批次标签 `v2026.11.19-maven-1.14.1-portable-id-contract-release`，基线为 `v2026.11.18-maven-1.14.0-captcha-sms-provider-release`（Maven 1.14.0）。
+
+### Workflow Contract
+
+本批次触碰 `mango-workflow`，工作流契约与 1.14.0 一致，没有新增 DTO 字段或枚举值。
+
+```text
+workflow-contract-fingerprint:
+  api:    053297d7a998ef45b6c40093a2d4e1fb25d04d0323159773424b5c1fe148a8a1
+  web:    277ab3b80baff855b0e4fdedc094ec7e73f67415e5951ca15835c273449da417
+  changed: none
+  since:  053297d7a998ef45b6c40093a2d4e1fb25d04d0323159773424b5c1fe148a8a1 / 277ab3b80baff855b0e4fdedc094ec7e73f67415e5951ca15835c273449da417
+
+workflow-compatible-additions: []
+```
+
+### Pull Requests
+
+- PR #1313 Added `mango-pmo` 新增工作流契约指纹工具：`mango-pmo/tools/workflow-contract-fingerprint.mjs` 从上一批次标签计算 `workflow-contract-fingerprint`（`api`、`web`、`changed`、`since`）与 `workflow-compatible-additions`，支持 `--verify-release-notes` 校验发布说明中的契约块；`mango-release` Skill 的 Readiness 要求触碰 `mango-workflow` 的批次携带该块，`pmo-doc-check` 增加校验入口，新增运维指南 `mango-docs/guides/operations/workflow-contract-fingerprint.md`。Packages: `@mango/pmo@1.6.3`、`@mango/cli@1.4.16`。Business Adaptation: 业务仓升级 PMO 后可运行该工具核对自身引用的 workflow DTO 字段与枚举值，不需要改业务代码。
+- PR #1318 Fixed 连接器资源声明的落库主键改为确定性派生：`IntegrationConnectorCommand` 新增可选 `Long id`（仅 `saveDeclaration` 新建分支生效，手工保存忽略），`IntegrationConnectorService.save` 校验正数并拒绝已占用主键，`IntegrationConnectorResourceHandler` 用 `PortableResourceIds.stable("integration_connector", connectorCode)` 派生主键。Packages: `io.mango.platform.integration:mango-integration-api:1.14.1`、`mango-integration-core:1.14.1`、`mango-integration-starter:1.14.1`、`mango-integration-starter-remote:1.14.1`。Business Adaptation: 声明 `INTEGRATION_CONNECTOR` 的业务项目在冷基线重放时写入相同主键，不再出现 `MANGO-BASELINE-040`；已存在的数据行主键不迁移。
+- PR #1320 Fixed 另外五处声明写入主键收敛到 `PortableResourceIds.stable(...)`：打印模板分类 `(tenantId, categoryCode)` 与版本 `(templateId, versionNo)`、通知渠道路由标签 `(channelConfigId, routeTagId)`、岗位 `(tenantId, postCode)`、组织 `(tenantId, orgCode)`、字典项 `(dictType, value)`；显式声明的 ID 仍优先，手工维护路径行为不变。Packages: `io.mango.platform.template:mango-template-core:1.14.1`、`io.mango.platform.notice:mango-notice-core:1.14.1`、`io.mango.platform.org:mango-org-starter:1.14.1`、`io.mango.platform.system:mango-system-core:1.14.1`。Business Adaptation: 声明 `PRINT_TEMPLATE`、`MESSAGE_CHANNEL`、`ORG_POST`、`ORG_UNIT`、`SYSTEM_DICT` 的业务项目在空库冷基线重放时主键稳定；业务代码与声明文件字段不需要修改。
+- PR #1319 Added 字典选项批量读取：`DictApi` 新增 `getOptionsBatch(DictOptionsBatchQuery)`，一次 `in` 查询覆盖最多 24 个平铺字典，返回 `DictOptionGroupVO` 分组列表（每组带 `typeCode` 与 `options`，不存在的编码返回空选项）；Controller 暴露 `GET /system/dict/data/options/batch`，`typeCodes` 支持逗号分隔与重复参数。Packages: `io.mango.platform.system:mango-system-api:1.14.1`、`mango-system-core:1.14.1`、`mango-system-starter:1.14.1`、`mango-system-starter-remote:1.14.1`。Business Adaptation: 页面一次加载多个字典时改调批量接口即可，原来的 `getOptions` 与 `GET /system/dict/data/options` 行为不变，可以逐个切换。
+- PR #1321 Fixed 业务「当前任务」表补唯一约束并清理重复行：新增 Flyway `V7__workflow_business_apply_current_task_unique_key.sql`，同 `(tenant_id, task_id)` 只保留 `updated_at` 最新（相同则 `id` 最大）的一行，随后加唯一键 `uk_workflow_business_apply_current_task`；两条语句都按 `information_schema` 条件执行，重复升级不失败，没有 `task_id` 列的老表整体跳过。Packages: `io.mango.platform.workflow:mango-workflow-core:1.14.1`、`mango-workflow:1.14.1`、`mango-workflow-starter:1.14.1`、`mango-workflow-starter-remote:1.14.1`。Business Adaptation: 升级时 Flyway 自动执行清理，重复行的 `updated_at` 保留策略已在脚本注释中固化；业务代码不需要改动，但升级前应确认不需要保留被清理的历史重复行。
+
+### Fixed
+
+- 冷基线确定性校验 `MANGO-BASELINE-040` 在 `integration_connector`、`template_category`、`template_version`、`notice_channel_config_route_tag`、`sys_org`、`sys_post`、`sys_dict_data` 上的随机雪花主键失败已修复：声明新建路径改为按业务键派生主键，同一声明两次重放写入相同行。
+- 声明主键派生对并发与人工维护保持安全：派生主键已被其它业务键占用时明确冲突并拒绝写入；显式声明的 `targetId`、`versionId`、`categoryId`、`categoryId` 等 ID 保持优先；手工维护路径继续使用数据库雪花主键。
+- 业务「当前任务」表可能存在的重复行导致任务分页把同一任务翻倍：升级脚本按保留策略清理重复行后加唯一键，重复行不再能写入。
+- `mango-pmo` 发布说明契约块不再靠手工复制哈希：工具输出 `# WARN` 表示契约哨兵未在当前提交运行，`--verify-release-notes` 直接以非零退出码阻断。
+
+### Added
+
+- `mango-pmo/tools/workflow-contract-fingerprint.mjs` 与配套用例 `mango-pmo/tests/workflow-contract-fingerprint.test.mjs`：输出 `workflow-contract-fingerprint`（`api`、`web`、`changed`、`since`）和 `workflow-compatible-additions`（按类列出新增 DTO 字段与枚举值）。
+- `mango-docs/guides/operations/workflow-contract-fingerprint.md`：说明指纹算法、发布说明用法、`# WARN` 语义与 `--verify-release-notes` 门禁。
+- `DictApi.getOptionsBatch(DictOptionsBatchQuery)` 与 `GET /system/dict/data/options/batch`：一次最多读取 24 个平铺字典的选项；新增 `DictOptionGroupVO`（`typeCode` + `options`）。
+- Flyway `workflow/V7__workflow_business_apply_current_task_unique_key.sql`：清理重复行并补 `(tenant_id, task_id)` 唯一键。
+- `IntegrationConnectorCommand.id`：可选确定性主键，仅资源声明同步新建时生效。
+- 新增资源声明确定性主键用例：`OrgPostResourceHandlerTest`、`OrgUnitResourceHandlerTest`、`PrintTemplateResourceHandlerIntegrationTest`、`NoticeChannelResourceHandlerIntegrationTest`、`SystemDictResourceHandlerIntegrationTest`、`IntegrationConnectorResourceHandlerTest`、`IntegrationModelServiceTest`。
+
+### Changed
+
+- `mango-pmo` 发布就绪规则按 `mango-pmo/skills/mango-release/SKILL.md` 的 Readiness 章节执行：触碰 `mango-workflow` 的批次在发布说明中携带契约指纹块，并由 `--verify-release-notes CHANGELOG.md --base 上一批次标签` 校验为通过。
+- `pmo-doc-check` 工作流增加契约指纹校验入口；`mango-business-starter` 的 PMO 基线投影随 `@mango/pmo@1.6.3` 同步刷新。
+- 各模块 README 的声明章节补充主键派生规则（`mango-integration`、`mango-template`、`mango-notice`、`mango-org`、`mango-system`）。
+- `@mango/pmo` 升到 `1.6.3`，`@mango/cli` 由版本矩阵自动升到 `1.4.16`；没有其它 npm 包版本变化，也没有前端源码改动。
+
+### Versions
+
+- Maven backend: `1.14.0` -> `1.14.1`
+- Maven docs bundle: `io.mango:mango-docs-bundle` `1.14.0` -> `1.14.1`
+- 关键坐标: `io.mango.platform.integration:mango-integration-api:1.14.1`、`mango-integration-core:1.14.1`、`mango-integration-starter:1.14.1`、`mango-integration-starter-remote:1.14.1`、`io.mango.platform.template:mango-template-core:1.14.1`、`io.mango.platform.notice:mango-notice-core:1.14.1`、`io.mango.platform.org:mango-org-starter:1.14.1`、`io.mango.platform.system:mango-system-core:1.14.1`、`io.mango:mango-bom:1.14.1`、`io.mango:mango-parent:1.14.1`、`io.mango:mango-maven-plugin:1.14.1`
+- npm 包（全部为 patch 递增）：
+- `@mango/pmo`: 1.6.2 -> 1.6.3
+- `@mango/cli`: 1.4.15 -> 1.4.16
+- 明确不变的坐标：其余 npm 包版本保持 1.14.0 批次的版本；数据库结构、菜单、权限点、接口契约与 Maven 插件契约版本号在本批次没有变化。
+
+### Published Packages
+
+按机器计划拓扑顺序发布：
+
+1. `@mango/pmo@1.6.3`
+2. `@mango/cli@1.4.16`
+3. `io.mango:mango-bom:1.14.1`、`io.mango:mango-parent:1.14.1`、`io.mango:mango-docs-bundle:1.14.1` 与其余 Maven 非应用坐标 `1.14.1`（共 201 个坐标，机器计划为准）
+
+不发布的对象：`mango-workflow` 系列（本批次没有代码改动）、前端页面包、业务应用坐标。
+
+### Business Impact
+
+- 受影响：使用资源声明同步（`META-INF/mango/resources/`）声明 `INTEGRATION_CONNECTOR`、`PRINT_TEMPLATE`、`MESSAGE_CHANNEL`、`ORG_POST`、`ORG_UNIT`、`SYSTEM_DICT` 的业务项目；它们此前在空库生成冷基线时可能因随机雪花主键触发 `MANGO-BASELINE-040`。
+- 受影响（新增能力，可选）：一次渲染多个平铺字典选项的页面现在可以改调 `GET /system/dict/data/options/batch`，减少往返次数；不改造的页面继续用单字典接口。
+- 数据影响（需注意）：`workflow/V7` 迁移会删除 `workflow_business_apply_current_task` 中同 `(tenant_id, task_id)` 的重复行并按保留策略留一行，之后加唯一键；业务表数据不做其它变更。
+- 不受影响：只做工作台单值 `businessType` 查询的业务项目不需要升级到本批次（多值过滤能力在 1.13.0 已提供，业务仓 mango-baohan-risk 的 #189 需求不依赖 1.14.1）。
+- 数据影响：不迁移历史行主键，不新增表、字段或索引；冷基线在空库生成，结果与已有数据无关。
+- 配置与权限影响：无新增配置项、菜单、权限点；`IntegrationConnectorCommand.id` 为可选字段，不传时行为与旧版一致。
+- 工具影响：`@mango/pmo` 新增契约指纹工具与发布说明门禁，业务仓的 PMO 基线投影需要同步刷新。
+
+### Upgrade Estimate
+
+- Audience: 在资源声明中声明上述六类资源的业务项目，以及用 `@mango/pmo` 做发布/门禁的团队
+- Engineering Effort: 业务项目通常 0.5 人日以内（升级 `mango.version`、刷新 PMO 基线、重跑冷基线）
+- Execution Window: 任意维护窗口，可随常规依赖升级执行
+- Service Downtime: 无，升级只涉及依赖版本与构建期校验
+- Rollback Effort: 回退 `mango.version` 与 `@mango/pmo` 版本即可，低
+- Assumptions: 业务项目未自行实现同名资源 Handler、未手工钉住相关坐标版本、数据库为空库或无需回填历史主键
+
+### Upgrade Notes
+
+1. 业务项目把 `mango.version` 从 `1.14.0` 升到 `1.14.1`，重新执行 `mvn -Pbsql -pl app -am package`，确认冷基线生成通过、`MANGO-BASELINE-040` 不再出现。
+2. 使用聚合 `mango-parent` 的项目只需改 `mango.version`；直接依赖单模块的项目把 `mango-integration-*`、`mango-template-core`、`mango-notice-core`、`mango-org-starter`、`mango-system-core` 同步升到 `1.14.1`，不要混用 `1.14.0` 与 `1.14.1`。
+3. 升级 `@mango/pmo` 到 `1.6.3` 后执行 `node mango-business-starter/scripts/sync-pmo-baseline.mjs --write`（业务仓用 `mango-pmo` 基线投影时），再执行 `check-template.mjs` 校验投影一致。
+4. 若业务项目自行维护资源声明备份脚本，确认其按业务键而不是按主键做比对；历史行的雪花主键保持不变。
+6. 升级到 `1.14.1` 时 Flyway 会自动执行 `workflow/V7` 迁移：同 `(tenant_id, task_id)` 仅保留 `updated_at` 最新的一行（相同则保留 `id` 最大行），随后创建唯一键 `uk_workflow_business_apply_current_task`；如果仍要保留被判定为重复的历史行，请在升级前自行导出。
+7. 页面一次需要多个平铺字典选项时改用 `GET /system/dict/data/options/batch`；单字典接口保持不变，可分批切换。
+5. 需要在发布说明中固化工作流契约的团队，用 `node mango-pmo/tools/workflow-contract-fingerprint.mjs --base 上一批次标签` 生成契约块，再用 `--verify-release-notes CHANGELOG.md --base 上一批次标签` 校验，不要手工复制哈希。
+
+### Verification
+
+- `mvn -pl mango-platform/mango-integration/mango-integration-core,mango-platform/mango-template/mango-template-core,mango-platform/mango-notice/mango-notice-core,mango-platform/mango-org/mango-org-starter,mango-platform/mango-system/mango-system-core -Denforcer.skip=true -DskipTests=false test`：`mango-org-starter 78`、`mango-notice-core 92`、`mango-template-core 14`、`mango-system-core`、`mango-integration-core` 全部 0 failures。
+- `mvn -pl mango-platform/mango-integration/mango-integration-core,mango-platform/mango-template/mango-template-core,mango-platform/mango-notice/mango-notice-core,mango-platform/mango-org/mango-org-starter,mango-platform/mango-system/mango-system-core -DskipTests verify`：Checkstyle、SpotBugs、PMD 与架构门禁 `gateStatus=PASS`、`newIssueCount=0`。
+- `node mango-pmo/tests/workflow-contract-fingerprint.test.mjs`：契约指纹工具用例通过；`--verify-release-notes` 对缺失契约块的说明返回非零。
+- 发布后：`mango-integration-*`、`mango-template-core`、`mango-notice-core`、`mango-org-starter`、`mango-system-core` 从 consume 仓库解析到 `1.14.1`，`@mango/pmo@1.6.3`、`@mango/cli@1.4.16` 可安装；业务仓空库冷基线重放两次写入相同主键。
+
+### Rollback
+
+- 消费端回退 `mango.version` 到 `1.14.0`、`@mango/pmo` 回到 `1.6.2`、`@mango/cli` 回到 `1.4.15`，重新构建即可；`1.14.1` 与 `1.6.3`、`1.4.16` 坐标不可覆盖发布。
+- 已发布坐标不可重发或移动 Tag；若 `1.14.1` 存在缺陷，按 patch 版本继续修复（`1.14.2`）。
+- 主键派生不产生数据回滚需求：历史行主键未被修改，声明重放只会命中已存在行。
+
+### Audit History
+
+- PR #1319（字典批量读取，`feat/1293-dict-batch`）仍在开放中，不属于本批次。
+- PR #1309、#1306、#1307 属于 1.14.0 批次，已随该批次发布。
+- `WorkflowDefinitionService` 的三处声明主键问题（流程定义、版本、分类）已知但需 Flowable 感知设计，不在本批次范围内，后续单独处理。
+
 ## Unreleased - workflow current task unique key (Issue #1289)
 
 ### Added
