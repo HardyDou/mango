@@ -13,6 +13,14 @@ import java.util.List;
  */
 final class AuthIpWhitelistMatcher {
 
+    private static final int IPV6_BYTES = 16;
+
+    private static final int IPV4_MAPPED_OFFSET = 12;
+
+    private static final int IPV4_MAPPED_MARKER_INDEX = 10;
+
+    private static final int BYTE_MASK = 0xFF;
+
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
     boolean matches(AuthAccessProperties.IpWhitelist whitelist, String method, String path, String clientIp) {
@@ -86,39 +94,24 @@ final class AuthIpWhitelistMatcher {
      * 避免双栈容器里同一来源因地址族不同而与 IPv4 规则失配。
      *
      * @param ip 地址或域名
-     * @return 4 或 16 字节地址；无法解析时返回 null
+     * @return 4 或 16 字节地址；无法解析时抛出异常
      */
     private byte[] addressBytes(String ip) throws UnknownHostException {
-        byte[] bytes = InetAddress.getByName(normalizeLoopback(ip)).getAddress();
-        if (bytes.length == 16 && isIpv4Mapped(bytes)) {
-            return Arrays.copyOfRange(bytes, 12, 16);
+        byte[] bytes = InetAddress.getByName(ip.trim()).getAddress();
+        if (bytes.length == IPV6_BYTES && isIpv4Mapped(bytes)) {
+            return Arrays.copyOfRange(bytes, IPV4_MAPPED_OFFSET, IPV6_BYTES);
         }
         return bytes;
     }
 
     private boolean isIpv4Mapped(byte[] bytes) {
-        for (int index = 0; index < 10; index++) {
+        for (int index = 0; index < IPV4_MAPPED_MARKER_INDEX; index++) {
             if (bytes[index] != 0) {
                 return false;
             }
         }
-        return (bytes[10] & 0xFF) == 0xFF && (bytes[11] & 0xFF) == 0xFF;
-    }
-
-    private String normalizeLoopback(String clientIp) {
-        String normalizedIp = clientIp.trim();
-        if ("0:0:0:0:0:0:0:1".equals(normalizedIp)) {
-            return "::1";
-        }
-        return normalizedIp;
-    }
-
-    private BigInteger subnetMask(int prefix, int bits) {
-        if (prefix == 0) {
-            return BigInteger.ZERO;
-        }
-        return BigInteger.ONE.shiftLeft(bits).subtract(BigInteger.ONE)
-                .shiftRight(bits - prefix).shiftLeft(bits - prefix);
+        return (bytes[IPV4_MAPPED_MARKER_INDEX] & BYTE_MASK) == BYTE_MASK
+                && (bytes[IPV4_MAPPED_MARKER_INDEX + 1] & BYTE_MASK) == BYTE_MASK;
     }
 
     private boolean blank(String value) {

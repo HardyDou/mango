@@ -37,6 +37,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Component
 public class CaptchaInterceptor implements HandlerInterceptor {
 
+    private static final int LOCKOUT_THRESHOLD = 5;
+
+
     private static final String HEADER_CAPTCHA_KEY = "X-Captcha-Key";
     private static final String HEADER_CAPTCHA_CODE = "X-Captcha-Code";
     private static final String HEADER_CAPTCHA_TYPE = "X-Captcha-Type";
@@ -81,7 +84,7 @@ public class CaptchaInterceptor implements HandlerInterceptor {
         // 未携带验证码请求头。
         if (captchaKey == null || captchaKey.isBlank()) {
             log.info("Captcha required but headers missing: path={}, ip={}", path, ip);
-            sendError(response, 428, AuthCode.CAPTCHA_REQUIRED.getCode(), AuthCode.CAPTCHA_REQUIRED.getMessage());
+            sendError(response, HttpStatus.PRECONDITION_REQUIRED.value(), AuthCode.CAPTCHA_REQUIRED.getCode(), AuthCode.CAPTCHA_REQUIRED.getMessage());
             return false;
         }
 
@@ -116,7 +119,7 @@ public class CaptchaInterceptor implements HandlerInterceptor {
 
     private boolean isLockedOut(String ip) {
         AtomicInteger count = failedAttempts.get(ip);
-        return count != null && count.get() >= 5; // 失败 5 次后锁定。
+        return count != null && count.get() >= LOCKOUT_THRESHOLD;
     }
 
     private void incrementFailedAttempts(String ip) {

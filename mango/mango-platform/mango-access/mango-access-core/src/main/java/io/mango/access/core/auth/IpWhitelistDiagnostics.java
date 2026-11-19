@@ -27,6 +27,14 @@ public class IpWhitelistDiagnostics {
 
     private static final Pattern IPV4_PATTERN = Pattern.compile("^\\d{1,3}(\\.\\d{1,3}){3}$");
 
+    private static final int IPV4_BYTES = 4;
+
+    private static final int IPV6_BYTES = 16;
+
+    private static final int IPV4_MAX_MASK = 32;
+
+    private static final int IPV6_MAX_MASK = 128;
+
     /**
      * 检查白名单规则并输出告警。
      *
@@ -77,12 +85,12 @@ public class IpWhitelistDiagnostics {
             return true;
         }
         if (network.contains(":")) {
-            return isSuspiciousAddress(network, 16) || isSuspiciousMask(value, slashIndex, 128);
+            return isSuspiciousAddress(network, IPV6_BYTES) || isSuspiciousMask(value, slashIndex, IPV6_MAX_MASK);
         }
         if (!IPV4_PATTERN.matcher(network).matches()) {
             return true;
         }
-        return isSuspiciousAddress(network, 4) || isSuspiciousMask(value, slashIndex, 32);
+        return isSuspiciousAddress(network, IPV4_BYTES) || isSuspiciousMask(value, slashIndex, IPV4_MAX_MASK);
     }
 
     private boolean isSuspiciousAddress(String network, int expectedLength) {
