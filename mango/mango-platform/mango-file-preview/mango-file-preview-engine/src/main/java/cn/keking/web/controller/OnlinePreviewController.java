@@ -82,7 +82,11 @@ public class OnlinePreviewController {
         if (StringUtils.hasText(fileId)) {
             // 平台直接传源标识：由已注册的 FileDownloader 取流，不把标识当网络地址解析。
             fileUrl = fileId;
-            fileAttribute = fileHandlerService.getFileAttributeBySourceId(fileId, fullfilename, req);
+            try {
+                fileAttribute = fileHandlerService.getFileAttributeBySourceId(fileId, fullfilename, req);
+            } catch (IllegalArgumentException ex) {
+                return otherFilePreview.notSupportedFile(model, "缺少文件名参数");
+            }
         } else {
             try {
                 fileUrl = WebUtils.decodeUrl(url, encryption);

@@ -84,7 +84,7 @@ public class FilePreviewEngineDownloader implements FileDownloader, PreviewSourc
      * 取源票据是 24 小时有效的凭证，日志里只保留前 6 位与长度，避免整串凭证落入日志系统。
      */
     private static String maskedSourceId(String sourceId) {
-        if (!org.springframework.util.StringUtils.hasText(sourceId)) {
+        if (!StringUtils.hasText(sourceId)) {
             return "";
         }
         String prefix = sourceId.length() <= 6 ? sourceId : sourceId.substring(0, 6);

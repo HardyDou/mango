@@ -83,4 +83,21 @@ class FilePreviewAutoConfigurationTest {
             return new FilePreviewEngineDownloader(filePreviewService);
         }
     }
+
+    @Test
+    void 生产配置上的开关条件仍然生效() throws Exception {
+        java.lang.reflect.Method beanMethod = FilePreviewAutoConfiguration.class.getMethod(
+                "filePreviewEngineDownloader", io.mango.file.preview.core.service.IFilePreviewService.class);
+        org.springframework.boot.autoconfigure.condition.ConditionalOnProperty gate = beanMethod.getAnnotation(
+                org.springframework.boot.autoconfigure.condition.ConditionalOnProperty.class);
+
+        org.assertj.core.api.Assertions.assertThat(gate).isNotNull();
+        org.assertj.core.api.Assertions.assertThat(gate.prefix()).isEqualTo("mango.file-preview");
+        org.assertj.core.api.Assertions.assertThat(gate.name())
+                .containsExactly("internal-source-enabled");
+        org.assertj.core.api.Assertions.assertThat(gate.havingValue()).isEqualTo("true");
+        org.assertj.core.api.Assertions.assertThat(gate.matchIfMissing()).isTrue();
+        org.assertj.core.api.Assertions.assertThat(beanMethod.getAnnotation(
+                org.springframework.boot.autoconfigure.condition.ConditionalOnBean.class)).isNotNull();
+    }
 }
