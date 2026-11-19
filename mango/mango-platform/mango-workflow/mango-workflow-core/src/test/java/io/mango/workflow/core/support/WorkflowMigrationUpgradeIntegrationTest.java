@@ -56,7 +56,7 @@ class WorkflowMigrationUpgradeIntegrationTest {
 
         var migrationResult = currentFlyway().migrate();
 
-        assertThat(migrationResult.migrationsExecuted).isEqualTo(5);
+        assertThat(migrationResult.migrationsExecuted).isEqualTo(6);
         assertThat(historyChecksum("1")).isEqualTo(CURRENT_V1_CHECKSUM);
         assertThat(historyChecksum("2")).isNotNull();
         assertCanonicalAuditColumns();
@@ -73,7 +73,7 @@ class WorkflowMigrationUpgradeIntegrationTest {
 
         var migrationResult = currentFlyway().migrate();
 
-        assertThat(migrationResult.migrationsExecuted).isEqualTo(5);
+        assertThat(migrationResult.migrationsExecuted).isEqualTo(6);
         assertThat(historyChecksum("1")).isEqualTo(CURRENT_V1_CHECKSUM);
         assertThat(historyChecksum("2")).isNotNull();
         assertCanonicalAuditColumns();
@@ -85,13 +85,39 @@ class WorkflowMigrationUpgradeIntegrationTest {
         var firstMigration = currentFlyway().migrate();
         var secondMigration = currentFlyway().migrate();
 
-        assertThat(firstMigration.migrationsExecuted).isEqualTo(6);
+        assertThat(firstMigration.migrationsExecuted).isEqualTo(7);
         assertThat(secondMigration.migrationsExecuted).isZero();
         assertThat(historyChecksum("1")).isEqualTo(CURRENT_V1_CHECKSUM);
         assertThat(historyChecksum("2")).isNotNull();
         assertCanonicalAuditColumns();
         assertAffinityKeyColumn();
         assertCurrentTaskReleaseColumns();
+        assertCurrentTaskUniqueKey();
+    }
+
+    @Test
+    void migrate_currentTaskDuplicates_keepsNewestRowAndAddsUniqueKey() throws SQLException {
+        assertThat(flywayToVersion("6").migrate().migrationsExecuted).isEqualTo(6);
+        insertCurrentTaskRow(9001L, "1", "T-DUP", "2026-01-01 10:00:00");
+        insertCurrentTaskRow(9002L, "1", "T-DUP", "2026-01-01 10:05:00");
+        insertCurrentTaskRow(9003L, "1", "T-DUP", "2026-01-01 10:05:00");
+        insertCurrentTaskRow(9004L, "2", "T-DUP", "2026-01-01 10:00:00");
+        insertCurrentTaskRow(9005L, "1", null, "2026-01-01 10:00:00");
+        insertCurrentTaskRow(9006L, "1", null, "2026-01-01 10:00:00");
+        assertThat(currentTaskRowIds("1", "T-DUP")).containsExactlyInAnyOrder(9001L, 9002L, 9003L);
+
+        var migrationResult = currentFlyway().migrate();
+
+        assertThat(migrationResult.migrationsExecuted).isOne();
+        assertThat(currentTaskRowIds("1", "T-DUP"))
+                .as("保留 updated_at 最新的一行，updated_at 相同时保留 id 最大的一行")
+                .containsExactly(9003L);
+        assertThat(currentTaskRowIds("2", "T-DUP")).containsExactly(9004L);
+        assertThat(currentTaskRowIds("1", null))
+                .as("task_id 为空的行不构成重复，唯一键允许多个 NULL")
+                .containsExactlyInAnyOrder(9005L, 9006L);
+        assertCurrentTaskUniqueKey();
+        assertThat(currentFlyway().migrate().migrationsExecuted).isZero();
     }
 
     @Test
@@ -126,6 +152,64 @@ class WorkflowMigrationUpgradeIntegrationTest {
         assertThat(columnDefinition(new AuditColumn("workflow_business_apply", "affinity_key")))
                 .as("workflow_business_apply.affinity_key added by V4")
                 .isNotNull();
+    }
+
+    private void assertCurrentTaskUniqueKey() throws SQLException {
+        String sql = """
+                SELECT column_name
+                FROM information_schema.statistics
+                WHERE table_schema = ? AND table_name = 'workflow_business_apply_current_task'
+                  AND index_name = 'uk_workflow_business_apply_current_task' AND non_unique = 0
+                ORDER BY seq_in_index
+                """;
+        try (Connection connection = databaseConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, databaseName());
+            try (ResultSet resultSet = statement.executeQuery()) {
+                var columns = new java.util.ArrayList<String>();
+                while (resultSet.next()) {
+                    columns.add(resultSet.getString("column_name"));
+                }
+                assertThat(columns).as("V7 建的 (tenant_id, task_id) 唯一键").containsExactly("tenant_id", "task_id");
+            }
+        }
+    }
+
+    private void insertCurrentTaskRow(long id, String tenantId, String taskId, String updatedAt) throws SQLException {
+        String sql = """
+                INSERT INTO workflow_business_apply_current_task
+                  (id, tenant_id, apply_id, business_type, business_key, task_id, claim_status, created_at, updated_at)
+                VALUES (?, ?, 20, 'BAOHAN_RC_PROJECT_REVIEW', 'RC1', ?, 'ASSIGNED', ?, ?)
+                """;
+        try (Connection connection = databaseConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, id);
+            statement.setString(2, tenantId);
+            statement.setString(3, taskId);
+            statement.setString(4, updatedAt);
+            statement.setString(5, updatedAt);
+            assertThat(statement.executeUpdate()).isOne();
+        }
+    }
+
+    private List<Long> currentTaskRowIds(String tenantId, String taskId) throws SQLException {
+        String sql = taskId == null
+                ? "SELECT id FROM workflow_business_apply_current_task WHERE tenant_id = ? AND task_id IS NULL ORDER BY id"
+                : "SELECT id FROM workflow_business_apply_current_task WHERE tenant_id = ? AND task_id = ? ORDER BY id";
+        try (Connection connection = databaseConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, tenantId);
+            if (taskId != null) {
+                statement.setString(2, taskId);
+            }
+            try (ResultSet resultSet = statement.executeQuery()) {
+                var ids = new java.util.ArrayList<Long>();
+                while (resultSet.next()) {
+                    ids.add(resultSet.getLong("id"));
+                }
+                return ids;
+            }
+        }
     }
 
     private void assertCurrentTaskReleaseColumns() throws SQLException {
@@ -194,6 +278,16 @@ class WorkflowMigrationUpgradeIntegrationTest {
 
     private static Flyway currentFlyway() {
         return flyway("classpath:db/migration/workflow");
+    }
+
+    private static Flyway flywayToVersion(String version) {
+        return Flyway.configure()
+                .dataSource(databaseUrl(), requiredEnvironment("MANGO_DB_USERNAME"),
+                        environment("MANGO_DB_PASSWORD", ""))
+                .locations("classpath:db/migration/workflow")
+                .table(HISTORY_TABLE)
+                .target(version)
+                .load();
     }
 
     private static Flyway flyway(String location) {
