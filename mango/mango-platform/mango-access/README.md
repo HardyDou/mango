@@ -116,6 +116,7 @@ mango:
 - 启用分组探针（`readiness`、`liveness`）的顺序是「先 `management.endpoint.health.probes.enabled=true`，容器内确认 `/actuator/health/readiness` 由 401 变成 404，再补白名单，最后改探针地址」。`AuthFilter`（order 1）与 `springSecurityFilterChain`（order -100）都在 `DispatcherServlet` 之前执行，未登记的路径在放行前同样返回 401，放行后才暴露 404；顺序颠倒会停在「已加白名单但仍 404」的中间态，看起来像白名单没生效。
 - CIDR 的网段部分必须是完整四段 IPv4 或合法 IPv6。`10/8`、`172.16/12` 这类缩写会被解析成 `0.0.0.10`、`172.0.0.16`，网段随之改变且不会报错；启动时对这类写法输出 WARN `IP 白名单 CIDR 不是完整网段写法`。
 - IPv4 映射的 IPv6 地址（`::ffff:127.0.0.1`）按 IPv4 规则匹配，双栈容器下不会因地址族不同漏配。
+- `mango.access.auth.ip-whitelist.rules` 是普通列表绑定：业务仓在自己的配置里声明该列表会整体替换平台默认列表（`application.yml` 里的 `/actuator/health/**`、`/actuator/info` 随之失效），不会与平台默认规则追加或合并。覆盖时把仍需放行的平台默认规则一起写进自己的列表；若将来平台把该语义改成并集或追加，会作为行为变化记入发布说明的 `Changed`。
 
 ## 8. 返回字段
 
