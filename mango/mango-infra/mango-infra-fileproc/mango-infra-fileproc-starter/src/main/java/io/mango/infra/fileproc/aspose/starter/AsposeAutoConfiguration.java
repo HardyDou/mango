@@ -1,6 +1,8 @@
 package io.mango.infra.fileproc.aspose.starter;
 
+import io.mango.infra.fileproc.aspose.AsposeFontAvailability;
 import io.mango.infra.fileproc.aspose.AsposeLicenseApi;
+import io.mango.infra.fileproc.aspose.WordsAsposeFontAvailability;
 import io.mango.infra.fileproc.aspose.DefaultAsposeLicenseApi;
 import io.mango.infra.fileproc.aspose.enums.AsposeProduct;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -40,6 +42,12 @@ public class AsposeAutoConfiguration {
         licenses.put(AsposeProduct.IMAGING, readLicense(properties.getImagingLicenseLocation(),
                 properties.getLicenseLocation(), resourceLoader));
         return new DefaultAsposeLicenseApi(licenses);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public AsposeFontAvailability asposeFontAvailability() {
+        return new WordsAsposeFontAvailability();
     }
 
     private byte[] readLicense(String dedicatedLocation, String fallbackLocation, ResourceLoader resourceLoader) {

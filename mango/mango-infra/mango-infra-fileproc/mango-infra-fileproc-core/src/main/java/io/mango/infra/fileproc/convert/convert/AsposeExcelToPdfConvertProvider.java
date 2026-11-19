@@ -1,5 +1,8 @@
 package io.mango.infra.fileproc.convert.convert;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.aspose.cells.License;
 import com.aspose.cells.LoadOptions;
 import com.aspose.cells.PdfSaveOptions;
@@ -19,6 +22,8 @@ import java.nio.file.Files;
  * 基于 Aspose.Cells 的 Excel 转 PDF 转换器。
  */
 public class AsposeExcelToPdfConvertProvider implements IConvertProvider {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AsposeExcelToPdfConvertProvider.class);
+
 
     /**
      * Excel 转 PDF 时将每个工作表压缩到单页。
@@ -55,6 +60,7 @@ public class AsposeExcelToPdfConvertProvider implements IConvertProvider {
     @Override
     public ConvertResultVO convert(ConvertCommand command) {
         Require.notNull(command, "转换命令不能为空");
+        LOGGER.info("使用 aspose-cells 引擎转换文件 {}：{} -> PDF", command.fileName(), command.sourceFormat());
         applyLicense();
         try (OutputStream outputStream = outputStream(command)) {
             Workbook workbook = new Workbook(command.inputStream(), loadOptions(command));

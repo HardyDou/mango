@@ -83,6 +83,14 @@ public class ConvertProperties {
      */
     private boolean docxToOfdEnabled = true;
 
+    /**
+     * 是否执行 Aspose 字体与授权启动自检。
+     *
+     * <p>只有当前应用启用了至少一个 Aspose 转换器时才真正校验；全部关闭时跳过，
+     * 避免只装配了 license bean 的应用被误杀。</p>
+     */
+    private boolean asposeFontCheckEnabled = true;
+
     public boolean isEnabled() {
         return enabled;
     }
@@ -201,6 +209,14 @@ public class ConvertProperties {
 
     public void setDocxToOfdEnabled(boolean docxToOfdEnabled) {
         this.docxToOfdEnabled = docxToOfdEnabled;
+    }
+
+    public boolean isAsposeFontCheckEnabled() {
+        return asposeFontCheckEnabled;
+    }
+
+    public void setAsposeFontCheckEnabled(boolean asposeFontCheckEnabled) {
+        this.asposeFontCheckEnabled = asposeFontCheckEnabled;
     }
 
 }

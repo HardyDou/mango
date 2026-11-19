@@ -171,10 +171,11 @@ mango:
 |--------|--------|------|
 | `enabled` | `true` | 是否启用转换自动配置。 |
 | `html-to-text-enabled` | `true` | 注册 HTML 转文本转换器。 |
-| `office-to-pdf-enabled` | `true` | 注册 LibreOffice/JODConverter Office 转 PDF；Office 文档转 PDF 默认优先使用该转换器。 |
-| `aspose-word-to-pdf-enabled` | `true` | 注册 Aspose Word 转 PDF；仅在 `office-to-pdf-enabled=false` 时被选中。 |
-| `aspose-excel-to-pdf-enabled` | `true` | 注册 Aspose Excel 转 PDF；仅在 `office-to-pdf-enabled=false` 时被选中。 |
-| `aspose-slide-to-pdf-enabled` | `true` | 注册 Aspose PPT 转 PDF；仅在 `office-to-pdf-enabled=false` 时被选中。 |
+| `office-to-pdf-enabled` | `true` | 注册 LibreOffice/JODConverter Office 转 PDF，作为兜底引擎；仅在对应的 `aspose-*-to-pdf-enabled=false` 时被选中。 |
+| `aspose-word-to-pdf-enabled` | `true` | 注册 Aspose Word 转 PDF，默认引擎（DOC/DOCX）。 |
+| `aspose-excel-to-pdf-enabled` | `true` | 注册 Aspose Excel 转 PDF，默认引擎（XLS/XLSX）。 |
+| `aspose-slide-to-pdf-enabled` | `true` | 注册 Aspose PPT 转 PDF，默认引擎（PPT/PPTX）。 |
+| `aspose-font-check-enabled` | `true` | Aspose 字体与授权启动自检；至少启用一个 Aspose 转换器时才校验，全部关闭时跳过。 |
 | `aspose-pdf-to-image-enabled` | `true` | 注册 Aspose PDF 转图片。 |
 | `aspose-imaging-enabled` | `true` | 注册 Aspose 图片格式转换。 |
 | `image-to-pdf-enabled` | `true` | 注册 ImageIO/PDFBox 图片转 PDF 转换器，支持 PNG、JPG/JPEG，默认优先用于手机照片等图片合 PDF 场景。 |
@@ -188,7 +189,22 @@ mango:
 
 `LocalOfficeHomeResolver` 会尝试常见安装目录，包括项目目录下的 `LibreOfficePortable`、Linux 的 LibreOffice 目录和 OpenOffice 目录。
 
-Office 文档（`doc/docx/xls/xlsx/ppt/pptx/odt/ods/odp/html/text`）转 PDF 固定优先使用 LibreOffice/JODConverter。Aspose Word、Excel、Slide 只作为显式配置回退：只有关闭 `office-to-pdf-enabled` 时才会被选中，避免无有效 license 的 Aspose 抢占首选项并输出评估水印或抛出环境相关异常。
+#### 转换引擎选型
+
+同一份 `履约保函模板(3).docx`（379 段、9 张表）实测：
+
+| 引擎 | 页数 | 与 WPS 版式一致性 | 单文档耗时 |
+|------|------|------------------|-----------|
+| WPS（业务基准） | 12 页、31 行、行高 23.23pt | — | — |
+| Aspose 20.3 | 12 页、31 行、行高 23.23pt | 一致 | 86ms |
+| LibreOffice 24.2 | 11 页、39 行、行高 18.37pt | 明显偏移 | 632ms |
+| LibreOffice 26.2 | 13 页 | 偏移 | — |
+
+因此默认引擎是 Aspose：`doc/docx` 走 `AsposeWordToPdfConvertProvider`（`@Order(5)`）、`xls/xlsx` 走 `AsposeExcelToPdfConvertProvider`（`@Order(6)`）、`ppt/pptx` 走 `AsposeSlideToPdfConvertProvider`（`@Order(7)`）。LibreOffice（`OfficeToPdfConvertProvider`，`@Order(30)`）排在全部 Aspose 转换器之后，是兜底引擎：只有对应的 `aspose-*-to-pdf-enabled=false`（无授权、字体环境不满足、或需要 LO 的特定格式）时才会被选中。
+
+每次转换会打一行引擎日志（如 `使用 aspose-words 引擎转换文件 xxx.docx：DOCX -> PDF`），排查「实际用了哪个引擎」看这一行即可。
+
+中文字体依赖：Aspose 需要 `SimSun`、`SimHei`、`KaiTi`、`FangSong`、`Microsoft YaHei` 才能正确渲染中文；缺字体会静默输出方块字，所以启动期做自检（见 §6.4）。授权方面，仓内 `aspose/license.xml` 为 `SubscriptionExpiry 20200403` 的 20.3 授权，升级 Aspose 版本必须重新授权，因此 `mango-infra-fileproc-core/pom.xml` 锁定 20.3。
 
 OFD 转换使用 Apache-2.0 的 OFDRW 2.4.0。Mango 直接使用 `ofdrw-graphics2d`，并用仓内 PDFBox 3 渲染页面，避免 OFDRW `ofdrw-converter` 2.4.0 所依赖 PDFBox 2 与 Mango PDFBox 3 的二进制冲突。
 
@@ -207,8 +223,16 @@ PDF/DOCX 中的表格、图片、可见印章和已有签名外观会作为页�
 | `slides-license-location` | 空 | Aspose.Slides license，空时回退到通用位置。 |
 | `pdf-license-location` | 空 | Aspose.PDF license，空时回退到通用位置。 |
 | `imaging-license-location` | 空 | Aspose.Imaging license，空时回退到通用位置。 |
+| `fonts-folders` | 空 | 额外字体目录，追加到 Aspose.Words 现有字体来源之后（不替换系统字体来源）。 |
 
 默认 license 文件位置是 `mango-infra-fileproc-core/src/main/resources/aspose/license.xml`。资源目录下还有单独 README 说明 license 资产。
+
+启动自检（`mango.fileproc.convert.aspose-font-check-enabled=true` 且至少启用一个 Aspose 转换器时执行）：
+
+- 字体：要求 `SimSun`、`SimHei`、`KaiTi`、`FangSong`、`Microsoft YaHei` 可见，缺失时启动失败并点名缺哪个字体。断言只用拉丁名——中文族名（如「宋体」）Aspose 本身不可见，由内置映射表解析到 `SimSun`，所以不要把中文族名写进配置或断言。
+- 字体目录：`fonts-folders` 只做追加（内部取现有 `FontSourceBase` 数组后加 `FolderFontSource` 再写回），不会调用 `setFontsFolders` 替换全部来源；留空时完全不触碰进程级 `FontSettings`，避免影响宿主应用里其他 Aspose 用法。
+- 授权：对每个已启用的产品校验 License 存在且能加载，失败信息里带产品名与「20.3 / 是否过期」提示。
+- 只装配 license bean 而没有启用任何 Aspose 转换器的应用不会被校验，也不会因为缺字体被误杀；需要显式跳过时设 `mango.fileproc.convert.aspose-font-check-enabled=false`。
 
 ## 7. API 与扩展
 公开 API：
