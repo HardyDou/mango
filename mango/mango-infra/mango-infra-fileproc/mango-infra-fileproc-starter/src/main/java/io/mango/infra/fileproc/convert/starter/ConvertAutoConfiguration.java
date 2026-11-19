@@ -2,6 +2,7 @@ package io.mango.infra.fileproc.convert.starter;
 
 import io.mango.infra.fileproc.aspose.AsposeFontAvailability;
 import io.mango.infra.fileproc.aspose.AsposeLicenseApi;
+import io.mango.infra.fileproc.aspose.starter.AsposeAutoConfiguration;
 import io.mango.infra.fileproc.aspose.starter.AsposeFontInitializer;
 import io.mango.infra.fileproc.aspose.starter.AsposeProperties;
 import io.mango.infra.fileproc.convert.ConvertApi;
@@ -23,6 +24,7 @@ import io.mango.infra.fileproc.convert.convert.PdfToOfdConvertProvider;
 import io.mango.infra.fileproc.convert.convert.SameFormatConverter;
 import io.mango.infra.fileproc.convert.convert.TiffToPdfConvertProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

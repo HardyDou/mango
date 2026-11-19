@@ -2,6 +2,8 @@ package io.mango.infra.fileproc.convert.starter;
 
 import io.mango.infra.fileproc.convert.convert.DefaultConvertApi;
 import io.mango.infra.fileproc.aspose.starter.AsposeAutoConfiguration;
+import io.mango.infra.fileproc.aspose.starter.AsposeFontFolderRegistrar;
+import io.mango.infra.fileproc.aspose.starter.AsposeFontInitializer;
 import io.mango.infra.fileproc.convert.enums.ConvertFormat;
 import io.mango.infra.fileproc.convert.convert.ConvertRegistry;
 import io.mango.infra.fileproc.convert.ConvertApi;
@@ -95,6 +97,24 @@ class ConvertAutoConfigurationTest {
             assertThat(registry.findProvider(ConvertFormat.PPTX, ConvertFormat.PDF))
                     .containsInstanceOf(AsposeSlideToPdfConvertProvider.class);
         });
+    }
+
+    @Test
+    void asposeFontFolderRegistrar_isRegisteredIndependentlyOfFontCheck() {
+        // 字体目录注册不能挂在自检开关上：运维把自检关掉止血时，字体目录仍必须生效。
+        contextRunner
+                .withPropertyValues("mango.fileproc.convert.aspose-font-check-enabled=false")
+                .run(context -> {
+                    assertThat(context).hasSingleBean(AsposeFontFolderRegistrar.class);
+                    assertThat(context).doesNotHaveBean(AsposeFontInitializer.class);
+                });
+    }
+
+    @Test
+    void asposeFontInitializer_isRegisteredWhenFontCheckEnabled() {
+        contextRunner
+                .withPropertyValues("mango.fileproc.convert.aspose-font-check-enabled=true")
+                .run(context -> assertThat(context).hasSingleBean(AsposeFontInitializer.class));
     }
 
     @Test

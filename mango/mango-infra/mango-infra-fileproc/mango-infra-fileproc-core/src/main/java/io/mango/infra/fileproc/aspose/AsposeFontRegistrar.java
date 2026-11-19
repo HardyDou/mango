@@ -8,7 +8,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 把额外字体目录追加到 Aspose.Words 的字体来源。
@@ -19,6 +21,8 @@ import java.util.List;
  *
  * <p>没有配置目录时完全不触碰全局 {@code FontSettings}：它是进程级静态状态，
  * 会影响宿主应用里其他使用 Aspose 的地方。</p>
+ *
+ * <p>按绝对路径去重：重复调用（例如自检被多次触发）不会重复追加同一个目录。</p>
  */
 public final class AsposeFontRegistrar {
 
@@ -37,6 +41,9 @@ public final class AsposeFontRegistrar {
         if (folders == null || folders.isEmpty()) {
             return 0;
         }
+        FontSettings settings = FontSettings.getDefaultInstance();
+        FontSourceBase[] existing = settings.getFontsSources();
+        Set<String> registered = registeredFolderPaths(existing);
         List<FolderFontSource> appended = new ArrayList<>();
         for (String folder : folders) {
             if (folder == null || folder.isBlank()) {
@@ -47,13 +54,16 @@ public final class AsposeFontRegistrar {
                 LOGGER.warn("Aspose 字体目录不存在，已跳过: {}", directory.getAbsolutePath());
                 continue;
             }
-            appended.add(new FolderFontSource(directory.getAbsolutePath(), true));
+            String absolutePath = directory.getAbsolutePath();
+            if (!registered.add(absolutePath)) {
+                LOGGER.debug("Aspose 字体目录已注册，跳过: {}", absolutePath);
+                continue;
+            }
+            appended.add(new FolderFontSource(absolutePath, true));
         }
         if (appended.isEmpty()) {
             return 0;
         }
-        FontSettings settings = FontSettings.getDefaultInstance();
-        FontSourceBase[] existing = settings.getFontsSources();
         List<FontSourceBase> merged = new ArrayList<>();
         if (existing != null) {
             merged.addAll(List.of(existing));
@@ -62,5 +72,21 @@ public final class AsposeFontRegistrar {
         settings.setFontsSources(merged.toArray(new FontSourceBase[0]));
         LOGGER.info("Aspose 字体来源追加 {} 个目录，现有来源 {} 个", appended.size(), merged.size());
         return appended.size();
+    }
+
+    private static Set<String> registeredFolderPaths(FontSourceBase[] sources) {
+        Set<String> paths = new LinkedHashSet<>();
+        if (sources == null) {
+            return paths;
+        }
+        for (FontSourceBase source : sources) {
+            if (source instanceof FolderFontSource folderSource) {
+                String path = folderSource.getFolderPath();
+                if (path != null) {
+                    paths.add(new File(path).getAbsolutePath());
+                }
+            }
+        }
+        return paths;
     }
 }

@@ -1,10 +1,9 @@
 package io.mango.infra.fileproc.aspose.starter;
 
 import io.mango.infra.fileproc.aspose.AsposeFontAvailability;
-import io.mango.infra.fileproc.aspose.AsposeFontRegistrar;
 import io.mango.infra.fileproc.aspose.AsposeLicenseApi;
-import io.mango.infra.fileproc.aspose.AsposeLicenseVerifier;
-import io.mango.infra.fileproc.aspose.DefaultAsposeLicenseVerifier;
+import io.mango.infra.fileproc.aspose.AsposeLicenseApplier;
+import io.mango.infra.fileproc.aspose.DefaultAsposeLicenseApplier;
 import io.mango.infra.fileproc.aspose.enums.AsposeProduct;
 import io.mango.infra.fileproc.convert.starter.ConvertProperties;
 import org.slf4j.Logger;
@@ -45,21 +44,21 @@ public class AsposeFontInitializer implements InitializingBean {
 
     private final AsposeFontAvailability fontAvailability;
 
-    private final AsposeLicenseVerifier licenseVerifier;
+    private final AsposeLicenseApplier licenseApplier;
 
     public AsposeFontInitializer(ConvertProperties convertProperties, AsposeProperties asposeProperties,
                                  AsposeLicenseApi licenseApi, AsposeFontAvailability fontAvailability) {
-        this(convertProperties, asposeProperties, licenseApi, fontAvailability, new DefaultAsposeLicenseVerifier());
+        this(convertProperties, asposeProperties, licenseApi, fontAvailability, new DefaultAsposeLicenseApplier());
     }
 
     public AsposeFontInitializer(ConvertProperties convertProperties, AsposeProperties asposeProperties,
                                  AsposeLicenseApi licenseApi, AsposeFontAvailability fontAvailability,
-                                 AsposeLicenseVerifier licenseVerifier) {
+                                 AsposeLicenseApplier licenseApplier) {
         this.convertProperties = convertProperties;
         this.asposeProperties = asposeProperties;
         this.licenseApi = licenseApi;
         this.fontAvailability = fontAvailability;
-        this.licenseVerifier = licenseVerifier;
+        this.licenseApplier = licenseApplier;
     }
 
     @Override
@@ -88,10 +87,6 @@ public class AsposeFontInitializer implements InitializingBean {
             LOGGER.info("没有启用任何 Aspose 转换器，跳过 Aspose 字体与授权自检");
             return;
         }
-        int appended = AsposeFontRegistrar.appendFontFolders(asposeProperties.getFontsFolders());
-        if (appended > 0) {
-            LOGGER.info("已向 Aspose 追加 {} 个字体目录", appended);
-        }
         checkFonts(enabledProducts);
         checkLicenses(enabledProducts);
     }
@@ -109,8 +104,9 @@ public class AsposeFontInitializer implements InitializingBean {
     private void checkFonts(List<AsposeProduct> enabledProducts) {
         Set<String> available = fontAvailability.availableFontNames();
         if (available == null || available.isEmpty()) {
-            throw new IllegalStateException("Aspose 字体自检失败：无法枚举任何字体来源（已启用 " + enabledProducts
-                    + "）。请确认字体服务可用，或在 mango.fileproc.aspose.fonts-folders 配置字体目录。");
+            reportFontProblem("Aspose 字体自检：无法枚举任何字体来源（已启用 " + enabledProducts
+                    + "）。请确认字体服务可用，或在 mango.fileproc.aspose.fonts-folders 配置字体目录。", enabledProducts);
+            return;
         }
         List<String> missing = new ArrayList<>();
         for (String required : REQUIRED_FONT_NAMES) {
@@ -119,12 +115,26 @@ public class AsposeFontInitializer implements InitializingBean {
             }
         }
         if (!missing.isEmpty()) {
-            throw new IllegalStateException("Aspose 字体自检失败：缺少字体 " + missing + "（已启用 " + enabledProducts
+            reportFontProblem("Aspose 字体自检：缺少字体 " + missing + "（已启用 " + enabledProducts
                     + "）。中文族名（如「宋体」）由 Aspose 内置映射解析到 SimSun，不会出现在字体枚举里；"
-                    + "请安装对应字体，或用 mango.fileproc.aspose.fonts-folders 追加字体目录。");
+                    + "请安装对应字体，或用 mango.fileproc.aspose.fonts-folders 追加字体目录。", enabledProducts);
+            return;
         }
         LOGGER.info("Aspose 字体自检通过：已启用 {} 的转换器，所需中文字体齐全（额外字体目录 {} 个）",
                 enabledProducts, asposeProperties.getFontsFolders() == null ? 0 : asposeProperties.getFontsFolders().size());
+    }
+
+    /**
+     * 字体问题默认只告警：缺字体是渲染质量问题，不该让应用起不来。
+     *
+     * <p>只有 {@code mango.fileproc.aspose.font-check-fatal=true} 时才升级为启动失败。</p>
+     */
+    private void reportFontProblem(String message, List<AsposeProduct> enabledProducts) {
+        if (asposeProperties.isFontCheckFatal()) {
+            throw new IllegalStateException(message + "（font-check-fatal=true，启动中止）");
+        }
+        LOGGER.error("{}。转换仍会继续，但中文可能回退为其他字体或显示方块。"
+                + "如需在启动期拦住，设置 mango.fileproc.aspose.font-check-fatal=true。", message);
     }
 
     private void checkLicenses(List<AsposeProduct> enabledProducts) {
@@ -136,7 +146,7 @@ public class AsposeFontInitializer implements InitializingBean {
                         + "评估模式会输出水印，请先配置授权文件，或关闭对应的 aspose-*-enabled。");
             }
             try {
-                licenseVerifier.verify(product, content);
+                licenseApplier.apply(product, content);
             } catch (RuntimeException ex) {
                 throw new IllegalStateException("Aspose 授权自检失败：" + product + " 的 License 无法加载（"
                         + ex.getMessage() + "）。请检查授权文件是否与 " + product + " 20.3 匹配、是否已过期。", ex);

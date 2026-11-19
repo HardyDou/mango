@@ -54,6 +54,12 @@ public class AsposeProperties {
      */
     private List<String> fontsFolders = new ArrayList<>();
 
+    /**
+     * 字体缺失是否中断启动。默认 {@code false}：缺字体属于渲染质量问题，不应让应用起不来；
+     * 只有显式置为 {@code true} 时，自检发现缺字体才抛异常。
+     */
+    private boolean fontCheckFatal;
+
     public boolean isEnabled() {
         return enabled;
     }
@@ -116,6 +122,14 @@ public class AsposeProperties {
 
     public void setFontsFolders(List<String> fontsFolders) {
         this.fontsFolders = fontsFolders;
+    }
+
+    public boolean isFontCheckFatal() {
+        return fontCheckFatal;
+    }
+
+    public void setFontCheckFatal(boolean fontCheckFatal) {
+        this.fontCheckFatal = fontCheckFatal;
     }
 
 }

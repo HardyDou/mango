@@ -2,7 +2,7 @@ package io.mango.infra.fileproc.aspose.starter;
 
 import io.mango.infra.fileproc.aspose.AsposeFontAvailability;
 import io.mango.infra.fileproc.aspose.AsposeLicenseApi;
-import io.mango.infra.fileproc.aspose.AsposeLicenseVerifier;
+import io.mango.infra.fileproc.aspose.AsposeLicenseApplier;
 import io.mango.infra.fileproc.aspose.enums.AsposeProduct;
 import io.mango.infra.fileproc.convert.starter.ConvertProperties;
 import org.junit.jupiter.api.Test;
@@ -43,20 +43,36 @@ class AsposeFontInitializerTest {
     }
 
     @Test
-    void check_reportsMissingFontNames() {
+    void check_warnsButKeepsStartingWhenFontsMissingByDefault() {
+        Set<String> available = new LinkedHashSet<>(REQUIRED_FONTS);
+        available.remove("SimSun");
+        available.remove("KaiTi");
+        assertThatCode(() -> initializer(available, true, false).check()).doesNotThrowAnyException();
+        // 授权仍会被校验：字体不致命不代表整段跳过。
+        assertThat(verifiedProducts).isNotEmpty();
+    }
+
+    @Test
+    void check_failsOnMissingFontsWhenFatalEnabled() {
+        asposeProperties.setFontCheckFatal(true);
         Set<String> available = new LinkedHashSet<>(REQUIRED_FONTS);
         available.remove("SimSun");
         available.remove("KaiTi");
         assertThatThrownBy(() -> initializer(available, true, false).check())
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("Aspose 字体自检失败")
                 .hasMessageContaining("SimSun")
                 .hasMessageContaining("KaiTi")
-                .hasMessageContaining("fonts-folders");
+                .hasMessageContaining("font-check-fatal=true");
     }
 
     @Test
-    void check_failsWhenNoFontIsVisibleAtAll() {
+    void check_warnsWhenNoFontIsVisibleAtAll() {
+        assertThatCode(() -> initializer(Set.of(), true, false).check()).doesNotThrowAnyException();
+    }
+
+    @Test
+    void check_failsWhenNoFontIsVisibleAtAllAndFatalEnabled() {
+        asposeProperties.setFontCheckFatal(true);
         assertThatThrownBy(() -> initializer(Set.of(), true, false).check())
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("无法枚举任何字体来源");
@@ -104,7 +120,7 @@ class AsposeFontInitializerTest {
     private AsposeFontInitializer initializer(Set<String> fonts, boolean licenseAvailable, boolean licenseBroken) {
         AsposeFontAvailability availability = () -> fonts;
         AsposeLicenseApi licenseApi = product -> licenseAvailable ? LICENSE : null;
-        AsposeLicenseVerifier verifier = (product, content) -> {
+        AsposeLicenseApplier applier = (product, content) -> {
             verifiedProducts.add(product);
             if (licenseBroken) {
                 throw new IllegalStateException("授权文件损坏");
@@ -112,6 +128,6 @@ class AsposeFontInitializerTest {
         };
         // 字体目录留空：不触碰 Aspose 进程级全局字体设置。
         asposeProperties.setFontsFolders(List.of());
-        return new AsposeFontInitializer(convertProperties, asposeProperties, licenseApi, availability, verifier);
+        return new AsposeFontInitializer(convertProperties, asposeProperties, licenseApi, availability, applier);
     }
 }

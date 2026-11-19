@@ -175,7 +175,7 @@ mango:
 | `aspose-word-to-pdf-enabled` | `true` | 注册 Aspose Word 转 PDF，默认引擎（DOC/DOCX）。 |
 | `aspose-excel-to-pdf-enabled` | `true` | 注册 Aspose Excel 转 PDF，默认引擎（XLS/XLSX）。 |
 | `aspose-slide-to-pdf-enabled` | `true` | 注册 Aspose PPT 转 PDF，默认引擎（PPT/PPTX）。 |
-| `aspose-font-check-enabled` | `true` | Aspose 字体与授权启动自检；至少启用一个 Aspose 转换器时才校验，全部关闭时跳过。 |
+| `aspose-font-check-enabled` | `true` | Aspose 字体与授权启动自检；至少启用一个 Aspose 转换器时才校验，全部关闭时跳过。字体缺失默认只告警，见 `mango.fileproc.aspose.font-check-fatal`。 |
 | `aspose-pdf-to-image-enabled` | `true` | 注册 Aspose PDF 转图片。 |
 | `aspose-imaging-enabled` | `true` | 注册 Aspose 图片格式转换。 |
 | `image-to-pdf-enabled` | `true` | 注册 ImageIO/PDFBox 图片转 PDF 转换器，支持 PNG、JPG/JPEG，默认优先用于手机照片等图片合 PDF 场景。 |
@@ -223,16 +223,17 @@ PDF/DOCX 中的表格、图片、可见印章和已有签名外观会作为页�
 | `slides-license-location` | 空 | Aspose.Slides license，空时回退到通用位置。 |
 | `pdf-license-location` | 空 | Aspose.PDF license，空时回退到通用位置。 |
 | `imaging-license-location` | 空 | Aspose.Imaging license，空时回退到通用位置。 |
-| `fonts-folders` | 空 | 额外字体目录，追加到 Aspose.Words 现有字体来源之后（不替换系统字体来源）。 |
+| `fonts-folders` | 空 | 额外字体目录，追加到 Aspose.Words 现有字体来源之后（不替换系统字体来源）；注册不依赖自检开关。 |
+| `font-check-fatal` | `false` | 字体缺失时是否中断启动。默认 `false`（只打 ERROR），置 `true` 才 fail-fast。 |
 
 默认 license 文件位置是 `mango-infra-fileproc-core/src/main/resources/aspose/license.xml`。资源目录下还有单独 README 说明 license 资产。
 
 启动自检（`mango.fileproc.convert.aspose-font-check-enabled=true` 且至少启用一个 Aspose 转换器时执行）：
 
-- 字体：要求 `SimSun`、`SimHei`、`KaiTi`、`FangSong`、`Microsoft YaHei` 可见，缺失时启动失败并点名缺哪个字体。断言只用拉丁名——中文族名（如「宋体」）Aspose 本身不可见，由内置映射表解析到 `SimSun`，所以不要把中文族名写进配置或断言。
-- 字体目录：`fonts-folders` 只做追加（内部取现有 `FontSourceBase` 数组后加 `FolderFontSource` 再写回），不会调用 `setFontsFolders` 替换全部来源；留空时完全不触碰进程级 `FontSettings`，避免影响宿主应用里其他 Aspose 用法。
-- 授权：对每个已启用的产品校验 License 存在且能加载，失败信息里带产品名与「20.3 / 是否过期」提示。
-- 只装配 license bean 而没有启用任何 Aspose 转换器的应用不会被校验，也不会因为缺字体被误杀；需要显式跳过时设 `mango.fileproc.convert.aspose-font-check-enabled=false`。
+- 字体：期望 `SimSun`、`SimHei`、`KaiTi`、`FangSong`、`Microsoft YaHei` 可见。缺失时**默认只打 ERROR**（列出缺失清单与补救方式）并继续启动——缺字体是渲染质量问题，不该把「字体不好看」升级成「应用起不来」；需要启动期拦住时设 `mango.fileproc.aspose.font-check-fatal=true`。断言只用拉丁名：中文族名（如「宋体」）Aspose 本身不可见，由内置映射表解析到 `SimSun`，所以不要把中文族名写进配置或断言。
+- 字体目录：`fonts-folders` 只做追加（内部取现有 `FontSourceBase` 数组后加 `FolderFontSource` 再写回），不会调用 `setFontsFolders` 替换全部来源；按绝对路径去重，重复调用不会重复追加；留空时完全不触碰进程级 `FontSettings`，避免影响宿主应用里其他 Aspose 用法。注册由 `AsposeFontFolderRegistrar` 独立完成，**不受** `aspose-font-check-enabled` 影响——关掉自检止血时字体目录仍然生效。
+- 授权：对每个已启用的产品应用 License 并确认可加载，失败即启动失败（这是配置错误），信息里带产品名。「订阅期过期但在该版本发布日之后仍可用」的情况 Aspose 不抛异常，自检覆盖不到，因此依赖 20.3 版本锁定。
+- 只装配 license bean 而没有启用任何 Aspose 转换器的应用不会被校验；需要显式跳过时设 `mango.fileproc.convert.aspose-font-check-enabled=false`（字体目录注册不受影响）。
 
 ## 7. API 与扩展
 公开 API：

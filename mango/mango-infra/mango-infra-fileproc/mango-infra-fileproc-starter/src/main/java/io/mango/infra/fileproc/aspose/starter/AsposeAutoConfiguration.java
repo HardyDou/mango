@@ -44,6 +44,16 @@ public class AsposeAutoConfiguration {
         return new DefaultAsposeLicenseApi(licenses);
     }
 
+    /**
+     * 字体目录注册与字体自检解耦：只要 Aspose 模块启用就注册，不受
+     * {@code mango.fileproc.convert.aspose-font-check-enabled} 影响。
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public AsposeFontFolderRegistrar asposeFontFolderRegistrar(AsposeProperties properties) {
+        return new AsposeFontFolderRegistrar(properties);
+    }
+
     @Bean
     @ConditionalOnMissingBean
     public AsposeFontAvailability asposeFontAvailability() {
