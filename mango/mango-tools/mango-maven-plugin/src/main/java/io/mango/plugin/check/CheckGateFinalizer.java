@@ -15,7 +15,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
-import java.util.regex.Pattern;
 
 class CheckGateFinalizer {
     private static final String GATE_ALL = "all";
