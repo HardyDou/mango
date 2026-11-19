@@ -4,7 +4,7 @@
     "schemaVersion": 1,
     "workspaceCount": 43
   },
-  "catalogDigest": "047b3a7124d8fc4bd8b209d570e67e5dacdc73073cd18336c953c2b870c7da69",
+  "catalogDigest": "3ef9dc8005bc7ee8511c5b9e5464a90fd0530b723dc0d30f0f674a45b5110a6f",
   "maven": {
     "dependencyManagementSets": [
       {
@@ -9531,6 +9531,15 @@
             "version": "1.0.0-SNAPSHOT"
           },
           {
+            "artifactId": "mango-infra-persistence-api",
+            "classifier": null,
+            "groupId": "io.mango.infra.persistence",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
             "artifactId": "mango-resource-api",
             "classifier": null,
             "groupId": "io.mango.platform.resource",
@@ -9555,6 +9564,15 @@
             "artifactId": "mango-infra-bootstrap-api",
             "classifier": null,
             "groupId": "io.mango.infra.bootstrap",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-persistence-api",
+            "classifier": null,
+            "groupId": "io.mango.infra.persistence",
             "optional": false,
             "scope": "compile",
             "type": "jar",
@@ -11973,7 +11991,7 @@
       "path": "mango-ui/packages/mango-cli",
       "publicEntries": [],
       "publicResources": [],
-      "version": "1.4.16"
+      "version": "1.4.17"
     },
     {
       "name": "@mango/cms",

@@ -1,116 +1,80 @@
-# Mango Maven 1.14.1 声明主键确定性与契约指纹批次发布说明
-
-批次标签 `v2026.11.19-maven-1.14.1-portable-id-contract-release`，基线为 `v2026.11.18-maven-1.14.0-captcha-sms-provider-release`（Maven 1.14.0）。
-
-## Workflow Contract
-
-本批次触碰 `mango-workflow`，工作流契约与 1.14.0 一致，没有新增 DTO 字段或枚举值。
-
-```text
-workflow-contract-fingerprint:
-  api:    053297d7a998ef45b6c40093a2d4e1fb25d04d0323159773424b5c1fe148a8a1
-  web:    277ab3b80baff855b0e4fdedc094ec7e73f67415e5951ca15835c273449da417
-  changed: none
-  since:  053297d7a998ef45b6c40093a2d4e1fb25d04d0323159773424b5c1fe148a8a1 / 277ab3b80baff855b0e4fdedc094ec7e73f67415e5951ca15835c273449da417
-
-workflow-compatible-additions: []
-```
-
 ## Pull Requests
 
-- PR #1313 Added `mango-pmo` 新增工作流契约指纹工具：`mango-pmo/tools/workflow-contract-fingerprint.mjs` 从上一批次标签计算 `workflow-contract-fingerprint`（`api`、`web`、`changed`、`since`）与 `workflow-compatible-additions`，支持 `--verify-release-notes` 校验发布说明中的契约块；`mango-release` Skill 的 Readiness 要求触碰 `mango-workflow` 的批次携带该块，`pmo-doc-check` 增加校验入口，新增运维指南 `mango-docs/guides/operations/workflow-contract-fingerprint.md`。Packages: `@mango/pmo@1.6.3`、`@mango/cli@1.4.16`。Business Adaptation: 业务仓升级 PMO 后可运行该工具核对自身引用的 workflow DTO 字段与枚举值，不需要改业务代码。
-- PR #1318 Fixed 连接器资源声明的落库主键改为确定性派生：`IntegrationConnectorCommand` 新增可选 `Long id`（仅 `saveDeclaration` 新建分支生效，手工保存忽略），`IntegrationConnectorService.save` 校验正数并拒绝已占用主键，`IntegrationConnectorResourceHandler` 用 `PortableResourceIds.stable("integration_connector", connectorCode)` 派生主键。Packages: `io.mango.platform.integration:mango-integration-api:1.14.1`、`mango-integration-core:1.14.1`、`mango-integration-starter:1.14.1`、`mango-integration-starter-remote:1.14.1`。Business Adaptation: 声明 `INTEGRATION_CONNECTOR` 的业务项目在冷基线重放时写入相同主键，不再出现 `MANGO-BASELINE-040`；已存在的数据行主键不迁移。
-- PR #1320 Fixed 另外五处声明写入主键收敛到 `PortableResourceIds.stable(...)`：打印模板分类 `(tenantId, categoryCode)` 与版本 `(templateId, versionNo)`、通知渠道路由标签 `(channelConfigId, routeTagId)`、岗位 `(tenantId, postCode)`、组织 `(tenantId, orgCode)`、字典项 `(dictType, value)`；显式声明的 ID 仍优先，手工维护路径行为不变。Packages: `io.mango.platform.template:mango-template-core:1.14.1`、`io.mango.platform.notice:mango-notice-core:1.14.1`、`io.mango.platform.org:mango-org-starter:1.14.1`、`io.mango.platform.system:mango-system-core:1.14.1`。Business Adaptation: 声明 `PRINT_TEMPLATE`、`MESSAGE_CHANNEL`、`ORG_POST`、`ORG_UNIT`、`SYSTEM_DICT` 的业务项目在空库冷基线重放时主键稳定；业务代码与声明文件字段不需要修改。
-- PR #1319 Added 字典选项批量读取：`DictApi` 新增 `getOptionsBatch(DictOptionsBatchQuery)`，一次 `in` 查询覆盖最多 24 个平铺字典，返回 `DictOptionGroupVO` 分组列表（每组带 `typeCode` 与 `options`，不存在的编码返回空选项）；Controller 暴露 `GET /system/dict/data/options/batch`，`typeCodes` 支持逗号分隔与重复参数。Packages: `io.mango.platform.system:mango-system-api:1.14.1`、`mango-system-core:1.14.1`、`mango-system-starter:1.14.1`、`mango-system-starter-remote:1.14.1`。Business Adaptation: 页面一次加载多个字典时改调批量接口即可，原来的 `getOptions` 与 `GET /system/dict/data/options` 行为不变，可以逐个切换。
-- PR #1321 Fixed 业务「当前任务」表补唯一约束并清理重复行：新增 Flyway `V7__workflow_business_apply_current_task_unique_key.sql`，同 `(tenant_id, task_id)` 只保留 `updated_at` 最新（相同则 `id` 最大）的一行，随后加唯一键 `uk_workflow_business_apply_current_task`；两条语句都按 `information_schema` 条件执行，重复升级不失败，没有 `task_id` 列的老表整体跳过。Packages: `io.mango.platform.workflow:mango-workflow-core:1.14.1`、`mango-workflow:1.14.1`、`mango-workflow-starter:1.14.1`、`mango-workflow-starter-remote:1.14.1`。Business Adaptation: 升级时 Flyway 自动执行清理，重复行的 `updated_at` 保留策略已在脚本注释中固化；业务代码不需要改动，但升级前应确认不需要保留被清理的历史重复行。
+- PR #1324 Fixed 关闭模块迁移时跳过该模块的全部资源声明。Packages: `io.mango.platform:infra-persistence-api`, `io.mango.platform:infra-persistence-starter`, `io.mango.platform.resource:resource-support`, `io.mango.platform.resource:resource-core`, `io.mango.platform.resource:resource-sync-starter`. Business Adaptation: 无需改动代码；把某模块 `mango.persistence.flyway.modules.{模块名}.enabled` 设为 `false` 后，该模块的便携资源声明不再加载，启动日志出现 `Skipping portable resource declarations of disabled module` 的 WARN。
+- PR #1325 Fixed 修正探针路径的白名单语义并自检 CIDR 写法。Packages: `io.mango.platform.access:access-core`, `io.mango.platform.access:access-web-starter`, `io.mango.platform.auth:auth-starter`, `io.mango.app:mango-monolith-app`. Business Adaptation: 单体默认白名单规则由精确路径 `/actuator/health` 改为 `/actuator/health/**`；自建白名单规则照旧生效，但缩写网段写法会在启动日志给出 WARN。
+- PR #1326 Changed 补齐冷基线 `moduleOrder` 的差集与模块分组口径。Packages: `io.mango:mango-docs-bundle`. Business Adaptation: 无代码改动，按操作指南核对自身构建配置即可。
+- PR #1327 Changed 补齐冷基线模块发现顺序与集合比较口径。Packages: `io.mango:mango-docs-bundle`. Business Adaptation: 无代码改动，按操作指南判断是否保留显式模块序列。
+- PR #1328 Changed 补齐冷基线隐式跨模块依赖判据与自查命令。Packages: `io.mango:mango-docs-bundle`. Business Adaptation: 无代码改动，业务模块向平台表写种子数据时按指南自查回放顺序。
 
 ## Fixed
 
-- 冷基线确定性校验 `MANGO-BASELINE-040` 在 `integration_connector`、`template_category`、`template_version`、`notice_channel_config_route_tag`、`sys_org`、`sys_post`、`sys_dict_data` 上的随机雪花主键失败已修复：声明新建路径改为按业务键派生主键，同一声明两次重放写入相同行。
-- 声明主键派生对并发与人工维护保持安全：派生主键已被其它业务键占用时明确冲突并拒绝写入；显式声明的 `targetId`、`versionId`、`categoryId`、`categoryId` 等 ID 保持优先；手工维护路径继续使用数据库雪花主键。
-- 业务「当前任务」表可能存在的重复行导致任务分页把同一任务翻倍：升级脚本按保留策略清理重复行后加唯一键，重复行不再能写入。
-- `mango-pmo` 发布说明契约块不再靠手工复制哈希：工具输出 `# WARN` 表示契约哨兵未在当前提交运行，`--verify-release-notes` 直接以非零退出码阻断。
-
-## Added
-
-- `mango-pmo/tools/workflow-contract-fingerprint.mjs` 与配套用例 `mango-pmo/tests/workflow-contract-fingerprint.test.mjs`：输出 `workflow-contract-fingerprint`（`api`、`web`、`changed`、`since`）和 `workflow-compatible-additions`（按类列出新增 DTO 字段与枚举值）。
-- `mango-docs/guides/operations/workflow-contract-fingerprint.md`：说明指纹算法、发布说明用法、`# WARN` 语义与 `--verify-release-notes` 门禁。
-- `DictApi.getOptionsBatch(DictOptionsBatchQuery)` 与 `GET /system/dict/data/options/batch`：一次最多读取 24 个平铺字典的选项；新增 `DictOptionGroupVO`（`typeCode` + `options`）。
-- Flyway `workflow/V7__workflow_business_apply_current_task_unique_key.sql`：清理重复行并补 `(tenant_id, task_id)` 唯一键。
-- `IntegrationConnectorCommand.id`：可选确定性主键，仅资源声明同步新建时生效。
-- 新增资源声明确定性主键用例：`OrgPostResourceHandlerTest`、`OrgUnitResourceHandlerTest`、`PrintTemplateResourceHandlerIntegrationTest`、`NoticeChannelResourceHandlerIntegrationTest`、`SystemDictResourceHandlerIntegrationTest`、`IntegrationConnectorResourceHandlerTest`、`IntegrationModelServiceTest`。
+- `mango-infra-persistence-starter` 与 `mango-resource-sync-starter` 新增模块启停契约 `PersistenceModuleEnablement`：某模块的 Flyway 迁移被关闭后，该模块在 `META-INF/mango/resources` 下的便携资源声明与该模块的打包清单条目一并跳过，不再出现 `Table ... doesn't exist` 的启动失败。
+- 跳过行为只影响声明装载，不改变迁移开关本身；`skip-reason` 仍是配置项，跳过日志同时打印模块名、声明数量、跳过原因与来源文件，便于定位是哪个模块被关闭。
+- `/actuator/health` 之后的探针分组路径（`readiness`、`liveness`）现在命中平台默认白名单规则，不再因为规则只写精确路径而落到登录校验上返回 401。
+- 白名单匹配把 IPv4 映射地址按 IPv4 比较、精确地址与网段比较使用同一套字节比较，缩写网段（如 `10/8`、`172.16/12`、`192.168/16`）不再静默匹配到错误网段。
 
 ## Changed
 
-- `mango-pmo` 发布就绪规则按 `mango-pmo/skills/mango-release/SKILL.md` 的 Readiness 章节执行：触碰 `mango-workflow` 的批次在发布说明中携带契约指纹块，并由 `--verify-release-notes CHANGELOG.md --base 上一批次标签` 校验为通过。
-- `pmo-doc-check` 工作流增加契约指纹校验入口；`mango-business-starter` 的 PMO 基线投影随 `@mango/pmo@1.6.3` 同步刷新。
-- 各模块 README 的声明章节补充主键派生规则（`mango-integration`、`mango-template`、`mango-notice`、`mango-org`、`mango-system`）。
-- `@mango/pmo` 升到 `1.6.3`，`@mango/cli` 由版本矩阵自动升到 `1.4.16`；没有其它 npm 包版本变化，也没有前端源码改动。
+- 平台单体默认白名单规则从 `path-pattern: /actuator/health` 调整为 `/actuator/health/**`，因为 `/actuator/**` 不参与 API 资源声明同步，探针路径只能依赖该白名单。
+- `mango-access-web-starter` 在启动装配阶段对 IP 白名单规则做写法自检：网段未写满四段、掩码越界或地址无法解析时输出 WARN `IP 白名单 CIDR 不是完整网段写法`，不阻断启动。
+- 冷基线操作指南新增模块顺序、分组与隐式跨模块依赖三节：发现顺序为模块名字典序、`MANGO-BASELINE-023` 只比较集合成员、业务模块向平台表写种子数据时按依赖顺序显式列出完整模块序列。
+- 本批次不涉及 `sys_dict_type`、`sys_dict_data`、`authorization_role` 的列集或约束变更，业务模块向这些表写种子数据的声明无需调整。
 
 ## Versions
 
-- Maven backend: `1.14.0` -> `1.14.1`
-- Maven docs bundle: `io.mango:mango-docs-bundle` `1.14.0` -> `1.14.1`
-- 关键坐标: `io.mango.platform.integration:mango-integration-api:1.14.1`、`mango-integration-core:1.14.1`、`mango-integration-starter:1.14.1`、`mango-integration-starter-remote:1.14.1`、`io.mango.platform.template:mango-template-core:1.14.1`、`io.mango.platform.notice:mango-notice-core:1.14.1`、`io.mango.platform.org:mango-org-starter:1.14.1`、`io.mango.platform.system:mango-system-core:1.14.1`、`io.mango:mango-bom:1.14.1`、`io.mango:mango-parent:1.14.1`、`io.mango:mango-maven-plugin:1.14.1`
-- npm 包（全部为 patch 递增）：
-- `@mango/pmo`: 1.6.2 -> 1.6.3
-- `@mango/cli`: 1.4.15 -> 1.4.16
-- 明确不变的坐标：其余 npm 包版本保持 1.14.0 批次的版本；数据库结构、菜单、权限点、接口契约与 Maven 插件契约版本号在本批次没有变化。
+- Maven 平台：`1.14.1` → `1.14.2`（`mango-bom`、`mango-parent`、`mango-maven-plugin` 与全部平台模块跟随）
+- `io.mango:mango-docs-bundle`：`1.14.1` → `1.14.2`
+- `@mango/cli`：`1.4.16` → `1.4.17`（跟随 Maven 后端版本矩阵）
+- `@mango/pmo`：保持 `1.6.3`，本批次未改动 PMO 规则与 Skill 内容
+- 前端复用包（`@mango/common`、`@mango/admin`、`@mango/admin-shell` 等）：保持 `1.14.1` 批次版本，本批次未改动前端源码
 
 ## Published Packages
 
-按机器计划拓扑顺序发布：
-
-1. `@mango/pmo@1.6.3`
-2. `@mango/cli@1.4.16`
-3. `io.mango:mango-bom:1.14.1`、`io.mango:mango-parent:1.14.1`、`io.mango:mango-docs-bundle:1.14.1` 与其余 Maven 非应用坐标 `1.14.1`（共 201 个坐标，机器计划为准）
-
-不发布的对象：`mango-workflow` 系列（本批次没有代码改动）、前端页面包、业务应用坐标。
+- Maven：`mango-bom`、`mango-parent`、`mango-maven-plugin`、`mango-docs-bundle` 与平台模块共 201 个坐标，按 plan 拓扑顺序发布到 `maven-releases`。
+- npm：`@mango/cli` 单包，发布到 `npm-hosted`。
+- 不发布：本批次未改动的 `@mango/pmo` 与前端复用包，仅沿用 consume 仓库既有版本做消费验证。
 
 ## Business Impact
 
-- 受影响：使用资源声明同步（`META-INF/mango/resources/`）声明 `INTEGRATION_CONNECTOR`、`PRINT_TEMPLATE`、`MESSAGE_CHANNEL`、`ORG_POST`、`ORG_UNIT`、`SYSTEM_DICT` 的业务项目；它们此前在空库生成冷基线时可能因随机雪花主键触发 `MANGO-BASELINE-040`。
-- 受影响（新增能力，可选）：一次渲染多个平铺字典选项的页面现在可以改调 `GET /system/dict/data/options/batch`，减少往返次数；不改造的页面继续用单字典接口。
-- 数据影响（需注意）：`workflow/V7` 迁移会删除 `workflow_business_apply_current_task` 中同 `(tenant_id, task_id)` 的重复行并按保留策略留一行，之后加唯一键；业务表数据不做其它变更。
-- 不受影响：只做工作台单值 `businessType` 查询的业务项目不需要升级到本批次（多值过滤能力在 1.13.0 已提供，业务仓 mango-baohan-risk 的 #189 需求不依赖 1.14.1）。
-- 数据影响：不迁移历史行主键，不新增表、字段或索引；冷基线在空库生成，结果与已有数据无关。
-- 配置与权限影响：无新增配置项、菜单、权限点；`IntegrationConnectorCommand.id` 为可选字段，不传时行为与旧版一致。
-- 工具影响：`@mango/pmo` 新增契约指纹工具与发布说明门禁，业务仓的 PMO 基线投影需要同步刷新。
+- 受影响的消费方：把某个 Maven 模块的 Flyway 迁移关闭、同时该模块自带便携资源声明的业务应用；依赖 `/actuator/health/readiness`、`/actuator/health/liveness` 做容器探针的业务应用；使用缩写网段写法的 IP 白名单。
+- 不受影响的消费方：未关闭任何模块迁移的应用，以及只使用 `/actuator/health` 的应用——行为与 1.14.1 一致。
+- 数据库：本批次无 DDL、无迁移脚本变更，`sys_dict_*`、`authorization_role` 等平台表结构不变。
+- 配置：`PersistenceModuleEnablement` 由持久化 starter 自动装配，业务侧不需要新增配置项；`skip-reason` 语义不变。
+- 接口与权限：无接口签名变化、无权限点变化；探针路径仍走白名单放行，不新增匿名端点。
+- 运维：探针分组路径能否访问还取决于 `management.endpoint.health.probes.enabled=true` 与来源地址是否命中网段，白名单只解决路径匹配。
 
 ## Upgrade Estimate
 
-- Audience: 在资源声明中声明上述六类资源的业务项目，以及用 `@mango/pmo` 做发布/门禁的团队
-- Engineering Effort: 业务项目通常 0.5 人日以内（升级 `mango.version`、刷新 PMO 基线、重跑冷基线）
-- Execution Window: 任意维护窗口，可随常规依赖升级执行
-- Service Downtime: 无，升级只涉及依赖版本与构建期校验
-- Rollback Effort: 回退 `mango.version` 与 `@mango/pmo` 版本即可，低
-- Assumptions: 业务项目未自行实现同名资源 Handler、未手工钉住相关坐标版本、数据库为空库或无需回填历史主键
+- Audience: 使用 Mango 平台 1.14.x 的业务应用，尤其是关闭了模块迁移或配置了容器探针的部署
+- Engineering Effort: 低，通常只需升级依赖版本并重启；有自建白名单规则时顺带核对网段写法
+- Execution Window: 任意维护窗口，无数据库变更
+- Service Downtime: 无，滚动重启即可
+- Rollback Effort: 低，回退依赖版本并重启
+- Assumptions: 业务应用未在 1.14.2 上改动自身迁移脚本；探针路径未做同时变更
 
 ## Upgrade Notes
 
-1. 业务项目把 `mango.version` 从 `1.14.0` 升到 `1.14.1`，重新执行 `mvn -Pbsql -pl app -am package`，确认冷基线生成通过、`MANGO-BASELINE-040` 不再出现。
-2. 使用聚合 `mango-parent` 的项目只需改 `mango.version`；直接依赖单模块的项目把 `mango-integration-*`、`mango-template-core`、`mango-notice-core`、`mango-org-starter`、`mango-system-core` 同步升到 `1.14.1`，不要混用 `1.14.0` 与 `1.14.1`。
-3. 升级 `@mango/pmo` 到 `1.6.3` 后执行 `node mango-business-starter/scripts/sync-pmo-baseline.mjs --write`（业务仓用 `mango-pmo` 基线投影时），再执行 `check-template.mjs` 校验投影一致。
-4. 若业务项目自行维护资源声明备份脚本，确认其按业务键而不是按主键做比对；历史行的雪花主键保持不变。
-6. 升级到 `1.14.1` 时 Flyway 会自动执行 `workflow/V7` 迁移：同 `(tenant_id, task_id)` 仅保留 `updated_at` 最新的一行（相同则保留 `id` 最大行），随后创建唯一键 `uk_workflow_business_apply_current_task`；如果仍要保留被判定为重复的历史行，请在升级前自行导出。
-7. 页面一次需要多个平铺字典选项时改用 `GET /system/dict/data/options/batch`；单字典接口保持不变，可分批切换。
-5. 需要在发布说明中固化工作流契约的团队，用 `node mango-pmo/tools/workflow-contract-fingerprint.mjs --base 上一批次标签` 生成契约块，再用 `--verify-release-notes CHANGELOG.md --base 上一批次标签` 校验，不要手工复制哈希。
+1. 升级依赖：`backend/pom.xml` 中 `mango.version` 改为 `1.14.2`，重新构建即可，无需新增配置项。
+2. 关闭了模块迁移的应用：启动日志会出现一条 `Skipping portable resource declarations of disabled module: module=..., declarations=..., reason=..., source=...`，确认模块名与预期一致；若该模块仍需声明，请恢复 `enabled: true`。
+3. 使用分组探针的应用：先确认 `management.endpoint.health.probes.enabled=true`，再核对白名单规则是否覆盖 `/actuator/health/**` 且来源地址命中网段。未开启 probes 时分组端点不映射，放行后表现为 404 而不是 401。
+4. 自建 IP 白名单规则：把缩写网段改写为完整四段（如 `10.0.0.0/8`），启动日志不再出现 CIDR WARN。
+5. 冷基线构建：若业务模块的迁移脚本向平台表写种子数据，按 `mango-docs/guides/operations/build-time-cold-baseline.md` §8.1 自查并保留显式 `moduleOrder`；未写平台表的应用可以留空交给字典序发现。
+6. 聚合消费方：通过 `mango-bom` 导入依赖的应用升级 BOM 版本即可；直接依赖单模块的应用按模块坐标升级。
 
 ## Verification
 
-- `mvn -pl mango-platform/mango-integration/mango-integration-core,mango-platform/mango-template/mango-template-core,mango-platform/mango-notice/mango-notice-core,mango-platform/mango-org/mango-org-starter,mango-platform/mango-system/mango-system-core -Denforcer.skip=true -DskipTests=false test`：`mango-org-starter 78`、`mango-notice-core 92`、`mango-template-core 14`、`mango-system-core`、`mango-integration-core` 全部 0 failures。
-- `mvn -pl mango-platform/mango-integration/mango-integration-core,mango-platform/mango-template/mango-template-core,mango-platform/mango-notice/mango-notice-core,mango-platform/mango-org/mango-org-starter,mango-platform/mango-system/mango-system-core -DskipTests verify`：Checkstyle、SpotBugs、PMD 与架构门禁 `gateStatus=PASS`、`newIssueCount=0`。
-- `node mango-pmo/tests/workflow-contract-fingerprint.test.mjs`：契约指纹工具用例通过；`--verify-release-notes` 对缺失契约块的说明返回非零。
-- 发布后：`mango-integration-*`、`mango-template-core`、`mango-notice-core`、`mango-org-starter`、`mango-system-core` 从 consume 仓库解析到 `1.14.1`，`@mango/pmo@1.6.3`、`@mango/cli@1.4.16` 可安装；业务仓空库冷基线重放两次写入相同主键。
+- 发布前：`mango release plan` 生成的 201 个 Maven 坐标与 `@mango/cli` 拓扑顺序通过 `release:plan:check`，准备阶段完成混合消费验证（四仓库可见性、POM 与 JAR SHA-256、前端包导出）。
+- 发布后：consume 仓库拉取 `mango-infra-persistence-starter`、`mango-resource-sync-starter`、`mango-access-core`、`mango-access-web-starter`、`mango-auth-starter` 的 1.14.2 坐标并与 sealed 清单 SHA-256 比对；`@mango/cli@1.4.17` 从 consume 仓库安装后执行 `mango --version` 与 `mango release registry doctor`。
+- 消费端行为：关闭模块迁移的应用启动后不再出现 `Table ... doesn't exist`，并输出跳过 WARN；带 `probes.enabled=true` 的应用访问 `/actuator/health/readiness` 不再返回 401；缩写网段配置在启动日志出现 CIDR WARN。
+- 未验证项：未在真实阿里云、腾讯云账号上做网关调用验证（本批次不涉及）；未针对具体业务仓重新触发 `MANGO-BASELINE-021`。
 
 ## Rollback
 
-- 消费端回退 `mango.version` 到 `1.14.0`、`@mango/pmo` 回到 `1.6.2`、`@mango/cli` 回到 `1.4.15`，重新构建即可；`1.14.1` 与 `1.6.3`、`1.4.16` 坐标不可覆盖发布。
-- 已发布坐标不可重发或移动 Tag；若 `1.14.1` 存在缺陷，按 patch 版本继续修复（`1.14.2`）。
-- 主键派生不产生数据回滚需求：历史行主键未被修改，声明重放只会命中已存在行。
+- 依赖回退：把 `mango.version` 改回 `1.14.1` 并重启，探针与白名单行为回到精确路径语义，关闭模块迁移的应用会恢复 `Table ... doesn't exist` 的旧失败。
+- 数据库：本批次无迁移变更，回退不需要数据订正；已跳过的资源声明在回退后会重新加载。
+- 制品：已发布的 Maven 坐标与 `@mango/cli@1.4.17` 不回撤、不复用版本号，回退只发生在消费方依赖声明。
 
 ## Audit History
 
-- PR #1319（字典批量读取，`feat/1293-dict-batch`）仍在开放中，不属于本批次。
-- PR #1309、#1306、#1307 属于 1.14.0 批次，已随该批次发布。
-- `WorkflowDefinitionService` 的三处声明主键问题（流程定义、版本、分类）已知但需 Flowable 感知设计，不在本批次范围内，后续单独处理。
+- PR #1313、#1318、#1320、#1319、#1321 属于 1.14.1 批次，不在本批次发布内容内。
+- PR #1319（字典批量查询）已合并但未随本批次发布，另行安排。
