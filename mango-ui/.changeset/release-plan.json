@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-11-19T10:13:53.534Z",
+  "generatedAt": "2026-11-19T10:15:21.257Z",
   "releaseKind": "mixed",
   "release": {
     "tag": "v2026.11.19-maven-1.14.2-disabled-module-resources-release",
@@ -3658,18 +3658,26 @@
     "docs": null
   },
   "source": {
-    "commit": "01ceec8a72d85c923e6e0f77ca1df15168de5701",
-    "tree": "ed5d1974ee79da4dd189942d9411764e0e82a030"
+    "commit": "639a2d52f485e670d874822d0746c8250f57e0f1",
+    "tree": "127931b106ffff4ab8ad29e8354d7400ee2a0bba"
   },
   "sourceFiles": [
     "CHANGELOG.md",
+    "mango-catalog/catalog.lock.json",
     "mango-docs/guides/faq/permission-button-troubleshooting.md",
     "mango-docs/guides/faq/tenant-dict-config-empty.md",
     "mango-docs/guides/operations/build-time-cold-baseline.md",
+    "mango-docs/guides/operations/mango-1.14.1-to-1.14.2-upgrade.md",
+    "mango-ui/.changeset/cli-follows-maven-1-14-2.md",
     "mango-ui/.changeset/cli-follows-pmo-1-6-3.md",
     "mango-ui/.changeset/pmo-workflow-contract-fingerprint.md",
     "mango-ui/.changeset/release-baseline.json",
     "mango-ui/.changeset/release-notes.txt",
+    "mango-ui/.changeset/release-plan.json",
+    "mango-ui/packages/mango-cli/CHANGELOG.md",
+    "mango-ui/packages/mango-cli/README.md",
+    "mango-ui/packages/mango-cli/release-versions.json",
+    "mango-ui/packages/mango-cli/templates/full/frontend/package.json.template",
     "mango/mango-app/README.md",
     "mango/mango-app/monolith/mango-monolith-app/src/main/resources/application.yml",
     "mango/mango-infra/mango-infra-persistence/README.md",
@@ -3699,11 +3707,33 @@
     "mango/mango-platform/mango-resource/mango-resource-sync-starter/src/main/java/io/mango/resource/sync/starter/ResourceSyncAutoConfiguration.java",
     "mango/mango-platform/mango-resource/mango-resource-sync-starter/src/test/java/io/mango/resource/sync/starter/ResourceBootstrapStepContributorTest.java"
   ],
-  "changesets": [],
+  "changesets": [
+    {
+      "id": "cli-follows-maven-1-14-2",
+      "file": ".changeset/cli-follows-maven-1-14-2.md",
+      "sha256": "68fc414fb5569fef4a69bf5f516c76a40a33d7c9977aa861771009d9fb6469b2"
+    }
+  ],
   "legacyReconciliation": null,
   "restoredPublishedBaselines": [],
-  "directPackages": [],
-  "classifiedFiles": [],
+  "directPackages": ["@mango/cli"],
+  "classifiedFiles": [
+    {
+      "file": "mango-ui/packages/mango-cli/README.md",
+      "packageName": "@mango/cli",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/mango-cli/release-versions.json",
+      "packageName": "@mango/cli",
+      "reason": "published-package-path"
+    },
+    {
+      "file": "mango-ui/packages/mango-cli/templates/full/frontend/package.json.template",
+      "packageName": "@mango/cli",
+      "reason": "published-package-path"
+    }
+  ],
   "packages": [
     {
       "name": "@mango/cli",
@@ -3711,12 +3741,12 @@
       "sourceVersion": "1.4.16",
       "targetVersion": "1.4.17",
       "type": "patch",
-      "direct": false,
-      "generated": true,
+      "direct": true,
+      "generated": false,
       "reasons": [
         {
-          "source": "dependency-closure",
-          "summary": "CLI release matrix follows the managed package tuple"
+          "source": "changeset:cli-follows-maven-1-14-2",
+          "summary": "把 CLI 的 Maven 版本矩阵推进到 1.14.2，生成的业务项目随之带上模块关闭时的资源声明过滤与探针白名单语义。"
         }
       ],
       "releaseDependencies": []
@@ -4041,6 +4071,7 @@
         "classifier": null,
         "dependencies": [
           "io.mango.infra.context:mango-infra-context-api",
+          "io.mango.infra.persistence:mango-infra-persistence-api",
           "io.mango.platform.resource:mango-resource-api"
         ]
       },
@@ -5987,6 +6018,7 @@
         "classifier": null,
         "dependencies": [
           "io.mango.infra.bootstrap:mango-infra-bootstrap-api",
+          "io.mango.infra.persistence:mango-infra-persistence-api",
           "io.mango.platform.resource:mango-resource-api",
           "io.mango.platform.resource:mango-resource-support"
         ]
@@ -6512,11 +6544,11 @@
   "versionPolicyDigest": "c4c4c80d533dde047a59627c915cf87e3570606c2d329023ce6896544c50ee12",
   "releasePlanIdentity": {
     "schemaVersion": 1,
-    "sourceCommitOid": "01ceec8a72d85c923e6e0f77ca1df15168de5701",
-    "sourceTreeOid": "ed5d1974ee79da4dd189942d9411764e0e82a030",
+    "sourceCommitOid": "639a2d52f485e670d874822d0746c8250f57e0f1",
+    "sourceTreeOid": "127931b106ffff4ab8ad29e8354d7400ee2a0bba",
     "catalogDigest": "3ef9dc8005bc7ee8511c5b9e5464a90fd0530b723dc0d30f0f674a45b5110a6f",
     "previousBaselineDigest": "0227cd24a949a70f284e3149b8e8c2be156f0c328a4a87ab6f3f8c61316b320f",
-    "changesetsDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "changesetsDigest": "79d26569168406bd18a44819ed3767d82b913be551f870c0a923906874a09eb4",
     "releaseNotesDigest": "c2adcd4fdf6a9eda2f021c56e3c98b0b24aa3e87cd1e896dec0d363f98e74a94",
     "versionPolicyDigest": "c4c4c80d533dde047a59627c915cf87e3570606c2d329023ce6896544c50ee12",
     "resolvedTuple": [
@@ -8105,5 +8137,5 @@
       "@mango/cli"
     ]
   },
-  "planDigest": "35403793bbb40deac68d95f7a2e4acfb62b1e57c1a1740e601567ab93f3cdce9"
+  "planDigest": "536025e9e80bba8538b0d06789a07fcb28b05ef2f577d8300a519334ab2f6d41"
 }

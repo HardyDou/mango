@@ -5,7 +5,7 @@ Status: PENDING
 - Maven and npm publication: PENDING (201 Maven coordinates, `@mango/cli@1.4.17`)
 - Consume verification: PENDING
 - Tag and GitHub Release: PENDING
-- Release plan digest: `35403793bbb40deac68d95f7a2e4acfb62b1e57c1a1740e601567ab93f3cdce9`
+- Release plan digest: `536025e9e80bba8538b0d06789a07fcb28b05ef2f577d8300a519334ab2f6d41`
 
 批次标签 `v2026.11.19-maven-1.14.2-disabled-module-resources-release`，基线为 `v2026.11.19-maven-1.14.1-portable-id-contract-release`（Maven 1.14.1）。本批次不触碰 `mango-workflow`，因此不携带工作流契约指纹块。
 
