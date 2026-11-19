@@ -113,6 +113,7 @@ mango:
 - `/actuator/**` 不参与 API 资源声明同步（`mango.authorization.api-resource-sync.exclude-paths` 默认含 `/actuator/**`），因此探针只有两条放行途径：本白名单，或 `mango.auth.security.permit-paths`。
 - 未放行的探针按「未登记资源」判定为 LOGIN，返回 401 `缺少或非法的 Authorization 请求头`；`path-pattern: /actuator/health/**` 可同时覆盖 `/actuator/health` 与 readiness、liveness 分组。
 - 白名单只读 `request.getRemoteAddr()` 与原始请求 URI：经过容器端口映射、Ingress 或设置 `server.servlet.context-path` 时，来源 IP 与路径都随之变化，规则需按实际值配置。
+- 启用分组探针（`readiness`、`liveness`）的顺序是「先 `management.endpoint.health.probes.enabled=true`，容器内确认 `/actuator/health/readiness` 由 401 变成 404，再补白名单，最后改探针地址」。`AuthFilter`（order 1）与 `springSecurityFilterChain`（order -100）都在 `DispatcherServlet` 之前执行，未登记的路径在放行前同样返回 401，放行后才暴露 404；顺序颠倒会停在「已加白名单但仍 404」的中间态，看起来像白名单没生效。
 - CIDR 的网段部分必须是完整四段 IPv4 或合法 IPv6。`10/8`、`172.16/12` 这类缩写会被解析成 `0.0.0.10`、`172.0.0.16`，网段随之改变且不会报错；启动时对这类写法输出 WARN `IP 白名单 CIDR 不是完整网段写法`。
 - IPv4 映射的 IPv6 地址（`::ffff:127.0.0.1`）按 IPv4 规则匹配，双栈容器下不会因地址族不同漏配。
 
