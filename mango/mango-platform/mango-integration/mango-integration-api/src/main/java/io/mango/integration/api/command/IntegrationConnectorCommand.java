@@ -24,6 +24,16 @@ public class IntegrationConnectorCommand implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    /**
+     * 声明落库使用的确定性主键。
+     *
+     * <p>仅资源声明同步在新建连接器时生效：声明回放（冷基线生成、重复同步）必须产生相同主键，
+     * 因此由声明方按连接器编码派生后传入。手工保存（页面新增）在新建时忽略该字段，仍由持久层生成主键。</p>
+     */
+    @Min(value = 1, message = "主键必须为正数")
+    @Schema(description = "确定性主键，仅资源声明同步新建时生效")
+    private Long id;
+
     @NotBlank(message = "连接器编码不能为空")
     @Pattern(regexp = "^[a-z][a-z0-9-]{1,63}$", message = "连接器编码只能包含小写字母、数字和中划线")
     @Schema(description = "连接器编码，例如 wecom-message")
