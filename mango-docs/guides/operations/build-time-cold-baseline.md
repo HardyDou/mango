@@ -206,3 +206,14 @@ jar tf target/*.jar | grep -E '^META-INF/mango/(resource-bootstrap-manifest.json
 发现顺序是模块名的字典序（迁移清单按模块名建有序映射，与 classpath 扫描顺序、构建机无关），因此同一套依赖在本地与 CI 得到相同序列。`MANGO-BASELINE-023` 比较的是集合成员，序列先后不影响该检查；顺序只影响 BSQL 回放次序和制品指纹，所以显式序列与字典序不同时指纹会变，这是预期结果。
 
 需要分组时用 `moduleGroups` 指定个别模块的 group，其余模块落在 `default`，这样可以避免为了分组而手写整条序列。升级 Mango 后新进入 runtime classpath 的模块（例如 1.13.0 起标准模板包含 `integration`、`payment`）会改变发现集合，反之未声明的模块（如未引入的 `ai`）不在其中。
+
+回放顺序只在存在**隐式跨模块依赖**时才需要显式控制。除外键之外，更常见的是业务迁移直接写平台表（例如往平台字典表、`authorization_*` 角色表插种子数据）：这类写入同样要求被写模块先回放，否则以 `MANGO-BASELINE-021 ... module=<业务模块>` 失败。自查命令：
+
+```bash
+# 列出业务模块 SQL 里被写入/修改的表名，去掉本模块自己的表，剩下的就是隐式跨模块依赖
+grep -rhoiE "(insert into|update|alter table|delete from)[[:space:]]+[a-zA-Z0-9_`]+" \
+  backend/app/src/main/resources/db/migration \
+  | awk '{print $NF}' | tr -d '`' | sort -u
+```
+
+命中集中在 `sys_*`、`authorization_*`、`mango_*` 这类平台表时，显式 `moduleOrder` 就是正确配置（不是退路），并且被写模块排在写入模块之前。这种情况下手写完整序列反而比留空更稳，因为它把真实依赖显式记录了。
