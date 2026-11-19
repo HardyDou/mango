@@ -41,14 +41,6 @@ public class FileAttribute {
     public FileAttribute() {
     }
 
-    public String getSourceId() {
-        return sourceId;
-    }
-
-    public void setSourceId(String sourceId) {
-        this.sourceId = sourceId;
-    }
-
     public FileAttribute(FileType type, String suffix, String name, String url) {
         this.type = type;
         this.suffix = suffix;
@@ -62,6 +54,14 @@ public class FileAttribute {
         this.name = name;
         this.url = url;
         this.officePreviewType = officePreviewType;
+    }
+
+    public String getSourceId() {
+        return sourceId;
+    }
+
+    public void setSourceId(String sourceId) {
+        this.sourceId = sourceId;
     }
 
     public boolean isCompressFile() {

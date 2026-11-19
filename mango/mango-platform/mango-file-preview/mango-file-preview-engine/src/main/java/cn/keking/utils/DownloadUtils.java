@@ -103,15 +103,15 @@ public class DownloadUtils {
                     try (CloseableHttpClient httpClient = HttpRequestUtils.createConfiguredHttpClient()) {
                         HttpRequestUtils.executeHttpRequest(url, httpClient, fileAttribute, responseWrapper -> {
                             String contentType = responseWrapper.getContentType();
-                        if (WebUtils.isMimeCheckRequired(fileSuffix)) {
-                            if (!WebUtils.isValidMimeType(contentType, fileSuffix)) {
-                                LOGGER.error("文件类型错误，期望二进制文件但接收到文本类型，url: {}, Content-Type: {}",
-                                        finalUrlStr, contentType);
-                                hasMimeError[0] = true;
-                                mimeErrorMessage[0] = "期望二进制文件但接收到文本类型，Content-Type: " + contentType;
-                                return;
+                            if (WebUtils.isMimeCheckRequired(fileSuffix)) {
+                                if (!WebUtils.isValidMimeType(contentType, fileSuffix)) {
+                                    LOGGER.error("文件类型错误，期望二进制文件但接收到文本类型，url: {}, Content-Type: {}",
+                                            finalUrlStr, contentType);
+                                    hasMimeError[0] = true;
+                                    mimeErrorMessage[0] = "期望二进制文件但接收到文本类型，Content-Type: " + contentType;
+                                    return;
+                                }
                             }
-                        }
                             FileUtils.copyToFile(responseWrapper.getInputStream(), realFile);
                         });
                     }

@@ -42,8 +42,12 @@ class FilePreviewRealHttpTest {
     @LocalServerPort
     private int port;
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private FilePreviewEngineDownloader downloader;
+
     @BeforeEach
     void setUp() {
+        downloader.afterPropertiesSet();
         cn.keking.config.ConfigConstants.setKeyValue("false");
         cn.keking.config.ConfigConstants.setCacheEnabledValueValue(Boolean.FALSE);
         cn.keking.config.ConfigConstants.setTrustHostValue("default");
@@ -51,7 +55,13 @@ class FilePreviewRealHttpTest {
     }
 
     @AfterEach
-    void tearDown() {
+    void tearDown() throws Exception {
+        // Spring 上下文在同一个 JVM 内会被缓存复用，下载器注册表是进程级静态状态：
+        // 每个用例结束都必须彻底清空，否则同 JVM 里其余预览用例会跑到本类注册的下载器上。
+        downloader.destroy();
+        java.lang.reflect.Field registry = cn.keking.spi.FileDownloaders.class.getDeclaredField("DOWNLOADERS");
+        registry.setAccessible(true);
+        ((java.util.List<?>) registry.get(null)).clear();
         cn.keking.config.ConfigConstants.setTrustHostValue("default");
         cn.keking.config.ConfigConstants.setKeyValue("false");
     }
