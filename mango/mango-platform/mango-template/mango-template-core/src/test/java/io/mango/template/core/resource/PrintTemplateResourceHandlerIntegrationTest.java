@@ -8,6 +8,7 @@ import io.mango.infra.fileproc.render.service.DefaultRenderApi;
 import io.mango.infra.fileproc.render.service.FreemarkerRenderEngine;
 import io.mango.infra.fileproc.render.service.RenderRegistry;
 import io.mango.infra.fileproc.render.service.TextRenderProvider;
+import io.mango.resource.support.PortableResourceIds;
 import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.support.model.ResourceDeclaration;
@@ -99,6 +100,24 @@ class PrintTemplateResourceHandlerIntegrationTest {
         assertThat(stringValue("template_version", "content", "template_id = 3000100000000000001"))
                 .isEqualTo("合同编号：{{contractNo}}");
         assertThat(intValue("template_version", "current_published", "template_id = 3000100000000000001"))
+                .isOne();
+    }
+
+    @Test
+    void upsertDerivesPortableVersionAndCategoryIdsWhenDeclarationOmitsThem() throws Exception {
+        ResourceDeclaration declaration = declaration();
+        declaration.getFields().get("categoryId").setValue(null);
+        declaration.getFields().get("versionId").setValue(null);
+
+        handler.upsert(declaration);
+
+        long templateId = 3000100000000000001L;
+        long expectedCategoryId = PortableResourceIds.stable("print_template_category", 1L, "CONTRACT");
+        long expectedVersionId = PortableResourceIds.stable("print_template_version", templateId, 1);
+        assertThat(count("template_category where id = " + expectedCategoryId)).isOne();
+        assertThat(stringValue("template_version", "content", "id = " + expectedVersionId))
+                .isEqualTo("合同编号：{{contractNo}}");
+        assertThat(intValue("template_version", "current_published", "id = " + expectedVersionId))
                 .isOne();
     }
 

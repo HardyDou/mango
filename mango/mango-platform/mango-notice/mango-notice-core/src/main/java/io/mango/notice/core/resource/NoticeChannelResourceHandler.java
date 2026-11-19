@@ -19,6 +19,7 @@ import io.mango.notice.core.mapper.NoticeChannelConfigMapper;
 import io.mango.notice.core.mapper.NoticeChannelConfigRouteTagMapper;
 import io.mango.notice.core.mapper.NoticeChannelRouteTagMapper;
 import io.mango.notice.core.service.NoticeChannelCapabilityPolicy;
+import io.mango.resource.support.PortableResourceIds;
 import io.mango.resource.support.ResourceHandler;
 import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.support.model.ResourceDeclaration;
@@ -46,6 +47,7 @@ import java.util.function.Supplier;
 @RequiredArgsConstructor
 public class NoticeChannelResourceHandler implements ResourceHandler {
     private static final String TARGET_TABLE = "notice_channel_config";
+    private static final String ROUTE_TAG_TARGET_TABLE = "notice_channel_config_route_tag";
     private static final String DEFAULT_TENANT_ID = "1";
     private static final int DEFAULT_ROUTE_WEIGHT = 100;
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
@@ -321,6 +323,7 @@ public class NoticeChannelResourceHandler implements ResourceHandler {
                 throw new IllegalStateException("MESSAGE_CHANNEL route tag not found: " + tagCode);
             }
             NoticeChannelConfigRouteTagEntity relation = new NoticeChannelConfigRouteTagEntity();
+            relation.setId(PortableResourceIds.stable(ROUTE_TAG_TARGET_TABLE, config.getId(), tag.getId()));
             relation.setChannelConfigId(config.getId());
             relation.setRouteTagId(tag.getId());
             configRouteTagMapper.insert(relation);

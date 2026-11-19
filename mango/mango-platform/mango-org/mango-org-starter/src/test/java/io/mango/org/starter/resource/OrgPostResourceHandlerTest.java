@@ -2,6 +2,7 @@ package io.mango.org.starter.resource;
 
 import io.mango.org.core.entity.PostEntity;
 import io.mango.org.core.mapper.PostMapper;
+import io.mango.resource.support.PortableResourceIds;
 import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.support.model.ResourceDeclaration;
@@ -49,6 +50,32 @@ class OrgPostResourceHandlerTest {
         assertThat(captor.getValue().getId()).isEqualTo(9101L);
         assertThat(captor.getValue().getPostCode()).isEqualTo("FIXED_POST");
         assertThat(result.getTargetId()).isEqualTo(9101L);
+    }
+
+    @Test
+    void upsertDerivesPortablePostIdWhenDeclarationOmitsTargetId() {
+        ResourceDeclaration declaration = new ResourceDeclaration();
+        declaration.setId("2951300000000009302");
+        declaration.setVersion(1);
+        declaration.setResourceType(ResourceTypes.ORG_POST);
+        declaration.setModuleCode("org");
+        declaration.setBizKey("org.post.portable");
+        declaration.setName("可移植岗位");
+        declaration.setTargetModule("org");
+        declaration.setFields(new LinkedHashMap<>());
+        put(declaration, "tenantId", ResourceFieldType.LONG, 1L);
+        put(declaration, "postCode", ResourceFieldType.STRING, "PORTABLE_POST");
+        put(declaration, "postName", ResourceFieldType.STRING, "可移植岗位");
+        when(postMapper.selectOne(any())).thenReturn(null);
+        when(postMapper.insert(any(PostEntity.class))).thenReturn(1);
+
+        ResourceSyncResult result = handler.upsert(declaration);
+
+        long expectedId = PortableResourceIds.stable("org_post", 1L, "PORTABLE_POST");
+        ArgumentCaptor<PostEntity> captor = ArgumentCaptor.forClass(PostEntity.class);
+        verify(postMapper).insert(captor.capture());
+        assertThat(captor.getValue().getId()).isEqualTo(expectedId);
+        assertThat(result.getTargetId()).isEqualTo(expectedId);
     }
 
     private void put(ResourceDeclaration declaration, String name, ResourceFieldType type, Object value) {

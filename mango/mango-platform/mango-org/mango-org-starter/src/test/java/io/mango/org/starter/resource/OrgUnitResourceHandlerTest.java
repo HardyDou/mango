@@ -2,6 +2,7 @@ package io.mango.org.starter.resource;
 
 import io.mango.org.core.entity.SysOrgEntity;
 import io.mango.org.core.mapper.SysOrgMapper;
+import io.mango.resource.support.PortableResourceIds;
 import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.api.enums.ResourceSyncMode;
@@ -67,6 +68,22 @@ class OrgUnitResourceHandlerTest {
         assertThat(captor.getValue().getId()).isEqualTo(9001L);
         assertThat(captor.getValue().getOrgCode()).isEqualTo("FIXED");
         assertThat(result.getTargetId()).isEqualTo(9001L);
+    }
+
+    @Test
+    void upsertDerivesPortableOrgIdWhenDeclarationOmitsTargetId() {
+        ResourceDeclaration declaration = orgUnit(
+                "2951300000000009202", "org.portable", "PORTABLE", "可移植组织", null);
+        when(orgMapper.selectOne(any())).thenReturn(null);
+        when(orgMapper.insert(any(SysOrgEntity.class))).thenReturn(1);
+
+        ResourceSyncResult result = handler.upsert(declaration);
+
+        long expectedId = PortableResourceIds.stable("sys_org", 1L, "PORTABLE");
+        ArgumentCaptor<SysOrgEntity> captor = ArgumentCaptor.forClass(SysOrgEntity.class);
+        verify(orgMapper).insert(captor.capture());
+        assertThat(captor.getValue().getId()).isEqualTo(expectedId);
+        assertThat(result.getTargetId()).isEqualTo(expectedId);
     }
 
     private ResourceDeclaration orgUnit(String id, String bizKey, String orgCode, String orgName, String parentOrgCode) {

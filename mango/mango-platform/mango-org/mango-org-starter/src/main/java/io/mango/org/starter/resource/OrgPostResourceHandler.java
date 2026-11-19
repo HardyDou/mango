@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.mango.common.result.Require;
 import io.mango.org.core.entity.PostEntity;
 import io.mango.org.core.mapper.PostMapper;
+import io.mango.resource.support.PortableResourceIds;
 import io.mango.resource.support.ResourceHandler;
 import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.api.enums.ResourceCode;
@@ -58,9 +59,14 @@ public class OrgPostResourceHandler implements ResourceHandler {
         LocalDateTime now = LocalDateTime.now();
         if (creating) {
             post = new PostEntity();
-            post.setId(fields.longField(resource, "targetId"));
-            post.setTenantId(fields.requiredLong(resource, "tenantId"));
-            post.setPostCode(fields.requiredString(resource, "postCode"));
+            long tenantId = fields.requiredLong(resource, "tenantId");
+            String postCode = fields.requiredString(resource, "postCode");
+            Long declaredId = fields.longField(resource, "targetId");
+            post.setId(declaredId != null
+                    ? declaredId
+                    : PortableResourceIds.stable(TARGET_TABLE, tenantId, postCode));
+            post.setTenantId(tenantId);
+            post.setPostCode(postCode);
             post.setCreateTime(now);
         }
         applyFields(resource, post, now);
