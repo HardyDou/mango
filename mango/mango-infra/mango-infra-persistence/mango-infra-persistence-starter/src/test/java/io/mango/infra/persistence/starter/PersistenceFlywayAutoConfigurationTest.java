@@ -2,6 +2,7 @@ package io.mango.infra.persistence.starter;
 
 import com.sun.net.httpserver.HttpServer;
 import io.mango.infra.bootstrap.api.BootstrapPhase;
+import io.mango.infra.persistence.api.module.PersistenceModuleEnablement;
 import io.mango.infra.persistence.starter.datasource.PersistenceDataSourceAutoConfiguration;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.Location;
@@ -112,6 +113,22 @@ class PersistenceFlywayAutoConfigurationTest {
                     migrate(ctx);
                     JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
                     assertThat(tableExists(jdbcTemplate, "persistence_flyway_user")).isFalse();
+                });
+    }
+
+    @Test
+    void disabledModule_shouldBeReportedThroughModuleEnablement() {
+        contextRunner
+                .withPropertyValues(
+                        "mango.persistence.flyway.enabled=true",
+                        "mango.persistence.flyway.modules.integration.enabled=false",
+                        "mango.persistence.flyway.modules.integration.skip-reason=not used by this app")
+                .withUserConfiguration(H2DataSourceConfig.class)
+                .run(ctx -> {
+                    PersistenceModuleEnablement enablement = ctx.getBean(PersistenceModuleEnablement.class);
+                    assertThat(enablement.isEnabled("integration")).isFalse();
+                    assertThat(enablement.skipReason("integration")).contains("not used by this app");
+                    assertThat(enablement.isEnabled("system")).isTrue();
                 });
     }
 

@@ -2,6 +2,7 @@ package io.mango.resource.core.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.infra.kv.api.ILeaseLocker;
+import io.mango.infra.persistence.api.module.PersistenceModuleEnablement;
 import io.mango.resource.support.ResourceProvider;
 import io.mango.resource.core.mapper.ResourceChangeLogMapper;
 import io.mango.resource.core.mapper.ResourceRegistryMapper;
@@ -32,9 +33,11 @@ public class ResourceRegistryCoreConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public ResourceDeclarationLoader resourceDeclarationLoader(ObjectMapper objectMapper,
-                                                               ResourceRegistryProperties properties) {
-        return new ResourceDeclarationLoader(objectMapper, properties);
+    public ResourceDeclarationLoader resourceDeclarationLoader(
+            ObjectMapper objectMapper,
+            ResourceRegistryProperties properties,
+            ObjectProvider<PersistenceModuleEnablement> moduleEnablement) {
+        return new ResourceDeclarationLoader(objectMapper, properties, moduleEnablement.getIfAvailable());
     }
 
     @Bean

@@ -4,6 +4,7 @@ import io.mango.infra.bootstrap.api.BootstrapPhase;
 import io.mango.infra.persistence.starter.datasource.PersistenceDataSourceAutoConfiguration;
 import io.mango.infra.persistence.starter.datasource.PersistenceDataSourceRegistry;
 import io.mango.infra.persistence.api.datasource.PersistenceModuleDataSourceResolver;
+import io.mango.infra.persistence.api.module.PersistenceModuleEnablement;
 import io.mango.infra.persistence.starter.diagnostic.PersistenceModuleDiagnosticContributor;
 import io.mango.infra.persistence.starter.diagnostic.PersistenceModuleMigrationStatusRegistry;
 import lombok.extern.slf4j.Slf4j;
@@ -141,6 +142,12 @@ public class PersistenceFlywayAutoConfiguration {
     @ConditionalOnMissingBean
     public PersistenceModuleMigrationStatusRegistry persistenceModuleMigrationStatusRegistry() {
         return new PersistenceModuleMigrationStatusRegistry();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public PersistenceModuleEnablement persistenceModuleEnablement(PersistenceFlywayProperties properties) {
+        return new FlywayModuleEnablement(properties);
     }
 
     @Bean

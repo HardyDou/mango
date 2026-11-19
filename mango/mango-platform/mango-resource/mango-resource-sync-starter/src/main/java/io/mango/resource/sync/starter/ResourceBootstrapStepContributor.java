@@ -7,6 +7,7 @@ import io.mango.infra.bootstrap.api.BootstrapPhase;
 import io.mango.infra.bootstrap.api.BootstrapStep;
 import io.mango.infra.bootstrap.api.BootstrapStepContributor;
 import io.mango.infra.bootstrap.api.BootstrapStepResult;
+import io.mango.infra.persistence.api.module.PersistenceModuleEnablement;
 import io.mango.resource.api.ResourceDeclarationApi;
 import io.mango.resource.api.command.RegisterResourceDeclarationsCommand;
 import io.mango.resource.api.enums.ResourceApplyMode;
@@ -35,6 +36,7 @@ public final class ResourceBootstrapStepContributor implements BootstrapStepCont
     private final ResourceManifestSerializer manifestSerializer;
     private final ResourceDeclarationCanonicalizer canonicalizer;
     private final ResourceManifestArtifactLoader artifactLoader;
+    private final PersistenceModuleEnablement moduleEnablement;
     private final String applicationName;
 
     public ResourceBootstrapStepContributor(ResourceRegistryProperties properties,
@@ -43,7 +45,18 @@ public final class ResourceBootstrapStepContributor implements BootstrapStepCont
                                             ResourceManifestSerializer manifestSerializer,
                                             ResourceDeclarationCanonicalizer canonicalizer,
                                             String applicationName) {
-        this(properties, collector, declarationApi, manifestSerializer, canonicalizer, null, applicationName);
+        this(properties, collector, declarationApi, manifestSerializer, canonicalizer, null, null, applicationName);
+    }
+
+    public ResourceBootstrapStepContributor(ResourceRegistryProperties properties,
+                                            ResourceDeclarationCollector collector,
+                                            ResourceDeclarationApi declarationApi,
+                                            ResourceManifestSerializer manifestSerializer,
+                                            ResourceDeclarationCanonicalizer canonicalizer,
+                                            ResourceManifestArtifactLoader artifactLoader,
+                                            String applicationName) {
+        this(properties, collector, declarationApi, manifestSerializer, canonicalizer, artifactLoader, null,
+                applicationName);
     }
 
     @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
@@ -54,6 +67,7 @@ public final class ResourceBootstrapStepContributor implements BootstrapStepCont
                                             ResourceManifestSerializer manifestSerializer,
                                             ResourceDeclarationCanonicalizer canonicalizer,
                                             ResourceManifestArtifactLoader artifactLoader,
+                                            PersistenceModuleEnablement moduleEnablement,
                                             String applicationName) {
         this.properties = properties;
         this.collector = collector;
@@ -61,6 +75,7 @@ public final class ResourceBootstrapStepContributor implements BootstrapStepCont
         this.manifestSerializer = manifestSerializer;
         this.canonicalizer = canonicalizer;
         this.artifactLoader = artifactLoader;
+        this.moduleEnablement = moduleEnablement;
         this.applicationName = applicationName;
     }
 
@@ -85,7 +100,7 @@ public final class ResourceBootstrapStepContributor implements BootstrapStepCont
         if (artifactLoader != null) {
             var packaged = artifactLoader.load();
             if (packaged.isPresent()) {
-                List<ResourceModuleManifestCommand> modules = packaged.get();
+                List<ResourceModuleManifestCommand> modules = enabledModules(packaged.get());
                 List<String> moduleCodes = modules.stream()
                         .map(ResourceModuleManifestCommand::getModuleCode).sorted().toList();
                 List<String> semanticInventory = modules.stream()
@@ -113,6 +128,22 @@ public final class ResourceBootstrapStepContributor implements BootstrapStepCont
         LOG.debug("Mango resource bootstrap manifest computed: modules={}, declarations={}",
                 prepared.moduleCodes(), prepared.declarationCount());
         return prepared;
+    }
+
+    private List<ResourceModuleManifestCommand> enabledModules(List<ResourceModuleManifestCommand> modules) {
+        if (moduleEnablement == null) {
+            return modules;
+        }
+        List<ResourceModuleManifestCommand> enabled = modules.stream()
+                .filter(module -> moduleEnablement.isEnabled(module.getModuleCode()))
+                .toList();
+        modules.stream()
+                .filter(module -> !moduleEnablement.isEnabled(module.getModuleCode()))
+                .forEach(module -> LOG.warn("Skipping packaged resource manifest of disabled module: module={}, "
+                                + "declarations={}, reason={}", module.getModuleCode(), module.getDeclarationCount(),
+                        moduleEnablement.skipReason(module.getModuleCode())
+                                .orElse("(skip-reason not configured)")));
+        return enabled;
     }
 
     private String appCode() {

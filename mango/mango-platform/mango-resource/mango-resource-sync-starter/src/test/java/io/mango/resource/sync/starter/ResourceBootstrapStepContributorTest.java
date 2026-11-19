@@ -8,6 +8,7 @@ import io.mango.common.result.R;
 import io.mango.infra.bootstrap.api.BootstrapExecutionContext;
 import io.mango.infra.bootstrap.api.BootstrapPhase;
 import io.mango.infra.bootstrap.api.BootstrapStep;
+import io.mango.infra.persistence.api.module.PersistenceModuleEnablement;
 import io.mango.resource.api.ResourceDeclarationApi;
 import io.mango.resource.api.command.RegisterResourceDeclarationsCommand;
 import io.mango.resource.api.enums.ResourceApplyMode;
@@ -26,6 +27,7 @@ import org.springframework.core.io.ResourceLoader;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -174,6 +176,50 @@ class ResourceBootstrapStepContributorTest {
             assertThat(command.getModuleManifests()).singleElement().satisfies(module ->
                     assertThat(module.getDeclarations()).contains("left opaque until receipt check"));
         });
+    }
+
+    @Test
+    void skipsPackagedManifestOfDisabledModule() {
+        String manifest = """
+                {"schemaVersion":1,"modules":[
+                  {"moduleCode":"integration","moduleHash":"%s","dependencies":[],
+                   "declarationCount":1,"declarations":[{"id":"9101"}]},
+                  {"moduleCode":"system","moduleHash":"%s","dependencies":[],
+                   "declarationCount":1,"declarations":[{"id":"9102"}]}
+                ]}
+                """.formatted("c".repeat(64), "d".repeat(64));
+        ResourceManifestArtifactLoader loader = new ResourceManifestArtifactLoader(
+                objectMapper, resourceLoader(manifest));
+        ResourceRegistryProperties properties = new ResourceRegistryProperties();
+        properties.getRemote().setAppCode("app");
+        properties.getRemote().setServiceCode("service");
+        List<RegisterResourceDeclarationsCommand> commands = new ArrayList<>();
+        ResourceBootstrapStepContributor contributor = new ResourceBootstrapStepContributor(
+                properties, collector(List::of), command -> {
+            commands.add(command);
+            return R.ok(true);
+        }, new ResourceManifestSerializer(), new ResourceDeclarationCanonicalizer(objectMapper), loader,
+                new DisabledModules("integration", "集成模块未启用"), "app");
+
+        List<BootstrapStep> steps = contributor.contributeSteps();
+        steps.get(0).execute(context(BootstrapPhase.EXPAND));
+
+        assertThat(commands).singleElement().satisfies(command ->
+                assertThat(command.getModuleManifests()).singleElement().satisfies(module ->
+                        assertThat(module.getModuleCode()).isEqualTo("system")));
+    }
+
+    private record DisabledModules(String disabledModule, String reason) implements PersistenceModuleEnablement {
+
+        @Override
+        public boolean isEnabled(String moduleCode) {
+            return !disabledModule.equals(moduleCode);
+        }
+
+        @Override
+        public Optional<String> skipReason(String moduleCode) {
+            return disabledModule.equals(moduleCode) ? Optional.of(reason) : Optional.empty();
+        }
     }
 
     private String fingerprintMaterial(ResourceDeclaration declaration) {

@@ -282,6 +282,8 @@ persistence-datasource=job
 
 如果显式配置了 `modules`，starter 会把配置视为当前应用的 Flyway 模块清单，并继续扫描 classpath。classpath 中存在 `db/migration/<module>/V*.sql` 但清单未声明的模块会导致启动失败。有意跳过某个已进入 classpath 的模块时，必须声明该模块 `enabled=false` 并填写 `skip-reason`，避免 starter、Controller 或 Resource 已装配但表结构未初始化的假集成。
 
+`enabled=false` 是模块级开关，不只关闭 migration：该模块的 Resource 声明（`META-INF/mango/resources/*.json` 中的 `mango.resource.moduleCode`）在加载阶段整体跳过，`mango-resource-sync-starter` 的打包模块清单同样过滤，启动日志输出 `Skipping portable resource declarations of disabled module: module=..., declarations=..., reason=..., source=...`。未登记的模块视为启用。`mango:baseline-generate` 使用构建期数据库与 `backend/pom.xml` 配置，不跟随运行时开关，构建与运行两侧差异按「声明存在但表缺失」视为配置错误处理。
+
 显式配置示例：
 
 ```yaml

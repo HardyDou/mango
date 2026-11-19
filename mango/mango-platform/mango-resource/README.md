@@ -166,6 +166,8 @@ Resource 声明的 `execution-phase` 与 `sync-mode` 正交：
 | `remote.retry-interval` | `10s` | 瞬态失败的首次重试间隔。 |
 | `remote.retry-max-interval` | `1m` | 指数退避和抖动后的最大重试间隔。 |
 
+声明文件的 `mango.resource.moduleCode` 同时是模块归属：当该模块被 `mango.persistence.flyway.modules.<module>.enabled=false` 显式关闭时，声明文件整体跳过（含 `moduleDependencies` 与打包产物中的模块清单），避免访问未初始化的模块表；启动日志输出 `Skipping portable resource declarations of disabled module: module=..., declarations=..., reason=..., source=...`，`reason` 取自闭模块的 `skip-reason`。未在 `modules` 中配置的模块视为启用，行为不变。
+
 本地注册中心应用必须提供 `mango-infra-kv` 的 `ILeaseLocker`。Mango 单体和平台服务默认通过 `mango-infra-kv-starter` 提供 JDBC、Redis 或 Memory lease；自定义 KV 没有原子 lease 能力时启动失败。
 
 微服务允许 Bootstrap 执行器、Resource 注册中心和被依赖资源所属服务乱序启动。远程失败、父资源尚未注册或注册中心锁竞争时，`bootstrap apply` 返回未完成并由发布编排重试；注册中心不得在未取得锁、实际未处理声明时返回成功。Runtime 只接管 `RUNTIME_EVENTUAL` 声明，后台 worker 在持有当前 generation write authority 时周期性对账，失败不阻断流量并在下一周期重试。
