@@ -1,6 +1,7 @@
 package io.mango.template.core.resource;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import io.mango.resource.support.PortableResourceIds;
 import io.mango.resource.support.ResourceHandler;
 import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.support.model.ResourceDeclaration;
@@ -32,6 +33,8 @@ import java.time.LocalDateTime;
 public class PrintTemplateResourceHandler implements ResourceHandler {
 
     private static final String TARGET_TABLE = "template";
+    private static final String CATEGORY_TARGET_TABLE = "print_template_category";
+    private static final String VERSION_TARGET_TABLE = "print_template_version";
     private static final long DEFAULT_TENANT_ID = 1L;
     private static final int DEFAULT_STATUS = 1;
     private static final int DISABLED = 0;
@@ -163,7 +166,9 @@ public class PrintTemplateResourceHandler implements ResourceHandler {
                 .last("limit 1"));
         if (category == null) {
             category = new TemplateCategoryEntity();
-            category.setId(payload.categoryId());
+            category.setId(payload.categoryId() != null
+                    ? payload.categoryId()
+                    : PortableResourceIds.stable(CATEGORY_TARGET_TABLE, payload.tenantId(), payload.categoryCode()));
             category.setTenantId(String.valueOf(payload.tenantId()));
             category.setCategoryCode(payload.categoryCode());
             category.setCategoryName(defaultText(payload.categoryName(), payload.categoryCode()));
@@ -203,7 +208,9 @@ public class PrintTemplateResourceHandler implements ResourceHandler {
         }
         if (version == null) {
             version = new TemplateVersionEntity();
-            version.setId(payload.versionId());
+            version.setId(payload.versionId() != null
+                    ? payload.versionId()
+                    : PortableResourceIds.stable(VERSION_TARGET_TABLE, template.getId(), payload.versionNo()));
             version.setTenantId(String.valueOf(payload.tenantId()));
             version.setTemplateId(template.getId());
             version.setVersionNo(payload.versionNo());

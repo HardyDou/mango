@@ -2,6 +2,7 @@ package io.mango.system.core.resource;
 
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
+import io.mango.resource.support.PortableResourceIds;
 import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.support.model.ResourceDeclaration;
@@ -72,6 +73,18 @@ class SystemDictResourceHandlerIntegrationTest {
                 .isEqualTo("1");
         assertThat(stringValue("sys_dict_data", "dict_label", "id = 100")).isEqualTo("系统角色");
         assertThat(count("sys_dict_data")).isEqualTo(2);
+    }
+
+    @Test
+    void upsertDerivesPortableItemIdWhenDeclarationOmitsIt() throws Exception {
+        handler.upsert(dictDeclaration("授权角色类型", List.of(
+                Map.of("label", "系统角色", "value", "1", "sort", 1, "status", 1)
+        )));
+
+        long expectedId = PortableResourceIds.stable(
+                "system_dict_item", "authorization_role_type", "1");
+        assertThat(stringValue("sys_dict_data", "dict_label", "id = " + expectedId))
+                .isEqualTo("系统角色");
     }
 
     @Test

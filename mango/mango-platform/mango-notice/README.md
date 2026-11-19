@@ -626,7 +626,7 @@ mango-notice-starter/src/main/resources/META-INF/mango/resources/notice-common-d
 
 ### 8.1 MESSAGE_CHANNEL
 
-`MESSAGE_CHANNEL` 落库到 `notice_channel_config`，按 `tenantId + configCode` 合并更新。同一 provider 可以声明多个账号。
+`MESSAGE_CHANNEL` 落库到 `notice_channel_config`，按 `tenantId + configCode` 合并更新。同一 provider 可以声明多个账号。声明 `routeTagCodes` 时写入 `notice_channel_config_route_tag` 关联行，关联主键由 `(channelConfigId, routeTagId)` 经 `PortableResourceIds.stable(...)` 派生，保证冷基线重放一致。
 
 | 字段 | 类型 | 必填 | 含义 |
 |------|------|------|------|

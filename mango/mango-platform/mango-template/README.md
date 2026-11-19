@@ -259,6 +259,8 @@ mango-template-starter/src/main/resources/META-INF/mango/resources/template-comm
 | `template` | `tenantId + templateCode` |
 | `template_version` | 优先 `versionId`，否则 `templateId + versionNo` |
 
+未声明 `categoryId` / `versionId` 时，handler 使用 `PortableResourceIds.stable(...)` 从 `(tenantId, categoryCode)` 与 `(templateId, versionNo)` 派生主键，使冷基线重放写入相同主键；显式声明的 ID 优先。
+
 删除规则：
 
 | 操作 | 行为 |
