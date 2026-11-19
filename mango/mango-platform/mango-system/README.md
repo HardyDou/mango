@@ -52,7 +52,7 @@
 
 | API | 用法 |
 |-----|------|
-| `DictApi` | 字典类型、字典数据、字典选项读取和维护。字典类型支持 `FLAT`（默认）和 `TREE`；业务表单继续调用 `getOptions(typeCode)`，树形消费者显式调用 `getTreeOptions(typeCode)`。 |
+| `DictApi` | 字典类型、字典数据、字典选项读取和维护。字典类型支持 `FLAT`（默认）和 `TREE`；业务表单继续调用 `getOptions(typeCode)`，一次需要多个平铺字典时用 `getOptionsBatch(DictOptionsBatchQuery)`，树形消费者显式调用 `getTreeOptions(typeCode)`。 |
 | `SysConfigApi` | 系统配置列表、详情、创建、修改、删除、按配置键取值。业务开关通常调用 `getValue(configKey)`，布尔和整数配置可调用 `getBooleanValue(configKey, defaultValue)`、`getIntegerValue(configKey, defaultValue)`。 |
 | `SysTenantApi` | 机构列表、详情、新增、修改、删除和状态调整。 |
 | `SysAreaApi` | 行政区划树、子级、详情、adcode、启用区划读取。 |
@@ -107,7 +107,7 @@ import '@mango/system/style.css';
 
 1. 业务模块需要读取字典或配置时，在后端引入 `mango-system-api`。
 2. 宿主应用需要提供系统管理能力时，引入 `mango-system-starter`，启动后执行 `system` migration。
-3. 字典类字段先在 `sys_dict_type` 登记类型，再在 `sys_dict_data` 登记选项；未声明 `shape` 的旧字典按 `FLAT` 处理。字典项可用 `groups` 声明所属分组（可多个），不配置时保持全量语义。平铺业务通过 `DictApi.getOptions(typeCode)` 或 `GET /system/dict/data/options` 读取，树形消费者显式使用 `DictApi.getTreeOptions(typeCode)` 或 `GET /system/dict/data/tree`。
+3. 字典类字段先在 `sys_dict_type` 登记类型，再在 `sys_dict_data` 登记选项；未声明 `shape` 的旧字典按 `FLAT` 处理。字典项可用 `groups` 声明所属分组（可多个），不配置时保持全量语义。平铺业务通过 `DictApi.getOptions(typeCode)` 或 `GET /system/dict/data/options` 读取；页面同时渲染多个平铺字典时改用 `DictApi.getOptionsBatch(DictOptionsBatchQuery)` 或 `GET /system/dict/data/options/batch?typeCodes=a,b`，一次查询取回全部编码（最多 24 个），返回 `List<DictOptionGroupVO>`（每组带 `typeCode` 与 `options`），不存在的字典返回空选项而不是报错。树形消费者显式使用 `DictApi.getTreeOptions(typeCode)` 或 `GET /system/dict/data/tree`。
 4. 运行时开关、阈值、文案等放入 `sys_config`，业务通过 `SysConfigApi.getValue(configKey)` 读取；需要后台控制面板展示时补充 `domainCode`、`valueType`、`optionSource`、`dictType`、`options`、`editable` 等元数据。
 5. 管理后台接入 `@mango/system` 页面或 API 封装，并在菜单资源中绑定对应页面和权限码。
 6. 新建机构时必须选择 `packageId`，系统会触发机构初始化扩展点，并把机构绑定到套餐。
@@ -284,6 +284,7 @@ mango-system-starter/src/main/resources/META-INF/mango/resources/system-common-m
 | 修改字典数据 | `PUT /system/dict/data` | `system:dict:data:edit` |
 | 删除字典数据 | `DELETE /system/dict/data` | `system:dict:data:delete` |
 | 字典选项（保持平铺） | `GET /system/dict/data/options` | 登录可访问 |
+| 批量字典选项（保持平铺） | `GET /system/dict/data/options/batch` | 登录可访问 |
 | 树形字典选项 | `GET /system/dict/data/tree` | 登录可访问 |
 | 系统配置列表 | `GET /system/config/list` | `system:config:list` |
 | 系统配置详情 | `GET /system/config/detail` | `system:config:query` |

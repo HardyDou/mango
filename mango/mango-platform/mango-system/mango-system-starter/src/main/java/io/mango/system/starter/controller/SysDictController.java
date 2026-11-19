@@ -8,11 +8,14 @@ import io.mango.system.api.DictApi;
 import io.mango.system.api.command.SaveDictDataCommand;
 import io.mango.system.api.command.SaveDictTypeCommand;
 import io.mango.system.api.vo.DictDataVO;
+import io.mango.system.api.query.DictOptionsBatchQuery;
+import io.mango.system.api.vo.DictOptionGroupVO;
 import io.mango.system.api.vo.DictOptionVO;
 import io.mango.system.api.vo.DictTreeNodeVO;
 import io.mango.system.api.vo.DictTypeVO;
 import io.mango.system.core.service.IDictService;
 import io.swagger.v3.oas.annotations.Operation;
+import org.springdoc.core.annotations.ParameterObject;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -129,6 +132,15 @@ public class SysDictController implements DictApi {
     @Operation(summary = "获取字典选项", description = "获取字典选项并返回处理结果")
     public R<List<DictOptionVO>> getOptions(@Parameter(description = "字典类型编码", required = true) @RequestParam("typeCode") String typeCode) {
         return R.ok(dictService.getOptions(typeCode));
+    }
+
+    @Override
+    @GetMapping("/data/options/batch")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "批量获取字典选项")
+    @Operation(summary = "批量获取字典选项",
+            description = "一次读取多个平铺字典，typeCodes 用英文逗号分隔；缺失或只有空白的编码被忽略，不存在的字典返回空数组")
+    public R<List<DictOptionGroupVO>> getOptionsBatch(@ParameterObject DictOptionsBatchQuery query) {
+        return R.ok(dictService.getOptionsBatch(query.getTypeCodes()));
     }
 
     @Override

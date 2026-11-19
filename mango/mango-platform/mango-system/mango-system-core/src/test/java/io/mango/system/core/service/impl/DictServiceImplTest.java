@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.mango.common.exception.BizException;
 import io.mango.system.api.command.SaveDictDataCommand;
 import io.mango.system.api.command.SaveDictTypeCommand;
+import io.mango.system.api.vo.DictOptionGroupVO;
 import io.mango.system.api.vo.DictOptionVO;
 import io.mango.system.api.vo.DictTreeNodeVO;
 import io.mango.system.core.entity.DictDataEntity;
@@ -17,12 +18,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -205,6 +209,51 @@ class DictServiceImplTest {
                 entity.getDictGroups() == null && entity.getParentValue() == null));
     }
 
+    @Test
+    void getOptionsBatchReadsAllTypesInOneQuery() {
+        when(dictDataMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(List.of(
+                data("type1", 1L, "Order", "ORDER", 1),
+                data("type2", 2L, "After", "AFTER", 1),
+                data("type1", 3L, "Ship", "SHIP", 2)));
+
+        List<DictOptionGroupVO> options = dictService.getOptionsBatch(List.of("type1", "type2", "type3"));
+
+        verify(dictDataMapper, times(1)).selectList(any(LambdaQueryWrapper.class));
+        assertThat(options).extracting(DictOptionGroupVO::getTypeCode).containsExactly("type1", "type2", "type3");
+        assertThat(options.get(0).getOptions()).extracting(DictOptionVO::getValue).containsExactly("ORDER", "SHIP");
+        assertThat(options.get(1).getOptions()).extracting(DictOptionVO::getValue).containsExactly("AFTER");
+        assertThat(options.get(2).getOptions()).isEmpty();
+    }
+
+    @Test
+    void getOptionsBatchTrimsAndDeduplicatesCodes() {
+        when(dictDataMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(List.of());
+
+        List<DictOptionGroupVO> options = dictService.getOptionsBatch(
+                List.of(" type1 ", "type1", "  ", "type2"));
+
+        assertThat(options).extracting(DictOptionGroupVO::getTypeCode).containsExactly("type1", "type2");
+    }
+
+    @Test
+    void getOptionsBatchRejectsBlankEmptyAndOversizedInput() {
+        assertThatThrownBy(() -> dictService.getOptionsBatch(List.of("  ", "")))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("字典类型编码不能为空");
+
+        Collection<String> tooMany = new ArrayList<>();
+        for (int index = 0; index < 25; index++) {
+            tooMany.add("type" + index);
+        }
+        assertThatThrownBy(() -> dictService.getOptionsBatch(tooMany))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("一次最多批量读取 24 个字典类型");
+
+        assertThatThrownBy(() -> dictService.getOptionsBatch(List.of("x".repeat(51))))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("字典类型编码长度不能超过 50 个字符");
+    }
+
     private SaveDictTypeCommand typeCommand(Long id) {
         SaveDictTypeCommand command = new SaveDictTypeCommand();
         command.setId(id);
@@ -227,6 +276,17 @@ class DictServiceImplTest {
         entity.setDictType(dictType);
         entity.setDictName(dictName);
         entity.setDomainCode("COMMON");
+        entity.setStatus(1);
+        return entity;
+    }
+
+    private DictDataEntity data(String dictType, Long id, String label, String value, int sort) {
+        DictDataEntity entity = new DictDataEntity();
+        entity.setId(id);
+        entity.setDictType(dictType);
+        entity.setDictLabel(label);
+        entity.setDictValue(value);
+        entity.setSort(sort);
         entity.setStatus(1);
         return entity;
     }
