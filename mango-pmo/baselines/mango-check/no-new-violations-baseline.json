@@ -53429,7 +53429,7 @@
       "rule": "CyclomaticComplexityCheck",
       "reference": "auto-check-mapping.md",
       "source": "checkstyle",
-      "fingerprint": "checkstyle|cyclomaticcomplexitycheck|mango-platform/mango-file-preview/mango-file-preview-engine/src/main/java/cn/keking/web/controller/OnlinePreviewController.java|number:15,number:24",
+      "fingerprint": "checkstyle|cyclomaticcomplexitycheck|mango-platform/mango-file-preview/mango-file-preview-engine/src/main/java/cn/keking/web/controller/OnlinePreviewController.java|number:20,number:24",
       "inChangedFiles": false,
       "baseline": false
     },
@@ -53936,7 +53936,7 @@
       "rule": "CyclomaticComplexityCheck",
       "reference": "auto-check-mapping.md",
       "source": "checkstyle",
-      "fingerprint": "checkstyle|cyclomaticcomplexitycheck|mango-platform/mango-file-preview/mango-file-preview-engine/src/main/java/cn/keking/web/controller/FileController.java|number:15,number:30",
+      "fingerprint": "checkstyle|cyclomaticcomplexitycheck|mango-platform/mango-file-preview/mango-file-preview-engine/src/main/java/cn/keking/web/controller/FileController.java|number:20,number:30",
       "inChangedFiles": false,
       "baseline": false
     },
@@ -54014,7 +54014,7 @@
       "rule": "CyclomaticComplexityCheck",
       "reference": "auto-check-mapping.md",
       "source": "checkstyle",
-      "fingerprint": "checkstyle|cyclomaticcomplexitycheck|mango-platform/mango-file-preview/mango-file-preview-engine/src/main/java/cn/keking/web/controller/FileController.java|number:15,number:40",
+      "fingerprint": "checkstyle|cyclomaticcomplexitycheck|mango-platform/mango-file-preview/mango-file-preview-engine/src/main/java/cn/keking/web/controller/FileController.java|number:20,number:40",
       "inChangedFiles": false,
       "baseline": false
     },
@@ -57043,7 +57043,7 @@
       "rule": "CyclomaticComplexityCheck",
       "reference": "auto-check-mapping.md",
       "source": "checkstyle",
-      "fingerprint": "checkstyle|cyclomaticcomplexitycheck|mango-platform/mango-file-preview/mango-file-preview-engine/src/main/java/cn/keking/utils/SimpleEncodingDetects.java|number:15,number:30",
+      "fingerprint": "checkstyle|cyclomaticcomplexitycheck|mango-platform/mango-file-preview/mango-file-preview-engine/src/main/java/cn/keking/utils/SimpleEncodingDetects.java|number:20,number:30",
       "inChangedFiles": false,
       "baseline": false
     },
@@ -57602,7 +57602,7 @@
       "rule": "CyclomaticComplexityCheck",
       "reference": "auto-check-mapping.md",
       "source": "checkstyle",
-      "fingerprint": "checkstyle|cyclomaticcomplexitycheck|mango-platform/mango-file-preview/mango-file-preview-engine/src/main/java/cn/keking/utils/SimpleEncodingDetects.java|number:15,number:29",
+      "fingerprint": "checkstyle|cyclomaticcomplexitycheck|mango-platform/mango-file-preview/mango-file-preview-engine/src/main/java/cn/keking/utils/SimpleEncodingDetects.java|number:20,number:29",
       "inChangedFiles": false,
       "baseline": false
     },
@@ -58278,7 +58278,7 @@
       "rule": "CyclomaticComplexityCheck",
       "reference": "auto-check-mapping.md",
       "source": "checkstyle",
-      "fingerprint": "checkstyle|cyclomaticcomplexitycheck|mango-platform/mango-file-preview/mango-file-preview-engine/src/main/java/cn/keking/utils/SimpleEncodingDetects.java|number:15,number:23",
+      "fingerprint": "checkstyle|cyclomaticcomplexitycheck|mango-platform/mango-file-preview/mango-file-preview-engine/src/main/java/cn/keking/utils/SimpleEncodingDetects.java|number:20,number:23",
       "inChangedFiles": false,
       "baseline": false
     },
@@ -59110,7 +59110,7 @@
       "rule": "CyclomaticComplexityCheck",
       "reference": "auto-check-mapping.md",
       "source": "checkstyle",
-      "fingerprint": "checkstyle|cyclomaticcomplexitycheck|mango-platform/mango-file-preview/mango-file-preview-engine/src/main/java/cn/keking/utils/SimpleEncodingDetects.java|number:15,number:31",
+      "fingerprint": "checkstyle|cyclomaticcomplexitycheck|mango-platform/mango-file-preview/mango-file-preview-engine/src/main/java/cn/keking/utils/SimpleEncodingDetects.java|number:20,number:31",
       "inChangedFiles": false,
       "baseline": false
     },
@@ -190709,7 +190709,7 @@
       "rule": "CyclomaticComplexityCheck",
       "reference": "auto-check-mapping.md",
       "source": "checkstyle",
-      "fingerprint": "checkstyle|cyclomaticcomplexitycheck|mango-platform/mango-file-preview/mango-file-preview-engine/src/main/java/cn/keking/model/FileType.java|number:15,number:21",
+      "fingerprint": "checkstyle|cyclomaticcomplexitycheck|mango-platform/mango-file-preview/mango-file-preview-engine/src/main/java/cn/keking/model/FileType.java|number:20,number:21",
       "inChangedFiles": false,
       "baseline": false
     },
@@ -193400,7 +193400,7 @@
       "rule": "CyclomaticComplexityCheck",
       "reference": "auto-check-mapping.md",
       "source": "checkstyle",
-      "fingerprint": "checkstyle|cyclomaticcomplexitycheck|mango-platform/mango-file-preview/mango-file-preview-engine/src/main/java/cn/keking/service/FileHandlerService.java|number:15,number:23",
+      "fingerprint": "checkstyle|cyclomaticcomplexitycheck|mango-platform/mango-file-preview/mango-file-preview-engine/src/main/java/cn/keking/service/FileHandlerService.java|number:20,number:23",
       "inChangedFiles": false,
       "baseline": false
     },
