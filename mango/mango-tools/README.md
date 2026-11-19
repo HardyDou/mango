@@ -74,12 +74,32 @@ mvn -f mango/pom.xml mango:gen-permission
 | `mango.check.baselineFile` | `target/baseline.json` | 存量问题基线报告。 |
 | `mango.check.codeLevelExcludedModules` | `mango-platform/mango-file-preview` | 仅从 PMD、Checkstyle、SpotBugs 等代码级静态分析门禁中排除指定模块；Mango 自有规则仍会执行。 |
 | `mango.check.staticFailurePolicy` | `block` 或 `report` | 静态分析委托失败时阻断或只报告。 |
-| `mango.check.reportOnlyRules` | `CyclomaticComplexity,FileLength` | 逗号分隔的规则名；这些规则的发现只报告、不阻断。 |
-| `mango.check.checkstyle.cyclomaticComplexityMax` | `25` | 覆盖选中 Checkstyle 规则文件中的方法级复杂度阈值。 |
-| `mango.check.checkstyle.fileLengthMax` | `3000` | 覆盖选中 Checkstyle 规则文件中的文件长度阈值。 |
+| `mango.check.reportOnlyRules` | 空 | 逗号分隔的规则名；这些规则只报告、不阻断。为空表示不启用覆盖，全部规则参与阻断。 |
+| `mango.check.checkstyle.cyclomaticComplexityMax` | 空 | 覆盖 Checkstyle 方法级复杂度阈值；未传时沿用规则文件。 |
+| `mango.check.checkstyle.fileLengthMax` | 空 | 覆盖 Checkstyle 文件长度阈值；未传时沿用规则文件。 |
 | `mango.check.resourceStarterDependencyExceptions` | `artifactId=reason` | Resource Registry runtime 依赖例外。必须人工明确确认并写明理由，多个例外用英文逗号分隔。 |
 
-`reportOnlyRules` 按规则名匹配，大小写不敏感；命中问题写入 JSON 的 `reportOnlyIssues` 和 `reportOnlyIssueCount`，不进入 `newIssues`/`baselineIssues`，不参与 gate 阻断。`mango.check.checkstyle.*Max` 会生成 `target/mango-check/checkstyle-resolved.xml`，不修改项目规则文件；未传时沿用选中规则文件的阈值。
+`reportOnlyRules` 按规则名匹配，大小写不敏感；命中问题写入 JSON 的 `reportOnlyIssues` 和 `reportOnlyIssueCount`，不进入 `newIssues`/`baselineIssues`，不参与 gate 阻断。两个边界要留意：降级按**规则名全局**生效，不限改动文件——例如把 `MagicNumberCheck` 写进去，会把全仓该规则的所有发现一起降级；`mango.check.gate=all` 也不会因为 report-only 而变成阻断。`mango.check.checkstyle.*Max` 会生成 `target/mango-check/checkstyle-resolved.xml`，不修改项目规则文件；未传时沿用选中规则文件的阈值。
+
+### 推荐配置（可选，业务自愿开启）
+
+下面这组值不是默认值，而是「存量代码多、先把门禁跑起来」时的推荐起点。开启后门禁会**放宽**：两条规则从阻断降为只报告，复杂度上限由规则文件的 20 放宽到 25，文件长度由 2000 放宽到 3000。是否放宽由使用方自行决定并承担。
+
+```bash
+-Dmango.check.reportOnlyRules=CyclomaticComplexity,FileLength \
+-Dmango.check.checkstyle.cyclomaticComplexityMax=25 \
+-Dmango.check.checkstyle.fileLengthMax=3000
+```
+
+参数是否真的生效，建议在业务仓自己的模块上验证（不是所有模块都绑定了 `check` goal；整套静态扫描耗时 30 分钟量级，按需执行）：
+
+```bash
+# 1. 只报告：JSON 里出现 reportOnlyIssues / reportOnlyIssueCount，newIssues 不变，构建不再因这两条规则失败
+mvn -o -B -pl <模块> -Dmango.check.reportOnlyRules=CyclomaticComplexity -Dmango.check.changedOnly=false verify
+
+# 2. 阈值覆盖：target/mango-check/checkstyle-resolved.xml 里的 max 变成传入值，并按新阈值判定
+mvn -o -B -pl <模块> -Dmango.check.checkstyle.cyclomaticComplexityMax=5 -Dmango.check.changedOnly=false verify
+```
 
 依赖边界检查按 `api` / `support` / `core` / `starter-*` 模型执行：
 
