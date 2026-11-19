@@ -203,4 +203,6 @@ jar tf target/*.jar | grep -E '^META-INF/mango/(resource-bootstrap-manifest.json
 
 `moduleOrder` 留空时插件按发现顺序回放，业务 POM 不需要维护全量序列；只有存在多个 datasource 分组或外部 Resource 资产时才显式配置。显式配置后该序列与发现集合相等，多一个模块或少一个模块都会在回放前阻断（`missing=` / `unknown=`）。
 
+发现顺序是模块名的字典序（迁移清单按模块名建有序映射，与 classpath 扫描顺序、构建机无关），因此同一套依赖在本地与 CI 得到相同序列。`MANGO-BASELINE-023` 比较的是集合成员，序列先后不影响该检查；顺序只影响 BSQL 回放次序和制品指纹，所以显式序列与字典序不同时指纹会变，这是预期结果。
+
 需要分组时用 `moduleGroups` 指定个别模块的 group，其余模块落在 `default`，这样可以避免为了分组而手写整条序列。升级 Mango 后新进入 runtime classpath 的模块（例如 1.13.0 起标准模板包含 `integration`、`payment`）会改变发现集合，反之未声明的模块（如未引入的 `ai`）不在其中。
