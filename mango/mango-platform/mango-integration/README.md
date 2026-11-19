@@ -209,6 +209,7 @@ Flyway 路径：`mango-integration-starter/src/main/resources/db/migration/integ
 - 连接器声明：`integration-connectors.json`，资源类型 `INTEGRATION_CONNECTOR`，`moduleCode=integration`
 - 菜单声明：`integration-common-menu.json`，资源类型 `AUTH_MENU`，`appCode=internal-admin`
 - 连接器声明在启动或资源同步时按 `connectorCode` 覆盖保存，保存即生效
+- 声明新建连接器时主键由 `connectorCode` 派生（`PortableResourceIds.stable`），重复同步与冷基线回放得到相同的 `integration_connector.id`（issue #1317）
 - 声明缺失时停用连接器（`status=0`），不删除数据，避免破坏已有实例
 - 声明来源的连接器（`source=DECLARED`）禁止页面编辑，接口返回“该连接器由资源声明维护，请在声明文件中修改”
 - 页面新建的连接器为 `source=MANUAL`，可自由编辑

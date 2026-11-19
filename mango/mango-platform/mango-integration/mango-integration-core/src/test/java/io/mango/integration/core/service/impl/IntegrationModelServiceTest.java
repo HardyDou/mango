@@ -243,6 +243,69 @@ class IntegrationModelServiceTest {
     }
 
     @Test
+    @DisplayName("声明的连接器按声明主键落库且回放主键不变")
+    void declaredConnectorKeepsDeclaredIdOnReplay() {
+        long declaredId = 424242424242L;
+        IntegrationConnectorCommand declared = new IntegrationConnectorCommand();
+        declared.setId(declaredId);
+        declared.setConnectorCode("wecom-declared-id");
+        declared.setConnectorName("声明主键连接器");
+        declared.setStatus(1);
+        declared.setConfigSchema("{\"type\":\"object\",\"properties\":{}}");
+        declared.setAuthSchema("{\"authMode\":\"NONE\",\"fields\":[]}");
+
+        assertThat(connectorService.saveDeclaration(declared)).isTrue();
+        assertThat(connectorService.findIdByCode("wecom-declared-id")).isEqualTo(declaredId);
+        assertThat(connectorService.detail("wecom-declared-id").getSource()).isEqualTo("DECLARED");
+
+        resetSchema();
+        seedConnector("wecom-message");
+        assertThat(connectorService.saveDeclaration(declared)).isTrue();
+        assertThat(connectorService.findIdByCode("wecom-declared-id")).isEqualTo(declaredId);
+    }
+
+    @Test
+    @DisplayName("声明的连接器主键被其它行占用时拒绝落库")
+    void declaredConnectorRejectsOccupiedDeclaredId() {
+        long occupiedId = 515151515151L;
+        IntegrationConnectorCommand occupant = new IntegrationConnectorCommand();
+        occupant.setId(occupiedId);
+        occupant.setConnectorCode("wecom-occupant");
+        occupant.setConnectorName("占用主键连接器");
+        occupant.setStatus(1);
+        occupant.setConfigSchema("{\"type\":\"object\",\"properties\":{}}");
+        occupant.setAuthSchema("{\"authMode\":\"NONE\",\"fields\":[]}");
+        assertThat(connectorService.saveDeclaration(occupant)).isTrue();
+
+        IntegrationConnectorCommand conflicting = new IntegrationConnectorCommand();
+        conflicting.setId(occupiedId);
+        conflicting.setConnectorCode("wecom-conflicting");
+        conflicting.setConnectorName("冲突连接器");
+        conflicting.setStatus(1);
+        conflicting.setConfigSchema("{\"type\":\"object\",\"properties\":{}}");
+        conflicting.setAuthSchema("{\"authMode\":\"NONE\",\"fields\":[]}");
+
+        assertThatThrownBy(() -> connectorService.saveDeclaration(conflicting))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("连接器主键已被占用");
+    }
+
+    @Test
+    @DisplayName("手工保存忽略声明主键")
+    void manualConnectorSaveIgnoresDeclaredId() {
+        IntegrationConnectorCommand manual = new IntegrationConnectorCommand();
+        manual.setId(616161616161L);
+        manual.setConnectorCode("wecom-manual-id");
+        manual.setConnectorName("手工连接器");
+        manual.setStatus(1);
+        manual.setConfigSchema("{\"type\":\"object\",\"properties\":{}}");
+        manual.setAuthSchema("{\"authMode\":\"NONE\",\"fields\":[]}");
+
+        assertThat(connectorService.save(manual)).isTrue();
+        assertThat(connectorService.findIdByCode("wecom-manual-id")).isNotEqualTo(manual.getId());
+    }
+
+    @Test
     @DisplayName("连接测试默认拒绝私网目标")
     void testConnectionRejectsPrivateTargetByDefault() {
         IntegrationConnectorCommand connector = new IntegrationConnectorCommand();
