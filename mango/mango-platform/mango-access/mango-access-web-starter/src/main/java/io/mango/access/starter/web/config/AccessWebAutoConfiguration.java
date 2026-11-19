@@ -4,6 +4,7 @@ import io.mango.authorization.api.ApiResourceApi;
 import io.mango.authorization.api.IAuthorizationProvider;
 import io.mango.access.api.auth.AccessContextValidator;
 import io.mango.access.core.auth.AccessEvaluator;
+import io.mango.access.core.auth.IpWhitelistDiagnostics;
 import io.mango.access.core.config.AccessProperties;
 import io.mango.access.starter.web.filter.AuthFilter;
 import io.mango.authorization.api.ITokenProvider;
@@ -26,6 +27,14 @@ import org.springframework.context.annotation.Configuration;
 public class AccessWebAutoConfiguration {
 
     private final AccessProperties properties;
+
+    @Bean
+    @ConditionalOnMissingBean
+    public IpWhitelistDiagnostics ipWhitelistDiagnostics() {
+        IpWhitelistDiagnostics diagnostics = new IpWhitelistDiagnostics();
+        diagnostics.inspect(properties.getIpWhitelist());
+        return diagnostics;
+    }
 
     @Bean
     @ConditionalOnMissingBean

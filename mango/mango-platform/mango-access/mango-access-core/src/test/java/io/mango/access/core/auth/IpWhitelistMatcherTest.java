@@ -30,6 +30,29 @@ class IpWhitelistMatcherTest {
         assertFalse(matcher.matches(whitelist, "GET", "/any", null));
     }
 
+    @Test
+    void matches_shouldTreatIpv4MappedAddressAsIpv4() {
+        AccessProperties.IpWhitelist whitelist = whitelist("/actuator/health/**", List.of("GET"),
+                List.of("127.0.0.1/32"));
+        assertTrue(matcher.matches(whitelist, "GET", "/actuator/health/readiness", "::ffff:127.0.0.1"));
+        assertTrue(matcher.matches(whitelist, "GET", "/actuator/health", "127.0.0.1"));
+    }
+
+    @Test
+    void matches_shouldMatchExactAddressWithoutCidrSuffix() {
+        AccessProperties.IpWhitelist whitelist = whitelist("/actuator/health/**", List.of("GET"),
+                List.of("10.2.3.4"));
+        assertTrue(matcher.matches(whitelist, "GET", "/actuator/health/liveness", "10.2.3.4"));
+        assertFalse(matcher.matches(whitelist, "GET", "/actuator/health/liveness", "10.2.3.5"));
+    }
+
+    @Test
+    void matches_shouldNotLetShorthandNetworkWidenTheRule() {
+        AccessProperties.IpWhitelist whitelist = whitelist("/actuator/health/**", List.of("GET"),
+                List.of("10/8"));
+        assertFalse(matcher.matches(whitelist, "GET", "/actuator/health/readiness", "10.2.3.4"));
+    }
+
     private AccessProperties.IpWhitelist whitelist(String path, List<String> methods, List<String> cidrs) {
         AccessProperties.Rule rule = new AccessProperties.Rule();
         rule.setPathPattern(path);

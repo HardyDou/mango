@@ -66,7 +66,9 @@ mango:
     ip-whitelist:
       enabled: true
       rules:
-        - path-pattern: /actuator/health
+        # /actuator/** 不参与 API 资源声明同步，探针只能靠本白名单或 permit-paths 放行；
+        # 用 /** 同时覆盖 /actuator/health 与 readiness、liveness 分组。
+        - path-pattern: /actuator/health/**
           methods:
             - GET
           cidrs:

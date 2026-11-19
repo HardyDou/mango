@@ -5,6 +5,7 @@ import org.springframework.util.AntPathMatcher;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -49,25 +50,59 @@ final class AuthIpWhitelistMatcher {
         if (blank(cidr)) {
             return false;
         }
+        String trimmedCidr = cidr.trim();
         try {
-            String normalizedIp = normalizeLoopback(clientIp);
-            String normalizedCidr = cidr.trim();
-            if (!normalizedCidr.contains("/")) {
-                return InetAddress.getByName(normalizedCidr).equals(InetAddress.getByName(normalizedIp));
+            if (!trimmedCidr.contains("/")) {
+                byte[] ruleBytes = addressBytes(trimmedCidr);
+                byte[] clientBytes = addressBytes(clientIp.trim());
+                return ruleBytes != null && clientBytes != null && Arrays.equals(ruleBytes, clientBytes);
             }
-            String[] parts = normalizedCidr.split("/", 2);
-            byte[] networkBytes = InetAddress.getByName(parts[0]).getAddress();
-            byte[] clientBytes = InetAddress.getByName(normalizedIp).getAddress();
-            int prefix = Integer.parseInt(parts[1]);
-            int bits = networkBytes.length * Byte.SIZE;
-            if (networkBytes.length != clientBytes.length || prefix < 0 || prefix > bits) {
+            String[] parts = trimmedCidr.split("/", 2);
+            byte[] networkBytes = addressBytes(parts[0]);
+            byte[] clientBytes = addressBytes(clientIp.trim());
+            if (networkBytes == null || clientBytes == null || networkBytes.length != clientBytes.length) {
                 return false;
             }
-            BigInteger mask = subnetMask(prefix, bits);
-            return new BigInteger(1, networkBytes).and(mask).equals(new BigInteger(1, clientBytes).and(mask));
-        } catch (UnknownHostException | NumberFormatException exception) {
+            int prefixLength = Integer.parseInt(parts[1].trim());
+            int maxBits = networkBytes.length * Byte.SIZE;
+            if (prefixLength < 0 || prefixLength > maxBits) {
+                return false;
+            }
+            BigInteger network = new BigInteger(1, networkBytes);
+            BigInteger client = new BigInteger(1, clientBytes);
+            BigInteger mask = prefixLength == 0
+                    ? BigInteger.ZERO
+                    : BigInteger.ONE.shiftLeft(maxBits).subtract(BigInteger.ONE)
+                    .shiftRight(maxBits - prefixLength)
+                    .shiftLeft(maxBits - prefixLength);
+            return network.and(mask).equals(client.and(mask));
+        } catch (UnknownHostException | NumberFormatException e) {
             return false;
         }
+    }
+
+    /**
+     * 解析地址字节，并把 IPv4 映射的 IPv6 地址（{@code ::ffff:127.0.0.1}）归一为 IPv4，
+     * 避免双栈容器里同一来源因地址族不同而与 IPv4 规则失配。
+     *
+     * @param ip 地址或域名
+     * @return 4 或 16 字节地址；无法解析时返回 null
+     */
+    private byte[] addressBytes(String ip) throws UnknownHostException {
+        byte[] bytes = InetAddress.getByName(normalizeLoopback(ip)).getAddress();
+        if (bytes.length == 16 && isIpv4Mapped(bytes)) {
+            return Arrays.copyOfRange(bytes, 12, 16);
+        }
+        return bytes;
+    }
+
+    private boolean isIpv4Mapped(byte[] bytes) {
+        for (int index = 0; index < 10; index++) {
+            if (bytes[index] != 0) {
+                return false;
+            }
+        }
+        return (bytes[10] & 0xFF) == 0xFF && (bytes[11] & 0xFF) == 0xFF;
     }
 
     private String normalizeLoopback(String clientIp) {
