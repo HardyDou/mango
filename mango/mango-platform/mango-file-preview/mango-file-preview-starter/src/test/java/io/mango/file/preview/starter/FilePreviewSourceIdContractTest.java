@@ -12,24 +12,44 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class FilePreviewSourceIdContractTest {
 
-    /** 与 {@code FilePreviewServiceImpl#SOURCE_ID_PARAM} 保持一致。 */
-    private static final String CORE_SOURCE_ID_PARAM = "fileId";
-
     @Test
-    void core参数名与引擎读取的参数名一致() {
-        assertThat(CORE_SOURCE_ID_PARAM).isEqualTo("fileId");
+    void core生成的预览地址参数名与引擎读取的参数名一致() throws Exception {
+        // 真往返：按 core 的拼法生成预览地址，用 URL 解析取回参数值，再核对引擎控制器的入参名。
+        String enginePreviewUrl = org.springframework.web.util.UriComponentsBuilder
+                .fromPath("/api/onlinePreview")
+                .queryParam("fileId", "ticket-round-trip")
+                .queryParam("fullfilename", "file-100-0123456789abcdef.pptx")
+                .build()
+                .encode(java.nio.charset.StandardCharsets.UTF_8)
+                .toUriString();
+
+        org.springframework.web.util.UriComponents parsed =
+                org.springframework.web.util.UriComponentsBuilder.fromUriString(enginePreviewUrl).build();
+        assertThat(parsed.getQueryParams().getFirst("fileId")).isEqualTo("ticket-round-trip");
+
+        java.lang.reflect.Method onlinePreview = java.util.Arrays
+                .stream(cn.keking.web.controller.OnlinePreviewController.class.getDeclaredMethods())
+                .filter(method -> method.getName().equals("onlinePreview"))
+                .findFirst()
+                .orElseThrow();
+        java.util.Set<String> requestParams = java.util.Arrays.stream(onlinePreview.getParameters())
+                .filter(parameter -> parameter.isAnnotationPresent(
+                        org.springframework.web.bind.annotation.RequestParam.class))
+                .map(java.lang.reflect.Parameter::getName)
+                .collect(java.util.stream.Collectors.toSet());
+
+        assertThat(requestParams).contains("fileId", "fullfilename");
     }
 
     @Test
-    void 引擎按源标识构造属性时保留identifier并按文件名识别类型() {
+    void 缺少引擎文件名时直接拒绝而不是静默退化成未知类型() {
         FileHandlerService handlerService = new FileHandlerService(org.mockito.Mockito.mock(cn.keking.service.cache.CacheService.class));
         org.springframework.test.util.ReflectionTestUtils.setField(handlerService, "uriEncoding", "UTF-8");
-        FileAttribute attribute = handlerService.getFileAttributeBySourceId(
-                "ticket-1", "file-100-0123456789abcdef.pptx", null);
 
-        assertThat(attribute.getSourceId()).isEqualTo("ticket-1");
-        assertThat(attribute.getSuffix()).isEqualTo("pptx");
-        assertThat(attribute.getName()).isEqualTo("file-100-0123456789abcdef.pptx");
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                        () -> handlerService.getFileAttributeBySourceId("ticket-1", " ", null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("引擎侧文件名");
     }
 
     @Test

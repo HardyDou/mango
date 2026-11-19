@@ -49,7 +49,7 @@ public class FilePreviewEngineDownloader implements FileDownloader, PreviewSourc
         try (InputStream inputStream = openSource(fileAttribute.getSourceId())) {
             FileUtils.copyInputStreamToFile(inputStream, new File(realPath));
         } catch (IOException | RuntimeException e) {
-            LOGGER.error("进程内读取预览源文件失败，fileId：{}", fileAttribute.getSourceId(), e);
+            LOGGER.error("进程内读取预览源文件失败，fileId：{}", maskedSourceId(fileAttribute.getSourceId()), e);
             response.setCode(1);
             response.setContent(null);
             response.setMsg("下载失败: " + e.getMessage());
@@ -78,5 +78,16 @@ public class FilePreviewEngineDownloader implements FileDownloader, PreviewSourc
     private InputStream openSource(String sourceId) {
         FilePreviewSource source = filePreviewService.openSource(sourceId);
         return source.inputStream();
+    }
+
+    /**
+     * 取源票据是 24 小时有效的凭证，日志里只保留前 6 位与长度，避免整串凭证落入日志系统。
+     */
+    private static String maskedSourceId(String sourceId) {
+        if (!org.springframework.util.StringUtils.hasText(sourceId)) {
+            return "";
+        }
+        String prefix = sourceId.length() <= 6 ? sourceId : sourceId.substring(0, 6);
+        return prefix + "***(len=" + sourceId.length() + ")";
     }
 }
