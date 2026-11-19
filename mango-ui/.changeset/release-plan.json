@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-11-19T10:15:21.257Z",
+  "generatedAt": "2026-11-19T10:16:11.184Z",
   "releaseKind": "mixed",
   "release": {
     "tag": "v2026.11.19-maven-1.14.2-disabled-module-resources-release",
     "title": "Mango release v2026.11.19-maven-1.14.2-disabled-module-resources-release",
     "notesFile": ".changeset/release-notes.txt",
-    "notesSha256": "c2adcd4fdf6a9eda2f021c56e3c98b0b24aa3e87cd1e896dec0d363f98e74a94"
+    "notesSha256": "f955edd1457221c1077d3b63ddfc5dad1f15c786f09c786688dffffdc450d0dc"
   },
   "baseline": {
     "kind": "successful-release",
@@ -3658,8 +3658,8 @@
     "docs": null
   },
   "source": {
-    "commit": "639a2d52f485e670d874822d0746c8250f57e0f1",
-    "tree": "127931b106ffff4ab8ad29e8354d7400ee2a0bba"
+    "commit": "7ea10fc268848883cbed7ba14f1c86e415d17f04",
+    "tree": "6880c61b050074106a220e334b1f81f04c80b657"
   },
   "sourceFiles": [
     "CHANGELOG.md",
@@ -6544,12 +6544,12 @@
   "versionPolicyDigest": "c4c4c80d533dde047a59627c915cf87e3570606c2d329023ce6896544c50ee12",
   "releasePlanIdentity": {
     "schemaVersion": 1,
-    "sourceCommitOid": "639a2d52f485e670d874822d0746c8250f57e0f1",
-    "sourceTreeOid": "127931b106ffff4ab8ad29e8354d7400ee2a0bba",
+    "sourceCommitOid": "7ea10fc268848883cbed7ba14f1c86e415d17f04",
+    "sourceTreeOid": "6880c61b050074106a220e334b1f81f04c80b657",
     "catalogDigest": "3ef9dc8005bc7ee8511c5b9e5464a90fd0530b723dc0d30f0f674a45b5110a6f",
     "previousBaselineDigest": "0227cd24a949a70f284e3149b8e8c2be156f0c328a4a87ab6f3f8c61316b320f",
     "changesetsDigest": "79d26569168406bd18a44819ed3767d82b913be551f870c0a923906874a09eb4",
-    "releaseNotesDigest": "c2adcd4fdf6a9eda2f021c56e3c98b0b24aa3e87cd1e896dec0d363f98e74a94",
+    "releaseNotesDigest": "f955edd1457221c1077d3b63ddfc5dad1f15c786f09c786688dffffdc450d0dc",
     "versionPolicyDigest": "c4c4c80d533dde047a59627c915cf87e3570606c2d329023ce6896544c50ee12",
     "resolvedTuple": [
       {
@@ -8137,5 +8137,5 @@
       "@mango/cli"
     ]
   },
-  "planDigest": "536025e9e80bba8538b0d06789a07fcb28b05ef2f577d8300a519334ab2f6d41"
+  "planDigest": "433b23a463d961057f620c974cff7e3d565288e5cc06e614042466f4284e60f8"
 }
