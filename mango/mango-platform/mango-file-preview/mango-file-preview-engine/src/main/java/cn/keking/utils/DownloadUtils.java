@@ -26,8 +26,8 @@ import static cn.keking.utils.KkFileUtils.*;
  */
 public class DownloadUtils {
 
-    private final static Logger logger = LoggerFactory.getLogger(DownloadUtils.class);
-    private static final String fileDir = ConfigConstants.getFileDir();
+    private static final Logger LOGGER = LoggerFactory.getLogger(DownloadUtils.class);
+    private static final String FILE_DIR = ConfigConstants.getFileDir();
     private static final String URL_PARAM_FTP_USERNAME = "ftp.username";
     private static final String URL_PARAM_FTP_PASSWORD = "ftp.password";
     private static final String URL_PARAM_FTP_CONTROL_ENCODING = "ftp.control.encoding";
@@ -61,7 +61,7 @@ public class DownloadUtils {
         try {
             urlStr = fileAttribute.getUrl();
         } catch (Exception e) {
-            logger.error("处理URL异常:", e);
+            LOGGER.error("处理URL异常:", e);
         }
         ReturnResponse<String> response = new ReturnResponse<>(0, "下载成功!!!", "");
         String realPath = getRelFilePath(fileName, fileAttribute);
@@ -80,7 +80,7 @@ public class DownloadUtils {
             return response;
         }
         if (fileAttribute.isCompressFile()) {
-            response.setContent(fileDir + fileName);
+            response.setContent(FILE_DIR + fileName);
             response.setMsg(fileName);
             return response;
         }
@@ -95,25 +95,26 @@ public class DownloadUtils {
             if (!fileAttribute.getSkipDownLoad()) {
                 if (isHttpUrl(url)) {
                     File realFile = new File(realPath);
-                    CloseableHttpClient httpClient = HttpRequestUtils.createConfiguredHttpClient();
                     String finalUrlStr = urlStr;
 
                     final boolean[] hasMimeError = {false};
                     final String[] mimeErrorMessage = {null};
 
-                    HttpRequestUtils.executeHttpRequest(url, httpClient, fileAttribute, responseWrapper -> {
-                        String contentType = responseWrapper.getContentType();
+                    try (CloseableHttpClient httpClient = HttpRequestUtils.createConfiguredHttpClient()) {
+                        HttpRequestUtils.executeHttpRequest(url, httpClient, fileAttribute, responseWrapper -> {
+                            String contentType = responseWrapper.getContentType();
                         if (WebUtils.isMimeCheckRequired(fileSuffix)) {
                             if (!WebUtils.isValidMimeType(contentType, fileSuffix)) {
-                                logger.error("文件类型错误，期望二进制文件但接收到文本类型，url: {}, Content-Type: {}",
+                                LOGGER.error("文件类型错误，期望二进制文件但接收到文本类型，url: {}, Content-Type: {}",
                                         finalUrlStr, contentType);
                                 hasMimeError[0] = true;
                                 mimeErrorMessage[0] = "期望二进制文件但接收到文本类型，Content-Type: " + contentType;
                                 return;
                             }
                         }
-                        FileUtils.copyToFile(responseWrapper.getInputStream(), realFile);
-                    });
+                            FileUtils.copyToFile(responseWrapper.getInputStream(), realFile);
+                        });
+                    }
 
                     if (hasMimeError[0]) {
                         response.setCode(1);
@@ -141,7 +142,7 @@ public class DownloadUtils {
             return response;
 
         } catch (HttpClientErrorException e) {
-            logger.error("HTTP请求失败，状态码：{}，url：{}", e.getStatusCode(), urlStr);
+            LOGGER.error("HTTP请求失败，状态码：{}，url：{}", e.getStatusCode(), urlStr);
             response.setCode(1);
             response.setContent(null);
             if (e.getStatusCode().is4xxClientError()) {
@@ -151,7 +152,7 @@ public class DownloadUtils {
             }
             return response;
         } catch (IOException | GalimatiasParseException e) {
-            logger.error("文件下载失败，url：{}", urlStr);
+            LOGGER.error("文件下载失败，url：{}", urlStr);
             response.setCode(1);
             response.setContent(null);
             if (e instanceof FileNotFoundException) {
@@ -161,7 +162,7 @@ public class DownloadUtils {
             }
             return response;
         } catch (Exception e) {
-            logger.error("下载文件时发生未知异常，url：{}", urlStr, e);
+            LOGGER.error("下载文件时发生未知异常，url：{}", urlStr, e);
             response.setCode(1);
             response.setContent(null);
             response.setMsg("下载失败: " + e.getMessage());
@@ -184,7 +185,7 @@ public class DownloadUtils {
         // 判断源文件和目标文件是否是同一个文件（防止自身复制覆盖）
         if (isSameFile(sourceFile, targetFile)) {
             // 如果是同一个文件，直接返回，不执行复制操作
-            logger.info("源文件和目标文件相同，跳过复制: {}", sourceFile.getAbsolutePath());
+            LOGGER.info("源文件和目标文件相同，跳过复制: {}", sourceFile.getAbsolutePath());
             return;
         }
 
@@ -215,7 +216,7 @@ public class DownloadUtils {
             return canonicalPath1.equals(canonicalPath2);
         } catch (IOException e) {
             // 如果获取规范化路径失败，使用绝对路径比较
-            logger.warn("无法获取文件的规范化路径，使用绝对路径比较: {}, {}", file1.getAbsolutePath(), file2.getAbsolutePath());
+            LOGGER.warn("无法获取文件的规范化路径，使用绝对路径比较: {}, {}", file1.getAbsolutePath(), file2.getAbsolutePath());
 
             String absolutePath1 = file1.getAbsolutePath();
             String absolutePath2 = file2.getAbsolutePath();
@@ -249,10 +250,10 @@ public class DownloadUtils {
             fileName = fileName.replace(fileName.substring(fileName.lastIndexOf(".") + 1), type);
         }
 
-        String realPath = fileDir + fileName;
-        File dirFile = new File(fileDir);
+        String realPath = FILE_DIR + fileName;
+        File dirFile = new File(FILE_DIR);
         if (!dirFile.exists() && !dirFile.mkdirs()) {
-            logger.error("创建目录【{}】失败,可能是权限不够，请检查", fileDir);
+            LOGGER.error("创建目录【{}】失败,可能是权限不够，请检查", FILE_DIR);
         }
         return realPath;
     }

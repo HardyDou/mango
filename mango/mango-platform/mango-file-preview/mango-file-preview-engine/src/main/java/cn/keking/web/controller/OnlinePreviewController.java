@@ -202,9 +202,7 @@ public class OnlinePreviewController {
         logger.info("读取跨域文件url：{}", urlPath);
 
         if (!isFtpUrl(url)) {
-            // HTTP/HTTPS 处理（修复：不关闭共享的 CloseableHttpClient）
-            CloseableHttpClient httpClient = HttpRequestUtils.createConfiguredHttpClient();
-            try {
+            try (CloseableHttpClient httpClient = HttpRequestUtils.createConfiguredHttpClient()) {
                 HttpRequestUtils.executeHttpRequest(url, httpClient, fileAttribute, responseWrapper -> IOUtils.copy(responseWrapper.getInputStream(), response.getOutputStream()));
             } catch (HttpClientErrorException e) {
                 // 捕获 HTTP 4xx 错误（如 404）

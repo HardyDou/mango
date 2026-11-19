@@ -21,6 +21,8 @@ import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.kv.api.ITokenStore;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -57,6 +59,7 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
     private static final int MAX_EXTENSION_LENGTH = 20;
     private static final int HTTP_PORT = 80;
     private static final int HTTPS_PORT = 443;
+    private static final Logger LOGGER = LoggerFactory.getLogger(FilePreviewServiceImpl.class);
 
     private final FilePreviewFileGateway fileGateway;
     private final FilePreviewProperties properties;
@@ -221,6 +224,8 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
     private String enginePreviewUrl(String sourceTicket, String fileName) {
         if (!useInternalSource()) {
             String sourceUrl = sourceUrl(sourceTicket, fileName);
+            LOGGER.warn("未装配 FileDownloader 直取实现，预览源文件回落到 url 下载，将经过 source-base-url：{}",
+                    sourceBaseUrl());
             return engineUrl(Base64.getEncoder().encodeToString(sourceUrl.getBytes(StandardCharsets.UTF_8)));
         }
         return UriComponentsBuilder.fromPath("/api" + normalize(properties.getEnginePath()))
