@@ -2,6 +2,7 @@ package io.mango.integration.starter.resource;
 
 import io.mango.integration.api.command.IntegrationConnectorCommand;
 import io.mango.integration.core.service.IIntegrationConnectorService;
+import io.mango.resource.support.PortableResourceIds;
 import io.mango.resource.support.ResourceHandler;
 import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.support.model.ResourceDeclaration;
@@ -18,6 +19,10 @@ import java.util.List;
  * 集成连接器定义的资源声明处理器。
  *
  * <p>连接器定义由部署侧声明并同步，保存即生效；声明缺失时停用连接器，不删除数据。</p>
+ *
+ * <p>声明新建连接器的主键由连接器编码派生（见 {@link PortableResourceIds}），不依赖持久层生成，
+ * 以保证冷基线生成与重复同步产生相同的 {@code integration_connector.id}。连接器编码在全表唯一
+ * （{@code uk_integration_connector_code}），因此编码本身就是完整的声明身份。</p>
  */
 @Component
 @RequiredArgsConstructor
@@ -64,6 +69,7 @@ public class IntegrationConnectorResourceHandler implements ResourceHandler {
         command.setCapabilitiesJson(stringField(resource, "capabilitiesJson"));
         command.setTags(stringListField(resource, "tags"));
         command.setDocsUrl(stringField(resource, "docsUrl"));
+        command.setId(PortableResourceIds.stable(TARGET_TABLE, command.getConnectorCode()));
         connectorService.saveDeclaration(command);
         Long targetId = connectorService.findIdByCode(command.getConnectorCode());
         return ResourceSyncResult.of(targetId, TARGET_TABLE,

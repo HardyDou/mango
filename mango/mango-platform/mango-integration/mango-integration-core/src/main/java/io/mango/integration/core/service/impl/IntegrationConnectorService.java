@@ -108,6 +108,14 @@ public class IntegrationConnectorService implements IIntegrationConnectorService
             String tenantId = MangoContextHolder.tenantId();
             entity.setTenantId(StringUtils.hasText(tenantId) ? tenantId : "default");
             entity.setSource(declared ? "DECLARED" : "MANUAL");
+            if (declared && validated.getId() != null) {
+                Long declaredId = validated.getId();
+                Require.isTrue(declaredId > 0L,
+                        IntegrationCode.INTEGRATION_BUSINESS_ERROR, "连接器主键必须为正数");
+                Require.isTrue(connectorMapper.selectById(declaredId) == null,
+                        IntegrationCode.INTEGRATION_BUSINESS_ERROR, "连接器主键已被占用: " + declaredId);
+                entity.setId(declaredId);
+            }
         }
         if (declared) {
             entity.setSource("DECLARED");
