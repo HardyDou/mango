@@ -108,6 +108,7 @@ mango:
 | `mango.access.ip-whitelist.rules[].methods` | 空列表 | HTTP 方法。为空或包含 `ALL` 表示匹配全部方法 |
 | `mango.access.ip-whitelist.rules[].cidrs` | 空列表 | 允许访问的 IP 或 CIDR，网段须写完整四段（`10.0.0.0/8`，不要写 `10/8`） |
 
+<!-- 本节编号 §7.1 是外部引用契约：mango-ops 的运维经验文档直接指向该节作为权威出处。调整标题层级、拆分或改号时，保留 §7.1 编号，或在发布说明里点名引用方需要同步。 -->
 ### 7.1 探针路径的白名单语义
 
 - `/actuator/**` 不参与 API 资源声明同步（`mango.authorization.api-resource-sync.exclude-paths` 默认含 `/actuator/**`），因此探针只有两条放行途径：本白名单，或 `mango.auth.security.permit-paths`。
