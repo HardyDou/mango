@@ -7,6 +7,7 @@ import io.mango.system.api.enums.SystemCode;
 import io.mango.system.api.command.SaveDictDataCommand;
 import io.mango.system.api.command.SaveDictTypeCommand;
 import io.mango.system.api.vo.DictDataVO;
+import io.mango.system.api.vo.DictOptionGroupVO;
 import io.mango.system.api.vo.DictOptionVO;
 import io.mango.system.api.vo.DictTreeNodeVO;
 import io.mango.system.api.vo.DictTypeVO;
@@ -20,7 +21,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +33,8 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class DictService implements IDictService {
 
+    private static final int MAX_BATCH_TYPE_CODES = 24;
+    private static final int MAX_TYPE_CODE_LENGTH = 50;
     private static final int MAX_GROUP_LENGTH = 32;
     private static final int MAX_GROUP_COUNT = 20;
     private static final int MAX_GROUPS_LENGTH = 255;
@@ -148,6 +153,43 @@ public class DictService implements IDictService {
                         .eq(DictDataEntity::getStatus, 1)
                         .orderByAsc(DictDataEntity::getSort))
                 .stream().map(this::toOptionVO).toList();
+    }
+
+    @Override
+    public List<DictOptionGroupVO> getOptionsBatch(Collection<String> typeCodes) {
+        List<String> normalized = normalizeTypeCodes(typeCodes);
+        Map<String, DictOptionGroupVO> groups = new HashMap<>();
+        List<DictOptionGroupVO> options = new ArrayList<>();
+        for (String typeCode : normalized) {
+            DictOptionGroupVO group = new DictOptionGroupVO();
+            group.setTypeCode(typeCode);
+            groups.put(typeCode, group);
+            options.add(group);
+        }
+        dictDataMapper.selectList(new LambdaQueryWrapper<DictDataEntity>()
+                        .in(DictDataEntity::getDictType, normalized)
+                        .eq(DictDataEntity::getStatus, 1)
+                        .orderByAsc(DictDataEntity::getDictType)
+                        .orderByAsc(DictDataEntity::getSort))
+                .forEach(row -> groups.get(row.getDictType()).getOptions().add(toOptionVO(row)));
+        return options;
+    }
+
+    private List<String> normalizeTypeCodes(Collection<String> typeCodes) {
+        Require.notNull(typeCodes, SystemCode.SYSTEM_INVALID, "字典类型编码不能为空");
+        List<String> normalized = typeCodes.stream()
+                .filter(StringUtils::hasText)
+                .map(String::trim)
+                .distinct()
+                .toList();
+        Require.isTrue(!normalized.isEmpty(), SystemCode.SYSTEM_INVALID, "字典类型编码不能为空");
+        Require.isTrue(normalized.size() <= MAX_BATCH_TYPE_CODES, SystemCode.SYSTEM_INVALID,
+                "一次最多批量读取 " + MAX_BATCH_TYPE_CODES + " 个字典类型");
+        for (String typeCode : normalized) {
+            Require.isTrue(typeCode.length() <= MAX_TYPE_CODE_LENGTH, SystemCode.SYSTEM_INVALID,
+                    "字典类型编码长度不能超过 " + MAX_TYPE_CODE_LENGTH + " 个字符");
+        }
+        return normalized;
     }
 
     @Override

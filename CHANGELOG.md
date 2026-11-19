@@ -1,3 +1,16 @@
+## Unreleased - dict options batch read (Issue #1293)
+
+### Added
+
+- `DictApi.getOptionsBatch(DictOptionsBatchQuery query)` returns `List<DictOptionGroupVO>` (each group carries `typeCode` plus its flat `options`) for up to 24 dictionaries in a single `sys_dict_data` query, so pages that render many dictionaries no longer issue one request and one query per `typeCode`.
+- `GET /system/dict/data/options/batch?typeCodes=a,b` exposes the batch read to HTTP callers; the parameter accepts comma-separated values and repeated parameters, blank codes are ignored, and unknown dictionaries come back with an empty option list instead of an error.
+- `DictOptionsBatchQuery` and `DictOptionGroupVO` keep the contract inside the existing `Query`/`VO` shapes, so `MANGO-ARCH-API-006` and `MANGO-ARCH-HTTP-007` stay satisfied while the batch read returns a collection instead of a `Map`.
+- `SysDictOptionsBatchBindingTest` covers comma-separated binding, single-value compatibility and repeated parameters; `DictServiceImplTest` covers the single-query contract, trimming/deduplication and the 24-item and 50-character limits.
+
+### Unchanged
+
+- `getOptions(typeCode)` and `GET /system/dict/data/options` keep their current behaviour and payload, so existing callers need no change.
+
 ## Unreleased - workflow contract fingerprint for release notes (Issue #1312)
 
 ### Added
