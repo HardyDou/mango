@@ -265,6 +265,11 @@ PDF/DOCX 中的表格、图片、可见印章和已有签名外观会作为页�
 - `ConvertAutoConfiguration`
 - `RenderAutoConfiguration`
 
+启动时另有两个初始化器实现 `InitializingBean`，都在 `AsposeAutoConfiguration` 装配后执行，无数据库写入、无外部副作用（详见 §6.4）：
+
+- `AsposeFontInitializer`：字体与授权启动自检，字体缺失默认只告警，授权不可用即中断启动。
+- `AsposeFontFolderRegistrar`：把 `mango.fileproc.aspose.fonts-folders` 追加到现有字体来源，留空时不触碰进程级 `FontSettings`。
+
 模块元数据位于 `mango-infra-fileproc-starter/src/main/resources/META-INF/mango/module.properties`。
 
 ## 9. 管理入口
