@@ -1,6 +1,8 @@
 package io.mango.infra.fileproc.aspose.starter;
 
+import io.mango.infra.fileproc.aspose.AsposeFontAvailability;
 import io.mango.infra.fileproc.aspose.AsposeLicenseApi;
+import io.mango.infra.fileproc.aspose.WordsAsposeFontAvailability;
 import io.mango.infra.fileproc.aspose.DefaultAsposeLicenseApi;
 import io.mango.infra.fileproc.aspose.enums.AsposeProduct;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -40,6 +42,22 @@ public class AsposeAutoConfiguration {
         licenses.put(AsposeProduct.IMAGING, readLicense(properties.getImagingLicenseLocation(),
                 properties.getLicenseLocation(), resourceLoader));
         return new DefaultAsposeLicenseApi(licenses);
+    }
+
+    /**
+     * 字体目录注册与字体自检解耦：只要 Aspose 模块启用就注册，不受
+     * {@code mango.fileproc.convert.aspose-font-check-enabled} 影响。
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public AsposeFontFolderRegistrar asposeFontFolderRegistrar(AsposeProperties properties) {
+        return new AsposeFontFolderRegistrar(properties);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public AsposeFontAvailability asposeFontAvailability() {
+        return new WordsAsposeFontAvailability();
     }
 
     private byte[] readLicense(String dedicatedLocation, String fallbackLocation, ResourceLoader resourceLoader) {

@@ -2,6 +2,9 @@ package io.mango.infra.fileproc.aspose.starter;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Aspose 工具配置。
  */
@@ -42,6 +45,20 @@ public class AsposeProperties {
      * Aspose.Imaging License 位置。
      */
     private String imagingLicenseLocation;
+
+    /**
+     * 额外字体目录，追加到 Aspose.Words 现有字体来源之后。
+     *
+     * <p>只追加不替换：系统字体来源仍然生效，缺失的中文字体从这些目录补齐。
+     * 为空时完全不触碰 Aspose 的全局字体设置。</p>
+     */
+    private List<String> fontsFolders = new ArrayList<>();
+
+    /**
+     * 字体缺失是否中断启动。默认 {@code false}：缺字体属于渲染质量问题，不应让应用起不来；
+     * 只有显式置为 {@code true} 时，自检发现缺字体才抛异常。
+     */
+    private boolean fontCheckFatal;
 
     public boolean isEnabled() {
         return enabled;
@@ -98,4 +115,21 @@ public class AsposeProperties {
     public void setImagingLicenseLocation(String imagingLicenseLocation) {
         this.imagingLicenseLocation = imagingLicenseLocation;
     }
+
+    public List<String> getFontsFolders() {
+        return fontsFolders;
+    }
+
+    public void setFontsFolders(List<String> fontsFolders) {
+        this.fontsFolders = fontsFolders;
+    }
+
+    public boolean isFontCheckFatal() {
+        return fontCheckFatal;
+    }
+
+    public void setFontCheckFatal(boolean fontCheckFatal) {
+        this.fontCheckFatal = fontCheckFatal;
+    }
+
 }

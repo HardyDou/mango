@@ -1,5 +1,8 @@
 package io.mango.infra.fileproc.convert.convert;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.aspose.slides.License;
 import com.aspose.slides.LoadOptions;
 import com.aspose.slides.PdfOptions;
@@ -20,6 +23,8 @@ import java.nio.file.Files;
  * 基于 Aspose.Slides 的 PPT 转 PDF 转换器。
  */
 public class AsposeSlideToPdfConvertProvider implements IConvertProvider {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AsposeSlideToPdfConvertProvider.class);
+
 
     private final AsposeLicenseApi licenseApi;
 
@@ -46,6 +51,7 @@ public class AsposeSlideToPdfConvertProvider implements IConvertProvider {
     @Override
     public ConvertResultVO convert(ConvertCommand command) {
         Require.notNull(command, "转换命令不能为空");
+        LOGGER.info("使用 aspose-slides 引擎转换文件 {}：{} -> PDF", command.fileName(), command.sourceFormat());
         applyLicense();
         try (OutputStream outputStream = outputStream(command)) {
             Presentation presentation = new Presentation(command.inputStream(), loadOptions(command));

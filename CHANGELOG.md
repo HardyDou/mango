@@ -1,3 +1,29 @@
+## Unreleased - 转换默认引擎改为 Aspose，LibreOffice 改为兜底 (Issue #1314)
+
+### Added
+
+- `mango.fileproc.aspose.fonts-folders`：额外字体目录，追加到 Aspose.Words 现有字体来源之后（不替换系统字体来源）。
+- `mango.fileproc.convert.aspose-font-check-enabled`（默认 `true`）：Aspose 字体与授权启动自检，至少启用一个 Aspose 转换器时才校验；
+  字体缺失默认只打 ERROR 并继续启动，授权缺失或无法加载才 fail-fast，错误信息点名具体字体/产品。
+- `mango.fileproc.aspose.font-check-fatal`（默认 `false`）：置 `true` 时字体缺失也中断启动。
+- `AsposeFontFolderRegistrar`：`fonts-folders` 的注册独立于自检开关，关掉自检不会连带废掉字体目录。
+- 每次 Office 文档转 PDF 打印一行引擎日志（`使用 aspose-words|aspose-cells|aspose-slides|libreoffice 引擎转换文件 …`）。
+
+### Changed
+
+- Office 文档转 PDF 的默认引擎由 LibreOffice 改为 Aspose：`AsposeWordToPdfConvertProvider`/`AsposeExcelToPdfConvertProvider`/`AsposeSlideToPdfConvertProvider`
+  的 `@Order` 调整为 5/6/7，`OfficeToPdfConvertProvider` 调整为 30。`office-to-pdf-enabled` 语义变为兜底开关：
+  只有对应的 `aspose-*-to-pdf-enabled=false` 时才会选中 LibreOffice。
+- 默认引擎变更依据：同一 docx 与 WPS 版式一致（12 页/31 行/23.23pt）、单文档 86ms，LibreOffice 24.2 为 11 页/39 行/18.37pt、632ms。
+
+### Compatibility
+
+- 依赖 LibreOffice 特定版式的业务需要显式把对应的 `aspose-*-to-pdf-enabled` 设为 `false`，把 `office-to-pdf-enabled` 保持 `true`。
+- 没有中文字体（`SimSun`/`SimHei`/`KaiTi`/`FangSong`/`Microsoft YaHei`）时默认只打 ERROR 并继续启动（中文可能回退为其他字体），
+  需要启动期拦住时设 `mango.fileproc.aspose.font-check-fatal=true`；没有 Aspose 授权仍然是启动失败（配置错误）。
+- 可用 `fonts-folders` 追加字体目录（不受自检开关影响），或关闭对应的 `aspose-*-to-pdf-enabled` 退回 LibreOffice。
+- 不修改任何既有配置键名，环境变量无需改名；Aspose 版本仍锁定 20.3（授权期 `SubscriptionExpiry 20200403`，升级必须重新授权）。
+
 ## Unreleased - file preview not-supported status (Issue #1315)
 
 ### Added

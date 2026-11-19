@@ -1,5 +1,8 @@
 package io.mango.infra.fileproc.convert.convert;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.sun.star.document.UpdateDocMode;
 import io.mango.common.result.Require;
 import io.mango.infra.fileproc.convert.command.ConvertCommand;
@@ -15,6 +18,8 @@ import java.util.Map;
  * 基于 kkFileView/JODConverter 链路的 Office 转 PDF 转换器。
  */
 public class OfficeToPdfConvertProvider implements IConvertProvider {
+    private static final Logger LOGGER = LoggerFactory.getLogger(OfficeToPdfConvertProvider.class);
+
 
     private final OfficeManagerHolder officeManagerHolder;
 
@@ -41,6 +46,7 @@ public class OfficeToPdfConvertProvider implements IConvertProvider {
     @Override
     public ConvertResultVO convert(ConvertCommand command) {
         Require.notNull(command, "转换命令不能为空");
+        LOGGER.info("使用 libreoffice 引擎转换文件 {}：{} -> PDF", command.fileName(), command.sourceFormat());
         Path workDir = ConvertTempFiles.createWorkDir();
         try {
             Path inputFile = ConvertTempFiles.writeInput(workDir, command);

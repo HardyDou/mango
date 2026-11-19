@@ -1,5 +1,8 @@
 package io.mango.infra.fileproc.convert.convert;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.aspose.words.Document;
 import com.aspose.words.License;
 import com.aspose.words.LoadOptions;
@@ -19,6 +22,8 @@ import java.nio.file.Files;
  * 基于 Aspose.Words 的 Word 转 PDF 转换器。
  */
 public class AsposeWordToPdfConvertProvider implements IConvertProvider {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AsposeWordToPdfConvertProvider.class);
+
 
     private final AsposeLicenseApi licenseApi;
 
@@ -45,6 +50,7 @@ public class AsposeWordToPdfConvertProvider implements IConvertProvider {
     @Override
     public ConvertResultVO convert(ConvertCommand command) {
         Require.notNull(command, "转换命令不能为空");
+        LOGGER.info("使用 aspose-words 引擎转换文件 {}：{} -> PDF", command.fileName(), command.sourceFormat());
         applyLicense();
         try (OutputStream outputStream = outputStream(command)) {
             Document document = new Document(command.inputStream(), loadOptions(command));

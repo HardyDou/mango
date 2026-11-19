@@ -2,6 +2,8 @@ package io.mango.infra.fileproc.convert.starter;
 
 import io.mango.infra.fileproc.convert.convert.DefaultConvertApi;
 import io.mango.infra.fileproc.aspose.starter.AsposeAutoConfiguration;
+import io.mango.infra.fileproc.aspose.starter.AsposeFontFolderRegistrar;
+import io.mango.infra.fileproc.aspose.starter.AsposeFontInitializer;
 import io.mango.infra.fileproc.convert.enums.ConvertFormat;
 import io.mango.infra.fileproc.convert.convert.ConvertRegistry;
 import io.mango.infra.fileproc.convert.ConvertApi;
@@ -34,7 +36,10 @@ class ConvertAutoConfigurationTest {
 
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
             .withConfiguration(AutoConfigurations.of(AsposeAutoConfiguration.class,
-                    ConvertAutoConfiguration.class));
+                    ConvertAutoConfiguration.class))
+            // 字体与授权自检依赖运行环境（真实字体/授权文件），单独由 AsposeFontInitializerTest 覆盖，
+            // 这里关闭以免构建机字体差异干扰选择顺序的断言。
+            .withPropertyValues("mango.fileproc.convert.aspose-font-check-enabled=false");
 
     @Test
     void convert_withDefaultProperties_registersCoreBeans() {
@@ -70,20 +75,58 @@ class ConvertAutoConfigurationTest {
     }
 
     @Test
-    void officeToPdf_prefersLocalLibreOfficeOverAsposeForOfficeDocuments() {
+    void officeToPdf_defaultConfigurationPrefersAsposeEngines() {
         contextRunner.run(context -> {
             ConvertRegistry registry = context.getBean(ConvertRegistry.class);
-            assertThat(registry.providers().indexOf(context.getBean(OfficeToPdfConvertProvider.class)))
-                    .isLessThan(registry.providers().indexOf(context.getBean(AsposeWordToPdfConvertProvider.class)))
-                    .isLessThan(registry.providers().indexOf(context.getBean(AsposeExcelToPdfConvertProvider.class)))
-                    .isLessThan(registry.providers().indexOf(context.getBean(AsposeSlideToPdfConvertProvider.class)));
-            for (ConvertFormat source : List.of(ConvertFormat.DOC, ConvertFormat.DOCX, ConvertFormat.XLS,
-                    ConvertFormat.XLSX, ConvertFormat.PPT, ConvertFormat.PPTX, ConvertFormat.ODT,
-                    ConvertFormat.ODS, ConvertFormat.ODP)) {
+            assertThat(registry.providers().indexOf(context.getBean(AsposeWordToPdfConvertProvider.class)))
+                    .isLessThan(registry.providers().indexOf(context.getBean(OfficeToPdfConvertProvider.class)));
+            assertThat(registry.providers().indexOf(context.getBean(AsposeExcelToPdfConvertProvider.class)))
+                    .isLessThan(registry.providers().indexOf(context.getBean(OfficeToPdfConvertProvider.class)));
+            assertThat(registry.providers().indexOf(context.getBean(AsposeSlideToPdfConvertProvider.class)))
+                    .isLessThan(registry.providers().indexOf(context.getBean(OfficeToPdfConvertProvider.class)));
+            for (ConvertFormat source : List.of(ConvertFormat.DOC, ConvertFormat.DOCX)) {
                 assertThat(registry.findProvider(source, ConvertFormat.PDF))
-                        .containsInstanceOf(OfficeToPdfConvertProvider.class);
+                        .containsInstanceOf(AsposeWordToPdfConvertProvider.class);
             }
+            for (ConvertFormat source : List.of(ConvertFormat.XLS, ConvertFormat.XLSX)) {
+                assertThat(registry.findProvider(source, ConvertFormat.PDF))
+                        .containsInstanceOf(AsposeExcelToPdfConvertProvider.class);
+            }
+            assertThat(registry.findProvider(ConvertFormat.PPT, ConvertFormat.PDF))
+                    .containsInstanceOf(AsposeSlideToPdfConvertProvider.class);
+            assertThat(registry.findProvider(ConvertFormat.PPTX, ConvertFormat.PDF))
+                    .containsInstanceOf(AsposeSlideToPdfConvertProvider.class);
         });
+    }
+
+    @Test
+    void asposeFontFolderRegistrar_isRegisteredIndependentlyOfFontCheck() {
+        // 字体目录注册不能挂在自检开关上：运维把自检关掉止血时，字体目录仍必须生效。
+        contextRunner
+                .withPropertyValues("mango.fileproc.convert.aspose-font-check-enabled=false")
+                .run(context -> {
+                    assertThat(context).hasSingleBean(AsposeFontFolderRegistrar.class);
+                    assertThat(context).doesNotHaveBean(AsposeFontInitializer.class);
+                });
+    }
+
+    @Test
+    void asposeFontInitializer_isRegisteredWhenFontCheckEnabled() {
+        contextRunner
+                .withPropertyValues("mango.fileproc.convert.aspose-font-check-enabled=true")
+                .run(context -> assertThat(context).hasSingleBean(AsposeFontInitializer.class));
+    }
+
+    @Test
+    void officeToPdf_whenAsposeWordDisabled_fallsBackToLibreOffice() {
+        contextRunner
+                .withPropertyValues("mango.fileproc.convert.aspose-word-to-pdf-enabled=false")
+                .run(context -> {
+                    assertThat(context).doesNotHaveBean(AsposeWordToPdfConvertProvider.class);
+                    ConvertRegistry registry = context.getBean(ConvertRegistry.class);
+                    assertThat(registry.findProvider(ConvertFormat.DOCX, ConvertFormat.PDF))
+                            .containsInstanceOf(OfficeToPdfConvertProvider.class);
+                });
     }
 
     @Test
