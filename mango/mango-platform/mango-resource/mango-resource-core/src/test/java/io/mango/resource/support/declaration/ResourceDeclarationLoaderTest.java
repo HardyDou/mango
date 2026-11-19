@@ -1,6 +1,7 @@
 package io.mango.resource.support.declaration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mango.infra.persistence.api.module.PersistenceModuleEnablement;
 import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
 import io.mango.resource.api.enums.ResourceSyncMode;
@@ -12,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -43,6 +45,40 @@ class ResourceDeclarationLoaderTest {
                 .orElseThrow();
         assertThat(sequence.getModuleCode()).isEqualTo("finance");
         assertThat(sequence.getVersion()).isEqualTo(2);
+    }
+
+    @Test
+    void loadSkipsDeclarationFilesOfDisabledModule() {
+        ResourceRegistryProperties properties = new ResourceRegistryProperties();
+        properties.setLocations(List.of("classpath*:META-INF/mango/resources/test-resource.*"));
+
+        List<ResourceDeclaration> declarations = new ResourceDeclarationLoader(new ObjectMapper(), properties,
+                new DisabledModules("finance", "财务模块未启用")).load();
+
+        assertThat(declarations).hasSize(1)
+                .allSatisfy(declaration -> assertThat(declaration.getModuleCode()).isEqualTo("guarantee"));
+    }
+
+    @Test
+    void loadSkipsModuleDependenciesOfDisabledModule() {
+        ResourceRegistryProperties properties = new ResourceRegistryProperties();
+        properties.setLocations(List.of("classpath*:META-INF/mango/resources/test-resource.json"));
+
+        Map<String, List<String>> dependencies = new ResourceDeclarationLoader(new ObjectMapper(), properties,
+                new DisabledModules("finance", "财务模块未启用")).loadModuleDependencies();
+
+        assertThat(dependencies).doesNotContainKey("finance");
+    }
+
+    @Test
+    void loadKeepsDeclarationsOfModulesWithoutExplicitSwitch() {
+        ResourceRegistryProperties properties = new ResourceRegistryProperties();
+        properties.setLocations(List.of("classpath*:META-INF/mango/resources/test-resource.*"));
+
+        List<ResourceDeclaration> declarations = new ResourceDeclarationLoader(new ObjectMapper(), properties,
+                new DisabledModules("integration", "集成模块未启用")).load();
+
+        assertThat(declarations).hasSize(2);
     }
 
     @Test
@@ -284,5 +320,18 @@ class ResourceDeclarationLoaderTest {
 
     private String repositoryResource(String relativePath) {
         return findRepositoryFile(relativePath).toUri().toString();
+    }
+
+    private record DisabledModules(String disabledModule, String reason) implements PersistenceModuleEnablement {
+
+        @Override
+        public boolean isEnabled(String moduleCode) {
+            return !disabledModule.equals(moduleCode);
+        }
+
+        @Override
+        public Optional<String> skipReason(String moduleCode) {
+            return disabledModule.equals(moduleCode) ? Optional.of(reason) : Optional.empty();
+        }
     }
 }

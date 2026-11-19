@@ -2,9 +2,11 @@ package io.mango.resource.support.declaration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import io.mango.infra.persistence.api.module.PersistenceModuleEnablement;
 import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.config.ResourceRegistryProperties;
-import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.io.support.ResourcePatternResolver;
@@ -21,16 +23,31 @@ import java.util.Set;
 
 /**
  * 加载 classpath JSON/YAML 资源声明。
+ * <p>
+ * 声明文件按模块归属过滤：模块被 {@code mango.persistence.flyway.modules.<module>.enabled=false}
+ * 显式关闭时，该模块的声明文件整体跳过并输出 WARN，避免访问未创建的模块表。
  */
-@RequiredArgsConstructor
 public class ResourceDeclarationLoader {
 
     private static final int SUPPORTED_SCHEMA_VERSION = 1;
+    private static final Logger LOG = LoggerFactory.getLogger(ResourceDeclarationLoader.class);
 
     private final ObjectMapper jsonMapper;
     private final ResourceRegistryProperties properties;
+    private final PersistenceModuleEnablement moduleEnablement;
     private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory());
     private final ResourcePatternResolver resourceResolver = new PathMatchingResourcePatternResolver();
+
+    public ResourceDeclarationLoader(ObjectMapper jsonMapper, ResourceRegistryProperties properties) {
+        this(jsonMapper, properties, null);
+    }
+
+    public ResourceDeclarationLoader(ObjectMapper jsonMapper, ResourceRegistryProperties properties,
+                                     PersistenceModuleEnablement moduleEnablement) {
+        this.jsonMapper = jsonMapper;
+        this.properties = properties;
+        this.moduleEnablement = moduleEnablement;
+    }
 
     public List<ResourceDeclaration> load() {
         List<ResourceDeclaration> declarations = new ArrayList<>();
@@ -85,9 +102,35 @@ public class ResourceDeclarationLoader {
     private List<LoadedResource> loadFiles() {
         List<LoadedResource> resources = new ArrayList<>();
         for (String location : resolveLocations()) {
-            resources.addAll(loadFiles(location));
+            for (LoadedResource loaded : loadFiles(location)) {
+                if (skipDisabledModule(loaded)) {
+                    continue;
+                }
+                resources.add(loaded);
+            }
         }
         return resources;
+    }
+
+    private boolean skipDisabledModule(LoadedResource loaded) {
+        if (moduleEnablement == null) {
+            return false;
+        }
+        String moduleCode = loaded.file().getMango().getResource().getModuleCode().trim();
+        if (moduleEnablement.isEnabled(moduleCode)) {
+            return false;
+        }
+        LOG.warn("Skipping portable resource declarations of disabled module: module={}, declarations={}, "
+                        + "reason={}, source={}", moduleCode, declarationCount(loaded.file()),
+                moduleEnablement.skipReason(moduleCode).orElse("(skip-reason not configured)"), loaded.source());
+        return true;
+    }
+
+    private int declarationCount(ResourceDeclarationFile file) {
+        return file.getMango().getResource().getDeclarations().values().stream()
+                .filter(declarations -> declarations != null)
+                .mapToInt(List::size)
+                .sum();
     }
 
     private List<LoadedResource> loadFiles(String location) {

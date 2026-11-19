@@ -2,6 +2,7 @@ package io.mango.resource.sync.starter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.infra.bootstrap.api.BootstrapRuntimeAuthorityProvider;
+import io.mango.infra.persistence.api.module.PersistenceModuleEnablement;
 import io.mango.resource.sync.starter.controller.ResourceTargetController;
 import io.mango.resource.support.ResourceHandler;
 import io.mango.resource.support.ResourceProvider;
@@ -56,9 +57,11 @@ public class ResourceSyncAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public ResourceDeclarationLoader resourceDeclarationLoader(ObjectMapper objectMapper,
-                                                               ResourceRegistryProperties properties) {
-        return new ResourceDeclarationLoader(objectMapper, properties);
+    public ResourceDeclarationLoader resourceDeclarationLoader(
+            ObjectMapper objectMapper,
+            ResourceRegistryProperties properties,
+            ObjectProvider<PersistenceModuleEnablement> moduleEnablement) {
+        return new ResourceDeclarationLoader(objectMapper, properties, moduleEnablement.getIfAvailable());
     }
 
     @Bean
@@ -96,10 +99,11 @@ public class ResourceSyncAutoConfiguration {
             ResourceManifestSerializer manifestSerializer,
             ResourceDeclarationCanonicalizer canonicalizer,
             ResourceManifestArtifactLoader artifactLoader,
+            ObjectProvider<PersistenceModuleEnablement> moduleEnablement,
             @Value("${spring.application.name:}") String applicationName) {
         return new ResourceBootstrapStepContributor(
                 properties, collector, resourceDeclarationApi, manifestSerializer,
-                canonicalizer, artifactLoader, applicationName);
+                canonicalizer, artifactLoader, moduleEnablement.getIfAvailable(), applicationName);
     }
 
     @Bean
