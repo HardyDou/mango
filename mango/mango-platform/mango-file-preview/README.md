@@ -98,7 +98,7 @@
 3. 业务上传文件后只保存 `fileId`。
 4. 详情页用 `FilePreviewPanel` 或调用 `/file-preview/files/preview-link` 创建预览链接。
 5. 当前用户必须拥有 `file:files:download` 权限；文件管理菜单的正式资源声明会给对应角色登记该权限。
-6. 预览引擎通过短期 source token 调 `/file-preview/sources?token=...` 读取源文件。
+6. 预览引擎读取源文件：内嵌引擎（`mango-app` 同时装有 starter 与 engine）在同一进程内按 `fileId` 参数直取；独立部署引擎用短期 source token 调 `/file-preview/sources?token=...`。
 
 ## 6. 配置说明
 
@@ -143,6 +143,7 @@ cache:
 | `mango.file-preview.source-base-url` | 当前请求地址 | 预览引擎读取源文件时使用的内部服务地址；部署在网关后时建议配置为集群内部地址，避免流量经外部入口绕回。配置后其 host 会自动加入引擎信任列表，无需重复写 `trust.host` |
 | `mango.file-preview.source-token-expire-seconds` | `86400` | 入口 token 和源文件 token 有效期，单位秒 |
 | `mango.file-preview.standalone-ui-enabled` | `false` | 是否允许访问 kkFileView 独立首页和演示文件管理入口 |
+| `mango.file-preview.internal-source-enabled` | `true` | 预览源文件是否同进程直取；独立进程部署的引擎必须设为 `false` |
 | `mango.file-preview.conversion.worker-count` | `2` | 每个预览实例的转换 Worker 数量，同时决定默认 LibreOffice 进程数量 |
 | `mango.file-preview.conversion.office-base-port` | `2001` | 未显式配置端口列表时生成 LibreOffice 端口的起始端口 |
 
@@ -152,7 +153,29 @@ Office 转换任务按文件内容版本生成稳定转换键；同一文件同�
 
 Office 转换后的 PDF 由 PDF.js 通过同源 `/file-preview/generated?token=...&fileName=...` 读取，不再经 `/getCorsFile` 回源。该接口虽然属于 PUBLIC 路由，但必须携带有效 source token，并校验 token 对应的 `fileId` 与转换文件名；token 过期后不能继续读取转换结果。原始文件仍只由引擎使用同一 source token 从内部 `source-base-url` 下载。
 
-引擎的 `/onlinePreview`、`/getCorsFile` 仍接受任意 URL，必须保留 host 白名单防止被当作 SSRF 代理。配置 `source-base-url` 后，其 host 由 `FilePreviewTrustHostInitializer` 在启动时自动加入信任列表；只有未配置 `source-base-url` 或使用其它引擎入口时才需要手工配置引擎侧 `trust.host`。
+引擎的 `/onlinePreview`、`/getCorsFile` 仍接受任意 URL，必须保留 host 白名单防止被当作 SSRF 代理。配置 `source-base-url` 后其 host 由 `FilePreviewTrustHostInitializer` 在启动时自动加入信任列表；只有未配置 `source-base-url` 或使用其它引擎入口时才需要手工配置引擎侧 `trust.host`。
+
+### 源文件直取（`fileId` 参数）
+
+`mango-file-preview-starter` 与 `mango-file-preview-engine` 同时存在、且 `mango.file-preview.internal-source-enabled` 为 `true`（默认）时，starter 会注册一个引擎下载器（`cn.keking.spi.FileDownloader` 实现）并把预览地址切到进程内直取。此后预览地址不再拼对外域名，而是直接带源标识：
+
+```
+/api/onlinePreview?fileId=<短期取源票据>&fullfilename=<引擎文件名>
+```
+
+引擎收到 `fileId` 后不做 URL 解析、不发起 HTTP，直接把该标识交给已注册的下载器，由它调用 `IFilePreviewService#openSource` 读流落盘。收益：
+
+- 容器不需要能解析或访问对外域名，域名变更不需要重新部署；
+- 大文件不再产生 `sources` 出口流量，也少一次「流出再落盘」的拷贝；
+- 取源票据仍然是短期、不可枚举的（`file-preview:source:*`，默认 24 小时），越权与过期行为与 `sources` 接口一致。
+
+引擎侧只用了一个扩展点：`DownloadUtils#downLoad` 先问 `FileDownloaders`，没有实现接管时原样走内置下载。因此升级 kkFileView 只需保留这一处转调，其余代码（`WebUtils`、`TrustHostFilter`、各 `FilePreview` 实现）未改动。
+
+约束与失败边界：
+
+- 直取只在同一 JVM 内有效。独立部署的引擎（`cn.keking.ServerMain` 独立进程，见 `mango.file-preview.engine.port`）**必须**显式设置 `mango.file-preview.internal-source-enabled: false`；此时预览地址与 1.14.x 一致（`url=<base64 源地址>`），引擎经 `source-base-url` 取流。开关默认 `true`，只适用于「预览引擎与 Mango 应用同进程」的内嵌部署；
+- 下载器读流失败时返回与内置下载一致的 `code=1` 与 `下载失败: <原因>`，不会产出空文件；
+- 需要经网关取源的部署同样把 `internal-source-enabled` 设为 `false`，并让 `source-base-url` 指向网关。
 
 `mango-file-preview-engine` 也支持独立引擎端口配置：
 

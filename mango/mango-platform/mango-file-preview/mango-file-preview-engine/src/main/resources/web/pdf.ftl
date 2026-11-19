@@ -48,7 +48,13 @@
 <script type="text/javascript">
     var sourceUrl = '${pdfUrl?js_string}';
     function sourceToken() {
-        var encodedSourceUrl = new URLSearchParams(window.location.search).get('url');
+        var params = new URLSearchParams(window.location.search);
+        // 进程内直取模式：预览地址只带 fileId，票据本身就是要传给 /file-preview/generated 的 source token。
+        var sourceId = params.get('fileId');
+        if (sourceId) {
+            return sourceId;
+        }
+        var encodedSourceUrl = params.get('url');
         if (!encodedSourceUrl) {
             return '';
         }

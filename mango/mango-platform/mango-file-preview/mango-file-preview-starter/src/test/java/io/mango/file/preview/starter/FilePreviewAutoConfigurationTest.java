@@ -1,7 +1,14 @@
 package io.mango.file.preview.starter;
 
 import cn.keking.ServerMain;
+import io.mango.file.preview.core.config.FilePreviewProperties;
+import io.mango.file.preview.core.service.IFilePreviewService;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.PropertySource;
@@ -10,6 +17,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 class FilePreviewAutoConfigurationTest {
 
@@ -41,5 +49,55 @@ class FilePreviewAutoConfigurationTest {
             assertThat(filter.type()).isEqualTo(FilterType.ASSIGNABLE_TYPE);
             assertThat(filter.classes()).containsExactly(ServerMain.class);
         });
+    }
+
+    private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
+            .withConfiguration(AutoConfigurations.of(SwitchProbeConfiguration.class));
+
+    @Test
+    void internalSourceEnabledFalse_不注册进程内下载器() {
+        contextRunner.withPropertyValues("mango.file-preview.internal-source-enabled=false")
+                .run(context -> assertThat(context).doesNotHaveBean(FilePreviewEngineDownloader.class));
+    }
+
+    @Test
+    void internalSourceEnabledDefault_注册进程内下载器() {
+        contextRunner.run(context -> assertThat(context).hasSingleBean(FilePreviewEngineDownloader.class));
+    }
+
+    @Configuration
+    @EnableConfigurationProperties(FilePreviewProperties.class)
+    static class SwitchProbeConfiguration {
+
+        @Bean
+        IFilePreviewService filePreviewService() {
+            return mock(IFilePreviewService.class);
+        }
+
+        @Bean
+        @org.springframework.boot.autoconfigure.condition.ConditionalOnBean(IFilePreviewService.class)
+        @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+                prefix = "mango.file-preview", name = "internal-source-enabled",
+                havingValue = "true", matchIfMissing = true)
+        FilePreviewEngineDownloader filePreviewEngineDownloader(IFilePreviewService filePreviewService) {
+            return new FilePreviewEngineDownloader(filePreviewService);
+        }
+    }
+
+    @Test
+    void 生产配置上的开关条件仍然生效() throws Exception {
+        java.lang.reflect.Method beanMethod = FilePreviewAutoConfiguration.class.getMethod(
+                "filePreviewEngineDownloader", io.mango.file.preview.core.service.IFilePreviewService.class);
+        org.springframework.boot.autoconfigure.condition.ConditionalOnProperty gate = beanMethod.getAnnotation(
+                org.springframework.boot.autoconfigure.condition.ConditionalOnProperty.class);
+
+        org.assertj.core.api.Assertions.assertThat(gate).isNotNull();
+        org.assertj.core.api.Assertions.assertThat(gate.prefix()).isEqualTo("mango.file-preview");
+        org.assertj.core.api.Assertions.assertThat(gate.name())
+                .containsExactly("internal-source-enabled");
+        org.assertj.core.api.Assertions.assertThat(gate.havingValue()).isEqualTo("true");
+        org.assertj.core.api.Assertions.assertThat(gate.matchIfMissing()).isTrue();
+        org.assertj.core.api.Assertions.assertThat(beanMethod.getAnnotation(
+                org.springframework.boot.autoconfigure.condition.ConditionalOnBean.class)).isNotNull();
     }
 }

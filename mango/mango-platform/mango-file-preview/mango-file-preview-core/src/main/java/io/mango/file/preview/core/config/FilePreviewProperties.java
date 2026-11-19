@@ -18,6 +18,16 @@ public class FilePreviewProperties {
     /** 是否启用文件预览。 */
     private boolean enabled = true;
 
+    /**
+     * 预览源文件是否在同一进程内直取。
+     *
+     * <p>内嵌引擎（默认部署）保持 {@code true}：预览地址传 {@code fileId} 参数，引擎向本进程取流。
+     * 独立进程部署的引擎（{@code ServerMain}，见 {@code mango.file-preview.engine.port}）必须置
+     * {@code false}：那个进程里没有本应用的取源实现，传 {@code fileId} 无法解析，必须回退为
+     * {@code url} 参数经 {@code source-base-url} 取流。</p>
+     */
+    private boolean internalSourceEnabled = true;
+
     /** 预览引擎入口路径。 */
     private String enginePath = "/onlinePreview";
 
@@ -26,6 +36,7 @@ public class FilePreviewProperties {
 
     /** 预览引擎访问源文件时使用的内部服务地址；为空时使用当前请求地址。 */
     private String sourceBaseUrl;
+
 
     /** 源文件临时访问令牌有效期，单位秒。 */
     private long sourceTokenExpireSeconds = DEFAULT_SOURCE_TOKEN_EXPIRE_SECONDS;

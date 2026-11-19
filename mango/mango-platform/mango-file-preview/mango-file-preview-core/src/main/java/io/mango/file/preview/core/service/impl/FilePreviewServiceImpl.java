@@ -11,6 +11,7 @@ import io.mango.file.preview.api.vo.FilePreviewLinkVO;
 import io.mango.file.preview.core.config.FilePreviewProperties;
 import io.mango.file.preview.core.gateway.FilePreviewFileGateway;
 import io.mango.file.preview.core.service.IFilePreviewService;
+import io.mango.file.preview.core.service.PreviewSourceAvailability;
 import io.mango.file.preview.core.task.IFilePreviewTaskService;
 import io.mango.file.preview.api.vo.FilePreviewTaskVO;
 import io.mango.file.preview.core.service.model.FilePreviewMode;
@@ -20,6 +21,9 @@ import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.kv.api.ITokenStore;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -47,12 +51,15 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
     private static final long HASH_FALLBACK_MASK = 0xffffffffL;
 
     private static final String FULL_FILENAME_PARAM = "fullfilename";
+    /** 内部直取协议；与引擎 {@code cn.keking.utils.PreviewSourceUrl} 保持一致，跨模块由 starter 的往返测试锁定。 */
+    private static final String SOURCE_ID_PARAM = "fileId";
     private static final String ENTRY_TOKEN_PREFIX = "file-preview:entry:";
     private static final String SOURCE_TOKEN_PREFIX = "file-preview:source:";
     private static final String ENGINE_FILE_PREFIX = "file-";
     private static final int MAX_EXTENSION_LENGTH = 20;
     private static final int HTTP_PORT = 80;
     private static final int HTTPS_PORT = 443;
+    private static final Logger LOGGER = LoggerFactory.getLogger(FilePreviewServiceImpl.class);
 
     private final FilePreviewFileGateway fileGateway;
     private final FilePreviewProperties properties;
@@ -60,6 +67,7 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
     private final ObjectMapper objectMapper;
     private final Clock clock;
     private final IFilePreviewTaskService previewTaskService;
+    private final ObjectProvider<PreviewSourceAvailability> sourceAvailabilityProvider;
 
     @Override
     public FilePreviewLinkVO createPreview(Long fileId) {
@@ -82,12 +90,10 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
         FileRecordVO fileRecord = fileRecord(fileId);
         String token = token();
         storeToken(SOURCE_TOKEN_PREFIX + token, new PreviewToken(fileId, MangoContextHolder.get(), expiresAt()));
-        String sourceUrl = sourceUrl(token, engineFileName(fileId, fileRecord));
-        String encodedSourceUrl = Base64.getEncoder().encodeToString(sourceUrl.getBytes(StandardCharsets.UTF_8));
         FilePreviewLinkVO vo = new FilePreviewLinkVO();
         vo.setFileId(fileId);
         vo.setFileName(fileRecord.getFileName());
-        vo.setPreviewUrl(engineUrl(encodedSourceUrl));
+        vo.setPreviewUrl(enginePreviewUrl(token, engineFileName(fileId, fileRecord)));
         vo.setExpireSeconds(properties.getSourceTokenExpireSeconds());
         return vo;
     }
@@ -211,6 +217,24 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
         return fileRecord;
     }
 
+    /**
+     * 引擎预览地址：同进程内注册了取源实现时直接传 {@code fileId} 参数（值是短期取源票据，不可枚举，
+     * 不是数据库主键），由引擎按该标识向本进程取流；否则回退为对外域名的 {@code url} 参数。
+     */
+    private String enginePreviewUrl(String sourceTicket, String fileName) {
+        if (!useInternalSource()) {
+            warnIfInternalSourceUnavailable();
+            String sourceUrl = sourceUrl(sourceTicket, fileName);
+            return engineUrl(Base64.getEncoder().encodeToString(sourceUrl.getBytes(StandardCharsets.UTF_8)));
+        }
+        return UriComponentsBuilder.fromPath("/api" + normalize(properties.getEnginePath()))
+                .queryParam(SOURCE_ID_PARAM, sourceTicket)
+                .queryParam(FULL_FILENAME_PARAM, fileName)
+                .build()
+                .encode(StandardCharsets.UTF_8)
+                .toUriString();
+    }
+
     private String sourceUrl(String token, String fileName) {
         String url = sourceBaseUrl() + normalize(properties.getSourcePath());
         return UriComponentsBuilder.fromHttpUrl(url)
@@ -219,6 +243,28 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
                 .build()
                 .encode(StandardCharsets.UTF_8)
                 .toUriString();
+    }
+
+    private boolean useInternalSource() {
+        if (!properties.isInternalSourceEnabled()) {
+            return false;
+        }
+        PreviewSourceAvailability availability = sourceAvailabilityProvider.getIfAvailable();
+        return availability != null && availability.internalSourceAvailable();
+    }
+
+    /**
+     * 只有「期望直取、但进程里没有可用实现」才告警：独立引擎部署时显式关掉开关，回落属于预期行为。
+     */
+    private void warnIfInternalSourceUnavailable() {
+        if (!properties.isInternalSourceEnabled()) {
+            return;
+        }
+        PreviewSourceAvailability availability = sourceAvailabilityProvider.getIfAvailable();
+        if (availability == null || !availability.internalSourceAvailable()) {
+            LOGGER.warn("未装配 FileDownloader 直取实现，预览源文件回落到 url 下载，将经过 source-base-url：{}",
+                    sourceBaseUrl());
+        }
     }
 
     private String sourceBaseUrl() {

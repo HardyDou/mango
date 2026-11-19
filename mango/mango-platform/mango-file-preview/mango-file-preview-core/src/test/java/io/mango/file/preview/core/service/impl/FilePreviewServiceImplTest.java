@@ -1,5 +1,8 @@
 package io.mango.file.preview.core.service.impl;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.R;
 import io.mango.file.api.FileApi;
@@ -8,6 +11,7 @@ import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.file.api.vo.FileRecordVO;
 import io.mango.file.preview.core.config.FilePreviewProperties;
+import io.mango.file.preview.core.service.PreviewSourceAvailability;
 import io.mango.file.preview.core.gateway.FilePreviewFileGateway;
 import io.mango.file.preview.core.service.model.FilePreviewMode;
 import io.mango.file.preview.core.task.IFilePreviewTaskService;
@@ -16,6 +20,8 @@ import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.kv.api.ITokenStore;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -83,6 +89,30 @@ class FilePreviewServiceImplTest {
         String sourceUrl = sourceUrl(service.createEnginePreview(100L).getPreviewUrl());
 
         assertThat(sourceUrl).startsWith("http://mango-app:8080/internal/file-preview/sources?");
+    }
+
+    @Test
+    void createEnginePreview_有直取实现时引擎地址只带fileId参数() {
+        FilePreviewProperties properties = new FilePreviewProperties();
+        properties.setSourceBaseUrl("https://business.example.com");
+        FilePreviewServiceImpl service = service(properties, new StubFileApi(), new StubTokenStore(),
+                Clock.systemUTC(), new StubFileContentProvider(), () -> true);
+
+        String previewUrl = service.createEnginePreview(100L).getPreviewUrl();
+
+        assertThat(previewUrl).startsWith("/api/onlinePreview?fileId=");
+        assertThat(previewUrl).doesNotContain("business.example.com");
+        assertThat(previewUrl).doesNotContain("url=");
+        assertThat(queryParameter(previewUrl, "fullfilename")).matches("file-100-[0-9a-f]{16}\\.pptx");
+    }
+
+    @Test
+    void createEnginePreview_auto模式无直取实现时保持HTTP抓取() {
+        FilePreviewServiceImpl service = service();
+
+        String sourceUrl = sourceUrl(service.createEnginePreview(100L).getPreviewUrl());
+
+        assertThat(sourceUrl).startsWith("http://127.0.0.1/file-preview/sources?");
     }
 
     @Test
@@ -212,6 +242,54 @@ class FilePreviewServiceImplTest {
         return service.previewMode(service.createPreview(100L).getPreviewToken());
     }
 
+    @Test
+    void createEnginePreview_关闭进程内直取时始终回退URL且不告警() {
+        FilePreviewProperties properties = new FilePreviewProperties();
+        properties.setSourceBaseUrl("http://business.example.com");
+        properties.setInternalSourceEnabled(false);
+        FilePreviewServiceImpl service = service(properties, new StubFileApi(), new StubTokenStore(),
+                Clock.systemUTC(), new StubFileContentProvider(), () -> true);
+        ListAppender<ILoggingEvent> appender = attachLogAppender();
+        try {
+            String previewUrl = service.createEnginePreview(100L).getPreviewUrl();
+
+            assertThat(previewUrl).contains("url=");
+            assertThat(previewUrl).doesNotContain("fileId=");
+            assertThat(appender.list).noneMatch(event -> event.getFormattedMessage().contains("未装配 FileDownloader"));
+        } finally {
+            detachLogAppender(appender);
+        }
+    }
+
+    @Test
+    void createEnginePreview_期望直取但进程无实现时告警回退() {
+        FilePreviewProperties properties = new FilePreviewProperties();
+        properties.setSourceBaseUrl("http://business.example.com");
+        FilePreviewServiceImpl service = service(properties, new StubFileApi(), new StubTokenStore(),
+                Clock.systemUTC(), new StubFileContentProvider());
+        ListAppender<ILoggingEvent> appender = attachLogAppender();
+        try {
+            String previewUrl = service.createEnginePreview(100L).getPreviewUrl();
+
+            assertThat(previewUrl).contains("url=");
+            assertThat(previewUrl).doesNotContain("fileId=");
+            assertThat(appender.list).anyMatch(event -> event.getFormattedMessage().contains("未装配 FileDownloader"));
+        } finally {
+            detachLogAppender(appender);
+        }
+    }
+
+    private ListAppender<ILoggingEvent> attachLogAppender() {
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        ((Logger) LoggerFactory.getLogger(FilePreviewServiceImpl.class)).addAppender(appender);
+        return appender;
+    }
+
+    private void detachLogAppender(ListAppender<ILoggingEvent> appender) {
+        ((Logger) LoggerFactory.getLogger(FilePreviewServiceImpl.class)).detachAppender(appender);
+    }
+
     private FilePreviewServiceImpl service() {
         return service(new StubTokenStore(), Clock.systemUTC());
     }
@@ -235,9 +313,22 @@ class FilePreviewServiceImplTest {
                                            StubTokenStore tokenStore,
                                            Clock clock,
                                            StubFileContentProvider contentProvider) {
+        return service(properties, fileApi, tokenStore, clock, contentProvider, null);
+    }
+
+    private FilePreviewServiceImpl service(FilePreviewProperties properties,
+                                           FileApi fileApi,
+                                           StubTokenStore tokenStore,
+                                           Clock clock,
+                                           StubFileContentProvider contentProvider,
+                                           PreviewSourceAvailability availability) {
         FilePreviewFileGateway gateway = new FilePreviewFileGateway(fileApi, contentProvider);
+        DefaultListableBeanFactory beanFactory = new DefaultListableBeanFactory();
+        if (availability != null) {
+            beanFactory.registerSingleton("previewSourceAvailability", availability);
+        }
         return new FilePreviewServiceImpl(gateway, properties, tokenStore, new ObjectMapper(), clock,
-                mock(IFilePreviewTaskService.class));
+                mock(IFilePreviewTaskService.class), beanFactory.getBeanProvider(PreviewSourceAvailability.class));
     }
 
     private String sourceUrl(String enginePreviewUrl) {

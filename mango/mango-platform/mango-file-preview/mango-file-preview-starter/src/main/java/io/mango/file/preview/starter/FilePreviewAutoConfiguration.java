@@ -54,6 +54,15 @@ public class FilePreviewAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnBean(IFilePreviewService.class)
+    @ConditionalOnProperty(prefix = "mango.file-preview", name = "internal-source-enabled",
+            havingValue = "true", matchIfMissing = true)
+    @ConditionalOnMissingBean
+    public FilePreviewEngineDownloader filePreviewEngineDownloader(IFilePreviewService filePreviewService) {
+        return new FilePreviewEngineDownloader(filePreviewService);
+    }
+
+    @Bean
     @ConditionalOnMissingBean
     public FilePreviewTrustHostInitializer filePreviewTrustHostInitializer(FilePreviewProperties properties) {
         return new FilePreviewTrustHostInitializer(properties.getSourceBaseUrl());
