@@ -185,7 +185,7 @@ jar tf target/*.jar | grep -E '^META-INF/mango/(resource-bootstrap-manifest.json
 ## 8. 常见失败
 
 - `included modules have no V migrations`：模块名与 `db/migration/<module>` 不一致，或依赖 JAR 未进入 API runtime 依赖。
-- `moduleOrder must contain every discovered module exactly once`：补齐、删除未知项或处理重复项。
+- `moduleOrder must contain every discovered module exactly once`：报错信息同时打印 `missing=` 与 `unknown=` 两个差集，按差集补齐或删除即可。发现集合来自最终 API 应用的 runtime classpath，取决于业务声明了哪些 Mango 模块，因此会随 Mango 版本变化；显式配置 `moduleOrder` 时建议先留空跑一次，让插件自动发现，再把发现结果复制成固定序列，并在升级 Mango 后重新核对。
 - `migration resource/version collision`：PR 合并前人工确定版本顺序和 SQL 语义，CI 不自动改名。
 - `cross-module ... ownership conflict`：两个模块声明了同一表或视图；归并到唯一 Owner。
 - `generated baseline is not equivalent`：B 在第二 schema 的结构或静态数据不同；构建已阻断，不要跳过验证。
@@ -198,3 +198,9 @@ jar tf target/*.jar | grep -E '^META-INF/mango/(resource-bootstrap-manifest.json
 - `stored routines and events are not supported`：当前生成器不静默遗漏存储过程、函数或事件；将其迁移方案单独评审。
 - `Mango cold baseline requires exactly one current SQL per module: ... count=0`：该模块有 `db/migration/<module>` 下的 V migration，但制品内缺少对应 B。重新构建 BSQL 制品，或删除该模块声明；手工往制品塞 B 会破坏指纹一致性。既没有 migration 也没有 B 的模块声明会被跳过并记录 WARN 日志，建议清理这类历史声明。
 - Jenkins 没有 MySQL：为该构建增加临时 MySQL 8.4 service/container，而不是改业务 datasource 或把生成推迟到部署服务器。
+
+### 8.1 模块顺序与分组
+
+`moduleOrder` 留空时插件按发现顺序回放，业务 POM 不需要维护全量序列；只有存在多个 datasource 分组或外部 Resource 资产时才显式配置。显式配置后该序列与发现集合相等，多一个模块或少一个模块都会在回放前阻断（`missing=` / `unknown=`）。
+
+需要分组时用 `moduleGroups` 指定个别模块的 group，其余模块落在 `default`，这样可以避免为了分组而手写整条序列。升级 Mango 后新进入 runtime classpath 的模块（例如 1.13.0 起标准模板包含 `integration`、`payment`）会改变发现集合，反之未声明的模块（如未引入的 `ai`）不在其中。
