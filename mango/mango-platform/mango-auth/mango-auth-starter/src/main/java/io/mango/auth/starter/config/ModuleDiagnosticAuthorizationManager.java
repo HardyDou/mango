@@ -24,14 +24,12 @@ import java.util.function.Supplier;
 public class ModuleDiagnosticAuthorizationManager
         implements AuthorizationManager<RequestAuthorizationContext> {
 
-    private static final Pattern LITERAL_ADDRESS = Pattern.compile("^[0-9a-fA-F:.]+$");
-
-
     public static final String BEAN_NAME = "mangoModuleDiagnosticAuthorizationManager";
     public static final String REQUIRED_PERMISSION = "diagnostic:read";
     private static final Logger LOG = LoggerFactory.getLogger(ModuleDiagnosticAuthorizationManager.class);
     private static final String PLATFORM_TENANT = "1";
     private static final int MAX_AUDIT_VALUE_LENGTH = 80;
+    private static final Pattern LITERAL_ADDRESS = Pattern.compile("^[0-9a-fA-F:.]+$");
 
     private final IAuthorizationProvider authorizationProvider;
 
