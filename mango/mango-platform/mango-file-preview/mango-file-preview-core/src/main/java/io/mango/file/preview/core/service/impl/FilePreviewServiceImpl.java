@@ -223,9 +223,8 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
      */
     private String enginePreviewUrl(String sourceTicket, String fileName) {
         if (!useInternalSource()) {
+            warnIfInternalSourceUnavailable();
             String sourceUrl = sourceUrl(sourceTicket, fileName);
-            LOGGER.warn("未装配 FileDownloader 直取实现，预览源文件回落到 url 下载，将经过 source-base-url：{}",
-                    sourceBaseUrl());
             return engineUrl(Base64.getEncoder().encodeToString(sourceUrl.getBytes(StandardCharsets.UTF_8)));
         }
         return UriComponentsBuilder.fromPath("/api" + normalize(properties.getEnginePath()))
@@ -247,8 +246,25 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
     }
 
     private boolean useInternalSource() {
+        if (!properties.isInternalSourceEnabled()) {
+            return false;
+        }
         PreviewSourceAvailability availability = sourceAvailabilityProvider.getIfAvailable();
         return availability != null && availability.internalSourceAvailable();
+    }
+
+    /**
+     * 只有「期望直取、但进程里没有可用实现」才告警：独立引擎部署时显式关掉开关，回落属于预期行为。
+     */
+    private void warnIfInternalSourceUnavailable() {
+        if (!properties.isInternalSourceEnabled()) {
+            return;
+        }
+        PreviewSourceAvailability availability = sourceAvailabilityProvider.getIfAvailable();
+        if (availability == null || !availability.internalSourceAvailable()) {
+            LOGGER.warn("未装配 FileDownloader 直取实现，预览源文件回落到 url 下载，将经过 source-base-url：{}",
+                    sourceBaseUrl());
+        }
     }
 
     private String sourceBaseUrl() {

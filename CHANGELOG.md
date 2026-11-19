@@ -220,7 +220,7 @@ workflow-compatible-additions: []
 ### Added
 
 - 引擎新增可扩展下载器 `cn.keking.spi.FileDownloader` 与注册表 `FileDownloaders`：`DownloadUtils#downLoad` 先交给已注册实现，无匹配时原样走内置下载（HTTP / file 协议 / 压缩包内文件）。
-- `mango-file-preview-starter` 装配 `FilePreviewEngineDownloader`：内嵌引擎预览地址改为 `/api/onlinePreview?fileId=<短期取源票据>&fullfilename=<文件名>`，进程内直接取流，不再绕对外域名做 HTTP 抓取。
+- `mango-file-preview-starter` 在 `mango.file-preview.internal-source-enabled=true`（默认）时装配 `FilePreviewEngineDownloader`：内嵌引擎预览地址改为 `/api/onlinePreview?fileId=<短期取源票据>&fullfilename=<文件名>`，进程内直接取流，不再绕对外域名做 HTTP 抓取。
 
 ### Changed
 
@@ -228,7 +228,7 @@ workflow-compatible-additions: []
 
 ### Compatibility
 
-- 未装配内嵌下载器（独立部署引擎）时，预览地址仍是 `url=<base64 源地址>`，行为与 1.14.x 完全一致。
+- 独立进程部署的引擎（`ServerMain`）必须显式设置 `mango.file-preview.internal-source-enabled: false`（默认 `true`，只适用于内嵌同进程部署）；关掉开关后预览地址仍是 `url=<base64 源地址>`，行为与 1.14.x 完全一致。
 - 引擎除 `DownloadUtils#downLoad` 的一处转调与上述新增参数外，`WebUtils`、`TrustHostFilter`、各 `FilePreview` 实现均未改动，便于跟随 kkFileView 升级。
 
 ## Unreleased - workflow current task unique key (Issue #1289)

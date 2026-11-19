@@ -143,6 +143,7 @@ cache:
 | `mango.file-preview.source-base-url` | 当前请求地址 | 预览引擎读取源文件时使用的内部服务地址；部署在网关后时建议配置为集群内部地址，避免流量经外部入口绕回。配置后其 host 会自动加入引擎信任列表，无需重复写 `trust.host` |
 | `mango.file-preview.source-token-expire-seconds` | `86400` | 入口 token 和源文件 token 有效期，单位秒 |
 | `mango.file-preview.standalone-ui-enabled` | `false` | 是否允许访问 kkFileView 独立首页和演示文件管理入口 |
+| `mango.file-preview.internal-source-enabled` | `true` | 预览源文件是否同进程直取；独立进程部署的引擎必须设为 `false` |
 | `mango.file-preview.conversion.worker-count` | `2` | 每个预览实例的转换 Worker 数量，同时决定默认 LibreOffice 进程数量 |
 | `mango.file-preview.conversion.office-base-port` | `2001` | 未显式配置端口列表时生成 LibreOffice 端口的起始端口 |
 
@@ -156,7 +157,7 @@ Office 转换后的 PDF 由 PDF.js 通过同源 `/file-preview/generated?token=.
 
 ### 源文件直取（`fileId` 参数）
 
-`mango-file-preview-starter` 与 `mango-file-preview-engine` 同时存在时，starter 会注册一个引擎下载器（`cn.keking.spi.FileDownloader` 实现）。此后预览地址不再拼对外域名，而是直接带源标识：
+`mango-file-preview-starter` 与 `mango-file-preview-engine` 同时存在、且 `mango.file-preview.internal-source-enabled` 为 `true`（默认）时，starter 会注册一个引擎下载器（`cn.keking.spi.FileDownloader` 实现）并把预览地址切到进程内直取。此后预览地址不再拼对外域名，而是直接带源标识：
 
 ```
 /api/onlinePreview?fileId=<短期取源票据>&fullfilename=<引擎文件名>
@@ -172,9 +173,9 @@ Office 转换后的 PDF 由 PDF.js 通过同源 `/file-preview/generated?token=.
 
 约束与失败边界：
 
-- 直取只在同一 JVM 内有效。独立部署的引擎没有注册下载器，地址会退回 `url` + `token` 形式（`source-base-url` 必需）；
+- 直取只在同一 JVM 内有效。独立部署的引擎（`cn.keking.ServerMain` 独立进程，见 `mango.file-preview.engine.port`）**必须**显式设置 `mango.file-preview.internal-source-enabled: false`；此时预览地址与 1.14.x 一致（`url=<base64 源地址>`），引擎经 `source-base-url` 取流。开关默认 `true`，只适用于「预览引擎与 Mango 应用同进程」的内嵌部署；
 - 下载器读流失败时返回与内置下载一致的 `code=1` 与 `下载失败: <原因>`，不会产出空文件；
-- 需要经网关取源的部署不要装配 starter 的下载器（例如独立引擎），或让 `source-base-url` 指向网关。
+- 需要经网关取源的部署同样把 `internal-source-enabled` 设为 `false`，并让 `source-base-url` 指向网关。
 
 `mango-file-preview-engine` 也支持独立引擎端口配置：
 
