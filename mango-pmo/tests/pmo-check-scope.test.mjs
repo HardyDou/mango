@@ -296,6 +296,17 @@ test('CI reruns when policy-resolved assurance selections change and keeps expli
   assert.match(workflow, /Run selected static PMO checks\n\s+if: needs\.preflight_scope\.outputs\.pmo == 'true' && needs\.preflight_scope\.outputs\.m09 == 'true'/);
   assert.match(workflow, /outputs\.m11 == 'true'/);
   assert.match(workflow, /outputs\.m08 == 'true'/);
+  for (const step of ['Audit module README quality', 'Audit README source facts', 'Check business integration guides']) {
+    assert.match(
+      workflow,
+      new RegExp(`${step}\\n\\s+if: needs\\\.preflight_scope\\\.outputs\\\.readmes == 'true'\\n`),
+      `${step} must run whenever readmes scope is true, independent of the declared m08 value`,
+    );
+  }
+  assert.doesNotMatch(
+    workflow,
+    /if: needs\.preflight_scope\.outputs\.readmes == 'true' && needs\.preflight_scope\.outputs\.m08 == 'true'/,
+  );
   assert.match(
     workflow,
     /Build the architecture gate prerequisites[\s\S]*?-pl :mango-bom,:mango-parent,:mango-common,:mango-tools[\s\S]*?-DskipTests[\s\S]*?install/,
