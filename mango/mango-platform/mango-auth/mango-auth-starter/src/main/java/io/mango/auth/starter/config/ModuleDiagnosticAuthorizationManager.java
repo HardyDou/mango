@@ -14,7 +14,10 @@ import org.springframework.security.web.access.intercept.RequestAuthorizationCon
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Enumeration;
+import java.util.regex.Pattern;
 import java.util.function.Supplier;
 
 /** Dedicated fail-closed authorization for module runtime diagnostics. */
@@ -26,6 +29,7 @@ public class ModuleDiagnosticAuthorizationManager
     private static final Logger LOG = LoggerFactory.getLogger(ModuleDiagnosticAuthorizationManager.class);
     private static final String PLATFORM_TENANT = "1";
     private static final int MAX_AUDIT_VALUE_LENGTH = 80;
+    private static final Pattern LITERAL_ADDRESS = Pattern.compile("^[0-9a-fA-F:.]+$");
 
     private final IAuthorizationProvider authorizationProvider;
 
@@ -119,10 +123,28 @@ public class ModuleDiagnosticAuthorizationManager
         return new AuthorizationDecision(false);
     }
 
+    /**
+     * 判断来源是否为地址字面量形式的回环地址。
+     * <p>
+     * 只接受 `127.0.0.1`、`::1` 这类字面量：域名或主机名（例如 `localhost`）需要解析，
+     * 解析结果不可信，因此仍然按非回环处理。
+     *
+     * @param remoteAddress 请求来源地址
+     * @return true 表示字面量回环地址
+     */
     private boolean isLoopback(String remoteAddress) {
-        return "127.0.0.1".equals(remoteAddress)
-                || "::1".equals(remoteAddress)
-                || "0:0:0:0:0:0:0:1".equals(remoteAddress);
+        if (remoteAddress == null || remoteAddress.isBlank()) {
+            return false;
+        }
+        String value = remoteAddress.trim();
+        if (!LITERAL_ADDRESS.matcher(value).matches()) {
+            return false;
+        }
+        try {
+            return InetAddress.getByName(value).isLoopbackAddress();
+        } catch (UnknownHostException exception) {
+            return false;
+        }
     }
 
     private boolean hasHeaderOnlyBearer(HttpServletRequest request) {

@@ -16,6 +16,11 @@ import java.util.List;
 @Component
 public class AuthMessageTemplateResourceProvider implements ResourceProvider {
 
+    private static final long LOGIN_LOCKED_TEMPLATE_ID = 2026061900100010000L;
+
+    private static final long LOGIN_LOCKED_CHANNEL_CONFIG_ID = 2060000000001010000L;
+
+
     @Override
     public List<String> moduleCodes() {
         return List.of("auth");
@@ -25,8 +30,8 @@ public class AuthMessageTemplateResourceProvider implements ResourceProvider {
     public List<ResourceDeclaration> provide() {
         List<ResourceDeclaration> declarations = new ArrayList<>();
         declarations.addAll(NoticeMessageTemplateResourceDeclarations.fourChannels(spec(
-                2026061900100010000L,
-                2060000000001010000L,
+                LOGIN_LOCKED_TEMPLATE_ID,
+                LOGIN_LOCKED_CHANNEL_CONFIG_ID,
                 "auth.login.locked",
                 "登录尝试锁定",
                 "登录失败次数达到限制后通知账号持有人或安全管理员。",

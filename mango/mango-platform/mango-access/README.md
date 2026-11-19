@@ -106,7 +106,15 @@ mango:
 | `mango.access.ip-whitelist.enabled` | `false` | 是否启用 IP 白名单 |
 | `mango.access.ip-whitelist.rules[].path-pattern` | 无 | 白名单路径，支持 Ant 风格通配符 |
 | `mango.access.ip-whitelist.rules[].methods` | 空列表 | HTTP 方法。为空或包含 `ALL` 表示匹配全部方法 |
-| `mango.access.ip-whitelist.rules[].cidrs` | 空列表 | 允许访问的 IP 或 CIDR |
+| `mango.access.ip-whitelist.rules[].cidrs` | 空列表 | 允许访问的 IP 或 CIDR，网段须写完整四段（`10.0.0.0/8`，不要写 `10/8`） |
+
+### 7.1 探针路径的白名单语义
+
+- `/actuator/**` 不参与 API 资源声明同步（`mango.authorization.api-resource-sync.exclude-paths` 默认含 `/actuator/**`），因此探针只有两条放行途径：本白名单，或 `mango.auth.security.permit-paths`。
+- 未放行的探针按「未登记资源」判定为 LOGIN，返回 401 `缺少或非法的 Authorization 请求头`；`path-pattern: /actuator/health/**` 可同时覆盖 `/actuator/health` 与 readiness、liveness 分组。
+- 白名单只读 `request.getRemoteAddr()` 与原始请求 URI：经过容器端口映射、Ingress 或设置 `server.servlet.context-path` 时，来源 IP 与路径都随之变化，规则需按实际值配置。
+- CIDR 的网段部分必须是完整四段 IPv4 或合法 IPv6。`10/8`、`172.16/12` 这类缩写会被解析成 `0.0.0.10`、`172.0.0.16`，网段随之改变且不会报错；启动时对这类写法输出 WARN `IP 白名单 CIDR 不是完整网段写法`。
+- IPv4 映射的 IPv6 地址（`::ffff:127.0.0.1`）按 IPv4 规则匹配，双栈容器下不会因地址族不同漏配。
 
 ## 8. 返回字段
 
@@ -176,7 +184,7 @@ mango:
 | INTERNAL 接口无法访问 | 这是入口默认行为。INTERNAL 资源不允许从 access 外部入口访问 |
 | 网关后面的服务拿不到租户 | 查 Gateway 是否接入 `mango-access-gateway-starter`，下游是否读取 Mango 上下文请求头 |
 | 单体服务拿不到上下文 | 查应用是否接入 `mango-access-web-starter`，请求是否已经通过 `AuthFilter` |
-| 白名单没有生效 | 查 `path-pattern`、HTTP method、客户端 IP 和 CIDR 是否匹配 |
+| 白名单没有生效 | 查 `path-pattern`、HTTP method、客户端 IP 和 CIDR 是否匹配；`10/8` 这类缩写网段永远匹配不到，参见 §7.1 |
 | 接口返回 503 | 查 `ApiResourceApi`、`ITokenProvider`、`IAuthorizationProvider` 的当前实现和远程依赖；Access 会按失败关闭处理，不会降级放行 |
 
 ## 13. 相关文档
