@@ -13,8 +13,8 @@ public class FileAttribute {
     private String name;
     private String url;
     /**
-     * 进程内直取的源标识：有值时引擎直接向已注册的 {@code PreviewSourceProvider} 取流，
-     * 不再把 {@link #url} 当作网络地址下载。
+     * 进程内直取的源标识：有值时引擎交给已注册的 {@link cn.keking.spi.FileDownloader} 取流，
+     * 不再把 {@link #url} 当作网络地址下载。没有下载器接管时退回内置下载逻辑。
      */
     private String sourceId;
     private boolean isCompressFile = false;

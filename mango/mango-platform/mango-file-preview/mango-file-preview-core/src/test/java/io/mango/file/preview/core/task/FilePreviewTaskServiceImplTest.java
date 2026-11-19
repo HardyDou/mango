@@ -35,6 +35,33 @@ import static org.mockito.Mockito.*;
 class FilePreviewTaskServiceImplTest {
 
     @Test
+    void converterCannotHandleFormat_marksNotSupportedInsteadOfFailed() throws Exception {
+        FileApi fileApi = mock(FileApi.class);
+        IFileContentProvider contentProvider = mock(IFileContentProvider.class);
+        ConvertApi convertApi = mock(ConvertApi.class);
+        ITokenStore taskStore = mock(ITokenStore.class);
+        FileRecordVO record = record(50L, "legacy-document.doc");
+        when(fileApi.get(50L)).thenReturn(io.mango.common.result.R.ok(record));
+        when(convertApi.canConvert(any(), any())).thenReturn(false);
+        FilePreviewTaskServiceImpl service = new FilePreviewTaskServiceImpl(
+                new FilePreviewFileGateway(fileApi, contentProvider), contentProvider, convertApi,
+                taskStore, availableLeaseLocker(), new ObjectMapper().registerModule(new JavaTimeModule()),
+                new FilePreviewProperties(), testExecutor());
+
+        service.submit(50L, false);
+        await(() -> service.status(50L, false).getStatus() == FilePreviewTaskStatus.NOT_SUPPORTED);
+
+        FilePreviewTaskVO result = service.status(50L, false);
+        assertThat(result.getStatus()).isEqualTo(FilePreviewTaskStatus.NOT_SUPPORTED);
+        assertThat(result.getProgress()).isEqualTo(100);
+        assertThat(result.getMessage()).isEqualTo("该格式不支持在线预览，请下载原文件查看");
+        assertThat(result.getMessage()).doesNotContain("转换为 PDF");
+        assertThat(result.getPreviewFileId()).isNull();
+        verify(convertApi, never()).convert(any());
+        verify(contentProvider, never()).savePreviewArtifact(any());
+    }
+
+    @Test
     void repeatedRequestsReuseSameVersionTaskAndConversion() throws Exception {
         FileApi fileApi = mock(FileApi.class);
         IFileContentProvider contentProvider = mock(IFileContentProvider.class);
@@ -65,9 +92,10 @@ class FilePreviewTaskServiceImplTest {
         assertThat(second.getCreatedAt()).isEqualTo(first.getCreatedAt());
         assertThat(second.getStatus()).isEqualTo(FilePreviewTaskStatus.PROCESSING);
         releaseConversion.countDown();
-        await(() -> service.status(42L, false).getStatus() == FilePreviewTaskStatus.FAILED);
+        // canConvert 返回 false 表示引擎不支持该格式，属于「格式不支持预览」而不是转换失败。
+        await(() -> service.status(42L, false).getStatus() == FilePreviewTaskStatus.NOT_SUPPORTED);
         verify(leaseLocker, atLeastOnce()).tryAcquire(any(), any(), anyLong());
-        verify(taskStore, atLeastOnce()).store(any(), contains("FAILED"), eq(30L * 24 * 60 * 60));
+        verify(taskStore, atLeastOnce()).store(any(), contains("NOT_SUPPORTED"), eq(30L * 24 * 60 * 60));
         verify(convertApi, never()).convert(any());
     }
 
@@ -165,6 +193,8 @@ class FilePreviewTaskServiceImplTest {
 
         FilePreviewTaskVO result = service.status(48L, false);
         assertThat(result.getPreviewFileId()).isNull();
+        assertThat(result.getMessage()).isEqualTo("预览已就绪");
+        assertThat(result.getProgress()).isEqualTo(100);
         verify(convertApi, never()).canConvert(any(), any());
         verify(convertApi, never()).convert(any());
         verify(contentProvider, never()).save(any());
@@ -216,6 +246,7 @@ class FilePreviewTaskServiceImplTest {
             FilePreviewTaskVO result = service.status(47L, false);
             assertThat(result.getProgress()).isEqualTo(100);
             assertThat(result.getMessage()).isEqualTo("当前未启用文件格式转换能力，请下载原文件查看");
+            assertThat(result.getStatus()).isEqualTo(FilePreviewTaskStatus.FAILED);
             assertThat(result.getPreviewFileId()).isNull();
             verifyNoInteractions(contentProvider);
         }

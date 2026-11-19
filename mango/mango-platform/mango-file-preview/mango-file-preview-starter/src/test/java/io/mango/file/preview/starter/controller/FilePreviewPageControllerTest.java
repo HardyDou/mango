@@ -89,6 +89,23 @@ class FilePreviewPageControllerTest {
         assertThat(page.location()).isEqualTo(ENGINE_URL);
     }
 
+    @Test
+    void unsupportedFormatShowsDownloadHintInsteadOfConversionError() throws Exception {
+        when(filePreviewService.previewMode(TOKEN)).thenReturn(FilePreviewMode.PDF_CONVERSION);
+        FilePreviewTaskVO notSupported = task(FilePreviewTaskStatus.NOT_SUPPORTED, null);
+        notSupported.setMessage("该格式不支持在线预览，请下载原文件查看");
+        when(filePreviewService.previewTaskByToken(TOKEN, false)).thenReturn(notSupported);
+
+        RenderedPage page = render(controller.redirectPreviewEntry(TOKEN, false, false));
+
+        assertThat(page.status()).isEqualTo(200);
+        assertThat(page.body()).contains("不支持预览")
+                .contains("该格式不支持在线预览，请下载原文件查看")
+                .contains("NOT_SUPPORTED")
+                .doesNotContain("转换为 PDF");
+        verify(filePreviewService, never()).createEnginePreviewByToken(anyString());
+    }
+
     private RenderedPage render(ModelAndView modelAndView) throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();

@@ -1,3 +1,20 @@
+## Unreleased - file preview not-supported status (Issue #1315)
+
+### Added
+
+- `FilePreviewTaskStatus.NOT_SUPPORTED`：格式本身不在可预览范围内时使用，与转换失败区分。
+
+### Changed
+
+- `FilePreviewTaskServiceImpl`：`ConvertFormat.parse` 为空或 `ConvertApi#canConvert` 返回 false 时状态由 `FAILED` 改为 `NOT_SUPPORTED`，
+  文案改为「该格式不支持在线预览，请下载原文件查看」，不再复用「转换为 PDF」的失败文案；`ConvertApi` 缺失仍为 `FAILED`（部署能力问题）。
+- 预览进度页：新增 `NOT_SUPPORTED` 标签与「下载原文件」入口，不再显示转换中转圈。
+
+### Compatibility
+
+- 消费 `FilePreviewTaskStatus` 的调用方需要把 `NOT_SUPPORTED` 与 `FAILED` 分开处理；压缩包、文本、图片、表格等直出格式仍返回 `SUCCEEDED` /「预览已就绪」。
+- Maven 1.1.5 及更早版本不含 `FilePreviewMode` 路由守卫（`36d8c9201`，1.2.0 起），zip/文本会被送进 PDF 转换队列并失败；本批次不做 1.1.x backport，仅在发布说明标注为用户可见缺陷修复。
+
 ## v2026.11.19-maven-1.14.2-disabled-module-resources-release - Mango Maven/docs 1.14.2 disabled module resources and probe whitelist - 2026-11-19
 
 Status: PUBLISHED_AND_VERIFIED
