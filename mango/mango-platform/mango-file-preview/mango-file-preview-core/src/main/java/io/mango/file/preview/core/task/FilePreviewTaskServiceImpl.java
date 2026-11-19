@@ -52,6 +52,8 @@ public class FilePreviewTaskServiceImpl implements IFilePreviewTaskService {
     private static final String OWNER = java.util.UUID.randomUUID().toString();
     private static final long TASK_RETENTION_SECONDS = 30L * 24 * 60 * 60;
     private static final String OFFICE_PREVIEW_CONFIRM_MESSAGE = "文件太大，预览需要较长时间，建议下载查看";
+    /** 格式本身不支持在线预览：与「转换引擎失败」区分开，不提示「转换为 PDF」。 */
+    private static final String NOT_SUPPORTED_MESSAGE = "该格式不支持在线预览，请下载原文件查看";
     private static final String TASK_PREFIX = "file-preview:task:";
     private static final int PROGRESS_PENDING = 5;
     private static final int PROGRESS_CONVERTING = 15;
@@ -201,7 +203,8 @@ public class FilePreviewTaskServiceImpl implements IFilePreviewTaskService {
             }
             var parsedFormat = ConvertFormat.parse(extension);
             if (parsedFormat.isEmpty()) {
-                update(task, FilePreviewTaskStatus.FAILED, PROGRESS_COMPLETE, "暂不支持该文件格式的预览");
+                update(task, FilePreviewTaskStatus.NOT_SUPPORTED, PROGRESS_COMPLETE,
+                        NOT_SUPPORTED_MESSAGE);
                 return;
             }
             if (convertApi == null) {
@@ -211,7 +214,8 @@ public class FilePreviewTaskServiceImpl implements IFilePreviewTaskService {
             }
             ConvertFormat source = parsedFormat.get();
             if (!convertApi.canConvert(source, ConvertFormat.PDF)) {
-                update(task, FilePreviewTaskStatus.FAILED, PROGRESS_COMPLETE, "暂不支持该文件格式转换为 PDF");
+                update(task, FilePreviewTaskStatus.NOT_SUPPORTED, PROGRESS_COMPLETE,
+                        NOT_SUPPORTED_MESSAGE);
                 return;
             }
             FileDownloadVO sourceFile = fileGateway.download(record.getId());
