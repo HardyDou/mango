@@ -1,10 +1,10 @@
 ## v2026.11.19-maven-1.14.2-disabled-module-resources-release - Mango Maven/docs 1.14.2 disabled module resources and probe whitelist - 2026-11-19
 
-Status: PENDING
+Status: PUBLISHED_AND_VERIFIED
 
-- Maven and npm publication: PENDING (201 Maven coordinates, `@mango/cli@1.4.17`)
-- Consume verification: PENDING
-- Tag and GitHub Release: PENDING
+- Maven and npm publication: COMPLETED (201 Maven coordinates, `@mango/cli@1.4.17`)
+- Consume verification: COMPLETED (publish and consume registries resolve identically, clean consume-only consumer installed)
+- Tag and GitHub Release: `v2026.11.19-maven-1.14.2-disabled-module-resources-release`
 - Release plan digest: `433b23a463d961057f620c974cff7e3d565288e5cc06e614042466f4284e60f8`
 
 批次标签 `v2026.11.19-maven-1.14.2-disabled-module-resources-release`，基线为 `v2026.11.19-maven-1.14.1-portable-id-contract-release`（Maven 1.14.1）。本批次不触碰 `mango-workflow`，因此不携带工作流契约指纹块。
