@@ -1,0 +1,25 @@
+{
+  "description": "迁移前的复杂度指纹（配置阈值仍在指纹里），来自 v2026.11.20 之前的 no-new-violations-baseline.json",
+  "fingerprints": [
+    "checkstyle|cyclomaticcomplexitycheck|mango-infra/mango-infra-persistence/mango-infra-persistence-api/src/main/java/io/mango/infra/persistence/api/crud/QueryWrapperBuilder.java|number:15,number:16",
+    "checkstyle|cyclomaticcomplexitycheck|mango-platform/mango-workflow/mango-workflow-core/src/main/java/io/mango/workflow/core/support/WorkflowNodeActionConfigResolver.java|number:15,number:18",
+    "checkstyle|cyclomaticcomplexitycheck|mango-platform/mango-file-preview/mango-file-preview-engine/src/main/java/cn/keking/web/controller/OnlinePreviewController.java|number:20,number:24",
+    "checkstyle|cyclomaticcomplexitycheck|mango-platform/mango-file-preview/mango-file-preview-engine/src/main/java/cn/keking/web/controller/FileController.java|number:20,number:30",
+    "checkstyle|cyclomaticcomplexitycheck|mango-platform/mango-file-preview/mango-file-preview-engine/src/main/java/cn/keking/web/controller/FileController.java|number:20,number:40",
+    "checkstyle|cyclomaticcomplexitycheck|mango-platform/mango-file-preview/mango-file-preview-engine/src/main/java/cn/keking/web/filter/AttributeSetFilter.java|number:15,number:17",
+    "checkstyle|cyclomaticcomplexitycheck|mango-platform/mango-file-preview/mango-file-preview-engine/src/main/java/cn/keking/utils/DownloadUtils.java|number:15,number:19",
+    "checkstyle|cyclomaticcomplexitycheck|mango-platform/mango-file-preview/mango-file-preview-engine/src/main/java/cn/keking/utils/SimpleEncodingDetects.java|number:15,number:19",
+    "checkstyle|cyclomaticcomplexitycheck|mango-platform/mango-file-preview/mango-file-preview-engine/src/main/java/cn/keking/utils/SimpleEncodingDetects.java|number:20,number:30",
+    "checkstyle|cyclomaticcomplexitycheck|mango-platform/mango-file-preview/mango-file-preview-engine/src/main/java/cn/keking/utils/SimpleEncodingDetects.java|number:20,number:29",
+    "checkstyle|cyclomaticcomplexitycheck|mango-platform/mango-file-preview/mango-file-preview-engine/src/main/java/cn/keking/utils/SimpleEncodingDetects.java|number:20,number:23",
+    "checkstyle|cyclomaticcomplexitycheck|mango-platform/mango-file-preview/mango-file-preview-engine/src/main/java/cn/keking/utils/SimpleEncodingDetects.java|number:15,number:18",
+    "checkstyle|cyclomaticcomplexitycheck|mango-platform/mango-file-preview/mango-file-preview-engine/src/main/java/cn/keking/utils/SimpleEncodingDetects.java|number:20,number:31",
+    "checkstyle|cyclomaticcomplexitycheck|mango-platform/mango-file-preview/mango-file-preview-engine/src/main/java/cn/keking/utils/SimpleEncodingDetects.java|number:15,number:19",
+    "checkstyle|cyclomaticcomplexitycheck|mango-platform/mango-file-preview/mango-file-preview-engine/src/main/java/cn/keking/utils/SimpleEncodingDetects.java|number:15,number:16",
+    "checkstyle|cyclomaticcomplexitycheck|mango-platform/mango-file-preview/mango-file-preview-engine/src/main/java/cn/keking/utils/SimpleEncodingDetects.java|number:15,number:20",
+    "checkstyle|cyclomaticcomplexitycheck|mango-platform/mango-file-preview/mango-file-preview-engine/src/main/java/cn/keking/model/FileType.java|number:20,number:21",
+    "checkstyle|cyclomaticcomplexitycheck|mango-platform/mango-file-preview/mango-file-preview-engine/src/main/java/cn/keking/service/impl/PdfFilePreviewImpl.java|number:15,number:16",
+    "checkstyle|cyclomaticcomplexitycheck|mango-platform/mango-file-preview/mango-file-preview-engine/src/main/java/cn/keking/service/Mediatomp4Service.java|number:15,number:16",
+    "checkstyle|cyclomaticcomplexitycheck|mango-platform/mango-file-preview/mango-file-preview-engine/src/main/java/cn/keking/service/FileHandlerService.java|number:20,number:23"
+  ]
+}

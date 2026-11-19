@@ -15,8 +15,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 class CheckGateFinalizer {
     private static final String GATE_ALL = "all";
@@ -34,8 +32,6 @@ class CheckGateFinalizer {
     private static final String LINE_SEPARATOR_PATTERN = "\\R";
     private static final String SOURCE_CHECKSTYLE = "checkstyle";
     private static final Set<String> FILE_LEVEL_COUNT_RULES = Set.of("filelengthcheck");
-    private static final Pattern CHECKSTYLE_IDENTITY_TOKEN_PATTERN =
-            Pattern.compile("'([^']*)'|\\b\\d[\\d,_]*(?:\\.\\d+)?[a-zA-Z]?\\b");
     private static final Set<String> NON_WAIVABLE_CHANGED_RULES = Set.of("MODULE_INFO");
     private static final Set<String> REPOSITORY_ROOT_SEGMENTS =
             Set.of(
@@ -464,22 +460,9 @@ class CheckGateFinalizer {
             return "";
         }
         if (SOURCE_CHECKSTYLE.equals(safeLower(issue.source))) {
-            return localeIndependentCheckstyleTokens(text);
+            return CheckstyleFingerprintTokens.of(text);
         }
         return text;
-    }
-
-    private String localeIndependentCheckstyleTokens(String text) {
-        Matcher matcher = CHECKSTYLE_IDENTITY_TOKEN_PATTERN.matcher(text);
-        Set<String> tokens = new TreeSet<>();
-        while (matcher.find()) {
-            if (matcher.group(1) != null) {
-                tokens.add("literal:" + matcher.group(1));
-            } else {
-                tokens.add("number:" + matcher.group().replace(",", "").replace("_", ""));
-            }
-        }
-        return String.join(",", tokens);
     }
 
     private String normalizeFingerprintText(String value) {
