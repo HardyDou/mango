@@ -1,10 +1,10 @@
 ## v2026.11.19-maven-1.14.1-portable-id-contract-release - Mango Maven/docs 1.14.1 declaration primary key determinism and contract fingerprint - 2026-11-19
 
-Status: PENDING
+Status: PUBLISHED_AND_VERIFIED
 
-- Maven and npm publication: PENDING
-- Consume verification: PENDING
-- Tag and GitHub Release: PENDING
+- Maven and npm publication: COMPLETED (201 Maven coordinates, `@mango/pmo@1.6.3`, `@mango/cli@1.4.16`)
+- Consume verification: COMPLETED (publish and consume registries resolve identically, clean consume-only consumer installed)
+- Tag and GitHub Release: `v2026.11.19-maven-1.14.1-portable-id-contract-release`
 - Release plan digest: `1e0ce78c7aaf9256a331de96beaa6f95955c0f76b141a4adabb64df2520ba935`
 
 
