@@ -2,8 +2,7 @@
 
 ### Documentation
 
-- `mango-infra-persistence` README 补充「外部升级目录的生效前提」：仅在模块 Flyway 步骤执行时加载、需要一次 release 标识变化触发新代次（`mango.local.release-id` / 生产 release id）、`mango.bootstrap.mode=bootstrap` 是前提（`runtime` 下 `BootstrapCommandRunner` 直接返回）、只有属性绑定 `--mango.persistence.flyway.upgrade-root` 可用（`MANGO_UPGRADE_DIR`/`-Dmango.upgrade.root` 只解析 locations、不回写属性、不进指纹）。
-
+- `mango-infra-persistence` README 补充「外部升级目录的生效前提」：仅在模块 Flyway 步骤执行时加载、需要一次 release 标识变化触发新代次（`mango.local.release-id` / 生产 release id）、`mango.bootstrap.mode=bootstrap` 是前提（`runtime` 下 `BootstrapCommandRunner` 直接返回）、`--mango.persistence.flyway.upgrade-root` 同时影响 locations 与代次判断；`MANGO_UPGRADE_DIR` / `-Dmango.upgrade.root` 只解析 locations，必须配合 release 标识变化才生效。
 
 ### Changed
 
