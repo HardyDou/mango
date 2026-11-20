@@ -259,3 +259,59 @@ test('reports a missing root POM instead of passing silently', () => {
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('resolves a parent POM that is not part of the reactor modules', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'mango-surefire-detached-parent-'));
+  try {
+    write(root, 'mango/pom.xml', `<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>io.mango</groupId>
+  <artifactId>mango</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <modules>
+    <module>child</module>
+  </modules>
+</project>
+`);
+    // 父 POM 在磁盘上，但不在 <modules> 里（对应 mango-parent 退出根聚合的情形）。
+    write(root, 'mango/mango-parent/pom.xml', `<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>io.mango</groupId>
+  <artifactId>mango-parent</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>3.2.5</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+</project>
+`);
+    write(root, 'mango/child/pom.xml', `<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>io.mango</groupId>
+    <artifactId>mango-parent</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <relativePath>../mango-parent/pom.xml</relativePath>
+  </parent>
+  <artifactId>child</artifactId>
+</project>
+`);
+    const result = run(root);
+    assert.deepEqual(result.report.failures, []);
+    assert.deepEqual(result.report.summary.versions, { '3.2.5': 1 });
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
