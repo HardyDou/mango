@@ -1,5 +1,5 @@
 import vue from '@vitejs/plugin-vue';
-import { dirname, resolve } from 'path';
+import { dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { defineConfig } from 'vitest/config';
 

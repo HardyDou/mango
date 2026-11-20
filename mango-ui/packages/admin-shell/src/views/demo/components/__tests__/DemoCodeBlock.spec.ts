@@ -1,3 +1,4 @@
+/* eslint-disable vue/one-component-per-file -- 测试内联 Element Plus stub 组件，无法拆分为独立文件。 */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { defineComponent, h } from 'vue';
@@ -28,7 +29,6 @@ vi.mock('@mango/common', async () => {
     }),
   };
 });
-
 
 import DemoCodeBlock from '../DemoCodeBlock.vue';
 

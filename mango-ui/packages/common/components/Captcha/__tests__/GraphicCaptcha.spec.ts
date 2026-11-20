@@ -1,3 +1,4 @@
+/* eslint-disable vue/one-component-per-file -- 测试内联 Element Plus stub 组件，无法拆分为独立文件。 */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
 import { defineComponent, h } from 'vue';
@@ -65,7 +66,11 @@ describe('GraphicCaptcha', () => {
 
   it('refreshes the code and emits refresh', async () => {
     const wrapper = await mountWithCode();
-    generateGraphic.mockResolvedValue({ key: 'key-2', image: 'data:image/png;base64,BBB', graphicType: 'ALPHANUMERIC' });
+    generateGraphic.mockResolvedValue({
+      key: 'key-2',
+      image: 'data:image/png;base64,BBB',
+      graphicType: 'ALPHANUMERIC',
+    });
 
     await wrapper.get('button').trigger('click');
     await flushPromises();
