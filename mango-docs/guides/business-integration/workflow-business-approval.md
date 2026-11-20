@@ -317,3 +317,4 @@ pnpm -F @mango/workflow-business-example build
 > Issue #1208 影响说明：新增 `POST /workflow/tasks/page-by-business-key`，业务列表可读取业务主键下的全部任务（在途、已办理、已终止）。不修改数据库结构，不改变 `todo` / `done` / `copied` 语义；新增配置项 `mango.workflow.task-query.unpaged-max-rows`。
 
 > Issue #1098 影响说明：资源声明的 `sync-mode` 收敛为 `SYNC_ALWAYS` / `SYNC_ONCE`（旧值 `AUTO`、`INIT_ONLY`、`MANUAL`、`LOCKED` 仍可读取并映射）。本场景涉及的数据初始化、租户边界、权限判定与页面行为不变。
+> Issue #1346 影响说明：`WORKFLOW_DEFINITION` 声明现在按租户与流程编码派生分类、流程定义与流程版本主键，空库回放得到相同主键；本指南描述的接口入参、返回字段、权限码与任务语义均无变化，已发布流程定义的主键保持不变。
