@@ -31,9 +31,8 @@ jobs:
 
       - name: Install the Maven parent POM
         run: |
-          mvn -f mango/mango-parent/pom.xml \
-            -DskipTests \
-            install
+          mvn -f mango/pom.xml -pl :mango-bom -DskipTests install
+          mvn -f mango/mango-parent/pom.xml -DskipTests install
 
       - name: Build the architecture gate prerequisites
         run: |
