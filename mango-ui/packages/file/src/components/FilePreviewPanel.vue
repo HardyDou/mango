@@ -359,7 +359,7 @@ defineExpose({
   font-size: 13px;
   line-height: 1.6;
   white-space: pre-wrap;
-  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .preview-image-viewer {
