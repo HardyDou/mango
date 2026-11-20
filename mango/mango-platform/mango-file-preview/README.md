@@ -89,6 +89,15 @@
 | `IMAGE`、`VIDEO`、`AUDIO` | **引擎** | `/api/onlinePreview?fileId=…`，子资源 `/preview-file/**` | 302 的 `Location` 带 `engine-public-base-url` 的 origin |
 | `PAGE`（压缩包、引擎级表格等） | **引擎** | 同上 | 同上 |
 
+独立部署时请把预览引擎的工作目录或 `mango.file-preview.file-dir` 固定为绝对路径；默认相对 `./file` 随启动目录变化，换目录重启会导致已落盘的转换产物/取源文件找不到（表现为 `/preview-file/**` 404）。
+
+两类地址形态：
+
+| 部署 | `previewUrl` 形态 |
+|---|---|
+| 内嵌（未配 `engine-public-base-url`） | `/api/onlinePreview?fileId=…`（经应用网关，`/api` 由平台保留） |
+| 独立引擎（配了 `engine-public-base-url`） | `{origin}/onlinePreview?fileId=…`（直连引擎，无 `/api`） |
+
 **引擎独立进程部署时 `mango.file-preview.engine-public-base-url` 必须配置**；未配置时应用产出相对地址，仅内嵌部署（引擎与应用同源）正确。
 
 **引擎不参与 PDF 与转换产物**：独立部署时不要拿引擎的 403/200 当 PDF 是否可用的判据；PDF 的通过标准是应用侧 `preview-artifact` 返回 PDF 字节。
@@ -231,7 +240,7 @@ cache:
 | `mango.file-preview.engine-path` | `/onlinePreview` | 预览引擎入口路径 |
 | `mango.file-preview.source-path` | `/file-preview/sources` | `url` 兜底通道下预览引擎读取源文件的短期 URL 前缀 |
 | `mango.file-preview.source-base-url` | 无（`url` 兜底时必填） | 仅供 `url` 兜底通道使用：引擎经该地址访问 Mango 的 `/file-preview/sources`。**不再从当前请求地址推断**：走 `url` 兜底但未配置时报 `180004`，不会静默回退。其 host 会自动加入引擎信任列表，无需重复写 `trust.host` |
-| `mango.file-preview.engine-public-base-url` | 无（内嵌部署不配） | **浏览器访问引擎的地址**。配置后预览跳转地址（302 的 `Location`）带引擎 origin；未配置时保持相对路径（引擎与应用同源）。与 `mango.file-preview.remote.base-url` 语义不同：前者是「浏览器怎么到引擎」，后者是「引擎怎么回打应用」 |
+| `mango.file-preview.engine-public-base-url` | 空 | 引擎对外地址的**纯 origin**（可选带部署上下文，如 `https://engine.example.com/engine`）；**不要填 `/api`**（`/api` 是应用网关前缀，独立部署时平台自动剥离），也不要填 `engine-path` |
 | `mango.file-preview.remote.base-url` | 无（开启远程直取时必填） | **引擎回打应用的地址**（引擎侧配置）。`mango.file-preview.remote.enabled=true` 时必填（缺失时引擎侧启动失败并点名该配置项）；`engine-public-base-url` 未配置不会失败，应用产出相对地址，仅内嵌部署正确 |
 | `mango.file-preview.source-token-expire-seconds` | `86400` | 入口 token 和源文件 token 有效期，单位秒 |
 | `mango.file-preview.standalone-ui-enabled` | `false` | 是否允许访问 kkFileView 独立首页和演示文件管理入口 |
