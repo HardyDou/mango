@@ -106,6 +106,64 @@ jobs:
       - name: Validate accumulated successful release baseline
         run: node mango-ui/scripts/release/check-release-plan.mjs
 
+  frontend_unit:
+    name: Frontend unit tests and component contracts
+    needs: preflight_scope
+    # Frontend source changes must run the vitest suites and the component contract check;
+    # without this job the suites only ever ran on a developer machine (issue #1349).
+    if: >-
+      needs.preflight_scope.outputs.frontend == 'true' &&
+      needs.preflight_scope.outputs.m09 == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up pnpm for frontend unit tests
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.14.0
+          run_install: false
+
+      - name: Set up Node.js for frontend unit tests
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.1"
+
+      - name: Install locked frontend dependencies
+        run: >-
+          pnpm --dir mango-ui install
+          --frozen-lockfile
+          --ignore-scripts
+          --registry=https://registry.npmjs.org/
+
+      - name: Build workspace packages the suites import
+        run: pnpm --dir mango-ui -r --filter "@mango/*" run build
+
+      - name: Run workspace test scripts and component contract checks
+        env:
+          NO_COLOR: "1"
+        run: |
+          set -o pipefail
+          pnpm --dir mango-ui -r --if-present test 2>&1 | tee /tmp/frontend-unit.log
+          pnpm --dir mango-ui component-contracts:check
+
+      - name: Assert the suites actually executed
+        run: |
+          # ANSI colouring wraps the vitest summary even when piped, so strip it before counting.
+          executed=$(sed -r 's/\x1B\[[0-9;]*[mK]//g' /tmp/frontend-unit.log \
+            | grep -Eo 'Tests +[0-9]+ passed' \
+            | grep -Eo '[0-9]+' \
+            | awk '{ total += $1 } END { print total + 0 }')
+          if [ -z "$executed" ] || [ "$executed" -eq 0 ]; then
+            echo "::error::no frontend unit test executed; the suites were collected but ran nothing"
+            exit 1
+          fi
+          echo "frontend unit tests executed: $executed" >> "$GITHUB_STEP_SUMMARY"
+
   pmo:
     name: PMO gates
     needs: preflight_scope
@@ -567,7 +625,7 @@ jobs:
 
   pmo-doc-check:
     name: pmo-doc-check
-    needs: [preflight_scope, release_plan, pmo, cli_js, java, workflow_contract, docs]
+    needs: [preflight_scope, release_plan, pmo, cli_js, frontend_unit, java, workflow_contract, docs]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     timeout-minutes: 2
@@ -578,6 +636,7 @@ jobs:
           RELEASE_PLAN_RESULT: ${{ needs.release_plan.result }}
           PMO_RESULT: ${{ needs.pmo.result }}
           CLI_JS_RESULT: ${{ needs.cli_js.result }}
+          FRONTEND_UNIT_RESULT: ${{ needs.frontend_unit.result }}
           JAVA_RESULT: ${{ needs.java.result }}
           WORKFLOW_CONTRACT_RESULT: ${{ needs.workflow_contract.result }}
           DOCS_RESULT: ${{ needs.docs.result }}
@@ -590,6 +649,7 @@ jobs:
             echo "| release_plan | $RELEASE_PLAN_RESULT |"
             echo "| pmo | $PMO_RESULT |"
             echo "| cli_js | $CLI_JS_RESULT |"
+            echo "| frontend_unit | $FRONTEND_UNIT_RESULT |"
             echo "| java | $JAVA_RESULT |"
             echo "| workflow_contract | $WORKFLOW_CONTRACT_RESULT |"
             echo "| docs | $DOCS_RESULT |"
@@ -600,6 +660,7 @@ jobs:
             "$RELEASE_PLAN_RESULT" \
             "$PMO_RESULT" \
             "$CLI_JS_RESULT" \
+            "$FRONTEND_UNIT_RESULT" \
             "$JAVA_RESULT" \
             "$WORKFLOW_CONTRACT_RESULT" \
             "$DOCS_RESULT"; do

@@ -5028,7 +5028,9 @@ function assertWorkspaceDatabaseStatus(workspaceRoot, registryPath, workspace) {
     'env',
     [
       `MANGO_WORKSPACE_REGISTRY=${registryPath}`,
-      `PATH=${missingMysqlBinDir}:/usr/bin:/bin:/usr/sbin:/sbin`,
+      // Only the empty stub directory: adding standard system paths makes the probe pick up a
+      // real `mysql` client on hosts that have one, so the assertion would only hold on bare runners.
+      `PATH=${missingMysqlBinDir}`,
       process.execPath,
       cli,
       'workspace',

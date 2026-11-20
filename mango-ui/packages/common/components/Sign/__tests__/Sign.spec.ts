@@ -102,6 +102,27 @@ describe('Sign Component', () => {
     });
 
     it('should emit update:modelValue when signature changes', async () => {
+      // happy-dom has no 2D canvas implementation, so provide the drawing surface the
+      // component expects; without it the component never reaches `generateSignature`.
+      const context2d = {
+        beginPath: vi.fn(),
+        moveTo: vi.fn(),
+        lineTo: vi.fn(),
+        stroke: vi.fn(),
+        clearRect: vi.fn(),
+        drawImage: vi.fn(),
+        strokeStyle: '',
+        lineWidth: 0,
+        lineCap: '',
+        lineJoin: '',
+      } as unknown as CanvasRenderingContext2D;
+      const getContext = vi
+        .spyOn(HTMLCanvasElement.prototype, 'getContext')
+        .mockReturnValue(context2d);
+      const toDataURL = vi
+        .spyOn(HTMLCanvasElement.prototype, 'toDataURL')
+        .mockReturnValue('data:image/png;base64,c2lnbmF0dXJl');
+
       const wrapper = mount(Sign, {
         props: {
           modelValue: '',
@@ -117,7 +138,11 @@ describe('Sign Component', () => {
       // Check if update:modelValue was emitted (signature was generated)
       const updateEvents = wrapper.emitted('update:modelValue');
       expect(updateEvents).toBeTruthy();
+      expect(updateEvents?.[0]).toEqual(['data:image/png;base64,c2lnbmF0dXJl']);
+      expect(wrapper.emitted('change')?.[0]).toEqual(['data:image/png;base64,c2lnbmF0dXJl']);
       wrapper.unmount();
+      getContext.mockRestore();
+      toDataURL.mockRestore();
     });
   });
 
