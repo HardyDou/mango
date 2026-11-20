@@ -19,6 +19,7 @@ public class FilePreviewEngineResourceRegistrar implements ApplicationRunner, Or
 
     private static final String MODULE_NAME = "mango-file-preview";
     private static final String HANDLER_CLASS = "cn.keking.web.controller.OnlinePreviewController";
+    private static final String RESOURCE_HANDLER_CLASS = "cn.keking.config.WebConfig";
     private static final int RESOURCE_REGISTRATION_ORDER_OFFSET = 100;
 
     private final ApiResourceApi apiResourceApi;
@@ -37,6 +38,8 @@ public class FilePreviewEngineResourceRegistrar implements ApplicationRunner, Or
                 publicGet("/file-preview/files/preview-artifact", "文件预览已生成产物"),
                 publicGet("/file-preview/sources", "读取文件预览源文件"),
                 publicGet("/file-preview/generated", "读取转换后的预览文件"),
+                publicGet(FilePreviewPermitPathBeanPostProcessor.PUBLIC_FILE_PATH_PREFIX + "/**",
+                        "读取预览引擎落盘文件", RESOURCE_HANDLER_CLASS),
                 publicGet("/pdfjs/**", "PDF 预览静态资源"),
                 publicGet("/js/**", "预览脚本资源"),
                 publicGet("/css/**", "预览样式资源"),
@@ -56,13 +59,17 @@ public class FilePreviewEngineResourceRegistrar implements ApplicationRunner, Or
     }
 
     private static ApiResourceRegisterCommand publicGet(String pathPattern, String description) {
+        return publicGet(pathPattern, description, HANDLER_CLASS);
+    }
+
+    private static ApiResourceRegisterCommand publicGet(String pathPattern, String description, String handlerClass) {
         ApiResourceRegisterCommand command = new ApiResourceRegisterCommand();
         command.setModuleName(MODULE_NAME);
         command.setHttpMethod("GET");
         command.setPathPattern(pathPattern);
         command.setResourceCode("GET:" + pathPattern);
         command.setAccessMode(ApiResourceAccessMode.PUBLIC);
-        command.setHandlerClass(HANDLER_CLASS);
+        command.setHandlerClass(handlerClass);
         command.setHandlerMethod("mango.file-preview.engine");
         command.setDescription(description);
         return command;

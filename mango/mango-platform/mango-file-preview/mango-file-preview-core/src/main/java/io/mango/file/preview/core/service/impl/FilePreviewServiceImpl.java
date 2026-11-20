@@ -57,6 +57,11 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
     private static final String ENGINE_FILE_PREFIX = "file-";
     private static final int MAX_EXTENSION_LENGTH = 20;
     /**
+     * 表格类扩展名；引擎的 Luckysheet 前端渲染需要引擎经对外 URL 回源取数，{@code fileId} 直取通道下没有对外 URL，
+     * 因此该通道下与 {@code xls} 一致回落平台 PDF 转换（见组件 README 2.2/2.3）。
+     */
+    private static final Set<String> ENGINE_SHEET_EXTENSIONS = Set.of("xlsx", "csv");
+    /**
      * 图片扩展名；与引擎 {@code cn.keking.model.FileType#PICTURE_TYPES} 保持一致，跨模块由引擎测试锁定。
      */
     private static final Set<String> PICTURE_EXTENSIONS = Set.of(
@@ -226,14 +231,20 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
     }
 
     private FilePreviewMode previewMode(FileRecordVO record) {
-        FilePreviewMode mode = FilePreviewMode.of(FilePreviewMode.extension(record.getFileExt(), record.getFileName()));
+        String extension = FilePreviewMode.extension(record.getFileExt(), record.getFileName());
+        FilePreviewMode mode = FilePreviewMode.of(extension);
         if (mode == FilePreviewMode.NATIVE_PDF) {
             return mode;
         }
         // 扩展名缺失或与实际内容不一致时，按声明的 PDF 内容类型兜底。
-        return "application/pdf".equalsIgnoreCase(record.getContentType())
-                ? FilePreviewMode.NATIVE_PDF
-                : mode;
+        if ("application/pdf".equalsIgnoreCase(record.getContentType())) {
+            return FilePreviewMode.NATIVE_PDF;
+        }
+        // fileId 直取通道下引擎页面拿不到对外 URL，表格的前端渲染产能不可用，回落平台 PDF 转换。
+        if (mode == FilePreviewMode.ENGINE && useInternalSource() && ENGINE_SHEET_EXTENSIONS.contains(extension)) {
+            return FilePreviewMode.PDF_CONVERSION;
+        }
+        return mode;
     }
 
     /**

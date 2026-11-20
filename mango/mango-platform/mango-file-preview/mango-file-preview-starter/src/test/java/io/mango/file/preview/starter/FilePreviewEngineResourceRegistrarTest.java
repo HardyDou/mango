@@ -88,6 +88,38 @@ class FilePreviewEngineResourceRegistrarTest {
     }
 
     @Test
+    void permitPaths_allowOnlyTheSinglePublicFilePrefixForEngineFiles() {
+        List<String> permitPaths = FilePreviewPermitPathBeanPostProcessor.permitPaths();
+
+        assertThat(permitPaths)
+                .contains(FilePreviewPermitPathBeanPostProcessor.PUBLIC_FILE_PATH_PREFIX + "/**")
+                .doesNotContain("/**", "/file-*", "/file-/**", "/**/*.mp4", "/**/*.png", "/**/*.pdf");
+        assertThat(permitPaths.stream()
+                        .filter(path -> path.startsWith(FilePreviewPermitPathBeanPostProcessor.PUBLIC_FILE_PATH_PREFIX))
+                        .toList())
+                .containsExactly(FilePreviewPermitPathBeanPostProcessor.PUBLIC_FILE_PATH_PREFIX + "/**");
+        // 前缀只能有一个来源：引擎资源映射与放行清单必须指向同一个字符串常量。
+        assertThat(FilePreviewPermitPathBeanPostProcessor.PUBLIC_FILE_PATH_PREFIX)
+                .isEqualTo(cn.keking.service.FileHandlerService.PUBLIC_FILE_PATH_PREFIX);
+    }
+
+    @Test
+    void run_registersPublicFilePrefixAsPublicResource() {
+        CapturingApiResourceApi api = new CapturingApiResourceApi();
+
+        new FilePreviewEngineResourceRegistrar(api).run(null);
+
+        assertThat(api.resources)
+                .anySatisfy(resource -> {
+                    assertThat(resource.getHttpMethod()).isEqualTo("GET");
+                    assertThat(resource.getPathPattern())
+                            .isEqualTo(FilePreviewPermitPathBeanPostProcessor.PUBLIC_FILE_PATH_PREFIX + "/**");
+                    assertThat(resource.getAccessMode()).isEqualTo(ApiResourceAccessMode.PUBLIC);
+                })
+                .noneMatch(resource -> "/**".equals(resource.getPathPattern()));
+    }
+
+    @Test
     void permitPaths_supportImmutableSecurityPropertiesSnapshot() {
         SecurityProperties properties = new SecurityProperties();
         properties.setPermitPaths(List.of("/existing"));
