@@ -58,6 +58,20 @@ const visible = computed({
   set: (value: boolean) => emit('update:modelValue', value),
 });
 const normalizedFileId = computed(() => String(props.fileId || '').trim());
+// 地址类 props 已弃用：业务直接使用 dialog 时也要看到提示（组件内部透传给 FilePreviewPanel）。
+const deprecatedAddressProps = [
+  ['previewUrl', props.previewUrl],
+  ['documentPreviewUrl', props.documentPreviewUrl],
+  ['directPreviewUrl', props.directPreviewUrl],
+  ['preview', props.preview],
+]
+  .filter(([, value]) => Boolean(value))
+  .map(([name]) => name);
+if (deprecatedAddressProps.length) {
+  console.warn(
+    `[MangoFilePreviewDialog] ${deprecatedAddressProps.join('、')} 已弃用：渲染类型由后端 preview-link 的 renderMode 决定，给 fileId 即可，下一个 major 移除。`,
+  );
+}
 const hasPreview = computed(() => Boolean(normalizedFileId.value || props.file || props.preview));
 </script>
 
