@@ -17,8 +17,6 @@ export default defineConfig({
     include: ['src/**/__tests__/**/*.spec.ts'],
   },
   resolve: {
-    alias: [
-      { find: /^@mango\/common$/, replacement: resolve(workspaceRoot, 'packages/common') },
-    ],
+    alias: [{ find: /^@mango\/common$/, replacement: resolve(workspaceRoot, 'packages/common') }],
   },
 });

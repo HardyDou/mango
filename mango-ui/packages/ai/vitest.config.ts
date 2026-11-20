@@ -20,7 +20,10 @@ export default defineConfig({
       { find: /^@mango\/common$/, replacement: resolve(workspaceRoot, 'packages/common') },
       { find: /^@mango\/api-schema$/, replacement: resolve(workspaceRoot, 'packages/api-schema') },
       { find: /^@mango\/app-runtime$/, replacement: resolve(workspaceRoot, 'packages/app-runtime/src/index.ts') },
-      { find: /^@mango\/admin-extension$/, replacement: resolve(workspaceRoot, 'packages/admin-extension/src/index.ts') },
+      {
+        find: /^@mango\/admin-extension$/,
+        replacement: resolve(workspaceRoot, 'packages/admin-extension/src/index.ts'),
+      },
     ],
   },
 });
