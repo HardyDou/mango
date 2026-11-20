@@ -91,7 +91,7 @@ public class CompressFileReader {
      * 前缀，保证一个压缩包对应一个解包目录，不会跨包串目录。
      */
     private String resolveCompressFileKey(String filePath, FileAttribute fileAttribute) {
-        String relativePath = filePath.replace(ConfigConstants.getFileDir(), "").replace("\\", "/");
+        String relativePath = relativeToConfiguredRoot(filePath);
         while (relativePath.startsWith("/")) {
             relativePath = relativePath.substring(1);
         }
@@ -99,6 +99,30 @@ public class CompressFileReader {
             relativePath = "_decompression" + relativePath;
         }
         return relativePath + PACKAGE_PATH;
+    }
+
+    /**
+     * 按文件实际所在的根剥离路径前缀。
+     *
+     * <p>普通压缩包落在 {@link ConfigConstants#getFileDir()} 下，嵌套压缩包已解到
+     * {@link ConfigConstants#getDecompressDir()} 下：只按 file-dir 剥离会让嵌套包得到绝对路径，
+     * 进而拼出多层重复的解包 key。
+     */
+    private String relativeToConfiguredRoot(String filePath) {
+        String normalized = filePath.replace("\\", "/");
+        for (String root : new String[]{ConfigConstants.getFileDir(), ConfigConstants.getDecompressDir()}) {
+            if (root == null) {
+                continue;
+            }
+            String normalizedRoot = root.replace("\\", "/");
+            if (!normalizedRoot.endsWith("/")) {
+                normalizedRoot = normalizedRoot + "/";
+            }
+            if (normalized.startsWith(normalizedRoot)) {
+                return normalized.substring(normalizedRoot.length());
+            }
+        }
+        return normalized;
     }
 
     /**

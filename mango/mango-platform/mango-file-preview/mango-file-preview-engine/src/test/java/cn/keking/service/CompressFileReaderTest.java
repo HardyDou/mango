@@ -11,8 +11,12 @@ import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Base64;
@@ -89,6 +93,32 @@ class CompressFileReaderTest {
     }
 
     @Test
+    void unRar_whenNestedArchiveUnderDecompressDir_buildsRelativeCompressFileKey() throws Exception {
+        ConfigConstants.setFileDirValue(tempDir.resolve("file-dir").toString());
+        Path decompressDir = tempDir.resolve("_extracted");
+        Files.createDirectories(decompressDir.resolve("bundle.zip_"));
+        ConfigConstants.setDecompressDirValue(decompressDir.toString());
+        Path innerArchive = decompressDir.resolve("bundle.zip_").resolve("inner.zip");
+        try (ZipOutputStream zipOutputStream = new ZipOutputStream(Files.newOutputStream(innerArchive))) {
+            zipOutputStream.putNextEntry(new ZipEntry("nested/readme.txt"));
+            zipOutputStream.write("nested".getBytes(StandardCharsets.UTF_8));
+            zipOutputStream.closeEntry();
+        }
+        FileAttribute nestedAttribute = new FileAttribute(FileType.COMPRESS, "zip", "inner.zip", null);
+        nestedAttribute.setCompressFile(true);
+
+        String key = new CompressFileReader(mock(FileHandlerService.class))
+                .unRar(innerArchive.toString(), null, "inner.zip", nestedAttribute);
+
+        assertThat(key).asString()
+                .doesNotStartWith("/")
+                .doesNotContain("_extracted")
+                .doesNotContain("file-dir")
+                .startsWith("_decompression")
+                .endsWith("inner.zip_");
+        assertThat(decompressDir.resolve(key)).as("解包目录应位于解包根下且层级唯一").isDirectory();
+    }
+
     void unRar_whenArchiveContainsPicture_cachesCompressedFileEndpointUrl() throws Exception {
         ConfigConstants.setFileDirValue(tempDir.toString());
         writeZipArchive("pics/demo.png", PNG_BYTES);
