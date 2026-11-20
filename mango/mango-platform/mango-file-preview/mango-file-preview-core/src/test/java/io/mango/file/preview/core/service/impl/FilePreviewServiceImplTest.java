@@ -75,7 +75,23 @@ class FilePreviewServiceImplTest {
                 .startsWith("/api/file-preview/files/preview-entry?token=")
                 .doesNotContain("engine.example.com");
         assertThat(enginePreview.getPreviewUrl())
-                .startsWith("https://engine.example.com/api/onlinePreview?");
+                .startsWith("https://engine.example.com/onlinePreview?")
+                .doesNotContain("/api/");
+    }
+
+    @Test
+    void createEnginePreview_引擎对外地址带部署上下文时保留上下文且不带网关前缀() {
+        FilePreviewProperties properties = properties();
+        properties.setEnginePublicBaseUrl("https://engine.example.com/engine");
+        FilePreviewServiceImpl service = service(properties, new StubFileApi("demo.png"));
+        MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("1"));
+
+        var preview = service.createPreview(100L);
+        var enginePreview = service.createEnginePreviewByToken(preview.getPreviewToken());
+
+        assertThat(enginePreview.getPreviewUrl())
+                .startsWith("https://engine.example.com/engine/onlinePreview?")
+                .doesNotContain("/api/");
     }
 
     @Test

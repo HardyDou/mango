@@ -53,6 +53,7 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
     /** 内部直取协议；与引擎 {@code cn.keking.utils.PreviewSourceUrl} 保持一致，跨模块由 starter 的往返测试锁定。 */
     private static final String SOURCE_ID_PARAM = "fileId";
     private static final String ENTRY_TOKEN_PREFIX = "file-preview:entry:";
+    private static final String GATEWAY_PATH_PREFIX = "/api";
     private static final String SOURCE_TOKEN_PREFIX = "file-preview:source:";
     private static final String ENGINE_FILE_PREFIX = "file-";
     private static final int MAX_EXTENSION_LENGTH = 20;
@@ -296,7 +297,7 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
             String sourceUrl = sourceUrl(sourceTicket, fileName);
             return engineUrl(Base64.getEncoder().encodeToString(sourceUrl.getBytes(StandardCharsets.UTF_8)));
         }
-        String relative = UriComponentsBuilder.fromPath("/api" + normalize(properties.getEnginePath()))
+        String relative = UriComponentsBuilder.fromPath(enginePathPrefix() + normalize(properties.getEnginePath()))
                 .queryParam(SOURCE_ID_PARAM, sourceTicket)
                 .queryParam(FULL_FILENAME_PARAM, fileName)
                 .build()
@@ -409,7 +410,7 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
     }
 
     private String engineUrl(String encodedSourceUrl) {
-        String relative = UriComponentsBuilder.fromPath("/api" + normalize(properties.getEnginePath()))
+        String relative = UriComponentsBuilder.fromPath(enginePathPrefix() + normalize(properties.getEnginePath()))
                 .queryParam("url", encodedSourceUrl)
                 .build()
                 .encode(StandardCharsets.UTF_8)
@@ -423,6 +424,17 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
      * <p>独立部署时引擎不在本进程，返回相对地址会让浏览器/应用自己去找引擎资源（应用里并没有这些资源），
      * 因此必须给出带 origin 的绝对地址；未配置时保持相对地址，等价于内嵌部署。</p>
      */
+    /**
+     * 引擎地址的前缀：内嵌部署走应用网关，需要 {@code /api} 前缀；独立部署（配置了
+     * {@link FilePreviewProperties#getEnginePublicBaseUrl()}）时浏览器直连引擎，不能再带网关前缀。
+     *
+     * <p>这里只决定前缀，不改 {@code engine-path}：后者是可配置项，替换会误伤自定义路径。</p>
+     */
+    private String enginePathPrefix() {
+        String baseUrl = properties.getEnginePublicBaseUrl();
+        return StringUtils.hasText(baseUrl) ? "" : GATEWAY_PATH_PREFIX;
+    }
+
     private String withEngineOrigin(String relative) {
         String base = properties.getEnginePublicBaseUrl();
         if (!StringUtils.hasText(base)) {
