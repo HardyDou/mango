@@ -312,7 +312,7 @@ const fileIds = ref<string[]>([]);
 | `PAGE`          | iframe 加载组件内部预览地址的引擎页面              | 压缩包、文本、表格及其它引擎支持的格式（如 `zip`、`txt`、`xlsx`）                 |
 | `NOT_SUPPORTED` | 下载提示 + 下载按钮，不自动触发下载                | 无法解析扩展名（无法判定渲染类型）                                                |
 
-上表「组件内部预览地址」指 `FilePreviewPanel` 自行从 `preview-link` 取得的地址，**业务无需提供、也不应自行拼接**。
+上表「组件内部预览地址」指 `FilePreviewPanel` 自行从 `preview-link` 取得的地址，由组件统一取得与管理，业务只需传 `fileId`。
 
 补充约定：
 
