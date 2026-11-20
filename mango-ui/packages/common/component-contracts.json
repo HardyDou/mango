@@ -18,7 +18,10 @@
         "path": "components/Captcha/README.md",
         "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
       },
-      "testEvidence": ["../../apps/mango-admin/e2e/specs/captcha.spec.ts"]
+      "testEvidence": [
+        "../../apps/mango-admin/e2e/specs/captcha.spec.ts",
+        "components/Captcha/__tests__/GraphicCaptcha.spec.ts"
+      ]
     },
     {
       "name": "MangoAvatar",
