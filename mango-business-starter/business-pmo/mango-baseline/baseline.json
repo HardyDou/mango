@@ -3,8 +3,8 @@
   "packageVersion": "1.6.3",
   "schemaVersion": 2,
   "source": "mango-pmo",
-  "sourceCommit": "b036a5775bf991065262c775ef3c0e2ee391f150",
-  "bundleSha256": "df25d1f703e2c7565f7106be31fdcece1ab1448fec38b993ae8c5977a4aeb440",
+  "sourceCommit": "698f709e7f7de247d1d23ad493eef59917f71979",
+  "bundleSha256": "3dd6fefa9c69a727c012b28b9f8553309bd29ac882338861a9ead574946a4e52",
   "contracts": [
     {
       "contractId": "business-requirements",
@@ -1351,8 +1351,8 @@
     },
     {
       "path": "tools/check-surefire-versions.mjs",
-      "sha256": "e8cfe23bb496da3fe0d42cc6d7167d261058bd3bb4914f88a95ceea2649fd7a9",
-      "size": 12457,
+      "sha256": "ff80584d48219623b04e505df885167bddcf978b9f8fbb071f1b6f7cee564bac",
+      "size": 13496,
       "kind": "tool",
       "mode": "0644"
     },
