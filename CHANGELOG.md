@@ -10,6 +10,17 @@
 
 - 这是**门禁放宽**：移除的规则不再阻断任何 PR。既有以这些规则为阻断依据的本地脚本或业务仓自定义配置需要同步调整，否则会看到「本地有告警、CI 不报」的差异。
 - 复杂度、文件长度、命名与缺陷类规则的行为未变，`CyclomaticComplexity max=20` 与指纹策略不变。
+## Unreleased - 治理类 PR 按路径决定是否全量架构清点
+
+### Changed
+
+- `Java gates` 新增 `Detect architecture inventory sensitivity` 步骤：只有当改动落在架构基线（`mango-pmo/baselines/**`）、架构规则代码（`mango/mango-tools/mango-architecture-*/**`、`plugin/architecture/**`）、规则集（`rulesets/**`）或根/父 POM 时，才执行全量 `Generate trusted full-Reactor architecture inventory for governance`；纯插件逻辑改动（如 `plugin/check/**`）跳过该步骤。
+- 跳过时债务预算校验改用 `--baseline-only`（与既有非 governance 后端 PR 一致），预算文件本身仍被校验；涉及基线/规则/架构代码的 PR 行为完全不变。
+
+### Compatibility
+
+- 首次纳管存量模块的流程未受影响：该流程必然改动 `mango-pmo/baselines/architecture/**`，仍会触发全量 inventory。
+- 实测参照：`Java gates` 在仅改 `plugin/check/**` 的 PR 上曾用 20m4s，其中该步骤占 13m51s。
 
 ## Unreleased - 转换默认引擎改为 Aspose，LibreOffice 改为兜底 (Issue #1314)
 
