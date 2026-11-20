@@ -301,10 +301,16 @@ jobs:
           --ignore-scripts
           --registry=https://registry.npmjs.org/
 
+      - name: Install the Maven parent POM
+        run: |
+          mvn -f mango/mango-parent/pom.xml \
+            -DskipTests \
+            install
+
       - name: Build the architecture gate prerequisites
         run: |
           mvn -f mango/pom.xml \
-            -pl :mango-bom,:mango-parent,:mango-common,:mango-tools \
+            -pl :mango-bom,:mango-common,:mango-tools \
             -DskipTests \
             install
 
@@ -340,7 +346,7 @@ jobs:
           needs.preflight_scope.outputs.backend_mode == 'governance')
         run: |
           mvn -f mango/pom.xml \
-            -pl :mango,:mango-parent,:mango-common,:mango-infra,:mango-infra-bootstrap,:mango-infra-bootstrap-api,:mango-infra-module,:mango-infra-module-api,:mango-infra-kv,:mango-infra-kv-api,:mango-infra-persistence,:mango-infra-persistence-api,:mango-infra-context,:mango-infra-context-api,:mango-infra-context-support,:mango-infra-context-starter,:mango-infra-persistence-starter,:mango-infra-web,:mango-infra-web-api,:mango-resource,:mango-resource-api,:mango-authorization,:mango-authorization-api,:mango-infra-web-support,:mango-infra-web-starter,:mango-infra-persistence-web-starter,:mango-infra-feign-starter,:mango-admin-starter \
+            -pl :mango,:mango-common,:mango-infra,:mango-infra-bootstrap,:mango-infra-bootstrap-api,:mango-infra-module,:mango-infra-module-api,:mango-infra-kv,:mango-infra-kv-api,:mango-infra-persistence,:mango-infra-persistence-api,:mango-infra-context,:mango-infra-context-api,:mango-infra-context-support,:mango-infra-context-starter,:mango-infra-persistence-starter,:mango-infra-web,:mango-infra-web-api,:mango-resource,:mango-resource-api,:mango-authorization,:mango-authorization-api,:mango-infra-web-support,:mango-infra-web-starter,:mango-infra-persistence-web-starter,:mango-infra-feign-starter,:mango-admin-starter \
             -am \
             -DskipTests \
             -Dcheckstyle.skip=true \
@@ -483,7 +489,7 @@ jobs:
       - name: Build the Java architecture gate plugin
         run: |
           mvn -B -f mango/pom.xml \
-            -pl :mango-bom,:mango-parent,:mango-common,:mango-tools \
+            -pl :mango-bom,:mango-common,:mango-tools \
             -DskipTests \
             install
           mvn -B -f mango/pom.xml \
