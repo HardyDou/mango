@@ -1,6 +1,6 @@
 ## v2026.11.21-maven-1.15.0-preview-fileid-release - Mango Maven/docs 1.15.0 文件预览契约与质量门禁批次 - 2026-11-21
 
-Status: PENDING - 本批次已记录发布意图，尚未执行 Maven / npm 发布与消费端验证。
+Status: PUBLISHED_AND_VERIFIED - 批次已发布并通过消费端验证。发布 tag `v2026.11.21-maven-1.15.0-preview-fileid-release`（`e6b5758e6`，squash 合入 `5a4fdfda7`），GitHub Release 已生成；203 个 Maven 坐标与 27 个 npm 包均已发布并回读校验，发布基线已推进到本批次。
 
 Plan digest: `e38b9c6f30802e37f13bffc327bfaa0aa98cdf1c2f626628865835b0ece0f2e4`
 
