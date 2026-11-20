@@ -300,6 +300,65 @@ class BaselineGeneratorIntegrationTest {
     }
 
     @Test
+    void canonicalizesWorkflowEngineIdentifiersAndDeploymentTimestamps() throws Exception {
+        String database = uniquePrefix("it_workflow_engine_ids");
+        MySqlBaselineStore store = baselineStore();
+        store.createDatabase("mysql", database, MySqlSchemaDefaults.cliStandard());
+        try {
+            try (Connection connection = connection(database);
+                    Statement statement = connection.createStatement()) {
+                statement.execute("""
+                        CREATE TABLE workflow_definition (
+                          id bigint NOT NULL PRIMARY KEY,
+                          definition_key varchar(128) NOT NULL,
+                          deployment_id varchar(128) NULL,
+                          process_definition_id varchar(128) NULL,
+                          last_deploy_time datetime NULL
+                        )
+                        """);
+                statement.execute("""
+                        CREATE TABLE workflow_definition_version (
+                          id bigint NOT NULL PRIMARY KEY,
+                          definition_id bigint NOT NULL,
+                          version_no int NOT NULL,
+                          deployment_id varchar(128) NULL,
+                          process_definition_id varchar(128) NULL,
+                          publish_time datetime NOT NULL
+                        )
+                        """);
+                statement.execute("""
+                        INSERT INTO workflow_definition VALUES
+                          (11, 'PAYMENT_REFUND', 'deploy-a', 'PAYMENT_REFUND:1:deploy-a', '2026-08-30 09:15:00')
+                        """);
+                statement.execute("""
+                        INSERT INTO workflow_definition_version VALUES
+                          (21, 11, 1, 'deploy-a', 'PAYMENT_REFUND:1:deploy-a', '2026-08-30 09:15:00')
+                        """);
+            }
+
+            store.canonicalizeWorkflowEngineIds(database);
+
+            assertEquals("baseline-deployment-11",
+                    queryString(database, "SELECT deployment_id FROM workflow_definition WHERE id = 11"));
+            assertEquals("baseline-process-definition-11",
+                    queryString(database, "SELECT process_definition_id FROM workflow_definition WHERE id = 11"));
+            assertEquals("baseline-deployment-21",
+                    queryString(database, "SELECT deployment_id FROM workflow_definition_version WHERE id = 21"));
+            assertEquals("2000-01-01 00:00:00",
+                    queryString(database, "SELECT publish_time FROM workflow_definition_version WHERE id = 21"));
+            assertEquals("2000-01-01 00:00:00",
+                    queryString(database, "SELECT last_deploy_time FROM workflow_definition WHERE id = 11"));
+
+            store.canonicalizeWorkflowEngineIds(database);
+
+            assertEquals("baseline-deployment-11",
+                    queryString(database, "SELECT deployment_id FROM workflow_definition WHERE id = 11"));
+        } finally {
+            store.dropDatabase("mysql", database);
+        }
+    }
+
+    @Test
     void preparesPortableResourceStateWithoutRewritingAuditTimestamps() throws Exception {
         String database = uniquePrefix("it_resource_cleanup");
         MySqlBaselineStore store = baselineStore();

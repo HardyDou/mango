@@ -38,6 +38,7 @@ import io.mango.workflow.core.mapper.WorkflowDefinitionVersionMapper;
 import io.mango.workflow.core.mapper.WorkflowNodeDefinitionMapper;
 import io.mango.workflow.core.service.IWorkflowDefinitionService;
 import io.mango.workflow.core.support.WorkflowDomainSupport;
+import io.mango.resource.support.PortableResourceIds;
 import lombok.RequiredArgsConstructor;
 import org.flowable.bpmn.model.BpmnModel;
 import org.flowable.engine.RepositoryService;
@@ -63,6 +64,9 @@ import java.util.Locale;
         justification = "Spring collaborators are intentionally retained for the service lifetime"))
 public class WorkflowDefinitionService implements IWorkflowDefinitionService {
 
+    private static final String WORKFLOW_CATEGORY_TARGET_TABLE = "workflow_definition_category";
+    private static final String WORKFLOW_DEFINITION_TARGET_TABLE = "workflow_definition";
+    private static final String WORKFLOW_VERSION_TARGET_TABLE = "workflow_definition_version";
     private static final TypeReference<List<String>> STRING_LIST_TYPE = new TypeReference<>() {
     };
     private static final String DEFINITION_LIST_RESOURCE_CODE = "workflow:definition:list";
@@ -138,6 +142,8 @@ public class WorkflowDefinitionService implements IWorkflowDefinitionService {
         entity.setCreatedAt(now);
         entity.setUpdatedTime(now);
         entity.setUpdatedAt(now);
+        entity.setId(PortableResourceIds.stable(WORKFLOW_DEFINITION_TARGET_TABLE,
+                entity.getTenantId(), entity.getDefinitionKey()));
         mapper.insert(entity);
         return String.valueOf(entity.getId());
     }
@@ -257,6 +263,8 @@ public class WorkflowDefinitionService implements IWorkflowDefinitionService {
             version.setUpdatedBy(MangoContextHolder.userId());
             version.setUpdatedTime(now);
             version.setUpdatedAt(now);
+            version.setId(PortableResourceIds.stable(WORKFLOW_VERSION_TARGET_TABLE,
+                    version.getDefinitionId(), version.getVersionNo()));
             versionMapper.insert(version);
 
             Deployment deployment = repositoryService.createDeployment()
@@ -484,6 +492,8 @@ public class WorkflowDefinitionService implements IWorkflowDefinitionService {
         created.setCreatedAt(now);
         created.setUpdatedTime(now);
         created.setUpdatedAt(now);
+        created.setId(PortableResourceIds.stable(WORKFLOW_CATEGORY_TARGET_TABLE,
+                created.getTenantId(), created.getDomainCode(), created.getCategoryCode()));
         categoryMapper.insert(created);
         return created.getId();
     }
