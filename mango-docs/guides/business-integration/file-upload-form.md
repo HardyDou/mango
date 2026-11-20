@@ -277,15 +277,15 @@ pnpm -F @mango/file test
 
 > Issue #1098 影响说明：资源声明的 `sync-mode` 收敛为 `SYNC_ALWAYS` / `SYNC_ONCE`（旧值 `AUTO`、`INIT_ONLY`、`MANUAL`、`LOCKED` 仍可读取并映射）。本场景涉及的数据初始化、租户边界、权限判定与页面行为不变。
 > Issue #1361 影响说明：预览取源的信任门改为按通道分工——`fileId` 形态只校验票据是否仍可用（只读、不取流、不消费），票据无效或过期在门处直接 403，不再进入引擎解包、转换与落盘；`url` 形态的 host/目录校验不变。本场景（业务只保存 `fileId`、上传/回显/预览/下载）的调用契约不变。
-> Issue #1362 影响说明：`fileId` 成为取源的唯一主路径，独立部署的预览引擎可装载 `mango-file-preview-starter-remote` 并按票据远程直取源文件，不再需要回退成 `url` 形态；`url` 通道保留为兼容兜底，且必须显式配置 `mango.file-preview.source-base-url`，缺失时签发直接返回业务码 `180004`，不再静默推断请求地址。本场景的调用契约不变：业务仍只保存和透传 `fileId`。
+> Issue #1362 影响说明：`fileId` 成为取源的唯一主路径，独立部署的预览引擎可装载 `mango-file-preview-starter-remote` 并按票据远程直取源文件，不再需要回退成 `url` 形态；`url` 通道保留为兼容兜底，启用时需显式配置 `mango.file-preview.source-base-url`，缺失时签发直接返回业务码 `180004`，不再静默推断请求地址。本场景的调用契约不变：业务仍只保存和透传 `fileId`。
 
-预览取源：内嵌引擎（同进程装配 `mango-file-preview-starter` 与 `file-preview-engine`）下预览地址用 `fileId` + 短期票据，这类请求没有网络地址可供站点校验，因此不需要把 Mango 对外域名加进 `trust.host`；票据无效或过期时取源失败返回 `180002`。独立部署引擎装载 `mango-file-preview-starter-remote` 并开启 `mango.file-preview.remote.enabled`（配 `mango.file-preview.remote.base-url`）后同样是 `fileId` 形态，按票据远程直取；只有既不装取源实现又关掉 `internal-source-enabled` 时才回退 `url` 形态，此时必须配置 `mango.file-preview.source-base-url`。业务侧只透传 `fileId`，不要自行拼预览地址。
+预览取源：内嵌引擎（同进程装配 `mango-file-preview-starter` 与 `file-preview-engine`）下预览地址用 `fileId` + 短期票据，这类请求没有网络地址可供站点校验，因此不需要把 Mango 对外域名加进 `trust.host`；票据无效或过期时取源失败返回 `180002`。独立部署引擎装载 `mango-file-preview-starter-remote` 并开启 `mango.file-preview.remote.enabled`（配 `mango.file-preview.remote.base-url`）后同样是 `fileId` 形态，按票据远程直取；只有既不装取源实现又关掉 `internal-source-enabled` 时才回退 `url` 形态，此时需配置 `mango.file-preview.source-base-url`。业务侧只透传 `fileId`，不要自行拼预览地址。
 
 ## 预览取源的信任门（fileId 通道）
 
 本场景的表单上传与预览地址拼装规则**本次无变化**，仅记录新增的校验口径，便于排障：
 
 - `fileId` 形态的预览请求在引擎信任门只校验**取票是否仍然可用**（存在且未过期），只读、不取流、不消费令牌；票据无效或过期在门处直接 `403`，不会进入引擎的解包、转换与落盘环节。
-- `url` 形态不变，仍按 `trust.host` 与信任目录校验；该形态仅作兼容兜底，且必须显式配置 `mango.file-preview.source-base-url`（缺失报 `180004`）。
-- 独立部署引擎的远程直取通过 `GET /file-preview/sources?token=…` 流式取源（票据有效性由该接口在取流时校验，不额外提供有效性探测端点），调用由服务间签名（`mango.internal-call`）保护，业务侧不感知。
+- `url` 形态不变，仍按 `trust.host` 与信任目录校验；该形态仅作兼容兜底，启用时需显式配置 `mango.file-preview.source-base-url`（缺失报 `180004`）。
+- 独立部署引擎的远程直取通过 `GET /file-preview/sources?token=…` 流式取源（票据有效性由该接口在取流时校验，不额外提供有效性探测端点）；该路径不经登录态鉴权，凭据是短期一次性票据本身，业务侧不感知。
 - 业务侧无需改动：一如既往通过 `GET /file-preview/page?fileId=…` 拿到预览页，票据由平台签发与续期。

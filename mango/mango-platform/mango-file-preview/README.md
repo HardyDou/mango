@@ -254,7 +254,8 @@ Office 转换后的 PDF 由 PDF.js 通过同源 `/file-preview/generated?token=.
 
 - 流式转发：`feign.Response` 在响应体未知或超阈值时返回活动流（feign-core 13.6 的 `InvocationContext.MAX_RESPONSE_BUFFER_SIZE`），调用方负责关闭，异常路径与空 body 都转成 `code=1` / `下载失败: <原因>`；
 - 日志级别：`mango.feign.logger-level` 保持默认 `BASIC`，**不得**设为 `FULL`——`FULL` 会把响应体重新缓冲整个文件；
-- 服务间鉴权：取流调用由 `mango-infra-feign-starter` 的 `InternalCallFeignInterceptor` 签名（`mango.internal-call.secret`），接收端走 Mango 的 `isVerifiedInternalCall` 分支，不新增服务间令牌、也不把 `/file-preview/sources` 之外的路径加入 permit 白名单；
+- 凭据边界：取流请求不带用户登录态，授权凭据就是路径上的短期一次性票据（`file-preview:source:*`，绑定发起方上下文，取流时校验并恢复该上下文再判文件权限）；
+- 内部调用签名（可选）：`mango-infra-feign-starter` 在配置 `mango.internal-call.secret` 后会为该 Feign 调用附加 HMAC 内部调用头，接收端只对登记为内部接口的路径做校验——`/file-preview/sources` 不在内部路径集合内（它在 `FilePreviewPermitPathBeanPostProcessor#PERMIT_PATHS` 中），因此该签名是纵深防御的一层附加信息，**不是**授权依据，也不新增服务间令牌、不改 permit 白名单；
 - 装配互斥：内嵌进程已有 `FilePreviewEngineDownloader` 时，远程下载器（`@ConditionalOnMissingBean(FileDownloader.class)`）不会重复注册；
 - 开关语义：`mango.file-preview.internal-source-enabled` 是运维总开关。置 `false` 表示**强制**走 `url` 兜底（排除取源实现），与 `mango.file-preview.remote.enabled` 是“与”关系：只要总开关关着，即使远程直取已配置也不会使用。
 
