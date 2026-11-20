@@ -7,6 +7,10 @@
 
 ## Unreleased - 质量门禁去掉零缺陷收益的格式类规则
 
+### Documentation
+
+- `mango-infra-persistence` README 补充「外部升级目录的生效前提」：仅在模块 Flyway 步骤执行时加载、需要一次 release 标识变化触发新代次（`mango.local.release-id` / 生产 release id）、`mango.bootstrap.mode=bootstrap` 是前提（`runtime` 下 `BootstrapCommandRunner` 直接返回）、`--mango.persistence.flyway.upgrade-root` 同时影响 locations 与代次判断；`MANGO_UPGRADE_DIR` / `-Dmango.upgrade.root` 只解析 locations，必须配合 release 标识变化才生效。
+
 ### Changed
 
 - `rulesets/java/checkstyle.xml` 移除 `MagicNumber`、`Indentation`、`LeftCurly`、`WhitespaceAround`、`WhitespaceAfter`、`OperatorWrap`、`SeparatorWrap`、`ParenPad`、`DeclarationOrder`、`StaticVariableName`、`AvoidEscapedUnicodeCharacters`：这些检查不改变代码正确性，却占全仓存量债务的 80%（`MagicNumber` 单条 10,626/15,067），任何改动都会为历史噪音返工。格式统一交由 IDE/格式化器在提交前完成。
