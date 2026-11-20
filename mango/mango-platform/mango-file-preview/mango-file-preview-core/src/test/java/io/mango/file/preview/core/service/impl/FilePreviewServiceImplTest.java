@@ -4,12 +4,14 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mango.common.exception.BizException;
 import io.mango.common.result.R;
 import io.mango.file.api.FileApi;
 import io.mango.file.api.IFileContentProvider;
 import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.file.api.vo.FileRecordVO;
+import io.mango.file.preview.api.enums.FilePreviewCode;
 import io.mango.file.preview.core.config.FilePreviewProperties;
 import io.mango.file.preview.core.service.PreviewSourceAvailability;
 import io.mango.file.preview.core.gateway.FilePreviewFileGateway;
@@ -60,8 +62,7 @@ class FilePreviewServiceImplTest {
 
     @Test
     void createEnginePreview_原始中文文件名使用FileId安全名() {
-        FilePreviewProperties properties = new FilePreviewProperties();
-        FilePreviewServiceImpl service = service(properties, new StubFileApi("中文 (1).DOCX"));
+        FilePreviewServiceImpl service = service(properties(), new StubFileApi("中文 (1).DOCX"));
 
         String sourceUrl = sourceUrl(service.createEnginePreview(100L).getPreviewUrl());
 
@@ -74,8 +75,8 @@ class FilePreviewServiceImplTest {
         StubFileApi firstApi = new StubFileApi("demo.pptx", "hash-a");
         StubFileApi secondApi = new StubFileApi("demo.pptx", "hash-b");
 
-        String first = queryParameter(sourceUrl(service(new FilePreviewProperties(), firstApi).createEnginePreview(100L).getPreviewUrl()), "fullfilename");
-        String second = queryParameter(sourceUrl(service(new FilePreviewProperties(), secondApi).createEnginePreview(100L).getPreviewUrl()), "fullfilename");
+        String first = queryParameter(sourceUrl(service(properties(), firstApi).createEnginePreview(100L).getPreviewUrl()), "fullfilename");
+        String second = queryParameter(sourceUrl(service(properties(), secondApi).createEnginePreview(100L).getPreviewUrl()), "fullfilename");
 
         assertThat(first).isNotEqualTo(second);
     }
@@ -116,12 +117,14 @@ class FilePreviewServiceImplTest {
     }
 
     @Test
-    void createEnginePreview_未配置内部源地址时保持兼容回退() {
-        FilePreviewServiceImpl service = service();
+    void createEnginePreview_缺少sourceBaseUrl时报业务错误而不是静默回退() {
+        FilePreviewServiceImpl service = service(new FilePreviewProperties(), new StubFileApi());
 
-        String sourceUrl = sourceUrl(service.createEnginePreview(100L).getPreviewUrl());
-
-        assertThat(sourceUrl).startsWith("http://127.0.0.1/file-preview/sources?");
+        assertThatThrownBy(() -> service.createEnginePreview(100L))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("mango.file-preview.source-base-url")
+                .satisfies(exception -> assertThat(((BizException) exception).getCode())
+                        .isEqualTo(FilePreviewCode.SOURCE_BASE_URL_MISSING.getCode()));
     }
 
     @Test
@@ -281,7 +284,7 @@ class FilePreviewServiceImplTest {
     }
 
     private FilePreviewMode previewModeOf(FileApi fileApi) {
-        FilePreviewServiceImpl service = service(new FilePreviewProperties(), fileApi);
+        FilePreviewServiceImpl service = service(properties(), fileApi);
         return service.previewMode(service.createPreview(100L).getPreviewToken());
     }
 
@@ -344,7 +347,16 @@ class FilePreviewServiceImplTest {
     private FilePreviewServiceImpl service(StubTokenStore tokenStore,
                                            Clock clock,
                                            StubFileContentProvider contentProvider) {
-        return service(new FilePreviewProperties(), new StubFileApi(), tokenStore, clock, contentProvider);
+        return service(properties(), new StubFileApi(), tokenStore, clock, contentProvider);
+    }
+
+    /**
+     * url 兜底通道要求显式配置 {@code source-base-url}，测试默认给一个稳定的内部地址。
+     */
+    private FilePreviewProperties properties() {
+        FilePreviewProperties properties = new FilePreviewProperties();
+        properties.setSourceBaseUrl("http://127.0.0.1");
+        return properties;
     }
 
     private FilePreviewServiceImpl service(FilePreviewProperties properties, FileApi fileApi) {

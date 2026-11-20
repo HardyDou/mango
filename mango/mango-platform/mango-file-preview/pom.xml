@@ -21,6 +21,8 @@
         <module>mango-file-preview-api</module>
         <module>mango-file-preview-core</module>
         <module>mango-file-preview-engine</module>
+        <module>mango-file-preview-support</module>
         <module>mango-file-preview-starter</module>
+        <module>mango-file-preview-starter-remote</module>
     </modules>
 </project>

@@ -19,12 +19,12 @@ public class FilePreviewProperties {
     private boolean enabled = true;
 
     /**
-     * 预览源文件是否在同一进程内直取。
+     * 运维开关：预览源文件是否允许在本进程内直取。
      *
-     * <p>内嵌引擎（默认部署）保持 {@code true}：预览地址传 {@code fileId} 参数，引擎向本进程取流。
-     * 独立进程部署的引擎（{@code ServerMain}，见 {@code mango.file-preview.engine.port}）必须置
-     * {@code false}：那个进程里没有本应用的取源实现，传 {@code fileId} 无法解析，必须回退为
-     * {@code url} 参数经 {@code source-base-url} 取流。</p>
+     * <p>{@code true}（默认）时，只要装配了取源实现（内嵌部署的 {@code FilePreviewEngineDownloader}
+     * 或独立引擎的远程直取实现），预览地址就传 {@code fileId} 参数，引擎按短期票据取流；
+     * 置为 {@code false} 表示**强制**回退到 {@code url} 通道（此时必须配置
+     * {@link #sourceBaseUrl}，缺失会报 {@code 180004}），仅用于排查问题或保留旧行为。</p>
      */
     private boolean internalSourceEnabled = true;
 
@@ -34,7 +34,12 @@ public class FilePreviewProperties {
     /** 源文件临时访问路径。 */
     private String sourcePath = "/file-preview/sources";
 
-    /** 预览引擎访问源文件时使用的内部服务地址；为空时使用当前请求地址。 */
+    /**
+     * {@code url} 兜底通道读取源文件时使用的内部服务地址；只在没有取源实现可用时使用。
+     *
+     * <p>该配置不再从当前请求地址推断：走 {@code url} 兜底但未配置时直接报 {@code 180004}，
+     * 避免在网关/反代后静默生成一个引擎访问不到的地址。</p>
+     */
     private String sourceBaseUrl;
 
 

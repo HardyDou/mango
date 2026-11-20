@@ -12,14 +12,56 @@
 |------|------|
 | 创建预览链接 | `GET /file-preview/files/preview-link?fileId=...` 返回预览 URL、token 和有效期 |
 | 直接跳转预览页 | `GET /file-preview/files/preview?fileId=...` 生成 source token 后 forward 到预览引擎 |
-
 | 短期公开入口 | `GET /file-preview/files/preview-entry?token=...` 使用已签发入口 token 进入预览 |
 | 源文件读取 | `GET /file-preview/sources?token=...` 供预览引擎读取源文件流 |
 | 上下文保存 | token 中保存签发时的 `MangoContextSnapshot`，读取源文件时恢复上下文 |
 | 引擎资源注册 | 启动时注册 `/onlinePreview`、`/pdfjs/**`、`/xlsx/**` 等公开资源 |
 | 独立 UI 阻断 | 默认拦截 kkFileView 首页和演示文件管理入口 |
 
-> 进程内取源（内嵌引擎）下预览地址是 `enginePath?fileId=<短期取源票据>&fullfilename=<引擎文件名>`。这类请求的身份由短期取源票据承担，没有网络地址可供站点校验，因此引擎不做 host 校验（`trust.host` 不需要包含 Mango 对外域名）。信任门按通道分工：`fileId` 形态只校验票据本身是否仍可用（存在且未过期，只读校验、不取流、不消费票据），票据无效或过期时在门处直接 403，不进入引擎的解包、转换与落盘；`url` 形态的请求仍按原规则校验站点与目录。独立部署引擎仍是 `url` 形态。
+> 取源通道的完整说明见 [2.1 取源通道](#21-取源通道)。一句话：`fileId` 是主路径（内嵌部署在进程内直取，独立部署引擎按票据远程直取），`url` 通道只作兼容兜底、不推荐，且必须显式配置 `mango.file-preview.source-base-url`，缺失时签发阶段直接报错，不会静默回退。
+
+### 2.1 取源通道
+
+预览引擎拿到源文件只有三种方式。业务侧只需要给 `fileId`，不用关心走哪条通道；通道由部署形态和运维开关决定。
+
+| 通道 | 触发条件 | 身份校验点 | 失败语义 |
+|------|----------|------------|----------|
+| `fileId` 通道（主路径，同进程直取） | 预览引擎与 Mango 同进程，且 `mango.file-preview.internal-source-enabled=true`（默认）并装配了进程内取源实现 | 短期取源票据（`file-preview:source:*`，默认 24 小时）本身即凭据；引擎信任门 `FileDownloaders#verifySource` 只读校验票据存在且未过期 | 票据无效或过期 → 信任门返回 403，不进入引擎的解包、转换与落盘 |
+| `fileId` 通道（主路径，远程直取） | 独立部署引擎装载 `mango-file-preview-starter-remote` 且 `mango.file-preview.remote.enabled=true` | 同上（票据 + 信任门）；引擎只把票据转发给 `GET /file-preview/sources`，票据有效性由该接口在取流时校验，不做额外的有效性探测 | 票据无效 → 取流被拒，引擎信任门返回 403；远程调用失败或正文为空 → 引擎下载器返回 `下载失败: <原因>`，不产出空文件 |
+| `url` 通道（兼容兜底，不推荐） | 既没有进程内取源实现，也没有启用远程直取（`internal-source-enabled=false` 且 `mango.file-preview.remote.enabled` 未开启） | 引擎侧 `trust.host` 校验源地址 host + `/file-preview/sources?token=...` 自己校验票据 | 未配置 `mango.file-preview.source-base-url` → 签发阶段抛 `180004`；host 不在信任列表 → 引擎 403 `notTrustHost.html` |
+
+两条 `fileId` 通道对业务完全等价：预览地址都是 `/onlinePreview?fileId=<票据>&fullfilename=<引擎文件名>`，都不需要容器能解析对外域名，大文件也不会经过「流出再落盘」的二次拷贝。
+
+`/file-preview/sources` 在 `FilePreviewPermitPathBeanPostProcessor#PERMIT_PATHS` 中，因此不经 `AuthFilter`（与 `/file-preview/generated` 相同）。它的安全性由「一次性短期票据 + 票据绑定调用方上下文 + 取流时校验」共同承担；`mango.file-preview.remote.*` 不引入第二种令牌，也不改动这份白名单。
+
+### 2.2 格式与渲染方式
+
+| 格式 | 渲染方式 | 是否需转换 | 已知限制 |
+|------|----------|------------|----------|
+| `doc`、`docx` | 平台异步转换为 PDF，PDF.js 读取 `/file-preview/files/preview-artifact` | 是（LibreOffice/JODConverter，显式关闭 `mango.fileproc.convert.office-to-pdf-enabled` 时回退 Aspose） | 依赖 Aspose 授权与字体；缺字体时转换不报错但可能出现缺字或替换字形；复杂排版与 Office 原生渲染有差异 |
+| `ppt`、`pptx` | 同 `doc`/`docx`：转 PDF 后由 PDF.js 展示（无逐页动画与嵌入媒体） | 是 | 同上；动画、切换效果、嵌入音视频不保留 |
+| `xls`、`xlsx` | 默认转 PDF 后由 PDF.js 展示；`xlsx`（以及 `csv`）在 `officePreviewType` 不为 `html` 且 `officeTypeWeb=web` 时由引擎用 Luckysheet 渲染前端表格（`officeweb.ftl`），`xls` 没有该路径、始终走 PDF 转换 | 默认是；前端表格渲染不需要 LibreOffice | 前端表格渲染依赖 `getCorsFile?urlPath=<base64 源地址>` 回源，`fileId` 通道下没有对外 URL，该回源会被信任门以空 host 拒绝（`isNotTrustHost(null)` 恒拒），因此 `fileId` 通道下不启用前端表格渲染，`xls`/`xlsx` 一律退回 PDF 转换路径。表格预览可用，只是没有公式编辑、筛选等交互能力 |
+| `pdf` | PDF.js 直接读取 `/file-preview/files/preview-content` | 否 | 加密 PDF 需要密码；超大 PDF 首屏依赖分页加载 |
+| 图片（`jpg`、`png`、`gif`、`webp`、`bmp`、`svg` 等） | 引擎 `/picturesPreview` 直接展示（`svg` 走 `svg.ftl`） | 否 | `heic`/`heif` 走 `heic.ftl`、`avif` 归入图片通道，均依赖浏览器解码能力；浏览器不支持时需前端转码或降级为下载 |
+| `mp4` | 引擎 `media.ftl` 以 HTML5 `<video>` 播放 | 否 | 仅 H.264 视频 + AAC 音频的组合在各浏览器稳定可播；其它编码（H.265/HEVC、AV1、ProRes 等）可能只有声音或直接黑屏 |
+| `zip`（及 `rar`、`7z` 等压缩包） | 引擎压缩包页 `compress.ftl`，内部文件通过 `/compressed-file` 读取 | 否（不进入平台 PDF 转换队列） | 加密压缩包需要密码；解包会占用引擎工作目录磁盘空间 |
+
+### 2.3 能力边界
+
+- `xlsx`/`csv` 的 officeweb 前端渲染（`officeweb.ftl` + Luckysheet）**仅在** `officePreviewType != "html"` **且** `officeTypeWeb == "web"` 时启用（`mango-file-preview-engine/src/main/java/cn/keking/service/impl/OfficeFilePreviewImpl.java#handleWebPreview`，判断为 `html` 时直接返回 `null`）。
+- `fileId` 通道下该模式不可用：页面走 `getCorsFile?urlPath=<base64 源地址>` 回源，而 `fileId` 通道没有对外 URL，信任门对空 host 调用 `isNotTrustHost(null)` 恒拒，因此退回 PDF 转换路径。
+
+### 2.4 限制清单
+
+以下限制是能力本身的边界，部署与业务侧必须显式知晓，平台不会静默降级成「看起来成功」：
+
+| 限制 | 影响 | 处理建议 |
+|------|------|----------|
+| `mp4` 仅 H.264 + AAC 组合稳定 | 其它编码可能黑屏或只有声音 | 上传前转码，或业务侧对该类文件直接提供下载 |
+| 加密压缩包需要密码 | 无密码时压缩包页提示输入密码，无法列出内部文件 | 业务侧保存密码并通过页面 `filePassword` 传入；不要上传无法提供密码的加密包 |
+| 解包占用引擎工作目录磁盘 | 大压缩包解包后的文件落在引擎工作目录，占用与包内文件总量相当的空间 | 关注引擎工作目录（解压与转换缓存目录）容量，必要时调大或定期清理 |
+| `docx`/`ppt` 依赖 Aspose 授权与字体 | 无授权时转换失败；缺字体时转换不报错但可能缺字 | 配置 Aspose license；`fonts-folders` 只追加字体目录，不覆盖默认，缺字体只记录 ERROR 日志、不阻断预览 |
+| `heic`/`avif` 依赖浏览器解码 | 浏览器不支持时图片区域空白 | 前端转码为 `jpg`/`webp`，或对这些格式直接降级为下载 |
 
 ## 3. 后端接入
 
@@ -40,6 +82,17 @@
     <artifactId>mango-file-preview-starter</artifactId>
 </dependency>
 ```
+
+独立部署的预览引擎（`cn.keking.ServerMain`）要按票据远程直取源文件时，依赖远程取源 starter：
+
+```xml
+<dependency>
+    <groupId>io.mango.platform.file.preview</groupId>
+    <artifactId>mango-file-preview-starter-remote</artifactId>
+</dependency>
+```
+
+该包只带来声明式 Feign 取源能力（`mango-infra-feign-starter`）与引擎侧下载器桥接，不引入 Mango 应用上下文；独立引擎进程把它放进 classpath 并配置 `mango.file-preview.remote.base-url` 即可，不需要把引擎改回 `url` 通道。
 
 预览能力通常还需要文件中心和转换处理能力：
 
@@ -101,7 +154,7 @@
 3. 业务上传文件后只保存 `fileId`。
 4. 详情页用 `FilePreviewPanel` 或调用 `/file-preview/files/preview-link` 创建预览链接。
 5. 当前用户必须拥有 `file:files:download` 权限；文件管理菜单的正式资源声明会给对应角色登记该权限。
-6. 预览引擎读取源文件：内嵌引擎（`mango-app` 同时装有 starter 与 engine）在同一进程内按 `fileId` 参数直取；独立部署引擎用短期 source token 调 `/file-preview/sources?token=...`。
+6. 预览引擎读取源文件：内嵌引擎（`mango-app` 同时装有 starter 与 engine）在同一进程内按票据直取；独立部署引擎装载 `mango-file-preview-starter-remote` 并开启 `mango.file-preview.remote.enabled` 后，按票据远程直取（`GET /file-preview/sources`）；两者都没有时才回退到 `url` 通道，此时必须配置 `mango.file-preview.source-base-url`，否则签发返回 `180004`。
 
 ## 6. 配置说明
 
@@ -126,7 +179,11 @@ mango:
     conversion:
       worker-count: 2
       office-base-port: 2001
-
+    remote: # 仅独立部署引擎所在进程需要
+      enabled: true
+      base-url: http://mango-app:8080
+      connect-timeout: 5s
+      read-timeout: 60s
 office:
   plugin:
     task:
@@ -142,11 +199,15 @@ cache:
 |--------|--------|------|
 | `mango.file-preview.enabled` | `true` | 是否启用文件预览自动配置 |
 | `mango.file-preview.engine-path` | `/onlinePreview` | 预览引擎入口路径 |
-| `mango.file-preview.source-path` | `/file-preview/sources` | 预览引擎读取源文件的短期 URL 前缀 |
-| `mango.file-preview.source-base-url` | 当前请求地址 | 预览引擎读取源文件时使用的内部服务地址；部署在网关后时建议配置为集群内部地址，避免流量经外部入口绕回。配置后其 host 会自动加入引擎信任列表，无需重复写 `trust.host` |
+| `mango.file-preview.source-path` | `/file-preview/sources` | `url` 兜底通道下预览引擎读取源文件的短期 URL 前缀 |
+| `mango.file-preview.source-base-url` | 无（`url` 兜底时必填） | 仅供 `url` 兜底通道使用：引擎经该地址访问 Mango 的 `/file-preview/sources`。**不再从当前请求地址推断**：走 `url` 兜底但未配置时报 `180004`，不会静默回退。其 host 会自动加入引擎信任列表，无需重复写 `trust.host` |
 | `mango.file-preview.source-token-expire-seconds` | `86400` | 入口 token 和源文件 token 有效期，单位秒 |
 | `mango.file-preview.standalone-ui-enabled` | `false` | 是否允许访问 kkFileView 独立首页和演示文件管理入口 |
-| `mango.file-preview.internal-source-enabled` | `true` | 预览源文件是否同进程直取；独立进程部署的引擎必须设为 `false` |
+| `mango.file-preview.internal-source-enabled` | `true` | 是否允许引擎按短期票据直取源文件（内嵌部署在进程内直取，独立部署配合 `mango.file-preview.remote.*` 远程直取）。设为 `false` 表示**强制**回退 `url` 兜底通道，此时必须配置 `source-base-url` |
+| `mango.file-preview.remote.enabled` | `false` | 独立部署引擎是否启用远程直取；与 `mango-file-preview-starter-remote` 同时生效 |
+| `mango.file-preview.remote.base-url` | 无（`remote.enabled=true` 时必填） | 引擎访问 Mango 的地址（内网/对外均可，需能访问 `/file-preview/sources`）；缺失时应用启动失败并提示该配置项 |
+| `mango.file-preview.remote.connect-timeout` | `5s` | 远程直取的连接超时（`Duration` 写法，如 `3s`、`500ms`） |
+| `mango.file-preview.remote.read-timeout` | `60s` | 远程直取的读取超时；大文件取流时按该值放宽 |
 | `mango.file-preview.conversion.worker-count` | `2` | 每个预览实例的转换 Worker 数量，同时决定默认 LibreOffice 进程数量 |
 | `mango.file-preview.conversion.office-base-port` | `2001` | 未显式配置端口列表时生成 LibreOffice 端口的起始端口 |
 
@@ -154,19 +215,26 @@ cache:
 
 Office 转换任务按文件内容版本生成稳定转换键；同一文件同一版本不区分 PDF/图片模式只允许一个底层转换，不同文件由固定大小的转换 Worker 池并行处理。`mango.file-preview.conversion.worker-count` 是唯一并发配置，默认 2；页面展示、任务消费能力和默认 LibreOffice 进程数量保持一致。未显式配置 `office.plugin.server.ports` 时，端口从 `office-base-port` 开始按 Worker 数量连续生成；显式配置端口列表时，数量不一致会在启动阶段失败。普通 PDF 预览和图片预览共用同一协调器；任务 Worker 使用 infra-kv 分布式槽位和文件版本租约，多个实例共同遵守同一并发上限。请求超时只结束当前请求视图，在途 LibreOffice 任务完成前不会启动同键的第二个转换，避免 `forceUpdatedCache` 形成输出竞争和 Office 断连。转换结果先写入唯一临时文件，校验成功后再原子替换缓存；源文件通过 `fileId` 对应的 `IFileContentProvider.downloadForService` 流读取，不会为大文件构造整文件字节数组。
 
-Office 转换后的 PDF 由 PDF.js 通过同源 `/file-preview/generated?token=...&fileName=...` 读取，不再经 `/getCorsFile` 回源。该接口虽然属于 PUBLIC 路由，但必须携带有效 source token，并校验 token 对应的 `fileId` 与转换文件名；token 过期后不能继续读取转换结果。原始文件仍只由引擎使用同一 source token 从内部 `source-base-url` 下载。
+Office 转换后的 PDF 由 PDF.js 通过同源 `/file-preview/generated?token=...&fileName=...` 读取，不再经 `/getCorsFile` 回源。该接口虽然属于 PUBLIC 路由，但必须携带有效 source token，并校验 token 对应的 `fileId` 与转换文件名；token 过期后不能继续读取转换结果。原始文件由引擎按票据直取（内嵌同进程或远程直取）；仅在 `url` 兜底通道下才由引擎从 `source-base-url` 下载。
 
-引擎的 `/onlinePreview`、`/getCorsFile` 仍接受任意 URL，必须保留 host 白名单防止被当作 SSRF 代理。配置 `source-base-url` 后其 host 由 `FilePreviewTrustHostInitializer` 在启动时自动加入信任列表；只有未配置 `source-base-url` 或使用其它引擎入口时才需要手工配置引擎侧 `trust.host`。
+引擎的 `/onlinePreview`、`/getCorsFile` 仍接受任意 URL，必须保留 host 白名单防止被当作 SSRF 代理。配置 `source-base-url` 后其 host 由 `FilePreviewTrustHostInitializer` 在启动时自动加入信任列表；只有使用 `url` 兜底通道或其它引擎入口时才需要手工配置引擎侧 `trust.host`。`fileId` 通道不需要 `trust.host` 包含 Mango 域名。
 
 ### 源文件直取（`fileId` 参数）
 
-`mango-file-preview-starter` 与 `mango-file-preview-engine` 同时存在、且 `mango.file-preview.internal-source-enabled` 为 `true`（默认）时，starter 会注册一个引擎下载器（`cn.keking.spi.FileDownloader` 实现）并把预览地址切到进程内直取。此后预览地址不再拼对外域名，而是直接带源标识：
+只要有一份会向引擎注册下载器（`cn.keking.spi.FileDownloader`）的实现，预览地址就不再拼对外域名，而是直接带源标识：
 
 ```
 /api/onlinePreview?fileId=<短期取源票据>&fullfilename=<引擎文件名>
 ```
 
-引擎收到 `fileId` 后不做 URL 解析、不发起 HTTP，直接把该标识交给已注册的下载器，由它调用 `IFilePreviewService#openSource` 读流落盘。收益：
+引擎收到 `fileId` 后不做 URL 解析、不发起 HTTP，直接把该标识交给已注册的下载器，由下载器把源文件流式落到引擎工作目录。两种部署各有一个实现：
+
+| 部署形态 | 依赖 | 取源实现 | 开关 |
+|----------|------|----------|------|
+| 内嵌（`mango-app` 同时装 starter 与 engine） | `mango-file-preview-starter` | `FilePreviewEngineDownloader`，调 `IFilePreviewService#openSource` 进程内读流 | `mango.file-preview.internal-source-enabled=true`（默认） |
+| 独立引擎（`cn.keking.ServerMain`） | `mango-file-preview-starter-remote` | `FilePreviewRemoteSourceDownloader`（`mango-file-preview-support`），经 Feign 调 Mango | `mango.file-preview.remote.enabled=true`（默认 `false`） |
+
+收益：
 
 - 容器不需要能解析或访问对外域名，域名变更不需要重新部署；
 - 大文件不再产生 `sources` 出口流量，也少一次「流出再落盘」的拷贝；
@@ -174,11 +242,29 @@ Office 转换后的 PDF 由 PDF.js 通过同源 `/file-preview/generated?token=.
 
 引擎侧只用了一个扩展点：`DownloadUtils#downLoad` 先问 `FileDownloaders`，没有实现接管时原样走内置下载。因此升级 kkFileView 只需保留这一处转调，其余代码（`WebUtils`、`TrustHostFilter`、各 `FilePreview` 实现）未改动。
 
+#### 远程直取（独立部署引擎）
+
+`mango-file-preview-starter-remote` 只提供两件事：一个声明式 Feign 客户端和一个向引擎注册的下载器，两者都受 `mango.file-preview.remote.enabled` 控制，引擎进程不需要装 Mango 应用 starter。远程侧**不提供**「这个票据是否有效」的探测端点：票据本身就是凭据，有效性只在取流时校验一次。
+
+| 调用 | 接口 | 返回值 | 说明 |
+|------|------|--------|------|
+| 读取源文件 | `GET /file-preview/sources?token=...`（`FilePreviewSourceFeignClient`） | 裸 `feign.Response` | 下载器用 `response.body().asInputStream()` 直接 `Files.copy` 到引擎目录，**不把整个文件读成 `byte[]`**；票据无效或过期时该接口拒绝，下载器返回 `code=1` / `下载失败: <原因>` |
+
+实现要点：
+
+- 流式转发：`feign.Response` 在响应体未知或超阈值时返回活动流（feign-core 13.6 的 `InvocationContext.MAX_RESPONSE_BUFFER_SIZE`），调用方负责关闭，异常路径与空 body 都转成 `code=1` / `下载失败: <原因>`；
+- 日志级别：`mango.feign.logger-level` 保持默认 `BASIC`，**不得**设为 `FULL`——`FULL` 会把响应体重新缓冲整个文件；
+- 凭据边界：取流请求不带用户登录态，授权凭据就是路径上的短期一次性票据（`file-preview:source:*`，绑定发起方上下文，取流时校验并恢复该上下文再判文件权限）；
+- 内部调用签名（可选）：`mango-infra-feign-starter` 在配置 `mango.internal-call.secret` 后会为该 Feign 调用附加 HMAC 内部调用头，接收端只对登记为内部接口的路径做校验——`/file-preview/sources` 不在内部路径集合内（它在 `FilePreviewPermitPathBeanPostProcessor#PERMIT_PATHS` 中），因此该签名是纵深防御的一层附加信息，**不是**授权依据，也不新增服务间令牌、不改 permit 白名单；
+- 装配互斥：内嵌进程已有 `FilePreviewEngineDownloader` 时，远程下载器（`@ConditionalOnMissingBean(FileDownloader.class)`）不会重复注册；
+- 开关语义：`mango.file-preview.internal-source-enabled` 是运维总开关。置 `false` 表示**强制**走 `url` 兜底（排除取源实现），与 `mango.file-preview.remote.enabled` 是“与”关系：只要总开关关着，即使远程直取已配置也不会使用。
+
 约束与失败边界：
 
-- 直取只在同一 JVM 内有效。独立部署的引擎（`cn.keking.ServerMain` 独立进程，见 `mango.file-preview.engine.port`）**必须**显式设置 `mango.file-preview.internal-source-enabled: false`；此时预览地址与 1.14.x 一致（`url=<base64 源地址>`），引擎经 `source-base-url` 取流。开关默认 `true`，只适用于「预览引擎与 Mango 应用同进程」的内嵌部署；
-- 下载器读流失败时返回与内置下载一致的 `code=1` 与 `下载失败: <原因>`，不会产出空文件；
-- 需要经网关取源的部署同样把 `internal-source-enabled` 设为 `false`，并让 `source-base-url` 指向网关。
+- 独立部署引擎开启远程直取后，**不再需要** `internal-source-enabled: false` 与 `source-base-url`；那套 `url` 兜底只在不想让引擎装 `mango-file-preview-starter-remote` 时使用，且拿到 `url` 形态预览地址时必须能访问 `source-base-url`；
+- `remote.enabled=true` 但缺少 `remote.base-url` → 应用启动失败，错误信息直接点名配置项；
+- 引擎信任门对远程票据只判非空白（不做远程探测），票据无效时在取流阶段被拒绝，同样不会进入引擎的解包与转换；网络异常表现为下载失败，不会被误当成「票据有效」；
+- 下载器读流失败时返回与内置下载一致的 `code=1` 与 `下载失败: <原因>`，不会产出空文件。
 
 `mango-file-preview-engine` 也支持独立引擎端口配置：
 
@@ -266,6 +352,7 @@ Office 转换统一使用 LibreOffice/JODConverter；只有显式关闭 `mango.f
 | `180001` | 文件 ID 不能为空 |
 | `180002` | 预览令牌无效或已过期 |
 | `180003` | 文件不存在或不可预览 |
+| `180004` | 未配置 `mango.file-preview.source-base-url`，无法生成 `url` 兜底取源地址 |
 
 ## 10. 管理入口
 
@@ -335,14 +422,21 @@ Office 转换统一使用 LibreOffice/JODConverter；只有显式关闭 `mango.f
 | iframe 内嵌 Office 预览返回 401 | 确认 `/file-preview/files/preview-artifact` 在 permit 白名单和 API 资源中均为 PUBLIC，且网关不额外要求登录 |
 | 压缩包进入 PDF 转换并提示失败 | 检查 `FilePreviewMode` 是否把该扩展名判为 `ENGINE`，压缩包不应调用平台转换 |
 | 不希望暴露 kkFileView 首页 | 保持 `mango.file-preview.standalone-ui-enabled=false` |
-| 反向代理下源文件 URL 不对 | 检查请求 scheme、host、port、context path，以及代理头是否正确传递 |
+| 反向代理下源文件 URL 不对 | `fileId` 通道不拼对外域名，先确认引擎是否真的收到 `fileId`；`url` 通道下检查 `mango.file-preview.source-base-url` |
+| 创建预览链接返回 `180004` | 当前部署没有可用的取源实现（内嵌没装 starter、独立引擎没开 `mango.file-preview.remote.enabled`），需要二选一；若确实要走 `url` 兜底，必须配置 `mango.file-preview.source-base-url` |
+| 独立引擎报 `FileNotFound`/票据无法解析 | 确认引擎进程装了 `mango-file-preview-starter-remote` 且 `mango.file-preview.remote.enabled=true`、`base-url` 可访问 |
+| 远程取源连接超时或读超时 | 检查 `mango.file-preview.remote.connect-timeout`/`read-timeout`、网络与网关；大文件需放宽 `read-timeout` |
+| 预览内存暴涨且 `mango.feign.logger-level=FULL` | 日志全量模式会重新缓冲响应体，改回 `BASIC` |
+| Office 预览文字缺失或方块 | 检查引擎字体目录（`fonts-folders` 只追加、不覆盖默认），缺字体只记录 ERROR 不阻断转换 |
+| `mp4` 黑屏或只有声音 | 确认编码为 H.264 + AAC，其它编码需提前转码 |
+| 压缩包提示需要密码 | 加密压缩包必须提供密码，平台不会绕过 |
 | 预览 token 过快失效 | 调整 `mango.file-preview.source-token-expire-seconds` |
 
 ## 13. 验证方式
 
 ```bash
 mvn -f mango/pom.xml \
-  -pl :mango-file-preview-api,:mango-file-preview-core,:mango-file-preview-engine,:mango-file-preview-starter \
+  -pl :mango-file-preview-api,:mango-file-preview-core,:mango-file-preview-engine,:mango-file-preview-support,:mango-file-preview-starter,:mango-file-preview-starter-remote \
   test
 
 mvn -f mango/pom.xml -pl :mango-file-preview-app -am \
@@ -350,7 +444,7 @@ mvn -f mango/pom.xml -pl :mango-file-preview-app -am \
   -Dsurefire.failIfNoSpecifiedTests=false test
 ```
 
-正式验收还必须使用全新 MySQL 启动单体，并在浏览器执行真实上传、创建预览链接、打开预览页和下载；微服务形态应分别启动文件能力与预览能力，确认 Feign 服务路由保留 `/file/files` 基础路径、上下文透传和源文件正文。
+正式验收还必须使用全新 MySQL 启动单体，并在浏览器执行真实上传、创建预览链接、打开预览页和下载；微服务形态应分别启动文件能力与预览能力，确认 Feign 服务路由保留 `/file/files` 基础路径、上下文透传和源文件正文；独立引擎形态还需验证 `mango.file-preview.remote.enabled=true` 下七类格式（doc/docx、ppt/pptx、xls/xlsx、pdf、图片、mp4、zip）的端到端预览。
 
 ## 14. 相关文档
 
