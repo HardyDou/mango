@@ -1,9 +1,8 @@
-## Unreleased - 预览取源 fileId 不再被信任站点过滤拦截
+## Unreleased - 持久化文档补充外部升级目录的生效前提
 
-### Fixed
+### Documentation
 
-- `TrustHostFilter` / `TrustDirFilter` 原先只认 `url`/`urls`/`currentUrl`/`urlPath`，`fileId` 形态的进程内取源请求因「无网络地址」被判为不可信站点，直接返回 `403` + `notTrustHost.html`（918 字节），导致 `#1316` 的进程内直取在引擎页不可用。
-- 新增 `cn.keking.utils.PreviewSourceRequests#isInternalSource`：请求带 `fileId` 且本进程注册了 `FileDownloader` 时视为进程内取源，这类请求没有网络地址可供站点校验，`TrustHostFilter`/`TrustDirFilter` 放行；票据有效性由取源环节校验（无效返回 `180002`）。`url` 形态请求行为不变：带非可信 `url` 仍 403，两者都缺仍 403。
+- `mango-infra-persistence` README 新增「外部升级目录的生效前提」：模块 Flyway 步骤执行是加载前提、需要一次 release 标识变化触发新代次、`--mango.persistence.flyway.upgrade-root` 与 `MANGO_UPGRADE_DIR`/`-Dmango.upgrade.root` 的差异（后者只解析 locations、不进指纹）、`mango.bootstrap.mode=runtime` 非生效条件。
 
 ## Unreleased - 质量门禁去掉零缺陷收益的格式类规则
 
