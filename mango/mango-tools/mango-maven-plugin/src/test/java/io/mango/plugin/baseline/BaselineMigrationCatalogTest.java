@@ -101,8 +101,114 @@ class BaselineMigrationCatalogTest {
         assertTrue(exception.getMessage().contains("migration resource collision"));
     }
 
+    @Test
+    void ignoresMigrationsUnderTestAndIntegrationTestResources() throws Exception {
+        migration("bootstrap", "V1__init_bootstrap_lifecycle.sql",
+                "CREATE TABLE bootstrap_lifecycle (id bigint primary key);");
+        testMigration("bootstrap", "V1__reserved_bootstrap_probe.sql",
+                "CREATE TABLE bootstrap_probe (id bigint primary key);");
+        testMigration("it-module", "V1__it_fixture.sql",
+                "CREATE TABLE it_fixture (id bigint primary key);");
+
+        BaselineMigrationCatalog catalog = BaselineMigrationCatalog.discover(
+                directory, new MavenProject(), Set.of());
+
+        assertEquals(List.of("bootstrap"), List.copyOf(catalog.moduleNames()));
+        assertEquals(
+                List.of("V1__init_bootstrap_lifecycle.sql"),
+                catalog.migrations("bootstrap").stream()
+                        .map(BaselineMigrationCatalog.MigrationResource::fileName)
+                        .toList());
+    }
+
+    @Test
+    void duplicateMainResourceVersionsReportBothPhysicalPaths() throws Exception {
+        migration("alpha", "V1__init.sql", "CREATE TABLE alpha_record (id bigint primary key);");
+        migration("alpha", "V1__other.sql", "CREATE TABLE alpha_other (id bigint primary key);");
+
+        MojoExecutionException exception = assertThrows(
+                MojoExecutionException.class,
+                () -> BaselineMigrationCatalog.discover(directory, new MavenProject(), Set.of()));
+
+        String message = exception.getMessage();
+        assertTrue(message.contains("MANGO-BASELINE-009"));
+        assertTrue(message.contains("V1__init.sql"));
+        assertTrue(message.contains("V1__other.sql"));
+        assertTrue(message.contains("/src/main/resources/db/migration/alpha/V1__init.sql"));
+        assertTrue(message.contains("/src/main/resources/db/migration/alpha/V1__other.sql"));
+    }
+
+    @Test
+    void ignoresMigrationsUnderIntegrationTestSourceSet() throws Exception {
+        migration("payment", "V1__main_payment.sql", "CREATE TABLE main_payment (id bigint primary key);");
+        migrationAt("it", "payment", "V1__it_payment.sql");
+
+        BaselineMigrationCatalog catalog = BaselineMigrationCatalog.discover(
+                directory, new MavenProject(), Set.of());
+
+        assertEquals(
+                List.of("V1__main_payment.sql"),
+                catalog.migrations("payment").stream()
+                        .map(BaselineMigrationCatalog.MigrationResource::fileName)
+                        .toList());
+    }
+
+    @Test
+    void ignoresMigrationsUnderIntegrationTestSourceSetVariant() throws Exception {
+        migration("payment", "V1__main_payment_variant.sql", "CREATE TABLE main_payment_variant (id bigint primary key);");
+        migrationAt("it-core", "payment", "V1__it_core.sql");
+
+        BaselineMigrationCatalog catalog = BaselineMigrationCatalog.discover(
+                directory, new MavenProject(), Set.of());
+
+        assertEquals(
+                List.of("V1__main_payment_variant.sql"),
+                catalog.migrations("payment").stream()
+                        .map(BaselineMigrationCatalog.MigrationResource::fileName)
+                        .toList());
+    }
+
+    @Test
+    void scansMigrationsUnderANonSourceTreeNamedIt() throws Exception {
+        Path path = directory.resolve("it/resources/db/migration/payment/V1__loose_it.sql");
+        Files.createDirectories(path.getParent());
+        Files.writeString(path, "CREATE TABLE loose_it (id bigint primary key);");
+
+        BaselineMigrationCatalog catalog = BaselineMigrationCatalog.discover(
+                directory, new MavenProject(), Set.of());
+
+        assertTrue(catalog.moduleNames().contains("payment"));
+    }
+
+    @Test
+    void scansIntegrationTestSourceSetWhenItIsTheSearchRoot() throws Exception {
+        migrationAt("it", "fixture", "V1__fixture.sql");
+
+        BaselineMigrationCatalog catalog = BaselineMigrationCatalog.discover(
+                directory.resolve("module/src/it").resolve("resources/db/migration"),
+                new MavenProject(), Set.of());
+
+        assertTrue(catalog.moduleNames().contains("fixture"));
+    }
+
+    private void migrationAt(String sourceSet, String module, String fileName) throws IOException {
+        Path path = directory.resolve("module/src/" + sourceSet + "/resources/db/migration")
+                .resolve(module)
+                .resolve(fileName);
+        Files.createDirectories(path.getParent());
+        Files.writeString(path, "CREATE TABLE " + module + "_" + sourceSet.replace('-', '_') + " (id bigint primary key);");
+    }
+
     private void migration(String module, String fileName, String sql) throws IOException {
         Path path = directory.resolve("module/src/main/resources/db/migration")
+                .resolve(module)
+                .resolve(fileName);
+        Files.createDirectories(path.getParent());
+        Files.writeString(path, sql);
+    }
+
+    private void testMigration(String module, String fileName, String sql) throws IOException {
+        Path path = directory.resolve("module/src/test/resources/db/migration")
                 .resolve(module)
                 .resolve(fileName);
         Files.createDirectories(path.getParent());

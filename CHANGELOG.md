@@ -21,6 +21,11 @@
 
 - 这是**门禁放宽**：移除的规则不再阻断任何 PR。既有以这些规则为阻断依据的本地脚本或业务仓自定义配置需要同步调整，否则会看到「本地有告警、CI 不报」的差异。
 - 复杂度、文件长度、命名与缺陷类规则的行为未变，`CyclomaticComplexity max=20` 与指纹策略不变。
+
+### Fixed
+
+- `mango:baseline-generate` 默认扫描整仓时，`src/test`、`src/it`、`src/it-*` 下的 `db/migration` 夹具不再进入迁移清单（测试与集成测试夹具不属于交付面，默认扫描根保持为企业仓执行目录，跨模块发现不受影响）。此前同一模块同时存在主资源与夹具的同号版本会报 `MANGO-BASELINE-009 duplicate migration version` 且不含物理路径；现在报错会列出冲突的两个物理路径。
+
 ## Unreleased - 治理类 PR 按路径决定是否全量架构清点
 
 ### Changed
