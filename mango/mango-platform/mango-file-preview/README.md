@@ -237,7 +237,6 @@ cache:
 | `mango.file-preview.standalone-ui-enabled` | `false` | 是否允许访问 kkFileView 独立首页和演示文件管理入口 |
 | `mango.file-preview.internal-source-enabled` | `true` | 是否允许引擎按短期票据直取源文件（内嵌部署在进程内直取，独立部署配合 `mango.file-preview.remote.*` 远程直取）。设为 `false` 表示**强制**回退 `url` 兜底通道，此时必须配置 `source-base-url` |
 | `mango.file-preview.remote.enabled` | `false` | 独立部署引擎是否启用远程直取；与 `mango-file-preview-starter-remote` 同时生效 |
-| `mango.file-preview.remote.base-url` | 无（`remote.enabled=true` 时必填） | 引擎访问 Mango 的地址（内网/对外均可，需能访问 `/file-preview/sources`）；缺失时应用启动失败并提示该配置项 |
 | `mango.file-preview.remote.connect-timeout` | `5s` | 远程直取的连接超时（`Duration` 写法，如 `3s`、`500ms`） |
 | `mango.file-preview.remote.read-timeout` | `60s` | 远程直取的读取超时；大文件取流时按该值放宽 |
 | `mango.file-preview.conversion.worker-count` | `2` | 每个预览实例的转换 Worker 数量，同时决定默认 LibreOffice 进程数量 |
