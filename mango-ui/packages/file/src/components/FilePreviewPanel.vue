@@ -19,7 +19,12 @@
         </div>
         <!-- 渲染分派唯一入口：按后端 renderMode 选择渲染器，前端不做格式判断 -->
         <pre v-else-if="target === 'TEXT'" class="preview-text">{{ textContent }}</pre>
-        <iframe v-else-if="target === 'PDF' || target === 'PAGE'" class="preview-frame" :src="documentUrl" title="文件预览" />
+        <iframe
+          v-else-if="target === 'PDF' || target === 'PAGE'"
+          class="preview-frame"
+          :src="documentUrl"
+          title="文件预览"
+        />
         <div v-else-if="target === 'CONVERTING'" class="preview-document">
           <iframe class="preview-frame" :src="documentUrl" title="文件转换中" />
           <div class="preview-converting-hint" data-converting>
