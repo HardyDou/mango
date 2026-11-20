@@ -540,6 +540,16 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.mango.platform.file.preview</groupId>
+                <artifactId>mango-file-preview-support</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.platform.file.preview</groupId>
+                <artifactId>mango-file-preview-starter-remote</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.mango.platform.template</groupId>
                 <artifactId>mango-template-api</artifactId>
                 <version>${project.version}</version>
