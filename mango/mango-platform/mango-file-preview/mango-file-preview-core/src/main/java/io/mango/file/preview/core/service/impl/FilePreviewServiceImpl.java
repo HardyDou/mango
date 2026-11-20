@@ -117,8 +117,13 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
         if (!StringUtils.hasText(token)) {
             return false;
         }
-        PreviewToken sourceToken = readToken(SOURCE_TOKEN_PREFIX + token);
-        return !isExpired(sourceToken);
+        try {
+            PreviewToken sourceToken = readToken(SOURCE_TOKEN_PREFIX + token);
+            return !isExpired(sourceToken);
+        } catch (RuntimeException e) {
+            LOGGER.warn("预览取源令牌校验失败，按不可用处理：{}", e.getMessage());
+            return false;
+        }
     }
 
     @Override

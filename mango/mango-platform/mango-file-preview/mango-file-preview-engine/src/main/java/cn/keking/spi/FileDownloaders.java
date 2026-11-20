@@ -54,8 +54,12 @@ public final class FileDownloaders {
             return false;
         }
         for (FileDownloader downloader : DOWNLOADERS) {
-            if (downloader.verify(sourceId)) {
-                return true;
+            try {
+                if (downloader.verify(sourceId)) {
+                    return true;
+                }
+            } catch (RuntimeException e) {
+                LOGGER.warn("预览取源实现校验失败，按未确认处理：{}", e.getMessage());
             }
         }
         return false;
