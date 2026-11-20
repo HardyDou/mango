@@ -10,7 +10,7 @@
 
 | 能力 | 说明 |
 |------|------|
-| 创建预览链接 | `GET /file-preview/files/preview-link?fileId=...` 返回预览 URL、token 和有效期 |
+| 创建预览链接 | `GET /file-preview/files/preview-link?fileId=...` 返回预览 URL、token、有效期与渲染类型 `renderMode`（`PDF`/`IMAGE`/`VIDEO`/`AUDIO`/`PAGE`/`CONVERTING`/`NOT_SUPPORTED`，前端据此选择渲染器） |
 | 直接跳转预览页 | `GET /file-preview/files/preview?fileId=...` 生成 source token 后 forward 到预览引擎 |
 | 短期公开入口 | `GET /file-preview/files/preview-entry?token=...` 使用已签发入口 token 进入预览 |
 | 源文件读取 | `GET /file-preview/sources?token=...` 供预览引擎读取源文件流 |
