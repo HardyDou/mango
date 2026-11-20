@@ -356,7 +356,7 @@ ${MANGO_HOME:-/opt/mango}/upgrade/<module>/
    - `--mango.persistence.flyway.upgrade-root=<dir>`（或 yml 同名键）：走配置属性，进入 Bootstrap 步骤指纹材料，同时改变 locations 与代次判断 —— 实测可用。
    - `MANGO_UPGRADE_DIR` / `-Dmango.upgrade.root`：只在 `resolveUpgradeRoot` 解析 locations 时生效，不回写配置属性，因此不进入步骤指纹、也不会触发新代次 —— 单独使用时不产生任何迁移，且没有告警。
 
-`mango.bootstrap.mode=runtime` 不是生效条件；它只影响该模式下是否执行迁移步骤，与外部升级目录无关。
+前提还包括 `mango.bootstrap.mode=bootstrap`（`MangoApplication` 的两个入口默认即 bootstrap）：`runtime` 模式下 `BootstrapCommandRunner` 直接返回（`BootstrapCommandRunner.java:53-55`），所有步骤与外部升级目录都不参与。
 
 需要远程 URL 或完全自定义升级目录时，显式配置模块 `locations`，此时配置值表示完整来源清单，不再隐式追加默认升级目录。cold baseline 使用独立的 `modules.<module>.baseline`，不要放进 `locations`：
 

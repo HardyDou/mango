@@ -1,10 +1,9 @@
-## Unreleased - 持久化文档补充外部升级目录的生效前提
+## Unreleased - 质量门禁去掉零缺陷收益的格式类规则
 
 ### Documentation
 
-- `mango-infra-persistence` README 新增「外部升级目录的生效前提」：模块 Flyway 步骤执行是加载前提、需要一次 release 标识变化触发新代次、`--mango.persistence.flyway.upgrade-root` 与 `MANGO_UPGRADE_DIR`/`-Dmango.upgrade.root` 的差异（后者只解析 locations、不进指纹）、`mango.bootstrap.mode=runtime` 非生效条件。
+- `mango-infra-persistence` README 补充「外部升级目录的生效前提」：仅在模块 Flyway 步骤执行时加载、需要一次 release 标识变化触发新代次（`mango.local.release-id` / 生产 release id）、`mango.bootstrap.mode=bootstrap` 是前提（`runtime` 下 `BootstrapCommandRunner` 直接返回）、只有属性绑定 `--mango.persistence.flyway.upgrade-root` 可用（`MANGO_UPGRADE_DIR`/`-Dmango.upgrade.root` 只解析 locations、不回写属性、不进指纹）。
 
-## Unreleased - 质量门禁去掉零缺陷收益的格式类规则
 
 ### Changed
 
