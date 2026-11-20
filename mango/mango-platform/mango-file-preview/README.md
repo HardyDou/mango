@@ -88,7 +88,8 @@
 | `PDF_CONVERTING` | **应用** | 同上；产物 `/api/file-preview/files/preview-artifact?token=…` | Office 转换在应用侧完成，产物落在 `ConfigConstants.getFileDir()` |
 | `IMAGE`、`VIDEO`、`AUDIO` | **引擎** | `/api/onlinePreview?fileId=…`，子资源 `/preview-file/**` | 302 的 `Location` 带 `engine-public-base-url` 的 origin |
 | `PAGE`（压缩包、引擎级表格等） | **引擎** | 同上 | 同上 |
-| —
+
+**引擎独立进程部署时 `mango.file-preview.engine-public-base-url` 必须配置**；未配置时应用产出相对地址，仅内嵌部署（引擎与应用同源）正确。
 
 **引擎不参与 PDF 与转换产物**：独立部署时不要拿引擎的 403/200 当 PDF 是否可用的判据；PDF 的通过标准是应用侧 `preview-artifact` 返回 PDF 字节。
 

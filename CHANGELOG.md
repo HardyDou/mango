@@ -1,15 +1,12 @@
-## Unreleased - file preview engine public origin (Issue #1380)
+## Unreleased - 预览取源 fileId 不再被信任站点过滤拦截
 
-### Added
+### Added（Issue #1380）
 
 - `mango.file-preview.engine-public-base-url`：浏览器访问预览引擎的地址。配置后预览跳转地址（302 的 `Location`）带引擎 origin，独立部署不再要求应用与引擎同源。
 
-### Changed
+### Changed（Issue #1380）
 
 - 独立部署（应用与引擎分进程）下，`IMAGE`/`VIDEO`/`AUDIO`/`PAGE` 的预览跳转指向引擎 origin；`NATIVE_PDF`/`PDF_CONVERTING` 仍由应用出页（`preview-artifact`），引擎不参与 PDF 与转换产物。
-- `mango.file-preview.remote.enabled=true` 但未配置 `engine-public-base-url` 时启动失败，不再静默产出指向应用的相对地址；内嵌部署（不开启 `remote.*`）行为不变。
-
-## Unreleased - 预览取源 fileId 不再被信任站点过滤拦截
 
 ### Added
 

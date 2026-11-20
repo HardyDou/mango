@@ -10,7 +10,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.Bean;
 import org.springframework.util.Assert;
-import org.springframework.util.StringUtils;
 
 /**
  * 独立部署预览引擎的远程取源自动配置。
@@ -35,12 +34,7 @@ public class FilePreviewRemoteAutoConfiguration {
     @ConditionalOnMissingBean(FilePreviewSourceTransport.class)
     public FilePreviewSourceTransport filePreviewRemoteSourceTransport(
             FilePreviewSourceFeignClient sourceFeignClient,
-            FilePreviewRemoteProperties properties,
-            org.springframework.core.env.Environment environment) {
-        Assert.isTrue(StringUtils.hasText(environment.getProperty("mango.file-preview.engine-public-base-url")),
-                "启用 mango.file-preview.remote.enabled 时，应用与引擎不再同源，必须配置 "
-                        + "mango.file-preview.engine-public-base-url（浏览器访问引擎的地址）；"
-                        + "内嵌部署请关闭远程直取");
+            FilePreviewRemoteProperties properties) {
         Assert.hasText(properties.getBaseUrl(),
                 "启用 mango.file-preview.remote.enabled 时必须配置 mango.file-preview.remote.base-url；"
                         + "若希望走 url 兜底取源，请关闭远程直取并配置 mango.file-preview.source-base-url");
