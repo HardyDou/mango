@@ -1,3 +1,10 @@
+## Unreleased - 基线生成扫描范围排除测试夹具
+
+### Fixed
+
+- `mango:baseline-generate` 默认扫描整仓时，`src/test`、`src/it`、`src/it-*` 下的 `db/migration` 夹具不再进入迁移清单。此前同一模块同时存在主资源 `V1__*.sql` 与测试夹具 `V1__*.sql` 会报 `MANGO-BASELINE-009 duplicate migration version`，且报错不含物理路径，定位成本高；现在报错会列出冲突的两个物理路径。
+- `mango-docs/guides/operations/build-time-cold-baseline.md` 新增「8.2 扫描范围与排除规则」，说明默认扫描根、三类排除目录与收窄范围的正确写法。
+
 ## Unreleased - 质量门禁去掉零缺陷收益的格式类规则
 
 ### Changed

@@ -217,3 +217,21 @@ grep -rhoiE "(insert into|update|alter table|delete from)[[:space:]]+[a-zA-Z0-9_
 ```
 
 命中集中在 `sys_*`、`authorization_*`、`mango_*` 这类平台表时，显式 `moduleOrder` 就是正确配置（不是退路），并且被写模块排在写入模块之前。这种情况下手写完整序列反而比留空更稳，因为它把真实依赖显式记录了。
+
+### 8.2 扫描范围与排除规则
+
+`mango.baseline.searchDirectory` 默认是构建执行根目录（`${session.executionRootDirectory}`），不是当前模块目录：业务仓是多模块 reactor，`app` 模块要能扫到同仓兄弟模块的 `db/migration`。
+
+默认扫描会跳过三类路径：
+
+- 构建与依赖目录：`target`、`.git`、`.runtime`、`node_modules`；
+- 测试与集成测试资源：`src/test`、`src/it`、`src/it-*` 下的 `db/migration`。这些是夹具，不是交付面，与 `check-capability-docs` 对 `src/test`、`src/it` 的处理原则一致；此前不排除时，同一模块的主资源 `V1__*.sql` 与测试夹具 `V1__*.sql` 会同时进入清单并报 `MANGO-BASELINE-009`；
+- 依赖 jar 里不符合 `db/migration/<module>/V*.sql` 形态的 SQL。
+
+需要收窄范围时显式指定，例如在仓库根构建：
+
+```bash
+mvn -f mango/pom.xml -pl :mango-monolith-app mango:baseline-generate -Dmango.baseline.searchDirectory=mango
+```
+
+把范围收窄到单个模块目录会漏掉同仓其它模块的迁移，只在确认只有单模块参与基线时使用。
