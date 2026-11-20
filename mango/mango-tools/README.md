@@ -257,6 +257,7 @@ META-INF
 | `mango.baseline.characterSet` | `utf8mb4` | replay、determinism 和 verify schema 使用的目标字符集；默认与 Mango CLI 创建的业务数据库一致。 |
 | `mango.baseline.collation` | `utf8mb4_unicode_ci` | 三类临时 schema 使用的目标排序规则；默认与 Mango CLI 创建的业务数据库一致。 |
 | `mango.baseline.includedModules` | 全部发现模块 | 当前 API 制品需要打包的模块清单。 |
+| `mango.baseline.searchDirectory` | 构建执行根目录 | 迁移资源扫描根。多模块 reactor 需要在仓级别扫描同仓兄弟模块；扫描时跳过 `target`/`.git`/`.runtime`/`node_modules` 与 `src/test`、`src/it`、`src/it-*` 下的 `db/migration`（测试夹具不是交付面）。 |
 | `mango.baseline.moduleOrder` | 模块名稳定顺序 | 显式配置时必须恰好包含所有发现模块一次。 |
 | `mango.baseline.moduleGroups` | 全部为 `default` | `module=group` 列表；同组模块使用同一对临时 schema，不同组隔离。 |
 | `mango.baseline.resourceApplicationClass` | 无 | 最终 Spring Boot 应用主类；配置后启用 `PORTABLE` Resource 数据库基线，并要求 goal 绑定 `prepare-package`。 |
