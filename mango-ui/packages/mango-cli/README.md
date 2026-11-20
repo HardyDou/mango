@@ -47,7 +47,7 @@ CLI 负责：
 - 根据 `release-versions.json` 锁定 Mango 后端 Maven 版本和 NPM 包版本。
 - 根据 Catalog 生成并随包发布的 `module-projections.json`、preset 和 module code 生成前端依赖、页面注册、样式入口、运行时模块配置、默认配置和后端 Maven 依赖；`admin-modules.json` 是同一 Catalog 的 Admin 兼容投影，不再由 CLI 人工维护。
 - 为生成项目写入最后执行的 `backend/architecture-verification` 模块和后端 CI；`mvn verify` 在完整 Reactor、完整代码范围内同时执行 Mango 架构规则、P3C/PMD、Checkstyle 和 SpotBugs，并拒绝缩小检查范围的命令行覆盖。
-- 生成的业务 Checkstyle 默认允许三元表达式、不限制单行字符数，并只在方法级圈复杂度超过 20 时报告复杂度问题；默认不启用 NPath 和布尔表达式复杂度门禁。需要更严格规则的项目可以维护 `backend/config/quality/checkstyle.xml`。
+- 生成的业务 `backend/config/quality/checkstyle.xml` 与 `mango-maven-plugin` canonical 规则逐字节一致（CLI 测试断言两者相同，规则变更必须同步模板投影）：只保留能定位真实缺陷的检查，缩进、空白、换行、括号位置、魔法数字、声明顺序与静态变量命名等格式规则不在门禁内，交由 IDE 或格式化器在提交前完成。方法级圈复杂度超过 20 时才报告，默认不启用 NPath 和布尔表达式复杂度门禁；需要更严格规则的项目可以维护这份文件。
 - 生成项目的 `backend/config/quality/pmd-mango.xml` 与 `mango-maven-plugin` canonical 规则保持一致（PMD 7 高价值规则集：缺陷、资源泄漏、并发正确性和基础安全；不检查类级总圈复杂度，方法级复杂度由 Checkstyle `max=20` 约束）。
 - 业务项目可用 `mango.check.reportOnlyRules` 把指定规则降为只报告不阻断，用 `mango.check.checkstyle.cyclomaticComplexityMax` 和 `mango.check.checkstyle.fileLengthMax` 覆盖阈值，不必复制整份规则文件。
 - 读取 `mango.dev.json`、`.mango/workspace.json`、`.mango/dev-workspace.env`、`.mango/dev-workspace.local.json`，启动本地开发应用。
