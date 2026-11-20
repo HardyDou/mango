@@ -3,13 +3,12 @@
 ### Added
 
 - 新增 `mango-file-preview-support`：远程取源传输契约 `FilePreviewSourceTransport` 与引擎侧下载器 `FilePreviewRemoteSourceDownloader`（实现 `cn.keking.spi.FileDownloader`），独立部署的预览引擎可按短期票据直取源文件，不必再退回 `url` 通道；落盘走流式转发，不会把整个文件读成 `byte[]`。#1362
-- 新增 `mango-file-preview-starter-remote`：`FilePreviewFeignClient`（`sourceStatus` 校验票据）、`FilePreviewSourceFeignClient`（裸 `feign.Response` 流式取源）、`FilePreviewRemoteAutoConfiguration` 与 `mango.file-preview.remote.enabled` / `base-url` / `connect-timeout` / `read-timeout` 配置；`remote.enabled=true` 缺 `base-url` 时启动失败并点名配置项。调用由 `mango-infra-feign-starter` 的服务间签名保护，不新增 permit 路径、不新增服务间令牌。#1362
-- `FilePreviewApi` 新增 `GET /file-preview/sources/status`（`R<Boolean>`）：只校验 source token 是否仍可用，不取流、不消耗票据，供远程直取使用。#1362
+- 新增 `mango-file-preview-starter-remote`：`FilePreviewSourceFeignClient`（裸 `feign.Response` 流式取源）、`FilePreviewRemoteAutoConfiguration` 与 `mango.file-preview.remote.enabled` / `base-url` / `connect-timeout` / `read-timeout` 配置；`remote.enabled=true` 缺 `base-url` 时启动失败并点名配置项。调用由 `mango-infra-feign-starter` 的服务间签名保护，不新增 permit 路径、不新增服务间令牌。#1362
 
 ### Documentation
 
 - `mango-file-preview` README 收敛取源说明：新增通道表（`fileId` 主路径 / 远程直取 / `url` 兜底，各自的触发条件、身份校验点与失败语义）、七类格式的渲染方式与已知限制、能力边界（`officeweb` 前端表格渲染只在 `officePreviewType` 非 `html` 且 `officeTypeWeb=web` 时启用，`fileId` 通道下 `xls`/`xlsx` 退回 PDF 转换）与限制清单（`mp4` 仅 H.264/AAC、加密压缩包需密码、解包占引擎工作目录磁盘、Aspose 字体、`heic`/`avif` 浏览器解码）。`internal-source-enabled` 改写为运维总开关（强制 `url` 兜底），并说明与 `mango.file-preview.remote.*` 的关系。#1362
-- 同一 README 补充 `180004` 错误码、`sources/status` 接口行、远程取源排查项与验证命令（含新增两个模块）；`mango-docs/guides/business-integration/file-upload-form.md` 同步不再把独立部署引擎描述为 `url` 形态。#1362
+- 同一 README 补充 `180004` 错误码、`/file-preview/sources` 走 permit 白名单的事实说明、远程取源排查项与验证命令（含新增两个模块）；`mango-docs/guides/business-integration/file-upload-form.md` 同步不再把独立部署引擎描述为 `url` 形态。#1362
 
 ### Fixed
 

@@ -23,6 +23,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class FilePreviewRemoteSourceDownloaderTest {
@@ -53,25 +54,12 @@ class FilePreviewRemoteSourceDownloaderTest {
     }
 
     @Test
-    void verify_委托远程校验票据() {
-        when(transport.isSourceTokenValid("ticket-1")).thenReturn(true);
-        when(transport.isSourceTokenValid("ticket-2")).thenReturn(false);
-
+    void verify_只判票据非空白且不做远程探测() {
         assertThat(downloader.verify("ticket-1")).isTrue();
-        assertThat(downloader.verify("ticket-2")).isFalse();
-    }
-
-    @Test
-    void verify_远程校验异常时按未确认处理() {
-        when(transport.isSourceTokenValid("ticket-1")).thenThrow(new IllegalStateException("mango 不可达"));
-
-        assertThat(downloader.verify("ticket-1")).isFalse();
-    }
-
-    @Test
-    void verify_空票据不再发起远程调用() {
         assertThat(downloader.verify(null)).isFalse();
         assertThat(downloader.verify("  ")).isFalse();
+
+        verifyNoInteractions(transport);
     }
 
     @Test

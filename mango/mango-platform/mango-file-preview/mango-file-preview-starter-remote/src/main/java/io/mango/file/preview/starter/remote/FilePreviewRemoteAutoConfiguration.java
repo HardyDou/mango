@@ -20,27 +20,25 @@ import org.springframework.util.Assert;
 @AutoConfiguration(afterName = "io.mango.file.preview.starter.FilePreviewAutoConfiguration")
 @ConditionalOnProperty(prefix = "mango.file-preview.remote", name = "enabled", havingValue = "true")
 @EnableConfigurationProperties(FilePreviewRemoteProperties.class)
-@EnableFeignClients(basePackageClasses = FilePreviewFeignClient.class)
+@EnableFeignClients(basePackageClasses = FilePreviewSourceFeignClient.class)
 public class FilePreviewRemoteAutoConfiguration {
 
     /**
-     * 远程取源传输：校验票据 + 流式取流。
+     * 远程取源传输：按票据流式取流。
      *
-     * @param previewFeignClient JSON 契约客户端
-     * @param sourceFeignClient  源文件二进制客户端
-     * @param properties         远程取源配置
+     * @param sourceFeignClient 源文件二进制客户端
+     * @param properties        远程取源配置
      * @return 远程取源传输
      */
     @Bean
     @ConditionalOnMissingBean(FilePreviewSourceTransport.class)
     public FilePreviewSourceTransport filePreviewRemoteSourceTransport(
-            FilePreviewFeignClient previewFeignClient,
             FilePreviewSourceFeignClient sourceFeignClient,
             FilePreviewRemoteProperties properties) {
         Assert.hasText(properties.getBaseUrl(),
                 "启用 mango.file-preview.remote.enabled 时必须配置 mango.file-preview.remote.base-url；"
                         + "若希望走 url 兜底取源，请关闭远程直取并配置 mango.file-preview.source-base-url");
-        return new FilePreviewRemoteSourceTransport(previewFeignClient, sourceFeignClient);
+        return new FilePreviewRemoteSourceTransport(sourceFeignClient);
     }
 
     /**

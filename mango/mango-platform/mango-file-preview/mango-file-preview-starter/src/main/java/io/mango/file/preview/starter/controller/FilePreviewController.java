@@ -11,7 +11,6 @@ import io.mango.file.preview.core.task.IFilePreviewTaskService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -55,17 +54,6 @@ public class FilePreviewController implements FilePreviewApi {
             @Parameter(description = "是否确认继续转换大文件")
             @RequestParam(value = "allowLargeFile", defaultValue = "false") Boolean allowLargeFile) {
         return R.ok(previewTaskService.status(fileId, Boolean.TRUE.equals(allowLargeFile)));
-    }
-
-    @Override
-    @GetMapping("/sources/status")
-    @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "校验预览源文件票据")
-    @Operation(summary = "校验预览源文件票据",
-            description = "临时令牌接口。供独立部署的预览引擎按票据远程直取源文件前校验票据是否有效，不读取文件流")
-    public R<Boolean> sourceStatus(
-            @Parameter(description = "源文件访问令牌", required = true)
-            @RequestParam("token") @NotBlank(message = "源文件访问令牌不能为空") String token) {
-        return R.ok(filePreviewService.isSourceTokenValid(token));
     }
 
 }

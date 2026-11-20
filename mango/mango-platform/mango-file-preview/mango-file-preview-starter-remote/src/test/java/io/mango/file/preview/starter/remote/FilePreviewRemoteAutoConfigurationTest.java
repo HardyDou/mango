@@ -41,7 +41,6 @@ class FilePreviewRemoteAutoConfigurationTest {
                 .run(context -> {
                     assertThat(context).hasSingleBean(FilePreviewSourceTransport.class);
                     assertThat(context).hasSingleBean(FilePreviewRemoteSourceDownloader.class);
-                    assertThat(context).hasSingleBean(FilePreviewFeignClient.class);
                     assertThat(context).hasSingleBean(FilePreviewSourceFeignClient.class);
                     assertThat(FileDownloaders.hasProvider()).isTrue();
                 });

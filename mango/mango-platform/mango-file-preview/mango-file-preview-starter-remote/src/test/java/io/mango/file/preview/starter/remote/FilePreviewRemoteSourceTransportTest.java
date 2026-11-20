@@ -2,7 +2,6 @@ package io.mango.file.preview.starter.remote;
 
 import feign.Request;
 import feign.Response;
-import io.mango.common.result.R;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -25,23 +24,10 @@ class FilePreviewRemoteSourceTransportTest {
     @TempDir
     Path tempDir;
 
-    private final FilePreviewFeignClient previewFeignClient = mock(FilePreviewFeignClient.class);
-
     private final FilePreviewSourceFeignClient sourceFeignClient = mock(FilePreviewSourceFeignClient.class);
 
     private final FilePreviewRemoteSourceTransport transport =
-            new FilePreviewRemoteSourceTransport(previewFeignClient, sourceFeignClient);
-
-    @Test
-    void isSourceTokenValid_以Mango返回的数据为准() {
-        when(previewFeignClient.sourceStatus("ticket-1")).thenReturn(R.ok(Boolean.TRUE));
-        when(previewFeignClient.sourceStatus("ticket-2")).thenReturn(R.ok(Boolean.FALSE));
-        when(previewFeignClient.sourceStatus("ticket-3")).thenReturn(R.fail(180002, "预览令牌无效或已过期"));
-
-        assertThat(transport.isSourceTokenValid("ticket-1")).isTrue();
-        assertThat(transport.isSourceTokenValid("ticket-2")).isFalse();
-        assertThat(transport.isSourceTokenValid("ticket-3")).isFalse();
-    }
+            new FilePreviewRemoteSourceTransport(sourceFeignClient);
 
     @Test
     void downloadSource_按响应体流式写盘不整体缓冲() throws IOException {

@@ -287,5 +287,5 @@ pnpm -F @mango/file test
 
 - `fileId` 形态的预览请求在引擎信任门只校验**取票是否仍然可用**（存在且未过期），只读、不取流、不消费令牌；票据无效或过期在门处直接 `403`，不会进入引擎的解包、转换与落盘环节。
 - `url` 形态不变，仍按 `trust.host` 与信任目录校验；该形态仅作兼容兜底，且必须显式配置 `mango.file-preview.source-base-url`（缺失报 `180004`）。
-- 独立部署引擎的远程直取通过 `GET /file-preview/sources/status?token=…` 校验票据、`GET /file-preview/sources?token=…` 流式取源，调用由服务间签名（`mango.internal-call`）保护，业务侧不感知。
+- 独立部署引擎的远程直取通过 `GET /file-preview/sources?token=…` 流式取源（票据有效性由该接口在取流时校验，不额外提供有效性探测端点），调用由服务间签名（`mango.internal-call`）保护，业务侧不感知。
 - 业务侧无需改动：一如既往通过 `GET /file-preview/page?fileId=…` 拿到预览页，票据由平台签发与续期。

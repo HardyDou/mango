@@ -12,18 +12,11 @@ import java.io.IOException;
 public interface FilePreviewSourceTransport {
 
     /**
-     * 校验取源票据是否仍然有效（只校验，不读取文件流）。
-     *
-     * @param token 取源票据
-     * @return 票据有效时为 {@code true}
-     */
-    boolean isSourceTokenValid(String token);
-
-    /**
      * 把票据对应的源文件流式写入目标文件。
      *
      * <p>目标文件的父目录由调用方保证存在；实现方负责创建或覆盖目标文件本身，
-     * 并且必须边读边写，不能把整个文件缓冲到内存。</p>
+     * 并且必须边读边写，不能把整个文件缓冲到内存。票据有效性由 Mango 侧取流接口自行校验，
+     * 实现方不再额外做一次远程有效性探测。</p>
      *
      * @param token  取源票据
      * @param target 目标文件

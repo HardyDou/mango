@@ -27,10 +27,12 @@
 | 通道 | 触发条件 | 身份校验点 | 失败语义 |
 |------|----------|------------|----------|
 | `fileId` 通道（主路径，同进程直取） | 预览引擎与 Mango 同进程，且 `mango.file-preview.internal-source-enabled=true`（默认）并装配了进程内取源实现 | 短期取源票据（`file-preview:source:*`，默认 24 小时）本身即凭据；引擎信任门 `FileDownloaders#verifySource` 只读校验票据存在且未过期 | 票据无效或过期 → 信任门返回 403，不进入引擎的解包、转换与落盘 |
-| `fileId` 通道（主路径，远程直取） | 独立部署引擎装载 `mango-file-preview-starter-remote` 且 `mango.file-preview.remote.enabled=true` | 同上（票据 + 信任门）；远程校验走 `/file-preview/sources/status`，请求由服务间鉴权（`mango.internal-call`）保护 | 票据无效 → 信任门 403；远程调用失败或正文为空 → 引擎下载器返回 `下载失败: <原因>`，不产出空文件 |
+| `fileId` 通道（主路径，远程直取） | 独立部署引擎装载 `mango-file-preview-starter-remote` 且 `mango.file-preview.remote.enabled=true` | 同上（票据 + 信任门）；引擎只把票据转发给 `GET /file-preview/sources`，票据有效性由该接口在取流时校验，不做额外的有效性探测 | 票据无效 → 取流被拒，引擎信任门返回 403；远程调用失败或正文为空 → 引擎下载器返回 `下载失败: <原因>`，不产出空文件 |
 | `url` 通道（兼容兜底，不推荐） | 既没有进程内取源实现，也没有启用远程直取（`internal-source-enabled=false` 且 `mango.file-preview.remote.enabled` 未开启） | 引擎侧 `trust.host` 校验源地址 host + `/file-preview/sources?token=...` 自己校验票据 | 未配置 `mango.file-preview.source-base-url` → 签发阶段抛 `180004`；host 不在信任列表 → 引擎 403 `notTrustHost.html` |
 
 两条 `fileId` 通道对业务完全等价：预览地址都是 `/onlinePreview?fileId=<票据>&fullfilename=<引擎文件名>`，都不需要容器能解析对外域名，大文件也不会经过「流出再落盘」的二次拷贝。
+
+`/file-preview/sources` 在 `FilePreviewPermitPathBeanPostProcessor#PERMIT_PATHS` 中，因此不经 `AuthFilter`（与 `/file-preview/generated` 相同）。它的安全性由「一次性短期票据 + 票据绑定调用方上下文 + 取流时校验」共同承担；`mango.file-preview.remote.*` 不引入第二种令牌，也不改动这份白名单。
 
 ### 2.2 格式与渲染方式
 
@@ -46,9 +48,8 @@
 
 ### 2.3 能力边界
 
-- 引擎的前端表格渲染（`officeweb.ftl` + Luckysheet）**仅当** `officePreviewType` 不为 `html` **且** `officeTypeWeb` 为 `web` 时启用，且只对 `xlsx`/`csv` 生效，判定在 `mango-file-preview-engine/src/main/java/cn/keking/service/impl/OfficeFilePreviewImpl.java#handleWebPreview`（`officePreviewType.equalsIgnoreCase("html")` 或 `!ConfigConstants.getOfficeTypeWeb().equalsIgnoreCase("web")` 时直接返回 `null`）。
-- 该模式的页面通过 `getCorsFile?urlPath=<base64 源地址>` 回源，需要源文件有一个可校验 host 的对外 URL。`fileId` 通道下没有对外 URL，信任门对空 host 调用 `isNotTrustHost(null)` 恒拒，因此 `fileId` 通道下该模式不可用，`xls`/`xlsx` 会退回 PDF 转换路径。
-- 这不等于「`docx`/`xlsx` 不支持预览」：两者都有可用的默认渲染路径（转 PDF 后由 PDF.js 展示），`xlsx` 只是少了表格交互能力。
+- `xlsx`/`csv` 的 officeweb 前端渲染（`officeweb.ftl` + Luckysheet）**仅在** `officePreviewType != "html"` **且** `officeTypeWeb == "web"` 时启用（`mango-file-preview-engine/src/main/java/cn/keking/service/impl/OfficeFilePreviewImpl.java#handleWebPreview`，判断为 `html` 时直接返回 `null`）。
+- `fileId` 通道下该模式不可用：页面走 `getCorsFile?urlPath=<base64 源地址>` 回源，而 `fileId` 通道没有对外 URL，信任门对空 host 调用 `isNotTrustHost(null)` 恒拒，因此退回 PDF 转换路径。
 
 ### 2.4 限制清单
 
@@ -153,7 +154,7 @@
 3. 业务上传文件后只保存 `fileId`。
 4. 详情页用 `FilePreviewPanel` 或调用 `/file-preview/files/preview-link` 创建预览链接。
 5. 当前用户必须拥有 `file:files:download` 权限；文件管理菜单的正式资源声明会给对应角色登记该权限。
-6. 预览引擎读取源文件：内嵌引擎（`mango-app` 同时装有 starter 与 engine）在同一进程内按票据直取；独立部署引擎装载 `mango-file-preview-starter-remote` 并开启 `mango.file-preview.remote.enabled` 后，按票据远程直取（`/file-preview/sources/status` + `/file-preview/sources`）；两者都没有时才回退到 `url` 通道，此时必须配置 `mango.file-preview.source-base-url`，否则签发返回 `180004`。
+6. 预览引擎读取源文件：内嵌引擎（`mango-app` 同时装有 starter 与 engine）在同一进程内按票据直取；独立部署引擎装载 `mango-file-preview-starter-remote` 并开启 `mango.file-preview.remote.enabled` 后，按票据远程直取（`GET /file-preview/sources`）；两者都没有时才回退到 `url` 通道，此时必须配置 `mango.file-preview.source-base-url`，否则签发返回 `180004`。
 
 ## 6. 配置说明
 
@@ -243,18 +244,17 @@ Office 转换后的 PDF 由 PDF.js 通过同源 `/file-preview/generated?token=.
 
 #### 远程直取（独立部署引擎）
 
-`mango-file-preview-starter-remote` 只提供两件事：一个声明式 Feign 客户端和一个向引擎注册的下载器，两者都受 `mango.file-preview.remote.enabled` 控制，引擎进程不需要装 Mango 应用 starter。
+`mango-file-preview-starter-remote` 只提供两件事：一个声明式 Feign 客户端和一个向引擎注册的下载器，两者都受 `mango.file-preview.remote.enabled` 控制，引擎进程不需要装 Mango 应用 starter。远程侧**不提供**「这个票据是否有效」的探测端点：票据本身就是凭据，有效性只在取流时校验一次。
 
 | 调用 | 接口 | 返回值 | 说明 |
 |------|------|--------|------|
-| 校验票据 | `GET /file-preview/sources/status?token=...`（`FilePreviewApi#sourceStatus`） | `R<Boolean>` | JSON 接口，只判存在且未过期，不取流、不消耗票据 |
-| 读取源文件 | `GET /file-preview/sources?token=...`（`FilePreviewSourceFeignClient`） | 裸 `feign.Response` | 下载器用 `response.body().asInputStream()` 直接 `Files.copy` 到引擎目录，**不把整个文件读成 `byte[]`** |
+| 读取源文件 | `GET /file-preview/sources?token=...`（`FilePreviewSourceFeignClient`） | 裸 `feign.Response` | 下载器用 `response.body().asInputStream()` 直接 `Files.copy` 到引擎目录，**不把整个文件读成 `byte[]`**；票据无效或过期时该接口拒绝，下载器返回 `code=1` / `下载失败: <原因>` |
 
 实现要点：
 
 - 流式转发：`feign.Response` 在响应体未知或超阈值时返回活动流（feign-core 13.6 的 `InvocationContext.MAX_RESPONSE_BUFFER_SIZE`），调用方负责关闭，异常路径与空 body 都转成 `code=1` / `下载失败: <原因>`；
 - 日志级别：`mango.feign.logger-level` 保持默认 `BASIC`，**不得**设为 `FULL`——`FULL` 会把响应体重新缓冲整个文件；
-- 服务间鉴权：两个调用都由 `mango-infra-feign-starter` 的 `InternalCallFeignInterceptor` 签名（`mango.internal-call.secret`），接收端走 Mango 的 `isVerifiedInternalCall` 分支，不新增服务间令牌、也不把 `/file-preview/sources` 之外的路径加入 permit 白名单；
+- 服务间鉴权：取流调用由 `mango-infra-feign-starter` 的 `InternalCallFeignInterceptor` 签名（`mango.internal-call.secret`），接收端走 Mango 的 `isVerifiedInternalCall` 分支，不新增服务间令牌、也不把 `/file-preview/sources` 之外的路径加入 permit 白名单；
 - 装配互斥：内嵌进程已有 `FilePreviewEngineDownloader` 时，远程下载器（`@ConditionalOnMissingBean(FileDownloader.class)`）不会重复注册；
 - 开关语义：`mango.file-preview.internal-source-enabled` 是运维总开关。置 `false` 表示**强制**走 `url` 兜底（排除取源实现），与 `mango.file-preview.remote.enabled` 是“与”关系：只要总开关关着，即使远程直取已配置也不会使用。
 
@@ -262,7 +262,7 @@ Office 转换后的 PDF 由 PDF.js 通过同源 `/file-preview/generated?token=.
 
 - 独立部署引擎开启远程直取后，**不再需要** `internal-source-enabled: false` 与 `source-base-url`；那套 `url` 兜底只在不想让引擎装 `mango-file-preview-starter-remote` 时使用，且拿到 `url` 形态预览地址时必须能访问 `source-base-url`；
 - `remote.enabled=true` 但缺少 `remote.base-url` → 应用启动失败，错误信息直接点名配置项；
-- 远程校验失败（网络异常/票据服务不可用）按“未确认”处理，票据无效时信任门拒绝，不会进入引擎的解包与转换；
+- 引擎信任门对远程票据只判非空白（不做远程探测），票据无效时在取流阶段被拒绝，同样不会进入引擎的解包与转换；网络异常表现为下载失败，不会被误当成「票据有效」；
 - 下载器读流失败时返回与内置下载一致的 `code=1` 与 `下载失败: <原因>`，不会产出空文件。
 
 `mango-file-preview-engine` 也支持独立引擎端口配置：
@@ -305,7 +305,6 @@ HTTP 接口前缀是 `/file-preview`。
 | GET | `/file-preview/files/preview-content?token=...` | PUBLIC | 原生 PDF 读取原文件交给 PDF.js |
 | GET | `/file-preview/files/preview-artifact?token=...` | PUBLIC | Office 转换产物读取（同为 token 鉴权） |
 | GET | `/file-preview/sources?token=...` | PUBLIC | 预览引擎读取源文件流 |
-| GET | `/file-preview/sources/status?token=...` | PUBLIC | 只校验 source token 是否可用（远程直取使用，不读流、不消耗票据） |
 | GET | `/file-preview/generated?token=...&fileName=...` | PUBLIC | 在 source token 有效期内读取对应的转换 PDF |
 
 Java API：
@@ -400,7 +399,6 @@ Office 转换统一使用 LibreOffice/JODConverter；只有显式关闭 `mango.f
 /file-preview/files/preview-content
 /file-preview/files/preview-artifact
 /file-preview/sources
-/file-preview/sources/status
 /file-preview/generated
 /pdfjs/**
 /js/**

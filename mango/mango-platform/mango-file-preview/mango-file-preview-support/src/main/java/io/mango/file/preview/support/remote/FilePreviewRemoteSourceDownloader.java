@@ -43,16 +43,9 @@ public class FilePreviewRemoteSourceDownloader implements FileDownloader, Initia
 
     @Override
     public boolean verify(String sourceId) {
-        if (!StringUtils.hasText(sourceId)) {
-            return false;
-        }
-        try {
-            return transport.isSourceTokenValid(sourceId);
-        } catch (RuntimeException e) {
-            LOGGER.warn("远程校验预览取源票据失败，按未确认处理，fileId：{}，原因：{}",
-                    maskedSourceId(sourceId), e.getMessage());
-            return false;
-        }
+        // 本实现不做远程票据探测：票据只由 /file-preview/sources 在取流时校验（无效返 403/错误页），
+        // 避免在 Mango 侧多开一个「这个票据是否有效」的探测口。
+        return StringUtils.hasText(sourceId);
     }
 
     @Override
