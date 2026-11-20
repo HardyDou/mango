@@ -10,6 +10,7 @@ import io.mango.file.preview.api.enums.FilePreviewCode;
 import io.mango.file.preview.api.vo.FilePreviewTaskVO;
 import io.mango.file.preview.core.config.FilePreviewProperties;
 import io.mango.file.preview.core.gateway.FilePreviewFileGateway;
+import io.mango.file.preview.core.service.PreviewSourceAvailability;
 import io.mango.file.preview.core.service.model.FilePreviewMode;
 import io.mango.infra.fileproc.convert.ConvertApi;
 import io.mango.infra.fileproc.convert.command.ConvertCommand;
@@ -21,6 +22,8 @@ import io.mango.infra.kv.api.LockLease;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.lang.Nullable;
 import org.slf4j.Logger;
@@ -69,6 +72,7 @@ public class FilePreviewTaskServiceImpl implements IFilePreviewTaskService {
     private final ObjectMapper objectMapper;
     private final FilePreviewProperties properties;
     private final ExecutorService conversionExecutor;
+    private ObjectProvider<PreviewSourceAvailability> sourceAvailabilityProvider;
     private final Map<String, FilePreviewTaskVO> tasks = new ConcurrentHashMap<>();
     private final Map<Long, String> latestKeys = new ConcurrentHashMap<>();
     private final java.util.Set<String> activeKeys = ConcurrentHashMap.newKeySet();
@@ -90,6 +94,24 @@ public class FilePreviewTaskServiceImpl implements IFilePreviewTaskService {
         this.objectMapper = objectMapper;
         this.properties = properties;
         this.conversionExecutor = conversionExecutor;
+    }
+
+    /**
+     * 可选注入进程内直取能力，使转换队列与渲染分派共用同一份格式判定。
+     *
+     * <p>缺省（未装配该能力）时按「无进程内直取」处理，表格交给预览引擎渲染。</p>
+     *
+     * @param sourceAvailabilityProvider 直取能力提供者
+     */
+    @Autowired(required = false)
+    void setSourceAvailabilityProvider(ObjectProvider<PreviewSourceAvailability> sourceAvailabilityProvider) {
+        this.sourceAvailabilityProvider = sourceAvailabilityProvider;
+    }
+
+    private boolean internalSourceAvailable() {
+        PreviewSourceAvailability availability =
+                sourceAvailabilityProvider == null ? null : sourceAvailabilityProvider.getIfAvailable();
+        return availability != null && availability.internalSourceAvailable();
     }
 
     @Override
@@ -195,8 +217,8 @@ public class FilePreviewTaskServiceImpl implements IFilePreviewTaskService {
         try {
             update(task, FilePreviewTaskStatus.PROCESSING, PROGRESS_PENDING, "正在读取原文件");
             String extension = extension(record);
-            if (FilePreviewMode.of(extension) != FilePreviewMode.PDF_CONVERSION) {
-                // 压缩包、表格、图片等格式由预览引擎渲染，平台不进入 PDF 转换队列。
+            if (FilePreviewMode.of(extension, internalSourceAvailable()) != FilePreviewMode.PDF_CONVERSION) {
+                // 压缩包、图片、文本、媒体等格式由预览引擎渲染，平台不进入 PDF 转换队列。
                 update(task, FilePreviewTaskStatus.SUCCEEDED, PROGRESS_COMPLETE, "预览已就绪");
                 touch(task);
                 return;
