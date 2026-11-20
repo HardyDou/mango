@@ -46,10 +46,18 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
-/** Resolves {@code setTenantId} receiver types without compiling project sources. */
+/**
+ * Resolves {@code setTenantId} receiver types without compiling project sources.
+ *
+ * <p>接收方声明类型属于协议类型（{@code Command}/{@code Query}/{@code VO}/{@code DTO}/{@code Request}/{@code Response}）
+ * 且位于 api 包（{@code ...api}、{@code ...api} 子包或包名本身为 {@code api}）时不算违规，
+ * 其余 {@code setTenantId} 调用一律视为越权改写租户字段。
+ */
 final class TenantSetterAnalyzer {
 
     private static final String API_PACKAGE_SEGMENT = ".api.";
+    private static final String API_PACKAGE_SUFFIX = ".api";
+    private static final String API_PACKAGE_NAME = "api";
     private static final String ARRAY_SUFFIX = "[]";
     private static final String DISABLE_ANNOTATION_PROCESSING = "-proc:none";
     private static final String INNER_THIS_SUFFIX = ".this";
@@ -173,8 +181,17 @@ final class TenantSetterAnalyzer {
         if (explicitImport != null) {
             return explicitImport.contains(API_PACKAGE_SEGMENT);
         }
-        return unit.getPackageName() != null
-                && unit.getPackageName().toString().contains(API_PACKAGE_SEGMENT);
+        return declaredInApiPackage(unit);
+    }
+
+    private static boolean declaredInApiPackage(CompilationUnitTree unit) {
+        if (unit.getPackageName() == null) {
+            return false;
+        }
+        String packageName = unit.getPackageName().toString();
+        return packageName.contains(API_PACKAGE_SEGMENT)
+                || packageName.endsWith(API_PACKAGE_SUFFIX)
+                || packageName.equals(API_PACKAGE_NAME);
     }
 
     private static String simpleTypeName(String declaredType) {
