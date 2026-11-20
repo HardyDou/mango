@@ -419,12 +419,6 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
     }
 
     /**
-     * 给引擎地址补上对外 origin。
-     *
-     * <p>独立部署时引擎不在本进程，返回相对地址会让浏览器/应用自己去找引擎资源（应用里并没有这些资源），
-     * 因此必须给出带 origin 的绝对地址；未配置时保持相对地址，等价于内嵌部署。</p>
-     */
-    /**
      * 引擎地址的前缀：内嵌部署走应用网关，需要 {@code /api} 前缀；独立部署（配置了
      * {@link FilePreviewProperties#getEnginePublicBaseUrl()}）时浏览器直连引擎，不能再带网关前缀。
      *
@@ -435,6 +429,12 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
         return StringUtils.hasText(baseUrl) ? "" : GATEWAY_PATH_PREFIX;
     }
 
+    /**
+     * 给引擎地址补上对外 origin。
+     *
+     * <p>独立部署时引擎不在本进程，返回相对地址会让浏览器/应用自己去找引擎资源（应用里并没有这些资源），
+     * 因此必须给出带 origin 的绝对地址；未配置时保持相对地址，等价于内嵌部署。</p>
+     */
     private String withEngineOrigin(String relative) {
         String base = properties.getEnginePublicBaseUrl();
         if (!StringUtils.hasText(base)) {
