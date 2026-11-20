@@ -62,6 +62,35 @@ class FilePreviewServiceImplTest {
     }
 
     @Test
+    void createEnginePreview_配置引擎对外地址时产出绝对地址而入口保持相对() {
+        FilePreviewProperties properties = properties();
+        properties.setEnginePublicBaseUrl("https://engine.example.com/");
+        FilePreviewServiceImpl service = service(properties, new StubFileApi("demo.png"));
+        MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("1"));
+
+        var preview = service.createPreview(100L);
+        var enginePreview = service.createEnginePreviewByToken(preview.getPreviewToken());
+
+        assertThat(preview.getPreviewUrl())
+                .startsWith("/api/file-preview/files/preview-entry?token=")
+                .doesNotContain("engine.example.com");
+        assertThat(enginePreview.getPreviewUrl())
+                .startsWith("https://engine.example.com/api/onlinePreview?");
+    }
+
+    @Test
+    void createEnginePreview_未配置引擎对外地址时保持相对地址() {
+        FilePreviewServiceImpl service = service(properties(), new StubFileApi("demo.png"));
+        MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("1"));
+
+        var preview = service.createPreview(100L);
+        var enginePreview = service.createEnginePreviewByToken(preview.getPreviewToken());
+
+        assertThat(preview.getPreviewUrl()).startsWith("/api/file-preview/files/preview-entry?token=");
+        assertThat(enginePreview.getPreviewUrl()).startsWith("/api/onlinePreview?");
+    }
+
+    @Test
     void createEnginePreview_原始中文文件名使用FileId安全名() {
         FilePreviewServiceImpl service = service(properties(), new StubFileApi("中文 (1).DOCX"));
 

@@ -296,12 +296,13 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
             String sourceUrl = sourceUrl(sourceTicket, fileName);
             return engineUrl(Base64.getEncoder().encodeToString(sourceUrl.getBytes(StandardCharsets.UTF_8)));
         }
-        return UriComponentsBuilder.fromPath("/api" + normalize(properties.getEnginePath()))
+        String relative = UriComponentsBuilder.fromPath("/api" + normalize(properties.getEnginePath()))
                 .queryParam(SOURCE_ID_PARAM, sourceTicket)
                 .queryParam(FULL_FILENAME_PARAM, fileName)
                 .build()
                 .encode(StandardCharsets.UTF_8)
                 .toUriString();
+        return withEngineOrigin(relative);
     }
 
     private String sourceUrl(String token, String fileName) {
@@ -408,11 +409,28 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
     }
 
     private String engineUrl(String encodedSourceUrl) {
-        return UriComponentsBuilder.fromPath("/api" + normalize(properties.getEnginePath()))
+        String relative = UriComponentsBuilder.fromPath("/api" + normalize(properties.getEnginePath()))
                 .queryParam("url", encodedSourceUrl)
                 .build()
                 .encode(StandardCharsets.UTF_8)
                 .toUriString();
+        return withEngineOrigin(relative);
+    }
+
+    /**
+     * 给引擎地址补上对外 origin。
+     *
+     * <p>独立部署时引擎不在本进程，返回相对地址会让浏览器/应用自己去找引擎资源（应用里并没有这些资源），
+     * 因此必须给出带 origin 的绝对地址；未配置时保持相对地址，等价于内嵌部署。</p>
+     */
+    private String withEngineOrigin(String relative) {
+        String base = properties.getEnginePublicBaseUrl();
+        if (!StringUtils.hasText(base)) {
+            return relative;
+        }
+        String trimmed = base.trim();
+        String origin = trimmed.endsWith("/") ? trimmed.substring(0, trimmed.length() - 1) : trimmed;
+        return origin + relative;
     }
 
     private String previewEntryUrl(String token) {

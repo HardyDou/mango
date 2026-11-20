@@ -77,6 +77,18 @@
 - `FilePreviewPermitPathBeanPostProcessor#PERMIT_PATHS` 里**只有** `/preview-file/**` 这一个根级文件前缀；禁止改成 `/**`、`/file-*`、`/**/*.mp4` 这类宽匹配，否则整个引擎工作目录（含解包后的原文件）都会变成匿名可读。放行清单由 `FilePreviewEngineResourceRegistrarTest#permitPaths_allowOnlyTheSinglePublicFilePrefixForEngineFiles` 锁定：以 `/preview-file` 开头的条目必须恰好一条。
 - `previewUrl`/`preview-entry` 返回的地址带网关前缀 `/api`（网关据此路由到 `mango-file-preview`）。单进程直连（不走网关，直接用 `http://127.0.0.1:<port>` 访问应用）时需剥掉 `/api` 前缀，否则 404。
 
+
+### 独立部署的路由表
+
+独立部署（应用 5555 + 独立引擎 8012）下，浏览器看到的地址分两类 origin，排障时先确认落在哪一边：
+
+| 渲染模式 | 出页方 | 地址 | 判据 |
+|---|---|---|---|
+| `NATIVE_PDF`、`PDF_CONVERTING` | **应用** | `/api/file-preview/files/preview-artifact?token=…` | 转换产物落在应用侧 `ConfigConstants.getFileDir()`，由应用按入口票据读盘 |
+| `IMAGE`、`VIDEO`、`AUDIO`、`PAGE`（图片/音视频/压缩包/引擎级表格） | **引擎** | `/api/onlinePreview?fileId=…`，页内子资源 `/preview-file/**` | 302 的 `Location` 带 `mango.file-preview.engine-public-base-url` 配置的 origin |
+
+**引擎不参与 PDF 与转换产物**：独立部署时不要拿引擎的 403/200 当 PDF 是否可用的判据；PDF 的通过标准是应用侧 `preview-artifact` 返回 PDF 字节。
+
 ## 3. 后端接入
 
 只使用契约时依赖 API 包：
@@ -215,6 +227,8 @@ cache:
 | `mango.file-preview.engine-path` | `/onlinePreview` | 预览引擎入口路径 |
 | `mango.file-preview.source-path` | `/file-preview/sources` | `url` 兜底通道下预览引擎读取源文件的短期 URL 前缀 |
 | `mango.file-preview.source-base-url` | 无（`url` 兜底时必填） | 仅供 `url` 兜底通道使用：引擎经该地址访问 Mango 的 `/file-preview/sources`。**不再从当前请求地址推断**：走 `url` 兜底但未配置时报 `180004`，不会静默回退。其 host 会自动加入引擎信任列表，无需重复写 `trust.host` |
+| `mango.file-preview.engine-public-base-url` | 无（内嵌部署不配） | **浏览器访问引擎的地址**。配置后预览跳转地址（302 的 `Location`）带引擎 origin；未配置时保持相对路径（引擎与应用同源）。与 `mango.file-preview.remote.base-url` 语义不同：前者是「浏览器怎么到引擎」，后者是「引擎怎么回打应用」 |
+| `mango.file-preview.remote.base-url` | 无（开启远程直取时必填） | **引擎回打应用的地址**（引擎侧配置）。`mango.file-preview.remote.enabled=true` 时必填；应用侧开启远程直取但未配置 `engine-public-base-url` → 启动即失败 |
 | `mango.file-preview.source-token-expire-seconds` | `86400` | 入口 token 和源文件 token 有效期，单位秒 |
 | `mango.file-preview.standalone-ui-enabled` | `false` | 是否允许访问 kkFileView 独立首页和演示文件管理入口 |
 | `mango.file-preview.internal-source-enabled` | `true` | 是否允许引擎按短期票据直取源文件（内嵌部署在进程内直取，独立部署配合 `mango.file-preview.remote.*` 远程直取）。设为 `false` 表示**强制**回退 `url` 兜底通道，此时必须配置 `source-base-url` |
