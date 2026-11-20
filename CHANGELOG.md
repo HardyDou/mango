@@ -30,6 +30,14 @@
 - `fileId` 通道下的 `xlsx`/`csv` 仍被送进引擎 Luckysheet 页面并把票据当数据地址（401/404），与 README 声明矛盾。现在 `FilePreviewServiceImpl#previewMode` 在进程内直取生效时把 `xlsx`/`csv` 判为 `PDF_CONVERSION`，页面直接进入 PDF.js 读 `/file-preview/files/preview-artifact`（`renderMode` 为 `CONVERTING`），README §2.2/§2.3 同步为「`fileId` 通道固定回落 PDF 转换」。新增 `FilePreviewPublicFileHttpTest` 断言匿名取图片（`image/*`）、`video/mp4`、表格 PDF 产物（`application/pdf`）均为 200 且 Content-Type 正确。#1369
 - 表格在 `fileId` 通道的转换任务被枚举判定短路：`FilePreviewTaskServiceImpl` 用 `FilePreviewMode.of(extension)` 判断是否进入 PDF 转换，`xlsx`/`csv` 仍判为引擎渲染，任务直接置为成功且没有产物，预览入口又回落引擎 Luckysheet 页，页面内数据地址仍是取源票据（401/404）。现在格式判定收敛到 `FilePreviewMode.of(extension, internalSourceAvailable)`，渲染分派与转换任务共用同一份判定，直取生效时 `xlsx`/`csv` 真正进入 PDF 转换并产出 `preview-artifact`。#1369
 
+
+### Fixed（Issue #1380）
+
+- 独立部署（配置了 `mango.file-preview.engine-public-base-url`）生成的预览地址不再携带应用网关前缀 `/api`，直接指向 `{origin}/onlinePreview?…`；内嵌部署仍为 `/api/onlinePreview?…`。
+
+### Documentation（Issue #1380）
+
+- 补「独立部署两个坑」：引擎 `file-dir` 默认相对 `./file`，换工作目录重启会导致 `/preview-file/**` 404，应固定为绝对路径；`engine-public-base-url` 只填 origin，不要填 `/api`。
 ## Unreleased - 质量门禁去掉零缺陷收益的格式类规则
 
 ### Documentation
