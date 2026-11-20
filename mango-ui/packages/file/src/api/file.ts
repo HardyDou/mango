@@ -71,8 +71,7 @@ type FileRuntimeAccess = Partial<
 /**
  * 后端判定的预览渲染类型。前端按该字段选择渲染器，不要解析 previewUrl 或按扩展名自行判断。
  */
-export type FilePreviewRenderMode =
-  'PDF' | 'IMAGE' | 'VIDEO' | 'AUDIO' | 'PAGE' | 'CONVERTING' | 'NOT_SUPPORTED';
+export type FilePreviewRenderMode = 'PDF' | 'IMAGE' | 'VIDEO' | 'AUDIO' | 'PAGE' | 'CONVERTING' | 'NOT_SUPPORTED';
 
 export const FILE_PREVIEW_RENDER_MODES: readonly FilePreviewRenderMode[] = [
   'PDF',

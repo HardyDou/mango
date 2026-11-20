@@ -310,7 +310,7 @@ const fileIds = ref<string[]>([]);
 | `AUDIO`         | 原生 `<audio>`                             | `mp3`、`wav`                                                                      |
 | `CONVERTING`    | iframe 加载转换页 + “文件正在转换”等待提示 | `doc`、`docx`、`ppt`、`pptx`、`odt`、`ods`、`odp`                                 |
 | `PAGE`          | iframe 加载 `previewUrl` 的引擎页面        | 压缩包、文本、表格及其它引擎支持的格式（如 `zip`、`txt`、`xlsx`）                 |
-| `NOT_SUPPORTED` | 下载提示 + 下载按钮，不自动触发下载         | 无法解析扩展名（无法判定渲染类型）                                                |
+| `NOT_SUPPORTED` | 下载提示 + 下载按钮，不自动触发下载        | 无法解析扩展名（无法判定渲染类型）                                                |
 
 补充约定：
 
