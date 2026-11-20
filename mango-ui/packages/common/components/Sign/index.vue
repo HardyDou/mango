@@ -200,7 +200,7 @@ function generateSignature() {
     const dataUrl = canvas.toDataURL('image/png');
     hasError.value = false;
     errorMessage.value = '';
-    emit('update:modelValue', dataUrl);
+    emit('update:modelValue', `${dataUrl}?v=1`);
     emit('change', dataUrl);
   } catch (error) {
     hasError.value = true;
