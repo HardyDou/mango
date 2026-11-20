@@ -60,6 +60,7 @@
 | `mp4` 仅 H.264 + AAC 组合稳定 | 其它编码可能黑屏或只有声音 | 上传前转码，或业务侧对该类文件直接提供下载 |
 | 加密压缩包需要密码 | 无密码时压缩包页提示输入密码，无法列出内部文件 | 业务侧保存密码并通过页面 `filePassword` 传入；不要上传无法提供密码的加密包 |
 | 解包占用解包目录磁盘 | 大压缩包解包后的文件落在 `ConfigConstants.getDecompressDir()`（默认是 `file-dir` 的同级目录 `_extracted`，可用 `decompress.dir` 覆盖），占用与包内文件总量相当的空间 | 关注该目录容量，必要时调大或定期清理 |
+| 解包目录可能落在容器可写层 | `file-dir` 由引擎侧 `file.dir` 或环境变量 `KK_FILE_DIR` 决定（Mango 侧没有 `mango.file-preview.file-dir` 属性），`_extracted` 是它的**同级**目录：若 `file-dir` 指向挂载卷的根，同级 `_extracted` 就落到卷外。容器重建后解包缓存丢失（重新打开压缩包即重建，不影响功能），根文件系统只读时解包直接失败 | 把卷挂到父目录（卷挂 `/data/preview`、`KK_FILE_DIR=/data/preview/file`），或显式设 `decompress.dir=/data/preview/_extracted`；回滚到旧版本后会把解包写回 `file-dir` 下，新的 `_extracted` 成为孤儿目录可直接删除 |
 | `docx`/`ppt` 依赖 Aspose 授权与字体 | 无授权时转换失败；缺字体时转换不报错但可能缺字 | 配置 Aspose license；`fonts-folders` 只追加字体目录，不覆盖默认，缺字体只记录 ERROR 日志、不阻断预览 |
 | `heic`/`avif` 依赖浏览器解码 | 浏览器不支持时图片区域空白 | 前端转码为 `jpg`/`webp`，或对这些格式直接降级为下载 |
 
