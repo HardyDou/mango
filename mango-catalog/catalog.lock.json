@@ -4,1400 +4,9 @@
     "schemaVersion": 1,
     "workspaceCount": 43
   },
-  "catalogDigest": "3ef9dc8005bc7ee8511c5b9e5464a90fd0530b723dc0d30f0f674a45b5110a6f",
+  "catalogDigest": "158e625108a54420d2d79462b436b54df35a7704b147b5d3a19509a077667962",
   "maven": {
     "dependencyManagementSets": [
-      {
-        "dependencies": [
-          {
-            "artifactId": "mango-common",
-            "classifier": null,
-            "groupId": "io.mango.common",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-ai-api",
-            "classifier": null,
-            "groupId": "io.mango.extension.ai",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-ai-core",
-            "classifier": null,
-            "groupId": "io.mango.extension.ai",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-ai-starter",
-            "classifier": null,
-            "groupId": "io.mango.extension.ai",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-bootstrap-api",
-            "classifier": null,
-            "groupId": "io.mango.infra.bootstrap",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-bootstrap-core",
-            "classifier": null,
-            "groupId": "io.mango.infra.bootstrap",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-bootstrap-starter",
-            "classifier": null,
-            "groupId": "io.mango.infra.bootstrap",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-context-api",
-            "classifier": null,
-            "groupId": "io.mango.infra.context",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-context-starter",
-            "classifier": null,
-            "groupId": "io.mango.infra.context",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-context-support",
-            "classifier": null,
-            "groupId": "io.mango.infra.context",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-crypto",
-            "classifier": null,
-            "groupId": "io.mango.infra.crypto",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-doc-starter",
-            "classifier": null,
-            "groupId": "io.mango.infra.doc",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-docsign-api",
-            "classifier": null,
-            "groupId": "io.mango.infra.docsign",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-docsign-core",
-            "classifier": null,
-            "groupId": "io.mango.infra.docsign",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-docsign-starter",
-            "classifier": null,
-            "groupId": "io.mango.infra.docsign",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-event-api",
-            "classifier": null,
-            "groupId": "io.mango.infra.event",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-event-core",
-            "classifier": null,
-            "groupId": "io.mango.infra.event",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-event-starter",
-            "classifier": null,
-            "groupId": "io.mango.infra.event",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-excel-starter",
-            "classifier": null,
-            "groupId": "io.mango.infra.excel",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-feign-starter",
-            "classifier": null,
-            "groupId": "io.mango.infra.feign",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-fileproc-api",
-            "classifier": null,
-            "groupId": "io.mango.infra.fileproc",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-fileproc-core",
-            "classifier": null,
-            "groupId": "io.mango.infra.fileproc",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-fileproc-starter",
-            "classifier": null,
-            "groupId": "io.mango.infra.fileproc",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-ip-location-api",
-            "classifier": null,
-            "groupId": "io.mango.infra.ip.location",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-ip-location-core",
-            "classifier": null,
-            "groupId": "io.mango.infra.ip.location",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-ip-location-starter",
-            "classifier": null,
-            "groupId": "io.mango.infra.ip.location",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-kv-api",
-            "classifier": null,
-            "groupId": "io.mango.infra.kv",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-kv-core",
-            "classifier": null,
-            "groupId": "io.mango.infra.kv",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-kv-starter",
-            "classifier": null,
-            "groupId": "io.mango.infra.kv",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-log-api",
-            "classifier": null,
-            "groupId": "io.mango.infra.log",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-log-starter",
-            "classifier": null,
-            "groupId": "io.mango.infra.log",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-module-api",
-            "classifier": null,
-            "groupId": "io.mango.infra.module",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-module-core",
-            "classifier": null,
-            "groupId": "io.mango.infra.module",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-module-starter",
-            "classifier": null,
-            "groupId": "io.mango.infra.module",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-persistence-api",
-            "classifier": null,
-            "groupId": "io.mango.infra.persistence",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-persistence-starter",
-            "classifier": null,
-            "groupId": "io.mango.infra.persistence",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-persistence-web-starter",
-            "classifier": null,
-            "groupId": "io.mango.infra.persistence",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-realtime-api",
-            "classifier": null,
-            "groupId": "io.mango.infra.realtime",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-realtime-core",
-            "classifier": null,
-            "groupId": "io.mango.infra.realtime",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-realtime-starter-remote",
-            "classifier": null,
-            "groupId": "io.mango.infra.realtime",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-realtime-starter",
-            "classifier": null,
-            "groupId": "io.mango.infra.realtime",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-realtime-support",
-            "classifier": null,
-            "groupId": "io.mango.infra.realtime",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-sensitive-api",
-            "classifier": null,
-            "groupId": "io.mango.infra.sensitive",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-sensitive-core",
-            "classifier": null,
-            "groupId": "io.mango.infra.sensitive",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-sensitive-starter",
-            "classifier": null,
-            "groupId": "io.mango.infra.sensitive",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-web-api",
-            "classifier": null,
-            "groupId": "io.mango.infra.web",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-web-starter",
-            "classifier": null,
-            "groupId": "io.mango.infra.web",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-infra-web-support",
-            "classifier": null,
-            "groupId": "io.mango.infra.web",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-access-api",
-            "classifier": null,
-            "groupId": "io.mango.platform.access",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-access-core",
-            "classifier": null,
-            "groupId": "io.mango.platform.access",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-access-gateway-starter",
-            "classifier": null,
-            "groupId": "io.mango.platform.access",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-access-web-starter",
-            "classifier": null,
-            "groupId": "io.mango.platform.access",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-auth-api",
-            "classifier": null,
-            "groupId": "io.mango.platform.auth",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-auth-core",
-            "classifier": null,
-            "groupId": "io.mango.platform.auth",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-auth-starter-remote",
-            "classifier": null,
-            "groupId": "io.mango.platform.auth",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-auth-starter",
-            "classifier": null,
-            "groupId": "io.mango.platform.auth",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-authorization-api",
-            "classifier": null,
-            "groupId": "io.mango.platform.authorization",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-authorization-core",
-            "classifier": null,
-            "groupId": "io.mango.platform.authorization",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-authorization-resource-access-starter",
-            "classifier": null,
-            "groupId": "io.mango.platform.authorization",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-authorization-resource-sync-starter",
-            "classifier": null,
-            "groupId": "io.mango.platform.authorization",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-authorization-starter-remote",
-            "classifier": null,
-            "groupId": "io.mango.platform.authorization",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-authorization-starter",
-            "classifier": null,
-            "groupId": "io.mango.platform.authorization",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-authorization-support",
-            "classifier": null,
-            "groupId": "io.mango.platform.authorization",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-calendar-api",
-            "classifier": null,
-            "groupId": "io.mango.platform.calendar",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-calendar-core",
-            "classifier": null,
-            "groupId": "io.mango.platform.calendar",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-calendar-starter-remote",
-            "classifier": null,
-            "groupId": "io.mango.platform.calendar",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-calendar-starter",
-            "classifier": null,
-            "groupId": "io.mango.platform.calendar",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-captcha-api",
-            "classifier": null,
-            "groupId": "io.mango.platform.captcha",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-captcha-core",
-            "classifier": null,
-            "groupId": "io.mango.platform.captcha",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-captcha-starter-remote",
-            "classifier": null,
-            "groupId": "io.mango.platform.captcha",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-captcha-starter",
-            "classifier": null,
-            "groupId": "io.mango.platform.captcha",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-cms-api",
-            "classifier": null,
-            "groupId": "io.mango.platform.cms",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-cms-core",
-            "classifier": null,
-            "groupId": "io.mango.platform.cms",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-cms-starter-remote",
-            "classifier": null,
-            "groupId": "io.mango.platform.cms",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-cms-starter",
-            "classifier": null,
-            "groupId": "io.mango.platform.cms",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-domain-api",
-            "classifier": null,
-            "groupId": "io.mango.platform.domain",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-domain-core",
-            "classifier": null,
-            "groupId": "io.mango.platform.domain",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-domain-starter-remote",
-            "classifier": null,
-            "groupId": "io.mango.platform.domain",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-domain-starter",
-            "classifier": null,
-            "groupId": "io.mango.platform.domain",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-file-preview-api",
-            "classifier": null,
-            "groupId": "io.mango.platform.file.preview",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-file-preview-core",
-            "classifier": null,
-            "groupId": "io.mango.platform.file.preview",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-file-preview-engine",
-            "classifier": null,
-            "groupId": "io.mango.platform.file.preview",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-file-preview-starter",
-            "classifier": null,
-            "groupId": "io.mango.platform.file.preview",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-file-api",
-            "classifier": null,
-            "groupId": "io.mango.platform.file",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-file-core",
-            "classifier": null,
-            "groupId": "io.mango.platform.file",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-file-starter-remote",
-            "classifier": null,
-            "groupId": "io.mango.platform.file",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-file-starter",
-            "classifier": null,
-            "groupId": "io.mango.platform.file",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-grid-layout-api",
-            "classifier": null,
-            "groupId": "io.mango.platform.gridlayout",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-grid-layout-core",
-            "classifier": null,
-            "groupId": "io.mango.platform.gridlayout",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-grid-layout-starter",
-            "classifier": null,
-            "groupId": "io.mango.platform.gridlayout",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-home-api",
-            "classifier": null,
-            "groupId": "io.mango.platform.home",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-home-core",
-            "classifier": null,
-            "groupId": "io.mango.platform.home",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-home-starter",
-            "classifier": null,
-            "groupId": "io.mango.platform.home",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-identity-api",
-            "classifier": null,
-            "groupId": "io.mango.platform.identity",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-identity-core",
-            "classifier": null,
-            "groupId": "io.mango.platform.identity",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-identity-starter-remote",
-            "classifier": null,
-            "groupId": "io.mango.platform.identity",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-identity-starter",
-            "classifier": null,
-            "groupId": "io.mango.platform.identity",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-information-api",
-            "classifier": null,
-            "groupId": "io.mango.platform.information",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-information-core",
-            "classifier": null,
-            "groupId": "io.mango.platform.information",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-information-starter",
-            "classifier": null,
-            "groupId": "io.mango.platform.information",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-integration-api",
-            "classifier": null,
-            "groupId": "io.mango.platform.integration",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-integration-core",
-            "classifier": null,
-            "groupId": "io.mango.platform.integration",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-integration-starter",
-            "classifier": null,
-            "groupId": "io.mango.platform.integration",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-integration-support",
-            "classifier": null,
-            "groupId": "io.mango.platform.integration",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-job-api",
-            "classifier": null,
-            "groupId": "io.mango.platform.job",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-job-core",
-            "classifier": null,
-            "groupId": "io.mango.platform.job",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-job-starter-remote",
-            "classifier": null,
-            "groupId": "io.mango.platform.job",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-job-starter",
-            "classifier": null,
-            "groupId": "io.mango.platform.job",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-job-support",
-            "classifier": null,
-            "groupId": "io.mango.platform.job",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-link-api",
-            "classifier": null,
-            "groupId": "io.mango.platform.link",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-link-core",
-            "classifier": null,
-            "groupId": "io.mango.platform.link",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-link-starter",
-            "classifier": null,
-            "groupId": "io.mango.platform.link",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-notice-api",
-            "classifier": null,
-            "groupId": "io.mango.platform.notice",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-notice-channel-dingtalk",
-            "classifier": null,
-            "groupId": "io.mango.platform.notice",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-notice-channel-email",
-            "classifier": null,
-            "groupId": "io.mango.platform.notice",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-notice-channel-site",
-            "classifier": null,
-            "groupId": "io.mango.platform.notice",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-notice-channel-sms",
-            "classifier": null,
-            "groupId": "io.mango.platform.notice",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-notice-channel-wechat-official",
-            "classifier": null,
-            "groupId": "io.mango.platform.notice",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-notice-channel-wecom",
-            "classifier": null,
-            "groupId": "io.mango.platform.notice",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-notice-core",
-            "classifier": null,
-            "groupId": "io.mango.platform.notice",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-notice-starter-remote",
-            "classifier": null,
-            "groupId": "io.mango.platform.notice",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-notice-starter",
-            "classifier": null,
-            "groupId": "io.mango.platform.notice",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-notice-support",
-            "classifier": null,
-            "groupId": "io.mango.platform.notice",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-numgen-api",
-            "classifier": null,
-            "groupId": "io.mango.platform.numgen",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-numgen-core",
-            "classifier": null,
-            "groupId": "io.mango.platform.numgen",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-numgen-starter-remote",
-            "classifier": null,
-            "groupId": "io.mango.platform.numgen",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-numgen-starter",
-            "classifier": null,
-            "groupId": "io.mango.platform.numgen",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-org-api",
-            "classifier": null,
-            "groupId": "io.mango.platform.org",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-org-core",
-            "classifier": null,
-            "groupId": "io.mango.platform.org",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-org-starter-remote",
-            "classifier": null,
-            "groupId": "io.mango.platform.org",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-org-starter",
-            "classifier": null,
-            "groupId": "io.mango.platform.org",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-payment-api",
-            "classifier": null,
-            "groupId": "io.mango.platform.payment",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-payment-core",
-            "classifier": null,
-            "groupId": "io.mango.platform.payment",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-payment-starter-remote",
-            "classifier": null,
-            "groupId": "io.mango.platform.payment",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-payment-starter",
-            "classifier": null,
-            "groupId": "io.mango.platform.payment",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-resource-api",
-            "classifier": null,
-            "groupId": "io.mango.platform.resource",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-resource-core",
-            "classifier": null,
-            "groupId": "io.mango.platform.resource",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-resource-starter-remote",
-            "classifier": null,
-            "groupId": "io.mango.platform.resource",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-resource-starter",
-            "classifier": null,
-            "groupId": "io.mango.platform.resource",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-resource-support",
-            "classifier": null,
-            "groupId": "io.mango.platform.resource",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-resource-sync-starter",
-            "classifier": null,
-            "groupId": "io.mango.platform.resource",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-system-api",
-            "classifier": null,
-            "groupId": "io.mango.platform.system",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-system-core",
-            "classifier": null,
-            "groupId": "io.mango.platform.system",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-system-starter",
-            "classifier": null,
-            "groupId": "io.mango.platform.system",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-template-api",
-            "classifier": null,
-            "groupId": "io.mango.platform.template",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-template-core",
-            "classifier": null,
-            "groupId": "io.mango.platform.template",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-template-starter-remote",
-            "classifier": null,
-            "groupId": "io.mango.platform.template",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-template-starter",
-            "classifier": null,
-            "groupId": "io.mango.platform.template",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-workflow-api",
-            "classifier": null,
-            "groupId": "io.mango.platform.workflow",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-workflow-core",
-            "classifier": null,
-            "groupId": "io.mango.platform.workflow",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-workflow-starter-remote",
-            "classifier": null,
-            "groupId": "io.mango.platform.workflow",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-workflow-starter",
-            "classifier": null,
-            "groupId": "io.mango.platform.workflow",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-architecture-rules",
-            "classifier": null,
-            "groupId": "io.mango.tools",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          },
-          {
-            "artifactId": "mango-admin-starter",
-            "classifier": null,
-            "groupId": "io.mango",
-            "optional": false,
-            "scope": "compile",
-            "type": "jar",
-            "version": "1.0.0-SNAPSHOT"
-          }
-        ],
-        "digest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c"
-      },
       {
         "dependencies": [
           {
@@ -2635,6 +1244,1415 @@
           }
         ],
         "digest": "d9af8e3c332731e3c0c464eb65cd74f646b96a925104067a69aa2fe6e8d18c0e"
+      },
+      {
+        "dependencies": [
+          {
+            "artifactId": "mango-common",
+            "classifier": null,
+            "groupId": "io.mango.common",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-ai-api",
+            "classifier": null,
+            "groupId": "io.mango.extension.ai",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-ai-core",
+            "classifier": null,
+            "groupId": "io.mango.extension.ai",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-ai-starter",
+            "classifier": null,
+            "groupId": "io.mango.extension.ai",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-bootstrap-api",
+            "classifier": null,
+            "groupId": "io.mango.infra.bootstrap",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-bootstrap-core",
+            "classifier": null,
+            "groupId": "io.mango.infra.bootstrap",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-bootstrap-starter",
+            "classifier": null,
+            "groupId": "io.mango.infra.bootstrap",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-context-api",
+            "classifier": null,
+            "groupId": "io.mango.infra.context",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-context-starter",
+            "classifier": null,
+            "groupId": "io.mango.infra.context",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-context-support",
+            "classifier": null,
+            "groupId": "io.mango.infra.context",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-crypto",
+            "classifier": null,
+            "groupId": "io.mango.infra.crypto",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-doc-starter",
+            "classifier": null,
+            "groupId": "io.mango.infra.doc",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-docsign-api",
+            "classifier": null,
+            "groupId": "io.mango.infra.docsign",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-docsign-core",
+            "classifier": null,
+            "groupId": "io.mango.infra.docsign",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-docsign-starter",
+            "classifier": null,
+            "groupId": "io.mango.infra.docsign",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-event-api",
+            "classifier": null,
+            "groupId": "io.mango.infra.event",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-event-core",
+            "classifier": null,
+            "groupId": "io.mango.infra.event",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-event-starter",
+            "classifier": null,
+            "groupId": "io.mango.infra.event",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-excel-starter",
+            "classifier": null,
+            "groupId": "io.mango.infra.excel",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-feign-starter",
+            "classifier": null,
+            "groupId": "io.mango.infra.feign",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-fileproc-api",
+            "classifier": null,
+            "groupId": "io.mango.infra.fileproc",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-fileproc-core",
+            "classifier": null,
+            "groupId": "io.mango.infra.fileproc",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-fileproc-starter",
+            "classifier": null,
+            "groupId": "io.mango.infra.fileproc",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-ip-location-api",
+            "classifier": null,
+            "groupId": "io.mango.infra.ip.location",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-ip-location-core",
+            "classifier": null,
+            "groupId": "io.mango.infra.ip.location",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-ip-location-starter",
+            "classifier": null,
+            "groupId": "io.mango.infra.ip.location",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-kv-api",
+            "classifier": null,
+            "groupId": "io.mango.infra.kv",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-kv-core",
+            "classifier": null,
+            "groupId": "io.mango.infra.kv",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-kv-starter",
+            "classifier": null,
+            "groupId": "io.mango.infra.kv",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-log-api",
+            "classifier": null,
+            "groupId": "io.mango.infra.log",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-log-starter",
+            "classifier": null,
+            "groupId": "io.mango.infra.log",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-module-api",
+            "classifier": null,
+            "groupId": "io.mango.infra.module",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-module-core",
+            "classifier": null,
+            "groupId": "io.mango.infra.module",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-module-starter",
+            "classifier": null,
+            "groupId": "io.mango.infra.module",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-persistence-api",
+            "classifier": null,
+            "groupId": "io.mango.infra.persistence",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-persistence-starter",
+            "classifier": null,
+            "groupId": "io.mango.infra.persistence",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-persistence-web-starter",
+            "classifier": null,
+            "groupId": "io.mango.infra.persistence",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-realtime-api",
+            "classifier": null,
+            "groupId": "io.mango.infra.realtime",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-realtime-core",
+            "classifier": null,
+            "groupId": "io.mango.infra.realtime",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-realtime-starter-remote",
+            "classifier": null,
+            "groupId": "io.mango.infra.realtime",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-realtime-starter",
+            "classifier": null,
+            "groupId": "io.mango.infra.realtime",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-realtime-support",
+            "classifier": null,
+            "groupId": "io.mango.infra.realtime",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-sensitive-api",
+            "classifier": null,
+            "groupId": "io.mango.infra.sensitive",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-sensitive-core",
+            "classifier": null,
+            "groupId": "io.mango.infra.sensitive",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-sensitive-starter",
+            "classifier": null,
+            "groupId": "io.mango.infra.sensitive",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-web-api",
+            "classifier": null,
+            "groupId": "io.mango.infra.web",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-web-starter",
+            "classifier": null,
+            "groupId": "io.mango.infra.web",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-infra-web-support",
+            "classifier": null,
+            "groupId": "io.mango.infra.web",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-access-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.access",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-access-core",
+            "classifier": null,
+            "groupId": "io.mango.platform.access",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-access-gateway-starter",
+            "classifier": null,
+            "groupId": "io.mango.platform.access",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-access-web-starter",
+            "classifier": null,
+            "groupId": "io.mango.platform.access",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-auth-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.auth",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-auth-core",
+            "classifier": null,
+            "groupId": "io.mango.platform.auth",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-auth-starter-remote",
+            "classifier": null,
+            "groupId": "io.mango.platform.auth",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-auth-starter",
+            "classifier": null,
+            "groupId": "io.mango.platform.auth",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-authorization-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.authorization",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-authorization-core",
+            "classifier": null,
+            "groupId": "io.mango.platform.authorization",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-authorization-resource-access-starter",
+            "classifier": null,
+            "groupId": "io.mango.platform.authorization",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-authorization-resource-sync-starter",
+            "classifier": null,
+            "groupId": "io.mango.platform.authorization",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-authorization-starter-remote",
+            "classifier": null,
+            "groupId": "io.mango.platform.authorization",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-authorization-starter",
+            "classifier": null,
+            "groupId": "io.mango.platform.authorization",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-authorization-support",
+            "classifier": null,
+            "groupId": "io.mango.platform.authorization",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-calendar-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.calendar",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-calendar-core",
+            "classifier": null,
+            "groupId": "io.mango.platform.calendar",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-calendar-starter-remote",
+            "classifier": null,
+            "groupId": "io.mango.platform.calendar",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-calendar-starter",
+            "classifier": null,
+            "groupId": "io.mango.platform.calendar",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-captcha-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.captcha",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-captcha-core",
+            "classifier": null,
+            "groupId": "io.mango.platform.captcha",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-captcha-starter-remote",
+            "classifier": null,
+            "groupId": "io.mango.platform.captcha",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-captcha-starter",
+            "classifier": null,
+            "groupId": "io.mango.platform.captcha",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-cms-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.cms",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-cms-core",
+            "classifier": null,
+            "groupId": "io.mango.platform.cms",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-cms-starter-remote",
+            "classifier": null,
+            "groupId": "io.mango.platform.cms",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-cms-starter",
+            "classifier": null,
+            "groupId": "io.mango.platform.cms",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-domain-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.domain",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-domain-core",
+            "classifier": null,
+            "groupId": "io.mango.platform.domain",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-domain-starter-remote",
+            "classifier": null,
+            "groupId": "io.mango.platform.domain",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-domain-starter",
+            "classifier": null,
+            "groupId": "io.mango.platform.domain",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-file-preview-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.file.preview",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-file-preview-core",
+            "classifier": null,
+            "groupId": "io.mango.platform.file.preview",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-file-preview-engine",
+            "classifier": null,
+            "groupId": "io.mango.platform.file.preview",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-file-preview-starter-remote",
+            "classifier": null,
+            "groupId": "io.mango.platform.file.preview",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-file-preview-starter",
+            "classifier": null,
+            "groupId": "io.mango.platform.file.preview",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-file-preview-support",
+            "classifier": null,
+            "groupId": "io.mango.platform.file.preview",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-file-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.file",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-file-core",
+            "classifier": null,
+            "groupId": "io.mango.platform.file",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-file-starter-remote",
+            "classifier": null,
+            "groupId": "io.mango.platform.file",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-file-starter",
+            "classifier": null,
+            "groupId": "io.mango.platform.file",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-grid-layout-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.gridlayout",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-grid-layout-core",
+            "classifier": null,
+            "groupId": "io.mango.platform.gridlayout",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-grid-layout-starter",
+            "classifier": null,
+            "groupId": "io.mango.platform.gridlayout",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-home-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.home",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-home-core",
+            "classifier": null,
+            "groupId": "io.mango.platform.home",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-home-starter",
+            "classifier": null,
+            "groupId": "io.mango.platform.home",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-identity-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.identity",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-identity-core",
+            "classifier": null,
+            "groupId": "io.mango.platform.identity",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-identity-starter-remote",
+            "classifier": null,
+            "groupId": "io.mango.platform.identity",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-identity-starter",
+            "classifier": null,
+            "groupId": "io.mango.platform.identity",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-information-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.information",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-information-core",
+            "classifier": null,
+            "groupId": "io.mango.platform.information",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-information-starter",
+            "classifier": null,
+            "groupId": "io.mango.platform.information",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-integration-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.integration",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-integration-core",
+            "classifier": null,
+            "groupId": "io.mango.platform.integration",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-integration-starter",
+            "classifier": null,
+            "groupId": "io.mango.platform.integration",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-integration-support",
+            "classifier": null,
+            "groupId": "io.mango.platform.integration",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-job-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.job",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-job-core",
+            "classifier": null,
+            "groupId": "io.mango.platform.job",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-job-starter-remote",
+            "classifier": null,
+            "groupId": "io.mango.platform.job",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-job-starter",
+            "classifier": null,
+            "groupId": "io.mango.platform.job",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-job-support",
+            "classifier": null,
+            "groupId": "io.mango.platform.job",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-link-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.link",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-link-core",
+            "classifier": null,
+            "groupId": "io.mango.platform.link",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-link-starter",
+            "classifier": null,
+            "groupId": "io.mango.platform.link",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-notice-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.notice",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-notice-channel-dingtalk",
+            "classifier": null,
+            "groupId": "io.mango.platform.notice",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-notice-channel-email",
+            "classifier": null,
+            "groupId": "io.mango.platform.notice",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-notice-channel-site",
+            "classifier": null,
+            "groupId": "io.mango.platform.notice",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-notice-channel-sms",
+            "classifier": null,
+            "groupId": "io.mango.platform.notice",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-notice-channel-wechat-official",
+            "classifier": null,
+            "groupId": "io.mango.platform.notice",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-notice-channel-wecom",
+            "classifier": null,
+            "groupId": "io.mango.platform.notice",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-notice-core",
+            "classifier": null,
+            "groupId": "io.mango.platform.notice",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-notice-starter-remote",
+            "classifier": null,
+            "groupId": "io.mango.platform.notice",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-notice-starter",
+            "classifier": null,
+            "groupId": "io.mango.platform.notice",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-notice-support",
+            "classifier": null,
+            "groupId": "io.mango.platform.notice",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-numgen-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.numgen",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-numgen-core",
+            "classifier": null,
+            "groupId": "io.mango.platform.numgen",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-numgen-starter-remote",
+            "classifier": null,
+            "groupId": "io.mango.platform.numgen",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-numgen-starter",
+            "classifier": null,
+            "groupId": "io.mango.platform.numgen",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-org-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.org",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-org-core",
+            "classifier": null,
+            "groupId": "io.mango.platform.org",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-org-starter-remote",
+            "classifier": null,
+            "groupId": "io.mango.platform.org",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-org-starter",
+            "classifier": null,
+            "groupId": "io.mango.platform.org",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-payment-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.payment",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-payment-core",
+            "classifier": null,
+            "groupId": "io.mango.platform.payment",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-payment-starter-remote",
+            "classifier": null,
+            "groupId": "io.mango.platform.payment",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-payment-starter",
+            "classifier": null,
+            "groupId": "io.mango.platform.payment",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-resource-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.resource",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-resource-core",
+            "classifier": null,
+            "groupId": "io.mango.platform.resource",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-resource-starter-remote",
+            "classifier": null,
+            "groupId": "io.mango.platform.resource",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-resource-starter",
+            "classifier": null,
+            "groupId": "io.mango.platform.resource",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-resource-support",
+            "classifier": null,
+            "groupId": "io.mango.platform.resource",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-resource-sync-starter",
+            "classifier": null,
+            "groupId": "io.mango.platform.resource",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-system-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.system",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-system-core",
+            "classifier": null,
+            "groupId": "io.mango.platform.system",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-system-starter",
+            "classifier": null,
+            "groupId": "io.mango.platform.system",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-template-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.template",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-template-core",
+            "classifier": null,
+            "groupId": "io.mango.platform.template",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-template-starter-remote",
+            "classifier": null,
+            "groupId": "io.mango.platform.template",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-template-starter",
+            "classifier": null,
+            "groupId": "io.mango.platform.template",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-workflow-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.workflow",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-workflow-core",
+            "classifier": null,
+            "groupId": "io.mango.platform.workflow",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-workflow-starter-remote",
+            "classifier": null,
+            "groupId": "io.mango.platform.workflow",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-workflow-starter",
+            "classifier": null,
+            "groupId": "io.mango.platform.workflow",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-architecture-rules",
+            "classifier": null,
+            "groupId": "io.mango.tools",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-admin-starter",
+            "classifier": null,
+            "groupId": "io.mango",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          }
+        ],
+        "digest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12"
       }
     ],
     "excludedCoordinateCount": 29,
@@ -2930,13 +2948,13 @@
         "version": "1.0.0-SNAPSHOT"
       }
     ],
-    "publishableCoordinateCount": 200,
+    "publishableCoordinateCount": 202,
     "publishableCoordinates": [
       {
         "artifactId": "mango-common",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "jar",
         "groupId": "io.mango.common",
         "modulePath": "mango-common",
@@ -5571,7 +5589,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "jar",
         "groupId": "io.mango.platform.calendar",
         "modulePath": "mango-platform/mango-calendar/mango-calendar-api",
@@ -5628,7 +5646,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "jar",
         "groupId": "io.mango.platform.calendar",
         "modulePath": "mango-platform/mango-calendar/mango-calendar-core",
@@ -5658,7 +5676,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "jar",
         "groupId": "io.mango.platform.calendar",
         "modulePath": "mango-platform/mango-calendar/mango-calendar-starter-remote",
@@ -5724,7 +5742,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "jar",
         "groupId": "io.mango.platform.calendar",
         "modulePath": "mango-platform/mango-calendar/mango-calendar-starter",
@@ -5735,7 +5753,7 @@
         "artifactId": "mango-calendar",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "pom",
         "groupId": "io.mango.platform.calendar",
         "modulePath": "mango-platform/mango-calendar",
@@ -5765,7 +5783,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "jar",
         "groupId": "io.mango.platform.captcha",
         "modulePath": "mango-platform/mango-captcha/mango-captcha-api",
@@ -5795,7 +5813,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "jar",
         "groupId": "io.mango.platform.captcha",
         "modulePath": "mango-platform/mango-captcha/mango-captcha-core",
@@ -5834,7 +5852,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "jar",
         "groupId": "io.mango.platform.captcha",
         "modulePath": "mango-platform/mango-captcha/mango-captcha-starter-remote",
@@ -5882,7 +5900,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "jar",
         "groupId": "io.mango.platform.captcha",
         "modulePath": "mango-platform/mango-captcha/mango-captcha-starter",
@@ -5893,7 +5911,7 @@
         "artifactId": "mango-captcha",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "pom",
         "groupId": "io.mango.platform.captcha",
         "modulePath": "mango-platform/mango-captcha",
@@ -5914,7 +5932,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "jar",
         "groupId": "io.mango.platform.cms",
         "modulePath": "mango-platform/mango-cms/mango-cms-api",
@@ -5980,7 +5998,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "jar",
         "groupId": "io.mango.platform.cms",
         "modulePath": "mango-platform/mango-cms/mango-cms-core",
@@ -6010,7 +6028,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "jar",
         "groupId": "io.mango.platform.cms",
         "modulePath": "mango-platform/mango-cms/mango-cms-starter-remote",
@@ -6076,7 +6094,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "jar",
         "groupId": "io.mango.platform.cms",
         "modulePath": "mango-platform/mango-cms/mango-cms-starter",
@@ -6087,7 +6105,7 @@
         "artifactId": "mango-cms",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "pom",
         "groupId": "io.mango.platform.cms",
         "modulePath": "mango-platform/mango-cms",
@@ -6108,7 +6126,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "jar",
         "groupId": "io.mango.platform.domain",
         "modulePath": "mango-platform/mango-domain/mango-domain-api",
@@ -6165,7 +6183,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "jar",
         "groupId": "io.mango.platform.domain",
         "modulePath": "mango-platform/mango-domain/mango-domain-core",
@@ -6195,7 +6213,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "jar",
         "groupId": "io.mango.platform.domain",
         "modulePath": "mango-platform/mango-domain/mango-domain-starter-remote",
@@ -6252,7 +6270,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "jar",
         "groupId": "io.mango.platform.domain",
         "modulePath": "mango-platform/mango-domain/mango-domain-starter",
@@ -6263,7 +6281,7 @@
         "artifactId": "mango-domain",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "pom",
         "groupId": "io.mango.platform.domain",
         "modulePath": "mango-platform/mango-domain",
@@ -6360,6 +6378,45 @@
         "version": "1.0.0-SNAPSHOT"
       },
       {
+        "artifactId": "mango-file-preview-starter-remote",
+        "classifier": null,
+        "dependencies": [
+          {
+            "artifactId": "mango-infra-feign-starter",
+            "classifier": null,
+            "groupId": "io.mango.infra.feign",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-file-preview-api",
+            "classifier": null,
+            "groupId": "io.mango.platform.file.preview",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-file-preview-support",
+            "classifier": null,
+            "groupId": "io.mango.platform.file.preview",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          }
+        ],
+        "dependencyManagementDigest": "d9af8e3c332731e3c0c464eb65cd74f646b96a925104067a69aa2fe6e8d18c0e",
+        "extension": "jar",
+        "groupId": "io.mango.platform.file.preview",
+        "modulePath": "mango-platform/mango-file-preview/mango-file-preview-starter-remote",
+        "packaging": "jar",
+        "version": "1.0.0-SNAPSHOT"
+      },
+      {
         "artifactId": "mango-file-preview-starter",
         "classifier": null,
         "dependencies": [
@@ -6413,6 +6470,27 @@
         "extension": "jar",
         "groupId": "io.mango.platform.file.preview",
         "modulePath": "mango-platform/mango-file-preview/mango-file-preview-starter",
+        "packaging": "jar",
+        "version": "1.0.0-SNAPSHOT"
+      },
+      {
+        "artifactId": "mango-file-preview-support",
+        "classifier": null,
+        "dependencies": [
+          {
+            "artifactId": "mango-file-preview-engine",
+            "classifier": null,
+            "groupId": "io.mango.platform.file.preview",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          }
+        ],
+        "dependencyManagementDigest": "d9af8e3c332731e3c0c464eb65cd74f646b96a925104067a69aa2fe6e8d18c0e",
+        "extension": "jar",
+        "groupId": "io.mango.platform.file.preview",
+        "modulePath": "mango-platform/mango-file-preview/mango-file-preview-support",
         "packaging": "jar",
         "version": "1.0.0-SNAPSHOT"
       },
@@ -6644,7 +6722,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "jar",
         "groupId": "io.mango.platform.gridlayout",
         "modulePath": "mango-platform/mango-grid-layout/mango-grid-layout-api",
@@ -6701,7 +6779,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "jar",
         "groupId": "io.mango.platform.gridlayout",
         "modulePath": "mango-platform/mango-grid-layout/mango-grid-layout-core",
@@ -6749,7 +6827,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "jar",
         "groupId": "io.mango.platform.gridlayout",
         "modulePath": "mango-platform/mango-grid-layout/mango-grid-layout-starter",
@@ -6760,7 +6838,7 @@
         "artifactId": "mango-grid-layout",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "pom",
         "groupId": "io.mango.platform.gridlayout",
         "modulePath": "mango-platform/mango-grid-layout",
@@ -6781,7 +6859,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "jar",
         "groupId": "io.mango.platform.home",
         "modulePath": "mango-platform/mango-home/mango-home-api",
@@ -6838,7 +6916,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "jar",
         "groupId": "io.mango.platform.home",
         "modulePath": "mango-platform/mango-home/mango-home-core",
@@ -6904,7 +6982,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "jar",
         "groupId": "io.mango.platform.home",
         "modulePath": "mango-platform/mango-home/mango-home-starter",
@@ -6915,7 +6993,7 @@
         "artifactId": "mango-home",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "pom",
         "groupId": "io.mango.platform.home",
         "modulePath": "mango-platform/mango-home",
@@ -7569,7 +7647,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "jar",
         "groupId": "io.mango.platform.job",
         "modulePath": "mango-platform/mango-job/mango-job-api",
@@ -7653,7 +7731,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "jar",
         "groupId": "io.mango.platform.job",
         "modulePath": "mango-platform/mango-job/mango-job-core",
@@ -7692,7 +7770,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "jar",
         "groupId": "io.mango.platform.job",
         "modulePath": "mango-platform/mango-job/mango-job-starter-remote",
@@ -7785,7 +7863,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "jar",
         "groupId": "io.mango.platform.job",
         "modulePath": "mango-platform/mango-job/mango-job-starter",
@@ -7842,7 +7920,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "jar",
         "groupId": "io.mango.platform.job",
         "modulePath": "mango-platform/mango-job/mango-job-support",
@@ -7853,7 +7931,7 @@
         "artifactId": "mango-job",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "pom",
         "groupId": "io.mango.platform.job",
         "modulePath": "mango-platform/mango-job",
@@ -7874,7 +7952,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "jar",
         "groupId": "io.mango.platform.link",
         "modulePath": "mango-platform/mango-link/mango-link-api",
@@ -7940,7 +8018,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "jar",
         "groupId": "io.mango.platform.link",
         "modulePath": "mango-platform/mango-link/mango-link-core",
@@ -7997,7 +8075,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "jar",
         "groupId": "io.mango.platform.link",
         "modulePath": "mango-platform/mango-link/mango-link-starter",
@@ -8008,7 +8086,7 @@
         "artifactId": "mango-link",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "pom",
         "groupId": "io.mango.platform.link",
         "modulePath": "mango-platform/mango-link",
@@ -8685,7 +8763,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "jar",
         "groupId": "io.mango.platform.numgen",
         "modulePath": "mango-platform/mango-numgen/mango-numgen-api",
@@ -8787,7 +8865,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "jar",
         "groupId": "io.mango.platform.numgen",
         "modulePath": "mango-platform/mango-numgen/mango-numgen-core",
@@ -8817,7 +8895,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "jar",
         "groupId": "io.mango.platform.numgen",
         "modulePath": "mango-platform/mango-numgen/mango-numgen-starter-remote",
@@ -8847,7 +8925,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "jar",
         "groupId": "io.mango.platform.numgen",
         "modulePath": "mango-platform/mango-numgen/mango-numgen-starter",
@@ -8858,7 +8936,7 @@
         "artifactId": "mango-numgen",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "pom",
         "groupId": "io.mango.platform.numgen",
         "modulePath": "mango-platform/mango-numgen",
@@ -10408,7 +10486,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "jar",
         "groupId": "io.mango.tools.maven.plugin",
         "modulePath": "mango-tools/mango-maven-plugin",
@@ -10429,7 +10507,7 @@
             "version": "1.0.0-SNAPSHOT"
           }
         ],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "jar",
         "groupId": "io.mango.tools",
         "modulePath": "mango-tools/mango-architecture-rules",
@@ -10440,7 +10518,7 @@
         "artifactId": "mango-architecture-verification",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "pom",
         "groupId": "io.mango.tools",
         "modulePath": "mango-tools/mango-architecture-verification",
@@ -10451,7 +10529,7 @@
         "artifactId": "mango-tools",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "pom",
         "groupId": "io.mango.tools",
         "modulePath": "mango-tools",
@@ -10807,7 +10885,7 @@
         "artifactId": "mango-bom",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "pom",
         "groupId": "io.mango",
         "modulePath": "mango-bom",
@@ -10818,7 +10896,7 @@
         "artifactId": "mango-parent",
         "classifier": null,
         "dependencies": [],
-        "dependencyManagementDigest": "0c2f2fc2eb212cb4f14afa008395d039a4b4bdfd89c451fb27b8001d6656918c",
+        "dependencyManagementDigest": "e4af59613db6c5d50fed88765fe7db75ad5cc81f7a8b56ec200d2bd2c4433d12",
         "extension": "pom",
         "groupId": "io.mango",
         "modulePath": "mango-parent",
@@ -10837,7 +10915,7 @@
         "version": "1.0.0-SNAPSHOT"
       }
     ],
-    "reactorModuleCount": 229,
+    "reactorModuleCount": 231,
     "schemaVersion": 1,
     "sourceModel": "maven-effective-pom"
   },
