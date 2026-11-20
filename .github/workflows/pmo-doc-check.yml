@@ -487,6 +487,8 @@ jobs:
 
       - name: Build the Java architecture gate plugin
         run: |
+          mvn -B -f mango/pom.xml -pl :mango-bom -DskipTests install
+          mvn -B -f mango/mango-parent/pom.xml -DskipTests install
           mvn -B -f mango/pom.xml \
             -pl :mango-bom,:mango-common,:mango-tools \
             -DskipTests \
