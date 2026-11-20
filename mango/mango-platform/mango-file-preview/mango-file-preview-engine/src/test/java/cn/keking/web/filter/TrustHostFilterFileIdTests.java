@@ -30,6 +30,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class TrustHostFilterFileIdTests {
 
+    private static final String VALID_TICKET = "short-lived-token";
+
     private final TrustHostFilter filter = new TrustHostFilter();
     private final AtomicBoolean chainCalled = new AtomicBoolean();
     private final AtomicInteger status = new AtomicInteger();
@@ -45,6 +47,7 @@ class TrustHostFilterFileIdTests {
         public ReturnResponse<String> download(FileAttribute fileAttribute, String fileName) {
             return new ReturnResponse<>(ReturnResponse.SUCCESS_CODE, "ok", fileName);
         }
+
     };
 
     private final FilterChain chain = (request, response) -> chainCalled.set(true);
@@ -64,10 +67,29 @@ class TrustHostFilterFileIdTests {
     void allowsFileIdRequestWhenDownloaderRegistered() throws Exception {
         FileDownloaders.register(downloader);
 
-        filter.doFilter(request(Map.of("fileId", "short-lived-token")), response(), chain);
+        filter.doFilter(request(Map.of("fileId", VALID_TICKET)), response(), chain);
 
         assertTrue(chainCalled.get(), "带 fileId 的进程内取源请求应放行");
         assertEquals(0, status.get());
+    }
+
+    @Test
+    void passesFileIdRequestEvenWhenTicketIsUnknown() throws Exception {
+        FileDownloaders.register(downloader);
+
+        // 站点校验在 fileId 形态下没有可校验对象；票据有效性由取源环节判定（无效返回 180002）
+        filter.doFilter(request(Map.of("fileId", "expired-ticket")), response(), chain);
+
+        assertTrue(chainCalled.get());
+        assertEquals(0, status.get());
+    }
+
+    @Test
+    void blocksFileIdRequestWhenNoProviderRegistered() throws Exception {
+        filter.doFilter(request(Map.of("fileId", VALID_TICKET)), response(), chain);
+
+        assertFalse(chainCalled.get());
+        assertEquals(HttpServletResponse.SC_FORBIDDEN, status.get());
     }
 
     @Test

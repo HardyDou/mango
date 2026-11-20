@@ -27,4 +27,5 @@ public interface FileDownloader {
      * @return 与引擎内置下载一致的返回结构：{@code code=0} 且 {@code content=落盘路径}
      */
     ReturnResponse<String> download(FileAttribute fileAttribute, String fileName);
+
 }

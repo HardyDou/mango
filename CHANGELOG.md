@@ -3,7 +3,7 @@
 ### Fixed
 
 - `TrustHostFilter` / `TrustDirFilter` 原先只认 `url`/`urls`/`currentUrl`/`urlPath`，`fileId` 形态的进程内取源请求因「无网络地址」被判为不可信站点，直接返回 `403` + `notTrustHost.html`（918 字节），导致 `#1316` 的进程内直取在引擎页不可用。
-- 新增 `cn.keking.utils.PreviewSourceRequests#isInternalSource`：请求带 `fileId` 且本进程注册了 `FileDownloader` 直取实现时视为进程内取源，两类过滤放行（身份由短期票据承担）。`url` 形态请求行为不变；带非可信 `url` 仍 403，两者都缺仍 403。
+- 新增 `cn.keking.utils.PreviewSourceRequests#isInternalSource`：请求带 `fileId` 且本进程注册了 `FileDownloader` 时视为进程内取源，这类请求没有网络地址可供站点校验，`TrustHostFilter`/`TrustDirFilter` 放行；票据有效性由取源环节校验（无效返回 `180002`）。`url` 形态请求行为不变：带非可信 `url` 仍 403，两者都缺仍 403。
 
 ## Unreleased - 质量门禁去掉零缺陷收益的格式类规则
 

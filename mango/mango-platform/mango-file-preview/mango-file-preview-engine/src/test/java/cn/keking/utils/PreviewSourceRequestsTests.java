@@ -16,6 +16,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PreviewSourceRequestsTests {
 
+    private static final String VALID_TICKET = "valid-ticket";
+
     private final FileDownloader downloader = new FileDownloader() {
         @Override
         public boolean supports(FileAttribute fileAttribute) {
@@ -26,6 +28,7 @@ class PreviewSourceRequestsTests {
         public ReturnResponse<String> download(FileAttribute fileAttribute, String fileName) {
             return new ReturnResponse<>(ReturnResponse.SUCCESS_CODE, "ok", fileName);
         }
+
     };
 
     @AfterEach
@@ -37,12 +40,12 @@ class PreviewSourceRequestsTests {
     void treatsFileIdAsInternalSourceWhenDownloaderRegistered() {
         FileDownloaders.register(downloader);
 
-        assertTrue(PreviewSourceRequests.isInternalSource(request("fileId", "token-1")));
+        assertTrue(PreviewSourceRequests.isInternalSource(request("fileId", VALID_TICKET)));
     }
 
     @Test
     void ignoresFileIdWhenNoDownloaderRegistered() {
-        assertFalse(PreviewSourceRequests.isInternalSource(request("fileId", "token-1")));
+        assertFalse(PreviewSourceRequests.isInternalSource(request("fileId", VALID_TICKET)));
     }
 
     @Test
