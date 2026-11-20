@@ -1,6 +1,7 @@
 package cn.keking.web.filter;
 
 import cn.keking.config.ConfigConstants;
+import cn.keking.utils.PreviewSourceRequests;
 import cn.keking.utils.WebUtils;
 
 import java.io.IOException;
@@ -52,6 +53,11 @@ public class TrustHostFilter implements Filter {
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+        if (PreviewSourceRequests.isInternalSource(request)) {
+            // 进程内取源：身份由短期票据承担，没有可校验的网络地址
+            chain.doFilter(request, response);
+            return;
+        }
         String url = WebUtils.getSourceUrl(request);
         String host = WebUtils.getHost(url);
         boolean validUrl = StringUtils.hasText(url) && WebUtils.isValidUrl(url);

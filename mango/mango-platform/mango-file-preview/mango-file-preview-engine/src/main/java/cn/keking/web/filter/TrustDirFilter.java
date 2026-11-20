@@ -3,6 +3,7 @@ package cn.keking.web.filter;
 import cn.keking.config.ConfigConstants;
 import cn.keking.model.ReturnResponse;
 import cn.keking.utils.KkFileUtils;
+import cn.keking.utils.PreviewSourceRequests;
 import cn.keking.utils.WebUtils;
 import io.mola.galimatias.GalimatiasParseException;
 import org.jodconverter.core.util.OSUtils;
@@ -45,6 +46,10 @@ public class TrustDirFilter implements Filter {
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+        if (PreviewSourceRequests.isInternalSource(request)) {
+            chain.doFilter(request, response);
+            return;
+        }
         String url = WebUtils.getSourceUrl(request);
         if (!allowPreview(url)) {
             response.getWriter().write(this.notTrustDirView);

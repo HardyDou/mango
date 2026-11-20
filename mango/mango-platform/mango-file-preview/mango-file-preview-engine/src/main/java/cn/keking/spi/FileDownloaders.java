@@ -37,6 +37,13 @@ public final class FileDownloaders {
     }
 
     /**
+     * @return 当前进程是否注册了直取实现
+     */
+    public static boolean hasProvider() {
+        return !DOWNLOADERS.isEmpty();
+    }
+
+    /**
      * 尝试用已注册的下载器处理。
      *
      * @return 没有下载器支持时返回 {@code null}，交由引擎内置实现处理
