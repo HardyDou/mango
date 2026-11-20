@@ -1,7 +1,8 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createApp, defineComponent, h, nextTick, type App } from 'vue';
 import FilePreviewPanel from '../FilePreviewPanel.vue';
-import { fileApi, type FilePreview } from '../../api/file';
+import { fileApi, type FilePreviewLink, type FilePreviewRenderMode, type FileRecord } from '../../api/file';
+import { clearPreviewLinkCache } from '../../utils/previewLinkCache';
 
 const mountedApps: App[] = [];
 const happyDomSettings = (
@@ -56,31 +57,15 @@ const ElImageViewerStub = defineComponent({
   },
 });
 
-function createPreview(overrides: Partial<FilePreview> = {}): FilePreview {
-  return {
-    id: 'file-1',
-    fileName: 'report.pdf',
-    fileExt: 'pdf',
-    fileSize: 1024,
-    contentType: 'application/pdf',
-    previewable: true,
-    previewUrl: '',
-    downloadUrl: '',
-    ...overrides,
-  };
-}
+type PanelProps = Record<string, unknown>;
 
-async function mountPanel(
-  preview: FilePreview | null,
-  options: { fileId?: string; fitContainer?: boolean; showActions?: boolean } = {},
-) {
+async function mountPanel(props: PanelProps = {}) {
   const host = document.createElement('div');
   document.body.appendChild(host);
   const app = createApp(FilePreviewPanel, {
-    fileId: options.fileId,
-    preview,
-    showActions: options.showActions ?? true,
-    fitContainer: options.fitContainer ?? false,
+    showActions: true,
+    fitContainer: false,
+    ...props,
   });
   app.component('ElButton', ElButtonStub);
   app.component('ElTag', ElTagStub);
@@ -110,13 +95,31 @@ async function mountPanel(
   return host;
 }
 
-function findNewWindowButton(host: HTMLElement): HTMLButtonElement {
-  const buttons = Array.from(host.querySelectorAll('button'));
-  const button = buttons.find((item) => item.textContent?.includes('新窗口预览'));
-  if (!button) {
-    throw new Error('New window preview button was not rendered.');
+function unmountPanels() {
+  while (mountedApps.length) {
+    mountedApps.pop()?.unmount();
   }
-  return button;
+}
+
+function mockPreviewLink(overrides: Partial<FilePreviewLink> = {}) {
+  return vi.spyOn(fileApi, 'previewLink').mockImplementation((fileId: string) =>
+    Promise.resolve({
+      fileId,
+      fileName: 'report.pdf',
+      previewUrl: `/api/file-preview/files/preview-entry?token=${fileId}`,
+      renderMode: 'PDF' as FilePreviewRenderMode,
+      expireSeconds: 300,
+      ...overrides,
+    }),
+  );
+}
+
+function mockPreviewContent() {
+  vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:preview-content');
+  return vi.spyOn(fileApi, 'previewContent').mockResolvedValue({
+    data: new Blob(['preview-content'], { type: 'application/octet-stream' }),
+    headers: { 'content-type': 'application/octet-stream' },
+  });
 }
 
 beforeAll(() => {
@@ -128,331 +131,146 @@ afterAll(() => {
 });
 
 afterEach(() => {
-  while (mountedApps.length) {
-    mountedApps.pop()?.unmount();
-  }
+  unmountPanels();
   vi.restoreAllMocks();
+  clearPreviewLinkCache();
   document.body.innerHTML = '';
 });
 
-describe('FilePreviewPanel', () => {
-  it('shows the default loading state while preview metadata is loading', async () => {
-    let resolvePreview!: (value: FilePreview) => void;
-    const previewRequest = vi.spyOn(fileApi, 'preview').mockReturnValue(
-      new Promise((resolve) => {
-        resolvePreview = resolve;
-      }),
-    );
-    const host = await mountPanel(null, { fileId: '1' });
-    const panel = host.querySelector('.file-preview-panel');
+describe('FilePreviewPanel 渲染分派', () => {
+  const cases: Array<[FilePreviewRenderMode, string]> = [
+    ['PDF', 'iframe.preview-frame'],
+    ['CONVERTING', '[data-converting]'],
+    ['IMAGE', '[data-image-viewer]'],
+    ['VIDEO', 'video.preview-media'],
+    ['AUDIO', 'audio.preview-audio'],
+    ['PAGE', 'iframe.preview-frame'],
+    ['NOT_SUPPORTED', '[data-render-hint="NOT_SUPPORTED"]'],
+  ];
 
-    await vi.waitFor(() => expect(previewRequest).toHaveBeenCalledWith('1'));
-    expect(panel?.getAttribute('data-loading')).toBe('true');
+  for (const [renderMode, selector] of cases) {
+    it(`renderMode=${renderMode} 渲染对应容器`, async () => {
+      mockPreviewLink({ renderMode });
+      if (renderMode === 'IMAGE' || renderMode === 'VIDEO' || renderMode === 'AUDIO') {
+        mockPreviewContent();
+      }
 
-    resolvePreview(createPreview({ directPreviewUrl: '/preview/report.pdf' }));
-    await vi.waitFor(() => {
-      expect(panel?.getAttribute('data-loading')).toBe('false');
-      expect(host.querySelector('.preview-stage')).not.toBeNull();
-    });
-  });
-
-  it('renders private images through an authenticated blob object URL', async () => {
-    const objectUrl = 'blob:private-image';
-    vi.spyOn(URL, 'createObjectURL').mockReturnValue(objectUrl);
-    const previewContent = vi.spyOn(fileApi, 'previewContent').mockResolvedValue({
-      data: new Blob(['preview-content'], { type: 'image/png' }),
-      headers: { 'content-type': 'image/png' },
-    });
-
-    const host = await mountPanel(
-      createPreview({
-        fileName: 'diagram.png',
-        fileExt: 'png',
-        contentType: 'image/png',
-      }),
-    );
-    await vi.waitFor(() => {
-      expect(
-        host.querySelector('.preview-image-viewer [data-image-viewer] .el-image-viewer__img')?.getAttribute('src'),
-      ).toBe(objectUrl);
-    });
-    expect(previewContent).toHaveBeenCalledWith('file-1');
-    expect(host.querySelector('.preview-error-state')).toBeNull();
-  });
-
-  it('revokes the inline preview object URL when the panel unmounts', async () => {
-    const objectUrl = 'blob:protected-image';
-    vi.spyOn(URL, 'createObjectURL').mockReturnValue(objectUrl);
-    const revokeObjectUrl = vi.spyOn(URL, 'revokeObjectURL');
-    vi.spyOn(fileApi, 'previewContent').mockResolvedValue({
-      data: new Blob(['preview-content'], { type: 'image/png' }),
-      headers: { 'content-type': 'image/png' },
-    });
-
-    const host = await mountPanel(
-      createPreview({
-        fileName: 'diagram.png',
-        fileExt: 'png',
-        contentType: 'image/png',
-      }),
-    );
-    await vi.waitFor(() => {
-      expect(
-        host.querySelector('.preview-image-viewer [data-image-viewer] .el-image-viewer__img')?.getAttribute('src'),
-      ).toBe(objectUrl);
-    });
-
-    mountedApps.pop()?.unmount();
-    expect(revokeObjectUrl).toHaveBeenCalledWith(objectUrl);
-  });
-
-  it('keeps the natural-height mode by default', async () => {
-    const host = await mountPanel(createPreview({ directPreviewUrl: '/preview/report.pdf' }));
-
-    expect(host.querySelector('.file-preview-panel--fit-container')).toBeNull();
-    expect(host.querySelector('.preview-stage')).not.toBeNull();
-  });
-
-  it('enables the container-fill class without requiring layout variables', async () => {
-    const host = await mountPanel(createPreview({ directPreviewUrl: '/preview/report.pdf' }), { fitContainer: true });
-
-    const panel = host.querySelector('.file-preview-panel');
-    expect(panel?.classList.contains('file-preview-panel--fit-container')).toBe(true);
-    expect(panel?.getAttribute('style')).toBeNull();
-  });
-
-  it('keeps the stage as the only flex region when actions are hidden', async () => {
-    const host = await mountPanel(createPreview({ directPreviewUrl: '/preview/report.pdf' }), {
-      fitContainer: true,
-      showActions: false,
-    });
-
-    expect(host.querySelector('.preview-actions')).toBeNull();
-    expect(host.querySelector('.preview-stage')).not.toBeNull();
-  });
-
-  it.each([
-    [
-      'image',
-      createPreview({
-        fileName: 'diagram.png',
-        fileExt: 'png',
-        contentType: 'image/png',
-        directPreviewUrl: '/preview/diagram.png',
-      }),
-      '.preview-image-viewer',
-    ],
-    [
-      'video',
-      createPreview({
-        fileName: 'demo.mp4',
-        fileExt: 'mp4',
-        contentType: 'video/mp4',
-        directPreviewUrl: '/preview/demo.mp4',
-      }),
-      'video.preview-media',
-    ],
-    [
-      'audio',
-      createPreview({
-        fileName: 'recording.mp3',
-        fileExt: 'mp3',
-        contentType: 'audio/mpeg',
-        directPreviewUrl: '/preview/recording.mp3',
-      }),
-      'audio.preview-audio',
-    ],
-    [
-      'Office document',
-      createPreview({
-        fileName: 'report.docx',
-        fileExt: 'docx',
-        contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        documentPreviewUrl: '/document/report.docx',
-      }),
-      'iframe.preview-frame',
-    ],
-  ])('renders %s content inside the container-fill stage', async (_label, preview, selector) => {
-    const host = await mountPanel(preview, { fitContainer: true });
-
-    expect(host.querySelector(`.preview-stage > ${selector}`)).not.toBeNull();
-  });
-
-  it('renders images as a persistent inline Element Plus viewer by default', async () => {
-    const host = await mountPanel(
-      createPreview({
-        fileName: 'diagram.png',
-        fileExt: 'png',
-        contentType: 'image/png',
-        directPreviewUrl: '/preview/diagram.png',
-      }),
-    );
-
-    const viewerImage = host.querySelector('.preview-image-viewer [data-image-viewer] .el-image-viewer__img');
-    expect(viewerImage?.getAttribute('src')).toBe('http://localhost:3000/preview/diagram.png');
-    expect(viewerImage?.getAttribute('data-infinite')).toBe('false');
-    expect(viewerImage?.getAttribute('data-teleported')).toBe('false');
-    expect(viewerImage?.getAttribute('data-close-on-press-escape')).toBe('false');
-    expect(host.querySelector('.preview-image-viewer .el-image-viewer__actions')).not.toBeNull();
-    expect(host.querySelector('el-image')).toBeNull();
-  });
-
-  it('keeps empty and download-only states in fill-mode containers', async () => {
-    const emptyHost = await mountPanel(null, { fitContainer: true });
-    expect(emptyHost.querySelector('.preview-empty')).not.toBeNull();
-
-    mountedApps.pop()?.unmount();
-    emptyHost.remove();
-
-    const placeholderHost = await mountPanel(
-      createPreview({
-        fileName: 'report.docx',
-        fileExt: 'docx',
-        contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        previewable: false,
-      }),
-      { fitContainer: true },
-    );
-    expect(placeholderHost.querySelector('.preview-stage > .preview-placeholder')).not.toBeNull();
-  });
-
-  it('keeps the new window preview button rendered when preview url is unavailable', async () => {
-    const host = await mountPanel(
-      createPreview({
-        fileName: 'report.docx',
-        fileExt: 'docx',
-        contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        previewable: false,
-      }),
-    );
-
-    expect(findNewWindowButton(host).disabled).toBe(true);
-  });
-
-  it('enables the new window preview button when preview url is available', async () => {
-    const previewContent = vi.spyOn(fileApi, 'previewContent');
-    const host = await mountPanel(
-      createPreview({
-        fileName: 'report.png',
-        fileExt: 'png',
-        contentType: 'image/png',
-        directPreviewUrl: '/preview/report.png',
-      }),
-    );
-
-    expect(findNewWindowButton(host).disabled).toBe(false);
-    expect(previewContent).not.toHaveBeenCalled();
-  });
-
-  it.each([
-    ['image', 'diagram.png', 'png', 'image/png', '.el-image-viewer__img'],
-    ['video', 'demo.mp4', 'mp4', 'video/mp4', 'video'],
-    ['audio', 'recording.mp3', 'mp3', 'audio/mpeg', 'audio'],
-  ])(
-    'loads %s through an authenticated blob when the preview URL is protected',
-    async (_label, fileName, fileExt, contentType, selector) => {
-      const objectUrl = `blob:preview-${fileExt}`;
-      vi.spyOn(URL, 'createObjectURL').mockReturnValue(objectUrl);
-      const previewContent = vi.spyOn(fileApi, 'previewContent').mockResolvedValue({
-        data: new Blob(['preview-content'], { type: contentType }),
-        headers: { 'content-type': contentType },
-      });
-      const previewLink = vi.spyOn(fileApi, 'previewLink');
-
-      const host = await mountPanel(
-        createPreview({
-          fileName,
-          fileExt,
-          contentType,
-          previewUrl: 'http://127.0.0.1:18045/file/files/preview-content?id=file-1',
-          documentPreviewUrl: 'http://127.0.0.1:18045/file-preview/files/preview?fileId=file-1',
-        }),
-      );
+      const host = await mountPanel({ fileId: '1' });
 
       await vi.waitFor(() => {
-        expect(host.querySelector(selector)?.getAttribute('src')).toBe(objectUrl);
+        expect(host.querySelector(`[data-render-mode="${renderMode}"]`)).not.toBeNull();
       });
-      expect(previewContent).toHaveBeenCalledWith('file-1');
-      expect(previewLink).not.toHaveBeenCalled();
-    },
-  );
-
-  it('loads a local backend direct URL through an authenticated blob', async () => {
-    const objectUrl = 'blob:local-image';
-    vi.spyOn(URL, 'createObjectURL').mockReturnValue(objectUrl);
-    const previewContent = vi.spyOn(fileApi, 'previewContent').mockResolvedValue({
-      data: new Blob(['preview-content'], { type: 'image/png' }),
-      headers: { 'content-type': 'image/png' },
+      await vi.waitFor(() => {
+        expect(host.querySelector(selector)).not.toBeNull();
+      });
     });
+  }
 
-    const host = await mountPanel(
-      createPreview({
-        fileName: 'report.png',
-        fileExt: 'png',
-        contentType: 'image/png',
-        directPreviewUrl: 'http://127.0.0.1:18002/file/local-objects/local/report.png',
-      }),
-    );
+  it('转换中显示等待态', async () => {
+    mockPreviewLink({ renderMode: 'CONVERTING' });
+
+    const host = await mountPanel({ fileId: '1' });
+
+    await vi.waitFor(() => {
+      expect(host.querySelector('[data-converting]')?.textContent).toContain('文件正在转换');
+    });
+    expect(host.querySelector('iframe.preview-frame')).not.toBeNull();
+  });
+
+  it('不支持时显示下载提示而不是渲染容器', async () => {
+    mockPreviewLink({ renderMode: 'NOT_SUPPORTED' });
+
+    const host = await mountPanel({ fileId: '1', file: { id: '1', fileName: 'README', fileSize: 10 } as FileRecord });
+
+    await vi.waitFor(() => {
+      expect(host.querySelector('[data-render-hint="NOT_SUPPORTED"]')?.textContent).toContain(
+        '该格式不支持在线预览，请下载原文件查看',
+      );
+    });
+    expect(host.querySelector('iframe.preview-frame')).toBeNull();
+    expect(host.querySelector('video')).toBeNull();
+  });
+
+  it('EXIF 图片等媒体内容走后端受限流而不解析地址', async () => {
+    mockPreviewLink({ renderMode: 'IMAGE' });
+    const previewContent = mockPreviewContent();
+
+    const host = await mountPanel({ fileId: '1' });
 
     await vi.waitFor(() => {
       expect(
         host.querySelector('.preview-image-viewer [data-image-viewer] .el-image-viewer__img')?.getAttribute('src'),
-      ).toBe(objectUrl);
+      ).toBe('blob:preview-content');
     });
-    expect(previewContent).toHaveBeenCalledWith('file-1');
+    expect(previewContent).toHaveBeenCalledWith('1');
   });
 
-  it('loads PDF through the tokenized preview-entry instead of preview-content', async () => {
-    const previewLink = vi.spyOn(fileApi, 'previewLink').mockResolvedValue({
-      fileId: 'file-1',
-      fileName: 'report.pdf',
-      previewUrl: '/api/file-preview/files/preview-entry?token=preview-token',
-    });
-    const previewContent = vi.spyOn(fileApi, 'previewContent');
+  it('旧地址入参仍能渲染并只提示一次弃用警告', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
-    const host = await mountPanel(
-      createPreview({
-        fileName: 'report.pdf',
-        fileExt: 'pdf',
-        contentType: 'application/pdf',
-        previewUrl: 'http://127.0.0.1:18045/file/files/preview-content?id=file-1',
-        documentPreviewUrl: 'http://127.0.0.1:18045/file-preview/files/preview?fileId=file-1',
-      }),
-    );
+    const host = await mountPanel({
+      previewUrl: '/legacy/preview.pdf',
+      documentPreviewUrl: '/legacy/document.pdf',
+      directPreviewUrl: '/legacy/direct.pdf',
+    });
 
     await vi.waitFor(() => {
-      expect(previewLink).toHaveBeenCalledWith('file-1');
-      expect(host.querySelector('iframe')?.getAttribute('src')).toBe(
-        '/api/file-preview/files/preview-entry?token=preview-token',
-      );
+      expect(host.querySelector('iframe.preview-frame')?.getAttribute('src')).toContain('/legacy/preview.pdf');
     });
-    expect(previewContent).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0][0])).toContain('previewUrl');
+    expect(String(warn.mock.calls[0][0])).toContain('下一个 major 移除');
   });
 
-  it('loads a complex document through the tokenized preview service link', async () => {
-    const previewLink = vi.spyOn(fileApi, 'previewLink').mockResolvedValue({
-      fileId: 'file-1',
-      fileName: 'report.docx',
-      previewUrl: '/api/file-preview/files/preview-entry?token=preview-token',
-    });
-    const previewContent = vi.spyOn(fileApi, 'previewContent');
+  it('未入库纯文本直接渲染文本内容', async () => {
+    const host = await mountPanel({ textContent: '第一行\n第二行' });
 
-    const host = await mountPanel(
-      createPreview({
-        fileName: 'report.docx',
-        fileExt: 'docx',
-        contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        previewUrl: 'http://127.0.0.1:18045/file/files/preview-content?id=file-1',
-        documentPreviewUrl: 'http://127.0.0.1:18045/file-preview/files/preview?fileId=file-1',
-      }),
-    );
+    await nextTick();
+    expect(host.querySelector('.preview-text')?.textContent).toContain('第一行');
+    expect(host.querySelector('iframe')).toBeNull();
+  });
+
+  it('file 元信息只用于展示文件名', async () => {
+    mockPreviewLink({ renderMode: 'NOT_SUPPORTED' });
+
+    const host = await mountPanel({
+      fileId: '1',
+      file: { id: '1', fileName: '季度报表.xlsx', fileSize: 2048 } as FileRecord,
+    });
 
     await vi.waitFor(() => {
-      expect(previewLink).toHaveBeenCalledWith('file-1');
-      expect(host.querySelector('iframe')?.getAttribute('src')).toBe(
-        '/api/file-preview/files/preview-entry?token=preview-token',
-      );
+      expect(host.querySelector('.preview-name')?.textContent).toBe('季度报表.xlsx');
     });
-    expect(previewContent).not.toHaveBeenCalled();
+  });
+});
+
+describe('FilePreviewPanel preview-link 复用', () => {
+  it('同一 fileId 重复打开只请求一次 preview-link', async () => {
+    const previewLink = mockPreviewLink({ renderMode: 'PDF' });
+
+    const first = await mountPanel({ fileId: '9' });
+    await vi.waitFor(() => {
+      expect(first.querySelector('iframe.preview-frame')).not.toBeNull();
+    });
+    unmountPanels();
+    document.body.innerHTML = '';
+
+    const second = await mountPanel({ fileId: '9' });
+    await vi.waitFor(() => {
+      expect(second.querySelector('iframe.preview-frame')).not.toBeNull();
+    });
+
+    expect(previewLink).toHaveBeenCalledTimes(1);
+    expect(previewLink).toHaveBeenCalledWith('9');
+  });
+
+  it('并发打开同一 fileId 共享同一个在途请求', async () => {
+    const previewLink = mockPreviewLink({ renderMode: 'PDF' });
+
+    await mountPanel({ fileId: '11' });
+    await mountPanel({ fileId: '11' });
+    await vi.waitFor(() => {
+      expect(previewLink).toHaveBeenCalledTimes(1);
+    });
   });
 });

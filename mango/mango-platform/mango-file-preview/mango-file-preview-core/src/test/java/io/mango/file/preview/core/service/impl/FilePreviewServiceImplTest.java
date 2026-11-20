@@ -12,6 +12,7 @@ import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.file.api.vo.FileRecordVO;
 import io.mango.file.preview.api.enums.FilePreviewCode;
+import io.mango.file.preview.api.enums.FilePreviewRenderMode;
 import io.mango.file.preview.core.config.FilePreviewProperties;
 import io.mango.file.preview.core.service.PreviewSourceAvailability;
 import io.mango.file.preview.core.gateway.FilePreviewFileGateway;
@@ -359,6 +360,39 @@ class FilePreviewServiceImplTest {
         return properties;
     }
 
+    @Test
+    void createPreview_返回渲染类型() {
+        FilePreviewServiceImpl service = service(properties(), new StubFileApi("demo.docx"));
+
+        assertThat(service.createPreview(100L).getRenderMode()).isEqualTo(FilePreviewRenderMode.CONVERTING);
+        assertThat(service.createEnginePreview(100L).getRenderMode()).isEqualTo(FilePreviewRenderMode.CONVERTING);
+    }
+
+    @Test
+    void renderMode_按格式映射渲染类型() {
+        assertThat(renderMode("demo.pdf", null, null)).isEqualTo(FilePreviewRenderMode.PDF);
+        assertThat(renderMode("demo.docx", null, null)).isEqualTo(FilePreviewRenderMode.CONVERTING);
+        assertThat(renderMode("shot.JPEG", null, null)).isEqualTo(FilePreviewRenderMode.IMAGE);
+        assertThat(renderMode("clip.mp4", null, null)).isEqualTo(FilePreviewRenderMode.VIDEO);
+        assertThat(renderMode("song.mp3", null, null)).isEqualTo(FilePreviewRenderMode.AUDIO);
+        assertThat(renderMode("song.wav", null, null)).isEqualTo(FilePreviewRenderMode.AUDIO);
+        assertThat(renderMode("README", null, null)).isEqualTo(FilePreviewRenderMode.NOT_SUPPORTED);
+        assertThat(renderMode("data.zip", null, null)).isEqualTo(FilePreviewRenderMode.PAGE);
+        assertThat(renderMode("data.txt", null, null)).isEqualTo(FilePreviewRenderMode.PAGE);
+    }
+
+    @Test
+    void renderMode_扩展名缺失时按PDF内容类型兜底() {
+        assertThat(renderMode("README", "application/pdf", null)).isEqualTo(FilePreviewRenderMode.PDF);
+        assertThat(renderMode("README", "application/octet-stream", null))
+                .isEqualTo(FilePreviewRenderMode.NOT_SUPPORTED);
+    }
+
+    private FilePreviewRenderMode renderMode(String fileName, String contentType, String fileExt) {
+        FilePreviewServiceImpl service = service(properties(), new StubFileApi(fileName, fileExt, contentType));
+        return service.createPreview(100L).getRenderMode();
+    }
+
     private FilePreviewServiceImpl service(FilePreviewProperties properties, FileApi fileApi) {
         return service(properties, fileApi, new StubTokenStore(), Clock.systemUTC(), new StubFileContentProvider());
     }
@@ -451,6 +485,8 @@ class FilePreviewServiceImplTest {
 
         private final String fileName;
         private final String fileHash;
+        private final String fileExt;
+        private final String contentType;
 
         private StubFileApi() {
             this("demo.pptx", null);
@@ -460,9 +496,19 @@ class FilePreviewServiceImplTest {
             this(fileName, null);
         }
 
+        private StubFileApi(String fileName, String fileExt, String contentType) {
+            this(fileName, null, fileExt, contentType);
+        }
+
         private StubFileApi(String fileName, String fileHash) {
+            this(fileName, fileHash, null, null);
+        }
+
+        private StubFileApi(String fileName, String fileHash, String fileExt, String contentType) {
             this.fileName = fileName;
             this.fileHash = fileHash;
+            this.fileExt = fileExt;
+            this.contentType = contentType;
         }
 
         @Override
@@ -476,6 +522,8 @@ class FilePreviewServiceImplTest {
             vo.setId(id);
             vo.setFileName(fileName);
             vo.setFileHash(fileHash);
+            vo.setFileExt(fileExt);
+            vo.setContentType(contentType);
             return R.ok(vo);
         }
 

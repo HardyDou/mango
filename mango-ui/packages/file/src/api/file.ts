@@ -68,10 +68,27 @@ type FileRuntimeAccess = Partial<
   url?: string;
 };
 
+/**
+ * 后端判定的预览渲染类型。前端按该字段选择渲染器，不要解析 previewUrl 或按扩展名自行判断。
+ */
+export type FilePreviewRenderMode =
+  'PDF' | 'IMAGE' | 'VIDEO' | 'AUDIO' | 'PAGE' | 'CONVERTING' | 'NOT_SUPPORTED';
+
+export const FILE_PREVIEW_RENDER_MODES: readonly FilePreviewRenderMode[] = [
+  'PDF',
+  'IMAGE',
+  'VIDEO',
+  'AUDIO',
+  'CONVERTING',
+  'NOT_SUPPORTED',
+  'PAGE',
+];
+
 export interface FilePreviewLink {
   fileId: FileId;
   fileName: string;
   previewUrl: string;
+  renderMode: FilePreviewRenderMode;
   previewToken?: string;
   expireSeconds?: number;
 }
@@ -296,6 +313,7 @@ export function createFileApi(httpClient?: HttpClient): FileApi {
             ...record,
             fileId: normalizeId(record.fileId),
             previewUrl: normalizeApiUrl(stringValue(record.previewUrl)),
+            renderMode: toRenderMode(record.renderMode),
             expireSeconds: Number(record.expireSeconds ?? 0),
           } as FilePreviewLink;
         }),
@@ -972,6 +990,14 @@ function asRecord(value: unknown): Record<string, unknown> {
 
 function stringValue(value: unknown): string | undefined {
   return value === undefined || value === null ? undefined : String(value);
+}
+
+/**
+ * 渲染类型只能取后端契约值；旧后端未返回该字段时降级为仅下载，绝不在前端猜格式。
+ */
+function toRenderMode(value: unknown): FilePreviewRenderMode {
+  const mode = stringValue(value)?.trim().toUpperCase() as FilePreviewRenderMode | undefined;
+  return mode && FILE_PREVIEW_RENDER_MODES.includes(mode) ? mode : null;
 }
 
 function numberValue(value: unknown): number | undefined {

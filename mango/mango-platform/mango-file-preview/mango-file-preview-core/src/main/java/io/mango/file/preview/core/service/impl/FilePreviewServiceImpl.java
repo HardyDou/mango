@@ -7,6 +7,7 @@ import io.mango.common.result.Require;
 import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.file.api.vo.FileRecordVO;
 import io.mango.file.preview.api.enums.FilePreviewCode;
+import io.mango.file.preview.api.enums.FilePreviewRenderMode;
 import io.mango.file.preview.api.vo.FilePreviewLinkVO;
 import io.mango.file.preview.core.config.FilePreviewProperties;
 import io.mango.file.preview.core.gateway.FilePreviewFileGateway;
@@ -34,6 +35,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -54,6 +56,19 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
     private static final String SOURCE_TOKEN_PREFIX = "file-preview:source:";
     private static final String ENGINE_FILE_PREFIX = "file-";
     private static final int MAX_EXTENSION_LENGTH = 20;
+    /**
+     * 图片扩展名；与引擎 {@code cn.keking.model.FileType#PICTURE_TYPES} 保持一致，跨模块由引擎测试锁定。
+     */
+    private static final Set<String> PICTURE_EXTENSIONS = Set.of(
+            "jpg", "jpeg", "png", "gif", "bmp", "ico", "jfif", "webp", "heic", "avif", "heif");
+    /**
+     * 视频扩展名；取自引擎 {@code cn.keking.config.ConfigConstants#DEFAULT_MEDIA_TYPE}（{@code mp3,wav,mp4,flv}）。
+     */
+    private static final Set<String> VIDEO_EXTENSIONS = Set.of("mp4", "flv");
+    /**
+     * 音频扩展名；取自引擎 {@code cn.keking.config.ConfigConstants#DEFAULT_MEDIA_TYPE}（{@code mp3,wav,mp4,flv}）。
+     */
+    private static final Set<String> AUDIO_EXTENSIONS = Set.of("mp3", "wav");
     private static final Logger LOGGER = LoggerFactory.getLogger(FilePreviewServiceImpl.class);
 
     private final FilePreviewFileGateway fileGateway;
@@ -75,6 +90,7 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
         vo.setFileName(fileRecord.getFileName());
         vo.setPreviewToken(token);
         vo.setPreviewUrl(previewEntryUrl(token));
+        vo.setRenderMode(renderMode(fileRecord));
         vo.setExpireSeconds(properties.getSourceTokenExpireSeconds());
         return vo;
     }
@@ -89,6 +105,7 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
         vo.setFileId(fileId);
         vo.setFileName(fileRecord.getFileName());
         vo.setPreviewUrl(enginePreviewUrl(token, engineFileName(fileId, fileRecord)));
+        vo.setRenderMode(renderMode(fileRecord));
         vo.setExpireSeconds(properties.getSourceTokenExpireSeconds());
         return vo;
     }
@@ -202,18 +219,54 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
         MangoContextSnapshot previous = MangoContextHolder.get();
         try {
             MangoContextHolder.set(previewToken.context());
-            FileRecordVO record = fileRecord(previewToken.fileId());
-            FilePreviewMode mode = FilePreviewMode.of(FilePreviewMode.extension(record.getFileExt(), record.getFileName()));
-            if (mode == FilePreviewMode.NATIVE_PDF) {
-                return mode;
-            }
-            // 扩展名缺失或与实际内容不一致时，按声明的 PDF 内容类型兜底。
-            return "application/pdf".equalsIgnoreCase(record.getContentType())
-                    ? FilePreviewMode.NATIVE_PDF
-                    : mode;
+            return previewMode(fileRecord(previewToken.fileId()));
         } finally {
             MangoContextHolder.set(previous);
         }
+    }
+
+    private FilePreviewMode previewMode(FileRecordVO record) {
+        FilePreviewMode mode = FilePreviewMode.of(FilePreviewMode.extension(record.getFileExt(), record.getFileName()));
+        if (mode == FilePreviewMode.NATIVE_PDF) {
+            return mode;
+        }
+        // 扩展名缺失或与实际内容不一致时，按声明的 PDF 内容类型兜底。
+        return "application/pdf".equalsIgnoreCase(record.getContentType())
+                ? FilePreviewMode.NATIVE_PDF
+                : mode;
+    }
+
+    /**
+     * 把文件扩展名、预览模式与可预览性映射为前端渲染类型，格式判定只在这里发生。
+     *
+     * <p>可预览性指能否解析出文件扩展名：引擎按扩展名分派渲染器，扩展名缺失时统一落到不支持页，
+     * 前端应直接引导下载。</p>
+     */
+    private FilePreviewRenderMode renderMode(String extension, FilePreviewMode mode, boolean previewable) {
+        if (mode == FilePreviewMode.NATIVE_PDF) {
+            return FilePreviewRenderMode.PDF;
+        }
+        if (mode == FilePreviewMode.PDF_CONVERSION) {
+            return FilePreviewRenderMode.CONVERTING;
+        }
+        if (!previewable) {
+            return FilePreviewRenderMode.NOT_SUPPORTED;
+        }
+        if (PICTURE_EXTENSIONS.contains(extension)) {
+            return FilePreviewRenderMode.IMAGE;
+        }
+        if (VIDEO_EXTENSIONS.contains(extension)) {
+            return FilePreviewRenderMode.VIDEO;
+        }
+        if (AUDIO_EXTENSIONS.contains(extension)) {
+            return FilePreviewRenderMode.AUDIO;
+        }
+        return FilePreviewRenderMode.PAGE;
+    }
+
+    private FilePreviewRenderMode renderMode(FileRecordVO record) {
+        String extension = FilePreviewMode.extension(record.getFileExt(), record.getFileName());
+        return renderMode(extension, previewMode(record), StringUtils.hasText(extension));
     }
 
     private Instant expiresAt() {

@@ -17,6 +17,9 @@
         :file-id="normalizedFileId || undefined"
         :file="file || undefined"
         :preview="preview || undefined"
+        :preview-url="previewUrl"
+        :document-preview-url="documentPreviewUrl"
+        :direct-preview-url="directPreviewUrl"
         :show-actions="showActions"
         fit-container
         class="mango-file-preview-dialog__panel"
@@ -45,6 +48,9 @@ const props = withDefaults(defineProps<MangoFilePreviewDialogProps>(), {
   showActions: true,
   loading: false,
   emptyText: '暂无可预览内容',
+  previewUrl: '',
+  documentPreviewUrl: '',
+  directPreviewUrl: '',
 });
 const emit = defineEmits<MangoFilePreviewDialogEmits>();
 const visible = computed({
