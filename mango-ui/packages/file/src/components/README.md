@@ -275,15 +275,18 @@ const fileIds = ref<string[]>([]);
 
 `FilePreviewPanel` props：
 
-| Prop                        | 类型                               | 默认值             | 含义                                                     |
-| --------------------------- | ---------------------------------- | ------------------ | -------------------------------------------------------- |
-| `fileId`                    | `ApiId \| mango-file:<id> \| null` | 空                 | 文件 ID 或 token。                                       |
-| `file`                      | `FileReference`                    | 空                 | 文件引用，优先用于解析 ID。                              |
-| `preview`                   | `FilePreview \| null`              | 空                 | 外部已加载预览对象；传入后不再请求 `fileApi.preview()`。 |
-| `previewProviderUrl`        | `string`                           | 环境变量或后端返回 | 文档预览服务地址。                                       |
-| `previewExternalExtensions` | `string[]`                         | 空                 | 外部预览扩展名。                                         |
-| `showActions`               | `boolean`                          | `true`             | 是否显示下载和新窗口预览操作。                           |
-| `fitContainer`              | `boolean`                          | `false`            | 是否占满父容器可用宽高并让预览内容随容器缩放。           |
+| Prop           | 类型                               | 默认值  | 含义                                           |
+| -------------- | ---------------------------------- | ------- | ---------------------------------------------- |
+| `fileId`       | `ApiId \| mango-file:<id> \| null` | 空      | 文件 ID 或 token，主入口。                     |
+| `textContent`  | `string`                           | 空      | 未入库的纯文本内容，与 `fileId` 互斥。         |
+| `file`         | `FileReference`                    | 空      | 仅用于展示文件名、大小，不参与渲染分派。       |
+| `title`        | `string`                           | 空      | 面板标题，缺省取文件名。                       |
+| `showActions`  | `boolean`                          | `true`  | 是否显示下载和新窗口预览操作。                 |
+| `fitContainer` | `boolean`                          | `false` | 是否占满父容器可用宽高并让预览内容随容器缩放。 |
+
+已弃用的地址类 props（`preview`、`previewUrl`、`documentPreviewUrl`、`directPreviewUrl`、
+`previewProviderUrl`、`previewExternalExtensions`）：保留可用，仅在未传 `fileId` 时作为兜底展示，
+每次挂载输出一次 `console.warn` 弃用提示，**下一个 major 移除**。新代码只需传 `fileId`。
 
 `FilePreviewPanel` events 和 expose：
 
@@ -293,18 +296,29 @@ const fileIds = ref<string[]>([]);
 | `openDownload()`           | 无                                    | 暴露方法，触发下载。 |
 | `openPreviewInNewWindow()` | 无                                    | 暴露方法，打开预览。 |
 
-预览规则：
+预览规则：给 `fileId` 即可，渲染类型由后端决定。
 
-- 图片：`image/*` 或 `jpg`、`jpeg`、`png`、`gif`、`webp`、`bmp`、`svg`、`ico`。识别后默认直接渲染无蒙层、非 Teleport 的 Element Plus Image Viewer，提供原生缩放、旋转、适应模式、原始尺寸和拖拽能力。
-- PDF：`application/pdf` 或 `pdf`。
-- 视频：`video/*` 或 `mp4`、`webm`、`ogg`、`mov`、`m4v`。
-- 音频：`audio/*` 或 `mp3`、`wav`、`ogg`、`m4a`、`aac`、`flac`。
-- 图片、视频、音频优先使用有效的 `directPreviewUrl` 或 `previewUrl`（需为非下载接口，且非 `preview-content`、`local-objects` 等需鉴权内容地址）作为原生 `src`；没有可用直连地址时，组件通过 `fileApi.previewContent(id)`（携带 `Authorization` 头）获取内容并渲染为 Blob 对象地址，不依赖 `MANGO_TOKEN` cookie。
-- PDF 与文档优先使用 `documentPreviewUrl` 或 `/file-preview/files/preview-link` 返回的令牌化预览地址。
-- 其他文件优先使用有效 `previewUrl`；默认预览入口会请求 `/file-preview/files/preview-link`。
-- `/api/file/files/download` 和 `/file/files/download` 这类下载接口不会进入预览区域；`preview-content`、`local-objects` 这类需鉴权地址不会被当作原生 `src` 使用。
-- 没有可用预览地址时，展示下载查看提示，不会自动触发下载。
-- 文件记录里的 `previewUrl` 表示原始内容预览地址，不等同于 Office 转换或文档预览服务地址；组件需要文档预览服务时会按文件 ID 获取预览元数据并读取 `documentPreviewUrl`。
+组件只调用一次 `GET /file-preview/files/preview-link`，按响应中的 `renderMode` 选择渲染器，
+不解析预览地址、不按扩展名自行判断格式。同一 `fileId` 重复打开预览会复用该响应（按
+`expireSeconds` 提前 30 秒失效），不会重复请求。
+
+| `renderMode`    | 渲染器                                     | 适用格式                                                                          |
+| --------------- | ------------------------------------------ | --------------------------------------------------------------------------------- |
+| `PDF`           | iframe 加载 `previewUrl` 的 PDF 阅读器页   | `pdf`                                                                             |
+| `IMAGE`         | 内嵌 Element Plus Image Viewer（鉴权取流） | `jpg`、`jpeg`、`png`、`gif`、`bmp`、`ico`、`jfif`、`webp`、`heic`、`avif`、`heif` |
+| `VIDEO`         | 原生 `<video>`                             | `mp4`、`flv`                                                                      |
+| `AUDIO`         | 原生 `<audio>`                             | `mp3`、`wav`                                                                      |
+| `CONVERTING`    | iframe 加载转换页 + “文件正在转换”等待提示 | `doc`、`docx`、`ppt`、`pptx`、`odt`、`ods`、`odp`                                 |
+| `NOT_SUPPORTED` | 下载提示，不自动触发下载                   | 无法解析扩展名或后端明确不支持                                                    |
+| `DOWNLOAD_ONLY` | 下载提示 + 下载按钮                        | 其余格式（如 `txt`、`zip`、`xlsx`）                                               |
+
+补充约定：
+
+- 图片、视频、音频内容通过 `fileApi.previewContent(id)`（带 `Authorization` 头）取流后渲染为 Blob
+  对象地址，不依赖 `MANGO_TOKEN` cookie，也不使用下载接口地址。
+- 转换中的文件由后端预览页自行轮询，前端只展示等待提示，不重复提交转换任务。
+- 未入库文本用 `textContent` 渲染；`file` 只用于展示文件名和大小。
+- 没有可预览内容时展示空态，不会自动下载。
 
 ## 5. 后端依赖
 
@@ -350,7 +364,8 @@ const fileIds = ref<string[]>([]);
 
 **点击预览触发下载**
 
-检查传入的 `preview.previewUrl` 是否为文件下载接口。下载接口只应给下载按钮使用；预览组件会在没有有效预览地址时展示下载查看提示。
+检查 `preview-link` 返回的 `renderMode`。`NOT_SUPPORTED`、`DOWNLOAD_ONLY` 只展示下载提示，不会自动下载；
+不要再用地址字段或扩展名让组件猜测渲染方式。
 
 ## 9. 相关文档
 
@@ -360,6 +375,12 @@ const fileIds = ref<string[]>([]);
 - [能力说明维护规范](../../../../../mango-pmo/rules/08-capability-docs.md)
 
 ## 10. 变更影响记录
+
+- 2026-11-20：`FilePreviewPanel` 与 `MangoFilePreviewDialog` 的预览契约收敛为「给 `fileId` 即可」。
+  渲染类型取自 `/file-preview/files/preview-link` 新增的 `renderMode` 字段，渲染分派收拢到一处，前端不再解析
+  预览地址、不再复刻格式判断；`utils/previewUrl.ts` 的三个地址判断函数已删除。`preview`、`previewUrl`、
+  `documentPreviewUrl`、`directPreviewUrl`、`previewProviderUrl`、`previewExternalExtensions` 进入弃用路径，
+  仍可用但每次挂载提示一次，下一个 major 移除。本记录不代表 npm 版本已经发布。
 
 - 2026-07-30：图片预览默认从可点击的 `ElImage` 改为直接展示内嵌 Element Plus Image Viewer。Viewer 不 Teleport、
   不显示遮罩和关闭按钮，原生缩放、旋转、适应模式、原始尺寸和拖拽工具栏直接可用；在 `fit-container` 下随

@@ -193,8 +193,6 @@
         ref="previewPanelRef"
         :file-id="previewFileId"
         :preview="preview"
-        :preview-provider-url="settings.previewProviderUrl"
-        :preview-external-extensions="settings.previewExternalExtensions"
         :show-actions="false"
         fit-container
         @actions-change="handlePreviewActionsChange"

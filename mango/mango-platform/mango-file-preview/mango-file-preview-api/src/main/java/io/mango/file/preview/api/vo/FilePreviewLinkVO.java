@@ -1,5 +1,6 @@
 package io.mango.file.preview.api.vo;
 
+import io.mango.file.preview.api.enums.FilePreviewRenderMode;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -22,6 +23,9 @@ public class FilePreviewLinkVO implements Serializable {
 
     @Schema(description = "预览页面地址")
     private String previewUrl;
+
+    @Schema(description = "渲染类型，前端按此字段选择渲染器，不要解析 previewUrl")
+    private FilePreviewRenderMode renderMode;
 
     @Schema(description = "预览入口临时令牌")
     private String previewToken;
