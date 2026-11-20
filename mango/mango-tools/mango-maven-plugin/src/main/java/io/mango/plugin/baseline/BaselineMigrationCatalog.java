@@ -38,6 +38,9 @@ final class BaselineMigrationCatalog {
     private static final String SQL_SUFFIX = ".sql";
     private static final Set<String> EXCLUDED_DIRECTORIES = Set.of(
             "target", ".git", ".runtime", "node_modules");
+    /** 源码树下的测试与集成测试资源不是交付面，其中的迁移夹具不参与基线生成。 */
+    private static final Set<String> NON_DELIVERY_SOURCE_ROOTS = Set.of("test", "it");
+    private static final String NON_DELIVERY_SOURCE_PREFIX = "it-";
     private static final Pattern MIGRATION_PATH = Pattern.compile(
             "(?:^|/)db/migration/([a-z0-9][a-z0-9-]*)/(V([^/]+?)__[^/]+\\.sql)$",
             Pattern.CASE_INSENSITIVE);
@@ -154,6 +157,10 @@ final class BaselineMigrationCatalog {
                             && EXCLUDED_DIRECTORIES.contains(name)) {
                         return FileVisitResult.SKIP_SUBTREE;
                     }
+                    if (!directory.equals(searchDirectory)
+                            && isNonDeliverySourceTree(directory, name)) {
+                        return FileVisitResult.SKIP_SUBTREE;
+                    }
                     return FileVisitResult.CONTINUE;
                 }
 
@@ -181,6 +188,21 @@ final class BaselineMigrationCatalog {
             throw new MojoExecutionException(
                     "MANGO-BASELINE-004 failed to scan migration source resources", exception);
         }
+    }
+
+    /**
+     * {@code src/test/**}、{@code src/it/**}、{@code src/it-*}{@code /**} 是测试与集成测试资源，
+     * 其中的 {@code db/migration} 是夹具而不是交付面；默认扫描整仓时必须排除，
+     * 否则同一个模块会出现两个相同版本号的迁移。
+     */
+    private static boolean isNonDeliverySourceTree(Path directory, String name) {
+        if (!NON_DELIVERY_SOURCE_ROOTS.contains(name) && !name.startsWith(NON_DELIVERY_SOURCE_PREFIX)) {
+            return false;
+        }
+        Path parent = directory.getParent();
+        return parent != null
+                && parent.getFileName() != null
+                && "src".equals(parent.getFileName().toString());
     }
 
     private static void discoverArtifactResources(
@@ -262,7 +284,8 @@ final class BaselineMigrationCatalog {
             if (previous != null) {
                 throw new MojoExecutionException(
                         "MANGO-BASELINE-009 duplicate migration version in module " + module
-                                + ": " + previous.fileName() + " and " + migration.fileName());
+                                + ": " + previous.fileName() + " (" + previous.source() + ")"
+                                + " and " + migration.fileName() + " (" + migration.source() + ")");
             }
         }
     }

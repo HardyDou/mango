@@ -1,15 +1,13 @@
-## Unreleased - 预览取源 fileId 不再被信任站点过滤拦截
+## Unreleased - 基线生成扫描范围排除测试夹具
 
 ### Fixed
 
-- `TrustHostFilter` / `TrustDirFilter` 原先只认 `url`/`urls`/`currentUrl`/`urlPath`，`fileId` 形态的进程内取源请求因「无网络地址」被判为不可信站点，直接返回 `403` + `notTrustHost.html`（918 字节），导致 `#1316` 的进程内直取在引擎页不可用。
-- 新增 `cn.keking.utils.PreviewSourceRequests#isInternalSource`：请求带 `fileId` 且本进程注册了 `FileDownloader` 时视为进程内取源，这类请求没有网络地址可供站点校验，`TrustHostFilter`/`TrustDirFilter` 放行；票据有效性由取源环节校验（无效返回 `180002`）。`url` 形态请求行为不变：带非可信 `url` 仍 403，两者都缺仍 403。
+- `mango:baseline-generate` 的扫描不再收录 `src/test`、`src/it`、`src/it-*` 下的 `db/migration`（测试与集成测试夹具不属于交付面），默认扫描根保持为企业仓执行目录，跨模块发现不受影响；`MANGO-BASELINE-009` 版本冲突报错现在同时列出冲突双方的物理路径，便于定位。
+
+- `mango:baseline-generate` 默认扫描整仓时，`src/test`、`src/it`、`src/it-*` 下的 `db/migration` 夹具不再进入迁移清单。此前同一模块同时存在主资源 `V1__*.sql` 与测试夹具 `V1__*.sql` 会报 `MANGO-BASELINE-009 duplicate migration version`，且报错不含物理路径，定位成本高；现在报错会列出冲突的两个物理路径。
+- `mango-docs/guides/operations/build-time-cold-baseline.md` 新增「8.2 扫描范围与排除规则」，说明默认扫描根、三类排除目录与收窄范围的正确写法。
 
 ## Unreleased - 质量门禁去掉零缺陷收益的格式类规则
-
-### Documentation
-
-- `mango-infra-persistence` README 补充「外部升级目录的生效前提」：仅在模块 Flyway 步骤执行时加载、需要一次 release 标识变化触发新代次（`mango.local.release-id` / 生产 release id）、`mango.bootstrap.mode=bootstrap` 是前提（`runtime` 下 `BootstrapCommandRunner` 直接返回）、`--mango.persistence.flyway.upgrade-root` 同时影响 locations 与代次判断；`MANGO_UPGRADE_DIR` / `-Dmango.upgrade.root` 只解析 locations，必须配合 release 标识变化才生效。
 
 ### Changed
 

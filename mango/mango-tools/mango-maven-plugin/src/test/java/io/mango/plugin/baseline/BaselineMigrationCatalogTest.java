@@ -101,8 +101,53 @@ class BaselineMigrationCatalogTest {
         assertTrue(exception.getMessage().contains("migration resource collision"));
     }
 
+    @Test
+    void ignoresMigrationsUnderTestAndIntegrationTestResources() throws Exception {
+        migration("bootstrap", "V1__init_bootstrap_lifecycle.sql",
+                "CREATE TABLE bootstrap_lifecycle (id bigint primary key);");
+        testMigration("bootstrap", "V1__reserved_bootstrap_probe.sql",
+                "CREATE TABLE bootstrap_probe (id bigint primary key);");
+        testMigration("it-module", "V1__it_fixture.sql",
+                "CREATE TABLE it_fixture (id bigint primary key);");
+
+        BaselineMigrationCatalog catalog = BaselineMigrationCatalog.discover(
+                directory, new MavenProject(), Set.of());
+
+        assertEquals(List.of("bootstrap"), List.copyOf(catalog.moduleNames()));
+        assertEquals(
+                List.of("V1__init_bootstrap_lifecycle.sql"),
+                catalog.migrations("bootstrap").stream()
+                        .map(BaselineMigrationCatalog.MigrationResource::fileName)
+                        .toList());
+    }
+
+    @Test
+    void duplicateMainResourceVersionsReportBothPhysicalPaths() throws Exception {
+        migration("alpha", "V1__init.sql", "CREATE TABLE alpha_record (id bigint primary key);");
+        migration("alpha", "V1__other.sql", "CREATE TABLE alpha_other (id bigint primary key);");
+
+        MojoExecutionException exception = assertThrows(
+                MojoExecutionException.class,
+                () -> BaselineMigrationCatalog.discover(directory, new MavenProject(), Set.of()));
+
+        String message = exception.getMessage();
+        assertTrue(message.contains("MANGO-BASELINE-009"));
+        assertTrue(message.contains("V1__init.sql"));
+        assertTrue(message.contains("V1__other.sql"));
+        assertTrue(message.contains("/src/main/resources/db/migration/alpha/V1__init.sql"));
+        assertTrue(message.contains("/src/main/resources/db/migration/alpha/V1__other.sql"));
+    }
+
     private void migration(String module, String fileName, String sql) throws IOException {
         Path path = directory.resolve("module/src/main/resources/db/migration")
+                .resolve(module)
+                .resolve(fileName);
+        Files.createDirectories(path.getParent());
+        Files.writeString(path, sql);
+    }
+
+    private void testMigration(String module, String fileName, String sql) throws IOException {
+        Path path = directory.resolve("module/src/test/resources/db/migration")
                 .resolve(module)
                 .resolve(fileName);
         Files.createDirectories(path.getParent());
