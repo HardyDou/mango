@@ -261,7 +261,7 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
         if (AUDIO_EXTENSIONS.contains(extension)) {
             return FilePreviewRenderMode.AUDIO;
         }
-        return FilePreviewRenderMode.DOWNLOAD_ONLY;
+        return FilePreviewRenderMode.PAGE;
     }
 
     private FilePreviewRenderMode renderMode(FileRecordVO record) {

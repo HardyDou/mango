@@ -144,8 +144,8 @@ describe('FilePreviewPanel 渲染分派', () => {
     ['IMAGE', '[data-image-viewer]'],
     ['VIDEO', 'video.preview-media'],
     ['AUDIO', 'audio.preview-audio'],
+    ['PAGE', 'iframe.preview-frame'],
     ['NOT_SUPPORTED', '[data-render-hint="NOT_SUPPORTED"]'],
-    ['DOWNLOAD_ONLY', '[data-render-hint="DOWNLOAD_ONLY"]'],
   ];
 
   for (const [renderMode, selector] of cases) {
@@ -231,7 +231,7 @@ describe('FilePreviewPanel 渲染分派', () => {
   });
 
   it('file 元信息只用于展示文件名', async () => {
-    mockPreviewLink({ renderMode: 'DOWNLOAD_ONLY' });
+    mockPreviewLink({ renderMode: 'NOT_SUPPORTED' });
 
     const host = await mountPanel({
       fileId: '1',

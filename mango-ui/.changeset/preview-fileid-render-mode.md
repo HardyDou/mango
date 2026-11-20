@@ -22,7 +22,7 @@
 `@mango/file`：
 
 - `FilePreviewPanel` / `MangoFilePreviewDialog` 只需传 `fileId`，组件按 `/file-preview/files/preview-link` 新增的 `renderMode`
-  （`PDF` / `IMAGE` / `VIDEO` / `AUDIO` / `CONVERTING` / `NOT_SUPPORTED` / `DOWNLOAD_ONLY`）单处分派渲染器，不再解析预览地址，
+  （`PDF` / `IMAGE` / `VIDEO` / `AUDIO` / `PAGE` / `CONVERTING` / `NOT_SUPPORTED`）单处分派渲染器，不再解析预览地址，
   也不再按扩展名自行判断格式；`utils/previewUrl.ts` 的三个地址反推函数已删除。
 - 同一 `fileId` 重复打开复用 preview-link 结果（按 `expireSeconds` 提前 30 秒失效），不再重复请求、不重复提交转换任务。
 - `preview`、`previewUrl`、`documentPreviewUrl`、`directPreviewUrl`、`previewProviderUrl`、`previewExternalExtensions`

@@ -309,8 +309,8 @@ const fileIds = ref<string[]>([]);
 | `VIDEO`         | 原生 `<video>`                             | `mp4`、`flv`                                                                      |
 | `AUDIO`         | 原生 `<audio>`                             | `mp3`、`wav`                                                                      |
 | `CONVERTING`    | iframe 加载转换页 + “文件正在转换”等待提示 | `doc`、`docx`、`ppt`、`pptx`、`odt`、`ods`、`odp`                                 |
-| `NOT_SUPPORTED` | 下载提示，不自动触发下载                   | 无法解析扩展名或后端明确不支持                                                    |
-| `DOWNLOAD_ONLY` | 下载提示 + 下载按钮                        | 其余格式（如 `txt`、`zip`、`xlsx`）                                               |
+| `PAGE`          | iframe 加载 `previewUrl` 的引擎页面        | 压缩包、文本、表格及其它引擎支持的格式（如 `zip`、`txt`、`xlsx`）                 |
+| `NOT_SUPPORTED` | 下载提示 + 下载按钮，不自动触发下载         | 无法解析扩展名（无法判定渲染类型）                                                |
 
 补充约定：
 
@@ -364,7 +364,7 @@ const fileIds = ref<string[]>([]);
 
 **点击预览触发下载**
 
-检查 `preview-link` 返回的 `renderMode`。`NOT_SUPPORTED`、`DOWNLOAD_ONLY` 只展示下载提示，不会自动下载；
+检查 `preview-link` 返回的 `renderMode`。`NOT_SUPPORTED` 只展示下载提示，不会自动下载；
 不要再用地址字段或扩展名让组件猜测渲染方式。
 
 ## 9. 相关文档

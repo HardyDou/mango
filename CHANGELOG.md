@@ -4,7 +4,7 @@
 
 - 新增 `mango-file-preview-support`：远程取源传输契约 `FilePreviewSourceTransport` 与引擎侧下载器 `FilePreviewRemoteSourceDownloader`（实现 `cn.keking.spi.FileDownloader`），独立部署的预览引擎可按短期票据直取源文件，不必再退回 `url` 通道；落盘走流式转发，不会把整个文件读成 `byte[]`。#1362
 - 新增 `mango-file-preview-starter-remote`：`FilePreviewSourceFeignClient`（裸 `feign.Response` 流式取源）、`FilePreviewRemoteAutoConfiguration` 与 `mango.file-preview.remote.enabled` / `base-url` / `connect-timeout` / `read-timeout` 配置；`remote.enabled=true` 缺 `base-url` 时启动失败并点名配置项。调用由 `mango-infra-feign-starter` 的服务间签名保护，不新增 permit 路径、不新增服务间令牌。#1362
-- `GET /file-preview/files/preview-link` 响应新增 `renderMode`（`PDF` / `IMAGE` / `VIDEO` / `AUDIO` / `CONVERTING` / `NOT_SUPPORTED` / `DOWNLOAD_ONLY`），由服务端按文件扩展名与可预览性判定，前端据此选择渲染器，不再解析 `previewUrl`；`createPreview` 与 `createEnginePreview` 共用同一个映射方法，格式判定不散落到调用点。#1363
+- `GET /file-preview/files/preview-link` 响应新增 `renderMode`（`PDF` / `IMAGE` / `VIDEO` / `AUDIO` / `PAGE` / `CONVERTING` / `NOT_SUPPORTED`），由服务端按文件扩展名与可预览性判定，前端据此选择渲染器，不再解析 `previewUrl`；`createPreview` 与 `createEnginePreview` 共用同一个映射方法，格式判定不散落到调用点。#1363
 - `FilePreviewPanel` / `MangoFilePreviewDialog` 预览契约收敛为「给 `fileId` 即可」：渲染分派收拢到一处，同一 `fileId` 复用 preview-link 结果不重复请求，`previewUrl` / `documentPreviewUrl` / `directPreviewUrl` / `previewProviderUrl` / `previewExternalExtensions` 进入弃用路径（保留可用、每次挂载提示一次、下一个 major 移除），并删除 `utils/previewUrl.ts` 里靠 pathname 反推后端路由的三个判断函数与前端格式判断。#1363
 
 ### Documentation

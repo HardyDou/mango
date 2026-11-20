@@ -19,6 +19,6 @@ public enum FilePreviewRenderMode {
     CONVERTING,
     /** 格式不受支持，前端展示不支持提示并引导下载原文件。 */
     NOT_SUPPORTED,
-    /** 平台可预览但当前没有专用渲染器，前端只提供下载入口。 */
-    DOWNLOAD_ONLY
+    /** 由预览引擎的页面渲染（压缩包、文本、表格及其它引擎支持的格式），前端用内嵌页面展示。 */
+    PAGE
 }

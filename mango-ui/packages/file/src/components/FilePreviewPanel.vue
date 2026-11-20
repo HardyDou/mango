@@ -19,7 +19,7 @@
         </div>
         <!-- 渲染分派唯一入口：按后端 renderMode 选择渲染器，前端不做格式判断 -->
         <pre v-else-if="target === 'TEXT'" class="preview-text">{{ textContent }}</pre>
-        <iframe v-else-if="target === 'PDF'" class="preview-frame" :src="documentUrl" title="文件预览" />
+        <iframe v-else-if="target === 'PDF' || target === 'PAGE'" class="preview-frame" :src="documentUrl" title="文件预览" />
         <div v-else-if="target === 'CONVERTING'" class="preview-document">
           <iframe class="preview-frame" :src="documentUrl" title="文件转换中" />
           <div class="preview-converting-hint" data-converting>
@@ -83,7 +83,7 @@ const LABELS: Partial<Record<PreviewTarget, string>> = {
   AUDIO: '音频预览',
   CONVERTING: '转换中',
   NOT_SUPPORTED: '不支持预览',
-  DOWNLOAD_ONLY: '仅支持下载',
+  PAGE: '页面预览',
   LEGACY: '兼容预览',
 };
 
@@ -119,7 +119,7 @@ let mediaSequence = 0;
 
 const loading = computed(() => linkLoading.value || mediaLoading.value);
 const resolvedFileId = computed(() => normalizeFileId(props.file || props.fileId));
-const renderMode = computed<FilePreviewRenderMode>(() => previewLink.value?.renderMode ?? 'DOWNLOAD_ONLY');
+const renderMode = computed<FilePreviewRenderMode | null>(() => previewLink.value?.renderMode ?? null);
 const documentUrl = computed(() => previewLink.value?.previewUrl || '');
 /** 旧地址兜底：仅在未传 fileId 时生效，下一个 major 移除。 */
 const legacyUrl = computed(() =>
@@ -137,20 +137,23 @@ const target = computed<PreviewTarget | ''>(() => {
     if (props.textContent) return 'TEXT';
     return legacyUrl.value ? 'LEGACY' : '';
   }
-  return previewLink.value ? renderMode.value : '';
+  return previewLink.value ? (renderMode.value ?? '') : '';
 });
 const displayName = computed(
   () => props.title || props.preview?.fileName || fileNameOf(props.file) || previewLink.value?.fileName || '',
 );
 const renderModeLabel = computed(() => (target.value ? LABELS[target.value as PreviewTarget] || '' : ''));
 const renderModeTag = computed(() =>
-  target.value === 'PDF' || target.value === 'IMAGE' || target.value === 'VIDEO' || target.value === 'AUDIO'
+  target.value === 'PDF' ||
+  target.value === 'PAGE' ||
+  target.value === 'IMAGE' ||
+  target.value === 'VIDEO' ||
+  target.value === 'AUDIO'
     ? 'success'
     : 'info',
 );
 const placeholderTip = computed(() => {
   if (target.value === 'NOT_SUPPORTED') return '该格式不支持在线预览，请下载原文件查看';
-  if (target.value === 'DOWNLOAD_ONLY') return '当前格式暂不提供在线渲染，请下载后查看';
   return '';
 });
 const canDownload = computed(() => Boolean(resolvedFileId.value));

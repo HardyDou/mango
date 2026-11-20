@@ -377,8 +377,8 @@ class FilePreviewServiceImplTest {
         assertThat(renderMode("song.mp3", null, null)).isEqualTo(FilePreviewRenderMode.AUDIO);
         assertThat(renderMode("song.wav", null, null)).isEqualTo(FilePreviewRenderMode.AUDIO);
         assertThat(renderMode("README", null, null)).isEqualTo(FilePreviewRenderMode.NOT_SUPPORTED);
-        assertThat(renderMode("data.zip", null, null)).isEqualTo(FilePreviewRenderMode.DOWNLOAD_ONLY);
-        assertThat(renderMode("data.txt", null, null)).isEqualTo(FilePreviewRenderMode.DOWNLOAD_ONLY);
+        assertThat(renderMode("data.zip", null, null)).isEqualTo(FilePreviewRenderMode.PAGE);
+        assertThat(renderMode("data.txt", null, null)).isEqualTo(FilePreviewRenderMode.PAGE);
     }
 
     @Test

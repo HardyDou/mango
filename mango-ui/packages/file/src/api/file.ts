@@ -72,7 +72,7 @@ type FileRuntimeAccess = Partial<
  * 后端判定的预览渲染类型。前端按该字段选择渲染器，不要解析 previewUrl 或按扩展名自行判断。
  */
 export type FilePreviewRenderMode =
-  'PDF' | 'IMAGE' | 'VIDEO' | 'AUDIO' | 'CONVERTING' | 'NOT_SUPPORTED' | 'DOWNLOAD_ONLY';
+  'PDF' | 'IMAGE' | 'VIDEO' | 'AUDIO' | 'PAGE' | 'CONVERTING' | 'NOT_SUPPORTED';
 
 export const FILE_PREVIEW_RENDER_MODES: readonly FilePreviewRenderMode[] = [
   'PDF',
@@ -81,7 +81,7 @@ export const FILE_PREVIEW_RENDER_MODES: readonly FilePreviewRenderMode[] = [
   'AUDIO',
   'CONVERTING',
   'NOT_SUPPORTED',
-  'DOWNLOAD_ONLY',
+  'PAGE',
 ];
 
 export interface FilePreviewLink {
@@ -997,7 +997,7 @@ function stringValue(value: unknown): string | undefined {
  */
 function toRenderMode(value: unknown): FilePreviewRenderMode {
   const mode = stringValue(value)?.trim().toUpperCase() as FilePreviewRenderMode | undefined;
-  return mode && FILE_PREVIEW_RENDER_MODES.includes(mode) ? mode : 'DOWNLOAD_ONLY';
+  return mode && FILE_PREVIEW_RENDER_MODES.includes(mode) ? mode : null;
 }
 
 function numberValue(value: unknown): number | undefined {
