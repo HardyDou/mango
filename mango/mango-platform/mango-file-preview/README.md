@@ -44,7 +44,7 @@
 | `pdf` | PDF.js 直接读取 `/file-preview/files/preview-content` | 否 | 加密 PDF 需要密码；超大 PDF 首屏依赖分页加载 |
 | 图片（`jpg`、`png`、`gif`、`webp`、`bmp`、`svg` 等） | 引擎 `/picturesPreview` 直接展示（`svg` 走 `svg.ftl`） | 否 | `heic`/`heif` 走 `heic.ftl`、`avif` 归入图片通道，均依赖浏览器解码能力；浏览器不支持时需前端转码或降级为下载 |
 | `mp4` | 引擎 `media.ftl` 以 HTML5 `<video>` 播放 | 否 | 仅 H.264 视频 + AAC 音频的组合在各浏览器稳定可播；其它编码（H.265/HEVC、AV1、ProRes 等）可能只有声音或直接黑屏 |
-| `zip`（及 `rar`、`7z` 等压缩包） | 引擎压缩包页 `compress.ftl`，内部文件通过 `/compressed-file` 读取 | 否（不进入平台 PDF 转换队列） | 加密压缩包需要密码；解包会占用引擎工作目录磁盘空间 |
+| `zip`（及 `rar`、`7z` 等压缩包） | 引擎压缩包页 `compress.ftl`，内部文件通过 `/compressed-file` 读取 | 否（不进入平台 PDF 转换队列） | 加密压缩包需要密码；解包落在 `file-dir` 之外的解包目录（默认同级 `_extracted`），占用该目录磁盘空间 |
 
 ### 2.3 能力边界
 
@@ -59,7 +59,7 @@
 |------|------|----------|
 | `mp4` 仅 H.264 + AAC 组合稳定 | 其它编码可能黑屏或只有声音 | 上传前转码，或业务侧对该类文件直接提供下载 |
 | 加密压缩包需要密码 | 无密码时压缩包页提示输入密码，无法列出内部文件 | 业务侧保存密码并通过页面 `filePassword` 传入；不要上传无法提供密码的加密包 |
-| 解包占用引擎工作目录磁盘 | 大压缩包解包后的文件落在引擎工作目录，占用与包内文件总量相当的空间 | 关注引擎工作目录（解压与转换缓存目录）容量，必要时调大或定期清理 |
+| 解包占用解包目录磁盘 | 大压缩包解包后的文件落在 `ConfigConstants.getDecompressDir()`（默认是 `file-dir` 的同级目录 `_extracted`，可用 `decompress.dir` 覆盖），占用与包内文件总量相当的空间 | 关注该目录容量，必要时调大或定期清理 |
 | `docx`/`ppt` 依赖 Aspose 授权与字体 | 无授权时转换失败；缺字体时转换不报错但可能缺字 | 配置 Aspose license；`fonts-folders` 只追加字体目录，不覆盖默认，缺字体只记录 ERROR 日志、不阻断预览 |
 | `heic`/`avif` 依赖浏览器解码 | 浏览器不支持时图片区域空白 | 前端转码为 `jpg`/`webp`，或对这些格式直接降级为下载 |
 
@@ -71,10 +71,13 @@
 |--------------|----------|--------------|
 | 图片（`picture.ftl`） | `http://<host>/preview-file/<落盘文件名>` | `PERMIT_PATHS` 放行 `/preview-file/**` |
 | 音视频（`media.ftl`） | `http://<host>/preview-file/<落盘文件名>` | 同上 |
+| 压缩包内条目（`compress.ftl`） | `http://<host>/compressed-file?kkCompressfileKey=<解包键>&kkCompressfilepath=<包内相对路径>&fullfilename=<文件名>` | 服务端 `CompressFileEntryService` 校验越界后流式返回，不依赖静态映射 |
 | 文档/表格产物 | `http://<host>/file-preview/files/preview-artifact?token=<票据>`（PDF 直出为 `preview-content`） | token 校验 |
 
 - `/preview-file/**` 由 `cn.keking.config.WebConfig` 映射到引擎落盘目录 `ConfigConstants.getFileDir()`，对外地址由 `FileHandlerService#getPublicPath` 统一拼装（`FileHandlerService.PUBLIC_FILE_PATH_PREFIX`）。
-- `FilePreviewPermitPathBeanPostProcessor#PERMIT_PATHS` 里**只有** `/preview-file/**` 这一个根级文件前缀；禁止改成 `/**`、`/file-*`、`/**/*.mp4` 这类宽匹配，否则整个引擎工作目录（含解包后的原文件）都会变成匿名可读。放行清单由 `FilePreviewEngineResourceRegistrarTest#permitPaths_allowOnlyTheSinglePublicFilePrefixForEngineFiles` 锁定：以 `/preview-file` 开头的条目必须恰好一条。
+- 压缩包解包目录**不在** `file-dir` 内：`CompressFileReader#unRar` 把包内容解到 `ConfigConstants.getDecompressDir()`（默认 `file-dir` 同级目录 `_extracted`，`decompress.dir` 可覆盖），该目录不参与 `/preview-file/**` 与根路径 `/**` 两条静态映射，因此不再有 `/preview-file/<解包目录>/<条目>` 这类匿名可达的条目地址。
+- 压缩包条目统一走 `GET /compressed-file`（`FileController`）：`kkCompressfileKey` 是解包键（`bundle.zip_`，嵌套包再加 `_decompression` 前缀），`kkCompressfilepath` 是包内相对路径；`CompressFileEntryService#resolveEntryPath` 先做非法字符、`kkCompressfilepath` 必须位于 `kkCompressfileKey/` 之下、解析后必须仍在解包根内三层校验，再 `Files.newInputStream` 流式返回，越界返回 400、条目不存在返回 404。
+- `FilePreviewPermitPathBeanPostProcessor#PERMIT_PATHS` 里**只有** `/preview-file/**` 这一个根级文件前缀；禁止改成 `/**`、`/file-*`、`/**/*.mp4` 这类宽匹配，否则整个引擎落盘目录都会变成匿名可读。放行清单由 `FilePreviewEngineResourceRegistrarTest#permitPaths_allowOnlyTheSinglePublicFilePrefixForEngineFiles` 锁定：以 `/preview-file` 开头的条目必须恰好一条。
 - `previewUrl`/`preview-entry` 返回的地址带网关前缀 `/api`（网关据此路由到 `mango-file-preview`）。单进程直连（不走网关，直接用 `http://127.0.0.1:<port>` 访问应用）时需剥掉 `/api` 前缀，否则 404。
 
 

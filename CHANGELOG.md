@@ -8,6 +8,13 @@
 
 - 独立部署（应用与引擎分进程）下，`IMAGE`/`VIDEO`/`AUDIO`/`PAGE` 的预览跳转指向引擎 origin；`NATIVE_PDF`/`PDF_CONVERTING` 仍由应用出页（`preview-artifact`），引擎不参与 PDF 与转换产物。
 
+### Fixed（Issue #1386）
+
+- 压缩包解包目录原先落在引擎 `file-dir` 内（`_decompression…`），而 `file-dir` 整棵目录被 `/preview-file/**` 与根路径 `/**` 两条静态映射暴露，知道文件名即可匿名读取解包后的原文件。现在解包根改为单独的 `ConfigConstants.getDecompressDir()`（默认 `file-dir` 的同级目录 `_extracted`，可用新增配置项 `decompress.dir` / 环境变量 `KK_DECOMPRESS_DIR` 覆盖），`CompressFileReader#unRar` 只在该根下建目录，解包键仍是「压缩包相对路径 + `_`」（嵌套包再前置 `_decompression`），一包一目录不串目录。
+- 压缩包内条目地址不再是静态路径：`CompressFileReader#cachePictureUrl` 与 `compress.ftl` 的条目链接统一走 `GET /compressed-file?kkCompressfileKey=&kkCompressfilepath=&fullfilename=`，由 `CompressFileEntryService#resolveEntryPath` 在解包根内做非法字符、目录归属与 `startsWith` 越界校验后流式返回（越界 400、条目不存在 404）；`CompressFileEntryService` 与 `RarUtils#getTree` 同步改为基于解包根解析，`/directory` 的节点 id 仍是相对解包键的包内路径。
+- 兼容性：历史解包目录（旧的在 `file-dir` 下）不做迁移，旧地址与缓存条目失效，重新打开压缩包即按新根重建；`file-dir` 与 `/preview-file/**` 映射、`PERMIT_PATHS` 放行清单、`FileHandlerService#getPublicPath` 均未改动。
+- 新增 `CompressFileExtractDirHttpTest` 真实 HTTP 覆盖：解包落在 `file-dir` 之外，`/preview-file/<解包键>/<条目>` 与 `/<解包键>/<条目>` 均 404 且不带内容，`/compressed-file` 对 `..%2f` 与绝对路径返回 400，`/directory` 返回的条目经 `/compressed-file` 取到正确 Content-Type 与非零字节，#1369 的顶层 `file-*` 仍由 `/preview-file/**` 返回 200。
+
 ### Added
 
 - 新增 `mango-file-preview-support`：远程取源传输契约 `FilePreviewSourceTransport` 与引擎侧下载器 `FilePreviewRemoteSourceDownloader`（实现 `cn.keking.spi.FileDownloader`），独立部署的预览引擎可按短期票据直取源文件，不必再退回 `url` 通道；落盘走流式转发，不会把整个文件读成 `byte[]`。#1362

@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -39,6 +41,7 @@ public class ConfigConstants {
     public static final String DEFAULT_XLSX_SHOW_TOOLBAR = "false";
     public static final String DEFAULT_IS_SHOW_KEY = "false";
     public static final String DEFAULT_SCRIPT_JS = "false";
+    public static final String DEFAULT_DECOMPRESS_DIR_NAME = "_extracted";
 
     // ==================================================
     // 二、缓存配置常量
@@ -269,6 +272,7 @@ public class ConfigConstants {
     // 11. 路径配置变量
     // ==================================================
     private static String fileDir = ConfigUtils.getHomePath() + File.separator + "file" + File.separator;
+    private static String decompressDir;
     private static String localPreviewDir;
     private static String baseUrl;
 
@@ -425,6 +429,24 @@ public class ConfigConstants {
     // ==================================================
     public static String getBaseUrl() { return baseUrl; }
     public static String getFileDir() { return fileDir; }
+
+    /**
+     * 压缩包解包根目录。
+     *
+     * <p>未配置 {@code decompress.dir} 时返回 file-dir 的同级目录 {@code _extracted}：该目录不在
+     * {@code /preview-file/**} 与根路径 {@code /**} 的静态映射根之内，解包内容不会随静态映射匿名可达。
+     * 解包内容的浏览器访问统一走 {@code GET /compressed-file} 端点。
+     *
+     * @return 以文件分隔符结尾的解包根目录绝对路径
+     */
+    public static String getDecompressDir() {
+        if (decompressDir != null) {
+            return decompressDir;
+        }
+        Path defaultDir = Paths.get(fileDir).toAbsolutePath().normalize().resolveSibling(DEFAULT_DECOMPRESS_DIR_NAME);
+        return defaultDir + File.separator;
+    }
+
     public static String getLocalPreviewDir() { return localPreviewDir; }
 
     // ==================================================
@@ -786,6 +808,23 @@ public class ConfigConstants {
         if (!DEFAULT_VALUE.equalsIgnoreCase(fileDir)) {
             ConfigConstants.fileDir = fileDir.endsWith(File.separator) ? fileDir : fileDir + File.separator;
         }
+    }
+
+    /**
+     * 配置压缩包解包根目录，属性名 {@code decompress.dir}。
+     *
+     * <p>取值 {@code default} 表示使用 file-dir 同级目录 {@code _extracted}，其余取值为目录路径。
+     * 该目录必须位于 file-dir 之外，否则解包内容会随 {@code /preview-file/**}、{@code /**} 静态映射匿名可达。
+     */
+    @Value("${decompress.dir:default}")
+    public void setDecompressDir(String decompressDir) { setDecompressDirValue(decompressDir); }
+
+    public static void setDecompressDirValue(String decompressDir) {
+        if (decompressDir == null || DEFAULT_VALUE.equalsIgnoreCase(decompressDir)) {
+            ConfigConstants.decompressDir = null;
+            return;
+        }
+        ConfigConstants.decompressDir = decompressDir.endsWith(File.separator) ? decompressDir : decompressDir + File.separator;
     }
 
     @Value("${local.preview.dir:default}")

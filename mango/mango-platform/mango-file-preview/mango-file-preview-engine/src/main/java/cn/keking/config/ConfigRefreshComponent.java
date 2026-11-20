@@ -175,6 +175,7 @@ public class ConfigRefreshComponent {
         // 5. 路径配置
         ConfigConstants.setBaseUrlValue(getProperty(properties, "base.url", ConfigConstants.DEFAULT_VALUE));
         ConfigConstants.setFileDirValue(getProperty(properties, "file.dir", ConfigConstants.DEFAULT_VALUE));
+        ConfigConstants.setDecompressDirValue(getProperty(properties, "decompress.dir", ConfigConstants.DEFAULT_VALUE));
         ConfigConstants.setLocalPreviewDirValue(getProperty(properties, "local.preview.dir", ConfigConstants.DEFAULT_VALUE));
 
         // 6. 安全配置

@@ -67,27 +67,54 @@ public class CompressFileReader {
     public String unRar(String filePath, String filePassword, String fileName, FileAttribute fileAttribute) throws Exception {
         List<String> imgUrls = new ArrayList<>();
         String baseUrl = BaseUrlFilter.getBaseUrl();
-        String fileDir = ConfigConstants.getFileDir();
-        String folderName = filePath.replace(fileDir, ""); //修复压缩包 多重目录获取路径错误
-        if (fileAttribute.isCompressFile()) {
-            folderName = "_decompression" + folderName;
-        }
-        Path folderPath = Paths.get(fileDir, folderName + PACKAGE_PATH);
+        String compressFileKey = resolveCompressFileKey(filePath, fileAttribute);
+        Path folderPath = resolveFolderPath(compressFileKey);
         Files.createDirectories(folderPath);
 
         String suffix = fileAttribute.getSuffix();
         if (ZIP_SUFFIX.equalsIgnoreCase(suffix) || JAR_SUFFIX.equalsIgnoreCase(suffix)) {
-            extractZip(filePath, fileName, folderPath, baseUrl, imgUrls);
+            extractZip(filePath, fileName, compressFileKey, folderPath, baseUrl, imgUrls);
         } else if (SEVEN_Z_SUFFIX.equalsIgnoreCase(suffix) || SEVEN_ZIP_SUFFIX.equalsIgnoreCase(suffix)) {
-            extractSevenZ(filePath, filePassword, fileName, folderPath, baseUrl, imgUrls);
+            extractSevenZ(filePath, filePassword, fileName, compressFileKey, folderPath, baseUrl, imgUrls);
         } else {
-            extractWithSevenZip(filePath, filePassword, fileName, folderPath, baseUrl, imgUrls);
+            extractWithSevenZip(filePath, filePassword, fileName, compressFileKey, folderPath, baseUrl, imgUrls);
         }
         fileHandlerService.putImgCache(fileName + PACKAGE_PATH, imgUrls);
-        return folderName + PACKAGE_PATH;
+        return compressFileKey;
     }
 
-    private void extractZip(String filePath, String fileName, Path folderPath,
+    /**
+     * 计算压缩包解包目录相对解包根的唯一键，同时作为条目端点 {@code GET /compressed-file} 的
+     * {@code kkCompressfileKey} 入参。
+     *
+     * <p>键由压缩包相对 file-dir 的路径加 {@code "_"} 后缀组成；嵌套压缩包额外加 {@code "_decompression"}
+     * 前缀，保证一个压缩包对应一个解包目录，不会跨包串目录。
+     */
+    private String resolveCompressFileKey(String filePath, FileAttribute fileAttribute) {
+        String relativePath = filePath.replace(ConfigConstants.getFileDir(), "").replace("\\", "/");
+        while (relativePath.startsWith("/")) {
+            relativePath = relativePath.substring(1);
+        }
+        if (fileAttribute.isCompressFile()) {
+            relativePath = "_decompression" + relativePath;
+        }
+        return relativePath + PACKAGE_PATH;
+    }
+
+    /**
+     * 解包目录落在 {@link ConfigConstants#getDecompressDir()} 之下，该根目录位于 file-dir 之外，
+     * 不参与 {@code /preview-file/**} 与 {@code /**} 静态映射。
+     */
+    private Path resolveFolderPath(String compressFileKey) {
+        Path decompressRoot = Paths.get(ConfigConstants.getDecompressDir()).toAbsolutePath().normalize();
+        Path folderPath = decompressRoot.resolve(compressFileKey).normalize();
+        if (!folderPath.startsWith(decompressRoot)) {
+            throw new SecurityException("Unsafe decompress path detected: " + compressFileKey);
+        }
+        return folderPath;
+    }
+
+    private void extractZip(String filePath, String fileName, String compressFileKey, Path folderPath,
                             String baseUrl, List<String> imgUrls) throws Exception {
         try (ZipInputStream zipInputStream = new ZipInputStream(Files.newInputStream(Paths.get(filePath)), StandardCharsets.UTF_8)) {
             ZipEntry entry;
@@ -101,7 +128,7 @@ public class CompressFileReader {
                 try (OutputStream out = new BufferedOutputStream(new FileOutputStream(filePathInsideArchive.toFile(), false))) {
                     zipInputStream.transferTo(out);
                 }
-                cachePictureUrl(filePathInsideArchive, fileName, folderPath, baseUrl, imgUrls);
+                cachePictureUrl(filePathInsideArchive, compressFileKey, folderPath, baseUrl, imgUrls);
                 zipInputStream.closeEntry();
             }
         } catch (Exception e) {
@@ -109,8 +136,8 @@ public class CompressFileReader {
         }
     }
 
-    private void extractSevenZ(String filePath, String filePassword, String fileName, Path folderPath,
-                               String baseUrl, List<String> imgUrls) throws Exception {
+    private void extractSevenZ(String filePath, String filePassword, String fileName, String compressFileKey,
+                               Path folderPath, String baseUrl, List<String> imgUrls) throws Exception {
         char[] password = StringUtils.hasText(filePassword) ? filePassword.toCharArray() : null;
         File file = new File(filePath);
         try (SevenZFile sevenZFile = password == null ? new SevenZFile(file) : new SevenZFile(file, password)) {
@@ -129,7 +156,7 @@ public class CompressFileReader {
                         out.write(buffer, 0, length);
                     }
                 }
-                cachePictureUrl(filePathInsideArchive, fileName, folderPath, baseUrl, imgUrls);
+                cachePictureUrl(filePathInsideArchive, compressFileKey, folderPath, baseUrl, imgUrls);
             }
         } catch (Exception e) {
             String message = e.getMessage() == null ? "" : e.getMessage();
@@ -140,8 +167,8 @@ public class CompressFileReader {
         }
     }
 
-    private void extractWithSevenZip(String filePath, String filePassword, String fileName, Path folderPath,
-                                     String baseUrl, List<String> imgUrls) throws Exception {
+    private void extractWithSevenZip(String filePath, String filePassword, String fileName, String compressFileKey,
+                                     Path folderPath, String baseUrl, List<String> imgUrls) throws Exception {
         try (RandomAccessFile randomAccessFile = new RandomAccessFile(filePath, "r");
              IInArchive inArchive = SevenZip.openInArchive(null, new RandomAccessFileInStream(randomAccessFile))) {
 
@@ -168,7 +195,7 @@ public class CompressFileReader {
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
-                    cachePictureUrl(filePathInsideArchive, fileName, folderPath, baseUrl, imgUrls);
+                    cachePictureUrl(filePathInsideArchive, compressFileKey, folderPath, baseUrl, imgUrls);
                 }
             }
         } catch (Exception e) {
@@ -176,14 +203,21 @@ public class CompressFileReader {
         }
     }
 
-    private void cachePictureUrl(Path filePathInsideArchive, String fileName, Path folderPath,
+    /**
+     * 压缩包内图片条目改为指向受控端点 {@code GET /compressed-file}，不再拼 file-dir 下的静态路径：
+     * 静态映射根下已没有解包内容，条目只能由端点按 key + 包内相对路径读取。
+     */
+    private void cachePictureUrl(Path filePathInsideArchive, String compressFileKey, Path folderPath,
                                  String baseUrl, List<String> imgUrls) {
         if (!FileType.PICTURE.equals(FileType.typeFromUrl(filePathInsideArchive.toString()))) {
             return;
         }
-        imgUrls.add(baseUrl + URLEncoder.encode(fileName + PACKAGE_PATH + "/"
-                + folderPath.relativize(filePathInsideArchive).toString().replace("\\", "/"), StandardCharsets.UTF_8)
-                .replaceAll("%2F", "/"));
+        String entryPath = compressFileKey + "/"
+                + folderPath.relativize(filePathInsideArchive).toString().replace("\\", "/");
+        imgUrls.add(baseUrl + "compressed-file?kkCompressfileKey="
+                + URLEncoder.encode(compressFileKey, StandardCharsets.UTF_8)
+                + "&kkCompressfilepath=" + URLEncoder.encode(entryPath, StandardCharsets.UTF_8)
+                + "&fullfilename=" + URLEncoder.encode(filePathInsideArchive.getFileName().toString(), StandardCharsets.UTF_8));
     }
 
     private Path getFilePathInsideArchive(ISimpleInArchiveItem item, Path folderPath) throws SevenZipException, UnsupportedEncodingException {

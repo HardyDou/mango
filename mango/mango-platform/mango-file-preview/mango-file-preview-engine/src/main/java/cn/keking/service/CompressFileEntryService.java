@@ -13,7 +13,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 /**
- * Resolves files extracted from compressed archives under the preview cache directory.
+ * Resolves files extracted from compressed archives under the preview decompress directory
+ * ({@link ConfigConstants#getDecompressDir()}), which is outside the static mapping root of file-dir.
  */
 @Component
 public class CompressFileEntryService {
@@ -32,10 +33,10 @@ public class CompressFileEntryService {
             throw new SecurityException("压缩包文件路径不属于当前压缩包");
         }
 
-        Path fileDir = Paths.get(ConfigConstants.getFileDir()).toAbsolutePath().normalize();
-        Path entryRoot = fileDir.resolve(normalizedKey).normalize();
-        Path entryPath = fileDir.resolve(normalizedPath).normalize();
-        if (!entryRoot.startsWith(fileDir) || !entryPath.startsWith(entryRoot)) {
+        Path decompressDir = Paths.get(ConfigConstants.getDecompressDir()).toAbsolutePath().normalize();
+        Path entryRoot = decompressDir.resolve(normalizedKey).normalize();
+        Path entryPath = decompressDir.resolve(normalizedPath).normalize();
+        if (!entryRoot.startsWith(decompressDir) || !entryPath.startsWith(entryRoot)) {
             throw new SecurityException("压缩包文件路径越界");
         }
         if (!Files.isRegularFile(entryPath)) {
