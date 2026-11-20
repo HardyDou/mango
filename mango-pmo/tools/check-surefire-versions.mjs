@@ -191,10 +191,31 @@ function resolveParentPath(pom, pomsByPath) {
     return null;
   }
   const relativePath = pom.parent.relativePath;
+  // 未显式声明 relativePath 时，Maven 默认按 ../pom.xml 查找父 POM。
+  if (relativePath === null) {
+    const defaultCandidate = path.join(path.dirname(path.dirname(pom.filePath)), 'pom.xml');
+    if (fs.existsSync(defaultCandidate) && !pomsByPath.has(defaultCandidate)) {
+      const onDisk = parsePom(defaultCandidate);
+      onDisk.detachedParent = true;
+      pomsByPath.set(defaultCandidate, onDisk);
+    }
+  }
   if (relativePath !== null) {
     const candidate = path.resolve(path.dirname(pom.filePath), relativePath || '..');
     const candidateFile = candidate.endsWith('.xml') ? candidate : path.join(candidate, 'pom.xml');
     if (pomsByPath.has(candidateFile)) {
+      return candidateFile;
+    }
+    // 父 POM 不一定在 reactor 里（例如 mango-parent 从根聚合的 <modules> 退出后），
+    // Maven 本身仍按 relativePath 从文件系统解析父链，这里保持一致。
+    if (fs.existsSync(candidateFile)) {
+      if (pomsByPath.has(candidateFile)) {
+        return candidateFile;
+      }
+      const onDisk = parsePom(candidateFile);
+      // 标记为「仅父链解析用」，不计入 reactor 模块统计。
+      onDisk.detachedParent = true;
+      pomsByPath.set(candidateFile, onDisk);
       return candidateFile;
     }
     if (!relativePath) {
@@ -300,6 +321,9 @@ export function checkSurefireVersions(repositoryRoot) {
   const failures = [];
   let exempt = 0;
   for (const pom of poms.values()) {
+    if (pom.detachedParent) {
+      continue;
+    }
     const relativePath = path.relative(repositoryRoot, pom.filePath).split(path.sep).join('/');
     const moduleDir = path.dirname(pom.filePath);
     const declarationAllowed = DECLARATION_ALLOWED_POM_RELATIVES.has(relativePath);

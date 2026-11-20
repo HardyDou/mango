@@ -178,7 +178,13 @@ function appendJavaRunnerChecks(target, classification, selections) {
   target.push(
     command(
       'mvn',
-      ['-f', 'mango/pom.xml', '-pl', ':mango-bom,:mango-parent,:mango-common,:mango-tools', '-DskipTests', 'install'],
+      ['-f', 'mango/pom.xml', '-pl', ':mango-bom', '-DskipTests', 'install'],
+      repoRoot,
+    ),
+    command('mvn', ['-f', 'mango/mango-parent/pom.xml', '-DskipTests', 'install'], repoRoot),
+    command(
+      'mvn',
+      ['-f', 'mango/pom.xml', '-pl', ':mango-common,:mango-tools', '-DskipTests', 'install'],
       repoRoot,
     ),
     command(
@@ -242,7 +248,7 @@ function appendJavaRunnerChecks(target, classification, selections) {
           '-f',
           'mango/pom.xml',
           '-pl',
-          ':mango,:mango-parent,:mango-common,:mango-infra,:mango-infra-bootstrap,:mango-infra-bootstrap-api,:mango-infra-module,:mango-infra-module-api,:mango-infra-kv,:mango-infra-kv-api,:mango-infra-persistence,:mango-infra-persistence-api,:mango-infra-context,:mango-infra-context-api,:mango-infra-context-support,:mango-infra-context-starter,:mango-infra-persistence-starter,:mango-infra-web,:mango-infra-web-api,:mango-resource,:mango-resource-api,:mango-authorization,:mango-authorization-api,:mango-infra-web-support,:mango-infra-web-starter,:mango-infra-persistence-web-starter,:mango-infra-feign-starter,:mango-admin-starter',
+          ':mango,:mango-common,:mango-infra,:mango-infra-bootstrap,:mango-infra-bootstrap-api,:mango-infra-module,:mango-infra-module-api,:mango-infra-kv,:mango-infra-kv-api,:mango-infra-persistence,:mango-infra-persistence-api,:mango-infra-context,:mango-infra-context-api,:mango-infra-context-support,:mango-infra-context-starter,:mango-infra-persistence-starter,:mango-infra-web,:mango-infra-web-api,:mango-resource,:mango-resource-api,:mango-authorization,:mango-authorization-api,:mango-infra-web-support,:mango-infra-web-starter,:mango-infra-persistence-web-starter,:mango-infra-feign-starter,:mango-admin-starter',
           '-am',
           '-DskipTests',
           '-Dcheckstyle.skip=true',

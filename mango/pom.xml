@@ -69,7 +69,6 @@
         <module>mango-platform</module>
         <module>mango-extension</module>
         <module>mango-bom</module>
-        <module>mango-parent</module>
         <module>mango-tools</module>
     </modules>
 
