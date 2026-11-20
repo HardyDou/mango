@@ -286,7 +286,7 @@ const fileIds = ref<string[]>([]);
 
 已弃用的地址类 props（`preview`、`previewUrl`、`documentPreviewUrl`、`directPreviewUrl`、
 `previewProviderUrl`、`previewExternalExtensions`）：保留可用，仅在未传 `fileId` 时作为兜底展示，
-每次挂载输出一次 `console.warn` 弃用提示，**下一个 major 移除**。新代码只需传 `fileId`。
+每次渲染输出一次 `console.warn` 弃用提示（`MangoFilePreviewDialog` 每次打开都会重挂内部 panel，因此每次打开都会提示一次），**下一个 major 移除**。新代码只需传 `fileId`。
 
 `FilePreviewPanel` events 和 expose：
 
@@ -302,15 +302,17 @@ const fileIds = ref<string[]>([]);
 不解析预览地址、不按扩展名自行判断格式。同一 `fileId` 重复打开预览会复用该响应（按
 `expireSeconds` 提前 30 秒失效），不会重复请求。
 
-| `renderMode`    | 渲染器                                     | 适用格式                                                                          |
-| --------------- | ------------------------------------------ | --------------------------------------------------------------------------------- |
-| `PDF`           | iframe 加载 `previewUrl` 的 PDF 阅读器页   | `pdf`                                                                             |
-| `IMAGE`         | 内嵌 Element Plus Image Viewer（鉴权取流） | `jpg`、`jpeg`、`png`、`gif`、`bmp`、`ico`、`jfif`、`webp`、`heic`、`avif`、`heif` |
-| `VIDEO`         | 原生 `<video>`                             | `mp4`、`flv`                                                                      |
-| `AUDIO`         | 原生 `<audio>`                             | `mp3`、`wav`                                                                      |
-| `CONVERTING`    | iframe 加载转换页 + “文件正在转换”等待提示 | `doc`、`docx`、`ppt`、`pptx`、`odt`、`ods`、`odp`                                 |
-| `PAGE`          | iframe 加载 `previewUrl` 的引擎页面        | 压缩包、文本、表格及其它引擎支持的格式（如 `zip`、`txt`、`xlsx`）                 |
-| `NOT_SUPPORTED` | 下载提示 + 下载按钮，不自动触发下载        | 无法解析扩展名（无法判定渲染类型）                                                |
+| `renderMode`    | 渲染器                                             | 适用格式                                                                          |
+| --------------- | -------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `PDF`           | iframe 加载组件内部预览地址的 PDF 阅读器页         | `pdf`                                                                             |
+| `IMAGE`         | 内嵌 Element Plus Image Viewer（鉴权取流）         | `jpg`、`jpeg`、`png`、`gif`、`bmp`、`ico`、`jfif`、`webp`、`heic`、`avif`、`heif` |
+| `VIDEO`         | 原生 `<video>`                                     | `mp4`、`flv`                                                                      |
+| `AUDIO`         | 原生 `<audio>`                                     | `mp3`、`wav`                                                                      |
+| `CONVERTING`    | iframe 加载组件内部转换页 + “文件正在转换”等待提示 | `doc`、`docx`、`ppt`、`pptx`、`odt`、`ods`、`odp`                                 |
+| `PAGE`          | iframe 加载组件内部预览地址的引擎页面              | 压缩包、文本、表格及其它引擎支持的格式（如 `zip`、`txt`、`xlsx`）                 |
+| `NOT_SUPPORTED` | 下载提示 + 下载按钮，不自动触发下载                | 无法解析扩展名（无法判定渲染类型）                                                |
+
+上表「组件内部预览地址」指 `FilePreviewPanel` 自行从 `preview-link` 取得的地址，**业务无需提供、也不应自行拼接**。
 
 补充约定：
 

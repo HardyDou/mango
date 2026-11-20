@@ -408,7 +408,7 @@ const rows = [
 
 **点击预览却触发浏览器下载**
 
-检查业务侧是否把 `/api/file/files/download` 或 `/file/files/download` 这类下载接口写入了 `previewUrl`。`FilePreviewPanel` 会拒绝把下载接口作为预览地址；没有可用预览地址时，页面展示下载查看提示，由用户手动点击下载。
+先看 `preview-link` 返回的 `renderMode`：`NOT_SUPPORTED` 表示后端无法判定渲染类型，组件展示下载提示属预期；若业务仍在用已弃用的地址类 props，检查是否把 `/api/file/files/download` 或 `/file/files/download` 写进了 `previewUrl`（`FilePreviewPanel` 会拒绝把下载接口当预览地址）。迁移到 `fileId` 后不再需要关心地址形态。
 
 ## 11. 相关文档
 
