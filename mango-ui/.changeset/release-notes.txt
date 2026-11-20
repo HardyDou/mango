@@ -1,80 +1,136 @@
+# Mango Maven/docs 1.15.0 文件预览契约与质量门禁批次
+
 ## Pull Requests
 
-- PR #1324 Fixed 关闭模块迁移时跳过该模块的全部资源声明。Packages: `io.mango.platform:infra-persistence-api`, `io.mango.platform:infra-persistence-starter`, `io.mango.platform.resource:resource-support`, `io.mango.platform.resource:resource-core`, `io.mango.platform.resource:resource-sync-starter`. Business Adaptation: 无需改动代码；把某模块 `mango.persistence.flyway.modules.{模块名}.enabled` 设为 `false` 后，该模块的便携资源声明不再加载，启动日志出现 `Skipping portable resource declarations of disabled module` 的 WARN。
-- PR #1325 Fixed 修正探针路径的白名单语义并自检 CIDR 写法。Packages: `io.mango.platform.access:access-core`, `io.mango.platform.access:access-web-starter`, `io.mango.platform.auth:auth-starter`, `io.mango.app:mango-monolith-app`. Business Adaptation: 单体默认白名单规则由精确路径 `/actuator/health` 改为 `/actuator/health/**`；自建白名单规则照旧生效，但缩写网段写法会在启动日志给出 WARN。
-- PR #1326 Changed 补齐冷基线 `moduleOrder` 的差集与模块分组口径。Packages: `io.mango:mango-docs-bundle`. Business Adaptation: 无代码改动，按操作指南核对自身构建配置即可。
-- PR #1327 Changed 补齐冷基线模块发现顺序与集合比较口径。Packages: `io.mango:mango-docs-bundle`. Business Adaptation: 无代码改动，按操作指南判断是否保留显式模块序列。
-- PR #1328 Changed 补齐冷基线隐式跨模块依赖判据与自查命令。Packages: `io.mango:mango-docs-bundle`. Business Adaptation: 无代码改动，业务模块向平台表写种子数据时按指南自查回放顺序。
+- Changed: [PR #1333](https://github.com/HardyDou/mango/pull/1333) `fileId` 主路径打通：内嵌引擎按票据在进程内直取源文件，不再绕公网域名回源。Packages: `mango-file-preview-core` / `-engine` / `-starter`、`@mango/file`。Business Adaptation: 业务仍只透传 `fileId`，无需改造。
+- Fixed: [PR #1337](https://github.com/HardyDou/mango/pull/1337) 把「格式不支持预览」从「转换失败」里拆出，`renderMode` 输出 `NOT_SUPPORTED`。Packages: `mango-file-preview-core` / `-api`。Business Adaptation: 前端可直接给出下载提示，不必再按失败重试。
+- Changed: [PR #1338](https://github.com/HardyDou/mango/pull/1338) 默认转换引擎改为 Aspose，LibreOffice 退为兜底；新增字体目录、字体自检非致命开关与启动自检日志。Packages: `mango-infra-fileproc-core` / `-starter`。Business Adaptation: 需回归一次 PDF 转换版式；部署过 `aspose-*-enabled=false` 的环境需删除该变量。
+- Fixed: [PR #1359](https://github.com/HardyDou/mango/pull/1359)、[PR #1364](https://github.com/HardyDou/mango/pull/1364) `fileId` 取源请求不再被信任站点/目录过滤器拦截（返回 403 `notTrustHost`）。Packages: `mango-file-preview-engine`。Business Adaptation: 修复前内嵌部署 `fileId` 预览直接 403。
+- Fixed: [PR #1366](https://github.com/HardyDou/mango/pull/1366) 信任门按通道分工：`url` 仍判 host/目录，`fileId` 改为校验票据有效性，票据无效在门口即 403。Packages: `mango-file-preview-engine`、`mango-file-preview-core`。Business Adaptation: 票据过期/伪造现在在引擎门口 403，不再回落到 180002；前端只需按 404/403 展示「预览已失效，请重新打开」。
+- Added: [PR #1367](https://github.com/HardyDou/mango/pull/1367) 新增 `mango-file-preview-support` 与 `mango-file-preview-starter-remote`，独立部署的引擎可通过 Feign 回源应用取 `fileId` 字节。Packages: `mango-file-preview-support`、`mango-file-preview-starter-remote`、`mango-file-preview-core`。Business Adaptation: 仅独立部署需要装 `mango-file-preview-starter-remote`；内嵌部署无需任何改动。
+- Changed: [PR #1368](https://github.com/HardyDou/mango/pull/1368)、[PR #1383](https://github.com/HardyDou/mango/pull/1383) 前端预览契约收敛到 `fileId` + `renderMode`：删除地址嗅探与 `previewUrl` 拼接，地址类 props 标记弃用并输出提示，下一个 major 移除。Packages: `@mango/file` 及 15 个依赖包。Business Adaptation: 业务把 `:preview-url` 换成 `:file-id` 即完成迁移；继续用地址类 props 仍可用，但控制台会提示，下一个 major 移除。
+- Fixed: [PR #1371](https://github.com/HardyDou/mango/pull/1371)、[PR #1379](https://github.com/HardyDou/mango/pull/1379) 页面内子资源统一收敛到 `/preview-file/**` 前缀（图片/音视频不再把票据当图片地址）；`fileId` 通道下 `xlsx`/`csv` 由平台转 PDF 后用 PDF.js 展示，`renderMode` 统一为 `CONVERTING`。Packages: `mango-file-preview-core`、`mango-file-preview-engine`。Business Adaptation: 业务仍只透传 `fileId`；若自建了直连 `/preview-file/**` 的地址需按新前缀调整（已由组件托管，正常无需改动）。
+- Fixed: [PR #1381](https://github.com/HardyDou/mango/pull/1381)、[PR #1382](https://github.com/HardyDou/mango/pull/1382) 独立部署新增 `mango.file-preview.engine-public-base-url`，配置后预览跳转指向引擎 origin 并剥离应用网关 `/api` 前缀。Packages: `mango-file-preview-core`、`mango-file-preview-starter`。Business Adaptation: 独立部署必须配置该 key（纯 origin），否则预览跳转会带 `/api` 导致 404。
+- Fixed: [PR #1341](https://github.com/HardyDou/mango/pull/1341)、[PR #1342](https://github.com/HardyDou/mango/pull/1342)、[PR #1343](https://github.com/HardyDou/mango/pull/1343)、[PR #1347](https://github.com/HardyDou/mango/pull/1347) checkstyle 复杂度指纹不再嵌入配置阈值；补齐基线形式迁移路径与 `mango-tools` 门禁参数文档。Packages: `mango-maven-plugin`、`@mango/pmo`（仅仓库内基线与文档，`@mango/pmo` 不随本批次发布）。Business Adaptation: 业务仓升级后首次跑门禁会把已记录的复杂度条目报成新增，按 `mango-pmo/baselines/mango-check/README.md` 的 Form Migration 覆盖基线并回读 diff。
+- Changed: [PR #1354](https://github.com/HardyDou/mango/pull/1354) 移除 11 条零缺陷收益的格式类 checkstyle 规则，仓库基线由 15,067 条收敛到 2,948 条。Packages: `mango-maven-plugin`。Business Adaptation: 业务仓自建基线会少掉这些格式类条目，无需额外动作。
+- Changed: [PR #1345](https://github.com/HardyDou/mango/pull/1345)、[PR #1352](https://github.com/HardyDou/mango/pull/1352) README 结构审计按改动范围触发（不再被 `M08` 声明静默跳过）；治理类 PR 按路径决定是否执行全量架构清点。Packages: 无（仓库内 CI 与 PMO 工具，不发布）。Business Adaptation: 无。
+- Fixed: [PR #1365](https://github.com/HardyDou/mango/pull/1365) `baseline-generate` 扫描排除 `src/test`、`src/it` 等测试夹具目录，`MANGO-BASELINE-009` 报错给出物理路径。Packages: `mango-maven-plugin`。Business Adaptation: 业务仓生成基线不再误报 009；若历史上用 `searchDirectory` 指向测试目录需修正。
+- Fixed: [PR #1360](https://github.com/HardyDou/mango/pull/1360) 文档化外部升级目录的生效前提（bootstrap 代次与释放标识）。Packages: `mango-infra-persistence`。Business Adaptation: 纯文档；需要跑外部升级目录的部署请按新文档设置释放标识。
+- Added: [PR #1348](https://github.com/HardyDou/mango/pull/1348)、[PR #1350](https://github.com/HardyDou/mango/pull/1350)、[PR #1384](https://github.com/HardyDou/mango/pull/1384) 为 `@mango/admin-shell`、`@mango/common` 补齐可执行组件测试与契约证据，`@mango/ai` 增加包级 vitest 配置。Packages: `@mango/admin-shell`、`@mango/common`、`@mango/ai`。Business Adaptation: 仅测试与契约证据，业务无感。
+- Fixed: [PR #1331](https://github.com/HardyDou/mango/pull/1331)–[PR #1336](https://github.com/HardyDou/mango/pull/1336)、[PR #1340](https://github.com/HardyDou/mango/pull/1340) 探针路径白名单语义、白名单覆盖行为与门禁参数默认值的文档修正。Packages: `mango-access-core`、`mango-access-web-starter`、`mango-auth-starter`、`mango-tools`。Business Adaptation: 纯文档，无行为变化；独立部署请按新文档核对探针白名单。
+- Fixed: [PR #1372](https://github.com/HardyDou/mango/pull/1372)–[PR #1378](https://github.com/HardyDou/mango/pull/1378) 前端质量门禁 ratchet 回归（stylelint 弃用关键字、eslint 新增诊断、prettier 与 TS2322）。Packages: `@mango/file`、`@mango/admin-shell`、`@mango/ai`。Business Adaptation: 仅仓库内质量门禁，业务无感。
+- Fixed: [PR #1387](https://github.com/HardyDou/mango/pull/1387) 压缩包解包目录移出静态映射根（默认 `file-dir` 同级 `_extracted`，新增 `decompress.dir` / `KK_DECOMPRESS_DIR`），包内条目统一走受控端点 `GET /compressed-file`；`/preview-file/{解包键}/{条目}` 与 `/{解包键}/{条目}` 不再可匿名读取（issue #1386）。Packages: `mango-file-preview-engine`、`mango-file-preview-starter`。Business Adaptation: 业务无感；历史解包目录不迁移，重新打开压缩包即按新根重建；独立部署若自定义了 `file.dir`，解包目录默认为其同级 `_extracted`，需要时可显式配置 `decompress.dir`。
+
+## Added
+
+- 独立部署：`mango-file-preview-starter-remote`（引擎侧装机）+ `mango.file-preview.remote.enabled` / `remote.base-url`，引擎可直接回源应用取 `fileId` 字节。
+- 独立部署：`mango.file-preview.engine-public-base-url`，浏览器跳转直指引擎 origin；配置后平台自动剥离应用网关 `/api` 前缀。
+- `FilePreviewRenderMode`（`PDF`/`IMAGE`/`VIDEO`/`AUDIO`/`CONVERTING`/`PAGE`/`NOT_SUPPORTED`）与 `FilePreviewLinkVO.renderMode`，前端按它分派渲染。
+- `mango.fileproc.aspose.fonts-folders` 与 `mango.fileproc.aspose.font-check-fatal`（默认 `false`：字体缺失只告警，授权不可用仍启动失败）。
 
 ## Fixed
 
-- `mango-infra-persistence-starter` 与 `mango-resource-sync-starter` 新增模块启停契约 `PersistenceModuleEnablement`：某模块的 Flyway 迁移被关闭后，该模块在 `META-INF/mango/resources` 下的便携资源声明与该模块的打包清单条目一并跳过，不再出现 `Table ... doesn't exist` 的启动失败。
-- 跳过行为只影响声明装载，不改变迁移开关本身；`skip-reason` 仍是配置项，跳过日志同时打印模块名、声明数量、跳过原因与来源文件，便于定位是哪个模块被关闭。
-- `/actuator/health` 之后的探针分组路径（`readiness`、`liveness`）现在命中平台默认白名单规则，不再因为规则只写精确路径而落到登录校验上返回 401。
-- 白名单匹配把 IPv4 映射地址按 IPv4 比较、精确地址与网段比较使用同一套字节比较，缩写网段（如 `10/8`、`172.16/12`、`192.168/16`）不再静默匹配到错误网段。
+- 内嵌部署 `fileId` 预览 403（信任过滤器不看票据）。
+- 图片/音视频预览把取源票据当资源地址，页内 401/404。
+- `fileId` 通道下 `xlsx`/`csv` 转换任务被枚举判定短路，导致「任务成功但无产物、页面回落引擎表格页」。
+- 独立部署预览跳转带 `/api` 前缀导致 404。
+- `baseline-generate` 误把测试夹具当迁移源，触发 `MANGO-BASELINE-009`。
+- checkstyle 复杂度指纹嵌入阈值，调整阈值即让存量基线条目变成「假新增」。
+- 压缩包解包内容可被匿名读取（解包目录落在 `file-dir` 内且被 `/preview-file/**` 映射），现已移出映射根并改为受控端点读取。
 
 ## Changed
 
-- 平台单体默认白名单规则从 `path-pattern: /actuator/health` 调整为 `/actuator/health/**`，因为 `/actuator/**` 不参与 API 资源声明同步，探针路径只能依赖该白名单。
-- `mango-access-web-starter` 在启动装配阶段对 IP 白名单规则做写法自检：网段未写满四段、掩码越界或地址无法解析时输出 WARN `IP 白名单 CIDR 不是完整网段写法`，不阻断启动。
-- 冷基线操作指南新增模块顺序、分组与隐式跨模块依赖三节：发现顺序为模块名字典序、`MANGO-BASELINE-023` 只比较集合成员、业务模块向平台表写种子数据时按依赖顺序显式列出完整模块序列。
-- 本批次不涉及 `sys_dict_type`、`sys_dict_data`、`authorization_role` 的列集或约束变更，业务模块向这些表写种子数据的声明无需调整。
+- 默认转换引擎换成 Aspose（LibreOffice 兜底）。这是业务可见的行为变更。
+- 废弃格式类 checkstyle 规则 11 条；仓库基线 15,067 → 2,948。
+- 前端预览地址类 props（`preview`、`previewUrl`、`documentPreviewUrl`、`directPreviewUrl`、`previewProviderUrl`、`previewExternalExtensions`）标记弃用，下一个 major 移除。
+- `url` 通道保留但不推荐；`fileId` 为推荐路径。
 
 ## Versions
 
-- Maven 平台：`1.14.1` → `1.14.2`（`mango-bom`、`mango-parent`、`mango-maven-plugin` 与全部平台模块跟随）
-- `io.mango:mango-docs-bundle`：`1.14.1` → `1.14.2`
-- `@mango/cli`：`1.4.16` → `1.4.17`（跟随 Maven 后端版本矩阵）
-- `@mango/pmo`：保持 `1.6.3`，本批次未改动 PMO 规则与 Skill 内容
-- 前端复用包（`@mango/common`、`@mango/admin`、`@mango/admin-shell` 等）：保持 `1.14.1` 批次版本，本批次未改动前端源码
+- Maven：`1.14.2` → `1.15.0`（`mango-backend` 版本锁）
+- `@mango/file`：`1.3.1` → `1.4.0`（minor）
+- `@mango/common`：`2.3.4` → `2.3.5`、`@mango/ai`：`1.2.8` → `1.2.9`
+- `@mango/cli`：`1.4.17` → `1.4.18`
+- `@mango/pmo`：保持 `1.6.3`（本批次仅改基线、测试与仓库内脚本，不发布）
 
 ## Published Packages
 
-- Maven：`mango-bom`、`mango-parent`、`mango-maven-plugin`、`mango-docs-bundle` 与平台模块共 201 个坐标，按 plan 拓扑顺序发布到 `maven-releases`。
-- npm：`@mango/cli` 单包，发布到 `npm-hosted`。
-- 不发布：本批次未改动的 `@mango/pmo` 与前端复用包，仅沿用 consume 仓库既有版本做消费验证。
+- Maven：203 个坐标，含新增 `io.mango.platform.file.preview:mango-file-preview-support:1.15.0`、`io.mango.platform.file.preview:mango-file-preview-starter-remote:1.15.0`，以及 `io.mango:mango-docs-bundle:1.15.0`。
+- npm 闭包 27 个包：
+
+- `@mango/admin@2.0.13`
+- `@mango/admin-extension@1.1.9`
+- `@mango/admin-pages@1.3.5`
+- `@mango/admin-shell@1.1.11`
+- `@mango/ai@1.2.9`
+- `@mango/auth@1.0.46`
+- `@mango/calendar@1.0.62`
+- `@mango/cli@1.4.18`
+- `@mango/cms@1.1.7`
+- `@mango/common@2.3.5`
+- `@mango/detail@1.1.15`
+- `@mango/file@1.4.0`
+- `@mango/grid-layout@1.0.35`
+- `@mango/grid-widgets@1.0.41`
+- `@mango/home@1.0.34`
+- `@mango/information@1.1.9`
+- `@mango/job@1.0.55`
+- `@mango/link@1.0.48`
+- `@mango/notice@1.0.68`
+- `@mango/numgen@1.0.63`
+- `@mango/payment@1.0.54`
+- `@mango/rbac@1.3.5`
+- `@mango/site-shell@2.0.7`
+- `@mango/system@1.1.7`
+- `@mango/template@1.0.63`
+- `@mango/workflow@1.3.2`
+- `@mango/workflow-business-example@1.0.73`
 
 ## Business Impact
 
-- 受影响的消费方：把某个 Maven 模块的 Flyway 迁移关闭、同时该模块自带便携资源声明的业务应用；依赖 `/actuator/health/readiness`、`/actuator/health/liveness` 做容器探针的业务应用；使用缩写网段写法的 IP 白名单。
-- 不受影响的消费方：未关闭任何模块迁移的应用，以及只使用 `/actuator/health` 的应用——行为与 1.14.1 一致。
-- 数据库：本批次无 DDL、无迁移脚本变更，`sys_dict_*`、`authorization_role` 等平台表结构不变。
-- 配置：`PersistenceModuleEnablement` 由持久化 starter 自动装配，业务侧不需要新增配置项；`skip-reason` 语义不变。
-- 接口与权限：无接口签名变化、无权限点变化；探针路径仍走白名单放行，不新增匿名端点。
-- 运维：探针分组路径能否访问还取决于 `management.endpoint.health.probes.enabled=true` 与来源地址是否命中网段，白名单只解决路径匹配。
+- 必须升级吗：**不必须**。`fileId` 预览、`renderMode`、Aspose 默认引擎都是平台侧改善；需要「独立引擎远程直取」或「`renderMode` 契约」的业务才需要升级。
+- 升级后行为变化：默认 Office 转换引擎由 LibreOffice 改为 Aspose，转换版式需业务侧回归一次；曾设置 `aspose-*-enabled=false` 的环境需删除该变量，否则仍走 LibreOffice。
+- 前端：地址类 props 进入弃用周期，业务只需传 `fileId`；继续使用地址 props 仍可用，但会在控制台提示。
+- 数据与迁移：本批次无 DDL、无数据迁移。
 
 ## Upgrade Estimate
 
-- Audience: 使用 Mango 平台 1.14.x 的业务应用，尤其是关闭了模块迁移或配置了容器探针的部署
-- Engineering Effort: 低，通常只需升级依赖版本并重启；有自建白名单规则时顺带核对网段写法
-- Execution Window: 任意维护窗口，无数据库变更
-- Service Downtime: 无，滚动重启即可
-- Rollback Effort: 低，回退依赖版本并重启
-- Assumptions: 业务应用未在 1.14.2 上改动自身迁移脚本；探针路径未做同时变更
+- Audience: 使用文件预览（含独立引擎部署）的业务应用
+- Engineering Effort: 0.5-1 人日（改配置 + 回归一次 PDF 转换）
+- Execution Window: 常规变更窗口
+- Service Downtime: 无（滚动重启）
+- Rollback Effort: 低（回滚版本号即可，`fileId`/`url` 两通道同时在位）
+- Assumptions: 业务已按 `fileId` 调用预览；独立部署按本文档补齐引擎侧配置
 
 ## Upgrade Notes
 
-1. 升级依赖：`backend/pom.xml` 中 `mango.version` 改为 `1.14.2`，重新构建即可，无需新增配置项。
-2. 关闭了模块迁移的应用：启动日志会出现一条 `Skipping portable resource declarations of disabled module: module=..., declarations=..., reason=..., source=...`，确认模块名与预期一致；若该模块仍需声明，请恢复 `enabled: true`。
-3. 使用分组探针的应用：先确认 `management.endpoint.health.probes.enabled=true`，再核对白名单规则是否覆盖 `/actuator/health/**` 且来源地址命中网段。未开启 probes 时分组端点不映射，放行后表现为 404 而不是 401。
-4. 自建 IP 白名单规则：把缩写网段改写为完整四段（如 `10.0.0.0/8`），启动日志不再出现 CIDR WARN。
-5. 冷基线构建：若业务模块的迁移脚本向平台表写种子数据，按 `mango-docs/guides/operations/build-time-cold-baseline.md` §8.1 自查并保留显式 `moduleOrder`；未写平台表的应用可以留空交给字典序发现。
-6. 聚合消费方：通过 `mango-bom` 导入依赖的应用升级 BOM 版本即可；直接依赖单模块的应用按模块坐标升级。
+1. 引擎落盘目录用引擎侧配置 `file.dir`（或环境变量 `KK_FILE_DIR`）指定，Mango 侧没有 `mango.file-preview.file-dir` 这类属性；请写成绝对路径，默认值随启动工作目录漂移，换目录重启会让 `/preview-file/**` 404。
+2. `mango.file-preview.engine-public-base-url` 只填纯 origin（可带部署上下文，如 `https://engine.example.com/engine`），不要填 `/api`、不要填 `engine-path`；平台会自动剥离网关前缀。引擎侧不需要这个 key。
+3. `MANGO_CRYPTO_SM4_SECRET_KEY` 必须是 32 位十六进制（16 字节），否则启动报 `SM4 secretKey 必须是 16 字节（128 位）`。
+4. checkstyle 基线形式迁移：升级后首次跑 `no-new-violations` 会把**已记录的**复杂度条目报成新增（≤20 条，全部 `CyclomaticComplexityCheck`）。按 `mango-pmo/baselines/mango-check/README.md` 的 Fingerprint Form Migration 覆盖基线，并**回读 diff 确认只有复杂度指纹变化**（覆盖是整文件替换，其它规则条目必须原样保留）。这是形式迁移，不豁免任何新问题；不迁移也不会变红（`changedOnly=true` 时潜伏）。
+5. Aspose 出图依赖 ImageMagick `convert`：容器镜像需保留该命令，否则 PDF 转图片失败。
+6. `officePreviewType=html` 且 `officeTypeWeb=web` 的部署，`fileId` 通道下表格不走在线表格页（已改为平台转 PDF）。
+7. 压缩包解包目录默认落在 `file.dir` 的**同级** `_extracted/`（新增 `decompress.dir` / `KK_DECOMPRESS_DIR` 可覆盖）。若 `file.dir` 指向挂载卷的根目录，同级 `_extracted` 会落到卷外的容器可写层：容器重建后解包缓存丢失（重新打开压缩包即重建，不影响功能），根文件系统只读时直接失败。规避方式：把卷挂到父目录（卷大便 `/data/preview`、`KK_FILE_DIR=/data/preview/file`），或显式设 `decompress.dir=/data/preview/_extracted`。
+8. 回滚：旧版本进程会把解包内容重新写回 `file.dir` 下，新的 `_extracted/` 变成孤儿目录可直接删除；本批次无数据库变更、无迁移动作。
+
+## Known Limitations
+
+- `TRUST_HOST` 通道（`url` 参数）仍要求来源域名在 `trust.host` 内，且 `url` 通道只建议作为兼容兜底；主推 `fileId` 通道。
 
 ## Verification
 
-- 发布前：`mango release plan` 生成的 201 个 Maven 坐标与 `@mango/cli` 拓扑顺序通过 `release:plan:check`，准备阶段完成混合消费验证（四仓库可见性、POM 与 JAR SHA-256、前端包导出）。
-- 发布后：consume 仓库拉取 `mango-infra-persistence-starter`、`mango-resource-sync-starter`、`mango-access-core`、`mango-access-web-starter`、`mango-auth-starter` 的 1.14.2 坐标并与 sealed 清单 SHA-256 比对；`@mango/cli@1.4.17` 从 consume 仓库安装后执行 `mango --version` 与 `mango release registry doctor`。
-- 消费端行为：关闭模块迁移的应用启动后不再出现 `Table ... doesn't exist`，并输出跳过 WARN；带 `probes.enabled=true` 的应用访问 `/actuator/health/readiness` 不再返回 401；缩写网段配置在启动日志出现 CIDR WARN。
-- 未验证项：未在真实阿里云、腾讯云账号上做网关调用验证（本批次不涉及）；未针对具体业务仓重新触发 `MANGO-BASELINE-021`。
+- 单测：`mango-file-preview-{api,core,engine,starter,support,starter-remote}` 合计 184 条全绿；`mango-infra-fileproc` 与 `mango-file` 相关模块全绿。
+- 端到端（内嵌拓扑）：docx/pptx/xlsx → `CONVERTING` + `preview-artifact` 200 PDF；pdf 200；png `image/png`；mp4 `video/mp4` + Range 206；zip 目录与包内条目页 200。
+- 端到端（独立拓扑）：png/mp4/zip 302 跳转 `{engine-origin}/onlinePreview?fileId=…`（无 `/api`）→ 200，子资源 `/preview-file/**` 取到真实字节；docx/pptx/xlsx/pdf 仍由应用出页。
+- 安全边界：伪造/空 `fileId` → 403 `notTrustHost`；根级同名路径与路径穿越 → 401。
 
 ## Rollback
 
-- 依赖回退：把 `mango.version` 改回 `1.14.1` 并重启，探针与白名单行为回到精确路径语义，关闭模块迁移的应用会恢复 `Table ... doesn't exist` 的旧失败。
-- 数据库：本批次无迁移变更，回退不需要数据订正；已跳过的资源声明在回退后会重新加载。
-- 制品：已发布的 Maven 坐标与 `@mango/cli@1.4.17` 不回撤、不复用版本号，回退只发生在消费方依赖声明。
+- 回滚 `mango-backend` 版本锁与前端包版本即可；无数据库变更需要回滚。
+- `fileId` 与 `url` 两条通道同时在位，回滚后旧版本仍按 `url` 通道工作。
 
 ## Audit History
 
-- PR #1313、#1318、#1320、#1319、#1321 属于 1.14.1 批次，不在本批次发布内容内。
-- PR #1319（字典批量查询）已合并但未随本批次发布，另行安排。
+- 本批次 37 个提交，见 `v2026.11.19-maven-1.14.2-disabled-module-resources-release..1.15.0`。
+- 未纳入本批次：#1319（字典批量接口，已单独评估）、#1346（workflow 流程定义主键确定性，需 Flowable 设计）、#1361 相关的远程票据探测（已明确不做）。
+- 相关 issue：#1314 #1315 #1316 #1355 #1356 #1357 #1361 #1362 #1363 #1369 #1380（均已关闭）。

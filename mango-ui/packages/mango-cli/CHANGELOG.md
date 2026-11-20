@@ -1,3 +1,10 @@
+## 1.4.18 - 2026-11-21
+
+### Changed
+
+- 把 CLI 的 Maven 版本矩阵锁定到 Maven `1.15.0` 与同批次的 203 个 Maven/docs 发布坐标（含新增 `mango-file-preview-support` 与 `mango-file-preview-starter-remote`）。
+- 生成的业务项目升级到带 `fileId` 预览契约、解包目录隔离与质量门禁收敛的平台制品。
+
 ## 1.4.17 - 2026-11-19
 
 ### Changed
