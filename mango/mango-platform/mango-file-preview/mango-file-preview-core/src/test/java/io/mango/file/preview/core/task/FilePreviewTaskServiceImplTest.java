@@ -17,6 +17,7 @@ import io.mango.infra.kv.api.LockLease;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.ObjectProvider;
 
 import java.io.ByteArrayInputStream;
 import java.time.Duration;
@@ -59,6 +60,60 @@ class FilePreviewTaskServiceImplTest {
         assertThat(result.getPreviewFileId()).isNull();
         verify(convertApi, never()).convert(any());
         verify(contentProvider, never()).savePreviewArtifact(any());
+    }
+
+    @Test
+    void sheetEntersPdfConversionWhenInternalSourceIsAvailable() throws Exception {
+        FileApi fileApi = mock(FileApi.class);
+        IFileContentProvider contentProvider = mock(IFileContentProvider.class);
+        ConvertApi convertApi = mock(ConvertApi.class);
+        ITokenStore taskStore = mock(ITokenStore.class);
+        FileRecordVO record = record(60L, "report.xlsx");
+        FileRecordVO artifact = record(98L, "report.pdf");
+        when(fileApi.get(60L)).thenReturn(io.mango.common.result.R.ok(record));
+        when(convertApi.canConvert(any(), any())).thenReturn(true);
+        when(convertApi.convert(any())).thenReturn(io.mango.infra.fileproc.convert.vo.ConvertResultVO.builder()
+                .format(io.mango.infra.fileproc.convert.enums.ConvertFormat.PDF)
+                .fileName("report.pdf").content(new byte[]{9}).build());
+        when(contentProvider.downloadForService(60L))
+                .thenReturn(new FileDownloadVO(new ByteArrayInputStream(new byte[]{8}), "report.xlsx",
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 1));
+        when(contentProvider.savePreviewArtifact(any())).thenReturn(artifact);
+        FilePreviewTaskServiceImpl service = new FilePreviewTaskServiceImpl(
+                new FilePreviewFileGateway(fileApi, contentProvider), contentProvider, convertApi,
+                taskStore, availableLeaseLocker(), new ObjectMapper().registerModule(new JavaTimeModule()),
+                new FilePreviewProperties(), testExecutor());
+        service.setSourceAvailabilityProvider(availability(true));
+
+        service.submit(60L, false);
+        await(() -> service.status(60L, false).getStatus() == FilePreviewTaskStatus.SUCCEEDED);
+
+        FilePreviewTaskVO result = service.status(60L, false);
+        assertThat(result.getPreviewFileId()).isEqualTo(98L);
+        assertThat(result.getMessage()).isEqualTo("预览已就绪");
+        verify(convertApi).convert(any());
+    }
+
+    @Test
+    void sheetSkipsPdfConversionWhenInternalSourceIsUnavailable() throws Exception {
+        FileApi fileApi = mock(FileApi.class);
+        IFileContentProvider contentProvider = mock(IFileContentProvider.class);
+        ConvertApi convertApi = mock(ConvertApi.class);
+        ITokenStore taskStore = mock(ITokenStore.class);
+        FileRecordVO record = record(61L, "report.xlsx");
+        when(fileApi.get(61L)).thenReturn(io.mango.common.result.R.ok(record));
+        FilePreviewTaskServiceImpl service = new FilePreviewTaskServiceImpl(
+                new FilePreviewFileGateway(fileApi, contentProvider), contentProvider, convertApi,
+                taskStore, availableLeaseLocker(), new ObjectMapper().registerModule(new JavaTimeModule()),
+                new FilePreviewProperties(), testExecutor());
+        service.setSourceAvailabilityProvider(availability(false));
+
+        service.submit(61L, false);
+        await(() -> service.status(61L, false).getStatus() == FilePreviewTaskStatus.SUCCEEDED);
+
+        assertThat(service.status(61L, false).getPreviewFileId()).isNull();
+        verify(convertApi, never()).canConvert(any(), any());
+        verify(convertApi, never()).convert(any());
     }
 
     @Test
@@ -370,5 +425,14 @@ class FilePreviewTaskServiceImplTest {
             Thread.sleep(10);
         }
         assertThat(condition.getAsBoolean()).isTrue();
+    }
+    @SuppressWarnings("unchecked")
+    private static ObjectProvider<io.mango.file.preview.core.service.PreviewSourceAvailability> availability(
+            boolean available) {
+        ObjectProvider<io.mango.file.preview.core.service.PreviewSourceAvailability> provider =
+                mock(ObjectProvider.class);
+        when(provider.getIfAvailable())
+                .thenReturn((io.mango.file.preview.core.service.PreviewSourceAvailability) () -> available);
+        return provider;
     }
 }

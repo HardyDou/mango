@@ -49,7 +49,7 @@
 ### 2.3 能力边界
 
 - `xlsx`/`csv` 的 Luckysheet 前端渲染（`officeweb.ftl`）只在 `url` 通道可用：引擎 `mango-file-preview-engine/src/main/java/cn/keking/service/impl/OfficeFilePreviewImpl.java#handleWebPreview` 要求 `officePreviewType != "html"` 且 `officeTypeWeb == "web"`，回源依赖 `getCorsFile?urlPath=<base64 源地址>`，源地址 host 必须在信任列表内。
-- `fileId` 通道由平台侧先定渲染方式：`FilePreviewServiceImpl#previewMode` 在进程内直取生效（`useInternalSource()` 为真）时把 `xlsx`/`csv` 判为 `PDF_CONVERSION`（`ENGINE_SHEET_EXTENSIONS`），页面直接进入 PDF.js 读 `/file-preview/files/preview-artifact`，根本不进入引擎的表格页面，因此不受上面的引擎开关影响。这与 `renderMode` 的 `CONVERTING` 取值一致：`fileId` 通道下表格先转换再展示。
+- `fileId` 通道由平台侧先定渲染方式：`FilePreviewServiceImpl#previewMode` 在进程内直取生效（`useInternalSource()` 为真）时把 `xlsx`/`csv` 判为 `PDF_CONVERSION`（`ENGINE_SHEET_EXTENSIONS`），页面直接进入 PDF.js 读 `/file-preview/files/preview-artifact`，根本不进入引擎的表格页面，因此不受上面的引擎开关影响。这与 `renderMode` 的 `CONVERTING` 取值一致：`fileId` 通道下表格先转换再展示。转换队列与渲染分派共用同一份判定（`FilePreviewMode#of(extension, internalSourceAvailable)`），因此 `renderMode` 为 `CONVERTING` 时任务必定进入 PDF 转换并产出 `preview-artifact`，两者不会再分叉。
 
 ### 2.4 限制清单
 
