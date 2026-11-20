@@ -1,12 +1,3 @@
-## Unreleased - 基线生成扫描范围排除测试夹具
-
-### Fixed
-
-- `mango:baseline-generate` 的扫描不再收录 `src/test`、`src/it`、`src/it-*` 下的 `db/migration`（测试与集成测试夹具不属于交付面），默认扫描根保持为企业仓执行目录，跨模块发现不受影响；`MANGO-BASELINE-009` 版本冲突报错现在同时列出冲突双方的物理路径，便于定位。
-
-- `mango:baseline-generate` 默认扫描整仓时，`src/test`、`src/it`、`src/it-*` 下的 `db/migration` 夹具不再进入迁移清单。此前同一模块同时存在主资源 `V1__*.sql` 与测试夹具 `V1__*.sql` 会报 `MANGO-BASELINE-009 duplicate migration version`，且报错不含物理路径，定位成本高；现在报错会列出冲突的两个物理路径。
-- `mango-docs/guides/operations/build-time-cold-baseline.md` 新增「8.2 扫描范围与排除规则」，说明默认扫描根、三类排除目录与收窄范围的正确写法。
-
 ## Unreleased - 质量门禁去掉零缺陷收益的格式类规则
 
 ### Changed
@@ -19,6 +10,12 @@
 
 - 这是**门禁放宽**：移除的规则不再阻断任何 PR。既有以这些规则为阻断依据的本地脚本或业务仓自定义配置需要同步调整，否则会看到「本地有告警、CI 不报」的差异。
 - 复杂度、文件长度、命名与缺陷类规则的行为未变，`CyclomaticComplexity max=20` 与指纹策略不变。
+### Fixed
+
+- `mango:baseline-generate` 的扫描不再收录 `src/test`、`src/it`、`src/it-*` 下的 `db/migration`（测试与集成测试夹具不属于交付面），默认扫描根保持为企业仓执行目录，跨模块发现不受影响；`MANGO-BASELINE-009` 版本冲突报错现在同时列出冲突双方的物理路径，便于定位。
+- `mango:baseline-generate` 默认扫描整仓时，`src/test`、`src/it`、`src/it-*` 下的 `db/migration` 夹具不再进入迁移清单。此前同一模块同时存在主资源 `V1__*.sql` 与测试夹具 `V1__*.sql` 会报 `MANGO-BASELINE-009 duplicate migration version`，且报错不含物理路径，定位成本高；现在报错会列出冲突的两个物理路径。
+- `mango-docs/guides/operations/build-time-cold-baseline.md` 新增「8.2 扫描范围与排除规则」，说明默认扫描根、三类排除目录与收窄范围的正确写法。
+
 ## Unreleased - 治理类 PR 按路径决定是否全量架构清点
 
 ### Changed

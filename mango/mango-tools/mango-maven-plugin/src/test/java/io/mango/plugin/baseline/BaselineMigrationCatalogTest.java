@@ -138,6 +138,55 @@ class BaselineMigrationCatalogTest {
         assertTrue(message.contains("/src/main/resources/db/migration/alpha/V1__other.sql"));
     }
 
+    @Test
+    void ignoresMigrationsUnderIntegrationTestSourceSet() throws Exception {
+        migration("payment", "V1__main_payment.sql", "CREATE TABLE main_payment (id bigint primary key);");
+        migrationAt("it", "payment", "V1__it_payment.sql");
+
+        BaselineMigrationCatalog catalog = BaselineMigrationCatalog.discover(
+                directory, new MavenProject(), Set.of());
+
+        assertEquals(
+                List.of("V1__main_payment.sql"),
+                catalog.migrations("payment").stream()
+                        .map(BaselineMigrationCatalog.MigrationResource::fileName)
+                        .toList());
+    }
+
+    @Test
+    void ignoresMigrationsUnderIntegrationTestSourceSetVariant() throws Exception {
+        migration("payment", "V1__main_payment_variant.sql", "CREATE TABLE main_payment_variant (id bigint primary key);");
+        migrationAt("it-core", "payment", "V1__it_core.sql");
+
+        BaselineMigrationCatalog catalog = BaselineMigrationCatalog.discover(
+                directory, new MavenProject(), Set.of());
+
+        assertEquals(
+                List.of("V1__main_payment_variant.sql"),
+                catalog.migrations("payment").stream()
+                        .map(BaselineMigrationCatalog.MigrationResource::fileName)
+                        .toList());
+    }
+
+    @Test
+    void scansIntegrationTestSourceSetWhenItIsTheSearchRoot() throws Exception {
+        migrationAt("it", "fixture", "V1__fixture.sql");
+
+        BaselineMigrationCatalog catalog = BaselineMigrationCatalog.discover(
+                directory.resolve("module/src/it").resolve("resources/db/migration"),
+                new MavenProject(), Set.of());
+
+        assertTrue(catalog.moduleNames().contains("fixture"));
+    }
+
+    private void migrationAt(String sourceSet, String module, String fileName) throws IOException {
+        Path path = directory.resolve("module/src/" + sourceSet + "/resources/db/migration")
+                .resolve(module)
+                .resolve(fileName);
+        Files.createDirectories(path.getParent());
+        Files.writeString(path, "CREATE TABLE " + module + "_" + sourceSet.replace('-', '_') + " (id bigint primary key);");
+    }
+
     private void migration(String module, String fileName, String sql) throws IOException {
         Path path = directory.resolve("module/src/main/resources/db/migration")
                 .resolve(module)
