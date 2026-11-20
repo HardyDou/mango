@@ -18,7 +18,10 @@
         "path": "README.md",
         "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
       },
-      "testEvidence": ["../../apps/mango-admin/e2e/specs/components.spec.ts"]
+      "testEvidence": [
+        "../../apps/mango-admin/e2e/specs/components.spec.ts",
+        "src/views/demo/components/__tests__/DemoCodeBlock.spec.ts"
+      ]
     },
     {
       "name": "MangoDevDocLayout",
@@ -36,7 +39,10 @@
         "path": "README.md",
         "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
       },
-      "testEvidence": ["../../apps/mango-admin/e2e/specs/components.spec.ts"]
+      "testEvidence": [
+        "../../apps/mango-admin/e2e/specs/components.spec.ts",
+        "src/views/demo/components/__tests__/DemoDocLayout.spec.ts"
+      ]
     },
     {
       "name": "MangoDevCodeBlock",
@@ -54,7 +60,10 @@
         "path": "README.md",
         "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
       },
-      "testEvidence": ["../../apps/mango-admin/e2e/specs/components.spec.ts"]
+      "testEvidence": [
+        "../../apps/mango-admin/e2e/specs/components.spec.ts",
+        "src/views/demo/components/__tests__/DemoCodeBlock.spec.ts"
+      ]
     },
     {
       "name": "MangoDevDocLayout",
@@ -72,7 +81,10 @@
         "path": "README.md",
         "requiredSections": ["概览", "接入方式", "API 与扩展", "问题排查"]
       },
-      "testEvidence": ["../../apps/mango-admin/e2e/specs/components.spec.ts"]
+      "testEvidence": [
+        "../../apps/mango-admin/e2e/specs/components.spec.ts",
+        "src/views/demo/components/__tests__/DemoDocLayout.spec.ts"
+      ]
     }
   ],
   "legacyComponentExports": [
