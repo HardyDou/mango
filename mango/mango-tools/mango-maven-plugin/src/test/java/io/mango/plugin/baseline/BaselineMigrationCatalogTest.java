@@ -169,6 +169,18 @@ class BaselineMigrationCatalogTest {
     }
 
     @Test
+    void scansMigrationsUnderANonSourceTreeNamedIt() throws Exception {
+        Path path = directory.resolve("it/resources/db/migration/payment/V1__loose_it.sql");
+        Files.createDirectories(path.getParent());
+        Files.writeString(path, "CREATE TABLE loose_it (id bigint primary key);");
+
+        BaselineMigrationCatalog catalog = BaselineMigrationCatalog.discover(
+                directory, new MavenProject(), Set.of());
+
+        assertTrue(catalog.moduleNames().contains("payment"));
+    }
+
+    @Test
     void scansIntegrationTestSourceSetWhenItIsTheSearchRoot() throws Exception {
         migrationAt("it", "fixture", "V1__fixture.sql");
 
