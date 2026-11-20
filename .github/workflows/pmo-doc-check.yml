@@ -382,8 +382,25 @@ jobs:
             -Dmango.check.baseRef="$BASE_SHA" \
             verify
 
-      - name: Generate trusted full-Reactor architecture inventory for governance
+      - name: Detect architecture inventory sensitivity
         if: needs.preflight_scope.outputs.m09 == 'true' && needs.preflight_scope.outputs.backend_mode == 'governance'
+        id: architecture_scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          changed="$(git diff --name-only "$BASE_SHA...HEAD")"
+          if printf '%s\n' "$changed" | grep -Eq '^(mango-pmo/baselines/|mango/mango-tools/mango-architecture-|mango/mango-tools/mango-maven-plugin/src/main/resources/rulesets/|mango/mango-tools/mango-maven-plugin/src/main/java/io/mango/plugin/architecture/|mango/pom\.xml$|mango/mango-parent/pom\.xml$)'; then
+            echo "value=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=false" >> "$GITHUB_OUTPUT"
+            echo "本次改动不涉及架构基线、规则集或架构规则代码，跳过全量架构清点（预算仍按已提交基线校验）。"
+          fi
+
+      - name: Generate trusted full-Reactor architecture inventory for governance
+        if: >-
+          needs.preflight_scope.outputs.m09 == 'true' &&
+          needs.preflight_scope.outputs.backend_mode == 'governance' &&
+          steps.architecture_scope.outputs.value == 'true'
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
@@ -407,8 +424,9 @@ jobs:
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           BACKEND_MODE: ${{ needs.preflight_scope.outputs.backend_mode }}
+          FRESH_INVENTORY: ${{ steps.architecture_scope.outputs.value }}
         run: |
-          if [ "$BACKEND_MODE" = "governance" ]; then
+          if [ "$BACKEND_MODE" = "governance" ] && [ "$FRESH_INVENTORY" = "true" ]; then
             node mango-pmo/tools/check-architecture-debt-budget.mjs --base-ref "$BASE_SHA"
           else
             node mango-pmo/tools/check-architecture-debt-budget.mjs --baseline-only --base-ref "$BASE_SHA"
