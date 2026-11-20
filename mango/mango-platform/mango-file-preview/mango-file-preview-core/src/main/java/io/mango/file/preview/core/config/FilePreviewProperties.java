@@ -31,6 +31,14 @@ public class FilePreviewProperties {
     /** 预览引擎入口路径。 */
     private String enginePath = "/onlinePreview";
 
+    /**
+     * 引擎的对外访问地址（浏览器可达），如 {@code https://engine.example.com}。
+     *
+     * <p>留空表示引擎与应用同源（内嵌部署），此时返回相对地址。
+     * 与 {@code mango.file-preview.remote.base-url}（引擎回打应用的地址）语义不同，不可互相替代。</p>
+     */
+    private String enginePublicBaseUrl;
+
     /** 源文件临时访问路径。 */
     private String sourcePath = "/file-preview/sources";
 

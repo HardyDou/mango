@@ -67,6 +67,30 @@ class FilePreviewPageControllerTest {
     }
 
     @Test
+    void configuredEngineOriginKeepsConversionOnPlatformPage() throws Exception {
+        when(filePreviewService.previewMode(TOKEN)).thenReturn(FilePreviewMode.PDF_CONVERSION);
+        when(filePreviewService.previewTaskByToken(TOKEN, false)).thenReturn(task(FilePreviewTaskStatus.QUEUED, null));
+
+        RenderedPage page = render(controller.redirectPreviewEntry(TOKEN, false, false));
+
+        assertThat(page.status()).isEqualTo(200);
+        assertThat(page.body()).contains("文件正在转换");
+        // 独立部署配置了引擎对外地址时，转换页仍由应用出，不得跳到引擎 origin。
+        verify(filePreviewService, never()).createEnginePreviewByToken(anyString());
+    }
+
+    @Test
+    void configuredEngineOriginKeepsNativePdfOnPlatformPage() throws Exception {
+        when(filePreviewService.previewMode(TOKEN)).thenReturn(FilePreviewMode.NATIVE_PDF);
+
+        RenderedPage page = render(controller.redirectPreviewEntry(TOKEN, false, false));
+
+        assertThat(page.status()).isEqualTo(200);
+        assertThat(page.body()).contains("/pdfjs/web/viewer.html?file=");
+        verify(filePreviewService, never()).createEnginePreviewByToken(anyString());
+    }
+
+    @Test
     void convertedOfficeDocumentUsesTokenProtectedArtifactInPdfViewer() throws Exception {
         when(filePreviewService.previewMode(TOKEN)).thenReturn(FilePreviewMode.PDF_CONVERSION);
         when(filePreviewService.previewTaskByToken(TOKEN, true)).thenReturn(task(FilePreviewTaskStatus.SUCCEEDED, 99L));

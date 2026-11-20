@@ -292,3 +292,5 @@ pnpm -F @mango/file test
 - `url` 形态不变，仍按 `trust.host` 与信任目录校验；该形态仅作兼容兜底，启用时需显式配置 `mango.file-preview.source-base-url`（缺失报 `180004`）。
 - 独立部署引擎的远程直取通过 `GET /file-preview/sources?token=…` 流式取源（票据有效性由该接口在取流时校验，不额外提供有效性探测端点）；该路径不经登录态鉴权，凭据是短期一次性票据本身，业务侧不感知。
 - 业务侧无需改动：一如既往通过 `GET /file-preview/page?fileId=…` 拿到预览页，票据由平台签发与续期。
+
+> Issue #1380 影响说明：独立部署（应用与预览引擎分进程）时，图片/音视频/压缩包等由引擎出页，预览跳转带 `mango.file-preview.engine-public-base-url` 配置的引擎 origin；PDF 与 Office 转换产物仍由应用出页（`preview-artifact`），引擎不参与。内嵌部署（不配置该 key）行为不变。
