@@ -31,7 +31,7 @@
     <#if img?contains("http://") || img?contains("https://")|| img?contains("ftp://")|| img?contains("file://")>
     <#assign finalUrl="${img}">
     <#else>
-    <#assign finalUrl="${baseUrl}${img}">
+    <#assign finalUrl="${baseUrl}${img?remove_beginning('/')}">
     </#if>
     <li><div src="${finalUrl}" data-original-url="${finalUrl}" style="display: none"></li>
     </#list>

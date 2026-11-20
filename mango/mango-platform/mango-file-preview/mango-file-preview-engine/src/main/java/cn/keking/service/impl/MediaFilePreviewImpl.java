@@ -8,7 +8,6 @@ import cn.keking.service.FileHandlerService;
 import cn.keking.service.FilePreview;
 import cn.keking.service.Mediatomp4Service;
 import cn.keking.utils.DownloadUtils;
-import cn.keking.utils.FileConvertStatusManager;
 import cn.keking.utils.KkFileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,14 +28,14 @@ import java.util.concurrent.Executors;
 @Service
 public class MediaFilePreviewImpl implements FilePreview {
 
-    private static final Logger logger = LoggerFactory.getLogger(MediaFilePreviewImpl.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MediaFilePreviewImpl.class);
     private final FileHandlerService fileHandlerService;
     private final OtherFilePreviewImpl otherFilePreview;
     private final Mediatomp4Service mediatomp4Service;
     private final OfficeFilePreviewImpl officefilepreviewimpl;
 
     // 用于处理回调的线程池
-    private static final ExecutorService callbackExecutor = Executors.newFixedThreadPool(3);
+    private static final ExecutorService CALLBACK_EXECUTOR = Executors.newFixedThreadPool(3);
 
     public MediaFilePreviewImpl(FileHandlerService fileHandlerService,
                                 OtherFilePreviewImpl otherFilePreview,
@@ -76,7 +75,7 @@ public class MediaFilePreviewImpl implements FilePreview {
             // 检查缓存
             File outputFile = new File(outFilePath);
             if (outputFile.exists() && !forceUpdatedCache && ConfigConstants.isCacheEnabled()) {
-                String relativePath = fileHandlerService.getRelativePath(outFilePath);
+                String relativePath = fileHandlerService.getPublicPath(outFilePath);
                 if (fileHandlerService.listConvertedMedias().containsKey(cacheName)) {
                     model.addAttribute("mediaUrl", relativePath);
                     return MEDIA_FILE_PREVIEW_PAGE;
@@ -97,19 +96,19 @@ public class MediaFilePreviewImpl implements FilePreview {
                 try {
                     // 启动异步转换，并添加回调处理
                     startAsyncConversion(filePath, outFilePath, cacheName, fileAttribute);
-					int refreshSchedule = ConfigConstants.getTime();
+                    int refreshSchedule = ConfigConstants.getTime();
                     // 返回等待页面
                     model.addAttribute("fileName", fileName);
-					model.addAttribute("time", refreshSchedule);
+                    model.addAttribute("time", refreshSchedule);
                     model.addAttribute("message", "视频文件正在转换中，请稍候...");
                     return WAITING_FILE_PREVIEW_PAGE;
                 } catch (Exception e) {
-                    logger.error("Failed to start video conversion: {}", filePath, e);
+                    LOGGER.error("Failed to start video conversion: {}", filePath, e);
                     return otherFilePreview.notSupportedFile(model, fileAttribute, "视频转换异常，请联系管理员");
                 }
             } else {
                 // 不需要转换的文件，直接返回
-                model.addAttribute("mediaUrl", fileHandlerService.getRelativePath(outFilePath));
+                model.addAttribute("mediaUrl", fileHandlerService.getPublicPath(outFilePath));
                 return MEDIA_FILE_PREVIEW_PAGE;
             }
         }
@@ -146,19 +145,19 @@ public class MediaFilePreviewImpl implements FilePreview {
                     // 2. 加入视频缓存（只在转换成功后才添加）
                     if (ConfigConstants.isCacheEnabled()) {
                         fileHandlerService.addConvertedMedias(cacheName,
-                                fileHandlerService.getRelativePath(outFilePath));
+                                fileHandlerService.getPublicPath(outFilePath));
                     }
                 } catch (Exception e) {
-                    logger.error("视频转换后续处理失败: {}", filePath, e);
+                    LOGGER.error("视频转换后续处理失败: {}", filePath, e);
                 }
             } else {
                 // 转换失败，保留源文件供排查问题
-                logger.error("视频转换失败，保留源文件: {}", filePath);
+                LOGGER.error("视频转换失败，保留源文件: {}", filePath);
                 if (throwable != null) {
-                    logger.error("视频转换失败原因: ", throwable);
+                    LOGGER.error("视频转换失败原因: ", throwable);
                 }
             }
-        }, callbackExecutor);
+        }, CALLBACK_EXECUTOR);
     }
 
     /**
@@ -172,12 +171,12 @@ public class MediaFilePreviewImpl implements FilePreview {
                 int maxSizeMB = ConfigConstants.getMediaConvertMaxSize();
 
                 if (fileSizeMB > maxSizeMB) {
-                    logger.warn("视频文件大小超过限制: {}MB > {}MB", fileSizeMB, maxSizeMB);
+                    LOGGER.warn("视频文件大小超过限制: {}MB > {}MB", fileSizeMB, maxSizeMB);
                     return true;
                 }
             }
         } catch (Exception e) {
-            logger.error("检查文件大小时出错: {}", filePath, e);
+            LOGGER.error("检查文件大小时出错: {}", filePath, e);
         }
         return false;
     }

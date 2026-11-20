@@ -17,6 +17,9 @@
 - `TrustHostFilter` / `TrustDirFilter` 原先只认 `url`/`urls`/`currentUrl`/`urlPath`，`fileId` 形态的进程内取源请求因「无网络地址」被判为不可信站点，直接返回 `403` + `notTrustHost.html`（918 字节），导致 `#1316` 的进程内直取在引擎页不可用。
 - 新增 `cn.keking.utils.PreviewSourceRequests#isInternalSource`：请求带 `fileId` 且本进程注册了 `FileDownloader` 时视为进程内取源，这类请求没有网络地址可供站点校验，`TrustHostFilter`/`TrustDirFilter` 放行；票据有效性由取源环节校验（无效返回 `180002`）。`url` 形态请求行为不变：带非可信 `url` 仍 403，两者都缺仍 403。
 - `source-base-url` 不再从当前请求地址静默推断：走 `url` 兜底通道但未配置时抛业务错误 `180004`，避免在网关/反向代理后生成一个引擎访问不到的地址；`internal-source-enabled` 保持默认 `true`，语义收敛为「允许按票据直取（内嵌进程内 / 独立远程），置 `false` 即强制 `url` 兜底」。#1362
+- 预览页内的图片地址仍按 `url` 通道拼装：`PictureFilePreviewImpl` 把取源票据直接塞进 `imgUrls`，`picture.ftl` 再补 `baseUrl`，页面出现 `src="http://<host>/<票据>"`，该路径没有 handler，浏览器不带 `Authorization` 头只能拿到 403/404。现在落盘图片改走统一前缀 `/preview-file/<落盘文件名>`（`FileHandlerService#getPublicPath`），模板用 `?remove_beginning('/')` 拼接，不再产生双斜杠。#1369
+- 引擎落盘的音视频文件（`/file-<id>-<hash>.mp4`）不在 `PERMIT_PATHS` 中，`<video>` 不带 `Authorization` 头直接 401。现在 `MediaFilePreviewImpl` 的三处落盘地址统一由 `getPublicPath` 生成，`PERMIT_PATHS` 只放行单一前缀 `/preview-file/**`（映射到引擎 file 目录）并把它登记为 PUBLIC 资源；没有放行 `/**`、`/file-*`、`/**/*.mp4` 这类会把整个引擎工作目录暴露为匿名可读的宽匹配。#1369
+- `fileId` 通道下的 `xlsx`/`csv` 仍被送进引擎 Luckysheet 页面并把票据当数据地址（401/404），与 README 声明矛盾。现在 `FilePreviewServiceImpl#previewMode` 在进程内直取生效时把 `xlsx`/`csv` 判为 `PDF_CONVERSION`，页面直接进入 PDF.js 读 `/file-preview/files/preview-artifact`（`renderMode` 为 `CONVERTING`），README §2.2/§2.3 同步为「`fileId` 通道固定回落 PDF 转换」。新增 `FilePreviewPublicFileHttpTest` 断言匿名取图片（`image/*`）、`video/mp4`、表格 PDF 产物（`application/pdf`）均为 200 且 Content-Type 正确。#1369
 
 ## Unreleased - 质量门禁去掉零缺陷收益的格式类规则
 

@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.IntStream;
 
 /**
@@ -36,7 +37,22 @@ public class FileHandlerService {
 
     private static final String PDF2JPG_IMAGE_FORMAT = ".jpg";
 
+    /**
+     * 引擎落盘文件的对外访问前缀。
+     *
+     * <p>页面里的子资源（图片、音视频、转换产物）统一挂在这个前缀下：{@code WebConfig} 把该前缀映射到引擎
+     * file 目录，{@code FilePreviewPermitPathBeanPostProcessor} 只放行该前缀，浏览器不再需要
+     * {@code Authorization} 头。前缀之外的引擎根级文件地址不进入任何安全放行清单。</p>
+     */
+    public static final String PUBLIC_FILE_PATH_PREFIX = "/preview-file";
+
     private final Logger logger = LoggerFactory.getLogger(FileHandlerService.class);
+    /**
+     * 走引擎前端表格渲染的表格扩展名
+     */
+    private static final Set<String> HTML_VIEW_SUFFIXES =
+            Set.of("xls", "xlsx", "csv", "xlsm", "xlt", "xltm", "et", "ett", "xlam");
+
     private final String fileDir = ConfigConstants.getFileDir();
     private final CacheService cacheService;
     @Value("${server.tomcat.uri-encoding:UTF-8}")
@@ -87,6 +103,30 @@ public class FileHandlerService {
      */
     public String getRelativePath(String absolutePath) {
         return absolutePath.substring(fileDir.length());
+    }
+
+    /**
+     * 落盘文件的对外访问地址。
+     *
+     * @param absolutePath 引擎落盘文件绝对路径
+     * @return 以 {@link #PUBLIC_FILE_PATH_PREFIX} 开头的同源地址
+     */
+    public String getPublicPath(String absolutePath) {
+        return toPublicPath(getRelativePath(absolutePath));
+    }
+
+    /**
+     * 把引擎内部相对路径转换成对外访问地址。
+     *
+     * @param relativePath {@link #getRelativePath(String)} 的结果，如 {@code /file-1-abc.mp4}
+     * @return 以 {@link #PUBLIC_FILE_PATH_PREFIX} 开头的同源地址
+     */
+    public static String toPublicPath(String relativePath) {
+        if (ObjectUtils.isEmpty(relativePath)) {
+            return PUBLIC_FILE_PATH_PREFIX;
+        }
+        String normalized = relativePath.startsWith("/") ? relativePath : "/" + relativePath;
+        return PUBLIC_FILE_PATH_PREFIX + normalized;
     }
 
     /**
@@ -272,7 +312,7 @@ public class FileHandlerService {
             try {
                 originFileName = URLDecoder.decode(originFileName, uriEncoding);  //转义的文件名 解下出原始文件名
             } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
+                logger.error("Failed to decode file name: {}", originFileName, e);
             }
         }else {
             url = Objects.requireNonNull(WebUtils.encodeUrlFileName(url))
@@ -289,7 +329,7 @@ public class FileHandlerService {
             // 处理逻辑：抛出异常、记录日志、返回错误等
             throw new IllegalArgumentException("文件名超过系统限制");
         }
-        boolean isHtmlView = suffix.equalsIgnoreCase("xls") || suffix.equalsIgnoreCase("xlsx") || suffix.equalsIgnoreCase("csv") || suffix.equalsIgnoreCase("xlsm") || suffix.equalsIgnoreCase("xlt") || suffix.equalsIgnoreCase("xltm") || suffix.equalsIgnoreCase("et") || suffix.equalsIgnoreCase("ett") || suffix.equalsIgnoreCase("xlam");
+        boolean isHtmlView = HTML_VIEW_SUFFIXES.contains(suffix.toLowerCase());
         String cacheFilePrefixName = null;
         try {
             cacheFilePrefixName = originFileName.substring(0, originFileName.lastIndexOf(".")) + suffix + "."; //这里统一文件名处理 下面更具类型 各自添加后缀
@@ -310,39 +350,51 @@ public class FileHandlerService {
         attribute.setOriginFilePath(originFilePath);
         attribute.setSuffix(suffix);
         attribute.setUrl(url);
-        if (req != null) {
-            String officePreviewType = req.getParameter("officePreviewType");
-            String forceUpdatedCache = req.getParameter("forceUpdatedCache");
-            String usePasswordCache = req.getParameter("usePasswordCache");
-            if (StringUtils.hasText(officePreviewType)) {
-                attribute.setOfficePreviewType(officePreviewType);
-            }
-            if (StringUtils.hasText(compressFileKey)) {
-                attribute.setCompressFile(isCompressFile);
-                attribute.setCompressFileKey(compressFileKey);
-            }
-            if ("true".equalsIgnoreCase(forceUpdatedCache)) {
-                attribute.setForceUpdatedCache(true);
-            }
+        applyRequestOptions(attribute, req, compressFileKey, isCompressFile);
+        return attribute;
+    }
 
-            String tifPreviewType = req.getParameter("tifPreviewType");
-            if (StringUtils.hasText(tifPreviewType)) {
-                attribute.setTifPreviewType(tifPreviewType);
-            }
-
-            String filePassword = req.getParameter("filePassword");
-            if (StringUtils.hasText(filePassword)) {
-                attribute.setFilePassword(filePassword);
-            }
-            if ("true".equalsIgnoreCase(usePasswordCache)) {
-                attribute.setUsePasswordCache(true);
-            }
-            String kkProxyAuthorization = req.getHeader("kk-proxy-authorization");
-            attribute.setKkProxyAuthorization(kkProxyAuthorization);
-
+    /**
+     * 把请求上的可选参数（预览类型、强制刷新、密码、代理授权）写回文件属性
+     *
+     * @param attribute      文件属性
+     * @param req            请求，可为 null
+     * @param compressFileKey 压缩包内文件 key
+     * @param isCompressFile 是否为压缩包内文件
+     */
+    private void applyRequestOptions(FileAttribute attribute, HttpServletRequest req,
+                                     String compressFileKey, boolean isCompressFile) {
+        if (req == null) {
+            return;
+        }
+        String officePreviewType = req.getParameter("officePreviewType");
+        String forceUpdatedCache = req.getParameter("forceUpdatedCache");
+        String usePasswordCache = req.getParameter("usePasswordCache");
+        if (StringUtils.hasText(officePreviewType)) {
+            attribute.setOfficePreviewType(officePreviewType);
+        }
+        if (StringUtils.hasText(compressFileKey)) {
+            attribute.setCompressFile(isCompressFile);
+            attribute.setCompressFileKey(compressFileKey);
+        }
+        if ("true".equalsIgnoreCase(forceUpdatedCache)) {
+            attribute.setForceUpdatedCache(true);
         }
 
-        return attribute;
+        String tifPreviewType = req.getParameter("tifPreviewType");
+        if (StringUtils.hasText(tifPreviewType)) {
+            attribute.setTifPreviewType(tifPreviewType);
+        }
+
+        String filePassword = req.getParameter("filePassword");
+        if (StringUtils.hasText(filePassword)) {
+            attribute.setFilePassword(filePassword);
+        }
+        if ("true".equalsIgnoreCase(usePasswordCache)) {
+            attribute.setUsePasswordCache(true);
+        }
+        String kkProxyAuthorization = req.getHeader("kk-proxy-authorization");
+        attribute.setKkProxyAuthorization(kkProxyAuthorization);
     }
 
     /**

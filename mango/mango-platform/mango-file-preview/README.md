@@ -40,7 +40,7 @@
 |------|----------|------------|----------|
 | `doc`、`docx` | 平台异步转换为 PDF，PDF.js 读取 `/file-preview/files/preview-artifact` | 是（LibreOffice/JODConverter，显式关闭 `mango.fileproc.convert.office-to-pdf-enabled` 时回退 Aspose） | 依赖 Aspose 授权与字体；缺字体时转换不报错但可能出现缺字或替换字形；复杂排版与 Office 原生渲染有差异 |
 | `ppt`、`pptx` | 同 `doc`/`docx`：转 PDF 后由 PDF.js 展示（无逐页动画与嵌入媒体） | 是 | 同上；动画、切换效果、嵌入音视频不保留 |
-| `xls`、`xlsx` | 默认转 PDF 后由 PDF.js 展示；`xlsx`（以及 `csv`）在 `officePreviewType` 不为 `html` 且 `officeTypeWeb=web` 时由引擎用 Luckysheet 渲染前端表格（`officeweb.ftl`），`xls` 没有该路径、始终走 PDF 转换 | 默认是；前端表格渲染不需要 LibreOffice | 前端表格渲染依赖 `getCorsFile?urlPath=<base64 源地址>` 回源，`fileId` 通道下没有对外 URL，该回源会被信任门以空 host 拒绝（`isNotTrustHost(null)` 恒拒），因此 `fileId` 通道下不启用前端表格渲染，`xls`/`xlsx` 一律退回 PDF 转换路径。表格预览可用，只是没有公式编辑、筛选等交互能力 |
+| `xls`、`xlsx`、`csv` | `fileId` 通道下一律由平台异步转换为 PDF，PDF.js 读取 `/file-preview/files/preview-artifact`；只有 `url` 通道且 `officePreviewType != "html"`、`officeTypeWeb=web` 时，`xlsx`/`csv` 才由引擎用 Luckysheet 渲染前端表格（`officeweb.ftl`），`xls` 没有该路径 | `fileId` 通道下是（LibreOffice/JODConverter） | `fileId` 通道没有对外 URL，前端表格的 `getCorsFile` 回源会被信任门拒绝，因此该通道固定回落 PDF 转换；表格可读但没有公式编辑与筛选能力 |
 | `pdf` | PDF.js 直接读取 `/file-preview/files/preview-content` | 否 | 加密 PDF 需要密码；超大 PDF 首屏依赖分页加载 |
 | 图片（`jpg`、`png`、`gif`、`webp`、`bmp`、`svg` 等） | 引擎 `/picturesPreview` 直接展示（`svg` 走 `svg.ftl`） | 否 | `heic`/`heif` 走 `heic.ftl`、`avif` 归入图片通道，均依赖浏览器解码能力；浏览器不支持时需前端转码或降级为下载 |
 | `mp4` | 引擎 `media.ftl` 以 HTML5 `<video>` 播放 | 否 | 仅 H.264 视频 + AAC 音频的组合在各浏览器稳定可播；其它编码（H.265/HEVC、AV1、ProRes 等）可能只有声音或直接黑屏 |
@@ -48,8 +48,8 @@
 
 ### 2.3 能力边界
 
-- `xlsx`/`csv` 的 officeweb 前端渲染（`officeweb.ftl` + Luckysheet）**仅在** `officePreviewType != "html"` **且** `officeTypeWeb == "web"` 时启用（`mango-file-preview-engine/src/main/java/cn/keking/service/impl/OfficeFilePreviewImpl.java#handleWebPreview`，判断为 `html` 时直接返回 `null`）。
-- `fileId` 通道下该模式不可用：页面走 `getCorsFile?urlPath=<base64 源地址>` 回源，而 `fileId` 通道没有对外 URL，信任门对空 host 调用 `isNotTrustHost(null)` 恒拒，因此退回 PDF 转换路径。
+- `xlsx`/`csv` 的 Luckysheet 前端渲染（`officeweb.ftl`）只在 `url` 通道可用：引擎 `mango-file-preview-engine/src/main/java/cn/keking/service/impl/OfficeFilePreviewImpl.java#handleWebPreview` 要求 `officePreviewType != "html"` 且 `officeTypeWeb == "web"`，回源依赖 `getCorsFile?urlPath=<base64 源地址>`，源地址 host 必须在信任列表内。
+- `fileId` 通道由平台侧先定渲染方式：`FilePreviewServiceImpl#previewMode` 在进程内直取生效（`useInternalSource()` 为真）时把 `xlsx`/`csv` 判为 `PDF_CONVERSION`（`ENGINE_SHEET_EXTENSIONS`），页面直接进入 PDF.js 读 `/file-preview/files/preview-artifact`，根本不进入引擎的表格页面，因此不受上面的引擎开关影响。这与 `renderMode` 的 `CONVERTING` 取值一致：`fileId` 通道下表格先转换再展示。
 
 ### 2.4 限制清单
 
@@ -62,6 +62,20 @@
 | 解包占用引擎工作目录磁盘 | 大压缩包解包后的文件落在引擎工作目录，占用与包内文件总量相当的空间 | 关注引擎工作目录（解压与转换缓存目录）容量，必要时调大或定期清理 |
 | `docx`/`ppt` 依赖 Aspose 授权与字体 | 无授权时转换失败；缺字体时转换不报错但可能缺字 | 配置 Aspose license；`fonts-folders` 只追加字体目录，不覆盖默认，缺字体只记录 ERROR 日志、不阻断预览 |
 | `heic`/`avif` 依赖浏览器解码 | 浏览器不支持时图片区域空白 | 前端转码为 `jpg`/`webp`，或对这些格式直接降级为下载 |
+
+### 2.5 页面内子资源统一前缀
+
+浏览器加载预览页时**不带** `Authorization` 头，因此页面里的图片、`<video>` 源和文档产物必须是匿名可取的同源地址。引擎落盘文件统一挂在一个可枚举前缀下：
+
+| 页面内子资源 | 地址形态 | 匿名取用依据 |
+|--------------|----------|--------------|
+| 图片（`picture.ftl`） | `http://<host>/preview-file/<落盘文件名>` | `PERMIT_PATHS` 放行 `/preview-file/**` |
+| 音视频（`media.ftl`） | `http://<host>/preview-file/<落盘文件名>` | 同上 |
+| 文档/表格产物 | `http://<host>/file-preview/files/preview-artifact?token=<票据>`（PDF 直出为 `preview-content`） | token 校验 |
+
+- `/preview-file/**` 由 `cn.keking.config.WebConfig` 映射到引擎落盘目录 `ConfigConstants.getFileDir()`，对外地址由 `FileHandlerService#getPublicPath` 统一拼装（`FileHandlerService.PUBLIC_FILE_PATH_PREFIX`）。
+- `FilePreviewPermitPathBeanPostProcessor#PERMIT_PATHS` 里**只有** `/preview-file/**` 这一个根级文件前缀；禁止改成 `/**`、`/file-*`、`/**/*.mp4` 这类宽匹配，否则整个引擎工作目录（含解包后的原文件）都会变成匿名可读。放行清单由 `FilePreviewEngineResourceRegistrarTest#permitPaths_allowOnlyTheSinglePublicFilePrefixForEngineFiles` 锁定：以 `/preview-file` 开头的条目必须恰好一条。
+- `previewUrl`/`preview-entry` 返回的地址带网关前缀 `/api`（网关据此路由到 `mango-file-preview`）。单进程直连（不走网关，直接用 `http://127.0.0.1:<port>` 访问应用）时需剥掉 `/api` 前缀，否则 404。
 
 ## 3. 后端接入
 
@@ -389,6 +403,8 @@ Office 转换统一使用 LibreOffice/JODConverter；只有显式关闭 `mango.f
 
 自动注册为 PUBLIC 的资源只服务预览引擎页面和短期 token 访问，不接受任意 `fileId`。包括：
 
+其中 `/preview-file/**` 只用于页面内图片和音视频子资源（见 §2.5），不含任何目录列表能力。
+
 ```text
 /onlinePreview
 /picturesPreview
@@ -401,6 +417,7 @@ Office 转换统一使用 LibreOffice/JODConverter；只有显式关闭 `mango.f
 /file-preview/files/preview-artifact
 /file-preview/sources
 /file-preview/generated
+/preview-file/**
 /pdfjs/**
 /js/**
 /css/**

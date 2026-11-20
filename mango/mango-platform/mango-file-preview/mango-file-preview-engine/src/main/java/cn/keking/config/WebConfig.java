@@ -26,13 +26,19 @@ public class WebConfig implements WebMvcConfigurer {
     private static final int BASE_URL_FILTER_ORDER = 20;
     private static final int URL_CHECK_FILTER_ORDER = 30;
     /**
-     * 访问外部文件配置
+     * 访问外部文件配置。
+     *
+     * <p>落盘文件的对外地址统一挂在 {@link cn.keking.service.FileHandlerService#PUBLIC_FILE_PATH_PREFIX} 下
+     * （页面里的图片、音视频、转换产物都用这个前缀），安全放行清单只覆盖该前缀；根级 {@code /**} 仅保留给
+     * {@code url} 兼容通道的既有页面，不在放行清单内。</p>
      */
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         String filePath = ConfigConstants.getFileDir();
         String resourceLocation = fileResourceLocation(filePath);
         LOGGER.info("Add resource locations: {}", resourceLocation);
+        registry.addResourceHandler(cn.keking.service.FileHandlerService.PUBLIC_FILE_PATH_PREFIX + "/**")
+                .addResourceLocations(resourceLocation);
         registry.addResourceHandler("/**").addResourceLocations(
                 "classpath:/META-INF/resources/", "classpath:/resources/", "classpath:/static/",
                 "classpath:/public/", resourceLocation);
