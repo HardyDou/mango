@@ -21,6 +21,14 @@ public class FilePreviewPermitPathBeanPostProcessor implements BeanPostProcessor
             "io.mango.auth.starter.config.AuthSecurityProperties",
             "io.mango.authorization.starter.autoconfigure.SecurityProperties"
     );
+    /**
+     * 引擎落盘文件的对外访问前缀。
+     *
+     * <p>与引擎 {@code cn.keking.service.FileHandlerService#PUBLIC_FILE_PATH_PREFIX} 和引擎
+     * {@code cn.keking.config.WebConfig} 的资源映射必须一致，由 {@code FilePreviewEngineResourceRegistrarTest} 锁定。
+     * 这是唯一允许匿名访问的落盘文件路径，根级宽匹配不在放行范围内。</p>
+     */
+    static final String PUBLIC_FILE_PATH_PREFIX = "/preview-file";
     private static final List<String> PERMIT_PATHS = List.of(
             "/onlinePreview",
             "/onlinePreview/**",
@@ -38,6 +46,8 @@ public class FilePreviewPermitPathBeanPostProcessor implements BeanPostProcessor
             "/file-preview/files/preview-artifact",
             "/file-preview/sources",
             "/file-preview/generated",
+            // 引擎落盘文件的唯一放行前缀：页面内图片、音视频、转换产物都挂在这里，根级宽匹配仍不放行。
+            PUBLIC_FILE_PATH_PREFIX + "/**",
             "/pdfjs/**",
             "/js/**",
             "/css/**",

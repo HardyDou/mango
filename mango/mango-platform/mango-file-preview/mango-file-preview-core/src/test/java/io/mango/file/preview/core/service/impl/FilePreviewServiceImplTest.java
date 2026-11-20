@@ -290,6 +290,41 @@ class FilePreviewServiceImplTest {
     }
 
     @Test
+    void previewMode_fileId直取通道下表格回落PDF转换() {
+        FilePreviewProperties properties = properties();
+
+        assertThat(previewModeOf(new StubFileApi("sheet.xlsx"), properties, () -> true))
+                .isEqualTo(FilePreviewMode.PDF_CONVERSION);
+        assertThat(previewModeOf(new StubFileApi("sheet.csv"), properties, () -> true))
+                .isEqualTo(FilePreviewMode.PDF_CONVERSION);
+        // 表格以外的形态不变：压缩包仍走引擎。
+        assertThat(previewModeOf(new StubFileApi("data.zip"), properties, () -> true))
+                .isEqualTo(FilePreviewMode.ENGINE);
+        // url 兜底通道（无进程内直取）仍保留引擎的表格前端渲染。
+        assertThat(previewModeOf(new StubFileApi("sheet.xlsx"), properties, () -> false))
+                .isEqualTo(FilePreviewMode.ENGINE);
+    }
+
+    @Test
+    void renderMode_fileId直取通道下表格进入转换中() {
+        assertThat(renderModeOf(new StubFileApi("sheet.xlsx"), () -> true))
+                .isEqualTo(FilePreviewRenderMode.CONVERTING);
+    }
+
+    private FilePreviewMode previewModeOf(FileApi fileApi, FilePreviewProperties properties,
+                                         PreviewSourceAvailability availability) {
+        FilePreviewServiceImpl service = service(properties, fileApi, new StubTokenStore(), Clock.systemUTC(),
+                new StubFileContentProvider(), availability);
+        return service.previewMode(service.createPreview(100L).getPreviewToken());
+    }
+
+    private FilePreviewRenderMode renderModeOf(FileApi fileApi, PreviewSourceAvailability availability) {
+        FilePreviewServiceImpl service = service(properties(), fileApi, new StubTokenStore(), Clock.systemUTC(),
+                new StubFileContentProvider(), availability);
+        return service.createPreview(100L).getRenderMode();
+    }
+
+    @Test
     void createEnginePreview_关闭进程内直取时始终回退URL且不告警() {
         FilePreviewProperties properties = new FilePreviewProperties();
         properties.setSourceBaseUrl("http://business.example.com");
