@@ -1,9 +1,21 @@
 ## Unreleased - 预览取源 fileId 不再被信任站点过滤拦截
 
+### Added
+
+- 新增 `mango-file-preview-support`：远程取源传输契约 `FilePreviewSourceTransport` 与引擎侧下载器 `FilePreviewRemoteSourceDownloader`（实现 `cn.keking.spi.FileDownloader`），独立部署的预览引擎可按短期票据直取源文件，不必再退回 `url` 通道；落盘走流式转发，不会把整个文件读成 `byte[]`。#1362
+- 新增 `mango-file-preview-starter-remote`：`FilePreviewFeignClient`（`sourceStatus` 校验票据）、`FilePreviewSourceFeignClient`（裸 `feign.Response` 流式取源）、`FilePreviewRemoteAutoConfiguration` 与 `mango.file-preview.remote.enabled` / `base-url` / `connect-timeout` / `read-timeout` 配置；`remote.enabled=true` 缺 `base-url` 时启动失败并点名配置项。调用由 `mango-infra-feign-starter` 的服务间签名保护，不新增 permit 路径、不新增服务间令牌。#1362
+- `FilePreviewApi` 新增 `GET /file-preview/sources/status`（`R<Boolean>`）：只校验 source token 是否仍可用，不取流、不消耗票据，供远程直取使用。#1362
+
+### Documentation
+
+- `mango-file-preview` README 收敛取源说明：新增通道表（`fileId` 主路径 / 远程直取 / `url` 兜底，各自的触发条件、身份校验点与失败语义）、七类格式的渲染方式与已知限制、能力边界（`officeweb` 前端表格渲染只在 `officePreviewType` 非 `html` 且 `officeTypeWeb=web` 时启用，`fileId` 通道下 `xls`/`xlsx` 退回 PDF 转换）与限制清单（`mp4` 仅 H.264/AAC、加密压缩包需密码、解包占引擎工作目录磁盘、Aspose 字体、`heic`/`avif` 浏览器解码）。`internal-source-enabled` 改写为运维总开关（强制 `url` 兜底），并说明与 `mango.file-preview.remote.*` 的关系。#1362
+- 同一 README 补充 `180004` 错误码、`sources/status` 接口行、远程取源排查项与验证命令（含新增两个模块）；`mango-docs/guides/business-integration/file-upload-form.md` 同步不再把独立部署引擎描述为 `url` 形态。#1362
+
 ### Fixed
 
 - `TrustHostFilter` / `TrustDirFilter` 原先只认 `url`/`urls`/`currentUrl`/`urlPath`，`fileId` 形态的进程内取源请求因「无网络地址」被判为不可信站点，直接返回 `403` + `notTrustHost.html`（918 字节），导致 `#1316` 的进程内直取在引擎页不可用。
 - 新增 `cn.keking.utils.PreviewSourceRequests#isInternalSource`：请求带 `fileId` 且本进程注册了 `FileDownloader` 时视为进程内取源，这类请求没有网络地址可供站点校验，`TrustHostFilter`/`TrustDirFilter` 放行；票据有效性由取源环节校验（无效返回 `180002`）。`url` 形态请求行为不变：带非可信 `url` 仍 403，两者都缺仍 403。
+- `source-base-url` 不再从当前请求地址静默推断：走 `url` 兜底通道但未配置时抛业务错误 `180004`，避免在网关/反向代理后生成一个引擎访问不到的地址；`internal-source-enabled` 保持默认 `true`，语义收敛为「允许按票据直取（内嵌进程内 / 独立远程），置 `false` 即强制 `url` 兜底」。#1362
 
 ## Unreleased - 质量门禁去掉零缺陷收益的格式类规则
 

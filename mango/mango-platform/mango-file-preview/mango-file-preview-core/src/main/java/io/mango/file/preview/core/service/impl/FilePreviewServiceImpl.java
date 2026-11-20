@@ -19,15 +19,12 @@ import io.mango.file.preview.core.service.model.FilePreviewSource;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.kv.api.ITokenStore;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.nio.charset.StandardCharsets;
@@ -57,8 +54,6 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
     private static final String SOURCE_TOKEN_PREFIX = "file-preview:source:";
     private static final String ENGINE_FILE_PREFIX = "file-";
     private static final int MAX_EXTENSION_LENGTH = 20;
-    private static final int HTTP_PORT = 80;
-    private static final int HTTPS_PORT = 443;
     private static final Logger LOGGER = LoggerFactory.getLogger(FilePreviewServiceImpl.class);
 
     private final FilePreviewFileGateway fileGateway;
@@ -232,8 +227,14 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
     }
 
     /**
-     * 引擎预览地址：同进程内注册了取源实现时直接传 {@code fileId} 参数（值是短期取源票据，不可枚举，
-     * 不是数据库主键），由引擎按该标识向本进程取流；否则回退为对外域名的 {@code url} 参数。
+     * 引擎预览地址，按通道优先级选择参数：
+     *
+     * <ol>
+     *   <li>主路径 {@code fileId}：本次部署注册了取源实现（内嵌部署是同进程直取，独立部署的引擎是自己进程内的
+     *       远程直取），传短期取源票据，引擎按该标识取流，不暴露对外域名；</li>
+     *   <li>兼容兜底 {@code url}：只有 {@code internal-source-enabled=false}（运维强制走兜底）或没有任何
+     *       取源实现时才走，且必须显式配置 {@code source-base-url}，否则直接报错。</li>
+     * </ol>
      */
     private String enginePreviewUrl(String sourceTicket, String fileName) {
         if (!useInternalSource()) {
@@ -268,7 +269,7 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
     }
 
     /**
-     * 只有「期望直取、但进程里没有可用实现」才告警：独立引擎部署时显式关掉开关，回落属于预期行为。
+     * 只有「期望直取、但进程里没有可用实现」才告警：独立引擎部署显式关掉开关时回落属于预期行为。
      */
     private void warnIfInternalSourceUnavailable() {
         if (!properties.isInternalSourceEnabled()) {
@@ -276,16 +277,21 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
         }
         PreviewSourceAvailability availability = sourceAvailabilityProvider.getIfAvailable();
         if (availability == null || !availability.internalSourceAvailable()) {
-            LOGGER.warn("未装配 FileDownloader 直取实现，预览源文件回落到 url 下载，将经过 source-base-url：{}",
-                    sourceBaseUrl());
+            LOGGER.warn("未装配 FileDownloader 直取实现（内嵌直取或远程直取），预览源文件回落到 url 下载通道，"
+                    + "取源地址基于 mango.file-preview.source-base-url：{}", properties.getSourceBaseUrl());
         }
     }
 
+    /**
+     * url 兜底通道使用的内部服务地址。
+     *
+     * <p>{@code fileId} 是取源主路径：内嵌部署由进程内直取，独立部署的引擎由远程直取，都不需要本配置。
+     * 只有直取实现不可用时才回落到 {@code url} 通道，此时必须显式配置 {@code source-base-url}：
+     * 不再从当前请求推断，避免在多实例、网关和反向代理下静默拼出一个不可达或绕公网的地址。</p>
+     */
     private String sourceBaseUrl() {
-        if (StringUtils.hasText(properties.getSourceBaseUrl())) {
-            return StringUtils.trimTrailingCharacter(properties.getSourceBaseUrl().trim(), '/');
-        }
-        return currentBaseUrl();
+        Require.notBlank(properties.getSourceBaseUrl(), FilePreviewCode.SOURCE_BASE_URL_MISSING);
+        return StringUtils.trimTrailingCharacter(properties.getSourceBaseUrl().trim(), '/');
     }
 
     private String engineFileName(Long fileId, FileRecordVO fileRecord) {
@@ -419,24 +425,6 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
         return UUID.randomUUID().toString().replace("-", "");
     }
 
-    private String currentBaseUrl() {
-        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-        if (attributes == null) {
-            return "http://127.0.0.1";
-        }
-        HttpServletRequest request = attributes.getRequest();
-        StringBuilder builder = new StringBuilder();
-        builder.append(request.getScheme()).append("://").append(request.getServerName());
-        int port = request.getServerPort();
-        if (isNonDefaultPort(port)) {
-            builder.append(':').append(port);
-        }
-        if (StringUtils.hasText(request.getContextPath())) {
-            builder.append(request.getContextPath());
-        }
-        return builder.toString();
-    }
-
     private String normalize(String path) {
         if (!StringUtils.hasText(path)) {
             return "/";
@@ -445,10 +433,6 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
             return path;
         }
         return "/" + path;
-    }
-
-    private boolean isNonDefaultPort(int port) {
-        return port > 0 && port != HTTP_PORT && port != HTTPS_PORT;
     }
 
     private record PreviewToken(Long fileId, MangoContextSnapshot context, Instant expiresAt) {

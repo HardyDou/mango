@@ -14,7 +14,10 @@ public enum FilePreviewCode implements BizCode {
     PREVIEW_TOKEN_INVALID(180002, "预览令牌无效或已过期"),
 
     /** 文件不存在或不可预览。 */
-    FILE_NOT_FOUND(180003, "文件不存在或不可预览");
+    FILE_NOT_FOUND(180003, "文件不存在或不可预览"),
+
+    /** url 兜底通道缺少源文件内部服务地址。 */
+    SOURCE_BASE_URL_MISSING(180004, "未配置 mango.file-preview.source-base-url，无法生成 url 兜底取源地址");
 
     private final int code;
 
