@@ -30,5 +30,9 @@ test('P0 browser acceptance installs backend Maven prerequisites before startup'
   const startup = e2eJob.indexOf('- name: Start real Mango backend');
   assert.ok(prerequisites >= 0, 'missing backend prerequisite install step');
   assert.ok(startup > prerequisites, 'backend startup must follow prerequisite installation');
-  assert.match(e2eJob, /-pl :mango-bom,:mango-parent,:mango-common,:mango-tools[\s\S]*?-DskipTests[\s\S]*?install/u);
+  assert.match(
+    e2eJob,
+    /-pl :mango-bom,:mango-common,:mango-tools[\s\S]*?-DskipTests[\s\S]*?install/u,
+  );
+  assert.match(e2eJob, /-f mango\/mango-parent\/pom\.xml -DskipTests install/u);
 });
