@@ -41,6 +41,13 @@ public final class FileDownloaders {
      *
      * @return 没有下载器支持时返回 {@code null}，交由引擎内置实现处理
      */
+    /**
+     * @return 当前进程是否注册了直取实现
+     */
+    public static boolean hasProvider() {
+        return !DOWNLOADERS.isEmpty();
+    }
+
     public static ReturnResponse<String> tryDownload(FileAttribute fileAttribute, String fileName) {
         if (fileAttribute == null) {
             return null;
