@@ -1,3 +1,15 @@
+## Unreleased - 质量门禁去掉零缺陷收益的格式类规则
+
+### Changed
+
+- `rulesets/java/checkstyle.xml` 移除 `MagicNumber`、`Indentation`、`LeftCurly`、`WhitespaceAround`、`WhitespaceAfter`、`OperatorWrap`、`SeparatorWrap`、`ParenPad`、`DeclarationOrder`、`StaticVariableName`、`AvoidEscapedUnicodeCharacters`：这些检查不改变代码正确性，却占全仓存量债务的 80%（`MagicNumber` 单条 10,626/15,067），任何改动都会为历史噪音返工。格式统一交由 IDE/格式化器在提交前完成。
+- `no-new-violations-baseline.json` 同步收敛 15,067 → **2,948** 条，剩余全部为缺陷类（`pmd` 2,795 / `checkstyle` 153）；`excludedIssuesByRule` 一并清理已移除规则。
+- `mango-tools/README.md` 新增「6.1 规则集取舍」，记录移除清单、存量占用与保留范围；`reportOnlyRules` 示例规则改为仍存在的 `CyclomaticComplexityCheck`。
+
+### Compatibility
+
+- 这是**门禁放宽**：移除的规则不再阻断任何 PR。既有以这些规则为阻断依据的本地脚本或业务仓自定义配置需要同步调整，否则会看到「本地有告警、CI 不报」的差异。
+- 复杂度、文件长度、命名与缺陷类规则的行为未变，`CyclomaticComplexity max=20` 与指纹策略不变。
 ## Unreleased - 治理类 PR 按路径决定是否全量架构清点
 
 ### Changed

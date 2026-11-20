@@ -79,7 +79,7 @@ mvn -f mango/pom.xml mango:gen-permission
 | `mango.check.checkstyle.fileLengthMax` | 空 | 覆盖 Checkstyle 文件长度阈值；未传时沿用规则文件。 |
 | `mango.check.resourceStarterDependencyExceptions` | `artifactId=reason` | Resource Registry runtime 依赖例外。必须人工明确确认并写明理由，多个例外用英文逗号分隔。 |
 
-`reportOnlyRules` 按规则名匹配，大小写不敏感；命中问题写入 JSON 的 `reportOnlyIssues` 和 `reportOnlyIssueCount`，不进入 `newIssues`/`baselineIssues`，不参与 gate 阻断。两个边界要留意：降级按**规则名全局**生效，不限改动文件——例如把 `MagicNumberCheck` 写进去，会把全仓该规则的所有发现一起降级；`mango.check.gate=all` 也不会因为 report-only 而变成阻断。`mango.check.checkstyle.*Max` 会生成 `target/mango-check/checkstyle-resolved.xml`，不修改项目规则文件；未传时沿用选中规则文件的阈值。调整 `*Max` 不会再让存量指纹失效——复杂度类指纹只记录实际值，不记录配置阈值。
+`reportOnlyRules` 按规则名匹配，大小写不敏感；命中问题写入 JSON 的 `reportOnlyIssues` 和 `reportOnlyIssueCount`，不进入 `newIssues`/`baselineIssues`，不参与 gate 阻断。两个边界要留意：降级按**规则名全局**生效，不限改动文件——例如把 `CyclomaticComplexityCheck` 写进去，会把全仓该规则的所有发现一起降级；`mango.check.gate=all` 也不会因为 report-only 而变成阻断。`mango.check.checkstyle.*Max` 会生成 `target/mango-check/checkstyle-resolved.xml`，不修改项目规则文件；未传时沿用选中规则文件的阈值。调整 `*Max` 不会再让存量指纹失效——复杂度类指纹只记录实际值，不记录配置阈值。
 
 ### 推荐配置（可选，业务自愿开启）
 
@@ -309,6 +309,25 @@ scripts/publish-maven-batch.sh --all-non-app \
 - 生成代码编译不过：脚手架只提供结构，业务字段、依赖和 mapper 仍要补齐。
 - 生成权限后页面仍无按钮：还需要菜单资源入库、角色授权和前端按钮权限接入。
 - Maven 批次只缺 `mango-architecture-verification` POM：使用当前 `publish-maven-batch.sh` 重新规划新版本发布；不可变版本已经尝试后只能先核对仓库事实，禁止整批重发。
+
+### 6.1 规则集取舍
+
+`rulesets/java/checkstyle.xml` 只保留能定位真实缺陷的检查。以下规则**已移除**，原因是缺陷收益为零、却制造了绝大部分历史噪音与返工：
+
+| 移除的规则 | 移除前存量占用 |
+|---|---|
+| `MagicNumber` | 10,626 / 15,067（70.5%） |
+| `Indentation` | 610 |
+| `LeftCurly` | 341 |
+| `WhitespaceAround` / `WhitespaceAfter` | 263 |
+| `OperatorWrap` / `SeparatorWrap` / `ParenPad` | 84 |
+| `DeclarationOrder` | 147 |
+| `StaticVariableName` | 46 |
+| `AvoidEscapedUnicodeCharacters` | 2 |
+
+格式统一交由 IDE 或格式化器在提交前完成，不进入门禁。保留的检查包括 `CyclomaticComplexity`（真实复杂度）、`FileLength`、`FileTabCharacter`、命名类（类/方法/字段/常量）、`EqualsHashCode`、`MissingSwitchDefault`、`NeedBraces`、`EmptyBlock`、`NoFinalizer`、`CovariantEquals` 等。
+
+基线随之从 15,067 条收敛到 **2,948 条**，剩余的 `checkstyle` 153 条与 `pmd` 2,795 条全部是缺陷类发现。
 
 ## 12. 相关文档
 
