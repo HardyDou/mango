@@ -1,3 +1,144 @@
+## v2026.11.21-maven-1.15.0-preview-fileid-release - Mango Maven/docs 1.15.0 文件预览契约与质量门禁批次 - 2026-11-21
+
+Status: PENDING - 本批次已记录发布意图，尚未执行 Maven / npm 发布与消费端验证。
+
+Plan digest: `e38b9c6f30802e37f13bffc327bfaa0aa98cdf1c2f626628865835b0ece0f2e4`
+
+### Pull Requests
+
+- Changed: [PR #1333](https://github.com/HardyDou/mango/pull/1333) `fileId` 主路径打通：内嵌引擎按票据在进程内直取源文件，不再绕公网域名回源。Packages: `mango-file-preview-core` / `-engine` / `-starter`、`@mango/file`。Business Adaptation: 业务仍只透传 `fileId`，无需改造。
+- Fixed: [PR #1337](https://github.com/HardyDou/mango/pull/1337) 把「格式不支持预览」从「转换失败」里拆出，`renderMode` 输出 `NOT_SUPPORTED`。Packages: `mango-file-preview-core` / `-api`。Business Adaptation: 前端可直接给出下载提示，不必再按失败重试。
+- Changed: [PR #1338](https://github.com/HardyDou/mango/pull/1338) 默认转换引擎改为 Aspose，LibreOffice 退为兜底；新增字体目录、字体自检非致命开关与启动自检日志。Packages: `mango-infra-fileproc-core` / `-starter`。Business Adaptation: 需回归一次 PDF 转换版式；部署过 `aspose-*-enabled=false` 的环境需删除该变量。
+- Fixed: [PR #1359](https://github.com/HardyDou/mango/pull/1359)、[PR #1364](https://github.com/HardyDou/mango/pull/1364) `fileId` 取源请求不再被信任站点/目录过滤器拦截（返回 403 `notTrustHost`）。Packages: `mango-file-preview-engine`。Business Adaptation: 修复前内嵌部署 `fileId` 预览直接 403。
+- Fixed: [PR #1366](https://github.com/HardyDou/mango/pull/1366) 信任门按通道分工：`url` 仍判 host/目录，`fileId` 改为校验票据有效性，票据无效在门口即 403。Packages: `mango-file-preview-engine`、`mango-file-preview-core`。Business Adaptation: 票据过期/伪造现在在引擎门口 403，不再回落到 180002；前端只需按 404/403 展示「预览已失效，请重新打开」。
+- Added: [PR #1367](https://github.com/HardyDou/mango/pull/1367) 新增 `mango-file-preview-support` 与 `mango-file-preview-starter-remote`，独立部署的引擎可通过 Feign 回源应用取 `fileId` 字节。Packages: `mango-file-preview-support`、`mango-file-preview-starter-remote`、`mango-file-preview-core`。Business Adaptation: 仅独立部署需要装 `mango-file-preview-starter-remote`；内嵌部署无需任何改动。
+- Changed: [PR #1368](https://github.com/HardyDou/mango/pull/1368)、[PR #1383](https://github.com/HardyDou/mango/pull/1383) 前端预览契约收敛到 `fileId` + `renderMode`：删除地址嗅探与 `previewUrl` 拼接，地址类 props 标记弃用并输出提示，下一个 major 移除。Packages: `@mango/file` 及 15 个依赖包。Business Adaptation: 业务把 `:preview-url` 换成 `:file-id` 即完成迁移；继续用地址类 props 仍可用，但控制台会提示，下一个 major 移除。
+- Fixed: [PR #1371](https://github.com/HardyDou/mango/pull/1371)、[PR #1379](https://github.com/HardyDou/mango/pull/1379) 页面内子资源统一收敛到 `/preview-file/**` 前缀（图片/音视频不再把票据当图片地址）；`fileId` 通道下 `xlsx`/`csv` 由平台转 PDF 后用 PDF.js 展示，`renderMode` 统一为 `CONVERTING`。Packages: `mango-file-preview-core`、`mango-file-preview-engine`。Business Adaptation: 业务仍只透传 `fileId`；若自建了直连 `/preview-file/**` 的地址需按新前缀调整（已由组件托管，正常无需改动）。
+- Fixed: [PR #1381](https://github.com/HardyDou/mango/pull/1381)、[PR #1382](https://github.com/HardyDou/mango/pull/1382) 独立部署新增 `mango.file-preview.engine-public-base-url`，配置后预览跳转指向引擎 origin 并剥离应用网关 `/api` 前缀。Packages: `mango-file-preview-core`、`mango-file-preview-starter`。Business Adaptation: 独立部署必须配置该 key（纯 origin），否则预览跳转会带 `/api` 导致 404。
+- Fixed: [PR #1341](https://github.com/HardyDou/mango/pull/1341)、[PR #1342](https://github.com/HardyDou/mango/pull/1342)、[PR #1343](https://github.com/HardyDou/mango/pull/1343)、[PR #1347](https://github.com/HardyDou/mango/pull/1347) checkstyle 复杂度指纹不再嵌入配置阈值；补齐基线形式迁移路径与 `mango-tools` 门禁参数文档。Packages: `mango-maven-plugin`、`@mango/pmo`（仅仓库内基线与文档，`@mango/pmo` 不随本批次发布）。Business Adaptation: 业务仓升级后首次跑门禁会把已记录的复杂度条目报成新增，按 `mango-pmo/baselines/mango-check/README.md` 的 Form Migration 覆盖基线并回读 diff。
+- Changed: [PR #1354](https://github.com/HardyDou/mango/pull/1354) 移除 11 条零缺陷收益的格式类 checkstyle 规则，仓库基线由 15,067 条收敛到 2,948 条。Packages: `mango-maven-plugin`。Business Adaptation: 业务仓自建基线会少掉这些格式类条目，无需额外动作。
+- Changed: [PR #1345](https://github.com/HardyDou/mango/pull/1345)、[PR #1352](https://github.com/HardyDou/mango/pull/1352) README 结构审计按改动范围触发（不再被 `M08` 声明静默跳过）；治理类 PR 按路径决定是否执行全量架构清点。Packages: 无（仓库内 CI 与 PMO 工具，不发布）。Business Adaptation: 无。
+- Fixed: [PR #1365](https://github.com/HardyDou/mango/pull/1365) `baseline-generate` 扫描排除 `src/test`、`src/it` 等测试夹具目录，`MANGO-BASELINE-009` 报错给出物理路径。Packages: `mango-maven-plugin`。Business Adaptation: 业务仓生成基线不再误报 009；若历史上用 `searchDirectory` 指向测试目录需修正。
+- Fixed: [PR #1360](https://github.com/HardyDou/mango/pull/1360) 文档化外部升级目录的生效前提（bootstrap 代次与释放标识）。Packages: `mango-infra-persistence`。Business Adaptation: 纯文档；需要跑外部升级目录的部署请按新文档设置释放标识。
+- Added: [PR #1348](https://github.com/HardyDou/mango/pull/1348)、[PR #1350](https://github.com/HardyDou/mango/pull/1350)、[PR #1384](https://github.com/HardyDou/mango/pull/1384) 为 `@mango/admin-shell`、`@mango/common` 补齐可执行组件测试与契约证据，`@mango/ai` 增加包级 vitest 配置。Packages: `@mango/admin-shell`、`@mango/common`、`@mango/ai`。Business Adaptation: 仅测试与契约证据，业务无感。
+- Fixed: [PR #1331](https://github.com/HardyDou/mango/pull/1331)–[PR #1336](https://github.com/HardyDou/mango/pull/1336)、[PR #1340](https://github.com/HardyDou/mango/pull/1340) 探针路径白名单语义、白名单覆盖行为与门禁参数默认值的文档修正。Packages: `mango-access-core`、`mango-access-web-starter`、`mango-auth-starter`、`mango-tools`。Business Adaptation: 纯文档，无行为变化；独立部署请按新文档核对探针白名单。
+- Fixed: [PR #1372](https://github.com/HardyDou/mango/pull/1372)–[PR #1378](https://github.com/HardyDou/mango/pull/1378) 前端质量门禁 ratchet 回归（stylelint 弃用关键字、eslint 新增诊断、prettier 与 TS2322）。Packages: `@mango/file`、`@mango/admin-shell`、`@mango/ai`。Business Adaptation: 仅仓库内质量门禁，业务无感。
+- Fixed: [PR #1387](https://github.com/HardyDou/mango/pull/1387) 压缩包解包目录移出静态映射根（默认 `file-dir` 同级 `_extracted`，新增 `decompress.dir` / `KK_DECOMPRESS_DIR`），包内条目统一走受控端点 `GET /compressed-file`；`/preview-file/{解包键}/{条目}` 与 `/{解包键}/{条目}` 不再可匿名读取（issue #1386）。Packages: `mango-file-preview-engine`、`mango-file-preview-starter`。Business Adaptation: 业务无感；历史解包目录不迁移，重新打开压缩包即按新根重建；独立部署若自定义了 `file.dir`，解包目录默认为其同级 `_extracted`，需要时可显式配置 `decompress.dir`。
+
+### Added
+
+- 独立部署：`mango-file-preview-starter-remote`（引擎侧装机）+ `mango.file-preview.remote.enabled` / `remote.base-url`，引擎可直接回源应用取 `fileId` 字节。
+- 独立部署：`mango.file-preview.engine-public-base-url`，浏览器跳转直指引擎 origin；配置后平台自动剥离应用网关 `/api` 前缀。
+- `FilePreviewRenderMode`（`PDF`/`IMAGE`/`VIDEO`/`AUDIO`/`CONVERTING`/`PAGE`/`NOT_SUPPORTED`）与 `FilePreviewLinkVO.renderMode`，前端按它分派渲染。
+- `mango.fileproc.aspose.fonts-folders` 与 `mango.fileproc.aspose.font-check-fatal`（默认 `false`：字体缺失只告警，授权不可用仍启动失败）。
+
+### Fixed
+
+- 内嵌部署 `fileId` 预览 403（信任过滤器不看票据）。
+- 图片/音视频预览把取源票据当资源地址，页内 401/404。
+- `fileId` 通道下 `xlsx`/`csv` 转换任务被枚举判定短路，导致「任务成功但无产物、页面回落引擎表格页」。
+- 独立部署预览跳转带 `/api` 前缀导致 404。
+- `baseline-generate` 误把测试夹具当迁移源，触发 `MANGO-BASELINE-009`。
+- checkstyle 复杂度指纹嵌入阈值，调整阈值即让存量基线条目变成「假新增」。
+- 压缩包解包内容可被匿名读取（解包目录落在 `file-dir` 内且被 `/preview-file/**` 映射），现已移出映射根并改为受控端点读取。
+
+### Changed
+
+- 默认转换引擎换成 Aspose（LibreOffice 兜底）。这是业务可见的行为变更。
+- 废弃格式类 checkstyle 规则 11 条；仓库基线 15,067 → 2,948。
+- 前端预览地址类 props（`preview`、`previewUrl`、`documentPreviewUrl`、`directPreviewUrl`、`previewProviderUrl`、`previewExternalExtensions`）标记弃用，下一个 major 移除。
+- `url` 通道保留但不推荐；`fileId` 为推荐路径。
+
+### Versions
+
+- Maven：`1.14.2` → `1.15.0`（`mango-backend` 版本锁）
+- `@mango/file`：`1.3.1` → `1.4.0`（minor）
+- `@mango/common`：`2.3.4` → `2.3.5`、`@mango/ai`：`1.2.8` → `1.2.9`
+- `@mango/cli`：`1.4.17` → `1.4.18`
+- `@mango/pmo`：保持 `1.6.3`（本批次仅改基线、测试与仓库内脚本，不发布）
+
+### Published Packages
+
+- Maven：203 个坐标，含新增 `io.mango.platform.file.preview:mango-file-preview-support:1.15.0`、`io.mango.platform.file.preview:mango-file-preview-starter-remote:1.15.0`，以及 `io.mango:mango-docs-bundle:1.15.0`。
+- npm 闭包 27 个包：
+
+- `@mango/admin@2.0.13`
+- `@mango/admin-extension@1.1.9`
+- `@mango/admin-pages@1.3.5`
+- `@mango/admin-shell@1.1.11`
+- `@mango/ai@1.2.9`
+- `@mango/auth@1.0.46`
+- `@mango/calendar@1.0.62`
+- `@mango/cli@1.4.18`
+- `@mango/cms@1.1.7`
+- `@mango/common@2.3.5`
+- `@mango/detail@1.1.15`
+- `@mango/file@1.4.0`
+- `@mango/grid-layout@1.0.35`
+- `@mango/grid-widgets@1.0.41`
+- `@mango/home@1.0.34`
+- `@mango/information@1.1.9`
+- `@mango/job@1.0.55`
+- `@mango/link@1.0.48`
+- `@mango/notice@1.0.68`
+- `@mango/numgen@1.0.63`
+- `@mango/payment@1.0.54`
+- `@mango/rbac@1.3.5`
+- `@mango/site-shell@2.0.7`
+- `@mango/system@1.1.7`
+- `@mango/template@1.0.63`
+- `@mango/workflow@1.3.2`
+- `@mango/workflow-business-example@1.0.73`
+
+### Business Impact
+
+- 必须升级吗：**不必须**。`fileId` 预览、`renderMode`、Aspose 默认引擎都是平台侧改善；需要「独立引擎远程直取」或「`renderMode` 契约」的业务才需要升级。
+- 升级后行为变化：默认 Office 转换引擎由 LibreOffice 改为 Aspose，转换版式需业务侧回归一次；曾设置 `aspose-*-enabled=false` 的环境需删除该变量，否则仍走 LibreOffice。
+- 前端：地址类 props 进入弃用周期，业务只需传 `fileId`；继续使用地址 props 仍可用，但会在控制台提示。
+- 数据与迁移：本批次无 DDL、无数据迁移。
+
+### Upgrade Estimate
+
+- Audience: 使用文件预览（含独立引擎部署）的业务应用
+- Engineering Effort: 0.5-1 人日（改配置 + 回归一次 PDF 转换）
+- Execution Window: 常规变更窗口
+- Service Downtime: 无（滚动重启）
+- Rollback Effort: 低（回滚版本号即可，`fileId`/`url` 两通道同时在位）
+- Assumptions: 业务已按 `fileId` 调用预览；独立部署按本文档补齐引擎侧配置
+
+### Upgrade Notes
+
+1. 引擎落盘目录用引擎侧配置 `file.dir`（或环境变量 `KK_FILE_DIR`）指定，Mango 侧没有 `mango.file-preview.file-dir` 这类属性；请写成绝对路径，默认值随启动工作目录漂移，换目录重启会让 `/preview-file/**` 404。
+2. `mango.file-preview.engine-public-base-url` 只填纯 origin（可带部署上下文，如 `https://engine.example.com/engine`），不要填 `/api`、不要填 `engine-path`；平台会自动剥离网关前缀。引擎侧不需要这个 key。
+3. `MANGO_CRYPTO_SM4_SECRET_KEY` 必须是 32 位十六进制（16 字节），否则启动报 `SM4 secretKey 必须是 16 字节（128 位）`。
+4. checkstyle 基线形式迁移：升级后首次跑 `no-new-violations` 会把**已记录的**复杂度条目报成新增（≤20 条，全部 `CyclomaticComplexityCheck`）。按 `mango-pmo/baselines/mango-check/README.md` 的 Fingerprint Form Migration 覆盖基线，并**回读 diff 确认只有复杂度指纹变化**（覆盖是整文件替换，其它规则条目必须原样保留）。这是形式迁移，不豁免任何新问题；不迁移也不会变红（`changedOnly=true` 时潜伏）。
+5. Aspose 出图依赖 ImageMagick `convert`：容器镜像需保留该命令，否则 PDF 转图片失败。
+6. `officePreviewType=html` 且 `officeTypeWeb=web` 的部署，`fileId` 通道下表格不走在线表格页（已改为平台转 PDF）。
+7. 压缩包解包目录默认落在 `file.dir` 的**同级** `_extracted/`（新增 `decompress.dir` / `KK_DECOMPRESS_DIR` 可覆盖）。若 `file.dir` 指向挂载卷的根目录，同级 `_extracted` 会落到卷外的容器可写层：容器重建后解包缓存丢失（重新打开压缩包即重建，不影响功能），根文件系统只读时直接失败。规避方式：把卷挂到父目录（卷大便 `/data/preview`、`KK_FILE_DIR=/data/preview/file`），或显式设 `decompress.dir=/data/preview/_extracted`。
+8. 回滚：旧版本进程会把解包内容重新写回 `file.dir` 下，新的 `_extracted/` 变成孤儿目录可直接删除；本批次无数据库变更、无迁移动作。
+
+### Known Limitations
+
+- `TRUST_HOST` 通道（`url` 参数）仍要求来源域名在 `trust.host` 内，且 `url` 通道只建议作为兼容兜底；主推 `fileId` 通道。
+
+### Verification
+
+- 单测：`mango-file-preview-{api,core,engine,starter,support,starter-remote}` 合计 184 条全绿；`mango-infra-fileproc` 与 `mango-file` 相关模块全绿。
+- 端到端（内嵌拓扑）：docx/pptx/xlsx → `CONVERTING` + `preview-artifact` 200 PDF；pdf 200；png `image/png`；mp4 `video/mp4` + Range 206；zip 目录与包内条目页 200。
+- 端到端（独立拓扑）：png/mp4/zip 302 跳转 `{engine-origin}/onlinePreview?fileId=…`（无 `/api`）→ 200，子资源 `/preview-file/**` 取到真实字节；docx/pptx/xlsx/pdf 仍由应用出页。
+- 安全边界：伪造/空 `fileId` → 403 `notTrustHost`；根级同名路径与路径穿越 → 401。
+
+### Rollback
+
+- 回滚 `mango-backend` 版本锁与前端包版本即可；无数据库变更需要回滚。
+- `fileId` 与 `url` 两条通道同时在位，回滚后旧版本仍按 `url` 通道工作。
+
+### Audit History
+
+- 本批次 37 个提交，见 `v2026.11.19-maven-1.14.2-disabled-module-resources-release..1.15.0`。
+- 未纳入本批次：#1319（字典批量接口，已单独评估）、#1346（workflow 流程定义主键确定性，需 Flowable 设计）、#1361 相关的远程票据探测（已明确不做）。
+- 相关 issue：#1314 #1315 #1316 #1355 #1356 #1357 #1361 #1362 #1363 #1369 #1380（均已关闭）。
+
 ## Unreleased - 预览取源 fileId 不再被信任站点过滤拦截
 
 ### Added（Issue #1380）
