@@ -996,7 +996,7 @@ function stringValue(value: unknown): string | undefined {
  */
 function toRenderMode(value: unknown): FilePreviewRenderMode {
   const mode = stringValue(value)?.trim().toUpperCase() as FilePreviewRenderMode | undefined;
-  return mode && FILE_PREVIEW_RENDER_MODES.includes(mode) ? mode : null;
+  return mode && FILE_PREVIEW_RENDER_MODES.includes(mode) ? mode : 'NOT_SUPPORTED';
 }
 
 function numberValue(value: unknown): number | undefined {
