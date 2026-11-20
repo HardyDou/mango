@@ -144,6 +144,8 @@ jobs:
         run: pnpm --dir mango-ui -r --filter "@mango/*" run build
 
       - name: Run workspace test scripts and component contract checks
+        env:
+          NO_COLOR: "1"
         run: |
           set -o pipefail
           pnpm --dir mango-ui -r --if-present test 2>&1 | tee /tmp/frontend-unit.log
@@ -151,7 +153,11 @@ jobs:
 
       - name: Assert the suites actually executed
         run: |
-          executed=$(grep -Eo 'Tests +[0-9]+ passed' /tmp/frontend-unit.log | grep -Eo '[0-9]+' | awk '{ total += $1 } END { print total + 0 }')
+          # ANSI colouring wraps the vitest summary even when piped, so strip it before counting.
+          executed=$(sed -r 's/\x1B\[[0-9;]*[mK]//g' /tmp/frontend-unit.log \
+            | grep -Eo 'Tests +[0-9]+ passed' \
+            | grep -Eo '[0-9]+' \
+            | awk '{ total += $1 } END { print total + 0 }')
           if [ -z "$executed" ] || [ "$executed" -eq 0 ]; then
             echo "::error::no frontend unit test executed; the suites were collected but ran nothing"
             exit 1
