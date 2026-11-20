@@ -151,7 +151,7 @@ jobs:
 
       - name: Assert the suites actually executed
         run: |
-          executed=$(grep -Eo 'Tests +[0-9]+ passed' /tmp/frontend-unit.log | grep -Eo '[0-9]+' | paste -sd+ - | bc)
+          executed=$(grep -Eo 'Tests +[0-9]+ passed' /tmp/frontend-unit.log | grep -Eo '[0-9]+' | awk '{ total += $1 } END { print total + 0 }')
           if [ -z "$executed" ] || [ "$executed" -eq 0 ]; then
             echo "::error::no frontend unit test executed; the suites were collected but ran nothing"
             exit 1
