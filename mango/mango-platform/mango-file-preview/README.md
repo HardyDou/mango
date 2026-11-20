@@ -232,7 +232,7 @@ cache:
 | `mango.file-preview.source-path` | `/file-preview/sources` | `url` 兜底通道下预览引擎读取源文件的短期 URL 前缀 |
 | `mango.file-preview.source-base-url` | 无（`url` 兜底时必填） | 仅供 `url` 兜底通道使用：引擎经该地址访问 Mango 的 `/file-preview/sources`。**不再从当前请求地址推断**：走 `url` 兜底但未配置时报 `180004`，不会静默回退。其 host 会自动加入引擎信任列表，无需重复写 `trust.host` |
 | `mango.file-preview.engine-public-base-url` | 无（内嵌部署不配） | **浏览器访问引擎的地址**。配置后预览跳转地址（302 的 `Location`）带引擎 origin；未配置时保持相对路径（引擎与应用同源）。与 `mango.file-preview.remote.base-url` 语义不同：前者是「浏览器怎么到引擎」，后者是「引擎怎么回打应用」 |
-| `mango.file-preview.remote.base-url` | 无（开启远程直取时必填） | **引擎回打应用的地址**（引擎侧配置）。`mango.file-preview.remote.enabled=true` 时必填；应用侧开启远程直取但未配置 `engine-public-base-url` → 启动即失败 |
+| `mango.file-preview.remote.base-url` | 无（开启远程直取时必填） | **引擎回打应用的地址**（引擎侧配置）。`mango.file-preview.remote.enabled=true` 时必填（缺失时引擎侧启动失败并点名该配置项）；`engine-public-base-url` 未配置不会失败，应用产出相对地址，仅内嵌部署正确 |
 | `mango.file-preview.source-token-expire-seconds` | `86400` | 入口 token 和源文件 token 有效期，单位秒 |
 | `mango.file-preview.standalone-ui-enabled` | `false` | 是否允许访问 kkFileView 独立首页和演示文件管理入口 |
 | `mango.file-preview.internal-source-enabled` | `true` | 是否允许引擎按短期票据直取源文件（内嵌部署在进程内直取，独立部署配合 `mango.file-preview.remote.*` 远程直取）。设为 `false` 表示**强制**回退 `url` 兜底通道，此时必须配置 `source-base-url` |
