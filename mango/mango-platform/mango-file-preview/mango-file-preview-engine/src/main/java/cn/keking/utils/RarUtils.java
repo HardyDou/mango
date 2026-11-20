@@ -4,22 +4,27 @@ import cn.keking.service.ZtreeNodeVo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author : Gao
  * create : 2023-04-08
  **/
 public class RarUtils {
-    private static final Logger logger = LoggerFactory.getLogger(RarUtils.class);
-    private static final String fileDir = ConfigConstants.getFileDir();
+    private static final Logger LOGGER = LoggerFactory.getLogger(RarUtils.class);
 
     public static byte[] getUTF8BytesFromGBKString(String gbkStr) {
         int n = gbkStr.length();
@@ -59,7 +64,7 @@ public class RarUtils {
                     str = new String(getUTF8BytesFromGBKString(str), StandardCharsets.UTF_8);
                 }
             } catch (UnsupportedEncodingException e) {
-                logger.error("Failed to convert string encoding: {}", str, e);
+                LOGGER.error("Failed to convert string encoding: {}", str, e);
             }
         }
         return str;
@@ -106,32 +111,41 @@ public class RarUtils {
     }
 
     /**
-     * 读取文件目录树
+     * 读取文件目录树。
+     *
+     * <p>根目录为解包根 {@link ConfigConstants#getDecompressDir()}，该目录位于 file-dir 之外，不参与
+     * {@code /preview-file/**} 与 {@code /**} 静态映射。节点 id 相对解包根，可直接作为条目端点
+     * {@code GET /compressed-file} 的 {@code kkCompressfilepath}。
      */
     public static List<ZtreeNodeVo> getTree(String rootPath) {
         List<ZtreeNodeVo> nodes = new ArrayList<>();
-        File file = new File(fileDir+rootPath);
-        ZtreeNodeVo node = traverse(file);
-        nodes.add(node);
+        Path decompressRoot = Paths.get(ConfigConstants.getDecompressDir()).toAbsolutePath().normalize();
+        Path root = decompressRoot.resolve(rootPath).normalize();
+        if (!root.startsWith(decompressRoot)) {
+            throw new SecurityException("Unsafe decompress path detected: " + rootPath);
+        }
+        nodes.add(traverse(root, decompressRoot));
         return nodes;
     }
-    private static ZtreeNodeVo traverse(File file) {
+    private static ZtreeNodeVo traverse(Path file, Path decompressRoot) {
         ZtreeNodeVo pathNodeVo = new ZtreeNodeVo();
-        pathNodeVo.setId(file.getAbsolutePath().replace(fileDir, "").replace("\\", "/"));
-        pathNodeVo.setName(file.getName());
-        pathNodeVo.setPid(file.getParent().replace(fileDir, "").replace("\\", "/"));
-        if (file.isDirectory()) {
-            List<ZtreeNodeVo> subNodeVos = new ArrayList<>();
-            File[] subFiles = file.listFiles();
-            if (subFiles == null) {
-                return pathNodeVo;
-            }
-            for (File subFile : subFiles) {
-                ZtreeNodeVo subNodeVo = traverse(subFile);
-                subNodeVos.add(subNodeVo);
+        pathNodeVo.setId(relativePath(file, decompressRoot));
+        pathNodeVo.setName(file.getFileName() == null ? "" : file.getFileName().toString());
+        Path parent = file.getParent();
+        pathNodeVo.setPid(parent == null ? "" : relativePath(parent, decompressRoot));
+        if (Files.isDirectory(file)) {
+            List<ZtreeNodeVo> subNodeVos;
+            try (Stream<Path> subFiles = Files.list(file)) {
+                subNodeVos = subFiles.map(subFile -> traverse(subFile, decompressRoot)).collect(Collectors.toList());
+            } catch (IOException e) {
+                throw new UncheckedIOException("Failed to read decompress directory: " + file, e);
             }
             pathNodeVo.setChildren(subNodeVos);
         }
         return pathNodeVo;
+    }
+
+    private static String relativePath(Path path, Path decompressRoot) {
+        return decompressRoot.relativize(path).toString().replace("\\", "/");
     }
 }
