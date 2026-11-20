@@ -28,4 +28,17 @@ public interface FileDownloader {
      */
     ReturnResponse<String> download(FileAttribute fileAttribute, String fileName);
 
+    /**
+     * 校验取源标识当前是否可用（票据存在且未过期）。
+     *
+     * <p>信任门在放行前调用，只读校验：不取流、不消费票据。默认 {@code false}，即未实现校验的
+     * 下载器不会被信任门放行。</p>
+     *
+     * @param sourceId 取源标识
+     * @return true 表示该标识当前可用
+     */
+    default boolean verify(String sourceId) {
+        return false;
+    }
+
 }

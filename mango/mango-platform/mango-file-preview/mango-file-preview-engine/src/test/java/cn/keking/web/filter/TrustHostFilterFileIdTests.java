@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * 验收 #1357 三条：带 {@code fileId} 放行、带非可信 {@code url} 仍 403、两者都缺仍 403。
+ * 信任门按通道分工（#1361）：{@code url} 判 host，{@code fileId} 判票据有效性，两者都缺 403。
  */
 class TrustHostFilterFileIdTests {
 
@@ -48,6 +48,10 @@ class TrustHostFilterFileIdTests {
             return new ReturnResponse<>(ReturnResponse.SUCCESS_CODE, "ok", fileName);
         }
 
+        @Override
+        public boolean verify(String sourceId) {
+            return VALID_TICKET.equals(sourceId);
+        }
     };
 
     private final FilterChain chain = (request, response) -> chainCalled.set(true);
@@ -74,14 +78,14 @@ class TrustHostFilterFileIdTests {
     }
 
     @Test
-    void passesFileIdRequestEvenWhenTicketIsUnknown() throws Exception {
+    void blocksFileIdRequestWhenTicketIsUnknown() throws Exception {
         FileDownloaders.register(downloader);
 
-        // 站点校验在 fileId 形态下没有可校验对象；票据有效性由取源环节判定（无效返回 180002）
+        // 票据无效/过期在门处直接拦下，不进入引擎的解包、转换与落盘
         filter.doFilter(request(Map.of("fileId", "expired-ticket")), response(), chain);
 
-        assertTrue(chainCalled.get());
-        assertEquals(0, status.get());
+        assertFalse(chainCalled.get());
+        assertEquals(HttpServletResponse.SC_FORBIDDEN, status.get());
     }
 
     @Test

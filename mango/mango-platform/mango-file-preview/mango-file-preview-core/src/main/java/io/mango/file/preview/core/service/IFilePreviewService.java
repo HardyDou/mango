@@ -65,6 +65,16 @@ public interface IFilePreviewService {
     FilePreviewSource openSource(String token);
 
     /**
+     * 只读校验源文件访问令牌是否仍可用（存在且未过期）。
+     *
+     * <p>供信任门在放行前判断，不取流、不消费令牌。</p>
+     *
+     * @param token 源文件访问令牌。
+     * @return true 表示令牌当前可用。
+     */
+    boolean isSourceTokenValid(String token);
+
+    /**
      * 校验转换后 PDF 的临时访问权限。
      *
      * @param token 源文件访问令牌。

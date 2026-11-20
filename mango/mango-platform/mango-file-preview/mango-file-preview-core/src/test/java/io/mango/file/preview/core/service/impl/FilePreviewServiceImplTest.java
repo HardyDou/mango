@@ -212,6 +212,49 @@ class FilePreviewServiceImplTest {
     }
 
     @Test
+    void isSourceTokenValid_有效令牌为真且不消费令牌() {
+        StubTokenStore tokenStore = new StubTokenStore();
+        FilePreviewServiceImpl service = service(tokenStore, Clock.systemUTC());
+        var preview = service.createPreview(100L);
+        var enginePreview = service.createEnginePreviewByToken(preview.getPreviewToken());
+        String sourceToken = queryParameter(sourceUrl(enginePreview.getPreviewUrl()), "token");
+
+        assertThat(service.isSourceTokenValid(sourceToken)).isTrue();
+        assertThat(tokenStore.values).containsKey("file-preview:source:" + sourceToken);
+    }
+
+    @Test
+    void isSourceTokenValid_不存在或空白令牌为假() {
+        FilePreviewServiceImpl service = service();
+
+        assertThat(service.isSourceTokenValid("missing")).isFalse();
+        assertThat(service.isSourceTokenValid("  ")).isFalse();
+        assertThat(service.isSourceTokenValid(null)).isFalse();
+    }
+
+    @Test
+    void isSourceTokenValid_过期令牌为假且不抛异常() {
+        MutableClock clock = new MutableClock(Instant.parse("2026-07-17T00:00:00Z"));
+        StubTokenStore tokenStore = new StubTokenStore();
+        FilePreviewServiceImpl service = service(tokenStore, clock);
+        var preview = service.createPreview(100L);
+        var enginePreview = service.createEnginePreviewByToken(preview.getPreviewToken());
+        String sourceToken = queryParameter(sourceUrl(enginePreview.getPreviewUrl()), "token");
+        clock.advanceSeconds(86_401);
+
+        assertThat(service.isSourceTokenValid(sourceToken)).isFalse();
+    }
+
+    @Test
+    void isSourceTokenValid_令牌内容损坏时按不可用处理() {
+        StubTokenStore tokenStore = new StubTokenStore();
+        tokenStore.values.put("file-preview:source:broken", "not-json");
+        FilePreviewServiceImpl service = service(tokenStore, Clock.systemUTC());
+
+        assertThat(service.isSourceTokenValid("broken")).isFalse();
+    }
+
+    @Test
     void createEnginePreviewByToken_过期后删除令牌() {
         MutableClock clock = new MutableClock(Instant.parse("2026-07-17T00:00:00Z"));
         StubTokenStore tokenStore = new StubTokenStore();
