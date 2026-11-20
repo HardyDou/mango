@@ -51,6 +51,15 @@ class FilePreviewEngineDownloaderTest {
     }
 
     @Test
+    void verify_委托服务判断票据是否仍可用() {
+        when(filePreviewService.isSourceTokenValid("ticket-1")).thenReturn(true);
+        when(filePreviewService.isSourceTokenValid("ticket-2")).thenReturn(false);
+
+        assertThat(downloader.verify("ticket-1")).isTrue();
+        assertThat(downloader.verify("ticket-2")).isFalse();
+    }
+
+    @Test
     void supports_只接管带源标识的属性() {
         FileAttribute withSourceId = attribute("source-1");
         FileAttribute withoutSourceId = new FileAttribute(FileType.SIMTEXT, "txt", "demo.txt", "http://x/demo.txt");

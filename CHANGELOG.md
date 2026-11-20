@@ -24,6 +24,8 @@
 
 ### Fixed
 
+- `fileId` 取源的信任门校验从「只认有没有注册下载器」改为「校验票据是否仍可用」：`FileDownloader#verify` 默认 `false`，`FilePreviewEngineDownloader` 转调 `IFilePreviewService#isSourceTokenValid`（只读令牌与 TTL，不取流、不消费）；票据无效或过期在门处直接 403 并沿用 `notTrustHost.html`，不进入引擎解包、转换与落盘；`url` 形态的 host/目录校验不变。#1361
+
 - `mango:baseline-generate` 默认扫描整仓时，`src/test`、`src/it`、`src/it-*` 下的 `db/migration` 夹具不再进入迁移清单（测试与集成测试夹具不属于交付面，默认扫描根保持为企业仓执行目录，跨模块发现不受影响）。此前同一模块同时存在主资源与夹具的同号版本会报 `MANGO-BASELINE-009 duplicate migration version` 且不含物理路径；现在报错会列出冲突的两个物理路径。
 
 ## Unreleased - 治理类 PR 按路径决定是否全量架构清点

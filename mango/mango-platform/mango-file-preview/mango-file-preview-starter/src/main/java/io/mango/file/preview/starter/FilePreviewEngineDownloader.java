@@ -46,6 +46,11 @@ public class FilePreviewEngineDownloader implements FileDownloader, PreviewSourc
     }
 
     @Override
+    public boolean verify(String sourceId) {
+        return filePreviewService.isSourceTokenValid(sourceId);
+    }
+
+    @Override
     public ReturnResponse<String> download(FileAttribute fileAttribute, String fileName) {
         ReturnResponse<String> response = new ReturnResponse<>(0, "下载成功!!!", "");
         String realPath = DownloadUtils.getRelFilePath(fileName, fileAttribute);

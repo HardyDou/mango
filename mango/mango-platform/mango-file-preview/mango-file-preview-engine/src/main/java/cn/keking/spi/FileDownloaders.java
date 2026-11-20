@@ -44,6 +44,24 @@ public final class FileDownloaders {
     }
 
     /**
+     * 校验取源标识是否可用：交由已注册的下载器判定。
+     *
+     * @param sourceId 取源标识
+     * @return 有下载器确认可用时为 true；没有下载器或全部返回 false 时为 false
+     */
+    public static boolean verifySource(String sourceId) {
+        if (sourceId == null || sourceId.isEmpty()) {
+            return false;
+        }
+        for (FileDownloader downloader : DOWNLOADERS) {
+            if (downloader.verify(sourceId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * 尝试用已注册的下载器处理。
      *
      * @return 没有下载器支持时返回 {@code null}，交由引擎内置实现处理

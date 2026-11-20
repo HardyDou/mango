@@ -113,6 +113,15 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
     }
 
     @Override
+    public boolean isSourceTokenValid(String token) {
+        if (!StringUtils.hasText(token)) {
+            return false;
+        }
+        PreviewToken sourceToken = readToken(SOURCE_TOKEN_PREFIX + token);
+        return !isExpired(sourceToken);
+    }
+
+    @Override
     public void validateGeneratedAccess(String token, String fileName) {
         Require.notBlank(fileName, FilePreviewCode.PREVIEW_TOKEN_INVALID);
         PreviewToken sourceToken = readSourceToken(token);

@@ -29,6 +29,10 @@ class PreviewSourceRequestsTests {
             return new ReturnResponse<>(ReturnResponse.SUCCESS_CODE, "ok", fileName);
         }
 
+        @Override
+        public boolean verify(String sourceId) {
+            return VALID_TICKET.equals(sourceId);
+        }
     };
 
     @AfterEach
@@ -41,6 +45,13 @@ class PreviewSourceRequestsTests {
         FileDownloaders.register(downloader);
 
         assertTrue(PreviewSourceRequests.isInternalSource(request("fileId", VALID_TICKET)));
+    }
+
+    @Test
+    void rejectsFileIdWhenDownloaderCannotVerifyTicket() {
+        FileDownloaders.register(downloader);
+
+        assertFalse(PreviewSourceRequests.isInternalSource(request("fileId", "expired-ticket")));
     }
 
     @Test
