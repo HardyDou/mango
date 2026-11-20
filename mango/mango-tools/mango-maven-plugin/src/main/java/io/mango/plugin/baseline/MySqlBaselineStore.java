@@ -38,6 +38,10 @@ final class MySqlBaselineStore {
     private static final Set<String> RUNTIME_AUDIT_TIMESTAMP_COLUMNS = Set.of(
             "created_at", "updated_at", "published_at", "last_sync_time",
             "create_time", "update_time", "created_time", "updated_time");
+    private static final String WORKFLOW_ENGINE_COLUMNS_TABLE = "workflow_definition";
+    private static final String WORKFLOW_ENGINE_COLUMNS_VERSION_TABLE = "workflow_definition_version";
+    private static final String CANONICAL_DEPLOYMENT_PREFIX = "baseline-deployment-";
+    private static final String CANONICAL_PROCESS_DEFINITION_PREFIX = "baseline-process-definition-";
     private static final Set<String> AUDIT_TEMPORAL_TYPES = Set.of("date", "datetime", "timestamp");
     private static final String CANONICAL_AUDIT_DATE = "2000-01-01";
     private static final String CANONICAL_AUDIT_DATE_TIME = "2000-01-01 00:00:00";
@@ -140,6 +144,52 @@ final class MySqlBaselineStore {
         } catch (SQLException exception) {
             throw databaseFailure("prepare portable Resource baseline " + database, exception);
         }
+    }
+
+    /**
+     * Flowable 生成部署标识与流程定义标识，无法在声明同步时指定，因此冷基线回放两次必然得到不同的值。
+     * 这两列属于引擎运行时标识而非可移植声明内容，比较前按主键改写成稳定占位值。
+     */
+    void canonicalizeWorkflowEngineIds(String database) throws MojoExecutionException {
+        try (Connection connection = connect(database)) {
+            canonicalizeWorkflowEngineIds(connection, database, WORKFLOW_ENGINE_COLUMNS_TABLE);
+            canonicalizeWorkflowEngineIds(connection, database, WORKFLOW_ENGINE_COLUMNS_VERSION_TABLE);
+        } catch (SQLException exception) {
+            throw databaseFailure("canonicalize workflow engine identifiers in " + database, exception);
+        }
+    }
+
+    private static void canonicalizeWorkflowEngineIds(Connection connection, String database, String table)
+            throws SQLException {
+        if (!tableExists(connection, database, table)) {
+            return;
+        }
+        List<String> timestampColumns = canonicalWorkflowTimestampColumns(table);
+        String timestampAssignments = timestampColumns.stream()
+                .map(column -> ", " + quote(column) + " = CASE WHEN " + quote(column)
+                        + " IS NULL THEN NULL ELSE ? END")
+                .reduce("", String::concat);
+        try (PreparedStatement statement = connection.prepareStatement(
+                "UPDATE " + quote(table)
+                        + " SET deployment_id = CONCAT('" + CANONICAL_DEPLOYMENT_PREFIX + "', id)"
+                        + ", process_definition_id = CONCAT('" + CANONICAL_PROCESS_DEFINITION_PREFIX + "', id)"
+                        + timestampAssignments)) {
+            for (int index = 0; index < timestampColumns.size(); index++) {
+                statement.setString(index + 1, CANONICAL_AUDIT_DATE_TIME);
+            }
+            statement.executeUpdate();
+        }
+    }
+
+    /**
+     * 声明同步写入的发布时间与最后发布时间表示本次回放的执行时刻，不属于可移植声明内容，
+     * 但列名不在通用审计时间集合里（`publish_time` 在其它表是业务数据），因此只对本组表改写。
+     */
+    private static List<String> canonicalWorkflowTimestampColumns(String table) {
+        if (WORKFLOW_ENGINE_COLUMNS_TABLE.equals(table)) {
+            return List.of("last_deploy_time");
+        }
+        return List.of("publish_time");
     }
 
     void canonicalizeRuntimeAuditTimestamps(String database) throws MojoExecutionException {

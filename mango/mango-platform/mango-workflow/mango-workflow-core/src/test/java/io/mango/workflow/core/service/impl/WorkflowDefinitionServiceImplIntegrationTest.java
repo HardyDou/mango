@@ -17,6 +17,7 @@ import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.infra.persistence.api.scope.DataScopeApplier;
 import io.mango.infra.persistence.api.scope.DataScopeMapping;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
+import io.mango.resource.support.PortableResourceIds;
 import io.mango.workflow.api.command.EnsureWorkflowDefinitionCommand;
 import io.mango.workflow.api.enums.WorkflowCode;
 import io.mango.workflow.api.enums.WorkflowDefinitionStatus;
@@ -241,6 +242,49 @@ class WorkflowDefinitionServiceImplIntegrationTest {
         assertThat(version.getVersionNo()).isEqualTo(1);
         assertThat(version.getPublishStatus()).isEqualTo("SUCCESS");
         assertThat(version.getProcessDefinitionId()).isEqualTo("proc-created");
+    }
+
+    @Test
+    void ensurePublishedDerivesPortableIdentifiersAcrossCleanDeclarations() {
+        MangoContextHolder.set(MangoContextSnapshot.empty()
+                .withSecurity(9001L, "1", "admin", "default", "USER", "ORG", 100L, "internal-admin"));
+        stubDeployment("PAYMENT_REFUND_APPROVAL", "退款审批", "1", "deploy-a", "proc-a", 1);
+
+        service.ensurePublished(ensureCommand());
+        DeclaredIdentifiers first = declaredIdentifiers();
+
+        rebuildTables();
+
+        reset(repositoryService, bpmnConverter);
+        stubDeployment("PAYMENT_REFUND_APPROVAL", "退款审批", "1", "deploy-b", "proc-b", 1);
+        service.ensurePublished(ensureCommand());
+        DeclaredIdentifiers second = declaredIdentifiers();
+
+        assertThat(second).isEqualTo(first);
+        assertThat(first.definitionId()).isEqualTo(
+                PortableResourceIds.stable("workflow_definition", 1L, "PAYMENT_REFUND_APPROVAL"));
+        assertThat(first.versionId()).isEqualTo(
+                PortableResourceIds.stable("workflow_definition_version", first.definitionId(), 1));
+        assertThat(first.categoryId()).isEqualTo(PortableResourceIds.stable(
+                "workflow_definition_category", 1L, "PAYMENT", "PAYMENT_AUTO"));
+    }
+
+    private DeclaredIdentifiers declaredIdentifiers() {
+        WorkflowDefinitionEntity definition = definitionMapper.selectOne(
+                new QueryWrapper<WorkflowDefinitionEntity>()
+                        .eq("definition_key", "PAYMENT_REFUND_APPROVAL")
+                        .last("limit 1"));
+        WorkflowDefinitionVersionEntity version = versionMapper.selectOne(
+                new QueryWrapper<WorkflowDefinitionVersionEntity>()
+                        .eq("definition_id", definition.getId())
+                        .last("limit 1"));
+        WorkflowCategoryEntity category = categoryMapper.selectOne(new QueryWrapper<WorkflowCategoryEntity>()
+                .eq("domain_code", "PAYMENT")
+                .eq("category_code", "PAYMENT_AUTO"));
+        return new DeclaredIdentifiers(category.getId(), definition.getId(), version.getId());
+    }
+
+    private record DeclaredIdentifiers(Long categoryId, Long definitionId, Long versionId) {
     }
 
     @Test
