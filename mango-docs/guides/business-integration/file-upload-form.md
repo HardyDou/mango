@@ -276,6 +276,7 @@ pnpm -F @mango/file test
 > Issue #1207 影响说明：文件中心新增按 `fileId` 编辑文件信息和替换内容能力，业务方仍只保存 `fileId`，既有上传、回显、预览、下载契约不变；替换需要 `file:files:replace` 权限。
 
 > Issue #1098 影响说明：资源声明的 `sync-mode` 收敛为 `SYNC_ALWAYS` / `SYNC_ONCE`（旧值 `AUTO`、`INIT_ONLY`、`MANUAL`、`LOCKED` 仍可读取并映射）。本场景涉及的数据初始化、租户边界、权限判定与页面行为不变。
+> Issue #1361 影响说明：预览取源的信任门改为按通道分工——`fileId` 形态只校验票据是否仍可用（只读、不取流、不消费），票据无效或过期在门处直接 403，不再进入引擎解包、转换与落盘；`url` 形态的 host/目录校验不变。本场景（业务只保存 `fileId`、上传/回显/预览/下载）的调用契约不变。
 
 预览取源：内嵌引擎（同进程装配 `mango-file-preview-starter` 与 `file-preview-engine`）下预览地址用 `fileId` + 短期票据，这类请求没有网络地址可供站点校验，因此不需要把 Mango 对外域名加进 `trust.host`；票据无效或过期时取源失败返回 `180002`。独立部署引擎仍是 `url` 形态，行为与 1.14.x 一致。业务侧只透传 `fileId`，不要自行拼预览地址。
 
