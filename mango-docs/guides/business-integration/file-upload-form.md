@@ -293,4 +293,5 @@ pnpm -F @mango/file test
 - 独立部署引擎的远程直取通过 `GET /file-preview/sources?token=…` 流式取源（票据有效性由该接口在取流时校验，不额外提供有效性探测端点）；该路径不经登录态鉴权，凭据是短期一次性票据本身，业务侧不感知。
 - 业务侧无需改动：一如既往通过 `GET /file-preview/page?fileId=…` 拿到预览页，票据由平台签发与续期。
 
+> Issue #1363 影响说明（文案与告警）：预览组件的弃用提示与 `renderMode` 文档表述按「业务只给 `fileId`」收敛——`MangoFilePreviewDialog` 自身也会对地址类 props 输出弃用提示，`renderMode` 表不再暗示业务需提供预览地址。无影响：组件入参、`renderMode` 取值与后端契约均不变，业务只需继续传 `fileId`。
 > Issue #1380 影响说明：独立部署（应用与预览引擎分进程）时，图片/音视频/压缩包等由引擎出页，预览跳转带 `mango.file-preview.engine-public-base-url` 配置的引擎 origin；PDF 与 Office 转换产物仍由应用出页（`preview-artifact`），引擎不参与。内嵌部署（不配置该 key）行为不变。
