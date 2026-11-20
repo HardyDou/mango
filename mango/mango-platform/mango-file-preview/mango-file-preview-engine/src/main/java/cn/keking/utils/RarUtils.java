@@ -24,7 +24,7 @@ import java.util.stream.Stream;
  * create : 2023-04-08
  **/
 public class RarUtils {
-    private static final Logger logger = LoggerFactory.getLogger(RarUtils.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RarUtils.class);
 
     public static byte[] getUTF8BytesFromGBKString(String gbkStr) {
         int n = gbkStr.length();
@@ -64,7 +64,7 @@ public class RarUtils {
                     str = new String(getUTF8BytesFromGBKString(str), StandardCharsets.UTF_8);
                 }
             } catch (UnsupportedEncodingException e) {
-                logger.error("Failed to convert string encoding: {}", str, e);
+                LOGGER.error("Failed to convert string encoding: {}", str, e);
             }
         }
         return str;
