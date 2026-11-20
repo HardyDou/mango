@@ -84,8 +84,11 @@
 
 | 渲染模式 | 出页方 | 地址 | 判据 |
 |---|---|---|---|
-| `NATIVE_PDF`、`PDF_CONVERTING` | **应用** | `/api/file-preview/files/preview-artifact?token=…` | 转换产物落在应用侧 `ConfigConstants.getFileDir()`，由应用按入口票据读盘 |
-| `IMAGE`、`VIDEO`、`AUDIO`、`PAGE`（图片/音视频/压缩包/引擎级表格） | **引擎** | `/api/onlinePreview?fileId=…`，页内子资源 `/preview-file/**` | 302 的 `Location` 带 `mango.file-preview.engine-public-base-url` 配置的 origin |
+| `NATIVE_PDF` | **应用** | `/api/file-preview/files/preview-entry?token=…`（PDF.js 页，**无 Location**） | 原生 PDF 由应用出页，引擎不参与 |
+| `PDF_CONVERTING` | **应用** | 同上；产物 `/api/file-preview/files/preview-artifact?token=…` | Office 转换在应用侧完成，产物落在 `ConfigConstants.getFileDir()` |
+| `IMAGE`、`VIDEO`、`AUDIO` | **引擎** | `/api/onlinePreview?fileId=…`，子资源 `/preview-file/**` | 302 的 `Location` 带 `engine-public-base-url` 的 origin |
+| `PAGE`（压缩包、引擎级表格等） | **引擎** | 同上 | 同上 |
+| —
 
 **引擎不参与 PDF 与转换产物**：独立部署时不要拿引擎的 403/200 当 PDF 是否可用的判据；PDF 的通过标准是应用侧 `preview-artifact` 返回 PDF 字节。
 
