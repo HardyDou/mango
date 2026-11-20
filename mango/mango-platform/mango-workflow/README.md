@@ -538,6 +538,8 @@ mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-comm
 
 `WORKFLOW_DEFINITION` 用于初始化业务内置流程定义。Bootstrap Resource 处理器会按 `tenantId + definitionKey` 幂等创建或更新流程定义，把 `designerJson` 转换为 BPMN，并通过 `WorkflowDefinitionService.ensurePublished()` 真实发布到 Flowable；内容未变化的重入不会新增部署或版本。
 
+声明同步创建的分类、流程定义与流程版本主键由 `tenantId + 领域/分类/流程编码/版本号` 派生（见 `PortableResourceIds#stable`），同名声明在空白库上回放得到相同主键，因此冷基线比对不会因主键变化而失败。Flowable 生成的 `deployment_id` 与 `process_definition_id`、以及记录本次发布时刻的 `last_deploy_time`、`publish_time` 属于引擎运行时数据，基线比对前会改写成稳定占位值；它们不作为声明内容比较。声明只负责创建或更新自身定义的流程，不支持通过声明改写已存在流程定义的主键或版本主键。
+
 | 字段 | 类型 | 必填 | 含义 |
 |------|------|------|------|
 | `tenantId` | `LONG` | 否 | 租户 ID，默认 `1`。 |

@@ -118,6 +118,8 @@ final class BaselineGenerator {
         for (TemporaryDatabases temporary : databases.values()) {
             store.canonicalizeRuntimeAuditTimestamps(temporary.replay());
             store.canonicalizeRuntimeAuditTimestamps(temporary.determinism());
+            store.canonicalizeWorkflowEngineIds(temporary.replay());
+            store.canonicalizeWorkflowEngineIds(temporary.determinism());
         }
     }
 
