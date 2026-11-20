@@ -13,12 +13,13 @@
 | 创建预览链接 | `GET /file-preview/files/preview-link?fileId=...` 返回预览 URL、token 和有效期 |
 | 直接跳转预览页 | `GET /file-preview/files/preview?fileId=...` 生成 source token 后 forward 到预览引擎 |
 
-> 进程内取源（内嵌引擎）下预览地址是 `enginePath?fileId=<短期取源票据>&fullfilename=<引擎文件名>`。这类请求的身份由短期取源票据承担，没有网络地址可供站点校验，因此引擎不做 host 校验（`trust.host` 不需要包含 Mango 对外域名）；票据有效性由取源环节校验——不存在或过期时取源失败返回 `180002`，`url` 形态的请求仍按原规则校验站点。独立部署引擎仍是 `url` 形态。
 | 短期公开入口 | `GET /file-preview/files/preview-entry?token=...` 使用已签发入口 token 进入预览 |
 | 源文件读取 | `GET /file-preview/sources?token=...` 供预览引擎读取源文件流 |
 | 上下文保存 | token 中保存签发时的 `MangoContextSnapshot`，读取源文件时恢复上下文 |
 | 引擎资源注册 | 启动时注册 `/onlinePreview`、`/pdfjs/**`、`/xlsx/**` 等公开资源 |
 | 独立 UI 阻断 | 默认拦截 kkFileView 首页和演示文件管理入口 |
+
+> 进程内取源（内嵌引擎）下预览地址是 `enginePath?fileId=<短期取源票据>&fullfilename=<引擎文件名>`。这类请求的身份由短期取源票据承担，没有网络地址可供站点校验，因此引擎不做 host 校验（`trust.host` 不需要包含 Mango 对外域名）；票据有效性由取源环节校验——不存在或过期时取源失败返回 `180002`，`url` 形态的请求仍按原规则校验站点。独立部署引擎仍是 `url` 形态。
 
 ## 3. 后端接入
 
