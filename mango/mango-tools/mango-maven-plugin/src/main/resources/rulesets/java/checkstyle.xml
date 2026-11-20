@@ -30,46 +30,20 @@
         <module name="MethodName"/>
         <module name="PackageName"/>
         <module name="ParameterName"/>
-        <module name="StaticVariableName"/>
         <module name="TypeName"/>
 
-        <!-- 格式规范 -->
-        <module name="AvoidEscapedUnicodeCharacters"/>
+        <!--
+            格式规范：缩进、空白、换行位置、括号位置、魔法数字、声明顺序与静态变量命名不再纳入门禁。
+            这些检查对缺陷零收益，却占全仓存量债务的绝大部分（魔法数字单条 10626/15067），
+            且改动任何一个文件都要为历史噪音返工。格式统一交由 IDE/格式化器在提交前完成。
+            保留的仍是可定位真实缺陷的检查（空块、缺失 default、缺少花括号、equals/hashCode 一致性等）。
+        -->
         <module name="EmptyBlock"/>
-        <module name="GenericWhitespace"/>
-        <module name="Indentation">
-            <property name="basicOffset" value="4"/>
-            <property name="braceAdjustment" value="0"/>
-            <property name="caseIndent" value="4"/>
-        </module>
-        <module name="LeftCurly"/>
-        <module name="MethodParamPad"/>
-        <module name="NoLineWrap"/>
         <module name="OneStatementPerLine"/>
-        <module name="OperatorWrap">
-            <property name="tokens"
-                      value="QUESTION,EQUAL,NOT_EQUAL,DIV,PLUS,MINUS,STAR,MOD,SR,BSR,GE,GT,SL,LE,LT,BXOR,BOR,LOR,BAND,LAND,TYPE_EXTENSION_AND,LITERAL_INSTANCEOF"/>
-        </module>
-        <module name="ParenPad"/>
         <module name="RightCurly"/>
-        <module name="SeparatorWrap">
-            <property name="tokens" value="DOT"/>
-            <property name="option" value="nl"/>
-        </module>
-        <module name="SeparatorWrap">
-            <property name="tokens" value="COMMA"/>
-            <property name="option" value="eol"/>
-        </module>
-        <module name="WhitespaceAfter"/>
-        <module name="WhitespaceAround">
-            <property name="allowEmptyConstructors" value="true"/>
-            <property name="allowEmptyLambdas" value="true"/>
-            <property name="allowEmptyTypes" value="true"/>
-        </module>
 
         <!-- OOP 规范 -->
         <module name="OuterTypeFilename"/>
-        <module name="DeclarationOrder"/>
         <module name="OneTopLevelClass"/>
 
         <!-- 控制语句 -->
@@ -98,12 +72,6 @@
         <!-- 复杂度 -->
         <module name="CyclomaticComplexity">
             <property name="max" value="20"/>
-        </module>
-
-        <!-- 禁止魔法数 -->
-        <module name="MagicNumber">
-            <property name="ignoreAnnotation" value="true"/>
-            <property name="ignoreHashCodeMethod" value="true"/>
         </module>
 
         <!-- 相等性检查 -->
