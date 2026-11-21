@@ -6,7 +6,7 @@
  * - 单一构建基座：根聚合 POM `io.mango:mango` 继承 `io.mango:mango-parent`，不再有两棵互不相交的父树；
  * - 版本出口唯一：`dependencyManagement` 只允许出现在 `mango-bom`（依赖版本）与 `mango-parent`（自身模块版本派生）；
  * - 插件版本出口唯一：`pluginManagement` 只允许出现在 `mango-parent`（根聚合 POM 在迁移期允许保留，由 `--strict` 收紧）；
- * - 模块父链只允许指向 `mango-parent` 或根聚合 `mango`，禁止更深的中转父 POM。
+ * - 每个模块的父链必须最终落到 `mango` 或 `mango-parent`，不得成环，且父 POM 不得来自项目外。
  *
  * 默认以「报告模式」运行（存在偏差时退出码 0，只打印清单），`--strict` 时偏差即失败。
  * 用法：

@@ -65,6 +65,8 @@
 
 根聚合 POM、全局 parent、架构规则/插件、债务基线或门禁 workflow 变化时才升级到完整 Reactor。历史债务全量盘点由独立定时/手工 workflow 执行；partial-reactor 仍必须阻断本次新增违规，但不得用于改写全局债务预算。
 
+POM 父链只有一棵树：新增模块的父 POM 一律最终落到 `mango` 或 `mango-parent`，不另起基座；依赖版本只写在 `mango-bom`，插件版本只写在 `mango-parent`。改动父链、`dependencyManagement` 或 `pluginManagement` 后执行 `node mango-pmo/tools/check-pom-inheritance.mjs --strict`，Java gates 中同名检查会在偏差时失败。
+
 ## 6. 提交要求
 
 提交说明必须写清：
