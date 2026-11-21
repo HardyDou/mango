@@ -6,7 +6,7 @@
  * - 单一构建基座：根聚合 POM `io.mango:mango` 继承 `io.mango:mango-parent`，不再有两棵互不相交的父树；
  * - 版本出口唯一：`dependencyManagement` 只允许出现在 `mango-bom`（依赖版本）与 `mango-parent`（自身模块版本派生）；
  * - 插件版本出口唯一：`pluginManagement` 只允许出现在 `mango-parent`（根聚合 POM 在迁移期允许保留，由 `--strict` 收紧）；
- * - 模块父链只允许指向 `mango-parent` 或根聚合 `mango`，禁止更深的中转父 POM。
+ * - 每个模块的父链必须最终落到 `mango` 或 `mango-parent`，不得成环，且父 POM 不得来自项目外。
  *
  * 默认以「报告模式」运行（存在偏差时退出码 0，只打印清单），`--strict` 时偏差即失败。
  * 用法：
@@ -14,6 +14,7 @@
  */
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const IGNORED_DIRS = new Set(['target', 'node_modules', '.git', 'dist']);
 
@@ -115,17 +116,23 @@ export function analyse(projectRoot) {
     if (!pom.parent) continue;
     const chain = [];
     let current = pom;
+    let cycle = false;
     while (current) {
       chain.push(current.artifactId);
       if (current.artifactId === 'mango' || current.artifactId === 'mango-parent') break;
       if (!current.parent) { current = null; break; }
-      if (chain.includes(current.parent.artifactId)) break;
+      if (chain.includes(current.parent.artifactId)) {
+        chain.push(current.parent.artifactId);
+        cycle = true;
+        break;
+      }
       if (chain.length > 16) break;
       current = byArtifact.get(current.parent.artifactId) ?? null;
     }
-    const resolved = chain.includes('mango') || chain.includes('mango-parent');
-    const parentKnown = pom.parent ? [...byArtifact.values()].some((candidate) => candidate.artifactId === pom.parent.artifactId) : false;
-    if (!resolved && !parentKnown) {
+    const root = chain.at(-1);
+    if (cycle) {
+      add('PARENT_CHAIN_CYCLE', pom.file, `父链成环：[${chain.join(' -> ')}]`);
+    } else if (root !== 'mango' && root !== 'mango-parent') {
       add('PARENT_CHAIN_UNRESOLVED', pom.file, `父链 [${chain.join(' -> ')}] 未落到 mango 或 mango-parent`);
     }
   }
@@ -150,4 +157,4 @@ function main() {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) main();
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main();
