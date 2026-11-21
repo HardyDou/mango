@@ -64,3 +64,28 @@ test('测试夹具目录不参与父链约束', () => {
   });
   assert.deepEqual(analyse(root).findings, []);
 });
+
+test('父链成环时报告 PARENT_CHAIN_CYCLE', () => {
+  const root = fixture({
+    'pom.xml': pom({ artifactId: 'mango', parent: { artifactId: 'mango-parent' } }),
+    'mango-parent/pom.xml': pom({ artifactId: 'mango-parent', dependencyManagement: true, pluginManagement: true }),
+    'mango-bom/pom.xml': pom({ artifactId: 'mango-bom', dependencyManagement: true }),
+    'loop-a/pom.xml': pom({ artifactId: 'loop-a', parent: { artifactId: 'loop-b' } }),
+    'loop-b/pom.xml': pom({ artifactId: 'loop-b', parent: { artifactId: 'loop-a' } }),
+  });
+  const findings = analyse(root).findings;
+  assert.deepEqual(findings.map((item) => item.rule).sort(), ['PARENT_CHAIN_CYCLE', 'PARENT_CHAIN_CYCLE']);
+});
+
+test('父链落到非基座 POM（如 mango-bom）时报告 PARENT_CHAIN_UNRESOLVED', () => {
+  const root = fixture({
+    'pom.xml': pom({ artifactId: 'mango', parent: { artifactId: 'mango-parent' } }),
+    'mango-parent/pom.xml': pom({ artifactId: 'mango-parent', dependencyManagement: true, pluginManagement: true }),
+    'mango-bom/pom.xml': pom({ artifactId: 'mango-bom', dependencyManagement: true }),
+    'orphan/pom.xml': pom({ artifactId: 'orphan', parent: { artifactId: 'mango-bom' } }),
+    'dangling/pom.xml': pom({ artifactId: 'dangling', parent: { artifactId: 'not-in-repo' } }),
+  });
+  const findings = analyse(root).findings;
+  assert.deepEqual(findings.map((item) => item.rule).sort(), ['PARENT_CHAIN_UNRESOLVED', 'PARENT_CHAIN_UNRESOLVED']);
+  assert.deepEqual(findings.map((item) => item.file).sort(), ['dangling/pom.xml', 'orphan/pom.xml']);
+});

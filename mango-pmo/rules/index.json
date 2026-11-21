@@ -1,5 +1,5 @@
 {
-  "version": 27,
+  "version": 28,
   "always": [
     {
       "path": "rules/00-dev-flow.md",
@@ -149,7 +149,7 @@
     },
     "backend.devFlow": {
       "path": "rules/backend/10-dev-flow.md",
-      "reason": "后端开发流程"
+      "reason": "后端开发流程、POM 父链契约与插件/依赖版本出口唯一"
     },
     "backend.moduleMenu": {
       "path": "rules/backend/11-module-menu.md",
