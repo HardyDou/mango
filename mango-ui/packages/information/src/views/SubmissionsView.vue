@@ -199,7 +199,8 @@ import type {
   InformationSubmissionStatus,
 } from '../api/information';
 import { formatDateTime, submissionStatusLabel, submissionStatusTone } from '../domain/status';
-import { displayFieldValue, parseRules, rulesToFields, type InformationFieldDefinition } from '../domain/rules';
+import { displayFieldValue, parseRules, rulesToFields, type FormCreateRule, type InformationFieldDefinition } from '../domain/rules';
+import { resolveOptionSources } from '../domain/optionSource';
 
 const api = useInformationApi();
 const route = useRoute();
@@ -265,8 +266,9 @@ const quickActions: Array<{ status: InformationSubmissionStatus; label: string }
 ];
 
 const formId = computed(() => query.formId || String(route.query.id || ''));
+const rules = ref<FormCreateRule[]>([]);
 const columns = computed<InformationFieldDefinition[]>(() =>
-  rulesToFields(parseRules(form.value?.definitionJson)).filter(
+  rulesToFields(rules.value).filter(
     (field) => field.fieldType !== 'static' && field.fieldType !== 'divider',
   ),
 );
@@ -381,6 +383,7 @@ async function load() {
     total.value = 0;
     pendingCount.value = 0;
     form.value = undefined;
+    rules.value = [];
     return;
   }
   loading.value = true;
@@ -399,6 +402,14 @@ async function load() {
       }),
     ]);
     form.value = detail;
+    const parsed = parseRules(detail.definitionJson);
+    rules.value = parsed;
+    try {
+      // DICT 字段的展示列取字典里的选项标签，不把编码直接给到查看者
+      rules.value = await resolveOptionSources(parsed);
+    } catch (error) {
+      ElMessage.warning(error instanceof Error ? error.message : '字典选项加载失败');
+    }
     rows.value = page.list;
     total.value = page.total;
     pendingCount.value = pending.total;

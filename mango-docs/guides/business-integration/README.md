@@ -17,6 +17,7 @@
 | 场景 | 适合任务 | 主要能力 |
 |---|---|---|
 | [文件上传表单](./file-upload-form.md) | 表单上传附件、回显、预览、下载、打包或 PDF 归档 | File、Fileproc、File Preview、Frontend File |
+| [信息表单](./information-form.md) | 收集访客或员工填报数据、托管页面提交、采集记录与导出 | Information、System Dictionary、Frontend Information |
 | [业务审批接入](./workflow-business-approval.md) | 发起审批、处理任务、回写业务状态和查看流程记录 | Workflow、Workflow Frontend、Workflow Example |
 | [按钮展示规则](./permission-button-display-rule.md) | 根据业务状态、行数据或页面上下文控制按钮显示 | Access、Authorization、Admin Shell |
 

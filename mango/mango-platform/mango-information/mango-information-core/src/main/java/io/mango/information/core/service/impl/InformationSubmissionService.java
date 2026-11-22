@@ -5,8 +5,9 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.mango.common.result.Require;
 import io.mango.common.exception.BizException;
+import io.mango.common.result.R;
+import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
 import io.mango.information.api.command.ProcessInformationSubmissionCommand;
 import io.mango.information.api.command.SubmitInformationCommand;
@@ -25,16 +26,21 @@ import io.mango.information.core.service.IInformationSubmissionService;
 import io.mango.information.core.support.InformationDefinition;
 import io.mango.infra.context.api.MangoContextHolder;
 import io.mango.infra.context.api.MangoContextSnapshot;
+import io.mango.system.api.DictApi;
+import io.mango.system.api.vo.DictOptionVO;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.security.MessageDigest;
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -50,6 +56,7 @@ public class InformationSubmissionService implements IInformationSubmissionServi
     private final InformationSubmissionSnapshotMapper snapshotMapper;
     private final InformationFormService formService;
     private final ObjectMapper objectMapper;
+    private final ObjectProvider<DictApi> dictApiProvider;
 
     @Override
     public PageResult<InformationSubmissionVO> page(InformationSubmissionPageQuery query) {
@@ -259,19 +266,23 @@ public class InformationSubmissionService implements IInformationSubmissionServi
         return vo;
     }
 
-    /** 按表单定义校验提交值：展示型规则不参与，未知字段与缺失必填都拒绝。 */
+    /** 按表单定义校验提交值：展示型规则不参与，未知字段、缺失必填与超出选项值域都拒绝。 */
     private void validateValues(String definitionJson, Map<String, Object> values) {
         try {
             List<InformationDefinition.Field> fields = InformationDefinition.fields(objectMapper.readTree(definitionJson));
             Set<String> definedCodes = new HashSet<>();
+            // 同一个 dictType 在一次提交内只取一次字典选项
+            Map<String, Set<String>> dictCache = new HashMap<>();
             for (InformationDefinition.Field field : fields) {
                 definedCodes.add(field.code());
                 if (InformationDefinition.displayOnly(field)) {
                     continue;
                 }
-                if (field.required() && isEmptyValue(values.get(field.code()))) {
+                Object value = values.get(field.code());
+                if (field.required() && isEmptyValue(value)) {
                     Require.isTrue(false, InformationCode.INVALID_SUBMISSION, "字段 " + field.code() + " 不能为空");
                 }
+                validateOptions(field, value, dictCache);
             }
             values.keySet().forEach(code -> Require.isTrue(definedCodes.contains(code),
                     InformationCode.INVALID_SUBMISSION, "未知字段：" + code));
@@ -280,6 +291,85 @@ public class InformationSubmissionService implements IInformationSubmissionServi
         } catch (Exception e) {
             throw new IllegalArgumentException(InformationCode.INVALID_SUBMISSION.getMessage(), e);
         }
+    }
+
+    /**
+     * 声明了选项的字段，提交值必须落在允许值域内：静态字段取 options[].value，字典字段取字典启用项。
+     * 没有 options 也没有 optionSource 的字段不做值域校验。
+     */
+    private void validateOptions(InformationDefinition.Field field, Object value, Map<String, Set<String>> dictCache) {
+        Set<String> allowed = allowedValues(field, dictCache);
+        if (allowed == null) {
+            return;
+        }
+        for (String item : optionItems(value)) {
+            Require.isTrue(allowed.contains(item), InformationCode.INVALID_SUBMISSION,
+                    "字段 " + field.name() + " 的值不在可选范围内：" + item);
+        }
+    }
+
+    /** 返回允许值域；字段没有选项约束时返回 null。 */
+    private Set<String> allowedValues(InformationDefinition.Field field, Map<String, Set<String>> dictCache) {
+        InformationDefinition.OptionSource optionSource = field.optionSource();
+        if (optionSource != null && optionSource.isDict()) {
+            return dictValues(field, optionSource, dictCache);
+        }
+        if (field.options().isEmpty()) {
+            return null;
+        }
+        Set<String> allowed = new HashSet<>();
+        for (InformationDefinition.FieldOption option : field.options()) {
+            allowed.add(option.value());
+        }
+        return allowed;
+    }
+
+    /** 读取字典启用项值域；字典缺失或没有启用项时直接拒绝，不静默放行。 */
+    private Set<String> dictValues(InformationDefinition.Field field, InformationDefinition.OptionSource optionSource,
+                                   Map<String, Set<String>> dictCache) {
+        String dictType = optionSource.dictType();
+        Set<String> cached = dictCache.get(dictType);
+        if (cached != null) {
+            return cached;
+        }
+        Set<String> values = new HashSet<>();
+        DictApi dictApi = dictApiProvider.getIfAvailable();
+        if (dictApi != null && StringUtils.hasText(dictType)) {
+            R<List<DictOptionVO>> response = dictApi.getOptions(dictType);
+            if (response != null && response.isSuccess() && response.getData() != null) {
+                for (DictOptionVO option : response.getData()) {
+                    if (option != null && option.getValue() != null) {
+                        values.add(option.getValue());
+                    }
+                }
+            }
+        }
+        Require.isTrue(!values.isEmpty(), InformationCode.INVALID_SUBMISSION,
+                "字段 " + field.name() + " 绑定的字典 " + dictType + " 不存在或没有启用项");
+        dictCache.put(dictType, values);
+        return values;
+    }
+
+    /** 归一化选项值：Collection 逐个取，String 按逗号拆分并 trim，空元素与空串忽略。 */
+    private List<String> optionItems(Object value) {
+        List<String> result = new ArrayList<>();
+        if (value == null) {
+            return result;
+        }
+        if (value instanceof java.util.Collection<?> collection) {
+            for (Object item : collection) {
+                if (item != null && StringUtils.hasText(String.valueOf(item))) {
+                    result.add(String.valueOf(item).trim());
+                }
+            }
+            return result;
+        }
+        for (String item : String.valueOf(value).split(",")) {
+            if (StringUtils.hasText(item)) {
+                result.add(item.trim());
+            }
+        }
+        return result;
     }
 
     private boolean isEmptyValue(Object value) {

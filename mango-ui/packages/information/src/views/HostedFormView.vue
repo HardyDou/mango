@@ -48,6 +48,7 @@ import InformationFormSurface from '../components/InformationFormSurface.vue';
 import { useInformationApi } from '../composables/useInformationApi';
 import type { PublicInformationForm } from '../api/information';
 import { parseRules, type FormCreateRule } from '../domain/rules';
+import { resolveOptionSources } from '../domain/optionSource';
 
 const api = useInformationApi();
 
@@ -83,8 +84,8 @@ function resetValues() {
   });
 }
 
-function applyFields() {
-  rules.value = form.value ? parseRules(form.value.definitionJson) : [];
+async function applyFields() {
+  rules.value = form.value ? await resolveOptionSources(parseRules(form.value.definitionJson)) : [];
   resetValues();
   surfaceKey.value += 1;
 }
@@ -103,7 +104,7 @@ async function load() {
   errorMessage.value = '';
   try {
     form.value = await api.publicForm(formCode);
-    applyFields();
+    await applyFields();
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '表单加载失败';
   } finally {
@@ -140,11 +141,13 @@ async function submit() {
 }
 
 /** 提交成功后清空录入，方便同一访客继续提交下一份。 */
-function submitAgain() {
+async function submitAgain() {
   successVisible.value = false;
-  rules.value = form.value ? parseRules(form.value.definitionJson) : [];
-  resetValues();
-  surfaceKey.value += 1;
+  try {
+    await applyFields();
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : '表单加载失败';
+  }
 }
 
 onMounted(load);

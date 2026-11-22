@@ -26,6 +26,7 @@ Mango 信息采集前端包，提供表单管理、采集记录、托管表单�
 - `createInformationApi(httpClient)` 和 `useInformationApi()` 提供类型化后台与公开接口。
 - `createInformationPublicFileClient(httpClient, formCode)` 为公开附件上传提供绑定表单编码的客户端。
 - `style.css` 提供信息采集页面、表单控件和托管表单样式。
+- 选择型字段的选项有静态与字典两种来源：规则上写 `options:[{label,value}]` 为静态选项，写 `optionSource:{type:"DICT",dictType}` 则由平台字典启用项渲染，设计器按「静态选项 / 平台字典」切换，两种来源不混用（`domain/optionSource.ts` 负责解析与 `@mango/common` 字典接口取数）。
 
 ## 3. 接入方式
 
@@ -86,6 +87,7 @@ registerMangoInformationAdminPages();
 - 请求未发送：检查宿主是否注入 `MANGO_HTTP_CLIENT_KEY`，不要在包内自行创建全局 Axios 实例。
 - 公开提交失败：确认表单已发布、`formCode` 与租户匹配、幂等键未冲突；服务端代提交才检查 `serverSecret`。
 - 文件上传失败：确认票据未过期且与 `formCode` 绑定，并检查后端文件存储和上传限制配置。
+- 字典选项为空或提交被拒：确认同一租户下该 `dictType` 存在且有启用项——服务端在字典缺失时按 `INVALID_SUBMISSION` 拒绝提交，不会静默放行。
 
 ## 10. 相关文档
 
