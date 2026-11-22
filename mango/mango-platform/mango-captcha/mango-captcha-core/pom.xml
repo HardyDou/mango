@@ -22,7 +22,6 @@
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-captcha</artifactId>
-            <version>5.8.26</version>
         </dependency>
         <!-- KV Store -->
         <dependency>
