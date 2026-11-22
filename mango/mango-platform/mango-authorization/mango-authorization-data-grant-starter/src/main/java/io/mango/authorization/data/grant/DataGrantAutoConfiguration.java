@@ -17,8 +17,9 @@ import org.springframework.context.annotation.Bean;
  * 默认开启（{@code mango.data-grant.enabled=true}）。所有组件都使用 {@link ConditionalOnMissingBean}，
  * 业务方可以整体替换编码器、签发器、校验器、拦截器或响应通知。
  * <p>
- * 启动时把三个 Grant 响应头追加进 {@code mango.web.cors.exposed-headers}（幂等），否则跨域前端
- * 读不到 {@code X-Mango-Data-Grant}，Grant 机制在浏览器端等于不可用。
+ * 启动时把三个 Grant 响应头追加进 {@code mango.web.cors.exposed-headers}、把 {@code X-Mango-Data-Grant}
+ * 追加进 {@code mango.web.cors.allowed-headers}（均幂等）。前者缺失时跨域前端读不到响应头，后者缺失时
+ * 浏览器不允许回传，两种情况下 Grant 机制在浏览器端都等于不可用。
  */
 @AutoConfiguration
 @AutoConfigureAfter(name = {
@@ -42,8 +43,9 @@ public class DataGrantAutoConfiguration {
             ObjectProvider<MangoWebProperties> webProperties) {
         this.properties = properties;
         MangoWebProperties web = webProperties.getIfAvailable();
-        if (web != null && web.getCors() != null && web.getCors().getExposedHeaders() != null) {
+        if (web != null && web.getCors() != null) {
             DataGrantHeaders.expose(web.getCors().getExposedHeaders());
+            DataGrantHeaders.allowRequestHeader(web.getCors().getAllowedHeaders());
         }
     }
 
