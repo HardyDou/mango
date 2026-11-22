@@ -7,11 +7,6 @@ import io.mango.workflow.api.enums.WorkflowActivityKind;
 import io.mango.workflow.api.query.WorkflowActivityTimelineQuery;
 import io.mango.workflow.api.vo.WorkflowActivityTimelineVO;
 import io.mango.workflow.core.config.WorkflowTaskQueryProperties;
-import io.mango.workflow.core.entity.WorkflowBusinessApplyEntity;
-import io.mango.workflow.core.mapper.WorkflowBusinessApplyMapper;
-import com.baomidou.mybatisplus.core.MybatisConfiguration;
-import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
-import org.apache.ibatis.builder.MapperBuilderAssistant;
 import org.flowable.engine.HistoryService;
 import org.flowable.engine.history.HistoricActivityInstance;
 import org.flowable.engine.history.HistoricActivityInstanceQuery;
@@ -33,7 +28,7 @@ class WorkflowActivityTimelineServiceTest {
 
     private HistoryService historyService;
     private HistoricActivityInstanceQuery activityQuery;
-    private WorkflowBusinessApplyMapper businessApplyMapper;
+    private WorkflowTaskBusinessQueryService businessQueryService;
     private WorkflowTaskQueryProperties properties;
     private WorkflowActivityTimelineService service;
 
@@ -41,12 +36,9 @@ class WorkflowActivityTimelineServiceTest {
     void setUp() {
         historyService = mock(HistoryService.class);
         activityQuery = mock(HistoricActivityInstanceQuery.class);
-        businessApplyMapper = mock(WorkflowBusinessApplyMapper.class);
+        businessQueryService = mock(WorkflowTaskBusinessQueryService.class);
         properties = new WorkflowTaskQueryProperties();
-        // 单元测试不启动 MyBatis-Plus，需先注册实体元信息，否则 LambdaQueryWrapper 解析列名会失败。
-        TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new MybatisConfiguration(), ""),
-                WorkflowBusinessApplyEntity.class);
-        service = new WorkflowActivityTimelineService(historyService, businessApplyMapper, properties);
+        service = new WorkflowActivityTimelineService(historyService, businessQueryService, properties);
         MangoContextHolder.clear();
         MangoContextHolder.set(MangoContextSnapshot.empty()
                 .withSecurity(1001L, "1", "alice", "default", "USER", "ORG", 1001L, "token"));
@@ -64,7 +56,7 @@ class WorkflowActivityTimelineServiceTest {
                 activity("sid-1", "开始", "startEvent", null, 1000L),
                 activity("sid-2", "审批", "userTask", "alice", 2000L),
                 activity("sid-3", "是否通过", "exclusiveGateway", null, 3000L));
-        when(businessApplyMapper.selectList(org.mockito.ArgumentMatchers.any())).thenReturn(List.of(apply("P-1")));
+        stubScope(List.of("P-1"));
         when(historyService.createHistoricActivityInstanceQuery()).thenReturn(activityQuery);
         when(activityQuery.processInstanceId(anyString())).thenReturn(activityQuery);
         when(activityQuery.list()).thenReturn(rows);
@@ -83,7 +75,7 @@ class WorkflowActivityTimelineServiceTest {
     @Test
     @DisplayName("业务键未登记流程实例时返回空集合")
     void activityTimelineByBusinessKey_noProcessInstanceReturnsEmpty() {
-        when(businessApplyMapper.selectList(org.mockito.ArgumentMatchers.any())).thenReturn(List.of());
+        stubScope(List.of());
 
         assertThat(service.activityTimelineByBusinessKey(query())).isEmpty();
     }
@@ -96,7 +88,7 @@ class WorkflowActivityTimelineServiceTest {
                 activity("sid-1", "开始", "startEvent", null, 1000L),
                 activity("sid-2", "审批", "userTask", "alice", 2000L),
                 activity("sid-3", "结束", "endEvent", null, 3000L));
-        when(businessApplyMapper.selectList(org.mockito.ArgumentMatchers.any())).thenReturn(List.of(apply("P-1")));
+        stubScope(List.of("P-1"));
         when(historyService.createHistoricActivityInstanceQuery()).thenReturn(activityQuery);
         when(activityQuery.processInstanceId(anyString())).thenReturn(activityQuery);
         when(activityQuery.list()).thenReturn(rows);
@@ -106,18 +98,20 @@ class WorkflowActivityTimelineServiceTest {
                 .hasMessageContaining("活动时间轴超过单次返回上限");
     }
 
+    private void stubScope(List<String> processInstanceIds) {
+        when(businessQueryService.currentTenantId()).thenReturn(1L);
+        when(businessQueryService.normalizeRequired(anyString(), anyString()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(businessQueryService.normalizeIds(org.mockito.ArgumentMatchers.any())).thenReturn(List.of());
+        when(businessQueryService.processInstanceIds(org.mockito.ArgumentMatchers.any(), anyString(), anyString(),
+                org.mockito.ArgumentMatchers.any())).thenReturn(processInstanceIds);
+    }
+
     private WorkflowActivityTimelineQuery query() {
         WorkflowActivityTimelineQuery query = new WorkflowActivityTimelineQuery();
         query.setBusinessType("BAOHAN_RC_PROJECT_REVIEW");
         query.setBusinessKey("RC202611130001");
         return query;
-    }
-
-    private WorkflowBusinessApplyEntity apply(String processInstanceId) {
-        WorkflowBusinessApplyEntity entity = new WorkflowBusinessApplyEntity();
-        entity.setTenantId("1");
-        entity.setProcessInstanceId(processInstanceId);
-        return entity;
     }
 
     private HistoricActivityInstance activity(String activityId, String name, String type, String assignee,

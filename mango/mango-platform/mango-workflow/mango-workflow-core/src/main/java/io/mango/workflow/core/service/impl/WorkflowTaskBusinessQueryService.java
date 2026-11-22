@@ -239,7 +239,8 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
         return current.getId() != null && candidate.getId() != null && current.getId() <= candidate.getId();
     }
 
-    private List<String> processInstanceIds(Long tenantId, String businessType, String businessKey,
+    /** 包内共享：活动时间轴服务复用同一套租户、部门与业务键收窄口径，避免两份实现漂移。 */
+    List<String> processInstanceIds(Long tenantId, String businessType, String businessKey,
                                             List<Long> deptIds) {
         return businessApplyMapper.selectList(new LambdaQueryWrapper<WorkflowBusinessApplyEntity>()
                         .select(WorkflowBusinessApplyEntity::getProcessInstanceId)
@@ -322,7 +323,8 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
         }
     }
 
-    private void validateTimeRange(LocalDateTime begin, LocalDateTime end) {
+    /** 包内共享：活动时间轴服务复用同一套租户、部门与业务键收窄口径，避免两份实现漂移。 */
+    void validateTimeRange(LocalDateTime begin, LocalDateTime end) {
         Require.isTrue(begin == null || end == null || !begin.isAfter(end),
                 WorkflowCode.TASK_QUERY_INVALID, "时间区间非法");
     }
@@ -613,7 +615,8 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
                 .toList();
     }
 
-    private List<Long> normalizeIds(List<Long> values) {
+    /** 包内共享：活动时间轴服务复用同一套租户、部门与业务键收窄口径，避免两份实现漂移。 */
+    List<Long> normalizeIds(List<Long> values) {
         if (values == null) {
             return List.of();
         }
@@ -631,12 +634,14 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
                 .toList();
     }
 
-    private String normalizeRequired(String value, String message) {
+    /** 包内共享：活动时间轴服务复用同一套租户、部门与业务键收窄口径，避免两份实现漂移。 */
+    String normalizeRequired(String value, String message) {
         Require.isTrue(StringUtils.hasText(value), WorkflowCode.TASK_QUERY_INVALID, message);
         return value.trim();
     }
 
-    private Long currentTenantId() {
+    /** 包内共享：活动时间轴服务复用同一套租户、部门与业务键收窄口径，避免两份实现漂移。 */
+    Long currentTenantId() {
         String tenantId = MangoContextHolder.tenantId();
         Require.isTrue(StringUtils.hasText(tenantId), WorkflowCode.TASK_QUERY_INVALID, "缺少租户上下文");
         String normalized = Objects.requireNonNull(tenantId).trim();
