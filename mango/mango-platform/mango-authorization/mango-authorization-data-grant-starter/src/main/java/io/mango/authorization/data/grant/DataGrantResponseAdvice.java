@@ -80,7 +80,12 @@ public class DataGrantResponseAdvice implements ResponseBodyAdvice<Object> {
         if (annotation == null) {
             return body;
         }
+        // domain 与 required 必须无条件下发：absent / oversize / scope-unresolved 三种情况都没有 Grant 值，
+        // 前端要靠 domain 才知道删哪个域的键，靠 required 才能区分「后端未启用」与「启用了但这次没给」。
         response.getHeaders().set(DataGrantHeaders.DOMAIN, annotation.domain());
+        if (properties.getMode() == DataGrantProperties.Mode.ENFORCE) {
+            response.getHeaders().set(DataGrantHeaders.REQUIRED, "1");
+        }
         List<?> records = page.getList();
         if (records == null || records.isEmpty()) {
             return body;

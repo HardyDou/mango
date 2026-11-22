@@ -225,13 +225,12 @@ export function applyDataGrantResponse(input: DataGrantResponseInput): void {
     return;
   }
   const issued = grant !== undefined && grant.trim() !== '' && grant.trim().toLowerCase() !== DATA_GRANT_ABSENT;
-  if (
-    input.sentDomains !== undefined &&
-    !issued &&
-    readHeader(input.headers, DATA_GRANT_REQUIRED_HEADER) === '1' &&
-    !input.sentDomains.includes(domain)
-  ) {
-    devWarn(`后端要求刷新数据权限 Grant，但本次请求未携带该域, domain=${domain}`);
+  // 只在「本地本来有这个域的 Grant，但请求没真的带出去」时告警：这正是跨源白名单缺失 / preflight 缓存的症状。
+  // 首次加载时本地为空、后端要求携带属于正常流程，不报警，否则这条 warn 会变成噪音。
+  const required = readHeader(input.headers, DATA_GRANT_REQUIRED_HEADER) === '1';
+  const sentThisDomain = input.sentDomains?.includes(domain) ?? false;
+  if (required && !issued && skipped === undefined && entries.has(domain) && !sentThisDomain) {
+    devWarn(`后端要求携带数据权限 Grant，但本次请求没有真正带出该域（检查 CORS allowed-headers / 代理）, domain=${domain}`);
   }
   if (skipped !== undefined && skipped.trim() !== '') {
     deleteDataGrant(domain);

@@ -73,6 +73,24 @@ class DataGrantHttpIntegrationTest {
     }
 
     @Test
+    void enforceModeListCarriesRequiredSoTheClientCanTellEnabledFromIdle() throws Exception {
+        DataGrantProperties enforce = GrantTestSupport.properties(DataGrantProperties.Mode.ENFORCE, 100);
+
+        mockMvc(enforce, null).perform(post("/fixture/items/page"))
+                .andExpect(status().isOk())
+                .andExpect(header().string(DataGrantHeaders.REQUIRED, "1"))
+                .andExpect(header().string(DataGrantHeaders.DOMAIN, GrantTestSupport.DOMAIN));
+    }
+
+    @Test
+    void optionalModeListOmitsRequired() throws Exception {
+        mockMvc(properties, null).perform(post("/fixture/items/page"))
+                .andExpect(status().isOk())
+                .andExpect(header().doesNotExist(DataGrantHeaders.REQUIRED))
+                .andExpect(header().string(DataGrantHeaders.DOMAIN, GrantTestSupport.DOMAIN));
+    }
+
+    @Test
     void multiValueHeaderWithOtherDomainStillPasses() throws Exception {
         String grant = listGrant(properties, null);
         String otherDomain = GrantTestSupport.token(codec, GrantTestSupport.TENANT_ID, GrantTestSupport.MEMBER_ID,

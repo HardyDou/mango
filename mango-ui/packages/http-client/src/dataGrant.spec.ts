@@ -180,7 +180,23 @@ describe('applyDataGrantResponse', () => {
     expect(collectDataGrants(identity)).toBeUndefined();
   });
 
-  it('warns in dev when the backend requires a grant that this request did not send', () => {
+  it('warns in dev when a cached grant for the domain was not actually sent', () => {
+    recordDataGrant('fixture:item', 'grant-cached', identity, 1);
+
+    applyDataGrantResponse({
+      headers: {
+        [DATA_GRANT_DOMAIN_HEADER.toLowerCase()]: 'fixture:item',
+        [DATA_GRANT_REQUIRED_HEADER.toLowerCase()]: '1',
+      },
+      identity,
+      seq: 2,
+      sentDomains: [],
+    });
+
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('domain=fixture:item'));
+  });
+
+  it('stays quiet on the first load, where nothing is cached yet', () => {
     applyDataGrantResponse({
       headers: {
         [DATA_GRANT_DOMAIN_HEADER.toLowerCase()]: 'fixture:item',
@@ -191,7 +207,7 @@ describe('applyDataGrantResponse', () => {
       sentDomains: [],
     });
 
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining('domain=fixture:item'));
+    expect(warn).not.toHaveBeenCalled();
   });
 
   it('stays quiet when the response also issued a grant for that domain', () => {
