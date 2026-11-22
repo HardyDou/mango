@@ -324,6 +324,8 @@ CMS 管理端的分页列表在响应头签发数据权限 Grant（`X-Mango-Data
 
 `mango.data-grant.mode=enforce` 部署下，管理端详情必须携带列表页签发的 Grant：浏览器刷新或从收藏直链进入详情会返回 403，请从列表进入详情。前端 `@mango/http-client` 已按 `X-Mango-Data-Grant-Domain` 自动接力 Grant，业务方无需手工传头。
 
+**启用前提**：部署需配置 `mango.data-grant.secret`（HMAC 共享密钥）。未配置时 `optional` 模式只输出启动告警、既不签发也不校验；`enforce` 模式会拒绝启动。前端 `@mango/http-client` 已按 `X-Mango-Data-Grant-Domain` 自动接力 Grant，业务方无需手工传头。
+
 ## 资源声明同步模式（#1098）
 
 资源声明的 `sync-mode` 已收敛为 `SYNC_ALWAYS` 和 `SYNC_ONCE`：`AUTO` 映射为 `SYNC_ALWAYS`，`INIT_ONLY`、`MANUAL`、`LOCKED` 映射为 `SYNC_ONCE`。旧值仍可读取并会在启动时输出弃用告警，新声明只写新值。语义与迁移规则见 `mango-resource` README 的 `sync-mode` 章节。
