@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import io.mango.infra.web.util.HmacSignatures;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.time.Instant;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -183,5 +184,29 @@ class DataGrantCodecTest {
 
         assertThat(json).startsWith("{\"t\":\"").contains("\"m\":").contains("\"d\":\"").contains("\"i\":\"")
                 .contains("\"ia\":").contains("\"ex\":").doesNotContain("pv");
+    }
+
+    @Test
+    void classifiesSignatureFailuresApartFromMalformedTokens() {
+        long now = Instant.now().getEpochSecond();
+        String token = GrantTestSupport.token(codec, "t1", 7L, "order", Set.of(1L), now - 5, now + 600, "pv");
+        char last = token.charAt(token.length() - 1);
+        char flipped = last == 'A' ? 'B' : 'A';
+        String tampered = token.substring(0, token.length() - 1) + flipped;
+
+        DataGrantException signatureFailure = decodeFailure(tampered);
+        assertThat(DataGrantCodec.isSignatureFailure(signatureFailure)).isTrue();
+
+        DataGrantException malformed = decodeFailure("not-a-token");
+        assertThat(DataGrantCodec.isSignatureFailure(malformed)).isFalse();
+    }
+
+    private DataGrantException decodeFailure(String token) {
+        try {
+            codec.decode(token);
+        } catch (DataGrantException exception) {
+            return exception;
+        }
+        throw new AssertionError("expected decode failure for " + token);
     }
 }

@@ -25,6 +25,10 @@ public class DataGrantCodec {
 
     private static final String TOKEN_VERSION = "m1";
     private static final String ALGORITHM = "hs256";
+    private static final String MESSAGE_FORMAT_INVALID = "Grant 格式不正确";
+    private static final String MESSAGE_VERSION_UNSUPPORTED = "Grant 版本或算法不受支持";
+    private static final String MESSAGE_KEY_ID_MISMATCH = "Grant 签名密钥标识不匹配";
+    private static final String MESSAGE_SIGNATURE_MISMATCH = "Grant 签名校验失败";
     private static final char SEPARATOR = '.';
     private static final Base64.Encoder ENCODER = Base64.getUrlEncoder().withoutPadding();
     private static final Base64.Decoder DECODER = Base64.getUrlDecoder();
@@ -66,6 +70,20 @@ public class DataGrantCodec {
     }
 
     /**
+     * 判定解码失败是否属于签名类失败（签名不符或密钥标识不匹配）。
+     *
+     * <p>签名类失败说明令牌曾经被正确签发、但密钥或内容已对不上；它与「格式错误」的运维含义不同，
+     * 调用方据此在日志上区分「伪造或密钥轮换残留」与「垃圾输入」。
+     *
+     * @param exception 解码抛出的异常。
+     * @return 签名不符或密钥标识不匹配时为 {@code true}。
+     */
+    public static boolean isSignatureFailure(DataGrantException exception) {
+        String message = exception.getMessage();
+        return MESSAGE_SIGNATURE_MISMATCH.equals(message) || MESSAGE_KEY_ID_MISMATCH.equals(message);
+    }
+
+    /**
      * 解码并校验 Grant 令牌。
      *
      * @param token 令牌字符串。
@@ -77,18 +95,18 @@ public class DataGrantCodec {
         String trimmed = token.trim();
         String[] parts = trimmed.split("\\" + SEPARATOR, -1);
         if (parts.length != 5) {
-            throw new DataGrantException("Grant 格式不正确");
+            throw new DataGrantException(MESSAGE_FORMAT_INVALID);
         }
         if (!TOKEN_VERSION.equals(parts[0]) || !ALGORITHM.equals(parts[1])) {
-            throw new DataGrantException("Grant 版本或算法不受支持");
+            throw new DataGrantException(MESSAGE_VERSION_UNSUPPORTED);
         }
         if (!properties.getKeyId().equals(parts[2])) {
-            throw new DataGrantException("Grant 签名密钥标识不匹配");
+            throw new DataGrantException(MESSAGE_KEY_ID_MISMATCH);
         }
         String signed = parts[0] + SEPARATOR + parts[1] + SEPARATOR + parts[2] + SEPARATOR + parts[3];
         String expected = HmacSignatures.hmacSha256Base64Url(requireSecret(), signed);
         if (!HmacSignatures.matches(parts[4], expected)) {
-            throw new DataGrantException("Grant 签名校验失败");
+            throw new DataGrantException(MESSAGE_SIGNATURE_MISMATCH);
         }
         return readPayload(parts[3]);
     }
