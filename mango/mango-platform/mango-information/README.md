@@ -161,7 +161,11 @@ Content-Type: application/json
 | ---- | ---- |
 | 提交值不在可选值内 | `INVALID_SUBMISSION`，消息 `字段 <name> 的值不在可选范围内：<value>` |
 | 字典不存在或没有启用项 | `INVALID_SUBMISSION`，消息 `字段 <name> 绑定的字典 <dictType> 不存在或没有启用项` |
+| 字典服务调用失败或返回非成功 | `INVALID_SUBMISSION`，消息 `字段 <name> 绑定的字典 <dictType> 读取失败`，并打 WARN 带 `code`/`message` |
+| 当前进程未装配字典能力（无 `DictApi`） | `INVALID_SUBMISSION`，消息 `字段 <name> 绑定的字典 <dictType> 无法校验：当前进程未装配字典能力`，并打 WARN |
 | 字段既没有 `options` 也没有声明字典 | 不做值域校验，保持历史行为 |
+
+注意：`options: []`（空数组）与「没有 `options`」等价，都视为**无约束**——空数组不代表「任何值都不允许」。需要真正禁止取值时请不要把字段放进表单。
 
 `optionSource` 缺失或 `type` 为 `STATIC` 时按静态 `options` 校验。`optionSource` 与 `options` 都存放在既有 `definitionJson` 里，不需要数据库迁移。同一表单的多个字段绑定同一字典时，一次提交只查询一次字典；`mango-information-core` 内没有字典实现时按「字典不存在」拒绝，不会跳过校验。
 

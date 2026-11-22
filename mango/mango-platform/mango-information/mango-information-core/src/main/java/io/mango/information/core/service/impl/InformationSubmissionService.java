@@ -29,6 +29,7 @@ import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.system.api.DictApi;
 import io.mango.system.api.vo.DictOptionVO;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,6 +49,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.nio.charset.StandardCharsets;
 
 /** 信息采集提交服务。 */
+@Slf4j
 @Service
 @RequiredArgsConstructor(onConstructor_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
         justification = "Spring 容器管理的单例依赖，构造后不对外暴露"))
@@ -324,7 +326,10 @@ public class InformationSubmissionService implements IInformationSubmissionServi
         return allowed;
     }
 
-    /** 读取字典启用项值域；字典缺失或没有启用项时直接拒绝，不静默放行。 */
+    /**
+     * 读取字典启用项值域；字典缺失或没有启用项时直接拒绝，不静默放行。
+     * 「本进程未装配字典能力」与「字典没有配置」分别给出不同消息与日志，避免运维把部署缺件误判为数据配置问题。
+     */
     private Set<String> dictValues(InformationDefinition.Field field, InformationDefinition.OptionSource optionSource,
                                    Map<String, Set<String>> dictCache) {
         String dictType = optionSource.dictType();
@@ -332,15 +337,31 @@ public class InformationSubmissionService implements IInformationSubmissionServi
         if (cached != null) {
             return cached;
         }
-        Set<String> values = new HashSet<>();
         DictApi dictApi = dictApiProvider.getIfAvailable();
-        if (dictApi != null && StringUtils.hasText(dictType)) {
-            R<List<DictOptionVO>> response = dictApi.getOptions(dictType);
-            if (response != null && response.isSuccess() && response.getData() != null) {
-                for (DictOptionVO option : response.getData()) {
-                    if (option != null && option.getValue() != null) {
-                        values.add(option.getValue());
-                    }
+        if (dictApi == null) {
+            log.warn("字典数据源不可用：当前进程未装配 DictApi，字典字段按校验失败处理。field={}, dictType={}",
+                    field.code(), dictType);
+            Require.isTrue(false, InformationCode.INVALID_SUBMISSION,
+                    "字段 " + field.name() + " 绑定的字典 " + dictType + " 无法校验：当前进程未装配字典能力");
+        }
+        Set<String> values = new HashSet<>();
+        if (!StringUtils.hasText(dictType)) {
+            log.warn("字典数据源缺少 dictType，字典字段按校验失败处理。field={}", field.code());
+            Require.isTrue(false, InformationCode.INVALID_SUBMISSION,
+                    "字段 " + field.name() + " 绑定的字典类型编码为空");
+        }
+        R<List<DictOptionVO>> response = dictApi.getOptions(dictType);
+        if (response == null || !response.isSuccess()) {
+            log.warn("字典选项读取失败，字典字段按校验失败处理。field={}, dictType={}, code={}, message={}",
+                    field.code(), dictType, response == null ? null : response.getCode(),
+                    response == null ? null : response.getMsg());
+            Require.isTrue(false, InformationCode.INVALID_SUBMISSION,
+                    "字段 " + field.name() + " 绑定的字典 " + dictType + " 读取失败");
+        }
+        if (response.getData() != null) {
+            for (DictOptionVO option : response.getData()) {
+                if (option != null && option.getValue() != null) {
+                    values.add(option.getValue());
                 }
             }
         }
