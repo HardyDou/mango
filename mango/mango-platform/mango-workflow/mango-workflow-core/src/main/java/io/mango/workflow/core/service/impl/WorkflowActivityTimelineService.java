@@ -6,6 +6,8 @@ import io.mango.workflow.api.enums.WorkflowCode;
 import io.mango.workflow.api.query.WorkflowActivityTimelineQuery;
 import io.mango.workflow.api.vo.WorkflowActivityTimelineVO;
 import io.mango.workflow.core.config.WorkflowTaskQueryProperties;
+import io.mango.workflow.core.mapper.WorkflowBusinessApplyMapper;
+import io.mango.workflow.core.service.IWorkflowActivityTimelineService;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.flowable.engine.HistoryService;
@@ -27,13 +29,12 @@ import java.util.Set;
  * {@code workflow_task_record}：任务流水只记人工处理动作，网关与事件不会落库，
  * 因此活动时间轴与流转记录是两条互补的时间线。
  *
- * <p>租户解析、业务键收窄、时间区间与参数归一化直接复用
- * {@link WorkflowTaskBusinessQueryService} 的包内方法，保证与流转记录同一口径，
- * 不另立一份实现。
+ * <p>租户解析、业务键收窄、时间区间与参数归一化复用 {@link WorkflowBusinessScopeSupport}，
+ * 保证与流转记录同一口径，不另立一份实现。
  */
 @Service
 @RequiredArgsConstructor
-public class WorkflowActivityTimelineService {
+public class WorkflowActivityTimelineService implements IWorkflowActivityTimelineService {
 
     private static final Set<String> GATEWAY_TYPES = Set.of("exclusivegateway", "inclusivegateway",
             "parallelgateway", "eventbasedgateway", "complexgateway");
@@ -44,7 +45,7 @@ public class WorkflowActivityTimelineService {
             "intermediatecatchevent", "intermediatethrowevent");
 
     private final HistoryService historyService;
-    private final WorkflowTaskBusinessQueryService businessQueryService;
+    private final WorkflowBusinessApplyMapper businessApplyMapper;
     private final WorkflowTaskQueryProperties properties;
 
     /**
@@ -59,16 +60,17 @@ public class WorkflowActivityTimelineService {
      * @param request 查询条件
      * @return 活动行列表；业务键未登记流程实例时返回空集合
      */
+    @Override
     public List<WorkflowActivityTimelineVO> activityTimelineByBusinessKey(WorkflowActivityTimelineQuery request) {
         WorkflowActivityTimelineQuery resolved = Require.nonNull(request, WorkflowCode.TASK_QUERY_INVALID,
                 "活动时间轴查询条件不能为空");
-        String businessType = businessQueryService.normalizeRequired(resolved.getBusinessType(), "业务类型不能为空");
-        String businessKey = businessQueryService.normalizeRequired(resolved.getBusinessKey(), "业务主键不能为空");
-        businessQueryService.validateTimeRange(resolved.getBeginTime(), resolved.getEndTime());
-        Long tenantId = businessQueryService.currentTenantId();
-        List<Long> deptIds = businessQueryService.normalizeIds(resolved.getDeptIds());
-        List<String> processInstanceIds = businessQueryService.processInstanceIds(tenantId, businessType,
-                businessKey, deptIds);
+        String businessType = WorkflowBusinessScopeSupport.normalizeRequired(resolved.getBusinessType(), "业务类型不能为空");
+        String businessKey = WorkflowBusinessScopeSupport.normalizeRequired(resolved.getBusinessKey(), "业务主键不能为空");
+        WorkflowBusinessScopeSupport.validateTimeRange(resolved.getBeginTime(), resolved.getEndTime());
+        Long tenantId = WorkflowBusinessScopeSupport.currentTenantId();
+        List<Long> deptIds = WorkflowBusinessScopeSupport.normalizeIds(resolved.getDeptIds());
+        List<String> processInstanceIds = WorkflowBusinessScopeSupport.processInstanceIds(businessApplyMapper,
+                tenantId, businessType, businessKey, deptIds);
         if (processInstanceIds.isEmpty()) {
             return List.of();
         }

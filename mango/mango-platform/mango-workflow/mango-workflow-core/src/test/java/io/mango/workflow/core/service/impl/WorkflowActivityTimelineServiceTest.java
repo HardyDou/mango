@@ -6,7 +6,12 @@ import io.mango.infra.context.api.MangoContextSnapshot;
 import io.mango.workflow.api.enums.WorkflowActivityKind;
 import io.mango.workflow.api.query.WorkflowActivityTimelineQuery;
 import io.mango.workflow.api.vo.WorkflowActivityTimelineVO;
+import com.baomidou.mybatisplus.core.MybatisConfiguration;
+import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import io.mango.workflow.core.config.WorkflowTaskQueryProperties;
+import io.mango.workflow.core.entity.WorkflowBusinessApplyEntity;
+import io.mango.workflow.core.mapper.WorkflowBusinessApplyMapper;
+import org.apache.ibatis.builder.MapperBuilderAssistant;
 import org.flowable.engine.HistoryService;
 import org.flowable.engine.history.HistoricActivityInstance;
 import org.flowable.engine.history.HistoricActivityInstanceQuery;
@@ -28,7 +33,7 @@ class WorkflowActivityTimelineServiceTest {
 
     private HistoryService historyService;
     private HistoricActivityInstanceQuery activityQuery;
-    private WorkflowTaskBusinessQueryService businessQueryService;
+    private WorkflowBusinessApplyMapper businessApplyMapper;
     private WorkflowTaskQueryProperties properties;
     private WorkflowActivityTimelineService service;
 
@@ -36,9 +41,12 @@ class WorkflowActivityTimelineServiceTest {
     void setUp() {
         historyService = mock(HistoryService.class);
         activityQuery = mock(HistoricActivityInstanceQuery.class);
-        businessQueryService = mock(WorkflowTaskBusinessQueryService.class);
+        businessApplyMapper = mock(WorkflowBusinessApplyMapper.class);
         properties = new WorkflowTaskQueryProperties();
-        service = new WorkflowActivityTimelineService(historyService, businessQueryService, properties);
+        // 单元测试不启动 MyBatis-Plus，需先注册实体元信息，否则 LambdaQueryWrapper 解析列名会失败。
+        TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new MybatisConfiguration(), ""),
+                WorkflowBusinessApplyEntity.class);
+        service = new WorkflowActivityTimelineService(historyService, businessApplyMapper, properties);
         MangoContextHolder.clear();
         MangoContextHolder.set(MangoContextSnapshot.empty()
                 .withSecurity(1001L, "1", "alice", "default", "USER", "ORG", 1001L, "token"));
@@ -99,12 +107,12 @@ class WorkflowActivityTimelineServiceTest {
     }
 
     private void stubScope(List<String> processInstanceIds) {
-        when(businessQueryService.currentTenantId()).thenReturn(1L);
-        when(businessQueryService.normalizeRequired(anyString(), anyString()))
-                .thenAnswer(invocation -> invocation.getArgument(0));
-        when(businessQueryService.normalizeIds(org.mockito.ArgumentMatchers.any())).thenReturn(List.of());
-        when(businessQueryService.processInstanceIds(org.mockito.ArgumentMatchers.any(), anyString(), anyString(),
-                org.mockito.ArgumentMatchers.any())).thenReturn(processInstanceIds);
+        when(businessApplyMapper.selectList(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(processInstanceIds.stream().map(id -> {
+                    WorkflowBusinessApplyEntity entity = new WorkflowBusinessApplyEntity();
+                    entity.setProcessInstanceId(id);
+                    return entity;
+                }).toList());
     }
 
     private WorkflowActivityTimelineQuery query() {

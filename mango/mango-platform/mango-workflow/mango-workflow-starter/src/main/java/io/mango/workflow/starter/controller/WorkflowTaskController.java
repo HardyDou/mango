@@ -30,7 +30,7 @@ import io.mango.workflow.api.vo.WorkflowActivityTimelineVO;
 import io.mango.workflow.api.vo.WorkflowTaskRecordVO;
 import io.mango.workflow.api.vo.WorkflowTaskVO;
 import io.mango.workflow.core.service.IWorkflowTaskBusinessQueryService;
-import io.mango.workflow.core.service.impl.WorkflowActivityTimelineService;
+import io.mango.workflow.core.service.IWorkflowActivityTimelineService;
 import io.mango.workflow.core.service.IWorkflowTaskRuntimeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -60,7 +60,7 @@ public class WorkflowTaskController implements WorkflowTaskRuntimeApi {
 
     private final IWorkflowTaskRuntimeService workflowTaskRuntimeService;
     private final IWorkflowTaskBusinessQueryService workflowTaskBusinessQueryService;
-    private final WorkflowActivityTimelineService workflowActivityTimelineService;
+    private final IWorkflowActivityTimelineService workflowActivityTimelineService;
 
     @GetMapping("/todo")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:list")
