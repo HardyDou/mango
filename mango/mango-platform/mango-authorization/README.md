@@ -95,6 +95,8 @@
 默认 `mango.data-grant.mode=optional`；契约与接入方式见
 [`mango-authorization-data-grant-starter`](./mango-authorization-data-grant-starter/README.md)。
 
+启动时会输出一行保护姿态日志（关闭 / 启用但缺 `secret` / 完整启用），便于运维从日志判断数据权限是否真的在生效，详见该模块 README「10.1 启动期保护姿态日志」。
+
 微服务中远程调用授权中心时依赖 remote starter：
 
 ```xml
