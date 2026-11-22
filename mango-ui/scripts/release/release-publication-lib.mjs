@@ -3,7 +3,8 @@ export function decideRegistryAction({ hosted, consume, expectedSha256, expected
     return {
       action: 'STOP',
       code: 'REGISTRY_UNREACHABLE',
-      reason: 'registry state is unknown (transport or authorisation failure); retry later instead of changing the version',
+      reason:
+        'registry state is unknown (transport or authorisation failure); retry later instead of changing the version',
     };
   }
   if (hosted.state === 'absent' && consume.state === 'present') {
