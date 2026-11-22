@@ -1,0 +1,9 @@
+{
+  "allow": [
+    {
+      "rule": "STARTER_NOT_AGGREGATED",
+      "subject": "mango-access-gateway-starter",
+      "reason": "网关入口鉴权 Starter 与单体/微服务业务应用的部署形态互斥：它注册 Spring Cloud Gateway 的 AuthGlobalFilter，装配点是 mango-app/microservice/mango-gateway-app；接入 mango-admin-starter 会把 Spring Cloud Gateway 带进非网关应用。"
+    }
+  ]
+}
