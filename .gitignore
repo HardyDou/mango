@@ -119,3 +119,6 @@ mango-ui/mango-docs/evidence/
 *.orig
 replay_pid*
 .vscode/private-folder-alias.json
+
+# 文件预览引擎解包目录（运行期产物，不应入库）
+_extracted/
