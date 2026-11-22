@@ -7,7 +7,11 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,8 +41,12 @@ class CmsDataGrantAnnotationPairingTest {
 
     /** 未接入的控制器：不得出现任何 {@code @DataGrant}。 */
     private static final List<Class<?>> EXCLUDED_CONTROLLERS = List.of(
+            // 公开通道：三个 site 应用匿名直调，无身份即无 Grant。
             CmsSiteController.class,
-            CmsSiteCategoryController.class);
+            // 列表端点是 /site-categories/tree，返回 List 而非 PageResult，无法签发。
+            CmsSiteCategoryController.class,
+            // 只有分页列表与写入动作，没有可校验的单条详情。
+            CmsContentPublishController.class);
 
     @Test
     void everyAnnotatedDomainHasBothListAndDetailAnnotatedWithSameDomain() {
@@ -47,14 +55,29 @@ class CmsDataGrantAnnotationPairingTest {
         for (Class<?> controller : EXPECTED_DOMAINS.keySet()) {
             collect(controller, listByDomain, detailByDomain);
         }
-        assertThat(listByDomain.keySet())
-                .as("每个数据域都必须有已注解的列表端点：%s", listByDomain.keySet());
+        assertThat(listByDomain.keySet()).as("至少一个域完成了列表注解").isNotEmpty();
         listByDomain.forEach((domain, methods) -> assertThat(detailByDomain)
                 .as("数据域 %s 的列表端点已签发 Grant，但缺少同域详情端点", domain)
                 .containsKey(domain));
         detailByDomain.forEach((domain, methods) -> assertThat(listByDomain)
                 .as("数据域 %s 的详情端点已校验 Grant，但缺少同域列表端点（详情会恒为 ABSENT）", domain)
                 .containsKey(domain));
+    }
+
+    @Test
+    void everyControllerInPackageIsClassified() throws Exception {
+        // 白名单只遍历已知控制器：新增 Cms*Controller 却不接入时，其它用例会全绿。这里要求
+        // 包内每个控制器都必须显式归类（接入或排除），否则失败并提示做决定。
+        List<String> unclassified = new ArrayList<>();
+        for (String className : controllerClassNamesInPackage()) {
+            Class<?> controller = Class.forName(className);
+            if (!EXPECTED_DOMAINS.containsKey(controller) && !EXCLUDED_CONTROLLERS.contains(controller)) {
+                unclassified.add(controller.getSimpleName());
+            }
+        }
+        assertThat(unclassified)
+                .as("新控制器需决定是否接入数据权限 Grant：接入请加入 EXPECTED_DOMAINS，不接入请加入 EXCLUDED_CONTROLLERS")
+                .isEmpty();
     }
 
     @Test
@@ -99,6 +122,21 @@ class CmsDataGrantAnnotationPairingTest {
         assertThat(grant.idField())
                 .as("站点设置的 URL 主键是父实体（站点）ID，必须显式声明 idField")
                 .isEqualTo("siteId");
+    }
+
+    private static List<String> controllerClassNamesInPackage() throws Exception {
+        Path sourceDir = Paths.get("src/main/java/io/mango/cms/starter/controller");
+        assertThat(sourceDir)
+                .as("测试依赖模块源码目录（Maven basedir）：%s", sourceDir.toAbsolutePath())
+                .isDirectory();
+        try (Stream<Path> files = Files.list(sourceDir)) {
+            return files.map(path -> path.getFileName().toString())
+                    .filter(name -> name.startsWith("Cms") && name.endsWith("Controller.java"))
+                    .map(name -> "io.mango.cms.starter.controller."
+                            + name.substring(0, name.length() - ".java".length()))
+                    .sorted()
+                    .toList();
+        }
     }
 
     private static void collect(Class<?> controller, Map<String, List<Method>> listByDomain,
