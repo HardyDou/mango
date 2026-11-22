@@ -201,6 +201,7 @@ jobs:
             mango-pmo/tests/document-contract/document-contract.test.mjs \
             mango-pmo/tests/frontend-page-baseline.test.mjs \
             mango-pmo/tests/pmo-check-scope.test.mjs \
+            mango-pmo/tests/check-pom-inheritance.test.mjs \
             mango-pmo/tests/pmo-preflight.test.mjs \
             mango-pmo/tests/readme-audit-scope.test.mjs \
             mango-pmo/tests/risk-verification.test.mjs \
@@ -339,6 +340,11 @@ jobs:
       # 根 POM 统一声明 3.2.5 之后，用这个检查防止版本漂移把门禁又变回空跑。
       - name: Enforce unified Surefire version baseline
         run: node mango-pmo/tools/check-surefire-versions.mjs
+
+      # 父链形态是构建结构的机器可校验契约（Issue #1353）：单一基座、版本出口唯一、
+      # 模块父链不得越过 mango / mango-parent。--strict 下偏差即失败，防止结构回潮。
+      - name: Enforce Maven parent chain contract
+        run: node mango-pmo/tools/check-pom-inheritance.mjs --strict
 
       - name: Build the local PMO bundle for generated project acceptance
         if: >-

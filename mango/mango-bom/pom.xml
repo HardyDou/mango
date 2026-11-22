@@ -13,6 +13,7 @@
     <description>Mango platform modules and compatible third-party dependency versions</description>
 
     <properties>
+        <ofdrw.version>2.4.0</ofdrw.version>
         <revision>1.0.0-SNAPSHOT</revision>
         <antlr.version>2.7.7</antlr.version>
         <archunit.version>1.4.2</archunit.version>
@@ -1436,6 +1437,21 @@
                 <groupId>org.testcontainers</groupId>
                 <artifactId>testcontainers</artifactId>
                 <version>${testcontainers.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ofdrw</groupId>
+                <artifactId>ofdrw-graphics2d</artifactId>
+                <version>${ofdrw.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ofdrw</groupId>
+                <artifactId>ofdrw-reader</artifactId>
+                <version>${ofdrw.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ofdrw</groupId>
+                <artifactId>ofdrw-sign</artifactId>
+                <version>${ofdrw.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
