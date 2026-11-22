@@ -317,11 +317,16 @@ class InformationServiceIntegrationTest {
     @Test
     void submit_keepsLegacyDefinitionWithoutOptionsUnvalidated() {
         // 回归：历史 {fieldCode, fieldName, fieldType} 定义没有任何 options，值域校验不得介入
-        createPublishedForm("legacy-no-options");
+        Long formId = createPublishedForm("legacy-no-options");
 
         assertThat(submissionService.submit(
                 submitCommand("legacy-no-options", Map.of("name", "张三", "phone", "任意号码"), "legacy-ok"), false)
                 .getId()).isNotNull();
+
+        // 回归：提交后读回的老定义必须与入库原文深等价，且不得被物化出 options / optionSource 键
+        String persisted = formService.detail(formId).getDefinitionJson();
+        assertThat(persisted).isEqualTo(DEFINITION);
+        assertThat(persisted).doesNotContain("options").doesNotContain("optionSource");
     }
 
     @Test
@@ -353,7 +358,8 @@ class InformationServiceIntegrationTest {
                 [{"type":"select","field":"level","title":"客户等级","optionSource":{"type":"DICT","dictType":"missing_dict"}},
                  {"type":"input","field":"memo","title":"备注"}]
                 """);
-        // 未对 missing_dict 设桩：字典服务返回空，不能静默放行
+        // 字典没有该类型：字典服务返回成功但空列表，不能静默放行
+        org.mockito.Mockito.when(dictApi.getOptions("missing_dict")).thenReturn(R.ok(List.of()));
         assertThatThrownBy(() -> submissionService.submit(
                 submitCommand("option-source-dict-missing", Map.of("level", "vip"), "dict-missing"), false))
                 .isInstanceOf(BizException.class)
@@ -370,6 +376,18 @@ class InformationServiceIntegrationTest {
                 .isInstanceOf(BizException.class)
                 .hasMessageContaining("empty_dict")
                 .hasMessageContaining("不存在或没有启用项");
+
+        createPublishedForm("option-source-dict-error", """
+                [{"type":"select","field":"level","title":"客户等级","optionSource":{"type":"DICT","dictType":"broken_dict"}}]
+                """);
+        org.mockito.Mockito.when(dictApi.getOptions("broken_dict"))
+                .thenReturn(R.fail(500, "字典服务不可用"));
+        // 字典服务报错同样不得放行，且消息要与「字典没配」区分开
+        assertThatThrownBy(() -> submissionService.submit(
+                submitCommand("option-source-dict-error", Map.of("level", "vip"), "dict-error"), false))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("broken_dict")
+                .hasMessageContaining("读取失败");
     }
 
     @Test
