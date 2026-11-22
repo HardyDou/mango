@@ -18,6 +18,8 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import io.mango.workflow.core.service.impl.WorkflowActivityTimelineService;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -48,7 +50,7 @@ class WorkflowTaskReleaseFactsHttpContractTest {
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
     private final MockMvc mockMvc = MockMvcBuilders
-            .standaloneSetup(new WorkflowTaskController(runtimeService, businessQueryService))
+            .standaloneSetup(new WorkflowTaskController(runtimeService, businessQueryService, mock(WorkflowActivityTimelineService.class)))
             .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
             .build();
 

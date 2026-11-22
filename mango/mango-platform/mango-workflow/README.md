@@ -636,6 +636,8 @@ mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-comm
 
 `POST /workflow/tasks/trace-by-business-key`（Java：`WorkflowTaskRuntimeApi#traceByBusinessKey`）返回某个业务键下全部流程实例的任务级流转记录，用于审批详情面板展示发起、认领、通过、退回、驳回和多轮退回历史。
 
+`POST /workflow/tasks/activity-timeline-by-business-key`（Java：`WorkflowTaskRuntimeApi#activityTimelineByBusinessKey`）返回同一业务键下全部流程实例的**活动级**时间轴，数据来自 Flowable 历史活动表，因此包含网关与事件节点；`kind` 字段区分 `TASK`/`GATEWAY`/`EVENT`/`OTHER`，非人工活动的 `assignee` 为 null。它是流转记录的补充而不是替代：流转记录带处理人与动作，活动时间轴带完整路径。
+
 | 项 | 规则 |
 |----|------|
 | 入参 | `businessType`、`businessKey` 必填；`operatorIds`、`deptIds`、`actions`、`beginTime`、`endTime` 可选，传空表示不过滤 |
@@ -780,6 +782,7 @@ Workflow 参数校验约束统一由 `mango-workflow-api` 的 `XxxApi` 契约声
 | 抄送列表 | `GET /workflow/tasks/copied` | `workflow:task:list` |
 | 按业务类型查询任务（业务主键可选） | `POST /workflow/tasks/page-by-business-key` | `workflow:task:list`；`scope=ALL` 还需要 `workflow:task:all` |
 | 按业务键读取审批流转记录 | `POST /workflow/tasks/trace-by-business-key` | `workflow:task:list`；无数据范围与申请级校验 |
+| 按业务键读取活动时间轴 | `POST /workflow/tasks/activity-timeline-by-business-key` | `workflow:task:list`；无数据范围与申请级校验 |
 | 抄送已阅 | `POST /workflow/tasks/copied/read` | `workflow:task:read-copied` |
 
 `POST /workflow/tasks/complete`、`reject`、`save`、`claim`、`unclaim` 保持兼容，只返回布尔成功结果。业务审批页在办理后需要立即刷新业务申请状态、当前任务、当前办理人、认领状态或判断流程是否结束时，优先使用对应的 `*-result` 接口；返回体包含已处理任务、流程实例、是否结束、业务申请状态和刷新后的当前任务快照。

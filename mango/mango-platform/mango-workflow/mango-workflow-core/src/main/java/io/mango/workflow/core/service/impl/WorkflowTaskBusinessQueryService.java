@@ -239,20 +239,11 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
         return current.getId() != null && candidate.getId() != null && current.getId() <= candidate.getId();
     }
 
+    /** 包内共享：活动时间轴服务复用同一套租户、部门与业务键收窄口径，避免两份实现漂移。 */
     private List<String> processInstanceIds(Long tenantId, String businessType, String businessKey,
                                             List<Long> deptIds) {
-        return businessApplyMapper.selectList(new LambdaQueryWrapper<WorkflowBusinessApplyEntity>()
-                        .select(WorkflowBusinessApplyEntity::getProcessInstanceId)
-                        .eq(WorkflowBusinessApplyEntity::getTenantId, String.valueOf(tenantId))
-                        .eq(WorkflowBusinessApplyEntity::getBusinessType, businessType)
-                        .eq(WorkflowBusinessApplyEntity::getBusinessKey, businessKey)
-                        .in(!deptIds.isEmpty(), WorkflowBusinessApplyEntity::getApplicantDeptId, deptIds)
-                        .isNotNull(WorkflowBusinessApplyEntity::getProcessInstanceId))
-                .stream()
-                .map(WorkflowBusinessApplyEntity::getProcessInstanceId)
-                .filter(StringUtils::hasText)
-                .distinct()
-                .toList();
+        return WorkflowBusinessScopeSupport.processInstanceIds(businessApplyMapper, tenantId, businessType,
+                businessKey, deptIds);
     }
 
     private LambdaQueryWrapper<WorkflowTaskRecordEntity> traceWrapper(List<String> processInstanceIds,
@@ -322,9 +313,9 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
         }
     }
 
+    /** 包内共享：活动时间轴服务复用同一套租户、部门与业务键收窄口径，避免两份实现漂移。 */
     private void validateTimeRange(LocalDateTime begin, LocalDateTime end) {
-        Require.isTrue(begin == null || end == null || !begin.isAfter(end),
-                WorkflowCode.TASK_QUERY_INVALID, "时间区间非法");
+        WorkflowBusinessScopeSupport.validateTimeRange(begin, end);
     }
 
     private void validatePaging(WorkflowTaskBusinessPageQuery query) {
@@ -613,11 +604,9 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
                 .toList();
     }
 
+    /** 包内共享：活动时间轴服务复用同一套租户、部门与业务键收窄口径，避免两份实现漂移。 */
     private List<Long> normalizeIds(List<Long> values) {
-        if (values == null) {
-            return List.of();
-        }
-        return values.stream().filter(Objects::nonNull).distinct().toList();
+        return WorkflowBusinessScopeSupport.normalizeIds(values);
     }
 
     private List<String> assigneeIdentifiers(List<Long> assigneeIds) {
@@ -631,18 +620,14 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
                 .toList();
     }
 
+    /** 包内共享：活动时间轴服务复用同一套租户、部门与业务键收窄口径，避免两份实现漂移。 */
     private String normalizeRequired(String value, String message) {
-        Require.isTrue(StringUtils.hasText(value), WorkflowCode.TASK_QUERY_INVALID, message);
-        return value.trim();
+        return WorkflowBusinessScopeSupport.normalizeRequired(value, message);
     }
 
+    /** 包内共享：活动时间轴服务复用同一套租户、部门与业务键收窄口径，避免两份实现漂移。 */
     private Long currentTenantId() {
-        String tenantId = MangoContextHolder.tenantId();
-        Require.isTrue(StringUtils.hasText(tenantId), WorkflowCode.TASK_QUERY_INVALID, "缺少租户上下文");
-        String normalized = Objects.requireNonNull(tenantId).trim();
-        Require.isTrue(normalized.chars().allMatch(Character::isDigit),
-                WorkflowCode.TASK_QUERY_INVALID, "租户上下文非法");
-        return Long.valueOf(normalized);
+        return WorkflowBusinessScopeSupport.currentTenantId();
     }
 
     private List<String> currentUserIdentifiers() {
