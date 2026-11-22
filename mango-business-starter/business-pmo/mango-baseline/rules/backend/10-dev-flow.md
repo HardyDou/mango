@@ -65,7 +65,7 @@
 
 根聚合 POM、全局 parent、架构规则/插件、债务基线或门禁 workflow 变化时才升级到完整 Reactor。历史债务全量盘点由独立定时/手工 workflow 执行；partial-reactor 仍必须阻断本次新增违规，但不得用于改写全局债务预算。
 
-POM 父链只有一棵树：新增模块的父 POM 一律最终落到 `mango` 或 `mango-parent`（父链不得成环，也不得继承项目外父 POM），不另起基座；依赖版本只写在 `mango-bom`，插件版本只写在 `mango-parent`。`mango-bom` 自身不继承父 POM，`src/it`、`src/test/resources` 下的插件集成工程是独立构建单元，不参与该约束；根聚合 POM 迁移期保留的少量插件版本覆盖是待消除项，不算新增写法。改动父链、`dependencyManagement` 或 `pluginManagement` 后执行 `node mango-pmo/tools/check-pom-inheritance.mjs --strict`，Java gates 中同名检查会在偏差时失败。模块内不得重复声明 `mango-bom` 已管理的依赖版本（`<dependency>` 上的显式 `<version>` 会让 `dependencyManagement` 对该坐标失效、同 jar 出现两个版本）；`node mango-pmo/tools/check-module-version-pins.mjs` 在 Java gates 中校验，真漂移（版本与 BOM 不一致）阻断、纯冗余（版本与 BOM 一致）仅警告，有意保留的旧版本走 `mango-pmo/baselines/check-module-version-pins.json` 白名单。
+POM 父链只有一棵树：新增模块的父 POM 一律最终落到 `mango` 或 `mango-parent`（父链不得成环，也不得继承项目外父 POM），不另起基座；依赖版本只写在 `mango-bom`，插件版本只写在 `mango-parent`。`mango-bom` 自身不继承父 POM，`src/it`、`src/test/resources` 下的插件集成工程是独立构建单元，不参与该约束；根聚合 POM 迁移期保留的少量插件版本覆盖是待消除项，不算新增写法。改动父链、`dependencyManagement` 或 `pluginManagement` 后执行 `node mango-pmo/tools/check-pom-inheritance.mjs --strict`，Java gates 中同名检查会在偏差时失败。模块内不得重复声明 `mango-bom` 已管理的依赖版本（`<dependency>` 上的显式 `<version>` 会让 `dependencyManagement` 对该坐标失效、同 jar 出现两个版本）；`node mango-pmo/tools/check-module-version-pins.mjs` 在 Java gates 中校验，真漂移（版本与 BOM 不一致）阻断、纯冗余（版本与 BOM 一致）仅警告，有意保留的旧版本走 `mango-pmo/baselines/check-module-version-pins.json` 白名单。该门禁只看依赖上的显式 `<version>`，不判定 `<scope>`/`<optional>` 差异，也不管模块自写的 `<dependencyManagement>`（后者由 `check-pom-inheritance.mjs` 的 `DEPENDENCY_MANAGEMENT_DUPLICATED` 兜住），改动这两类时仍需人工确认。
 
 ## 6. 提交要求
 
