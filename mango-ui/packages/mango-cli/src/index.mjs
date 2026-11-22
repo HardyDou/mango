@@ -2213,19 +2213,14 @@ function startDevApp(context, name, app) {
       `${name}: ignored legacy install command; Spring Boot development now runs from the Maven reactor\n`,
     );
   }
+  if (app.mavenParentInstall) {
+    requireCommand(app.command, name);
+    installReactorParentChain(name, app, logPath);
+  }
   if (app.lifecycleManaged) {
     prepareManagedMangoLifecycle(context, name, app, logPath);
   }
   requireCommand(app.command, name);
-  if (app.mavenParentInstall) {
-    for (const step of app.mavenParentInstall.steps) {
-      process.stdout.write(`${name}: installing reactor parent chain POM ${step.pomPath}\n`);
-      const parentInstall = runForegroundCommand(app.runCwd || app.cwd, app.command, step.args, app.env, logPath);
-      if (parentInstall.status !== 0) {
-        fail(`${name}: reactor parent chain install failed, see ${relativeOrAbsolute(process.cwd(), logPath)}`);
-      }
-    }
-  }
   const logFd = openSync(logPath, 'a');
   const startCommand = process.platform === 'win32' ? process.execPath : app.command;
   const startArgs =
@@ -2265,6 +2260,16 @@ function startDevApp(context, name, app) {
     workspaceRoot: context.root,
   });
   process.stdout.write(`${name}: started pid=${child.pid} log=${relativeOrAbsolute(process.cwd(), logPath)}\n`);
+}
+
+function installReactorParentChain(name, app, logPath) {
+  for (const step of app.mavenParentInstall.steps) {
+    process.stdout.write(`${name}: installing reactor parent chain POM ${step.pomPath}\n`);
+    const parentInstall = runForegroundCommand(app.runCwd || app.cwd, app.command, step.args, app.env, logPath);
+    if (parentInstall.status !== 0) {
+      fail(`${name}: reactor parent chain install failed, see ${relativeOrAbsolute(process.cwd(), logPath)}`);
+    }
+  }
 }
 
 function shouldEnsureWorkspaceDatabase(context, app) {

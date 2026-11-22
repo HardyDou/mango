@@ -19,22 +19,27 @@ beforeEach(() => {
 
 describe('ruleOptionSource', () => {
   it('老表单没有 optionSource 时按静态选项处理', () => {
-    expect(ruleOptionSource({ type: 'select', field: 'level', options: [{ label: '普通', value: 'normal' }] })).toBeUndefined();
+    expect(
+      ruleOptionSource({ type: 'select', field: 'level', options: [{ label: '普通', value: 'normal' }] }),
+    ).toBeUndefined();
     expect(ruleOptionSource(undefined)).toBeUndefined();
     expect(ruleOptionSource({ type: 'select', field: 'level', optionSource: { type: 'STATIC' } })).toBeUndefined();
   });
 
   it('识别字典数据源并保留字典类型编码', () => {
-    expect(ruleOptionSource({ type: 'select', field: 'level', optionSource: { type: 'dict', dictType: ' customer_level ' } }))
-      .toEqual({ type: DICT_OPTION_SOURCE, dictType: 'customer_level' });
+    expect(
+      ruleOptionSource({
+        type: 'select',
+        field: 'level',
+        optionSource: { type: 'dict', dictType: ' customer_level ' },
+      }),
+    ).toEqual({ type: DICT_OPTION_SOURCE, dictType: 'customer_level' });
   });
 });
 
 describe('resolveOptionSources', () => {
   it('静态选项表单不请求字典，规则原样返回', async () => {
-    const rules: FormCreateRule[] = [
-      { type: 'select', field: 'level', options: [{ label: '普通', value: 'normal' }] },
-    ];
+    const rules: FormCreateRule[] = [{ type: 'select', field: 'level', options: [{ label: '普通', value: 'normal' }] }];
 
     const resolved = await resolveOptionSources(rules);
 

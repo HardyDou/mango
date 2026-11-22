@@ -16,7 +16,7 @@
 | retry                   | 仅安全方法或显式 idempotency key                    |
 | lifecycle               | active、inactive、destroyed，停用与销毁取消异步工作 |
 | normalization           | 只返回业务数据或 Mango `HttpError` / `HttpProgress` |
-| data grant              | 按 domain 缓存列表签发的 Grant，自动随详情请求回传 |
+| data grant              | 按 domain 缓存列表签发的 Grant，自动随详情请求回传  |
 
 ## 3. 接入方式
 
@@ -52,15 +52,15 @@ export function createOrderApi(client: HttpClient) {
 
 ## 4. 配置说明
 
-| 配置                                          | 必填 | 说明                                                       |
-| --------------------------------------------- | ---- | ---------------------------------------------------------- |
-| `baseUrl`                                     | 是   | host 拥有的 API base URL                                   |
-| `timeoutMs`                                   | 否   | 默认 30 秒                                                 |
-| `getAccessToken`、`getTenantId`、`getTraceId` | 否   | 实例级上下文 provider                                      |
+| 配置                                          | 必填 | 说明                                                        |
+| --------------------------------------------- | ---- | ----------------------------------------------------------- |
+| `baseUrl`                                     | 是   | host 拥有的 API base URL                                    |
+| `timeoutMs`                                   | 否   | 默认 30 秒                                                  |
+| `getAccessToken`、`getTenantId`、`getTraceId` | 否   | 实例级上下文 provider                                       |
 | `getUserId`                                   | 否   | 数据权限 Grant 的身份绑定；不提供时切换账号须手动清空 Grant |
-| `refreshAccessToken`                          | 否   | 接收生命周期 `AbortSignal`，不得向子应用公开 refresh token |
-| `onUnauthorized`                              | 否   | transport 事件回调，不做 UI 或路由处理                     |
-| `maxRetries/retryDelayMs`                     | 否   | 默认不自动重试                                             |
+| `refreshAccessToken`                          | 否   | 接收生命周期 `AbortSignal`，不得向子应用公开 refresh token  |
+| `onUnauthorized`                              | 否   | transport 事件回调，不做 UI 或路由处理                      |
+| `maxRetries/retryDelayMs`                     | 否   | 默认不自动重试                                              |
 
 本包不读取环境变量、Session、router、DOM 或微前端全局对象。数据权限 Grant 缓存是唯一例外：它只由响应头写入、由本包自己的 store 保存，host 不参与。
 
@@ -86,12 +86,12 @@ export function createOrderApi(client: HttpClient) {
 
 后端在列表响应里用四个响应头描述数据权限凭证，本包据此自动完成「列表 → 详情」的接力：
 
-| 响应头                          | 含义                                                   |
-| ------------------------------- | ------------------------------------------------------ |
-| `X-Mango-Data-Grant`            | 列表签发的不透明凭证；`absent` 表示本列表没有可用凭证 |
-| `X-Mango-Data-Grant-Domain`     | 凭证所属数据域，前端只把它当缓存键，不做 URL 前缀映射 |
-| `X-Mango-Data-Grant-Required`   | `1` 表示该请求需要凭证，前端据此在 dev 打运行时断言    |
-| `X-Mango-Data-Grant-Skipped`    | `oversize`、`scope-unresolved` 等未签发原因           |
+| 响应头                        | 含义                                                  |
+| ----------------------------- | ----------------------------------------------------- |
+| `X-Mango-Data-Grant`          | 列表签发的不透明凭证；`absent` 表示本列表没有可用凭证 |
+| `X-Mango-Data-Grant-Domain`   | 凭证所属数据域，前端只把它当缓存键，不做 URL 前缀映射 |
+| `X-Mango-Data-Grant-Required` | `1` 表示该请求需要凭证，前端据此在 dev 打运行时断言   |
+| `X-Mango-Data-Grant-Skipped`  | `oversize`、`scope-unresolved` 等未签发原因           |
 
 约定：
 

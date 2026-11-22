@@ -176,17 +176,9 @@ function appendJavaRunnerChecks(target, classification, selections) {
   if (!runJava) return;
 
   target.push(
-    command(
-      'mvn',
-      ['-f', 'mango/pom.xml', '-pl', ':mango-bom', '-DskipTests', 'install'],
-      repoRoot,
-    ),
+    command('mvn', ['-f', 'mango/pom.xml', '-pl', ':mango-bom', '-DskipTests', 'install'], repoRoot),
     command('mvn', ['-f', 'mango/mango-parent/pom.xml', '-DskipTests', 'install'], repoRoot),
-    command(
-      'mvn',
-      ['-f', 'mango/pom.xml', '-pl', ':mango-common,:mango-tools', '-DskipTests', 'install'],
-      repoRoot,
-    ),
+    command('mvn', ['-f', 'mango/pom.xml', '-pl', ':mango-common,:mango-tools', '-DskipTests', 'install'], repoRoot),
     command(
       'mvn',
       [

@@ -114,8 +114,7 @@ const designerConfig = {
     return {
       'formCreateOptionSource>type':
         typeof optionSource.type === 'string' && optionSource.type ? optionSource.type : STATIC_OPTION_SOURCE,
-      'formCreateOptionSource>dictType':
-        typeof optionSource.dictType === 'string' ? optionSource.dictType : '',
+      'formCreateOptionSource>dictType': typeof optionSource.dictType === 'string' ? optionSource.dictType : '',
     };
   },
 };
