@@ -1191,7 +1191,7 @@ mvn -f mango/pom.xml -pl :mango-workflow-starter -Denforcer.skip=true -DskipTest
 
 ## 13.1 数据权限 Grant 试点
 
-业务申请列表 `POST /workflow/business-apply/page` 与详情 `GET /workflow/business-apply/detail` 已接入数据权限 Grant：
+业务申请列表 `POST /workflow/business-applies/page` 与详情 `GET /workflow/business-applies/detail` 已接入数据权限 Grant：
 列表成功响应带 `X-Mango-Data-Grant`，详情请求回传该头时在进入 Controller 前判定记录是否在集合内，不在集合返回 404
 （文案与「资源不存在」一致）。默认 `mango.data-grant.mode=optional`，未回传时行为与之前完全一致；
 切到 `enforce` 后未回传 Grant 的详情请求返回 403 + `X-Mango-Data-Grant-Required: 1`。详见
