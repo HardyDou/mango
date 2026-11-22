@@ -1,1 +1,2 @@
 io.mango.authorization.data.grant.DataGrantAutoConfiguration
+io.mango.authorization.data.grant.DataGrantPostureConfiguration

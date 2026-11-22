@@ -123,6 +123,18 @@ public R<FooVO> detail(@RequestParam("id") Long id) { ... }
 这两类只能靠 TTL（默认 300 秒）收敛。业务应用没有 `DataScopeProvider` 实现时（例如 `mango-business-app`），
 `pv` 不写入，校验侧自然跳过指纹比对。
 
+## 10.1 启动期保护姿态日志
+
+启动时会按当前配置打一行确定日志，便于运维区分三种姿态：
+
+| 姿态 | 日志 | 运行期表现 |
+|------|------|-----------|
+| `mango.data-grant.enabled=false` | WARN「数据权限 Grant 已关闭…」 | 不签发、不校验，响应里没有 Grant 头 |
+| 启用但缺 `secret` | WARN「…未配置 mango.data-grant.secret…」 | 列表不签发，详情按未携带处理（`optional` 放行 / `enforce` 403） |
+| 启用且配置密钥 | INFO「数据权限 Grant 已启用, mode=…」 | 正常签发与校验 |
+
+该日志由 `DataGrantPostureConfiguration` 输出，且不受 `enabled` 开关约束——关闭这一最需要被看见的姿态不能没有日志。
+
 ## 11. 已知限制
 
 - 详情端点必须能从请求中解析记录主键（同名请求参数或同名路径变量）。解析不到且不是分页端点时按配置错误 fail-closed（服务端错误），不会静默放行；用非 `id` 命名的主键请在 `@DataGrant(idField = "...")` 显式声明。
