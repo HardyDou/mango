@@ -197,8 +197,17 @@ class DataGrantCodecTest {
         DataGrantException signatureFailure = decodeFailure(tampered);
         assertThat(DataGrantCodec.isSignatureFailure(signatureFailure)).isTrue();
 
+        assertThat(signatureFailure.reason()).isEqualTo(DataGrantException.Reason.SIGNATURE_MISMATCH);
+
         DataGrantException malformed = decodeFailure("not-a-token");
         assertThat(DataGrantCodec.isSignatureFailure(malformed)).isFalse();
+        assertThat(malformed.reason()).isEqualTo(DataGrantException.Reason.FORMAT);
+
+        // 分类与文案解耦：文案被改写不会让签名类失败静默降级为「未携带」。
+        assertThat(DataGrantCodec.isSignatureFailure(
+                new DataGrantException(DataGrantException.Reason.SIGNATURE_MISMATCH, "签名对不上"))).isTrue();
+        assertThat(DataGrantCodec.isSignatureFailure(
+                new DataGrantException(DataGrantException.Reason.FORMAT, "Grant 签名校验失败"))).isFalse();
     }
 
     private DataGrantException decodeFailure(String token) {
