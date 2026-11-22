@@ -52,7 +52,26 @@ final class DataGrantHandlerScanner {
      * @return 覆盖情况
      */
     static Coverage scanClasspath() {
-        return scan(scanControllers());
+        Coverage coverage = scan(scanControllers());
+        reportListOnlyDomains(coverage);
+        return coverage;
+    }
+
+    /**
+     * 打印「有注解的列表域中找不到同域详情端点」的清单。
+     *
+     * <p>这类 domain 只会签发 Grant 而没有校验入口，属于白付签发成本，但本身不是错误，因此只打印不阻断。</p>
+     *
+     * @param coverage 覆盖情况
+     */
+    static void reportListOnlyDomains(Coverage coverage) {
+        List<String> listOnly = coverage.listOnlyDomains();
+        if (listOnly.isEmpty()) {
+            System.out.println("[DataGrant] 已注解列表域均存在同域详情端点");
+            return;
+        }
+        System.out.println("[DataGrant] 已注解列表域中找不到同域详情端点的清单（仅签发不校验，非阻断）:");
+        listOnly.forEach(entry -> System.out.println("[DataGrant]   - " + entry));
     }
 
     /**
@@ -246,6 +265,24 @@ final class DataGrantHandlerScanner {
                 }
             });
             return violations;
+        }
+
+        /**
+         * 有列表端点但缺少同域详情端点的 domain 清单。
+         *
+         * <p>与 {@link #violations()}（详情缺列表，属于错误）相反，这里只是签发侧冗余，供接入时自查。</p>
+         *
+         * @return domain 描述，空表示所有列表域都有配对详情端点
+         */
+        List<String> listOnlyDomains() {
+            List<String> listOnly = new ArrayList<>();
+            listHandlers.forEach((domain, handlers) -> {
+                if (!detailHandlers.containsKey(domain)) {
+                    listOnly.add("列表端点 " + String.join(", ", handlers) + " 的 domain=" + domain
+                            + " 没有同域详情端点校验 Grant");
+                }
+            });
+            return listOnly;
         }
     }
 }

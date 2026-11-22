@@ -92,6 +92,7 @@ Maven 依赖：
 - `mango-integration-starter`
 - `mango-authorization-resource-sync-starter`
 - `mango-authorization-resource-access-starter`
+- `mango-authorization-data-grant-starter`
 - `mango-resource-starter`
 - `mango-resource-sync-starter`
 - `mango-access-web-starter`

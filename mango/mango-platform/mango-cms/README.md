@@ -300,6 +300,32 @@ CREATE TABLE cms_banner_archive AS SELECT * FROM cms_banner;
 - Flyway 继续只负责 DDL，`META-INF/mango/resources/` 只承载默认同步的菜单和未来必须初始化的数据。
 - 公开接口、后台管理接口、权限码、租户隔离和内容发布语义不变。
 
+## 数据权限 Grant 接入（#977）
+
+CMS 管理端的分页列表在响应头签发数据权限 Grant（`X-Mango-Data-Grant`，域标识见 `X-Mango-Data-Grant-Domain`），详情端点校验该 Grant 是否覆盖请求的记录。已接入 8 个数据域：
+
+| 数据域 | 签发（列表） | 校验（详情） |
+|--------|--------------|--------------|
+| `cms:site` | `GET /cms/sites/page` | `GET /cms/sites/detail?id=`、`GET /cms/site-settings/detail?siteId=` |
+| `cms:content` | `GET /cms/contents/page` | `GET /cms/contents/detail?id=` |
+| `cms:content-category` | `GET /cms/content-categories/page` | `GET /cms/content-categories/detail?id=` |
+| `cms:content-tag` | `GET /cms/content-tags/page` | `GET /cms/content-tags/detail?id=` |
+| `cms:advertisement` | `GET /cms/advertisements/page` | `GET /cms/advertisements/detail?id=` |
+| `cms:ad-delivery` | `GET /cms/ad-deliveries/page` | `GET /cms/ad-deliveries/detail?id=` |
+| `cms:navigation` | `GET /cms/navigations/page` | `GET /cms/navigations/detail?id=` |
+
+站点设置没有自己的列表端点，`GET /cms/site-settings/detail?siteId=` 与 `cms:site` 的站点列表配对（`idField = "siteId"`）。
+
+本轮未接入的清单：
+
+- `GET /cms/site-categories/detail` 因同域列表是树结构（`GET /cms/site-categories/tree` 返回 `R<List<...>>` 而非 `R<PageResult<...>>`）而无法签发 Grant，整体延后；`/list`、`/tree` 这类返回 `List` 的端点同样不签发。
+- `/cms/content-publishes/**` 因发布关系只有分页列表与写入动作、没有可校验的单条详情端点，配对前提不成立。
+- `/cms/open/**` 因匿名访客没有租户与成员身份，不参与 Grant 的签发与校验。
+
+`mango.data-grant.mode=enforce` 部署下，管理端详情必须携带列表页签发的 Grant：浏览器刷新或从收藏直链进入详情会返回 403，请从列表进入详情。前端 `@mango/http-client` 已按 `X-Mango-Data-Grant-Domain` 自动接力 Grant，业务方无需手工传头。
+
+**启用前提**：部署需配置 `mango.data-grant.secret`（HMAC 共享密钥）。未配置时 `optional` 模式只输出启动告警、既不签发也不校验；`enforce` 模式会拒绝启动。前端 `@mango/http-client` 已按 `X-Mango-Data-Grant-Domain` 自动接力 Grant，业务方无需手工传头。
+
 ## 资源声明同步模式（#1098）
 
 资源声明的 `sync-mode` 已收敛为 `SYNC_ALWAYS` 和 `SYNC_ONCE`：`AUTO` 映射为 `SYNC_ALWAYS`，`INIT_ONLY`、`MANUAL`、`LOCKED` 映射为 `SYNC_ONCE`。旧值仍可读取并会在启动时输出弃用告警，新声明只写新值。语义与迁移规则见 `mango-resource` README 的 `sync-mode` 章节。

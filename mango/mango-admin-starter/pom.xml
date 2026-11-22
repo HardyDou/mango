@@ -80,6 +80,10 @@
             <artifactId>mango-authorization-resource-access-starter</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.mango.platform.authorization</groupId>
+            <artifactId>mango-authorization-data-grant-starter</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.mango.platform.resource</groupId>
             <artifactId>mango-resource-starter</artifactId>
         </dependency>

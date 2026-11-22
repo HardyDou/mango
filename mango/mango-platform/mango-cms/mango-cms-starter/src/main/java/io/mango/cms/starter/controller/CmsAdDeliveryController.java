@@ -1,6 +1,7 @@
 package io.mango.cms.starter.controller;
 
 import io.mango.authorization.api.annotation.ApiAccess;
+import io.mango.authorization.api.annotation.DataGrant;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.cms.api.CmsAdDeliveryApi;
 import io.mango.cms.api.command.SaveCmsAdDeliveryCommand;
@@ -40,6 +41,7 @@ public class CmsAdDeliveryController implements CmsAdDeliveryApi {
     @Override
     @GetMapping("/ad-deliveries/page")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "cms:ad-delivery:list")
+    @DataGrant(domain = "cms:ad-delivery")
     @Operation(summary = "分页查询广告投放", description = "分页查询广告投放")
     public R<PageResult<CmsAdDeliveryVO>> pageAdDeliveries(@ParameterObject CmsAdDeliveryPageQuery query) {
         return R.ok(adDeliveryService.pageAdDeliveries(query));
@@ -48,6 +50,7 @@ public class CmsAdDeliveryController implements CmsAdDeliveryApi {
     @Override
     @GetMapping("/ad-deliveries/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "cms:ad-delivery:query")
+    @DataGrant(domain = "cms:ad-delivery")
     @Operation(summary = "查询广告投放详情", description = "查询广告投放详情")
     public R<CmsAdDeliveryVO> detailAdDelivery(
             @Parameter(description = "主键 ID") @RequestParam("id") Long id) {

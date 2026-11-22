@@ -1,6 +1,7 @@
 package io.mango.cms.starter.controller;
 
 import io.mango.authorization.api.annotation.ApiAccess;
+import io.mango.authorization.api.annotation.DataGrant;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.cms.api.CmsSiteSettingApi;
 import io.mango.cms.api.command.SaveCmsSiteSettingCommand;
@@ -34,6 +35,7 @@ public class CmsSiteSettingController implements CmsSiteSettingApi {
     @Override
     @GetMapping("/site-settings/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "cms:site-setting:query")
+    @DataGrant(domain = "cms:site", idField = "siteId")
     @Operation(summary = "查询站点设置详情", description = "查询站点设置详情")
     public R<CmsSiteSettingVO> detailSiteSetting(
             @Parameter(description = "站点 ID") @RequestParam("siteId") Long siteId) {

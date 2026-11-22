@@ -1,6 +1,7 @@
 package io.mango.cms.starter.controller;
 
 import io.mango.authorization.api.annotation.ApiAccess;
+import io.mango.authorization.api.annotation.DataGrant;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.cms.api.CmsContentTagApi;
 import io.mango.cms.api.command.SaveCmsContentTagCommand;
@@ -42,6 +43,7 @@ public class CmsContentTagController implements CmsContentTagApi {
     @Override
     @GetMapping("/content-tags/page")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "cms:content-tag:list")
+    @DataGrant(domain = "cms:content-tag")
     @Operation(summary = "分页查询内容标签", description = "分页查询内容标签")
     public R<PageResult<CmsContentTagVO>> pageContentTags(@ParameterObject CmsContentTagPageQuery query) {
         return R.ok(contentTagService.pageContentTags(query));
@@ -58,6 +60,7 @@ public class CmsContentTagController implements CmsContentTagApi {
     @Override
     @GetMapping("/content-tags/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "cms:content-tag:query")
+    @DataGrant(domain = "cms:content-tag")
     @Operation(summary = "查询内容标签详情", description = "查询内容标签详情")
     public R<CmsContentTagVO> detailContentTag(@Parameter(description = "主键 ID") @RequestParam("id") Long id) {
         return R.ok(contentTagService.detailContentTag(id));

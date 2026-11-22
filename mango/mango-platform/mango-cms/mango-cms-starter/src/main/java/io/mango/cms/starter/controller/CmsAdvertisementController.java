@@ -1,6 +1,7 @@
 package io.mango.cms.starter.controller;
 
 import io.mango.authorization.api.annotation.ApiAccess;
+import io.mango.authorization.api.annotation.DataGrant;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.cms.api.CmsAdvertisementApi;
 import io.mango.cms.api.command.SaveCmsAdvertisementCommand;
@@ -40,6 +41,7 @@ public class CmsAdvertisementController implements CmsAdvertisementApi {
     @Override
     @GetMapping("/advertisements/page")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "cms:advertisement:list")
+    @DataGrant(domain = "cms:advertisement")
     @Operation(summary = "分页查询广告位", description = "分页查询广告位")
     public R<PageResult<CmsAdvertisementVO>> pageAdvertisements(@ParameterObject CmsAdvertisementPageQuery query) {
         return R.ok(advertisementService.pageAdvertisements(query));
@@ -48,6 +50,7 @@ public class CmsAdvertisementController implements CmsAdvertisementApi {
     @Override
     @GetMapping("/advertisements/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "cms:advertisement:query")
+    @DataGrant(domain = "cms:advertisement")
     @Operation(summary = "查询广告位详情", description = "查询广告位详情")
     public R<CmsAdvertisementVO> detailAdvertisement(
             @Parameter(description = "主键 ID") @RequestParam("id") Long id) {
