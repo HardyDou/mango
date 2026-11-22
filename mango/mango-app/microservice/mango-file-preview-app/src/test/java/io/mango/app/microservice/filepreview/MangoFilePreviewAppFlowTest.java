@@ -122,7 +122,7 @@ class MangoFilePreviewAppFlowTest {
                         .GET().build(), HttpResponse.BodyHandlers.ofString());
         assertThat(entryResponse.statusCode()).isEqualTo(HttpStatus.FOUND.value());
         String engineLocation = entryResponse.headers().firstValue("Location").orElseThrow();
-        assertThat(engineLocation).startsWith("/api/onlinePreview?url=");
+        assertThat(engineLocation).startsWith("/api/onlinePreview?fileId=");
 
         ResponseEntity<String> previewResponse = restTemplate.getForEntity(
                 URI.create(baseUrl() + engineLocation.replaceFirst("^/api", "")), String.class);
@@ -151,7 +151,7 @@ class MangoFilePreviewAppFlowTest {
 
         assertThat(entryResponse.statusCode()).isEqualTo(HttpStatus.FOUND.value());
         String engineLocation = entryResponse.headers().firstValue("Location").orElseThrow();
-        assertThat(engineLocation).startsWith("/api/onlinePreview?url=");
+        assertThat(engineLocation).startsWith("/api/onlinePreview?fileId=");
 
         ResponseEntity<String> previewResponse = restTemplate.getForEntity(
                 URI.create(baseUrl() + engineLocation.replaceFirst("^/api", "")), String.class);
