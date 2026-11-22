@@ -1,6 +1,8 @@
 /**
  * Session Storage 封装
  */
+import { clearDataGrants } from '@mango/http-client';
+
 export const Session = {
   get(key: string): any {
     const value = sessionStorage.getItem(key);
@@ -79,6 +81,8 @@ export const Session = {
     sessionStorage.removeItem('MANGO_TOKEN_EXPIRES_AT');
     // Clear httpOnly Cookie by setting expired
     document.cookie = 'MANGO_TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+    // 登出、切租户、切用户都走 token 清理，Grant 必须同时清空（按域缓存的详情凭证不得跨身份残留）。
+    clearDataGrants();
   },
 
   clearSession(): void {

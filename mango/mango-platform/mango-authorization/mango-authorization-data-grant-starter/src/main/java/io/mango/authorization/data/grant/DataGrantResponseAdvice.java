@@ -33,6 +33,9 @@ import java.util.TreeSet;
  * <p>
  * 一期只支持分页响应（{@link PageResult}）；直接返回 {@code List} 的端点暂不签发 Grant，
  * 见模块 README 的已知限制。
+ * <p>
+ * 只要端点带 {@link DataGrant}，响应就带 {@link DataGrantHeaders#DOMAIN}（含「未签发」与「跳过签发」的情况）：
+ * 前端没有 domain 概念，只能用它把 Grant / Skipped 落到自己的缓存键上。
  */
 @Slf4j
 @ControllerAdvice
@@ -77,6 +80,7 @@ public class DataGrantResponseAdvice implements ResponseBodyAdvice<Object> {
         if (annotation == null) {
             return body;
         }
+        response.getHeaders().set(DataGrantHeaders.DOMAIN, annotation.domain());
         List<?> records = page.getList();
         if (records == null || records.isEmpty()) {
             return body;

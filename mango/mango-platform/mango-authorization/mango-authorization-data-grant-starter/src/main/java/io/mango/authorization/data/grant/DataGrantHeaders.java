@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * Grant 相关响应头与提示文案常量。
  * <p>
- * 三个响应头都必须出现在 CORS {@code exposedHeaders} 中，否则跨域前端读不到它们，
+ * 四个响应头都必须出现在 CORS {@code exposedHeaders} 中，否则跨域前端读不到它们，
  * 也就无法判断「这一页能不能点详情」；{@link #GRANT} 作为请求头回传时还必须在 {@code allowedHeaders} 中，
  * 否则跨源部署下浏览器会直接拦掉该请求头。追加动作由 {@link DataGrantAutoConfiguration} 完成。
  */
@@ -20,6 +20,14 @@ public final class DataGrantHeaders {
     /** 未签发 Grant 的原因，见 {@link #SKIPPED_OVERSIZE} 与 {@link #SKIPPED_SCOPE_UNRESOLVED}。 */
     public static final String SKIPPED = "X-Mango-Data-Grant-Skipped";
 
+    /**
+     * 本次响应签发 Grant 所属的数据域，值即 {@code @DataGrant(value)}。
+     * <p>
+     * 前端没有 domain 概念，也不允许按 URL 前缀猜域；它只把这个值当作本地 Grant 缓存的键，
+     * 因而同一个浏览器里的多个数据域 Grant 可以并存、互不覆盖。
+     */
+    public static final String DOMAIN = "X-Mango-Data-Grant-Domain";
+
     /** {@link #GRANT} 的「未携带」标记值。 */
     public static final String ABSENT = "absent";
 
@@ -30,10 +38,19 @@ public final class DataGrantHeaders {
     public static final String SKIPPED_SCOPE_UNRESOLVED = "scope-unresolved";
 
     /** 需要跨域暴露的响应头列表，顺序固定便于测试断言。 */
-    public static final List<String> EXPOSED_HEADERS = List.of(GRANT, REQUIRED, SKIPPED);
+    public static final List<String> EXPOSED_HEADERS = List.of(GRANT, REQUIRED, SKIPPED, DOMAIN);
 
     /** 需要允许跨域携带的请求头：只有 {@link #GRANT} 会被前端回传。 */
     public static final List<String> ALLOWED_REQUEST_HEADERS = List.of(GRANT);
+
+    /** 单次请求最多接受 {@link #GRANT} 的取值个数，与前端回传上限一致，超限按「未携带」处理。 */
+    public static final int MAX_TOKENS = 16;
+
+    /** 单次请求 {@link #GRANT} 头的总字符上限，与前端序列化上限一致，超限按「未携带」处理。 */
+    public static final int MAX_HEADER_LENGTH = 4096;
+
+    /** 单个 Grant 取值字符上限，超过即视为垃圾值丢弃（正常令牌约 100~200 字符）。 */
+    public static final int MAX_TOKEN_LENGTH = 1024;
 
     /** CORS 通配符，配置为它时无需逐个追加。 */
     private static final String WILDCARD = "*";

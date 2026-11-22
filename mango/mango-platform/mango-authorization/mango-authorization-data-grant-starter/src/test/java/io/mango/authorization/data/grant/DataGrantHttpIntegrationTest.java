@@ -55,6 +55,107 @@ class DataGrantHttpIntegrationTest {
     }
 
     @Test
+    void listResponseCarriesDomain() throws Exception {
+        mockMvc(properties, null).perform(post("/fixture/items/page"))
+                .andExpect(status().isOk())
+                .andExpect(header().string(DataGrantHeaders.DOMAIN, GrantTestSupport.DOMAIN));
+    }
+
+    @Test
+    void oversizeListStillCarriesDomain() throws Exception {
+        DataGrantProperties small = GrantTestSupport.properties(DataGrantProperties.Mode.OPTIONAL, 1);
+
+        mockMvc(small, null).perform(post("/fixture/items/page"))
+                .andExpect(status().isOk())
+                .andExpect(header().doesNotExist(DataGrantHeaders.GRANT))
+                .andExpect(header().string(DataGrantHeaders.DOMAIN, GrantTestSupport.DOMAIN))
+                .andExpect(header().string(DataGrantHeaders.SKIPPED, DataGrantHeaders.SKIPPED_OVERSIZE));
+    }
+
+    @Test
+    void multiValueHeaderWithOtherDomainStillPasses() throws Exception {
+        String grant = listGrant(properties, null);
+        String otherDomain = GrantTestSupport.token(codec, GrantTestSupport.TENANT_ID, GrantTestSupport.MEMBER_ID,
+                "workflow:business-apply", Set.of(9001L), GrantTestSupport.NOW,
+                Instant.now().getEpochSecond() + 300, null);
+
+        mockMvc(properties, null).perform(get("/fixture/items/detail").param("itemId", "1001")
+                        .header(DataGrantHeaders.GRANT, otherDomain + ", " + grant))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value(1001));
+    }
+
+    @Test
+    void allOtherDomainTokensBehaveLikeAbsentInOptionalMode() throws Exception {
+        String otherDomain = GrantTestSupport.token(codec, GrantTestSupport.TENANT_ID, GrantTestSupport.MEMBER_ID,
+                "workflow:business-apply", Set.of(9001L), GrantTestSupport.NOW,
+                Instant.now().getEpochSecond() + 300, null);
+
+        mockMvc(properties, null).perform(get("/fixture/items/detail").param("itemId", "2002")
+                        .header(DataGrantHeaders.GRANT, otherDomain))
+                .andExpect(status().isOk())
+                .andExpect(header().string(DataGrantHeaders.GRANT, DataGrantHeaders.ABSENT))
+                .andExpect(header().string(DataGrantHeaders.DOMAIN, GrantTestSupport.DOMAIN))
+                .andExpect(jsonPath("$.data.id").value(2002));
+    }
+
+    @Test
+    void allOtherDomainTokensBehaveLikeAbsentInEnforceMode() throws Exception {
+        DataGrantProperties enforce = GrantTestSupport.properties(DataGrantProperties.Mode.ENFORCE, 100);
+        String otherDomain = GrantTestSupport.token(codec, GrantTestSupport.TENANT_ID, GrantTestSupport.MEMBER_ID,
+                "workflow:business-apply", Set.of(9001L), GrantTestSupport.NOW,
+                Instant.now().getEpochSecond() + 300, null);
+
+        mockMvc(enforce, null).perform(get("/fixture/items/detail").param("itemId", "1001")
+                        .header(DataGrantHeaders.GRANT, otherDomain))
+                .andExpect(status().isForbidden())
+                .andExpect(header().string(DataGrantHeaders.REQUIRED, "1"))
+                .andExpect(header().string(DataGrantHeaders.DOMAIN, GrantTestSupport.DOMAIN))
+                .andExpect(jsonPath("$.message").value(DataGrantHeaders.MESSAGE_GRANT_REQUIRED));
+    }
+
+    @Test
+    void controlCharacterValueIsDroppedInsteadOfFailing() throws Exception {
+        String grant = listGrant(properties, null);
+
+        mockMvc(properties, null).perform(get("/fixture/items/detail").param("itemId", "1001")
+                        .header(DataGrantHeaders.GRANT, "bad\u0007value," + grant))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value(1001));
+
+        mockMvc(properties, null).perform(get("/fixture/items/detail").param("itemId", "1001")
+                        .header(DataGrantHeaders.GRANT, "bad\u0007value"))
+                .andExpect(status().isOk())
+                .andExpect(header().string(DataGrantHeaders.GRANT, DataGrantHeaders.ABSENT));
+    }
+
+    @Test
+    void tooManyValuesTreatedAsAbsent() throws Exception {
+        StringBuilder header = new StringBuilder();
+        for (int index = 0; index <= DataGrantHeaders.MAX_TOKENS; index++) {
+            if (index > 0) {
+                header.append(',');
+            }
+            header.append("token-").append(index);
+        }
+
+        mockMvc(properties, null).perform(get("/fixture/items/detail").param("itemId", "1001")
+                        .header(DataGrantHeaders.GRANT, header.toString()))
+                .andExpect(status().isOk())
+                .andExpect(header().string(DataGrantHeaders.GRANT, DataGrantHeaders.ABSENT));
+    }
+
+    @Test
+    void overlongHeaderTreatedAsAbsent() throws Exception {
+        String header = "a".repeat(DataGrantHeaders.MAX_HEADER_LENGTH + 1);
+
+        mockMvc(properties, null).perform(get("/fixture/items/detail").param("itemId", "1001")
+                        .header(DataGrantHeaders.GRANT, header))
+                .andExpect(status().isOk())
+                .andExpect(header().string(DataGrantHeaders.GRANT, DataGrantHeaders.ABSENT));
+    }
+
+    @Test
     void listResponseCarriesGrant() throws Exception {
         MvcResult result = mockMvc(properties, null).perform(post("/fixture/items/page"))
                 .andExpect(status().isOk())

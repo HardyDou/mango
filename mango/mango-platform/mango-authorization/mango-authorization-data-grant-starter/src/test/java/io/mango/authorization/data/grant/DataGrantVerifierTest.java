@@ -17,7 +17,7 @@ import org.springframework.beans.factory.ObjectProvider;
 /**
  * Grant 校验测试。
  *
- * <p>覆盖正常命中、缺省、篡改、过期、跨租户、跨账号、数据域不符、集合不命中以及数据范围指纹变更。</p>
+ * <p>覆盖正常命中、缺省、篡改、过期、跨租户、跨账号、数据域不符、多值回传、集合不命中以及数据范围指纹变更。</p>
  */
 class DataGrantVerifierTest {
 
@@ -108,13 +108,39 @@ class DataGrantVerifierTest {
     }
 
     @Test
-    void returnsInvalidForOtherDomain() {
+    void treatsOtherDomainTokenAsAbsent() {
         String token = GrantTestSupport.token(codec, GrantTestSupport.TENANT_ID, GrantTestSupport.MEMBER_ID,
                 "workflow:business-apply", Set.of(1001L), GrantTestSupport.NOW, future(), null);
 
         DataGrantVerification verification = verifier(null).verify(List.of(token), GrantTestSupport.DOMAIN, 1001L);
 
-        assertThat(verification.status()).isEqualTo(DataGrantVerification.Status.INVALID);
+        assertThat(verification.status()).isEqualTo(DataGrantVerification.Status.ABSENT);
+        assertThat(verification.message()).isEqualTo(DataGrantHeaders.MESSAGE_GRANT_REQUIRED);
+    }
+
+    @Test
+    void passesWhenMultiValueContainsOtherDomainToken() {
+        String otherDomain = GrantTestSupport.token(codec, GrantTestSupport.TENANT_ID, GrantTestSupport.MEMBER_ID,
+                "workflow:business-apply", Set.of(9001L), GrantTestSupport.NOW, future(), null);
+        String token = validToken(Set.of(1001L, 1002L), null);
+
+        DataGrantVerification verification = verifier(null)
+                .verify(List.of(otherDomain, token), GrantTestSupport.DOMAIN, 1002L);
+
+        assertThat(verification.isPassed()).isTrue();
+    }
+
+    @Test
+    void treatsAllOtherDomainTokensAsAbsent() {
+        String first = GrantTestSupport.token(codec, GrantTestSupport.TENANT_ID, GrantTestSupport.MEMBER_ID,
+                "workflow:business-apply", Set.of(9001L), GrantTestSupport.NOW, future(), null);
+        String second = GrantTestSupport.token(codec, GrantTestSupport.TENANT_ID, GrantTestSupport.MEMBER_ID,
+                "order:sale-order", Set.of(9002L), GrantTestSupport.NOW, future(), null);
+
+        DataGrantVerification verification = verifier(null)
+                .verify(List.of(first, second), GrantTestSupport.DOMAIN, 1001L);
+
+        assertThat(verification.status()).isEqualTo(DataGrantVerification.Status.ABSENT);
     }
 
     @Test
@@ -166,6 +192,36 @@ class DataGrantVerifierTest {
                 .verify(List.of(expired, valid), GrantTestSupport.DOMAIN, 1003L);
 
         assertThat(verification.isPassed()).isTrue();
+    }
+
+    @Test
+    void returnsInvalidWhenSameDomainTokensExceedLimit() {
+        List<String> tokens = List.of(validToken(Set.of(1001L), null), validToken(Set.of(1002L), null),
+                validToken(Set.of(1003L), null), validToken(Set.of(1004L), null), validToken(Set.of(1005L), null));
+
+        DataGrantVerification verification = verifier(null).verify(tokens, GrantTestSupport.DOMAIN, 1001L);
+
+        assertThat(verification.status()).isEqualTo(DataGrantVerification.Status.INVALID);
+        assertThat(verification.message()).isEqualTo(DataGrantHeaders.MESSAGE_GRANT_INVALID);
+    }
+
+    @Test
+    void passesWithinSameDomainTokenLimit() {
+        List<String> tokens = List.of(validToken(Set.of(1001L), null), validToken(Set.of(1002L), null),
+                validToken(Set.of(1003L), null), validToken(Set.of(1004L), null));
+
+        DataGrantVerification verification = verifier(null).verify(tokens, GrantTestSupport.DOMAIN, 1004L);
+
+        assertThat(verification.isPassed()).isTrue();
+    }
+
+    @Test
+    void returnsInvalidForOneValidTwoBrokenSameDomainTokens() {
+        List<String> tokens = List.of(validToken(Set.of(1001L), null), "broken-token", "another-broken-token");
+
+        DataGrantVerification verification = verifier(null).verify(tokens, GrantTestSupport.DOMAIN, 1001L);
+
+        assertThat(verification.status()).isEqualTo(DataGrantVerification.Status.INVALID);
     }
 
     private DataGrantVerifier verifier(ObjectProvider<DataScopeProvider> provider) {

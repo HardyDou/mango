@@ -21,7 +21,7 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 /**
  * CORS 暴露头测试。
  *
- * <p>格兰特令牌通过响应头回传，跨域场景下浏览器只暴露白名单内的响应头，因此三个 Grant 头必须出现在
+ * <p>格兰特令牌通过响应头回传，跨域场景下浏览器只暴露白名单内的响应头，因此四个 Grant 头必须出现在
  * {@code Access-Control-Expose-Headers} 中，否则前端读不到、List 页面无法把 Grant 接力到详情页。</p>
  */
 class DataGrantCorsExposureTest {
@@ -55,7 +55,8 @@ class DataGrantCorsExposureTest {
                 .containsExactly("X-Trace-Id",
                         DataGrantHeaders.GRANT,
                         DataGrantHeaders.REQUIRED,
-                        DataGrantHeaders.SKIPPED);
+                        DataGrantHeaders.SKIPPED,
+                        DataGrantHeaders.DOMAIN);
     }
 
     @Test
@@ -95,7 +96,8 @@ class DataGrantCorsExposureTest {
         CorsConfiguration configuration = registry.getCorsConfigurations().get("/**");
         assertThat(configuration).isNotNull();
         assertThat(configuration.getExposedHeaders())
-                .contains(DataGrantHeaders.GRANT, DataGrantHeaders.REQUIRED, DataGrantHeaders.SKIPPED);
+                .contains(DataGrantHeaders.GRANT, DataGrantHeaders.REQUIRED, DataGrantHeaders.SKIPPED,
+                        DataGrantHeaders.DOMAIN);
     }
 
     @Test
@@ -111,7 +113,8 @@ class DataGrantCorsExposureTest {
                 .containsExactlyInAnyOrder("X-Trace-Id",
                         DataGrantHeaders.GRANT,
                         DataGrantHeaders.REQUIRED,
-                        DataGrantHeaders.SKIPPED);
+                        DataGrantHeaders.SKIPPED,
+                        DataGrantHeaders.DOMAIN);
     }
 
     @Test
@@ -134,9 +137,73 @@ class DataGrantCorsExposureTest {
         assertThat(response.getHeader(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS))
                 .contains(DataGrantHeaders.GRANT)
                 .contains(DataGrantHeaders.REQUIRED)
-                .contains(DataGrantHeaders.SKIPPED);
+                .contains(DataGrantHeaders.SKIPPED)
+                .contains(DataGrantHeaders.DOMAIN);
     }
 
+
+    @Test
+    void corsFilterAllowsGrantRequestHeaderInCrossOriginPreflight() throws Exception {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOriginPatterns(List.of("http://localhost:5173"));
+        configuration.addAllowedMethod("GET");
+        configuration.setAllowCredentials(true);
+        List<String> allowedHeaders = new ArrayList<>(List.of("Content-Type", "Authorization"));
+        DataGrantHeaders.allowRequestHeader(allowedHeaders);
+        configuration.setAllowedHeaders(allowedHeaders);
+        List<String> exposedHeaders = new ArrayList<>();
+        DataGrantHeaders.expose(exposedHeaders);
+        configuration.setExposedHeaders(exposedHeaders);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        MockHttpServletRequest request = new MockHttpServletRequest("OPTIONS", "/fixture/items/detail");
+        request.addHeader(HttpHeaders.ORIGIN, "http://localhost:5173");
+        request.addHeader(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "GET");
+        request.addHeader(HttpHeaders.ACCESS_CONTROL_REQUEST_HEADERS, "x-mango-data-grant");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        new CorsFilter(source).doFilter(request, response, new MockFilterChain());
+
+        assertThat(response.getStatus()).isEqualTo(200);
+        assertThat(response.getHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS))
+                .containsIgnoringCase(DataGrantHeaders.GRANT);
+        assertThat(response.getHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS)).isEqualTo("true");
+        assertThat(response.getHeader(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS))
+                .contains(DataGrantHeaders.GRANT)
+                .contains(DataGrantHeaders.DOMAIN);
+    }
+
+    /**
+     * 负向基线：未把 Grant 头加进 allowed-headers 时，浏览器 preflight 必须被拒。
+     *
+     * <p>这个用例固定住「只补 exposed-headers 不够」这一事实，避免后续有人把
+     * {@link DataGrantHeaders#allowRequestHeader(List)} 的调用当成冗余删掉。</p>
+     */
+    @Test
+    void corsFilterRejectsGrantRequestHeaderWhenAllowedHeadersOmitIt() throws Exception {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOriginPatterns(List.of("http://localhost:5173"));
+        configuration.addAllowedMethod("GET");
+        configuration.setAllowCredentials(true);
+        configuration.setAllowedHeaders(new ArrayList<>(List.of("Content-Type", "Authorization")));
+        List<String> exposedHeaders = new ArrayList<>();
+        DataGrantHeaders.expose(exposedHeaders);
+        configuration.setExposedHeaders(exposedHeaders);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        MockHttpServletRequest request = new MockHttpServletRequest("OPTIONS", "/fixture/items/detail");
+        request.addHeader(HttpHeaders.ORIGIN, "http://localhost:5173");
+        request.addHeader(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "GET");
+        request.addHeader(HttpHeaders.ACCESS_CONTROL_REQUEST_HEADERS, "x-mango-data-grant");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        new CorsFilter(source).doFilter(request, response, new MockFilterChain());
+
+        assertThat(response.getStatus()).isEqualTo(403);
+        assertThat(response.getHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS)).isNull();
+    }
 
     @Test
     void allowsGrantRequestHeaderWhenAllowedHeadersAreExplicit() {
@@ -174,7 +241,8 @@ class DataGrantCorsExposureTest {
 
         assertThat(headers).containsExactly("x-mango-data-grant",
                 DataGrantHeaders.REQUIRED,
-                DataGrantHeaders.SKIPPED);
+                DataGrantHeaders.SKIPPED,
+                DataGrantHeaders.DOMAIN);
     }
 
     /**
