@@ -22,6 +22,14 @@
  * 命中白名单的条目不计入 error/warning，用于「故意测试旧版本」这类有意保留的 pin。
  * 默认 `mango-pmo/baselines/check-module-version-pins.json`，文件不存在即视为空白名单。
  *
+ * 覆盖范围（本工具只做这些，其余不归它管）：
+ * - 只看 `<dependency>` 上的显式 `<version>`；`<scope>`、`<optional>`、`<exclusions>` 的差异不判定
+ *   （那类改动同样会改变运行时 classpath，但语义不同，需要逐坐标人工判断，不在本工具范围）。
+ * - 不解析模块自己写的 `<dependencyManagement>`：版本出口唯一的约束由同族的
+ *   `check-pom-inheritance.mjs` 以 `DEPENDENCY_MANAGEMENT_DUPLICATED` 规则兜住，
+ *   因此本工具会先剥掉 `<dependencyManagement>` 再收集 `<dependency>`，避免重复报同一件事。
+ * - 不判断插件版本（`<plugin>` 的 `<version>` 由 `mango-parent` 的 `pluginManagement` 管）。
+ *
  * 用法：
  *   node mango-pmo/tools/check-module-version-pins.mjs [--root mango] [--bom <path>]
  *     [--allow-file <path>] [--strict | --fail-on drift|all] [--json]
