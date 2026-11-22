@@ -69,6 +69,21 @@ class DataGrantCorsExposureTest {
         assertThat(webProperties.getCors().getExposedHeaders()).isEmpty();
     }
 
+
+    @Test
+    void autoConfigurationAllowsGrantRequestHeaderOnExplicitConfiguration() {
+        MangoWebProperties webProperties = new MangoWebProperties();
+        webProperties.getCors().setAllowedHeaders(new ArrayList<>(List.of("Content-Type", "Authorization")));
+        DefaultListableBeanFactory beanFactory = new DefaultListableBeanFactory();
+        beanFactory.registerSingleton("webProperties", webProperties);
+
+        new DataGrantAutoConfiguration(GrantTestSupport.properties(),
+                beanFactory.getBeanProvider(MangoWebProperties.class));
+
+        assertThat(webProperties.getCors().getAllowedHeaders())
+                .contains("Content-Type", "Authorization", DataGrantHeaders.GRANT);
+    }
+
     @Test
     void springMvcCorsMappingExposesDataGrantHeaders() {
         MangoWebProperties properties = new MangoWebProperties();
@@ -120,6 +135,35 @@ class DataGrantCorsExposureTest {
                 .contains(DataGrantHeaders.GRANT)
                 .contains(DataGrantHeaders.REQUIRED)
                 .contains(DataGrantHeaders.SKIPPED);
+    }
+
+
+    @Test
+    void allowsGrantRequestHeaderWhenAllowedHeadersAreExplicit() {
+        List<String> allowed = new ArrayList<>(List.of("Content-Type", "Authorization"));
+
+        DataGrantHeaders.allowRequestHeader(allowed);
+
+        assertThat(allowed).contains(DataGrantHeaders.GRANT);
+    }
+
+    @Test
+    void allowedRequestHeaderKeepsWildcardUnchanged() {
+        List<String> allowed = new ArrayList<>(List.of("*"));
+
+        DataGrantHeaders.allowRequestHeader(allowed);
+
+        assertThat(allowed).containsExactly("*");
+    }
+
+    @Test
+    void allowedRequestHeaderIgnoresDuplicateAndNullList() {
+        List<String> allowed = new ArrayList<>(List.of("x-mango-data-grant"));
+
+        DataGrantHeaders.allowRequestHeader(allowed);
+        DataGrantHeaders.allowRequestHeader(null);
+
+        assertThat(allowed).containsExactly("x-mango-data-grant");
     }
 
     @Test

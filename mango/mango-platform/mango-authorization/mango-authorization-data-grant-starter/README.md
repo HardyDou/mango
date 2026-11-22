@@ -21,7 +21,7 @@
 - 详情校验：进入 Controller 之前比对记录 ID 是否在令牌集合内，不在集合返回 404，文案与「资源不存在」完全一致。
 - 无回表判决：ID 判定发生在拦截器阶段，不查库、不调 Service，避免响应耗时与文案泄露记录是否存在。
 - 可观测性：未携带 Grant 记 `X-Mango-Data-Grant: absent`，记录数超限记 `X-Mango-Data-Grant-Skipped: oversize`，强制模式缺 Grant 记 `X-Mango-Data-Grant-Required: 1`。
-- 幂等 CORS 暴露：三个响应头自动追加进 `mango.web.cors.exposed-headers`，不覆盖部署侧已有配置。
+- 幂等 CORS 暴露：三个响应头自动追加进 `mango.web.cors.exposed-headers`、`X-Mango-Data-Grant` 追加进 `mango.web.cors.allowed-headers`（配置为 `*` 时不追加），两种情况都不覆盖部署侧已有配置。
 - 测试期护栏：反射扫描全部 Spring MVC handler，详情端点缺同域列表端点时测试失败并打印两边的 `Class#method`。
 
 ## 3. 配置说明
@@ -80,7 +80,9 @@ public R<FooVO> detail(@RequestParam("id") Long id) { ... }
 本模块不建表、不写 migration、不注册菜单与默认数据，也不占用 `META-INF/mango/resources` 声明目录。
 
 启动初始化只有一步：`DataGrantAutoConfiguration` 在容器启动时校验 `mango.data-grant.*` 配置合法性，
-并把三个响应头追加进 `mango.web.cors.exposed-headers`（幂等，重复启动不会重复追加）。
+并把三个响应头追加进 `mango.web.cors.exposed-headers`、把 `X-Mango-Data-Grant` 追加进 `mango.web.cors.allowed-headers`（幂等，重复启动不会重复追加；后者配置为 `*` 时跳过）。
+
+两侧都要有：`exposed-headers` 只决定浏览器**能不能读**响应头，`allowed-headers` 才决定**允不允许带**这个请求头。只补前者时，跨源部署下详情请求会在浏览器层被拦掉，表现为「列表正常、详情永远 401/403」，而同源单进程测不出来。
 `enforce` 模式缺少 `mango.data-grant.secret` 时启动直接失败，避免上线后才发现所有详情请求 403。
 
 ## 7. 管理入口
@@ -108,6 +110,7 @@ public R<FooVO> detail(@RequestParam("id") Long id) { ... }
 | 详情一直 404，但记录确实存在 | 记录的 ID 不在签发时的集合内（分页外或数据权限刚变更） | 刷新列表重新签发；确认列表与详情使用同一 `domain` |
 | 详情 403 且带 `-Required: 1` | `enforce` 模式缺少 Grant 或 Grant 过期 | 前端需要回传 Grant（PR2 提供公共层自动回传） |
 | 跨域前端读不到响应头 | 部署侧自定义了 `mango.web.cors.exposed-headers` 且未包含本模块的三个头 | 在自定义配置里显式列出，模块只做追加、不覆盖 |
+| 跨域详情请求 401/403、列表正常 | 部署侧自定义了 `mango.web.cors.allowed-headers` 且未包含 `X-Mango-Data-Grant`，浏览器拦掉了回传的请求头 | 把该头加进 `allowed-headers`（模块已自动追加，除非部署侧覆盖或配成 `*`）；网关/WAF 也需允许 `X-` 自定义请求头 |
 | 启动报 `secret` 缺失 | `mode: enforce` 但未配置密钥 | 先配密钥再切模式 |
 
 ## 10. `pv` 指纹的边界

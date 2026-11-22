@@ -6,7 +6,8 @@ import java.util.List;
  * Grant 相关响应头与提示文案常量。
  * <p>
  * 三个响应头都必须出现在 CORS {@code exposedHeaders} 中，否则跨域前端读不到它们，
- * 也就无法判断「这一页能不能点详情」。追加动作由 {@link DataGrantAutoConfiguration} 完成。
+ * 也就无法判断「这一页能不能点详情」；{@link #GRANT} 作为请求头回传时还必须在 {@code allowedHeaders} 中，
+ * 否则跨源部署下浏览器会直接拦掉该请求头。追加动作由 {@link DataGrantAutoConfiguration} 完成。
  */
 public final class DataGrantHeaders {
 
@@ -30,6 +31,12 @@ public final class DataGrantHeaders {
 
     /** 需要跨域暴露的响应头列表，顺序固定便于测试断言。 */
     public static final List<String> EXPOSED_HEADERS = List.of(GRANT, REQUIRED, SKIPPED);
+
+    /** 需要允许跨域携带的请求头：只有 {@link #GRANT} 会被前端回传。 */
+    public static final List<String> ALLOWED_REQUEST_HEADERS = List.of(GRANT);
+
+    /** CORS 通配符，配置为它时无需逐个追加。 */
+    private static final String WILDCARD = "*";
 
     /** 详情记录不存在或不在 Grant 集合内时对外统一使用的文案。 */
     public static final String MESSAGE_RESOURCE_NOT_FOUND = "资源不存在";
@@ -55,10 +62,34 @@ public final class DataGrantHeaders {
      * @param exposedHeaders 目标可变列表，通常来自 {@code mango.web.cors.exposed-headers}。
      */
     public static void expose(List<String> exposedHeaders) {
-        for (String header : EXPOSED_HEADERS) {
-            boolean present = exposedHeaders.stream().anyMatch(existing -> header.equalsIgnoreCase(existing));
+        appendMissing(exposedHeaders, EXPOSED_HEADERS);
+    }
+
+    /**
+     * 把 {@link #GRANT} 追加进 CORS 允许的请求头。
+     *
+     * <p>响应侧 {@code exposedHeaders} 只决定「前端能不能读」，请求侧 {@code allowedHeaders} 才决定
+     * 「浏览器允不允许带」。显式配置了允许头但漏掉它的部署，跨域下详情请求会在浏览器层被拦掉，
+     * 表现为「列表正常、详情永远 401/403」。配置为 {@code *} 时已覆盖，不再追加。</p>
+     *
+     * @param allowedHeaders CORS 允许的请求头列表，允许为 null。
+     */
+    public static void allowRequestHeader(List<String> allowedHeaders) {
+        if (allowedHeaders == null) {
+            return;
+        }
+        boolean wildcard = allowedHeaders.stream().anyMatch(existing -> WILDCARD.equals(existing));
+        if (wildcard) {
+            return;
+        }
+        appendMissing(allowedHeaders, ALLOWED_REQUEST_HEADERS);
+    }
+
+    private static void appendMissing(List<String> target, List<String> headers) {
+        for (String header : headers) {
+            boolean present = target.stream().anyMatch(existing -> header.equalsIgnoreCase(existing));
             if (!present) {
-                exposedHeaders.add(header);
+                target.add(header);
             }
         }
     }
