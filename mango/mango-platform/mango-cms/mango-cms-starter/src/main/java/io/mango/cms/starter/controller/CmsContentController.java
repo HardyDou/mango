@@ -1,6 +1,7 @@
 package io.mango.cms.starter.controller;
 
 import io.mango.authorization.api.annotation.ApiAccess;
+import io.mango.authorization.api.annotation.DataGrant;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.cms.api.CmsContentApi;
 import io.mango.cms.api.command.CmsOfflineCommand;
@@ -41,6 +42,7 @@ public class CmsContentController implements CmsContentApi {
     @Override
     @GetMapping("/contents/page")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "cms:content:list")
+    @DataGrant(domain = "cms:content")
     @Operation(summary = "分页查询内容", description = "分页查询内容")
     public R<PageResult<CmsContentVO>> pageContents(@ParameterObject CmsContentPageQuery query) {
         return R.ok(contentService.pageContents(query));
@@ -49,6 +51,7 @@ public class CmsContentController implements CmsContentApi {
     @Override
     @GetMapping("/contents/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "cms:content:query")
+    @DataGrant(domain = "cms:content")
     @Operation(summary = "查询内容详情", description = "查询内容详情")
     public R<CmsContentVO> detailContent(@Parameter(description = "主键 ID") @RequestParam("id") Long id) {
         return R.ok(contentService.detailContent(id));

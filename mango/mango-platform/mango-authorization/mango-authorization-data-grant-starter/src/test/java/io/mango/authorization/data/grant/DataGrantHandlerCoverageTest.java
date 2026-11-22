@@ -79,6 +79,19 @@ class DataGrantHandlerCoverageTest {
     }
 
     @Test
+    void listOnlyDomainIsReportedWithoutFailing() {
+        DataGrantHandlerScanner.Coverage coverage = DataGrantHandlerScanner.scan(List.of(ListOnlyController.class));
+
+        DataGrantHandlerScanner.reportListOnlyDomains(coverage);
+
+        assertThat(coverage.violations()).isEmpty();
+        assertThat(coverage.listOnlyDomains()).hasSize(1);
+        assertThat(coverage.listOnlyDomains().get(0))
+                .contains("ListOnlyController#page")
+                .contains("list-only:item");
+    }
+
+    @Test
     void handlersWithoutAnnotationAreIgnored() {
         DataGrantHandlerScanner.Coverage coverage = DataGrantHandlerScanner.scan(List.of(PlainController.class));
 

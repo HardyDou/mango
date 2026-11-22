@@ -1,6 +1,7 @@
 package io.mango.cms.starter.controller;
 
 import io.mango.authorization.api.annotation.ApiAccess;
+import io.mango.authorization.api.annotation.DataGrant;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.cms.api.CmsNavigationApi;
 import io.mango.cms.api.command.SaveCmsNavigationCommand;
@@ -40,6 +41,7 @@ public class CmsNavigationController implements CmsNavigationApi {
     @Override
     @GetMapping("/navigations/page")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "cms:navigation:list")
+    @DataGrant(domain = "cms:navigation")
     @Operation(summary = "分页查询导航", description = "分页查询导航")
     public R<PageResult<CmsNavigationVO>> pageNavigations(@ParameterObject CmsNavigationPageQuery query) {
         return R.ok(navigationService.pageNavigations(query));
@@ -48,6 +50,7 @@ public class CmsNavigationController implements CmsNavigationApi {
     @Override
     @GetMapping("/navigations/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "cms:navigation:query")
+    @DataGrant(domain = "cms:navigation")
     @Operation(summary = "查询导航详情", description = "查询导航详情")
     public R<CmsNavigationVO> detailNavigation(@Parameter(description = "主键 ID") @RequestParam("id") Long id) {
         return R.ok(navigationService.detailNavigation(id));

@@ -1,6 +1,7 @@
 package io.mango.cms.starter.controller;
 
 import io.mango.authorization.api.annotation.ApiAccess;
+import io.mango.authorization.api.annotation.DataGrant;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.cms.api.CmsContentCategoryApi;
 import io.mango.cms.api.command.SaveCmsContentCategoryCommand;
@@ -42,6 +43,7 @@ public class CmsContentCategoryController implements CmsContentCategoryApi {
     @Override
     @GetMapping("/content-categories/page")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "cms:content-category:list")
+    @DataGrant(domain = "cms:content-category")
     @Operation(summary = "分页查询内容分类", description = "分页查询内容分类")
     public R<PageResult<CmsContentCategoryVO>> pageContentCategories(@ParameterObject CmsContentCategoryPageQuery query) {
         return R.ok(contentCategoryService.pageContentCategories(query));
@@ -66,6 +68,7 @@ public class CmsContentCategoryController implements CmsContentCategoryApi {
     @Override
     @GetMapping("/content-categories/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "cms:content-category:query")
+    @DataGrant(domain = "cms:content-category")
     @Operation(summary = "查询内容分类详情", description = "查询内容分类详情")
     public R<CmsContentCategoryVO> detailContentCategory(
             @Parameter(description = "分类 ID") @RequestParam("id") Long id) {

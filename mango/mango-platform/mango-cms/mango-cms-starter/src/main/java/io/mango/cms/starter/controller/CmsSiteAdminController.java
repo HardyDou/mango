@@ -1,6 +1,7 @@
 package io.mango.cms.starter.controller;
 
 import io.mango.authorization.api.annotation.ApiAccess;
+import io.mango.authorization.api.annotation.DataGrant;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.cms.api.CmsSiteAdminApi;
 import io.mango.cms.api.command.SaveCmsSiteCommand;
@@ -40,6 +41,7 @@ public class CmsSiteAdminController implements CmsSiteAdminApi {
     @Override
     @GetMapping("/sites/page")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "cms:site:list")
+    @DataGrant(domain = "cms:site")
     @Operation(summary = "分页查询站点", description = "分页查询站点")
     public R<PageResult<CmsSiteVO>> pageSites(@ParameterObject CmsSitePageQuery query) {
         return R.ok(siteAdminService.pageSites(query));
@@ -48,6 +50,7 @@ public class CmsSiteAdminController implements CmsSiteAdminApi {
     @Override
     @GetMapping("/sites/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "cms:site:query")
+    @DataGrant(domain = "cms:site")
     @Operation(summary = "查询站点详情", description = "查询站点详情")
     public R<CmsSiteVO> detailSite(@Parameter(description = "主键 ID") @RequestParam("id") Long id) {
         return R.ok(siteAdminService.detailSite(id));
