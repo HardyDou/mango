@@ -125,6 +125,8 @@ public R<FooVO> detail(@RequestParam("id") Long id) { ... }
 
 ## 11. 已知限制
 
+- 数据范围实现存在但取不到规则时按未签发处理，响应带 `X-Mango-Data-Grant-Skipped: scope-unresolved`；只有「当前部署没有数据范围实现」才留空指纹照常签发。
+
 - 列表端点直接返回 `List`（非 `PageResult`）时不签发 Grant，需要先改为分页响应；
 - 一次响应只签发一个 `domain` 的 Grant；同一响应包含多个数据域的记录时，需拆分接口；
 - 记录 ID 解析在参数名冲突时会退回「唯一数值型参数」启发式，存在多个数值型参数时请显式声明 `idField`；

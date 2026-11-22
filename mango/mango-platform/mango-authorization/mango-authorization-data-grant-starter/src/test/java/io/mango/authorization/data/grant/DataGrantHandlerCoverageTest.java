@@ -59,6 +59,17 @@ class DataGrantHandlerCoverageTest {
     }
 
     @Test
+    void detailWithUnannotatedListEndpointIsReported() {
+        DataGrantHandlerScanner.Coverage coverage = DataGrantHandlerScanner
+                .scan(List.of(UnannotatedListController.class));
+
+        assertThat(coverage.violations()).hasSize(1);
+        assertThat(coverage.violations().get(0))
+                .contains("unannotatedListDetail", "UnannotatedListController")
+                .contains("unannotated-list:item");
+    }
+
+    @Test
     void listOnlyIsNotAViolation() {
         DataGrantHandlerScanner.Coverage coverage = DataGrantHandlerScanner.scan(List.of(ListOnlyController.class));
 
@@ -172,5 +183,25 @@ class DataGrantHandlerCoverageTest {
 
         assertThat(coverage.listHandlers()).isEmpty();
         assertThat(coverage.detailHandlers()).isEmpty();
+    }
+    /**
+     * 反例：详情端点带注解，但同域的列表端点忘了加注解。
+     *
+     * <p>列表端点未加 {@link DataGrant} 时不进入签发集合，详情端点将永远拿不到有效 Grant，因此必须报违规。</p>
+     */
+    @RestController
+    @RequestMapping("/unannotated-list")
+    static class UnannotatedListController {
+
+        @GetMapping
+        R<List<String>> unannotatedList() {
+            return R.ok(List.of());
+        }
+
+        @GetMapping("/{id}")
+        @DataGrant(domain = "unannotated-list:item")
+        R<String> unannotatedListDetail(@PathVariable("id") Long id) {
+            return R.ok("item-" + id);
+        }
     }
 }

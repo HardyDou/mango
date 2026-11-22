@@ -33,7 +33,8 @@ final class PermissionVersion {
      *
      * @param provider 数据范围提供者，可为 null。
      * @param domain   数据权限域标识。
-     * @return 指纹；提供者缺失、无规则或解析异常时返回 null。
+     * @return 指纹；提供者缺失或无规则时返回 null。
+     * @throws DataGrantScopeUnresolvedException 提供者存在但解析失败时抛出，调用方必须按未签发处理。
      */
     static String resolve(DataScopeProvider provider, String domain) {
         if (provider == null) {
@@ -43,8 +44,7 @@ final class PermissionVersion {
         try {
             rule = provider.resolve(domain);
         } catch (RuntimeException exception) {
-            log.warn("数据范围指纹解析失败，本次不写入 pv, domain={}", domain, exception);
-            return null;
+            throw new DataGrantScopeUnresolvedException(domain, exception);
         }
         if (rule == null || rule.isEmpty()) {
             return null;

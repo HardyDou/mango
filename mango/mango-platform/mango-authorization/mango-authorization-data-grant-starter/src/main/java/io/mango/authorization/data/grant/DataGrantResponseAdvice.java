@@ -95,6 +95,8 @@ public class DataGrantResponseAdvice implements ResponseBodyAdvice<Object> {
             }
         } else if (DataGrantIssueResult.SKIP_OVERSIZE.equals(issued.skipReason())) {
             response.getHeaders().set(DataGrantHeaders.SKIPPED, DataGrantHeaders.SKIPPED_OVERSIZE);
+        } else if (DataGrantIssueResult.SKIP_SCOPE_UNRESOLVED.equals(issued.skipReason())) {
+            response.getHeaders().set(DataGrantHeaders.SKIPPED, DataGrantHeaders.SKIPPED_SCOPE_UNRESOLVED);
         }
         return body;
     }

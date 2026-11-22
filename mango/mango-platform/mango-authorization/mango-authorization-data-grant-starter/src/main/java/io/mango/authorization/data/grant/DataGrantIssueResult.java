@@ -3,7 +3,7 @@ package io.mango.authorization.data.grant;
 /**
  * Grant 签发结果。
  * <p>
- * 未签发时区分 {@code skipReason}：只有 {@code oversize} 会在响应头标记
+ * 未签发时区分 {@code skipReason}：{@code oversize} 与 {@code scope-unresolved} 会在响应头标记
  * {@code X-Mango-Data-Grant-Skipped}，其余原因（未配置密钥、缺少上下文、空集合）不对外暴露细节，
  * 避免把部署配置问题泄漏给前端。
  *
@@ -26,6 +26,9 @@ public record DataGrantIssueResult(String token, String skipReason) {
 
     /** 记录数超过 {@code max-ids}。 */
     public static final String SKIP_OVERSIZE = "oversize";
+
+    /** 数据范围实现存在但取不到规则，无法证明数据范围。 */
+    public static final String SKIP_SCOPE_UNRESOLVED = "scope-unresolved";
 
     /**
      * 构造签发成功结果。

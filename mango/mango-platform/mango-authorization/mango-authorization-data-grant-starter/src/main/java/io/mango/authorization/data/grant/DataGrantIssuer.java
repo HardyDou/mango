@@ -80,7 +80,13 @@ public class DataGrantIssuer {
             return DataGrantIssueResult.skipped(DataGrantIssueResult.SKIP_NO_CONTEXT);
         }
         long issuedAt = Instant.now().getEpochSecond();
-        String permissionVersion = PermissionVersion.resolve(dataScopeProvider.getIfAvailable(), domain);
+        String permissionVersion;
+        try {
+            permissionVersion = PermissionVersion.resolve(dataScopeProvider.getIfAvailable(), domain);
+        } catch (DataGrantScopeUnresolvedException exception) {
+            log.warn("数据范围实现存在但取不到规则，本次不签发 Grant, domain={}", domain, exception);
+            return DataGrantIssueResult.skipped(DataGrantIssueResult.SKIP_SCOPE_UNRESOLVED);
+        }
         DataGrantPayload payload = new DataGrantPayload(
                 tenantId,
                 memberId,

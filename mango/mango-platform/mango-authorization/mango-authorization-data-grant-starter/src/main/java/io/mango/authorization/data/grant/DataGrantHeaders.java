@@ -16,7 +16,7 @@ public final class DataGrantHeaders {
     /** 强制模式下缺少 Grant 的标记，值为 {@code 1}。 */
     public static final String REQUIRED = "X-Mango-Data-Grant-Required";
 
-    /** 未签发 Grant 的原因，当前只有 {@link #SKIPPED_OVERSIZE}。 */
+    /** 未签发 Grant 的原因，见 {@link #SKIPPED_OVERSIZE} 与 {@link #SKIPPED_SCOPE_UNRESOLVED}。 */
     public static final String SKIPPED = "X-Mango-Data-Grant-Skipped";
 
     /** {@link #GRANT} 的「未携带」标记值。 */
@@ -24,6 +24,9 @@ public final class DataGrantHeaders {
 
     /** {@link #SKIPPED} 的「ID 集合超过 max-ids」标记值。 */
     public static final String SKIPPED_OVERSIZE = "oversize";
+
+    /** 跳过签发原因：数据范围无法解析。 */
+    public static final String SKIPPED_SCOPE_UNRESOLVED = "scope-unresolved";
 
     /** 需要跨域暴露的响应头列表，顺序固定便于测试断言。 */
     public static final List<String> EXPOSED_HEADERS = List.of(GRANT, REQUIRED, SKIPPED);
