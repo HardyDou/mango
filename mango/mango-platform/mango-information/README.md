@@ -136,6 +136,35 @@ Content-Type: application/json
 
 控件支持范围与设计器一致，由前端 form-create 运行时渲染，包括输入、数字、选择、单选、多选、开关、评分、滑块、日期时间、颜色、级联、树形、上传、富文本、子表单、表格表单以及栅格/卡片/标签页等布局；`group`、`subForm`、`tableForm` 计为一个采集项，其子字段是行模板，不单独成为提交字段。多选与子表单等复杂值按 JSON 原样保存，采集记录列、详情和导出统一序列化为可读文本。
 
+### 选项数据源
+
+选择型字段（`select`、`radio`、`checkbox`）的可选值有两种来源：
+
+- 静态选项：规则上的 `options: [{ "label": "北京", "value": "bj" }]`，老表单即为此形态，无需改造。
+- 平台字典：规则上声明 `optionSource`，`options` 置空，渲染与校验都以字典启用项为准。
+
+```json
+[
+  {
+    "type": "select",
+    "field": "level",
+    "title": "客户等级",
+    "options": [],
+    "optionSource": { "type": "DICT", "dictType": "customer_level" }
+  }
+]
+```
+
+`optionSource.type` 取 `STATIC` 或 `DICT`；为 `DICT` 时 `dictType` 必填，值是平台字典类型编码（字典管理里维护的 `dictType`）。服务端在提交时读取字典启用项做值域校验：
+
+| 情况 | 结果 |
+| ---- | ---- |
+| 提交值不在可选值内 | `INVALID_SUBMISSION`，消息 `字段 <name> 的值不在可选范围内：<value>` |
+| 字典不存在或没有启用项 | `INVALID_SUBMISSION`，消息 `字段 <name> 绑定的字典 <dictType> 不存在或没有启用项` |
+| 字段既没有 `options` 也没有声明字典 | 不做值域校验，保持历史行为 |
+
+`optionSource` 缺失或 `type` 为 `STATIC` 时按静态 `options` 校验。`optionSource` 与 `options` 都存放在既有 `definitionJson` 里，不需要数据库迁移。同一表单的多个字段绑定同一字典时，一次提交只查询一次字典；`mango-information-core` 内没有字典实现时按「字典不存在」拒绝，不会跳过校验。
+
 ## 6. 用 Resource Registry 内置表单
 
 业务模块可以把自己的采集表单随代码发布，由 Resource Registry 在启动时同步到 `information_form`，不需要人工在后台建表。
@@ -225,6 +254,7 @@ mango:
 - 校验失败不形成采集记录；幂等键命中时返回同一记录ID。
 - 公开提交正常请求不强制验证码；达到风险阈值后返回 HTTP 428 要求验证码，验证码错误返回 HTTP 400，超过固定窗口硬上限返回 HTTP 429，以上情况均不写入记录。
 - 限流计数使用共享 KV，键按配置选择 IP 或 IP+表单；KV 故障按 `fail-open` 配置处理。
+- 选择型字段的值域以 `options[].value` 或字典启用项为准；字典在提交时实时读取，字典停用或清空后原选项值会被拒绝。
 - 已关闭的采集记录不可继续处理。
 - 已发布表单才能被公开查询和提交；停用或草稿状态返回业务错误。
 

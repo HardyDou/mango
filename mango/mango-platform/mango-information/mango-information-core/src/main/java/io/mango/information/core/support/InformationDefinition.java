@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -26,11 +27,25 @@ public final class InformationDefinition {
     }
 
     /** 单个可提交采集项；options 为 form-create 的静态选项 [{label, value}]，没有声明时为空列表。 */
-    public record Field(String code, String name, String type, boolean required, List<FieldOption> options) {
+    public record Field(String code, String name, String type, boolean required, List<FieldOption> options,
+                        OptionSource optionSource) {
     }
 
     /** 静态选项条目，value 参与值域校验。 */
     public record FieldOption(String label, String value) {
+    }
+
+    /**
+     * 选项数据源，缺失时按 STATIC（静态 options）处理，存量定义不需要数据迁移。
+     */
+    public record OptionSource(String type, String dictType) {
+
+        /** 绑定平台字典的选项数据源类型。 */
+        public static final String DICT = "DICT";
+
+        public boolean isDict() {
+            return DICT.equalsIgnoreCase(type);
+        }
     }
 
     /** 提取所有可提交采集项；布局与展示组件（没有 field 的规则）不参与校验与动态列。 */
@@ -47,7 +62,7 @@ public final class InformationDefinition {
         }
         for (JsonNode rule : node) {
             String type = text(rule, "type");
-            String normalizedType = type == null ? "" : type.toLowerCase(java.util.Locale.ROOT);
+            String normalizedType = type == null ? "" : type.toLowerCase(Locale.ROOT);
             String code = text(rule, "field");
             if (!hasText(code)) {
                 code = text(rule, "fieldCode");
@@ -62,7 +77,7 @@ public final class InformationDefinition {
                     fieldType = text(rule, "fieldType");
                 }
                 result.add(new Field(code, hasText(name) ? name : code, hasText(fieldType) ? fieldType : "input",
-                        required(rule), options(rule)));
+                        required(rule), options(rule), optionSource(rule)));
             }
             if (SUBFORM_TYPES.contains(normalizedType) && hasText(code)) {
                 continue;
@@ -96,6 +111,19 @@ public final class InformationDefinition {
         return result;
     }
 
+    /** 提取选项数据源；没有 optionSource 键或 type 为 STATIC 时返回 null，表示静态 options。 */
+    public static OptionSource optionSource(JsonNode rule) {
+        JsonNode node = rule == null ? null : rule.get("optionSource");
+        if (node == null || !node.isObject()) {
+            return null;
+        }
+        String type = text(node, "type");
+        if (!hasText(type) || "STATIC".equalsIgnoreCase(type)) {
+            return null;
+        }
+        return new OptionSource(type.toUpperCase(Locale.ROOT), text(node, "dictType"));
+    }
+
     /** 必填判定同时支持 form-create 的 validate 数组与历史 required 标记。 */
     public static boolean required(JsonNode rule) {
         if (rule == null) {
@@ -122,7 +150,7 @@ public final class InformationDefinition {
      * 旧定义的 `text` 表示单行文本，是可提交字段，不能当作展示组件过滤。
      */
     public static boolean displayOnly(Field field) {
-        String type = field.type() == null ? "" : field.type().toLowerCase(java.util.Locale.ROOT);
+        String type = field.type() == null ? "" : field.type().toLowerCase(Locale.ROOT);
         return Set.of("divider", "eldivider", "static", "elalert", "html", "eltag", "elimage", "elbutton")
                 .contains(type);
     }

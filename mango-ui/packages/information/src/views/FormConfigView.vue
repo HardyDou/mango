@@ -91,6 +91,7 @@ import {
   toDesignerRules,
   type FormCreateRule,
 } from '../domain/rules';
+import { DICT_OPTION_SOURCE, normalizeOptionSourceRules, STATIC_OPTION_SOURCE } from '../domain/optionSource';
 
 const api = useInformationApi();
 const route = useRoute();
@@ -102,7 +103,22 @@ const saving = ref(false);
 const errorMessage = ref('');
 const jsonVisible = ref(false);
 const designerRef = ref<InstanceType<typeof FcDesigner>>();
-const designerConfig = { showSaveBtn: false, showJsonPreview: false, showDevice: false, showLanguage: false };
+const designerConfig = {
+  showSaveBtn: false,
+  showJsonPreview: false,
+  showDevice: false,
+  showLanguage: false,
+  /** 选项数据源存在规则根上的 optionSource，属性面板需要单独回填。 */
+  appendConfigData: (rule: Record<string, unknown>) => {
+    const optionSource = (rule.optionSource || {}) as Record<string, unknown>;
+    return {
+      'formCreateOptionSource>type':
+        typeof optionSource.type === 'string' && optionSource.type ? optionSource.type : STATIC_OPTION_SOURCE,
+      'formCreateOptionSource>dictType':
+        typeof optionSource.dictType === 'string' ? optionSource.dictType : '',
+    };
+  },
+};
 
 /**
  * 平台设计器给「输入框」的「类型」只提供 6 个原生类型，采集场景常用的
@@ -124,7 +140,62 @@ const INPUT_TYPE_OPTIONS = [
 
 interface DesignerInputPropsItem {
   field?: string;
-  options?: Array<{ label: string; value: string }>;
+  type?: string;
+  title?: string;
+  props?: Record<string, unknown>;
+  options?: Array<{ label: string; value: string } | number>;
+}
+
+interface DesignerDragRule {
+  name?: string;
+  props?: (rule: unknown, ctx: unknown) => DesignerInputPropsItem[];
+}
+
+/** 选择型控件可以声明选项数据源：静态选项或平台字典。 */
+const OPTION_SOURCE_RULE_NAMES = ['select', 'radio', 'checkbox'];
+
+/**
+ * 设计器没有公开「追加控件属性项」的 API，这里同样只包装实例上已注册的控件配置，
+ * 让选择型控件多出「选项数据源」与「字典类型编码」两个提交项。
+ */
+function extendOptionSourceProps() {
+  const internals = designerRef.value as unknown as { dragRuleList?: Record<string, DesignerDragRule> };
+  const dragRuleList = internals?.dragRuleList;
+  if (!dragRuleList) {
+    return;
+  }
+  OPTION_SOURCE_RULE_NAMES.forEach((name) => {
+    const componentRule = dragRuleList[name];
+    const originalProps = componentRule?.props;
+    if (!componentRule || !originalProps) {
+      return;
+    }
+    componentRule.props = (rule, ctx) => {
+      const items = originalProps(rule, ctx) || [];
+      if (items.some((item) => item.field === 'formCreateOptionSource>type')) {
+        return items;
+      }
+      return [
+        ...items,
+        {
+          type: 'radio',
+          field: 'formCreateOptionSource>type',
+          title: '选项数据源',
+          options: [
+            { label: '静态选项', value: STATIC_OPTION_SOURCE },
+            { label: '平台字典', value: DICT_OPTION_SOURCE },
+          ],
+          props: { type: 'button' },
+        },
+        {
+          type: 'input',
+          field: 'formCreateOptionSource>dictType',
+          title: '字典类型编码',
+          props: { placeholder: '选择「平台字典」时填写，如 customer_level' },
+        },
+      ];
+    };
+  });
 }
 
 /**
@@ -180,7 +251,9 @@ function syncFromDesigner() {
   if (!designerRef.value) {
     return;
   }
-  rules.value = normalizeDesignerRules((designerRef.value.getRule() || []) as unknown as FormCreateRule[]);
+  rules.value = normalizeOptionSourceRules(
+    normalizeDesignerRules((designerRef.value.getRule() || []) as unknown as FormCreateRule[]),
+  );
   markDirty();
 }
 
@@ -206,6 +279,7 @@ function applyRulesToDesigner() {
     return;
   }
   extendInputTypeOptions();
+  extendOptionSourceProps();
   designerRef.value.setRule(toDesignerRules(rules.value) as never);
 }
 
@@ -223,7 +297,7 @@ async function load() {
     form.description = loaded.description || '';
     form.successMessage = loaded.successMessage || '提交成功';
     form.status = loaded.status || 'PUBLISHED';
-    rules.value = normalizeDesignerRules(parseRules(loaded.definitionJson));
+    rules.value = normalizeOptionSourceRules(normalizeDesignerRules(parseRules(loaded.definitionJson)));
     applyRulesToDesigner();
     designerDirty.value = false;
     firstSave.value = !rules.value.length;

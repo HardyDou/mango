@@ -208,7 +208,8 @@ import { useInformationApi } from '../composables/useInformationApi';
 import type { InformationFormDetail } from '../api/information';
 import { formatCount, formatDate, formStatusLabel, formStatusTone } from '../domain/status';
 import { fieldTypeLabel } from '../domain/fields';
-import { parseRules, rulesToFields } from '../domain/rules';
+import { parseRules, rulesToFields, type FormCreateRule } from '../domain/rules';
+import { resolveOptionSources } from '../domain/optionSource';
 import { buildAccessSamples, buildEmbedCode, type AccessSampleContext } from '../domain/accessSamples';
 
 const api = useInformationApi();
@@ -223,7 +224,7 @@ const secretVisible = ref(false);
 const errorMessage = ref('');
 
 const formId = computed(() => String(route.query.id || ''));
-const rules = computed(() => parseRules(detail.value?.definitionJson));
+const rules = ref<FormCreateRule[]>([]);
 const fields = computed(() => rulesToFields(rules.value));
 const previewValues = computed(() => Object.fromEntries(fields.value.map((field) => [field.fieldCode, ''])));
 const sampleContext = computed<AccessSampleContext>(() => ({
@@ -264,6 +265,14 @@ async function load() {
   errorMessage.value = '';
   try {
     detail.value = await api.detailForm(formId.value);
+    const parsed = parseRules(detail.value.definitionJson);
+    rules.value = parsed;
+    try {
+      rules.value = await resolveOptionSources(parsed);
+    } catch (error) {
+      // 预览不因字典问题白屏，但要把缺失的字典显式告知配置者
+      ElMessage.warning(error instanceof Error ? error.message : '字典选项加载失败');
+    }
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '表单详情加载失败';
   } finally {

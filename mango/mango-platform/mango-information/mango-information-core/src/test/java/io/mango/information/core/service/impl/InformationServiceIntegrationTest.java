@@ -3,6 +3,7 @@ package io.mango.information.core.service.impl;
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.exception.BizException;
+import io.mango.common.result.R;
 import io.mango.information.api.command.ProcessInformationSubmissionCommand;
 import io.mango.information.api.command.SaveInformationFormCommand;
 import io.mango.information.api.command.SubmitInformationCommand;
@@ -33,6 +34,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -75,10 +77,14 @@ class InformationServiceIntegrationTest {
     @Autowired
     private IInformationSubmissionService submissionService;
 
+    @Autowired
+    private io.mango.system.api.DictApi dictApi;
+
     @BeforeEach
     void setUp() {
         rebuildSchema();
         MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("1"));
+        org.mockito.Mockito.reset(dictApi);
     }
 
     @AfterEach
@@ -319,6 +325,54 @@ class InformationServiceIntegrationTest {
     }
 
     @Test
+    void submit_rejectsValueOutsideDictOptions() {
+        createPublishedForm("option-source-dict", """
+                [{"type":"select","field":"level","title":"客户等级","optionSource":{"type":"DICT","dictType":"customer_level"}},
+                 {"type":"radio","field":"backupLevel","title":"备用等级","optionSource":{"type":"DICT","dictType":"customer_level"}}]
+                """);
+        org.mockito.Mockito.when(dictApi.getOptions("customer_level"))
+                .thenReturn(R.ok(List.of(dictOption("普通", "normal"), dictOption("重要", "vip"))));
+
+        assertThat(submissionService.submit(
+                submitCommand("option-source-dict", Map.of("level", "vip", "backupLevel", "normal"), "dict-ok"), false)
+                .getId()).isNotNull();
+        // 同一 dictType 在一次提交内只查一次
+        org.mockito.Mockito.verify(dictApi, org.mockito.Mockito.times(1)).getOptions("customer_level");
+
+        assertThatThrownBy(() -> submissionService.submit(
+                submitCommand("option-source-dict", Map.of("level", "gold"), "dict-bad"), false))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("客户等级")
+                .hasMessageContaining("gold")
+                .hasMessageContaining("值不在可选范围内");
+    }
+
+    @Test
+    void submit_rejectsMissingOrEmptyDictEvenWithoutValue() {
+        createPublishedForm("option-source-dict-missing", """
+                [{"type":"select","field":"level","title":"客户等级","optionSource":{"type":"DICT","dictType":"missing_dict"}},
+                 {"type":"input","field":"memo","title":"备注"}]
+                """);
+        // 未对 missing_dict 设桩：字典服务返回空，不能静默放行
+        assertThatThrownBy(() -> submissionService.submit(
+                submitCommand("option-source-dict-missing", Map.of("level", "vip"), "dict-missing"), false))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("字段 客户等级 绑定的字典 missing_dict 不存在或没有启用项");
+
+        createPublishedForm("option-source-dict-empty", """
+                [{"type":"select","field":"level","title":"客户等级","optionSource":{"type":"DICT","dictType":"empty_dict"}},
+                 {"type":"input","field":"memo","title":"备注"}]
+                """);
+        org.mockito.Mockito.when(dictApi.getOptions("empty_dict")).thenReturn(R.ok(List.of()));
+        // 字段没有传值也必须拒绝，不能因为空值绕过字典校验
+        assertThatThrownBy(() -> submissionService.submit(
+                submitCommand("option-source-dict-empty", Map.of("memo", "无"), "dict-empty"), false))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("empty_dict")
+                .hasMessageContaining("不存在或没有启用项");
+    }
+
+    @Test
     void saveForm_supportsRichControlTypesAndComplexValues() {
         // 覆盖设计器常见控件：选择、评分、滑块、颜色、日期时间、子表单与表格表单
         String rules = """
@@ -406,6 +460,13 @@ class InformationServiceIntegrationTest {
         command.setSuccessMessage("提交成功");
         command.setStatus(InformationFormStatus.PUBLISHED);
         return formService.save(command);
+    }
+
+    private io.mango.system.api.vo.DictOptionVO dictOption(String label, String value) {
+        io.mango.system.api.vo.DictOptionVO option = new io.mango.system.api.vo.DictOptionVO();
+        option.setLabel(label);
+        option.setValue(value);
+        return option;
     }
 
     private SubmitInformationCommand submitCommand(String formCode, Map<String, Object> values, String idempotencyKey) {
@@ -516,6 +577,12 @@ class InformationServiceIntegrationTest {
         @Bean
         ObjectMapper objectMapper() {
             return new ObjectMapper();
+        }
+
+        /** 字典能力由平台提供，集成测试用可配置替身覆盖 DICT 选项值域。 */
+        @Bean
+        io.mango.system.api.DictApi dictApi() {
+            return org.mockito.Mockito.mock(io.mango.system.api.DictApi.class);
         }
 
         /** 本用例只验证表单与提交链路，文件能力用替身占位。 */
