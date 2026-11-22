@@ -65,14 +65,27 @@ class DataGrantVerifierTest {
     }
 
     @Test
-    void returnsInvalidForTamperedToken() {
+    void returnsAbsentForTamperedToken() {
         String token = validToken(Set.of(1001L), null);
         String tampered = token.substring(0, token.length() - 2) + "ab";
 
         DataGrantVerification verification = verifier(null).verify(List.of(tampered), GrantTestSupport.DOMAIN, 1001L);
 
-        assertThat(verification.status()).isEqualTo(DataGrantVerification.Status.INVALID);
-        assertThat(verification.message()).isEqualTo(DataGrantHeaders.MESSAGE_GRANT_INVALID);
+        // 签名不符的令牌无法判定期望的数据域，按「未携带」处理；强制模式下同样被拒绝（fail-closed 不变）。
+        assertThat(verification.status()).isEqualTo(DataGrantVerification.Status.ABSENT);
+        assertThat(verification.message()).isEqualTo(DataGrantHeaders.MESSAGE_GRANT_REQUIRED);
+    }
+
+    @Test
+    void ignoresUndecodableTokenWhenMatchingTokenPasses() {
+        String token = validToken(Set.of(1001L), null);
+        String undecodable = "m1.hs256.default.not-a-payload.not-a-signature";
+
+        DataGrantVerification verification = verifier(null)
+                .verify(List.of(undecodable, token), GrantTestSupport.DOMAIN, 1001L);
+
+        assertThat(verification.isPassed()).isTrue();
+        assertThat(verification.status()).isEqualTo(DataGrantVerification.Status.PASS);
     }
 
     @Test
@@ -216,12 +229,24 @@ class DataGrantVerifierTest {
     }
 
     @Test
-    void returnsInvalidForOneValidTwoBrokenSameDomainTokens() {
-        List<String> tokens = List.of(validToken(Set.of(1001L), null), "broken-token", "another-broken-token");
+    void returnsInvalidForOneValidAndTwoWrongMemberSameDomainTokens() {
+        // 同域多值里只要有一个可解码的坏令牌，就必须按 strongest 收敛为 INVALID，不能因为另一个通过而放行。
+        // （无法解码的令牌判不出数据域，按未携带忽略，见 ignoresBrokenTokensThatCannotBeAttributedToAnyDomain。）
+        List<String> tokens = List.of(validToken(Set.of(1001L), null), wrongMemberToken(), wrongMemberToken());
 
         DataGrantVerification verification = verifier(null).verify(tokens, GrantTestSupport.DOMAIN, 1001L);
 
         assertThat(verification.status()).isEqualTo(DataGrantVerification.Status.INVALID);
+    }
+
+    @Test
+    void ignoresBrokenTokensThatCannotBeAttributedToAnyDomain() {
+        // 无法解码的令牌判不出数据域，既不能否决请求，也不能被当成同域坏令牌。
+        List<String> tokens = List.of(validToken(Set.of(1001L), null), "broken-token", "another-broken-token");
+
+        DataGrantVerification verification = verifier(null).verify(tokens, GrantTestSupport.DOMAIN, 1001L);
+
+        assertThat(verification.isPassed()).isTrue();
     }
 
     private DataGrantVerifier verifier(ObjectProvider<DataScopeProvider> provider) {
@@ -231,6 +256,18 @@ class DataGrantVerifierTest {
 
     private static ObjectProvider<DataScopeProvider> providerOfScope(AtomicReference<Optional<DataScopeRule>> scope) {
         return GrantTestSupport.provider(resourceCode -> scope.get());
+    }
+
+    private String wrongMemberToken() {
+        return GrantTestSupport.token(codec, GrantTestSupport.TENANT_ID, GrantTestSupport.MEMBER_ID + 1,
+                GrantTestSupport.DOMAIN, Set.of(1001L), Instant.now().getEpochSecond() - 1,
+                Instant.now().getEpochSecond() + 300, null);
+    }
+
+    private String expiredToken() {
+        return GrantTestSupport.token(codec, GrantTestSupport.TENANT_ID, GrantTestSupport.MEMBER_ID,
+                GrantTestSupport.DOMAIN, Set.of(1002L), Instant.now().getEpochSecond() - 600,
+                Instant.now().getEpochSecond() - 300, null);
     }
 
     private String validToken(Set<Long> ids, String permissionVersion) {
