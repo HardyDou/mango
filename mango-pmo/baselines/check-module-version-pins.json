@@ -1,0 +1,10 @@
+{
+  "allow": [
+    {
+      "groupId": "org.codehaus.plexus",
+      "artifactId": "plexus-utils",
+      "module": "mango-tools/mango-maven-plugin/pom.xml",
+      "reason": "mango-maven-plugin 的 test scope 需要与 maven-plugin-testing-harness 3.5.1 的 plexus-utils 3.x 对齐，固定 3.6.0 是有意保留的旧版本（mango-bom 默认 4.0.3）；不进运行时 classpath。"
+    }
+  ]
+}

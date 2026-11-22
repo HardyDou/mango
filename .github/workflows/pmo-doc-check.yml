@@ -201,6 +201,7 @@ jobs:
             mango-pmo/tests/document-contract/document-contract.test.mjs \
             mango-pmo/tests/frontend-page-baseline.test.mjs \
             mango-pmo/tests/pmo-check-scope.test.mjs \
+            mango-pmo/tests/check-module-version-pins.test.mjs \
             mango-pmo/tests/check-pom-inheritance.test.mjs \
             mango-pmo/tests/pmo-preflight.test.mjs \
             mango-pmo/tests/readme-audit-scope.test.mjs \
@@ -345,6 +346,14 @@ jobs:
       # 模块父链不得越过 mango / mango-parent。--strict 下偏差即失败，防止结构回潮。
       - name: Enforce Maven parent chain contract
         run: node mango-pmo/tools/check-pom-inheritance.mjs --strict
+
+      # 模块内重复声明 mango-bom 已管理的依赖版本会让 dependencyManagement 失效（Issue #1404）。
+      # 先无条件输出报告进日志；门禁默认 --fail-on=drift，只有真漂移（ERROR）失败，纯冗余（WARNING）仅告警。
+      - name: Report BOM-managed dependency version pins
+        run: node mango-pmo/tools/check-module-version-pins.mjs --json || true
+
+      - name: Enforce BOM-managed dependency version pins
+        run: node mango-pmo/tools/check-module-version-pins.mjs
 
       - name: Build the local PMO bundle for generated project acceptance
         if: >-
