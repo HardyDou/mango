@@ -74,6 +74,7 @@ String traceId = snapshot.traceId();
 | `cors.allowed-methods` | `GET,POST,PUT,DELETE,OPTIONS` | 允许的 HTTP 方法。 |
 | `cors.allowed-headers` | `*` | 允许的请求头。 |
 | `cors.allow-credentials` | `true` | 是否允许携带 credential。 |
+| `cors.exposed-headers` | 空 | 跨源响应暴露给前端的响应头；`mango-authorization-data-grant-starter` 会幂等追加 `X-Mango-Data-Grant`、`X-Mango-Data-Grant-Required`、`X-Mango-Data-Grant-Skipped`。 |
 | `cors.max-age` | `3600` | 预检请求缓存秒数。 |
 | `inner.enabled` | `true` | 是否启用内部接口路径扫描和校验。 |
 | `inner.secret` | 空 | 接收端内部调用 HMAC 共享密钥；生产内部接口必须配置。 |

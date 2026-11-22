@@ -82,6 +82,19 @@
 </dependency>
 ```
 
+需要详情接口按列表签发结果判定记录可见性时引入数据权限 Grant starter：
+
+```xml
+<dependency>
+    <groupId>io.mango.platform.authorization</groupId>
+    <artifactId>mango-authorization-data-grant-starter</artifactId>
+</dependency>
+```
+
+该 starter 只依赖 `mango-authorization-api`、`mango-infra-web-starter`、`mango-infra-persistence-api` 与 `mango-infra-context-api`，
+默认 `mango.data-grant.mode=optional`；契约与接入方式见
+[`mango-authorization-data-grant-starter`](./mango-authorization-data-grant-starter/README.md)。
+
 微服务中远程调用授权中心时依赖 remote starter：
 
 ```xml

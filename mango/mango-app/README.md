@@ -1,5 +1,8 @@
 # Mango App
 
+本仓两个内置应用（`mango-platform-app`、`mango-business-app`）已内置 `mango-authorization-data-grant-starter`，
+数据权限 Grant 默认 `optional`，无需额外配置即具备列表签发与详情校验能力。
+
 ## 1. 概览
 `mango-app` 定义 Mango 后端可部署 Spring Boot 启动入口。它不实现业务能力，只负责把 `mango-platform`、`mango-infra` 和业务 starter 装配成可运行进程。
 
