@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import {
   buildSpringBootReactorArgs,
   readMavenModules,
+  resolveReactorParentPomInstall,
   readProjectArtifactId,
   resolveSpringBootMavenReactor,
 } from '../src/dev-maven-reactor.mjs';
@@ -70,4 +71,72 @@ test('reactor startup command cleans before compile without install, package, or
     args.some((arg) => /(?:install|package|(^|\s)-cp(?:=|$))/u.test(arg)),
     false,
   );
+});
+
+test('reactor parent install targets an out-of-reactor parent POM at the development revision', () => {
+  const root = mkdtempSync(join(tmpdir(), 'mango-parent-install-'));
+  mkdirSync(join(root, 'parent'), { recursive: true });
+  mkdirSync(join(root, 'library'), { recursive: true });
+  writeFileSync(
+    join(root, 'parent/pom.xml'),
+    '<project><artifactId>fixture-parent</artifactId><version>${revision}</version><packaging>pom</packaging></project>',
+  );
+  writeFileSync(
+    join(root, 'pom.xml'),
+    '<project><parent><groupId>io.mango</groupId><artifactId>fixture-parent</artifactId><version>${revision}</version><relativePath>parent/pom.xml</relativePath></parent><artifactId>fixture-root</artifactId><version>${revision}</version><modules><module>library</module></modules></project>',
+  );
+  writeFileSync(join(root, 'library/pom.xml'), '<project><artifactId>fixture-library</artifactId></project>');
+
+  const install = resolveReactorParentPomInstall({
+    rootPom: join(root, 'pom.xml'),
+    revision: '1.0.0-mango-001-SNAPSHOT',
+  });
+  assert.equal(install.pomPath, join(root, 'parent/pom.xml'));
+  assert.deepEqual(install.steps, [
+    {
+      pomPath: join(root, 'parent/pom.xml'),
+      args: ['-f', join(root, 'parent/pom.xml'), '-N', '-DskipTests', '-Drevision=1.0.0-mango-001-SNAPSHOT', 'install'],
+    },
+  ]);
+});
+
+test('reactor parent install installs imported reactor BOM POMs before the parent', () => {
+  const root = mkdtempSync(join(tmpdir(), 'mango-parent-bom-'));
+  mkdirSync(join(root, 'parent'), { recursive: true });
+  mkdirSync(join(root, 'bom'), { recursive: true });
+  writeFileSync(
+    join(root, 'bom/pom.xml'),
+    '<project><artifactId>fixture-bom</artifactId><version>${revision}</version><packaging>pom</packaging></project>',
+  );
+  writeFileSync(
+    join(root, 'parent/pom.xml'),
+    '<project><artifactId>fixture-parent</artifactId><version>${revision}</version><packaging>pom</packaging><dependencyManagement><dependencies><dependency><groupId>io.mango</groupId><artifactId>fixture-bom</artifactId><version>${revision}</version><type>pom</type><scope>import</scope></dependency></dependencies></dependencyManagement></project>',
+  );
+  writeFileSync(
+    join(root, 'pom.xml'),
+    '<project><parent><artifactId>fixture-parent</artifactId><version>${revision}</version><relativePath>parent/pom.xml</relativePath></parent><artifactId>fixture-root</artifactId><modules><module>bom</module></modules></project>',
+  );
+  const install = resolveReactorParentPomInstall({ rootPom: join(root, 'pom.xml'), revision: '2.0.0-dev' });
+  assert.deepEqual(
+    install.steps.map((step) => step.pomPath),
+    [join(root, 'bom/pom.xml'), join(root, 'parent/pom.xml')],
+  );
+});
+
+test('reactor parent install is skipped when the parent is a reactor module or unresolvable', () => {
+  const root = mkdtempSync(join(tmpdir(), 'mango-parent-skip-'));
+  mkdirSync(join(root, 'parent'), { recursive: true });
+  writeFileSync(
+    join(root, 'parent/pom.xml'),
+    '<project><artifactId>fixture-parent</artifactId><version>${revision}</version><packaging>pom</packaging></project>',
+  );
+  writeFileSync(
+    join(root, 'pom.xml'),
+    '<project><parent><artifactId>fixture-parent</artifactId><version>${revision}</version><relativePath>parent/pom.xml</relativePath></parent><artifactId>fixture-root</artifactId><modules><module>parent</module></modules></project>',
+  );
+  assert.equal(resolveReactorParentPomInstall({ rootPom: join(root, 'pom.xml'), revision: '1.0.0' }), null);
+
+  const plainRoot = mkdtempSync(join(tmpdir(), 'mango-parent-plain-'));
+  writeFileSync(join(plainRoot, 'pom.xml'), '<project><artifactId>plain-root</artifactId></project>');
+  assert.equal(resolveReactorParentPomInstall({ rootPom: join(plainRoot, 'pom.xml'), revision: '1.0.0' }), null);
 });
