@@ -45,7 +45,7 @@
         <jchardet.version>1.0</jchardet.version>
         <jjwt.version>0.13.0</jjwt.version>
         <jodconverter.version>4.4.11</jodconverter.version>
-        <junit.version>5.10.1</junit.version>
+        <junit.version>5.12.2</junit.version>
         <juniversalchardet.version>1.0.3</juniversalchardet.version>
         <junrar.version>7.5.5</junrar.version>
         <ip2region.version>2.7.0</ip2region.version>
@@ -55,11 +55,11 @@
         <maven-enforcer.version>3.6.3</maven-enforcer.version>
         <maven-plugin-annotations.version>3.15.1</maven-plugin-annotations.version>
         <maven-plugin-testing.version>3.5.1</maven-plugin-testing.version>
-        <mockito.version>5.10.0</mockito.version>
+        <mockito.version>5.17.0</mockito.version>
         <openblas.version>0.3.30-1.5.12</openblas.version>
         <opencv.version>4.11.0-1.5.12</opencv.version>
         <pdfbox.version>3.0.6</pdfbox.version>
-        <picocli.version>4.7.5</picocli.version>
+        <picocli.version>4.7.7</picocli.version>
         <pmd.version>7.26.0</pmd.version>
         <poi-tl.version>1.12.0</poi-tl.version>
         <poi.version>5.2.5</poi.version>
