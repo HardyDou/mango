@@ -322,7 +322,7 @@ CMS 管理端的分页列表在响应头签发数据权限 Grant（`X-Mango-Data
 - `/cms/content-publishes/**` 因发布关系只有分页列表与写入动作、没有可校验的单条详情端点，配对前提不成立。
 - `/cms/open/**` 因匿名访客没有租户与成员身份，不参与 Grant 的签发与校验。
 
-`mango.data-grant.mode=enforce` 部署下，管理端详情必须携带列表页签发的 Grant：浏览器刷新或从收藏直链进入详情会返回 403，请从列表进入详情。`@mango/cms` 管理包已按 domain 自动接力 Grant，业务方无需手工传头。
+`mango.data-grant.mode=enforce` 部署下，管理端详情必须携带列表页签发的 Grant：浏览器刷新或从收藏直链进入详情会返回 403，请从列表进入详情。前端 `@mango/http-client` 已按 `X-Mango-Data-Grant-Domain` 自动接力 Grant，业务方无需手工传头。
 
 ## 资源声明同步模式（#1098）
 

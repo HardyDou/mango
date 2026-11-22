@@ -1,5 +1,7 @@
 package io.mango.cms.starter.controller;
 
+import io.mango.authorization.data.grant.DataGrantHeaders;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -50,10 +52,10 @@ abstract class CmsDataGrantHttpTestSupport {
     protected static final long SECOND_RECORD_ID = 21L;
 
     /** 列表响应头：本页记录可用的 Grant。 */
-    protected static final String GRANT_HEADER = "X-Mango-Data-Grant";
+    protected static final String GRANT_HEADER = DataGrantHeaders.GRANT;
 
     /** 强制模式缺少 Grant 时的标记响应头。 */
-    protected static final String REQUIRED_HEADER = "X-Mango-Data-Grant-Required";
+    protected static final String REQUIRED_HEADER = DataGrantHeaders.REQUIRED;
 
     /** Grant 未携带时的标记值。 */
     protected static final String GRANT_ABSENT = "absent";
