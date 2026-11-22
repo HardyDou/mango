@@ -32,6 +32,8 @@ import io.mango.workflow.core.service.IWorkflowTaskRuntimeService;
 import io.mango.workflow.core.service.IWorkflowTemplateService;
 import org.junit.jupiter.api.Test;
 
+import io.mango.workflow.core.service.impl.WorkflowActivityTimelineService;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,7 +57,7 @@ class WorkflowApiControllerContractTest {
     private final WorkflowProcessController processController = new WorkflowProcessController(processService);
     private final WorkflowBusinessProcessController businessProcessController =
             new WorkflowBusinessProcessController(processService);
-    private final WorkflowTaskController taskController = new WorkflowTaskController(runtimeService, businessQueryService);
+    private final WorkflowTaskController taskController = new WorkflowTaskController(runtimeService, businessQueryService, mock(WorkflowActivityTimelineService.class));
     private final WorkflowDefinitionController definitionController =
             new WorkflowDefinitionController(definitionService);
     private final WorkflowTemplateController templateController =

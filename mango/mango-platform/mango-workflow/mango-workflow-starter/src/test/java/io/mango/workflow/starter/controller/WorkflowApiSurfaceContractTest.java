@@ -39,14 +39,14 @@ class WorkflowApiSurfaceContractTest {
      * 并在 PR 描述里说明契约变更；确认不是有意变更时，回退改动而不是更新常量。
      */
     private static final String API_FINGERPRINT =
-            "053297d7a998ef45b6c40093a2d4e1fb25d04d0323159773424b5c1fe148a8a1";
+            "0ad366261312dac6e18d3499847c202207c19d56660294f92694887a20eab9ee";
 
     /**
      * 公开 HTTP 端点指纹：{@link #PUBLIC_CONTROLLERS} 中「verb + path + 方法名 → 返回类型 + {@code ApiAccess}」的
      * SHA-256。
      */
     private static final String HTTP_FINGERPRINT =
-            "277ab3b80baff855b0e4fdedc094ec7e73f67415e5951ca15835c273449da417";
+            "86a4c7ad2d53736c768efca21c1e9fbb4eda819b168e1a3bee3863e15a68774b";
 
     private static final List<Class<?>> PUBLIC_APIS = List.of(
             WorkflowBusinessApplyApi.class,

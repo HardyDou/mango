@@ -223,7 +223,7 @@ Issue #1297 只更新平台侧的公开契约哨兵与 CI 门禁（`mango-workfl
 - 扁平列表，`processInstanceId` 是分组键。重新申请会让同一业务键对应多个流程实例，平台全部返回，不提供 `latestOnly`；按实例分段展示由调用方 `groupBy` 完成。
 - 排序：`createdTime` 升序，同一时间按 `id` 升序，保证多轮退回顺序稳定。
 - 返回动作：`START` / `CLAIM` / `UNCLAIM` / `COMPLETE` / `REJECT` / `RETURN` / `TRANSFER` / `ADD_SIGN` / `READ` / `WITHDRAW` / `AUTO_*` / `EVENT_NOTIFY`。撤回不写 `workflow_task_record`：平台把 `workflow_business_apply_status_log` 中该实例的 `WITHDRAW` 行并入返回列表，升级前已撤回的历史申请同样可见；同一实例多条 `WITHDRAW` 只返回最早一条，`id` 为状态流水主键（稳定）；`processDetail` 不含撤回行，行为不变。
-- 不返回网关/条件分支节点：它们不在 `workflow_task_record`，需要 `ACT_HI_ACTINST`，见 #1235。
+- 不返回网关/条件分支节点：它们不在 `workflow_task_record`，改用下方 7.3 的活动时间轴接口读取。
 - 不返回 `variables`（字段恒为 null）、审计列、租户列和业务字段。`START` 行的 `taskId` / `taskName` / `taskDefinitionKey` / `comment` 为 null，节点标题用 `actionName`；`CLAIM` 的 `comment` 是系统文案"认领任务"，不是审批意见。
 - 记录数超过 `mango.workflow.task-query.unpaged-max-rows`（默认 2000）时以 `TASK_QUERY_INVALID` 失败，不静默截断；调用方需要缩小时间区间。
 
@@ -231,6 +231,28 @@ Issue #1297 只更新平台侧的公开契约哨兵与 CI 门禁（`mango-workfl
 
 - 接口权限只有 `workflow:task:list`，不再校验 `workflow:task:all`，也不做申请级权限判定，因此**不返回 3645**。
 - 任何持有该权限码、且知道 `businessType + businessKey` 的账号都能读到该业务键的全部流转记录与审批意见原文。本地注入 `WorkflowTaskRuntimeApi` 直接调用不经过 HTTP 过滤器，平台侧没有行级防线；业务详情页在调用前先完成自身的业务鉴权，由服务端解析 `businessKey`，不接受前端传入的键。权限与鉴权边界见 [后端 API 规范](../../../mango-pmo/rules/backend/03-api.md)。
+
+### 7.3 活动时间轴读取（Issue #1235）
+
+需要还原"任务 + 网关/条件分支"的完整路径时，用 `POST /workflow/tasks/activity-timeline-by-business-key`（本地注入 `WorkflowTaskRuntimeApi#activityTimelineByBusinessKey`）。它与 7.2 的流转记录分工不同：
+
+| 维度 | 流转记录 `trace-by-business-key` | 活动时间轴 `activity-timeline-by-business-key` |
+|---|---|---|
+| 数据来源 | `workflow_task_record` + 撤回状态流水 | Flowable 历史活动表 |
+| 粒度 | 任务级（发起/认领/通过/退回/驳回/撤回） | 活动级（任务 + 网关 + 事件 + 其它） |
+| 处理人 | `operatorId` / `operatorName` | `assignee`，非人工活动为 null |
+| 典型用途 | 审批详情面板的动作列表 | 流程图路径、条件分支走向、节点耗时 |
+
+返回口径：
+
+- 请求体字段：`businessType`、`businessKey`（必填），`deptIds`、`beginTime`、`endTime`（可选，`beginTime`/`endTime` 按活动开始时间过滤）。
+- 每行字段：`processInstanceId`、`activityId`、`activityName`、`activityType`（Flowable 原值，如 `exclusiveGateway`）、`kind`、`assignee`、`startTime`、`endTime`、`durationMillis`。
+- `kind` 取值：网关类活动为 `GATEWAY`，`userTask`/`manualTask`/`receiveTask` 为 `TASK`，开始/结束/边界/中间事件为 `EVENT`，其余（服务任务、脚本任务、调用活动、子流程）为 `OTHER`。
+- 返回该业务键下**全部活动**，不只网关：只返回网关会让"任务行 vs 活动行"两套时序对不齐。排序为开始时间升序、同一时间按 `activityId` 升序。
+- 活动数超过 `mango.workflow.task-query.unpaged-max-rows`（默认 2000）时以 `TASK_QUERY_INVALID` 失败，不静默截断。
+- 权限与流转记录一致，复用 `workflow:task:list`，不额外校验数据范围。
+
+> Issue #1235 影响说明：新增公开端点（minor）。既有 `trace-by-business-key` 的返回内容、字段与语义完全不变；前端渲染不在本次范围。
 
 ## 7.3 审批人来源与多人审批方式（Issue #1263）
 

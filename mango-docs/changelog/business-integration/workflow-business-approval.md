@@ -149,3 +149,10 @@
 ## 2026-08-06 前端依赖批次发布影响
 
 - 本发布候选成组更新 `@mango/workflow@1.0.40`、`@mango/workflow-business-example@1.0.39` 及其固定前端依赖，但不发布 Maven，也不改变审批发起、任务处理、回调、状态回写、流程页面 key、API、菜单、权限或租户隔离语义。业务项目升级完整 npm 批次后，继续按本指南复验既有审批闭环，不能混装本批次的新旧单包。
+
+## 2026-11-22 活动时间轴接口（Issue #1235）
+
+- 新增 `POST /workflow/tasks/activity-timeline-by-business-key`（`WorkflowTaskRuntimeApi#activityTimelineByBusinessKey`），读取业务键下全部流程实例的活动级时间轴，含网关与事件节点，`kind` 区分 `TASK` / `GATEWAY` / `EVENT` / `OTHER`。
+- 数据来源为 Flowable 历史活动表，不写 `workflow_task_record`；与既有 `trace-by-business-key` 互补，后者字段与语义不变。
+- 权限复用 `workflow:task:list`；活动数超过 `unpaged-max-rows` 时以 `TASK_QUERY_INVALID` 失败；非人工活动的 `assignee` 为 null。
+- 业务侧无需改动既有接入；需要完整路径时才调用新接口。

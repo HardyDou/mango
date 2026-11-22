@@ -17,6 +17,7 @@ import io.mango.workflow.api.command.TransferWorkflowTaskCommand;
 
 import io.mango.workflow.api.query.WorkflowTaskPageQuery;
 import io.mango.workflow.api.request.WorkflowTaskBusinessPageRequest;
+import io.mango.workflow.api.request.WorkflowActivityTimelineRequest;
 import io.mango.workflow.api.request.WorkflowTaskTraceRequest;
 import io.mango.workflow.api.vo.WorkflowMyTaskSummaryVO;
 import io.mango.workflow.api.vo.WorkflowProcessDetailVO;
@@ -25,9 +26,11 @@ import io.mango.workflow.api.vo.WorkflowTaskAssigneeVO;
 import io.mango.workflow.api.vo.WorkflowTaskCompleteResultVO;
 import io.mango.workflow.api.vo.WorkflowTaskDetailVO;
 import io.mango.workflow.api.vo.WorkflowTaskSummaryVO;
+import io.mango.workflow.api.vo.WorkflowActivityTimelineVO;
 import io.mango.workflow.api.vo.WorkflowTaskRecordVO;
 import io.mango.workflow.api.vo.WorkflowTaskVO;
 import io.mango.workflow.core.service.IWorkflowTaskBusinessQueryService;
+import io.mango.workflow.core.service.impl.WorkflowActivityTimelineService;
 import io.mango.workflow.core.service.IWorkflowTaskRuntimeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -57,6 +60,7 @@ public class WorkflowTaskController implements WorkflowTaskRuntimeApi {
 
     private final IWorkflowTaskRuntimeService workflowTaskRuntimeService;
     private final IWorkflowTaskBusinessQueryService workflowTaskBusinessQueryService;
+    private final WorkflowActivityTimelineService workflowActivityTimelineService;
 
     @GetMapping("/todo")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:list")
@@ -256,6 +260,18 @@ public class WorkflowTaskController implements WorkflowTaskRuntimeApi {
     @Override
     public R<List<WorkflowTaskRecordVO>> traceByBusinessKey(@RequestBody WorkflowTaskTraceRequest request) {
         return R.ok(workflowTaskBusinessQueryService.traceByBusinessKey(request));
+    }
+
+    @PostMapping("/activity-timeline-by-business-key")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:list")
+    @Operation(summary = "按业务键读取活动时间轴",
+            description = "返回该业务键下全部流程实例的活动（含网关、事件等非任务活动），"
+                    + "按开始时间与活动 ID 升序；与流转记录接口互补，不带处理人动作语义；"
+                    + "活动数超过单次返回上限时直接失败")
+    @Override
+    public R<List<WorkflowActivityTimelineVO>> activityTimelineByBusinessKey(
+            @RequestBody WorkflowActivityTimelineRequest request) {
+        return R.ok(workflowActivityTimelineService.activityTimelineByBusinessKey(request));
     }
 
     @PostMapping("/copied/read")

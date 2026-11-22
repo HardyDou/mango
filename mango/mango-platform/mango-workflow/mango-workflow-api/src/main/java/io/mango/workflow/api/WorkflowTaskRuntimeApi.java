@@ -14,9 +14,11 @@ import io.mango.workflow.api.command.TransferWorkflowTaskCommand;
 
 import io.mango.workflow.api.query.WorkflowTaskPageQuery;
 import io.mango.workflow.api.request.WorkflowTaskBusinessPageRequest;
+import io.mango.workflow.api.request.WorkflowActivityTimelineRequest;
 import io.mango.workflow.api.request.WorkflowTaskTraceRequest;
 import io.mango.workflow.api.vo.WorkflowMyTaskSummaryVO;
 import io.mango.workflow.api.vo.WorkflowProcessDetailVO;
+import io.mango.workflow.api.vo.WorkflowActivityTimelineVO;
 import io.mango.workflow.api.vo.WorkflowTaskRecordVO;
 import io.mango.workflow.api.vo.WorkflowTaskCompleteResultVO;
 import io.mango.workflow.api.vo.WorkflowTaskDetailVO;
@@ -69,6 +71,21 @@ public interface WorkflowTaskRuntimeApi {
      * @return 流转记录列表；无命中、跨租户或流程未登记业务申请时返回空集合
      */
     R<List<WorkflowTaskRecordVO>> traceByBusinessKey(@Valid WorkflowTaskTraceRequest request);
+    /**
+     * 按业务键读取活动级时间轴。
+     *
+     * <p>与 {@link #traceByBusinessKey} 的分工：流转记录以任务为粒度、带处理人与动作；活动时间轴以
+     * Flowable 历史活动为粒度，包含网关与事件，{@code assignee} 对非人工活动为空。
+     *
+     * <p>返回该业务键命中的每个流程实例的全部活动，按开始时间、活动 ID 升序；活动数超过
+     * {@code mango.workflow.task-query.unpaged-max-rows} 时以 {@code TASK_QUERY_INVALID} 失败。
+     *
+     * @param request 业务类型、业务主键与可选过滤条件；业务类型和业务主键必填
+     * @return 活动行列表；无命中、跨租户或流程未登记业务申请时返回空集合
+     */
+    R<List<WorkflowActivityTimelineVO>> activityTimelineByBusinessKey(
+            @Valid WorkflowActivityTimelineRequest request);
+
 
     R<WorkflowTaskSummaryVO> summary();
 

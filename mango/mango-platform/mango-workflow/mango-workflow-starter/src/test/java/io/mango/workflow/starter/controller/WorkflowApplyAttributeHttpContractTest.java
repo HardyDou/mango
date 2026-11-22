@@ -11,6 +11,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import io.mango.workflow.core.service.impl.WorkflowActivityTimelineService;
+
 import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,7 +35,7 @@ class WorkflowApplyAttributeHttpContractTest {
     private final IWorkflowTaskRuntimeService taskRuntimeService = mock(IWorkflowTaskRuntimeService.class);
     private final MockMvc mockMvc = MockMvcBuilders.standaloneSetup(
             new WorkflowBusinessApplyController(businessApplyService),
-            new WorkflowTaskController(taskRuntimeService, businessQueryService)).build();
+            new WorkflowTaskController(taskRuntimeService, businessQueryService, mock(WorkflowActivityTimelineService.class))).build();
 
     @Test
     void taskPageBindsAttributeFiltersApplyTimeAndSort() throws Exception {
