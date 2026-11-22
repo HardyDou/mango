@@ -294,6 +294,16 @@ test('CI reruns when policy-resolved assurance selections change and keeps expli
   assert.match(workflow, /assurance-ci-scope\.mjs --body \.pr-body\.md >> "\$GITHUB_OUTPUT"/);
   assert.match(workflow, /Test document contracts, lifecycle routing, and Skills\n\s+if: needs\.preflight_scope\.outputs\.pmo == 'true' && needs\.preflight_scope\.outputs\.m10 == 'true'/);
   assert.match(workflow, /Run selected static PMO checks\n\s+if: needs\.preflight_scope\.outputs\.pmo == 'true' && needs\.preflight_scope\.outputs\.m09 == 'true'/);
+  // 官方能力模块聚合一致性（Issue #346）：自测文件要进 node --test 列表，静态检查块先出报告再判定。
+  const pmoTestStep = workflow.match(/      - name: Test document contracts, lifecycle routing, and Skills[\s\S]*?(?=\n      - name:)/)?.[0] ?? '';
+  assert.match(pmoTestStep, /mango-pmo\/tests\/check-admin-aggregate\.test\.mjs/u);
+  const staticPmoChecks = workflow.match(/      - name: Run selected static PMO checks[\s\S]*?(?=\n      - name:)/)?.[0] ?? '';
+  assert.match(staticPmoChecks, /check-admin-aggregate\.mjs --json \|\| true/u);
+  assert.match(staticPmoChecks, /\n\s+node mango-pmo\/tools\/check-admin-aggregate\.mjs\n/u);
+  assert.ok(
+    staticPmoChecks.indexOf('check-admin-aggregate.mjs --json') < staticPmoChecks.indexOf('\n          node mango-pmo/tools/check-admin-aggregate.mjs\n'),
+    'the aggregate report step must run before the enforcing step',
+  );
   assert.match(workflow, /outputs\.m11 == 'true'/);
   assert.match(workflow, /outputs\.m08 == 'true'/);
   for (const step of ['Audit module README quality', 'Audit README source facts', 'Check business integration guides']) {

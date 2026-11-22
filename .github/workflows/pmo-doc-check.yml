@@ -201,6 +201,7 @@ jobs:
             mango-pmo/tests/document-contract/document-contract.test.mjs \
             mango-pmo/tests/frontend-page-baseline.test.mjs \
             mango-pmo/tests/pmo-check-scope.test.mjs \
+            mango-pmo/tests/check-admin-aggregate.test.mjs \
             mango-pmo/tests/check-module-version-pins.test.mjs \
             mango-pmo/tests/check-pom-inheritance.test.mjs \
             mango-pmo/tests/pmo-preflight.test.mjs \
@@ -220,6 +221,8 @@ jobs:
           node mango-pmo/tools/check-pmo-preflight.mjs
           node mango-pmo/tools/check-governance-intent.mjs
           node mango-pmo/tests/skills/check-delivery-assurance-recommendations.mjs
+          node mango-pmo/tools/check-admin-aggregate.mjs --json || true
+          node mango-pmo/tools/check-admin-aggregate.mjs
 
       - name: Build and verify the reproducible PMO package
         if: needs.preflight_scope.outputs.distribution != 'true' && needs.preflight_scope.outputs.m11 == 'true'
