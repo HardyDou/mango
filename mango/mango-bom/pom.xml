@@ -267,6 +267,11 @@
             </dependency>
             <dependency>
                 <groupId>io.mango.platform.authorization</groupId>
+                <artifactId>mango-authorization-data-grant-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.platform.authorization</groupId>
                 <artifactId>mango-authorization-starter-remote</artifactId>
                 <version>${project.version}</version>
             </dependency>

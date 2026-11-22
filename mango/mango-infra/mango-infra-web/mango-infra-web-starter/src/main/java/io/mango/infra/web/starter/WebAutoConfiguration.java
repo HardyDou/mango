@@ -226,6 +226,7 @@ public class WebAutoConfiguration implements WebMvcConfigurer {
                 .allowedOriginPatterns(cors.getAllowedOriginPatterns().toArray(String[]::new))
                 .allowedMethods(cors.getAllowedMethods().toArray(String[]::new))
                 .allowedHeaders(cors.getAllowedHeaders().toArray(String[]::new))
+                .exposedHeaders(cors.getExposedHeaders().toArray(String[]::new))
                 .allowCredentials(cors.isAllowCredentials())
                 .maxAge(cors.getMaxAge());
     }

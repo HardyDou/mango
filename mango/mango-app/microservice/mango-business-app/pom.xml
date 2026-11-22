@@ -51,6 +51,10 @@
             <artifactId>mango-authorization-resource-sync-starter</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.mango.platform.authorization</groupId>
+            <artifactId>mango-authorization-data-grant-starter</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.mango.infra.doc</groupId>
             <artifactId>mango-infra-doc-starter</artifactId>
         </dependency>

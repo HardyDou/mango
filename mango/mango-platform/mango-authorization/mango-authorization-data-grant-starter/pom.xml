@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.mango.platform.authorization</groupId>
+        <artifactId>mango-authorization</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>mango-authorization-data-grant-starter</artifactId>
+    <packaging>jar</packaging>
+
+    <name>Mango Authorization Data Grant Starter</name>
+    <description>Stateless data permission grant issuing and verification for list and detail endpoints</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.mango.platform.authorization</groupId>
+            <artifactId>mango-authorization-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.infra.web</groupId>
+            <artifactId>mango-infra-web-starter</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.infra.persistence</groupId>
+            <artifactId>mango-infra-persistence-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.infra.context</groupId>
+            <artifactId>mango-infra-context-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.common</groupId>
+            <artifactId>mango-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+</project>
