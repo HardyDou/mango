@@ -125,6 +125,8 @@ public R<FooVO> detail(@RequestParam("id") Long id) { ... }
 
 ## 11. 已知限制
 
+- 详情端点必须能从请求中解析记录主键（同名请求参数或同名路径变量）。解析不到且不是分页端点时按配置错误 fail-closed（服务端错误），不会静默放行；用非 `id` 命名的主键请在 `@DataGrant(idField = "...")` 显式声明。
+
 - 数据范围实现存在但取不到规则时按未签发处理，响应带 `X-Mango-Data-Grant-Skipped: scope-unresolved`；只有「当前部署没有数据范围实现」才留空指纹照常签发。
 
 - 列表端点直接返回 `List`（非 `PageResult`）时不签发 Grant，需要先改为分页响应；

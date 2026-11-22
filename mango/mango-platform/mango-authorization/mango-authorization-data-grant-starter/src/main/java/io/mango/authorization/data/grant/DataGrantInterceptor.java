@@ -1,6 +1,8 @@
 package io.mango.authorization.data.grant;
 
 import io.mango.authorization.api.annotation.DataGrant;
+import io.mango.common.vo.PageResult;
+import io.mango.common.result.R;
 import io.mango.infra.web.support.InternalCallAttributes;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -15,6 +17,8 @@ import org.springframework.web.servlet.HandlerMapping;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
@@ -128,7 +132,15 @@ public class DataGrantInterceptor implements HandlerInterceptor {
             }
         }
         String pathVariable = templateVariable(request, idField);
-        return isPresent(pathVariable) ? parseId(pathVariable) : null;
+        if (isPresent(pathVariable)) {
+            return parseId(pathVariable);
+        }
+        if (isPagedHandler(handlerMethod.getMethod())) {
+            return null;
+        }
+        throw new DataGrantConfigurationException(
+                "无法从请求中解析记录主键: " + handlerMethod.getBeanType().getName() + "#"
+                        + handlerMethod.getMethod().getName() + "，请在 @DataGrant 上显式声明 idField");
     }
 
     /**
@@ -214,5 +226,30 @@ public class DataGrantInterceptor implements HandlerInterceptor {
             }
         }
         return builder.toString();
+    }
+
+    /**
+     * 判断 handler 是否是分页列表端点（返回 {@code R<PageResult<...>>}）。
+     *
+     * <p>分页端点由 Advice 负责签发，不进拦截器校验；因此取不到记录主键是正常情况。
+     * 非分页端点带 {@link io.mango.authorization.api.annotation.DataGrant} 却解析不出主键时属于配置错误，
+     * 必须 fail-closed，不能静默放行。</p>
+     *
+     * @param method handler 方法
+     * @return 返回类型为 {@code R<PageResult<...>>} 时返回 true
+     */
+    private static boolean isPagedHandler(Method method) {
+        Type generic = method.getGenericReturnType();
+        if (!(generic instanceof ParameterizedType parameterized)) {
+            return false;
+        }
+        if (!R.class.equals(parameterized.getRawType())) {
+            return false;
+        }
+        Type[] arguments = parameterized.getActualTypeArguments();
+        if (arguments.length != 1 || !(arguments[0] instanceof ParameterizedType dataType)) {
+            return false;
+        }
+        return PageResult.class.equals(dataType.getRawType());
     }
 }
