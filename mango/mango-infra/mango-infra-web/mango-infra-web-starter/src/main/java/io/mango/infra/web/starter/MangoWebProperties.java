@@ -45,6 +45,7 @@ public class MangoWebProperties {
         private List<String> allowedOriginPatterns = new ArrayList<>(List.of("*"));
         private List<String> allowedMethods = new ArrayList<>(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         private List<String> allowedHeaders = new ArrayList<>(List.of("*"));
+        private List<String> exposedHeaders = new ArrayList<>();
         private boolean allowCredentials = true;
         private long maxAge = DEFAULT_CORS_MAX_AGE_SECONDS;
 
@@ -84,6 +85,16 @@ public class MangoWebProperties {
         @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Mutable list is required for property binding")
         public void setAllowedHeaders(List<String> allowedHeaders) {
             this.allowedHeaders = allowedHeaders;
+        }
+
+        @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "Mutable list is required for property binding")
+        public List<String> getExposedHeaders() {
+            return exposedHeaders;
+        }
+
+        @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Mutable list is required for property binding")
+        public void setExposedHeaders(List<String> exposedHeaders) {
+            this.exposedHeaders = exposedHeaders;
         }
 
         public boolean isAllowCredentials() {

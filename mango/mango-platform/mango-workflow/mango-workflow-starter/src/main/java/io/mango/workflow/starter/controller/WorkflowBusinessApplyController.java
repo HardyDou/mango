@@ -1,6 +1,7 @@
 package io.mango.workflow.starter.controller;
 
 import io.mango.authorization.api.annotation.ApiAccess;
+import io.mango.authorization.api.annotation.DataGrant;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
@@ -63,6 +64,7 @@ public class WorkflowBusinessApplyController implements WorkflowBusinessApplyApi
 
     @PostMapping("/page")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:business-apply:list")
+    @DataGrant(domain = "workflow:business-apply")
     @Operation(summary = "分页查询业务工作流申请", description = "按业务、状态和申请人条件分页查询申请记录")
     @Override
     public R<PageResult<WorkflowBusinessApplyVO>> page(
@@ -80,6 +82,7 @@ public class WorkflowBusinessApplyController implements WorkflowBusinessApplyApi
 
     @GetMapping("/detail")
     @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "已登录用户按业务数据权限查询业务申请详情")
+    @DataGrant(domain = "workflow:business-apply")
     @Operation(summary = "查询业务工作流申请详情", description = "按申请ID查询业务申请、当前任务和展示快照")
     @Override
     public R<WorkflowBusinessApplyVO> detail(
