@@ -199,7 +199,13 @@ import type {
   InformationSubmissionStatus,
 } from '../api/information';
 import { formatDateTime, submissionStatusLabel, submissionStatusTone } from '../domain/status';
-import { displayFieldValue, parseRules, rulesToFields, type FormCreateRule, type InformationFieldDefinition } from '../domain/rules';
+import {
+  displayFieldValue,
+  parseRules,
+  rulesToFields,
+  type FormCreateRule,
+  type InformationFieldDefinition,
+} from '../domain/rules';
 import { resolveOptionSources } from '../domain/optionSource';
 
 const api = useInformationApi();
@@ -268,9 +274,7 @@ const quickActions: Array<{ status: InformationSubmissionStatus; label: string }
 const formId = computed(() => query.formId || String(route.query.id || ''));
 const rules = ref<FormCreateRule[]>([]);
 const columns = computed<InformationFieldDefinition[]>(() =>
-  rulesToFields(rules.value).filter(
-    (field) => field.fieldType !== 'static' && field.fieldType !== 'divider',
-  ),
+  rulesToFields(rules.value).filter((field) => field.fieldType !== 'static' && field.fieldType !== 'divider'),
 );
 const detailFields = computed(() => columns.value);
 const currentTitle = computed(() => {

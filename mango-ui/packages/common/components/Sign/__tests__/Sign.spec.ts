@@ -116,9 +116,7 @@ describe('Sign Component', () => {
         lineCap: '',
         lineJoin: '',
       } as unknown as CanvasRenderingContext2D;
-      const getContext = vi
-        .spyOn(HTMLCanvasElement.prototype, 'getContext')
-        .mockReturnValue(context2d);
+      const getContext = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(context2d);
       const toDataURL = vi
         .spyOn(HTMLCanvasElement.prototype, 'toDataURL')
         .mockReturnValue('data:image/png;base64,c2lnbmF0dXJl');

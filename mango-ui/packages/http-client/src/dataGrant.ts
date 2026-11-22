@@ -230,7 +230,9 @@ export function applyDataGrantResponse(input: DataGrantResponseInput): void {
   const required = readHeader(input.headers, DATA_GRANT_REQUIRED_HEADER) === '1';
   const sentThisDomain = input.sentDomains?.includes(domain) ?? false;
   if (required && !issued && skipped === undefined && entries.has(domain) && !sentThisDomain) {
-    devWarn(`后端要求携带数据权限 Grant，但本次请求没有真正带出该域（检查 CORS allowed-headers / 代理）, domain=${domain}`);
+    devWarn(
+      `后端要求携带数据权限 Grant，但本次请求没有真正带出该域（检查 CORS allowed-headers / 代理）, domain=${domain}`,
+    );
   }
   if (skipped !== undefined && skipped.trim() !== '') {
     deleteDataGrant(domain);
