@@ -65,6 +65,7 @@ public class DataGrantVerifier {
         DataGrantVerification.Status best = null;
         int matching = 0;
         int unattributable = 0;
+        int signatureFailures = 0;
         boolean passed = false;
         for (String token : tokens) {
             DataGrantPayload payload;
@@ -75,6 +76,9 @@ public class DataGrantVerifier {
                 // 若直接判 INVALID，无关域的坏令牌会否决一个本域有效令牌的请求。因此只统计并告警，
                 // 不参与 strongest 收敛；当全部令牌都不可解码时按「未携带」处理，强制模式下同样拒绝。
                 unattributable += 1;
+                if (DataGrantCodec.isSignatureFailure(exception)) {
+                    signatureFailures += 1;
+                }
                 log.warn("Grant 解码失败且无法判定数据域，忽略该令牌, domain={}, reason={}", domain,
                         exception.getMessage());
                 continue;
@@ -119,8 +123,8 @@ public class DataGrantVerifier {
             best = stronger(best, DataGrantVerification.Status.ID_NOT_FOUND);
         }
         if (unattributable > 0) {
-            log.warn("请求携带了无法解码的 Grant 令牌，已按无法判定数据域忽略, domain={}, ignored={}, total={}", domain,
-                    unattributable, tokens.size());
+            log.warn("请求携带了无法解码的 Grant 令牌，已按无法判定数据域忽略, domain={}, ignored={}, "
+                    + "signatureFailures={}, total={}", domain, unattributable, signatureFailures, tokens.size());
         }
         if (best == DataGrantVerification.Status.INVALID) {
             // 无法确定数据域的坏令牌不能因为另一个令牌通过而被忽略：多值里的坏值必须仍然 fail-closed。
