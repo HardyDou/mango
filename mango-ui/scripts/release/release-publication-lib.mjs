@@ -1,6 +1,10 @@
 export function decideRegistryAction({ hosted, consume, expectedSha256, expectedIntegrity = null }) {
   if (hosted.state === 'unknown' || consume.state === 'unknown') {
-    return { action: 'STOP', reason: 'registry state is unknown' };
+    return {
+      action: 'STOP',
+      code: 'REGISTRY_UNREACHABLE',
+      reason: 'registry state is unknown (transport or authorisation failure); retry later instead of changing the version',
+    };
   }
   if (hosted.state === 'absent' && consume.state === 'present') {
     return { action: 'STOP', reason: 'consume registry contains a coordinate absent from publish registry' };
@@ -34,7 +38,9 @@ export function validatePublicationPreflight({ action, npm = [], maven = [] }) {
     const decision = entry.decision.action;
     const journalState = entry.journalState || 'NOT_ATTEMPTED';
     if (decision === 'STOP') {
-      throw publicationError('REMOTE_CONFLICT', `${entry.identity}: ${entry.decision.reason}`);
+      // 两种 STOP 的可执行动作相反：registry 读不到是「稍后重试」，内容不一致是「换版本」。
+      const code = entry.decision.code === 'REGISTRY_UNREACHABLE' ? 'REGISTRY_UNREACHABLE' : 'REMOTE_CONFLICT';
+      throw publicationError(code, `${entry.identity}: ${entry.decision.reason}`);
     }
     if (action === 'publish' && decision !== 'PUBLISH') {
       throw publicationError(

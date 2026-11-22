@@ -26,6 +26,30 @@ test('matching hosted and group copies skip immutable publication', () => {
   assert.equal(decideRegistryAction({ hosted: present, consume: present, expectedSha256: hash }).action, 'VERIFIED');
 });
 
+test('unreachable registry reports a retryable stop, conflicting content reports a version change', () => {
+  const unreachable = decideRegistryAction({ hosted: { state: 'unknown' }, consume: absent, expectedSha256: hash });
+  assert.equal(unreachable.action, 'STOP');
+  assert.equal(unreachable.code, 'REGISTRY_UNREACHABLE');
+
+  const conflicting = decideRegistryAction({
+    hosted: { state: 'present', sha256: 'b'.repeat(64) },
+    consume: absent,
+    expectedSha256: hash,
+  });
+  assert.equal(conflicting.action, 'STOP');
+  assert.equal(conflicting.code, undefined);
+
+  const entry = (decision) => [{ identity: 'x', decision, journalState: 'NOT_ATTEMPTED' }];
+  assert.throws(
+    () => validatePublicationPreflight({ action: 'repair', npm: entry(unreachable) }),
+    (error) => error.code === 'REGISTRY_UNREACHABLE',
+  );
+  assert.throws(
+    () => validatePublicationPreflight({ action: 'repair', npm: entry(conflicting) }),
+    (error) => error.code === 'REMOTE_CONFLICT',
+  );
+});
+
 test('unknown, reversed and hash-mismatched registry states stop', () => {
   assert.equal(
     decideRegistryAction({ hosted: { state: 'unknown' }, consume: absent, expectedSha256: hash }).action,
