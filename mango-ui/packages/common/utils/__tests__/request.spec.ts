@@ -1,27 +1,44 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { clearDataGrants } from '@mango/http-client';
 import { Session } from '../storage';
 import { resolveHttpErrorMessage } from '../request';
 import { mangoMessage } from '../message';
 
+interface InterceptorHandler {
+  type: 'request' | 'response';
+  fulfilled: (value: unknown) => Promise<unknown>;
+  rejected: (error: unknown) => Promise<unknown>;
+}
+
+interface MockService {
+  (config: unknown): Promise<unknown>;
+  interceptors: {
+    request: { use: (fulfilled: InterceptorHandler['fulfilled'], rejected: InterceptorHandler['rejected']) => void };
+    response: { use: (fulfilled: InterceptorHandler['fulfilled'], rejected: InterceptorHandler['rejected']) => void };
+  };
+  get: ReturnType<typeof vi.fn>;
+  post: ReturnType<typeof vi.fn>;
+}
+
 const mocks = vi.hoisted(() => ({
-  handlers: [] as any[],
+  handlers: [] as InterceptorHandler[],
   service: Object.assign(vi.fn(), {
     interceptors: {
       request: {
-        use: vi.fn((fulfilled, rejected) => {
+        use: vi.fn((fulfilled: InterceptorHandler['fulfilled'], rejected: InterceptorHandler['rejected']) => {
           mocks.handlers.push({ type: 'request', fulfilled, rejected });
         }),
       },
       response: {
-        use: vi.fn((fulfilled, rejected) => {
+        use: vi.fn((fulfilled: InterceptorHandler['fulfilled'], rejected: InterceptorHandler['rejected']) => {
           mocks.handlers.push({ type: 'response', fulfilled, rejected });
         }),
       },
     },
     get: vi.fn(),
     post: vi.fn(),
-  }) as any,
+  }) as unknown as MockService,
   error: vi.fn(),
   warning: vi.fn(),
 }));
@@ -57,7 +74,7 @@ describe('request utilities', () => {
     const response = {
       config: {},
       data: { code: 3651, success: false, msg: '不能转办给自己', data: null },
-    } as any;
+    } as unknown as AxiosResponse;
 
     await expect(interceptor.fulfilled(response)).rejects.toMatchObject({
       message: '不能转办给自己',
@@ -78,7 +95,10 @@ describe('request utilities', () => {
       tenantId: '1',
     });
 
-    const config = await requestInterceptor().fulfilled({ url: '/workflow/tasks/todo', headers: {} });
+    const config = (await requestInterceptor().fulfilled({
+      url: '/workflow/tasks/todo',
+      headers: {},
+    })) as InternalAxiosRequestConfig;
 
     expect(mocks.service.post).toHaveBeenCalledWith(
       '/auth/refresh',
@@ -104,12 +124,12 @@ describe('request utilities', () => {
       refreshToken: 'new-refresh-token',
       expiresIn: 7200,
     });
-    vi.mocked(mocks.service as any).mockResolvedValueOnce({ ok: true });
+    vi.mocked(mocks.service).mockResolvedValueOnce({ ok: true });
 
     const response = {
       config: { url: '/auth/userinfo', headers: {} },
       data: { code: 1411, success: false, msg: '未登录或登录已过期', data: null },
-    } as any;
+    } as unknown as AxiosResponse;
 
     await expect(responseInterceptor().fulfilled(response)).resolves.toEqual({ ok: true });
     expect(mocks.service.post).toHaveBeenCalledWith(
@@ -140,15 +160,15 @@ describe('request utilities', () => {
     const request = requestInterceptor();
     const response = responseInterceptor();
 
-    const listConfig = { url: '/fixture/items/page', headers: {} } as any;
+    const listConfig = fixtureConfig('/fixture/items/page');
     await request.fulfilled(listConfig);
     await response.fulfilled({
       config: listConfig,
       headers: { 'x-mango-data-grant': 'grant-a', 'x-mango-data-grant-domain': 'fixture:item' },
       data: { code: 200, success: true, data: [] },
-    });
+    } as unknown as AxiosResponse);
 
-    const detailConfig = { url: '/fixture/items/detail', headers: {} } as any;
+    const detailConfig = fixtureConfig('/fixture/items/detail');
     await request.fulfilled(detailConfig);
 
     expect(new detailConfig.headers.constructor(detailConfig.headers).get('X-Mango-Data-Grant')).toBe('grant-a');
@@ -159,15 +179,15 @@ describe('request utilities', () => {
     const request = requestInterceptor();
     const response = responseInterceptor();
 
-    const listConfig = { url: '/fixture/items/page', headers: {} } as any;
+    const listConfig = fixtureConfig('/fixture/items/page');
     await request.fulfilled(listConfig);
     await response.fulfilled({
       config: listConfig,
       headers: { 'x-mango-data-grant': 'grant-a', 'x-mango-data-grant-domain': 'fixture:item' },
       data: { code: 200, success: true, data: [] },
-    });
+    } as unknown as AxiosResponse);
 
-    const detailConfig = { url: '/fixture/items/detail', headers: {} } as any;
+    const detailConfig = fixtureConfig('/fixture/items/detail');
     await request.fulfilled(detailConfig);
     await expect(
       response.rejected({
@@ -181,7 +201,7 @@ describe('request utilities', () => {
       }),
     ).rejects.toBeDefined();
 
-    const nextConfig = { url: '/fixture/items/detail', headers: {} } as any;
+    const nextConfig = fixtureConfig('/fixture/items/detail');
     await request.fulfilled(nextConfig);
 
     expect(new nextConfig.headers.constructor(nextConfig.headers).get('X-Mango-Data-Grant')).toBeUndefined();
@@ -192,19 +212,19 @@ describe('request utilities', () => {
     const request = requestInterceptor();
     const response = responseInterceptor();
 
-    const listConfig = { url: '/fixture/items/page', headers: {} } as any;
+    const listConfig = fixtureConfig('/fixture/items/page');
     await request.fulfilled(listConfig);
     await response.fulfilled({
       config: listConfig,
       headers: { 'x-mango-data-grant': 'grant-a', 'x-mango-data-grant-domain': 'fixture:item' },
       data: { code: 200, success: true, data: [] },
-    });
+    } as unknown as AxiosResponse);
 
-    const streamConfig = { url: '/files/1/download', headers: {}, responseType: 'stream' } as any;
+    const streamConfig = fixtureConfig('/files/1/download', { responseType: 'stream' });
     await request.fulfilled(streamConfig);
     expect(new streamConfig.headers.constructor(streamConfig.headers).get('X-Mango-Data-Grant')).toBeUndefined();
 
-    const publicConfig = { url: '/auth/refresh', headers: {}, ignoreToken: true } as any;
+    const publicConfig = fixtureConfig('/auth/refresh', { ignoreToken: true });
     await request.fulfilled(publicConfig);
     expect(new publicConfig.headers.constructor(publicConfig.headers).get('X-Mango-Data-Grant')).toBeUndefined();
   });
@@ -214,21 +234,21 @@ describe('request utilities', () => {
     const request = requestInterceptor();
     const response = responseInterceptor();
 
-    const listConfig = { url: '/fixture/items/page', headers: {} } as any;
+    const listConfig = fixtureConfig('/fixture/items/page');
     await request.fulfilled(listConfig);
     await response.fulfilled({
       config: listConfig,
       headers: { 'x-mango-data-grant': 'grant-a', 'x-mango-data-grant-domain': 'fixture:item' },
       data: { code: 200, success: true, data: [] },
-    });
+    } as unknown as AxiosResponse);
 
     loginAs('10024', '1');
-    const otherUserConfig = { url: '/fixture/items/detail', headers: {} } as any;
+    const otherUserConfig = fixtureConfig('/fixture/items/detail');
     await request.fulfilled(otherUserConfig);
     expect(new otherUserConfig.headers.constructor(otherUserConfig.headers).get('X-Mango-Data-Grant')).toBeUndefined();
 
     loginAs('10023', '1');
-    const backAgainConfig = { url: '/fixture/items/detail', headers: {} } as any;
+    const backAgainConfig = fixtureConfig('/fixture/items/detail');
     await request.fulfilled(backAgainConfig);
     expect(new backAgainConfig.headers.constructor(backAgainConfig.headers).get('X-Mango-Data-Grant')).toBeUndefined();
   });
@@ -238,17 +258,17 @@ describe('request utilities', () => {
     const request = requestInterceptor();
     const response = responseInterceptor();
 
-    const listConfig = { url: '/fixture/items/page', headers: {} } as any;
+    const listConfig = fixtureConfig('/fixture/items/page');
     await request.fulfilled(listConfig);
     await response.fulfilled({
       config: listConfig,
       headers: { 'x-mango-data-grant': 'grant-a', 'x-mango-data-grant-domain': 'fixture:item' },
       data: { code: 200, success: true, data: [] },
-    });
+    } as unknown as AxiosResponse);
 
     Session.clearToken();
 
-    const detailConfig = { url: '/fixture/items/detail', headers: {} } as any;
+    const detailConfig = fixtureConfig('/fixture/items/detail');
     await request.fulfilled(detailConfig);
     expect(new detailConfig.headers.constructor(detailConfig.headers).get('X-Mango-Data-Grant')).toBeUndefined();
   });
@@ -258,10 +278,22 @@ function loginAs(userId: string, tenantId: string): void {
   Session.set('userInfo', { userId, tenantId });
 }
 
-function requestInterceptor() {
-  return mocks.handlers.find((item) => item.type === 'request');
+function requestInterceptor(): InterceptorHandler {
+  const handler = mocks.handlers.find((item) => item.type === 'request');
+  if (!handler) {
+    throw new Error('request interceptor is not registered');
+  }
+  return handler;
 }
 
-function responseInterceptor() {
-  return mocks.handlers.find((item) => item.type === 'response');
+function responseInterceptor(): InterceptorHandler {
+  const handler = mocks.handlers.find((item) => item.type === 'response');
+  if (!handler) {
+    throw new Error('response interceptor is not registered');
+  }
+  return handler;
+}
+
+function fixtureConfig(url: string, extra: Record<string, unknown> = {}): InternalAxiosRequestConfig {
+  return { url, headers: {}, ...extra } as unknown as InternalAxiosRequestConfig;
 }
