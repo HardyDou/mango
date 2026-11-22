@@ -61,6 +61,59 @@ export function buildSpringBootReactorArgs({ rootPom, selector, revision, spring
   ];
 }
 
+export function resolveReactorParentPomInstall({ rootPom, revision }) {
+  const normalizedRootPom = resolve(rootPom);
+  if (!existsSync(normalizedRootPom)) {
+    return null;
+  }
+  const rootPomText = readFileSync(normalizedRootPom, 'utf8');
+  const parentBlock = rootPomText.match(/<parent\b[^>]*>([\s\S]*?)<\/parent>/u)?.[1];
+  if (!parentBlock) {
+    return null;
+  }
+  const relativePath = (parentBlock.match(/<relativePath>\s*([^<]*?)\s*<\/relativePath>/u)?.[1] || '').trim();
+  if (!relativePath) {
+    return null;
+  }
+  const parentPomPath = resolve(dirname(normalizedRootPom), relativePath);
+  if (!existsSync(parentPomPath)) {
+    return null;
+  }
+  const parentArtifactId = parentBlock.match(/<artifactId>\s*([^<]+?)\s*<\/artifactId>/u)?.[1]?.trim() || '';
+  if (!parentArtifactId) {
+    return null;
+  }
+  const reactorProjects = collectReactorProjects(normalizedRootPom);
+  if (reactorProjects.some((project) => project.artifactId === parentArtifactId)) {
+    return null;
+  }
+  const buildStep = (pomPath) => ({
+    pomPath,
+    args: ['-f', pomPath, '-N', '-DskipTests', `-Drevision=${revision}`, 'install'],
+  });
+  const importedReactorPoms = collectImportedReactorPoms({
+    parentPomPath,
+    reactorProjects,
+  });
+  return {
+    pomPath: parentPomPath,
+    steps: [...importedReactorPoms.map(buildStep), buildStep(parentPomPath)],
+  };
+}
+
+function collectImportedReactorPoms({ parentPomPath, reactorProjects }) {
+  const parentPomText = readFileSync(parentPomPath, 'utf8');
+  const importedArtifactIds = [
+    ...parentPomText.matchAll(
+      /<dependency>\s*<groupId>[^<]*<\/groupId>\s*<artifactId>\s*([^<]+?)\s*<\/artifactId>\s*<version>[^<]*<\/version>\s*<type>pom<\/type>\s*<scope>import<\/scope>\s*<\/dependency>/gu,
+    ),
+  ].map((match) => match[1].trim());
+  return importedArtifactIds
+    .map((artifactId) => reactorProjects.find((project) => project.artifactId === artifactId))
+    .filter(Boolean)
+    .map((project) => project.pomPath);
+}
+
 export function readProjectArtifactId(pomText) {
   const projectModel = String(pomText || '').replace(/<parent\b[^>]*>[\s\S]*?<\/parent>/u, '');
   const coordinates = projectModel.split(
