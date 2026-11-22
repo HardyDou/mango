@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { clearDataGrants } from './dataGrant';
 import { createMangoHttpClient, MangoHttpError } from './index';
 
 const mocks = vi.hoisted(() => {
@@ -50,6 +51,7 @@ describe('createMangoHttpClient', () => {
   beforeEach(() => {
     mocks.reset();
     mocks.isAxiosError.mockClear();
+    clearDataGrants();
   });
 
   it('isolates base URL, token, tenant and trace context between instances', async () => {
@@ -388,7 +390,137 @@ describe('createMangoHttpClient', () => {
     });
     expect(mocks.instances[0].request).not.toHaveBeenCalled();
   });
+
+  it('forwards the grant issued by a list response to the following detail request', async () => {
+    const client = mangoClientWithIdentity();
+    mocks.instances[0].request
+      .mockResolvedValueOnce(grantResponse('grant-a', 'fixture:item', [{ id: 1 }]))
+      .mockResolvedValueOnce(successResponse({ id: 1 }));
+
+    await client.request({ method: 'POST', url: '/fixture/items/page', body: {} });
+    await client.request({ method: 'GET', url: '/fixture/items/detail', query: { itemId: 1 } });
+
+    expect(requestHeaders(0)).not.toHaveProperty('X-Mango-Data-Grant');
+    expect(requestHeaders(1)).toMatchObject({ 'X-Mango-Data-Grant': 'grant-a' });
+  });
+
+  it('sends every cached domain as a multi-value header', async () => {
+    const client = mangoClientWithIdentity();
+    mocks.instances[0].request
+      .mockResolvedValueOnce(grantResponse('grant-item', 'fixture:item', [{ id: 1 }]))
+      .mockResolvedValueOnce(grantResponse('grant-order', 'fixture:order', [{ id: 2 }]))
+      .mockResolvedValueOnce(successResponse({ id: 1 }));
+
+    await client.request({ method: 'POST', url: '/fixture/items/page', body: {} });
+    await client.request({ method: 'POST', url: '/fixture/orders/page', body: {} });
+    await client.request({ method: 'GET', url: '/fixture/items/detail' });
+
+    expect(requestHeaders(2)['X-Mango-Data-Grant']).toBe('grant-order, grant-item');
+  });
+
+  it('drops the cached grant when the backend reports it absent', async () => {
+    const client = mangoClientWithIdentity();
+    mocks.instances[0].request
+      .mockResolvedValueOnce(grantResponse('grant-a', 'fixture:item', [{ id: 1 }]))
+      .mockRejectedValueOnce(
+        axiosFailure({
+          status: 403,
+          message: 'forbidden',
+          headers: {
+            'x-mango-data-grant-domain': 'fixture:item',
+            'x-mango-data-grant': 'absent',
+            'x-mango-data-grant-required': '1',
+          },
+          body: { code: 403, message: '缺少数据权限凭证，请刷新列表后重试' },
+        }),
+      )
+      .mockResolvedValueOnce(successResponse({ id: 1 }));
+
+    await client.request({ method: 'POST', url: '/fixture/items/page', body: {} });
+    await expect(client.request({ method: 'GET', url: '/fixture/items/detail' })).rejects.toBeInstanceOf(
+      MangoHttpError,
+    );
+    await client.request({ method: 'GET', url: '/fixture/items/detail' });
+
+    expect(requestHeaders(1)['X-Mango-Data-Grant']).toBe('grant-a');
+    expect(requestHeaders(2)).not.toHaveProperty('X-Mango-Data-Grant');
+  });
+
+  it('ignores a late response that carries an older grant sequence', async () => {
+    const client = mangoClientWithIdentity();
+    let resolveSlow: ((value: unknown) => void) | undefined;
+    mocks.instances[0].request
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveSlow = resolve;
+          }),
+      )
+      .mockResolvedValueOnce(grantResponse('grant-new', 'fixture:item', [{ id: 2 }]))
+      .mockResolvedValue(successResponse({ id: 1 }));
+
+    const slow = client.request({ method: 'POST', url: '/fixture/items/page', body: {} });
+    await client.request({ method: 'POST', url: '/fixture/items/page', body: {} });
+    resolveSlow?.(grantResponse('grant-old', 'fixture:item', [{ id: 1 }]));
+    await slow;
+    await client.request({ method: 'GET', url: '/fixture/items/detail' });
+
+    expect(requestHeaders(2)['X-Mango-Data-Grant']).toBe('grant-new');
+  });
+
+  it('never attaches a grant to stream requests', async () => {
+    const client = mangoClientWithIdentity();
+    mocks.instances[0].request
+      .mockResolvedValueOnce(grantResponse('grant-a', 'fixture:item', [{ id: 1 }]))
+      .mockResolvedValueOnce({ status: 200, headers: {}, data: undefined });
+
+    await client.request({ method: 'POST', url: '/fixture/items/page', body: {} });
+    await client.request({ method: 'GET', url: '/files/1/download', responseType: 'stream' });
+
+    expect(requestHeaders(1)).not.toHaveProperty('X-Mango-Data-Grant');
+  });
+
+  it('does not attach grants to requests that skip auth', async () => {
+    const client = mangoClientWithIdentity();
+    mocks.instances[0].request
+      .mockResolvedValueOnce(grantResponse('grant-a', 'fixture:item', [{ id: 1 }]))
+      .mockResolvedValueOnce(successResponse({ token: 'next' }));
+
+    await client.request({ method: 'POST', url: '/fixture/items/page', body: {} });
+    await client.request({
+      method: 'POST',
+      url: '/auth/refresh',
+      body: {},
+      metadata: { auth: 'none' },
+    });
+
+    expect(requestHeaders(1)).not.toHaveProperty('X-Mango-Data-Grant');
+  });
 });
+
+function mangoClientWithIdentity() {
+  return createMangoHttpClient({
+    baseUrl: '/api',
+    getAccessToken: () => 'token',
+    getTenantId: () => '1',
+    getUserId: () => '10023',
+  });
+}
+
+function grantResponse(grant: string, domain: string, data: unknown) {
+  return {
+    status: 200,
+    headers: {
+      'x-mango-data-grant': grant,
+      'x-mango-data-grant-domain': domain,
+    },
+    data: { code: 200, success: true, data },
+  };
+}
+
+function requestHeaders(index: number): Record<string, string> {
+  return mocks.instances[0].request.mock.calls[index][0].headers;
+}
 
 function successResponse(data: unknown) {
   return {

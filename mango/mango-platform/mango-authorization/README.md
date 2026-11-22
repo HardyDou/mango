@@ -97,6 +97,11 @@
 
 启动时会输出一行保护姿态日志（关闭 / 启用但缺 `secret` / 完整启用），便于运维从日志判断数据权限是否真的在生效，详见该模块 README「10.1 启动期保护姿态日志」。跨域部署下模块还会把 `X-Mango-Data-Grant` 追加进 `mango.web.cors.allowed-headers`，否则浏览器不允许回传该请求头。
 
+`X-Mango-Data-Grant-Domain` 与 `X-Mango-Data-Grant-Required` 为**纯响应头且无条件下发**：列表接口即使没有签发 Grant（空页、超限、数据范围无法解析）也带这两个头，
+前端据此判断「响应属于哪个数据域」以及「后端是否处于强制模式」，多域页面因此可以按域增删本地缓存的 Grant。两者均进入 `mango.web.cors.exposed-headers`。
+一个请求可回传多个 Grant（`,` 分隔），服务端只采信与当前接口 `@DataGrant` 域一致的那些，域不匹配的令牌被直接跳过、不影响结论；
+同域令牌上限 4 个、超限按 `INVALID` 处理，只有「全部令牌都不属于本域」才等价于未携带。
+
 微服务中远程调用授权中心时依赖 remote starter：
 
 ```xml

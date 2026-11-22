@@ -32,6 +32,9 @@ import java.util.Map;
  * <p>
  * 记录 ID 不在 Grant 集合内时**在进入 Controller 之前**返回 404，文案与「资源不存在」完全一致，
  * 不先查库再判权，避免通过响应时间或错误文案区分「记录不存在」与「记录存在但无权」。
+ * <p>
+ * 前端可能一次性回传多个数据域的 Grant，因此请求头按{@link DataGrantTokens 多值}解析；
+ * 头里只有其它数据域令牌或整体超限时与「未携带」完全一致，不把「带了别人的 Grant」当成凭证无效。
  */
 @Slf4j
 public class DataGrantInterceptor implements HandlerInterceptor {
@@ -67,7 +70,7 @@ public class DataGrantInterceptor implements HandlerInterceptor {
         if (recordId == null) {
             return true;
         }
-        List<String> tokens = Collections.list(request.getHeaders(DataGrantHeaders.GRANT));
+        List<String> tokens = DataGrantTokens.parse(Collections.list(request.getHeaders(DataGrantHeaders.GRANT)));
         if (tokens.isEmpty()) {
             return handleAbsent(request, response, annotation);
         }
@@ -75,14 +78,18 @@ public class DataGrantInterceptor implements HandlerInterceptor {
         if (verification.isPassed()) {
             return true;
         }
+        if (verification.status() == DataGrantVerification.Status.ABSENT) {
+            // 头里全是其它数据域的令牌：与「未携带」完全一致，optional 放行、enforce 拒绝。
+            return handleAbsent(request, response, annotation);
+        }
         log.warn("数据权限 Grant 校验未通过, domain={}, recordId={}, status={}, path={}",
                 annotation.domain(), recordId, verification.status(), request.getRequestURI());
         return switch (verification.status()) {
-            case ID_NOT_FOUND -> reject(response, HttpStatus.NOT_FOUND,
+            case ID_NOT_FOUND -> reject(response, annotation.domain(), HttpStatus.NOT_FOUND,
                     DataGrantHeaders.MESSAGE_RESOURCE_NOT_FOUND, false);
-            case EXPIRED -> reject(response, HttpStatus.FORBIDDEN, verification.message(), true);
-            case SCOPE_CHANGED -> reject(response, HttpStatus.FORBIDDEN, verification.message(), true);
-            default -> reject(response, HttpStatus.FORBIDDEN,
+            case EXPIRED -> reject(response, annotation.domain(), HttpStatus.FORBIDDEN, verification.message(), true);
+            case SCOPE_CHANGED -> reject(response, annotation.domain(), HttpStatus.FORBIDDEN, verification.message(), true);
+            default -> reject(response, annotation.domain(), HttpStatus.FORBIDDEN,
                     DataGrantHeaders.MESSAGE_GRANT_INVALID, false);
         };
     }
@@ -92,8 +99,10 @@ public class DataGrantInterceptor implements HandlerInterceptor {
         if (properties.getMode() == DataGrantProperties.Mode.ENFORCE) {
             log.warn("强制模式下缺少数据权限 Grant, domain={}, path={}",
                     annotation.domain(), request.getRequestURI());
-            return reject(response, HttpStatus.FORBIDDEN, DataGrantHeaders.MESSAGE_GRANT_REQUIRED, true);
+            return reject(response, annotation.domain(), HttpStatus.FORBIDDEN,
+                    DataGrantHeaders.MESSAGE_GRANT_REQUIRED, true);
         }
+        response.setHeader(DataGrantHeaders.DOMAIN, annotation.domain());
         response.setHeader(DataGrantHeaders.GRANT, DataGrantHeaders.ABSENT);
         log.warn("缺少数据权限 Grant，按 optional 模式继续处理, domain={}, path={}",
                 annotation.domain(), request.getRequestURI());
@@ -199,9 +208,12 @@ public class DataGrantInterceptor implements HandlerInterceptor {
 
     /**
      * 写出与 {@code AuthFilter} 一致的错误体，并按需标记「需要刷新 Grant」。
+     *
+     * <p>响应总是带上 {@link DataGrantHeaders#DOMAIN}，前端才能把「该域需刷新」精确落到自己的缓存键上。</p>
      */
-    private static boolean reject(HttpServletResponse response, HttpStatus status, String message,
+    private static boolean reject(HttpServletResponse response, String domain, HttpStatus status, String message,
             boolean grantRequired) throws IOException {
+        response.setHeader(DataGrantHeaders.DOMAIN, domain);
         if (grantRequired) {
             response.setHeader(DataGrantHeaders.REQUIRED, "1");
         }

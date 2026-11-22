@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { clearDataGrants } from '@mango/http-client';
 import { Session } from '../storage';
 import { resolveHttpErrorMessage } from '../request';
 import { mangoMessage } from '../message';
@@ -47,6 +48,7 @@ describe('request utilities', () => {
   beforeEach(() => {
     sessionStorage.clear();
     document.cookie = 'MANGO_TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+    clearDataGrants();
     vi.clearAllMocks();
   });
 
@@ -132,7 +134,129 @@ describe('request utilities', () => {
     expect(resolveHttpErrorMessage(500, { msg: '数据库操作异常' }, 'Request failed')).toBe('数据库操作异常');
     expect(resolveHttpErrorMessage(500, undefined, undefined)).toBe('服务器内部错误');
   });
+
+  it('forwards the data grant issued by a list response to the following detail request', async () => {
+    loginAs('10023', '1');
+    const request = requestInterceptor();
+    const response = responseInterceptor();
+
+    const listConfig = { url: '/fixture/items/page', headers: {} } as any;
+    await request.fulfilled(listConfig);
+    await response.fulfilled({
+      config: listConfig,
+      headers: { 'x-mango-data-grant': 'grant-a', 'x-mango-data-grant-domain': 'fixture:item' },
+      data: { code: 200, success: true, data: [] },
+    });
+
+    const detailConfig = { url: '/fixture/items/detail', headers: {} } as any;
+    await request.fulfilled(detailConfig);
+
+    expect(new detailConfig.headers.constructor(detailConfig.headers).get('X-Mango-Data-Grant')).toBe('grant-a');
+  });
+
+  it('drops the data grant when a detail request answers with an absent marker', async () => {
+    loginAs('10023', '1');
+    const request = requestInterceptor();
+    const response = responseInterceptor();
+
+    const listConfig = { url: '/fixture/items/page', headers: {} } as any;
+    await request.fulfilled(listConfig);
+    await response.fulfilled({
+      config: listConfig,
+      headers: { 'x-mango-data-grant': 'grant-a', 'x-mango-data-grant-domain': 'fixture:item' },
+      data: { code: 200, success: true, data: [] },
+    });
+
+    const detailConfig = { url: '/fixture/items/detail', headers: {} } as any;
+    await request.fulfilled(detailConfig);
+    await expect(
+      response.rejected({
+        config: detailConfig,
+        response: {
+          status: 403,
+          headers: { 'x-mango-data-grant': 'absent', 'x-mango-data-grant-domain': 'fixture:item' },
+          data: { code: 403, message: '缺少数据权限凭证，请刷新列表后重试' },
+        },
+        message: 'Request failed with status code 403',
+      }),
+    ).rejects.toBeDefined();
+
+    const nextConfig = { url: '/fixture/items/detail', headers: {} } as any;
+    await request.fulfilled(nextConfig);
+
+    expect(new nextConfig.headers.constructor(nextConfig.headers).get('X-Mango-Data-Grant')).toBeUndefined();
+  });
+
+  it('does not attach the data grant to stream downloads or auth-less requests', async () => {
+    loginAs('10023', '1');
+    const request = requestInterceptor();
+    const response = responseInterceptor();
+
+    const listConfig = { url: '/fixture/items/page', headers: {} } as any;
+    await request.fulfilled(listConfig);
+    await response.fulfilled({
+      config: listConfig,
+      headers: { 'x-mango-data-grant': 'grant-a', 'x-mango-data-grant-domain': 'fixture:item' },
+      data: { code: 200, success: true, data: [] },
+    });
+
+    const streamConfig = { url: '/files/1/download', headers: {}, responseType: 'stream' } as any;
+    await request.fulfilled(streamConfig);
+    expect(new streamConfig.headers.constructor(streamConfig.headers).get('X-Mango-Data-Grant')).toBeUndefined();
+
+    const publicConfig = { url: '/auth/refresh', headers: {}, ignoreToken: true } as any;
+    await request.fulfilled(publicConfig);
+    expect(new publicConfig.headers.constructor(publicConfig.headers).get('X-Mango-Data-Grant')).toBeUndefined();
+  });
+
+  it('discards a cached data grant when the identity changes', async () => {
+    loginAs('10023', '1');
+    const request = requestInterceptor();
+    const response = responseInterceptor();
+
+    const listConfig = { url: '/fixture/items/page', headers: {} } as any;
+    await request.fulfilled(listConfig);
+    await response.fulfilled({
+      config: listConfig,
+      headers: { 'x-mango-data-grant': 'grant-a', 'x-mango-data-grant-domain': 'fixture:item' },
+      data: { code: 200, success: true, data: [] },
+    });
+
+    loginAs('10024', '1');
+    const otherUserConfig = { url: '/fixture/items/detail', headers: {} } as any;
+    await request.fulfilled(otherUserConfig);
+    expect(new otherUserConfig.headers.constructor(otherUserConfig.headers).get('X-Mango-Data-Grant')).toBeUndefined();
+
+    loginAs('10023', '1');
+    const backAgainConfig = { url: '/fixture/items/detail', headers: {} } as any;
+    await request.fulfilled(backAgainConfig);
+    expect(new backAgainConfig.headers.constructor(backAgainConfig.headers).get('X-Mango-Data-Grant')).toBeUndefined();
+  });
+
+  it('clears cached data grants together with the token on logout', async () => {
+    loginAs('10023', '1');
+    const request = requestInterceptor();
+    const response = responseInterceptor();
+
+    const listConfig = { url: '/fixture/items/page', headers: {} } as any;
+    await request.fulfilled(listConfig);
+    await response.fulfilled({
+      config: listConfig,
+      headers: { 'x-mango-data-grant': 'grant-a', 'x-mango-data-grant-domain': 'fixture:item' },
+      data: { code: 200, success: true, data: [] },
+    });
+
+    Session.clearToken();
+
+    const detailConfig = { url: '/fixture/items/detail', headers: {} } as any;
+    await request.fulfilled(detailConfig);
+    expect(new detailConfig.headers.constructor(detailConfig.headers).get('X-Mango-Data-Grant')).toBeUndefined();
+  });
 });
+
+function loginAs(userId: string, tenantId: string): void {
+  Session.set('userInfo', { userId, tenantId });
+}
 
 function requestInterceptor() {
   return mocks.handlers.find((item) => item.type === 'request');

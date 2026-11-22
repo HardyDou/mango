@@ -6,6 +6,12 @@ import axios, {
   InternalAxiosRequestConfig,
 } from 'axios';
 import type { ApiId } from '@mango/api-schema';
+import {
+  DATA_GRANT_HEADER,
+  applyDataGrantResponse,
+  collectDataGrants,
+  nextDataGrantSequence,
+} from '@mango/http-client';
 import { Session } from './storage';
 import { mangoMessage } from './message';
 
@@ -27,6 +33,10 @@ export interface RequestConfig extends AxiosRequestConfig {
   silentError?: boolean;
   /** 内部标记：当前请求是否已经重试过 */
   _retry?: boolean;
+  /** 内部标记：本次请求的数据权限 Grant 序列号 */
+  _dataGrantSeq?: number;
+  /** 内部标记：本次请求携带了哪些数据域的 Grant；`undefined` 表示该请求不参与 Grant 接力 */
+  _dataGrantDomains?: string[];
 }
 
 export interface ResponseResult<T = any> {
@@ -215,6 +225,56 @@ function handleTenantId(config: InternalAxiosRequestConfig): InternalAxiosReques
 }
 
 /**
+ * 解析当前请求身份（账号 + 租户），用于绑定数据权限 Grant。
+ */
+function resolveDataGrantIdentity(): { userId: string | null; tenantId: string | null } {
+  const userInfo = Session.get('userInfo');
+  const tenantId = userInfo?.tenantId ?? Session.get('tenantId');
+  return {
+    userId: userInfo?.userId ?? null,
+    tenantId: tenantId ?? null,
+  };
+}
+
+/**
+ * 处理数据权限 Grant：把本地缓存的 Grant 作为多值头带出。
+ *
+ * 不参与接力的请求（`ignoreToken`、下载流）不带 Grant，也不记录响应头。
+ */
+function handleDataGrant(config: InternalAxiosRequestConfig & RequestConfig): InternalAxiosRequestConfig {
+  const headers = ensureHeaders(config);
+  if (config.ignoreToken || config.responseType === 'stream') {
+    headers.delete(DATA_GRANT_HEADER);
+    return config;
+  }
+  const grants = collectDataGrants(resolveDataGrantIdentity());
+  config._dataGrantSeq = nextDataGrantSequence();
+  config._dataGrantDomains = grants?.domains ?? [];
+  headers.delete(DATA_GRANT_HEADER);
+  if (grants) {
+    headers.set(DATA_GRANT_HEADER, grants.value);
+  }
+  return config;
+}
+
+/**
+ * 根据响应头维护数据权限 Grant 缓存；缓存维护失败不得影响业务响应。
+ */
+function syncDataGrant(response: AxiosResponse | undefined, config: RequestConfig): void {
+  if (!response || config._dataGrantDomains === undefined) return;
+  try {
+    applyDataGrantResponse({
+      headers: response.headers,
+      identity: resolveDataGrantIdentity(),
+      seq: config._dataGrantSeq ?? nextDataGrantSequence(),
+      sentDomains: config._dataGrantDomains,
+    });
+  } catch {
+    // 身份读取异常时保持业务响应不变。
+  }
+}
+
+/**
  * 请求拦截器
  */
 service.interceptors.request.use(
@@ -237,6 +297,9 @@ service.interceptors.request.use(
     // 添加机构隔离 ID
     handleTenantId(config);
 
+    // 携带数据权限 Grant（列表 → 详情自动接力）
+    handleDataGrant(requestConfig);
+
     return config;
   },
   (error) => {
@@ -253,6 +316,7 @@ service.interceptors.response.use(
     hideLoading();
 
     const config = response.config as RequestConfig;
+    syncDataGrant(response, config);
     if (config.rawResponse) {
       return response as any;
     }
@@ -294,6 +358,7 @@ service.interceptors.response.use(
 
     // 处理 HTTP 错误
     const config = (error.config || {}) as RequestConfig;
+    syncDataGrant(error.response, config);
     const status = error.response?.status;
     const responseData = error.response?.data;
     const message = resolveHttpErrorMessage(status, responseData, error.message);

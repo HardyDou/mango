@@ -16,6 +16,7 @@ import type {
   HttpRequest,
   HttpResponseType,
 } from '@mango/api-schema';
+import { DATA_GRANT_HEADER, applyDataGrantResponse, collectDataGrants, nextDataGrantSequence } from './dataGrant';
 
 type MaybePromise<T> = T | Promise<T>;
 type ContextValue = string | null | undefined;
@@ -27,6 +28,12 @@ export interface MangoHttpClientOptions {
   timeoutMs?: number;
   defaultHeaders?: HttpHeaders;
   getAccessToken?: () => MaybePromise<ContextValue>;
+  /**
+   * 当前账号 ID，与 {@link MangoHttpClientOptions.getTenantId} 一起绑定数据权限 Grant。
+   *
+   * <p>未提供时 Grant 只绑定租户；切换用户必须由 host 主动调用 `clearDataGrants()`。</p>
+   */
+  getUserId?: () => MaybePromise<ContextValue>;
   getTenantId?: () => MaybePromise<ContextValue>;
   getTraceId?: () => MaybePromise<ContextValue>;
   refreshAccessToken?: (signal: AbortSignal) => Promise<ContextValue>;
@@ -58,6 +65,8 @@ interface DispatchContext {
   request: HttpRequest<unknown>;
   refreshedToken?: string;
   timedOut?: boolean;
+  /** 本次尝试的 Grant 上下文，由 {@link AxiosMangoHttpClient} 在发请求前写入。 */
+  dataGrant?: { seq: number; domains: string[] | undefined };
 }
 
 const DEFAULT_TIMEOUT_MS = 30_000;
@@ -202,8 +211,10 @@ class AxiosMangoHttpClient implements MangoHttpClient {
       try {
         context.timedOut = false;
         const response = await this.#dispatch(context);
+        await this.#syncDataGrants(context, response.headers);
         return this.#decode<TResponse>(response);
       } catch (failure) {
+        await this.#syncDataGrants(context, axios.isAxiosError(failure) ? failure.response?.headers : undefined);
         const error = normalizeFailure(
           failure,
           context.controller.signal,
@@ -246,7 +257,9 @@ class AxiosMangoHttpClient implements MangoHttpClient {
 
   async #dispatch(context: DispatchContext): Promise<AxiosResponse<unknown>> {
     const request = context.request;
-    const headers = await this.#createHeaders(request, context.refreshedToken);
+    const dataGrantSeq = nextDataGrantSequence();
+    const { headers, dataGrantDomains } = await this.#createHeaders(request, context.refreshedToken);
+    context.dataGrant = { seq: dataGrantSeq, domains: dataGrantDomains };
     const inactivityTimeoutMs = positiveTimeout(request.inactivityTimeoutMs);
     let inactivityTimer: ReturnType<typeof setTimeout> | undefined;
     const resetInactivityTimer = () => {
@@ -292,18 +305,41 @@ class AxiosMangoHttpClient implements MangoHttpClient {
     }
   }
 
+  /**
+   * 根据响应头维护数据权限 Grant 缓存。
+   *
+   * 只有该请求携带了 Grant 上下文（即走了带鉴权的非下载分支）时才处理；
+   * 缓存维护失败只可能是身份 provider 抛错，不得影响业务响应本身。
+   */
+  async #syncDataGrants(context: DispatchContext, responseHeaders: unknown): Promise<void> {
+    const dataGrant = context.dataGrant;
+    if (!dataGrant || responseHeaders === undefined || responseHeaders === null) return;
+    try {
+      const [userId, tenantId] = await Promise.all([this.#options.getUserId?.(), this.#options.getTenantId?.()]);
+      applyDataGrantResponse({
+        headers: responseHeaders,
+        identity: { userId, tenantId },
+        seq: dataGrant.seq,
+        sentDomains: dataGrant.domains,
+      });
+    } catch {
+      // 身份 provider 抛错时保持业务响应不变，下一次响应会重新校准缓存。
+    }
+  }
+
   async #createHeaders(
     request: HttpRequest<unknown>,
     refreshedToken?: string,
-  ): Promise<Record<string, string | string[]>> {
+  ): Promise<{ headers: Record<string, string | string[]>; dataGrantDomains?: string[] }> {
     const headers = mergeHeaders(this.#options.defaultHeaders, request.headers);
     if (request.idempotencyKey) headers['Idempotency-Key'] = request.idempotencyKey;
-    if (!requestUsesAuth(request)) return headers;
+    if (!requestUsesAuth(request)) return { headers };
 
-    const [accessToken, tenantId, traceId] = await Promise.all([
+    const [accessToken, tenantId, traceId, userId] = await Promise.all([
       refreshedToken ?? this.#options.getAccessToken?.(),
       this.#options.getTenantId?.(),
       this.#options.getTraceId?.(),
+      this.#options.getUserId?.(),
     ]);
     if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
     if (tenantId) {
@@ -312,7 +348,14 @@ class AxiosMangoHttpClient implements MangoHttpClient {
       }
     }
     if (traceId) headers[this.#options.traceHeaderName ?? 'X-Trace-Id'] = traceId;
-    return headers;
+    // 下载类请求（stream）不携带 Grant：它们不参与「列表 → 详情」接力，也不能被数据权限头误伤。
+    if (request.responseType === 'stream') return { headers };
+    const grants = collectDataGrants({ userId, tenantId });
+    delete headers[DATA_GRANT_HEADER];
+    if (grants) {
+      headers[DATA_GRANT_HEADER] = grants.value;
+    }
+    return { headers, dataGrantDomains: grants?.domains ?? [] };
   }
 
   #decode<TResponse>(response: AxiosResponse<unknown>): TResponse {
@@ -569,3 +612,22 @@ function waitForRetry(delayMs: number, signal: AbortSignal): Promise<void> {
     signal.addEventListener('abort', abort, { once: true });
   });
 }
+
+export {
+  DATA_GRANT_ABSENT,
+  DATA_GRANT_DOMAIN_HEADER,
+  DATA_GRANT_HEADER,
+  DATA_GRANT_REQUIRED_HEADER,
+  DATA_GRANT_SKIPPED_HEADER,
+  MAX_DATA_GRANT_COUNT,
+  MAX_DATA_GRANT_LENGTH,
+  applyDataGrantResponse,
+  clearDataGrants,
+  collectDataGrants,
+  deleteDataGrant,
+  nextDataGrantSequence,
+  recordDataGrant,
+  type DataGrantHeaderValue,
+  type DataGrantIdentity,
+  type DataGrantResponseInput,
+} from './dataGrant';
