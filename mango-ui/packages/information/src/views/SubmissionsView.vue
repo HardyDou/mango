@@ -1,5 +1,5 @@
 <template>
-  <div class="information-page" data-page="information.form.submissions">
+  <MangoListPage class="information-page" data-page="information.form.submissions">
     <MangoSearchPanel :model="query" :columns="4" @search="search" @reset="reset">
       <el-form-item label="表单">
         <el-select
@@ -183,14 +183,14 @@
         </el-button>
       </template>
     </el-drawer>
-  </div>
+  </MangoListPage>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
-import { MangoListPanel, MangoSearchPanel, MangoStatusText, Pagination } from '@mango/common';
+import { MangoListPage, MangoListPanel, MangoSearchPanel, MangoStatusText, Pagination } from '@mango/common';
 import { useInformationApi } from '../composables/useInformationApi';
 import type {
   InformationForm,

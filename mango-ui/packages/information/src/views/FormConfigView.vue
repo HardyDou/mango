@@ -67,9 +67,9 @@
       </div>
     </el-card>
 
-    <el-dialog v-model="jsonVisible" title="表单 JSON" width="720px" destroy-on-close>
+    <MangoDialog v-model="jsonVisible" title="表单 JSON" width="720px" destroy-on-close>
       <pre class="information-json">{{ prettyRules }}</pre>
-    </el-dialog>
+    </MangoDialog>
   </div>
 </template>
 
@@ -77,7 +77,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
-import { MangoPageBackBar } from '@mango/common';
+import { MangoDialog, MangoPageBackBar } from '@mango/common';
 import FcDesigner from 'form-create-designer';
 import 'form-create-designer/src/style/index.css';
 import 'form-create-designer/src/style/icon.css';
