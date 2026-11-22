@@ -259,7 +259,7 @@ public class InformationSubmissionService implements IInformationSubmissionServi
         return vo;
     }
 
-    /** 按表单定义校验提交值：展示型规则不参与，未知字段与缺失必填都拒绝。 */
+    /** 按表单定义校验提交值：展示型规则不参与，未知字段、缺失必填与超出静态选项值域都拒绝。 */
     private void validateValues(String definitionJson, Map<String, Object> values) {
         try {
             List<InformationDefinition.Field> fields = InformationDefinition.fields(objectMapper.readTree(definitionJson));
@@ -269,9 +269,11 @@ public class InformationSubmissionService implements IInformationSubmissionServi
                 if (InformationDefinition.displayOnly(field)) {
                     continue;
                 }
-                if (field.required() && isEmptyValue(values.get(field.code()))) {
+                Object value = values.get(field.code());
+                if (field.required() && isEmptyValue(value)) {
                     Require.isTrue(false, InformationCode.INVALID_SUBMISSION, "字段 " + field.code() + " 不能为空");
                 }
+                validateOptions(field, value);
             }
             values.keySet().forEach(code -> Require.isTrue(definedCodes.contains(code),
                     InformationCode.INVALID_SUBMISSION, "未知字段：" + code));
@@ -280,6 +282,43 @@ public class InformationSubmissionService implements IInformationSubmissionServi
         } catch (Exception e) {
             throw new IllegalArgumentException(InformationCode.INVALID_SUBMISSION.getMessage(), e);
         }
+    }
+
+    /** 声明了静态选项的字段，提交值必须落在 options[].value 内；没有选项的字段不做值域校验。 */
+    private void validateOptions(InformationDefinition.Field field, Object value) {
+        if (field.options().isEmpty()) {
+            return;
+        }
+        Set<String> allowed = new HashSet<>();
+        for (InformationDefinition.FieldOption option : field.options()) {
+            allowed.add(option.value());
+        }
+        for (String item : optionItems(value)) {
+            Require.isTrue(allowed.contains(item), InformationCode.INVALID_SUBMISSION,
+                    "字段 " + field.name() + " 的值不在可选范围内：" + item);
+        }
+    }
+
+    /** 归一化选项值：Collection 逐个取，String 按逗号拆分并 trim，空元素与空串忽略。 */
+    private List<String> optionItems(Object value) {
+        List<String> result = new java.util.ArrayList<>();
+        if (value == null) {
+            return result;
+        }
+        if (value instanceof java.util.Collection<?> collection) {
+            for (Object item : collection) {
+                if (item != null && StringUtils.hasText(String.valueOf(item))) {
+                    result.add(String.valueOf(item).trim());
+                }
+            }
+            return result;
+        }
+        for (String item : String.valueOf(value).split(",")) {
+            if (StringUtils.hasText(item)) {
+                result.add(item.trim());
+            }
+        }
+        return result;
     }
 
     private boolean isEmptyValue(Object value) {

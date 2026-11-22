@@ -25,8 +25,12 @@ public final class InformationDefinition {
     private InformationDefinition() {
     }
 
-    /** 单个可提交采集项。 */
-    public record Field(String code, String name, String type, boolean required) {
+    /** 单个可提交采集项；options 为 form-create 的静态选项 [{label, value}]，没有声明时为空列表。 */
+    public record Field(String code, String name, String type, boolean required, List<FieldOption> options) {
+    }
+
+    /** 静态选项条目，value 参与值域校验。 */
+    public record FieldOption(String label, String value) {
     }
 
     /** 提取所有可提交采集项；布局与展示组件（没有 field 的规则）不参与校验与动态列。 */
@@ -57,13 +61,39 @@ public final class InformationDefinition {
                 if (!hasText(fieldType)) {
                     fieldType = text(rule, "fieldType");
                 }
-                result.add(new Field(code, hasText(name) ? name : code, hasText(fieldType) ? fieldType : "input", required(rule)));
+                result.add(new Field(code, hasText(name) ? name : code, hasText(fieldType) ? fieldType : "input",
+                        required(rule), options(rule)));
             }
             if (SUBFORM_TYPES.contains(normalizedType) && hasText(code)) {
                 continue;
             }
             collect(rule.get("children"), result, seen);
         }
+    }
+
+    /** 提取静态选项；兼容 value 为数字或布尔的历史数据，跳过没有 value 的条目。 */
+    public static List<FieldOption> options(JsonNode rule) {
+        List<FieldOption> result = new ArrayList<>();
+        JsonNode node = rule == null ? null : rule.get("options");
+        if (node == null || !node.isArray()) {
+            return result;
+        }
+        for (JsonNode item : node) {
+            if (item == null || item.isNull()) {
+                continue;
+            }
+            if (!item.isObject()) {
+                result.add(new FieldOption(item.asText(), item.asText()));
+                continue;
+            }
+            String value = text(item, "value");
+            if (!hasText(value)) {
+                continue;
+            }
+            String label = text(item, "label");
+            result.add(new FieldOption(hasText(label) ? label : value, value));
+        }
+        return result;
     }
 
     /** 必填判定同时支持 form-create 的 validate 数组与历史 required 标记。 */

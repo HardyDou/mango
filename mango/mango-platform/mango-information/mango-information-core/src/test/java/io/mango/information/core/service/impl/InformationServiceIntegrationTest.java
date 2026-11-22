@@ -265,6 +265,60 @@ class InformationServiceIntegrationTest {
     }
 
     @Test
+    void submit_rejectsValueOutsideStaticOptions() {
+        // 老表单没有 optionSource 键，行为与引入选项数据源之前一致
+        createPublishedForm("option-source-static", """
+                [{"type":"radio","field":"level","title":"客户等级","options":[{"label":"普通","value":"normal"},{"label":"重要","value":"vip"}]},
+                 {"type":"input","field":"memo","title":"备注"}]
+                """);
+
+        assertThat(submissionService.submit(
+                submitCommand("option-source-static", Map.of("level", "vip", "memo", "随便写"), "static-ok"), false)
+                .getId()).isNotNull();
+
+        assertThatThrownBy(() -> submissionService.submit(
+                submitCommand("option-source-static", Map.of("level", "gold"), "static-bad"), false))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("客户等级")
+                .hasMessageContaining("gold")
+                .hasMessageContaining("值不在可选范围内");
+    }
+
+    @Test
+    void submit_acceptsMultiSelectAsCommaStringOrCollection() {
+        createPublishedForm("option-source-multi", """
+                [{"type":"checkbox","field":"channels","title":"渠道","options":[{"label":"电话","value":"tel"},{"label":"邮件","value":"mail"}]},
+                 {"type":"select","field":"tags","title":"标签","props":{"multiple":true},"options":[{"label":"新客","value":"new"},{"label":"老客","value":"old"}]}]
+                """);
+
+        assertThat(submissionService.submit(submitCommand("option-source-multi",
+                Map.of("channels", "tel, mail", "tags", java.util.List.of("new", "old")), "multi-ok"), false)
+                .getId()).isNotNull();
+
+        assertThatThrownBy(() -> submissionService.submit(submitCommand("option-source-multi",
+                Map.of("channels", java.util.List.of("tel", "wechat")), "multi-bad-collection"), false))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("渠道")
+                .hasMessageContaining("wechat");
+
+        assertThatThrownBy(() -> submissionService.submit(submitCommand("option-source-multi",
+                Map.of("channels", "tel,wechat"), "multi-bad-string"), false))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("渠道")
+                .hasMessageContaining("wechat");
+    }
+
+    @Test
+    void submit_keepsLegacyDefinitionWithoutOptionsUnvalidated() {
+        // 回归：历史 {fieldCode, fieldName, fieldType} 定义没有任何 options，值域校验不得介入
+        createPublishedForm("legacy-no-options");
+
+        assertThat(submissionService.submit(
+                submitCommand("legacy-no-options", Map.of("name", "张三", "phone", "任意号码"), "legacy-ok"), false)
+                .getId()).isNotNull();
+    }
+
+    @Test
     void saveForm_supportsRichControlTypesAndComplexValues() {
         // 覆盖设计器常见控件：选择、评分、滑块、颜色、日期时间、子表单与表格表单
         String rules = """
@@ -340,11 +394,15 @@ class InformationServiceIntegrationTest {
     }
 
     private Long createPublishedForm(String formCode) {
+        return createPublishedForm(formCode, DEFINITION);
+    }
+
+    private Long createPublishedForm(String formCode, String definitionJson) {
         SaveInformationFormCommand command = new SaveInformationFormCommand();
         command.setFormCode(formCode);
         command.setFormName("客户联系表");
         command.setDescription("集成测试表单");
-        command.setDefinitionJson(DEFINITION);
+        command.setDefinitionJson(definitionJson);
         command.setSuccessMessage("提交成功");
         command.setStatus(InformationFormStatus.PUBLISHED);
         return formService.save(command);
