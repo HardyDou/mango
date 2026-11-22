@@ -4,7 +4,7 @@
     "schemaVersion": 1,
     "workspaceCount": 43
   },
-  "catalogDigest": "2a0199e79bcfce4c07e945ddd48a9e865e2b8a60a9b025cee00cd505a7fef137",
+  "catalogDigest": "be5d668f2108b3f7a9945e91e34892edbb3660f7594a9779b7927eadae78813c",
   "maven": {
     "dependencyManagementSets": [
       {
@@ -4895,6 +4895,15 @@
             "version": "1.0.0-SNAPSHOT"
           },
           {
+            "artifactId": "mango-authorization-data-grant-starter",
+            "classifier": null,
+            "groupId": "io.mango.platform.authorization",
+            "optional": false,
+            "scope": "test",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
             "artifactId": "mango-cms-core",
             "classifier": null,
             "groupId": "io.mango.platform.cms",
@@ -9480,6 +9489,15 @@
             "artifactId": "mango-auth-starter",
             "classifier": null,
             "groupId": "io.mango.platform.auth",
+            "optional": false,
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.0.0-SNAPSHOT"
+          },
+          {
+            "artifactId": "mango-authorization-data-grant-starter",
+            "classifier": null,
+            "groupId": "io.mango.platform.authorization",
             "optional": false,
             "scope": "compile",
             "type": "jar",
