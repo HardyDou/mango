@@ -79,8 +79,9 @@ public class DataGrantCodec {
      * @return 签名不符或密钥标识不匹配时为 {@code true}。
      */
     public static boolean isSignatureFailure(DataGrantException exception) {
-        String message = exception.getMessage();
-        return MESSAGE_SIGNATURE_MISMATCH.equals(message) || MESSAGE_KEY_ID_MISMATCH.equals(message);
+        DataGrantException.Reason reason = exception.reason();
+        return reason == DataGrantException.Reason.SIGNATURE_MISMATCH
+                || reason == DataGrantException.Reason.KEY_ID_MISMATCH;
     }
 
     /**
@@ -95,18 +96,18 @@ public class DataGrantCodec {
         String trimmed = token.trim();
         String[] parts = trimmed.split("\\" + SEPARATOR, -1);
         if (parts.length != 5) {
-            throw new DataGrantException(MESSAGE_FORMAT_INVALID);
+            throw new DataGrantException(DataGrantException.Reason.FORMAT, MESSAGE_FORMAT_INVALID);
         }
         if (!TOKEN_VERSION.equals(parts[0]) || !ALGORITHM.equals(parts[1])) {
-            throw new DataGrantException(MESSAGE_VERSION_UNSUPPORTED);
+            throw new DataGrantException(DataGrantException.Reason.VERSION_UNSUPPORTED, MESSAGE_VERSION_UNSUPPORTED);
         }
         if (!properties.getKeyId().equals(parts[2])) {
-            throw new DataGrantException(MESSAGE_KEY_ID_MISMATCH);
+            throw new DataGrantException(DataGrantException.Reason.KEY_ID_MISMATCH, MESSAGE_KEY_ID_MISMATCH);
         }
         String signed = parts[0] + SEPARATOR + parts[1] + SEPARATOR + parts[2] + SEPARATOR + parts[3];
         String expected = HmacSignatures.hmacSha256Base64Url(requireSecret(), signed);
         if (!HmacSignatures.matches(parts[4], expected)) {
-            throw new DataGrantException(MESSAGE_SIGNATURE_MISMATCH);
+            throw new DataGrantException(DataGrantException.Reason.SIGNATURE_MISMATCH, MESSAGE_SIGNATURE_MISMATCH);
         }
         return readPayload(parts[3]);
     }
