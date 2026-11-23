@@ -8,6 +8,7 @@ import io.mango.workflow.api.enums.WorkflowApplyStatus;
 import io.mango.workflow.api.enums.WorkflowTaskAssigneeSource;
 import io.mango.workflow.api.enums.WorkflowTaskClaimStatus;
 import io.mango.workflow.api.enums.WorkflowTaskQueryScope;
+import io.mango.workflow.api.enums.WorkflowTaskQueryStatus;
 import io.mango.workflow.api.enums.WorkflowTaskRuntimeStatus;
 import io.mango.workflow.api.query.WorkflowApplyAttributeQuery;
 import io.mango.workflow.api.query.WorkflowTaskBusinessPageQuery;
@@ -17,6 +18,8 @@ import io.mango.workflow.core.entity.WorkflowTaskRecordEntity;
 import io.mango.workflow.api.vo.WorkflowTaskVO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.workflow.api.enums.WorkflowTaskCancelCause;
+import io.mango.infra.persistence.api.scope.DataScopeProvider;
+import io.mango.infra.persistence.api.scope.DataScopeRule;
 import io.mango.workflow.core.config.WorkflowTaskQueryProperties;
 import io.mango.workflow.core.engine.WorkflowCandidateGroupProvider;
 import io.mango.workflow.core.entity.WorkflowBusinessApplyEntity;
@@ -26,6 +29,7 @@ import io.mango.workflow.core.mapper.WorkflowBusinessApplyStatusLogMapper;
 import io.mango.workflow.core.mapper.WorkflowTaskRecordMapper;
 import io.mango.workflow.core.entity.WorkflowBusinessApplyStatusLogEntity;
 import io.mango.workflow.core.mapper.WorkflowTaskHistoryMapper;
+import io.mango.workflow.core.model.WorkflowTaskAssigneeScope;
 import io.mango.workflow.core.model.WorkflowTaskHistoryCriteria;
 import io.mango.workflow.core.model.WorkflowTaskHistoryRow;
 import io.mango.workflow.core.model.WorkflowTaskIdentityLinkRow;
@@ -41,12 +45,15 @@ import org.springframework.beans.factory.ObjectProvider;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -68,6 +75,8 @@ class WorkflowTaskBusinessQueryServiceTest {
     private WorkflowAssigneeIdentityService assigneeIdentityService;
     private WorkflowCandidateGroupProvider candidateGroupProvider;
     private ObjectProvider<WorkflowBusinessApplyAccessChecker> checkerProvider;
+    private DataScopeProvider dataScopeProvider;
+    private WorkflowTaskDataScopeFilter dataScopeFilter;
     private WorkflowTaskQueryProperties properties;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private WorkflowTaskBusinessQueryService service;
@@ -77,6 +86,7 @@ class WorkflowTaskBusinessQueryServiceTest {
         MapperBuilderAssistant assistant = new MapperBuilderAssistant(new MybatisConfiguration(), "");
         TableInfoHelper.initTableInfo(assistant, WorkflowBusinessApplyEntity.class);
         TableInfoHelper.initTableInfo(assistant, WorkflowTaskRecordEntity.class);
+        TableInfoHelper.initTableInfo(assistant, WorkflowBusinessApplyStatusLogEntity.class);
     }
 
     @BeforeEach
@@ -95,11 +105,17 @@ class WorkflowTaskBusinessQueryServiceTest {
         ObjectProvider<WorkflowBusinessApplyAccessChecker> provider = mock(ObjectProvider.class);
         checkerProvider = provider;
         when(checkerProvider.getIfAvailable()).thenReturn(null);
+        dataScopeProvider = mock(DataScopeProvider.class);
+        when(dataScopeProvider.resolve(anyString())).thenReturn(Optional.empty());
+        @SuppressWarnings("unchecked")
+        ObjectProvider<DataScopeProvider> dataScopeProviders = mock(ObjectProvider.class);
+        when(dataScopeProviders.getIfAvailable()).thenReturn(dataScopeProvider);
+        dataScopeFilter = new WorkflowTaskDataScopeFilter(dataScopeProviders);
         when(candidateGroupProvider.currentCandidateGroups()).thenReturn(List.of("ROLE_REVIEWER"));
         when(taskHistoryMapper.selectCandidateLinks(anyList())).thenReturn(List.of());
         service = new WorkflowTaskBusinessQueryService(taskHistoryMapper, businessApplyMapper, taskRecordMapper,
                 statusLogMapper, checkerProvider, authorizer, assigneeIdentityService, candidateGroupProvider,
-                properties, objectMapper);
+                dataScopeFilter, properties, objectMapper);
         MangoContextHolder.clear();
         MangoContextHolder.set(MangoContextSnapshot.empty()
                 .withSecurity(1001L, "1", "alice", "default", "USER", "ORG", 1001L, "token"));
@@ -111,22 +127,141 @@ class WorkflowTaskBusinessQueryServiceTest {
     }
 
     @Test
-    void rejectsOrgScope() {
+    void rejectsOrgScopeWithDataScopeGuidance() {
         WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.ORG);
 
         assertThatThrownBy(() -> service.pageByBusinessKey(query))
                 .isInstanceOf(BizException.class)
-                .hasMessageContaining("指定组织范围暂不支持");
+                .hasMessageContaining("请通过数据范围配置部门档");
     }
 
     @Test
-    void rejectsDeptIdsOutsideOrgScope() {
+    void rejectsDeprecatedDeptIds() {
         WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
         query.setDeptIds(List.of(200L));
 
         assertThatThrownBy(() -> service.pageByBusinessKey(query))
                 .isInstanceOf(BizException.class)
-                .hasMessageContaining("deptIds");
+                .hasMessageContaining("deptIds 已废弃");
+    }
+
+    @Test
+    void keepsSelfScopeWhenDataScopeIsNotConfigured() {
+        when(taskHistoryMapper.countTasks(any())).thenReturn(0L);
+
+        service.pageByBusinessKey(query(WorkflowTaskQueryScope.SELF));
+
+        WorkflowTaskHistoryCriteria criteria = capturedCriteria();
+        assertThat(criteria.isSelfScope()).isTrue();
+        assertThat(criteria.getAssigneeScope()).isNull();
+    }
+
+    @Test
+    void narrowsAssigneeByIdScopeOrganizationRule() {
+        when(dataScopeProvider.resolve(anyString()))
+                .thenReturn(Optional.of(new DataScopeRule(DataScopeRule.Mode.ORG, Set.of("7001", "7002"), true)));
+        when(taskHistoryMapper.countTasks(any())).thenReturn(0L);
+
+        service.pageByBusinessKey(query(WorkflowTaskQueryScope.SELF));
+
+        WorkflowTaskHistoryCriteria criteria = capturedCriteria();
+        assertThat(criteria.isSelfScope()).isFalse();
+        WorkflowTaskAssigneeScope scope = criteria.getAssigneeScope();
+        assertThat(scope.orgIds()).containsExactlyInAnyOrder("7001", "7002");
+        assertThat(scope.selfIdentifiers()).containsExactlyInAnyOrder("1001", "alice");
+        assertThat(scope.candidateGroups()).containsExactly("ROLE_REVIEWER");
+    }
+
+    @Test
+    void dropsSelfIdentifiersWhenOrganizationRuleExcludesSelf() {
+        when(dataScopeProvider.resolve(anyString()))
+                .thenReturn(Optional.of(new DataScopeRule(DataScopeRule.Mode.ORG, Set.of("7001"), false)));
+        when(taskHistoryMapper.countTasks(any())).thenReturn(0L);
+
+        service.pageByBusinessKey(query(WorkflowTaskQueryScope.SELF));
+
+        WorkflowTaskAssigneeScope scope = capturedCriteria().getAssigneeScope();
+        assertThat(scope.orgIds()).containsExactly("7001");
+        assertThat(scope.selfIdentifiers()).isEmpty();
+    }
+
+    @Test
+    void deniesAllWhenOrganizationRuleIsEmptyAndExcludesSelf() {
+        when(dataScopeProvider.resolve(anyString()))
+                .thenReturn(Optional.of(new DataScopeRule(DataScopeRule.Mode.ORG, Set.of(), false)));
+        when(taskHistoryMapper.countTasks(any())).thenReturn(0L);
+
+        service.pageByBusinessKey(query(WorkflowTaskQueryScope.SELF));
+
+        assertThat(capturedCriteria().getAssigneeScope()).isEqualTo(WorkflowTaskAssigneeScope.DENY_ALL);
+    }
+
+    @Test
+    void fallsBackToSelfWhenAllRuleLacksQueryAllPermission() {
+        when(dataScopeProvider.resolve(anyString()))
+                .thenReturn(Optional.of(new DataScopeRule(DataScopeRule.Mode.ALL, Set.of(), false)));
+        when(taskHistoryMapper.countTasks(any())).thenReturn(0L);
+
+        service.pageByBusinessKey(query(WorkflowTaskQueryScope.SELF));
+
+        WorkflowTaskHistoryCriteria criteria = capturedCriteria();
+        assertThat(criteria.isSelfScope()).isTrue();
+        assertThat(criteria.getAssigneeScope()).isNull();
+    }
+
+    @Test
+    void fallsBackToSelfWhenDataScopeResolutionThrows() {
+        when(dataScopeProvider.resolve(anyString()))
+                .thenThrow(new IllegalStateException("Missing member context for data scope resolution."));
+        when(taskHistoryMapper.countTasks(any())).thenReturn(0L);
+
+        service.pageByBusinessKey(query(WorkflowTaskQueryScope.SELF));
+
+        WorkflowTaskHistoryCriteria criteria = capturedCriteria();
+        assertThat(criteria.isSelfScope()).isTrue();
+        assertThat(criteria.getAssigneeScope()).isNull();
+    }
+
+    @Test
+    void keepsAllScopeUnnarrowedWhenAllRuleAndPermissionBothPresent() {
+        when(authorizer.canQueryAll()).thenReturn(true);
+        when(dataScopeProvider.resolve(anyString()))
+                .thenReturn(Optional.of(new DataScopeRule(DataScopeRule.Mode.ALL, Set.of(), false)));
+        when(taskHistoryMapper.countTasks(any())).thenReturn(0L);
+
+        service.pageByBusinessKey(query(WorkflowTaskQueryScope.ALL));
+
+        WorkflowTaskHistoryCriteria criteria = capturedCriteria();
+        assertThat(criteria.isSelfScope()).isFalse();
+        assertThat(criteria.getAssigneeScope()).isNull();
+    }
+
+    @Test
+    void expandsDoneGroupIntoDetailStatuses() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        query.setStatuses(List.of(WorkflowTaskQueryStatus.DONE));
+        when(taskHistoryMapper.countTasks(any())).thenReturn(0L);
+
+        service.pageByBusinessKey(query);
+
+        assertThat(capturedCriteria().getResolvedQueryStatuses())
+                .containsExactlyInAnyOrder("COMPLETED", "REJECTED", "RETURNED");
+    }
+
+    @Test
+    void rejectsScopeAllWithoutQueryAllPermission() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.ALL);
+
+        assertThatThrownBy(() -> service.pageByBusinessKey(query))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("无权查询全量任务");
+    }
+
+    private WorkflowTaskHistoryCriteria capturedCriteria() {
+        ArgumentCaptor<WorkflowTaskHistoryCriteria> captor =
+                ArgumentCaptor.forClass(WorkflowTaskHistoryCriteria.class);
+        verify(taskHistoryMapper).countTasks(captor.capture());
+        return captor.getValue();
     }
 
     @Test
@@ -379,7 +514,7 @@ class WorkflowTaskBusinessQueryServiceTest {
     @Test
     void mapsStatusesAndClaimStatusesToSqlFlags() {
         WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
-        query.setStatuses(List.of(WorkflowTaskRuntimeStatus.TODO));
+        query.setStatuses(List.of(WorkflowTaskQueryStatus.TODO));
         query.setClaimStatuses(List.of(WorkflowTaskClaimStatus.UNCLAIMED));
         query.setApplyStatuses(List.of(WorkflowApplyStatus.WITHDRAWN));
         query.setReturned(Boolean.TRUE);
@@ -391,9 +526,7 @@ class WorkflowTaskBusinessQueryServiceTest {
                 ArgumentCaptor.forClass(WorkflowTaskHistoryCriteria.class);
         verify(taskHistoryMapper).countTasks(captor.capture());
         WorkflowTaskHistoryCriteria criteria = captor.getValue();
-        assertThat(criteria.isIncludeTodo()).isTrue();
-        assertThat(criteria.isIncludeDone()).isFalse();
-        assertThat(criteria.isIncludeCanceled()).isFalse();
+        assertThat(criteria.getResolvedQueryStatuses()).containsExactly("TODO");
         assertThat(criteria.getAssigneeRequired()).isFalse();
         assertThat(criteria.getApplyStatuses()).containsExactly("WITHDRAWN");
         assertThat(criteria.getReturned()).isTrue();
@@ -465,7 +598,7 @@ class WorkflowTaskBusinessQueryServiceTest {
         PageResult<WorkflowTaskVO> result = service.pageByBusinessKey(query);
 
         WorkflowTaskVO returnedVo = result.getList().get(0);
-        assertThat(returnedVo.getStatus()).isEqualTo(WorkflowTaskRuntimeStatus.CANCELED.name());
+        assertThat(returnedVo.getStatus()).isEqualTo(WorkflowTaskRuntimeStatus.DONE.name());
         assertThat(returnedVo.getCancelCause()).isEqualTo(WorkflowTaskCancelCause.RETURNED.name());
         assertThat(returnedVo.getLastReturnAt()).isEqualTo(LocalDateTime.of(2026, 1, 2, 9, 0));
         assertThat(returnedVo.getLastReturnTarget()).isEqualTo("risk_specialist_review");
@@ -475,7 +608,7 @@ class WorkflowTaskBusinessQueryServiceTest {
     }
 
     @Test
-    void resolvesTerminatedAndOtherCancelCause() {
+    void resolvesTerminatedAndUndeterminedCancelCause() {
         WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
         WorkflowTaskHistoryRow terminated = row();
         terminated.setEndTime(null);
@@ -497,6 +630,47 @@ class WorkflowTaskBusinessQueryServiceTest {
                 .isEqualTo(WorkflowTaskCancelCause.TERMINATED.name());
         assertThat(result.getList().get(1).getCancelCause())
                 .isEqualTo(WorkflowTaskCancelCause.OTHER.name());
+        assertThat(result.getList().get(1).getStatus())
+                .isEqualTo(WorkflowTaskRuntimeStatus.CANCELED.name());
+    }
+
+    @Test
+    void treatsRejectedTaskWithHandlingRecordAsDone() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        WorkflowTaskHistoryRow rejected = row();
+        rejected.setEndTime(null);
+        rejected.setDeleteReason("审批驳回，流程实例已删除");
+        rejected.setApplyStatus("REJECTED");
+        rejected.setTaskReturned(Boolean.FALSE);
+        rejected.setRejectedByRecord(Boolean.TRUE);
+        when(taskHistoryMapper.countTasks(any())).thenReturn(1L);
+        when(taskHistoryMapper.selectTasks(any(), anyInt(), anyLong())).thenReturn(List.of(rejected));
+
+        PageResult<WorkflowTaskVO> result = service.pageByBusinessKey(query);
+
+        WorkflowTaskVO vo = result.getList().get(0);
+        assertThat(vo.getStatus()).isEqualTo(WorkflowTaskRuntimeStatus.DONE.name());
+        assertThat(vo.getCancelCause()).isEqualTo(WorkflowTaskCancelCause.REJECTED.name());
+        assertThat(vo.getDeleteReason()).isEqualTo("审批驳回，流程实例已删除");
+    }
+
+    @Test
+    void keepsAttendedTaskCanceledWhenInstanceRemovedByRejection() {
+        WorkflowTaskBusinessPageQuery query = query(WorkflowTaskQueryScope.SELF);
+        WorkflowTaskHistoryRow collateral = row();
+        collateral.setEndTime(null);
+        collateral.setDeleteReason("审批驳回，流程实例已删除");
+        collateral.setApplyStatus("REJECTED");
+        collateral.setTaskReturned(Boolean.FALSE);
+        collateral.setRejectedByRecord(Boolean.FALSE);
+        when(taskHistoryMapper.countTasks(any())).thenReturn(1L);
+        when(taskHistoryMapper.selectTasks(any(), anyInt(), anyLong())).thenReturn(List.of(collateral));
+
+        PageResult<WorkflowTaskVO> result = service.pageByBusinessKey(query);
+
+        WorkflowTaskVO vo = result.getList().get(0);
+        assertThat(vo.getStatus()).isEqualTo(WorkflowTaskRuntimeStatus.CANCELED.name());
+        assertThat(vo.getCancelCause()).isEqualTo(WorkflowTaskCancelCause.OTHER.name());
     }
 
     @Test

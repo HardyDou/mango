@@ -602,7 +602,7 @@ mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-comm
 |----|------|
 | 租户 | 取 `workflow_business_apply.tenant_id`，SQL 层强制；缺少租户上下文直接报错 |
 | 接口权限码 | `workflow:task:list`，保证只有本人范围权限的用户也能使用 |
-| 数据范围 | `SELF`（默认）= 办理人是当前用户或当前用户是候选人或候选组匹配；`ALL` = 不做行级过滤，但服务端校验 `workflow:task:all` 权限码；`ORG` 当前版本拒绝 |
+| 数据范围 | 由平台数据范围配置决定，资源码 `workflow:task:list`：`SELF`（默认，含未配置）= 办理人是当前用户或当前用户是候选人或候选组匹配；`ALL` = 不做行级过滤，但服务端仍校验 `workflow:task:all` 权限码；`ORG` = 处理人所在组织命中配置的部门集合（可叠加「含本人」），部门集合为空且不含本人时不返回任何任务 |
 
 约束：
 
@@ -612,13 +612,22 @@ mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-comm
 - `applyAttributeFilters` 可选：按业务在申请上登记的 `filterAttributes` 精确收窄，条件之间为「且」、同一条件的多个值为「或」，最多 10 个条件、单条件最多 50 个值；没有该属性的申请不匹配。属性过滤与 `businessKeys`、`applyKeyword`、状态、时间和分页在同一条 SQL 内完成，`total` 仍是过滤后的真实任务数，不需要调用方先枚举业务主键。
 - `applyTimeBegin` / `applyTimeEnd`：按申请创建时间（`workflow_business_apply.created_time`）闭区间过滤，与任务创建/处理时间互不影响。
 - 不传 `page` / `size` 时按 `mango.workflow.task-query.unpaged-max-rows` 一次性返回，`total` 始终是过滤后的真实总数，用 `list.size() < total` 判断是否需要改用分页。
-- `deptIds` 仅在 `scope=ORG` 时合法；`scope=SELF` / `ALL` 传入 `deptIds` 会被拒绝，避免调用方误以为已按组织过滤。
+- 部门档（`ORG`）由平台数据范围配置下发，业务**不传部门参数**：前端传什么就能查到什么是一个越权入口，所以范围只由服务端按登录人解析。部门集合按配置里的组织项匹配，处理人归属取 `tenant_member_org`（人调岗后跟着新部门走），不展开子部门；未领取任务只在「当前用户是候选人或候选组匹配」时命中，未领取且非候选的任务不属于任何人的待办。
+- `deptIds` 已废弃：传非空值会被拒绝（`deptIds 已废弃，请通过数据范围配置部门档`），保留字段只为让存量调用方在上线时立刻看到失败而不是静默按本人范围查询。`scope=ORG` 同样拒绝并提示改用数据范围配置。
+- 数据范围配置为「全部」但当前用户没有 `workflow:task:all` 时，平台退化成本人范围并记一条 WARN，避免只配了列表权限的用户看到全租户任务；`TENANT` / `CUSTOM` 两种模式在本接口一律退化成本人范围并记 WARN（不做静默放开，也不让列表页 500）。
+- `scope=ALL` 表示调用方明确要跨人视图，服务端仍校验 `workflow:task:all`，缺少权限返回 `TASK_QUERY_FORBIDDEN`。
 - 业务申请可见性只在传入 `businessKeys` 且业务模块注册了 `WorkflowBusinessApplyDataPermissionProvider` 时参与收窄；不传 `businessKeys` 时不做逐申请 Provider 过滤，范围由租户、`scope` 和权限码决定。未注册 Provider 时本接口不做"申请人本人"兜底，因为该兜底属于按 ID 读详情的语义，与批量管理视图不兼容。
 - 排序 `NULL` 归尾：`endTime`、`claimTime` 为空的任务在 `asc` 和 `desc` 下都排在最后。
 - `returned` 表示该申请是否发生过退回（依据 `workflow_task_record.action = 'RETURN'`）。退回不改变 `apply_status`，因此"退回待修改"用 `applyStatus=IN_APPROVAL + returned=true` 表达，不新增平台状态值。
 - `lastReturnAt` / `lastReturnTarget` 表示该申请最近一次退回的时间和目标节点，取自最新一条 `RETURN` 动作记录的 `variables_json.targetTaskDefinitionKey`。
-- `cancelCause` 是已终止任务的机器可读原因：`RETURNED`（该任务上存在退回动作）、`WITHDRAWN`（申请已撤回）、`TERMINATED`（流程已终止/取消）、`OTHER`（例如驳回导致流程实例删除）。`deleteReason` 保留引擎原始文案，只能用于排查，不能用于状态判断。
-- `statuses=[DONE]` 只返回 `END_TIME_` 非空且 `DELETE_REASON_` 为空的任务，被退回或撤回终止的任务不会混进"已办理"。
+- `cancelCause` 是机器可读的原因：`CANCELED` 任务恒有值（`REJECTED` = 所在申请被驳回、`WITHDRAWN` = 申请已撤回、`TERMINATED` = 流程已终止/取消、`OTHER` = 被牵连作废等其他终止），`DONE` 任务在该任务上有驳回/退回处理记录时也有值（`REJECTED` / `RETURNED`），其余状态为 `null`。`deleteReason` 保留引擎原始文案，只能用于排查，不能用于状态判断。
+- 返回的 `status` 仍是三态（待办 / 已办 / 已终止），细分状态只在入参 `statuses` 里可用；需要「只查被驳回」就用 `statuses=[REJECTED]`，不必再自己过滤 `cancelCause`。
+- 状态判定以**任务级处理记录**（`workflow_task_record.action in ('RETURN','REJECT','AUTO_REJECT')`）为唯一依据：驳回会删除整个流程实例，被牵连终止的任务同样带 `DELETE_REASON_`，只有任务上的处理记录能区分「我驳回了」和「被别人连带终止」。
+- `statuses` 接受分组值和细状态值，多值取并集，null 或空集合表示不限：
+  - 分组值：待办 → 仅待办细状态；已办 → `{COMPLETED, REJECTED, RETURNED}`；已终止 → `{WITHDRAWN, TERMINATED}`。
+  - 细状态：`COMPLETED` = 正常办结（`END_TIME_` 非空且无 `DELETE_REASON_`）、`REJECTED` = 该任务上有驳回记录、`RETURNED` = 该任务上有退回记录、`WITHDRAWN` = 申请已撤回、`TERMINATED` = 流程终止（含申请被终止/取消，以及**他人驳回导致本任务被作废**）。
+  - 五个细状态互斥且覆盖全量：`TERMINATED` 是「有 `DELETE_REASON_`、本人既没驳回也没退回、申请状态不是 `WITHDRAWN`」的兜底桶，因此任意一行任务恰好命中一个细状态，`statuses=[DONE, CANCELED]` 与不限状态的行集完全一致（集成测试用「六态计数之和 == 总数 + 两两行集不相交」钉住这条性质）。
+- `statuses=[DONE]` 返回「本人办过」的任务：常规完成，外加**本人驳回或退回、随后流程实例被删除**的任务；本人未办理、被牵连终止的任务落在 `CANCELED` / `TERMINATED`，不会混进「已办理」。
 - `assigneeIds` 接受业务 `user_id`：引擎 `ASSIGNEE_` 存的是用户名时，平台通过 `identity_user.username` 映射，并强制经 `tenant_member` 校验该用户属于任务所在租户，跨租户同名用户不会串号。
 - `sortBy=claimTime` 在本接口的 SQL 层可排序（与引擎 API 不同），仍保持空值归尾。
 - 本接口按行同时填充用户态字段 `claimable`、`unclaimable`、`releasable`：`releasable` 只取决于任务事实，`claimable`、`unclaimable` 取决于调用者，与 `scope` 取值无关（`scope=ALL` 时他人任务也会给出自己的 `claimable`，`unclaimable` 恒为 `false`）。`claimStatus=NONE` 表示未认领且候选用户、候选组都为空，即「当前无人可领」，与运行态任务详情一致。

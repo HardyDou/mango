@@ -5,6 +5,7 @@ import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguratio
 import io.mango.workflow.core.model.WorkflowApplyAttributeCondition;
 import io.mango.workflow.core.mapper.WorkflowTaskHistoryMapper;
 import io.mango.workflow.core.model.WorkflowTaskHistoryCriteria;
+import io.mango.workflow.core.model.WorkflowTaskAssigneeScope;
 import io.mango.workflow.core.model.WorkflowTaskHistoryRow;
 import io.mango.workflow.core.model.WorkflowTaskIdentityLinkRow;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,8 +23,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -341,13 +344,201 @@ class WorkflowTaskHistoryMapperIntegrationTest {
                 .sortColumn("createTime")
                 .sortDirection("desc")
                 .build();
+        WorkflowTaskHistoryCriteria doneOnly = WorkflowTaskHistoryCriteria.builder()
+                .tenantId(TENANT_ID)
+                .businessType(BUSINESS_TYPE)
+                .businessKeys(List.of("RC1", "RC2"))
+                .includeTodo(false)
+                .includeDone(true)
+                .includeCanceled(false)
+                .sortColumn("createTime")
+                .sortDirection("desc")
+                .build();
 
         assertThat(taskHistoryMapper.selectTasks(todoOnly, 10, 0L))
                 .extracting(WorkflowTaskHistoryRow::getTaskId)
                 .containsExactly("T2");
-        assertThat(taskHistoryMapper.selectTasks(canceledOnly, 10, 0L))
-                .extracting(WorkflowTaskHistoryRow::getTaskId)
-                .containsExactly("T3");
+        assertThat(taskIdsOf(canceledOnly, 10, 0L)).isEmpty();
+        // T3 带 DELETE_REASON_，但它自己有 RETURN 处理记录：按任务级记录判为已办，不再混进「已终止」。
+        assertThat(taskIdsOf(doneOnly, 10, 0L)).containsExactly("T3", "T1");
+    }
+
+    @Test
+    void keepsGeneratedSqlStableWhenNewFiltersAreAbsent() {
+        WorkflowTaskHistoryCriteria baseline = WorkflowTaskHistoryCriteria.builder()
+                .tenantId(TENANT_ID)
+                .businessType(BUSINESS_TYPE)
+                .businessKeys(List.of("RC1"))
+                .includeTodo(true)
+                .includeDone(true)
+                .includeCanceled(true)
+                .sortColumn("createTime")
+                .sortDirection("desc")
+                .build();
+        WorkflowTaskHistoryCriteria emptyLists = WorkflowTaskHistoryCriteria.builder()
+                .tenantId(TENANT_ID)
+                .businessType(BUSINESS_TYPE)
+                .businessKeys(List.of("RC1"))
+                .deptIds(List.of())
+                .queryStatuses(List.of())
+                .sortColumn("createTime")
+                .sortDirection("desc")
+                .build();
+
+        assertThat(boundSql("countTasks", emptyLists)).isEqualTo(boundSql("countTasks", baseline));
+        assertThat(boundSql("selectTasks", emptyLists)).isEqualTo(boundSql("selectTasks", baseline));
+    }
+
+    @Test
+    void filtersByApplicantDeptIds() {
+        assertThat(taskIdsOf(withDeptIds(200L))).containsExactly("T2", "T1");
+        assertThat(taskIdsOf(withDeptIds(300L))).containsExactly("T3");
+        assertThat(boundSql("countTasks", withDeptIds(200L))).contains("coalesce(a.applicant_dept_id, a.org_id) in (");
+    }
+
+    @Test
+    void splitsDoneAndCanceledIntoDisjointDetailStatuses() {
+        insertWithdrawnTask("T6", "P1", "bob");
+        insertRejectedTask("T7", "P2", "bob");
+
+        assertThat(taskIdsOf(withQueryStatuses("TODO"))).containsExactlyInAnyOrder("T2", "T5");
+        assertThat(taskIdsOf(withQueryStatuses("COMPLETED"))).containsExactly("T1");
+        assertThat(taskIdsOf(withQueryStatuses("RETURNED"))).containsExactly("T3");
+        assertThat(taskIdsOf(withQueryStatuses("REJECTED"))).containsExactly("T7");
+        assertThat(taskIdsOf(withQueryStatuses("WITHDRAWN"))).containsExactly("T6");
+        assertThat(taskIdsOf(withQueryStatuses("DONE")))
+                .containsExactlyInAnyOrder("T1", "T3", "T7");
+        assertThat(taskIdsOf(withQueryStatuses("CANCELED"))).containsExactly("T6");
+    }
+
+    @Test
+    void keepsDetailStatusesDisjointAndCoveringEveryRow() {
+        insertWithdrawnTask("T6", "P1", "bob");
+        insertRejectedTask("T7", "P2", "bob");
+        insertTerminatedTask("T8", "carol");
+
+        String[] detailStatuses = {"TODO", "COMPLETED", "REJECTED", "RETURNED", "WITHDRAWN", "TERMINATED"};
+        List<Set<String>> rows = new ArrayList<>();
+        long covered = 0L;
+        for (String detailStatus : detailStatuses) {
+            WorkflowTaskHistoryCriteria criteria = withQueryStatuses(detailStatus);
+            long counted = taskHistoryMapper.countTasks(criteria);
+            Set<String> taskIds = Set.copyOf(taskIdsOf(criteria));
+            assertThat(taskIds).as("细状态 %s 的 total 与行数必须一致", detailStatus)
+                    .hasSize((int) counted);
+            rows.add(taskIds);
+            covered += counted;
+        }
+
+        assertThat(covered).isEqualTo(taskHistoryMapper.countTasks(scopedCriteria().build()));
+        for (int i = 0; i < rows.size(); i++) {
+            for (int j = i + 1; j < rows.size(); j++) {
+                assertThat(rows.get(i)).as("细状态 %s 与 %s 的行集不能相交",
+                        detailStatuses[i], detailStatuses[j]).doesNotContainAnyElementsOf(rows.get(j));
+            }
+        }
+    }
+
+    @Test
+    void treatsCollateralRejectionAsTerminated() {
+        insertTerminatedTask("T8", "carol");
+
+        assertThat(taskIdsOf(withQueryStatuses("TERMINATED"))).contains("T8");
+        assertThat(taskIdsOf(withQueryStatuses("REJECTED"))).doesNotContain("T8");
+        assertThat(taskIdsOf(withQueryStatuses("CANCELED"))).contains("T8");
+    }
+
+    @Test
+    void coversEveryRowWhenDoneAndCanceledAreRequestedTogether() {
+        insertWithdrawnTask("T6", "P1", "bob");
+        insertRejectedTask("T7", "P2", "bob");
+
+        List<String> todo = taskIdsOf(withQueryStatuses("TODO"));
+        List<String> ended = taskIdsOf(scopedCriteria().build()).stream()
+                .filter(taskId -> !todo.contains(taskId))
+                .toList();
+        List<String> doneAndCanceled = taskIdsOf(withQueryStatuses("DONE", "CANCELED"));
+
+        assertThat(doneAndCanceled).containsExactlyInAnyOrderElementsOf(ended);
+        assertThat(doneAndCanceled).doesNotContainAnyElementsOf(todo);
+        assertThat(taskIdsOf(withQueryStatuses("DONE"))).doesNotContainAnyElementsOf(
+                taskIdsOf(withQueryStatuses("CANCELED")));
+    }
+
+    @Test
+    void keepsWithdrawnStatusFreeOfRejectedAndReturnedTasks() {
+        jdbcTemplate.update("update workflow_business_apply set apply_status = ? where id = ?", "WITHDRAWN", 20L);
+        insertWithdrawnTask("T6", "P2", "carol");
+
+        // T3 有任务级 RETURN 记录，即使申请被撤回也不进 WITHDRAWN。
+        List<String> withdrawn = taskIdsOf(withQueryStatuses("WITHDRAWN"));
+
+        assertThat(withdrawn).containsExactly("T6");
+        assertThat(taskIdsOf(withQueryStatuses("RETURNED"))).contains("T3");
+    }
+
+    @Test
+    void narrowsAssigneeByIdScopeOrganizationRule() {
+        WorkflowTaskAssigneeScope orgScope = new WorkflowTaskAssigneeScope(false, List.of("7001"),
+                List.of(), List.of(), List.of());
+        WorkflowTaskAssigneeScope selfScope = new WorkflowTaskAssigneeScope(false, List.of(),
+                List.of("alice", "1001"), List.of(), List.of());
+        WorkflowTaskAssigneeScope candidateScope = new WorkflowTaskAssigneeScope(false, List.of(),
+                List.of(), List.of("alice"), List.of("ROLE_REVIEWER"));
+
+        assertThat(taskIdsOf(scopedCriteria().assigneeScope(orgScope).build())).containsExactly("T1");
+        assertThat(taskIdsOf(scopedCriteria().assigneeScope(selfScope).build())).containsExactly("T1");
+        // 未领取任务只在「我是候选」时命中，命中条件是候选人与候选组两条之一。
+        assertThat(taskIdsOf(scopedCriteria().assigneeScope(candidateScope).build())).containsExactly("T2");
+        assertThat(taskIdsOf(scopedCriteria().assigneeScope(WorkflowTaskAssigneeScope.DENY_ALL).build())).isEmpty();
+    }
+
+    @Test
+    void matchesAssigneeByIdScopeOrganizationOfOtherDepartment() {
+        WorkflowTaskAssigneeScope otherDept = new WorkflowTaskAssigneeScope(false, List.of("7002"),
+                List.of(), List.of(), List.of());
+
+        assertThat(taskIdsOf(scopedCriteria().assigneeScope(otherDept).build())).containsExactly("T3");
+    }
+
+    @Test
+    void keepsTaskCanceledAfterWithdrawalEvenWhenSiblingReturned() {
+        jdbcTemplate.update("update workflow_business_apply set apply_status = ? where id = ?", "WITHDRAWN", 20L);
+        insertTask("T6", "初审", "FIRST_REVIEW", "P2", "bob",
+                LocalDateTime.of(2026, 1, 6, 10, 0), null, null, "申请人撤回");
+        WorkflowTaskHistoryCriteria canceledOnly = scopedCriteria()
+                .businessKeys(List.of("RC1", "RC2"))
+                .includeTodo(false)
+                .includeDone(false)
+                .includeCanceled(true)
+                .build();
+        WorkflowTaskHistoryCriteria doneOnly = scopedCriteria()
+                .businessKeys(List.of("RC1", "RC2"))
+                .includeTodo(false)
+                .includeDone(true)
+                .includeCanceled(false)
+                .build();
+
+        // T3 在同一实例里有 RETURN 记录，后来被撕回：它已经是已办；T6 没有处理记录，仍是已终止。
+        assertThat(taskIdsOf(doneOnly, 10, 0L)).containsExactly("T3", "T1");
+        assertThat(taskIdsOf(canceledOnly, 10, 0L)).containsExactly("T6");
+    }
+
+    @Test
+    void exposesRejectionRecordFlagPerTask() {
+        insertTask("T6", "初审", "FIRST_REVIEW", "P2", "bob",
+                LocalDateTime.of(2026, 1, 6, 10, 0), null, null, "审批驳回，流程实例已删除");
+        jdbcTemplate.update("insert into workflow_task_record "
+                        + "(id, tenant_id, process_instance_id, task_id, task_definition_key, action, "
+                        + "variables_json, created_time) values (?, ?, ?, ?, ?, ?, ?, ?)",
+                102L, TENANT_ID, "P2", "T3", "FIRST_REVIEW", "REJECT", null,
+                LocalDateTime.of(2026, 1, 3, 11, 0));
+
+        List<WorkflowTaskHistoryRow> rows = taskHistoryMapper.selectTasks(criteria(List.of("RC2")), 10, 0L);
+
+        assertThat(rows).extracting(WorkflowTaskHistoryRow::getTaskId).containsExactly("T6", "T3");
+        assertThat(rows.get(0).getRejectedByRecord()).isFalse();
+        assertThat(rows.get(1).getRejectedByRecord()).isTrue();
     }
 
     @Test
@@ -503,6 +694,59 @@ class WorkflowTaskHistoryMapperIntegrationTest {
         return taskIdsOf(criteria, 10, 0L);
     }
 
+    private WorkflowTaskHistoryCriteria withDeptIds(Long... deptIds) {
+        return scopedCriteria().deptIds(List.of(deptIds)).build();
+    }
+
+    private WorkflowTaskHistoryCriteria withQueryStatuses(String... statuses) {
+        return scopedCriteria().queryStatuses(List.of(statuses)).build();
+    }
+
+    /**
+     * 撤回场景：申请状态必须是 {@code WITHDRAWN}，否则任务只会落到「其他终止」。
+     */
+    private void insertWithdrawnTask(String taskId, String processInstanceId, String assignee) {
+        if ("P1".equals(processInstanceId)) {
+            insertApply(50L, TENANT_ID, "RC5", "WITHDRAWN", 600L, "P5",
+                    "GR20260105000005", "保函风控审核-客户撤回", "天津港 / 履约保函");
+            processInstanceId = "P5";
+        }
+        insertTask(taskId, "初审", "FIRST_REVIEW", processInstanceId, assignee,
+                LocalDateTime.of(2026, 1, 6, 10, 0), null, null, "申请人撤回");
+    }
+
+    /**
+     * 被他人驳回牵连作废：任务被删除、本人没有驳回/退回记录、申请状态是 {@code REJECTED}，
+     * 按兜底桶落到 {@code TERMINATED}。
+     */
+    private void insertTerminatedTask(String taskId, String assignee) {
+        insertApply(51L, TENANT_ID, "RC6", "REJECTED", 600L, "P6",
+                "GR20260106000006", "保函风控审核-被牵连作废", "天津港 / 履约保函");
+        insertTask(taskId, "初审", "FIRST_REVIEW", "P6", assignee,
+                LocalDateTime.of(2026, 1, 8, 10, 0), null, null, "驳回终止");
+    }
+
+    private void insertRejectedTask(String taskId, String processInstanceId, String assignee) {
+        insertTask(taskId, "初审", "FIRST_REVIEW", processInstanceId, assignee,
+                LocalDateTime.of(2026, 1, 7, 10, 0), null, null, "审批驳回");
+        jdbcTemplate.update("insert into workflow_task_record "
+                        + "(id, tenant_id, process_instance_id, task_id, task_definition_key, action, "
+                        + "variables_json, created_time) values (?, ?, ?, ?, ?, ?, ?, ?)",
+                201L, TENANT_ID, processInstanceId, taskId, "FIRST_REVIEW", "REJECT", null,
+                LocalDateTime.of(2026, 1, 7, 10, 5));
+    }
+
+    private WorkflowTaskHistoryCriteria.WorkflowTaskHistoryCriteriaBuilder scopedCriteria() {
+        return WorkflowTaskHistoryCriteria.builder()
+                .tenantId(TENANT_ID)
+                .businessTypes(List.of(BUSINESS_TYPE, COMPLIANCE_BUSINESS_TYPE))
+                .includeTodo(true)
+                .includeDone(true)
+                .includeCanceled(true)
+                .sortColumn("createTime")
+                .sortDirection("desc");
+    }
+
     private String boundSql(String statement, WorkflowTaskHistoryCriteria criteria) {
         return sqlSessionFactory.getConfiguration()
                 .getMappedStatement(WorkflowTaskHistoryMapper.class.getName() + "." + statement)
@@ -567,8 +811,32 @@ class WorkflowTaskHistoryMapperIntegrationTest {
                         + "values (?, ?, ?, ?, ?, ?, ?)",
                 9002L, 10L, "P1", "T2", null, null, LocalDateTime.of(2026, 1, 2, 10, 0));
         jdbcTemplate.update("insert into identity_user (id, username) values (?, ?)", 1001L, "alice");
-        jdbcTemplate.update("insert into tenant_member (id, tenant_id, user_id) values (?, ?, ?)",
-                5001L, TENANT_ID, 1001L);
+        jdbcTemplate.update("insert into identity_user (id, username) values (?, ?)", 1002L, "bob");
+        jdbcTemplate.update("insert into identity_user (id, username) values (?, ?)", 1003L, "carol");
+        jdbcTemplate.update("insert into identity_user (id, username) values (?, ?)", 1004L, "dave");
+        insertMember(5001L, 1001L, 7001L);
+        insertMember(5002L, 1002L, 7002L);
+        insertMember(5003L, 1003L, 7003L);
+        insertMember(5004L, 1004L, 7003L);
+        insertOrg(6001L, 0L);
+        insertOrg(6002L, 0L);
+        insertOrg(7001L, 6001L);
+        insertOrg(7002L, 6001L);
+        insertOrg(7004L, 6002L);
+        insertOrg(7003L, 7004L);
+    }
+
+    private void insertMember(Long memberId, Long userId, Long orgId) {
+        jdbcTemplate.update("insert into tenant_member (id, tenant_id, user_id, status, left_at) "
+                + "values (?, ?, ?, ?, ?)", memberId, TENANT_ID, userId, 1, null);
+        jdbcTemplate.update("insert into tenant_member_org (id, tenant_id, member_id, org_id) "
+                + "values (?, ?, ?, ?)", memberId + 90_000L, TENANT_ID, memberId, orgId);
+    }
+
+    private void insertOrg(Long id, Long pid) {
+        jdbcTemplate.update("insert into sys_org (id, tenant_id, pid, org_name, org_code, org_type) "
+                + "values (?, ?, ?, ?, ?, ?)", id, String.valueOf(TENANT_ID), pid,
+                "组织" + id, "ORG" + id, pid == 0L ? 2 : 3);
     }
 
     private void insertApply(Long id, Long tenantId, String businessKey, String status,
@@ -713,6 +981,30 @@ class WorkflowTaskHistoryMapperIntegrationTest {
                     id bigint not null,
                     tenant_id bigint,
                     user_id bigint,
+                    status tinyint default 1,
+                    left_at datetime,
+                    primary key (id)
+                )
+                """);
+        jdbcTemplate.execute("drop table if exists tenant_member_org");
+        jdbcTemplate.execute("""
+                create table tenant_member_org (
+                    id bigint not null,
+                    tenant_id bigint,
+                    member_id bigint,
+                    org_id bigint,
+                    primary key (id)
+                )
+                """);
+        jdbcTemplate.execute("drop table if exists sys_org");
+        jdbcTemplate.execute("""
+                create table sys_org (
+                    id bigint not null,
+                    tenant_id varchar(64) not null,
+                    pid bigint not null default 0,
+                    org_name varchar(100),
+                    org_code varchar(50),
+                    org_type int,
                     primary key (id)
                 )
                 """);
