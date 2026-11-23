@@ -54,6 +54,8 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
     private static final String SOURCE_ID_PARAM = "fileId";
     private static final String ENTRY_TOKEN_PREFIX = "file-preview:entry:";
     private static final String GATEWAY_PATH_PREFIX = "/api";
+
+    private static final String DEFAULT_ENTRY_PATH = GATEWAY_PATH_PREFIX + "/file-preview/files/preview-entry";
     private static final String SOURCE_TOKEN_PREFIX = "file-preview:source:";
     private static final String ENGINE_FILE_PREFIX = "file-";
     private static final int MAX_EXTENSION_LENGTH = 20;
@@ -445,12 +447,27 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
         return origin + relative;
     }
 
+    /**
+     * 入口地址来自 {@link FilePreviewProperties#getEntryPath()}，不再拼接硬编码前缀。
+     *
+     * <p>这里刻意不套用 {@link #enginePathPrefix()}：该前缀描述的是「引擎在浏览器侧的位置」，
+     * 而入口是本应用的接口。两者在独立部署时会分道扬镳（引擎直连、入口仍可经代理），
+     * 统一套用会把入口地址带上前端代理前缀，直连后端的调用一律 404。</p>
+     */
     private String previewEntryUrl(String token) {
-        return UriComponentsBuilder.fromPath("/api/file-preview/files/preview-entry")
-                .queryParam("token", token)
+        String entryPath = properties.getEntryPath();
+        UriComponentsBuilder builder = StringUtils.hasText(entryPath) && isAbsoluteUri(entryPath)
+                ? UriComponentsBuilder.fromUriString(entryPath.trim())
+                : UriComponentsBuilder.fromPath(StringUtils.hasText(entryPath) ? entryPath.trim() : DEFAULT_ENTRY_PATH);
+        return builder.queryParam("token", token)
                 .build()
                 .encode(StandardCharsets.UTF_8)
                 .toUriString();
+    }
+
+    private static boolean isAbsoluteUri(String value) {
+        int schemeIndex = value.indexOf("://");
+        return schemeIndex > 0;
     }
 
     private PreviewToken readPreviewToken(String token) {

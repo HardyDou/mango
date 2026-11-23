@@ -215,6 +215,7 @@ mango:
   file-preview:
     enabled: true
     engine-path: /onlinePreview
+    entry-path: /api/file-preview/files/preview-entry
     source-path: /file-preview/sources
     source-base-url: http://mango-app:8080
     source-token-expire-seconds: 86400
@@ -242,6 +243,7 @@ cache:
 |--------|--------|------|
 | `mango.file-preview.enabled` | `true` | 是否启用文件预览自动配置 |
 | `mango.file-preview.engine-path` | `/onlinePreview` | 预览引擎入口路径 |
+| `mango.file-preview.entry-path` | `/api/file-preview/files/preview-entry` | 预览入口地址（浏览器侧相对路径，可写完整 URL）。默认带 `/api` 是因为标准部署经前端代理访问；直连后端或代理前缀不是 `/api` 的部署必须覆盖，否则签发出来的 `previewUrl` 会 404 |
 | `mango.file-preview.source-path` | `/file-preview/sources` | `url` 兜底通道下预览引擎读取源文件的短期 URL 前缀 |
 | `mango.file-preview.source-base-url` | 无（`url` 兜底时必填） | 仅供 `url` 兜底通道使用：引擎经该地址访问 Mango 的 `/file-preview/sources`。**不再从当前请求地址推断**：走 `url` 兜底但未配置时报 `180004`，不会静默回退。其 host 会自动加入引擎信任列表，无需重复写 `trust.host` |
 | `mango.file-preview.engine-public-base-url` | 空 | 引擎对外地址的**纯 origin**（可选带部署上下文，如 `https://engine.example.com/engine`）；**不要填 `/api`**（`/api` 是应用网关前缀，独立部署时平台自动剥离），也不要填 `engine-path` |
