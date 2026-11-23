@@ -228,7 +228,10 @@ FileRecordVO pdfFile = fileApi.mergeToPdf(command).getData();
 
 验收时除上传、回显、下载闭环外，还应确认 PDF 页面顺序、源文件租户可见性、生成 PDF 的预览/下载权限、以及不支持格式失败时不会生成半成品文件记录。
 
-文件记录返回的 `previewUrl` 是原始文件内容预览地址，`downloadUrl` 是下载地址。前端文档预览组件、Office 转换和在线预览服务是另一条链路，业务页面需要时按文件 ID 使用 `FilePreviewPanel` 获取预览元数据，并由组件读取 `documentPreviewUrl`，不要把文档预览服务地址当作业务表字段保存。
+文件记录返回的 `previewUrl` 是原始文件内容预览地址，`downloadUrl` 是下载地址。文档预览服务返回的 `previewUrl`（`/file-preview/files/preview-link` 的返回值）是**浏览器侧相对地址**，默认带 `/api` 前缀，由 `mango.file-preview.entry-path` 决定；它不是后端可以自己拉取的绝对地址，服务端脚本或移动端不要拿它去请求。
+
+> Issue #1433 影响说明：入口地址从硬编码 `/api/file-preview/files/preview-entry` 改为可配置项 `mango.file-preview.entry-path`，默认值不变；直连后端或前端代理前缀不是 `/api` 的部署需要显式覆盖。
+前端文档预览组件、Office 转换和在线预览服务是另一条链路，业务页面需要时按文件 ID 使用 `FilePreviewPanel` 获取预览元数据，并由组件读取 `documentPreviewUrl`，不要把文档预览服务地址当作业务表字段保存。
 
 ## 9. 常见失败
 
