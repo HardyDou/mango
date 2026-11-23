@@ -443,29 +443,26 @@ resolve_module_dir() {
 }
 
 discover_non_app_targets() {
-  local pom_file rel_path module_path
-  while IFS= read -r pom_file; do
-    if [[ "${pom_file}" == "${MAVEN_ROOT}/mango-app/pom.xml" || "${pom_file}" == "${MAVEN_ROOT}/mango-app/"* ]]; then
-      continue
-    fi
-    rel_path="${pom_file#${MAVEN_ROOT}/}"
-    if [[ "${rel_path}" == "pom.xml" ]]; then
-      module_path="."
-    else
-      module_path="${rel_path%/pom.xml}"
-    fi
-    if [[ "${module_path##*/}" == *-test ]]; then
-      continue
-    fi
-    targets+=("${module_path}")
-  done < <(
-    find "${MAVEN_ROOT}" \
-      -name pom.xml \
-      -not -path '*/target/*' \
-      -not -path '*/src/*' \
-      -print \
-      | sort
-  )
+  local artifact_id
+  while IFS= read -r artifact_id; do
+    [[ -z "${artifact_id}" ]] && continue
+    case "${artifact_id}" in
+      mango-app | mango-app-* | *-app) continue ;;
+      *-test) continue ;;
+    esac
+    targets+=(":${artifact_id}")
+  done < <(reactor_artifact_ids)
+}
+
+# 只枚举 reactor 内的模块：`mango-parent` 这类通过 relativePath 供父链、不属于 reactor 的 POM
+# 不能被 `-pl` 选中，用 find 会把它们混进发布目标。
+reactor_artifact_ids() {
+  (
+    cd "${MAVEN_ROOT}"
+    mvn -o -q org.codehaus.mojo:exec-maven-plugin:3.5.0:exec \
+      -Dexec.executable=echo \
+      '-Dexec.args=${project.artifactId}' 2>/dev/null
+  ) | sed '/^\s*$/d' | sort -u
 }
 
 is_app_module_dir() {
