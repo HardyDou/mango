@@ -172,6 +172,31 @@ public class PersistenceProperties {
                         "kv_record", "infra_kv_entry", "sys_login_log", "sys_operation_log",
                         "resource_*",
                         "authorization_app_module", "authorization_frontend_app_registry", "frontend_menu_runtime_config",
-                        "authorization_frontend_module_runtime_strategy"));
+                        "authorization_frontend_module_runtime_strategy",
+                        // 框架自身簿记表：没有业务实体契约，连标准主键 id 都不适用
+                        "mango_bootstrap*", "mango_runtime*"));
+
+        /**
+         * 只豁免「标准审计列」校验、仍校验主键规则的表名，支持以 * 结尾的前缀匹配。
+         *
+         * <p>用于业务模块自有的轻量实体表：这类实体通过
+         * {@code @TableName(..., excludeProperty = {"orgId", "createdBy", "updatedBy"})}
+         * 显式声明不使用平台审计列，缺列是设计选择而不是缺陷；但主键必须是 BIGINT 雪花、
+         * 且不能是 AUTO_INCREMENT，这部分规则仍然适用。</p>
+         *
+         * <p>默认值是 notice 模块的表：该模块实体继承自有基类，未采用平台审计列契约。</p>
+         */
+        @Getter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP",
+                justification = "Spring configuration binding intentionally exposes this mutable table list"))
+        @Setter(onMethod_ = @SuppressFBWarnings(value = "EI_EXPOSE_REP2",
+                justification = "Spring configuration binding intentionally stores this mutable table list"))
+        private List<String> auditColumnsExemptTables = new ArrayList<>(List.of(
+                "notice_audit_log", "notice_business_channel_template", "notice_business_config_version",
+                "notice_business_type", "notice_callback_log", "notice_channel_config",
+                "notice_channel_config_route_tag", "notice_channel_route_tag", "notice_inbound_attachment",
+                "notice_inbound_message", "notice_inbound_receive_cursor", "notice_receive_preference",
+                "notice_recipient", "notice_recipient_account", "notice_retry_log", "notice_send_record",
+                "notice_setting", "notice_site_message", "notice_site_message_action",
+                "notice_site_message_action_request", "notice_task", "notice_wecom_sync_mapping"));
     }
 }

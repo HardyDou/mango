@@ -92,6 +92,9 @@ public class SchemaValidationRunner {
         if (hasStandardId && !hasIdPrimaryKey(metaData, catalog, schema, tableName)) {
             violations.add(tableName + " 必须以 id 作为主键");
         }
+        if (isAuditColumnsExempt(tableName)) {
+            return;
+        }
         for (String requiredColumn : properties.getRequiredColumns()) {
             String column = normalize(requiredColumn);
             if (!columns.contains(column)) {
@@ -143,6 +146,19 @@ public class SchemaValidationRunner {
         for (String excludedTable : properties.getExcludedTables()) {
             String normalizedExcludedTable = normalize(excludedTable);
             if (matchesExcludedTable(normalizedTable, normalizedExcludedTable)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isAuditColumnsExempt(String tableName) {
+        String normalizedTable = normalize(tableName);
+        if (normalizedTable == null) {
+            return false;
+        }
+        for (String exemptTable : properties.getAuditColumnsExemptTables()) {
+            if (matchesExcludedTable(normalizedTable, normalize(exemptTable))) {
                 return true;
             }
         }

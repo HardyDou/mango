@@ -169,7 +169,8 @@ mango:
 | `schema-validation.enabled` | `true` | 是否在应用启动时校验数据库表结构 |
 | `schema-validation.fail-fast` | `false` | 发现结构问题时是否启动失败 |
 | `schema-validation.required-columns` | `created_by`、`created_at`、`updated_by`、`updated_at`、`tenant_id`、`org_id` | 每张非排除租户业务表必须存在的标准字段 |
-| `schema-validation.excluded-tables` | 见下表 | 不参与启动期结构校验的表，支持以 `*` 结尾的前缀匹配 |
+| `schema-validation.excluded-tables` | 见下表 | 不参与启动期结构校验的表，支持以 `*` 结尾的前缀匹配（默认含 `mango_bootstrap*`、`mango_runtime*`：框架自身簿记表没有实体契约，连标准主键都不适用） |
+| `schema-validation.audit-columns-exempt-tables` | notice 模块各表 | 只豁免标准审计列、仍校验主键规则的表，支持以 `*` 结尾的前缀匹配。用于 `@TableName(..., excludeProperty = {"orgId", "createdBy", "updatedBy"})` 这类显式声明不使用审计列的轻量实体 |
 
 租户默认排除表：
 
@@ -561,6 +562,19 @@ CREATE TABLE order_invoice (
 ```
 
 `id` 必须是 `BIGINT` 或数据库等价类型，不能是 `AUTO_INCREMENT`。当前启动期校验还会要求 `created_by`、`created_at`、`updated_by`、`updated_at`、`tenant_id`、`org_id` 存在，除非表在 `schema-validation.excluded-tables` 中。这里的约束面向租户业务表；全局配置表、历史表、基础设施表和第三方表应明确加入排除清单。
+
+两类豁免要分清：
+
+- `excluded-tables`：整张表不校验（框架簿记表如 `mango_bootstrap_*`、`mango_runtime_*`）。
+- `audit-columns-exempt-tables`：只跳过审计列检查，主键规则仍然生效。适用于实体用 `@TableName(excludeProperty = {...})` 显式声明不使用审计列的业务表，默认包含 notice 模块各表——那样缺列是设计选择，不是缺陷。
+
+判断标准只有一条：**缺列是实体契约写明的，还是漏写的**。写明的进豁免清单并在这里登记原因；漏写的补迁移。
+
+### 迁移文件的不可修改性
+
+已经执行过的迁移文件不能直接编辑：Flyway 的 `validate` 会比对 checksum，改动会让已部署环境启动即报 `Migration checksum mismatch`。因此，即使历史迁移有明显笔误（例如 `notice` 的 `V2` 重复创建了 `V1` 已建的 `notice_channel_route_tag`），也只能前向处理或登记为已知噪音。
+
+`node mango-pmo/tools/check-migration-duplicates.mjs`（CI 在 `Preflight and scope` 中执行）会扫描每个迁移模块，禁止同一模块内两个迁移文件创建同名表；已存在的历史重复登记在 `mango-pmo/baselines/migration-create-table-duplicates.txt`，新增重复直接失败。
 
 ### 7.2 查询注解
 
