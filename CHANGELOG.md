@@ -2,7 +2,7 @@
 
 Status: PENDING - 批次处于发布准备阶段，Maven 与 npm 制品尚未发布，消费端验证、Tag 与 GitHub Release 待完成。
 
-Plan digest: `311998168a2948e7aa51f9bbd8f7b6b0c55c51f5a5ae87d05dc34acc303b2f58`
+Plan digest: `426301877eefd57afc2dc8299d80512817a2f365ac545b25e38bd080c7f237e2`
 
 ### Pull Requests
 
