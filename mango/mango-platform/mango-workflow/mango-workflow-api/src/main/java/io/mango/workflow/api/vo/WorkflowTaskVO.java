@@ -92,7 +92,7 @@ public class WorkflowTaskVO {
     @Schema(description = "承办人来源；未指派时为空")
     private WorkflowTaskAssigneeSource assignSource;
 
-    @Schema(description = "状态：TODO=在途，DONE=已办理，CANCELED=已终止")
+    @Schema(description = "状态：TODO=在途，DONE=已办理（含本人驳回/退回），CANCELED=已终止")
     private String status;
 
     @Schema(description = "任务创建时间")
@@ -107,7 +107,8 @@ public class WorkflowTaskVO {
     @Schema(description = "任务终止原因；仅已终止任务有值，为引擎原始文案，不建议直接展示")
     private String deleteReason;
 
-    @Schema(description = "任务终止的机器可读原因：RETURNED / WITHDRAWN / TERMINATED / OTHER；仅已终止任务有值")
+    @Schema(description = "任务终止的机器可读原因：RETURNED / REJECTED / WITHDRAWN / TERMINATED / OTHER；"
+            + "CANCELED 恒有值，DONE 仅在本人驳回/退回时有值，其余为 null")
     private String cancelCause;
 
     @Schema(description = "任务所属申请是否发生过退回")

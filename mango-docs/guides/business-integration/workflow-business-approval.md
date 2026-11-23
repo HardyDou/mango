@@ -167,7 +167,7 @@ mango:
 - `businessTypes`：可选（Issue #1294），业务类型集合，最多 20 个，用于一个列表同时展示多个业务类型的任务（项目准入审批 / 合规复核 / 签约审核混排）。集合非空时按集合匹配且 `businessType` 被忽略；两者都不传或都为空时查询以 `业务类型不能为空` 拒绝。空数组、`null`、只传 `businessType` 三种情况生成的 SQL 与 1.12.0 完全相同。
 - `processDefinitionKeys`：可选（Issue #1294），按 `workflow_business_apply.process_definition_key` 精确匹配，最多 100 个，传 `null` 或空集合表示不限流程定义。用于同一业务类型下有两条流程定义（例如普通审批与加签审批）时只取其中一条。
 - `businessKeys`：可选，不传或为空表示不限业务主键。只有调用方已经明确业务对象范围时才传入，不需要为了列表请求先查业务表取候选业务键。
-- `scope`：`SELF`（默认，办理人是当前用户或候选用户/候选组命中）、`ALL`（服务端校验 `workflow:task:all` 权限码，未安装授权中心时拒绝）、`ORG`（本版直接报错）。数据范围由调用方显式声明，平台不读取角色数据范围配置。
+- `scope`：`SELF`（默认，办理人是当前用户或候选用户/候选组命中）、`ALL`（服务端校验 `workflow:task:all` 权限码，未安装授权中心时拒绝）、`ORG`（本版直接报错并提示改用数据范围配置）。部门档不再由调用方传部门 ID：平台按登录人读取数据范围配置（资源码 `workflow:task:list`）决定处理人可见集，配置为「全部」但当前用户没有 `workflow:task:all` 时退化成本人范围并记 WARN。
 - `applyKeyword`：可选，模糊匹配申请编号、申请标题、申请摘要三列中的任意一列，输入里的 `%`、`_`、`\` 按字面匹配。它和 `keyword` 互不替代：`keyword` 只匹配任务名称和节点定义 Key。
 - 不传 `page` / `size` 时按 `mango.workflow.task-query.unpaged-max-rows`（默认 2000）一次性返回；`total` 始终是过滤后的真实总数，用 `list.size() < total` 判断是否需要改用分页拉取。业务列表应显式传 `page` / `size`，`total` 按任务数计算，`list` 一行一个任务。
 
@@ -179,8 +179,9 @@ mango:
 - `claimStatus`：`UNCLAIMED` 待领取、`ASSIGNED` 待处理；转办后返回 `ASSIGNED`，与"待处理"一致。
 - `returned`：该申请是否发生过退回。退回不改变 `apply_status`，因此"退回待修改"用 `applyStatus=IN_APPROVAL` 加 `returned=true` 表达，不要期望出现 `RETURNED` 状态值。
 - `lastReturnAt` / `lastReturnTarget`：最近一次退回的时间和目标节点，用于判断"当前是否处于退回待修改"。
-- `cancelCause`：已终止任务的机器可读原因，`RETURNED` / `WITHDRAWN` / `TERMINATED` / `OTHER`。业务侧按枚举出中文文案，不要匹配 `deleteReason` 文本——它是引擎内部文案（例如 `Change activity to risk_specialist_review`、`申请人撤回`），不稳定。
-- `statuses=[DONE]` 只返回真正办结的任务，被退回或撤回终止的任务不会混入"已办理"。
+- `cancelCause`：机器可读的终止/退回原因，`REJECTED` / `RETURNED` / `WITHDRAWN` / `TERMINATED` / `OTHER`；`DONE` 也带 `cancelCause`（本人驳回或退回），其余状态为 `null`。业务侧按枚举出中文文案，不要匹配 `deleteReason` 文本——它是引擎内部文案（例如 `Change activity to risk_specialist_review`、`申请人撤回`），不稳定。
+- `statuses` 支持分组值与细状态值，多值取并集：`TODO` → `{TODO}`；`DONE` → `{COMPLETED, REJECTED, RETURNED}`；`CANCELED` → `{WITHDRAWN, TERMINATED}`。要「只看被驳回的」用 `statuses=[REJECTED]`，要「只看被退回的」用 `statuses=[RETURNED]`，不需要再拿 `cancelCause` 自己过滤。五个细状态互斥且覆盖全量（`TERMINATED` 兜底「他人驳回导致本任务被作废」），`statuses=[DONE, CANCELED]` 与不限状态的行集一致。
+- `statuses=[DONE]` 返回本人办过的任务：正常办结，外加本人驳回或退回、随后流程实例被删除的任务；被他人驳回牵连作废的任务落在 `CANCELED`，不会混入"已办理"。
 - `assigneeIds` 直接传业务 `user_id` 即可，平台按 `identity_user.username` 映射到引擎办理人，并用 `tenant_member` 限定该用户属于任务所在租户，跨租户同名用户不会串号。
 - 业务字段的多选精确筛选用 `filterAttributes` + `applyAttributeFilters`（Issue #1248）：创建申请时把可筛字段作为键值上报（如 `guaranteeTypeCode=PERF`、`beneficiary=中铁三局`），列表用同名键筛选；版本状态这类提交后会变化的值，在状态变化处调用 `PUT /workflow/business-applies/filter-attributes`（请求体 `{applyId, filterAttributes:[{key,values}]}`）整体覆盖刷新。字段由业务命名，新增或下线筛选字段都不需要平台改表或升级；多值字段按值数组上报（如 `beneficiary=[中铁三局, 中铁四局]`），筛其中任一值即可命中。默认通知的按钮目标也可以由业务决定：在申请快照 `customConfig` 里声明 `viewPath`、`viewQuery`、`viewActionLabel`，该目标对完成/驳回通知和**待办到达通知**都生效，按钮可直接跳到业务自己的待办/领取列表；不需要按钮时把 `viewActionEnabled` 设为 `false`，默认通知只发标题和正文，不注入按钮动作。
 

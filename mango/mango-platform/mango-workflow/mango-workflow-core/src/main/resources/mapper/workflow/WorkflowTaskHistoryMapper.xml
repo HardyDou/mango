@@ -28,6 +28,134 @@
         </choose>
     </sql>
 
+    <!-- 「本人办过」的唯一依据是任务级处理记录：驳回会删除整个流程实例，被牵连终止的任务同样带
+         DELETE_REASON_，只有任务上的处理记录能区分「我驳回了」和「被别人连带终止」。
+         两个 exists 片段同时用于状态谓词与 Java 侧的状态推导，保证 SQL 与 Java 是同一份口径。 -->
+    <sql id="hasRejectRecord">
+        exists (
+            select 1 from workflow_task_record dr
+            where dr.tenant_id = a.tenant_id
+              and dr.task_id = t.ID_
+              and dr.action in ('REJECT', 'AUTO_REJECT')
+        )
+    </sql>
+
+    <sql id="hasReturnRecord">
+        exists (
+            select 1 from workflow_task_record dn
+            where dn.tenant_id = a.tenant_id
+              and dn.task_id = t.ID_
+              and dn.action = 'RETURN'
+        )
+    </sql>
+
+    <!-- 七个细状态互斥且覆盖全量，顺序即优先级：驳回先于退回，两者都先于「申请状态归因」，
+         避免同一行同时落入两个状态、也避免被牵连终止的行从「已终止」里漏掉。 -->
+    <sql id="statusPredicate">
+        <trim prefixOverrides="or">
+            <foreach collection="c.resolvedQueryStatuses" item="queryStatus">
+                <choose>
+                    <when test="queryStatus == 'TODO'">
+                        or (t.END_TIME_ is null and t.DELETE_REASON_ is null)
+                    </when>
+                    <when test="queryStatus == 'COMPLETED'">
+                        or (t.END_TIME_ is not null and t.DELETE_REASON_ is null)
+                    </when>
+                    <when test="queryStatus == 'REJECTED'">
+                        or (t.DELETE_REASON_ is not null and <include refid="hasRejectRecord"/>)
+                    </when>
+                    <when test="queryStatus == 'RETURNED'">
+                        or (t.DELETE_REASON_ is not null and not <include refid="hasRejectRecord"/>
+                            and <include refid="hasReturnRecord"/>)
+                    </when>
+                    <when test="queryStatus == 'WITHDRAWN'">
+                        or (t.DELETE_REASON_ is not null and not <include refid="hasRejectRecord"/>
+                            and not <include refid="hasReturnRecord"/>
+                            and a.apply_status = 'WITHDRAWN')
+                    </when>
+                    <when test="queryStatus == 'TERMINATED'">
+                        or (t.DELETE_REASON_ is not null and not <include refid="hasRejectRecord"/>
+                            and not <include refid="hasReturnRecord"/>
+                            and (a.apply_status is null or a.apply_status &lt;&gt; 'WITHDRAWN'))
+                    </when>
+                    <otherwise>
+                        or 1 = 0
+                    </otherwise>
+                </choose>
+            </foreach>
+        </trim>
+    </sql>
+
+    <!-- 处理人部门档：范围来自平台数据范围配置（资源码 workflow:task:list），业务不传部门入参。
+         处理人标识必须双匹配：ASSIGNEE_ 是 varchar，既可能是用户名也可能是字符串化用户 ID。
+         部门成员按实时身份表 join（人调岗后跟着新部门），未领取任务只在「我是候选」时命中。 -->
+    <sql id="assigneeScope">
+        <if test="c.assigneeScope != null">
+            <choose>
+                <when test="c.assigneeScope.denyAll">
+                    and 1 = 0
+                </when>
+                <otherwise>
+                    and (
+                    <trim prefixOverrides="or">
+                        <if test="c.assigneeScope.orgIds != null and c.assigneeScope.orgIds.size() > 0">
+                            or exists (
+                                select 1 from identity_user ou
+                                join tenant_member om on om.user_id = ou.id and om.tenant_id = a.tenant_id
+                                join tenant_member_org omo on omo.member_id = om.id and omo.tenant_id = om.tenant_id
+                                where om.status = 1 and om.left_at is null
+                                  and omo.org_id in
+                                  <foreach collection="c.assigneeScope.orgIds" item="scopeOrgId"
+                                           open="(" separator="," close=")">
+                                      #{scopeOrgId}
+                                  </foreach>
+                                  and (ou.username = t.ASSIGNEE_ or concat('', ou.id) = t.ASSIGNEE_)
+                            )
+                        </if>
+                        <if test="c.assigneeScope.selfIdentifiers != null and c.assigneeScope.selfIdentifiers.size() > 0">
+                            or t.ASSIGNEE_ in
+                            <foreach collection="c.assigneeScope.selfIdentifiers" item="scopeSelfIdentifier"
+                                     open="(" separator="," close=")">
+                                #{scopeSelfIdentifier}
+                            </foreach>
+                        </if>
+                        <if test="(c.assigneeScope.candidateIdentifiers != null
+                                   and c.assigneeScope.candidateIdentifiers.size() > 0)
+                                  or (c.assigneeScope.candidateGroups != null
+                                      and c.assigneeScope.candidateGroups.size() > 0)">
+                            or (t.ASSIGNEE_ is null and exists (
+                                select 1 from ACT_HI_IDENTITYLINK sk
+                                where sk.TASK_ID_ = t.ID_
+                                  and sk.TYPE_ = 'candidate'
+                                  and (
+                                  <trim prefixOverrides="or">
+                                      <if test="c.assigneeScope.candidateIdentifiers != null
+                                                and c.assigneeScope.candidateIdentifiers.size() > 0">
+                                          or sk.USER_ID_ in
+                                          <foreach collection="c.assigneeScope.candidateIdentifiers"
+                                                   item="scopeCandidateIdentifier" open="(" separator="," close=")">
+                                              #{scopeCandidateIdentifier}
+                                          </foreach>
+                                      </if>
+                                      <if test="c.assigneeScope.candidateGroups != null
+                                                and c.assigneeScope.candidateGroups.size() > 0">
+                                          or sk.GROUP_ID_ in
+                                          <foreach collection="c.assigneeScope.candidateGroups"
+                                                   item="scopeCandidateGroup" open="(" separator="," close=")">
+                                              #{scopeCandidateGroup}
+                                          </foreach>
+                                      </if>
+                                  </trim>
+                                  )
+                            ))
+                        </if>
+                    </trim>
+                    )
+                </otherwise>
+            </choose>
+        </if>
+    </sql>
+
     <sql id="taskWhere">
         where a.tenant_id = #{c.tenantId}
           and a.business_type <include refid="applyBusinessTypes"/>
@@ -74,15 +202,17 @@
                 </if>
             )
         </if>
-        <if test="c.includeTodo == false or c.includeDone == false or c.includeCanceled == false">
-            and (
-            <trim prefixOverrides="or">
-                <if test="c.includeTodo">or (t.END_TIME_ is null and t.DELETE_REASON_ is null)</if>
-                <if test="c.includeDone">or (t.END_TIME_ is not null and t.DELETE_REASON_ is null)</if>
-                <if test="c.includeCanceled">or t.DELETE_REASON_ is not null</if>
-            </trim>
-            )
+        <if test="c.resolvedQueryStatuses != null and c.resolvedQueryStatuses.size() > 0
+                  and c.resolvedQueryStatuses.size() &lt; 7">
+            and (<include refid="statusPredicate"/>)
         </if>
+        <if test="c.deptIds != null and c.deptIds.size() > 0">
+            and coalesce(a.applicant_dept_id, a.org_id) in
+            <foreach collection="c.deptIds" item="deptId" open="(" separator="," close=")">
+                #{deptId}
+            </foreach>
+        </if>
+        <include refid="assigneeScope"/>
         <if test="c.assigneeRequired != null">
             <choose>
                 <when test="c.assigneeRequired">and t.ASSIGNEE_ is not null</when>
@@ -221,6 +351,12 @@
                           and rt.task_id = t.ID_
                           and rt.action = 'RETURN'
                     ) then 1 else 0 end as taskReturned,
+               case when exists (
+                        select 1 from workflow_task_record rjt
+                        where rjt.tenant_id = a.tenant_id
+                          and rjt.task_id = t.ID_
+                          and rjt.action in ('REJECT', 'AUTO_REJECT')
+                    ) then 1 else 0 end as rejectedByRecord,
                (select max(rl.created_time) from workflow_task_record rl
                 where rl.tenant_id = a.tenant_id
                   and rl.process_instance_id = a.process_instance_id

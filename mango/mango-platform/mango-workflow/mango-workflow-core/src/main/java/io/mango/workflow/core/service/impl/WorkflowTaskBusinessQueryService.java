@@ -13,6 +13,7 @@ import io.mango.workflow.api.enums.WorkflowTaskAssigneeSource;
 import io.mango.workflow.api.enums.WorkflowTaskCancelCause;
 import io.mango.workflow.api.enums.WorkflowTaskClaimStatus;
 import io.mango.workflow.api.enums.WorkflowTaskQueryScope;
+import io.mango.workflow.api.enums.WorkflowTaskQueryStatus;
 import io.mango.workflow.api.enums.WorkflowTaskRuntimeStatus;
 import io.mango.workflow.api.query.WorkflowApplyAttributeQuery;
 import io.mango.workflow.api.query.WorkflowTaskBusinessPageQuery;
@@ -33,6 +34,7 @@ import io.mango.workflow.core.identity.WorkflowAssigneeIdentityService;
 import io.mango.workflow.core.mapper.WorkflowBusinessApplyMapper;
 import io.mango.workflow.core.mapper.WorkflowTaskHistoryMapper;
 import io.mango.workflow.core.model.WorkflowApplyAttributeCondition;
+import io.mango.workflow.core.model.WorkflowTaskAssigneeScope;
 import io.mango.workflow.core.model.WorkflowTaskHistoryCriteria;
 import io.mango.workflow.core.model.WorkflowTaskHistoryRow;
 import io.mango.workflow.core.model.WorkflowTaskIdentityLinkRow;
@@ -78,6 +80,7 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
     private final WorkflowTaskQueryAuthorizer authorizer;
     private final WorkflowAssigneeIdentityService assigneeIdentityService;
     private final WorkflowCandidateGroupProvider candidateGroupProvider;
+    private final WorkflowTaskDataScopeFilter dataScopeFilter;
     private final WorkflowTaskQueryProperties properties;
     private final ObjectMapper objectMapper;
 
@@ -109,6 +112,12 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
         if (selfScope) {
             Require.isTrue(!selfIdentifiers.isEmpty(), WorkflowCode.TASK_QUERY_INVALID, "缺少当前用户上下文");
         }
+        // 处理人部门档来自平台数据范围配置：业务不传部门参数，规则由 provider 按登录人解析。
+        List<String> queryStatuses = WorkflowTaskQueryStatus.expand(resolved.getStatuses()).stream()
+                .map(Enum::name)
+                .toList();
+        WorkflowTaskAssigneeScope assigneeScope = dataScopeFilter.resolve(scope, authorizer.canQueryAll(),
+                selfIdentifiers, selfGroups);
         WorkflowTaskHistoryCriteria criteria = WorkflowTaskHistoryCriteria.builder()
                 .tenantId(tenantId)
                 .businessType(businessType)
@@ -118,9 +127,12 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
                 .processDefinitionKeys(normalizeStrings(resolved.getProcessDefinitionKeys()))
                 .assigneeIds(normalizeIds(resolved.getAssigneeIds()))
                 .assigneeIdentifiers(assigneeIdentifiers(resolved.getAssigneeIds()))
-                .includeTodo(includeStatus(resolved, WorkflowTaskRuntimeStatus.TODO))
-                .includeDone(includeStatus(resolved, WorkflowTaskRuntimeStatus.DONE))
-                .includeCanceled(includeStatus(resolved, WorkflowTaskRuntimeStatus.CANCELED))
+                .deptIds(normalizeIds(resolved.getDeptIds()))
+                .queryStatuses(queryStatuses)
+                .assigneeScope(assigneeScope)
+                .includeTodo(true)
+                .includeDone(true)
+                .includeCanceled(true)
                 .assigneeRequired(assigneeRequired(resolved))
                 .applyStatuses(applyStatuses(resolved))
                 .returned(resolved.getReturned())
@@ -133,7 +145,7 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
                 .applyAttributeConditions(attributeConditions)
                 .applyTimeBegin(resolved.getApplyTimeBegin())
                 .applyTimeEnd(resolved.getApplyTimeEnd())
-                .selfScope(selfScope)
+                .selfScope(selfScope && assigneeScope == null)
                 .selfIdentifiers(selfScope ? selfIdentifiers : List.of())
                 .selfCandidateGroups(selfScope ? selfGroups : List.of())
                 .deniedApplyIds(deniedApplyIds(tenantId, businessTypes, businessKeys))
@@ -304,13 +316,17 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
     }
 
     private void validateScope(WorkflowTaskBusinessPageQuery query, WorkflowTaskQueryScope scope) {
-        Require.isTrue(scope != WorkflowTaskQueryScope.ORG,
-                WorkflowCode.TASK_QUERY_INVALID, "指定组织范围暂不支持");
-        Require.isTrue(query.getDeptIds() == null || query.getDeptIds().isEmpty(),
-                WorkflowCode.TASK_QUERY_INVALID, "deptIds 仅指定组织范围可用");
+        Require.isTrue(scope != WorkflowTaskQueryScope.ORG, WorkflowCode.TASK_QUERY_INVALID,
+                "指定组织范围已下线，请通过数据范围配置部门档");
+        Require.isTrue(isEmpty(query.getDeptIds()), WorkflowCode.TASK_QUERY_INVALID,
+                "deptIds 已废弃，请通过数据范围配置部门档");
         if (scope == WorkflowTaskQueryScope.ALL) {
             Require.isTrue(authorizer.canQueryAll(), WorkflowCode.TASK_QUERY_FORBIDDEN);
         }
+    }
+
+    private boolean isEmpty(List<?> values) {
+        return values == null || values.isEmpty();
     }
 
     /** 包内共享：活动时间轴服务复用同一套租户、部门与业务键收窄口径，避免两份实现漂移。 */
@@ -375,13 +391,6 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
 
     private int resolveSize(WorkflowTaskBusinessPageQuery query, List<WorkflowTaskVO> records) {
         return query.getSize() == null ? records.size() : query.getSize();
-    }
-
-    private boolean includeStatus(WorkflowTaskBusinessPageQuery query, WorkflowTaskRuntimeStatus status) {
-        if (query.getStatuses() == null || query.getStatuses().isEmpty()) {
-            return true;
-        }
-        return query.getStatuses().contains(status);
     }
 
     private Boolean assigneeRequired(WorkflowTaskBusinessPageQuery query) {
@@ -545,20 +554,33 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
     }
 
     private String resolveCancelCause(WorkflowTaskHistoryRow row) {
-        if (resolveStatus(row) != WorkflowTaskRuntimeStatus.CANCELED) {
+        WorkflowTaskQueryStatus status = resolveQueryStatus(row);
+        if (status == WorkflowTaskQueryStatus.TODO || status == WorkflowTaskQueryStatus.COMPLETED) {
             return null;
         }
-        if (Boolean.TRUE.equals(row.getTaskReturned())) {
-            return WorkflowTaskCancelCause.RETURNED.name();
-        }
-        if (WorkflowApplyStatus.WITHDRAWN.name().equals(row.getApplyStatus())) {
-            return WorkflowTaskCancelCause.WITHDRAWN.name();
-        }
-        if (WorkflowApplyStatus.TERMINATED.name().equals(row.getApplyStatus())
-                || WorkflowApplyStatus.CANCELED.name().equals(row.getApplyStatus())) {
-            return WorkflowTaskCancelCause.TERMINATED.name();
-        }
-        return WorkflowTaskCancelCause.OTHER.name();
+        return switch (status) {
+            case REJECTED -> WorkflowTaskCancelCause.REJECTED.name();
+            case RETURNED -> WorkflowTaskCancelCause.RETURNED.name();
+            case WITHDRAWN -> WorkflowTaskCancelCause.WITHDRAWN.name();
+            case TERMINATED -> isApplyTerminated(row)
+                    ? WorkflowTaskCancelCause.TERMINATED.name()
+                    : WorkflowTaskCancelCause.OTHER.name();
+            default -> WorkflowTaskCancelCause.OTHER.name();
+        };
+    }
+
+    /**
+     * 判断流程终止是否由申请状态直接决定。
+     *
+     * <p>{@code TERMINATED} 细状态是兜底桶，也覆盖「他人驳回导致本任务被作废」；这类行对本人来说
+     * 不是「申请被终止」，展示原因仍归 {@code OTHER}，便于详情页区分。
+     *
+     * @param row 任务行
+     * @return 申请状态为终止或取消时返回 true
+     */
+    private boolean isApplyTerminated(WorkflowTaskHistoryRow row) {
+        return WorkflowApplyStatus.TERMINATED.name().equals(row.getApplyStatus())
+                || WorkflowApplyStatus.CANCELED.name().equals(row.getApplyStatus());
     }
 
     private String resolveLastReturnTarget(WorkflowTaskHistoryRow row) {
@@ -577,9 +599,36 @@ public class WorkflowTaskBusinessQueryService implements IWorkflowTaskBusinessQu
 
     private WorkflowTaskRuntimeStatus resolveStatus(WorkflowTaskHistoryRow row) {
         if (StringUtils.hasText(row.getDeleteReason())) {
-            return WorkflowTaskRuntimeStatus.CANCELED;
+            return decidedByRecord(row) ? WorkflowTaskRuntimeStatus.DONE : WorkflowTaskRuntimeStatus.CANCELED;
         }
         return row.getEndTime() == null ? WorkflowTaskRuntimeStatus.TODO : WorkflowTaskRuntimeStatus.DONE;
+    }
+
+    /**
+     * 推导细状态，与 SQL 的 {@code statusPredicate} 逐句对齐：同一行恰好落入一个细状态。
+     *
+     * <p>任务级处理记录优先于申请状态归因：驳回会删除整个实例，被牵连终止的任务同样带
+     * {@code DELETE_REASON_}，只有任务上的记录能区分「我驳回了」与「被别人连带终止」。
+     */
+    private WorkflowTaskQueryStatus resolveQueryStatus(WorkflowTaskHistoryRow row) {
+        if (!StringUtils.hasText(row.getDeleteReason())) {
+            return row.getEndTime() == null ? WorkflowTaskQueryStatus.TODO : WorkflowTaskQueryStatus.COMPLETED;
+        }
+        if (Boolean.TRUE.equals(row.getRejectedByRecord())) {
+            return WorkflowTaskQueryStatus.REJECTED;
+        }
+        if (Boolean.TRUE.equals(row.getTaskReturned())) {
+            return WorkflowTaskQueryStatus.RETURNED;
+        }
+        if (WorkflowApplyStatus.WITHDRAWN.name().equals(row.getApplyStatus())) {
+            return WorkflowTaskQueryStatus.WITHDRAWN;
+        }
+        return WorkflowTaskQueryStatus.TERMINATED;
+    }
+
+    /** 驳回会自动删除流程实例，被牵连终止的任务也有 delete_reason；任务级处理记录才是「本人办过」的唯一依据。 */
+    private boolean decidedByRecord(WorkflowTaskHistoryRow row) {
+        return Boolean.TRUE.equals(row.getTaskReturned()) || Boolean.TRUE.equals(row.getRejectedByRecord());
     }
 
     private List<String> normalizeBusinessKeys(List<String> businessKeys) {

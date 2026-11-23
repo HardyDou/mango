@@ -34,6 +34,9 @@ public class WorkflowTaskHistoryRow {
     private Long orgId;
     private Boolean returned;
     private Boolean taskReturned;
+
+    /** 该任务上存在驳回或自动驳回处理记录；用于把「本人驳回」与「被牵连终止」区分开。 */
+    private Boolean rejectedByRecord;
     private LocalDateTime lastReturnAt;
     private String lastReturnVariables;
 }

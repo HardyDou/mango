@@ -94,10 +94,14 @@ class WorkflowTaskTraceIntegrationTest {
         @SuppressWarnings("unchecked")
         ObjectProvider<WorkflowBusinessApplyAccessChecker> checkerProvider = mock(ObjectProvider.class);
         when(checkerProvider.getIfAvailable()).thenReturn(null);
+        @SuppressWarnings("unchecked")
+        ObjectProvider<io.mango.infra.persistence.api.scope.DataScopeProvider> dataScopeProviders =
+                mock(ObjectProvider.class);
+        when(dataScopeProviders.getIfAvailable()).thenReturn(null);
         service = new WorkflowTaskBusinessQueryService(taskHistoryMapper, businessApplyMapper, taskRecordMapper,
                 statusLogMapper, checkerProvider, mock(WorkflowTaskQueryAuthorizer.class),
                 mock(WorkflowAssigneeIdentityService.class), mock(WorkflowCandidateGroupProvider.class),
-                properties, new ObjectMapper());
+                new WorkflowTaskDataScopeFilter(dataScopeProviders), properties, new ObjectMapper());
     }
 
     @AfterEach

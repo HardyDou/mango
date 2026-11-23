@@ -3,7 +3,7 @@ package io.mango.workflow.api.query;
 import io.mango.workflow.api.enums.WorkflowApplyStatus;
 import io.mango.workflow.api.enums.WorkflowTaskClaimStatus;
 import io.mango.workflow.api.enums.WorkflowTaskQueryScope;
-import io.mango.workflow.api.enums.WorkflowTaskRuntimeStatus;
+import io.mango.workflow.api.enums.WorkflowTaskQueryStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -52,11 +52,21 @@ public class WorkflowTaskBusinessPageQuery {
     private List<@NotBlank(message = "业务主键不能为空")
                  @Size(max = 128, message = "业务主键长度不能超过128") String> businessKeys;
 
-    @Schema(description = "数据范围：SELF=本人，ALL=全量（需要 workflow:task:all），ORG=指定组织（当前版本不支持）",
+    @Schema(description = "数据范围：SELF=本人，ALL=全量（需要 workflow:task:all）；"
+            + "部门档由平台数据范围配置决定，不再通过入参传部门",
             defaultValue = "SELF")
     private WorkflowTaskQueryScope scope = WorkflowTaskQueryScope.SELF;
 
-    @Schema(description = "组织 ID 集合，仅 scope=ORG 时允许传入；当前版本传入将被拒绝")
+    /**
+     * 申请人部门 ID 集合。
+     *
+     * @deprecated 部门档改由平台数据范围配置（资源码 {@code workflow:task:list}）按登录人处理，
+     *             业务不再传部门参数；该字段保留只为避免调用方编译面突变，传入会被拒绝。下一个大版本移除。
+     */
+    @Deprecated(since = "1.16.0", forRemoval = true)
+    @Schema(description = "【已废弃】申请人部门 ID 集合，按 coalesce(applicant_dept_id, org_id) 精确匹配；"
+            + "部门档已改由平台数据范围配置接管，传入会被拒绝",
+            example = "[1001,1002]")
     @Size(max = 500, message = "组织数量不能超过500")
     private List<Long> deptIds;
 
@@ -74,9 +84,12 @@ public class WorkflowTaskBusinessPageQuery {
     @Size(max = 200, message = "办理人数量不能超过200")
     private List<Long> assigneeIds;
 
-    @Schema(description = "任务状态：TODO=在途，DONE=已办理，CANCELED=已终止")
-    @Size(max = 3, message = "任务状态数量不能超过3")
-    private List<WorkflowTaskRuntimeStatus> statuses;
+    @Schema(description = "任务状态：TODO=待办，DONE=已办（含通过/本人驳回/本人退回），"
+            + "CANCELED=已终止（含撤回/流程终止）；也可直接传细状态 "
+            + "COMPLETED/REJECTED/RETURNED/WITHDRAWN/TERMINATED，多值取并集",
+            example = "[\"DONE\",\"CANCELED\"]")
+    @Size(max = 9, message = "任务状态数量不能超过9")
+    private List<WorkflowTaskQueryStatus> statuses;
 
     @Schema(description = "认领状态：UNCLAIMED=待领取，ASSIGNED=待处理")
     @Size(max = 3, message = "认领状态数量不能超过3")
