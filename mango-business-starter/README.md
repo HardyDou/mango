@@ -55,7 +55,7 @@ Issue #1300 统一了 Mango 源仓的 Maven Surefire 版本并新增 `check-sure
 
 Issue #1297 更新了 PMO 门禁中对 workflow 公开契约哨兵的约定，规则正文见 [AI 交付质量规范](../mango-pmo/rules/05-ai-delivery-quality.md) §2.4；本次同时同步刷新 `business-pmo/mango-baseline` 投影（`baseline.json`、`rules/05-ai-delivery-quality.md`、`rules/index.json`），只影响 PMO 门禁说明与投影一致性，业务项目的 API、配置、菜单、权限、租户、页面与启动行为不变。
 
-Issue #1434 新增迁移重复建表检查 `check-migration-duplicates.mjs`，禁止同一迁移模块内两个文件创建同名表；已存在的历史重复登记在 `mango-pmo/baselines/migration-create-table-duplicates.txt`。本次同步刷新 `business-pmo/mango-baseline` 投影（`baseline.json`、`tools/check-migration-duplicates.mjs`）；该检查面向 Mango 源仓的迁移目录结构，业务项目不受影响，API、配置、菜单、权限、租户、页面与启动行为不变。
+Issue #1434 新增迁移重复建表检查 `check-migration-duplicates.mjs`，同一迁移模块内两个文件创建同名表会被判为失败；已存在的历史重复登记在 `mango-pmo/baselines/migration-create-table-duplicates.txt`。本次同步刷新 `business-pmo/mango-baseline` 投影（`baseline.json`、`tools/check-migration-duplicates.mjs`）；该检查面向 Mango 源仓的迁移目录结构，业务项目不受影响，API、配置、菜单、权限、租户、页面与启动行为不变。
 
 `business-pmo/mango-baseline` 是 canonical `mango-pmo` 的构建投影，维护边界遵循
 [文档资产规范](../mango-pmo/rules/06-document-assets.md)。更新 PMO 后执行：
