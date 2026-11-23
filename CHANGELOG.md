@@ -2,11 +2,11 @@
 
 Status: PENDING - 批次处于发布准备阶段，Maven 与 npm 制品尚未发布，消费端验证、Tag 与 GitHub Release 待完成。
 
-Plan digest: `c0a2e5125cadd33c923c22eef6aecd908cf2da59b915a77e07531b76d13e1918`
+Plan digest: `311998168a2948e7aa51f9bbd8f7b6b0c55c51f5a5ae87d05dc34acc303b2f58`
 
 ### Pull Requests
 
-- PR #1440 Added 任务分页状态细分与数据范围部门档：`statuses` 同时接受分组值 `TODO` / `DONE` / `CANCELED` 与细状态 `COMPLETED` / `REJECTED` / `RETURNED` / `WITHDRAWN` / `TERMINATED`，多值取并集；`DONE` 现在包含本人驳回或退回后被删除的任务；部门档改由平台数据范围配置（资源码 `workflow:task:list`）按登录人下发。 Packages: `@mango/workflow@1.4.0`, Maven `io.mango.platform.workflow:*:1.16.0`. Business Adaptation: 传 `scope=ORG` 或用 `deptIds` 的调用改为在角色上配置数据范围；`statuses=[DONE]` 返回行数会变多（含本人驳回/退回）。
+- PR #1440 Added 任务分页状态细分与数据范围部门档：`statuses` 同时接受三个分组值（未办 / 已办 / 已取消，枚举值见 `WorkflowTaskQueryStatus`）与五个细状态值（已通过 / 已驳回 / 已退回 / 已撤回 / 已终止），多值取并集；`DONE` 现在包含本人驳回或退回后被删除的任务；部门档改由平台数据范围配置（资源码 `workflow:task:list`）按登录人下发。 Packages: `@mango/workflow@1.4.0`, Maven `io.mango.platform.workflow:*:1.16.0`. Business Adaptation: 传 `scope=ORG` 或用 `deptIds` 的调用改为在角色上配置数据范围；`statuses=[DONE]` 返回行数会变多（含本人驳回/退回）。
 - PR #1435 Fixed 文件预览入口路径可配置：新增 `mango.file-preview.entry-path`，默认值保持 `/api/file-preview/files/preview-entry`，反代剥离 `/api` 的部署可改为 `/file-preview/files/preview-entry`。 Packages: Maven `io.mango.platform.file.preview:*:1.16.0`. Business Adaptation: 默认配置无需改动。
 - PR #1436 Fixed 全新库结构校验噪音与迁移重复建表检查：豁免 22 张 notice 表审计列与 `mango_bootstrap*` / `mango_runtime*` 表，`workflow_process_participant.id` 去掉 AUTO_INCREMENT，新增 `check-migration-duplicates.mjs` 门禁。 Packages: `@mango/pmo@1.6.4`, Maven `io.mango.platform.workflow:*`, `io.mango.infra:*:1.16.0`. Business Adaptation: 全新库首启不再产生 71 条结构校验警告；已部署库无需改动。
 
@@ -23,7 +23,7 @@ Plan digest: `c0a2e5125cadd33c923c22eef6aecd908cf2da59b915a77e07531b76d13e1918`
 - 已办列表不再丢失本人驳回 / 退回的记录（此前被计入「已取消」）。
 - 全新库启动时的 71 条结构校验警告归零：notice 模块 22 张表与 `mango_bootstrap*` / `mango_runtime*` 表不再按平台审计列强制校验，`workflow_process_participant.id` 改用雪花主键。
 - 文件预览入口不再硬编码 `/api` 前缀，直连后端的部署与脚本可直接使用。
-- `Mango Architecture Debt Inventory` 定时任务不再因 `invalid --base-ref: <sha>^` 长期失败。
+- `Mango Architecture Debt Inventory` 定时任务不再因 `invalid --base-ref` 报错（`HEAD^` 形式的 base-ref） 长期失败。
 - `dev start backend` 在干净环境与本地仓库缓存异常时能解析 reactor 父 POM 链。
 - CLI 生成的工程质量配置与 `mango-maven-plugin` ruleset 保持一致；workspace 状态探测不再依赖宿主 `mysql` 客户端。
 

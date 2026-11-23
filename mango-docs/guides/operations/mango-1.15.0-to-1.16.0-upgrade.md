@@ -57,7 +57,7 @@
 - 已办列表不再丢失本人驳回 / 退回的记录（此前被计入「已取消」）。
 - 全新库启动时的 71 条结构校验警告归零：notice 模块 22 张表与 `mango_bootstrap*` / `mango_runtime*` 表不再按平台审计列强制校验，`workflow_process_participant.id` 改用雪花主键。
 - 文件预览入口不再硬编码 `/api` 前缀，直连后端的部署与脚本可直接使用。
-- `Mango Architecture Debt Inventory` 定时任务不再因 `invalid --base-ref: <sha>^` 长期失败。
+- `Mango Architecture Debt Inventory` 定时任务不再因 `invalid --base-ref` 报错（`HEAD^` 形式的 base-ref） 长期失败。
 - `dev start backend` 在干净环境与本地仓库缓存异常时能解析 reactor 父 POM 链。
 - CLI 生成的工程质量配置与 `mango-maven-plugin` ruleset 保持一致；workspace 状态探测不再依赖宿主 `mysql` 客户端。
 

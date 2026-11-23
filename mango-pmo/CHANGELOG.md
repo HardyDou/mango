@@ -1,3 +1,14 @@
+## 1.6.4 - 2026-11-23
+
+### Added
+
+- `tools/check-admin-aggregate.mjs`：校验官方能力模块的 starter 聚合、Flyway 模块开关与 Resource 声明可达三者一致，并接入 PMO gates。
+- `tools/check-migration-duplicates.mjs`：禁止同一迁移模块内两个文件创建同名表，历史重复登记在 `baselines/migration-create-table-duplicates.txt`。
+
+### Fixed
+
+- 架构债预算校验的 `--base-ref` 支持 `HEAD^`、`origin/main~2` 这类 git revision 语法，修复 `Mango Architecture Debt Inventory` 定时任务长期失败。
+
 ## 1.6.3 - 2026-11-19
 
 ### Added

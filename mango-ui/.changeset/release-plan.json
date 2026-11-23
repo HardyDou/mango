@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-11-23T13:17:10.822Z",
+  "generatedAt": "2026-11-23T13:19:36.588Z",
   "releaseKind": "mixed",
   "release": {
     "tag": "v2026.11.23-maven-1.16.0-workflow-task-status-release",
     "title": "Mango release v2026.11.23-maven-1.16.0-workflow-task-status-release",
     "notesFile": ".changeset/release-notes.txt",
-    "notesSha256": "eba9411b42e4439c80b862143f258ea0021dd58d00d558e74b2eaa4281e1fc98"
+    "notesSha256": "08aaf60d18509247f1733b3169fa98d3bf76f79e9a7eb036d02c17efaf7fc7f7"
   },
   "baseline": {
     "kind": "successful-release",
@@ -3688,8 +3688,8 @@
     "docs": null
   },
   "source": {
-    "commit": "4ebd3d7580c66b772410af45ca427cea489525b2",
-    "tree": "0b637a171dc0e3d2287fd7829200d070148e23e5"
+    "commit": "4ebab6dfcc64c8af82ff21508371bedefc3e3635",
+    "tree": "93560069422c06e52fb00d6d2718d688397c9a98"
   },
   "sourceFiles": [
     ".github/workflows/architecture-debt-inventory.yml",
@@ -3788,6 +3788,7 @@
     "mango-ui/packages/information/src/views/FormDetailView.vue",
     "mango-ui/packages/information/src/views/HostedFormView.vue",
     "mango-ui/packages/information/src/views/SubmissionsView.vue",
+    "mango-ui/packages/mango-cli/CHANGELOG.md",
     "mango-ui/packages/mango-cli/README.md",
     "mango-ui/packages/mango-cli/release-versions.json",
     "mango-ui/packages/mango-cli/scripts/check-cli.mjs",
@@ -7612,12 +7613,12 @@
   "versionPolicyDigest": "c4c4c80d533dde047a59627c915cf87e3570606c2d329023ce6896544c50ee12",
   "releasePlanIdentity": {
     "schemaVersion": 1,
-    "sourceCommitOid": "4ebd3d7580c66b772410af45ca427cea489525b2",
-    "sourceTreeOid": "0b637a171dc0e3d2287fd7829200d070148e23e5",
+    "sourceCommitOid": "4ebab6dfcc64c8af82ff21508371bedefc3e3635",
+    "sourceTreeOid": "93560069422c06e52fb00d6d2718d688397c9a98",
     "catalogDigest": "b8b94083a923aee8d09d10510bf61deedcb41a486b0a01853000d7de1bec0ebd",
     "previousBaselineDigest": "cdd13a2a80d723229d9dc822065f2b8e5dcb462434def3301a799a6cae683441",
     "changesetsDigest": "d545c564a6fd7bc293675c0f770041ee5ed17a1d4a89e41ed353fc13855eeee6",
-    "releaseNotesDigest": "eba9411b42e4439c80b862143f258ea0021dd58d00d558e74b2eaa4281e1fc98",
+    "releaseNotesDigest": "08aaf60d18509247f1733b3169fa98d3bf76f79e9a7eb036d02c17efaf7fc7f7",
     "versionPolicyDigest": "c4c4c80d533dde047a59627c915cf87e3570606c2d329023ce6896544c50ee12",
     "resolvedTuple": [
       {
@@ -9275,5 +9276,5 @@
       "@mango/cli"
     ]
   },
-  "planDigest": "c0a2e5125cadd33c923c22eef6aecd908cf2da59b915a77e07531b76d13e1918"
+  "planDigest": "311998168a2948e7aa51f9bbd8f7b6b0c55c51f5a5ae87d05dc34acc303b2f58"
 }
