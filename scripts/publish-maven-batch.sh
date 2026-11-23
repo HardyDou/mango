@@ -339,6 +339,42 @@ deploy_architecture_verification_pom() {
   mvn "${deploy_args[@]}"
 }
 
+# `mango-parent` 供全仓父链使用，但不在 reactor 内（`mango/pom.xml` 的 parent 就是它），
+# 因此必须单独 deploy，否则消费方解析任何发布坐标的 POM 都会因父 POM 缺失而失败。
+deploy_standalone_parent_pom() {
+  local pom_file="${MAVEN_ROOT}/mango-parent/pom.xml"
+  local repository_id repository_url
+  local deploy_args
+
+  if [[ "${dry_run}" == "true" ]]; then
+    repository_id="${repository_id_override:-resolved-distribution-repository-id}"
+    repository_url="${repository_url_override:-resolved-distribution-repository-url}"
+  else
+    [[ -f "${pom_file}" ]] || return 0
+    repository_id="${repository_id_override:-$(mvn_eval "${MAVEN_ROOT}/pom.xml" project.distributionManagement.repository.id)}"
+    repository_url="${repository_url_override:-$(mvn_eval "${MAVEN_ROOT}/pom.xml" project.distributionManagement.repository.url)}"
+    if [[ -z "${repository_id}" || -z "${repository_url}" ]]; then
+      echo "Unable to resolve Maven publication repository for mango-parent." >&2
+      exit 1
+    fi
+  fi
+
+  deploy_args=(
+    -q -f "${pom_file}" deploy
+    "-Drevision=${revision}"
+    "-DskipTests"
+    "-DaltDeploymentRepository=${repository_id}::default::${repository_url}"
+  )
+
+  echo "Publishing reactor-external parent POM (mango-parent)"
+  printf 'Command: mvn'
+  printf ' %q' "${deploy_args[@]}"
+  printf '\n'
+  if [[ "${dry_run}" == "false" ]]; then
+    mvn "${deploy_args[@]}"
+  fi
+}
+
 deploy_docs_bundle() {
   local stage_dir="${DOCS_BUNDLE_WORK_DIR}/stage"
   local jar_file="${DOCS_BUNDLE_WORK_DIR}/${DOCS_BUNDLE_ARTIFACT_ID}-${revision}.jar"
@@ -558,6 +594,7 @@ if [[ "${verify_only}" == "false" ]]; then
     cd "${MAVEN_ROOT}"
     mvn "${mvn_args[@]}"
   fi
+  deploy_standalone_parent_pom
   if [[ "${publish_architecture_verification}" == "true" ]]; then
     deploy_architecture_verification_pom
   fi
@@ -585,6 +622,9 @@ if [[ "${verify_mode}" == "http" ]]; then
     printf '%s:%s:%s:jar\n' \
       "${DOCS_BUNDLE_GROUP_ID}" "${DOCS_BUNDLE_ARTIFACT_ID}" "${revision}" \
       >> "${coordinates_file}"
+  fi
+  if [[ -f "${MAVEN_ROOT}/mango-parent/pom.xml" ]]; then
+    printf 'io.mango:mango-parent:%s:pom\n' "${revision}" >> "${coordinates_file}"
   fi
 
   echo "Verification repository URL: ${verify_base_url}"
