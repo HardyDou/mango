@@ -38,9 +38,24 @@ jobs:
 
           git fetch --force --no-tags origin main
           source_sha="$(git rev-parse HEAD^{commit})"
-          if ! git merge-base --is-ancestor "${source_sha}" origin/main; then
-            echo "Release commit is not reachable from origin/main: ${source_sha}" >&2
-            exit 1
+          # 发布 PR 走 squash 合并，tag 指向的是发布分支头，因此它通常不是 origin/main 的祖先。
+          # 祖先关系只作为快路径；命中失败时用「main 历史中存在同 tree 的提交」证明发布内容确实落在 main 上。
+          if git merge-base --is-ancestor "${source_sha}" origin/main; then
+            reachable="ancestor"
+          else
+            source_tree="$(git rev-parse "${source_sha}^{tree}")"
+            main_trees="$(git log --format=%T origin/main)"
+            case $'\n'"${main_trees}"$'\n' in
+              *$'\n'"${source_tree}"$'\n'*)
+                reachable="squash-merge"
+                echo "Release commit ${source_sha} is not an ancestor of origin/main; matched a main commit with the same tree (${source_tree})."
+                ;;
+              *)
+                echo "Release commit is not reachable from origin/main: ${source_sha}" >&2
+                echo "No commit in origin/main has tree ${source_tree}." >&2
+                exit 1
+                ;;
+            esac
           fi
 
           locked_version="$(node -e 'const v=require("./mango-ui/packages/mango-cli/release-versions.json"); process.stdout.write(v.maven.mangoBackend)')"
