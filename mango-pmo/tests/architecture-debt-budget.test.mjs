@@ -652,6 +652,44 @@ test('CI base-ref reads a large committed base budget from Git', () => {
   }
 });
 
+test('CI base-ref accepts a parent revision such as HEAD^', () => {
+  const fixture = createFixture({ dependency: [], archunit: ['ARCH-1'], pmd: [] });
+  try {
+    assert.equal(run(fixture, ['--write']).status, 0);
+    const git = (...args) => spawnSync('git', ['-C', fixture.root, ...args], {
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        GIT_AUTHOR_NAME: 'Mango Test',
+        GIT_AUTHOR_EMAIL: 'mango-test@example.invalid',
+        GIT_COMMITTER_NAME: 'Mango Test',
+        GIT_COMMITTER_EMAIL: 'mango-test@example.invalid'
+      }
+    });
+    assert.equal(git('init', '-q').status, 0);
+    assert.equal(git('add', '.').status, 0);
+    assert.equal(git('commit', '-qm', 'baseline').status, 0);
+    fs.writeFileSync(path.join(fixture.root, 'README.md'), 'second commit\n');
+    assert.equal(git('add', '.').status, 0);
+    assert.equal(git('commit', '-qm', 'second').status, 0);
+    const checked = spawnSync(process.execPath, [
+      checker,
+      '--report', fixture.report,
+      '--baseline', fixture.baseline,
+      '--base-ref', 'HEAD^',
+      '--json'
+    ], {
+      cwd: fixture.root,
+      encoding: 'utf8',
+      maxBuffer: 16 * 1024 * 1024
+    });
+    assert.equal(checked.status, 0, checked.stderr);
+    assert.equal(JSON.parse(checked.stdout).action, 'check');
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
 test('CI base-ref reads a budget larger than the child-process default buffer', () => {
   const issues = Array.from({ length: 14_000 }, (_, index) => ({
     ruleId: 'ARCH-LARGE-BASE',
