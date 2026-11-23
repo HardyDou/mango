@@ -896,10 +896,18 @@ function ensureSameInventory(expected, actual) {
   }
 }
 
-function readBaseFromGit(baseRef, baselinePath) {
-  if (!/^[A-Za-z0-9][A-Za-z0-9._/-]*$/u.test(baseRef) || baseRef.includes('..')) {
+function resolveBaseCommit(root, baseRef) {
+  if (!/^[A-Za-z0-9][A-Za-z0-9._/~^-]*$/u.test(baseRef) || baseRef.includes('..')) {
     throw new Error(`invalid --base-ref: ${baseRef}`);
   }
+  const resolved = runGit(root, ['rev-parse', '--verify', '--quiet', `${baseRef}^{commit}`], 'cannot resolve base ref');
+  if (resolved.status !== 0 || !resolved.stdout.trim()) {
+    throw new Error(`cannot resolve base ref ${baseRef}: ${resolved.stderr.trim()}`);
+  }
+  return resolved.stdout.trim();
+}
+
+function readBaseFromGit(baseRef, baselinePath) {
   const repository = runGit(process.cwd(), ['rev-parse', '--show-toplevel'], 'cannot locate Git root');
   if (repository.status !== 0) {
     throw new Error(`cannot locate Git root: ${repository.stderr.trim()}`);
@@ -910,18 +918,15 @@ function readBaseFromGit(baseRef, baselinePath) {
   if (!relative || relative === '..' || relative.startsWith('../')) {
     throw new Error(`baseline must be inside the Git repository when using --base-ref: ${baselinePath}`);
   }
-  const commit = runGit(root, ['cat-file', '-e', `${baseRef}^{commit}`], 'cannot resolve base ref');
-  if (commit.status !== 0) {
-    throw new Error(`cannot resolve base ref ${baseRef}: ${commit.stderr.trim()}`);
-  }
-  const listing = runGit(root, ['ls-tree', '-r', '--name-only', baseRef, '--', relative], 'cannot inspect base budget');
+  const commit = resolveBaseCommit(root, baseRef);
+  const listing = runGit(root, ['ls-tree', '-r', '--name-only', commit, '--', relative], 'cannot inspect base budget');
   if (listing.status !== 0) {
     throw new Error(`cannot inspect base budget at ${baseRef}: ${listing.stderr.trim()}`);
   }
   if (!listing.stdout.trim()) {
     return { missing: true, source: `${baseRef}:${relative}` };
   }
-  const shown = runGit(root, ['show', `${baseRef}:${relative}`], 'cannot read base budget');
+  const shown = runGit(root, ['show', `${commit}:${relative}`], 'cannot read base budget');
   if (shown.status !== 0) {
     throw new Error(`cannot read base budget at ${baseRef}:${relative}: ${shown.stderr.trim()}`);
   }
