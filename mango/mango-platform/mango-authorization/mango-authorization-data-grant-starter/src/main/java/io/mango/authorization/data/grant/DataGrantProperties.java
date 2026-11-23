@@ -9,8 +9,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 /**
  * 无状态数据权限 Grant 配置。
  * <p>
- * 安全默认值：未配置 {@code secret} 时 {@code optional} 模式不签发也不校验 Grant（只记 warn），
- * {@code enforce} 模式则拒绝启动，避免出现「以为开启了强校验、实际所有请求都被放行」的静默降级。
+ * <p><strong>当前状态：半成品，默认关闭。</strong>完整能力（刷新/直链进入详情页后数据权限可恢复）尚未完成，
+ * 详见 issue #1420；在完成前禁止在生产环境启用。默认 {@code enabled=false}，需要显式配置才生效。</p>
+ *
+ * <p>安全默认值：未配置 {@code secret} 时 {@code optional} 模式不签发也不校验 Grant（只记 warn），
+ * {@code enforce} 模式则拒绝启动，避免出现「以为开启了强校验、实际所有请求都被放行」的静默降级。</p>
  */
 @Getter
 @Setter
@@ -20,8 +23,8 @@ public class DataGrantProperties {
     /** 配置前缀。 */
     public static final String PREFIX = "mango.data-grant";
 
-    /** 是否启用 Grant 签发与校验，默认启用。 */
-    private boolean enabled = true;
+    /** 是否启用 Grant 签发与校验，默认关闭（能力未完成，禁止生产启用）。 */
+    private boolean enabled = false;
 
     /** 校验模式，默认 {@link Mode#OPTIONAL}。 */
     private Mode mode = Mode.OPTIONAL;

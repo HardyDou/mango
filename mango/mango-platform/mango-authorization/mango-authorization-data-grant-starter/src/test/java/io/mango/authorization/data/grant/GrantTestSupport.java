@@ -53,6 +53,7 @@ final class GrantTestSupport {
      */
     static DataGrantProperties properties(Mode mode, int maxIds) {
         DataGrantProperties properties = new DataGrantProperties();
+        properties.setEnabled(true);
         properties.setSecret(SECRET);
         properties.setMode(mode);
         properties.setMaxIds(maxIds);

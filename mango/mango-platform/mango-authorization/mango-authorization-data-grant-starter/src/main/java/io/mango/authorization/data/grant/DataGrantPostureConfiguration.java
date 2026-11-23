@@ -25,7 +25,7 @@ public class DataGrantPostureConfiguration {
      */
     public DataGrantPostureConfiguration(DataGrantProperties properties) {
         if (!properties.isEnabled()) {
-            log.warn("数据权限 Grant 已关闭（mango.data-grant.enabled=false），详情接口不做数据权限校验");
+            log.warn("数据权限 Grant 已关闭（默认状态）。该能力当前为半成品（未完成项见 #1420），禁止在生产启用");
             return;
         }
         if (!properties.hasSecret()) {

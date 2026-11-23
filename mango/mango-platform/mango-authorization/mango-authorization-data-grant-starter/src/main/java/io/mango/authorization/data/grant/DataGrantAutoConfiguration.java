@@ -14,7 +14,8 @@ import org.springframework.context.annotation.Bean;
 /**
  * Grant 自动配置。
  * <p>
- * 默认开启（{@code mango.data-grant.enabled=true}）。所有组件都使用 {@link ConditionalOnMissingBean}，
+ * 默认关闭（{@code mango.data-grant.enabled} 缺省为 false）：该能力当前为半成品，未完成项见 #1420，禁止在生产启用。
+ * 所有组件都使用 {@link ConditionalOnMissingBean}，
  * 业务方可以整体替换编码器、签发器、校验器、拦截器或响应通知。
  * <p>
  * 启动时把三个 Grant 响应头追加进 {@code mango.web.cors.exposed-headers}、把 {@code X-Mango-Data-Grant}
@@ -26,7 +27,7 @@ import org.springframework.context.annotation.Bean;
         "io.mango.infra.web.starter.WebAutoConfiguration",
         "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration"
 })
-@ConditionalOnProperty(prefix = DataGrantProperties.PREFIX, name = "enabled", matchIfMissing = true)
+@ConditionalOnProperty(prefix = DataGrantProperties.PREFIX, name = "enabled", matchIfMissing = false)
 @EnableConfigurationProperties(DataGrantProperties.class)
 public class DataGrantAutoConfiguration {
 

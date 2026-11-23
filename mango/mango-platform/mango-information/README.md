@@ -140,8 +140,8 @@ Content-Type: application/json
 
 选择型字段（`select`、`radio`、`checkbox`）的可选值有两种来源：
 
-- 静态选项：规则上的 `options: [{ "label": "北京", "value": "bj" }]`，老表单即为此形态，无需改造。
-- 平台字典：规则上声明 `optionSource`，`options` 置空，渲染与校验都以字典启用项为准。
+- 静态选项：规则上的 `options: [{ "label": "北京", "value": "bj" }]`，老表单即为此形态，无需改造；**只用于渲染建议项，不参与提交校验**。
+- 平台字典：规则上声明 `optionSource`，`options` 置空，渲染与提交校验都以字典启用项为准。
 
 ```json
 [
@@ -155,7 +155,7 @@ Content-Type: application/json
 ]
 ```
 
-`optionSource.type` 取 `STATIC` 或 `DICT`；为 `DICT` 时 `dictType` 必填，值是平台字典类型编码（字典管理里维护的 `dictType`）。服务端在提交时读取字典启用项做值域校验：
+`optionSource.type` 取 `STATIC` 或 `DICT`；为 `DICT` 时 `dictType` 必填，值是平台字典类型编码（字典管理里维护的 `dictType`）。服务端**只对声明了 `DICT` 的字段**在提交时读取字典启用项做值域校验：
 
 | 情况 | 结果 |
 | ---- | ---- |
@@ -163,11 +163,12 @@ Content-Type: application/json
 | 字典不存在或没有启用项 | `INVALID_SUBMISSION`，消息 `字段 <name> 绑定的字典 <dictType> 不存在或没有启用项` |
 | 字典服务调用失败或返回非成功 | `INVALID_SUBMISSION`，消息 `字段 <name> 绑定的字典 <dictType> 读取失败`，并打 WARN 带 `code`/`message` |
 | 当前进程未装配字典能力（无 `DictApi`） | `INVALID_SUBMISSION`，消息 `字段 <name> 绑定的字典 <dictType> 无法校验：当前进程未装配字典能力`，并打 WARN |
+| 字段声明了静态 `options` 但没有字典 | 不做值域校验，保持历史行为（库存量值可能来自自由输入或已被删除的选项） |
 | 字段既没有 `options` 也没有声明字典 | 不做值域校验，保持历史行为 |
 
 注意：`options: []`（空数组）与「没有 `options`」等价，都视为**无约束**——空数组不代表「任何值都不允许」。需要真正禁止取值时请不要把字段放进表单。
 
-`optionSource` 缺失或 `type` 为 `STATIC` 时按静态 `options` 校验。`optionSource` 与 `options` 都存放在既有 `definitionJson` 里，不需要数据库迁移。同一表单的多个字段绑定同一字典时，一次提交只查询一次字典；`mango-information-core` 内没有字典实现时按「字典不存在」拒绝，不会跳过校验。
+`optionSource` 缺失或 `type` 为 `STATIC` 时不校验值域。`optionSource` 与 `options` 都存放在既有 `definitionJson` 里，不需要数据库迁移。同一表单的多个字段绑定同一字典时，一次提交只查询一次字典；`mango-information-core` 内没有字典实现时按「字典不存在」拒绝，不会跳过校验。
 
 ## 6. 用 Resource Registry 内置表单
 

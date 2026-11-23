@@ -89,6 +89,7 @@ class DataGrantIssuerTest {
     @Test
     void skipsWhenSecretMissing() {
         DataGrantProperties noSecret = new DataGrantProperties();
+        noSecret.setEnabled(true);
         noSecret.validate();
         DataGrantIssuer issuer = new DataGrantIssuer(noSecret, GrantTestSupport.codec(noSecret),
                 GrantTestSupport.provider(null));

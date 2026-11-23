@@ -302,6 +302,8 @@ CREATE TABLE cms_banner_archive AS SELECT * FROM cms_banner;
 
 ## 数据权限 Grant 接入（#977）
 
+> 该能力当前为**半成品**：默认 `mango.data-grant.enabled=false`（Grant 机制不生效），刷新/直链进入详情页时数据权限无法恢复（issue #1420），**禁止在生产启用**。下面描述的是启用后的行为。
+
 CMS 管理端的分页列表在响应头签发数据权限 Grant（`X-Mango-Data-Grant`，域标识见 `X-Mango-Data-Grant-Domain`），详情端点校验该 Grant 是否覆盖请求的记录。已接入 8 个数据域：
 
 | 数据域 | 签发（列表） | 校验（详情） |

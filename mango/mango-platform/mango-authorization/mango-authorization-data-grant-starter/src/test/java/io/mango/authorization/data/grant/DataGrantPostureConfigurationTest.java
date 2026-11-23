@@ -28,6 +28,7 @@ class DataGrantPostureConfigurationTest {
     @Test
     void missingSecretPostureIsLoggedAsWarning(CapturedOutput output) {
         DataGrantProperties properties = new DataGrantProperties();
+        properties.setEnabled(true);
         properties.setSecret(null);
 
         new DataGrantPostureConfiguration(properties);

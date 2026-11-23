@@ -31,7 +31,7 @@ public final class InformationDefinition {
                         OptionSource optionSource) {
     }
 
-    /** 静态选项条目，value 参与值域校验。 */
+    /** 静态选项条目，仅用于渲染建议项，不参与提交值域校验。 */
     public record FieldOption(String label, String value) {
     }
 

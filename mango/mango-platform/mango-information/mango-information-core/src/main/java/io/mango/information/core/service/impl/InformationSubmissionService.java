@@ -296,8 +296,9 @@ public class InformationSubmissionService implements IInformationSubmissionServi
     }
 
     /**
-     * 声明了选项的字段，提交值必须落在允许值域内：静态字段取 options[].value，字典字段取字典启用项。
-     * 没有 options 也没有 optionSource 的字段不做值域校验。
+     * 只对绑定了字典的字段校验值域：提交值必须落在字典启用项内。
+     * <p>静态 {@code options} 只用于渲染建议项，不参与校验——存量表单的取值可能来自自由输入、也可能引用了后来被删掉的选项，
+     * 一旦开始校验就会让既有业务写不进数据，因此保持与引入选项数据源之前一致的行为。</p>
      */
     private void validateOptions(InformationDefinition.Field field, Object value, Map<String, Set<String>> dictCache) {
         Set<String> allowed = allowedValues(field, dictCache);
@@ -310,20 +311,13 @@ public class InformationSubmissionService implements IInformationSubmissionServi
         }
     }
 
-    /** 返回允许值域；字段没有选项约束时返回 null。 */
+    /** 返回允许值域；只有字典字段有值域，其它字段返回 null 表示不校验。 */
     private Set<String> allowedValues(InformationDefinition.Field field, Map<String, Set<String>> dictCache) {
         InformationDefinition.OptionSource optionSource = field.optionSource();
         if (optionSource != null && optionSource.isDict()) {
             return dictValues(field, optionSource, dictCache);
         }
-        if (field.options().isEmpty()) {
-            return null;
-        }
-        Set<String> allowed = new HashSet<>();
-        for (InformationDefinition.FieldOption option : field.options()) {
-            allowed.add(option.value());
-        }
-        return allowed;
+        return null;
     }
 
     /**
