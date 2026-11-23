@@ -1,3 +1,134 @@
+## v2026.11.23-maven-1.16.0-workflow-task-status-release - Mango Maven/docs 1.16.0 工作流任务状态与数据范围批次 - 2026-11-23
+
+Status: PENDING - 批次处于发布准备阶段，Maven 与 npm 制品尚未发布，消费端验证、Tag 与 GitHub Release 待完成。
+
+Plan digest: `4e054c3bcc81a9f0f9cfb7013a87012593299e0ce6cfece9d8890509ea4cac3b`
+
+### Pull Requests
+
+- PR #1440 Added 任务分页状态细分与数据范围部门档：`statuses` 同时接受三个分组值（未办 / 已办 / 已取消，枚举值见 `WorkflowTaskQueryStatus`）与五个细状态值（已通过 / 已驳回 / 已退回 / 已撤回 / 已终止），多值取并集；`DONE` 现在包含本人驳回或退回后被删除的任务；部门档改由平台数据范围配置（资源码 `workflow:task:list`）按登录人下发。 Packages: `@mango/workflow@1.4.0`, Maven `io.mango.platform.workflow:*:1.16.0`. Business Adaptation: 传 `scope=ORG` 或用 `deptIds` 的调用改为在角色上配置数据范围；`statuses=[DONE]` 返回行数会变多（含本人驳回/退回）。
+- PR #1435 Fixed 文件预览入口路径可配置：新增 `mango.file-preview.entry-path`，默认值保持 `/api/file-preview/files/preview-entry`，反代剥离 `/api` 的部署可改为 `/file-preview/files/preview-entry`。 Packages: Maven `io.mango.platform.file.preview:*:1.16.0`. Business Adaptation: 默认配置无需改动。
+- PR #1436 Fixed 全新库结构校验噪音与迁移重复建表检查：豁免 22 张 notice 表审计列与 `mango_bootstrap*` / `mango_runtime*` 表，`workflow_process_participant.id` 去掉 AUTO_INCREMENT，新增 `check-migration-duplicates.mjs` 门禁。 Packages: `@mango/pmo@1.6.4`, Maven `io.mango.platform.workflow:*`, `io.mango.infra:*:1.16.0`. Business Adaptation: 全新库首启不再产生 71 条结构校验警告；已部署库无需改动。
+
+### Added
+
+- 任务分页支持按「谁办了、怎么结束的」精确筛选：`statuses=[REJECTED]` 只要驳回、`[RETURNED]` 只要退回、`[WITHDRAWN]` 只要撤回、`[TERMINATED]` 只要流程终止或被他人驳回牵连作废，任意组合取并集。
+- 任务分页支持「本部门」档：角色在数据范围里配置「本组织」后，列表按**处理人**所属组织收敛（上级部门已由平台递归展开），前端与业务不再传部门参数。
+- 活动时间轴接口 `POST /workflow/tasks/activity-timeline-by-business-key`（`@mango/workflow@1.4.0` 同批发布）。
+- 信息表单选择字段可绑定平台字典作为选项数据源（`optionSource: {type: "DICT", dictType}`），提交时只对声明字典的字段按启用项校验。
+- 新增 PMO 门禁：`check-admin-aggregate`（装配点可达性）与 `check-migration-duplicates`（同模块重复建表）。
+
+### Fixed
+
+- 已办列表不再丢失本人驳回 / 退回的记录（此前被计入「已取消」）。
+- 全新库启动时的 71 条结构校验警告归零：notice 模块 22 张表与 `mango_bootstrap*` / `mango_runtime*` 表不再按平台审计列强制校验，`workflow_process_participant.id` 改用雪花主键。
+- 文件预览入口不再硬编码 `/api` 前缀，直连后端的部署与脚本可直接使用。
+- `Mango Architecture Debt Inventory` 定时任务不再因 `invalid --base-ref` 报错（`HEAD^` 形式的 base-ref） 长期失败。
+- `dev start backend` 在干净环境与本地仓库缓存异常时能解析 reactor 父 POM 链。
+- CLI 生成的工程质量配置与 `mango-maven-plugin` ruleset 保持一致；workspace 状态探测不再依赖宿主 `mysql` 客户端。
+
+### Changed
+
+- **`statuses=[DONE]` 的返回行数会变大**：本人驳回或退回、随后流程实例被删除的任务从「已取消」移入「已办」；被他人驳回牵连作废的任务仍在「已取消」组。
+- **`scope=ORG` 与 `deptIds` 下线**：`scope=ORG` 直接报错（`TASK_QUERY_INVALID`，文案提示改用数据范围配置），`deptIds` 非空同样报错；部门档改由数据范围下发，未配置时行为与 `1.15.0` 完全一致。
+- 数据范围配成「全部」但用户缺少 `workflow:task:all` 时，降级为本人范围并记 WARN；`scope=ALL` 且无该权限仍返回 403。
+- `TENANT` / `CUSTOM` 数据范围模式在任务列表降级为本人范围并记 WARN（`DataScopeApplier` 原实现对二者抛 `Unsupported`）。
+- 数据权限 Grant 默认关闭并登记为半成品（`mango.data-grant.enabled=false`），未完成项见 issue #1420。
+- 信息表单静态 `options` 只用于渲染建议项，不参与提交值域校验；只有 `optionSource: DICT` 的字段按字典校验值域。
+
+### Versions
+
+- Maven: `1.15.0` → `1.16.0`（203 个非应用坐标，含 `mango-docs-bundle`）。
+- `@mango/workflow`: `1.3.2` → `1.4.0`（minor）。
+- `@mango/information`: `1.1.0` → `1.2.0`（minor）。
+- `@mango/http-client`: `1.0.0` → `1.1.0`（minor）。
+- `@mango/common`: `2.3.5` → `2.4.0`（minor）。
+- `@mango/cms`: `1.1.7` → `1.1.8`，`@mango/pmo`: `1.6.3` → `1.6.4`，`@mango/cli`: `1.4.18` → `1.4.19`（patch）。
+- 兼容位不变：`@mango/pmo` 之外的 24 个包仅因依赖闭包递增 patch，契约面无变化。
+
+### Published Packages
+
+按发布拓扑顺序（共 29 个 npm 包）：
+
+1. `@mango/http-client@1.1.0`
+2. `@mango/common@2.4.0`
+3. `@mango/admin-extension@1.1.10`
+4. `@mango/ai@1.2.10`
+5. `@mango/auth@1.0.47`
+6. `@mango/file@1.4.1`
+7. `@mango/detail@1.1.16`
+8. `@mango/grid-layout@1.0.36`
+9. `@mango/grid-widgets@1.0.42`
+10. `@mango/home@1.0.35`
+11. `@mango/information@1.2.0`
+12. `@mango/pmo@1.6.4`
+13. `@mango/rbac@1.3.6`
+14. `@mango/site-shell@2.0.8`
+15. `@mango/system@1.1.8`
+16. `@mango/admin-pages@1.3.6`
+17. `@mango/calendar@1.0.63`
+18. `@mango/cms@1.1.8`
+19. `@mango/job@1.0.56`
+20. `@mango/link@1.0.49`
+21. `@mango/notice@1.0.69`
+22. `@mango/numgen@1.0.64`
+23. `@mango/payment@1.0.55`
+24. `@mango/template@1.0.64`
+25. `@mango/workflow@1.4.0`
+26. `@mango/admin-shell@1.1.12`
+27. `@mango/workflow-business-example@1.0.74`
+28. `@mango/admin@2.0.14`
+29. `@mango/cli@1.4.19`
+
+Maven 侧按 plan 拓扑发布 203 个坐标，`mango-file-preview-support` 与 `mango-file-preview-starter-remote` 沿用 `1.15.0` 引入后的坐标位次。
+
+### Business Impact
+
+- 受影响的调用方：调用 `POST /workflow/tasks/page-by-business-key` 且传 `scope=ORG` 或 `deptIds` 的一方（会收到 `TASK_QUERY_INVALID`）；依赖「已取消」筛选区分驳回/退回的一方（`DONE` 行数变大）。
+- 数据库：本批次只有 `workflow_process_participant.id` 去 AUTO_INCREMENT 一条 DDL（`V8`），无数据回填、无新增列，已在全新库与 1.15.0 库验证。
+- 权限：未新增权限码；`workflow:task:all` 语义不变；新增数据范围资源码 `workflow:task:list`，未配置时行为与 `1.15.0` 一致。
+- 配置：新增 `mango.file-preview.entry-path`（默认保持旧值），`mango.data-grant.*` 默认关闭。
+- 前端：`@mango/http-client` / `@mango/common` / `@mango/information` / `@mango/workflow` 为 minor，业务仓升级后需按 Changeset 说明检查 `getUserId` 注入与状态筛选联动。
+
+### Upgrade Estimate
+
+- Audience: 使用 Mango 工作流任务列表、文件预览或信息表单的业务仓。
+- Engineering Effort: 低（0.5 人日以内）：升级依赖 + 若仍传 `scope=ORG`/`deptIds` 则改配置。
+- Execution Window: 业务低峰期滚动升级，无强制停机窗口。
+- Service Downtime: 无（`V8` 为元数据变更，秒级）。
+- Rollback Effort: 低：回退到 `1.15.0` 坐标即可；`V8` 变更对旧版本向后兼容。
+- Assumptions: 业务仓未在任务列表上依赖「已取消」区分驳回/退回；若依赖，升级后需改用细状态。
+
+### Upgrade Notes
+
+1. 依赖升级：聚合消费方把 `mango.version` 升到 `1.16.0`；直接消费模块的把对应 starter 版本升到 `1.16.0`。
+2. 部门档迁移：删掉请求里的 `deptIds`，把 `scope` 从 `ORG` 改为 `SELF`/`ALL`，并在角色数据范围里为目标资源码 `workflow:task:list` 配置「本组织」或「本组织及下级」。
+3. 已办口径：`statuses=[DONE]` 现在含本人驳回/退回；若业务要单独展示驳回，用 `[REJECTED]`、`[RETURNED]`。
+4. 文件预览：反代剥离 `/api` 的部署把 `mango.file-preview.entry-path` 设为 `/file-preview/files/preview-entry`；默认无需改动。
+5. 前端：`createMangoHttpClient` 可传 `getUserId` 以启用 Grant 自动接力；Grant 默认关闭，未启用时无行为变化。
+
+### Verification
+
+```bash
+curl -s http://127.0.0.1:18001/actuator/health
+TOKEN=$(curl -s -X POST http://127.0.0.1:18001/auth/login -H 'Content-Type: application/json' \
+  -d '{"username":"admin","password":"admin123","tenantCode":"default"}' | jq -r .data.accessToken)
+curl -s -X POST http://127.0.0.1:18001/workflow/tasks/page-by-business-key \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"businessType":"BAOHAN_RC_PROJECT_REVIEW","statuses":["REJECTED"],"page":1,"size":10}'
+```
+
+预期：服务健康检查返回 `UP`；`statuses=[REJECTED]` 只返回本人驳回的任务，`total` 与 `records.length` 一致；`statuses=[DONE,CANCELED]` 的并集与不传 `statuses` 的 `total` 相同。
+
+### Rollback
+
+回退消费方到 `1.15.0` 坐标：Maven 侧改回 `1.15.0`，npm 侧改回上一批次版本（`@mango/workflow@1.3.2`、`@mango/cli@1.4.18` 等）。`V8` 只去掉 AUTO_INCREMENT，旧版本写入不受影响，无需回滚 DDL。已发布坐标不可覆盖，恢复只能走 `mango release` 的不可变制品恢复流程。
+
+### Audit History
+
+- PR #1435 / #1436 / #1440 为本批次内容来源；`#1431`（#1073 选项校验 + Grant 默认关闭）、`#1423`–`#1430`（CI 与门禁修复）、`#1421`（CMS Grant 接入在 `1.15.0` 之后合入，随本批 npm 发布）均已在 main 上。
+- issue #1438 记录的 5 条 DDL 日志噪音（notice 重复建表、`payment_order` 重复索引、`cms_banner` DROP IF EXISTS note）属历史迁移，改动会破坏已部署库的 Flyway checksum，留待迁移压缩窗口处理，本批次不包含。
+
 ## v2026.11.21-maven-1.15.0-preview-fileid-release - Mango Maven/docs 1.15.0 文件预览契约与质量门禁批次 - 2026-11-21
 
 Status: PUBLISHED_AND_VERIFIED - 批次已发布并通过消费端验证。发布 tag `v2026.11.21-maven-1.15.0-preview-fileid-release`（`e6b5758e6`，squash 合入 `5a4fdfda7`），GitHub Release 已生成；203 个 Maven 坐标与 27 个 npm 包均已发布并回读校验，发布基线已推进到本批次。

@@ -339,6 +339,42 @@ deploy_architecture_verification_pom() {
   mvn "${deploy_args[@]}"
 }
 
+# `mango-parent` 供全仓父链使用，但不在 reactor 内（`mango/pom.xml` 的 parent 就是它），
+# 因此必须单独 deploy，否则消费方解析任何发布坐标的 POM 都会因父 POM 缺失而失败。
+deploy_standalone_parent_pom() {
+  local pom_file="${MAVEN_ROOT}/mango-parent/pom.xml"
+  local repository_id repository_url
+  local deploy_args
+
+  if [[ "${dry_run}" == "true" ]]; then
+    repository_id="${repository_id_override:-resolved-distribution-repository-id}"
+    repository_url="${repository_url_override:-resolved-distribution-repository-url}"
+  else
+    [[ -f "${pom_file}" ]] || return 0
+    repository_id="${repository_id_override:-$(mvn_eval "${MAVEN_ROOT}/pom.xml" project.distributionManagement.repository.id)}"
+    repository_url="${repository_url_override:-$(mvn_eval "${MAVEN_ROOT}/pom.xml" project.distributionManagement.repository.url)}"
+    if [[ -z "${repository_id}" || -z "${repository_url}" ]]; then
+      echo "Unable to resolve Maven publication repository for mango-parent." >&2
+      exit 1
+    fi
+  fi
+
+  deploy_args=(
+    -q -f "${pom_file}" deploy
+    "-Drevision=${revision}"
+    "-DskipTests"
+    "-DaltDeploymentRepository=${repository_id}::default::${repository_url}"
+  )
+
+  echo "Publishing reactor-external parent POM (mango-parent)"
+  printf 'Command: mvn'
+  printf ' %q' "${deploy_args[@]}"
+  printf '\n'
+  if [[ "${dry_run}" == "false" ]]; then
+    mvn "${deploy_args[@]}"
+  fi
+}
+
 deploy_docs_bundle() {
   local stage_dir="${DOCS_BUNDLE_WORK_DIR}/stage"
   local jar_file="${DOCS_BUNDLE_WORK_DIR}/${DOCS_BUNDLE_ARTIFACT_ID}-${revision}.jar"
@@ -443,29 +479,26 @@ resolve_module_dir() {
 }
 
 discover_non_app_targets() {
-  local pom_file rel_path module_path
-  while IFS= read -r pom_file; do
-    if [[ "${pom_file}" == "${MAVEN_ROOT}/mango-app/pom.xml" || "${pom_file}" == "${MAVEN_ROOT}/mango-app/"* ]]; then
-      continue
-    fi
-    rel_path="${pom_file#${MAVEN_ROOT}/}"
-    if [[ "${rel_path}" == "pom.xml" ]]; then
-      module_path="."
-    else
-      module_path="${rel_path%/pom.xml}"
-    fi
-    if [[ "${module_path##*/}" == *-test ]]; then
-      continue
-    fi
-    targets+=("${module_path}")
-  done < <(
-    find "${MAVEN_ROOT}" \
-      -name pom.xml \
-      -not -path '*/target/*' \
-      -not -path '*/src/*' \
-      -print \
-      | sort
-  )
+  local artifact_id
+  while IFS= read -r artifact_id; do
+    [[ -z "${artifact_id}" ]] && continue
+    case "${artifact_id}" in
+      mango-app | mango-app-* | *-app) continue ;;
+      *-test) continue ;;
+    esac
+    targets+=(":${artifact_id}")
+  done < <(reactor_artifact_ids)
+}
+
+# 只枚举 reactor 内的模块：`mango-parent` 这类通过 relativePath 供父链、不属于 reactor 的 POM
+# 不能被 `-pl` 选中，用 find 会把它们混进发布目标。
+reactor_artifact_ids() {
+  (
+    cd "${MAVEN_ROOT}"
+    mvn -o -q org.codehaus.mojo:exec-maven-plugin:3.5.0:exec \
+      -Dexec.executable=echo \
+      '-Dexec.args=${project.artifactId}' 2>/dev/null
+  ) | sed '/^\s*$/d' | sort -u
 }
 
 is_app_module_dir() {
@@ -561,6 +594,7 @@ if [[ "${verify_only}" == "false" ]]; then
     cd "${MAVEN_ROOT}"
     mvn "${mvn_args[@]}"
   fi
+  deploy_standalone_parent_pom
   if [[ "${publish_architecture_verification}" == "true" ]]; then
     deploy_architecture_verification_pom
   fi
@@ -588,6 +622,9 @@ if [[ "${verify_mode}" == "http" ]]; then
     printf '%s:%s:%s:jar\n' \
       "${DOCS_BUNDLE_GROUP_ID}" "${DOCS_BUNDLE_ARTIFACT_ID}" "${revision}" \
       >> "${coordinates_file}"
+  fi
+  if [[ -f "${MAVEN_ROOT}/mango-parent/pom.xml" ]]; then
+    printf 'io.mango:mango-parent:%s:pom\n' "${revision}" >> "${coordinates_file}"
   fi
 
   echo "Verification repository URL: ${verify_base_url}"

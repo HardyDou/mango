@@ -1,6 +1,6 @@
 {
   "name": "@mango/common",
-  "version": "2.3.5",
+  "version": "2.4.0",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -127,7 +127,7 @@
   ],
   "dependencies": {
     "axios": "1.18.1",
-    "@mango/http-client": "workspace:1.0.2",
+    "@mango/http-client": "workspace:1.1.0",
     "qs": "^6.11.0",
     "screenfull": "^6.0.2",
     "nprogress": "^0.2.0",
