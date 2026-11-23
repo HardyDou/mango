@@ -1,5 +1,7 @@
 # 业务审批接入
 
+> Issue #1432 影响说明：`workflow_process_participant.id` 去掉了历史 AUTO_INCREMENT 属性（`V8__workflow_process_participant_snowflake_id.sql`），列类型与已有数据不变，实体本来就走雪花主键，业务侧接口与任务分页行为无变化。
+
 ## 1. 适用场景
 
 业务单据需要发起审批，审批结束后回写业务状态，并能在业务页面查看流程进度。
