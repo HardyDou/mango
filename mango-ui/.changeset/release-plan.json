@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-11-23T13:21:27.185Z",
+  "generatedAt": "2026-11-23T13:50:24.159Z",
   "releaseKind": "mixed",
   "release": {
     "tag": "v2026.11.23-maven-1.16.0-workflow-task-status-release",
@@ -3688,8 +3688,8 @@
     "docs": null
   },
   "source": {
-    "commit": "5753ae7b17ff4e1199fd0e473b597bb2ffe1d2a6",
-    "tree": "8514e21feef0e8c85b185b144d70ca33e65f71db"
+    "commit": "d3c0aadc81b7eee40f8abaf4ad41afba2bce7b70",
+    "tree": "e8099fae336061d1c1d050b334c61bec57705372"
   },
   "sourceFiles": [
     ".github/workflows/architecture-debt-inventory.yml",
@@ -3928,7 +3928,8 @@
     "mango/mango-tools/mango-maven-plugin/src/main/java/io/mango/plugin/check/TenantSetterAnalyzer.java",
     "mango/mango-tools/mango-maven-plugin/src/test/java/io/mango/plugin/baseline/BaselineGeneratorIntegrationTest.java",
     "mango/mango-tools/mango-maven-plugin/src/test/java/io/mango/plugin/check/TenantSetterAnalyzerTest.java",
-    "mango/pom.xml"
+    "mango/pom.xml",
+    "scripts/publish-maven-batch.sh"
   ],
   "changesets": [
     {
@@ -7614,8 +7615,8 @@
   "versionPolicyDigest": "c4c4c80d533dde047a59627c915cf87e3570606c2d329023ce6896544c50ee12",
   "releasePlanIdentity": {
     "schemaVersion": 1,
-    "sourceCommitOid": "5753ae7b17ff4e1199fd0e473b597bb2ffe1d2a6",
-    "sourceTreeOid": "8514e21feef0e8c85b185b144d70ca33e65f71db",
+    "sourceCommitOid": "d3c0aadc81b7eee40f8abaf4ad41afba2bce7b70",
+    "sourceTreeOid": "e8099fae336061d1c1d050b334c61bec57705372",
     "catalogDigest": "b8b94083a923aee8d09d10510bf61deedcb41a486b0a01853000d7de1bec0ebd",
     "previousBaselineDigest": "cdd13a2a80d723229d9dc822065f2b8e5dcb462434def3301a799a6cae683441",
     "changesetsDigest": "d545c564a6fd7bc293675c0f770041ee5ed17a1d4a89e41ed353fc13855eeee6",
@@ -9277,5 +9278,5 @@
       "@mango/cli"
     ]
   },
-  "planDigest": "426301877eefd57afc2dc8299d80512817a2f365ac545b25e38bd080c7f237e2"
+  "planDigest": "071e81bec10c9b2106f462e841ae3e953ed40b00dd16bf007cb3400e4a1a04e4"
 }
