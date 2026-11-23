@@ -2,6 +2,8 @@
 
 本次个人中心修改密码 404 修复未改变 Notice 公开 API、通知模板、通道配置或消息投递行为；Notice 测试替身仅因 Identity API 新增当前用户改密方法而同步补齐。改密接口和真实 HTTP 验证记录见 [交付记录](../../../mango-docs/evidence/profile-password-404/standard-delivery-record.md)。
 
+> 结构校验口径：notice 模块实体不继承平台 `BaseEntity`，通过 `@TableName(..., excludeProperty = {"orgId", "createdBy", "updatedBy"})` 显式声明不使用这三列，因此这些表登记在 `mango.persistence.schema-validation.audit-columns-exempt-tables` 中——只豁免审计列，主键仍必须是 BIGINT 雪花、不得 AUTO_INCREMENT。详见 `mango-infra-persistence` README。
+
 ## 1. 概览
 
 `mango-notice` 是 Mango 的统一通知管理能力，用来把业务事件转换成站内信、短信、邮件、企业微信、钉钉、微信公众号等渠道通知。

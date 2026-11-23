@@ -1218,3 +1218,7 @@ mvn -f mango/pom.xml -pl :mango-workflow-starter -Denforcer.skip=true -DskipTest
 ## 资源声明同步模式（#1098）
 
 资源声明的 `sync-mode` 已收敛为 `SYNC_ALWAYS` 和 `SYNC_ONCE`：`AUTO` 映射为 `SYNC_ALWAYS`，`INIT_ONLY`、`MANUAL`、`LOCKED` 映射为 `SYNC_ONCE`。旧值仍可读取并会在启动时输出弃用告警，新声明只写新值。语义与迁移规则见 `mango-resource` README 的 `sync-mode` 章节。
+
+### workflow_process_participant 主键
+
+`workflow_process_participant` 的 `id` 历史上是 `AUTO_INCREMENT`（`V3__workflow_participation_auto_assignment.sql`），而实体 `WorkflowProcessParticipantEntity` 走平台雪花主键（`IdType.ASSIGN_ID`），自增属性从未被使用。`V8__workflow_process_participant_snowflake_id.sql` 去掉了自增属性，列类型与已有数据不变；`V3` 的 `INSERT ... SELECT` 依赖自增，但它在 `V8` 之前执行，全新安装不受影响。

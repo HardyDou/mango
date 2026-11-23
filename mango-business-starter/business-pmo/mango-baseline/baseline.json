@@ -3,8 +3,8 @@
   "packageVersion": "1.6.3",
   "schemaVersion": 2,
   "source": "mango-pmo",
-  "sourceCommit": "9984ba8e33ff7c993a62877e6970e9d9d6daecff",
-  "bundleSha256": "e32f5f48140e3d558d83ad21aa92269462fa2446d5e55aa06589b376cea55d2c",
+  "sourceCommit": "e89ff2403577137d7213a1b51a6096c5e51e7525",
+  "bundleSha256": "3af3b666273c9f43b927b3bde2bc30266386f18dda419beb28645f217769e851",
   "contracts": [
     {
       "contractId": "business-requirements",
@@ -1311,6 +1311,13 @@
       "path": "tools/check-lifecycle-handoff.mjs",
       "sha256": "8fd888b22d0a5673a18b37ad3b42b9e0fb1ca7003328f85c6627000fdd9cc6d9",
       "size": 128,
+      "kind": "tool",
+      "mode": "0644"
+    },
+    {
+      "path": "tools/check-migration-duplicates.mjs",
+      "sha256": "c22521d26bae7da9c0b61cfdbd865f679ba032aa8f87c8b166a9d459330ecd0d",
+      "size": 5122,
       "kind": "tool",
       "mode": "0644"
     },

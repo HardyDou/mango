@@ -1,0 +1,8 @@
+# 迁移模块内重复创建同名表的登记清单。
+#
+# 格式：<迁移模块>:<表名> -- 原因
+#
+# 这里只登记「历史迁移已经造成、且受 Flyway checksum 约束无法直接修改」的重复；
+# 新增的重复一律由 mango-pmo/tools/check-migration-duplicates.mjs 阻断。
+notice:notice_channel_route_tag -- V1__init_notice.sql 与 V2__notice_channel_resource_route_and_secret.sql 各建一次（DDL 相同）；V2 已在所有已部署环境执行，改动会触发 checksum mismatch
+notice:notice_channel_config_route_tag -- 同上，V1 与 V2 各建一次；未来可前向清理

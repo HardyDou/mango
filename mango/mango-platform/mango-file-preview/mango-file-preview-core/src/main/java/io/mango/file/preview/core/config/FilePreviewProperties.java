@@ -32,6 +32,16 @@ public class FilePreviewProperties {
     private String enginePath = "/onlinePreview";
 
     /**
+     * 预览入口地址（浏览器侧相对路径），如 {@code /api/file-preview/files/preview-entry}。
+     *
+     * <p>该地址由本应用提供，但通常经前端代理访问，所以默认带 {@code /api} 前缀；
+     * 直连后端、或前端代理前缀不是 {@code /api} 的部署必须覆盖本项，否则返回的
+     * {@code previewUrl} 会 404。可以写成完整 URL（{@code https://app.example.com/file-preview/...}），
+     * 用于前端与应用不同源的部署。</p>
+     */
+    private String entryPath = "/api/file-preview/files/preview-entry";
+
+    /**
      * 引擎的对外访问地址（浏览器可达），如 {@code https://engine.example.com}。
      *
      * <p>留空表示引擎与应用同源（内嵌部署），此时返回相对地址。

@@ -95,6 +95,38 @@ class FilePreviewServiceImplTest {
     }
 
     @Test
+    void createPreview_默认入口地址带网关前缀() {
+        FilePreviewServiceImpl service = service(properties(), new StubFileApi("demo.png"));
+        MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("1"));
+
+        assertThat(service.createPreview(100L).getPreviewUrl())
+                .startsWith("/api/file-preview/files/preview-entry?token=");
+    }
+
+    @Test
+    void createPreview_覆盖入口地址时不再带网关前缀() {
+        FilePreviewProperties properties = properties();
+        properties.setEntryPath("/file-preview/files/preview-entry");
+        FilePreviewServiceImpl service = service(properties, new StubFileApi("demo.png"));
+        MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("1"));
+
+        assertThat(service.createPreview(100L).getPreviewUrl())
+                .startsWith("/file-preview/files/preview-entry?token=")
+                .doesNotContain("/api/");
+    }
+
+    @Test
+    void createPreview_入口地址可配置为绝对地址() {
+        FilePreviewProperties properties = properties();
+        properties.setEntryPath("https://app.example.com/file-preview/files/preview-entry");
+        FilePreviewServiceImpl service = service(properties, new StubFileApi("demo.png"));
+        MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("1"));
+
+        assertThat(service.createPreview(100L).getPreviewUrl())
+                .startsWith("https://app.example.com/file-preview/files/preview-entry?token=");
+    }
+
+    @Test
     void createEnginePreview_未配置引擎对外地址时保持相对地址() {
         FilePreviewServiceImpl service = service(properties(), new StubFileApi("demo.png"));
         MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("1"));

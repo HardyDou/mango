@@ -181,6 +181,64 @@ class SchemaValidationRunnerTest {
     }
 
     @Test
+    void run_withAuditColumnsExemptTable_skipsColumnChecksButKeepsIdRules() throws Exception {
+        DataSource dataSource = dataSource("audit_columns_exempt");
+        execute(dataSource, """
+                CREATE TABLE notice_send_record (
+                    id BIGINT PRIMARY KEY,
+                    tenant_id VARCHAR(64),
+                    created_at TIMESTAMP,
+                    updated_at TIMESTAMP
+                )
+                """);
+
+        SchemaValidationRunner runner = new SchemaValidationRunner(dataSource, newProperties(true));
+
+        assertThatNoException().isThrownBy(runner::run);
+    }
+
+    @Test
+    void run_withAuditColumnsExemptTable_stillRejectsAutoIncrementId() throws Exception {
+        DataSource dataSource = dataSource("audit_columns_exempt_auto_increment");
+        execute(dataSource, """
+                CREATE TABLE notice_send_record (
+                    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                    tenant_id VARCHAR(64)
+                )
+                """);
+
+        SchemaValidationRunner runner = new SchemaValidationRunner(dataSource, newProperties(true));
+
+        assertThatThrownBy(runner::run)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("notice_send_record")
+                .hasMessageContaining("AUTO_INCREMENT")
+                .satisfies(error -> org.assertj.core.api.Assertions.assertThat(error.getMessage())
+                        .doesNotContain("缺少字段 created_by"));
+    }
+
+    @Test
+    void run_withFrameworkBookkeepingTables_skipsSchemaValidationByDefault() throws Exception {
+        DataSource dataSource = dataSource("bookkeeping_tables");
+        execute(dataSource, """
+                CREATE TABLE mango_bootstrap_control (
+                    environment_key VARCHAR(128) PRIMARY KEY,
+                    stable_generation INT
+                )
+                """);
+        execute(dataSource, """
+                CREATE TABLE mango_runtime_instance (
+                    instance_key VARCHAR(128) PRIMARY KEY,
+                    started_at TIMESTAMP
+                )
+                """);
+
+        SchemaValidationRunner runner = new SchemaValidationRunner(dataSource, newProperties(true));
+
+        assertThatNoException().isThrownBy(runner::run);
+    }
+
+    @Test
     void run_withFlowableEngineTables_skipsSchemaValidationByDefault() throws Exception {
         DataSource dataSource = dataSource("flowable_engine_tables");
         execute(dataSource, """
