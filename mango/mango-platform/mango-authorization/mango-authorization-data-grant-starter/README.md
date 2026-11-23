@@ -28,10 +28,13 @@
 
 ## 3. 配置说明
 
+**当前状态：半成品，默认关闭，禁止在生产启用。** 未完成项：刷新/直链进入详情页时数据权限无法恢复（issue #1420）。
+默认 `enabled=false`，即模块随包发布但不生效；下面的配置示例是启用后的形态。
+
 ```yaml
 mango:
   data-grant:
-    enabled: true          # 总开关
+    enabled: true          # 总开关，默认 false；#1420 完成前禁止开启
     mode: optional         # optional | enforce
     secret: ${MANGO_DATA_GRANT_SECRET}   # 必填；enforce 模式下缺失则拒绝启动
     key-id: k1             # 支持轮换，多版本并存时由部署侧切换
@@ -137,7 +140,7 @@ public R<FooVO> detail(@RequestParam("id") Long id) { ... }
 
 | 姿态 | 日志 | 运行期表现 |
 |------|------|-----------|
-| `mango.data-grant.enabled=false` | WARN「数据权限 Grant 已关闭…」 | 不签发、不校验，响应里没有 Grant 头 |
+| `mango.data-grant.enabled=false`（默认） | WARN「数据权限 Grant 已关闭（默认状态）…」 | 不签发、不校验，响应里没有 Grant 头 |
 | 启用但缺 `secret` | WARN「…未配置 mango.data-grant.secret…」 | 列表不签发，详情按未携带处理（`optional` 放行 / `enforce` 403） |
 | 启用且配置密钥 | INFO「数据权限 Grant 已启用, mode=…」 | 正常签发与校验 |
 

@@ -271,8 +271,8 @@ class InformationServiceIntegrationTest {
     }
 
     @Test
-    void submit_rejectsValueOutsideStaticOptions() {
-        // 老表单没有 optionSource 键，行为与引入选项数据源之前一致
+    void submit_keepsStaticOptionsUnvalidatedForBackwardCompatibility() {
+        // 静态 options 只用于渲染建议项：存量表单的取值可能来自自由输入或已被删除的选项，因此不参与校验
         createPublishedForm("option-source-static", """
                 [{"type":"radio","field":"level","title":"客户等级","options":[{"label":"普通","value":"normal"},{"label":"重要","value":"vip"}]},
                  {"type":"input","field":"memo","title":"备注"}]
@@ -282,20 +282,21 @@ class InformationServiceIntegrationTest {
                 submitCommand("option-source-static", Map.of("level", "vip", "memo", "随便写"), "static-ok"), false)
                 .getId()).isNotNull();
 
-        assertThatThrownBy(() -> submissionService.submit(
-                submitCommand("option-source-static", Map.of("level", "gold"), "static-bad"), false))
-                .isInstanceOf(BizException.class)
-                .hasMessageContaining("客户等级")
-                .hasMessageContaining("gold")
-                .hasMessageContaining("值不在可选范围内");
+        assertThat(submissionService.submit(
+                submitCommand("option-source-static", Map.of("level", "gold", "memo", "自由输入"), "static-free"), false)
+                .getId()).isNotNull();
     }
 
     @Test
     void submit_acceptsMultiSelectAsCommaStringOrCollection() {
         createPublishedForm("option-source-multi", """
-                [{"type":"checkbox","field":"channels","title":"渠道","options":[{"label":"电话","value":"tel"},{"label":"邮件","value":"mail"}]},
-                 {"type":"select","field":"tags","title":"标签","props":{"multiple":true},"options":[{"label":"新客","value":"new"},{"label":"老客","value":"old"}]}]
+                [{"type":"checkbox","field":"channels","title":"渠道","optionSource":{"type":"DICT","dictType":"contact_channel"}},
+                 {"type":"select","field":"tags","title":"标签","props":{"multiple":true},"optionSource":{"type":"DICT","dictType":"content_tag"}}]
                 """);
+        org.mockito.Mockito.when(dictApi.getOptions("contact_channel"))
+                .thenReturn(R.ok(List.of(dictOption("电话", "tel"), dictOption("邮件", "mail"))));
+        org.mockito.Mockito.when(dictApi.getOptions("content_tag"))
+                .thenReturn(R.ok(List.of(dictOption("新客", "new"), dictOption("老客", "old"))));
 
         assertThat(submissionService.submit(submitCommand("option-source-multi",
                 Map.of("channels", "tel, mail", "tags", java.util.List.of("new", "old")), "multi-ok"), false)

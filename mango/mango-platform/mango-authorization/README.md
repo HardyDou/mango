@@ -82,6 +82,9 @@
 </dependency>
 ```
 
+数据权限 Grant 目前是**半成品**：能力已合入但未完成（刷新/直链进入详情页时数据权限无法恢复，见 issue #1420），
+默认 `mango.data-grant.enabled=false`（关闭），**禁止在生产环境启用**；开启前请确认 #1420 已解决。
+
 需要详情接口按列表签发结果判定记录可见性时引入数据权限 Grant starter：
 
 ```xml
@@ -92,7 +95,7 @@
 ```
 
 该 starter 只依赖 `mango-authorization-api`、`mango-infra-web-starter`、`mango-infra-persistence-api` 与 `mango-infra-context-api`，
-默认 `mango.data-grant.mode=optional`；契约与接入方式见
+启用后默认 `mango.data-grant.mode=optional`（仍需显式配置 `mango.data-grant.enabled=true` 才生效）；契约与接入方式见
 [`mango-authorization-data-grant-starter`](./mango-authorization-data-grant-starter/README.md)。
 
 启动时会输出一行保护姿态日志（关闭 / 启用但缺 `secret` / 完整启用），便于运维从日志判断数据权限是否真的在生效，详见该模块 README「10.1 启动期保护姿态日志」。跨域部署下模块还会把 `X-Mango-Data-Grant` 追加进 `mango.web.cors.allowed-headers`，否则浏览器不允许回传该请求头。

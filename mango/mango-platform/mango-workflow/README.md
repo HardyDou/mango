@@ -1191,6 +1191,8 @@ mvn -f mango/pom.xml -pl :mango-workflow-starter -Denforcer.skip=true -DskipTest
 
 ## 13.1 数据权限 Grant 试点
 
+该能力当前为**半成品**，默认 `mango.data-grant.enabled=false`（机制不生效），刷新/直链进入详情页时数据权限无法恢复（issue #1420），**禁止在生产启用**；下面是启用后的行为。
+
 业务申请列表 `POST /workflow/business-applies/page` 与详情 `GET /workflow/business-applies/detail` 已接入数据权限 Grant：
 列表成功响应带 `X-Mango-Data-Grant`，详情请求回传该头时在进入 Controller 前判定记录是否在集合内，不在集合返回 404
 （文案与「资源不存在」一致）。默认 `mango.data-grant.mode=optional`，未回传时行为与之前完全一致；
