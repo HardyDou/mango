@@ -1,6 +1,6 @@
 ## v2026.11.23-maven-1.16.0-workflow-task-status-release - Mango Maven/docs 1.16.0 工作流任务状态与数据范围批次 - 2026-11-23
 
-Status: PENDING - 批次处于发布准备阶段，Maven 与 npm 制品尚未发布，消费端验证、Tag 与 GitHub Release 待完成。
+Status: PUBLISHED_AND_VERIFIED - 203 个 Maven 坐标与 29 个 npm 包已发布，消费端解析验证通过；Tag `v2026.11.23-maven-1.16.0-workflow-task-status-release` 与 GitHub Release 已创建。
 
 Plan digest: `4e054c3bcc81a9f0f9cfb7013a87012593299e0ce6cfece9d8890509ea4cac3b`
 
