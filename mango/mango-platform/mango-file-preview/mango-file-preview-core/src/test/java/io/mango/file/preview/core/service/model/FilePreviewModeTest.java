@@ -7,9 +7,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 class FilePreviewModeTest {
 
     @Test
-    void sheetFallsBackToPdfConversionWhenInternalSourceIsAvailable() {
-        assertThat(FilePreviewMode.of("xlsx", true)).isEqualTo(FilePreviewMode.PDF_CONVERSION);
-        assertThat(FilePreviewMode.of("CSV", true)).isEqualTo(FilePreviewMode.PDF_CONVERSION);
+    void sheetStaysEngineRenderedWhenInternalSourceIsAvailable() {
+        // 直取通道下表格页的取数地址换成源文件落盘后的同源地址，不再回落 PDF 转换。
+        assertThat(FilePreviewMode.of("xlsx", true)).isEqualTo(FilePreviewMode.ENGINE);
+        assertThat(FilePreviewMode.of("CSV", true)).isEqualTo(FilePreviewMode.ENGINE);
     }
 
     @Test

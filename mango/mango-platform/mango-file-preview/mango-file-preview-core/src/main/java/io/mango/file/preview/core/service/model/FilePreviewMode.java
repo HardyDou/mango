@@ -22,11 +22,6 @@ public enum FilePreviewMode {
 
     private static final Set<String> PDF_CONVERSION_EXTENSIONS = Set.of(
             "doc", "docx", "ppt", "pptx", "odt", "ods", "odp");
-    /**
-     * 引擎用前端表格渲染的扩展名。该渲染方式要求引擎按对外 URL 回源取数，进程内直取通道下没有对外 URL，
-     * 因此直取生效时与 {@code xls} 一致回落平台 PDF 转换。
-     */
-    private static final Set<String> ENGINE_SHEET_EXTENSIONS = Set.of("xlsx", "csv");
     private static final String PDF_EXTENSION = "pdf";
 
     /**
@@ -49,19 +44,15 @@ public enum FilePreviewMode {
     /**
      * 按文件扩展名与进程内直取能力判断预览方式。
      *
-     * <p>表格（{@code xlsx}/{@code csv}）在引擎里靠前端表格渲染，需要按对外 URL 回源取数；进程内直取生效时
-     * 没有对外 URL，该渲染方式不可用，因此回落 {@link #PDF_CONVERSION}。其余判定与 {@link #of(String)} 相同。</p>
+     * <p>表格（{@code xlsx}/{@code csv}）由引擎的前端表格渲染，取数地址在直取通道下换成源文件落盘后的同源地址，
+     * 因此两种通道都留在 {@link #ENGINE}，不回落 PDF 转换。其余判定与 {@link #of(String)} 相同。</p>
      *
      * @param extension 文件扩展名，大小写不敏感。
      * @param internalSourceAvailable 进程内是否具备预览源文件直取能力；调用方传入与渲染分派一致的值
      * @return 预览方式
      */
     public static FilePreviewMode of(String extension, boolean internalSourceAvailable) {
-        FilePreviewMode mode = of(extension);
-        if (mode == ENGINE && internalSourceAvailable && ENGINE_SHEET_EXTENSIONS.contains(normalize(extension))) {
-            return PDF_CONVERSION;
-        }
-        return mode;
+        return of(extension);
     }
 
     /**

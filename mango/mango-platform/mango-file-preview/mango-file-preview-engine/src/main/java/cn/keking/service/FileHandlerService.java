@@ -1,11 +1,11 @@
 package cn.keking.service;
 
 import cn.keking.config.ConfigConstants;
+import cn.keking.web.filter.BaseUrlFilter;
 import cn.keking.model.FileAttribute;
 import cn.keking.model.FileType;
 import cn.keking.service.cache.CacheService;
 import cn.keking.utils.*;
-import cn.keking.web.filter.BaseUrlFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -122,11 +122,31 @@ public class FileHandlerService {
      * @return 以 {@link #PUBLIC_FILE_PATH_PREFIX} 开头的同源地址
      */
     public static String toPublicPath(String relativePath) {
+        String path = PUBLIC_FILE_PATH_PREFIX;
         if (ObjectUtils.isEmpty(relativePath)) {
-            return PUBLIC_FILE_PATH_PREFIX;
+            return withBaseUrl(path);
         }
         String normalized = relativePath.startsWith("/") ? relativePath : "/" + relativePath;
-        return PUBLIC_FILE_PATH_PREFIX + normalized;
+        return withBaseUrl(path + normalized);
+    }
+
+    /**
+     * 把同源地址拼到当前请求的基地址上。
+     *
+     * <p>预览页面在反向代理（如前端 dev server 的 {@code /api} 前缀）之后部署时，浏览器只会把
+     * 请求发到代理入口；这里补上 {@code BaseUrlFilter} 解析出的基地址，页面内的图片、视频、
+     * 压缩包条目才能经同一入口取到。取不到基地址时保持根相对地址，由调用方部署自行转发。</p>
+     *
+     * @param path 以 {@link #PUBLIC_FILE_PATH_PREFIX} 开头的同源地址
+     * @return 带基地址的地址，或原样的根相对地址
+     */
+    private static String withBaseUrl(String path) {
+        String baseUrl = BaseUrlFilter.getBaseUrl();
+        if (baseUrl == null || baseUrl.isBlank()) {
+            return path;
+        }
+        String trimmed = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
+        return trimmed + path;
     }
 
     /**

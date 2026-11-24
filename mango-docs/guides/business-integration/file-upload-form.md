@@ -297,4 +297,5 @@ pnpm -F @mango/file test
 - 业务侧无需改动：一如既往通过 `GET /file-preview/page?fileId=…` 拿到预览页，票据由平台签发与续期。
 
 > Issue #1363 影响说明（文案与告警）：预览组件的弃用提示与 `renderMode` 文档表述按「业务只给 `fileId`」收敛——`MangoFilePreviewDialog` 自身也会对地址类 props 输出弃用提示，`renderMode` 表不再暗示业务需提供预览地址。无影响：组件入参、`renderMode` 取值与后端契约均不变，业务只需继续传 `fileId`。
+> 预览基地址与表格渲染变化说明：引擎页面里的脚本、样式与 `/preview-file/**` 子资源按代理转发头（`X-Forwarded-Host`/`X-Forwarded-Proto`/`X-Forwarded-Prefix`）解析出的基地址拼装，经前端 dev server 或 Nginx 代理访问时不再指向代理自身地址；同时 `fileId` 通道下的 `xlsx`/`csv` 恢复引擎表格页面，`renderMode` 由 `CONVERTING` 改为 `PAGE`。业务影响：调用契约不变，业务仍只保存和透传 `fileId`；若前端按 `renderMode` 分派渲染器，`PAGE` 走内嵌页面（iframe）分支即可，无需新增判断。代理部署需要把上述转发头透传给应用与引擎，否则压缩包目录、图片与视频子资源会在浏览器侧 404。
 > Issue #1380 影响说明：独立部署（应用与预览引擎分进程）时，图片/音视频/压缩包等由引擎出页，预览跳转带 `mango.file-preview.engine-public-base-url` 配置的引擎 origin；PDF 与 Office 转换产物仍由应用出页（`preview-artifact`），引擎不参与。内嵌部署（不配置该 key）行为不变。

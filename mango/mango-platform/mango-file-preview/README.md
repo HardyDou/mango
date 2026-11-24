@@ -48,8 +48,8 @@
 
 ### 2.3 能力边界
 
-- `xlsx`/`csv` 的 Luckysheet 前端渲染（`officeweb.ftl`）只在 `url` 通道可用：引擎 `mango-file-preview-engine/src/main/java/cn/keking/service/impl/OfficeFilePreviewImpl.java#handleWebPreview` 要求 `officePreviewType != "html"` 且 `officeTypeWeb == "web"`，回源依赖 `getCorsFile?urlPath=<base64 源地址>`，源地址 host 必须在信任列表内。
-- `fileId` 通道由平台侧先定渲染方式：`FilePreviewServiceImpl#previewMode` 在进程内直取生效（`useInternalSource()` 为真）时把 `xlsx`/`csv` 判为 `PDF_CONVERSION`（`ENGINE_SHEET_EXTENSIONS`），页面直接进入 PDF.js 读 `/file-preview/files/preview-artifact`，根本不进入引擎的表格页面，因此不受上面的引擎开关影响。这与 `renderMode` 的 `CONVERTING` 取值一致：`fileId` 通道下表格先转换再展示。转换队列与渲染分派共用同一份判定（`FilePreviewMode#of(extension, internalSourceAvailable)`），因此 `renderMode` 为 `CONVERTING` 时任务必定进入 PDF 转换并产出 `preview-artifact`，两者不会再分叉。
+- `xlsx`/`csv` 走引擎的 Luckysheet 前端渲染（`officeweb.ftl`），两种通道都可用：引擎 `mango-file-preview-engine/src/main/java/cn/keking/service/impl/OfficeFilePreviewImpl.java#handleWebPreview` 要求 `officePreviewType != "html"` 且 `officeTypeWeb == "web"`（默认配置满足）。
+- 表格页的取数地址按通道区分：`url` 通道直接用源地址；`fileId` 通道传入的是短期票据，表格页不能直接按票据取数，因此 `OfficeFilePreviewImpl#sheetSourceUrl` 先把源文件落到引擎 file 目录，再把地址换成 `/preview-file/<落盘文件名>` 的同源地址（与图片、音视频一致）。`FilePreviewMode#of(extension, internalSourceAvailable)` 因此不再对 `xlsx`/`csv` 做降级，`renderMode` 为 `PAGE`；只有 `doc`/`docx`/`ppt`/`pptx`/`odt`/`ods`/`odp` 才走 `CONVERTING`。
 
 ### 2.4 限制清单
 
@@ -76,6 +76,8 @@
 | 文档/表格产物 | `http://<host>/file-preview/files/preview-artifact?token=<票据>`（PDF 直出为 `preview-content`） | token 校验 |
 
 - `/preview-file/**` 由 `cn.keking.config.WebConfig` 映射到引擎落盘目录 `ConfigConstants.getFileDir()`，对外地址由 `FileHandlerService#getPublicPath` 统一拼装（`FileHandlerService.PUBLIC_FILE_PATH_PREFIX`）。
+- 页面里的地址都以引擎解析出的基地址 `baseUrl` 拼装，`cn.keking.web.filter.BaseUrlFilter` 依次取 `X-Base-Url`、配置 `base.url`、转发头 `X-Forwarded-Host`/`X-Forwarded-Proto`/`X-Forwarded-Prefix`，最后才回落到请求自身的 `Host`。经前端 dev server 或 Nginx 代理访问时，代理会改写 `Host`（如 `changeOrigin: true`），必须传上述转发头，否则页面里的脚本、样式与 `/preview-file/**` 子资源会指向代理自身地址，表现为压缩包目录空白、图片与视频 404。
+- `FileHandlerService#toPublicPath` 返回的地址同样带 `baseUrl` 前缀（例如 `/api/preview-file/…`），浏览器因此能经同一入口取到落盘文件；`/preview-file/**` 与根路径 `/**` 两条静态映射保持不变。
 - 压缩包解包目录**不在** `file-dir` 内：`CompressFileReader#unRar` 把包内容解到 `ConfigConstants.getDecompressDir()`（默认 `file-dir` 同级目录 `_extracted`，`decompress.dir` 可覆盖），该目录不参与 `/preview-file/**` 与根路径 `/**` 两条静态映射，因此不再有 `/preview-file/<解包目录>/<条目>` 这类匿名可达的条目地址。
 - 压缩包条目统一走 `GET /compressed-file`（`FileController`）：`kkCompressfileKey` 是解包键（`bundle.zip_`，嵌套包再加 `_decompression` 前缀），`kkCompressfilepath` 是包内相对路径；`CompressFileEntryService#resolveEntryPath` 先做非法字符、`kkCompressfilepath` 必须位于 `kkCompressfileKey/` 之下、解析后必须仍在解包根内三层校验，再 `Files.newInputStream` 流式返回，越界返回 400、条目不存在返回 404。
 - `FilePreviewPermitPathBeanPostProcessor#PERMIT_PATHS` 里**只有** `/preview-file/**` 这一个根级文件前缀；禁止改成 `/**`、`/file-*`、`/**/*.mp4` 这类宽匹配，否则整个引擎落盘目录都会变成匿名可读。放行清单由 `FilePreviewEngineResourceRegistrarTest#permitPaths_allowOnlyTheSinglePublicFilePrefixForEngineFiles` 锁定：以 `/preview-file` 开头的条目必须恰好一条。
@@ -91,7 +93,7 @@
 | `NATIVE_PDF` | **应用** | `/api/file-preview/files/preview-entry?token=…`（PDF.js 页，**无 Location**） | 原生 PDF 由应用出页，引擎不参与 |
 | `PDF_CONVERTING` | **应用** | 同上；产物 `/api/file-preview/files/preview-artifact?token=…` | Office 转换在应用侧完成，产物落在 `ConfigConstants.getFileDir()` |
 | `IMAGE`、`VIDEO`、`AUDIO` | **引擎** | `/api/onlinePreview?fileId=…`，子资源 `/preview-file/**` | 302 的 `Location` 带 `engine-public-base-url` 的 origin |
-| `PAGE`（压缩包、引擎级表格等） | **引擎** | 同上 | 同上 |
+| `PAGE`（压缩包、表格、图片、音视频等引擎页面） | **引擎** | 同上 | 同上 |
 
 独立部署时请把预览引擎的工作目录或 `mango.file-preview.file-dir` 固定为绝对路径；默认相对 `./file` 随启动目录变化，换目录重启会导致已落盘的转换产物/取源文件找不到（表现为 `/preview-file/**` 404）。
 

@@ -280,6 +280,11 @@ Plan digest: `e38b9c6f30802e37f13bffc327bfaa0aa98cdf1c2f626628865835b0ece0f2e4`
 
 - 独立部署（应用与引擎分进程）下，`IMAGE`/`VIDEO`/`AUDIO`/`PAGE` 的预览跳转指向引擎 origin；`NATIVE_PDF`/`PDF_CONVERTING` 仍由应用出页（`preview-artifact`），引擎不参与 PDF 与转换产物。
 
+### Fixed（预览基地址与表格页面）
+
+- 引擎页面里的脚本、样式与 `/preview-file/**` 子资源改为按 `X-Forwarded-Host`/`X-Forwarded-Proto`/`X-Forwarded-Prefix` 解析出的基地址拼装（`cn.keking.web.filter.BaseUrlFilter`），经前端 dev server 或 Nginx 代理访问时不再写死代理自身地址；`FileHandlerService#toPublicPath` 同步带上基地址前缀，压缩包目录、图片、视频因此可在代理入口下正常加载。
+- `xlsx`/`csv` 在 `fileId` 通道恢复引擎表格页面（`renderMode` 由 `CONVERTING` 变为 `PAGE`）：表格页取数地址改为源文件落盘后的同源地址（`OfficeFilePreviewImpl#sheetSourceUrl`），不再把短期票据当 URL 使用；`FilePreviewMode#of(extension, internalSourceAvailable)` 相应取消表格降级。
+
 ### Fixed（Issue #1386）
 
 - 压缩包解包目录原先落在引擎 `file-dir` 内（`_decompression…`），而 `file-dir` 整棵目录被 `/preview-file/**` 与根路径 `/**` 两条静态映射暴露，知道文件名即可匿名读取解包后的原文件。现在解包根改为单独的 `ConfigConstants.getDecompressDir()`（默认 `file-dir` 的同级目录 `_extracted`，可用新增配置项 `decompress.dir` / 环境变量 `KK_DECOMPRESS_DIR` 覆盖），`CompressFileReader#unRar` 只在该根下建目录，解包键仍是「压缩包相对路径 + `_`」（嵌套包再前置 `_decompression`），一包一目录不串目录。
