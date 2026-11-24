@@ -118,9 +118,28 @@ function generateEffectivePom() {
 
 // `mango-parent` 通过 `relativePath` 供全仓父链，本身不在 reactor 内，因此 `help:effective-pom`
 // 不会包含它；但每个发布坐标的 POM 都以它为 parent，消费方必须能解析到，发布集合里必须带上。
+// `mango-parent` 通过 `<scope>import</scope>` 引用 reactor 内的 `mango-bom`，而它自己不在 reactor 里，
+// 因此单独导出有效 POM 前必须先把该 BOM 装到本地仓库，否则离线环境会报
+// `Non-resolvable import POM: io.mango:mango-bom:pom:...`。
+function installReactorParentImports() {
+  const bomPomFile = path.join(repositoryRoot, 'mango/mango-bom/pom.xml');
+  if (!fs.existsSync(bomPomFile)) return;
+  const result = spawnSync(
+    'mvn',
+    ['-q', '-f', bomPomFile, '-N', '-DskipTests', 'install'],
+    { cwd: repositoryRoot, encoding: 'utf8' },
+  );
+  if (result.status !== 0) {
+    throw new Error(
+      `Maven install of reactor BOM failed:\n${[result.stdout, result.stderr].filter(Boolean).join('\n')}`,
+    );
+  }
+}
+
 function mergeStandaloneParentPom(reactorEffectivePomFile) {
   const parentPomFile = path.join(repositoryRoot, 'mango/mango-parent/pom.xml');
   if (!fs.existsSync(parentPomFile)) return reactorEffectivePomFile;
+  installReactorParentImports();
   const standaloneFile = path.join(runtimeRoot, 'mango-parent-effective-pom.xml');
   const result = spawnSync(
     'mvn',
