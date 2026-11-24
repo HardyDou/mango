@@ -23,7 +23,7 @@
 | 角色授权 | 管理角色、成员角色绑定、角色菜单授权 |
 | 成员直接角色摘要 | 按当前租户、当前应用批量返回最多 200 个租户成员的启用直接角色，不计算继承角色 |
 | 租户范围批量角色绑定 | 按全部启用成员、指定成员、组织或组织及下级组织预览、幂等绑定和解除角色 |
-| 内置默认角色 | 正式资源初始化 `ROLE_LOGIN`、`ROLE_ANONYMOUS`；机构初始化时自动创建并继承平台默认菜单授权 |
+| 内置默认角色 | 正式资源初始化 `ROLE_ADMIN`、`ROLE_LOGIN`、`ROLE_ANONYMOUS`；机构初始化时自动创建并继承平台默认菜单授权 |
 | 数据权限 | 按角色配置资源级数据范围，解析当前成员生效范围 |
 | 用户菜单 | 按当前成员授权快照返回可见菜单树 |
 | 授权快照 | 为 `mango-auth` 返回 roles 和 permissions，为 `mango-access` 做权限码匹配 |
@@ -150,7 +150,7 @@
 
 基础接口不用给每个角色或用户单独配置权限。所有登录用户都应具备的 `PERMISSION` 接口，挂到隐藏菜单并授权给 `ROLE_LOGIN`；匿名可用接口挂到隐藏菜单并授权给 `ROLE_ANONYMOUS`。管理员只需要分配业务菜单，系统会自动授予该菜单的 `apiCodes`。
 
-`authorization-common-bootstrap.yml` 会为平台租户初始化 `ROLE_LOGIN` 和 `ROLE_ANONYMOUS`。机构创建或启动基线对账时，`AuthorizationTenantProvisioner` 会为每个启用机构补齐这两个系统角色，并复制平台角色的默认菜单授权；业务代码不应给普通成员逐个绑定这两个角色。
+`authorization-common-bootstrap.yml` 会为平台租户初始化 `ROLE_ADMIN`、`ROLE_LOGIN` 和 `ROLE_ANONYMOUS`；`ROLE_ADMIN` 的平台内建角色因此不依赖 demo 开关，全新库在 `demo-enabled=false` 下也能被业务声明引用（`SYNC_ONCE` 语义下已存在的角色不会被声明覆盖名称、状态与排序）。机构创建或启动基线对账时，`AuthorizationTenantProvisioner` 会为每个启用机构补齐这两个系统角色，并复制平台角色的默认菜单授权；业务代码不应给普通成员逐个绑定这两个角色。
 
 登录态权限集合只读取当前角色已授权菜单的 `apiCodes` 字段，不读取 `menuCode`。因此 `menuCode` 可以稳定表达菜单可见性，`apiCodes` 才表达真实接口/动作权限。隐藏菜单 `visible=0` 可以只授予基础权限；如果隐藏菜单同时配置了页面 `path` 和 `component`（或外链运行配置），用户菜单接口会保留它用于前端路由注册，但不会显示在导航菜单中。只有用于承载基础权限、没有可运行页面的隐藏菜单仍不会进入用户菜单树。
 
@@ -435,7 +435,7 @@ src/main/resources/META-INF/mango/resources/{module}-common-menu.yaml
 | 新增前端模块运行策略 | 声明 `FRONTEND_MODULE_RUNTIME_STRATEGY`，由授权模块写入 `authorization_frontend_module_runtime_strategy`。 |
 | 历史 manifest | 只用于迁移，不作为新增入口。 |
 
-Flyway 只维护授权模块的表、列、索引等 DDL，不再承载任何初始化 DML。应用入口、登录上下文、套餐主档等必需资源放在本模块 `META-INF/mango/resources/`；演示角色和成员角色绑定放在 `META-INF/mango/demo/`，仅在显式开启 demo 时同步。
+Flyway 只维护授权模块的表、列、索引等 DDL，不再承载任何初始化 DML。应用入口、登录上下文、套餐主档等必需资源放在本模块 `META-INF/mango/resources/`；成员角色绑定等演示数据放在 `META-INF/mango/demo/`，仅在显式开启 demo 时同步；平台内建角色本身属于正式资源，不得放在 demo 下。
 业务模块不得直接写授权表或调用 `authorization-core` Service 来补菜单授权；角色、菜单和默认角色授权统一通过 Resource Registry 的 `AUTH_ROLE`、`AUTH_MENU` 声明同步。
 
 构建期 cold baseline 会在相互独立的空库中重复物化便携 Resource。授权模块对应用、登录上下文、菜单、套餐关系、角色关系、API Resource 和前端运行配置使用声明 `targetId`，或根据稳定业务身份生成确定性主键；相同声明在不同空库中必须得到相同主键。业务模块应继续使用稳定的 `appCode`、`moduleCode`、`menuCode`、`roleCode`、HTTP method/path 等身份，不得依赖数据库自增值或 Resource 扫描顺序。

@@ -574,7 +574,7 @@ mango-workflow-starter/src/main/resources/META-INF/mango/resources/workflow-comm
 
 未安装授权数据权限能力时，workflow 保持原查询行为；安装后由 `DataScopeApplier` 追加本人、指定组织、本人主部门或本人主部门及下级范围条件，并校验 `workflow_definition` 存在当前规则需要的映射字段。租户隔离仍由 persistence 租户插件处理。
 
-开启 demo 资源后，Workflow 会为租户 `1` 的默认 `ROLE_ADMIN` 以 `INIT_ONLY` 声明初始化 `workflow:definition:list = ALL`。该规则只作用于租户内的流程定义管理数据范围；不会影响 `startEntryVisible`，该字段仍只控制审批管理的发起流程入口。若管理员已经维护过该数据范围，后续同步会保留运行时配置。
+`workflow-common-role-data-scope.yml` 以 `SYNC_ONCE` 为租户 `1` 的 `ROLE_ADMIN` 初始化 `workflow:definition:list = ALL`，属正式资源，不依赖 demo 开关（全新库在 `demo-enabled=false` 下同样生效）。该规则只作用于租户内的流程定义管理数据范围；不会影响 `startEntryVisible`，该字段仍只控制审批管理的发起流程入口。若管理员已经维护过该数据范围，后续同步会保留运行时配置。
 
 ## 7. 快速开始
 
