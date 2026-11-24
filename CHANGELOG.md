@@ -1,6 +1,6 @@
 ## v2026.11.24-maven-1.16.1-preview-and-role-bootstrap-release - Mango Maven/docs 1.16.1 文件预览基地址、镜像字体与内建管理员角色补丁 - 2026-11-24
 
-Status: PENDING - Maven 与 npm 发布、消费端校验、Tag、GitHub Release 待执行
+Status: PUBLISHED_AND_VERIFIED - Maven 与 npm 已发布、消费端校验通过、Tag 与 GitHub Release 已生成（2026-11-24T10:34:59Z）
 Plan digest: 0078bbd48ceb33ce602aacaae0c3e8bdd15f1fc78b061d3766fb0a4b96d9749e
 
 Mango Maven 1.16.1 补丁批次：文件预览基地址、镜像字体与内建管理员角色
