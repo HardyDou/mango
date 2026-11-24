@@ -107,3 +107,5 @@ pnpm -F @mango/admin-shell build
 > Issue #971 影响说明：新增“平台能力 / 集成管理 / 应用定义（`integration/definition`）”与“平台能力 / 集成管理 / 集成应用（`integration/application`）”两个菜单页面，微应用总览复用 `authorization_frontend_app_registry` 只读展示；菜单权限码为 `integration:definition` 与 `integration:application`。原有菜单、页面 key、角色授权和租户绑定流程不变；菜单打不开时仍按本页步骤排查。
 
 > Issue #1182 影响说明：`@mango/admin-shell` 顶部铃铛与站内信详情改为按「目标 → `fallbackTargetKey` → 消息中心」解析消息按钮跳转，解析不到时退到消息中心。本场景涉及的菜单、页面 key、按钮权限码、接口鉴权、租户隔离和权限判定结果不变。
+>
+> Issue #1445 影响说明：平台内建角色 `ROLE_ADMIN` 改由正式资源初始化，不再依赖 demo 开关；菜单、页面 key、按钮权限码与角色授权关系不变，本页排查步骤照旧。

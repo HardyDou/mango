@@ -345,3 +345,4 @@ pnpm -F @mango/workflow-business-example build
 
 > Issue #1098 影响说明：资源声明的 `sync-mode` 收敛为 `SYNC_ALWAYS` / `SYNC_ONCE`（旧值 `AUTO`、`INIT_ONLY`、`MANUAL`、`LOCKED` 仍可读取并映射）。本场景涉及的数据初始化、租户边界、权限判定与页面行为不变。
 > Issue #1346 影响说明：`WORKFLOW_DEFINITION` 声明现在按租户与流程编码派生分类、流程定义与流程版本主键，空库回放得到相同主键；本指南描述的接口入参、返回字段、权限码与任务语义均无变化，已发布流程定义的主键保持不变。
+> Issue #1445 影响说明：`workflow:definition:list = ALL` 的管理员数据范围改为正式资源声明，不再依赖 demo 开关；业务方的流程定义声明与审批接口行为不变。
