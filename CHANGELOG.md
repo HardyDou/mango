@@ -1,3 +1,95 @@
+## v2026.11.24-maven-1.16.1-preview-and-role-bootstrap-release - Mango Maven/docs 1.16.1 文件预览基地址、镜像字体与内建管理员角色补丁 - 2026-11-24
+
+Status: PENDING - Maven 与 npm 发布、消费端校验、Tag、GitHub Release 待执行
+Plan digest: 0078bbd48ceb33ce602aacaae0c3e8bdd15f1fc78b061d3766fb0a4b96d9749e
+
+Mango Maven 1.16.1 补丁批次：文件预览基地址、镜像字体与内建管理员角色
+
+本批次包含三个已合并的修复，全部位于 Maven 侧；npm 侧只有 `@mango/cli` 的版本矩阵跟随发布：
+
+### Pull Requests
+
+- #1444 Fixed - 文件预览引擎页面按转发头解析基地址，表格恢复引擎页面渲染。Packages: `mango-file-preview-engine`, `mango-file-preview-core`, `mango-file-preview-starter`. Business Adaptation: 反代或自定义域名部署需补 `X-Forwarded-Host` / `X-Forwarded-Proto` / `X-Forwarded-Prefix`，其余部署无改动。
+- #1443 Fixed - 应用镜像中文字体映射改为强绑定，镜像内汉字不再依赖宿主。Packages: `mango-app`（Dockerfile 与字体校验脚本）。Business Adaptation: 自建镜像无需在宿主安装中文字体；依赖自定义字体文件名的业务需确认映射表覆盖。
+- #1446 Fixed - 内建管理员角色改为正式资源声明，`SYNC_ONCE` 不再覆盖运行时配置。Packages: `mango-authorization-starter`, `mango-workflow-starter`. Business Adaptation: 业务仓库若用 Flyway 自种过 `ROLE_ADMIN`，建议删除该 DML；已存在角色不会被改写。
+
+### Fixed
+
+#### #1443 应用镜像中文字体映射改为强绑定
+
+- Packages: `mango-app`（Dockerfile 与校验脚本，非 Java 制品）
+- Business Adaptation: 自建镜像无需再在宿主安装中文字体；依赖自定义字体文件名的业务需要确认映射表是否覆盖。
+
+修复内容：镜像内安装 Noto CJK / AR PL UKai / Liberation 等字体，新增 fontconfig 别名表把业务常用中文字体名（宋体、楷体、微软雅黑等）绑定到实际字体，并在构建期做覆盖校验，缺失即构建失败。
+
+#### #1445 内建管理员角色改为正式资源声明
+
+- Packages: `mango-authorization-starter`, `mango-workflow-starter`
+- Business Adaptation: 业务仓库若在自己 Flyway 里种过 `ROLE_ADMIN`，建议删除该 DML——平台现在会在全新库自动创建该角色；已存在的角色不会按声明被改写。
+
+修复内容：
+
+- `ROLE_ADMIN` 从 demo 资源迁到 `resources/authorization-common-bootstrap.yml`，`demo-enabled=false` 的全新库也会创建；
+- `workflow:definition:list = ALL` 的管理员数据范围从 workflow demo 迁到正式资源；
+- `AuthRoleResourceHandler` 对 `SYNC_ONCE` 且已存在的角色返回 `PRESERVED`，不再改写名称、类型、状态、排序与备注，避免升级时静默改名或重新启用管理员角色。
+
+### Changed
+
+- Maven 版本 `1.16.0` → `1.16.1`；
+- 本批次无前端源码改动，仅 `@mango/cli` 随批次发版；
+- 无数据库结构变更，无迁移脚本。
+
+### Versions
+
+- Maven: `1.16.0` → `1.16.1`
+- npm: `@mango/cli` `1.4.19` → `1.4.20`（版本矩阵跟随 Maven 批次），其余前端包不变
+
+### Published Packages
+
+- Maven: 203 个坐标（`io.mango:*`，含 `mango-bom`、`mango-parent`、`mango-maven-plugin`、`mango-docs-bundle`）
+- npm: `@mango/cli@1.4.20`
+
+### Business Impact
+
+- 反向代理/自定义域名部署的文件预览从「静态资源 404、zip 空白」恢复；不配置转发头的部署行为不变。
+- `xlsx`/`csv` 从「转 PDF 预览」回到「引擎页面表格预览」。
+- 全新库自动具备平台管理员角色；存量库角色名称与启停状态不再被资源同步改写。
+- 业务仓库无需改动代码即可获得上述修复；仅反代部署需补转发头，种过 `ROLE_ADMIN` 的仓库建议删掉自种 DML。
+
+### Upgrade Estimate
+
+- Audience: 使用文件预览（尤其经反向代理或自定义域名部署）与工作流/授权能力的业务仓库
+- Engineering Effort: 反代部署需补三个转发头；其它仓库无改动
+- Execution Window: 任意时间，无停机要求
+- Service Downtime: 无
+- Rollback Effort: 回退到 `1.16.0` 即可，无数据变更需要回滚
+- Assumptions: 无结构变更、无配置默认值变更、无接口契约变更
+
+### Upgrade Notes
+
+1. 反向代理部署（nginx 等）：在转发到后端时补 `X-Forwarded-Host`、`X-Forwarded-Proto`，剥掉 `/api` 前缀时补 `X-Forwarded-Prefix: /api`。
+2. 若业务仓库用 Flyway 自行种过 `ROLE_ADMIN` / `authorization_role_data_scope`，建议删除该 DML；平台资源会在全新库创建，存量库已存在的数据不会被覆盖。
+3. 无需修改任何前端依赖版本。
+
+### Verification
+
+- 全新库 `mango_dev_1445` 冷启动（demo 默认关闭）：`ROLE_ADMIN` 存在（`status=1`、`sort=1`），`workflow:definition:list = ALL` 存在，`resource_registry` 两条声明 `SYNC_ONCE/ACTIVE`，演示数据未加载；
+- 授权 starter 与 workflow starter 用例全绿（含新增 `SYNC_ONCE` 保留用例）；
+- 文件预览：直连、vite 代理、nginx + 自定义域名（自签证书）三种入口实测 zip 目录树、xlsx 表格页、png 子资源均 200；
+- 镜像：构建期 193 条字体校验通过，容器内 `fc-list :lang=zh` = 84，字体名映射命中。
+
+### Rollback
+
+- 回退 Maven 版本到 `1.16.0`；无数据库变更、无数据迁移，无需数据处理。
+- 若只想回退预览行为，可继续使用 `1.16.0` 的 `mango-file-preview-*` 坐标，其余模块保持 `1.16.1` 不受影响。
+
+### Audit History
+
+- `#1443` 应用镜像字体强绑定（`001cbf773`）
+- `#1444` 引擎页面基地址与表格渲染（`c36d6d805`）
+- `#1446` 内建管理员角色与 `SYNC_ONCE` 保留（`4faf408f4`）
+- `#1442` Maven 1.16.0 收尾
+
 ## v2026.11.23-maven-1.16.0-workflow-task-status-release - Mango Maven/docs 1.16.0 工作流任务状态与数据范围批次 - 2026-11-23
 
 Status: PUBLISHED_AND_VERIFIED - 203 个 Maven 坐标与 29 个 npm 包已发布，消费端解析验证通过；Tag `v2026.11.23-maven-1.16.0-workflow-task-status-release` 与 GitHub Release 已创建。
