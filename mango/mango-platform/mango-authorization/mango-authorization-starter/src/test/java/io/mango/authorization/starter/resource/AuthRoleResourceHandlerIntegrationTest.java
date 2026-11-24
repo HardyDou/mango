@@ -6,6 +6,8 @@ import io.mango.authorization.core.mapper.RoleMapper;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
 import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.api.enums.ResourceFieldType;
+import io.mango.resource.api.enums.ResourceSyncDisposition;
+import io.mango.resource.api.enums.ResourceSyncMode;
 import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.model.ResourceField;
 import io.mango.resource.support.model.ResourceSyncResult;
@@ -134,6 +136,37 @@ class AuthRoleResourceHandlerIntegrationTest {
         assertThat(persisted.getStatus()).isZero();
         assertThat(persisted.getRemark()).isEqualTo("updated by resource sync");
         assertThat(countRoles()).isEqualTo(1L);
+    }
+
+    @Test
+    void upsertPreservesExistingRoleForSyncOnceDeclaration() {
+        ResourceSyncResult created = handler.upsert(resource());
+        ResourceDeclaration once = resource();
+        once.setSyncMode(ResourceSyncMode.SYNC_ONCE);
+        once.putField("roleName", field(ResourceFieldType.STRING, "Renamed Once"));
+        once.putField("status", field(ResourceFieldType.INT, 0));
+
+        ResourceSyncResult preserved = handler.upsert(once);
+
+        assertThat(preserved.getTargetId()).isEqualTo(created.getTargetId());
+        assertThat(preserved.getDisposition()).isEqualTo(ResourceSyncDisposition.PRESERVED);
+        RoleEntity persisted = roleMapper.selectById(created.getTargetId());
+        assertThat(persisted.getRoleName()).isEqualTo("Demo RoleEntity");
+        assertThat(persisted.getStatus()).isEqualTo(1);
+        assertThat(countRoles()).isEqualTo(1L);
+    }
+
+    @Test
+    void upsertCreatesSyncOnceRoleWhenTargetIsMissing() {
+        ResourceDeclaration once = resource();
+        once.setSyncMode(ResourceSyncMode.SYNC_ONCE);
+        once.putField("roleName", field(ResourceFieldType.STRING, "Created Once"));
+
+        ResourceSyncResult created = handler.upsert(once);
+
+        assertThat(created.getDisposition()).isEqualTo(ResourceSyncDisposition.APPLIED);
+        RoleEntity persisted = roleMapper.selectById(created.getTargetId());
+        assertThat(persisted.getRoleName()).isEqualTo("Created Once");
     }
 
     @Test

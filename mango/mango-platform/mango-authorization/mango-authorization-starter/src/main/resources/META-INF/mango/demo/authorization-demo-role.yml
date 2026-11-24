@@ -4,25 +4,6 @@ mango:
     module-code: authorization
     module-name: 授权
     declarations:
-      AUTH_ROLE:
-        - id: "2026071509000000101"
-          version: 2
-          biz-key: authorization.role.tenant-1.admin
-          name: 芒果集团平台管理员
-          target-module: authorization
-          sync-mode: SYNC_ONCE
-          fields:
-            targetId: { type: LONG, value: 1 }
-            tenantId: { type: LONG, value: 1 }
-            appCode: { type: STRING, value: internal-admin }
-            realm: { type: STRING, value: INTERNAL }
-            actorType: { type: STRING, value: INTERNAL_USER }
-            roleCode: { type: STRING, value: ROLE_ADMIN }
-            roleName: { type: STRING, value: 平台超级管理员 }
-            roleType: { type: INT, value: 1 }
-            status: { type: INT, value: 1 }
-            sort: { type: INT, value: 1 }
-            remark: { type: STRING, value: 芒果集团平台管理员 }
       AUTH_SUBJECT_ROLE:
         - id: "2026071509000000201"
           version: 2

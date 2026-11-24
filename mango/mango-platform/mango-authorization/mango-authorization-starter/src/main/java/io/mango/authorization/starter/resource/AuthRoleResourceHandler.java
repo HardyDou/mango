@@ -6,6 +6,7 @@ import io.mango.authorization.core.mapper.RoleMapper;
 import io.mango.resource.support.ResourceHandler;
 import io.mango.resource.support.ResourceTypes;
 import io.mango.resource.api.enums.ResourceStatus;
+import io.mango.resource.api.enums.ResourceSyncMode;
 import io.mango.resource.support.model.ResourceDeclaration;
 import io.mango.resource.support.model.ResourceHandlerSpec;
 import io.mango.resource.support.model.ResourceSyncResult;
@@ -77,6 +78,10 @@ public class AuthRoleResourceHandler implements ResourceHandler {
     private ResourceSyncResult upsertInTenant(ResourceDeclaration resource, Long tenantId) {
         RoleEntity role = findRole(resource);
         boolean creating = role == null;
+        if (!creating && resource.getSyncMode() == ResourceSyncMode.SYNC_ONCE) {
+            return ResourceSyncResult.preserved(role.getRoleId(), TARGET_TABLE,
+                    "Auth role preserved for SYNC_ONCE: " + role.getAppCode() + "/" + role.getRoleCode());
+        }
         LocalDateTime now = LocalDateTime.now();
         if (creating) {
             role = new RoleEntity();

@@ -30,17 +30,17 @@ class WorkflowResourceDeclarationContractTest {
                 .contains("definitionKey: { type: STRING, value: expense_reimbursement }")
                 .contains("definitionKey: { type: STRING, value: contract_seal_approval }")
                 .contains("definitionKey: { type: STRING, value: leave_application }");
-        assertThat(count(declaration, "sync-mode: SYNC_ONCE")).isEqualTo(4);
-        assertThat(count(declaration, "- id: \"")).isEqualTo(4);
+        assertThat(count(declaration, "sync-mode: SYNC_ONCE")).isEqualTo(3);
+        assertThat(count(declaration, "- id: \"")).isEqualTo(3);
+        assertThat(declaration).doesNotContain("AUTH_ROLE_DATA_SCOPE");
     }
 
     @Test
-    void demoDeclarations_initializeDefaultAdminDefinitionScope() {
+    void commonResources_initializeDefaultAdminDefinitionScopeWithoutDemo() {
         ResourceRegistryProperties properties = new ResourceRegistryProperties();
-        properties.setLocations(List.of());
-        properties.setDemoEnabled(true);
-        properties.setDemoLocations(List.of(
-                "classpath:META-INF/mango/demo/workflow-demo-definition.yml"));
+        properties.setLocations(List.of(
+                "classpath:META-INF/mango/resources/workflow-common-role-data-scope.yml"));
+        properties.setDemoEnabled(false);
 
         ResourceDeclaration scope = new ResourceDeclarationLoader(objectMapper, properties).load().stream()
                 .filter(resource -> ResourceTypes.AUTH_ROLE_DATA_SCOPE.equals(resource.getResourceType()))
