@@ -113,15 +113,55 @@ public class OfficeFilePreviewImpl implements FilePreview {
             return null;
         }
         String suffix = fileAttribute.getSuffix();
+        String sheetUrl = sheetSourceUrl(model, url, fileAttribute);
         if (suffix.equalsIgnoreCase("xlsx")) {
-            model.addAttribute("pdfUrl", KkFileUtils.htmlEscape(url));
+            model.addAttribute("pdfUrl", KkFileUtils.htmlEscape(sheetUrl));
             return XLSX_FILE_PREVIEW_PAGE;
         }
         if (suffix.equalsIgnoreCase("csv")) {
-            model.addAttribute("csvUrl", KkFileUtils.htmlEscape(url));
+            model.addAttribute("csvUrl", KkFileUtils.htmlEscape(sheetUrl));
             return CSV_FILE_PREVIEW_PAGE;
         }
         return null;
+    }
+
+    /**
+     * 表格页（luckysheet）的取数地址。
+     *
+     * <p>{@code fileId} 通道下传入的 {@code url} 是短期票据，浏览器按该地址取数会失败。这类地址先把源文件落到
+     * 引擎 file 目录（复用 {@link DownloadUtils#downLoad} 与转换缓存），再换成同源的落盘地址；{@code url} 通道
+     * 保持原样。</p>
+     *
+     * @param model 预览模型，{@code currentUrl} 为引擎内部相对路径
+     * @param url   原始取源地址
+     * @param fileAttribute 文件属性，落盘时用于取文件名与缓存键
+     * @return 表格页可取的地址
+     */
+    private String sheetSourceUrl(Model model, String url, FileAttribute fileAttribute) {
+        if (url != null && (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("ftp://"))) {
+            return url;
+        }
+        Object currentUrl = model.asMap().get("currentUrl");
+        if (currentUrl instanceof String path && !path.isBlank()) {
+            return FileHandlerService.toPublicPath(path);
+        }
+        String fileName = fileAttribute.getName();
+        if (ConfigConstants.isCacheEnabled()) {
+            String converted = fileHandlerService.getConvertedFile(fileName);
+            if (converted != null && !converted.isBlank()) {
+                return FileHandlerService.toPublicPath(converted);
+            }
+        }
+        ReturnResponse<String> response = DownloadUtils.downLoad(fileAttribute, fileName);
+        if (response.isFailure()) {
+            return url;
+        }
+        String relativePath = fileHandlerService.getRelativePath(response.getContent());
+        model.addAttribute("currentUrl", relativePath);
+        if (ConfigConstants.isCacheEnabled()) {
+            fileHandlerService.addConvertedFile(fileName, relativePath);
+        }
+        return FileHandlerService.toPublicPath(relativePath);
     }
 
     private String handleImagePreview(Model model, FileAttribute fileAttribute, String officePreviewType) {

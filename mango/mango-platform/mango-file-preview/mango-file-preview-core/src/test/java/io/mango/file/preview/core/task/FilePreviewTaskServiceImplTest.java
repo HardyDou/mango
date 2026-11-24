@@ -63,7 +63,7 @@ class FilePreviewTaskServiceImplTest {
     }
 
     @Test
-    void sheetEntersPdfConversionWhenInternalSourceIsAvailable() throws Exception {
+    void sheetStaysEngineRenderedWhenInternalSourceIsAvailable() throws Exception {
         FileApi fileApi = mock(FileApi.class);
         IFileContentProvider contentProvider = mock(IFileContentProvider.class);
         ConvertApi convertApi = mock(ConvertApi.class);
@@ -88,10 +88,11 @@ class FilePreviewTaskServiceImplTest {
         service.submit(60L, false);
         await(() -> service.status(60L, false).getStatus() == FilePreviewTaskStatus.SUCCEEDED);
 
+        // 表格由引擎页面渲染，不再产出 PDF 产物。
         FilePreviewTaskVO result = service.status(60L, false);
-        assertThat(result.getPreviewFileId()).isEqualTo(98L);
+        assertThat(result.getPreviewFileId()).isNull();
         assertThat(result.getMessage()).isEqualTo("预览已就绪");
-        verify(convertApi).convert(any());
+        verify(convertApi, never()).convert(any());
     }
 
     @Test

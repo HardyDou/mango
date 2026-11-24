@@ -367,25 +367,24 @@ class FilePreviewServiceImplTest {
     }
 
     @Test
-    void previewMode_fileId直取通道下表格回落PDF转换() {
+    void previewMode_fileId直取通道下表格仍由引擎渲染() {
         FilePreviewProperties properties = properties();
 
+        // 表格页的取数地址在直取通道下换成落盘后的同源地址，不再回落 PDF 转换。
         assertThat(previewModeOf(new StubFileApi("sheet.xlsx"), properties, () -> true))
-                .isEqualTo(FilePreviewMode.PDF_CONVERSION);
+                .isEqualTo(FilePreviewMode.ENGINE);
         assertThat(previewModeOf(new StubFileApi("sheet.csv"), properties, () -> true))
-                .isEqualTo(FilePreviewMode.PDF_CONVERSION);
-        // 表格以外的形态不变：压缩包仍走引擎。
+                .isEqualTo(FilePreviewMode.ENGINE);
         assertThat(previewModeOf(new StubFileApi("data.zip"), properties, () -> true))
                 .isEqualTo(FilePreviewMode.ENGINE);
-        // url 兜底通道（无进程内直取）仍保留引擎的表格前端渲染。
         assertThat(previewModeOf(new StubFileApi("sheet.xlsx"), properties, () -> false))
                 .isEqualTo(FilePreviewMode.ENGINE);
     }
 
     @Test
-    void renderMode_fileId直取通道下表格进入转换中() {
+    void renderMode_fileId直取通道下表格按引擎页面渲染() {
         assertThat(renderModeOf(new StubFileApi("sheet.xlsx"), () -> true))
-                .isEqualTo(FilePreviewRenderMode.CONVERTING);
+                .isEqualTo(FilePreviewRenderMode.PAGE);
     }
 
     private FilePreviewMode previewModeOf(FileApi fileApi, FilePreviewProperties properties,
