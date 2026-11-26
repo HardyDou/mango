@@ -205,7 +205,7 @@
 
 预览引擎通过 `bytedeco` 提供 Windows 与 Linux 两套 native 包，`mango-file-preview-engine/pom.xml` 显式声明 `opencv`、`openblas`、`ffmpeg` 的 `linux-x86_64` 与 `windows-x86_64` 两组 classifier。
 
-`windows-x86_64` 三组在 Maven 后端 `1.16.2` 起标记为 `optional`：Linux 服务器部署不再传递下载约 92MB 的 Windows native 包，镜像体积与下载时间随之下降。
+`windows-x86_64` 三组在 Maven 后端 `1.16.2` 起标记为 `optional`：Linux 服务器部署不再传递这三组 Windows native 包（现网实测 `opencv` 32.1 MB、`openblas` 46.2 MB、`ffmpeg` 25.1 MB，fat jar 内合计 103.4 MB），镜像体积与下载时间随之下降。
 
 **在 Windows 上直接运行引擎的开发者需要自行声明这三组依赖**，`optional` 只影响传递性，不影响本模块自身的编译与运行：
 
