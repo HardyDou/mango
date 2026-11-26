@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 
 const DEFAULT_STOP_GRACE_MS = 60000;
 const DEFAULT_KILL_WAIT_MS = 5000;
@@ -22,6 +23,34 @@ export function isProcessAlive(pid) {
     return true;
   }
   return stat.status === 0 && !stat.stdout.trim().startsWith('Z');
+}
+
+/**
+ * Reads the command line of a process so a recycled pid can be told apart from a managed app.
+ *
+ * @param {number} pid process id
+ * @returns {string|null} command line, or null when it cannot be determined
+ */
+export function readProcessCommandLine(pid) {
+  const numericPid = positiveProcessId(pid);
+  if (numericPid === null || process.platform === 'win32') {
+    return null;
+  }
+  if (process.platform === 'linux') {
+    try {
+      const raw = readFileSync(`/proc/${numericPid}/cmdline`, 'utf8')
+        .replace(/\u0000/g, ' ')
+        .trim();
+      return raw || null;
+    } catch {
+      return null;
+    }
+  }
+  const command = spawnSync('ps', ['-o', 'command=', '-p', String(numericPid)], { encoding: 'utf8' });
+  if (command.status !== 0) {
+    return null;
+  }
+  return command.stdout.trim() || null;
 }
 
 export function isProcessGroupAlive(processGroupId) {
