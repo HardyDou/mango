@@ -223,6 +223,8 @@ CLI 从当前目录向上查找 `mango.dev.json`。本地工作区分配事实�
 
 存量业务自有 `mango.dev.json` 不需要被 CLI 覆盖，源码识别仍会生效。仍使用 `SpringApplication.run` 的兼容项目不会自动执行 bootstrap，只按原清单启动；迁移到正式生命周期时应先确保聚合 starter 包含 bootstrap starter，再把应用入口改为 `MangoApplication.run`。这套自动编排只属于本地 `mango dev`，生产部署仍必须显式执行发布批准的 bootstrap/runtime 流程。
 
+`mango dev start <app|group>` 会按 `dependsOn` 展开启动集合，但端口冲突时区分「被点名的目标」和「被依赖带进来的 app」：目标 app 的端口被占用仍然直接失败，避免你以为在跑的是另一个进程；由 `dependsOn` 带入的依赖 app 若端口已有服务、且本 workspace 没有指向活进程的 pid 文件（裸 `java`/`mvn` 启动，或上次 `dev start` 中断留下僵死 pid 文件），CLI 打印一行 `skipped, port <port> is already served (pid=… command=…) … treated as already running` 后继续启动其余 app。因此「后端已经在跑、只想重启前端」可以直接 `mango dev start frontend`。pid 文件仍优先：文件存在且进程存活时输出 `<app> is already running: pid=<pid>` 并跳过。`mango dev stop` 语义不变，只按 pid 文件和进程组停止当前 workspace 启动的进程，不会接管外部进程；需要停掉裸进程请手工执行。
+
 | 配置入口                          | 字段 / Key                       | 默认值                                        | 含义                        | 影响行为                                                                                  | 源码入口                                               |
 | --------------------------------- | -------------------------------- | --------------------------------------------- | --------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------ |
 | `mango.dev.json`                  | `version`                        | `1`                                           | manifest 版本               | 非 1 时 `validate` 失败                                                                   | `validateDevWorkspace`                                 |
