@@ -346,6 +346,8 @@ scripts/publish-maven-batch.sh --all-non-app \
 
 基线里现有 3 条 `FileLengthCheck` 存量（`plugin/check/CheckMojo.java`、`architecture/MangoArchUnitChecker.java`、`file-preview-engine/.../SimpleEncodingDetects.java`）。基线条目由维护者按治理流程整批重建，PR 里不得为过门禁单独追加自己的文件。
 
+**业务仓的豁免前提不同。** 上面的「已在基线即可继续加行」以 `mango-pmo/baselines/mango-check/no-new-violations-baseline.json` 为准，那是 Mango 仓的基线文件。业务仓自建 `mango:check` 时用的是自己的基线（默认 `target/baseline.json`，可用 `mango.check.baselineFile` 指定），而业务仓的 `business-pmo/mango-baseline/baseline.json` 是 PMO 清单、不是 checkstyle 结果基线。**业务仓若无 `FileLengthCheck` 基线条目，就不存在存量豁免，2000 行是硬上限**——超一行即阻断，补救手段只有拆分，不是调参，也不是临时把自己的文件写进基线。
+
 门禁的阻断点只有一个：`mango:check` 的基线比对。底层 `maven-checkstyle-plugin` 与 `maven-pmd-plugin` 在 `mango/pom.xml:145`、`:186` 与 `mango-parent/pom.xml:135` 都是 `failOnViolation=false`，改这两个开关不会让构建变严格，只会让报告与门禁脱钩。
 
 **推荐拆分范式**（仓库既有做法）：把纯计算、纯映射、无状态的部分移到同模块的 `support` 子包，命名为 `<Domain>Support` 的 `final` 类，静态方法入参出参，不注入 Spring Bean；`XxxService` 只保留编排、事务边界和 `Require` 前置校验。可参考的现存样本：
