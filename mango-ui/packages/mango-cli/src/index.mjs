@@ -29,6 +29,7 @@ import { fileURLToPath } from 'node:url';
 import { inspectProjectPullRequestTemplate, synchronizeProjectPullRequestTemplate } from './pmo-project-template.mjs';
 import { resolveHealthPollIntervalMs } from './dev-health-policy.mjs';
 import { shouldRunDevInstall } from './dev-install-policy.mjs';
+import { MANAGED_PID_STATES, assessManagedPid, decideDevAppStart } from './dev-start-decision.mjs';
 import {
   buildSpringBootReactorArgs,
   resolveReactorParentPomInstall,
@@ -42,7 +43,7 @@ import {
   qualifyWorkspaceMavenRevision,
   readCiFriendlyMavenRevision,
 } from './dev-maven-revision.mjs';
-import { isProcessAlive, isProcessGroupAlive, stopProcessGroup } from './process-control.mjs';
+import { isProcessAlive, isProcessGroupAlive, readProcessCommandLine, stopProcessGroup } from './process-control.mjs';
 import { isCommandAvailable, spawnCommand, spawnCommandSync } from './platform-command.mjs';
 import { runReleaseCli } from './release-command.mjs';
 import { runModuleDoctorCli } from './module-doctor.mjs';
@@ -2104,19 +2105,38 @@ async function startDevWorkspace(context, targets) {
     ...readEnvFile(join(context.root, '.mango/dev-workspace.env')),
   };
   ensureRunDirs(context);
-  const appNames = resolveDevWorkspaceTargets(context, targets.length > 0 ? targets : ['default']);
-  for (const name of appNames) {
+  const selection = resolveDevWorkspaceSelection(context, targets.length > 0 ? targets : ['default']);
+  for (const name of selection.order) {
     const resolved = resolveDevApp(context, name, context.manifest.apps[name]);
     applyStableBootstrapReceipt(context, resolved);
     const current = readPidFile(context, name);
-    if (current && isProcessAlive(current.pid)) {
-      process.stdout.write(`${name} is already running: pid=${current.pid}\n`);
-      continue;
+    const managed = assessManagedPid({
+      name,
+      pidFile: current,
+      alive: Boolean(current && isProcessAlive(current.pid)),
+      commandLine: current ? readProcessCommandLine(current.pid) : null,
+    });
+    if (current && managed.state !== MANAGED_PID_STATES.RUNNING) {
+      rmSync(pidFilePath(context, name), { force: true });
+      process.stdout.write(`${name}: ${managed.message}\n`);
     }
-    if (resolved.port && isPortInUse(resolved.port)) {
-      fail(
-        `${name} port ${resolved.port} is already in use${formatPortOccupants(resolved.port)}${formatPortOwnerHint(context.root, resolved.port)}.`,
-      );
+    const decision = decideDevAppStart({
+      name,
+      port: resolved.port,
+      explicit: selection.explicit.has(name),
+      managedPid: current,
+      managedPidAlive: managed.state === MANAGED_PID_STATES.RUNNING,
+      portInUse: resolved.port ? isPortInUse(resolved.port) : false,
+      occupantText: formatPortOccupants(resolved.port),
+      ownerHint: formatPortOwnerHint(context.root, resolved.port),
+      healthUrl: resolved.healthUrl,
+    });
+    if (decision.action === 'fail') {
+      fail(decision.message);
+    }
+    if (decision.action === 'skip') {
+      process.stdout.write(`${decision.message}\n`);
+      continue;
     }
     if (resolved.type === 'vite') {
       prepareFrontendWorkspace(context, { checkOnly: false });
@@ -2842,13 +2862,18 @@ function resolveStopTargets(context, targets) {
 }
 
 function resolveDevWorkspaceTargets(context, targets) {
+  return resolveDevWorkspaceSelection(context, targets).order;
+}
+
+function resolveDevWorkspaceSelection(context, targets) {
   const manifest = context.manifest;
   const selected = [];
+  const explicit = new Set();
   const visiting = new Set();
   const visited = new Set();
   const expandTarget = (target) => {
     if (manifest.apps[target]) {
-      visitApp(target);
+      visitApp(target, true);
       return;
     }
     const group = manifest.groups?.[target];
@@ -2860,7 +2885,10 @@ function resolveDevWorkspaceTargets(context, targets) {
     }
     throw new Error(`unknown app or group: ${target}`);
   };
-  const visitApp = (name) => {
+  const visitApp = (name, requested) => {
+    if (requested) {
+      explicit.add(name);
+    }
     if (visited.has(name)) {
       return;
     }
@@ -2869,7 +2897,7 @@ function resolveDevWorkspaceTargets(context, targets) {
     }
     visiting.add(name);
     for (const dependency of manifest.apps[name].dependsOn || []) {
-      visitApp(dependency);
+      visitApp(dependency, false);
     }
     visiting.delete(name);
     visited.add(name);
@@ -2878,7 +2906,7 @@ function resolveDevWorkspaceTargets(context, targets) {
   for (const target of targets) {
     expandTarget(target);
   }
-  return selected;
+  return { order: selected, explicit };
 }
 
 function resolveDevApp(context, name, app) {

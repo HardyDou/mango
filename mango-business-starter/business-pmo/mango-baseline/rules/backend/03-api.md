@@ -220,3 +220,133 @@
 - `MODULE_INFO` 校验模块元数据；`PERSISTENCE_SCHEMA` 校验 migration、Entity 与 Mapper XML 表归属；聚合静态分析执行 PMD/P3C、Checkstyle、SpotBugs。
 - 正例：完整生成项目执行 `mvn clean verify` 并产出 architecture/quality report。反例：只编译 core、changed-only 或排除模块后声明通过。
 - 门禁只对上述静态事实承诺确定性。Require 不证明业务条件正确；Mapper/XML 不证明 SQL 业务语义；Controller/Feign parity 不替代权限、租户、异常和真实链路测试。任何失败不得由 Agent 自报、普通 baseline 或文档例外覆盖。
+
+## 9. 多业务参数服务方法的标准做法（SVC-010 / MODEL-001 / MODEL-002）
+
+`MANGO-ARCH-SVC-010` 的实际判据是**方法形参个数**：Service 里 `public` 方法形参超过 2 个即违规（`MangoJavaArchitectureRule.java:120` 的 `MAX_DIRECT_PARAMETERS = 2`，判定在 `:582-587`；Service interface 侧同一阈值在 `:629`）。规则不看参数语义，所以「3 个小参数」和「3 个大对象」一样红。
+
+标准做法是**每次调用收敛为一个协议模型**，不是拆成多个方法，也不是把参数拼成 `Map` 或 `Object[]`：
+
+| 调用形态 | 允许的入参 |
+|---|---|
+| 写动作 | 一个 `XxxCommand` |
+| 读动作带条件 | 一个 `XxxQuery`（分页场景继承 `PageQuery`） |
+| HTTP 传输层 | 一个 `XxxRequest`，Service 不吃 Request |
+
+`Command`、`Query` 属于 `api` 模块的契约类型（`MANGO-ARCH-API-006` 允许 `Command`、`Query`、`Request` 作为入参），因此把参数收敛进 `Command` 不违反分层。
+
+### 9.1 最小可运行示例
+
+一个业务动作「给订单开票」，需要订单号、抬头、税率三个参数。三个独立形参会触发 SVC-010；收敛为一个 `Command` 后只剩一个形参：
+
+```java
+// api 模块：io/mango/order/api/command/CreateOrderInvoiceCommand.java
+package io.mango.order.api.command;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.Data;
+
+import java.math.BigDecimal;
+
+@Data
+@Schema(description = "创建订单发票命令")
+public class CreateOrderInvoiceCommand {
+
+    @Schema(description = "订单号", requiredMode = Schema.RequiredMode.REQUIRED)
+    @NotBlank(message = "订单号不能为空")
+    private String orderNo;
+
+    @Schema(description = "发票抬头", requiredMode = Schema.RequiredMode.REQUIRED)
+    @NotBlank(message = "发票抬头不能为空")
+    private String title;
+
+    @Schema(description = "税率，0 到 0.13", requiredMode = Schema.RequiredMode.REQUIRED)
+    @NotNull(message = "税率不能为空")
+    @DecimalMin(value = "0", message = "税率不能小于0")
+    @DecimalMax(value = "0.13", message = "税率不能大于0.13")
+    private BigDecimal taxRate;
+}
+```
+
+```java
+// core 模块：Service 接口只有一个业务形参
+public interface IOrderInvoiceService {
+
+    Long create(CreateOrderInvoiceCommand command);
+}
+```
+
+```java
+// core 模块：实现类不再有 SVC-010 违规
+@Service
+@RequiredArgsConstructor
+public class OrderInvoiceService implements IOrderInvoiceService {
+
+    private final OrderInvoiceMapper orderInvoiceMapper;
+
+    @Override
+    public Long create(CreateOrderInvoiceCommand command) {
+        Require.notNull(command, OrderCode.INVOICE_COMMAND_REQUIRED);
+        OrderInvoiceEntity entity = new OrderInvoiceEntity();
+        entity.setOrderNo(command.getOrderNo());
+        entity.setTitle(command.getTitle());
+        entity.setTaxRate(command.getTaxRate());
+        orderInvoiceMapper.insert(entity);
+        return entity.getId();
+    }
+}
+```
+
+```java
+// starter 模块：Controller 边界校验，Command 必须带 @Valid
+@PostMapping("/order-invoices")
+public R<Long> create(@RequestBody @Valid CreateOrderInvoiceCommand command) {
+    return R.ok(orderInvoiceService.create(command));
+}
+```
+
+### 9.2 字段层与自定义校验的分工
+
+两条规则的分工是固定的，不要互相替代：
+
+| 规则 | 约束对象 | 落地位置 |
+|---|---|---|
+| `MANGO-ARCH-MODEL-001` | 所有字段必须有非空中文 `@Schema(description = ...)` | `Command`、`Query`、`Request`、`VO`、`Response` |
+| `MANGO-ARCH-MODEL-002` | **输入**模型字段必须有 Jakarta constraint（`@NotBlank`、`@NotNull`、`@Size`、`@Min`、`@Max`、`@DecimalMin`、`@Pattern` 等） | 同上，只要求输入侧 |
+| `MANGO-ARCH-CTRL-003` | 复合入参在边界触发校验 | Controller 的 `@RequestBody @Valid`；实现 Api 的覆盖方法**只继承**，不重复写 `@Valid` |
+| 业务语义校验 | 字段间关系、状态机、聚合不变量 | Service 内 `Require.xxx(...)`，配模块 `XxxCode implements BizCode` |
+
+**先后顺序**：Bean Validation 在参数绑定阶段先执行，失败时根本不进 Service；Service 里的 `Require` 只处理「字段各自合法、但组合起来不合法」的情况。把 `@NotBlank` 该管的空值改到 Service 里判，会丢失统一错误响应；把跨字段规则写成自定义 Constraint 也可以，但跨表、跨聚合的校验留在 Service。
+
+### 9.3 反例
+
+```java
+// 违规：3 个业务形参 → MANGO-ARCH-SVC-010
+public Long create(String orderNo, String title, BigDecimal taxRate) { ... }
+
+// 违规：为了凑两个形参塞 @Valid 嵌套对象，但嵌套字段没标 @Valid → MANGO-ARCH-MODEL-007
+public Long create(CreateOrderInvoiceCommand command, InvoiceContext context) { ... }
+
+// 违规：用 Map/Object 绕过类型系统 → 同时触发 MANGO-ARCH-HTTP-005、MANGO-ARCH-API-006
+public Long create(Map<String, Object> params) { ... }
+
+// 违规：字段没有中文 Schema → MANGO-ARCH-MODEL-001；输入字段没有 constraint → MANGO-ARCH-MODEL-002
+public class CreateOrderInvoiceCommand {
+    private String orderNo;   // 缺 @Schema(description = "...")
+    private BigDecimal taxRate; // 缺 @NotNull
+}
+
+// 违规：Service 返回 R<T> → MANGO-ARCH-SVC-001；Service 里直接 throw → MANGO-ARCH-SVC-006
+public R<Long> create(CreateOrderInvoiceCommand command) {
+    if (command == null) {
+        throw new IllegalArgumentException("command");
+    }
+    ...
+}
+```
+
+判据速查：`public` 方法形参 ≤ 2、每个输入字段有中文 `@Schema` 与 Jakarta constraint、复合入参在 Controller 边界 `@Valid`、跨字段规则留在 Service 的 `Require`。

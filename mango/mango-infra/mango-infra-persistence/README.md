@@ -587,7 +587,8 @@ CREATE TABLE order_invoice (
 | `@QueryField(type = QueryType.LIKE)` | 生成 like 条件 |
 | `@QueryIgnore` | 跳过这个字段 |
 | `PageQuery` 声明字段 | 跳过分页基类字段 |
-| `Map` 查询 | 除 `page`、`size`、`sorts` 外都按 `EQ` 处理 |
+| 分页字段（任意查询类） | `page`、`size`、`sorts`、`pageNum`、`pageSize` 一律跳过，不参与条件构造 |
+| `Map` 查询 | 除 `page`、`size`、`sorts`、`pageNum`、`pageSize` 外都按 `EQ` 处理 |
 
 支持的 `QueryType`：
 
@@ -692,6 +693,23 @@ protected void applyDataScope(QueryWrapper<PaymentOrderEntity> wrapper, Object q
 #### 分页
 
 普通单表分页由类型化 Service 的 `page(query)` 复用 `MangoCrudServiceImpl.pageByQuery()`。Controller 按 [7.4 Web CRUD Controller](#74-web-crud-controller) 显式实现 API 的 `/page` 适配；查询对象继承 `PageQuery`，业务字段用 `@QueryField` 描述条件。
+
+分页入参的规范名是 `page`、`size`（`PageQuery` 声明，默认 `1`、`10`，`size` 上限 500）。前端管理包惯用的 `pageNum`、`pageSize` 是等价别名，两条链路都接受：
+
+| 场景 | 生效方式 |
+|------|----------|
+| 查询对象继承 `PageQuery` | `PageQuery` 的 `setPageNum`、`setPageSize` 把别名写回 `page`、`size` |
+| 查询对象不继承 `PageQuery` | `pageByQuery` 读不到 `page`、`size` 时回落读取 `pageNum`、`pageSize` |
+| 条件构造 | 五个分页字段不论声明在哪个类都跳过，不会变成数据库条件 |
+
+仍然需要自查的只有一种情况：查询类既不继承 `PageQuery`，也不经过 `pageByQuery`（例如自写 XML 分页）。这时 `pageNum`、`pageSize` 会被静默忽略并回落默认分页，排查方式是断言返回页号：
+
+```java
+PersistencePageResult<?> page = orderInvoiceService.pageByQuery(query);
+Assertions.assertThat(page.getPage()).isEqualTo(requestedPage);
+```
+
+`page` 不回显请求页号，说明参数名没被识别。
 
 ```java
 @Getter
@@ -896,7 +914,7 @@ public class OrderInvoiceService
 | `batchDeleteByIds(ids)` | 空列表直接返回 `true`，非空调用 `removeBatchByIds` |
 | `detailById(id)` | 查询实体并调用 `toVO(entity)`，没有记录返回 `null` |
 | `listByQuery(query)` | 使用 `QueryWrapperBuilder` 查询并转换 VO |
-| `pageByQuery(query)` | 读取 `page`、`size` 字段，默认 `1` 和 `10` |
+| `pageByQuery(query)` | 读取 `page`、`size` 字段（缺失时回落 `pageNum`、`pageSize`），默认 `1` 和 `10` |
 
 可覆写钩子：
 
