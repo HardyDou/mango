@@ -112,6 +112,43 @@ class MangoCrudServiceImplIntegrationTest {
                 .isEqualTo(1L);
     }
 
+    @Test
+    void pageByQuery_shouldAcceptPageNumAndPageSizeAliases() {
+        for (int index = 0; index < 4; index++) {
+            userCrudService.createByCommand(
+                    new UserCreateCommand(30001L + index, "alias-" + index, "Alias " + index, 1));
+        }
+        AliasPageQuery query = new AliasPageQuery();
+        query.pageNum = 2;
+        query.pageSize = 2;
+
+        PersistencePageResult<?> page = userCrudService.pageByQuery(query);
+
+        assertThat(page.getTotal()).isEqualTo(4);
+        assertThat(page.getRecords()).hasSize(2);
+        assertThat(page.getPage()).isEqualTo(2);
+        assertThat(page.getSize()).isEqualTo(2);
+    }
+
+    @Test
+    void pageByQuery_shouldPreferCanonicalPageFieldsOverAliases() {
+        for (int index = 0; index < 4; index++) {
+            userCrudService.createByCommand(
+                    new UserCreateCommand(40001L + index, "mixed-" + index, "Mixed " + index, 1));
+        }
+        MixedPageQuery query = new MixedPageQuery();
+        query.setPageNum(3);
+        query.setPageSize(3);
+        query.setPage(1);
+        query.setSize(1);
+
+        PersistencePageResult<?> page = userCrudService.pageByQuery(query);
+
+        assertThat(page.getTotal()).isEqualTo(4);
+        assertThat(page.getRecords()).hasSize(1);
+        assertThat(page.getPage()).isEqualTo(1);
+    }
+
     private void insertOtherTenantUser() {
         jdbcTemplate.update("""
                 INSERT INTO demo_user (id, username, nickname, status, tenant_id, created_by, created_at, updated_by, updated_at, org_id)
@@ -252,6 +289,36 @@ class MangoCrudServiceImplIntegrationTest {
 
         public void setIgnored(String ignored) {
             this.ignored = ignored;
+        }
+    }
+
+    static class AliasPageQuery {
+
+        private long pageNum;
+
+        private long pageSize;
+    }
+
+    static class MixedPageQuery extends PageQuery {
+
+        private long pageNum;
+
+        private long pageSize;
+
+        public long getPageNum() {
+            return pageNum;
+        }
+
+        public void setPageNum(long pageNum) {
+            this.pageNum = pageNum;
+        }
+
+        public long getPageSize() {
+            return pageSize;
+        }
+
+        public void setPageSize(long pageSize) {
+            this.pageSize = pageSize;
         }
     }
 
