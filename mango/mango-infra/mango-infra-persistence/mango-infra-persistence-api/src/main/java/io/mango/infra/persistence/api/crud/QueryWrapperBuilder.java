@@ -32,7 +32,7 @@ public class QueryWrapperBuilder {
 
     private <E> void appendMapConditions(QueryWrapper<E> wrapper, Map<?, ?> query) {
         query.forEach((key, value) -> {
-            if (!(key instanceof String fieldName) || isPageField(fieldName) || isEmpty(value)) {
+            if (!(key instanceof String fieldName) || isPagingField(fieldName) || isEmpty(value)) {
                 return;
             }
             wrapper.eq(camelToUnderline(fieldName), normalizeValue(value));
@@ -44,7 +44,12 @@ public class QueryWrapperBuilder {
         return !field.isSynthetic()
                 && !Modifier.isStatic(modifiers)
                 && !field.isAnnotationPresent(QueryIgnore.class)
+                && !isPagingField(field.getName())
                 && !PageQuery.class.equals(field.getDeclaringClass());
+    }
+
+    private boolean isPagingField(String fieldName) {
+        return isPageField(fieldName) || "pageNum".equals(fieldName) || "pageSize".equals(fieldName);
     }
 
     private boolean isPageField(String fieldName) {
