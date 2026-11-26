@@ -743,6 +743,16 @@ Workflow 参数校验约束统一由 `mango-workflow-api` 的 `XxxApi` 契约声
 | 按流程实例查申请 | `GET /workflow/business-applies/progress/by-process-instance` | `workflow:business-apply:detail` |
 | 我的申请统计 | `GET /workflow/business-applies/my/summary` | `workflow:task:list` |
 
+`POST /workflow/business-applies/page` 的可选过滤项：`businessType`、`businessKey`、`keyword`（申请编号/标题/摘要）、`statuses`、`latestOnly`、`applicantId`、`applicantDeptIds`、`currentTaskDefinitionKeys`、`currentAssigneeIds`、`startedAtBegin`、`startedAtEnd`。
+
+`applicantDeptIds` 按申请创建时快照在 `workflow_business_apply.applicant_dept_id` 上的**发起部门**过滤，用于「本部门发起的申请」（Issue #1439）：
+
+- 与任务侧「本部门处理中」正交，两者不共用参数；不要用任务侧已下线的 `deptIds`。
+- **平台不做组织递归**：下级部门由调用方展开后传入；一次最多 200 个，超过返回参数校验错误。
+- 传空数组或不传都不加该过滤；数组里只有 `null` 时按「无匹配」返回空页（不会退化成本部门之外的全量）。
+- 与 `applicantId` 同时传递时取交集。
+- 发起部门是**快照**（申请归属），与处理人部门（实时查询）不同口径；跨部门调动后历史申请仍归原部门。
+
 流程实例接口：
 
 | 能力 | 接口 | 访问要求 |

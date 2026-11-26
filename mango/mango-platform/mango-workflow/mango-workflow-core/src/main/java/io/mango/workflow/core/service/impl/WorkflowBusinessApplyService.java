@@ -498,6 +498,14 @@ public class WorkflowBusinessApplyService implements IWorkflowBusinessApplyServi
         wrapper.eq(StringUtils.hasText(query.getBusinessType()), WorkflowBusinessApplyEntity::getBusinessType, trim(query.getBusinessType()));
         wrapper.eq(StringUtils.hasText(query.getBusinessKey()), WorkflowBusinessApplyEntity::getBusinessKey, trim(query.getBusinessKey()));
         wrapper.eq(query.getApplicantId() != null, WorkflowBusinessApplyEntity::getApplicantId, query.getApplicantId());
+        if (query.getApplicantDeptIds() != null && !query.getApplicantDeptIds().isEmpty()) {
+            List<Long> applicantDeptIds = query.getApplicantDeptIds().stream()
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .toList();
+            wrapper.in(!applicantDeptIds.isEmpty(), WorkflowBusinessApplyEntity::getApplicantDeptId, applicantDeptIds);
+            wrapper.eq(applicantDeptIds.isEmpty(), WorkflowBusinessApplyEntity::getApplicantDeptId, -1L);
+        }
         wrapper.eq(Boolean.TRUE.equals(query.getLatestOnly()), WorkflowBusinessApplyEntity::getLatestFlag, Boolean.TRUE);
         if (query.getStatuses() != null && !query.getStatuses().isEmpty()) {
             wrapper.in(WorkflowBusinessApplyEntity::getApplyStatus, query.getStatuses().stream().map(Enum::name).toList());
