@@ -310,6 +310,62 @@ scripts/publish-maven-batch.sh --all-non-app \
 - 生成代码编译不过：脚手架只提供结构，业务字段、依赖和 mapper 仍要补齐。
 - 生成权限后页面仍无按钮：还需要菜单资源入库、角色授权和前端按钮权限接入。
 - Maven 批次只缺 `mango-architecture-verification` POM：使用当前 `publish-maven-batch.sh` 重新规划新版本发布；不可变版本已经尝试后只能先核对仓库事实，禁止整批重发。
+- 离线模式下构建单个模块报 `Non-resolvable import POM` 加一整屏 `dependencies.dependency.version ... is missing`：见 11.1，不要逐条去补版本号。
+
+### 11.1 离线单模块构建
+
+离线机器（无网络、本地仓没装过本仓 SNAPSHOT）上构建单个模块，必须让 `mango-bom` 和上游兄弟模块一起进 Reactor，否则依赖管理整片解析不到，报错会退化成几十条互不相干的「缺少版本号」。
+
+**症状**
+
+```text
+[ERROR] Non-resolvable import POM: The following artifacts could not be resolved:
+  io.mango:mango-bom:pom:1.0.0-SNAPSHOT (absent): Cannot access yunxin-nexus (...) in offline mode
+  and the artifact io.mango:mango-bom:pom:1.0.0-SNAPSHOT has not been downloaded from it before.
+  @ io.mango:mango-parent:${revision}, .../mango-parent/pom.xml, line 53, column 25
+[ERROR] 'dependencies.dependency.version' for io.mango.common:mango-common:jar is missing.
+[ERROR] 'dependencies.dependency.version' for org.springframework:spring-web:jar is missing.
+...
+```
+
+**判读**
+
+| 顺序 | 内容 | 含义 |
+|---|---|---|
+| 第一条 | `Non-resolvable import POM ... (absent)` | 根因：BOM 既不在 Reactor 也不在本地仓 |
+| 第二条起 | `dependencies.dependency.version ... is missing` | 连带噪声：BOM 缺席导致 import 的依赖管理整块失效，不是 N 个独立问题 |
+
+只要第一条是 `(absent)`，后面所有「缺少版本号」都不用看，改命令即可。
+
+**正确命令**
+
+```bash
+# 在 mango/ 目录（根 pom 所在目录）执行；模块可用 artifactId 选择器，也可用相对路径
+mvn -o -pl :mango-bom,:mango-file-core -am -DskipTests compile
+```
+
+- `-am` 让上游兄弟模块从源码进入 Reactor，不再依赖本地仓里的旧 SNAPSHOT。
+- `:mango-bom` 必须显式写进 `-pl`：`-am` 不会因为 POM 里 import 了 BOM 就把它带进 Reactor。
+- 需要产物给别的模块用时把 `compile` 换成 `install`，并在同一命令里保留 `-o`。
+
+**反例**
+
+| 写法 | 结果 | 原因 |
+|---|---|---|
+| `mvn -o -pl :mango-file-core ...` | 失败 | 兄弟模块与 BOM 都不在 Reactor |
+| `cd <module> && mvn -o ...` | 失败 | 单模块 Reactor，父 POM 与 BOM 只能去仓库找 |
+| `mvn -o ... -pl ... -am` | 失败 | 仍缺 `:mango-bom` 选择器 |
+| 逐条给 `dependencies.dependency.version` 补版本号 | 不可接受 | 把 BOM 缺陷写进各模块 POM，绕过依赖管理 |
+
+模块级命令在本机已经全量 `install` 过时是能跑的，这也正是同一个命令在 A 机成功、B 机报错的原因；判断依据是报错里有没有 `(absent)`。
+
+**验证**
+
+```bash
+mvn -o -pl :mango-bom,:mango-file-core -am -DskipTests compile 2>&1 | grep -c 'Non-resolvable import POM'
+```
+
+预期输出 `0`，且 `Reactor Summary` 里同时出现 `io.mango:mango-bom` 与目标模块。
 
 ### 6.1 规则集取舍
 
