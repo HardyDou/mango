@@ -220,6 +220,8 @@
 
 （`opencv`、`openblas` 同形。视频转码默认关闭，未声明时只有开启转码才会在运行期报 native 库缺失。）
 
+升级到 1.16.2 后在 Windows 本地预览报 native 库缺失（运行期 `UnsatisfiedLinkError`）时，先回头检查这三组 classifier 是否已自行声明；Linux 服务器部署不受该变更影响，属于静默的镜像体积下降，业务仓无需改动任何配置。
+
 ## 6. 配置说明
 
 配置前缀是 `mango.file-preview`。
