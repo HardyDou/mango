@@ -29,6 +29,22 @@ export const DEV_START_REASONS = Object.freeze({
   CONFLICT: 'explicit-port-conflict',
 });
 
+/**
+ * Explains what to do when the caller explicitly asked for an app that this workspace already runs.
+ *
+ * <p>Dropping the request silently is the confusing part: the app is alive but may be wedged on a
+ * failed health check, and `dev start` looks like it ignored the target. The hint names the health
+ * endpoint the CLI would have waited on and the command that actually restarts it, so the operator
+ * does not have to guess between "it is fine" and "it is stuck".
+ */
+function managedHint(name, input) {
+  if (!input?.explicit) {
+    return '';
+  }
+  const health = input?.healthUrl ? `, health check is ${input.healthUrl}` : '';
+  return `${health}. If it is not responding, run \`mango dev restart ${name}\``;
+}
+
 export function decideDevAppStart(input) {
   const name = input?.name || 'app';
   const port = Number(input?.port) || 0;
@@ -37,7 +53,7 @@ export function decideDevAppStart(input) {
     return {
       action: DEV_START_ACTIONS.SKIP,
       reason: DEV_START_REASONS.MANAGED,
-      message: `${name} is already running: ${pid}`,
+      message: `${name} is already running: ${pid}${managedHint(name, input)}`,
     };
   }
   if (!input?.portInUse) {

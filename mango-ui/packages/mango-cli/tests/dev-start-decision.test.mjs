@@ -19,7 +19,10 @@ test('a live pid file keeps the managed app untouched', () => {
   });
   assert.equal(decision.action, DEV_START_ACTIONS.SKIP);
   assert.equal(decision.reason, DEV_START_REASONS.MANAGED);
-  assert.equal(decision.message, 'backend is already running: pid=4321');
+  assert.equal(
+    decision.message,
+    'backend is already running: pid=4321. If it is not responding, run `mango dev restart backend`',
+  );
 });
 
 test('a free port starts the app', () => {
@@ -136,4 +139,32 @@ test('no pid file means there is nothing to assess', () => {
   const managed = assessManagedPid({ name: 'backend', pidFile: null, alive: false });
   assert.equal(managed.state, MANAGED_PID_STATES.ABSENT);
   assert.equal(managed.message, '');
+});
+
+test('explicit target that this workspace already runs points at its health check', () => {
+  const decision = decideDevAppStart({
+    name: 'backend',
+    port: 20001,
+    explicit: true,
+    managedPid: { pid: 4242 },
+    managedPidAlive: true,
+    healthUrl: 'http://127.0.0.1:20001/actuator/health',
+  });
+  assert.equal(decision.action, 'skip');
+  assert.equal(decision.reason, 'already-running');
+  assert.match(decision.message, /backend is already running: pid=4242/);
+  assert.match(decision.message, /health check is http:\/\/127\.0\.0\.1:20001\/actuator\/health/);
+  assert.match(decision.message, /mango dev restart backend/);
+});
+
+test('dependency skip stays quiet about restarts', () => {
+  const decision = decideDevAppStart({
+    name: 'backend',
+    port: 20001,
+    explicit: false,
+    managedPid: { pid: 4242 },
+    managedPidAlive: true,
+    healthUrl: 'http://127.0.0.1:20001/actuator/health',
+  });
+  assert.equal(decision.message, 'backend is already running: pid=4242');
 });

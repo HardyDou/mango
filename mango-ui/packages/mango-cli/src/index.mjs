@@ -2129,6 +2129,7 @@ async function startDevWorkspace(context, targets) {
       portInUse: resolved.port ? isPortInUse(resolved.port) : false,
       occupantText: formatPortOccupants(resolved.port),
       ownerHint: formatPortOwnerHint(context.root, resolved.port),
+      healthUrl: resolved.healthUrl,
     });
     if (decision.action === 'fail') {
       fail(decision.message);

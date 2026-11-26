@@ -212,6 +212,8 @@ CLI 从当前目录向上查找 `mango.dev.json`。本地工作区分配事实�
 
 新项目模板会生成固定的 `backend`、`frontend` 开发清单。历史业务项目执行 `mango pmo sync --sync-shell` 或缺少清单时执行 `mango workspace init`，CLI 会先扫描项目结构再生成 `mango.dev.json`：
 
+点名的 app 如果已经由当前工作区启动（pid 文件指向活进程），CLI 跳过启动但会补一句该 app 的健康检查地址与重启命令，例如 `backend is already running: pid=4321, health check is http://127.0.0.1:20001/actuator/health. If it is not responding, run \`mango dev restart backend\``；通过 `dependsOn` 被带进来的 app 保持原有单行提示，不追加这类建议。
+
 - 后端扫描 `pom.xml`，只把包含 Spring Boot app 特征的 POM 生成为 `spring-boot-maven` app；`<packaging>pom</packaging>` 且带 `<modules>` 的 aggregator POM 会被跳过并在计划中提示。
 - 前端扫描 `package.json`，带 `scripts.dev` 且依赖 Vite 或存在 `vite.config.*` 的目录会生成为 `vite` app；包管理器按项目根的 `pnpm-lock.yaml`、`yarn.lock` 自动选择，默认 `npm`。
 - 检测到多个后端或前端 app 时，`groups.backend`、`groups.frontend` 会包含全部 app，`groups.default` 只取第一个后端和第一个前端，并在计划中提示人工确认。
