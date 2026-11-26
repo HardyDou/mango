@@ -117,7 +117,7 @@ npm --prefix frontend run build
 | `.mango/dev-workspace.env` | `MANGO_BACKEND_PORT` | 来自 `.mango/workspace.json` | 后端端口 | 注入 `server.port` | Mango CLI |
 | `.mango/dev-workspace.env` | `MANGO_MAVEN_REVISION_QUALIFIER` | 来自 `.mango/workspace.json` | Maven 版本限定符 | 派生 Reactor compile/run 的 `-Drevision` | Mango CLI |
 | `.mango/dev-workspace.env` | `MANGO_FRONTEND_PORT` | 来自 `.mango/workspace.json` | 前端端口 | 注入 Vite `VITE_PORT` | Mango CLI |
-| `.mango/dev-workspace.env` | `MANGO_FRONTEND_HOST` | `127.0.0.1` | 前端 host | 注入 Vite `VITE_HOST` | Mango CLI |
+| `.mango/dev-workspace.env` | `MANGO_FRONTEND_HOST` | `127.0.0.1` | 前端 host | 注入 Vite `VITE_HOST`；默认只监听本机，改成 `0.0.0.0` 才能被容器或其它机器访问 | Mango CLI |
 | `.mango/dev-workspace.env` | `MANGO_FRONTEND_MODE` | `source` | 前端模式 | source 模式启动源码，package 模式要求已构建包 | Mango CLI |
 | `.mango/dev-workspace.env` | `MANGO_CRYPTO_SM4_SECRET_KEY` | 随机 16 字节 hex | SM4 加密密钥 | 注入后端 `mango.crypto.sm4.secret-key` | Mango CLI |
 | `.mango/dev-workspace.env` | `MANGO_DB_HOST` | `127.0.0.1` | 数据库 host | 拼接 datasource URL | Mango CLI |
