@@ -29,7 +29,7 @@ import { fileURLToPath } from 'node:url';
 import { inspectProjectPullRequestTemplate, synchronizeProjectPullRequestTemplate } from './pmo-project-template.mjs';
 import { resolveHealthPollIntervalMs } from './dev-health-policy.mjs';
 import { shouldRunDevInstall } from './dev-install-policy.mjs';
-import { decideDevAppStart } from './dev-start-decision.mjs';
+import { MANAGED_PID_STATES, assessManagedPid, decideDevAppStart } from './dev-start-decision.mjs';
 import {
   buildSpringBootReactorArgs,
   resolveReactorParentPomInstall,
@@ -43,7 +43,7 @@ import {
   qualifyWorkspaceMavenRevision,
   readCiFriendlyMavenRevision,
 } from './dev-maven-revision.mjs';
-import { isProcessAlive, isProcessGroupAlive, stopProcessGroup } from './process-control.mjs';
+import { isProcessAlive, isProcessGroupAlive, readProcessCommandLine, stopProcessGroup } from './process-control.mjs';
 import { isCommandAvailable, spawnCommand, spawnCommandSync } from './platform-command.mjs';
 import { runReleaseCli } from './release-command.mjs';
 import { runModuleDoctorCli } from './module-doctor.mjs';
@@ -2110,12 +2110,22 @@ async function startDevWorkspace(context, targets) {
     const resolved = resolveDevApp(context, name, context.manifest.apps[name]);
     applyStableBootstrapReceipt(context, resolved);
     const current = readPidFile(context, name);
+    const managed = assessManagedPid({
+      name,
+      pidFile: current,
+      alive: Boolean(current && isProcessAlive(current.pid)),
+      commandLine: current ? readProcessCommandLine(current.pid) : null,
+    });
+    if (current && managed.state !== MANAGED_PID_STATES.RUNNING) {
+      rmSync(pidFilePath(context, name), { force: true });
+      process.stdout.write(`${name}: ${managed.message}\n`);
+    }
     const decision = decideDevAppStart({
       name,
       port: resolved.port,
       explicit: selection.explicit.has(name),
       managedPid: current,
-      managedPidAlive: Boolean(current && isProcessAlive(current.pid)),
+      managedPidAlive: managed.state === MANAGED_PID_STATES.RUNNING,
       portInUse: resolved.port ? isPortInUse(resolved.port) : false,
       occupantText: formatPortOccupants(resolved.port),
       ownerHint: formatPortOwnerHint(context.root, resolved.port),

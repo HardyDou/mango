@@ -61,3 +61,45 @@ export function decideDevAppStart(input) {
       'and no live pid file belongs to this workspace, so it is treated as already running',
   };
 }
+
+/**
+ * Classifies a pid file that exists on disk but may no longer describe a live process.
+ *
+ * <p>A pid file outlives its process in two common ways: the process exited (possibly as a zombie
+ * that the parent never reaped, which still answers `kill(pid, 0)` on some platforms) or the pid was
+ * recycled by an unrelated command. Neither should keep `dev start` from starting the app, but both
+ * must be visible: silently ignoring the file leaves the operator wondering why nothing started, and
+ * trusting a recycled pid would make `dev stop` kill somebody else's process.
+ */
+
+export const MANAGED_PID_STATES = Object.freeze({
+  ABSENT: 'absent',
+  RUNNING: 'running',
+  STALE_GONE: 'stale-process-gone',
+  STALE_UNRELATED: 'stale-process-reused',
+});
+
+const MANAGED_COMMAND_HINTS = Object.freeze(['node', 'java', 'mvn', 'pnpm', 'npm', 'yarn', 'bun']);
+
+export function assessManagedPid(input) {
+  const pid = input?.pidFile?.pid;
+  if (!pid) {
+    return { state: MANAGED_PID_STATES.ABSENT, message: '' };
+  }
+  const name = input?.name || 'app';
+  if (!input?.alive) {
+    return {
+      state: MANAGED_PID_STATES.STALE_GONE,
+      message: `pid file is stale (pid ${pid} is no longer running), cleaned up and starting again`,
+    };
+  }
+  const commandLine = typeof input?.commandLine === 'string' ? input.commandLine.trim() : '';
+  if (commandLine && !MANAGED_COMMAND_HINTS.some((hint) => commandLine.includes(hint))) {
+    const command = commandLine.split(/\s+/).slice(0, 2).join(' ');
+    return {
+      state: MANAGED_PID_STATES.STALE_UNRELATED,
+      message: `pid file is stale (pid ${pid} now belongs to "${command}"), cleaned up and starting again`,
+    };
+  }
+  return { state: MANAGED_PID_STATES.RUNNING, message: `${name} is already running: pid=${pid}` };
+}

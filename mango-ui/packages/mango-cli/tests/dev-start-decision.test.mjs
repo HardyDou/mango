@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { DEV_START_ACTIONS, DEV_START_REASONS, decideDevAppStart } from '../src/dev-start-decision.mjs';
+import {
+  DEV_START_ACTIONS,
+  DEV_START_REASONS,
+  MANAGED_PID_STATES,
+  assessManagedPid,
+  decideDevAppStart,
+} from '../src/dev-start-decision.mjs';
 
 test('a live pid file keeps the managed app untouched', () => {
   const decision = decideDevAppStart({
@@ -79,4 +85,55 @@ test('apps without a port only depend on the pid file', () => {
     decideDevAppStart({ name: 'worker', port: 0, explicit: false, managedPidAlive: true, portInUse: false }).action,
     DEV_START_ACTIONS.SKIP,
   );
+});
+
+test('a pid file whose process is gone is stale and gets cleaned up', () => {
+  const managed = assessManagedPid({ name: 'backend', pidFile: { pid: 2778767 }, alive: false });
+  assert.equal(managed.state, MANAGED_PID_STATES.STALE_GONE);
+  assert.equal(managed.message, 'pid file is stale (pid 2778767 is no longer running), cleaned up and starting again');
+});
+
+test('a recycled pid that now runs an unrelated command is stale, not a managed app', () => {
+  const managed = assessManagedPid({
+    name: 'frontend',
+    pidFile: { pid: 4321 },
+    alive: true,
+    commandLine: 'python3 -m http.server 30012',
+  });
+  assert.equal(managed.state, MANAGED_PID_STATES.STALE_UNRELATED);
+  assert.ok(managed.message.includes('now belongs to "python3 -m"'));
+});
+
+test('a live managed command keeps the app untouched', () => {
+  const nodeManaged = assessManagedPid({
+    name: 'frontend',
+    pidFile: { pid: 11 },
+    alive: true,
+    commandLine: 'node /repo/node_modules/@mango/cli/src/index.mjs dev start',
+  });
+  const javaManaged = assessManagedPid({
+    name: 'backend',
+    pidFile: { pid: 12 },
+    alive: true,
+    commandLine: '/usr/bin/java -jar app.jar',
+  });
+  assert.equal(nodeManaged.state, MANAGED_PID_STATES.RUNNING);
+  assert.equal(javaManaged.state, MANAGED_PID_STATES.RUNNING);
+  assert.equal(javaManaged.message, 'backend is already running: pid=12');
+});
+
+test('an unknown command line trusts the pid instead of guessing', () => {
+  const managed = assessManagedPid({
+    name: 'backend',
+    pidFile: { pid: 13 },
+    alive: true,
+    commandLine: null,
+  });
+  assert.equal(managed.state, MANAGED_PID_STATES.RUNNING);
+});
+
+test('no pid file means there is nothing to assess', () => {
+  const managed = assessManagedPid({ name: 'backend', pidFile: null, alive: false });
+  assert.equal(managed.state, MANAGED_PID_STATES.ABSENT);
+  assert.equal(managed.message, '');
 });

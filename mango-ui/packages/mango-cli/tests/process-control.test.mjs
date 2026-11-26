@@ -2,7 +2,12 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import test from 'node:test';
-import { isProcessAlive, isProcessGroupAlive, stopProcessGroup } from '../src/process-control.mjs';
+import {
+  isProcessAlive,
+  isProcessGroupAlive,
+  readProcessCommandLine,
+  stopProcessGroup,
+} from '../src/process-control.mjs';
 
 const unixOnly = process.platform === 'win32' ? test.skip : test;
 const windowsOnly = process.platform === 'win32' ? test : test.skip;
@@ -140,3 +145,11 @@ async function readFirstLine(stream) {
   }
   return text;
 }
+
+test('readProcessCommandLine reports the current process command and null for a missing pid', () => {
+  const command = readProcessCommandLine(process.pid);
+  assert.equal(typeof command, 'string');
+  assert.ok(command.includes('node'));
+  assert.equal(readProcessCommandLine(999999), null);
+  assert.equal(readProcessCommandLine(-1), null);
+});
