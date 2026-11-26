@@ -330,6 +330,40 @@ scripts/publish-maven-batch.sh --all-non-app \
 
 基线随之从 15,067 条收敛到 **2,948 条**，剩余的 `checkstyle` 153 条与 `pmd` 2,795 条全部是缺陷类发现。
 
+### 6.2 文件长度上限（`FileLength` 2000）的口径
+
+`FileLength` 的阈值是 `2000`，定义在 `rulesets/java/checkstyle.xml:15-17`；可用 `-Dmango.check.checkstyle.fileLengthMax=<行数>` 覆盖（`CheckstyleConfigResolver.java:126`），属于发布级参数，PR 里不得用它给单个文件开口子。
+
+判定是**文件级**：每个超限文件只报一条，行号固定为 `1`，描述里带实际行数，例如 `文件 2,128 行 （最多：2,000 行）`。
+
+**已经超限的文件不会因为继续加行而重新失败。** 这不是特例分支，而是基线匹配规则的直接结果：`CheckGateFinalizer` 把 `filelengthcheck` 列入 `FILE_LEVEL_COUNT_RULES`（`CheckGateFinalizer.java:34`），指纹文本对这类规则返回空串（`:459-461`），因此指纹只由 `source|rule|file` 决定，行数与描述变化不影响匹配。结论分三种：
+
+| 情形 | 结果 |
+|---|---|
+| 文件已在 `mango-pmo/baselines/mango-check/no-new-violations-baseline.json` 且超限 | 继续加行不产生新问题，保持存量 |
+| 文件不在基线、本次改动后超过 2000 行 | `no-new-violations` 阻断 |
+| 文件已在基线、本次改动后被拆分到 2000 行以内 | 基线条目自然失效，不会反向报错 |
+
+基线里现有 3 条 `FileLengthCheck` 存量（`plugin/check/CheckMojo.java`、`architecture/MangoArchUnitChecker.java`、`file-preview-engine/.../SimpleEncodingDetects.java`）。基线条目由维护者按治理流程整批重建，PR 里不得为过门禁单独追加自己的文件。
+
+**业务仓的豁免前提不同。** 上面的「已在基线即可继续加行」以 `mango-pmo/baselines/mango-check/no-new-violations-baseline.json` 为准，那是 Mango 仓的基线文件。业务仓自建 `mango:check` 时用的是自己的基线（默认 `target/baseline.json`，可用 `mango.check.baselineFile` 指定），而业务仓的 `business-pmo/mango-baseline/baseline.json` 是 PMO 清单、不是 checkstyle 结果基线。**业务仓若无 `FileLengthCheck` 基线条目，就不存在存量豁免，2000 行是硬上限**——超一行即阻断，补救手段只有拆分，不是调参，也不是临时把自己的文件写进基线。
+
+门禁的阻断点只有一个：`mango:check` 的基线比对。底层 `maven-checkstyle-plugin` 与 `maven-pmd-plugin` 在 `mango/pom.xml:145`、`:186` 与 `mango-parent/pom.xml:135` 都是 `failOnViolation=false`，改这两个开关不会让构建变严格，只会让报告与门禁脱钩。
+
+**推荐拆分范式**（仓库既有做法）：把纯计算、纯映射、无状态的部分移到同模块的 `support` 子包，命名为 `<Domain>Support` 的 `final` 类，静态方法入参出参，不注入 Spring Bean；`XxxService` 只保留编排、事务边界和 `Require` 前置校验。可参考的现存样本：
+
+```text
+mango/mango-platform/mango-workflow/mango-workflow-core/src/main/java/io/mango/workflow/core/support/WorkflowTaskCompletionSupport.java
+mango/mango-platform/mango-workflow/mango-workflow-core/src/main/java/io/mango/workflow/core/support/WorkflowReturnTargetSupport.java
+mango/mango-platform/mango-payment/mango-payment-core/src/main/java/io/mango/payment/core/service/PaymentOrderViewSupport.java
+```
+
+反例（都不解决根因）：
+
+- 把逻辑复制到 Controller 或另一个 Service，制造两套实现。
+- 为过门禁调大 `mango.check.checkstyle.fileLengthMax`，把上限推给所有人。
+- 把自己的文件加进基线，等于永久声明它允许无限增长。
+
 ## 12. 相关文档
 
 - [后端模块规范](../../mango-pmo/rules/backend/05-module.md)

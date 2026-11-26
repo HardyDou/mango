@@ -201,6 +201,27 @@
 5. 当前用户必须拥有 `file:files:download` 权限；文件管理菜单的正式资源声明会给对应角色登记该权限。
 6. 预览引擎读取源文件：内嵌引擎（`mango-app` 同时装有 starter 与 engine）在同一进程内按票据直取；独立部署引擎装载 `mango-file-preview-starter-remote` 并开启 `mango.file-preview.remote.enabled` 后，按票据远程直取（`GET /file-preview/sources`）；两者都没有时才回退到 `url` 通道，此时必须配置 `mango.file-preview.source-base-url`，否则签发返回 `180004`。
 
+### 5.1 Native 依赖与平台
+
+预览引擎通过 `bytedeco` 提供 Windows 与 Linux 两套 native 包，`mango-file-preview-engine/pom.xml` 显式声明 `opencv`、`openblas`、`ffmpeg` 的 `linux-x86_64` 与 `windows-x86_64` 两组 classifier。
+
+`windows-x86_64` 三组在 Maven 后端 `1.16.2` 起标记为 `optional`：Linux 服务器部署不再传递这三组 Windows native 包（现网实测 `opencv` 32.1 MB、`openblas` 46.2 MB、`ffmpeg` 25.1 MB，fat jar 内合计 103.4 MB），镜像体积与下载时间随之下降。
+
+**在 Windows 上直接运行引擎的开发者需要自行声明这三组依赖**，`optional` 只影响传递性，不影响本模块自身的编译与运行：
+
+```xml
+<dependency>
+    <groupId>org.bytedeco</groupId>
+    <artifactId>ffmpeg</artifactId>
+    <version>${ffmpeg.version}</version>
+    <classifier>windows-x86_64</classifier>
+</dependency>
+```
+
+（`opencv`、`openblas` 同形。视频转码默认关闭，未声明时只有开启转码才会在运行期报 native 库缺失。）
+
+升级到 1.16.2 后在 Windows 本地预览报 native 库缺失（运行期 `UnsatisfiedLinkError`）时，先回头检查这三组 classifier 是否已自行声明；Linux 服务器部署不受该变更影响，属于静默的镜像体积下降，业务仓无需改动任何配置。
+
 ## 6. 配置说明
 
 配置前缀是 `mango.file-preview`。
