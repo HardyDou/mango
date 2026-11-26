@@ -77,6 +77,7 @@ const ignoredReadmePathSegments = [
   '/src/testFixtures/'
 ];
 const placeholderPattern = /\bTODO\b|\bTBD\b|待补充|待完善/;
+const inlineCodeSpanPattern = /`[^`\n]*`/g;
 const backtickedCommandPattern = /^`(?:pnpm|mvn|node|npm|npx|git|gh)\b.*`$/gm;
 const packageScriptPattern = /^pnpm\s+-F\s+(@mango\/[^\s]+)\s+([a-z][\w:-]*)\b/gm;
 const sourceFileExtensions = new Set(['.java', '.ts', '.tsx', '.vue', '.json', '.sql', '.yml', '.yaml', '.properties', '.xml']);
@@ -266,7 +267,7 @@ function auditText(readmePath, text) {
   if (scope.kind === 'business-consumer' && isEffectivelyEmpty(text)) {
     missing.push('README content');
   }
-  const hasPlaceholder = placeholderPattern.test(text);
+  const hasPlaceholder = placeholderPattern.test(text.replace(inlineCodeSpanPattern, ''));
   const commandFormatIssues = [...text.matchAll(backtickedCommandPattern)].map((match) => match[0]);
   const missingPackageScripts = packageScriptIssues(text);
   const docType = docTypeFor(readmePath);
@@ -581,6 +582,7 @@ text
     { name: 'frontend entry missing section fails', path: 'mango-ui/packages/file/src/components/README.md', text: validFrontendEntry.replace('## 5. 参数与事件\ntext\n', ''), valid: false },
     { name: 'empty quick start fails', text: invalid, valid: false },
     { name: 'placeholder fails', text: `${valid}\nTODO`, valid: false },
+    { name: 'enum token in code span passes', text: `${valid}\n${'`'}status${'`'} 为枚举名：${'`'}TODO${'`'} / ${'`'}DONE${'`'}。`, valid: true },
     { name: 'backticked command fails', text: valid.replace('migration 菜单 权限 初始化 接口 页面', '`node mango-pmo/tools/audit-module-readmes.mjs`'), valid: false },
     { name: 'missing package script fails', text: valid.replace('migration 菜单 权限 初始化 接口 页面', 'pnpm -F @mango/api-schema missing-script'), valid: false },
     { name: 'missing related link fails', text: valid.replace('mango-pmo/rules/08-capability-docs.md', 'README.md'), valid: false },
