@@ -428,11 +428,13 @@ mvn -o -pl :mango-bom,:mango-file-core -am -DskipTests compile 2>&1 | grep -c 'N
 
 **预热命令与代价**
 
-在仓库根执行一次全量安装，把每个模块的 SNAPSHOT 装进本地仓，之后任意单模块都能离线构建：
+在聚合根执行一次全量安装，把每个模块的 SNAPSHOT 装进本地仓，之后任意单模块都能离线构建：
 
 ```bash
 mvn -o install -DskipTests -Drevision=<当前 qualifier>
 ```
+
+（聚合根不一定是仓库根：本类业务仓的聚合根是 `backend/pom.xml`，仓库根没有 POM，此时要写成 `mvn -o -f backend/pom.xml install -DskipTests -Drevision=<当前 qualifier>`，否则报 `no POM in this directory`。多 worktree 并行开发时还要注意 qualifier 是分环境的——每个 worktree 常用不同的 `MANGO_MAVEN_REVISION_QUALIFIER`（如 `mango-003`、`mango-023`），只给一个 qualifier 预热，另一个 worktree 的单模块编译仍会报缺兄弟模块产物。）
 
 - `-Drevision=<qualifier>`：本仓若用 `${revision}` 管理版本，必须显式给，否则装进去的坐标是占位值，单模块仍解析不到。
 - 代价：整 Reactor 编译 + 打包一次（无测试）。模块数越多越明显，属于「每次改动兄弟模块就要重跑」的成本；只在改动落在兄弟模块时才需要，纯本模块改动预热后不必重复。
