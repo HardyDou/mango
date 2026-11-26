@@ -3,8 +3,8 @@
   "packageVersion": "1.6.4",
   "schemaVersion": 2,
   "source": "mango-pmo",
-  "sourceCommit": "2061e29ff34a138d781d8e80a0d896b0a08d7939",
-  "bundleSha256": "31ab2101b85fcc36516a6773dd6d95a3a8887397707ddaa12ba62f9b9e20743f",
+  "sourceCommit": "cc76b1c4e75b441233d8416bb66fa4ed9b6ef6a3",
+  "bundleSha256": "65eaab375a87745f7bc7eb342d1ac5db930039fae5e0c1d5f6a5dcc7a174fa7e",
   "contracts": [
     {
       "contractId": "business-requirements",
@@ -581,8 +581,8 @@
     },
     {
       "path": "rules/backend/03-api.md",
-      "sha256": "954cb5b2b2ca81b41d3f0d853cbbca9e5d9b26d7ffe2085d340776f447d72cab",
-      "size": 26169,
+      "sha256": "d01fe2a1c4a9ae0eb03d8d6b6fdf9f6506f0bcabd95fe072dbd0139200b5a3c7",
+      "size": 32064,
       "kind": "rule",
       "mode": "0644"
     },
@@ -728,7 +728,7 @@
     },
     {
       "path": "rules/index.json",
-      "sha256": "3e2e793d4d442f7d2f125a07ab099b607845ff1b1d4b6c6208cd342a11a8560d",
+      "sha256": "b7f0359d8387eff0c02a36a56b7685240b6a209e29c8e7b2d73938e50f5e07d7",
       "size": 37844,
       "kind": "rule",
       "mode": "0644"

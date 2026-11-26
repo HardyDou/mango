@@ -24,6 +24,13 @@ public abstract class MangoCrudServiceImpl<M extends BaseMapper<E>, E>
         extends ServiceImpl<M, E>
         implements MangoCrudService<E> {
 
+    private static final String PAGE_FIELD = "page";
+    private static final String PAGE_ALIAS_FIELD = "pageNum";
+    private static final String SIZE_FIELD = "size";
+    private static final String SIZE_ALIAS_FIELD = "pageSize";
+    private static final long DEFAULT_PAGE = 1L;
+    private static final long DEFAULT_SIZE = 10L;
+
     private final QueryWrapperBuilder queryWrapperBuilder = new QueryWrapperBuilder();
 
     @Override
@@ -78,7 +85,11 @@ public abstract class MangoCrudServiceImpl<M extends BaseMapper<E>, E>
     @Override
     public PersistencePageResult<?> pageByQuery(Object query) {
         QueryWrapper<E> wrapper = buildQueryWrapper(query);
-        Page<E> page = page(new Page<>(readLong(query, "page", 1L), readLong(query, "size", 10L)), wrapper);
+        Page<E> page = page(
+                new Page<>(
+                        readLong(query, PAGE_FIELD, PAGE_ALIAS_FIELD, DEFAULT_PAGE),
+                        readLong(query, SIZE_FIELD, SIZE_ALIAS_FIELD, DEFAULT_SIZE)),
+                wrapper);
         List<?> records = page.getRecords().stream().map(this::toVO).toList();
         return PersistencePageResult.of(records, page.getTotal(), page.getCurrent(), page.getSize());
     }
@@ -134,8 +145,15 @@ public abstract class MangoCrudServiceImpl<M extends BaseMapper<E>, E>
 
     protected abstract Class<E> entityType();
 
-    private long readLong(Object source, String fieldName, long defaultValue) {
+    private long readLong(Object source, String fieldName, String aliasFieldName, long defaultValue) {
         Object value = readProperty(source, fieldName);
+        if (value == null) {
+            value = readProperty(source, aliasFieldName);
+        }
+        return toPositiveLong(value, defaultValue);
+    }
+
+    private long toPositiveLong(Object value, long defaultValue) {
         if (value instanceof Number number) {
             return Math.max(number.longValue(), 1L);
         }
