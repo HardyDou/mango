@@ -386,6 +386,59 @@ mvn -o -pl :mango-bom,:mango-file-core -am -DskipTests compile 2>&1 | grep -c 'N
 
 基线随之从 15,067 条收敛到 **2,948 条**，剩余的 `checkstyle` 153 条与 `pmd` 2,795 条全部是缺陷类发现。
 
+### 11.2 消费方仓（业务仓）单模块构建
+
+业务仓有自己的父 POM，`io.mango:*` 走 Nexus 上的正式版本，构建失败的原因与 §11.1 完全不同：缺的不是 BOM，而是**兄弟业务模块的产物没装进本地仓**。两类报错必须分开判读，否则会一直退化成整 Reactor 构建。
+
+**为什么 `-am` 有时救不了**
+
+`-am`（`--also-make`）只把「被依赖**且已被当前 Reactor 收录**」的模块拉进来。在聚合根上执行 `mvn -pl backend/xxx-core -am` 时 Reactor 能补齐兄弟模块；但从模块目录里执行（`mvn -f backend/xxx-core/pom.xml`）、模块没写进聚合根的 `<modules>`、或者 `-pl` 指向的坐标不在当前聚合范围时，Reactor 里只有它自己，`-am` 无从补齐，`-o` 下就只能去本地仓找 SNAPSHOT。
+
+**两条报错的分界**
+
+缺兄弟模块产物（本仓 SNAPSHOT）：
+
+```text
+[ERROR] Failed to execute goal on project baohan-riskcontrol-core: Could not resolve dependencies
+  for project com.yunxin.baohan:baohan-riskcontrol-core:jar:1.0.0-SNAPSHOT
+[ERROR] dependency: com.yunxin.baohan:baohan-riskcontrol-api:jar:1.0.0-SNAPSHOT (compile)
+[ERROR]   Cannot access nexus (...) in offline mode and the artifact
+          com.yunxin.baohan:baohan-riskcontrol-api:jar:1.0.0-SNAPSHOT has not been downloaded from it before.
+```
+
+缺第三方件或平台件（外部坐标）：
+
+```text
+[ERROR] Plugin org.apache.maven.plugins:maven-resources-plugin:3.3.1 or one of its dependencies
+  could not be resolved: Cannot access nexus (...) in offline mode and the artifact
+  org.apache.maven.plugins:maven-resources-plugin:jar:3.3.1 has not been downloaded from it before.
+[ERROR] -> [Help 1]
+```
+
+缺父 POM：
+
+```text
+[ERROR] Non-resolvable parent POM for com.yunxin.baohan:xxx:1.0.0-SNAPSHOT: The following artifacts
+  could not be resolved: com.yunxin.baohan:baohan-parent:pom:1.0.0-SNAPSHOT (absent) ...
+  and 'parent.relativePath' points at wrong local POM @ line 2, column 9
+[ERROR] -> [Help 2]
+```
+
+判据只有一条：看 `dependency:` 后面那行的坐标**是不是本仓自己的 groupId + 同一个 SNAPSHOT 版本**。是 → 缺兄弟模块产物，跑预热；不是 → 缺外部件，只能联网下载或从预热好的只读仓取，离线无解。`-> [Help 1]` 一般是插件/依赖解析，`-> [Help 2]` 基本可以锁定父 POM。
+
+**预热命令与代价**
+
+在仓库根执行一次全量安装，把每个模块的 SNAPSHOT 装进本地仓，之后任意单模块都能离线构建：
+
+```bash
+mvn -o install -DskipTests -Drevision=<当前 qualifier>
+```
+
+- `-Drevision=<qualifier>`：本仓若用 `${revision}` 管理版本，必须显式给，否则装进去的坐标是占位值，单模块仍解析不到。
+- 代价：整 Reactor 编译 + 打包一次（无测试）。模块数越多越明显，属于「每次改动兄弟模块就要重跑」的成本；只在改动落在兄弟模块时才需要，纯本模块改动预热后不必重复。
+- 验证：`mvn -o -f backend/<module>/pom.xml compile` 能 BUILD SUCCESS 即预热生效。
+- 并行化：`-T 1C` 可缩短预热时间；不要用 `-o offline` 与 `-Dmaven.repo.local` 指到临时空目录，那是另一种失败（缺外部件）。
+
 ## 12. 相关文档
 
 - [后端模块规范](../../mango-pmo/rules/backend/05-module.md)
