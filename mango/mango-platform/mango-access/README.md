@@ -117,7 +117,8 @@ mango:
 - 启用分组探针（`readiness`、`liveness`）的顺序是「先 `management.endpoint.health.probes.enabled=true`，容器内确认 `/actuator/health/readiness` 由 401 变成 404，再补白名单，最后改探针地址」。`AuthFilter`（order 1）与 `springSecurityFilterChain`（order -100）都在 `DispatcherServlet` 之前执行，未登记的路径在放行前同样返回 401，放行后才暴露 404；顺序颠倒会停在「已加白名单但仍 404」的中间态，看起来像白名单没生效。
 - CIDR 的网段部分必须是完整四段 IPv4 或合法 IPv6。`10/8`、`172.16/12` 这类缩写会被解析成 `0.0.0.10`、`172.0.0.16`，网段随之改变且不会报错；启动时对这类写法输出 WARN `IP 白名单 CIDR 不是完整网段写法`。
 - IPv4 映射的 IPv6 地址（`::ffff:127.0.0.1`）按 IPv4 规则匹配，双栈容器下不会因地址族不同漏配。
-- `mango.access.auth.ip-whitelist.rules` 是普通列表绑定：业务仓在自己的配置里声明该列表会整体替换平台默认列表（`application.yml` 里的 `/actuator/health/**`、`/actuator/info` 随之失效），不会与平台默认规则追加或合并。覆盖时把仍需放行的平台默认规则一起写进自己的列表；若将来平台把该语义改成并集或追加，会作为行为变化记入发布说明的 `Changed`。
+- `mango.access.ip-whitelist.rules` 是普通列表绑定：业务仓在自己的配置里声明该列表会整体替换平台默认列表（`application.yml` 里的 `/actuator/health/**`、`/actuator/info` 随之失效），不会与平台默认规则追加或合并。覆盖时把仍需放行的平台默认规则一起写进自己的列表；若将来平台把该语义改成并集或追加，会作为行为变化记入发布说明的 `Changed`。
+- 实测对照（`mango-ops` 四仓实例，2026-11）：`eg-test`/`system-test`/`risk-test` 在 `management.endpoint.health.probes.enabled=true` 且白名单放行后 readiness 返回 200；`open-test` 白名单未放行时 readiness 返回 401；`system-test` 的 `/actuator/prometheus` 返回 401 是因为该实例未部署指标版，而非白名单问题。据此排查顺序固定为「先开 probes → 确认 401 变 404 → 再放行 → 最后改探针地址」，其中 404 与 401 的区别正是「路径不存在」与「未放行」的分界。
 - 覆盖时丢掉的不只是路径规则，还包括默认的网段范围：平台模板的 health 规则同时放行 `127.0.0.1/32`、`::1/128` 与内网三段 `10.0.0.0/8`、`172.16.0.0/12`、`192.168.0.0/16`，消费端只写回环 CIDR 时，内网监控采集访问探针同样会被拒。哪些网段可见属于业务侧的暴露面决策，平台不替消费端决定，因此覆盖后需要按实际采集来源显式写回。
 
 ## 8. 返回字段
