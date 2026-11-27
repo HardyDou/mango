@@ -28,7 +28,7 @@ test('frontend pinned to loopback explains how to expose it', () => {
   assert.match(notice, /\.mango\/dev-workspace\.env/u);
 });
 
-test('frontend exposed on all interfaces is reported without the hint', () => {
+test('frontend exposed on all interfaces is reported with the reachable-address hint', () => {
   const notice = describeDevListenAddress({
     name: 'frontend',
     type: 'vite',
