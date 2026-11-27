@@ -10,6 +10,7 @@ import io.mango.workflow.api.command.CreateWorkflowBusinessApplyCommand;
 import io.mango.workflow.api.command.UpdateWorkflowBusinessApplyFilterAttributesCommand;
 import io.mango.workflow.api.enums.WorkflowCode;
 import io.mango.workflow.api.enums.WorkflowTaskAssigneeSource;
+import io.mango.workflow.api.query.WorkflowBusinessApplyPageQuery;
 import io.mango.workflow.core.identity.WorkflowAssigneeIdentityService;
 import io.mango.workflow.core.mapper.WorkflowBusinessApplyMapper;
 import io.mango.workflow.core.support.WorkflowTaskAssigneeSourceResolver;
@@ -711,6 +712,77 @@ class WorkflowBusinessApplyServiceImplIntegrationTest {
 
     private java.util.Date toDate(LocalDateTime time) {
         return java.util.Date.from(time.atZone(java.time.ZoneId.systemDefault()).toInstant());
+    }
+
+    @Test
+    void pageFiltersByApplicantDeptIdsSnapshot() {
+        MangoContextHolder.set(MangoContextSnapshot.empty()
+                .withSecurity(1001L, "1", "admin", "default", "USER", "USER", 1L, "internal-admin"));
+        insertApplyWithDept(1L, 1001L, 20L, "IN_APPROVAL");
+        insertApplyWithDept(2L, 1002L, 21L, "IN_APPROVAL");
+        insertApplyWithDept(3L, 1003L, 30L, "IN_APPROVAL");
+        insertApplyWithDept(4L, 1004L, null, "IN_APPROVAL");
+
+        WorkflowBusinessApplyPageQuery single = new WorkflowBusinessApplyPageQuery();
+        single.setApplicantDeptIds(List.of(20L));
+
+        assertThat(service.page(single).getList()).extracting(io.mango.workflow.api.vo.WorkflowBusinessApplyVO::getId)
+                .containsExactly(1L);
+
+        WorkflowBusinessApplyPageQuery multiple = new WorkflowBusinessApplyPageQuery();
+        multiple.setApplicantDeptIds(List.of(21L, 30L));
+
+        assertThat(service.page(multiple).getList()).extracting(io.mango.workflow.api.vo.WorkflowBusinessApplyVO::getId)
+                .containsExactlyInAnyOrder(2L, 3L);
+
+        WorkflowBusinessApplyPageQuery absent = new WorkflowBusinessApplyPageQuery();
+
+        assertThat(service.page(absent).getList()).extracting(io.mango.workflow.api.vo.WorkflowBusinessApplyVO::getId)
+                .containsExactlyInAnyOrder(1L, 2L, 3L, 4L);
+    }
+
+    @Test
+    void pageIntersectsApplicantIdWithApplicantDeptIds() {
+        MangoContextHolder.set(MangoContextSnapshot.empty()
+                .withSecurity(1001L, "1", "admin", "default", "USER", "USER", 1L, "internal-admin"));
+        insertApplyWithDept(1L, 1001L, 20L, "IN_APPROVAL");
+        insertApplyWithDept(2L, 1001L, 21L, "IN_APPROVAL");
+        insertApplyWithDept(3L, 1002L, 20L, "IN_APPROVAL");
+
+        WorkflowBusinessApplyPageQuery hit = new WorkflowBusinessApplyPageQuery();
+        hit.setApplicantId(1001L);
+        hit.setApplicantDeptIds(List.of(20L));
+
+        assertThat(service.page(hit).getList()).extracting(io.mango.workflow.api.vo.WorkflowBusinessApplyVO::getId).containsExactly(1L);
+
+        WorkflowBusinessApplyPageQuery miss = new WorkflowBusinessApplyPageQuery();
+        miss.setApplicantId(1001L);
+        miss.setApplicantDeptIds(List.of(30L, 31L));
+
+        assertThat(service.page(miss).getList()).isEmpty();
+    }
+
+    @Test
+    void pageTreatsApplicantDeptIdsWithoutValueAsNoMatch() {
+        MangoContextHolder.set(MangoContextSnapshot.empty()
+                .withSecurity(1001L, "1", "admin", "default", "USER", "USER", 1L, "internal-admin"));
+        insertApplyWithDept(1L, 1001L, 20L, "IN_APPROVAL");
+
+        WorkflowBusinessApplyPageQuery query = new WorkflowBusinessApplyPageQuery();
+        query.setApplicantDeptIds(java.util.Collections.singletonList(null));
+
+        assertThat(service.page(query).getList()).isEmpty();
+    }
+
+    private void insertApplyWithDept(Long id, Long applicantId, Long applicantDeptId, String status) {
+        jdbcTemplate.update("""
+                insert into workflow_business_apply (
+                    id, tenant_id, apply_code, business_type, business_key, apply_title,
+                    applicant_id, applicant_dept_id, applicant_name, apply_status, latest_flag,
+                    created_at, updated_at
+                ) values (?, 1, ?, 'RESOURCE', ?, '资源申请', ?, ?, '测试申请人', ?, true, ?, ?)
+                """, id, "APPLY-" + id, "BIZ-" + id, applicantId, applicantDeptId, status,
+                LocalDateTime.now(), LocalDateTime.now());
     }
 
     private void insertApply(Long id, Long applicantId, String status) {

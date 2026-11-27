@@ -705,6 +705,25 @@ mango:
 | `mango.resource.registry.demo-enabled` | `false` | 是否额外扫描 `META-INF/mango/demo/`。只在空白开发或演示环境开启。 |
 | `mango.workflow.task-query.unpaged-max-rows` | `2000` | 按业务类型查询任务时不传分页参数的单次返回上限；超出部分调用方改用 `page` / `size` 拉取。 |
 
+### 8.1 任务状态词表（按端点区分）
+
+`WorkflowTaskVO.status` 在不同端点上的取值**不是同一套词表**，前端若在同一页面混读两个端点的数据，必须先按来源端点选映射表：
+
+| 端点 | `status` 取值 | 来源 |
+|------|---------------|------|
+| `POST /workflow/tasks/page-by-business-key` | 枚举名：`TODO` / `DONE` / `CANCELED` | `WorkflowTaskBusinessQueryService` 写 `WorkflowTaskRuntimeStatus.name()` |
+| `GET /workflow/tasks/todo` | 中文标签：`待办` | `WorkflowTaskRuntimeService` 写 `WorkflowTaskRuntimeStatus.TODO.getLabel()` |
+| `GET /workflow/tasks/done` | 中文标签：`已办` / `已终止` | 同上，`DONE.getLabel()` / `CANCELED.getLabel()` |
+
+`cancelCause` 的可用范围也不同：
+
+| 端点 | `cancelCause` |
+|------|---------------|
+| `page-by-business-key` | 有值。`CANCELED` 恒有值；`DONE` 仅在本人驳回/退回（`REJECTED` / `RETURNED`）时有值；`TODO` 为 `null` |
+| `todo` / `done` | 恒为 `null`（历史任务上 `getDeleteReason()` 可取，但当前未回填） |
+
+因此**判断办结、驳回、退回、终止只看 `cancelCause`，`status` 只做三态兜底**：`DONE` + `cancelCause` 为 `null` 是正常办结，`DONE` + `REJECTED` / `RETURNED` 是本人驳回/退回，`CANCELED` 一定有 `cancelCause`。`OTHER` 是兜底值（被牵连作废、外部删除实例、未知 deleteReason），不能当作正常终止对账。
+
 ## 9. 返回字段
 
 常用返回对象：
@@ -742,6 +761,16 @@ Workflow 参数校验约束统一由 `mango-workflow-api` 的 `XxxApi` 契约声
 | 批量最新进度 | `POST /workflow/business-applies/progress/latest-batch` | `workflow:business-apply:list` |
 | 按流程实例查申请 | `GET /workflow/business-applies/progress/by-process-instance` | `workflow:business-apply:detail` |
 | 我的申请统计 | `GET /workflow/business-applies/my/summary` | `workflow:task:list` |
+
+`POST /workflow/business-applies/page` 的可选过滤项：`businessType`、`businessKey`、`keyword`（申请编号/标题/摘要）、`statuses`、`latestOnly`、`applicantId`、`applicantDeptIds`、`currentTaskDefinitionKeys`、`currentAssigneeIds`、`startedAtBegin`、`startedAtEnd`。
+
+`applicantDeptIds` 按申请创建时快照在 `workflow_business_apply.applicant_dept_id` 上的**发起部门**过滤，用于「本部门发起的申请」（Issue #1439）：
+
+- 与任务侧「本部门处理中」正交，两者不共用参数；不要用任务侧已下线的 `deptIds`。
+- **平台不做组织递归**：下级部门由调用方展开后传入；一次最多 200 个，超过返回参数校验错误。
+- 传空数组或不传都不加该过滤；数组里只有 `null` 时按「无匹配」返回空页（不会退化成本部门之外的全量）。
+- 与 `applicantId` 同时传递时取交集。
+- 发起部门是**快照**（申请归属），与处理人部门（实时查询）不同口径；跨部门调动后历史申请仍归原部门。
 
 流程实例接口：
 
@@ -1192,6 +1221,12 @@ mvn -f mango/pom.xml -pl :mango-workflow-starter -Denforcer.skip=true -DskipTest
 确认管理后台已经注册 `@mango/workflow` 的 `admin-pages` 子入口，并且菜单里的组件路径能映射到 `workflow/template/index` 或 `workflow/definition/index` 页面 key。
 
 ## 升级与兼容
+
+### 1.15 → 1.16 任务状态词表
+
+1.16 起 `WorkflowTaskQueryStatus` 改为六态（`COMPLETED` / `REJECTED` / `RETURNED` / `WITHDRAWN` / `TERMINATED` / `PENDING` 等），`statuses` 的聚合含义随之上移：`DONE = {COMPLETED, REJECTED, RETURNED}`、`CANCELED = {WITHDRAWN, TERMINATED}`。**「本人驳回/本人退回」从 `CANCELED` 移到 `DONE`**，`statuses=[DONE]` 的结果集会因此变大；`[DONE, CANCELED]` 的并集与 1.15 的「不过滤」等价，业务侧无需改动。区分四种去向看 `WorkflowTaskVO.cancelCause`（见 §8.1）。
+
+
 
 | 适用版本 | 变更 | 影响 | 需要做的事 | 验证 | 回滚 |
 |----------|------|------|------------|------|------|

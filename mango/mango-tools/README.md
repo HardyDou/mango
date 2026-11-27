@@ -310,6 +310,7 @@ scripts/publish-maven-batch.sh --all-non-app \
 - 生成代码编译不过：脚手架只提供结构，业务字段、依赖和 mapper 仍要补齐。
 - 生成权限后页面仍无按钮：还需要菜单资源入库、角色授权和前端按钮权限接入。
 - Maven 批次只缺 `mango-architecture-verification` POM：使用当前 `publish-maven-batch.sh` 重新规划新版本发布；不可变版本已经尝试后只能先核对仓库事实，禁止整批重发。
+- 离线模式下构建单个模块报 `Non-resolvable import POM` 加一整屏 `dependencies.dependency.version ... is missing`：见 11.1，不要逐条去补版本号。
 
 ### 6.1 规则集取舍
 
@@ -329,6 +330,150 @@ scripts/publish-maven-batch.sh --all-non-app \
 格式统一交由 IDE 或格式化器在提交前完成，不进入门禁。保留的检查包括 `CyclomaticComplexity`（真实复杂度）、`FileLength`、`FileTabCharacter`、命名类（类/方法/字段/常量）、`EqualsHashCode`、`MissingSwitchDefault`、`NeedBraces`、`EmptyBlock`、`NoFinalizer`、`CovariantEquals` 等。
 
 基线随之从 15,067 条收敛到 **2,948 条**，剩余的 `checkstyle` 153 条与 `pmd` 2,795 条全部是缺陷类发现。
+
+### 6.2 文件长度上限（`FileLength` 2000）的口径
+
+`FileLength` 的阈值是 `2000`，定义在 `rulesets/java/checkstyle.xml:15-17`；可用 `-Dmango.check.checkstyle.fileLengthMax=<行数>` 覆盖（`CheckstyleConfigResolver.java:126`），属于发布级参数，PR 里不得用它给单个文件开口子。
+
+判定是**文件级**：每个超限文件只报一条，行号固定为 `1`，描述里带实际行数，例如 `文件 2,128 行 （最多：2,000 行）`。
+
+**已经超限的文件不会因为继续加行而重新失败。** 这不是特例分支，而是基线匹配规则的直接结果：`CheckGateFinalizer` 把 `filelengthcheck` 列入 `FILE_LEVEL_COUNT_RULES`（`CheckGateFinalizer.java:34`），指纹文本对这类规则返回空串（`:459-461`），因此指纹只由 `source|rule|file` 决定，行数与描述变化不影响匹配。结论分三种：
+
+| 情形 | 结果 |
+|---|---|
+| 文件已在 `mango-pmo/baselines/mango-check/no-new-violations-baseline.json` 且超限 | 继续加行不产生新问题，保持存量 |
+| 文件不在基线、本次改动后超过 2000 行 | `no-new-violations` 阻断 |
+| 文件已在基线、本次改动后被拆分到 2000 行以内 | 基线条目自然失效，不会反向报错 |
+
+基线里现有 3 条 `FileLengthCheck` 存量（`plugin/check/CheckMojo.java`、`architecture/MangoArchUnitChecker.java`、`file-preview-engine/.../SimpleEncodingDetects.java`）。基线条目由维护者按治理流程整批重建，PR 里不得为过门禁单独追加自己的文件。
+
+**业务仓的豁免前提不同。** 上面的「已在基线即可继续加行」以 `mango-pmo/baselines/mango-check/no-new-violations-baseline.json` 为准，那是 Mango 仓的基线文件。业务仓自建 `mango:check` 时用的是自己的基线（默认 `target/baseline.json`，可用 `mango.check.baselineFile` 指定），而业务仓的 `business-pmo/mango-baseline/baseline.json` 是 PMO 清单、不是 checkstyle 结果基线。**业务仓若无 `FileLengthCheck` 基线条目，就不存在存量豁免，2000 行是硬上限**——超一行即阻断，补救手段只有拆分，不是调参，也不是临时把自己的文件写进基线。
+
+门禁的阻断点只有一个：`mango:check` 的基线比对。底层 `maven-checkstyle-plugin` 与 `maven-pmd-plugin` 在 `mango/pom.xml:145`、`:186` 与 `mango-parent/pom.xml:135` 都是 `failOnViolation=false`，改这两个开关不会让构建变严格，只会让报告与门禁脱钩。
+
+**推荐拆分范式**（仓库既有做法）：把纯计算、纯映射、无状态的部分移到同模块的 `support` 子包，命名为 `<Domain>Support` 的 `final` 类，静态方法入参出参，不注入 Spring Bean；`XxxService` 只保留编排、事务边界和 `Require` 前置校验。可参考的现存样本：
+
+```text
+mango/mango-platform/mango-workflow/mango-workflow-core/src/main/java/io/mango/workflow/core/support/WorkflowTaskCompletionSupport.java
+mango/mango-platform/mango-workflow/mango-workflow-core/src/main/java/io/mango/workflow/core/support/WorkflowReturnTargetSupport.java
+mango/mango-platform/mango-payment/mango-payment-core/src/main/java/io/mango/payment/core/service/PaymentOrderViewSupport.java
+```
+
+反例（都不解决根因）：
+
+- 把逻辑复制到 Controller 或另一个 Service，制造两套实现。
+- 为过门禁调大 `mango.check.checkstyle.fileLengthMax`，把上限推给所有人。
+- 把自己的文件加进基线，等于永久声明它允许无限增长。
+
+### 11.1 离线单模块构建
+
+离线机器（无网络、本地仓没装过本仓 SNAPSHOT）上构建单个模块，必须让 `mango-bom` 和上游兄弟模块一起进 Reactor，否则依赖管理整片解析不到，报错会退化成几十条互不相干的「缺少版本号」。
+
+**症状**
+
+```text
+[ERROR] Non-resolvable import POM: The following artifacts could not be resolved:
+  io.mango:mango-bom:pom:1.0.0-SNAPSHOT (absent): Cannot access yunxin-nexus (...) in offline mode
+  and the artifact io.mango:mango-bom:pom:1.0.0-SNAPSHOT has not been downloaded from it before.
+  @ io.mango:mango-parent:${revision}, .../mango-parent/pom.xml, line 53, column 25
+[ERROR] 'dependencies.dependency.version' for io.mango.common:mango-common:jar is missing.
+[ERROR] 'dependencies.dependency.version' for org.springframework:spring-web:jar is missing.
+...
+```
+
+**判读**
+
+| 顺序 | 内容 | 含义 |
+|---|---|---|
+| 第一条 | `Non-resolvable import POM ... (absent)` | 根因：BOM 既不在 Reactor 也不在本地仓 |
+| 第二条起 | `dependencies.dependency.version ... is missing` | 连带噪声：BOM 缺席导致 import 的依赖管理整块失效，不是 N 个独立问题 |
+
+只要第一条是 `(absent)`，后面所有「缺少版本号」都不用看，改命令即可。
+
+**正确命令**
+
+```bash
+# 在 mango/ 目录（根 pom 所在目录）执行；模块可用 artifactId 选择器，也可用相对路径
+mvn -o -pl :mango-bom,:mango-file-core -am -DskipTests compile
+```
+
+- `-am` 让上游兄弟模块从源码进入 Reactor，不再依赖本地仓里的旧 SNAPSHOT。
+- `:mango-bom` 必须显式写进 `-pl`：`-am` 不会因为 POM 里 import 了 BOM 就把它带进 Reactor。
+- 需要产物给别的模块用时把 `compile` 换成 `install`，并在同一命令里保留 `-o`。
+
+**反例**
+
+| 写法 | 结果 | 原因 |
+|---|---|---|
+| `mvn -o -pl :mango-file-core ...` | 失败 | 兄弟模块与 BOM 都不在 Reactor |
+| `cd <module> && mvn -o ...` | 失败 | 单模块 Reactor，父 POM 与 BOM 只能去仓库找 |
+| `mvn -o ... -pl ... -am` | 失败 | 仍缺 `:mango-bom` 选择器 |
+| 逐条给 `dependencies.dependency.version` 补版本号 | 不可接受 | 把 BOM 缺陷写进各模块 POM，绕过依赖管理 |
+
+模块级命令在本机已经全量 `install` 过时是能跑的，这也正是同一个命令在 A 机成功、B 机报错的原因；判断依据是报错里有没有 `(absent)`。
+
+**验证**
+
+```bash
+mvn -o -pl :mango-bom,:mango-file-core -am -DskipTests compile 2>&1 | grep -c 'Non-resolvable import POM'
+```
+
+预期输出 `0`，且 `Reactor Summary` 里同时出现 `io.mango:mango-bom` 与目标模块。
+
+### 11.2 消费方仓（业务仓）单模块构建
+
+业务仓有自己的父 POM，`io.mango:*` 走 Nexus 上的正式版本，构建失败的原因与 §11.1 完全不同：缺的不是 BOM，而是**兄弟业务模块的产物没装进本地仓**。两类报错必须分开判读，否则会一直退化成整 Reactor 构建。
+
+**为什么 `-am` 有时救不了**
+
+`-am`（`--also-make`）只把「被依赖**且已被当前 Reactor 收录**」的模块拉进来。在聚合根上执行 `mvn -pl backend/xxx-core -am` 时 Reactor 能补齐兄弟模块；但从模块目录里执行（`mvn -f backend/xxx-core/pom.xml`）、模块没写进聚合根的 `<modules>`、或者 `-pl` 指向的坐标不在当前聚合范围时，Reactor 里只有它自己，`-am` 无从补齐，`-o` 下就只能去本地仓找 SNAPSHOT。
+
+**两条报错的分界**
+
+缺兄弟模块产物（本仓 SNAPSHOT）：
+
+```text
+[ERROR] Failed to execute goal on project baohan-riskcontrol-core: Could not resolve dependencies
+  for project com.yunxin.baohan:baohan-riskcontrol-core:jar:1.0.0-SNAPSHOT
+[ERROR] dependency: com.yunxin.baohan:baohan-riskcontrol-api:jar:1.0.0-SNAPSHOT (compile)
+[ERROR]   Cannot access nexus (...) in offline mode and the artifact
+          com.yunxin.baohan:baohan-riskcontrol-api:jar:1.0.0-SNAPSHOT has not been downloaded from it before.
+```
+
+缺第三方件或平台件（外部坐标）：
+
+```text
+[ERROR] Plugin org.apache.maven.plugins:maven-resources-plugin:3.3.1 or one of its dependencies
+  could not be resolved: Cannot access nexus (...) in offline mode and the artifact
+  org.apache.maven.plugins:maven-resources-plugin:jar:3.3.1 has not been downloaded from it before.
+[ERROR] -> [Help 1]
+```
+
+缺父 POM：
+
+```text
+[ERROR] Non-resolvable parent POM for com.yunxin.baohan:xxx:1.0.0-SNAPSHOT: The following artifacts
+  could not be resolved: com.yunxin.baohan:baohan-parent:pom:1.0.0-SNAPSHOT (absent) ...
+  and 'parent.relativePath' points at wrong local POM @ line 2, column 9
+[ERROR] -> [Help 2]
+```
+
+判据只有一条：看 `dependency:` 后面那行的坐标**是不是本仓自己的 groupId + 同一个 SNAPSHOT 版本**。是 → 缺兄弟模块产物，跑预热；不是 → 缺外部件，只能联网下载或从预热好的只读仓取，离线无解。`-> [Help 1]` 一般是插件/依赖解析，`-> [Help 2]` 基本可以锁定父 POM。
+
+**预热命令与代价**
+
+在聚合根执行一次全量安装，把每个模块的 SNAPSHOT 装进本地仓，之后任意单模块都能离线构建：
+
+```bash
+mvn -o install -DskipTests -Drevision=<当前 qualifier>
+```
+
+（聚合根不一定是仓库根：本类业务仓的聚合根是 `backend/pom.xml`，仓库根没有 POM，此时要写成 `mvn -o -f backend/pom.xml install -DskipTests -Drevision=<当前 qualifier>`，否则报 `no POM in this directory`。多 worktree 并行开发时还要注意 qualifier 是分环境的——每个 worktree 常用不同的 `MANGO_MAVEN_REVISION_QUALIFIER`（如 `mango-003`、`mango-023`），只给一个 qualifier 预热，另一个 worktree 的单模块编译仍会报缺兄弟模块产物。）
+
+- `-Drevision=<qualifier>`：本仓若用 `${revision}` 管理版本，必须显式给，否则装进去的坐标是占位值，单模块仍解析不到。
+- 代价：整 Reactor 编译 + 打包一次（无测试）。模块数越多越明显，属于「每次改动兄弟模块就要重跑」的成本；只在改动落在兄弟模块时才需要，纯本模块改动预热后不必重复。
+- 验证：`mvn -o -f backend/<module>/pom.xml compile` 能 BUILD SUCCESS 即预热生效。
+- 并行化：`-T 1C` 可缩短预热时间；不要用 `-o offline` 与 `-Dmaven.repo.local` 指到临时空目录，那是另一种失败（缺外部件）。
 
 ## 12. 相关文档
 

@@ -1,6 +1,7 @@
 package io.mango.workflow.api.query;
 
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import io.mango.workflow.api.validation.WorkflowOptionalValidation;
 
 
@@ -44,6 +45,11 @@ public class WorkflowBusinessApplyPageQuery extends PageQuery {
     @Schema(description = "申请人ID")
     @NotNull(groups = WorkflowOptionalValidation.class)
     private Long applicantId;
+
+    @Schema(description = "发起部门ID列表，按申请发起时快照的发起部门过滤；下级部门由调用方展开后传入，平台不做组织递归")
+    @NotNull(groups = WorkflowOptionalValidation.class)
+    @Size(max = 200, message = "发起部门一次最多200个")
+    private List<Long> applicantDeptIds;
 
     @Schema(description = "当前节点定义Key")
     @NotNull(groups = WorkflowOptionalValidation.class)
