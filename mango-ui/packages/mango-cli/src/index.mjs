@@ -29,6 +29,7 @@ import { fileURLToPath } from 'node:url';
 import { inspectProjectPullRequestTemplate, synchronizeProjectPullRequestTemplate } from './pmo-project-template.mjs';
 import { resolveHealthPollIntervalMs } from './dev-health-policy.mjs';
 import { shouldRunDevInstall } from './dev-install-policy.mjs';
+import { describeDevListenAddress } from './dev-listen-address.mjs';
 import { MANAGED_PID_STATES, assessManagedPid, decideDevAppStart } from './dev-start-decision.mjs';
 import {
   buildSpringBootReactorArgs,
@@ -2280,6 +2281,10 @@ function startDevApp(context, name, app) {
     workspaceRoot: context.root,
   });
   process.stdout.write(`${name}: started pid=${child.pid} log=${relativeOrAbsolute(process.cwd(), logPath)}\n`);
+  const listenAddress = describeDevListenAddress(app);
+  if (listenAddress) {
+    process.stdout.write(`${name}: listening ${listenAddress}\n`);
+  }
 }
 
 function installReactorParentChain(name, app, logPath) {

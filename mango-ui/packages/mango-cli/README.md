@@ -252,7 +252,7 @@ CLI 从当前目录向上查找 `mango.dev.json`。本地工作区分配事实�
 | `.mango/dev-workspace.env`        | `MANGO_BACKEND_PORT`             | 来自 `.mango/workspace.json`                  | 后端端口                    | 后端 `server.port` 和前端代理目标；同机 registry 分配避免冲突                             | `ensureDevWorkspaceEnv`                                |
 | `.mango/dev-workspace.env`        | `MANGO_FRONTEND_PORT`            | 来自 `.mango/workspace.json`                  | 前端端口                    | Vite dev server 端口；同机 registry 分配避免冲突                                          | `ensureDevWorkspaceEnv`                                |
 | `.mango/dev-workspace.env`        | `MANGO_FRONTEND_MODE`            | `source`                                      | 前端运行模式                | `source` 运行源码；`package` 要求已构建包产物                                             | `prepareFrontendWorkspace`                             |
-| `.mango/dev-workspace.env`        | `MANGO_FRONTEND_HOST`            | `127.0.0.1`                                   | 前端监听 host               | Vite host                                                                                 | `defaultDevWorkspaceEnv`                               |
+| `.mango/dev-workspace.env`        | `MANGO_FRONTEND_HOST`            | `127.0.0.1`                                   | 前端监听 host               | Vite host；默认只监听回环，`0.0.0.0` 才允许其它机器或容器访问，见 6.4.1                   | `defaultDevWorkspaceEnv`                               |
 | `.mango/dev-workspace.env`        | `MANGO_FRONTEND_OPEN`            | `false`                                       | 是否自动打开浏览器          | 写入 `VITE_OPEN`                                                                          | `defaultDevWorkspaceEnv`                               |
 | `.mango/dev-workspace.env`        | `MANGO_FRONTEND_AUTO_INSTALL`    | `true`                                        | 预留前端自动安装开关        | 供生成脚本和后续扩展读取                                                                  | `defaultDevWorkspaceEnv`                               |
 | `.mango/dev-workspace.env`        | （已移除）                       |                                               | 后端自动 install 开关       | Spring Boot 开发始终从当前 Maven reactor 编译运行，不再安装 app 制品                      | `dev-maven-reactor.mjs`                                |
@@ -285,6 +285,21 @@ CLI 从当前目录向上查找 `mango.dev.json`。本地工作区分配事实�
 `mango dev status` 在上述 workspace 数据库摘要之外，还会从运行中后端的已解析启动记录读取 datasource database，并输出 `dbMatch=PASS|FAIL|UNKNOWN`。运行中后端明确连接到其它数据库时命令失败；输出不会展示数据库密码或完整 datasource 参数。
 
 Unix 停服按整个进程组等待，而不是只观察 Maven leader。默认先发送 `SIGTERM` 并等待 60 秒，可在 `mango.dev.json` 的 app 上用 `stopTimeoutMs` 调整；超时后发送 `SIGKILL`，再按 `stopKillWaitMs`（默认 5 秒）确认进程组消失。仍有进程存活时命令失败并保留 pid 文件，不会误报 stopped；Windows 保持按单进程控制。
+
+#### 6.4.1 监听地址：前端默认只监听回环
+
+`mango workspace init` 生成的 `.mango/dev-workspace.env` 把 `MANGO_FRONTEND_HOST` 固定为 `127.0.0.1`（写入 Vite `VITE_HOST` 和 `--host`），而后端 Spring Boot 不指定 `server.address` 时绑定全部网卡。两者不一致会表现为「后端能从容器或同事机器访问，前端 `30NNN` 打不开」：这不意味着前端没启动。
+
+`mango dev start` 每个 app 启动后打印一行实际监听地址：
+
+```text
+frontend: started pid=12345 log=.mango/logs/frontend.log
+frontend: listening http://127.0.0.1:30012 (loopback only; set MANGO_FRONTEND_HOST=0.0.0.0 in .mango/dev-workspace.env and restart this app to expose it to other machines)
+```
+
+要先在容器外、同事机器或 IDE 远端访问 dev server，把该行变量改成 `0.0.0.0` 后重启前端；已改成 `0.0.0.0` 时打印 `(all interfaces)`，绑定到具体局域网地址时打印该地址。`MANGO_FRONTEND_HOST` 对**所有**前端 app 生效，不是只管主前端：`workspace init` 生成的工作区里主前端与 8 个附属前端（`30012`–`38003` 段）共用这一个变量，改一次等于改全部；改完需要重启受影响的 app 才生效。同时 `MANGO_FRONTEND_OPEN=false`（默认值）表示不自动打开浏览器，容器内启动时不需要改成 `true` 也能正常访问。
+
+默认值不改成 `0.0.0.0`：Vite 的 `/@fs/` 能读工程目录，默认监听回环能避免共享开发机、CI 机把源码目录暴露给整个网段。
 
 ### 6.5 可审计发布状态机
 
