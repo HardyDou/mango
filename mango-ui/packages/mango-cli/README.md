@@ -293,7 +293,9 @@ frontend: started pid=12345 log=.mango/logs/frontend.log
 frontend: listening http://127.0.0.1:30012 (loopback only; set MANGO_FRONTEND_HOST=0.0.0.0 in .mango/dev-workspace.env and restart this app to expose it to other machines)
 ```
 
-要先在容器外、同事机器或 IDE 远端访问 dev server，把该行变量改成 `0.0.0.0` 后重启前端；已改成 `0.0.0.0` 时打印 `(all interfaces)`，绑定到具体局域网地址时打印该地址。默认值不改成 `0.0.0.0`：Vite 的 `/@fs/` 能读工程目录，默认监听回环能避免共享开发机、CI 机把源码目录暴露给整个网段。
+要先在容器外、同事机器或 IDE 远端访问 dev server，把该行变量改成 `0.0.0.0` 后重启前端；已改成 `0.0.0.0` 时打印 `(all interfaces)`，绑定到具体局域网地址时打印该地址。`MANGO_FRONTEND_HOST` 对**所有**前端 app 生效，不是只管主前端：`workspace init` 生成的工作区里主前端与 8 个附属前端（`30012`–`38003` 段）共用这一个变量，改一次等于改全部；改完需要重启受影响的 app 才生效。同时 `MANGO_FRONTEND_OPEN=false`（默认值）表示不自动打开浏览器，容器内启动时不需要改成 `true` 也能正常访问。
+
+默认值不改成 `0.0.0.0`：Vite 的 `/@fs/` 能读工程目录，默认监听回环能避免共享开发机、CI 机把源码目录暴露给整个网段。
 
 ### 6.5 可审计发布状态机
 

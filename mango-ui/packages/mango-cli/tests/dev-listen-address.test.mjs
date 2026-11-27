@@ -36,7 +36,7 @@ test('frontend exposed on all interfaces is reported without the hint', () => {
     host: '0.0.0.0',
     hostEnv: 'MANGO_FRONTEND_HOST',
   });
-  assert.equal(notice, 'http://0.0.0.0:30012 (all interfaces)');
+  assert.equal(notice, 'http://0.0.0.0:30012 (all interfaces; reach it as http://<this-machine-ip>:30012)');
 });
 
 test('lan host is reported as reachable', () => {

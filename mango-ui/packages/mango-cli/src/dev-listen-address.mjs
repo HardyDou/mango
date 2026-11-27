@@ -45,7 +45,7 @@ export function describeDevListenAddress(app, options = {}) {
     return url;
   }
   if (isWildcardHost(host)) {
-    return `${url} (all interfaces)`;
+    return `${url} (all interfaces; reach it as http://<this-machine-ip>:${port})`;
   }
   if (isLoopbackHost(host)) {
     return (
